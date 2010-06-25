@@ -1,0 +1,67 @@
+Whiley Development Kit (WDK)
+============================
+Author: David J. Pearce, June 2010
+
+Welcome to the Whiley Development Kit.  This will allow you compile
+and run Whiley programs on the Java Virtual Machine.  Whiley will
+operate on any system that can run Java including Windows, Mac OS and
+Linux.  Whiley is released under the GNU General Public License,
+version 3 --- see the LICENSE file for more on this.
+
+Finally, to learn more about the Whiley language, visit
+http://whiley.org.  There you will find a range of documentation,
+including an overview of the aims and objectives of Whiley, and an
+introduction into the syntax of the language.
+
+Installation
+============
+
+To install the Whiley Development Kit, unpack the tarball into an
+appropriate directory (as you've probably already done).  You then
+need to make sure that PATH environment variable points to the bin/
+directory, where several scripts are provided for running Whiley.
+(don't worry if you don't know what the PATH is, as you can instead
+run the jar directly --- see below).
+
+With the PATH setup correctly, you should be able to run the wyjc
+command to compile Whiley programs as follows:
+
+% cd examples
+% wyjc hello-world.whiley
+
+At this point, you can run the program using the whiley command:
+
+% whiley hello-world
+Hello World
+
+(note: the whiley command is just a wrapper for java -cp
+lib/wyrt.jar).
+
+Running the Jar Directly
+========================
+
+If you're running on a Windows system without cygwin, or you're having
+trouble getting the wyjc scripts to work, then a useful alternative is
+to run the jar file directly.  You can do this as follows:
+
+% cd examples
+% java -jar ../lib/wyjc.jar -bp ../lib/wyrt.jar hello-world.whiley
+
+Then, to run the program you would do this:
+
+% java -cp "../lib/wyrt.jar;." hello-world
+Hello World
+
+(note: under UNIX you will want to replace the ';' with a ':')
+
+Getting Help
+============
+
+If you have trouble getting Whiley to work properly, first consult the
+whiley.org website.  If you are unable to find a solution, you can
+contact me directly on "david.pearce@ecs.vuw.ac.nz".
+
+
+
+
+

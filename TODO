@@ -1,0 +1,118 @@
+Wone Suggested Plan
+
+1) Fix up states to always add new stuff to end, and then backtrack.
+
+2) Simplify reasoning about constraints over arbitrary types
+
+3) Fix up quantification
+
+Whiley Suggested Plan (since there's a lot to do):
+
+1) Modify notation for comprehensions, to avoid ambiguity.
+
+2) Update Wone to generate Models [hard]
+
+4) Finish union types, add instanceof tests
+
+5) Sort out public / export modifiers
+
+6) Add support for recursive data types [easy]
+
+7) Add support for list concatenation
+
+9) Attempt to write JVM bytecode assembler benchmark [?]
+
+10) Sort out threading of processes
+
+========================================================
+Types
+========================================================
+
+1.2) Add support for recursive data types.
+
+1.3) Add support for symbols.
+
+1.4) Add support for map types ?
+     > yes, since we can have some nice index notation if we do this.
+
+========================================================
+Expressions + Statements
+========================================================
+
+2.1) Add support for list comprehension.
+
+2.2) Add modulus operator
+
+2.3) Add support for "not in", and "not subseteq", etc.
+
+2.4) Add support for right-to-left element of, subseteq, etc.
+
+2.5) Add support for more quantifiers --- e.g. one, lone, etc.
+
+2.6) Add support for a "type test" --- isa or something.
+
+2.7) Add "CharVal" expression
+
+2.8) Add support for loop statements.
+
+========================================================
+Methods
+========================================================
+
+3.1) Resolve issue with post-conditions which reference parameters.
+
+3.2) Add support for narrowing the method dispatch table.
+
+3.3) Add support for (static) method binding, and overloading.
+
+3.4) Add support for packages.
+
+========================================================
+Processes
+========================================================
+
+4.1) Add support for locking processes
+
+4.2) Add support for interfaces.
+
+4.3) Add process creation mechanism.
+
+4.4) Add stream creation mechanism.
+
+========================================================
+Theorem Prover
+========================================================
+
+5.1) Add support for omega test.
+
+5.2) Add support for sets and lists.  One motivation for this is the
+SetUnion_Check_2 benchmark.  The problem is that we need a quantifier
+to handle the case when two sets are not equal.  However, when we
+negate a condition, we won't realise we need to introduce the
+condition.  This could be overcome by using some kind of "set($6)"
+marker, which could then be used to say $6 != $1 implies some $2 | $2
+in $1 && $2 not in $6 etc.
+
+The other motivation for this is the problem with set/list lengths,
+which I don't think can be easily resolved otherwise.
+
+5.3) Improve overall performance.
+
+5.4) Add support for generating counter-examples, and three-value
+logic.
+
+========================================================
+Whiley Compiler
+========================================================
+
+6.1) Fix problem with writing methods which have union type parameters
+to class files.
+
+6.2) Optimise generation of runtime checks.  Particularly, the method
+extractLocalConstraint in RuntimeCheckGenerator could be improved.
+
+========================================================
+JVM Platform
+========================================================
+
+7.1) Improve performance!

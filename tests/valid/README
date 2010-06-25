@@ -1,0 +1,19 @@
+Valid Whiley Tests
+==================
+
+The valid tests are all examples of valid whiley programs.  None of
+these tests should be rejected by the compiler.  All should generate
+some amount of output, which can be used to ensure correct
+compilation.  They split into two sub-directories:
+
+definite --- these are examples which may (or may not) require wyone
+to prove correct.  The examples in this category can all be proved as
+definitely correct by wyone.  Observe that every test case must
+generate some form of runtime output.  This means the tests serve two
+purposes: firstly, to test wyone; secondly, to test the compiled
+whiley code generates the expected output.
+
+unknown --- these are examples which wyone is unable to definitely
+identify as being correct.  Therefore, when compiled, these examples
+will include one or more runtime checks.  As before, every test case
+must generate some form of runtime output.  

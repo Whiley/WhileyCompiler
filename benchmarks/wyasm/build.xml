@@ -1,0 +1,20 @@
+<project name="wyasm" default="compile">  
+  <property environment="env"/>
+
+  <target name="compile">
+    <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="${env.WHILEY_HOME}/lib/whiley.jar"/>
+    <wyjc srcdir="." includes="*.whiley" nvc="true"/>
+    <jar destfile="wyasm.jar">
+      <fileset dir="." includes="*.class"/>
+    </jar>
+  </target>
+
+ <target name="clean">
+  <delete includeEmptyDirs="true" failonerror="false">
+   <fileset file="*.jar"/>
+   <fileset dir="." includes="**/*.class"/>
+   <fileset dir="tmp/" includes="**"/>
+  </delete>
+ </target>
+
+</project>
