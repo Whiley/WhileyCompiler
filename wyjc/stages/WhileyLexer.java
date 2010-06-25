@@ -27,7 +27,7 @@ import wyjc.util.SyntaxError;
 
 public class WhileyLexer {	
 	private String filename;
-	private String input;
+	private StringBuffer input;
 	private int pos;
 	
 	public WhileyLexer(String filename) throws IOException {
@@ -49,7 +49,7 @@ public class WhileyLexer {
 			text.append("\n");
 		}
 		
-		input = text.toString();	
+		input = text;	
 	}
 	
 	public List<Token> scan() {
