@@ -478,8 +478,6 @@ public class ModuleLoader {
 						
 		File f = new File(root + File.separatorChar + filepkg);		
 		
-		System.out.println("FOUND: " + f);
-		
 		if (f.isDirectory()) {
 			for (String file : f.list()) {
 				if (!closedWorldAssumption && file.endsWith(".whiley")) {

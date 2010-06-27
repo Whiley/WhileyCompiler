@@ -501,8 +501,7 @@ public class NameResolution {
 				resolve(e.getValue(),imports);
 			}
 		} else if(t instanceof UserDefType) {
-			UserDefType dt = (UserDefType) t;			
-			System.out.println("RESOLVING: " + dt + " WITH " + imports);
+			UserDefType dt = (UserDefType) t;						
 			ModuleID owner = loader.resolve(dt.name(), imports);		
 			dt.resolve(owner);
 		} else if(t instanceof UnionType) {
