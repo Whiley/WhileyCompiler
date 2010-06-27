@@ -46,7 +46,15 @@ public class BoundedListQuantifiers {
 				" && all [ j : xs | xs[j] > 0 ] && x >= 0 && x < 1"));
 	}
 	
-	
+	@Test
+	public void Unsat_8() {
+		assertTrue(checkUnsat("[int] left, right, result; " + 
+				"some [x : result | 0 > result[x]] && left==[1.0,2.0,3.0]  && right==[5.0,6.0,7.0]" + 
+				"&& |result|==(|left|+|right|) " + 
+				"&& (all [$3 : result | (right[($3-|left|)]==result[$3] || 0 > ($3-|left|)) && (0 <= ($3-|left|) || left[$3]==result[$3])])"));
+						
+	}
+
 	@Test
 	public void Sat_1() {
 		assertTrue(checkSat("[int] xs; xs==[1,2] && all [ i : xs | xs[i] > 0 ]"));
