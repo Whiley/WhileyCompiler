@@ -101,6 +101,7 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void ListAppend_Valid_1_StaticTest() { verificationRunTest("ListAppend_Valid_1"); }
  @Test public void ListAppend_Valid_2_StaticTest() { verificationRunTest("ListAppend_Valid_2"); }
  @Test public void ListAppend_Valid_3_StaticTest() { verificationRunTest("ListAppend_Valid_3"); }
+ @Test public void ListAppend_Valid_4_StaticTest() { verificationRunTest("ListAppend_Valid_4"); }
  @Test public void ListConversion_Valid_1_StaticTest() { verificationRunTest("ListConversion_Valid_1"); }
  @Test public void ListElemOf_Valid_1_StaticTest() { verificationRunTest("ListElemOf_Valid_1"); }
  @Test public void ListEmpty_Valid_1_StaticTest() { verificationRunTest("ListEmpty_Valid_1"); }
