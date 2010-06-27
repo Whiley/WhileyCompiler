@@ -57,7 +57,13 @@ public final class WhileyList extends ArrayList {
 		}
 		return r;
 	}
-		
+	
+	public WhileyList append(WhileyList rhs) {
+		WhileyList r = new WhileyList(this);
+		r.addAll(rhs);
+		return r;
+	}
+	
 	public void set(BigInteger index, Object val) {	
 		int idx = index.intValue();
 		set(idx,val); 		

@@ -1,4 +1,5 @@
 void System::main([string] args):
-    [string] more
-    more = args + ["Hello"]
-    print str(more)
+    [int] left = [1,2]
+    [int] right = [3,4]
+    [int] r = left + right
+    print str(r)

@@ -1159,6 +1159,9 @@ public class TypeResolution {
 			} else if (e instanceof IntNotEquals || e instanceof ListNotEquals) {
 				return new Pair(Types.T_BOOL, new ListNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
+			} else if(e instanceof IntAdd) {				
+				return new Pair(Types.leastUpperBound(t1, t2), new ListAppend(
+						lhs.second(), rhs.second(), e.attributes()));
 			}
 		} else if(lhs_t instanceof ListType || rhs_t instanceof ListType) {
 			syntaxError("expecting type " + lhs_t + ", got " + rhs_t, rhs
@@ -1180,7 +1183,19 @@ public class TypeResolution {
 			} else if (e instanceof IntNotEquals || e instanceof SetNotEquals) {
 				return new Pair(Types.T_BOOL, new SetNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
-			}
+			} else if (e instanceof IntNotEquals || e instanceof SetNotEquals) {
+				return new Pair(Types.T_BOOL, new SetNotEquals(lhs.second(),
+						rhs.second(), e.attributes()));
+			} else if(e instanceof IntAdd) {
+				return new Pair(
+						Types.leastUpperBound(t1,t2),
+						new SetUnion(lhs.second(), rhs.second(), e.attributes()));
+			} else if(e instanceof IntSub) {
+				return new Pair(
+						Types.leastUpperBound(t1,t2),
+						new SetDifference(lhs.second(), rhs.second(), e.attributes()));
+			} 
+					
 		} else if(lhs_t instanceof SetType || rhs_t instanceof SetType) {
 			syntaxError("expecting type " + lhs_t + ", got " + rhs_t, rhs
 					.second());

@@ -875,6 +875,8 @@ public class ClassFileBuilder {
 				translate((ListAccess)expr, slots, environment, bytecodes);
 			} else if(expr instanceof ListSublist) {
 				translate((ListSublist)expr, slots, environment, bytecodes);
+			} else if(expr instanceof ListAppend) {
+				translate((ListAppend)expr, slots, environment, bytecodes);
 			} else if(expr instanceof ListEquals) {
 				translate((ListEquals)expr, slots, environment, bytecodes);
 			} else if(expr instanceof ListNotEquals) {
@@ -1515,6 +1517,14 @@ public class ClassFileBuilder {
 		translate(e.end(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_INTEGER,BIG_INTEGER);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
+				Bytecode.VIRTUAL));					
+	}
+	protected void translate(ListAppend e,
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {		
+		translate(e.lhs(), slots, environment,bytecodes);
+		translate(e.rhs(), slots, environment,bytecodes);				
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
 				Bytecode.VIRTUAL));					
 	}
 	protected void translate(ListElementOf e,
