@@ -146,7 +146,7 @@ public class ModuleLoader {
 		skeletontable.put(skeleton.id(), skeleton);
 	}
 	
-	public void register(ModuleInfo module) {
+	public void register(ModuleInfo module) {		
 		moduletable.put(module.id(), module);	
 	}
 	
@@ -211,7 +211,7 @@ public class ModuleLoader {
 	public static Condition dummyCondition = new BoolVal(true);
 	public static Condition nullCondition = new BoolVal(true);
 		
-	public ModuleInfo loadModule(ModuleID module) throws ResolveError {
+	public ModuleInfo loadModule(ModuleID module) throws ResolveError {		
 		ModuleInfo m = moduletable.get(module);
 		if(m != null) {
 			return m; // module was previously loaded and cached

@@ -36,6 +36,7 @@ import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
 import wyjc.jvm.rt.BigRational;
 import wyjc.util.*;
+import static wyjc.util.SyntaxError.*;
 
 /**
  * The purpose of the check generator is to generate all the necessary runtime
@@ -375,7 +376,7 @@ public class RuntimeCheckGenerator {
 		
 		// Now, check the requirements for the method itself.
 		Condition preCond = null;
-		
+				
 		ModuleInfo mi = loader.loadModule(ivk.module());		
 		
 		FunType funType = ivk.funType();
@@ -472,7 +473,7 @@ public class RuntimeCheckGenerator {
 				return null;
 			}
 		} catch(ResolveError ex) {
-			syntaxError(ex.getMessage(),e);
+			syntaxError(ex.getMessage(),e,ex);
 		}
 		
 		return checks;
@@ -678,20 +679,5 @@ public class RuntimeCheckGenerator {
 			checks.add(new Check(msg,c,attr));
 			nchecks++;
 		}
-	}
-	
-	private static void syntaxError(String msg, SyntacticElement elem) {
-		int start = -1;
-		int end = -1;
-		String filename = "unknown";
-		
-		SourceAttr attr = (SourceAttr) elem.attribute(SourceAttr.class);
-		if(attr != null) {
-			start=attr.start();
-			end=attr.end();
-			filename = attr.filename();
-		}
-		
-		throw new SyntaxError(msg, filename, start, end);
-	}
+	}	
 }
