@@ -26,15 +26,17 @@ public class ListLengthClosure implements InferenceRule {
 	public void infer(WFormula nlit, SolverState state, Solver solver) {
 		for(WListAccess la : WExprs.match(WListAccess.class, nlit)) {
 			WExpr source = la.source();
-			WExpr index = la.index();
+			WExpr index = la.index();			
+			
 			WFormula nf = WNumerics.greaterThan(new WLengthOf(source),index);
 			if(!state.contains(nf)) {				
 				state.infer(nf, solver);
 			}
-			nf = WNumerics.greaterThanEq(new WLengthOf(source),WNumber.ZERO);
-			if(!state.contains(nf)) {				
+			nf = WNumerics.greaterThanEq(index,WNumber.ZERO);
+			if(!state.contains(nf)) {								
 				state.infer(nf, solver);
 			}
+			
 		}				
 	}		
 }
