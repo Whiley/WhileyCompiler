@@ -1,5 +1,5 @@
-define (int op) as intup
-define (real op) as realtup
+define intup as (int op)
+define realtup as (real op)
 
 void f(realtup t):
     real x = t.op

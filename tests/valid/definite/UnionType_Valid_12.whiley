@@ -1,7 +1,7 @@
-define int where $ >= 0 as utr12nat
-define utr12nat|[int] as intList
+define utr12nat as int where $ >= 0
+define intList as utr12nat|[int]
 
-define (int op, intList il) where op >= 0 && op <= 5 as tupper
+define tupper as (int op, intList il) where op >= 0 && op <= 5
 
 int f(tupper y) ensures $ >= 0:
     return y.op

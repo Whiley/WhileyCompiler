@@ -1,5 +1,5 @@
-define int where $ > 0 as fr8nat
-define int where $ < 0 as fr8neg
+define fr8nat as int where $ > 0
+define fr8neg as int where $ < 0
 
 void f(fr8nat y):
     print "F(NAT)"

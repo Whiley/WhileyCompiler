@@ -1,4 +1,4 @@
-define [int] as intset
+define intset as [int]
 
 void System::main([string] args):
      intset is

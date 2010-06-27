@@ -1,4 +1,4 @@
-define [int] where no { x in $ | x < 0 } as plistv6 
+define plistv6 as [int] where no { x in $ | x < 0 } 
 
 int f(plistv6 xs):
     return |xs|

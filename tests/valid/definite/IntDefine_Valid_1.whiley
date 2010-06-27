@@ -1,6 +1,6 @@
 // this is a comment!
-define int where $ > 0 as ir1nat
-define ir1nat where $ > 1 as pir1nat
+define ir1nat as int where $ > 0
+define pir1nat as ir1nat where $ > 1
 
 void f(int x):
     pir1nat y

@@ -1,4 +1,4 @@
-define (bool flag, int code) as btr2tup
+define btr2tup as (bool flag, int code)
 
 void System::main([string] args):
     btr2tup x = (flag:true,code:0)

@@ -1,5 +1,5 @@
 // this is a comment!
-define [int]|[real] as IntRealList
+define IntRealList as [int]|[real]
 
 void System::main([string] args):
     IntRealList x

@@ -1,8 +1,8 @@
-define 169 as RET
-define 0 as NOP
+define RET as 169
+define NOP as 0
 
-define { NOP, RET } as unitCode
-define (unitCode op) as UNIT
+define unitCode as { NOP, RET }
+define UNIT as (unitCode op)
 
 byte f(UNIT x):
     return x.op

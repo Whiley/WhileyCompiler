@@ -1,5 +1,5 @@
-define (int x, int y) as state
-define process state as pState
+define state as (int x, int y)
+define pState as process state
 
 void pState::send(int x):
     this->x = x

@@ -1,5 +1,5 @@
 // this is a comment!
-define int where $ < 10 as cr3nat
+define cr3nat as int where $ < 10
 
 cr3nat f(cr3nat x):
     return 1

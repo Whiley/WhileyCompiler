@@ -1,5 +1,5 @@
-define int where $ > 0 as posint
-define int where $ < 0 as negint
+define posint as int where $ > 0
+define negint as int where $ < 0
 
 void f(posint x):
     print "POSITIVE"

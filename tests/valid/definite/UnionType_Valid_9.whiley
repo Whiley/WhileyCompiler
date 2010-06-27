@@ -1,5 +1,5 @@
 // this is a comment!
-define (int|[int] op) as IntList
+define IntList as (int|[int] op)
 
 void System::main([string] args):
     IntList x = (op:1)

@@ -1,4 +1,4 @@
-define int where $ >= 0 as fr4nat
+define fr4nat as int where $ >= 0
 
 fr4nat g(fr4nat x):
     return x + 1

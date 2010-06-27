@@ -1,6 +1,6 @@
-define (int x,int y) as point
-define [int] as listint
-define {int} as setint
+define point as (int x,int y)
+define listint as [int]
+define setint as {int}
 
 void System::main([string] args):
      point p

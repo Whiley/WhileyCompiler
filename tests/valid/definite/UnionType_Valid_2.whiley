@@ -1,5 +1,5 @@
 // this is a comment!
-define int|real as IntReal
+define IntReal as int|real
 
 void f(IntReal y):
     print str(y)

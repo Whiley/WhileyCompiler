@@ -1,4 +1,4 @@
-define 32 as THIRTYTWO
-define 12 as TWELVE
+define THIRTYTWO as 32
+define TWELVE as 12
 
-define { THIRTYTWO, TWELV } as numbers
+define numbers as { THIRTYTWO, TWELV }

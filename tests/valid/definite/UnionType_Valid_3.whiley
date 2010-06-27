@@ -1,4 +1,4 @@
-define int|real as intreal
+define intreal as int|real
 
 //void f(intreal x):
 //    if(x in int):

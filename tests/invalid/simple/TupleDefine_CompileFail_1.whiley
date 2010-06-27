@@ -1,4 +1,4 @@
-define (real x,real y) as point
+define point as (real x,real y)
 
 void System::main([string] args):
      point p

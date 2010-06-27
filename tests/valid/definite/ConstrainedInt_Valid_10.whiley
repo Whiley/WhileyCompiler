@@ -1,7 +1,7 @@
 // This example was inspired by comments from Stuart Marshall.
 
-define int where $ >= 0 as anat
-define int where 2*$ >= $ as bnat
+define anat as int where $ >= 0
+define bnat as int where 2*$ >= $
 
 bnat atob(anat x):
     return x

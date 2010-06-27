@@ -1,4 +1,4 @@
-define (int op, [real] rest)|(int op, int mode) as IntList
+define IntList as (int op, [real] rest)|(int op, int mode)
 
 void System::main([string] args):
     IntList x = (op:1, rest:[1.23])

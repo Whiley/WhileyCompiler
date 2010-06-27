@@ -1,6 +1,6 @@
-define int where $ >=0 && $ <= 255 as byte
-define { 1, 2, 3, 4 } as codeOp
-define (codeOp op, [int] payload) as code
+define byte as int where $ >=0 && $ <= 255
+define codeOp as { 1, 2, 3, 4 }
+define code as (codeOp op, [int] payload)
 
 void f(code x):
     byte y

@@ -1,4 +1,4 @@
-define [[int]] as nnint
+define nnint as [[int]]
 
 {int} flattern([[int]] nnint):
     return { x | y in nnint, x in y }

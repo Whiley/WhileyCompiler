@@ -1,5 +1,5 @@
 // this is a comment!
-define int where $ < 10 as c4nat
+define c4nat as int where $ < 10
 
 int h() ensures $ <= 5:
     return 5

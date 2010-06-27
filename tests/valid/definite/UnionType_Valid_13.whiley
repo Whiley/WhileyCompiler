@@ -1,12 +1,12 @@
 
-define { 0,1,2 } as immStoreCode
-define { 3,4,5 } ∪ immStoreCode as storeCode
-define (storeCode op, byte index) as STORE
+define immStoreCode as { 0,1,2 }
+define storeCode as { 3,4,5 } ∪ immStoreCode
+define STORE as (storeCode op, byte index)
 
-define { 6,7,8 } as branchCode
-define (branchCode op, int16 offset) as BRANCH
+define branchCode as { 6,7,8 }
+define BRANCH as (branchCode op, int16 offset)
 
-define STORE | BRANCH as byteCode
+define byteCode as STORE | BRANCH
 
 void System::main([string] args):
     byteCode b = (op:0,index:1)

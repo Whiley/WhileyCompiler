@@ -1,5 +1,5 @@
 // this is a comment!
-define {1,2,3,4,5} as nat
+define nat as {1,2,3,4,5}
 
 int h() ensures $ <= 3:
     return 0

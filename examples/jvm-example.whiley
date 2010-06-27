@@ -1,4 +1,4 @@
-define process (int d) as Wacky
+define Wacky as process (int d)
 
 void Wacky::doSomething():
     extern jvm:

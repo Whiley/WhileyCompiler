@@ -1,5 +1,5 @@
-define int where $ >= 0 as anat
-define int where 2*$ >= $ as bnat
+define anat as int where $ >= 0
+define bnat as int where 2*$ >= $
 
 int f(anat x):
     return x

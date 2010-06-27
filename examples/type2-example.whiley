@@ -1,7 +1,7 @@
-define int where $ >= 0 as anat
-define int where 2*$ >= $ as bnat
-define int where $ > 0 as posint
-define int where $ > 0 as dummy
+define anat as int where $ >= 0
+define bnat as int where 2*$ >= $
+define posint as int where $ > 0
+define dummy as int where $ > 0
 
 void System::main([string] args):
     anat a = 3

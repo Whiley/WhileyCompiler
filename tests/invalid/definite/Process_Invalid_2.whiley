@@ -1,5 +1,5 @@
-define (int x, int y) where x < y as state
-define process state as pState
+define state as (int x, int y) where x < y
+define pState as process state
 
 int pState::send(int x):
     print str(x)

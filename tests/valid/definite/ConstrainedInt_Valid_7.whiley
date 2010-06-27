@@ -1,6 +1,6 @@
 // this is a comment!
-define int where $ > 0 as nat
-define {1,2,3,4} as num
+define nat as int where $ > 0
+define num as {1,2,3,4}
 
 void f(num x):
     num y

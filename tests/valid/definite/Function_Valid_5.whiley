@@ -1,4 +1,4 @@
-define int where $ >= 0 as fr5nat
+define fr5nat as int where $ >= 0
 
 {fr5nat} g({fr5nat} xs):
     return { y | y in xs, y > 1 }

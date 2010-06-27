@@ -1,5 +1,5 @@
 // this is a comment!
-define int where $ < 10 as nat
+define nat as int where $ < 10
 
 nat f():
     return 1

@@ -1,6 +1,6 @@
-define int where $ > 0 as scf9nat
-define (scf9nat f, int g) where g > f as scf9tup 
-define [(scf9nat f, int g)] where some {z in $ | z.f == 1} as scf9arr
+define scf9nat as int where $ > 0
+define scf9tup as (scf9nat f, int g) where g > f 
+define scf9arr as [(scf9nat f, int g)] where some {z in $ | z.f == 1}
 
 void System::main([string] args):
     scf9arr x = [(f:1,g:2),(f:4,g:8)]

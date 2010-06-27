@@ -1,5 +1,5 @@
 // The effective type of an IntList is (int op)|([int] op)
-define (int op, [real] rest)|([int] op, int mode) as IntList
+define IntList as (int op, [real] rest)|([int] op, int mode)
 
 IntList f(IntList il):
     il.op = 1 // NOT OK, (mode may not be defined)

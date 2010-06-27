@@ -1,5 +1,5 @@
-define (int x, int y) as tup
-define (int x, int y) where $.x > 0 && $.y > 0 as point
+define tup as (int x, int y)
+define point as (int x, int y) where $.x > 0 && $.y > 0
 
 void System::main([string] args):
     point p

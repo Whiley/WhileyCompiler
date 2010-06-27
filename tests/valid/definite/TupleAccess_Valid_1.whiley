@@ -1,5 +1,5 @@
-define (int mode, ? rest) as etype
-define process etype as Ptype
+define etype as (int mode, ? rest)
+define Ptype as process etype
 
 int Ptype::get():
     this->mode = 1

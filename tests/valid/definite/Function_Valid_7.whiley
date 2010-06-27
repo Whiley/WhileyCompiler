@@ -1,5 +1,5 @@
-define {1,2,3,4} as fcode
-define {1,2} as tcode
+define fcode as {1,2,3,4}
+define tcode as {1,2}
 
 void g(fcode f):
     print str(f)

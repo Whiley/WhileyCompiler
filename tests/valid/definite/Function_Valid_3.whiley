@@ -1,4 +1,4 @@
-define int where $ >= 0 as fr3nat
+define fr3nat as int where $ >= 0
 
 void f(int x):
     print str(x)

@@ -1,4 +1,4 @@
-define (real x, real y) as dr2point
+define dr2point as (real x, real y)
 
 void System::main([string] args):
      dr2point p

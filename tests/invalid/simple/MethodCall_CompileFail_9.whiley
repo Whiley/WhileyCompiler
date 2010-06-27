@@ -1,4 +1,4 @@
-define process (int x) as myProc
+define myProc as process (int x)
 
 int myProc::get():
     return 1

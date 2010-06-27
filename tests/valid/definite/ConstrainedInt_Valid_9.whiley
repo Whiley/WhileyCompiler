@@ -1,7 +1,7 @@
 // this is a comment!
-define { 1,3,5 } as odd
-define { 2,4,6 } as even
-define odd ∪ even as oddeven
+define odd as { 1,3,5 }
+define even as { 2,4,6 }
+define oddeven as odd ∪ even
 
 even f(oddeven x):
     if(x ∈ odd):

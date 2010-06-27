@@ -1,4 +1,4 @@
-define (byte op, byte index) as btup
+define btup as (byte op, byte index)
 
 [byte] f(btup b):        
     return [b.op,b.index]

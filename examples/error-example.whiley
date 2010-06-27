@@ -1,4 +1,4 @@
-define (string errmsg) as err
+define err as (string errmsg)
 
 int|err System::check(int dummy):
     if(dummy > 0):

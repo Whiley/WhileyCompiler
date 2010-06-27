@@ -1,4 +1,4 @@
-define int where $ > 0 as scf5nat
+define scf5nat as int where $ > 0
 
 void System::main([string] args):
     (scf5nat f) x = (f:1)

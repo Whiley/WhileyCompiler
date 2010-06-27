@@ -1,4 +1,4 @@
-define process (int x, int y) as PointProc
+define PointProc as process (int x, int y)
 
 void PointProc::update(int z):
     this->y = z

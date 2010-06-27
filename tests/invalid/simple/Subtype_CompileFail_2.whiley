@@ -1,4 +1,4 @@
-define int where $ >= 0 as scf2nat
+define scf2nat as int where $ >= 0
 
 void f(scf2nat x):
     print str(x)

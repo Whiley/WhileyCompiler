@@ -1,5 +1,5 @@
 // this is a comment!
-define int where $ < 10 as cr1nat
+define cr1nat as int where $ < 10
 
 void f(cr1nat x):
     cr1nat y

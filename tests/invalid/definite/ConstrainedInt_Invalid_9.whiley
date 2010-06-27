@@ -1,5 +1,5 @@
 // this is a comment!
-define int where $ > 0 as irf2nat
+define irf2nat as int where $ > 0
 
 void f(irf2nat x):
     print str(x)

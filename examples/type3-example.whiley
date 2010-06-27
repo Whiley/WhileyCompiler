@@ -1,4 +1,4 @@
-define {1,2,3} as lilset
+define lilset as {1,2,3}
 
 void System::main([string] args):
     lilset xs = 3

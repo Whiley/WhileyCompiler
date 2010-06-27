@@ -1,4 +1,4 @@
-define [int] where no {x in $ | x < 0 } as posintlist
+define posintlist as [int] where no {x in $ | x < 0 }
 
 int sum(posintlist ls, int i) requires i >=0 && i <= |ls|, ensures $ >= 0:
     if(i == |ls|):

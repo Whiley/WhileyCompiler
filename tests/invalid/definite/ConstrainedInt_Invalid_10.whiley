@@ -1,6 +1,6 @@
 // this is a comment!
-define int where $ < 10 as irf3nat
-define irf3nat where $ > 0 as pirf3nat
+define irf3nat as int where $ < 10
+define pirf3nat as irf3nat where $ > 0
 
 void f(int x):
     pirf3nat y

@@ -196,6 +196,12 @@ public class WhileyParser {
 		int start = index; 
 		matchKeyword("define");
 		
+		Identifier name = matchIdentifier();		
+		
+		matchKeyword("as");
+		
+		int mid = index;
+		
 		// At this point, there are two possibilities. Either we have a type
 		// constructor, or we have an expression (which should correspond to a
 		// constant).
@@ -213,8 +219,7 @@ public class WhileyParser {
 				constraint = munged.second();
 				
 			}
-			matchKeyword("as");
-			Identifier name = matchIdentifier();			
+					
 			matchEndLine();		
 			return new TypeDecl(modifiers, t, constraint, name.text, sourceAttr(start,index-1));
 		
@@ -222,11 +227,9 @@ public class WhileyParser {
 		
 		// Ok, failed parsing type constructor. So, backtrack and try for
 		// expression.
-		index = start;
-		matchKeyword("define");		
+		index = mid;	
 		Expr e = parseCondition();
-		matchKeyword("as");
-		Identifier name = matchIdentifier();		
+		
 		matchEndLine();		
 		return new ConstDecl(modifiers, e, name.text, sourceAttr(start,index-1));
 	}

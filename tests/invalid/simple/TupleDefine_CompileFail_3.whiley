@@ -1,3 +1,3 @@
-define int where $ >=0 && $ <= 255 as tcf3byte
+define tcf3byte as int where $ >=0 && $ <= 255
 
-define (tcf3byte x, tcf3short y) as tups
+define tups as (tcf3byte x, tcf3short y)

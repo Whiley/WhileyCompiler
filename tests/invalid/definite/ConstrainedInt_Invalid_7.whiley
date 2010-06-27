@@ -1,6 +1,6 @@
 // this is a comment!
-define {1,2,3,4} as num
-define {1,2,3,4,5,6,7} as bignum
+define num as {1,2,3,4}
+define bignum as {1,2,3,4,5,6,7}
 
 void f(num x):
     num y

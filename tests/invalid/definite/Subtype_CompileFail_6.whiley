@@ -1,5 +1,5 @@
-define int where $ > 0 as scf6nat
-define (scf6nat f, int g) where g > f as scf6tup
+define scf6nat as int where $ > 0
+define scf6tup as (scf6nat f, int g) where g > f
 
 void System::main([string] args):
     scf6tup x = (f:1,g:2)

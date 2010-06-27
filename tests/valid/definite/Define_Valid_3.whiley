@@ -1,5 +1,5 @@
 // this is a comment!
-define { 1,3,5 } as odd
+define odd as { 1,3,5 }
 
 void System::main([string] args):
     odd y

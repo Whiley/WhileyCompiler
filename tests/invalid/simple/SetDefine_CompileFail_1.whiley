@@ -1,4 +1,4 @@
-define {int} as intlist
+define intlist as {int}
 
 void System::main([string] args):    
      intlist il    

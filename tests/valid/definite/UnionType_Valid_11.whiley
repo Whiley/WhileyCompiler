@@ -1,5 +1,5 @@
 // this is a comment!
-define int|[int] as IntList
+define IntList as int|[int]
 
 void System::f(int y):
     print str(y)
