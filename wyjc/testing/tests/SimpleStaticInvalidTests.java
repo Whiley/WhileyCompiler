@@ -57,6 +57,8 @@ public class SimpleStaticInvalidTests extends TestHarness {
  @Test public void ListAccess_CompileFail_1_StaticTest() { contextFailTest("ListAccess_CompileFail_1"); }
  @Test public void ListAccess_CompileFail_2_StaticTest() { contextFailTest("ListAccess_CompileFail_2"); }
  @Test public void ListAccess_CompileFail_3_StaticTest() { contextFailTest("ListAccess_CompileFail_3"); }
+ @Test public void ListAppend_Invalid_1_StaticTest() { contextFailTest("ListAppend_Invalid_1"); }
+ @Test public void ListAppend_Invalid_2_StaticTest() { contextFailTest("ListAppend_Invalid_2"); }
  @Test public void ListConversion_CompileFail_1_StaticTest() { contextFailTest("ListConversion_CompileFail_1"); }
  @Test public void ListDefine_CompileFail_1_StaticTest() { contextFailTest("ListDefine_CompileFail_1"); }
  @Test public void ListElemOf_CompileFail_1_StaticTest() { contextFailTest("ListElemOf_CompileFail_1"); }

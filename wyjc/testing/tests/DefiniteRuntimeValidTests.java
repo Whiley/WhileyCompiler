@@ -19,6 +19,7 @@
 package wyjc.testing.tests;
 
 import org.junit.*;
+
 import wyjc.testing.TestHarness;
 
 public class DefiniteRuntimeValidTests extends TestHarness {
@@ -98,6 +99,9 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void ListAssign_Valid_4_RunTest() { runTest("ListAssign_Valid_4"); }
  @Test public void ListAssign_Valid_5_RunTest() { runTest("ListAssign_Valid_5"); }
  @Test public void ListAssign_Valid_6_RunTest() { runTest("ListAssign_Valid_6"); }
+ @Test public void ListAppend_Valid_1_RunTest() { runTest("ListAppend_Valid_1"); }
+ @Test public void ListAppend_Valid_2_RunTest() { runTest("ListAppend_Valid_2"); }
+ @Test public void ListAppend_Valid_3_RunTest() { runTest("ListAppend_Valid_3"); } 
  @Test public void ListConversion_Valid_1_RunTest() { runTest("ListConversion_Valid_1"); }
  @Test public void ListElemOf_Valid_1_RunTest() { runTest("ListElemOf_Valid_1"); }
  @Test public void ListEmpty_Valid_1_RunTest() { runTest("ListEmpty_Valid_1"); }

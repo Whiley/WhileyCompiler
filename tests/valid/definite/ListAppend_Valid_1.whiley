@@ -1,4 +1,3 @@
 void System::main([string] args):
-    [int] l = [1,2,3]
-    [string] r = args + l
+    [int] r = [1,2] + [3,4]
     print str(r)
