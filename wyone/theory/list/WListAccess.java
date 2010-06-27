@@ -38,27 +38,26 @@ public final class WListAccess extends WConstructor<WExpr> implements WExpr {
 		WExpr index = oindex.substitute(binding);
 		WExpr ret;
 		
+		
 		if(index instanceof WNumber && target instanceof WListConstructor) {
 			WNumber idx = (WNumber) index;
 			WListConstructor c = (WListConstructor) target;
-			BigInteger num = idx.numerator();
+			BigInteger num = idx.numerator();			
 			if (idx.isInteger() && num.compareTo(BigInteger.ZERO) >= 0
-					&& num.compareTo(BigInteger.valueOf(subterms.size())) < 0) {
+					&& num.compareTo(BigInteger.valueOf(c.subterms().size())) < 0) {
 				return c.subterms().get(idx.intValue());
-			} else {
-				ret = this;
-			}
+			} 
 		} else if(index instanceof WNumber && target instanceof WListVal) {
 			WNumber idx = (WNumber) index;
 			WListVal c = (WListVal) target;
 			BigInteger num = idx.numerator();
 			if (idx.isInteger() && num.compareTo(BigInteger.ZERO) >= 0
-					&& num.compareTo(BigInteger.valueOf(subterms.size())) < 0) {
+					&& num.compareTo(BigInteger.valueOf(c.subterms().size())) < 0) {				
 				return c.subterms().get(idx.intValue());
-			} else {
-				ret = this;
-			}
-		} else if(target != otarget || index != oindex) {
+			} 
+		} 
+		
+		if(target != otarget || index != oindex) {
 			ret = new WListAccess(target,index);
 		} else {
 			ret = this;

@@ -62,7 +62,14 @@ public class Lists {
 	@Test public void Unsat_10() {
 		assertTrue(checkUnsat("[int] ls; int i; i < |ls| && 0 <= i && (0 > i+1 || i+1 > |ls|)"));
 	}
-			
+	
+	@Test
+	public void Unsat_11() {
+		assertTrue(checkUnsat("[int] result; int x; 0 > result[x] && " + 
+				"|result|==6 && ([5.0,6.0,7.0][x-3]==result[x] || 3 > x) " + 
+				"&& (3 <= x || [1.0,2.0,3.0][x]==result[x])"));
+	}
+	
 	@Test public void Sat_1() { 
 		assertTrue(checkSat("[int] l; int i; |l| == 2 && l[0] == 1 && l[1] == 2"));
 	}
