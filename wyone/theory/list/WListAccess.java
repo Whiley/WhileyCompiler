@@ -17,6 +17,7 @@
 
 package wyone.theory.list;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 import wyone.core.*;
@@ -40,13 +41,23 @@ public final class WListAccess extends WConstructor<WExpr> implements WExpr {
 		if(index instanceof WNumber && target instanceof WListConstructor) {
 			WNumber idx = (WNumber) index;
 			WListConstructor c = (WListConstructor) target;
-			// FIXME: bug when idx is non-integer, or larger than int
-			return c.subterms().get(idx.intValue());
+			BigInteger num = idx.numerator();
+			if (idx.isInteger() && num.compareTo(BigInteger.ZERO) >= 0
+					&& num.compareTo(BigInteger.valueOf(subterms.size())) < 0) {
+				return c.subterms().get(idx.intValue());
+			} else {
+				ret = this;
+			}
 		} else if(index instanceof WNumber && target instanceof WListVal) {
 			WNumber idx = (WNumber) index;
 			WListVal c = (WListVal) target;
-			// FIXME: bug when idx is non-integer, or larger than int
-			return c.subterms().get(idx.intValue());
+			BigInteger num = idx.numerator();
+			if (idx.isInteger() && num.compareTo(BigInteger.ZERO) >= 0
+					&& num.compareTo(BigInteger.valueOf(subterms.size())) < 0) {
+				return c.subterms().get(idx.intValue());
+			} else {
+				ret = this;
+			}
 		} else if(target != otarget || index != oindex) {
 			ret = new WListAccess(target,index);
 		} else {

@@ -108,9 +108,46 @@ public final class ListAppend extends BinOp<Expr> {
 		WEnvironment wenv = l.third();
 		wenv.addAll(r.third());		
 		WVariable retVar = WVariable.freshVar();
-		wenv.add(retVar.name(), type(environment).convert());
-		WFormula constraints = and(l.second(), r.second());
+		wenv.add(retVar.name(), type(environment).convert());		
 		
+		// first, identify new length					
+		WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar), add(new WLengthOf(l.first()),
+				new WLengthOf(r.first())));
+		
+		
+		// second, pump from left src into retVar
+		WVariable i = WVariable.freshVar();
+		HashMap<WVariable,WExpr> variables = new HashMap();
+		variables.put(i,l.first());
+		WFormula lhs = WExprs.equals(new WListAccess(l.first(), i),
+				new WListAccess(retVar, i));
+		WFormula forall1 = new WBoundedForall(true,variables,lhs);
+		
+		// third, pump from right src into retVar
+		i = WVariable.freshVar();
+		variables = new HashMap();
+		variables.put(i,r.first());
+		WFormula rhs = WExprs.equals(new WListAccess(r.first(), i),
+				new WListAccess(retVar, add(i,new WLengthOf(l.first()))));
+		WFormula forall2 = new WBoundedForall(true,variables,rhs);
+		
+			// finally, pump from retvar into left src
+		i = WVariable.freshVar();
+		variables = new HashMap();
+		variables.put(i,retVar);
+		WFormula l1 = lessThan(i,new WLengthOf(l.first()));
+		WFormula r1 = WExprs.equals(new WListAccess(l.first(), i),
+				new WListAccess(retVar, i));
+		WFormula l2 = greaterThanEq(i,new WLengthOf(l.first()));
+		WFormula r2 = WExprs.equals(new WListAccess(r.first(), subtract(i,
+				new WLengthOf(l.first()))), new WListAccess(retVar, i));
+
+		WFormula forall3 = new WBoundedForall(true, variables, WFormulas.and(
+				WFormulas.implies(l1, r1), WFormulas.implies(l2, r2)));
+		
+		WFormula constraints = WFormulas.and(l.second(), r.second(),
+				lenConstraints, forall1, forall2, forall3);
+	
 		return new Triple<WExpr, WFormula, WEnvironment>(retVar, constraints,
 				wenv);
 	}

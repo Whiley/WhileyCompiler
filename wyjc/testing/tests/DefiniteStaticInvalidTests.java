@@ -47,6 +47,9 @@ public class DefiniteStaticInvalidTests extends TestHarness {
  @Test public void ConstrainedTuple_Invalid_1_StaticTest() { verificationFailTest("ConstrainedTuple_Invalid_1"); }
  @Test public void Ensures_Invalid_1_StaticTest() { verificationFailTest("Ensures_Invalid_1"); }
  @Test public void IntDiv_Invalid_1_StaticTest() { verificationFailTest("IntDiv_Invalid_1"); }
+ @Test public void ListAppend_Invalid_3_verificationTest() { verificationFailTest("ListAppend_Invalid_3"); }
+ @Test public void ListAppend_Invalid_4_verificationTest() { verificationFailTest("ListAppend_Invalid_4"); }
+ @Test public void ListAppend_Invalid_5_verificationTest() { verificationFailTest("ListAppend_Invalid_5"); } 
  @Test public void ListAccess_Invalid_1_StaticTest() { verificationFailTest("ListAccess_Invalid_1"); }
  @Test public void ListAccess_Invalid_2_StaticTest() { verificationFailTest("ListAccess_Invalid_2"); }
  @Test public void ListAssign_Invalid_1_StaticTest() { verificationFailTest("ListAssign_Invalid_1"); }
