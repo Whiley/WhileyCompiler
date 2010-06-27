@@ -1510,8 +1510,7 @@ public class ClassFileBuilder {
 		addReadConversion(et,bytecodes);			
 	}
 	protected void translate(ListSublist e,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		Type et = e.type(environment);		
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {			
 		translate(e.source(), slots, environment,bytecodes);
 		translate(e.start(), slots, environment,bytecodes);		
 		translate(e.end(), slots, environment,bytecodes);
@@ -1519,10 +1518,15 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
 				Bytecode.VIRTUAL));					
 	}
-	protected void translate(ListAppend e,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {		
+	protected void translate(ListAppend e,			
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		Type et = e.type(environment);
+		Type lhs_t = e.lhs().type(environment);
+		Type rhs_t = e.lhs().type(environment);
 		translate(e.lhs(), slots, environment,bytecodes);
-		translate(e.rhs(), slots, environment,bytecodes);				
+		convert(et,e.lhs(), slots, environment,bytecodes);
+		translate(e.rhs(), slots, environment,bytecodes);
+		convert(et,e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
 				Bytecode.VIRTUAL));					
