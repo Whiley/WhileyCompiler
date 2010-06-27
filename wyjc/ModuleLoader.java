@@ -144,11 +144,8 @@ public class ModuleLoader {
 	
 	public void preregister(SkeletonInfo skeleton, String filename) {		
 		skeletontable.put(skeleton.id(), skeleton);
-		int index = filename.lastIndexOf(File.separatorChar);		
-		if(index != -1) {			
-			File parent = new File(filename).getParentFile();
-			addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);						
-		}
+		File parent = new File(filename).getParentFile();
+		addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);								 
 	}
 	
 	public void register(ModuleInfo module) {			
