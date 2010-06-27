@@ -142,11 +142,16 @@ public class ModuleLoader {
 		}
 	}	
 	
-	public void preregister(SkeletonInfo skeleton) {
+	public void preregister(SkeletonInfo skeleton, String filename) {		
 		skeletontable.put(skeleton.id(), skeleton);
+		int index = filename.lastIndexOf(File.separatorChar);		
+		if(index != -1) {			
+			File parent = new File(filename).getParentFile();
+			addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);						
+		}
 	}
 	
-	public void register(ModuleInfo module) {		
+	public void register(ModuleInfo module) {			
 		moduletable.put(module.id(), module);	
 	}
 	
@@ -171,10 +176,11 @@ public class ModuleLoader {
 		for (PkgID pkg : imports) {			
 			if(pkg.size() > 0 && pkg.last().equals("*")) {				
 				pkg = pkg.subpkg(0, pkg.size()-1);
-				if(!isPackage(pkg)) {
+				if(!isPackage(pkg)) {					
 					continue; // sanity check
-				}
+				}				
 				PackageInfo p = resolvePackage(pkg);
+				
 				for (String n : p.modules) {
 					try {
 						ModuleID mid = new ModuleID(pkg,n);									
@@ -185,7 +191,7 @@ public class ModuleLoader {
 					} catch(ResolveError rex) {
 						// ignore. This indicates we simply couldn't resolve
                         // this module. For example, if it wasn't a whiley class
-                        // file.
+                        // file.						
 					}
 				}
 			} else if(pkg.size() > 0) {
@@ -369,7 +375,7 @@ public class ModuleLoader {
 	private PackageInfo resolvePackage(PkgID pkg) throws ResolveError {			
 		// First, check if we have already resolved this package.						
 		PackageInfo pkgInfo = packages.get(pkg);
-						
+		
 		if(pkgInfo != null) {		
 			return pkgInfo;
 		} else if(failedPackages.contains(pkg)) {
@@ -383,14 +389,14 @@ public class ModuleLoader {
 		// Second, try whileypath
 		for (String dir : whileypath) {							
 			// check if whileypath entry is a jarfile or a directory
-			if (!dir.endsWith(".jar")) {				
+			if (!dir.endsWith(".jar")) {
 				// dir is not a Jar file, so I assume it's a directory.				
 				pkgInfo = lookForPackage(dir,pkg,filePkg);
-				if(pkgInfo != null) {										
+				if(pkgInfo != null) {					
 					packages.put(pkg,pkgInfo);
 					return pkgInfo;
 				}				
-			} else {
+			} else {			
 				// this is a jar file
 				try {
 					JarFile jf = new JarFile(dir);
@@ -469,8 +475,10 @@ public class ModuleLoader {
 		if(root.equals("")) {
 			root = ".";
 		}
-		
+						
 		File f = new File(root + File.separatorChar + filepkg);		
+		
+		System.out.println("FOUND: " + f);
 		
 		if (f.isDirectory()) {
 			for (String file : f.list()) {

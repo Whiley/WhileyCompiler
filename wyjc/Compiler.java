@@ -96,14 +96,14 @@ public class Compiler {
 	
 	public void compile(File file) throws IOException {
 		UnresolvedWhileyFile uwf = innerParse(file);		
-		loader.preregister(uwf.skeletonInfo());	
+		loader.preregister(uwf.skeletonInfo(),uwf.filename());	
 		enqueue(uwf);				
 		flushQueue();			
 	}
 	
 	public UnresolvedWhileyFile parse(File file) throws IOException {
 		UnresolvedWhileyFile uwf = innerParse(file);		
-		loader.preregister(uwf.skeletonInfo());						
+		loader.preregister(uwf.skeletonInfo(),uwf.filename());						
 		enqueue(uwf);
 		return uwf;
 	}
@@ -121,7 +121,7 @@ public class Compiler {
 		for (File f : files) {
 			UnresolvedWhileyFile m = innerParse(f);			
 			modules.add(m);			
-			loader.preregister(m.skeletonInfo());
+			loader.preregister(m.skeletonInfo(),m.filename());
 			enqueued.add(m.id());
 			queue.add(m);
 		}
