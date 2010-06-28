@@ -65,6 +65,8 @@ public class DefiniteRuntimeInvalidTests extends TestHarness {
  @Test public void RealDiv_Invalid_1_RunTest() { runtimeFailTest("RealDiv_Invalid_1"); }
  @Test public void RealMul_Invalid_1_RunTest() { runtimeFailTest("RealMul_Invalid_1"); }
  @Test public void RecursiveType_Invalid_3_RunTest() { runtimeFailTest("RecursiveType_Invalid_3"); }
+ @Test public void RecursiveType_Invalid_5_RunTest() { runtimeFailTest("RecursiveType_Invalid_5"); }
+ @Test public void RecursiveType_Invalid_6_RunTest() { runtimeFailTest("RecursiveType_Invalid_6"); }
  @Test public void Requires_Invalid_1_RunTest() { runtimeFailTest("Requires_Invalid_1"); }
  @Test public void SetAssign_Invalid_1_RunTest() { runtimeFailTest("SetAssign_Invalid_1"); }
  @Test public void SetElemOf_Invalid_1_RunTest() { runtimeFailTest("SetElemOf_Invalid_1"); } 
