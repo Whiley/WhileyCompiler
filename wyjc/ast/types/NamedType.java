@@ -36,10 +36,7 @@ public class NamedType implements NonUnionType {
 	public NamedType(ModuleID module, String name, Type type) {		
 		this.module = module;
 		this.name = name;
-		this.type = type;
-		if(!this.type.isExistential()) {
-			throw new IllegalArgumentException("Named types must be existential");
-		}
+		this.type = type;		
 	}
 	
 	public ModuleID module() {
@@ -68,8 +65,9 @@ public class NamedType implements NonUnionType {
 			}
 		} 
 				
-		// return type.isSubtype(t);
-		return false; // for existential named types
+		// is the following line a problem? It's needed for subtyping
+		// recursively defined datatypes.
+		return type.isSubtype(t);			
 	}
 	
 	public boolean isExistential() {

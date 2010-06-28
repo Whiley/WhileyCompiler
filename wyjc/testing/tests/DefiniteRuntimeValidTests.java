@@ -132,6 +132,7 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void RealDiv_Valid_3_RunTest() { runTest("RealDiv_Valid_3"); }
  @Test public void RealNeg_Valid_1_RunTest() { runTest("RealNeg_Valid_1"); }
  @Test public void RealSub_Valid_1_RunTest() { runTest("RealSub_Valid_1"); }
+ @Test public void RecursiveType_Valid_1_RunTest() { runTest("RecursiveType_Valid_1"); }
  @Test public void Requires_Valid_1_RunTest() { runTest("Requires_Valid_1"); }
  @Test public void Resolution_Valid_1_RunTest() { runTest("Resolution_Valid_1"); }
  @Test public void SetAssign_Valid_1_RunTest() { runTest("SetAssign_Valid_1"); }

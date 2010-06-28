@@ -229,7 +229,7 @@ public class TypeResolution {
 						
 		if(ut == null) {
 			// this indicates a cyclic definition.			
-			RecursiveVariable rv = new RecursiveVariable(key.first(),key.second());
+			NamedType rv = new NamedType(key.first(),key.second(),Types.T_VOID);
 			t = new Pair<Type,Condition>(rv,null);
 			types.put(key, t);
 			return t;
@@ -246,7 +246,7 @@ public class TypeResolution {
 		}
 		
 		if(types.containsKey(key)) {			
-			t = new Pair<Type, Condition>(new RecursiveType(key.first(),key.second(),t.first()), constraint);
+			t = new Pair<Type, Condition>(new NamedType(key.first(),key.second(),t.first()), constraint);
 		} else {		
 			t = new Pair<Type, Condition>(t.first(), constraint);
 		}
