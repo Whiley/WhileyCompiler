@@ -132,6 +132,8 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void RealNeg_Valid_1_StaticTest() { verificationRunTest("RealNeg_Valid_1"); }
  @Test public void RealSub_Valid_1_StaticTest() { verificationRunTest("RealSub_Valid_1"); }
  @Test public void RecursiveType_Valid_1_StaticTest() { verificationRunTest("RecursiveType_Valid_1"); }
+ @Test public void RecursiveType_Valid_2_StaticTest() { verificationRunTest("RecursiveType_Valid_2"); }
+ @Test public void RecursiveType_Valid_3_StaticTest() { verificationRunTest("RecursiveType_Valid_3"); } 
  @Test public void Requires_Valid_1_StaticTest() { verificationRunTest("Requires_Valid_1"); }
  @Test public void Resolution_Valid_1_StaticTest() { verificationRunTest("Resolution_Valid_1"); }
  @Test public void SetAssign_Valid_1_StaticTest() { verificationRunTest("SetAssign_Valid_1"); }
