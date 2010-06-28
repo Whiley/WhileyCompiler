@@ -28,12 +28,12 @@ import wyone.core.WType;
  * @author djp
  * 
  */
-public class NamedType implements NonUnionType {
+public class RecursiveType implements NonUnionType {
 	private ModuleID module;
 	private String name;
 	private Type type; // underlying type
 	
-	public NamedType(ModuleID module, String name, Type type) {		
+	public RecursiveType(ModuleID module, String name, Type type) {		
 		this.module = module;
 		this.name = name;
 		this.type = type;		
@@ -59,8 +59,8 @@ public class NamedType implements NonUnionType {
 		
 		if (t == Types.T_VOID) {
 			return true;
-		} else if (t instanceof NamedType) {
-			NamedType nt = (NamedType) t;
+		} else if (t instanceof RecursiveType) {
+			RecursiveType nt = (RecursiveType) t;
 			if(name.equals(nt.name) && module.equals(nt.module)) {
 				return true;
 			}
@@ -76,8 +76,8 @@ public class NamedType implements NonUnionType {
 	}
 	
 	public boolean equals(Object o) {
-		if(o instanceof NamedType) {
-			NamedType nt = (NamedType) o;			
+		if(o instanceof RecursiveType) {
+			RecursiveType nt = (RecursiveType) o;			
 			if(module == null && nt.module == null) {
 				return name.equals(nt.name);
 			} else if(module != null && nt.module != null) {
