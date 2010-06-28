@@ -229,7 +229,10 @@ public class TypeResolution {
 						
 		if(ut == null) {
 			// this indicates a cyclic definition.			
-			syntaxError("cyclic type definition encountered",srcs.get(key));
+			RecursiveVariable rv = new RecursiveVariable(key.first(),key.second());
+			t = new Pair<Type,Condition>(rv,null);
+			types.put(key, t);
+			return t;
 		} else {
 			unresolved.put(key, null); // mark this node as visited
 		}
@@ -242,7 +245,11 @@ public class TypeResolution {
 			constraint = new And(constraint,t.second(),constraint.attribute(SourceAttr.class));			
 		}
 		
-		t = new Pair<Type, Condition>(t.first(), constraint);
+		if(types.containsKey(key)) {			
+			t = new Pair<Type, Condition>(new RecursiveType(key.first(),key.second(),t.first()), constraint);
+		} else {		
+			t = new Pair<Type, Condition>(t.first(), constraint);
+		}
 		types.put(key, t);				
 		
 		return t;

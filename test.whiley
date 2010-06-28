@@ -1,6 +1,4 @@
-define int as nat
-define  as nat{int} where $ > 0
+define expr as int | (int op, expr left, expr right)
 
 void System::main([string] args):
-    nat x = 1
-    print str(x)
+    expr e = 1

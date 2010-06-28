@@ -21,7 +21,6 @@ package wyjc.ast.types;
 import wyone.core.WType;
 import wyone.theory.numeric.WRealType;
 
-
 public final class RealType implements NonUnionType {
 	public String toString() { return "real"; }
 	

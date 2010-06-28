@@ -206,14 +206,13 @@ public class WhileyParser {
 		// constructor, or we have an expression (which should correspond to a
 		// constant).
 		
-		try {
-			UnresolvedType t = parseType();
+		try {			
+			UnresolvedType t = parseType();			
 			Condition constraint = null;
 			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
-				// this is a constrained type
-				matchKeyword("where");
-				constraint = parseRealCondition();
-				
+				// this is a constrained type				
+				matchKeyword("where");				
+				constraint = parseRealCondition();				
 				Pair<Type,Condition> munged = mungeConstrainedTypes(t,constraint);
 				t = munged.first();
 				constraint = munged.second();

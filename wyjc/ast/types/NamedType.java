@@ -93,7 +93,7 @@ public class NamedType implements NonUnionType {
 	}
 	
 	public String toString() {
-		return name + ":" + type;
+		return module + ":" + name + "[" + type + "]";
 	}
 	
 	public WType convert() {
