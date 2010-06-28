@@ -63,6 +63,8 @@ public class WhileyLexer {
 				tokens.add(scanDigits());
 			} else if(c == '"') {
 				tokens.add(scanString());
+			} else if(c == '\'') {
+				tokens.add(scanChar());
 			} else if(isOperatorStart(c)) {
 				tokens.add(scanOperator());
 			} else if(isIdentifierStart(c)) {
@@ -111,6 +113,30 @@ public class WhileyLexer {
 			BigInteger r = new BigInteger(input.substring(start, pos));
 			return new Int(r,input.substring(start,pos),start);			
 		}		
+	}
+	
+	public Token scanChar() {
+		int start = pos;
+		pos++;
+		char c = input.charAt(pos++);				
+		if(c == '\\') {
+			// escape code
+			switch(input.charAt(pos++)) {
+				case 't':
+					c = '\t';
+					break;
+				case 'n':
+					c = '\n';
+					break;
+				default:
+					syntaxError("unrecognised escape character",pos);
+			}
+		}
+		if(input.charAt(pos) != '\'') {
+			syntaxError("unexpected end-of-character",pos);
+		}
+		pos = pos + 1;
+		return new Int(BigInteger.valueOf(c),input.substring(start,pos),start);
 	}
 	
 	public Token scanString() {
@@ -474,7 +500,7 @@ public class WhileyLexer {
 			super(text,pos);
 			this.string = string;
 		}
-	}
+	}	
 	public static class Keyword extends Token {
 		public Keyword(String text, int pos) { super(text,pos); }
 	}
