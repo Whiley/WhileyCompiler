@@ -101,6 +101,14 @@ public class UnionType implements Type {
 		return false;
 	}
 	
+	public Type substitute(Map<String,String> binding) {
+		HashSet<NonUnionType> ts = new HashSet<NonUnionType>();
+		for (NonUnionType b : types) {
+			ts.add((NonUnionType) b.substitute(binding));
+		}
+		return new UnionType(ts);
+	}
+	
 	public String toString() {
 		String r = "";
 		boolean firstTime=true;

@@ -18,6 +18,8 @@
 
 package wyjc.ast.types;
 
+import java.util.Map;
+
 import wyone.core.WType;
 import wyone.theory.list.WListType;
 
@@ -57,6 +59,10 @@ public final class ListType extends SetType {
 	
 	public WType convert() {
 		return new WListType(element().convert());
+	}
+	
+	public Type substitute(Map<String,String> binding) {
+		return new ListType(element().substitute(binding));
 	}
 	
 	public String toString() {

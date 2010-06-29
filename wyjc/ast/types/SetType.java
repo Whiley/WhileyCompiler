@@ -18,6 +18,8 @@
 
 package wyjc.ast.types;
 
+import java.util.Map;
+
 import wyone.core.WType;
 import wyone.theory.set.WSetType;
 
@@ -73,6 +75,10 @@ public class SetType implements NonUnionType {
 		
 	public String toString() {
 		return "{" + element.toString() + "}";
+	}
+	
+	public Type substitute(Map<String,String> binding) {
+		return new SetType(element.substitute(binding));
 	}
 	
 	public WType convert() {

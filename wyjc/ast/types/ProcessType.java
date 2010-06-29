@@ -18,6 +18,8 @@
 
 package wyjc.ast.types;
 
+import java.util.Map;
+
 import wyone.core.WType;
 
 
@@ -61,6 +63,10 @@ public class ProcessType implements NonUnionType {
 	
 	public boolean isExistential() {
 		return element.isExistential();
+	}
+
+	public Type substitute(Map<String,String> binding) {
+		return new ProcessType(element.substitute(binding));
 	}
 	
 	public String toString() {

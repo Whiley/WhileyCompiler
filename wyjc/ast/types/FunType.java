@@ -87,6 +87,15 @@ public class FunType implements Type {
 		return false;
 	}
 
+	public Type substitute(Map<String,String> binding) {
+		Type retType = ret.substitute(binding);
+		ArrayList<Type> params = new ArrayList<Type>();
+		for(Type t : parameters) {
+			params.add(t.substitute(binding));
+		}
+		return new FunType(retType,parameters);
+	}
+	
 	public int hashCode() {
 		return ret.hashCode() + parameters.hashCode();
 	}

@@ -18,6 +18,8 @@
 
 package wyjc.ast.types;
 
+import java.util.Map;
+
 import wyjc.util.*;
 import wyone.core.WType;
 
@@ -37,6 +39,9 @@ public class NamedType implements NonUnionType {
 		this.module = module;
 		this.name = name;
 		this.type = type;		
+		if(!type.isExistential()) {
+			throw new IllegalArgumentException("Named types must be existential");
+		}
 	}
 	
 	public ModuleID module() {
@@ -65,10 +70,7 @@ public class NamedType implements NonUnionType {
 				return true;
 			}
 		} 
-				
-		// is the following line a problem? It's needed for subtyping
-		// recursively defined datatypes.
-		return type.isSubtype(t);			
+		return false;			
 	}
 	
 	public boolean isExistential() {
@@ -86,7 +88,11 @@ public class NamedType implements NonUnionType {
 		} 
 		return false;
 	}
-			
+	
+	public Type substitute(Map<String,String> binding) {
+		return new NamedType(module,name,type.substitute(binding));
+	}
+	
 	public int hashCode() {
 		return name.hashCode();
 	}

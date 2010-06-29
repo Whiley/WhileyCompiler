@@ -18,6 +18,9 @@
 
 package wyjc.ast.types;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import wyjc.util.*;
 import wyone.core.WType;
 
@@ -28,19 +31,18 @@ import wyone.core.WType;
  * @author djp
  * 
  */
-public class RecursiveType implements NonUnionType {
-	private ModuleID module;
+public class RecursiveType implements NonUnionType {	
 	private String name;
 	private Type type; // underlying type
 	
-	public RecursiveType(ModuleID module, String name, Type type) {		
-		this.module = module;
-		this.name = name;
+	public RecursiveType(Type type) {				
+		this.name = calculateName(type);
 		this.type = type;		
 	}
 	
-	public ModuleID module() {
-		return module;
+	RecursiveType(String name, Type type) {				
+		this.name = name;
+		this.type = type;		
 	}
 	
 	public String name() {
@@ -56,33 +58,36 @@ public class RecursiveType implements NonUnionType {
 	}
 		
 	public boolean isSubtype(Type t) {
-		
-		if (t == Types.T_VOID) {
-			return true;
-		} else if (t instanceof RecursiveType) {
-			RecursiveType nt = (RecursiveType) t;
-			if(name.equals(nt.name) && module.equals(nt.module)) {
-				return true;
-			}
+		if(t instanceof RecursiveType) {
+			RecursiveType nt = (RecursiveType) t;			
+			Type nt_type = nt.type();
+			HashMap<String,String> binding = new HashMap();
+			binding.put(nt.name(), name);
+			nt_type = nt_type.substitute(binding);
+			return type.isSubtype(nt_type);
 		} 
-				
-		// is the following line a problem? It's needed for subtyping
-		// recursively defined datatypes.
-		return type.isSubtype(t);			
+		return type.isSubtype(t);					
 	}
 	
 	public boolean isExistential() {
 		return false;
 	}
 	
+	public Type substitute(Map<String,String> binding) {
+		Type t = type.substitute(binding);
+		String newname = binding.get(name);
+		if(newname == null) {
+			newname = name;
+		}
+		return new RecursiveType(newname,t);
+	}
+	
+	
 	public boolean equals(Object o) {
 		if(o instanceof RecursiveType) {
 			RecursiveType nt = (RecursiveType) o;			
-			if(module == null && nt.module == null) {
-				return name.equals(nt.name);
-			} else if(module != null && nt.module != null) {
-				return name.equals(nt.name) && module.equals(nt.module);
-			} // otherwise, not equal
+			// FIXME: not completely sure about this
+			return name.equals(nt.name) && type.equals(nt.type);
 		} 
 		return false;
 	}
@@ -92,10 +97,15 @@ public class RecursiveType implements NonUnionType {
 	}
 	
 	public String toString() {
-		return module + ":" + name + "[" + type + "]";
+		return name + "[" + type + "]";
 	}
 	
 	public WType convert() {
 		return type.convert();
+	}
+	
+	private static String calculateName(Type sub) {
+		System.err.println("RECURSIVE TYPE NAME HACK IN PLACE");
+		return "X"; // hack for now
 	}
 }

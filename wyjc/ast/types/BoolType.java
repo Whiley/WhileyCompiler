@@ -18,6 +18,8 @@
 
 package wyjc.ast.types;
 
+import java.util.Map;
+
 import wyone.core.WType;
 import wyone.theory.logic.WBoolType;
 import wyone.theory.numeric.WIntType;
@@ -52,6 +54,10 @@ public final class BoolType implements NonUnionType {
 	
 	public boolean isExistential() {
 		return false;
+	}
+	
+	public Type substitute(Map<String,String> binding) {
+		return this;
 	}
 	
 	public WType convert() {
