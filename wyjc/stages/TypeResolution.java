@@ -45,6 +45,8 @@ public class TypeResolution {
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID,Expr> constants;
 	private HashMap<NameID,Pair<Type,Condition>> types;	
+	private HashMap<NameID,SyntacticElement> srcs;
+	private HashMap<NameID,Pair<UnresolvedType,Condition>> unresolved;
 	private HashMap<NameID,List<ModuleInfo.Method>> functions;
 	
 	public TypeResolution(ModuleLoader loader) {
@@ -55,6 +57,8 @@ public class TypeResolution {
 		modules = new HashSet<ModuleID>();
 		constants = new HashMap<NameID,Expr>();
 		types = new HashMap<NameID,Pair<Type,Condition>>();
+		srcs = new HashMap<NameID,SyntacticElement>();
+		unresolved = new HashMap<NameID,Pair<UnresolvedType,Condition>>();
 		functions = new HashMap<NameID,List<ModuleInfo.Method>>();
 		
 		for(UnresolvedWhileyFile f : files) {			
@@ -88,7 +92,6 @@ public class TypeResolution {
 	
 	protected void generateConstants(List<UnresolvedWhileyFile> files) {
 		HashMap<NameID,Expr> exprs = new HashMap();
-		HashMap<NameID,SyntacticElement> srcs = new HashMap();
 		
 		// first construct list.
 		for(UnresolvedWhileyFile f : files) {
@@ -104,7 +107,7 @@ public class TypeResolution {
 		
 		for(NameID k : exprs.keySet()) {	
 			try {
-				expandConstant(k,exprs,srcs);
+				expandConstant(k,exprs);
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),srcs.get(k),rex);
 			}
@@ -136,8 +139,7 @@ public class TypeResolution {
 	}
 	
 	protected Expr expandConstant(NameID key,
-			HashMap<NameID, Expr> exprs,
-			HashMap<NameID, SyntacticElement> srcs) throws ResolveError {
+			HashMap<NameID, Expr> exprs) throws ResolveError {
 		
 		Expr e = exprs.get(key);
 		
@@ -169,7 +171,7 @@ public class TypeResolution {
 				NameID ck = new NameID(c.module(),c.name());
 				Expr v = constants.get(ck);
 				if(v == null) {
-					v = expandConstant(ck,exprs,srcs);
+					v = expandConstant(ck,exprs);
 				}
 				binding.put(c.name(), v);				
 			}
@@ -182,11 +184,8 @@ public class TypeResolution {
 		return e;
 	}
 	
-	protected void generateTypes(List<UnresolvedWhileyFile> files) {
-		HashMap<NameID,Pair<UnresolvedType,Condition>> unresolved = new HashMap();
+	protected void generateTypes(List<UnresolvedWhileyFile> files) {		
 		HashMap<NameID,SyntacticElement> srcs = new HashMap();
-		
-		// FIXME: need to first convert constants into types
 		
 		// second construct list.
 		for(UnresolvedWhileyFile f : files) {
@@ -204,43 +203,54 @@ public class TypeResolution {
 		// third expand all types
 		for(NameID k : unresolved.keySet()) {
 			try {
-				expandType(k,unresolved,srcs);
+				expandType(k);
 			} catch(ResolveError ex) {
 				syntaxError(ex.getMessage(),srcs.get(k),ex);
 			}
 		}
 	}
 	
-	protected Pair<Type,Condition> expandType(NameID key,
-			HashMap<NameID, Pair<UnresolvedType,Condition>> unresolved,
-			HashMap<NameID, SyntacticElement> srcs) throws ResolveError {
-		
-		System.out.println("EXPANDING: " + key);
-		
+	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {
 		Pair<Type,Condition> t = types.get(key);
 		
-		if(t != null) { 
-			return t; 
-		} else if(!modules.contains(key.module())) {			
+		if(t == null) { 
+			HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();
+			cache.put(key,new Pair(new RecursiveType(key,null),null)); // to terminate any recursive types.
+			t = expandTypeHelper(key,cache);
+
+			if(isRecursive(key,t.first())) {
+				// recursive case
+				RecursiveType rt = new RecursiveType(key,t.first());
+				t = new Pair(rt,t.second());
+			} 
+			types.put(key,t);			
+		}
+		
+		return t;
+	}
+	
+	private static boolean isRecursive(NameID root, Type type) {
+		// FIXME: need to check for occurrences of this variable in the expanded type.
+		return false;
+	}
+	
+	protected Pair<Type,Condition> expandTypeHelper(NameID key,
+			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {
+		
+		if(!modules.contains(key.module())) {			
 			// indicates a non-local key
 			ModuleInfo mi = loader.loadModule(key.module());
 			ModuleInfo.TypeDef td = mi.type(key.name()); 
 			return new Pair<Type, Condition>(td.type(), td.constraint());
 		}
-		Pair<UnresolvedType,Condition> ut = unresolved.get(key);
-						
-		if(ut == null) {
-			// this indicates a cyclic definition.					
-			RecursiveType rv = new RecursiveType(key,null);
-			System.out.println("RECURSIVE LEAF: " + key);
-			t = new Pair<Type,Condition>(rv,null);
-			types.put(key, t);
-			return t;
-		} else {
-			unresolved.put(key, null); // mark this node as visited
-		}
-						
-		t = expandType(ut.first(), unresolved, srcs);
+		
+		// Now, check for a cached expansion.
+		Pair<Type,Condition> cached = cache.get(key);					
+		if(cached != null) { return cached; } 
+		
+		// Ok, expand the type properly then
+		Pair<UnresolvedType,Condition> ut = unresolved.get(key);		
+		Pair<Type,Condition> t = expandType(ut.first(), cache);
 		Condition constraint = ut.second();
 		if (constraint == null) {
 			constraint = t.second();
@@ -248,36 +258,21 @@ public class TypeResolution {
 			constraint = new And(constraint, t.second(), constraint
 					.attribute(SourceAttr.class));
 		}
-		
-		Pair<Type,Condition> old = types.get(key);
-		if (old != null) {
-			// indicates a recursive type			
-			RecursiveType rt = (RecursiveType) old.first();
-			System.out.println("RECURSIVE ROOT: " + rt.name());
-			t = new Pair<Type, Condition>(new RecursiveType(rt.name(), t
-					.first()), constraint);
-		} else {
-			t = new Pair<Type, Condition>(t.first(), constraint);
-		}
-		
-		types.put(key, t);				
-		
-		System.out.println("*** GOT: " + key + " => " + t);
-		
-		return t;
+			
+		// Done
+		return new Pair<Type, Condition>(t.first(), constraint);		
 	}	
 	
 	protected Pair<Type,Condition> expandType(UnresolvedType ut,
-			HashMap<NameID, Pair<UnresolvedType,Condition>> unresolved,
-			HashMap<NameID, SyntacticElement> srcs) throws ResolveError {			
+			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {			
 		
 		if(ut instanceof Type) {
 			// covers all primitive types etc
 			return new Pair<Type,Condition>((Type) ut,null);
 		} else if(ut instanceof UserDefType) {
 			UserDefType ult = (UserDefType) ut;			;
-			Pair<Type,Condition> et = expandType(new NameID(ult.module(), ult
-					.name()), unresolved, srcs);			
+			Pair<Type,Condition> et = expandTypeHelper(new NameID(ult.module(), ult
+					.name()), cache);			
 			if(et.first().isExistential()) {
 				return new Pair<Type, Condition>(new NamedType(ult.module(),
 						ult.name(), et.first()), et.second());				
@@ -286,7 +281,7 @@ public class TypeResolution {
 			}
 		} else if(ut instanceof UnresolvedListType) {		
 			UnresolvedListType ult = (UnresolvedListType) ut;
-			Pair<Type,Condition> tc = expandType(ult.element(),unresolved,srcs); 
+			Pair<Type,Condition> tc = expandType(ult.element(),cache); 
 			Condition c = tc.second();
 			if(c != null) {				
 				String vn = wyone.core.WVariable.freshVar().name(); // FIXME: remove this hack!
@@ -302,7 +297,7 @@ public class TypeResolution {
 			return new Pair<Type,Condition>(new ListType(tc.first()),c);
 		} else if(ut instanceof UnresolvedSetType) {
 			UnresolvedSetType ult = (UnresolvedSetType) ut;
-			Pair<Type,Condition> tc = expandType(ult.element(),unresolved,srcs); 
+			Pair<Type,Condition> tc = expandType(ult.element(),cache); 
 			Condition c = tc.second();
 			if(c != null) {				
 				String vn = wyone.core.WVariable.freshVar().name(); // FIXME: remove this hack!				
@@ -324,7 +319,7 @@ public class TypeResolution {
 			HashMap<String,Type> types = new HashMap<String,Type>();
 			for(Map.Entry<String,UnresolvedType> e : utt.types().entrySet()) {
 				String key = e.getKey();
-				Pair<Type,Condition> tc = expandType(e.getValue(),unresolved,srcs);				
+				Pair<Type,Condition> tc = expandType(e.getValue(),cache);				
 				types.put(key, tc.first());
 				Condition ec = tc.second();
 				if(ec != null) {					
@@ -351,7 +346,7 @@ public class TypeResolution {
 			// Now, first determine what the underlying types is going to be.
 			ArrayList<Pair<Type,Condition>> conditions = new ArrayList();
 			for(UnresolvedType bound : utt.types()) {
-				Pair<Type,Condition> rb = expandType(bound,unresolved,srcs);
+				Pair<Type,Condition> rb = expandType(bound,cache);
 				t = Types.leastUpperBound(t,rb.first());
 				if(rb.second() != null) {
 					conditions.add(rb);
@@ -371,7 +366,7 @@ public class TypeResolution {
 		} else  {			
 			// must be process type
 			UnresolvedProcessType ult = (UnresolvedProcessType) ut;
-			Pair<Type,Condition> tc = expandType(ult.element(),unresolved,srcs);
+			Pair<Type,Condition> tc = expandType(ult.element(),cache);
 			Condition cond = null;
 			if(tc.second() != null) {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
@@ -384,7 +379,7 @@ public class TypeResolution {
 	}
 	
 	protected Pair<Type,Condition> expandAndCheck(UnresolvedType t) throws ResolveError {		
-		Pair<Type,Condition> tc = expandType(t,null,null);
+		Pair<Type,Condition> tc = expandType(t,null);
 		Condition c = tc.second();
 		if(c != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
@@ -412,7 +407,7 @@ public class TypeResolution {
 				if(p.type() == Types.T_VOID) {
 					syntaxError("parameter cannot be declared void",f);
 				} 
-				Pair<Type,Condition> t = expandType(p.type(),null,null);				
+				Pair<Type,Condition> t = expandType(p.type(),null);				
 				environment.put(p.name(), t.first());						
 				p.attributes().add(new TypeAttr(t.first()));				
 				paramTypes.add(t.first());
@@ -424,7 +419,7 @@ public class TypeResolution {
 		FunDecl.Return ret = f.returnType();
 		Pair<Type,Condition> r_t;
 		try {
-			r_t = expandType(ret.type(),null,null);
+			r_t = expandType(ret.type(),null);
 		} catch(ResolveError rex) {
 			syntaxError(rex.getMessage(),ret,rex);
 			return null; // unreachable
@@ -437,7 +432,7 @@ public class TypeResolution {
 		Type recType = null;
 		if(rec != null) {
 			try {
-				r_t = expandType(rec.type(),null,null);
+				r_t = expandType(rec.type(),null);
 				recType = r_t.first();
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),ret,rex);
