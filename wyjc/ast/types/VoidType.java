@@ -36,7 +36,7 @@ public final class VoidType implements NonUnionType {
 		return 0;
 	}
 	
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		return false;
 	}
 		

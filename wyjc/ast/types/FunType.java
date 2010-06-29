@@ -41,7 +41,7 @@ public class FunType implements Type {
 		return Collections.unmodifiableList(parameters);
 	}
 
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -52,11 +52,11 @@ public class FunType implements Type {
 				for(int i=0;i!=ftparams.size();++i) {
 					Type t1 = parameters.get(i);
 					Type t2 = ftparams.get(i);
-					if(!t1.isSubtype(t2)) {
+					if(!t1.isSubtype(t2,environment)) {
 						return false;
 					}
 				}
-				return ft.returnType().isSubtype(ret);
+				return ft.returnType().isSubtype(ret,environment);
 			}
 		} 
 		return false;

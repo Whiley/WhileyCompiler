@@ -19,6 +19,7 @@
 package wyjc.ast.types;
 
 import java.util.*;
+
 import wyone.core.WType;
 import wyone.theory.numeric.WIntType;
 
@@ -35,7 +36,7 @@ public class AnyType implements NonUnionType {
 		return 3;
 	}
 	
-	public boolean isSubtype(Type t) {		
+	public boolean isSubtype(Type t, Map<String,Type> environment) {		
 		return true;
 	}
 	

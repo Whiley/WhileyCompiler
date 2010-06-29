@@ -229,7 +229,7 @@ public class TypeResolution {
 						
 		if(ut == null) {
 			// this indicates a cyclic definition.			
-			NamedType rv = new NamedType(key.first(),key.second(),Types.T_VOID);
+			RecursiveType rv = new RecursiveType(null);
 			t = new Pair<Type,Condition>(rv,null);
 			types.put(key, t);
 			return t;
@@ -245,9 +245,13 @@ public class TypeResolution {
 			constraint = new And(constraint,t.second(),constraint.attribute(SourceAttr.class));			
 		}
 		
-		if(types.containsKey(key)) {			
-			t = new Pair<Type, Condition>(new NamedType(key.first(),key.second(),t.first()), constraint);
-		} else {		
+		Pair<Type,Condition> old = types.get(key);
+		if (old != null) {
+			// indicates a recursive type
+			RecursiveType rt = (RecursiveType) old.first();
+			t = new Pair<Type, Condition>(new RecursiveType(rt.name(), t
+					.first()), constraint);
+		} else {
 			t = new Pair<Type, Condition>(t.first(), constraint);
 		}
 		types.put(key, t);				
@@ -1155,7 +1159,7 @@ public class TypeResolution {
 			ListType t1 = (ListType) lhs_t;
 			ListType t2 = (ListType) rhs_t;
 												
-			if(!t1.isSubtype(t2) && !t2.isSubtype(t1)) {
+			if(!t1.isSubtype(t2, Collections.EMPTY_MAP) && !t2.isSubtype(t1, Collections.EMPTY_MAP)) {
 				syntaxError("cannot compare type " + t1 + " with type " + t2,e);
 			}
 			
@@ -1180,7 +1184,7 @@ public class TypeResolution {
 			SetType t1 = (SetType) lhs_t;
 			SetType t2 = (SetType) rhs_t;
 												
-			if(!t1.isSubtype(t2) && !t2.isSubtype(t1)) {
+			if(!t1.isSubtype(t2, Collections.EMPTY_MAP) && !t2.isSubtype(t1, Collections.EMPTY_MAP)) {
 				syntaxError("cannot compare type " + t1 + " with type " + t2,e);
 			}
 			
@@ -1339,7 +1343,7 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
 						
-		if(!c.lhsTest().isSubtype(lhs.first())) {			
+		if(!c.lhsTest().isSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.
 			environment = new HashMap<String,Type>(environment);
@@ -1432,7 +1436,7 @@ public class TypeResolution {
 			
 			if (receiver == funrec
 					|| (receiver != null && funrec != null && funrec
-							.isSubtype(receiver))) {				
+							.isSubtype(receiver, Collections.EMPTY_MAP))) {				
 				// receivers match up OK ... 
 				if (ft.parameters().size() == paramTypes.size()
 						&& fun.name().equals(name)
@@ -1473,7 +1477,7 @@ public class TypeResolution {
 		for (int i = 0; i != p1types.size(); ++i) {
 			Type p1 = p1types.get(i);
 			Type p2 = p2types.get(i);
-			if (!p1.isSubtype(p2)) {
+			if (!p1.isSubtype(p2, Collections.EMPTY_MAP)) {
 				return false;
 			}
 		}
@@ -1495,7 +1499,7 @@ public class TypeResolution {
 	 * @param elem
 	 */
 	protected void checkSubtype(Type t1, Type t2, SyntacticElement elem) {		
-		if (!t1.isSubtype(t2)) {
+		if (!t1.isSubtype(t2, Collections.EMPTY_MAP)) {
 			syntaxError("expected type " + t1 + ", got type " + t2 + ".", elem);
 		}
 	}	

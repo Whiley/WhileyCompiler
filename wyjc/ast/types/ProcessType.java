@@ -46,13 +46,13 @@ public class ProcessType implements NonUnionType {
 		return element.hashCode() * 123;
 	}
 	
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
 		if (t instanceof ProcessType) {
 			ProcessType lt = (ProcessType) t;
-			return element.isSubtype(lt.element);
+			return element.isSubtype(lt.element, environment);
 		} 		
 		return false;
 	}

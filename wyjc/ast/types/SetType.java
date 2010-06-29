@@ -46,7 +46,7 @@ public class SetType implements NonUnionType {
 		return element.hashCode() * 123;
 	}
 	
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -54,13 +54,13 @@ public class SetType implements NonUnionType {
 			return true;
 		} else if (t instanceof ListType) {
 			ListType lt = (ListType) t;
-			return element.isSubtype(lt.element());
+			return element.isSubtype(lt.element(),environment);
 		} else if (t instanceof SetType) {
 			SetType lt = (SetType) t;
-			return element.isSubtype(lt.element);
+			return element.isSubtype(lt.element,environment);
 		} else if(t instanceof ProcessType) {
 			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element());
+			return isSubtype(pt.element(),environment);
 		} 		
 		return false;
 	}

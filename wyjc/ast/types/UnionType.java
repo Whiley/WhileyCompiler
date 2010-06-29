@@ -52,7 +52,7 @@ public class UnionType implements Type {
 		return types.hashCode();
 	}
 	
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -61,7 +61,7 @@ public class UnionType implements Type {
 			for(Type b1 : types) {
 				boolean matched = false;
 				for(Type b2 : ut.types) {
-					if(b1.isSubtype(b2)) {
+					if(b1.isSubtype(b2, environment)) {
 						matched = true;
 					}
 				}
@@ -72,13 +72,13 @@ public class UnionType implements Type {
 			return true;
 		} else {
 			for(Type b : types) {
-				if(b.isSubtype(t)) {
+				if(b.isSubtype(t, environment)) {
 					return true;
 				}
 			}
 			if(t instanceof ProcessType) {
 				ProcessType pt = (ProcessType) t;
-				return isSubtype(pt.element());
+				return isSubtype(pt.element(), environment);
 			} 
 			return false;
 		}

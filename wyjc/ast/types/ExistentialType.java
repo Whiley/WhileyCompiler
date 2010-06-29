@@ -36,7 +36,7 @@ public class ExistentialType implements NonUnionType {
 		return 3;
 	}
 	
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		// the following is certainly a pretty strange one!
 		return false;
 	}

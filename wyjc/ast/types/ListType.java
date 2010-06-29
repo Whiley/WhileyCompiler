@@ -37,7 +37,7 @@ public final class ListType extends SetType {
 		return at.element().equals(element());
 	}
 		
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -45,10 +45,10 @@ public final class ListType extends SetType {
 			return true;
 		} else if(t instanceof ListType) {
 			ListType lt = (ListType) t;
-			return element().isSubtype(lt.element());
+			return element().isSubtype(lt.element(),environment);
 		} else if(t instanceof ProcessType) {
 			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element());
+			return isSubtype(pt.element(), environment);
 		} 		
 		return false;
 	}

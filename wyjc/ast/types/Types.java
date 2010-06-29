@@ -34,9 +34,9 @@ public class Types {
 	public static Type leastUpperBound(Type t1, Type t2) {		
 		// NOTE. There are still bugs in this algorithm.
 		
-		if(t1.isSubtype(t2)) {
+		if(t1.isSubtype(t2, Collections.EMPTY_MAP)) {
 			return t1;
-		} else if(t2.isSubtype(t1)) {
+		} else if(t2.isSubtype(t1, Collections.EMPTY_MAP)) {
 			return t2;
 		}
 		
@@ -58,7 +58,7 @@ public class Types {
 			
 			for(int i=0;i!=types.size();++i) {
 				NonUnionType t = types.get(i);
-				if(t2.isSubtype(t)) {
+				if(t2.isSubtype(t, Collections.EMPTY_MAP)) {
 					types.set(i, (NonUnionType) t2);
 					return new UnionType(types);
 				}
@@ -72,7 +72,7 @@ public class Types {
 			
 			for(int i=0;i!=types.size();++i) {
 				NonUnionType t = types.get(i);
-				if(t1.isSubtype(t)) {
+				if(t1.isSubtype(t, Collections.EMPTY_MAP)) {
 					types.set(i, (NonUnionType) t1);			
 					return new UnionType(types);
 				}
@@ -96,9 +96,9 @@ public class Types {
 		
 		// NOTE. There are still bugs in this algorithm.
 		
-		if(t1.isSubtype(t2)) {									
+		if(t1.isSubtype(t2, Collections.EMPTY_MAP)) {									
 			return t1;
-		} else if(t2.isSubtype(t1)) {			
+		} else if(t2.isSubtype(t1, Collections.EMPTY_MAP)) {			
 			return t2;
 		}
 		

@@ -37,12 +37,12 @@ public final class IntType implements NonUnionType {
 		return 1;
 	}
 	
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		} else if(t instanceof ProcessType) {
 			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element());
+			return isSubtype(pt.element(), environment);
 		} 
 		return t instanceof IntType || t == Types.T_VOID;
 	}	

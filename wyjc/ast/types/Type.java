@@ -33,7 +33,7 @@ public interface Type extends UnresolvedType {
 	 * @param t
 	 * @return
 	 */
-	public abstract boolean isSubtype(Type t);
+	public abstract boolean isSubtype(Type t, Map<String,Type> environment);
 	
 	/**
 	 * Strip off all named types.

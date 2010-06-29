@@ -40,7 +40,8 @@ public class RecursiveType implements NonUnionType {
 		this.type = type;		
 	}
 	
-	RecursiveType(String name, Type type) {				
+	// care needed here to avoid capture.
+	public RecursiveType(String name, Type type) {				
 		this.name = name;
 		this.type = type;		
 	}
@@ -57,16 +58,29 @@ public class RecursiveType implements NonUnionType {
 		return type.flattern();
 	}
 		
-	public boolean isSubtype(Type t) {
-		if(t instanceof RecursiveType) {
+	public boolean isSubtype(Type t, Map<String,Type> environment) {
+		// this is a delicate method; don't mess with it unless you know what
+		// you're doing.
+		if(equals(t)) {
+			return true;
+		} else if(type == null) {
+			// leaf case, so unroll one level
+			Type tmp = environment.get(name);
+			System.out.println("GOT: " + environment);
+			return tmp.isSubtype(t,environment);
+		} else if(t instanceof RecursiveType) {
+			// non-leaf case
 			RecursiveType nt = (RecursiveType) t;			
 			Type nt_type = nt.type();
 			HashMap<String,String> binding = new HashMap();
 			binding.put(nt.name(), name);
-			nt_type = nt_type.substitute(binding);
-			return type.isSubtype(nt_type);
-		} 
-		return type.isSubtype(t);					
+			t = nt_type.substitute(binding);
+		}
+		
+		environment = new HashMap<String,Type>(environment);
+		// FIXME: potential for variable capture here?
+		environment.put(name, type);
+		return type.isSubtype(t,environment);				
 	}
 	
 	public boolean isExistential() {
@@ -87,7 +101,9 @@ public class RecursiveType implements NonUnionType {
 		if(o instanceof RecursiveType) {
 			RecursiveType nt = (RecursiveType) o;			
 			// FIXME: not completely sure about this
-			return name.equals(nt.name) && type.equals(nt.type);
+			return name.equals(nt.name)
+					&& (type == nt.type || (type != null && type
+							.equals(nt.type)));
 		} 
 		return false;
 	}
@@ -97,7 +113,11 @@ public class RecursiveType implements NonUnionType {
 	}
 	
 	public String toString() {
-		return name + "[" + type + "]";
+		if(type != null) {
+			return name + "[" + type + "]";
+		} else {
+			return name;
+		}
 	}
 	
 	public WType convert() {

@@ -109,9 +109,9 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		
 		Type t = l.type(environment);
 		
-		if (type.isSubtype(t)) {			
+		if (type.isSubtype(t, Collections.EMPTY_MAP)) {			
 			return rhs;
-		} else if (!t.isSubtype(type) || l instanceof Value) {
+		} else if (!t.isSubtype(type, Collections.EMPTY_MAP) || l instanceof Value) {
 			return new BoolVal(true);
 		}
 		return new TypeGate(type, l,r, attributes());
