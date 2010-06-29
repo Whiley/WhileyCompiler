@@ -214,15 +214,8 @@ public class TypeResolution {
 		Pair<Type,Condition> t = types.get(key);
 		
 		if(t == null) { 
-			HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();
-			cache.put(key,new Pair(new RecursiveType(key,null),null)); // to terminate any recursive types.
-			t = expandTypeHelper(key,cache);
-
-			if(isRecursive(key,t.first())) {
-				// recursive case
-				RecursiveType rt = new RecursiveType(key,t.first());
-				t = new Pair(rt,t.second());
-			} 
+			HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
+			t = expandTypeHelper(key,cache);			
 			types.put(key,t);			
 		}
 		
@@ -252,6 +245,9 @@ public class TypeResolution {
 		Pair<Type,Condition> cached = cache.get(key);					
 		if(cached != null) { return cached; }		
 		
+		// following is needed to terminate any recursion
+		cache.put(key, new Pair(new RecursiveType(key,null),null));
+		
 		// Ok, expand the type properly then
 		Pair<UnresolvedType,Condition> ut = unresolved.get(key);		
 		Pair<Type,Condition> t = expandType(ut.first(), cache);
@@ -265,6 +261,12 @@ public class TypeResolution {
 		
 		t = new Pair<Type, Condition>(t.first(), constraint); 
 		
+		if(isRecursive(key,t.first())) {
+			// recursive case
+			RecursiveType rt = new RecursiveType(key,t.first());
+			t = new Pair(rt,t.second());
+		} 
+		
 		cache.put(key, t);
 		
 		// Done
@@ -272,7 +274,7 @@ public class TypeResolution {
 	}	
 	
 	protected Pair<Type,Condition> expandType(UnresolvedType ut,
-			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {			
+			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {							
 		
 		if(ut instanceof Type) {
 			// covers all primitive types etc
