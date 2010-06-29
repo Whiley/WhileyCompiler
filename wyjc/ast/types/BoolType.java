@@ -20,6 +20,7 @@ package wyjc.ast.types;
 
 import java.util.Map;
 
+import wyjc.util.NameID;
 import wyone.core.WType;
 import wyone.theory.logic.WBoolType;
 import wyone.theory.numeric.WIntType;
@@ -38,7 +39,7 @@ public final class BoolType implements NonUnionType {
 		return 2;
 	}
 	
-	public boolean isSubtype(Type t, Map<String,Type> environment) {
+	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		} else if(t instanceof ProcessType) {
@@ -56,7 +57,7 @@ public final class BoolType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<String,String> binding) {
+	public Type substitute(Map<NameID,NameID> binding) {
 		return this;
 	}
 	

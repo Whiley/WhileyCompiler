@@ -43,9 +43,9 @@ import wyjc.util.*;
 public class TypeResolution {	
 	private ModuleLoader loader;
 	private HashSet<ModuleID> modules;
-	private HashMap<Pair<ModuleID,String>,Expr> constants;
-	private HashMap<Pair<ModuleID,String>,Pair<Type,Condition>> types;	
-	private HashMap<Pair<ModuleID,String>,List<ModuleInfo.Method>> functions;
+	private HashMap<NameID,Expr> constants;
+	private HashMap<NameID,Pair<Type,Condition>> types;	
+	private HashMap<NameID,List<ModuleInfo.Method>> functions;
 	
 	public TypeResolution(ModuleLoader loader) {
 		this.loader = loader;		
@@ -53,9 +53,9 @@ public class TypeResolution {
 	
 	public void resolve(List<UnresolvedWhileyFile> files) {
 		modules = new HashSet<ModuleID>();
-		constants = new HashMap<Pair<ModuleID,String>,Expr>();
-		types = new HashMap<Pair<ModuleID,String>,Pair<Type,Condition>>();
-		functions = new HashMap<Pair<ModuleID,String>,List<ModuleInfo.Method>>();
+		constants = new HashMap<NameID,Expr>();
+		types = new HashMap<NameID,Pair<Type,Condition>>();
+		functions = new HashMap<NameID,List<ModuleInfo.Method>>();
 		
 		for(UnresolvedWhileyFile f : files) {			
 			modules.add(f.id());
@@ -69,7 +69,7 @@ public class TypeResolution {
 		}
 		
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		for (Pair<ModuleID, String> key : new HashSet<Pair<ModuleID, String>>(
+		for (NameID key : new HashSet<NameID>(
 				types.keySet())) {			
 			Pair<Type, Condition> val = types.get(key);
 									
@@ -87,22 +87,22 @@ public class TypeResolution {
 	}
 	
 	protected void generateConstants(List<UnresolvedWhileyFile> files) {
-		HashMap<Pair<ModuleID,String>,Expr> exprs = new HashMap();
-		HashMap<Pair<ModuleID,String>,SyntacticElement> srcs = new HashMap();
+		HashMap<NameID,Expr> exprs = new HashMap();
+		HashMap<NameID,SyntacticElement> srcs = new HashMap();
 		
 		// first construct list.
 		for(UnresolvedWhileyFile f : files) {
 			for(Decl d : f.declarations()) {
 				if(d instanceof ConstDecl) {
 					ConstDecl cd = (ConstDecl) d;
-					Pair<ModuleID,String> key = new Pair<ModuleID,String>(f.id(),cd.name());
+					NameID key = new NameID(f.id(),cd.name());
 					exprs.put(key, cd.constant());
 					srcs.put(key,d);
 				}
 			}
 		}
 		
-		for(Pair<ModuleID,String> k : exprs.keySet()) {	
+		for(NameID k : exprs.keySet()) {	
 			try {
 				expandConstant(k,exprs,srcs);
 			} catch(ResolveError rex) {
@@ -110,7 +110,7 @@ public class TypeResolution {
 			}
 		}
 		
-		for(Pair<ModuleID,String> k : constants.keySet()) {			
+		for(NameID k : constants.keySet()) {			
 			Expr c = constants.get(k);
 			Pair<Type,Expr> p = check(c,new HashMap<String,Type>());
 			c = p.second().reduce(new HashMap<String,Type>());
@@ -135,18 +135,18 @@ public class TypeResolution {
 		}
 	}
 	
-	protected Expr expandConstant(Pair<ModuleID, String> key,
-			HashMap<Pair<ModuleID, String>, Expr> exprs,
-			HashMap<Pair<ModuleID, String>, SyntacticElement> srcs) throws ResolveError {
+	protected Expr expandConstant(NameID key,
+			HashMap<NameID, Expr> exprs,
+			HashMap<NameID, SyntacticElement> srcs) throws ResolveError {
 		
 		Expr e = exprs.get(key);
 		
 		if(constants.get(key) != null) {
 			return e;
-		} else if(!modules.contains(key.first())) {
+		} else if(!modules.contains(key.module())) {
 			// indicates a non-local key
-			ModuleInfo mi = loader.loadModule(key.first());
-			return mi.constant(key.second()).constant();
+			ModuleInfo mi = loader.loadModule(key.module());
+			return mi.constant(key.name()).constant();
 		} else if(e == null) {
 			// this indicates a cyclic definition.
 			syntaxError("cyclic constant definition encountered",srcs.get(key));
@@ -166,7 +166,7 @@ public class TypeResolution {
 				// FIXME: there's a bug here for constants which are defined in
                 // external class files.
 				Constant c = (Constant) u;
-				Pair<ModuleID,String> ck = new Pair(c.module(),c.name());
+				NameID ck = new NameID(c.module(),c.name());
 				Expr v = constants.get(ck);
 				if(v == null) {
 					v = expandConstant(ck,exprs,srcs);
@@ -183,8 +183,8 @@ public class TypeResolution {
 	}
 	
 	protected void generateTypes(List<UnresolvedWhileyFile> files) {
-		HashMap<Pair<ModuleID,String>,Pair<UnresolvedType,Condition>> unresolved = new HashMap();
-		HashMap<Pair<ModuleID,String>,SyntacticElement> srcs = new HashMap();
+		HashMap<NameID,Pair<UnresolvedType,Condition>> unresolved = new HashMap();
+		HashMap<NameID,SyntacticElement> srcs = new HashMap();
 		
 		// FIXME: need to first convert constants into types
 		
@@ -193,7 +193,7 @@ public class TypeResolution {
 			for(Decl d : f.declarations()) {
 				if(d instanceof TypeDecl) {
 					TypeDecl td = (TypeDecl) d;
-					Pair<ModuleID,String> key = new Pair<ModuleID,String>(f.id(),td.name());					
+					NameID key = new NameID(f.id(),td.name());					
 					unresolved.put(key, new Pair<UnresolvedType, Condition>(td
 							.type(), td.constraint()));
 					srcs.put(key,d);
@@ -202,7 +202,7 @@ public class TypeResolution {
 		}
 		
 		// third expand all types
-		for(Pair<ModuleID,String> k : unresolved.keySet()) {
+		for(NameID k : unresolved.keySet()) {
 			try {
 				expandType(k,unresolved,srcs);
 			} catch(ResolveError ex) {
@@ -211,25 +211,28 @@ public class TypeResolution {
 		}
 	}
 	
-	protected Pair<Type,Condition> expandType(Pair<ModuleID, String> key,
-			HashMap<Pair<ModuleID, String>, Pair<UnresolvedType,Condition>> unresolved,
-			HashMap<Pair<ModuleID, String>, SyntacticElement> srcs) throws ResolveError {
-				
+	protected Pair<Type,Condition> expandType(NameID key,
+			HashMap<NameID, Pair<UnresolvedType,Condition>> unresolved,
+			HashMap<NameID, SyntacticElement> srcs) throws ResolveError {
+		
+		System.out.println("EXPANDING: " + key);
+		
 		Pair<Type,Condition> t = types.get(key);
 		
 		if(t != null) { 
 			return t; 
-		} else if(!modules.contains(key.first())) {
+		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key
-			ModuleInfo mi = loader.loadModule(key.first());
-			ModuleInfo.TypeDef td = mi.type(key.second()); 
+			ModuleInfo mi = loader.loadModule(key.module());
+			ModuleInfo.TypeDef td = mi.type(key.name()); 
 			return new Pair<Type, Condition>(td.type(), td.constraint());
 		}
 		Pair<UnresolvedType,Condition> ut = unresolved.get(key);
 						
 		if(ut == null) {
-			// this indicates a cyclic definition.			
-			RecursiveType rv = new RecursiveType(null);
+			// this indicates a cyclic definition.					
+			RecursiveType rv = new RecursiveType(key,null);
+			System.out.println("RECURSIVE LEAF: " + key);
 			t = new Pair<Type,Condition>(rv,null);
 			types.put(key, t);
 			return t;
@@ -237,38 +240,43 @@ public class TypeResolution {
 			unresolved.put(key, null); // mark this node as visited
 		}
 						
-		t = expandType(ut.first(),unresolved,srcs);		
+		t = expandType(ut.first(), unresolved, srcs);
 		Condition constraint = ut.second();
-		if(constraint == null) {
+		if (constraint == null) {
 			constraint = t.second();
-		} else if(t.second() != null) {
-			constraint = new And(constraint,t.second(),constraint.attribute(SourceAttr.class));			
+		} else if (t.second() != null) {
+			constraint = new And(constraint, t.second(), constraint
+					.attribute(SourceAttr.class));
 		}
 		
 		Pair<Type,Condition> old = types.get(key);
 		if (old != null) {
-			// indicates a recursive type
+			// indicates a recursive type			
 			RecursiveType rt = (RecursiveType) old.first();
+			System.out.println("RECURSIVE ROOT: " + rt.name());
 			t = new Pair<Type, Condition>(new RecursiveType(rt.name(), t
 					.first()), constraint);
 		} else {
 			t = new Pair<Type, Condition>(t.first(), constraint);
 		}
+		
 		types.put(key, t);				
 		
+		System.out.println("*** GOT: " + key + " => " + t);
+		
 		return t;
-	}
+	}	
 	
 	protected Pair<Type,Condition> expandType(UnresolvedType ut,
-			HashMap<Pair<ModuleID, String>, Pair<UnresolvedType,Condition>> unresolved,
-			HashMap<Pair<ModuleID, String>, SyntacticElement> srcs) throws ResolveError {			
+			HashMap<NameID, Pair<UnresolvedType,Condition>> unresolved,
+			HashMap<NameID, SyntacticElement> srcs) throws ResolveError {			
 		
 		if(ut instanceof Type) {
 			// covers all primitive types etc
 			return new Pair<Type,Condition>((Type) ut,null);
 		} else if(ut instanceof UserDefType) {
 			UserDefType ult = (UserDefType) ut;			;
-			Pair<Type,Condition> et = expandType(new Pair<ModuleID, String>(ult.module(), ult
+			Pair<Type,Condition> et = expandType(new NameID(ult.module(), ult
 					.name()), unresolved, srcs);			
 			if(et.first().isExistential()) {
 				return new Pair<Type, Condition>(new NamedType(ult.module(),
@@ -445,7 +453,7 @@ public class TypeResolution {
 	
 
 	protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
-		Pair<ModuleID,String> key = new Pair(id,fun.name());
+		NameID key = new NameID(id,fun.name());
 		List<ModuleInfo.Method> funs = functions.get(key);
 		if(funs == null) {
 			funs = new ArrayList<ModuleInfo.Method>();
@@ -477,7 +485,7 @@ public class TypeResolution {
 	
 	public void check(ConstDecl d, ModuleID mid) {
 		try {
-			Pair<ModuleID,String> key = new Pair(mid,d.name());
+			NameID key = new NameID(mid,d.name());
 			Value v = (Value) constants.get(key);						
 			d.setConstant(v); 
 			d.attributes().add(new TypeAttr(v.type()));
@@ -1328,14 +1336,14 @@ public class TypeResolution {
 		if (c.module() == null) {
 			syntaxError("unresolved constant: " + c.name(), c);
 		}
-		Pair<ModuleID, String> key = new Pair(c.module(), c.name());
+		NameID key = new NameID(c.module(), c.name());
 		Value v;		
-		if(modules.contains(key.first())) {
+		if(modules.contains(key.module())) {
 			v = (Value) constants.get(key);	
 		} else {
 			// indicates a non-local key
-			ModuleInfo mi = loader.loadModule(key.first());
-			v = mi.constant(key.second()).constant();				 
+			ModuleInfo mi = loader.loadModule(key.module());
+			v = mi.constant(key.name()).constant();				 
 		}				
 		return new Pair<Type, Expr>(v.type(), v);
 	}
@@ -1463,7 +1471,7 @@ public class TypeResolution {
 	protected List<ModuleInfo.Method> lookupMethod(ModuleID mid, String name)
 			throws ResolveError {
 		if (modules.contains(mid)) {
-			Pair<ModuleID, String> key = new Pair(mid, name);
+			NameID key = new NameID(mid, name);
 			return functions.get(key);
 		} else {
 			ModuleInfo module = loader.loadModule(mid);

@@ -20,6 +20,7 @@ package wyjc.ast.types;
 
 import java.util.Map;
 
+import wyjc.util.NameID;
 import wyone.core.WType;
 
 
@@ -46,7 +47,7 @@ public class ProcessType implements NonUnionType {
 		return element.hashCode() * 123;
 	}
 	
-	public boolean isSubtype(Type t, Map<String,Type> environment) {
+	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -65,7 +66,7 @@ public class ProcessType implements NonUnionType {
 		return element.isExistential();
 	}
 
-	public Type substitute(Map<String,String> binding) {
+	public Type substitute(Map<NameID,NameID> binding) {
 		return new ProcessType(element.substitute(binding));
 	}
 	

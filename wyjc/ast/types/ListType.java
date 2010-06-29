@@ -20,6 +20,7 @@ package wyjc.ast.types;
 
 import java.util.Map;
 
+import wyjc.util.NameID;
 import wyone.core.WType;
 import wyone.theory.list.WListType;
 
@@ -37,7 +38,7 @@ public final class ListType extends SetType {
 		return at.element().equals(element());
 	}
 		
-	public boolean isSubtype(Type t, Map<String,Type> environment) {
+	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -61,7 +62,7 @@ public final class ListType extends SetType {
 		return new WListType(element().convert());
 	}
 	
-	public Type substitute(Map<String,String> binding) {
+	public Type substitute(Map<NameID,NameID> binding) {
 		return new ListType(element().substitute(binding));
 	}
 	

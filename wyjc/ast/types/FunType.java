@@ -20,6 +20,7 @@ package wyjc.ast.types;
 
 import java.util.*;
 
+import wyjc.util.NameID;
 import wyone.core.WFunType;
 import wyone.core.WType;
 
@@ -41,7 +42,7 @@ public class FunType implements Type {
 		return Collections.unmodifiableList(parameters);
 	}
 
-	public boolean isSubtype(Type t, Map<String,Type> environment) {
+	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -87,7 +88,7 @@ public class FunType implements Type {
 		return false;
 	}
 
-	public Type substitute(Map<String,String> binding) {
+	public Type substitute(Map<NameID,NameID> binding) {
 		Type retType = ret.substitute(binding);
 		ArrayList<Type> params = new ArrayList<Type>();
 		for(Type t : parameters) {

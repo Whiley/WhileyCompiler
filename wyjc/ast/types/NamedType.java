@@ -60,7 +60,7 @@ public class NamedType implements NonUnionType {
 		return type.flattern();
 	}
 		
-	public boolean isSubtype(Type t, Map<String,Type> environment) {
+	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
 		
 		if (t == Types.T_VOID) {
 			return true;
@@ -89,7 +89,7 @@ public class NamedType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<String,String> binding) {
+	public Type substitute(Map<NameID,NameID> binding) {
 		return new NamedType(module,name,type.substitute(binding));
 	}
 	
