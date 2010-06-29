@@ -230,7 +230,11 @@ public class TypeResolution {
 	}
 	
 	private static boolean isRecursive(NameID root, Type type) {
-		// FIXME: need to check for occurrences of this variable in the expanded type.
+		for(RecursiveType rt : type.match(RecursiveType.class)) {
+			if(rt.name().equals(root)) {
+				return true;
+			}
+		}
 		return false;
 	}
 	
@@ -246,7 +250,7 @@ public class TypeResolution {
 		
 		// Now, check for a cached expansion.
 		Pair<Type,Condition> cached = cache.get(key);					
-		if(cached != null) { return cached; } 
+		if(cached != null) { return cached; }		
 		
 		// Ok, expand the type properly then
 		Pair<UnresolvedType,Condition> ut = unresolved.get(key);		
@@ -258,9 +262,13 @@ public class TypeResolution {
 			constraint = new And(constraint, t.second(), constraint
 					.attribute(SourceAttr.class));
 		}
-			
+		
+		t = new Pair<Type, Condition>(t.first(), constraint); 
+		
+		cache.put(key, t);
+		
 		// Done
-		return new Pair<Type, Condition>(t.first(), constraint);		
+		return t;		
 	}	
 	
 	protected Pair<Type,Condition> expandType(UnresolvedType ut,
@@ -379,7 +387,7 @@ public class TypeResolution {
 	}
 	
 	protected Pair<Type,Condition> expandAndCheck(UnresolvedType t) throws ResolveError {		
-		Pair<Type,Condition> tc = expandType(t,null);
+		Pair<Type,Condition> tc = expandType(t,new HashMap());
 		Condition c = tc.second();
 		if(c != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
@@ -407,7 +415,7 @@ public class TypeResolution {
 				if(p.type() == Types.T_VOID) {
 					syntaxError("parameter cannot be declared void",f);
 				} 
-				Pair<Type,Condition> t = expandType(p.type(),null);				
+				Pair<Type,Condition> t = expandType(p.type(),new HashMap());				
 				environment.put(p.name(), t.first());						
 				p.attributes().add(new TypeAttr(t.first()));				
 				paramTypes.add(t.first());
@@ -419,7 +427,7 @@ public class TypeResolution {
 		FunDecl.Return ret = f.returnType();
 		Pair<Type,Condition> r_t;
 		try {
-			r_t = expandType(ret.type(),null);
+			r_t = expandType(ret.type(),new HashMap());
 		} catch(ResolveError rex) {
 			syntaxError(rex.getMessage(),ret,rex);
 			return null; // unreachable
@@ -432,7 +440,7 @@ public class TypeResolution {
 		Type recType = null;
 		if(rec != null) {
 			try {
-				r_t = expandType(rec.type(),null);
+				r_t = expandType(rec.type(),new HashMap());
 				recType = r_t.first();
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),ret,rex);

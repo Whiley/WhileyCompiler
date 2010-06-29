@@ -110,6 +110,20 @@ public class UnionType implements Type {
 		return new UnionType(ts);
 	}
 	
+	public <T> Set<T> match(Class<T> type) {
+		HashSet<T> r = new HashSet<T>();
+		
+		for(Type t : types) {
+			r.addAll(t.match(type));
+		}
+		
+		if(UnionType.class == type) {			
+			r.add((T)this);			
+		} 
+		
+		return r;		
+	}
+	
 	public String toString() {
 		String r = "";
 		boolean firstTime=true;

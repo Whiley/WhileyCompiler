@@ -20,7 +20,7 @@ package wyjc.ast.types;
 
 import wyone.core.WType;
 import wyjc.util.NameID;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This represents a primitive type in the language, such as "int" or "void".
@@ -47,6 +47,16 @@ public interface Type extends UnresolvedType {
 	 * @return
 	 */
 	public abstract Type substitute(Map<NameID,NameID> binding);
+
+	/**
+	 * Return every subcomponent of this type which is an instanceof of the
+	 * given class.
+	 * 
+	 * @param <T>
+	 * @param type
+	 * @return
+	 */
+	public abstract <T> Set<T> match(Class<T> type);
 	
 	public abstract boolean isExistential(); 	
 	

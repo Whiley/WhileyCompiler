@@ -57,6 +57,16 @@ public class AnyType implements NonUnionType {
 		return this;
 	}
 	
+	public <T> Set<T> match(Class<T> type) {
+		if(AnyType.class == type) {
+			HashSet r = new HashSet();
+			r.add(this);
+			return r;
+		} else {
+			return Collections.EMPTY_SET;
+		}
+	}
+	
 	public WType convert() {
 		return WIntType.T_INT;
 	}

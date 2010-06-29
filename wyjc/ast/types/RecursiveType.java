@@ -18,8 +18,11 @@
 
 package wyjc.ast.types;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import wyjc.util.*;
 import wyone.core.WType;
@@ -91,6 +94,19 @@ public class RecursiveType implements NonUnionType {
 		return new RecursiveType(newname,t);
 	}
 	
+	public <T> Set<T> match(Class<T> t) {
+		Set<T> r;
+		if(type == null) {
+			r = Collections.EMPTY_SET;
+		} else {
+			r = type.match(t);
+		}
+		if(RecursiveType.class == t) {
+			r = new HashSet(r);
+			r.add((T)this);			
+		} 
+		return r;		
+	}
 	
 	public boolean equals(Object o) {
 		if(o instanceof RecursiveType) {

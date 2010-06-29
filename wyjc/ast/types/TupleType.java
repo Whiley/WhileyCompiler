@@ -113,6 +113,20 @@ public class TupleType implements NonUnionType {
 		return new TupleType(ts);
 	}
 	
+	public <T> Set<T> match(Class<T> type) {
+		HashSet<T> r = new HashSet<T>();
+		
+		for(Map.Entry<String, Type> e : types.entrySet()) {
+			r.addAll(e.getValue().match(type));
+		}
+		
+		if(UnionType.class == type) {			
+			r.add((T)this);			
+		} 
+		
+		return r;		
+	}
+	
 	public String toString() {
 		String r = "(";
 		boolean firstTime = true;

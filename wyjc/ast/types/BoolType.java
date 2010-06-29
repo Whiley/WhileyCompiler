@@ -18,7 +18,10 @@
 
 package wyjc.ast.types;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import wyjc.util.NameID;
 import wyone.core.WType;
@@ -59,6 +62,16 @@ public final class BoolType implements NonUnionType {
 	
 	public Type substitute(Map<NameID,NameID> binding) {
 		return this;
+	}
+	
+	public <T> Set<T> match(Class<T> type) {
+		if(BoolType.class == type) {
+			HashSet r = new HashSet();
+			r.add(this);
+			return r;
+		} else {
+			return Collections.EMPTY_SET;
+		}
 	}
 	
 	public WType convert() {

@@ -114,6 +114,20 @@ public class FunType implements Type {
 		return r + ")";		
 	}
 	
+	public <T> Set<T> match(Class<T> type) {
+		HashSet<T> r = new HashSet<T>(ret.match(type));
+		
+		for(Type t : parameters) {
+			r.addAll(t.match(type));
+		}
+		
+		if(FunType.class == type) {			
+			r.add((T)this);			
+		} 
+		
+		return r;		
+	}
+	
 	public WType convert() {
 		ArrayList<WType> params = new ArrayList<WType>();
 		for(Type t : parameters) {

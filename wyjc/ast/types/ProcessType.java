@@ -18,7 +18,9 @@
 
 package wyjc.ast.types;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import wyjc.util.NameID;
 import wyone.core.WType;
@@ -72,6 +74,15 @@ public class ProcessType implements NonUnionType {
 	
 	public String toString() {
 		return "process " + element.toString();
+	}
+	
+	public <T> Set<T> match(Class<T> type) {
+		Set<T> r = element().match(type);
+		if(ProcessType.class == type) {
+			r = new HashSet(r);
+			r.add((T)this);			
+		} 
+		return r;		
 	}
 	
 	public WType convert() {

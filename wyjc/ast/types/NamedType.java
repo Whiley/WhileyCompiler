@@ -18,7 +18,9 @@
 
 package wyjc.ast.types;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import wyjc.util.*;
 import wyone.core.WType;
@@ -99,6 +101,15 @@ public class NamedType implements NonUnionType {
 	
 	public String toString() {
 		return module + ":" + name + "[" + type + "]";
+	}
+	
+	public <T> Set<T> match(Class<T> t) {
+		Set<T> r = type.match(t);
+		if(NamedType.class == t) {
+			r = new HashSet(r);
+			r.add((T)this);			
+		} 
+		return r;		
 	}
 	
 	public WType convert() {
