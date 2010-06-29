@@ -138,6 +138,13 @@ public class WhileyDefine implements BytecodeAttribute {
 			utf8 = new Constant.Utf8(lt.name());	
 			Constant.addPoolItem(utf8,constantPool);
 			addPoolItems(lt.type(),constantPool);
+		} else if(type instanceof RecursiveType) {
+			RecursiveType lt = (RecursiveType) type;
+			Constant.Utf8 utf8 =  new Constant.Utf8(lt.name());	
+			Constant.addPoolItem(utf8,constantPool);
+			if(lt.type() != null) {
+				addPoolItems(lt.type(),constantPool);
+			}
 		} else if(type instanceof FunType) {
 			FunType ft = (FunType) type;
 			for(Type t : ft.parameters()) {
@@ -198,6 +205,18 @@ public class WhileyDefine implements BytecodeAttribute {
 			utf8 = new Constant.Utf8(st.name());
 			writer.write_u2(constantPool.get(utf8));
 			write(st.type(),writer,constantPool);
+		} else if(t instanceof RecursiveType) {
+			RecursiveType st = (RecursiveType) t;
+			if(st.type() != null) {
+				writer.write_u1(RECURSIVE_TYPE);
+			} else {
+				writer.write_u1(RECURSIVE_LEAF);
+			}
+			Constant.Utf8 utf8 = new Constant.Utf8(st.name());
+			writer.write_u2(constantPool.get(utf8));
+			if(st.type() != null) {
+				write(st.type(),writer,constantPool);
+			}
 		} else if(t instanceof FunType) {
 			FunType st = (FunType) t;
 			writer.write_u1(FUN_TYPE);
@@ -302,10 +321,23 @@ public class WhileyDefine implements BytecodeAttribute {
 					et = readType(input,constantPool);
 					return new ProcessType(et);
 				case NAMED_TYPE:
+				{
 					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
 					ModuleID module = readModule(input,constantPool);
 					et = readType(input,constantPool);
 					return new NamedType(module,name,et);
+				}
+				case RECURSIVE_TYPE:
+				{
+					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;					
+					et = readType(input,constantPool);
+					return new RecursiveType(name,et);
+				}
+				case RECURSIVE_LEAF:
+				{
+					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;										
+					return new RecursiveType(name,null);
+				}
 				case FUN_TYPE:
 					Type ret = readType(input,constantPool);
 					int count = input.read_u2();
@@ -339,4 +371,6 @@ public class WhileyDefine implements BytecodeAttribute {
 	public static final int PROCESS_TYPE = 11;
 	public static final int NAMED_TYPE = 12;
 	public static final int FUN_TYPE = 13;
+	public static final int RECURSIVE_TYPE = 14;
+	public static final int RECURSIVE_LEAF = 15;
 }

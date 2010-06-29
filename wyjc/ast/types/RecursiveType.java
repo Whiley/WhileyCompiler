@@ -65,8 +65,7 @@ public class RecursiveType implements NonUnionType {
 			return true;
 		} else if(type == null) {
 			// leaf case, so unroll one level
-			Type tmp = environment.get(name);
-			System.out.println("GOT: " + environment);
+			Type tmp = environment.get(name);			
 			return tmp.isSubtype(t,environment);
 		} else if(t instanceof RecursiveType) {
 			// non-leaf case
