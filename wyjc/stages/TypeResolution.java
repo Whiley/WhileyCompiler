@@ -90,6 +90,64 @@ public class TypeResolution {
 		}
 	}
 	
+    public void resolve(UnresolvedWhileyFile wf) {		
+		for(UnresolvedWhileyFile.Decl d : wf.declarations()) {
+			if(d instanceof FunDecl) {				
+				ModuleInfo.Method m = resolve((FunDecl)d);
+				addFunDecl(m,wf.id());
+			}
+		}				
+	}			
+	
+    public ModuleInfo.Method resolve(FunDecl f) {
+		HashMap<String,Type> environment = new HashMap<String,Type>();
+		ArrayList<Type> paramTypes = new ArrayList<Type>();
+		
+		for(FunDecl.Parameter p : f.parameters()) {
+			try {
+				if(p.type() == Types.T_VOID) {
+					syntaxError("parameter cannot be declared void",f);
+				} 
+				Pair<Type,Condition> t = expandType(p.type(),new HashMap());				
+				environment.put(p.name(), t.first());						
+				p.attributes().add(new TypeAttr(t.first()));				
+				paramTypes.add(t.first());
+			} catch(ResolveError rex) {
+				syntaxError(rex.getMessage(),p,rex);
+			}
+		}
+		
+		FunDecl.Return ret = f.returnType();
+		Pair<Type,Condition> r_t;
+		try {
+			r_t = expandType(ret.type(),new HashMap());
+		} catch(ResolveError rex) {
+			syntaxError(rex.getMessage(),ret,rex);
+			return null; // unreachable
+		}
+		ret.attributes().add(new TypeAttr(r_t.first()));		
+		FunType ft = new FunType(r_t.first(),paramTypes);
+		f.attributes().add(new TypeAttr(ft));
+		
+		FunDecl.Receiver rec = f.receiver();
+		Type recType = null;
+		if(rec != null) {
+			try {
+				r_t = expandType(rec.type(),new HashMap());
+				recType = r_t.first();
+			} catch(ResolveError rex) {
+				syntaxError(rex.getMessage(),ret,rex);
+				return null; // unreachable
+			}
+			rec.attributes().add(new TypeAttr(r_t.first()));
+		} 
+		
+		// FIXME: constraints on receiver are lost.
+		return new ModuleInfo.Method(recType, f.name(), ft, f
+				.parameterNames(), null, null);
+	}
+	
+    
 	protected void generateConstants(List<UnresolvedWhileyFile> files) {
 		HashMap<NameID,Expr> exprs = new HashMap();
 		
@@ -211,14 +269,9 @@ public class TypeResolution {
 	}
 	
 	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {
-		Pair<Type,Condition> t = types.get(key);
-		
-		if(t == null) { 
-			HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
-			t = expandTypeHelper(key,cache);			
-			types.put(key,t);			
-		}
-		
+		HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
+		Pair<Type,Condition> t = expandTypeHelper(key,cache);			
+		types.put(key,t);							
 		return t;
 	}
 	
@@ -233,8 +286,12 @@ public class TypeResolution {
 	
 	protected Pair<Type,Condition> expandTypeHelper(NameID key,
 			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {
+
+		Pair<Type,Condition> t = types.get(key);
 		
-		if(!modules.contains(key.module())) {			
+		if(t != null) {
+			return t;
+		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key
 			ModuleInfo mi = loader.loadModule(key.module());
 			ModuleInfo.TypeDef td = mi.type(key.name()); 
@@ -249,8 +306,11 @@ public class TypeResolution {
 		cache.put(key, new Pair(new RecursiveType(key,null),null));
 		
 		// Ok, expand the type properly then
-		Pair<UnresolvedType,Condition> ut = unresolved.get(key);		
-		Pair<Type,Condition> t = expandType(ut.first(), cache);
+		Pair<UnresolvedType,Condition> ut = unresolved.get(key);
+		
+		System.out.println("LOOKING FOR: " + key + " IN: " + unresolved);
+		
+		t = expandType(ut.first(), cache);
 		Condition constraint = ut.second();
 		if (constraint == null) {
 			constraint = t.second();
@@ -399,65 +459,7 @@ public class TypeResolution {
 		return new Pair<Type,Condition>(tc.first(),c);
 	}
 	
-	public void resolve(UnresolvedWhileyFile wf) {		
-		for(UnresolvedWhileyFile.Decl d : wf.declarations()) {
-			if(d instanceof FunDecl) {				
-				ModuleInfo.Method m = resolve((FunDecl)d);
-				addFunDecl(m,wf.id());
-			}
-		}				
-	}		
-	
-	public ModuleInfo.Method resolve(FunDecl f) {
-		HashMap<String,Type> environment = new HashMap<String,Type>();
-		ArrayList<Type> paramTypes = new ArrayList<Type>();
-		
-		for(FunDecl.Parameter p : f.parameters()) {
-			try {
-				if(p.type() == Types.T_VOID) {
-					syntaxError("parameter cannot be declared void",f);
-				} 
-				Pair<Type,Condition> t = expandType(p.type(),new HashMap());				
-				environment.put(p.name(), t.first());						
-				p.attributes().add(new TypeAttr(t.first()));				
-				paramTypes.add(t.first());
-			} catch(ResolveError rex) {
-				syntaxError(rex.getMessage(),p,rex);
-			}
-		}
-		
-		FunDecl.Return ret = f.returnType();
-		Pair<Type,Condition> r_t;
-		try {
-			r_t = expandType(ret.type(),new HashMap());
-		} catch(ResolveError rex) {
-			syntaxError(rex.getMessage(),ret,rex);
-			return null; // unreachable
-		}
-		ret.attributes().add(new TypeAttr(r_t.first()));		
-		FunType ft = new FunType(r_t.first(),paramTypes);
-		f.attributes().add(new TypeAttr(ft));
-		
-		FunDecl.Receiver rec = f.receiver();
-		Type recType = null;
-		if(rec != null) {
-			try {
-				r_t = expandType(rec.type(),new HashMap());
-				recType = r_t.first();
-			} catch(ResolveError rex) {
-				syntaxError(rex.getMessage(),ret,rex);
-				return null; // unreachable
-			}
-			rec.attributes().add(new TypeAttr(r_t.first()));
-		} 
-		
-		// FIXME: constraints on receiver are lost.
-		return new ModuleInfo.Method(recType, f.name(), ft, f
-				.parameterNames(), null, null);
-	}
-	
-
-	protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
+		protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
 		NameID key = new NameID(id,fun.name());
 		List<ModuleInfo.Method> funs = functions.get(key);
 		if(funs == null) {

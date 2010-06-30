@@ -1,6 +1,4 @@
-define binop as (int op, expr left, expr right)
-define expr as int | binop
-
-void System::main([string] args):
-    expr e = (op:1, left:(op:2, left:1, right:2), right:2)
-    print str(e)
+void f(int a) requires a > 1:
+    int b = a-1
+    a = 10
+    print str(b)
