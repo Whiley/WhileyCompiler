@@ -294,7 +294,7 @@ public class TypeResolution {
 				String name = names[nameIdx++];
 				binding.put(n, new RecursiveType(name, null));
 			}
-		}
+		}		
 		return new Pair<Type, Condition>(p.first().substitute(binding), p
 				.second());
 	}
@@ -508,7 +508,7 @@ public class TypeResolution {
 				} else if(d instanceof ConstDecl) {					
 					check((ConstDecl)d, wf.id());
 				} else if(d instanceof TypeDecl) {					
-					check((TypeDecl)d);
+					check((TypeDecl)d,wf);
 				} else {					
 					check((FunDecl)d);
 				}				
@@ -533,10 +533,12 @@ public class TypeResolution {
 		}
 	}
 	
-	public void check(TypeDecl d) {		
-		try {			
-			Pair<Type,Condition> t = expandAndCheck(d.type());
-						
+	public void check(TypeDecl d, UnresolvedWhileyFile wf) {		
+		try {
+			NameID key = new NameID(wf.id(),d.name());
+			Pair<Type,Condition> t = types.get(key);
+			expandAndCheck(d.type());			
+			System.out.println("COND: " + t.second() + " FOR: " + key);
 			if(d.constraint() != null) {
 				HashMap<String,Type> environment = new HashMap<String,Type>();				
 				environment.put("$", t.first());
