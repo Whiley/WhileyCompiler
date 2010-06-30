@@ -268,9 +268,10 @@ public class TypeResolution {
 		}
 	}
 	
-	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {
+	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {		
 		HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
-		Pair<Type,Condition> t = expandTypeHelper(key,cache);			
+		Pair<Type,Condition> t = expandTypeHelper(key,cache);
+		System.out.println("EXPANDING TYPE: " + key + " ==> " + t.first());
 		types.put(key,t);							
 		return t;
 	}
@@ -284,12 +285,16 @@ public class TypeResolution {
 		return false;
 	}
 	
+	private static boolean isRecursive(Type type) {
+		return !type.match(RecursiveType.class).isEmpty();
+	}
+	
 	protected Pair<Type,Condition> expandTypeHelper(NameID key,
 			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {
 
 		Pair<Type,Condition> t = types.get(key);
 		
-		if(t != null) {
+		if(t != null && !isRecursive(t.first())) {
 			return t;
 		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key
@@ -307,8 +312,6 @@ public class TypeResolution {
 		
 		// Ok, expand the type properly then
 		Pair<UnresolvedType,Condition> ut = unresolved.get(key);
-		
-		System.out.println("LOOKING FOR: " + key + " IN: " + unresolved);
 		
 		t = expandType(ut.first(), cache);
 		Condition constraint = ut.second();
@@ -448,8 +451,11 @@ public class TypeResolution {
 		} 
 	}
 	
-	protected Pair<Type,Condition> expandAndCheck(UnresolvedType t) throws ResolveError {		
-		Pair<Type,Condition> tc = expandType(t,new HashMap());
+	/**
+	 * This method expands a type, whilst also checking that the expanded constraint is type safe. 
+	 */
+	protected Pair<Type,Condition> expandAndCheck(UnresolvedType t) throws ResolveError {				
+		Pair<Type,Condition> tc = expandType(t,new HashMap());		
 		Condition c = tc.second();
 		if(c != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
@@ -459,7 +465,7 @@ public class TypeResolution {
 		return new Pair<Type,Condition>(tc.first(),c);
 	}
 	
-		protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
+	protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
 		NameID key = new NameID(id,fun.name());
 		List<ModuleInfo.Method> funs = functions.get(key);
 		if(funs == null) {
@@ -505,7 +511,8 @@ public class TypeResolution {
 	
 	public void check(TypeDecl d) {		
 		try {
-			Pair<Type,Condition> t = expandAndCheck(d.type());
+			NameID key = new NameID(f.id(),d.name());
+			Pair<Type,Condition> t = expandAndCheck(d.type());			
 			if(d.constraint() != null) {
 				HashMap<String,Type> environment = new HashMap<String,Type>();				
 				environment.put("$", t.first());

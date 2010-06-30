@@ -139,6 +139,13 @@ public class IntegerArithmetic {
 		// value for y. 
 		assertTrue(checkUnsat("int x,y; x < y && y < x+1"));
 	}
+	
+	@Test public void Unsat_26() { 
+		// this should fail because both x and y are assumed to be integer
+		// variables... 
+		assertTrue(checkUnsat("[int] x; int i,i$0; 0 > i && ((0 <= i && 0 > -|x| && 0 > (-|x|+i)) || ((0 > i$0 || 0 <= (-|x|+i$0)) && i==0.0 && 0 > -|x|))"));
+	}			
+	
 	/*
 	 * ============= SAT TESTS ==============
 	 */
