@@ -69,8 +69,8 @@ public class RecursiveType implements NonUnionType {
 			// non-leaf case
 			RecursiveType nt = (RecursiveType) t;			
 			Type nt_type = nt.type();
-			HashMap<String,String> binding = new HashMap();
-			binding.put(nt.name(), name);
+			HashMap<String,Type> binding = new HashMap();
+			binding.put(nt.name(), new RecursiveType(name,null));
 			t = nt_type.substitute(binding);
 		}
 		
@@ -84,13 +84,27 @@ public class RecursiveType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<String, String> binding) {		
-		Type t = type == null ? null : type.substitute(binding);
-		String newname = binding.get(name);
-		if(newname == null) {
-			newname = name;
+	public Type substitute(Map<String, Type> binding) {		
+		// FIXME: Potential for name capture bug here. Uncertain if it can
+		// definitely happen though.			
+		if(type != null) {
+			Type tt = type.substitute(binding);
+			Type t = binding.get(name);
+			String n = name;
+			if(t instanceof RecursiveType) { 
+				// FIXME: somehow this feels like a hack. I'm sure there's a
+				// more elegant way of doing this.
+				RecursiveType rt = (RecursiveType) t;
+				n = rt.name();
+			}
+			return new RecursiveType(n,tt);			
+		} else {
+			Type t = binding.get(name);
+			if(t == null) { return this; }
+			else {
+				return t;
+			}
 		}
-		return new RecursiveType(newname,t);
 	}
 	
 	public <T> Set<T> match(Class<T> t) {

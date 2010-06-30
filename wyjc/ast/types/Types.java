@@ -125,6 +125,14 @@ public class Types {
 		} else if(t instanceof NamedType) {
 			NamedType nt = (NamedType) t;
 			return effectiveTupleType(nt.type(),elem);
+		} else if(t instanceof RecursiveType) {
+			// this is more tricky. We need to unroll the type once to ensure we
+			// don't lose the recursive information.
+			RecursiveType rt = (RecursiveType) t;
+			HashMap<String,Type> binding = new HashMap<String,Type>();
+			binding.put(rt.name(), rt);
+			t = rt.type().substitute(binding);
+			return effectiveTupleType(t,elem);
 		}
 		syntaxError("expecting tuple type, got: " + t,elem);
 		return null;

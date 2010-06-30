@@ -284,16 +284,19 @@ public class TypeResolution {
 	 * @param p
 	 * @return
 	 */
-	protected Pair<Type,Condition> simplifyRecursiveTypes(Pair<Type,Condition> p) {
-		HashMap<String,String> binding = new HashMap<String,String>();
+	protected Pair<Type, Condition> simplifyRecursiveTypes(
+			Pair<Type, Condition> p) {
+		HashMap<String, Type> binding = new HashMap<String, Type>();
 		int nameIdx = 0;
-		for(RecursiveType t : p.first().match(RecursiveType.class)) {
+		for (RecursiveType t : p.first().match(RecursiveType.class)) {
 			String n = t.name();
-			if(!binding.containsKey(n) && nameIdx < names.length) {
-				binding.put(n,names[nameIdx++]);
+			if (!binding.containsKey(n) && nameIdx < names.length) {
+				String name = names[nameIdx++];
+				binding.put(n, new RecursiveType(name, null));
 			}
 		}
-		return new Pair<Type,Condition>(p.first().substitute(binding),p.second());
+		return new Pair<Type, Condition>(p.first().substitute(binding), p
+				.second());
 	}
 	protected static final String[] names = {"X","Y","Z","U","V","W","P","Q","R","S","T"}; 
 	private static boolean isRecursive(NameID root, Type type) {
@@ -1042,7 +1045,7 @@ public class TypeResolution {
 	}
 	
 	protected Pair<Type,Expr> check(TupleAccess e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.source(), environment);		
+		Pair<Type,Expr> lhs = check(e.source(), environment);			
 		TupleType at = Types.effectiveTupleType(lhs.first(),lhs.second()); 		
 		Type et = at.get(e.name());
 		

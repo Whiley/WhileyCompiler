@@ -67,7 +67,7 @@ public class ProcessType implements NonUnionType {
 		return element.isExistential();
 	}
 
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		return new ProcessType(element.substitute(binding));
 	}
 	

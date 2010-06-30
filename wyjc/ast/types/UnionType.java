@@ -101,7 +101,7 @@ public class UnionType implements Type {
 		return false;
 	}
 	
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		HashSet<NonUnionType> ts = new HashSet<NonUnionType>();
 		for (NonUnionType b : types) {
 			ts.add((NonUnionType) b.substitute(binding));

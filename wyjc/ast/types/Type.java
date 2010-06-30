@@ -45,7 +45,7 @@ public interface Type extends UnresolvedType {
 	 * @param binding
 	 * @return
 	 */
-	public abstract Type substitute(Map<String, String> binding);
+	public abstract Type substitute(Map<String, Type> binding);
 
 	/**
 	 * Return every subcomponent of this type which is an instanceof of the

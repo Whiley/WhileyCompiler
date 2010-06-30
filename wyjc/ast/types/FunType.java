@@ -87,7 +87,7 @@ public class FunType implements Type {
 		return false;
 	}
 
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		Type retType = ret.substitute(binding);
 		ArrayList<Type> params = new ArrayList<Type>();
 		for(Type t : parameters) {

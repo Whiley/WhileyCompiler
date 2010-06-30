@@ -88,7 +88,7 @@ public class SetType implements NonUnionType {
 		return r;		
 	}
 	
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		return new SetType(element.substitute(binding));
 	}
 	

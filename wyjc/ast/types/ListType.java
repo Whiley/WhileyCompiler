@@ -64,7 +64,7 @@ public final class ListType extends SetType {
 		return new WListType(element().convert());
 	}
 	
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		return new ListType(element().substitute(binding));
 	}
 	

@@ -91,7 +91,7 @@ public class NamedType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		return new NamedType(module,name,type.substitute(binding));
 	}
 	

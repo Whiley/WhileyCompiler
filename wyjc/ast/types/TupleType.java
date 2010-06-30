@@ -104,7 +104,7 @@ public class TupleType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		HashMap<String,Type> ts = new HashMap<String,Type>();
 		for (Map.Entry<String, Type> e : types.entrySet()) {
 			ts.put(e.getKey(), e.getValue().substitute(binding));

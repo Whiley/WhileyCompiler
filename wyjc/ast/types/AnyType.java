@@ -52,7 +52,7 @@ public class AnyType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		return this;
 	}
 	

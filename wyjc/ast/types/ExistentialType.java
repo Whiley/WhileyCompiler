@@ -56,7 +56,7 @@ public class ExistentialType implements NonUnionType {
 		return true;
 	}
 	
-	public Type substitute(Map<String, String> binding) {
+	public Type substitute(Map<String, Type> binding) {
 		return this;
 	}
 	
