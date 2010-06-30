@@ -35,16 +35,16 @@ import wyone.core.WType;
  * 
  */
 public class RecursiveType implements NonUnionType {	
-	private final NameID name;
+	private final String name;
 	private final Type type; // underlying type
 	
 	// care needed here to avoid capture.
-	public RecursiveType(NameID name, Type type) {						
+	public RecursiveType(String name, Type type) {						
 		this.name = name;
 		this.type = type;		
 	}
 		
-	public NameID name() {
+	public String name() {
 		return name;
 	}
 	
@@ -56,7 +56,7 @@ public class RecursiveType implements NonUnionType {
 		return type.flattern();
 	}
 		
-	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
+	public boolean isSubtype(Type t, Map<String, Type> environment) {
 		// this is a delicate method; don't mess with it unless you know what
 		// you're doing.	
 		if(equals(t)) {
@@ -69,12 +69,12 @@ public class RecursiveType implements NonUnionType {
 			// non-leaf case
 			RecursiveType nt = (RecursiveType) t;			
 			Type nt_type = nt.type();
-			HashMap<NameID,NameID> binding = new HashMap();
+			HashMap<String,String> binding = new HashMap();
 			binding.put(nt.name(), name);
 			t = nt_type.substitute(binding);
 		}
 		
-		environment = new HashMap<NameID,Type>(environment);
+		environment = new HashMap<String,Type>(environment);
 		// FIXME: potential for variable capture here?
 		environment.put(name, type);
 		return type.isSubtype(t,environment);				
@@ -84,9 +84,9 @@ public class RecursiveType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<NameID,NameID> binding) {		
+	public Type substitute(Map<String, String> binding) {		
 		Type t = type == null ? null : type.substitute(binding);
-		NameID newname = binding.get(name);
+		String newname = binding.get(name);
 		if(newname == null) {
 			newname = name;
 		}

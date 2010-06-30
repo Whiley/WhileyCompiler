@@ -19,7 +19,6 @@
 package wyjc.ast.types;
 
 import wyone.core.WType;
-import wyjc.util.NameID;
 import java.util.*;
 
 /**
@@ -34,7 +33,7 @@ public interface Type extends UnresolvedType {
 	 * @param t
 	 * @return
 	 */
-	public abstract boolean isSubtype(Type t, Map<NameID,Type> environment);
+	public abstract boolean isSubtype(Type t, Map<String, Type> environment);
 	
 	/**
 	 * Strip off all named types.
@@ -46,7 +45,7 @@ public interface Type extends UnresolvedType {
 	 * @param binding
 	 * @return
 	 */
-	public abstract Type substitute(Map<NameID,NameID> binding);
+	public abstract Type substitute(Map<String, String> binding);
 
 	/**
 	 * Return every subcomponent of this type which is an instanceof of the

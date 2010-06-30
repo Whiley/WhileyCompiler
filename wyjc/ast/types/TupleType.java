@@ -20,7 +20,6 @@ package wyjc.ast.types;
 
 import java.util.*;
 
-import wyjc.util.NameID;
 import wyjc.util.Pair;
 import wyone.core.WType;
 import wyone.theory.tuple.WTupleType;
@@ -56,7 +55,7 @@ public class TupleType implements NonUnionType {
 		return types.hashCode();
 	}	
 	
-	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
+	public boolean isSubtype(Type t, Map<String, Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -105,7 +104,7 @@ public class TupleType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<NameID,NameID> binding) {
+	public Type substitute(Map<String, String> binding) {
 		HashMap<String,Type> ts = new HashMap<String,Type>();
 		for (Map.Entry<String, Type> e : types.entrySet()) {
 			ts.put(e.getKey(), e.getValue().substitute(binding));

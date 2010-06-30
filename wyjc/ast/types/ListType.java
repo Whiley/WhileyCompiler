@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import wyjc.util.NameID;
 import wyone.core.WType;
 import wyone.theory.list.WListType;
 
@@ -41,7 +40,7 @@ public final class ListType extends SetType {
 		return at.element().equals(element());
 	}
 		
-	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
+	public boolean isSubtype(Type t, Map<String, Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		}
@@ -65,7 +64,7 @@ public final class ListType extends SetType {
 		return new WListType(element().convert());
 	}
 	
-	public Type substitute(Map<NameID,NameID> binding) {
+	public Type substitute(Map<String, String> binding) {
 		return new ListType(element().substitute(binding));
 	}
 	

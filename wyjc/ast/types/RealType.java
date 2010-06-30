@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import wyjc.util.NameID;
 import wyone.core.WType;
 import wyone.theory.numeric.WRealType;
 
@@ -40,7 +39,7 @@ public final class RealType implements NonUnionType {
 		return 1;
 	}
 	
-	public boolean isSubtype(Type t, Map<NameID,Type> environment) {
+	public boolean isSubtype(Type t, Map<String, Type> environment) {
 		if(t instanceof NamedType) {
 			t = ((NamedType)t).type();
 		} else if(t instanceof ProcessType) {
@@ -58,7 +57,7 @@ public final class RealType implements NonUnionType {
 		return false;
 	}
 	
-	public Type substitute(Map<NameID,NameID> binding) {
+	public Type substitute(Map<String, String> binding) {
 		return this;
 	}
 	

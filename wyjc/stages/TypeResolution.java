@@ -307,7 +307,7 @@ public class TypeResolution {
 		if(cached != null) { return cached; }		
 		
 		// following is needed to terminate any recursion
-		cache.put(key, new Pair(new RecursiveType(key,null),null));
+		cache.put(key, new Pair(new RecursiveType(key.toString(),null),null));
 		
 		// Ok, expand the type properly then
 		Pair<UnresolvedType,Condition> ut = unresolved.get(key);
@@ -325,7 +325,7 @@ public class TypeResolution {
 		
 		if(isRecursive(key,t.first())) {
 			// recursive case
-			RecursiveType rt = new RecursiveType(key,t.first());
+			RecursiveType rt = new RecursiveType(key.toString(),t.first());
 			t = new Pair(rt,t.second());
 		} 
 		

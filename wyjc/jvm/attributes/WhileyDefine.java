@@ -140,12 +140,9 @@ public class WhileyDefine implements BytecodeAttribute {
 			addPoolItems(lt.type(),constantPool);
 		} else if(type instanceof RecursiveType) {
 			RecursiveType lt = (RecursiveType) type;
-			NameID name = lt.name();
-			Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
-			Constant.addPoolItem(utf8,constantPool);
-			utf8 = new Constant.Utf8(name.name());	
-			Constant.addPoolItem(utf8,constantPool);			
-			Constant.addPoolItem(utf8,constantPool);
+			String name = lt.name();
+			Constant.Utf8 utf8 = new Constant.Utf8(name);
+			Constant.addPoolItem(utf8,constantPool);					
 			if(lt.type() != null) {
 				addPoolItems(lt.type(),constantPool);
 			}
@@ -216,11 +213,9 @@ public class WhileyDefine implements BytecodeAttribute {
 			} else {
 				writer.write_u1(RECURSIVE_LEAF);
 			}
-			NameID id = st.name();
-			Constant.Utf8 utf8 = new Constant.Utf8(id.module().toString());
-			writer.write_u2(constantPool.get(utf8));
-			utf8 = new Constant.Utf8(id.name());
-			writer.write_u2(constantPool.get(utf8));
+			String name = st.name();
+			Constant.Utf8 utf8 = new Constant.Utf8(name);
+			writer.write_u2(constantPool.get(utf8));			
 			if(st.type() != null) {
 				write(st.type(),writer,constantPool);
 			}
@@ -335,17 +330,15 @@ public class WhileyDefine implements BytecodeAttribute {
 					return new NamedType(module,name,et);
 				}
 				case RECURSIVE_TYPE:
-				{					
-					ModuleID module = readModule(input,constantPool);
+				{										
 					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
 					et = readType(input,constantPool);
-					return new RecursiveType(new NameID(module,name),et);
+					return new RecursiveType(name,et);
 				}
 				case RECURSIVE_LEAF:
-				{					
-					ModuleID module = readModule(input,constantPool);
+				{										
 					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
-					return new RecursiveType(new NameID(module,name),null);					
+					return new RecursiveType(name,null);					
 				}
 				case FUN_TYPE:
 					Type ret = readType(input,constantPool);
