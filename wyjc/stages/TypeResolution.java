@@ -271,13 +271,35 @@ public class TypeResolution {
 	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {		
 		HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
 		Pair<Type,Condition> t = expandTypeHelper(key,cache);		
+		t = simplifyRecursiveTypes(t);
 		types.put(key,t);							
 		return t;
 	}
-	
+
+	/**
+	 * The purpose of this method is to simplify the name of any recursive type
+	 * variables so that, instead of using the full module and name for each
+	 * variable, we use something like X, Y, etc.
+	 * 
+	 * @param p
+	 * @return
+	 */
+	protected Pair<Type,Condition> simplifyRecursiveTypes(Pair<Type,Condition> p) {
+		HashMap<String,String> binding = new HashMap<String,String>();
+		int nameIdx = 0;
+		for(RecursiveType t : p.first().match(RecursiveType.class)) {
+			String n = t.name();
+			if(!binding.containsKey(n) && nameIdx < names.length) {
+				binding.put(n,names[nameIdx++]);
+			}
+		}
+		return new Pair<Type,Condition>(p.first().substitute(binding),p.second());
+	}
+	protected static final String[] names = {"X","Y","Z","U","V","W","P","Q","R","S","T"}; 
 	private static boolean isRecursive(NameID root, Type type) {
+		String rootName = root.toString();
 		for(RecursiveType rt : type.match(RecursiveType.class)) {
-			if(rt.name().equals(root)) {
+			if(rt.name().equals(rootName)) {
 				return true;
 			}
 		}
