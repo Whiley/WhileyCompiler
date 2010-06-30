@@ -8,5 +8,3 @@ define expr as int | binop
 void System::main([string] args):
     expr e1 = (op:0,left:(op:MUL,left:2,right:2),right:2)
     print str(e1)
-    print str(e2)
-    print str(e3)

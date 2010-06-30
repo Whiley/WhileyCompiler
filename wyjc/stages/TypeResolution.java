@@ -108,7 +108,7 @@ public class TypeResolution {
 				if(p.type() == Types.T_VOID) {
 					syntaxError("parameter cannot be declared void",f);
 				} 
-				Pair<Type,Condition> t = expandType(p.type(),new HashMap());				
+				Pair<Type,Condition> t = expandType(p.type(),types);				
 				environment.put(p.name(), t.first());						
 				p.attributes().add(new TypeAttr(t.first()));				
 				paramTypes.add(t.first());
@@ -120,7 +120,7 @@ public class TypeResolution {
 		FunDecl.Return ret = f.returnType();
 		Pair<Type,Condition> r_t;
 		try {
-			r_t = expandType(ret.type(),new HashMap());
+			r_t = expandType(ret.type(),types);
 		} catch(ResolveError rex) {
 			syntaxError(rex.getMessage(),ret,rex);
 			return null; // unreachable
@@ -133,7 +133,7 @@ public class TypeResolution {
 		Type recType = null;
 		if(rec != null) {
 			try {
-				r_t = expandType(rec.type(),new HashMap());
+				r_t = expandType(rec.type(),types);
 				recType = r_t.first();
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),ret,rex);
@@ -479,7 +479,7 @@ public class TypeResolution {
 	 * This method expands a type, whilst also checking that the expanded constraint is type safe. 
 	 */
 	protected Pair<Type,Condition> expandAndCheck(UnresolvedType t) throws ResolveError {				
-		Pair<Type,Condition> tc = expandType(t,new HashMap());		
+		Pair<Type,Condition> tc = expandType(t,types);		
 		Condition c = tc.second();
 		if(c != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
@@ -508,7 +508,7 @@ public class TypeResolution {
 				} else if(d instanceof ConstDecl) {					
 					check((ConstDecl)d, wf.id());
 				} else if(d instanceof TypeDecl) {					
-					check((TypeDecl)d,wf);
+					check((TypeDecl)d);
 				} else {					
 					check((FunDecl)d);
 				}				
@@ -533,11 +533,10 @@ public class TypeResolution {
 		}
 	}
 	
-	public void check(TypeDecl d, UnresolvedWhileyFile wf) {		
-		try {
-			NameID key = new NameID(wf.id(),d.name());
-			Pair<Type,Condition> t = types.get(key);
-			expandAndCheck(d.type());			
+	public void check(TypeDecl d) {		
+		try {			
+			Pair<Type,Condition> t = expandAndCheck(d.type());
+						
 			if(d.constraint() != null) {
 				HashMap<String,Type> environment = new HashMap<String,Type>();				
 				environment.put("$", t.first());
