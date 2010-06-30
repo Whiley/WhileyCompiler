@@ -270,8 +270,7 @@ public class TypeResolution {
 	
 	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {		
 		HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
-		Pair<Type,Condition> t = expandTypeHelper(key,cache);
-		System.out.println("EXPANDING TYPE: " + key + " ==> " + t.first());
+		Pair<Type,Condition> t = expandTypeHelper(key,cache);		
 		types.put(key,t);							
 		return t;
 	}
@@ -484,7 +483,7 @@ public class TypeResolution {
 				} else if(d instanceof ConstDecl) {					
 					check((ConstDecl)d, wf.id());
 				} else if(d instanceof TypeDecl) {					
-					check((TypeDecl)d);
+					check((TypeDecl)d,wf);
 				} else {					
 					check((FunDecl)d);
 				}				
@@ -509,10 +508,11 @@ public class TypeResolution {
 		}
 	}
 	
-	public void check(TypeDecl d) {		
+	public void check(TypeDecl d, UnresolvedWhileyFile wf) {		
 		try {
-			NameID key = new NameID(f.id(),d.name());
-			Pair<Type,Condition> t = expandAndCheck(d.type());			
+			NameID key = new NameID(wf.id(),d.name());
+			Pair<Type,Condition> t = types.get(key);
+			expandAndCheck(d.type());			
 			if(d.constraint() != null) {
 				HashMap<String,Type> environment = new HashMap<String,Type>();				
 				environment.put("$", t.first());
