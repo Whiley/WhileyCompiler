@@ -11,7 +11,7 @@ For detail, see `comment-dwim'."
      (comment-dwim arg)))
 
 (defvar whiley-keywords
-  '("return" "if" "else" "define" "assert" "as" "package" "import" "print" "where" "ensures" "requires" "public" "visible" "this" "str" "spawn" "in" "no" "some")
+  '("return" "if" "else" "define" "assert" "as" "package" "import" "print" "where" "ensures" "requires" "public" "visible" "this" "str" "spawn" "in" "no" "some" "false" "true")
     "Whiley keywords.")
 
 (defvar whiley-types

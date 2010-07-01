@@ -565,6 +565,10 @@ public class ClassFileBuilder {
 			translateCondition((RealGreaterThan)cond,trueLabel,slots,environment, bytecodes);
 		} else if(cond instanceof RealGreaterThanEquals) {
 			translateCondition((RealGreaterThanEquals)cond,trueLabel,slots,environment, bytecodes);
+		} else if(cond instanceof TypeEquals) {
+			translateCondition((TypeEquals)cond,trueLabel,slots,environment, bytecodes);
+		} else if(cond instanceof TypeGate) {
+			translateCondition((TypeGate)cond,trueLabel,slots,environment, bytecodes);
 		} else {
 			// default case
 			translate(cond,slots,environment,bytecodes);
@@ -765,6 +769,32 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));		
 		bytecodes.add(new Bytecode.If(Bytecode.If.GE,trueLabel));
+	}
+	
+	protected void translateCondition(TypeEquals e, String trueLabel,
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		translate(e.lhs(), slots, environment,bytecodes);					
+		String exitLabel = freshLabel();		
+		translateTypeTest(e.lhsTest(), slots,
+				environment, bytecodes);
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,exitLabel));			
+		environment = (HashMap) environment.clone();
+		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);
+		translate(e.rhs(), slots, environment,bytecodes);
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));	
+	}
+	
+	protected void translateCondition(TypeGate e, String trueLabel,
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		translate(e.lhs(), slots, environment,bytecodes);							
+		translateTypeTest(e.lhsTest(), slots,
+				environment, bytecodes);
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));			
+		environment = (HashMap) environment.clone();
+		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);		
+		translate(e.rhs(), slots, environment,bytecodes);
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));		
 	}
 	
 	private void translate(Expr expr, HashMap<String, Integer> slots,
@@ -1972,9 +2002,8 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {	
 		if(selector instanceof Variable) {
 			Variable v = (Variable) selector;
-			environment.put(v.name(), type);
 			typeInferenceConversion(v,type,environment,slots,bytecodes);
-					
+			environment.put(v.name(), type);								
 		} else {
 			// do nothing for now.  this is dangerous and could be improved
 		}
