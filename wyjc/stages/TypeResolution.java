@@ -302,6 +302,12 @@ public class TypeResolution {
 			}
 		}		
 		
+		Type ntype = p.first().substitute(t_binding);
+		
+		if(p.second() == null) {
+			return new Pair<Type, Condition>(ntype,p.second());
+		}
+		
 		// Conditions (e.g. type gates) are difficult, since they involve types
 		// that were generated during the type graph traversal. This means that
 		// they may contain "open" recursive types. That is, types whose parent
@@ -315,13 +321,13 @@ public class TypeResolution {
 		//
 		// This is what the r_binding is for ---> closing the open loops.
 
-		HashMap<Expr,Expr> c_binding = new HashMap();
+		HashMap<Expr,Expr> c_binding = new HashMap();		
 		for (TypeGate tg : p.second().match(TypeGate.class)) {
 			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
 			c_binding.put(tg, new TypeGate(t,tg.lhs(),tg.rhs(),tg.attributes()));
 		}
 		
-		return new Pair<Type, Condition>(p.first().substitute(t_binding),
+		return new Pair<Type, Condition>(ntype,
 				(Condition) p.second().replace(c_binding));
 	}
 	protected static final String[] names = {"X","Y","Z","U","V","W","P","Q","R","S","T"}; 
