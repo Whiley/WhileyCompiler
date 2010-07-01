@@ -19,6 +19,7 @@
 package wyjc.testing.tests;
 
 import org.junit.*;
+
 import wyjc.testing.TestHarness;
 
 public class DefiniteStaticValidTests extends TestHarness {
@@ -186,6 +187,11 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void TupleAssign_Valid_5_StaticTest() { verificationRunTest("TupleAssign_Valid_5"); }
  @Test public void TupleConversion_Valid_1_StaticTest() { verificationRunTest("TupleConversion_Valid_1"); }
  @Test public void TupleDefine_Valid_1_StaticTest() { verificationRunTest("TupleDefine_Valid_1"); }
+ @Test public void TypeEquals_Valid_1_StaticTest() { verificationRunTest("TypeEquals_Valid_1"); }
+ @Test public void TypeEquals_Valid_2_StaticTest() { verificationRunTest("TypeEquals_Valid_2"); }
+ @Test public void TypeEquals_Valid_3_StaticTest() { verificationRunTest("TypeEquals_Valid_3"); }
+ @Test public void TypeEquals_Valid_4_StaticTest() { verificationRunTest("TypeEquals_Valid_4"); }
+ @Test public void TypeEquals_Valid_5_StaticTest() { verificationRunTest("TypeEquals_Valid_5"); }
  @Test public void UnionType_Valid_1_StaticTest() { verificationRunTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_10_StaticTest() { verificationRunTest("UnionType_Valid_10"); }
  @Test public void UnionType_Valid_11_StaticTest() { verificationRunTest("UnionType_Valid_11"); }

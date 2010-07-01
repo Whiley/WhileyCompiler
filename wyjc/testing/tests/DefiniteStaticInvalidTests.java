@@ -95,6 +95,7 @@ public class DefiniteStaticInvalidTests extends TestHarness {
  @Test public void TupleAssign_Invalid_1_StaticTest() { verificationFailTest("TupleAssign_Invalid_1"); }
  @Test public void TupleAssign_Invalid_2_StaticTest() { verificationFailTest("TupleAssign_Invalid_2"); }
  @Test public void TupleAssign_Invalid_3_StaticTest() { verificationFailTest("TupleAssign_Invalid_3"); }
+ @Test public void TypeEquals_Invalid_3_StaticTest() { verificationFailTest("TypeEquals_Invalid_3"); }
  @Test public void UnionType_Invalid_1_StaticTest() { verificationFailTest("UnionType_Invalid_1"); }
  @Test public void VarDecl_Invalid_1_StaticTest() { verificationFailTest("VarDecl_Invalid_1"); } 
 }

@@ -901,6 +901,8 @@ public class ClassFileBuilder {
 				translate((Variable)expr, slots, environment, bytecodes);
 			} else if(expr instanceof Spawn) {
 				translate((Spawn)expr, slots, environment, bytecodes);
+			} else if(expr instanceof TypeEquals) {
+				translate((TypeEquals)expr, slots, environment, bytecodes);
 			} else if(expr instanceof ProcessAccess) {
 				translate((ProcessAccess)expr, slots, environment, bytecodes);
 			} else {
@@ -1903,7 +1905,13 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
 	}
-	
+	protected void translate(TypeEquals e,
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		// translate(e.lhs(), slots, environment,bytecodes);	
+
+		// FIXME: total hack for now
+		bytecodes.add(new Bytecode.LoadConst(new Boolean(true)));
+	}
 	protected void translate(ProcessAccess a,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {				
 		translate(a.mhs(), slots, environment,bytecodes);

@@ -60,6 +60,7 @@ public class Simplifier {
 				|| c instanceof RealGreaterThanEquals
 				|| c instanceof TupleEquals
 				|| c instanceof TupleNotEquals
+				|| c instanceof TypeEquals
 				|| c instanceof ListEquals
 				|| c instanceof ListNotEquals
 				|| c instanceof ListElementOf
@@ -105,7 +106,8 @@ public class Simplifier {
 	protected Condition notElimination(Not ac) {		
 		Condition c = ac.mhs();
 		if (c instanceof Subset || c instanceof SubsetEq
-				|| c instanceof ListElementOf || c instanceof SetElementOf) {
+				|| c instanceof ListElementOf || c instanceof SetElementOf
+				|| c instanceof TypeEquals) {
 			return ac;
 		} else {
 			return invert(ac.mhs());

@@ -464,6 +464,8 @@ public class RuntimeCheckGenerator {
 				checks = checkgen((TupleVal)e,environment);
 			} else if(e instanceof TupleGenerator) {				
 				checks = checkgen((TupleGenerator)e,environment);
+			} else if(e instanceof TypeEquals) {				
+				checks = checkgen((TypeEquals)e,environment);
 			} else if(e instanceof Spawn) {				
 				checks = checkgen((Spawn)e,environment);
 			} else if (e instanceof ProcessAccess) {
@@ -664,6 +666,11 @@ public class RuntimeCheckGenerator {
 
 		return checks;
 	}	
+	
+	protected List<Check> checkgen(TypeEquals e,
+			HashMap<String, Type> environment) {
+		return checkgen(e.lhs(), environment);
+	}
 	
 	protected void addCheck(String msg, Condition c,
 			HashMap<String, Type> environment, SyntacticElement elem,

@@ -187,6 +187,11 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void TupleAssign_Valid_5_RunTest() { runTest("TupleAssign_Valid_5"); }
  @Test public void TupleConversion_Valid_1_RunTest() { runTest("TupleConversion_Valid_1"); }
  @Test public void TupleDefine_Valid_1_RunTest() { runTest("TupleDefine_Valid_1"); }
+ @Test public void TypeEquals_Valid_1_RunTest() { runTest("TypeEquals_Valid_1"); }
+ @Test public void TypeEquals_Valid_2_RunTest() { runTest("TypeEquals_Valid_2"); }
+ @Test public void TypeEquals_Valid_3_RunTest() { runTest("TypeEquals_Valid_3"); }
+ @Test public void TypeEquals_Valid_4_RunTest() { runTest("TypeEquals_Valid_4"); }
+ @Test public void TypeEquals_Valid_5_RunTest() { runTest("TypeEquals_Valid_5"); }
  @Test public void UnionType_Valid_1_RunTest() { runTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_10_RunTest() { runTest("UnionType_Valid_10"); }
  @Test public void UnionType_Valid_11_RunTest() { runTest("UnionType_Valid_11"); }
