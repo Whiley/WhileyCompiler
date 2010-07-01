@@ -21,17 +21,17 @@
 package whiley.lang
 
 // The purpose of this module is to provide some standard types.
-define int where $ >=-128 && $ <= 127 as int8
-define int where $ >=-32768 && $ <= 32768 as int16
-define int where $ >=-2147483648 && $ <= 2147483647 as int32
-define int where $ >= -9223372036854775808 && $ <= 9223372036854775807 as int64
+define int8 as int where $ >=-128 && $ <= 127
+define int16 as int where $ >=-32768 && $ <= 32768
+define int32 as int where $ >=-2147483648 && $ <= 2147483647
+define int64 as int where $ >= -9223372036854775808 && $ <= 9223372036854775807
 
-define int where $ >=0 && $ <= 255 as byte
-define int where $ >=0 && $ <= 255 as uint8
-define int where $ >= 0 && $ <= 65535 as uint16
-define int where $ >= 0 && $ <= 4294967295 as uint32
-define int where $ >= 0 && $ <= 18446744073709551615 as uint64
+define byte as int where $ >=0 && $ <= 255
+define uint8 as int where $ >=0 && $ <= 255
+define uint16 as int where $ >= 0 && $ <= 65535
+define uint32 as int where $ >= 0 && $ <= 4294967295
+define uint64 as int where $ >= 0 && $ <= 18446744073709551615
 
-define int where $ >= 0 as nat
+define nat as int where $ >= 0
 
-define ? as error
+define error as ?

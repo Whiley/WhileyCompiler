@@ -20,4 +20,13 @@
 
 package whiley.lang
 
-define System as process ?
+define char as int where $ >0 && $ <= 1114111
+
+bool isUpperCase(char c):
+    return 'A' <= c && c <= 'Z'
+
+bool isLowerCase(char c):
+    return 'a' <= c && c <= 'z'
+
+bool isLetter(char c):
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')

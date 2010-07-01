@@ -20,8 +20,7 @@
 
 package whiley.lang
 
-define int where $ >0 && $ <= 1114111 as char
-define [char] as string
+define string as [char]
 
 public string str(* item):
     extern jvm:
