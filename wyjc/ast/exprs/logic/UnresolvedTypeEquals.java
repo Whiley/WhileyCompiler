@@ -28,16 +28,9 @@ import java.util.Set;
 import wyjc.ModuleLoader;
 import wyjc.ast.attrs.Attribute;
 import wyjc.ast.attrs.SyntacticElementImpl;
-import wyjc.ast.exprs.Condition;
-import wyjc.ast.exprs.Expr;
-import wyjc.ast.exprs.LVal;
-import wyjc.ast.exprs.Value;
-import wyjc.ast.exprs.Variable;
+import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.tuple.TupleAccess;
-import wyjc.ast.types.BoolType;
-import wyjc.ast.types.TupleType;
-import wyjc.ast.types.Type;
-import wyjc.ast.types.Types;
+import wyjc.ast.types.*;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;
 import wyone.core.WEnvironment;
@@ -45,17 +38,17 @@ import wyone.core.WExpr;
 import wyone.theory.logic.WBool;
 import wyone.theory.logic.WFormula;
 
-public class TypeEquals extends SyntacticElementImpl implements Condition {
-	private Type rhs;
+public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condition {
+	private UnresolvedType rhs;
 	private Expr lhs;
 	
-	public TypeEquals(Expr lhs, Type rhs, Attribute... attributes) {
+	public UnresolvedTypeEquals(Expr lhs, UnresolvedType rhs, Attribute... attributes) {
 		super(attributes);				
 		this.lhs = lhs;
 		this.rhs = rhs;
 	}
 
-	public TypeEquals(Expr lhs, Type rhs, Collection<Attribute> attributes) {
+	public UnresolvedTypeEquals(Expr lhs, UnresolvedType rhs, Collection<Attribute> attributes) {
 		super(attributes);	
 		this.lhs = lhs;
 		this.rhs = rhs;		
@@ -69,13 +62,13 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		return lhs;
 	}
 	
-	public Type rhs() {
+	public UnresolvedType rhs() {
 		return rhs;
 	}
 	
 	public Condition substitute(Map<String,Expr> binding) {		
 		Expr l = lhs.substitute(binding);
-		return new TypeEquals(l,rhs,attributes());
+		return new UnresolvedTypeEquals(l,rhs,attributes());
 	}
 	
 	public Expr replace(Map<Expr, Expr> binding) {
@@ -84,13 +77,12 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 			return t;
 		} else {			
 			Expr l = lhs.replace(binding);
-			return new TypeEquals(l,rhs, attributes());
+			return new UnresolvedTypeEquals(l,rhs, attributes());
 		}
 	}
 	
 	public <T> List<T> match(Class<T> match) {
-		List<T> matches = lhs.match(match);
-		matches.addAll(rhs.match(match));
+		List<T> matches = lhs.match(match);		
 		if(match.isInstance(this)) {
 			matches.add((T)this);
 		}
@@ -102,16 +94,7 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 	}
 	
 	public Condition reduce(Map<String, Type> environment) {
-		Expr l = lhs.reduce(environment);				
-		
-		Type t = l.type(environment);
-		
-		if (rhs.isSubtype(t, Collections.EMPTY_MAP)) {			
-			return new BoolVal(true);
-		} else if (!t.isSubtype(rhs, Collections.EMPTY_MAP) || l instanceof Value) {
-			return new BoolVal(false);
-		}
-		return new TypeEquals(lhs,rhs, attributes());
+		return this;
 	}
 	
 	public String toString() {
@@ -120,13 +103,13 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 
 	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		// need to do better here.
-		return new Triple(WBool.TRUE,WBool.TRUE,new WEnvironment());		
+		throw new IllegalArgumentException("Cannot convert UnresolvedTypeEquals");		
 	}
 
 	public Triple<WFormula, WFormula, WEnvironment> convertCondition(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		// need to do better here.
-		return new Triple(WBool.TRUE,WBool.TRUE,new WEnvironment());		
+		throw new IllegalArgumentException("Cannot convert UnresolvedTypeEquals");		
 	}  		
 }

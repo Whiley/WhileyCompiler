@@ -271,6 +271,8 @@ public class NameResolution {
 				return resolve((TupleGenerator) e, environment, imports);
 			} else if (e instanceof TupleAccess) {
 				return resolve((TupleAccess) e, environment, imports);
+			} else if (e instanceof UnresolvedTypeEquals) {
+				return resolve((UnresolvedTypeEquals) e, environment, imports);
 			} else {				
 				syntaxError("unknown expression encountered: "
 							+ e.getClass().getName(), e);				
@@ -475,6 +477,12 @@ public class NameResolution {
 	protected Expr resolve(TupleAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		Expr src = resolve(sg.source(),environment,imports);		
 		return new TupleAccess(src,sg.name(),sg.attributes());
+	}
+	
+	protected Expr resolve(UnresolvedTypeEquals sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+		Expr src = resolve(sg.lhs(),environment,imports);		
+		resolve(sg.rhs(),imports);
+		return new UnresolvedTypeEquals(src,sg.rhs(),sg.attributes());
 	}
 	
 	protected void resolve(UnresolvedType t, ArrayList<PkgID> imports) throws ResolveError {

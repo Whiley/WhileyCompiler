@@ -850,6 +850,8 @@ public class TypeResolution {
 				retType = check((BinOp) e, environment);
 			} else if (e instanceof IntNegate) {
 				retType = check((IntNegate) e, environment);
+			} else if(e instanceof UnresolvedTypeEquals) {
+				retType = check((UnresolvedTypeEquals)e,environment);				
 			} else if (e instanceof Invoke) {
 				retType = check((Invoke) e, environment);
 				if (retType.first() == Types.T_VOID) {
@@ -1206,7 +1208,7 @@ public class TypeResolution {
 			
 			return new Pair(lhst, new SetDifference( lhs.second(),
 					 rhs.second(), e.attributes()));
-		}  
+		} 
 		
 		Type lhs_t = flattern(lhs.first());
 		Type rhs_t = flattern(rhs.first());						
@@ -1390,6 +1392,23 @@ public class TypeResolution {
 				
 		syntaxError("cannot add types " + lhs.first() + " and " + rhs.first(),e);
 		return null;
+	}
+	
+	protected Pair<Type, Expr> check(UnresolvedTypeEquals ueq,
+			HashMap<String, Type> environment) throws ResolveError {
+		Pair<Type, Expr> lhs = check(ueq.lhs(), environment);
+		Pair<Type, Condition> rhs = expandAndCheck(ueq.rhs());
+		Type lhs_t = lhs.first();
+		Type rhs_t = rhs.first();
+
+		// now check it makes sense
+		if (!lhs_t.isSubtype(rhs_t, Collections.EMPTY_MAP)
+				&& !rhs_t.isSubtype(lhs_t, Collections.EMPTY_MAP)) {
+			syntaxError("cannot match type " + lhs_t + " against " + rhs_t, ueq);
+		}
+
+		return new Pair<Type, Expr>(Types.T_BOOL, new TypeEquals(lhs.second(),
+				rhs_t, ueq.attributes()));
 	}
 	
 	protected Pair<Type,Expr> check(Variable v, HashMap<String,Type> environment) {

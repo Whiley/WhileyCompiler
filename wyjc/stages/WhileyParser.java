@@ -677,6 +677,10 @@ public class WhileyParser {
 			match(NotEquals.class);			
 			Expr rhs = parseMulDivExpression();			
 			return new IntNotEquals( lhs,  rhs, sourceAttr(start,index-1));
+		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.TypeEquals) {
+			match(WhileyLexer.TypeEquals.class);			
+			UnresolvedType rhs = parseType();
+			return new wyjc.ast.exprs.logic.UnresolvedTypeEquals( lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
 			match(WhileyLexer.ElemOf.class);			
 			Expr rhs = parseMulDivExpression();

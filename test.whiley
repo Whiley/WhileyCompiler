@@ -2,9 +2,9 @@ define bop as (int x, int y) where x > 0
 define expr as int|bop
 
 void f(expr e):
-    if e is int:
+    if e ~= int:
         print "GOT INT"
-    else if e is bop:
+    else if e ~= bop:
         print "GOT BOB"
     else:
         print "GOT SOMETHING ELSE?"
