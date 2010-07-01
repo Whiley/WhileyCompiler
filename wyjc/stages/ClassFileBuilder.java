@@ -1907,7 +1907,7 @@ public class ClassFileBuilder {
 				Bytecode.SPECIAL));
 	}
 	protected void translate(TypeEquals e,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {		
 		translate(e.lhs(), slots, environment,bytecodes);					
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
@@ -1990,9 +1990,10 @@ public class ClassFileBuilder {
 		if(slots != null) {			
 			// FIXME: can eliminate this in many more circumstances
 			translate(v,slots,environment,bytecodes);
-			Bytecode.CheckCast cast = new Bytecode.CheckCast(convertType(type)); 
-			Bytecode.Store store = new Bytecode.Store(slots.get(v.name()), convertType(type));
-			bytecodes.add(cast);
+			
+			addReadConversion(type,bytecodes);			 
+			Bytecode.Store store = new Bytecode.Store(slots.get(v.name()),
+					convertType(type));			
 			bytecodes.add(store);	
 		}	
 	}
