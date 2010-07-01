@@ -377,26 +377,23 @@ public class ClassFileBuilder {
 	
 	private void translate(Assign stmt,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		Type t = stmt.lhs().type(environment);
+		Type lhs_t = stmt.lhs().type(environment);
+		Type rhs_t = stmt.rhs().type(environment);
 		
 		if(stmt.lhs() instanceof Variable) {
 			Variable v = (Variable) stmt.lhs();
 			int slot = slots.get(v.name());						
 			translate(stmt.rhs(), slots, environment, bytecodes);
-			Type rhs_t = stmt.rhs().type(environment);
 			cloneRHS(rhs_t,bytecodes);
 			Bytecode.Store b = new Bytecode.Store(slot, convertType(rhs_t));
-			bytecodes.add(b);
-			// finally, update rhs for type inference
-			environment.put(v.name(), rhs_t);
-			
+			bytecodes.add(b);		
 		} else if(stmt.lhs() instanceof ListAccess) {
 			ListAccess la = (ListAccess) stmt.lhs();
 			translate(la.source(), slots, environment, bytecodes);
 			translate(la.index(), slots, environment, bytecodes);
 			translate(stmt.rhs(), slots, environment, bytecodes);
-			cloneRHS(t,bytecodes);			
-			addWriteConversion(t,bytecodes);			
+			cloneRHS(lhs_t,bytecodes);			
+			addWriteConversion(lhs_t,bytecodes);			
 			JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_INTEGER,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.VIRTUAL));		
@@ -407,8 +404,8 @@ public class ClassFileBuilder {
 			convert(Types.T_ANY,la.source(), slots, environment, bytecodes);
 			bytecodes.add(new Bytecode.LoadConst(la.name()));
 			translate(stmt.rhs(), slots, environment, bytecodes);
-			cloneRHS(t,bytecodes);			
-			addWriteConversion(t,bytecodes);			
+			cloneRHS(lhs_t,bytecodes);			
+			addWriteConversion(lhs_t,bytecodes);			
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "put", ftype,
 					Bytecode.VIRTUAL));
@@ -416,6 +413,8 @@ public class ClassFileBuilder {
 		} else {
 			syntaxError("assignment of type not implemented: " + stmt.lhs(),stmt);
 		}
+		
+		typeInference(stmt.lhs(),rhs_t,environment);
 	}
 
 	private void cloneRHS(Type t, ArrayList<Bytecode> bytecodes) {
@@ -901,6 +900,8 @@ public class ClassFileBuilder {
 				translate((Variable)expr, slots, environment, bytecodes);
 			} else if(expr instanceof Spawn) {
 				translate((Spawn)expr, slots, environment, bytecodes);
+			} else if(expr instanceof TypeEquals) {
+				translate((TypeEquals)expr, slots, environment, bytecodes);
 			} else if(expr instanceof TypeGate) {
 				translate((TypeGate)expr, slots, environment, bytecodes);
 			} else if(expr instanceof ProcessAccess) {
@@ -1905,7 +1906,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
 	}
-	protected void translate(TypeGate e,
+	protected void translate(TypeEquals e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		//translate(e.lhs(), slots, environment,bytecodes);			
 		// FIXME: total hack for now
@@ -1916,6 +1917,24 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(0));
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
+		environment = (HashMap) environment.clone();
+		typeInference(e.lhs(),e.lhsTest(),environment);
+		translate(e.rhs(), slots, environment,bytecodes);
+		bytecodes.add(new Bytecode.Label(exitLabel));		
+	}
+	protected void translate(TypeGate e,
+			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		//translate(e.lhs(), slots, environment,bytecodes);			
+		// FIXME: total hack for now
+		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
+		String exitLabel = freshLabel();
+		String trueLabel = freshLabel();
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));
+		bytecodes.add(new Bytecode.LoadConst(1));
+		bytecodes.add(new Bytecode.Goto(exitLabel));
+		bytecodes.add(new Bytecode.Label(trueLabel));
+		environment = (HashMap) environment.clone();
+		typeInference(e.lhs(),e.lhsTest(),environment);
 		translate(e.rhs(), slots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
@@ -1929,7 +1948,20 @@ public class ClassFileBuilder {
 		ProcessType pt = (ProcessType) a.mhs().type(environment);
 		addReadConversion(pt.element(), bytecodes);	
 	}
-		
+	
+	// the purpose of the type inference method is to update the known type of
+	// an expression as a result of an assignment, type gate or type equality
+	// expression being true.
+	protected void typeInference(Expr selector, Type type,
+			HashMap<String, Type> environment) {
+		if(selector instanceof Variable) {
+			Variable v = (Variable) selector;
+			environment.put(v.name(), type);
+		} else {
+			// do nothing for now.  this is dangerous and could be improved
+		}
+	}
+	
 	public void addReadConversion(Type et, ArrayList<Bytecode> bytecodes) {
 		if(et == Types.T_BOOL) {
 			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BOOLEAN));

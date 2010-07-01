@@ -36,19 +36,19 @@ import static wyone.theory.logic.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
 
 
-public class TypeGate extends SyntacticElementImpl implements Condition {
+public class TypeEquals extends SyntacticElementImpl implements Condition {
 	private Type type;
 	private Expr lhs;
 	private Condition rhs;
 	
-	public TypeGate(Type type, Expr lhs, Condition rhs, Attribute... attributes) {
+	public TypeEquals(Type type, Expr lhs, Condition rhs, Attribute... attributes) {
 		super(attributes);		
 		this.type = type;
 		this.lhs = lhs;
 		this.rhs = rhs;
 	}
 
-	public TypeGate(Type type, Expr lhs, Condition rhs, Collection<Attribute> attributes) {
+	public TypeEquals(Type type, Expr lhs, Condition rhs, Collection<Attribute> attributes) {
 		super(attributes);
 		this.type = type;
 		this.lhs = lhs;
@@ -74,7 +74,7 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 	public Condition substitute(Map<String,Expr> binding) {
 		Condition r = rhs.substitute(binding);		
 		Expr l = lhs.substitute(binding);
-		return new TypeGate(type,l,r,attributes());
+		return new TypeEquals(type,l,r,attributes());
 	}
 	
 	public Expr replace(Map<Expr, Expr> binding) {
@@ -84,7 +84,7 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		} else {
 			Condition r = (Condition)  rhs.replace(binding);
 			Expr l = lhs.replace(binding);
-			return new TypeGate(type, l,r, attributes());
+			return new TypeEquals(type, l,r, attributes());
 		}
 	}
 	
@@ -112,13 +112,13 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		if (type.isSubtype(t, Collections.EMPTY_MAP)) {			
 			return rhs;
 		} else if (!t.isSubtype(type, Collections.EMPTY_MAP) || l instanceof Value) {
-			return new BoolVal(true);
+			return new BoolVal(false);
 		}
-		return new TypeGate(type, l,r, attributes());
+		return new TypeEquals(type, l,r, attributes());
 	}
 	
 	public String toString() {
-		return "(" + lhs + " ~= " + type + " => " + rhs + ")";
+		return "(" + lhs + " ~= " + type + " && " + rhs + ")";
 	}
 
 	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {

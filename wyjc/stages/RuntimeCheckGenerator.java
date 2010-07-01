@@ -464,6 +464,8 @@ public class RuntimeCheckGenerator {
 				checks = checkgen((TupleVal)e,environment);
 			} else if(e instanceof TupleGenerator) {				
 				checks = checkgen((TupleGenerator)e,environment);
+			} else if(e instanceof TypeEquals) {				
+				checks = checkgen((TypeEquals)e,environment);
 			} else if(e instanceof TypeGate) {				
 				checks = checkgen((TypeGate)e,environment);
 			} else if(e instanceof Spawn) {				
@@ -667,6 +669,13 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}	
 	
+	protected List<Check> checkgen(TypeEquals e,
+			HashMap<String, Type> environment) {
+		List<Check> checks = checkgen(e.lhs(), environment);
+		checks.addAll(checkgen(e.rhs(),environment));
+		return checks;
+	}
+	
 	protected List<Check> checkgen(TypeGate e,
 			HashMap<String, Type> environment) {
 		List<Check> checks = checkgen(e.lhs(), environment);
@@ -676,7 +685,7 @@ public class RuntimeCheckGenerator {
 	
 	protected void addCheck(String msg, Condition c,
 			HashMap<String, Type> environment, SyntacticElement elem,
-			List<Check> checks) {		
+			List<Check> checks) {				
 		c = c.reduce(environment);		
 		if(c instanceof BoolVal) {
 			BoolVal v = (BoolVal) c;			

@@ -1416,8 +1416,8 @@ public class TypeResolution {
 			condition = condition.substitute(binding);			 
 		}
 
-		return new Pair<Type, Expr>(Types.T_BOOL, new TypeGate(rhs_t, lhs.second(),
-				condition, ueq.attributes()));
+		return new Pair<Type, Expr>(Types.T_BOOL, new TypeEquals(rhs_t, lhs
+				.second(), condition, ueq.attributes()));
 	}
 	
 	protected Pair<Type,Expr> check(Variable v, HashMap<String,Type> environment) {

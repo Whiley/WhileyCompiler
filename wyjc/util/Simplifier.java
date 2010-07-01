@@ -61,7 +61,6 @@ public class Simplifier {
 				|| c instanceof RealGreaterThanEquals
 				|| c instanceof TupleEquals
 				|| c instanceof TupleNotEquals
-				|| c instanceof TypeGate
 				|| c instanceof ListEquals
 				|| c instanceof ListNotEquals
 				|| c instanceof ListElementOf
@@ -83,6 +82,8 @@ public class Simplifier {
 			return notElimination((Not)c);
 		} else if(c instanceof TypeGate) {
 			return notElimination((TypeGate)c);
+		} else if(c instanceof TypeEquals) {
+			return notElimination((TypeEquals)c);
 		} else {			
 			syntaxError("unknown condition encountered (" + c.getClass().getName() + ")",c);
 			return null;
@@ -96,6 +97,11 @@ public class Simplifier {
 	
 	protected Condition notElimination(TypeGate tg) {
 		return new TypeGate(tg.lhsTest(), tg.lhs(), notElimination(tg.rhs()), tg
+				.attributes());
+	}
+	
+	protected Condition notElimination(TypeEquals tg) {
+		return new TypeEquals(tg.lhsTest(), tg.lhs(), notElimination(tg.rhs()), tg
 				.attributes());
 	}
 	
@@ -174,6 +180,8 @@ public class Simplifier {
 			return invert((ProcessNotEquals)c);
 		} else if(c instanceof TypeGate) {
 			return invert((TypeGate)c);
+		} else if(c instanceof TypeEquals) {
+			return invert((TypeEquals)c);
 		} else {
 			syntaxError("unknown condition encountered: " + c.getClass().getName(),c);
 			return null;
@@ -289,7 +297,12 @@ public class Simplifier {
 	}
 	
 	protected Condition invert(TypeGate c) {
-		// FIXME: could do better here I suspect
-		return new Not(c,c.attribute(SourceAttr.class));
+		return new TypeEquals(c.lhsTest(), c.lhs(), invert(c.rhs()), c
+				.attribute(SourceAttr.class));
+	}
+	
+	protected Condition invert(TypeEquals c) {
+		return new TypeGate(c.lhsTest(), c.lhs(), invert(c.rhs()), c
+				.attribute(SourceAttr.class));
 	}
 }
