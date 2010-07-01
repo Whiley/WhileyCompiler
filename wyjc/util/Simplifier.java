@@ -61,7 +61,7 @@ public class Simplifier {
 				|| c instanceof RealGreaterThanEquals
 				|| c instanceof TupleEquals
 				|| c instanceof TupleNotEquals
-				|| c instanceof TypeEquals
+				|| c instanceof TypeGate
 				|| c instanceof ListEquals
 				|| c instanceof ListNotEquals
 				|| c instanceof ListElementOf
@@ -108,7 +108,7 @@ public class Simplifier {
 		Condition c = ac.mhs();
 		if (c instanceof Subset || c instanceof SubsetEq
 				|| c instanceof ListElementOf || c instanceof SetElementOf
-				|| c instanceof TypeEquals) {
+				|| c instanceof TypeGate) {
 			return ac;
 		} else {
 			return invert(ac.mhs());
@@ -172,8 +172,8 @@ public class Simplifier {
 			return invert((ProcessEquals)c);
 		} else if(c instanceof ProcessNotEquals) {
 			return invert((ProcessNotEquals)c);
-		} else if(c instanceof TypeEquals) {
-			return invert((TypeEquals)c);
+		} else if(c instanceof TypeGate) {
+			return invert((TypeGate)c);
 		} else {
 			syntaxError("unknown condition encountered: " + c.getClass().getName(),c);
 			return null;
@@ -288,7 +288,7 @@ public class Simplifier {
 		return new ProcessEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(TypeEquals c) {
+	protected Condition invert(TypeGate c) {
 		// FIXME: could do better here I suspect
 		return new Not(c,c.attribute(SourceAttr.class));
 	}

@@ -118,7 +118,7 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 	}
 	
 	public String toString() {
-		return lhs + " ~= " + type + " => " + rhs;
+		return lhs + " ~= " + type + " && " + rhs;
 	}
 
 	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {

@@ -901,8 +901,8 @@ public class ClassFileBuilder {
 				translate((Variable)expr, slots, environment, bytecodes);
 			} else if(expr instanceof Spawn) {
 				translate((Spawn)expr, slots, environment, bytecodes);
-			} else if(expr instanceof TypeEquals) {
-				translate((TypeEquals)expr, slots, environment, bytecodes);
+			} else if(expr instanceof TypeGate) {
+				translate((TypeGate)expr, slots, environment, bytecodes);
 			} else if(expr instanceof ProcessAccess) {
 				translate((ProcessAccess)expr, slots, environment, bytecodes);
 			} else {
@@ -1905,12 +1905,19 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
 	}
-	protected void translate(TypeEquals e,
+	protected void translate(TypeGate e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		// translate(e.lhs(), slots, environment,bytecodes);	
-		
+		//translate(e.lhs(), slots, environment,bytecodes);			
 		// FIXME: total hack for now
-		bytecodes.add(new Bytecode.LoadConst(new Boolean(true)));
+		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
+		String exitLabel = freshLabel();
+		String trueLabel = freshLabel();
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));
+		bytecodes.add(new Bytecode.LoadConst(0));
+		bytecodes.add(new Bytecode.Goto(exitLabel));
+		bytecodes.add(new Bytecode.Label(trueLabel));
+		translate(e.rhs(), slots, environment,bytecodes);
+		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
 	protected void translate(ProcessAccess a,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {				
