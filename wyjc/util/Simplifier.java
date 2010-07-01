@@ -18,6 +18,7 @@
 
 package wyjc.util;
 
+import wyjc.ast.attrs.SourceAttr;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.integer.*;
 import wyjc.ast.exprs.list.*;
@@ -171,8 +172,10 @@ public class Simplifier {
 			return invert((ProcessEquals)c);
 		} else if(c instanceof ProcessNotEquals) {
 			return invert((ProcessNotEquals)c);
+		} else if(c instanceof TypeEquals) {
+			return invert((TypeEquals)c);
 		} else {
-			syntaxError("unknown condition encountered",c);
+			syntaxError("unknown condition encountered: " + c.getClass().getName(),c);
 			return null;
 		}
 	}
@@ -283,5 +286,10 @@ public class Simplifier {
 	
 	protected Condition invert(ProcessNotEquals c) {
 		return new ProcessEquals(c.lhs(),c.rhs(),c.attributes());
+	}
+	
+	protected Condition invert(TypeEquals c) {
+		// FIXME: could do better here I suspect
+		return new Not(c,c.attribute(SourceAttr.class));
 	}
 }

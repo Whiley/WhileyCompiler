@@ -1908,7 +1908,7 @@ public class ClassFileBuilder {
 	protected void translate(TypeEquals e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		// translate(e.lhs(), slots, environment,bytecodes);	
-
+		
 		// FIXME: total hack for now
 		bytecodes.add(new Bytecode.LoadConst(new Boolean(true)));
 	}

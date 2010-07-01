@@ -1406,9 +1406,18 @@ public class TypeResolution {
 				&& !rhs_t.isSubtype(lhs_t, Collections.EMPTY_MAP)) {
 			syntaxError("cannot match type " + lhs_t + " against " + rhs_t, ueq);
 		}
+		
+		Condition condition = new BoolVal(true,ueq.attribute(SourceAttr.class)); 
+		
+		if(rhs.second() != null) {
+			condition = rhs.second();
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put("$",lhs.second());
+			condition = condition.substitute(binding);			 
+		}
 
-		return new Pair<Type, Expr>(Types.T_BOOL, new TypeEquals(lhs.second(),
-				rhs_t, ueq.attributes()));
+		return new Pair<Type, Expr>(Types.T_BOOL, new TypeGate(rhs_t, lhs.second(),
+				condition, ueq.attributes()));
 	}
 	
 	protected Pair<Type,Expr> check(Variable v, HashMap<String,Type> environment) {
