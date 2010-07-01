@@ -286,17 +286,43 @@ public class TypeResolution {
 	 */
 	protected Pair<Type, Condition> simplifyRecursiveTypes(
 			Pair<Type, Condition> p) {
-		HashMap<String, Type> binding = new HashMap<String, Type>();
+		HashMap<String, Type> t_binding = new HashMap<String, Type>();
+		HashMap<String, Type> r_binding = new HashMap<String, Type>();
+						
 		int nameIdx = 0;
+		
 		for (RecursiveType t : p.first().match(RecursiveType.class)) {
 			String n = t.name();
-			if (!binding.containsKey(n) && nameIdx < names.length) {
+			if (!t_binding.containsKey(n) && nameIdx < names.length) {
 				String name = names[nameIdx++];
-				binding.put(n, new RecursiveType(name, null));
+				t_binding.put(n, new RecursiveType(name, null));
+			}
+			if(t.type() != null) {
+				r_binding.put(t.name(), t);
 			}
 		}		
-		return new Pair<Type, Condition>(p.first().substitute(binding), p
-				.second());
+		
+		// Conditions (e.g. type gates) are difficult, since they involve types
+		// that were generated during the type graph traversal. This means that
+		// they may contain "open" recursive types. That is, types whose parent
+		// was on the stack when the condition was created, leaving just the
+		// empty leaf to be used in the condition. We need to unroll these leafs
+		// by one level. The problem is that we can't do the unrolling when the
+		// conditions are created since we don't know who they're parents are at
+		// that point. Probably a more elegant solution is to separate the
+		// generation of types from the generation and/or check of the
+		// conditions.
+		//
+		// This is what the r_binding is for ---> closing the open loops.
+
+		HashMap<Expr,Expr> c_binding = new HashMap();
+		for (TypeGate tg : p.second().match(TypeGate.class)) {
+			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
+			c_binding.put(tg, new TypeGate(t,tg.lhs(),tg.rhs(),tg.attributes()));
+		}
+		
+		return new Pair<Type, Condition>(p.first().substitute(t_binding),
+				(Condition) p.second().replace(c_binding));
 	}
 	protected static final String[] names = {"X","Y","Z","U","V","W","P","Q","R","S","T"}; 
 	private static boolean isRecursive(NameID root, Type type) {
@@ -450,7 +476,7 @@ public class TypeResolution {
 				}
 			}
 											
-			for(Pair<Type,Condition> p : conditions) {
+			for(Pair<Type,Condition> p : conditions) {				
 				Condition cond = p.second();				
 				if(t instanceof UnionType) {
 					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
@@ -537,8 +563,7 @@ public class TypeResolution {
 		try {
 			NameID key = new NameID(wf.id(),d.name());
 			Pair<Type,Condition> t = types.get(key);
-			expandAndCheck(d.type());			
-			System.out.println("COND: " + t.second() + " FOR: " + key);
+			expandAndCheck(d.type());						
 			if(d.constraint() != null) {
 				HashMap<String,Type> environment = new HashMap<String,Type>();				
 				environment.put("$", t.first());
