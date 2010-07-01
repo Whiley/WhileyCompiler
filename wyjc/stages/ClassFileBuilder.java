@@ -414,7 +414,7 @@ public class ClassFileBuilder {
 			syntaxError("assignment of type not implemented: " + stmt.lhs(),stmt);
 		}
 		
-		typeInference(stmt.lhs(),rhs_t,environment);
+		typeInference(stmt.lhs(),rhs_t,environment,null,null);
 	}
 
 	private void cloneRHS(Type t, ArrayList<Bytecode> bytecodes) {
@@ -1908,33 +1908,33 @@ public class ClassFileBuilder {
 	}
 	protected void translate(TypeEquals e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		//translate(e.lhs(), slots, environment,bytecodes);			
-		// FIXME: total hack for now
-		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
+		translate(e.lhs(), slots, environment,bytecodes);					
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
-		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));
+		translateTypeTest(e.lhsTest(), slots,
+				environment, bytecodes);
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
 		bytecodes.add(new Bytecode.LoadConst(0));
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 		environment = (HashMap) environment.clone();
-		typeInference(e.lhs(),e.lhsTest(),environment);
+		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
 	protected void translate(TypeGate e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		//translate(e.lhs(), slots, environment,bytecodes);			
-		// FIXME: total hack for now
-		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
+		translate(e.lhs(), slots, environment,bytecodes);			
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
-		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));
+		translateTypeTest(e.lhsTest(), slots,
+				environment, bytecodes);
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
 		bytecodes.add(new Bytecode.LoadConst(1));
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 		environment = (HashMap) environment.clone();
-		typeInference(e.lhs(),e.lhsTest(),environment);
+		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
@@ -1949,17 +1949,52 @@ public class ClassFileBuilder {
 		addReadConversion(pt.element(), bytecodes);	
 	}
 	
+	// The purpose of this method is to translate a type test. We're testing to
+	// see whether what's on the top of the stack matches the given type of not.
+	// In the majority of situations this is pretty easy to do. For example,
+	// testing for an int corresponds to an instanceof against BigInteger. Some
+	// situations are a little harder; like testing for a union type.
+	protected void translateTypeTest(Type test, HashMap<String, Integer> slots,
+			HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		if (test == Types.T_BOOL) {
+			bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
+		} else {
+			bytecodes.add(new Bytecode.InstanceOf(
+					(JvmType.Reference) convertType(test)));
+		} 
+	}
+	
 	// the purpose of the type inference method is to update the known type of
 	// an expression as a result of an assignment, type gate or type equality
 	// expression being true.
 	protected void typeInference(Expr selector, Type type,
-			HashMap<String, Type> environment) {
+			HashMap<String, Type> environment, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {	
 		if(selector instanceof Variable) {
 			Variable v = (Variable) selector;
 			environment.put(v.name(), type);
+			typeInferenceConversion(v,type,environment,slots,bytecodes);
+					
 		} else {
 			// do nothing for now.  this is dangerous and could be improved
 		}
+	}
+	
+	// The following method is required to retype a variable after a (positive)
+	// type equality test. This is necessary since the JVM doesn't know about
+	// our type equalities and, anyway, it can't reason in a flow-sensitive
+	// manner.
+	protected void typeInferenceConversion(Variable v, Type type,
+			HashMap<String, Type> environment, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		if(slots != null) {			
+			// FIXME: can eliminate this in many more circumstances
+			translate(v,slots,environment,bytecodes);
+			Bytecode.CheckCast cast = new Bytecode.CheckCast(convertType(type)); 
+			Bytecode.Store store = new Bytecode.Store(slots.get(v.name()), convertType(type));
+			bytecodes.add(cast);
+			bytecodes.add(store);	
+		}	
 	}
 	
 	public void addReadConversion(Type et, ArrayList<Bytecode> bytecodes) {
@@ -2222,7 +2257,7 @@ public class ClassFileBuilder {
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");
 	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang","AssertionError");
-	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util","Collection");
+	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util","Collection");	
 	
 	public JvmType.Function convertType(Type receiver, FunType ft) {
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
