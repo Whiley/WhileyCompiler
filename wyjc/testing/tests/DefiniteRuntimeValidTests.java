@@ -52,6 +52,7 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_1_RunTest() { runTest("ConstrainedList_Valid_1"); }
  @Test public void ConstrainedList_Valid_2_RunTest() { runTest("ConstrainedList_Valid_2"); }
  @Test public void ConstrainedList_Valid_3_RunTest() { runTest("ConstrainedList_Valid_3"); }
+ @Test public void ConstrainedList_Valid_4_RunTest() { runTest("ConstrainedList_Valid_4"); }
  @Test public void ConstrainedSet_Valid_1_RunTest() { runTest("ConstrainedSet_Valid_1"); }
  @Test public void ConstrainedSet_Valid_2_RunTest() { runTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RunTest() { runTest("ConstrainedSet_Valid_3"); }
