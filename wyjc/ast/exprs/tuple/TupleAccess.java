@@ -52,8 +52,7 @@ public class TupleAccess extends SyntacticElementImpl implements Expr, LVal {
 	}
 	
 	public Type type(Map<String,Type> environment) {
-		Type src = source.type(environment).flattern();
-		System.out.println("TYPING: " + this + " : " + src);
+		Type src = source.type(environment).flattern();		
 		TupleType tt = Types.effectiveTupleType(src,this);		
 		src = tt.types().get(name);
 		if(src != null) {

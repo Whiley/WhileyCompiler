@@ -510,14 +510,16 @@ public class TypeResolution {
 	/**
 	 * This method expands a type, whilst also checking that the expanded constraint is type safe. 
 	 */
-	protected Pair<Type,Condition> expandAndCheck(UnresolvedType t) throws ResolveError {				
+	protected Pair<Type, Condition> expandAndCheck(UnresolvedType t,
+			SyntacticElement elem) throws ResolveError {				
 		Pair<Type,Condition> tc = expandType(t,types);		
 		Condition c = tc.second();		
 		if(c != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
 			env.put("$",tc.first());			
-			c = (Condition) check(c,env).second();			
-		}		
+			c = (Condition) check(c,env).second();
+			renumber(c,elem.attribute(SourceAttr.class));
+		}				
 		return new Pair<Type,Condition>(tc.first(),c);
 	}
 	
@@ -569,7 +571,7 @@ public class TypeResolution {
 		try {
 			NameID key = new NameID(wf.id(),d.name());
 			Pair<Type,Condition> t = types.get(key);
-			expandAndCheck(d.type());						
+			expandAndCheck(d.type(),d);						
 			if(d.constraint() != null) {
 				HashMap<String,Type> environment = new HashMap<String,Type>();				
 				environment.put("$", t.first());
@@ -595,26 +597,22 @@ public class TypeResolution {
 			} else if(environment.containsKey(p.name())) {
 				syntaxError("duplicate parameter name",p);
 			}			
-			Pair<Type,Condition> tc = expandAndCheck(p.type());			
+			Pair<Type,Condition> tc = expandAndCheck(p.type(),p);			
 			environment.put(p.name(), tc.first());
 			declared.put(p.name(), tc.first());
 			p.attributes().add(new ConstraintAttr(tc.second()));
 		}
-		
-		if(f.receiver() != null) {
-			Pair<Type,Condition> tc = expandAndCheck(f.receiver().type());			
-			environment.put("this",tc.first());
-			declared.put("this",tc.first());
-		}
-		
+				
 		FunDecl.Return ret = f.returnType();
-		Pair<Type,Condition> rp = expandAndCheck(f.returnType().type());
+		Pair<Type,Condition> rp = expandAndCheck(ret.type(),ret);
 		if(rp.second() != null) {
 			ret.attributes().add(new ConstraintAttr(rp.second()));
 		}
 		FunDecl.Receiver rec = f.receiver();
 		if(rec != null) {
-			rp = expandAndCheck(rec.type());
+			rp = expandAndCheck(rec.type(),rec);
+			environment.put("this",rp.first());
+			declared.put("this",rp.first());
 			if(rp.second() != null) {
 				rec.attributes().add(new ConstraintAttr(rp.second()));
 			}
@@ -691,7 +689,7 @@ public class TypeResolution {
 			syntaxError("variable cannot be declared void", s);
 		} else {
 			try {
-				Pair<Type,Condition> p = expandAndCheck(s.type());
+				Pair<Type,Condition> p = expandAndCheck(s.type(),s);
 				s_type = p.first();				
 				s_condition = p.second();
 				if(s_condition != null) {					
@@ -1397,7 +1395,7 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(UnresolvedTypeEquals ueq,
 			HashMap<String, Type> environment) throws ResolveError {
 		Pair<Type, Expr> lhs = check(ueq.lhs(), environment);
-		Pair<Type, Condition> rhs = expandAndCheck(ueq.rhs());
+		Pair<Type, Condition> rhs = expandAndCheck(ueq.rhs(),ueq);
 		Type lhs_t = lhs.first();
 		Type rhs_t = rhs.first();
 
@@ -1609,5 +1607,21 @@ public class TypeResolution {
 		if (!t1.isSubtype(t2, Collections.EMPTY_MAP)) {
 			syntaxError("expected type " + t1 + ", got type " + t2 + ".", elem);
 		}
-	}	
+	}
+
+	/**
+	 * This method simply renumbers every syntactic element.
+	 * 
+	 * @param e
+	 * @param loc
+	 */
+	protected void renumber(Expr e, SourceAttr loc) {
+		for(SyntacticElement elem : e.match(SyntacticElement.class)) {
+			SourceAttr old = elem.attribute(SourceAttr.class);
+			if(old != null) {
+				elem.attributes().remove(old);
+			} 
+			elem.attributes().add(loc);
+		}
+	}
 }
