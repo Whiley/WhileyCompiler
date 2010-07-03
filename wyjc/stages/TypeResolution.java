@@ -413,8 +413,8 @@ public class TypeResolution {
 			Pair<Type,Condition> tc = expandType(ult.element(),cache); 
 			Condition c = tc.second();
 			if(c != null) {				
-				String vn = wyone.core.WVariable.freshVar().name(); // FIXME: remove this hack!
-				Variable v = new Variable(vn);
+				String vn = wyone.core.WVariable.freshVar().name(); // FIXME: remove this hack!								
+				Variable v = new Variable(vn,c.attribute(SourceAttr.class));
 				HashMap<String,Expr> binding = new HashMap();
 				binding.put("$",v);				
 				c = c.substitute(binding);			

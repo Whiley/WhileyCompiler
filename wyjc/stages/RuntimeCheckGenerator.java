@@ -359,7 +359,7 @@ public class RuntimeCheckGenerator {
 					binding.put(v, new Variable(v + "$_", var.attributes()));
 				}
 			}			
-			Condition pc = postCondition.substitute(binding);			
+			Condition pc = postCondition.substitute(binding);						
 			addCheck("function postcondition not satisfied",pc,environment,e,checks);								
 		}		
 		
