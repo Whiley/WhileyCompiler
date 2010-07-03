@@ -108,6 +108,7 @@ public class None extends UnOp<SetComprehension> implements Condition {
 	public Triple<WFormula, WFormula, WEnvironment> convertCondition(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
+		
 		SetComprehension sc = (SetComprehension) expr;				
 		WFormula constraints = WBool.TRUE;
 		HashMap<WVariable,WExpr> variables = new HashMap();
@@ -122,6 +123,7 @@ public class None extends UnOp<SetComprehension> implements Condition {
 			WVariable v = new WVariable(name);
 			
 			boolean hackOn = false;
+			
 			if(src instanceof RangeGenerator && st instanceof ListType) {
 				// This is essentially a rather big hack; but, it definitely
 				// helps reduce the theorem proving burden, since this is a very
@@ -141,7 +143,7 @@ public class None extends UnOp<SetComprehension> implements Condition {
 			
 			Triple<WExpr, WFormula, WEnvironment> re = src.convert(environment, loader);
 			if(st instanceof ListType) {
-				nenv.put(name, Types.T_INT);
+				nenv.put(name, st.element());
 				if(!hackOn) {
 					binding.put(v, new WListAccess(re.first(),v));
 				}
