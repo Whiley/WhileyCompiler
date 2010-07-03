@@ -26,6 +26,7 @@ import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.stmts.Stmt;
 import wyjc.ast.types.*;
+import wyjc.ast.types.unresolved.UnresolvedType;
 
 public class TemplatedWhileyFile {
 	

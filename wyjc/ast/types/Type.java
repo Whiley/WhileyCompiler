@@ -18,6 +18,7 @@
 
 package wyjc.ast.types;
 
+import wyjc.ast.types.unresolved.UnresolvedType;
 import wyone.core.WType;
 import java.util.*;
 

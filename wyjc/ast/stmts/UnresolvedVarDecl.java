@@ -24,6 +24,7 @@ import wyjc.ast.attrs.Attribute;
 import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.Expr;
 import wyjc.ast.types.*;
+import wyjc.ast.types.unresolved.UnresolvedType;
 
 /**
  * This class represents a variable declaration. All variables in whiley must be

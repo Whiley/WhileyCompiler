@@ -18,7 +18,6 @@
 
 package wyjc.ast.types.unresolved;
 
-import wyjc.ast.types.UnresolvedType;
 import wyjc.util.ModuleID;
 
 /**

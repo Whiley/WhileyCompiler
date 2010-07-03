@@ -31,6 +31,7 @@ import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.tuple.TupleAccess;
 import wyjc.ast.types.*;
+import wyjc.ast.types.unresolved.UnresolvedType;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;
 import wyone.core.WEnvironment;

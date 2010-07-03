@@ -18,7 +18,7 @@
 
 package wyjc.ast;
 
-import wyjc.ast.types.UnresolvedType;
+import wyjc.ast.types.unresolved.UnresolvedType;
 import wyjc.util.ModuleID;
 
 public abstract class SkeletonInfo {

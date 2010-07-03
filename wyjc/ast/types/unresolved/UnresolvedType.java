@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.ast.types;
+package wyjc.ast.types.unresolved;
 
 public interface UnresolvedType {		
 }
