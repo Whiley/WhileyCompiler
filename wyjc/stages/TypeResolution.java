@@ -271,7 +271,7 @@ public class TypeResolution {
 	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {		
 		HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
 		Pair<Type,Condition> t = expandTypeHelper(key,cache);		
-		t = simplifyRecursiveTypes(t);
+		t = simplifyRecursiveTypes(t);		
 		types.put(key,t);							
 		return t;
 	}
@@ -355,7 +355,7 @@ public class TypeResolution {
 		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key
 			ModuleInfo mi = loader.loadModule(key.module());
-			ModuleInfo.TypeDef td = mi.type(key.name()); 
+			ModuleInfo.TypeDef td = mi.type(key.name());			
 			return new Pair<Type, Condition>(td.type(), td.constraint());
 		}
 		
@@ -512,7 +512,7 @@ public class TypeResolution {
 	 */
 	protected Pair<Type,Condition> expandAndCheck(UnresolvedType t) throws ResolveError {				
 		Pair<Type,Condition> tc = expandType(t,types);		
-		Condition c = tc.second();
+		Condition c = tc.second();		
 		if(c != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
 			env.put("$",tc.first());			
@@ -594,8 +594,8 @@ public class TypeResolution {
 				syntaxError("parameter name not permitted",p);
 			} else if(environment.containsKey(p.name())) {
 				syntaxError("duplicate parameter name",p);
-			}
-			Pair<Type,Condition> tc = expandAndCheck(p.type());
+			}			
+			Pair<Type,Condition> tc = expandAndCheck(p.type());			
 			environment.put(p.name(), tc.first());
 			declared.put(p.name(), tc.first());
 			p.attributes().add(new ConstraintAttr(tc.second()));

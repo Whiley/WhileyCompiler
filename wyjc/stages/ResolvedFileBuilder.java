@@ -54,12 +54,14 @@ public class ResolvedFileBuilder {
 	
 	protected ResolvedWhileyFile.ConstDecl build(UnresolvedWhileyFile.ConstDecl cd) {
 		Value v = (Value) cd.constant();
-		return new ResolvedWhileyFile.ConstDecl(cd.modifiers(),v,cd.name(),cd.attributes());
+		return new ResolvedWhileyFile.ConstDecl(cd.modifiers(), v, cd.name(),
+				cd.attributes());
 	}
 	
 	protected ResolvedWhileyFile.TypeDecl build(UnresolvedWhileyFile.TypeDecl cd) {
 		Type t = (Type) cd.attribute(TypeAttr.class).type();
-		return new ResolvedWhileyFile.TypeDecl(cd.modifiers(),t, cd.constraint(), cd.name(),
+		Condition c = (Condition) cd.attribute(ConstraintAttr.class).constraint();
+		return new ResolvedWhileyFile.TypeDecl(cd.modifiers(), t, c, cd.name(),
 				cd.attributes());
 	}
 	

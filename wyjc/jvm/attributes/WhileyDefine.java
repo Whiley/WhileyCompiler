@@ -84,7 +84,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		} else if(expr == null) {
 			iw.write_u1(1); // TYPE ONLY
 			write(type, iw, constantPool);
-		} else {
+		} else {									
 			iw.write_u1(2); // BOTH
 			write(type, iw, constantPool);
 			write(expr, iw, constantPool);			
@@ -93,7 +93,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
 		writer.write_u4(out.size() + 2);		
 		writer.write_u2(constantPool.get(new Constant.Utf8(defName)));
-		writer.write(out.toByteArray());		
+		writer.write(out.toByteArray());				
 	}	
 		
 	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {		
@@ -263,7 +263,7 @@ public class WhileyDefine implements BytecodeAttribute {
 			int nameIdx = input.read_u2();
 			
 			String name = ((Constant.Utf8) constantPool.get(nameIdx)).str;
-			int sw = input.read_u1();
+			int sw = input.read_u1();			
 			Type type = null;
 			Expr expr = null;
 						
@@ -273,8 +273,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			} else if(sw == 1) {
 				// type only
 				type = readType(input,constantPool);
-			} else {
-				// both
+			} else {				
+				// both				
 				type = readType(input,constantPool);											
 				expr = WhileyCondition.Reader.readCondition(input,constantPool);									
 			}

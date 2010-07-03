@@ -335,7 +335,7 @@ public class WhileyCondition implements BytecodeAttribute {
 			writer.write_u2(NOT);
 		} else if(expr instanceof Some) {
 			writer.write_u2(SOME);
-		} else if(expr instanceof None) {
+		} else if(expr instanceof None) {			
 			writer.write_u2(NONE);
 		} else if(expr instanceof IntNegate) {
 			writer.write_u2(INTNEG);
@@ -518,7 +518,7 @@ public class WhileyCondition implements BytecodeAttribute {
 					Condition rhs = readCondition(reader,constantPool);
 					return new And(lhs,rhs);				
 				case NONE:
-					Expr expr = readExpr(reader,constantPool);
+					Expr expr = readExpr(reader,constantPool);					
 					return new None((SetComprehension)expr);
 				case NOT:
 					lhs = readCondition(reader,constantPool);
