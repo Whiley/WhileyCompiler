@@ -105,16 +105,17 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 	
 	public Condition reduce(Map<String, Type> environment) {
 		Expr l = lhs.reduce(environment);
-		Condition r = rhs.reduce(environment);				
-		
+		Condition r = rhs.reduce(environment);
+
 		Type t = l.type(environment);
-		
-		if (type.isSubtype(t, Collections.EMPTY_MAP)) {			
+
+		if (type.isSubtype(t, Collections.EMPTY_MAP)) {
 			return rhs;
-		} else if (!t.isSubtype(type, Collections.EMPTY_MAP) || l instanceof Value) {
+		} else if (!t.isSubtype(type, Collections.EMPTY_MAP)
+				|| l instanceof Value) {
 			return new BoolVal(true);
 		}
-		return new TypeGate(type, l,r, attributes());
+		return new TypeGate(type, l, r, attributes());
 	}
 	
 	public String toString() {
