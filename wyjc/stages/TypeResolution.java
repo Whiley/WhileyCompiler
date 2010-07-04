@@ -468,7 +468,7 @@ public class TypeResolution {
 			return new Pair<Type,Condition>(new TupleType(types),c);
 		} else if(ut instanceof UnresolvedUnionType) {
 			UnresolvedUnionType utt = (UnresolvedUnionType) ut;
-						
+			
 			Type t = Types.T_VOID;
 			Condition c = null;
 			
@@ -486,11 +486,12 @@ public class TypeResolution {
 				Condition cond = p.second();				
 				if(t instanceof UnionType) {
 					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
-					// indicates a choice of some kind required
+					// indicates a choice of some kind required					
 					cond = new TypeGate(p.first(),v,cond, cond.attribute(SourceAttr.class));
 				}
-				c = c == null ? cond : new Or(c,cond,cond.attribute(SourceAttr.class));				
+				c = c == null ? cond : new Or(c,cond,cond.attribute(SourceAttr.class));							
 			}			
+			
 			return new Pair<Type,Condition>(t,c);			
 		} else  {			
 			// must be process type
@@ -1445,9 +1446,9 @@ public class TypeResolution {
 		return new Pair<Type, Expr>(v.type(), v);
 	}
 	
-	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {
+	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {		
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
-						
+		
 		if(!c.lhsTest().isSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.

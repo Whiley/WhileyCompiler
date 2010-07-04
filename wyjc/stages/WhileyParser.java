@@ -1100,7 +1100,25 @@ public class WhileyParser {
 		return new StringVal(vals,sourceAttr(start,index-1));
 	}
 	
-	private UnresolvedType parseType() {		
+	private UnresolvedType parseType() {
+		UnresolvedType t = parseBaseType();
+		// Now, attempt to look for union or intersection types.
+		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
+			// this is a union type
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			types.add(t);
+			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
+				match(Bar.class);
+				t = parseBaseType();
+				types.add(t);
+			}					
+			return new UnresolvedUnionType(types);
+		} else {
+			return t;
+		}		
+	}
+	
+	private UnresolvedType parseBaseType() {		
 		checkNotEof();		
 		Token token = tokens.get(index);
 		UnresolvedType t;
@@ -1161,15 +1179,6 @@ public class WhileyParser {
 			Identifier id = matchIdentifier();			
 			t = new UserDefType(id.text);			
 		}		
-		
-		// Now, attempt to look for union or intersection types.
-		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
-			// this is a union type.
-			match(Bar.class);
-			UnresolvedType t2 = parseType();
-			// now, calculate the appropriate union type.
-			return new UnresolvedUnionType(t, t2);
-		} 
 		
 		return t;
 	}		
