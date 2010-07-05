@@ -149,6 +149,7 @@ public class RuntimeCheckGenerator {
 					shadow, var, pc.attributes());
 			assignments.add(decl);
 		}
+		
 		f.statements().addAll(0,assignments);
 	}
 	protected Pair<List<Check>,List<Check>> checkgen(Stmt s, FunDecl f,
