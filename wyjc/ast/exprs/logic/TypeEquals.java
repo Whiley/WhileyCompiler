@@ -23,18 +23,12 @@ import java.util.*;
 import wyjc.ModuleLoader;
 import wyjc.ast.attrs.*;
 import wyjc.ast.exprs.*;
-import wyjc.ast.exprs.list.*;
 import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.types.*;
-import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;
 import wyone.core.*;
 import wyone.theory.logic.*;
-import wyone.theory.numeric.*;
-import static wyone.theory.logic.WFormulas.*;
-import static wyone.theory.numeric.WNumerics.*;
-
 
 public class TypeEquals extends SyntacticElementImpl implements Condition {
 	private Type type;
@@ -104,17 +98,19 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 	}
 	
 	public Condition reduce(Map<String, Type> environment) {
+		// FIXME: for the moment, I make no effort to reduce the right-hand
+		// side. This is because it's a surprisingly complex operation. The key
+		// that if the lhs occurs in the rhs, then we need to
 		Expr l = lhs.reduce(environment);
-		Condition r = rhs.reduce(environment);				
 		
 		Type t = l.type(environment);
 		
-		if (type.isSubtype(t, Collections.EMPTY_MAP)) {			
+		if(type.isSubtype(t, Collections.EMPTY_MAP)) {			
 			return rhs;
 		} else if (!t.isSubtype(type, Collections.EMPTY_MAP) || l instanceof Value) {
 			return new BoolVal(false);
 		}
-		return new TypeEquals(type, l,r, attributes());
+		return new TypeEquals(type, l,rhs, attributes());
 	}
 	
 	public String toString() {

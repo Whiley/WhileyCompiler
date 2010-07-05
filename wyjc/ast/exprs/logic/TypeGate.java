@@ -104,9 +104,19 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 	}
 	
 	public Condition reduce(Map<String, Type> environment) {
+		// FIXME: for the moment, I make no effort to reduce the right-hand
+		// side. This is because it's a surprisingly complex operation. The key
+		// is that if the lhs occurs in the rhs, then we need to update it's
+		// type (somehow), otherwise we won't be able to properly type that
+		// expression when trying to reduce it.
+		// I think the best way to resolve this, is to adjust the lhs to be only
+		// a string, rather than an arbitrary expression. An alternative is to
+		// substitute all occurrence of the lhs in the rhs with a cast for the
+		// right type. This would work, but can only be done on the fly,
+		// since otherwise we'd have problems when expanding an existing type
+		// into an entirely new type.
 		Expr l = lhs.reduce(environment);
-		Condition r = rhs.reduce(environment);
-
+		
 		Type t = l.type(environment);
 
 		if (type.isSubtype(t, Collections.EMPTY_MAP)) {
@@ -115,7 +125,7 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 				|| l instanceof Value) {
 			return new BoolVal(true);
 		}
-		return new TypeGate(type, l, r, attributes());
+		return new TypeGate(type, l, rhs, attributes());
 	}
 	
 	public String toString() {

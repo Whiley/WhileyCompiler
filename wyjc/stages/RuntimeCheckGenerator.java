@@ -686,8 +686,7 @@ public class RuntimeCheckGenerator {
 	
 	protected void addCheck(String msg, Condition c,
 			HashMap<String, Type> environment, SyntacticElement elem,
-			List<Check> checks) {
-		System.out.println("ADDING CHECK: " + c);
+			List<Check> checks) {		
 		c = c.reduce(environment);		
 		if(c instanceof BoolVal) {
 			BoolVal v = (BoolVal) c;			
