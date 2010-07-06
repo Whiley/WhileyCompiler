@@ -178,6 +178,19 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 				wenv);
 	}
     
+    public int hashCode() {
+		return source.hashCode() + start.hashCode() + end.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		if (o instanceof ListVal) {
+			ListSublist l = (ListSublist) o;
+			return start.equals(l.start) && source.equals(l.source)
+					&& end.equals(l.end);
+		}
+		return false;
+	}
+    
     public String toString() {
     	return source + "[" + start + ":" + end + "]";
     }
