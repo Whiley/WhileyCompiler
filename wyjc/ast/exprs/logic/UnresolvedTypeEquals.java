@@ -113,4 +113,16 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 		// need to do better here.
 		throw new IllegalArgumentException("Cannot convert UnresolvedTypeEquals");		
 	}  		
+	
+	public int hashCode() {
+		return lhs.hashCode() + rhs.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		if(o instanceof UnresolvedTypeEquals) {
+			UnresolvedTypeEquals e = (UnresolvedTypeEquals) o;
+			return lhs.equals(e.lhs) && rhs.equals(e.rhs);
+		}
+		return false;
+	}
 }

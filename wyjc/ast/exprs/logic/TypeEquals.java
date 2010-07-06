@@ -23,6 +23,7 @@ import java.util.*;
 import wyjc.ModuleLoader;
 import wyjc.ast.attrs.*;
 import wyjc.ast.exprs.*;
+import wyjc.ast.exprs.list.RangeVal;
 import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.types.*;
 import wyjc.util.ResolveError;
@@ -131,6 +132,23 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		return rhs.convert(environment, loader);		
 	}
 
+	public int hashCode() {
+		return lhs.hashCode() + rhs.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		if(o instanceof TypeEquals) {
+			TypeEquals e = (TypeEquals) o;
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put(e.var,new Variable(var));
+			// the following substitution is necessary to ensure we're
+			// equivalent upto variable renaming.
+			Expr e_rhs = e.rhs.substitute(binding);
+			return lhs.equals(e.lhs) && rhs.equals(e_rhs);
+		}
+		return false;
+	}
+	
 	public Triple<WFormula, WFormula, WEnvironment> convertCondition(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {

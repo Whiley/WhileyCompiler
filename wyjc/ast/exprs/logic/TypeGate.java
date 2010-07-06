@@ -147,4 +147,21 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		environment.put(var, type);
 		return rhs.convertCondition(environment, loader);
 	}  		
+	
+	public int hashCode() {
+		return lhs.hashCode() + rhs.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		if(o instanceof TypeGate) {
+			TypeGate e = (TypeGate) o;
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put(e.var,new Variable(var));
+			// the following substitution is necessary to ensure we're
+			// equivalent upto variable renaming.
+			Expr e_rhs = e.rhs.substitute(binding);
+			return lhs.equals(e.lhs) && rhs.equals(e_rhs);
+		}
+		return false;
+	}
 }
