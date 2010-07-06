@@ -117,6 +117,18 @@ public class Variable extends SyntacticElementImpl implements Expr, LVal {
 		return this;
 	}
 	
+	public boolean equals(Object o) {
+		if(o instanceof Variable) {
+			Variable c = (Variable) o;
+			return var.equals(c.var);
+		} 
+		return false;		
+	}
+	
+	public int hashCode() {
+		return var.hashCode();
+	}
+	
 	public String toString() { return var; }
 	
 	private static int count=0;

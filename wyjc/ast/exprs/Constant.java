@@ -80,6 +80,18 @@ public class Constant extends Variable {
 	public Expr reduce(Map<String, Type> environment) {
 		return this;
 	}
+
+	public boolean equals(Object o) {
+		if(o instanceof Constant) {
+			Constant c = (Constant) o;
+			return mid.equals(c.mid) && var.equals(c.var);
+		} 
+		return false;		
+	}
+	
+	public int hashCode() {
+		return mid.hashCode() ^ var.hashCode();
+	}
 	
 	public String toString() { return var; }
 }

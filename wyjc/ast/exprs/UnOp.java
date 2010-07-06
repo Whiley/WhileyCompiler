@@ -58,4 +58,16 @@ public abstract class UnOp<T extends Expr> extends SyntacticElementImpl implemen
 	public Set<Variable> uses() {
 		return expr.uses();		
 	}
+	
+	public boolean equals(Object o) {
+		if(o != null && o instanceof UnOp && o.getClass().equals(getClass())) {
+			UnOp bop = (UnOp) o;
+			return expr.equals(bop.expr); 
+		} 
+		return false;		
+	}
+	
+	public int hashCode() {
+		return expr.hashCode();
+	}
 }

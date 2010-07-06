@@ -67,4 +67,16 @@ public abstract class BinOp<T extends Expr> extends SyntacticElementImpl impleme
 		r.addAll(rhs.uses());
 		return r;
 	}
+	
+	public boolean equals(Object o) {
+		if(o != null && o instanceof BinOp && o.getClass().equals(getClass())) {
+			BinOp bop = (BinOp) o;
+			return lhs.equals(bop.lhs) && rhs.equals(bop.rhs); 
+		} 
+		return false;		
+	}
+	
+	public int hashCode() {
+		return lhs.hashCode() ^ rhs.hashCode();
+	}
 }
