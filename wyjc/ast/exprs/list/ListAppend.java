@@ -150,8 +150,8 @@ public final class ListAppend extends BinOp<Expr> {
 	
 		return new Triple<WExpr, WFormula, WEnvironment>(retVar, constraints,
 				wenv);
-	}
-    
+	}       
+	    
     public String toString() {
     	return lhs + " + " + rhs;
     }

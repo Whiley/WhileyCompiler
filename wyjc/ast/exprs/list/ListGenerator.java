@@ -136,6 +136,14 @@ public final class ListGenerator extends SyntacticElementImpl implements Expr {
 				ps), constraints, wenv);
 	}    
 	
+    public int hashCode() {
+		return values.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		return (o instanceof ListGenerator) && ((ListGenerator) o).values.equals(values);
+	}
+    
 	public String toString() { 
 		String r = "[";
 		boolean firstTime=true;

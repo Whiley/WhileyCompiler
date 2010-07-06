@@ -227,16 +227,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 							.equals(i.target)))) {
 				if (module == i.module
 						|| (module != null && module.equals(i.module))) {
-					if(ftype.equals(i.ftype) && arguments.size() == i.arguments.size()) {
-						for(int j=0;j!=arguments.size();++j) {
-							Expr a1 = arguments.get(j);
-							Expr a2 = i.arguments.get(j);
-							if(!a1.equals(a2)) {
-								return false;
-							}
-						}
-						return true;
-					}
+					return ftype.equals(i.ftype) && arguments.equals(i.arguments);					
 				}
 			}
 		} 
@@ -251,9 +242,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		if(module != null) {
 			hc += module.hashCode();
 		}
-		for(Expr e : arguments) {
-			hc += e.hashCode();
-		}
+		hc += arguments.hashCode();
 		return hc;
 	}
 	

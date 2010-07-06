@@ -137,6 +137,18 @@ public final class ListAccess extends SyntacticElementImpl implements Expr, LVal
 				.first()), constraints, wenv);
 	}
 
+	public boolean equals(Object o) {
+		if(o instanceof ListAccess) {
+			ListAccess la = (ListAccess) o;
+			return source.equals(la.source) && index.equals(la.index);
+		}
+		return false;
+	}
+	
+	public int hashCode() {
+		return index.hashCode() + source.hashCode();
+	}
+	
     public String toString() {
     	return source + "[" + index + "]";
     }
