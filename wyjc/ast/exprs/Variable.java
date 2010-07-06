@@ -118,4 +118,9 @@ public class Variable extends SyntacticElementImpl implements Expr, LVal {
 	}
 	
 	public String toString() { return var; }
+	
+	private static int count=0;
+	public static String freshVar() {
+		return "$X" + count++;
+	}
 }

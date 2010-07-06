@@ -32,21 +32,28 @@ import wyone.theory.logic.*;
 
 public class TypeEquals extends SyntacticElementImpl implements Condition {
 	private Type type;
+	private String var;
 	private Expr lhs;
 	private Condition rhs;
 	
 	public TypeEquals(Type type, Expr lhs, Condition rhs, Attribute... attributes) {
 		super(attributes);		
 		this.type = type;
+		this.var = Variable.freshVar();
+		HashMap<Expr,Expr> binding = new HashMap<Expr,Expr>();
+		binding.put(lhs,new Variable(var,lhs.attribute(SourceAttr.class)));
 		this.lhs = lhs;
-		this.rhs = rhs;
+		this.rhs = (Condition) rhs.replace(binding);
 	}
 
 	public TypeEquals(Type type, Expr lhs, Condition rhs, Collection<Attribute> attributes) {
 		super(attributes);
 		this.type = type;
-		this.lhs = lhs;
-		this.rhs = rhs;		
+		this.var = Variable.freshVar();
+		HashMap<Expr,Expr> binding = new HashMap<Expr,Expr>();
+		binding.put(lhs,new Variable(var,lhs.attribute(SourceAttr.class)));
+		this.lhs = 	lhs;
+		this.rhs = (Condition) rhs.replace(binding);		
 	}
 	
 	public BoolType type(Map<String,Type> environment) {		
@@ -56,6 +63,10 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 	public Type lhsTest() {
 		return type;
 	}
+	
+	public String variable() {
+		return var;
+	}	
 	
 	public Expr lhs() {
 		return lhs;
@@ -97,21 +108,11 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		return r;
 	}
 	
-	public Condition reduce(Map<String, Type> environment) {
-		// FIXME: for the moment, I make no effort to reduce the right-hand
-		// side. This is because it's a surprisingly complex operation. The key
-		// is that if the lhs occurs in the rhs, then we need to update it's
-		// type (somehow), otherwise we won't be able to properly type that
-		// expression when trying to reduce it.
-		// I think the best way to resolve this, is to adjust the lhs to be only
-		// a string, rather than an arbitrary expression. An alternative is to
-		// substitute all occurrence of the lhs in the rhs with a cast for the
-		// right type. This would work, but can only be done on the fly,
-		// since otherwise we'd have problems when expanding an existing type
-		// into an entirely new type.
-				
+	public Condition reduce(Map<String, Type> environment) {			
 		Expr l = lhs.reduce(environment);
-		
+		HashMap<String,Type> nenv = new HashMap<String,Type>(environment);
+		nenv.put(var,type);		
+		Condition r = rhs.reduce(nenv);		
 		Type t = l.type(environment);
 		
 		if(type.isSubtype(t, Collections.EMPTY_MAP)) {			
@@ -119,12 +120,12 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		} else if (!t.isSubtype(type, Collections.EMPTY_MAP) || l instanceof Value) {
 			return new BoolVal(false);
 		}
-		return new TypeEquals(type, l,rhs, attributes());
+		return new TypeEquals(type, l, r, attributes());
 	}
 	
 	public String toString() {
-		return "(" + lhs + " ~= " + type + " && " + rhs + ")";
-	}
+		return "(" + lhs + "[" + var + "] ~= " + type + " && " + rhs + ")";
+	}	
 
 	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		return rhs.convert(environment, loader);		
@@ -133,26 +134,9 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 	public Triple<WFormula, WFormula, WEnvironment> convertCondition(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
-		LVal lv = (LVal) lhs; // should be valid after reduction
-		List<Expr> fs = lv.flattern();
-		String var = ((Variable) fs.get(0)).name();
-		Type t = update(lv, type, environment);
+		// FIXME: this is incomplete obviously
 		environment = new HashMap<String, Type>(environment);
-		environment.put(var, t);
+		environment.put(var, type);
 		return rhs.convertCondition(environment, loader);
-	}  	
-	
-	private Type update(LVal lv, Type t, Map<String, Type> environment) {
-		if(lv instanceof Variable) {			
-			return t;
-		} else if(lv instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) lv;
-			TupleType old = (TupleType) ta.source().type(environment).flattern();
-			HashMap<String,Type> types = new HashMap(old.types());
-			types.put(ta.name(), t);
-			return new TupleType(types);			
-		} else {
-			return lv.type(environment); // temporary fow now
-		}
-	}
+	}  		
 }

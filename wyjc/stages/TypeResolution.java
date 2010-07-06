@@ -413,7 +413,7 @@ public class TypeResolution {
 			Pair<Type,Condition> tc = expandType(ult.element(),cache); 
 			Condition c = tc.second();
 			if(c != null) {				
-				String vn = wyone.core.WVariable.freshVar().name(); // FIXME: remove this hack!								
+				String vn = Variable.freshVar();								
 				Variable v = new Variable(vn,c.attribute(SourceAttr.class));
 				HashMap<String,Expr> binding = new HashMap();
 				binding.put("$",v);				
@@ -429,7 +429,7 @@ public class TypeResolution {
 			Pair<Type,Condition> tc = expandType(ult.element(),cache); 
 			Condition c = tc.second();
 			if(c != null) {				
-				String vn = wyone.core.WVariable.freshVar().name(); // FIXME: remove this hack!				
+				String vn = Variable.freshVar();							
 				Variable v = new Variable(vn, c
 						.attribute(SourceAttr.class));
 				HashMap<String,Expr> binding = new HashMap();
@@ -1447,37 +1447,20 @@ public class TypeResolution {
 	}
 	
 	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {		
+		System.out.println("CHECKING: " + c + " : " + environment);
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
 		
 		if(!c.lhsTest().isSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.
 			environment = new HashMap<String,Type>(environment);
-			update(lhs.second(),c.lhsTest(), environment);
+			environment.put(c.variable(), c.lhsTest());
 		}
 		
 		Pair<Type,Expr> rhs = check(c.rhs(),environment);
 		
 		return new Pair<Type, Expr>(rhs.first(), new TypeGate(c.lhsTest(), lhs
 				.second(), (Condition) rhs.second(), c.attributes()));
-	}
-	
-	protected void update(Expr target, Type type,
-			HashMap<String, Type> environment) {
-		if(target instanceof Variable) {
-			Variable v = (Variable) target;
-			environment.put(v.name(), type);
-		} else if(target instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) target;
-			// FIXME: could be a problem here with named and union types.
-			TupleType tt = (TupleType) ta.source().type(environment);						
-			HashMap<String,Type> map = new HashMap<String,Type>(tt.types());
-			map.put(ta.name(),type);
-			tt = new TupleType(map);
-			update(ta.source(), tt, environment);
-		} else {			
-			System.out.println("MISSED ME: " + target + " => " + type);
-		}
 	}
 	
 	protected Pair<Type, Expr> check(Spawn c, HashMap<String,Type> environment) {
