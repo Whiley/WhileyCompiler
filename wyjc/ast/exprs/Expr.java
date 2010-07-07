@@ -108,7 +108,7 @@ public interface Expr extends SyntacticElement {
 	 */
 	public Triple<WExpr, WFormula, WEnvironment> convert(
 			Map<String, Type> environment, ModuleLoader loader)
-			throws ResolveError;
+			throws ResolveError;		
 }
 
 

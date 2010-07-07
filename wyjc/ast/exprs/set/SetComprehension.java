@@ -369,4 +369,18 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		}
 		return true;
 	}	
+	
+	public int hashCode() {
+		return value.hashCode() + srcs.hashCode() + condition.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		if(o instanceof SetComprehension) {
+			SetComprehension sc = (SetComprehension) o;
+			// FIXME: bug when value is null
+			return srcs.equals(sc.srcs) && value.equals(sc.value)
+					&& condition.equals(sc.condition);
+		}
+		return false;
+	}
 }
