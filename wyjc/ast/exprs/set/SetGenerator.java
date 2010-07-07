@@ -154,4 +154,16 @@ public class SetGenerator extends SyntacticElementImpl implements Expr {
 		}
 		return r + "}";
 	}
+	
+	public boolean equals(Object o) {
+		if(o instanceof SetGenerator) {
+			SetGenerator s = (SetGenerator) o;
+			return values.equals(s.values);
+		}
+		return false;
+	}
+	
+	public int hashCode() {
+		return values.hashCode();
+	}
 }

@@ -377,9 +377,12 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 	public boolean equals(Object o) {
 		if(o instanceof SetComprehension) {
 			SetComprehension sc = (SetComprehension) o;
-			// FIXME: bug when value is null
-			return srcs.equals(sc.srcs) && value.equals(sc.value)
+			if(value == null && sc.value != null) {
+				return false;
+			} else {
+				return srcs.equals(sc.srcs) && value.equals(sc.value)
 					&& condition.equals(sc.condition);
+			}
 		}
 		return false;
 	}
