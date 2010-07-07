@@ -151,6 +151,15 @@ public class TupleGenerator extends SyntacticElementImpl implements Expr,Iterabl
 				fields, params), constraints, wenv);
 	}
 	
+	public int hashCode() {
+		return exprs.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		return (o instanceof TupleGenerator) && ((TupleGenerator)o).exprs.equals(exprs);
+	}
+	
+	
 	public String toString() {
 		String r = "(";
 		boolean firstTime = true;

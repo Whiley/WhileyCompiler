@@ -126,5 +126,17 @@ public class TupleAccess extends SyntacticElementImpl implements Expr, LVal {
     		return source + "." + name;
     	}
     }
+    
+    public boolean equals(Object o) {
+    	if(o instanceof TupleAccess) {
+    		TupleAccess t = (TupleAccess) o;
+    		return name.equals(t.name) && source.equals(t.source);
+    	}
+    	return false;
+    }
+    
+    public int hashCode() {
+    	return source.hashCode();
+    }
 
 }
