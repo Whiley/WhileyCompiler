@@ -95,14 +95,14 @@ public class Simplifier {
 				.attributes());
 	}
 	
-	protected Condition notElimination(TypeGate tg) {
-		return new TypeGate(tg.lhsTest(), tg.lhs(), notElimination(tg.rhs()), tg
-				.attributes());
+	protected Condition notElimination(TypeGate tg) {		
+		return new TypeGate(tg.lhsTest(), tg.variable(), tg.lhs(),
+				notElimination(tg.rhs()), tg.attributes());		
 	}
 	
 	protected Condition notElimination(TypeEquals tg) {
-		return new TypeEquals(tg.lhsTest(), tg.lhs(), notElimination(tg.rhs()), tg
-				.attributes());
+		return new TypeEquals(tg.lhsTest(), tg.variable(), tg.lhs(),
+				notElimination(tg.rhs()), tg.attributes());
 	}
 	
 	protected Condition notElimination(Or ac) {
@@ -297,12 +297,12 @@ public class Simplifier {
 	}
 	
 	protected Condition invert(TypeGate c) {
-		return new TypeEquals(c.lhsTest(), c.lhs(), invert(c.rhs()), c
-				.attribute(SourceAttr.class));
+		return new TypeEquals(c.lhsTest(), c.variable(), c.lhs(), invert(c
+				.rhs()), c.attribute(SourceAttr.class));
 	}
 	
 	protected Condition invert(TypeEquals c) {
-		return new TypeGate(c.lhsTest(), c.lhs(), invert(c.rhs()), c
+		return new TypeGate(c.lhsTest(), c.variable(), c.lhs(), invert(c.rhs()), c
 				.attribute(SourceAttr.class));
 	}
 }

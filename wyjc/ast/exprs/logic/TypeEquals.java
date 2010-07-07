@@ -37,24 +37,20 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 	private Expr lhs;
 	private Condition rhs;
 	
-	public TypeEquals(Type type, Expr lhs, Condition rhs, Attribute... attributes) {
+	public TypeEquals(Type type, String var, Expr lhs, Condition rhs, Attribute... attributes) {
 		super(attributes);		
 		this.type = type;
-		this.var = Variable.freshVar();
-		HashMap<Expr,Expr> binding = new HashMap<Expr,Expr>();
-		binding.put(lhs,new Variable(var,lhs.attribute(SourceAttr.class)));
+		this.var = var;
 		this.lhs = lhs;
-		this.rhs = (Condition) rhs.replace(binding);
+		this.rhs = rhs;		
 	}
 
-	public TypeEquals(Type type, Expr lhs, Condition rhs, Collection<Attribute> attributes) {
+	public TypeEquals(Type type, String var, Expr lhs, Condition rhs, Collection<Attribute> attributes) {
 		super(attributes);
 		this.type = type;
-		this.var = Variable.freshVar();
-		HashMap<Expr,Expr> binding = new HashMap<Expr,Expr>();
-		binding.put(lhs,new Variable(var,lhs.attribute(SourceAttr.class)));
+		this.var = var;
 		this.lhs = 	lhs;
-		this.rhs = (Condition) rhs.replace(binding);		
+		this.rhs = rhs;		
 	}
 	
 	public BoolType type(Map<String,Type> environment) {		
@@ -80,7 +76,7 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 	public Condition substitute(Map<String,Expr> binding) {
 		Condition r = rhs.substitute(binding);		
 		Expr l = lhs.substitute(binding);
-		return new TypeEquals(type,l,r,attributes());
+		return new TypeEquals(type,var,l,r,attributes());
 	}
 	
 	public Expr replace(Map<Expr, Expr> binding) {
@@ -90,7 +86,7 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		} else {
 			Condition r = (Condition)  rhs.replace(binding);
 			Expr l = lhs.replace(binding);
-			return new TypeEquals(type, l,r, attributes());
+			return new TypeEquals(type,var,l,r, attributes());
 		}
 	}
 	
@@ -106,6 +102,7 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 	public Set<Variable> uses() {
 		Set<Variable> r = lhs.uses();
 		r.addAll(rhs.uses());
+		r.remove(new Variable(var));
 		return r;
 	}
 	
@@ -117,11 +114,13 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		Type t = l.type(environment);
 		
 		if(type.isSubtype(t, Collections.EMPTY_MAP)) {			
-			return rhs;
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put(var, lhs);
+			return rhs.substitute(binding);
 		} else if (!t.isSubtype(type, Collections.EMPTY_MAP) || l instanceof Value) {
 			return new BoolVal(false);
 		}
-		return new TypeEquals(type, l, r, attributes());
+		return new TypeEquals(type, var, l, r, attributes());
 	}
 	
 	public String toString() {

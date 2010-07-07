@@ -166,6 +166,8 @@ public class VerificationConditionGenerator {
 				
 				// Now, convert the expression being checked to a formula
 				Condition check = simplifier.simplify(new Not(c.condition()));					
+				System.out.println("CONVERTING: " + check);				
+				System.out.println("FROM: " + c.condition());
 				Triple<WFormula, WFormula, WEnvironment> pcs = check.convertCondition(environment, loader);											
 		
 				// Generate initial verification condition.

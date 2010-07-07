@@ -142,6 +142,7 @@ public class WhileyCondition implements BytecodeAttribute {
 			} else if(expr instanceof TypeGate) {
 				TypeGate la = (TypeGate) expr;
 				WhileyDefine.addPoolItems(la.lhsTest(), constantPool);
+				Constant.addPoolItem(new Constant.Utf8(la.variable()), constantPool);
 				addPoolItems(la.lhs(),constantPool);
 				addPoolItems(la.rhs(),constantPool);
 			} else {							
@@ -461,8 +462,9 @@ public class WhileyCondition implements BytecodeAttribute {
 	
 	public static void writeCondition(TypeGate expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(TYPETEST);
+		writer.write_u2(TYPETEST);		
 		WhileyDefine.write(expr.lhsTest(),writer,constantPool);
+		writer.write_u2(constantPool.get(new Constant.Utf8(expr.variable())));
 		writeCondition(expr.lhs(),writer,constantPool);
 		writeCondition(expr.rhs(),writer,constantPool);
 	}
@@ -628,9 +630,11 @@ public class WhileyCondition implements BytecodeAttribute {
 					return new TupleNotEquals(e1,e2);
 				case TYPETEST:			
 					Type t = WhileyDefine.Reader.readType(reader,constantPool);
+					int idx = reader.read_u2(); 
 					e1 = readExpr(reader, constantPool);
 					rhs = readCondition(reader, constantPool);
-					return new TypeGate(t,e1,rhs);
+					Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
+					return new TypeGate(t,utf8.str,e1,rhs);
 			} 
 			throw new RuntimeException("unknown whiley condition encountered: " + code);	
 		}

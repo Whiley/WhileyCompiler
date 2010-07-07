@@ -324,7 +324,8 @@ public class TypeResolution {
 		HashMap<Expr,Expr> c_binding = new HashMap();		
 		for (TypeGate tg : p.second().match(TypeGate.class)) {
 			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
-			c_binding.put(tg, new TypeGate(t,tg.lhs(),tg.rhs(),tg.attributes()));
+			c_binding.put(tg, new TypeGate(t, tg.variable(), tg.lhs(),
+					tg.rhs(), tg.attributes()));
 		}
 		
 		return new Pair<Type, Condition>(ntype,
@@ -486,8 +487,13 @@ public class TypeResolution {
 				Condition cond = p.second();				
 				if(t instanceof UnionType) {
 					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
+					String var = Variable.freshVar();
+					HashMap<String,Expr> binding = new HashMap<String,Expr>();
+					binding.put("$", new Variable(var));										
 					// indicates a choice of some kind required					
-					cond = new TypeGate(p.first(),v,cond, cond.attribute(SourceAttr.class));
+					cond = new TypeGate(p.first(), var, v, cond
+							.substitute(binding), cond
+							.attribute(SourceAttr.class));					
 				}
 				c = c == null ? cond : new Or(c,cond,cond.attribute(SourceAttr.class));							
 			}			
@@ -1407,15 +1413,17 @@ public class TypeResolution {
 		}
 		
 		Condition condition = new BoolVal(true,ueq.attribute(SourceAttr.class)); 
+		String var = Variable.freshVar();				
 		
 		if(rhs.second() != null) {
+			Variable v = new Variable(var,ueq.attribute(SourceAttr.class));
 			condition = rhs.second();
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			binding.put("$",lhs.second());
+			binding.put("$",v);
 			condition = condition.substitute(binding);			 
-		}
-
-		return new Pair<Type, Expr>(Types.T_BOOL, new TypeEquals(rhs_t, lhs
+		}		
+		
+		return new Pair<Type, Expr>(Types.T_BOOL, new TypeEquals(rhs_t, var, lhs
 				.second(), condition, ueq.attributes()));
 	}
 	
@@ -1446,8 +1454,7 @@ public class TypeResolution {
 		return new Pair<Type, Expr>(v.type(), v);
 	}
 	
-	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {		
-		System.out.println("CHECKING: " + c + " : " + environment);
+	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {				
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
 		
 		if(!c.lhsTest().isSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
@@ -1459,8 +1466,9 @@ public class TypeResolution {
 		
 		Pair<Type,Expr> rhs = check(c.rhs(),environment);
 		
-		return new Pair<Type, Expr>(rhs.first(), new TypeGate(c.lhsTest(), lhs
-				.second(), (Condition) rhs.second(), c.attributes()));
+		return new Pair<Type, Expr>(rhs.first(), new TypeGate(c.lhsTest(), c
+				.variable(), lhs.second(), (Condition) rhs.second(), c
+				.attributes()));
 	}
 	
 	protected Pair<Type, Expr> check(Spawn c, HashMap<String,Type> environment) {
