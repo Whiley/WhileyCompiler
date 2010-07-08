@@ -24,54 +24,56 @@ import org.junit.*;
 
 public class Tuples {
 	@Test public void Unsat_1() { 
-		assertTrue(checkUnsat("(int x, int y) t; t.x > 0 && t.x <= 0"));
+		assertTrue(checkUnsat("t <: (int x, int y) && t.x > 0 && t.x <= 0"));
 	}
 	
 	@Test public void Unsat_2() { 
-		assertTrue(checkUnsat("(int x, int y) t; t.x > 0 && t.x+1 <= 1"));
+		assertTrue(checkUnsat("t <: (int x, int y) && t.x > 0 && t.x+1 <= 1"));
 	}
 	
 	@Test public void Unsat_3() { 
-		assertTrue(checkUnsat("(int x, int y) t; t.x < t.y && t.y < 0 && 0 < t.x"));
+		assertTrue(checkUnsat("t <: (int x, int y) && t.x < t.y && t.y < 0 && 0 < t.x"));
 	}
 	
 	@Test public void Unsat_4() { 
-		assertTrue(checkUnsat("(int x, int y) t; t.x < t.y && t.y <= 0 && 0 <= t.x"));
+		assertTrue(checkUnsat("t <: (int x, int y) && t.x < t.y && t.y <= 0 && 0 <= t.x"));
 	}
 
 	@Test public void Unsat_5() {
-		assertTrue(checkUnsat("(int f1,int f2) x; x==(f1:1.0,f2:3.0) && x.f2 <= 2"));		
+		assertTrue(checkUnsat("x <: (int f1,int f2)&& x==(f1:1.0,f2:3.0) && x.f2 <= 2"));		
 	}
 	
 	@Test public void Unsat_6() { 
-		assertTrue(checkUnsat("(int x, int y) t; t.x != t.y && t.x >= 0 && t.y >= 0 && t.x + t.y <= 0"));
+		assertTrue(checkUnsat("t <: (int x, int y) && t.x != t.y && t.x >= 0 && t.y >= 0 && t.x + t.y <= 0"));
 	}
 	
 	@Test public void Unsat_7() { 
-		assertTrue(checkUnsat("(int x, int y) t; (t.y == 2 || t.y == -11) && (t.x == 3 || t.x == 10) && t.y >= t.x"));
+		assertTrue(checkUnsat("t <: (int x, int y) && (t.y == 2 || t.y == -11) && (t.x == 3 || t.x == 10) && t.y >= t.x"));
 	}
 	
 	@Test public void Unsat_8() { 
-		assertTrue(checkUnsat("(int x, int y) t1, t2; t1.x < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2"));
+		assertTrue(checkUnsat("t1 <: (int x, int y) && t2 <: (int x, int y) &&t1.x < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2"));
 	}
 	
 	@Test public void Unsat_9() { 
-		assertTrue(checkUnsat("(int f1,int f2) x,y; y==(f1:1.0,f2:3.0) && x.f1==1 && x.f2==3 && x!=y"));
+		assertTrue(checkUnsat("x <: (int f1,int f2) && y <: (int f1,int f2) && " + 
+				"y==(f1:1.0,f2:3.0) && x.f1==1 && x.f2==3 && x!=y"));
 	}
 	
 	@Test public void Unsat_10() { 
-		assertTrue(checkUnsat("(int f1,int f2) x,y; int z; y==(f1:z,f2:3.0) && x.f1==z && x.f2==3 && x!=y"));
+		assertTrue(checkUnsat("x <: (int f1,int f2) && y <: (int f1,int f2) && z<:int &&" +
+				"y==(f1:z,f2:3.0) && x.f1==z && x.f2==3 && x!=y"));
 	}
 	
 	@Test public void Unsat_11() { 
-		assertTrue(checkUnsat("((int f1,int f2) f) x;(int f1,int f2) y; y==(f1:1.0,f2:3.0) && x.f.f1==1 && x.f.f2==3 && x.f!=y"));
+		assertTrue(checkUnsat("x <: ((int f1,int f2) f) && y <: (int f1,int f2) && y==(f1:1.0,f2:3.0) && x.f.f1==1 && x.f.f2==3 && x.f!=y"));
 	}
 	
 	@Test public void Unsat_12() { 
-		assertTrue(checkUnsat("(int f1,int f2) x,y; int a; y==(f1:a,f2:3.0) && x==(f1:1,f2:3.0) && x != y && a == 1"));
+		assertTrue(checkUnsat("x <: (int f1,int f2) && y <: (int f1,int f2) && a <: int && y==(f1:a,f2:3.0) && x==(f1:1,f2:3.0) && x != y && a == 1"));
 	}
 	
 	@Test public void Sat_1() { 
-		assertTrue(checkSat("(int f1,int f2) x$0,x; x$0==(f1:1.0,f2:3.0) && x.f1==2.0 && x$0.f2==x.f2 && x.f1!=x.f2"));
+		assertTrue(checkSat("x <: (int f1,int f2) && y <: (int f1,int f2) && y==(f1:1.0,f2:3.0) && x.f1==2.0 && y.f2==x.f2 && x.f1!=x.f2"));
 	}
 }
