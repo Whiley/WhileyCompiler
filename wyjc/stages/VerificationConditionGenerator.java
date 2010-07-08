@@ -171,7 +171,10 @@ public class VerificationConditionGenerator {
 				// Generate initial verification condition.
 				WFormula vc = and(preCondition,pcs.second(),pcs.first());																
 				
-				vc = addEnvironment(vc,check.uses(),environment);
+				// Now, generate the typing constrains
+				Set<Variable> uses = check.uses();
+				uses.addAll(attr.preCondition().uses());
+				vc = addEnvironment(vc,uses,environment);
 				
 				// Simplify vc where possible.							
 //				vc = simplify(vc);				
