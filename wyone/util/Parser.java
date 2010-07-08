@@ -28,6 +28,7 @@ import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.tuple.*;
+import wyone.theory.type.*;
 import static wyone.theory.logic.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
 import static wyone.theory.set.WSets.*;
@@ -82,7 +83,8 @@ public class Parser {
 			int start = index;
 			String id = parseIdentifier();
 			index = start; // reset index
-			if(id.equals("int") || id.equals("real") || id.equals("bool")) {
+			if (id.equals("?") || id.equals("int") || id.equals("real")
+					|| id.equals("bool")) {
 				return true;
 			}
 
@@ -112,7 +114,10 @@ public class Parser {
 		
 		int start = index;
 		
-		if(input.charAt(index) == '{') {
+		if(input.charAt(index) == '?') {
+			match("?");
+			return WAnyType.T_ANY;
+		} else if(input.charAt(index) == '{') {
 			match("{");
 			WType et = parseType();
 			match("}");
@@ -315,6 +320,11 @@ public class Parser {
 			match("=!}");
 			WExpr rhs = parseExpression(environment);			
 			return supsetEq(lhs, rhs).not();
+		} else if ((index + 1) < input.length() && input.charAt(index) == '~'
+				&& input.charAt(index + 1) == '=') {
+			match("~=");
+			WType rhs = parseType();			
+			return new WTypeTest(true, lhs, rhs);
 		} else if(lhs instanceof WVariable) {
 			WVariable v = (WVariable) lhs;
 			return new WPredicate(true,v.name(),v.subterms());

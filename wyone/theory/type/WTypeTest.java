@@ -1,0 +1,91 @@
+// This file is part of the Wyone automated theorem prover.
+//
+// Wyone is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License as published 
+// by the Free Software Foundation; either version 3 of the License, 
+// or (at your option) any later version.
+//
+// Wyone is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
+// the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public 
+// License along with Wyone. If not, see <http://www.gnu.org/licenses/>
+//
+// Copyright 2010, David James Pearce. 
+
+package wyone.theory.type;
+
+import java.util.*;
+
+import wyone.core.*;
+import wyone.theory.logic.*;
+import wyone.util.WConstructor;
+
+public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
+	private boolean sign;
+	private WType type;
+
+	/**
+	 * Construct a (non-strict) subset relationship between lhs and rhs. If
+	 * sign, then we have |lhs| <= |rhs| (i.e. all of lhs is in rhs, and they
+	 * may be equal), otherwise there is an element of lhs which is not in rhs.
+	 * 
+	 * @param sign
+	 * @param lhs
+	 * @param rhs
+	 */
+	public WTypeTest(boolean sign, WExpr lhs, WType type) {
+		super(sign ? ("~="+type) : ("!~="+type),lhs);
+		this.sign = sign;
+		this.type = type;
+	}
+	
+	public boolean sign() {
+		return sign;
+	}
+	
+	public WLiteral not() {
+		return new WTypeTest(!sign,lhs(),type);
+	}
+	
+	public WBoolType type(Solver solver) {
+		return WBoolType.T_BOOL;
+	}
+	
+	public WExpr lhs() {
+		return subterms.get(0);
+	}
+
+	public WLiteral rearrange(WExpr rhs) {
+		// no idea what to do here ...
+		throw new RuntimeException("Not sure how to rearrange type tests!");
+	}
+	
+	public WLiteral substitute(Map<WExpr,WExpr> binding) {
+		WExpr lhs = lhs();		
+		WExpr nlhs = lhs.substitute(binding);
+		
+		// need to check the type here!
+		
+		WLiteral r;
+		
+		if(lhs != nlhs) {
+			r = new WTypeTest(sign,nlhs,type); 			
+		} else {
+			r = this;
+		}
+		
+		WLiteral tmp = (WLiteral) binding.get(r);
+		return tmp != null ? tmp : r;
+	}
+	
+	public String toString() {		
+		if(sign) {
+			return lhs().toString() + "~=" + type;			
+		} else {
+			return lhs().toString() + "~!=" + type;			
+		}		
+	}
+}
