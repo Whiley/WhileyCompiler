@@ -27,36 +27,36 @@ public class BoundedListQuantifiers {
 	
 	@Test
 	public void Unsat_1() {
-		assertTrue(checkUnsat("[int] xs; xs==[0,1,2] && all [ i : xs | xs[i] > 0 ]"));
+		assertTrue(checkUnsat("xs <: [int] && xs==[0,1,2] && all [ i : xs | xs[i] > 0 ]"));
 	}
 	
 	@Test
 	public void Unsat_5() {
-		assertTrue(checkUnsat("[int] xs; int i; xs[i]==0 && all [ j : xs | xs[j] > 0 ]"));
+		assertTrue(checkUnsat("xs <: [int] && y <: int && xs[i]==0 && all [ j : xs | xs[j] > 0 ]"));
 	}
 	
 	@Test
 	public void Unsat_6() {
-		assertTrue(checkUnsat("[int] xs; some [ i : xs | xs[i] == 0 ] && all [ j : xs | xs[j] > 0 ]"));
+		assertTrue(checkUnsat("xs <: [int] && some [ i : xs | xs[i] == 0 ] && all [ j : xs | xs[j] > 0 ]"));
 	}
 	
 	@Test
 	public void Unsat_7() {
-		assertTrue(checkUnsat("int x,i; [int] xs; x == xs[i]" + 
-				" && all [ j : xs | xs[j] > 0 ] && x >= 0 && x < 1"));
+		assertTrue(checkUnsat("x <: int && y <: int && xs <: [int] && x == xs[i]"
+				+ " && all [ j : xs | xs[j] > 0 ] && x >= 0 && x < 1"));
 	}
 	
 
 	@Test
 	public void Unsat_8() {
-		assertTrue(checkUnsat("[int] result; int x; 0 > result[x] && |result|==6 " + 
-				"&& all [$3 : result | ([5.0,6.0,7.0][$3-3]==result[$3] || 3 > $3)" + 
-				"&& (3 <= $3 || [1.0,2.0,3.0][$3]==result[$3])]"));
+		assertTrue(checkUnsat("result <: [int] && x <: int && 0 > result[x] && |result|==6 "
+				+ "&& all [$3 : result | ([5.0,6.0,7.0][$3-3]==result[$3] || 3 > $3)"
+				+ "&& (3 <= $3 || [1.0,2.0,3.0][$3]==result[$3])]"));
 	}
 	
 	@Test
 	public void Unsat_9() {
-		assertTrue(checkUnsat("[int] left, right, result; " + 
+		assertTrue(checkUnsat("left <: [int] && right <: [int] && result <: [int] && " + 
 				"some [x : result | 0 > result[x]] && left==[1.0,2.0,3.0]  && right==[5.0,6.0,7.0]" + 
 				"&& |result|==(|left|+|right|) " + 
 				"&& (all [$3 : result | (right[($3-|left|)]==result[$3] || 0 > ($3-|left|)) && (0 <= ($3-|left|) || left[$3]==result[$3])])"));
@@ -65,6 +65,6 @@ public class BoundedListQuantifiers {
 
 	@Test
 	public void Sat_1() {
-		assertTrue(checkSat("[int] xs; xs==[1,2] && all [ i : xs | xs[i] > 0 ]"));
+		assertTrue(checkSat("xs <: [int] && xs==[1,2] && all [ i : xs | xs[i] > 0 ]"));
 	}
 }

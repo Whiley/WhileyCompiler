@@ -58,63 +58,393 @@ public class Parser {
 	}
 		
 	public WFormula parseInput() {
-		WFormula f = WBool.TRUE;
-		// The following map is used to check that every variable used in the
-		// formula has been declared.
-		HashMap<String,WType> environment = new HashMap<String,WType>();
-		
-		while (isTypeAhead()) {
-			f = and(f,parseTypeDeclaration(environment));			
-		}
-		
-		f = and(f,parseFormula(environment));
-		
-		return f;
+		return parseFormula();		
+	}	
+	
+	private WFormula parseFormula() {
+		return parseConjunctDisjunct();
 	}
 	
-	private boolean isTypeAhead() {
+	private WFormula parseConjunctDisjunct() {
+		WFormula c1 = parsePredicate();
+		
+		parseWhiteSpace();				 
+		
+		if(index < input.length() && input.charAt(index) == '&') {
+			match("&&");
+			WFormula c2 = parseConjunctDisjunct();			
+			return and(c1,c2);
+		} else if(index < input.length() && input.charAt(index) == '|') {
+			match("||");
+			WFormula c2 = parseConjunctDisjunct();			
+			return or(c1,c2);
+		}
+		return c1;
+	}
+		
+	private WFormula parsePredicate() {
 		parseWhiteSpace();
 		
-		if (index < input.length()
-				&& (input.charAt(index) == '{' || input.charAt(index) == '[' || input
-						.charAt(index) == '(')) {
-			int start = index;
-			index++;
-			boolean r = isTypeAhead();		
-			index=start;
-			return r; 			
+		int start = index;
+		
+		String lookahead = lookahead();
+		
+		if(lookahead.equals("(")) {
+			match("(");			
+			WFormula r = parseConjunctDisjunct();			
+			match(")");
+			return r;
+		} else if(lookahead.equals("!")) {
+			match("!");			
+			return not(parsePredicate());			
+		} else if(lookahead.equals("all")) {						
+			match("all");					
+			match("[");
+						
+			parseWhiteSpace();
+			HashMap<WVariable,WExpr> vars = new HashMap<WVariable,WExpr>();			
+			boolean firstTime=true;
+			while(!lookahead().equals("|")) {		
+				if(!firstTime) {
+					match(",");
+					parseWhiteSpace();
+				}
+				firstTime=false;
+				String v = parseIdentifier();				
+				match(":");				
+				WExpr src = parseExpression();				
+				WVariable var = new WVariable(v); 
+				vars.put(var,src);
+				// type is ignored for now								
+				parseWhiteSpace();
+			}
+			match("|");
+			WFormula f = parseConjunctDisjunct();			
+			match("]");
+			return new WBoundedForall(true,vars,f);						
+		} else if(lookahead.equals("some")) {			
+			match("some");			
+			match("[");			
+			parseWhiteSpace();
+			HashMap<WVariable,WExpr> vars = new HashMap<WVariable,WExpr>();			
+			boolean firstTime=true;
+			while(!lookahead().equals("|")) {		
+				if(!firstTime) {
+					match(",");
+					parseWhiteSpace();
+				}
+				firstTime=false;
+				String v = parseIdentifier();
+				match(":");				
+				WExpr src = parseExpression();				
+				WVariable var = new WVariable(v); 
+				vars.put(var,src);
+				// type is ignored for now								
+				parseWhiteSpace();
+			}
+			match("|");
+			WFormula f = parseConjunctDisjunct();			
+			match("]");
+			return new WBoundedForall(false,vars,f);							
+		} 
+			
+		WExpr lhs = parseExpression();
+		
+		parseWhiteSpace();				 
+		
+		if ((index + 1) < input.length() && input.charAt(index) == '<'
+				&& input.charAt(index + 1) == ':') {
+			match("<:");
+			WType rhs = parseType();
+			return WTypes.subtypeOf(lhs, rhs);
+		} else if ((index + 1) < input.length() && input.charAt(index) == '<'
+				&& input.charAt(index + 1) == '=') {
+			match("<=");
+			WExpr rhs = parseExpression();			
+			return lessThanEq(lhs, rhs);
+		} else if (index < input.length() && input.charAt(index) == '<') {
+			match("<");
+			WExpr rhs = parseExpression();
+			return lessThan(lhs,rhs);			
+		} else if ((index + 1) < input.length() && input.charAt(index) == '>'
+				&& input.charAt(index + 1) == '=') {
+			match(">=");
+			WExpr rhs = parseExpression();
+			return greaterThanEq(lhs,rhs);
+		} else if (index < input.length() && input.charAt(index) == '>') {
+			match(">");
+			WExpr rhs = parseExpression();
+			return greaterThan(lhs,rhs);			
+		} else if ((index + 1) < input.length() && input.charAt(index) == '='
+				&& input.charAt(index + 1) == '=') {
+			match("==");
+			WExpr rhs = parseExpression();			
+			return WExprs.equals(lhs,rhs);
+		} else if ((index + 1) < input.length() && input.charAt(index) == '!'
+				&& input.charAt(index + 1) == '=') {
+			match("!=");
+			WExpr rhs = parseExpression();
+			return WExprs.notEquals(lhs, rhs);			
+		} else if ((index + 1) < input.length() && input.charAt(index) == '{'
+				&& input.charAt(index + 1) == '=') {
+			match("{=");
+			WExpr rhs = parseExpression();			
+			return subsetEq(lhs, rhs);
+		} else if ((index + 1) < input.length() && input.charAt(index) == '='
+				&& input.charAt(index + 1) == '}') {
+			match("=}");
+			WExpr rhs = parseExpression();			
+			return supsetEq(lhs, rhs);
+		} else if ((index + 2) < input.length() && input.charAt(index) == '{'
+				&& input.charAt(index + 1) == '!') {
+			match("{!=");
+			WExpr rhs = parseExpression();			
+			return subsetEq(lhs, rhs).not();
+		} else if ((index + 2) < input.length() && input.charAt(index) == '!'
+				&& input.charAt(index + 1) == '}') {
+			match("=!}");
+			WExpr rhs = parseExpression();			
+			return supsetEq(lhs, rhs).not();
+		} else if(lhs instanceof WVariable) {
+			WVariable v = (WVariable) lhs;
+			return new WPredicate(true,v.name(),v.subterms());
 		} else {
-			int start = index;
-			String id = parseIdentifier();
-			index = start; // reset index
-			if (id.equals("?") || id.equals("int") || id.equals("real")
-					|| id.equals("bool")) {
-				return true;
+			// will need more here
+			throw new SyntaxError("syntax error", filename, start,
+						index - 1);			
+		} 					
+	}
+	
+	private WExpr parseExpression( ) {				
+		WExpr lhs = parseMulDivExpression();
+		
+		parseWhiteSpace();				 
+		
+		while (index < input.length()
+				&& (input.charAt(index) == '-' || input.charAt(index) == '+')) {
+			boolean add = input.charAt(index) == '+';
+			if (add) {
+				match("+");
+			} else {
+				match("-");
 			}
 
-			return false;		
+			WExpr rhs = parseMulDivExpression();
+			if (add) {
+				lhs = add(lhs, rhs);
+			} else {
+				lhs = subtract(lhs, rhs);
+			}
+		}
+		
+		return lhs;
+	}
+	
+	private WExpr parseMulDivExpression( ) {
+		int start = index;
+		WExpr lhs = parseIndexTerm();
+		parseWhiteSpace();
+		
+		if(index < input.length() && input.charAt(index) == '*') {
+			match("*");
+			WExpr rhs = parseExpression();
+			return multiply(lhs,rhs);			
+		} else if(index < input.length() && input.charAt(index) == '/') {
+			throw new SyntaxError("Support for divide is lacking", filename,
+					start, index - 1);
+		} else {
+			return lhs;
 		}
 	}
 	
-	private WFormula parseTypeDeclaration(HashMap<String,WType> environment) {
-		WFormula f = WBool.TRUE;
-		WType t = parseType();
+	private WExpr parseIndexTerm() {
+		WExpr term = parseTerm();
+		String lookahead = lookahead();
+		while(lookahead.equals(".") || lookahead.equals("[")) {				
+			if(lookahead.equals(".")) {
+				match(".");
+				String field = parseIdentifier();
+				term = new WTupleAccess(term,field);
+			} else {
+				match("[");										
+				WExpr index = parseExpression();									
+				match("]");
+				term = new WListAccess(term,index);	
+			}
+			lookahead = lookahead();
+		}
+		
+		return term;		
+	}
+	
+	private WExpr parseTerm() {
 		parseWhiteSpace();
+		
+		int start = index;		
+		if (index < input.length() && input.charAt(index) == '(') {			
+			return parseBracketedTerm();			
+		} else if (index < input.length() && input.charAt(index) == '[') {			
+			return parseListTerm();			
+		} else if (index < input.length() && input.charAt(index) == '{') {			
+			return parseSetTerm();			
+		} else if (index < input.length() && input.charAt(index) == '|') {			
+			return parseLengthTerm();			
+		} else if (index < input.length()
+				&& Character.isJavaIdentifierStart(input.charAt(index))) {
+			return parseIdentifierTerm();			
+		} else if (index < input.length()
+				&& Character.isDigit(input.charAt(index))) {
+			return parseNumber();
+		} else if (input.charAt(index) == '-') {
+			return parseNegation();
+		} else {
+			throw new SyntaxError("syntax error", filename, start, index);
+		}
+	}
+	
+	private WExpr parseLengthTerm() {
+		match("|");
+		WExpr r = parseExpression();
+		match("|");		
+		return new WLengthOf(r);
+	}
+	
+	private WExpr parseListTerm() {
+		match("[");
+		ArrayList<WExpr> params = new ArrayList<WExpr>();
+		String lookahead = lookahead();
+		boolean firstTime = true;
+		while(!lookahead.equals("]")) {
+			if(!firstTime) {
+				match(",");
+				lookahead = lookahead();
+			}
+			firstTime=false;							
+			params.add(parseExpression());
+			lookahead = lookahead();
+		}
+		match("]");
+		return new WListConstructor(params).substitute(Collections.EMPTY_MAP);
+	}
+	
+
+	private WExpr parseSetTerm() {		
+		match("{");
+		HashSet<WExpr> params = new HashSet<WExpr>();
+		String lookahead = lookahead();
+		boolean firstTime = true;
+		while(!lookahead.equals("}")) {
+			if(!firstTime) {
+				match(",");
+				lookahead = lookahead();
+			}
+			firstTime=false;							
+			params.add(parseExpression());
+			lookahead = lookahead();
+		}		
+		match("}");		
+		return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
+	}
+	
+	private WExpr parseIdentifierTerm() {
+		int start = index;		
 		String v = parseIdentifier();
-		parseWhiteSpace();
-		f = and(f,WTypes.subtypeOf(new WVariable(v),t));
-		environment.put(v,t);
-		while(input.charAt(index) == ',') {
-			match(",");
-			parseWhiteSpace();
-			v = parseIdentifier();
-			f = and(f,WTypes.subtypeOf(new WVariable(v),t));
-			environment.put(v,t);
-		}
-		match(";");
-		return f;
+		
+		ArrayList<WExpr> params = null;
+		
+		if(lookahead().equals("(")) {
+			// this indicates a function application
+			match("(");
+			params = new ArrayList<WExpr>();
+			String lookahead = lookahead();
+			boolean firstTime = true;
+			while(!lookahead.equals(")")) {
+				if(!firstTime) {
+					match(",");
+					lookahead = lookahead();
+				}
+				firstTime=false;							
+				params.add(parseExpression());
+				lookahead = lookahead();
+			}
+			match(")");								
+		} 
+		
+		WExpr term; 
+		
+		if(params == null) {
+			return  new WVariable(v);
+		} else {
+			return new WVariable(v,params);
+		}					
 	}
 	
+	private WExpr parseBracketedTerm() {
+		match("(");
+		WExpr e;					
+		if(lookahead(2).equals(":")) {				
+			// this indicates a tuple constructor
+			ArrayList<String> fields = new ArrayList();
+			ArrayList<WExpr> items = new ArrayList();
+			boolean firstTime = true;
+			while(!lookahead().equals(")")) {
+				if(!firstTime) {
+					match(",");						
+				}
+				firstTime = false;
+				String id = parseIdentifier();
+				match(":");
+				WExpr val = parseExpression();
+				fields.add(id);
+				items.add(val);					
+			}
+			e = new WTupleConstructor(fields,items);				
+		} else {
+			// normal bracketed expression
+			e = parseExpression();				
+		}
+		
+		match(")");
+		return e;
+	}
+	
+	private WExpr parseNegation() {		
+		match("-");
+		WExpr e = parseIndexTerm();		
+		return negate(e);
+	}
+	
+	private String parseIdentifier() {		
+		String id = Character.toString(input.charAt(index));
+		index++; // skip past the identifier start
+		while(index < input.length() && Character.isJavaIdentifierPart(input.charAt(index))) {
+			id += Character.toString(input.charAt(index));
+			index = index + 1;			
+		}
+		return id;
+	}
+	
+	private WExpr parseNumber() {
+		int start = index;
+		while (index < input.length() && Character.isDigit(input.charAt(index))) {
+			index = index + 1;
+		}
+		if(index < input.length() && input.charAt(index) == '.') {
+			index = index + 1;
+			int start2 = index;
+			while (index < input.length() && Character.isDigit(input.charAt(index))) {
+				index = index + 1;
+			}
+			String lhs = input.substring(start, start2-1);
+			String rhs = input.substring(start2, index);
+			lhs = lhs + rhs;
+			BigInteger bottom = BigInteger.valueOf(10);
+			bottom = bottom.pow(rhs.length());
+			return new WNumber(new BigInteger(lhs),bottom);
+		} else {
+			return new WNumber(new BigInteger(input.substring(start, index)));
+		}
+	}
 	
 	private WType parseType() {
 		parseWhiteSpace();
@@ -164,419 +494,8 @@ public class Parser {
 						index - 1);				
 			}
 		
-			if(index < input.length() && input.charAt(index) == '(') {
-				// this indicates a constructor type
-				ArrayList<WType> types = new ArrayList<WType>();
-				match("(");
-				boolean firstTime=true;
-				do {
-					if(!firstTime) {
-						match(",");
-					}
-					firstTime=false;
-					types.add(parseType());
-				} while (index < input.length() && input.charAt(index) == ',');
-				match(")");				
-				r = new WFunType(r, types);
-			}
-			
 			return r;
 		}		
-	}
-	
-	private WFormula parseFormula(HashMap<String,WType> environment ) {
-		return parseConjunctDisjunct(environment);
-	}
-	
-	private WFormula parseConjunctDisjunct(HashMap<String,WType> environment) {
-		WFormula c1 = parsePredicate(environment);
-		
-		parseWhiteSpace();				 
-		
-		if(index < input.length() && input.charAt(index) == '&') {
-			match("&&");
-			WFormula c2 = parseConjunctDisjunct(environment);			
-			return and(c1,c2);
-		} else if(index < input.length() && input.charAt(index) == '|') {
-			match("||");
-			WFormula c2 = parseConjunctDisjunct(environment);			
-			return or(c1,c2);
-		}
-		return c1;
-	}
-		
-	private WFormula parsePredicate(HashMap<String,WType> environment) {
-		parseWhiteSpace();
-		
-		int start = index;
-		
-		String lookahead = lookahead();
-		
-		if(lookahead.equals("(")) {
-			match("(");			
-			WFormula r = parseConjunctDisjunct(environment);			
-			match(")");
-			return r;
-		} else if(lookahead.equals("!")) {
-			match("!");			
-			return not(parsePredicate(environment));			
-		} else if(lookahead.equals("all")) {			
-			environment = new HashMap(environment);
-			match("all");					
-			match("[");
-						
-			parseWhiteSpace();
-			HashMap<WVariable,WExpr> vars = new HashMap<WVariable,WExpr>();			
-			boolean firstTime=true;
-			while(!lookahead().equals("|")) {		
-				if(!firstTime) {
-					match(",");
-					parseWhiteSpace();
-				}
-				firstTime=false;
-				String v = parseIdentifier();				
-				match(":");				
-				WExpr src = parseExpression(environment);				
-				WVariable var = new WVariable(v); 
-				vars.put(var,src);
-				// type is ignored for now				
-				environment.put(v, WIntType.T_INT);
-				parseWhiteSpace();
-			}
-			match("|");
-			WFormula f = parseConjunctDisjunct(environment);			
-			match("]");
-			return new WBoundedForall(true,vars,f);						
-		} else if(lookahead.equals("some")) {
-			environment = new HashMap(environment);
-			match("some");			
-			match("[");			
-			parseWhiteSpace();
-			HashMap<WVariable,WExpr> vars = new HashMap<WVariable,WExpr>();			
-			boolean firstTime=true;
-			while(!lookahead().equals("|")) {		
-				if(!firstTime) {
-					match(",");
-					parseWhiteSpace();
-				}
-				firstTime=false;
-				String v = parseIdentifier();
-				match(":");				
-				WExpr src = parseExpression(environment);				
-				WVariable var = new WVariable(v); 
-				vars.put(var,src);
-				// type is ignored for now				
-				environment.put(v, WIntType.T_INT);
-				parseWhiteSpace();
-			}
-			match("|");
-			WFormula f = parseConjunctDisjunct(environment);			
-			match("]");
-			return new WBoundedForall(false,vars,f);							
-		} 
-			
-		WExpr lhs = parseExpression(environment);
-		
-		parseWhiteSpace();				 
-		
-		if ((index + 1) < input.length() && input.charAt(index) == '<'
-				&& input.charAt(index + 1) == '=') {
-			match("<=");
-			WExpr rhs = parseExpression(environment);			
-			return lessThanEq(lhs, rhs);
-		} else if (index < input.length() && input.charAt(index) == '<') {
-			match("<");
-			WExpr rhs = parseExpression(environment);
-			return lessThan(lhs,rhs);			
-		} else if ((index + 1) < input.length() && input.charAt(index) == '>'
-				&& input.charAt(index + 1) == '=') {
-			match(">=");
-			WExpr rhs = parseExpression(environment);
-			return greaterThanEq(lhs,rhs);
-		} else if (index < input.length() && input.charAt(index) == '>') {
-			match(">");
-			WExpr rhs = parseExpression(environment);
-			return greaterThan(lhs,rhs);			
-		} else if ((index + 1) < input.length() && input.charAt(index) == '='
-				&& input.charAt(index + 1) == '=') {
-			match("==");
-			WExpr rhs = parseExpression(environment);			
-			return WExprs.equals(lhs,rhs);
-		} else if ((index + 1) < input.length() && input.charAt(index) == '!'
-				&& input.charAt(index + 1) == '=') {
-			match("!=");
-			WExpr rhs = parseExpression(environment);
-			return WExprs.notEquals(lhs, rhs);			
-		} else if ((index + 1) < input.length() && input.charAt(index) == '{'
-				&& input.charAt(index + 1) == '=') {
-			match("{=");
-			WExpr rhs = parseExpression(environment);			
-			return subsetEq(lhs, rhs);
-		} else if ((index + 1) < input.length() && input.charAt(index) == '='
-				&& input.charAt(index + 1) == '}') {
-			match("=}");
-			WExpr rhs = parseExpression(environment);			
-			return supsetEq(lhs, rhs);
-		} else if ((index + 2) < input.length() && input.charAt(index) == '{'
-				&& input.charAt(index + 1) == '!') {
-			match("{!=");
-			WExpr rhs = parseExpression(environment);			
-			return subsetEq(lhs, rhs).not();
-		} else if ((index + 2) < input.length() && input.charAt(index) == '!'
-				&& input.charAt(index + 1) == '}') {
-			match("=!}");
-			WExpr rhs = parseExpression(environment);			
-			return supsetEq(lhs, rhs).not();
-		} else if ((index + 1) < input.length() && input.charAt(index) == '~'
-				&& input.charAt(index + 1) == '=') {
-			match("~=");
-			WType rhs = parseType();			
-			return new WSubtype(true, lhs, rhs);
-		} else if(lhs instanceof WVariable) {
-			WVariable v = (WVariable) lhs;
-			return new WPredicate(true,v.name(),v.subterms());
-		} else {
-			// will need more here
-			throw new SyntaxError("syntax error", filename, start,
-						index - 1);			
-		} 					
-	}
-	
-	private WExpr parseExpression(HashMap<String,WType> environment ) {				
-		WExpr lhs = parseMulDivExpression(environment);
-		
-		parseWhiteSpace();				 
-		
-		while (index < input.length()
-				&& (input.charAt(index) == '-' || input.charAt(index) == '+')) {
-			boolean add = input.charAt(index) == '+';
-			if (add) {
-				match("+");
-			} else {
-				match("-");
-			}
-
-			WExpr rhs = parseMulDivExpression(environment);
-			if (add) {
-				lhs = add(lhs, rhs);
-			} else {
-				lhs = subtract(lhs, rhs);
-			}
-		}
-		
-		return lhs;
-	}
-	
-	private WExpr parseMulDivExpression(HashMap<String,WType> environment ) {
-		int start = index;
-		WExpr lhs = parseIndexTerm(environment);
-		parseWhiteSpace();
-		
-		if(index < input.length() && input.charAt(index) == '*') {
-			match("*");
-			WExpr rhs = parseExpression(environment);
-			return multiply(lhs,rhs);			
-		} else if(index < input.length() && input.charAt(index) == '/') {
-			throw new SyntaxError("Support for divide is lacking", filename,
-					start, index - 1);
-		} else {
-			return lhs;
-		}
-	}
-	
-	private WExpr parseIndexTerm(HashMap<String,WType> environment) {
-		WExpr term = parseTerm(environment);
-		String lookahead = lookahead();
-		while(lookahead.equals(".") || lookahead.equals("[")) {				
-			if(lookahead.equals(".")) {
-				match(".");
-				String field = parseIdentifier();
-				term = new WTupleAccess(term,field);
-			} else {
-				match("[");										
-				WExpr index = parseExpression(environment);									
-				match("]");
-				term = new WListAccess(term,index);	
-			}
-			lookahead = lookahead();
-		}
-		
-		return term;		
-	}
-	
-	private WExpr parseTerm(HashMap<String,WType> environment) {
-		parseWhiteSpace();
-		
-		int start = index;		
-		if (index < input.length() && input.charAt(index) == '(') {			
-			return parseBracketedTerm(environment);			
-		} else if (index < input.length() && input.charAt(index) == '[') {			
-			return parseListTerm(environment);			
-		} else if (index < input.length() && input.charAt(index) == '{') {			
-			return parseSetTerm(environment);			
-		} else if (index < input.length() && input.charAt(index) == '|') {			
-			return parseLengthTerm(environment);			
-		} else if (index < input.length()
-				&& Character.isJavaIdentifierStart(input.charAt(index))) {
-			return parseIdentifierTerm(environment);			
-		} else if (index < input.length()
-				&& Character.isDigit(input.charAt(index))) {
-			return parseNumber();
-		} else if (input.charAt(index) == '-') {
-			return parseNegation(environment);
-		} else {
-			throw new SyntaxError("syntax error", filename, start, index);
-		}
-	}
-	
-	private WExpr parseLengthTerm(HashMap<String,WType> environment) {
-		match("|");
-		WExpr r = parseExpression(environment);
-		match("|");		
-		return new WLengthOf(r);
-	}
-	
-	private WExpr parseListTerm(HashMap<String,WType> environment) {
-		match("[");
-		ArrayList<WExpr> params = new ArrayList<WExpr>();
-		String lookahead = lookahead();
-		boolean firstTime = true;
-		while(!lookahead.equals("]")) {
-			if(!firstTime) {
-				match(",");
-				lookahead = lookahead();
-			}
-			firstTime=false;							
-			params.add(parseExpression(environment));
-			lookahead = lookahead();
-		}
-		match("]");
-		return new WListConstructor(params).substitute(Collections.EMPTY_MAP);
-	}
-	
-
-	private WExpr parseSetTerm(HashMap<String,WType> environment) {		
-		match("{");
-		HashSet<WExpr> params = new HashSet<WExpr>();
-		String lookahead = lookahead();
-		boolean firstTime = true;
-		while(!lookahead.equals("}")) {
-			if(!firstTime) {
-				match(",");
-				lookahead = lookahead();
-			}
-			firstTime=false;							
-			params.add(parseExpression(environment));
-			lookahead = lookahead();
-		}		
-		match("}");		
-		return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
-	}
-	
-	private WExpr parseIdentifierTerm(HashMap<String,WType> environment) {
-		int start = index;		
-		String v = parseIdentifier();
-		
-		if (environment.get(v) == null) {
-			throw new SyntaxError(
-					"syntax error --- variable or constructor not declared: "
-							+ v, filename, start, index);
-		} 
-	
-		ArrayList<WExpr> params = null;
-		
-		if(lookahead().equals("(")) {
-			// this indicates a function application
-			match("(");
-			params = new ArrayList<WExpr>();
-			String lookahead = lookahead();
-			boolean firstTime = true;
-			while(!lookahead.equals(")")) {
-				if(!firstTime) {
-					match(",");
-					lookahead = lookahead();
-				}
-				firstTime=false;							
-				params.add(parseExpression(environment));
-				lookahead = lookahead();
-			}
-			match(")");								
-		} 
-		
-		WExpr term; 
-		
-		if(params == null) {
-			return  new WVariable(v);
-		} else {
-			return new WVariable(v,params);
-		}					
-	}
-	
-	private WExpr parseBracketedTerm(HashMap<String,WType> environment) {
-		match("(");
-		WExpr e;					
-		if(lookahead(2).equals(":")) {				
-			// this indicates a tuple constructor
-			ArrayList<String> fields = new ArrayList();
-			ArrayList<WExpr> items = new ArrayList();
-			boolean firstTime = true;
-			while(!lookahead().equals(")")) {
-				if(!firstTime) {
-					match(",");						
-				}
-				firstTime = false;
-				String id = parseIdentifier();
-				match(":");
-				WExpr val = parseExpression(environment);
-				fields.add(id);
-				items.add(val);					
-			}
-			e = new WTupleConstructor(fields,items);				
-		} else {
-			// normal bracketed expression
-			e = parseExpression(environment);				
-		}
-		
-		match(")");
-		return e;
-	}
-	
-	private WExpr parseNegation(HashMap<String,WType> environment) {		
-		match("-");
-		WExpr e = parseIndexTerm(environment);		
-		return negate(e);
-	}
-	
-	private String parseIdentifier() {		
-		String id = Character.toString(input.charAt(index));
-		index++; // skip past the identifier start
-		while(index < input.length() && Character.isJavaIdentifierPart(input.charAt(index))) {
-			id += Character.toString(input.charAt(index));
-			index = index + 1;			
-		}
-		return id;
-	}
-	
-	private WExpr parseNumber() {
-		int start = index;
-		while (index < input.length() && Character.isDigit(input.charAt(index))) {
-			index = index + 1;
-		}
-		if(index < input.length() && input.charAt(index) == '.') {
-			index = index + 1;
-			int start2 = index;
-			while (index < input.length() && Character.isDigit(input.charAt(index))) {
-				index = index + 1;
-			}
-			String lhs = input.substring(start, start2-1);
-			String rhs = input.substring(start2, index);
-			lhs = lhs + rhs;
-			BigInteger bottom = BigInteger.valueOf(10);
-			bottom = bottom.pow(rhs.length());
-			return new WNumber(new BigInteger(lhs),bottom);
-		} else {
-			return new WNumber(new BigInteger(input.substring(start, index)));
-		}
 	}
 	
 	private void match(String x) {

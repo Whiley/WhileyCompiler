@@ -110,7 +110,7 @@ public class BigArithmetic {
 			}
 			String a = Long.toString(x);
 			String b = Long.toString(x-1);			
-			assertTrue(checkUnsat("int x; x > " + a + " && x <= " + b));
+			assertTrue(checkUnsat("x<:int && x > " + a + " && x <= " + b));
 		}
 	}
 
@@ -124,7 +124,7 @@ public class BigArithmetic {
 			}
 			String a = Long.toString(x);
 			String b = Long.toString(x - 1);
-			assertTrue(checkUnsat("int x; x > " + b + " && x+1 <= " + a));
+			assertTrue(checkUnsat("x <: int && x > " + b + " && x+1 <= " + a));
 		}
 	}
 
@@ -137,7 +137,7 @@ public class BigArithmetic {
 				x = x + 1;
 			}
 			String a = Long.toString(x);						
-			assertTrue(checkUnsat("int x, y; x < y && y < " + a + " && " + a + " < x"));
+			assertTrue(checkUnsat("x<:int && y<:int && x < y && y < " + a + " && " + a + " < x"));
 		}
 	}
 
@@ -151,7 +151,7 @@ public class BigArithmetic {
 			}
 			String a = Long.toString(x);
 			String b = Long.toString(x - 1);
-			assertTrue(checkUnsat("int x,y; x < y && y <= " + a + "&&" + a + " <= x"));
+			assertTrue(checkUnsat("x <: int && y <: int && x < y && y <= " + a + "&&" + a + " <= x"));
 		}
 	}
 	

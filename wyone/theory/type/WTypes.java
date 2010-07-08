@@ -21,11 +21,7 @@ public class WTypes {
 				// all possible types.
 				WSubtype st = (WSubtype) f;
 				if(e.equals(st.lhs())) {
-					WType t = st.rhs();
-					if(t instanceof WFunType) {
-						WFunType c = (WFunType) t;
-						return c.returnType();
-					}
+					WType t = st.rhs();					
 					return t;
 				}
 			}
