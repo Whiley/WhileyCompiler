@@ -92,12 +92,9 @@ public class ListEquals extends ConditionBinOp<Expr> implements Condition {
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
-		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
+		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);		
 		return new Pair<WFormula,WFormula>(WExprs.equals(l
-				.first(), r.first()), WFormulas.and(l.second(), r.second()),
-				wenv);
+				.first(), r.first()), WFormulas.and(l.second(), r.second()));
 	}
 }
 

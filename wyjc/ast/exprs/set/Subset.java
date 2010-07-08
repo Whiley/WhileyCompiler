@@ -98,7 +98,7 @@ public class Subset extends ConditionBinOp<Expr> implements Condition {
 				.notEquals(l.first(), r.first()));
 
 		return new Pair<WFormula,WFormula>(f, WFormulas.and(l
-				.second(), r.second()), wenv);
+				.second(), r.second()));
 	}
 	
 	public String toString() {

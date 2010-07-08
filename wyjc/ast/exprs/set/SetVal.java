@@ -124,7 +124,7 @@ public class SetVal extends SyntacticElementImpl implements Expr, Value {
 			wvalues.add((WValue) p.first());
 		}
 		
-		return new Pair<WExpr,WFormula>(new WSetVal(wvalues), constraints, wenv);
+		return new Pair<WExpr,WFormula>(new WSetVal(wvalues), constraints);
 	}
 	
 	public boolean equals(Object o) {

@@ -355,7 +355,7 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 				cond));
 
 		
-		return new Pair<WExpr,WFormula>(rv, constraints, wenv);
+		return new Pair<WExpr,WFormula>(rv, constraints);
 	}  
 	
 	private boolean countersIncrement(int[] counters, Collection[] data) {

@@ -132,11 +132,8 @@ public class RangeGenerator extends SyntacticElementImpl implements Expr {
 				.first(), retVar), lessThanEq(retVar, st.first()));
 		WFormula constraints = and(or(lhs, rhs), st.second(), ed.second());
 
-		WEnvironment wenv = st.third();
-		wenv.putAll(ed.third());
 		wenv.put(retVar.name(),new WListType(WIntType.T_INT));
-		return new Pair<WExpr,WFormula>(retVar, constraints,
-				wenv);
+		return new Pair<WExpr,WFormula>(retVar, constraints);
 	}
 	
 	public String toString() { 

@@ -144,9 +144,6 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 		Pair<WExpr,WFormula> start = this.start.convert(environment, loader);
 		Pair<WExpr,WFormula> end = this.end.convert(environment, loader);
 		
-		WEnvironment wenv = src.third();
-		wenv.putAll(start.third());
-		wenv.putAll(end.third());
 		WVariable retVar = WVariable.freshVar();
 		wenv.put(retVar.name(), type(environment).convert());
 		
@@ -174,8 +171,7 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 		
 		WFormula constraints = and(start.second(), end.second(), src
 				.second(), lenConstraints, forall1, forall2);
-		return new Pair<WExpr,WFormula>(retVar, constraints,
-				wenv);
+		return new Pair<WExpr,WFormula>(retVar, constraints);
 	}
     
     public int hashCode() {

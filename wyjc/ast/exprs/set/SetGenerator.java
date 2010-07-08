@@ -139,7 +139,7 @@ public class SetGenerator extends SyntacticElementImpl implements Expr {
 			wvalues.add(p.first());
 		}
 		
-		return new Pair<WExpr,WFormula>(new WSetConstructor(wvalues), constraints, wenv);
+		return new Pair<WExpr,WFormula>(new WSetConstructor(wvalues), constraints);
 	}
 	
 	public String toString() { 

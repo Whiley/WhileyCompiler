@@ -104,9 +104,7 @@ public final class ListAppend extends BinOp<Expr> {
     public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);		
-		
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());		
+			
 		WVariable retVar = WVariable.freshVar();
 		wenv.put(retVar.name(), type(environment).convert());		
 		

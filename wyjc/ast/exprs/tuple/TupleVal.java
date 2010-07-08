@@ -136,7 +136,7 @@ public final class TupleVal extends SyntacticElementImpl implements Value {
 			params.add((WValue) src.first());
 		}
 
-		return new Pair<WExpr,WFormula>(new WTupleVal(fields,params), constraints, wenv);
+		return new Pair<WExpr,WFormula>(new WTupleVal(fields,params), constraints);
 	}
 	
 	public String toString() {

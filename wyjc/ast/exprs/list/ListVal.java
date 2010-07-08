@@ -117,17 +117,15 @@ public class ListVal extends SyntacticElementImpl implements Expr,Value {
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {    	
 		WFormula constraints = WBool.TRUE;
 		ArrayList<WValue> ps = new ArrayList<WValue>();
-		WEnvironment wenv = new wyone.util.WHashEnv();
 		
 		for(Expr e : values) {			
-			Pair<WExpr,WFormula> p = e.convert(environment,loader);
-			wenv.putAll(p.third());
+			Pair<WExpr,WFormula> p = e.convert(environment,loader);			
 			constraints = and(constraints,p.second());			
 			ps.add((WValue) p.first());
 		}
 
 		return new Pair<WExpr,WFormula>(new WListVal(ps),
-				constraints, wenv);
+				constraints);
 	}    
 
 	public String toString() { 

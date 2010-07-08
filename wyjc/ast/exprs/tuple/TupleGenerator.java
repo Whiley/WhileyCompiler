@@ -148,7 +148,7 @@ public class TupleGenerator extends SyntacticElementImpl implements Expr,Iterabl
 		}
 
 		return new Pair<WExpr,WFormula>(new WTupleConstructor(
-				fields, params), constraints, wenv);
+				fields, params), constraints);
 	}
 	
 	public int hashCode() {

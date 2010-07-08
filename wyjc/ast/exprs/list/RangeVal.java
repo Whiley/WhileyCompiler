@@ -123,8 +123,7 @@ public class RangeVal extends SyntacticElementImpl implements Value,Expr {
 			constraints = and(lessThan(new WNumber(end.value()), retVar),
 					lessThanEq(retVar, new WNumber(start.value())));
 		}		
-		return new Pair<WExpr,WFormula>(retVar, constraints,
-				new wyone.util.WHashEnv());		
+		return new Pair<WExpr,WFormula>(retVar, constraints);		
 	}
 	
 	public String toString() { 

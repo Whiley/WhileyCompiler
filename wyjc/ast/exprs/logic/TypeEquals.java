@@ -166,6 +166,6 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		constraints = and(constraints,r.second());
 		WFormula condition = r.first();
 		condition = and(WExprs.equals(new WVariable(var), l.first()), condition);
-		return new Triple(condition, constraints, wenv);		
+		return new Triple(condition, constraints);		
 	}  		
 }

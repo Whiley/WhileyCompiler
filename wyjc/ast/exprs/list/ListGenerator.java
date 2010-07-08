@@ -34,7 +34,6 @@ import wyjc.util.Triple;
 import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.list.*;
-import wyone.util.WHashEnv;
 import static wyone.theory.logic.WFormulas.*;
 
 public final class ListGenerator extends SyntacticElementImpl implements Expr {
@@ -124,17 +123,15 @@ public final class ListGenerator extends SyntacticElementImpl implements Expr {
 
     public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {    	
     	WFormula constraints = WBool.TRUE;
-    	ArrayList<WExpr> ps = new ArrayList<WExpr>();
-    	WEnvironment wenv = new WHashEnv();
+    	ArrayList<WExpr> ps = new ArrayList<WExpr>();    	
     	for(Expr e : values) {
-    		Pair<WExpr,WFormula> p = e.convert(environment,loader);
-    		wenv.putAll(p.third());
+    		Pair<WExpr,WFormula> p = e.convert(environment,loader);    		
     		constraints = and(constraints,p.second());
     		ps.add(p.first());
     	}
 		
 		return new Pair<WExpr,WFormula>(new WListConstructor(
-				ps), constraints, wenv);
+				ps), constraints);
 	}    
 	
     public int hashCode() {

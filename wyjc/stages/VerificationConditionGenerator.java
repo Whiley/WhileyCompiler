@@ -182,7 +182,7 @@ public class VerificationConditionGenerator {
 				
 				// Now, add the vc as an attribute
 				s.attributes().add(
-						new VerificationConditionAttr(vc, wenv));
+						new VerificationConditionAttr(vc));
 			} else if (s instanceof IfElse) {
 				// FIXME: bug here for recombining environments
 				IfElse ife = (IfElse) s;

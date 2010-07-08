@@ -129,12 +129,10 @@ public final class ListAccess extends SyntacticElementImpl implements Expr, LVal
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {
 		Pair<WExpr,WFormula> idx = index.convert(environment, loader);
-		Pair<WExpr,WFormula> src = source.convert(environment, loader);
-		WEnvironment wenv = idx.third();
-		wenv.putAll(src.third());
+		Pair<WExpr,WFormula> src = source.convert(environment, loader);		
 		WFormula constraints = WFormulas.and(idx.second(), src.second());
 		return new Pair<WExpr,WFormula>(new WListAccess(src.first(), idx
-				.first()), constraints, wenv);
+				.first()), constraints);
 	}
 
 	public boolean equals(Object o) {
