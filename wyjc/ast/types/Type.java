@@ -19,7 +19,10 @@
 package wyjc.ast.types;
 
 import wyjc.ast.types.unresolved.UnresolvedType;
+import wyone.core.WExpr;
 import wyone.core.WType;
+import wyone.theory.logic.WFormula;
+
 import java.util.*;
 
 /**
@@ -60,5 +63,10 @@ public interface Type extends UnresolvedType {
 	
 	public abstract boolean isExistential(); 	
 	
+	/**
+	 * Convert a whiley type into a wyone type.
+	 * @param target
+	 * @return
+	 */
 	public abstract WType convert();
 }

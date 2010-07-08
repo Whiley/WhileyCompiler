@@ -21,7 +21,7 @@ package wyjc.ast.types;
 import java.util.*;
 
 import wyone.core.WType;
-import wyone.theory.numeric.WIntType;
+import wyone.theory.type.WUnionType;
 
 public class UnionType implements Type {
 	private HashSet<NonUnionType> types;
@@ -137,6 +137,10 @@ public class UnionType implements Type {
 	}
 	
 	public WType convert() {
-		return WIntType.T_INT;
+		HashSet<WType> ntypes = new HashSet<WType>();
+		for(Type t : types) {
+			ntypes.add(t.convert());
+		}
+		return new WUnionType(ntypes);
 	}
 }
