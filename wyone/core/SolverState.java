@@ -70,13 +70,6 @@ public final class SolverState implements Iterable<WFormula> {
 	public void add(WFormula f, Solver solver) {		
 		if(f == WBool.TRUE) {
 			// do nothing
-		} else if(f instanceof WConjunct) {
-			WConjunct c = (WConjunct) f;							
-			worklist.clear();
-			for(WFormula p : c.subterms()) {				
-				internal_add(p);
-			}
-			infer(solver);
 		} else {
 			worklist.clear();
 			internal_add(f);
@@ -255,6 +248,15 @@ public final class SolverState implements Iterable<WFormula> {
 	
 	private void internal_add(WFormula f) {		
 		f = reduce(f); 		
+		
+		if(f instanceof WConjunct) {
+			WConjunct wc = (WConjunct) f;
+			for(WFormula nf : wc.subterms()) {
+				internal_add(nf);
+			}
+			return;
+		} 
+				
 		Integer x = assignments.get(f);
 		
 		if(x == null) {			

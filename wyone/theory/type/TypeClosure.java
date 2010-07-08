@@ -23,29 +23,49 @@ import wyone.theory.logic.WFormula;
 
 public class TypeClosure implements InferenceRule {
 	
-	public void infer(WFormula nlit, SolverState state, Solver solver) {
-		if(nlit instanceof WSubtype) {
-			WSubtype wt = (WSubtype) nlit;
-			WType lhs_t = wt.lhs().type(state);
-			if(lhs_t.isSubtype(wt.rhs())) {
-				if(!wt.sign()) {
-					// definite problem
-					state.infer(WBool.FALSE, solver);
-				} else {
-					// can possibly refine a variable's type here.
-					refineType(wt.lhs(),wt.rhs(),state,solver);
-				}
-			} else {
-				if(wt.sign()) {
-					// definite problem
-					state.infer(WBool.FALSE, solver);
+	public void infer(WFormula nlit, SolverState state, Solver solver) {				
+		if(nlit instanceof WSubtype) {			
+			inferSubtype((WSubtype)nlit,state,solver);			
+		}		
+	}
+	
+	protected void inferSubtype(WSubtype ws, SolverState state,
+			Solver solver) {
+		
+		boolean wsign = ws.sign();
+		WExpr lhs = ws.lhs();
+		WType rhs = ws.rhs();
+		
+		for(WFormula f : state) {			
+			if(f instanceof WSubtype && f!=ws) {				
+				WSubtype st = (WSubtype) f;
+				WType st_rhs = st.rhs();				
+				if(st.lhs().equals(lhs)) {					
+					boolean subst = rhs.isSubtype(st_rhs);
+					boolean stsub = st_rhs.isSubtype(rhs);
+					boolean signs = wsign == st.sign();
+					// ok, this is icky
+					if(subst && wsign && signs) {
+						// ws is subsumed by st
+						state.eliminate(ws);
+						return;
+					} else if(stsub && wsign && signs) {
+						// st is subsumed by ws
+						state.eliminate(st);
+					} else if(stsub && wsign && !signs) {
+						// error
+						state.infer(WBool.FALSE, solver);
+						return;
+					} else if(subst && !wsign && !signs) {
+						// error
+						state.infer(WBool.FALSE, solver);
+						return;
+					} else if(!subst && !stsub && wsign && signs) {
+						state.infer(WBool.FALSE, solver);
+						return;
+					}											
 				}
 			}
 		}
-	}
-	
-	protected void refineType(WExpr lhs, WType rhs, SolverState state,
-			Solver solver) {
-		System.out.println("ATTEMPTING TO REFINE TYPE: " + lhs + " => " + rhs);
 	}
 }
