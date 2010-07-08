@@ -29,6 +29,7 @@ import wyjc.util.ResolveError;
 import wyjc.util.Triple;
 import wyone.core.*;
 import wyone.theory.logic.*;
+import wyone.theory.type.WTypes;
 import static wyone.theory.logic.WFormulas.*;
 
 
@@ -147,7 +148,11 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		Pair<WFormula,WFormula> r = rhs.convertCondition(environment, loader);		
 		constraints = and(constraints,r.second());
 		WFormula condition = r.first();
-		condition = and(WExprs.equals(new WVariable(var), l.first()), condition);
+		condition = and(WTypes.subtypeOf(l.first(), type.convert()), WExprs
+				.equals(new WVariable(var), l.first()), condition);
+		
+		condition = or(WTypes.subtypeOf(l.first(), type.convert()).not(),condition);
+		
 		return new Pair<WFormula,WFormula>(condition, constraints);		
 	}  		
 	

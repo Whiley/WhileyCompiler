@@ -143,7 +143,7 @@ public class CongruenceClosure implements InferenceRule {
 				WType t = WTypes.type(var,state);
 				// Type can currently be null if represents a quantified
 				// variable.
-				if(t != null && !t.isSubtype(val.type(null))) {					
+				if(t != null && !t.isSubtype(val.type(null), Collections.EMPTY_MAP)) {					
 					return WBool.FALSE;
 				}
 			}

@@ -18,6 +18,7 @@
 package wyone.theory.type;
 
 import java.util.*;
+
 import wyone.core.WType;
 
 public class WUnionType implements WType {
@@ -40,18 +41,18 @@ public class WUnionType implements WType {
 		return r;
 	}
 	
-	public boolean isSubtype(WType ot) {				
+	public boolean isSubtype(WType ot, Map<String, WType> environment) {				
 		if(ot instanceof WUnionType) {
 			WUnionType wut = (WUnionType) ot;
 			for(WType t : wut.types) {
-				if(!isSubtype(t)) {
+				if(!isSubtype(t, environment)) {
 					return false;
 				}
 			}
 			return true;
 		} else {
 			for(WType t : types) {
-				if(t.isSubtype(ot)) {
+				if(t.isSubtype(ot, environment)) {
 					return true;
 				}
 			}

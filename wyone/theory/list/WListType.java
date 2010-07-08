@@ -17,6 +17,8 @@
 
 package wyone.theory.list;
 
+import java.util.Map;
+
 import wyone.core.WType;
 import wyone.core.WValue;
 import wyone.theory.set.WSetType;
@@ -33,10 +35,10 @@ public final class WListType implements WType {
 		return element;
 	}
 	
-	public boolean isSubtype(WType o) {
+	public boolean isSubtype(WType o, Map<String, WType> environment) {
 		if(o instanceof WListType) {			
 			WListType sv = (WListType) o;			
-			return element.isSubtype(sv.element);
+			return element.isSubtype(sv.element, environment);
 		} else {
 			return false;
 		}

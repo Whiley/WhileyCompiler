@@ -47,7 +47,7 @@ public class WTupleType implements WType {
 		return null;
 	}
 	
-	public boolean isSubtype(WType val) {
+	public boolean isSubtype(WType val, Map<String, WType> environment) {
 		if(val instanceof WTupleType) {
 			WTupleType wt = (WTupleType) val;
 			if(wt.types.size() != types.size()) {
@@ -59,7 +59,7 @@ public class WTupleType implements WType {
 				WType t = w_types.get(i).second();
 				Pair<String,WType> p = types.get(i);
 				if (!p.first().equals(field)
-						|| !p.second().isSubtype(t)) {
+						|| !p.second().isSubtype(t, environment)) {
 					return false;
 				}				
 			}

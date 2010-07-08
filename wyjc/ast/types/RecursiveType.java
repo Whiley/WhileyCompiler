@@ -26,6 +26,7 @@ import java.util.Set;
 
 import wyjc.util.*;
 import wyone.core.WType;
+import wyone.theory.type.WRecursiveType;
 
 /**
  * A NameType is simply a type which has been defined and, hence, has a name
@@ -145,6 +146,10 @@ public class RecursiveType implements NonUnionType {
 	}
 	
 	public WType convert() {
-		return type.convert();
+		if(type == null) {
+			return new WRecursiveType(name,null);
+		} else {
+			return new WRecursiveType(name,type.convert());			
+		}
 	}	
 }

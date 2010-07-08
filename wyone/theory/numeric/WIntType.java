@@ -17,6 +17,8 @@
 
 package wyone.theory.numeric;
 
+import java.util.Map;
+
 import wyone.core.WType;
 import wyone.core.WValue;
 import wyone.theory.logic.WBoolType;
@@ -30,7 +32,7 @@ public class WIntType implements WType {
 		return "int";
 	}
 	
-	public boolean isSubtype(WType o) {				
+	public boolean isSubtype(WType o, Map<String, WType> environment) {				
 		return o instanceof WIntType;
 	}
 	

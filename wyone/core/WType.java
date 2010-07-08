@@ -17,6 +17,8 @@
 
 package wyone.core;
 
+import java.util.Map;
+
 /**
  * A Wyone type is declared for each variable in the formula being tested for
  * satisfiability. The type is often necessary to ensure a given model does
@@ -31,9 +33,10 @@ package wyone.core;
 public interface WType {
 	/**
 	 * Check whether the given value is an instance of this type.
-	 * 
+	 * @param environment TODO
 	 * @param o
+	 * 
 	 * @return
 	 */
-	boolean isSubtype(WType v); 
+	boolean isSubtype(WType v, Map<String, WType> environment); 
 }

@@ -17,6 +17,8 @@
 
 package wyone.theory.numeric;
 
+import java.util.Map;
+
 import wyone.core.WType;
 import wyone.core.WValue;
 
@@ -29,7 +31,7 @@ public class WRealType implements WType {
 		return "real";
 	}
 	
-	public boolean isSubtype(WType o) {				
+	public boolean isSubtype(WType o, Map<String, WType> environment) {				
 		return o instanceof WIntType || o instanceof WRealType;
 	}
 	

@@ -17,6 +17,8 @@
 
 package wyone.theory.type;
 
+import java.util.Map;
+
 import wyone.core.WType;
 
 /**
@@ -34,7 +36,7 @@ public class WAnyType implements WType {
 		return "?";
 	}
 	
-	public boolean isSubtype(WType o) {				
+	public boolean isSubtype(WType o, Map<String, WType> environment) {				
 		return true;
 	}
 	

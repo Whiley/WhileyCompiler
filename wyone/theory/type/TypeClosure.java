@@ -17,6 +17,8 @@
 
 package wyone.theory.type;
 
+import java.util.Collections;
+
 import wyone.core.*;
 import wyone.theory.logic.WBool;
 import wyone.theory.logic.WFormula;
@@ -41,8 +43,8 @@ public class TypeClosure implements InferenceRule {
 				WSubtype st = (WSubtype) f;
 				WType st_rhs = st.rhs();				
 				if(st.lhs().equals(lhs)) {					
-					boolean subst = rhs.isSubtype(st_rhs);
-					boolean stsub = st_rhs.isSubtype(rhs);
+					boolean subst = rhs.isSubtype(st_rhs, Collections.EMPTY_MAP);
+					boolean stsub = st_rhs.isSubtype(rhs, Collections.EMPTY_MAP);
 					boolean signs = wsign == st.sign();
 					// ok, this is icky
 					if(subst && wsign && signs) {
