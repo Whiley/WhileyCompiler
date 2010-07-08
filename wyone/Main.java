@@ -28,6 +28,7 @@ import wyone.theory.tuple.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.list.*;
 import wyone.theory.set.*;
+import wyone.theory.type.*;
 import wyone.util.*;
 
 /**
@@ -40,15 +41,23 @@ import wyone.util.*;
 public class Main {
 	
 	public static final CompoundHeuristic heuristic = new CompoundHeuristic(
-			new NotEqualsHeuristic(), new DisjunctHeuristic(),
-			new BoundedNumberHeuristic(true, true), new BoundedNumberHeuristic(
-					true, false));
+			new NotEqualsHeuristic(), 
+			new DisjunctHeuristic(),
+			new BoundedNumberHeuristic(true, true), 
+			new BoundedNumberHeuristic(true, false));
 
-	public static final InferenceRule[] theories = {
-			new FourierMotzkinSolver(), new CongruenceClosure(),
-			new DisjunctInference(), new TupleClosure(), new SubsetClosure(),
-			new BoundedForallClosure(), new ListForallClosure(),
-			new ListLengthClosure(), new LengthOfClosure() };
+	public static final InferenceRule[] theories = {		
+			new FourierMotzkinSolver(), 
+			new CongruenceClosure(),
+			new DisjunctInference(),
+			new WTypeClosure(), 
+			new TupleClosure(), 
+			new SubsetClosure(),
+			new BoundedForallClosure(), 
+			new ListForallClosure(),
+			new ListLengthClosure(), 
+			new LengthOfClosure() 
+		};
 
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);

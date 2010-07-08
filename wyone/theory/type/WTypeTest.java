@@ -36,10 +36,10 @@ public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
 	 * @param lhs
 	 * @param rhs
 	 */
-	public WTypeTest(boolean sign, WExpr lhs, WType type) {
-		super(sign ? ("~="+type) : ("!~="+type),lhs);
+	public WTypeTest(boolean sign, WExpr lhs, WType rhs) {
+		super(sign ? ("~="+rhs) : ("!~="+rhs),lhs);
 		this.sign = sign;
-		this.type = type;
+		this.type = rhs;
 	}
 	
 	public boolean sign() {
@@ -58,6 +58,10 @@ public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
 		return subterms.get(0);
 	}
 
+	public WType rhs() {
+		return type;
+	}
+	
 	public WLiteral rearrange(WExpr rhs) {
 		// no idea what to do here ...
 		throw new RuntimeException("Not sure how to rearrange type tests!");
