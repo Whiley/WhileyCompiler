@@ -236,7 +236,7 @@ public final class Solver extends Thread {
 	 * @param types --- types of formula
 	 * @return
 	 */
-	protected Proof checkModel(Map<WVariable, WValue> model) {		
+	protected Proof checkModel(Map<WVariable, WValue> model) {						
 		// First, check types are satisfied.
 		for(Map.Entry<String,WType> vt : types.entrySet()) {		
 			if (!(vt.getValue() instanceof WFunType)) {
