@@ -32,10 +32,10 @@ import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.tuple.TupleAccess;
 import wyjc.ast.types.*;
 import wyjc.ast.types.unresolved.UnresolvedType;
+import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;
 import wyone.core.WEnvironment;
-import wyone.core.WExpr;
 import wyone.theory.logic.WBool;
 import wyone.theory.logic.WFormula;
 
@@ -102,12 +102,12 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 		return lhs + " ~= " + rhs;
 	}
 
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		// need to do better here.
 		throw new IllegalArgumentException("Cannot convert UnresolvedTypeEquals");		
 	}
 
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(
+	public Pair<WFormula, WFormula> convertCondition(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		// need to do better here.

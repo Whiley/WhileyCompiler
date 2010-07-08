@@ -122,18 +122,18 @@ public final class ListGenerator extends SyntacticElementImpl implements Expr {
 	}
 	
 
-    public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {    	
+    public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {    	
     	WFormula constraints = WBool.TRUE;
     	ArrayList<WExpr> ps = new ArrayList<WExpr>();
     	WEnvironment wenv = new WHashEnv();
     	for(Expr e : values) {
-    		Triple<WExpr, WFormula, WEnvironment> p = e.convert(environment,loader);
+    		Pair<WExpr,WFormula> p = e.convert(environment,loader);
     		wenv.putAll(p.third());
     		constraints = and(constraints,p.second());
     		ps.add(p.first());
     	}
 		
-		return new Triple<WExpr, WFormula, WEnvironment>(new WListConstructor(
+		return new Pair<WExpr,WFormula>(new WListConstructor(
 				ps), constraints, wenv);
 	}    
 	

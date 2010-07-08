@@ -114,19 +114,19 @@ public class ListVal extends SyntacticElementImpl implements Expr,Value {
 		return (o instanceof ListVal) && ((ListVal) o).values.equals(values);
 	}
 
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {    	
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {    	
 		WFormula constraints = WBool.TRUE;
 		ArrayList<WValue> ps = new ArrayList<WValue>();
 		WEnvironment wenv = new wyone.util.WHashEnv();
 		
 		for(Expr e : values) {			
-			Triple<WExpr, WFormula, WEnvironment> p = e.convert(environment,loader);
+			Pair<WExpr,WFormula> p = e.convert(environment,loader);
 			wenv.putAll(p.third());
 			constraints = and(constraints,p.second());			
 			ps.add((WValue) p.first());
 		}
 
-		return new Triple<WExpr, WFormula, WEnvironment>(new WListVal(ps),
+		return new Pair<WExpr,WFormula>(new WListVal(ps),
 				constraints, wenv);
 	}    
 

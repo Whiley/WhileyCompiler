@@ -30,7 +30,6 @@ import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
-import wyone.util.WHashEnv;
 
 /**
  * This class represents an integer or real number used in an expression.
@@ -98,8 +97,8 @@ public class IntVal extends SyntacticElementImpl implements Expr,Value {
 		return this;
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
-		return new Triple<WExpr, WFormula, WEnvironment>(new WNumber(value), WBool.TRUE, new WHashEnv());
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+		return new Pair<WExpr,WFormula>(new WNumber(value), WBool.TRUE);
 	}
 	
 	public Type type(Map<String,Type> environment) {

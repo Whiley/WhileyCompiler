@@ -70,13 +70,13 @@ public class IntNegate extends UnOp<Expr> implements Expr {
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(
+	public Pair<WExpr,WFormula> convert(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
-		Triple<WExpr, WFormula, WEnvironment> p = expr.convert(environment,
+		Pair<WExpr,WFormula> p = expr.convert(environment,
 				loader);
-		return new Triple<WExpr, WFormula, WEnvironment>(negate(p.first()), p
-				.second(), p.third());
+		return new Pair<WExpr,WFormula>(negate(p.first()), p
+				.second());
 	}
 	
     public String toString() {

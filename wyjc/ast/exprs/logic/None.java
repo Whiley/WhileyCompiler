@@ -101,11 +101,11 @@ public class None extends UnOp<SetComprehension> implements Condition {
     	return r + " | " + expr.condition() + "}";
     }
   
-    public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+    public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		return null; // FIXME
 	}
 
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(
+	public Pair<WFormula, WFormula> convertCondition(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		
@@ -141,7 +141,7 @@ public class None extends UnOp<SetComprehension> implements Condition {
 				}
 			}
 			
-			Triple<WExpr, WFormula, WEnvironment> re = src.convert(environment, loader);
+			Pair<WExpr,WFormula> re = src.convert(environment, loader);
 			if(st instanceof ListType) {
 				nenv.put(name, st.element());
 				if(!hackOn) {
@@ -156,7 +156,7 @@ public class None extends UnOp<SetComprehension> implements Condition {
 			wenv.putAll(re.third());										
 		}
 		
-		Triple<WFormula, WFormula, WEnvironment> mhs = sc.condition().convertCondition(nenv, loader);
+		Pair<WFormula,WFormula> mhs = sc.condition().convertCondition(nenv, loader);
 		constraints = WFormulas.and(constraints,mhs.second()).substitute(binding);		
 		wenv.putAll(mhs.third());
 
@@ -166,6 +166,6 @@ public class None extends UnOp<SetComprehension> implements Condition {
 				
 		return new Triple(
 				new WBoundedForall(true, variables, mhs.first().not().substitute(binding)),
-				constraints,wenv);	
+				constraints);	
 	}
 }

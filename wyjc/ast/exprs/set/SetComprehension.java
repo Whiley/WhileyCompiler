@@ -304,7 +304,7 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		return r + " | " + condition + "}";		
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		
 		// STEP 1 --- forward direction
 		// FIXME: forward direction is definitely broken.				
@@ -319,7 +319,7 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		
 		for (Pair<String, Expr> src : srcs) {
 			WVariable v = new WVariable(src.first());
-			Triple<WExpr, WFormula, WEnvironment> re = src.second().convert(nenv, loader);
+			Pair<WExpr,WFormula> re = src.second().convert(nenv, loader);
 			SetType st = (SetType) src.second().type(nenv);			
 			wenv.putAll(re.third());
 			nenv.put(v.name(), st.element());
@@ -328,11 +328,11 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		}
 
 		if(condition != null) {
-			Triple<WFormula, WFormula, WEnvironment> fp = condition.convertCondition(nenv, loader);
+			Pair<WFormula,WFormula> fp = condition.convertCondition(nenv, loader);
 			cond = WFormulas.and(cond,fp.first(),fp.second());
 		}
 		
-		Triple<WExpr, WFormula, WEnvironment> val = value.convert(nenv, loader);			
+		Pair<WExpr,WFormula> val = value.convert(nenv, loader);			
 		cond = WFormulas.and(cond,val.second());
 		
 		WFormula formula = WFormulas.implies(cond, WSets.subsetEq(new WSetConstructor(val.first()), rv));
@@ -355,7 +355,7 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 				cond));
 
 		
-		return new Triple<WExpr,WFormula,WEnvironment>(rv, constraints, wenv);
+		return new Pair<WExpr,WFormula>(rv, constraints, wenv);
 	}  
 	
 	private boolean countersIncrement(int[] counters, Collection[] data) {

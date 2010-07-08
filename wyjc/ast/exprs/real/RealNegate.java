@@ -70,9 +70,9 @@ public class RealNegate extends UnOp<Expr> implements Expr {
 		}
 	}
     
-    public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
-		Triple<WExpr, WFormula, WEnvironment> p = expr.convert(environment, loader);			
-		return new Triple<WExpr, WFormula, WEnvironment>(negate(p.first()), p.second(), p.third());
+    public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
+		Pair<WExpr,WFormula> p = expr.convert(environment, loader);			
+		return new Pair<WExpr,WFormula>(negate(p.first()), p.second(), p.third());
 	}
 	
     public String toString() {

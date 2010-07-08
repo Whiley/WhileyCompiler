@@ -101,9 +101,9 @@ public final class ListAppend extends BinOp<Expr> {
 		}
 	}
         
-    public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
-		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);		
+    public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
+		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
+		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);		
 		
 		WEnvironment wenv = l.third();
 		wenv.putAll(r.third());		
@@ -148,7 +148,7 @@ public final class ListAppend extends BinOp<Expr> {
 		WFormula constraints = WFormulas.and(l.second(), r.second(),
 				lenConstraints, forall1, forall2, forall3);
 	
-		return new Triple<WExpr, WFormula, WEnvironment>(retVar, constraints,
+		return new Pair<WExpr,WFormula>(retVar, constraints,
 				wenv);
 	}       
 	    

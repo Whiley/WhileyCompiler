@@ -82,12 +82,12 @@ public class Not extends UnOp<Condition> implements Condition {
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		return null; // FIXME
 	}
 
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
-		Triple<WFormula, WFormula, WEnvironment> r = expr.convertCondition(environment, loader);
-		return new Triple<WFormula, WFormula, WEnvironment>(r.first().not(),r.second(),r.third());
+	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+		Pair<WFormula,WFormula> r = expr.convertCondition(environment, loader);
+		return new Pair<WFormula,WFormula>(r.first().not(),r.second(),r.third());
 	}  
 }

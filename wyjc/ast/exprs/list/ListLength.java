@@ -69,10 +69,10 @@ public class ListLength extends UnOp<Expr> implements Expr {
 		}
 	}	
 
-    public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
-		Triple<WExpr, WFormula, WEnvironment> src = expr.convert(environment,
+    public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+		Pair<WExpr,WFormula> src = expr.convert(environment,
 				loader);
-		return new Triple<WExpr, WFormula, WEnvironment>(new WLengthOf(src
+		return new Pair<WExpr,WFormula>(new WLengthOf(src
 				.first()), src.second(), src.third());
 	}    
 	

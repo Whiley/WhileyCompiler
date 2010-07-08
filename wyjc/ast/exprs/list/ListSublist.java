@@ -139,10 +139,10 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 		return r;
 	}
     
-    public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
-		Triple<WExpr, WFormula, WEnvironment> src = source.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> start = this.start.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> end = this.end.convert(environment, loader);
+    public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
+		Pair<WExpr,WFormula> src = source.convert(environment, loader);
+		Pair<WExpr,WFormula> start = this.start.convert(environment, loader);
+		Pair<WExpr,WFormula> end = this.end.convert(environment, loader);
 		
 		WEnvironment wenv = src.third();
 		wenv.putAll(start.third());
@@ -174,7 +174,7 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 		
 		WFormula constraints = and(start.second(), end.second(), src
 				.second(), lenConstraints, forall1, forall2);
-		return new Triple<WExpr, WFormula, WEnvironment>(retVar, constraints,
+		return new Pair<WExpr,WFormula>(retVar, constraints,
 				wenv);
 	}
     

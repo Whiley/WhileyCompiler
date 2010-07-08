@@ -64,11 +64,11 @@ public class Constant extends Variable {
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(
+	public Pair<WExpr,WFormula> convert(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
-		return new Triple<WExpr, WFormula, WEnvironment>(
-				new wyone.core.WVariable(var), WBool.TRUE, new wyone.util.WHashEnv());
+		return new Pair<WExpr, WFormula>(
+				new wyone.core.WVariable(var), WBool.TRUE);
 	}
 	
 	public List<Expr> flattern() {

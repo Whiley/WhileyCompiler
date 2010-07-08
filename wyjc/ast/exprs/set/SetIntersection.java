@@ -100,10 +100,10 @@ public class SetIntersection extends BinOp<Expr> implements Expr {
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment,
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {
-		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
+		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
+		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
 		wenv.putAll(r.third());
 		
@@ -124,7 +124,7 @@ public class SetIntersection extends BinOp<Expr> implements Expr {
 		WFormula constraints = WFormulas.and(l.second(), r.second(), left,
 				right, WSets.subsetEq(vs, l.first()), WSets.subsetEq(vs, r
 						.first()));		
-		return new Triple<WExpr, WFormula, WEnvironment>(vs,constraints,wenv);
+		return new Pair<WExpr,WFormula>(vs,constraints);
 	}
 	
 	public String toString() {

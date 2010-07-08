@@ -67,7 +67,7 @@ public class Spawn extends UnOp<Expr> implements Stmt, Expr {
 		return new Spawn(e,attributes());		
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		// FIXME: unsure about this!
 		return expr.convert(environment, loader);
 	}

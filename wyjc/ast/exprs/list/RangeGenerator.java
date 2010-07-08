@@ -117,14 +117,14 @@ public class RangeGenerator extends SyntacticElementImpl implements Expr {
 		return false;
 	}
 
-	public Triple<WExpr, WFormula, WEnvironment> convert(
+	public Pair<WExpr,WFormula> convert(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		WVariable retVar = WVariable.freshVar();
 		
-		Triple<WExpr, WFormula, WEnvironment> st = start.convert(environment,
+		Pair<WExpr,WFormula> st = start.convert(environment,
 				loader);
-		Triple<WExpr, WFormula, WEnvironment> ed = end.convert(environment,
+		Pair<WExpr,WFormula> ed = end.convert(environment,
 				loader);
 		WFormula lhs = and(lessThanEq(st.first(), ed.first()), lessThanEq(st
 				.first(), retVar), lessThan(retVar, ed.first()));
@@ -135,7 +135,7 @@ public class RangeGenerator extends SyntacticElementImpl implements Expr {
 		WEnvironment wenv = st.third();
 		wenv.putAll(ed.third());
 		wenv.put(retVar.name(),new WListType(WIntType.T_INT));
-		return new Triple<WExpr, WFormula, WEnvironment>(retVar, constraints,
+		return new Pair<WExpr,WFormula>(retVar, constraints,
 				wenv);
 	}
 	

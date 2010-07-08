@@ -81,12 +81,12 @@ public class RealLessThan extends ConditionBinOp<Expr> implements Condition {
 		}
 	}
 	
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
-		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
+	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
+		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
 		wenv.putAll(r.third());
-		return new Triple<WFormula, WFormula, WEnvironment>(lessThan(l
+		return new Pair<WFormula,WFormula>(lessThan(l
 				.first(), r.first()), WFormulas.and(l.second(), r.second()),
 				wenv);		
 	}  

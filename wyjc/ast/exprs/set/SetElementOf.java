@@ -161,9 +161,9 @@ public class SetElementOf extends ConditionBinOp<Expr> implements Condition {
 		return new SetElementOf(l, r, attributes());		
 	}
 	
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
-		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);					
+	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
+		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
+		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);					
 		WFormula constraints = WFormulas.and(l.second(),r.second());		
 		WEnvironment wenv = l.third();
 		wenv.putAll(r.third());
@@ -176,7 +176,7 @@ public class SetElementOf extends ConditionBinOp<Expr> implements Condition {
 			ls = new WSetConstructor(l.first());
 		}		
 				
-		return new Triple(new WSubsetEq(true, ls, r.first()),constraints,wenv);
+		return new Triple(new WSubsetEq(true, ls, r.first()),constraints);
 	}  	
 	
 	public String toString() {

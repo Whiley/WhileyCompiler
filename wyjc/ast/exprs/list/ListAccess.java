@@ -126,14 +126,14 @@ public final class ListAccess extends SyntacticElementImpl implements Expr, LVal
 		return r;
 	}
 
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment,
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {
-		Triple<WExpr, WFormula, WEnvironment> idx = index.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> src = source.convert(environment, loader);
+		Pair<WExpr,WFormula> idx = index.convert(environment, loader);
+		Pair<WExpr,WFormula> src = source.convert(environment, loader);
 		WEnvironment wenv = idx.third();
 		wenv.putAll(src.third());
 		WFormula constraints = WFormulas.and(idx.second(), src.second());
-		return new Triple<WExpr, WFormula, WEnvironment>(new WListAccess(src.first(), idx
+		return new Pair<WExpr,WFormula>(new WListAccess(src.first(), idx
 				.first()), constraints, wenv);
 	}
 

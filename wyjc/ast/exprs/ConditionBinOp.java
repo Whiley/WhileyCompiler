@@ -42,15 +42,15 @@ public abstract class ConditionBinOp<T extends Expr> extends BinOp<T> implements
 		return Types.T_BOOL;
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment,
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {
 		WVariable fv = WVariable.freshVar();
-		Triple<WFormula,WFormula,WEnvironment> cn = convertCondition(environment, loader);		
+		Pair<WFormula,WFormula> cn = convertCondition(environment, loader);		
 		WFormula f = cn.second();
 		WFormula tmp = cn.first();
 		WFormula left = WFormulas.implies(new WPredicate(true,fv.name()),tmp); 
 		WFormula right = WFormulas.implies(tmp,new WPredicate(true,fv.name()));
 		f = WFormulas.and(f,left,right);		
-		return new Triple<WExpr,WFormula,WEnvironment>(fv,f,cn.third());
+		return new Pair<WExpr,WFormula>(fv,f);
 	}	
 }

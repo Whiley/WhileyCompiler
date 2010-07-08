@@ -89,12 +89,12 @@ public class And extends ConditionBinOp<Condition> implements Condition {
 		}
 	}
 	
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
-		Triple<WFormula, WFormula, WEnvironment> l = lhs.convertCondition(environment, loader);
-		Triple<WFormula, WFormula, WEnvironment> r = rhs.convertCondition(environment, loader);
+	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+		Pair<WFormula,WFormula> l = lhs.convertCondition(environment, loader);
+		Pair<WFormula,WFormula> r = rhs.convertCondition(environment, loader);
 		WEnvironment wenv = l.third();
 		wenv.putAll(r.third());
-		return new Triple<WFormula, WFormula, WEnvironment>(WFormulas.and(l
+		return new Pair<WFormula,WFormula>(WFormulas.and(l
 				.first(), r.first()), WFormulas.and(l.second(), r.second()),
 				wenv);			
 	}    

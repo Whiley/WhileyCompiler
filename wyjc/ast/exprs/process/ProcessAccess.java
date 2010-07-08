@@ -81,7 +81,7 @@ public class ProcessAccess extends UnOp<Expr> implements LVal {
 		return "*" + expr.toString() + "";					
 	}
 
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		return expr.convert(environment, loader);
 	}
 }

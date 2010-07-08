@@ -26,6 +26,7 @@ import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.list.RangeVal;
 import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.types.*;
+import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;
 import wyone.core.*;
@@ -128,7 +129,7 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		return "(" + lhs + "[" + var + "] ~= " + type + " && " + rhs + ")";
 	}	
 
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		return rhs.convert(environment, loader);		
 	}
 
@@ -149,18 +150,18 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		return false;
 	}
 	
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(
+	public Pair<WFormula, WFormula> convertCondition(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		// FIXME: this is incomplete obviously
 		
-		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment,loader);		
+		Pair<WExpr,WFormula> l = lhs.convert(environment,loader);		
 		WEnvironment wenv = l.third();
 		WFormula constraints = l.second();
 		
 		environment = new HashMap<String, Type>(environment);
 		environment.put(var, type);
-		Triple<WFormula, WFormula, WEnvironment> r = rhs.convertCondition(environment, loader);
+		Pair<WFormula,WFormula> r = rhs.convertCondition(environment, loader);
 		wenv.putAll(r.third());
 		constraints = and(constraints,r.second());
 		WFormula condition = r.first();

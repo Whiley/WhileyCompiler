@@ -89,7 +89,7 @@ public class SetDifference extends BinOp<Expr> implements Expr {
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		return null;
 	}  
 			

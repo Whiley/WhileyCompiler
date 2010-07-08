@@ -89,16 +89,15 @@ public class Variable extends SyntacticElementImpl implements Expr, LVal {
 		return matches;
 	}
 	
-	public Triple<wyone.core.WExpr, WFormula, WEnvironment> convert(
+	public Pair<WExpr,WFormula> convert(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
-
-		WEnvironment wenv = new wyone.util.WHashEnv();
+		
 		WVariable wvar = new wyone.core.WVariable(var);
 		wenv.put(var, environment.get(var).convert());
 
-		return new Triple<wyone.core.WExpr, WFormula, WEnvironment>(wvar,
-				WBool.TRUE, wenv);
+		return new Pair<wyone.core.WExpr, WFormula>(wvar,
+				WBool.TRUE);
 	}
 	
 	public Set<Variable> uses() {

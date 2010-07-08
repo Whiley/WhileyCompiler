@@ -25,7 +25,6 @@ import wyjc.ast.attrs.SyntacticElement;
 import wyjc.ast.types.BoolType;
 import wyjc.ast.types.Type;
 import wyjc.util.*;
-import wyone.core.WEnvironment;
 import wyone.core.WExpr;
 import wyone.theory.logic.WFormula;
 
@@ -92,7 +91,7 @@ public interface Condition extends Expr, SyntacticElement {
      * @return
      * @throws ResolveError TODO
      */
-	public Triple<WFormula, WFormula, WEnvironment> convertCondition(Map<String, Type> environment,
+	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError;	
 }
 

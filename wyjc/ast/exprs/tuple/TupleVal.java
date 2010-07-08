@@ -121,7 +121,7 @@ public final class TupleVal extends SyntacticElementImpl implements Value {
 		return (o instanceof TupleVal) && ((TupleVal)o).values.equals(values);
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment,
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {
 		WFormula constraints = WBool.TRUE;
 		WEnvironment wenv = new wyone.util.WHashEnv();
@@ -130,13 +130,13 @@ public final class TupleVal extends SyntacticElementImpl implements Value {
 		ArrayList<WValue> params = new ArrayList<WValue>();
 		for (String field : fields) {
 			Value e = values.get(field);			
-			Triple<WExpr, WFormula, WEnvironment> src = e.convert(environment, loader);
+			Pair<WExpr,WFormula> src = e.convert(environment, loader);
 			wenv.putAll(src.third());
 			constraints = WFormulas.and(constraints, src.second());
 			params.add((WValue) src.first());
 		}
 
-		return new Triple<WExpr, WFormula, WEnvironment>(new WTupleVal(fields,params), constraints, wenv);
+		return new Pair<WExpr,WFormula>(new WTupleVal(fields,params), constraints, wenv);
 	}
 	
 	public String toString() {

@@ -110,7 +110,7 @@ public class SetVal extends SyntacticElementImpl implements Expr, Value {
 		return values.hashCode();
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment,
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {						
 		
 		WFormula constraints = WBool.TRUE;
@@ -118,13 +118,13 @@ public class SetVal extends SyntacticElementImpl implements Expr, Value {
 		WEnvironment wenv = new wyone.util.WHashEnv();
 		
 		for(Expr e : values) {
-			Triple<WExpr, WFormula, WEnvironment> p = e.convert(environment,loader);
+			Pair<WExpr,WFormula> p = e.convert(environment,loader);
 			wenv.putAll(p.third());
 			constraints = and(constraints,p.second());
 			wvalues.add((WValue) p.first());
 		}
 		
-		return new Triple<WExpr, WFormula, WEnvironment>(new WSetVal(wvalues), constraints, wenv);
+		return new Pair<WExpr,WFormula>(new WSetVal(wvalues), constraints, wenv);
 	}
 	
 	public boolean equals(Object o) {

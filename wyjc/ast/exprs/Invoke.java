@@ -151,7 +151,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		return this;
 	}
 		
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment,
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {
 		
 		// FIXME: there is a bug here, when the same method is encountered in
@@ -163,7 +163,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		ArrayList<WExpr> params = new ArrayList<WExpr>();
 
 		for(Expr p : arguments) {			
-			Triple<WExpr, WFormula, WEnvironment> pc = p.convert(environment,
+			Pair<WExpr, WFormula> pc = p.convert(environment,
 					loader);
 			params.add(pc.first());
 			argConstraints = WFormulas.and(argConstraints,pc.second());			
@@ -172,8 +172,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		WVariable retLabel = new WVariable("&" + name, params);							
 		environment = new HashMap<String,Type>(environment);
 		environment.put("$", ftype.returnType());		
-		
-		WEnvironment wenv = new wyone.util.WHashEnv();
+				
 		wenv.put(retLabel.name(),ftype.convert());				
 		
 		ModuleInfo mi = loader.loadModule(module);
@@ -200,11 +199,9 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 					binding.put(new WVariable(p_name), p_expr);					
 				}
 
-				Triple<WFormula, WFormula,WEnvironment> pc = function.postCondition()
+				Pair<WFormula, WFormula> pc = function.postCondition()
 						.convertCondition(environment, loader);
 		
-				wenv.putAll(pc.third());
-				
 				mcs = WFormulas.and(pc.first(), pc.second()).substitute(
 						binding);
 			}
@@ -216,7 +213,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 			}
 		}								
 		
-		return new Triple<WExpr, WFormula, WEnvironment>(retLabel, constraints, wenv);
+		return new Pair<WExpr, WFormula>(retLabel, constraints);
 	}
 	
 	public boolean equals(Object o) {

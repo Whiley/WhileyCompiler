@@ -24,8 +24,7 @@ import wyjc.ModuleLoader;
 import wyjc.ast.attrs.Attribute;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.*;
-import wyjc.util.ResolveError;
-import wyjc.util.Triple;
+import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
 import static wyone.theory.numeric.WNumerics.*;
@@ -80,12 +79,10 @@ public class IntAdd extends BinOp<Expr> implements Expr {
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
-		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
+		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
 		WFormula constraints = WFormulas.and(l.second(),r.second());
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());		
-		return new Triple<WExpr, WFormula, WEnvironment>(add(l.first(),r.first()), constraints ,wenv);
+		return new Pair<WExpr,WFormula>(add(l.first(),r.first()), constraints);
 	}
 }

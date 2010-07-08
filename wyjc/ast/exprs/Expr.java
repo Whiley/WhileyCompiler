@@ -23,8 +23,7 @@ import java.util.*;
 import wyjc.ModuleLoader;
 import wyjc.ast.attrs.SyntacticElement;
 import wyjc.ast.types.Type;
-import wyjc.util.Triple;
-import wyjc.util.ResolveError;
+import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
 
@@ -106,7 +105,7 @@ public interface Expr extends SyntacticElement {
 	 * @throws ResolveError
 	 *             TODO
 	 */
-	public Triple<WExpr, WFormula, WEnvironment> convert(
+	public Pair<WExpr,WFormula> convert(
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError;		
 }

@@ -157,7 +157,7 @@ public class VerificationConditionGenerator {
 				// First, extract the precondition previously generated.
 				PreConditionAttr attr = s.attribute(PreConditionAttr.class);
 				// Second, convert it into a pair of formulas
-				Triple<WFormula, WFormula, WEnvironment> pcPair = attr.preCondition().convertCondition(environment, loader);																			
+				Pair<WFormula,WFormula> pcPair = attr.preCondition().convertCondition(environment, loader);																			
 				WEnvironment wenv = pcPair.third();
 				
 				// Third, construct a single preCondition formula
@@ -168,7 +168,7 @@ public class VerificationConditionGenerator {
 				Condition check = simplifier.simplify(new Not(c.condition()));					
 				System.out.println("CONVERTING: " + check);				
 				System.out.println("FROM: " + c.condition());
-				Triple<WFormula, WFormula, WEnvironment> pcs = check.convertCondition(environment, loader);											
+				Pair<WFormula,WFormula> pcs = check.convertCondition(environment, loader);											
 		
 				// Generate initial verification condition.
 				WFormula vc = and(preCondition,pcs.second(),pcs.first());												

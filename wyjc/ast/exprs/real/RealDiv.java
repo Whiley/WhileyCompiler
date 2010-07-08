@@ -86,13 +86,13 @@ public class RealDiv extends BinOp<Expr> implements Expr {
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
-		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
-		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
+		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
+		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
 		wenv.putAll(r.third());
-		return new Triple<WExpr, WFormula, WEnvironment>(divide(l.first(),r.first()), WFormulas
-				.and(l.second(), r.second()),wenv);		
+		return new Pair<WExpr,WFormula>(divide(l.first(),r.first()), WFormulas
+				.and(l.second(), r.second()));		
 	}  
 	
 	public String toString() {

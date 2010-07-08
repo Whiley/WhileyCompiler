@@ -132,7 +132,7 @@ public class TupleGenerator extends SyntacticElementImpl implements Expr,Iterabl
 		}
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
 		WFormula constraints = WBool.TRUE;
 		WEnvironment wenv = new wyone.util.WHashEnv();
 		ArrayList<String> fields = new ArrayList(exprs.keySet());
@@ -141,13 +141,13 @@ public class TupleGenerator extends SyntacticElementImpl implements Expr,Iterabl
 		ArrayList<WExpr> params = new ArrayList<WExpr>();
 		for (String field : fields) {
 			Expr e = exprs.get(field);									
-			Triple<WExpr, WFormula, WEnvironment> src = e.convert(environment, loader);
+			Pair<WExpr,WFormula> src = e.convert(environment, loader);
 			wenv.putAll(src.third());
 			constraints = WFormulas.and(constraints, src.second());
 			params.add(src.first());
 		}
 
-		return new Triple<WExpr, WFormula, WEnvironment>(new WTupleConstructor(
+		return new Pair<WExpr,WFormula>(new WTupleConstructor(
 				fields, params), constraints, wenv);
 	}
 	

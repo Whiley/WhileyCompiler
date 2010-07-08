@@ -99,11 +99,11 @@ public class ListElementOf extends ConditionBinOp<Expr> implements Condition {
 	}
 	
 
-    public Triple<WFormula, WFormula, WEnvironment> convertCondition(Map<String, Type> environment,
+    public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment,
 			ModuleLoader loader)
 			throws ResolveError {
-		Triple<WExpr,WFormula,WEnvironment> l = lhs.convert(environment,loader);
-		Triple<WExpr,WFormula,WEnvironment> r = rhs.convert(environment,loader);
+		Pair<WExpr,WFormula> l = lhs.convert(environment,loader);
+		Pair<WExpr,WFormula> r = rhs.convert(environment,loader);
 		WFormula constraints = WFormulas.and(l.second(),r.second());
 		WEnvironment wenv = l.third();
 		wenv.putAll(r.third());
@@ -113,7 +113,7 @@ public class ListElementOf extends ConditionBinOp<Expr> implements Condition {
 		HashMap vars = new HashMap<WVariable,WType>();
 		vars.put(idx, null); // FIXME: need to determine type
 		WForall fa = new WForall(false,vars,cond);		
-		return new Triple<WFormula,WFormula,WEnvironment>(fa,constraints,wenv);
+		return new Pair<WFormula,WFormula>(fa,constraints);
 	}
     
 	

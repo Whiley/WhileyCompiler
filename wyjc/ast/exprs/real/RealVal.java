@@ -106,8 +106,8 @@ public class RealVal extends SyntacticElementImpl implements Expr,Value {
 		return (o instanceof RealVal) && ((RealVal) o).value.equals(value);
 	}
 	
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
-		return new Triple<WExpr, WFormula, WEnvironment>(new WNumber(value.numerator(),
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
+		return new Pair<WExpr,WFormula>(new WNumber(value.numerator(),
 				value.denominator()), WBool.TRUE, new wyone.util.WHashEnv());		
 	}  
 	

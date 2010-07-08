@@ -112,7 +112,7 @@ public class RangeVal extends SyntacticElementImpl implements Value,Expr {
 		return false;
 	}
 
-	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment,
+	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
 			ModuleLoader loader) throws ResolveError {
 		WVariable retVar = WVariable.freshVar();
 		WFormula constraints;
@@ -123,7 +123,7 @@ public class RangeVal extends SyntacticElementImpl implements Value,Expr {
 			constraints = and(lessThan(new WNumber(end.value()), retVar),
 					lessThanEq(retVar, new WNumber(start.value())));
 		}		
-		return new Triple<WExpr, WFormula, WEnvironment>(retVar, constraints,
+		return new Pair<WExpr,WFormula>(retVar, constraints,
 				new wyone.util.WHashEnv());		
 	}
 	
