@@ -133,8 +133,7 @@ public class TupleGenerator extends SyntacticElementImpl implements Expr,Iterabl
 	}
 	
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
-		WFormula constraints = WBool.TRUE;
-		WEnvironment wenv = new wyone.util.WHashEnv();
+		WFormula constraints = WBool.TRUE;		
 		ArrayList<String> fields = new ArrayList(exprs.keySet());
 		Collections.sort(fields);
 		
@@ -142,7 +141,6 @@ public class TupleGenerator extends SyntacticElementImpl implements Expr,Iterabl
 		for (String field : fields) {
 			Expr e = exprs.get(field);									
 			Pair<WExpr,WFormula> src = e.convert(environment, loader);
-			wenv.putAll(src.third());
 			constraints = WFormulas.and(constraints, src.second());
 			params.add(src.first());
 		}

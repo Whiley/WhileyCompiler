@@ -18,11 +18,6 @@
 
 package wyjc.ast.attrs;
 
-import java.util.*;
-
-import wyone.core.WEnvironment;
-import wyone.core.WType;
-import wyone.core.WVariable;
 import wyone.theory.logic.WFormula;
 
 /**
@@ -32,49 +27,18 @@ import wyone.theory.logic.WFormula;
  * @author djp
  * 
  */
-public final class VerificationConditionAttr implements Attribute {
-	private final WEnvironment environment;
+public final class VerificationConditionAttr implements Attribute {	
 	private final WFormula condition;
 
-	public VerificationConditionAttr(WFormula condition, WEnvironment environment) {
-		this.condition = condition;
-		this.environment = environment;
+	public VerificationConditionAttr(WFormula condition) {
+		this.condition = condition;		
 	}
 
 	public WFormula condition() {
 		return condition;
 	}
 	
-	public WEnvironment environment() {
-		return environment;
-	}
-	
 	public String toString() {
-		
-		// first, construct reverse map
-		HashMap<WType,Set<String>> renv = new HashMap();
-		for(Map.Entry<String, WType> e : environment.entrySet()) {
-			Set<String> vars = renv.get(e.getValue());
-			if(vars == null) {
-				vars = new HashSet<String>();
-				renv.put(e.getValue(),vars);
-			}
-			vars.add(e.getKey());
-		}
-		
-		String r = "";
-		for(Map.Entry<WType, Set<String>> e : renv.entrySet()) {
-			r += e.getKey() + " ";
-			boolean firstTime=true;
-			for(String v : e.getValue()) {
-				if(!firstTime) {
-					r += ",";
-				}
-				firstTime=false;
-				r += v;
-			}
-			r += "; ";
-		}
-		return r + condition;
+		return condition.toString();
 	}
 }

@@ -73,7 +73,7 @@ public class SetLength extends UnOp<Expr> implements Expr {
 		Pair<WExpr,WFormula> src = expr.convert(environment,
 				loader);
 		return new Pair<WExpr,WFormula>(new WLengthOf(src
-				.first()), src.second(), src.third());
+				.first()), src.second());
 	}
 	
     public String toString() {

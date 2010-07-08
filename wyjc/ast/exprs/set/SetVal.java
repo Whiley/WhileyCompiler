@@ -114,12 +114,10 @@ public class SetVal extends SyntacticElementImpl implements Expr, Value {
 			ModuleLoader loader) throws ResolveError {						
 		
 		WFormula constraints = WBool.TRUE;
-		HashSet<WValue> wvalues = new HashSet<WValue>();
-		WEnvironment wenv = new wyone.util.WHashEnv();
+		HashSet<WValue> wvalues = new HashSet<WValue>();		
 		
 		for(Expr e : values) {
 			Pair<WExpr,WFormula> p = e.convert(environment,loader);
-			wenv.putAll(p.third());
 			constraints = and(constraints,p.second());
 			wvalues.add((WValue) p.first());
 		}

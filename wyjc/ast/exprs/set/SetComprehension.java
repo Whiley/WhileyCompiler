@@ -310,8 +310,7 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		// FIXME: forward direction is definitely broken.				
 		
 		HashMap<WVariable,WExpr> variables = new HashMap();
-		HashMap<String,Type> nenv = new HashMap<String,Type>(environment);
-		WEnvironment wenv = new wyone.util.WHashEnv();
+		HashMap<String,Type> nenv = new HashMap<String,Type>(environment);		
 		WFormula cond = WBool.TRUE;
 		WFormula constraints = WBool.TRUE;
 		WVariable rv = WVariable.freshVar(); // return set
@@ -320,8 +319,7 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		for (Pair<String, Expr> src : srcs) {
 			WVariable v = new WVariable(src.first());
 			Pair<WExpr,WFormula> re = src.second().convert(nenv, loader);
-			SetType st = (SetType) src.second().type(nenv);			
-			wenv.putAll(re.third());
+			SetType st = (SetType) src.second().type(nenv);						
 			nenv.put(v.name(), st.element());
 			variables.put(v,re.first());			
 			constraints = WFormulas.and(constraints,re.second());

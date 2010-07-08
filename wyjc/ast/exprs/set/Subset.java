@@ -91,8 +91,6 @@ public class Subset extends ConditionBinOp<Expr> implements Condition {
 			ModuleLoader loader) throws ResolveError {
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
 
 		WFormula f = WFormulas.and(WSets.subsetEq(l.first(), r.first()), WExprs
 				.notEquals(l.first(), r.first()));

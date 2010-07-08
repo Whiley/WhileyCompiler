@@ -94,8 +94,6 @@ public class SetUnion extends BinOp<Expr> implements Expr {
 			ModuleLoader loader) throws ResolveError {
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
 		
 		WVariable v = WVariable.freshVar();
 		WVariable vs = WVariable.freshVar();

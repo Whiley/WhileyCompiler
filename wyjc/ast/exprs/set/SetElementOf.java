@@ -165,8 +165,6 @@ public class SetElementOf extends ConditionBinOp<Expr> implements Condition {
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);					
 		WFormula constraints = WFormulas.and(l.second(),r.second());		
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
 		
 		WExpr ls;		
 		
@@ -176,7 +174,7 @@ public class SetElementOf extends ConditionBinOp<Expr> implements Condition {
 			ls = new WSetConstructor(l.first());
 		}		
 				
-		return new Triple(new WSubsetEq(true, ls, r.first()),constraints);
+		return new Pair(new WSubsetEq(true, ls, r.first()),constraints);
 	}  	
 	
 	public String toString() {

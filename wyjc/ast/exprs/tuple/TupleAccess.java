@@ -115,7 +115,7 @@ public class TupleAccess extends SyntacticElementImpl implements Expr, LVal {
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		Pair<WExpr,WFormula> src = source.convert(environment, loader);			
 		WExpr access = new WTupleAccess(src.first(),name);
-		return new Pair<WExpr,WFormula>(access,src.second(),src.third());
+		return new Pair<WExpr,WFormula>(access,src.second());
 	}
     
     public String toString() {
