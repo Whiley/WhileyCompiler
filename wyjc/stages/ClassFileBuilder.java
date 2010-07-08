@@ -772,29 +772,58 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translateCondition(TypeEquals e, String trueLabel,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		translate(e.lhs(), slots, environment,bytecodes);					
-		String exitLabel = freshLabel();		
-		translateTypeTest(e.lhsTest(), slots,
+			HashMap<String, Integer> slots, HashMap<String, Type> environment,
+			ArrayList<Bytecode> bytecodes) {
+		// first, translate lhs
+		translate(e.lhs(), slots, environment,bytecodes);
+		// second allocate new slot to store result in
+		HashMap<String,Integer> nslots = new HashMap(slots);
+		int slot = nslots.size();
+		nslots.put(e.variable(), slot);		
+		// third, store result
+		JvmType lhs_t = convertType(e.lhs().type(environment));
+		bytecodes.add(new Bytecode.Dup(lhs_t));
+		bytecodes.add(new Bytecode.Store(slot, lhs_t));
+		
+		String exitLabel = freshLabel();
+		translateTypeTest(e.lhsTest(), nslots,
 				environment, bytecodes);
-		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,exitLabel));			
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,exitLabel));		
 		environment = (HashMap) environment.clone();
-		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);
-		translate(e.rhs(), slots, environment,bytecodes);
+		environment.put(e.variable(), e.lhsTest());
+		JvmType type = convertType(e.lhsTest());
+		addReadConversion(e.lhsTest(),bytecodes);			 		
+		bytecodes.add(new Bytecode.Store(slot, type));			
+		translate(e.rhs(), nslots, environment,bytecodes);
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
-		bytecodes.add(new Bytecode.Label(exitLabel));	
+		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
 	
 	protected void translateCondition(TypeGate e, String trueLabel,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		translate(e.lhs(), slots, environment,bytecodes);							
-		translateTypeTest(e.lhsTest(), slots,
+			HashMap<String, Integer> slots, HashMap<String, Type> environment,
+			ArrayList<Bytecode> bytecodes) {
+		// first, translate lhs
+		translate(e.lhs(), slots, environment,bytecodes);
+		// second allocate new slot to store result in
+		HashMap<String,Integer> nslots = new HashMap(slots);
+		int slot = nslots.size();
+		nslots.put(e.variable(), slot);		
+		// third, store result
+		JvmType lhs_t = convertType(e.lhs().type(environment));
+		bytecodes.add(new Bytecode.Dup(lhs_t));
+		bytecodes.add(new Bytecode.Store(slot, lhs_t));
+
+		// fourth perform test		
+		translateTypeTest(e.lhsTest(), nslots,
 				environment, bytecodes);
-		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));			
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));		
 		environment = (HashMap) environment.clone();
-		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);		
-		translate(e.rhs(), slots, environment,bytecodes);
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));		
+		environment.put(e.variable(), e.lhsTest());
+		JvmType type = convertType(e.lhsTest());
+		addReadConversion(e.lhsTest(),bytecodes);			 		
+		bytecodes.add(new Bytecode.Store(slot, type));			
+		translate(e.rhs(), nslots, environment,bytecodes);
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));			
 	}
 	
 	private void translate(Expr expr, HashMap<String, Integer> slots,
@@ -1936,36 +1965,67 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
 	}
-	protected void translate(TypeEquals e,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {		
-		translate(e.lhs(), slots, environment,bytecodes);					
+
+	protected void translate(TypeEquals e, HashMap<String, Integer> slots,
+			HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		// first, translate lhs
+		translate(e.lhs(), slots, environment,bytecodes);
+		// second allocate new slot to store result in
+		HashMap<String,Integer> nslots = new HashMap(slots);
+		int slot = nslots.size();
+		nslots.put(e.variable(), slot);		
+		// third, store result
+		JvmType lhs_t = convertType(e.lhs().type(environment));
+		bytecodes.add(new Bytecode.Dup(lhs_t));
+		bytecodes.add(new Bytecode.Store(slot, lhs_t));
+		
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
-		translateTypeTest(e.lhsTest(), slots,
+		translateTypeTest(e.lhsTest(), nslots,
 				environment, bytecodes);
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
 		bytecodes.add(new Bytecode.LoadConst(0));
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 		environment = (HashMap) environment.clone();
-		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);
-		translate(e.rhs(), slots, environment,bytecodes);
+		environment.put(e.variable(), e.lhsTest());
+		JvmType type = convertType(e.lhsTest());
+		addReadConversion(e.lhsTest(),bytecodes);			 		
+		bytecodes.add(new Bytecode.Store(slot, type));	
+		
+		translate(e.rhs(), nslots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
-	protected void translate(TypeGate e,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		translate(e.lhs(), slots, environment,bytecodes);			
+
+	protected void translate(TypeGate e, HashMap<String, Integer> slots,
+			HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		// first, translate lhs
+		translate(e.lhs(), slots, environment,bytecodes);
+		// second allocate new slot to store result in
+		HashMap<String,Integer> nslots = new HashMap(slots);
+		int slot = nslots.size();
+		nslots.put(e.variable(), slot);		
+		// third, store result
+		JvmType lhs_t = convertType(e.lhs().type(environment));
+		bytecodes.add(new Bytecode.Dup(lhs_t));
+		bytecodes.add(new Bytecode.Store(slot, lhs_t));
+
+		// fourth perform test
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
-		translateTypeTest(e.lhsTest(), slots,
+		translateTypeTest(e.lhsTest(), nslots,
 				environment, bytecodes);
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
 		bytecodes.add(new Bytecode.LoadConst(1));
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 		environment = (HashMap) environment.clone();
-		typeInference(e.lhs(),e.lhsTest(),environment,slots,bytecodes);
-		translate(e.rhs(), slots, environment,bytecodes);
+		environment.put(e.variable(), e.lhsTest());
+		JvmType type = convertType(e.lhsTest());
+		addReadConversion(e.lhsTest(),bytecodes);			 		
+		bytecodes.add(new Bytecode.Store(slot, type));	
+		
+		translate(e.rhs(), nslots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
 	protected void translate(ProcessAccess a,
@@ -2000,6 +2060,7 @@ public class ClassFileBuilder {
 	protected void typeInference(Expr selector, Type type,
 			HashMap<String, Type> environment, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
+		
 		if(selector instanceof Variable) {
 			Variable v = (Variable) selector;
 			typeInferenceConversion(v,type,environment,slots,bytecodes);
@@ -2016,6 +2077,7 @@ public class ClassFileBuilder {
 	protected void typeInferenceConversion(Variable v, Type type,
 			HashMap<String, Type> environment, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
+		
 		if(slots != null) {			
 			// FIXME: can eliminate this in many more circumstances
 			translate(v,slots,environment,bytecodes);
@@ -2332,6 +2394,13 @@ public class ClassFileBuilder {
 			} else {
 				return JAVA_LANG_OBJECT;
 			}
+		} else if(t instanceof RecursiveType) {
+			RecursiveType rt = (RecursiveType) t;
+			if(rt.type() == null) {
+				return JAVA_LANG_OBJECT;
+			} else {
+				return convertType(rt.type());
+			}
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}		
@@ -2418,6 +2487,13 @@ public class ClassFileBuilder {
 				r += type2str(pt);
 			}
 			return r;
+		} else if(t instanceof RecursiveType) {
+			RecursiveType rt = (RecursiveType) t;
+			if(rt.type() == null) {
+				return rt.name();
+			} else {
+				return rt.name() + ":" + type2str(rt.type());
+			}
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}
