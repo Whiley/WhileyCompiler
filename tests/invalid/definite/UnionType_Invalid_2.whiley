@@ -6,11 +6,11 @@ define nat as int where $ >= 0
 define natlist as [nat]
 define nlt as nat | natlist
 
-nlt g(int y) requires y > 2:
+nlt g(int y) requires y >= 0:
     return y
 
-plt f(int x) requires x > 1:
-    return g(x+1)
+plt f(int x) requires x >= 0:
+    return g(x)
 
 void System::main([string] args):
-    print str(f(2))
+    print str(f(0))
