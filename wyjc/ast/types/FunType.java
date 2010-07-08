@@ -20,7 +20,6 @@ package wyjc.ast.types;
 
 import java.util.*;
 
-import wyone.core.WFunType;
 import wyone.core.WType;
 
 
@@ -128,10 +127,6 @@ public class FunType implements Type {
 	}
 	
 	public WType convert() {
-		ArrayList<WType> params = new ArrayList<WType>();
-		for(Type t : parameters) {
-			params.add(t.convert());
-		}
-		return new WFunType(ret.convert(),params);
+		throw new RuntimeException("cannot convert FunType to WType");
 	}
 }

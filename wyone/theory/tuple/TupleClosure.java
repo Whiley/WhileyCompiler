@@ -50,8 +50,13 @@ public class TupleClosure implements InferenceRule {
 			if(lhs.target().equals(target)) {
 				fields.put(lhs.field(), eq.rhs());
 			}
+		}		
+		// It can arise in some situations that we don't have the full type for
+		// a variable. I could do better here, but for now this will do I think.
+		WType _type = target.type(state);
+		if(!(_type instanceof WTupleType)) {
+			return;
 		}
-		
 		WTupleType type = (WTupleType) target.type(state);				
 		if(type.types().size() == fields.size()) {			
 			ArrayList<String> names = new ArrayList<String>();

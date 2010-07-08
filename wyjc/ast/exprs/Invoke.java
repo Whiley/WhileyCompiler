@@ -162,12 +162,15 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		WFormula constraints = null;
 		
 		ArrayList<WExpr> params = new ArrayList<WExpr>();
-
-		for(Expr p : arguments) {			
+		
+		for(int i=0;i!=arguments.size();++i) {
+			Expr p = arguments.get(i);
 			Pair<WExpr, WFormula> pc = p.convert(environment,
 					loader);
+			WType p_type = ftype.parameters().get(i).convert();
 			params.add(pc.first());
-			argConstraints = WFormulas.and(argConstraints,pc.second());			
+			argConstraints = WFormulas.and(argConstraints, pc.second(), WTypes
+					.subtypeOf(pc.first(), p_type));			
 		}
 		
 		WVariable retLabel = new WVariable("&" + name, params);							
@@ -215,7 +218,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		}								
 		
 		constraints = WFormulas.and(constraints, WTypes.subtypeOf(retLabel,
-				ftype.convert()));
+				ftype.returnType().convert()));
 		
 		return new Pair<WExpr, WFormula>(retLabel, constraints);
 	}
