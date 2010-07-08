@@ -792,7 +792,7 @@ public class ClassFileBuilder {
 		environment = (HashMap) environment.clone();
 		environment.put(e.variable(), e.lhsTest());
 		JvmType type = convertType(e.lhsTest());
-		bytecodes.add(new Bytecode.Load(slot, type));	
+		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));	
 		addReadConversion(e.lhsTest(),bytecodes);			 		
 		bytecodes.add(new Bytecode.Store(slot, type));			
 		translate(e.rhs(), nslots, environment,bytecodes);
@@ -821,7 +821,7 @@ public class ClassFileBuilder {
 		environment = (HashMap) environment.clone();
 		environment.put(e.variable(), e.lhsTest());
 		JvmType type = convertType(e.lhsTest());
-		bytecodes.add(new Bytecode.Load(slot, type));
+		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));
 		addReadConversion(e.lhsTest(),bytecodes);			 		
 		bytecodes.add(new Bytecode.Store(slot, type));			
 		translate(e.rhs(), nslots, environment,bytecodes);
@@ -1992,7 +1992,7 @@ public class ClassFileBuilder {
 		environment = (HashMap) environment.clone();
 		environment.put(e.variable(), e.lhsTest());
 		JvmType type = convertType(e.lhsTest());
-		bytecodes.add(new Bytecode.Load(slot, type));
+		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));
 		addReadConversion(e.lhsTest(),bytecodes);			 		
 		bytecodes.add(new Bytecode.Store(slot, type));	
 		
@@ -2025,7 +2025,7 @@ public class ClassFileBuilder {
 		environment = (HashMap) environment.clone();
 		environment.put(e.variable(), e.lhsTest());
 		JvmType type = convertType(e.lhsTest());
-		bytecodes.add(new Bytecode.Load(slot, type));
+		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));
 		addReadConversion(e.lhsTest(),bytecodes);			 		
 		bytecodes.add(new Bytecode.Store(slot, type));	
 		

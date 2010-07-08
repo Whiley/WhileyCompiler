@@ -1,10 +1,5 @@
-// A simple, recursive expression tree
-define expr as (int num) | (string err)
+define expr as {int}|bool
 
-expr parseIdentifier():
-    return (err:"Hello")
-
-void System::main([string] args):
-    expr e = parseIdentifier()
-
-
+void f(expr e):
+    if e ~= bool:
+        print "a"
