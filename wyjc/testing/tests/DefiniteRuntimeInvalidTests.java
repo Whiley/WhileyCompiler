@@ -87,5 +87,6 @@ public class DefiniteRuntimeInvalidTests extends TestHarness {
  @Test public void TupleAssign_Invalid_3_RunTest() { runtimeFailTest("TupleAssign_Invalid_3"); }
  @Test public void TypeEquals_Invalid_3_RunTest() { runtimeFailTest("TypeEquals_Invalid_3"); }
  @Test public void UnionType_Invalid_1_RunTest() { runtimeFailTest("UnionType_Invalid_1"); }
+ @Test public void UnionType_Invalid_2_RunTest() { runtimeFailTest("UnionType_Invalid_2"); }
  @Test public void VarDecl_Invalid_1_RunTest() { runtimeFailTest("VarDecl_Invalid_1"); } 
 }
