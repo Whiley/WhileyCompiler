@@ -477,24 +477,30 @@ public class TypeResolution {
 			ArrayList<Pair<Type,Condition>> conditions = new ArrayList();
 			for(UnresolvedType bound : utt.types()) {
 				Pair<Type,Condition> rb = expandType(bound,cache);
-				t = Types.leastUpperBound(t,rb.first());
-				if(rb.second() != null) {
-					conditions.add(rb);
-				}
+				t = Types.leastUpperBound(t,rb.first());				
+				conditions.add(rb);				
 			}
 											
 			for(Pair<Type,Condition> p : conditions) {				
 				Condition cond = p.second();				
-				if(t instanceof UnionType) {
+				
+				if(cond == null) {
+					String var = Variable.freshVar();
+					// FIXME: how to avoid losing source information here?
+					Variable v = new Variable("$");
+					cond = new TypeEquals(p.first(), var, v, new BoolVal(true));
+				} else if(t instanceof UnionType) {
 					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
 					String var = Variable.freshVar();
 					HashMap<String,Expr> binding = new HashMap<String,Expr>();
 					binding.put("$", new Variable(var));										
 					// indicates a choice of some kind required					
-					cond = new TypeGate(p.first(), var, v, cond
+					
+					cond = new TypeEquals(p.first(), var, v, cond
 							.substitute(binding), cond
 							.attribute(SourceAttr.class));					
 				}
+				
 				c = c == null ? cond : new Or(c,cond,cond.attribute(SourceAttr.class));							
 			}			
 			
@@ -899,6 +905,8 @@ public class TypeResolution {
 				retType = check((TupleAccess) e, environment);
 			} else if (e instanceof TypeGate) {
 				retType = check((TypeGate) e, environment);
+			} else if (e instanceof TypeEquals) {
+				retType = check((TypeEquals) e, environment);
 			} else if (e instanceof Spawn) {
 				retType = check((Spawn) e, environment);
 			} else if (e instanceof ProcessAccess) {
@@ -1471,6 +1479,23 @@ public class TypeResolution {
 				.attributes()));
 	}
 	
+	protected Pair<Type, Expr> check(TypeEquals c, HashMap<String,Type> environment) {				
+		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
+		
+		if(!c.lhsTest().isSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
+			// we have to clone the environment, since it's effects only apply
+			// to the contained condition.
+			environment = new HashMap<String,Type>(environment);
+			environment.put(c.variable(), c.lhsTest());
+		}
+		
+		Pair<Type,Expr> rhs = check(c.rhs(),environment);
+		
+		return new Pair<Type, Expr>(rhs.first(), new TypeEquals(c.lhsTest(), c
+				.variable(), lhs.second(), (Condition) rhs.second(), c
+				.attributes()));
+	}
+		
 	protected Pair<Type, Expr> check(Spawn c, HashMap<String,Type> environment) {
 		Pair<Type,Expr> p = check(c.mhs(),environment);		
 		// there is nothing to do here really

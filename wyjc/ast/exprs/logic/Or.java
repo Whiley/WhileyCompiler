@@ -66,7 +66,7 @@ public class Or extends ConditionBinOp<Condition> implements Condition {
 	public Condition reduce(Map<String, Type> environment) {
 		Condition l = lhs.reduce(environment);
 		Condition r = rhs.reduce(environment);
-				
+		
 		if (l instanceof BoolVal && r instanceof BoolVal) {
 			BoolVal i1 = (BoolVal) l;
 			BoolVal i2 = (BoolVal) r;

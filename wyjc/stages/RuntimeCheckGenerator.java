@@ -346,7 +346,7 @@ public class RuntimeCheckGenerator {
 		}
 		
 		if(f.postCondition() != null) {
-			Condition postCondition = f.postCondition();			
+			Condition postCondition = f.postCondition();
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
 			binding.put("$", e);
 			for (Variable var : postCondition.uses()) {				
@@ -360,7 +360,7 @@ public class RuntimeCheckGenerator {
 					binding.put(v, new Variable(v + "$_", var.attributes()));
 				}
 			}			
-			Condition pc = postCondition.substitute(binding);						
+			Condition pc = postCondition.substitute(binding);
 			addCheck("function postcondition not satisfied",pc,environment,e,checks);								
 		}		
 		
