@@ -34,6 +34,7 @@ import wyjc.util.Triple;
 import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
+import wyone.theory.type.WTypes;
 import wyone.theory.list.*;
 import static wyone.theory.logic.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
@@ -130,9 +131,9 @@ public class RangeGenerator extends SyntacticElementImpl implements Expr {
 				.first(), retVar), lessThan(retVar, ed.first()));
 		WFormula rhs = and(lessThan(st.first(), ed.first()), lessThanEq(ed
 				.first(), retVar), lessThanEq(retVar, st.first()));
-		WFormula constraints = and(or(lhs, rhs), st.second(), ed.second());
+		WFormula constraints = and(or(lhs, rhs), st.second(), ed.second(),
+				WTypes.subtypeOf(retVar, WIntType.T_INT));
 
-		wenv.put(retVar.name(),new WListType(WIntType.T_INT));
 		return new Pair<WExpr,WFormula>(retVar, constraints);
 	}
 	

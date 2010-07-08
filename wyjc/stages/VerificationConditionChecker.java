@@ -66,8 +66,8 @@ public class VerificationConditionChecker {
 				syntaxError("internal failure --- missing verification condition",s);
 			}
 								
-			Proof p = Solver.checkUnsatisfiable(timeout, attr.condition(), attr
-					.environment(), wyone.Main.heuristic, wyone.Main.theories); 						
+			Proof p = Solver.checkUnsatisfiable(timeout, attr.condition(),
+					wyone.Main.heuristic, wyone.Main.theories); 						
 			// FIXME: need to update this			
 			if (p instanceof Proof.Sat || p instanceof Proof.Unknown) {
 				syntaxError(c.message(), s);

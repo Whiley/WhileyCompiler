@@ -32,6 +32,7 @@ import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.set.*;
+import wyone.theory.type.WTypes;
 import static wyjc.util.SyntaxError.*;
 import static wyone.theory.logic.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
@@ -97,16 +98,16 @@ public class SetUnion extends BinOp<Expr> implements Expr {
 		
 		WVariable v = WVariable.freshVar();
 		WVariable vs = WVariable.freshVar();
-		wenv.put(vs.name(),type(environment).convert());
+		WFormula constraints = WTypes.subtypeOf(vs, type(environment).convert());
 		HashMap<WVariable, WExpr> vars = new HashMap();
 		vars.put(v, vs);
 		WSetConstructor sc = new WSetConstructor(v);
 		WFormula allc = WFormulas.or(WSets.subsetEq(sc, l.first()), WSets
 				.subsetEq(sc, r.first()));
-		WFormula constraints = WFormulas.and(l.second(), r.second(), WSets
+		constraints = WFormulas.and(constraints, l.second(), r.second(), WSets
 				.subsetEq(l.first(), vs), WSets.subsetEq(r.first(), vs),
 				new WBoundedForall(true, vars, allc));
-		
+
 		return new Pair<WExpr,WFormula>(vs,constraints);
 	}
 	

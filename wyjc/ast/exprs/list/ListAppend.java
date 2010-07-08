@@ -36,6 +36,7 @@ import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
+import wyone.theory.type.WTypes;
 import wyone.theory.list.*;
 import static wyjc.util.SyntaxError.*;
 import static wyone.theory.logic.WFormulas.*;
@@ -106,7 +107,6 @@ public final class ListAppend extends BinOp<Expr> {
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);		
 			
 		WVariable retVar = WVariable.freshVar();
-		wenv.put(retVar.name(), type(environment).convert());		
 		
 		// first, identify new length					
 		WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar), add(new WLengthOf(l.first()),
@@ -144,10 +144,10 @@ public final class ListAppend extends BinOp<Expr> {
 				WFormulas.implies(l1, r1), WFormulas.implies(l2, r2)));
 		
 		WFormula constraints = WFormulas.and(l.second(), r.second(),
-				lenConstraints, forall1, forall2, forall3);
-	
-		return new Pair<WExpr,WFormula>(retVar, constraints,
-				wenv);
+				lenConstraints, forall1, forall2, forall3, WTypes.subtypeOf(
+						retVar, type(environment).convert()));
+
+		return new Pair<WExpr,WFormula>(retVar, constraints);
 	}       
 	    
     public String toString() {

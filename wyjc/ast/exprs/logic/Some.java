@@ -136,17 +136,12 @@ public class Some extends UnOp<SetComprehension> implements Condition {
 			}
 									
 			variables.put(v,re.first());
-			constraints = WFormulas.and(constraints,re.second());
-			wenv.putAll(re.third());										
+			constraints = WFormulas.and(constraints,re.second());											
 		}
 		
 		Pair<WFormula,WFormula> mhs = sc.condition().convertCondition(nenv, loader);
 		constraints = WFormulas.and(constraints,mhs.second()).substitute(binding);		
 		
-		for(Pair<String, Expr> src : sc.sources()) {
-			wenv.remove(src.first());
-		}
-				
 		return new Pair(
 				new WBoundedForall(false, variables, mhs.first().substitute(binding)),
 				constraints);	

@@ -91,11 +91,8 @@ public class Variable extends SyntacticElementImpl implements Expr, LVal {
 	
 	public Pair<WExpr,WFormula> convert(
 			Map<String, Type> environment, ModuleLoader loader)
-			throws ResolveError {
-		
-		WVariable wvar = new wyone.core.WVariable(var);
-		wenv.put(var, environment.get(var).convert());
-
+			throws ResolveError {		
+		WVariable wvar = new wyone.core.WVariable(var);		
 		return new Pair<wyone.core.WExpr, WFormula>(wvar,
 				WBool.TRUE);
 	}

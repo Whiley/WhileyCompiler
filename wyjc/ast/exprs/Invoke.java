@@ -30,6 +30,7 @@ import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
+import wyone.theory.type.WTypes;
 
 public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 	private final String name;
@@ -173,7 +174,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		environment = new HashMap<String,Type>(environment);
 		environment.put("$", ftype.returnType());		
 				
-		wenv.put(retLabel.name(),ftype.convert());				
+		constraints = null;		
 		
 		ModuleInfo mi = loader.loadModule(module);
 		
@@ -212,6 +213,9 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 				constraints = WFormulas.or(constraints, mcs);
 			}
 		}								
+		
+		constraints = WFormulas.and(constraints, WTypes.subtypeOf(retLabel,
+				ftype.convert()));
 		
 		return new Pair<WExpr, WFormula>(retLabel, constraints);
 	}

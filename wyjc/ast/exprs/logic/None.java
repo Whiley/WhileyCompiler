@@ -156,10 +156,6 @@ public class None extends UnOp<SetComprehension> implements Condition {
 		
 		Pair<WFormula,WFormula> mhs = sc.condition().convertCondition(nenv, loader);
 		constraints = WFormulas.and(constraints,mhs.second()).substitute(binding);		
-		
-		for(Pair<String, Expr> src : sc.sources()) {
-			wenv.remove(src.first());
-		}
 				
 		return new Pair(
 				new WBoundedForall(true, variables, mhs.first().not().substitute(binding)),

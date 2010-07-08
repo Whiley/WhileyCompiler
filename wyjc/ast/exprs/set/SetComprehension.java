@@ -34,6 +34,7 @@ import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.set.*;
+import wyone.theory.type.WTypes;
 import static wyjc.util.SyntaxError.*;
 import static wyone.theory.logic.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
@@ -311,10 +312,9 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		
 		HashMap<WVariable,WExpr> variables = new HashMap();
 		HashMap<String,Type> nenv = new HashMap<String,Type>(environment);		
-		WFormula cond = WBool.TRUE;
-		WFormula constraints = WBool.TRUE;
+		WFormula cond = WBool.TRUE;		
 		WVariable rv = WVariable.freshVar(); // return set
-		wenv.put(rv.name(),type(environment).convert());
+		WFormula constraints = WTypes.subtypeOf(rv, type(environment).convert());
 		
 		for (Pair<String, Expr> src : srcs) {
 			WVariable v = new WVariable(src.first());

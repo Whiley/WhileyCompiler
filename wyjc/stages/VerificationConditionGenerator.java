@@ -38,6 +38,7 @@ import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.set.*;
 import wyone.theory.tuple.WTupleType;
+import wyone.theory.type.WTypes;
 import static wyjc.util.SyntaxError.*;
 import static wyone.theory.logic.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
@@ -157,8 +158,7 @@ public class VerificationConditionGenerator {
 				// First, extract the precondition previously generated.
 				PreConditionAttr attr = s.attribute(PreConditionAttr.class);
 				// Second, convert it into a pair of formulas
-				Pair<WFormula,WFormula> pcPair = attr.preCondition().convertCondition(environment, loader);																			
-				WEnvironment wenv = pcPair.third();
+				Pair<WFormula,WFormula> pcPair = attr.preCondition().convertCondition(environment, loader);																						
 				
 				// Third, construct a single preCondition formula
 				WFormula preCondition = and(pcPair.first(), pcPair
@@ -166,16 +166,12 @@ public class VerificationConditionGenerator {
 				
 				// Now, convert the expression being checked to a formula
 				Condition check = simplifier.simplify(new Not(c.condition()));					
-				System.out.println("CONVERTING: " + check);				
-				System.out.println("FROM: " + c.condition());
 				Pair<WFormula,WFormula> pcs = check.convertCondition(environment, loader);											
 		
 				// Generate initial verification condition.
-				WFormula vc = and(preCondition,pcs.second(),pcs.first());												
-				wenv.putAll(pcs.third());
+				WFormula vc = and(preCondition,pcs.second(),pcs.first());																
 				
-				// Add any axioms necessary for the VC
-				vc = addAxioms(vc);								
+				vc = addEnvironment(vc,check.uses(),environment);
 				
 				// Simplify vc where possible.							
 //				vc = simplify(vc);				
@@ -201,80 +197,15 @@ public class VerificationConditionGenerator {
 			syntaxError("internal failure",s,ex);
 		}
 	}
-					
-	protected WFormula addAxioms(WFormula f) {
-		Set<String> preds = usedPreds(f);
-				
-		if(preds.contains("in")) {			
-			HashMap<WVariable,WType> vars = new HashMap<WVariable,WType>();
-			vars.put(new WVariable("l"),null);
-			vars.put(new WVariable("s"),null);
-			vars.put(new WVariable("v"),null);
-			
-			WFormula lhs = and(new WPredicate(true, "length",
-					new WVariable("l"), new WVariable("s")), new WPredicate(true,
-					"in", new WVariable("v"), new WVariable("s")));
-			WFormula rhs = greaterThan(new WVariable("l"),WNumber.ZERO);
-			f = and(f, new WForall(true, vars, implies(lhs,
-					rhs)));
+	
+	protected WFormula addEnvironment(WFormula vc, Set<Variable> uses,
+			HashMap<String, Type> environment) {
+		for (Variable v : uses) {
+			Type t = environment.get(v.name());
+			vc = WFormulas.and(WTypes.subtypeOf(new WVariable(v.name()), t
+					.convert()), vc);
 		}
-		
-		if(preds.contains("get")) {
-			// Axiom 2 --- get(val,list,index) is a functional (with respect to val)
-			
-			HashMap<WVariable,WType> vars = new HashMap<WVariable,WType>();
-			vars.put(new WVariable("l"),null); // list
-			vars.put(new WVariable("i"),null); // index			
-			vars.put(new WVariable("v1"),null);									
-			vars.put(new WVariable("v2"),null);
-			
-			WFormula lhs = and(
-					new WPredicate(true, "get", new WVariable("v1"), new WVariable("l"),new WVariable("i")), 
-					new WPredicate(true, "get", new WVariable("v2"), new WVariable("l"), new WVariable("i")));
-			WFormula rhs = WExprs.equals(new WVariable("v2"),new WVariable("v1"));
-			f = and(f, new WForall(true, vars, implies(lhs,
-					rhs)));
-			
-			// Axiom 3 --- get(val,list,index) implies (|list| > 0 && index >= 0 && index < |list|)			
-			vars = new HashMap<WVariable,WType>();
-			vars.put(new WVariable("v"),null); // value at index i			 
-			vars.put(new WVariable("l"),null); // list
-			vars.put(new WVariable("i"),null); // index
-			vars.put(new WVariable("s"),null); // size
-						
-			lhs = and(new WPredicate(true, "get", new WVariable("v"),
-					new WVariable("l"), new WVariable("i")), new WPredicate(true,
-					"length", new WVariable("s"), new WVariable("l")));
-			rhs = greaterThan(new WVariable("s"),WNumber.ZERO);
-			rhs = and(rhs, lessThanEq(WNumber.ZERO, new WVariable("i")),
-					greaterThan(new WVariable("s"), new WVariable("i")));
-			f = and(f, new WForall(true, vars, implies(lhs,
-					rhs)));
-			
-			// Axiom 4 --- get(val,list,index) iff in(val,list)
-			vars = new HashMap<WVariable,WType>();
-			vars.put(new WVariable("v"),null); // value at index i			 
-			vars.put(new WVariable("l"),null); // list
-			vars.put(new WVariable("i"),null); // index			
-						
-			lhs = new WPredicate(true, "get", new WVariable("v"), new WVariable(
-					"l"), new WVariable("i"));
-			rhs = new WPredicate(true, "in", new WVariable("v"),
-					new WVariable("l"));
-			f = and(f, new WForall(true, vars, implies(lhs,
-					rhs)));
-			// reverse direction is harder
-			vars = new HashMap<WVariable,WType>();			
-			vars.put(new WVariable("v"),null); // value at index i			 
-			vars.put(new WVariable("l"),null); // list			
-			HashMap<WVariable,WType> evars = new HashMap();
-			evars.put(new WVariable("i"),null);
-			
-			f = and(f, new WForall(true, vars, implies(rhs,
-					new WForall(false, evars, lhs.not()))));
-		}				
-				
-		return f;
+		return vc;
 	}
 	
 	protected HashSet<String> usedPreds(WFormula f) {

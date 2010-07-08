@@ -35,6 +35,7 @@ import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
+import wyone.theory.type.WTypes;
 import wyone.theory.list.*;
 import static wyjc.util.SyntaxError.*;
 import static wyone.theory.logic.WFormulas.*;
@@ -145,7 +146,6 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 		Pair<WExpr,WFormula> end = this.end.convert(environment, loader);
 		
 		WVariable retVar = WVariable.freshVar();
-		wenv.put(retVar.name(), type(environment).convert());
 		
 		// first, identify new length					
 		WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar), subtract(end
@@ -168,9 +168,11 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 		rhs = WExprs.equals(new WListAccess(src.first(), WNumerics.add(i,start.first())),
 				new WListAccess(retVar, i));
 		WFormula forall2 = new WBoundedForall(true,variables,rhs);
+
+		WFormula constraints = and(start.second(), end.second(), src.second(),
+				lenConstraints, forall1, forall2, WTypes.subtypeOf(retVar,
+						type(environment).convert()));				
 		
-		WFormula constraints = and(start.second(), end.second(), src
-				.second(), lenConstraints, forall1, forall2);
 		return new Pair<WExpr,WFormula>(retVar, constraints);
 	}
     

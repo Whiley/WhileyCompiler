@@ -37,6 +37,7 @@ import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.set.WSetConstructor;
 import wyone.theory.set.WSets;
+import wyone.theory.type.WTypes;
 import static wyjc.util.SyntaxError.syntaxError;
 import static wyone.theory.logic.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
@@ -109,7 +110,7 @@ public class SetIntersection extends BinOp<Expr> implements Expr {
 		WVariable vs = WVariable.freshVar();
 		HashMap<WVariable, WExpr> vars = new HashMap();
 		vars.put(v, vs);
-		wenv.put(vs.name(),type(environment).convert());
+		WFormula constraints = WTypes.subtypeOf(vs, type(environment).convert());		
 		WSetConstructor sc = new WSetConstructor(v);
 		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
 				.subsetEq(sc, l.first()), WSets.subsetEq(sc, r.first())));
@@ -119,9 +120,9 @@ public class SetIntersection extends BinOp<Expr> implements Expr {
 		WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
 				.subsetEq(sc, r.first()), WSets.subsetEq(sc, vs)));
 		
-		WFormula constraints = WFormulas.and(l.second(), r.second(), left,
+		constraints = WFormulas.and(constraints, l.second(), r.second(), left,
 				right, WSets.subsetEq(vs, l.first()), WSets.subsetEq(vs, r
-						.first()));		
+						.first()));
 		return new Pair<WExpr,WFormula>(vs,constraints);
 	}
 	
