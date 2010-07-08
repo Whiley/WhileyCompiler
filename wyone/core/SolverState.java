@@ -136,18 +136,18 @@ public final class SolverState implements Iterable<WFormula> {
 		for(int i=0;i!=worklist.size();++i) {
 			Integer x = worklist.get(i);			
 			WFormula f = rassignments.get(x);
-			// System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
+			//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 			for(InferenceRule ir : solver.theories()) {				
 				if(assertions.get(x)) {					
 					ir.infer(f, this, solver);
-					if(contains(WBool.FALSE)){					
+					if(contains(WBool.FALSE)){
 						return; // early termination
 					}
 				} else {
 					break;
 				}
 			}		
-			// System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
+			//System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
 		}		
 	}
 	

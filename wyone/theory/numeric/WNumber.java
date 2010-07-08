@@ -34,8 +34,8 @@ public final class WNumber implements WValue {
 	private final BigInteger numerator;
 	private final BigInteger denominator;
 
-	public WType type(Solver solver) {
-		if(denominator.equals(ONE)) {
+	public WType type(Solver solver) {		
+		if(denominator.equals(BigInteger.ONE)) {
 			return WIntType.T_INT;
 		} else {
 			return WRealType.T_REAL;

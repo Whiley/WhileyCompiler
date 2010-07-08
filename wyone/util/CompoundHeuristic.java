@@ -45,7 +45,7 @@ public final class CompoundHeuristic implements SplitHeuristic {
 	public List<SolverState> split(SolverState state,Solver solver) {
 		for(SplitHeuristic h : heuristics) {
 			List<SolverState> r = h.split(state,solver);
-			if(r != null) {
+			if(r != null) {				
 				return r;
 			}
 		}
