@@ -73,7 +73,7 @@ public class WLengthOf extends WConstructor<WExpr> implements WExpr {
 		return new WEquality(true,this,e);
 	}
 		
-	public WType type(Solver solver) {
+	public WType type(SolverState state) {
 		return WIntType.T_INT;
 	}
 }

@@ -76,8 +76,8 @@ public final class WListAccess extends WConstructor<WExpr> implements WExpr {
 		return new WEquality(true,this,e);
 	}
 	
-	public WType type(Solver solver) {		
-		WType type = source().type(solver);
+	public WType type(SolverState state) {		
+		WType type = source().type(state);
 		if(type instanceof WListType) {			
 			WListType tt = (WListType) type;
 			return tt.element();			

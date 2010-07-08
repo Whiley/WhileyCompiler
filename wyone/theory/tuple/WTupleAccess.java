@@ -62,8 +62,8 @@ public final class WTupleAccess extends WConstructor<WExpr> implements WExpr {
 		return new WEquality(true,this,e);
 	}
 	
-	public WType type(Solver solver) {		
-		WType type = target().type(solver);
+	public WType type(SolverState state) {		
+		WType type = target().type(state);
 		if(type instanceof WTupleType) {			
 			WTupleType tt = (WTupleType) type;
 			WType ft = tt.get(field);

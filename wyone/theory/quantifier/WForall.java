@@ -57,7 +57,7 @@ public class WForall implements WLiteral {
 		return formula;
 	}	
 	
-	public WType type(Solver solver) {		
+	public WType type(SolverState state) {		
 		return WBoolType.T_BOOL;		
 	}
 	

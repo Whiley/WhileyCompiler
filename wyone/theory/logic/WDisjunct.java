@@ -38,7 +38,7 @@ public final class WDisjunct extends WConstructor<WFormula> implements WFormula 
 	// REQUIRED METHODS
 	// =================================================================
 
-	public WType type(Solver solver) {		
+	public WType type(SolverState state) {		
 		return WBoolType.T_BOOL;		
 	}	
 	

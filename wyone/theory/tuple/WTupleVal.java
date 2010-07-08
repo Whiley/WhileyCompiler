@@ -46,10 +46,10 @@ public final class WTupleVal extends WConstructor<WValue> implements WValue {
 		return new WEquality(true,rhs,this);		
 	}
 	
-	public WTupleType type(Solver solver) {
+	public WTupleType type(SolverState state) {
 		ArrayList<Pair<String,WType>> types = new ArrayList();
 		for(int i=0;i!=fields.size();++i) {
-			WType t = subterms.get(i).type(solver);
+			WType t = subterms.get(i).type(state);
 			types.add(new Pair(fields.get(i),t));
 		}
 		return new WTupleType(types);

@@ -78,13 +78,13 @@ public interface WExpr extends Comparable<WExpr> {
 	/**
 	 * The following method gives the type of this expression. That is, the type
 	 * of the value that this expression will evaluate to. A reference to the
-	 * solver is required in order to handle variables, whose type is determined
-	 * by the user. This is particularly useful for compound values, such as
-	 * tuples and lists. In such cases, we need to know whether the element is
-	 * an integer or not.
+	 * solver state is required in order to handle variables, whose type is
+	 * determined by the current state. This is particularly useful for compound
+	 * values, such as tuples and lists. In such cases, we need to know whether
+	 * the element is an integer or not.
 	 * 
-	 * @param solver
+	 * @param state
 	 * @return
 	 */
-	public WType type(Solver solver);
+	public WType type(SolverState state);
 }

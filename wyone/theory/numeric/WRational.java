@@ -86,7 +86,7 @@ public final class WRational implements WExpr {
 		return denominator;
 	}
 	
-	public WType type(Solver solver) {		
+	public WType type(SolverState state) {		
 		return WRealType.T_REAL;		
 	}
 		

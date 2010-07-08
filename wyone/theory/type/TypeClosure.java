@@ -21,10 +21,11 @@ import wyone.core.*;
 import wyone.theory.logic.WBool;
 import wyone.theory.logic.WFormula;
 
-public class WTypeClosure implements InferenceRule {
+public class TypeClosure implements InferenceRule {
+	
 	public void infer(WFormula nlit, SolverState state, Solver solver) {
-		if(nlit instanceof WTypeTest) {
-			WTypeTest wt = (WTypeTest) nlit;
+		if(nlit instanceof WSubtype) {
+			WSubtype wt = (WSubtype) nlit;
 			WType lhs_t = wt.lhs().type(solver);
 			if(lhs_t.isSubtype(wt.rhs())) {
 				if(!wt.sign()) {

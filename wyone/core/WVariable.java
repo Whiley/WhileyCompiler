@@ -115,8 +115,8 @@ public class WVariable extends WConstructor<WExpr> implements WExpr {
 		}
 	}
 	
-	public WType type(Solver solver) {
-		WType type= solver.type(this);
+	public WType type(SolverState state) {
+		WType type= state.type(this);
 		if(type instanceof WFunType) {
 			// not exactly ideal
 			WFunType wft = (WFunType) type;

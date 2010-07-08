@@ -324,7 +324,7 @@ public class Parser {
 				&& input.charAt(index + 1) == '=') {
 			match("~=");
 			WType rhs = parseType();			
-			return new WTypeTest(true, lhs, rhs);
+			return new WSubtype(true, lhs, rhs);
 		} else if(lhs instanceof WVariable) {
 			WVariable v = (WVariable) lhs;
 			return new WPredicate(true,v.name(),v.subterms());

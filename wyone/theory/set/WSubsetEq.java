@@ -48,7 +48,7 @@ public class WSubsetEq extends WConstructor<WExpr> implements WLiteral {
 		return new WSubsetEq(!sign,lhs(),rhs());
 	}
 	
-	public WBoolType type(Solver solver) {
+	public WBoolType type(SolverState state) {
 		return WBoolType.T_BOOL;
 	}
 	

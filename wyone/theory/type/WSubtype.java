@@ -23,7 +23,7 @@ import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.util.WConstructor;
 
-public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
+public class WSubtype extends WConstructor<WExpr> implements WLiteral {
 	private boolean sign;
 	private WType type;
 
@@ -36,8 +36,8 @@ public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
 	 * @param lhs
 	 * @param rhs
 	 */
-	public WTypeTest(boolean sign, WExpr lhs, WType rhs) {
-		super(sign ? ("~="+rhs) : ("!~="+rhs),lhs);
+	public WSubtype(boolean sign, WExpr lhs, WType rhs) {
+		super(sign ? ("<:"+rhs) : ("<!:"+rhs),lhs);
 		this.sign = sign;
 		this.type = rhs;
 	}
@@ -47,10 +47,10 @@ public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
 	}
 	
 	public WLiteral not() {
-		return new WTypeTest(!sign,lhs(),type);
+		return new WSubtype(!sign,lhs(),type);
 	}
 	
-	public WBoolType type(Solver solver) {
+	public WBoolType type(SolverState state) {
 		return WBoolType.T_BOOL;
 	}
 	
@@ -84,7 +84,7 @@ public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
 		WLiteral r;
 		
 		if(lhs != nlhs) {
-			r = new WTypeTest(sign,nlhs,type); 			
+			r = new WSubtype(sign,nlhs,type); 			
 		} else {
 			r = this;
 		}
@@ -95,9 +95,9 @@ public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
 	
 	public String toString() {		
 		if(sign) {
-			return lhs().toString() + "~=" + type;			
+			return lhs().toString() + "<:" + type;			
 		} else {
-			return lhs().toString() + "~!=" + type;			
+			return lhs().toString() + "<!:" + type;			
 		}		
 	}
 }

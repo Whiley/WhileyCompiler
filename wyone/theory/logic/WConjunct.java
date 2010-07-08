@@ -35,7 +35,7 @@ public final class WConjunct extends WConstructor<WFormula> implements WFormula 
 		super("&&",fs);
 	}			
 	
-	public WType type(Solver solver) {		
+	public WType type(SolverState state) {		
 		return WBoolType.T_BOOL;		
 	}	
 	

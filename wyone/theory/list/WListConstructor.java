@@ -42,9 +42,9 @@ public class WListConstructor extends WConstructor<WExpr> implements WExpr {
 		return new WEquality(true,rhs,this);
 	}
 	
-	public WListType type(Solver solver) {
+	public WListType type(SolverState state) {
 		// FIXME: following is inherently broken
-		return new WListType(subterms.get(0).type(solver));
+		return new WListType(subterms.get(0).type(state));
 	}
 	
 	public WExpr substitute(Map<WExpr,WExpr> binding) {

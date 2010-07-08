@@ -51,7 +51,7 @@ public final class WEquality extends WConstructor<WExpr> implements WLiteral {
 		return subterms.get(1);
 	}
 	
-	public WType type(Solver solver) {
+	public WType type(SolverState state) {
 		return WBoolType.T_BOOL;
 	}
 	

@@ -42,9 +42,9 @@ public class WSetVal extends WConstructor<WValue> implements WValue {
 		return new WEquality(true,rhs,this);
 	}
 	
-	public WSetType type(Solver solver) {
+	public WSetType type(SolverState state) {
 		// FIXME: following is inherently broken
-		return new WSetType(subterms.get(0).type(solver));
+		return new WSetType(subterms.get(0).type(state));
 	}
 	
 	public WValue substitute(Map<WExpr,WExpr> binding) {
