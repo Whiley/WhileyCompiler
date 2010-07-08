@@ -68,6 +68,14 @@ public class WTypeTest extends WConstructor<WExpr> implements WLiteral {
 		WExpr nlhs = lhs.substitute(binding);
 		
 		// need to check the type here!
+		if(lhs instanceof WValue) {
+			WValue v = (WValue) lhs;
+			if(type.isSubtype(v)) {
+				return WBool.TRUE;
+			} else {
+				return WBool.FALSE;
+			}
+		}
 		
 		WLiteral r;
 		
