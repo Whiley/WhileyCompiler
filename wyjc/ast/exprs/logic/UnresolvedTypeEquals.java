@@ -35,9 +35,8 @@ import wyjc.ast.types.unresolved.UnresolvedType;
 import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;
-import wyone.core.WEnvironment;
-import wyone.theory.logic.WBool;
-import wyone.theory.logic.WFormula;
+import wyone.core.*;
+import wyone.theory.logic.*;
 
 public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condition {
 	private UnresolvedType rhs;

@@ -98,10 +98,7 @@ public class Or extends ConditionBinOp<Condition> implements Condition {
 	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		Pair<WFormula,WFormula> l = lhs.convertCondition(environment, loader);
 		Pair<WFormula,WFormula> r = rhs.convertCondition(environment, loader);
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
 		return new Pair<WFormula,WFormula>(WFormulas.or(l
-				.first(), r.first()), WFormulas.and(l.second(), r.second()),
-				wenv);				
+				.first(), r.first()), WFormulas.and(l.second(), r.second()));				
 	}  
 }

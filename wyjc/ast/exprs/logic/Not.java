@@ -88,6 +88,6 @@ public class Not extends UnOp<Condition> implements Condition {
 
 	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		Pair<WFormula,WFormula> r = expr.convertCondition(environment, loader);
-		return new Pair<WFormula,WFormula>(r.first().not(),r.second(),r.third());
+		return new Pair<WFormula,WFormula>(r.first().not(),r.second());
 	}  
 }

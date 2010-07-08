@@ -114,17 +114,17 @@ public class BoolVal extends SyntacticElementImpl implements Condition, Value {
 	
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		if(value) {
-			return new Triple(WBool.TRUE,WBool.TRUE, new wyone.util.WHashEnv());
+			return new Pair(WBool.TRUE,WBool.TRUE);
 		} else {
-			return new Triple(WBool.FALSE,WBool.TRUE, new wyone.util.WHashEnv());
+			return new Pair(WBool.FALSE,WBool.TRUE);
 		}		
 	}
 	
 	public Pair<WFormula, WFormula> convertCondition(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		if(value) {
-			return new Triple(WBool.TRUE,WBool.TRUE, new wyone.util.WHashEnv());
+			return new Pair(WBool.TRUE,WBool.TRUE);
 		} else {
-			return new Triple(WBool.FALSE,WBool.TRUE, new wyone.util.WHashEnv());
+			return new Pair(WBool.FALSE,WBool.TRUE);
 		}
 	}    	
 }

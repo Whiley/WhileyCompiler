@@ -139,18 +139,16 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 			throws ResolveError {
 		// FIXME: this is incomplete obviously
 		
-		Pair<WExpr,WFormula> l = lhs.convert(environment,loader);		
-		WEnvironment wenv = l.third();
+		Pair<WExpr,WFormula> l = lhs.convert(environment,loader);				
 		WFormula constraints = l.second();
 		
 		environment = new HashMap<String, Type>(environment);
 		environment.put(var, type);
-		Pair<WFormula,WFormula> r = rhs.convertCondition(environment, loader);
-		wenv.putAll(r.third());
+		Pair<WFormula,WFormula> r = rhs.convertCondition(environment, loader);		
 		constraints = and(constraints,r.second());
 		WFormula condition = r.first();
 		condition = and(WExprs.equals(new WVariable(var), l.first()), condition);
-		return new Triple(condition, constraints);		
+		return new Pair<WFormula,WFormula>(condition, constraints);		
 	}  		
 	
 	public int hashCode() {

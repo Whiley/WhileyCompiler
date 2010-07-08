@@ -101,7 +101,6 @@ public class Some extends UnOp<SetComprehension> implements Condition {
 		HashMap<WVariable,WExpr> variables = new HashMap();
 		HashMap<String,Type> nenv = new HashMap(environment);
 		HashMap<WExpr,WExpr> binding = new HashMap();
-		WEnvironment wenv = new wyone.util.WHashEnv();
 		
 		for (Pair<String, Expr> p : sc.sources()) {
 			String name = p.first();
@@ -143,13 +142,12 @@ public class Some extends UnOp<SetComprehension> implements Condition {
 		
 		Pair<WFormula,WFormula> mhs = sc.condition().convertCondition(nenv, loader);
 		constraints = WFormulas.and(constraints,mhs.second()).substitute(binding);		
-		wenv.putAll(mhs.third());
-
+		
 		for(Pair<String, Expr> src : sc.sources()) {
 			wenv.remove(src.first());
 		}
 				
-		return new Triple(
+		return new Pair(
 				new WBoundedForall(false, variables, mhs.first().substitute(binding)),
 				constraints);	
 	}
