@@ -18,7 +18,6 @@
 package wyone.theory.type;
 
 import wyone.core.WType;
-import wyone.core.WValue;
 
 /**
  * The AnyType is used to declare variables whose type is unknown. As the
@@ -35,7 +34,7 @@ public class WAnyType implements WType {
 		return "?";
 	}
 	
-	public boolean isSubtype(WValue o) {				
+	public boolean isSubtype(WType o) {				
 		return true;
 	}
 	

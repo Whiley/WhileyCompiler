@@ -47,19 +47,19 @@ public class WTupleType implements WType {
 		return null;
 	}
 	
-	public boolean isSubtype(WValue val) {
-		if(val instanceof WTupleVal) {
-			WTupleVal wt = (WTupleVal) val;
-			if(wt.subterms().size() != types.size()) {
+	public boolean isSubtype(WType val) {
+		if(val instanceof WTupleType) {
+			WTupleType wt = (WTupleType) val;
+			if(wt.types.size() != types.size()) {
 				return false;
 			}
-			List<String> wt_fields = wt.fields();
-			List<WValue> wt_params = wt.subterms();
+			List<Pair<String,WType>> w_types = wt.types;			
 			for(int i=0;i!=types.size();++i) {
-				String field = wt_fields.get(i);
-				WValue v = wt_params.get(i);
+				String field = w_types.get(i).first();
+				WType t = w_types.get(i).second();
 				Pair<String,WType> p = types.get(i);
-				if (!p.first().equals(field) || !p.second().isSubtype(v)) {
+				if (!p.first().equals(field)
+						|| !p.second().isSubtype(t)) {
 					return false;
 				}				
 			}

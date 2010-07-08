@@ -19,6 +19,8 @@ package wyone.theory.set;
 
 import wyone.core.WType;
 import wyone.core.WValue;
+import wyone.theory.list.WListType;
+import wyone.theory.list.WListVal;
 
 public final class WSetType implements WType {
 	private final WType element;
@@ -31,15 +33,10 @@ public final class WSetType implements WType {
 		return element;
 	}
 	
-	public boolean isSubtype(WValue o) {
-		if(o instanceof WSetVal) {			
-			WSetVal sv = (WSetVal) o;
-			for(WValue v : sv.subterms()) {
-				if(!element.isSubtype(v)) {
-					return false;
-				}
-			}
-			return true;
+	public boolean isSubtype(WType o) {
+		if(o instanceof WSetType) {			
+			WSetType sv = (WSetType) o;			
+			return element.isSubtype(sv.element);
 		} else {
 			return false;
 		}

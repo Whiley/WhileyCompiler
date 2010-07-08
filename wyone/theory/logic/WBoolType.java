@@ -30,8 +30,8 @@ public class WBoolType implements WType {
 		return "bool";
 	}
 	
-	public boolean isSubtype(WValue o) {
-		return o instanceof WBool;
+	public boolean isSubtype(WType o) {
+		return o instanceof WBoolType;
 	}
 	
 	public boolean equals(Object o) {

@@ -142,7 +142,7 @@ public class CongruenceClosure implements InferenceRule {
 				WType t = solver.type(var);
 				// Type can currently be null if represents a quantified
 				// variable.
-				if(t != null && !t.isSubtype(val)) {									
+				if(t != null && !t.isSubtype(val.type(null))) {									
 					return WBool.FALSE;
 				}
 			}

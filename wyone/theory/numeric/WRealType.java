@@ -28,9 +28,9 @@ public class WRealType implements WType {
 	public String toString() {
 		return "real";
 	}
-
-	public boolean isSubtype(WValue v) {
-		return v instanceof Number;		
+	
+	public boolean isSubtype(WType o) {				
+		return o instanceof WIntType || o instanceof WRealType;
 	}
 	
 	public boolean equals(Object o) {

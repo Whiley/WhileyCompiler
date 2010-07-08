@@ -244,7 +244,7 @@ public final class Solver extends Thread {
 				WValue v = model.get(new WVariable(vt.getKey()));
 				if (v == null) {					
 					return Proof.UNKNOWN;
-				} else if(!vt.getValue().isSubtype(v)) {
+				} else if (!vt.getValue().isSubtype(v.type(null))) {
 					return Proof.UNSAT;
 				}
 			}

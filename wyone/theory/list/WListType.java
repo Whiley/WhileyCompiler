@@ -33,15 +33,10 @@ public final class WListType implements WType {
 		return element;
 	}
 	
-	public boolean isSubtype(WValue o) {
-		if(o instanceof WListVal) {			
-			WListVal sv = (WListVal) o;
-			for(WValue v : sv.subterms()) {
-				if(!element.isSubtype(v)) {
-					return false;
-				}
-			}
-			return true;
+	public boolean isSubtype(WType o) {
+		if(o instanceof WListType) {			
+			WListType sv = (WListType) o;			
+			return element.isSubtype(sv.element);
 		} else {
 			return false;
 		}

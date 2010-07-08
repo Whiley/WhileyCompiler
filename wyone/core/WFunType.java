@@ -38,7 +38,7 @@ public class WFunType implements WType {
 		this.parameterTypes = new ArrayList<WType>(parameterTypes);		
 	}
 	
-	public boolean isSubtype(WValue v) {
+	public boolean isSubtype(WType v) {
 		return false; // impossible
 	}
 	

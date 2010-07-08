@@ -30,12 +30,8 @@ public class WIntType implements WType {
 		return "int";
 	}
 	
-	public boolean isSubtype(WValue o) {				
-		if (o instanceof WNumber) {			
-			WNumber n = (WNumber) o;
-			return n.isInteger();
-		}
-		return false;
+	public boolean isSubtype(WType o) {				
+		return o instanceof WIntType;
 	}
 	
 	public boolean equals(Object o) {

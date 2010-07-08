@@ -35,5 +35,5 @@ public interface WType {
 	 * @param o
 	 * @return
 	 */
-	boolean isSubtype(WValue v); 
+	boolean isSubtype(WType v); 
 }
