@@ -82,8 +82,6 @@ public class RealSub extends BinOp<Expr> implements Expr {
 			ModuleLoader loader) throws ResolveError {
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
 		return new Pair<WExpr,WFormula>(subtract(l.first(),r.first()), WFormulas
 				.and(l.second(), r.second()));		
 	}

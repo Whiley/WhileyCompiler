@@ -79,8 +79,6 @@ public class RealAdd extends BinOp<Expr> implements Expr {
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
 		return new Pair<WExpr,WFormula>(add(l.first(),r.first()), WFormulas
 				.and(l.second(), r.second()));
 	}

@@ -78,8 +78,6 @@ public class ProcessNotEquals extends ConditionBinOp<Expr> implements Condition 
 			throws ResolveError {
 		Pair<WExpr,WFormula> l = lhs.convert(environment, loader);
 		Pair<WExpr,WFormula> r = rhs.convert(environment, loader);
-		WEnvironment wenv = l.third();
-		wenv.putAll(r.third());
 		return new Pair<WFormula,WFormula>(WExprs.notEquals(l.first(), r
 				.first()), WFormulas.and(l.second(), r.second()));
 	}
