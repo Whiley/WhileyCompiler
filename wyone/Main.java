@@ -50,7 +50,7 @@ public class Main {
 			new FourierMotzkinSolver(), 
 			new CongruenceClosure(),
 			new DisjunctInference(),
-			new WTypeClosure(), 
+			new TypeClosure(), 
 			new TupleClosure(), 
 			new SubsetClosure(),
 			new BoundedForallClosure(), 
