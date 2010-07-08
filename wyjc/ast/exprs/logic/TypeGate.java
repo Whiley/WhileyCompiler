@@ -23,17 +23,12 @@ import java.util.*;
 import wyjc.ModuleLoader;
 import wyjc.ast.attrs.*;
 import wyjc.ast.exprs.*;
-import wyjc.ast.exprs.list.*;
-import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.types.*;
-import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;
 import wyone.core.*;
 import wyone.theory.logic.*;
-import wyone.theory.numeric.*;
 import static wyone.theory.logic.WFormulas.*;
-import static wyone.theory.numeric.WNumerics.*;
 
 
 public class TypeGate extends SyntacticElementImpl implements Condition {
@@ -142,9 +137,19 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		// FIXME: this is incomplete obviously
+		
+		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment,loader);		
+		WEnvironment wenv = l.third();
+		WFormula constraints = l.second();
+		
 		environment = new HashMap<String, Type>(environment);
 		environment.put(var, type);
-		return rhs.convertCondition(environment, loader);
+		Triple<WFormula, WFormula, WEnvironment> r = rhs.convertCondition(environment, loader);
+		wenv.addAll(r.third());
+		constraints = and(constraints,r.second());
+		WFormula condition = r.first();
+		condition = and(WExprs.equals(new WVariable(var), l.first()), condition);
+		return new Triple(condition, constraints, wenv);		
 	}  		
 	
 	public int hashCode() {
