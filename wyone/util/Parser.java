@@ -221,7 +221,7 @@ public class Parser {
 			match("!");			
 			return not(parsePredicate(environment));			
 		} else if(lookahead.equals("all")) {			
-			environment = new WHashEnv(environment);
+			environment = new HashMap(environment);
 			match("all");					
 			match("[");
 						
@@ -248,7 +248,7 @@ public class Parser {
 			match("]");
 			return new WBoundedForall(true,vars,f);						
 		} else if(lookahead.equals("some")) {
-			environment = new WHashEnv(environment);
+			environment = new HashMap(environment);
 			match("some");			
 			match("[");			
 			parseWhiteSpace();
