@@ -17,10 +17,7 @@
 
 package wyone.theory.logic;
 
-import java.math.BigInteger;
 import java.util.*;
-
-import wyone.core.SolverState;
 
 public class WFormulas {
 	

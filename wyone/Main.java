@@ -61,16 +61,16 @@ public class Main {
 
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);
-		Pair<WEnvironment,WFormula> p = parser.parseInput();		
-		Proof r = Solver.checkUnsatisfiable(1, p.second(), p.first(),
+		WFormula f = parser.parseInput();		
+		Proof r = Solver.checkUnsatisfiable(1, f,
 				heuristic, theories);		
 		return r instanceof Proof.Unsat;
 	}
 	
 	public static boolean checkSat(String input) {		
 		Parser parser = new Parser(input);
-		Pair<WEnvironment,WFormula> p = parser.parseInput();
-		Proof r = Solver.checkUnsatisfiable(1, p.second(), p.first(),
+		WFormula f = parser.parseInput();
+		Proof r = Solver.checkUnsatisfiable(1, f,
 				heuristic, theories);
 		return r instanceof Proof.Sat;
 	}
@@ -107,9 +107,9 @@ public class Main {
 				long start = System.currentTimeMillis();
 				
 				Parser parser = new Parser(new File(args[fileArgsBegin]));
-				Pair<WEnvironment,WFormula> p = parser.parseInput();								
-				System.out.println("Parsed: " + p.first() + " : " + p.second());				
-				Proof r = Solver.checkUnsatisfiable(timeout, p.second(), p.first(),
+				WFormula f = parser.parseInput();								
+				System.out.println("Parsed: " + f);				
+				Proof r = Solver.checkUnsatisfiable(timeout, f,
 						heuristic, theories);
 				
 				if(r instanceof Proof.Unsat) {

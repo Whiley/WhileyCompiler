@@ -21,6 +21,7 @@ import java.util.*;
 
 import wyone.theory.congruence.*;
 import wyone.theory.logic.*;
+import wyone.theory.type.WTypes;
 import wyone.util.WConstructor;
 
 /**
@@ -116,7 +117,7 @@ public class WVariable extends WConstructor<WExpr> implements WExpr {
 	}
 	
 	public WType type(SolverState state) {
-		WType type= WExprs.type(this,state);
+		WType type= WTypes.type(this,state);
 		if(type instanceof WFunType) {
 			// not exactly ideal
 			WFunType wft = (WFunType) type;

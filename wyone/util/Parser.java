@@ -57,15 +57,19 @@ public class Parser {
 		index = 0;		
 	}
 		
-	public Pair<WEnvironment,WFormula> parseInput() {
-		WEnvironment environment = new WHashEnv();
+	public WFormula parseInput() {
+		WFormula f = WBool.TRUE;
+		// The following map is used to check that every variable used in the
+		// formula has been declared.
+		HashMap<String,WType> environment = new HashMap<String,WType>();
 		
 		while (isTypeAhead()) {
-			parseTypeDeclaration(environment);			
+			f = and(f,parseTypeDeclaration(environment));			
 		}
 		
-		WFormula f = parseFormula(environment);
-		return new Pair<WEnvironment,WFormula>(environment,f);
+		f = and(f,parseFormula(environment));
+		
+		return f;
 	}
 	
 	private boolean isTypeAhead() {
@@ -92,20 +96,23 @@ public class Parser {
 		}
 	}
 	
-	private Pair<String,WType> parseTypeDeclaration(WEnvironment environment) {
+	private WFormula parseTypeDeclaration(HashMap<String,WType> environment) {
+		WFormula f = WBool.TRUE;
 		WType t = parseType();
 		parseWhiteSpace();
 		String v = parseIdentifier();
 		parseWhiteSpace();
-		environment.put(v, t);
+		f = and(f,WTypes.subtypeOf(new WVariable(v),t));
+		environment.put(v,t);
 		while(input.charAt(index) == ',') {
 			match(",");
 			parseWhiteSpace();
 			v = parseIdentifier();
-			environment.put(v, t);
+			f = and(f,WTypes.subtypeOf(new WVariable(v),t));
+			environment.put(v,t);
 		}
 		match(";");
-		return new Pair<String,WType>(v,t);
+		return f;
 	}
 	
 	
@@ -177,11 +184,11 @@ public class Parser {
 		}		
 	}
 	
-	private WFormula parseFormula(WEnvironment environment ) {
+	private WFormula parseFormula(HashMap<String,WType> environment ) {
 		return parseConjunctDisjunct(environment);
 	}
 	
-	private WFormula parseConjunctDisjunct(WEnvironment environment) {
+	private WFormula parseConjunctDisjunct(HashMap<String,WType> environment) {
 		WFormula c1 = parsePredicate(environment);
 		
 		parseWhiteSpace();				 
@@ -198,7 +205,7 @@ public class Parser {
 		return c1;
 	}
 		
-	private WFormula parsePredicate(WEnvironment environment) {
+	private WFormula parsePredicate(HashMap<String,WType> environment) {
 		parseWhiteSpace();
 		
 		int start = index;
@@ -335,7 +342,7 @@ public class Parser {
 		} 					
 	}
 	
-	private WExpr parseExpression(WEnvironment environment ) {				
+	private WExpr parseExpression(HashMap<String,WType> environment ) {				
 		WExpr lhs = parseMulDivExpression(environment);
 		
 		parseWhiteSpace();				 
@@ -360,7 +367,7 @@ public class Parser {
 		return lhs;
 	}
 	
-	private WExpr parseMulDivExpression(WEnvironment environment ) {
+	private WExpr parseMulDivExpression(HashMap<String,WType> environment ) {
 		int start = index;
 		WExpr lhs = parseIndexTerm(environment);
 		parseWhiteSpace();
@@ -377,7 +384,7 @@ public class Parser {
 		}
 	}
 	
-	private WExpr parseIndexTerm(WEnvironment environment) {
+	private WExpr parseIndexTerm(HashMap<String,WType> environment) {
 		WExpr term = parseTerm(environment);
 		String lookahead = lookahead();
 		while(lookahead.equals(".") || lookahead.equals("[")) {				
@@ -397,7 +404,7 @@ public class Parser {
 		return term;		
 	}
 	
-	private WExpr parseTerm(WEnvironment environment) {
+	private WExpr parseTerm(HashMap<String,WType> environment) {
 		parseWhiteSpace();
 		
 		int start = index;		
@@ -422,14 +429,14 @@ public class Parser {
 		}
 	}
 	
-	private WExpr parseLengthTerm(WEnvironment environment) {
+	private WExpr parseLengthTerm(HashMap<String,WType> environment) {
 		match("|");
 		WExpr r = parseExpression(environment);
 		match("|");		
 		return new WLengthOf(r);
 	}
 	
-	private WExpr parseListTerm(WEnvironment environment) {
+	private WExpr parseListTerm(HashMap<String,WType> environment) {
 		match("[");
 		ArrayList<WExpr> params = new ArrayList<WExpr>();
 		String lookahead = lookahead();
@@ -448,7 +455,7 @@ public class Parser {
 	}
 	
 
-	private WExpr parseSetTerm(WEnvironment environment) {		
+	private WExpr parseSetTerm(HashMap<String,WType> environment) {		
 		match("{");
 		HashSet<WExpr> params = new HashSet<WExpr>();
 		String lookahead = lookahead();
@@ -466,11 +473,11 @@ public class Parser {
 		return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
 	}
 	
-	private WExpr parseIdentifierTerm(WEnvironment environment) {
+	private WExpr parseIdentifierTerm(HashMap<String,WType> environment) {
 		int start = index;		
 		String v = parseIdentifier();
 		
-		if (environment.fullType(v) == null) {
+		if (environment.get(v) == null) {
 			throw new SyntaxError(
 					"syntax error --- variable or constructor not declared: "
 							+ v, filename, start, index);
@@ -505,7 +512,7 @@ public class Parser {
 		}					
 	}
 	
-	private WExpr parseBracketedTerm(WEnvironment environment) {
+	private WExpr parseBracketedTerm(HashMap<String,WType> environment) {
 		match("(");
 		WExpr e;					
 		if(lookahead(2).equals(":")) {				
@@ -534,7 +541,7 @@ public class Parser {
 		return e;
 	}
 	
-	private WExpr parseNegation(WEnvironment environment) {		
+	private WExpr parseNegation(HashMap<String,WType> environment) {		
 		match("-");
 		WExpr e = parseIndexTerm(environment);		
 		return negate(e);

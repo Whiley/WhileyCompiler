@@ -19,6 +19,7 @@ package wyone.theory.congruence;
 
 import java.util.*;
 import wyone.core.*;
+import wyone.theory.type.*;
 import wyone.theory.logic.*;
 
 public class CongruenceClosure implements InferenceRule {
@@ -60,7 +61,7 @@ public class CongruenceClosure implements InferenceRule {
 	
 	private void inferEquality(WEquality eq, SolverState state, Solver solver) {
 		
-		if(typeCheck(eq,solver) != eq) {			
+		if(typeCheck(eq,state) != eq) {			
 			state.infer(WBool.FALSE,solver);
 			return; // no point going on.
 		}
@@ -108,7 +109,7 @@ public class CongruenceClosure implements InferenceRule {
 		// forms are added into the literal set.
 		for(WFormula f : state) {
 			if(f == eq) { continue; }			
-			WFormula nf = typeCheck(f.substitute(binding),solver);						
+			WFormula nf = typeCheck(f.substitute(binding),state);						
 			if(nf != f) {
 				// f has been replaced!					
 				if(!isAssignment(f)) {
@@ -128,7 +129,7 @@ public class CongruenceClosure implements InferenceRule {
 		return false;
 	}	
 	
-	public WFormula typeCheck(WFormula f, Solver solver) {
+	public WFormula typeCheck(WFormula f, SolverState state) {
 		// sanity check assignments. Not strictly necessary, but useful to
 		// ensure early termination when the type of an assignment is clearly
 		// wrong.
@@ -139,7 +140,7 @@ public class CongruenceClosure implements InferenceRule {
 			if (lhs instanceof WVariable && rhs instanceof WValue) {
 				WVariable var = (WVariable) lhs;
 				WValue val = (WValue) rhs;
-				WType t = solver.type(var);
+				WType t = WTypes.type(var,state);
 				// Type can currently be null if represents a quantified
 				// variable.
 				if(t != null && !t.isSubtype(val.type(null))) {					

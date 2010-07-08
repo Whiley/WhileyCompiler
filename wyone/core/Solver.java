@@ -43,47 +43,20 @@ public final class Solver extends Thread {
 	private final WFormula formula;
 	
 	/**
-	 * The typing of the formula being tested for satisfiability
-	 */
-	private final WEnvironment types;
-
-	/**
 	 * The following fields are used for the return value.
 	 */
 	private volatile Thread owner;		
 	private volatile Proof value;
 	private volatile RuntimeException exception;
 	
-	Solver(WFormula formula, WEnvironment types,
+	Solver(WFormula formula, 
 			SplitHeuristic heuristic,InferenceRule... theories) {
 		this.owner = Thread.currentThread();
 		this.formula = formula;
-		this.types = types;
 		this.theories = new ArrayList<InferenceRule>();
 		this.splitHeuristic = heuristic;
 		for (InferenceRule t : theories) {
 			this.theories.add(t);
-		}
-	}
-
-	/**
-	 * Get the type of a variable.
-	 * @param atom
-	 * @return
-	 */
-	public WType type(WVariable atom) {
-		if (atom instanceof WVariable) {
-			WVariable var = (WVariable) atom;
-			WType t = types.evalType(var.name());
-			if (t instanceof WFunType) {
-				WFunType c = (WFunType) t;
-				return c.returnType();
-			} else {
-				return t;
-			}
-		} else {
-			throw new IllegalArgumentException(
-					"Cannot determine type for expression: " + atom);
 		}
 	}
 	
@@ -116,12 +89,12 @@ public final class Solver extends Thread {
 	 * @return
 	 */
 	public static Proof checkUnsatisfiable(int timeout, WFormula formula,
-			WEnvironment types, SplitHeuristic heuristic,
+			SplitHeuristic heuristic,
 			InferenceRule... theories) {		
 		
 		// System.out.println("UNSAT: " + formula + " : " + types);
 		
-		Solver solver = new Solver(formula,types,heuristic,theories);
+		Solver solver = new Solver(formula,heuristic,theories);
 				
 		try {
 			solver.start();
@@ -236,21 +209,8 @@ public final class Solver extends Thread {
 	 * @param types --- types of formula
 	 * @return
 	 */
-	protected Proof checkModel(Map<WVariable, WValue> model) {						
-		// First, check types are satisfied.
-		for(Map.Entry<String,WType> vt : types.entrySet()) {		
-			if (!(vt.getValue() instanceof WFunType)) {
-				// this ensures we have a variable here				
-				WValue v = model.get(new WVariable(vt.getKey()));
-				if (v == null) {					
-					return Proof.UNKNOWN;
-				} else if (!vt.getValue().isSubtype(v.type(null))) {
-					return Proof.UNSAT;
-				}
-			}
-		}					
-		
-		// Second, check formula does indeed evaluate to true		
+	protected Proof checkModel(Map<WVariable, WValue> model) {								
+		// Check formula does indeed evaluate to true		
 		WFormula f = formula.substitute((Map) model);
 				
 		if(f == WBool.TRUE) {
