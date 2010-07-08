@@ -13,13 +13,13 @@ public class Types {
 	@Test
 	public void Unsat_2() {
 		assertTrue(checkUnsat("? x; int y;"
-				+ "(x ~= int && x < y) || (x ~= [int] && |x| > 0) && "
+				+ "((x ~= int && x < y) || (x ~= [int] && |x| > 0)) && "
 				+ "x ~= int && x == 0"));								
 	}
 	@Test
 	public void Unsat_3() {
 		assertTrue(checkUnsat("? x; int y;"
-				+ "(x ~= int && x < y) || (x ~= [int] && |x| > 0) && "
-				+ "(x ~= int && x == 0) || (x ~= [int] && |x| == 0)"));								
+				+ "((x ~= int && x < y) || (x ~= [int] && |x| > 0)) && "
+				+ "((x ~= int && x == 0) || (x ~= [int] && |x| == 0))"));								
 	}
 }
