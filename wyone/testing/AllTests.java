@@ -21,7 +21,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses( { IntegerArithmetic.class,
-		Lists.class, BoundedSetQuantifiers.class, Sets.class, Tuples.class, BigArithmetic.class })
+@Suite.SuiteClasses( { IntegerArithmetic.class, Lists.class,
+		BoundedSetQuantifiers.class, Sets.class, Tuples.class,
+		BigArithmetic.class, Types.class })
 public class AllTests {
 }

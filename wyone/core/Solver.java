@@ -60,15 +60,6 @@ public final class Solver extends Thread {
 		}
 	}
 	
-	public WVariable newSkolem(WType type) {
-		// The frustrating thing about skolems here, is that they permeate all
-		// possible states of computation; not just those states where the
-		// skolem is actually used.
-		WVariable v = WVariable.freshVar();
-		types.put(v.name(), type);
-		return v;
-	}
-	
 	/**
 	 * Access the theories being used in this solver.
 	 * 
@@ -209,13 +200,13 @@ public final class Solver extends Thread {
 	 * @param types --- types of formula
 	 * @return
 	 */
-	protected Proof checkModel(Map<WVariable, WValue> model) {								
+	protected Proof checkModel(Map<WVariable, WValue> model) {										
 		// Check formula does indeed evaluate to true		
 		WFormula f = formula.substitute((Map) model);
 				
 		if(f == WBool.TRUE) {
 			return new Proof.Sat(model);
-		} else {
+		} else {			
 			return Proof.UNKNOWN;
 		}
 	}	

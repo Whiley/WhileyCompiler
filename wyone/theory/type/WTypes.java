@@ -32,4 +32,11 @@ public class WTypes {
 		}
 		return WAnyType.T_ANY;
 	}	
+	
+	public static WVariable newSkolem(WType t, SolverState state,
+			Solver solver) {
+		WVariable v = WVariable.freshVar();
+		state.infer(WTypes.subtypeOf(v, t), solver);
+		return v;
+	}
 }

@@ -23,6 +23,7 @@ import wyone.theory.list.*;
 import wyone.theory.logic.*;
 import wyone.theory.set.*;
 import wyone.theory.numeric.*;
+import wyone.theory.type.*;
 
 public class BoundedForallClosure implements InferenceRule {
 
@@ -129,12 +130,12 @@ public class BoundedForallClosure implements InferenceRule {
 			WVariable skolem;
 			if(type instanceof WListType) {				
 				// must be list eyp
-				skolem = solver.newSkolem(WIntType.T_INT);
+				skolem = WTypes.newSkolem(WIntType.T_INT,state,solver);
 				WFormula lb = WNumerics.greaterThanEq(skolem,WNumber.ZERO);
 				WFormula ub = WNumerics.lessThan(skolem, new WLengthOf(src));
 				constraints = WFormulas.and(constraints,lb,ub);
 			} else {
-				skolem = solver.newSkolem(((WSetType)type).element());
+				skolem = WTypes.newSkolem(((WSetType)type).element(),state,solver);
 				WSubsetEq seq = WSets.subsetEq(new WSetConstructor(skolem),src);
 				constraints = WFormulas.and(constraints,seq);
 			}
@@ -213,5 +214,5 @@ public class BoundedForallClosure implements InferenceRule {
 			nf = nf.substitute(Collections.EMPTY_MAP);				
 			state.infer(nf, solver);
 		}
-	}
+	}		
 }

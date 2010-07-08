@@ -20,6 +20,7 @@ package wyone.theory.set;
 import java.util.*;
 import wyone.core.*;
 import wyone.theory.numeric.*;
+import wyone.theory.type.WTypes;
 import wyone.theory.list.*;
 import wyone.theory.logic.*;
 import wyone.theory.congruence.*;
@@ -56,7 +57,7 @@ public class SubsetClosure implements InferenceRule {
 		WSetType type = (WSetType) lhs_t;
 		state.eliminate(eq); // not needed any longer
 		
-		WVariable skolem = solver.newSkolem(type.element());
+		WVariable skolem = WTypes.newSkolem(type.element(),state,solver);
 		WExpr setc = new WSetConstructor(skolem);
 		WFormula left = WFormulas.and(WSets.subsetEq(setc,eq.lhs()),WSets.subsetEq(setc,eq.rhs()).not()); 
 		WFormula right = WFormulas.and(WSets.subsetEq(setc,eq.rhs()),WSets.subsetEq(setc,eq.lhs()).not());
