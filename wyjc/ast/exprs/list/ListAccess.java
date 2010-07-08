@@ -131,7 +131,7 @@ public final class ListAccess extends SyntacticElementImpl implements Expr, LVal
 		Triple<WExpr, WFormula, WEnvironment> idx = index.convert(environment, loader);
 		Triple<WExpr, WFormula, WEnvironment> src = source.convert(environment, loader);
 		WEnvironment wenv = idx.third();
-		wenv.addAll(src.third());
+		wenv.putAll(src.third());
 		WFormula constraints = WFormulas.and(idx.second(), src.second());
 		return new Triple<WExpr, WFormula, WEnvironment>(new WListAccess(src.first(), idx
 				.first()), constraints, wenv);

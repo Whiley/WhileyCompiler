@@ -311,17 +311,17 @@ public class SetComprehension extends SyntacticElementImpl implements Expr {
 		
 		HashMap<WVariable,WExpr> variables = new HashMap();
 		HashMap<String,Type> nenv = new HashMap<String,Type>(environment);
-		WEnvironment wenv = new WEnvironment();
+		WEnvironment wenv = new wyone.util.WHashEnv();
 		WFormula cond = WBool.TRUE;
 		WFormula constraints = WBool.TRUE;
 		WVariable rv = WVariable.freshVar(); // return set
-		wenv.add(rv.name(),type(environment).convert());
+		wenv.put(rv.name(),type(environment).convert());
 		
 		for (Pair<String, Expr> src : srcs) {
 			WVariable v = new WVariable(src.first());
 			Triple<WExpr, WFormula, WEnvironment> re = src.second().convert(nenv, loader);
 			SetType st = (SetType) src.second().type(nenv);			
-			wenv.addAll(re.third());
+			wenv.putAll(re.third());
 			nenv.put(v.name(), st.element());
 			variables.put(v,re.first());			
 			constraints = WFormulas.and(constraints,re.second());

@@ -99,7 +99,7 @@ public class Or extends ConditionBinOp<Condition> implements Condition {
 		Triple<WFormula, WFormula, WEnvironment> l = lhs.convertCondition(environment, loader);
 		Triple<WFormula, WFormula, WEnvironment> r = rhs.convertCondition(environment, loader);
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		return new Triple<WFormula, WFormula, WEnvironment>(WFormulas.or(l
 				.first(), r.first()), WFormulas.and(l.second(), r.second()),
 				wenv);				

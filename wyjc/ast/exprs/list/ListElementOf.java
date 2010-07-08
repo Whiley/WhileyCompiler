@@ -106,7 +106,7 @@ public class ListElementOf extends ConditionBinOp<Expr> implements Condition {
 		Triple<WExpr,WFormula,WEnvironment> r = rhs.convert(environment,loader);
 		WFormula constraints = WFormulas.and(l.second(),r.second());
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		
 		WVariable idx = WVariable.freshVar(); // index for existential
 		WFormula cond = new WPredicate(false,"get",l.first(),r.first(),idx);

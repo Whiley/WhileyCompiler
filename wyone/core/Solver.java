@@ -92,7 +92,7 @@ public final class Solver extends Thread {
 		// possible states of computation; not just those states where the
 		// skolem is actually used.
 		WVariable v = WVariable.freshVar();
-		types.add(v.name(), type);
+		types.put(v.name(), type);
 		return v;
 	}
 	
@@ -238,7 +238,7 @@ public final class Solver extends Thread {
 	 */
 	protected Proof checkModel(Map<WVariable, WValue> model) {		
 		// First, check types are satisfied.
-		for(Map.Entry<String,WType> vt : types) {		
+		for(Map.Entry<String,WType> vt : types.entrySet()) {		
 			if (!(vt.getValue() instanceof WFunType)) {
 				// this ensures we have a variable here				
 				WValue v = model.get(new WVariable(vt.getKey()));

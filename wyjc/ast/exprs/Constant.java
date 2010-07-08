@@ -68,7 +68,7 @@ public class Constant extends Variable {
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 		return new Triple<WExpr, WFormula, WEnvironment>(
-				new wyone.core.WVariable(var), WBool.TRUE, new WEnvironment());
+				new wyone.core.WVariable(var), WBool.TRUE, new wyone.util.WHashEnv());
 	}
 	
 	public List<Expr> flattern() {

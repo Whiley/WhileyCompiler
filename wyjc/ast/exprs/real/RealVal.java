@@ -108,7 +108,7 @@ public class RealVal extends SyntacticElementImpl implements Expr,Value {
 	
 	public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {		
 		return new Triple<WExpr, WFormula, WEnvironment>(new WNumber(value.numerator(),
-				value.denominator()), WBool.TRUE, new WEnvironment());		
+				value.denominator()), WBool.TRUE, new wyone.util.WHashEnv());		
 	}  
 	
 	public String toString() {		

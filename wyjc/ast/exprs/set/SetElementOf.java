@@ -166,7 +166,7 @@ public class SetElementOf extends ConditionBinOp<Expr> implements Condition {
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);					
 		WFormula constraints = WFormulas.and(l.second(),r.second());		
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		
 		WExpr ls;		
 		

@@ -130,11 +130,11 @@ public class SetGenerator extends SyntacticElementImpl implements Expr {
 		
 		WFormula constraints = WBool.TRUE;
 		HashSet<WExpr> wvalues = new HashSet<WExpr>();
-		WEnvironment wenv = new WEnvironment();
+		WEnvironment wenv = new wyone.util.WHashEnv();
 		
 		for(Expr e : values) {
 			Triple<WExpr, WFormula, WEnvironment> p = e.convert(environment,loader);
-			wenv.addAll(p.third());
+			wenv.putAll(p.third());
 			constraints = and(constraints,p.second());
 			wvalues.add(p.first());
 		}

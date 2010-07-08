@@ -58,7 +58,7 @@ public class Parser {
 	}
 		
 	public Pair<WEnvironment,WFormula> parseInput() {
-		WEnvironment environment = new WEnvironment();
+		WEnvironment environment = new WHashEnv();
 		
 		while (isTypeAhead()) {
 			parseTypeDeclaration(environment);			
@@ -97,12 +97,12 @@ public class Parser {
 		parseWhiteSpace();
 		String v = parseIdentifier();
 		parseWhiteSpace();
-		environment.add(v, t);
+		environment.put(v, t);
 		while(input.charAt(index) == ',') {
 			match(",");
 			parseWhiteSpace();
 			v = parseIdentifier();
-			environment.add(v, t);
+			environment.put(v, t);
 		}
 		match(";");
 		return new Pair<String,WType>(v,t);
@@ -214,7 +214,7 @@ public class Parser {
 			match("!");			
 			return not(parsePredicate(environment));			
 		} else if(lookahead.equals("all")) {			
-			environment = environment.clone();
+			environment = new WHashEnv(environment);
 			match("all");					
 			match("[");
 						
@@ -233,7 +233,7 @@ public class Parser {
 				WVariable var = new WVariable(v); 
 				vars.put(var,src);
 				// type is ignored for now				
-				environment.add(v, WIntType.T_INT);
+				environment.put(v, WIntType.T_INT);
 				parseWhiteSpace();
 			}
 			match("|");
@@ -241,7 +241,7 @@ public class Parser {
 			match("]");
 			return new WBoundedForall(true,vars,f);						
 		} else if(lookahead.equals("some")) {
-			environment = environment.clone();
+			environment = new WHashEnv(environment);
 			match("some");			
 			match("[");			
 			parseWhiteSpace();
@@ -259,7 +259,7 @@ public class Parser {
 				WVariable var = new WVariable(v); 
 				vars.put(var,src);
 				// type is ignored for now				
-				environment.add(v, WIntType.T_INT);
+				environment.put(v, WIntType.T_INT);
 				parseWhiteSpace();
 			}
 			match("|");

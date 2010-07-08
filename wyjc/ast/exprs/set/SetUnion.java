@@ -95,11 +95,11 @@ public class SetUnion extends BinOp<Expr> implements Expr {
 		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		
 		WVariable v = WVariable.freshVar();
 		WVariable vs = WVariable.freshVar();
-		wenv.add(vs.name(),type(environment).convert());
+		wenv.put(vs.name(),type(environment).convert());
 		HashMap<WVariable, WExpr> vars = new HashMap();
 		vars.put(v, vs);
 		WSetConstructor sc = new WSetConstructor(v);

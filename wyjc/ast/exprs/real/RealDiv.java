@@ -90,7 +90,7 @@ public class RealDiv extends BinOp<Expr> implements Expr {
 		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		return new Triple<WExpr, WFormula, WEnvironment>(divide(l.first(),r.first()), WFormulas
 				.and(l.second(), r.second()),wenv);		
 	}  

@@ -93,9 +93,9 @@ public class Variable extends SyntacticElementImpl implements Expr, LVal {
 			Map<String, Type> environment, ModuleLoader loader)
 			throws ResolveError {
 
-		WEnvironment wenv = new WEnvironment();
+		WEnvironment wenv = new wyone.util.WHashEnv();
 		WVariable wvar = new wyone.core.WVariable(var);
-		wenv.add(var, environment.get(var).convert());
+		wenv.put(var, environment.get(var).convert());
 
 		return new Triple<wyone.core.WExpr, WFormula, WEnvironment>(wvar,
 				WBool.TRUE, wenv);

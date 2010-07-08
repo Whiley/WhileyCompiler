@@ -92,7 +92,7 @@ public class Subset extends ConditionBinOp<Expr> implements Condition {
 		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 
 		WFormula f = WFormulas.and(WSets.subsetEq(l.first(), r.first()), WExprs
 				.notEquals(l.first(), r.first()));

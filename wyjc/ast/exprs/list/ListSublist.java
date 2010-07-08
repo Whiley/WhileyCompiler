@@ -145,10 +145,10 @@ public final class ListSublist extends SyntacticElementImpl implements Expr {
 		Triple<WExpr, WFormula, WEnvironment> end = this.end.convert(environment, loader);
 		
 		WEnvironment wenv = src.third();
-		wenv.addAll(start.third());
-		wenv.addAll(end.third());
+		wenv.putAll(start.third());
+		wenv.putAll(end.third());
 		WVariable retVar = WVariable.freshVar();
-		wenv.add(retVar.name(), type(environment).convert());
+		wenv.put(retVar.name(), type(environment).convert());
 		
 		// first, identify new length					
 		WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar), subtract(end

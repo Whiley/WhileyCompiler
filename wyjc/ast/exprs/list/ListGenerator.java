@@ -34,6 +34,7 @@ import wyjc.util.Triple;
 import wyone.core.*;
 import wyone.theory.logic.*;
 import wyone.theory.list.*;
+import wyone.util.WHashEnv;
 import static wyone.theory.logic.WFormulas.*;
 
 public final class ListGenerator extends SyntacticElementImpl implements Expr {
@@ -124,10 +125,10 @@ public final class ListGenerator extends SyntacticElementImpl implements Expr {
     public Triple<WExpr, WFormula, WEnvironment> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {    	
     	WFormula constraints = WBool.TRUE;
     	ArrayList<WExpr> ps = new ArrayList<WExpr>();
-    	WEnvironment wenv = new WEnvironment();
+    	WEnvironment wenv = new WHashEnv();
     	for(Expr e : values) {
     		Triple<WExpr, WFormula, WEnvironment> p = e.convert(environment,loader);
-    		wenv.addAll(p.third());
+    		wenv.putAll(p.third());
     		constraints = and(constraints,p.second());
     		ps.add(p.first());
     	}

@@ -82,7 +82,7 @@ public class IntLessThanEquals extends ConditionBinOp<Expr> implements Condition
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
 		WFormula constraints = WFormulas.and(l.second(),r.second());
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());		
+		wenv.putAll(r.third());		
 		return new Triple<WFormula, WFormula, WEnvironment>(WNumerics.lessThanEq(l.first(),r.first()), constraints ,wenv);
 	}
 			

@@ -19,51 +19,7 @@ package wyone.core;
 
 import java.util.*;
 
-public class WEnvironment implements Iterable<Map.Entry<String,WType>> {
-	private final HashMap<String,WType> types = new HashMap<String,WType>();
-	
-	/**
-	 * Set the type of a variable in the typing environment.
-	 * 
-	 * @param var
-	 * @param type
-	 */
-	public void add(String var,WType type) {
-		WType old = types.get(var);
-		if (old != null && !old.equals(type)) {			
-			throw new IllegalArgumentException("Variable " + var
-					+ " cannot have types: " + type + " & " + old);
-		}
-		types.put(var, type);
-	}
-
-	public void addAll(WEnvironment wenv) {
-		for (Map.Entry<String, WType> e : wenv.types.entrySet()) {
-			add(e.getKey(), e.getValue());
-		}
-	}
-	
-	public void remove(String var) {
-		types.remove(var);
-	}
-	
-	/**
-	 * Clear all types for the given variables.
-	 * 
-	 * @param vars
-	 */
-	public void clearAll(Collection<String> vars) {
-		for(String v : vars) {
-			types.remove(v);
-		}
-	}
-	
-	
-	public WEnvironment clone() {
-		WEnvironment r = new WEnvironment();
-		r.types.putAll(types);
-		return r;
-	}
+public interface WEnvironment extends Map<String,WType> {
 	
 	/**
 	 * The full type returns the true type of the variable in question. This may
@@ -72,9 +28,7 @@ public class WEnvironment implements Iterable<Map.Entry<String,WType>> {
 	 * @param var
 	 * @return
 	 */
-	public WType fullType(String var) {
-		return types.get(var);
-	}
+	public WType fullType(String var);
 
 	/**
 	 * This returns type that this expression will evaluate to. So, in the case
@@ -83,30 +37,5 @@ public class WEnvironment implements Iterable<Map.Entry<String,WType>> {
 	 * @param var
 	 * @return
 	 */
-	public WType evalType(String var) {
-		WType t = types.get(var);
-		if(t instanceof WFunType) {
-			WFunType ft = (WFunType) t;
-			return ft.returnType();
-		} else {
-			return t;
-		}
-	}
-	
-	public Iterator<Map.Entry<String,WType>> iterator() {
-		return types.entrySet().iterator();
-	}
-	
-	public String toString() {
-		String r = "[";
-		boolean firstTime=true;
-		for(Map.Entry<String,WType> e : types.entrySet()) {
-			if(!firstTime) {
-				r += ", ";
-			}
-			firstTime=false;
-			r += e.getKey() + "->" + e.getValue();
-		}
-		return r + "]";
-	}
+	public WType evalType(String var);	
 }

@@ -86,7 +86,7 @@ public class RealGreaterThanEquals extends ConditionBinOp<Expr> implements Condi
 		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		return new Triple<WFormula, WFormula, WEnvironment>(WNumerics.greaterThanEq(l
 				.first(), r.first()), WFormulas.and(l.second(), r.second()),
 				wenv);		

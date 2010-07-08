@@ -173,8 +173,8 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		environment = new HashMap<String,Type>(environment);
 		environment.put("$", ftype.returnType());		
 		
-		WEnvironment wenv = new WEnvironment();
-		wenv.add(retLabel.name(),ftype.convert());				
+		WEnvironment wenv = new wyone.util.WHashEnv();
+		wenv.put(retLabel.name(),ftype.convert());				
 		
 		ModuleInfo mi = loader.loadModule(module);
 		
@@ -203,7 +203,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 				Triple<WFormula, WFormula,WEnvironment> pc = function.postCondition()
 						.convertCondition(environment, loader);
 		
-				wenv.addAll(pc.third());
+				wenv.putAll(pc.third());
 				
 				mcs = WFormulas.and(pc.first(), pc.second()).substitute(
 						binding);

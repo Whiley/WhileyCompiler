@@ -105,13 +105,13 @@ public class SetIntersection extends BinOp<Expr> implements Expr {
 		Triple<WExpr, WFormula, WEnvironment> l = lhs.convert(environment, loader);
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		
 		WVariable v = WVariable.freshVar();
 		WVariable vs = WVariable.freshVar();
 		HashMap<WVariable, WExpr> vars = new HashMap();
 		vars.put(v, vs);
-		wenv.add(vs.name(),type(environment).convert());
+		wenv.put(vs.name(),type(environment).convert());
 		WSetConstructor sc = new WSetConstructor(v);
 		WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
 				.subsetEq(sc, l.first()), WSets.subsetEq(sc, r.first())));

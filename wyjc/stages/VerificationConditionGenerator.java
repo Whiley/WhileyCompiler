@@ -172,7 +172,7 @@ public class VerificationConditionGenerator {
 		
 				// Generate initial verification condition.
 				WFormula vc = and(preCondition,pcs.second(),pcs.first());												
-				wenv.addAll(pcs.third());
+				wenv.putAll(pcs.third());
 				
 				// Add any axioms necessary for the VC
 				vc = addAxioms(vc);								

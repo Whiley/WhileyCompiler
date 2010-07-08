@@ -115,11 +115,11 @@ public class SetVal extends SyntacticElementImpl implements Expr, Value {
 		
 		WFormula constraints = WBool.TRUE;
 		HashSet<WValue> wvalues = new HashSet<WValue>();
-		WEnvironment wenv = new WEnvironment();
+		WEnvironment wenv = new wyone.util.WHashEnv();
 		
 		for(Expr e : values) {
 			Triple<WExpr, WFormula, WEnvironment> p = e.convert(environment,loader);
-			wenv.addAll(p.third());
+			wenv.putAll(p.third());
 			constraints = and(constraints,p.second());
 			wvalues.add((WValue) p.first());
 		}

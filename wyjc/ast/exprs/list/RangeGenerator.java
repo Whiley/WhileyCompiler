@@ -133,8 +133,8 @@ public class RangeGenerator extends SyntacticElementImpl implements Expr {
 		WFormula constraints = and(or(lhs, rhs), st.second(), ed.second());
 
 		WEnvironment wenv = st.third();
-		wenv.addAll(ed.third());
-		wenv.add(retVar.name(),new WListType(WIntType.T_INT));
+		wenv.putAll(ed.third());
+		wenv.put(retVar.name(),new WListType(WIntType.T_INT));
 		return new Triple<WExpr, WFormula, WEnvironment>(retVar, constraints,
 				wenv);
 	}

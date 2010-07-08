@@ -106,9 +106,9 @@ public final class ListAppend extends BinOp<Expr> {
 		Triple<WExpr, WFormula, WEnvironment> r = rhs.convert(environment, loader);		
 		
 		WEnvironment wenv = l.third();
-		wenv.addAll(r.third());		
+		wenv.putAll(r.third());		
 		WVariable retVar = WVariable.freshVar();
-		wenv.add(retVar.name(), type(environment).convert());		
+		wenv.put(retVar.name(), type(environment).convert());		
 		
 		// first, identify new length					
 		WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar), add(new WLengthOf(l.first()),

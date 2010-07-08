@@ -145,7 +145,7 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		environment = new HashMap<String, Type>(environment);
 		environment.put(var, type);
 		Triple<WFormula, WFormula, WEnvironment> r = rhs.convertCondition(environment, loader);
-		wenv.addAll(r.third());
+		wenv.putAll(r.third());
 		constraints = and(constraints,r.second());
 		WFormula condition = r.first();
 		condition = and(WExprs.equals(new WVariable(var), l.first()), condition);

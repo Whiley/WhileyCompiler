@@ -53,7 +53,7 @@ public final class VerificationConditionAttr implements Attribute {
 		
 		// first, construct reverse map
 		HashMap<WType,Set<String>> renv = new HashMap();
-		for(Map.Entry<String, WType> e : environment) {
+		for(Map.Entry<String, WType> e : environment.entrySet()) {
 			Set<String> vars = renv.get(e.getValue());
 			if(vars == null) {
 				vars = new HashSet<String>();
