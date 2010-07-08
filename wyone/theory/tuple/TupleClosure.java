@@ -52,7 +52,7 @@ public class TupleClosure implements InferenceRule {
 			}
 		}
 		
-		WTupleType type = (WTupleType) target.type(solver);				
+		WTupleType type = (WTupleType) target.type(state);				
 		if(type.types().size() == fields.size()) {			
 			ArrayList<String> names = new ArrayList<String>();
 			ArrayList<WExpr> exprs = new ArrayList<WExpr>();

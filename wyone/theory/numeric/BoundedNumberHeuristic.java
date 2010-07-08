@@ -125,7 +125,7 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 			if(f instanceof WInequality) {				
 				WInequality wieq = (WInequality) f;
 				WExpr var = variable(wieq);									
-				WType t = var.type(solver);
+				WType t = var.type(state);
 				if(isInteger && t instanceof WIntType) {
 					updateBounds(wieq,var,true,bounds);
 				} else if(!isInteger && t instanceof WRealType) {

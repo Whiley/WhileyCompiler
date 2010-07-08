@@ -49,7 +49,7 @@ public class SubsetClosure implements InferenceRule {
 	}	
 	
 	private void inferVariableNeqs(WEquality eq, SolverState state, Solver solver) {
-		WType lhs_t = eq.lhs().type(solver);
+		WType lhs_t = eq.lhs().type(state);
 		if(!(lhs_t instanceof WSetType)) {
 			return; // nothing doing here
 		}

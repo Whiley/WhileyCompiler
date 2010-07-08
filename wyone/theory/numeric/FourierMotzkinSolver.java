@@ -144,7 +144,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 			SolverState state, Solver solver) {		
 		WExpr lb;
 		WExpr ub;
-		WType atom_t = above.atom.type(solver);
+		WType atom_t = above.atom.type(state);
 		boolean belowSign = below.sign;
 		boolean aboveSign = above.sign;				
 		

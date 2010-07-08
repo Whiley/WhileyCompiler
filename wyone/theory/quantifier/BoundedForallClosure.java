@@ -125,7 +125,7 @@ public class BoundedForallClosure implements InferenceRule {
 		for(Map.Entry<WVariable,WExpr> e : bf.variables().entrySet()) {
 			WVariable var = e.getKey();
 			WExpr src = e.getValue();				
-			WType type = src.type(solver);					
+			WType type = src.type(state);					
 			WVariable skolem;
 			if(type instanceof WListType) {				
 				// must be list eyp

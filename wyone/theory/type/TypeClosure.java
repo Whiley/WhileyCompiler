@@ -26,7 +26,7 @@ public class TypeClosure implements InferenceRule {
 	public void infer(WFormula nlit, SolverState state, Solver solver) {
 		if(nlit instanceof WSubtype) {
 			WSubtype wt = (WSubtype) nlit;
-			WType lhs_t = wt.lhs().type(solver);
+			WType lhs_t = wt.lhs().type(state);
 			if(lhs_t.isSubtype(wt.rhs())) {
 				if(!wt.sign()) {
 					// definite problem
