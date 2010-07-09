@@ -322,6 +322,13 @@ public class TypeResolution {
 		// This is what the r_binding is for ---> closing the open loops.
 
 		HashMap<Expr,Expr> c_binding = new HashMap();		
+		
+		for (TypeEquals tg : p.second().match(TypeEquals.class)) {
+			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
+			c_binding.put(tg, new TypeEquals(t, tg.variable(), tg.lhs(),
+					tg.rhs(), tg.attributes()));
+		}
+					
 		for (TypeGate tg : p.second().match(TypeGate.class)) {
 			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
 			c_binding.put(tg, new TypeGate(t, tg.variable(), tg.lhs(),
@@ -470,39 +477,49 @@ public class TypeResolution {
 		} else if(ut instanceof UnresolvedUnionType) {
 			UnresolvedUnionType utt = (UnresolvedUnionType) ut;
 			
-			Type t = Types.T_VOID;
-			Condition c = null;
+			Type t = Types.T_VOID;			
 			
 			// Now, first determine what the underlying types is going to be.
+			boolean nontrivialCondition = false;
 			ArrayList<Pair<Type,Condition>> conditions = new ArrayList();
-			for(UnresolvedType bound : utt.types()) {
+			for(UnresolvedType bound : utt.types()) {				
 				Pair<Type,Condition> rb = expandType(bound,cache);
 				t = Types.leastUpperBound(t,rb.first());				
-				conditions.add(rb);				
+				conditions.add(rb);
+			    nontrivialCondition = rb.second() != null;
 			}
-											
-			for(Pair<Type,Condition> p : conditions) {				
-				Condition cond = p.second();				
+									
+			Condition c = null;
+			
+			if(nontrivialCondition) {
 				
-				if(cond == null) {
-					String var = Variable.freshVar();
-					// FIXME: how to avoid losing source information here?
-					Variable v = new Variable("$");
-					cond = new TypeEquals(p.first(), var, v, new BoolVal(true));
-				} else if(t instanceof UnionType) {
-					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
-					String var = Variable.freshVar();
-					HashMap<String,Expr> binding = new HashMap<String,Expr>();
-					binding.put("$", new Variable(var));										
-					// indicates a choice of some kind required					
-					
-					cond = new TypeEquals(p.first(), var, v, cond
-							.substitute(binding), cond
-							.attribute(SourceAttr.class));					
+				// So, we only want to 
+				
+				for(Pair<Type,Condition> p : conditions) {				
+					Condition cond = p.second();				
+
+					if(t instanceof UnionType) {
+						if(cond == null) {
+							String var = Variable.freshVar();
+							// FIXME: how to avoid losing source information here?
+							Variable v = new Variable("$");
+							cond = new TypeEquals(p.first(), var, v, new BoolVal(true));
+						} else {
+							Variable v = new Variable("$", cond.attribute(SourceAttr.class));
+							String var = Variable.freshVar();
+							HashMap<String,Expr> binding = new HashMap<String,Expr>();
+							binding.put("$", new Variable(var));										
+							// indicates a choice of some kind required					
+
+							cond = new TypeEquals(p.first(), var, v, cond
+									.substitute(binding), cond
+									.attribute(SourceAttr.class));					
+						}
+					}
+
+					c = c == null ? cond : new Or(c,cond,cond.attribute(SourceAttr.class));							
 				}
-				
-				c = c == null ? cond : new Or(c,cond,cond.attribute(SourceAttr.class));							
-			}			
+			}
 			
 			return new Pair<Type,Condition>(t,c);			
 		} else  {			
