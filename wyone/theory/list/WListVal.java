@@ -25,6 +25,7 @@ import wyone.theory.logic.WLiteral;
 import wyone.theory.tuple.WTupleConstructor;
 import wyone.theory.tuple.WTupleType;
 import wyone.theory.tuple.WTupleVal;
+import wyone.theory.type.WAnyType;
 import wyone.util.*;
 
 public class WListVal extends WConstructor<WValue> implements WValue {
@@ -43,8 +44,14 @@ public class WListVal extends WConstructor<WValue> implements WValue {
 	}
 	
 	public WListType type(SolverState state) {
-		// FIXME: following is inherently broken
-		return new WListType(subterms.get(0).type(state));
+		if(subterms.isEmpty()) {
+			// I think the following is definitely broken. It should be a void
+			// type of some sort.
+			return new WListType(WAnyType.T_ANY);
+		} else {
+			// FIXME: following is inherently broken
+			return new WListType(subterms.get(0).type(state));
+		}
 	}
 	
 	public WValue substitute(Map<WExpr,WExpr> binding) {

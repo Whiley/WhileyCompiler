@@ -232,7 +232,12 @@ public class RuntimeCheckGenerator {
 					
 		List<Expr> flat = lhs.flattern();
 		Variable v = (Variable) flat.get(0);
-		Condition lhs_c = constraints.get(v.name());
+		
+		if (lhs instanceof Variable) {			
+			environment.put(v.name(), rhs.type(environment));
+		}
+		
+		Condition lhs_c = constraints.get(v.name());		
 		if (lhs_c != null) {
 			postChecks = new ArrayList<Check>();
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
@@ -242,10 +247,6 @@ public class RuntimeCheckGenerator {
 					+ " not satisfied", lhs_c, environment, as, postChecks);
 		}
 
-		if (lhs instanceof Variable) {			
-			environment.put(v.name(), rhs.type(environment));
-		}
-		
 		return new Pair<List<Check>,List<Check>>(preChecks,postChecks);
 	}	
 	
@@ -686,7 +687,7 @@ public class RuntimeCheckGenerator {
 	
 	protected void addCheck(String msg, Condition c,
 			HashMap<String, Type> environment, SyntacticElement elem,
-			List<Check> checks) {			
+			List<Check> checks) {		
 		c = c.reduce(environment);				
 		if(c instanceof BoolVal) {
 			BoolVal v = (BoolVal) c;			
