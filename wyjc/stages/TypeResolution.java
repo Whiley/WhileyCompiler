@@ -479,28 +479,44 @@ public class TypeResolution {
 			
 			Type t = Types.T_VOID;			
 			
-			// Now, first determine what the underlying types is going to be.			
-			ArrayList<Pair<Type,Condition>> conditions = new ArrayList();
+			// Now, first determine what the underlying type is going to be, and
+			// build up the condition map. The condition map is rather subtle in
+			// it's formation to ensure we get a good typing at the end.
+			HashMap<Type,Condition> conditions = new HashMap<Type,Condition>();
+			
 			for(UnresolvedType bound : utt.types()) {				
 				Pair<Type,Condition> rb = expandType(bound,cache);
 				t = Types.leastUpperBound(t,rb.first());				
 				if(rb.second() != null) {
-					conditions.add(rb);
-				}			    
-			}
-									
+					Condition et = conditions.get(rb.first());
+					if(et == null) {
+						conditions.put(rb.first(),rb.second());
+					} else if(!(et instanceof BoolVal)) {
+						et = new Or(et,rb.second(),rb.second().attribute(SourceAttr.class));
+						conditions.put(rb.first(),et);
+					}
+				} else {
+					conditions.put(rb.first(), new BoolVal(true));
+				}
+			}			
+			
+			// FIXME: there is a bug here when the number of conditions exceeds
+			// the size of the type.
+			
 			Condition c = null;
-			for(Pair<Type,Condition> p : conditions) {				
-				Condition cond = p.second();				
+			for(Map.Entry<Type,Condition> p : conditions.entrySet()) {				
+				Condition cond = p.getValue();				
 
-				if(t instanceof UnionType) {					
+				if(t instanceof UnionType) {
+					// Only need to generate a type test when there is actually
+					// something to distinguish
 					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
 					String var = Variable.freshVar();
 					HashMap<String,Expr> binding = new HashMap<String,Expr>();
 					binding.put("$", new Variable(var));										
 					// indicates a choice of some kind required					
 
-					cond = new TypeGate(p.first(), var, v, cond
+					cond = new TypeGate(p.getKey(), var, v, cond
 							.substitute(binding), cond
 							.attribute(SourceAttr.class));										
 				}
