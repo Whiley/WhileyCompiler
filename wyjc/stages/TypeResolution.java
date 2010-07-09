@@ -500,29 +500,7 @@ public class TypeResolution {
 				}
 			}			
 			
-			// FIXME: there is a bug here when the number of conditions exceeds
-			// the size of the type.
-			
-			Condition c = null;
-			for(Map.Entry<Type,Condition> p : conditions.entrySet()) {				
-				Condition cond = p.getValue();				
-
-				if(t instanceof UnionType) {
-					// Only need to generate a type test when there is actually
-					// something to distinguish
-					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
-					String var = Variable.freshVar();
-					HashMap<String,Expr> binding = new HashMap<String,Expr>();
-					binding.put("$", new Variable(var));										
-					// indicates a choice of some kind required					
-
-					cond = new TypeGate(p.getKey(), var, v, cond
-							.substitute(binding), cond
-							.attribute(SourceAttr.class));										
-				}
-
-				c = c == null ? cond : new And(c,cond,cond.attribute(SourceAttr.class));							
-			}
+			Condition c = mergeTypeCases(t,conditions);			
 			
 			return new Pair<Type,Condition>(t,c);			
 		} else  {			
@@ -538,6 +516,63 @@ public class TypeResolution {
 			}
 			return new Pair<Type,Condition>(new ProcessType(tc.first()),cond);					
 		} 
+	}
+	
+	// The following method is pretty icky; i'm in no way 100% sure it works
+	// correctly.
+	protected Condition mergeTypeCases(Type t,
+			HashMap<Type, Condition> conditions) {
+		
+		if(t instanceof UnionType) {
+			// Recursive Case
+			UnionType ut = (UnionType) t;
+			Condition c = null;
+			for(Type b : ut.types()) {
+				Condition bc = mergeTypeCases(b,conditions);
+				
+				if (bc != null) {
+					Variable v = new Variable("$", bc
+							.attribute(SourceAttr.class));
+					String var = Variable.freshVar();
+					HashMap<String, Expr> binding = new HashMap<String, Expr>();
+					binding.put("$", new Variable(var));
+					// indicates a choice of some kind required
+
+					bc = new TypeGate(b, var, v, bc.substitute(binding), bc
+							.attribute(SourceAttr.class));
+				}
+				
+				if(c == null) {
+					c = bc;										
+				} else if(bc != null) {
+					c = new And(c,bc,bc.attribute(SourceAttr.class));
+				}				
+			}
+			return c;
+		} else {
+			// Base case
+			Condition c = conditions.get(t);
+			Type lub = null;
+			for(Type b : conditions.keySet()) {
+				if (t.isSubtype(b, Collections.EMPTY_MAP) && !t.equals(b)) {
+					// b is a strict subtype of t
+					lub = lub == null ? b : Types.leastUpperBound(b, lub);
+				}
+			}
+			if(lub == null) {
+				// no specific subtypes of this, so ignore
+				return c;
+			} else {
+				Condition r = mergeTypeCases(lub,conditions);
+				if(c == null) {
+					return r;
+				} else if(r == null) {
+					return c;
+				} else {
+					return new Or(r,c,c.attribute(SourceAttr.class));
+				}
+			}
+		}
 	}
 	
 	/**
