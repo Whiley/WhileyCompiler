@@ -552,6 +552,11 @@ public class TypeResolution {
 		} else {
 			// Base case
 			Condition c = conditions.get(t);
+			if(c instanceof BoolVal && ((BoolVal)c).value()) {
+				// useful simplification to reduce unnecssary checks
+				c = null;
+			}
+			
 			Type lub = null;
 			for(Type b : conditions.keySet()) {
 				if (t.isSubtype(b, Collections.EMPTY_MAP) && !t.equals(b)) {
