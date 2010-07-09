@@ -479,46 +479,33 @@ public class TypeResolution {
 			
 			Type t = Types.T_VOID;			
 			
-			// Now, first determine what the underlying types is going to be.
-			boolean nontrivialCondition = false;
+			// Now, first determine what the underlying types is going to be.			
 			ArrayList<Pair<Type,Condition>> conditions = new ArrayList();
 			for(UnresolvedType bound : utt.types()) {				
 				Pair<Type,Condition> rb = expandType(bound,cache);
 				t = Types.leastUpperBound(t,rb.first());				
-				conditions.add(rb);
-			    nontrivialCondition = rb.second() != null;
+				if(rb.second() != null) {
+					conditions.add(rb);
+				}			    
 			}
 									
 			Condition c = null;
-			
-			if(nontrivialCondition) {
-				
-				// So, we only want to 
-				
-				for(Pair<Type,Condition> p : conditions) {				
-					Condition cond = p.second();				
+			for(Pair<Type,Condition> p : conditions) {				
+				Condition cond = p.second();				
 
-					if(t instanceof UnionType) {
-						if(cond == null) {
-							String var = Variable.freshVar();
-							// FIXME: how to avoid losing source information here?
-							Variable v = new Variable("$");
-							cond = new TypeEquals(p.first(), var, v, new BoolVal(true));
-						} else {
-							Variable v = new Variable("$", cond.attribute(SourceAttr.class));
-							String var = Variable.freshVar();
-							HashMap<String,Expr> binding = new HashMap<String,Expr>();
-							binding.put("$", new Variable(var));										
-							// indicates a choice of some kind required					
+				if(t instanceof UnionType) {					
+					Variable v = new Variable("$", cond.attribute(SourceAttr.class));
+					String var = Variable.freshVar();
+					HashMap<String,Expr> binding = new HashMap<String,Expr>();
+					binding.put("$", new Variable(var));										
+					// indicates a choice of some kind required					
 
-							cond = new TypeEquals(p.first(), var, v, cond
-									.substitute(binding), cond
-									.attribute(SourceAttr.class));					
-						}
-					}
-
-					c = c == null ? cond : new Or(c,cond,cond.attribute(SourceAttr.class));							
+					cond = new TypeGate(p.first(), var, v, cond
+							.substitute(binding), cond
+							.attribute(SourceAttr.class));										
 				}
+
+				c = c == null ? cond : new And(c,cond,cond.attribute(SourceAttr.class));							
 			}
 			
 			return new Pair<Type,Condition>(t,c);			
