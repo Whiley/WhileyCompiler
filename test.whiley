@@ -1,9 +1,6 @@
-define nat as int where $ >= 0
-define natlist as [nat]
-define nlt as nat | natlist
+define un_t as [int]|int
 
-nlt g(int y):
-    return y
-
-void System::main([string] args):
-    g(-1)
+int f(un_t x):
+    if x ~= [int] && |x| > 0:
+        return 1
+    return 0
