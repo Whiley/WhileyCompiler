@@ -1,6 +1,8 @@
-define un_t as [int]|int
+define state as (string input, int pos) where pos >= 0 && pos <= |input|
 
-int f(un_t x):
-    if x ~= [int] && |x| > 0:
-        return 1
-    return 0
+state parseWhiteSpace(state st):
+    return st
+
+state parseTerm(state st):
+    st = parseWhiteSpace(st)
+    return st

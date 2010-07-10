@@ -672,8 +672,7 @@ public class RuntimeCheckGenerator {
 	}	
 	
 	protected List<Check> checkgen(TypeEquals e,
-			HashMap<String, Type> environment) {
-		System.out.println("PASSING THROUGH " + e);
+			HashMap<String, Type> environment) {		
 		List<Check> checks = checkgen(e.lhs(), environment);
 		checks.addAll(checkgen(e.rhs(),environment));
 		return checks;

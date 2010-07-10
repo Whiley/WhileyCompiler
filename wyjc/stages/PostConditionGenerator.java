@@ -72,7 +72,6 @@ public class PostConditionGenerator {
 	protected Condition infer(Stmt s, HashMap<String, Type> environment,
 			FunDecl f, Condition preCondition) {		
 		// Simplify the precondition as much as possible.
-		System.out.println("PRECONDITION: " + preCondition);
 		preCondition = preCondition.reduce(environment);
 		preCondition = simplifier.simplify(preCondition);
 		
@@ -167,6 +166,7 @@ public class PostConditionGenerator {
 		// Now, create shadow
 		String var = v.name();
 		Variable shadowVar = new Variable(var + "$" + shadow_label++,v.attributes());
+		environment.put(shadowVar.name(), environment.get(v.name()));
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put(var,shadowVar);
 		condition = condition.substitute(binding);
