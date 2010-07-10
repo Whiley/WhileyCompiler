@@ -61,6 +61,7 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void ConstrainedTuple_Valid_2_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_2"); }
  @Test public void ConstrainedTuple_Valid_3_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_3"); }
  @Test public void ConstrainedTuple_Valid_4_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_4"); }
+ @Test public void ConstrainedTuple_Valid_5_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_5"); }
  @Test public void Define_Valid_1_StaticTest() { verificationRunTest("Define_Valid_1"); }
  @Test public void Define_Valid_2_StaticTest() { verificationRunTest("Define_Valid_2"); }
  @Test public void Define_Valid_3_StaticTest() { verificationRunTest("Define_Valid_3"); }

@@ -72,6 +72,7 @@ public class PostConditionGenerator {
 	protected Condition infer(Stmt s, HashMap<String, Type> environment,
 			FunDecl f, Condition preCondition) {		
 		// Simplify the precondition as much as possible.
+		System.out.println("PRECONDITION: " + preCondition);
 		preCondition = preCondition.reduce(environment);
 		preCondition = simplifier.simplify(preCondition);
 		
