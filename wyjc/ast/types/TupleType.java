@@ -20,6 +20,7 @@ package wyjc.ast.types;
 
 import java.util.*;
 
+import wyjc.ast.exprs.Condition;
 import wyjc.util.Pair;
 import wyone.core.WType;
 import wyone.theory.tuple.WTupleType;
@@ -28,6 +29,11 @@ public class TupleType extends ConstrainedType implements NonUnionType {
 	private HashMap<String,Type> types;
 	
 	public TupleType(Map<String,Type> types) {
+		this.types = new HashMap<String,Type>(types);			
+	}
+	
+	public TupleType(Map<String,Type> types, Condition constraint) {
+		super(constraint);
 		this.types = new HashMap<String,Type>(types);			
 	}
 	
@@ -55,7 +61,7 @@ public class TupleType extends ConstrainedType implements NonUnionType {
 	
 	public int hashCode() {		
 		int hc = constraint == null ? 0 : constraint.hashCode();
-		return types.hashCode();
+		return types.hashCode() + hc;
 	}	
 	
 	public boolean isSubtype(Type t, Map<String, Type> environment) {
@@ -95,7 +101,7 @@ public class TupleType extends ConstrainedType implements NonUnionType {
 		for (Map.Entry<String, Type> e : types.entrySet()) {
 			ts.put(e.getKey(), e.getValue().flattern());
 		}
-		return new TupleType(ts);
+		return new TupleType(ts,constraint);
 	}
 	
 	public boolean isExistential() {
@@ -112,7 +118,7 @@ public class TupleType extends ConstrainedType implements NonUnionType {
 		for (Map.Entry<String, Type> e : types.entrySet()) {
 			ts.put(e.getKey(), e.getValue().substitute(binding));
 		}
-		return new TupleType(ts);
+		return new TupleType(ts,constraint);
 	}
 	
 	public <T> Set<T> match(Class<T> type) {

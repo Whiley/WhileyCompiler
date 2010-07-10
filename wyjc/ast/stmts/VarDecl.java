@@ -33,42 +33,33 @@ import wyjc.ast.types.*;
  */
 public final class VarDecl extends SyntacticElementImpl implements Stmt {
 	protected Type type;
-	protected String name;
-	protected Condition constraint;
+	protected String name;	
 	protected Expr initialiser;
 	
-	public VarDecl(Type type, Condition constraint, String name, Expr initialiser,
+	public VarDecl(Type type, String name, Expr initialiser,
 			Attribute... attributes) {
 		super(attributes);
-		this.type = type;
-		this.constraint = constraint;
+		this.type = type;		
 		this.name = name;
 		this.initialiser = initialiser;
 	}
 
-	public VarDecl(Type type, Condition constraint, String name,
+	public VarDecl(Type type, String name,
 			Expr initialiser, Collection<Attribute> attributes) {
 		super(attributes);
-		this.type = type;
-		this.constraint = constraint;
+		this.type = type;		
 		this.name = name;
 		this.initialiser = initialiser;
 	}
 
 	
-	public Type type() { return type; }
-	public Condition constraint() { return constraint; }
+	public Type type() { return type; }	
 	public String name() { return name; }		
 	
 	public Expr initialiser() { return initialiser; }
 		
 	public String toString() {
-		String cstr = "";
-		if(constraint != null) {
-			cstr = constraint.toString();
-			cstr = cstr.replace("$", name);
-			cstr = " where " + cstr;
-		}
+		String cstr = "";		
 		if(initialiser != null) {
 			return type + " " + name + " = " + initialiser + cstr;
 		} else {

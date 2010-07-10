@@ -20,17 +20,20 @@ package wyjc.ast.types;
 
 import java.util.*;
 
+import wyjc.ast.exprs.Condition;
 import wyone.core.WType;
 import wyone.theory.type.WUnionType;
 
 public class UnionType extends ConstrainedType implements Type {
 	private HashSet<NonUnionType> types;
 	
-	public UnionType(Collection<NonUnionType> types) {
+	public UnionType(Condition constraint, Collection<NonUnionType> types) {
+		super(constraint);
 		this.types = new HashSet<NonUnionType>(types);
 	}
 
-	public UnionType(NonUnionType... ts) {
+	public UnionType(Condition constraint, NonUnionType... ts) {
+		super(constraint);
 		types = new HashSet<NonUnionType>();
 		for(NonUnionType t : ts) {
 			types.add(t);
@@ -110,7 +113,7 @@ public class UnionType extends ConstrainedType implements Type {
 		for (NonUnionType b : types) {
 			ts.add((NonUnionType) b.substitute(binding));
 		}
-		return new UnionType(ts);
+		return new UnionType(constraint, ts);
 	}
 	
 	public <T> Set<T> match(Class<T> type) {

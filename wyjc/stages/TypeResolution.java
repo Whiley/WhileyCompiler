@@ -44,7 +44,7 @@ public class TypeResolution {
 	private ModuleLoader loader;
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID,Expr> constants;
-	private HashMap<NameID,Pair<Type,Condition>> types;	
+	private HashMap<NameID,Type> types;	
 	private HashMap<NameID,SyntacticElement> srcs;
 	private HashMap<NameID,Pair<UnresolvedType,Condition>> unresolved;
 	private HashMap<NameID,List<ModuleInfo.Method>> functions;
@@ -56,7 +56,7 @@ public class TypeResolution {
 	public void resolve(List<UnresolvedWhileyFile> files) {
 		modules = new HashSet<ModuleID>();
 		constants = new HashMap<NameID,Expr>();
-		types = new HashMap<NameID,Pair<Type,Condition>>();
+		types = new HashMap<NameID,Type>();
 		srcs = new HashMap<NameID,SyntacticElement>();
 		unresolved = new HashMap<NameID,Pair<UnresolvedType,Condition>>();
 		functions = new HashMap<NameID,List<ModuleInfo.Method>>();
@@ -75,14 +75,14 @@ public class TypeResolution {
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		for (NameID key : new HashSet<NameID>(
 				types.keySet())) {			
-			Pair<Type, Condition> val = types.get(key);
+			Type type = types.get(key);
 									
-			environment.put("$", val.first());
-			Condition c = val.second();
+			environment.put("$", type);
+			Condition c = type.constraint();
 			if(c != null) {								
 				c = (Condition) check(c, environment).second();				
 			}
-			types.put(key, new Pair<Type, Condition>(val.first(), c));
+			types.put(key, recondition(type, c));
 		}
 							
 		for(UnresolvedWhileyFile f : files) {
@@ -108,25 +108,27 @@ public class TypeResolution {
 				if(p.type() == Types.T_VOID) {
 					syntaxError("parameter cannot be declared void",f);
 				} 
-				Pair<Type,Condition> t = expandType(p.type(),types);				
-				environment.put(p.name(), t.first());						
-				p.attributes().add(new TypeAttr(t.first()));				
-				paramTypes.add(t.first());
+				Type t = expandType(p.type(),types);				
+				environment.put(p.name(), t);						
+				p.attributes().add(new TypeAttr(t));				
+				paramTypes.add(t);
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),p,rex);
 			}
 		}
 		
 		FunDecl.Return ret = f.returnType();
-		Pair<Type,Condition> r_t;
+		Type r_t;
 		try {
 			r_t = expandType(ret.type(),types);
 		} catch(ResolveError rex) {
 			syntaxError(rex.getMessage(),ret,rex);
 			return null; // unreachable
 		}
-		ret.attributes().add(new TypeAttr(r_t.first()));		
-		FunType ft = new FunType(r_t.first(),paramTypes);
+		ret.attributes().add(new TypeAttr(r_t));	
+		
+		// FIXME: some problem here as no constraint on function type
+		FunType ft = new FunType(r_t,paramTypes,null);
 		f.attributes().add(new TypeAttr(ft));
 		
 		FunDecl.Receiver rec = f.receiver();
@@ -134,12 +136,12 @@ public class TypeResolution {
 		if(rec != null) {
 			try {
 				r_t = expandType(rec.type(),types);
-				recType = r_t.first();
+				recType = r_t;
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),ret,rex);
 				return null; // unreachable
 			}
-			rec.attributes().add(new TypeAttr(r_t.first()));
+			rec.attributes().add(new TypeAttr(r_t));
 		} 
 		
 		// FIXME: constraints on receiver are lost.
@@ -188,7 +190,7 @@ public class TypeResolution {
 						Condition ec = buildEquals(vt.element(),lhs,elem);						
 						vstc = vstc == null ? ec : new Or(vstc,ec,c.attribute(SourceAttr.class));
 					}					
-					types.put(k,new Pair<Type,Condition>(vt.element(),vstc));
+					types.put(k,recondition(vt.element(),vstc));
 				}
 			} else {
 				syntaxError("invalid constant definition",srcs.get(k));
@@ -268,9 +270,9 @@ public class TypeResolution {
 		}
 	}
 	
-	protected Pair<Type, Condition> expandType(NameID key) throws ResolveError {		
-		HashMap<NameID, Pair<Type,Condition>> cache = new HashMap<NameID,Pair<Type,Condition>>();			
-		Pair<Type,Condition> t = expandTypeHelper(key,cache);		
+	protected Type expandType(NameID key) throws ResolveError {		
+		HashMap<NameID, Type> cache = new HashMap<NameID,Type>();			
+		Type t = expandTypeHelper(key,cache);		
 		t = simplifyRecursiveTypes(t);		
 		types.put(key,t);							
 		return t;
@@ -284,28 +286,27 @@ public class TypeResolution {
 	 * @param p
 	 * @return
 	 */
-	protected Pair<Type, Condition> simplifyRecursiveTypes(
-			Pair<Type, Condition> p) {
+	protected Type simplifyRecursiveTypes(Type p) {
 		HashMap<String, Type> t_binding = new HashMap<String, Type>();
 		HashMap<String, Type> r_binding = new HashMap<String, Type>();
 						
 		int nameIdx = 0;
 		
-		for (RecursiveType t : p.first().match(RecursiveType.class)) {
+		for (RecursiveType t : p.match(RecursiveType.class)) {
 			String n = t.name();
 			if (!t_binding.containsKey(n) && nameIdx < names.length) {
 				String name = names[nameIdx++];
-				t_binding.put(n, new RecursiveType(name, null));
+				t_binding.put(n, new RecursiveType(name, null, null));
 			}
 			if(t.type() != null) {
 				r_binding.put(t.name(), t);
 			}
 		}		
 		
-		Type ntype = p.first().substitute(t_binding);
+		Type ntype = p.substitute(t_binding);
 		
-		if(p.second() == null) {
-			return new Pair<Type, Condition>(ntype,p.second());
+		if(p.constraint() == null) {
+			return p;
 		}
 		
 		// Conditions (e.g. type gates) are difficult, since they involve types
@@ -323,20 +324,19 @@ public class TypeResolution {
 
 		HashMap<Expr,Expr> c_binding = new HashMap();		
 		
-		for (TypeEquals tg : p.second().match(TypeEquals.class)) {
+		for (TypeEquals tg : p.constraint().match(TypeEquals.class)) {
 			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
 			c_binding.put(tg, new TypeEquals(t, tg.variable(), tg.lhs(),
 					tg.rhs(), tg.attributes()));
 		}
 					
-		for (TypeGate tg : p.second().match(TypeGate.class)) {
+		for (TypeGate tg : p.constraint().match(TypeGate.class)) {
 			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
 			c_binding.put(tg, new TypeGate(t, tg.variable(), tg.lhs(),
 					tg.rhs(), tg.attributes()));
 		}
 		
-		return new Pair<Type, Condition>(ntype,
-				(Condition) p.second().replace(c_binding));
+		return recondition(ntype, (Condition) p.constraint().replace(c_binding));
 	}
 	protected static final String[] names = {"X","Y","Z","U","V","W","P","Q","R","S","T"}; 
 	private static boolean isRecursive(NameID root, Type type) {
@@ -353,26 +353,26 @@ public class TypeResolution {
 		return !type.match(RecursiveType.class).isEmpty();
 	}
 	
-	protected Pair<Type,Condition> expandTypeHelper(NameID key,
-			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {
+	protected Type expandTypeHelper(NameID key,
+			HashMap<NameID, Type> cache) throws ResolveError {
 
-		Pair<Type,Condition> t = types.get(key);
+		Type t = types.get(key);
 		
-		if(t != null && !isRecursive(t.first())) {
+		if(t != null && !isRecursive(t)) {
 			return t;
 		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key
 			ModuleInfo mi = loader.loadModule(key.module());
 			ModuleInfo.TypeDef td = mi.type(key.name());			
-			return new Pair<Type, Condition>(td.type(), td.constraint());
+			return td.type();
 		}
 		
 		// Now, check for a cached expansion.
-		Pair<Type,Condition> cached = cache.get(key);					
+		Type cached = cache.get(key);					
 		if(cached != null) { return cached; }		
 		
 		// following is needed to terminate any recursion
-		cache.put(key, new Pair(new RecursiveType(key.toString(),null),null));
+		cache.put(key, new RecursiveType(key.toString(),null,null));
 		
 		// Ok, expand the type properly then
 		Pair<UnresolvedType,Condition> ut = unresolved.get(key);
@@ -380,19 +380,20 @@ public class TypeResolution {
 		t = expandType(ut.first(), cache);
 		Condition constraint = ut.second();
 		if (constraint == null) {
-			constraint = t.second();
-		} else if (t.second() != null) {
-			constraint = new And(constraint, t.second(), constraint
+			constraint = t.constraint();
+		} else if (t.constraint() != null) {
+			constraint = new And(constraint, t.constraint(), constraint
 					.attribute(SourceAttr.class));
 		}
 		
-		t = new Pair<Type, Condition>(t.first(), constraint); 
+		 
 		
-		if(isRecursive(key,t.first())) {
+		if(isRecursive(key,t)) {
 			// recursive case
-			RecursiveType rt = new RecursiveType(key.toString(),t.first());
-			t = new Pair(rt,t.second());
+			t = new RecursiveType(key.toString(),t,null);			
 		} 
+		
+		t = recondition(t,constraint);
 		
 		cache.put(key, t);
 		
@@ -400,200 +401,71 @@ public class TypeResolution {
 		return t;		
 	}	
 	
-	protected Pair<Type,Condition> expandType(UnresolvedType ut,
-			HashMap<NameID, Pair<Type,Condition>> cache) throws ResolveError {							
+	protected Type expandType(UnresolvedType ut,
+			HashMap<NameID, Type> cache) throws ResolveError {							
 		
 		if(ut instanceof Type) {
 			// covers all primitive types etc
-			return new Pair<Type,Condition>((Type) ut,null);
+			return (Type) ut;
 		} else if(ut instanceof UserDefType) {
 			UserDefType ult = (UserDefType) ut;			;
-			Pair<Type,Condition> et = expandTypeHelper(new NameID(ult.module(), ult
+			Type et = expandTypeHelper(new NameID(ult.module(), ult
 					.name()), cache);			
-			if(et.first().isExistential()) {
-				return new Pair<Type, Condition>(new NamedType(ult.module(),
-						ult.name(), et.first()), et.second());				
+			if(et.isExistential()) {
+				return new NamedType(ult.module(),ult.name(), et);				
 			} else {
 				return et;
 			}
 		} else if(ut instanceof UnresolvedListType) {		
 			UnresolvedListType ult = (UnresolvedListType) ut;
-			Pair<Type,Condition> tc = expandType(ult.element(),cache); 
-			Condition c = tc.second();
-			if(c != null) {				
-				String vn = Variable.freshVar();								
-				Variable v = new Variable(vn,c.attribute(SourceAttr.class));
-				HashMap<String,Expr> binding = new HashMap();
-				binding.put("$",v);				
-				c = c.substitute(binding);			
-				List<Pair<String,Expr>> ss = new ArrayList();
-				ss.add(new Pair(vn, new Variable("$", c
-						.attribute(SourceAttr.class))));
-				c = new None(new SetComprehension(v,ss,new Not(c)));				
-			}
-			return new Pair<Type,Condition>(new ListType(tc.first()),c);
+			Type tc = expandType(ult.element(),cache); 					
+			return new ListType(tc);
 		} else if(ut instanceof UnresolvedSetType) {
 			UnresolvedSetType ult = (UnresolvedSetType) ut;
-			Pair<Type,Condition> tc = expandType(ult.element(),cache); 
-			Condition c = tc.second();
-			if(c != null) {				
-				String vn = Variable.freshVar();							
-				Variable v = new Variable(vn, c
-						.attribute(SourceAttr.class));
-				HashMap<String,Expr> binding = new HashMap();
-				binding.put("$",v);				
-				c = c.substitute(binding);			
-				List<Pair<String,Expr>> ss = new ArrayList();
-				ss.add(new Pair(vn,new Variable("$", c
-						.attribute(SourceAttr.class))));
-				c = new None(new SetComprehension(v,ss,new Not(c)));				
-			}
-			return new Pair<Type,Condition>(new SetType(tc.first()),c);					
+			Type tc = expandType(ult.element(),cache); 			
+			return new SetType(tc);					
 		} else if(ut instanceof UnresolvedTupleType) {
 			UnresolvedTupleType utt = (UnresolvedTupleType) ut;			
-			Condition c = null;
-		
 			HashMap<String,Type> types = new HashMap<String,Type>();
 			for(Map.Entry<String,UnresolvedType> e : utt.types().entrySet()) {
 				String key = e.getKey();
-				Pair<Type,Condition> tc = expandType(e.getValue(),cache);				
-				types.put(key, tc.first());
-				Condition ec = tc.second();
-				if(ec != null) {					
-					HashMap<String,Expr> binding = new HashMap<String,Expr>();
-					Variable v = new Variable("$", ec.attribute(SourceAttr.class));
-					binding.put("$",
-							new TupleAccess(v, key, ec.attribute(SourceAttr.class)));
-					ec = ec.substitute(binding);					
-					if (c == null) {
-						c = ec;
-					} else {
-						c = new And(c, ec);
-					}
-				}
-				
+				Type tc = expandType(e.getValue(),cache);				
+				types.put(key, tc);		
 			}					
-			return new Pair<Type,Condition>(new TupleType(types),c);
+			return new TupleType(types);
 		} else if(ut instanceof UnresolvedUnionType) {
 			UnresolvedUnionType utt = (UnresolvedUnionType) ut;
 			
 			Type t = Types.T_VOID;			
 			
-			// Now, first determine what the underlying type is going to be, and
-			// build up the condition map. The condition map is rather subtle in
-			// it's formation to ensure we get a good typing at the end.
-			HashMap<Type,Condition> conditions = new HashMap<Type,Condition>();
-			
 			for(UnresolvedType bound : utt.types()) {				
-				Pair<Type,Condition> rb = expandType(bound,cache);
-				t = Types.leastUpperBound(t,rb.first());				
-				if(rb.second() != null) {
-					Condition et = conditions.get(rb.first());
-					if(et == null) {
-						conditions.put(rb.first(),rb.second());
-					} else if(!(et instanceof BoolVal)) {
-						et = new Or(et,rb.second(),rb.second().attribute(SourceAttr.class));
-						conditions.put(rb.first(),et);
-					}
-				} else {
-					conditions.put(rb.first(), new BoolVal(true));
-				}
+				Type rb = expandType(bound,cache);
+				t = Types.leastUpperBound(t,rb);								
 			}			
 			
-			Condition c = mergeTypeCases(t,conditions);			
-			
-			return new Pair<Type,Condition>(t,c);			
+			return t;			
 		} else  {			
 			// must be process type
 			UnresolvedProcessType ult = (UnresolvedProcessType) ut;
-			Pair<Type,Condition> tc = expandType(ult.element(),cache);
-			Condition cond = null;
-			if(tc.second() != null) {
-				HashMap<String,Expr> binding = new HashMap<String,Expr>();
-				binding.put("$", new ProcessAccess(new Variable("$", tc.second()
-						.attribute(SourceAttr.class))));					
-				cond = tc.second().substitute(binding);
-			}
-			return new Pair<Type,Condition>(new ProcessType(tc.first()),cond);					
+			Type tc = expandType(ult.element(),cache);			
+			return new ProcessType(tc);					
 		} 
-	}
-	
-	// The following method is pretty icky; i'm in no way 100% sure it works
-	// correctly.
-	protected Condition mergeTypeCases(Type t,
-			HashMap<Type, Condition> conditions) {
-		
-		if(t instanceof UnionType) {
-			// Recursive Case
-			UnionType ut = (UnionType) t;
-			Condition c = null;
-			for(Type b : ut.types()) {
-				Condition bc = mergeTypeCases(b,conditions);
-				
-				if (bc != null) {
-					Variable v = new Variable("$", bc
-							.attribute(SourceAttr.class));
-					String var = Variable.freshVar();
-					HashMap<String, Expr> binding = new HashMap<String, Expr>();
-					binding.put("$", new Variable(var));
-					// indicates a choice of some kind required
-
-					bc = new TypeGate(b, var, v, bc.substitute(binding), bc
-							.attribute(SourceAttr.class));
-				}
-				
-				if(c == null) {
-					c = bc;										
-				} else if(bc != null) {
-					c = new And(c,bc,bc.attribute(SourceAttr.class));
-				}				
-			}
-			return c;
-		} else {
-			// Base case
-			Condition c = conditions.get(t);
-			if(c instanceof BoolVal && ((BoolVal)c).value()) {
-				// useful simplification to reduce unnecssary checks
-				c = null;
-			}
-			
-			Type lub = null;
-			for(Type b : conditions.keySet()) {
-				if (t.isSubtype(b, Collections.EMPTY_MAP) && !t.equals(b)) {
-					// b is a strict subtype of t
-					lub = lub == null ? b : Types.leastUpperBound(b, lub);
-				}
-			}
-			if(lub == null) {
-				// no specific subtypes of this, so ignore
-				return c;
-			} else {
-				Condition r = mergeTypeCases(lub,conditions);
-				if(c == null) {
-					return r;
-				} else if(r == null) {
-					return c;
-				} else {
-					return new Or(r,c,c.attribute(SourceAttr.class));
-				}
-			}
-		}
 	}
 	
 	/**
 	 * This method expands a type, whilst also checking that the expanded constraint is type safe. 
 	 */
-	protected Pair<Type, Condition> expandAndCheck(UnresolvedType t,
+	protected Type expandAndCheck(UnresolvedType t,
 			SyntacticElement elem) throws ResolveError {				
-		Pair<Type,Condition> tc = expandType(t,types);		
-		Condition c = tc.second();		
+		Type tc = expandType(t,types);		
+		Condition c = tc.constraint();		
 		if(c != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
-			env.put("$",tc.first());			
+			env.put("$",tc);			
 			c = (Condition) check(c,env).second();
 			renumber(c,elem.attribute(SourceAttr.class));
 		}				
-		return new Pair<Type,Condition>(tc.first(),c);
+		return recondition(tc,c);
 	}
 	
 	protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
@@ -643,16 +515,15 @@ public class TypeResolution {
 	public void check(TypeDecl d, UnresolvedWhileyFile wf) {		
 		try {
 			NameID key = new NameID(wf.id(),d.name());
-			Pair<Type,Condition> t = types.get(key);
+			Type t = types.get(key);
 			expandAndCheck(d.type(),d);						
 			if(d.constraint() != null) {
 				HashMap<String,Type> environment = new HashMap<String,Type>();				
-				environment.put("$", t.first());
+				environment.put("$", t);
 				Pair<Type,Expr> r = check(d.constraint(), environment);												
 				d.setConstraint((Condition) r.second());							
 			}			
-			d.attributes().add(new TypeAttr(t.first()));
-			d.attributes().add(new ConstraintAttr(t.second()));
+			d.attributes().add(new TypeAttr(t));			
 		} catch(SyntaxError se) {			
 			throw se;
 		} catch(Exception ex) {		
@@ -670,25 +541,20 @@ public class TypeResolution {
 			} else if(environment.containsKey(p.name())) {
 				syntaxError("duplicate parameter name",p);
 			}			
-			Pair<Type,Condition> tc = expandAndCheck(p.type(),p);			
-			environment.put(p.name(), tc.first());
-			declared.put(p.name(), tc.first());
-			p.attributes().add(new ConstraintAttr(tc.second()));
+			Type tc = expandAndCheck(p.type(),p);			
+			environment.put(p.name(), tc);
+			declared.put(p.name(), tc);			
 		}
 				
 		FunDecl.Return ret = f.returnType();
-		Pair<Type,Condition> rp = expandAndCheck(ret.type(),ret);
-		if(rp.second() != null) {
-			ret.attributes().add(new ConstraintAttr(rp.second()));
-		}
+		Type rp = expandAndCheck(ret.type(),ret);
+		
+		// FIXME: lost return / receiver constraint?
+		
 		FunDecl.Receiver rec = f.receiver();
 		if(rec != null) {
 			rp = expandAndCheck(rec.type(),rec);
-			environment.put("this",rp.first());
-			declared.put("this",rp.first());
-			if(rp.second() != null) {
-				rec.attributes().add(new ConstraintAttr(rp.second()));
-			}
+			environment.put("this",rp);						
 		}
 		
 		if(f.preCondition() != null) {
@@ -707,7 +573,7 @@ public class TypeResolution {
 		
 		if(f.postCondition() != null) {
 			if(!(f.returnType().type() == Types.T_VOID)) {
-				environment.put("$",rp.first());
+				environment.put("$",rp);
 			}
 			Pair<Type,Expr> postcond = check(f.postCondition(),environment);
 			f.setPostCondition((Condition)postcond.second());
@@ -752,8 +618,7 @@ public class TypeResolution {
 	protected Stmt check(UnresolvedVarDecl s,
 			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		Expr initialiser = s.initialiser();
-		Type s_type = null;
-		Condition s_condition = null;
+		Type s_type = null;		
 		
 		if (environment.get(s.name()) != null) {
 			syntaxError("duplicate variable declaration.", s);
@@ -762,12 +627,7 @@ public class TypeResolution {
 			syntaxError("variable cannot be declared void", s);
 		} else {
 			try {
-				Pair<Type,Condition> p = expandAndCheck(s.type(),s);
-				s_type = p.first();				
-				s_condition = p.second();
-				if(s_condition != null) {					
-					s.attributes().add(new ConstraintAttr(s_condition));
-				}
+				s_type = expandAndCheck(s.type(),s);				
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),s,rex);
 			}
@@ -783,7 +643,7 @@ public class TypeResolution {
 			environment.put(s.name(), s_type);
 		}
 		
-		return new VarDecl(s_type, s_condition, s.name(),
+		return new VarDecl(s_type, s.name(),
 				initialiser, s.attribute(SourceAttr.class));
 	}	
 	
@@ -1470,9 +1330,8 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(UnresolvedTypeEquals ueq,
 			HashMap<String, Type> environment) throws ResolveError {
 		Pair<Type, Expr> lhs = check(ueq.lhs(), environment);
-		Pair<Type, Condition> rhs = expandAndCheck(ueq.type(),ueq);
-		Type lhs_t = lhs.first();
-		Type rhs_t = rhs.first();
+		Type rhs_t = expandAndCheck(ueq.type(),ueq);
+		Type lhs_t = lhs.first();		
 
 		// now check it makes sense
 		if (!lhs_t.isSubtype(rhs_t, Collections.EMPTY_MAP)
@@ -1480,16 +1339,11 @@ public class TypeResolution {
 			syntaxError("cannot match type " + lhs_t + " against " + rhs_t, ueq);
 		}
 		
-		Condition condition = new BoolVal(true,ueq.attribute(SourceAttr.class)); 
+		Condition condition = (Condition) check(ueq.rhs(),environment).second();  
 		String var = Variable.freshVar();				
 		
-		if(rhs.second() != null) {
-			Variable v = new Variable(var,ueq.attribute(SourceAttr.class));
-			condition = rhs.second();
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			binding.put("$",v);
-			condition = condition.substitute(binding);			 
-		}		
+		// FIXME: I think there's a problem here as the condition needs to have
+		// all occurences of lhs replaced with var.
 		
 		return new Pair<Type, Expr>(Types.T_BOOL, new TypeEquals(rhs_t, var, lhs
 				.second(), condition, ueq.attributes()));
@@ -1686,6 +1540,40 @@ public class TypeResolution {
 		}
 	}
 
+	protected Type recondition(Type t, Condition c) {
+		if (t instanceof VoidType || t instanceof ExistentialType
+				|| t instanceof NamedType) {
+			return t;
+		} else if(t instanceof IntType) {
+			return Types.T_INT(c);
+		} else if(t instanceof RealType) {
+			return Types.T_INT(c);
+		} else if(t instanceof ListType) {
+			ListType lt = (ListType) t;
+			return new ListType(lt.element(),c);
+		} else if(t instanceof SetType) {
+			SetType st = (SetType) t;
+			return new SetType(st.element(),c);
+		} else if(t instanceof ProcessType) {
+			ProcessType st = (ProcessType) t;
+			return new ProcessType(st.element(),c);
+		} else if(t instanceof RecursiveType) {
+			RecursiveType st = (RecursiveType) t;
+			return new RecursiveType(st.name(),st.type(),c);
+		} else if(t instanceof TupleType) {
+			TupleType st = (TupleType) t;
+			return new TupleType(st.types(),c);
+		} else if(t instanceof UnionType) {
+			UnionType st = (UnionType) t;
+			return new UnionType(c,st.types());
+		} else if(t instanceof FunType) {
+			FunType ft = (FunType) t;
+			return new FunType(ft.returnType(),ft.parameters(),c);
+		} else {
+			throw new IllegalArgumentException("unknown type encountered: " + t);
+		}
+	}
+	
 	/**
 	 * This method simply renumbers every syntactic element.
 	 * 

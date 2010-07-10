@@ -333,12 +333,12 @@ public class WhileyDefine implements BytecodeAttribute {
 				{										
 					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
 					et = readType(input,constantPool);
-					return new RecursiveType(name,et);
+					return new RecursiveType(name,et,null);
 				}
 				case RECURSIVE_LEAF:
 				{										
 					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
-					return new RecursiveType(name,null);					
+					return new RecursiveType(name,null,null);					
 				}
 				case FUN_TYPE:
 					Type ret = readType(input,constantPool);
@@ -347,7 +347,7 @@ public class WhileyDefine implements BytecodeAttribute {
 					for(int i=0;i!=count;++i) {
 						ftypes.add(readType(input,constantPool));
 					}
-					return new FunType(ret,ftypes);				
+					return new FunType(ret,ftypes,null);				
 			}
 			
 			throw new RuntimeException("Unknown type id encountered: " + t);

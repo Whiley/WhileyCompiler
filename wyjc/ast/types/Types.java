@@ -107,10 +107,12 @@ public class Types {
 		} else if(t1 instanceof ListType && t2 instanceof ListType) {
 			ListType l1 = (ListType) t1;
 			ListType l2 = (ListType) t2;
+			// FIXME: bug here
 			return new ListType(leastUpperBound(l1.element(),l2.element()));
 		} else if(t1 instanceof SetType && t2 instanceof SetType) {
 			SetType s1 = (SetType) t1;
 			SetType s2 = (SetType) t2;
+			// FIXME: bug here
 			return new SetType(leastUpperBound(s1.element(),s2.element()));
 		} else {
 			return new UnionType((NonUnionType) t1, (NonUnionType) t2);
@@ -129,7 +131,7 @@ public class Types {
 		
 		if(t1 instanceof ListType && t2 instanceof ListType) {
 			ListType l1 = (ListType) t1;
-			ListType l2 = (ListType) t2;
+			ListType l2 = (ListType) t2;			
 			return new ListType(greatestLowerBound(l1.element(),l2.element()));
 		} else if(t1 instanceof SetType && t2 instanceof SetType) {
 			SetType s1 = (SetType) t1;

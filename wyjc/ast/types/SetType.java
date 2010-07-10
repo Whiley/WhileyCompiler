@@ -29,6 +29,10 @@ import wyone.theory.set.WSetType;
 public class SetType extends ConstrainedType implements NonUnionType {
 	private Type element;
 	
+	public SetType(Type element) {	
+		this.element = element;
+	}
+	
 	public SetType(Type element, Condition constraint) {
 		super(constraint);
 		this.element = element;

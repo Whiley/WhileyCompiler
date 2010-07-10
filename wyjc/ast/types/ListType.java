@@ -29,10 +29,12 @@ import wyone.theory.list.WListType;
 
 
 public final class ListType extends SetType {
+	public ListType(Type element) {
+		super(element);		
+	}
 	public ListType(Type element, Condition constraint) {
 		super(element,constraint);		
 	}
-	
 	public boolean equals(Object o) {
 		if(!(o instanceof ListType)) {
 			return false;
