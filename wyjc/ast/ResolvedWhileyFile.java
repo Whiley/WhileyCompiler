@@ -134,7 +134,8 @@ public class ResolvedWhileyFile {
 			for (Parameter p : parameters()) {
 				ps.add(p.type());
 			}
-			return new FunType(returnType().type(), ps);
+			// FIXME: this will need to be fixed at some point.
+			return new FunType(returnType().type(), ps, null);
 		}
 		
 		public static class Return extends TemplatedWhileyFile.Return<Type> {

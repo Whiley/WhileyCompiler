@@ -27,7 +27,7 @@ import wyjc.ast.*;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.logic.*;
 import wyjc.ast.types.*;
-import wyjc.jvm.attributes.WhileyCondition;
+import wyjc.jvm.attributes.WhileyType;
 import wyjc.jvm.attributes.WhileyDefine;
 import wyjc.util.*;
 import wyjvm.attributes.*;
@@ -438,8 +438,8 @@ public class ModuleLoader {
 
 		ClassFileReader r = new ClassFileReader(
 				input,
-				new WhileyCondition.Reader("WhileyPreCondition"),
-				new WhileyCondition.Reader("WhileyPostCondition"),
+				new WhileyType.Reader("WhileyPreCondition"),
+				new WhileyType.Reader("WhileyPostCondition"),
 				new WhileyDefine.Reader()
 		);					
 
@@ -610,9 +610,9 @@ public class ModuleLoader {
 	protected ModuleInfo.Method createMethodInfo(ModuleID mid,
 			ClassFile.Method cm) {
 		Triple<String,Type,FunType> info = splitDescriptor(cm.name());				
-		WhileyCondition pre = (WhileyCondition) cm
+		WhileyType pre = (WhileyType) cm
 				.attribute("WhileyPreCondition");
-		WhileyCondition post = (WhileyCondition) cm
+		WhileyType post = (WhileyType) cm
 				.attribute("WhileyPostCondition");
 		Condition prec = pre == null ? null : pre.condition();
 		Condition postc = post == null ? null : post.condition();

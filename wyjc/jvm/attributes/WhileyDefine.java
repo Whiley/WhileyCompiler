@@ -101,7 +101,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		Constant.addPoolItem(new Constant.Utf8(defName), constantPool);
 		
 		if(expr != null) {
-			WhileyCondition.addPoolItems(expr, constantPool);
+			WhileyType.addPoolItems(expr, constantPool);
 		}
 		if(type != null) {
 			addPoolItems(type, constantPool);
@@ -234,7 +234,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	protected void write(Expr e, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		WhileyCondition.writeCondition(e,writer,constantPool);				
+		WhileyType.writeCondition(e,writer,constantPool);				
 	}
 	
 	public void print(PrintWriter output,
@@ -269,14 +269,14 @@ public class WhileyDefine implements BytecodeAttribute {
 						
 			if(sw == 0) {				
 				// Condition only
-				expr = WhileyCondition.Reader.readExpr(input,constantPool);				
+				expr = WhileyType.Reader.readExpr(input,constantPool);				
 			} else if(sw == 1) {
 				// type only
 				type = readType(input,constantPool);
 			} else {				
 				// both				
 				type = readType(input,constantPool);											
-				expr = WhileyCondition.Reader.readCondition(input,constantPool);									
+				expr = WhileyType.Reader.readCondition(input,constantPool);									
 			}
 			
 			return new WhileyDefine(name,type,expr);

@@ -34,7 +34,7 @@ import wyjc.ast.exprs.set.*;
 import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
-import wyjc.jvm.attributes.WhileyCondition;
+import wyjc.jvm.attributes.WhileyType;
 import wyjc.jvm.attributes.WhileyDefine;
 import wyjc.jvm.attributes.WhileyVersion;
 import wyjc.jvm.rt.*;
@@ -279,12 +279,12 @@ public class ClassFileBuilder {
 			}
 			preCondition = preCondition.substitute(binding);
 			
-			WhileyCondition wc = new WhileyCondition("WhileyPreCondition",preCondition);
+			WhileyType wc = new WhileyType("WhileyPreCondition",preCondition);
 			cm.attributes().add(wc);
 		}
 		Condition postCondition = fd.postCondition();
 		if(postCondition != null) {
-			WhileyCondition wc = new WhileyCondition("WhileyPostCondition",postCondition);
+			WhileyType wc = new WhileyType("WhileyPostCondition",postCondition);
 			cm.attributes().add(wc);
 		}
 		return cm;

@@ -49,11 +49,11 @@ import wyjvm.lang.Constant;
  * 
  */
 
-public class WhileyCondition implements BytecodeAttribute {
+public class WhileyType implements BytecodeAttribute {
 	private String name;
 	private Condition condition;
 	
-	public WhileyCondition(String name, Condition condition) {
+	public WhileyType(String name, Condition condition) {
 		this.name = name;
 		this.condition = condition;
 	}
@@ -511,12 +511,12 @@ public class WhileyCondition implements BytecodeAttribute {
 			return name;
 		}
 		
-		public WhileyCondition read(BinaryInputStream input,
+		public WhileyType read(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			input.read_u2(); // attribute name index code
 			input.read_u4(); // attribute length 						
 			Condition c = readCondition(input,constantPool);
-			return new WhileyCondition(name,c);		
+			return new WhileyType(name,c);		
 		}
 
 		protected static Condition readCondition(BinaryInputStream reader,
