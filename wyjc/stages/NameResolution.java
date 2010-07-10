@@ -480,9 +480,10 @@ public class NameResolution {
 	}
 	
 	protected Expr resolve(UnresolvedTypeEquals sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		Expr src = resolve(sg.lhs(),environment,imports);		
-		resolve(sg.rhs(),imports);
-		return new UnresolvedTypeEquals(src,sg.rhs(),sg.attributes());
+		Expr lhs = resolve(sg.lhs(),environment,imports);
+		Condition rhs = (Condition) resolve(sg.rhs(),environment,imports);		
+		resolve(sg.type(),imports);
+		return new UnresolvedTypeEquals(lhs,sg.type(),rhs,sg.attributes());
 	}
 	
 	protected void resolve(UnresolvedType t, ArrayList<PkgID> imports) throws ResolveError {

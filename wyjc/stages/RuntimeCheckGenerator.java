@@ -673,6 +673,7 @@ public class RuntimeCheckGenerator {
 	
 	protected List<Check> checkgen(TypeEquals e,
 			HashMap<String, Type> environment) {
+		System.out.println("PASSING THROUGH " + e);
 		List<Check> checks = checkgen(e.lhs(), environment);
 		checks.addAll(checkgen(e.rhs(),environment));
 		return checks;
@@ -688,7 +689,8 @@ public class RuntimeCheckGenerator {
 	protected void addCheck(String msg, Condition c,
 			HashMap<String, Type> environment, SyntacticElement elem,
 			List<Check> checks) {		
-		c = c.reduce(environment);				
+		c = c.reduce(environment);			
+		
 		if(c instanceof BoolVal) {
 			BoolVal v = (BoolVal) c;			
 			if(!v.value()) {

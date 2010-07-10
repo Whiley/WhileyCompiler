@@ -1470,7 +1470,7 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(UnresolvedTypeEquals ueq,
 			HashMap<String, Type> environment) throws ResolveError {
 		Pair<Type, Expr> lhs = check(ueq.lhs(), environment);
-		Pair<Type, Condition> rhs = expandAndCheck(ueq.rhs(),ueq);
+		Pair<Type, Condition> rhs = expandAndCheck(ueq.type(),ueq);
 		Type lhs_t = lhs.first();
 		Type rhs_t = rhs.first();
 

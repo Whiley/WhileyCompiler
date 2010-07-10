@@ -118,7 +118,7 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		
 		if(type.isSubtype(t, Collections.EMPTY_MAP)) {			
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			binding.put(var, l);
+			binding.put(var, l);			
 			return r.substitute(binding);
 		} else if (!t.isSubtype(type, Collections.EMPTY_MAP) || l instanceof Value) {
 			return new BoolVal(false);

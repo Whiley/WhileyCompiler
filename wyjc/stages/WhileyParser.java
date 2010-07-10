@@ -702,9 +702,15 @@ public class WhileyParser {
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
 		match(WhileyLexer.TypeEquals.class);			
-		UnresolvedType rhs = parseType();
-		System.out.println("NEED TO CHECK FOR CONJUNCTS HERE");
-		return new wyjc.ast.exprs.logic.UnresolvedTypeEquals(lhs, rhs,
+		UnresolvedType type = parseType();
+		Condition rhs = new BoolVal(true,sourceAttr(start, index - 1));
+		
+		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {						
+			match(LogicalAnd.class);
+			rhs = parseRealCondition();						
+		}
+		
+		return new wyjc.ast.exprs.logic.UnresolvedTypeEquals(lhs, type, rhs,
 				sourceAttr(start, index - 1));
 	}
 	

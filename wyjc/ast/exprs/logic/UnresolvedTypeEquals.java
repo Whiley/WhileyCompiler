@@ -39,19 +39,24 @@ import wyone.core.*;
 import wyone.theory.logic.*;
 
 public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condition {
-	private UnresolvedType rhs;
+	private UnresolvedType type;
 	private Expr lhs;
+	private Condition rhs;
 	
-	public UnresolvedTypeEquals(Expr lhs, UnresolvedType rhs, Attribute... attributes) {
+	public UnresolvedTypeEquals(Expr lhs, UnresolvedType type, Condition rhs,
+			Attribute... attributes) {
 		super(attributes);				
 		this.lhs = lhs;
 		this.rhs = rhs;
+		this.type = type;
 	}
 
-	public UnresolvedTypeEquals(Expr lhs, UnresolvedType rhs, Collection<Attribute> attributes) {
+	public UnresolvedTypeEquals(Expr lhs, UnresolvedType type, Condition rhs,
+			Collection<Attribute> attributes) {
 		super(attributes);	
 		this.lhs = lhs;
-		this.rhs = rhs;		
+		this.rhs = rhs;
+		this.type = type;		
 	}
 	
 	public BoolType type(Map<String,Type> environment) {		
@@ -62,13 +67,18 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 		return lhs;
 	}
 	
-	public UnresolvedType rhs() {
+	public Condition rhs() {
 		return rhs;
+	}
+	
+	public UnresolvedType type() {
+		return type;
 	}
 	
 	public Condition substitute(Map<String,Expr> binding) {		
 		Expr l = lhs.substitute(binding);
-		return new UnresolvedTypeEquals(l,rhs,attributes());
+		Condition r = rhs.substitute(binding);
+		return new UnresolvedTypeEquals(l,type,r,attributes());
 	}
 	
 	public Expr replace(Map<Expr, Expr> binding) {
@@ -77,7 +87,8 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 			return t;
 		} else {			
 			Expr l = lhs.replace(binding);
-			return new UnresolvedTypeEquals(l,rhs, attributes());
+			Condition r = (Condition) rhs.replace(binding);
+			return new UnresolvedTypeEquals(l,type, r, attributes());
 		}
 	}
 	
@@ -89,8 +100,10 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 		return matches;
 	}
 	
-	public Set<Variable> uses() {
-		return lhs.uses();				
+	public Set<Variable> uses() {		
+		Set<Variable> uses = lhs.uses();
+		uses.addAll(rhs.uses());
+		return uses;
 	}
 	
 	public Condition reduce(Map<String, Type> environment) {
@@ -98,7 +111,7 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 	}
 	
 	public String toString() {
-		return lhs + " ~= " + rhs;
+		return lhs + " ~= " + type + " && " + rhs;
 	}
 
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment, ModuleLoader loader) throws ResolveError {
@@ -114,13 +127,13 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 	}  		
 	
 	public int hashCode() {
-		return lhs.hashCode() + rhs.hashCode();
+		return lhs.hashCode() + type.hashCode() + rhs.hashCode();
 	}
 	
 	public boolean equals(Object o) {
 		if(o instanceof UnresolvedTypeEquals) {
 			UnresolvedTypeEquals e = (UnresolvedTypeEquals) o;
-			return lhs.equals(e.lhs) && rhs.equals(e.rhs);
+			return lhs.equals(e.lhs) && type.equals(e.type) && rhs.equals(e.rhs);
 		}
 		return false;
 	}

@@ -203,6 +203,7 @@ public class VerificationConditionGenerator {
 	
 	protected WFormula addEnvironment(WFormula vc, Set<Variable> uses,
 			HashMap<String, Type> environment) {
+		System.out.println("ADDING TYPES FOR: " + uses + " IN: " + environment);
 		for (Variable v : uses) {
 			Type t = environment.get(v.name());
 			vc = WFormulas.and(WTypes.subtypeOf(new WVariable(v.name()), t
