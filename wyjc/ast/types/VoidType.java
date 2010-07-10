@@ -26,7 +26,7 @@ import java.util.Set;
 import wyone.core.WType;
 import wyone.theory.numeric.WIntType;
 
-public final class VoidType implements NonUnionType {
+public final class VoidType extends ConstrainedType implements NonUnionType {
 	public String toString() { return "void"; }
 	
 	VoidType() {}

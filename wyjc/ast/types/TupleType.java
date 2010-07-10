@@ -24,7 +24,7 @@ import wyjc.util.Pair;
 import wyone.core.WType;
 import wyone.theory.tuple.WTupleType;
 
-public class TupleType implements NonUnionType {
+public class TupleType extends ConstrainedType implements NonUnionType {
 	private HashMap<String,Type> types;
 	
 	public TupleType(Map<String,Type> types) {
@@ -46,12 +46,15 @@ public class TupleType implements NonUnionType {
 	public boolean equals(Object o) {
 		if(o instanceof TupleType) {
 			TupleType t = (TupleType) o;
-			return types.equals(t.types);
+			return types.equals(t.types)
+					&& (constraint == t.constraint || (constraint != null && constraint
+							.equals(t.constraint)));
 		}
 		return false;
 	}
 	
 	public int hashCode() {		
+		int hc = constraint == null ? 0 : constraint.hashCode();
 		return types.hashCode();
 	}	
 	
@@ -140,7 +143,7 @@ public class TupleType implements NonUnionType {
 			firstTime = false;
 			r = r + types.get(s).toString() + " " + s;
 		}
-		return r + ")";
+		return r + ")" + super.toString();
 	}
 	
 	public WType convert() {

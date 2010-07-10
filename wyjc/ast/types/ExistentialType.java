@@ -26,7 +26,7 @@ import java.util.Set;
 import wyone.core.WType;
 import wyone.theory.numeric.WIntType;
 
-public class ExistentialType implements NonUnionType {
+public class ExistentialType extends ConstrainedType implements NonUnionType {
 	public String toString() { return "?"; }
 	
 	ExistentialType() {}

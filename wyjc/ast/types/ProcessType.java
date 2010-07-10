@@ -22,13 +22,19 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import wyjc.ast.exprs.Condition;
 import wyone.core.WType;
 
 
-public class ProcessType implements NonUnionType {
+public class ProcessType extends ConstrainedType implements NonUnionType {
 	private Type element;
 	
-	public ProcessType(Type element) {
+	public ProcessType(Type element) {		
+		this.element = element;
+	}
+	
+	public ProcessType(Type element, Condition constraint) {
+		super(constraint);
 		this.element = element;
 	}
 	
@@ -41,11 +47,14 @@ public class ProcessType implements NonUnionType {
 			return false;
 		}
 		ProcessType at = (ProcessType) o;
-		return at.element.equals(element);
+		return at.element.equals(element)
+				&& (constraint == at.constraint || (constraint != null && constraint
+						.equals(at.constraint)));
 	}
 	
 	public int hashCode() {
-		return element.hashCode() * 123;
+		int hc = constraint == null ? 0 : constraint.hashCode();
+		return (element.hashCode() * 123) + hc;
 	}
 	
 	public boolean isSubtype(Type t, Map<String, Type> environment) {
@@ -72,7 +81,7 @@ public class ProcessType implements NonUnionType {
 	}
 	
 	public String toString() {
-		return "process " + element.toString();
+		return "process " + element.toString() + super.toString();
 	}
 	
 	public <T> Set<T> match(Class<T> type) {

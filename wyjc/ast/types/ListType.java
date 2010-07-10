@@ -23,13 +23,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import wyjc.ast.exprs.Condition;
 import wyone.core.WType;
 import wyone.theory.list.WListType;
 
 
 public final class ListType extends SetType {
-	public ListType(Type element) {
-		super(element);		
+	public ListType(Type element, Condition constraint) {
+		super(element,constraint);		
 	}
 	
 	public boolean equals(Object o) {
@@ -37,7 +38,9 @@ public final class ListType extends SetType {
 			return false;
 		}
 		ListType at = (ListType) o;
-		return at.element().equals(element());
+		return at.element().equals(element())
+				&& (constraint == at.constraint || (constraint != null && constraint
+						.equals(at.constraint)));
 	}
 		
 	public boolean isSubtype(Type t, Map<String, Type> environment) {
@@ -57,7 +60,7 @@ public final class ListType extends SetType {
 	}
 	
 	public Type flattern() {
-		return new ListType(element().flattern());
+		return new ListType(element().flattern(),constraint);
 	}
 	
 	public WType convert() {
@@ -65,7 +68,7 @@ public final class ListType extends SetType {
 	}
 	
 	public Type substitute(Map<String, Type> binding) {
-		return new ListType(element().substitute(binding));
+		return new ListType(element().substitute(binding),constraint);
 	}
 	
 	public <T> Set<T> match(Class<T> type) {
@@ -78,6 +81,6 @@ public final class ListType extends SetType {
 	}
 	
 	public String toString() {
-		return "[" + element().toString() + "]";
+		return "[" + element().toString() + "]" + super.toString();
 	}
 }

@@ -18,6 +18,7 @@
 
 package wyjc.ast.types;
 
+import wyjc.ast.exprs.Condition;
 import wyjc.ast.types.unresolved.UnresolvedType;
 import wyone.core.WExpr;
 import wyone.core.WType;
@@ -30,26 +31,44 @@ import java.util.*;
  * 
  * @author djp
  */
-public interface Type extends UnresolvedType { 
+public interface Type extends UnresolvedType {
 	/**
-	 * Determine whether a given type is a subtype of this type.
+	 * Determine whether a given type is a subtype of this type. Observe that
+	 * this only considers the types themselves, not any constraints that may be
+	 * imposed upon them (since we cannot reason about constraints here).
+	 * Therefore, it's entirely possible that this will report two types are
+	 * subtypes of each other when, in fact, they're not (if constraints are
+	 * considered). For example, consider:
+	 * 
+	 * <pre>
+	 * define nat as int where $ >= 0
+	 * define pos as int where $ > 0
+	 * </pre>
+	 * 
+	 * Now, this method will report that nat <: pos (since int <: int).
 	 * 
 	 * @param t
+	 *            --- the type being tested to see whether it's a subtype of
+	 *            this type.
+	 * @param environment
+	 *            --- this is used to propagate the types of internally
+	 *            generated variables (i.e. arising from RecursiveType).
+	 *            Initially, you should just supply Collections.EMPTY_MAP.
 	 * @return
 	 */
-	public abstract boolean isSubtype(Type t, Map<String, Type> environment);
+	public boolean isSubtype(Type t, Map<String, Type> environment);
 	
 	/**
 	 * Strip off all named types.
 	 */
-	public abstract Type flattern();
+	public Type flattern();
 	
 	/**
 	 * Substitute matching type variables for new names 
 	 * @param binding
 	 * @return
 	 */
-	public abstract Type substitute(Map<String, Type> binding);
+	public Type substitute(Map<String, Type> binding);
 
 	/**
 	 * Return every subcomponent of this type which is an instanceof of the
@@ -59,14 +78,28 @@ public interface Type extends UnresolvedType {
 	 * @param type
 	 * @return
 	 */
-	public abstract <T> Set<T> match(Class<T> type);
-	
-	public abstract boolean isExistential(); 	
+	public <T> Set<T> match(Class<T> type);
+
+	/**
+	 * Determine whether or not this type contains an existential.
+	 * 
+	 * @return
+	 */
+	public boolean isExistential();
+
+	/**
+	 * Every type may have an optional constraint. If there is no constraint,
+	 * this will be null. Within the constraint the special variable $ is used
+	 * to refer to the variable of this type.
+	 * 
+	 * @return
+	 */
+	public Condition constraint();
 	
 	/**
 	 * Convert a whiley type into a wyone type.
 	 * @param target
 	 * @return
 	 */
-	public abstract WType convert();
+	public WType convert();
 }

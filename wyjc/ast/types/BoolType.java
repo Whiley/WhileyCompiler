@@ -23,22 +23,31 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import wyjc.ast.exprs.Condition;
 import wyone.core.WType;
 import wyone.theory.logic.WBoolType;
 import wyone.theory.numeric.WIntType;
 
 
-public final class BoolType implements NonUnionType {
-	public String toString() { return "bool"; }
+public final class BoolType extends ConstrainedType implements NonUnionType {
+	public String toString() { return "bool" + super.toString(); }
 	
-	BoolType() {}
+	BoolType(Condition constraint) {
+		super(constraint);		
+	}
 	
 	public boolean equals(Object o) {
-		return o == Types.T_BOOL;
+		if(o instanceof BoolType) {
+			BoolType bt = (BoolType) o;
+			return constraint == bt.constraint
+					|| (constraint != null && constraint.equals(bt.constraint));			
+		}
+		return false;
 	}
 	
 	public int hashCode() {
-		return 2;
+		int hc = constraint == null ? 0 : constraint.hashCode();
+		return 2 + hc;
 	}
 	
 	public boolean isSubtype(Type t, Map<String, Type> environment) {

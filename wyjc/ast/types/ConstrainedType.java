@@ -18,55 +18,44 @@
 
 package wyjc.ast.types;
 
-import java.util.*;
+import wyjc.ast.exprs.Condition;
 
-import wyone.core.WType;
-import wyone.theory.numeric.WIntType;
+/**
+ * Every type may have an optional constraint. Within the constraint, the
+ * special variable $ is used to refer to the variable of this type.
+ * 
+ * @author djp
+ * 
+ */
+public abstract class ConstrainedType {
+	protected final Condition constraint;
 
-public class AnyType extends ConstrainedType implements NonUnionType {
-	public String toString() { return "*"; }
-	
-	AnyType() {}
-	
-	public boolean equals(Object o) {
-		return o == Types.T_ANY;
+	/**
+	 * Create a constrained type with a given condition. This condition may be
+	 * null.
+	 * 
+	 * @param constraint
+	 */
+	public ConstrainedType(Condition constraint) {
+		this.constraint = constraint;
 	}
 	
-	public int hashCode() {
-		return 3;
+	/**
+	 * Create a constrained type with no condition.
+	 */
+	public ConstrainedType() {
+		constraint = null;
 	}
 	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {		
-		return true;
+	public Condition constraint() {
+		return constraint;
 	}
 	
-	public Type flattern() {
-		return this;
-	}
-	
-	public Type lub(Type t) {
-		return this;
-	}	
-	
-	public boolean isExistential() {
-		return false;
-	}
-	
-	public Type substitute(Map<String, Type> binding) {
-		return this;
-	}
-	
-	public <T> Set<T> match(Class<T> type) {
-		if(AnyType.class == type) {
-			HashSet r = new HashSet();
-			r.add(this);
-			return r;
+	public String toString() {
+		if(constraint == null) {
+			return "";
 		} else {
-			return Collections.EMPTY_SET;
+			return " where " + constraint;
 		}
-	}
-	
-	public WType convert() {
-		return WIntType.T_INT;
 	}
 }

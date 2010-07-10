@@ -20,14 +20,16 @@ package wyjc.ast.types;
 
 import java.util.*;
 
+import wyjc.ast.exprs.Condition;
 import wyone.core.WType;
 
 
-public class FunType implements Type {
+public class FunType extends ConstrainedType implements Type {
 	private Type ret;
 	private ArrayList<Type> parameters;
 	
-	public FunType(Type ret, Collection<Type> parameters) {
+	public FunType(Type ret, Collection<Type> parameters, Condition constraint) {
+		super(constraint);
 		this.ret = ret;
 		this.parameters = new ArrayList<Type>(parameters);
 	}
@@ -66,7 +68,7 @@ public class FunType implements Type {
 		for(Type p : parameters) {
 			fps.add(p.flattern());
 		}
-		return new FunType(ret.flattern(),fps);
+		return new FunType(ret.flattern(),fps,constraint);
 	}
 
 	public boolean isExistential() {
@@ -81,22 +83,26 @@ public class FunType implements Type {
 	public boolean equals(Object o) {
 		if (o instanceof FunType) {
 			FunType ft = (FunType) o;
-			return ret.equals(ft.ret) && parameters.equals(ft.parameters);
+			return ret.equals(ft.ret)
+					&& parameters.equals(ft.parameters)
+					&& (constraint == ft.constraint || (constraint != null && constraint
+							.equals(ft.constraint)));
 		}
 		return false;
 	}
 
+	public int hashCode() {
+		int hc = constraint == null ? 0 : constraint.hashCode();
+		return ret.hashCode() + parameters.hashCode() + hc;
+	}
+	
 	public Type substitute(Map<String, Type> binding) {
 		Type retType = ret.substitute(binding);
 		ArrayList<Type> params = new ArrayList<Type>();
 		for(Type t : parameters) {
 			params.add(t.substitute(binding));
-		}
-		return new FunType(retType,parameters);
-	}
-	
-	public int hashCode() {
-		return ret.hashCode() + parameters.hashCode();
+		}		
+		return new FunType(retType,parameters,constraint);
 	}
 	
 	public String toString() {
@@ -109,7 +115,7 @@ public class FunType implements Type {
 			firstTime=false;
 			r += t.toString();
 		}
-		return r + ")";		
+		return r + ")" + super.toString();		
 	}
 	
 	public <T> Set<T> match(Class<T> type) {

@@ -32,7 +32,7 @@ import wyone.core.WType;
  * @author djp
  * 
  */
-public class NamedType implements NonUnionType {
+public class NamedType extends ConstrainedType implements NonUnionType {
 	private ModuleID module;
 	private String name;
 	private Type type; // underlying type

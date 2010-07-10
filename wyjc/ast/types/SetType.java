@@ -22,13 +22,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import wyjc.ast.exprs.Condition;
 import wyone.core.WType;
 import wyone.theory.set.WSetType;
 
-public class SetType implements NonUnionType {
+public class SetType extends ConstrainedType implements NonUnionType {
 	private Type element;
 	
-	public SetType(Type element) {
+	public SetType(Type element, Condition constraint) {
+		super(constraint);
 		this.element = element;
 	}
 	
@@ -41,11 +43,14 @@ public class SetType implements NonUnionType {
 			return false;
 		}
 		SetType at = (SetType) o;
-		return at.element.equals(element);
+		return at.element.equals(element)
+				&& (constraint == at.constraint || (constraint != null && constraint
+						.equals(at.constraint)));
 	}
 	
 	public int hashCode() {
-		return element.hashCode() * 123;
+		int hc = constraint == null ? 0 : constraint.hashCode();
+		return (element.hashCode() * 123) + hc;
 	}
 	
 	public boolean isSubtype(Type t, Map<String, Type> environment) {
@@ -68,7 +73,7 @@ public class SetType implements NonUnionType {
 	}
 		
 	public Type flattern() {
-		return new SetType(element.flattern());
+		return new SetType(element.flattern(),constraint);
 	}
 	
 	public boolean isExistential() {
@@ -76,7 +81,7 @@ public class SetType implements NonUnionType {
 	}
 		
 	public String toString() {
-		return "{" + element.toString() + "}";
+		return "{" + element.toString() + "}" + super.toString();
 	}
 	
 	public <T> Set<T> match(Class<T> type) {
@@ -89,7 +94,7 @@ public class SetType implements NonUnionType {
 	}
 	
 	public Type substitute(Map<String, Type> binding) {
-		return new SetType(element.substitute(binding));
+		return new SetType(element.substitute(binding),constraint);
 	}
 	
 	public WType convert() {

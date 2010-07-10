@@ -23,21 +23,30 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import wyjc.ast.exprs.Condition;
 import wyone.core.WType;
 import wyone.theory.numeric.WRealType;
 
-public final class RealType implements NonUnionType {
-	public String toString() { return "real"; }
+public final class RealType extends ConstrainedType implements NonUnionType {
+	public String toString() { return "real" + super.toString(); }
 	
-	RealType() {}
+	RealType(Condition constraint) {
+		super(constraint);
+	}
 	
 	public boolean equals(Object o) {
-		return o == Types.T_REAL;
+		if(o instanceof RealType) {
+			RealType bt = (RealType) o;
+			return constraint == bt.constraint
+					|| (constraint != null && constraint.equals(bt.constraint));			
+		}
+		return false;
 	}
 	
 	public int hashCode() {
-		return 1;
-	}
+		int hc = constraint == null ? 0 : constraint.hashCode();
+		return 2 + hc;
+	}			
 	
 	public boolean isSubtype(Type t, Map<String, Type> environment) {
 		if(t instanceof NamedType) {

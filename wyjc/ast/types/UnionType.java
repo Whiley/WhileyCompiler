@@ -23,7 +23,7 @@ import java.util.*;
 import wyone.core.WType;
 import wyone.theory.type.WUnionType;
 
-public class UnionType implements Type {
+public class UnionType extends ConstrainedType implements Type {
 	private HashSet<NonUnionType> types;
 	
 	public UnionType(Collection<NonUnionType> types) {
@@ -43,13 +43,17 @@ public class UnionType implements Type {
 	
 	public boolean equals(Object o) {
 		if(o instanceof UnionType) {
-			return ((UnionType)o).types.equals(types);
+			UnionType ut = (UnionType) o;
+			return ut.types.equals(types)
+					&& (constraint == ut.constraint || (constraint != null && constraint
+							.equals(ut.constraint)));
 		}
 		return false;
 	}
 	
 	public int hashCode() {
-		return types.hashCode();
+		int hc = constraint == null ? 0 : constraint.hashCode();
+		return types.hashCode() + hc;
 	}
 	
 	public boolean isSubtype(Type t, Map<String, Type> environment) {
@@ -133,7 +137,7 @@ public class UnionType implements Type {
 			firstTime=false;
 			r += t.toString();
 		}
-		return r;
+		return r + super.toString();
 	}
 	
 	public WType convert() {

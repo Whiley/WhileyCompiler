@@ -21,16 +21,41 @@ package wyjc.ast.types;
 import java.util.*;
 
 import wyjc.ast.attrs.SyntacticElement;
+import wyjc.ast.exprs.Condition;
 import static wyjc.util.SyntaxError.*;
 
 public class Types {
 	public static final AnyType T_ANY = new AnyType();
-	public static final BoolType T_BOOL = new BoolType();
-	public static final IntType T_INT = new IntType();
-	public static final RealType T_REAL = new RealType();
 	public static final VoidType T_VOID = new VoidType();
 	public static final ExistentialType T_EXISTENTIAL = new ExistentialType();
-		
+	public static final BoolType T_BOOL = new BoolType(null);
+	public static final IntType T_INT = new IntType(null);
+	public static final RealType T_REAL = new RealType(null);
+	
+	public static IntType T_INT(Condition constraint) {
+		if(constraint == null) {
+			return T_INT;
+		} else {
+			return new IntType(constraint);
+		}
+	}
+	
+	public static RealType T_REAL(Condition constraint) {
+		if(constraint == null) {
+			return T_REAL;
+		} else {
+			return new RealType(constraint);
+		}
+	}
+	
+	public static BoolType T_BOOL(Condition constraint) {
+		if(constraint == null) {
+			return T_BOOL;
+		} else {
+			return new BoolType(constraint);
+		}
+	}
+	
 	public static Type leastUpperBound(Type t1, Type t2) {		
 		// NOTE. There are still bugs in this algorithm.
 		

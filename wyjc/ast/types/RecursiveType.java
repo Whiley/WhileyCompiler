@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import wyjc.ast.exprs.Condition;
 import wyjc.util.*;
 import wyone.core.WType;
 import wyone.theory.type.WRecursiveType;
@@ -35,16 +36,17 @@ import wyone.theory.type.WRecursiveType;
  * @author djp
  * 
  */
-public class RecursiveType implements NonUnionType {	
+public class RecursiveType extends ConstrainedType implements NonUnionType {	
 	private final String name;
 	private final Type type; // underlying type
 	
-	// care needed here to avoid capture.
-	public RecursiveType(String name, Type type) {						
+	// care needed here to avoid capture.	
+	public RecursiveType(String name, Type type, Condition constraint) {
+		super(constraint);
 		this.name = name;
-		this.type = type;		
+		this.type = type;
 	}
-		
+	
 	public String name() {
 		return name;
 	}
@@ -71,7 +73,7 @@ public class RecursiveType implements NonUnionType {
 			RecursiveType nt = (RecursiveType) t;			
 			Type nt_type = nt.type();
 			HashMap<String,Type> binding = new HashMap();
-			binding.put(nt.name(), new RecursiveType(name,null));
+			binding.put(nt.name(), new RecursiveType(name,null,null));
 			t = nt_type.substitute(binding);
 		}
 		
@@ -98,7 +100,7 @@ public class RecursiveType implements NonUnionType {
 				RecursiveType rt = (RecursiveType) t;
 				n = rt.name();
 			}
-			return new RecursiveType(n,tt);			
+			return new RecursiveType(n,tt,constraint);			
 		} else {
 			Type t = binding.get(name);
 			if(t == null) { return this; }
@@ -125,16 +127,18 @@ public class RecursiveType implements NonUnionType {
 	public boolean equals(Object o) {
 		if(o instanceof RecursiveType) {
 			RecursiveType nt = (RecursiveType) o;			
-			// FIXME: not completely sure about this
 			return name.equals(nt.name)
 					&& (type == nt.type || (type != null && type
-							.equals(nt.type)));
+							.equals(nt.type)))
+					&& (constraint == nt.constraint || (constraint != null && constraint
+							.equals(nt.constraint)));
 		} 
 		return false;
 	}
 			
 	public int hashCode() {
-		return name.hashCode();
+		int hc = constraint == null ? 0 : constraint.hashCode();
+		return name.hashCode() + hc;
 	}
 	
 	public String toString() {
