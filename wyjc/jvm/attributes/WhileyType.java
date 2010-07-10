@@ -71,6 +71,145 @@ public class WhileyType implements BytecodeAttribute {
 		addPoolItems(condition, constantPool);		
 	}
 	
+
+	protected static void addPoolItems(Type type,
+			Set<Constant.Info> constantPool) {
+		if(type instanceof ListType) {
+			ListType lt = (ListType) type;
+			addPoolItems(lt.element(),constantPool);
+		} else if(type instanceof SetType) {
+			SetType st = (SetType) type;
+			addPoolItems(st.element(),constantPool);
+		} else if(type instanceof TupleType) {
+			TupleType tt = (TupleType) type;
+			for(Map.Entry<String,Type> p : tt.types().entrySet()) {
+				Constant.Utf8 utf8 = new Constant.Utf8(p.getKey());
+				Constant.addPoolItem(utf8,constantPool);
+				addPoolItems(p.getValue(),constantPool);
+			}
+		} else if(type instanceof UnionType) {
+			UnionType ut = (UnionType) type;			
+			for(Type p : ut.types()) {
+				addPoolItems(p,constantPool);	
+			}	
+		} else if(type instanceof ProcessType) {
+			ProcessType st = (ProcessType) type;
+			addPoolItems(st.element(),constantPool);
+		} else if(type instanceof NamedType) {
+			NamedType lt = (NamedType) type;
+			Constant.Utf8 utf8 = new Constant.Utf8(lt.module().toString());
+			Constant.addPoolItem(utf8,constantPool);
+			utf8 = new Constant.Utf8(lt.name());	
+			Constant.addPoolItem(utf8,constantPool);
+			addPoolItems(lt.type(),constantPool);
+		} else if(type instanceof RecursiveType) {
+			RecursiveType lt = (RecursiveType) type;
+			String name = lt.name();
+			Constant.Utf8 utf8 = new Constant.Utf8(name);
+			Constant.addPoolItem(utf8,constantPool);					
+			if(lt.type() != null) {
+				addPoolItems(lt.type(),constantPool);
+			}
+		} else if(type instanceof FunType) {
+			FunType ft = (FunType) type;
+			for(Type t : ft.parameters()) {
+				addPoolItems(t,constantPool);
+			}
+			addPoolItems(ft.returnType(),constantPool);
+		}
+	}
+		
+	public static void write(Type t, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		
+		Condition constraint = t.constraint();
+		byte mask = (byte) (constraint == null ? 0 : CONSTRAINT_MASK);		
+		
+		if(t == Types.T_EXISTENTIAL) {
+			writer.write_u1(EXISTENTIAL_TYPE | mask);
+		} else if(t == Types.T_VOID) {
+			writer.write_u1(VOID_TYPE);
+		} else if(t == Types.T_BOOL) {
+			writer.write_u1(BOOL_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+		} else if(t == Types.T_INT) {
+			writer.write_u1(INT_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }			
+		} else if(t == Types.T_REAL) {
+			writer.write_u1(REAL_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+		} else if(t instanceof ListType) {
+			ListType lt = (ListType) t;
+			writer.write_u1(LIST_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+			write(lt.element(),writer,constantPool);
+		} else if(t instanceof SetType) {
+			SetType st = (SetType) t;
+			writer.write_u1(SET_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+			write(st.element(),writer,constantPool);
+		} else if(t instanceof TupleType) {
+			TupleType tt = (TupleType) t;
+			writer.write_u1(TUPLE_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+			// FIXME: bug here if number of entries > 64K
+			writer.write_u2(tt.types().size());
+			for(Map.Entry<String,Type> p : tt.types().entrySet()) {
+				Constant.Utf8 utf8 = new Constant.Utf8(p.getKey());
+				writer.write_u2(constantPool.get(utf8));
+				write(p.getValue(),writer,constantPool);	
+			}			
+		} else if(t instanceof UnionType) {
+			UnionType ut = (UnionType) t;
+			writer.write_u1(UNION_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+			// FIXME: bug here if number of bounds > 64K
+			writer.write_u2(ut.types().size());
+			for(Type p : ut.types()) {
+				write(p,writer,constantPool);	
+			}			
+		} else if(t instanceof ProcessType) {
+			ProcessType st = (ProcessType) t;
+			writer.write_u1(PROCESS_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+			write(st.element(),writer,constantPool);
+		} else if(t instanceof NamedType) {
+			NamedType st = (NamedType) t;
+			writer.write_u1(NAMED_TYPE | mask);
+			Constant.Utf8 utf8 = new Constant.Utf8(st.module().toString());
+			writer.write_u2(constantPool.get(utf8));
+			utf8 = new Constant.Utf8(st.name());
+			writer.write_u2(constantPool.get(utf8));
+			write(st.type(),writer,constantPool);
+		} else if(t instanceof RecursiveType) {
+			RecursiveType st = (RecursiveType) t;
+			if(st.type() != null) {
+				writer.write_u1(RECURSIVE_TYPE | mask);
+				if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+			} else {
+				writer.write_u1(RECURSIVE_LEAF);
+			}
+			String name = st.name();
+			Constant.Utf8 utf8 = new Constant.Utf8(name);
+			writer.write_u2(constantPool.get(utf8));			
+			if(st.type() != null) {
+				write(st.type(),writer,constantPool);
+			}
+		} else if(t instanceof FunType) {
+			FunType st = (FunType) t;
+			writer.write_u1(FUN_TYPE | mask);
+			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
+			write(st.returnType(),writer,constantPool);
+			writer.write_u2(st.parameters().size());
+			for(Type p : st.parameters()) {
+				write(p,writer,constantPool);
+			}
+		} else {
+			throw new RuntimeException("unknown type encountered: " + t);
+		}
+	}
+	
+	
 	public static void addPoolItems(Expr expr, Set<Constant.Info> constantPool) {
 		try {
 			if (expr instanceof BoolVal || expr instanceof IntVal
@@ -133,7 +272,7 @@ public class WhileyType implements BytecodeAttribute {
 				Constant.addPoolItem(new Constant.Utf8(v.name()), constantPool);				
 			} else if(expr instanceof Invoke) {
 				Invoke v = (Invoke) expr;
-				WhileyDefine.addPoolItems(v.funType(), constantPool);
+				addPoolItems(v.funType(), constantPool);
 				Constant.addPoolItem(new Constant.Utf8(v.module().toString()), constantPool);
 				Constant.addPoolItem(new Constant.Utf8(v.name()), constantPool);
 				for(Expr e : v.arguments()) {
@@ -141,13 +280,13 @@ public class WhileyType implements BytecodeAttribute {
 				}	
 			} else if(expr instanceof TypeGate) {
 				TypeGate la = (TypeGate) expr;
-				WhileyDefine.addPoolItems(la.lhsTest(), constantPool);
+				addPoolItems(la.lhsTest(), constantPool);
 				Constant.addPoolItem(new Constant.Utf8(la.variable()), constantPool);
 				addPoolItems(la.lhs(),constantPool);
 				addPoolItems(la.rhs(),constantPool);
 			} else if(expr instanceof TypeEquals) {
 				TypeEquals la = (TypeEquals) expr;
-				WhileyDefine.addPoolItems(la.lhsTest(), constantPool);
+				addPoolItems(la.lhsTest(), constantPool);
 				Constant.addPoolItem(new Constant.Utf8(la.variable()), constantPool);
 				addPoolItems(la.lhs(),constantPool);
 				addPoolItems(la.rhs(),constantPool);
@@ -471,7 +610,7 @@ public class WhileyType implements BytecodeAttribute {
 	public static void writeCondition(TypeGate expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(TYPEGATE);		
-		WhileyDefine.write(expr.lhsTest(),writer,constantPool);
+		write(expr.lhsTest(),writer,constantPool);
 		writer.write_u2(constantPool.get(new Constant.Utf8(expr.variable())));
 		writeCondition(expr.lhs(),writer,constantPool);
 		writeCondition(expr.rhs(),writer,constantPool);
@@ -480,7 +619,7 @@ public class WhileyType implements BytecodeAttribute {
 	public static void writeCondition(TypeEquals expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(TYPEEQUALS);		
-		WhileyDefine.write(expr.lhsTest(),writer,constantPool);
+		write(expr.lhsTest(),writer,constantPool);
 		writer.write_u2(constantPool.get(new Constant.Utf8(expr.variable())));
 		writeCondition(expr.lhs(),writer,constantPool);
 		writeCondition(expr.rhs(),writer,constantPool);
@@ -491,7 +630,7 @@ public class WhileyType implements BytecodeAttribute {
 		writer.write_u2(INVOKE);
 		Constant.Utf8 utf8 = new Constant.Utf8(expr.module().toString()); 
 		writer.write_u2(constantPool.get(utf8));
-		WhileyDefine.write(expr.funType(),writer,constantPool);
+		write(expr.funType(),writer,constantPool);
 		utf8 = new Constant.Utf8(expr.name()); 
 		writer.write_u2(constantPool.get(utf8));
 		writer.write_u2(expr.arguments().size());
@@ -646,14 +785,14 @@ public class WhileyType implements BytecodeAttribute {
 					e2 = readExpr(reader, constantPool);
 					return new TupleNotEquals(e1,e2);
 				case TYPEGATE:			
-					Type t = WhileyDefine.Reader.readType(reader,constantPool);
+					Type t = readType(reader,constantPool);
 					int idx = reader.read_u2(); 
 					e1 = readExpr(reader, constantPool);
 					rhs = readCondition(reader, constantPool);
 					Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
 					return new TypeGate(t,utf8.str,e1,rhs);
 				case TYPEEQUALS:			
-					t = WhileyDefine.Reader.readType(reader,constantPool);
+					t = readType(reader,constantPool);
 					idx = reader.read_u2(); 
 					e1 = readExpr(reader, constantPool);
 					rhs = readCondition(reader, constantPool);
@@ -675,7 +814,7 @@ public class WhileyType implements BytecodeAttribute {
 					return new Variable(utf8.str);
 				case INVOKE:							
 					Constant.Utf8 module = (Constant.Utf8) constantPool.get(reader.read_u2());
-					FunType t = (FunType) WhileyDefine.Reader.readType(reader,constantPool);
+					FunType t = (FunType) readType(reader,constantPool);
 					Constant.Utf8 name = (Constant.Utf8) constantPool.get(reader.read_u2());
 					int size = reader.read_u2();
 					ArrayList<Expr> args = new ArrayList<Expr>();
@@ -828,8 +967,107 @@ public class WhileyType implements BytecodeAttribute {
 			}
 			return readCondition(code,reader,constantPool);
 		}
+		
+		public static Type readType(BinaryInputStream input,
+				Map<Integer, Constant.Info> constantPool) throws IOException {
+			int t = input.read_u1();
+			Condition constraint = null;
+			
+			if((t & CONSTRAINT_MASK) != 0) {
+				constraint = readCondition(input,constantPool);
+			}
+			
+			switch(t) {
+				case EXISTENTIAL_TYPE:
+					return Types.T_EXISTENTIAL;
+				case VOID_TYPE:
+					return Types.T_VOID;
+				case BOOL_TYPE:
+					return Types.T_BOOL(constraint);
+				case INT_TYPE:
+					return Types.T_INT(constraint);
+				case REAL_TYPE:
+					return Types.T_REAL(constraint);
+				case LIST_TYPE:
+					Type et = readType(input,constantPool);
+					return new ListType(et,constraint);
+				case SET_TYPE:
+					et = readType(input,constantPool);
+					return new SetType(et,constraint);
+				case TUPLE_TYPE:
+					int nents = input.read_u2();					
+					HashMap<String,Type> types = new HashMap<String,Type>();
+					for(int i=0;i!=nents;++i) {
+						String key = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
+						et = readType(input,constantPool);
+						types.put(key,et);
+					}
+					return new TupleType(types,constraint);
+				case UNION_TYPE:
+					nents = input.read_u2();					
+					ArrayList<NonUnionType> bounds = new ArrayList<NonUnionType>();
+					for(int i=0;i!=nents;++i) {						
+						et = readType(input,constantPool);
+						bounds.add((NonUnionType) et);
+					}
+					return new UnionType(bounds,constraint);
+				case PROCESS_TYPE:
+					et = readType(input,constantPool);
+					return new ProcessType(et);
+				case NAMED_TYPE:
+				{					
+					ModuleID module = readModule(input,constantPool);
+					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
+					et = readType(input,constantPool);
+					return new NamedType(module,name,et);
+				}
+				case RECURSIVE_TYPE:
+				{										
+					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
+					et = readType(input,constantPool);
+					return new RecursiveType(name,et,constraint);
+				}
+				case RECURSIVE_LEAF:
+				{										
+					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
+					return new RecursiveType(name,null,null);					
+				}
+				case FUN_TYPE:
+					Type ret = readType(input,constantPool);
+					int count = input.read_u2();
+					ArrayList<Type> ftypes = new ArrayList<Type>();
+					for(int i=0;i!=count;++i) {
+						ftypes.add(readType(input,constantPool));
+					}
+					return new FunType(ret,ftypes,constraint);				
+			}
+			
+			throw new RuntimeException("Unknown type id encountered: " + t);
+		}
+		
+		protected static ModuleID readModule(BinaryInputStream input,
+				Map<Integer, Constant.Info> constantPool) throws IOException {
+			String modstr = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
+			return ModuleID.fromString(modstr);
+		}
 	}
 	
+	public static final int EXISTENTIAL_TYPE = 1;
+	public static final int VOID_TYPE = 2;
+	public static final int BOOL_TYPE = 3;
+	public static final int INT_TYPE = 4;
+	public static final int REAL_TYPE = 5;
+	public static final int LIST_TYPE = 6;
+	public static final int SET_TYPE = 7;
+	public static final int TUPLE_TYPE = 8;
+	public static final int UNION_TYPE = 9;
+	public static final int INTERSECTION_TYPE = 10;
+	public static final int PROCESS_TYPE = 11;
+	public static final int NAMED_TYPE = 12;
+	public static final int FUN_TYPE = 13;
+	public static final int RECURSIVE_TYPE = 14;
+	public static final int RECURSIVE_LEAF = 15;
+	public static final int CONSTRAINT_MASK = 16;
 	
 	private final static int NULL = 0;
 	private final static int VARIABLE = 1;

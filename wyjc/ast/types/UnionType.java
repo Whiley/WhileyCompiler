@@ -27,7 +27,7 @@ import wyone.theory.type.WUnionType;
 public class UnionType extends ConstrainedType implements Type {
 	private HashSet<NonUnionType> types;
 	
-	public UnionType(Condition constraint, Collection<NonUnionType> types) {
+	public UnionType(Collection<NonUnionType> types, Condition constraint) {
 		super(constraint);
 		this.types = new HashSet<NonUnionType>(types);
 	}
@@ -113,7 +113,7 @@ public class UnionType extends ConstrainedType implements Type {
 		for (NonUnionType b : types) {
 			ts.add((NonUnionType) b.substitute(binding));
 		}
-		return new UnionType(constraint, ts);
+		return new UnionType(ts, constraint);
 	}
 	
 	public <T> Set<T> match(Class<T> type) {
