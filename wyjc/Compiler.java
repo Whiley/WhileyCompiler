@@ -34,8 +34,7 @@ public class Compiler {
 	protected ArrayList<UnresolvedWhileyFile> queue = new ArrayList<UnresolvedWhileyFile>();	
 	
 	protected NameResolution nameResolver;
-	protected TypeResolution typeResolver;	
-	protected ExpandConstraints constraintExpander = new ExpandConstraints();
+	protected TypeResolution typeResolver;		
 	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
 	protected DefiniteAssignmentChecker defAssignChecker = new DefiniteAssignmentChecker();
 	protected FunctionChecker functionChecker = new FunctionChecker();
@@ -181,9 +180,6 @@ public class Compiler {
 	 */
 	public void finishCompilation(UnresolvedWhileyFile uwf) {				
 		
-		// expand pre and post-condition constraints.
-		expandConstraints(uwf);
-		
 		// Resolve the file
 		ResolvedWhileyFile rwf = buildResolvedFile(uwf);
 		
@@ -234,14 +230,6 @@ public class Compiler {
 				System.currentTimeMillis() - start);		
 		
 	}
-	
-	protected void expandConstraints(UnresolvedWhileyFile m) {
-		long start = System.currentTimeMillis();		
-		constraintExpander.expand(m);
-		logTimedMessage("[" + m.filename() + "] expanded constraints",
-				System.currentTimeMillis() - start);		
-		
-	}		
 	
 	protected ResolvedWhileyFile buildResolvedFile(UnresolvedWhileyFile m) {
 		long start = System.currentTimeMillis();		
