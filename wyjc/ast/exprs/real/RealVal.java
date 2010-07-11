@@ -95,11 +95,11 @@ public class RealVal extends SyntacticElementImpl implements Expr,Value {
 	}
 	
 	public Type type(Map<String,Type> environment) {
-		return Types.T_REAL;
+		return Types.T_REAL(null);
 	}
 	
 	public Type type() {
-		return Types.T_REAL;
+		return Types.T_REAL(null);
 	}
 	
 	public boolean equals(Object o) {

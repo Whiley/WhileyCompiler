@@ -31,15 +31,15 @@ import wyone.theory.logic.*;
 public abstract class ConditionBinOp<T extends Expr> extends BinOp<T> implements Condition {
 	
 	public ConditionBinOp(T lhs, T rhs, Attribute... attributes) {
-		super(lhs,rhs,Types.T_BOOL,attributes);
+		super(lhs,rhs,Types.T_BOOL(null),attributes);
 	}
 	
 	public ConditionBinOp(T lhs, T rhs, Collection<Attribute> attributes) {
-		super(lhs,rhs,Types.T_BOOL,attributes);		
+		super(lhs,rhs,Types.T_BOOL(null),attributes);		
 	}	
 	
 	public BoolType type(Map<String,Type> environment) {
-		return Types.T_BOOL;
+		return Types.T_BOOL(null);
 	}
 	
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,

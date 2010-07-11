@@ -190,11 +190,11 @@ public class PostConditionGenerator {
 	
 	protected Condition equate(Expr lhs, Expr rhs, Type type,
 			List<Attribute> attributes) {
-		if (type == Types.T_BOOL) {
+		if (type instanceof BoolType) {
 			return new BoolEquals(lhs, rhs, attributes);
-		} else if (type == Types.T_INT) {
+		} else if (type instanceof IntType) {
 			return new IntEquals(lhs, rhs, attributes);
-		} else if (type == Types.T_REAL) {
+		} else if (type instanceof RealType) {
 			return new RealEquals(lhs, rhs, attributes);
 		} else if (type instanceof TupleType) {
 			return new TupleEquals(lhs, rhs, attributes);

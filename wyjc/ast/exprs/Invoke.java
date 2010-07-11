@@ -184,7 +184,9 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		for (ModuleInfo.Method function : mi.method(name, ftype)) {
 			WFormula mcs = WBool.TRUE;
 			
-			if (function.postCondition() != null) {
+			// FIXME: need to sort this out
+			Condition postCondition = null; // was function.postCondition()
+			if (postCondition != null) {
 				
 				// Ok, here we need to translate the post-condition
 
@@ -203,7 +205,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 					binding.put(new WVariable(p_name), p_expr);					
 				}
 
-				Pair<WFormula, WFormula> pc = function.postCondition()
+				Pair<WFormula, WFormula> pc = postCondition
 						.convertCondition(environment, loader);
 		
 				mcs = WFormulas.and(pc.first(), pc.second()).substitute(

@@ -270,6 +270,8 @@ public class ClassFileBuilder {
 		Code code = new Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);
 		
+		// FIXME: I need to write out the true method type here 
+		/*
 		Condition preCondition = fd.preCondition();
 		if(preCondition != null) {			
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
@@ -287,6 +289,7 @@ public class ClassFileBuilder {
 			WhileyType wc = new WhileyType("WhileyPostCondition",postCondition);
 			cm.attributes().add(wc);
 		}
+		*/
 		return cm;
 	}
 	
@@ -705,9 +708,9 @@ public class ClassFileBuilder {
 	protected void translateCondition(RealEquals e, String trueLabel,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment, bytecodes);		
+		convert(Types.T_REAL(null),e.lhs(), slots, environment, bytecodes);		
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "equals", ftype,
 				Bytecode.VIRTUAL));
@@ -716,9 +719,9 @@ public class ClassFileBuilder {
 	protected void translateCondition(RealNotEquals e, String trueLabel,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment, bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "equals", ftype,
 				Bytecode.VIRTUAL));
@@ -728,9 +731,9 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots, HashMap<String, Type> environment,
 			ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment, bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));
@@ -740,9 +743,9 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots, HashMap<String, Type> environment,
 			ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment, bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));
@@ -751,9 +754,9 @@ public class ClassFileBuilder {
 	protected void translateCondition(RealGreaterThan e, String trueLabel,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment, bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));
@@ -762,9 +765,9 @@ public class ClassFileBuilder {
 	protected void translateCondition(RealGreaterThanEquals e, String trueLabel,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment, bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment, bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));		
@@ -1366,9 +1369,9 @@ public class ClassFileBuilder {
 	protected void translate(RealAdd e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "add", ftype,
 				Bytecode.VIRTUAL));
@@ -1376,9 +1379,9 @@ public class ClassFileBuilder {
 	protected void translate(RealSub e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "subtract", ftype,
 				Bytecode.VIRTUAL));
@@ -1386,9 +1389,9 @@ public class ClassFileBuilder {
 	protected void translate(RealMul e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "multiply", ftype,
 				Bytecode.VIRTUAL));
@@ -1396,9 +1399,9 @@ public class ClassFileBuilder {
 	protected void translate(RealDiv e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "divide", ftype,
 				Bytecode.VIRTUAL));
@@ -1406,9 +1409,9 @@ public class ClassFileBuilder {
 	protected void translate(RealEquals e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);		
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);		
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "equals", ftype,
 				Bytecode.VIRTUAL));
@@ -1416,9 +1419,9 @@ public class ClassFileBuilder {
 	protected void translate(RealNotEquals e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);		
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);		
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "equals", ftype,
 				Bytecode.VIRTUAL));
@@ -1435,9 +1438,9 @@ public class ClassFileBuilder {
 	protected void translate(RealLessThan e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));
@@ -1454,9 +1457,9 @@ public class ClassFileBuilder {
 	protected void translate(RealLessThanEquals e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));
@@ -1473,9 +1476,9 @@ public class ClassFileBuilder {
 	protected void translate(RealGreaterThan e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));
@@ -1492,9 +1495,9 @@ public class ClassFileBuilder {
 	protected void translate(RealGreaterThanEquals e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.lhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.lhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.lhs(), slots, environment,bytecodes);
 		translate(e.rhs(), slots, environment,bytecodes);
-		convert(Types.T_REAL,e.rhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.rhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_INT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "compareTo", ftype,
 				Bytecode.VIRTUAL));
@@ -1511,7 +1514,7 @@ public class ClassFileBuilder {
 	protected void translate(RealNegate e,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		translate(e.mhs(), slots, environment,bytecodes);		
-		convert(Types.T_REAL,e.mhs(), slots, environment,bytecodes);
+		convert(Types.T_REAL(null),e.mhs(), slots, environment,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "negate", ftype,
 				Bytecode.VIRTUAL));
@@ -1951,7 +1954,7 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {		
 		Type t = environment.get(v.name());
 		int slot = slots.get(v.name());	
-		if(t == Types.T_BOOL) {
+		if(t instanceof BoolType) {
 			bytecodes.add(new Bytecode.Load(slot,T_BOOL));
 		} else {
 			bytecodes.add(new Bytecode.Load(slot,JAVA_LANG_OBJECT));
@@ -2050,7 +2053,7 @@ public class ClassFileBuilder {
 	// situations are a little harder; like testing for a union type.
 	protected void translateTypeTest(Type test, HashMap<String, Integer> slots,
 			HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
-		if (test == Types.T_BOOL) {
+		if (test instanceof BoolType) {
 			bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
 		} else {
 			bytecodes.add(new Bytecode.InstanceOf(
@@ -2094,7 +2097,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void addReadConversion(Type et, ArrayList<Bytecode> bytecodes) {
-		if(et == Types.T_BOOL) {
+		if(et instanceof BoolType) {
 			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BOOLEAN));
 			JvmType.Function ftype = new JvmType.Function(T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
@@ -2105,7 +2108,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void addWriteConversion(Type et, ArrayList<Bytecode> bytecodes) {
-		if(et == Types.T_BOOL) {
+		if(et instanceof BoolType) {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"valueOf", ftype, Bytecode.STATIC));
@@ -2143,10 +2146,10 @@ public class ClassFileBuilder {
 		
 		if(toType.equals(fromType)) {		
 			// do nothing!			
-		} else if (!(toType == Types.T_BOOL) && fromType == Types.T_BOOL) {
+		} else if (!(toType instanceof BoolType) && fromType instanceof BoolType) {
 			// this is either going into a union type, or the any type
 			convert(toType, (BoolType) fromType, slots, bytecodes);
-		} else if(toType == Types.T_REAL && fromType == Types.T_INT) {			
+		} else if(toType == Types.T_REAL(null) && fromType instanceof IntType) {			
 			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
 					Bytecode.STATIC));			
@@ -2372,11 +2375,11 @@ public class ClassFileBuilder {
 			return T_VOID;
 		} else if(t == Types.T_ANY) {
 			return JAVA_LANG_OBJECT;
-		} else if(t == Types.T_BOOL) {
+		} else if(t instanceof BoolType) {
 			return T_BOOL;
-		} else if(t == Types.T_INT) {
+		} else if(t instanceof IntType) {
 			return BIG_INTEGER;
-		} else if(t == Types.T_REAL) {
+		} else if(t instanceof RealType) {
 			return BIG_RATIONAL;
 		} else if(t instanceof ListType) {
 			return WHILEYLIST;
@@ -2443,11 +2446,11 @@ public class ClassFileBuilder {
 			return "*";
 		} else if(t == Types.T_VOID) {
 			return "V";
-		} else if(t == Types.T_BOOL) {
+		} else if(t instanceof BoolType) {
 			return "B";
-		} else if(t == Types.T_INT) {
+		} else if(t instanceof IntType) {
 			return "I";
-		} else if(t == Types.T_REAL) {
+		} else if(t instanceof RealType) {
 			return "R";
 		} else if(t instanceof ListType) {
 			ListType st = (ListType) t;

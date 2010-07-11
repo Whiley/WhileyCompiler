@@ -90,11 +90,11 @@ public class SetElementOf extends ConditionBinOp<Expr> implements Condition {
 			
 			for(Expr e : sc.getValues()) {
 				Condition eq;
-				if(t == Types.T_BOOL) {
+				if(t instanceof BoolType) {
 					eq = new BoolEquals(v,(Expr) e);
-				} else if(t == Types.T_INT) {
+				} else if(t instanceof IntType) {
 					eq = new IntEquals(v,(Expr) e);
-				} else if(t == Types.T_REAL) {
+				} else if(t instanceof RealType) {
 					eq = new RealEquals(v,(Expr) e);
 				} else if(t instanceof ListType) {
 					eq = new ListEquals(v,(Expr) e);
@@ -117,11 +117,11 @@ public class SetElementOf extends ConditionBinOp<Expr> implements Condition {
 			
 			for(Expr e : sc.getValues()) {
 				Condition eq;
-				if(t == Types.T_BOOL) {
+				if(t instanceof BoolType) {
 					eq = new BoolEquals(v,(Expr) e);
-				} else if(t == Types.T_INT) {
+				} else if(t instanceof IntType) {
 					eq = new IntEquals(v,(Expr) e);
-				} else if(t == Types.T_REAL) {
+				} else if(t instanceof RealType) {
 					eq = new RealEquals(v,(Expr) e);
 				} else if(t instanceof ListType) {
 					eq = new ListEquals(v,(Expr) e);

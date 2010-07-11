@@ -242,11 +242,11 @@ public class VerificationConditionGenerator {
 	}
 		
 	private static WType convert(Type t, SyntacticElement elem) {
-		if(t == Types.T_BOOL) {
+		if(t instanceof BoolType) {
 			return WBoolType.T_BOOL;
-		} else if(t == Types.T_INT) {
+		} else if(t instanceof IntType) {
 			return WIntType.T_INT;
-		} else if (t == Types.T_REAL) {
+		} else if (t instanceof RealType) {
 			return WRealType.T_REAL;
 		} else if (t instanceof ListType) {
 			ListType lt = (ListType) t;

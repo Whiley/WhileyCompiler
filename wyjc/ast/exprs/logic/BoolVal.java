@@ -49,11 +49,11 @@ public class BoolVal extends SyntacticElementImpl implements Condition, Value {
 	}
 	
 	public BoolType type(Map<String,Type> environment) {
-		return Types.T_BOOL;
+		return Types.T_BOOL(null);
 	}
 	
 	public BoolType type() {
-		return Types.T_BOOL;
+		return Types.T_BOOL(null);
 	}
 	
 	public BoolVal substitute(Map<String, Expr> binding) {

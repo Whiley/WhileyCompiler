@@ -377,6 +377,9 @@ public class RuntimeCheckGenerator {
 		FunType funType = ivk.funType();
 		for(ModuleInfo.Method method : mi.method(ivk.name(),funType)) {			
 			Condition cond = null;
+			// FIXME: following code no longer makes sense, since there is no
+			// precondition, only the (constrained) function type
+			/*
 			if(method.preCondition() != null) {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				List<String> params = method.parameterNames();
@@ -394,7 +397,7 @@ public class RuntimeCheckGenerator {
 				
 				cond = (Condition) method.preCondition().substitute(binding);				
 			}
-	
+			 */
 			// finally, combine the generated condition as necessary	
 			if(cond != null) {
 				preCond = preCond == null ? cond : new Or(preCond,cond);
@@ -479,9 +482,9 @@ public class RuntimeCheckGenerator {
 	}
 	
 	protected static final IntVal INT_ZERO = new IntVal(0, new TypeAttr(
-			Types.T_INT));
+			Types.T_INT(null)));
 	protected static final RealVal REAL_ZERO = new RealVal(BigRational.ZERO,
-			new TypeAttr(Types.T_REAL));
+			new TypeAttr(Types.T_REAL(null)));
 	
 	protected List<Check> checkgen(BinOp bop, HashMap<String,Type> environment) {
 		List<Check> checks = checkgen(bop.lhs(),environment);

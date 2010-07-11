@@ -51,15 +51,15 @@ import wyjvm.lang.Constant;
 
 public class WhileyType implements BytecodeAttribute {
 	private String name;
-	private Condition condition;
+	private Type type;
 	
-	public WhileyType(String name, Condition condition) {
+	public WhileyType(String name, Type type) {
 		this.name = name;
-		this.condition = condition;
+		this.type = type;
 	}
 	
-	public Condition condition() {
-		return condition;
+	public Type type() {
+		return type;
 	}
 	
 	public String name() {
@@ -67,8 +67,8 @@ public class WhileyType implements BytecodeAttribute {
 	}
 	
 	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {
-		Constant.addPoolItem(new Constant.Utf8(name), constantPool);				
-		addPoolItems(condition, constantPool);		
+		Constant.addPoolItem(new Constant.Utf8(name), constantPool);						
+		addPoolItems(type, constantPool);
 	}
 	
 
@@ -129,13 +129,13 @@ public class WhileyType implements BytecodeAttribute {
 			writer.write_u1(EXISTENTIAL_TYPE | mask);
 		} else if(t == Types.T_VOID) {
 			writer.write_u1(VOID_TYPE);
-		} else if(t == Types.T_BOOL) {
+		} else if(t instanceof BoolType) {
 			writer.write_u1(BOOL_TYPE | mask);
 			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
-		} else if(t == Types.T_INT) {
+		} else if(t instanceof IntType) {
 			writer.write_u1(INT_TYPE | mask);
 			if(constraint != null) { writeCondition(constraint,writer,constantPool); }			
-		} else if(t == Types.T_REAL) {
+		} else if(t instanceof RealType) {
 			writer.write_u1(REAL_TYPE | mask);
 			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
 		} else if(t instanceof ListType) {
@@ -304,7 +304,7 @@ public class WhileyType implements BytecodeAttribute {
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		BinaryOutputStream iw = new BinaryOutputStream(out);
-		writeCondition(condition,iw,constantPool);
+		write(type,iw,constantPool);
 		writer.write_u2(constantPool.get(new Constant.Utf8(name)));
 		writer.write_u4(out.size());		
 		writer.write(out.toByteArray());						
@@ -654,8 +654,8 @@ public class WhileyType implements BytecodeAttribute {
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			input.read_u2(); // attribute name index code
 			input.read_u4(); // attribute length 						
-			Condition c = readCondition(input,constantPool);
-			return new WhileyType(name,c);		
+			Type t = readType(input,constantPool);
+			return new WhileyType(name,t);		
 		}
 
 		protected static Condition readCondition(BinaryInputStream reader,

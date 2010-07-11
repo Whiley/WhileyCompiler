@@ -566,8 +566,7 @@ public class ModuleLoader {
 			for(ModuleInfo.Method c : cases) {								
 				if(cases.size() == 1) {							
 					ModuleInfo.Method sm = new ModuleInfo.Method(c.receiver(),
-							stripCase(c.name()), c.type(), c.parameterNames(),
-							c.preCondition(), c.postCondition());
+							stripCase(c.name()), c.type(), c.parameterNames());
 					ncases.add(sm);
 				}
 			}
@@ -609,18 +608,14 @@ public class ModuleLoader {
 			ClassFile.Method cm) {
 		Triple<String,Type,FunType> info = splitDescriptor(cm.name());				
 		WhileyType pre = (WhileyType) cm
-				.attribute("WhileyPreCondition");
-		WhileyType post = (WhileyType) cm
-				.attribute("WhileyPostCondition");
-		Condition prec = pre == null ? null : pre.condition();
-		Condition postc = post == null ? null : post.condition();
+				.attribute("WhileyType");		
 		ArrayList<String> parameterNames = new ArrayList<String>();
 		FunType type = info.third();
 		for (int i = 0; i != type.parameters().size(); ++i) {
 			parameterNames.add("p" + i);
 		}
 		return new ModuleInfo.Method(info.second(), info.first(), type,
-				parameterNames, prec, postc);
+				parameterNames);
 	}
 	
 	/**
@@ -705,11 +700,11 @@ public class ModuleLoader {
 			case 'V':
 				return Types.T_VOID;
 			case 'B':
-				return Types.T_BOOL;
+				return Types.T_BOOL(null);
 			case 'I':
-				return Types.T_INT;
+				return Types.T_INT(null);
 			case 'R':
-				return Types.T_REAL;
+				return Types.T_REAL(null);
 			case 'P':
 				return new ProcessType(parseType());
 			case 'N':				

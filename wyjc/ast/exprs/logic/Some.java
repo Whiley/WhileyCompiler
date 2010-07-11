@@ -46,15 +46,15 @@ import static wyone.theory.numeric.WNumerics.*;
 
 public class Some extends UnOp<SetComprehension> implements Condition {
 	public Some(SetComprehension e, Attribute... attributes) {
-		super(e,Types.T_BOOL,attributes);		
+		super(e,Types.T_BOOL(null),attributes);		
 	}
 	
 	public Some(SetComprehension e, Collection<Attribute> attributes) {
-		super(e,Types.T_BOOL,attributes);		
+		super(e,Types.T_BOOL(null),attributes);		
 	}
 	
 	public BoolType type(Map<String,Type> env) {
-		return Types.T_BOOL;
+		return Types.T_BOOL(null);
 	}
 	
     public Condition substitute(Map<String,Expr> binding) {
@@ -127,7 +127,7 @@ public class Some extends UnOp<SetComprehension> implements Condition {
 			}
 			Pair<WExpr,WFormula> re = src.convert(environment, loader);
 			if(st instanceof ListType) {
-				nenv.put(name, Types.T_INT);
+				nenv.put(name, Types.T_INT(null));
 				if(!hackOn) {
 					binding.put(v, new WListAccess(re.first(),v));
 				}

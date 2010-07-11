@@ -39,11 +39,11 @@ import static wyone.theory.numeric.WNumerics.*;
  */
 public class IntSub extends BinOp<Expr> implements Expr {
 	public IntSub(Expr lhs, Expr rhs, Attribute... attributes) {
-		super(lhs,rhs,Types.T_INT,attributes);
+		super(lhs,rhs,Types.T_INT(null),attributes);
 	}
 
 	public IntSub(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
-		super(lhs,rhs,Types.T_INT,attributes);
+		super(lhs,rhs,Types.T_INT(null),attributes);
 	}
 	
 	public Expr substitute(Map<String,Expr> binding) {

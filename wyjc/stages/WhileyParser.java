@@ -1141,16 +1141,16 @@ public class WhileyParser {
 			t = Types.T_ANY;
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");
-			t = Types.T_INT;
+			t = Types.T_INT(null);
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
-			t = Types.T_REAL;
+			t = Types.T_REAL(null);
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
 			t = Types.T_VOID;
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = Types.T_BOOL;
+			t = Types.T_BOOL(null);
 		} else if(token.text.equals("process")) {
 			matchKeyword("process");
 			t = new UnresolvedProcessType(parseType());			

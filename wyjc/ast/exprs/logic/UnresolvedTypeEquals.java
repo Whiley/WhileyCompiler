@@ -60,7 +60,7 @@ public class UnresolvedTypeEquals extends SyntacticElementImpl implements Condit
 	}
 	
 	public BoolType type(Map<String,Type> environment) {		
-		return Types.T_BOOL;
+		return Types.T_BOOL(null);
 	}
 	
 	public Expr lhs() {

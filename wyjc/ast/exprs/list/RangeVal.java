@@ -93,7 +93,7 @@ public class RangeVal extends SyntacticElementImpl implements Value,Expr {
 	}
 	
 	public Type type() {		
-		return new ListType(Types.T_INT);
+		return new ListType(Types.T_INT(null));
 	}
 	
 	public Expr reduce(Map<String, Type> environment) {

@@ -146,7 +146,7 @@ public class TypeResolution {
 		
 		// FIXME: constraints on receiver are lost.
 		return new ModuleInfo.Method(recType, f.name(), ft, f
-				.parameterNames(), null, null);
+				.parameterNames());
 	}
 	
     
@@ -631,7 +631,7 @@ public class TypeResolution {
 	
 	protected Stmt check(Print s, HashMap<String,Type> environment) {
 		Pair<Type,Expr> e = check(s.expr(),environment);
-		checkSubtype(new ListType(Types.T_INT),e.first(),s);
+		checkSubtype(new ListType(Types.T_INT(null)),e.first(),s);
 		return new Print(e.second(),s.attributes());
 	}
 
@@ -669,7 +669,7 @@ public class TypeResolution {
 	protected Stmt check(IfElse s, HashMap<String, Type> environment,
 			HashMap<String, Type> declared, FunDecl f) {
 		Pair<Type,Expr> cond = check(s.condition(),environment);
-		checkSubtype(Types.T_BOOL,cond.first(),s);
+		checkSubtype(Types.T_BOOL(null),cond.first(),s);
 		ArrayList<Stmt> tb = new ArrayList<Stmt>();
 		ArrayList<Stmt> fb = null;
 		for(Stmt st : s.trueBranch()) {			
@@ -698,13 +698,13 @@ public class TypeResolution {
 	
 	protected Stmt check(Assertion s, HashMap<String,Type> environment) {
 		Pair<Type,Expr> cond = check(s.condition(),environment);
-		checkSubtype(Types.T_BOOL,cond.first(),s);
+		checkSubtype(Types.T_BOOL(null),cond.first(),s);
 		return new Assertion((Condition) cond.second(),s.attributes());
 	}
 	
 	protected Stmt check(Check s, HashMap<String,Type> environment) {
 		Pair<Type,Expr> cond = check(s.condition(),environment);
-		checkSubtype(Types.T_BOOL,cond.first(),s);
+		checkSubtype(Types.T_BOOL(null),cond.first(),s);
 		return new Check(s.message(), (Condition) cond.second(), s.attributes());
 	}
 	
@@ -748,11 +748,11 @@ public class TypeResolution {
 		Pair<Type,Expr> retType;
 		try {
 			if (e instanceof IntVal) {
-				retType = new Pair<Type,Expr>(Types.T_INT, e);
+				retType = new Pair<Type,Expr>(Types.T_INT(null), e);
 			} else if (e instanceof RealVal) {
-				retType = new Pair<Type,Expr>(Types.T_REAL, e);
+				retType = new Pair<Type,Expr>(Types.T_REAL(null), e);
 			} else if (e instanceof BoolVal) {
-				retType = new Pair<Type,Expr>(Types.T_BOOL, e);
+				retType = new Pair<Type,Expr>(Types.T_BOOL(null), e);
 			} else if (e instanceof RangeVal) {
 				retType = new Pair<Type,Expr>(((Value)e).type(), e);
 			} else if (e instanceof Constant) {			
@@ -895,10 +895,10 @@ public class TypeResolution {
 		Type ft = flattern(lhs.first());
 		if(ft instanceof ListType) {
 			checkSubtype(new ListType(Types.T_ANY),lhs.first(),e.mhs());
-			return new Pair(Types.T_INT,new ListLength(lhs.second(),e.attributes()));
+			return new Pair(Types.T_INT(null),new ListLength(lhs.second(),e.attributes()));
 		} else {
 			checkSubtype(new SetType(Types.T_ANY),lhs.first(),e.mhs());	
-			return new Pair(Types.T_INT,new SetLength(lhs.second(),e.attributes()));			
+			return new Pair(Types.T_INT(null),new SetLength(lhs.second(),e.attributes()));			
 		}		
 	}
 			
@@ -977,19 +977,19 @@ public class TypeResolution {
 		Pair<Type,Expr> lhs = check(e.mhs(), environment);	
 
 		checkSubtype(new SetType(Types.T_ANY),lhs.first(),e.mhs());	
-		return new Pair(Types.T_INT,new SetLength(lhs.second(),e.attributes()));			
+		return new Pair(Types.T_INT(null),new SetLength(lhs.second(),e.attributes()));			
 	}		
 	protected Pair<Type,Expr> check(Some e, HashMap<String,Type> environment) {
 		Pair<Type,Expr> lhs = check(e.mhs(), environment);		
 		checkSubtype(new SetType(Types.T_ANY),lhs.first(),e.mhs());		
-		return new Pair(Types.T_BOOL, new Some((SetComprehension) lhs
+		return new Pair(Types.T_BOOL(null), new Some((SetComprehension) lhs
 				.second(), e.attributes()));
 	}
 	
 	protected Pair<Type,Expr> check(None e, HashMap<String,Type> environment) {
 		Pair<Type,Expr> lhs = check(e.mhs(), environment);		
 		checkSubtype(new SetType(Types.T_ANY),lhs.first(),e.mhs());		
-		return new Pair(Types.T_BOOL, new None((SetComprehension) lhs
+		return new Pair(Types.T_BOOL(null), new None((SetComprehension) lhs
 				.second(), e.attributes()));
 	}
 	
@@ -1031,16 +1031,16 @@ public class TypeResolution {
 			
 	protected Pair<Type,Expr> check(Not e, HashMap<String,Type> environment) {
 		Pair<Type,Expr> lhs = check(e.mhs(), environment);
-		checkSubtype(lhs.first(),Types.T_BOOL,e.mhs());		
+		checkSubtype(lhs.first(),Types.T_BOOL(null),e.mhs());		
 		return new Pair(lhs.first(), new Not((Condition) lhs.second(), e
 				.attributes()));
 	}			
 	
 	protected Pair<Type,Expr> check(IntNegate e, HashMap<String,Type> environment) {
 		Pair<Type,Expr> lhs = check(e.mhs(),environment);		
-		if(lhs.first() == Types.T_REAL) {
+		if(lhs.first() instanceof RealType) {
 			return new Pair(lhs.first(),new RealNegate( lhs.second(),e.attributes()));
-		} else if(lhs.first() == Types.T_INT) {
+		} else if(lhs.first() instanceof IntType) {
 			return new Pair(lhs.first(),new IntNegate( lhs.second(),e.attributes()));
 		}
 		syntaxError("expecting int or real type, found " + lhs + ".",e.mhs());
@@ -1052,32 +1052,32 @@ public class TypeResolution {
 		Pair<Type,Expr> rhs = check(e.rhs(),environment);
 				
 		if(e instanceof And) {
-			checkSubtype(Types.T_BOOL, lhs.first(), e);
-			checkSubtype(Types.T_BOOL, rhs.first(), e);
-			return new Pair(Types.T_BOOL, new And((Condition) lhs.second(),
+			checkSubtype(Types.T_BOOL(null), lhs.first(), e);
+			checkSubtype(Types.T_BOOL(null), rhs.first(), e);
+			return new Pair(Types.T_BOOL(null), new And((Condition) lhs.second(),
 					(Condition) rhs.second(), e.attributes()));
 		} else if(e instanceof Or) {
-			checkSubtype(Types.T_BOOL, lhs.first(), e);
-			checkSubtype(Types.T_BOOL, rhs.first(), e);
-			return new Pair(Types.T_BOOL, new Or((Condition) lhs.second(),
+			checkSubtype(Types.T_BOOL(null), lhs.first(), e);
+			checkSubtype(Types.T_BOOL(null), rhs.first(), e);
+			return new Pair(Types.T_BOOL(null), new Or((Condition) lhs.second(),
 					(Condition) rhs.second(), e.attributes()));
 		} else if(e instanceof ListElementOf) {								
 			checkSubtype(new ListType(Types.T_ANY), rhs.first(), e);
 			ListType rhst = (ListType) rhs.first();
 			checkSubtype(rhst.element(),lhs.first(),e);
-			return new Pair(Types.T_BOOL, new ListElementOf(lhs.second(),
+			return new Pair(Types.T_BOOL(null), new ListElementOf(lhs.second(),
 					rhs.second(), e.attributes()));			
 		} else if(e instanceof SetElementOf) {			
 			if(rhs.first() instanceof SetType) {				
 				SetType rhst = (SetType) rhs.first();
 				checkSubtype(rhst.element(),lhs.first(),e);
-				return new Pair(Types.T_BOOL, new SetElementOf(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new SetElementOf(lhs.second(),
 						 rhs.second(), e.attributes()));			
 			} else {			
 				checkSubtype(new ListType(Types.T_ANY), rhs.first(), e);
 				ListType rhst = (ListType) rhs.first();
 				checkSubtype(rhst.element(),lhs.first(),e);
-				return new Pair(Types.T_BOOL, new ListElementOf(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new ListElementOf(lhs.second(),
 						 rhs.second(), e.attributes()));
 			}
 		} else if(e instanceof Subset) {
@@ -1086,7 +1086,7 @@ public class TypeResolution {
 			SetType rhst = (SetType) rhs.first();
 			SetType lhst = (SetType) lhs.first();
 			checkSubtype(lhst.element(),rhst.element(),e);
-			return new Pair(Types.T_BOOL, new Subset( lhs.second(),
+			return new Pair(Types.T_BOOL(null), new Subset( lhs.second(),
 					 rhs.second(), e.attributes()));
 		} else if(e instanceof SubsetEq) {
 			checkSubtype(new SetType(Types.T_ANY), lhs.first(), e);
@@ -1094,7 +1094,7 @@ public class TypeResolution {
 			SetType rhst = (SetType) rhs.first();
 			SetType lhst = (SetType) lhs.first();
 			checkSubtype(lhst.element(),rhst.element(),e);
-			return new Pair(Types.T_BOOL, new SubsetEq( lhs.second(),
+			return new Pair(Types.T_BOOL(null), new SubsetEq( lhs.second(),
 					 rhs.second(), e.attributes()));
 		} else if(e instanceof SetUnion) {			
 			checkSubtype(new SetType(Types.T_ANY), lhs.first(), e);
@@ -1140,10 +1140,10 @@ public class TypeResolution {
 			}
 									
 			if (e instanceof IntEquals || e instanceof TupleEquals) {
-				return new Pair(Types.T_BOOL, new TupleEquals(
+				return new Pair(Types.T_BOOL(null), new TupleEquals(
 						 lhs.second(),rhs.second(), e.attributes()));
 			} else if (e instanceof IntNotEquals  || e instanceof TupleNotEquals) {
-				return new Pair(Types.T_BOOL, new TupleNotEquals(
+				return new Pair(Types.T_BOOL(null), new TupleNotEquals(
 						 lhs.second(),rhs.second(), e.attributes()));
 			}
 		} else if(lhs_t instanceof TupleType || rhs_t instanceof TupleType) {
@@ -1161,11 +1161,11 @@ public class TypeResolution {
 			}
 			
 			if (e instanceof IntEquals || e instanceof ListEquals) {
-				return new Pair(Types.T_BOOL, new ListEquals(
+				return new Pair(Types.T_BOOL(null), new ListEquals(
 						 lhs.second(),rhs.second(), e
 								.attributes()));
 			} else if (e instanceof IntNotEquals || e instanceof ListNotEquals) {
-				return new Pair(Types.T_BOOL, new ListNotEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new ListNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if(e instanceof IntAdd) {				
 				return new Pair(Types.leastUpperBound(t1, t2), new ListAppend(
@@ -1186,13 +1186,13 @@ public class TypeResolution {
 			}
 			
 			if (e instanceof IntEquals || e instanceof SetEquals) {
-				return new Pair(Types.T_BOOL, new SetEquals(lhs.second(), rhs
+				return new Pair(Types.T_BOOL(null), new SetEquals(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntNotEquals || e instanceof SetNotEquals) {
-				return new Pair(Types.T_BOOL, new SetNotEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new SetNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if (e instanceof IntNotEquals || e instanceof SetNotEquals) {
-				return new Pair(Types.T_BOOL, new SetNotEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new SetNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if(e instanceof IntAdd) {
 				return new Pair(
@@ -1210,15 +1210,15 @@ public class TypeResolution {
 		}
 		
 		// now consider boolean types
-		if(lhs_t == Types.T_BOOL && rhs_t == Types.T_BOOL) {
+		if(lhs_t instanceof BoolType && rhs_t instanceof BoolType) {
 			if (e instanceof IntEquals || e instanceof BoolEquals) {				
-				return new Pair(Types.T_BOOL, new BoolEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new BoolEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if (e instanceof IntNotEquals || e instanceof BoolNotEquals) {				
-				return new Pair(Types.T_BOOL, new BoolNotEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new BoolNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			}
-		} else if(lhs_t == Types.T_BOOL || rhs_t == Types.T_BOOL) {
+		} else if(lhs_t instanceof BoolType || rhs_t instanceof BoolType) {
 			syntaxError("expecting type " + lhs_t + ", got " + rhs_t, rhs
 					.second());
 		}
@@ -1227,81 +1227,81 @@ public class TypeResolution {
 		 * operators. So, all we have left are the numeric binary operators.
 		 */									
 		
-		if (target == Types.T_REAL || rhs_t == Types.T_REAL) {			
-			target = Types.T_REAL;
-		} else if(!(target == Types.T_INT)) {
+		if (target instanceof RealType || rhs_t instanceof RealType) {			
+			target = Types.T_REAL(null);
+		} else if(!(target instanceof IntType)) {
 			syntaxError("expecting int or real type",lhs.second());
-		} else if(!(rhs_t == Types.T_INT)) {
+		} else if(!(rhs_t instanceof IntType)) {
 			syntaxError("expecting int or real type",rhs.second());
 		} 
 		
-		if (target == Types.T_INT) {
+		if (target instanceof IntType) {
 			if (e instanceof IntEquals) {
-				return new Pair(Types.T_BOOL, new IntEquals(lhs.second(), rhs
+				return new Pair(Types.T_BOOL(null), new IntEquals(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntNotEquals) {
-				return new Pair(Types.T_BOOL, new IntNotEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new IntNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if (e instanceof IntLessThan) {
-				return new Pair(Types.T_BOOL, new IntLessThan(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new IntLessThan(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if (e instanceof IntLessThanEquals) {
-				return new Pair(Types.T_BOOL, new IntLessThanEquals(lhs
+				return new Pair(Types.T_BOOL(null), new IntLessThanEquals(lhs
 						.second(), rhs.second(), e.attributes()));
 			} else if (e instanceof IntGreaterThan) {
-				return new Pair(Types.T_BOOL, new IntGreaterThan(
+				return new Pair(Types.T_BOOL(null), new IntGreaterThan(
 						lhs.second(), rhs.second(), e.attributes()));
 			} else if (e instanceof IntGreaterThanEquals) {
-				return new Pair(Types.T_BOOL, new IntGreaterThanEquals(lhs
+				return new Pair(Types.T_BOOL(null), new IntGreaterThanEquals(lhs
 						.second(), rhs.second(), e.attributes()));
 			} else if (e instanceof IntAdd) {
-				return new Pair(Types.T_INT, new IntAdd(lhs.second(), rhs
+				return new Pair(Types.T_INT(null), new IntAdd(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntSub) {
-				return new Pair(Types.T_INT, new IntSub(lhs.second(), rhs
+				return new Pair(Types.T_INT(null), new IntSub(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntMul) {
-				return new Pair(Types.T_INT, new IntMul(lhs.second(), rhs
+				return new Pair(Types.T_INT(null), new IntMul(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntDiv) {
-				return new Pair(Types.T_INT, new IntDiv(lhs.second(), rhs
+				return new Pair(Types.T_INT(null), new IntDiv(lhs.second(), rhs
 						.second(), e.attributes()));
 			}
 		} else {
 			if (e instanceof IntEquals || e instanceof RealEquals) {
-				return new Pair(Types.T_BOOL, new RealEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new RealEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if (e instanceof IntNotEquals || e instanceof RealNotEquals) {
-				return new Pair(Types.T_BOOL, new RealNotEquals(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new RealNotEquals(lhs.second(),
 						rhs.second(), e.attributes()));
 			}						
 			
 			if (e instanceof IntLessThan || e instanceof RealLessThan) {
-				return new Pair(Types.T_BOOL, new RealLessThan(lhs.second(),
+				return new Pair(Types.T_BOOL(null), new RealLessThan(lhs.second(),
 						rhs.second(), e.attributes()));
 			} else if (e instanceof IntLessThanEquals
 					|| e instanceof RealLessThanEquals) {
-				return new Pair(Types.T_BOOL, new RealLessThanEquals(lhs
+				return new Pair(Types.T_BOOL(null), new RealLessThanEquals(lhs
 						.second(), rhs.second(), e.attributes()));
 			} else if (e instanceof IntGreaterThan
 					|| e instanceof RealGreaterThan) {
-				return new Pair(Types.T_BOOL, new RealGreaterThan(lhs
+				return new Pair(Types.T_BOOL(null), new RealGreaterThan(lhs
 						.second(), rhs.second(), e.attributes()));
 			} else if (e instanceof IntGreaterThanEquals
 					|| e instanceof RealGreaterThanEquals) {
-				return new Pair(Types.T_BOOL, new RealGreaterThanEquals(lhs
+				return new Pair(Types.T_BOOL(null), new RealGreaterThanEquals(lhs
 						.second(), rhs.second(), e.attributes()));
 			} else if (e instanceof IntAdd || e instanceof RealAdd) {
-				return new Pair(Types.T_REAL, new RealAdd(lhs.second(), rhs
+				return new Pair(Types.T_REAL(null), new RealAdd(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntSub || e instanceof RealSub) {
-				return new Pair(Types.T_REAL, new RealSub(lhs.second(), rhs
+				return new Pair(Types.T_REAL(null), new RealSub(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntMul || e instanceof RealMul) {
-				return new Pair(Types.T_REAL, new RealMul(lhs.second(), rhs
+				return new Pair(Types.T_REAL(null), new RealMul(lhs.second(), rhs
 						.second(), e.attributes()));
 			} else if (e instanceof IntDiv || e instanceof RealDiv) {
-				return new Pair(Types.T_REAL, new RealDiv(lhs.second(), rhs
+				return new Pair(Types.T_REAL(null), new RealDiv(lhs.second(), rhs
 						.second(), e.attributes()));
 			}
 		}
@@ -1328,7 +1328,7 @@ public class TypeResolution {
 		// FIXME: I think there's a problem here as the condition needs to have
 		// all occurences of lhs replaced with var.
 		
-		return new Pair<Type, Expr>(Types.T_BOOL, new TypeEquals(rhs_t, var, lhs
+		return new Pair<Type, Expr>(Types.T_BOOL(null), new TypeEquals(rhs_t, var, lhs
 				.second(), condition, ueq.attributes()));
 	}
 	
@@ -1410,9 +1410,9 @@ public class TypeResolution {
 	
 	
 	protected Condition buildEquals(Type t, Expr lhs, Expr rhs) {		
-		if(t == Types.T_INT) {
+		if(t instanceof IntType) {
 			return new IntEquals(lhs,rhs);
-		} else if(t == Types.T_REAL) {
+		} else if(t instanceof RealType) {
 			return new RealEquals(lhs,rhs);
 		} else if(t instanceof ListType) {
 			return new ListEquals(lhs,rhs);

@@ -36,15 +36,15 @@ import static wyone.theory.numeric.WNumerics.*;
 
 public class Not extends UnOp<Condition> implements Condition {
 	public Not(Condition c, Attribute... attributes) {
-		super(c,Types.T_BOOL,attributes);		
+		super(c,Types.T_BOOL(null),attributes);		
 	}
 
 	public Not(Condition c, Collection<Attribute> attributes) {
-		super(c,Types.T_BOOL,attributes);
+		super(c,Types.T_BOOL(null),attributes);
 	}
 	
 	public BoolType type(Map<String,Type> env) {
-		return Types.T_BOOL;
+		return Types.T_BOOL(null);
 	}
 	
 	public Condition substitute(Map<String,Expr> binding) {

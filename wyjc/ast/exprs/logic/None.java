@@ -39,15 +39,15 @@ import wyone.theory.set.*;
 
 public class None extends UnOp<SetComprehension> implements Condition {
 	public None(SetComprehension e, Attribute... attributes) {
-		super(e,Types.T_BOOL,attributes);		
+		super(e,Types.T_BOOL(null),attributes);		
 	}
 	
 	public None(SetComprehension e, Collection<Attribute> attributes) {
-		super(e,Types.T_BOOL,attributes);		
+		super(e,Types.T_BOOL(null),attributes);		
 	}
 	
 	public BoolType type(Map<String,Type> env) {
-		return Types.T_BOOL;
+		return Types.T_BOOL(null);
 	}
 	
 	public Condition substitute(Map<String,Expr> binding) {

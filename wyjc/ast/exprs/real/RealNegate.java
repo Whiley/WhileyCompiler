@@ -36,11 +36,11 @@ import static wyone.theory.numeric.WNumerics.*;
 
 public class RealNegate extends UnOp<Expr> implements Expr {		
 	public RealNegate(Expr e, Attribute... attributes) {
-		super(e,Types.T_REAL,attributes);		
+		super(e,Types.T_REAL(null),attributes);		
 	}
 	
 	public RealNegate(Expr e, Collection<Attribute> attributes) {
-		super(e,Types.T_REAL,attributes);		
+		super(e,Types.T_REAL(null),attributes);		
 	}
 	
     public Expr substitute(Map<String,Expr> binding) {

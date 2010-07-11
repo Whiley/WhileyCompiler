@@ -38,11 +38,11 @@ import static wyone.theory.numeric.WNumerics.*;
  */
 public class RealAdd extends BinOp<Expr> implements Expr {
 	public RealAdd(Expr lhs, Expr rhs, Attribute... attributes) {
-		super(lhs,rhs,Types.T_REAL,attributes);
+		super(lhs,rhs,Types.T_REAL(null),attributes);
 	}
 
 	public RealAdd(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
-		super(lhs,rhs,Types.T_REAL,attributes);
+		super(lhs,rhs,Types.T_REAL(null),attributes);
 	}
 	
 	public Expr substitute(Map<String,Expr> binding) {

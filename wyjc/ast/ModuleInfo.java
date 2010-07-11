@@ -130,16 +130,12 @@ public class ModuleInfo extends SkeletonInfo {
 		private Type receiver;
 		private FunType type;
 		private ArrayList<String> paramNames;
-		private Condition preCondition;
-		private Condition postCondition;
 		
-		public Method(Type receiver, String name, FunType type, Collection<String> paramNames, Condition preCondition, Condition postCondition) {
+		public Method(Type receiver, String name, FunType type, Collection<String> paramNames) {
 			this.receiver = receiver;
 			this.name = name;
 			this.type = type;
-			this.paramNames = new ArrayList<String>(paramNames);
-			this.preCondition = preCondition;
-			this.postCondition = postCondition;
+			this.paramNames = new ArrayList<String>(paramNames);		
 		}
 		
 		public Type receiver() {
@@ -157,15 +153,7 @@ public class ModuleInfo extends SkeletonInfo {
 		public boolean isFunction() {
 			return receiver == null;
 		}
-		
-		public Condition preCondition() {
-			return preCondition;
-		}
-		
-		public Condition postCondition() {
-			return postCondition;
-		}
-		
+				
 		public List<String> parameterNames() {
 			return paramNames;
 		}

@@ -99,7 +99,7 @@ public class RangeGenerator extends SyntacticElementImpl implements Expr {
 	}
 	
 	public Type type(Map<String,Type> environment) {				
-		return new ListType(Types.T_INT);
+		return new ListType(Types.T_INT(null));
 	}
 	
 	public Expr reduce(Map<String, Type> environment) {

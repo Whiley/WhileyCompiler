@@ -68,8 +68,7 @@ public class ResolvedWhileyFile {
 				FunDecl.Receiver rec = fd.receiver();
 				Type recType = rec == null ? null : rec.type(); 
 				ModuleInfo.Method method = new ModuleInfo.Method(recType, fd
-						.name(), fd.type(), fd.parameterNames(), fd
-						.preCondition(), fd.postCondition());
+						.name(), fd.type(), fd.parameterNames());
 				List<ModuleInfo.Method> ms = methods.get(fd.name());
 				if(ms == null) {
 					ms = new ArrayList<ModuleInfo.Method>();

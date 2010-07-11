@@ -36,11 +36,11 @@ import static wyone.theory.numeric.WNumerics.*;
 
 public class IntNegate extends UnOp<Expr> implements Expr {
 	public IntNegate(Expr e, Attribute... attributes) {
-		super(e,Types.T_INT, attributes);
+		super(e,Types.T_INT(null), attributes);
 	}
 	
 	public IntNegate(Expr e, Collection<Attribute> attributes) {
-		super(e,Types.T_INT, attributes);
+		super(e,Types.T_INT(null), attributes);
 	}
 	
 	public Expr substitute(Map<String,Expr> binding) {

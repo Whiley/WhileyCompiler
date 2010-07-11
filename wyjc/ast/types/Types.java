@@ -30,9 +30,9 @@ public class Types {
 	public static final AnyType T_ANY = new AnyType();
 	public static final VoidType T_VOID = new VoidType();
 	public static final ExistentialType T_EXISTENTIAL = new ExistentialType();
-	public static final BoolType T_BOOL = new BoolType(null);
-	public static final IntType T_INT = new IntType(null);
-	public static final RealType T_REAL = new RealType(null);
+	private static final BoolType T_BOOL = new BoolType(null);
+	private static final IntType T_INT = new IntType(null);
+	private static final RealType T_REAL = new RealType(null);
 	
 	public static IntType T_INT(Condition constraint) {
 		if(constraint == null) {
@@ -209,9 +209,7 @@ public class Types {
 		return isBaseSubtype(t1,t2,Collections.EMPTY_MAP);
 	}
 	private static boolean isBaseSubtype(Type t1, Type t2, Map<String,Type> environment) {
-		if(t1.constraint() != null) {
-			return false; // cannot be sure we have a strict subtype
-		} else if(t1 instanceof IntType) {
+		if(t1 instanceof IntType) {
 			return t2 instanceof IntType;
 		} else if(t1 instanceof RealType) {
 			return t2 instanceof IntType || t2 instanceof RealType;
@@ -565,6 +563,8 @@ public class Types {
 		if (t instanceof VoidType || t instanceof ExistentialType
 				|| t instanceof NamedType || t instanceof AnyType) {
 			return t;
+		} else if(t instanceof BoolType) {
+			return (T) Types.T_BOOL(c);
 		} else if(t instanceof IntType) {
 			return (T) Types.T_INT(c);
 		} else if(t instanceof RealType) {

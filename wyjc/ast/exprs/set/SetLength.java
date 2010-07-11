@@ -34,11 +34,11 @@ import wyone.theory.list.*;
 public class SetLength extends UnOp<Expr> implements Expr {	
 	
 	public SetLength(Expr e, Attribute... attributes) {
-		super(e,Types.T_INT,attributes);		
+		super(e,Types.T_INT(null),attributes);		
 	}
 	
 	public SetLength(Expr e, Collection<Attribute> attributes) {
-		super(e,Types.T_INT,attributes);
+		super(e,Types.T_INT(null),attributes);
 	}
 	
 	public Expr substitute(Map<String,Expr> binding) {

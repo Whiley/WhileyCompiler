@@ -102,11 +102,11 @@ public class IntVal extends SyntacticElementImpl implements Expr,Value {
 	}
 	
 	public Type type(Map<String,Type> environment) {
-		return Types.T_INT;
+		return Types.T_INT(null);
 	}
 	
 	public Type type() {
-		return Types.T_INT;
+		return Types.T_INT(null);
 	}
 	
 	public String toString() {		
