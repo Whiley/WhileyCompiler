@@ -67,6 +67,12 @@ public final class ListType extends SetType {
 	}
 	
 	public String toString() {
-		return "[" + element().toString() + "]" + super.toString();
+		String r;
+		if(constraint != null) {
+			r = " where " + constraint.toString();
+		} else {
+			r = "";
+		}
+		return "[" + element().toString() + "]" + r;
 	}
 }

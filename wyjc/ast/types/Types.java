@@ -61,9 +61,9 @@ public class Types {
 	public static Type leastUpperBound(Type t1, Type t2) {		
 		// NOTE. There are still bugs in this algorithm.
 		
-		if(isStrictSubtype(t1,t2)) {
+		if(isStrictSubtype(t1,t2)) {			
 			return t1;
-		} else if(isStrictSubtype(t2,t1)) {
+		} else if(isStrictSubtype(t2,t1)) {			
 			return t2;
 		} else if(isBaseEquivalent(t1,t2)) {
 			// FIXME: it would be nice to do some kind of simplification here.
@@ -221,7 +221,7 @@ public class Types {
 			return t2 instanceof AnyType;
 		} else if(t1 instanceof ExistentialType) {
 			return false;
-		} else if(t1 instanceof VoidType) {
+		} else if(t2 instanceof VoidType) {
 			return true;
 		} else if(t1 instanceof NamedType && t2 instanceof NamedType) {
 			NamedType nt1 = (NamedType) t1;			
@@ -336,7 +336,9 @@ public class Types {
 		return isStrictSubtype(t1,t2,Collections.EMPTY_MAP);
 	}
 	private static boolean isStrictSubtype(Type t1, Type t2, Map<String,Type> environment) {
-		if(t1.constraint() != null) {
+		if(t2 instanceof VoidType) {
+			return true;
+		} else if(t1.constraint() != null) {
 			return false; // cannot be sure we have a strict subtype
 		} else if(t1 instanceof IntType) {
 			return t2 instanceof IntType;
@@ -348,8 +350,6 @@ public class Types {
 			return t2 instanceof AnyType;
 		} else if(t1 instanceof ExistentialType) {
 			return false;
-		} else if(t1 instanceof VoidType) {
-			return true;
 		} else if(t1 instanceof NamedType && t2 instanceof NamedType) {
 			NamedType nt1 = (NamedType) t1;			
 			NamedType nt2 = (NamedType) t2;
