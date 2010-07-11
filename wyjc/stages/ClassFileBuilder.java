@@ -602,7 +602,7 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots, HashMap<String, Type> environment,
 			ArrayList<Bytecode> bytecodes) {
 		if(e.lhs() instanceof BoolVal) {
-			BoolVal bv = (BoolVal) e.lhs();						
+			BoolVal bv = (BoolVal) e.lhs();									
 			translate(e.rhs(), slots, environment,bytecodes);			
 			if(bv.value()) {
 				bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));

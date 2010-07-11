@@ -74,6 +74,9 @@ public class WhileyType implements BytecodeAttribute {
 
 	protected static void addPoolItems(Type type,
 			Set<Constant.Info> constantPool) {
+		if(type.constraint() != null) {
+			addPoolItems(type.constraint(),constantPool);
+		}
 		if(type instanceof ListType) {
 			ListType lt = (ListType) type;
 			addPoolItems(lt.element(),constantPool);
@@ -976,6 +979,8 @@ public class WhileyType implements BytecodeAttribute {
 			if((t & CONSTRAINT_MASK) != 0) {
 				constraint = readCondition(input,constantPool);
 			}
+
+			t &= ~CONSTRAINT_MASK;
 			
 			switch(t) {
 				case EXISTENTIAL_TYPE:
