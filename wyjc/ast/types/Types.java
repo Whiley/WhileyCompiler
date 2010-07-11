@@ -559,7 +559,7 @@ public class Types {
 	 * @param c
 	 * @return
 	 */
-	 public static <T extends UnresolvedType> T recondition(T t, Condition c) {
+	 public static <T extends UnresolvedType> T recondition(T t, Condition c) {		
 		if (t instanceof VoidType || t instanceof ExistentialType
 				|| t instanceof NamedType || t instanceof AnyType) {
 			return t;
@@ -568,7 +568,7 @@ public class Types {
 		} else if(t instanceof IntType) {
 			return (T) Types.T_INT(c);
 		} else if(t instanceof RealType) {
-			return (T) Types.T_INT(c);
+			return (T) Types.T_REAL(c);
 		} else if(t instanceof ListType) {
 			ListType lt = (ListType) t;
 			return (T) new ListType(lt.element(),c);
@@ -605,7 +605,7 @@ public class Types {
 		} else if(t instanceof FunType) {
 			FunType ft = (FunType) t;
 			return (T) new FunType(ft.returnType(),ft.parameters(),c);
-		} else if(t instanceof UserDefType) {
+		} else if(t instanceof UserDefType) {				
 			UserDefType udt = (UserDefType) t;
 			return (T) new UserDefType(udt.name(),udt.module(),c);
 		} else {

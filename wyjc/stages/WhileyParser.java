@@ -211,10 +211,11 @@ public class WhileyParser {
 			Condition constraint = null;
 			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type				
-				matchKeyword("where");				
-				constraint = parseRealCondition();				
-				Pair<Type,Condition> munged = mungeConstrainedTypes(t,constraint);
-				t = Types.recondition(munged.first(),munged.second());
+				matchKeyword("where");
+				constraint = parseRealCondition();
+				Pair<Type,Condition> munged = mungeConstrainedTypes(t,constraint);				
+				UnresolvedType ut = munged.first();				
+				t = Types.recondition(ut,munged.second());
 			}
 					
 			matchEndLine();		
@@ -311,7 +312,8 @@ public class WhileyParser {
 	 * @param constraint
 	 * @return
 	 */
-	private Pair<Type,Condition> mungeConstrainedTypes(UnresolvedType t, Condition constraint) {
+	private Pair<Type, Condition> mungeConstrainedTypes(UnresolvedType t,
+			Condition constraint) {
 		// for the moment, it's really a hack.
 		if(t instanceof UnresolvedTupleType) {
 			UnresolvedTupleType tt = (UnresolvedTupleType) t;
