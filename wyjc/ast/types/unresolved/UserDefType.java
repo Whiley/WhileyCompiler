@@ -18,6 +18,8 @@
 
 package wyjc.ast.types.unresolved;
 
+import wyjc.ast.exprs.Condition;
+import wyjc.ast.types.ConstrainedType;
 import wyjc.util.ModuleID;
 
 /**
@@ -29,11 +31,16 @@ import wyjc.util.ModuleID;
  * @author djp
  * 
  */
-public class UserDefType implements UnresolvedType {
+public class UserDefType extends ConstrainedType implements UnresolvedType {
 	private String name;
 	private ModuleID module;
 	
 	public UserDefType(String name) {
+		this.name = name;
+	}
+	
+	public UserDefType(String name, Condition constraint) {
+		super(constraint);
 		this.name = name;
 	}
 	

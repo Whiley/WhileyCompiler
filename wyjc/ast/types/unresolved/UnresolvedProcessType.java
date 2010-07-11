@@ -18,12 +18,18 @@
 
 package wyjc.ast.types.unresolved;
 
+import wyjc.ast.exprs.Condition;
 import wyjc.ast.types.*;
 
-public final class UnresolvedProcessType implements UnresolvedType {
+public final class UnresolvedProcessType extends ConstrainedType implements UnresolvedType {
 	private UnresolvedType element;
 	
 	public UnresolvedProcessType(UnresolvedType element) {
+		this.element = element;
+	}
+	
+	public UnresolvedProcessType(UnresolvedType element, Condition constraint) {
+		super(constraint);
 		this.element = element;
 	}
 	

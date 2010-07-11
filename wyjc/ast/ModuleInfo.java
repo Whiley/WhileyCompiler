@@ -92,12 +92,10 @@ public class ModuleInfo extends SkeletonInfo {
 	public static class TypeDef {
 		private String name;
 		private Type type;
-		private Condition constraint;
 
-		public TypeDef(String name, Type type, Condition constraint) {			
+		public TypeDef(String name, Type type) {			
 			this.name = name;
-			this.type = type;
-			this.constraint = constraint;
+			this.type = type;			
 		}
 
 		public String name() {
@@ -106,10 +104,6 @@ public class ModuleInfo extends SkeletonInfo {
 
 		public Type type() {
 			return type;
-		}
-
-		public Condition constraint() {
-			return constraint;
 		}
 	}
 	

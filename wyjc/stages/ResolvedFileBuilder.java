@@ -22,7 +22,6 @@ import java.util.*;
 
 import wyjc.ast.ResolvedWhileyFile;
 import wyjc.ast.UnresolvedWhileyFile;
-import wyjc.ast.attrs.ConstraintAttr;
 import wyjc.ast.attrs.TypeAttr;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.*;
@@ -59,21 +58,17 @@ public class ResolvedFileBuilder {
 	}
 	
 	protected ResolvedWhileyFile.TypeDecl build(UnresolvedWhileyFile.TypeDecl cd) {
-		Type t = (Type) cd.attribute(TypeAttr.class).type();
-		Condition c = (Condition) cd.attribute(ConstraintAttr.class).constraint();
-		return new ResolvedWhileyFile.TypeDecl(cd.modifiers(), t, c, cd.name(),
+		Type t = (Type) cd.attribute(TypeAttr.class).type();		
+		return new ResolvedWhileyFile.TypeDecl(cd.modifiers(), t, cd.name(),
 				cd.attributes());
 	}
 	
 	protected ResolvedWhileyFile.FunDecl build(UnresolvedWhileyFile.FunDecl cd) {
 		ArrayList<ResolvedWhileyFile.FunDecl.Parameter> params = new ArrayList();				
 		
-		for (UnresolvedWhileyFile.FunDecl.Parameter p : cd.parameters()) {
-			ConstraintAttr ca = p.attribute(ConstraintAttr.class);
-			Condition constraint = ca == null ? null : ca.constraint();
-
+		for (UnresolvedWhileyFile.FunDecl.Parameter p : cd.parameters()) {			
 			params.add(new ResolvedWhileyFile.FunDecl.Parameter((Type) p
-					.attribute(TypeAttr.class).type(), constraint, p.name(), p
+					.attribute(TypeAttr.class).type(), p.name(), p
 					.attributes()));
 		}
 		

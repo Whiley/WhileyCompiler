@@ -82,13 +82,14 @@ public class NameResolution {
 	protected TypeDecl resolve(TypeDecl td, ArrayList<PkgID> imports) throws ResolveError {
 		try {
 			resolve(td.type(), imports);
-			Condition c = td.constraint();
+			Condition c = td.type().constraint();
 			if(c != null) {
 				HashSet<String> env = new HashSet<String>();
 				env.add("$");
 				c = (Condition) resolve(c,env,imports);
 			}
-			return new TypeDecl(td.modifiers(),td.type(),c,td.name(),td.attributes());
+			return new TypeDecl(td.modifiers(),
+					Types.recondition(td.type(), c), td.name(), td.attributes());
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
 			syntaxError(e.getMessage(), td);

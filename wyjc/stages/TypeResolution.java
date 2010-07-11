@@ -46,7 +46,7 @@ public class TypeResolution {
 	private HashMap<NameID,Expr> constants;
 	private HashMap<NameID,Type> types;	
 	private HashMap<NameID,SyntacticElement> srcs;
-	private HashMap<NameID,Pair<UnresolvedType,Condition>> unresolved;
+	private HashMap<NameID,UnresolvedType> unresolved;
 	private HashMap<NameID,List<ModuleInfo.Method>> functions;
 	
 	public TypeResolution(ModuleLoader loader) {
@@ -58,7 +58,7 @@ public class TypeResolution {
 		constants = new HashMap<NameID,Expr>();
 		types = new HashMap<NameID,Type>();
 		srcs = new HashMap<NameID,SyntacticElement>();
-		unresolved = new HashMap<NameID,Pair<UnresolvedType,Condition>>();
+		unresolved = new HashMap<NameID,UnresolvedType>();
 		functions = new HashMap<NameID,List<ModuleInfo.Method>>();
 		
 		for(UnresolvedWhileyFile f : files) {			
@@ -253,8 +253,7 @@ public class TypeResolution {
 				if(d instanceof TypeDecl) {
 					TypeDecl td = (TypeDecl) d;
 					NameID key = new NameID(f.id(),td.name());					
-					unresolved.put(key, new Pair<UnresolvedType, Condition>(td
-							.type(), td.constraint()));
+					unresolved.put(key, td.type());
 					srcs.put(key,d);
 				}
 			}
@@ -375,25 +374,14 @@ public class TypeResolution {
 		cache.put(key, new RecursiveType(key.toString(),null,null));
 		
 		// Ok, expand the type properly then
-		Pair<UnresolvedType,Condition> ut = unresolved.get(key);
+		UnresolvedType ut = unresolved.get(key);
 		
-		t = expandType(ut.first(), cache);
-		Condition constraint = ut.second();
-		if (constraint == null) {
-			constraint = t.constraint();
-		} else if (t.constraint() != null) {
-			constraint = new And(constraint, t.constraint(), constraint
-					.attribute(SourceAttr.class));
-		}
-		
-		 
-		
+		t = expandType(ut, cache);
+				 		
 		if(isRecursive(key,t)) {
 			// recursive case
 			t = new RecursiveType(key.toString(),t,null);			
 		} 
-		
-		t = Types.recondition(t,constraint);
 		
 		cache.put(key, t);
 		
@@ -516,13 +504,7 @@ public class TypeResolution {
 		try {
 			NameID key = new NameID(wf.id(),d.name());
 			Type t = types.get(key);
-			expandAndCheck(d.type(),d);						
-			if(d.constraint() != null) {
-				HashMap<String,Type> environment = new HashMap<String,Type>();				
-				environment.put("$", t);
-				Pair<Type,Expr> r = check(d.constraint(), environment);												
-				d.setConstraint((Condition) r.second());							
-			}			
+			expandAndCheck(d.type(),d);										
 			d.attributes().add(new TypeAttr(t));			
 		} catch(SyntaxError se) {			
 			throw se;
@@ -1173,7 +1155,8 @@ public class TypeResolution {
 			ListType t1 = (ListType) lhs_t;
 			ListType t2 = (ListType) rhs_t;
 												
-			if(!t1.isBaseSubtype(t2, Collections.EMPTY_MAP) && !t2.isBaseSubtype(t1, Collections.EMPTY_MAP)) {
+			if (!Types.isBaseSubtype(t1, t2)
+					&& !Types.isBaseSubtype(t2, t1)) {
 				syntaxError("cannot compare type " + t1 + " with type " + t2,e);
 			}
 			
@@ -1198,7 +1181,7 @@ public class TypeResolution {
 			SetType t1 = (SetType) lhs_t;
 			SetType t2 = (SetType) rhs_t;
 												
-			if(!t1.isBaseSubtype(t2, Collections.EMPTY_MAP) && !t2.isBaseSubtype(t1, Collections.EMPTY_MAP)) {
+			if(!Types.isBaseSubtype(t1, t2) && !Types.isBaseSubtype(t2, t1)) {
 				syntaxError("cannot compare type " + t1 + " with type " + t2,e);
 			}
 			
@@ -1334,8 +1317,8 @@ public class TypeResolution {
 		Type lhs_t = lhs.first();		
 
 		// now check it makes sense
-		if (!lhs_t.isBaseSubtype(rhs_t, Collections.EMPTY_MAP)
-				&& !rhs_t.isBaseSubtype(lhs_t, Collections.EMPTY_MAP)) {
+		if (!Types.isBaseSubtype(lhs_t, rhs_t)
+				&& !Types.isBaseSubtype(rhs_t, lhs_t)) {
 			syntaxError("cannot match type " + lhs_t + " against " + rhs_t, ueq);
 		}
 		
@@ -1379,7 +1362,7 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {				
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
 		
-		if(!c.lhsTest().isBaseSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
+		if(!Types.isBaseSubtype(c.lhsTest(),lhs.first())) {			
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.
 			environment = new HashMap<String,Type>(environment);
@@ -1396,7 +1379,7 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(TypeEquals c, HashMap<String,Type> environment) {				
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
 		
-		if(!c.lhsTest().isBaseSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
+		if(!Types.isBaseSubtype(c.lhsTest(), lhs.first())) {			
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.
 			environment = new HashMap<String,Type>(environment);
@@ -1471,8 +1454,8 @@ public class TypeResolution {
 			}
 			
 			if (receiver == funrec
-					|| (receiver != null && funrec != null && funrec
-							.isBaseSubtype(receiver, Collections.EMPTY_MAP))) {				
+					|| (receiver != null && funrec != null && Types
+							.isBaseSubtype(funrec, receiver))) {				
 				// receivers match up OK ... 
 				if (ft.parameters().size() == paramTypes.size()
 						&& fun.name().equals(name)
@@ -1513,7 +1496,7 @@ public class TypeResolution {
 		for (int i = 0; i != p1types.size(); ++i) {
 			Type p1 = p1types.get(i);
 			Type p2 = p2types.get(i);
-			if (!p1.isBaseSubtype(p2, Collections.EMPTY_MAP)) {
+			if (!Types.isBaseSubtype(p1, p2)) {
 				return false;
 			}
 		}
@@ -1535,7 +1518,7 @@ public class TypeResolution {
 	 * @param elem
 	 */
 	protected void checkSubtype(Type t1, Type t2, SyntacticElement elem) {		
-		if (!t1.isBaseSubtype(t2, Collections.EMPTY_MAP)) {
+		if (!Types.isBaseSubtype(t1, t2)) {
 			syntaxError("expected type " + t1 + ", got type " + t2 + ".", elem);
 		}
 	}

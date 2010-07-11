@@ -67,13 +67,8 @@ public class CodeWriter {
 	}
 	
 	public void write(TypeDecl td) {
-		writeModifiers(td.modifiers());
-		if(td.constraint() != null) {
-			output.println("define " + td.name() + " as " + td.type()
-					+ " where " + td.constraint());
-		} else {
-			output.println("define "  + td.name() + " as " + td.type());
-		}
+		writeModifiers(td.modifiers());		
+		output.println("define " + td.name() + " as " + td.type());		
 	}
 	
 	public void write(ConstDecl td) {

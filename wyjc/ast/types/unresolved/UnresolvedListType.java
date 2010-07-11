@@ -18,12 +18,18 @@
 
 package wyjc.ast.types.unresolved;
 
+import wyjc.ast.exprs.Condition;
 import wyjc.ast.types.*;
 
-public final class UnresolvedListType implements UnresolvedType {
+public final class UnresolvedListType extends ConstrainedType implements UnresolvedType {
 	private UnresolvedType element;
 	
 	public UnresolvedListType(UnresolvedType element) {
+		this.element = element;
+	}
+	
+	public UnresolvedListType(UnresolvedType element, Condition constraint) {
+		super(constraint);
 		this.element = element;
 	}
 	

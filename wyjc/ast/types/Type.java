@@ -62,15 +62,6 @@ public interface Type extends UnresolvedType {
 	public boolean isExistential();
 
 	/**
-	 * Every type may have an optional constraint. If there is no constraint,
-	 * this will be null. Within the constraint the special variable $ is used
-	 * to refer to the variable of this type.
-	 * 
-	 * @return
-	 */
-	public Condition constraint();
-	
-	/**
 	 * Convert a whiley type into a wyone type.
 	 * @param target
 	 * @return

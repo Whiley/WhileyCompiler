@@ -74,19 +74,17 @@ public class RuntimeCheckGenerator {
 	}
 	
 	public void checkgen(FunDecl f) {		
-		List<Stmt> f_statements = f.statements();
-		HashMap<String,Condition> constraints = new HashMap<String,Condition>();
+		List<Stmt> f_statements = f.statements();		
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
-		for(FunDecl.Parameter p : f.parameters()) {						
-			constraints.put(p.name(),p.constraint());
+		for(FunDecl.Parameter p : f.parameters()) {									
 			environment.put(p.name(),p.type());
 		}
 		
-		determineShadows(f, environment, constraints);
+		determineShadows(f, environment);
 		for(int i=0;i!=f_statements.size();++i) {
 			Stmt s = f_statements.get(i);
-			Pair<List<Check>,List<Check>> checks = checkgen(s,f, constraints, environment);
+			Pair<List<Check>,List<Check>> checks = checkgen(s,f, environment);
 			f_statements.addAll(i,checks.first());
 			i = i + checks.first().size();
 			f_statements.addAll(i+1,checks.second());
@@ -103,8 +101,7 @@ public class RuntimeCheckGenerator {
 	 * @param f
 	 */
 	protected void determineShadows(FunDecl f,
-			HashMap<String, Type> environment,
-			HashMap<String, Condition> constraints) {
+			HashMap<String, Type> environment) {
 		shadows.clear(); // reset old shadow information
 		Condition pc = f.postCondition();
 		if(pc == null) {
@@ -119,8 +116,7 @@ public class RuntimeCheckGenerator {
 				// efficient as it might be. 
 				String shadow = v + "$_";
 				shadows.add(var);
-				environment.put(shadow, environment.get(v));
-				constraints.put(shadow, constraints.get(v));
+				environment.put(shadow, environment.get(v));				
 			}
 		}		
 	}
@@ -133,27 +129,25 @@ public class RuntimeCheckGenerator {
 		Condition pc = f.postCondition();
 		if(pc == null) {
 			return;
-		}
-		HashMap<String,Condition> constraints = new HashMap<String,Condition>();
+		}		
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
-		for(FunDecl.Parameter p : f.parameters()) {						
-			constraints.put(p.name(),p.constraint());
+		for(FunDecl.Parameter p : f.parameters()) {									
 			environment.put(p.name(),p.type());
 		}		
 		ArrayList<Stmt> assignments = new ArrayList<Stmt>();
 		for(Variable var : shadows) {
 			String v = var.name();
 			String shadow = v + "$_";
-			VarDecl decl = new VarDecl(environment.get(v), constraints.get(v),
-					shadow, var, pc.attributes());
+			VarDecl decl = new VarDecl(environment.get(v), shadow, var, pc
+					.attributes());
 			assignments.add(decl);
 		}
 		
 		f.statements().addAll(0,assignments);
 	}
 	protected Pair<List<Check>,List<Check>> checkgen(Stmt s, FunDecl f,
-			HashMap<String, Condition> constraints,
+			
 			HashMap<String, Type> environment) {
 		List<Check> preChecks;
 		List<Check> postChecks = Collections.EMPTY_LIST;
@@ -166,13 +160,13 @@ public class RuntimeCheckGenerator {
 			} else if(s instanceof Print) {
 				preChecks = checkgen((Print)s,environment);
 			} else if (s instanceof Assign) {
-				Pair<List<Check>,List<Check>> tmp = checkgen((Assign)s, constraints, environment);
+				Pair<List<Check>,List<Check>> tmp = checkgen((Assign)s, environment);
 				preChecks = tmp.first();
 				postChecks = tmp.second();
 			} else if (s instanceof VarDecl) {
-				preChecks = checkgen((VarDecl)s, constraints, environment);					
+				preChecks = checkgen((VarDecl)s, environment);					
 			} else if (s instanceof IfElse) {
-				preChecks = checkgen((IfElse) s, f, constraints, environment);	
+				preChecks = checkgen((IfElse) s, f, environment);	
 			} else if (s instanceof Return) {
 				preChecks = checkgen((Return)s, environment, f);			
 			} else if (s instanceof Invoke) {
@@ -192,20 +186,18 @@ public class RuntimeCheckGenerator {
 	}	
 	
 	private List<Check> checkgen(VarDecl as,
-			HashMap<String, Condition> constraints,
 			HashMap<String, Type> environment) {
 		Expr init = as.initialiser();
-				
-		constraints.put(as.name(), as.constraint());		
 		
 		if(init != null) {
 			ArrayList<Check> checks = new ArrayList<Check>();
 			checks.addAll(checkgen(init,environment));
 										
-			if (as.constraint() != null) {
+			if (as.type().constraint() != null) {
 				HashMap<String, Expr> binding = new HashMap<String,Expr>();
-				binding.put("$", init);			
-				Condition constraint = as.constraint().substitute(binding);				
+				binding.put("$", init);
+				// FIXME: broken because we need to fully expand the constraint
+				Condition constraint = as.type().constraint().substitute(binding);				
 				addCheck("constraint for variable " + as.name()
 						+ " not satisfied", constraint, environment, as, checks);
 			}						
@@ -221,7 +213,6 @@ public class RuntimeCheckGenerator {
 	}
 	
 	private Pair<List<Check>,List<Check>> checkgen(Assign as,
-			HashMap<String, Condition> constraints,
 			HashMap<String, Type> environment) {
 		LVal lhs = as.lhs();
 		Expr rhs = as.rhs();
@@ -232,12 +223,14 @@ public class RuntimeCheckGenerator {
 					
 		List<Expr> flat = lhs.flattern();
 		Variable v = (Variable) flat.get(0);
+		Type oldType = environment.get(v.name());
 		
 		if (lhs instanceof Variable) {			
 			environment.put(v.name(), rhs.type(environment));
 		}
 		
-		Condition lhs_c = constraints.get(v.name());		
+		// FIXME: broken because we need to fully expand the constraint
+		Condition lhs_c = oldType.constraint();		
 		if (lhs_c != null) {
 			postChecks = new ArrayList<Check>();
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
@@ -291,7 +284,7 @@ public class RuntimeCheckGenerator {
 	}
 	
 	private List<Check> checkgen(IfElse ie, FunDecl f,
-			HashMap<String, Condition> constraints,
+			
 			HashMap<String, Type> environment) {
 		List<Check> checks = checkgen(ie.condition(),environment);		
 		List<Stmt> t_statements = ie.trueBranch();
@@ -300,7 +293,7 @@ public class RuntimeCheckGenerator {
 		if(t_statements != null) {			
 			for(int i=0;i!=t_statements.size();++i) {				
 				Stmt s = t_statements.get(i);
-				Pair<List<Check>,List<Check>> tchecks = checkgen(s,f,constraints, environment);
+				Pair<List<Check>,List<Check>> tchecks = checkgen(s,f,environment);
 				t_statements.addAll(i,tchecks.first());
 				i = i + tchecks.first().size();
 				t_statements.addAll(i+1,tchecks.second());
@@ -311,7 +304,7 @@ public class RuntimeCheckGenerator {
 		if(f_statements != null) {
 			for(int i=0;i!=f_statements.size();++i) {
 				Stmt s = f_statements.get(i);
-				Pair<List<Check>,List<Check>> fchecks = checkgen(s,f, constraints, environment);
+				Pair<List<Check>,List<Check>> fchecks = checkgen(s,f,environment);
 				f_statements.addAll(i,fchecks.first());
 				i = i + fchecks.first().size();
 				f_statements.addAll(i+1,fchecks.second());

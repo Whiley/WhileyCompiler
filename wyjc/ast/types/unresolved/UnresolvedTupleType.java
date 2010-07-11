@@ -20,13 +20,20 @@ package wyjc.ast.types.unresolved;
 
 import java.util.*;
 
+import wyjc.ast.exprs.Condition;
 import wyjc.ast.types.*;
 
-public class UnresolvedTupleType implements UnresolvedType {
+public class UnresolvedTupleType extends ConstrainedType implements UnresolvedType {
 	private HashMap<String,UnresolvedType> types;
 	
 	public UnresolvedTupleType(Map<String,UnresolvedType> types) {
 		this.types = new HashMap<String,UnresolvedType>(types);			
+	}
+	
+	public UnresolvedTupleType(Map<String, UnresolvedType> types,
+			Condition constraint) {
+		super(constraint);
+		this.types = new HashMap<String, UnresolvedType>(types);
 	}
 	
 	public Iterator<Map.Entry<String,UnresolvedType>> iterator() {

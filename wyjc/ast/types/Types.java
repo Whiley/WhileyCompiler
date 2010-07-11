@@ -23,6 +23,7 @@ import java.util.*;
 import wyjc.ast.attrs.SyntacticElement;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.logic.*;
+import wyjc.ast.types.unresolved.UnresolvedType;
 import static wyjc.util.SyntaxError.*;
 
 public class Types {
@@ -64,67 +65,95 @@ public class Types {
 			return t1;
 		} else if(isStrictSubtype(t2,t1)) {
 			return t2;
-		} else if(baseEquivalent(t1,t2)) {
-			return recondition(t1, new Or(t1.constraint(), t2.constraint()));
+		} else if(isBaseEquivalent(t1,t2)) {
+			// FIXME: it would be nice to do some kind of simplification here.
+			return recondition(t1, leastUpperBound(t1.constraint(),t2.constraint()));
 		} else if(isBaseSubtype(t1,t2)) {
 			Condition c = t1.constraint();
-			String v;
-			c = new And(c,new TypeGate(new Variable("$"),v,t2.constraint()));
+			String v = Variable.freshVar();
+			// FIXME: i'm not very sure about this
+			Condition tg = new TypeGate(t2,v,new Variable("$"),new BoolVal(true));
+			return recondition(t1,new Or(c,tg));
 		} else if(isBaseSubtype(t2,t1)) {
-			
+			Condition c = t2.constraint();
+			String v = Variable.freshVar();
+			// FIXME: i'm not very sure about this
+			Condition tg = new TypeGate(t1,v,new Variable("$"),new BoolVal(true));
+			return recondition(t2,new Or(c,tg));
 		}
 		
-		if(t1 instanceof UnionType && t2 instanceof UnionType) {
+		if (t1 instanceof UnionType && t2 instanceof UnionType) {
 			UnionType ut1 = (UnionType) t1;
 			UnionType ut2 = (UnionType) t2;
-			ArrayList<NonUnionType> types = new ArrayList<NonUnionType>(ut1.types());
-			
-			// OK, this is totally broken because it doesn't eliminate subsumed
+			ArrayList<NonUnionType> types = new ArrayList<NonUnionType>(ut1
+					.types());
+
+			// OK, this could be improved because it doesn't eliminate subsumed
 			// types. I really need to work harder here, but for now i'm
 			// slacking off...
-			
+
 			types.addAll(ut2.types());
-			return new UnionType(types);
-			
+			return new UnionType(types, leastUpperBound(t1.constraint(), t2
+					.constraint()));
 		} else if(t1 instanceof UnionType) {			
 			UnionType ut1 = (UnionType) t1;
 			ArrayList<NonUnionType> types = new ArrayList<NonUnionType>(ut1.types());
 			
 			for(int i=0;i!=types.size();++i) {
 				NonUnionType t = types.get(i);
-				if(t2.isBaseSubtype(t, Collections.EMPTY_MAP)) {
+				if(isStrictSubtype(t2, t)) {
 					types.set(i, (NonUnionType) t2);
-					return new UnionType(types);
+					return new UnionType(types, ut1.constraint());
+				} else if(isBaseEquivalent(t,t2)) {
+					types.set(i, (NonUnionType) recondition(t, leastUpperBound(
+							t.constraint(), t2.constraint())));
+					return new UnionType(types,ut1.constraint());
 				}
 			}
 						
 			types.add((NonUnionType) t2);
-			return new UnionType(types);
+			return new UnionType(types, leastUpperBound(t1.constraint(), t2
+					.constraint()));
 		} else if(t2 instanceof UnionType) {
 			UnionType ut2 = (UnionType) t2;
 			ArrayList<NonUnionType> types = new ArrayList<NonUnionType>(ut2.types());
 			
 			for(int i=0;i!=types.size();++i) {
 				NonUnionType t = types.get(i);
-				if(t1.isBaseSubtype(t, Collections.EMPTY_MAP)) {
-					types.set(i, (NonUnionType) t1);			
-					return new UnionType(types);
+				if(isStrictSubtype(t1, t)) {
+					types.set(i, (NonUnionType) t1);
+					return new UnionType(types, ut2.constraint());
+				} else if(isBaseEquivalent(t,t1)) {
+					types.set(i, (NonUnionType) recondition(t, leastUpperBound(
+							t.constraint(), t1.constraint())));
+					return new UnionType(types,ut2.constraint());
 				}
-			}					
-			types.add((NonUnionType) t1);			
-			return new UnionType(types);			
+			}
+			
+			types.add((NonUnionType) t1);
+			return new UnionType(types, leastUpperBound(t2.constraint(), t1
+					.constraint()));
 		} else if(t1 instanceof ListType && t2 instanceof ListType) {
 			ListType l1 = (ListType) t1;
 			ListType l2 = (ListType) t2;
-			// FIXME: bug here
 			return new ListType(leastUpperBound(l1.element(),l2.element()));
 		} else if(t1 instanceof SetType && t2 instanceof SetType) {
 			SetType s1 = (SetType) t1;
 			SetType s2 = (SetType) t2;
-			// FIXME: bug here
 			return new SetType(leastUpperBound(s1.element(),s2.element()));
 		} else {
 			return new UnionType((NonUnionType) t1, (NonUnionType) t2);
+		}
+	}
+	
+	private static Condition leastUpperBound(Condition c1, Condition c2) {
+		if(c1 == null) {
+			return c2;
+		} else if(c2 == null) {
+			return c1;
+		} else {
+			// Would be nice to do some simplification here
+			return new Or(c1,c2);
 		}
 	}
 	
@@ -132,9 +161,9 @@ public class Types {
 		
 		// NOTE. There are still bugs in this algorithm.
 		
-		if(t1.isBaseSubtype(t2, Collections.EMPTY_MAP)) {									
+		if(isBaseSubtype(t1, t2, Collections.EMPTY_MAP)) {									
 			return t1;
-		} else if(t2.isBaseSubtype(t1, Collections.EMPTY_MAP)) {			
+		} else if(isBaseSubtype(t2, t1, Collections.EMPTY_MAP)) {			
 			return t2;
 		}
 		
@@ -420,37 +449,147 @@ public class Types {
 		
 		return false;
 	}
-	
 
-	public static Type recondition(Type t, Condition c) {
+	/**
+	 * Two types are ease equivalent if their underlying types are identical.
+	 * That is, when all constraints are ignored.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @param environment
+	 * @return
+	 */
+	private static boolean isBaseEquivalent(Type t1, Type t2) {		
+		if(t1 instanceof IntType) {
+			return t2 instanceof IntType;
+		} else if(t1 instanceof RealType) {
+			return t2 instanceof RealType;
+		} else if(t1 instanceof BoolType) {
+			return t2 instanceof BoolType;
+		} else if(t1 instanceof AnyType) {
+			return t2 instanceof AnyType;
+		} else if(t1 instanceof ExistentialType) {
+			return t2 instanceof ExistentialType;
+		} else if(t1 instanceof VoidType) {
+			return t2 instanceof VoidType;
+		} else if(t1 instanceof NamedType && t2 instanceof NamedType) {
+			NamedType nt1 = (NamedType) t1;			
+			NamedType nt2 = (NamedType) t2;
+			return nt1.name().equals(nt2.name())
+					&& nt1.module().equals(nt2.module());										
+		} else if(t1 instanceof ProcessType && t2 instanceof ProcessType) {
+			ProcessType pt1 = (ProcessType) t1;			
+			ProcessType pt2 = (ProcessType) t2;
+			return isBaseEquivalent(pt1.element(),pt2.element());							
+		} else if(t1 instanceof ListType && t2 instanceof ListType) {
+			ListType pt1 = (ListType) t1;			
+			ListType pt2 = (ListType) t2;
+			return isBaseEquivalent(pt1.element(),pt2.element());							
+		} else if(t1 instanceof SetType && t2 instanceof SetType) {
+			SetType pt1 = (SetType) t1;			
+			SetType pt2 = (SetType) t2;
+			return isBaseEquivalent(pt1.element(),pt2.element());							
+		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
+			TupleType tt1 = (TupleType) t1;			
+			TupleType tt2 = (TupleType) t2;
+				
+			for (Map.Entry<String, Type> p : tt1.types().entrySet()) {
+				String n = p.getKey();
+				Type mt = tt2.types().get(n);				
+				Type ttt = p.getValue();
+				if (mt == null || !isBaseEquivalent(ttt,mt)) {					
+					return false;
+				}
+			}				
+			
+			return true;			
+		} else if(t1 instanceof RecursiveType) {
+			RecursiveType rt1 = (RecursiveType) t1;
+			if(t1.equals(t2)) {
+				return true;
+			} else if(t2 instanceof RecursiveType) {				
+				RecursiveType rt2 = (RecursiveType) t2;
+				
+				if(rt1.type() == null) {
+					return rt2.type() == null;
+				}
+				
+				HashMap<String,Type> binding = new HashMap();
+				binding.put(rt2.name(), new RecursiveType(rt1.name(),null,null));				
+				return isBaseEquivalent(rt1.type(),rt2.type().substitute(binding));
+			}
+		} else if(t1 instanceof UnionType && t2 instanceof UnionType) {
+			UnionType ut1 = (UnionType) t1;			
+			UnionType ut2 = (UnionType) t2;
+			Set<NonUnionType> ut1types = ut1.types();
+			Set<NonUnionType> ut2types = ut2.types();
+			if(ut1types.size() != ut2types.size()) {
+				return false;
+			}
+			Iterator<NonUnionType> iter = ut2.types().iterator();
+			for(Type tt1 : ut1types) {
+				Type tt2 = iter.next();
+				if(!isBaseEquivalent(tt1,tt2)) {
+					return false;
+				}				
+			}
+			return true;			
+		} else if(t1 instanceof FunType && t2 instanceof FunType) {						
+			FunType ft1 = (FunType) t1;
+			FunType ft2 = (FunType) t2;
+			List<Type> ft1params = ft1.parameters();
+			List<Type> ft2params = ft2.parameters();
+			if(ft2params.size() == ft1params.size()) {
+				for(int i=0;i!=ft2params.size();++i) {
+					Type tt1 = ft1params.get(i);
+					Type tt2 = ft2params.get(i);
+					if(!isBaseEquivalent(tt1,tt2)) {
+						return false;
+					}
+				}
+				return isBaseEquivalent(ft2.returnType(), ft1.returnType());
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * The following simply updates the condition associated with a type.
+	 * 
+	 * @param t
+	 * @param c
+	 * @return
+	 */
+	 public static <T extends UnresolvedType> T recondition(T t, Condition c) {
 		if (t instanceof VoidType || t instanceof ExistentialType
 				|| t instanceof NamedType) {
 			return t;
 		} else if(t instanceof IntType) {
-			return Types.T_INT(c);
+			return (T) Types.T_INT(c);
 		} else if(t instanceof RealType) {
-			return Types.T_INT(c);
+			return (T) Types.T_INT(c);
 		} else if(t instanceof ListType) {
 			ListType lt = (ListType) t;
-			return new ListType(lt.element(),c);
+			return (T) new ListType(lt.element(),c);
 		} else if(t instanceof SetType) {
 			SetType st = (SetType) t;
-			return new SetType(st.element(),c);
+			return (T) new SetType(st.element(),c);
 		} else if(t instanceof ProcessType) {
 			ProcessType st = (ProcessType) t;
-			return new ProcessType(st.element(),c);
+			return (T) new ProcessType(st.element(),c);
 		} else if(t instanceof RecursiveType) {
 			RecursiveType st = (RecursiveType) t;
-			return new RecursiveType(st.name(),st.type(),c);
+			return (T) new RecursiveType(st.name(),st.type(),c);
 		} else if(t instanceof TupleType) {
 			TupleType st = (TupleType) t;
-			return new TupleType(st.types(),c);
+			return (T) new TupleType(st.types(),c);
 		} else if(t instanceof UnionType) {
 			UnionType st = (UnionType) t;
-			return new UnionType(c,st.types());
+			return (T) new UnionType(st.types(),c);
 		} else if(t instanceof FunType) {
 			FunType ft = (FunType) t;
-			return new FunType(ft.returnType(),ft.parameters(),c);
+			return (T) new FunType(ft.returnType(),ft.parameters(),c);
 		} else {
 			throw new IllegalArgumentException("unknown type encountered: " + t);
 		}

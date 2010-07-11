@@ -18,5 +18,17 @@
 
 package wyjc.ast.types.unresolved;
 
-public interface UnresolvedType {		
+import wyjc.ast.exprs.Condition;
+
+public interface UnresolvedType {
+
+	/**
+	 * Every type may have an optional constraint. If there is no constraint,
+	 * this will be null. Within the constraint the special variable $ is used
+	 * to refer to the variable of this type.
+	 * 
+	 * @return
+	 */
+	public Condition constraint();
+		
 }

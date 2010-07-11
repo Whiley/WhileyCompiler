@@ -20,12 +20,19 @@ package wyjc.ast.types.unresolved;
 
 import java.util.*;
 
+import wyjc.ast.exprs.Condition;
 import wyjc.ast.types.*;
 
-public class UnresolvedUnionType implements UnresolvedType {
+public class UnresolvedUnionType extends ConstrainedType implements UnresolvedType {
 	private HashSet<UnresolvedType> types;
 	
 	public UnresolvedUnionType(Collection<UnresolvedType> types) {
+		// need to flattern union types here.
+		this.types = new HashSet<UnresolvedType>(types);
+	}
+
+	public UnresolvedUnionType(Collection<UnresolvedType> types, Condition constraint) {
+		super(constraint);
 		// need to flattern union types here.
 		this.types = new HashSet<UnresolvedType>(types);
 	}

@@ -59,7 +59,7 @@ public class ResolvedWhileyFile {
 		for(Decl d : decls) {
 			if(d instanceof TypeDecl) {
 				TypeDecl td = (TypeDecl) d;
-				types.put(td.name(), new ModuleInfo.TypeDef(td.name(),td.type(),td.constraint()));
+				types.put(td.name(), new ModuleInfo.TypeDef(td.name(),td.type()));
 			} else if(d instanceof ConstDecl) {
 				ConstDecl cd = (ConstDecl) d;
 				constants.put(cd.name(), new ModuleInfo.Const(cd.name(),cd.constant()));
@@ -99,14 +99,14 @@ public class ResolvedWhileyFile {
 	public static class TypeDecl extends TemplatedWhileyFile.TypeDecl<Type>
 			implements
 				Decl {
-		public TypeDecl(List<Modifier> modifiers, Type type, Condition constraint, String name,
+		public TypeDecl(List<Modifier> modifiers, Type type, String name,
 				Attribute... attributes) {
-			super(modifiers,type, constraint, name, attributes);
+			super(modifiers,type, name, attributes);
 		}
-		public TypeDecl(List<Modifier> modifiers, Type type, Condition constraint, String name,
+		public TypeDecl(List<Modifier> modifiers, Type type, String name,
 				Collection<Attribute> attributes) {
-			super(modifiers,type, constraint, name, attributes);
-		}
+			super(modifiers,type, name, attributes);
+		}		
 	}
 
 	public static class FunDecl
@@ -160,21 +160,13 @@ public class ResolvedWhileyFile {
 				extends
 					TemplatedWhileyFile.Parameter<Type> {
 			
-			private Condition constraint;
-			
-			public Parameter(Type t, Condition constraint, String name, Attribute... attributes) {
-				super(t, name, attributes);
-				this.constraint = constraint;
+			public Parameter(Type t, String name, Attribute... attributes) {
+				super(t, name, attributes);				
 			}
 			
-			public Parameter(Type t, Condition constraint, String name, Collection<Attribute> attributes) {
-				super(t, name, attributes);
-				this.constraint = constraint;
-			}
-			
-			public Condition constraint() {
-				return constraint;
-			}
+			public Parameter(Type t, String name, Collection<Attribute> attributes) {
+				super(t, name, attributes);				
+			}			
 		}
 	}
 }

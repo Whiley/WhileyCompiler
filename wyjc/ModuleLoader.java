@@ -583,13 +583,11 @@ public class ModuleLoader {
 				Expr expr = wd.expr();
 				if(type == null) {
 					// constant definition
-					// FIXME: split WhileyDefine into two attributes to avoid awkward cast
 					ModuleInfo.Const ci = new ModuleInfo.Const(wd.defName(),(Value) expr);
 					constants.put(wd.defName(),ci);
 				} else {
-					// type definition
-					// FIXME: split WhileyDefine into two attributes to avoid awkward cast
-					ModuleInfo.TypeDef ti = new ModuleInfo.TypeDef(wd.defName(),type,(Condition) expr);
+					// type definition					
+					ModuleInfo.TypeDef ti = new ModuleInfo.TypeDef(wd.defName(),type);
 					types.put(wd.defName(),ti);
 				}
 			}

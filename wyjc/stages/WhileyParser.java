@@ -214,13 +214,11 @@ public class WhileyParser {
 				matchKeyword("where");				
 				constraint = parseRealCondition();				
 				Pair<Type,Condition> munged = mungeConstrainedTypes(t,constraint);
-				t = munged.first();
-				constraint = munged.second();
-				
+				t = Types.recondition(munged.first(),munged.second());
 			}
 					
 			matchEndLine();		
-			return new TypeDecl(modifiers, t, constraint, name.text, sourceAttr(start,index-1));
+			return new TypeDecl(modifiers, t, name.text, sourceAttr(start,index-1));
 		
 		} catch(Exception e) {}
 		

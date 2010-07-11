@@ -27,7 +27,12 @@ import wyone.core.WType;
 public class FunType extends ConstrainedType implements Type {
 	private Type ret;
 	private ArrayList<Type> parameters;
-	
+
+	public FunType(Type ret, Collection<Type> parameters) {
+		this.ret = ret;
+		this.parameters = new ArrayList<Type>(parameters);
+	}
+
 	public FunType(Type ret, Collection<Type> parameters, Condition constraint) {
 		super(constraint);
 		this.ret = ret;

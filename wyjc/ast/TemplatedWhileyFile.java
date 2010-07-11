@@ -83,23 +83,20 @@ public class TemplatedWhileyFile {
 	
 	public static class TypeDecl<T extends UnresolvedType> extends SyntacticElementImpl implements Decl<T> {
 		protected List<Modifier> modifiers;
-		protected T type;
-		protected Condition constraint;	
+		protected T type;		
 		protected String name;
 
-		public TypeDecl(List<Modifier> modifiers, T type, Condition constraint, String name, Attribute... attributes) { 
+		public TypeDecl(List<Modifier> modifiers, T type, String name, Attribute... attributes) { 
 			super(attributes);
 			this.modifiers = modifiers;
-			this.type = type;
-			this.constraint = constraint;
+			this.type = type;			
 			this.name = name;
 		}
 
-		public TypeDecl(List<Modifier> modifiers, T type, Condition constraint, String name, Collection<Attribute> attributes) { 
+		public TypeDecl(List<Modifier> modifiers, T type, String name, Collection<Attribute> attributes) { 
 			super(attributes);		
 			this.modifiers = modifiers;
-			this.type = type;
-			this.constraint = constraint;
+			this.type = type;			
 			this.name = name;
 		}
 			
@@ -117,12 +114,6 @@ public class TemplatedWhileyFile {
 		}
 		
 		public T type() { return type; }
-		
-		public Condition constraint() { return constraint; }
-		
-		public void setConstraint(Condition constraint) {
-			this.constraint = constraint;
-		}
 		
 		public String name() { return name; }		
 		

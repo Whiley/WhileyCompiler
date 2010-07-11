@@ -94,11 +94,6 @@ public class VerificationConditionGenerator {
 				TypeDecl dd = (TypeDecl) d;				
 				Condition c = flatternConstraints(dd.type());
 
-				if(c == null) {
-					c = dd.constraint();
-				} else if(dd.constraint() != null) {
-					c = new And(c,dd.constraint());
-				}
 				if(c != null) {				
 					types.put(dd.name(), c);
 				}									

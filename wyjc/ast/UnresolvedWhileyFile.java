@@ -127,11 +127,11 @@ public class UnresolvedWhileyFile {
 	}
 	
 	public static class TypeDecl extends TemplatedWhileyFile.TypeDecl<UnresolvedType> implements Decl {
-		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, Condition constraint, String name, Attribute... attributes) { 
-			super(modifiers, type, constraint, name, attributes);			
+		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name, Attribute... attributes) { 
+			super(modifiers, type, name, attributes);			
 		}
-		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, Condition constraint, String name, List<Attribute> attributes) { 
-			super(modifiers,type, constraint, name, attributes);			
+		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name, List<Attribute> attributes) { 
+			super(modifiers,type, name, attributes);			
 		}
 	}
 	

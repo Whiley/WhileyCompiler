@@ -94,7 +94,7 @@ public class ClassFileBuilder {
 			} else if(d instanceof TypeDecl) {
 				TypeDecl td = (TypeDecl) d;
 				Type t = td.type();
-				WhileyDefine wd = new WhileyDefine(td.name(),t,td.constraint());
+				WhileyDefine wd = new WhileyDefine(td.name(),t,null);
 				cf.attributes().add(wd);
 			} else if(d instanceof ConstDecl) {
 				ConstDecl cd = (ConstDecl) d;				
