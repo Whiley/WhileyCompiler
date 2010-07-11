@@ -23,7 +23,7 @@ import java.util.*;
 import wyjc.ast.attrs.SyntacticElement;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.logic.*;
-import wyjc.ast.types.unresolved.UnresolvedType;
+import wyjc.ast.types.unresolved.*;
 import static wyjc.util.SyntaxError.*;
 
 public class Types {
@@ -563,7 +563,7 @@ public class Types {
 	 */
 	 public static <T extends UnresolvedType> T recondition(T t, Condition c) {
 		if (t instanceof VoidType || t instanceof ExistentialType
-				|| t instanceof NamedType) {
+				|| t instanceof NamedType || t instanceof AnyType) {
 			return t;
 		} else if(t instanceof IntType) {
 			return (T) Types.T_INT(c);
@@ -572,24 +572,42 @@ public class Types {
 		} else if(t instanceof ListType) {
 			ListType lt = (ListType) t;
 			return (T) new ListType(lt.element(),c);
+		} else if(t instanceof UnresolvedListType) {
+			UnresolvedListType lt = (UnresolvedListType) t;
+			return (T) new UnresolvedListType(lt.element(),c);
 		} else if(t instanceof SetType) {
 			SetType st = (SetType) t;
 			return (T) new SetType(st.element(),c);
+		} else if(t instanceof UnresolvedSetType) {
+			UnresolvedSetType st = (UnresolvedSetType) t;
+			return (T) new UnresolvedSetType(st.element(),c);
 		} else if(t instanceof ProcessType) {
 			ProcessType st = (ProcessType) t;
 			return (T) new ProcessType(st.element(),c);
+		} else if(t instanceof UnresolvedProcessType) {
+			UnresolvedProcessType st = (UnresolvedProcessType) t;
+			return (T) new UnresolvedProcessType(st.element(),c);
 		} else if(t instanceof RecursiveType) {
 			RecursiveType st = (RecursiveType) t;
 			return (T) new RecursiveType(st.name(),st.type(),c);
 		} else if(t instanceof TupleType) {
 			TupleType st = (TupleType) t;
 			return (T) new TupleType(st.types(),c);
+		} else if(t instanceof UnresolvedTupleType) {
+			UnresolvedTupleType st = (UnresolvedTupleType) t;
+			return (T) new UnresolvedTupleType(st.types(),c);
 		} else if(t instanceof UnionType) {
 			UnionType st = (UnionType) t;
 			return (T) new UnionType(st.types(),c);
+		} else if(t instanceof UnresolvedUnionType) {
+			UnresolvedUnionType st = (UnresolvedUnionType) t;
+			return (T) new UnresolvedUnionType(st.types(),c);
 		} else if(t instanceof FunType) {
 			FunType ft = (FunType) t;
 			return (T) new FunType(ft.returnType(),ft.parameters(),c);
+		} else if(t instanceof UserDefType) {
+			UserDefType udt = (UserDefType) t;
+			return (T) new UserDefType(udt.name(),udt.module(),c);
 		} else {
 			throw new IllegalArgumentException("unknown type encountered: " + t);
 		}

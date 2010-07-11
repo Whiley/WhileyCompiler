@@ -46,7 +46,14 @@ public class UserDefType extends ConstrainedType implements UnresolvedType {
 	
 	public UserDefType(String name, ModuleID module) {
 		this.name = name;
+		this.module = module;
 	}
+
+	public UserDefType(String name, ModuleID module, Condition constraint) {
+		super(constraint);
+		this.name = name;
+		this.module = module;
+	}	
 	
 	public void resolve(ModuleID module) {
 		this.module = module;
