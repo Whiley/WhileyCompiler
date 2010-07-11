@@ -82,7 +82,7 @@ public class TypeResolution {
 			if(c != null) {								
 				c = (Condition) check(c, environment).second();				
 			}
-			types.put(key, recondition(type, c));
+			types.put(key, Types.recondition(type, c));
 		}
 							
 		for(UnresolvedWhileyFile f : files) {
@@ -190,7 +190,7 @@ public class TypeResolution {
 						Condition ec = buildEquals(vt.element(),lhs,elem);						
 						vstc = vstc == null ? ec : new Or(vstc,ec,c.attribute(SourceAttr.class));
 					}					
-					types.put(k,recondition(vt.element(),vstc));
+					types.put(k,Types.recondition(vt.element(),vstc));
 				}
 			} else {
 				syntaxError("invalid constant definition",srcs.get(k));
@@ -336,7 +336,7 @@ public class TypeResolution {
 					tg.rhs(), tg.attributes()));
 		}
 		
-		return recondition(ntype, (Condition) p.constraint().replace(c_binding));
+		return Types.recondition(ntype, (Condition) p.constraint().replace(c_binding));
 	}
 	protected static final String[] names = {"X","Y","Z","U","V","W","P","Q","R","S","T"}; 
 	private static boolean isRecursive(NameID root, Type type) {
@@ -393,7 +393,7 @@ public class TypeResolution {
 			t = new RecursiveType(key.toString(),t,null);			
 		} 
 		
-		t = recondition(t,constraint);
+		t = Types.recondition(t,constraint);
 		
 		cache.put(key, t);
 		
@@ -465,7 +465,7 @@ public class TypeResolution {
 			c = (Condition) check(c,env).second();
 			renumber(c,elem.attribute(SourceAttr.class));
 		}				
-		return recondition(tc,c);
+		return Types.recondition(tc,c);
 	}
 	
 	protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
@@ -1173,7 +1173,7 @@ public class TypeResolution {
 			ListType t1 = (ListType) lhs_t;
 			ListType t2 = (ListType) rhs_t;
 												
-			if(!t1.isSubtype(t2, Collections.EMPTY_MAP) && !t2.isSubtype(t1, Collections.EMPTY_MAP)) {
+			if(!t1.isBaseSubtype(t2, Collections.EMPTY_MAP) && !t2.isBaseSubtype(t1, Collections.EMPTY_MAP)) {
 				syntaxError("cannot compare type " + t1 + " with type " + t2,e);
 			}
 			
@@ -1198,7 +1198,7 @@ public class TypeResolution {
 			SetType t1 = (SetType) lhs_t;
 			SetType t2 = (SetType) rhs_t;
 												
-			if(!t1.isSubtype(t2, Collections.EMPTY_MAP) && !t2.isSubtype(t1, Collections.EMPTY_MAP)) {
+			if(!t1.isBaseSubtype(t2, Collections.EMPTY_MAP) && !t2.isBaseSubtype(t1, Collections.EMPTY_MAP)) {
 				syntaxError("cannot compare type " + t1 + " with type " + t2,e);
 			}
 			
@@ -1334,8 +1334,8 @@ public class TypeResolution {
 		Type lhs_t = lhs.first();		
 
 		// now check it makes sense
-		if (!lhs_t.isSubtype(rhs_t, Collections.EMPTY_MAP)
-				&& !rhs_t.isSubtype(lhs_t, Collections.EMPTY_MAP)) {
+		if (!lhs_t.isBaseSubtype(rhs_t, Collections.EMPTY_MAP)
+				&& !rhs_t.isBaseSubtype(lhs_t, Collections.EMPTY_MAP)) {
 			syntaxError("cannot match type " + lhs_t + " against " + rhs_t, ueq);
 		}
 		
@@ -1379,7 +1379,7 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {				
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
 		
-		if(!c.lhsTest().isSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
+		if(!c.lhsTest().isBaseSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.
 			environment = new HashMap<String,Type>(environment);
@@ -1396,7 +1396,7 @@ public class TypeResolution {
 	protected Pair<Type, Expr> check(TypeEquals c, HashMap<String,Type> environment) {				
 		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
 		
-		if(!c.lhsTest().isSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
+		if(!c.lhsTest().isBaseSubtype(lhs.first(), Collections.EMPTY_MAP)) {			
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.
 			environment = new HashMap<String,Type>(environment);
@@ -1472,7 +1472,7 @@ public class TypeResolution {
 			
 			if (receiver == funrec
 					|| (receiver != null && funrec != null && funrec
-							.isSubtype(receiver, Collections.EMPTY_MAP))) {				
+							.isBaseSubtype(receiver, Collections.EMPTY_MAP))) {				
 				// receivers match up OK ... 
 				if (ft.parameters().size() == paramTypes.size()
 						&& fun.name().equals(name)
@@ -1513,7 +1513,7 @@ public class TypeResolution {
 		for (int i = 0; i != p1types.size(); ++i) {
 			Type p1 = p1types.get(i);
 			Type p2 = p2types.get(i);
-			if (!p1.isSubtype(p2, Collections.EMPTY_MAP)) {
+			if (!p1.isBaseSubtype(p2, Collections.EMPTY_MAP)) {
 				return false;
 			}
 		}
@@ -1535,42 +1535,8 @@ public class TypeResolution {
 	 * @param elem
 	 */
 	protected void checkSubtype(Type t1, Type t2, SyntacticElement elem) {		
-		if (!t1.isSubtype(t2, Collections.EMPTY_MAP)) {
+		if (!t1.isBaseSubtype(t2, Collections.EMPTY_MAP)) {
 			syntaxError("expected type " + t1 + ", got type " + t2 + ".", elem);
-		}
-	}
-
-	protected Type recondition(Type t, Condition c) {
-		if (t instanceof VoidType || t instanceof ExistentialType
-				|| t instanceof NamedType) {
-			return t;
-		} else if(t instanceof IntType) {
-			return Types.T_INT(c);
-		} else if(t instanceof RealType) {
-			return Types.T_INT(c);
-		} else if(t instanceof ListType) {
-			ListType lt = (ListType) t;
-			return new ListType(lt.element(),c);
-		} else if(t instanceof SetType) {
-			SetType st = (SetType) t;
-			return new SetType(st.element(),c);
-		} else if(t instanceof ProcessType) {
-			ProcessType st = (ProcessType) t;
-			return new ProcessType(st.element(),c);
-		} else if(t instanceof RecursiveType) {
-			RecursiveType st = (RecursiveType) t;
-			return new RecursiveType(st.name(),st.type(),c);
-		} else if(t instanceof TupleType) {
-			TupleType st = (TupleType) t;
-			return new TupleType(st.types(),c);
-		} else if(t instanceof UnionType) {
-			UnionType st = (UnionType) t;
-			return new UnionType(c,st.types());
-		} else if(t instanceof FunType) {
-			FunType ft = (FunType) t;
-			return new FunType(ft.returnType(),ft.parameters(),c);
-		} else {
-			throw new IllegalArgumentException("unknown type encountered: " + t);
 		}
 	}
 	

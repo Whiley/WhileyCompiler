@@ -39,11 +39,6 @@ public class ExistentialType extends ConstrainedType implements NonUnionType {
 		return 3;
 	}
 	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		// the following is certainly a pretty strange one!
-		return false;
-	}
-	
 	public Type lub(Type t) {
 		return this;
 	}

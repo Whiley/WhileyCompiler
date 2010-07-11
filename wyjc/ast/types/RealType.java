@@ -47,16 +47,6 @@ public final class RealType extends ConstrainedType implements NonUnionType {
 		int hc = constraint == null ? 0 : constraint.hashCode();
 		return 2 + hc;
 	}			
-	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		} else if(t instanceof ProcessType) {
-			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element(),environment);
-		} 
-		return t == Types.T_REAL || t instanceof IntType || t == Types.T_VOID;
-	}
 		
 	public Type flattern() {
 		return this;

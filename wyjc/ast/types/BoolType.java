@@ -50,16 +50,6 @@ public final class BoolType extends ConstrainedType implements NonUnionType {
 		return 2 + hc;
 	}
 	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		} else if(t instanceof ProcessType) {
-			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element(), environment);
-		} 
-		return t == Types.T_BOOL || t == Types.T_VOID;
-	}	
-	
 	public Type flattern() {
 		return this;
 	}		

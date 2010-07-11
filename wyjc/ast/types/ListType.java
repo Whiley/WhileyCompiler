@@ -44,22 +44,6 @@ public final class ListType extends SetType {
 				&& (constraint == at.constraint || (constraint != null && constraint
 						.equals(at.constraint)));
 	}
-		
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		}
-		if(t == Types.T_VOID) {
-			return true;
-		} else if(t instanceof ListType) {
-			ListType lt = (ListType) t;
-			return element().isSubtype(lt.element(),environment);
-		} else if(t instanceof ProcessType) {
-			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element(), environment);
-		} 		
-		return false;
-	}
 	
 	public Type flattern() {
 		return new ListType(element().flattern(),constraint);

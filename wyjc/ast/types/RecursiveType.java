@@ -58,31 +58,7 @@ public class RecursiveType extends ConstrainedType implements NonUnionType {
 	public Type flattern() {
 		return type.flattern();
 	}
-		
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		// this is a delicate method; don't mess with it unless you know what
-		// you're doing.	
-		if(equals(t)) {
-			return true;
-		} else if(type == null) {			
-			// leaf case, so unroll one level
-			Type tmp = environment.get(name);			
-			return tmp != null && tmp.isSubtype(t,environment);
-		} else if(t instanceof RecursiveType) {
-			// non-leaf case
-			RecursiveType nt = (RecursiveType) t;			
-			Type nt_type = nt.type();
-			HashMap<String,Type> binding = new HashMap();
-			binding.put(nt.name(), new RecursiveType(name,null,null));
-			t = nt_type.substitute(binding);
-		}
-		
-		environment = new HashMap<String,Type>(environment);
-		// FIXME: potential for variable capture here?
-		environment.put(name, type);
-		return type.isSubtype(t,environment);				
-	}
-	
+			
 	public boolean isExistential() {
 		return false;
 	}

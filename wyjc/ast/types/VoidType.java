@@ -38,10 +38,6 @@ public final class VoidType extends ConstrainedType implements NonUnionType {
 	public int hashCode() {
 		return 0;
 	}
-	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		return false;
-	}
 		
 	public Type lub(Type t) {
 		return t;

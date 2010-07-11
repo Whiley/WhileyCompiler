@@ -31,33 +31,7 @@ import java.util.*;
  * 
  * @author djp
  */
-public interface Type extends UnresolvedType {
-	/**
-	 * Determine whether a given type is a subtype of this type. Observe that
-	 * this only considers the types themselves, not any constraints that may be
-	 * imposed upon them (since we cannot reason about constraints here).
-	 * Therefore, it's entirely possible that this will report two types are
-	 * subtypes of each other when, in fact, they're not (if constraints are
-	 * considered). For example, consider:
-	 * 
-	 * <pre>
-	 * define nat as int where $ >= 0
-	 * define pos as int where $ > 0
-	 * </pre>
-	 * 
-	 * Now, this method will report that nat <: pos (since int <: int).
-	 * 
-	 * @param t
-	 *            --- the type being tested to see whether it's a subtype of
-	 *            this type.
-	 * @param environment
-	 *            --- this is used to propagate the types of internally
-	 *            generated variables (i.e. arising from RecursiveType).
-	 *            Initially, you should just supply Collections.EMPTY_MAP.
-	 * @return
-	 */
-	public boolean isSubtype(Type t, Map<String, Type> environment);
-	
+public interface Type extends UnresolvedType {	
 	/**
 	 * Strip off all named types.
 	 */

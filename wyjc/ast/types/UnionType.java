@@ -57,38 +57,6 @@ public class UnionType extends ConstrainedType implements Type {
 	public int hashCode() {
 		int hc = constraint == null ? 0 : constraint.hashCode();
 		return types.hashCode() + hc;
-	}
-	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		}
-		if(t instanceof UnionType) {
-			UnionType ut = (UnionType) t;
-			for(Type b1 : types) {
-				boolean matched = false;
-				for(Type b2 : ut.types) {
-					if(b1.isSubtype(b2, environment)) {
-						matched = true;
-					}
-				}
-				if(!matched) {
-					return false;
-				}
-			}
-			return true;
-		} else {
-			for(Type b : types) {
-				if(b.isSubtype(t, environment)) {
-					return true;
-				}
-			}
-			if(t instanceof ProcessType) {
-				ProcessType pt = (ProcessType) t;
-				return isSubtype(pt.element(), environment);
-			} 
-			return false;
-		}
 	}	
 	
 	public Type flattern() {

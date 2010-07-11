@@ -64,38 +64,6 @@ public class TupleType extends ConstrainedType implements NonUnionType {
 		return types.hashCode() + hc;
 	}	
 	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		}
-		if(t == Types.T_VOID) {
-			return true;
-		} else if(t instanceof TupleType) {
-			TupleType tt = (TupleType) t;			
-						
-			for (Map.Entry<String, Type> p : types.entrySet()) {
-				String n = p.getKey();
-				Type mt = tt.types().get(n);				
-				Type ttt = p.getValue();
-				if (mt == null || !ttt.isSubtype(mt,environment)) {					
-					return false;
-				}
-			}
-			
-			return true;			
-		} else if(t instanceof ProcessType) {
-			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element(), environment);
-		} else if(t instanceof UnionType) {			
-			UnionType ut = (UnionType) t;
-			Type tt = Types.commonType(ut.types());			
-			if(tt instanceof TupleType) {
-				return isSubtype(tt, environment);
-			}			
-		}
-		return false;
-	}
-	
 	public Type flattern() {
 		HashMap<String, Type> ts = new HashMap<String, Type>();
 		for (Map.Entry<String, Type> e : types.entrySet()) {

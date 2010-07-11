@@ -36,10 +36,6 @@ public class AnyType extends ConstrainedType implements NonUnionType {
 		return 3;
 	}
 	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {		
-		return true;
-	}
-	
 	public Type flattern() {
 		return this;
 	}

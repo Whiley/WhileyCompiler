@@ -61,19 +61,6 @@ public class NamedType extends ConstrainedType implements NonUnionType {
 	public Type flattern() {
 		return type.flattern();
 	}
-		
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		
-		if (t == Types.T_VOID) {
-			return true;
-		} else if (t instanceof NamedType) {
-			NamedType nt = (NamedType) t;
-			if(name.equals(nt.name) && module.equals(nt.module)) {
-				return true;
-			}
-		} 
-		return false;			
-	}
 	
 	public boolean isExistential() {
 		return false;

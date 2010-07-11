@@ -57,17 +57,6 @@ public class ProcessType extends ConstrainedType implements NonUnionType {
 		return (element.hashCode() * 123) + hc;
 	}
 	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		}
-		if (t instanceof ProcessType) {
-			ProcessType lt = (ProcessType) t;
-			return element.isSubtype(lt.element, environment);
-		} 		
-		return false;
-	}
-	
 	public Type flattern() {
 		return new ProcessType(element.flattern());
 	}

@@ -55,26 +55,7 @@ public class SetType extends ConstrainedType implements NonUnionType {
 	public int hashCode() {
 		int hc = constraint == null ? 0 : constraint.hashCode();
 		return (element.hashCode() * 123) + hc;
-	}
-	
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		}
-		if(t == Types.T_VOID) {
-			return true;
-		} else if (t instanceof ListType) {
-			ListType lt = (ListType) t;
-			return element.isSubtype(lt.element(),environment);
-		} else if (t instanceof SetType) {
-			SetType lt = (SetType) t;
-			return element.isSubtype(lt.element,environment);
-		} else if(t instanceof ProcessType) {
-			ProcessType pt = (ProcessType) t;
-			return isSubtype(pt.element(),environment);
-		} 		
-		return false;
-	}
+	}		
 		
 	public Type flattern() {
 		return new SetType(element.flattern(),constraint);

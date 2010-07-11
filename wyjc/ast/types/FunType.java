@@ -41,27 +41,6 @@ public class FunType extends ConstrainedType implements Type {
 	public List<Type> parameters() {
 		return Collections.unmodifiableList(parameters);
 	}
-
-	public boolean isSubtype(Type t, Map<String, Type> environment) {
-		if(t instanceof NamedType) {
-			t = ((NamedType)t).type();
-		}
-		if(t instanceof FunType) {
-			FunType ft = (FunType) t;
-			List<Type> ftparams = ft.parameters();
-			if(ftparams.size() == parameters.size()) {
-				for(int i=0;i!=ftparams.size();++i) {
-					Type t1 = parameters.get(i);
-					Type t2 = ftparams.get(i);
-					if(!t1.isSubtype(t2,environment)) {
-						return false;
-					}
-				}
-				return ft.returnType().isSubtype(ret,environment);
-			}
-		} 
-		return false;
-	}	
 	
 	public Type flattern() {
 		ArrayList<Type> fps = new ArrayList<Type>();
