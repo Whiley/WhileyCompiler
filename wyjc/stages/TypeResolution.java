@@ -1443,11 +1443,12 @@ public class TypeResolution {
 	protected FunType bindFunction(ModuleID mid, String name, Type receiver,
 			List<Type> paramTypes,
 			SyntacticElement elem) throws ResolveError {
+		
 		FunType candidate = null;
 		List<Type> candidateTypes = null;
 								
-		for (ModuleInfo.Method fun : lookupMethod(mid,name)) {
-			FunType ft = (FunType) fun.type();
+		for (ModuleInfo.Method fun : lookupMethod(mid,name)) {								
+			FunType ft = (FunType) fun.type();			
 			Type funrec = null;
 			if(fun.receiver() != null) {
 				funrec = fun.receiver();
@@ -1461,7 +1462,7 @@ public class TypeResolution {
 						&& fun.name().equals(name)
 						&& isSubtype(ft.parameters(), paramTypes, elem)
 						&& (candidateTypes == null || isSubtype(candidateTypes, ft
-								.parameters(), elem))) {				
+								.parameters(), elem))) {							
 					// This declaration is a candidate. Now, we need to see if our
 					// candidate type signature is as precise as possible.
 					if(candidateTypes == null) {					
@@ -1495,8 +1496,8 @@ public class TypeResolution {
 		
 		for (int i = 0; i != p1types.size(); ++i) {
 			Type p1 = p1types.get(i);
-			Type p2 = p2types.get(i);
-			if (!Types.isBaseSubtype(p1, p2)) {
+			Type p2 = p2types.get(i);			
+			if (!Types.isBaseSubtype(p1, p2)) {				
 				return false;
 			}
 		}

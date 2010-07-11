@@ -1,2 +1,5 @@
-define c1nat as int where $ > 0
-define c1pnat as c1nat where $ > 1
+define nat as int where $ >= 0
+
+void System::main([string] args):
+    nat x = 1
+    print str(x)

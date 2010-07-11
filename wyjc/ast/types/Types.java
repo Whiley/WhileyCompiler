@@ -216,7 +216,7 @@ public class Types {
 		} else if(t1 instanceof BoolType) {
 			return t2 instanceof BoolType;
 		} else if(t1 instanceof AnyType) {
-			return t2 instanceof AnyType;
+			return true;
 		} else if(t1 instanceof ExistentialType) {
 			return false;
 		} else if(t2 instanceof VoidType) {
@@ -345,7 +345,7 @@ public class Types {
 		} else if(t1 instanceof BoolType) {
 			return t2 instanceof BoolType;
 		} else if(t1 instanceof AnyType) {
-			return t2 instanceof AnyType;
+			return true;
 		} else if(t1 instanceof ExistentialType) {
 			return false;
 		} else if(t1 instanceof NamedType && t2 instanceof NamedType) {
