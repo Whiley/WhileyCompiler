@@ -369,44 +369,35 @@ public class RuntimeCheckGenerator {
 			checks.addAll(checkgen(e,environment));					
 		}
 		
-		// Now, check the requirements for the method itself.
-		Condition preCond = null;
-				
 		ModuleInfo mi = loader.loadModule(ivk.module());		
 		
 		FunType funType = ivk.funType();
-		for(ModuleInfo.Method method : mi.method(ivk.name(),funType)) {			
-			Condition cond = null;
-			// FIXME: following code no longer makes sense, since there is no
-			// precondition, only the (constrained) function type
-			/*
-			if(method.preCondition() != null) {
-				HashMap<String,Expr> binding = new HashMap<String,Expr>();
-				List<String> params = method.parameterNames();
-
-				// first, we build the appropriate binding.
-				for (int i = 0; i != params.size(); ++i) {
-					String param = params.get(i);
-					Expr e = args.get(i);
-					binding.put(param,e);
-				}
-
-				// second, we substitute the method pre-condition using this binding
-				// to generate an expression which makes sense in terms of the
-				// current method.
-				
-				cond = (Condition) method.preCondition().substitute(binding);				
-			}
-			 */
-			// finally, combine the generated condition as necessary	
-			if(cond != null) {
-				preCond = preCond == null ? cond : new Or(preCond,cond);
-			} else {
-				preCond = new BoolVal(true);
+		// FIXME: following is a temporary solution. Eventually, i'll inline
+		// method calls for base equivalent methods.
+		ModuleInfo.Method method = mi.method(ivk.name(),funType).get(0);
+		HashMap<String,Expr> paramBinding = new HashMap<String,Expr>();		
+		List<String> paramNames = method.parameterNames();
+		List<Type> paramTypes = funType.parameters();
+		for (int i = 0; i != paramTypes.size(); ++i) {
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();						
+			Type t = paramTypes.get(i);
+			Expr e = args.get(i);
+			String n = paramNames.get(i);
+			paramBinding.put(n,e);
+			// FIXME: there's a bug here as we need to fully expand the
+			// constraint.
+			Condition c = t.constraint();
+			if(c != null) {				
+				binding.put("$", e);
+				c = c.substitute(binding);
+				addCheck("constraints for parameter not satisfied",c,environment,e,checks);
 			}
 		}
 		
-		if(preCond != null) {			
+		// FIXME: bug here, condition needs to be fully expanded
+		Condition preCond = funType.constraint();
+		if(preCond != null) {
+			preCond = preCond.substitute(paramBinding);
 			addCheck("function precondition not satisfied",preCond,environment,ivk,checks);
 		}		
 		
