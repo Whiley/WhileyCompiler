@@ -145,8 +145,8 @@ public class TypeResolution {
 		} 
 		
 		// FIXME: constraints on receiver are lost.
-		return new ModuleInfo.Method(recType, f.name(), ft, f
-				.parameterNames());
+		return new ModuleInfo.Method(recType, f.name(), ft, f.preCondition(), f
+				.postCondition(), f.parameterNames());
 	}
 	
     

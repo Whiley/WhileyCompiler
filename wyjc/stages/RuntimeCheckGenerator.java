@@ -338,7 +338,7 @@ public class RuntimeCheckGenerator {
 		}
 		
 		Condition postCondition = Types.expandConstraints(f.type().returnType());
-		// FIXME: need to include the post condition here, if there is one.
+		postCondition = Types.and(postCondition,f.postCondition()); 
 		if(postCondition != null) {			
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
 			binding.put("$", e);
@@ -392,7 +392,7 @@ public class RuntimeCheckGenerator {
 		}
 		
 		// FIXME: bug here, condition needs to be fully expanded
-		Condition preCond = funType.constraint();
+		Condition preCond = method.preCondition();
 		if(preCond != null) {
 			preCond = preCond.substitute(paramBinding);
 			addCheck("function precondition not satisfied",preCond,environment,ivk,checks);

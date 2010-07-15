@@ -82,7 +82,7 @@ public class ResolvedFileBuilder {
 					.receiver().attribute(TypeAttr.class).type(), cd
 					.returnType().attributes());
 		}
-		
+				
 		return new ResolvedWhileyFile.FunDecl(cd.modifiers(),cd.name(), rec, ret, params, cd
 				.preCondition(), cd.postCondition(), cd.statements(), cd
 				.attributes());
