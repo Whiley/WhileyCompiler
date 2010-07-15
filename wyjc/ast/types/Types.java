@@ -20,10 +20,13 @@ package wyjc.ast.types;
 
 import java.util.*;
 
-import wyjc.ast.attrs.SyntacticElement;
+import wyjc.ast.attrs.*;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.logic.*;
+import wyjc.ast.exprs.set.SetComprehension;
+import wyjc.ast.exprs.tuple.TupleAccess;
 import wyjc.ast.types.unresolved.*;
+import wyjc.util.*;
 import static wyjc.util.SyntaxError.*;
 
 public class Types {
@@ -613,6 +616,86 @@ public class Types {
 		}
 	}
 
+	 public static Condition expandConstraints(Type t) {		
+			if (t instanceof VoidType || t instanceof ExistentialType
+					|| t instanceof NamedType || t instanceof AnyType
+					|| t instanceof BoolType || t instanceof IntType
+					|| t instanceof RealType) {
+				return t.constraint();
+			} else if(t instanceof ListType) {
+				ListType lt = (ListType) t;
+				Condition c = expandConstraints(lt.element()); 				
+				if(c != null) {				
+					String vn = Variable.freshVar();								
+					Variable v = new Variable(vn,c.attribute(SourceAttr.class));
+					HashMap<String,Expr> binding = new HashMap();
+					binding.put("$",v);				
+					c = c.substitute(binding);			
+					List<Pair<String,Expr>> ss = new ArrayList();
+					ss.add(new Pair(vn, new Variable("$", c
+							.attribute(SourceAttr.class))));
+					c = new None(new SetComprehension(v,ss,new Not(c)));				
+				}
+				return and(c,lt.constraint());
+			} else if(t instanceof SetType) {
+				SetType st = (SetType) t;
+				Condition c = expandConstraints(st.element()); 				
+				if(c != null) {				
+					String vn = Variable.freshVar();								
+					Variable v = new Variable(vn,c.attribute(SourceAttr.class));
+					HashMap<String,Expr> binding = new HashMap();
+					binding.put("$",v);				
+					c = c.substitute(binding);			
+					List<Pair<String,Expr>> ss = new ArrayList();
+					ss.add(new Pair(vn, new Variable("$", c
+							.attribute(SourceAttr.class))));
+					c = new None(new SetComprehension(v,ss,new Not(c)));				
+				}
+				return and(c,st.constraint());				
+			} else if(t instanceof ProcessType) {
+				ProcessType st = (ProcessType) t;
+				return expandConstraints(st.element());
+			} else if(t instanceof RecursiveType) {
+				// FIXME: not sure what to do here
+				return null;
+			} else if(t instanceof TupleType) {
+				TupleType st = (TupleType) t;
+				Condition c = null;
+				
+				for(Map.Entry<String,Type> e : st.types().entrySet()) {
+					String key = e.getKey();
+					Condition ec = expandConstraints(e.getValue());														
+					if(ec != null) {					
+						HashMap<String,Expr> binding = new HashMap<String,Expr>();
+						Variable v = new Variable("$", ec.attribute(SourceAttr.class));
+						binding.put("$",
+								new TupleAccess(v, key, ec.attribute(SourceAttr.class)));										
+						c = and(c, ec.substitute(binding));						
+					}					
+				}	
+				
+				return and(st.constraint(),c);				
+			} else if(t instanceof UnionType) {
+				// FIXME: really dunno what to do here
+				return null;
+			} else if(t instanceof FunType) {
+				// FIXME: need to add this!
+				return null;
+			} else {
+				throw new IllegalArgumentException("unknown type encountered: " + t);
+			}
+		}
+	 
+	 public static Condition and(Condition c1, Condition c2) {
+		 if(c1 == null) {
+			 return c2;
+		 } else if(c2 == null) {
+			 return c1;
+		 } else {
+			 return new And(c1,c2);
+		 }
+	 }
+	 
 	public static TupleType effectiveTupleType(Type t, SyntacticElement elem) {		
 		if(t instanceof TupleType) {
 			return (TupleType) t;

@@ -196,8 +196,7 @@ public class RuntimeCheckGenerator {
 			if (as.type().constraint() != null) {
 				HashMap<String, Expr> binding = new HashMap<String,Expr>();
 				binding.put("$", init);
-				// FIXME: broken because we need to fully expand the constraint
-				Condition constraint = as.type().constraint().substitute(binding);				
+				Condition constraint = Types.expandConstraints(as.type()).substitute(binding);				
 				addCheck("constraint for variable " + as.name()
 						+ " not satisfied", constraint, environment, as, checks);
 			}						
@@ -229,9 +228,8 @@ public class RuntimeCheckGenerator {
 			environment.put(v.name(), rhs.type(environment));
 		}
 		
-		// FIXME: broken because we need to fully expand the constraint
-		Condition lhs_c = oldType.constraint();		
-		if (lhs_c != null) {
+		Condition lhs_c = Types.expandConstraints(oldType);		
+		if (lhs_c != null) {			
 			postChecks = new ArrayList<Check>();
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
 			binding.put("$",v);
@@ -384,9 +382,7 @@ public class RuntimeCheckGenerator {
 			Expr e = args.get(i);
 			String n = paramNames.get(i);
 			paramBinding.put(n,e);
-			// FIXME: there's a bug here as we need to fully expand the
-			// constraint.
-			Condition c = t.constraint();
+			Condition c = Types.expandConstraints(t);			
 			if(c != null) {				
 				binding.put("$", e);
 				c = c.substitute(binding);
