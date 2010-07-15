@@ -337,8 +337,9 @@ public class RuntimeCheckGenerator {
 			checks.addAll(checkgen(e,environment));
 		}
 		
-		if(f.postCondition() != null) {
-			Condition postCondition = f.postCondition();
+		Condition postCondition = Types.expandConstraints(f.type().returnType());
+		// FIXME: need to include the post condition here, if there is one.
+		if(postCondition != null) {			
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
 			binding.put("$", e);
 			for (Variable var : postCondition.uses()) {				
