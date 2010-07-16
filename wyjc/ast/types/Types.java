@@ -69,8 +69,9 @@ public class Types {
 		} else if(isStrictSubtype(t2,t1)) {			
 			return t2;
 		} else if(isBaseEquivalent(t1,t2)) {
+			// FIXME: is there a bug with deep constraints?
 			// FIXME: it would be nice to do some kind of simplification here.
-			return recondition(t1, leastUpperBound(t1.constraint(),t2.constraint()));
+			return recondition(t1, leastUpperBound(t1.constraint(),t2.constraint()));			
 		} else if(isBaseSubtype(t1,t2)) {
 			Condition c = t1.constraint();
 			String v = Variable.freshVar();

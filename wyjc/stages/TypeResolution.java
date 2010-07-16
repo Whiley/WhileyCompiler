@@ -425,13 +425,14 @@ public class TypeResolution {
 			UnresolvedUnionType utt = (UnresolvedUnionType) ut;
 			
 			Type t = Types.T_VOID;			
-			
+									
 			for(UnresolvedType bound : utt.types()) {				
 				Type rb = expandType(bound,cache);
 				t = Types.leastUpperBound(t,rb);								
 			}			
-						
-			return Types.recondition(t, utt.constraint());			
+			
+			Type r = Types.recondition(t, Types.and(t.constraint(),utt.constraint()));			
+			return r;
 		} else  {			
 			// must be process type
 			UnresolvedProcessType ult = (UnresolvedProcessType) ut;
