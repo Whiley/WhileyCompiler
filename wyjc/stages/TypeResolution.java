@@ -407,11 +407,11 @@ public class TypeResolution {
 		} else if(ut instanceof UnresolvedListType) {		
 			UnresolvedListType ult = (UnresolvedListType) ut;
 			Type tc = expandType(ult.element(),cache); 					
-			return new ListType(tc);
+			return new ListType(tc, ult.constraint());
 		} else if(ut instanceof UnresolvedSetType) {
 			UnresolvedSetType ult = (UnresolvedSetType) ut;
 			Type tc = expandType(ult.element(),cache); 			
-			return new SetType(tc);					
+			return new SetType(tc, ult.constraint());					
 		} else if(ut instanceof UnresolvedTupleType) {
 			UnresolvedTupleType utt = (UnresolvedTupleType) ut;			
 			HashMap<String,Type> types = new HashMap<String,Type>();
@@ -420,7 +420,7 @@ public class TypeResolution {
 				Type tc = expandType(e.getValue(),cache);				
 				types.put(key, tc);		
 			}					
-			return new TupleType(types);
+			return new TupleType(types, utt.constraint());
 		} else if(ut instanceof UnresolvedUnionType) {
 			UnresolvedUnionType utt = (UnresolvedUnionType) ut;
 			
@@ -430,8 +430,8 @@ public class TypeResolution {
 				Type rb = expandType(bound,cache);
 				t = Types.leastUpperBound(t,rb);								
 			}			
-			
-			return t;			
+						
+			return Types.recondition(t, utt.constraint());			
 		} else  {			
 			// must be process type
 			UnresolvedProcessType ult = (UnresolvedProcessType) ut;
@@ -613,7 +613,8 @@ public class TypeResolution {
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),s,rex);
 			}
-		}		
+		}
+		
 		if (initialiser != null) {
 			Pair<Type, Expr> t = check(initialiser, environment);
 			initialiser = t.second();
