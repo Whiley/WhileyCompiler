@@ -1,5 +1,5 @@
-void f(int x) requires x > 0:
+void f({int} xs):
     print "GOT HERE"
 
 void System::main([string] args):
-    f(-1)
+    f({})

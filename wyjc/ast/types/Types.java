@@ -211,8 +211,10 @@ public class Types {
 	public static boolean isBaseSubtype(Type t1, Type t2) {
 		return isBaseSubtype(t1,t2,Collections.EMPTY_MAP);
 	}
-	private static boolean isBaseSubtype(Type t1, Type t2, Map<String,Type> environment) {
-		if(t1 instanceof IntType) {
+	private static boolean isBaseSubtype(Type t1, Type t2, Map<String,Type> environment) {		
+		if(t2 instanceof VoidType) {
+			return true;
+		} else if(t1 instanceof IntType) {
 			return t2 instanceof IntType;
 		} else if(t1 instanceof RealType) {
 			return t2 instanceof IntType || t2 instanceof RealType;
@@ -222,8 +224,6 @@ public class Types {
 			return true;
 		} else if(t1 instanceof ExistentialType) {
 			return false;
-		} else if(t2 instanceof VoidType) {
-			return true;
 		} else if(t1 instanceof NamedType && t2 instanceof NamedType) {
 			NamedType nt1 = (NamedType) t1;			
 			NamedType nt2 = (NamedType) t2;
