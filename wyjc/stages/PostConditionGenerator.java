@@ -54,7 +54,17 @@ public class PostConditionGenerator {
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 				
 		for(FunDecl.Parameter p : f.parameters()) {											
-			environment.put(p.name(), p.type());						
+			environment.put(p.name(), p.type());
+			Condition c = Types.expandConstraints(p.type());
+			// i'm not complete sure where the best place to do this is. It
+			// could actually be done later on, at the point of generating the
+			// VC for a given condition.
+			if(c != null) {
+				HashMap<String,Expr> binding = new HashMap<String,Expr>();
+				binding.put("$", new Variable(p.name(),p.attribute(SourceAttr.class)));
+				c = c.substitute(binding);
+				condition = Types.and(condition,c);
+			}
 		}
 		if(f.receiver() != null) {
 			environment.put("this",f.receiver().type());

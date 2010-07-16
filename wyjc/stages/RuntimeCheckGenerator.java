@@ -81,6 +81,11 @@ public class RuntimeCheckGenerator {
 			environment.put(p.name(),p.type());
 		}
 		
+		if(f.receiver() != null) {
+			Type rt = f.receiver().type();
+			environment.put("this", rt);
+		}
+		
 		determineShadows(f, environment);
 		
 		// The declared map contains the actual declared types of variables.
@@ -233,7 +238,7 @@ public class RuntimeCheckGenerator {
 			environment.put(v.name(), rhs.type(environment));
 		}		
 		// FIXME: presumably we could simply this for union types by eliminating
-		// things which cannot apply to the new type.
+		// things which cannot apply to the new type.		
 		Condition lhs_c = Types.expandConstraints(declaredType);		
 		if (lhs_c != null) {			
 			postChecks = new ArrayList<Check>();
