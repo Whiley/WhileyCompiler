@@ -75,16 +75,20 @@ public class RuntimeCheckGenerator {
 	
 	public void checkgen(FunDecl f) {		
 		List<Stmt> f_statements = f.statements();		
-		HashMap<String,Type> environment = new HashMap<String,Type>();
+		HashMap<String,Type> environment = new HashMap<String,Type>();				
 		
 		for(FunDecl.Parameter p : f.parameters()) {									
 			environment.put(p.name(),p.type());
 		}
 		
 		determineShadows(f, environment);
+		
+		// The declared map contains the actual declared types of variables.
+		HashMap<String,Type> declared = (HashMap) environment.clone();
+				
 		for(int i=0;i!=f_statements.size();++i) {
 			Stmt s = f_statements.get(i);
-			Pair<List<Check>,List<Check>> checks = checkgen(s,f, environment);
+			Pair<List<Check>,List<Check>> checks = checkgen(s,f, environment, declared);
 			f_statements.addAll(i,checks.first());
 			i = i + checks.first().size();
 			f_statements.addAll(i+1,checks.second());
@@ -101,7 +105,7 @@ public class RuntimeCheckGenerator {
 	 * @param f
 	 */
 	protected void determineShadows(FunDecl f,
-			HashMap<String, Type> environment) {
+			HashMap<String,Type> environment) {
 		shadows.clear(); // reset old shadow information
 		Condition pc = f.postCondition();
 		if(pc == null) {
@@ -148,7 +152,7 @@ public class RuntimeCheckGenerator {
 	}
 	protected Pair<List<Check>,List<Check>> checkgen(Stmt s, FunDecl f,
 			
-			HashMap<String, Type> environment) {
+			HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		List<Check> preChecks;
 		List<Check> postChecks = Collections.EMPTY_LIST;
 		try {
@@ -158,21 +162,21 @@ public class RuntimeCheckGenerator {
 				// these statements can have no requirements
 				preChecks = Collections.EMPTY_LIST;
 			} else if(s instanceof Print) {
-				preChecks = checkgen((Print)s,environment);
+				preChecks = checkgen((Print)s,environment,declared);
 			} else if (s instanceof Assign) {
-				Pair<List<Check>,List<Check>> tmp = checkgen((Assign)s, environment);
+				Pair<List<Check>,List<Check>> tmp = checkgen((Assign)s, environment,declared);
 				preChecks = tmp.first();
 				postChecks = tmp.second();
 			} else if (s instanceof VarDecl) {
-				preChecks = checkgen((VarDecl)s, environment);					
+				preChecks = checkgen((VarDecl)s, environment, declared);					
 			} else if (s instanceof IfElse) {
-				preChecks = checkgen((IfElse) s, f, environment);	
+				preChecks = checkgen((IfElse) s, f, environment, declared);	
 			} else if (s instanceof Return) {
-				preChecks = checkgen((Return)s, environment, f);			
+				preChecks = checkgen((Return)s, environment, declared, f);			
 			} else if (s instanceof Invoke) {
-				preChecks = checkgen((Invoke) s, environment);
+				preChecks = checkgen((Invoke) s, environment, declared);
 			} else if (s instanceof Spawn) {
-				preChecks = checkgen((Spawn) s, environment);
+				preChecks = checkgen((Spawn) s, environment, declared);
 			} else {
 				syntaxError("Unknown statement encountered: " + s, s);
 				return null;
@@ -186,12 +190,14 @@ public class RuntimeCheckGenerator {
 	}	
 	
 	private List<Check> checkgen(VarDecl as,
-			HashMap<String, Type> environment) {
+			HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		Expr init = as.initialiser();
+		
+		declared.put(as.name(), as.type());
 		
 		if(init != null) {
 			ArrayList<Check> checks = new ArrayList<Check>();
-			checks.addAll(checkgen(init,environment));
+			checks.addAll(checkgen(init,environment, declared));
 										
 			if (as.type().constraint() != null) {
 				HashMap<String, Expr> binding = new HashMap<String,Expr>();
@@ -199,8 +205,8 @@ public class RuntimeCheckGenerator {
 				Condition constraint = Types.expandConstraints(as.type()).substitute(binding);				
 				addCheck("constraint for variable " + as.name()
 						+ " not satisfied", constraint, environment, as, checks);
-			}						
-			
+			}											
+						
 			environment.put(as.name(), init.type(environment));
 			
 			return checks;
@@ -212,23 +218,23 @@ public class RuntimeCheckGenerator {
 	}
 	
 	private Pair<List<Check>,List<Check>> checkgen(Assign as,
-			HashMap<String, Type> environment) {
+			HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		LVal lhs = as.lhs();
 		Expr rhs = as.rhs();
 		
 		List<Check> postChecks = Collections.EMPTY_LIST;
-		List<Check> preChecks = checkgen(lhs,environment);
-		preChecks.addAll(checkgen(rhs,environment));
+		List<Check> preChecks = checkgen(lhs,environment, declared);
+		preChecks.addAll(checkgen(rhs,environment, declared));
 					
 		List<Expr> flat = lhs.flattern();
 		Variable v = (Variable) flat.get(0);
-		Type oldType = environment.get(v.name());
-		
+		Type declaredType = declared.get(v.name());		;
 		if (lhs instanceof Variable) {			
 			environment.put(v.name(), rhs.type(environment));
-		}
-		
-		Condition lhs_c = Types.expandConstraints(oldType);		
+		}		
+		// FIXME: presumably we could simply this for union types by eliminating
+		// things which cannot apply to the new type.
+		Condition lhs_c = Types.expandConstraints(declaredType);		
 		if (lhs_c != null) {			
 			postChecks = new ArrayList<Check>();
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
@@ -283,15 +289,15 @@ public class RuntimeCheckGenerator {
 	
 	private List<Check> checkgen(IfElse ie, FunDecl f,
 			
-			HashMap<String, Type> environment) {
-		List<Check> checks = checkgen(ie.condition(),environment);		
+			HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		List<Check> checks = checkgen(ie.condition(),environment, declared);		
 		List<Stmt> t_statements = ie.trueBranch();
 		List<Stmt> f_statements = ie.falseBranch();
 		
 		if(t_statements != null) {			
 			for(int i=0;i!=t_statements.size();++i) {				
 				Stmt s = t_statements.get(i);
-				Pair<List<Check>,List<Check>> tchecks = checkgen(s,f,environment);
+				Pair<List<Check>,List<Check>> tchecks = checkgen(s,f,environment, declared);
 				t_statements.addAll(i,tchecks.first());
 				i = i + tchecks.first().size();
 				t_statements.addAll(i+1,tchecks.second());
@@ -302,7 +308,7 @@ public class RuntimeCheckGenerator {
 		if(f_statements != null) {
 			for(int i=0;i!=f_statements.size();++i) {
 				Stmt s = f_statements.get(i);
-				Pair<List<Check>,List<Check>> fchecks = checkgen(s,f,environment);
+				Pair<List<Check>,List<Check>> fchecks = checkgen(s,f,environment, declared);
 				f_statements.addAll(i,fchecks.first());
 				i = i + fchecks.first().size();
 				f_statements.addAll(i+1,fchecks.second());
@@ -313,19 +319,19 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}
 	
-	private List<Check> checkgen(Print ps, HashMap<String, Type> environment) {
-		return checkgen(ps.expr(),environment);
+	private List<Check> checkgen(Print ps, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(ps.expr(),environment, declared);
 	}
 	
-	private List<Check> checkgen(Spawn ps, HashMap<String, Type> environment) {
-		return checkgen(ps.mhs(),environment);
+	private List<Check> checkgen(Spawn ps, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(ps.mhs(),environment, declared);
 	}
 	
-	private List<Check> checkgen(ProcessAccess ps, HashMap<String, Type> environment) {
-		return checkgen(ps.mhs(),environment);
+	private List<Check> checkgen(ProcessAccess ps, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(ps.mhs(),environment, declared);
 	}
 	
-	private List<Check> checkgen(Return rs, HashMap<String, Type> environment,
+	private List<Check> checkgen(Return rs, HashMap<String,Type> environment, HashMap<String,Type> declared,
 			FunDecl f) {
 		Expr e = rs.expr();
 		
@@ -334,7 +340,7 @@ public class RuntimeCheckGenerator {
 		if(e == null) {
 			return checks;
 		} else {
-			checks.addAll(checkgen(e,environment));
+			checks.addAll(checkgen(e,environment, declared));
 		}
 		
 		Condition postCondition = Types.expandConstraints(f.type().returnType());
@@ -360,12 +366,12 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}
 	
-	private List<Check> checkgen(Invoke ivk, HashMap<String,Type> environment) throws ResolveError {
+	private List<Check> checkgen(Invoke ivk, HashMap<String,Type> environment, HashMap<String,Type> declared) throws ResolveError {
 		// First, we'll check the requirements of the argument expressions.
 		ArrayList<Check> checks = new ArrayList<Check>();
 		List<Expr> args = ivk.arguments(); 
 		for(Expr e : args) {
-			checks.addAll(checkgen(e,environment));					
+			checks.addAll(checkgen(e,environment, declared));					
 		}
 		
 		ModuleInfo mi = loader.loadModule(ivk.module());		
@@ -401,7 +407,7 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}
 	
-	public List<Check> checkgen(Expr e, HashMap<String,Type> environment) {		
+	public List<Check> checkgen(Expr e, HashMap<String,Type> environment, HashMap<String,Type> declared) {		
 		List<Check> checks = null;
 		try {
 			if (e instanceof IntVal
@@ -413,51 +419,51 @@ public class RuntimeCheckGenerator {
 				// These ones do nothing.
 				checks = new ArrayList<Check>();
 			} else if(e instanceof BinOp) {
-				checks = checkgen((BinOp)e,environment);
+				checks = checkgen((BinOp)e,environment, declared);
 			} else if(e instanceof IntNegate) {
-				checks = checkgen((IntNegate)e,environment);
+				checks = checkgen((IntNegate)e,environment, declared);
 			} else if(e instanceof RealNegate) {
-				checks = checkgen((RealNegate)e,environment);
+				checks = checkgen((RealNegate)e,environment, declared);
 			} else if(e instanceof Invoke) {
-				checks = checkgen((Invoke)e,environment);			 		
+				checks = checkgen((Invoke)e,environment, declared);			 		
 			} else if(e instanceof Not) {
-				checks = checkgen((Not)e,environment);
+				checks = checkgen((Not)e,environment, declared);
 			} else if(e instanceof ListVal) {
-				checks = checkgen((ListVal)e,environment);
+				checks = checkgen((ListVal)e,environment, declared);
 			} else if(e instanceof ListGenerator) {
-				checks = checkgen((ListGenerator)e,environment);
+				checks = checkgen((ListGenerator)e,environment, declared);
 			} else if(e instanceof ListAccess) {
-				checks = checkgen((ListAccess)e,environment);
+				checks = checkgen((ListAccess)e,environment, declared);
 			} else if(e instanceof ListSublist) {
-				checks = checkgen((ListSublist)e,environment);
+				checks = checkgen((ListSublist)e,environment, declared);
 			} else if(e instanceof ListLength) {
-				checks = checkgen((ListLength)e,environment);
+				checks = checkgen((ListLength)e,environment, declared);
 			} else if(e instanceof SetVal) {
-				checks = checkgen((SetVal)e,environment);
+				checks = checkgen((SetVal)e,environment, declared);
 			} else if(e instanceof SetGenerator) {
-				checks = checkgen((SetGenerator)e,environment);
+				checks = checkgen((SetGenerator)e,environment, declared);
 			} else if(e instanceof SetComprehension) {
-				checks = checkgen((SetComprehension)e,environment);
+				checks = checkgen((SetComprehension)e,environment, declared);
 			} else if(e instanceof SetLength) {
-				checks = checkgen((SetLength)e,environment);
+				checks = checkgen((SetLength)e,environment, declared);
 			} else if(e instanceof None) {
-				checks = checkgen((None)e,environment);
+				checks = checkgen((None)e,environment, declared);
 			} else if(e instanceof Some) {
-				checks = checkgen((Some)e,environment);
+				checks = checkgen((Some)e,environment, declared);
 			} else if(e instanceof ListElementOf) {
-				checks = checkgen((ListElementOf)e,environment);
+				checks = checkgen((ListElementOf)e,environment, declared);
 			} else if(e instanceof TupleVal) {				
-				checks = checkgen((TupleVal)e,environment);
+				checks = checkgen((TupleVal)e,environment, declared);
 			} else if(e instanceof TupleGenerator) {				
-				checks = checkgen((TupleGenerator)e,environment);
+				checks = checkgen((TupleGenerator)e,environment, declared);
 			} else if(e instanceof TypeEquals) {				
-				checks = checkgen((TypeEquals)e,environment);
+				checks = checkgen((TypeEquals)e,environment, declared);
 			} else if(e instanceof TypeGate) {				
-				checks = checkgen((TypeGate)e,environment);
+				checks = checkgen((TypeGate)e,environment, declared);
 			} else if(e instanceof Spawn) {				
-				checks = checkgen((Spawn)e,environment);
+				checks = checkgen((Spawn)e,environment, declared);
 			} else if (e instanceof ProcessAccess) {
-				checks = checkgen((ProcessAccess) e,environment);
+				checks = checkgen((ProcessAccess) e,environment, declared);
 			} else {
 				syntaxError("Unknown expression encountered (" + e.getClass().getName() +")",e);
 				return null;
@@ -474,9 +480,9 @@ public class RuntimeCheckGenerator {
 	protected static final RealVal REAL_ZERO = new RealVal(BigRational.ZERO,
 			new TypeAttr(Types.T_REAL(null)));
 	
-	protected List<Check> checkgen(BinOp bop, HashMap<String,Type> environment) {
-		List<Check> checks = checkgen(bop.lhs(),environment);
-		checks.addAll(checkgen(bop.rhs(),environment));		
+	protected List<Check> checkgen(BinOp bop, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		List<Check> checks = checkgen(bop.lhs(),environment, declared);
+		checks.addAll(checkgen(bop.rhs(),environment, declared));		
 		
 		if(bop instanceof IntDiv) {					
 			Condition c = new IntNotEquals(bop.rhs(),INT_ZERO);
@@ -488,44 +494,44 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}
 	
-	protected List<Check> checkgen(IntNegate e, HashMap<String,Type> environment) {
-		return checkgen(e.mhs(),environment);
+	protected List<Check> checkgen(IntNegate e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(e.mhs(),environment, declared);
 	}
 	
-	protected List<Check> checkgen(RealNegate e, HashMap<String,Type> environment) {
-		return checkgen(e.mhs(),environment);
+	protected List<Check> checkgen(RealNegate e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(e.mhs(),environment, declared);
 	}
 	
-	protected List<Check> checkgen(Not e, HashMap<String,Type> environment) {
-		return checkgen(e.mhs(),environment);
+	protected List<Check> checkgen(Not e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(e.mhs(),environment, declared);
 	}
 	
-	protected List<Check> checkgen(ListVal lv, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(ListVal lv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
 		for(Expr e : lv.getValues()) {
-			checks.addAll(checkgen(e,environment));
+			checks.addAll(checkgen(e,environment, declared));
 		}
 		
 		return checks;
 	}
 	
-	protected List<Check> checkgen(ListGenerator lv, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(ListGenerator lv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
 		for(Expr e : lv.getValues()) {
-			checks.addAll(checkgen(e,environment));
+			checks.addAll(checkgen(e,environment, declared));
 		}
 		
 		return checks;
 	}
 	
-	protected List<Check> checkgen(ListAccess la, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(ListAccess la, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		SourceAttr attr = la.attribute(SourceAttr.class);
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
-		checks.addAll(checkgen(la.source(),environment));
-		checks.addAll(checkgen(la.index(),environment));
+		checks.addAll(checkgen(la.source(),environment, declared));
+		checks.addAll(checkgen(la.index(),environment, declared));
 		
 		Condition ltz = new IntGreaterThanEquals(la.index(),INT_ZERO);
 		Condition gtel = new IntLessThan(la.index(),new ListLength(la.source()));
@@ -534,13 +540,13 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}
 	
-	protected List<Check> checkgen(ListSublist la, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(ListSublist la, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		SourceAttr attr = la.attribute(SourceAttr.class);
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
-		checks.addAll(checkgen(la.source(),environment));
-		checks.addAll(checkgen(la.start(),environment));
-		checks.addAll(checkgen(la.end(),environment));
+		checks.addAll(checkgen(la.source(),environment, declared));
+		checks.addAll(checkgen(la.start(),environment, declared));
+		checks.addAll(checkgen(la.end(),environment, declared));
 		
 		Condition ltz = new IntGreaterThanEquals(la.start(),INT_ZERO);
 		Condition gtel = new IntLessThanEquals(la.end(),new ListLength(la.source()));
@@ -551,36 +557,36 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}
 	
-	protected List<Check> checkgen(ListLength e, HashMap<String,Type> environment) {
-		return checkgen(e.mhs(),environment);
+	protected List<Check> checkgen(ListLength e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(e.mhs(),environment, declared);
 	}
 		
-	protected List<Check> checkgen(SetVal sv, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(SetVal sv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
 		for(Expr e : sv.getValues()) {
-			checks.addAll(checkgen(e,environment));
+			checks.addAll(checkgen(e,environment, declared));
 		}
 		
 		return checks;
 	}
 	
-	protected List<Check> checkgen(SetGenerator sv, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(SetGenerator sv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
 		for(Expr e : sv.getValues()) {
-			checks.addAll(checkgen(e,environment));
+			checks.addAll(checkgen(e,environment, declared));
 		}
 		
 		return checks;
 	}
 	
-	protected List<Check> checkgen(SetComprehension sc, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(SetComprehension sc, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 						
-		checks.addAll(checkgen(sc.sign(),environment));
+		checks.addAll(checkgen(sc.sign(),environment, declared));
 		if(sc.condition() != null) {
-			checks.addAll(checkgen(sc.condition(),environment));
+			checks.addAll(checkgen(sc.condition(),environment, declared));
 		}
 		
 		for(int i=0;i!=checks.size();++i) {
@@ -617,60 +623,60 @@ public class RuntimeCheckGenerator {
 		return checks;		
 	}
 	
-	protected List<Check> checkgen(SetLength e, HashMap<String,Type> environment) {
-		return checkgen(e.mhs(),environment);
+	protected List<Check> checkgen(SetLength e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(e.mhs(),environment, declared);
 	}
 	
-	protected List<Check> checkgen(None e, HashMap<String,Type> environment) {
-		return checkgen(e.mhs(),environment);
+	protected List<Check> checkgen(None e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(e.mhs(),environment, declared);
 	}
 	
-	protected List<Check> checkgen(Some e, HashMap<String,Type> environment) {
-		return checkgen(e.mhs(),environment);
+	protected List<Check> checkgen(Some e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		return checkgen(e.mhs(),environment, declared);
 	}
 	
-	protected List<Check> checkgen(ListElementOf e, HashMap<String,Type> environment) {
-		List<Check> checks = checkgen(e.lhs(),environment);
-		checks.addAll(checkgen(e.rhs(),environment));
+	protected List<Check> checkgen(ListElementOf e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		List<Check> checks = checkgen(e.lhs(),environment, declared);
+		checks.addAll(checkgen(e.rhs(),environment, declared));
 		return checks;
 	}
 	
-	protected List<Check> checkgen(TupleVal tv, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(TupleVal tv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 
 		for (Map.Entry<String, Value> e : tv.values().entrySet()) {
-			checks.addAll(checkgen(e.getValue(),environment));
+			checks.addAll(checkgen(e.getValue(),environment, declared));
 		}
 
 		return checks;
 	}			
 	
-	protected List<Check> checkgen(TupleGenerator tv, HashMap<String,Type> environment) {
+	protected List<Check> checkgen(TupleGenerator tv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 
 		for (Map.Entry<String, Expr> e : tv.values().entrySet()) {
-			checks.addAll(checkgen(e.getValue(),environment));
+			checks.addAll(checkgen(e.getValue(),environment, declared));
 		}
 
 		return checks;
 	}	
 	
 	protected List<Check> checkgen(TypeEquals e,
-			HashMap<String, Type> environment) {		
-		List<Check> checks = checkgen(e.lhs(), environment);
-		checks.addAll(checkgen(e.rhs(),environment));
+			HashMap<String,Type> environment, HashMap<String,Type> declared) {		
+		List<Check> checks = checkgen(e.lhs(), environment, declared);
+		checks.addAll(checkgen(e.rhs(),environment, declared));
 		return checks;
 	}
 	
 	protected List<Check> checkgen(TypeGate e,
-			HashMap<String, Type> environment) {
-		List<Check> checks = checkgen(e.lhs(), environment);
-		checks.addAll(checkgen(e.rhs(),environment));
+			HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		List<Check> checks = checkgen(e.lhs(), environment, declared);
+		checks.addAll(checkgen(e.rhs(),environment, declared));
 		return checks;
 	}
 	
 	protected void addCheck(String msg, Condition c,
-			HashMap<String, Type> environment, SyntacticElement elem,
+			HashMap<String,Type> environment, SyntacticElement elem,
 			List<Check> checks) {		
 		c = c.reduce(environment);			
 		
