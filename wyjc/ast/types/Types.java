@@ -618,75 +618,158 @@ public class Types {
 	}
 
 	 public static Condition expandConstraints(Type t) {		
-			if (t instanceof VoidType || t instanceof ExistentialType
-					|| t instanceof NamedType || t instanceof AnyType
-					|| t instanceof BoolType || t instanceof IntType
-					|| t instanceof RealType) {
-				return t.constraint();
-			} else if(t instanceof ListType) {
-				ListType lt = (ListType) t;
-				Condition c = expandConstraints(lt.element()); 				
-				if(c != null) {				
-					String vn = Variable.freshVar();								
-					Variable v = new Variable(vn,c.attribute(SourceAttr.class));
-					HashMap<String,Expr> binding = new HashMap();
-					binding.put("$",v);				
-					c = c.substitute(binding);			
-					List<Pair<String,Expr>> ss = new ArrayList();
-					ss.add(new Pair(vn, new Variable("$", c
-							.attribute(SourceAttr.class))));
-					c = new None(new SetComprehension(v,ss,new Not(c)));				
+		 if (t instanceof VoidType || t instanceof ExistentialType
+				 || t instanceof NamedType || t instanceof AnyType
+				 || t instanceof BoolType || t instanceof IntType
+				 || t instanceof RealType) {
+			 return t.constraint();
+		 } else if(t instanceof ListType) {
+			 ListType lt = (ListType) t;
+			 Condition c = expandConstraints(lt.element()); 				
+			 if(c != null) {				
+				 String vn = Variable.freshVar();								
+				 Variable v = new Variable(vn,c.attribute(SourceAttr.class));
+				 HashMap<String,Expr> binding = new HashMap();
+				 binding.put("$",v);				
+				 c = c.substitute(binding);			
+				 List<Pair<String,Expr>> ss = new ArrayList();
+				 ss.add(new Pair(vn, new Variable("$", c
+						 .attribute(SourceAttr.class))));
+				 c = new None(new SetComprehension(v,ss,new Not(c)));				
+			 }
+			 return and(c,lt.constraint());
+		 } else if(t instanceof SetType) {
+			 SetType st = (SetType) t;
+			 Condition c = expandConstraints(st.element()); 				
+			 if(c != null) {				
+				 String vn = Variable.freshVar();								
+				 Variable v = new Variable(vn,c.attribute(SourceAttr.class));
+				 HashMap<String,Expr> binding = new HashMap();
+				 binding.put("$",v);				
+				 c = c.substitute(binding);			
+				 List<Pair<String,Expr>> ss = new ArrayList();
+				 ss.add(new Pair(vn, new Variable("$", c
+						 .attribute(SourceAttr.class))));
+				 c = new None(new SetComprehension(v,ss,new Not(c)));				
+			 }
+			 return and(c,st.constraint());				
+		 } else if(t instanceof ProcessType) {
+			 ProcessType st = (ProcessType) t;
+			 return expandConstraints(st.element());
+		 } else if(t instanceof RecursiveType) {
+			 // FIXME: not sure what to do here
+			 return null;
+		 } else if(t instanceof TupleType) {
+			 TupleType st = (TupleType) t;
+			 Condition c = null;
+
+			 for(Map.Entry<String,Type> e : st.types().entrySet()) {
+				 String key = e.getKey();
+				 Condition ec = expandConstraints(e.getValue());														
+				 if(ec != null) {					
+					 HashMap<String,Expr> binding = new HashMap<String,Expr>();
+					 Variable v = new Variable("$", ec.attribute(SourceAttr.class));
+					 binding.put("$",
+							 new TupleAccess(v, key, ec.attribute(SourceAttr.class)));										
+					 c = and(c, ec.substitute(binding));						
+				 }					
+			 }	
+
+			 return and(st.constraint(),c);				
+		 } else if(t instanceof UnionType) {
+			 UnionType utt = (UnionType) t;
+			 // Now, build up the condition map. The condition map is rather
+			 // subtle in it's formation to ensure we get a good typing at the end.
+			 HashMap<Type,Condition> conditions = new HashMap<Type,Condition>();
+
+			 for(Type bound : utt.types()) {				
+				 Condition c = expandConstraints(bound);
+
+				 if(c != null) {
+					 Condition et = conditions.get(bound);
+					 if(et == null) {
+						 conditions.put(bound,c);
+					 } else if(!(et instanceof BoolVal)) {
+						 et = new Or(et,c,c.attribute(SourceAttr.class));
+						 conditions.put(bound,et);
+					 }
+				 } else {
+					 conditions.put(bound, new BoolVal(true));
+				 }
+			 }			
+			 
+			 return mergeTypeCases(t,conditions);			 
+		 } else if(t instanceof FunType) {
+			 // FIXME: need to add this!
+			 return null;
+		 } else {
+			 throw new IllegalArgumentException("unknown type encountered: " + t);
+		 }
+	 }
+
+	 // The following method is pretty icky; i'm in no way 100% sure it works
+	 // correctly.
+	 protected static Condition mergeTypeCases(Type t,
+			 HashMap<Type, Condition> conditions) {
+
+		 if(t instanceof UnionType) {
+			 // Recursive Case
+			 UnionType ut = (UnionType) t;
+			 Condition c = null;
+			 for(Type b : ut.types()) {
+				 Condition bc = mergeTypeCases(b,conditions);
+
+				 if (bc != null) {
+					 Variable v = new Variable("$", bc
+							 .attribute(SourceAttr.class));
+					 String var = Variable.freshVar();
+					 HashMap<String, Expr> binding = new HashMap<String, Expr>();
+					 binding.put("$", new Variable(var));
+					 // indicates a choice of some kind required
+
+					 bc = new TypeGate(b, var, v, bc.substitute(binding), bc
+							 .attribute(SourceAttr.class));
+				 }
+
+				 if(c == null) {
+					 c = bc;										
+				 } else if(bc != null) {
+					 c = new And(c,bc,bc.attribute(SourceAttr.class));
+				 }				
+			 }
+			 return c;
+		 } else {
+			 // Base case
+			 Condition c = conditions.get(t);
+			 if(c instanceof BoolVal && ((BoolVal)c).value()) {
+				 // useful simplification to reduce unnecssary checks
+				 c = null;
+			 }
+
+			 Type lub = null;
+			for (Type b : conditions.keySet()) {
+				if (isBaseSubtype(t, b, Collections.EMPTY_MAP)
+						&& !isBaseEquivalent(t, b)) {
+					// b is a strict subtype of t
+					lub = lub == null ? b : Types.leastUpperBound(b, lub);
 				}
-				return and(c,lt.constraint());
-			} else if(t instanceof SetType) {
-				SetType st = (SetType) t;
-				Condition c = expandConstraints(st.element()); 				
-				if(c != null) {				
-					String vn = Variable.freshVar();								
-					Variable v = new Variable(vn,c.attribute(SourceAttr.class));
-					HashMap<String,Expr> binding = new HashMap();
-					binding.put("$",v);				
-					c = c.substitute(binding);			
-					List<Pair<String,Expr>> ss = new ArrayList();
-					ss.add(new Pair(vn, new Variable("$", c
-							.attribute(SourceAttr.class))));
-					c = new None(new SetComprehension(v,ss,new Not(c)));				
-				}
-				return and(c,st.constraint());				
-			} else if(t instanceof ProcessType) {
-				ProcessType st = (ProcessType) t;
-				return expandConstraints(st.element());
-			} else if(t instanceof RecursiveType) {
-				// FIXME: not sure what to do here
-				return null;
-			} else if(t instanceof TupleType) {
-				TupleType st = (TupleType) t;
-				Condition c = null;
-				
-				for(Map.Entry<String,Type> e : st.types().entrySet()) {
-					String key = e.getKey();
-					Condition ec = expandConstraints(e.getValue());														
-					if(ec != null) {					
-						HashMap<String,Expr> binding = new HashMap<String,Expr>();
-						Variable v = new Variable("$", ec.attribute(SourceAttr.class));
-						binding.put("$",
-								new TupleAccess(v, key, ec.attribute(SourceAttr.class)));										
-						c = and(c, ec.substitute(binding));						
-					}					
-				}	
-				
-				return and(st.constraint(),c);				
-			} else if(t instanceof UnionType) {
-				// FIXME: really dunno what to do here
-				return null;
-			} else if(t instanceof FunType) {
-				// FIXME: need to add this!
-				return null;
-			} else {
-				throw new IllegalArgumentException("unknown type encountered: " + t);
 			}
-		}
-	 
+			 if(lub == null) {
+				 // no specific subtypes of this, so ignore
+				 return c;
+			 } else {
+				 Condition r = mergeTypeCases(lub,conditions);
+				 if(c == null) {
+					 return r;
+				 } else if(r == null) {
+					 return c;
+				 } else {
+					 return new Or(r,c,c.attribute(SourceAttr.class));
+				 }
+			 }
+		 }
+	 }
+
 	 public static Condition and(Condition c1, Condition c2) {
 		 if(c1 == null) {
 			 return c2;
