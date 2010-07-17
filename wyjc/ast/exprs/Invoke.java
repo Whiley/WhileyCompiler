@@ -26,6 +26,7 @@ import wyjc.ast.attrs.*;
 import wyjc.ast.stmts.Stmt;
 import wyjc.ast.types.FunType;
 import wyjc.ast.types.Type;
+import wyjc.ast.types.Types;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
@@ -184,8 +185,9 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		for (ModuleInfo.Method function : mi.method(name, ftype)) {
 			WFormula mcs = WBool.TRUE;
 			
-			// FIXME: need to sort this out
-			Condition postCondition = null; // was function.postCondition()
+			Condition postCondition = Types.expandConstraints(function.type()
+					.returnType());
+			postCondition = Types.and(function.postCondition(), postCondition);
 			if (postCondition != null) {
 				
 				// Ok, here we need to translate the post-condition
