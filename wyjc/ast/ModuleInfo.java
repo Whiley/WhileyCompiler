@@ -24,6 +24,7 @@ import wyjc.ast.exprs.Condition;
 import wyjc.ast.exprs.Value;
 import wyjc.ast.types.FunType;
 import wyjc.ast.types.Type;
+import wyjc.ast.types.Types;
 import wyjc.ast.types.unresolved.UnresolvedType;
 import wyjc.util.ModuleID;
 
@@ -76,7 +77,7 @@ public class ModuleInfo extends SkeletonInfo {
 		ArrayList<Method> rs = new ArrayList<Method>();
 		if(ls != null) {
 			for(Method m : ls) {
-				if(m.type().equals(ft)) {
+				if(Types.isBaseEquivalent(m.type(),ft)) {
 					rs.add(m);
 				}
 			}

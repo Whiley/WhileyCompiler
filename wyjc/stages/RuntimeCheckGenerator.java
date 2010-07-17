@@ -371,7 +371,8 @@ public class RuntimeCheckGenerator {
 		return checks;
 	}
 	
-	private List<Check> checkgen(Invoke ivk, HashMap<String,Type> environment, HashMap<String,Type> declared) throws ResolveError {
+	private List<Check> checkgen(Invoke ivk, HashMap<String, Type> environment,
+			HashMap<String, Type> declared) throws ResolveError {
 		// First, we'll check the requirements of the argument expressions.
 		ArrayList<Check> checks = new ArrayList<Check>();
 		List<Expr> args = ivk.arguments(); 
@@ -379,12 +380,51 @@ public class RuntimeCheckGenerator {
 			checks.addAll(checkgen(e,environment, declared));					
 		}
 		
-		ModuleInfo mi = loader.loadModule(ivk.module());		
-		
+		ModuleInfo mi = loader.loadModule(ivk.module());				
 		FunType funType = ivk.funType();
-		// FIXME: following is a temporary solution. Eventually, i'll inline
-		// method calls for base equivalent methods.
-		ModuleInfo.Method method = mi.method(ivk.name(),funType).get(0);
+		List<ModuleInfo.Method> methods = mi.method(ivk.name(),funType); 
+		if(methods.size() == 1) {		
+			checkgenSingleInvoke(methods.get(0),ivk,environment,checks);
+		} else {
+			checkgenMultipleInvoke(methods,ivk,environment,checks);
+		}
+		
+		
+		return checks;
+	}
+	
+	public void checkgenMultipleInvoke(List<ModuleInfo.Method> methods, Invoke ivk,
+			HashMap<String, Type> environment, List<Check> checks) {
+		List<Expr> args = ivk.arguments();
+		Condition condition = null;
+		
+		for(ModuleInfo.Method method : methods) {
+			FunType funType = method.type();
+			Condition precondition = method.preCondition();							
+			List<Type> paramTypes = funType.parameters();
+			for (int i = 0; i != paramTypes.size(); ++i) {
+				HashMap<String,Expr> binding = new HashMap<String,Expr>();						
+				Type t = paramTypes.get(i);
+				Expr e = args.get(i);				
+				Condition c = Types.expandConstraints(t);			
+				if(c != null) {				
+					binding.put("$", e);
+					c = c.substitute(binding);
+					precondition = Types.and(precondition,c);
+				}
+			}			
+			condition = Types.or(condition,precondition);			
+		}
+		
+		if(condition != null) {
+			addCheck("function precondition not satisfied",condition,environment,ivk,checks);
+		}
+	}
+	
+	public void checkgenSingleInvoke(ModuleInfo.Method method, Invoke ivk,
+			HashMap<String, Type> environment, List<Check> checks) {
+		List<Expr> args = ivk.arguments();
+		FunType funType = method.type();
 		HashMap<String,Expr> paramBinding = new HashMap<String,Expr>();		
 		List<String> paramNames = method.parameterNames();
 		List<Type> paramTypes = funType.parameters();
@@ -402,14 +442,11 @@ public class RuntimeCheckGenerator {
 			}
 		}
 		
-		// FIXME: bug here, condition needs to be fully expanded
 		Condition preCond = method.preCondition();
 		if(preCond != null) {
 			preCond = preCond.substitute(paramBinding);
 			addCheck("function precondition not satisfied",preCond,environment,ivk,checks);
-		}		
-		
-		return checks;
+		}				
 	}
 	
 	public List<Check> checkgen(Expr e, HashMap<String,Type> environment, HashMap<String,Type> declared) {		

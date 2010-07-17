@@ -1450,7 +1450,7 @@ public class TypeResolution {
 		List<Type> candidateTypes = null;
 								
 		for (ModuleInfo.Method fun : lookupMethod(mid,name)) {								
-			FunType ft = (FunType) fun.type();			
+			FunType ft = Types.stripConstraints(fun.type());			
 			Type funrec = null;
 			if(fun.receiver() != null) {
 				funrec = fun.receiver();

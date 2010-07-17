@@ -461,7 +461,7 @@ public class Types {
 	 * @param environment
 	 * @return
 	 */
-	private static boolean isBaseEquivalent(Type t1, Type t2) {		
+	public static boolean isBaseEquivalent(Type t1, Type t2) {		
 		if(t1 instanceof IntType) {
 			return t2 instanceof IntType;
 		} else if(t1 instanceof RealType) {
@@ -554,6 +554,64 @@ public class Types {
 		}
 		
 		return false;
+	}
+
+	public static <T extends Type> T stripConstraints(T type) {		
+		if(type instanceof IntType) {
+			return (T) Types.T_INT(null);
+		} else if(type instanceof RealType) {
+			return (T) Types.T_REAL(null);			
+		} else if(type instanceof BoolType) {
+			return (T) Types.T_BOOL(null);			
+		} else if(type instanceof AnyType) {
+			return (T) Types.T_ANY;			
+		} else if(type instanceof ExistentialType) {
+			return (T) Types.T_EXISTENTIAL;		
+		} else if(type instanceof VoidType) {
+			return (T) Types.T_VOID;
+		} else if(type instanceof NamedType) {
+			NamedType ntype = (NamedType) type;						
+			return (T) new NamedType(ntype.module(),ntype.name(),stripConstraints(ntype.type()));										
+		} else if(type instanceof ProcessType) {
+			ProcessType ptype = (ProcessType) type;						
+			return (T) new ProcessType(stripConstraints(ptype.element()));							
+		} else if(type instanceof ListType) {
+			ListType ptype = (ListType) type;						
+			return (T) new ListType(stripConstraints(ptype.element()));							
+		} else if(type instanceof SetType) {
+			SetType ptype = (SetType) type;						
+			return (T) new SetType(stripConstraints(ptype.element()));								
+		} else if(type instanceof TupleType) {
+			TupleType ttype = (TupleType) type;						
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			for (Map.Entry<String, Type> p : ttype.types().entrySet()) {				
+				types.put(p.getKey(), stripConstraints(p.getValue()));
+			}							
+			return (T) new TupleType(types);			
+		} else if(type instanceof RecursiveType) {
+			RecursiveType rt = (RecursiveType) type;
+			Type rt_type = rt.type();
+			if(rt_type != null) {
+				rt_type = stripConstraints(rt_type);
+			}
+			return (T) new RecursiveType(rt.name(),rt_type,null);
+		} else if(type instanceof UnionType) {
+			UnionType utype = (UnionType) type;						
+			HashSet<NonUnionType> types = new HashSet<NonUnionType>();
+			for(NonUnionType t : utype.types()) {
+				types.add(stripConstraints(t));
+			}
+			return (T) new UnionType(types);			
+		} else if(type instanceof FunType) {						
+			FunType ftype = (FunType) type;
+			ArrayList<Type> params = new ArrayList<Type>();
+			for(Type t : ftype.parameters()) {
+				params.add(stripConstraints(t));
+			}
+			return (T) new FunType(stripConstraints(ftype.returnType()),params);
+		}
+		
+		return null;
 	}
 
 	/**
@@ -777,6 +835,16 @@ public class Types {
 			 return c1;
 		 } else {
 			 return new And(c1,c2);
+		 }
+	 }
+	 
+	 public static Condition or(Condition c1, Condition c2) {
+		 if(c1 == null) {
+			 return c2;
+		 } else if(c2 == null) {
+			 return c1;
+		 } else {
+			 return new Or(c1,c2);
 		 }
 	 }
 	 
