@@ -203,14 +203,9 @@ public class RuntimeCheckGenerator {
 		if(init != null) {
 			ArrayList<Check> checks = new ArrayList<Check>();
 			checks.addAll(checkgen(init,environment, declared));
-										
-			if (as.type().constraint() != null) {
-				HashMap<String, Expr> binding = new HashMap<String,Expr>();
-				binding.put("$", init);
-				Condition constraint = Types.expandConstraints(as.type()).substitute(binding);				
-				addCheck("constraint for variable " + as.name()
-						+ " not satisfied", constraint, environment, as, checks);
-			}											
+			Condition constraint = new TypeEquals(as.type(), Variable.freshVar(), init, new BoolVal(true));
+			addCheck("constraint for variable " + as.name()
+						+ " not satisfied", constraint, environment, as, checks);														
 						
 			environment.put(as.name(), init.type(environment));
 			
@@ -238,16 +233,11 @@ public class RuntimeCheckGenerator {
 			environment.put(v.name(), rhs.type(environment));
 		}		
 		// FIXME: presumably we could simply this for union types by eliminating
-		// things which cannot apply to the new type.		
-		Condition lhs_c = Types.expandConstraints(declaredType);		
-		if (lhs_c != null) {			
-			postChecks = new ArrayList<Check>();
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			binding.put("$",v);
-			lhs_c = lhs_c.substitute(binding);
-			addCheck("constraint for variable " + v
-					+ " not satisfied", lhs_c, environment, as, postChecks);
-		}
+		// things which cannot apply to the new type.
+		Condition lhs_c = new TypeEquals(declaredType, Variable.freshVar(), v, new BoolVal(true));				
+		postChecks = new ArrayList<Check>();				
+		addCheck("constraint for variable " + v
+					+ " not satisfied", lhs_c, environment, as, postChecks);		
 
 		return new Pair<List<Check>,List<Check>>(preChecks,postChecks);
 	}	
@@ -720,8 +710,9 @@ public class RuntimeCheckGenerator {
 	protected void addCheck(String msg, Condition c,
 			HashMap<String,Type> environment, SyntacticElement elem,
 			List<Check> checks) {		
+		System.out.println("ADDING CHECK: " + c);
 		c = c.reduce(environment);			
-		
+		System.out.println("REDUCED CHECK: " + c);
 		if(c instanceof BoolVal) {
 			BoolVal v = (BoolVal) c;			
 			if(!v.value()) {
