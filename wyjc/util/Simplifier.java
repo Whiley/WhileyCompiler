@@ -301,7 +301,7 @@ public class Simplifier {
 				.rhs()), c.attribute(SourceAttr.class));
 	}
 	
-	protected Condition invert(TypeEquals c) {
+	protected Condition invert(TypeEquals c) {		
 		return new TypeGate(c.lhsTest(), c.variable(), c.lhs(), invert(c.rhs()), c
 				.attribute(SourceAttr.class));
 	}

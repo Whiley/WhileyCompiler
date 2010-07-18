@@ -140,11 +140,10 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		Pair<WFormula,WFormula> r = rhs.convertCondition(environment, loader);		
 		constraints = and(constraints,r.second());
 		WFormula condition = r.first();
-		condition = and(WTypes.subtypeOf(l.first(), type.convert()), WExprs
-				.equals(new WVariable(var), l.first()), condition);
 		
+		condition = and(WExprs.equals(new WVariable(var), l.first()), condition);		
 		condition = or(WTypes.subtypeOf(l.first(), type.convert()).not(),condition);
-		
+							
 		return new Pair<WFormula,WFormula>(condition, constraints);		
 	}  		
 	

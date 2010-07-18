@@ -75,9 +75,9 @@ public class WSubtype extends WConstructor<WExpr> implements WLiteral {
 		if(nlhs instanceof WValue) {
 			WValue v = (WValue) nlhs;
 			if(type.isSubtype(v.type(null), Collections.EMPTY_MAP)) {
-				return WBool.TRUE;
+				return sign ? WBool.TRUE : WBool.FALSE;
 			} else {
-				return WBool.FALSE;
+				return sign ? WBool.FALSE : WBool.TRUE;				
 			}
 		}
 		
