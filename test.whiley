@@ -1,12 +1,12 @@
-define pos as int where $ > 0
-define neg as int where $ < 0
+define nat as int where $ >= 0
+define onion as [int]|nat
 
-neg negate(pos x):
-    return -x
-
-pos negate(neg x):
-    return -x
-
+void f(onion x):
+    if x ~= [int]:
+        print "GOT LIST"
+    else if x ~= nat:
+        print "GOT NAT"
 
 void System::main([string] args):
-    negate(0)
+    f([1,2,3])
+    f(1)

@@ -104,15 +104,15 @@ public class ClassFileBuilder {
 		}
 
 		for(Triple<String,Type,FunType> c : methodCases.keySet()) {
-			List<FunDecl> cases = methodCases.get(c);
+			List<FunDecl> cases = methodCases.get(c);			
 			if(cases.size() == 1) {
 				FunDecl fd = cases.get(0);				
-				ClassFile.Method m = build(0,fd,wf);
+				ClassFile.Method m = build(0,fd,wf);				
 				cf.methods().add(m);				
 			} else {
 				int idx = 0;
 				for(FunDecl fd : cases) {					
-					ClassFile.Method m = build(++idx,fd,wf);
+					ClassFile.Method m = build(++idx,fd,wf);					
 					cf.methods().add(m);					
 				}
 				cf.methods().add(
@@ -2432,7 +2432,9 @@ public class ClassFileBuilder {
 	}
 	
 	protected String nameMangle(String name, Type receiver, FunType type) {
+		type = Types.stripConstraints(type);
 		if (receiver != null) {
+			receiver = Types.stripConstraints(receiver);
 			return name + "$" + type2str(receiver) + "$" + type2str(type);
 		} else {
 			return name + "$" + type2str(type);
@@ -2468,7 +2470,7 @@ public class ClassFileBuilder {
 				}
 				firstTime=false;
 				r += type2str(b);
-			}
+			}			
 			return r;
 		} else if(t instanceof TupleType) {
 			TupleType st = (TupleType) t;
