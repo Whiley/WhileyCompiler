@@ -116,7 +116,20 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		Condition r = rhs.reduce(nenv);		
 		Type t = l.type(environment);
 		
-		return new TypeEquals(type, var, l, r, attributes());
+		if(Types.isBaseSubtype(type,t)) {			
+			Condition c = Types.expandConstraints(type);
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();			
+			binding.put(var, lhs);
+			if(c == null) {
+				return r.substitute(binding);
+			}
+			binding.put("$", lhs);					
+			return new And(c.substitute(binding),r.substitute(binding));
+		} else if(!Types.isBaseSubtype(t, type)) {
+			return new BoolVal(false);
+		} else {				
+			return new TypeEquals(type, var, l, r, attributes());
+		}
 	}
 	
 	public String toString() {

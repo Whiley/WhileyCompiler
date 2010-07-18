@@ -115,7 +115,19 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 		Condition r = rhs.reduce(nenv);		
 		
 		Type t = l.type(environment);
-
+		if(Types.isBaseSubtype(type,t)) {			
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put(var, lhs);
+			Condition c = Types.expandConstraints(type);
+			if(c == null) {
+				return r.substitute(binding);
+			}			
+			binding.put("$", lhs);					
+			return new Or(new Not(c.substitute(binding)),r.substitute(binding));
+		} else if(!Types.isBaseSubtype(t, type)) {
+			return new BoolVal(true);
+		} 
+		
 		return new TypeGate(type, var, l, r, attributes());
 	}
 	
