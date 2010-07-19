@@ -338,26 +338,26 @@ public class RuntimeCheckGenerator {
 			checks.addAll(checkgen(e,environment, declared));
 		}
 		
-		Condition postCondition = Types.expandConstraints(f.type().returnType());
-		postCondition = Types.and(postCondition,f.postCondition()); 
-		if(postCondition != null) {			
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			binding.put("$", e);
-			for (Variable var : postCondition.uses()) {				
-				if(shadows.contains(var)){
-					String v = var.name();
-					// Observe that the following is required, since the
-					// parameter may have been modified in the method body.
-					// However, the post condition must always refer to the
-					// value on entry; therefore, we have stored that variable
-					// into a shadow.
-					binding.put(v, new Variable(v + "$_", var.attributes()));
-				}
-			}			
-			Condition pc = postCondition.substitute(binding);
-			addCheck("function postcondition not satisfied",pc,environment,e,checks);								
-		}		
-		
+		Condition postCondition = f.postCondition();
+		if(postCondition == null) {
+			postCondition = new BoolVal(true);
+		}
+		postCondition = new TypeEquals(f.type().returnType(), Variable.freshVar(), e, postCondition);
+		HashMap<String,Expr> binding = new HashMap<String,Expr>();		
+		for (Variable var : postCondition.uses()) {				
+			if(shadows.contains(var)){
+				String v = var.name();
+				// Observe that the following is required, since the
+				// parameter may have been modified in the method body.
+				// However, the post condition must always refer to the
+				// value on entry; therefore, we have stored that variable
+				// into a shadow.
+				binding.put(v, new Variable(v + "$_", var.attributes()));
+			}
+		}			
+		Condition pc = postCondition.substitute(binding);
+		addCheck("function postcondition not satisfied",pc,environment,e,checks);								
+						
 		return checks;
 	}
 	
@@ -396,12 +396,8 @@ public class RuntimeCheckGenerator {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();						
 				Type t = paramTypes.get(i);
 				Expr e = args.get(i);				
-				Condition c = Types.expandConstraints(t);			
-				if(c != null) {				
-					binding.put("$", e);
-					c = c.substitute(binding);
-					precondition = Types.and(precondition,c);
-				}
+				Condition constraint = new TypeEquals(t, Variable.freshVar(), e, new BoolVal(true));
+				precondition = Types.and(precondition,constraint);				
 			}			
 			condition = Types.or(condition,precondition);			
 		}
@@ -424,12 +420,8 @@ public class RuntimeCheckGenerator {
 			Expr e = args.get(i);
 			String n = paramNames.get(i);
 			paramBinding.put(n,e);
-			Condition c = Types.expandConstraints(t);			
-			if(c != null) {				
-				binding.put("$", e);
-				c = c.substitute(binding);
-				addCheck("constraints for parameter not satisfied",c,environment,e,checks);
-			}
+			Condition constraint = new TypeEquals(t, Variable.freshVar(), e, new BoolVal(true));						
+			addCheck("constraints for parameter not satisfied",constraint,environment,e,checks);			
 		}
 		
 		Condition preCond = method.preCondition();
