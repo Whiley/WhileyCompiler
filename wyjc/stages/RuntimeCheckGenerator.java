@@ -343,7 +343,8 @@ public class RuntimeCheckGenerator {
 			postCondition = new BoolVal(true);
 		}
 		postCondition = new TypeEquals(f.type().returnType(), Variable.freshVar(), e, postCondition);
-		HashMap<String,Expr> binding = new HashMap<String,Expr>();		
+		HashMap<String,Expr> binding = new HashMap<String,Expr>();
+		binding.put("$",e);
 		for (Variable var : postCondition.uses()) {				
 			if(shadows.contains(var)){
 				String v = var.name();
