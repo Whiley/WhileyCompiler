@@ -156,9 +156,12 @@ public class Types {
 		
 		return new UnionType((NonUnionType) t1, (NonUnionType) t2);		
 	}
-		
+	
 	public static Type greatestLowerBound(Type t1, Type t2) {
-		
+		return greatestLowerBound(t1,t2,Collections.EMPTY_MAP);				
+	}
+	
+	private static Type greatestLowerBound(Type t1, Type t2, Map<String,Type> environment) {					
 		// NOTE. There are still bugs in this algorithm.
 		if(isStrictSubtype(t1,t2)) {			
 			return t2;
@@ -179,18 +182,18 @@ public class Types {
 		} else if(t1 instanceof ListType && t2 instanceof ListType) {
 			ListType l1 = (ListType) t1;
 			ListType l2 = (ListType) t2;
-			return new ListType(greatestLowerBound(l1.element(),l2.element()),and(l1.constraint(),l2.constraint()));
+			return new ListType(greatestLowerBound(l1.element(),l2.element(),environment),and(l1.constraint(),l2.constraint()));
 		} else if(t1 instanceof SetType && t2 instanceof SetType) {
 			SetType s1 = (SetType) t1;
 			SetType s2 = (SetType) t2;
-			return new SetType(greatestLowerBound(s1.element(),s2.element()),and(t1.constraint(),t2.constraint()));
+			return new SetType(greatestLowerBound(s1.element(),s2.element(),environment),and(t1.constraint(),t2.constraint()));
 		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
 			TupleType tt1 = (TupleType) t1;
 			TupleType tt2 = (TupleType) t2;
 			if(tt1.types().keySet().equals(tt2.types().keySet())) {
 				HashMap<String,Type> types = new HashMap<String,Type>();
 				for(Map.Entry<String,Type> e : tt1.types().entrySet()) {
-					Type type = leastUpperBound(tt2.types().get(e.getKey()),e.getValue());
+					Type type = greatestLowerBound(tt2.types().get(e.getKey()),e.getValue(),environment);
 					types.put(e.getKey(), type);
 				}
 				return new TupleType(types,and(t1.constraint(),t2.constraint()));
@@ -202,8 +205,8 @@ public class Types {
 			
 			for(NonUnionType b1 : ut1.types()) {
 				for(NonUnionType b2 : ut2.types()) {
-					if(Types.isBaseSubtype(b1,b2) || Types.isBaseSubtype(b2,b1)) {
-						Type glb = greatestLowerBound(b1,b2);
+					if(isBaseSubtype(b1,b2,environment) || isBaseSubtype(b2,b1,environment)) {
+						Type glb = greatestLowerBound(b1,b2,environment);
 						if(glb instanceof UnionType) {
 							types.addAll(((UnionType)glb).types());
 						} else {
@@ -221,12 +224,12 @@ public class Types {
 				return new UnionType(types);
 			}
 		} else if(t1 instanceof UnionType) {
-			UnionType ut1 = (UnionType) t1;
+			UnionType ut1 = (UnionType) t1;			
 			HashSet<NonUnionType> types = new HashSet<NonUnionType>();
 			
 			for(NonUnionType b : ut1.types()) {
-				if(Types.isBaseSubtype(b,t2) || Types.isBaseSubtype(t2,b)) {
-					Type glb = greatestLowerBound(b,t2);
+				if(isBaseSubtype(b,t2,environment) || isBaseSubtype(t2,b, environment)) {
+					Type glb = greatestLowerBound(b,t2,environment);
 					if(glb instanceof UnionType) {
 						types.addAll(((UnionType)glb).types());
 					} else {
@@ -247,8 +250,8 @@ public class Types {
 			HashSet<NonUnionType> types = new HashSet<NonUnionType>();
 			
 			for(NonUnionType b : ut2.types()) {
-				if(Types.isBaseSubtype(b,t1) || Types.isBaseSubtype(t1,b)) {
-					Type glb = greatestLowerBound(b,t1);
+				if (isBaseSubtype(b, t1, environment) || isBaseSubtype(t1, b, environment)) {
+					Type glb = greatestLowerBound(b,t1,environment);
 					if(glb instanceof UnionType) {
 						types.addAll(((UnionType)glb).types());
 					} else {
@@ -264,9 +267,29 @@ public class Types {
 			} else {
 				return new UnionType(types);
 			}
+		} else if(t1 instanceof RecursiveType && t2 instanceof RecursiveType) {
+			// not sure what to do here
+		} else if(t1 instanceof RecursiveType) {
+			RecursiveType rt1 = (RecursiveType) t1;
+			t1 = rt1.type();
+			if(t1 == null) {
+				t1 = environment.get(rt1.name());
+			} else {
+				environment = new HashMap<String,Type>(environment);
+				environment.put(rt1.name(), rt1.type());
+			}
+			return greatestLowerBound(t1,t2,environment);
+		} else if(t2 instanceof RecursiveType) {
+			RecursiveType rt2 = (RecursiveType) t2;
+			t2 = rt2.type();
+			if(t2 == null) {
+				t2 = environment.get(rt2.name());
+			} else {
+				environment = new HashMap<String,Type>(environment);
+				environment.put(rt2.name(), rt2.type());
+			}
+			return greatestLowerBound(t1,t2,environment);
 		}
-		
-		// FIXME: need to add support for recursive types
 		
 		return Types.T_VOID;	
 	}
