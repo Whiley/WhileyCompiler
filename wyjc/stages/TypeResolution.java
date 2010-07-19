@@ -432,14 +432,13 @@ public class TypeResolution {
 				t = Types.leastUpperBound(t,rb);								
 			}			
 			
-			Type r = Types.recondition(t, Types.and(t.constraint(),utt.constraint()));			
-			return r;
+			return Types.recondition(t, Types.and(t.constraint(),utt.constraint()));						
 		} else  {			
 			// must be process type
 			UnresolvedProcessType ult = (UnresolvedProcessType) ut;
 			Type tc = expandType(ult.element(),cache);			
 			return new ProcessType(tc);					
-		} 
+		} 		
 	}
 	
 	/**
@@ -447,15 +446,72 @@ public class TypeResolution {
 	 */
 	protected Type expandAndCheck(UnresolvedType t,
 			SyntacticElement elem) throws ResolveError {				
-		Type tc = expandType(t,types);		
-		Condition c = tc.constraint();		
-		if(c != null) {
+		Type tc = expandType(t,types);	
+		return expandAndCheck(tc,elem);
+	}
+	
+	protected Type expandAndCheck(Type ut,
+			SyntacticElement elem) throws ResolveError {
+		// An interesting question is whether this method should be integrated
+		// with the expand type method.
+		
+		Condition constraint = ut.constraint();		
+		if(constraint != null) {
 			HashMap<String,Type> env = new HashMap<String,Type>();
-			env.put("$",tc);			
-			c = (Condition) check(c,env).second();
-			renumber(c,elem.attribute(SourceAttr.class));
+			// there's something deeply screwed up about the following line.
+			env.put("$",ut);			
+			constraint = (Condition) check(constraint,env).second();
+			renumber(constraint,elem.attribute(SourceAttr.class));
 		}				
-		return Types.recondition(tc,c);
+		
+		if (ut instanceof BoolType || ut instanceof IntType
+				|| ut instanceof RealType || ut instanceof ExistentialType
+				|| ut instanceof AnyType || ut instanceof VoidType) {
+			return Types.recondition(ut, constraint);
+		} else if(ut instanceof NamedType) {		
+			NamedType ult = (NamedType) ut;
+			Type tc = expandAndCheck(ult.type(),elem); 					
+			return new NamedType(ult.module(), ult.name(),tc);
+		} else if(ut instanceof ListType) {		
+			ListType ult = (ListType) ut;
+			Type tc = expandAndCheck(ult.element(),elem); 					
+			return new ListType(tc, constraint);
+		} else if(ut instanceof SetType) {
+			SetType ult = (SetType) ut;
+			Type tc = expandAndCheck(ult.element(),elem); 			
+			return new SetType(tc, constraint);					
+		} else if(ut instanceof TupleType) {
+			TupleType utt = (TupleType) ut;			
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			for(Map.Entry<String,Type> e : utt.types().entrySet()) {
+				String key = e.getKey();
+				Type tc = expandAndCheck(e.getValue(),elem);				
+				types.put(key, tc);		
+			}					
+			return new TupleType(types, constraint);
+		} else if(ut instanceof UnionType) {
+			UnionType utt = (UnionType) ut;
+			
+			Type t = Types.T_VOID;			
+									
+			for(UnresolvedType bound : utt.types()) {				
+				Type rb = expandAndCheck(bound,elem);
+				t = Types.leastUpperBound(t,rb);								
+			}			
+			
+			return Types.recondition(t, Types.and(t.constraint(),constraint));						
+		} else if(ut instanceof ProcessType) {			
+			// must be process type
+			ProcessType ult = (ProcessType) ut;			
+			return new ProcessType(expandAndCheck(ult.element(),elem));					
+		} else {
+			RecursiveType rt = (RecursiveType) ut;		
+			Type rt_type = rt.type();
+			if(rt_type != null) {
+				rt_type = expandAndCheck(rt_type,elem);
+			}
+			return new RecursiveType(rt.name(),rt_type,constraint);
+		}
 	}
 	
 	protected void addFunDecl(ModuleInfo.Method fun, ModuleID id) {
