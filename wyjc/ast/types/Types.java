@@ -268,7 +268,22 @@ public class Types {
 				return new UnionType(types);
 			}
 		} else if(t1 instanceof RecursiveType && t2 instanceof RecursiveType) {
-			// not sure what to do here
+			RecursiveType rt1 = (RecursiveType) t1;
+			RecursiveType rt2 = (RecursiveType) t2;
+			Type rt1_type = rt1.type();
+			Type rt2_type = rt2.type();
+			
+			if(rt1_type == null && rt2_type == null) {
+				return rt1_type;
+			} else if(rt1_type != null && rt2_type != null) {
+				environment = new HashMap<String,Type>(environment);
+				environment.put(rt1.name(), rt1_type);
+				environment.put(rt2.name(), rt2_type);
+				return new RecursiveType(rt1.name(), greatestLowerBound(
+						rt1_type, rt2_type, environment), and(rt1.constraint(),
+						rt2.constraint()));
+			}
+			
 		} else if(t1 instanceof RecursiveType) {
 			RecursiveType rt1 = (RecursiveType) t1;
 			t1 = rt1.type();
