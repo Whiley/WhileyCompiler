@@ -4,8 +4,10 @@ define pos as int where $ > 0
 define expr as nat | (expr lhs, expr rhs)
 define posExpr as pos | (posExpr lhs, posExpr rhs)
 
-void f(posExpr e1):
+expr f(posExpr e1):
     expr e2 = e1
+    return e2
 
 void System::main([string] args):
-    f((lhs:(lhs:1,rhs:2),rhs:1))
+    expr e = f((lhs:(lhs:1,rhs:2),rhs:1))
+    print str(e)
