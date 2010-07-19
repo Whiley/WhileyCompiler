@@ -68,25 +68,38 @@ public class Types {
 			return t1;
 		} else if(isStrictSubtype(t2,t1)) {			
 			return t2;
-		} else if(isBaseEquivalent(t1,t2)) {
-			// FIXME: is there a bug with deep constraints?
-			// FIXME: it would be nice to do some kind of simplification here.
-			return recondition(t1, leastUpperBound(t1.constraint(),t2.constraint()));			
-		} else if(isBaseSubtype(t1,t2)) {
-			Condition c = t1.constraint();
+		} else if(t1 instanceof IntType && t2 instanceof IntType) {
+			return Types.T_INT(or(t1.constraint(),t2.constraint()));
+		} else if(t1 instanceof RealType && t2 instanceof RealType) {
+			return Types.T_REAL(or(t1.constraint(),t2.constraint()));
+		} else if(t1 instanceof IntType && t2 instanceof RealType) {
 			String v = Variable.freshVar();
-			// FIXME: i'm not very sure about this
-			Condition tg = new TypeGate(t2,v,new Variable("$"),new BoolVal(true));
-			return recondition(t1,new Or(c,tg));
-		} else if(isBaseSubtype(t2,t1)) {
-			Condition c = t2.constraint();
-			String v = Variable.freshVar();
-			// FIXME: i'm not very sure about this
 			Condition tg = new TypeGate(t1,v,new Variable("$"),new BoolVal(true));
-			return recondition(t2,new Or(c,tg));
-		}
-		
-		if (t1 instanceof UnionType && t2 instanceof UnionType) {
+			return Types.T_REAL(or(tg,t2.constraint()));
+		} else if(t1 instanceof RealType && t2 instanceof IntType) {
+			String v = Variable.freshVar();
+			Condition tg = new TypeGate(t2,v,new Variable("$"),new BoolVal(true));
+			return Types.T_REAL(or(tg,t1.constraint()));
+		} else if(t1 instanceof ListType && t2 instanceof ListType) {
+			ListType l1 = (ListType) t1;
+			ListType l2 = (ListType) t2;
+			return new ListType(leastUpperBound(l1.element(),l2.element()),or(t1.constraint(),t2.constraint()));
+		} else if(t1 instanceof SetType && t2 instanceof SetType) {
+			SetType s1 = (SetType) t1;
+			SetType s2 = (SetType) t2;
+			return new SetType(leastUpperBound(s1.element(),s2.element()),or(t1.constraint(),t2.constraint()));
+		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
+			TupleType tt1 = (TupleType) t1;
+			TupleType tt2 = (TupleType) t2;
+			if(tt1.types().keySet().equals(tt2.types().keySet())) {
+				HashMap<String,Type> types = new HashMap<String,Type>();
+				for(Map.Entry<String,Type> e : tt1.types().entrySet()) {
+					Type type = leastUpperBound(tt2.types().get(e.getKey()),e.getValue());
+					types.put(e.getKey(), type);
+				}
+				return new TupleType(types,or(t1.constraint(),t2.constraint()));
+			}			
+		} else if (t1 instanceof UnionType && t2 instanceof UnionType) {
 			UnionType ut1 = (UnionType) t1;
 			UnionType ut2 = (UnionType) t2;
 			ArrayList<NonUnionType> types = new ArrayList<NonUnionType>(ut1
@@ -97,7 +110,7 @@ public class Types {
 			// slacking off...
 
 			types.addAll(ut2.types());
-			return new UnionType(types, leastUpperBound(t1.constraint(), t2
+			return new UnionType(types, or(t1.constraint(), t2
 					.constraint()));
 		} else if(t1 instanceof UnionType) {			
 			UnionType ut1 = (UnionType) t1;
@@ -109,14 +122,14 @@ public class Types {
 					types.set(i, (NonUnionType) t2);
 					return new UnionType(types, ut1.constraint());
 				} else if(isBaseEquivalent(t,t2)) {
-					types.set(i, (NonUnionType) recondition(t, leastUpperBound(
+					types.set(i, (NonUnionType) recondition(t, or(
 							t.constraint(), t2.constraint())));
 					return new UnionType(types,ut1.constraint());
 				}
 			}
 						
 			types.add((NonUnionType) t2);
-			return new UnionType(types, leastUpperBound(t1.constraint(), t2
+			return new UnionType(types, or(t1.constraint(), t2
 					.constraint()));
 		} else if(t2 instanceof UnionType) {
 			UnionType ut2 = (UnionType) t2;
@@ -128,61 +141,134 @@ public class Types {
 					types.set(i, (NonUnionType) t1);
 					return new UnionType(types, ut2.constraint());
 				} else if(isBaseEquivalent(t,t1)) {
-					types.set(i, (NonUnionType) recondition(t, leastUpperBound(
+					types.set(i, (NonUnionType) recondition(t, or(
 							t.constraint(), t1.constraint())));
 					return new UnionType(types,ut2.constraint());
 				}
 			}
 			
 			types.add((NonUnionType) t1);
-			return new UnionType(types, leastUpperBound(t2.constraint(), t1
+			return new UnionType(types, or(t2.constraint(), t1
 					.constraint()));
-		} else if(t1 instanceof ListType && t2 instanceof ListType) {
-			ListType l1 = (ListType) t1;
-			ListType l2 = (ListType) t2;
-			return new ListType(leastUpperBound(l1.element(),l2.element()));
-		} else if(t1 instanceof SetType && t2 instanceof SetType) {
-			SetType s1 = (SetType) t1;
-			SetType s2 = (SetType) t2;
-			return new SetType(leastUpperBound(s1.element(),s2.element()));
-		} else {
-			return new UnionType((NonUnionType) t1, (NonUnionType) t2);
-		}
+		} 
+				
+		// FIXME: could do better with recursive types definitely
+		
+		return new UnionType((NonUnionType) t1, (NonUnionType) t2);		
 	}
-	
-	private static Condition leastUpperBound(Condition c1, Condition c2) {
-		if(c1 == null) {
-			return c2;
-		} else if(c2 == null) {
-			return c1;
-		} else {
-			// Would be nice to do some simplification here
-			return new Or(c1,c2);
-		}
-	}
-	
+		
 	public static Type greatestLowerBound(Type t1, Type t2) {
 		
 		// NOTE. There are still bugs in this algorithm.
-		
-		if(isBaseSubtype(t1, t2, Collections.EMPTY_MAP)) {									
-			return t1;
-		} else if(isBaseSubtype(t2, t1, Collections.EMPTY_MAP)) {			
+		if(isStrictSubtype(t1,t2)) {			
 			return t2;
-		}
-		
-		if(t1 instanceof ListType && t2 instanceof ListType) {
+		} else if(isStrictSubtype(t2,t1)) {			
+			return t1;
+		} else if(t1 instanceof IntType && t2 instanceof IntType) {
+			return Types.T_INT(and(t1.constraint(),t2.constraint()));
+		} else if(t1 instanceof RealType && t2 instanceof RealType) {
+			return Types.T_REAL(and(t1.constraint(),t2.constraint()));
+		} else if(t1 instanceof IntType && t2 instanceof RealType) {
+			String v = Variable.freshVar();
+			Condition tg = new TypeGate(t1,v,new Variable("$"),new BoolVal(true));
+			return Types.T_REAL(and(tg,t2.constraint()));
+		} else if(t1 instanceof RealType && t2 instanceof IntType) {
+			String v = Variable.freshVar();
+			Condition tg = new TypeGate(t2,v,new Variable("$"),new BoolVal(true));
+			return Types.T_REAL(and(tg,t1.constraint()));
+		} else if(t1 instanceof ListType && t2 instanceof ListType) {
 			ListType l1 = (ListType) t1;
-			ListType l2 = (ListType) t2;			
-			return new ListType(greatestLowerBound(l1.element(),l2.element()));
+			ListType l2 = (ListType) t2;
+			return new ListType(greatestLowerBound(l1.element(),l2.element()),and(l1.constraint(),l2.constraint()));
 		} else if(t1 instanceof SetType && t2 instanceof SetType) {
 			SetType s1 = (SetType) t1;
 			SetType s2 = (SetType) t2;
-			return new SetType(greatestLowerBound(s1.element(),s2.element()));
-		} else {
-			// THIS IS COMPLETELY BROKEN. NEED TO ADD A SPECIAL INTERSECTION TYPE.
-			return new UnionType((NonUnionType) t1, (NonUnionType) t2);
+			return new SetType(greatestLowerBound(s1.element(),s2.element()),and(t1.constraint(),t2.constraint()));
+		} else if(t1 instanceof TupleType && t2 instanceof TupleType) {
+			TupleType tt1 = (TupleType) t1;
+			TupleType tt2 = (TupleType) t2;
+			if(tt1.types().keySet().equals(tt2.types().keySet())) {
+				HashMap<String,Type> types = new HashMap<String,Type>();
+				for(Map.Entry<String,Type> e : tt1.types().entrySet()) {
+					Type type = leastUpperBound(tt2.types().get(e.getKey()),e.getValue());
+					types.put(e.getKey(), type);
+				}
+				return new TupleType(types,and(t1.constraint(),t2.constraint()));
+			}			
+		} else if(t1 instanceof UnionType && t2 instanceof UnionType) {
+			UnionType ut1 = (UnionType) t1;
+			UnionType ut2 = (UnionType) t2;
+			HashSet<NonUnionType> types = new HashSet<NonUnionType>();
+			
+			for(NonUnionType b1 : ut1.types()) {
+				for(NonUnionType b2 : ut2.types()) {
+					if(Types.isBaseSubtype(b1,b2) || Types.isBaseSubtype(b2,b1)) {
+						Type glb = greatestLowerBound(b1,b2);
+						if(glb instanceof UnionType) {
+							types.addAll(((UnionType)glb).types());
+						} else {
+							types.add((NonUnionType)glb);
+						}
+					}
+				}
+			}
+			
+			if(types.isEmpty()) {
+				return T_VOID;
+			} else if(types.size() == 1) {
+				return types.iterator().next();
+			} else {
+				return new UnionType(types);
+			}
+		} else if(t1 instanceof UnionType) {
+			UnionType ut1 = (UnionType) t1;
+			HashSet<NonUnionType> types = new HashSet<NonUnionType>();
+			
+			for(NonUnionType b : ut1.types()) {
+				if(Types.isBaseSubtype(b,t2) || Types.isBaseSubtype(t2,b)) {
+					Type glb = greatestLowerBound(b,t2);
+					if(glb instanceof UnionType) {
+						types.addAll(((UnionType)glb).types());
+					} else {
+						types.add((NonUnionType)glb);
+					}
+				}
+			}
+			
+			if(types.isEmpty()) {
+				return T_VOID;
+			} else if(types.size() == 1) {
+				return types.iterator().next();
+			} else {
+				return new UnionType(types);
+			}
+		} else if(t2 instanceof UnionType) {
+			UnionType ut2 = (UnionType) t2;
+			HashSet<NonUnionType> types = new HashSet<NonUnionType>();
+			
+			for(NonUnionType b : ut2.types()) {
+				if(Types.isBaseSubtype(b,t1) || Types.isBaseSubtype(t1,b)) {
+					Type glb = greatestLowerBound(b,t1);
+					if(glb instanceof UnionType) {
+						types.addAll(((UnionType)glb).types());
+					} else {
+						types.add((NonUnionType)glb);
+					}
+				}
+			}
+			
+			if(types.isEmpty()) {
+				return T_VOID;
+			} else if(types.size() == 1) {
+				return types.iterator().next();
+			} else {
+				return new UnionType(types);
+			}
 		}
+		
+		// FIXME: need to add support for recursive types
+		
+		return Types.T_VOID;	
 	}
 
 	/**

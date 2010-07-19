@@ -206,7 +206,7 @@ public class RuntimeCheckGenerator {
 			Condition constraint = new TypeEquals(as.type(), Variable.freshVar(), init, new BoolVal(true));
 			addCheck("constraint for variable " + as.name()
 						+ " not satisfied", constraint, environment, as, checks);														
-						
+									
 			environment.put(as.name(), init.type(environment));
 			
 			return checks;

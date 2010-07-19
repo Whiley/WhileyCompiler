@@ -1,7 +1,7 @@
 define nat as int where $ >= 0
+define onion as [int]|nat
 define expr as nat | (expr lhs, expr rhs)
 
 void System::main([string] args):
-    nat x = 1
-    nat y = -x
-
+    onion x = |args|
+    expr e2 = (lhs:(lhs:1,rhs:2),rhs:2)

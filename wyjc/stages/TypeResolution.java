@@ -335,6 +335,7 @@ public class TypeResolution {
 					tg.rhs(), tg.attributes()));
 		}
 		
+		// FIXME: this is broken right?
 		return Types.recondition(ntype, (Condition) p.constraint().replace(c_binding));
 	}
 	protected static final String[] names = {"X","Y","Z","U","V","W","P","Q","R","S","T"}; 

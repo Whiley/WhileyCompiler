@@ -116,8 +116,9 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 		Condition r = rhs.reduce(nenv);		
 		Type t = l.type(environment);
 		
-		if(Types.isBaseSubtype(type,t)) {			
-			Condition c = Types.expandConstraints(type);
+		if(Types.isBaseSubtype(type,t)) {
+			Type glb = Types.greatestLowerBound(type,t);
+			Condition c = Types.expandConstraints(glb);
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();			
 			binding.put(var, lhs);
 			if(c == null) {
