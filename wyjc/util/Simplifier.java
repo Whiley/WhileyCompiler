@@ -113,8 +113,7 @@ public class Simplifier {
 	protected Condition notElimination(Not ac) {		
 		Condition c = ac.mhs();
 		if (c instanceof Subset || c instanceof SubsetEq
-				|| c instanceof ListElementOf || c instanceof SetElementOf
-				|| c instanceof TypeGate) {
+				|| c instanceof ListElementOf || c instanceof SetElementOf) {
 			return ac;
 		} else {
 			return invert(ac.mhs());
@@ -122,7 +121,10 @@ public class Simplifier {
 	}
 	
 	public Condition invert(Condition c) {
-		if(c instanceof BoolVal) {
+		if (c instanceof Subset || c instanceof SubsetEq
+				|| c instanceof SetElementOf || c instanceof ListElementOf) {
+			return new Not(c, c.attribute(SourceAttr.class));
+		} else if(c instanceof BoolVal) {
 			return new BoolVal(!((BoolVal)c).value());
 		} else if(c instanceof And) {
 			return invert((And)c);
@@ -304,5 +306,5 @@ public class Simplifier {
 	protected Condition invert(TypeEquals c) {		
 		return new TypeGate(c.lhsTest(), c.variable(), c.lhs(), invert(c.rhs()), c
 				.attribute(SourceAttr.class));
-	}
+	}	
 }
