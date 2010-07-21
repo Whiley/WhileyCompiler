@@ -269,27 +269,10 @@ public class ClassFileBuilder {
 		ArrayList<Bytecode> codes = translate(fd);
 		Code code = new Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);
+		System.out.println("WRITING TYPE: " + flatType);
+		WhileyType wc = new WhileyType("WhileyType",flatType);
+		cm.attributes().add(wc);
 		
-		// FIXME: I need to write out the true method type here 
-		/*
-		Condition preCondition = fd.preCondition();
-		if(preCondition != null) {			
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			int pidx = 0;
-			for(FunDecl.Parameter p : fd.parameters()) {
-				binding.put(p.name(), new Variable("p" + pidx++));
-			}
-			preCondition = preCondition.substitute(binding);
-			
-			WhileyType wc = new WhileyType("WhileyPreCondition",preCondition);
-			cm.attributes().add(wc);
-		}
-		Condition postCondition = fd.postCondition();
-		if(postCondition != null) {
-			WhileyType wc = new WhileyType("WhileyPostCondition",postCondition);
-			cm.attributes().add(wc);
-		}
-		*/
 		return cm;
 	}
 	
