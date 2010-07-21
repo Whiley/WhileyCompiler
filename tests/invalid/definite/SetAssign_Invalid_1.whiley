@@ -1,5 +1,5 @@
 // this is a comment!
-void f({int} xs) requires |xs| > 4:
+void f({int} xs) where |xs| > 4:
     print str(xs)
 
 void System::main([string] args):

@@ -1,4 +1,4 @@
-void f([bool] x) requires |x| > 0 && x[0]:
+void f([bool] x) where |x| > 0 && x[0]:
     print str(x)
 
 void System::main([string] args):

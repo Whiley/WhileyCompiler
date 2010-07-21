@@ -1,5 +1,5 @@
-int g(int y) requires y >= 0, ensures $ > 0:
+int g(int y) where y >= 0 && $ > 0:
     return y
 
-int f(int y) requires y > 0, ensures $ >= 0:
+int f(int y) where y > 0 && $ >= 0:
     return g(y)

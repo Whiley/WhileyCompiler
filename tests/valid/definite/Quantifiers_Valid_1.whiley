@@ -1,5 +1,5 @@
 // this is a comment!
-void f({int} xs) requires no { w in xs | w < 0}:
+void f({int} xs) where no { w in xs | w < 0}:
     print str(xs)
 
 void System::main([string] args):

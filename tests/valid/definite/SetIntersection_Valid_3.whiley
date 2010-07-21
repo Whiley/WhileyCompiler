@@ -1,4 +1,4 @@
-void f({int} xs) requires |xs| < 3:
+void f({int} xs) where |xs| < 3:
     print str(xs)
 
 void g({int} ys):

@@ -1,4 +1,4 @@
-void f([int] xs) requires xs != [false]:
+void f([int] xs) where xs != [false]:
     print str(xs)
 
 void System::main([string] args):

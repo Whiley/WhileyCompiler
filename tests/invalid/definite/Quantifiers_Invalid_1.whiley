@@ -1,4 +1,4 @@
-void f({int} ls) requires some { i in ls | i < 0}:
+void f({int} ls) where some { i in ls | i < 0}:
     print str(ls)
 
 void g({int} ls):

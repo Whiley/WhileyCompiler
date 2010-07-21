@@ -1,4 +1,4 @@
-void f({int} xs) requires xs != ∅:
+void f({int} xs) where xs != ∅:
     print str(xs)
 
 void System::main([string] args):

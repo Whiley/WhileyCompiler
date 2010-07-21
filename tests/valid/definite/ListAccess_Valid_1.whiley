@@ -1,4 +1,4 @@
-void f([int] x) requires |x| > 0:
+void f([int] x) where |x| > 0:
     int y
     int z
     y = x[0]

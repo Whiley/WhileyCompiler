@@ -1,7 +1,7 @@
-int f(int x) requires x >= 0:
+int f(int x) where x >= 0:
     return x
 
-int f(int x) requires x >= 0:
+int f(int x) where x >= 0:
     return x
 
 void System::main([string] args):    

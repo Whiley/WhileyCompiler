@@ -1,7 +1,7 @@
 int f(int x):
     return x+1
 
-void g(int x, int y) requires y == f(x):
+void g(int x, int y) where y == f(x):
     print str(x)
     print str(y)
 

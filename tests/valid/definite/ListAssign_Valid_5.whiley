@@ -1,4 +1,4 @@
-[int] f() ensures |$| > 1:
+[int] f() where |$| > 1:
     return [1,2]
 
 void System::main([string] args):

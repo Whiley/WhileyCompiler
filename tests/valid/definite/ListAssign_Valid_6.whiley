@@ -1,4 +1,4 @@
-void f([int] a) requires |a| > 0:
+void f([int] a) where |a| > 0:
      a[0] = 5
      print str(a)
 

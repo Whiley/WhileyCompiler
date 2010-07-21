@@ -7,7 +7,7 @@ void f(num x):
     y = x
     print str(y)
 
-void g({bignum} zs, int z) requires z in {x | x in zs, x < 5}:
+void g({bignum} zs, int z) where z in {x | x in zs, x < 5}:
     f(z)
 
 void System::main([string] args):

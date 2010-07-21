@@ -1,4 +1,4 @@
-int f(int x) ensures $ > x:
+int f(int x) where $ > x:
     x = x + 1
     return x
 

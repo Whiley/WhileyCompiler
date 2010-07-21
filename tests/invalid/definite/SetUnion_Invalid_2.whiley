@@ -1,4 +1,4 @@
-void f({int} xs, {int} ys, {int} zs) requires zs == xs ∪ ys:
+void f({int} xs, {int} ys, {int} zs) where zs == xs ∪ ys:
     print str(xs)
 
 void g({int} ys):

@@ -1,7 +1,7 @@
-void f({int} xs, {int} ys) requires xs ⊆ ys:
+void f({int} xs, {int} ys) where xs ⊆ ys:
     print "XS IS A SUBSET"
 
-void g({int} xs, {int} ys) requires xs ⊆ ys:
+void g({int} xs, {int} ys) where xs ⊆ ys:
     f(ys,xs)
 
 void System::main([string] args):

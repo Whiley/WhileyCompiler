@@ -1,4 +1,4 @@
-void f({int} ls) requires no { i in ls | i <= 0}:
+void f({int} ls) where no { i in ls | i <= 0}:
     print str(ls)
 
 void System::main([string] args):
