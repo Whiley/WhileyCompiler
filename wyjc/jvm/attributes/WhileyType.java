@@ -643,14 +643,8 @@ public class WhileyType implements BytecodeAttribute {
 	}
 	
 	public static class Reader implements BytecodeAttributeReader {
-		private String name;
-		
-		public Reader(String name) {
-			this.name = name;
-		}
-		
 		public String name() {
-			return name;
+			return "WhileyType";
 		}
 		
 		public WhileyType read(BinaryInputStream input,

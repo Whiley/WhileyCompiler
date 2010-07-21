@@ -438,8 +438,7 @@ public class ModuleLoader {
 
 		ClassFileReader r = new ClassFileReader(
 				input,
-				new WhileyType.Reader("WhileyPreCondition"),
-				new WhileyType.Reader("WhileyPostCondition"),
+				new WhileyType.Reader(),				
 				new WhileyDefine.Reader()
 		);					
 
