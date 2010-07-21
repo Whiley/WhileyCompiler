@@ -126,7 +126,9 @@ public class WhileyType implements BytecodeAttribute {
 		Condition constraint = t.constraint();
 		byte mask = (byte) (constraint == null ? 0 : CONSTRAINT_MASK);		
 		
-		if(t == Types.T_EXISTENTIAL) {
+		if(t == Types.T_ANY) {
+			writer.write_u1(ANY_TYPE | mask);
+		} else if(t == Types.T_EXISTENTIAL) {
 			writer.write_u1(EXISTENTIAL_TYPE | mask);
 		} else if(t == Types.T_VOID) {
 			writer.write_u1(VOID_TYPE);
@@ -981,6 +983,8 @@ public class WhileyType implements BytecodeAttribute {
 			t &= ~CONSTRAINT_MASK;
 			
 			switch(t) {
+				case ANY_TYPE:
+					return Types.T_ANY;
 				case EXISTENTIAL_TYPE:
 					return Types.T_EXISTENTIAL;
 				case VOID_TYPE:
@@ -1056,21 +1060,22 @@ public class WhileyType implements BytecodeAttribute {
 	}
 	
 	public static final int EXISTENTIAL_TYPE = 1;
-	public static final int VOID_TYPE = 2;
-	public static final int BOOL_TYPE = 3;
-	public static final int INT_TYPE = 4;
-	public static final int REAL_TYPE = 5;
-	public static final int LIST_TYPE = 6;
-	public static final int SET_TYPE = 7;
-	public static final int TUPLE_TYPE = 8;
-	public static final int UNION_TYPE = 9;
-	public static final int INTERSECTION_TYPE = 10;
-	public static final int PROCESS_TYPE = 11;
-	public static final int NAMED_TYPE = 12;
-	public static final int FUN_TYPE = 13;
-	public static final int RECURSIVE_TYPE = 14;
-	public static final int RECURSIVE_LEAF = 15;
-	public static final int CONSTRAINT_MASK = 16;
+	public static final int ANY_TYPE = 2;
+	public static final int VOID_TYPE = 3;
+	public static final int BOOL_TYPE = 4;
+	public static final int INT_TYPE = 5;
+	public static final int REAL_TYPE = 6;
+	public static final int LIST_TYPE = 7;
+	public static final int SET_TYPE = 8;
+	public static final int TUPLE_TYPE = 9;
+	public static final int UNION_TYPE = 10;
+	public static final int INTERSECTION_TYPE = 11;
+	public static final int PROCESS_TYPE = 12;
+	public static final int NAMED_TYPE = 13;
+	public static final int FUN_TYPE = 14;
+	public static final int RECURSIVE_TYPE = 15;
+	public static final int RECURSIVE_LEAF = 16;
+	public static final int CONSTRAINT_MASK = 32;
 	
 	private final static int NULL = 0;
 	private final static int VARIABLE = 1;
