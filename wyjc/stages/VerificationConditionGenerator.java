@@ -74,8 +74,7 @@ import static wyone.theory.numeric.WNumerics.*;
  * @author djp
  */
 public class VerificationConditionGenerator {
-	private final ModuleLoader loader;
-	private final Simplifier simplifier = new Simplifier();
+	private final ModuleLoader loader;	
 	private final HashMap<String,Expr> constants = new HashMap<String,Expr>();
 	private final HashMap<String,Condition> types = new HashMap<String,Condition>();
 
@@ -115,6 +114,10 @@ public class VerificationConditionGenerator {
 		
 		for(FunDecl.Parameter p : f.parameters()) {											
 			environment.put(p.name(), p.type());						
+		}
+		
+		if(f.returnType().type() != Types.T_VOID) {
+			environment.put("$",f.returnType().type());
 		}
 		
 		if(f.receiver() != null) {
@@ -160,7 +163,7 @@ public class VerificationConditionGenerator {
 						.second());								
 				
 				// Now, convert the expression being checked to a formula
-				Condition check = simplifier.simplify(new Not(c.condition()));					
+				Condition check = Exprs.simplify(new Not(c.condition()));					
 				Pair<WFormula,WFormula> pcs = check.convertCondition(environment, loader);											
 		
 				// Generate initial verification condition.

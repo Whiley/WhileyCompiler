@@ -1,25 +1,7 @@
-// This file is part of the Whiley-to-Java Compiler (wyjc).
-//
-// The Whiley-to-Java Compiler is free software; you can redistribute 
-// it and/or modify it under the terms of the GNU General Public 
-// License as published by the Free Software Foundation; either 
-// version 3 of the License, or (at your option) any later version.
-//
-// The Whiley-to-Java Compiler is distributed in the hope that it 
-// will be useful, but WITHOUT ANY WARRANTY; without even the 
-// implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
-// PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public 
-// License along with the Whiley-to-Java Compiler. If not, see 
-// <http://www.gnu.org/licenses/>
-//
-// Copyright 2010, David James Pearce. 
+package wyjc.ast.exprs;
 
-package wyjc.util;
-
+import static wyjc.util.SyntaxError.syntaxError;
 import wyjc.ast.attrs.SourceAttr;
-import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.integer.*;
 import wyjc.ast.exprs.list.*;
 import wyjc.ast.exprs.logic.*;
@@ -27,21 +9,38 @@ import wyjc.ast.exprs.process.*;
 import wyjc.ast.exprs.real.*;
 import wyjc.ast.exprs.set.*;
 import wyjc.ast.exprs.tuple.*;
-import static wyjc.util.SyntaxError.*;
 
-public class Simplifier {
-	public Condition simplify(Condition c) {				
+public class Exprs {
+
+	/**
+	 * Simplify a condition as much as possible. Currently, this only applies
+	 * not elimination.
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public static Condition simplify(Condition c) {				
 		c = notElimination(c); // put into NNF		
 		// c = unitPropagation(c); // apply equalities such as x == 1 immediately.
 		// c = factorise(c); // attempt to find common factors of subexpressions. 
 		return c;
 	}
 		
-	// ==========================================================================
-	// Not Elimination
-	// ==========================================================================
 	
-	public Condition notElimination(Condition c) {
+	/**
+	 * Not elimination attempts to simplify a condition by pushing "nots"
+	 * through conjuncts and disjuncts, cancelling them where possible and
+	 * inverting literals where necessary.  For example:
+	 * <pre>
+	 * !!x ===> x
+	 * !(x < y) ===> x >= y
+	 * !(x < y || x == z) ===> x >= y && x != z
+	 * </pre>
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public static Condition notElimination(Condition c) {
 		if(c instanceof BoolVal									
 				|| c instanceof Some
 				|| c instanceof None
@@ -90,27 +89,27 @@ public class Simplifier {
 		}
 	}
 	
-	protected Condition notElimination(And ac) {
+	protected static Condition notElimination(And ac) {
 		return new And(notElimination(ac.lhs()), notElimination(ac.rhs()), ac
 				.attributes());
 	}
 	
-	protected Condition notElimination(TypeGate tg) {		
+	protected static Condition notElimination(TypeGate tg) {		
 		return new TypeGate(tg.lhsTest(), tg.variable(), tg.lhs(),
 				notElimination(tg.rhs()), tg.attributes());		
 	}
 	
-	protected Condition notElimination(TypeEquals tg) {
+	protected static Condition notElimination(TypeEquals tg) {
 		return new TypeEquals(tg.lhsTest(), tg.variable(), tg.lhs(),
 				notElimination(tg.rhs()), tg.attributes());
 	}
 	
-	protected Condition notElimination(Or ac) {
+	protected static Condition notElimination(Or ac) {
 		return new Or(notElimination(ac.lhs()), notElimination(ac.rhs()), ac
 				.attributes());
 	}
 	
-	protected Condition notElimination(Not ac) {		
+	protected static Condition notElimination(Not ac) {		
 		Condition c = ac.mhs();
 		if (c instanceof Subset || c instanceof SubsetEq
 				|| c instanceof ListElementOf || c instanceof SetElementOf) {
@@ -119,8 +118,15 @@ public class Simplifier {
 			return invert(ac.mhs());
 		}
 	}
-	
-	public Condition invert(Condition c) {
+
+	/**
+	 * Invert a condition, such that the result is true iff the original
+	 * condition was false and vice-versa.
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public static Condition invert(Condition c) {
 		if (c instanceof Subset || c instanceof SubsetEq
 				|| c instanceof SetElementOf || c instanceof ListElementOf) {
 			return new Not(c, c.attribute(SourceAttr.class));
@@ -190,120 +196,120 @@ public class Simplifier {
 		}
 	}
 	
-	protected Condition invert(And c) {
+	protected static Condition invert(And c) {
 		return new Or(invert(c.lhs()),invert(c.rhs()),c.attributes());
 	}
 	
-	protected Condition invert(Or c) {
+	protected static Condition invert(Or c) {
 		return new And(invert(c.lhs()),invert(c.rhs()),c.attributes());
 	}
 	
-	protected Condition invert(Not c) {
+	protected static Condition invert(Not c) {
 		return invert(c.mhs());
 	}	
 	
-	protected Condition invert(None c) {
+	protected static Condition invert(None c) {
 		return new Some(c.mhs(),c.attributes());
 	}
 	
-	protected Condition invert(Some c) {
+	protected static Condition invert(Some c) {
 		return new None(c.mhs(),c.attributes());
 	}
 	
-	protected Condition invert(BoolEquals c) {
+	protected static Condition invert(BoolEquals c) {
 		return new BoolNotEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(BoolNotEquals c) {
+	protected static Condition invert(BoolNotEquals c) {
 		return new BoolEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(IntEquals c) {
+	protected static Condition invert(IntEquals c) {
 		return new IntNotEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(IntNotEquals c) {
+	protected static Condition invert(IntNotEquals c) {
 		return new IntEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(IntLessThan c) {
+	protected static Condition invert(IntLessThan c) {
 		return new IntGreaterThanEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(IntLessThanEquals c) {
+	protected static Condition invert(IntLessThanEquals c) {
 		return new IntGreaterThan(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(IntGreaterThan c) {
+	protected static Condition invert(IntGreaterThan c) {
 		return new IntLessThanEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(IntGreaterThanEquals c) {
+	protected static Condition invert(IntGreaterThanEquals c) {
 		return new IntLessThan(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(RealEquals c) {
+	protected static Condition invert(RealEquals c) {
 		return new RealNotEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(RealNotEquals c) {
+	protected static Condition invert(RealNotEquals c) {
 		return new RealEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(RealLessThan c) {
+	protected static Condition invert(RealLessThan c) {
 		return new RealGreaterThanEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(RealLessThanEquals c) {
+	protected static Condition invert(RealLessThanEquals c) {
 		return new RealGreaterThan(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(RealGreaterThan c) {
+	protected static Condition invert(RealGreaterThan c) {
 		return new RealLessThanEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(RealGreaterThanEquals c) {
+	protected static Condition invert(RealGreaterThanEquals c) {
 		return new RealLessThan(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(TupleEquals c) {
+	protected static Condition invert(TupleEquals c) {
 		return new TupleNotEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(TupleNotEquals c) {
+	protected static Condition invert(TupleNotEquals c) {
 		return new TupleEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(ListEquals c) {
+	protected static Condition invert(ListEquals c) {
 		return new ListNotEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(ListNotEquals c) {
+	protected static Condition invert(ListNotEquals c) {
 		return new ListEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(SetEquals c) {
+	protected static Condition invert(SetEquals c) {
 		return new SetNotEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(SetNotEquals c) {
+	protected static Condition invert(SetNotEquals c) {
 		return new SetEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(ProcessEquals c) {
+	protected static Condition invert(ProcessEquals c) {
 		return new ProcessNotEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(ProcessNotEquals c) {
+	protected static Condition invert(ProcessNotEquals c) {
 		return new ProcessEquals(c.lhs(),c.rhs(),c.attributes());
 	}
 	
-	protected Condition invert(TypeGate c) {
+	protected static Condition invert(TypeGate c) {
 		return new TypeEquals(c.lhsTest(), c.variable(), c.lhs(), invert(c
 				.rhs()), c.attribute(SourceAttr.class));
 	}
 	
-	protected Condition invert(TypeEquals c) {		
+	protected static Condition invert(TypeEquals c) {		
 		return new TypeGate(c.lhsTest(), c.variable(), c.lhs(), invert(c.rhs()), c
 				.attribute(SourceAttr.class));
 	}	

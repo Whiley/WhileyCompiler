@@ -56,8 +56,7 @@ public class ClassFileBuilder {
 	protected int CLASS_VERSION = 49;
 	protected int WHILEY_MINOR_VERSION;
 	protected int WHILEY_MAJOR_VERSION;
-	protected ModuleLoader loader;
-	protected Simplifier simplifier = new Simplifier();
+	protected ModuleLoader loader;	
 	
 	public ClassFileBuilder(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
@@ -427,7 +426,7 @@ public class ClassFileBuilder {
 		
 		if(stmt.falseBranch() == null) {
 			String falseLabel = freshLabel();
-			Condition cond = simplify(new Not(stmt.condition()));			
+			Condition cond = Exprs.simplify(new Not(stmt.condition()));			
 			translateCondition(cond,falseLabel,slots,environment,bytecodes);
 			
 			// simplest case						
@@ -437,7 +436,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Label(falseLabel));
 		} else {
 			String trueLabel = freshLabel();
-			Condition cond = simplify(stmt.condition());
+			Condition cond = Exprs.simplify(stmt.condition());
 			translateCondition(cond,trueLabel,slots,environment, bytecodes);
 			
 			// more complex case			
@@ -506,7 +505,7 @@ public class ClassFileBuilder {
 		if(cond instanceof And) {
 			String falseLabel = freshLabel();
 			And bop = (And) cond;
-			Condition lhsc = simplifier.simplify(new Not(bop.lhs()));
+			Condition lhsc = Exprs.simplify(new Not(bop.lhs()));
 			translateCondition(lhsc,falseLabel,slots,environment,bytecodes);
 			translateCondition(bop.rhs(),trueLabel,slots,environment,bytecodes);
 			bytecodes.add(new Bytecode.Label(falseLabel));	
@@ -2394,10 +2393,6 @@ public class ClassFileBuilder {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}		
 	}	
-	
-	public Condition simplify(Condition c) {
-		return simplifier.simplify(c);
-	}
 		
 	protected int var = 0;
 	protected String freshVar(HashMap<String, Integer> slots) {

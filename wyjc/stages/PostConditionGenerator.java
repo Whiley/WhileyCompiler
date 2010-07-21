@@ -38,10 +38,8 @@ import wyjc.util.*;
 import static wyjc.util.SyntaxError.*;
 
 public class PostConditionGenerator {
-	protected Simplifier simplifier; 
 	
-	public void generate(ResolvedWhileyFile wf) {
-		this.simplifier = new Simplifier();
+	public void generate(ResolvedWhileyFile wf) {	
 		for(Decl d : wf.declarations()) {
 			if(d instanceof FunDecl) {
 				generate((FunDecl)d);
@@ -83,7 +81,7 @@ public class PostConditionGenerator {
 			FunDecl f, Condition preCondition) {		
 		// Simplify the precondition as much as possible.
 		preCondition = preCondition.reduce(environment);
-		preCondition = simplifier.simplify(preCondition);
+		preCondition = Exprs.simplify(preCondition);
 		
 		s.attributes().add(new PreConditionAttr(preCondition));
 		Condition postCondition;
@@ -244,7 +242,7 @@ public class PostConditionGenerator {
 				Condition cond = equate(new ListAccess(la.source(), idx_v),
 						new ListAccess(nsrc, idx_v), type, attributes);
 				cond = new Or(cond,new IntEquals(idx_v,la.index()));
-				cond = simplifier.simplify(new Not(cond));
+				cond = Exprs.simplify(new Not(cond));
 				c = new And(c, new None(new SetComprehension(zero, srcs, cond)));
 				// finally assert lists are same length
 				c = new And(c, new IntEquals(new ListLength(nsrc),
