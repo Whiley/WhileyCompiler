@@ -88,15 +88,9 @@ public class CodeWriter {
 			output.print(p.type() + " " + p.name());
 		}
 		output.print(")");
-		if(f.preCondition() != null) {
-			output.print(" requires " + f.preCondition());
-			if(f.postCondition() != null) {
-				output.print(", ");
-			} 
-		}
-		if(f.postCondition() != null) {			
-			output.print("ensures " + f.postCondition());
-		}		
+		if(f.constraint() != null) {
+			output.print(" where " + f.constraint());			
+		}			
 		output.println(":");
 		for(Stmt s : f.statements()) {							
 			write(s,1);

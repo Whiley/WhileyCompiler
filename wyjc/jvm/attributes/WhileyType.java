@@ -49,12 +49,10 @@ import wyjvm.lang.Constant;
  * 
  */
 
-public class WhileyType implements BytecodeAttribute {
-	private String name;
+public class WhileyType implements BytecodeAttribute {	
 	private Type type;
 	
-	public WhileyType(String name, Type type) {
-		this.name = name;
+	public WhileyType(Type type) {		
 		this.type = type;
 	}
 	
@@ -63,11 +61,11 @@ public class WhileyType implements BytecodeAttribute {
 	}
 	
 	public String name() {
-		return name;
+		return "WhileyType";
 	}
 	
 	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {
-		Constant.addPoolItem(new Constant.Utf8(name), constantPool);						
+		Constant.addPoolItem(new Constant.Utf8(name()), constantPool);						
 		addPoolItems(type, constantPool);
 	}
 	
@@ -308,7 +306,7 @@ public class WhileyType implements BytecodeAttribute {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		BinaryOutputStream iw = new BinaryOutputStream(out);
 		write(type,iw,constantPool);
-		writer.write_u2(constantPool.get(new Constant.Utf8(name)));
+		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
 		writer.write_u4(out.size());		
 		writer.write(out.toByteArray());						
 	}
@@ -317,7 +315,7 @@ public class WhileyType implements BytecodeAttribute {
 	public void print(PrintWriter output,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {
-		output.print(  name + ":");
+		output.print(  name() + ":");
 	}	
 	
 	protected static void writeCondition(Expr expr, BinaryOutputStream writer,
@@ -658,7 +656,7 @@ public class WhileyType implements BytecodeAttribute {
 			input.read_u2(); // attribute name index code
 			input.read_u4(); // attribute length 						
 			Type t = readType(input,constantPool);
-			return new WhileyType(name,t);		
+			return new WhileyType(t);		
 		}
 
 		protected static Condition readCondition(BinaryInputStream reader,

@@ -181,15 +181,15 @@ public class WhileyParser {
 		match(RightBrace.class);
 		
 		// now, look to see if we have requires and ensures clauses.
-		Pair<Condition,Condition> ppc = parseRequiresEnsures();
+		Condition whereCondition = parseWhere();
 		
 		match(Colon.class);
 		matchEndLine();
 		
 		List<Stmt> stmts = parseBlock(1);
 		
-		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes, ppc.first(), ppc
-				.second(), stmts, sourceAttr(start, index - 1));
+		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes,
+				whereCondition, stmts, sourceAttr(start, index - 1));
 	}
 	
 	private Decl parseDefType(List<Modifier> modifiers) {		
@@ -328,37 +328,15 @@ public class WhileyParser {
 		return new Pair(t,constraint);
 	}
 	
-	private Pair<Condition,Condition> parseRequiresEnsures() {
-		checkNotEof();
-		Condition preCondition = null;
-		Condition postCondition = null;		
-		Token token = tokens.get(index);
-		
-		if (token instanceof Keyword) {
-			Keyword k = (Keyword) token;
-			if (k.text.equals("requires")) {				
-				matchKeyword("requires");
-				preCondition = parseRealCondition();
-			} 
-
-			checkNotEof();
-			token = tokens.get(index);
-			if (token instanceof Comma) {
-				match(Comma.class);
-				checkNotEof();
-				token = tokens.get(index);
-			}
+	private Condition parseWhere() {
+		checkNotEof();		
+		if(index < tokens.size() && tokens.get(index).text.equals("where")) {
+			// this is a constrained type				
+			matchKeyword("where");
+			return parseRealCondition();			
+		} else {
+			return null;
 		}
-		
-		if (token instanceof Keyword) {
-			Keyword k = (Keyword) token;
-			if(k.text.equals("ensures")) {		
-				matchKeyword("ensures");
-				postCondition = parseRealCondition();
-			}
-		}
-		
-		return new Pair(preCondition,postCondition);
 	}
 	
 	private Stmt parseStatement(int indent) {

@@ -50,7 +50,7 @@ public class PostConditionGenerator {
 	}
 		
 	protected void generate(FunDecl f) {		
-		Condition condition = f.preCondition();
+		Condition condition = f.constraint();
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 				
 		for(FunDecl.Parameter p : f.parameters()) {											

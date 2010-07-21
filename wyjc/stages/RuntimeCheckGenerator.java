@@ -112,7 +112,7 @@ public class RuntimeCheckGenerator {
 	protected void determineShadows(FunDecl f,
 			HashMap<String,Type> environment) {
 		shadows.clear(); // reset old shadow information
-		Condition pc = f.postCondition();
+		Condition pc = f.constraint();
 		if(pc == null) {
 			return;
 		}
@@ -135,7 +135,7 @@ public class RuntimeCheckGenerator {
 	 * @return
 	 */
 	protected void generateShadows(FunDecl f) {
-		Condition pc = f.postCondition();
+		Condition pc = f.constraint();
 		if(pc == null) {
 			return;
 		}		
@@ -338,7 +338,7 @@ public class RuntimeCheckGenerator {
 			checks.addAll(checkgen(e,environment, declared));
 		}
 		
-		Condition postCondition = f.postCondition();
+		Condition postCondition = f.constraint();
 		if(postCondition == null) {
 			postCondition = new BoolVal(true);
 		}
@@ -391,10 +391,9 @@ public class RuntimeCheckGenerator {
 		
 		for(ModuleInfo.Method method : methods) {
 			FunType funType = method.type();
-			Condition precondition = method.preCondition();							
+			Condition precondition = funType.constraint();							
 			List<Type> paramTypes = funType.parameters();
-			for (int i = 0; i != paramTypes.size(); ++i) {
-				HashMap<String,Expr> binding = new HashMap<String,Expr>();						
+			for (int i = 0; i != paramTypes.size(); ++i) {									
 				Type t = paramTypes.get(i);
 				Expr e = args.get(i);				
 				Condition constraint = new TypeEquals(t, Variable.freshVar(), e, new BoolVal(true));
@@ -425,7 +424,7 @@ public class RuntimeCheckGenerator {
 			addCheck("constraints for parameter not satisfied",constraint,environment,e,checks);			
 		}
 		
-		Condition preCond = method.preCondition();
+		Condition preCond = funType.constraint();
 		if(preCond != null) {
 			preCond = preCond.substitute(paramBinding);
 			addCheck("function precondition not satisfied",preCond,environment,ivk,checks);

@@ -132,17 +132,14 @@ public class NameResolution {
 			// Ok, we've hit a resolution error.
 			syntaxError(e.getMessage(), fd.receiver());
 		}
-		
-		if(fd.preCondition() != null) {
-			Condition c = (Condition) resolve(fd.preCondition(), environment,imports);
-			fd.setPreCondition(c);
-		}
-		if(fd.postCondition() != null) {
+			
+		if(fd.constraint() != null) {
 			environment.add("$");
-			Condition c = (Condition) resolve(fd.postCondition(), environment,imports);
-			fd.setPostCondition(c);
+			Condition c = (Condition) resolve(fd.constraint(), environment,imports);
+			fd.setConstraint(c);
 			environment.remove("$");
 		}
+		
 		List<Stmt> stmts = fd.statements();
 		for (int i=0;i!=stmts.size();++i) {
 			Stmt s = resolve(stmts.get(i), environment, imports);

@@ -130,8 +130,7 @@ public class TemplatedWhileyFile {
 		protected S receiverType;
 		protected R returnType;
 		protected List<P> parameters;
-		protected Condition precondition;
-		protected Condition postcondition;
+		protected Condition constraint;		
 		protected List<Stmt> statements;
 
 		/**
@@ -151,7 +150,7 @@ public class TemplatedWhileyFile {
 		 *            The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name, S receiverType, R returnType,
-				List<P> parameters, Condition pre, Condition post,
+				List<P> parameters, Condition constraint,
 				List<Stmt> statements, Collection<Attribute> attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
@@ -159,8 +158,7 @@ public class TemplatedWhileyFile {
 			this.receiverType = receiverType;
 			this.returnType = returnType;
 			this.parameters = parameters;
-			this.precondition = pre;
-			this.postcondition = post;
+			this.constraint = constraint;			
 			this.statements = statements;
 		}
 
@@ -181,7 +179,7 @@ public class TemplatedWhileyFile {
 		 *            The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name, S receiverType, R returnType,
-				List<P> parameters, Condition pre, Condition post,
+				List<P> parameters, Condition constraint,
 				List<Stmt> statements, Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
@@ -189,8 +187,7 @@ public class TemplatedWhileyFile {
 			this.receiverType = receiverType;
 			this.returnType = returnType;
 			this.parameters = parameters;
-			this.precondition = pre;
-			this.postcondition = post;
+			this.constraint = constraint;
 			this.statements = statements;
 		}
 		
@@ -225,21 +222,13 @@ public class TemplatedWhileyFile {
 		}
 
 		/**
-		 * Return the precondition of this function.
+		 * Return the constraint of this function, which embodies the pre and
+		 * post-conditions.
 		 * 
 		 * @return
 		 */
-		public Condition preCondition() {
-			return precondition;
-		}
-
-		/**
-		 * Return the postcondition of this function.
-		 * 
-		 * @return
-		 */
-		public Condition postCondition() {
-			return postcondition;
+		public Condition constraint() {
+			return constraint;
 		}
 
 		/**

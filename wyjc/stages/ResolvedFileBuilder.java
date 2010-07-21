@@ -83,8 +83,7 @@ public class ResolvedFileBuilder {
 					.returnType().attributes());
 		}
 				
-		return new ResolvedWhileyFile.FunDecl(cd.modifiers(),cd.name(), rec, ret, params, cd
-				.preCondition(), cd.postCondition(), cd.statements(), cd
-				.attributes());
-	}	
+		return new ResolvedWhileyFile.FunDecl(cd.modifiers(), cd.name(), rec,
+				ret, params, cd.constraint(), cd.statements(), cd.attributes());
+	}
 }

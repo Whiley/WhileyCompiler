@@ -74,18 +74,14 @@ public class VarDefChecker {
 		for(FunDecl.Parameter p : f.parameters()) {
 			definitions.add(p.name());
 		}
-		
-		if(f.preCondition() != null) {
-			check(f.preCondition(),definitions);
-		}
-		
-		if(f.postCondition() != null) {
+				
+		if(f.constraint() != null) {
 			if(!(f.returnType().type() == Types.T_VOID)) {
 				definitions.add("$");
-				check(f.postCondition(),definitions);
+				check(f.constraint(),definitions);
 				definitions.remove("$");
 			} else {
-				check(f.postCondition(),definitions);
+				check(f.constraint(),definitions);
 			}
 		}
 		

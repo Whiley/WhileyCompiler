@@ -167,7 +167,7 @@ public class ClassFileBuilder {
 				environment.put(p.name(), p.type());
 				slot = slot + 1;				
 			}			
-			Condition condition = fd.preCondition();
+			Condition condition = fd.constraint();
 			if(condition != null) {				
 				translateCondition(new Not(condition), falseLabel,
 						slots, environment, bytecodes);				
@@ -268,9 +268,8 @@ public class ClassFileBuilder {
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
 		ArrayList<Bytecode> codes = translate(fd);
 		Code code = new Code(codes,new ArrayList(),cm);
-		cm.attributes().add(code);
-		System.out.println("WRITING TYPE: " + flatType);
-		WhileyType wc = new WhileyType("WhileyType",flatType);
+		cm.attributes().add(code);		
+		WhileyType wc = new WhileyType(flatType);
 		cm.attributes().add(wc);
 		
 		return cm;

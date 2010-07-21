@@ -566,8 +566,7 @@ public class ModuleLoader {
 			for(ModuleInfo.Method c : cases) {								
 				if(cases.size() == 1) {							
 					ModuleInfo.Method sm = new ModuleInfo.Method(c.receiver(),
-							stripCase(c.name()), c.type(), c.preCondition(), c
-									.postCondition(), c.parameterNames());
+							stripCase(c.name()), c.type(), c.parameterNames());
 					ncases.add(sm);
 				}
 			}
@@ -615,9 +614,8 @@ public class ModuleLoader {
 		for (int i = 0; i != type.parameters().size(); ++i) {
 			parameterNames.add("p" + i);
 		}
-		// FIXME: bug here as pre + post conditions not generated 
-		return new ModuleInfo.Method(info.second(), info.first(), type, null,
-				null, parameterNames);
+		return new ModuleInfo.Method(info.second(), info.first(), type,
+				parameterNames);
 	}
 	
 	/**

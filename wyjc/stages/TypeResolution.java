@@ -144,9 +144,7 @@ public class TypeResolution {
 			rec.attributes().add(new TypeAttr(r_t));
 		} 
 		
-		// FIXME: constraints on receiver are lost.
-		return new ModuleInfo.Method(recType, f.name(), ft, f.preCondition(), f
-				.postCondition(), f.parameterNames());
+		return new ModuleInfo.Method(recType, f.name(), ft, f.parameterNames());
 	}
 	
     
@@ -597,11 +595,6 @@ public class TypeResolution {
 			environment.put("this",rp);						
 		}
 		
-		if(f.preCondition() != null) {
-			Pair<Type,Expr> precond = check(f.preCondition(),environment);
-			f.setPreCondition((Condition) precond.second());
-		}
-		
 		ArrayList<Stmt> nstmts = new ArrayList<Stmt>();
 		
 		for(Stmt s : f.statements()) {
@@ -611,12 +604,12 @@ public class TypeResolution {
 		f.statements().clear();
 		f.statements().addAll(nstmts);
 		
-		if(f.postCondition() != null) {
+		if(f.constraint() != null) {
 			if(!(f.returnType().type() == Types.T_VOID)) {
 				environment.put("$",rp);
 			}
-			Pair<Type,Expr> postcond = check(f.postCondition(),environment);
-			f.setPostCondition((Condition)postcond.second());
+			Pair<Type,Expr> postcond = check(f.constraint(),environment);
+			f.setConstraint((Condition)postcond.second());
 		}				
 	}
 	

@@ -141,18 +141,14 @@ public class UnresolvedWhileyFile {
 			implements
 				Decl {
 		public FunDecl(List<Modifier> modifiers, String name, Receiver receiver, Return returnType,
-				List<Parameter> parameters, Condition pre, Condition post,
+				List<Parameter> parameters, Condition constraint,
 				List<Stmt> statements, Attribute... attributes) {
-			super(modifiers,name, receiver, returnType, parameters, pre, post,
+			super(modifiers,name, receiver, returnType, parameters, constraint,
 					statements, attributes);
 		}
 
-		public void setPreCondition(Condition pre) {
-			this.precondition = pre;
-		}
-
-		public void setPostCondition(Condition post) {
-			this.postcondition = post;
+		public void setConstraint(Condition constraint) {
+			this.constraint = constraint;
 		}
 
 		public static class Return
