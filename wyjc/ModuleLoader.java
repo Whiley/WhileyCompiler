@@ -565,7 +565,7 @@ public class ModuleLoader {
 			for(ModuleInfo.Method c : cases) {								
 				if(cases.size() == 1) {							
 					ModuleInfo.Method sm = new ModuleInfo.Method(c.receiver(),
-							stripCase(c.name()), c.type());
+							stripCase(c.name()), c.type(), c.parameterNames());
 					ncases.add(sm);
 				}
 			}
@@ -606,9 +606,15 @@ public class ModuleLoader {
 	protected ModuleInfo.Method createMethodInfo(ModuleID mid,
 			ClassFile.Method cm) {
 		Triple<String,Type,FunType> info = splitDescriptor(cm.name());				
-		WhileyType pre = (WhileyType) cm.attribute("WhileyType");				
-		FunType type = (FunType) pre.type();		
-		return new ModuleInfo.Method(info.second(), info.first(), type);
+		WhileyType pre = (WhileyType) cm
+				.attribute("WhileyType");		
+		ArrayList<String> parameterNames = new ArrayList<String>();
+		FunType type = info.third();
+		for (int i = 0; i != type.parameters().size(); ++i) {
+			parameterNames.add("p" + i);
+		}
+		return new ModuleInfo.Method(info.second(), info.first(), type,
+				parameterNames);
 	}
 	
 	/**
@@ -759,8 +765,13 @@ public class ModuleLoader {
 			return r;
 		}
 		
-		public FunType parseFunType() {				
-			return new FunType(parseType(),parseType());
+		public FunType parseFunType() {
+			Type rt = parseType();
+			ArrayList<Type> ps = new ArrayList<Type>();
+			while(index < desc.length()) {
+				ps.add(parseType());				
+			}
+			return new FunType(rt,ps);
 		}
 	}
 }

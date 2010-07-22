@@ -50,7 +50,7 @@ public class PostConditionGenerator {
 	protected void generate(FunDecl f) {				
 		Condition condition = null;
 		if(f.constraint() != null) {
-			condition = Exprs.splitPreCondition(f.constraint());
+			condition = Exprs.splitPreCondition(f.constraint());			
 		}
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 				

@@ -332,7 +332,7 @@ public class Exprs {
 			And and = (And) condition;
 			Condition lhs = splitPreCondition(and.lhs());
 			Condition rhs = splitPreCondition(and.rhs());
-			return new Or(lhs,rhs,and.attribute(SourceAttr.class));
+			return new And(lhs,rhs,and.attribute(SourceAttr.class));
 		} else {
 			Set<Variable> uses = condition.uses();
 			for(Variable v : uses) {

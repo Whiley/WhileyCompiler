@@ -202,7 +202,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(owner, mangle, ft,
 					Bytecode.STATIC));
 			// finally, return value (if there is one)
-			if (funType.postState() == Types.T_VOID) {
+			if (funType.returnType() == Types.T_VOID) {
 				bytecodes.add(new Bytecode.Return(null));
 			} else {
 				bytecodes.add(new Bytecode.Return(ft.returnType()));
@@ -467,8 +467,8 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, FunDecl fd, ArrayList<Bytecode> bytecodes) {
 		if(stmt.expr() != null) {
 			translate(stmt.expr(),slots,environment,bytecodes);			
-			convert(fd.type().postState(),stmt.expr(),slots,environment,bytecodes);
-			bytecodes.add(new Bytecode.Return(convertType(fd.type().postState())));
+			convert(fd.type().returnType(),stmt.expr(),slots,environment,bytecodes);
+			bytecodes.add(new Bytecode.Return(convertType(fd.type().returnType())));
 		} else {
 			bytecodes.add(new Bytecode.Return(null));
 		}
@@ -1925,7 +1925,7 @@ public class ClassFileBuilder {
 
 		bytecodes.add(new Bytecode.Invoke(owner,name,jft,Bytecode.STATIC));
 		
-		if (noReturn && !(ft.postState() == Types.T_VOID)) {
+		if (noReturn && !(ft.returnType() == Types.T_VOID)) {
 			// FIXME: broken for bool types
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
@@ -2347,7 +2347,7 @@ public class ClassFileBuilder {
 		for(Type t : ft.parameters()) {
 			paramTypes.add(convertType(t));
 		}
-		JvmType rt = convertType(ft.postState());
+		JvmType rt = convertType(ft.returnType());
 		return new JvmType.Function(rt,paramTypes);
 	}
 	
@@ -2468,7 +2468,7 @@ public class ClassFileBuilder {
 					+ type2str(st.type());
 		} else if(t instanceof FunType) {
 			FunType ft = (FunType) t;
-			String r = type2str(ft.postState());
+			String r = type2str(ft.returnType());
 			for(Type pt : ft.parameters()) {
 				r += type2str(pt);
 			}
