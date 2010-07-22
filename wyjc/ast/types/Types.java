@@ -884,7 +884,16 @@ public class Types {
 		 } else if(t instanceof FunType) {
 			 FunType ft = (FunType) t;
 			 Condition post = expandConstraints(ft.returnType());
-			 // FIXME: bug here!!
+			 HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			 int index = 0;
+			 for(Type pt : ft.parameters()) {				 
+				 Condition ptc = expandConstraints(pt);
+				 if(ptc != null) {
+					 binding.put("$", new Variable("$" + index));
+					 ptc.substitute(binding);
+					 post = and(post,ptc);
+				 }
+			 }
 			 return and(post,ft.constraint());
 		 } else {
 			 throw new IllegalArgumentException("unknown type encountered: " + t);

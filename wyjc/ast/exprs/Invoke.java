@@ -185,10 +185,12 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		for (ModuleInfo.Method function : mi.method(name, ftype)) {
 			WFormula mcs = WBool.TRUE;
 			
-			Condition postCondition = Types.expandConstraints(function.type());			
-									
+			Condition postCondition = Types.expandConstraints(function.type());						
+			
 			if (postCondition != null) {				
 				// Ok, here we need to translate the post-condition
+				postCondition = Exprs.splitPostCondition(postCondition);
+				
 				HashMap<WExpr, WExpr> binding = new HashMap<WExpr,WExpr>();
 				binding.put(new WVariable("$"), retLabel);
 				FunType f_type = function.type();
@@ -197,13 +199,13 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 				environment = new HashMap<String, Type>(environment);
 
 				for (int i = 0; i != f_params.size(); ++i) {
-					String p_name = f_params.get(i);
+					String p_name = "$" + i;
 					WExpr p_expr = params.get(i);
 					Type p_type = f_type.parameters().get(i);
 					environment.put(p_name, p_type);
 					binding.put(new WVariable(p_name), p_expr);					
 				}
-
+				
 				Pair<WFormula, WFormula> pc = postCondition
 						.convertCondition(environment, loader);
 		

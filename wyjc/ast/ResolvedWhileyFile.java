@@ -21,8 +21,7 @@ package wyjc.ast;
 import java.util.*;
 
 import wyjc.ast.attrs.Attribute;
-import wyjc.ast.exprs.Condition;
-import wyjc.ast.exprs.Value;
+import wyjc.ast.exprs.*;
 import wyjc.ast.stmts.Stmt;
 import wyjc.ast.types.*;
 import wyjc.util.ModuleID;
@@ -127,13 +126,21 @@ public class ResolvedWhileyFile {
 			super(modifiers,name, receiver, returnType, parameters, constraint, statements,
 					attributes);
 		}
-				
+						
 		public FunType type() {
 			ArrayList<Type> ps = new ArrayList<Type>();
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			int index = 0;
 			for (Parameter p : parameters()) {
 				ps.add(p.type());
+				binding.put(p.name(), new Variable("$" + index));
+				index = index + 1;
 			}
-			return new FunType(returnType().type(), ps, constraint());
+			Condition constraint = constraint();
+			if(constraint != null) {
+				constraint = constraint.substitute(binding);
+			}
+			return new FunType(returnType().type(), ps, constraint);
 		}
 		
 		public static class Return extends TemplatedWhileyFile.Return<Type> {

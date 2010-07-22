@@ -396,17 +396,22 @@ public class RuntimeCheckGenerator {
 			FunType funType = method.type();
 			Condition precondition = null;
 			
-			if(funType.constraint() != null) {
-				precondition = Exprs.splitPreCondition(funType.constraint());	
-			}
-									
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
 			List<Type> paramTypes = funType.parameters();
 			for (int i = 0; i != paramTypes.size(); ++i) {									
 				Type t = paramTypes.get(i);
 				Expr e = args.get(i);				
+				binding.put("$" + i, e);
 				Condition constraint = new TypeEquals(t, Variable.freshVar(), e, new BoolVal(true));
 				precondition = Types.and(precondition,constraint);				
 			}			
+			
+			if(funType.constraint() != null) {
+				Condition c = Exprs.splitPreCondition(funType.constraint());
+				c = c.substitute(binding);
+				precondition = Types.and(precondition,c);
+			}												
+			
 			condition = Types.or(condition,precondition);			
 		}
 		
@@ -419,20 +424,17 @@ public class RuntimeCheckGenerator {
 			HashMap<String, Type> environment, List<Check> checks) {
 		List<Expr> args = ivk.arguments();
 		FunType funType = method.type();
-		HashMap<String,Expr> paramBinding = new HashMap<String,Expr>();		
-		List<String> paramNames = method.parameterNames();
+		HashMap<String,Expr> paramBinding = new HashMap<String,Expr>();				
 		List<Type> paramTypes = funType.parameters();
-		for (int i = 0; i != paramTypes.size(); ++i) {
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();						
+		
+		for (int i = 0; i != paramTypes.size(); ++i) {						
 			Type t = paramTypes.get(i);
-			Expr e = args.get(i);
-			String n = paramNames.get(i);
-			paramBinding.put(n,e);
+			Expr e = args.get(i);			
+			paramBinding.put("$" + i,e);
 			Condition constraint = new TypeEquals(t, Variable.freshVar(), e, new BoolVal(true));						
 			addCheck("constraints for parameter not satisfied",constraint,environment,e,checks);			
 		}
-		
-		
+				
 		if(funType.constraint() != null) {
 			Condition preCond = Exprs.splitPreCondition(funType.constraint());
 			preCond = preCond.substitute(paramBinding);

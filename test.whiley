@@ -1,6 +1,6 @@
-int f(int x) where x+1 > 0 && $ < 0:
-    print str(x)
-    return -1
+int f(int x) where $ > x:
+    return 1
 
 void System::main([string] args):
-    f(|args|-1)
+    int y = f(1)
+    assert y > 0

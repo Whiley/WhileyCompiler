@@ -58,6 +58,7 @@ public class DefiniteStaticInvalidTests extends TestHarness {
  @Test public void ListElemOf_Invalid_1_StaticTest() { verificationFailTest("ListElemOf_Invalid_1"); } 
  @Test public void ListLength_Invalid_1_StaticTest() { verificationFailTest("ListLength_Invalid_1"); }
  @Test public void ListLength_Invalid_2_StaticTest() { verificationFailTest("ListLength_Invalid_2"); }
+ @Test public void ListLength_Invalid_3_StaticTest() { verificationFailTest("ListLength_Invalid_3"); }
  @Test public void ListSublist_CompileFail_2_StaticTest() { verificationFailTest("ListSublist_CompileFail_2"); }
  @Test public void Process_Invalid_1_StaticTest() { verificationFailTest("Process_Invalid_1"); }
  // Process state updates are completely broken

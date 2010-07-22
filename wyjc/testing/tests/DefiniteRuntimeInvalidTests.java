@@ -57,6 +57,7 @@ public class DefiniteRuntimeInvalidTests extends TestHarness {
  @Test public void ListElemOf_Invalid_1_RunTest() { runtimeFailTest("ListElemOf_Invalid_1"); } 
  @Test public void ListLength_Invalid_1_RunTest() { runtimeFailTest("ListLength_Invalid_1"); }
  @Test public void ListLength_Invalid_2_RunTest() { runtimeFailTest("ListLength_Invalid_2"); }
+ @Test public void ListLength_Invalid_3_RunTest() { runtimeFailTest("ListLength_Invalid_3"); }
  @Ignore("Known Bug") @Test public void Process_Invalid_1_RunTest() { runtimeFailTest("Process_Invalid_1"); }
  @Ignore("Known Bug") @Test public void Process_Invalid_2_RunTest() { runtimeFailTest("Process_Invalid_2"); }
  @Test public void Quantifiers_Invalid_1_RunTest() { runtimeFailTest("Quantifiers_Invalid_1"); }
