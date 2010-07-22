@@ -205,7 +205,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 					environment.put(p_name, p_type);
 					binding.put(new WVariable(p_name), p_expr);					
 				}
-				
+			
 				Pair<WFormula, WFormula> pc = postCondition
 						.convertCondition(environment, loader);
 		

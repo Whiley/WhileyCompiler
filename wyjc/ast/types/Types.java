@@ -890,10 +890,11 @@ public class Types {
 				 Condition ptc = expandConstraints(pt);
 				 if(ptc != null) {
 					 binding.put("$", new Variable("$" + index));
-					 ptc.substitute(binding);
+					 ptc = ptc.substitute(binding);
 					 post = and(post,ptc);
 				 }
-			 }
+				 index = index + 1;
+			 }			 
 			 return and(post,ft.constraint());
 		 } else {
 			 throw new IllegalArgumentException("unknown type encountered: " + t);

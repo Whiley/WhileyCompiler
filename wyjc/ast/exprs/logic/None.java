@@ -117,7 +117,7 @@ public class None extends UnOp<SetComprehension> implements Condition {
 				
 		for (Pair<String, Expr> p : sc.sources()) {
 			String name = p.first();
-			Expr src = p.second();
+			Expr src = p.second();			
 			SetType st = (SetType) src.type(environment);
 			WVariable v = new WVariable(name);
 			

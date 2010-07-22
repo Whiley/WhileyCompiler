@@ -158,8 +158,9 @@ public class VerificationConditionGenerator {
 				WFormula preCondition = and(pcPair.first(), pcPair
 						.second());								
 				
-				// Now, convert the expression being checked to a formula
-				Condition check = Exprs.simplify(new Not(c.condition()));					
+				// Now, convert the expression being checked to a formula				
+				Condition check = Exprs.simplify(new Not(c.condition()));
+				
 				Pair<WFormula,WFormula> pcs = check.convertCondition(environment, loader);											
 		
 				// Generate initial verification condition.
@@ -169,9 +170,6 @@ public class VerificationConditionGenerator {
 				Set<Variable> uses = check.uses();
 				uses.addAll(attr.preCondition().uses());
 				vc = addEnvironment(vc,uses,environment);
-				
-				// Simplify vc where possible.							
-//				vc = simplify(vc);				
 				
 				// Now, add the vc as an attribute
 				s.attributes().add(
