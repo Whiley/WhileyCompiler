@@ -125,7 +125,7 @@ public class TypeEquals extends SyntacticElementImpl implements Condition {
 				return r.substitute(binding);
 			}
 			binding.put("$", lhs);					
-			return new And(c.substitute(binding),r.substitute(binding));
+			return new And(c.substitute(binding),r.substitute(binding)).reduce(environment);
 		} else if(!Types.isBaseSubtype(t, type)) {
 			return new BoolVal(false);
 		} else {				

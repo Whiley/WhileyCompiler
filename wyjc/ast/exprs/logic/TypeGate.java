@@ -124,7 +124,7 @@ public class TypeGate extends SyntacticElementImpl implements Condition {
 				return r.substitute(binding);
 			}			
 			binding.put("$", lhs);					
-			return new Or(new Not(c.substitute(binding)),r.substitute(binding));
+			return new Or(new Not(c.substitute(binding)),r.substitute(binding)).reduce(environment);
 		} else if(!Types.isBaseSubtype(t, type)) {
 			return new BoolVal(true);
 		} 

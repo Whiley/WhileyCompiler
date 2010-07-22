@@ -882,8 +882,10 @@ public class Types {
 			 
 			 return mergeTypeCases(t,conditions);			 
 		 } else if(t instanceof FunType) {
-			 // FIXME: need to add this!
-			 return null;
+			 FunType ft = (FunType) t;
+			 Condition post = expandConstraints(ft.returnType());
+			 // FIXME: bug here!!
+			 return and(post,ft.constraint());
 		 } else {
 			 throw new IllegalArgumentException("unknown type encountered: " + t);
 		 }

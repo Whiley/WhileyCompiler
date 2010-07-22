@@ -186,7 +186,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 			WFormula mcs = WBool.TRUE;
 			
 			Condition postCondition = Types.expandConstraints(function.type());			
-			
+									
 			if (postCondition != null) {				
 				// Ok, here we need to translate the post-condition
 				HashMap<WExpr, WExpr> binding = new HashMap<WExpr,WExpr>();

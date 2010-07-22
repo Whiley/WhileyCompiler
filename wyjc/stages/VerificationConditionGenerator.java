@@ -116,10 +116,6 @@ public class VerificationConditionGenerator {
 			environment.put(p.name(), p.type());						
 		}
 		
-		if(f.returnType().type() != Types.T_VOID) {
-			environment.put("$",f.returnType().type());
-		}
-		
 		if(f.receiver() != null) {
 			environment.put("this", f.receiver().type());
 		}
