@@ -1,5 +1,6 @@
 package wyjc.ast.exprs;
 
+import java.util.*;
 import static wyjc.util.SyntaxError.syntaxError;
 import wyjc.ast.attrs.SourceAttr;
 import wyjc.ast.exprs.integer.*;
@@ -312,5 +313,49 @@ public class Exprs {
 	protected static Condition invert(TypeEquals c) {		
 		return new TypeGate(c.lhsTest(), c.variable(), c.lhs(), invert(c.rhs()), c
 				.attribute(SourceAttr.class));
-	}	
+	}
+
+	/**
+	 * The purpose of this method is to split out the precondition from a
+	 * function condition, where $ represents the return value.  
+	 * 
+	 * @param condition
+	 * @return
+	 */
+	public static Condition splitPreCondition(Condition condition) {
+		if(condition instanceof Or) {
+			Or or = (Or) condition;
+			Condition lhs = splitPreCondition(or.lhs());
+			Condition rhs = splitPreCondition(or.rhs());
+			return new Or(lhs,rhs,or.attribute(SourceAttr.class));
+		} else if(condition instanceof And) {
+			And and = (And) condition;
+			Condition lhs = splitPreCondition(and.lhs());
+			Condition rhs = splitPreCondition(and.rhs());
+			return new Or(lhs,rhs,and.attribute(SourceAttr.class));
+		} else {
+			Set<Variable> uses = condition.uses();
+			for(Variable v : uses) {
+				if(v.name().equals("$")) {
+					// Ok, this literal uses $, so it's strictly part of the
+					// pre-condition.
+					return new BoolVal(true);
+				}
+			}
+			return condition;
+		}
+	}
+	
+	/**
+	 * The purpose of this method is to split out the postcondition from a
+	 * function condition, where $ represents the return value.  
+	 * 
+	 * @param condition
+	 * @return
+	 */
+	public static Condition splitPostCondition(Condition condition) {
+		// FIXME: could do much better here by identifying the connected
+		// component which contains "$" and extracting just that.
+		return condition;
+	}
 }

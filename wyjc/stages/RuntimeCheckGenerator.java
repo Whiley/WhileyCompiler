@@ -338,10 +338,13 @@ public class RuntimeCheckGenerator {
 			checks.addAll(checkgen(e,environment, declared));
 		}
 		
-		Condition postCondition = f.constraint();
-		if(postCondition == null) {
+		Condition postCondition;
+		if(f.constraint() != null) {
+			postCondition = Exprs.splitPostCondition(f.constraint());
+		} else {
 			postCondition = new BoolVal(true);
 		}
+		
 		postCondition = new TypeEquals(f.type().returnType(), Variable.freshVar(), e, postCondition);
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put("$",e);
@@ -391,7 +394,12 @@ public class RuntimeCheckGenerator {
 		
 		for(ModuleInfo.Method method : methods) {
 			FunType funType = method.type();
-			Condition precondition = funType.constraint();							
+			Condition precondition = null;
+			
+			if(funType.constraint() != null) {
+				precondition = Exprs.splitPreCondition(funType.constraint());	
+			}
+									
 			List<Type> paramTypes = funType.parameters();
 			for (int i = 0; i != paramTypes.size(); ++i) {									
 				Type t = paramTypes.get(i);
@@ -424,8 +432,9 @@ public class RuntimeCheckGenerator {
 			addCheck("constraints for parameter not satisfied",constraint,environment,e,checks);			
 		}
 		
-		Condition preCond = funType.constraint();
-		if(preCond != null) {
+		
+		if(funType.constraint() != null) {
+			Condition preCond = Exprs.splitPreCondition(funType.constraint());
 			preCond = preCond.substitute(paramBinding);
 			addCheck("function precondition not satisfied",preCond,environment,ivk,checks);
 		}				
