@@ -113,9 +113,7 @@ public class WhileyType implements BytecodeAttribute {
 			}
 		} else if(type instanceof FunType) {
 			FunType ft = (FunType) type;
-			for(Type t : ft.parameters()) {
-				addPoolItems(t,constantPool);
-			}
+			addPoolItems(ft.preState(),constantPool);
 			addPoolItems(ft.postState(),constantPool);
 		}
 	}
@@ -202,11 +200,8 @@ public class WhileyType implements BytecodeAttribute {
 			FunType st = (FunType) t;
 			writer.write_u1(FUN_TYPE | mask);
 			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
-			write(st.postState(),writer,constantPool);
-			writer.write_u2(st.parameters().size());
-			for(Type p : st.parameters()) {
-				write(p,writer,constantPool);
-			}
+			write(st.preState(),writer,constantPool);
+			write(st.postState(),writer,constantPool);			
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}
@@ -277,10 +272,8 @@ public class WhileyType implements BytecodeAttribute {
 				Invoke v = (Invoke) expr;
 				addPoolItems(v.funType(), constantPool);
 				Constant.addPoolItem(new Constant.Utf8(v.module().toString()), constantPool);
-				Constant.addPoolItem(new Constant.Utf8(v.name()), constantPool);
-				for(Expr e : v.arguments()) {
-					addPoolItems(e,constantPool);
-				}	
+				Constant.addPoolItem(new Constant.Utf8(v.name()), constantPool);				
+				addPoolItems(v.argument(),constantPool);				
 			} else if(expr instanceof TypeGate) {
 				TypeGate la = (TypeGate) expr;
 				addPoolItems(la.lhsTest(), constantPool);
@@ -636,10 +629,7 @@ public class WhileyType implements BytecodeAttribute {
 		write(expr.funType(),writer,constantPool);
 		utf8 = new Constant.Utf8(expr.name()); 
 		writer.write_u2(constantPool.get(utf8));
-		writer.write_u2(expr.arguments().size());
-		for(Expr e : expr.arguments()) {
-			writeCondition(e,writer,constantPool);
-		}
+		writeCondition(expr.argument(),writer,constantPool);		
 	}
 	
 	public static class Reader implements BytecodeAttributeReader {
@@ -814,11 +804,8 @@ public class WhileyType implements BytecodeAttribute {
 					FunType t = (FunType) readType(reader,constantPool);
 					Constant.Utf8 name = (Constant.Utf8) constantPool.get(reader.read_u2());
 					int size = reader.read_u2();
-					ArrayList<Expr> args = new ArrayList<Expr>();
-					for(int i=0;i!=size;++i) {
-						args.add(readExpr(reader,constantPool));
-					}
-					return new Invoke(name.str,ModuleID.fromString(module.str),t,null,args);																	
+					Expr argument = readExpr(reader,constantPool);					
+					return new Invoke(name.str,ModuleID.fromString(module.str),t,null,argument);																	
 				case INTADD:
 					Expr lhs = readExpr(reader, constantPool);
 					Expr rhs = readExpr(reader, constantPool);
@@ -1034,13 +1021,9 @@ public class WhileyType implements BytecodeAttribute {
 					return new RecursiveType(name,null,null);					
 				}
 				case FUN_TYPE:
-					Type ret = readType(input,constantPool);
-					int count = input.read_u2();
-					ArrayList<Type> ftypes = new ArrayList<Type>();
-					for(int i=0;i!=count;++i) {
-						ftypes.add(readType(input,constantPool));
-					}
-					return new FunType(ret,ftypes,constraint);				
+					Type pre = readType(input,constantPool);
+					Type post = readType(input,constantPool);
+					return new FunType(pre,post,constraint);				
 			}
 			
 			throw new RuntimeException("Unknown type id encountered: " + t);
