@@ -345,7 +345,7 @@ public class RuntimeCheckGenerator {
 			postCondition = new BoolVal(true);
 		}
 		
-		postCondition = new TypeEquals(f.type().returnType(), Variable.freshVar(), e, postCondition);
+		postCondition = new TypeEquals(f.type().postState(), Variable.freshVar(), e, postCondition);
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put("$",e);
 		for (Variable var : postCondition.uses()) {				

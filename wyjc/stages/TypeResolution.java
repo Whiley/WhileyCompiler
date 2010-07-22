@@ -789,7 +789,7 @@ public class TypeResolution {
 			nargs.set(i,narg);
 		}
 		
-		Type rt = funtype.returnType();
+		Type rt = funtype.postState();
 		
 		Invoke ns = new Invoke(s.name(),target,nargs,s.attributes());		
 		ns.resolve(s.module(),funtype);

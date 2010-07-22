@@ -432,18 +432,9 @@ public class Types {
 		} else if(t1 instanceof FunType && t2 instanceof FunType) {						
 			FunType ft1 = (FunType) t1;
 			FunType ft2 = (FunType) t2;
-			List<Type> ft1params = ft1.parameters();
-			List<Type> ft2params = ft2.parameters();
-			if(ft2params.size() == ft1params.size()) {
-				for(int i=0;i!=ft2params.size();++i) {
-					Type tt1 = ft1params.get(i);
-					Type tt2 = ft2params.get(i);
-					if(!isBaseSubtype(tt1,tt2,environment)) {
-						return false;
-					}
-				}
-				return isBaseSubtype(ft2.returnType(), ft1.returnType(), environment);
-			}
+			return isBaseSubtype(ft1.preState(), ft2.preState(), environment)
+					&& isBaseSubtype(ft2.postState(), ft1.postState(),
+							environment);
 		}
 		
 		return false;
@@ -558,19 +549,10 @@ public class Types {
 			}
 		} else if(t1 instanceof FunType && t2 instanceof FunType) {						
 			FunType ft1 = (FunType) t1;
-			FunType ft2 = (FunType) t2;
-			List<Type> ft1params = ft1.parameters();
-			List<Type> ft2params = ft2.parameters();
-			if(ft2params.size() == ft1params.size()) {
-				for(int i=0;i!=ft2params.size();++i) {
-					Type tt1 = ft1params.get(i);
-					Type tt2 = ft2params.get(i);
-					if(!isStrictSubtype(tt1,tt2,environment)) {
-						return false;
-					}
-				}
-				return isStrictSubtype(ft2.returnType(), ft1.returnType(), environment);
-			}
+			FunType ft2 = (FunType) t2;			
+			return isStrictSubtype(ft1.preState(), ft2.preState(), environment)
+					&& isStrictSubtype(ft2.postState(), ft1.postState(),
+							environment);			
 		}
 		
 		return false;
@@ -662,19 +644,9 @@ public class Types {
 			return true;			
 		} else if(t1 instanceof FunType && t2 instanceof FunType) {						
 			FunType ft1 = (FunType) t1;
-			FunType ft2 = (FunType) t2;
-			List<Type> ft1params = ft1.parameters();
-			List<Type> ft2params = ft2.parameters();
-			if(ft2params.size() == ft1params.size()) {
-				for(int i=0;i!=ft2params.size();++i) {
-					Type tt1 = ft1params.get(i);
-					Type tt2 = ft2params.get(i);
-					if(!isBaseEquivalent(tt1,tt2)) {
-						return false;
-					}
-				}
-				return isBaseEquivalent(ft2.returnType(), ft1.returnType());
-			}
+			FunType ft2 = (FunType) t2;			
+			return isBaseEquivalent(ft2.preState(), ft1.preState())
+					&& isBaseEquivalent(ft2.postState(), ft1.postState());			
 		}
 		
 		return false;
@@ -727,12 +699,9 @@ public class Types {
 			}
 			return (T) new UnionType(types);			
 		} else if(type instanceof FunType) {						
-			FunType ftype = (FunType) type;
-			ArrayList<Type> params = new ArrayList<Type>();
-			for(Type t : ftype.parameters()) {
-				params.add(stripConstraints(t));
-			}
-			return (T) new FunType(stripConstraints(ftype.returnType()),params);
+			FunType ftype = (FunType) type;			
+			return (T) new FunType(stripConstraints(ftype.preState()),
+					stripConstraints(ftype.postState()));
 		}
 		
 		return null;
@@ -790,7 +759,7 @@ public class Types {
 			return (T) new UnresolvedUnionType(st.types(),c);
 		} else if(t instanceof FunType) {
 			FunType ft = (FunType) t;
-			return (T) new FunType(ft.returnType(),ft.parameters(),c);
+			return (T) new FunType(ft.preState(),ft.postState(),c);
 		} else if(t instanceof UserDefType) {				
 			UserDefType udt = (UserDefType) t;
 			return (T) new UserDefType(udt.name(),udt.module(),c);
@@ -883,8 +852,9 @@ public class Types {
 			 return mergeTypeCases(t,conditions);			 
 		 } else if(t instanceof FunType) {
 			 FunType ft = (FunType) t;
-			 Condition post = expandConstraints(ft.returnType());
-			 // FIXME: bug here!!
+			 Condition post = expandConstraints(ft.postState());
+			 // FIXME: bug here --- missing constraints for parameters, since we
+			// can't name them!!
 			 return and(post,ft.constraint());
 		 } else {
 			 throw new IllegalArgumentException("unknown type encountered: " + t);

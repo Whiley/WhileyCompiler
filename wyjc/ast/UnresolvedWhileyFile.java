@@ -141,9 +141,9 @@ public class UnresolvedWhileyFile {
 			implements
 				Decl {
 		public FunDecl(List<Modifier> modifiers, String name, Receiver receiver, Return returnType,
-				List<Parameter> parameters, Condition constraint,
+				Parameter parameter, Condition constraint,
 				List<Stmt> statements, Attribute... attributes) {
-			super(modifiers,name, receiver, returnType, parameters, constraint,
+			super(modifiers,name, receiver, returnType, parameter, constraint,
 					statements, attributes);
 		}
 

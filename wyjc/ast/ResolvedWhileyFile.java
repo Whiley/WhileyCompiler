@@ -68,7 +68,7 @@ public class ResolvedWhileyFile {
 				FunDecl.Receiver rec = fd.receiver();
 				Type recType = rec == null ? null : rec.type(); 
 				ModuleInfo.Method method = new ModuleInfo.Method(recType, fd
-						.name(), fd.type(), fd.parameterNames());
+						.name(), fd.type());
 				List<ModuleInfo.Method> ms = methods.get(fd.name());
 				if(ms == null) {
 					ms = new ArrayList<ModuleInfo.Method>();
@@ -115,25 +115,22 @@ public class ResolvedWhileyFile {
 				Decl {
 		
 		public FunDecl(List<Modifier> modifiers, String name, Receiver receiver, Return returnType,
-				List<Parameter> parameters, Condition constraint,
+				Parameter parameter, Condition constraint,
 				List<Stmt> statements, Attribute... attributes) {
-			super(modifiers,name, receiver, returnType, parameters, constraint, statements,
+			super(modifiers,name, receiver, returnType, parameter, constraint, statements,
 					attributes);
 		}
 
 		public FunDecl(List<Modifier> modifiers, String name, Receiver receiver, Return returnType,
-				List<Parameter> parameters, Condition constraint,
+				Parameter parameter, Condition constraint,
 				List<Stmt> statements, Collection<Attribute> attributes) {
-			super(modifiers,name, receiver, returnType, parameters, constraint, statements,
+			super(modifiers,name, receiver, returnType, parameter, constraint, statements,
 					attributes);
 		}
 				
-		public FunType type() {
-			ArrayList<Type> ps = new ArrayList<Type>();
-			for (Parameter p : parameters()) {
-				ps.add(p.type());
-			}
-			return new FunType(returnType().type(), ps, constraint());
+		public FunType type() {			
+			return new FunType(returnType().type(), parameter.type(),
+					constraint());
 		}
 		
 		public static class Return extends TemplatedWhileyFile.Return<Type> {

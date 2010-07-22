@@ -116,7 +116,7 @@ public class WhileyType implements BytecodeAttribute {
 			for(Type t : ft.parameters()) {
 				addPoolItems(t,constantPool);
 			}
-			addPoolItems(ft.returnType(),constantPool);
+			addPoolItems(ft.postState(),constantPool);
 		}
 	}
 		
@@ -202,7 +202,7 @@ public class WhileyType implements BytecodeAttribute {
 			FunType st = (FunType) t;
 			writer.write_u1(FUN_TYPE | mask);
 			if(constraint != null) { writeCondition(constraint,writer,constantPool); }
-			write(st.returnType(),writer,constantPool);
+			write(st.postState(),writer,constantPool);
 			writer.write_u2(st.parameters().size());
 			for(Type p : st.parameters()) {
 				write(p,writer,constantPool);

@@ -25,89 +25,81 @@ import wyone.core.WType;
 
 
 public class FunType extends ConstrainedType implements Type {
-	private Type ret;
-	private ArrayList<Type> parameters;
+	private Type preState;
+	private Type postState;
 
-	public FunType(Type ret, Collection<Type> parameters) {
-		this.ret = ret;
-		this.parameters = new ArrayList<Type>(parameters);
+	/**
+	 * Construct an unconstrained function type. The preState represents the
+	 * state going into the function, whilst the postState represents that
+	 * coming out of the function.
+	 * 
+	 * @param preState
+	 * @param postState
+	 */
+	public FunType(Type preState, Type postState) {
+		this.preState = preState;
+		this.postState = postState;		
 	}
 
-	public FunType(Type ret, Collection<Type> parameters, Condition constraint) {
-		super(constraint);
-		this.ret = ret;
-		this.parameters = new ArrayList<Type>(parameters);
+	/**
+	 * Construct a constrained function type. The preState represents the state
+	 * going into the function, whilst the postState represents that coming out
+	 * of the function. In the constraint, "$" refers to the postState, whilst
+	 * "#" refers to the preState.
+	 * 
+	 * @param preState
+	 * @param postState
+	 */
+	public FunType(Type preState, Type postState, Condition constraint) {
+		this.preState = preState;
+		this.postState = postState;		
 	}
 
-	public Type returnType() {
-		return ret;
+	public Type preState() {
+		return preState;
 	}
 
-	public List<Type> parameters() {
-		return Collections.unmodifiableList(parameters);
+	public Type postState() {
+		return postState;
 	}
 	
-	public Type flattern() {
-		ArrayList<Type> fps = new ArrayList<Type>();
-		for(Type p : parameters) {
-			fps.add(p.flattern());
-		}
-		return new FunType(ret.flattern(),fps,constraint);
+	public Type flattern() {		
+		return new FunType(preState.flattern(), postState.flattern(),
+				constraint);
 	}
 
-	public boolean isExistential() {
-		for(Type p : parameters) {
-			if(p.isExistential()) {
-				return true;
-			}
-		}
-		return ret.isExistential();
+	public boolean isExistential() {		
+		return preState.isExistential() || postState.isExistential();
 	}
 	
 	public boolean equals(Object o) {
 		if (o instanceof FunType) {
 			FunType ft = (FunType) o;
-			return ret.equals(ft.ret)
-					&& parameters.equals(ft.parameters)
-					&& (constraint == ft.constraint || (constraint != null && constraint
-							.equals(ft.constraint)));
+			return preState.equals(ft.preState)
+					&& postState.equals(ft.postState); 					
 		}
 		return false;
 	}
 
 	public int hashCode() {
 		int hc = constraint == null ? 0 : constraint.hashCode();
-		return ret.hashCode() + parameters.hashCode() + hc;
+		return preState.hashCode() + postState.hashCode() + hc;
 	}
 	
 	public Type substitute(Map<String, Type> binding) {
-		Type retType = ret.substitute(binding);
-		ArrayList<Type> params = new ArrayList<Type>();
-		for(Type t : parameters) {
-			params.add(t.substitute(binding));
-		}		
-		return new FunType(retType,parameters,constraint);
+		Type pre = preState.substitute(binding);
+		Type post = postState.substitute(binding);
+				
+		return new FunType(pre,post,constraint);
 	}
 	
 	public String toString() {
-		String r = ret.toString() + "(";
-		boolean firstTime=true;
-		for(Type t : parameters) {
-			if(!firstTime) {
-				r += ",";
-			}
-			firstTime=false;
-			r += t.toString();
-		}
-		return r + ")" + super.toString();		
+		return preState.toString() + " => " + postState + super.toString();			
 	}
 	
 	public <T> Set<T> match(Class<T> type) {
-		HashSet<T> r = new HashSet<T>(ret.match(type));
-		
-		for(Type t : parameters) {
-			r.addAll(t.match(type));
-		}
+		HashSet<T> r = new HashSet<T>(preState.match(type));
+		r.addAll(postState.match(type));
 		
 		if(FunType.class == type) {			
 			r.add((T)this);			

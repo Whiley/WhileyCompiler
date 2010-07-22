@@ -130,14 +130,11 @@ public class ModuleInfo extends SkeletonInfo {
 		private String name;
 		private Type receiver;		
 		private FunType type;
-		private ArrayList<String> paramNames;
 		
-		public Method(Type receiver, String name, FunType type,				
-				Collection<String> paramNames) {
+		public Method(Type receiver, String name, FunType type) {
 			this.receiver = receiver;
 			this.name = name;
-			this.type = type;
-			this.paramNames = new ArrayList<String>(paramNames);		
+			this.type = type;				
 		}
 		
 		public Type receiver() {
@@ -154,10 +151,6 @@ public class ModuleInfo extends SkeletonInfo {
 
 		public boolean isFunction() {
 			return receiver == null;
-		}
-				
-		public List<String> parameterNames() {
-			return paramNames;
-		}
+		}		
 	}
 }

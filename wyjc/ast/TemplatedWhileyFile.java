@@ -129,7 +129,7 @@ public class TemplatedWhileyFile {
 		protected String name;
 		protected S receiverType;
 		protected R returnType;
-		protected List<P> parameters;
+		protected P parameter;
 		protected Condition constraint;		
 		protected List<Stmt> statements;
 
@@ -150,14 +150,14 @@ public class TemplatedWhileyFile {
 		 *            The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name, S receiverType, R returnType,
-				List<P> parameters, Condition constraint,
+				P parameter, Condition constraint,
 				List<Stmt> statements, Collection<Attribute> attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
 			this.name = name;		
 			this.receiverType = receiverType;
 			this.returnType = returnType;
-			this.parameters = parameters;
+			this.parameter = parameter;
 			this.constraint = constraint;			
 			this.statements = statements;
 		}
@@ -179,14 +179,14 @@ public class TemplatedWhileyFile {
 		 *            The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name, S receiverType, R returnType,
-				List<P> parameters, Condition constraint,
+				P parameter, Condition constraint,
 				List<Stmt> statements, Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
 			this.name = name;		
 			this.receiverType = receiverType;
 			this.returnType = returnType;
-			this.parameters = parameters;
+			this.parameter = parameter;
 			this.constraint = constraint;
 			this.statements = statements;
 		}
@@ -245,16 +245,8 @@ public class TemplatedWhileyFile {
 		 * 
 		 * @return
 		 */
-		public List<P> parameters() {
-			return parameters;
-		}
-
-		public List<String> parameterNames() {
-			ArrayList<String> names = new ArrayList<String>();
-			for (P p : parameters) {
-				names.add(p.name());
-			}
-			return names;
+		public P parameter() {
+			return parameter;
 		}
 
 		/**

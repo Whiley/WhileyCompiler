@@ -23,6 +23,7 @@ import java.util.*;
 import wyjc.ModuleLoader;
 import wyjc.ast.*;
 import wyjc.ast.attrs.*;
+import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.stmts.Stmt;
 import wyjc.ast.types.FunType;
 import wyjc.ast.types.Type;
@@ -37,48 +38,47 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 	private final String name;
 	private ModuleID module;
 	private final Expr target;	
+	private final Expr argument;
 	private FunType ftype;
 	
-	private final ArrayList<Expr> arguments;
-	
-	public Invoke(String name, Expr target, List<Expr> arguments,
+	public Invoke(String name, Expr target, Expr argument,
 			Attribute... attributes) {
 		super(attributes);		
 		this.name = name;
 		this.target = target;
-		this.arguments = new ArrayList<Expr>(arguments);		
+		this.argument = argument;		
 	}
 	
-	public Invoke(String name, Expr target, List<Expr> arguments,
+	public Invoke(String name, Expr target, Expr argument,
 			Collection<Attribute> attributes) {
 		super(attributes);
 		this.target = target;
 		this.name = name;		
-		this.arguments = new ArrayList<Expr>(arguments);		
+		this.argument = argument;		
 	}
 	
 	public Invoke(String name, ModuleID module, FunType ftype, Expr target,
-			List<Expr> arguments, Attribute... attributes) {
+			Expr argument, Attribute... attributes) {
 		super(attributes);
 		this.target = target;
 		this.name = name;		
 		this.module = module;
 		this.ftype = ftype;
-		this.arguments = new ArrayList<Expr>(arguments);		
+		this.argument = argument;		
 	}
 	
 	public Invoke(String name, ModuleID module, FunType ftype, Expr target,
-			List<Expr> arguments, Collection<Attribute> attributes) {
+			Expr argument, Collection<Attribute> attributes) {
 		super(attributes);
 		this.target = target;
 		this.name = name;
 		this.module = module;
 		this.ftype = ftype;
-		this.arguments = new ArrayList<Expr>(arguments);		
+		this.argument = argument;		
 	}
 	
 	public Type type(Map<String,Type> environment) {
-		return ftype.returnType();
+		return ftype.postState();
 	}
 	
 	public FunType funType() {
@@ -98,34 +98,26 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		this.ftype = ftype;
 	}
 		
-	public Expr substitute(Map<String,Expr> binding) {
-		ArrayList<Expr> args = new ArrayList<Expr>();
-		for(Expr e : arguments) {
-			args.add(e.substitute(binding));
-		}
+	public Expr substitute(Map<String,Expr> binding) {		
 		Expr targ = target == null ? null : target.substitute(binding);
-		return new Invoke(name,module,ftype,targ,args,attributes());
+		return new Invoke(name, module, ftype, targ, argument
+				.substitute(binding), attributes());
 	}
 	
 	public Expr replace(Map<Expr,Expr> binding) {
 		Expr t = binding.get(this);
 		if(t != null) {
 			return t;
-		} else {
-			ArrayList<Expr> args = new ArrayList<Expr>();		
-			for(Expr e : arguments) {
-				args.add(e.replace(binding));
-			}
+		} else {			
 			Expr targ = target == null ? null : target.replace(binding);
-			return new Invoke(name,module,ftype,targ,args,attributes());
+			return new Invoke(name, module, ftype, targ, argument
+					.replace(binding), attributes());
 		}
 	}
 	
 	public <T> List<T> match(Class<T> match) {
 		ArrayList<T> r = new ArrayList();
-		for(Expr p : arguments) {
-			r.addAll(p.match(match));
-		}
+		r.addAll(argument.match(match));		
 		if(match.isInstance(this)) {
 			r.add((T) this);
 		}
@@ -133,9 +125,10 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 	}
 	
 	public Set<Variable> uses() {
-		HashSet<Variable> r = new HashSet<Variable>();
-		for(Expr p : arguments) {
-			r.addAll(p.uses());
+		HashSet<Variable> r = new HashSet<Variable>();		
+		r.addAll(argument.uses());		
+		if(target != null) {
+			r.addAll(target.uses());
 		}
 		return r;
 	}
@@ -144,13 +137,18 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		return name;
 	}
 	
-	public List<Expr> arguments() {
-		return arguments;
+	public Expr argument() {
+		return argument;
 	}	
 	
 	public Expr reduce(Map<String, Type> environment) {
-		// FIXME: this could be improved ?
-		return this;
+		Expr argument = this.argument;
+		Expr target = this.target;		
+		argument = argument.reduce(environment);		
+		if(target != null) {
+			target = target.reduce(environment);
+		}
+		return new Invoke(name, module, ftype, target, argument, attributes());		
 	}
 		
 	public Pair<WExpr,WFormula> convert(Map<String, Type> environment,
@@ -158,25 +156,21 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		
 		// FIXME: there is a bug here, when the same method is encountered in
         // several distincts places in a method call.
-
-		WFormula argConstraints = WBool.TRUE;
+		
 		WFormula constraints = null;
 		
 		ArrayList<WExpr> params = new ArrayList<WExpr>();
 		
-		for(int i=0;i!=arguments.size();++i) {
-			Expr p = arguments.get(i);
-			Pair<WExpr, WFormula> pc = p.convert(environment,
+		Pair<WExpr, WFormula> pc = argument.convert(environment,
 					loader);
-			WType p_type = ftype.parameters().get(i).convert();
-			params.add(pc.first());
-			argConstraints = WFormulas.and(argConstraints, pc.second(), WTypes
-					.subtypeOf(pc.first(), p_type));			
-		}
+		WType p_type = ftype.preState().convert();
+		params.add(pc.first());
+		WFormula argConstraints = WFormulas.and(pc.second(), WTypes.subtypeOf(
+				pc.first(), p_type));					
 		
 		WVariable retLabel = new WVariable("&" + name, params);							
 		environment = new HashMap<String,Type>(environment);
-		environment.put("$", ftype.returnType());		
+		environment.put("$", ftype.postState());		
 				
 		constraints = null;		
 		
@@ -187,30 +181,26 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 			
 			Condition postCondition = Types.expandConstraints(function.type());			
 									
+			/**
+			 * FIXME: need to update this for sure 
 			if (postCondition != null) {				
 				// Ok, here we need to translate the post-condition
 				HashMap<WExpr, WExpr> binding = new HashMap<WExpr,WExpr>();
 				binding.put(new WVariable("$"), retLabel);
-				FunType f_type = function.type();
-				List<String> f_params = function.parameterNames();
-				
+				FunType f_type = function.type();				
 				environment = new HashMap<String, Type>(environment);
+				
+				Type posttype = f_type.postState();
+				environment.put("$", posttype);
+				binding.put(new WVariable("$"), argument);					
 
-				for (int i = 0; i != f_params.size(); ++i) {
-					String p_name = f_params.get(i);
-					WExpr p_expr = params.get(i);
-					Type p_type = f_type.parameters().get(i);
-					environment.put(p_name, p_type);
-					binding.put(new WVariable(p_name), p_expr);					
-				}
-
-				Pair<WFormula, WFormula> pc = postCondition
+				Pair<WFormula, WFormula> postc = postCondition
 						.convertCondition(environment, loader);
 		
-				mcs = WFormulas.and(pc.first(), pc.second()).substitute(
+				mcs = WFormulas.and(postc.first(), postc.second()).substitute(
 						binding);
 			}
-			
+			*/
 			if (constraints == null) {
 				constraints = mcs;
 			} else {
@@ -219,7 +209,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		}								
 		
 		constraints = WFormulas.and(constraints, WTypes.subtypeOf(retLabel,
-				ftype.returnType().convert()));
+				ftype.postState().convert()));
 		
 		return new Pair<WExpr, WFormula>(retLabel, constraints);
 	}
@@ -232,7 +222,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 							.equals(i.target)))) {
 				if (module == i.module
 						|| (module != null && module.equals(i.module))) {
-					return ftype.equals(i.ftype) && arguments.equals(i.arguments);					
+					return ftype.equals(i.ftype) && argument.equals(i.argument);					
 				}
 			}
 		} 
@@ -247,7 +237,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		if(module != null) {
 			hc += module.hashCode();
 		}
-		hc += arguments.hashCode();
+		hc += argument.hashCode();
 		return hc;
 	}
 	
@@ -256,16 +246,10 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		if (target != null) {
 			r += target.toString() + "->";
 		}
-		r += name + "(";
-		boolean firstTime = true;
-		for(Expr e : arguments) {
-			if(!firstTime) {
-				r += ",";
-			}
-			firstTime=false;
-			r += e;
+		if (argument instanceof TupleGenerator || argument instanceof TupleVal) {
+			return name + argument;
+		} else {
+			return name + " " + argument;
 		}
-		return r + ")";
-		
 	}
 }
