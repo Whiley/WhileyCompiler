@@ -778,7 +778,16 @@ public class ClassFileBuilder {
 		JvmType type = convertType(e.lhsTest());
 		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));	
 		addReadConversion(e.lhsTest(),bytecodes);			 		
-		bytecodes.add(new Bytecode.Store(slot, type));			
+		bytecodes.add(new Bytecode.Store(slot, type));
+		// FIXME: this is obviously broken for recursive types.
+		Condition c = Types.expandConstraints(e.lhsTest());
+		if(c != null) {
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put("$",new Variable(e.variable()));
+			c = c.substitute(binding);
+			translate(c, nslots, environment,bytecodes);
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ,exitLabel));
+		}
 		translate(e.rhs(), nslots, environment,bytecodes);
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
 		bytecodes.add(new Bytecode.Label(exitLabel));		
@@ -807,7 +816,16 @@ public class ClassFileBuilder {
 		JvmType type = convertType(e.lhsTest());
 		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));
 		addReadConversion(e.lhsTest(),bytecodes);			 		
-		bytecodes.add(new Bytecode.Store(slot, type));			
+		bytecodes.add(new Bytecode.Store(slot, type));	
+		// FIXME: this is obviously broken for recursive types.
+		Condition c = Types.expandConstraints(e.lhsTest());
+		if(c != null) {
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put("$",new Variable(e.variable()));
+			c = c.substitute(binding);
+			translate(c, nslots, environment,bytecodes);
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ,trueLabel));
+		}
 		translate(e.rhs(), nslots, environment,bytecodes);
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));			
 	}
@@ -1967,10 +1985,12 @@ public class ClassFileBuilder {
 		
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
+		String falseLabel = freshLabel();
 		translateTypeTest(e.lhsTest(), nslots,
 				environment, bytecodes);
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
-		bytecodes.add(new Bytecode.LoadConst(0));
+		bytecodes.add(new Bytecode.Label(falseLabel));
+		bytecodes.add(new Bytecode.LoadConst(0));		
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 		environment = (HashMap) environment.clone();
@@ -1979,7 +1999,15 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));
 		addReadConversion(e.lhsTest(),bytecodes);			 		
 		bytecodes.add(new Bytecode.Store(slot, type));	
-		
+		// FIXME: this is obviously broken for recursive types.
+		Condition c = Types.expandConstraints(e.lhsTest());
+		if(c != null) {
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put("$",new Variable(e.variable()));
+			c = c.substitute(binding);
+			translate(c, nslots, environment,bytecodes);
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ,falseLabel));
+		}
 		translate(e.rhs(), nslots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
@@ -2000,9 +2028,11 @@ public class ClassFileBuilder {
 		// fourth perform test
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
+		String falseLabel = freshLabel();
 		translateTypeTest(e.lhsTest(), nslots,
 				environment, bytecodes);
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));
+		bytecodes.add(new Bytecode.Label(falseLabel));
 		bytecodes.add(new Bytecode.LoadConst(1));
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
@@ -2012,7 +2042,15 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slot, JAVA_LANG_OBJECT));
 		addReadConversion(e.lhsTest(),bytecodes);			 		
 		bytecodes.add(new Bytecode.Store(slot, type));	
-		
+		// FIXME: this is obviously broken for recursive types.
+		Condition c = Types.expandConstraints(e.lhsTest());
+		if(c != null) {
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			binding.put("$",new Variable(e.variable()));
+			c = c.substitute(binding);
+			translate(c, nslots, environment,bytecodes);
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ,falseLabel));
+		}
 		translate(e.rhs(), nslots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
@@ -2034,6 +2072,7 @@ public class ClassFileBuilder {
 	// situations are a little harder; like testing for a union type.
 	protected void translateTypeTest(Type test, HashMap<String, Integer> slots,
 			HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
+		
 		if (test instanceof BoolType) {
 			bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
 		} else {

@@ -10,5 +10,4 @@ void f(tup t):
 
 void System::main([string] args):
     f((lhs:[0],p:0))
-    f((lhs:[1],p:0))
-    f((lhs:[],p:0)) 
+    f((lhs:[0,1],p:0))

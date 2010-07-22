@@ -686,7 +686,7 @@ public class WhileyParser {
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {						
 			match(LogicalAnd.class);
 			rhs = parseRealCondition();						
-		}
+		}				
 		
 		return new wyjc.ast.exprs.logic.UnresolvedTypeEquals(lhs, type, rhs,
 				sourceAttr(start, index - 1));

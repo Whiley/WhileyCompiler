@@ -1373,10 +1373,17 @@ public class TypeResolution {
 				&& !Types.isBaseSubtype(rhs_t, lhs_t)) {
 			syntaxError("cannot match type " + lhs_t + " against " + rhs_t, ueq);
 		}
+				
+		Condition rhs = ueq.rhs();
+		String var = Variable.freshVar();
+		environment = new HashMap<String,Type>(environment);
+		environment.put(var, rhs_t);
+		HashMap<Expr,Expr> binding = new HashMap();
+		binding.put(lhs.second(),new Variable(var));
+		rhs = (Condition) rhs.replace(binding);
 		
-		Condition condition = (Condition) check(ueq.rhs(),environment).second();  
-		String var = Variable.freshVar();				
-		
+		Condition condition = (Condition) check(rhs,environment).second();  
+								
 		// FIXME: I think there's a problem here as the condition needs to have
 		// all occurences of lhs replaced with var.
 		
@@ -1435,7 +1442,7 @@ public class TypeResolution {
 			// we have to clone the environment, since it's effects only apply
 			// to the contained condition.
 			environment = new HashMap<String,Type>(environment);
-			environment.put(c.variable(), c.lhsTest());
+			environment.put(c.variable(), c.lhsTest());		
 		}
 		
 		Pair<Type,Expr> rhs = check(c.rhs(),environment);

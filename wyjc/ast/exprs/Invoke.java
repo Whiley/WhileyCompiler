@@ -211,7 +211,7 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 		
 				mcs = WFormulas.and(pc.first(), pc.second()).substitute(
 						binding);
-			}
+			} 
 			
 			if (constraints == null) {
 				constraints = mcs;
@@ -219,9 +219,13 @@ public class Invoke extends SyntacticElementImpl implements Stmt, Expr {
 				constraints = WFormulas.or(constraints, mcs);
 			}
 		}								
-		
-		constraints = WFormulas.and(constraints, WTypes.subtypeOf(retLabel,
-				ftype.returnType().convert()));
+
+		if(constraints == null) {
+			constraints = WTypes.subtypeOf(retLabel,ftype.returnType().convert());
+		} else {
+			constraints = WFormulas.and(constraints, WTypes.subtypeOf(retLabel,
+					ftype.returnType().convert()));
+		}
 		
 		return new Pair<WExpr, WFormula>(retLabel, constraints);
 	}
