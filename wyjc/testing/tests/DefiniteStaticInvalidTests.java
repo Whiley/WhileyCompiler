@@ -70,7 +70,7 @@ public class DefiniteStaticInvalidTests extends TestHarness {
  @Test public void RealDiv_Invalid_1_StaticTest() { verificationFailTest("RealDiv_Invalid_1"); }
  @Test public void RealMul_Invalid_1_StaticTest() { verificationFailTest("RealMul_Invalid_1"); }
  @Test public void RecursiveType_Invalid_3_StaticTest() { verificationFailTest("RecursiveType_Invalid_3"); }
- @Test public void RecursiveType_Invalid_5_StaticTest() { verificationFailTest("RecursiveType_Invalid_5"); }
+ 
  @Test public void RecursiveType_Invalid_6_StaticTest() { verificationFailTest("RecursiveType_Invalid_6"); }
  @Test public void RecursiveType_Invalid_7_StaticTest() { verificationFailTest("RecursiveType_Invalid_7"); }
  @Test public void RecursiveType_Invalid_8_StaticTest() { verificationFailTest("RecursiveType_Invalid_8"); }
