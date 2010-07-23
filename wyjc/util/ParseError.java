@@ -18,6 +18,8 @@
 
 package wyjc.util;
 
+import wyil.util.SyntaxError;
+
 public class ParseError extends SyntaxError {
 	/**
 	 * Identify a syntax error at a particular point in a file.
