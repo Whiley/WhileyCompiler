@@ -21,18 +21,12 @@ package wyjc;
 import java.io.*;
 import java.util.*;
 
-import wyil.stages.ClassFileBuilder;
-import wyil.stages.CodeWriter;
-import wyil.stages.DefiniteAssignmentChecker;
-import wyil.stages.FunctionChecker;
-import wyil.stages.PostConditionGenerator;
-import wyil.stages.RuntimeCheckGenerator;
-import wyil.stages.VerificationConditionChecker;
-import wyil.stages.VerificationConditionGenerator;
+import wyil.*;
+import wyil.lang.*;
+import wyil.stages.*;
 import wyjc.ast.ResolvedWhileyFile;
 import wyjc.ast.UnresolvedWhileyFile;
 import wyjc.stages.*;
-import wyjc.util.ModuleID;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 
