@@ -48,7 +48,7 @@ public abstract class Module {
 		ArrayList<Method> rs = new ArrayList<Method>();
 		if(ls != null) {
 			for(Method m : ls) {
-				if(Types.isBaseEquivalent(m.type(),ft)) {
+				if(m.type().equals(ft)) {
 					rs.add(m);
 				}
 			}
