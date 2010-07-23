@@ -578,7 +578,7 @@ public class ModuleLoader {
 			if(ba instanceof WhileyDefine) {
 				WhileyDefine wd = (WhileyDefine) ba;
 				Type type = wd.type();
-				Expr expr = wd.expr();
+				Expr expr = wd.value();
 				if(type == null) {
 					// constant definition
 					ModuleInfo.Const ci = new ModuleInfo.Const(wd.defName(),(Value) expr);

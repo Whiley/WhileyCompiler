@@ -24,8 +24,7 @@ import java.io.PrintWriter;
 import java.util.*;
 
 import wyjc.ast.exprs.Expr;
-import wyjc.ast.types.*;
-import wyjc.util.*;
+import wyil.lang.*;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
@@ -42,16 +41,16 @@ import wyjvm.lang.Constant;
  */
 public class WhileyDefine implements BytecodeAttribute {
 	private String defName;
-	private Expr expr;
+	private Value value;
 	private Type type;
 	
-	public WhileyDefine(String name, Type type, Expr expr) {
+	public WhileyDefine(String name, Type type, Value expr) {
 		if(type != null && expr != null) {
 			throw new IllegalArgumentException("Cannot define a type and an expression");
 		}
 		this.defName = name;
 		this.type = type;
-		this.expr = expr;
+		this.value = expr;
 	}
 	
 	public String name() {
@@ -66,8 +65,8 @@ public class WhileyDefine implements BytecodeAttribute {
 		return type;
 	}
 	
-	public Expr expr() {
-		return expr;
+	public Value value() {
+		return value;
 	}
 	
 	public void write(BinaryOutputStream writer,
@@ -83,8 +82,8 @@ public class WhileyDefine implements BytecodeAttribute {
 
 		if(type == null) {
 			iw.write_u1(0); // CONDITION ONLY			
-			write(expr,iw, constantPool);			
-		} else if(expr == null) {
+			write(value,iw, constantPool);			
+		} else if(value == null) {
 			iw.write_u1(1); // TYPE ONLY
 			WhileyType.write(type, iw, constantPool);
 		} else {									
@@ -101,8 +100,8 @@ public class WhileyDefine implements BytecodeAttribute {
 		Constant.addPoolItem(new Constant.Utf8(name()), constantPool);	
 		Constant.addPoolItem(new Constant.Utf8(defName), constantPool);
 		
-		if(expr != null) {
-			WhileyType.addPoolItems(expr, constantPool);
+		if(value != null) {
+			WhileyType.addPoolItems(value, constantPool);
 		}
 		if(type != null) {
 			WhileyType.addPoolItems(type, constantPool);
@@ -119,12 +118,12 @@ public class WhileyDefine implements BytecodeAttribute {
 			throws IOException {
 
 		if (type == null) {
-			output.println("  WhileyDefine: " + defName + " as " + expr);
-		} else if (expr == null) {
+			output.println("  WhileyDefine: " + defName + " as " + value);
+		} else if (value == null) {
 			output.println("  WhileyDefine: " + defName + " as " + type);
 		} else {
 			output.println("  WhileyDefine: " + defName + " as " + type
-					+ " where " + expr);
+					+ " where " + value);
 		}
 	}
 	

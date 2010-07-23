@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import wyil.jvm.rt.*;
+import wyil.jvm.attributes.*;
 import wyil.lang.*;
 import wyil.util.*;
 import wyjvm.attributes.*;
@@ -561,10 +561,10 @@ public class ModuleLoader {
 			if(ba instanceof WhileyDefine) {
 				WhileyDefine wd = (WhileyDefine) ba;
 				Type type = wd.type();
-				Expr expr = wd.expr();
+				Value value = wd.value();
 				if(type == null) {
 					// constant definition
-					Module.ConstDef ci = new Module.ConstDef(wd.defName(),(Value) expr);
+					Module.ConstDef ci = new Module.ConstDef(wd.defName(),value);
 					constants.put(wd.defName(),ci);
 				} else {
 					// type definition					
@@ -588,12 +588,10 @@ public class ModuleLoader {
 	
 	protected Module.Method createMethodInfo(ModuleID mid,
 			ClassFile.Method cm) {
-		Triple<String,Type,Type.Fun> info = splitDescriptor(cm.name());				
-		WhileyType pre = (WhileyType) cm
-				.attribute("WhileyType");		
+		Triple<String,Type,Type.Fun> info = splitDescriptor(cm.name());							
 		ArrayList<String> parameterNames = new ArrayList<String>();
 		Type.Fun type = info.third();
-		for (int i = 0; i != type.parameters().size(); ++i) {
+		for (int i = 0; i != type.params.size(); ++i) {
 			parameterNames.add("p" + i);
 		}
 		return new Module.Method(info.second(), info.first(), type,
@@ -640,7 +638,7 @@ public class ModuleLoader {
 		String[] split = desc.split("\\$");
 		Type receiver = null;
 		String name = split[0];
-		Type.Fun ft = new TypeParser(split[split.length - 1]).parseType.Fun();
+		Type.Fun ft = new TypeParser(split[split.length - 1]).parseFunType();
 		if(split.length > 2) {
 			receiver = new TypeParser(split[1]).parseType();
 		}
@@ -657,22 +655,22 @@ public class ModuleLoader {
 		}
 		
 		public Type parseType() {
-			NonUnionType type = parseNonUnionType();
+			Type.NonUnion type = parseNonUnionType();
 
 			if (index < desc.length() && desc.charAt(index) == '|') {
-				ArrayList<NonUnionType> types = new ArrayList<NonUnionType>();
+				ArrayList<Type.NonUnion> types = new ArrayList<Type.NonUnion>();
 				types.add(type);
 				while (index < desc.length() && desc.charAt(index) == '|') {
 					index = index + 1;
 					types.add(parseNonUnionType());
 				}
-				return new UnionType(types);
+				return Type.T_UNION(types);
 			}
 
 			return type;
 		}
 		
-		public NonUnionType parseNonUnionType() {
+		public Type.NonUnion parseNonUnionType() {
 			char lookahead = desc.charAt(index++);
 			switch (lookahead) {
 			case '*':
@@ -688,7 +686,7 @@ public class ModuleLoader {
 			case 'R':
 				return Type.T_REAL;
 			case 'P':
-				return new ProcessType(parseType());
+				return Type.T_PROCESS(parseType());
 			case 'N':				
 				int start = index;
 				while(desc.charAt(index) != ';') {
@@ -702,14 +700,14 @@ public class ModuleLoader {
 				}
 				String name = desc.substring(start,index);
 				index++;				
-				return new NamedType(ModuleID.fromString(pkg), name,
+				return Type.T_NAMED(ModuleID.fromString(pkg), name,
 							parseType());			
 			case '[': 
 				Type et = parseType();
 				lookahead = desc.charAt(index);
 				if (lookahead == ']') {
 					index++;
-					return new ListType(et);
+					return Type.T_LIST(et);
 				}				
 				break;
 			case '{': 
@@ -717,7 +715,7 @@ public class ModuleLoader {
 				lookahead = desc.charAt(index);
 				if (lookahead == '}') {
 					index++;
-					return new SetType(et);	
+					return Type.T_SET(et);	
 				}	
 				break;
 			case '(':
@@ -731,7 +729,7 @@ public class ModuleLoader {
 					lookahead = desc.charAt(index);					
 				}
 				index++; // skip right brace
-				return new TupleType(types);	
+				return Type.T_TUPLE(types);	
 			}
 			throw new RuntimeException("invalid type descriptor: "
 					+ desc);	

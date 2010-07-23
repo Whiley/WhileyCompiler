@@ -29,6 +29,10 @@ public abstract class Type {
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
 	
+	public static Named T_NAMED(ModuleID module, String name, Type element) {
+		return get(new Named(module, name, element));
+	}
+	
 	public static List T_LIST(Type element) {
 		return get(new List(element));
 	}
@@ -45,7 +49,24 @@ public abstract class Type {
 		return get(new Fun(ret, parameters));
 	}
 	
-	public static final class Any extends Type {
+	public static Union T_UNION(Collection<NonUnion> bounds) {
+		return get(new Union(bounds));
+	}
+	public static Union T_UNION(NonUnion... bounds) {
+		return get(new Union(bounds));
+	}
+	
+	public static Process T_PROCESS(Type element) {
+		return get(new Process(element));
+	}
+	
+	public static Tuple T_TUPLE(Map<String,Type> types) {
+		return get(new Tuple(types));
+	}
+	
+	public static abstract class NonUnion extends Type {}
+	
+	public static final class Any extends NonUnion {
 		private Any() {}
 		public boolean equals(Object o) {
 			return o == T_ANY;
@@ -54,7 +75,7 @@ public abstract class Type {
 			return 1;
 		}
 	}
-	public static final class Void extends Type {
+	public static final class Void extends NonUnion {
 		private Void() {}
 		public boolean equals(Object o) {
 			return o == T_VOID;
@@ -63,7 +84,7 @@ public abstract class Type {
 			return 1;
 		}
 	}
-	public static final class Existential extends Type {
+	public static final class Existential extends NonUnion {
 		private Existential() {}
 		public boolean equals(Object o) {
 			return o == T_EXISTENTIAL;
@@ -72,7 +93,7 @@ public abstract class Type {
 			return 2;
 		}
 	}
-	public static final class Bool extends Type {
+	public static final class Bool extends NonUnion {
 		private Bool() {}
 		public boolean equals(Object o) {
 			return o == T_BOOL;
@@ -81,7 +102,7 @@ public abstract class Type {
 			return 3;
 		}
 	}
-	public static final class Int extends Type {
+	public static final class Int extends NonUnion {
 		private Int() {}
 		public boolean equals(Object o) {
 			return o == T_INT;
@@ -90,7 +111,7 @@ public abstract class Type {
 			return 4;
 		}	
 	}
-	public static final class Real extends Type {
+	public static final class Real extends NonUnion {
 		private Real() {}
 		public boolean equals(Object o) {
 			return o == T_REAL;
@@ -99,7 +120,28 @@ public abstract class Type {
 			return 5;
 		}
 	}
-	public static final class List extends Type {
+	public static final class Named extends NonUnion {
+		public final ModuleID module;
+		public final String name;
+		public final Type element;
+		private Named(ModuleID mid, String name, Type element) {
+			this.module = mid;
+			this.name = name;
+			this.element = element;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Named) {
+				Named l = (Named) o;
+				return element.equals(l.element) && module.equals(l.module)
+						&& name.equals(l.name); 
+			}
+			return false;
+		}
+		public int hashCode() {
+			return element.hashCode() + module.hashCode() + name.hashCode();
+		}
+	}
+	public static final class List extends NonUnion {
 		public final Type element;
 		private List(Type element) {
 			this.element = element;
@@ -115,7 +157,7 @@ public abstract class Type {
 			return element.hashCode();
 		}
 	}
-	public static final class Set extends Type {
+	public static final class Set extends NonUnion {
 		public final Type element;
 		private Set(Type element) {
 			this.element = element;
@@ -131,7 +173,27 @@ public abstract class Type {
 			return element.hashCode();
 		}
 	}
-	public static final class Fun extends Type {
+	public static final class Union extends Type {
+		public final HashSet<NonUnion> bounds;
+		public Union(Collection<NonUnion> bounds) {
+			if (bounds.size() < 2) {
+				new IllegalArgumentException(
+						"Cannot construct a type union with fewer than two bounds");
+			}
+			this.bounds = new HashSet<NonUnion>(bounds);
+		}
+		public Union(NonUnion... bounds) {			
+			this.bounds = new HashSet<NonUnion>();
+			for(NonUnion b : bounds) {
+				this.bounds.add(b);
+			}
+			if (this.bounds.size() < 2) {
+				new IllegalArgumentException(
+						"Cannot construct a type union with fewer than two bounds");
+			}
+		}
+	}
+	public static final class Fun extends NonUnion {
 		public final Type ret;
 		public final ArrayList<Type> params;
 		
@@ -155,6 +217,42 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return ret.hashCode() + params.hashCode();
+		}
+	}
+	public static final class Process extends NonUnion {
+		public final Type element;
+		private Process(Type element) {
+			this.element = element;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Process) {
+				Process l = (Process) o;
+				return element.equals(l.element);
+			}
+			return false;
+		}
+		public int hashCode() {
+			return element.hashCode();
+		}
+	}
+	public static final class Tuple extends NonUnion {
+		public final HashMap<String,Type> types;
+		private Tuple(Map<String,Type> types) {
+			if(types.size() == 0) {
+				throw new IllegalArgumentException(
+						"Cannot create type tuple with no fields");
+			}
+			this.types = new HashMap<String,Type>(types);
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Tuple) {
+				Tuple l = (Tuple) o;
+				return types.equals(l.types);
+			}
+			return false;
+		}
+		public int hashCode() {
+			return types.hashCode();
 		}
 	}
 	

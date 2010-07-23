@@ -3,7 +3,7 @@ package wyil.lang;
 import java.util.*;
 import wyil.ModuleLoader;
 
-public abstract class Module extends ModuleLoader.Skeleton {	
+public class Module extends ModuleLoader.Skeleton {	
 	private HashMap<String,List<Method>> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
