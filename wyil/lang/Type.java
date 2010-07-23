@@ -37,7 +37,7 @@ public abstract class Type {
 		return get(new Set(element));
 	}
 	
-	private static class Any extends Type {
+	private static final class Any extends Type {
 		public boolean equals(Object o) {
 			return o == T_ANY;
 		}
@@ -45,7 +45,7 @@ public abstract class Type {
 			return 1;
 		}
 	}
-	private static class Void extends Type {
+	private static final class Void extends Type {
 		public boolean equals(Object o) {
 			return o == T_VOID;
 		}
@@ -53,7 +53,7 @@ public abstract class Type {
 			return 1;
 		}
 	}
-	private static class Existential extends Type {
+	private static final class Existential extends Type {
 		public boolean equals(Object o) {
 			return o == T_EXISTENTIAL;
 		}
@@ -61,7 +61,7 @@ public abstract class Type {
 			return 2;
 		}
 	}
-	private static class Bool extends Type {
+	private static final class Bool extends Type {
 		public boolean equals(Object o) {
 			return o == T_BOOL;
 		}
@@ -69,7 +69,7 @@ public abstract class Type {
 			return 3;
 		}
 	}
-	private static class Int extends Type {
+	private static final class Int extends Type {
 		public boolean equals(Object o) {
 			return o == T_INT;
 		}
@@ -77,7 +77,7 @@ public abstract class Type {
 			return 4;
 		}	
 	}
-	private static class Real extends Type {
+	private static final class Real extends Type {
 		public boolean equals(Object o) {
 			return o == T_REAL;
 		}
@@ -85,7 +85,7 @@ public abstract class Type {
 			return 5;
 		}
 	}
-	private static class List extends Type {
+	private static final class List extends Type {
 		public final Type element;
 		public List(Type element) {
 			this.element = element;
@@ -101,7 +101,7 @@ public abstract class Type {
 			return element.hashCode();
 		}
 	}
-	private static class Set extends Type {
+	private static final class Set extends Type {
 		public final Type element;
 		public Set(Type element) {
 			this.element = element;
