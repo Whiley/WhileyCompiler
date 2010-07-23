@@ -1,5 +1,5 @@
 <project name="whiley" default="stdlib">  
-  <property name="version" value="0.2.9"/>
+  <property name="version" value="0.3"/>
 
   <target name="compile">
     <javac debug="true" srcdir="." includeantruntime="true" includes="wyjc/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyone/testing/**"/> 
@@ -42,20 +42,33 @@
   </target>
 
   <target name="distsrc" depends="stdlib">
-  <tar destfile="wdk-src-v${version}.tar" longfile="gnu">  
-    <tarfileset dir="." includes="wyjc/**/*.java,wyjvm/**/*.java,wyone/**/*.java"/>
-    <tarfileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
-    <tarfileset dir="." includes="examples/**/*.whiley"/>
-    <tarfileset dir="." includes="stdlib/**/*.whiley"/>
-    <tarfileset dir="." filemode="755">
+  <mkdir dir="wdk-v${version}"/>
+  <copy todir="wdk-v${version}">
+    <fileset dir="." includes="wyjc/**/*.java,wyjvm/**/*.java,wyone/**/*.java"/>
+    <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
+    <fileset dir="." includes="examples/**/*.whiley"/>
+    <fileset dir="." includes="stdlib/**/*.whiley"/>
+    <fileset dir=".">
       <include name="bin/wyjc"/>
       <include name="bin/whiley"/>
+    </fileset>
+    <fileset dir="." includes="LICENSE,README,build.xml"/>
+    <fileset dir="." includes="lib/wyrt.jar,lib/wyjc.jar"/>
+  </copy>
+  <tar destfile="wdk-src-v${version}.tar" longfile="gnu">  
+    <tarfileset dir="." includes="wdk-v${version}/**/*.java"/>
+    <tarfileset dir="." includes="wdk-v${version}/**/*.whiley"/>
+    <tarfileset dir="." includes="wdk-v${version}/**/*.sysout"/>
+    <tarfileset dir="." filemode="755">
+      <include name="wdk-v${version}/bin/wyjc"/>
+      <include name="wdk-v${version}/bin/whiley"/>
     </tarfileset>
-    <tarfileset dir="." includes="LICENSE,README,build.xml"/>
-    <tarfileset dir="." includes="lib/wyrt.jar,lib/wyjc.jar"/>
+    <tarfileset dir="." includes="wdk-v${version}/LICENSE,wdk-v${version}/README,wdk-v${version}/build.xml"/>
+    <tarfileset dir="." includes="wdk-v${version}/lib/wyrt.jar,wdk-v${version}/lib/wyjc.jar"/>
   </tar>
   <gzip destfile="wdk-src-v${version}.tgz" src="wdk-src-v${version}.tar"/>
   <delete file="wdk-src-v${version}.tar"/>
+  <delete dir="wdk-v${version}"/>
   </target>
 
   <target name="dist" depends="distsrc,distjar">
