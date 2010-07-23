@@ -37,7 +37,16 @@ public abstract class Type {
 		return get(new Set(element));
 	}
 	
-	private static final class Any extends Type {
+	public static Fun T_FUN(Type ret, Type... parameters) {
+		return get(new Fun(ret,parameters));
+	}
+	
+	public static Fun T_FUN(Type ret, Collection<Type> parameters) {
+		return get(new Fun(ret, parameters));
+	}
+	
+	public static final class Any extends Type {
+		private Any() {}
 		public boolean equals(Object o) {
 			return o == T_ANY;
 		}
@@ -45,7 +54,8 @@ public abstract class Type {
 			return 1;
 		}
 	}
-	private static final class Void extends Type {
+	public static final class Void extends Type {
+		private Void() {}
 		public boolean equals(Object o) {
 			return o == T_VOID;
 		}
@@ -53,7 +63,8 @@ public abstract class Type {
 			return 1;
 		}
 	}
-	private static final class Existential extends Type {
+	public static final class Existential extends Type {
+		private Existential() {}
 		public boolean equals(Object o) {
 			return o == T_EXISTENTIAL;
 		}
@@ -61,7 +72,8 @@ public abstract class Type {
 			return 2;
 		}
 	}
-	private static final class Bool extends Type {
+	public static final class Bool extends Type {
+		private Bool() {}
 		public boolean equals(Object o) {
 			return o == T_BOOL;
 		}
@@ -69,7 +81,8 @@ public abstract class Type {
 			return 3;
 		}
 	}
-	private static final class Int extends Type {
+	public static final class Int extends Type {
+		private Int() {}
 		public boolean equals(Object o) {
 			return o == T_INT;
 		}
@@ -77,7 +90,8 @@ public abstract class Type {
 			return 4;
 		}	
 	}
-	private static final class Real extends Type {
+	public static final class Real extends Type {
+		private Real() {}
 		public boolean equals(Object o) {
 			return o == T_REAL;
 		}
@@ -85,9 +99,9 @@ public abstract class Type {
 			return 5;
 		}
 	}
-	private static final class List extends Type {
+	public static final class List extends Type {
 		public final Type element;
-		public List(Type element) {
+		private List(Type element) {
 			this.element = element;
 		}
 		public boolean equals(Object o) {
@@ -101,9 +115,9 @@ public abstract class Type {
 			return element.hashCode();
 		}
 	}
-	private static final class Set extends Type {
+	public static final class Set extends Type {
 		public final Type element;
-		public Set(Type element) {
+		private Set(Type element) {
 			this.element = element;
 		}
 		public boolean equals(Object o) {
@@ -115,6 +129,32 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return element.hashCode();
+		}
+	}
+	public static final class Fun extends Type {
+		public final Type ret;
+		public final ArrayList<Type> params;
+		
+		private Fun(Type ret, Type... parameters) {
+			this.ret = ret;
+			this.params = new ArrayList<Type>();
+			for(Type t : parameters) {
+				this.params.add(t);
+			}
+		}
+		private Fun(Type ret, Collection<Type> parameters) {
+			this.ret = ret;
+			this.params = new ArrayList<Type>(parameters);			
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Fun) {
+				Fun fun = (Fun) o;
+				return ret.equals(fun.ret) && params.equals(fun.params);
+			}
+			return false;
+		}
+		public int hashCode() {
+			return ret.hashCode() + params.hashCode();
 		}
 	}
 	
