@@ -23,12 +23,12 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import wyil.jvm.attributes.WhileyDefine;
+import wyil.jvm.attributes.WhileyType;
 import wyjc.ast.*;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.logic.*;
 import wyjc.ast.types.*;
-import wyjc.jvm.attributes.WhileyType;
-import wyjc.jvm.attributes.WhileyDefine;
 import wyjc.util.*;
 import wyjvm.attributes.*;
 import wyjvm.io.ClassFileReader;

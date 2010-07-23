@@ -1,13 +1,9 @@
 package wyil.lang;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import wyil.ModuleLoader;
 
-public abstract class Module {
-	private ModuleID mid;
+public abstract class Module extends ModuleLoader.Skeleton {	
 	private HashMap<String,List<Method>> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
@@ -16,16 +12,12 @@ public abstract class Module {
 			Map<String, List<Method>> methods,
 			Map<String, TypeDef> types,
 			Map<String, ConstDef> constants) {		
-		this.mid = mid;
+		super(mid);
 		this.methods = new HashMap<String, List<Method>>(methods);
 		this.types = new HashMap<String, TypeDef>(types);
 		this.constants = new HashMap<String, ConstDef>(constants);
 	}
 	
-	public ModuleID id() {
-		return mid;
-	}
-
 	public TypeDef type(String name) {
 		return types.get(name);
 	}

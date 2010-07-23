@@ -25,6 +25,7 @@ import java.util.jar.JarFile;
 
 import wyil.jvm.rt.*;
 import wyil.lang.*;
+import wyil.util.*;
 import wyjvm.attributes.*;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.*;
@@ -62,10 +63,10 @@ public class ModuleLoader {
      * A map from module names in the form "xxx.yyy" to skeleton objects. This
      * is required to permit preregistration of source files during compilation.
      */
-	private HashMap<ModuleID, SkeletonInfo> skeletontable = new HashMap<ModuleID, SkeletonInfo>();  
+	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();  
 			
 	/**
-	 * A PackageInfo object contains information about a particular package,
+	 * A Package object contains information about a particular package,
 	 * including the following information:
 	 * 
 	 * 1) where it can be found on the file system (either a directory).
@@ -73,7 +74,7 @@ public class ModuleLoader {
 	 * 2) what modules it contains.
 	 * 
 	 */
-	private final class PackageInfo {
+	private static final class Package {
 		
 		/**
          * The modules field contains the names of those modules contained in
@@ -89,12 +90,35 @@ public class ModuleLoader {
 		 */
 		public final ArrayList<File> locations = new ArrayList<File>();
 	}
+
+	/**
+	 * A module Skeleton provides basic information regarding what names are
+	 * defined within a module. It represents the minimal knowledge regarding a
+	 * module that we can have. Skeletons are used early on in the compilation
+	 * process to help with name resolution.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public abstract static class Skeleton {
+		protected final ModuleID mid;
+
+		public Skeleton(ModuleID mid) {
+			this.mid = mid;
+		}
+		
+		public ModuleID id() {
+			return mid;
+		}
+
+		public abstract boolean hasName(String name);
+	}
 	
 	/**
      * The packages map maps each package to its PackageInfo record. This means
      * we can quickly identify packages will have already been loaded.
      */
-	private final HashMap<PkgID, PackageInfo> packages = new HashMap<PkgID, PackageInfo>();
+	private final HashMap<PkgID, Package> packages = new HashMap<PkgID, Package>();
 	
 	/**
      * The failed packages set is a collection of packages which have been
@@ -104,17 +128,13 @@ public class ModuleLoader {
 	private final HashSet<PkgID> failedPackages = new HashSet<PkgID>();
 	
 	/**
-     * The compiler is needed to actually load and parse files from the file
-     * system.
-     */
-	private Compiler compiler;
+	 * The logger is used to log messages from the module loader.
+	 */
+	private final Logger logger;
 	
-	public ModuleLoader(Collection<String> whileypath) {
+	public ModuleLoader(Collection<String> whileypath, Logger logger) {
+		this.logger = logger;
 		this.whileypath = new ArrayList<String>(whileypath);		
-	}
-	
-	public void setCompiler(Compiler compiler) {
-		this.compiler = compiler;
 	}
 	
 	public void setClosedWorldAssumption(boolean flag) {
@@ -137,7 +157,7 @@ public class ModuleLoader {
 		}
 	}	
 	
-	public void preregister(SkeletonInfo skeleton, String filename) {		
+	public void preregister(Skeleton skeleton, String filename) {		
 		skeletontable.put(skeleton.id(), skeleton);
 		File parent = new File(filename).getParentFile();
 		addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);								 
@@ -171,12 +191,12 @@ public class ModuleLoader {
 				if(!isPackage(pkg)) {					
 					continue; // sanity check
 				}				
-				PackageInfo p = resolvePackage(pkg);
+				Package p = resolvePackage(pkg);
 				
 				for (String n : p.modules) {
 					try {
 						ModuleID mid = new ModuleID(pkg,n);									
-						SkeletonInfo mi = loadSkeleton(mid);					
+						Skeleton mi = loadSkeleton(mid);					
 						if (mi.hasName(name)) {
 							return mid;
 						} 					
@@ -191,7 +211,7 @@ public class ModuleLoader {
 					String pkgname = pkg.last();
 					pkg = pkg.subpkg(0, pkg.size()-1);
 					ModuleID mid = new ModuleID(pkg,pkgname);												
-					SkeletonInfo mi = loadSkeleton(mid);					
+					Skeleton mi = loadSkeleton(mid);					
 					if (mi.hasName(name)) {
 						return mid;
 					} 	
@@ -206,9 +226,6 @@ public class ModuleLoader {
 		throw new ResolveError("name not found: " + name);
 	}
 		
-	public static Condition dummyCondition = new BoolVal(true);
-	public static Condition nullCondition = new BoolVal(true);
-		
 	public Module loadModule(ModuleID module) throws ResolveError {		
 		Module m = moduletable.get(module);
 		if(m != null) {
@@ -216,7 +233,7 @@ public class ModuleLoader {
 		}
 			
 		// module has not been previously loaded.
-		PackageInfo pkg = resolvePackage(module.pkg());
+		Package pkg = resolvePackage(module.pkg());
 		// check for error
 		if(pkg == null) {
 			throw new ResolveError("Unable to find package: " + module.pkg());
@@ -235,8 +252,8 @@ public class ModuleLoader {
 		return m;		
 	}
 	
-	public SkeletonInfo loadSkeleton(ModuleID module) throws ResolveError {
-		SkeletonInfo skeleton = skeletontable.get(module);
+	public Skeleton loadSkeleton(ModuleID module) throws ResolveError {
+		Skeleton skeleton = skeletontable.get(module);
 		if(skeleton != null) {
 			return skeleton;
 		} 		
@@ -246,7 +263,7 @@ public class ModuleLoader {
 		}
 		
 		// module has not been previously loaded.
-		PackageInfo pkg = resolvePackage(module.pkg());
+		Package pkg = resolvePackage(module.pkg());
 		// check for error
 		if(pkg == null) {
 			throw new ResolveError("Unable to find package: " + module.pkg());
@@ -265,7 +282,7 @@ public class ModuleLoader {
 		return skeleton;		
 	}
 	
-	private SkeletonInfo loadSkeleton(ModuleID module, PackageInfo pkg) throws ResolveError, IOException {		
+	private Skeleton loadSkeleton(ModuleID module, Package pkg) throws ResolveError, IOException {		
 		String filename = module.fileName();	
 		String jarname = filename.replace(File.separatorChar,'/') + ".class";
 
@@ -281,21 +298,7 @@ public class ModuleLoader {
 				File classFile = new File(location.getPath(),filename + ".class");					
 				File srcFile = new File(location.getPath(),filename + ".whiley");
 
-				if (!closedWorldAssumption
-						&& srcFile.exists()
-						&& (!classFile.exists() || classFile.lastModified() < srcFile
-								.lastModified())) {
-					// Here, there is a source file, and either there is no
-					// class
-					// file, or the class file is older than the source
-					// file.
-					// Therefore, we need to (re)compile the source file.
-					UnresolvedWhileyFile wf = compiler.parse(srcFile);
-					SkeletonInfo si = wf.skeletonInfo();
-					// register fact that we've loaded a module
-					skeletontable.put(module,si);
-					return si;					
-				} else if(classFile.exists()) {															
+				if(classFile.exists()) {															
 					// Here, there is no sourcefile, but there is a
 					// classfile.
 					// So, no need to compile --- just load the class file!
@@ -320,7 +323,7 @@ public class ModuleLoader {
 	 *            where it can be located on the file system.
 	 * @return
 	 */
-	private Module loadModule(ModuleID module, PackageInfo pkg)
+	private Module loadModule(ModuleID module, Package pkg)
 			throws ResolveError, IOException {			
 		String filename = module.fileName();	
 		String jarname = filename.replace(File.separatorChar,'/') + ".class";
@@ -334,20 +337,8 @@ public class ModuleLoader {
 				return readWhileyClass(module, jarname, jf.getInputStream(je));
 			} else {
 				File classFile = new File(location.getPath(),filename + ".class");					
-				File srcFile = new File(location.getPath(),filename + ".whiley");
 				
-				if (!closedWorldAssumption && srcFile.exists()						
-						&& (!classFile.exists() || classFile.lastModified() < srcFile
-								.lastModified())) {
-					// Here, there is a source file, and either there is no class
-					// file, or the class file is older than the source file.
-					// Therefore, we need to (re)compile the source file.
-					UnresolvedWhileyFile wf = compiler.parse(srcFile);
-					// register fact that we've loaded a module
-					// moduletable.put(module,wf);
-					// return wf;
-					break;
-				} else if(classFile.exists()) {															
+				if(classFile.exists()) {															
 					// Here, there is no sourcefile, but there is a classfile.
 					// So, no need to compile --- just load the class file!
 					return readWhileyClass(module, jarname, new FileInputStream(classFile));					
@@ -364,9 +355,9 @@ public class ModuleLoader {
      * @param pkg --- the package to look for
      * @return
      */
-	private PackageInfo resolvePackage(PkgID pkg) throws ResolveError {			
+	private Package resolvePackage(PkgID pkg) throws ResolveError {			
 		// First, check if we have already resolved this package.						
-		PackageInfo pkgInfo = packages.get(pkg);
+		Package pkgInfo = packages.get(pkg);
 		
 		if(pkgInfo != null) {		
 			return pkgInfo;
@@ -432,16 +423,13 @@ public class ModuleLoader {
 		long time = System.currentTimeMillis();
 
 		ClassFileReader r = new ClassFileReader(
-				input,
-				new WhileyType.Reader(),				
-				new WhileyDefine.Reader()
-		);					
+				input);					
 
 		ClassFile cf = r.readClass();
 
 		Module mi = createModule(module,cf);
 		if(mi != null) {
-			compiler.logTimedMessage("Loaded " + filename, System
+			logger.logTimedMessage("Loaded " + filename, System
 					.currentTimeMillis()
 					- time);				
 
@@ -451,7 +439,7 @@ public class ModuleLoader {
 			moduletable.put(module,mi);
 			return mi;
 		} else {
-			compiler.logTimedMessage("Ignored " + filename, System
+			logger.logTimedMessage("Ignored " + filename, System
 					.currentTimeMillis()
 					- time);	
 			return null;
@@ -462,7 +450,7 @@ public class ModuleLoader {
      * This traverses the directory tree, starting from dir, looking for class
      * or java files. There's probably a bug if the directory tree is cyclic!
      */
-	private PackageInfo lookForPackage(String root, PkgID pkg, String filepkg) {		
+	private Package lookForPackage(String root, PkgID pkg, String filepkg) {		
 		if(root.equals("")) {
 			root = ".";
 		}
@@ -498,9 +486,9 @@ public class ModuleLoader {
 	 *            file, or a directory.
 	 */
 	private void addPackageItem(PkgID pkg, String name, File pkgLocation) {
-		PackageInfo items = packages.get(pkg);
+		Package items = packages.get(pkg);
 		if (items == null) {						
-			items = new PackageInfo();			
+			items = new Package();			
 			packages.put(pkg, items);
 		} 
 
@@ -518,7 +506,7 @@ public class ModuleLoader {
 		for(int i=0;i<pkg.size()-1;++i) {
 			PkgID p = pkg.subpkg(0,i);
 			if (packages.get(p) == null) {
-				packages.put(p, new PackageInfo());
+				packages.put(p, new Package());
 			}
 		}
 	}
@@ -567,7 +555,7 @@ public class ModuleLoader {
 		}
 						
 		HashMap<String,Module.TypeDef> types = new HashMap();
-		HashMap<String,Module.Const> constants = new HashMap();
+		HashMap<String,Module.ConstDef> constants = new HashMap();
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
 			if(ba instanceof WhileyDefine) {
@@ -576,7 +564,7 @@ public class ModuleLoader {
 				Expr expr = wd.expr();
 				if(type == null) {
 					// constant definition
-					Module.Const ci = new Module.Const(wd.defName(),(Value) expr);
+					Module.ConstDef ci = new Module.ConstDef(wd.defName(),(Value) expr);
 					constants.put(wd.defName(),ci);
 				} else {
 					// type definition					

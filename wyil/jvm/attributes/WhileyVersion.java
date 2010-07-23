@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.jvm.attributes;
+package wyil.jvm.attributes;
 
 import java.io.IOException;
 import java.io.PrintWriter;
