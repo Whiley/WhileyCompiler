@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.stages;
+package wyil.stages;
 
 import java.util.*;
 
@@ -24,17 +24,13 @@ import wyjc.ast.ResolvedWhileyFile;
 import wyjc.ast.ResolvedWhileyFile.*;
 import wyjc.ast.attrs.*;
 import wyjc.ast.exprs.*;
-import wyjc.ast.exprs.integer.IntNegate;
-import wyjc.ast.exprs.integer.IntVal;
-import wyjc.ast.exprs.list.ListAccess;
-import wyjc.ast.exprs.list.ListVal;
-import wyjc.ast.exprs.logic.Not;
-import wyjc.ast.exprs.real.RealNegate;
-import wyjc.ast.exprs.real.RealVal;
-import wyjc.ast.exprs.set.SetComprehension;
-import wyjc.ast.exprs.set.SetVal;
-import wyjc.ast.exprs.tuple.TupleAccess;
-import wyjc.ast.exprs.tuple.TupleVal;
+import wyjc.ast.exprs.integer.*;
+import wyjc.ast.exprs.list.*;
+import wyjc.ast.exprs.logic.*;
+import wyjc.ast.exprs.process.*;
+import wyjc.ast.exprs.real.*;
+import wyjc.ast.exprs.set.*;
+import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
 import wyjc.util.*;
@@ -59,7 +55,7 @@ import wyjc.util.*;
  * @author djp
  * 
  */
-public class VarDefChecker {
+public class DefiniteAssignmentChecker {
 	public void verify(ResolvedWhileyFile wf) {		
 		for(Decl d : wf.declarations()) {
 			if(d instanceof FunDecl) {
@@ -71,10 +67,14 @@ public class VarDefChecker {
 	public void verify(FunDecl f) {
 		HashSet<String> definitions = new HashSet<String>();
 		
+		if(f.receiver() != null) {
+			definitions.add("this");
+		}
+		
 		for(FunDecl.Parameter p : f.parameters()) {
 			definitions.add(p.name());
 		}
-				
+		
 		if(f.constraint() != null) {
 			if(!(f.returnType().type() == Types.T_VOID)) {
 				definitions.add("$");
@@ -120,6 +120,8 @@ public class VarDefChecker {
 			check((Invoke) statement, definitions);
 		} else if (statement instanceof VarDecl) {
 			check((VarDecl) statement, definitions);
+		} else if (statement instanceof Spawn) {
+			check((Spawn) statement, definitions);
 		} else {
 			syntaxError("Unknown statement encountered: " + statement,
 					statement);
@@ -129,10 +131,18 @@ public class VarDefChecker {
 	protected void check(VarDecl s, HashSet<String> definitions) {		
 		// actually don't do anything here, as currently variable definitions
         // cannot assign variables as well.
+		if(s.initialiser() != null) {
+			check(s.initialiser(),definitions);
+			definitions.add(s.name());
+		}
 	}
 	
 	protected void check(Print s, HashSet<String> definitions) {
 		check(s.expr(),definitions);				
+	}
+	
+	protected void check(Spawn s, HashSet<String> definitions) {
+		check(s.mhs(),definitions);				
 	}
 
 	protected void check(Assign s, HashSet<String> definitions) {
@@ -160,7 +170,7 @@ public class VarDefChecker {
 			// At this point, we need to compute the intersection of definitions
             // coming from the true and false branches.
 			for(String v : trueDefinitions) {
-				if(falseDefinitions.contains(v)) {
+				if(falseDefinitions.contains(v)) {					
 					definitions.add(v);
 				}
 			}			
@@ -176,7 +186,7 @@ public class VarDefChecker {
 	}
 	
 	protected void check(Return s, HashSet<String> definitions) {
-		if(s.expr() != null) {
+		if(s.expr() != null) {			
 			check(s.expr(),definitions);
 		}
 	}
@@ -185,8 +195,10 @@ public class VarDefChecker {
 		check(s.condition(),definitions);
 	}
 	
-	protected void check(Invoke s, HashSet<String> definitions) {
-		
+	protected void check(Invoke s, HashSet<String> definitions) {		
+		if(s.target() != null) {
+			check(s.target(),definitions);
+		}
 		List<Expr> args = s.arguments();
 		for(int i=0;i!=args.size();++i) {
 			Expr arg = args.get(i);
@@ -200,14 +212,16 @@ public class VarDefChecker {
      * @param e
      * @return
      */
-	protected void check(Expr e, HashSet<String> definitions) {				
-		for(Variable v : e.uses()) {
-			if(!definitions.contains(v.name())) {
-				syntaxError("variable " + v.name() + " used before defined",e);
+	protected void check(Expr e, HashSet<String> definitions) {
+		Set<Variable> uses = e.uses();
+
+		for (Variable s : uses) {
+			if (!definitions.contains(s.name())) {
+				syntaxError("variable " + s + " may not be defined", e);
 			}
-		}		
+		}
 	}
-			
+		
 	private static void syntaxError(String msg, SyntacticElement elem) {
 		int start = -1;
 		int end = -1;

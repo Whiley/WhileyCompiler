@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.stages;
+package wyil.stages;
 
 import wyjc.ast.ResolvedWhileyFile;
 import wyjc.ast.ResolvedWhileyFile.*;
