@@ -64,6 +64,9 @@ public abstract class Type {
 		return get(new Tuple(types));
 	}
 	
+	public static Recursive T_RECURSIVE(String name, Type element) {
+		return get(new Recursive(name,element));
+	}
 	public static abstract class NonUnion extends Type {}
 	
 	public static final class Any extends NonUnion {
@@ -123,22 +126,22 @@ public abstract class Type {
 	public static final class Named extends NonUnion {
 		public final ModuleID module;
 		public final String name;
-		public final Type element;
+		public final Type type;
 		private Named(ModuleID mid, String name, Type element) {
 			this.module = mid;
 			this.name = name;
-			this.element = element;
+			this.type = element;
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Named) {
 				Named l = (Named) o;
-				return element.equals(l.element) && module.equals(l.module)
+				return type.equals(l.type) && module.equals(l.module)
 						&& name.equals(l.name); 
 			}
 			return false;
 		}
 		public int hashCode() {
-			return element.hashCode() + module.hashCode() + name.hashCode();
+			return type.hashCode() + module.hashCode() + name.hashCode();
 		}
 	}
 	public static final class List extends NonUnion {
@@ -255,7 +258,30 @@ public abstract class Type {
 			return types.hashCode();
 		}
 	}
-	
+	public static final class Recursive extends NonUnion {
+		public final String name;
+		public final Type type;
+		private Recursive(String name, Type element) {
+			this.name = name;
+			this.type = element;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Recursive) {
+				Recursive l = (Recursive) o;				
+				if(type == null && l.type == null) {
+					return name.equals(l.name);
+				} else if(l.type != null){
+					// FIXME: should do isomorphic test here?
+					return name.equals(l.name) && type.equals(l.type); 
+				}
+				return false;
+			}
+			return false;
+		}
+		public int hashCode() {
+			return type.hashCode();
+		}
+	}
 	private static final ArrayList<Type> types = new ArrayList<Type>();
 	private static final HashMap<Type,Integer> cache = new HashMap<Type,Integer>();
 	
