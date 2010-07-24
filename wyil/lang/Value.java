@@ -7,14 +7,17 @@ import wyil.jvm.rt.BigRational;
 public abstract class Value {	
 	public abstract Type type();
 	
+	public static Bool V_BOOL(boolean value) {
+		return get(new Bool(value));
+	}
+	
 	public static Int V_INT(BigInteger value) {
 		return get(new Int(value));
 	}
 
 	public static Real V_REAL(BigRational value) {
 		return get(new Real(value));
-	}
-
+	}	
 
 	public static Set V_SET(Collection<Value> values) {
 		return get(new Set(values));
@@ -24,6 +27,25 @@ public abstract class Value {
 		return get(new List(values));
 	}
 
+	public static final class Bool extends Value {
+		public final boolean value;
+		private Bool(boolean value) {
+			this.value = value;
+		}
+		public Type type() {
+			return Type.T_BOOL;
+		}
+		public int hashCode() {
+			return value ? 1 : 0;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Bool) {
+				Bool i = (Bool) o;
+				return value == i.value;
+			}
+			return false;
+		}
+	}
 	public static final class Int extends Value {
 		public final BigInteger value;
 		private Int(BigInteger value) {

@@ -2,6 +2,7 @@ package wyjc.lang;
 
 import java.util.*;
 
+import wyil.lang.Type;
 import wyil.lang.ModuleID;
 import wyil.lang.Value;
 
@@ -10,7 +11,7 @@ public interface Expr extends SyntacticElement {
 	public interface LVal {}
 	
 	public static class Variable extends SyntacticElement.Impl implements Expr, LVal {
-		protected final String var;
+		public final String var;
 
 		public Variable(String var, Attribute... attributes) {
 			super(attributes);
@@ -56,6 +57,19 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	public static class TypeConst extends SyntacticElement.Impl implements Expr {
+		public final Type type;
+
+		public TypeConst(Type val, Attribute... attributes) {
+			super(attributes);
+			this.type = val;
+		}
+
+		public TypeConst(Type val, Collection<Attribute> attributes) {
+			super(attributes);
+			this.type = val;
+		}
+	}
 	public enum BOp { 
 		AND,
 		OR,
@@ -73,7 +87,11 @@ public interface Expr extends SyntacticElement {
 		GTEQ,
 		SUBSET,
 		SUBSETEQ,
-		ELEMENTOF
+		ELEMENTOF,
+		LISTACCESS,
+		LISTRANGE,
+		TYPEEQ,
+		TYPEIMPLIES
 	};
 		
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
@@ -101,7 +119,9 @@ public interface Expr extends SyntacticElement {
 	public enum UOp {
 		NOT,
 		NEG,
-		LENGTHOF
+		LENGTHOF,
+		PROCESSACCESS,
+		PROCESSSPAWN
 	}
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
