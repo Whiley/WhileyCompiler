@@ -13,7 +13,7 @@ public class WhileyFile {
 	}
 	
 	public static class ConstDecl extends
-				SyntacticElementImpl implements Decl {
+				SyntacticElement.Impl implements Decl {
 		
 		public final List<Modifier> modifiers;
 		public final Expr value;
@@ -53,7 +53,7 @@ public class WhileyFile {
 		}
 	}
 	
-	public static class TypeDecl extends SyntacticElementImpl implements Decl {
+	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
 		public final List<Modifier> modifiers;
 		public final Type type;		
 		public final String name;
