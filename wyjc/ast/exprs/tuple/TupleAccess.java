@@ -22,11 +22,11 @@ import java.util.*;
 
 import static wyjc.util.SyntaxError.syntaxError;
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.process.ProcessAccess;
 import wyjc.ast.types.*;
+import wyjc.lang.Attribute;
+import wyjc.lang.SyntacticElementImpl;
 import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;

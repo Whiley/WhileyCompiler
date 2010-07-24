@@ -29,6 +29,7 @@ import wyjc.ast.exprs.logic.*;
 import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
 import wyjc.ast.types.unresolved.UserDefType;
+import wyjc.lang.SyntacticElement;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.congruence.*;

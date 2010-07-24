@@ -27,6 +27,8 @@ import wyjc.ast.stmts.Stmt;
 import wyjc.ast.types.FunType;
 import wyjc.ast.types.Type;
 import wyjc.ast.types.Types;
+import wyjc.lang.Attribute;
+import wyjc.lang.SyntacticElementImpl;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;

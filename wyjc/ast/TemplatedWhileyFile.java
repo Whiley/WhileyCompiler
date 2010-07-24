@@ -20,13 +20,14 @@ package wyjc.ast;
 
 import java.util.*;
 
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.attrs.SyntacticElement;
-import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.stmts.Stmt;
 import wyjc.ast.types.*;
 import wyjc.ast.types.unresolved.UnresolvedType;
+import wyjc.lang.Attribute;
+import wyjc.lang.Modifier;
+import wyjc.lang.SyntacticElement;
+import wyjc.lang.SyntacticElementImpl;
 
 public class TemplatedWhileyFile {
 	

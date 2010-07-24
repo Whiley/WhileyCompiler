@@ -24,6 +24,8 @@ import wyjc.ModuleLoader;
 import wyjc.ast.attrs.*;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.*;
+import wyjc.lang.Attribute;
+import wyjc.lang.SyntacticElementImpl;
 import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;

@@ -21,13 +21,13 @@ package wyjc.ast.exprs.set;
 import java.util.*;
 
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.attrs.SourceAttr;
-import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.list.*;
 import wyjc.ast.exprs.logic.*;
 import wyjc.ast.types.*;
+import wyjc.lang.Attribute;
+import wyjc.lang.SourceAttr;
+import wyjc.lang.SyntacticElementImpl;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;

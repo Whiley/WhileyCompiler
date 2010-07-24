@@ -20,8 +20,8 @@ package wyjc.ast.exprs.list;
 
 import java.util.*;
 
-import wyjc.ast.attrs.Attribute;
 import wyjc.ast.exprs.Value;
+import wyjc.lang.Attribute;
 
 public class StringVal extends ListVal {
 	public StringVal(List<Value> values, Attribute... attributes) {

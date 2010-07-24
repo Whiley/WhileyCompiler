@@ -16,10 +16,11 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.ast.attrs;
+package wyjc.lang;
 
 import java.util.*;
 import java.util.concurrent.*;
+
 
 
 public class SyntacticElementImpl  implements SyntacticElement {

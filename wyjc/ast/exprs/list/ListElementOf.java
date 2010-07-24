@@ -26,6 +26,7 @@ import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.logic.*;
 import wyjc.ast.exprs.set.*;
 import wyjc.ast.types.*;
+import wyjc.lang.Attribute;
 import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;

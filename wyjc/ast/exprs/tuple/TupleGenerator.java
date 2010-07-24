@@ -22,11 +22,11 @@ import java.util.*;
 
 import wyjc.ModuleLoader;
 import wyjc.ast.*;
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.TupleType;
 import wyjc.ast.types.Type;
+import wyjc.lang.Attribute;
+import wyjc.lang.SyntacticElementImpl;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;

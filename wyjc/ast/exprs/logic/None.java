@@ -22,12 +22,12 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.set.*;
 import wyjc.ast.exprs.integer.IntVal;
 import wyjc.ast.exprs.list.*;
 import wyjc.ast.types.*;
+import wyjc.lang.Attribute;
 import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;

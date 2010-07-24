@@ -22,6 +22,8 @@ import java.util.*;
 
 import wyjc.ast.attrs.*;
 import wyjc.ast.types.Type;
+import wyjc.lang.Attribute;
+import wyjc.lang.SyntacticElementImpl;
 
 public abstract class UnOp<T extends Expr> extends SyntacticElementImpl implements Expr {
 	protected final T expr;

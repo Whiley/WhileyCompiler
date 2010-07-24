@@ -22,6 +22,7 @@ import java.util.*;
 
 import wyjc.ast.*;
 import wyjc.ast.attrs.*;
+import wyjc.lang.Attribute;
 import wyil.lang.ModuleID;
 import wyone.core.*;
 import wyone.theory.logic.*;

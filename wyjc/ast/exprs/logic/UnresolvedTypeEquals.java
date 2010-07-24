@@ -26,12 +26,12 @@ import java.util.Map;
 import java.util.Set;
 
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.tuple.TupleAccess;
 import wyjc.ast.types.*;
 import wyjc.ast.types.unresolved.UnresolvedType;
+import wyjc.lang.Attribute;
+import wyjc.lang.SyntacticElementImpl;
 import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;

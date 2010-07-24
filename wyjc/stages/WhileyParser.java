@@ -37,6 +37,8 @@ import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
 import wyjc.ast.types.unresolved.*;
 import wyjc.jvm.rt.BigRational;
+import wyjc.lang.Modifier;
+import wyjc.lang.SourceAttr;
 import wyjc.util.*;
 import wyjvm.lang.Bytecode;
 

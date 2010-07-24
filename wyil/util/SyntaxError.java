@@ -18,8 +18,8 @@
 
 package wyil.util;
 
-import wyjc.ast.attrs.SourceAttr;
-import wyjc.ast.attrs.SyntacticElement;
+import wyjc.lang.SourceAttr;
+import wyjc.lang.SyntacticElement;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser. 

@@ -21,13 +21,13 @@ package wyil.stages;
 import java.io.PrintWriter;
 import java.util.List;
 
-import wyjc.ast.Modifier;
 import wyjc.ast.ResolvedWhileyFile;
 import wyjc.ast.ResolvedWhileyFile.*;
 import wyjc.ast.attrs.*;
 import wyjc.ast.exprs.*;
 import wyjc.ast.stmts.*;
 import wyjc.ast.types.Type;
+import wyjc.lang.Modifier;
 import wyjc.util.Pair;
 
 public class CodeWriter {

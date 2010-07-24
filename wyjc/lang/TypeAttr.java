@@ -16,12 +16,18 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.ast;
+package wyjc.lang;
 
-public interface Modifier {
-	public static final Modifier PUBLIC = new Public();	
+import wyjc.ast.types.*;
+
+public class TypeAttr implements Attribute {
+	private final Type type;
 	
-	public static class Public implements Modifier {
-		public String toString() { return "public"; }
+	public TypeAttr(Type type) {
+		this.type = type;	
+	}
+	
+	public Type type() {
+		return type;
 	}	
 }

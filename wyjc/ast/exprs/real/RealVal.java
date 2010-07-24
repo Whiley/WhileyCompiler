@@ -23,11 +23,11 @@ import java.util.*;
 
 import wyjc.ModuleLoader;
 import wyjc.ast.*;
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.*;
 import wyjc.jvm.rt.BigRational;
+import wyjc.lang.Attribute;
+import wyjc.lang.SyntacticElementImpl;
 import wyjc.util.Pair;
 import wyjc.util.ResolveError;
 import wyjc.util.Triple;

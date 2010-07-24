@@ -16,7 +16,8 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.ast.attrs;
+package wyjc.lang;
+
 
 
 /**

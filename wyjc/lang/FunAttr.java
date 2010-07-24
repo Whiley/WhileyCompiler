@@ -16,18 +16,18 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.ast.attrs;
+package wyjc.lang;
 
-import wyjc.ast.types.*;
+import wyjc.ast.types.FunType;
 
-public class TypeAttr implements Attribute {
-	private final Type type;
+public class FunAttr implements Attribute {
+	private final FunType type;
 	
-	public TypeAttr(Type type) {
+	public FunAttr(FunType type) {
 		this.type = type;	
 	}
 	
-	public Type type() {
+	public FunType type() {
 		return type;
 	}	
 }

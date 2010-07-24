@@ -33,6 +33,8 @@ import wyjc.ast.exprs.set.*;
 import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
+import wyjc.lang.SourceAttr;
+import wyjc.lang.SyntacticElement;
 import wyjc.util.*;
 
 /**

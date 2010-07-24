@@ -22,9 +22,9 @@ import java.util.*;
 import java.math.BigInteger;
 
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.*;
+import wyjc.lang.Attribute;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;

@@ -35,6 +35,9 @@ import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
 import wyjc.jvm.rt.BigRational;
+import wyjc.lang.SourceAttr;
+import wyjc.lang.SyntacticElement;
+import wyjc.lang.TypeAttr;
 import wyjc.util.*;
 import static wyjc.util.SyntaxError.*;
 

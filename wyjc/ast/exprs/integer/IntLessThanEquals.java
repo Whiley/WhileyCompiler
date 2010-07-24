@@ -21,10 +21,10 @@ package wyjc.ast.exprs.integer;
 import java.util.*;
 
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
 import wyjc.ast.exprs.*;
 import wyjc.ast.exprs.logic.BoolVal;
 import wyjc.ast.types.Type;
+import wyjc.lang.Attribute;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;

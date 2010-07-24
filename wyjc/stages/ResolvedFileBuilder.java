@@ -22,9 +22,9 @@ import java.util.*;
 
 import wyjc.ast.ResolvedWhileyFile;
 import wyjc.ast.UnresolvedWhileyFile;
-import wyjc.ast.attrs.TypeAttr;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.*;
+import wyjc.lang.TypeAttr;
 
 public class ResolvedFileBuilder {
 

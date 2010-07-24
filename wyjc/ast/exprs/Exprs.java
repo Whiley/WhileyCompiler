@@ -2,7 +2,6 @@ package wyjc.ast.exprs;
 
 import java.util.*;
 import static wyjc.util.SyntaxError.syntaxError;
-import wyjc.ast.attrs.SourceAttr;
 import wyjc.ast.exprs.integer.*;
 import wyjc.ast.exprs.list.*;
 import wyjc.ast.exprs.logic.*;
@@ -10,6 +9,7 @@ import wyjc.ast.exprs.process.*;
 import wyjc.ast.exprs.real.*;
 import wyjc.ast.exprs.set.*;
 import wyjc.ast.exprs.tuple.*;
+import wyjc.lang.SourceAttr;
 
 public class Exprs {
 

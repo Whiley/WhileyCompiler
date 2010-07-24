@@ -3,8 +3,6 @@ package wyjc.lang;
 import java.util.*;
 
 import wyil.lang.Type;
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.attrs.SyntacticElementImpl;
 import wyjvm.lang.Bytecode;
 
 public interface Stmt {

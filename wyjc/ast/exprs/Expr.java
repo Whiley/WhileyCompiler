@@ -21,8 +21,8 @@ package wyjc.ast.exprs;
 import java.util.*;
 
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.SyntacticElement;
 import wyjc.ast.types.Type;
+import wyjc.lang.SyntacticElement;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;

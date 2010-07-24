@@ -16,18 +16,12 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.ast.attrs;
+package wyjc.lang;
 
-import wyjc.ast.types.FunType;
-
-public class FunAttr implements Attribute {
-	private final FunType type;
+public interface Modifier {
+	public static final Modifier PUBLIC = new Public();	
 	
-	public FunAttr(FunType type) {
-		this.type = type;	
-	}
-	
-	public FunType type() {
-		return type;
+	public static class Public implements Modifier {
+		public String toString() { return "public"; }
 	}	
 }

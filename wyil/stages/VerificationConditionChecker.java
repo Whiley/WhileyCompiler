@@ -22,6 +22,8 @@ import wyjc.ast.ResolvedWhileyFile;
 import wyjc.ast.ResolvedWhileyFile.*;
 import wyjc.ast.attrs.*;
 import wyjc.ast.stmts.*;
+import wyjc.lang.SourceAttr;
+import wyjc.lang.SyntacticElement;
 import wyjc.util.*;
 import wyone.core.*;
 

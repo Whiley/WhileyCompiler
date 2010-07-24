@@ -34,6 +34,8 @@ import wyjc.ast.exprs.set.*;
 import wyjc.ast.exprs.tuple.*;
 import wyjc.ast.stmts.*;
 import wyjc.ast.types.*;
+import wyjc.lang.Attribute;
+import wyjc.lang.SourceAttr;
 import wyjc.util.*;
 import static wyjc.util.SyntaxError.*;
 

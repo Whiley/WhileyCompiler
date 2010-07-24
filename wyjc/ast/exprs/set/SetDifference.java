@@ -22,12 +22,12 @@ package wyjc.ast.exprs.set;
 import java.util.*;
 
 import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
 import wyjc.ast.exprs.*;
 import wyjc.ast.types.AnyType;
 import wyjc.ast.types.SetType;
 import wyjc.ast.types.Type;
 import wyjc.ast.types.Types;
+import wyjc.lang.Attribute;
 import wyjc.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
