@@ -7,7 +7,7 @@ import wyjvm.lang.Bytecode;
 
 public interface Stmt {
 	
-	public static final class VarDecl extends SyntacticElementImpl implements
+	public static final class VarDecl extends SyntacticElement.Impl implements
 			Stmt {
 		public final Type type;
 		public final String name;
@@ -30,7 +30,7 @@ public interface Stmt {
 		}
 	}
 	
-	public static final class Assign extends SyntacticElementImpl implements Stmt {
+	public static final class Assign extends SyntacticElement.Impl implements Stmt {
 		public final Expr lhs;
 		public final Expr rhs;
 
@@ -51,7 +51,7 @@ public interface Stmt {
 		}
 	}
 	
-	public static final class Assert extends SyntacticElementImpl implements Stmt {
+	public static final class Assert extends SyntacticElement.Impl implements Stmt {
 		public final Expr expr;		
 
 		public Assert(Expr expr, Attribute... attributes) {
@@ -69,7 +69,7 @@ public interface Stmt {
 		}
 	}
 	
-	public static final class Return extends SyntacticElementImpl implements Stmt {
+	public static final class Return extends SyntacticElement.Impl implements Stmt {
 		public final Expr expr;		
 
 		public Return(Expr expr, Attribute... attributes) {
@@ -91,7 +91,7 @@ public interface Stmt {
 		}
 	}
 	
-	public static final class IfElse extends SyntacticElementImpl implements Stmt {
+	public static final class IfElse extends SyntacticElement.Impl implements Stmt {
 		public final Expr condition;
 		public final ArrayList<Stmt> trueBranch;
 		public final ArrayList<Stmt> falseBranch;
@@ -113,7 +113,7 @@ public interface Stmt {
 		}
 	}
 	
-	public static class Skip extends SyntacticElementImpl implements Stmt {
+	public static class Skip extends SyntacticElement.Impl implements Stmt {
 		public Skip(Attribute... attributes) {
 			super(attributes);
 		}

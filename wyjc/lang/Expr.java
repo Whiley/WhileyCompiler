@@ -7,7 +7,7 @@ import wyjc.ast.attrs.*;
 
 public interface Expr {
 			
-	public static class Variable extends SyntacticElementImpl implements Expr {
+	public static class Variable extends SyntacticElement.Impl implements Expr {
 		protected final String var;
 
 		public Variable(String var, Attribute... attributes) {
@@ -60,7 +60,7 @@ public interface Expr {
 		ELEMENTOF
 	};
 		
-	public static class BinOp extends SyntacticElementImpl implements Expr {
+	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public final BOp op;
 		public final Expr lhs;
 		public final Expr rhs;
@@ -88,7 +88,7 @@ public interface Expr {
 		LENGTHOF
 	}
 	
-	public static class UnOp extends SyntacticElementImpl implements Expr {
+	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
 		public final Expr mhs;		
 		
@@ -106,7 +106,7 @@ public interface Expr {
 		}
 	}
 	
-	public static class Invoke extends SyntacticElementImpl implements Expr {
+	public static class Invoke extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final List<Expr> arguments;
 		
