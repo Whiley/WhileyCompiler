@@ -120,8 +120,7 @@ public interface Expr extends SyntacticElement {
 		NOT,
 		NEG,
 		LENGTHOF,
-		PROCESSACCESS,
-		PROCESSSPAWN
+		PROCESSACCESS		
 	}
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
@@ -142,6 +141,46 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public static class NaryOp extends SyntacticElement.Impl implements Expr {
+		public final NOp nop;
+		public final ArrayList<Expr> arguments;
+		public NaryOp(NOp nop, List<Expr> arguments, Attribute... attributes) {
+			super(attributes);
+			this.nop = nop;
+			this.arguments = new ArrayList<Expr>(arguments);
+		}
+		public NaryOp(NOp nop, List<Expr> arguments, Collection<Attribute> attributes) {
+			super(attributes);
+			this.nop = nop;
+			this.arguments = new ArrayList<Expr>(arguments);
+		}
+	}
+	
+	public enum NOp {
+		LISTGENERATOR,
+		SETGENERATOR,
+		
+	}
+	
+	public static class TupleAccess extends SyntacticElement.Impl implements
+			Expr {
+		public final Expr lhs;
+		public final String name;
+
+		public TupleAccess(Expr lhs, String name, Attribute... attributes) {
+			super(attributes);
+			this.lhs = lhs;
+			this.name = name;
+		}
+
+		public TupleAccess(Expr lhs, String name,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.lhs = lhs;
+			this.name = name;
+		}
+	}		
+	
 	public static class Invoke extends SyntacticElement.Impl implements Expr,Stmt {
 		public final String name;
 		public final Expr receiver;
@@ -161,6 +200,21 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 			this.receiver = receiver;
 			this.arguments = arguments;
+		}
+	}
+	
+	public static class Spawn extends SyntacticElement.Impl implements Expr,Stmt {		
+		public final Expr mhs;		
+		
+		public Spawn(Expr mhs, Attribute... attributes) {
+			super(attributes);			
+			this.mhs = mhs;			
+		}
+
+		public Spawn(Expr mhs,
+				Collection<Attribute> attributes) {
+			super(attributes);			
+			this.mhs = mhs;			
 		}
 	}
 }

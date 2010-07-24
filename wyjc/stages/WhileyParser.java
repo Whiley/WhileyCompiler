@@ -303,12 +303,13 @@ public class WhileyParser {
 	 */
 	private Pair<Type, Expr> mungeConstrainedTypes(Type t,
 			Expr constraint) {
+		
 		// for the moment, it's really a hack.
 		if(t instanceof Type.Tuple) {
 			Type.Tuple tt = (Type.Tuple) t;
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			for (Map.Entry<String, Type> e : tt.types().entrySet()) {
-				binding.put(e.getKey(), new TupleAccess(new Variable("$"), e
+			for (Map.Entry<String, Type> e : tt.types.entrySet()) {
+				binding.put(e.getKey(), new parseConditionExpression(new Expr.Variable("$"), e
 						.getKey()));
 			}
 			constraint = constraint.substitute(binding);
@@ -621,12 +622,7 @@ public class WhileyParser {
 	private Expr parseTypeEquals(Expr lhs, int start) {
 		match(WhileyLexer.TypeEquals.class);			
 		Type type = parseType();
-		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));
-		
-		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {						
-			match(LogicalAnd.class);
-			rhs = parseConditionExpression();						
-		}				
+		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));				
 		
 		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
 				index - 1));
@@ -720,12 +716,12 @@ public class WhileyParser {
 				} else {					
 					lhs = new Expr.UnOp(Expr.UOp.PROCESSACCESS, lhs,
 							sourceAttr(start, index - 1));
-					lhs = new TupleAccess(lhs, name, sourceAttr(start,index - 1));			
+					lhs = new Expr.TupleAccess(lhs, name, sourceAttr(start,index - 1));			
 				}
 			} else {				
 				match(Dot.class);
 				String name = matchIdentifier().text;				
-				lhs =  new TupleAccess( lhs, name, sourceAttr(start,index - 1));
+				lhs =  new Expr.TupleAccess(lhs, name, sourceAttr(start,index - 1));
 			}
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
@@ -852,12 +848,11 @@ public class WhileyParser {
 		return null;		
 	}
 	
-	private Expr.UnOp parseSpawn() {
+	private Expr.Spawn parseSpawn() {
 		int start = index;
 		matchKeyword("spawn");
 		Expr state = parseMulDivExpression();
-		return new Expr.UnOp(Expr.UOp.PROCESSSPAWN, state, sourceAttr(start,
-				index - 1));
+		return new Expr.Spawn(state, sourceAttr(start,index - 1));
 	}
 	
 	private Expr parseListVal() {
@@ -960,14 +955,15 @@ public class WhileyParser {
 			Expr value = exprs.get(0);
 			List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
 			HashSet<String> vars = new HashSet<String>();
-			Condition condition = null;			
+			Expr condition = null;			
 			
 			for(int i=1;i!=exprs.size();++i) {
 				Expr v = exprs.get(i);
-				if(v instanceof SetElementOf) {
-					SetElementOf eof = (SetElementOf) v;
-					if(eof.lhs() instanceof Variable) {
-						String var = ((Variable) eof.lhs()).name();
+				if(v instanceof Expr.BinOp) {
+					Expr.BinOp eof = (Expr.BinOp) v;					
+					if (eof.op == Expr.BOp.ELEMENTOF
+							&& eof.lhs instanceof Expr.Variable) {
+						String var = ((Expr.Variable) eof.lhs).var;
 						if (vars.contains(var)) {
 							syntaxError(
 									"variable "
@@ -976,15 +972,11 @@ public class WhileyParser {
 									v);
 						}
 						vars.add(var);
-						srcs.add(new Pair<String,Expr>(var,  eof.rhs()));
+						srcs.add(new Pair<String,Expr>(var,  eof.rhs));
 						continue;
-					}
-				} else if(v instanceof Condition) {	
-					if(condition != null) {
-						condition = new And(condition,(Condition)v, v.attributes());
-					} else {
-						condition = (Condition)v;
-					}
+					} 					
+				} else if((i+1) == exprs.size()) {
+					condition = v;					
 				} else {
 					syntaxError("condition expected",v);
 				}
