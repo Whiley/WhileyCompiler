@@ -18,6 +18,8 @@
 
 package wyjc.lang;
 
+import wyil.lang.Type;
+
 /**
  * An attribute is simply a piece of information that we may wish to
  * attached to a syntactic element,
@@ -26,5 +28,36 @@ package wyjc.lang;
  * 
  */
 public interface Attribute {
+
+	public static final class Fun implements Attribute {
+		public final Type.Fun type;
+		
+		public Fun(Type.Fun type) {
+			this.type = type;	
+		}		
+	}
+
+	public static final class TypeDef implements Attribute {
+		public final Type type;
+		
+		public TypeDef(Type type) {
+			this.type = type;	
+		}		
+	}
 	
+	public static class Source implements Attribute {
+		public final String filename;
+		public final int start;	
+		public final int end;	
+
+		public Source(String filename, int start, int end) {
+			this.filename = filename;
+			this.start = start;
+			this.end = end;		
+		}
+		
+		public String toString() {
+			return filename + ":" + start + ":" + end;
+		}
+	}
 }
