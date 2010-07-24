@@ -20,13 +20,9 @@ package wyjc.ast.exprs;
 
 import java.util.*;
 
-import wyjc.ModuleLoader;
-import wyjc.ast.attrs.Attribute;
-import wyjc.ast.types.*;
-import wyjc.util.ModuleID;
-import wyjc.util.Pair;
-import wyjc.util.ResolveError;
-import wyjc.util.Triple;
+import wyjc.ast.*;
+import wyjc.ast.attrs.*;
+import wyil.lang.ModuleID;
 import wyone.core.*;
 import wyone.theory.logic.*;
 
@@ -50,37 +46,6 @@ public class Constant extends Variable {
 		return mid;
 	}
 	
-	public Type type(Map<String,Type> environment) {
-		// FIXME: well, could do better but this should be OK!
-		return Types.T_ANY;
-	}
-	
-	public Expr substitute(Map<String,Expr> binding) {
-		Expr e = binding.get(var);
-		if(e != null) {
-			return (Expr) e; 
-		} else {
-			return this;
-		}
-	}
-	
-	public Pair<WExpr,WFormula> convert(
-			Map<String, Type> environment, ModuleLoader loader)
-			throws ResolveError {
-		return new Pair<WExpr, WFormula>(
-				new wyone.core.WVariable(var), WBool.TRUE);
-	}
-	
-	public List<Expr> flattern() {
-		ArrayList<Expr> r = new ArrayList<Expr>();
-		r.add(this);
-		return r;
-	}
-	
-	public Expr reduce(Map<String, Type> environment) {
-		return this;
-	}
-
 	public boolean equals(Object o) {
 		if(o instanceof Constant) {
 			Constant c = (Constant) o;
