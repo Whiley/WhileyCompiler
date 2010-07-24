@@ -18,27 +18,12 @@
 
 package wyjc.stages;
 
-import static wyjc.util.SyntaxError.*;
+import static wyil.util.SyntaxError.*;
 
 import java.util.*;
 
-import wyjc.ModuleLoader;
-import wyjc.ast.ModuleInfo;
-import wyjc.ast.UnresolvedWhileyFile;
-import wyjc.ast.UnresolvedWhileyFile.*;
-import wyjc.ast.attrs.*;
-import wyjc.ast.exprs.*;
-import wyjc.ast.exprs.integer.*;
-import wyjc.ast.exprs.list.*;
-import wyjc.ast.exprs.logic.*;
-import wyjc.ast.exprs.process.*;
-import wyjc.ast.exprs.real.*;
-import wyjc.ast.exprs.set.*;
-import wyjc.ast.exprs.tuple.*;
-import wyjc.ast.stmts.*;
-import wyjc.ast.types.*;
-import wyjc.ast.types.unresolved.*;
-import wyjc.util.*;
+import wyil.ModuleLoader;
+import wyil.lang.*;
 
 public class TypeResolution {	
 	private ModuleLoader loader;

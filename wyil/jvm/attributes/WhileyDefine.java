@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-import wyjc.ast.exprs.Expr;
 import wyil.lang.*;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
