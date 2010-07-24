@@ -19,7 +19,7 @@ package wyjvm.lang;
 
 import java.util.*;
 
-import wyjc.util.Pair;
+import wyil.util.Pair;
 
 /**
  * Represents types used in Java programs (e.g. int, String, Object[], etc).

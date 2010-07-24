@@ -20,7 +20,7 @@ package wyjvm.io;
 import java.io.*;
 import java.util.*;
 
-import wyjc.util.*;
+import wyil.util.*;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;
 

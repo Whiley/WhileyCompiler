@@ -20,7 +20,7 @@ package wyjvm.lang;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
-import wyjc.util.Pair;
+import wyil.util.Pair;
 
 public abstract class Bytecode {
 	

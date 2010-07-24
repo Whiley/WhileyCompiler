@@ -309,8 +309,8 @@ public class WhileyParser {
 			Type.Tuple tt = (Type.Tuple) t;
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
 			for (Map.Entry<String, Type> e : tt.types.entrySet()) {
-				binding.put(e.getKey(), new parseConditionExpression(new Expr.Variable("$"), e
-						.getKey()));
+				binding.put(e.getKey(), new Expr.TupleAccess(new Expr.Variable(
+						"$"), e.getKey()));
 			}
 			constraint = constraint.substitute(binding);
 		} 

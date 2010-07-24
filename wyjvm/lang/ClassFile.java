@@ -19,7 +19,7 @@ package wyjvm.lang;
 
 import java.util.*;
 
-import wyjc.util.Pair;
+import wyil.util.Pair;
 import wyjvm.attributes.*;
 
 public class ClassFile {

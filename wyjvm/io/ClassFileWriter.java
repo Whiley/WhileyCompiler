@@ -20,7 +20,7 @@ package wyjvm.io;
 import java.io.*;
 import java.util.*;
 
-import wyjc.util.Pair;
+import wyil.util.Pair;
 import wyjvm.lang.*;
 
 public class ClassFileWriter {

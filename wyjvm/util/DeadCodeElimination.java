@@ -19,7 +19,7 @@ package wyjvm.util;
 
 import java.util.*;
 
-import wyjc.util.Pair;
+import wyil.util.Pair;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;
 
