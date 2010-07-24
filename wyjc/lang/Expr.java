@@ -2,9 +2,8 @@ package wyjc.lang;
 
 import java.util.*;
 
-import wyil.lang.Type;
-import wyil.lang.ModuleID;
-import wyil.lang.Value;
+import wyil.lang.*;
+import wyil.util.Pair;
 
 public interface Expr extends SyntacticElement {
 	
@@ -144,12 +143,20 @@ public interface Expr extends SyntacticElement {
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {
 		public final NOp nop;
 		public final ArrayList<Expr> arguments;
-		public NaryOp(NOp nop, List<Expr> arguments, Attribute... attributes) {
+		public NaryOp(NOp nop, Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.nop = nop;
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
-		public NaryOp(NOp nop, List<Expr> arguments, Collection<Attribute> attributes) {
+		public NaryOp(NOp nop, Attribute attribute, Expr... arguments) {
+			super(attribute);
+			this.nop = nop;
+			this.arguments = new ArrayList<Expr>();
+			for(Expr a : arguments) {
+				this.arguments.add(a);
+			}
+		}
+		public NaryOp(NOp nop, Collection<Expr> arguments, Collection<Attribute> attributes) {
 			super(attributes);
 			this.nop = nop;
 			this.arguments = new ArrayList<Expr>(arguments);
@@ -157,9 +164,43 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public enum NOp {
-		LISTGENERATOR,
-		SETGENERATOR,
+		SETGEN,
+		LISTGEN,
+		SUBLIST					
+	}
+	
+	public static class Comprehension extends SyntacticElement.Impl implements Expr {
+		public final COp cop;
+		public final Expr value;
+		public final ArrayList<Pair<String,Expr>> sources;
+		public final Expr condition;
 		
+		public Comprehension(COp cop, Expr value,
+				Collection<Pair<String, Expr>> sources, Expr condition,
+				Attribute... attributes) {
+			super(attributes);
+			this.cop = cop;
+			this.value = value;
+			this.condition = condition;
+			this.sources = new ArrayList<Pair<String, Expr>>(sources);
+		}
+
+		public Comprehension(COp cop, Expr value,
+				Collection<Pair<String, Expr>> sources, Expr condition,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.cop = cop;
+			this.value = value;
+			this.condition = condition;
+			this.sources = new ArrayList<Pair<String,Expr>>(sources);
+		}		
+	}
+	
+	public enum COp {
+		SETCOMP,
+		LISTCOMP,
+		NONE, // implies value == null					
+		SOME, // implies value == null
 	}
 	
 	public static class TupleAccess extends SyntacticElement.Impl implements
@@ -180,6 +221,20 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 		}
 	}		
+
+	public static class TupleGen extends SyntacticElement.Impl implements Expr {
+		public final HashMap<String,Expr> fields;		
+		
+		public TupleGen(Map<String, Expr> fields, Attribute... attributes) {
+			super(attributes);
+			this.fields = new HashMap<String, Expr>(fields);
+		}
+		
+		public TupleGen(Map<String, Expr> fields, Collection<Attribute> attributes) {
+			super(attributes);
+			this.fields = new HashMap<String, Expr>(fields);
+		}			
+	}
 	
 	public static class Invoke extends SyntacticElement.Impl implements Expr,Stmt {
 		public final String name;

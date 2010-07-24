@@ -565,14 +565,16 @@ public class WhileyParser {
 		if (index < tokens.size()
 				&& tokens.get(index) instanceof WhileyLexer.None) {
 			match(WhileyLexer.None.class);
-			SetComprehension sc = parseQuantifierSet();
-			return new wyjc.ast.exprs.logic.None(sc, sourceAttr(start,index-1));
+			Expr.Comprehension sc = parseQuantifierSet();
+			return new Expr.Comprehension(Expr.COp.NONE, null, sc.sources,
+					sc.condition, sourceAttr(start, index - 1));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof WhileyLexer.Some) {
 			match(WhileyLexer.Some.class);
-			SetComprehension sc = parseQuantifierSet();			
-			return new wyjc.ast.exprs.logic.Some(sc, sourceAttr(start,index-1));
-		} 
+			Expr.Comprehension sc = parseQuantifierSet();			
+			return new Expr.Comprehension(Expr.COp.SOME, null, sc.sources,
+					sc.condition, sourceAttr(start, index - 1));			
+		} // should do FOR here;  could also do lone and one
 		
 		Expr lhs = parseMulDivExpression();
 		
@@ -697,7 +699,8 @@ public class WhileyParser {
 					match(Colon.class);
 					Expr end = parseMulDivExpression();
 					match(RightSquare.class);
-					lhs =  new ListSublist( lhs,  rhs, end, sourceAttr(start,index - 1));
+					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
+							start, index - 1), lhs, rhs, end);
 				} else {
 					match(RightSquare.class);							
 					lhs = new Expr.BinOp(Expr.BOp.LISTACCESS, lhs, rhs,
@@ -792,7 +795,7 @@ public class WhileyParser {
 				} 
 				match(RightBrace.class);
 
-				return new TupleGenerator(exprs,sourceAttr(start, index - 1));
+				return new Expr.TupleGen(exprs,sourceAttr(start, index - 1));
 			} 
 		} else if(token instanceof Star) {
 			// this indicates a process dereference
@@ -872,10 +875,11 @@ public class WhileyParser {
 			token = tokens.get(index);
 		}
 		match(RightSquare.class);
-		return new ListGenerator(exprs, sourceAttr(start, index - 1));
+		return new Expr.NaryOp(Expr.NOp.LISTGEN, exprs, sourceAttr(start,
+				index - 1));
 	}
 	
-	private SetComprehension parseQuantifierSet() {
+	private Expr.Comprehension parseQuantifierSet() {
 		int start = index;		
 		match(LeftCurly.class);			
 		Token token = tokens.get(index);			
@@ -907,12 +911,8 @@ public class WhileyParser {
 		match(Bar.class);
 		Expr condition = parseConditionExpression();
 		match(RightCurly.class);
-		Expr value = new Expr.Constant(Value.V_INT(BigInteger.valueOf(0))); // this
-																			// is
-																			// a
-																			// dummy				
-		return new SetComprehension(value, srcs, condition, sourceAttr(
-				start, index - 1));
+		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
+				sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseSetVal() {
@@ -981,10 +981,11 @@ public class WhileyParser {
 					syntaxError("condition expected",v);
 				}
 			}
-			return new SetComprehension(value, srcs, condition, sourceAttr(
-					start, index - 1));
+			return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs,
+					condition, sourceAttr(start, index - 1));
 		} else {	
-			return new SetGenerator(exprs,sourceAttr(start, index - 1));
+			return new Expr.NaryOp(Expr.NOp.SETGEN, exprs, sourceAttr(
+					start, index - 1));
 		}
 	}
 	
