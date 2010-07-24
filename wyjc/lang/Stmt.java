@@ -31,16 +31,16 @@ public interface Stmt {
 	}
 	
 	public static final class Assign extends SyntacticElement.Impl implements Stmt {
-		public final Expr lhs;
+		public final Expr.LVal lhs;
 		public final Expr rhs;
 
-		public Assign(Expr lhs, Expr rhs, Attribute... attributes) {
+		public Assign(Expr.LVal lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 
-		public Assign(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+		public Assign(Expr.LVal lhs, Expr rhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.rhs = rhs;

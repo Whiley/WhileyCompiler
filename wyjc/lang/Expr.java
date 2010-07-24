@@ -6,8 +6,10 @@ import wyil.lang.ModuleID;
 import wyil.lang.Value;
 
 public interface Expr extends SyntacticElement {
-			
-	public static class Variable extends SyntacticElement.Impl implements Expr {
+	
+	public interface LVal {}
+	
+	public static class Variable extends SyntacticElement.Impl implements Expr, LVal {
 		protected final String var;
 
 		public Variable(String var, Attribute... attributes) {
@@ -120,21 +122,24 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class Invoke extends SyntacticElement.Impl implements Expr {
+	public static class Invoke extends SyntacticElement.Impl implements Expr,Stmt {
 		public final String name;
+		public final Expr receiver;
 		public final List<Expr> arguments;
 		
-		public Invoke(String name, List<Expr> arguments,
+		public Invoke(String name, Expr receiver, List<Expr> arguments,
 				Attribute... attributes) {
 			super(attributes);
 			this.name = name;
+			this.receiver = receiver;
 			this.arguments = arguments;
 		}
 		
-		public Invoke(String name, List<Expr> arguments,
+		public Invoke(String name, Expr receiver, List<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
+			this.receiver = receiver;
 			this.arguments = arguments;
 		}
 	}

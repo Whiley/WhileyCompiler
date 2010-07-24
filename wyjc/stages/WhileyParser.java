@@ -201,7 +201,7 @@ public class WhileyParser {
 			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type				
 				matchKeyword("where");
-				constraint = parseRealCondition();
+				constraint = parseConditionExpression();
 				Pair<Type,Expr> munged = mungeConstrainedTypes(t,constraint);				
 				t = munged.first();
 				constraint = munged.second();				
@@ -317,12 +317,12 @@ public class WhileyParser {
 		return new Pair(t,constraint);
 	}
 	
-	private Condition parseWhere() {
+	private Expr parseWhere() {
 		checkNotEof();		
 		if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 			// this is a constrained type				
 			matchKeyword("where");
-			return parseRealCondition();			
+			return parseConditionExpression();			
 		} else {
 			return null;
 		}
@@ -355,13 +355,13 @@ public class WhileyParser {
 		} else {
 			int start = index;
 			Expr t = parseIndexTerm();
-			if (t instanceof Variable && (index < tokens.size()
+			if (t instanceof Expr.Variable && (index < tokens.size()
 					&& !(tokens.get(index) instanceof Equals))) {
 				index = start;
 				return parseVarDecl();
-			} else if(t instanceof Invoke) {
+			} else if(t instanceof Expr.Invoke) {
 				matchEndLine();
-				return (Invoke) t;
+				return (Expr.Invoke) t;
 			} else {
 				index = start;
 				return parseAssign();
@@ -369,7 +369,7 @@ public class WhileyParser {
 		}
 	}		
 	
-	private Invoke parseInvokeStmt() {				
+	private Expr.Invoke parseInvokeStmt() {				
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
@@ -390,34 +390,34 @@ public class WhileyParser {
 		matchEndLine();				
 		
 		// no receiver is possible in this case.
-		return new Invoke(name.text, null, args, sourceAttr(start,index-1));
+		return new Expr.Invoke(name.text, null, args, sourceAttr(start,index-1));
 	}
 	
-	private Stmt parseReturn() {		
-		int start = index; 
-		matchKeyword("return");		
+	private Stmt parseReturn() {
+		int start = index;
+		matchKeyword("return");
 		Expr e = null;
 		if (index < tokens.size()
 				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof Comment)) {
 			e = parseCondition();
-		} 		
+		}
 		matchEndLine();
-		return new Return(e, sourceAttr(start,index-1));
+		return new Stmt.Return(e, sourceAttr(start, index - 1));
 	}
 	
 	private Stmt parseAssert() {
 		int start = index;
 		matchKeyword("assert");				
 		checkNotEof();
-		Condition e = parseRealCondition();
+		Expr e = parseConditionExpression();
 		matchEndLine();		
-		return new Assertion(e, sourceAttr(start,index-1));
+		return new Stmt.Assert(e, sourceAttr(start,index-1));
 	}
 	
 	private Stmt parseSkip() {
 		int start = index;
 		matchEndLine();		
-		return new Skip(sourceAttr(start,index-1));
+		return new Stmt.Skip(sourceAttr(start,index-1));
 	}
 	
 	private Stmt parsePrint() {		
@@ -426,13 +426,13 @@ public class WhileyParser {
 		checkNotEof();
 		Expr e = parseMulDivExpression();
 		matchEndLine();		
-		return new Print(e, sourceAttr(start,index-1));
+		return new Stmt.Debug(e, sourceAttr(start,index-1));
 	}
 	
 	private Stmt parseIf(int indent) {
 		int start = index;
 		matchKeyword("if");						
-		Condition c = parseRealCondition();								
+		Expr c = parseConditionExpression();								
 		match(Colon.class);
 		matchEndLine();
 		List<Stmt> tblk = parseBlock(indent+1);				
@@ -456,7 +456,7 @@ public class WhileyParser {
 			}
 		}		
 		
-		return new IfElse(c,tblk,fblk, sourceAttr(start,index-1));
+		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,index-1));
 	}
 	
 	private Stmt parseExtern(int indent) {
@@ -486,7 +486,7 @@ public class WhileyParser {
 			}
 		}
 		
-		return new ExternJvm(bytecodes,sourceAttr(start,index-1));
+		return new Stmt.ExternJvm(bytecodes,sourceAttr(start,index-1));
 	}		
 	
 	private Bytecode parseBytecode() {
@@ -505,8 +505,8 @@ public class WhileyParser {
 			matchEndLine();
 			return b;
 		} catch(wyjvm.util.Parser.ParseError err) {	
-			SourceAttr sa = sourceAttr(start,index-1);
-			throw new SyntaxError(err.getMessage(),filename,sa.start(),sa.end(),err);
+			Attribute.Source sa = sourceAttr(start,index-1);
+			throw new SyntaxError(err.getMessage(),filename,sa.start,sa.end,err);
 		}
 	}
 	
@@ -521,7 +521,7 @@ public class WhileyParser {
 		}
 
 		matchEndLine();
-		return new VarDecl(type, var.text, initialiser, sourceAttr(
+		return new Stmt.VarDecl(type, var.text, initialiser, sourceAttr(
 				start, index - 1));
 	}
 		
@@ -529,13 +529,14 @@ public class WhileyParser {
 		// standard assignment
 		int start = index;
 		Expr lhs = parseIndexTerm();		
-		if(!(lhs instanceof LVal)) {
+		if(!(lhs instanceof Expr.LVal)) {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
 		}				
 		match(Equals.class);		
 		Expr rhs = parseCondition();
 		matchEndLine();
-		return new Assign((LVal) lhs,rhs, sourceAttr(start,index-1));		
+		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start,
+				index - 1));		
 	}	
 	
 	private Expr parseCondition() {
@@ -544,65 +545,19 @@ public class WhileyParser {
 		Expr c1 = parseConditionExpression();
 
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
-			if (c1 instanceof Variable || c1 instanceof TupleAccess
-					|| c1 instanceof ListAccess
-					|| c1 instanceof Invoke) {
-				c1 = new IntEquals(new BoolVal(true, c1.attributes()), c1, c1.attributes());
-			}						
-			checkCondition(c1);			
 			match(LogicalAnd.class);
-			Condition c2 = parseRealCondition();			
-			return new And((Condition)c1,c2, sourceAttr(start,index-1));
+			Expr c2 = parseConditionExpression();			
+			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
+					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
-			if (c1 instanceof Variable || c1 instanceof TupleAccess
-					|| c1 instanceof ListAccess) {
-				c1 = new IntEquals(new BoolVal(true, c1.attributes()), c1, c1.attributes());
-			}			
-			checkCondition(c1);
 			match(LogicalOr.class);
-			Condition c2 = parseRealCondition();
-			return new Or((Condition)c1,c2, sourceAttr(start,index-1));
+			Expr c2 = parseConditionExpression();
+			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
+					index - 1));			
 		} 
 		return c1;		
 	}
-	
-	private void checkCondition(Expr c) {
-		if(!(c instanceof Condition)) {
-			syntaxError("Bool expression expected.",c);
-		}		
-	}
-	
-	private Condition parseRealCondition() {
-		Expr e = parseCondition();
 		
-		if (e instanceof Variable || e instanceof TupleAccess
-				|| e instanceof ListAccess
-				|| e instanceof Invoke
-				) {
-			e = new IntEquals(new BoolVal(true, e.attributes()),e , e
-					.attributes());
-		} 
-		
-		checkCondition(e);
-		
-		return (Condition)e;
-	}
-	
-	private Condition parseRealConditionExpression() {
-		Expr e = parseConditionExpression();
-		
-		if (e instanceof Variable || e instanceof TupleAccess
-				|| e instanceof ListAccess
-				|| e instanceof Invoke
-				) {
-			e = new IntEquals(new BoolVal(true, e.attributes()),e , e
-					.attributes());
-		} 
-		
-		checkCondition(e);
-		
-		return (Condition)e;
-	}		
 	private Expr parseConditionExpression() {		
 		int start = index;
 		
@@ -623,45 +578,41 @@ public class WhileyParser {
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			Expr rhs = parseMulDivExpression();
-			return new IntLessThanEquals( lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
 			Expr rhs = parseMulDivExpression();
-			return new IntLessThan( lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 			Expr rhs = parseMulDivExpression();
-			return new IntGreaterThanEquals( lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			Expr rhs = parseMulDivExpression();
-			return new IntGreaterThan( lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			Expr rhs = parseMulDivExpression();
-			return new IntEquals( lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			Expr rhs = parseMulDivExpression();			
-			return new IntNotEquals( lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.TypeEquals) {
 			return parseTypeEquals(lhs,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
 			match(WhileyLexer.ElemOf.class);			
 			Expr rhs = parseMulDivExpression();
-			return new wyjc.ast.exprs.set.SetElementOf(lhs,  rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
 			match(WhileyLexer.SubsetEquals.class);			
 			Expr rhs = parseMulDivExpression();
-			return new wyjc.ast.exprs.set.SubsetEq( lhs, rhs, sourceAttr(start,index-1));
+			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
 			match(WhileyLexer.Subset.class);			
 			Expr rhs = parseMulDivExpression();
-			return new wyjc.ast.exprs.set.Subset( lhs,  rhs, sourceAttr(start,index-1));
-		} else if(lhs instanceof Variable) {
-			return (Variable) lhs;
-		} else if(lhs instanceof Not) {
-			return (Not) lhs;
+			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
 		}	
@@ -674,7 +625,7 @@ public class WhileyParser {
 		
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {						
 			match(LogicalAnd.class);
-			rhs = parseRealCondition();						
+			rhs = parseConditionExpression();						
 		}				
 		
 		return new wyjc.ast.exprs.logic.TypeEquals(lhs, type, rhs,
@@ -879,7 +830,7 @@ public class WhileyParser {
 			return new SetVal(new ArrayList<Value>(), sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Not(parseRealConditionExpression(), sourceAttr(start, index - 1));
+			return new Not(parseConditionExpressionExpression(), sourceAttr(start, index - 1));
 		}
 		syntaxError("unrecognised term.",token);
 		return null;		
@@ -942,7 +893,7 @@ public class WhileyParser {
 			token = tokens.get(index);
 		}
 		match(Bar.class);
-		Condition condition = parseRealCondition();
+		Condition condition = parseConditionExpression();
 		match(RightCurly.class);
 		Expr value = new IntVal(0); // this is a dummy				
 		return new SetComprehension(value, srcs, condition, sourceAttr(
