@@ -22,8 +22,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyjc.jvm.rt.BigRational;
-import wyjc.util.SyntaxError;
+import wyil.jvm.rt.BigRational;
+import wyil.util.SyntaxError;
 
 public class WhileyLexer {	
 	private String filename;

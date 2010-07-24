@@ -22,23 +22,11 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyjc.ast.*;
-import wyjc.ast.UnresolvedWhileyFile.*;
-import wyjc.ast.attrs.*;
-import wyjc.ast.exprs.*;
-import wyjc.ast.exprs.integer.*;
-import wyjc.ast.exprs.list.*;
-import wyjc.ast.exprs.logic.*;
-import wyjc.ast.exprs.process.*;
-import wyjc.ast.exprs.real.*;
-import wyjc.ast.exprs.set.*;
-import wyjc.ast.exprs.tuple.*;
-import wyjc.ast.stmts.*;
-import wyjc.ast.types.*;
-import wyjc.ast.types.unresolved.*;
-import wyjc.jvm.rt.BigRational;
-import wyjc.lang.Modifier;
-import wyjc.lang.SourceAttr;
+import wyil.lang.*;
+import wyil.jvm.rt.BigRational;
+import wyil.util.*;
+import wyjc.lang.*;
+import wyjc.lang.WhileyFile.*;
 import wyjc.util.*;
 import wyjvm.lang.Bytecode;
 
@@ -53,7 +41,7 @@ public class WhileyParser {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens); 
 	}
-	public UnresolvedWhileyFile read() {
+	public WhileyFile read() {
 		ArrayList<Decl> decls = new ArrayList<Decl>();
 		boolean finishedImports = false;
 		ArrayList<String> pkg = parsePackage();
@@ -92,7 +80,7 @@ public class WhileyParser {
 		String name = filename.substring(filename
 				.lastIndexOf(File.separatorChar) + 1, filename.length() - 7);
 		
-		return new UnresolvedWhileyFile(new ModuleID(pkg,name),filename,decls);
+		return new WhileyFile(new ModuleID(pkg,name),filename,decls);
 	}
 	
 	private ArrayList<String> parsePackage() {
@@ -147,15 +135,15 @@ public class WhileyParser {
 	
 	private FunDecl parseFunction(List<Modifier> modifiers) {			
 		int start = index;		
-		UnresolvedType returnType = parseType();		
-		FunDecl.Return ret = new FunDecl.Return(returnType,sourceAttr(start,index-1));
+		Type returnType = parseType();		
+		Return ret = new Return(returnType,sourceAttr(start,index-1));
 		// FIXME: potential bug here at end of file
 		Token token = tokens.get(index+1);
-		FunDecl.Receiver receiver = null;
+		Receiver receiver = null;
 							
 		if(token instanceof Colon) {
-			UnresolvedType process = parseType();
-			receiver = new FunDecl.Receiver(process);
+			Type process = parseType();
+			receiver = new Receiver(process);
 			match(Colon.class);
 			match(Colon.class);					
 		}
@@ -165,7 +153,7 @@ public class WhileyParser {
 		match(LeftBrace.class);		
 		
 		// Now build up the parameter types
-		List<FunDecl.Parameter> paramTypes = new ArrayList();
+		List<Parameter> paramTypes = new ArrayList();
 		boolean firstTime=true;		
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightBrace)) {
@@ -174,16 +162,15 @@ public class WhileyParser {
 			}
 			firstTime = false;
 			int pstart = index;
-			UnresolvedType t = parseType();
+			Type t = parseType();
 			Identifier n = matchIdentifier();
-			paramTypes.add(new FunDecl.Parameter(t, n.text, sourceAttr(pstart,
+			paramType.add(new Parameter(t, n.text, sourceAttr(pstart,
 					index - 1)));
 		}
 		
 		match(RightBrace.class);
 		
-		// now, look to see if we have requires and ensures clauses.
-		Condition whereCondition = parseWhere();
+		Expr whereCondition = parseWhere();
 		
 		match(Colon.class);
 		matchEndLine();
@@ -209,19 +196,19 @@ public class WhileyParser {
 		// constant).
 		
 		try {			
-			UnresolvedType t = parseType();			
-			Condition constraint = null;
+			Type t = parseType();			
+			Expr constraint = null;
 			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type				
 				matchKeyword("where");
 				constraint = parseRealCondition();
-				Pair<Type,Condition> munged = mungeConstrainedTypes(t,constraint);				
-				UnresolvedType ut = munged.first();				
-				t = Types.recondition(ut,munged.second());
+				Pair<Type,Expr> munged = mungeConstrainedTypes(t,constraint);				
+				t = munged.first();
+				constraint = munged.second();				
 			}
 					
 			matchEndLine();		
-			return new TypeDecl(modifiers, t, name.text, sourceAttr(start,index-1));
+			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,index-1));
 		
 		} catch(Exception e) {}
 		
@@ -293,7 +280,7 @@ public class WhileyParser {
 	
 	/**
 	 * The following method may seem quite strange. Basically, the idea is to
-	 * try and sensibly prize the constraint appart and/or add scope information
+	 * try and sensibly prize the constraint apart and/or add scope information
 	 * (where needed). For example, consider the following definitions:
 	 * 
 	 * <pre>
@@ -314,13 +301,13 @@ public class WhileyParser {
 	 * @param constraint
 	 * @return
 	 */
-	private Pair<Type, Condition> mungeConstrainedTypes(UnresolvedType t,
-			Condition constraint) {
+	private Pair<Type, Expr> mungeConstrainedTypes(Type t,
+			Expr constraint) {
 		// for the moment, it's really a hack.
-		if(t instanceof UnresolvedTupleType) {
-			UnresolvedTupleType tt = (UnresolvedTupleType) t;
+		if(t instanceof Type.Tuple) {
+			Type.Tuple tt = (Type.Tuple) t;
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			for (Map.Entry<String, UnresolvedType> e : tt.types().entrySet()) {
+			for (Map.Entry<String, Type> e : tt.types().entrySet()) {
 				binding.put(e.getKey(), new TupleAccess(new Variable("$"), e
 						.getKey()));
 			}
@@ -525,7 +512,7 @@ public class WhileyParser {
 	
 	private Stmt parseVarDecl() {
 		int start = index;
-		UnresolvedType type = parseType();
+		Type type = parseType();
 		Identifier var = matchIdentifier();
 		Expr initialiser = null;
 		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
@@ -534,7 +521,7 @@ public class WhileyParser {
 		}
 
 		matchEndLine();
-		return new UnresolvedVarDecl(type, var.text, initialiser, sourceAttr(
+		return new VarDecl(type, var.text, initialiser, sourceAttr(
 				start, index - 1));
 	}
 		
@@ -682,7 +669,7 @@ public class WhileyParser {
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
 		match(WhileyLexer.TypeEquals.class);			
-		UnresolvedType type = parseType();
+		Type type = parseType();
 		Condition rhs = new BoolVal(true,sourceAttr(start, index - 1));
 		
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {						
@@ -690,7 +677,7 @@ public class WhileyParser {
 			rhs = parseRealCondition();						
 		}				
 		
-		return new wyjc.ast.exprs.logic.UnresolvedTypeEquals(lhs, type, rhs,
+		return new wyjc.ast.exprs.logic.TypeEquals(lhs, type, rhs,
 				sourceAttr(start, index - 1));
 	}
 	
@@ -971,7 +958,8 @@ public class WhileyParser {
 		if(token instanceof RightCurly) {
 			match(RightCurly.class);
 			// empty set definition
-			return new SetVal(new ArrayList<Value>(),sourceAttr(start,index-1));
+			Value v = Value.V_SET(new ArrayList<Value>()); 
+			return new Expr.Constant(v, sourceAttr(start, index - 1));
 		}
 		
 		exprs.add(parseCondition());
@@ -1042,27 +1030,31 @@ public class WhileyParser {
 		match(Bar.class);
 		Expr e = parseIndexTerm();
 		match(Bar.class);
-		return new ListLength( e, sourceAttr(start, index - 1));
+		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseNegation() {
 		int start = index;
 		match(Minus.class);
 		Expr e = parseIndexTerm();
-		if(e instanceof IntVal) {
-			IntVal ne = (IntVal) e;
-			java.math.BigInteger bi = ne.value();
-			return new IntVal(bi.negate(), sourceAttr(start,index));
-		} else if(e instanceof RealVal) {
-			RealVal ne = (RealVal) e;
-			BigRational br = ne.value();
-			return new RealVal(br.negate(), sourceAttr(start,index));
-		} else {
-			return new IntNegate( e, sourceAttr(start,index));
-		}
+		
+		if(e instanceof Expr.Constant) {
+			Expr.Constant c = (Expr.Constant) e;
+			if(c.val instanceof Value.Int) { 
+				java.math.BigInteger bi = ((Value.Int)c.val).value;
+				return new Expr.Constant(Value.V_INT(bi.negate()),
+						sourceAttr(start, index));
+			} else if(c.val instanceof Value.Real){
+				BigRational br = ((Value.Real)c.val).value;				
+				return new Expr.Constant(Value.V_REAL(br.negate()), sourceAttr(
+						start, index));	
+			}
+		} 
+		
+		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
-	private Invoke parseInvokeExpr() {		
+	private Expr.Invoke parseInvokeExpr() {		
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
@@ -1079,70 +1071,71 @@ public class WhileyParser {
 			args.add(e);		
 		}
 		match(RightBrace.class);		
-		return new Invoke(name.text, null, args, sourceAttr(start,index-1));
+		return new Expr.Invoke(name.text, null, args, sourceAttr(start,index-1));
 	}
 	
 	private Expr parseString() {
 		int start = index;
-		String s = match(Strung.class).string;		
+		String s = match(Strung.class).string;
 		ArrayList<Value> vals = new ArrayList<Value>();
-		for(int i=0;i!=s.length();++i) {
-			vals.add(new IntVal(s.charAt(i)));
-		}		
-		return new StringVal(vals,sourceAttr(start,index-1));
+		for (int i = 0; i != s.length(); ++i) {
+			vals.add(Value.V_INT(BigInteger.valueOf(s.charAt(i))));
+		}
+		Value.List list = Value.V_LIST(vals);
+		return new Expr.Constant(list, sourceAttr(start, index - 1));
 	}
 	
-	private UnresolvedType parseType() {
-		UnresolvedType t = parseBaseType();
+	private Type parseType() {
+		Type t = parseBaseType();
 		// Now, attempt to look for union or intersection types.
 		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
 			// this is a union type
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
-			types.add(t);
+			ArrayList<Type.NonUnion> types = new ArrayList<Type.NonUnion>();
+			types.add((Type.NonUnion)t);
 			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
 				match(Bar.class);
 				t = parseBaseType();
-				types.add(t);
+				types.add((Type.NonUnion)t);
 			}					
-			return new UnresolvedUnionType(types);
+			return Type.T_UNION(types);
 		} else {
 			return t;
 		}		
 	}
 	
-	private UnresolvedType parseBaseType() {		
+	private Type parseBaseType() {		
 		checkNotEof();		
 		Token token = tokens.get(index);
-		UnresolvedType t;
+		Type t;
 		
 		if(token instanceof Question) {
 			match(Question.class);
-			t = Types.T_EXISTENTIAL;
+			t = Type.T_EXISTENTIAL;
 		} else if(token instanceof Star) {
 			match(Star.class);
-			t = Types.T_ANY;
+			t = Type.T_ANY;
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");
-			t = Types.T_INT(null);
+			t = Type.T_INT;
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
-			t = Types.T_REAL(null);
+			t = Type.T_REAL;
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = Types.T_VOID;
+			t = Type.T_VOID;
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = Types.T_BOOL(null);
+			t = Type.T_BOOL;
 		} else if(token.text.equals("process")) {
 			matchKeyword("process");
-			t = new UnresolvedProcessType(parseType());			
+			t = Type.T_PROCESS(parseType());			
 		} else if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();
+			HashMap<String,Type> types = new HashMap<String,Type>();
 			checkNotEof();
 			token = tokens.get(index);
 			while(!(token instanceof RightBrace)) {
-				UnresolvedType tmp = parseType();
+				Type tmp = parseType();
 				
 				Token n = matchIdentifier();
 				if(types.containsKey(n)) {
@@ -1158,18 +1151,19 @@ public class WhileyParser {
 				}
 			}
 			match(RightBrace.class);
-			t = new UnresolvedTupleType(types);
+			t = Type.T_TUPLE(types);
 		} else if(token instanceof LeftCurly) {
 			match(LeftCurly.class);
-			t = new UnresolvedSetType(parseType());
+			t = Type.T_SET(parseType());
 			match(RightCurly.class);
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);
-			t = new UnresolvedListType(parseType());
+			t = Type.T_LIST(parseType());
 			match(RightSquare.class);
 		} else {		
-			Identifier id = matchIdentifier();			
-			t = new UserDefType(id.text);			
+			Identifier id = matchIdentifier();	
+			// FIXME: there is a problem here!
+			t = Type.T_NAMED(null,id.text,null);			
 		}		
 		
 		return t;
@@ -1241,15 +1235,15 @@ public class WhileyParser {
 		}
 	}
 	
-	private SourceAttr sourceAttr(int start, int end) {
+	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
-		return new SourceAttr(filename,t1.start,t2.end());
+		return new Attribute.Source(filename,t1.start,t2.end());
 	}
 	
 	private void syntaxError(String msg, Expr e) {
-		SourceAttr loc = e.attribute(SourceAttr.class);
-		throw new ParseError(msg, filename, loc.start(), loc.end());
+		Attribute.Source loc = e.attribute(Attribute.Source.class);
+		throw new ParseError(msg, filename, loc.start, loc.end);
 	}
 	
 	private void syntaxError(String msg, Token t) {

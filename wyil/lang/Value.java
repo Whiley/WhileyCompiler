@@ -10,8 +10,21 @@ public abstract class Value {
 	public static Int V_INT(BigInteger value) {
 		return get(new Int(value));
 	}
-	
-	public static class Int extends Value {
+
+	public static Real V_REAL(BigRational value) {
+		return get(new Real(value));
+	}
+
+
+	public static Set V_SET(Collection<Value> values) {
+		return get(new Set(values));
+	}
+
+	public static List V_LIST(Collection<Value> values) {
+		return get(new List(values));
+	}
+
+	public static final class Int extends Value {
 		public final BigInteger value;
 		private Int(BigInteger value) {
 			this.value = value;
@@ -31,7 +44,7 @@ public abstract class Value {
 		}
 	}
 	
-	public static class Real extends Value {
+	public static final class Real extends Value {
 		public final BigRational value;
 		private Real(BigRational value) {
 			this.value = value;
@@ -46,6 +59,56 @@ public abstract class Value {
 			if(o instanceof Int) {
 				Int i = (Int) o;
 				return value.equals(i.value);
+			}
+			return false;
+		}
+	}
+	
+	public static class List extends Value {
+		public final ArrayList<Value> values;
+		private List(Collection<Value> value) {
+			this.values = new ArrayList<Value>(value);
+		}
+		public Type type() {
+			if(values.isEmpty()) {
+				return Type.T_LIST(Type.T_VOID);
+			} else {
+				// FIXME: need to use lub here
+				return Type.T_LIST(values.get(0).type());
+			}
+		}
+		public int hashCode() {
+			return values.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof List) {
+				List i = (List) o;
+				return values.equals(i.values);
+			}
+			return false;
+		}
+	}
+	
+	public static class Set extends Value {
+		public final HashSet<Value> values;
+		private Set(Collection<Value> value) {
+			this.values = new HashSet<Value>(value);
+		}
+		public Type type() {
+			if(values.isEmpty()) {
+				return Type.T_SET(Type.T_VOID);
+			} else {
+				// FIXME: need to use lub here
+				return Type.T_SET(values.iterator().next().type());
+			}
+		}
+		public int hashCode() {
+			return values.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Set) {
+				Set i = (Set) o;
+				return values.equals(i.values);
 			}
 			return false;
 		}

@@ -3,9 +3,9 @@ package wyjc.lang;
 import java.util.*;
 
 import wyil.lang.ModuleID;
-import wyjc.ast.attrs.*;
+import wyil.lang.Value;
 
-public interface Expr {
+public interface Expr extends SyntacticElement {
 			
 	public static class Variable extends SyntacticElement.Impl implements Expr {
 		protected final String var;
@@ -25,18 +25,32 @@ public interface Expr {
 		}
 	}
 	
-	public static class Constant extends Variable {
+	public static class NamedConstant extends Variable {
 		public final ModuleID mid;
 
-		public Constant(String var, ModuleID mid, Attribute... attributes) {
+		public NamedConstant(String var, ModuleID mid, Attribute... attributes) {
 			super(var, attributes);
 			this.mid = mid;
 		}
 
-		public Constant(String var, ModuleID mid,
+		public NamedConstant(String var, ModuleID mid,
 				Collection<Attribute> attributes) {
 			super(var, attributes);
 			this.mid = mid;
+		}
+	}
+
+	public static class Constant extends SyntacticElement.Impl implements Expr {
+		public final Value val;
+
+		public Constant(Value val, Attribute... attributes) {
+			super(attributes);
+			this.val = val;
+		}
+
+		public Constant(Value val, Collection<Attribute> attributes) {
+			super(attributes);
+			this.val = val;
 		}
 	}
 
