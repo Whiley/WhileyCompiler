@@ -100,8 +100,8 @@ public class PostConditionGenerator {
 				postCondition = infer((Assign)s, environment, f, preCondition);			
 			} else if (s instanceof IfElse) {
 				postCondition = infer((IfElse)s,environment,f, preCondition);	
-			} else if (s instanceof Return) {
-				postCondition = infer((Return)s,environment,f, preCondition);			
+			} else if (s instanceof UnresolvedType) {
+				postCondition = infer((UnresolvedType)s,environment,f, preCondition);			
 			} else if (s instanceof Assertion) {
 				postCondition = infer((Assertion) s,environment, f, preCondition);
 			} else if (s instanceof Check) {
@@ -271,7 +271,7 @@ public class PostConditionGenerator {
 		return c;
 	}
 	
-	protected Condition infer(Return r, HashMap<String, Type> environment,
+	protected Condition infer(UnresolvedType r, HashMap<String, Type> environment,
 			 FunDecl f, Condition condition) {			
 		return new BoolVal(false);		
 	}

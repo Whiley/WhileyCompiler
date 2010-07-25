@@ -114,8 +114,8 @@ public class DefiniteAssignmentChecker {
 			check((IfElse) statement, definitions);
 		} else if (statement instanceof While) {
 			check((While) statement, definitions);
-		} else if (statement instanceof Return) {
-			check((Return) statement, definitions);
+		} else if (statement instanceof UnresolvedType) {
+			check((UnresolvedType) statement, definitions);
 		} else if (statement instanceof Assertion) {
 			check((Assertion) statement, definitions);
 		} else if (statement instanceof Invoke) {
@@ -187,7 +187,7 @@ public class DefiniteAssignmentChecker {
 		}		
 	}
 	
-	protected void check(Return s, HashSet<String> definitions) {
+	protected void check(UnresolvedType s, HashSet<String> definitions) {
 		if(s.expr() != null) {			
 			check(s.expr(),definitions);
 		}

@@ -179,8 +179,8 @@ public class RuntimeCheckGenerator {
 				preChecks = checkgen((VarDecl)s, environment, declared);					
 			} else if (s instanceof IfElse) {
 				preChecks = checkgen((IfElse) s, f, environment, declared);	
-			} else if (s instanceof Return) {
-				preChecks = checkgen((Return)s, environment, declared, f);			
+			} else if (s instanceof UnresolvedType) {
+				preChecks = checkgen((UnresolvedType)s, environment, declared, f);			
 			} else if (s instanceof Invoke) {
 				preChecks = checkgen((Invoke) s, environment, declared);
 			} else if (s instanceof Spawn) {
@@ -329,7 +329,7 @@ public class RuntimeCheckGenerator {
 		return checkgen(ps.mhs(),environment, declared);
 	}
 	
-	private List<Check> checkgen(Return rs, HashMap<String,Type> environment, HashMap<String,Type> declared,
+	private List<Check> checkgen(UnresolvedType rs, HashMap<String,Type> environment, HashMap<String,Type> declared,
 			FunDecl f) {
 		Expr e = rs.expr();
 		

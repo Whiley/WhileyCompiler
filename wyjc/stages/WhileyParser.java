@@ -135,15 +135,13 @@ public class WhileyParser {
 	
 	private FunDecl parseFunction(List<Modifier> modifiers) {			
 		int start = index;		
-		Type returnType = parseType();		
-		Return ret = new Return(returnType,sourceAttr(start,index-1));
+		UnresolvedType ret = parseType();				
 		// FIXME: potential bug here at end of file
 		Token token = tokens.get(index+1);
-		Receiver receiver = null;
+		UnresolvedType receiver = null;
 							
 		if(token instanceof Colon) {
-			Type process = parseType();
-			receiver = new Receiver(process);
+			receiver = parseType();			
 			match(Colon.class);
 			match(Colon.class);					
 		}
@@ -162,7 +160,7 @@ public class WhileyParser {
 			}
 			firstTime = false;
 			int pstart = index;
-			Type t = parseType();
+			UnresolvedType t = parseType();
 			Identifier n = matchIdentifier();
 			paramTypes.add(new Parameter(t, n.text, sourceAttr(pstart,
 					index - 1)));
@@ -196,15 +194,12 @@ public class WhileyParser {
 		// constant).
 		
 		try {			
-			Type t = parseType();			
+			UnresolvedType t = parseType();			
 			Expr constraint = null;
 			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type				
 				matchKeyword("where");
-				constraint = parseConditionExpression();
-				Pair<Type,Expr> munged = mungeConstrainedTypes(t,constraint);				
-				t = munged.first();
-				constraint = munged.second();				
+				constraint = parseConditionExpression();							
 			}
 					
 			matchEndLine();		
@@ -276,46 +271,6 @@ public class WhileyParser {
 		} else {
 			return null;
 		}
-	}
-	
-	/**
-	 * The following method may seem quite strange. Basically, the idea is to
-	 * try and sensibly prize the constraint apart and/or add scope information
-	 * (where needed). For example, consider the following definitions:
-	 * 
-	 * <pre>
-	 *   define (int op, [int] rest) where op &gt; 0 as msg
-	 *   define [(int op)] where op &gt; 0 as mstList 
-	 * </pre>
-	 * 
-	 * Basically, we need to translate these definitions into a more usuable
-	 * form, such as:
-	 * 
-	 * <pre>
-	 *   define (int op, [int] rest) where $.op &gt; 0 as msg
-	 *   define (int op) where $ &gt; 0 as tmp$1
-	 *   define [tmp$1] as mstList 
-	 * </pre>
-	 * 
-	 * @param t
-	 * @param constraint
-	 * @return
-	 */
-	private Pair<Type, Expr> mungeConstrainedTypes(Type t,
-			Expr constraint) {
-		
-		// for the moment, it's really a hack.
-		if(t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			for (Map.Entry<String, Type> e : tt.types.entrySet()) {
-				binding.put(e.getKey(), new Expr.TupleAccess(new Expr.Variable(
-						"$"), e.getKey()));
-			}
-			constraint = constraint.substitute(binding);
-		} 
-		
-		return new Pair(t,constraint);
 	}
 	
 	private Expr parseWhere() {
@@ -513,7 +468,7 @@ public class WhileyParser {
 	
 	private Stmt parseVarDecl() {
 		int start = index;
-		Type type = parseType();
+		UnresolvedType type = parseType();
 		Identifier var = matchIdentifier();
 		Expr initialiser = null;
 		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
@@ -623,7 +578,7 @@ public class WhileyParser {
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
 		match(WhileyLexer.TypeEquals.class);			
-		Type type = parseType();
+		UnresolvedType type = parseType();
 		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));				
 		
 		return new Expr.BinOp(Expr.BOp.TYPEEQ, lhs, tc, sourceAttr(start,
@@ -1049,57 +1004,60 @@ public class WhileyParser {
 		return new Expr.Constant(list, sourceAttr(start, index - 1));
 	}
 	
-	private Type parseType() {
-		Type t = parseBaseType();
+	private UnresolvedType parseType() {
+		int start = index;
+		UnresolvedType t = parseBaseType();
 		// Now, attempt to look for union or intersection types.
 		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
 			// this is a union type
-			ArrayList<Type.NonUnion> types = new ArrayList<Type.NonUnion>();
-			types.add((Type.NonUnion)t);
+			ArrayList<UnresolvedType.NonUnion> types = new ArrayList<UnresolvedType.NonUnion>();
+			types.add((UnresolvedType.NonUnion)t);
 			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
 				match(Bar.class);
 				t = parseBaseType();
-				types.add((Type.NonUnion)t);
+				types.add((UnresolvedType.NonUnion)t);
 			}					
-			return Type.T_UNION(types);
+			return new UnresolvedType.Union(types, sourceAttr(start,index-1));
 		} else {
 			return t;
 		}		
 	}
 	
-	private Type parseBaseType() {		
-		checkNotEof();		
+	private UnresolvedType parseBaseType() {		
+		checkNotEof();
+		int start = index;
 		Token token = tokens.get(index);
-		Type t;
+		UnresolvedType t;
 		
 		if(token instanceof Question) {
 			match(Question.class);
-			t = Type.T_EXISTENTIAL;
+			t = new UnresolvedType.Existential(sourceAttr(start,index-1));
 		} else if(token instanceof Star) {
 			match(Star.class);
-			t = Type.T_ANY;
+			t = new UnresolvedType.Any(sourceAttr(start,index-1));
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");
-			t = Type.T_INT;
+			t = new UnresolvedType.Int(sourceAttr(start,index-1));
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
-			t = Type.T_REAL;
+			t = new UnresolvedType.Real(sourceAttr(start,index-1));
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = Type.T_VOID;
+			t = new UnresolvedType.Void(sourceAttr(start,index-1));
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = Type.T_BOOL;
+			t = new UnresolvedType.Bool(sourceAttr(start,index-1));
 		} else if(token.text.equals("process")) {
 			matchKeyword("process");
-			t = Type.T_PROCESS(parseType());			
+			t = new UnresolvedType.Process(parseType(),sourceAttr(start,index-1));			
 		} else if(token instanceof LeftBrace) {
+		
 			match(LeftBrace.class);
-			HashMap<String,Type> types = new HashMap<String,Type>();
+			HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();
 			checkNotEof();
 			token = tokens.get(index);
 			while(!(token instanceof RightBrace)) {
-				Type tmp = parseType();
+				UnresolvedType tmp = parseType();
 				
 				Token n = matchIdentifier();
 				if(types.containsKey(n)) {
@@ -1115,19 +1073,20 @@ public class WhileyParser {
 				}
 			}
 			match(RightBrace.class);
-			t = Type.T_TUPLE(types);
+			t = new UnresolvedType.Tuple(types, sourceAttr(start,index-1));
 		} else if(token instanceof LeftCurly) {
 			match(LeftCurly.class);
-			t = Type.T_SET(parseType());
+			t = parseType();
 			match(RightCurly.class);
+			t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);
-			t = Type.T_LIST(parseType());
+			t = parseType();
 			match(RightSquare.class);
+			t = new UnresolvedType.List(t,sourceAttr(start,index-1));
 		} else {		
-			Identifier id = matchIdentifier();	
-			// FIXME: there is a problem here!
-			t = Type.T_NAMED(null,id.text,null);			
+			Identifier id = matchIdentifier();			
+			t = new UnresolvedType.Named(id.text,sourceAttr(start,index-1));			
 		}		
 		
 		return t;

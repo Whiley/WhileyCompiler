@@ -73,7 +73,7 @@ public class ReturnValueChecker {
 			}
 			
 			return exit || is.falseBranch() == null;
-		} else if(statement instanceof Return) {
+		} else if(statement instanceof UnresolvedType) {
 			return false;
 		}
 

@@ -61,9 +61,10 @@ public class Compiler implements Logger {
 			
 	public Compiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
-		/*
-		this.typeResolver = new TypeResolution(loader);		
+		
 		this.nameResolver = new NameResolution(loader);
+		/*
+		this.typeResolver = new TypeResolution(loader);				
 		this.checkGenerator = new RuntimeCheckGenerator(loader);
 		this.classBuilder = new ClassFileBuilder(loader,whileyMajorVersion,whileyMinorVersion);
 		this.vcGenerator = new VerificationConditionGenerator(loader);

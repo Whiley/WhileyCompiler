@@ -72,7 +72,7 @@ public class ResolvedFileBuilder {
 					.attributes()));
 		}
 		
-		ResolvedWhileyFile.FunDecl.Return ret = new ResolvedWhileyFile.FunDecl.Return(
+		UnresolvedType.FunDecl.Return ret = new UnresolvedType.FunDecl.Return(
 				(Type) cd.returnType().attribute(TypeAttr.class).type(), cd.returnType().attributes());
 		
 		ResolvedWhileyFile.FunDecl.Receiver rec = null;

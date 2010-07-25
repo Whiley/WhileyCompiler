@@ -2,18 +2,17 @@ package wyjc.lang;
 
 import java.util.*;
 
-import wyil.lang.Type;
 import wyjvm.lang.Bytecode;
 
 public interface Stmt {
 	
 	public static final class VarDecl extends SyntacticElement.Impl implements
 			Stmt {
-		public final Type type;
+		public final UnresolvedType type;
 		public final String name;
 		public final Expr initialiser;
 
-		public VarDecl(Type type, String name, Expr init,
+		public VarDecl(UnresolvedType type, String name, Expr init,
 				Attribute... attributes) {
 			super(attributes);
 			this.type = type;
@@ -21,7 +20,7 @@ public interface Stmt {
 			this.initialiser = init;
 		}
 
-		public VarDecl(Type type, String name, Expr init,
+		public VarDecl(UnresolvedType type, String name, Expr init,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.type = type;

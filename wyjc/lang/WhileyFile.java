@@ -56,22 +56,22 @@ public class WhileyFile {
 				SyntacticElement.Impl implements Decl {
 		
 		public final List<Modifier> modifiers;
-		public final Expr value;
+		public final Expr constant;
 		public final String name;
 
-		public ConstDecl(List<Modifier> modifiers, Expr value, String name,
+		public ConstDecl(List<Modifier> modifiers, Expr constant, String name,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
-			this.value = value;
+			this.constant = constant;
 			this.name = name;
 		}
 
-		public ConstDecl(List<Modifier> modifiers, Expr value, String name,
+		public ConstDecl(List<Modifier> modifiers, Expr constant, String name,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
-			this.value = value;
+			this.constant = constant;
 			this.name = name;
 		}
 
@@ -89,17 +89,17 @@ public class WhileyFile {
 		}
 		
 		public String toString() {
-			return "define " + value + " as " + name;
+			return "define " + constant + " as " + name;
 		}
 	}
 	
 	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
 		public final List<Modifier> modifiers;
-		public final Type type;	
+		public final UnresolvedType type;	
 		public final Expr constraint;
 		public final String name;
 
-		public TypeDecl(List<Modifier> modifiers, Type type, String name, Expr constraint,
+		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name, Expr constraint,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
@@ -108,7 +108,7 @@ public class WhileyFile {
 			this.constraint = constraint;
 		}
 
-		public TypeDecl(List<Modifier> modifiers, Type type, String name, Expr constraint,
+		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name, Expr constraint,
 				Collection<Attribute> attributes) { 
 			super(attributes);		
 			this.modifiers = modifiers;
@@ -136,8 +136,8 @@ public class WhileyFile {
 	public final static class FunDecl extends SyntacticElement.Impl implements Decl {
 		public final ArrayList<Modifier> modifiers; 
 		public final String name;
-		public final Receiver receiverType;
-		public final Return returnType;
+		public final UnresolvedType receiverType;
+		public final UnresolvedType returnType;
 		public final ArrayList<Parameter> parameters;
 		public final Expr constraint;		
 		public final ArrayList<Stmt> statements;
@@ -157,7 +157,7 @@ public class WhileyFile {
 		 *            The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name,
-				Receiver receiverType, Return returnType,
+				UnresolvedType receiverType, UnresolvedType returnType,
 				List<Parameter> parameters, Expr constraint,
 				List<Stmt> statements, Collection<Attribute> attributes) {
 			super(attributes);
@@ -185,7 +185,7 @@ public class WhileyFile {
 		 *            The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name,
-				Receiver receiverType, Return returnType,
+				UnresolvedType receiverType, UnresolvedType returnType,
 				List<Parameter> parameters, Expr constraint,
 				List<Stmt> statements, Attribute... attributes) {
 			super(attributes);
@@ -213,16 +213,10 @@ public class WhileyFile {
 	}
 	
 	public static final class Parameter extends SyntacticElement.Impl implements Decl {
-		public final Type type;
+		public final UnresolvedType type;
 		public final String name;
 
-		public Parameter(Type type, String name, Attribute... attributes) {
-			super(attributes);
-			this.type = type;
-			this.name = name;
-		}
-
-		public Parameter(Type type, String name, Collection<Attribute> attributes) {
+		public Parameter(UnresolvedType type, String name, Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 			this.name = name;
@@ -231,33 +225,5 @@ public class WhileyFile {
 		public String name() {
 			return name;
 		}
-	}
-	
-	public static final class Return extends SyntacticElement.Impl {
-		public final Type type;
-
-		public Return(Type type, Attribute... attributes) {
-			super(attributes);
-			this.type = type;			
-		}
-
-		public Return(Type type, Collection<Attribute> attributes) {
-			super(attributes);
-			this.type = type;			
-		}		
-	}
-
-	public static final class Receiver extends SyntacticElement.Impl {
-		public final Type type;
-
-		public Receiver(Type type, Attribute... attributes) {
-			super(attributes);
-			this.type = type;			
-		}
-
-		public Receiver(Type type, Collection<Attribute> attributes) {
-			super(attributes);
-			this.type = type;			
-		}	
-	}
+	}	
 }

@@ -102,7 +102,7 @@ public class TypeResolution {
 			}
 		}
 		
-		FunDecl.Return ret = f.returnType();
+		FunDecl.UnresolvedType ret = f.returnType();
 		Type r_t;
 		try {
 			r_t = expandType(ret.type(),types);
@@ -569,7 +569,7 @@ public class TypeResolution {
 			declared.put(p.name(), tc);			
 		}
 				
-		FunDecl.Return ret = f.returnType();
+		FunDecl.UnresolvedType ret = f.returnType();
 		Type rp = expandAndCheck(ret.type(),ret);
 		
 		// FIXME: lost return / receiver constraint?
@@ -609,8 +609,8 @@ public class TypeResolution {
 				return check((Assign)s, environment, declared);			
 			} else if (s instanceof IfElse) {
 				return check((IfElse)s,environment,declared,f);	
-			} else if (s instanceof Return) {
-				return check((Return)s,environment,f);			
+			} else if (s instanceof UnresolvedType) {
+				return check((UnresolvedType)s,environment,f);			
 			} else if (s instanceof Assertion) {
 				return check((Assertion) s,environment);
 			} else if (s instanceof Check) {
@@ -721,13 +721,13 @@ public class TypeResolution {
 		return new IfElse((Condition) cond.second(),tb,fb,s.attributes());
 	}
 
-	protected Stmt check(Return s, HashMap<String,Type> environment, FunDecl f) {
+	protected Stmt check(UnresolvedType s, HashMap<String,Type> environment, FunDecl f) {
 		Expr expr = s.expr();
 		if(expr != null) {
 			Pair<Type,Expr> rhs = check(s.expr(),environment);
 			Type lhs = f.returnType().attribute(TypeAttr.class).type();
 			checkSubtype(lhs,rhs.first(),s);
-			return new Return(rhs.second(), s.attributes());
+			return new UnresolvedType(rhs.second(), s.attributes());
 		} else {
 			return s;
 		}

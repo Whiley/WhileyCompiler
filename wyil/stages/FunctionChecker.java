@@ -79,8 +79,8 @@ public class FunctionChecker {
 				check((Assign) statement, isFunction);
 			} else if (statement instanceof IfElse) {
 				check((IfElse) statement, isFunction);
-			} else if (statement instanceof Return) {
-				check((Return) statement, isFunction);
+			} else if (statement instanceof UnresolvedType) {
+				check((UnresolvedType) statement, isFunction);
 			} else if (statement instanceof Assertion) {
 				check((Assertion) statement, isFunction);
 			} else if (statement instanceof Invoke) {
@@ -130,7 +130,7 @@ public class FunctionChecker {
 		check(stmt.condition());
 	}
 	
-	public void check(Return stmt, boolean isFunction) {
+	public void check(UnresolvedType stmt, boolean isFunction) {
 		if(stmt.expr() != null) {
 			check(stmt.expr(),isFunction);
 		}

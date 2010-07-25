@@ -315,8 +315,8 @@ public class ClassFileBuilder {
 				translate((IfElse)stmt,slots, environment, fd, bytecodes);
 			} else if(stmt instanceof Print) {
 				translate((Print)stmt,slots, environment, bytecodes);
-			} else if(stmt instanceof Return) {
-				translate((Return)stmt,slots, environment, fd, bytecodes);
+			} else if(stmt instanceof UnresolvedType) {
+				translate((UnresolvedType)stmt,slots, environment, fd, bytecodes);
 			} else if(stmt instanceof ExternJvm) {
 				translate((ExternJvm)stmt,slots, environment, bytecodes);				
 			} else if(stmt instanceof Skip) {
@@ -463,7 +463,7 @@ public class ClassFileBuilder {
 		return;		
 	}
 	
-	private void translate(Return stmt,
+	private void translate(UnresolvedType stmt,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, FunDecl fd, ArrayList<Bytecode> bytecodes) {
 		if(stmt.expr() != null) {
 			translate(stmt.expr(),slots,environment,bytecodes);			

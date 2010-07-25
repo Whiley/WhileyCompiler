@@ -20,20 +20,12 @@ package wyjc.stages;
 
 import java.util.*;
 
-import static wyjc.util.SyntaxError.*;
-import wyjc.ModuleLoader;
-import wyjc.ast.*;
-import wyjc.ast.UnresolvedWhileyFile.*;
-import wyjc.ast.exprs.*;
-import wyjc.ast.exprs.integer.*;
-import wyjc.ast.exprs.list.*;
-import wyjc.ast.exprs.logic.*;
-import wyjc.ast.exprs.process.*;
-import wyjc.ast.exprs.set.*;
-import wyjc.ast.exprs.tuple.*;
-import wyjc.ast.stmts.*;
-import wyjc.ast.types.*;
-import wyjc.ast.types.unresolved.*;
+import static wyil.util.SyntaxError.*;
+import wyil.ModuleLoader;
+import wyil.util.*;
+import wyil.lang.*;
+import wyjc.lang.*;
+import wyjc.lang.WhileyFile.*;
 import wyjc.util.*;
 
 public class NameResolution {
@@ -43,30 +35,26 @@ public class NameResolution {
 		this.loader = loader;
 	}
 	
-	public void resolve(UnresolvedWhileyFile wf) {
+	public void resolve(WhileyFile wf) {
 		ArrayList<PkgID> imports = new ArrayList<PkgID>();
 		
-		ModuleID id = wf.id();
+		ModuleID id = wf.module;
 		
 		imports.add(id.pkg().append(id.module()));
 		imports.add(id.pkg().append("*"));
 		imports.add(new PkgID(new String[]{"whiley","lang"}).append("*"));
-				
-		List<Decl> decls = wf.declarations();
-		for(int i=0;i!=decls.size();++i) {
-			Decl d = decls.get(i);
+						
+		for(Decl d : wf.declarations) {			
 			try {
 				if(d instanceof ImportDecl) {
 					ImportDecl impd = (ImportDecl) d;
-					imports.add(0,new PkgID(impd.pkg()));
+					imports.add(0,new PkgID(impd.pkg));
 				} else if(d instanceof FunDecl) {
 					resolve((FunDecl)d,imports);
 				} else if(d instanceof TypeDecl) {
-					TypeDecl td = resolve((TypeDecl)d,imports);
-					decls.set(i,td);
+					resolve((TypeDecl)d,imports);					
 				} else if(d instanceof ConstDecl) {
-					ConstDecl cd = resolve((ConstDecl)d,imports);
-					decls.set(i,cd);
+					resolve((ConstDecl)d,imports);					
 				}
 			} catch(ResolveError ex) {
 				syntaxError(ex.getMessage(),d);
@@ -74,26 +62,19 @@ public class NameResolution {
 		}				
 	}
 	
-	protected ConstDecl resolve(ConstDecl td, ArrayList<PkgID> imports) {
-		Expr e = resolve(td.constant(),new HashSet<String>(), imports);
-		return new ConstDecl(td.modifiers(),e,td.name(),td.attributes());
+	protected void resolve(ConstDecl td, ArrayList<PkgID> imports) {
+		resolve(td.constant,new HashSet<String>(), imports);		
 	}
 	
-	protected TypeDecl resolve(TypeDecl td, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(TypeDecl td, ArrayList<PkgID> imports) throws ResolveError {
 		try {
-			resolve(td.type(), imports);
-			Condition c = td.type().constraint();
-			if(c != null) {
-				HashSet<String> env = new HashSet<String>();
-				env.add("$");
-				c = (Condition) resolve(c,env,imports);
-			}
-			return new TypeDecl(td.modifiers(),
-					Types.recondition(td.type(), c), td.name(), td.attributes());
+			resolve(td.type, imports);			
+			if(td.constraint != null) {
+				resolve(td.constraint,imports);
+			}		
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), td);
-			return null;
+			syntaxError(e.getMessage(), td);			
 		}
 	}
 	
@@ -101,9 +82,9 @@ public class NameResolution {
 		HashSet<String> environment = new HashSet<String>();
 		
 		// method parameter types
-		for (FunDecl.Parameter p : fd.parameters()) {
+		for (WhileyFile.Parameter p : fd.parameters) {
 			try {
-				resolve(p.type(), imports);
+				resolve(p.type, imports);
 				environment.add(p.name());
 			} catch (ResolveError e) {												
 				// Ok, we've hit a resolution error.
@@ -111,7 +92,7 @@ public class NameResolution {
 			}
 		}
 		
-		if(fd.receiver() != null) {
+		if(fd.receiver != null) {
 			environment.add("this");
 		}
 		
@@ -161,8 +142,8 @@ public class NameResolution {
 				return resolve((Print)s, environment, imports);
 			} else if(s instanceof IfElse) {
 				return resolve((IfElse)s, environment, imports);
-			} else if(s instanceof Return) {
-				return resolve((Return)s, environment, imports);
+			} else if(s instanceof UnresolvedType) {
+				return resolve((UnresolvedType)s, environment, imports);
 			} else if(s instanceof Invoke) {
 				return (Stmt) resolve((Invoke)s, environment, imports);
 			} else if(s instanceof Spawn) {
@@ -203,13 +184,13 @@ public class NameResolution {
 		return new Assertion(c, s.attributes());
 	}
 
-	protected Stmt resolve(Return s, HashSet<String> environment,
+	protected Stmt resolve(UnresolvedType s, HashSet<String> environment,
 			ArrayList<PkgID> imports) {
 		Expr e = s.expr();
 		if (e != null) {
 			e = resolve(e, environment, imports);
 		}
-		return new Return(e, s.attributes());
+		return new UnresolvedType(e, s.attributes());
 	}
 
 	protected Stmt resolve(Print s, HashSet<String> environment,
