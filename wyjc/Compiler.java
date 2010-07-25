@@ -37,6 +37,7 @@ public class Compiler implements Logger {
 	
 	protected NameResolution nameResolver;
 	protected TypeResolution typeResolver;		
+	/*
 	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
 	protected DefiniteAssignmentChecker defAssignChecker = new DefiniteAssignmentChecker();
 	protected FunctionChecker functionChecker = new FunctionChecker();
@@ -46,6 +47,7 @@ public class Compiler implements Logger {
 	protected VerificationConditionGenerator vcGenerator;	
 	protected VerificationConditionChecker vcChecker = new VerificationConditionChecker();	
 	protected ClassFileBuilder classBuilder;	
+	*/
 	
 	protected boolean verificationFlag = true; // verification is enabled	
 	protected boolean runtimeChecksFlag = true; // runtime checks enabled
@@ -59,8 +61,8 @@ public class Compiler implements Logger {
 			
 	public Compiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
-		this.typeResolver = new TypeResolution(loader);
 		/*
+		this.typeResolver = new TypeResolution(loader);		
 		this.nameResolver = new NameResolution(loader);
 		this.checkGenerator = new RuntimeCheckGenerator(loader);
 		this.classBuilder = new ClassFileBuilder(loader,whileyMajorVersion,whileyMinorVersion);

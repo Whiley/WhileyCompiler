@@ -1,5 +1,5 @@
 <project name="whiley" default="stdlib">  
-  <property name="version" value="0.3"/>
+  <property name="version" value="0.3.0"/>
 
   <target name="compile">
     <javac debug="true" srcdir="." includeantruntime="true" includes="wyjc/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyone/testing/**"/> 

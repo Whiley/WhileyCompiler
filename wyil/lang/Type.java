@@ -287,7 +287,7 @@ public abstract class Type {
 	
 	private static <T extends Type> T get(T type) {
 		Integer idx = cache.get(type);
-		if(idx != 0) {
+		if(idx != null) {
 			return (T) types.get(idx);
 		} else {
 			types.add(type);			

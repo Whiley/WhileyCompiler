@@ -141,7 +141,7 @@ public abstract class Value {
 	
 	private static <T extends Value> T get(T type) {
 		Integer idx = cache.get(type);
-		if(idx != 0) {
+		if(idx != null) {
 			return (T) values.get(idx);
 		} else {
 			values.add(type);			
