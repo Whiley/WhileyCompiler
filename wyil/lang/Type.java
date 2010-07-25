@@ -89,6 +89,12 @@ public abstract class Type {
 				(t1 instanceof Any) ||
 				(t1 instanceof Real && t2 instanceof Int)) {
 			return true;
+		} else if(t1 instanceof Named) {
+			Named t = (Named) t1;
+			return isSubtype(t.type,t2, environment);
+		} else if(t2 instanceof Named) {
+			Named t = (Named) t2;
+			return isSubtype(t1,t.type, environment);
 		} else if(t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
@@ -97,10 +103,14 @@ public abstract class Type {
 			Set l1 = (Set) t1;
 			Set l2 = (Set) t2;
 			return isSubtype(l1.element,l2.element,environment);
+		} else if(t1 instanceof Process && t2 instanceof Process) {
+			Process l1 = (Process) t1;
+			Process l2 = (Process) t2;
+			return isSubtype(l1.element,l2.element,environment);
 		} else if(t1 instanceof Union && t2 instanceof Union) {			
 			Union u2 = (Union) t2;
 			for(Type t : u2.bounds) {
-				if(isSubtype(t1,t)) {
+				if(isSubtype(t1,t,environment)) {
 					return true;
 				}				
 			}
@@ -108,11 +118,21 @@ public abstract class Type {
 		} else if(t1 instanceof Union) {
 			Union u1 = (Union) t1;
 			for(Type t : u1.bounds) {
-				if(isSubtype(t,t2)) {
+				if(isSubtype(t,t2,environment)) {
 					return true;
 				}
 			}
 			return false;
+		} else if(t1 instanceof Tuple && t2 instanceof Tuple) {
+			Tuple tt1 = (Tuple) t1;
+			Tuple tt2 = (Tuple) t2;
+			for(Map.Entry<String,Type> e : tt1.types.entrySet()) {
+				Type t = tt2.types.get(e.getKey());
+				if(!isSubtype(e.getValue(),t,environment)) {
+					return false;
+				}
+			}
+			return true;
 		} else if(t1 instanceof Fun && t2 instanceof Fun) {
 			Fun f1 = (Fun) t1;
 			Fun f2 = (Fun) t2;
@@ -130,8 +150,6 @@ public abstract class Type {
 			}
 			return isSubtype(f2.ret,f1.ret,environment);
 		}
-		
-		// FIXME: need to add more cases.
 		
 		return false;
 	}
