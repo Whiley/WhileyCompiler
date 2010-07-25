@@ -25,7 +25,7 @@ import java.util.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 
-public class TypeResolution {	
+public class OldTypeResolution {	
 	private ModuleLoader loader;
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID,Expr> constants;
@@ -34,7 +34,7 @@ public class TypeResolution {
 	private HashMap<NameID,UnresolvedType> unresolved;
 	private HashMap<NameID,List<ModuleInfo.Method>> functions;
 	
-	public TypeResolution(ModuleLoader loader) {
+	public OldTypeResolution(ModuleLoader loader) {
 		this.loader = loader;		
 	}
 	

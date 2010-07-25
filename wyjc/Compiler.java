@@ -36,7 +36,7 @@ public class Compiler implements Logger {
 	protected ArrayList<WhileyFile> queue = new ArrayList<WhileyFile>();	
 	
 	protected ModuleBuilder nameResolver;
-	protected TypeResolution typeResolver;		
+	protected OldTypeResolution typeResolver;		
 	/*
 	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
 	protected DefiniteAssignmentChecker defAssignChecker = new DefiniteAssignmentChecker();
