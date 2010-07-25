@@ -35,7 +35,7 @@ public class Compiler implements Logger {
 	protected HashSet<ModuleID> enqueued = new HashSet<ModuleID>();
 	protected ArrayList<WhileyFile> queue = new ArrayList<WhileyFile>();	
 	
-	protected NameResolution nameResolver;
+	protected ModuleBuilder nameResolver;
 	protected TypeResolution typeResolver;		
 	/*
 	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
@@ -62,7 +62,7 @@ public class Compiler implements Logger {
 	public Compiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
 		
-		this.nameResolver = new NameResolution(loader);
+		this.nameResolver = new ModuleBuilder(loader);
 		/*
 		this.typeResolver = new TypeResolution(loader);				
 		this.checkGenerator = new RuntimeCheckGenerator(loader);

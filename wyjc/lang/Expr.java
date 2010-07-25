@@ -7,7 +7,7 @@ import wyil.util.Pair;
 
 public interface Expr extends SyntacticElement {
 
-	public interface LVal {}
+	public interface LVal extends Expr {}
 	
 	public static class Variable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;
@@ -91,7 +91,8 @@ public interface Expr extends SyntacticElement {
 		NOT,
 		NEG,
 		LENGTHOF,
-		PROCESSACCESS		
+		PROCESSACCESS,
+		PROCESSSPAWN
 	}
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
@@ -188,13 +189,9 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class Spawn extends SyntacticElement.Impl implements Expr,Stmt {		
-		// Spawn cannot be an UnOp since it needs to be a stmt and an expr
-		public final Expr mhs;		
-		
+	public static class Spawn extends UnOp implements Stmt {		
 		public Spawn(Expr mhs, Attribute... attributes) {
-			super(attributes);			
-			this.mhs = mhs;			
+			super(UOp.PROCESSSPAWN,mhs,attributes);							
 		}
 	}
 }

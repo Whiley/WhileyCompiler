@@ -4,7 +4,7 @@ import java.util.*;
 
 import wyjvm.lang.Bytecode;
 
-public interface Stmt {
+public interface Stmt extends SyntacticElement {
 	
 	public static final class VarDecl extends SyntacticElement.Impl implements
 			Stmt {

@@ -26,12 +26,14 @@ import wyil.util.*;
 import wyil.lang.*;
 import wyjc.lang.*;
 import wyjc.lang.WhileyFile.*;
+import wyjc.lang.Stmt.*;
+import wyjc.lang.Expr.*;
 import wyjc.util.*;
 
-public class NameResolution {
+public class ModuleBuilder {
 	private final ModuleLoader loader;
 	
-	public NameResolution(ModuleLoader loader) {
+	public ModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
@@ -98,230 +100,168 @@ public class NameResolution {
 		
 		// method return type
 		try {
-			resolve(fd.returnType().type(), imports);
+			resolve(fd.ret, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), fd.returnType());
+			syntaxError(e.getMessage(), fd.ret);
 		}
 		
 		// method receiver type (if applicable)
-		try {
-			if(fd.receiver() != null) {
-				resolve(fd.receiver().type(), imports);
-			}
+		try {			
+			resolve(fd.receiver, imports);			
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), fd.receiver());
+			syntaxError(e.getMessage(), fd.receiver);
 		}
 			
-		if(fd.constraint() != null) {
+		if(fd.constraint != null) {
 			environment.add("$");
-			Condition c = (Condition) resolve(fd.constraint(), environment,imports);
-			fd.setConstraint(c);
+			resolve(fd.constraint, environment,imports);			
 			environment.remove("$");
 		}
 		
-		List<Stmt> stmts = fd.statements();
+		List<Stmt> stmts = fd.statements;
 		for (int i=0;i!=stmts.size();++i) {
 			Stmt s = resolve(stmts.get(i), environment, imports);
 			stmts.set(i,s);					
 		}
 	}
 	
-	public Stmt resolve(Stmt s, HashSet<String> environment, ArrayList<PkgID> imports) {
+	public void resolve(Stmt s, HashSet<String> environment, ArrayList<PkgID> imports) {
 		try {
-			if(s instanceof Skip) {
-				return s;
-			} else if(s instanceof UnresolvedVarDecl) {
-				return resolve((UnresolvedVarDecl)s, environment, imports);
+			if(s instanceof Skip) {				
+			} else if(s instanceof VarDecl) {
+				resolve((VarDecl)s, environment, imports);
 			} else if(s instanceof Assign) {
-				return resolve((Assign)s, environment, imports);
-			} else if(s instanceof Assertion) {
-				return resolve((Assertion)s, environment, imports);
-			} else if(s instanceof Print) {
-				return resolve((Print)s, environment, imports);
+				resolve((Assign)s, environment, imports);
+			} else if(s instanceof Assert) {
+				resolve((Assert)s, environment, imports);
+			} else if(s instanceof Debug) {
+				resolve((Debug)s, environment, imports);
 			} else if(s instanceof IfElse) {
-				return resolve((IfElse)s, environment, imports);
-			} else if(s instanceof UnresolvedType) {
-				return resolve((UnresolvedType)s, environment, imports);
+				resolve((IfElse)s, environment, imports);
 			} else if(s instanceof Invoke) {
-				return (Stmt) resolve((Invoke)s, environment, imports);
+				resolve((Invoke)s, environment, imports);
 			} else if(s instanceof Spawn) {
-				return (Stmt) resolve((UnOp)s, environment, imports);
+				resolve((UnOp)s, environment, imports);
 			} else {
 				syntaxError("unknown statement encountered: "
-						+ s.getClass().getName(), s);
-				return null;
+						+ s.getClass().getName(), s);				
 			}
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), s);
-			return null;
+			syntaxError(e.getMessage(), s);			
 		}
 	}
 	
-	protected Stmt resolve(UnresolvedVarDecl s, HashSet<String> environment,
+	protected void resolve(VarDecl s, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
-		Expr init = s.initialiser();
-		resolve(s.type(), imports);
+		Expr init = s.initialiser;
+		resolve(s.type, imports);
 		if(init != null) {
-			init = resolve(init,environment, imports);
+			resolve(init,environment, imports);
 		}
-		environment.add(s.name());
-		return new UnresolvedVarDecl(s.type(),s.name(),init,s.attributes());
+		environment.add(s.name);		
 	}
 	
-	protected Stmt resolve(Assign s, HashSet<String> environment,
+	protected void resolve(Assign s, HashSet<String> environment,
 			ArrayList<PkgID> imports) {
-		LVal lhs = (LVal) resolve(s.lhs(), environment, imports);
-		Expr rhs = resolve(s.rhs(), environment, imports);
-		return new Assign(lhs, rhs, s.attributes());
+		resolve(s.lhs, environment, imports);
+		resolve(s.rhs, environment, imports);	
 	}
 
-	protected Stmt resolve(Assertion s, HashSet<String> environment,
+	protected void resolve(Assert s, HashSet<String> environment,
 			ArrayList<PkgID> imports) {
-		Condition c = (Condition) resolve(s.condition(), environment, imports);
-		return new Assertion(c, s.attributes());
+		resolve(s.expr, environment, imports);		
 	}
 
-	protected Stmt resolve(UnresolvedType s, HashSet<String> environment,
+	protected void resolve(Debug s, HashSet<String> environment,
 			ArrayList<PkgID> imports) {
-		Expr e = s.expr();
-		if (e != null) {
-			e = resolve(e, environment, imports);
+		resolve(s.expr, environment, imports);		
+	}
+
+	protected void resolve(IfElse s, HashSet<String> environment,
+			ArrayList<PkgID> imports) {
+		resolve(s.condition, environment, imports);
+		environment = new HashSet<String>(environment);
+		for (Stmt st : s.trueBranch) {
+			resolve(st, environment, imports);
 		}
-		return new UnresolvedType(e, s.attributes());
-	}
-
-	protected Stmt resolve(Print s, HashSet<String> environment,
-			ArrayList<PkgID> imports) {
-		Expr e = resolve(s.expr(), environment, imports);
-		return new Print(e, s.attributes());
-	}
-
-	protected Stmt resolve(IfElse s, HashSet<String> environment,
-			ArrayList<PkgID> imports) {
-		ArrayList<Stmt> tb = new ArrayList<Stmt>();
-		ArrayList<Stmt> fb = null;
-		for (Stmt st : s.trueBranch()) {
-			tb.add(resolve(st, environment, imports));
-		}
-		if (s.falseBranch() != null) {
-			fb = new ArrayList<Stmt>();
-			for (Stmt st : s.falseBranch()) {
-				fb.add(resolve(st, environment, imports));
+		if (s.falseBranch != null) {			
+			for (Stmt st : s.falseBranch) {
+				resolve(st, environment, imports);
 			}
 		}
-
-		Condition cond = (Condition) resolve(s.condition(), environment, imports);
-
-		return new IfElse(cond, tb, fb, s.attributes());
 	}
 	
-	protected Expr resolve(Expr e, HashSet<String> environment, ArrayList<PkgID> imports) {
+	protected void resolve(Expr e, HashSet<String> environment, ArrayList<PkgID> imports) {
 		try {
-			if (e instanceof Value) {
-				return e;
+			if (e instanceof Constant) {
+				
 			} else if (e instanceof Variable) {
-				return resolve((Variable)e, environment, imports);
+				resolve((Variable)e, environment, imports);
+			} else if (e instanceof NaryOp) {
+				resolve((BinOp)e, environment, imports);
 			} else if (e instanceof BinOp) {
-				return resolve((BinOp)e, environment, imports);
+				resolve((BinOp)e, environment, imports);
 			} else if (e instanceof UnOp) {
-				return resolve((UnOp)e, environment, imports);
+				resolve((UnOp)e, environment, imports);
 			} else if (e instanceof Invoke) {
-				return resolve((Invoke)e, environment, imports);
-			} else if (e instanceof RangeGenerator) {
-				return resolve((RangeGenerator) e, environment, imports);
-			} else if (e instanceof ListGenerator) {
-				return resolve((ListGenerator) e, environment, imports);
-			} else if (e instanceof ListAccess) {
-				return resolve((ListAccess) e, environment, imports);
-			} else if (e instanceof ListSublist) {
-				return resolve((ListSublist) e, environment, imports);
-			} else if (e instanceof SetVal) {
-				return resolve((SetVal) e, environment, imports);
-			} else if (e instanceof SetGenerator) {
-				return resolve((SetGenerator) e, environment, imports);
-			} else if (e instanceof SetComprehension) {
-				return resolve((SetComprehension) e, environment, imports);
-			} else if (e instanceof TupleVal) {
-				return resolve((TupleVal) e, environment, imports);
-			} else if (e instanceof TupleGenerator) {
-				return resolve((TupleGenerator) e, environment, imports);
+				resolve((Invoke)e, environment, imports);
+			} else if (e instanceof Comprehension) {
+				resolve((Comprehension) e, environment, imports);
 			} else if (e instanceof TupleAccess) {
-				return resolve((TupleAccess) e, environment, imports);
-			} else if (e instanceof UnresolvedTypeEquals) {
-				return resolve((UnresolvedTypeEquals) e, environment, imports);
+				resolve((TupleAccess) e, environment, imports);
+			} else if (e instanceof TupleGen) {
+				resolve((TupleGen) e, environment, imports);
 			} else {				
 				syntaxError("unknown expression encountered: "
-							+ e.getClass().getName(), e);				
-				return null;
+							+ e.getClass().getName(), e);								
 			}
 		} catch(ResolveError re) {
-			syntaxError(re.getMessage(),e,re);
-			return null;
+			syntaxError(re.getMessage(),e,re);			
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
-			syntaxError("internal failure", e, ex);
-			return null;
+			syntaxError("internal failure", e, ex);			
 		}	
 	}
 	
-	protected Invoke resolve(Invoke s, HashSet<String> environment,
+	protected void resolve(Invoke s, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
-		List<Expr> args = s.arguments();		
-		ArrayList<Expr> nargs = new ArrayList();
-		for(Expr e : args) {						
-			nargs.add(resolve(e, environment, imports));
-		}
-		
-		ModuleID mid = loader.resolve(s.name(),imports);
-		Expr target = s.target();
-		if(target != null) {
-			target = resolve(target,environment,imports);
-		}
-		Invoke ivk = new Invoke(s.name(),target,nargs,s.attributes());
 						
-		ivk.resolve(mid,null);
+		for(Expr e : s.arguments) {						
+			resolve(e, environment, imports);
+		}
 		
-		return ivk;
+		ModuleID mid = loader.resolve(s.name,imports);
+		Expr target = s.receiver;
+		if(target != null) {
+			resolve(target,environment,imports);
+		}
+		
+		// FIXME: need to actually resolve the invocation
+		// ivk.resolve(mid,null);		
 	}
 	
-	protected Expr resolve(Variable v, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		if(environment.contains(v.name())) {
-			// this is a local variable access
-			return v;
-		} else {
-			// this is a constant variable access (or other)			
-			ModuleID mid = loader.resolve(v.name(), imports);
-			return new Constant(v.name(),mid,v.attributes());
+	protected void resolve(Variable v, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+		if(!environment.contains(v.var)) {		
+			// this is a constant variable access (or other)	
+			
+			// FIXME: need to actually resolve this variable
+			ModuleID mid = loader.resolve(v.var, imports);			
 		}
 	}
 	
-	protected Expr resolve(None e, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
-		SetComprehension sc = (SetComprehension) resolve(e.mhs(), environment,
-				imports);
-		return new None(sc, e.attributes());
-	}
-
-	protected Expr resolve(Some e, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
-		SetComprehension sc = (SetComprehension) resolve(e.mhs(), environment,
-				imports);
-		return new Some(sc, e.attributes());
-	}
-	
-	protected Expr resolve(UnOp v, HashSet<String> environment,
+	protected void resolve(UnOp v, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
 		Expr lhs = resolve(v.mhs(), environment, imports);
 		if(v instanceof Not) {
 			return new Not((Condition)lhs,v.attributes());
 		} else if (v instanceof Some) {
-			return resolve((Some) v, environment, imports);
+			resolve((Some) v, environment, imports);
 		} else if (v instanceof None) {
-			return resolve((None) v, environment, imports);
+			resolve((None) v, environment, imports);
 		} else if(v instanceof IntNegate) {
 			return new IntNegate(lhs,v.attributes());
 		} else if(v instanceof ListLength) {
@@ -338,7 +278,7 @@ public class NameResolution {
 		}
 	}
 	
-	protected Expr resolve(BinOp v, HashSet<String> environment, ArrayList<PkgID> imports) {
+	protected void resolve(BinOp v, HashSet<String> environment, ArrayList<PkgID> imports) {
 		Expr lhs = resolve(v.lhs(), environment, imports);
 		Expr rhs = resolve(v.rhs(), environment, imports);
 		
@@ -388,7 +328,7 @@ public class NameResolution {
 		}
 	}
 	
-	protected Expr resolve(SetGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(SetGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		ArrayList<Expr> nexprs = new ArrayList<Expr>();
 		for(Expr e : sg.getValues()) {
 			nexprs.add(resolve(e, environment, imports));
@@ -396,7 +336,7 @@ public class NameResolution {
 		return new SetGenerator(nexprs,sg.attributes());
 	}
 	
-	protected Expr resolve(SetComprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {				
+	protected void resolve(SetComprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {				
 		List<Pair<String,Expr>> sources = e.sources();		
 		List<Pair<String,Expr>> nsources = new ArrayList<Pair<String,Expr>>();
 		HashSet<String> nenv = new HashSet<String>(environment);			
@@ -417,27 +357,27 @@ public class NameResolution {
 		return new SetComprehension(p,nsources,c,e.attributes());		
 	}
 	
-	protected Expr resolve(RangeGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(RangeGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		Expr start = resolve(sg.start(),environment,imports);
 		Expr end = resolve(sg.end(),environment,imports);
 		
 		return new RangeGenerator(start,end,sg.attributes());
 	}
 	
-	protected Expr resolve(ListAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(ListAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		Expr src = resolve(sg.source(),environment,imports);
 		Expr idx = resolve(sg.index(),environment,imports);
 		return new ListAccess(src,idx,sg.attributes());
 	}
 	
-	protected Expr resolve(ListSublist sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(ListSublist sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		Expr src = resolve(sg.source(),environment,imports);
 		Expr start = resolve(sg.start(),environment,imports);
 		Expr end = resolve(sg.end(),environment,imports);
 		return new ListSublist(src,start,end,sg.attributes());
 	}
 	
-	protected Expr resolve(ListGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(ListGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		ArrayList<Expr> nexprs = new ArrayList<Expr>();
 		for(Expr e : sg.getValues()) {
 			nexprs.add(resolve(e, environment, imports));
@@ -445,7 +385,7 @@ public class NameResolution {
 		return new ListGenerator(nexprs,sg.attributes());
 	}
 		
-	protected Expr resolve(TupleGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(TupleGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		HashMap<String,Expr> vals = new HashMap<String,Expr>();
 		for(Map.Entry<String,Expr> e : sg.values().entrySet()) {
 			vals.put(e.getKey(), resolve(e.getValue(),environment,imports));
@@ -453,12 +393,12 @@ public class NameResolution {
 		return new TupleGenerator(vals,sg.attributes());
 	}
 	
-	protected Expr resolve(TupleAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(TupleAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		Expr src = resolve(sg.source(),environment,imports);		
 		return new TupleAccess(src,sg.name(),sg.attributes());
 	}
 	
-	protected Expr resolve(UnresolvedTypeEquals sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(UnresolvedTypeEquals sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
 		Expr lhs = resolve(sg.lhs(),environment,imports);
 		Condition rhs = (Condition) resolve(sg.rhs(),environment,imports);		
 		resolve(sg.type(),imports);
@@ -466,45 +406,30 @@ public class NameResolution {
 	}
 	
 	protected void resolve(UnresolvedType t, ArrayList<PkgID> imports) throws ResolveError {
-		if(t instanceof ListType) {
-			ListType lt = (ListType) t;
-			resolve(lt.element(),imports);
-		} else if(t instanceof SetType) {
-			SetType st = (SetType) t;
-			resolve(st.element(),imports);
-		} else if(t instanceof UnresolvedSetType) {
-			UnresolvedSetType st = (UnresolvedSetType) t;
-			resolve(st.element(),imports);
-		} else if(t instanceof UnresolvedListType) {
-			UnresolvedListType lt = (UnresolvedListType) t;
-			resolve(lt.element(),imports);
-		} else if(t instanceof TupleType) {
-			TupleType tt = (TupleType) t;
-			for(Map.Entry<String,Type> e : tt.types().entrySet()) {
+		if(t instanceof UnresolvedType.List) {
+			UnresolvedType.List lt = (UnresolvedType.List) t;
+			resolve(lt.element,imports);
+		} else if(t instanceof UnresolvedType.Set) {
+			UnresolvedType.Set st = (UnresolvedType.Set) t;
+			resolve(st.element,imports);
+		} else if(t instanceof UnresolvedType.Tuple) {
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				resolve(e.getValue(),imports);
 			}
-		} else if(t instanceof UnresolvedTupleType) {
-			UnresolvedTupleType tt = (UnresolvedTupleType) t;
-			for(Map.Entry<String,UnresolvedType> e : tt.types().entrySet()) {
-				resolve(e.getValue(),imports);
-			}
-		} else if(t instanceof UserDefType) {
-			UserDefType dt = (UserDefType) t;						
-			ModuleID owner = loader.resolve(dt.name(), imports);		
-			dt.resolve(owner);
-		} else if(t instanceof UnionType) {
-			UnionType ut = (UnionType) t;
-			for(Type b : ut.types()) {
+		} else if(t instanceof UnresolvedType.Named) {
+			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
+			ModuleID owner = loader.resolve(dt.name, imports);		
+			// FIXME: need to actually resolve stuff!!
+			// dt.resolve(owner);
+		} else if(t instanceof UnresolvedType.Union) {
+			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			for(UnresolvedType b : ut.bounds) {
 				resolve(b,imports);
 			}
-		} else if(t instanceof UnresolvedUnionType) {
-			UnresolvedUnionType ut = (UnresolvedUnionType) t;
-			for(UnresolvedType b : ut.types()) {
-				resolve(b,imports);
-			}
-		}  else if(t instanceof UnresolvedProcessType) {	
-			UnresolvedProcessType ut = (UnresolvedProcessType) t;
-			resolve(ut.element(),imports);			
+		} else if(t instanceof UnresolvedType.Process) {	
+			UnresolvedType.Process ut = (UnresolvedType.Process) t;
+			resolve(ut.element,imports);			
 		}  
 	}
 }
