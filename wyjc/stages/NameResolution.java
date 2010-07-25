@@ -30,30 +30,14 @@ import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
 import wyjc.util.*;
 
-public class TypeResolution {
+public class NameResolution {
 	private final ModuleLoader loader;	
 	
-	public TypeResolution(ModuleLoader loader) {
+	public NameResolution(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
-	public void resolve(List<WhileyFile> files) {
-		HashMap<ModuleID, WhileyFile> fileMap = new HashMap<ModuleID, WhileyFile>();
-		
-		for (WhileyFile f : files) {
-			fileMap.put(f.module, f);
-		}
-		
-		// Stage 1 ... resolve and check types of all named types and functions
-		for(WhileyFile f : files) {
-			for(WhileyFile.Decl d : f.declarations) {
-				
-			}
-		}
-		
-		// Stage 2 ... resolve, propagate and check types for all expressions.
-	}
-	private void resolve(WhileyFile wf) {
+	public void resolve(WhileyFile wf) {
 		ArrayList<PkgID> imports = new ArrayList<PkgID>();
 		
 		ModuleID id = wf.module;
@@ -88,7 +72,9 @@ public class TypeResolution {
 		try {
 			resolve(td.type, imports);			
 			if(td.constraint != null) {
-				resolve(td.constraint,imports);
+				HashSet<String> environment = new HashSet<String>();
+				environment.add("$");
+				resolve(td.constraint,environment,imports);
 			}		
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
@@ -138,8 +124,7 @@ public class TypeResolution {
 		
 		List<Stmt> stmts = fd.statements;
 		for (int i=0;i!=stmts.size();++i) {
-			Stmt s = resolve(stmts.get(i), environment, imports);
-			stmts.set(i,s);					
+			resolve(stmts.get(i), environment, imports);							
 		}
 	}
 	
@@ -152,6 +137,8 @@ public class TypeResolution {
 				resolve((Assign)s, environment, imports);
 			} else if(s instanceof Assert) {
 				resolve((Assert)s, environment, imports);
+			} else if(s instanceof Return) {
+				resolve((Return)s, environment, imports);
 			} else if(s instanceof Debug) {
 				resolve((Debug)s, environment, imports);
 			} else if(s instanceof IfElse) {
@@ -191,6 +178,13 @@ public class TypeResolution {
 		resolve(s.expr, environment, imports);		
 	}
 
+	protected void resolve(Return s, HashSet<String> environment,
+			ArrayList<PkgID> imports) {
+		if(s.expr != null) {
+			resolve(s.expr, environment, imports);
+		}
+	}
+	
 	protected void resolve(Debug s, HashSet<String> environment,
 			ArrayList<PkgID> imports) {
 		resolve(s.expr, environment, imports);		
@@ -243,29 +237,32 @@ public class TypeResolution {
 		}	
 	}
 	
-	protected void resolve(Invoke s, HashSet<String> environment,
+	protected void resolve(Invoke ivk, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
 						
-		for(Expr e : s.arguments) {						
+		for(Expr e : ivk.arguments) {						
 			resolve(e, environment, imports);
 		}
 		
-		ModuleID mid = loader.resolve(s.name,imports);
-		Expr target = s.receiver;
+		ModuleID mid = loader.resolve(ivk.name,imports);
+		Expr target = ivk.receiver;
+		
 		if(target != null) {
 			resolve(target,environment,imports);
 		}
-		
-		// FIXME: need to actually resolve the invocation
-		// ivk.resolve(mid,null);		
+	
+		// Ok, resolve the module for this invoke
+		ivk.attributes().add(new Attribute.Module(mid));		
 	}
 	
-	protected void resolve(Variable v, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(Variable v, HashSet<String> environment,
+			ArrayList<PkgID> imports) throws ResolveError {
 		if(!environment.contains(v.var)) {		
-			// this is a constant variable access (or other)	
-			
-			// FIXME: need to actually resolve this variable
-			ModuleID mid = loader.resolve(v.var, imports);			
+			// This variable access must correspond with a constant definition
+			// in some module. Therefore, we must determine which module this
+			// is, and then store that information for future use.							
+			ModuleID mid = loader.resolve(v.var, imports);
+			v.attributes().add(new Attribute.Module(mid));			
 		}
 	}
 	
@@ -327,10 +324,12 @@ public class TypeResolution {
 				resolve(e.getValue(),imports);
 			}
 		} else if(t instanceof UnresolvedType.Named) {
+			// This case corresponds to a user-defined type. This will be
+			// defined in some module (possibly ours), and we need to identify
+			// what module that is here, and save it for future use.
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			ModuleID owner = loader.resolve(dt.name, imports);		
-			// FIXME: need to actually resolve stuff!!
-			// dt.resolve(owner);
+			ModuleID mid = loader.resolve(dt.name, imports);			
+			t.attributes().add(new Attribute.Module(mid));
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			for(UnresolvedType b : ut.bounds) {

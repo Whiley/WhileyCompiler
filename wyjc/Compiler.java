@@ -35,7 +35,7 @@ public class Compiler implements Logger {
 	protected HashSet<ModuleID> enqueued = new HashSet<ModuleID>();
 	protected ArrayList<WhileyFile> queue = new ArrayList<WhileyFile>();	
 	
-	protected TypeResolution nameResolver;
+	protected NameResolution nameResolver;
 	protected OldTypeResolution typeResolver;		
 	/*
 	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
@@ -62,7 +62,7 @@ public class Compiler implements Logger {
 	public Compiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
 		
-		this.nameResolver = new TypeResolution(loader);
+		this.nameResolver = new NameResolution(loader);
 		/*
 		this.typeResolver = new TypeResolution(loader);				
 		this.checkGenerator = new RuntimeCheckGenerator(loader);
@@ -225,7 +225,7 @@ public class Compiler implements Logger {
 	
 	protected void resolveNames(WhileyFile m) {
 		long start = System.currentTimeMillis();		
-		// nameResolver.resolve(m);
+		nameResolver.resolve(m);
 		logTimedMessage("[" + m.filename + "] resolved names",
 				System.currentTimeMillis() - start);		
 		

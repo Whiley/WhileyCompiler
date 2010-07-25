@@ -18,7 +18,7 @@
 
 package wyjc.lang;
 
-import wyil.lang.Type;
+import wyil.lang.*;
 
 /**
  * An attribute is simply a piece of information that we may wish to
@@ -37,12 +37,20 @@ public interface Attribute {
 		}		
 	}
 
-	public static final class TypeDef implements Attribute {
-		public final Type type;
+	public static final class Type implements Attribute {
+		public final wyil.lang.Type type;
 		
-		public TypeDef(Type type) {
+		public Type(wyil.lang.Type type) {
 			this.type = type;	
 		}		
+	}
+	
+	public static final class Module implements Attribute {
+		public final ModuleID module;
+		
+		public Module(ModuleID module) {
+			this.module = module;
+		}
 	}
 	
 	public static class Source implements Attribute {
