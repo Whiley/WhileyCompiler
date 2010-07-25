@@ -130,15 +130,28 @@ public class ModuleLoader {
 	/**
 	 * The logger is used to log messages from the module loader.
 	 */
-	private final Logger logger;
+	private Logger logger;
 	
 	public ModuleLoader(Collection<String> whileypath, Logger logger) {
 		this.logger = logger;
 		this.whileypath = new ArrayList<String>(whileypath);		
 	}
 	
+	public ModuleLoader(Collection<String> whileypath) {
+		this.logger = Logger.NULL;
+		this.whileypath = new ArrayList<String>(whileypath);		
+	}
+	
 	public void setClosedWorldAssumption(boolean flag) {
 		closedWorldAssumption = flag;
+	}
+	
+	/**
+	 * Set the logger for this module loader.
+	 * @param logger
+	 */
+	public void setLogger(Logger logger) {
+		this.logger = logger;
 	}
 	
 	/**
@@ -574,7 +587,7 @@ public class ModuleLoader {
 			}
 		}
 		
-		return new Module(mid,nmethods,types,constants);
+		return new Module(mid,cf.name(),nmethods,types,constants);
 	}
 	
 	public String stripCase(String name) {

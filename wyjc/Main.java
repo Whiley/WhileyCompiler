@@ -21,6 +21,9 @@ package wyjc;
 import java.io.*;
 import java.util.*;
 
+import wyil.ModuleLoader;
+import wyil.lang.*;
+import wyil.util.*;
 import wyjc.util.*;
 
 public class Main {
@@ -127,7 +130,7 @@ public class Main {
 		Compiler compiler  = new Compiler(loader,MAJOR_VERSION,MINOR_VERSION);
 		
 		// Now, configure compiler and loader
-		loader.setCompiler(compiler);
+		loader.setLogger(compiler);
 		loader.setClosedWorldAssumption(cwa);
 		compiler.setDebugMode(debugMode);
 		
@@ -185,19 +188,7 @@ public class Main {
 				}
 
 				return CONTEXT_ERROR;
-			} catch (StuckError e) {
-				if (e.filename() != null) {
-					outputSourceError(e.filename(), e.start(), e.end(),
-							"runtime error (" + e.getMessage() + ").");
-				} else {
-					System.err.println("runtime error (" + e.getMessage() + ").");
-				}
-
-				if (verbose) {
-					e.printStackTrace(errout);
-				}
-				return RUNTIME_ERROR;
-			}
+			} 
 		} catch(Exception e) {			
 			errout.println("Error: " + e.getMessage());
 			if(verbose) {

@@ -23,17 +23,17 @@ import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.util.*;
 import wyil.stages.*;
-import wyjc.ast.ResolvedWhileyFile;
-import wyjc.ast.UnresolvedWhileyFile;
+import wyjc.lang.*;
 import wyjc.stages.*;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 
-public class Compiler {	
+public class Compiler implements Logger {	
 	private ModuleLoader loader;
 	protected HashSet<ModuleID> enqueued = new HashSet<ModuleID>();
-	protected ArrayList<UnresolvedWhileyFile> queue = new ArrayList<UnresolvedWhileyFile>();	
+	protected ArrayList<WhileyFile> queue = new ArrayList<WhileyFile>();	
 	
 	protected NameResolution nameResolver;
 	protected TypeResolution typeResolver;		
@@ -60,10 +60,12 @@ public class Compiler {
 	public Compiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
 		this.typeResolver = new TypeResolution(loader);
+		/*
 		this.nameResolver = new NameResolution(loader);
 		this.checkGenerator = new RuntimeCheckGenerator(loader);
 		this.classBuilder = new ClassFileBuilder(loader,whileyMajorVersion,whileyMinorVersion);
 		this.vcGenerator = new VerificationConditionGenerator(loader);
+		*/
 	}
 	
 	/**
@@ -96,38 +98,38 @@ public class Compiler {
 	}
 	
 	public void compile(File file) throws IOException {
-		UnresolvedWhileyFile uwf = innerParse(file);		
-		loader.preregister(uwf.skeletonInfo(),uwf.filename());	
-		enqueue(uwf);				
+		WhileyFile wf = innerParse(file);		
+		loader.preregister(wf.skeleton(),wf.filename);	
+		enqueue(wf);				
 		flushQueue();			
 	}
 	
-	public UnresolvedWhileyFile parse(File file) throws IOException {
-		UnresolvedWhileyFile uwf = innerParse(file);		
-		loader.preregister(uwf.skeletonInfo(),uwf.filename());						
-		enqueue(uwf);
-		return uwf;
+	public WhileyFile parse(File file) throws IOException {
+		WhileyFile wf = innerParse(file);		
+		loader.preregister(wf.skeleton(),wf.filename);						
+		enqueue(wf);
+		return wf;
 	}
 			
-	public void enqueue(UnresolvedWhileyFile file) {
-		if(!enqueued.contains(file.id())) {				
-			enqueued.add(file.id());
+	public void enqueue(WhileyFile file) {
+		if(!enqueued.contains(file.module)) {				
+			enqueued.add(file.module);
 			queue.add(file);
 			resolveNames(file);
 		}
 	}
 	
-	public List<UnresolvedWhileyFile> compile(List<File> files) throws IOException {
-		ArrayList<UnresolvedWhileyFile> modules = new ArrayList<UnresolvedWhileyFile>();
+	public List<WhileyFile> compile(List<File> files) throws IOException {
+		ArrayList<WhileyFile> modules = new ArrayList<WhileyFile>();
 		for (File f : files) {
-			UnresolvedWhileyFile m = innerParse(f);			
-			modules.add(m);			
-			loader.preregister(m.skeletonInfo(),m.filename());
-			enqueued.add(m.id());
-			queue.add(m);
+			WhileyFile wf = innerParse(f);			
+			modules.add(wf);			
+			loader.preregister(wf.skeleton(),wf.filename);
+			enqueued.add(wf.module);
+			queue.add(wf);
 		}
 		
-		for (UnresolvedWhileyFile m : modules) {
+		for (WhileyFile m : modules) {
 			resolveNames(m);			
 		}
 		
@@ -140,7 +142,7 @@ public class Compiler {
 		resolveTypes(queue);
 		
 		while (!queue.isEmpty()) {
-			UnresolvedWhileyFile m = queue.remove(0);
+			WhileyFile m = queue.remove(0);
 			finishCompilation(m);
 		}
 	}
@@ -155,7 +157,7 @@ public class Compiler {
 	 * @return
 	 * @throws IOException
 	 */
-	public UnresolvedWhileyFile innerParse(File file) throws IOException {
+	public WhileyFile innerParse(File file) throws IOException {
 		long start = System.currentTimeMillis();	
 		WhileyLexer wlexer = new WhileyLexer(file.getPath());		
 		List<WhileyLexer.Token> tokens = wlexer.scan();		
@@ -178,91 +180,93 @@ public class Compiler {
 	 * for all expressions used within the module, as well as checking for
 	 * definite assignment and performing verification checking.
 	 * 
-	 * @param uwf
+	 * @param wf
 	 */
-	public void finishCompilation(UnresolvedWhileyFile uwf) {				
+	public void finishCompilation(WhileyFile wf) {				
 		
-		// Resolve the file
-		ResolvedWhileyFile rwf = buildResolvedFile(uwf);
+		// Build the Module
+		// Module mod = buildModule(wf);
 		
 		// Register the updated file
-		loader.register(rwf.moduleInfo());
+		//loader.register(mod);
 		
 		// Perform definite assignment analysis
-		defAssignment(rwf);				
+		//defAssignment(rwf);				
 		
 		// Check functional behaviour
-		funCheck(rwf);				
+		//funCheck(rwf);				
 				
 		// Perform return value check
-		returnCheck(rwf);
+		//returnCheck(rwf);
 		
 		if (runtimeChecksFlag) {
 			// Generate runtime checks
-			generateChecks(rwf);
+			//generateChecks(rwf);
 		
 			// Generate post conditions
-			generatePostConditions(rwf);
+			//generatePostConditions(rwf);
 
 			// Generate verification conditions
-			generateVerificationConditions(rwf);
+			//generateVerificationConditions(rwf);
 
 			if(verificationFlag) {
 				// Check verification conditions (if applicable)
-				checkVerificationConditions(rwf);
+				//checkVerificationConditions(rwf);
 			}			
 		}
 	
-		writeClassFile(rwf);		
+		// writeClassFile(rwf);
+		System.out.println("*** PARSED: " + wf.filename);
 	}
 	
 	
-	protected void resolveNames(UnresolvedWhileyFile m) {
+	protected void resolveNames(WhileyFile m) {
 		long start = System.currentTimeMillis();		
-		nameResolver.resolve(m);
-		logTimedMessage("[" + m.filename() + "] resolved names",
+		// nameResolver.resolve(m);
+		logTimedMessage("[" + m.filename + "] resolved names",
 				System.currentTimeMillis() - start);		
 		
 	}
 	
-	protected void resolveTypes(List<UnresolvedWhileyFile> files) {
+	protected void resolveTypes(List<WhileyFile> files) {
 		long start = System.currentTimeMillis();		
-		typeResolver.resolve(files);
+		// typeResolver.resolve(files);
 		logTimedMessage("resolved types",
 				System.currentTimeMillis() - start);		
 		
 	}
 	
-	protected ResolvedWhileyFile buildResolvedFile(UnresolvedWhileyFile m) {
+	/*
+	protected Module buildModule(WhileyFile m) {
 		long start = System.currentTimeMillis();		
-		ResolvedWhileyFile rwf = fileBuilder.build(m);
-		logTimedMessage("[" + m.filename() + "] built resolved file",
+		Module rwf = fileBuilder.build(m);
+		logTimedMessage("[" + m.filename + "] built wyil module",
 				System.currentTimeMillis() - start);
 		return rwf;
 	}
 	
-	protected void defAssignment(ResolvedWhileyFile m) {
+	protected void defAssignment(Module m) {
 		long start = System.currentTimeMillis();	
 		defAssignChecker.verify(m);
 		logTimedMessage("[" + m.filename() + "] definite assignment checked",
 				System.currentTimeMillis() - start);
 	}
 	
-	protected void funCheck(ResolvedWhileyFile m) {
+	protected void funCheck(Module m) {
 		long start = System.currentTimeMillis();	
 		functionChecker.check(m);
 		logTimedMessage("[" + m.filename() + "] functional behaviour checked",
 				System.currentTimeMillis() - start);
 	}
 	
-	protected void returnCheck(ResolvedWhileyFile m) {
+	protected void returnCheck(Module m) {
 		long start = System.currentTimeMillis();	
 		returnValueChecker.check(m);
 		logTimedMessage("[" + m.filename() + "] return value checked",
 				System.currentTimeMillis() - start);
 	}
 	
-	protected void generateChecks(ResolvedWhileyFile m) {
+	protected void generateChecks(Module m) {
 		long start = System.currentTimeMillis();	
 		checkGenerator.checkgen(m);
 		logTimedMessage("[" + m.filename() + "] runtime checks generated",
@@ -274,7 +278,7 @@ public class Compiler {
 		
 	}
 	
-	protected void generatePostConditions(ResolvedWhileyFile m) {
+	protected void generatePostConditions(Module m) {
 		long start = System.currentTimeMillis();	
 		postGenerator.generate(m);
 		logTimedMessage("[" + m.filename() + "] postconditions generated",
@@ -284,7 +288,7 @@ public class Compiler {
 		}
 	}
 	
-	protected void generateVerificationConditions(ResolvedWhileyFile m) {
+	protected void generateVerificationConditions(Module m) {
 		long start = System.currentTimeMillis();	
 		vcGenerator.generate(m);
 		logTimedMessage("[" + m.filename() + "] verification conditions generated",
@@ -294,14 +298,14 @@ public class Compiler {
 		}
 	}
 	
-	protected void checkVerificationConditions(ResolvedWhileyFile m) {
+	protected void checkVerificationConditions(Module m) {
 		long start = System.currentTimeMillis();	
 		vcChecker.verify(m);
 		logTimedMessage("[" + m.filename() + "] verification conditions checked",
 				System.currentTimeMillis() - start);
 	}
 	
-	protected void writeClassFile(ResolvedWhileyFile m) {
+	protected void writeClassFile(Module m) {
 		long start = System.currentTimeMillis();
 		ClassFile file = classBuilder.build(m);		
 		// calculate filename
@@ -318,6 +322,7 @@ public class Compiler {
 					System.currentTimeMillis() - start);
 		}
 	}
+	*/
 	
 	/**
 	 * This method is just a helper to format the output
@@ -350,9 +355,10 @@ public class Compiler {
 		}
 	}
 	
-	private void debugChecks(ResolvedWhileyFile wf) {
+	/*
+	private void debugChecks(Module wf) {
 		long start = System.currentTimeMillis();
-		String filename = stripExtension(wf.filename()) + ".debug";
+		String filename = stripExtension(wf.filename) + ".debug";
 		try {
 			PrintWriter printer = new PrintWriter(filename,"UTF8");
 			CodeWriter writer = new CodeWriter(printer);
@@ -365,7 +371,7 @@ public class Compiler {
 		}
 	}
 	
-	private void debugPCS(ResolvedWhileyFile wf) {
+	private void debugPCS(Module wf) {
 		long start = System.currentTimeMillis();
 		String filename = stripExtension(wf.filename()) + ".debug";
 		try {
@@ -380,7 +386,7 @@ public class Compiler {
 		}
 	}
 	
-	private void debugVCS(ResolvedWhileyFile wf) {
+	private void debugVCS(Module wf) {
 		long start = System.currentTimeMillis();
 		String filename = stripExtension(wf.filename()) + ".debug";
 		try {
@@ -394,6 +400,7 @@ public class Compiler {
 			logTimedMessage("Failed writing " + filename,System.currentTimeMillis()-start);
 		}
 	}
+	*/
 	
 	private static String stripExtension(String input) {
 		int li = input.lastIndexOf('.');

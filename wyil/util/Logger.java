@@ -10,4 +10,14 @@ public interface Logger {
 	 * @param time
 	 */
 	public void logTimedMessage(String msg, long time);
+
+	/**
+	 * The NULL logger simply drops all logged messages. It's a simple, albeit
+	 * not that helpful, default.
+	 */
+	public static final Logger NULL = new Logger() {
+		public void logTimedMessage(String msg, long time) {
+			// do nothing.
+		}
+	};	
 }

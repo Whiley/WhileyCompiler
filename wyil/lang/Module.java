@@ -4,18 +4,25 @@ import java.util.*;
 import wyil.ModuleLoader;
 
 public class Module extends ModuleLoader.Skeleton {	
+	private final String filename;
 	private HashMap<String,List<Method>> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
 	
 	public Module(ModuleID mid,
+			String filename,
 			Map<String, List<Method>> methods,
 			Map<String, TypeDef> types,
 			Map<String, ConstDef> constants) {		
 		super(mid);
+		this.filename = filename;
 		this.methods = new HashMap<String, List<Method>>(methods);
 		this.types = new HashMap<String, TypeDef>(types);
 		this.constants = new HashMap<String, ConstDef>(constants);
+	}
+	
+	public String filename() {
+		return filename;
 	}
 	
 	public TypeDef type(String name) {
