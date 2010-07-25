@@ -245,11 +245,11 @@ public class TypeResolution {
 		Type t = resolve(mhs, environment);
 		
 		if(v.op == UOp.NEG) {
-			checkSubtype(t,Type.T_REAL,mhs);
+			checkIsSubtype(Type.T_REAL,t,mhs);
 		} else if(v.op == UOp.NOT) {
-			checkSubtype(t,Type.T_BOOL,mhs);			
+			checkIsSubtype(Type.T_BOOL,t,mhs);			
 		} else if(v.op == UOp.LENGTHOF) {
-			checkSubtype(t,Type.T_SET(Type.T_ANY),mhs);
+			checkIsSubtype(Type.T_SET(Type.T_ANY),t,mhs);
 			return Type.T_INT;
 		} else if(v.op == UOp.PROCESSACCESS) {
 			Type.Process tp = checkType(t,Type.Process.class,mhs);
@@ -264,10 +264,50 @@ public class TypeResolution {
 	protected Type resolve(BinOp v, HashMap<String,Type> environment) {
 		Type lhs_t = resolve(v.lhs, environment);
 		Type rhs_t = resolve(v.rhs, environment);
+		BOp bop = v.op;
+			
+		if(bop == BOp.OR || bop == BOp.AND) {
+			checkIsSubtype(Type.T_BOOL, lhs_t, v);
+			checkIsSubtype(Type.T_BOOL, rhs_t, v);
+			return Type.T_BOOL;
+		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
+				|| bop == BOp.DIV) {
+			checkIsSubtype(Type.T_REAL, lhs_t, v);
+			checkIsSubtype(Type.T_REAL, rhs_t, v);
+			return Type.leastUpperBound(lhs_t,rhs_t);
+		} else if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
+				|| bop == BOp.GTEQ) {
+			checkIsSubtype(Type.T_REAL, lhs_t, v);
+			checkIsSubtype(Type.T_REAL, rhs_t, v);
+			return Type.T_BOOL;
+		} else if(bop == BOp.UNION || bop == BOp.INTERSECTION) {
+			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
+			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
+			return Type.leastUpperBound(lhs_t,rhs_t);
+		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
+			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
+			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
+			return Type.T_BOOL;
+		} else if(bop == BOp.EQ || bop == BOp.NEQ){
+			if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
+				syntaxError("Cannot compare types",v);
+			}
+			return Type.T_BOOL;
+		} else if(bop == BOp.ELEMENTOF) {
+			checkType(rhs_t, Type.Set.class, v);
+			Type.Set st = (Type.Set) rhs_t;
+			if(!Type.isSubtype(lhs_t, st.element) && !Type.isSubtype(st.element, lhs_t)) {
+				syntaxError("Cannot compare types",v);
+			}
+			return Type.T_BOOL;
+		} else if(bop == BOp.LISTACCESS) {
+			checkType(lhs_t, Type.List.class, v);
+			checkIsSubtype(Type.T_INT, rhs_t, v);
+			Type.List lt = (Type.List) lhs_t;  
+			return lt.element;		
+		} 			
 		
-		Type ret_t = Type.leastUpperBound(lhs_t,rhs_t);
-		
-		// FIXME: lots to do here
+		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
 	protected Type resolve(NaryOp v, HashMap<String,Type> environment,
@@ -349,8 +389,8 @@ public class TypeResolution {
 		}
 	}
 	
-	// Check t1 <: t2
-	protected void checkSubtype(Type t1, Type t2,
+	// Check t1 :> t2
+	protected void checkIsSubtype(Type t1, Type t2,
 			SyntacticElement elem) {
 		// FIXME: to do
 	}
