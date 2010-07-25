@@ -22,6 +22,10 @@ import java.util.*;
 
 public abstract class Type {
 	
+	// =============================================================
+	// Type Constructors
+	// =============================================================
+		
 	public static final Any T_ANY = new Any();
 	public static final Void T_VOID = new Void();
 	public static final Existential T_EXISTENTIAL = new Existential();
@@ -67,6 +71,133 @@ public abstract class Type {
 	public static Recursive T_RECURSIVE(String name, Type element) {
 		return get(new Recursive(name,element));
 	}
+	
+	// =============================================================
+	// Type Methods
+	// =============================================================
+	
+	/**
+	 * Return true iff t2 is a subtype of t1
+	 */
+	public static boolean isSubtype(Type t1, Type t2) {
+		return isSubtype(t1,t2,Collections.EMPTY_MAP);
+	}
+	
+	private static boolean isSubtype(Type t1, Type t2, Map<String,Type> environment) {
+		if(t1 == t2 || 
+				(t2 instanceof Void) ||
+				(t1 instanceof Any) ||
+				(t1 instanceof Real && t2 instanceof Int)) {
+			return true;
+		} else if(t1 instanceof List && t2 instanceof List) {
+			List l1 = (List) t1;
+			List l2 = (List) t2;
+			return isSubtype(l1.element,l2.element,environment);
+		} else if(t1 instanceof Set && t2 instanceof Set) {
+			Set l1 = (Set) t1;
+			Set l2 = (Set) t2;
+			return isSubtype(l1.element,l2.element,environment);
+		} else if(t1 instanceof Union && t2 instanceof Union) {			
+			Union u2 = (Union) t2;
+			for(Type t : u2.bounds) {
+				if(isSubtype(t1,t)) {
+					return true;
+				}				
+			}
+			return false;
+		} else if(t1 instanceof Union) {
+			Union u1 = (Union) t1;
+			for(Type t : u1.bounds) {
+				if(isSubtype(t,t2)) {
+					return true;
+				}
+			}
+			return false;
+		} else if(t1 instanceof Fun && t2 instanceof Fun) {
+			Fun f1 = (Fun) t1;
+			Fun f2 = (Fun) t2;
+			ArrayList<Type> f1_params = f1.params;
+			ArrayList<Type> f2_params = f2.params;
+			if(f1.params.size() != f2.params.size()) {
+				return false;
+			}
+			for(int i=0;i!=f1_params.size();++i) {
+				Type tt1 = f1_params.get(i);
+				Type tt2 = f2_params.get(i);
+				if(!isSubtype(tt1,tt2,environment)) {
+					return false;
+				}
+			}
+			return isSubtype(f2.ret,f1.ret,environment);
+		}
+		
+		// FIXME: need to add more cases.
+		
+		return false;
+	}
+	
+	public static Type leastUpperBound(Type t1, Type t2) {
+		
+		if(isSubtype(t1, t2, Collections.EMPTY_MAP)) {
+			return t1;
+		} else if(isSubtype(t2, t1, Collections.EMPTY_MAP)) {
+			return t2;
+		}
+		
+		if(t1 instanceof Union && t2 instanceof Union) {
+			Union ut1 = (Union) t1;
+			Union ut2 = (Union) t2;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut1.bounds);
+			
+			// FIXME: this is totally broken because it doesn't eliminate
+			// subsumed types. I really need to work harder here, but for now
+			// i'm slacking off...
+			types.addAll(ut2.bounds);
+			
+			return T_UNION(types);			
+		} else if(t1 instanceof Union) {			
+			Union ut1 = (Union) t1;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut1.bounds);
+			
+			for(int i=0;i!=types.size();++i) {
+				NonUnion t = types.get(i);
+				if(isSubtype(t2, t, Collections.EMPTY_MAP)) {
+					types.set(i, (NonUnion) t2);
+					return T_UNION(types);
+				}
+			}						
+			types.add((NonUnion) t2);
+			return T_UNION(types);
+		} else if(t2 instanceof Union) {
+			Union ut2 = (Union) t2;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut2.bounds);
+			
+			for(int i=0;i!=types.size();++i) {
+				NonUnion t = types.get(i);
+				if(isSubtype(t1, t, Collections.EMPTY_MAP)) {
+					types.set(i, (NonUnion) t1);			
+					return T_UNION(types);
+				}
+			}					
+			types.add((NonUnion) t1);			
+			return T_UNION(types);			
+		} else if(t1 instanceof List && t2 instanceof List) {
+			List l1 = (List) t1;
+			List l2 = (List) t2;
+			return T_LIST(leastUpperBound(l1.element,l2.element));
+		} else if(t1 instanceof Set && t2 instanceof Set) {
+			Set s1 = (Set) t1;
+			Set s2 = (Set) t2;
+			return T_SET(leastUpperBound(s1.element,s2.element));
+		} else {
+			return T_UNION((NonUnion) t1, (NonUnion) t2);
+		}
+	}
+	
+	// =============================================================
+	// Type Classes
+	// =============================================================
+	
 	public static abstract class NonUnion extends Type {}
 	
 	public static final class Any extends NonUnion {

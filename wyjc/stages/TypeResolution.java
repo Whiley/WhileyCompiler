@@ -47,119 +47,81 @@ public class TypeResolution {
 		// Stage 1 ... resolve and check types of all named types and functions
 		for(WhileyFile f : files) {
 			for(WhileyFile.Decl d : f.declarations) {
-				
+				if(d instanceof ConstDecl) {
+					resolve((ConstDecl)d);
+				} else if(d instanceof TypeDecl) {
+					resolve((TypeDecl)d);
+				} else if(d instanceof FunDecl) {
+					
+				}
 			}
 		}
 		
 		// Stage 2 ... resolve, propagate and check types for all expressions.
 	}
-	private void resolve(WhileyFile wf) {
-		ArrayList<PkgID> imports = new ArrayList<PkgID>();
-		
-		ModuleID id = wf.module;
-		
-		imports.add(id.pkg().append(id.module()));
-		imports.add(id.pkg().append("*"));
-		imports.add(new PkgID(new String[]{"whiley","lang"}).append("*"));
-						
-		for(Decl d : wf.declarations) {			
-			try {
-				if(d instanceof ImportDecl) {
-					ImportDecl impd = (ImportDecl) d;
-					imports.add(0,new PkgID(impd.pkg));
-				} else if(d instanceof FunDecl) {
-					resolve((FunDecl)d,imports);
-				} else if(d instanceof TypeDecl) {
-					resolve((TypeDecl)d,imports);					
-				} else if(d instanceof ConstDecl) {
-					resolve((ConstDecl)d,imports);					
-				}
-			} catch(ResolveError ex) {
-				syntaxError(ex.getMessage(),d);
-			}
+	
+	protected void resolve(ConstDecl td) {
+		resolve(td.constant,new HashMap<String,Type>());		
+	}
+	
+	protected void resolve(TypeDecl td) throws SyntaxError {		
+		Type t = resolve(td.type);
+		td.attributes().add(new Attribute.Type(t));
+		if(td.constraint != null) {
+			// FIXME: at this point, would be good to add types for other
+			// exposed variables.
+			HashMap<String,Type> environment = new HashMap<String,Type>();
+			environment.put("$", t);
+			t = resolve(td.constraint, environment);
+			checkType(t,Type.Bool.class, td.constraint);			
 		}				
 	}
 	
-	protected void resolve(ConstDecl td, ArrayList<PkgID> imports) {
-		resolve(td.constant,new HashSet<String>(), imports);		
-	}
-	
-	protected void resolve(TypeDecl td, ArrayList<PkgID> imports) throws ResolveError {
-		try {
-			resolve(td.type, imports);			
-			if(td.constraint != null) {
-				resolve(td.constraint,imports);
-			}		
-		} catch (ResolveError e) {												
-			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), td);			
-		}
-	}
-	
-	protected void resolve(FunDecl fd, ArrayList<PkgID> imports) {
-		HashSet<String> environment = new HashSet<String>();
+	protected void resolve(FunDecl fd) {
+		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
 		// method parameter types
-		for (WhileyFile.Parameter p : fd.parameters) {
-			try {
-				resolve(p.type, imports);
-				environment.add(p.name());
-			} catch (ResolveError e) {												
-				// Ok, we've hit a resolution error.
-				syntaxError(e.getMessage(), p, e);
-			}
+		for (WhileyFile.Parameter p : fd.parameters) {			
+			Type t = resolve(p.type);
+			environment.put(p.name(),t);			
 		}
-		
-		if(fd.receiver != null) {
-			environment.add("this");
-		}
-		
+				
 		// method return type
-		try {
-			resolve(fd.ret, imports);
-		} catch (ResolveError e) {
-			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), fd.ret);
-		}
+		Type ret = resolve(fd.ret);		
 		
-		// method receiver type (if applicable)
-		try {			
-			resolve(fd.receiver, imports);			
-		} catch (ResolveError e) {
-			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), fd.receiver);
-		}
+		// method receiver type (if applicable)						
+		Type t = resolve(fd.receiver);
+		environment.put("this",t);		
 			
-		if(fd.constraint != null) {
-			environment.add("$");
-			resolve(fd.constraint, environment,imports);			
+		if(fd.constraint != null) {			
+			environment.put("$",ret);
+			resolve(fd.constraint, environment);			
 			environment.remove("$");
 		}
 		
 		List<Stmt> stmts = fd.statements;
 		for (int i=0;i!=stmts.size();++i) {
-			Stmt s = resolve(stmts.get(i), environment, imports);
-			stmts.set(i,s);					
+			resolve(stmts.get(i), environment);							
 		}
 	}
 	
-	public void resolve(Stmt s, HashSet<String> environment, ArrayList<PkgID> imports) {
+	public void resolve(Stmt s, HashMap<String,Type> environment) {
 		try {
 			if(s instanceof Skip) {				
 			} else if(s instanceof VarDecl) {
-				resolve((VarDecl)s, environment, imports);
+				resolve((VarDecl)s, environment);
 			} else if(s instanceof Assign) {
-				resolve((Assign)s, environment, imports);
+				resolve((Assign)s, environment);
 			} else if(s instanceof Assert) {
-				resolve((Assert)s, environment, imports);
+				resolve((Assert)s, environment);
 			} else if(s instanceof Debug) {
-				resolve((Debug)s, environment, imports);
+				resolve((Debug)s, environment);
 			} else if(s instanceof IfElse) {
-				resolve((IfElse)s, environment, imports);
+				resolve((IfElse)s, environment);
 			} else if(s instanceof Invoke) {
-				resolve((Invoke)s, environment, imports);
+				resolve((Invoke)s, environment);
 			} else if(s instanceof Spawn) {
-				resolve((UnOp)s, environment, imports);
+				resolve((UnOp)s, environment);
 			} else {
 				syntaxError("unknown statement encountered: "
 						+ s.getClass().getName(), s);				
@@ -170,175 +132,226 @@ public class TypeResolution {
 		}
 	}
 	
-	protected void resolve(VarDecl s, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(VarDecl s, HashMap<String,Type> environment,
+			ArrayList<PkgID> imports) throws SyntaxError {
 		Expr init = s.initialiser;
-		resolve(s.type, imports);
+		resolve(s.type);
 		if(init != null) {
-			resolve(init,environment, imports);
+			resolve(init,environment);
 		}
 		environment.add(s.name);		
 	}
 	
-	protected void resolve(Assign s, HashSet<String> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.lhs, environment, imports);
-		resolve(s.rhs, environment, imports);	
+	protected void resolve(Assign s, HashMap<String,Type> environment) {
+		resolve(s.lhs, environment);
+		resolve(s.rhs, environment);	
 	}
 
-	protected void resolve(Assert s, HashSet<String> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.expr, environment, imports);		
+	protected void resolve(Assert s, HashMap<String,Type> environment) {
+		resolve(s.expr, environment);		
 	}
 
-	protected void resolve(Debug s, HashSet<String> environment,
-			ArrayList<PkgID> imports) {
-		resolve(s.expr, environment, imports);		
+	protected void resolve(Debug s, HashMap<String,Type> environment) {
+		resolve(s.expr, environment);		
 	}
 
-	protected void resolve(IfElse s, HashSet<String> environment,
+	protected void resolve(IfElse s, HashMap<String,Type> environment,
 			ArrayList<PkgID> imports) {
-		resolve(s.condition, environment, imports);
-		environment = new HashSet<String>(environment);
+		Type t = resolve(s.condition, environment);
+		checkType(t,Type.Bool.class,s.condition);
+		
+		// FIXME: need to perform some type inference here
+		
+		HashMap<String,Type> tenv = new HashMap<String,Type>(environment);		
 		for (Stmt st : s.trueBranch) {
-			resolve(st, environment, imports);
+			resolve(st, tenv);
 		}
 		if (s.falseBranch != null) {			
+			HashMap<String,Type> fenv = new HashMap<String,Type>(environment);
 			for (Stmt st : s.falseBranch) {
-				resolve(st, environment, imports);
+				resolve(st, fenv);
 			}
 		}
 	}
 	
-	protected void resolve(Expr e, HashSet<String> environment, ArrayList<PkgID> imports) {
+	protected Type resolve(Expr e, HashMap<String,Type> environment) {
+		Type t;
 		try {
 			if (e instanceof Constant) {
-				
+				t = resolve((Constant)e, environment);
 			} else if (e instanceof Variable) {
-				resolve((Variable)e, environment, imports);
+				t = resolve((Variable)e, environment);
 			} else if (e instanceof NaryOp) {
-				resolve((BinOp)e, environment, imports);
+				t = resolve((BinOp)e, environment);
 			} else if (e instanceof BinOp) {
-				resolve((BinOp)e, environment, imports);
+				t = resolve((BinOp)e, environment);
 			} else if (e instanceof UnOp) {
-				resolve((UnOp)e, environment, imports);
+				t = resolve((UnOp)e, environment);
 			} else if (e instanceof Invoke) {
-				resolve((Invoke)e, environment, imports);
+				t = resolve((Invoke)e, environment);
 			} else if (e instanceof Comprehension) {
-				resolve((Comprehension) e, environment, imports);
+				t = resolve((Comprehension) e, environment);
 			} else if (e instanceof TupleAccess) {
-				resolve((TupleAccess) e, environment, imports);
+				t = resolve((TupleAccess) e, environment);
 			} else if (e instanceof TupleGen) {
-				resolve((TupleGen) e, environment, imports);
+				t = resolve((TupleGen) e, environment);
 			} else {				
 				syntaxError("unknown expression encountered: "
-							+ e.getClass().getName(), e);								
+							+ e.getClass().getName(), e);
+				return null;
 			}
-		} catch(ResolveError re) {
-			syntaxError(re.getMessage(),e,re);			
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
-			syntaxError("internal failure", e, ex);			
+			syntaxError("internal failure", e, ex);
+			return null;
 		}	
+		
+		// Save the type for use later in wyil generation
+		e.attributes().add(new Attribute.Type(t));
+		return t;
 	}
 	
-	protected void resolve(Invoke s, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
+	protected Type resolve(Invoke s, HashMap<String, Type> environment)
+			throws SyntaxError {
 						
 		for(Expr e : s.arguments) {						
-			resolve(e, environment, imports);
+			resolve(e, environment);
 		}
-		
-		ModuleID mid = loader.resolve(s.name,imports);
+				
 		Expr target = s.receiver;
 		if(target != null) {
-			resolve(target,environment,imports);
+			resolve(target,environment);
 		}
 		
-		// FIXME: need to actually resolve the invocation
-		// ivk.resolve(mid,null);		
+		
 	}
 	
-	protected void resolve(Variable v, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		if(!environment.contains(v.var)) {		
-			// this is a constant variable access (or other)	
-			
-			// FIXME: need to actually resolve this variable
-			ModuleID mid = loader.resolve(v.var, imports);			
+	protected Type resolve(Constant c, HashMap<String,Type> environment) throws SyntaxError {
+		return c.val.type();
+	}
+	
+	protected Type resolve(Variable v, HashMap<String,Type> environment) throws SyntaxError {
+		Type t = environment.get(v.var);
+		if(t == null) {		
+			syntaxError("unknown variable",v);			
 		}
+		return t;
 	}
 	
-	protected void resolve(UnOp v, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
-		resolve(v.mhs, environment, imports);		
+	protected Type resolve(UnOp v, HashMap<String,Type> environment,
+			ArrayList<PkgID> imports) throws SyntaxError {
+		Expr mhs = v.mhs;
+		Type t = resolve(mhs, environment);
+		
+		if(v.op == UOp.NEG) {
+			checkSubtype(t,Type.T_REAL,mhs);
+		} else if(v.op == UOp.NOT) {
+			checkSubtype(t,Type.T_BOOL,mhs);			
+		} else if(v.op == UOp.LENGTHOF) {
+			checkSubtype(t,Type.T_SET(Type.T_ANY),mhs);
+			return Type.T_INT;
+		} else if(v.op == UOp.PROCESSACCESS) {
+			Type.Process tp = checkType(t,Type.Process.class,mhs);
+			return tp.element;
+		} else if(v.op == UOp.PROCESSSPAWN){
+			return Type.T_PROCESS(t);
+		} 
+		
+		return t;
 	}
 	
-	protected void resolve(BinOp v, HashSet<String> environment, ArrayList<PkgID> imports) {
-		resolve(v.lhs, environment, imports);
-		resolve(v.rhs, environment, imports);		
+	protected Type resolve(BinOp v, HashMap<String,Type> environment) {
+		Type lhs_t = resolve(v.lhs, environment);
+		Type rhs_t = resolve(v.rhs, environment);
+		
+		Type ret_t = Type.leastUpperBound(lhs_t,rhs_t);
+		
+		// FIXME: lots to do here
 	}
 	
-	protected void resolve(NaryOp v, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
+	protected Type resolve(NaryOp v, HashMap<String,Type> environment,
+			ArrayList<PkgID> imports) throws SyntaxError {		
 		for(Expr e : v.arguments) {
-			resolve(e, environment, imports);
+			resolve(e, environment);
 		}		
 	}
 	
-	protected void resolve(Comprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {				
+	protected Type resolve(Comprehension e, HashMap<String,Type> environment) throws SyntaxError {				
 		HashSet<String> nenv = new HashSet<String>(environment);
 		for(Pair<String,Expr> me : e.sources) {						
 			String s = me.first();						
-			resolve(me.second(),nenv,imports); 			
+			resolve(me.second(),nenv); 			
 			nenv.add(me.first());
 		}
 		
 		if(e.value != null) {
-			resolve(e.condition,nenv,imports);
+			resolve(e.condition,nenv);
 		}
 		if(e.condition != null) {
-			resolve(e.condition,nenv,imports);
+			resolve(e.condition,nenv);
 		}
 	}
 	
 		
-	protected void resolve(TupleGen sg, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
+	protected Type resolve(TupleGen sg, HashMap<String,Type> environment,
+			ArrayList<PkgID> imports) throws SyntaxError {		
 		for(Map.Entry<String,Expr> e : sg.fields.entrySet()) {
-			resolve(e.getValue(),environment,imports);
+			resolve(e.getValue(),environment);
 		}			
 	}
 	
-	protected void resolve(TupleAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		resolve(sg.lhs,environment,imports);			
+	protected Type resolve(TupleAccess sg, HashMap<String,Type> environment) throws SyntaxError {
+		Type lhs = resolve(sg.lhs,environment);
+		lhs = checkType(lhs,Type.Tuple.class,sg.lhs);
+		
 	}
 	
-	protected void resolve(UnresolvedType t, ArrayList<PkgID> imports) throws ResolveError {
+	protected Type resolve(UnresolvedType t) throws SyntaxError {
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
-			resolve(lt.element,imports);
+			resolve(lt.element);
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			resolve(st.element,imports);
+			resolve(st.element);
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
-				resolve(e.getValue(),imports);
+				resolve(e.getValue());
 			}
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			ModuleID owner = loader.resolve(dt.name, imports);		
+			ModuleID owner = loader.resolve(dt.name);		
 			// FIXME: need to actually resolve stuff!!
 			// dt.resolve(owner);
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			for(UnresolvedType b : ut.bounds) {
-				resolve(b,imports);
+				resolve(b);
 			}
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			resolve(ut.element,imports);			
+			resolve(ut.element);			
 		}  
+	}
+	
+	protected <T extends Type> T checkType(Type t, Class<T> clazz,
+			SyntacticElement elem) {
+		if(t instanceof Type.Named) {
+			t = ((Type.Named)t).type;
+		}
+		if (clazz.isInstance(t)) {
+			return (T) t;
+		} else {
+			syntaxError("expected type " + clazz.getName() + " found " + t,
+					elem);
+			return null;
+		}
+	}
+	
+	// Check t1 <: t2
+	protected void checkSubtype(Type t1, Type t2,
+			SyntacticElement elem) {
+		// FIXME: to do
 	}
 }
