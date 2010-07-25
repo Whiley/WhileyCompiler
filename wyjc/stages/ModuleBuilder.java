@@ -255,154 +255,47 @@ public class ModuleBuilder {
 	
 	protected void resolve(UnOp v, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
-		Expr lhs = resolve(v.mhs(), environment, imports);
-		if(v instanceof Not) {
-			return new Not((Condition)lhs,v.attributes());
-		} else if (v instanceof Some) {
-			resolve((Some) v, environment, imports);
-		} else if (v instanceof None) {
-			resolve((None) v, environment, imports);
-		} else if(v instanceof IntNegate) {
-			return new IntNegate(lhs,v.attributes());
-		} else if(v instanceof ListLength) {
-			return new ListLength(lhs,v.attributes());
-		} else if(v instanceof SetLength) {
-			return new SetLength(lhs,v.attributes());
-		} else if(v instanceof Spawn) {
-			return new Spawn(lhs,v.attributes());
-		} else if(v instanceof ProcessAccess) {
-			return new ProcessAccess(lhs,v.attributes());
-		} else {
-			syntaxError("unrecognised unary operator: " + v.getClass().getName(),v);			
-			return null;
-		}
+		resolve(v.mhs, environment, imports);		
 	}
 	
 	protected void resolve(BinOp v, HashSet<String> environment, ArrayList<PkgID> imports) {
-		Expr lhs = resolve(v.lhs(), environment, imports);
-		Expr rhs = resolve(v.rhs(), environment, imports);
-		
-		if(v instanceof And) {
-			return new And((Condition)lhs,(Condition)rhs,v.attributes());
-		} else if(v instanceof Or) {
-			return new Or((Condition)lhs,(Condition)rhs,v.attributes());
-		} else if(v instanceof IntAdd) {
-			return new IntAdd(lhs,rhs,v.attributes());
-		} else if(v instanceof IntSub) {
-			return new IntSub(lhs,rhs,v.attributes());
-		} else if(v instanceof IntMul) {
-			return new IntMul(lhs,rhs,v.attributes());
-		} else if(v instanceof IntDiv) {
-			return new IntDiv(lhs,rhs,v.attributes());
-		} else if(v instanceof IntLessThan) {
-			return new IntLessThan(lhs,rhs,v.attributes());
-		} else if(v instanceof IntLessThanEquals) {
-			return new IntLessThanEquals(lhs,rhs,v.attributes());
-		} else if(v instanceof IntGreaterThan) {
-			return new IntGreaterThan(lhs,rhs,v.attributes());
-		} else if(v instanceof IntGreaterThanEquals) {
-			return new IntGreaterThanEquals(lhs,rhs,v.attributes());
-		} else if(v instanceof IntEquals) {
-			return new IntEquals(lhs,rhs,v.attributes());
-		} else if(v instanceof ProcessEquals) {
-			return new ProcessEquals(lhs,rhs,v.attributes());
-		} else if(v instanceof IntNotEquals) {
-			return new IntNotEquals(lhs,rhs,v.attributes());
-		} else if(v instanceof SetUnion) {
-			return new SetUnion(lhs,rhs,v.attributes());
-		} else if(v instanceof SetIntersection) {
-			return new SetIntersection(lhs,rhs,v.attributes());
-		} else if(v instanceof SetDifference) {
-			return new SetDifference(lhs,rhs,v.attributes());
-		} else if(v instanceof SetElementOf) {
-			return new SetElementOf(lhs,rhs,v.attributes());
-		} else if(v instanceof Subset) {
-			return new Subset(lhs,rhs,v.attributes());
-		} else if(v instanceof SubsetEq) {
-			return new SubsetEq(lhs,rhs,v.attributes());
-		} else if(v instanceof ListElementOf) {
-			return new ListElementOf(lhs,rhs,v.attributes());
-		} else {
-			syntaxError("unrecognised binary operator: " + v.getClass().getName(),v);
-			return null;
-		}
+		resolve(v.lhs, environment, imports);
+		resolve(v.rhs, environment, imports);		
 	}
 	
-	protected void resolve(SetGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		ArrayList<Expr> nexprs = new ArrayList<Expr>();
-		for(Expr e : sg.getValues()) {
-			nexprs.add(resolve(e, environment, imports));
-		}
-		return new SetGenerator(nexprs,sg.attributes());
+	protected void resolve(NaryOp v, HashSet<String> environment,
+			ArrayList<PkgID> imports) throws ResolveError {		
+		for(Expr e : v.arguments) {
+			resolve(e, environment, imports);
+		}		
 	}
 	
-	protected void resolve(SetComprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {				
-		List<Pair<String,Expr>> sources = e.sources();		
-		List<Pair<String,Expr>> nsources = new ArrayList<Pair<String,Expr>>();
-		HashSet<String> nenv = new HashSet<String>(environment);			
-		
-		for(Pair<String,Expr> me : sources) {						
+	protected void resolve(Comprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {				
+		HashSet<String> nenv = new HashSet<String>(environment);
+		for(Pair<String,Expr> me : e.sources) {						
 			String s = me.first();						
-			Expr src = resolve(me.second(),nenv,imports); 
-			nsources.add(new Pair<String,Expr>(s, src));
+			resolve(me.second(),nenv,imports); 			
 			nenv.add(me.first());
 		}
 		
-		Condition c = e.condition();
-		if(c != null) {
-			c = (Condition) resolve(e.condition(),nenv,imports);
+		if(e.value != null) {
+			resolve(e.condition,nenv,imports);
 		}
-		Expr p = resolve(e.sign(),nenv,imports);
-		
-		return new SetComprehension(p,nsources,c,e.attributes());		
-	}
-	
-	protected void resolve(RangeGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		Expr start = resolve(sg.start(),environment,imports);
-		Expr end = resolve(sg.end(),environment,imports);
-		
-		return new RangeGenerator(start,end,sg.attributes());
-	}
-	
-	protected void resolve(ListAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		Expr src = resolve(sg.source(),environment,imports);
-		Expr idx = resolve(sg.index(),environment,imports);
-		return new ListAccess(src,idx,sg.attributes());
-	}
-	
-	protected void resolve(ListSublist sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		Expr src = resolve(sg.source(),environment,imports);
-		Expr start = resolve(sg.start(),environment,imports);
-		Expr end = resolve(sg.end(),environment,imports);
-		return new ListSublist(src,start,end,sg.attributes());
-	}
-	
-	protected void resolve(ListGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		ArrayList<Expr> nexprs = new ArrayList<Expr>();
-		for(Expr e : sg.getValues()) {
-			nexprs.add(resolve(e, environment, imports));
+		if(e.condition != null) {
+			resolve(e.condition,nenv,imports);
 		}
-		return new ListGenerator(nexprs,sg.attributes());
 	}
+	
 		
-	protected void resolve(TupleGenerator sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		HashMap<String,Expr> vals = new HashMap<String,Expr>();
-		for(Map.Entry<String,Expr> e : sg.values().entrySet()) {
-			vals.put(e.getKey(), resolve(e.getValue(),environment,imports));
-		}		
-		return new TupleGenerator(vals,sg.attributes());
+	protected void resolve(TupleGen sg, HashSet<String> environment,
+			ArrayList<PkgID> imports) throws ResolveError {		
+		for(Map.Entry<String,Expr> e : sg.fields.entrySet()) {
+			resolve(e.getValue(),environment,imports);
+		}			
 	}
 	
 	protected void resolve(TupleAccess sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		Expr src = resolve(sg.source(),environment,imports);		
-		return new TupleAccess(src,sg.name(),sg.attributes());
-	}
-	
-	protected void resolve(UnresolvedTypeEquals sg, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {
-		Expr lhs = resolve(sg.lhs(),environment,imports);
-		Condition rhs = (Condition) resolve(sg.rhs(),environment,imports);		
-		resolve(sg.type(),imports);
-		return new UnresolvedTypeEquals(lhs,sg.type(),rhs,sg.attributes());
+		resolve(sg.lhs,environment,imports);			
 	}
 	
 	protected void resolve(UnresolvedType t, ArrayList<PkgID> imports) throws ResolveError {
