@@ -30,10 +30,10 @@ import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
 import wyjc.util.*;
 
-public class ModuleBuilder {
+public class TypeResolution {
 	private final ModuleLoader loader;
 	
-	public ModuleBuilder(ModuleLoader loader) {
+	public TypeResolution(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
