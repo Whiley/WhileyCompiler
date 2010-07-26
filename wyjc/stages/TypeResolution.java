@@ -61,14 +61,14 @@ public class TypeResolution {
 
 		// Stage 2 ... resolve, propagate and check types for all expressions.
 		for(WhileyFile f : files) {
-			for(WhileyFile.Decl d : f.declarations) {
+			for(WhileyFile.Decl d : f.declarations) {				
 				if(d instanceof ConstDecl) {
 					resolve((ConstDecl)d);
 				} else if(d instanceof TypeDecl) {
 					resolve((TypeDecl)d);
 				} else if(d instanceof FunDecl) {
 					partResolve(f.module,(FunDecl)d);
-				}
+				}				
 			}
 		}
 		
@@ -107,23 +107,16 @@ public class TypeResolution {
 			}
 		}
 	}
-	
-	/**
-	 * Determine whether or not a type is recursive
-	 * 
-	 * @param type
-	 * @return
-	 */
-	private static boolean isRecursive(Type type) {
-		return !type.match(RecursiveType.class).isEmpty();
-	}
-	
+		
 	protected Type expandType(NameID key,
 			HashMap<NameID, Type> cache) throws ResolveError {
 
 		Type t = types.get(key);
+		Type cached = cache.get(key);					
 		
-		if(t != null && !isRecursive(t)) {
+		if(cached != null) { 
+			return cached; 
+		} else if(t != null) {
 			return t;
 		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
@@ -133,8 +126,6 @@ public class TypeResolution {
 		}
 		
 		// Now, check for a cached expansion.
-		Type cached = cache.get(key);					
-		if(cached != null) { return cached; }		
 		
 		// following is needed to terminate any recursion
 		cache.put(key, Type.T_RECURSIVE(key.toString(),null));
@@ -144,7 +135,7 @@ public class TypeResolution {
 		
 		t = expandType(ut, cache);
 				 		
-		if(isRecursive(key,t)) {
+		if(isOpenRecursive(key,t)) {
 			// recursive case
 			t = Type.T_RECURSIVE(key.toString(),t);			
 		} 
@@ -192,14 +183,18 @@ public class TypeResolution {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
 			Attribute.Module modInfo = dt.attribute(Attribute.Module.class);
 			NameID name = new NameID(modInfo.module,dt.name);
-			Type et = expandType(name,cache);
+			try {
+				Type et = expandType(name,cache);
 			
-			if(Type.isExistential(et)) {
-				return Type.T_NAMED(modInfo.module,dt.name,et);
-			} else {
-				return et;
-			}
-			
+				if (Type.isExistential(et)) {
+					return Type.T_NAMED(modInfo.module, dt.name, et);
+				} else {
+					return et;
+				}
+			} catch (ResolveError rex) {
+				syntaxError(rex.getMessage(), t, rex);
+				return null;
+			}			
 		}  else {
 			// for base cases
 			return resolve(t);
@@ -209,19 +204,19 @@ public class TypeResolution {
 	protected void partResolve(ModuleID module, FunDecl fd) {
 		
 		ArrayList<Type> parameters = new ArrayList<Type>();
-		for (WhileyFile.Parameter p : fd.parameters) {			
-			parameters.add(resolve(p.type));
+		for (WhileyFile.Parameter p : fd.parameters) {						
+			parameters.add(resolve(p.type));			
 		}
 		
 		// method return type
-		Type ret = resolve(fd.ret);		
+		Type ret = resolve(fd.ret);
 		
 		// method receiver type (if applicable)
 		Type.Process rec = null;
-		if(fd.receiver != null) {
+		if (fd.receiver != null) {			
 			Type t = resolve(fd.receiver);
-			checkType(t,Type.Process.class,fd.receiver);
-			rec = (Type.Process) rec;
+			checkType(t, Type.Process.class, fd.receiver);
+			rec = (Type.Process) rec;			
 		}
 		
 		List<Type.Fun> types = functions.get(fd.name);
@@ -241,49 +236,36 @@ public class TypeResolution {
 		resolve(td.constant,new HashMap<String,Type>());		
 	}
 	
-	protected void resolve(TypeDecl td) throws ResolveError {		
-		Type t = resolve(td.type);
+	protected void resolve(TypeDecl td) {		
+		Type t = resolve(td.type);		
 		td.attributes().add(new Attribute.Type(t));
 		
 		if(td.constraint != null) {
 			// FIXME: at this point, would be good to add types for other
 			// exposed variables.
 			HashMap<String,Type> environment = new HashMap<String,Type>();
-			environment.put("$", t);
-			t = resolve(td.constraint, environment);
+			environment.put("$", t);			
+			t = resolve(td.constraint, environment);			
 			checkType(t,Type.Bool.class, td.constraint);			
 		}				
 	}		
 		
-	protected void fullResolve(FunDecl fd) {		
+	protected void resolve(FunDecl fd) {		
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
 		// method parameter types
-		for (WhileyFile.Parameter p : fd.parameters) {			
-			try {
-				Type t = resolve(p.type);
-				environment.put(p.name(),t);
-			} catch(ResolveError rex) {
-				syntaxError(rex.getMessage(),p,rex);
-			}
+		for (WhileyFile.Parameter p : fd.parameters) {						
+			Type t = resolve(p.type);
+			environment.put(p.name(),t);			
 		}
 				
 		// method return type
-		Type ret = null;
-		try {
-			ret = resolve(fd.ret);
-		} catch(ResolveError rex) {
-			syntaxError(rex.getMessage(),fd.ret,rex);
-		}
+		Type ret = resolve(fd.ret);		
 		
 		// method receiver type (if applicable)			
-		if(fd.receiver != null) {
-			try {
-				Type rec = resolve(fd.receiver);
-				environment.put("this", rec);
-			} catch(ResolveError rex) {
-				syntaxError(rex.getMessage(),fd.receiver,rex);
-			}
+		if(fd.receiver != null) {			
+			Type rec = resolve(fd.receiver);
+			environment.put("this", rec);			
 		}
 			
 		if(fd.constraint != null) {			
@@ -578,7 +560,7 @@ public class TypeResolution {
 		return ft;
 	}
 	
-	protected Type resolve(UnresolvedType t) throws ResolveError {
+	protected Type resolve(UnresolvedType t) {
 		if(t instanceof UnresolvedType.Any) {
 			return Type.T_ANY;
 		} else if(t instanceof UnresolvedType.Existential) {
@@ -610,9 +592,14 @@ public class TypeResolution {
 			if(modules.contains(mid)) {
 				return types.get(new NameID(mid,dt.name));
 			} else {
-				Module mi = loader.loadModule(mid);
-				Module.TypeDef td = mi.type(dt.name);			
-				return td.type();
+				try {
+					Module mi = loader.loadModule(mid);
+					Module.TypeDef td = mi.type(dt.name);			
+					return td.type();
+				} catch(ResolveError rex) {
+					syntaxError(rex.getMessage(),t,rex);
+					return null;
+				}
 			}
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
@@ -702,5 +689,51 @@ public class TypeResolution {
 	protected void checkIsSubtype(Type t1, Type t2,
 			SyntacticElement elem) {
 		// FIXME: to do
+	}
+
+	/**
+	 * An open recursive type is one for which there is a recursive leaf node
+	 * for the given key, but there is no enclosing recursive node for it.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static boolean isOpenRecursive(NameID key, Type t) {
+		if (t instanceof Type.Existential) {
+			return true;
+		} else if (t instanceof Type.Void || t instanceof Type.Bool || t instanceof Type.Int
+				|| t instanceof Type.Real || t instanceof Type.Any || t instanceof Type.Named) {
+			return false;
+		} else if(t instanceof Type.List) {
+			Type.List lt = (Type.List) t;
+			return isOpenRecursive(key,lt.element);
+		} else if(t instanceof Type.Set) {
+			Type.Set lt = (Type.Set) t;
+			return isOpenRecursive(key,lt.element);
+		} else if(t instanceof Type.Process) {
+			Type.Process lt = (Type.Process) t;
+			return isOpenRecursive(key,lt.element);
+		} else if(t instanceof Type.Union) {
+			Type.Union ut = (Type.Union) t;
+			for(Type b : ut.bounds) {
+				if(isOpenRecursive(key,b)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			Type.Fun ft = (Type.Fun) t;
+			for(Type p : ft.params) {
+				if(isOpenRecursive(key,p)) {
+					return true;
+				}
+			}
+			if (ft.receiver != null) {
+				return isOpenRecursive(key, ft.receiver)
+						|| isOpenRecursive(key, ft.ret);
+			} else {
+				return isOpenRecursive(key, ft.ret);
+			}
+		}
 	}
 }
