@@ -45,12 +45,12 @@ public abstract class Type {
 		return get(new Set(element));
 	}
 	
-	public static Fun T_FUN(Type ret, Type... parameters) {
-		return get(new Fun(ret,parameters));
+	public static Fun T_FUN(Process receiver, Type ret, Type... parameters) {
+		return get(new Fun(receiver, ret,parameters));
 	}
 	
-	public static Fun T_FUN(Type ret, Collection<Type> parameters) {
-		return get(new Fun(ret, parameters));
+	public static Fun T_FUN(Process receiver, Type ret, Collection<Type> parameters) {
+		return get(new Fun(receiver, ret, parameters));
 	}
 	
 	public static Union T_UNION(Collection<NonUnion> bounds) {
@@ -346,24 +346,31 @@ public abstract class Type {
 		}
 	}
 	public static final class Fun extends NonUnion {
+		public final Process receiver;
 		public final Type ret;
 		public final ArrayList<Type> params;
 		
-		private Fun(Type ret, Type... parameters) {
+		private Fun(Process receiver, Type ret, Type... parameters) {
 			this.ret = ret;
+			this.receiver = receiver;
 			this.params = new ArrayList<Type>();
 			for(Type t : parameters) {
 				this.params.add(t);
 			}
 		}
-		private Fun(Type ret, Collection<Type> parameters) {
+		private Fun(Process receiver, Type ret, Collection<Type> parameters) {
 			this.ret = ret;
+			this.receiver = receiver;
 			this.params = new ArrayList<Type>(parameters);			
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Fun) {
 				Fun fun = (Fun) o;
-				return ret.equals(fun.ret) && params.equals(fun.params);
+				if(receiver == null) {
+					return fun.receiver == null && ret.equals(fun.ret) && params.equals(fun.params);	
+				} else {
+					return receiver.equals(fun.receiver) && ret.equals(fun.ret) && params.equals(fun.params);
+				}				
 			}
 			return false;
 		}

@@ -97,21 +97,15 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public static class Method {
-		private String name;
-		private Type receiver;		
+		private String name;		
 		private Type.Fun type;
 		private ArrayList<String> paramNames;
 		
-		public Method(Type receiver, String name, Type.Fun type,				
-				Collection<String> paramNames) {
-			this.receiver = receiver;
+		public Method(String name, Type.Fun type,				
+				Collection<String> paramNames) {			
 			this.name = name;
 			this.type = type;
 			this.paramNames = new ArrayList<String>(paramNames);		
-		}
-		
-		public Type receiver() {
-			return receiver;
 		}
 		
 		public String name() {
@@ -123,7 +117,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 
 		public boolean isFunction() {
-			return receiver == null;
+			return type.receiver == null;
 		}
 				
 		public List<String> parameterNames() {

@@ -36,7 +36,7 @@ public class Compiler implements Logger {
 	protected ArrayList<WhileyFile> queue = new ArrayList<WhileyFile>();	
 	
 	protected NameResolution nameResolver;
-	protected OldTypeResolution typeResolver;		
+	protected TypeResolution typeResolver;		
 	/*
 	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
 	protected DefiniteAssignmentChecker defAssignChecker = new DefiniteAssignmentChecker();
@@ -62,9 +62,9 @@ public class Compiler implements Logger {
 	public Compiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
 		
-		this.nameResolver = new NameResolution(loader);
+		this.nameResolver = new NameResolution(loader);		
+		this.typeResolver = new TypeResolution(loader);
 		/*
-		this.typeResolver = new TypeResolution(loader);				
 		this.checkGenerator = new RuntimeCheckGenerator(loader);
 		this.classBuilder = new ClassFileBuilder(loader,whileyMajorVersion,whileyMinorVersion);
 		this.vcGenerator = new VerificationConditionGenerator(loader);
@@ -233,7 +233,7 @@ public class Compiler implements Logger {
 	
 	protected void resolveTypes(List<WhileyFile> files) {
 		long start = System.currentTimeMillis();		
-		// typeResolver.resolve(files);
+		typeResolver.resolve(files);
 		logTimedMessage("resolved types",
 				System.currentTimeMillis() - start);		
 		

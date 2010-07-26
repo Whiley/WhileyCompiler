@@ -560,8 +560,8 @@ public class ModuleLoader {
 			}
 			for(Module.Method c : cases) {								
 				if(cases.size() == 1) {							
-					Module.Method sm = new Module.Method(c.receiver(),
-							stripCase(c.name()), c.type(), c.parameterNames());
+					Module.Method sm = new Module.Method(stripCase(c.name()), c
+							.type(), c.parameterNames());
 					ncases.add(sm);
 				}
 			}
@@ -601,14 +601,13 @@ public class ModuleLoader {
 	
 	protected Module.Method createMethodInfo(ModuleID mid,
 			ClassFile.Method cm) {
-		Triple<String,Type,Type.Fun> info = splitDescriptor(cm.name());							
+		Pair<String,Type.Fun> info = splitDescriptor(cm.name());							
 		ArrayList<String> parameterNames = new ArrayList<String>();
-		Type.Fun type = info.third();
+		Type.Fun type = info.second();
 		for (int i = 0; i != type.params.size(); ++i) {
 			parameterNames.add("p" + i);
 		}
-		return new Module.Method(info.second(), info.first(), type,
-				parameterNames);
+		return new Module.Method(info.first(), type, parameterNames);
 	}
 	
 	/**
@@ -647,15 +646,15 @@ public class ModuleLoader {
 		}
 	}
 	
-	protected Triple<String,Type,Type.Fun> splitDescriptor(String desc) {
-		String[] split = desc.split("\\$");
-		Type receiver = null;
+	protected Pair<String,Type.Fun> splitDescriptor(String desc) {
+		String[] split = desc.split("\\$");		
 		String name = split[0];
-		Type.Fun ft = new TypeParser(split[split.length - 1]).parseFunType();
+		Type.Fun ft = new TypeParser(split[split.length - 1]).parseRestFunType();
 		if(split.length > 2) {
-			receiver = new TypeParser(split[1]).parseType();
-		}
-		return new Triple<String,Type,Type.Fun>(name,receiver,ft);
+			Type.Process rec = (Type.Process) new TypeParser(split[1]).parseType();
+			ft = Type.T_FUN(rec,ft.ret,ft.params);
+		} 
+		return new Pair<String,Type.Fun>(name,ft);		
 	}
 	
 	protected class TypeParser {
@@ -759,13 +758,13 @@ public class ModuleLoader {
 			return r;
 		}
 		
-		public Type.Fun parseFunType() {
+		public Type.Fun parseRestFunType() {			
 			Type rt = parseType();
 			ArrayList<Type> ps = new ArrayList<Type>();
 			while(index < desc.length()) {
 				ps.add(parseType());				
 			}
-			return Type.T_FUN(rt,ps);
+			return Type.T_FUN(null,rt,ps);
 		}
 	}
 }
