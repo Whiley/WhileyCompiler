@@ -54,24 +54,30 @@ public class TypeResolution {
 			modules.add(f.module);
 		}
 						
-		// Stage 1 ... resolve and check types of all named types and functions
+		// Stage 1 ... resolve and check types of all named types
 		generateTypes(files);
-		
-				
-
-		// Stage 2 ... resolve, propagate and check types for all expressions.
+					
+		// Stage 2 ... resolve and check types for all functions / methods
 		for(WhileyFile f : files) {
 			for(WhileyFile.Decl d : f.declarations) {				
-				if(d instanceof ConstDecl) {
-					resolve((ConstDecl)d);
-				} else if(d instanceof TypeDecl) {
-					resolve((TypeDecl)d);
-				} else if(d instanceof FunDecl) {
+				if(d instanceof FunDecl) {
 					partResolve(f.module,(FunDecl)d);
 				}				
 			}
 		}
 		
+		// Stage 3 ... resolve, propagate types for all expressions
+		for(WhileyFile f : files) {
+			for(WhileyFile.Decl d : f.declarations) {				
+				if(d instanceof TypeDecl) {
+					resolve((TypeDecl)d);
+				} else if(d instanceof ConstDecl) {
+					resolve((ConstDecl)d);
+				} else if(d instanceof FunDecl) {
+					resolve((FunDecl)d);
+				}				
+			}
+		}
 	}
 
 	/**
@@ -183,6 +189,7 @@ public class TypeResolution {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
 			Attribute.Module modInfo = dt.attribute(Attribute.Module.class);
 			NameID name = new NameID(modInfo.module,dt.name);
+			
 			try {
 				Type et = expandType(name,cache);
 			
@@ -219,13 +226,16 @@ public class TypeResolution {
 			rec = (Type.Process) rec;			
 		}
 		
+		Type.Fun ft = Type.T_FUN(rec, ret, parameters);
+		
 		List<Type.Fun> types = functions.get(fd.name);
 		if(types == null) {
 			types = new ArrayList<Type.Fun>();
 			functions.put(new NameID(module, fd.name), types);
 		}
 		
-		types.add(Type.T_FUN(rec, ret, parameters));
+		types.add(ft);		
+		fd.attributes().add(new Attribute.Fun(ft));
 	}
 
 	protected void resolve(ConstDecl td) {
@@ -276,11 +286,11 @@ public class TypeResolution {
 		
 		List<Stmt> stmts = fd.statements;
 		for (int i=0;i!=stmts.size();++i) {
-			resolve(stmts.get(i), environment);							
+			resolve(stmts.get(i), fd, environment);							
 		}
 	}
 	
-	public void resolve(Stmt s, HashMap<String,Type> environment) {		
+	public void resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment) {		
 		try {
 			if(s instanceof Skip) {				
 			} else if(s instanceof VarDecl) {
@@ -289,10 +299,12 @@ public class TypeResolution {
 				resolve((Assign)s, environment);
 			} else if(s instanceof Assert) {
 				resolve((Assert)s, environment);
+			} else if(s instanceof Return) {
+				resolve((Return)s, fd, environment);
 			} else if(s instanceof Debug) {
 				resolve((Debug)s, environment);
 			} else if(s instanceof IfElse) {
-				resolve((IfElse)s, environment);
+				resolve((IfElse)s, fd, environment);
 			} else if(s instanceof Invoke) {
 				resolve((Invoke)s, environment);
 			} else if(s instanceof Spawn) {
@@ -303,6 +315,8 @@ public class TypeResolution {
 			}
 		} catch(ResolveError rex) {
 			syntaxError(rex.getMessage(),s,rex);
+		} catch(SyntaxError sex) {
+			throw sex;
 		} catch(Exception ex) {
 			syntaxError("internal failure", s, ex);			
 		}
@@ -332,12 +346,20 @@ public class TypeResolution {
 		checkIsSubtype(t,Type.T_BOOL,s.expr);
 	}
 
+	protected void resolve(Return s, FunDecl fd, HashMap<String,Type> environment) {
+		if(s.expr != null) {
+			Type t = resolve(s.expr, environment);
+			Type.Fun ft = fd.attribute(Attribute.Fun.class).type;
+			checkIsSubtype(ft.ret,t,s.expr);
+		}
+	}
+	
 	protected void resolve(Debug s, HashMap<String,Type> environment) {
 		Type t = resolve(s.expr, environment);
 		checkIsSubtype(t,Type.T_LIST(Type.T_INT),s.expr);
 	}
 
-	protected void resolve(IfElse s, HashMap<String,Type> environment) {
+	protected void resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment) {
 		Type t = resolve(s.condition, environment);
 		checkType(t,Type.Bool.class,s.condition);
 		
@@ -345,12 +367,12 @@ public class TypeResolution {
 		
 		HashMap<String,Type> tenv = new HashMap<String,Type>(environment);		
 		for (Stmt st : s.trueBranch) {
-			resolve(st, tenv);
+			resolve(st, fd, tenv);
 		}
 		if (s.falseBranch != null) {			
 			HashMap<String,Type> fenv = new HashMap<String,Type>(environment);
 			for (Stmt st : s.falseBranch) {
-				resolve(st, fenv);
+				resolve(st, fd, fenv);
 			}
 		}
 	}
@@ -679,16 +701,17 @@ public class TypeResolution {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
-			syntaxError("expected type " + clazz.getName() + " found " + t,
+			syntaxError("expected type " + clazz.getName() + ", found " + t,
 					elem);
 			return null;
 		}
 	}
 	
 	// Check t1 :> t2
-	protected void checkIsSubtype(Type t1, Type t2,
-			SyntacticElement elem) {
-		// FIXME: to do
+	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
+		if (!Type.isSubtype(t1, t2)) {
+			syntaxError("expected type " + t1 + ", found " + t2, elem);
+		}
 	}
 
 	/**

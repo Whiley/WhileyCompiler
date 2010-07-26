@@ -270,6 +270,9 @@ public abstract class Type {
 		public int hashCode() {
 			return 1;
 		}
+		public String toString() {
+			return "*";
+		}
 	}
 	public static final class Void extends NonUnion {
 		private Void() {}
@@ -278,6 +281,9 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return 1;
+		}
+		public String toString() {
+			return "void";
 		}
 	}
 	public static final class Existential extends NonUnion {
@@ -288,6 +294,9 @@ public abstract class Type {
 		public int hashCode() {
 			return 2;
 		}
+		public String toString() {
+			return "?";
+		}
 	}
 	public static final class Bool extends NonUnion {
 		private Bool() {}
@@ -297,6 +306,9 @@ public abstract class Type {
 		public int hashCode() {
 			return 3;
 		}
+		public String toString() {
+			return "bool";
+		}
 	}
 	public static final class Int extends NonUnion {
 		private Int() {}
@@ -305,6 +317,9 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return 4;
+		}
+		public String toString() {
+			return "int";
 		}	
 	}
 	public static final class Real extends NonUnion {
@@ -314,6 +329,9 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return 5;
+		}
+		public String toString() {
+			return "real";
 		}
 	}
 	public static final class Named extends NonUnion {
@@ -336,6 +354,9 @@ public abstract class Type {
 		public int hashCode() {
 			return type.hashCode() + module.hashCode() + name.hashCode();
 		}
+		public String toString() {
+			return name + "[" + type + "]";
+		}
 	}
 	public static final class List extends NonUnion {
 		public final Type element;
@@ -350,7 +371,10 @@ public abstract class Type {
 			return false;
 		}
 		public int hashCode() {
-			return element.hashCode();
+			return element.hashCode();	
+		}
+		public String toString() {
+			return "[" + element + "]";
 		}
 	}
 	public static final class Set extends NonUnion {
@@ -367,6 +391,9 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return element.hashCode();
+		}
+		public String toString() {
+			return "{" + element + "}";
 		}
 	}
 	public static final class Union extends Type {
@@ -387,6 +414,18 @@ public abstract class Type {
 				new IllegalArgumentException(
 						"Cannot construct a type union with fewer than two bounds");
 			}
+		}
+		public String toString() {
+			String r = "";
+			boolean firstTime=true;
+			for(Type t : bounds) {
+				if(!firstTime) {
+					r +="|";
+				}
+				firstTime=false;
+				r += t;
+			}
+			return r;
 		}
 	}
 	public static final class Fun extends NonUnion {
@@ -421,6 +460,22 @@ public abstract class Type {
 		public int hashCode() {
 			return ret.hashCode() + params.hashCode();
 		}
+		public String toString() {
+			String r = "";
+			if(receiver != null) {
+				r += receiver + "::";
+			}
+			r += "(";
+			boolean firstTime=true;
+			for(Type p : params) {
+				if(!firstTime) {
+					r +=",";
+				}
+				firstTime=false;
+				r += p;
+			}
+			return r + ")" + ret;
+		}
 	}
 	public static final class Process extends NonUnion {
 		public final Type element;
@@ -436,6 +491,9 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return element.hashCode();
+		}
+		public String toString() {
+			return "process " + element;
 		}
 	}
 	public static final class Tuple extends NonUnion {
@@ -456,6 +514,20 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return types.hashCode();
+		}
+		public String toString() {
+			ArrayList<String> fields = new ArrayList<String>(types.keySet());
+			Collections.sort(fields);
+			String r = "(";
+			boolean firstTime=true;
+			for(String f : fields) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				r += types.get(f);
+			}
+			return r + ")";
 		}
 	}
 	public static final class Recursive extends NonUnion {
@@ -480,6 +552,13 @@ public abstract class Type {
 		}
 		public int hashCode() {
 			return type.hashCode();
+		}
+		public String toString() {
+			if(type == null) {
+				return name;
+			} else {
+				return name + "[" + type + "]";
+			}
 		}
 	}
 	private static final ArrayList<Type> types = new ArrayList<Type>();
