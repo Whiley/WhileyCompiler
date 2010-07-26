@@ -143,9 +143,9 @@ public abstract class Value {
 		Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) values.get(idx);
-		} else {
-			values.add(type);			
+		} else {					
 			cache.put(type, values.size());
+			values.add(type);
 			return type;
 		}
 	}

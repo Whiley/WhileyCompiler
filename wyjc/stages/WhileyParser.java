@@ -392,7 +392,7 @@ public class WhileyParser {
 		match(Colon.class);
 		matchEndLine();
 		List<Stmt> tblk = parseBlock(indent+1);				
-		List<Stmt> fblk = null;
+		List<Stmt> fblk = Collections.EMPTY_LIST;
 		
 		if ((index+1) < tokens.size() && tokens.get(index) instanceof Tabs) {
 			Tabs ts = (Tabs) tokens.get(index);			

@@ -130,9 +130,7 @@ public class TypeResolution {
 			Module.TypeDef td = mi.type(key.name());			
 			return td.type();
 		}
-		
-		// Now, check for a cached expansion.
-		
+
 		// following is needed to terminate any recursion
 		cache.put(key, Type.T_RECURSIVE(key.toString(),null));
 		
@@ -243,7 +241,7 @@ public class TypeResolution {
 		// The problem is that we may not have generated the type for the given
 		// method call, which means we won't be able to bind it. One option is
 		// simply to disallow function calls in constant definitions.
-		resolve(td.constant,new HashMap<String,Type>());		
+		resolve(td.constant,new HashMap<String,Type>(),new HashMap<String,Type>());		
 	}
 	
 	protected void resolve(TypeDecl td) {		
@@ -254,19 +252,29 @@ public class TypeResolution {
 			// FIXME: at this point, would be good to add types for other
 			// exposed variables.
 			HashMap<String,Type> environment = new HashMap<String,Type>();
+			HashMap<String,Type> declared = new HashMap<String,Type>();
 			environment.put("$", t);			
-			t = resolve(td.constraint, environment);			
+			t = resolve(td.constraint, environment, declared);			
 			checkType(t,Type.Bool.class, td.constraint);			
 		}				
 	}		
 		
-	protected void resolve(FunDecl fd) {		
-		HashMap<String,Type> environment = new HashMap<String,Type>();
+	protected void resolve(FunDecl fd) {
+		
+		// The declared environment holds the declared type of a given local
+		// variable. This is separate from the environment (see below), whose
+		// types may change as a result of assignment and type inference.
+		HashMap<String,Type> declared = new HashMap<String,Type>();
+		
+		// The environment holds the current type of a given local variable. The
+		// current type is affected by assignments to that variable.
+		HashMap<String,Type> environment = new HashMap<String,Type>();		
 		
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {						
 			Type t = resolve(p.type);
-			environment.put(p.name(),t);			
+			environment.put(p.name(),t);
+			declared.put(p.name(),t);
 		}
 				
 		// method return type
@@ -275,40 +283,42 @@ public class TypeResolution {
 		// method receiver type (if applicable)			
 		if(fd.receiver != null) {			
 			Type rec = resolve(fd.receiver);
-			environment.put("this", rec);			
+			environment.put("this", rec);
+			declared.put("this", rec);
 		}
 			
 		if(fd.constraint != null) {			
 			environment.put("$",ret);
-			resolve(fd.constraint, environment);			
+			resolve(fd.constraint, environment, declared);			
 			environment.remove("$");
 		}
 		
 		List<Stmt> stmts = fd.statements;
 		for (int i=0;i!=stmts.size();++i) {
-			resolve(stmts.get(i), fd, environment);							
+			resolve(stmts.get(i), fd, environment, declared);							
 		}
 	}
 	
-	public void resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment) {		
+	public void resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment,
+			HashMap<String, Type> declared) {		
 		try {
 			if(s instanceof Skip) {				
 			} else if(s instanceof VarDecl) {
-				resolve((VarDecl)s, environment);
+				resolve((VarDecl)s, environment, declared);
 			} else if(s instanceof Assign) {
-				resolve((Assign)s, environment);
+				resolve((Assign)s, environment, declared);
 			} else if(s instanceof Assert) {
-				resolve((Assert)s, environment);
+				resolve((Assert)s, environment, declared);
 			} else if(s instanceof Return) {
-				resolve((Return)s, fd, environment);
+				resolve((Return)s, fd, environment, declared);
 			} else if(s instanceof Debug) {
-				resolve((Debug)s, environment);
+				resolve((Debug)s, environment, declared);
 			} else if(s instanceof IfElse) {
-				resolve((IfElse)s, fd, environment);
+				resolve((IfElse)s, fd, environment, declared);
 			} else if(s instanceof Invoke) {
-				resolve((Invoke)s, environment);
+				resolve((Invoke)s, environment, declared);
 			} else if(s instanceof Spawn) {
-				resolve((UnOp)s, environment);
+				resolve((UnOp)s, environment, declared);
 			} else {
 				syntaxError("unknown statement encountered: "
 						+ s.getClass().getName(), s);				
@@ -322,82 +332,95 @@ public class TypeResolution {
 		}
 	}
 	
-	protected void resolve(VarDecl s, HashMap<String,Type> environment) throws ResolveError {
+	protected void resolve(VarDecl s, HashMap<String, Type> environment,
+			HashMap<String, Type> declared) throws ResolveError {
 		Expr init = s.initialiser;
 		Type type = resolve(s.type);
 		if(init != null) {
-			Type initT = resolve(init,environment);
+			Type initT = resolve(init,environment, declared);
 			checkIsSubtype(type,initT,init);
-		}
-		environment.put(s.name,type);		
+			environment.put(s.name,type);
+		} 
+		declared.put(s.name,type);
 	}
 	
-	protected void resolve(Assign s, HashMap<String,Type> environment) {
-		Type lhs_t = resolve(s.lhs, environment);
-		Type rhs_t = resolve(s.rhs, environment);
-		checkIsSubtype(lhs_t,rhs_t,s.rhs);
+	protected void resolve(Assign s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		Type rhs_t = resolve(s.rhs, environment, declared);
 		
-		// FIXME: need to perform type inference here, which means updating the
-		// environment and also carrying around a declared environment
+		if(s.lhs instanceof Variable) {
+			// perform type inference as a result of this assignment
+			Variable v = (Variable) s.lhs;			
+			Type declared_t = declared.get(v.var);
+			if(declared_t == null) {
+				syntaxError("unknown variable",v);
+			}
+			checkIsSubtype(declared_t,rhs_t,s.rhs);
+			environment.put(v.var, rhs_t);
+		} else {
+			Type lhs_t = resolve(s.lhs, environment, declared);
+			checkIsSubtype(lhs_t,rhs_t,s.rhs);					
+		}
 	}
 
-	protected void resolve(Assert s, HashMap<String,Type> environment) {
-		Type t = resolve(s.expr, environment);
+	protected void resolve(Assert s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		Type t = resolve(s.expr, environment, declared);
 		checkIsSubtype(t,Type.T_BOOL,s.expr);
 	}
 
-	protected void resolve(Return s, FunDecl fd, HashMap<String,Type> environment) {
+	protected void resolve(Return s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		if(s.expr != null) {
-			Type t = resolve(s.expr, environment);
+			Type t = resolve(s.expr, environment, declared);
 			Type.Fun ft = fd.attribute(Attribute.Fun.class).type;
 			checkIsSubtype(ft.ret,t,s.expr);
 		}
 	}
 	
-	protected void resolve(Debug s, HashMap<String,Type> environment) {
-		Type t = resolve(s.expr, environment);
+	protected void resolve(Debug s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		Type t = resolve(s.expr, environment, declared);
 		checkIsSubtype(t,Type.T_LIST(Type.T_INT),s.expr);
 	}
 
-	protected void resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment) {
-		Type t = resolve(s.condition, environment);
+	protected void resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		Type t = resolve(s.condition, environment, declared);
 		checkType(t,Type.Bool.class,s.condition);
 		
 		// FIXME: need to perform some type inference here
 		
 		HashMap<String,Type> tenv = new HashMap<String,Type>(environment);		
+		HashMap<String,Type> tdec = new HashMap<String,Type>(declared);
 		for (Stmt st : s.trueBranch) {
-			resolve(st, fd, tenv);
+			resolve(st, fd, tenv, tdec);
 		}
 		if (s.falseBranch != null) {			
 			HashMap<String,Type> fenv = new HashMap<String,Type>(environment);
+			HashMap<String,Type> fdec = new HashMap<String,Type>(declared);
 			for (Stmt st : s.falseBranch) {
-				resolve(st, fd, fenv);
+				resolve(st, fd, fenv, fdec);
 			}
 		}
 	}
 	
-	protected Type resolve(Expr e, HashMap<String,Type> environment) {
+	protected Type resolve(Expr e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		Type t;
 		try {
 			if (e instanceof Constant) {
-				t = resolve((Constant)e, environment);
+				t = resolve((Constant)e, environment, declared);
 			} else if (e instanceof Variable) {
-				t = resolve((Variable)e, environment);
+				t = resolve((Variable)e, environment, declared);
 			} else if (e instanceof NaryOp) {
-				t = resolve((BinOp)e, environment);
+				t = resolve((BinOp)e, environment, declared);
 			} else if (e instanceof BinOp) {
-				t = resolve((BinOp)e, environment);
+				t = resolve((BinOp)e, environment, declared);
 			} else if (e instanceof UnOp) {
-				t = resolve((UnOp)e, environment);
+				t = resolve((UnOp)e, environment, declared);
 			} else if (e instanceof Invoke) {
-				t = resolve((Invoke)e, environment);
+				t = resolve((Invoke)e, environment, declared);
 			} else if (e instanceof Comprehension) {
-				t = resolve((Comprehension) e, environment);
+				t = resolve((Comprehension) e, environment, declared);
 			} else if (e instanceof TupleAccess) {
-				t = resolve((TupleAccess) e, environment);
+				t = resolve((TupleAccess) e, environment, declared);
 			} else if (e instanceof TupleGen) {
-				t = resolve((TupleGen) e, environment);
+				t = resolve((TupleGen) e, environment, declared);
 			} else {				
 				syntaxError("unknown expression encountered: "
 							+ e.getClass().getName(), e);
@@ -415,19 +438,19 @@ public class TypeResolution {
 		return t;
 	}
 	
-	protected Type resolve(Invoke s, HashMap<String, Type> environment)
+	protected Type resolve(Invoke s, HashMap<String,Type> environment, HashMap<String,Type> declared)
 			throws ResolveError {
 		List<Expr> args = s.arguments;
 		
 		ArrayList<Type> ptypes = new ArrayList<Type>();		
 		for(Expr e : args) {			
-			Type e_t = resolve(e,environment);
+			Type e_t = resolve(e,environment, declared);
 			ptypes.add(e_t);			
 		}
 		
 		Type.Process receiver = null;
 		if(s.receiver != null) {			
-			Type tmp = resolve(s.receiver,environment);
+			Type tmp = resolve(s.receiver,environment, declared);
 			checkType(tmp,Type.Process.class,s.receiver);
 			receiver = (Type.Process) tmp;
 		}
@@ -444,11 +467,11 @@ public class TypeResolution {
 		return funtype.ret;									
 	}
 			
-	protected Type resolve(Constant c, HashMap<String,Type> environment)  {
+	protected Type resolve(Constant c, HashMap<String,Type> environment, HashMap<String,Type> declared)  {
 		return c.val.type();
 	}
 	
-	protected Type resolve(Variable v, HashMap<String,Type> environment)  {
+	protected Type resolve(Variable v, HashMap<String,Type> environment, HashMap<String,Type> declared)  {
 		Type t = environment.get(v.var);
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
@@ -456,10 +479,10 @@ public class TypeResolution {
 		return t;
 	}
 	
-	protected Type resolve(UnOp v, HashMap<String,Type> environment,
+	protected Type resolve(UnOp v, HashMap<String,Type> environment, HashMap<String,Type> declared,
 			ArrayList<PkgID> imports)  {
 		Expr mhs = v.mhs;
-		Type t = resolve(mhs, environment);
+		Type t = resolve(mhs, environment, declared);
 		
 		if(v.op == UOp.NEG) {
 			checkIsSubtype(Type.T_REAL,t,mhs);
@@ -478,9 +501,9 @@ public class TypeResolution {
 		return t;
 	}
 	
-	protected Type resolve(BinOp v, HashMap<String,Type> environment) {
-		Type lhs_t = resolve(v.lhs, environment);
-		Type rhs_t = resolve(v.rhs, environment);
+	protected Type resolve(BinOp v, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+		Type lhs_t = resolve(v.lhs, environment, declared);
+		Type rhs_t = resolve(v.rhs, environment, declared);
 		BOp bop = v.op;
 			
 		if(bop == BOp.OR || bop == BOp.AND) {
@@ -527,14 +550,14 @@ public class TypeResolution {
 		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
-	protected Type resolve(NaryOp v, HashMap<String,Type> environment)  {		
+	protected Type resolve(NaryOp v, HashMap<String,Type> environment, HashMap<String,Type> declared)  {		
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments",v);
 			}
-			Type src = resolve(v.arguments.get(0), environment);
-			Type start = resolve(v.arguments.get(1), environment);
-			Type end = resolve(v.arguments.get(2), environment);
+			Type src = resolve(v.arguments.get(0), environment, declared);
+			Type start = resolve(v.arguments.get(1), environment, declared);
+			Type end = resolve(v.arguments.get(2), environment, declared);
 			checkType(src,Type.List.class,v.arguments.get(0));
 			checkType(start,Type.Int.class,v.arguments.get(1));
 			checkType(end,Type.Int.class,v.arguments.get(2));
@@ -544,7 +567,7 @@ public class TypeResolution {
 			Type etype = Type.T_VOID;
 
 			for(Expr e : v.arguments) {
-				Type t = resolve(e, environment);
+				Type t = resolve(e, environment, declared);
 				etype = Type.leastUpperBound(t,etype);
 			}		
 
@@ -556,23 +579,23 @@ public class TypeResolution {
 		}
 	}
 	
-	protected Type resolve(Comprehension e, HashMap<String,Type> environment)  {				
+	protected Type resolve(Comprehension e, HashMap<String,Type> environment, HashMap<String,Type> declared)  {				
 		throw new RuntimeException("Need to implement type resolution for Comprehension");
 	}
 		
-	protected Type resolve(TupleGen sg, HashMap<String, Type> environment)
+	protected Type resolve(TupleGen sg, HashMap<String,Type> environment, HashMap<String,Type> declared)
 			 {
 		HashMap<String, Type> types = new HashMap<String, Type>();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			Type t = resolve(e.getValue(), environment);
+			Type t = resolve(e.getValue(), environment, declared);
 			types.put(e.getKey(), t);
 		}
 		return Type.T_TUPLE(types);
 	}
 	
-	protected Type resolve(TupleAccess sg, HashMap<String, Type> environment)
+	protected Type resolve(TupleAccess sg, HashMap<String,Type> environment, HashMap<String,Type> declared)
 			 {
-		Type lhs = resolve(sg.lhs, environment);
+		Type lhs = resolve(sg.lhs, environment, declared);
 		// FIXME: will need to determine effective tuple type here
 		Type.Tuple tup = checkType(lhs, Type.Tuple.class, sg.lhs);
 		Type ft = tup.types.get(sg.name);
@@ -629,7 +652,7 @@ public class TypeResolution {
 			for(UnresolvedType b : ut.bounds) {
 				Type bt = resolve(b);
 				if(bt instanceof Type.NonUnion) {
-					bounds.add((Type.NonUnion)t);
+					bounds.add((Type.NonUnion)bt);
 				} else {
 					bounds.addAll(((Type.Union)bt).bounds);
 				}

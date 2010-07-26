@@ -99,8 +99,8 @@ public interface Stmt extends SyntacticElement {
 				List<Stmt> falseBranch, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
-			this.trueBranch = new ArrayList<Stmt>(trueBranch);
-			this.falseBranch = new ArrayList<Stmt>(falseBranch);
+			this.trueBranch = new ArrayList<Stmt>(trueBranch);			
+			this.falseBranch = new ArrayList<Stmt>(falseBranch);			
 		}
 		
 		public IfElse(Expr condition, List<Stmt> trueBranch,

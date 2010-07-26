@@ -568,9 +568,9 @@ public abstract class Type {
 		Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) types.get(idx);
-		} else {
-			types.add(type);			
+		} else {				
 			cache.put(type, types.size());
+			types.add(type);	
 			return type;
 		}
 	}
