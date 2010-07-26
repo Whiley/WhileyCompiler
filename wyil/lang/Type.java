@@ -241,6 +241,17 @@ public abstract class Type {
 				}
 			}
 			return false;
+		} else if(t instanceof Tuple) {			
+			Tuple tt = (Tuple) t;
+			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+				if (isExistential(b.getValue())) {
+					return true;
+				}
+			}
+			return false;
+		} else if (t instanceof Recursive) {
+			Recursive lt = (Recursive) t;
+			return lt.type == null || isExistential(lt.type);
 		} else {
 			Fun ft = (Fun) t;
 			for(Type p : ft.params) {
@@ -550,8 +561,13 @@ public abstract class Type {
 			}
 			return false;
 		}
+
 		public int hashCode() {
-			return type.hashCode();
+			if (type != null) {
+				return name.hashCode() + type.hashCode();
+			} else {
+				return name.hashCode();
+			}
 		}
 		public String toString() {
 			if(type == null) {

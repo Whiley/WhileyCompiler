@@ -24,6 +24,7 @@ import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
+import wyil.lang.Type.Tuple;
 import wyjc.lang.*;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt.*;
@@ -104,8 +105,10 @@ public class TypeResolution {
 		// third expand all types
 		for(NameID key : unresolved.keySet()) {
 			try {
+				// FIXME: something is broken
 				HashMap<NameID, Type> cache = new HashMap<NameID,Type>();			
-				Type t = expandType(key,cache);		
+				Type t = expandType(key,cache);
+				System.out.println("GOT: " + t + " FOR: " + key);
 				// t = simplifyRecursiveTypes(t);		
 				types.put(key,t);				
 			} catch(ResolveError ex) {
@@ -170,7 +173,7 @@ public class TypeResolution {
 			for(UnresolvedType b : ut.bounds) {
 				Type bt = expandType(b,cache);
 				if(bt instanceof Type.NonUnion) {
-					bounds.add((Type.NonUnion)t);
+					bounds.add((Type.NonUnion)bt);
 				} else {
 					bounds.addAll(((Type.Union)bt).bounds);
 				}
@@ -763,6 +766,14 @@ public class TypeResolution {
 			Type.Union ut = (Type.Union) t;
 			for(Type b : ut.bounds) {
 				if(isOpenRecursive(key,b)) {
+					return true;
+				}
+			}
+			return false;
+		} else if(t instanceof Tuple) {			
+			Tuple tt = (Tuple) t;
+			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+				if (isOpenRecursive(key,b.getValue())) {
 					return true;
 				}
 			}
