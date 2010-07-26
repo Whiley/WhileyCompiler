@@ -218,7 +218,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public boolean isExistential(Type t) {
+	public static boolean isExistential(Type t) {
 		if (t instanceof Existential) {
 			return true;
 		} else if (t instanceof Void || t instanceof Bool || t instanceof Int
