@@ -126,7 +126,7 @@ public class TypeResolution {
 		if(t != null && !isRecursive(t)) {
 			return t;
 		} else if(!modules.contains(key.module())) {			
-			// indicates a non-local key
+			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());			
 			return td.type();
@@ -155,6 +155,57 @@ public class TypeResolution {
 		return t;		
 	}	
 	
+	protected Type expandType(UnresolvedType t, HashMap<NameID, Type> cache)
+			throws SyntaxError {
+		if(t instanceof UnresolvedType.List) {
+			UnresolvedType.List lt = (UnresolvedType.List) t;			
+			return Type.T_LIST(expandType(lt.element, cache));
+		} else if(t instanceof UnresolvedType.Set) {
+			UnresolvedType.Set st = (UnresolvedType.Set) t;			
+			return Type.T_SET(expandType(st.element, cache));
+		} else if(t instanceof UnresolvedType.Tuple) {
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
+				types.put(e.getKey(),expandType(e.getValue(),cache));
+			}
+			return Type.T_TUPLE(types);
+		} else if(t instanceof UnresolvedType.Union) {
+			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
+			for(UnresolvedType b : ut.bounds) {
+				Type bt = expandType(b,cache);
+				if(bt instanceof Type.NonUnion) {
+					bounds.add((Type.NonUnion)t);
+				} else {
+					bounds.addAll(((Type.Union)bt).bounds);
+				}
+			}
+			if(bounds.size() == 1) {
+				return bounds.iterator().next();
+			} else {
+				return Type.T_UNION(bounds);
+			}
+		} else if(t instanceof UnresolvedType.Process) {	
+			UnresolvedType.Process ut = (UnresolvedType.Process) t;
+			return Type.T_PROCESS(expandType(ut.element,cache));			
+		} else if(t instanceof UnresolvedType.Named) {
+			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
+			Attribute.Module modInfo = dt.attribute(Attribute.Module.class);
+			NameID name = new NameID(modInfo.module,dt.name);
+			Type et = expandType(name,cache);
+			
+			if(Type.isExistential(et)) {
+				return Type.T_NAMED(modInfo.module,dt.name,et);
+			} else {
+				return et;
+			}
+			
+		}  else {
+			// for base cases
+			return resolve(t);
+		}
+	}
 	
 	protected void partResolve(ModuleID module, FunDecl fd) {
 		
@@ -513,7 +564,7 @@ public class TypeResolution {
 		return ft;
 	}
 	
-	protected Type resolve(UnresolvedType t) throws SyntaxError {
+	protected Type resolve(UnresolvedType t) throws ResolveError {
 		if(t instanceof UnresolvedType.Any) {
 			return Type.T_ANY;
 		} else if(t instanceof UnresolvedType.Existential) {
@@ -541,7 +592,14 @@ public class TypeResolution {
 			return Type.T_TUPLE(types);
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			
+			ModuleID mid = dt.attribute(Attribute.Module.class).module;
+			if(modules.contains(mid)) {
+				return types.get(new NameID(mid,dt.name));
+			} else {
+				Module mi = loader.loadModule(mid);
+				Module.TypeDef td = mi.type(dt.name);			
+				return td.type();
+			}
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
