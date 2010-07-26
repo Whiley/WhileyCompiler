@@ -155,8 +155,7 @@ public class TypeResolution {
 		return t;		
 	}	
 	
-	protected Type expandType(UnresolvedType t, HashMap<NameID, Type> cache)
-			throws SyntaxError {
+	protected Type expandType(UnresolvedType t, HashMap<NameID, Type> cache) {
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;			
 			return Type.T_LIST(expandType(lt.element, cache));
@@ -242,7 +241,7 @@ public class TypeResolution {
 		resolve(td.constant,new HashMap<String,Type>());		
 	}
 	
-	protected void resolve(TypeDecl td) throws SyntaxError {		
+	protected void resolve(TypeDecl td) throws ResolveError {		
 		Type t = resolve(td.type);
 		td.attributes().add(new Attribute.Type(t));
 		
@@ -256,22 +255,35 @@ public class TypeResolution {
 		}				
 	}		
 		
-	protected void fullResolve(FunDecl fd) {
+	protected void fullResolve(FunDecl fd) {		
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {			
-			Type t = resolve(p.type);
-			environment.put(p.name(),t);			
+			try {
+				Type t = resolve(p.type);
+				environment.put(p.name(),t);
+			} catch(ResolveError rex) {
+				syntaxError(rex.getMessage(),p,rex);
+			}
 		}
 				
 		// method return type
-		Type ret = resolve(fd.ret);		
+		Type ret = null;
+		try {
+			ret = resolve(fd.ret);
+		} catch(ResolveError rex) {
+			syntaxError(rex.getMessage(),fd.ret,rex);
+		}
 		
 		// method receiver type (if applicable)			
 		if(fd.receiver != null) {
-			Type rec = resolve(fd.receiver);
-			environment.put("this", rec);
+			try {
+				Type rec = resolve(fd.receiver);
+				environment.put("this", rec);
+			} catch(ResolveError rex) {
+				syntaxError(rex.getMessage(),fd.receiver,rex);
+			}
 		}
 			
 		if(fd.constraint != null) {			
@@ -307,12 +319,14 @@ public class TypeResolution {
 				syntaxError("unknown statement encountered: "
 						+ s.getClass().getName(), s);				
 			}
+		} catch(ResolveError rex) {
+			syntaxError(rex.getMessage(),s,rex);
 		} catch(Exception ex) {
 			syntaxError("internal failure", s, ex);			
 		}
 	}
 	
-	protected void resolve(VarDecl s, HashMap<String,Type> environment) throws SyntaxError {
+	protected void resolve(VarDecl s, HashMap<String,Type> environment) throws ResolveError {
 		Expr init = s.initialiser;
 		Type type = resolve(s.type);
 		if(init != null) {
@@ -398,7 +412,7 @@ public class TypeResolution {
 	}
 	
 	protected Type resolve(Invoke s, HashMap<String, Type> environment)
-			throws SyntaxError, ResolveError {
+			throws ResolveError {
 		List<Expr> args = s.arguments;
 		
 		ArrayList<Type> ptypes = new ArrayList<Type>();		
@@ -426,11 +440,11 @@ public class TypeResolution {
 		return funtype.ret;									
 	}
 			
-	protected Type resolve(Constant c, HashMap<String,Type> environment) throws SyntaxError {
+	protected Type resolve(Constant c, HashMap<String,Type> environment)  {
 		return c.val.type();
 	}
 	
-	protected Type resolve(Variable v, HashMap<String,Type> environment) throws SyntaxError {
+	protected Type resolve(Variable v, HashMap<String,Type> environment)  {
 		Type t = environment.get(v.var);
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
@@ -439,7 +453,7 @@ public class TypeResolution {
 	}
 	
 	protected Type resolve(UnOp v, HashMap<String,Type> environment,
-			ArrayList<PkgID> imports) throws SyntaxError {
+			ArrayList<PkgID> imports)  {
 		Expr mhs = v.mhs;
 		Type t = resolve(mhs, environment);
 		
@@ -509,7 +523,7 @@ public class TypeResolution {
 		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
-	protected Type resolve(NaryOp v, HashMap<String,Type> environment) throws SyntaxError {		
+	protected Type resolve(NaryOp v, HashMap<String,Type> environment)  {		
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments",v);
@@ -538,12 +552,12 @@ public class TypeResolution {
 		}
 	}
 	
-	protected Type resolve(Comprehension e, HashMap<String,Type> environment) throws SyntaxError {				
+	protected Type resolve(Comprehension e, HashMap<String,Type> environment)  {				
 		throw new RuntimeException("Need to implement type resolution for Comprehension");
 	}
 		
 	protected Type resolve(TupleGen sg, HashMap<String, Type> environment)
-			throws SyntaxError {
+			 {
 		HashMap<String, Type> types = new HashMap<String, Type>();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
 			Type t = resolve(e.getValue(), environment);
@@ -553,7 +567,7 @@ public class TypeResolution {
 	}
 	
 	protected Type resolve(TupleAccess sg, HashMap<String, Type> environment)
-			throws SyntaxError {
+			 {
 		Type lhs = resolve(sg.lhs, environment);
 		// FIXME: will need to determine effective tuple type here
 		Type.Tuple tup = checkType(lhs, Type.Tuple.class, sg.lhs);

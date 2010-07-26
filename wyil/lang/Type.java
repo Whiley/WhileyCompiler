@@ -211,6 +211,50 @@ public abstract class Type {
 			return T_UNION((NonUnion) t1, (NonUnion) t2);
 		}
 	}
+
+	/**
+	 * Determine whether a given type contains an existential or not.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public boolean isExistential(Type t) {
+		if (t instanceof Existential) {
+			return true;
+		} else if (t instanceof Void || t instanceof Bool || t instanceof Int
+				|| t instanceof Real || t instanceof Any || t instanceof Named) {
+			return false;
+		} else if(t instanceof List) {
+			List lt = (List) t;
+			return isExistential(lt.element);
+		} else if(t instanceof Set) {
+			Set lt = (Set) t;
+			return isExistential(lt.element);
+		} else if(t instanceof Process) {
+			Process lt = (Process) t;
+			return isExistential(lt.element);
+		} else if(t instanceof Union) {
+			Union ut = (Union) t;
+			for(Type b : ut.bounds) {
+				if(isExistential(b)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			Fun ft = (Fun) t;
+			for(Type p : ft.params) {
+				if(isExistential(p)) {
+					return true;
+				}
+			}
+			if(ft.receiver != null) {
+				return isExistential(ft.receiver) || isExistential(ft.ret);
+			} else {
+				return isExistential(ft.ret);
+			}
+		}
+	}
 	
 	// =============================================================
 	// Type Classes
