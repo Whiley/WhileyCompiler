@@ -266,6 +266,124 @@ public abstract class Type {
 			}
 		}
 	}
+
+	/**
+	 * This method lists the names for all recursive types used in the given
+	 * type.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static java.util.Set<String> recursiveTypeNames(Type t) {
+		if (t instanceof Existential || t instanceof Void || t instanceof Bool
+				|| t instanceof Int || t instanceof Real || t instanceof Any
+				|| t instanceof Named) {
+			return Collections.EMPTY_SET;
+		} else if(t instanceof List) {
+			List lt = (List) t;
+			return recursiveTypeNames(lt.element);
+		} else if(t instanceof Set) {
+			Set lt = (Set) t;
+			return recursiveTypeNames(lt.element);
+		} else if(t instanceof Process) {
+			Process lt = (Process) t;
+			return recursiveTypeNames(lt.element);
+		} else if(t instanceof Union) {
+			Union ut = (Union) t;
+			HashSet<String> names = new HashSet<String>();
+			for(Type b : ut.bounds) {
+				names.addAll(recursiveTypeNames(b));				
+			}
+			return names;
+		} else if(t instanceof Tuple) {			
+			Tuple tt = (Tuple) t;
+			HashSet<String> names = new HashSet<String>();
+			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+				names.addAll(recursiveTypeNames(b.getValue()));				
+			}
+			return names;
+		} else if (t instanceof Recursive) {
+			Recursive lt = (Recursive) t;
+			HashSet<String> names = new HashSet<String>();
+			names.add(lt.name);
+			if(lt.type != null) {
+				names.addAll(recursiveTypeNames(lt.type));
+			}
+			return names;
+		} else {
+			Fun ft = (Fun) t;
+			HashSet<String> names = new HashSet<String>();
+			for(Type p : ft.params) {
+				names.addAll(recursiveTypeNames(p));				
+			}
+			names.addAll(recursiveTypeNames(ft.ret));
+			if(ft.receiver != null) {
+				names.addAll(recursiveTypeNames(ft.receiver));				
+			} 
+			return names;
+		}
+	}
+
+	/**
+	 * This method renames all of the recursive types used within the given type
+	 * using a given binding.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static Type substituteRecursiveTypes(Type t, Map<String,String> binding) {
+		if (t instanceof Existential || t instanceof Void || t instanceof Bool
+				|| t instanceof Int || t instanceof Real || t instanceof Any
+				|| t instanceof Named) {
+			return t;
+		} else if(t instanceof List) {
+			List lt = (List) t;
+			return T_LIST(substituteRecursiveTypes(lt.element, binding));
+		} else if(t instanceof Set) {
+			Set lt = (Set) t;
+			return T_SET(substituteRecursiveTypes(lt.element, binding));			
+		} else if(t instanceof Process) {
+			Process lt = (Process) t;
+			return T_PROCESS(substituteRecursiveTypes(lt.element, binding));			
+		} else if(t instanceof Union) {
+			Union ut = (Union) t;
+			HashSet<NonUnion> bounds = new HashSet<NonUnion>();
+			for(NonUnion b : ut.bounds) {
+				bounds.add((NonUnion)substituteRecursiveTypes(b, binding));				
+			}
+			return T_UNION(bounds);			
+		} else if(t instanceof Tuple) {			
+			Tuple tt = (Tuple) t;			
+			HashMap<String,Type> fields = new HashMap<String,Type>();
+			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+				fields.put(b.getKey(), substituteRecursiveTypes(b.getValue(),
+						binding));				
+			}
+			return T_TUPLE(fields);
+		} else if (t instanceof Recursive) {
+			Recursive lt = (Recursive) t;
+			String name = binding.get(lt.name);
+			name = name == null ? lt.name : name;
+			if (lt.type != null) {
+				return T_RECURSIVE(name, substituteRecursiveTypes(lt.type,
+						binding));
+			} else {
+				return T_RECURSIVE(name, null);
+			}
+		} else {
+			Fun ft = (Fun) t;
+			ArrayList<Type> params = new ArrayList<Type>();
+			for(Type p : ft.params) {
+				params.add(substituteRecursiveTypes(p, binding));
+			}
+			Type ret = substituteRecursiveTypes(ft.ret, binding);
+			Process receiver = null;
+			if(ft.receiver != null) {
+				receiver = (Process) substituteRecursiveTypes(ft.ret, binding);							
+			} 
+			return T_FUN(receiver,ret,params);
+		}
+	}
 	
 	// =============================================================
 	// Type Classes

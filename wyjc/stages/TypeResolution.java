@@ -107,9 +107,8 @@ public class TypeResolution {
 			try {
 				// FIXME: something is broken
 				HashMap<NameID, Type> cache = new HashMap<NameID,Type>();			
-				Type t = expandType(key,cache);
-				System.out.println("GOT: " + t + " FOR: " + key);
-				// t = simplifyRecursiveTypes(t);		
+				Type t = expandType(key,cache);				
+				t = simplifyRecursiveTypes(t);		
 				types.put(key,t);				
 			} catch(ResolveError ex) {
 				syntaxError(ex.getMessage(),srcs.get(key),ex);
@@ -792,5 +791,30 @@ public class TypeResolution {
 				return isOpenRecursive(key, ft.ret);
 			}
 		}
+	}
+
+	/**
+	 * The purpose of this method is to making the naming of recursive types a
+	 * little more human-readable.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static Type simplifyRecursiveTypes(Type t) {
+		Set<String> _names = Type.recursiveTypeNames(t);
+		ArrayList<String> names = new ArrayList<String>(_names);
+		HashMap<String,String> binding = new HashMap<String,String>();
+		
+		for(int i=0;i!=names.size();++i) {
+			int let = i % 26;
+			int num = i / 26;
+			String n = "" + (char) ('A' + let);
+			if(num > 0) {
+				n += num;
+			}
+			binding.put(names.get(i), n);
+		}
+		
+		return Type.substituteRecursiveTypes(t, binding);
 	}
 }
