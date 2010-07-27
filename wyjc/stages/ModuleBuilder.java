@@ -4,7 +4,7 @@ import wyil.lang.*;
 import wyil.util.*;
 import wyjc.lang.*;
 
-public class WyilBuilder {
+public class ModuleBuilder {
 	public Module build(WhileyFile wf) {
 		
 	}
