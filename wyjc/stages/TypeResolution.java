@@ -105,10 +105,9 @@ public class TypeResolution {
 		// third expand all types
 		for(NameID key : unresolved.keySet()) {
 			try {
-				// FIXME: something is broken
 				HashMap<NameID, Type> cache = new HashMap<NameID,Type>();			
 				Type t = expandType(key,cache);				
-				t = simplifyRecursiveTypes(t);		
+				t = simplifyRecursiveTypes(t);				
 				types.put(key,t);				
 			} catch(ResolveError ex) {
 				syntaxError(ex.getMessage(),srcs.get(key),ex);
@@ -194,6 +193,7 @@ public class TypeResolution {
 				Type et = expandType(name,cache);
 			
 				if (Type.isExistential(et)) {
+					System.out.println("GOT EXISTENTIAL FOR: " + et);
 					return Type.T_NAMED(modInfo.module, dt.name, et);
 				} else {
 					return et;
@@ -769,15 +769,24 @@ public class TypeResolution {
 				}
 			}
 			return false;
-		} else if(t instanceof Tuple) {			
-			Tuple tt = (Tuple) t;
+		} else if(t instanceof Type.Tuple) {			
+			Type.Tuple tt = (Tuple) t;
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				if (isOpenRecursive(key,b.getValue())) {
 					return true;
 				}
 			}
 			return false;
-		} else {
+		} else if(t instanceof Type.Recursive) {
+			Type.Recursive rt = (Type.Recursive) t;
+			if(rt.name.equals(key.toString())) {
+				return rt.type == null;
+			} else if(rt.type != null) {
+				return isOpenRecursive(key,rt.type); 
+			} else {
+				return false;
+			}
+		} else {		
 			Type.Fun ft = (Type.Fun) t;
 			for(Type p : ft.params) {
 				if(isOpenRecursive(key,p)) {
@@ -806,7 +815,7 @@ public class TypeResolution {
 		HashMap<String,String> binding = new HashMap<String,String>();
 		
 		for(int i=0;i!=names.size();++i) {
-			int let = i % 26;
+			int let = (i+20) % 26;
 			int num = i / 26;
 			String n = "" + (char) ('A' + let);
 			if(num > 0) {

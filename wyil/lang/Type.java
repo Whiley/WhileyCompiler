@@ -251,7 +251,10 @@ public abstract class Type {
 			return false;
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
-			return lt.type == null || isExistential(lt.type);
+			if(lt.type != null) {
+				return isExistential(lt.type);	
+			}
+			return false;
 		} else {
 			Fun ft = (Fun) t;
 			for(Type p : ft.params) {
@@ -276,8 +279,7 @@ public abstract class Type {
 	 */
 	public static java.util.Set<String> recursiveTypeNames(Type t) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Bool
-				|| t instanceof Int || t instanceof Real || t instanceof Any
-				|| t instanceof Named) {
+				|| t instanceof Int || t instanceof Real || t instanceof Any) {			
 			return Collections.EMPTY_SET;
 		} else if(t instanceof List) {
 			List lt = (List) t;
@@ -288,6 +290,9 @@ public abstract class Type {
 		} else if(t instanceof Process) {
 			Process lt = (Process) t;
 			return recursiveTypeNames(lt.element);
+		} else if(t instanceof Named) {
+			Named lt = (Named) t;
+			return recursiveTypeNames(lt.type);
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
 			HashSet<String> names = new HashSet<String>();
@@ -302,7 +307,7 @@ public abstract class Type {
 				names.addAll(recursiveTypeNames(b.getValue()));				
 			}
 			return names;
-		} else if (t instanceof Recursive) {
+		} else if (t instanceof Recursive) {			
 			Recursive lt = (Recursive) t;
 			HashSet<String> names = new HashSet<String>();
 			names.add(lt.name);
@@ -654,7 +659,7 @@ public abstract class Type {
 					r += ",";
 				}
 				firstTime=false;
-				r += types.get(f);
+				r += types.get(f) + " " + f;
 			}
 			return r + ")";
 		}
@@ -690,7 +695,7 @@ public abstract class Type {
 		public String toString() {
 			if(type == null) {
 				return name;
-			} else {
+			} else {				
 				return name + "[" + type + "]";
 			}
 		}
