@@ -42,16 +42,14 @@ public class TypeResolution {
 		this.loader = loader;
 	}
 	
-	public void resolve(List<WhileyFile> files) {
-		HashMap<ModuleID, WhileyFile> fileMap = new HashMap<ModuleID, WhileyFile>();		
+	public void resolve(List<WhileyFile> files) {			
 		modules = new HashSet<ModuleID>();
 		functions = new HashMap<NameID,List<Type.Fun>>();
 		types = new HashMap<NameID,Type>();		
 		unresolved = new HashMap<NameID,UnresolvedType>();
 		
 		// now, init data
-		for (WhileyFile f : files) {
-			fileMap.put(f.module, f);
+		for (WhileyFile f : files) {			
 			modules.add(f.module);
 		}
 						
@@ -140,7 +138,7 @@ public class TypeResolution {
 		
 		t = expandType(ut, cache);
 				 		
-		if(isOpenRecursive(key,t)) {
+		if(Type.isOpenRecursive(key,t)) {
 			// recursive case
 			t = Type.T_RECURSIVE(key.toString(),t);			
 		} 
@@ -736,69 +734,6 @@ public class TypeResolution {
 	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
 		if (!Type.isSubtype(t1, t2)) {
 			syntaxError("expected type " + t1 + ", found " + t2, elem);
-		}
-	}
-
-	/**
-	 * An open recursive type is one for which there is a recursive leaf node
-	 * for the given key, but there is no enclosing recursive node for it.
-	 * 
-	 * @param t
-	 * @return
-	 */
-	public static boolean isOpenRecursive(NameID key, Type t) {
-		if (t instanceof Type.Existential) {
-			return true;
-		} else if (t instanceof Type.Void || t instanceof Type.Bool || t instanceof Type.Int
-				|| t instanceof Type.Real || t instanceof Type.Any || t instanceof Type.Named) {
-			return false;
-		} else if(t instanceof Type.List) {
-			Type.List lt = (Type.List) t;
-			return isOpenRecursive(key,lt.element);
-		} else if(t instanceof Type.Set) {
-			Type.Set lt = (Type.Set) t;
-			return isOpenRecursive(key,lt.element);
-		} else if(t instanceof Type.Process) {
-			Type.Process lt = (Type.Process) t;
-			return isOpenRecursive(key,lt.element);
-		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;
-			for(Type b : ut.bounds) {
-				if(isOpenRecursive(key,b)) {
-					return true;
-				}
-			}
-			return false;
-		} else if(t instanceof Type.Tuple) {			
-			Type.Tuple tt = (Tuple) t;
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
-				if (isOpenRecursive(key,b.getValue())) {
-					return true;
-				}
-			}
-			return false;
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
-			if(rt.name.equals(key.toString())) {
-				return rt.type == null;
-			} else if(rt.type != null) {
-				return isOpenRecursive(key,rt.type); 
-			} else {
-				return false;
-			}
-		} else {		
-			Type.Fun ft = (Type.Fun) t;
-			for(Type p : ft.params) {
-				if(isOpenRecursive(key,p)) {
-					return true;
-				}
-			}
-			if (ft.receiver != null) {
-				return isOpenRecursive(key, ft.receiver)
-						|| isOpenRecursive(key, ft.ret);
-			} else {
-				return isOpenRecursive(key, ft.ret);
-			}
 		}
 	}
 
