@@ -35,7 +35,7 @@ public class TypeResolution {
 	private final ModuleLoader loader;
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID,List<Type.Fun>> functions;	
-	private HashMap<NameID,Type> types;	
+	private HashMap<NameID,Pair<Type,Block>> types;	
 	private HashMap<NameID,UnresolvedType> unresolved;
 	
 	public TypeResolution(ModuleLoader loader) {
@@ -45,7 +45,7 @@ public class TypeResolution {
 	public void resolve(List<WhileyFile> files) {			
 		modules = new HashSet<ModuleID>();
 		functions = new HashMap<NameID,List<Type.Fun>>();
-		types = new HashMap<NameID,Type>();		
+		types = new HashMap<NameID,Pair<Type,Block>>();		
 		unresolved = new HashMap<NameID,UnresolvedType>();
 		
 		// now, init data
@@ -104,30 +104,30 @@ public class TypeResolution {
 		for(NameID key : unresolved.keySet()) {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID,Type>();			
-				Type t = expandType(key,cache);				
-				t = simplifyRecursiveTypes(t);				
-				types.put(key,t);				
+				Pair<Type,Block> p = expandType(key,cache);				
+				Type t = simplifyRecursiveTypes(p.first());				
+				types.put(key,new Pair<Type,Block>(t,p.second()));				
 			} catch(ResolveError ex) {
 				syntaxError(ex.getMessage(),srcs.get(key),ex);
 			}
 		}
 	}
 		
-	protected Type expandType(NameID key,
+	protected Pair<Type,Block> expandType(NameID key,
 			HashMap<NameID, Type> cache) throws ResolveError {
 
-		Type t = types.get(key);
+		Pair<Type,Block> t = types.get(key);
 		Type cached = cache.get(key);					
 		
 		if(cached != null) { 
-			return cached; 
+			return new Pair<Type,Block>(cached,null); 
 		} else if(t != null) {
 			return t;
 		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());			
-			return td.type();
+			return new Pair<Type,Block>(td.type(),null);
 		}
 
 		// following is needed to terminate any recursion
@@ -138,36 +138,42 @@ public class TypeResolution {
 		
 		t = expandType(ut, cache);
 				 		
-		if(Type.isOpenRecursive(key,t)) {
-			// recursive case
-			t = Type.T_RECURSIVE(key.toString(),t);			
+		// Now, we need to test whether the current type is open and recursive
+		// on this name. In such case, we must close it in order to complete the
+		// recursive type.
+		if(Type.isOpenRecursive(key,t.first())) {
+			t = new Pair<Type,Block>(Type.T_RECURSIVE(key.toString(),t.first()),null);			
 		} 
 		
-		cache.put(key, t);
+		cache.put(key, t.first());
 		
 		// Done
 		return t;		
 	}	
 	
-	protected Type expandType(UnresolvedType t, HashMap<NameID, Type> cache) {
+	protected Pair<Type,Block> expandType(UnresolvedType t, HashMap<NameID, Type> cache) {
 		if(t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;			
-			return Type.T_LIST(expandType(lt.element, cache));
+			UnresolvedType.List lt = (UnresolvedType.List) t;
+			Pair<Type,Block> p = expandType(lt.element, cache);
+			return new Pair<Type,Block>(Type.T_LIST(p.first()),p.second());
 		} else if(t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;			
-			return Type.T_SET(expandType(st.element, cache));
+			UnresolvedType.Set st = (UnresolvedType.Set) t;
+			Pair<Type,Block> p = expandType(st.element, cache);
+			return new Pair<Type,Block>(Type.T_SET(p.first()),p.second());
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			HashMap<String,Type> types = new HashMap<String,Type>();
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
-				types.put(e.getKey(),expandType(e.getValue(),cache));
+				Pair<Type,Block> p = expandType(e.getValue(),cache);
+				types.put(e.getKey(),p.first());
 			}
-			return Type.T_TUPLE(types);
+			return new Pair<Type,Block>(Type.T_TUPLE(types),null);
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
 			for(UnresolvedType b : ut.bounds) {
-				Type bt = expandType(b,cache);
+				Pair<Type,Block> p = expandType(b,cache);
+				Type bt = p.first();
 				if(bt instanceof Type.NonUnion) {
 					bounds.add((Type.NonUnion)bt);
 				} else {
@@ -175,24 +181,25 @@ public class TypeResolution {
 				}
 			}
 			if(bounds.size() == 1) {
-				return bounds.iterator().next();
+				return new Pair<Type,Block>(bounds.iterator().next(),null);
 			} else {
-				return Type.T_UNION(bounds);
+				return new Pair<Type,Block>(Type.T_UNION(bounds),null);
 			}
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			return Type.T_PROCESS(expandType(ut.element,cache));			
+			Pair<Type,Block> p = expandType(ut.element,cache);
+			return new Pair<Type, Block>(Type.T_PROCESS(p.first()), p.second());			
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
 			Attribute.Module modInfo = dt.attribute(Attribute.Module.class);
 			NameID name = new NameID(modInfo.module,dt.name);
 			
 			try {
-				Type et = expandType(name,cache);
-			
-				if (Type.isExistential(et)) {
-					System.out.println("GOT EXISTENTIAL FOR: " + et);
-					return Type.T_NAMED(modInfo.module, dt.name, et);
+				Pair<Type, Block> et = expandType(name, cache);
+
+				if (Type.isExistential(et.first())) {
+					return new Pair<Type, Block>(Type.T_NAMED(modInfo.module,
+							dt.name, et.first()), et.second());
 				} else {
 					return et;
 				}
@@ -202,7 +209,7 @@ public class TypeResolution {
 			}			
 		}  else {
 			// for base cases
-			return resolve(t);
+			return new Pair<Type,Block>(resolve(t),null);
 		}
 	}
 	
