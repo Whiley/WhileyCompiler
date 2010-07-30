@@ -605,8 +605,8 @@ public class OldTypeResolution {
 				return s;
 			} else if(s instanceof Print) {
 				return check((Print)s,environment);
-			} else if (s instanceof Assign) {
-				return check((Assign)s, environment, declared);			
+			} else if (s instanceof VarAssign) {
+				return check((VarAssign)s, environment, declared);			
 			} else if (s instanceof IfElse) {
 				return check((IfElse)s,environment,declared,f);	
 			} else if (s instanceof UnresolvedType) {
@@ -672,7 +672,7 @@ public class OldTypeResolution {
 		return new Print(e.second(),s.attributes());
 	}
 
-	protected Stmt check(Assign s, HashMap<String, Type> environment,
+	protected Stmt check(VarAssign s, HashMap<String, Type> environment,
 			HashMap<String, Type> declared) throws ResolveError {		
 		Pair<Type,Expr> lhs = check(s.lhs(),environment);		
 		Pair<Type,Expr> rhs = check(s.rhs(),environment);
@@ -691,14 +691,14 @@ public class OldTypeResolution {
 			environment.put(v.name(), rhs.first());
 			// no implict cast required --- by definition variable has correct
 			// type.
-			return new Assign((LVal) lhs.second(), rhs.second(), s.attributes());
+			return new VarAssign((LVal) lhs.second(), rhs.second(), s.attributes());
 		} else {
 			// This represents a partial update of a variable. For the moment,
 			// these are not supported as, frankly, they are pretty trick to do
 			// at the best of times.
 			checkSubtype(lhs.first(),rhs.first(),s);
 
-			return new Assign((LVal) lhs.second(), rhs
+			return new VarAssign((LVal) lhs.second(), rhs
 					.second(), s.attributes());
 		}		
 	}	

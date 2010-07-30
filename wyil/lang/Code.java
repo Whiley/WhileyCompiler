@@ -18,7 +18,7 @@
 
 package wyil.lang;
 
-public abstract class Code {
+public interface Code {
 
 	/**
 	 * This represents a simple assignment between two variables.
@@ -26,32 +26,67 @@ public abstract class Code {
 	 * @author djp
 	 * 
 	 */
-	public static class Assign {
-		public Type type;
-		public int lhs;
-		public int rhs;
+	public final static class VarAssign implements Code {
+		public final Type type;
+		public final String lhs;
+		public final String rhs;
 		
-		public Assign(Type type, int lhs, int rhs) {
+		public VarAssign(Type type, String lhs, String rhs) {
 			this.type = type;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Assign) {
-				Assign a = (Assign) o;
-				return type.equals(a.type) && lhs == a.lhs && rhs == a.rhs;
+			if(o instanceof VarAssign) {
+				VarAssign a = (VarAssign) o;
+				return type.equals(a.type) && lhs.equals(a.lhs) && rhs.equals(a.rhs);
 				
 			}
 			return false;
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + lhs + rhs;			
+			return type.hashCode() + lhs.hashCode() + rhs.hashCode();			
 		}
 		
 		public String toString() {
-			return "$" + lhs + " := " + "$" + rhs;
+			return type + " " + lhs + " := " + rhs;
+		}		
+	}
+
+	/**
+	 * This represents the assignment of a constant to a variable
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class VarLoad implements Code  {		
+		public final Type type;
+		public final String lhs;
+		public final Value rhs;
+		
+		public VarLoad(Type type, String lhs, Value rhs) {
+			this.type = type;
+			this.lhs = lhs;
+			this.rhs = rhs;
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof VarLoad) {
+				VarLoad a = (VarLoad) o;
+				return type.equals(a.type) && lhs.equals(a.lhs)
+						&& rhs.equals(a.rhs);
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + lhs.hashCode() + rhs.hashCode();			
+		}
+		
+		public String toString() {
+			return type + " " + lhs + " := " + rhs;
 		}		
 	}
 	
@@ -60,20 +95,33 @@ public abstract class Code {
 	 * @author djp
 	 *
 	 */
-	public static class IfGoto {
-		public int op;
-		public int lhs;
-		public int rhs;
-		public int target;
+	public final static class IfGoto implements Code  {
+		public final CompOP op;
+		public final String lhs;
+		public final String rhs;
+		public final int target;
+		
+		public IfGoto(CompOP op, String lhs, String rhs, int target) {
+			this.op = op;
+			this.lhs = lhs;
+			this.rhs = rhs;
+			this.target = target;
+		}
 	}
+	
+	public enum CompOP{ EQ,NEQ,LT,LTEQ,GT,GTEQ,ELEMOF,SUBSET,SUBSETEQ };
 	
 	/**
 	 * This represents an unconditional branching instruction
 	 * @author djp
 	 *
 	 */
-	public static class Goto {
-		public int target;
+	public final static class Goto implements Code  {
+		public final int target;
+		
+		public Goto(int target) {
+			this.target = target;
+		}
 	}
 	
 	// ==========================================
@@ -87,19 +135,5 @@ public abstract class Code {
 	public final int DIV = 13;	
 	public final int UNION = 16;
 	public final int INTERSECT = 17;
-	public final int DIFFERENCE = 18;
-	
-	// Comparator Opcodes
-	public final int EQ = 20;
-	public final int NEQ = 21;
-	public final int LT = 21;
-	public final int LTEQ = 22;
-	public final int GT = 23;
-	public final int GTEQ = 23;
-	public final int ELEMOF = 24;
-	public final int SUBSET = 25;
-	public final int SUBSETEQ = 26;
-	public final int SUPSET = 27;
-	public final int SUPSETEQ = 28;
-			
+	public final int DIFFERENCE = 18;			
 }

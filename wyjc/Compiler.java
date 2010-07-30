@@ -25,6 +25,7 @@ import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
 import wyil.stages.*;
+import wyil.io.*;
 import wyjc.lang.*;
 import wyjc.stages.*;
 import wyjvm.io.ClassFileWriter;
@@ -32,9 +33,6 @@ import wyjvm.lang.ClassFile;
 
 public class Compiler implements Logger {	
 	private ModuleLoader loader;
-	protected HashSet<ModuleID> enqueued = new HashSet<ModuleID>();
-	protected ArrayList<WhileyFile> queue = new ArrayList<WhileyFile>();	
-	
 	protected NameResolution nameResolver;
 	protected TypeResolution typeResolver;		
 	/*
@@ -99,57 +97,28 @@ public class Compiler implements Logger {
 	public void setDebugMode(int debugMode) {
 		this.debugMode = debugMode;
 	}
-	
-	public void compile(File file) throws IOException {
-		WhileyFile wf = innerParse(file);		
-		loader.preregister(wf.skeleton(),wf.filename);	
-		enqueue(wf);				
-		flushQueue();			
-	}
-	
-	public WhileyFile parse(File file) throws IOException {
-		WhileyFile wf = innerParse(file);		
-		loader.preregister(wf.skeleton(),wf.filename);						
-		enqueue(wf);
-		return wf;
-	}
-			
-	public void enqueue(WhileyFile file) {
-		if(!enqueued.contains(file.module)) {				
-			enqueued.add(file.module);
-			queue.add(file);
-			resolveNames(file);
-		}
-	}
-	
+
 	public List<WhileyFile> compile(List<File> files) throws IOException {
-		ArrayList<WhileyFile> modules = new ArrayList<WhileyFile>();
+		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
-			modules.add(wf);			
-			loader.preregister(wf.skeleton(),wf.filename);
-			enqueued.add(wf.module);
-			queue.add(wf);
+			wyfiles.add(wf);			
+			loader.preregister(wf.skeleton(),wf.filename);			
 		}
-		
-		for (WhileyFile m : modules) {
+				
+		for (WhileyFile m : wyfiles) {
 			resolveNames(m);			
 		}
 		
-		flushQueue();
-		
-		return modules;
-	}
-	
-	public void flushQueue() {
-		resolveTypes(queue);
-		
-		while (!queue.isEmpty()) {
-			WhileyFile m = queue.remove(0);
-			finishCompilation(m);
+		List<Module> modules = buildModules(wyfiles);		
+		for(Module m : modules) {
+			WyilFileWriter fr = new WyilFileWriter(System.out);
+			fr.write(m);
 		}
+		
+		return wyfiles;
 	}
-	
+		
 	/**
 	 * This method simply parses a whiley file into an abstract syntax tree. It
 	 * makes little effort to check whether or not the file is syntactically. In
@@ -231,12 +200,12 @@ public class Compiler implements Logger {
 		
 	}
 	
-	protected void resolveTypes(List<WhileyFile> files) {
+	protected List<Module> buildModules(List<WhileyFile> files) {
 		long start = System.currentTimeMillis();		
-		typeResolver.resolve(files);
+		List<Module> modules = typeResolver.resolve(files);
 		logTimedMessage("resolved types",
-				System.currentTimeMillis() - start);		
-		
+				System.currentTimeMillis() - start);
+		return modules;		
 	}
 	
 	/*

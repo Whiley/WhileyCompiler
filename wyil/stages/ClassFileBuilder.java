@@ -309,8 +309,8 @@ public class ClassFileBuilder {
 				translate((Assertion)stmt,slots, environment, bytecodes);
 			} else if(stmt instanceof Check) {
 				translate((Check)stmt,slots, environment, bytecodes);
-			}else if(stmt instanceof Assign) {
-				translate((Assign)stmt,slots, environment, bytecodes);
+			}else if(stmt instanceof VarAssign) {
+				translate((VarAssign)stmt,slots, environment, bytecodes);
 			} else if(stmt instanceof IfElse) {
 				translate((IfElse)stmt,slots, environment, fd, bytecodes);
 			} else if(stmt instanceof Print) {
@@ -359,7 +359,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(label));	
 	}
 	
-	private void translate(Assign stmt,
+	private void translate(VarAssign stmt,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		Type lhs_t = stmt.lhs().type(environment);
 		Type rhs_t = stmt.rhs().type(environment);

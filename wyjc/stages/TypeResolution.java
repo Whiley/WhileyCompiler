@@ -42,7 +42,7 @@ public class TypeResolution {
 		this.loader = loader;
 	}
 	
-	public void resolve(List<WhileyFile> files) {			
+	public List<Module> resolve(List<WhileyFile> files) {			
 		modules = new HashSet<ModuleID>();
 		functions = new HashMap<NameID,List<Type.Fun>>();
 		types = new HashMap<NameID,Pair<Type,Block>>();		
@@ -66,19 +66,30 @@ public class TypeResolution {
 		}
 		
 		// Stage 3 ... resolve, propagate types for all expressions
+		ArrayList<Module> modules = new ArrayList<Module>();
 		for(WhileyFile f : files) {
-			for(WhileyFile.Decl d : f.declarations) {				
-				if(d instanceof TypeDecl) {
-					resolve((TypeDecl)d);
-				} else if(d instanceof ConstDecl) {
-					resolve((ConstDecl)d);
-				} else if(d instanceof FunDecl) {
-					resolve((FunDecl)d);
-				}				
-			}
+			modules.add(resolve(f));			
 		}
+		
+		return modules;
 	}
 
+	public Module resolve(WhileyFile wf) {
+		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
+		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
+		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
+		for(WhileyFile.Decl d : wf.declarations) {				
+			if(d instanceof TypeDecl) {
+				resolve((TypeDecl)d);
+			} else if(d instanceof ConstDecl) {
+				resolve((ConstDecl)d);
+			} else if(d instanceof FunDecl) {
+				resolve((FunDecl)d);
+			}				
+		}
+		return new Module(wf.module,wf.filename,methods,types,constants);
+	}
+	
 	/**
 	 * The following method visits every define type statement in every whiley
 	 * file being compiled, and determines its true type.  
@@ -479,7 +490,8 @@ public class TypeResolution {
 	}
 			
 	protected Pair<Type,Block> resolve(Constant c, HashMap<String,Type> environment, HashMap<String,Type> declared)  {
-		return new Pair<Type,Block>(c.val.type(),null);
+		Block blk = new Block(new Code.VarLoad(c.val.type(),"$",c.val));		
+		return new Pair<Type,Block>(c.val.type(),blk);
 	}
 	
 	protected Pair<Type,Block> resolve(Variable v, HashMap<String,Type> environment, HashMap<String,Type> declared)  {

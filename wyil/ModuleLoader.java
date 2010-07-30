@@ -525,8 +525,6 @@ public class ModuleLoader {
 	}
 	
 	protected Module createModule(ModuleID mid, ClassFile cf) {
-		HashMap<Pair<String,Type.Fun>,List<Module.Method>> methods = new HashMap();
-		
 		if(cf.attribute("WhileyVersion") == null) {
 			// This indicates the class is not a WhileyFile. This means it was
 			// generate from some other source (e.g. it was a .java file
@@ -536,39 +534,17 @@ public class ModuleLoader {
 			return null;
 		}
 		
+		ArrayList<Module.Method> methods = new ArrayList();
+		
 		for(ClassFile.Method cm : cf.methods()) {
 			if(!cm.isSynthetic()) {
 				Module.Method mi = createMethodInfo(mid,cm);
-				Pair<String, Type.Fun> key = new Pair(stripCase(mi.name()), mi
-						.type());
-				List<Module.Method> cases = methods.get(key);
-				if(cases == null) {
-					cases = new ArrayList<Module.Method>();
-					methods.put(key,cases);
-				}
-				cases.add(mi);
+				methods.add(mi);
 			}
 		}
 		
-		HashMap<String,List<Module.Method>> nmethods = new HashMap();
-		for(Pair<String,Type.Fun> key : methods.keySet()) {
-			List<Module.Method> cases = methods.get(key);
-			List<Module.Method> ncases = nmethods.get(key.first());
-			if(ncases == null) {
-				ncases = new ArrayList<Module.Method>();
-				nmethods.put(key.first(),ncases);
-			}
-			for(Module.Method c : cases) {								
-				if(cases.size() == 1) {							
-					Module.Method sm = new Module.Method(stripCase(c.name()), c
-							.type(), c.parameterNames());
-					ncases.add(sm);
-				}
-			}
-		}
-						
-		HashMap<String,Module.TypeDef> types = new HashMap();
-		HashMap<String,Module.ConstDef> constants = new HashMap();
+		ArrayList<Module.TypeDef> types = new ArrayList();
+		ArrayList<Module.ConstDef> constants = new ArrayList();
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
 			if(ba instanceof WhileyDefine) {
@@ -578,16 +554,16 @@ public class ModuleLoader {
 				if(type == null) {
 					// constant definition
 					Module.ConstDef ci = new Module.ConstDef(wd.defName(),value);
-					constants.put(wd.defName(),ci);
+					constants.add(ci);
 				} else {
 					// type definition					
 					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type);
-					types.put(wd.defName(),ti);
+					types.add(ti);
 				}
 			}
 		}
 		
-		return new Module(mid,cf.name(),nmethods,types,constants);
+		return new Module(mid,cf.name(),methods,types,constants);
 	}
 	
 	public String stripCase(String name) {

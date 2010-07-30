@@ -136,8 +136,8 @@ public class VerificationConditionGenerator {
 				} else {
 					environment.put(vd.name(), vd.type());
 				}
-			} else if(s instanceof Assign) {
-				Assign a = (Assign) s;
+			} else if(s instanceof VarAssign) {
+				VarAssign a = (VarAssign) s;
 				String var;
 				var = ((Variable) a.lhs().flattern().get(0)).name();
 				String shadowVar = var + "$" + shadow_label++;

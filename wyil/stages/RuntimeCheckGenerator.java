@@ -171,8 +171,8 @@ public class RuntimeCheckGenerator {
 				preChecks = Collections.EMPTY_LIST;
 			} else if(s instanceof Print) {
 				preChecks = checkgen((Print)s,environment,declared);
-			} else if (s instanceof Assign) {
-				Pair<List<Check>,List<Check>> tmp = checkgen((Assign)s, environment,declared);
+			} else if (s instanceof VarAssign) {
+				Pair<List<Check>,List<Check>> tmp = checkgen((VarAssign)s, environment,declared);
 				preChecks = tmp.first();
 				postChecks = tmp.second();
 			} else if (s instanceof VarDecl) {
@@ -220,7 +220,7 @@ public class RuntimeCheckGenerator {
 		return Collections.EMPTY_LIST;
 	}
 	
-	private Pair<List<Check>,List<Check>> checkgen(Assign as,
+	private Pair<List<Check>,List<Check>> checkgen(VarAssign as,
 			HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		LVal lhs = as.lhs();
 		Expr rhs = as.rhs();

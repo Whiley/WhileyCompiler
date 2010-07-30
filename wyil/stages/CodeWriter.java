@@ -120,7 +120,7 @@ public class CodeWriter {
 			output.println("// " + c);
 		} 
 		
-		if (s instanceof Assign || s instanceof UnresolvedType
+		if (s instanceof VarAssign || s instanceof UnresolvedType
 				|| s instanceof Print
 				|| s instanceof VarDecl || s instanceof Invoke) {
 			// Simple statements.						

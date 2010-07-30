@@ -59,7 +59,7 @@ public class VerificationConditionChecker {
 	}
 	
 	public void verify(Stmt s) {
-		if (s instanceof Print || s instanceof Assign || s instanceof UnresolvedType) {
+		if (s instanceof Print || s instanceof VarAssign || s instanceof UnresolvedType) {
 			return; // do nothing
 		} else if(s instanceof Check) {			
 			Check c = (Check) s;			
