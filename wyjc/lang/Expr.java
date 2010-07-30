@@ -84,6 +84,13 @@ public interface Expr extends SyntacticElement {
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
+		
+		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+			super(attributes);
+			this.op = op;
+			this.lhs = lhs;
+			this.rhs = rhs;
+		}
 	}
 
 

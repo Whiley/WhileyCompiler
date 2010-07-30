@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.stages;
+package wyil.io;
 
 import java.math.BigInteger;
 import java.util.*;

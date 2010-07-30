@@ -69,10 +69,10 @@ public abstract class Code {
 		public final BOP op;
 		public final Type type;
 		public final String lhs;
-		public final String rhs1;
-		public final String rhs2;
+		public final RVal rhs1;
+		public final RVal rhs2;
 		
-		public BinOp(Type type, BOP op, String lhs, String rhs1, String rhs2) {
+		public BinOp(Type type, BOP op, String lhs, RVal rhs1, RVal rhs2) {
 			this.op = op;
 			this.type = type;
 			this.lhs = lhs;
@@ -100,6 +100,30 @@ public abstract class Code {
 		}		
 	}
 	
+	public final static class Debug extends Code {				
+		public final RVal rhs;
+		
+		public Debug(RVal rhs) {			
+			this.rhs = rhs;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Debug) {
+				Debug a = (Debug) o;
+				return rhs.equals(a.rhs);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return rhs.hashCode();			
+		}
+		
+		public String toString() {
+			return "debug " + rhs;
+		}		
+	}
 	
 	/**
 	 * This represents a conditional branching instruction
@@ -109,11 +133,11 @@ public abstract class Code {
 	public final static class IfGoto extends Code {
 		public final BOP op;
 		public final Type type;
-		public final String lhs;
-		public final String rhs;
+		public final RVal lhs;
+		public final RVal rhs;
 		public final String target;
 
-		public IfGoto(Type type, BOP op, String lhs, String rhs, String target) {
+		public IfGoto(Type type, BOP op, RVal lhs, RVal rhs, String target) {
 			this.op = op;
 			this.type = type;
 			this.lhs = lhs;

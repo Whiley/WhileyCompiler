@@ -159,7 +159,7 @@ public class NameResolution {
 	
 	protected void resolve(VarDecl s, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
-		RVal init = s.initialiser;
+		Expr init = s.initialiser;
 		resolve(s.type, imports);
 		if(init != null) {
 			resolve(init,environment, imports);
@@ -204,7 +204,7 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(RVal e, HashSet<String> environment, ArrayList<PkgID> imports) {
+	protected void resolve(Expr e, HashSet<String> environment, ArrayList<PkgID> imports) {
 		try {
 			if (e instanceof Constant) {
 				
@@ -240,12 +240,12 @@ public class NameResolution {
 	protected void resolve(Invoke ivk, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
 						
-		for(RVal e : ivk.arguments) {						
+		for(Expr e : ivk.arguments) {						
 			resolve(e, environment, imports);
 		}
 		
 		ModuleID mid = loader.resolve(ivk.name,imports);
-		RVal target = ivk.receiver;
+		Expr target = ivk.receiver;
 		
 		if(target != null) {
 			resolve(target,environment,imports);
@@ -278,14 +278,14 @@ public class NameResolution {
 	
 	protected void resolve(NaryOp v, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {		
-		for(RVal e : v.arguments) {
+		for(Expr e : v.arguments) {
 			resolve(e, environment, imports);
 		}		
 	}
 	
 	protected void resolve(Comprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {				
 		HashSet<String> nenv = new HashSet<String>(environment);
-		for(Pair<String,RVal> me : e.sources) {						
+		for(Pair<String,Expr> me : e.sources) {						
 			String s = me.first();						
 			resolve(me.second(),nenv,imports); 			
 			nenv.add(me.first());
@@ -302,7 +302,7 @@ public class NameResolution {
 		
 	protected void resolve(TupleGen sg, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {		
-		for(Map.Entry<String,RVal> e : sg.fields.entrySet()) {
+		for(Map.Entry<String,Expr> e : sg.fields.entrySet()) {
 			resolve(e.getValue(),environment,imports);
 		}			
 	}

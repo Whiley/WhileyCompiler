@@ -1,9 +1,17 @@
 package wyil.lang;
 
-public interface RVal {
-	public static class Variable implements RVal {
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public abstract class RVal {
+	
+	public static Variable VAR(String v) {
+		return get(new Variable(v));
+	}
+	
+	public static class Variable extends RVal {
 		public final String name;
-		public Variable(String name) {
+		Variable(String name) {
 			this.name = name;
 		}
 		public int hashCode() {
@@ -17,6 +25,20 @@ public interface RVal {
 		}
 		public String toString() {
 			return name;
+		}
+	}
+	
+	private static final ArrayList<RVal> values = new ArrayList<RVal>();
+	private static final HashMap<RVal,Integer> cache = new HashMap<RVal,Integer>();
+	
+	private static <T extends RVal> T get(T type) {
+		Integer idx = cache.get(type);
+		if(idx != null) {
+			return (T) values.get(idx);
+		} else {					
+			cache.put(type, values.size());
+			values.add(type);
+			return type;
 		}
 	}
 }
