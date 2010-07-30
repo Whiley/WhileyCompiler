@@ -9,181 +9,64 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import wyil.lang.ModuleID;
-import wyil.lang.Type;
-import wyil.lang.Value;
-import wyil.util.Pair;
-import wyil.util.SyntaxError;
-import wyjvm.io.BinaryInputStream;
-import wyjvm.io.BinaryOutputStream;
+import wyil.jvm.rt.BigRational;
+import wyil.lang.*;
+import wyjvm.io.*;
 import wyjvm.lang.Constant;
 
 public class WhileyBlock {
 
-	public static void addPoolItems(RVal expr, Set<Constant.Info> constantPool) {
-		try {
-			if (expr instanceof BoolVal || expr instanceof IntVal
-					|| expr instanceof RealVal) {
-				// nop
-			} else if (expr instanceof UnOp) {
-				addPoolItems(((UnOp) expr).mhs(), constantPool);
-			} else if(expr instanceof BinOp) {
-				addPoolItems(((BinOp)expr).lhs(),constantPool);
-				addPoolItems(((BinOp)expr).rhs(),constantPool);				
-			} else if(expr instanceof SetVal) {
-				SetVal sg = (SetVal) expr;
-				for(RVal e : sg.getValues()) {
-					addPoolItems(e,constantPool);
-				}				
-			} else if(expr instanceof SetGenerator) {
-				SetGenerator sg = (SetGenerator) expr;
-				for(RVal e : sg.getValues()) {
-					addPoolItems(e,constantPool);
-				}				
-			} else if(expr instanceof SetComprehension) {
-				SetComprehension sc = (SetComprehension) expr;
-				for(Pair<String,RVal> s : sc.sources()) {
-					Constant.addPoolItem(new Constant.Utf8(s.first()), constantPool);					
-					addPoolItems(s.second(),constantPool);
-				}
-				addPoolItems(sc.condition(),constantPool);
-			} else if(expr instanceof ListVal) {
-				ListVal sg = (ListVal) expr;
-				for(RVal e : sg.getValues()) {
-					addPoolItems(e,constantPool);
-				}				
-			} else if(expr instanceof ListGenerator) {
-				ListGenerator sg = (ListGenerator) expr;
-				for(RVal e : sg.getValues()) {
-					addPoolItems(e,constantPool);
-				}				
-			} else if(expr instanceof ListAccess) {
-				ListAccess la = (ListAccess) expr;
-				addPoolItems(la.source(),constantPool);
-				addPoolItems(la.index(),constantPool);
-			} else if(expr instanceof TupleAccess) {
-				TupleAccess ta = (TupleAccess) expr;
-				Constant.addPoolItem(new Constant.Utf8(ta.name()), constantPool);				
-				addPoolItems(ta.source(), constantPool);
-			} else if(expr instanceof TupleVal) {
-				TupleVal tv = (TupleVal) expr;
-				for(Map.Entry<String,Value> v : tv.values().entrySet()) {
-					Constant.addPoolItem(new Constant.Utf8(v.getKey()), constantPool);					
-					addPoolItems(v.getValue(),constantPool);
-				}
-			} else if(expr instanceof TupleGenerator) {				
-				TupleGenerator tv = (TupleGenerator) expr;
-				for(Map.Entry<String,RVal> v : tv.values().entrySet()) {
-					Constant.addPoolItem(new Constant.Utf8(v.getKey()), constantPool);					
-					addPoolItems(v.getValue(),constantPool);
-				}
-			} else if(expr instanceof Variable) {
-				Variable v = (Variable) expr;
-				Constant.addPoolItem(new Constant.Utf8(v.name()), constantPool);				
-			} else if(expr instanceof Invoke) {
-				Invoke v = (Invoke) expr;
-				addPoolItems(v.funType(), constantPool);
-				Constant.addPoolItem(new Constant.Utf8(v.module().toString()), constantPool);
-				Constant.addPoolItem(new Constant.Utf8(v.name()), constantPool);
-				for(RVal e : v.arguments()) {
-					addPoolItems(e,constantPool);
-				}	
-			} else if(expr instanceof TypeGate) {
-				TypeGate la = (TypeGate) expr;
-				addPoolItems(la.lhsTest(), constantPool);
-				Constant.addPoolItem(new Constant.Utf8(la.variable()), constantPool);
-				addPoolItems(la.lhs(),constantPool);
-				addPoolItems(la.rhs(),constantPool);
-			} else if(expr instanceof TypeEquals) {
-				TypeEquals la = (TypeEquals) expr;
-				addPoolItems(la.lhsTest(), constantPool);
-				Constant.addPoolItem(new Constant.Utf8(la.variable()), constantPool);
-				addPoolItems(la.lhs(),constantPool);
-				addPoolItems(la.rhs(),constantPool);
-			} else {							
-				syntaxError("unknown expression encountered (" + expr.getClass().getName() + ")",expr);			
-			}
-		} catch(SyntaxError se) {
-			throw se;
-		} catch(Exception ex) {
-			syntaxError("internal failure",expr,ex);
-		}
+	public static void addPoolItems(Block expr, Set<Constant.Info> constantPool) {
+		
 	}
 	
+	public static void addPoolItems(Code code, Set<Constant.Info> constantPool) {
+		
+	}
+	
+	public static void addPoolItems(RVal rval, Set<Constant.Info> constantPool) {
+		
+	}
 
-	protected static void writeCondition(RVal expr, BinaryOutputStream writer,
+	protected static void writeCondition(Block expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) {
-		try {
-			if(expr instanceof BoolVal) {
-				writeCondition((BoolVal)expr, writer, constantPool);
-			} else if(expr instanceof UnOp) {
-				writeCondition((UnOp)expr, writer, constantPool);
-			} else if(expr instanceof BinOp) {
-				writeCondition((BinOp)expr, writer, constantPool);
-			} else if(expr instanceof IntVal) {			
-				writeCondition((IntVal)expr, writer, constantPool);
-			} else if(expr instanceof RealVal) {			
-				writeCondition((RealVal)expr, writer, constantPool);
-			} else if(expr instanceof SetVal) {
-				writeCondition((SetVal)expr, writer, constantPool);
-			} else if(expr instanceof SetGenerator) {
-				writeCondition((SetGenerator)expr, writer, constantPool);
-			} else if(expr instanceof SetComprehension) {
-				writeCondition((SetComprehension)expr, writer, constantPool);
-			} else if(expr instanceof Subset) {
-				writeCondition((Subset)expr, writer, constantPool);
-			} else if(expr instanceof ListVal) {
-				writeCondition((ListVal)expr, writer, constantPool);
-			} else if(expr instanceof ListGenerator) {
-				writeCondition((ListGenerator)expr, writer, constantPool);
-			} else if(expr instanceof ListAccess) {
-				writeCondition((ListAccess)expr, writer, constantPool);
-			} else if(expr instanceof TupleVal) {
-				writeCondition((TupleVal)expr, writer, constantPool);
-			} else if(expr instanceof TupleGenerator) {
-				writeCondition((TupleGenerator)expr, writer, constantPool);
-			} else if(expr instanceof TupleAccess) {
-				writeCondition((TupleAccess)expr, writer, constantPool);
-			} else if(expr instanceof Invoke) {
-				writeCondition((Invoke)expr, writer, constantPool);
-			} else if(expr instanceof Variable) {
-				writeCondition((Variable)expr, writer, constantPool);
-			} else if(expr instanceof TypeGate) {
-				writeCondition((TypeGate)expr, writer, constantPool);
-			} else if(expr instanceof TypeEquals) {
-				writeCondition((TypeEquals)expr, writer, constantPool);
-			} else {
-				syntaxError("unknown expression encountered (" + expr.getClass().getName() + ")",expr);			
-			}
-		} catch(Exception ex) {
-			syntaxError("internal failure",expr,ex);
-		}
+		
 	}
 	
-	public static void writeCondition(BoolVal expr, BinaryOutputStream writer,
+	protected static void writeCondition(Code code, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) {
+		
+	}	
+	
+	protected static void writeCondition(RVal rval, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) {
+		
+	}	
+	
+	public static void writeCondition(Value.Bool expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		
-		if(expr.value()) {
+		if(expr.value) {
 			writer.write_u2(TRUE);
 		} else {
 			writer.write_u2(FALSE);
 		}
 	}
 	
-	public static void writeCondition(IntVal expr, BinaryOutputStream writer,
+	public static void writeCondition(Value.Int expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(INTVAL);
-		BigInteger bi = expr.value();
+		BigInteger bi = expr.value;
 		byte[] bibytes = bi.toByteArray();
 		// FIXME: bug here for constants that require more than 65535 bytes
 		writer.write_u2(bibytes.length);
 		writer.write(bibytes);
 	}
 	
-	public static void writeCondition(RealVal expr, BinaryOutputStream writer,
+	public static void writeCondition(Value.Real expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(REALVAL);
-		BigRational br = expr.value();
+		BigRational br = expr.value;
 		BigInteger num = br.numerator();
 		BigInteger den = br.denominator();
 		
@@ -198,390 +81,59 @@ public class WhileyBlock {
 		writer.write(denbytes);		
 	}
 	
-	public static void writeCondition(SetVal expr, BinaryOutputStream writer,
+	public static void writeCondition(Value.Set expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(SETVAL);
-		writer.write_u2(expr.getValues().size());
-		for(Value v : expr.getValues()) {
+		writer.write_u2(expr.values.size());
+		for(Value v : expr.values) {
 			writeCondition(v,writer,constantPool);
 		}
 	}
 	
-	public static void writeCondition(SetGenerator expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(SETGEN);
-		writer.write_u2(expr.getValues().size());
-		for(RVal v : expr.getValues()) {
-			writeCondition(v,writer,constantPool);
-		}
-	}
-	
-	public static void writeCondition(SetComprehension expr,
-			BinaryOutputStream writer, Map<Constant.Info, Integer> constantPool)
-			throws IOException {
-		writer.write_u2(SETCOMPREHENSION);
-		writeCondition(expr.sign(), writer, constantPool);
-		writer.write_u2(expr.sources().size());
-		for (Pair<String, RVal> s : expr.sources()) {
-			writer.write_u2(constantPool.get(new Constant.Utf8(s.first())));
-			writeCondition(s.second(), writer, constantPool);
-		}
-		if (expr.condition() == null) {
-			writer.write_u2(NULL);
-		} else {
-			writeCondition(expr.condition(), writer, constantPool);
-		}
-	}
-	
-	public static void writeCondition(ListVal expr, BinaryOutputStream writer,
+	public static void writeCondition(Value.List expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(LISTVAL);
-		writer.write_u2(expr.getValues().size());
-		for(Value v : expr.getValues()) {
+		writer.write_u2(expr.values.size());
+		for(Value v : expr.values) {
 			writeCondition(v,writer,constantPool);
 		}
 	}
 	
-	public static void writeCondition(ListGenerator expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(LISTGEN);
-		writer.write_u2(expr.getValues().size());
-		for(RVal v : expr.getValues()) {
-			writeCondition(v,writer,constantPool);
-		}
-	}
-	
-	public static void writeCondition(TupleVal expr, BinaryOutputStream writer,
+	public static void writeCondition(Value.Tuple expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(TUPLEVAL);
-		writer.write_u2(expr.values().size());
-		for(Map.Entry<String,Value> v : expr.values().entrySet()) {
-			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
-			writeCondition(v.getValue(), writer, constantPool);
-		}
-	}
-	public static void writeCondition(TupleGenerator expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		writer.write_u2(TUPLEGEN);
-		writer.write_u2(expr.values().size());
-		for(Map.Entry<String,RVal> v : expr.values().entrySet()) {
+		writer.write_u2(expr.values.size());
+		for(Map.Entry<String,Value> v : expr.values.entrySet()) {
 			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
 			writeCondition(v.getValue(), writer, constantPool);
 		}
 	}
 	
-	public static void writeCondition(UnOp expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		
-		if(expr instanceof Not) {
-			writer.write_u2(NOT);
-		} else if(expr instanceof Some) {
-			writer.write_u2(SOME);
-		} else if(expr instanceof None) {			
-			writer.write_u2(NONE);
-		} else if(expr instanceof IntNegate) {
-			writer.write_u2(INTNEG);
-		} else if(expr instanceof RealNegate) {
-			writer.write_u2(REALNEG);
-		} else if(expr instanceof SetLength) {
-			writer.write_u2(SETLENGTH);
-		} else if(expr instanceof ListLength) {
-			writer.write_u2(LISTLENGTH);
-		} else {
-			syntaxError("unknown expression encountered: " + expr.getClass().getName(),expr);
-		}
-		
-		writeCondition(expr.mhs(),writer,constantPool);
-	}
-	
-	public static void writeCondition(BinOp expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		if(expr instanceof And) {
-			writer.write_u2(AND);
-		} else if(expr instanceof BoolEquals) {			
-			writer.write_u2(BOOLEQ);
-		} else if(expr instanceof BoolNotEquals) {
-			writer.write_u2(BOOLNEQ);
-		} else if(expr instanceof Or) {
-			writer.write_u2(OR);
-		} else if(expr instanceof IntAdd) {
-			writer.write_u2(INTADD);
-		} else if(expr instanceof IntDiv) {
-			writer.write_u2(INTDIV);
-		} else if(expr instanceof IntMul) {
-			writer.write_u2(INTMUL);
-		} else if(expr instanceof IntSub) {
-			writer.write_u2(INTSUB);
-		} else if(expr instanceof IntEquals) {			
-			writer.write_u2(INTEQ);
-		} else if(expr instanceof IntNotEquals) {
-			writer.write_u2(INTNEQ);
-		} else if(expr instanceof IntLessThan) {			
-			writer.write_u2(INTLT);
-		} else if(expr instanceof IntLessThanEquals) {
-			writer.write_u2(INTLTEQ);
-		} else if(expr instanceof IntGreaterThan) {
-			writer.write_u2(INTGT);
-		} else if(expr instanceof IntGreaterThanEquals) {
-			writer.write_u2(INTGTEQ);
-		} else if(expr instanceof RealAdd) {
-			writer.write_u2(REALADD);
-		} else if(expr instanceof RealDiv) {
-			writer.write_u2(REALDIV);
-		} else if(expr instanceof RealMul) {
-			writer.write_u2(REALMUL);
-		} else if(expr instanceof RealSub) {
-			writer.write_u2(REALSUB);
-		} else if(expr instanceof RealEquals) {
-			writer.write_u2(REALEQ);
-		} else if(expr instanceof RealNotEquals) {
-			writer.write_u2(REALNEQ);
-		} else if(expr instanceof RealLessThan) {
-			writer.write_u2(REALLT);
-		} else if(expr instanceof RealLessThanEquals) {
-			writer.write_u2(REALLTEQ);
-		} else if(expr instanceof RealGreaterThan) {
-			writer.write_u2(REALGT);
-		} else if(expr instanceof RealGreaterThanEquals) {
-			writer.write_u2(REALGTEQ);
-		} else if(expr instanceof SetEquals) {
-			writer.write_u2(SETEQ);
-		} else if(expr instanceof SetNotEquals) {
-			writer.write_u2(SETNEQ);
-		} else if(expr instanceof Subset) {
-			writer.write_u2(SETSUBSET);
-		} else if(expr instanceof SubsetEq) {
-			writer.write_u2(SETSUBSETEQ);
-		} else if(expr instanceof SetElementOf) {
-			writer.write_u2(SETELEMOF);
-		} else if(expr instanceof SetUnion) {
-			writer.write_u2(SETUNION);
-		} else if(expr instanceof SetIntersection) {
-			writer.write_u2(SETINTERSECT);
-		} else if(expr instanceof SetDifference) {
-			writer.write_u2(SETDIFFERENCE);
-		} else if(expr instanceof ListEquals) {
-			writer.write_u2(LISTEQ);
-		} else if(expr instanceof ListNotEquals) {
-			writer.write_u2(LISTNEQ);
-		} else if(expr instanceof ListElementOf) {
-			writer.write_u2(LISTELEMOF);
-		} else if(expr instanceof TupleEquals) {
-			writer.write_u2(TUPLEEQ);
-		} else if(expr instanceof TupleNotEquals) {
-			writer.write_u2(TUPLENEQ);
-		} else {
-			syntaxError("unknown expression encountered: ",expr);
-		}
-		
-		writeCondition(expr.lhs(),writer,constantPool);
-		writeCondition(expr.rhs(),writer,constantPool);
-	}
-	
-	public static void writeCondition(ListAccess expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(LISTACCESS);
-		writeCondition(expr.source(),writer,constantPool);
-		writeCondition(expr.index(),writer,constantPool);
-	}
-	
-	public static void writeCondition(TupleAccess expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(TUPLEACCESS);
-		writer.write_u2(constantPool.get(new Constant.Utf8(expr.name())));		
-		writeCondition(expr.source(),writer,constantPool);		
-	}
-	
-	public static void writeCondition(Variable expr, BinaryOutputStream writer,
+	public static void writeCondition(RVal.Variable expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		// The encoding of variables could be optimised to avoid using the
 		// constant pool in most, if not all cases.
 		writer.write_u2(VARIABLE);				
-		int idx = constantPool.get(new Constant.Utf8(expr.name()));							
-		writer.write_u2(idx);				
+		int idx = constantPool.get(new Constant.Utf8(expr.name));							
+		writer.write_u2(idx);						
 	}
 	
-	public static void writeCondition(TypeGate expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(TYPEGATE);		
-		write(expr.lhsTest(),writer,constantPool);
-		writer.write_u2(constantPool.get(new Constant.Utf8(expr.variable())));
-		writeCondition(expr.lhs(),writer,constantPool);
-		writeCondition(expr.rhs(),writer,constantPool);
-	}
-	
-	public static void writeCondition(TypeEquals expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(TYPEEQUALS);		
-		write(expr.lhsTest(),writer,constantPool);
-		writer.write_u2(constantPool.get(new Constant.Utf8(expr.variable())));
-		writeCondition(expr.lhs(),writer,constantPool);
-		writeCondition(expr.rhs(),writer,constantPool);
-	}
-
-	public static void writeCondition(Invoke expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		writer.write_u2(INVOKE);
-		Constant.Utf8 utf8 = new Constant.Utf8(expr.module().toString()); 
-		writer.write_u2(constantPool.get(utf8));
-		write(expr.funType(),writer,constantPool);
-		utf8 = new Constant.Utf8(expr.name()); 
-		writer.write_u2(constantPool.get(utf8));
-		writer.write_u2(expr.arguments().size());
-		for(RVal e : expr.arguments()) {
-			writeCondition(e,writer,constantPool);
-		}
-	}
-	
-
-	protected static Condition readCondition(BinaryInputStream reader,
+	protected static Block readCondition(BinaryInputStream reader,
 			Map<Integer, Constant.Info> constantPool) throws IOException {							
 		int code = reader.read_u2();
-		return readCondition(code,reader,constantPool);
+		return readCodes(code,reader,constantPool);
 	}
 	
-	protected static Condition readCondition(int code, BinaryInputStream reader,
+	protected static Block readCodes(int code, BinaryInputStream reader,
 			Map<Integer, Constant.Info> constantPool) throws IOException {							
-		switch (code) {
-			case TRUE:
-				return new BoolVal(true);
-			case FALSE:
-				return new BoolVal(false);
-			case AND:
-				Condition lhs = readCondition(reader,constantPool);
-				Condition rhs = readCondition(reader,constantPool);
-				return new And(lhs,rhs);				
-			case NONE:
-				RVal expr = readExpr(reader,constantPool);					
-				return new None((SetComprehension)expr);
-			case NOT:
-				lhs = readCondition(reader,constantPool);
-				return new Not(lhs);
-			case OR:
-				lhs = readCondition(reader,constantPool);
-				rhs = readCondition(reader,constantPool);
-				return new Or(lhs,rhs);
-			case SOME:
-				expr = readExpr(reader,constantPool);
-				return new Some((SetComprehension)expr);
-			case BOOLEQ:
-				RVal e1 = readExpr(reader, constantPool);
-				RVal e2 = readExpr(reader, constantPool);
-				return new BoolEquals(e1,e2);
-			case BOOLNEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new BoolNotEquals(e1,e2);				
-			case INTEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new IntEquals(e1,e2);
-			case INTGT:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new IntGreaterThan(e1,e2);
-			case INTGTEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new IntGreaterThanEquals(e1,e2);
-			case INTLT:				
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new IntLessThan(e1,e2);
-			case INTLTEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new IntLessThanEquals(e1,e2);
-			case INTNEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new IntNotEquals(e1,e2);
-			case REALEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new RealEquals(e1,e2);
-			case REALGT:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new RealGreaterThan(e1,e2);
-			case REALGTEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new RealGreaterThanEquals(e1,e2);
-			case REALLT:				
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new RealLessThan(e1,e2);
-			case REALLTEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new RealLessThanEquals(e1,e2);
-			case REALNEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new RealNotEquals(e1,e2);
-			case LISTELEMOF:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new ListElementOf(e1,e2);
-			case LISTEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new ListEquals(e1,e2);
-			case LISTNEQ:			
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new ListNotEquals(e1,e2);
-			case SETELEMOF:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new SetElementOf(e1,e2);
-			case SETEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new SetEquals(e1,e2);
-			case SETNEQ:			
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new SetNotEquals(e1,e2);
-			case SETSUBSET:			
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new Subset(e1,e2);
-			case SETSUBSETEQ:			
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new SubsetEq(e1,e2);		
-			case TUPLEEQ:
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new TupleEquals(e1,e2);
-			case TUPLENEQ:			
-				e1 = readExpr(reader, constantPool);
-				e2 = readExpr(reader, constantPool);
-				return new TupleNotEquals(e1,e2);
-			case TYPEGATE:			
-				Type t = readType(reader,constantPool);
-				int idx = reader.read_u2(); 
-				e1 = readExpr(reader, constantPool);
-				rhs = readCondition(reader, constantPool);
-				Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
-				return new TypeGate(t,utf8.str,e1,rhs);
-			case TYPEEQUALS:			
-				t = readType(reader,constantPool);
-				idx = reader.read_u2(); 
-				e1 = readExpr(reader, constantPool);
-				rhs = readCondition(reader, constantPool);
-				utf8 = (Constant.Utf8) constantPool.get(idx);
-				return new TypeEquals(t,utf8.str,e1,rhs);
-		} 
-		throw new RuntimeException("unknown whiley condition encountered: " + code);	
+		Block blk = new Block();
+		return blk;
 	}
 
 	
 
 	
-	protected static RVal readExpr(BinaryInputStream reader,
+	protected static RVal readRVal(BinaryInputStream reader,
 			Map<Integer, Constant.Info> constantPool) throws IOException {		
 		int code = reader.read_u2();				
 		switch (code) {
@@ -590,61 +142,14 @@ public class WhileyBlock {
 				// constant pool in most, if not all cases.
 				int idx = reader.read_u2();			
 				Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
-				return new Variable(utf8.str);
-			case INVOKE:							
-				Constant.Utf8 module = (Constant.Utf8) constantPool.get(reader.read_u2());
-				FunType t = (FunType) readType(reader,constantPool);
-				Constant.Utf8 name = (Constant.Utf8) constantPool.get(reader.read_u2());
-				int size = reader.read_u2();
-				ArrayList<RVal> args = new ArrayList<RVal>();
-				for(int i=0;i!=size;++i) {
-					args.add(readExpr(reader,constantPool));
-				}
-				return new Invoke(name.str,ModuleID.fromString(module.str),t,null,args);																	
-			case INTADD:
-				RVal lhs = readExpr(reader, constantPool);
-				RVal rhs = readExpr(reader, constantPool);
-				return new IntAdd(lhs, rhs);
-			case INTDIV:
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new IntDiv(lhs, rhs);			
-			case INTMUL:
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new IntMul(lhs, rhs);
-			case INTNEG:	
-				lhs = readExpr(reader, constantPool);				
-				return new IntNegate(lhs);
-			case INTSUB:
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new IntSub(lhs, rhs);
+				Type type = WhileyType.Reader.readType(reader, constantPool);
+				return RVal.VAR(type,utf8.str);			
 			case INTVAL:			
 				int len = reader.read_u2();
 				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger bi = new BigInteger(bytes);
-				return new IntVal(bi);
-			case REALADD:
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new RealAdd(lhs, rhs);
-			case REALDIV:
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new RealDiv(lhs, rhs);			
-			case REALMUL:
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new RealMul(lhs, rhs);
-			case REALNEG:	
-				lhs = readExpr(reader, constantPool);				
-				return new RealNegate(lhs);
-			case REALSUB:
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new RealSub(lhs, rhs);
+				return Value.V_INT(bi);			
 			case REALVAL:			
 				len = reader.read_u2();
 				bytes = new byte[len];
@@ -655,96 +160,34 @@ public class WhileyBlock {
 				reader.read(bytes);
 				BigInteger den = new BigInteger(bytes);
 				BigRational br = new BigRational(num,den);
-				return new RealVal(br);
-			case LISTACCESS:			
-				lhs = readExpr(reader, constantPool);
-				rhs = readExpr(reader, constantPool);
-				return new ListAccess(lhs, rhs);		
-			case LISTLENGTH:
-				lhs = readExpr(reader, constantPool);			
-				return new ListLength(lhs);
-			case LISTGEN:
-				len = reader.read_u2();
-				ArrayList<RVal> exprs = new ArrayList<RVal>();
-				for(int i=0;i!=len;++i) {
-					exprs.add((RVal) readExpr(reader,constantPool));
-				}
-				return new ListGenerator(exprs);		
+				return Value.V_REAL(br);				
 			case LISTVAL:
 				len = reader.read_u2();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
-					values.add((Value) readExpr(reader,constantPool));
+					values.add((Value) readRVal(reader,constantPool));
 				}
-				return new ListVal(values);
-			case SETLENGTH:
-				lhs = readExpr(reader, constantPool);			
-				return new SetLength(lhs);
-			case SETGEN:
-				len = reader.read_u2();
-				exprs = new ArrayList<RVal>();
-				for(int i=0;i!=len;++i) {
-					exprs.add((RVal) readExpr(reader,constantPool));
-				}
-				return new SetGenerator(exprs);		
+				return Value.V_LIST(values);			
 			case SETVAL:
 				len = reader.read_u2();
 				values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
-					values.add((Value) readExpr(reader,constantPool));
+					values.add((Value) readRVal(reader,constantPool));
 				}
-				return new SetVal(values);
-			case SETUNION:
-				lhs = readExpr(reader, constantPool);			
-				rhs = readExpr(reader, constantPool);
-				return new SetUnion(lhs,rhs);
-			case SETINTERSECT:
-				lhs = readExpr(reader, constantPool);			
-				rhs = readExpr(reader, constantPool);
-				return new SetIntersection(lhs,rhs);
-			case SETDIFFERENCE:
-				lhs = readExpr(reader, constantPool);			
-				rhs = readExpr(reader, constantPool);
-				return new SetDifference(lhs,rhs);
-			case SETCOMPREHENSION:			
-				lhs = readExpr(reader, constantPool);
-				len = reader.read_u2();		
-				ArrayList<Pair<String,RVal>> srcs = new ArrayList<Pair<String,RVal>>();
-				for(int i=0;i!=len;++i) {
-					idx = reader.read_u2();
-					utf8 = (Constant.Utf8) constantPool.get(idx);
-					lhs = readExpr(reader, constantPool);
-					srcs.add(new Pair<String,RVal>(utf8.str, lhs));
-				}
-				Condition c = readCondition(reader, constantPool);
-				return new SetComprehension(lhs,srcs,c);
-			case TUPLEACCESS:			
-				idx = reader.read_u2();
-				lhs = readExpr(reader, constantPool);
-				utf8 = (Constant.Utf8) constantPool.get(idx);
-				return new TupleAccess(lhs, utf8.str);		
-			case TUPLEGEN:
-				len = reader.read_u2();
-				HashMap<String,RVal> tgs = new HashMap<String,RVal>();
-				for(int i=0;i!=len;++i) {
-					idx = reader.read_u2();
-					utf8 = (Constant.Utf8) constantPool.get(idx);
-					lhs = readExpr(reader, constantPool);
-					tgs.put(utf8.str, lhs);
-				}
-				return new TupleGenerator(tgs);
+				return Value.V_SET(values);			
 			case TUPLEVAL:
 				len = reader.read_u2();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();
 				for(int i=0;i!=len;++i) {
 					idx = reader.read_u2();
 					utf8 = (Constant.Utf8) constantPool.get(idx);
-					lhs = readExpr(reader, constantPool);
-					tvs.put(utf8.str, (Value) lhs);
+					Value lhs = (Value) readRVal(reader, constantPool);
+					tvs.put(utf8.str, lhs);
 				}
-				return new TupleVal(tvs);
-		}
-		return readCondition(code,reader,constantPool);
+				return Value.V_TUPLE(tvs);
+			default:
+				throw new RuntimeException("Unknown RVal encountered in WhileyBlock");
+		}		
 	}
 
 	private final static int NULL = 0;

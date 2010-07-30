@@ -44,8 +44,8 @@ public class Compiler implements Logger {
 	protected PostConditionGenerator postGenerator = new PostConditionGenerator();
 	protected VerificationConditionGenerator vcGenerator;	
 	protected VerificationConditionChecker vcChecker = new VerificationConditionChecker();	
-	protected ClassFileBuilder classBuilder;	
 	*/
+	protected ClassFileBuilder classBuilder;		
 	
 	protected boolean verificationFlag = true; // verification is enabled	
 	protected boolean runtimeChecksFlag = true; // runtime checks enabled
@@ -62,9 +62,9 @@ public class Compiler implements Logger {
 		
 		this.nameResolver = new NameResolution(loader);		
 		this.typeResolver = new ModuleBuilder(loader);
-		/*
-		this.checkGenerator = new RuntimeCheckGenerator(loader);
 		this.classBuilder = new ClassFileBuilder(loader,whileyMajorVersion,whileyMinorVersion);
+		/*
+		this.checkGenerator = new RuntimeCheckGenerator(loader);		
 		this.vcGenerator = new VerificationConditionGenerator(loader);
 		*/
 	}
@@ -112,8 +112,7 @@ public class Compiler implements Logger {
 		
 		List<Module> modules = buildModules(wyfiles);		
 		for(Module m : modules) {
-			WyilFileWriter fr = new WyilFileWriter(System.out);
-			fr.write(m);
+			finishCompilation(m);
 		}
 		
 		return wyfiles;
@@ -154,7 +153,7 @@ public class Compiler implements Logger {
 	 * 
 	 * @param wf
 	 */
-	public void finishCompilation(WhileyFile wf) {				
+	public void finishCompilation(Module module) {				
 		
 		// Build the Module
 		// Module mod = buildModule(wf);
@@ -187,8 +186,7 @@ public class Compiler implements Logger {
 			}			
 		}
 	
-		// writeClassFile(rwf);
-		System.out.println("*** PARSED: " + wf.filename);
+		writeClassFile(module);		
 	}
 	
 	
@@ -276,6 +274,7 @@ public class Compiler implements Logger {
 		logTimedMessage("[" + m.filename() + "] verification conditions checked",
 				System.currentTimeMillis() - start);
 	}
+	*/
 	
 	protected void writeClassFile(Module m) {
 		long start = System.currentTimeMillis();
@@ -293,8 +292,7 @@ public class Compiler implements Logger {
 					+ "] failed writing class file (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 		}
-	}
-	*/
+	}	
 	
 	/**
 	 * This method is just a helper to format the output

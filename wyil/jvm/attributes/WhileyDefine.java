@@ -100,16 +100,16 @@ public class WhileyDefine implements BytecodeAttribute {
 		Constant.addPoolItem(new Constant.Utf8(defName), constantPool);
 		
 		if(value != null) {
-			WhileyType.addPoolItems(value, constantPool);
+			WhileyBlock.addPoolItems(value, constantPool);
 		}
 		if(type != null) {
 			WhileyType.addPoolItems(type, constantPool);
 		}
 	}
 	
-	protected void write(RVal e, BinaryOutputStream writer,
+	protected void write(Value v, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		WhileyType.writeCondition(e,writer,constantPool);				
+		WhileyBlock.writeCondition(e,writer,constantPool);				
 	}
 	
 	public void print(PrintWriter output,

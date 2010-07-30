@@ -5,8 +5,6 @@ import java.util.*;
 import wyil.jvm.rt.BigRational;
 
 public abstract class Value extends RVal {	
-	public abstract Type type();
-	
 	public static Bool V_BOOL(boolean value) {
 		return get(new Bool(value));
 	}
@@ -25,6 +23,10 @@ public abstract class Value extends RVal {
 
 	public static List V_LIST(Collection<Value> values) {
 		return get(new List(values));
+	}
+	
+	public static Tuple V_TUPLE(Map<String,Value> values) {
+		return get(new Tuple(values));
 	}
 
 	public static final class Bool extends Value {
@@ -167,6 +169,43 @@ public abstract class Value extends RVal {
 				}
 				firstTime=false;
 				r += v;
+			}
+			return r + "}";
+		}
+	}
+	
+	public static class Tuple extends Value {
+		public final HashMap<String,Value> values;
+		private Tuple(Map<String,Value> value) {
+			this.values = new HashMap<String,Value>(value);
+		}
+
+		public Type type() {
+			HashMap<String, Type> types = new HashMap<String, Type>();
+			for (Map.Entry<String, Value> e : values.entrySet()) {
+				types.put(e.getKey(), e.getValue().type());
+			}
+			return Type.T_TUPLE(types);
+		}
+		public int hashCode() {
+			return values.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Tuple) {
+				Tuple i = (Tuple) o;
+				return values.equals(i.values);
+			}
+			return false;
+		}
+		public String toString() {
+			String r = "{";
+			boolean firstTime=true;
+			for(Map.Entry<String,Value> v : values.entrySet()) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				r += v.getKey() + ":" + v.getValue();
 			}
 			return r + "}";
 		}

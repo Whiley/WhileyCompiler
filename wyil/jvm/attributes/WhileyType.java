@@ -277,13 +277,26 @@ public class WhileyType implements BytecodeAttribute {
 					return Type.T_RECURSIVE(name,null);					
 				}
 				case FUN_TYPE:
+				{
 					Type ret = readType(input,constantPool);
 					int count = input.read_u2();
 					ArrayList<Type> ftypes = new ArrayList<Type>();
 					for(int i=0;i!=count;++i) {
 						ftypes.add(readType(input,constantPool));
 					}
-					return Type.T_FUN(ret,ftypes);				
+					return Type.T_FUN(null,ret,ftypes);
+				}
+				case METH_TYPE:
+				{
+					Type.Process rec = (Type.Process) readType(input,constantPool);
+					Type ret = readType(input,constantPool);
+					int count = input.read_u2();
+					ArrayList<Type> ftypes = new ArrayList<Type>();
+					for(int i=0;i!=count;++i) {
+						ftypes.add(readType(input,constantPool));
+					}
+					return Type.T_FUN(rec,ret,ftypes);
+				}
 			}
 			
 			throw new RuntimeException("Unknown type id encountered: " + t);
@@ -310,7 +323,8 @@ public class WhileyType implements BytecodeAttribute {
 	public static final int PROCESS_TYPE = 12;
 	public static final int NAMED_TYPE = 13;
 	public static final int FUN_TYPE = 14;
-	public static final int RECURSIVE_TYPE = 15;
-	public static final int RECURSIVE_LEAF = 16;
+	public static final int METH_TYPE = 15;
+	public static final int RECURSIVE_TYPE = 16;
+	public static final int RECURSIVE_LEAF = 17;
 	public static final int CONSTRAINT_MASK = 32;
 }

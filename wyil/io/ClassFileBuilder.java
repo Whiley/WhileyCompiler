@@ -24,11 +24,13 @@ import java.util.*;
 import wyil.jvm.attributes.*;
 import wyil.*;
 import wyil.lang.*;
+import wyil.lang.Code;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;
 import wyjvm.lang.Modifier;
 import wyjvm.util.DeadCodeElimination;
 import static wyil.util.SyntaxError.*;
+import static wyjvm.lang.JvmType.*;
 import static wyjvm.lang.JvmTypes.*;
 
 /**
@@ -49,61 +51,33 @@ public class ClassFileBuilder {
 		this.WHILEY_MAJOR_VERSION = whileyMajorVersion;
 	}
 
-	public ClassFile build(ResolvedWhileyFile wf) {
-		JvmType.Clazz type = new JvmType.Clazz(wf.id().pkg().toString(),wf.id().module().toString());
+	public ClassFile build(Module module) {
+		JvmType.Clazz type = new JvmType.Clazz(module.id().pkg().toString(),
+				module.id().module().toString());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
 		ClassFile cf = new ClassFile(49, type, JAVA_LANG_OBJECT,
 				new ArrayList<JvmType.Clazz>(), modifiers);
 		
-		boolean addMainLauncher = false;
-		HashMap<Triple<String,Type,Type.Fun>,List<FunDecl>> methodCases = new HashMap();
+		boolean addMainLauncher = false;		
 		
-		for(Decl d : wf.declarations()) {
-			if(d instanceof FunDecl) {
-				FunDecl fd = (FunDecl) d;				
-				if(fd.name().equals("main")) { 
-					addMainLauncher = true;
-				}
-				Type.Fun ft = (Type.Fun) fd.type();
-				Type pt = fd.receiver() == null ? null : fd.receiver().type();
-				Triple<String,Type,Type.Fun> key = new Triple(fd.name(),pt,ft);
-				List<FunDecl> cases = methodCases.get(key);
-				if(cases == null) {
-					cases = new ArrayList<FunDecl>();
-					methodCases.put(key,cases);
-				}
-				cases.add(fd);				
-			} else if(d instanceof TypeDecl) {
-				TypeDecl td = (TypeDecl) d;
-				Type t = td.type();
-				WhileyDefine wd = new WhileyDefine(td.name(),t,null);
-				cf.attributes().add(wd);
-			} else if(d instanceof ConstDecl) {
-				ConstDecl cd = (ConstDecl) d;				
-				WhileyDefine wd = new WhileyDefine(cd.name(),null,cd.constant());
-				cf.attributes().add(wd);
-			}
+		for(Module.ConstDef d : module.constants()) {						
+			WhileyDefine wd = new WhileyDefine(d.name(),null,d.constant());
+			cf.attributes().add(wd);
 		}
-
-		for(Triple<String,Type,Type.Fun> c : methodCases.keySet()) {
-			List<FunDecl> cases = methodCases.get(c);			
-			if(cases.size() == 1) {
-				FunDecl fd = cases.get(0);				
-				ClassFile.Method m = build(0,fd,wf);				
-				cf.methods().add(m);				
-			} else {
-				int idx = 0;
-				for(FunDecl fd : cases) {					
-					ClassFile.Method m = build(++idx,fd,wf);					
-					cf.methods().add(m);					
-				}
-				cf.methods().add(
-						buildCaseDispatch(c.first(), c.second(), c.third(),
-								cases, wf.id()));
-			}
+		for(Module.TypeDef td : module.types()) {			
+			Type t = td.type();
+			WhileyDefine wd = new WhileyDefine(td.name(),t,null);
+			cf.attributes().add(wd);
 		}
+		for(Module.Method fd : module.methods()) {				
+			if(fd.name().equals("main")) { 
+				addMainLauncher = true;
+			}
+			ClassFile.Method m = build(fd);				
+			cf.methods().add(m);			
+		}		
 		
 		if(addMainLauncher) {
 			cf.methods().add(buildMainLauncher(type));
@@ -143,7 +117,8 @@ public class ClassFileBuilder {
 						ft3, Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
 		
-		Code code = new Code(codes,new ArrayList(),cm);
+		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,
+				new ArrayList(), cm);
 		cm.attributes().add(code);
 		
 		return cm;	
@@ -155,48 +130,48 @@ public class ClassFileBuilder {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);		
-		Type.Fun flatType = fd.type();
-		String name = nameMangle(name,pt,flatType);		
+		JvmType.Function ft = (JvmType.Function) convertType(fd.type());
+		String name = nameMangle(fd.name(),fd.type());		
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
 		ArrayList<Bytecode> codes = translate(fd);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
-		cm.attributes().add(code);		
-		WhileyType wc = new WhileyType(flatType);
-		cm.attributes().add(wc);
+		cm.attributes().add(code);				
 		
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translate(FunDecl fd) {
+	public ArrayList<Bytecode> translate(Module.Method fd) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		HashMap<String, Type> environment = new HashMap<String,Type>();
 		HashMap<String, Integer> slots = new HashMap<String, Integer>();		
 		
 		int slot = 0;
-		if(fd.receiver() != null) {
+		if(fd.type().receiver != null) {
 			slots.put("this",slot++);
-			environment.put("this",fd.receiver().type());
+			environment.put("this",fd.type().receiver);
 		}
 				
-		for(FunDecl.Parameter p : fd.parameters()) {
-			slots.put(p.name(),slot++);
-			environment.put(p.name(), p.type());
+		List<Type> paramTypes = fd.type().params;
+		List<String> paramNames = fd.parameterNames();
+		for(int i=0;i!=paramTypes.size();++i) {
+			String name = paramNames.get(i);
+			Type type = paramTypes.get(i);
+			slots.put(name,slot++);
+			environment.put(name,type);
 		}
 		
-		for(Stmt s : fd.statements()) {			
-			translate(s,slots,environment,fd,bytecodes);			
+		/*
+		for(Code c : fd.body()) {			
+			translate(c,slots,environment,fd,bytecodes);			
 		}
-		
-		if(fd.returnType().type() == Types.T_VOID) {			
-			bytecodes.add(new Bytecode.Return(null));			
-		}
+		*/
 		
 		return bytecodes;
 	}
 	
 	
 	public void addReadConversion(Type et, ArrayList<Bytecode> bytecodes) {
-		if(et instanceof BoolType) {
+		if(et instanceof Type.Bool) {
 			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BOOLEAN));
 			JvmType.Function ftype = new JvmType.Function(T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
@@ -207,13 +182,13 @@ public class ClassFileBuilder {
 	}
 	
 	public void addWriteConversion(Type et, ArrayList<Bytecode> bytecodes) {
-		if(et instanceof BoolType) {
+		if(et instanceof Type.Bool) {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"valueOf", ftype, Bytecode.STATIC));
 		} 
 	}
-	
+		
 	public void construct(JvmType.Clazz owner,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment,
 			ArrayList<Bytecode> bytecodes, RVal... params) {
@@ -222,7 +197,7 @@ public class ClassFileBuilder {
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
 		for(RVal e : params) {			
 			translate(e,slots,environment,bytecodes);
-			paramTypes.add(convertType(e.type(environment)));
+			paramTypes.add(convertType(e.type()));
 		}
 		JvmType.Function ftype = new JvmType.Function(T_VOID,paramTypes);
 		
@@ -230,36 +205,28 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(owner, "<init>", ftype,
 				Bytecode.SPECIAL));
 
-	}	
-
-	protected void convert(Type toType, RVal from,
-			HashMap<String, Integer> slots, HashMap<String, Type> environment,
-			ArrayList<Bytecode> bytecodes) {				
-		Type fromType = from.type(environment);			
-		
-		convert(toType, fromType, slots, bytecodes);
-	}
+	}		 
 	
 	protected void convert(Type toType, Type fromType,
 			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {		
 		
 		if(toType.equals(fromType)) {		
 			// do nothing!			
-		} else if (!(toType instanceof BoolType) && fromType instanceof BoolType) {
+		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
-			convert(toType, (BoolType) fromType, slots, bytecodes);
-		} else if(toType == Types.T_REAL(null) && fromType instanceof IntType) {			
+			convert(toType, (Type.Bool) fromType, slots, bytecodes);
+		} else if(toType == Type.T_REAL && fromType == Type.T_INT) {			
 			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
 					Bytecode.STATIC));			
-		} else if(toType instanceof ListType && fromType instanceof ListType) {
-			convert((ListType) toType, (ListType) fromType, slots, bytecodes);			
-		} else if(toType instanceof SetType && fromType instanceof ListType) {
-			convert((SetType) toType, (ListType) fromType, slots, bytecodes);			
-		} else if(toType instanceof SetType && fromType instanceof SetType) {
-			convert((SetType) toType, (SetType) fromType, slots, bytecodes);			
-		} else if(toType instanceof TupleType && fromType instanceof TupleType) {
-			convert((TupleType) toType, (TupleType) fromType, slots, bytecodes);
+		} else if(toType instanceof Type.List && fromType instanceof Type.List) {
+			convert((Type.List) toType, (Type.List) fromType, slots, bytecodes);			
+		} else if(toType instanceof Type.Set && fromType instanceof Type.List) {
+			convert((Type.Set) toType, (Type.List) fromType, slots, bytecodes);			
+		} else if(toType instanceof Type.Set && fromType instanceof Type.Set) {
+			convert((Type.Set) toType, (Type.Set) fromType, slots, bytecodes);			
+		} else if(toType instanceof Type.Tuple && fromType instanceof Type.Tuple) {
+			convert((Type.Tuple) toType, (Type.Tuple) fromType, slots, bytecodes);
 		} else {
 			// every other kind of conversion is either a syntax error (which
 			// should have been caught by TypeChecker); or, a nop (since no
@@ -267,11 +234,11 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void convert(ListType toListType, ListType fromListType,
+	protected void convert(Type.List toType, Type.List fromType,
 			HashMap<String, Integer> slots,			
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(fromListType.element() == Types.T_VOID) {
+		if(fromType.element == Type.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -301,8 +268,8 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));						
-		addReadConversion(fromListType.element(),bytecodes);
-		convert(toListType.element(), fromListType.element(), slots,
+		addReadConversion(fromType.element,bytecodes);
+		convert(toType.element, fromType.element, slots,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add",
@@ -313,11 +280,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slots.get(tmp),WHILEYLIST));
 	}
 	
-	protected void convert(SetType toSetType, ListType fromListType,
+	protected void convert(Type.Set toType, Type.List fromType,
 			HashMap<String, Integer> slots,			
 			ArrayList<Bytecode> bytecodes) {
 						
-		if(fromListType.element() == Types.T_VOID) {
+		if(fromType.element == Type.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -347,8 +314,8 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));						
-		addReadConversion(fromListType.element(),bytecodes);
-		convert(toSetType.element(), fromListType.element(), slots,
+		addReadConversion(fromType.element,bytecodes);
+		convert(toType.element, fromType.element, slots,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
@@ -359,11 +326,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slots.get(tmp),WHILEYSET));
 	}
 	
-	protected void convert(SetType toType, SetType fromType,
+	protected void convert(Type.Set toType, Type.Set fromType,
 			HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(fromType.element() == Types.T_VOID) {
+		if(fromType.element == Type.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -393,8 +360,8 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));
-		bytecodes.add(new Bytecode.CheckCast(convertType(fromType.element())));		
-		convert(toType.element(), fromType.element(), slots,
+		bytecodes.add(new Bytecode.CheckCast(convertType(fromType.element)));		
+		convert(toType.element, fromType.element, slots,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
@@ -405,7 +372,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slots.get(tmp),WHILEYSET));
 	}
 	
-	public void convert(TupleType toType, TupleType fromType,
+	public void convert(Type.Tuple toType, Type.Tuple fromType,
 			HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		slots = (HashMap) slots.clone();
@@ -415,9 +382,9 @@ public class ClassFileBuilder {
 		construct(WHILEYTUPLE,slots,null,bytecodes);
 		bytecodes.add(new Bytecode.Store(slots.get(newtup),WHILEYTUPLE));		
 				
-		for(String key : toType.types().keySet()) {
-			Type to = toType.types().get(key);
-			Type from = fromType.types().get(key);					
+		for(String key : toType.types.keySet()) {
+			Type to = toType.types.get(key);
+			Type from = fromType.types.get(key);					
 			bytecodes.add(new Bytecode.Load(slots.get(newtup),WHILEYTUPLE));
 			bytecodes.add(new Bytecode.LoadConst(key));
 			bytecodes.add(new Bytecode.Load(slots.get(oldtup),WHILEYTUPLE));
@@ -436,7 +403,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slots.get(newtup),WHILEYTUPLE));		
 	}
 	
-	public void convert(Type toType, BoolType fromType,
+	public void convert(Type toType, Type.Bool fromType,
 			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
@@ -457,57 +424,56 @@ public class ClassFileBuilder {
 	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang","AssertionError");
 	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util","Collection");	
 	
-	public JvmType.Function convertType(Type receiver, Type.Fun ft) {
-		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		if(receiver != null) {
-			paramTypes.add(convertType(receiver));
-		}
-		for(Type t : ft.parameters()) {
-			paramTypes.add(convertType(t));
-		}
-		JvmType rt = convertType(ft.returnType());
-		return new JvmType.Function(rt,paramTypes);
-	}
-	
 	public JvmType convertType(Type t) {
-		if(t == Types.T_VOID) {
+		if(t == Type.T_VOID) {
 			return T_VOID;
-		} else if(t == Types.T_ANY) {
+		} else if(t == Type.T_ANY) {
 			return JAVA_LANG_OBJECT;
-		} else if(t instanceof BoolType) {
+		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
-		} else if(t instanceof IntType) {
+		} else if(t instanceof Type.Int) {
 			return BIG_INTEGER;
-		} else if(t instanceof RealType) {
+		} else if(t instanceof Type.Real) {
 			return BIG_RATIONAL;
-		} else if(t instanceof ListType) {
+		} else if(t instanceof Type.List) {
 			return WHILEYLIST;
-		} else if(t instanceof SetType) {
+		} else if(t instanceof Type.Set) {
 			return WHILEYSET;
-		} else if(t instanceof TupleType) {
+		} else if(t instanceof Type.Tuple) {
 			return WHILEYTUPLE;
-		} else if(t instanceof ProcessType) {
+		} else if(t instanceof Type.Process) {
 			return WHILEYPROCESS;
-		} else if(t instanceof NamedType) {
-			NamedType nt = (NamedType) t;
-			return convertType(nt.type());
-		} else if(t instanceof UnionType) {
-			UnionType ut = (UnionType) t;
-			Type c = Types.commonType(ut.types());
+		} else if(t instanceof Type.Named) {
+			Type.Named nt = (Type.Named) t;
+			return convertType(nt.type);
+		} else if(t instanceof Type.Union) {
+			Type.Union ut = (Type.Union) t;
+			Type c = Type.leastUpperBound(ut.bounds);
 			if(c != null) {
 				// there was some commonality between types
 				return convertType(c);
 			} else {
 				return JAVA_LANG_OBJECT;
 			}
-		} else if(t instanceof RecursiveType) {
-			RecursiveType rt = (RecursiveType) t;
-			if(rt.type() == null) {
+		} else if(t instanceof Type.Recursive) {
+			Type.Recursive rt = (Type.Recursive) t;
+			if(rt.type == null) {
 				return JAVA_LANG_OBJECT;
 			} else {
-				return convertType(rt.type());
+				return convertType(rt.type);
 			}
-		} else {
+		} else if(t instanceof Type.Fun) {
+			Type.Fun ft = (Type.Fun) t; 
+			ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
+			if(ft.receiver != null) {
+				paramTypes.add(convertType(ft.receiver));
+			}
+			for(Type pt : ft.params) {
+				paramTypes.add(convertType(pt));
+			}
+			JvmType rt = convertType(ft.ret);
+			return new JvmType.Function(rt,paramTypes);
+		}else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}		
 	}	
@@ -526,40 +492,34 @@ public class ClassFileBuilder {
 		return "label" + label++;
 	}
 	
-	protected String nameMangle(String name, Type receiver, Type.Fun type) {
-		type = Types.stripConstraints(type);
-		if (receiver != null) {
-			receiver = Types.stripConstraints(receiver);
-			return name + "$" + type2str(receiver) + "$" + type2str(type);
-		} else {
-			return name + "$" + type2str(type);
-		}
+	protected String nameMangle(String name, Type.Fun type) {		
+		return name + "$" + type2str(type);		
 	}
 	
 	protected String type2str(Type t) {
-		if(t == Types.T_EXISTENTIAL) {
+		if(t == Type.T_EXISTENTIAL) {
 			return "?";
-		} else if(t == Types.T_ANY) {
+		} else if(t == Type.T_ANY) {
 			return "*";
-		} else if(t == Types.T_VOID) {
+		} else if(t == Type.T_VOID) {
 			return "V";
-		} else if(t instanceof BoolType) {
+		} else if(t instanceof Type.Bool) {
 			return "B";
-		} else if(t instanceof IntType) {
+		} else if(t instanceof Type.Int) {
 			return "I";
-		} else if(t instanceof RealType) {
+		} else if(t instanceof Type.Real) {
 			return "R";
-		} else if(t instanceof ListType) {
-			ListType st = (ListType) t;
-			return "[" + type2str(st.element()) + "]";
-		} else if(t instanceof SetType) {
-			SetType st = (SetType) t;
-			return "{" + type2str(st.element()) + "}";
-		} else if(t instanceof UnionType) {
-			UnionType st = (UnionType) t;
+		} else if(t instanceof Type.List) {
+			Type.List st = (Type.List) t;
+			return "[" + type2str(st.element) + "]";
+		} else if(t instanceof Type.Set) {
+			Type.Set st = (Type.Set) t;
+			return "{" + type2str(st.element) + "}";
+		} else if(t instanceof Type.Union) {
+			Type.Union st = (Type.Union) t;
 			String r = "";
 			boolean firstTime=true;
-			for(Type b : st.types()) {
+			for(Type b : st.bounds) {
 				if(!firstTime) {
 					r += "|";
 				}
@@ -567,36 +527,40 @@ public class ClassFileBuilder {
 				r += type2str(b);
 			}			
 			return r;
-		} else if(t instanceof TupleType) {
-			TupleType st = (TupleType) t;
-			ArrayList<String> keys = new ArrayList<String>(st.types().keySet());
+		} else if(t instanceof Type.Tuple) {
+			Type.Tuple st = (Type.Tuple) t;
+			ArrayList<String> keys = new ArrayList<String>(st.types.keySet());
 			Collections.sort(keys);
 			String r="(";
 			for(String k : keys) {
-				Type kt = st.types().get(k);
+				Type kt = st.types.get(k);
 				r += k + ":" + type2str(kt);
 			}			
 			return r + ")";
-		} else if(t instanceof ProcessType) {
-			ProcessType st = (ProcessType) t;
-			return "P" + type2str(st.element());
-		} else if(t instanceof NamedType) {
-			NamedType st = (NamedType) t;
-			return "N" + st.module() + ";" + st.name() + ";"
-					+ type2str(st.type());
+		} else if(t instanceof Type.Process) {
+			Type.Process st = (Type.Process) t;
+			return "P" + type2str(st.element);
+		} else if(t instanceof Type.Named) {
+			Type.Named st = (Type.Named) t;
+			return "N" + st.module + ";" + st.name + ";"
+					+ type2str(st.type);
 		} else if(t instanceof Type.Fun) {
 			Type.Fun ft = (Type.Fun) t;
-			String r = type2str(ft.returnType());
-			for(Type pt : ft.parameters()) {
+			String r = "";
+			if(ft.receiver != null) {
+				r += type2str(ft.receiver) + "$";
+			}				
+			r += type2str(ft.ret);
+			for(Type pt : ft.params) {
 				r += type2str(pt);
 			}
 			return r;
-		} else if(t instanceof RecursiveType) {
-			RecursiveType rt = (RecursiveType) t;
-			if(rt.type() == null) {
-				return rt.name();
+		} else if(t instanceof Type.Recursive) {
+			Type.Recursive rt = (Type.Recursive) t;
+			if(rt.type == null) {
+				return rt.name;
 			} else {
-				return rt.name() + ":" + type2str(rt.type());
+				return rt.name + ":" + type2str(rt.type);
 			}
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
@@ -605,8 +569,8 @@ public class ClassFileBuilder {
 	
 
 	protected Type flattern(Type t) {
-		if(t instanceof NamedType) {
-			return ((NamedType)t).type();
+		if(t instanceof Type.Named) {
+			return ((Type.Named)t).type;
 		}
 		return t;
 	}

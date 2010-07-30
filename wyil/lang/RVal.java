@@ -4,27 +4,35 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public abstract class RVal {
-	
-	public static Variable VAR(String v) {
-		return get(new Variable(v));
+	public abstract Type type();
+		
+	public static Variable VAR(Type t, String v) {
+		return get(new Variable(t,v));
 	}
 	
 	public static class Variable extends RVal {
 		public final String name;
-		Variable(String name) {
+		public final Type type;
+		
+		Variable(Type type, String name) {
 			this.name = name;
+			this.type = type;
+		}
+		public Type type() {
+			return type;
 		}
 		public int hashCode() {
-			return name.hashCode();
+			return type.hashCode() + name.hashCode();
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Variable) {
-				return name.equals(((Variable)o).name);
+				Variable v = (Variable) o;
+				return type.equals(v.type) && name.equals(v.name);
 			}
 			return false;
 		}
 		public String toString() {
-			return name;
+			return "[" + type + "] " + name;
 		}
 	}
 	

@@ -212,6 +212,13 @@ public abstract class Type {
 		}
 	}
 
+	public static Type leastUpperBound(Collection<? extends Type> types) {
+		Type t = T_VOID;
+		for(Type b : types) {
+			t = leastUpperBound(t,b);
+		}
+		return t;
+	}
 	/**
 	 * Determine whether a given type contains an existential or not.
 	 * 

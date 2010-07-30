@@ -378,7 +378,7 @@ public class ModuleBuilder {
 			checkIsSubtype(type,initT.first(),init);
 			environment.put(s.name,type);
 			blk.addAll(initT.second());
-			blk.add(new Code.Assign(type, s.name, RVal.VAR("$0")));
+			blk.add(new Code.Assign(type, s.name, RVal.VAR(initT.first(),"$0")));
 		} 
 		declared.put(s.name,type);
 		return blk;
@@ -396,7 +396,8 @@ public class ModuleBuilder {
 			}
 			checkIsSubtype(declared_t,rhs_tb.first(),s.rhs);
 			environment.put(v.var, rhs_tb.first());			
-			blk.add(new Code.Assign(rhs_tb.first(), v.var, RVal.VAR("$0")));
+			blk.add(new Code.Assign(rhs_tb.first(), v.var, RVal.VAR(rhs_tb
+					.first(), "$0")));
 		} else {
 			Pair<Type,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
 			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);							
@@ -424,7 +425,7 @@ public class ModuleBuilder {
 		Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
 		checkIsSubtype(t.first(),Type.T_LIST(Type.T_INT),s.expr);
 		Block blk = t.second();
-		blk.add(new Code.Debug(RVal.VAR("$0")));
+		blk.add(new Code.Debug(RVal.VAR(t.first(),"$0")));
 		return blk;
 	}
 
@@ -514,12 +515,12 @@ public class ModuleBuilder {
 	protected Block resolveCondition(String target, Variable v,
 			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		Type t = environment.get(v.var);
-		if(t == null) {		
-			syntaxError("unknown variable",v);			
+		if (t == null) {
+			syntaxError("unknown variable", v);
 		}
-		checkType(t,Type.Bool.class,v);		
-		Block blk = new Block();		
-		blk.add(new Code.IfGoto(t, Code.BOP.EQ, RVal.VAR(v.var), Value
+		checkType(t, Type.Bool.class, v);
+		Block blk = new Block();
+		blk.add(new Code.IfGoto(t, Code.BOP.EQ, RVal.VAR(t, v.var), Value
 				.V_BOOL(true), target));
 		return blk;
 	}
@@ -682,7 +683,7 @@ public class ModuleBuilder {
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
 		}
-		Block blk = new Block(new Code.Assign(t, "$" + target, RVal.VAR(v.var)));
+		Block blk = new Block(new Code.Assign(t, "$" + target, RVal.VAR(t,v.var)));
 		return new Pair<Type, Block>(t, blk);
 	}
 	
@@ -716,8 +717,8 @@ public class ModuleBuilder {
 		
 		Pair<Type,Block> lhs_tb = resolve(target,v.lhs, environment, declared);
 		Pair<Type,Block> rhs_tb = resolve(target+1,v.rhs, environment, declared);
-		RVal lhs_v = RVal.VAR("$" + target);
-		RVal rhs_v = RVal.VAR("$" + (target+1));		
+		RVal lhs_v = RVal.VAR(lhs_tb.first(),"$" + target);
+		RVal rhs_v = RVal.VAR(rhs_tb.first(),"$" + (target+1));		
 		Type lhs_t = lhs_tb.first();
 		Type rhs_t = rhs_tb.first();
 		BOp bop = v.op;
