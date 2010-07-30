@@ -23,31 +23,7 @@ public abstract class Code {
 	// ==========================================
 	// =============== Methods ==================
 	// ==========================================
-	
-	public static Code substitute(String v1, String v2, Code c) {
-		if(c instanceof Assign) {
-			Assign va = (Assign) c;
-			return new Assign(va.type,substitute(v1,v2,va.lhs),substitute(v2,v2,va.rhs));
-		} else if(c instanceof Load) {
-			Load va = (Load) c;
-			return new Load(va.type,substitute(v1,v2,va.lhs),va.rhs);
-		} else if(c instanceof IfGoto) {
-			IfGoto ig = (IfGoto) c;
-			return new IfGoto(ig.type, ig.op, substitute(v2, v2, ig.lhs),
-					substitute(v1, v2, ig.rhs), ig.target);
-		} else {
-			return c;
-		}
-	}
-	
-	private static String substitute(String v1, String v2, String s) {
-		if(s.equals(v1)) {
-			return v2;
-		} else {
-			return s;
-		}
-	}
-	
+		
 	/**
 	 * This represents a simple assignment between two variables.
 	 * 
@@ -57,9 +33,9 @@ public abstract class Code {
 	public final static class Assign extends Code {
 		public final Type type;
 		public final String lhs;
-		public final String rhs;
+		public final Expr rhs;
 		
-		public Assign(Type type, String lhs, String rhs) {
+		public Assign(Type type, String lhs, Expr rhs) {
 			this.type = type;
 			this.lhs = lhs;
 			this.rhs = rhs;
@@ -83,41 +59,6 @@ public abstract class Code {
 		}		
 	}
 
-	/**
-	 * This represents the assignment of a constant to a variable
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public final static class Load extends Code  {		
-		public final Type type;
-		public final String lhs;
-		public final Value rhs;
-		
-		public Load(Type type, String lhs, Value rhs) {
-			this.type = type;
-			this.lhs = lhs;
-			this.rhs = rhs;
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Load) {
-				Load a = (Load) o;
-				return type.equals(a.type) && lhs.equals(a.lhs)
-						&& rhs.equals(a.rhs);
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return type.hashCode() + lhs.hashCode() + rhs.hashCode();			
-		}
-		
-		public String toString() {
-			return type + " " + lhs + " := " + rhs;
-		}		
-	}
-	
 	/**
 	 * This represents a simple assignment between two variables.
 	 * 
