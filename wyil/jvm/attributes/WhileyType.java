@@ -196,112 +196,111 @@ public class WhileyType implements BytecodeAttribute {
 		writer.write(out.toByteArray());						
 	}
 	
-	
 	public void print(PrintWriter output,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {
-		output.print(  name() + ":");
-	}	
-		public static class Reader implements BytecodeAttributeReader {
+		output.print(name() + ":");
+	}
+
+	public static class Reader implements BytecodeAttributeReader {
 		public String name() {
 			return "WhileyType";
 		}
-		
+
 		public WhileyType read(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			input.read_u2(); // attribute name index code
-			input.read_u4(); // attribute length 						
-			Type t = readType(input,constantPool);
-			return new WhileyType(t);		
+			input.read_u4(); // attribute length
+			Type t = readType(input, constantPool);
+			return new WhileyType(t);
 		}
 
 		public static Type readType(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			int t = input.read_u1();
-			
-			switch(t) {
-				case ANY_TYPE:
-					return Type.T_ANY;
-				case EXISTENTIAL_TYPE:
-					return Type.T_EXISTENTIAL;
-				case VOID_TYPE:
-					return Type.T_VOID;
-				case BOOL_TYPE:
-					return Type.T_BOOL;
-				case INT_TYPE:
-					return Type.T_INT;
-				case REAL_TYPE:
-					return Type.T_REAL;
-				case LIST_TYPE:
-					Type et = readType(input,constantPool);
-					return Type.T_LIST(et);
-				case SET_TYPE:
-					et = readType(input,constantPool);
-					return Type.T_SET(et);
-				case TUPLE_TYPE:
-					int nents = input.read_u2();					
-					HashMap<String,Type> types = new HashMap<String,Type>();
-					for(int i=0;i!=nents;++i) {
-						String key = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
-						et = readType(input,constantPool);
-						types.put(key,et);
-					}
-					return Type.T_TUPLE(types);
-				case UNION_TYPE:
-					nents = input.read_u2();					
-					ArrayList<Type.NonUnion> bounds = new ArrayList<Type.NonUnion>();
-					for(int i=0;i!=nents;++i) {						
-						et = readType(input,constantPool);
-						bounds.add((Type.NonUnion) et);
-					}
-					return Type.T_UNION(bounds);
-				case PROCESS_TYPE:
-					et = readType(input,constantPool);
-					return Type.T_PROCESS(et);
-				case NAMED_TYPE:
-				{					
-					ModuleID module = readModule(input,constantPool);
-					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
-					et = readType(input,constantPool);
-					return Type.T_NAMED(module,name,et);
+
+			switch (t) {
+			case ANY_TYPE:
+				return Type.T_ANY;
+			case EXISTENTIAL_TYPE:
+				return Type.T_EXISTENTIAL;
+			case VOID_TYPE:
+				return Type.T_VOID;
+			case BOOL_TYPE:
+				return Type.T_BOOL;
+			case INT_TYPE:
+				return Type.T_INT;
+			case REAL_TYPE:
+				return Type.T_REAL;
+			case LIST_TYPE:
+				Type et = readType(input, constantPool);
+				return Type.T_LIST(et);
+			case SET_TYPE:
+				et = readType(input, constantPool);
+				return Type.T_SET(et);
+			case TUPLE_TYPE:
+				int nents = input.read_u2();
+				HashMap<String, Type> types = new HashMap<String, Type>();
+				for (int i = 0; i != nents; ++i) {
+					String key = ((Constant.Utf8) constantPool.get(input
+							.read_u2())).str;
+					et = readType(input, constantPool);
+					types.put(key, et);
 				}
-				case RECURSIVE_TYPE:
-				{										
-					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
-					et = readType(input,constantPool);
-					return Type.T_RECURSIVE(name,et);
+				return Type.T_TUPLE(types);
+			case UNION_TYPE:
+				nents = input.read_u2();
+				ArrayList<Type.NonUnion> bounds = new ArrayList<Type.NonUnion>();
+				for (int i = 0; i != nents; ++i) {
+					et = readType(input, constantPool);
+					bounds.add((Type.NonUnion) et);
 				}
-				case RECURSIVE_LEAF:
-				{										
-					String name = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
-					return Type.T_RECURSIVE(name,null);					
-				}
-				case FUN_TYPE:
-				{
-					Type ret = readType(input,constantPool);
-					int count = input.read_u2();
-					ArrayList<Type> ftypes = new ArrayList<Type>();
-					for(int i=0;i!=count;++i) {
-						ftypes.add(readType(input,constantPool));
-					}
-					return Type.T_FUN(null,ret,ftypes);
-				}
-				case METH_TYPE:
-				{
-					Type.Process rec = (Type.Process) readType(input,constantPool);
-					Type ret = readType(input,constantPool);
-					int count = input.read_u2();
-					ArrayList<Type> ftypes = new ArrayList<Type>();
-					for(int i=0;i!=count;++i) {
-						ftypes.add(readType(input,constantPool));
-					}
-					return Type.T_FUN(rec,ret,ftypes);
-				}
+				return Type.T_UNION(bounds);
+			case PROCESS_TYPE:
+				et = readType(input, constantPool);
+				return Type.T_PROCESS(et);
+			case NAMED_TYPE: {
+				ModuleID module = readModule(input, constantPool);
+				String name = ((Constant.Utf8) constantPool
+						.get(input.read_u2())).str;
+				et = readType(input, constantPool);
+				return Type.T_NAMED(module, name, et);
 			}
-			
+			case RECURSIVE_TYPE: {
+				String name = ((Constant.Utf8) constantPool
+						.get(input.read_u2())).str;
+				et = readType(input, constantPool);
+				return Type.T_RECURSIVE(name, et);
+			}
+			case RECURSIVE_LEAF: {
+				String name = ((Constant.Utf8) constantPool
+						.get(input.read_u2())).str;
+				return Type.T_RECURSIVE(name, null);
+			}
+			case FUN_TYPE: {
+				Type ret = readType(input, constantPool);
+				int count = input.read_u2();
+				ArrayList<Type> ftypes = new ArrayList<Type>();
+				for (int i = 0; i != count; ++i) {
+					ftypes.add(readType(input, constantPool));
+				}
+				return Type.T_FUN(null, ret, ftypes);
+			}
+			case METH_TYPE: {
+				Type.Process rec = (Type.Process) readType(input, constantPool);
+				Type ret = readType(input, constantPool);
+				int count = input.read_u2();
+				ArrayList<Type> ftypes = new ArrayList<Type>();
+				for (int i = 0; i != count; ++i) {
+					ftypes.add(readType(input, constantPool));
+				}
+				return Type.T_FUN(rec, ret, ftypes);
+			}
+			}
+
 			throw new RuntimeException("Unknown type id encountered: " + t);
 		}
-		
+
 		protected static ModuleID readModule(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			String modstr = ((Constant.Utf8) constantPool.get(input.read_u2())).str;

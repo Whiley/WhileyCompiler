@@ -41,15 +41,19 @@ import wyjvm.lang.Constant;
 public class WhileyDefine implements BytecodeAttribute {
 	private String defName;
 	private Value value;
+	private Block block;
 	private Type type;
 	
-	public WhileyDefine(String name, Type type, Value expr) {
-		if(type != null && expr != null) {
-			throw new IllegalArgumentException("Cannot define a type and an expression");
-		}
+	public WhileyDefine(String name, Value expr) {
+		this.defName = name;
+		this.type = expr.type();
+		this.value = expr;
+	}
+	
+	public WhileyDefine(String name, Type type, Block block) {
 		this.defName = name;
 		this.type = type;
-		this.value = expr;
+		this.block = block;
 	}
 	
 	public String name() {
@@ -109,7 +113,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	protected void write(Value v, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		WhileyBlock.writeCondition(e,writer,constantPool);				
+		WhileyBlock.writeValue(v,writer,constantPool);				
 	}
 	
 	public void print(PrintWriter output,
@@ -139,22 +143,21 @@ public class WhileyDefine implements BytecodeAttribute {
 			
 			String name = ((Constant.Utf8) constantPool.get(nameIdx)).str;
 			int sw = input.read_u1();			
-			Type type = null;
-			RVal expr = null;
-						
+			
 			if(sw == 0) {				
 				// Condition only
-				expr = WhileyType.Reader.readExpr(input,constantPool);				
+				Value value = WhileyBlock.Reader.readValue(input,constantPool);				
+				return new WhileyDefine(name,value);			
 			} else if(sw == 1) {
 				// type only
-				type = WhileyType.Reader.readType(input,constantPool);
+				Type type = WhileyType.Reader.readType(input,constantPool);
+				return new WhileyDefine(name,type,null);
 			} else {				
 				// both				
-				type = WhileyType.Reader.readType(input,constantPool);											
-				expr = WhileyType.Reader.readCondition(input,constantPool);									
+				Type type = WhileyType.Reader.readType(input,constantPool);											
+				Block blk = WhileyBlock.Reader.readBlock(input,constantPool);
+				return new WhileyDefine(name,type,blk);
 			}
-			
-			return new WhileyDefine(name,type,expr);
 		}						
 	}	
 }

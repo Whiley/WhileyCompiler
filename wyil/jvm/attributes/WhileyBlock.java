@@ -2,7 +2,7 @@ package wyil.jvm.attributes;
 
 import static wyil.util.SyntaxError.syntaxError;
 
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,12 +12,32 @@ import java.util.Set;
 import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
 import wyjvm.io.*;
-import wyjvm.lang.Constant;
+import wyjvm.lang.*;
 
-public class WhileyBlock {
+public class WhileyBlock implements BytecodeAttribute {
+	private final Block block;
+	
+	public WhileyBlock(Block block) {
+		this.block = block;
+	}
+	
+	public String name() {
+		return "WhileyBlock";
+	}
+	
+	public void print(PrintWriter output,
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader) {
 
-	public static void addPoolItems(Block expr, Set<Constant.Info> constantPool) {
-		
+	}
+	
+	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {
+		addPoolItems(block, constantPool);
+	}
+	
+	public static void addPoolItems(Block block, Set<Constant.Info> constantPool) {
+		for(Code c : block) {
+			addPoolItems(c,constantPool);
+		}
 	}
 	
 	public static void addPoolItems(Code code, Set<Constant.Info> constantPool) {
@@ -27,23 +47,58 @@ public class WhileyBlock {
 	public static void addPoolItems(RVal rval, Set<Constant.Info> constantPool) {
 		
 	}
+	
+	public void write(BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader) {
 
-	protected static void writeCondition(Block expr, BinaryOutputStream writer,
+	}
+
+	protected static void writeBlock(Block expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) {
 		
 	}
 	
-	protected static void writeCondition(Code code, BinaryOutputStream writer,
+	protected static void writeCode(Code code, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) {
 		
 	}	
 	
-	protected static void writeCondition(RVal rval, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) {
-		
+	protected static void writeRVal(RVal rval, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		if(rval instanceof Value) {
+			writeValue((Value)rval,writer,constantPool);
+		} else {
+			writeRVal((RVal.Variable)rval,writer,constantPool);
+		}
 	}	
 	
-	public static void writeCondition(Value.Bool expr, BinaryOutputStream writer,
+	public static void writeRVal(RVal.Variable expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		// The encoding of variables could be optimised to avoid using the
+		// constant pool in most, if not all cases.
+		writer.write_u2(VARIABLE);				
+		int idx = constantPool.get(new Constant.Utf8(expr.name));							
+		writer.write_u2(idx);						
+	}
+	
+	protected static void writeValue(Value val, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		if(val instanceof Value.Bool) {
+			writeValue((Value.Bool) val, writer, constantPool);
+		} else if(val instanceof Value.Int) {
+			writeValue((Value.Int) val, writer, constantPool);
+		} else if(val instanceof Value.Real) {
+			writeValue((Value.Real) val, writer, constantPool);
+		} else if(val instanceof Value.Set) {
+			writeValue((Value.Set) val, writer, constantPool);
+		} else if(val instanceof Value.List) {
+			writeValue((Value.List) val, writer, constantPool);
+		} else if(val instanceof Value.Tuple) {
+			writeValue((Value.Tuple) val, writer, constantPool);
+		} 
+	}
+	
+	public static void writeValue(Value.Bool expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		
 		if(expr.value) {
@@ -53,7 +108,7 @@ public class WhileyBlock {
 		}
 	}
 	
-	public static void writeCondition(Value.Int expr, BinaryOutputStream writer,
+	public static void writeValue(Value.Int expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(INTVAL);
 		BigInteger bi = expr.value;
@@ -63,7 +118,7 @@ public class WhileyBlock {
 		writer.write(bibytes);
 	}
 	
-	public static void writeCondition(Value.Real expr, BinaryOutputStream writer,
+	public static void writeValue(Value.Real expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(REALVAL);
 		BigRational br = expr.value;
@@ -81,62 +136,64 @@ public class WhileyBlock {
 		writer.write(denbytes);		
 	}
 	
-	public static void writeCondition(Value.Set expr, BinaryOutputStream writer,
+	public static void writeValue(Value.Set expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(SETVAL);
 		writer.write_u2(expr.values.size());
 		for(Value v : expr.values) {
-			writeCondition(v,writer,constantPool);
+			writeValue(v,writer,constantPool);
 		}
 	}
 	
-	public static void writeCondition(Value.List expr, BinaryOutputStream writer,
+	public static void writeValue(Value.List expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(LISTVAL);
 		writer.write_u2(expr.values.size());
 		for(Value v : expr.values) {
-			writeCondition(v,writer,constantPool);
+			writeValue(v,writer,constantPool);
 		}
 	}
 	
-	public static void writeCondition(Value.Tuple expr, BinaryOutputStream writer,
+	public static void writeValue(Value.Tuple expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(TUPLEVAL);
 		writer.write_u2(expr.values.size());
 		for(Map.Entry<String,Value> v : expr.values.entrySet()) {
 			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
-			writeCondition(v.getValue(), writer, constantPool);
+			writeValue(v.getValue(), writer, constantPool);
 		}
 	}
 	
-	public static void writeCondition(RVal.Variable expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		// The encoding of variables could be optimised to avoid using the
-		// constant pool in most, if not all cases.
-		writer.write_u2(VARIABLE);				
-		int idx = constantPool.get(new Constant.Utf8(expr.name));							
-		writer.write_u2(idx);						
-	}
-	
-	protected static Block readCondition(BinaryInputStream reader,
-			Map<Integer, Constant.Info> constantPool) throws IOException {							
-		int code = reader.read_u2();
-		return readCodes(code,reader,constantPool);
-	}
-	
-	protected static Block readCodes(int code, BinaryInputStream reader,
-			Map<Integer, Constant.Info> constantPool) throws IOException {							
-		Block blk = new Block();
-		return blk;
-	}
+	public static class Reader implements BytecodeAttributeReader { 
+		public String name() {
+			return "WhileyBlock";
+		}
+		
+		public WhileyBlock read(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {
+			return new WhileyBlock(readBlock(reader,constantPool));
+		}
+		
+		protected static Block readBlock(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {							
+			int code = reader.read_u2();
+			return readCodes(code,reader,constantPool);
+		}
 
-	
+		protected static Block readCodes(int code, BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {							
+			Block blk = new Block();
+			return blk;
+		}
 
-	
-	protected static RVal readRVal(BinaryInputStream reader,
-			Map<Integer, Constant.Info> constantPool) throws IOException {		
-		int code = reader.read_u2();				
-		switch (code) {
+		protected static Value readValue(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {
+			return (Value) readRVal(reader,constantPool);
+		}
+		protected static RVal readRVal(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {		
+			int code = reader.read_u2();				
+			switch (code) {
 			case VARIABLE:			
 				// The encoding of variables could be optimised to avoid using the
 				// constant pool in most, if not all cases.
@@ -187,9 +244,10 @@ public class WhileyBlock {
 				return Value.V_TUPLE(tvs);
 			default:
 				throw new RuntimeException("Unknown RVal encountered in WhileyBlock");
-		}		
+			}		
+		}
 	}
-
+	
 	private final static int NULL = 0;
 	private final static int VARIABLE = 1;
 	private final static int INVOKE = 2;		
