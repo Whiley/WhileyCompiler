@@ -161,6 +161,10 @@ public class Module extends ModuleLoader.Skeleton {
 		public boolean isFunction() {
 			return type.receiver == null;
 		}
+		
+		public boolean isPublic() {
+			return true;
+		}
 				
 		public List<String> parameterNames() {
 			return paramNames;
