@@ -782,7 +782,7 @@ public class ClassFileBuilder {
 		// FIXME: this is obviously broken for recursive types.
 		Condition c = Types.expandConstraints(e.lhsTest());
 		if(c != null) {
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			HashMap<String,RVal> binding = new HashMap<String,RVal>();
 			binding.put("$",new Variable(e.variable()));
 			c = c.substitute(binding);
 			translate(c, nslots, environment,bytecodes);
@@ -820,7 +820,7 @@ public class ClassFileBuilder {
 		// FIXME: this is obviously broken for recursive types.
 		Condition c = Types.expandConstraints(e.lhsTest());
 		if(c != null) {
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			HashMap<String,RVal> binding = new HashMap<String,RVal>();
 			binding.put("$",new Variable(e.variable()));
 			c = c.substitute(binding);
 			translate(c, nslots, environment,bytecodes);
@@ -830,7 +830,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE,trueLabel));			
 	}
 	
-	private void translate(Expr expr, HashMap<String, Integer> slots,
+	private void translate(RVal expr, HashMap<String, Integer> slots,
 			HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		
 		try {
@@ -1542,7 +1542,7 @@ public class ClassFileBuilder {
 		construct(WHILEYLIST, slots, environment,bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,
 				JAVA_LANG_OBJECT);  
-		for(Expr e : lv.getValues()) {
+		for(RVal e : lv.getValues()) {
 			Type et = e.type(environment);
 			bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 			translate(e, slots, environment,bytecodes);
@@ -1556,7 +1556,7 @@ public class ClassFileBuilder {
 		construct(WHILEYLIST, slots, environment,bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,
 				JAVA_LANG_OBJECT);  
-		for(Expr e : lv.getValues()) {
+		for(RVal e : lv.getValues()) {
 			Type et = e.type(environment);			
 			bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 			translate(e, slots, environment,bytecodes);
@@ -1647,7 +1647,7 @@ public class ClassFileBuilder {
 		construct(WHILEYSET, slots, environment,bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,
 				JAVA_LANG_OBJECT);  
-		for(Expr e : lv.getValues()) {
+		for(RVal e : lv.getValues()) {
 			// FIXME: there is a bug here for bool lists
 			bytecodes.add(new Bytecode.Dup(WHILEYSET));
 			translate(e, slots, environment,bytecodes);
@@ -1661,7 +1661,7 @@ public class ClassFileBuilder {
 		construct(WHILEYSET, slots, environment,bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,
 				JAVA_LANG_OBJECT);  
-		for(Expr e : lv.getValues()) {
+		for(RVal e : lv.getValues()) {
 			// FIXME: there is a bug here for bool lists
 			bytecodes.add(new Bytecode.Dup(WHILEYSET));
 			translate(e, slots, environment,bytecodes);
@@ -1772,10 +1772,10 @@ public class ClassFileBuilder {
 		construct(WHILEYSET, slots, environment,bytecodes);
 		bytecodes.add(new Bytecode.Store(slots.get(tmp), WHILEYSET));
 		HashMap<String,Integer> nslots = new HashMap(slots);
-		ArrayList<Pair<String,Expr>> nsources = new ArrayList();
+		ArrayList<Pair<String,RVal>> nsources = new ArrayList();
 		HashMap<String,Type> nenv = new HashMap(environment);
-		for(Pair<String,Expr> p : e.sources()) {
-			nsources.add(new Pair<String,Expr>(p.first(),p.second()));
+		for(Pair<String,RVal> p : e.sources()) {
+			nsources.add(new Pair<String,RVal>(p.first(),p.second()));
 			SetType st = (SetType) p.second().type(nenv);			
 			nenv.put(p.first(), st.element());
 			nslots.put(p.first(),nslots.size());
@@ -1786,7 +1786,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slots.get(tmp), WHILEYSET));		
 	}
 	protected void translateSetCompHelper(String list, SetComprehension sc,
-			ArrayList<Pair<String, Expr>> srcs,
+			ArrayList<Pair<String, RVal>> srcs,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {		
 		
 		if(srcs.size() == 0) {
@@ -1809,7 +1809,7 @@ public class ClassFileBuilder {
 			String loopLabel = freshLabel();
 			String exitLabel = freshLabel();			
 			String iter = freshVar(slots);
-			Pair<String,Expr> src = srcs.get(0);
+			Pair<String,RVal> src = srcs.get(0);
 			srcs.remove(0);
 			translate(src.second(), slots, environment,bytecodes);			
 			String srcVar = src.first();						
@@ -1862,7 +1862,7 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots, HashMap<String, Type> environment, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 		construct(WHILEYTUPLE, slots, environment,bytecodes);		
-		for(Map.Entry<String,Expr> e : expr.values().entrySet()) {
+		for(Map.Entry<String,RVal> e : expr.values().entrySet()) {
 			Type et = e.getValue().type(environment);
 			bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
 			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
@@ -1915,10 +1915,10 @@ public class ClassFileBuilder {
 		String name = nameMangle(e.name(),receiver,ft);
 		JvmType.Function jft = convertType(receiver,ft);
 		List<Type> params = ft.parameters();
-		List<Expr> args = e.arguments();
+		List<RVal> args = e.arguments();
 		
 		for (int i=0;i!=params.size();++i) {
-			Expr p = args.get(i);
+			RVal p = args.get(i);
 			Type pt = params.get(i);
 			translate(p, slots, environment, bytecodes);
 			convert(pt,p, slots, environment, bytecodes);					
@@ -2002,7 +2002,7 @@ public class ClassFileBuilder {
 		// FIXME: this is obviously broken for recursive types.
 		Condition c = Types.expandConstraints(e.lhsTest());
 		if(c != null) {
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			HashMap<String,RVal> binding = new HashMap<String,RVal>();
 			binding.put("$",new Variable(e.variable()));
 			c = c.substitute(binding);
 			translate(c, nslots, environment,bytecodes);
@@ -2045,7 +2045,7 @@ public class ClassFileBuilder {
 		// FIXME: this is obviously broken for recursive types.
 		Condition c = Types.expandConstraints(e.lhsTest());
 		if(c != null) {
-			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			HashMap<String,RVal> binding = new HashMap<String,RVal>();
 			binding.put("$",new Variable(e.variable()));
 			c = c.substitute(binding);
 			translate(c, nslots, environment,bytecodes);
@@ -2084,7 +2084,7 @@ public class ClassFileBuilder {
 	// the purpose of the type inference method is to update the known type of
 	// an expression as a result of an assignment, type gate or type equality
 	// expression being true.
-	protected void typeInference(Expr selector, Type type,
+	protected void typeInference(RVal selector, Type type,
 			HashMap<String, Type> environment, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
 		
@@ -2137,11 +2137,11 @@ public class ClassFileBuilder {
 	
 	public void construct(JvmType.Clazz owner,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment,
-			ArrayList<Bytecode> bytecodes, Expr... params) {
+			ArrayList<Bytecode> bytecodes, RVal... params) {
 		bytecodes.add(new Bytecode.New(owner));		
 		bytecodes.add(new Bytecode.Dup(owner));
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		for(Expr e : params) {			
+		for(RVal e : params) {			
 			translate(e,slots,environment,bytecodes);
 			paramTypes.add(convertType(e.type(environment)));
 		}
@@ -2153,7 +2153,7 @@ public class ClassFileBuilder {
 
 	}	
 
-	protected void convert(Type toType, Expr from,
+	protected void convert(Type toType, RVal from,
 			HashMap<String, Integer> slots, HashMap<String, Type> environment,
 			ArrayList<Bytecode> bytecodes) {				
 		Type fromType = from.type(environment);			

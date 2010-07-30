@@ -201,9 +201,9 @@ public class DefiniteAssignmentChecker {
 		if(s.target() != null) {
 			check(s.target(),definitions);
 		}
-		List<Expr> args = s.arguments();
+		List<RVal> args = s.arguments();
 		for(int i=0;i!=args.size();++i) {
-			Expr arg = args.get(i);
+			RVal arg = args.get(i);
 			check(arg,definitions);			
 		}		
 	}
@@ -214,7 +214,7 @@ public class DefiniteAssignmentChecker {
      * @param e
      * @return
      */
-	protected void check(Expr e, HashSet<String> definitions) {
+	protected void check(RVal e, HashSet<String> definitions) {
 		Set<Variable> uses = e.uses();
 
 		for (Variable s : uses) {

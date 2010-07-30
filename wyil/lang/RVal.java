@@ -1,7 +1,7 @@
 package wyil.lang;
 
-public interface Expr {
-	public static class Variable implements Expr {
+public interface RVal {
+	public static class Variable implements RVal {
 		public final String name;
 		public Variable(String name) {
 			this.name = name;

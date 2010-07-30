@@ -20,7 +20,7 @@ import wyjvm.lang.Constant;
 
 public class WhileyBlock {
 
-	public static void addPoolItems(Expr expr, Set<Constant.Info> constantPool) {
+	public static void addPoolItems(RVal expr, Set<Constant.Info> constantPool) {
 		try {
 			if (expr instanceof BoolVal || expr instanceof IntVal
 					|| expr instanceof RealVal) {
@@ -32,29 +32,29 @@ public class WhileyBlock {
 				addPoolItems(((BinOp)expr).rhs(),constantPool);				
 			} else if(expr instanceof SetVal) {
 				SetVal sg = (SetVal) expr;
-				for(Expr e : sg.getValues()) {
+				for(RVal e : sg.getValues()) {
 					addPoolItems(e,constantPool);
 				}				
 			} else if(expr instanceof SetGenerator) {
 				SetGenerator sg = (SetGenerator) expr;
-				for(Expr e : sg.getValues()) {
+				for(RVal e : sg.getValues()) {
 					addPoolItems(e,constantPool);
 				}				
 			} else if(expr instanceof SetComprehension) {
 				SetComprehension sc = (SetComprehension) expr;
-				for(Pair<String,Expr> s : sc.sources()) {
+				for(Pair<String,RVal> s : sc.sources()) {
 					Constant.addPoolItem(new Constant.Utf8(s.first()), constantPool);					
 					addPoolItems(s.second(),constantPool);
 				}
 				addPoolItems(sc.condition(),constantPool);
 			} else if(expr instanceof ListVal) {
 				ListVal sg = (ListVal) expr;
-				for(Expr e : sg.getValues()) {
+				for(RVal e : sg.getValues()) {
 					addPoolItems(e,constantPool);
 				}				
 			} else if(expr instanceof ListGenerator) {
 				ListGenerator sg = (ListGenerator) expr;
-				for(Expr e : sg.getValues()) {
+				for(RVal e : sg.getValues()) {
 					addPoolItems(e,constantPool);
 				}				
 			} else if(expr instanceof ListAccess) {
@@ -73,7 +73,7 @@ public class WhileyBlock {
 				}
 			} else if(expr instanceof TupleGenerator) {				
 				TupleGenerator tv = (TupleGenerator) expr;
-				for(Map.Entry<String,Expr> v : tv.values().entrySet()) {
+				for(Map.Entry<String,RVal> v : tv.values().entrySet()) {
 					Constant.addPoolItem(new Constant.Utf8(v.getKey()), constantPool);					
 					addPoolItems(v.getValue(),constantPool);
 				}
@@ -85,7 +85,7 @@ public class WhileyBlock {
 				addPoolItems(v.funType(), constantPool);
 				Constant.addPoolItem(new Constant.Utf8(v.module().toString()), constantPool);
 				Constant.addPoolItem(new Constant.Utf8(v.name()), constantPool);
-				for(Expr e : v.arguments()) {
+				for(RVal e : v.arguments()) {
 					addPoolItems(e,constantPool);
 				}	
 			} else if(expr instanceof TypeGate) {
@@ -111,7 +111,7 @@ public class WhileyBlock {
 	}
 	
 
-	protected static void writeCondition(Expr expr, BinaryOutputStream writer,
+	protected static void writeCondition(RVal expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) {
 		try {
 			if(expr instanceof BoolVal) {
@@ -211,7 +211,7 @@ public class WhileyBlock {
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(SETGEN);
 		writer.write_u2(expr.getValues().size());
-		for(Expr v : expr.getValues()) {
+		for(RVal v : expr.getValues()) {
 			writeCondition(v,writer,constantPool);
 		}
 	}
@@ -222,7 +222,7 @@ public class WhileyBlock {
 		writer.write_u2(SETCOMPREHENSION);
 		writeCondition(expr.sign(), writer, constantPool);
 		writer.write_u2(expr.sources().size());
-		for (Pair<String, Expr> s : expr.sources()) {
+		for (Pair<String, RVal> s : expr.sources()) {
 			writer.write_u2(constantPool.get(new Constant.Utf8(s.first())));
 			writeCondition(s.second(), writer, constantPool);
 		}
@@ -246,7 +246,7 @@ public class WhileyBlock {
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u2(LISTGEN);
 		writer.write_u2(expr.getValues().size());
-		for(Expr v : expr.getValues()) {
+		for(RVal v : expr.getValues()) {
 			writeCondition(v,writer,constantPool);
 		}
 	}
@@ -264,7 +264,7 @@ public class WhileyBlock {
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
 		writer.write_u2(TUPLEGEN);
 		writer.write_u2(expr.values().size());
-		for(Map.Entry<String,Expr> v : expr.values().entrySet()) {
+		for(Map.Entry<String,RVal> v : expr.values().entrySet()) {
 			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
 			writeCondition(v.getValue(), writer, constantPool);
 		}
@@ -428,7 +428,7 @@ public class WhileyBlock {
 		utf8 = new Constant.Utf8(expr.name()); 
 		writer.write_u2(constantPool.get(utf8));
 		writer.write_u2(expr.arguments().size());
-		for(Expr e : expr.arguments()) {
+		for(RVal e : expr.arguments()) {
 			writeCondition(e,writer,constantPool);
 		}
 	}
@@ -452,7 +452,7 @@ public class WhileyBlock {
 				Condition rhs = readCondition(reader,constantPool);
 				return new And(lhs,rhs);				
 			case NONE:
-				Expr expr = readExpr(reader,constantPool);					
+				RVal expr = readExpr(reader,constantPool);					
 				return new None((SetComprehension)expr);
 			case NOT:
 				lhs = readCondition(reader,constantPool);
@@ -465,8 +465,8 @@ public class WhileyBlock {
 				expr = readExpr(reader,constantPool);
 				return new Some((SetComprehension)expr);
 			case BOOLEQ:
-				Expr e1 = readExpr(reader, constantPool);
-				Expr e2 = readExpr(reader, constantPool);
+				RVal e1 = readExpr(reader, constantPool);
+				RVal e2 = readExpr(reader, constantPool);
 				return new BoolEquals(e1,e2);
 			case BOOLNEQ:
 				e1 = readExpr(reader, constantPool);
@@ -581,7 +581,7 @@ public class WhileyBlock {
 	
 
 	
-	protected static Expr readExpr(BinaryInputStream reader,
+	protected static RVal readExpr(BinaryInputStream reader,
 			Map<Integer, Constant.Info> constantPool) throws IOException {		
 		int code = reader.read_u2();				
 		switch (code) {
@@ -596,14 +596,14 @@ public class WhileyBlock {
 				FunType t = (FunType) readType(reader,constantPool);
 				Constant.Utf8 name = (Constant.Utf8) constantPool.get(reader.read_u2());
 				int size = reader.read_u2();
-				ArrayList<Expr> args = new ArrayList<Expr>();
+				ArrayList<RVal> args = new ArrayList<RVal>();
 				for(int i=0;i!=size;++i) {
 					args.add(readExpr(reader,constantPool));
 				}
 				return new Invoke(name.str,ModuleID.fromString(module.str),t,null,args);																	
 			case INTADD:
-				Expr lhs = readExpr(reader, constantPool);
-				Expr rhs = readExpr(reader, constantPool);
+				RVal lhs = readExpr(reader, constantPool);
+				RVal rhs = readExpr(reader, constantPool);
 				return new IntAdd(lhs, rhs);
 			case INTDIV:
 				lhs = readExpr(reader, constantPool);
@@ -665,9 +665,9 @@ public class WhileyBlock {
 				return new ListLength(lhs);
 			case LISTGEN:
 				len = reader.read_u2();
-				ArrayList<Expr> exprs = new ArrayList<Expr>();
+				ArrayList<RVal> exprs = new ArrayList<RVal>();
 				for(int i=0;i!=len;++i) {
-					exprs.add((Expr) readExpr(reader,constantPool));
+					exprs.add((RVal) readExpr(reader,constantPool));
 				}
 				return new ListGenerator(exprs);		
 			case LISTVAL:
@@ -682,9 +682,9 @@ public class WhileyBlock {
 				return new SetLength(lhs);
 			case SETGEN:
 				len = reader.read_u2();
-				exprs = new ArrayList<Expr>();
+				exprs = new ArrayList<RVal>();
 				for(int i=0;i!=len;++i) {
-					exprs.add((Expr) readExpr(reader,constantPool));
+					exprs.add((RVal) readExpr(reader,constantPool));
 				}
 				return new SetGenerator(exprs);		
 			case SETVAL:
@@ -709,12 +709,12 @@ public class WhileyBlock {
 			case SETCOMPREHENSION:			
 				lhs = readExpr(reader, constantPool);
 				len = reader.read_u2();		
-				ArrayList<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
+				ArrayList<Pair<String,RVal>> srcs = new ArrayList<Pair<String,RVal>>();
 				for(int i=0;i!=len;++i) {
 					idx = reader.read_u2();
 					utf8 = (Constant.Utf8) constantPool.get(idx);
 					lhs = readExpr(reader, constantPool);
-					srcs.add(new Pair<String,Expr>(utf8.str, lhs));
+					srcs.add(new Pair<String,RVal>(utf8.str, lhs));
 				}
 				Condition c = readCondition(reader, constantPool);
 				return new SetComprehension(lhs,srcs,c);
@@ -725,7 +725,7 @@ public class WhileyBlock {
 				return new TupleAccess(lhs, utf8.str);		
 			case TUPLEGEN:
 				len = reader.read_u2();
-				HashMap<String,Expr> tgs = new HashMap<String,Expr>();
+				HashMap<String,RVal> tgs = new HashMap<String,RVal>();
 				for(int i=0;i!=len;++i) {
 					idx = reader.read_u2();
 					utf8 = (Constant.Utf8) constantPool.get(idx);

@@ -28,7 +28,7 @@ import wyil.lang.*;
 public class OldTypeResolution {	
 	private ModuleLoader loader;
 	private HashSet<ModuleID> modules;
-	private HashMap<NameID,Expr> constants;
+	private HashMap<NameID,RVal> constants;
 	private HashMap<NameID,Type> types;	
 	private HashMap<NameID,SyntacticElement> srcs;
 	private HashMap<NameID,UnresolvedType> unresolved;
@@ -40,7 +40,7 @@ public class OldTypeResolution {
 	
 	public void resolve(List<UnresolvedWhileyFile> files) {
 		modules = new HashSet<ModuleID>();
-		constants = new HashMap<NameID,Expr>();
+		constants = new HashMap<NameID,RVal>();
 		types = new HashMap<NameID,Type>();
 		srcs = new HashMap<NameID,SyntacticElement>();
 		unresolved = new HashMap<NameID,UnresolvedType>();
@@ -134,7 +134,7 @@ public class OldTypeResolution {
 	
     
 	protected void generateConstants(List<UnresolvedWhileyFile> files) {
-		HashMap<NameID,Expr> exprs = new HashMap();
+		HashMap<NameID,RVal> exprs = new HashMap();
 		
 		// first construct list.
 		for(UnresolvedWhileyFile f : files) {
@@ -157,8 +157,8 @@ public class OldTypeResolution {
 		}
 		
 		for(NameID k : constants.keySet()) {			
-			Expr c = constants.get(k);
-			Pair<Type,Expr> p = check(c,new HashMap<String,Type>());
+			RVal c = constants.get(k);
+			Pair<Type,RVal> p = check(c,new HashMap<String,Type>());
 			c = p.second().reduce(new HashMap<String,Type>());
 			if(c instanceof Value) {
 				Value v = (Value) c;				
@@ -181,10 +181,10 @@ public class OldTypeResolution {
 		}
 	}
 	
-	protected Expr expandConstant(NameID key,
-			HashMap<NameID, Expr> exprs) throws ResolveError {
+	protected RVal expandConstant(NameID key,
+			HashMap<NameID, RVal> exprs) throws ResolveError {
 		
-		Expr e = exprs.get(key);
+		RVal e = exprs.get(key);
 		
 		if(constants.get(key) != null) {
 			return e;
@@ -204,7 +204,7 @@ public class OldTypeResolution {
 		// First, we need to compute the correct binding for all constant
         // references.
 		
-		HashMap<String,Expr> binding = new HashMap<String,Expr>();			
+		HashMap<String,RVal> binding = new HashMap<String,RVal>();			
 		
 		for(Variable u : uses) {
 			if(u instanceof Constant) {
@@ -212,7 +212,7 @@ public class OldTypeResolution {
                 // external class files.
 				Constant c = (Constant) u;
 				NameID ck = new NameID(c.module(),c.name());
-				Expr v = constants.get(ck);
+				RVal v = constants.get(ck);
 				if(v == null) {
 					v = expandConstant(ck,exprs);
 				}
@@ -304,7 +304,7 @@ public class OldTypeResolution {
 		//
 		// This is what the r_binding is for ---> closing the open loops.
 
-		HashMap<Expr,Expr> c_binding = new HashMap();		
+		HashMap<RVal,RVal> c_binding = new HashMap();		
 		
 		for (TypeEquals tg : p.constraint().match(TypeEquals.class)) {
 			Type t = tg.lhsTest().substitute(r_binding).substitute(t_binding);
@@ -593,7 +593,7 @@ public class OldTypeResolution {
 			if(!(f.returnType().type() == Types.T_VOID)) {
 				environment.put("$",rp);
 			}
-			Pair<Type,Expr> postcond = check(f.constraint(),environment);
+			Pair<Type,RVal> postcond = check(f.constraint(),environment);
 			f.setConstraint((Condition)postcond.second());
 		}				
 	}
@@ -635,7 +635,7 @@ public class OldTypeResolution {
 	
 	protected Stmt check(UnresolvedVarDecl s,
 			HashMap<String, Type> environment, HashMap<String, Type> declared) {
-		Expr initialiser = s.initialiser();
+		RVal initialiser = s.initialiser();
 		Type s_type = null;		
 		
 		if (environment.get(s.name()) != null) {
@@ -652,7 +652,7 @@ public class OldTypeResolution {
 		}
 		
 		if (initialiser != null) {
-			Pair<Type, Expr> t = check(initialiser, environment);
+			Pair<Type, RVal> t = check(initialiser, environment);
 			initialiser = t.second();
 			checkSubtype(s_type, t.first(), s);
 			environment.put(s.name(), t.first());
@@ -667,15 +667,15 @@ public class OldTypeResolution {
 	}	
 	
 	protected Stmt check(Print s, HashMap<String,Type> environment) {
-		Pair<Type,Expr> e = check(s.expr(),environment);
+		Pair<Type,RVal> e = check(s.expr(),environment);
 		checkSubtype(new ListType(Types.T_INT(null)),e.first(),s);
 		return new Print(e.second(),s.attributes());
 	}
 
 	protected Stmt check(Assign s, HashMap<String, Type> environment,
 			HashMap<String, Type> declared) throws ResolveError {		
-		Pair<Type,Expr> lhs = check(s.lhs(),environment);		
-		Pair<Type,Expr> rhs = check(s.rhs(),environment);
+		Pair<Type,RVal> lhs = check(s.lhs(),environment);		
+		Pair<Type,RVal> rhs = check(s.rhs(),environment);
 						
 		if(lhs.second() instanceof Variable) {						
 			// This represents the full update of a variable						
@@ -705,7 +705,7 @@ public class OldTypeResolution {
 	
 	protected Stmt check(IfElse s, HashMap<String, Type> environment,
 			HashMap<String, Type> declared, FunDecl f) {
-		Pair<Type,Expr> cond = check(s.condition(),environment);
+		Pair<Type,RVal> cond = check(s.condition(),environment);
 		checkSubtype(Types.T_BOOL(null),cond.first(),s);
 		ArrayList<Stmt> tb = new ArrayList<Stmt>();
 		ArrayList<Stmt> fb = null;
@@ -722,9 +722,9 @@ public class OldTypeResolution {
 	}
 
 	protected Stmt check(UnresolvedType s, HashMap<String,Type> environment, FunDecl f) {
-		Expr expr = s.expr();
+		RVal expr = s.expr();
 		if(expr != null) {
-			Pair<Type,Expr> rhs = check(s.expr(),environment);
+			Pair<Type,RVal> rhs = check(s.expr(),environment);
 			Type lhs = f.returnType().attribute(TypeAttr.class).type();
 			checkSubtype(lhs,rhs.first(),s);
 			return new UnresolvedType(rhs.second(), s.attributes());
@@ -734,31 +734,31 @@ public class OldTypeResolution {
 	}
 	
 	protected Stmt check(Assertion s, HashMap<String,Type> environment) {
-		Pair<Type,Expr> cond = check(s.condition(),environment);
+		Pair<Type,RVal> cond = check(s.condition(),environment);
 		checkSubtype(Types.T_BOOL(null),cond.first(),s);
 		return new Assertion((Condition) cond.second(),s.attributes());
 	}
 	
 	protected Stmt check(Check s, HashMap<String,Type> environment) {
-		Pair<Type,Expr> cond = check(s.condition(),environment);
+		Pair<Type,RVal> cond = check(s.condition(),environment);
 		checkSubtype(Types.T_BOOL(null),cond.first(),s);
 		return new Check(s.message(), (Condition) cond.second(), s.attributes());
 	}
 	
-	protected Pair<Type,Expr> check(Invoke s, HashMap<String,Type> environment) throws ResolveError {						
-		List<Expr> args = s.arguments();
+	protected Pair<Type,RVal> check(Invoke s, HashMap<String,Type> environment) throws ResolveError {						
+		List<RVal> args = s.arguments();
 		
 		ArrayList<Type> ptypes = new ArrayList();
-		ArrayList<Expr> nargs = new ArrayList();
-		for(Expr e : args) {			
-			Pair<Type,Expr> rhs = check(e,environment);
+		ArrayList<RVal> nargs = new ArrayList();
+		for(RVal e : args) {			
+			Pair<Type,RVal> rhs = check(e,environment);
 			ptypes.add(rhs.first());
 			nargs.add(rhs.second());
 		}
-		Expr target = s.target();
+		RVal target = s.target();
 		Type receiver = null;
 		if(target != null) {			
-			Pair<Type,Expr> tmp = check(target,environment);
+			Pair<Type,RVal> tmp = check(target,environment);
 			target = tmp.second();
 			receiver = tmp.first();			
 		}
@@ -770,7 +770,7 @@ public class OldTypeResolution {
 		}
 				
 		for(int i=0;i!=nargs.size();++i) {			
-			Expr narg = nargs.get(i);				
+			RVal narg = nargs.get(i);				
 			nargs.set(i,narg);
 		}
 		
@@ -778,20 +778,20 @@ public class OldTypeResolution {
 		
 		Invoke ns = new Invoke(s.name(),target,nargs,s.attributes());		
 		ns.resolve(s.module(),funtype);
-		return new Pair<Type,Expr>(rt,ns);
+		return new Pair<Type,RVal>(rt,ns);
 	}
 	
-	protected Pair<Type,Expr> check(Expr e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> retType;
+	protected Pair<Type,RVal> check(RVal e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> retType;
 		try {
 			if (e instanceof IntVal) {
-				retType = new Pair<Type,Expr>(Types.T_INT(null), e);
+				retType = new Pair<Type,RVal>(Types.T_INT(null), e);
 			} else if (e instanceof RealVal) {
-				retType = new Pair<Type,Expr>(Types.T_REAL(null), e);
+				retType = new Pair<Type,RVal>(Types.T_REAL(null), e);
 			} else if (e instanceof BoolVal) {
-				retType = new Pair<Type,Expr>(Types.T_BOOL(null), e);
+				retType = new Pair<Type,RVal>(Types.T_BOOL(null), e);
 			} else if (e instanceof RangeVal) {
-				retType = new Pair<Type,Expr>(((Value)e).type(), e);
+				retType = new Pair<Type,RVal>(((Value)e).type(), e);
 			} else if (e instanceof Constant) {			
 				retType = check((Constant) e, environment);
 			} else if (e instanceof Variable) {
@@ -864,18 +864,18 @@ public class OldTypeResolution {
 		return retType;
 	}
 	
-	protected Pair<Type,Expr> check(RangeGenerator e, HashMap<String,Type> environment) {					
-		Pair<Type,Expr> start = check(e.start(),environment);
-		Pair<Type,Expr> end = check(e.end(),environment);
+	protected Pair<Type,RVal> check(RangeGenerator e, HashMap<String,Type> environment) {					
+		Pair<Type,RVal> start = check(e.start(),environment);
+		Pair<Type,RVal> end = check(e.end(),environment);
 		Type t = Types.leastUpperBound(start.first(), end.first());
 		
 		return new Pair(new ListType(t), new RangeGenerator(start.second(), end
 				.second(), e.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(ListAccess e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.source(), environment);
-		Pair<Type,Expr> rhs = check(e.index(), environment);
+	protected Pair<Type,RVal> check(ListAccess e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.source(), environment);
+		Pair<Type,RVal> rhs = check(e.index(), environment);
 		
 		checkType(rhs.first(),IntType.class,e.index());
 		
@@ -884,10 +884,10 @@ public class OldTypeResolution {
 				 rhs.second(), e.attributes()));		
 	}
 	
-	protected Pair<Type,Expr> check(ListSublist e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.source(), environment);
-		Pair<Type,Expr> start = check(e.start(), environment);
-		Pair<Type,Expr> end = check(e.end(), environment);
+	protected Pair<Type,RVal> check(ListSublist e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.source(), environment);
+		Pair<Type,RVal> start = check(e.start(), environment);
+		Pair<Type,RVal> end = check(e.end(), environment);
 		
 		checkType(start.first(),IntType.class,e.start());
 		checkType(end.first(),IntType.class,e.end());		
@@ -897,12 +897,12 @@ public class OldTypeResolution {
 				 start.second(), end.second(), e.attributes()));		
 	}
 	
-	protected Pair<Type,Expr> check(ListGenerator e, HashMap<String,Type> environment) {
-		List<Expr> exprs = e.getValues();		
+	protected Pair<Type,RVal> check(ListGenerator e, HashMap<String,Type> environment) {
+		List<RVal> exprs = e.getValues();		
 		Type t = Types.T_VOID;
-		ArrayList<Expr> nexprs = new ArrayList<Expr>();				
+		ArrayList<RVal> nexprs = new ArrayList<RVal>();				
 		for(int i=0;i!=exprs.size();++i) {
-			Pair<Type,Expr> et = check(exprs.get(i), environment);
+			Pair<Type,RVal> et = check(exprs.get(i), environment);
 			t = Types.leastUpperBound(t,et.first());
 			nexprs.add(et.second());
 		}
@@ -911,24 +911,24 @@ public class OldTypeResolution {
 				.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(StringVal e, HashMap<String,Type> environment) {
+	protected Pair<Type,RVal> check(StringVal e, HashMap<String,Type> environment) {
 		return check((ListVal)e,environment);		
 	}
 	
-	protected Pair<Type,Expr> check(ListVal e, HashMap<String,Type> environment) {
+	protected Pair<Type,RVal> check(ListVal e, HashMap<String,Type> environment) {
 		List<Value> exprs = e.getValues();
 		Type t = Types.T_VOID;
 			
 		for(int i=0;i!=exprs.size();++i) {
-			Pair<Type,Expr> et = check(exprs.get(i), environment);
+			Pair<Type,RVal> et = check(exprs.get(i), environment);
 			t = Types.leastUpperBound(t,et.first());			
 		}
 		
 		return new Pair(new ListType(t), new ListVal(exprs,e.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(ListLength e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.mhs(), environment);	
+	protected Pair<Type,RVal> check(ListLength e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.mhs(), environment);	
 		Type ft = flattern(lhs.first());
 		if(ft instanceof ListType) {
 			checkSubtype(new ListType(Types.T_ANY),lhs.first(),e.mhs());
@@ -939,24 +939,24 @@ public class OldTypeResolution {
 		}		
 	}
 			
-	protected Pair<Type,Expr> check(SetComprehension e, HashMap<String,Type> environment) {		
+	protected Pair<Type,RVal> check(SetComprehension e, HashMap<String,Type> environment) {		
 		HashMap<String,Type> valueEnv = (HashMap<String,Type>) environment.clone();
-		List<Pair<String,Expr>> sources = e.sources();		
-		List<Pair<String,Expr>> nsources = new ArrayList<Pair<String,Expr>>();
+		List<Pair<String,RVal>> sources = e.sources();		
+		List<Pair<String,RVal>> nsources = new ArrayList<Pair<String,RVal>>();
 		
 		Type anySetType = new SetType(Types.T_ANY);
 		Type anySetListType = Types.leastUpperBound(anySetType,new ListType(Types.T_ANY));
 		
-		for(Pair<String,Expr> me : sources) {			
+		for(Pair<String,RVal> me : sources) {			
 			String s = me.first();
 			
 			if(environment.get(s) != null) {
 				syntaxError("variable " + s + " already defined",e);
 			}
 			
-			Expr src = me.second();
-			Pair<Type,Expr> p = check(src,valueEnv); 
-			nsources.add(new Pair<String,Expr>(s,  p.second()));
+			RVal src = me.second();
+			Pair<Type,RVal> p = check(src,valueEnv); 
+			nsources.add(new Pair<String,RVal>(s,  p.second()));
 			
 			checkSubtype(anySetListType,p.first(),src);
 			Type pt = flattern(p.first());			
@@ -975,21 +975,21 @@ public class OldTypeResolution {
 			c =(Condition) check(e.condition(),valueEnv).second();
 		}
 		
-		Pair<Type,Expr> p = check(e.sign(),valueEnv);		
-		Expr ne = new SetComprehension(p.second(),nsources,c,e.attributes());
+		Pair<Type,RVal> p = check(e.sign(),valueEnv);		
+		RVal ne = new SetComprehension(p.second(),nsources,c,e.attributes());
 		
-		return new Pair<Type,Expr>(new SetType(p.first()),ne);
+		return new Pair<Type,RVal>(new SetType(p.first()),ne);
 	}
 	
-	protected Pair<Type,Expr> check(SetGenerator e, HashMap<String,Type> environment) {
-		List<Expr> exprs = e.getValues();
+	protected Pair<Type,RVal> check(SetGenerator e, HashMap<String,Type> environment) {
+		List<RVal> exprs = e.getValues();
 		
-		ArrayList<Expr> nexprs = new ArrayList<Expr>();
+		ArrayList<RVal> nexprs = new ArrayList<RVal>();
 		
 		Type t = Types.T_VOID;
 				
-		for(Expr v : exprs) {
-			Pair<Type,Expr> et = check(v, environment);			
+		for(RVal v : exprs) {
+			Pair<Type,RVal> et = check(v, environment);			
 			t = Types.leastUpperBound(t,et.first());			
 			nexprs.add( et.second());
 		}
@@ -998,40 +998,40 @@ public class OldTypeResolution {
 				new SetGenerator(nexprs, e.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(SetVal e, HashMap<String,Type> environment) {
+	protected Pair<Type,RVal> check(SetVal e, HashMap<String,Type> environment) {
 		Set<Value> exprs = e.getValues();
 		
 		Type t = Types.T_VOID;
 		for(Value v : exprs) {
-			Pair<Type,Expr> et = check(v, environment);			
+			Pair<Type,RVal> et = check(v, environment);			
 			t = Types.leastUpperBound(t,et.first());			
 		}				
 		
 		return new Pair(new SetType(t), new SetVal(exprs, e
 				.attributes()));
 	}
-	protected Pair<Type,Expr> check(SetLength e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.mhs(), environment);	
+	protected Pair<Type,RVal> check(SetLength e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.mhs(), environment);	
 
 		checkSubtype(new SetType(Types.T_ANY),lhs.first(),e.mhs());	
 		return new Pair(Types.T_INT(null),new SetLength(lhs.second(),e.attributes()));			
 	}		
-	protected Pair<Type,Expr> check(Some e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.mhs(), environment);		
+	protected Pair<Type,RVal> check(Some e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.mhs(), environment);		
 		checkSubtype(new SetType(Types.T_ANY),lhs.first(),e.mhs());		
 		return new Pair(Types.T_BOOL(null), new Some((SetComprehension) lhs
 				.second(), e.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(None e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.mhs(), environment);		
+	protected Pair<Type,RVal> check(None e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.mhs(), environment);		
 		checkSubtype(new SetType(Types.T_ANY),lhs.first(),e.mhs());		
 		return new Pair(Types.T_BOOL(null), new None((SetComprehension) lhs
 				.second(), e.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(TupleAccess e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.source(), environment);			
+	protected Pair<Type,RVal> check(TupleAccess e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.source(), environment);			
 		TupleType at = Types.effectiveTupleType(lhs.first(),lhs.second()); 		
 		Type et = at.get(e.name());
 		
@@ -1043,38 +1043,38 @@ public class OldTypeResolution {
 				.attributes()));		
 	}
 	
-	protected Pair<Type,Expr> check(TupleGenerator e, HashMap<String,Type> environment) {				
-		HashMap<String,Expr> exprs = new HashMap();
+	protected Pair<Type,RVal> check(TupleGenerator e, HashMap<String,Type> environment) {				
+		HashMap<String,RVal> exprs = new HashMap();
 		HashMap<String,Type> types = new HashMap();
 		
-		for(Map.Entry<String,Expr>  p : e) {		
-			Pair<Type,Expr> et = check(p.getValue(), environment);
+		for(Map.Entry<String,RVal>  p : e) {		
+			Pair<Type,RVal> et = check(p.getValue(), environment);
 			types.put(p.getKey(), et.first());
 			exprs.put(p.getKey(), et.second());			
 		}		
 		return new Pair(new TupleType(types),new TupleGenerator(exprs,e.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(TupleVal e, HashMap<String,Type> environment) {				
+	protected Pair<Type,RVal> check(TupleVal e, HashMap<String,Type> environment) {				
 		HashMap<String,Value> exprs = new HashMap();
 		HashMap<String,Type> types = new HashMap();
 		
 		for(Map.Entry<String,Value>  p : e.values().entrySet()) {		
-			Pair<Type,Expr> et = check(p.getValue(), environment);
+			Pair<Type,RVal> et = check(p.getValue(), environment);
 			types.put(p.getKey(), et.first());					
 		}		
 		return new Pair(new TupleType(types),new TupleVal(exprs,e.attributes()));
 	}
 			
-	protected Pair<Type,Expr> check(Not e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.mhs(), environment);
+	protected Pair<Type,RVal> check(Not e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.mhs(), environment);
 		checkSubtype(lhs.first(),Types.T_BOOL(null),e.mhs());		
 		return new Pair(lhs.first(), new Not((Condition) lhs.second(), e
 				.attributes()));
 	}			
 	
-	protected Pair<Type,Expr> check(IntNegate e, HashMap<String,Type> environment) {
-		Pair<Type,Expr> lhs = check(e.mhs(),environment);		
+	protected Pair<Type,RVal> check(IntNegate e, HashMap<String,Type> environment) {
+		Pair<Type,RVal> lhs = check(e.mhs(),environment);		
 		if(lhs.first() instanceof RealType) {
 			return new Pair(lhs.first(),new RealNegate( lhs.second(),e.attributes()));
 		} else if(lhs.first() instanceof IntType) {
@@ -1084,9 +1084,9 @@ public class OldTypeResolution {
 		return null;
 	}
 	
-	protected Pair<Type,Expr> check(BinOp e, HashMap<String,Type> environment) {		
-		Pair<Type,Expr> lhs = check(e.lhs(),environment);
-		Pair<Type,Expr> rhs = check(e.rhs(),environment);
+	protected Pair<Type,RVal> check(BinOp e, HashMap<String,Type> environment) {		
+		Pair<Type,RVal> lhs = check(e.lhs(),environment);
+		Pair<Type,RVal> rhs = check(e.rhs(),environment);
 				
 		if(e instanceof And) {
 			checkSubtype(Types.T_BOOL(null), lhs.first(), e);
@@ -1347,9 +1347,9 @@ public class OldTypeResolution {
 		return null;
 	}
 	
-	protected Pair<Type, Expr> check(UnresolvedTypeEquals ueq,
+	protected Pair<Type, RVal> check(UnresolvedTypeEquals ueq,
 			HashMap<String, Type> environment) throws ResolveError {
-		Pair<Type, Expr> lhs = check(ueq.lhs(), environment);
+		Pair<Type, RVal> lhs = check(ueq.lhs(), environment);
 		Type rhs_t = expandAndCheck(ueq.type(),ueq);
 		Type lhs_t = lhs.first();		
 
@@ -1363,7 +1363,7 @@ public class OldTypeResolution {
 		String var = Variable.freshVar();
 		environment = new HashMap<String,Type>(environment);
 		environment.put(var, rhs_t);
-		HashMap<Expr,Expr> binding = new HashMap();
+		HashMap<RVal,RVal> binding = new HashMap();
 		binding.put(lhs.second(),new Variable(var));
 		rhs = (Condition) rhs.replace(binding);
 		
@@ -1372,21 +1372,21 @@ public class OldTypeResolution {
 		// FIXME: I think there's a problem here as the condition needs to have
 		// all occurences of lhs replaced with var.
 		
-		return new Pair<Type, Expr>(Types.T_BOOL(null), new TypeEquals(rhs_t, var, lhs
+		return new Pair<Type, RVal>(Types.T_BOOL(null), new TypeEquals(rhs_t, var, lhs
 				.second(), condition, ueq.attributes()));
 	}
 	
-	protected Pair<Type,Expr> check(Variable v, HashMap<String,Type> environment) {
+	protected Pair<Type,RVal> check(Variable v, HashMap<String,Type> environment) {
 		Type t = environment.get(v.name());		
 		
 		if (t == null) {
 			syntaxError("variable " + v.name() + " has not been declared.", v);			
 		} 
 				
-		return new Pair<Type,Expr>(t,v);
+		return new Pair<Type,RVal>(t,v);
 	}
 	
-	protected Pair<Type, Expr> check(Constant c,
+	protected Pair<Type, RVal> check(Constant c,
 			HashMap<String,Type> environment) throws ResolveError {
 		if (c.module() == null) {
 			syntaxError("unresolved constant: " + c.name(), c);
@@ -1400,11 +1400,11 @@ public class OldTypeResolution {
 			ModuleInfo mi = loader.loadModule(key.module());
 			v = mi.constant(key.name()).constant();				 
 		}				
-		return new Pair<Type, Expr>(v.type(), v);
+		return new Pair<Type, RVal>(v.type(), v);
 	}
 	
-	protected Pair<Type, Expr> check(TypeGate c, HashMap<String,Type> environment) {				
-		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
+	protected Pair<Type, RVal> check(TypeGate c, HashMap<String,Type> environment) {				
+		Pair<Type,RVal> lhs = check(c.lhs(),environment);			
 		
 		if(!Types.isBaseSubtype(c.lhsTest(),lhs.first())) {			
 			// we have to clone the environment, since it's effects only apply
@@ -1413,15 +1413,15 @@ public class OldTypeResolution {
 			environment.put(c.variable(), c.lhsTest());
 		}
 		
-		Pair<Type,Expr> rhs = check(c.rhs(),environment);
+		Pair<Type,RVal> rhs = check(c.rhs(),environment);
 		
-		return new Pair<Type, Expr>(rhs.first(), new TypeGate(c.lhsTest(), c
+		return new Pair<Type, RVal>(rhs.first(), new TypeGate(c.lhsTest(), c
 				.variable(), lhs.second(), (Condition) rhs.second(), c
 				.attributes()));
 	}
 	
-	protected Pair<Type, Expr> check(TypeEquals c, HashMap<String,Type> environment) {				
-		Pair<Type,Expr> lhs = check(c.lhs(),environment);			
+	protected Pair<Type, RVal> check(TypeEquals c, HashMap<String,Type> environment) {				
+		Pair<Type,RVal> lhs = check(c.lhs(),environment);			
 		
 		if(!Types.isBaseSubtype(c.lhsTest(), lhs.first())) {			
 			// we have to clone the environment, since it's effects only apply
@@ -1430,30 +1430,30 @@ public class OldTypeResolution {
 			environment.put(c.variable(), c.lhsTest());		
 		}
 		
-		Pair<Type,Expr> rhs = check(c.rhs(),environment);
+		Pair<Type,RVal> rhs = check(c.rhs(),environment);
 		
-		return new Pair<Type, Expr>(rhs.first(), new TypeEquals(c.lhsTest(), c
+		return new Pair<Type, RVal>(rhs.first(), new TypeEquals(c.lhsTest(), c
 				.variable(), lhs.second(), (Condition) rhs.second(), c
 				.attributes()));
 	}
 		
-	protected Pair<Type, Expr> check(Spawn c, HashMap<String,Type> environment) {
-		Pair<Type,Expr> p = check(c.mhs(),environment);		
+	protected Pair<Type, RVal> check(Spawn c, HashMap<String,Type> environment) {
+		Pair<Type,RVal> p = check(c.mhs(),environment);		
 		// there is nothing to do here really
 		c = new Spawn(p.second(), c.attributes());
-		return new Pair<Type, Expr>(new ProcessType(p.first()), c);
+		return new Pair<Type, RVal>(new ProcessType(p.first()), c);
 	}	
 	
-	protected Pair<Type, Expr> check(ProcessAccess c, HashMap<String,Type> environment) {
-		Pair<Type,Expr> p = check(c.mhs(),environment);		
+	protected Pair<Type, RVal> check(ProcessAccess c, HashMap<String,Type> environment) {
+		Pair<Type,RVal> p = check(c.mhs(),environment);		
 		ProcessType pt = (ProcessType) p.first();
 		// there is nothing to do here really
 		c = new ProcessAccess(p.second(), c.attributes());
-		return new Pair<Type, Expr>(pt.element(), c);
+		return new Pair<Type, RVal>(pt.element(), c);
 	}	
 	
 	
-	protected Condition buildEquals(Type t, Expr lhs, Expr rhs) {		
+	protected Condition buildEquals(Type t, RVal lhs, RVal rhs) {		
 		if(t instanceof IntType) {
 			return new IntEquals(lhs,rhs);
 		} else if(t instanceof RealType) {
@@ -1574,7 +1574,7 @@ public class OldTypeResolution {
 	 * @param e
 	 * @param loc
 	 */
-	protected void renumber(Expr e, SourceAttr loc) {
+	protected void renumber(RVal e, SourceAttr loc) {
 		for(SyntacticElement elem : e.match(SyntacticElement.class)) {
 			SourceAttr old = elem.attribute(SourceAttr.class);
 			if(old != null) {

@@ -369,7 +369,7 @@ public class ModuleBuilder {
 	
 	protected Block resolve(VarDecl s, HashMap<String, Type> environment,
 			HashMap<String, Type> declared) throws ResolveError {
-		Expr init = s.initialiser;
+		RVal init = s.initialiser;
 		Pair<Type,Block> tb = resolve(s.type);
 		Type type = tb.first();
 		Block blk = new Block();
@@ -464,7 +464,7 @@ public class ModuleBuilder {
 	 * @param declared
 	 * @return
 	 */
-	protected Block resolveCondition(String target, Expr e,
+	protected Block resolveCondition(String target, RVal e,
 			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		try {
 			if (e instanceof Constant) {
@@ -593,7 +593,7 @@ public class ModuleBuilder {
 	 * @param declared
 	 * @return
 	 */
-	protected Pair<Type, Block> resolve(int target, Expr e,			
+	protected Pair<Type, Block> resolve(int target, RVal e,			
 			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		try {
 			if (e instanceof Constant) {
@@ -630,10 +630,10 @@ public class ModuleBuilder {
 	protected Pair<Type, Block> resolve(int target, Invoke s,
 			HashMap<String, Type> environment, HashMap<String, Type> declared)
 			throws ResolveError {
-		List<Expr> args = s.arguments;
+		List<RVal> args = s.arguments;
 		
 		ArrayList<Type> ptypes = new ArrayList<Type>();		
-		for(Expr e : args) {			
+		for(RVal e : args) {			
 			Pair<Type,Block> e_tb = resolve(target,e,environment, declared);
 			ptypes.add(e_tb.first());			
 		}
@@ -676,7 +676,7 @@ public class ModuleBuilder {
 	protected Pair<Type, Block> resolve(int target, UnOp v,
 			HashMap<String, Type> environment, HashMap<String, Type> declared,
 			ArrayList<PkgID> imports) {
-		Expr mhs = v.mhs;
+		RVal mhs = v.mhs;
 		Pair<Type, Block> tb = resolve(target, mhs, environment, declared); 
 		Type t = tb.first();
 		
@@ -776,7 +776,7 @@ public class ModuleBuilder {
 
 			Type etype = Type.T_VOID;
 
-			for(Expr e : v.arguments) {
+			for(RVal e : v.arguments) {
 				Pair<Type,Block> t = resolve(target,e, environment, declared);
 				etype = Type.leastUpperBound(t.first(),etype);
 			}		
@@ -797,7 +797,7 @@ public class ModuleBuilder {
 	protected Pair<Type, Block> resolve(int target, TupleGen sg,
 			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		HashMap<String, Type> types = new HashMap<String, Type>();
-		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
+		for (Map.Entry<String, RVal> e : sg.fields.entrySet()) {
 			Pair<Type, Block> tb = resolve(target, e.getValue(), environment,
 					declared);
 			types.put(e.getKey(), tb.first());
@@ -984,12 +984,12 @@ public class ModuleBuilder {
 		return "label" + labelIndex++;
 	}
 	
-	public static Expr invert(Expr e) {
+	public static RVal invert(RVal e) {
 		// FIXME broken
 		return e;
 	}
 	
-	public static Code.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	public static Code.BOP OP2BOP(RVal.BOp bop, SyntacticElement elem) {
 		switch(bop) {
 		case ADD:
 			return Code.BOP.ADD;

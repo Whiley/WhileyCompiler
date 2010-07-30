@@ -107,7 +107,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 	
-	protected void write(Expr e, BinaryOutputStream writer,
+	protected void write(RVal e, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
 		WhileyType.writeCondition(e,writer,constantPool);				
 	}
@@ -140,7 +140,7 @@ public class WhileyDefine implements BytecodeAttribute {
 			String name = ((Constant.Utf8) constantPool.get(nameIdx)).str;
 			int sw = input.read_u1();			
 			Type type = null;
-			Expr expr = null;
+			RVal expr = null;
 						
 			if(sw == 0) {				
 				// Condition only

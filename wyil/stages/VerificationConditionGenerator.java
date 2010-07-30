@@ -76,7 +76,7 @@ import static wyone.theory.numeric.WNumerics.*;
  */
 public class VerificationConditionGenerator {
 	private final ModuleLoader loader;	
-	private final HashMap<String,Expr> constants = new HashMap<String,Expr>();
+	private final HashMap<String,RVal> constants = new HashMap<String,RVal>();
 	private final HashMap<String,Condition> types = new HashMap<String,Condition>();
 
 	public VerificationConditionGenerator(ModuleLoader loader) {

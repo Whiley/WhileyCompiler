@@ -33,9 +33,9 @@ public abstract class Code {
 	public final static class Assign extends Code {
 		public final Type type;
 		public final String lhs;
-		public final Expr rhs;
+		public final RVal rhs;
 		
-		public Assign(Type type, String lhs, Expr rhs) {
+		public Assign(Type type, String lhs, RVal rhs) {
 			this.type = type;
 			this.lhs = lhs;
 			this.rhs = rhs;
