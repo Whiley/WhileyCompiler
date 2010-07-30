@@ -583,7 +583,7 @@ public class ModuleLoader {
 		for (int i = 0; i != type.params.size(); ++i) {
 			parameterNames.add("p" + i);
 		}
-		return new Module.Method(info.first(), type, parameterNames);
+		return new Module.Method(info.first(), type, parameterNames, null);
 	}
 	
 	/**

@@ -19,6 +19,7 @@
 package wyjc.stages;
 
 import java.util.*;
+import java.math.BigInteger;
 
 import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
@@ -80,11 +81,11 @@ public class TypeResolution {
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 		for(WhileyFile.Decl d : wf.declarations) {				
 			if(d instanceof TypeDecl) {
-				resolve((TypeDecl)d);
+				types.add(resolve((TypeDecl)d));
 			} else if(d instanceof ConstDecl) {
-				resolve((ConstDecl)d);
+				constants.add(resolve((ConstDecl)d));
 			} else if(d instanceof FunDecl) {
-				resolve((FunDecl)d);
+				methods.add(resolve((FunDecl)d));
 			}				
 		}
 		return new Module(wf.module,wf.filename,methods,types,constants);
@@ -254,15 +255,19 @@ public class TypeResolution {
 		fd.attributes().add(new Attribute.Fun(ft));
 	}
 
-	protected void resolve(ConstDecl td) {
+	protected Module.ConstDef resolve(ConstDecl td) {
 		// FIXME: this looks problematic if the constant contains method calls.
 		// The problem is that we may not have generated the type for the given
 		// method call, which means we won't be able to bind it. One option is
 		// simply to disallow function calls in constant definitions.
-		resolve(td.constant,new HashMap<String,Type>(),new HashMap<String,Type>());		
+		resolve(td.constant,new HashMap<String,Type>(),new HashMap<String,Type>());
+		
+		// FIXME: broken
+		
+		return new Module.ConstDef(td.name(),Value.V_INT(BigInteger.ONE));
 	}
 	
-	protected void resolve(TypeDecl td) {		
+	protected Module.TypeDef resolve(TypeDecl td) {		
 		Pair<Type,Block> p = resolve(td.type);
 		Type t = p.first();
 		td.attributes().add(new Attribute.Type(t));
@@ -276,9 +281,11 @@ public class TypeResolution {
 			t = resolve(td.constraint, environment, declared).first();			
 			checkType(t,Type.Bool.class, td.constraint);			
 		}				
+		
+		return new Module.TypeDef(td.name(),t);
 	}		
 		
-	protected void resolve(FunDecl fd) {
+	protected Module.Method resolve(FunDecl fd) {
 		
 		// The declared environment holds the declared type of a given local
 		// variable. This is separate from the environment (see below), whose
@@ -288,12 +295,14 @@ public class TypeResolution {
 		// The environment holds the current type of a given local variable. The
 		// current type is affected by assignments to that variable.
 		HashMap<String,Type> environment = new HashMap<String,Type>();		
-		
+				
+		ArrayList<String> parameterNames = new ArrayList<String>();
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {						
 			Pair<Type,Block> t = resolve(p.type);
 			environment.put(p.name(),t.first());
 			declared.put(p.name(),t.first());
+			parameterNames.add(p.name());
 		}
 				
 		// method return type
@@ -312,10 +321,14 @@ public class TypeResolution {
 			environment.remove("$");
 		}
 		
-		List<Stmt> stmts = fd.statements;
-		for (int i=0;i!=stmts.size();++i) {
-			resolve(stmts.get(i), fd, environment, declared);							
+		Block blk = new Block();
+		for (Stmt s : fd.statements) {			
+			blk.addAll(resolve(s, fd, environment, declared));
 		}
+		
+		Type.Fun tf = fd.attribute(Attribute.Fun.class).type;
+		
+		return new Module.Method(fd.name(),tf,parameterNames,blk);
 	}
 	
 	public Block resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment,
@@ -357,18 +370,23 @@ public class TypeResolution {
 		Expr init = s.initialiser;
 		Pair<Type,Block> tb = resolve(s.type);
 		Type type = tb.first();
+		Block blk = new Block();
 		if(init != null) {
 			Pair<Type,Block> initT = resolve(init,environment, declared);
 			checkIsSubtype(type,initT.first(),init);
 			environment.put(s.name,type);
+			// FIXME: could improve this by substituting $ for s.name
+			blk.addAll(initT.second());
+			blk.add(new Code.VarAssign(initT.first(), s.name, "$"));
 		} 
 		declared.put(s.name,type);
-		return null;
+		return blk;
 	}
 	
 	protected Block resolve(Assign s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		Pair<Type,Block> rhs_tb = resolve(s.rhs, environment, declared);
-		
+		Block blk = new Block();
+		blk.addAll(rhs_tb.second());
 		if(s.lhs instanceof Variable) {
 			// perform type inference as a result of this assignment
 			Variable v = (Variable) s.lhs;			
@@ -378,11 +396,13 @@ public class TypeResolution {
 			}
 			checkIsSubtype(declared_t,rhs_tb.first(),s.rhs);
 			environment.put(v.var, rhs_tb.first());
+			blk.add(new Code.VarAssign(rhs_tb.first(),v.var,"$"));
 		} else {
 			Pair<Type,Block> lhs_tb = resolve(s.lhs, environment, declared);
 			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);					
+			System.out.println("WARNING: Assign is missing cases");
 		}
-		return null;
+		return blk;
 	}
 
 	protected Block resolve(Assert s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
@@ -499,7 +519,8 @@ public class TypeResolution {
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
 		}
-		return new Pair<Type,Block>(t,null);
+		Block blk = new Block(new Code.VarAssign(t, "$",v.var));
+		return new Pair<Type, Block>(t, blk);
 	}
 	
 	protected Pair<Type,Block> resolve(UnOp v, HashMap<String,Type> environment, HashMap<String,Type> declared,
@@ -508,6 +529,7 @@ public class TypeResolution {
 		Pair<Type,Block> tb = resolve(mhs, environment, declared); 
 		Type t = tb.first();
 		
+		Block blk = new Block();
 		if(v.op == UOp.NEG) {
 			checkIsSubtype(Type.T_REAL,t,mhs);
 		} else if(v.op == UOp.NOT) {
@@ -521,8 +543,8 @@ public class TypeResolution {
 		} else if(v.op == UOp.PROCESSSPAWN){
 			t = Type.T_PROCESS(t);
 		} 
-		
-		return new Pair<Type,Block>(t,null);
+				
+		return new Pair<Type,Block>(t,blk);
 	}
 	
 	protected Pair<Type,Block> resolve(BinOp v, HashMap<String,Type> environment, HashMap<String,Type> declared) {
@@ -532,52 +554,54 @@ public class TypeResolution {
 		Type lhs_t = lhs_tb.first();
 		Type rhs_t = rhs_tb.first();
 		BOp bop = v.op;
-			
+		
+		Block blk = new Block();
 		if(bop == BOp.OR || bop == BOp.AND) {
 			checkIsSubtype(Type.T_BOOL, lhs_t, v);
 			checkIsSubtype(Type.T_BOOL, rhs_t, v);
-			return new Pair<Type,Block>(Type.T_BOOL,null);
+			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),null);
+			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
 		} else if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
 				|| bop == BOp.GTEQ) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			return new Pair<Type,Block>(Type.T_BOOL,null);
+			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		} else if(bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),null);
+			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
 		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			return new Pair<Type,Block>(Type.T_BOOL,null);
+			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		} else if(bop == BOp.EQ || bop == BOp.NEQ){
 			if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
 				syntaxError("Cannot compare types",v);
 			}
-			return new Pair<Type,Block>(Type.T_BOOL,null);
+			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		} else if(bop == BOp.ELEMENTOF) {
 			checkType(rhs_t, Type.Set.class, v);
 			Type.Set st = (Type.Set) rhs_t;
 			if(!Type.isSubtype(lhs_t, st.element) && !Type.isSubtype(st.element, lhs_t)) {
 				syntaxError("Cannot compare types",v);
 			}
-			return new Pair<Type,Block>(Type.T_BOOL,null);
+			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		} else if(bop == BOp.LISTACCESS) {
 			checkType(lhs_t, Type.List.class, v);
 			checkIsSubtype(Type.T_INT, rhs_t, v);
 			Type.List lt = (Type.List) lhs_t;  
-			return new Pair<Type,Block>(lt.element,null);		
+			return new Pair<Type,Block>(lt.element,blk);		
 		} 			
 		
 		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
 	protected Pair<Type,Block> resolve(NaryOp v, HashMap<String,Type> environment, HashMap<String,Type> declared)  {		
+		Block blk = new Block();
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments",v);
@@ -588,7 +612,7 @@ public class TypeResolution {
 			checkType(src.first(),Type.List.class,v.arguments.get(0));
 			checkType(start.first(),Type.Int.class,v.arguments.get(1));
 			checkType(end.first(),Type.Int.class,v.arguments.get(2));
-			return new Pair<Type,Block>(((Type.List)src.first()).element,null);
+			return new Pair<Type,Block>(((Type.List)src.first()).element,blk);
 		} else {
 
 			Type etype = Type.T_VOID;
@@ -599,9 +623,9 @@ public class TypeResolution {
 			}		
 
 			if(v.nop == NOp.LISTGEN) {
-				return new Pair<Type,Block>(Type.T_LIST(etype),null);
+				return new Pair<Type,Block>(Type.T_LIST(etype),blk);
 			} else {
-				return new Pair<Type,Block>(Type.T_SET(etype),null);
+				return new Pair<Type,Block>(Type.T_SET(etype),blk);
 			} 
 		}
 	}

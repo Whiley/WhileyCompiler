@@ -18,15 +18,42 @@
 
 package wyil.lang;
 
-public interface Code {
+public abstract class Code {
 
+	// ==========================================
+	// =============== Methods ==================
+	// ==========================================
+	
+	public static Code substitute(String v1, String v2, Code c) {
+		if(c instanceof VarAssign) {
+			VarAssign va = (VarAssign) c;
+			return new VarAssign(va.type,substitute(v2,v2,va.lhs),substitute(v2,v2,va.rhs));
+		} else if(c instanceof VarLoad) {
+			VarLoad va = (VarLoad) c;
+			return new VarLoad(va.type,substitute(v2,v2,va.lhs),va.rhs);
+		} else if(c instanceof IfGoto) {
+			IfGoto g = (IfGoto) c;
+			return new IfGoto();
+		} else {
+			return c;
+		}
+	}
+	
+	private static String substitute(String v1, String v2, String s) {
+		if(s.equals(v1)) {
+			return v2;
+		} else {
+			return s;
+		}
+	}
+	
 	/**
 	 * This represents a simple assignment between two variables.
 	 * 
 	 * @author djp
 	 * 
 	 */
-	public final static class VarAssign implements Code {
+	public final static class VarAssign extends Code {
 		public final Type type;
 		public final String lhs;
 		public final String rhs;
@@ -61,7 +88,7 @@ public interface Code {
 	 * @author djp
 	 * 
 	 */
-	public final static class VarLoad implements Code  {		
+	public final static class VarLoad extends Code  {		
 		public final Type type;
 		public final String lhs;
 		public final Value rhs;
@@ -95,7 +122,7 @@ public interface Code {
 	 * @author djp
 	 *
 	 */
-	public final static class IfGoto implements Code  {
+	public final static class IfGoto extends Code  {
 		public final CompOP op;
 		public final String lhs;
 		public final String rhs;
@@ -116,7 +143,7 @@ public interface Code {
 	 * @author djp
 	 *
 	 */
-	public final static class Goto implements Code  {
+	public final static class Goto extends Code  {
 		public final int target;
 		
 		public Goto(int target) {

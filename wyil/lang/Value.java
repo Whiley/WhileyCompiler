@@ -45,6 +45,12 @@ public abstract class Value {
 			}
 			return false;
 		}
+		public String toString() {
+			if(value) { return "true"; }
+			else {
+				return "false";
+			}
+		}
 	}
 	public static final class Int extends Value {
 		public final BigInteger value;
@@ -63,6 +69,9 @@ public abstract class Value {
 				return value.equals(i.value);
 			}
 			return false;
+		}
+		public String toString() {
+			return value.toString();
 		}
 	}
 	
@@ -83,6 +92,9 @@ public abstract class Value {
 				return value.equals(i.value);
 			}
 			return false;
+		}
+		public String toString() {
+			return value.toString();
 		}
 	}
 	
@@ -109,6 +121,18 @@ public abstract class Value {
 			}
 			return false;
 		}
+		public String toString() {
+			String r = "[";
+			boolean firstTime=true;
+			for(Value v : values) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				r += v;
+			}
+			return r + "]";
+		}
 	}
 	
 	public static class Set extends Value {
@@ -133,6 +157,18 @@ public abstract class Value {
 				return values.equals(i.values);
 			}
 			return false;
+		}
+		public String toString() {
+			String r = "{";
+			boolean firstTime=true;
+			for(Value v : values) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				r += v;
+			}
+			return r + "}";
 		}
 	}
 	

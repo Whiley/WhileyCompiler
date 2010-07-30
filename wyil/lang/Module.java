@@ -136,12 +136,14 @@ public class Module extends ModuleLoader.Skeleton {
 		private String name;		
 		private Type.Fun type;
 		private ArrayList<String> paramNames;
+		private Block body;
 		
-		public Method(String name, Type.Fun type,				
-				Collection<String> paramNames) {			
+		public Method(String name, Type.Fun type,
+				Collection<String> paramNames, Block body) {			
 			this.name = name;
 			this.type = type;
-			this.paramNames = new ArrayList<String>(paramNames);		
+			this.paramNames = new ArrayList<String>(paramNames);
+			this.body = body;
 		}
 		
 		public String name() {
@@ -152,6 +154,10 @@ public class Module extends ModuleLoader.Skeleton {
 			return type;
 		}
 
+		public Block body() {
+			return body;
+		}
+		
 		public boolean isFunction() {
 			return type.receiver == null;
 		}

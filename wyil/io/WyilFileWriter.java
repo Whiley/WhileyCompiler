@@ -16,24 +16,44 @@ public class WyilFileWriter {
 	}
 	
 	public void write(Module module) {
-		out.println("module: " + module.id());
-		out.println("source file: " + module.filename());
+		out.println("module " + module.id());
+		out.println("source file " + module.filename());
 		out.println();
 		for(ConstDef cd : module.constants()) {
-			System.out.println("define " + cd.name() + " as " + cd.constant());
+			out.println("define " + cd.name() + " as " + cd.constant());
 		}
-		out.println();
+		if(!module.constants().isEmpty()) {
+			out.println();
+		}
 		for(TypeDef td : module.types()) {
-			System.out.println("define " + td.name() + " as " + td.type());
+			out.println("define " + td.name() + " as " + td.type());
 		}
-		out.println();
+		if(!module.types().isEmpty()) {
+			out.println();
+		}		
 		for(Method md : module.methods()) {
 			write(md);
 		}
+		out.flush();
 	}
 	
 	protected void write(Method method) {
 		Type.Fun ft = method.type(); 
-		out.print(method.name() + " : " + ft);
+		out.println(method.name() + " " + ft + ":");
+		for(Code c : method.body()) {
+			write(1,c);
+		}
+	}
+	
+	protected void write(int indent, Code c) {
+		tabIndent(indent);		
+		out.println(c);
+	}	
+	
+	protected void tabIndent(int indent) {
+		indent = indent * 4;
+		for(int i=0;i!=indent;++i) {
+			out.print(" ");
+		}
 	}
 }
