@@ -143,9 +143,13 @@ public class ClassFileBuilder {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();		
 		HashMap<String, Integer> slots = new HashMap<String, Integer>();		
 		
+		HashSet<String> uses = Block.usedVariables(fd.body(),
+				new HashSet<String>());
+		
 		int slot = 0;
 		if(fd.type().receiver != null) {
-			slots.put("this",slot++);	
+			slots.put("this",slot++);
+			uses.remove("this");
 		}
 				
 		List<Type> paramTypes = fd.type().params;
@@ -153,8 +157,13 @@ public class ClassFileBuilder {
 		for(int i=0;i!=paramTypes.size();++i) {
 			String name = paramNames.get(i);			
 			slots.put(name,slot++);			
+			uses.remove(name);
 		}
-				
+		
+		for(String v : uses) {
+			slots.put(v,slot++);						
+		}
+		
 		for(Code c : fd.body()) {			
 			translate(c,slots,bytecodes);			
 		}		
@@ -166,7 +175,9 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		if(c instanceof Code.Assign) {
 			translate((Code.Assign)c,slots,bytecodes);
-		} else if(c instanceof Code.BinOp) {
+		} else if(c instanceof Code.Return){
+			translate((Code.Return)c,slots,bytecodes);
+		}else if(c instanceof Code.BinOp) {
 			
 		} else if(c instanceof Code.Goto) {
 			
@@ -174,6 +185,8 @@ public class ClassFileBuilder {
 			
 		} else if(c instanceof Code.Label){
 			
+		} else if(c instanceof Code.Debug){
+			translate((Code.Debug)c,slots,bytecodes);
 		}
 	}
 	
@@ -188,7 +201,17 @@ public class ClassFileBuilder {
 		// Write assignment
 		bytecodes.add(new Bytecode.Store(slots.get(c.lhs), convertType(c.type)));		
 	}
-	
+
+	public void translate(Code.Return c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		if (c.rhs != null) {
+			translate(c.rhs, slots, bytecodes);
+			bytecodes.add(new Bytecode.Return(convertType(c.type)));
+		} else {		
+			bytecodes.add(new Bytecode.Return(null));
+		}
+	}
+
 	public void translate(Code.BinOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		
@@ -204,6 +227,13 @@ public class ClassFileBuilder {
 	public void translate(Code.Label c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Label(c.label));
+	}
+	public void translate(Code.Debug c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		translate(c.rhs,slots,bytecodes);
+		JvmType.Function ftype = new JvmType.Function(T_VOID,WHILEYLIST);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "println", ftype,
+				Bytecode.STATIC));
 	}
 	
 	public void translate(RVal r, HashMap<String, Integer> slots,

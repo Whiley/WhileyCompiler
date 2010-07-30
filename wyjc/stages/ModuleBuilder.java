@@ -325,9 +325,14 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		for (Stmt s : fd.statements) {						
 			blk.addAll(resolve(s, fd, environment, declared));
-		}
+		}				
 		
 		Type.Fun tf = fd.attribute(Attribute.Fun.class).type;
+		
+		if(tf.ret == Type.T_VOID) {
+			// need to terminate method
+			blk.add(new Code.Return(tf.ret,null));
+		}
 		
 		return new Module.Method(fd.name(),tf,parameterNames,blk);
 	}

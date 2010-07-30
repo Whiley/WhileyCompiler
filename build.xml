@@ -2,7 +2,7 @@
   <property name="version" value="0.3.0"/>
 
   <target name="compile">
-    <javac debug="true" srcdir="." includeantruntime="true" includes="wyjc/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyone/testing/**"/> 
+    <javac debug="true" srcdir="." includeantruntime="true" includes="wyjc/**,wyil/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyone/testing/**"/> 
   </target>
 
   <target name="build-wyjc" depends="compile">
@@ -13,7 +13,7 @@
       <attribute name="Main-Class" value="wyjc.Main"/>
       <attribute name="Implementation-Version" value="${version}-${build.number}"/>
     </manifest>
-    <jar destfile="lib/wyjc.jar" basedir="." includes="wyjc/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
+    <jar destfile="lib/wyjc.jar" basedir="." includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
     <delete dir="tmp"/>
   </target>
 
@@ -35,7 +35,7 @@
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
     <jar destfile="wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="." includes="wyjc/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
+      <fileset dir="." includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -44,7 +44,7 @@
   <target name="distsrc" depends="stdlib">
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
-    <fileset dir="." includes="wyjc/**/*.java,wyjvm/**/*.java,wyone/**/*.java"/>
+    <fileset dir="." includes="wyjc/**/*.java,wyjvm/**/*.java,wyil/**/*.java,wyone/**/*.java"/>
     <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
     <fileset dir="." includes="examples/**/*.whiley"/>
     <fileset dir="." includes="stdlib/**/*.whiley"/>
@@ -76,7 +76,7 @@
 
   <target name="doc">
     <javadoc
-       packagenames="wyjc.*,wyone.*,wyjvm.*"
+       packagenames="wyjc.*,wyone.*,wyil.*,wyjvm.*"
        sourcepath="."
        destdir="docs/api"
        author="true"

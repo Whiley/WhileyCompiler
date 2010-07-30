@@ -1,6 +1,2 @@
-define expr as int | (expr lhs)
-
-void f(int x):
-    bool y 
-    y = true
+void System::main([int] args):
     print "Hello World"

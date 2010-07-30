@@ -2,10 +2,18 @@ package wyil.lang;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 public abstract class RVal {
 	public abstract Type type();
-		
+	
+	public static void usedVariables(RVal r, Set<String> uses) {
+		if (r instanceof Variable) {
+			Variable v = (Variable) r;
+			uses.add(v.name);
+		}
+	}
+	
 	public static Variable VAR(Type t, String v) {
 		return get(new Variable(t,v));
 	}

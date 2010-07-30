@@ -18,11 +18,24 @@
 
 package wyil.lang;
 
+import java.util.Set;
+
 public abstract class Code {
 
 	// ==========================================
 	// =============== Methods ==================
 	// ==========================================
+	
+	/**
+	 * Determine which variables are used by this code.
+	 */
+	public static void usedVariables(Code c, Set<String> uses) {
+		if(c instanceof Assign) {
+			Assign a = (Assign) c;
+			uses.add(a.lhs);
+			RVal.usedVariables(a.rhs,uses);
+		} 
+	}
 		
 	/**
 	 * This represents a simple assignment between two variables.
@@ -59,6 +72,33 @@ public abstract class Code {
 		}		
 	}
 
+	public final static class Return extends Code {
+		public final Type type;
+		public final RVal rhs;
+		
+		public Return(Type type,RVal rhs) {
+			this.type = type;			
+			this.rhs = rhs;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Return) {
+				Return a = (Return) o;
+				return type.equals(a.type) && rhs.equals(a.rhs);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + rhs.hashCode();			
+		}
+		
+		public String toString() {
+			return "return[" + type + "] " + rhs;
+		}		
+	}
+	
 	/**
 	 * This represents a simple assignment between two variables.
 	 * 
