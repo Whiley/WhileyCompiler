@@ -32,14 +32,14 @@ import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
 import wyjc.util.*;
 
-public class TypeResolution {
+public class ModuleBuilder {
 	private final ModuleLoader loader;
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID,List<Type.Fun>> functions;	
 	private HashMap<NameID,Pair<Type,Block>> types;	
 	private HashMap<NameID,UnresolvedType> unresolved;
 	
-	public TypeResolution(ModuleLoader loader) {
+	public ModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	

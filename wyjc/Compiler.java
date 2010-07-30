@@ -34,7 +34,7 @@ import wyjvm.lang.ClassFile;
 public class Compiler implements Logger {	
 	private ModuleLoader loader;
 	protected NameResolution nameResolver;
-	protected TypeResolution typeResolver;		
+	protected ModuleBuilder typeResolver;		
 	/*
 	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
 	protected DefiniteAssignmentChecker defAssignChecker = new DefiniteAssignmentChecker();
@@ -61,7 +61,7 @@ public class Compiler implements Logger {
 		this.loader = loader;
 		
 		this.nameResolver = new NameResolution(loader);		
-		this.typeResolver = new TypeResolution(loader);
+		this.typeResolver = new ModuleBuilder(loader);
 		/*
 		this.checkGenerator = new RuntimeCheckGenerator(loader);
 		this.classBuilder = new ClassFileBuilder(loader,whileyMajorVersion,whileyMinorVersion);
