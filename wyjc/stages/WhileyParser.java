@@ -959,12 +959,12 @@ public class WhileyParser {
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if(c.val instanceof Value.Int) { 
-				java.math.BigInteger bi = ((Value.Int)c.val).value;
+			if(c.value instanceof Value.Int) { 
+				java.math.BigInteger bi = ((Value.Int)c.value).value;
 				return new Expr.Constant(Value.V_INT(bi.negate()),
 						sourceAttr(start, index));
-			} else if(c.val instanceof Value.Real){
-				BigRational br = ((Value.Real)c.val).value;				
+			} else if(c.value instanceof Value.Real){
+				BigRational br = ((Value.Real)c.value).value;				
 				return new Expr.Constant(Value.V_REAL(br.negate()), sourceAttr(
 						start, index));	
 			}

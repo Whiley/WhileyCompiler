@@ -108,8 +108,8 @@ public class DefiniteAssignmentChecker {
 			// nothing to do here.
 		} else if (statement instanceof Print) {
 			check((Print) statement, definitions);
-		} else if (statement instanceof VarAssign) {
-			check((VarAssign) statement, definitions);
+		} else if (statement instanceof Assign) {
+			check((Assign) statement, definitions);
 		} else if (statement instanceof IfElse) {
 			check((IfElse) statement, definitions);
 		} else if (statement instanceof While) {
@@ -147,7 +147,7 @@ public class DefiniteAssignmentChecker {
 		check(s.mhs(),definitions);				
 	}
 
-	protected void check(VarAssign s, HashSet<String> definitions) {
+	protected void check(Assign s, HashSet<String> definitions) {
 		check(s.rhs(),definitions);
 		if(s.lhs() instanceof Variable) {
 			Variable v = (Variable) s.lhs();

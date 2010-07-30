@@ -25,15 +25,16 @@ public abstract class Code {
 	// ==========================================
 	
 	public static Code substitute(String v1, String v2, Code c) {
-		if(c instanceof VarAssign) {
-			VarAssign va = (VarAssign) c;
-			return new VarAssign(va.type,substitute(v2,v2,va.lhs),substitute(v2,v2,va.rhs));
-		} else if(c instanceof VarLoad) {
-			VarLoad va = (VarLoad) c;
-			return new VarLoad(va.type,substitute(v2,v2,va.lhs),va.rhs);
+		if(c instanceof Assign) {
+			Assign va = (Assign) c;
+			return new Assign(va.type,substitute(v1,v2,va.lhs),substitute(v2,v2,va.rhs));
+		} else if(c instanceof Load) {
+			Load va = (Load) c;
+			return new Load(va.type,substitute(v1,v2,va.lhs),va.rhs);
 		} else if(c instanceof IfGoto) {
-			IfGoto g = (IfGoto) c;
-			return new IfGoto();
+			IfGoto ig = (IfGoto) c;
+			return new IfGoto(ig.type, ig.op, substitute(v2, v2, ig.lhs),
+					substitute(v1, v2, ig.rhs), ig.target);
 		} else {
 			return c;
 		}
@@ -53,20 +54,20 @@ public abstract class Code {
 	 * @author djp
 	 * 
 	 */
-	public final static class VarAssign extends Code {
+	public final static class Assign extends Code {
 		public final Type type;
 		public final String lhs;
 		public final String rhs;
 		
-		public VarAssign(Type type, String lhs, String rhs) {
+		public Assign(Type type, String lhs, String rhs) {
 			this.type = type;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof VarAssign) {
-				VarAssign a = (VarAssign) o;
+			if(o instanceof Assign) {
+				Assign a = (Assign) o;
 				return type.equals(a.type) && lhs.equals(a.lhs) && rhs.equals(a.rhs);
 				
 			}
@@ -88,20 +89,20 @@ public abstract class Code {
 	 * @author djp
 	 * 
 	 */
-	public final static class VarLoad extends Code  {		
+	public final static class Load extends Code  {		
 		public final Type type;
 		public final String lhs;
 		public final Value rhs;
 		
-		public VarLoad(Type type, String lhs, Value rhs) {
+		public Load(Type type, String lhs, Value rhs) {
 			this.type = type;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof VarLoad) {
-				VarLoad a = (VarLoad) o;
+			if (o instanceof Load) {
+				Load a = (Load) o;
 				return type.equals(a.type) && lhs.equals(a.lhs)
 						&& rhs.equals(a.rhs);
 			}
@@ -118,25 +119,86 @@ public abstract class Code {
 	}
 	
 	/**
+	 * This represents a simple assignment between two variables.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class BinOp extends Code {
+		public final BOP op;
+		public final Type type;
+		public final String lhs;
+		public final String rhs1;
+		public final String rhs2;
+		
+		public BinOp(Type type, BOP op, String lhs, String rhs1, String rhs2) {
+			this.op = op;
+			this.type = type;
+			this.lhs = lhs;
+			this.rhs1 = rhs1;
+			this.rhs2 = rhs2;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof BinOp) {
+				BinOp a = (BinOp) o;
+				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+						&& rhs1.equals(a.rhs1) && rhs2.equals(a.rhs2);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return op.hashCode() + type.hashCode() + lhs.hashCode()
+					+ rhs1.hashCode() + rhs2.hashCode();
+		}
+		
+		public String toString() {
+			return type + " " + lhs + " := " + rhs1 + " " + op + " " + rhs2;
+		}		
+	}
+	
+	
+	/**
 	 * This represents a conditional branching instruction
 	 * @author djp
 	 *
 	 */
-	public final static class IfGoto extends Code  {
-		public final CompOP op;
+	public final static class IfGoto extends Code {
+		public final BOP op;
+		public final Type type;
 		public final String lhs;
 		public final String rhs;
-		public final int target;
-		
-		public IfGoto(CompOP op, String lhs, String rhs, int target) {
+		public final String target;
+
+		public IfGoto(Type type, BOP op, String lhs, String rhs, String target) {
 			this.op = op;
+			this.type = type;
 			this.lhs = lhs;
 			this.rhs = rhs;
 			this.target = target;
 		}
-	}
+		
+		public int hashCode() {
+			return op.hashCode() + type.hashCode() + lhs.hashCode()
+					+ rhs.hashCode() + target.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IfGoto) {
+				IfGoto ig = (IfGoto) o;
+				return op == ig.op && type.equals(ig.type)
+						&& lhs.equals(ig.lhs) && rhs.equals(ig.rhs)
+						&& target.equals(ig.target);
+			}
+			return false;
+		}
 	
-	public enum CompOP{ EQ,NEQ,LT,LTEQ,GT,GTEQ,ELEMOF,SUBSET,SUBSETEQ };
+		public String toString() {
+			return "if " + lhs + " " + op + " " + rhs + " goto " + target;
+		}
+	}	
 	
 	/**
 	 * This represents an unconditional branching instruction
@@ -144,23 +206,104 @@ public abstract class Code {
 	 *
 	 */
 	public final static class Goto extends Code  {
-		public final int target;
+		public final String target;
 		
-		public Goto(int target) {
+		public Goto(String target) {
 			this.target = target;
 		}
-	}
+		
+		public int hashCode() {
+			return target.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Goto) {
+				return target.equals(((Goto)o).target);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "goto " + target;
+		}
+	}	
 	
-	// ==========================================
-	// =============== Opcodes ==================
-	// ==========================================
+	/**
+	 * This represents the target of a branching instruction
+	 * @author djp
+	 *
+	 */
+	public final static class Label extends Code  {
+		public final String label;
+		
+		public Label(String label) {
+			this.label = label;
+		}
+		
+		public int hashCode() {
+			return label.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Label) {
+				return label.equals(((Label)o).label);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "." + label;
+		}
+	}	
 	
-	// Arithmetic Opcodes	
-	public final int ADD = 10;
-	public final int SUB = 11;
-	public final int MUL = 12;
-	public final int DIV = 13;	
-	public final int UNION = 16;
-	public final int INTERSECT = 17;
-	public final int DIFFERENCE = 18;			
+	public enum BOP { 
+		EQ() {
+			public String toString() { return "=="; }
+		},
+		NEQ{
+			public String toString() { return "!="; }
+		},
+		LT{
+			public String toString() { return "<"; }
+		},
+		LTEQ{
+			public String toString() { return "<="; }
+		},
+		GT{
+			public String toString() { return ">"; }
+		},
+		GTEQ{
+			public String toString() { return ">="; }
+		},
+		ELEMOF{
+			public String toString() { return "in"; }
+		},
+		SUBSET{
+			public String toString() { return "<"; }
+		},
+		SUBSETEQ{
+			public String toString() { return "<="; }
+		},
+		ADD{
+			public String toString() { return "+"; }
+		},
+		SUB{
+			public String toString() { return "-"; }
+		},
+		MUL{
+			public String toString() { return "*"; }
+		},
+		DIV{
+			public String toString() { return "/"; }
+		},
+		UNION{
+			public String toString() { return "+"; }
+		},
+		INTERSECT{
+			public String toString() { return "&"; }
+		},
+		DIFFERENCE{
+			public String toString() { return "-"; }
+		}
+	};	
 }

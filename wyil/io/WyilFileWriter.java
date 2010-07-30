@@ -1,6 +1,7 @@
 package wyil.io;
 
 import java.io.*;
+import java.util.*;
 import wyil.lang.*;
 import wyil.lang.Module.*;
 
@@ -39,15 +40,31 @@ public class WyilFileWriter {
 	
 	protected void write(Method method) {
 		Type.Fun ft = method.type(); 
-		out.println(method.name() + " " + ft + ":");
+		out.print(ft.ret + " " + method.name() + "(");
+		List<Type> pts = ft.params;
+		List<String> names = method.parameterNames();
+		for(int i=0;i!=names.size();++i) {
+			String n = names.get(i);
+			Type t = pts.get(i);
+			if(i!=0) {
+				out.print(", ");
+			}
+			out.print(t + " " + n);
+		}
+		out.println("):");
 		for(Code c : method.body()) {
-			write(1,c);
+			write(0,c);
 		}
 	}
 	
-	protected void write(int indent, Code c) {
-		tabIndent(indent);		
-		out.println(c);
+	protected void write(int indent, Code c) {		
+		if(c instanceof Code.Label) {
+			tabIndent(indent);
+			out.println(c);
+		} else {
+			tabIndent(indent+1);
+			out.println(c);
+		}
 	}	
 	
 	protected void tabIndent(int indent) {

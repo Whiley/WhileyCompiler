@@ -260,7 +260,8 @@ public class ModuleBuilder {
 		// The problem is that we may not have generated the type for the given
 		// method call, which means we won't be able to bind it. One option is
 		// simply to disallow function calls in constant definitions.
-		resolve(td.constant,new HashMap<String,Type>(),new HashMap<String,Type>());
+		resolve(0, td.constant, new HashMap<String, Type>(),
+				new HashMap<String, Type>());
 		
 		// FIXME: broken
 		
@@ -278,7 +279,7 @@ public class ModuleBuilder {
 			HashMap<String,Type> environment = new HashMap<String,Type>();
 			HashMap<String,Type> declared = new HashMap<String,Type>();
 			environment.put("$", t);			
-			t = resolve(td.constraint, environment, declared).first();			
+			t = resolve(0, td.constraint, environment, declared).first();			
 			checkType(t,Type.Bool.class, td.constraint);			
 		}				
 		
@@ -317,12 +318,12 @@ public class ModuleBuilder {
 			
 		if(fd.constraint != null) {			
 			environment.put("$",ret.first());
-			resolve(fd.constraint, environment, declared);			
+			resolve(0, fd.constraint, environment, declared);			
 			environment.remove("$");
 		}
 		
 		Block blk = new Block();
-		for (Stmt s : fd.statements) {			
+		for (Stmt s : fd.statements) {						
 			blk.addAll(resolve(s, fd, environment, declared));
 		}
 		
@@ -334,7 +335,8 @@ public class ModuleBuilder {
 	public Block resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment,
 			HashMap<String, Type> declared) {		
 		try {
-			if(s instanceof Skip) {				
+			if(s instanceof Skip) {	
+				return new Block();
 			} else if(s instanceof VarDecl) {
 				return resolve((VarDecl)s, environment, declared);
 			} else if(s instanceof Assign) {
@@ -348,9 +350,9 @@ public class ModuleBuilder {
 			} else if(s instanceof IfElse) {
 				return resolve((IfElse)s, fd, environment, declared);
 			} else if(s instanceof Invoke) {
-				return resolve((Invoke)s, environment, declared).second();
+				return resolve(0, (Invoke)s, environment, declared).second();
 			} else if(s instanceof Spawn) {
-				return resolve((UnOp)s, environment, declared).second();
+				return resolve(0, (UnOp)s, environment, declared).second();
 			} else {
 				syntaxError("unknown statement encountered: "
 						+ s.getClass().getName(), s);				
@@ -372,21 +374,19 @@ public class ModuleBuilder {
 		Type type = tb.first();
 		Block blk = new Block();
 		if(init != null) {
-			Pair<Type,Block> initT = resolve(init,environment, declared);
+			Pair<Type,Block> initT = resolve(0, init,environment, declared);
 			checkIsSubtype(type,initT.first(),init);
 			environment.put(s.name,type);
-			// FIXME: could improve this by substituting $ for s.name
 			blk.addAll(initT.second());
-			blk.add(new Code.VarAssign(initT.first(), s.name, "$"));
+			blk.add(new Code.Assign(type, s.name, "$0"));
 		} 
 		declared.put(s.name,type);
 		return blk;
 	}
 	
 	protected Block resolve(Assign s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
-		Pair<Type,Block> rhs_tb = resolve(s.rhs, environment, declared);
-		Block blk = new Block();
-		blk.addAll(rhs_tb.second());
+		Pair<Type,Block> rhs_tb = resolve(0, s.rhs, environment, declared);
+		Block blk = new Block(rhs_tb.second());
 		if(s.lhs instanceof Variable) {
 			// perform type inference as a result of this assignment
 			Variable v = (Variable) s.lhs;			
@@ -395,25 +395,25 @@ public class ModuleBuilder {
 				syntaxError("unknown variable",v);
 			}
 			checkIsSubtype(declared_t,rhs_tb.first(),s.rhs);
-			environment.put(v.var, rhs_tb.first());
-			blk.add(new Code.VarAssign(rhs_tb.first(),v.var,"$"));
+			environment.put(v.var, rhs_tb.first());			
+			blk.add(new Code.Assign(rhs_tb.first(), v.var, "$0"));
 		} else {
-			Pair<Type,Block> lhs_tb = resolve(s.lhs, environment, declared);
-			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);					
+			Pair<Type,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
+			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);							
 			System.out.println("WARNING: Assign is missing cases");
 		}
 		return blk;
 	}
 
 	protected Block resolve(Assert s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
-		Pair<Type,Block> t = resolve(s.expr, environment, declared);
+		Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
 		checkIsSubtype(t.first(),Type.T_BOOL,s.expr);
 		return null;
 	}
 
 	protected Block resolve(Return s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		if(s.expr != null) {
-			Pair<Type,Block> t = resolve(s.expr, environment, declared);
+			Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
 			Type.Fun ft = fd.attribute(Attribute.Fun.class).type;
 			checkIsSubtype(ft.ret,t.first(),s.expr);
 		}
@@ -421,52 +421,199 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolve(Debug s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
-		Pair<Type,Block> t = resolve(s.expr, environment, declared);
+		Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
 		checkIsSubtype(t.first(),Type.T_LIST(Type.T_INT),s.expr);
 		return null;
 	}
 
 	protected Block resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Type> declared) {
-		Pair<Type,Block> tb = resolve(s.condition, environment, declared);
-		checkType(tb.first(),Type.Bool.class,s.condition);
+		String falseLab = label();
+		String exitLab = s.falseBranch.isEmpty() ? falseLab : label();
+		Block blk = resolveCondition(falseLab, invert(s.condition),
+				environment, declared);
 		
 		// FIXME: need to perform some type inference here
 		
 		HashMap<String,Type> tenv = new HashMap<String,Type>(environment);		
-		HashMap<String,Type> tdec = new HashMap<String,Type>(declared);
+		HashMap<String,Type> tdec = new HashMap<String,Type>(declared);		
 		for (Stmt st : s.trueBranch) {
-			resolve(st, fd, tenv, tdec);
+			blk.addAll(resolve(st, fd, tenv, tdec));
 		}
-		if (s.falseBranch != null) {			
+		if (!s.falseBranch.isEmpty()) {			
+			blk.add(new Code.Goto(exitLab));
+			blk.add(new Code.Label(falseLab));
 			HashMap<String,Type> fenv = new HashMap<String,Type>(environment);
 			HashMap<String,Type> fdec = new HashMap<String,Type>(declared);
 			for (Stmt st : s.falseBranch) {
-				resolve(st, fd, fenv, fdec);
-			}
+				blk.addAll(resolve(st, fd, fenv, fdec));
+			}			
 		}
+		
+		blk.add(new Code.Label(exitLab));
+		
+		return blk;
+	}
+
+	/**
+	 * Target gives the name of the register to use to store the result of this
+	 * expression in.
+	 * 
+	 * @param target
+	 * @param e
+	 * @param environment
+	 * @param declared
+	 * @return
+	 */
+	protected Block resolveCondition(String target, Expr e,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+		try {
+			if (e instanceof Constant) {
+				return resolveCondition(target,(Constant)e, environment, declared);
+			} else if (e instanceof Variable) {
+				return resolveCondition(target,(Variable)e, environment, declared);
+			} else if (e instanceof NaryOp) {
+				return resolveCondition(target,(BinOp)e, environment, declared);
+			} else if (e instanceof BinOp) {
+				return resolveCondition(target,(BinOp)e, environment, declared);
+			} else if (e instanceof UnOp) {
+				return resolveCondition(target,(UnOp)e, environment, declared);
+			} else if (e instanceof Invoke) {
+				return resolveCondition(target,(Invoke)e, environment, declared);
+			} else if (e instanceof TupleAccess) {
+				return resolveCondition(target,(TupleAccess) e, environment, declared);
+			} else if (e instanceof TupleGen) {
+				return resolveCondition(target,(TupleGen) e, environment, declared);
+			} else {				
+				syntaxError("expected boolean expression "
+							+ e.getClass().getName(), e);			
+			}
+		} catch(SyntaxError se) {
+			throw se;
+		} catch(Exception ex) {
+			syntaxError("internal failure", e, ex);			
+		}	
+		
 		return null;
 	}
 	
-	protected Pair<Type,Block> resolve(Expr e, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+	protected Block resolveCondition(String target, Constant c,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+		checkType(c.value.type(),Type.Bool.class,c);
+		Value.Bool b = (Value.Bool) c.value;
+		Block blk = new Block();
+		if(b.value) {
+			blk.add(new Code.Goto(target));
+		} else {
+			// do nout
+		}
+		return blk;
+	}
+		
+	protected Block resolveCondition(String target, Variable v,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+		Type t = environment.get(v.var);
+		if(t == null) {		
+			syntaxError("unknown variable",v);			
+		}
+		checkType(t,Type.Bool.class,v);		
+		Block blk = new Block();
+		blk.add(new Code.Load(t, "$0", Value.V_BOOL(true)));
+		blk.add(new Code.IfGoto(t, Code.BOP.EQ, v.var, "$0", target));
+		return blk;
+	}
+	
+	protected Block resolveCondition(String target, BinOp v,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+		
+		String lhs_v = "$" + target;
+		String rhs_v = "$" + (target + 1);
+		
+		BOp bop = v.op;
+		
+		Block blk = new Block();
+		
+		if (bop == BOp.OR) {
+			blk.addAll(resolveCondition(target, v.lhs, environment, declared));
+			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
+			return blk;
+		} else if (bop == BOp.AND) {
+			String exitLabel = label();
+			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), environment,
+					declared));
+			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
+			blk.add(new Code.Label(exitLabel));
+			return blk;
+		}
+		
+		Pair<Type,Block> lhs_tb = resolve(0,v.lhs, environment, declared);
+		Pair<Type,Block> rhs_tb = resolve(1,v.rhs, environment, declared);
+		blk.addAll(lhs_tb.second());
+		blk.addAll(rhs_tb.second());
+		
+		Type lhs_t = lhs_tb.first();
+		Type rhs_t = rhs_tb.first();
+		if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
+				|| bop == BOp.GTEQ) {
+			checkIsSubtype(Type.T_REAL, lhs_t, v);
+			checkIsSubtype(Type.T_REAL, rhs_t, v);
+			return blk;
+		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
+			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
+			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
+			return blk;
+		} else if(bop == BOp.EQ || bop == BOp.NEQ){
+			if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
+				syntaxError("Cannot compare types",v);
+			}
+			return blk;
+		} else if(bop == BOp.ELEMENTOF) {
+			checkType(rhs_t, Type.Set.class, v);
+			Type.Set st = (Type.Set) rhs_t;
+			if(!Type.isSubtype(lhs_t, st.element) && !Type.isSubtype(st.element, lhs_t)) {
+				syntaxError("Cannot compare types",v);
+			}
+			return blk;
+		} else if(bop == BOp.LISTACCESS) {
+			checkType(lhs_t, Type.List.class, v);
+			checkIsSubtype(Type.T_INT, rhs_t, v);
+			Type.List lt = (Type.List) lhs_t;  
+			return blk;		
+		} 			
+		
+		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
+	}
+	
+	/**
+	 * Target gives the name of the register to use to store the result of this
+	 * expression in.
+	 * 
+	 * @param target
+	 * @param e
+	 * @param environment
+	 * @param declared
+	 * @return
+	 */
+	protected Pair<Type, Block> resolve(int target, Expr e,			
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		try {
 			if (e instanceof Constant) {
-				return resolve((Constant)e, environment, declared);
+				return resolve(target,(Constant)e, environment, declared);
 			} else if (e instanceof Variable) {
-				return resolve((Variable)e, environment, declared);
+				return resolve(target,(Variable)e, environment, declared);
 			} else if (e instanceof NaryOp) {
-				return resolve((BinOp)e, environment, declared);
+				return resolve(target,(BinOp)e, environment, declared);
 			} else if (e instanceof BinOp) {
-				return resolve((BinOp)e, environment, declared);
+				return resolve(target,(BinOp)e, environment, declared);
 			} else if (e instanceof UnOp) {
-				return resolve((UnOp)e, environment, declared);
+				return resolve(target,(UnOp)e, environment, declared);
 			} else if (e instanceof Invoke) {
-				return resolve((Invoke)e, environment, declared);
+				return resolve(target,(Invoke)e, environment, declared);
 			} else if (e instanceof Comprehension) {
-				return resolve((Comprehension) e, environment, declared);
+				return resolve(target,(Comprehension) e, environment, declared);
 			} else if (e instanceof TupleAccess) {
-				return resolve((TupleAccess) e, environment, declared);
+				return resolve(target,(TupleAccess) e, environment, declared);
 			} else if (e instanceof TupleGen) {
-				return resolve((TupleGen) e, environment, declared);
+				return resolve(target,(TupleGen) e, environment, declared);
 			} else {				
 				syntaxError("unknown expression encountered: "
 							+ e.getClass().getName(), e);			
@@ -480,19 +627,20 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Pair<Type,Block> resolve(Invoke s, HashMap<String,Type> environment, HashMap<String,Type> declared)
+	protected Pair<Type, Block> resolve(int target, Invoke s,
+			HashMap<String, Type> environment, HashMap<String, Type> declared)
 			throws ResolveError {
 		List<Expr> args = s.arguments;
 		
 		ArrayList<Type> ptypes = new ArrayList<Type>();		
 		for(Expr e : args) {			
-			Pair<Type,Block> e_tb = resolve(e,environment, declared);
+			Pair<Type,Block> e_tb = resolve(target,e,environment, declared);
 			ptypes.add(e_tb.first());			
 		}
 		
 		Type.Process receiver = null;
 		if(s.receiver != null) {			
-			Pair<Type,Block> tb = resolve(s.receiver,environment, declared);
+			Pair<Type,Block> tb = resolve(target,s.receiver,environment, declared);
 			checkType(tb.first(),Type.Process.class,s.receiver);
 			receiver = (Type.Process) tb.first();
 		}
@@ -509,24 +657,27 @@ public class ModuleBuilder {
 		return new Pair<Type,Block>(funtype.ret,null);									
 	}
 			
-	protected Pair<Type,Block> resolve(Constant c, HashMap<String,Type> environment, HashMap<String,Type> declared)  {
-		Block blk = new Block(new Code.VarLoad(c.val.type(),"$",c.val));		
-		return new Pair<Type,Block>(c.val.type(),blk);
+	protected Pair<Type, Block> resolve(int target, Constant c,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+		Block blk = new Block(new Code.Load(c.value.type(),"$" + target,c.value));		
+		return new Pair<Type,Block>(c.value.type(),blk);
 	}
 	
-	protected Pair<Type,Block> resolve(Variable v, HashMap<String,Type> environment, HashMap<String,Type> declared)  {
+	protected Pair<Type, Block> resolve(int target, Variable v,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		Type t = environment.get(v.var);
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
 		}
-		Block blk = new Block(new Code.VarAssign(t, "$",v.var));
+		Block blk = new Block(new Code.Assign(t, "$" + target,v.var));
 		return new Pair<Type, Block>(t, blk);
 	}
 	
-	protected Pair<Type,Block> resolve(UnOp v, HashMap<String,Type> environment, HashMap<String,Type> declared,
-			ArrayList<PkgID> imports)  {
+	protected Pair<Type, Block> resolve(int target, UnOp v,
+			HashMap<String, Type> environment, HashMap<String, Type> declared,
+			ArrayList<PkgID> imports) {
 		Expr mhs = v.mhs;
-		Pair<Type,Block> tb = resolve(mhs, environment, declared); 
+		Pair<Type, Block> tb = resolve(target, mhs, environment, declared); 
 		Type t = tb.first();
 		
 		Block blk = new Block();
@@ -547,15 +698,21 @@ public class ModuleBuilder {
 		return new Pair<Type,Block>(t,blk);
 	}
 	
-	protected Pair<Type,Block> resolve(BinOp v, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+	protected Pair<Type, Block> resolve(int target, BinOp v,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		
-		Pair<Type,Block> lhs_tb = resolve(v.lhs, environment, declared);
-		Pair<Type,Block> rhs_tb = resolve(v.rhs, environment, declared);
+		Pair<Type,Block> lhs_tb = resolve(target,v.lhs, environment, declared);
+		Pair<Type,Block> rhs_tb = resolve(target+1,v.rhs, environment, declared);
+		String lhs_v = "$" + target;
+		String rhs_v = "$" + (target + 1);
 		Type lhs_t = lhs_tb.first();
 		Type rhs_t = rhs_tb.first();
 		BOp bop = v.op;
 		
 		Block blk = new Block();
+		blk.addAll(lhs_tb.second());
+		blk.addAll(rhs_tb.second());
+		
 		if(bop == BOp.OR || bop == BOp.AND) {
 			checkIsSubtype(Type.T_BOOL, lhs_t, v);
 			checkIsSubtype(Type.T_BOOL, rhs_t, v);
@@ -564,6 +721,7 @@ public class ModuleBuilder {
 				|| bop == BOp.DIV) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
+			blk.add(new Code.BinOp(lhs_t,OP2BOP(bop,v),lhs_v,lhs_v,rhs_v));			
 			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
 		} else if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
 				|| bop == BOp.GTEQ) {
@@ -600,15 +758,16 @@ public class ModuleBuilder {
 		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
-	protected Pair<Type,Block> resolve(NaryOp v, HashMap<String,Type> environment, HashMap<String,Type> declared)  {		
+	protected Pair<Type, Block> resolve(int target, NaryOp v,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {		
 		Block blk = new Block();
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments",v);
 			}
-			Pair<Type,Block> src = resolve(v.arguments.get(0), environment, declared);
-			Pair<Type,Block> start = resolve(v.arguments.get(1), environment, declared);
-			Pair<Type,Block> end = resolve(v.arguments.get(2), environment, declared);
+			Pair<Type,Block> src = resolve(target,v.arguments.get(0), environment, declared);
+			Pair<Type,Block> start = resolve(target,v.arguments.get(1), environment, declared);
+			Pair<Type,Block> end = resolve(target,v.arguments.get(2), environment, declared);
 			checkType(src.first(),Type.List.class,v.arguments.get(0));
 			checkType(start.first(),Type.Int.class,v.arguments.get(1));
 			checkType(end.first(),Type.Int.class,v.arguments.get(2));
@@ -618,7 +777,7 @@ public class ModuleBuilder {
 			Type etype = Type.T_VOID;
 
 			for(Expr e : v.arguments) {
-				Pair<Type,Block> t = resolve(e, environment, declared);
+				Pair<Type,Block> t = resolve(target,e, environment, declared);
 				etype = Type.leastUpperBound(t.first(),etype);
 			}		
 
@@ -630,30 +789,32 @@ public class ModuleBuilder {
 		}
 	}
 	
-	protected Pair<Type,Block> resolve(Comprehension e, HashMap<String,Type> environment, HashMap<String,Type> declared)  {				
+	protected Pair<Type, Block> resolve(int target, Comprehension e,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {				
 		throw new RuntimeException("Need to implement type resolution for Comprehension");
 	}
 		
-	protected Pair<Type,Block> resolve(TupleGen sg, HashMap<String,Type> environment, HashMap<String,Type> declared)
-			 {
+	protected Pair<Type, Block> resolve(int target, TupleGen sg,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		HashMap<String, Type> types = new HashMap<String, Type>();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			Pair<Type,Block> tb = resolve(e.getValue(), environment, declared);
+			Pair<Type, Block> tb = resolve(target, e.getValue(), environment,
+					declared);
 			types.put(e.getKey(), tb.first());
 		}
-		return new Pair<Type,Block>(Type.T_TUPLE(types),null);
+		return new Pair<Type, Block>(Type.T_TUPLE(types), null);
 	}
 	
-	protected Pair<Type,Block> resolve(TupleAccess sg, HashMap<String,Type> environment, HashMap<String,Type> declared)
-			 {
-		Pair<Type,Block> lhs = resolve(sg.lhs, environment, declared);
+	protected Pair<Type, Block> resolve(int target, TupleAccess sg,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+		Pair<Type, Block> lhs = resolve(target, sg.lhs, environment, declared);
 		// FIXME: will need to determine effective tuple type here
 		Type.Tuple tup = checkType(lhs.first(), Type.Tuple.class, sg.lhs);
 		Type ft = tup.types.get(sg.name);
 		if (ft == null) {
 			syntaxError("type has no field named: " + sg.name, sg.lhs);
 		}
-		return new Pair<Type,Block>(ft,null);
+		return new Pair<Type, Block>(ft, null);
 	}
 	
 	protected Pair<Type,Block> resolve(UnresolvedType t) {
@@ -816,5 +977,46 @@ public class ModuleBuilder {
 		}
 		
 		return Type.substituteRecursiveTypes(t, binding);
+	}
+	
+	private static int labelIndex = 0;
+	public static String label() {
+		return "label" + labelIndex++;
+	}
+	
+	public static Expr invert(Expr e) {
+		// FIXME broken
+		return e;
+	}
+	
+	public static Code.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+		switch(bop) {
+		case ADD:
+			return Code.BOP.ADD;
+		case SUB:
+			return Code.BOP.SUB;
+		case DIV:
+			return Code.BOP.DIV;
+		case MUL:
+			return Code.BOP.MUL;
+		case UNION:
+			return Code.BOP.UNION;			
+		case INTERSECTION:
+			return Code.BOP.INTERSECT;
+		case EQ:
+			return Code.BOP.EQ;
+		case NEQ:
+			return Code.BOP.NEQ;
+		case LT:
+			return Code.BOP.LT;
+		case LTEQ:
+			return Code.BOP.LTEQ;
+		case GT:
+			return Code.BOP.GT;		
+		case GTEQ:
+			return Code.BOP.GTEQ;
+		}
+		syntaxError("unrecognised binary operation",elem);
+		return null;
 	}
 }

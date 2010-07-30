@@ -32,11 +32,11 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class Constant extends SyntacticElement.Impl implements Expr {
-		public final Value val;
+		public final Value value;
 
 		public Constant(Value val, Attribute... attributes) {
 			super(attributes);
-			this.val = val;
+			this.value = val;
 		}
 	}
 

@@ -75,8 +75,8 @@ public class FunctionChecker {
 				// nothing to do here.
 			} else if (statement instanceof Print) {
 				check((Print) statement, isFunction);
-			} else if (statement instanceof VarAssign) {
-				check((VarAssign) statement, isFunction);
+			} else if (statement instanceof Assign) {
+				check((Assign) statement, isFunction);
 			} else if (statement instanceof IfElse) {
 				check((IfElse) statement, isFunction);
 			} else if (statement instanceof UnresolvedType) {
@@ -100,7 +100,7 @@ public class FunctionChecker {
 		}
 	}
 	
-	public void check(VarAssign stmt, boolean isFunction) {
+	public void check(Assign stmt, boolean isFunction) {
 		check(stmt.lhs(),isFunction);
 		check(stmt.rhs(),isFunction);
 	}

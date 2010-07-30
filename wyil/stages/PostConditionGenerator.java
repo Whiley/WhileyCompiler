@@ -96,8 +96,8 @@ public class PostConditionGenerator {
 				postCondition = infer((Skip)s,environment, f, preCondition);
 			} else if(s instanceof Print) {
 				postCondition = infer((Print)s,environment, f, preCondition);
-			} else if (s instanceof VarAssign) {
-				postCondition = infer((VarAssign)s, environment, f, preCondition);			
+			} else if (s instanceof Assign) {
+				postCondition = infer((Assign)s, environment, f, preCondition);			
 			} else if (s instanceof IfElse) {
 				postCondition = infer((IfElse)s,environment,f, preCondition);	
 			} else if (s instanceof UnresolvedType) {
@@ -144,7 +144,7 @@ public class PostConditionGenerator {
 	}
 
 	protected int shadow_label = 0;
-	protected Condition infer(VarAssign s, HashMap<String, Type> environment,
+	protected Condition infer(Assign s, HashMap<String, Type> environment,
 			 FunDecl f, Condition condition) {			
 		LVal lhs = s.lhs();
 		Expr rhs = s.rhs();
