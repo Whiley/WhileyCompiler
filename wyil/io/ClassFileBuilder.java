@@ -299,33 +299,66 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		translate(c.lhs,slots,bytecodes);
 		translate(c.rhs,slots,bytecodes);
+		JvmType type = convertType(c.type);
 		int op;
 		switch(c.op) {
 		case EQ:
-			op = Bytecode.IfCmp.EQ;
+		{
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
+					Bytecode.VIRTUAL));			
+			op = Bytecode.If.EQ;
 			break;
+		}
 		case NEQ:
-			op = Bytecode.IfCmp.NE;
+		{
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
+					Bytecode.VIRTUAL));
+			op = Bytecode.If.NE;
 			break;
+		}
 		case LT:
-			op = Bytecode.IfCmp.LT;
+		{			
+			JvmType.Function ftype = new JvmType.Function(T_INT,type);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "compareTo", ftype,
+					Bytecode.VIRTUAL));
+			op = Bytecode.If.LT;			
 			break;
+		}
 		case LTEQ:
-			op = Bytecode.IfCmp.LE;
+		{			
+			JvmType.Function ftype = new JvmType.Function(T_INT,type);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+					"compareTo", ftype, Bytecode.VIRTUAL));
+			op = Bytecode.If.LE;
 			break;
+		}
 		case GT:
-			op = Bytecode.IfCmp.LT;
+		{
+			System.out.println("GOING GT");
+			JvmType.Function ftype = new JvmType.Function(T_INT, type);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+					"compareTo", ftype, Bytecode.VIRTUAL));
+			op = Bytecode.If.GT;
 			break;
+		}
 		case GTEQ:
-			op = Bytecode.IfCmp.GE;
+		{
+			System.out.println("GOING GTEQ");
+			JvmType.Function ftype = new JvmType.Function(T_INT,type);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+					"compareTo", ftype, Bytecode.VIRTUAL));			
+			op = Bytecode.If.GE;
 			break;
+		}
 		case SUBSETEQ:
 		case SUBSET:
 		case ELEMOF:
 			default:
 				throw new RuntimeException("unknown if condition encountered");
-		}
-		bytecodes.add(new Bytecode.IfCmp(op, convertType(c.type), c.target));
+		}		
+		bytecodes.add(new Bytecode.If(op, c.target));
 	}
 	public void translate(Code.Goto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
