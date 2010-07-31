@@ -24,6 +24,7 @@ import java.util.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
+import wyjc.compiler.Compiler;
 import wyjc.util.*;
 
 public class Main {

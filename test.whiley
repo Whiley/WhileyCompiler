@@ -1,2 +1,3 @@
 void System::main([[char]] args):
-    print "Hello World"
+    if |args| == 0:
+        print "Hello World"

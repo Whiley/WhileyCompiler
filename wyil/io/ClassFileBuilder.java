@@ -182,7 +182,7 @@ public class ClassFileBuilder {
 		} else if(c instanceof Code.Goto) {
 			
 		} else if(c instanceof Code.IfGoto) {
-			
+			translate((Code.IfGoto)c,slots,bytecodes);
 		} else if(c instanceof Code.Label){
 			
 		} else if(c instanceof Code.Debug){
@@ -222,7 +222,35 @@ public class ClassFileBuilder {
 	}
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-		
+		translate(c.lhs,slots,bytecodes);
+		translate(c.rhs,slots,bytecodes);
+		int op;
+		switch(c.op) {
+		case EQ:
+			op = Bytecode.IfCmp.EQ;
+			break;
+		case NEQ:
+			op = Bytecode.IfCmp.NE;
+			break;
+		case LT:
+			op = Bytecode.IfCmp.LT;
+			break;
+		case LTEQ:
+			op = Bytecode.IfCmp.LE;
+			break;
+		case GT:
+			op = Bytecode.IfCmp.LT;
+			break;
+		case GTEQ:
+			op = Bytecode.IfCmp.GE;
+			break;
+		case SUBSETEQ:
+		case SUBSET:
+		case ELEMOF:
+			default:
+				throw new RuntimeException("unknown if condition encountered");
+		}
+		bytecodes.add(new Bytecode.IfCmp(op, convertType(c.type), c.target));
 	}
 	public void translate(Code.Label c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {

@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc;
+package wyjc.compiler;
 
 import java.io.*;
 import java.util.*;
@@ -186,6 +186,8 @@ public class Compiler implements Logger {
 			}			
 		}
 	
+		new WyilFileWriter(System.out).write(module);
+		
 		writeClassFile(module);		
 	}
 	

@@ -140,6 +140,43 @@ public abstract class Code {
 		}		
 	}
 	
+	public final static class UnOp extends Code {
+		public final UOP op;
+		public final Type type;
+		public final String lhs;
+		public final RVal rhs;		
+		
+		public UnOp(Type type, UOP op, String lhs, RVal rhs) {
+			this.op = op;
+			this.type = type;
+			this.lhs = lhs;
+			this.rhs = rhs;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof UnOp) {
+				UnOp a = (UnOp) o;
+				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+						&& rhs.equals(a.rhs);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return op.hashCode() + type.hashCode() + lhs.hashCode()
+					+ rhs.hashCode();
+		}
+		
+		public String toString() {
+			if(op == UOP.LENGTHOF){
+				return type + " " + lhs + " := |" + rhs + "|";
+			} else {
+				return type + " " + lhs + " := " + op + rhs;
+			}
+		}		
+	}
+	
 	public final static class Debug extends Code {				
 		public final RVal rhs;
 		
@@ -260,7 +297,17 @@ public abstract class Code {
 			return "." + label;
 		}
 	}	
-	
+	public enum UOP { 
+		NEG() {
+			public String toString() { return "-"; }
+		},
+		NOT() {
+			public String toString() { return "!"; }
+		},
+		LENGTHOF() {
+			public String toString() { return "||"; }
+		}
+	}
 	public enum BOP { 
 		EQ() {
 			public String toString() { return "=="; }

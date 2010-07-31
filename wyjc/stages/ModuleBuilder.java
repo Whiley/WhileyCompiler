@@ -439,7 +439,7 @@ public class ModuleBuilder {
 		String falseLab = label();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : label();
 		Block blk = resolveCondition(falseLab, invert(s.condition),
-				environment, declared);
+				environment, declared);				
 		
 		// FIXME: need to perform some type inference here
 		
@@ -553,22 +553,28 @@ public class ModuleBuilder {
 		Pair<Type,Block> rhs_tb = resolve(1,v.rhs, environment, declared);
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-		
 		Type lhs_t = lhs_tb.first();
 		Type rhs_t = rhs_tb.first();
+		RVal lvar = RVal.VAR(lhs_t,"$0");
+		RVal rvar = RVal.VAR(lhs_t,"$1");
+		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
+		
 		if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
 				|| bop == BOp.GTEQ) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
-			checkIsSubtype(Type.T_REAL, rhs_t, v);
+			checkIsSubtype(Type.T_REAL, rhs_t, v);			
+			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));			
 			return blk;
 		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
-			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
+			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);			
+			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));			
 			return blk;
 		} else if(bop == BOp.EQ || bop == BOp.NEQ){
 			if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
 				syntaxError("Cannot compare types",v);
-			}
+			}			
+			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
 			return blk;
 		} else if(bop == BOp.ELEMENTOF) {
 			checkType(rhs_t, Type.Set.class, v);
@@ -579,8 +585,7 @@ public class ModuleBuilder {
 			return blk;
 		} else if(bop == BOp.LISTACCESS) {
 			checkType(lhs_t, Type.List.class, v);
-			checkIsSubtype(Type.T_INT, rhs_t, v);
-			Type.List lt = (Type.List) lhs_t;  
+			checkIsSubtype(Type.T_INT, rhs_t, v);			 
 			return blk;		
 		} 			
 		
@@ -716,6 +721,33 @@ public class ModuleBuilder {
 		} 
 				
 		return new Pair<Type,Block>(t,blk);
+	}
+
+	protected Pair<Type, Block> resolve(int target, UnOp v,
+			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+		Pair<Type,Block> mhs = resolve(target,v.mhs,environment,declared);
+		Block blk = mhs.second();
+		Type mhs_t = mhs.first();
+		switch(v.op) {
+		case NEG:
+			checkIsSubtype(Type.T_REAL,mhs_t,v.mhs);
+			blk.add(new Code.UnOp(mhs_t, Code.UOP.NEG, "$" + target, RVal.VAR(
+					mhs_t, "$" + target)));
+			return new Pair<Type,Block>(mhs_t,blk);
+		case NOT:
+			checkIsSubtype(Type.T_BOOL,mhs_t,v.mhs);
+			blk.add(new Code.UnOp(mhs_t, Code.UOP.NOT, "$" + target, RVal.VAR(
+					mhs_t, "$" + target)));			
+			return new Pair<Type,Block>(mhs_t,blk);
+		case LENGTHOF:
+			checkIsSubtype(Type.T_LIST(Type.T_ANY),mhs_t,v.mhs);
+			blk.add(new Code.UnOp(mhs_t, Code.UOP.LENGTHOF, "$" + target, RVal
+					.VAR(mhs_t, "$" + target)));
+			return new Pair<Type,Block>(Type.T_INT,blk);
+		default:
+			syntaxError("unexpected unary operator encountered",v);
+			return null;
+		}		
 	}
 	
 	protected Pair<Type, Block> resolve(int target, BinOp v,
