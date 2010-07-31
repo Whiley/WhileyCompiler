@@ -176,11 +176,11 @@ public class ClassFileBuilder {
 		} else if(c instanceof Code.Return){
 			translate((Code.Return)c,slots,bytecodes);
 		} else if(c instanceof Code.BinOp) {
-			
+			translate((Code.BinOp)c,slots,bytecodes);
 		} else if(c instanceof Code.UnOp) {
 			translate((Code.UnOp)c,slots,bytecodes);
 		} else if(c instanceof Code.Goto) {
-			
+			translate((Code.Goto)c,slots,bytecodes);
 		} else if(c instanceof Code.IfGoto) {
 			translate((Code.IfGoto)c,slots,bytecodes);
 		} else if(c instanceof Code.Label){
@@ -214,7 +214,42 @@ public class ClassFileBuilder {
 
 	public void translate(Code.BinOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
+
+		// translate 1st right-hand side
+		translate(c.rhs1, slots, bytecodes);
+
+		// Apply conversion (if necessary)
+		convert(c.type, c.rhs1.type(), slots, bytecodes);
+
+		// translate 2nd right-hand side
+		translate(c.rhs2, slots, bytecodes);
+
+		// Apply conversion (if necessary)
+		convert(c.type, c.rhs2.type(), slots, bytecodes);
+
+		JvmType type = convertType(c.type);
+		JvmType.Function ftype = new JvmType.Function(type,type);
 		
+		switch(c.op) {
+		case ADD:			
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "add", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case SUB:			
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "subtract", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case MUL:			
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "multiply", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case DIV:			
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "divide", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		}
+		
+		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
 	}
 
 	public void translate(Code.UnOp c, HashMap<String, Integer> slots,
@@ -259,11 +294,7 @@ public class ClassFileBuilder {
 		}
 		
 		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
-	}
-	public void translate(Code.Goto c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-		
-	}
+	}	
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		translate(c.lhs,slots,bytecodes);
@@ -295,6 +326,10 @@ public class ClassFileBuilder {
 				throw new RuntimeException("unknown if condition encountered");
 		}
 		bytecodes.add(new Bytecode.IfCmp(op, convertType(c.type), c.target));
+	}
+	public void translate(Code.Goto c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Goto(c.target));
 	}
 	public void translate(Code.Label c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
