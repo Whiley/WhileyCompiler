@@ -24,7 +24,7 @@ import java.util.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
-import wyjc.compiler.Compiler;
+import wyjc.compiler.AbstractCompiler;
 import wyjc.util.*;
 
 public class Main {
@@ -95,13 +95,13 @@ public class Main {
 					        				} else if (arg.equals("-verbose")) {
 					verbose = true;
 				} else if(arg.equals("-debug:lexer")) {					
-					debugMode |= Compiler.DEBUG_LEXER;
+					debugMode |= AbstractCompiler.DEBUG_LEXER;
 				} else if(arg.equals("-debug:checks")) {
-					debugMode |= Compiler.DEBUG_CHECKS;					
+					debugMode |= AbstractCompiler.DEBUG_CHECKS;					
 				} else if (arg.equals("-debug:pcs")) {				
-					debugMode |= Compiler.DEBUG_PCS;					
+					debugMode |= AbstractCompiler.DEBUG_PCS;					
 				} else if (arg.equals("-debug:vcs")) {									
-					debugMode |= Compiler.DEBUG_VCS;
+					debugMode |= AbstractCompiler.DEBUG_VCS;
 				} else if(arg.equals("-nvc")) {					
 					nvc = true;
 				} else if(arg.equals("-nrc")) {					
@@ -128,7 +128,7 @@ public class Main {
 		whileypath.addAll(bootpath);
 		
 		ModuleLoader loader = new ModuleLoader(whileypath);
-		Compiler compiler  = new Compiler(loader,MAJOR_VERSION,MINOR_VERSION);
+		AbstractCompiler compiler  = new AbstractCompiler(loader,MAJOR_VERSION,MINOR_VERSION);
 		
 		// Now, configure compiler and loader
 		loader.setLogger(compiler);

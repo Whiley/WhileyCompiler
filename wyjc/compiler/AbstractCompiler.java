@@ -31,24 +31,12 @@ import wyjc.stages.*;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 
-public class Compiler implements Logger {	
+public abstract class AbstractCompiler implements Logger {	
 	private ModuleLoader loader;
 	protected NameResolution nameResolver;
 	protected ModuleBuilder typeResolver;		
-	/*
-	protected ResolvedFileBuilder fileBuilder = new ResolvedFileBuilder();
-	protected DefiniteAssignmentChecker defAssignChecker = new DefiniteAssignmentChecker();
-	protected FunctionChecker functionChecker = new FunctionChecker();
-	protected ReturnValueChecker returnValueChecker = new ReturnValueChecker();
-	protected RuntimeCheckGenerator checkGenerator;
-	protected PostConditionGenerator postGenerator = new PostConditionGenerator();
-	protected VerificationConditionGenerator vcGenerator;	
-	protected VerificationConditionChecker vcChecker = new VerificationConditionChecker();	
-	*/
 	protected ClassFileBuilder classBuilder;		
 	
-	protected boolean verificationFlag = true; // verification is enabled	
-	protected boolean runtimeChecksFlag = true; // runtime checks enabled
 	protected int debugMode = 0;
 	
 	public static final int DEBUG_LEXER = 1;
@@ -57,7 +45,7 @@ public class Compiler implements Logger {
 	public static final int DEBUG_PCS = 8;
 	public static final int DEBUG_VCS = 16;
 			
-	public Compiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
+	public AbstractCompiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
 		
 		this.nameResolver = new NameResolution(loader);		
@@ -86,13 +74,6 @@ public class Compiler implements Logger {
 	
 	public void setLogOut(OutputStream logout) {
 		this.logout = new PrintStream(logout);
-	}
-	
-	public void setVerification(boolean flag) {
-		this.verificationFlag = flag;
-	}
-	public void setRuntimeChecks(boolean flag) {
-		this.runtimeChecksFlag = flag;
 	}
 	public void setDebugMode(int debugMode) {
 		this.debugMode = debugMode;
@@ -154,41 +135,10 @@ public class Compiler implements Logger {
 	 * @param wf
 	 */
 	public void finishCompilation(Module module) {				
-		
-		// Build the Module
-		// Module mod = buildModule(wf);
-		
 		// Register the updated file
-		//loader.register(mod);
-		
-		// Perform definite assignment analysis
-		//defAssignment(rwf);				
-		
-		// Check functional behaviour
-		//funCheck(rwf);				
+		loader.register(module);
 				
-		// Perform return value check
-		//returnCheck(rwf);
-		
-		if (runtimeChecksFlag) {
-			// Generate runtime checks
-			//generateChecks(rwf);
-		
-			// Generate post conditions
-			//generatePostConditions(rwf);
-
-			// Generate verification conditions
-			//generateVerificationConditions(rwf);
-
-			if(verificationFlag) {
-				// Check verification conditions (if applicable)
-				//checkVerificationConditions(rwf);
-			}			
-		}
-	
-		new WyilFileWriter(System.out).write(module);
-		
-		writeClassFile(module);		
+		writeOutputFile(module);		
 	}
 	
 	
@@ -207,76 +157,8 @@ public class Compiler implements Logger {
 				System.currentTimeMillis() - start);
 		return modules;		
 	}
-	
-	/*
-	protected Module buildModule(WhileyFile m) {
-		long start = System.currentTimeMillis();		
-		Module rwf = fileBuilder.build(m);
-		logTimedMessage("[" + m.filename + "] built wyil module",
-				System.currentTimeMillis() - start);
-		return rwf;
-	}
-	
-	protected void defAssignment(Module m) {
-		long start = System.currentTimeMillis();	
-		defAssignChecker.verify(m);
-		logTimedMessage("[" + m.filename() + "] definite assignment checked",
-				System.currentTimeMillis() - start);
-	}
-	
-	protected void funCheck(Module m) {
-		long start = System.currentTimeMillis();	
-		functionChecker.check(m);
-		logTimedMessage("[" + m.filename() + "] functional behaviour checked",
-				System.currentTimeMillis() - start);
-	}
-	
-	protected void returnCheck(Module m) {
-		long start = System.currentTimeMillis();	
-		returnValueChecker.check(m);
-		logTimedMessage("[" + m.filename() + "] return value checked",
-				System.currentTimeMillis() - start);
-	}
-	
-	protected void generateChecks(Module m) {
-		long start = System.currentTimeMillis();	
-		checkGenerator.checkgen(m);
-		logTimedMessage("[" + m.filename() + "] runtime checks generated",
-				System.currentTimeMillis() - start);
-
-		if((debugMode & DEBUG_CHECKS) != 0) {
-			debugChecks(m);
-		}
 		
-	}
-	
-	protected void generatePostConditions(Module m) {
-		long start = System.currentTimeMillis();	
-		postGenerator.generate(m);
-		logTimedMessage("[" + m.filename() + "] postconditions generated",
-				System.currentTimeMillis() - start);
-		if((debugMode & DEBUG_PCS) != 0) {
-			debugPCS(m);
-		}
-	}
-	
-	protected void generateVerificationConditions(Module m) {
-		long start = System.currentTimeMillis();	
-		vcGenerator.generate(m);
-		logTimedMessage("[" + m.filename() + "] verification conditions generated",
-				System.currentTimeMillis() - start);
-		if((debugMode & DEBUG_VCS) != 0) {
-			debugVCS(m);
-		}
-	}
-	
-	protected void checkVerificationConditions(Module m) {
-		long start = System.currentTimeMillis();	
-		vcChecker.verify(m);
-		logTimedMessage("[" + m.filename() + "] verification conditions checked",
-				System.currentTimeMillis() - start);
-	}
-	*/
+	protected abstract void writeOutputFile(Module m);	
 	
 	protected void writeClassFile(Module m) {
 		long start = System.currentTimeMillis();
