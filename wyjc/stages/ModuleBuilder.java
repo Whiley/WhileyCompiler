@@ -789,7 +789,12 @@ public class ModuleBuilder {
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
 		
-		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
+		if (bop == BOp.SUB && Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t)) {
+			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
+			blk.add(new Code.BinOp(Type.leastUpperBound(lhs_t, rhs_t),
+					Code.BOP.DIFFERENCE, "$" + target, lhs_v, rhs_v));
+			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
+		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL				
 				|| bop == BOp.DIV) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);

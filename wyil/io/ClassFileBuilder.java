@@ -249,6 +249,18 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
 					Bytecode.VIRTUAL));
 			break;
+		case UNION:			
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case INTERSECT:
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case DIFFERENCE:
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
+					Bytecode.VIRTUAL));
+			break;
 		}
 		
 		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));

@@ -1,6 +1,6 @@
 void System::main([[char]] args):
-    int x = 1
-    bool y = x == |args|
-    if y:
+    {int} xs = {1,2}
+    xs = xs - {|args|}
+    if xs == {2}:
         print "Hello World"
 
