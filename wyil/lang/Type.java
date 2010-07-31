@@ -45,11 +45,11 @@ public abstract class Type {
 		return get(new Set(element));
 	}
 	
-	public static Fun T_FUN(Process receiver, Type ret, Type... parameters) {
+	public static Fun T_FUN(ProcessName receiver, Type ret, Type... parameters) {
 		return get(new Fun(receiver, ret,parameters));
 	}
 	
-	public static Fun T_FUN(Process receiver, Type ret, Collection<Type> parameters) {
+	public static Fun T_FUN(ProcessName receiver, Type ret, Collection<Type> parameters) {
 		return get(new Fun(receiver, ret, parameters));
 	}
 	
@@ -405,10 +405,10 @@ public abstract class Type {
 	 * @return
 	 */
 	public static boolean isOpenRecursive(NameID key, Type t) {
-		if (t instanceof Type.Existential) {
-			return true;
-		} else if (t instanceof Type.Void || t instanceof Type.Bool || t instanceof Type.Int
-				|| t instanceof Type.Real || t instanceof Type.Any || t instanceof Type.Named) {
+		if (t instanceof Type.Void || t instanceof Type.Bool
+				|| t instanceof Type.Int || t instanceof Type.Real
+				|| t instanceof Type.Any || t instanceof Type.Named
+				|| t instanceof Type.Existential) {
 			return false;
 		} else if(t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
@@ -465,6 +465,7 @@ public abstract class Type {
 	// =============================================================
 	
 	public static abstract class NonUnion extends Type {}
+	public static abstract class ProcessName extends NonUnion {}
 	
 	public static final class Any extends NonUnion {
 		private Any() {}
@@ -538,7 +539,7 @@ public abstract class Type {
 			return "real";
 		}
 	}
-	public static final class Named extends NonUnion {
+	public static final class Named extends ProcessName {
 		public final ModuleID module;
 		public final String name;
 		public final Type type;
@@ -633,11 +634,11 @@ public abstract class Type {
 		}
 	}
 	public static final class Fun extends NonUnion {
-		public final Process receiver;
+		public final ProcessName receiver;
 		public final Type ret;
 		public final ArrayList<Type> params;
 		
-		private Fun(Process receiver, Type ret, Type... parameters) {
+		private Fun(ProcessName receiver, Type ret, Type... parameters) {
 			this.ret = ret;
 			this.receiver = receiver;
 			this.params = new ArrayList<Type>();
@@ -645,7 +646,7 @@ public abstract class Type {
 				this.params.add(t);
 			}
 		}
-		private Fun(Process receiver, Type ret, Collection<Type> parameters) {
+		private Fun(ProcessName receiver, Type ret, Collection<Type> parameters) {
 			this.ret = ret;
 			this.receiver = receiver;
 			this.params = new ArrayList<Type>(parameters);			
@@ -681,7 +682,8 @@ public abstract class Type {
 			return r + ")" + ret;
 		}
 	}
-	public static final class Process extends NonUnion {
+
+	public static final class Process extends ProcessName {
 		public final Type element;
 		private Process(Type element) {
 			this.element = element;

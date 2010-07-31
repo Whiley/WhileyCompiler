@@ -196,17 +196,16 @@ public class ModuleLoader {
 	 *             if it couldn't resolve the module
 	 */
 	public ModuleID resolve(String name, List<PkgID> imports)
-			throws ResolveError {		
-						
-		for (PkgID pkg : imports) {			
+			throws ResolveError {									
+		for (PkgID pkg : imports) {				
 			if(pkg.size() > 0 && pkg.last().equals("*")) {				
 				pkg = pkg.subpkg(0, pkg.size()-1);
 				if(!isPackage(pkg)) {					
 					continue; // sanity check
-				}				
+				}								
 				Package p = resolvePackage(pkg);
 				
-				for (String n : p.modules) {
+				for (String n : p.modules) {					
 					try {
 						ModuleID mid = new ModuleID(pkg,n);									
 						Skeleton mi = loadSkeleton(mid);					
@@ -370,9 +369,9 @@ public class ModuleLoader {
      */
 	private Package resolvePackage(PkgID pkg) throws ResolveError {			
 		// First, check if we have already resolved this package.						
-		Package pkgInfo = packages.get(pkg);
+		Package pkgInfo = packages.get(pkg);				
 		
-		if(pkgInfo != null) {		
+		if(pkgInfo != null) {			
 			return pkgInfo;
 		} else if(failedPackages.contains(pkg)) {
 			// yes, it's already been resolved but it doesn't exist.
@@ -383,7 +382,7 @@ public class ModuleLoader {
 		String filePkg = pkg.fileName();
 		
 		// Second, try whileypath
-		for (String dir : whileypath) {							
+		for (String dir : whileypath) {			
 			// check if whileypath entry is a jarfile or a directory
 			if (!dir.endsWith(".jar")) {
 				// dir is not a Jar file, so I assume it's a directory.				
@@ -433,10 +432,10 @@ public class ModuleLoader {
 	
 	private Module readWhileyClass(ModuleID module, String filename,
 			InputStream input) throws IOException {
-		long time = System.currentTimeMillis();
-
+		long time = System.currentTimeMillis();		
+		
 		ClassFileReader r = new ClassFileReader(
-				input);					
+				input, new WhileyDefine.Reader());					
 
 		ClassFile cf = r.readClass();
 
@@ -463,20 +462,19 @@ public class ModuleLoader {
      * This traverses the directory tree, starting from dir, looking for class
      * or java files. There's probably a bug if the directory tree is cyclic!
      */
-	private Package lookForPackage(String root, PkgID pkg, String filepkg) {		
+	private Package lookForPackage(String root, PkgID pkg, String filepkg) {				
 		if(root.equals("")) {
 			root = ".";
-		}
-						
-		File f = new File(root + File.separatorChar + filepkg);		
+		}				
 		
-		if (f.isDirectory()) {
-			for (String file : f.list()) {
+		File f = new File(root + File.separatorChar + filepkg);				
+		if (f.isDirectory()) {			
+			for (String file : f.list()) {				
 				if (!closedWorldAssumption && file.endsWith(".whiley")) {
 					// strip  off ".whiley" to get module name
 					String name = file.substring(0,file.length()-7);
 					addPackageItem(pkg, name, new File(root));					
-				} else if (file.endsWith(".class")) {
+				} else if (file.endsWith(".class")) {					
 					// strip  off ".class" to get module name
 					String name = file.substring(0,file.length()-6);
 					addPackageItem(pkg, name, new File(root));					
@@ -550,14 +548,14 @@ public class ModuleLoader {
 			if(ba instanceof WhileyDefine) {
 				WhileyDefine wd = (WhileyDefine) ba;
 				Type type = wd.type();
-				Value value = wd.value();
+				Value value = wd.value();				
 				if(type == null) {
 					// constant definition
 					Module.ConstDef ci = new Module.ConstDef(wd.defName(),value);
 					constants.add(ci);
 				} else {
 					// type definition					
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type);
+					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type);					
 					types.add(ti);
 				}
 			}

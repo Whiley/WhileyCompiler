@@ -107,7 +107,6 @@ public class WhileyType implements BytecodeAttribute {
 		
 	public static void write(Type t, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		
 		if(t == Type.T_ANY) {
 			writer.write_u1(ANY_TYPE );
 		} else if(t == Type.T_EXISTENTIAL) {
@@ -116,7 +115,7 @@ public class WhileyType implements BytecodeAttribute {
 			writer.write_u1(VOID_TYPE);
 		} else if(t == Type.T_BOOL) {
 			writer.write_u1(BOOL_TYPE );			
-		} else if(t == Type.T_INT) {
+		} else if(t == Type.T_INT) {			
 			writer.write_u1(INT_TYPE );		
 		} else if(t == Type.T_REAL) {
 			writer.write_u1(REAL_TYPE );			
@@ -150,7 +149,7 @@ public class WhileyType implements BytecodeAttribute {
 			Type.Process st = (Type.Process) t;
 			writer.write_u1(PROCESS_TYPE );			
 			write(st.element,writer,constantPool);
-		} else if(t instanceof Type.Named) {
+		} else if(t instanceof Type.Named) {			
 			Type.Named st = (Type.Named) t;
 			writer.write_u1(NAMED_TYPE );
 			Constant.Utf8 utf8 = new Constant.Utf8(st.module.toString());

@@ -81,7 +81,7 @@ public class ModuleBuilder {
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 		for(WhileyFile.Decl d : wf.declarations) {				
 			if(d instanceof TypeDecl) {
-				types.add(resolve((TypeDecl)d));
+				types.add(resolve((TypeDecl)d,wf.module));
 			} else if(d instanceof ConstDecl) {
 				constants.add(resolve((ConstDecl)d));
 			} else if(d instanceof FunDecl) {
@@ -116,8 +116,11 @@ public class ModuleBuilder {
 		for(NameID key : unresolved.keySet()) {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID,Type>();			
-				Pair<Type,Block> p = expandType(key,cache);				
+				Pair<Type,Block> p = expandType(key,cache);								
 				Type t = simplifyRecursiveTypes(p.first());				
+				if (Type.isExistential(t)) {					
+					t = Type.T_NAMED(key.module(),key.name(), t);
+				} 				
 				types.put(key,new Pair<Type,Block>(t,p.second()));				
 			} catch(ResolveError ex) {
 				syntaxError(ex.getMessage(),srcs.get(key),ex);
@@ -163,7 +166,7 @@ public class ModuleBuilder {
 		return t;		
 	}	
 	
-	protected Pair<Type,Block> expandType(UnresolvedType t, HashMap<NameID, Type> cache) {
+	protected Pair<Type,Block> expandType(UnresolvedType t, HashMap<NameID, Type> cache) {		
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			Pair<Type,Block> p = expandType(lt.element, cache);
@@ -207,9 +210,8 @@ public class ModuleBuilder {
 			NameID name = new NameID(modInfo.module,dt.name);
 			
 			try {
-				Pair<Type, Block> et = expandType(name, cache);
-
-				if (Type.isExistential(et.first())) {
+				Pair<Type, Block> et = expandType(name, cache);				
+				if (Type.isExistential(et.first())) {					
 					return new Pair<Type, Block>(Type.T_NAMED(modInfo.module,
 							dt.name, et.first()), et.second());
 				} else {
@@ -236,11 +238,11 @@ public class ModuleBuilder {
 		Type ret = resolve(fd.ret).first();
 		
 		// method receiver type (if applicable)
-		Type.Process rec = null;
+		Type.ProcessName rec = null;
 		if (fd.receiver != null) {			
 			Type t = resolve(fd.receiver).first();
 			checkType(t, Type.Process.class, fd.receiver);
-			rec = (Type.Process) rec;			
+			rec = (Type.ProcessName) t;					
 		}
 		
 		Type.Fun ft = Type.T_FUN(rec, ret, parameters);
@@ -268,19 +270,18 @@ public class ModuleBuilder {
 		return new Module.ConstDef(td.name(),Value.V_INT(BigInteger.ONE));
 	}
 	
-	protected Module.TypeDef resolve(TypeDecl td) {		
-		Pair<Type,Block> p = resolve(td.type);
+	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {		
+		Pair<Type,Block> p = types.get(new NameID(module,td.name()));
 		Type t = p.first();
-		td.attributes().add(new Attribute.Type(t));
-		
+		td.attributes().add(new Attribute.Type(t));		
 		if(td.constraint != null) {
 			// FIXME: at this point, would be good to add types for other
 			// exposed variables.
 			HashMap<String,Type> environment = new HashMap<String,Type>();
 			HashMap<String,Type> declared = new HashMap<String,Type>();
 			environment.put("$", t);			
-			t = resolve(0, td.constraint, environment, declared).first();			
-			checkType(t,Type.Bool.class, td.constraint);			
+			Type tmp = resolve(0, td.constraint, environment, declared).first();			
+			checkType(tmp,Type.Bool.class, td.constraint);			
 		}				
 		
 		return new Module.TypeDef(td.name(),t);
@@ -837,7 +838,7 @@ public class ModuleBuilder {
 		return new Pair<Type, Block>(ft, null);
 	}
 	
-	protected Pair<Type,Block> resolve(UnresolvedType t) {
+	protected Pair<Type,Block> resolve(UnresolvedType t) {		
 		if(t instanceof UnresolvedType.Any) {
 			return new Pair<Type,Block>(Type.T_ANY,null);
 		} else if(t instanceof UnresolvedType.Existential) {
@@ -846,7 +847,7 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.T_VOID,null);
 		} else if(t instanceof UnresolvedType.Bool) {
 			return new Pair<Type,Block>(Type.T_BOOL,null);
-		} else if(t instanceof UnresolvedType.Int) {
+		} else if(t instanceof UnresolvedType.Int) {			
 			return new Pair<Type,Block>(Type.T_INT,null);
 		} else if(t instanceof UnresolvedType.Real) {
 			return new Pair<Type,Block>(Type.T_REAL,null);

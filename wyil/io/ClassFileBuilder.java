@@ -66,7 +66,7 @@ public class ClassFileBuilder {
 			cf.attributes().add(wd);
 		}
 		for(Module.TypeDef td : module.types()) {			
-			Type t = td.type();
+			Type t = td.type();			
 			WhileyDefine wd = new WhileyDefine(td.name(),t,null);
 			cf.attributes().add(wd);
 		}
@@ -129,8 +129,8 @@ public class ClassFileBuilder {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);		
-		JvmType.Function ft = (JvmType.Function) convertType(fd.type());
-		String name = nameMangle(fd.name(),fd.type());		
+		JvmType.Function ft = (JvmType.Function) convertType(fd.type());		
+		String name = nameMangle(fd.name(),fd.type());			
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
 		ArrayList<Bytecode> codes = translate(fd);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
@@ -694,13 +694,13 @@ public class ClassFileBuilder {
 	}
 	
 	
-	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.jvm.rt","WhileyList");
-	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.jvm.rt","WhileySet");
-	public final static JvmType.Clazz WHILEYTUPLE = new JvmType.Clazz("wyjc.jvm.rt","WhileyTuple");	
+	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyil.jvm.rt","WhileyList");
+	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
+	public final static JvmType.Clazz WHILEYTUPLE = new JvmType.Clazz("wyil.jvm.rt","WhileyTuple");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
-			"wyjc.jvm.rt", "WhileyProcess");
+			"wyil.jvm.rt", "WhileyProcess");
 	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
-	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.jvm.rt","BigRational");
+	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyil.jvm.rt","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");
@@ -848,13 +848,5 @@ public class ClassFileBuilder {
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}
-	}
-	
-
-	protected Type flattern(Type t) {
-		if(t instanceof Type.Named) {
-			return ((Type.Named)t).type;
-		}
-		return t;
 	}
 }
