@@ -44,17 +44,12 @@ public class Compiler implements Logger {
 	public interface Writer {
 		public void write(Module module, Logger logout);
 	}
-		
-	protected int debugMode = 0;
-	
-	public static final int DEBUG_LEXER = 1;
-	public static final int DEBUG_PARSER = 2;	
-	public static final int DEBUG_CHECKS = 4;
-	public static final int DEBUG_PCS = 8;
-	public static final int DEBUG_VCS = 16;
 			
-	public Compiler(ModuleLoader loader) {
+	public Compiler(ModuleLoader loader, List<Stage> stages,
+			List<Writer> writers) {
 		this.loader = loader;		
+		this.stages = new ArrayList<Stage>(stages);
+		this.writers = new ArrayList<Writer>(writers);
 		this.nameResolver = new NameResolution(loader);		
 		this.typeResolver = new ModuleBuilder(loader);	
 	}
@@ -76,9 +71,6 @@ public class Compiler implements Logger {
 	
 	public void setLogOut(OutputStream logout) {
 		this.logout = new PrintStream(logout);
-	}
-	public void setDebugMode(int debugMode) {
-		this.debugMode = debugMode;
 	}
 
 	public List<WhileyFile> compile(List<File> files) throws IOException {
@@ -116,10 +108,6 @@ public class Compiler implements Logger {
 		WhileyLexer wlexer = new WhileyLexer(file.getPath());		
 		List<WhileyLexer.Token> tokens = wlexer.scan();		
 
-		if((debugMode & DEBUG_LEXER) != 0) {
-			debugLexer(tokens);
-		}
-		
 		WhileyParser wfr = new WhileyParser(file.getPath(),tokens);	
 		logTimedMessage("[" + file + "] Parsing complete", System
 				.currentTimeMillis()
@@ -139,11 +127,12 @@ public class Compiler implements Logger {
 	public void finishCompilation(Module module) {				
 		// Register the updated file
 		loader.register(module);
-				
-		writeOutputFile(module);		
+		
+		for(Writer w : writers) {
+			w.write(module,this);
+		}
 	}
-	
-	
+		
 	protected void resolveNames(WhileyFile m) {
 		long start = System.currentTimeMillis();		
 		nameResolver.resolve(m);
@@ -175,74 +164,5 @@ public class Compiler implements Logger {
 		logout.print(" [");
 		logout.print(time);
 		logout.println("ms]");
-	}
-	
-	private void debugLexer(List<WhileyLexer.Token> tokens) {
-		for(WhileyLexer.Token t : tokens) {
-			if(t instanceof WhileyLexer.NewLine) {
-				System.out.println("NewLine:" + t.start);
-			} else if(t instanceof WhileyLexer.Tabs) {
-				WhileyLexer.Tabs ts = (WhileyLexer.Tabs) t;
-				System.out.println("Tabs(" + ts.ntabs + "):" + t.start);
-			} else {
-				String name = t.getClass().getName().substring(26);
-				System.err.println(name +  ":" + t.start + " \"" + t.text + "\"");
-			}
-		}
-	}
-	
-	/*
-	private void debugChecks(Module wf) {
-		long start = System.currentTimeMillis();
-		String filename = stripExtension(wf.filename) + ".debug";
-		try {
-			PrintWriter printer = new PrintWriter(filename,"UTF8");
-			CodeWriter writer = new CodeWriter(printer);
-			writer.setWriteChecks();
-			writer.write(wf);
-			logTimedMessage("Wrote " + filename,System.currentTimeMillis()-start);
-			printer.close();
-		} catch(IOException e) {
-			logTimedMessage("Failed writing " + filename,System.currentTimeMillis()-start);
-		}
-	}
-	
-	private void debugPCS(Module wf) {
-		long start = System.currentTimeMillis();
-		String filename = stripExtension(wf.filename()) + ".debug";
-		try {
-			PrintWriter printer = new PrintWriter(filename,"UTF8");
-			CodeWriter writer = new CodeWriter(printer);
-			writer.setWriteProofs();
-			writer.write(wf);
-			logTimedMessage("Wrote " + filename,System.currentTimeMillis()-start);
-			printer.close();
-		} catch(IOException e) {
-			logTimedMessage("Failed writing " + filename,System.currentTimeMillis()-start);
-		}
-	}
-	
-	private void debugVCS(Module wf) {
-		long start = System.currentTimeMillis();
-		String filename = stripExtension(wf.filename()) + ".debug";
-		try {
-			PrintWriter printer = new PrintWriter(filename,"UTF8");
-			CodeWriter writer = new CodeWriter(printer);
-			writer.setWriteVerificationConditions();
-			writer.write(wf);
-			logTimedMessage("Wrote " + filename,System.currentTimeMillis()-start);
-			printer.close();
-		} catch(IOException e) {
-			logTimedMessage("Failed writing " + filename,System.currentTimeMillis()-start);
-		}
-	}
-	*/
-	
-	private static String stripExtension(String input) {
-		int li = input.lastIndexOf('.');
-		if(li == -1) { return input; } // had no extension?
-		else {
-			return input.substring(0,li);
-		}
-	}		
+	}	
 }

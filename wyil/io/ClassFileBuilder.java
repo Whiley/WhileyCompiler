@@ -26,10 +26,8 @@ import wyil.jvm.rt.BigRational;
 import wyil.*;
 import wyil.lang.*;
 import wyil.lang.Code;
-import wyjvm.attributes.*;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
-import static wyil.util.SyntaxError.*;
 import static wyjvm.lang.JvmTypes.*;
 
 /**
@@ -86,7 +84,7 @@ public class ClassFileBuilder {
 				new WhileyVersion(WHILEY_MAJOR_VERSION, WHILEY_MINOR_VERSION));
 		
 		// Finally, we need to eliminate any dead code that was introduced.
-		new DeadCodeElimination().apply(cf);
+		//new DeadCodeElimination().apply(cf);
 		
 		return cf;
 	}	

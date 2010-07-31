@@ -24,6 +24,7 @@ import java.util.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
+import wyjc.compiler.*;
 import wyjc.compiler.Compiler;
 import wyjc.util.*;
 
@@ -70,7 +71,8 @@ public class Main {
 		boolean nvc = false;
 		boolean nrc = false;
 		boolean cwa = true; // for simplicity!
-		int debugMode = 0;				
+		boolean wyil = false;
+		boolean bytecodes = false;
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
 		ArrayList<String> bootpath = new ArrayList<String>();
@@ -94,18 +96,14 @@ public class Main {
 					        							.split(File.pathSeparator));															
 					        				} else if (arg.equals("-verbose")) {
 					verbose = true;
-				} else if(arg.equals("-debug:lexer")) {					
-					debugMode |= Compiler.DEBUG_LEXER;
-				} else if(arg.equals("-debug:checks")) {
-					debugMode |= Compiler.DEBUG_CHECKS;					
-				} else if (arg.equals("-debug:pcs")) {				
-					debugMode |= Compiler.DEBUG_PCS;					
-				} else if (arg.equals("-debug:vcs")) {									
-					debugMode |= Compiler.DEBUG_VCS;
 				} else if(arg.equals("-nvc")) {					
 					nvc = true;
 				} else if(arg.equals("-nrc")) {					
 					nrc = true;
+				} else if(arg.equals("-bytecode")) {					
+					bytecodes = true;
+				} else if(arg.equals("-wyil")) {					
+					wyil = true;
 				} else {
 					throw new RuntimeException("Unknown option: " + args[i]);
 				}
@@ -128,22 +126,23 @@ public class Main {
 		whileypath.addAll(bootpath);
 		
 		ModuleLoader loader = new ModuleLoader(whileypath);
-		Compiler compiler  = new Compiler(loader,MAJOR_VERSION,MINOR_VERSION);
+		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
+		ArrayList<Compiler.Writer> writers = new ArrayList<Compiler.Writer>();
+		if(wyil) {
+			writers.add(new WyilWriter());
+		}
+		if(bytecodes) {
+			writers.add(new BytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
+		}
+		writers.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));		
+		Compiler compiler = new Compiler(loader,stages,writers);
 		
 		// Now, configure compiler and loader
 		loader.setLogger(compiler);
 		loader.setClosedWorldAssumption(cwa);
-		compiler.setDebugMode(debugMode);
-		
+			
 		if(verbose) {
 			compiler.setLogOut(System.err);
-		}
-		
-		if(nvc) {
-			compiler.setVerification(false);
-		}
-		if(nrc) {
-			compiler.setRuntimeChecks(false);
 		}
 		
 		try {
