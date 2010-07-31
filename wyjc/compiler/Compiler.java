@@ -31,12 +31,20 @@ import wyjc.stages.*;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 
-public abstract class AbstractCompiler implements Logger {	
+public class Compiler implements Logger {	
 	private ModuleLoader loader;
 	protected NameResolution nameResolver;
 	protected ModuleBuilder typeResolver;		
-	protected ClassFileBuilder classBuilder;		
-	
+	protected ArrayList<Stage> stages;
+	protected ArrayList<Writer> writers;
+
+	public interface Stage {
+		public Module process(Module module, Logger logout);
+	}
+	public interface Writer {
+		public void write(Module module, Logger logout);
+	}
+		
 	protected int debugMode = 0;
 	
 	public static final int DEBUG_LEXER = 1;
@@ -45,16 +53,10 @@ public abstract class AbstractCompiler implements Logger {
 	public static final int DEBUG_PCS = 8;
 	public static final int DEBUG_VCS = 16;
 			
-	public AbstractCompiler(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
-		this.loader = loader;
-		
+	public Compiler(ModuleLoader loader) {
+		this.loader = loader;		
 		this.nameResolver = new NameResolution(loader);		
-		this.typeResolver = new ModuleBuilder(loader);
-		this.classBuilder = new ClassFileBuilder(loader,whileyMajorVersion,whileyMinorVersion);
-		/*
-		this.checkGenerator = new RuntimeCheckGenerator(loader);		
-		this.vcGenerator = new VerificationConditionGenerator(loader);
-		*/
+		this.typeResolver = new ModuleBuilder(loader);	
 	}
 	
 	/**
@@ -157,26 +159,6 @@ public abstract class AbstractCompiler implements Logger {
 				System.currentTimeMillis() - start);
 		return modules;		
 	}
-		
-	protected abstract void writeOutputFile(Module m);	
-	
-	protected void writeClassFile(Module m) {
-		long start = System.currentTimeMillis();
-		ClassFile file = classBuilder.build(m);		
-		// calculate filename
-		String filename = m.filename().replace(".whiley", ".class");
-		try {
-			FileOutputStream out = new FileOutputStream(filename);
-			ClassFileWriter writer = new ClassFileWriter(out,null);
-			writer.write(file);
-			logTimedMessage("[" + m.filename() + "] class file written",
-					System.currentTimeMillis() - start);
-		} catch(IOException ex) {
-			logTimedMessage("[" + m.filename()
-					+ "] failed writing class file (" + ex.getMessage() + ")",
-					System.currentTimeMillis() - start);
-		}
-	}	
 	
 	/**
 	 * This method is just a helper to format the output
