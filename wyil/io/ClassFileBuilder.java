@@ -84,7 +84,7 @@ public class ClassFileBuilder {
 				new WhileyVersion(WHILEY_MAJOR_VERSION, WHILEY_MINOR_VERSION));
 		
 		// Finally, we need to eliminate any dead code that was introduced.
-		//new DeadCodeElimination().apply(cf);
+		new DeadCodeElimination().apply(cf);
 		
 		return cf;
 	}	
@@ -175,14 +175,14 @@ public class ClassFileBuilder {
 			translate((Code.Assign)c,slots,bytecodes);
 		} else if(c instanceof Code.Return){
 			translate((Code.Return)c,slots,bytecodes);
-		}else if(c instanceof Code.BinOp) {
+		} else if(c instanceof Code.BinOp) {
 			
 		} else if(c instanceof Code.Goto) {
 			
 		} else if(c instanceof Code.IfGoto) {
 			translate((Code.IfGoto)c,slots,bytecodes);
 		} else if(c instanceof Code.Label){
-			
+			translate((Code.Label)c,slots,bytecodes);
 		} else if(c instanceof Code.Debug){
 			translate((Code.Debug)c,slots,bytecodes);
 		}
