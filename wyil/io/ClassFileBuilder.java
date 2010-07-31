@@ -234,19 +234,19 @@ public class ClassFileBuilder {
 		
 		switch(c.op) {
 		case ADD:			
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "add", ftype,
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "add", ftype,
 					Bytecode.VIRTUAL));
 			break;
 		case SUB:			
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "subtract", ftype,
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "subtract", ftype,
 					Bytecode.VIRTUAL));
 			break;
 		case MUL:			
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "multiply", ftype,
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
 					Bytecode.VIRTUAL));
 			break;
 		case DIV:			
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "divide", ftype,
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
 					Bytecode.VIRTUAL));
 			break;
 		}
@@ -348,7 +348,7 @@ public class ClassFileBuilder {
 	}
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {		
-		if (c.op == Code.BOP.ELEMOF) {
+		if (c.op == Code.COP.ELEMOF) {
 			// element of is a special case because the lhs and rhs have
 			// slightly different types.
 			Type target;
@@ -368,86 +368,103 @@ public class ClassFileBuilder {
 			convert(c.type,c.rhs.type(), slots, bytecodes);
 		}
 		JvmType type = convertType(c.type);
-		int op;
-		switch(c.op) {
-		case EQ:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
-					Bytecode.VIRTUAL));			
-			op = Bytecode.If.NE;
-			break;
+		if(c.type == Type.T_BOOL) {
+			// boolean is a special case, since it is not implemented as an
+			// object on the JVM stack. Therefore, we need to use the "if_cmp"
+			// bytecode, rather than calling .equals() and using "if" bytecode.
+			switch(c.op) {
+			case EQ:
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.EQ, type, c.target));
+				break;			
+			case NEQ:
+				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, c.target));				
+				break;			
+			}
+		} else {
+			// Non-boolean case. Just use the Object.equals() method, followed
+			// by "if" bytecode.			
+			int op;
+			switch(c.op) {
+			case EQ:
+			{
+				JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
+						Bytecode.VIRTUAL));			
+				op = Bytecode.If.NE;
+				break;
+			}
+			case NEQ:
+			{
+				JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
+						Bytecode.VIRTUAL));
+				op = Bytecode.If.EQ;
+				break;
+			}
+			case LT:
+			{			
+				JvmType.Function ftype = new JvmType.Function(T_INT,type);
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "compareTo", ftype,
+						Bytecode.VIRTUAL));
+				op = Bytecode.If.LT;			
+				break;
+			}
+			case LTEQ:
+			{			
+				JvmType.Function ftype = new JvmType.Function(T_INT,type);
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+						"compareTo", ftype, Bytecode.VIRTUAL));
+				op = Bytecode.If.LE;
+				break;
+			}
+			case GT:
+			{		
+				JvmType.Function ftype = new JvmType.Function(T_INT, type);
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+						"compareTo", ftype, Bytecode.VIRTUAL));
+				op = Bytecode.If.GT;
+				break;
+			}
+			case GTEQ:
+			{		
+				JvmType.Function ftype = new JvmType.Function(T_INT,type);
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+						"compareTo", ftype, Bytecode.VIRTUAL));			
+				op = Bytecode.If.GE;
+				break;
+			}
+			case SUBSETEQ:
+			{
+				JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
+				bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subsetEq", ftype,
+						Bytecode.VIRTUAL));
+				op = Bytecode.If.NE;
+				break;
+			}
+			case SUBSET:
+			{
+				JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
+				bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subset", ftype,
+						Bytecode.VIRTUAL));
+				op = Bytecode.If.NE;
+				break;
+			}
+			case ELEMOF:
+			{
+				JvmType.Function ftype = new JvmType.Function(T_BOOL,
+						JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "contains",
+						ftype, Bytecode.INTERFACE));
+				op = Bytecode.If.NE;
+				break;
+			}
+			default:
+				throw new RuntimeException("unknown if condition encountered");
+			}		
+			bytecodes.add(new Bytecode.If(op, c.target));
 		}
-		case NEQ:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
-					Bytecode.VIRTUAL));
-			op = Bytecode.If.EQ;
-			break;
-		}
-		case LT:
-		{			
-			JvmType.Function ftype = new JvmType.Function(T_INT,type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "compareTo", ftype,
-					Bytecode.VIRTUAL));
-			op = Bytecode.If.LT;			
-			break;
-		}
-		case LTEQ:
-		{			
-			JvmType.Function ftype = new JvmType.Function(T_INT,type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"compareTo", ftype, Bytecode.VIRTUAL));
-			op = Bytecode.If.LE;
-			break;
-		}
-		case GT:
-		{		
-			JvmType.Function ftype = new JvmType.Function(T_INT, type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"compareTo", ftype, Bytecode.VIRTUAL));
-			op = Bytecode.If.GT;
-			break;
-		}
-		case GTEQ:
-		{		
-			JvmType.Function ftype = new JvmType.Function(T_INT,type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"compareTo", ftype, Bytecode.VIRTUAL));			
-			op = Bytecode.If.GE;
-			break;
-		}
-		case SUBSETEQ:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subsetEq", ftype,
-					Bytecode.VIRTUAL));
-			op = Bytecode.If.NE;
-			break;
-		}
-		case SUBSET:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subset", ftype,
-					Bytecode.VIRTUAL));
-			op = Bytecode.If.NE;
-			break;
-		}
-		case ELEMOF:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,
-					JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "contains",
-					ftype, Bytecode.INTERFACE));
-			op = Bytecode.If.NE;
-			break;
-		}
-		default:
-			throw new RuntimeException("unknown if condition encountered");
-		}		
-		bytecodes.add(new Bytecode.If(op, c.target));
 	}
+	
 	public void translate(Code.Goto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Goto(c.target));

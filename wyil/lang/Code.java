@@ -284,13 +284,13 @@ public abstract class Code {
 	 *
 	 */
 	public final static class IfGoto extends Code {
-		public final BOP op;
+		public final COP op;
 		public final Type type;
 		public final RVal lhs;
 		public final RVal rhs;
 		public final String target;
 
-		public IfGoto(Type type, BOP op, RVal lhs, RVal rhs, String target) {
+		public IfGoto(Type type, COP op, RVal lhs, RVal rhs, String target) {
 			this.op = op;
 			this.type = type;
 			this.lhs = lhs;
@@ -385,6 +385,29 @@ public abstract class Code {
 		}
 	}
 	public enum BOP { 
+		ADD{
+			public String toString() { return "+"; }
+		},
+		SUB{
+			public String toString() { return "-"; }
+		},
+		MUL{
+			public String toString() { return "*"; }
+		},
+		DIV{
+			public String toString() { return "/"; }
+		},
+		UNION{
+			public String toString() { return "+"; }
+		},
+		INTERSECT{
+			public String toString() { return "&"; }
+		},
+		DIFFERENCE{
+			public String toString() { return "-"; }
+		}
+	};	
+	public enum COP { 
 		EQ() {
 			public String toString() { return "=="; }
 		},
@@ -411,27 +434,6 @@ public abstract class Code {
 		},
 		SUBSETEQ{
 			public String toString() { return "<="; }
-		},
-		ADD{
-			public String toString() { return "+"; }
-		},
-		SUB{
-			public String toString() { return "-"; }
-		},
-		MUL{
-			public String toString() { return "*"; }
-		},
-		DIV{
-			public String toString() { return "/"; }
-		},
-		UNION{
-			public String toString() { return "+"; }
-		},
-		INTERSECT{
-			public String toString() { return "&"; }
-		},
-		DIFFERENCE{
-			public String toString() { return "-"; }
 		}
 	};	
 	public enum NOP { 

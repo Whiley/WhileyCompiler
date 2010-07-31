@@ -524,7 +524,7 @@ public class ModuleBuilder {
 		}
 		checkType(t, Type.Bool.class, v);
 		Block blk = new Block();
-		blk.add(new Code.IfGoto(t, Code.BOP.EQ, RVal.VAR(t, v.var), Value
+		blk.add(new Code.IfGoto(t, Code.COP.EQ, RVal.VAR(t, v.var), Value
 				.V_BOOL(true), target));
 		return blk;
 	}
@@ -561,18 +561,18 @@ public class ModuleBuilder {
 				|| bop == BOp.GTEQ) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);			
-			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));			
+			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));			
 			return blk;
 		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);			
-			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));			
+			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));			
 			return blk;
 		} else if(bop == BOp.EQ || bop == BOp.NEQ){
 			if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
 				syntaxError("Cannot compare types",v);
 			}			
-			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
+			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));
 			return blk;
 		} else if(bop == BOp.ELEMENTOF) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t, v);
@@ -588,12 +588,12 @@ public class ModuleBuilder {
 				syntaxError("Cannot compare types",v);
 			}
 			lub = Type.leastUpperBound(lhs_t,element);
-			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
+			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));
 			return blk;
 		} else if(bop == BOp.LISTACCESS) {
 			checkType(lhs_t, Type.List.class, v);
 			checkIsSubtype(Type.T_INT, rhs_t, v);			 
-			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
+			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));
 			return blk;		
 		} 			
 		
@@ -761,61 +761,58 @@ public class ModuleBuilder {
 	protected Pair<Type, Block> resolve(int target, BinOp v,
 			HashMap<String, Type> environment, HashMap<String, Type> declared) {
 		
+		// could probably use a range test for this somehow
+		if (v.op == BOp.EQ || v.op == BOp.NEQ || v.op == BOp.LT
+				|| v.op == BOp.LTEQ || v.op == BOp.GT || v.op == BOp.GTEQ
+				|| v.op == BOp.SUBSET || v.op == BOp.SUBSETEQ
+				|| v.op == BOp.ELEMENTOF || v.op == BOp.AND || v.op == BOp.OR) {			
+			String trueLabel = label();
+			String exitLabel = label();
+			Block blk = resolveCondition(trueLabel,v,environment,declared);
+			blk.add(new Code.Assign(Type.T_BOOL,"$" + target,Value.V_BOOL(false)));
+			blk.add(new Code.Goto(exitLabel));
+			blk.add(new Code.Label(trueLabel));
+			blk.add(new Code.Assign(Type.T_BOOL,"$" + target,Value.V_BOOL(true)));
+			blk.add(new Code.Label(exitLabel));
+			return new Pair<Type,Block>(Type.T_BOOL,blk);
+		}
+		
 		Pair<Type,Block> lhs_tb = resolve(target,v.lhs, environment, declared);
 		Pair<Type,Block> rhs_tb = resolve(target+1,v.rhs, environment, declared);
 		RVal lhs_v = RVal.VAR(lhs_tb.first(),"$" + target);
 		RVal rhs_v = RVal.VAR(rhs_tb.first(),"$" + (target+1));		
 		Type lhs_t = lhs_tb.first();
-		Type rhs_t = rhs_tb.first();
+		Type rhs_t = rhs_tb.first();		
 		BOp bop = v.op;
 		
 		Block blk = new Block();
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
 		
-		if(bop == BOp.OR || bop == BOp.AND) {
-			checkIsSubtype(Type.T_BOOL, lhs_t, v);
-			checkIsSubtype(Type.T_BOOL, rhs_t, v);
-			return new Pair<Type,Block>(Type.T_BOOL,blk);
-		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
+		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			blk.add(new Code.BinOp(lhs_t, OP2BOP(bop, v), "$" + target, lhs_v,
-					rhs_v));			
+			blk.add(new Code.BinOp(Type.leastUpperBound(lhs_t, rhs_t), OP2BOP(
+					bop, v), "$" + target, lhs_v, rhs_v));
 			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
-		} else if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
-				|| bop == BOp.GTEQ) {
-			checkIsSubtype(Type.T_REAL, lhs_t, v);
-			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		} else if(bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
+			blk.add(new Code.BinOp(Type.leastUpperBound(lhs_t, rhs_t), OP2BOP(
+					bop, v), "$" + target, lhs_v, rhs_v));
 			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
-		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
-			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
-			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			return new Pair<Type,Block>(Type.T_BOOL,blk);
-		} else if(bop == BOp.EQ || bop == BOp.NEQ){
-			if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
-				syntaxError("Cannot compare types",v);
-			}
-			return new Pair<Type,Block>(Type.T_BOOL,blk);
-		} else if(bop == BOp.ELEMENTOF) {
-			checkType(rhs_t, Type.Set.class, v);
-			Type.Set st = (Type.Set) rhs_t;
-			if(!Type.isSubtype(lhs_t, st.element) && !Type.isSubtype(st.element, lhs_t)) {
-				syntaxError("Cannot compare types",v);
-			}
-			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		} else if(bop == BOp.LISTACCESS) {
 			checkType(lhs_t, Type.List.class, v);
 			checkIsSubtype(Type.T_INT, rhs_t, v);
 			Type.List lt = (Type.List) lhs_t;  
 			return new Pair<Type,Block>(lt.element,blk);		
-		} 			
-		
+		} else if(bop == BOp.OR || bop == BOp.AND) {
+			checkIsSubtype(Type.T_BOOL, lhs_t, v);
+			checkIsSubtype(Type.T_BOOL, rhs_t, v);
+			return new Pair<Type,Block>(Type.T_BOOL,blk);
+		} 
+				
 		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
@@ -1104,27 +1101,34 @@ public class ModuleBuilder {
 		case UNION:
 			return Code.BOP.UNION;			
 		case INTERSECTION:
-			return Code.BOP.INTERSECT;
-		case EQ:
-			return Code.BOP.EQ;
-		case NEQ:
-			return Code.BOP.NEQ;
-		case LT:
-			return Code.BOP.LT;
-		case LTEQ:
-			return Code.BOP.LTEQ;
-		case GT:
-			return Code.BOP.GT;		
-		case GTEQ:
-			return Code.BOP.GTEQ;
-		case SUBSET:
-			return Code.BOP.SUBSET;		
-		case SUBSETEQ:
-			return Code.BOP.SUBSETEQ;
-		case ELEMENTOF:
-			return Code.BOP.ELEMOF;
+			return Code.BOP.INTERSECT;	
 		}
 		syntaxError("unrecognised binary operation",elem);
+		return null;
+	}
+	
+	public static Code.COP OP2COP(Expr.BOp bop, SyntacticElement elem) {
+		switch (bop) {
+		case EQ:
+			return Code.COP.EQ;
+		case NEQ:
+			return Code.COP.NEQ;
+		case LT:
+			return Code.COP.LT;
+		case LTEQ:
+			return Code.COP.LTEQ;
+		case GT:
+			return Code.COP.GT;
+		case GTEQ:
+			return Code.COP.GTEQ;
+		case SUBSET:
+			return Code.COP.SUBSET;
+		case SUBSETEQ:
+			return Code.COP.SUBSETEQ;
+		case ELEMENTOF:
+			return Code.COP.ELEMOF;
+		}
+		syntaxError("unrecognised binary operation", elem);
 		return null;
 	}
 }
