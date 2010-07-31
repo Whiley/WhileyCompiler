@@ -307,7 +307,7 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
 					Bytecode.VIRTUAL));			
-			op = Bytecode.If.EQ;
+			op = Bytecode.If.NE;
 			break;
 		}
 		case NEQ:
@@ -315,7 +315,7 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
 					Bytecode.VIRTUAL));
-			op = Bytecode.If.NE;
+			op = Bytecode.If.EQ;
 			break;
 		}
 		case LT:
@@ -335,8 +335,7 @@ public class ClassFileBuilder {
 			break;
 		}
 		case GT:
-		{
-			System.out.println("GOING GT");
+		{		
 			JvmType.Function ftype = new JvmType.Function(T_INT, type);
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
 					"compareTo", ftype, Bytecode.VIRTUAL));
@@ -344,8 +343,7 @@ public class ClassFileBuilder {
 			break;
 		}
 		case GTEQ:
-		{
-			System.out.println("GOING GTEQ");
+		{		
 			JvmType.Function ftype = new JvmType.Function(T_INT,type);
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
 					"compareTo", ftype, Bytecode.VIRTUAL));			
