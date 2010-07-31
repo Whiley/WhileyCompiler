@@ -29,6 +29,10 @@ public interface Expr extends SyntacticElement {
 			super(var, attributes);
 			this.mid = mid;
 		}
+		
+		public String toString() {
+			return mid + ":" + var;
+		}
 	}
 
 	public static class Constant extends SyntacticElement.Impl implements Expr {
@@ -37,6 +41,10 @@ public interface Expr extends SyntacticElement {
 		public Constant(Value val, Attribute... attributes) {
 			super(attributes);
 			this.value = val;
+		}
+		
+		public String toString() {
+			return value.toString();
 		}
 	}
 
@@ -48,30 +56,6 @@ public interface Expr extends SyntacticElement {
 			this.type = val;
 		}
 	}
-	
-	public enum BOp { 
-		AND,
-		OR,
-		ADD,
-		SUB,
-		MUL,
-		DIV,		
-		UNION,
-		INTERSECTION,
-		EQ,
-		NEQ,
-		LT,
-		LTEQ,
-		GT,
-		GTEQ,
-		SUBSET,
-		SUBSETEQ,
-		ELEMENTOF,
-		LISTACCESS,
-		LISTRANGE,
-		TYPEEQ,
-		TYPEIMPLIES
-	};
 		
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public final BOp op;
@@ -90,6 +74,10 @@ public interface Expr extends SyntacticElement {
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
+		}
+		
+		public String toString() {
+			return "(" + op + " " + lhs + " " + rhs + ")";
 		}
 	}
 
@@ -201,4 +189,70 @@ public interface Expr extends SyntacticElement {
 			super(UOp.PROCESSSPAWN,mhs,attributes);							
 		}
 	}
+	
+	public enum BOp { 
+		AND {
+			public String toString() { return "&&"; }
+		},
+		OR{
+			public String toString() { return "||"; }
+		},
+		ADD{
+			public String toString() { return "+"; }
+		},
+		SUB{
+			public String toString() { return "-"; }
+		},
+		MUL{
+			public String toString() { return "*"; }
+		},
+		DIV{
+			public String toString() { return "/"; }
+		},		
+		UNION{
+			public String toString() { return "+"; }
+		},
+		INTERSECTION{
+			public String toString() { return "&"; }
+		},
+		EQ{
+			public String toString() { return "=="; }
+		},
+		NEQ{
+			public String toString() { return "!="; }
+		},
+		LT{
+			public String toString() { return "<"; }
+		},
+		LTEQ{
+			public String toString() { return "<="; }
+		},
+		GT{
+			public String toString() { return ">"; }
+		},
+		GTEQ{
+			public String toString() { return ">="; }
+		},
+		SUBSET{
+			public String toString() { return "<"; }
+		},
+		SUBSETEQ{
+			public String toString() { return "<="; }
+		},
+		ELEMENTOF{
+			public String toString() { return "in"; }
+		},
+		LISTACCESS{
+			public String toString() { return "[]"; }
+		},
+		LISTRANGE{
+			public String toString() { return ".."; }
+		},
+		TYPEEQ{
+			public String toString() { return "~=="; }
+		},
+		TYPEIMPLIES {
+			public String toString() { return "~=>"; }
+		}
+	};
 }

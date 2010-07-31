@@ -194,18 +194,20 @@ public class WhileyParser {
 		// constant).
 		
 		try {			
-			UnresolvedType t = parseType();			
+			UnresolvedType t = parseType();
+			
 			Expr constraint = null;
 			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type				
 				matchKeyword("where");
-				constraint = parseConditionExpression();							
-			}
-					
-			matchEndLine();		
+				constraint = parseCondition();							
+			}					
+			matchEndLine();					
 			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,index-1));
 		
-		} catch(Exception e) {}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 		
 		// Ok, failed parsing type constructor. So, backtrack and try for
 		// expression.
