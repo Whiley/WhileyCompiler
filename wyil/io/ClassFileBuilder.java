@@ -248,15 +248,17 @@ public class ClassFileBuilder {
 		}
 		case LENGTHOF: {
 			JvmType.Function ftype = new JvmType.Function(T_INT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", ftype,
-					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "size",
+					ftype, Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
-			ftype = new JvmType.Function(type, T_LONG);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "valueOf",
+			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
 					ftype, Bytecode.STATIC));
 			break;
 		}
 		}
+		
+		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
 	}
 	public void translate(Code.Goto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
