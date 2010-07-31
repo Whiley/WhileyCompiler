@@ -18,7 +18,7 @@
 
 package wyil.lang;
 
-import java.util.Set;
+import java.util.*;
 
 public abstract class Code {
 
@@ -175,6 +175,82 @@ public abstract class Code {
 				return type + " " + lhs + " := " + op + rhs;
 			}
 		}		
+	}
+	
+	public final static class NaryOp extends Code {
+		public final NOP op;
+		public final Type type;
+		public final String lhs;
+		public final ArrayList<RVal> args;		
+		
+		public NaryOp(Type type, NOP op, String lhs, RVal... args) {
+			this.op = op;
+			this.type = type;
+			this.lhs = lhs;
+			this.args = new ArrayList<RVal>();
+			for(RVal r : args) {
+				this.args.add(r);
+			}
+		}
+		
+		public NaryOp(Type type, NOP op, String lhs, Collection<RVal> args) {
+			this.op = op;
+			this.type = type;
+			this.lhs = lhs;
+			this.args = new ArrayList<RVal>(args);			
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NaryOp) {
+				NaryOp a = (NaryOp) o;
+				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+						&& args.equals(a.args);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return op.hashCode() + type.hashCode() + lhs.hashCode()
+					+ args.hashCode();
+		}
+		
+		public String toString() {
+			String rhs = "";
+			switch (op) {
+			case SETGEN: {
+				rhs += "{";
+				boolean firstTime = true;
+				for (RVal r : args) {
+					if (!firstTime) {
+						rhs += ",";
+					}
+					firstTime = false;
+					rhs += r;
+				}
+				rhs += "}";
+				break;
+			}
+			case LISTGEN: {
+				rhs += "[";
+				boolean firstTime = true;
+				for (RVal r : args) {
+					if (!firstTime) {
+						rhs += ",";
+					}
+					firstTime = false;
+					rhs += r;
+				}
+				rhs += "]";
+				break;
+			}
+			case SUBLIST:
+				rhs += args.get(0) + "[" + args.get(1) + ":" + args.get(2)
+						+ "]";
+				break;
+			}
+			return type + " " + lhs + " := " + rhs;
+		}
 	}
 	
 	public final static class Debug extends Code {				
@@ -358,4 +434,9 @@ public abstract class Code {
 			public String toString() { return "-"; }
 		}
 	};	
+	public enum NOP { 
+		SETGEN(),
+		LISTGEN(),
+		SUBLIST();
+	}
 }

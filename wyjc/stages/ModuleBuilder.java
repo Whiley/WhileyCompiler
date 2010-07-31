@@ -480,8 +480,6 @@ public class ModuleBuilder {
 				return resolveCondition(target,(Constant)e, environment, declared);
 			} else if (e instanceof Variable) {
 				return resolveCondition(target,(Variable)e, environment, declared);
-			} else if (e instanceof NaryOp) {
-				return resolveCondition(target,(BinOp)e, environment, declared);
 			} else if (e instanceof BinOp) {
 				return resolveCondition(target,(BinOp)e, environment, declared);
 			} else if (e instanceof UnOp) {
@@ -578,14 +576,17 @@ public class ModuleBuilder {
 			return blk;
 		} else if(bop == BOp.ELEMENTOF) {
 			checkType(rhs_t, Type.Set.class, v);
-			Type.Set st = (Type.Set) rhs_t;
+			Type.Set st = (Type.Set) rhs_t;			
 			if(!Type.isSubtype(lhs_t, st.element) && !Type.isSubtype(st.element, lhs_t)) {
 				syntaxError("Cannot compare types",v);
 			}
+			lub = Type.leastUpperBound(lhs_t,st.element);
+			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
 			return blk;
 		} else if(bop == BOp.LISTACCESS) {
 			checkType(lhs_t, Type.List.class, v);
 			checkIsSubtype(Type.T_INT, rhs_t, v);			 
+			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
 			return blk;		
 		} 			
 		
@@ -606,7 +607,7 @@ public class ModuleBuilder {
 		}
 		syntaxError("expected boolean expression",v);
 		return null;
-	}
+	}	
 	
 	/**
 	 * Target gives the name of the register to use to store the result of this
@@ -626,7 +627,7 @@ public class ModuleBuilder {
 			} else if (e instanceof Variable) {
 				return resolve(target,(Variable)e, environment, declared);
 			} else if (e instanceof NaryOp) {
-				return resolve(target,(BinOp)e, environment, declared);
+				return resolve(target,(NaryOp)e, environment, declared);
 			} else if (e instanceof BinOp) {
 				return resolve(target,(BinOp)e, environment, declared);
 			} else if (e instanceof UnOp) {
@@ -819,26 +820,40 @@ public class ModuleBuilder {
 				syntaxError("incorrect number of arguments",v);
 			}
 			Pair<Type,Block> src = resolve(target,v.arguments.get(0), environment, declared);
-			Pair<Type,Block> start = resolve(target,v.arguments.get(1), environment, declared);
-			Pair<Type,Block> end = resolve(target,v.arguments.get(2), environment, declared);
+			Pair<Type,Block> start = resolve(target+1,v.arguments.get(1), environment, declared);
+			Pair<Type,Block> end = resolve(target+2,v.arguments.get(2), environment, declared);
 			checkType(src.first(),Type.List.class,v.arguments.get(0));
 			checkType(start.first(),Type.Int.class,v.arguments.get(1));
 			checkType(end.first(),Type.Int.class,v.arguments.get(2));
+			blk.addAll(src.second());
+			blk.addAll(start.second());
+			blk.addAll(end.second());
+			blk.add(new Code.NaryOp(src.first(), Code.NOP.SUBLIST, "$"+target, RVal
+					.VAR(src.first(), "$"+target), RVal.VAR(start.first(), "$"+(target+1)),
+					RVal.VAR(end.first(), "$"+(target+2))));
 			return new Pair<Type,Block>(((Type.List)src.first()).element,blk);
 		} else {
-
 			Type etype = Type.T_VOID;
 
-			for(Expr e : v.arguments) {
-				Pair<Type,Block> t = resolve(target,e, environment, declared);
+			int idx = target;
+			ArrayList<RVal> args = new ArrayList<RVal>();
+			for(Expr e : v.arguments) {				
+				Pair<Type,Block> t = resolve(idx,e, environment, declared);
+				args.add(RVal.VAR(t.first(),"$" + idx++));
 				etype = Type.leastUpperBound(t.first(),etype);
+				blk.addAll(t.second());				
 			}		
 
-			if(v.nop == NOp.LISTGEN) {
-				return new Pair<Type,Block>(Type.T_LIST(etype),blk);
+			if (v.nop == NOp.LISTGEN) {
+				etype = Type.T_LIST(etype);
+				blk.add(new Code.NaryOp(etype, Code.NOP.LISTGEN,
+						"$"+target, args));				
 			} else {
-				return new Pair<Type,Block>(Type.T_SET(etype),blk);
-			} 
+				etype = Type.T_SET(etype);
+				blk.add(new Code.NaryOp(etype, Code.NOP.SETGEN,
+						"$"+target, args));
+			}
+			return new Pair<Type, Block>(etype, blk);
 		}
 	}
 	
@@ -1095,6 +1110,12 @@ public class ModuleBuilder {
 			return Code.BOP.GT;		
 		case GTEQ:
 			return Code.BOP.GTEQ;
+		case SUBSET:
+			return Code.BOP.SUBSET;		
+		case SUBSETEQ:
+			return Code.BOP.SUBSETEQ;
+		case ELEMENTOF:
+			return Code.BOP.ELEMOF;
 		}
 		syntaxError("unrecognised binary operation",elem);
 		return null;

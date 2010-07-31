@@ -160,7 +160,7 @@ public class ClassFileBuilder {
 		
 		for(String v : uses) {
 			slots.put(v,slot++);						
-		}
+		}	
 		
 		for(Code c : fd.body()) {			
 			translate(c,slots,bytecodes);			
@@ -179,6 +179,8 @@ public class ClassFileBuilder {
 			translate((Code.BinOp)c,slots,bytecodes);
 		} else if(c instanceof Code.UnOp) {
 			translate((Code.UnOp)c,slots,bytecodes);
+		} else if(c instanceof Code.NaryOp) {
+			translate((Code.NaryOp)c,slots,bytecodes);
 		} else if(c instanceof Code.Goto) {
 			translate((Code.Goto)c,slots,bytecodes);
 		} else if(c instanceof Code.IfGoto) {
@@ -294,11 +296,72 @@ public class ClassFileBuilder {
 		}
 		
 		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
-	}	
-	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
+	}
+	public void translate(Code.NaryOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-		translate(c.lhs,slots,bytecodes);
-		translate(c.rhs,slots,bytecodes);
+
+		// translate right-hand side
+		for(RVal r : c.args) {
+			translate(r, slots, bytecodes);
+			// Apply conversion (if necessary)		
+			convert(c.type, r.type(), slots, bytecodes);
+		}
+
+		JvmType type = convertType(c.type);
+
+		switch (c.op) {
+		case SETGEN: {
+			construct(WHILEYSET, slots, bytecodes);		
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,
+					JAVA_LANG_OBJECT);  
+			for(RVal e : c.args) {
+				bytecodes.add(new Bytecode.Dup(WHILEYSET));
+				translate(e, slots, bytecodes);
+				addWriteConversion(e.type(),bytecodes);
+				bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
+				bytecodes.add(new Bytecode.Pop(WHILEYSET));
+			}
+			break;
+		}
+		case LISTGEN: {
+			construct(WHILEYLIST, slots, bytecodes);		
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,
+					JAVA_LANG_OBJECT);  
+			for(RVal e : c.args) {
+				bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+				translate(e, slots, bytecodes);
+				addWriteConversion(e.type(),bytecodes);
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
+				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+			}
+			break;
+		}
+		case SUBLIST: {
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_INTEGER,BIG_INTEGER);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		}
+		}
+		// store the result
+		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
+	}
+	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {		
+		if(c.op == Code.BOP.ELEMOF) {
+			// element of is a special case because the lhs and rhs have
+			// slightly different types.
+			// FIXME: bug related to list elementof
+			translate(c.rhs,slots,bytecodes);			
+			convert(Type.T_SET(c.type),c.rhs.type(), slots, bytecodes);
+			translate(c.lhs,slots,bytecodes);
+			convert(c.type,c.lhs.type(), slots, bytecodes);			
+		} else {
+			translate(c.lhs,slots,bytecodes);
+			convert(c.type,c.lhs.type(), slots, bytecodes);
+			translate(c.rhs,slots,bytecodes);			
+			convert(c.type,c.rhs.type(), slots, bytecodes);
+		}
 		JvmType type = convertType(c.type);
 		int op;
 		switch(c.op) {
@@ -351,10 +414,32 @@ public class ClassFileBuilder {
 			break;
 		}
 		case SUBSETEQ:
+		{
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subsetEq", ftype,
+					Bytecode.VIRTUAL));
+			op = Bytecode.If.NE;
+			break;
+		}
 		case SUBSET:
+		{
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subset", ftype,
+					Bytecode.VIRTUAL));
+			op = Bytecode.If.NE;
+			break;
+		}
 		case ELEMOF:
-			default:
-				throw new RuntimeException("unknown if condition encountered");
+		{
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,
+					JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "contains",
+					ftype, Bytecode.INTERFACE));
+			op = Bytecode.If.NE;
+			break;
+		}
+		default:
+			throw new RuntimeException("unknown if condition encountered");
 		}		
 		bytecodes.add(new Bytecode.If(op, c.target));
 	}

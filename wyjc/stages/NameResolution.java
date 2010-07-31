@@ -211,7 +211,7 @@ public class NameResolution {
 			} else if (e instanceof Variable) {
 				resolve((Variable)e, environment, imports);
 			} else if (e instanceof NaryOp) {
-				resolve((BinOp)e, environment, imports);
+				resolve((NaryOp)e, environment, imports);
 			} else if (e instanceof BinOp) {
 				resolve((BinOp)e, environment, imports);
 			} else if (e instanceof UnOp) {

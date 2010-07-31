@@ -40,7 +40,7 @@ public abstract class RVal {
 			return false;
 		}
 		public String toString() {
-			return "[" + type + "] " + name;
+			return "(" + type + ") " + name;
 		}
 	}
 	
