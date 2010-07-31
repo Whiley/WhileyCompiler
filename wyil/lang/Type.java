@@ -103,6 +103,10 @@ public abstract class Type {
 			Set l1 = (Set) t1;
 			Set l2 = (Set) t2;
 			return isSubtype(l1.element,l2.element,environment);
+		} else if(t1 instanceof Set && t2 instanceof List) {
+			Set l1 = (Set) t1;
+			List l2 = (List) t2;
+			return isSubtype(l1.element,l2.element,environment);
 		} else if(t1 instanceof Process && t2 instanceof Process) {
 			Process l1 = (Process) t1;
 			Process l2 = (Process) t2;

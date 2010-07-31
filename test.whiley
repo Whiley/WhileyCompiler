@@ -1,3 +1,3 @@
 void System::main([[char]] args):
-    if |args| in {2,3}:
+    if "Hello" ∈ args:
         print "Hello World"

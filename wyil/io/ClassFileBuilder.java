@@ -348,12 +348,17 @@ public class ClassFileBuilder {
 	}
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {		
-		if(c.op == Code.BOP.ELEMOF) {
+		if (c.op == Code.BOP.ELEMOF) {
 			// element of is a special case because the lhs and rhs have
 			// slightly different types.
-			// FIXME: bug related to list elementof
+			Type target;
+			if(Type.isSubtype(Type.T_LIST(Type.T_ANY), c.rhs.type())) {				
+				target = Type.T_LIST(c.type);
+			} else {				
+				target = Type.T_SET(c.type);
+			}
 			translate(c.rhs,slots,bytecodes);			
-			convert(Type.T_SET(c.type),c.rhs.type(), slots, bytecodes);
+			convert(target,c.rhs.type(), slots, bytecodes);
 			translate(c.lhs,slots,bytecodes);
 			convert(c.type,c.lhs.type(), slots, bytecodes);			
 		} else {
@@ -714,10 +719,9 @@ public class ClassFileBuilder {
 	}		 
 	
 	protected void convert(Type toType, Type fromType,
-			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {		
-		
+			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {				
 		if(toType.equals(fromType)) {		
-			// do nothing!			
+			// do nothing!						
 		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
 			convert(toType, (Type.Bool) fromType, slots, bytecodes);
@@ -748,6 +752,8 @@ public class ClassFileBuilder {
 			// nothing to do, in this particular case
 			return;
 		}
+		
+		System.out.println("CONVERTING LIST => LIST");
 		
 		// The following piece of code implements a java for-each loop which
 		// iterates every element of the input collection, and recursively

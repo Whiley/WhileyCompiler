@@ -554,7 +554,7 @@ public class ModuleBuilder {
 		Type lhs_t = lhs_tb.first();
 		Type rhs_t = rhs_tb.first();
 		RVal lvar = RVal.VAR(lhs_t,"$0");
-		RVal rvar = RVal.VAR(lhs_t,"$1");
+		RVal rvar = RVal.VAR(rhs_t,"$1");
 		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
 		
 		if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
@@ -575,12 +575,19 @@ public class ModuleBuilder {
 			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
 			return blk;
 		} else if(bop == BOp.ELEMENTOF) {
-			checkType(rhs_t, Type.Set.class, v);
-			Type.Set st = (Type.Set) rhs_t;			
-			if(!Type.isSubtype(lhs_t, st.element) && !Type.isSubtype(st.element, lhs_t)) {
+			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t, v);
+			Type element;
+			if(rhs_t instanceof Type.Set) {
+				Type.Set st = (Type.Set) rhs_t;
+				element = st.element;
+			} else {
+				Type.List st = (Type.List) rhs_t;
+				element = st.element;
+			}						
+			if(!Type.isSubtype(lhs_t, element) && !Type.isSubtype(element, lhs_t)) {
 				syntaxError("Cannot compare types",v);
 			}
-			lub = Type.leastUpperBound(lhs_t,st.element);
+			lub = Type.leastUpperBound(lhs_t,element);
 			blk.add(new Code.IfGoto(lub,OP2BOP(bop,v),lvar,rvar,target));
 			return blk;
 		} else if(bop == BOp.LISTACCESS) {
