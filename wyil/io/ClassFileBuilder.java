@@ -177,6 +177,8 @@ public class ClassFileBuilder {
 			translate((Code.Return)c,slots,bytecodes);
 		} else if(c instanceof Code.BinOp) {
 			
+		} else if(c instanceof Code.UnOp) {
+			translate((Code.UnOp)c,slots,bytecodes);
 		} else if(c instanceof Code.Goto) {
 			
 		} else if(c instanceof Code.IfGoto) {
@@ -193,7 +195,7 @@ public class ClassFileBuilder {
 		// Translate right-hand side
 		translate(c.rhs,slots,bytecodes);
 
-		// Apply read conversion if necessary
+		// Apply conversion if necessary
 		convert(c.type,c.rhs.type(),slots,bytecodes);
 		
 		// Write assignment
@@ -213,6 +215,48 @@ public class ClassFileBuilder {
 	public void translate(Code.BinOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		
+	}
+
+	public void translate(Code.UnOp c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+
+		// translate right-hand side
+		translate(c.rhs, slots, bytecodes);
+
+		// Apply conversion (if necessary)
+		convert(c.type, c.rhs.type(), slots, bytecodes);
+
+		JvmType type = convertType(c.type);
+
+		switch (c.op) {
+		case NEG: {
+			JvmType.Function ftype = new JvmType.Function(type);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
+					ftype, Bytecode.VIRTUAL));
+			break;
+		}
+		case NOT: {
+			String exitLabel = freshLabel();
+			String trueLabel = freshLabel();
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, trueLabel));
+			bytecodes.add(new Bytecode.LoadConst(0));
+			bytecodes.add(new Bytecode.Goto(exitLabel));
+			bytecodes.add(new Bytecode.Label(trueLabel));
+			bytecodes.add(new Bytecode.LoadConst(1));
+			bytecodes.add(new Bytecode.Label(exitLabel));
+			break;
+		}
+		case LENGTHOF: {
+			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", ftype,
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
+			ftype = new JvmType.Function(type, T_LONG);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "valueOf",
+					ftype, Bytecode.STATIC));
+			break;
+		}
+		}
 	}
 	public void translate(Code.Goto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
