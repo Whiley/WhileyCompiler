@@ -22,11 +22,11 @@ package whiley.lang
 
 define char as int where $>=0 && $ <= 1114111
 
-public bool isUpperCase(char c):
-    return 'A' <= c && c <= 'Z'
+//public bool isUpperCase(char c):
+//    return 'A' <= c && c <= 'Z'
 
-public bool isLowerCase(char c):
-    return 'a' <= c && c <= 'z'
+//public bool isLowerCase(char c):
+//    return 'a' <= c && c <= 'z'
 
-public bool isLetter(char c):
-    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+//public bool isLetter(char c):
+//    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
