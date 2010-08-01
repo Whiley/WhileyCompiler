@@ -1,4 +1,4 @@
-package wyil.transforms;
+package wyil.transform;
 
 /**
  * The purpose of the method dispatch inliner is to inline dispatch choices into
