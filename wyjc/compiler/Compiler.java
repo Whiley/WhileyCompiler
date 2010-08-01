@@ -128,6 +128,10 @@ public class Compiler implements Logger {
 		// Register the updated file
 		loader.register(module);
 		
+		for(Stage s : stages) {
+			module = s.process(module,this);
+		}
+		
 		for(Writer w : writers) {
 			w.write(module,this);
 		}

@@ -23,6 +23,7 @@ import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
+import wyil.transform.*;
 import wyil.util.*;
 import wyjc.compiler.*;
 import wyjc.compiler.Compiler;
@@ -127,6 +128,7 @@ public class Main {
 		
 		ModuleLoader loader = new ModuleLoader(whileypath);
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
+		stages.add(new WyilTransform("dispatch inline",new MethodDispatchInliner(loader)));
 		ArrayList<Compiler.Writer> writers = new ArrayList<Compiler.Writer>();
 		if(wyil) {
 			writers.add(new WyilWriter());

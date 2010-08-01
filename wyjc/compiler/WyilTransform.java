@@ -17,12 +17,12 @@ public class WyilTransform implements Compiler.Stage {
 		long start = System.currentTimeMillis();
 			
 		try {
-			logout.logTimedMessage("[" + module.filename() + "] applied transform " + name,
+			logout.logTimedMessage("[" + module.filename() + "] applied " + name,
 					System.currentTimeMillis() - start);
 			return transform.apply(module);
 		} catch(Throwable ex) {
 			logout.logTimedMessage("[" + module.filename()
-					+ "] transform " + name + " failed (" + ex.getMessage() + ")",
+					+ "] failed on " + name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 			return null;
 		}
