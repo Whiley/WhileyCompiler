@@ -12,9 +12,9 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public Module(ModuleID mid,
 			String filename,
-			List<Method> methods,
-			List<TypeDef> types,
-			List<ConstDef> constants) {		
+			Collection<Method> methods,
+			Collection<TypeDef> types,
+			Collection<ConstDef> constants) {		
 		super(mid);
 		this.filename = filename;
 		
@@ -137,21 +137,28 @@ public class Module extends ModuleLoader.Skeleton {
 			return constant;
 		}
 	}
-	
+		
 	public static class Method {
 		private String name;		
 		private Type.Fun type;
-		private ArrayList<String> paramNames;
-		private Block constraint;
-		private Block body;
+		private List<Case> cases;
 		
-		public Method(String name, Type.Fun type,
-				Collection<String> paramNames, Block constraint, Block body) {
+		public Method(String name, Type.Fun type, Case... cases) {
 			this.name = name;
 			this.type = type;
-			this.paramNames = new ArrayList<String>(paramNames);
-			this.constraint = constraint;
-			this.body = body;
+			ArrayList<Case> tmp = new ArrayList<Case>();
+			for (Case c : cases) {
+				tmp.add(c);
+			}
+			this.cases = Collections.unmodifiableList(tmp);
+		}
+		
+		public Method(String name, Type.Fun type,
+				Collection<Case> cases) {
+			this.name = name;
+			this.type = type;
+			this.cases = Collections
+					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
 		public String name() {
@@ -162,6 +169,30 @@ public class Module extends ModuleLoader.Skeleton {
 			return type;
 		}
 
+		public List<Case> cases() {
+			return cases;
+		}
+
+		public boolean isFunction() {
+			return type.receiver == null;
+		}
+		
+		public boolean isPublic() {
+			return true;
+		}
+	}	
+	
+	public static class Case {
+		private ArrayList<String> paramNames;
+		private Block constraint;
+		private Block body;
+
+		public Case(Collection<String> paramNames, Block constraint, Block body) {
+			this.paramNames = new ArrayList<String>(paramNames);
+			this.constraint = constraint;
+			this.body = body;
+		}
+
 		public Block body() {
 			return body;
 		}
@@ -170,16 +201,9 @@ public class Module extends ModuleLoader.Skeleton {
 			return constraint;
 		}
 		
-		public boolean isFunction() {
-			return type.receiver == null;
-		}
-		
-		public boolean isPublic() {
-			return true;
-		}
-				
 		public List<String> parameterNames() {
 			return paramNames;
 		}
-	}	
+		
+	}
 }

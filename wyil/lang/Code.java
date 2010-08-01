@@ -288,10 +288,12 @@ public abstract class Code {
 		public final NameID name;
 		public final LVal lhs;
 		public final List<RVal> args;
+		public final int caseNum;
 
-		public Invoke(Type.Fun type, NameID name, LVal lhs, RVal... args) {
+		public Invoke(Type.Fun type, NameID name, int caseNum, LVal lhs, RVal... args) {
 			this.type = type;
 			this.name = name;
+			this.caseNum = caseNum;
 			this.lhs = lhs;
 			ArrayList<RVal> tmp = new ArrayList<RVal>();
 			for(RVal r : args) {
@@ -300,10 +302,11 @@ public abstract class Code {
 			this.args = Collections.unmodifiableList(tmp); 
 		}
 
-		public Invoke(Type.Fun type, NameID name, LVal lhs,
+		public Invoke(Type.Fun type, NameID name, int caseNum, LVal lhs,
 				Collection<RVal> args) {
 			this.type = type;
 			this.name = name;
+			this.caseNum = caseNum;
 			this.lhs = lhs;
 			this.args = Collections.unmodifiableList(new ArrayList<RVal>(args));
 		}
@@ -311,12 +314,14 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke a = (Invoke) o;
-				if(lhs == null) {
+				if (lhs == null) {
 					return type.equals(a.type) && name.equals(a.name)
-					&& a.lhs == null && args.equals(a.args);
+							&& caseNum == a.caseNum && a.lhs == null
+							&& args.equals(a.args);
 				} else {
 					return type.equals(a.type) && name.equals(a.name)
-						&& lhs.equals(a.lhs) && args.equals(a.args);
+							&& caseNum == a.caseNum && lhs.equals(a.lhs)
+							&& args.equals(a.args);
 				}
 			}
 			return false;
@@ -324,9 +329,9 @@ public abstract class Code {
 
 		public int hashCode() {
 			if (lhs == null) {
-				return name.hashCode() + type.hashCode() + args.hashCode();
+				return name.hashCode() + caseNum + type.hashCode() + args.hashCode();
 			} else {
-				return name.hashCode() + type.hashCode() + lhs.hashCode()
+				return name.hashCode() + caseNum + type.hashCode() + lhs.hashCode()
 						+ args.hashCode();
 			}
 		}
@@ -341,10 +346,14 @@ public abstract class Code {
 				firstTime = false;
 				rhs += v;
 			}
+			String n = name + ":" + type;
+			if(caseNum > 0) {
+				n += ":" + caseNum;
+			}
 			if(lhs == null) {
-				return name + "(" + rhs + ")";
+				return n + ":(" + rhs + ")";
 			} else {
-				return type + " " + lhs + " := " + name + "(" + rhs + ")";
+				return lhs + " := " + n + ":(" + rhs + ")";
 			}
 		}
 	}

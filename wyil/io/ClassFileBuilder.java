@@ -69,12 +69,11 @@ public class ClassFileBuilder {
 			WhileyDefine wd = new WhileyDefine(td.name(),t,td.constraint());
 			cf.attributes().add(wd);
 		}
-		for(Module.Method fd : module.methods()) {				
-			if(fd.name().equals("main")) { 
+		for(Module.Method method : module.methods()) {				
+			if(method.name().equals("main")) { 
 				addMainLauncher = true;
-			}
-			ClassFile.Method m = build(fd);				
-			cf.methods().add(m);			
+			}			
+			cf.methods().addAll(build(method));			
 		}		
 		
 		if(addMainLauncher) {
@@ -122,37 +121,50 @@ public class ClassFileBuilder {
 		return cm;	
 	}
 	
-	public ClassFile.Method build(Module.Method fd) {		
+	public List<ClassFile.Method> build(Module.Method method) {
+		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
+		int num = 1;
+		for(Module.Case c : method.cases()) {
+			methods.add(build(num++,c,method));
+		}
+		return methods;
+	}
+	
+	public ClassFile.Method build(int caseNum, Module.Case mcase,
+			Module.Method method) {		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		if(fd.isPublic()) {
+		if(method.isPublic()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);		
-		JvmType.Function ft = (JvmType.Function) convertType(fd.type());		
-		String name = nameMangle(fd.name(),fd.type());			
+		JvmType.Function ft = (JvmType.Function) convertType(method.type());		
+		String name = nameMangle(method.name(),method.type());
+		if(method.cases().size() > 1) {
+			name = name + "$" + caseNum;
+		}
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
-		ArrayList<Bytecode> codes = translate(fd);
+		ArrayList<Bytecode> codes = translate(mcase, method);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);				
 		
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translate(Module.Method fd) {
+	public ArrayList<Bytecode> translate(Module.Case mcase, Module.Method method) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();		
 		HashMap<String, Integer> slots = new HashMap<String, Integer>();		
 		
-		HashSet<String> uses = Block.usedVariables(fd.body(),
+		HashSet<String> uses = Block.usedVariables(mcase.body(),
 				new HashSet<String>());
 		
 		int slot = 0;
-		if(fd.type().receiver != null) {
+		if(method.type().receiver != null) {
 			slots.put("this",slot++);
 			uses.remove("this");
 		}
 				
-		List<Type> paramTypes = fd.type().params;
-		List<String> paramNames = fd.parameterNames();
+		List<Type> paramTypes = method.type().params;
+		List<String> paramNames = mcase.parameterNames();
 		for(int i=0;i!=paramTypes.size();++i) {
 			String name = paramNames.get(i);			
 			slots.put(name,slot++);			
@@ -163,7 +175,7 @@ public class ClassFileBuilder {
 			slots.put(v,slot++);						
 		}	
 		
-		for(Code c : fd.body()) {			
+		for(Code c : mcase.body()) {			
 			translate(c,slots,bytecodes);			
 		}		
 		
@@ -506,9 +518,11 @@ public class ClassFileBuilder {
 		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
 		JvmType.Function type = (JvmType.Function) convertType(c.type);
 		String mangled = nameMangle(c.name.name(), c.type);
+		if(c.caseNum > 0) {
+			mangled += "$" + c.caseNum;
+		}
 		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
-				Bytecode.STATIC));
-		
+				Bytecode.STATIC));		
 		// finally, make the assignment (where appropriate)
 		if(c.lhs != null) {
 			makeAssignment(c.lhs,slots,bytecodes);

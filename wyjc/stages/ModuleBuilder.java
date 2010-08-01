@@ -75,8 +75,8 @@ public class ModuleBuilder {
 		return modules;
 	}
 
-	public Module resolve(WhileyFile wf) {
-		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
+	public Module resolve(WhileyFile wf) {		
+		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 		for(WhileyFile.Decl d : wf.declarations) {				
@@ -86,7 +86,16 @@ public class ModuleBuilder {
 				} else if(d instanceof ConstDecl) {
 					constants.add(resolve((ConstDecl)d));
 				} else if(d instanceof FunDecl) {
-					methods.add(resolve((FunDecl)d));
+					Module.Method mi = resolve((FunDecl)d);
+					Pair<Type.Fun,String> key = new Pair(mi.type(),mi.name());
+					Module.Method method = methods.get(key);
+					if(method != null) {					
+						// coalesce cases
+						ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(method.cases());
+						ncases.addAll(mi.cases());
+						mi = new Module.Method(mi.name(), mi.type(), ncases);					
+					}
+					methods.put(key, mi);
 				}				
 			} catch(SyntaxError se) {
 				throw se;
@@ -94,7 +103,8 @@ public class ModuleBuilder {
 				syntaxError("internal failure",d,ex);
 			}
 		}
-		return new Module(wf.module,wf.filename,methods,types,constants);
+		return new Module(wf.module, wf.filename, methods.values(), types,
+				constants);
 	}
 	
 	/**
@@ -369,7 +379,8 @@ public class ModuleBuilder {
 			blk.add(new Code.Return(tf.ret,null));
 		}
 		
-		return new Module.Method(fd.name(),tf,parameterNames,constraint,blk);
+		Module.Case ncase = new Module.Case(parameterNames, constraint, blk);
+		return new Module.Method(fd.name(), tf, ncase);
 	}
 	
 	public Block resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment,
@@ -783,7 +794,7 @@ public class ModuleBuilder {
 		// Now, if this method/function has one or more "cases" then we need to
 		// select the right one, based on the pre / post conditions. 
 		
-		blk.add(new Code.Invoke(funtype, name, lhs, nargs));
+		blk.add(new Code.Invoke(funtype, name, 0, lhs, nargs));
 		
 		return new Pair<Type,Block>(funtype.ret,blk);									
 	}

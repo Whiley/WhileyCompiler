@@ -532,12 +532,20 @@ public class ModuleLoader {
 			return null;
 		}
 		
-		ArrayList<Module.Method> methods = new ArrayList();
+		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
 		
 		for(ClassFile.Method cm : cf.methods()) {
 			if(!cm.isSynthetic()) {
 				Module.Method mi = createMethodInfo(mid,cm);
-				methods.add(mi);
+				Pair<Type.Fun,String> key = new Pair(mi.type(),mi.name());
+				Module.Method method = methods.get(key);
+				if(method != null) {					
+					// coalesce cases
+					ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(method.cases());
+					ncases.addAll(mi.cases());
+					mi = new Module.Method(mi.name(), mi.type(), ncases);					
+				}
+				methods.put(key, mi);
 			}
 		}
 		
@@ -559,8 +567,8 @@ public class ModuleLoader {
 				}
 			}
 		}
-		
-		return new Module(mid,cf.name(),methods,types,constants);
+				
+		return new Module(mid, cf.name(), methods.values(), types, constants);
 	}
 	
 	public String stripCase(String name) {
@@ -581,12 +589,16 @@ public class ModuleLoader {
 			parameterNames.add("p" + i);
 		}
 		WhileyBlock constraint = (WhileyBlock) cm.attribute("WhileyBlock");
+		Module.Case mcase;
+		
 		if(constraint != null) {
-			return new Module.Method(info.first(), type, parameterNames, constraint
+			mcase = new Module.Case(parameterNames, constraint
 				.block(), null);
 		} else {
-			return new Module.Method(info.first(), type, parameterNames, null, null);
+			mcase = new Module.Case(parameterNames, null, null);
 		}
+		
+		return new Module.Method(stripCase(info.first()), type, mcase);
 	}
 	
 	/**

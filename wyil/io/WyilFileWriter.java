@@ -45,10 +45,16 @@ public class WyilFileWriter {
 	}
 	
 	public static void write(Method method, PrintWriter out) {
+		for (Case c : method.cases()) {
+			write(c, method, out);
+		}
+	}
+	
+	public static void write(Case mcase, Method method, PrintWriter out) {
 		Type.Fun ft = method.type(); 
 		out.print(ft.ret + " " + method.name() + "(");
 		List<Type> pts = ft.params;
-		List<String> names = method.parameterNames();
+		List<String> names = mcase.parameterNames();
 		for(int i=0;i!=names.size();++i) {
 			String n = names.get(i);
 			Type t = pts.get(i);
@@ -58,7 +64,8 @@ public class WyilFileWriter {
 			out.print(t + " " + n);
 		}
 		out.println("):");
-		for(Code c : method.body()) {
+		
+		for(Code c : mcase.body()) {
 			write(0,c,out);
 		}
 	}
