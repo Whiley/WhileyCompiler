@@ -19,6 +19,7 @@
 package wyil.lang;
 
 import java.util.*;
+import wyil.lang.RVal.LVal;
 
 public abstract class Code {
 
@@ -31,8 +32,8 @@ public abstract class Code {
 	 */
 	public static void usedVariables(Code c, Set<String> uses) {
 		if(c instanceof Assign) {
-			Assign a = (Assign) c;
-			uses.add(a.lhs);
+			Assign a = (Assign) c;			
+			RVal.usedVariables(a.lhs,uses);
 			RVal.usedVariables(a.rhs,uses);
 		} 
 	}
@@ -46,15 +47,15 @@ public abstract class Code {
 	public static Code substitute(String from, String to, Code c) {
 		if(c instanceof Assign) {
 			 Assign a = (Assign) c;
-			return new Assign(a.type, substitute(from, to, a.lhs), RVal
+			return new Assign(RVal.substitute(from, to, a.lhs), RVal
 					.substitute(from, to, a.rhs));
 		} else if(c instanceof UnOp) {
 			UnOp u = (UnOp) c;
-			return new UnOp(u.type, u.op, substitute(from, to, u.lhs), RVal
+			return new UnOp(u.op, RVal.substitute(from, to, u.lhs), RVal
 					.substitute(from, to, u.rhs));
 		} else if(c instanceof BinOp) {
 			BinOp u = (BinOp) c;
-			return new BinOp(u.type, u.op, substitute(from, to, u.lhs), RVal
+			return new BinOp(u.op, RVal.substitute(from, to, u.lhs), RVal
 					.substitute(from, to, u.rhs1), RVal.substitute(from, to,
 					u.rhs2));
 		} else if(c instanceof NaryOp) {
@@ -63,7 +64,7 @@ public abstract class Code {
 			for (RVal r : u.args) {
 				args.add(RVal.substitute(from, to, r));
 			}
-			return new NaryOp(u.type, u.op, substitute(from, to, u.lhs), args);
+			return new NaryOp(u.op, RVal.substitute(from, to, u.lhs), args);
 		} else if(c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, RVal.substitute(from, to, u.lhs),
@@ -71,15 +72,7 @@ public abstract class Code {
 		} else {
 			return c;
 		}
-	}
-	
-	private static String substitute(String from, String to, String str) {
-		if (str.equals(from)) {
-			return to;
-		} else {
-			return str;
-		}
-	}
+	}	
 	
 	/**
 	 * This represents a simple assignment between two variables.
@@ -87,13 +80,11 @@ public abstract class Code {
 	 * @author djp
 	 * 
 	 */
-	public final static class Assign extends Code {
-		public final Type type;
-		public final String lhs;
+	public final static class Assign extends Code {		
+		public final LVal lhs;
 		public final RVal rhs;
 		
-		public Assign(Type type, String lhs, RVal rhs) {
-			this.type = type;
+		public Assign(LVal lhs, RVal rhs) {			
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
@@ -101,18 +92,18 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof Assign) {
 				Assign a = (Assign) o;
-				return type.equals(a.type) && lhs.equals(a.lhs) && rhs.equals(a.rhs);
+				return lhs.equals(a.lhs) && rhs.equals(a.rhs);
 				
 			}
 			return false;
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + lhs.hashCode() + rhs.hashCode();			
+			return lhs.hashCode() + rhs.hashCode();			
 		}
 		
 		public String toString() {
-			return type + " " + lhs + " := " + rhs;
+			return lhs + " := " + rhs;
 		}		
 	}
 
@@ -150,15 +141,13 @@ public abstract class Code {
 	 * 
 	 */
 	public final static class BinOp extends Code {
-		public final BOP op;
-		public final Type type;
-		public final String lhs;
+		public final BOP op;		
+		public final LVal lhs;
 		public final RVal rhs1;
 		public final RVal rhs2;
 		
-		public BinOp(Type type, BOP op, String lhs, RVal rhs1, RVal rhs2) {
-			this.op = op;
-			this.type = type;
+		public BinOp(BOP op, LVal lhs, RVal rhs1, RVal rhs2) {
+			this.op = op;			
 			this.lhs = lhs;
 			this.rhs1 = rhs1;
 			this.rhs2 = rhs2;
@@ -167,7 +156,7 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof BinOp) {
 				BinOp a = (BinOp) o;
-				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+				return op == a.op && lhs.equals(a.lhs)
 						&& rhs1.equals(a.rhs1) && rhs2.equals(a.rhs2);
 				
 			}
@@ -175,24 +164,22 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + type.hashCode() + lhs.hashCode()
+			return op.hashCode() + lhs.hashCode()
 					+ rhs1.hashCode() + rhs2.hashCode();
 		}
 		
 		public String toString() {
-			return type + " " + lhs + " := " + rhs1 + " " + op + " " + rhs2;
+			return lhs + " := " + rhs1 + " " + op + " " + rhs2;
 		}		
 	}
 	
 	public final static class UnOp extends Code {
-		public final UOP op;
-		public final Type type;
-		public final String lhs;
+		public final UOP op;		
+		public final LVal lhs;
 		public final RVal rhs;		
 		
-		public UnOp(Type type, UOP op, String lhs, RVal rhs) {
-			this.op = op;
-			this.type = type;
+		public UnOp(UOP op, LVal lhs, RVal rhs) {
+			this.op = op;			
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
@@ -200,7 +187,7 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof UnOp) {
 				UnOp a = (UnOp) o;
-				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+				return op == a.op && lhs.equals(a.lhs)
 						&& rhs.equals(a.rhs);
 				
 			}
@@ -208,28 +195,26 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + type.hashCode() + lhs.hashCode()
+			return op.hashCode() + lhs.hashCode()
 					+ rhs.hashCode();
 		}
 		
 		public String toString() {
 			if(op == UOP.LENGTHOF){
-				return type + " " + lhs + " := |" + rhs + "|";
+				return lhs + " := |" + rhs + "|";
 			} else {
-				return type + " " + lhs + " := " + op + rhs;
+				return lhs + " := " + op + rhs;
 			}
 		}		
 	}
 	
 	public final static class NaryOp extends Code {
-		public final NOP op;
-		public final Type type;
-		public final String lhs;
+		public final NOP op;		
+		public final LVal lhs;
 		public final ArrayList<RVal> args;		
 		
-		public NaryOp(Type type, NOP op, String lhs, RVal... args) {
-			this.op = op;
-			this.type = type;
+		public NaryOp(NOP op, LVal lhs, RVal... args) {
+			this.op = op;			
 			this.lhs = lhs;
 			this.args = new ArrayList<RVal>();
 			for(RVal r : args) {
@@ -237,9 +222,8 @@ public abstract class Code {
 			}
 		}
 		
-		public NaryOp(Type type, NOP op, String lhs, Collection<RVal> args) {
-			this.op = op;
-			this.type = type;
+		public NaryOp(NOP op, LVal lhs, Collection<RVal> args) {
+			this.op = op;			
 			this.lhs = lhs;
 			this.args = new ArrayList<RVal>(args);			
 		}
@@ -247,7 +231,7 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof NaryOp) {
 				NaryOp a = (NaryOp) o;
-				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+				return op == a.op && lhs.equals(a.lhs)
 						&& args.equals(a.args);
 				
 			}
@@ -255,7 +239,7 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + type.hashCode() + lhs.hashCode()
+			return op.hashCode() + lhs.hashCode()
 					+ args.hashCode();
 		}
 		
@@ -293,7 +277,72 @@ public abstract class Code {
 						+ "]";
 				break;
 			}
-			return type + " " + lhs + " := " + rhs;
+			return lhs + " := " + rhs;
+		}
+	}
+	
+	public final static class Invoke extends Code {
+		public final Type.Fun type;
+		public final NameID name;
+		public final LVal lhs;
+		public final ArrayList<RVal> args;
+
+		public Invoke(Type.Fun type, NameID name, LVal lhs, RVal... args) {
+			this.type = type;
+			this.name = name;
+			this.lhs = lhs;
+			this.args = new ArrayList<RVal>();
+			for (RVal r : args) {
+				this.args.add(r);
+			}
+		}
+
+		public Invoke(Type.Fun type, NameID name, LVal lhs,
+				Collection<RVal> args) {
+			this.type = type;
+			this.name = name;
+			this.lhs = lhs;
+			this.args = new ArrayList<RVal>(args);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Invoke) {
+				Invoke a = (Invoke) o;
+				if(lhs == null) {
+					return type.equals(a.type) && name.equals(a.name)
+					&& a.lhs == null && args.equals(a.args);
+				} else {
+					return type.equals(a.type) && name.equals(a.name)
+						&& lhs.equals(a.lhs) && args.equals(a.args);
+				}
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			if (lhs == null) {
+				return name.hashCode() + type.hashCode() + args.hashCode();
+			} else {
+				return name.hashCode() + type.hashCode() + lhs.hashCode()
+						+ args.hashCode();
+			}
+		}
+
+		public String toString() {
+			String rhs = "";
+			boolean firstTime = true;
+			for (RVal v : args) {
+				if (!firstTime) {
+					rhs += ",";
+				}
+				firstTime = false;
+				rhs += v;
+			}
+			if(lhs == null) {
+				return name + "(" + rhs + ")";
+			} else {
+				return type + " " + lhs + " := " + name + "(" + rhs + ")";
+			}
 		}
 	}
 	
@@ -506,8 +555,8 @@ public abstract class Code {
 		}
 	};	
 	public enum NOP { 
-		SETGEN(),
-		LISTGEN(),
-		SUBLIST();
+		SETGEN,
+		LISTGEN,
+		SUBLIST
 	}
 }

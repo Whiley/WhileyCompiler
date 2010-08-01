@@ -25,6 +25,7 @@ import wyil.jvm.attributes.*;
 import wyil.jvm.rt.BigRational;
 import wyil.*;
 import wyil.lang.*;
+import wyil.lang.RVal.LVal;
 import wyil.lang.Code;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
@@ -185,6 +186,8 @@ public class ClassFileBuilder {
 			translate((Code.Goto)c,slots,bytecodes);
 		} else if(c instanceof Code.IfGoto) {
 			translate((Code.IfGoto)c,slots,bytecodes);
+		} else if(c instanceof Code.Invoke){
+			translate((Code.Invoke)c,slots,bytecodes);
 		} else if(c instanceof Code.Label){
 			translate((Code.Label)c,slots,bytecodes);
 		} else if(c instanceof Code.Debug){
@@ -200,10 +203,10 @@ public class ClassFileBuilder {
 		translate(c.rhs,slots,bytecodes);
 
 		// Apply conversion if necessary
-		convert(c.type,c.rhs.type(),slots,bytecodes);
+		convert(c.lhs.type(), c.rhs.type(), slots, bytecodes);
 		
 		// Write assignment
-		bytecodes.add(new Bytecode.Store(slots.get(c.lhs), convertType(c.type)));		
+		makeAssignment(c.lhs,slots,bytecodes);		
 	}
 
 	public void translate(Code.Return c, HashMap<String, Integer> slots,
@@ -223,15 +226,15 @@ public class ClassFileBuilder {
 		translate(c.rhs1, slots, bytecodes);
 
 		// Apply conversion (if necessary)
-		convert(c.type, c.rhs1.type(), slots, bytecodes);
+		convert(c.lhs.type(), c.rhs1.type(), slots, bytecodes);
 
 		// translate 2nd right-hand side
 		translate(c.rhs2, slots, bytecodes);
 
 		// Apply conversion (if necessary)
-		convert(c.type, c.rhs2.type(), slots, bytecodes);
+		convert(c.lhs.type(), c.rhs2.type(), slots, bytecodes);
 
-		JvmType type = convertType(c.type);
+		JvmType type = convertType(c.lhs.type());
 		JvmType.Function ftype = new JvmType.Function(type,type);
 		
 		switch(c.op) {
@@ -265,7 +268,7 @@ public class ClassFileBuilder {
 			break;
 		}
 		
-		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
+		makeAssignment(c.lhs,slots,bytecodes);		
 	}
 
 	public void translate(Code.UnOp c, HashMap<String, Integer> slots,
@@ -275,9 +278,9 @@ public class ClassFileBuilder {
 		translate(c.rhs, slots, bytecodes);
 
 		// Apply conversion (if necessary)
-		convert(c.type, c.rhs.type(), slots, bytecodes);
+		convert(c.lhs.type(), c.rhs.type(), slots, bytecodes);
 
-		JvmType type = convertType(c.type);
+		JvmType type = convertType(c.lhs.type());
 
 		switch (c.op) {
 		case NEG: {
@@ -309,7 +312,7 @@ public class ClassFileBuilder {
 		}
 		}
 		
-		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
+		makeAssignment(c.lhs,slots,bytecodes);		
 	}
 	public void translate(Code.NaryOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
@@ -318,10 +321,8 @@ public class ClassFileBuilder {
 		for(RVal r : c.args) {
 			translate(r, slots, bytecodes);
 			// Apply conversion (if necessary)		
-			convert(c.type, r.type(), slots, bytecodes);
+			convert(c.lhs.type(), r.type(), slots, bytecodes);
 		}
-
-		JvmType type = convertType(c.type);
 
 		switch (c.op) {
 		case SETGEN: {
@@ -357,8 +358,9 @@ public class ClassFileBuilder {
 			break;
 		}
 		}
+		
 		// store the result
-		bytecodes.add(new Bytecode.Store(slots.get(c.lhs),type));
+		makeAssignment(c.lhs,slots,bytecodes);		
 	}
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {		
@@ -476,6 +478,43 @@ public class ClassFileBuilder {
 				throw new RuntimeException("unknown if condition encountered");
 			}		
 			bytecodes.add(new Bytecode.If(op, c.target));
+		}
+	}
+	
+	public void translate(Code.Invoke c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		int idx=0;
+		// first, translate receiver (where appropriate)
+		if(c.type.receiver != null) {			
+			RVal r = c.args.get(idx++);
+			translate(r, slots, bytecodes);
+			// Apply conversion (if necessary)		
+			convert(c.type.receiver, r.type(), slots, bytecodes);
+		}
+		// next, translate parameters
+		List<Type> params = c.type.params;
+		for(int i=0;i!=params.size();++i) {
+			Type pt = params.get(i);
+			RVal r = c.args.get(idx++);
+			translate(r, slots, bytecodes);
+			// Apply conversion (if necessary)		
+			convert(pt, r.type(), slots, bytecodes);
+		}
+		ModuleID mid = c.name.module();
+		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
+		JvmType.Function type = (JvmType.Function) convertType(c.type);
+		String mangled = nameMangle(c.name.name(), c.type);
+		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
+				Bytecode.STATIC));
+		
+		// finally, make the assignment (where appropriate)
+		if(c.lhs != null) {
+			makeAssignment(c.lhs,slots,bytecodes);
+		} else if(c.lhs == null && c.type.ret != Type.T_VOID){
+			// in this case, the function being called does return something,
+			// but we're discarding it. Therefore, we need to pop the return
+			// value off the stack
+			bytecodes.add(new Bytecode.Pop(convertType(c.type.ret)));
 		}
 	}
 	
@@ -702,6 +741,23 @@ public class ClassFileBuilder {
 		}
 	}
 
+	/**
+	 * Generate code to assign value on stack to the given LVal
+	 * @param lhs
+	 * @param slots
+	 * @param bytecodes
+	 */
+	public void makeAssignment(LVal lhs, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		if(lhs instanceof RVal.Variable) {
+			RVal.Variable v = (RVal.Variable) lhs;
+			bytecodes.add(new Bytecode.Store(slots.get(v.name),
+					convertType(v.type)));
+		} else {
+			System.err.println("MISSING CODE FOR LVAL ASSIGNMENT");
+		}
+	}
+	
 	/**
 	 * The read conversion is necessary in situations where we're reading a
 	 * value from a collection (e.g. WhileyList, WhileySet, etc) and then

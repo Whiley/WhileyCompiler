@@ -7,6 +7,8 @@ import java.util.Set;
 public abstract class RVal {
 	public abstract Type type();
 	
+	public static abstract class LVal extends RVal {}
+	
 	public static void usedVariables(RVal r, Set<String> uses) {
 		if (r instanceof Variable) {
 			Variable v = (Variable) r;
@@ -20,14 +22,12 @@ public abstract class RVal {
 	 * @param c
 	 * @param uses
 	 */
-	public static RVal substitute(String from, String to, RVal r) {
+	public static <T extends RVal> T substitute(String from, String to, T r) {
 		if (r instanceof Variable) {
 			Variable v = (Variable) r;
 			if (v.name.equals(from)) {
-				return VAR(v.type, to);
-			} else {
-				return v;
-			}
+				return (T) VAR(v.type, to);
+			} 
 		}
 		return r;
 	}
@@ -36,7 +36,7 @@ public abstract class RVal {
 		return get(new Variable(t,v));
 	}
 	
-	public static class Variable extends RVal {
+	public static class Variable extends LVal {
 		public final String name;
 		public final Type type;
 		

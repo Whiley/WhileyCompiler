@@ -1,3 +1,5 @@
-define nat as int where $ >= 0
+void f(int x):
+    print "HELLO WORLD"
+
 void System::main([[char]] args):
-    nat x = 1
+    f(1)

@@ -403,7 +403,8 @@ public class ModuleBuilder {
 			checkIsSubtype(type,initT.first(),init);
 			environment.put(s.name,type);
 			blk.addAll(initT.second());
-			blk.add(new Code.Assign(type, s.name, RVal.VAR(initT.first(),"$0")));			
+			blk.add(new Code.Assign(RVal.VAR(type, s.name), RVal.VAR(initT
+					.first(), "$0")));			
 			// Finally, need to actually check the constraints!						
 			if(constraint != null) {
 				blk.addAll(constraint);
@@ -428,8 +429,8 @@ public class ModuleBuilder {
 			}
 			checkIsSubtype(declared_t,rhs_tb.first(),s.rhs);
 			environment.put(v.var, rhs_tb.first());			
-			blk.add(new Code.Assign(rhs_tb.first(), v.var, RVal.VAR(rhs_tb
-					.first(), "$0")));
+			blk.add(new Code.Assign(RVal.VAR(rhs_tb.first(), v.var), RVal.VAR(
+					rhs_tb.first(), "$0")));
 		} else {
 			Pair<Type,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
 			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);							
@@ -699,18 +700,26 @@ public class ModuleBuilder {
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared)
 			throws ResolveError {
 		List<Expr> args = s.arguments;
-		
-		ArrayList<Type> ptypes = new ArrayList<Type>();		
-		for(Expr e : args) {			
-			Pair<Type,Block> e_tb = resolve(target,e,environment, declared);
-			ptypes.add(e_tb.first());			
-		}
+		Block blk = new Block();
+				
+		int idx=target;
+		ArrayList<RVal> nargs = new ArrayList<RVal>();
 		
 		Type.Process receiver = null;
 		if(s.receiver != null) {			
-			Pair<Type,Block> tb = resolve(target,s.receiver,environment, declared);
+			Pair<Type,Block> tb = resolve(idx,s.receiver,environment, declared);
+			nargs.add(RVal.VAR(tb.first(),"$" + idx++));
 			checkType(tb.first(),Type.Process.class,s.receiver);
 			receiver = (Type.Process) tb.first();
+			blk.addAll(tb.second());			
+		}
+		
+		ArrayList<Type> ptypes = new ArrayList<Type>();
+		for(Expr e : args) {			
+			Pair<Type,Block> e_tb = resolve(idx,e,environment, declared);
+			nargs.add(RVal.VAR(e_tb.first(),"$" + idx++));
+			ptypes.add(e_tb.first());
+			blk.addAll(e_tb.second());
 		}
 		
 		Attribute.Module modInfo = s.attribute(Attribute.Module.class);
@@ -718,16 +727,25 @@ public class ModuleBuilder {
 		
 		if(funtype == null) {
 			syntaxError("invalid or ambiguous method call",s);
-		}
+		}			
 		
+		// FIXME: need to deal with methods that have different (constrained)
+		// types.
 		s.attributes().add(new Attribute.Fun(funtype));
+		NameID name = new NameID(modInfo.module,s.name);	
+		RVal.Variable lhs = null;
+		if(funtype.ret != Type.T_VOID) {
+			lhs = RVal.VAR(funtype.ret, "$" + target);
+		}
+		blk.add(new Code.Invoke(funtype, name, lhs, nargs));
 		
-		return new Pair<Type,Block>(funtype.ret,null);									
+		return new Pair<Type,Block>(funtype.ret,blk);									
 	}
 			
 	protected Pair<Type, Block> resolve(int target, Constant c,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		Block blk = new Block(new Code.Assign(c.value.type(),"$" + target,c.value));		
+		Block blk = new Block(new Code.Assign(RVal.VAR(c.value.type(), "$"
+				+ target), c.value));		
 		return new Pair<Type,Block>(c.value.type(),blk);
 	}
 	
@@ -737,7 +755,8 @@ public class ModuleBuilder {
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
 		}
-		Block blk = new Block(new Code.Assign(t, "$" + target, RVal.VAR(t,v.var)));
+		Block blk = new Block(new Code.Assign(RVal.VAR(t, "$" + target), RVal
+				.VAR(t, v.var)));
 		return new Pair<Type, Block>(t, blk);
 	}
 	
@@ -774,18 +793,18 @@ public class ModuleBuilder {
 		switch(v.op) {
 		case NEG:
 			checkIsSubtype(Type.T_REAL,mhs_t,v.mhs);
-			blk.add(new Code.UnOp(mhs_t, Code.UOP.NEG, "$" + target, RVal.VAR(
-					mhs_t, "$" + target)));
+			blk.add(new Code.UnOp(Code.UOP.NEG, RVal.VAR(mhs_t, "$" + target),
+					RVal.VAR(mhs_t, "$" + target)));
 			return new Pair<Type,Block>(mhs_t,blk);
 		case NOT:
 			checkIsSubtype(Type.T_BOOL,mhs_t,v.mhs);
-			blk.add(new Code.UnOp(mhs_t, Code.UOP.NOT, "$" + target, RVal.VAR(
-					mhs_t, "$" + target)));			
+			blk.add(new Code.UnOp(Code.UOP.NOT, RVal.VAR(mhs_t, "$" + target),
+					RVal.VAR(mhs_t, "$" + target)));
 			return new Pair<Type,Block>(mhs_t,blk);
 		case LENGTHOF:
-			checkIsSubtype(Type.T_LIST(Type.T_ANY),mhs_t,v.mhs);
-			blk.add(new Code.UnOp(mhs_t, Code.UOP.LENGTHOF, "$" + target, RVal
-					.VAR(mhs_t, "$" + target)));
+			checkIsSubtype(Type.T_SET(Type.T_ANY),mhs_t,v.mhs);
+			blk.add(new Code.UnOp(Code.UOP.LENGTHOF, RVal.VAR(mhs_t, "$"
+					+ target), RVal.VAR(mhs_t, "$" + target)));
 			return new Pair<Type,Block>(Type.T_INT,blk);
 		default:
 			syntaxError("unexpected unary operator encountered",v);
@@ -804,10 +823,10 @@ public class ModuleBuilder {
 			String trueLabel = label();
 			String exitLabel = label();
 			Block blk = resolveCondition(trueLabel,v,environment,declared);
-			blk.add(new Code.Assign(Type.T_BOOL,"$" + target,Value.V_BOOL(false)));
+			blk.add(new Code.Assign(RVal.VAR(Type.T_BOOL,"$" + target),Value.V_BOOL(false)));
 			blk.add(new Code.Goto(exitLabel));
 			blk.add(new Code.Label(trueLabel));
-			blk.add(new Code.Assign(Type.T_BOOL,"$" + target,Value.V_BOOL(true)));
+			blk.add(new Code.Assign(RVal.VAR(Type.T_BOOL,"$" + target),Value.V_BOOL(true)));
 			blk.add(new Code.Label(exitLabel));
 			return new Pair<Type,Block>(Type.T_BOOL,blk);
 		}
@@ -823,36 +842,45 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-		
+
 		if (bop == BOp.SUB && Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t)) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			blk.add(new Code.BinOp(Type.leastUpperBound(lhs_t, rhs_t),
-					Code.BOP.DIFFERENCE, "$" + target, lhs_v, rhs_v));
-			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
-		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL				
+			blk
+					.add(new Code.BinOp(Code.BOP.DIFFERENCE, RVal.VAR(Type
+							.leastUpperBound(lhs_t, rhs_t), "$" + target),
+							lhs_v, rhs_v));
+			return new Pair<Type, Block>(Type.leastUpperBound(lhs_t, rhs_t),
+					blk);
+		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			blk.add(new Code.BinOp(Type.leastUpperBound(lhs_t, rhs_t), OP2BOP(
-					bop, v), "$" + target, lhs_v, rhs_v));
-			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
-		} else if(bop == BOp.UNION || bop == BOp.INTERSECTION) {
+			blk
+					.add(new Code.BinOp(OP2BOP(bop, v), RVal.VAR(Type
+							.leastUpperBound(lhs_t, rhs_t), "$" + target),
+							lhs_v, rhs_v));
+			return new Pair<Type, Block>(Type.leastUpperBound(lhs_t, rhs_t),
+					blk);
+		} else if (bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			blk.add(new Code.BinOp(Type.leastUpperBound(lhs_t, rhs_t), OP2BOP(
-					bop, v), "$" + target, lhs_v, rhs_v));
-			return new Pair<Type,Block>(Type.leastUpperBound(lhs_t,rhs_t),blk);
-		} else if(bop == BOp.LISTACCESS) {
+			blk
+					.add(new Code.BinOp(OP2BOP(bop, v), RVal.VAR(Type
+							.leastUpperBound(lhs_t, rhs_t), "$" + target),
+							lhs_v, rhs_v));
+			return new Pair<Type, Block>(Type.leastUpperBound(lhs_t, rhs_t),
+					blk);
+		} else if (bop == BOp.LISTACCESS) {
 			checkType(lhs_t, Type.List.class, v);
 			checkIsSubtype(Type.T_INT, rhs_t, v);
-			Type.List lt = (Type.List) lhs_t;  
-			return new Pair<Type,Block>(lt.element,blk);		
-		} else if(bop == BOp.OR || bop == BOp.AND) {
+			Type.List lt = (Type.List) lhs_t;
+			return new Pair<Type, Block>(lt.element, blk);
+		} else if (bop == BOp.OR || bop == BOp.AND) {
 			checkIsSubtype(Type.T_BOOL, lhs_t, v);
 			checkIsSubtype(Type.T_BOOL, rhs_t, v);
-			return new Pair<Type,Block>(Type.T_BOOL,blk);
-		} 
-				
+			return new Pair<Type, Block>(Type.T_BOOL, blk);
+		}
+			
 		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
@@ -872,9 +900,10 @@ public class ModuleBuilder {
 			blk.addAll(src.second());
 			blk.addAll(start.second());
 			blk.addAll(end.second());
-			blk.add(new Code.NaryOp(src.first(), Code.NOP.SUBLIST, "$"+target, RVal
-					.VAR(src.first(), "$"+target), RVal.VAR(start.first(), "$"+(target+1)),
-					RVal.VAR(end.first(), "$"+(target+2))));
+			blk.add(new Code.NaryOp(Code.NOP.SUBLIST, RVal.VAR(src.first(), "$"
+					+ target), RVal.VAR(src.first(), "$" + target), RVal.VAR(
+					start.first(), "$" + (target + 1)), RVal.VAR(end.first(),
+					"$" + (target + 2))));
 			return new Pair<Type,Block>(((Type.List)src.first()).element,blk);
 		} else {
 			Type etype = Type.T_VOID;
@@ -890,12 +919,12 @@ public class ModuleBuilder {
 
 			if (v.nop == NOp.LISTGEN) {
 				etype = Type.T_LIST(etype);
-				blk.add(new Code.NaryOp(etype, Code.NOP.LISTGEN,
-						"$"+target, args));				
+				blk.add(new Code.NaryOp(Code.NOP.LISTGEN, RVal.VAR(etype, "$"
+						+ target), args));				
 			} else {
 				etype = Type.T_SET(etype);
-				blk.add(new Code.NaryOp(etype, Code.NOP.SETGEN,
-						"$"+target, args));
+				blk.add(new Code.NaryOp(Code.NOP.SETGEN, RVal.VAR(etype, "$"
+						+ target), args));
 			}
 			return new Pair<Type, Block>(etype, blk);
 		}

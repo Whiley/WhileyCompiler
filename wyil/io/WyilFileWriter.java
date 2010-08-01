@@ -39,6 +39,7 @@ public class WyilFileWriter {
 		}		
 		for(Method md : module.methods()) {
 			write(md,out);
+			out.println();
 		}
 		out.flush();
 	}
