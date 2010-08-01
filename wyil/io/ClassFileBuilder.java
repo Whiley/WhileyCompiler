@@ -189,6 +189,8 @@ public class ClassFileBuilder {
 			translate((Code.Label)c,slots,bytecodes);
 		} else if(c instanceof Code.Debug){
 			translate((Code.Debug)c,slots,bytecodes);
+		} else if(c instanceof Code.Fail){
+			translate((Code.Fail)c,slots,bytecodes);
 		}
 	}
 	
@@ -492,7 +494,16 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "println", ftype,
 				Bytecode.STATIC));
 	}
-	
+	public void translate(Code.Fail c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
+		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
+		bytecodes.add(new Bytecode.LoadConst(c.msg));
+		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_RUNTIMEEXCEPTION, "<init>",
+				ftype, Bytecode.SPECIAL));
+		bytecodes.add(new Bytecode.Throw());
+	}
 	public void translate(RVal r, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		if (r instanceof Value) {
@@ -744,7 +755,6 @@ public class ClassFileBuilder {
 		// call the appropriate constructor
 		bytecodes.add(new Bytecode.Invoke(owner, "<init>", ftype,
 				Bytecode.SPECIAL));
-
 	}		 
 	
 	protected void convert(Type toType, Type fromType,

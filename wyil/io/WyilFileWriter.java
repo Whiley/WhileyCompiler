@@ -28,6 +28,11 @@ public class WyilFileWriter {
 		}
 		for(TypeDef td : module.types()) {
 			out.println("define " + td.name() + " as " + td.type());
+			if(td.constraint() != null) {
+				for(Code c : td.constraint()) {
+					write(0,c,out);
+				}
+			}
 		}
 		if(!module.types().isEmpty()) {
 			out.println();

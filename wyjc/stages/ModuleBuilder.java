@@ -159,7 +159,8 @@ public class ModuleBuilder {
 			HashMap<String,Type> env = new HashMap<String,Type>();
 			env.put("$",t.first());
 			String trueLabel = label();
-			Block constraint = resolveCondition(trueLabel,ut.second(),env,env);
+			Block constraint = resolveCondition(trueLabel, ut.second(), env,
+					new HashMap());
 			constraint.add(new Code.Fail("type constraint not satisfied"));
 			constraint.add(new Code.Label(trueLabel));
 			if(blk == null) {				
@@ -280,7 +281,7 @@ public class ModuleBuilder {
 		// method call, which means we won't be able to bind it. One option is
 		// simply to disallow function calls in constant definitions.
 		resolve(0, td.constant, new HashMap<String, Type>(),
-				new HashMap<String, Type>());
+				new HashMap());
 		
 		// FIXME: broken
 		
@@ -295,7 +296,7 @@ public class ModuleBuilder {
 			// FIXME: at this point, would be good to add types for other
 			// exposed variables.
 			HashMap<String,Type> environment = new HashMap<String,Type>();
-			HashMap<String,Type> declared = new HashMap<String,Type>();
+			HashMap<String,Pair<Type,Block>> declared = new HashMap();
 			environment.put("$", t);			
 			Type tmp = resolve(0, td.constraint, environment, declared).first();			
 			checkType(tmp,Type.Bool.class, td.constraint);			
@@ -308,7 +309,7 @@ public class ModuleBuilder {
 		// The declared environment holds the declared type of a given local
 		// variable. This is separate from the environment (see below), whose
 		// types may change as a result of assignment and type inference.
-		HashMap<String,Type> declared = new HashMap<String,Type>();
+		HashMap<String,Pair<Type,Block>> declared = new HashMap();
 		
 		// The environment holds the current type of a given local variable. The
 		// current type is affected by assignments to that variable.
@@ -319,7 +320,7 @@ public class ModuleBuilder {
 		for (WhileyFile.Parameter p : fd.parameters) {						
 			Pair<Type,Block> t = resolve(p.type);
 			environment.put(p.name(),t.first());
-			declared.put(p.name(),t.first());
+			declared.put(p.name(),t);
 			parameterNames.add(p.name());
 		}
 				
@@ -330,7 +331,7 @@ public class ModuleBuilder {
 		if(fd.receiver != null) {			
 			Pair<Type,Block> rec = resolve(fd.receiver);
 			environment.put("this", rec.first());
-			declared.put("this", rec.first());
+			declared.put("this", rec);
 		}
 			
 		if(fd.constraint != null) {			
@@ -355,7 +356,7 @@ public class ModuleBuilder {
 	}
 	
 	public Block resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment,
-			HashMap<String, Type> declared) {			
+			HashMap<String,Pair<Type,Block>> declared) {			
 		try {
 			if(s instanceof VarDecl) {
 				return resolve((VarDecl)s, environment, declared);
@@ -373,7 +374,7 @@ public class ModuleBuilder {
 				return resolve(0, (Invoke)s, environment, declared).second();
 			} else if(s instanceof Spawn) {
 				return resolve(0, (UnOp)s, environment, declared).second();
-			} if(s instanceof Skip) {	
+			} else if(s instanceof Skip) {	
 				return new Block();
 			} else {
 				syntaxError("unknown statement encountered: "
@@ -390,29 +391,38 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolve(VarDecl s, HashMap<String, Type> environment,
-			HashMap<String, Type> declared) throws ResolveError {
+			HashMap<String,Pair<Type,Block>> declared) throws ResolveError {
 		Expr init = s.initialiser;
 		Pair<Type,Block> tb = resolve(s.type);
 		Type type = tb.first();
+		// FIXME: need to do a substitution here
+		Block constraint = Block.substitute("$",s.name,tb.second());
 		Block blk = new Block();
 		if(init != null) {
 			Pair<Type,Block> initT = resolve(0, init,environment, declared);
 			checkIsSubtype(type,initT.first(),init);
 			environment.put(s.name,type);
 			blk.addAll(initT.second());
-			blk.add(new Code.Assign(type, s.name, RVal.VAR(initT.first(),"$0")));
+			blk.add(new Code.Assign(type, s.name, RVal.VAR(initT.first(),"$0")));			
+			// Finally, need to actually check the constraints!						
+			if(constraint != null) {
+				blk.addAll(constraint);
+			}
 		} 
-		declared.put(s.name,type);
+
+		declared.put(s.name,new Pair<Type,Block>(type,constraint));
+				
 		return blk;
 	}
 	
-	protected Block resolve(Assign s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+	protected Block resolve(Assign s, HashMap<String, Type> environment,
+			HashMap<String,Pair<Type,Block>> declared) {
 		Pair<Type,Block> rhs_tb = resolve(0, s.rhs, environment, declared);
 		Block blk = new Block(rhs_tb.second());
 		if(s.lhs instanceof Variable) {
 			// perform type inference as a result of this assignment
 			Variable v = (Variable) s.lhs;			
-			Type declared_t = declared.get(v.var);
+			Type declared_t = declared.get(v.var).first();
 			if(declared_t == null) {
 				syntaxError("unknown variable",v);
 			}
@@ -425,16 +435,25 @@ public class ModuleBuilder {
 			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);							
 			System.out.println("WARNING: Assign is missing cases");
 		}
+		
+		// Finally, we need to add any constraints that may be coming from the
+		// declared type.
+		Variable target = (Variable) s.lhs; // FIXME
+		Block constraint = declared.get(target.var).second();
+		if(constraint != null) {
+			blk.addAll(constraint);
+		}
+		
 		return blk;
 	}
 
-	protected Block resolve(Assert s, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+	protected Block resolve(Assert s, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
 		checkIsSubtype(t.first(),Type.T_BOOL,s.expr);
 		return null;
 	}
 
-	protected Block resolve(Return s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+	protected Block resolve(Return s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		if(s.expr != null) {
 			Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
 			Type.Fun ft = fd.attribute(Attribute.Fun.class).type;
@@ -443,7 +462,7 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Block resolve(Debug s, HashMap<String,Type> environment, HashMap<String,Type> declared) {		
+	protected Block resolve(Debug s, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
 		checkIsSubtype(t.first(),Type.T_LIST(Type.T_INT),s.expr);
 		Block blk = t.second();
@@ -451,7 +470,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Type> declared) {
+	protected Block resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		String falseLab = label();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : label();
 		Block blk = resolveCondition(falseLab, invert(s.condition),
@@ -459,8 +478,8 @@ public class ModuleBuilder {
 		
 		// FIXME: need to perform some type inference here
 		
-		HashMap<String,Type> tenv = new HashMap<String,Type>(environment);		
-		HashMap<String,Type> tdec = new HashMap<String,Type>(declared);		
+		HashMap<String,Type> tenv = new HashMap<String,Type>(environment);					
+		HashMap<String,Pair<Type,Block>> tdec = new HashMap<String,Pair<Type,Block>>(declared);
 		for (Stmt st : s.trueBranch) {
 			blk.addAll(resolve(st, fd, tenv, tdec));
 		}
@@ -468,7 +487,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Goto(exitLab));
 			blk.add(new Code.Label(falseLab));
 			HashMap<String,Type> fenv = new HashMap<String,Type>(environment);
-			HashMap<String,Type> fdec = new HashMap<String,Type>(declared);
+			HashMap<String,Pair<Type,Block>> fdec = new HashMap<String,Pair<Type,Block>>(declared);
 			for (Stmt st : s.falseBranch) {
 				blk.addAll(resolve(st, fd, fenv, fdec));
 			}			
@@ -490,7 +509,7 @@ public class ModuleBuilder {
 	 * @return
 	 */
 	protected Block resolveCondition(String target, Expr e,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		try {
 			if (e instanceof Constant) {
 				return resolveCondition(target,(Constant)e, environment, declared);
@@ -520,7 +539,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolveCondition(String target, Constant c,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		checkType(c.value.type(),Type.Bool.class,c);
 		Value.Bool b = (Value.Bool) c.value;
 		Block blk = new Block();
@@ -533,7 +552,7 @@ public class ModuleBuilder {
 	}
 		
 	protected Block resolveCondition(String target, Variable v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		Type t = environment.get(v.var);
 		if (t == null) {
 			syntaxError("unknown variable", v);
@@ -546,7 +565,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolveCondition(String target, BinOp v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {		
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		BOp bop = v.op;		
 		Block blk = new Block();
 		
@@ -618,7 +637,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolveCondition(String target, UnOp v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {		
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		UOp uop = v.op;		
 		switch(uop) {
 		case NOT:						
@@ -643,7 +662,7 @@ public class ModuleBuilder {
 	 * @return
 	 */
 	protected Pair<Type, Block> resolve(int target, Expr e,			
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		try {
 			if (e instanceof Constant) {
 				return resolve(target,(Constant)e, environment, declared);
@@ -677,7 +696,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Pair<Type, Block> resolve(int target, Invoke s,
-			HashMap<String, Type> environment, HashMap<String, Type> declared)
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared)
 			throws ResolveError {
 		List<Expr> args = s.arguments;
 		
@@ -707,13 +726,13 @@ public class ModuleBuilder {
 	}
 			
 	protected Pair<Type, Block> resolve(int target, Constant c,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		Block blk = new Block(new Code.Assign(c.value.type(),"$" + target,c.value));		
 		return new Pair<Type,Block>(c.value.type(),blk);
 	}
 	
 	protected Pair<Type, Block> resolve(int target, Variable v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		Type t = environment.get(v.var);
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
@@ -723,7 +742,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Pair<Type, Block> resolve(int target, UnOp v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared,
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared,
 			ArrayList<PkgID> imports) {
 		Expr mhs = v.mhs;
 		Pair<Type, Block> tb = resolve(target, mhs, environment, declared); 
@@ -748,7 +767,7 @@ public class ModuleBuilder {
 	}
 
 	protected Pair<Type, Block> resolve(int target, UnOp v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		Pair<Type,Block> mhs = resolve(target,v.mhs,environment,declared);
 		Block blk = mhs.second();
 		Type mhs_t = mhs.first();
@@ -775,7 +794,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Pair<Type, Block> resolve(int target, BinOp v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		
 		// could probably use a range test for this somehow
 		if (v.op == BOp.EQ || v.op == BOp.NEQ || v.op == BOp.LT
@@ -838,7 +857,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Pair<Type, Block> resolve(int target, NaryOp v,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {		
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		Block blk = new Block();
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
@@ -883,12 +902,12 @@ public class ModuleBuilder {
 	}
 	
 	protected Pair<Type, Block> resolve(int target, Comprehension e,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {				
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
 		throw new RuntimeException("Need to implement type resolution for Comprehension");
 	}
 		
 	protected Pair<Type, Block> resolve(int target, TupleGen sg,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		HashMap<String, Type> types = new HashMap<String, Type>();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
 			Pair<Type, Block> tb = resolve(target, e.getValue(), environment,
@@ -899,7 +918,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Pair<Type, Block> resolve(int target, TupleAccess sg,
-			HashMap<String, Type> environment, HashMap<String, Type> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		Pair<Type, Block> lhs = resolve(target, sg.lhs, environment, declared);
 		// FIXME: will need to determine effective tuple type here
 		Type.Tuple tup = checkType(lhs.first(), Type.Tuple.class, sg.lhs);

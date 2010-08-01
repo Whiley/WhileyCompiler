@@ -14,6 +14,24 @@ public abstract class RVal {
 		}
 	}
 	
+	/**
+	 * Substitute all occurrences of variable from with variable to.
+	 * 
+	 * @param c
+	 * @param uses
+	 */
+	public static RVal substitute(String from, String to, RVal r) {
+		if (r instanceof Variable) {
+			Variable v = (Variable) r;
+			if (v.name.equals(from)) {
+				return VAR(v.type, to);
+			} else {
+				return v;
+			}
+		}
+		return r;
+	}
+	
 	public static Variable VAR(Type t, String v) {
 		return get(new Variable(t,v));
 	}

@@ -36,7 +36,51 @@ public abstract class Code {
 			RVal.usedVariables(a.rhs,uses);
 		} 
 	}
-		
+
+	/**
+	 * Substitute all occurrences of variable from with variable to.
+	 * 
+	 * @param c
+	 * @param uses
+	 */
+	public static Code substitute(String from, String to, Code c) {
+		if(c instanceof Assign) {
+			 Assign a = (Assign) c;
+			return new Assign(a.type, substitute(from, to, a.lhs), RVal
+					.substitute(from, to, a.rhs));
+		} else if(c instanceof UnOp) {
+			UnOp u = (UnOp) c;
+			return new UnOp(u.type, u.op, substitute(from, to, u.lhs), RVal
+					.substitute(from, to, u.rhs));
+		} else if(c instanceof BinOp) {
+			BinOp u = (BinOp) c;
+			return new BinOp(u.type, u.op, substitute(from, to, u.lhs), RVal
+					.substitute(from, to, u.rhs1), RVal.substitute(from, to,
+					u.rhs2));
+		} else if(c instanceof NaryOp) {
+			NaryOp u = (NaryOp) c;
+			ArrayList<RVal> args = new ArrayList<RVal>();
+			for (RVal r : u.args) {
+				args.add(RVal.substitute(from, to, r));
+			}
+			return new NaryOp(u.type, u.op, substitute(from, to, u.lhs), args);
+		} else if(c instanceof IfGoto) {
+			IfGoto u = (IfGoto) c;
+			return new IfGoto(u.type, u.op, RVal.substitute(from, to, u.lhs),
+					RVal.substitute(from, to, u.rhs), u.target);
+		} else {
+			return c;
+		}
+	}
+	
+	private static String substitute(String from, String to, String str) {
+		if (str.equals(from)) {
+			return to;
+		} else {
+			return str;
+		}
+	}
+	
 	/**
 	 * This represents a simple assignment between two variables.
 	 * 
