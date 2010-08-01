@@ -580,7 +580,13 @@ public class ModuleLoader {
 		for (int i = 0; i != type.params.size(); ++i) {
 			parameterNames.add("p" + i);
 		}
-		return new Module.Method(info.first(), type, parameterNames, null);
+		WhileyBlock constraint = (WhileyBlock) cm.attribute("WhileyBlock");
+		if(constraint != null) {
+			return new Module.Method(info.first(), type, parameterNames, constraint
+				.block(), null);
+		} else {
+			return new Module.Method(info.first(), type, parameterNames, null, null);
+		}
 	}
 	
 	/**

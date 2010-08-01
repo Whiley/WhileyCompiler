@@ -322,6 +322,8 @@ public class ModuleBuilder {
 		HashMap<String,Type> environment = new HashMap<String,Type>();		
 				
 		ArrayList<String> parameterNames = new ArrayList<String>();
+		Block constraint = null;
+		
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {						
 			Pair<Type,Block> t = resolve(p.type);
@@ -339,11 +341,20 @@ public class ModuleBuilder {
 			environment.put("this", rec.first());
 			declared.put("this", rec);
 		}
-			
-		if(fd.constraint != null) {			
-			environment.put("$",ret.first());
-			resolve(0, fd.constraint, environment, declared);			
+				
+		if (fd.constraint != null) {
+			environment.put("$", ret.first());
+			String trueLabel = label();
+			Block tmp = resolveCondition(trueLabel, fd.constraint, environment,
+					declared);
+			tmp.add(new Code.Fail("function precondition not satisfied"));
+			tmp.add(new Code.Label(trueLabel));
 			environment.remove("$");
+			if (constraint == null) {
+				constraint = tmp;
+			} else {
+				constraint.addAll(tmp);
+			}
 		}
 		
 		Block blk = new Block();
@@ -358,7 +369,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Return(tf.ret,null));
 		}
 		
-		return new Module.Method(fd.name(),tf,parameterNames,blk);
+		return new Module.Method(fd.name(),tf,parameterNames,constraint,blk);
 	}
 	
 	public Block resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment,
@@ -756,21 +767,22 @@ public class ModuleBuilder {
 			blk.addAll(e_tb.second());
 		}
 		
+		// First, determine the (static) type of the method/function being
+		// invoked
 		Attribute.Module modInfo = s.attribute(Attribute.Module.class);		
 		Type.Fun funtype = bindFunction(modInfo.module, s.name, receiver, ptypes,s);
 		
 		if(funtype == null) {
 			syntaxError("invalid or ambiguous method call",s);
 		}			
-		
-		// FIXME: need to deal with methods that have different (constrained)
-		// types.
 		s.attributes().add(new Attribute.Fun(funtype));
 		NameID name = new NameID(modInfo.module,s.name);	
 		RVal.Variable lhs = null;
-		if(funtype.ret != Type.T_VOID) {
-			lhs = RVal.VAR(funtype.ret, "$" + target);
-		}
+		if(funtype.ret != Type.T_VOID) { lhs = RVal.VAR(funtype.ret, "$" + target);}
+		
+		// Now, if this method/function has one or more "cases" then we need to
+		// select the right one, based on the pre / post conditions. 
+		
 		blk.add(new Code.Invoke(funtype, name, lhs, nargs));
 		
 		return new Pair<Type,Block>(funtype.ret,blk);									

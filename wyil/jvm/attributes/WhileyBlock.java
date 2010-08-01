@@ -25,6 +25,10 @@ public class WhileyBlock implements BytecodeAttribute {
 		return "WhileyBlock";
 	}
 	
+	public Block block() {
+		return block;
+	}
+	
 	public void print(PrintWriter output,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) {
 

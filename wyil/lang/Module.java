@@ -142,13 +142,15 @@ public class Module extends ModuleLoader.Skeleton {
 		private String name;		
 		private Type.Fun type;
 		private ArrayList<String> paramNames;
+		private Block constraint;
 		private Block body;
 		
 		public Method(String name, Type.Fun type,
-				Collection<String> paramNames, Block body) {			
+				Collection<String> paramNames, Block constraint, Block body) {
 			this.name = name;
 			this.type = type;
 			this.paramNames = new ArrayList<String>(paramNames);
+			this.constraint = constraint;
 			this.body = body;
 		}
 		
@@ -162,6 +164,10 @@ public class Module extends ModuleLoader.Skeleton {
 
 		public Block body() {
 			return body;
+		}
+		
+		public Block constraint() {
+			return constraint;
 		}
 		
 		public boolean isFunction() {
