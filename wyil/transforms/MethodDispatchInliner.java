@@ -1,4 +1,4 @@
-package wyil.stages;
+package wyil.transforms;
 
 /**
  * The purpose of the method dispatch inliner is to inline dispatch choices into
@@ -9,5 +9,5 @@ package wyil.stages;
  * 
  */
 public class MethodDispatchInliner {
-
+	
 }
