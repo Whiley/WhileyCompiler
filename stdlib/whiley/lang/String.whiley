@@ -26,6 +26,6 @@ public string str(* item):
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;
-        invokestatic wyjc/jvm/rt/WhileyList.fromString:(Ljava/lang/String;)Lwyjc/jvm/rt/WhileyList;
+        invokestatic wyil/jvm/rt/WhileyList.fromString:(Ljava/lang/String;)Lwyil/jvm/rt/WhileyList;
         areturn
     return "DUMMY" // dead code

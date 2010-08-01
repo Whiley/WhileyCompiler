@@ -20,6 +20,7 @@ package wyil.lang;
 
 import java.util.*;
 import wyil.lang.RVal.LVal;
+import wyjvm.lang.Bytecode;
 
 public abstract class Code {
 
@@ -211,21 +212,22 @@ public abstract class Code {
 	public final static class NaryOp extends Code {
 		public final NOP op;		
 		public final LVal lhs;
-		public final ArrayList<RVal> args;		
+		public final List<RVal> args;		
 		
 		public NaryOp(NOP op, LVal lhs, RVal... args) {
 			this.op = op;			
 			this.lhs = lhs;
-			this.args = new ArrayList<RVal>();
+			ArrayList<RVal> tmp = new ArrayList<RVal>();
 			for(RVal r : args) {
-				this.args.add(r);
+				tmp.add(r);
 			}
+			this.args = Collections.unmodifiableList(tmp); 
 		}
 		
 		public NaryOp(NOP op, LVal lhs, Collection<RVal> args) {
 			this.op = op;			
 			this.lhs = lhs;
-			this.args = new ArrayList<RVal>(args);			
+			this.args = Collections.unmodifiableList(new ArrayList<RVal>(args));			
 		}
 		
 		public boolean equals(Object o) {
@@ -285,16 +287,17 @@ public abstract class Code {
 		public final Type.Fun type;
 		public final NameID name;
 		public final LVal lhs;
-		public final ArrayList<RVal> args;
+		public final List<RVal> args;
 
 		public Invoke(Type.Fun type, NameID name, LVal lhs, RVal... args) {
 			this.type = type;
 			this.name = name;
 			this.lhs = lhs;
-			this.args = new ArrayList<RVal>();
-			for (RVal r : args) {
-				this.args.add(r);
+			ArrayList<RVal> tmp = new ArrayList<RVal>();
+			for(RVal r : args) {
+				tmp.add(r);
 			}
+			this.args = Collections.unmodifiableList(tmp); 
 		}
 
 		public Invoke(Type.Fun type, NameID name, LVal lhs,
@@ -302,7 +305,7 @@ public abstract class Code {
 			this.type = type;
 			this.name = name;
 			this.lhs = lhs;
-			this.args = new ArrayList<RVal>(args);
+			this.args = Collections.unmodifiableList(new ArrayList<RVal>(args));
 		}
 
 		public boolean equals(Object o) {
@@ -491,6 +494,41 @@ public abstract class Code {
 			return "." + label;
 		}
 	}	
+	
+	public static class Skip extends Code  {
+		public int hashCode() {
+			return 1;
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof Skip;
+		}
+		
+		public String toString() {
+			return "skip";
+		}
+	}
+	public static class ExternJvm extends Skip  {
+		public final List<Bytecode> bytecodes;
+
+		public ExternJvm(Collection<Bytecode> bytecodes) {
+			this.bytecodes = Collections
+					.unmodifiableList(new ArrayList<Bytecode>(bytecodes));
+		}
+		
+		public int hashCode() {
+			return 1;
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof Skip;
+		}
+		
+		public String toString() {
+			return "skip";
+		}
+	}
+	
 	public enum UOP { 
 		NEG() {
 			public String toString() { return "-"; }

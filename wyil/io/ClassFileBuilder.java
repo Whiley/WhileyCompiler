@@ -194,7 +194,9 @@ public class ClassFileBuilder {
 			translate((Code.Debug)c,slots,bytecodes);
 		} else if(c instanceof Code.Fail){
 			translate((Code.Fail)c,slots,bytecodes);
-		}
+		} else if(c instanceof Code.ExternJvm){
+			translate((Code.ExternJvm)c,slots,bytecodes);
+		} 
 	}
 	
 	public void translate(Code.Assign c, HashMap<String, Integer> slots,
@@ -543,6 +545,11 @@ public class ClassFileBuilder {
 				ftype, Bytecode.SPECIAL));
 		bytecodes.add(new Bytecode.Throw());
 	}
+	public void translate(Code.ExternJvm c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.addAll(c.bytecodes);
+	}
+	
 	public void translate(RVal r, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		if (r instanceof Value) {

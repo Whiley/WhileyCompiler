@@ -80,13 +80,19 @@ public class ModuleBuilder {
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 		for(WhileyFile.Decl d : wf.declarations) {				
-			if(d instanceof TypeDecl) {
-				types.add(resolve((TypeDecl)d,wf.module));
-			} else if(d instanceof ConstDecl) {
-				constants.add(resolve((ConstDecl)d));
-			} else if(d instanceof FunDecl) {
-				methods.add(resolve((FunDecl)d));
-			}				
+			try {
+				if(d instanceof TypeDecl) {
+					types.add(resolve((TypeDecl)d,wf.module));
+				} else if(d instanceof ConstDecl) {
+					constants.add(resolve((ConstDecl)d));
+				} else if(d instanceof FunDecl) {
+					methods.add(resolve((FunDecl)d));
+				}				
+			} catch(SyntaxError se) {
+				throw se;
+			} catch(Throwable ex) {
+				syntaxError("internal failure",d,ex);
+			}
 		}
 		return new Module(wf.module,wf.filename,methods,types,constants);
 	}
@@ -374,8 +380,10 @@ public class ModuleBuilder {
 				return resolve(0, (Invoke)s, environment, declared).second();
 			} else if(s instanceof Spawn) {
 				return resolve(0, (UnOp)s, environment, declared).second();
+			} else if(s instanceof ExternJvm) {	
+				return resolve((ExternJvm)s, fd, environment, declared);
 			} else if(s instanceof Skip) {	
-				return new Block();
+				return resolve((Skip)s, fd, environment, declared);				
 			} else {
 				syntaxError("unknown statement encountered: "
 						+ s.getClass().getName(), s);				
@@ -395,8 +403,10 @@ public class ModuleBuilder {
 		Expr init = s.initialiser;
 		Pair<Type,Block> tb = resolve(s.type);
 		Type type = tb.first();
-		// FIXME: need to do a substitution here
-		Block constraint = Block.substitute("$",s.name,tb.second());
+		Block constraint = tb.second();
+		if(constraint != null) {
+			Block.substitute("$",s.name,tb.second());
+		}
 		Block blk = new Block();
 		if(init != null) {
 			Pair<Type,Block> initT = resolve(0, init,environment, declared);
@@ -454,13 +464,37 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Block resolve(Return s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		if(s.expr != null) {
-			Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
+	protected Block resolve(Return s, FunDecl fd,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		if (s.expr != null) {			
+			Pair<Type, Block> t = resolve(0, s.expr, environment, declared);
 			Type.Fun ft = fd.attribute(Attribute.Fun.class).type;
-			checkIsSubtype(ft.ret,t.first(),s.expr);
+			checkIsSubtype(ft.ret, t.first(), s.expr);
+			Block blk = new Block();
+			blk.addAll(t.second());
+			blk.add(new Code.Return(ft.ret, RVal.VAR(t.first(), "$" + 0)));
+			return blk;
+		} else {
+			Block blk = new Block();
+			blk.add(new Code.Return(Type.T_VOID, null));
+			return blk;
 		}
-		return null;
+	}
+	
+	protected Block resolve(ExternJvm s, FunDecl fd,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Block blk = new Block();
+		blk.add(new Code.ExternJvm(s.bytecodes));
+		return blk;
+	}
+	protected Block resolve(Skip s, FunDecl fd,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Block blk = new Block();
+		blk.add(new Code.Skip());
+		return blk;
 	}
 	
 	protected Block resolve(Debug s, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
@@ -722,7 +756,7 @@ public class ModuleBuilder {
 			blk.addAll(e_tb.second());
 		}
 		
-		Attribute.Module modInfo = s.attribute(Attribute.Module.class);
+		Attribute.Module modInfo = s.attribute(Attribute.Module.class);		
 		Type.Fun funtype = bindFunction(modInfo.module, s.name, receiver, ptypes,s);
 		
 		if(funtype == null) {

@@ -1,5 +1,7 @@
-void f(int x):
+int f(int x):
     print "HELLO WORLD"
+    return 123+x
 
 void System::main([[char]] args):
-    f(1)
+    int x = 1
+    print str(f(x))

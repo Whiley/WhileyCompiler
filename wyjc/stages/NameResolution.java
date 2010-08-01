@@ -130,8 +130,7 @@ public class NameResolution {
 	
 	public void resolve(Stmt s, HashSet<String> environment, ArrayList<PkgID> imports) {
 		try {
-			if(s instanceof Skip) {				
-			} else if(s instanceof VarDecl) {
+			if(s instanceof VarDecl) {
 				resolve((VarDecl)s, environment, imports);
 			} else if(s instanceof Assign) {
 				resolve((Assign)s, environment, imports);
@@ -141,6 +140,8 @@ public class NameResolution {
 				resolve((Return)s, environment, imports);
 			} else if(s instanceof Debug) {
 				resolve((Debug)s, environment, imports);
+			} else if(s instanceof Skip) {
+				// do nothing
 			} else if(s instanceof IfElse) {
 				resolve((IfElse)s, environment, imports);
 			} else if(s instanceof Invoke) {
@@ -239,7 +240,7 @@ public class NameResolution {
 	
 	protected void resolve(Invoke ivk, HashSet<String> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
-						
+					
 		for(Expr e : ivk.arguments) {						
 			resolve(e, environment, imports);
 		}
@@ -250,7 +251,7 @@ public class NameResolution {
 		if(target != null) {
 			resolve(target,environment,imports);
 		}
-	
+		
 		// Ok, resolve the module for this invoke
 		ivk.attributes().add(new Attribute.Module(mid));		
 	}
