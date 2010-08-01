@@ -99,10 +99,12 @@ public class Module extends ModuleLoader.Skeleton {
 	public static class TypeDef {
 		private String name;
 		private Type type;
+		private Block constraint;
 
-		public TypeDef(String name, Type type) {			
+		public TypeDef(String name, Type type, Block constraint) {			
 			this.name = name;
 			this.type = type;			
+			this.constraint = constraint;
 		}
 
 		public String name() {
@@ -111,6 +113,10 @@ public class Module extends ModuleLoader.Skeleton {
 
 		public Type type() {
 			return type;
+		}
+		
+		public Block constraint() {
+			return constraint;
 		}
 	}
 	

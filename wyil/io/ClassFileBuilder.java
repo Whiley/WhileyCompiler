@@ -65,7 +65,7 @@ public class ClassFileBuilder {
 		}
 		for(Module.TypeDef td : module.types()) {			
 			Type t = td.type();			
-			WhileyDefine wd = new WhileyDefine(td.name(),t,null);
+			WhileyDefine wd = new WhileyDefine(td.name(),t,td.constraint());
 			cf.attributes().add(wd);
 		}
 		for(Module.Method fd : module.methods()) {				

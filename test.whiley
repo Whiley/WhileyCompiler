@@ -1,6 +1,4 @@
+define nat as int where $ >= 0
 void System::main([[char]] args):
-    {int} xs = {1,2}
-    xs = xs - {|args|}
-    if xs == {2}:
-        print "Hello World"
-
+    nat x = -1
+    print str(x)

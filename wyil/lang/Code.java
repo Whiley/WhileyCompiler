@@ -278,6 +278,31 @@ public abstract class Code {
 		}		
 	}
 	
+	public final static class Fail extends Code {				
+		public final String msg;
+		
+		public Fail(String msg) {			
+			this.msg = msg;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Fail) {
+				Fail a = (Fail) o;
+				return msg.equals(a.msg);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return msg.hashCode();			
+		}
+		
+		public String toString() {
+			return "fail \"" + msg + "\"";
+		}		
+	}
+	
 	/**
 	 * This represents a conditional branching instruction
 	 * @author djp

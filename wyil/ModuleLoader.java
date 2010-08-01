@@ -547,15 +547,14 @@ public class ModuleLoader {
 		for(BytecodeAttribute ba : cf.attributes()) {
 			if(ba instanceof WhileyDefine) {
 				WhileyDefine wd = (WhileyDefine) ba;
-				Type type = wd.type();
-				Value value = wd.value();				
+				Type type = wd.type();							
 				if(type == null) {
 					// constant definition
-					Module.ConstDef ci = new Module.ConstDef(wd.defName(),value);
+					Module.ConstDef ci = new Module.ConstDef(wd.defName(),wd.value());
 					constants.add(ci);
 				} else {
 					// type definition					
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type);					
+					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,wd.block());					
 					types.add(ti);
 				}
 			}

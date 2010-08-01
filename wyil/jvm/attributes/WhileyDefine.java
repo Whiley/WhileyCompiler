@@ -45,15 +45,14 @@ public class WhileyDefine implements BytecodeAttribute {
 	private Type type;
 	
 	public WhileyDefine(String name, Value expr) {
-		this.defName = name;
-		this.type = expr.type();
+		this.defName = name;		
 		this.value = expr;
 	}
 	
 	public WhileyDefine(String name, Type type, Block block) {
 		this.defName = name;
 		this.type = type;
-		this.block = block;
+		this.block = block;		
 	}
 	
 	public String name() {
@@ -70,6 +69,10 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	public Value value() {
 		return value;
+	}
+	
+	public Block block() {
+		return block;
 	}
 	
 	public void write(BinaryOutputStream writer,
@@ -122,11 +125,13 @@ public class WhileyDefine implements BytecodeAttribute {
 
 		if (type == null) {
 			output.println("  WhileyDefine: " + defName + " as " + value);
-		} else if (value == null) {
+		} else if (block == null) {
 			output.println("  WhileyDefine: " + defName + " as " + type);
 		} else {
-			output.println("  WhileyDefine: " + defName + " as " + type
-					+ " where " + value);
+			output.println("  WhileyDefine: " + defName + " as " + type);
+			for(Code c : block) {
+				wyil.io.WyilFileWriter.write(1,c,output);
+			}
 		}
 	}
 	

@@ -37,7 +37,7 @@ public class ModuleBuilder {
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID,List<Type.Fun>> functions;	
 	private HashMap<NameID,Pair<Type,Block>> types;	
-	private HashMap<NameID,UnresolvedType> unresolved;
+	private HashMap<NameID,Pair<UnresolvedType,Expr>> unresolved;
 	
 	public ModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;
@@ -47,7 +47,7 @@ public class ModuleBuilder {
 		modules = new HashSet<ModuleID>();
 		functions = new HashMap<NameID,List<Type.Fun>>();
 		types = new HashMap<NameID,Pair<Type,Block>>();		
-		unresolved = new HashMap<NameID,UnresolvedType>();
+		unresolved = new HashMap<NameID,Pair<UnresolvedType,Expr>>();
 		
 		// now, init data
 		for (WhileyFile f : files) {			
@@ -106,7 +106,8 @@ public class ModuleBuilder {
 				if(d instanceof TypeDecl) {
 					TypeDecl td = (TypeDecl) d;
 					NameID key = new NameID(f.module,td.name());					
-					unresolved.put(key, td.type);
+					unresolved.put(key, new Pair<UnresolvedType, Expr>(td.type,
+							td.constraint));
 					srcs.put(key,d);
 				}
 			}
@@ -120,7 +121,7 @@ public class ModuleBuilder {
 				Type t = simplifyRecursiveTypes(p.first());				
 				if (Type.isExistential(t)) {					
 					t = Type.T_NAMED(key.module(),key.name(), t);
-				} 				
+				} 								
 				types.put(key,new Pair<Type,Block>(t,p.second()));				
 			} catch(ResolveError ex) {
 				syntaxError(ex.getMessage(),srcs.get(key),ex);
@@ -149,17 +150,33 @@ public class ModuleBuilder {
 		cache.put(key, Type.T_RECURSIVE(key.toString(),null));
 		
 		// Ok, expand the type properly then
-		UnresolvedType ut = unresolved.get(key);
+		Pair<UnresolvedType,Expr> ut = unresolved.get(key);
+		t = expandType(ut.first(), cache);		
 		
-		t = expandType(ut, cache);
-				 		
+		// Resolve the constraint and generate an appropriate block.			
+		Block blk = t.second();
+		if(ut.second() != null) {			
+			HashMap<String,Type> env = new HashMap<String,Type>();
+			env.put("$",t.first());
+			String trueLabel = label();
+			Block constraint = resolveCondition(trueLabel,ut.second(),env,env);
+			constraint.add(new Code.Fail("type constraint not satisfied"));
+			constraint.add(new Code.Label(trueLabel));
+			if(blk == null) {				
+				t = new Pair<Type,Block>(t.first(),constraint);
+			} else {
+				blk.addAll(constraint); // affects t
+			}			
+		}
+		
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
 		if(Type.isOpenRecursive(key,t.first())) {
 			t = new Pair<Type,Block>(Type.T_RECURSIVE(key.toString(),t.first()),null);			
 		} 
-		
+				
+		// finally, store it in the cache
 		cache.put(key, t.first());
 		
 		// Done
@@ -282,9 +299,8 @@ public class ModuleBuilder {
 			environment.put("$", t);			
 			Type tmp = resolve(0, td.constraint, environment, declared).first();			
 			checkType(tmp,Type.Bool.class, td.constraint);			
-		}				
-		
-		return new Module.TypeDef(td.name(),t);
+		}						
+		return new Module.TypeDef(td.name(),t,p.second());
 	}		
 		
 	protected Module.Method resolve(FunDecl fd) {

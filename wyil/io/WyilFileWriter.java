@@ -33,12 +33,12 @@ public class WyilFileWriter {
 			out.println();
 		}		
 		for(Method md : module.methods()) {
-			write(md);
+			write(md,out);
 		}
 		out.flush();
 	}
 	
-	protected void write(Method method) {
+	public static void write(Method method, PrintWriter out) {
 		Type.Fun ft = method.type(); 
 		out.print(ft.ret + " " + method.name() + "(");
 		List<Type> pts = ft.params;
@@ -53,21 +53,21 @@ public class WyilFileWriter {
 		}
 		out.println("):");
 		for(Code c : method.body()) {
-			write(0,c);
+			write(0,c,out);
 		}
 	}
 	
-	protected void write(int indent, Code c) {		
+	public static void write(int indent, Code c, PrintWriter out) {		
 		if(c instanceof Code.Label) {
-			tabIndent(indent);
+			tabIndent(indent,out);
 			out.println(c);
 		} else {
-			tabIndent(indent+1);
+			tabIndent(indent+1,out);
 			out.println(c);
 		}
 	}	
 	
-	protected void tabIndent(int indent) {
+	public static void tabIndent(int indent, PrintWriter out) {
 		indent = indent * 4;
 		for(int i=0;i!=indent;++i) {
 			out.print(" ");
