@@ -26,7 +26,6 @@ import java.util.jar.JarFile;
 import wyil.jvm.attributes.*;
 import wyil.lang.*;
 import wyil.util.*;
-import wyjvm.attributes.*;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.*;
 
@@ -434,8 +433,10 @@ public class ModuleLoader {
 			InputStream input) throws IOException {
 		long time = System.currentTimeMillis();		
 		
-		ClassFileReader r = new ClassFileReader(
-				input, new WhileyDefine.Reader());					
+		ClassFileReader r = new ClassFileReader(input,
+				new WhileyDefine.Reader(), new WhileyBlock.Reader(
+						"WhileyPreCondition"), new WhileyBlock.Reader(
+						"WhileyPostCondition"));					
 
 		ClassFile cf = r.readClass();
 
@@ -588,16 +589,14 @@ public class ModuleLoader {
 		for (int i = 0; i != type.params.size(); ++i) {
 			parameterNames.add("p" + i);
 		}
-		WhileyBlock constraint = (WhileyBlock) cm.attribute("WhileyBlock");
+		WhileyBlock precondition = (WhileyBlock) cm.attribute("WhileyPreCondition");
+		WhileyBlock postcondition = (WhileyBlock) cm.attribute("WhileyPostCondition");
 		Module.Case mcase;
 		
-		if(constraint != null) {
-			mcase = new Module.Case(parameterNames, constraint
-				.block(), null);
-		} else {
-			mcase = new Module.Case(parameterNames, null, null);
-		}
-		
+		Block preblk = precondition == null ? null : precondition.block();
+		Block postblk = postcondition == null ? null : postcondition.block();;
+				
+		mcase = new Module.Case(parameterNames, preblk,postblk, null);				
 		return new Module.Method(stripCase(info.first()), type, mcase);
 	}
 	

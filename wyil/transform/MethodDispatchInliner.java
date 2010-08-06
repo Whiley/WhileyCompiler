@@ -53,12 +53,17 @@ public class MethodDispatchInliner implements ModuleTransform {
 	}
 	
 	public Module.Case transform(Module.Case mcase) {
-		Block constraint = mcase.constraint();
-		if(constraint != null) {
-			constraint = transform(constraint);
+		Block precondition = mcase.precondition();
+		if(precondition != null) {
+			precondition = transform(precondition);
+		}
+		Block postcondition = mcase.precondition();
+		if(postcondition != null) {
+			postcondition = transform(postcondition);
 		}
 		Block body = transform(mcase.body());
-		return new Module.Case(mcase.parameterNames(),constraint,body);
+		return new Module.Case(mcase.parameterNames(), precondition,
+				postcondition, body);
 	}
 	
 	public Block transform(Block block) {
@@ -82,7 +87,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 			int ncases = method.cases().size();
 			if(ncases == 1) {
 				Module.Case c = method.cases().get(0);
-				Block constraint = c.constraint();
+				Block constraint = c.precondition();
 				if (constraint != null) {
 					blk.addAll(transformConstraint(constraint,ivk,c));
 				}
@@ -99,7 +104,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 					if(caseNum > 1) {
 						blk.add(new Code.Label(nextLabel));
 					}
-					Block constraint = c.constraint();
+					Block constraint = c.precondition();
 					if (constraint != null) {						
 						constraint = transformConstraint(constraint,ivk,c);
 						if(caseNum < ncases) {

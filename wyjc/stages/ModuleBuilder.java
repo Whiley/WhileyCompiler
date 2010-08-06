@@ -379,7 +379,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Return(tf.ret,null));
 		}
 		
-		Module.Case ncase = new Module.Case(parameterNames, constraint, blk);
+		Module.Case ncase = new Module.Case(parameterNames, constraint, null, blk);
 		return new Module.Method(fd.name(), tf, ncase);
 	}
 	

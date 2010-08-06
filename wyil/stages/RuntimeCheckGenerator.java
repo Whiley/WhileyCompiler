@@ -115,7 +115,7 @@ public class RuntimeCheckGenerator {
 	protected void determineShadows(FunDecl f,
 			HashMap<String,Type> environment) {
 		shadows.clear(); // reset old shadow information
-		Condition pc = f.constraint();
+		Condition pc = f.precondition();
 		if(pc == null) {
 			return;
 		}
@@ -138,7 +138,7 @@ public class RuntimeCheckGenerator {
 	 * @return
 	 */
 	protected void generateShadows(FunDecl f) {
-		Condition pc = f.constraint();
+		Condition pc = f.precondition();
 		if(pc == null) {
 			return;
 		}		
@@ -342,8 +342,8 @@ public class RuntimeCheckGenerator {
 		}
 		
 		Condition postCondition;
-		if(f.constraint() != null) {
-			postCondition = Exprs.splitPostCondition(f.constraint());
+		if(f.precondition() != null) {
+			postCondition = Exprs.splitPostCondition(f.precondition());
 		} else {
 			postCondition = new BoolVal(true);
 		}				
@@ -409,8 +409,8 @@ public class RuntimeCheckGenerator {
 				precondition = Types.and(precondition,constraint);				
 			}			
 			
-			if(funType.constraint() != null) {
-				Condition c = Exprs.splitPreCondition(funType.constraint());
+			if(funType.precondition() != null) {
+				Condition c = Exprs.splitPreCondition(funType.precondition());
 				c = c.substitute(binding);
 				precondition = Types.and(precondition,c);
 			}												
@@ -438,8 +438,8 @@ public class RuntimeCheckGenerator {
 			addCheck("constraints for parameter not satisfied",constraint,environment,e,checks);			
 		}
 				
-		if(funType.constraint() != null) {
-			Condition preCond = Exprs.splitPreCondition(funType.constraint());
+		if(funType.precondition() != null) {
+			Condition preCond = Exprs.splitPreCondition(funType.precondition());
 			preCond = preCond.substitute(paramBinding);
 			addCheck("function precondition not satisfied",preCond,environment,ivk,checks);
 		}				

@@ -183,13 +183,16 @@ public class Module extends ModuleLoader.Skeleton {
 	}	
 	
 	public static class Case {
-		private ArrayList<String> paramNames;
-		private Block constraint;
-		private Block body;
+		private final ArrayList<String> paramNames;
+		private final Block precondition;
+		private final Block postcondition;
+		private final Block body;
 
-		public Case(Collection<String> paramNames, Block constraint, Block body) {
+		public Case(Collection<String> paramNames, Block precondition,
+				Block postcondition, Block body) {
 			this.paramNames = new ArrayList<String>(paramNames);
-			this.constraint = constraint;
+			this.precondition = precondition;
+			this.postcondition = postcondition;
 			this.body = body;
 		}
 
@@ -197,8 +200,12 @@ public class Module extends ModuleLoader.Skeleton {
 			return body;
 		}
 		
-		public Block constraint() {
-			return constraint;
+		public Block precondition() {
+			return precondition;
+		}
+		
+		public Block postcondition() {
+			return postcondition;
 		}
 		
 		public List<String> parameterNames() {

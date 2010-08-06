@@ -65,7 +65,20 @@ public class WyilFileWriter {
 		}
 		out.println("):");
 		
-		for(Code c : mcase.body()) {
+		if(mcase.precondition() != null) {
+			out.println("precondition: ");
+			write(0,mcase.precondition(),out);
+		}
+		if(mcase.postcondition() != null) {
+			out.println("postcondition: ");
+			write(0,mcase.postcondition(),out);
+		}
+		out.println("body: ");
+		write(0,mcase.body(),out);	
+	}
+	
+	public static void write(int indent, Block blk, PrintWriter out) {
+		for(Code c : blk) {
 			write(0,c,out);
 		}
 	}

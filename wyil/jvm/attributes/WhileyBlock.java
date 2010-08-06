@@ -16,13 +16,15 @@ import wyjvm.lang.*;
 
 public class WhileyBlock implements BytecodeAttribute {
 	private final Block block;
+	private final String name;
 	
-	public WhileyBlock(Block block) {
+	public WhileyBlock(String name, Block block) {
 		this.block = block;
+		this.name = name;
 	}
 	
 	public String name() {
-		return "WhileyBlock";
+		return name;
 	}
 	
 	public Block block() {
@@ -54,7 +56,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) {
-
+		// don't forget to write the name
 	}
 
 	protected static void writeBlock(Block expr, BinaryOutputStream writer,
@@ -178,14 +180,21 @@ public class WhileyBlock implements BytecodeAttribute {
 		}
 	}
 	
-	public static class Reader implements BytecodeAttributeReader { 
-		public String name() {
-			return "WhileyBlock";
+	public static class Reader implements BytecodeAttributeReader { 		
+		private final String name;
+		
+		public Reader(String name) {
+			this.name = name;
+		}
+		public String name() {			
+			return name;
 		}
 		
 		public WhileyBlock read(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
-			return new WhileyBlock(readBlock(reader,constantPool));
+			int idx = reader.read_u2();
+			Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
+			return new WhileyBlock(utf8.str, readBlock(reader, constantPool));
 		}
 		
 		protected static Block readBlock(BinaryInputStream reader,

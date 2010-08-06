@@ -41,7 +41,7 @@ public class FunctionChecker {
 	}
 	
 	public void check(FunDecl fd) {
-		check(fd.constraint());
+		check(fd.precondition());
 		boolean isFunction = fd.isFunction();
 		
 		for(Stmt s : fd.statements()) {
