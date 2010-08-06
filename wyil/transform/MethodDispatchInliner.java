@@ -57,7 +57,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		if(precondition != null) {
 			precondition = transform(precondition);
 		}
-		Block postcondition = mcase.precondition();
+		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
 			postcondition = transform(postcondition);
 		}

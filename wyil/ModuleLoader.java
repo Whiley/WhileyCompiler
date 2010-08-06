@@ -535,16 +535,17 @@ public class ModuleLoader {
 		
 		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
 		
-		for(ClassFile.Method cm : cf.methods()) {
-			if(!cm.isSynthetic()) {
-				Module.Method mi = createMethodInfo(mid,cm);
-				Pair<Type.Fun,String> key = new Pair(mi.type(),mi.name());
+		for (ClassFile.Method cm : cf.methods()) {
+			if (!cm.isSynthetic()) {
+				Module.Method mi = createMethodInfo(mid, cm);
+				Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
 				Module.Method method = methods.get(key);
-				if(method != null) {					
+				if (method != null) {
 					// coalesce cases
-					ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(method.cases());
+					ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
+							method.cases());
 					ncases.addAll(mi.cases());
-					mi = new Module.Method(mi.name(), mi.type(), ncases);					
+					mi = new Module.Method(mi.name(), mi.type(), ncases);
 				}
 				methods.put(key, mi);
 			}

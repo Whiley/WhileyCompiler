@@ -67,11 +67,11 @@ public class WyilFileWriter {
 		
 		if(mcase.precondition() != null) {
 			out.println("precondition: ");
-			write(0,mcase.precondition(),out);
+			write(0,mcase.precondition(),out);			
 		}
 		if(mcase.postcondition() != null) {
 			out.println("postcondition: ");
-			write(0,mcase.postcondition(),out);
+			write(0,mcase.postcondition(),out);			
 		}
 		out.println("body: ");
 		write(0,mcase.body(),out);	
