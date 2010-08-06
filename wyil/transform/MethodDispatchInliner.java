@@ -84,8 +84,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 				Module.Case c = method.cases().get(0);
 				Block constraint = c.constraint();
 				if (constraint != null) {
-					// FIXME: substitute parameters properly
-					blk.addAll(constraint);
+					blk.addAll(transformConstraint(constraint,ivk,c));
 				}
 				blk.add(ivk);
 			} else {			
@@ -101,31 +100,13 @@ public class MethodDispatchInliner implements ModuleTransform {
 						blk.add(new Code.Label(nextLabel));
 					}
 					Block constraint = c.constraint();
-					if (constraint != null) {
-						constraint = Block.relabel(constraint);
+					if (constraint != null) {						
+						constraint = transformConstraint(constraint,ivk,c);
 						if(caseNum < ncases) {
 							nextLabel = Block.freshLabel();
 							constraint = chain(nextLabel, constraint);
-						}
-						// Hook up actual arguments to constraint parameters.
-						// This is done by substituting the parameter names for
-						// their actual arguments. This works only because we
-						// know that the parameters will never be assigned
-						// within the constraint (i.e since they were generated
-						// from a condition expression, only registers could be
-						// assigned).
-						HashMap<String,RVal> binding = new HashMap<String,RVal>();
-						for (int i = 0; i != ivk.args.size(); ++i) {
-							RVal arg = ivk.args.get(i);
-							String target = c.parameterNames().get(i);
-							// FIXME: feels like some kind of problem related to
-							// typing here. That is, if we need a conversion
-							// between the argument type and the constraint
-							// parameter type, then aren't we losing this?
-							binding.put(target, arg);
-							
-						}
-						blk.addAll(Block.substitute(binding, constraint));
+						}						
+						blk.addAll(constraint);
 					}
 					
 					blk.add(new Code.Invoke(ivk.type, ivk.name, caseNum, ivk.lhs,
@@ -141,6 +122,31 @@ public class MethodDispatchInliner implements ModuleTransform {
 		} catch(ResolveError rex) {
 			throw new RuntimeException(rex.getMessage());
 		}
+	}
+	
+	public static Block transformConstraint(Block constraint, Code.Invoke ivk,
+			Module.Case c) {
+		constraint = Block.relabel(constraint);
+		// FIXME: substitute parameters properly
+		// Hook up actual arguments to constraint parameters.
+		// This is done by substituting the parameter names for
+		// their actual arguments. This works only because we
+		// know that the parameters will never be assigned
+		// within the constraint (i.e since they were generated
+		// from a condition expression, only registers could be
+		// assigned).
+		HashMap<String,RVal> binding = new HashMap<String,RVal>();
+		for (int i = 0; i != ivk.args.size(); ++i) {
+			RVal arg = ivk.args.get(i);
+			String target = c.parameterNames().get(i);
+			// FIXME: feels like some kind of problem related to
+			// typing here. That is, if we need a conversion
+			// between the argument type and the constraint
+			// parameter type, then aren't we losing this?
+			binding.put(target, arg);
+			
+		}					
+		return Block.substitute(binding, constraint);
 	}
 	
 	public static Block chain(String target, Block block) {

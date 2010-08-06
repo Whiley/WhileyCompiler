@@ -74,6 +74,7 @@ public class Main {
 		boolean cwa = true; // for simplicity!
 		boolean wyil = false;
 		boolean bytecodes = false;
+		boolean classfile = true;
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
 		ArrayList<String> bootpath = new ArrayList<String>();
@@ -105,6 +106,8 @@ public class Main {
 					bytecodes = true;
 				} else if(arg.equals("-wyil")) {					
 					wyil = true;
+				} else if(arg.equals("-ncf")) {					
+					classfile = false;
 				} else {
 					throw new RuntimeException("Unknown option: " + args[i]);
 				}
@@ -136,7 +139,9 @@ public class Main {
 		if(bytecodes) {
 			writers.add(new BytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}
-		writers.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));		
+		if(classfile) {
+			writers.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));
+		}
 		Compiler compiler = new Compiler(loader,stages,writers);
 		
 		// Now, configure compiler and loader

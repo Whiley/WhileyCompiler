@@ -280,7 +280,7 @@ public class WhileyParser {
 		if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 			// this is a constrained type				
 			matchKeyword("where");
-			return parseConditionExpression();			
+			return parseCondition();			
 		} else {
 			return null;
 		}
@@ -367,7 +367,7 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("assert");				
 		checkNotEof();
-		Expr e = parseConditionExpression();
+		Expr e = parseCondition();
 		matchEndLine();		
 		return new Stmt.Assert(e, sourceAttr(start,index-1));
 	}
@@ -390,7 +390,7 @@ public class WhileyParser {
 	private Stmt parseIf(int indent) {
 		int start = index;
 		matchKeyword("if");						
-		Expr c = parseConditionExpression();								
+		Expr c = parseCondition();								
 		match(Colon.class);
 		matchEndLine();
 		List<Stmt> tblk = parseBlock(indent+1);				
@@ -475,7 +475,7 @@ public class WhileyParser {
 		Expr initialiser = null;
 		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
 			match(Equals.class);
-			initialiser = parseConditionExpression();
+			initialiser = parseCondition();
 		}
 
 		matchEndLine();
@@ -504,12 +504,12 @@ public class WhileyParser {
 
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
-			Expr c2 = parseConditionExpression();			
+			Expr c2 = parseCondition();			
 			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
-			Expr c2 = parseConditionExpression();
+			Expr c2 = parseCondition();
 			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
 					index - 1));			
 		} 
@@ -801,7 +801,7 @@ public class WhileyParser {
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Expr.UOp.NOT, parseConditionExpression(),
+			return new Expr.UnOp(Expr.UOp.NOT, parseCondition(),
 					sourceAttr(start, index - 1));
 		}
 		syntaxError("unrecognised term.",token);
@@ -866,7 +866,7 @@ public class WhileyParser {
 			token = tokens.get(index);
 		}
 		match(Bar.class);
-		Expr condition = parseConditionExpression();
+		Expr condition = parseCondition();
 		match(RightCurly.class);
 		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
 				sourceAttr(start, index - 1));

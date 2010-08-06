@@ -105,6 +105,6 @@ public final class Block extends ArrayList<Code> {
 	
 	private static int idx=0;
 	public static String freshLabel() {
-		return "label" + idx++;
+		return "blklab" + idx++;
 	}
 }
