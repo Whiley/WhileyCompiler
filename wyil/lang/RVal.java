@@ -32,6 +32,13 @@ public abstract class RVal {
 			if (rv != null) {
 				return rv;
 			} 
+		} else if (r instanceof Register) {
+			Register v = (Register) r;
+			// FIXME: should changing the type of binding
+			RVal rv = binding.get(v.toString());
+			if (rv != null) {
+				return rv;
+			} 
 		}
 		return r;
 	}
@@ -74,7 +81,15 @@ public abstract class RVal {
 			return "(" + type + ") " + name;
 		}
 	}
-	
+
+	/**
+	 * A register is different from a variable because it's explicitly
+	 * designated as temporary. In contract, a Variable corresponds to a program
+	 * variable from the original source language.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static class Register extends LVal {
 		public final int index;
 		public final Type type;
