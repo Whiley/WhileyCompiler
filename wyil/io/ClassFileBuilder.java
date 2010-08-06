@@ -1125,7 +1125,7 @@ public class ClassFileBuilder {
 	
 	protected int label = 0;
 	protected String freshLabel() {
-		return "label" + label++;
+		return "cfblab" + label++;
 	}
 	
 	protected String nameMangle(String name, Type.Fun type) {		
