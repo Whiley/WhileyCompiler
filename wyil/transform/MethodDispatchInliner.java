@@ -87,9 +87,12 @@ public class MethodDispatchInliner implements ModuleTransform {
 					blk.addAll(constraint);
 				}
 				blk.add(ivk);
-			} else {									
+			} else {			
+				// This is the multi-case option, which is harder. Here, we need
+				// to chain together the constrain tests for multiple different
+				// method cases. Thus, if one fails we move onto try the next
+				// and, only if we try every possible case, do we actually fail.
 				int caseNum = 1;
-				// FIXME: think about fresh label scheme
 				String exitLabel = Block.freshLabel();
 				String nextLabel = null;
 				for (Module.Case c : method.cases()) {
