@@ -90,16 +90,18 @@ public class MethodDispatchInliner implements ModuleTransform {
 			} else {									
 				int caseNum = 1;
 				// FIXME: think about fresh label scheme
-				String exitLabel = "EXIT";
+				String exitLabel = Block.freshLabel();
+				String nextLabel = null;
 				for (Module.Case c : method.cases()) {
 					if(caseNum > 1) {
-						blk.add(new Code.Label("DUMMY" + caseNum));
+						blk.add(new Code.Label(nextLabel));
 					}
 					Block constraint = c.constraint();
 					if (constraint != null) {
-						// FIXME: substitute parameters properly					
+						// FIXME: substitute parameters properly
+						constraint = Block.relabel(constraint);
 						if(caseNum < ncases) {
-							String nextLabel = "DUMMY" + (caseNum+1);
+							nextLabel = Block.freshLabel();
 							constraint = chain(nextLabel, constraint);
 						}
 						blk.addAll(constraint);

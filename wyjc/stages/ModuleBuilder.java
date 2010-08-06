@@ -174,7 +174,7 @@ public class ModuleBuilder {
 		if(ut.second() != null) {			
 			HashMap<String,Type> env = new HashMap<String,Type>();
 			env.put("$",t.first());
-			String trueLabel = label();
+			String trueLabel = Block.freshLabel();
 			Block constraint = resolveCondition(trueLabel, ut.second(), env,
 					new HashMap());
 			constraint.add(new Code.Fail("type constraint not satisfied"));
@@ -354,7 +354,7 @@ public class ModuleBuilder {
 				
 		if (fd.constraint != null) {
 			environment.put("$", ret.first());
-			String trueLabel = label();
+			String trueLabel = Block.freshLabel();
 			Block tmp = resolveCondition(trueLabel, fd.constraint, environment,
 					declared);
 			tmp.add(new Code.Fail("function precondition not satisfied"));
@@ -528,8 +528,8 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		String falseLab = label();
-		String exitLab = s.falseBranch.isEmpty() ? falseLab : label();
+		String falseLab = Block.freshLabel();
+		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block.freshLabel();
 		Block blk = resolveCondition(falseLab, invert(s.condition),
 				environment, declared);				
 		
@@ -631,7 +631,7 @@ public class ModuleBuilder {
 			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
 			return blk;
 		} else if (bop == BOp.AND) {
-			String exitLabel = label();
+			String exitLabel = Block.freshLabel();
 			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), environment,
 					declared));
 			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
@@ -698,7 +698,7 @@ public class ModuleBuilder {
 		UOp uop = v.op;		
 		switch(uop) {
 		case NOT:						
-			String label = label();
+			String label = Block.freshLabel();
 			Block blk = resolveCondition(label,v.mhs,environment,declared);
 			blk.add(new Code.Goto(target));
 			blk.add(new Code.Label(label));
@@ -877,8 +877,8 @@ public class ModuleBuilder {
 				|| v.op == BOp.LTEQ || v.op == BOp.GT || v.op == BOp.GTEQ
 				|| v.op == BOp.SUBSET || v.op == BOp.SUBSETEQ
 				|| v.op == BOp.ELEMENTOF || v.op == BOp.AND || v.op == BOp.OR) {			
-			String trueLabel = label();
-			String exitLabel = label();
+			String trueLabel = Block.freshLabel();
+			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel,v,environment,declared);
 			blk.add(new Code.Assign(RVal.VAR(Type.T_BOOL,"$" + target),Value.V_BOOL(false)));
 			blk.add(new Code.Goto(exitLabel));
@@ -1175,12 +1175,7 @@ public class ModuleBuilder {
 		}
 		
 		return Type.substituteRecursiveTypes(t, binding);
-	}
-	
-	private static int labelIndex = 0;
-	public static String label() {
-		return "label" + labelIndex++;
-	}
+	}	
 	
 	public static Expr invert(Expr e) {
 		if(e instanceof Expr.BinOp) {

@@ -57,12 +57,10 @@ public class TestHarness {
 	 *            Java file in the srcPath of the same name.
 	 */
 	protected void runTest(String name) {				
-		final String[] args = new String[5];
+		final String[] args = new String[3];
 		args[0] = "-wp";		
-		args[1] = "lib/wyrt.jar";
-		args[2] = "-debug:pcs";						
-		args[3] = "-nvc";		
-		args[4] = srcPath + File.separatorChar + name + ".whiley";		
+		args[1] = "lib/wyrt.jar";				
+		args[2] = srcPath + File.separatorChar + name + ".whiley";		
 		
 		if(Main.run(args) != 0) { 
 			fail("couldn't compile test!");

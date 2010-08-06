@@ -24,6 +24,7 @@ public class WyilTransform implements Compiler.Stage {
 			logout.logTimedMessage("[" + module.filename()
 					+ "] failed on " + name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
+			ex.printStackTrace();
 			return null;
 		}
 	}

@@ -43,4 +43,52 @@ public final class Block extends ArrayList<Code> {
 		}
 		return r;
 	}
+
+	/**
+	 * This method relabels a given block to ensure its labels do not clash with
+	 * any generated so far via freshLabel(). This is particularly important
+	 * when bringing blocks in from the wild (e.g. as constraints for external
+	 * methods), as we have no idea what labels they may have.
+	 * 
+	 * @param blk
+	 * @return
+	 */
+	public static Block relabel(Block blk) {
+		Block b = new Block();
+		HashMap<String, String> nlabels = new HashMap<String, String>();
+		for (Code c : blk) {			
+			if (c instanceof Code.Label) {
+				Code.Label l = (Code.Label) c;
+				String label = nlabels.get(l.label);
+				if (label == null) {
+					label = freshLabel();
+					nlabels.put(l.label, label);
+				}
+				c = new Code.Label(label);
+			} else if (c instanceof Code.Goto) {
+				Code.Goto g = (Code.Goto) c;
+				String target = nlabels.get(g.target);
+				if (target == null) {
+					target = freshLabel();
+					nlabels.put(g.target, target);
+				}
+				c = new Code.Goto(target);
+			} else if (c instanceof Code.IfGoto) {
+				Code.IfGoto g = (Code.IfGoto) c;
+				String target = nlabels.get(g.target);
+				if (target == null) {
+					target = freshLabel();
+					nlabels.put(g.target, target);
+				}
+				c = new Code.IfGoto(g.type, g.op, g.lhs, g.rhs, target);
+			}			
+			b.add(c);
+		}
+		return b;
+	}
+	
+	private static int idx=0;
+	public static String freshLabel() {
+		return "label" + idx++;
+	}
 }
