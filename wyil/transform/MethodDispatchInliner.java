@@ -1,6 +1,7 @@
 package wyil.transform;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
@@ -106,16 +107,25 @@ public class MethodDispatchInliner implements ModuleTransform {
 							nextLabel = Block.freshLabel();
 							constraint = chain(nextLabel, constraint);
 						}
-						// hook up actual arguments to constraint parameters
+						// Hook up actual arguments to constraint parameters.
+						// This is done by substituting the parameter names for
+						// their actual arguments. This works only because we
+						// know that the parameters will never be assigned
+						// within the constraint (i.e since they were generated
+						// from a condition expression, only registers could be
+						// assigned).
+						HashMap<String,RVal> binding = new HashMap<String,RVal>();
 						for (int i = 0; i != ivk.args.size(); ++i) {
 							RVal arg = ivk.args.get(i);
 							String target = c.parameterNames().get(i);
-							Type type = method.type().params.get(i);
-							// FIXME: still a major problem here
-							blk.add(new Code.Assign(RVal.VAR(type, target),
-									arg));
+							// FIXME: feels like some kind of problem related to
+							// typing here. That is, if we need a conversion
+							// between the argument type and the constraint
+							// parameter type, then aren't we losing this?
+							binding.put(target, arg);
+							
 						}
-						blk.addAll(constraint);
+						blk.addAll(Block.substitute(binding, constraint));
 					}
 					
 					blk.add(new Code.Invoke(ivk.type, ivk.name, caseNum, ivk.lhs,
