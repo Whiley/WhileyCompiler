@@ -45,31 +45,31 @@ public abstract class Code {
 	 * @param c
 	 * @param uses
 	 */
-	public static Code substitute(String from, String to, Code c) {
+	public static Code substitute(HashMap<String,RVal> binding, Code c) {
 		if(c instanceof Assign) {
 			 Assign a = (Assign) c;
-			return new Assign(RVal.substitute(from, to, a.lhs), RVal
-					.substitute(from, to, a.rhs));
+			return new Assign((LVal) RVal.substitute(binding, a.lhs), RVal
+					.substitute(binding, a.rhs));
 		} else if(c instanceof UnOp) {
 			UnOp u = (UnOp) c;
-			return new UnOp(u.op, RVal.substitute(from, to, u.lhs), RVal
-					.substitute(from, to, u.rhs));
+			return new UnOp(u.op, (LVal) RVal.substitute(binding, u.lhs), RVal
+					.substitute(binding, u.rhs));
 		} else if(c instanceof BinOp) {
 			BinOp u = (BinOp) c;
-			return new BinOp(u.op, RVal.substitute(from, to, u.lhs), RVal
-					.substitute(from, to, u.rhs1), RVal.substitute(from, to,
+			return new BinOp(u.op, (LVal) RVal.substitute(binding, u.lhs), RVal
+					.substitute(binding, u.rhs1), RVal.substitute(binding,
 					u.rhs2));
 		} else if(c instanceof NaryOp) {
 			NaryOp u = (NaryOp) c;
 			ArrayList<RVal> args = new ArrayList<RVal>();
 			for (RVal r : u.args) {
-				args.add(RVal.substitute(from, to, r));
+				args.add(RVal.substitute(binding, r));
 			}
-			return new NaryOp(u.op, RVal.substitute(from, to, u.lhs), args);
+			return new NaryOp(u.op, (LVal) RVal.substitute(binding, u.lhs), args);
 		} else if(c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
-			return new IfGoto(u.type, u.op, RVal.substitute(from, to, u.lhs),
-					RVal.substitute(from, to, u.rhs), u.target);
+			return new IfGoto(u.type, u.op, RVal.substitute(binding, u.lhs),
+					RVal.substitute(binding, u.rhs), u.target);
 		} else {
 			return c;
 		}

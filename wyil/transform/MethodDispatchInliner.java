@@ -98,11 +98,19 @@ public class MethodDispatchInliner implements ModuleTransform {
 					}
 					Block constraint = c.constraint();
 					if (constraint != null) {
-						// FIXME: substitute parameters properly
 						constraint = Block.relabel(constraint);
 						if(caseNum < ncases) {
 							nextLabel = Block.freshLabel();
 							constraint = chain(nextLabel, constraint);
+						}
+						// hook up actual arguments to constraint parameters
+						for (int i = 0; i != ivk.args.size(); ++i) {
+							RVal arg = ivk.args.get(i);
+							String target = c.parameterNames().get(i);
+							Type type = method.type().params.get(i);
+							// FIXME: still a major problem here
+							blk.add(new Code.Assign(RVal.VAR(type, target),
+									arg));
 						}
 						blk.addAll(constraint);
 					}

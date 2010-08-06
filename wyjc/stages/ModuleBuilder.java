@@ -427,7 +427,7 @@ public class ModuleBuilder {
 		Type type = tb.first();
 		Block constraint = tb.second();
 		if(constraint != null) {
-			Block.substitute("$",s.name,tb.second());
+			Block.substitute("$", RVal.VAR(type, s.name), tb.second());
 		}
 		Block blk = new Block();
 		if(init != null) {

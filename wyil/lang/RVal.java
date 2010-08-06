@@ -22,11 +22,12 @@ public abstract class RVal {
 	 * @param c
 	 * @param uses
 	 */
-	public static <T extends RVal> T substitute(String from, String to, T r) {
+	public static RVal substitute(HashMap<String,RVal> binding, RVal r) {
 		if (r instanceof Variable) {
 			Variable v = (Variable) r;
-			if (v.name.equals(from)) {
-				return (T) VAR(v.type, to);
+			RVal rv = binding.get(v.name);
+			if (rv != null) {
+				return rv;
 			} 
 		}
 		return r;
