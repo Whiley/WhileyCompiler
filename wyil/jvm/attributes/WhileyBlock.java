@@ -71,8 +71,10 @@ public class WhileyBlock implements BytecodeAttribute {
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(rval instanceof Value) {
 			writeValue((Value)rval,writer,constantPool);
-		} else {
+		} else if(rval instanceof RVal.Variable) {
 			writeRVal((RVal.Variable)rval,writer,constantPool);
+		} else {
+			writeRVal((RVal.Register)rval,writer,constantPool);
 		}
 	}	
 	
@@ -83,6 +85,14 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write_u2(VARIABLE);				
 		int idx = constantPool.get(new Constant.Utf8(expr.name));							
 		writer.write_u2(idx);						
+	}
+	
+	public static void writeRVal(RVal.Register expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		// The encoding of variables could be optimised to avoid using the
+		// constant pool in most, if not all cases.
+		writer.write_u2(REGISTER);												
+		writer.write_u2(expr.index);						
 	}
 	
 	protected static void writeValue(Value val, BinaryOutputStream writer,
@@ -198,13 +208,23 @@ public class WhileyBlock implements BytecodeAttribute {
 				Map<Integer, Constant.Info> constantPool) throws IOException {		
 			int code = reader.read_u2();				
 			switch (code) {
-			case VARIABLE:			
+			case VARIABLE:
+			{
 				// The encoding of variables could be optimised to avoid using the
 				// constant pool in most, if not all cases.
 				int idx = reader.read_u2();			
 				Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
 				Type type = WhileyType.Reader.readType(reader, constantPool);
-				return RVal.VAR(type,utf8.str);			
+				return RVal.VAR(type,utf8.str);
+			}
+			case REGISTER:
+			{
+				// The encoding of variables could be optimised to avoid using the
+				// constant pool in most, if not all cases.
+				int idx = reader.read_u2();							
+				Type type = WhileyType.Reader.readType(reader, constantPool);
+				return RVal.REG(type,idx);
+			}
 			case INTVAL:			
 				int len = reader.read_u2();
 				byte[] bytes = new byte[len];
@@ -237,15 +257,17 @@ public class WhileyBlock implements BytecodeAttribute {
 				}
 				return Value.V_SET(values);			
 			case TUPLEVAL:
+			{
 				len = reader.read_u2();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();
 				for(int i=0;i!=len;++i) {
-					idx = reader.read_u2();
-					utf8 = (Constant.Utf8) constantPool.get(idx);
+					int idx = reader.read_u2();
+					Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
 					Value lhs = (Value) readRVal(reader, constantPool);
 					tvs.put(utf8.str, lhs);
 				}
 				return Value.V_TUPLE(tvs);
+			}
 			default:
 				throw new RuntimeException("Unknown RVal encountered in WhileyBlock");
 			}		
@@ -254,7 +276,8 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	private final static int NULL = 0;
 	private final static int VARIABLE = 1;
-	private final static int INVOKE = 2;		
+	private final static int REGISTER = 2;
+	private final static int INVOKE = 3;		
 	
 	private final static int TRUE = 4;
 	private final static int FALSE = 5;

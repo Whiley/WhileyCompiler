@@ -13,6 +13,9 @@ public abstract class RVal {
 		if (r instanceof Variable) {
 			Variable v = (Variable) r;
 			uses.add(v.name);
+		} else if(r instanceof Register) {
+			Register v = (Register) r;
+			uses.add("%" + v.index);
 		}
 	}
 	
@@ -37,6 +40,11 @@ public abstract class RVal {
 		return get(new Variable(t,v));
 	}
 	
+	public static Register REG(Type t, int index) {
+		return get(new Register(t,index));
+	}
+	
+	
 	public static class Variable extends LVal {
 		public final String name;
 		public final Type type;
@@ -44,6 +52,10 @@ public abstract class RVal {
 		Variable(Type type, String name) {
 			this.name = name;
 			this.type = type;
+			if (this.name.contains("%")) {
+				throw new IllegalArgumentException(
+						"wyil.lang.RVal.Variable name cannot contain \"$\" --- reserved for registers");
+			}
 		}
 		public Type type() {
 			return type;
@@ -60,6 +72,32 @@ public abstract class RVal {
 		}
 		public String toString() {
 			return "(" + type + ") " + name;
+		}
+	}
+	
+	public static class Register extends LVal {
+		public final int index;
+		public final Type type;
+		
+		Register(Type type, int index) {
+			this.index = index;
+			this.type = type;
+		}
+		public Type type() {
+			return type;
+		}
+		public int hashCode() {
+			return type.hashCode() + index;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Register) {
+				Register v = (Register) o;
+				return type.equals(v.type) && index == v.index;
+			}
+			return false;
+		}
+		public String toString() {
+			return "(" + type + ") %" + index;
 		}
 	}
 	

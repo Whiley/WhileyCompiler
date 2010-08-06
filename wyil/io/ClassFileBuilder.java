@@ -568,9 +568,13 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		if (r instanceof Value) {
 			translate((Value) r, slots, bytecodes);
-		} else {
+		} else if(r instanceof RVal.Variable) {
 			RVal.Variable v = (RVal.Variable) r;
 			bytecodes.add(new Bytecode.Load(slots.get(v.name),
+					convertType(v.type)));
+		} else {
+			RVal.Register v = (RVal.Register) r;
+			bytecodes.add(new Bytecode.Load(slots.get("%" + v.index),
 					convertType(v.type)));
 		}
 	}
@@ -773,6 +777,10 @@ public class ClassFileBuilder {
 		if(lhs instanceof RVal.Variable) {
 			RVal.Variable v = (RVal.Variable) lhs;
 			bytecodes.add(new Bytecode.Store(slots.get(v.name),
+					convertType(v.type)));
+		} else if(lhs instanceof RVal.Register) {
+			RVal.Register v = (RVal.Register) lhs;
+			bytecodes.add(new Bytecode.Store(slots.get("%" + v.index),
 					convertType(v.type)));
 		} else {
 			System.err.println("MISSING CODE FOR LVAL ASSIGNMENT");
