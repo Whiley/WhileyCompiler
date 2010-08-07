@@ -2,6 +2,7 @@ package wyil.transform;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
@@ -39,7 +40,13 @@ public class MethodDispatchInliner implements ModuleTransform {
 		if(constraint == null) {
 			return type;
 		} else {
-			constraint = transform(constraint);
+			// Now, calculate the register target. This is used to determine a safe
+			// register number that is guaranteed not to interfere with any register
+			// already being used in the body.
+			HashSet<String> uses = new HashSet<String>();				
+			Block.usedVariables(constraint, uses);
+			int regTarget = uses.size();
+			constraint = transform(regTarget,constraint);
 			return new Module.TypeDef(type.name(), type.type(), constraint);
 		}
 	}
@@ -55,22 +62,38 @@ public class MethodDispatchInliner implements ModuleTransform {
 	public Module.Case transform(Module.Case mcase) {
 		Block precondition = mcase.precondition();
 		if(precondition != null) {
-			precondition = transform(precondition);
+			// calculate reg target (see below)
+			HashSet<String> uses = new HashSet<String>();						
+			Block.usedVariables(precondition, uses);
+			int regTarget = uses.size();			
+			precondition = transform(regTarget,precondition);
 		}
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
-			postcondition = transform(postcondition);
+			// calculate reg target (see below)
+			HashSet<String> uses = new HashSet<String>();						
+			Block.usedVariables(precondition, uses);
+			int regTarget = uses.size();
+			postcondition = transform(regTarget,postcondition);
 		}
-		Block body = transform(mcase.body());
+		
+		// Now, calculate the register target. This is used to determine a safe
+		// register number that is guaranteed not to interfere with any register
+		// already being used in the body.
+		HashSet<String> uses = new HashSet<String>();				
+		Block.usedVariables(mcase.body(), uses);
+		int regTarget = uses.size();
+		
+		Block body = transform(regTarget,mcase.body());
 		return new Module.Case(mcase.parameterNames(), precondition,
 				postcondition, body);
 	}
 	
-	public Block transform(Block block) {
+	public Block transform(int regTarget, Block block) {
 		Block nblock = new Block();
 		for(Code c : block) {
 			if(c instanceof Code.Invoke) {
-				nblock.addAll(transform((Code.Invoke) c));												
+				nblock.addAll(transform(regTarget,(Code.Invoke) c));												
 			} else {
 				nblock.add(c);
 			}
@@ -78,7 +101,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		return nblock;
 	}
 	
-	public Block transform(Code.Invoke ivk) {
+	public Block transform(int regTarget, Code.Invoke ivk) {
 		try {
 			Module module = loader.loadModule(ivk.name.module());
 			Module.Method method = module.method(ivk.name.name(),
@@ -89,7 +112,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 				Module.Case c = method.cases().get(0);
 				Block constraint = c.precondition();
 				if (constraint != null) {
-					blk.addAll(transformConstraint(constraint,ivk,c));
+					blk.addAll(transformConstraint(regTarget,constraint,ivk,c));
 				}
 				blk.add(ivk);
 			} else {			
@@ -106,7 +129,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 					}
 					Block constraint = c.precondition();
 					if (constraint != null) {						
-						constraint = transformConstraint(constraint,ivk,c);
+						constraint = transformConstraint(regTarget,constraint,ivk,c);
 						if(caseNum < ncases) {
 							nextLabel = Block.freshLabel();
 							constraint = chain(nextLabel, constraint);
@@ -129,10 +152,17 @@ public class MethodDispatchInliner implements ModuleTransform {
 		}
 	}
 	
-	public static Block transformConstraint(Block constraint, Code.Invoke ivk,
-			Module.Case c) {
-		constraint = Block.relabel(constraint);
-		// FIXME: substitute parameters properly
+	public static Block transformConstraint(int regTarget, Block constraint,
+			Code.Invoke ivk, Module.Case c) {
+		// First, we need to perform the register shift. This is ensure that
+		// registers used in the constraint do not interfere with registers
+		// currently in use at the point where we inline it.
+		constraint = Block.registerShift(regTarget,constraint);
+
+		// Similarly, we need to make sure any labels used in the constraint do
+		// not collide with labels used at the inline point.
+		constraint = Block.relabel(constraint);		
+		
 		// Hook up actual arguments to constraint parameters.
 		// This is done by substituting the parameter names for
 		// their actual arguments. This works only because we
@@ -150,7 +180,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 			// parameter type, then aren't we losing this?
 			binding.put(target, arg);
 			
-		}					
+		}							
 		return Block.substitute(binding, constraint);
 	}
 	

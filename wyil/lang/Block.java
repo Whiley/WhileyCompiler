@@ -61,6 +61,23 @@ public final class Block extends ArrayList<Code> {
 	}
 
 	/**
+	 * The register shift method is responsible for mapping every register with
+	 * index i, to be a register with index i + shift. This is used to guarantee
+	 * that the registers of blocks inserted into other blocks do not collide.
+	 * 
+	 * @param shift --- amount to shift
+	 * @param block
+	 * @return
+	 */
+	public static Block registerShift(int shift, Block block) {
+		Block r = new Block();
+		for (Code c : block) {
+			r.add(Code.registerShift(shift, c));
+		}
+		return r;
+	}
+	
+	/**
 	 * This method relabels a given block to ensure its labels do not clash with
 	 * any generated so far via freshLabel(). This is particularly important
 	 * when bringing blocks in from the wild (e.g. as constraints for external

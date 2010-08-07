@@ -535,39 +535,45 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(Debug s, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
-		Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
-		checkIsSubtype(t.first(),Type.T_LIST(Type.T_INT),s.expr);
+	protected Block resolve(Debug s, HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Pair<Type, Block> t = resolve(0, s.expr, environment, declared);
+		checkIsSubtype(t.first(), Type.T_LIST(Type.T_INT), s.expr);
 		Block blk = t.second();
-		blk.add(new Code.Debug(RVal.REG(t.first(),0)));
+		blk.add(new Code.Debug(RVal.REG(t.first(), 0)));
 		return blk;
 	}
 
-	protected Block resolve(IfElse s, FunDecl fd, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {
+	protected Block resolve(IfElse s, FunDecl fd,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
 		String falseLab = Block.freshLabel();
-		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block.freshLabel();
+		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
+				.freshLabel();
 		Block blk = resolveCondition(falseLab, invert(s.condition),
-				environment, declared);				
-		
+				environment, declared);
+
 		// FIXME: need to perform some type inference here
-		
-		HashMap<String,Type> tenv = new HashMap<String,Type>(environment);					
-		HashMap<String,Pair<Type,Block>> tdec = new HashMap<String,Pair<Type,Block>>(declared);
+
+		HashMap<String, Type> tenv = new HashMap<String, Type>(environment);
+		HashMap<String, Pair<Type, Block>> tdec = new HashMap<String, Pair<Type, Block>>(
+				declared);
 		for (Stmt st : s.trueBranch) {
 			blk.addAll(resolve(st, fd, tenv, tdec));
 		}
-		if (!s.falseBranch.isEmpty()) {			
+		if (!s.falseBranch.isEmpty()) {
 			blk.add(new Code.Goto(exitLab));
 			blk.add(new Code.Label(falseLab));
-			HashMap<String,Type> fenv = new HashMap<String,Type>(environment);
-			HashMap<String,Pair<Type,Block>> fdec = new HashMap<String,Pair<Type,Block>>(declared);
+			HashMap<String, Type> fenv = new HashMap<String, Type>(environment);
+			HashMap<String, Pair<Type, Block>> fdec = new HashMap<String, Pair<Type, Block>>(
+					declared);
 			for (Stmt st : s.falseBranch) {
 				blk.addAll(resolve(st, fd, fenv, fdec));
-			}			
+			}
 		}
-		
+
 		blk.add(new Code.Label(exitLab));
-		
+
 		return blk;
 	}
 
@@ -831,32 +837,7 @@ public class ModuleBuilder {
 		Block blk = new Block(new Code.Assign(RVal.REG(t, target), RVal
 				.VAR(t, v.var)));
 		return new Pair<Type, Block>(t, blk);
-	}
-	
-	protected Pair<Type, Block> resolve(int target, UnOp v,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared,
-			ArrayList<PkgID> imports) {
-		Expr mhs = v.mhs;
-		Pair<Type, Block> tb = resolve(target, mhs, environment, declared); 
-		Type t = tb.first();
-		
-		Block blk = new Block();
-		if(v.op == UOp.NEG) {
-			checkIsSubtype(Type.T_REAL,t,mhs);
-		} else if(v.op == UOp.NOT) {
-			checkIsSubtype(Type.T_BOOL,t,mhs);			
-		} else if(v.op == UOp.LENGTHOF) {
-			checkIsSubtype(Type.T_SET(Type.T_ANY),t,mhs);
-			t = Type.T_INT;
-		} else if(v.op == UOp.PROCESSACCESS) {
-			Type.Process tp = checkType(t,Type.Process.class,mhs);
-			t = tp.element;
-		} else if(v.op == UOp.PROCESSSPAWN){
-			t = Type.T_PROCESS(t);
-		} 
-				
-		return new Pair<Type,Block>(t,blk);
-	}
+	}		
 
 	protected Pair<Type, Block> resolve(int target, UnOp v,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {

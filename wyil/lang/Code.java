@@ -76,6 +76,46 @@ public abstract class Code {
 	}	
 	
 	/**
+	 * The register shift method is responsible for mapping every register with
+	 * index i, to be a register with index i + shift. This is used to guarantee
+	 * that the registers of blocks inserted into other blocks do not collide.
+	 * 
+	 * @param shift
+	 * @param block
+	 * @return
+	 */
+	public static Code registerShift(int shift, Code c) {
+		if (c instanceof Assign) {
+			Assign a = (Assign) c;
+			return new Assign((LVal) RVal.registerShift(shift, a.lhs), RVal
+					.registerShift(shift, a.rhs));
+		} else if (c instanceof UnOp) {
+			UnOp u = (UnOp) c;
+			return new UnOp(u.op, (LVal) RVal.registerShift(shift, u.lhs), RVal
+					.registerShift(shift, u.rhs));
+		} else if (c instanceof BinOp) {
+			BinOp u = (BinOp) c;
+			return new BinOp(u.op, (LVal) RVal.registerShift(shift, u.lhs),
+					RVal.registerShift(shift, u.rhs1), RVal.registerShift(
+							shift, u.rhs2));
+		} else if (c instanceof NaryOp) {
+			NaryOp u = (NaryOp) c;
+			ArrayList<RVal> args = new ArrayList<RVal>();
+			for (RVal r : u.args) {
+				args.add(RVal.registerShift(shift, r));
+			}
+			return new NaryOp(u.op, (LVal) RVal.registerShift(shift, u.lhs),
+					args);
+		} else if (c instanceof IfGoto) {
+			IfGoto u = (IfGoto) c;
+			return new IfGoto(u.type, u.op, RVal.registerShift(shift, u.lhs),
+					RVal.registerShift(shift, u.rhs), u.target);
+		} else {
+			return c;
+		}
+	}
+	
+	/**
 	 * This represents a simple assignment between two variables.
 	 * 
 	 * @author djp

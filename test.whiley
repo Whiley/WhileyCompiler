@@ -1,9 +1,12 @@
-int f(int x) where x > 1:
-    return x+1
+int g(int x, int y) requires x>=0 && y>=0, ensures $>0:
+    bool a
+    a = x >= y
+    if(!a):
+        return x + y
+    else:
+        return 1
 
-int f(int x) where x < 1:
-    return x+1
 
-void System::main([[char]] args):
-    int x = |args|
-    print str(f(x))
+void System::main([string] args):
+    print str(g(4,345))
+    

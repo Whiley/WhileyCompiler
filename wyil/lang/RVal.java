@@ -42,6 +42,14 @@ public abstract class RVal {
 		}
 		return r;
 	}
+		
+	public static RVal registerShift(int shift, RVal r) {
+		if (r instanceof Register) {
+			Register v = (Register) r;
+			return new Register(v.type,v.index + shift);
+		}
+		return r;
+	}
 	
 	public static Variable VAR(Type t, String v) {
 		return get(new Variable(t,v));
