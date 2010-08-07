@@ -45,7 +45,9 @@ public abstract class Code {
 			CExpr.usedVariables(a.rhs,uses);
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;			
-			CExpr.usedVariables(a.lhs,uses);
+			if(a.lhs != null) {
+				CExpr.usedVariables(a.lhs,uses);
+			}
 			for(CExpr arg : a.args){
 				CExpr.usedVariables(arg,uses);
 			}			
@@ -71,8 +73,11 @@ public abstract class Code {
 			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
 		} else if(c instanceof Invoke) {
-			Invoke a = (Invoke) c;			
-			LVal lhs = (LVal) CExpr.substitute(binding, a.lhs);
+			Invoke a = (Invoke) c;						
+			LVal lhs = a.lhs;
+			if(lhs != null) {
+				lhs = (LVal) CExpr.substitute(binding, a.lhs);
+			}
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			for(CExpr arg : a.args){
 				args.add(CExpr.substitute(binding,arg));
@@ -106,7 +111,10 @@ public abstract class Code {
 					CExpr.registerShift(shift, u.rhs), u.target);
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;			
-			LVal lhs = (LVal) CExpr.registerShift(shift, a.lhs);
+			LVal lhs = a.lhs;
+			if(lhs != null) {
+				lhs = (LVal) CExpr.registerShift(shift, a.lhs);
+			}			
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			for(CExpr arg : a.args){
 				args.add(CExpr.registerShift(shift,arg));

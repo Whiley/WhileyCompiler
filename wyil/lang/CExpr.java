@@ -412,7 +412,11 @@ public abstract class CExpr {
 			for(CExpr arg : args) {
 				t = Type.leastUpperBound(t,arg.type());
 			}
-			return t;
+			if(op == NOP.SETGEN){
+				return Type.T_SET(t);
+			} else {
+				return Type.T_LIST(t);
+			}
 		}
 		
 		public boolean equals(Object o) {

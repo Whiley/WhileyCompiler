@@ -444,7 +444,7 @@ public class ModuleBuilder {
 		Type type = tb.first();
 		Block constraint = tb.second();
 		if(constraint != null) {
-			Block.substitute("$", CExpr.VAR(type, s.name), tb.second());
+			constraint = Block.substitute("$", CExpr.VAR(type, s.name), tb.second());
 		}
 		Block blk = new Block();
 		if(init != null) {
@@ -504,8 +504,10 @@ public class ModuleBuilder {
 		// Finally, we need to add any constraints that may be coming from the
 		// declared type.
 		Variable target = (Variable) flattern(s.lhs); // FIXME
+		Type declared_t = declared.get(target.var).first();
 		Block constraint = declared.get(target.var).second();
 		if(constraint != null) {
+			constraint = Block.substitute("$", CExpr.VAR(declared_t, target.var), constraint);
 			blk.addAll(constraint);
 		}
 		
