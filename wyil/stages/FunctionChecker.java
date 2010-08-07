@@ -143,7 +143,7 @@ public class FunctionChecker {
 			check(stmt.target(),isFunction);
 		}
 		
-		for(RVal e : stmt.arguments()) {
+		for(CExpr e : stmt.arguments()) {
 			check(e,isFunction);
 		}		
 	}
@@ -160,7 +160,7 @@ public class FunctionChecker {
 		}
 	}
 	
-	public void check(RVal expr, boolean isFunction) {
+	public void check(CExpr expr, boolean isFunction) {
 		try {
 			if (expr instanceof Variable || expr instanceof Value) {
 				// do nothing
@@ -217,7 +217,7 @@ public class FunctionChecker {
 	}
 	
 	public void check(ListGenerator gen, boolean isFunction) {
-		for(RVal e : gen.getValues()) {
+		for(CExpr e : gen.getValues()) {
 			check(e,isFunction);
 		}
 	}
@@ -234,7 +234,7 @@ public class FunctionChecker {
 	}
 	
 	public void check(SetGenerator gen, boolean isFunction) {
-		for(RVal e : gen.getValues()) {
+		for(CExpr e : gen.getValues()) {
 			check(e,isFunction);
 		}
 	}
@@ -245,7 +245,7 @@ public class FunctionChecker {
 	}
 	
 	public void check(TupleGenerator gen, boolean isFunction) {
-		for(RVal e : gen.values().values()) {
+		for(CExpr e : gen.values().values()) {
 			check(e,isFunction);
 		}
 	}

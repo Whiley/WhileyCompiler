@@ -50,7 +50,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		
 	}
 	
-	public static void addPoolItems(RVal rval, Set<Constant.Info> constantPool) {
+	public static void addPoolItems(CExpr rval, Set<Constant.Info> constantPool) {
 		
 	}
 	
@@ -69,18 +69,18 @@ public class WhileyBlock implements BytecodeAttribute {
 		
 	}	
 	
-	protected static void writeRVal(RVal rval, BinaryOutputStream writer,
+	protected static void writeRVal(CExpr rval, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(rval instanceof Value) {
 			writeValue((Value)rval,writer,constantPool);
-		} else if(rval instanceof RVal.Variable) {
-			writeRVal((RVal.Variable)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.Variable) {
+			writeRVal((CExpr.Variable)rval,writer,constantPool);
 		} else {
-			writeRVal((RVal.Register)rval,writer,constantPool);
+			writeRVal((CExpr.Register)rval,writer,constantPool);
 		}
 	}	
 	
-	public static void writeRVal(RVal.Variable expr, BinaryOutputStream writer,
+	public static void writeRVal(CExpr.Variable expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		// The encoding of variables could be optimised to avoid using the
 		// constant pool in most, if not all cases.
@@ -89,7 +89,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write_u2(idx);						
 	}
 	
-	public static void writeRVal(RVal.Register expr, BinaryOutputStream writer,
+	public static void writeRVal(CExpr.Register expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		// The encoding of variables could be optimised to avoid using the
 		// constant pool in most, if not all cases.
@@ -213,7 +213,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			return (Value) readRVal(reader,constantPool);
 		}
-		protected static RVal readRVal(BinaryInputStream reader,
+		protected static CExpr readRVal(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {		
 			int code = reader.read_u2();				
 			switch (code) {
@@ -224,7 +224,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				int idx = reader.read_u2();			
 				Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
 				Type type = WhileyType.Reader.readType(reader, constantPool);
-				return RVal.VAR(type,utf8.str);
+				return CExpr.VAR(type,utf8.str);
 			}
 			case REGISTER:
 			{
@@ -232,7 +232,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				// constant pool in most, if not all cases.
 				int idx = reader.read_u2();							
 				Type type = WhileyType.Reader.readType(reader, constantPool);
-				return RVal.REG(type,idx);
+				return CExpr.REG(type,idx);
 			}
 			case INTVAL:			
 				int len = reader.read_u2();

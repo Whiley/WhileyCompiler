@@ -2,12 +2,12 @@ package wyil.lang;
 
 import java.util.*;
 
-public abstract class RVal {
+public abstract class CExpr {
 	public abstract Type type();
 	
-	public static abstract class LVal extends RVal {}
+	public static abstract class LVal extends CExpr {}
 	
-	public static void usedVariables(RVal r, Set<String> uses) {
+	public static void usedVariables(CExpr r, Set<String> uses) {
 		if (r instanceof Variable) {
 			Variable v = (Variable) r;
 			uses.add(v.name);
@@ -23,17 +23,17 @@ public abstract class RVal {
 	 * @param c
 	 * @param uses
 	 */
-	public static RVal substitute(HashMap<String,RVal> binding, RVal r) {
+	public static CExpr substitute(HashMap<String,CExpr> binding, CExpr r) {
 		if (r instanceof Variable) {
 			Variable v = (Variable) r;
-			RVal rv = binding.get(v.name);
+			CExpr rv = binding.get(v.name);
 			if (rv != null) {
 				return rv;
 			} 
 		} else if (r instanceof Register) {
 			Register v = (Register) r;
 			// FIXME: should changing the type of binding
-			RVal rv = binding.get(v.toString());
+			CExpr rv = binding.get(v.toString());
 			if (rv != null) {
 				return rv;
 			} 
@@ -41,7 +41,7 @@ public abstract class RVal {
 		return r;
 	}
 		
-	public static RVal registerShift(int shift, RVal r) {
+	public static CExpr registerShift(int shift, CExpr r) {
 		if (r instanceof Register) {
 			Register v = (Register) r;
 			return new Register(v.type,v.index + shift);
@@ -57,7 +57,7 @@ public abstract class RVal {
 		return get(new Register(t,index));
 	}
 	
-	public static ListAccess LISTACCESS(Type.List t, RVal src, RVal index) {
+	public static ListAccess LISTACCESS(Type.List t, CExpr src, CExpr index) {
 		return get(new ListAccess(t, src, index));
 	}
 	
@@ -127,10 +127,10 @@ public abstract class RVal {
 	
 	public static class ListAccess extends LVal {
 		public final Type.List type;
-		public final RVal src;
-		public final RVal index;
+		public final CExpr src;
+		public final CExpr index;
 
-		ListAccess(Type.List type, RVal src, RVal index) {
+		ListAccess(Type.List type, CExpr src, CExpr index) {
 			this.type = type;
 			this.src = src;
 			this.index = index;
@@ -158,10 +158,10 @@ public abstract class RVal {
 		}
 	}
 	
-	private static final ArrayList<RVal> values = new ArrayList<RVal>();
-	private static final HashMap<RVal,Integer> cache = new HashMap<RVal,Integer>();
+	private static final ArrayList<CExpr> values = new ArrayList<CExpr>();
+	private static final HashMap<CExpr,Integer> cache = new HashMap<CExpr,Integer>();
 	
-	private static <T extends RVal> T get(T type) {
+	private static <T extends CExpr> T get(T type) {
 		Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) values.get(idx);

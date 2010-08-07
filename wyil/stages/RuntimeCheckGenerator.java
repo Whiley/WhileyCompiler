@@ -199,7 +199,7 @@ public class RuntimeCheckGenerator {
 	
 	private List<Check> checkgen(VarDecl as,
 			HashMap<String,Type> environment, HashMap<String,Type> declared) {
-		RVal init = as.initialiser();
+		CExpr init = as.initialiser();
 		
 		declared.put(as.name(), as.type());
 		
@@ -223,13 +223,13 @@ public class RuntimeCheckGenerator {
 	private Pair<List<Check>,List<Check>> checkgen(Assign as,
 			HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		LVal lhs = as.lhs();
-		RVal rhs = as.rhs();
+		CExpr rhs = as.rhs();
 		
 		List<Check> postChecks = Collections.EMPTY_LIST;
 		List<Check> preChecks = checkgen(lhs,environment, declared);
 		preChecks.addAll(checkgen(rhs,environment, declared));
 					
-		List<RVal> flat = lhs.flattern();
+		List<CExpr> flat = lhs.flattern();
 		Variable v = (Variable) flat.get(0);
 		Type declaredType = declared.get(v.name());		;
 		if (lhs instanceof Variable) {			
@@ -247,8 +247,8 @@ public class RuntimeCheckGenerator {
 	
 	private boolean tupleAccessEquivalent(TupleAccess t1, TupleAccess t2) {
 		if(t1.name().equals(t2.name())) {
-			RVal s1 = t1.source();
-			RVal s2 = t2.source();
+			CExpr s1 = t1.source();
+			CExpr s2 = t2.source();
 			if(s1 instanceof Variable && s2 instanceof Variable) {
 				Variable v1 = (Variable) s1;
 				Variable v2 = (Variable) s2;
@@ -269,7 +269,7 @@ public class RuntimeCheckGenerator {
 			if (sc.sign() instanceof Variable && sc.sources().size() == 1) {
 				Condition c = sc.condition();
 				String var = sc.variables().iterator().next();
-				HashMap<String,RVal> binding = new HashMap<String,RVal>();
+				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 				binding.put(var,
 						new Variable("$", lv.attribute(TypeAttr.class)));				
 				c = c.substitute(binding);
@@ -331,7 +331,7 @@ public class RuntimeCheckGenerator {
 	
 	private List<Check> checkgen(UnresolvedType rs, HashMap<String,Type> environment, HashMap<String,Type> declared,
 			FunDecl f) {
-		RVal e = rs.expr();
+		CExpr e = rs.expr();
 		
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
@@ -349,7 +349,7 @@ public class RuntimeCheckGenerator {
 		}				
 		
 		postCondition = new TypeEquals(f.type().returnType(), Variable.freshVar(), e, postCondition);
-		HashMap<String,RVal> binding = new HashMap<String,RVal>();
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		binding.put("$",e);
 		for (Variable var : postCondition.uses()) {				
 			if(shadows.contains(var)){
@@ -372,8 +372,8 @@ public class RuntimeCheckGenerator {
 			HashMap<String, Type> declared) throws ResolveError {
 		// First, we'll check the requirements of the argument expressions.
 		ArrayList<Check> checks = new ArrayList<Check>();
-		List<RVal> args = ivk.arguments(); 
-		for(RVal e : args) {
+		List<CExpr> args = ivk.arguments(); 
+		for(CExpr e : args) {
 			checks.addAll(checkgen(e,environment, declared));					
 		}
 		
@@ -392,18 +392,18 @@ public class RuntimeCheckGenerator {
 	
 	public void checkgenMultipleInvoke(List<ModuleInfo.Method> methods, Invoke ivk,
 			HashMap<String, Type> environment, List<Check> checks) {
-		List<RVal> args = ivk.arguments();
+		List<CExpr> args = ivk.arguments();
 		Condition condition = null;
 		
 		for(ModuleInfo.Method method : methods) {
 			FunType funType = method.type();
 			Condition precondition = null;
 			
-			HashMap<String,RVal> binding = new HashMap<String,RVal>();
+			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 			List<Type> paramTypes = funType.parameters();
 			for (int i = 0; i != paramTypes.size(); ++i) {									
 				Type t = paramTypes.get(i);
-				RVal e = args.get(i);				
+				CExpr e = args.get(i);				
 				binding.put("$" + i, e);
 				Condition constraint = new TypeEquals(t, Variable.freshVar(), e, new BoolVal(true));
 				precondition = Types.and(precondition,constraint);				
@@ -425,14 +425,14 @@ public class RuntimeCheckGenerator {
 	
 	public void checkgenSingleInvoke(ModuleInfo.Method method, Invoke ivk,
 			HashMap<String, Type> environment, List<Check> checks) {
-		List<RVal> args = ivk.arguments();
+		List<CExpr> args = ivk.arguments();
 		FunType funType = method.type();
-		HashMap<String,RVal> paramBinding = new HashMap<String,RVal>();				
+		HashMap<String,CExpr> paramBinding = new HashMap<String,CExpr>();				
 		List<Type> paramTypes = funType.parameters();
 		
 		for (int i = 0; i != paramTypes.size(); ++i) {						
 			Type t = paramTypes.get(i);
-			RVal e = args.get(i);			
+			CExpr e = args.get(i);			
 			paramBinding.put("$" + i,e);
 			Condition constraint = new TypeEquals(t, Variable.freshVar(), e, new BoolVal(true));						
 			addCheck("constraints for parameter not satisfied",constraint,environment,e,checks);			
@@ -445,7 +445,7 @@ public class RuntimeCheckGenerator {
 		}				
 	}
 	
-	public List<Check> checkgen(RVal e, HashMap<String,Type> environment, HashMap<String,Type> declared) {		
+	public List<Check> checkgen(CExpr e, HashMap<String,Type> environment, HashMap<String,Type> declared) {		
 		List<Check> checks = null;
 		try {
 			if (e instanceof IntVal
@@ -547,7 +547,7 @@ public class RuntimeCheckGenerator {
 	protected List<Check> checkgen(ListVal lv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
-		for(RVal e : lv.getValues()) {
+		for(CExpr e : lv.getValues()) {
 			checks.addAll(checkgen(e,environment, declared));
 		}
 		
@@ -557,7 +557,7 @@ public class RuntimeCheckGenerator {
 	protected List<Check> checkgen(ListGenerator lv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
-		for(RVal e : lv.getValues()) {
+		for(CExpr e : lv.getValues()) {
 			checks.addAll(checkgen(e,environment, declared));
 		}
 		
@@ -602,7 +602,7 @@ public class RuntimeCheckGenerator {
 	protected List<Check> checkgen(SetVal sv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
-		for(RVal e : sv.getValues()) {
+		for(CExpr e : sv.getValues()) {
 			checks.addAll(checkgen(e,environment, declared));
 		}
 		
@@ -612,7 +612,7 @@ public class RuntimeCheckGenerator {
 	protected List<Check> checkgen(SetGenerator sv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 		
-		for(RVal e : sv.getValues()) {
+		for(CExpr e : sv.getValues()) {
 			checks.addAll(checkgen(e,environment, declared));
 		}
 		
@@ -641,16 +641,16 @@ public class RuntimeCheckGenerator {
 			if(vars.size() != 0) {
 				// only update the check if it ranges over one or more variables
                 // in the comprehension
-				List<Pair<String,RVal>> nsources = new ArrayList<Pair<String,RVal>>();
-				HashMap<String,RVal> tmap = new HashMap<String,RVal>();
+				List<Pair<String,CExpr>> nsources = new ArrayList<Pair<String,CExpr>>();
+				HashMap<String,CExpr> tmap = new HashMap<String,CExpr>();
 				
 				for(String v : vars) {
-					nsources.add(new Pair<String,RVal>(v, sc.source(v)));
+					nsources.add(new Pair<String,CExpr>(v, sc.source(v)));
 					tmap.put(v,new Variable(v));
 				}
 								
 				Condition nc = new Not(c.condition());
-				RVal val = vars.size() == 1 ? new Variable(vars.iterator()
+				CExpr val = vars.size() == 1 ? new Variable(vars.iterator()
 						.next()) : new TupleGenerator(tmap);
 				SetComprehension e = new SetComprehension(val, nsources, nc, c
 						.attributes());
@@ -692,7 +692,7 @@ public class RuntimeCheckGenerator {
 	protected List<Check> checkgen(TupleGenerator tv, HashMap<String,Type> environment, HashMap<String,Type> declared) {
 		ArrayList<Check> checks = new ArrayList<Check>();
 
-		for (Map.Entry<String, RVal> e : tv.values().entrySet()) {
+		for (Map.Entry<String, CExpr> e : tv.values().entrySet()) {
 			checks.addAll(checkgen(e.getValue(),environment, declared));
 		}
 

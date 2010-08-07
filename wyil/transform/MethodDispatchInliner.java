@@ -170,9 +170,9 @@ public class MethodDispatchInliner implements ModuleTransform {
 		// within the constraint (i.e since they were generated
 		// from a condition expression, only registers could be
 		// assigned).
-		HashMap<String,RVal> binding = new HashMap<String,RVal>();
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		for (int i = 0; i != ivk.args.size(); ++i) {
-			RVal arg = ivk.args.get(i);
+			CExpr arg = ivk.args.get(i);
 			String target = c.parameterNames().get(i);
 			// FIXME: feels like some kind of problem related to
 			// typing here. That is, if we need a conversion

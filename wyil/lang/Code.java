@@ -19,7 +19,7 @@
 package wyil.lang;
 
 import java.util.*;
-import wyil.lang.RVal.LVal;
+import wyil.lang.CExpr.LVal;
 import wyjvm.lang.Bytecode;
 
 public abstract class Code {
@@ -34,8 +34,8 @@ public abstract class Code {
 	public static void usedVariables(Code c, Set<String> uses) {
 		if(c instanceof Assign) {
 			Assign a = (Assign) c;			
-			RVal.usedVariables(a.lhs,uses);
-			RVal.usedVariables(a.rhs,uses);
+			CExpr.usedVariables(a.lhs,uses);
+			CExpr.usedVariables(a.rhs,uses);
 		} 
 	}
 
@@ -45,31 +45,31 @@ public abstract class Code {
 	 * @param c
 	 * @param uses
 	 */
-	public static Code substitute(HashMap<String,RVal> binding, Code c) {
+	public static Code substitute(HashMap<String,CExpr> binding, Code c) {
 		if(c instanceof Assign) {
 			 Assign a = (Assign) c;
-			return new Assign((LVal) RVal.substitute(binding, a.lhs), RVal
+			return new Assign((LVal) CExpr.substitute(binding, a.lhs), CExpr
 					.substitute(binding, a.rhs));
 		} else if(c instanceof UnOp) {
 			UnOp u = (UnOp) c;
-			return new UnOp(u.op, (LVal) RVal.substitute(binding, u.lhs), RVal
+			return new UnOp(u.op, (LVal) CExpr.substitute(binding, u.lhs), CExpr
 					.substitute(binding, u.rhs));
 		} else if(c instanceof BinOp) {
 			BinOp u = (BinOp) c;
-			return new BinOp(u.op, (LVal) RVal.substitute(binding, u.lhs), RVal
-					.substitute(binding, u.rhs1), RVal.substitute(binding,
+			return new BinOp(u.op, (LVal) CExpr.substitute(binding, u.lhs), CExpr
+					.substitute(binding, u.rhs1), CExpr.substitute(binding,
 					u.rhs2));
 		} else if(c instanceof NaryOp) {
 			NaryOp u = (NaryOp) c;
-			ArrayList<RVal> args = new ArrayList<RVal>();
-			for (RVal r : u.args) {
-				args.add(RVal.substitute(binding, r));
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for (CExpr r : u.args) {
+				args.add(CExpr.substitute(binding, r));
 			}
-			return new NaryOp(u.op, (LVal) RVal.substitute(binding, u.lhs), args);
+			return new NaryOp(u.op, (LVal) CExpr.substitute(binding, u.lhs), args);
 		} else if(c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
-			return new IfGoto(u.type, u.op, RVal.substitute(binding, u.lhs),
-					RVal.substitute(binding, u.rhs), u.target);
+			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
+					CExpr.substitute(binding, u.rhs), u.target);
 		} else {
 			return c;
 		}
@@ -87,29 +87,29 @@ public abstract class Code {
 	public static Code registerShift(int shift, Code c) {
 		if (c instanceof Assign) {
 			Assign a = (Assign) c;
-			return new Assign((LVal) RVal.registerShift(shift, a.lhs), RVal
+			return new Assign((LVal) CExpr.registerShift(shift, a.lhs), CExpr
 					.registerShift(shift, a.rhs));
 		} else if (c instanceof UnOp) {
 			UnOp u = (UnOp) c;
-			return new UnOp(u.op, (LVal) RVal.registerShift(shift, u.lhs), RVal
+			return new UnOp(u.op, (LVal) CExpr.registerShift(shift, u.lhs), CExpr
 					.registerShift(shift, u.rhs));
 		} else if (c instanceof BinOp) {
 			BinOp u = (BinOp) c;
-			return new BinOp(u.op, (LVal) RVal.registerShift(shift, u.lhs),
-					RVal.registerShift(shift, u.rhs1), RVal.registerShift(
+			return new BinOp(u.op, (LVal) CExpr.registerShift(shift, u.lhs),
+					CExpr.registerShift(shift, u.rhs1), CExpr.registerShift(
 							shift, u.rhs2));
 		} else if (c instanceof NaryOp) {
 			NaryOp u = (NaryOp) c;
-			ArrayList<RVal> args = new ArrayList<RVal>();
-			for (RVal r : u.args) {
-				args.add(RVal.registerShift(shift, r));
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for (CExpr r : u.args) {
+				args.add(CExpr.registerShift(shift, r));
 			}
-			return new NaryOp(u.op, (LVal) RVal.registerShift(shift, u.lhs),
+			return new NaryOp(u.op, (LVal) CExpr.registerShift(shift, u.lhs),
 					args);
 		} else if (c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
-			return new IfGoto(u.type, u.op, RVal.registerShift(shift, u.lhs),
-					RVal.registerShift(shift, u.rhs), u.target);
+			return new IfGoto(u.type, u.op, CExpr.registerShift(shift, u.lhs),
+					CExpr.registerShift(shift, u.rhs), u.target);
 		} else {
 			return c;
 		}
@@ -123,9 +123,9 @@ public abstract class Code {
 	 */
 	public final static class Assign extends Code {		
 		public final LVal lhs;
-		public final RVal rhs;
+		public final CExpr rhs;
 		
-		public Assign(LVal lhs, RVal rhs) {			
+		public Assign(LVal lhs, CExpr rhs) {			
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
@@ -150,9 +150,9 @@ public abstract class Code {
 
 	public final static class Return extends Code {
 		public final Type type;
-		public final RVal rhs;
+		public final CExpr rhs;
 		
-		public Return(Type type,RVal rhs) {
+		public Return(Type type,CExpr rhs) {
 			this.type = type;			
 			this.rhs = rhs;
 		}
@@ -184,10 +184,10 @@ public abstract class Code {
 	public final static class BinOp extends Code {
 		public final BOP op;		
 		public final LVal lhs;
-		public final RVal rhs1;
-		public final RVal rhs2;
+		public final CExpr rhs1;
+		public final CExpr rhs2;
 		
-		public BinOp(BOP op, LVal lhs, RVal rhs1, RVal rhs2) {
+		public BinOp(BOP op, LVal lhs, CExpr rhs1, CExpr rhs2) {
 			this.op = op;			
 			this.lhs = lhs;
 			this.rhs1 = rhs1;
@@ -217,9 +217,9 @@ public abstract class Code {
 	public final static class UnOp extends Code {
 		public final UOP op;		
 		public final LVal lhs;
-		public final RVal rhs;		
+		public final CExpr rhs;		
 		
-		public UnOp(UOP op, LVal lhs, RVal rhs) {
+		public UnOp(UOP op, LVal lhs, CExpr rhs) {
 			this.op = op;			
 			this.lhs = lhs;
 			this.rhs = rhs;
@@ -252,22 +252,22 @@ public abstract class Code {
 	public final static class NaryOp extends Code {
 		public final NOP op;		
 		public final LVal lhs;
-		public final List<RVal> args;		
+		public final List<CExpr> args;		
 		
-		public NaryOp(NOP op, LVal lhs, RVal... args) {
+		public NaryOp(NOP op, LVal lhs, CExpr... args) {
 			this.op = op;			
 			this.lhs = lhs;
-			ArrayList<RVal> tmp = new ArrayList<RVal>();
-			for(RVal r : args) {
+			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
+			for(CExpr r : args) {
 				tmp.add(r);
 			}
 			this.args = Collections.unmodifiableList(tmp); 
 		}
 		
-		public NaryOp(NOP op, LVal lhs, Collection<RVal> args) {
+		public NaryOp(NOP op, LVal lhs, Collection<CExpr> args) {
 			this.op = op;			
 			this.lhs = lhs;
-			this.args = Collections.unmodifiableList(new ArrayList<RVal>(args));			
+			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));			
 		}
 		
 		public boolean equals(Object o) {
@@ -291,7 +291,7 @@ public abstract class Code {
 			case SETGEN: {
 				rhs += "{";
 				boolean firstTime = true;
-				for (RVal r : args) {
+				for (CExpr r : args) {
 					if (!firstTime) {
 						rhs += ",";
 					}
@@ -304,7 +304,7 @@ public abstract class Code {
 			case LISTGEN: {
 				rhs += "[";
 				boolean firstTime = true;
-				for (RVal r : args) {
+				for (CExpr r : args) {
 					if (!firstTime) {
 						rhs += ",";
 					}
@@ -327,28 +327,28 @@ public abstract class Code {
 		public final Type.Fun type;
 		public final NameID name;
 		public final LVal lhs;
-		public final List<RVal> args;
+		public final List<CExpr> args;
 		public final int caseNum;
 
-		public Invoke(Type.Fun type, NameID name, int caseNum, LVal lhs, RVal... args) {
+		public Invoke(Type.Fun type, NameID name, int caseNum, LVal lhs, CExpr... args) {
 			this.type = type;
 			this.name = name;
 			this.caseNum = caseNum;
 			this.lhs = lhs;
-			ArrayList<RVal> tmp = new ArrayList<RVal>();
-			for(RVal r : args) {
+			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
+			for(CExpr r : args) {
 				tmp.add(r);
 			}
 			this.args = Collections.unmodifiableList(tmp); 
 		}
 
 		public Invoke(Type.Fun type, NameID name, int caseNum, LVal lhs,
-				Collection<RVal> args) {
+				Collection<CExpr> args) {
 			this.type = type;
 			this.name = name;
 			this.caseNum = caseNum;
 			this.lhs = lhs;
-			this.args = Collections.unmodifiableList(new ArrayList<RVal>(args));
+			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));
 		}
 
 		public boolean equals(Object o) {
@@ -379,7 +379,7 @@ public abstract class Code {
 		public String toString() {
 			String rhs = "";
 			boolean firstTime = true;
-			for (RVal v : args) {
+			for (CExpr v : args) {
 				if (!firstTime) {
 					rhs += ",";
 				}
@@ -399,9 +399,9 @@ public abstract class Code {
 	}
 	
 	public final static class Debug extends Code {				
-		public final RVal rhs;
+		public final CExpr rhs;
 		
-		public Debug(RVal rhs) {			
+		public Debug(CExpr rhs) {			
 			this.rhs = rhs;
 		}
 		
@@ -456,11 +456,11 @@ public abstract class Code {
 	public final static class IfGoto extends Code {
 		public final COP op;
 		public final Type type;
-		public final RVal lhs;
-		public final RVal rhs;
+		public final CExpr lhs;
+		public final CExpr rhs;
 		public final String target;
 
-		public IfGoto(Type type, COP op, RVal lhs, RVal rhs, String target) {
+		public IfGoto(Type type, COP op, CExpr lhs, CExpr rhs, String target) {
 			this.op = op;
 			this.type = type;
 			this.lhs = lhs;

@@ -25,7 +25,7 @@ import wyil.jvm.attributes.*;
 import wyil.jvm.rt.BigRational;
 import wyil.*;
 import wyil.lang.*;
-import wyil.lang.RVal.LVal;
+import wyil.lang.CExpr.LVal;
 import wyil.lang.Code;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
@@ -331,7 +331,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 
 		// translate right-hand side
-		for(RVal r : c.args) {
+		for(CExpr r : c.args) {
 			translate(r, slots, bytecodes);
 			// Apply conversion (if necessary)		
 			convert(c.lhs.type(), r.type(), slots, bytecodes);
@@ -342,7 +342,7 @@ public class ClassFileBuilder {
 			construct(WHILEYSET, slots, bytecodes);		
 			JvmType.Function ftype = new JvmType.Function(T_BOOL,
 					JAVA_LANG_OBJECT);  
-			for(RVal e : c.args) {
+			for(CExpr e : c.args) {
 				bytecodes.add(new Bytecode.Dup(WHILEYSET));
 				translate(e, slots, bytecodes);
 				addWriteConversion(e.type(),bytecodes);
@@ -355,7 +355,7 @@ public class ClassFileBuilder {
 			construct(WHILEYLIST, slots, bytecodes);		
 			JvmType.Function ftype = new JvmType.Function(T_BOOL,
 					JAVA_LANG_OBJECT);  
-			for(RVal e : c.args) {
+			for(CExpr e : c.args) {
 				bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 				translate(e, slots, bytecodes);
 				addWriteConversion(e.type(),bytecodes);
@@ -499,7 +499,7 @@ public class ClassFileBuilder {
 		int idx=0;
 		// first, translate receiver (where appropriate)
 		if(c.type.receiver != null) {			
-			RVal r = c.args.get(idx++);
+			CExpr r = c.args.get(idx++);
 			translate(r, slots, bytecodes);
 			// Apply conversion (if necessary)		
 			convert(c.type.receiver, r.type(), slots, bytecodes);
@@ -508,7 +508,7 @@ public class ClassFileBuilder {
 		List<Type> params = c.type.params;
 		for(int i=0;i!=params.size();++i) {
 			Type pt = params.get(i);
-			RVal r = c.args.get(idx++);
+			CExpr r = c.args.get(idx++);
 			translate(r, slots, bytecodes);
 			// Apply conversion (if necessary)		
 			convert(pt, r.type(), slots, bytecodes);
@@ -563,20 +563,20 @@ public class ClassFileBuilder {
 		bytecodes.addAll(c.bytecodes);
 	}
 	
-	public void translate(RVal r, HashMap<String, Integer> slots,
+	public void translate(CExpr r, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		if (r instanceof Value) {
 			translate((Value) r, slots, bytecodes);
-		} else if(r instanceof RVal.Variable) {
-			RVal.Variable v = (RVal.Variable) r;
+		} else if(r instanceof CExpr.Variable) {
+			CExpr.Variable v = (CExpr.Variable) r;
 			bytecodes.add(new Bytecode.Load(slots.get(v.name),
 					convertType(v.type)));
-		} else if(r instanceof RVal.Register) {
-			RVal.Register v = (RVal.Register) r;
+		} else if(r instanceof CExpr.Register) {
+			CExpr.Register v = (CExpr.Register) r;
 			bytecodes.add(new Bytecode.Load(slots.get("%" + v.index),
 					convertType(v.type)));
-		} else if(r instanceof RVal.ListAccess) {
-			RVal.ListAccess v = (RVal.ListAccess) r;
+		} else if(r instanceof CExpr.ListAccess) {
+			CExpr.ListAccess v = (CExpr.ListAccess) r;
 			translate(v.src,slots,bytecodes);
 			convert(v.type,v.src.type(), slots, bytecodes);
 			translate(v.index,slots,bytecodes);
@@ -783,12 +783,12 @@ public class ClassFileBuilder {
 	 */
 	public void makeAssignment(LVal lhs, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-		if(lhs instanceof RVal.Variable) {
-			RVal.Variable v = (RVal.Variable) lhs;
+		if(lhs instanceof CExpr.Variable) {
+			CExpr.Variable v = (CExpr.Variable) lhs;
 			bytecodes.add(new Bytecode.Store(slots.get(v.name),
 					convertType(v.type)));
-		} else if(lhs instanceof RVal.Register) {
-			RVal.Register v = (RVal.Register) lhs;
+		} else if(lhs instanceof CExpr.Register) {
+			CExpr.Register v = (CExpr.Register) lhs;
 			bytecodes.add(new Bytecode.Store(slots.get("%" + v.index),
 					convertType(v.type)));
 		} else {
@@ -836,11 +836,11 @@ public class ClassFileBuilder {
 	 * @param params
 	 */
 	public void construct(JvmType.Clazz owner, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes, RVal... params) {
+			ArrayList<Bytecode> bytecodes, CExpr... params) {
 		bytecodes.add(new Bytecode.New(owner));		
 		bytecodes.add(new Bytecode.Dup(owner));
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		for(RVal e : params) {			
+		for(CExpr e : params) {			
 			translate(e,slots,bytecodes);
 			paramTypes.add(convertType(e.type()));
 		}

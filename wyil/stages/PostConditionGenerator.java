@@ -63,7 +63,7 @@ public class PostConditionGenerator {
 			// could actually be done later on, at the point of generating the
 			// VC for a given condition.
 			if(c != null) {
-				HashMap<String,RVal> binding = new HashMap<String,RVal>();
+				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 				binding.put("$", new Variable(p.name(),p.attribute(SourceAttr.class)));
 				c = c.substitute(binding);
 				condition = Types.and(condition,c);
@@ -130,7 +130,7 @@ public class PostConditionGenerator {
 	protected Condition infer(VarDecl s, HashMap<String, Type> environment,
 			 FunDecl f, Condition condition) {
 		
-		RVal init = s.initialiser();
+		CExpr init = s.initialiser();
 		if(init != null) {
 			Type itype = init.type(environment);
 			Type type = flattern(itype);
@@ -147,7 +147,7 @@ public class PostConditionGenerator {
 	protected Condition infer(Assign s, HashMap<String, Type> environment,
 			 FunDecl f, Condition condition) {			
 		LVal lhs = s.lhs();
-		RVal rhs = s.rhs();
+		CExpr rhs = s.rhs();
 		Type rhs_t = s.rhs().type(environment);		
 		
 		Variable v;		
@@ -155,15 +155,15 @@ public class PostConditionGenerator {
 			v = (Variable) lhs;						
 			environment.put(v.name(), rhs_t);
 		} else if (lhs instanceof TupleAccess || lhs instanceof ListAccess) {			
-			List<RVal> exprs = lhs.flattern(); 
+			List<CExpr> exprs = lhs.flattern(); 
 			v = (Variable) exprs.get(0);
 			
 			// The following is a critical check to prevent inference of state
             // changes in processes other than the special receiver "this"			
-			for(RVal e : exprs) {
+			for(CExpr e : exprs) {
 				if(e instanceof ProcessAccess) {	
 					ProcessAccess pa = (ProcessAccess) e;
-					RVal mhs = pa.mhs();
+					CExpr mhs = pa.mhs();
 					if(!isThis(mhs)) {
 						return condition;
 					}
@@ -180,7 +180,7 @@ public class PostConditionGenerator {
 		String var = v.name();
 		Variable shadowVar = new Variable(var + "$" + shadow_label++,v.attributes());
 		environment.put(shadowVar.name(), environment.get(v.name()));
-		HashMap<String,RVal> binding = new HashMap<String,RVal>();
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		binding.put(var,shadowVar);
 		condition = condition.substitute(binding);
 		
@@ -197,11 +197,11 @@ public class PostConditionGenerator {
 		return condition;		
 	}
 	
-	protected boolean isThis(RVal e) {
+	protected boolean isThis(CExpr e) {
 		return e instanceof Variable && ((Variable)e).name().equals("this");
 	}
 	
-	protected Condition equate(RVal lhs, RVal rhs, Type type,
+	protected Condition equate(CExpr lhs, CExpr rhs, Type type,
 			List<Attribute> attributes) {
 		if (type instanceof BoolType) {
 			return new BoolEquals(lhs, rhs, attributes);
@@ -223,25 +223,25 @@ public class PostConditionGenerator {
 	}
 	
 	protected Condition updateCondition(LVal lhs, Variable shadow,
-			HashMap<String, RVal> binding, HashMap<String, Type> environment,
+			HashMap<String, CExpr> binding, HashMap<String, Type> environment,
 			List<Attribute> attributes) {
 		// the purpose of this method is to generate a condition which
 		// identifies that everything in the lhs base variable is identical to
 		// that in the shadowVariable, except for the particular element being
 		// updated.
-		List<RVal> exprs = lhs.flattern();				
+		List<CExpr> exprs = lhs.flattern();				
 		Condition c = new BoolVal(true);
 		IntVal zero = new IntVal(0);
 		
 		for (int i = 1; i < exprs.size(); ++i) {			
-			RVal access = exprs.get(i);			
+			CExpr access = exprs.get(i);			
 			if (access instanceof ListAccess) {				
 				ListAccess la = (ListAccess) access;
 				Type type = access.type(environment);
-				RVal nsrc = la.source().substitute(binding);
+				CExpr nsrc = la.source().substitute(binding);
 				String idx = wyone.core.WVariable.freshVar().name();
 				Variable idx_v = new Variable(idx); // hack
-				ArrayList<Pair<String, RVal>> srcs = new ArrayList();
+				ArrayList<Pair<String, CExpr>> srcs = new ArrayList();
 				srcs.add(new Pair(idx, new RangeGenerator(zero, new ListLength(
 						nsrc))));
 				Condition cond = equate(new ListAccess(la.source(), idx_v),
@@ -255,7 +255,7 @@ public class PostConditionGenerator {
 			} else if(access instanceof TupleAccess){
 				TupleAccess ta = (TupleAccess) access;
 				TupleType tt = (TupleType) ta.source().type(environment).flattern();
-				RVal nsrc = ta.source().substitute(binding);											
+				CExpr nsrc = ta.source().substitute(binding);											
 				for (String name : tt.types().keySet()) {
 					if (!name.equals(ta.name())) {	
 						Type type = tt.get(name);

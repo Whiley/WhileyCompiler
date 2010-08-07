@@ -36,8 +36,8 @@ public final class Block extends ArrayList<Code> {
 	 * @param block
 	 * @return
 	 */
-	public static Block substitute(String from, RVal to, Block block) {
-		HashMap<String,RVal> binding = new HashMap<String,RVal>();
+	public static Block substitute(String from, CExpr to, Block block) {
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		binding.put(from,to);
 		return substitute(binding,block);
 	}
@@ -52,7 +52,7 @@ public final class Block extends ArrayList<Code> {
 	 * @param block
 	 * @return
 	 */
-	public static Block substitute(HashMap<String, RVal> binding, Block block) {
+	public static Block substitute(HashMap<String, CExpr> binding, Block block) {
 		Block r = new Block();
 		for (Code c : block) {
 			r.add(Code.substitute(binding, c));

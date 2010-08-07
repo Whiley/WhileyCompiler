@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.util.*;
 import wyil.jvm.rt.BigRational;
 
-public abstract class Value extends RVal {	
+public abstract class Value extends CExpr {	
 	public static Bool V_BOOL(boolean value) {
 		return get(new Bool(value));
 	}
