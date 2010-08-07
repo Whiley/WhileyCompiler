@@ -1,4 +1,4 @@
-real f(real x) requires x >= 0.2345 && $ < -0.2:
+real f(real x) requires x >= 0.2345, ensures $ < -0.2:
     return (0.0 - x)
 
 void System::main([string] args):

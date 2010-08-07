@@ -1,4 +1,4 @@
-define fr5nat as int requires $ >= 0
+fr5nat as int where $ >= 0
 
 {fr5nat} g({fr5nat} xs):
     return { y | y in xs, y > 1 }

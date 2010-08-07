@@ -1,7 +1,7 @@
 // This example was inspired by comments from Stuart Marshall.
 
-define anat as int requires $ >= 0
-define bnat as int requires 2*$ >= $
+anat as int where $ >= 0
+bnat as int where 2*$ >= $
 
 bnat atob(anat x):
     return x

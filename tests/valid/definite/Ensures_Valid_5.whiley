@@ -1,4 +1,4 @@
-int f(int x) requires $ > x:
+int f(int x) ensures $ > x:
     x = x + 1
     return x
 

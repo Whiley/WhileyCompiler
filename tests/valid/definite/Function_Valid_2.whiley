@@ -1,4 +1,4 @@
-define fr2nat as int requires $ >= 0
+fr2nat as int where $ >= 0
 
 void f(fr2nat x):
     print str(x)

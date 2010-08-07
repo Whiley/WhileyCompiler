@@ -1,4 +1,4 @@
-bool pred({int} xs) requires !$ || no { z in xs | z < 0 }:
+bool pred({int} xs) ensures !$ || no { z in xs | z < 0 }:
     {int} zs = { z | z in xs, z < 0 }
     return |zs| == 0
 

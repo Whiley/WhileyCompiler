@@ -1,5 +1,5 @@
 // this is a comment!
-define nat as int requires $ > 0
+nat as int where $ > 0
 define num as {1,2,3,4}
 
 void f(num x):

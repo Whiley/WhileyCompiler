@@ -1,5 +1,5 @@
-define fr8nat as int requires $ > 0
-define fr8neg as int requires $ < 0
+fr8nat as int where $ > 0
+fr8neg as int where $ < 0
 
 void f(fr8nat y):
     print "F(NAT)"

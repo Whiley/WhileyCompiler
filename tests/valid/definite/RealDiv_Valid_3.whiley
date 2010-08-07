@@ -1,4 +1,4 @@
-real g(real x) requires x <= 0.5 && $ <= 0.166666666666668:
+real g(real x) requires x <= 0.5, ensures $ <= 0.166666666666668:
      return x / 3
 
 void System::main([string] args):

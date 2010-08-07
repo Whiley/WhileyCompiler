@@ -1,5 +1,5 @@
-define nat as int requires $ >= 0
-define pos as int requires $ > 0
+nat as int where $ >= 0
+pos as int where $ > 0
 
 define expr as nat | (expr lhs, expr rhs)
 define posExpr as pos | (posExpr lhs, posExpr rhs)
