@@ -187,12 +187,6 @@ public class ClassFileBuilder {
 			translate((Code.Assign)c,slots,bytecodes);
 		} else if(c instanceof Code.Return){
 			translate((Code.Return)c,slots,bytecodes);
-		} else if(c instanceof Code.BinOp) {
-			translate((Code.BinOp)c,slots,bytecodes);
-		} else if(c instanceof Code.UnOp) {
-			translate((Code.UnOp)c,slots,bytecodes);
-		} else if(c instanceof Code.NaryOp) {
-			translate((Code.NaryOp)c,slots,bytecodes);
 		} else if(c instanceof Code.Goto) {
 			translate((Code.Goto)c,slots,bytecodes);
 		} else if(c instanceof Code.IfGoto) {
@@ -235,155 +229,7 @@ public class ClassFileBuilder {
 		}
 	}
 
-	public void translate(Code.BinOp c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-		
-		makePreAssignment(c.lhs,slots,bytecodes);
-		
-		// translate 1st right-hand side
-		translate(c.rhs1, slots, bytecodes);
-
-		// Apply conversion (if necessary)
-		convert(c.lhs.type(), c.rhs1.type(), slots, bytecodes);
-
-		// translate 2nd right-hand side
-		translate(c.rhs2, slots, bytecodes);
-
-		// Apply conversion (if necessary)
-		convert(c.lhs.type(), c.rhs2.type(), slots, bytecodes);
-
-		JvmType type = convertType(c.lhs.type());
-		JvmType.Function ftype = new JvmType.Function(type,type);
-		
-		switch(c.op) {
-		case ADD:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "add", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case SUB:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "subtract", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case MUL:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case DIV:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case UNION:			
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case INTERSECT:
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case DIFFERENCE:
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		}
-		
-		makePostAssignment(c.lhs,slots,bytecodes);		
-	}
-
-	public void translate(Code.UnOp c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-
-		makePreAssignment(c.lhs,slots,bytecodes);
-		
-		// translate right-hand side
-		translate(c.rhs, slots, bytecodes);
-
-		// Apply conversion (if necessary)
-		convert(c.lhs.type(), c.rhs.type(), slots, bytecodes);
-
-		JvmType type = convertType(c.lhs.type());
-
-		switch (c.op) {
-		case NEG: {
-			JvmType.Function ftype = new JvmType.Function(type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
-					ftype, Bytecode.VIRTUAL));
-			break;
-		}
-		case NOT: {
-			String exitLabel = freshLabel();
-			String trueLabel = freshLabel();
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, trueLabel));
-			bytecodes.add(new Bytecode.LoadConst(0));
-			bytecodes.add(new Bytecode.Goto(exitLabel));
-			bytecodes.add(new Bytecode.Label(trueLabel));
-			bytecodes.add(new Bytecode.LoadConst(1));
-			bytecodes.add(new Bytecode.Label(exitLabel));
-			break;
-		}
-		case LENGTHOF: {
-			JvmType.Function ftype = new JvmType.Function(T_INT);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "size",
-					ftype, Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
-			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
-					ftype, Bytecode.STATIC));
-			break;
-		}
-		}
-		
-		makePostAssignment(c.lhs,slots,bytecodes);		
-	}
-	public void translate(Code.NaryOp c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-
-		makePreAssignment(c.lhs,slots,bytecodes);
-		
-		// translate right-hand side
-		for(CExpr r : c.args) {
-			translate(r, slots, bytecodes);
-			// Apply conversion (if necessary)		
-			convert(c.lhs.type(), r.type(), slots, bytecodes);
-		}
-
-		switch (c.op) {
-		case SETGEN: {
-			construct(WHILEYSET, slots, bytecodes);		
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,
-					JAVA_LANG_OBJECT);  
-			for(CExpr e : c.args) {
-				bytecodes.add(new Bytecode.Dup(WHILEYSET));
-				translate(e, slots, bytecodes);
-				addWriteConversion(e.type(),bytecodes);
-				bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
-				bytecodes.add(new Bytecode.Pop(WHILEYSET));
-			}
-			break;
-		}
-		case LISTGEN: {
-			construct(WHILEYLIST, slots, bytecodes);		
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,
-					JAVA_LANG_OBJECT);  
-			for(CExpr e : c.args) {
-				bytecodes.add(new Bytecode.Dup(WHILEYLIST));
-				translate(e, slots, bytecodes);
-				addWriteConversion(e.type(),bytecodes);
-				bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
-				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-			}
-			break;
-		}
-		case SUBLIST: {
-			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_INTEGER,BIG_INTEGER);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		}
-		}
-		
-		// store the result
-		makePostAssignment(c.lhs,slots,bytecodes);		
-	}
+	
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {		
 		if (c.op == Code.COP.ELEMOF) {
@@ -587,16 +433,163 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(slots.get("%" + v.index),
 					convertType(v.type)));
 		} else if(r instanceof CExpr.ListAccess) {
-			CExpr.ListAccess v = (CExpr.ListAccess) r;
-			translate(v.src,slots,bytecodes);
-			convert(v.type,v.src.type(), slots, bytecodes);
-			translate(v.index,slots,bytecodes);
-			convert(Type.T_INT,v.index.type(), slots, bytecodes);
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,BIG_INTEGER);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-					Bytecode.VIRTUAL));
-			addReadConversion(v.type(),bytecodes);			
+			translate((CExpr.ListAccess)r,slots,bytecodes);
+		} else if(r instanceof CExpr.BinOp) {
+			translate((CExpr.BinOp)r,slots,bytecodes);
+		} else if(r instanceof CExpr.UnOp) {
+			translate((CExpr.UnOp)r,slots,bytecodes);
+		} else if(r instanceof CExpr.NaryOp) {
+			translate((CExpr.NaryOp)r,slots,bytecodes);
 		}
+	}
+	
+	public void translate(CExpr.ListAccess v, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {		
+		translate(v.src,slots,bytecodes);
+		convert(v.type,v.src.type(), slots, bytecodes);
+		translate(v.index,slots,bytecodes);
+		convert(Type.T_INT,v.index.type(), slots, bytecodes);
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,BIG_INTEGER);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
+				Bytecode.VIRTUAL));
+		addReadConversion(v.type(),bytecodes);	
+	}
+	
+	public void translate(CExpr.BinOp c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		
+		// translate 1st right-hand side
+		translate(c.lhs, slots, bytecodes);
+
+		// Apply conversion (if necessary)
+		convert(c.lhs.type(), c.lhs.type(), slots, bytecodes);
+
+		// translate 2nd right-hand side
+		translate(c.rhs, slots, bytecodes);
+
+		// Apply conversion (if necessary)
+		convert(c.lhs.type(), c.rhs.type(), slots, bytecodes);
+
+		JvmType type = convertType(c.lhs.type());
+		JvmType.Function ftype = new JvmType.Function(type,type);
+		
+		switch(c.op) {
+		case ADD:			
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "add", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case SUB:			
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "subtract", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case MUL:			
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case DIV:			
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case UNION:			
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case INTERSECT:
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		case DIFFERENCE:
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		}		
+	}
+
+	public void translate(CExpr.UnOp c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		
+		// translate right-hand side
+		translate(c.rhs, slots, bytecodes);
+
+		// Apply conversion (if necessary)
+		convert(c.type(), c.rhs.type(), slots, bytecodes);
+
+		JvmType type = convertType(c.type());
+
+		switch (c.op) {
+		case NEG: {
+			JvmType.Function ftype = new JvmType.Function(type);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
+					ftype, Bytecode.VIRTUAL));
+			break;
+		}
+		case NOT: {
+			String exitLabel = freshLabel();
+			String trueLabel = freshLabel();
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, trueLabel));
+			bytecodes.add(new Bytecode.LoadConst(0));
+			bytecodes.add(new Bytecode.Goto(exitLabel));
+			bytecodes.add(new Bytecode.Label(trueLabel));
+			bytecodes.add(new Bytecode.LoadConst(1));
+			bytecodes.add(new Bytecode.Label(exitLabel));
+			break;
+		}
+		case LENGTHOF: {
+			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "size",
+					ftype, Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
+			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
+					ftype, Bytecode.STATIC));
+			break;
+		}
+		}		
+	}
+	public void translate(CExpr.NaryOp c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+
+		// translate right-hand side
+		for(CExpr r : c.args) {
+			translate(r, slots, bytecodes);
+			// Apply conversion (if necessary)		
+			convert(c.type(), r.type(), slots, bytecodes);
+		}
+
+		switch (c.op) {
+		case SETGEN: {
+			construct(WHILEYSET, slots, bytecodes);		
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,
+					JAVA_LANG_OBJECT);  
+			for(CExpr e : c.args) {
+				bytecodes.add(new Bytecode.Dup(WHILEYSET));
+				translate(e, slots, bytecodes);
+				addWriteConversion(e.type(),bytecodes);
+				bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
+				bytecodes.add(new Bytecode.Pop(WHILEYSET));
+			}
+			break;
+		}
+		case LISTGEN: {
+			construct(WHILEYLIST, slots, bytecodes);		
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,
+					JAVA_LANG_OBJECT);  
+			for(CExpr e : c.args) {
+				bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+				translate(e, slots, bytecodes);
+				addWriteConversion(e.type(),bytecodes);
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
+				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+			}
+			break;
+		}
+		case SUBLIST: {
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_INTEGER,BIG_INTEGER);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
+					Bytecode.VIRTUAL));
+			break;
+		}
+		}	
 	}
 	
 	public void translate(Value v, HashMap<String, Integer> slots,

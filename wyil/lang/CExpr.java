@@ -15,6 +15,14 @@ public abstract class CExpr {
 		} else if(r instanceof Register) {
 			Register v = (Register) r;
 			uses.add("%" + v.index);
+		} else if(r instanceof ListAccess) {
+			ListAccess v = (ListAccess) r;
+			usedVariables(v.src,uses);
+			usedVariables(v.index,uses);
+		} else if(r instanceof BinOp) {
+			BinOp v = (BinOp) r;
+			usedVariables(v.lhs,uses);
+			usedVariables(v.rhs,uses);
 		}
 	}
 	
@@ -38,6 +46,14 @@ public abstract class CExpr {
 			if (rv != null) {
 				return rv;
 			} 
+		} else if(r instanceof ListAccess) {
+			ListAccess la = (ListAccess) r;
+			return LISTACCESS(la.type, (LVal) substitute(binding, la.src),
+					substitute(binding, la.index));
+		} else if (r instanceof BinOp) {
+			BinOp bop = (BinOp) r;
+			return BINOP(bop.type, bop.op, substitute(binding, bop.lhs),
+					substitute(binding, bop.rhs));
 		}
 		return r;
 	}
@@ -58,8 +74,24 @@ public abstract class CExpr {
 		return get(new Register(t,index));
 	}
 	
-	public static ListAccess LISTACCESS(Type.List t, LVal src, CExpr index) {
+	public static ListAccess LISTACCESS(Type.List t, CExpr src, CExpr index) {
 		return get(new ListAccess(t, src, index));
+	}
+
+	public static BinOp BINOP(Type t, BOP bop, CExpr lhs, CExpr rhs) {
+		return get(new BinOp(t, bop, lhs, rhs));
+	}
+	
+	public static UnOp UNOP(Type t, UOP uop, CExpr mhs) {
+		return get(new UnOp(t, uop, mhs));
+	}
+	
+	public static NaryOp NARYOP(Type t, NOP nop, CExpr... args) {
+		return get(new NaryOp(t, nop, args));
+	}
+	
+	public static NaryOp NARYOP(Type t, NOP nop, Collection<CExpr> args) {
+		return get(new NaryOp(t, nop, args));
 	}
 	
 	public static class Variable extends LVar {
@@ -128,10 +160,10 @@ public abstract class CExpr {
 	
 	public static class ListAccess extends LVal {
 		public final Type.List type;
-		public final LVal src;
+		public final CExpr src;
 		public final CExpr index;
 
-		ListAccess(Type.List type, LVal src, CExpr index) {
+		ListAccess(Type.List type, CExpr src, CExpr index) {
 			this.type = type;
 			this.src = src;
 			this.index = index;
@@ -157,6 +189,207 @@ public abstract class CExpr {
 		public String toString() {
 			return "(" + type + ") " + src + "[" + index + "]";
 		}
+	}
+	
+	/**
+	 * This represents a simple assignment between two variables.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class BinOp extends CExpr {
+		public final BOP op;
+		public final Type type;
+		public final CExpr lhs;
+		public final CExpr rhs;
+
+		BinOp(Type type, BOP op, CExpr lhs, CExpr rhs) {
+			this.op = op;
+			this.type = type;
+			this.lhs = lhs;
+			this.rhs = rhs;
+		}
+
+		public Type type() {
+			return type;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof BinOp) {
+				BinOp a = (BinOp) o;
+				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+						&& rhs.equals(a.rhs);
+
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return op.hashCode() + type.hashCode() + lhs.hashCode()
+					+ rhs.hashCode();
+		}
+
+		public String toString() {
+			return lhs + " " + op + " " + rhs;
+		}
+	}
+	
+	public enum BOP { 
+		ADD{
+			public String toString() { return "+"; }
+		},
+		SUB{
+			public String toString() { return "-"; }
+		},
+		MUL{
+			public String toString() { return "*"; }
+		},
+		DIV{
+			public String toString() { return "/"; }
+		},
+		UNION{
+			public String toString() { return "+"; }
+		},
+		INTERSECT{
+			public String toString() { return "&"; }
+		},
+		DIFFERENCE{
+			public String toString() { return "-"; }
+		}
+	};	
+	
+	public final static class UnOp extends CExpr {
+		public final UOP op;		
+		public final Type type;
+		public final CExpr rhs;		
+		
+		UnOp(Type type, UOP op, CExpr rhs) {
+			this.op = op;			
+			this.type = type;
+			this.rhs = rhs;
+		}
+		
+		public Type type() {
+			return type;
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof UnOp) {
+				UnOp a = (UnOp) o;
+				return op == a.op && type.equals(a.type) && rhs.equals(a.rhs);
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return op.hashCode() + type.hashCode()
+					+ rhs.hashCode();
+		}
+		
+		public String toString() {
+			if(op == UOP.LENGTHOF){
+				return "|" + rhs + "|";
+			} else {
+				return op.toString() + rhs;
+			}
+		}		
+	}
+	
+	public enum UOP { 
+		NEG() {
+			public String toString() { return "-"; }
+		},
+		NOT() {
+			public String toString() { return "!"; }
+		},
+		LENGTHOF() {
+			public String toString() { return "||"; }
+		}
+	}
+	
+
+	public final static class NaryOp extends CExpr {
+		public final NOP op;		
+		public final Type type;
+		public final List<CExpr> args;		
+		
+		NaryOp(Type type, NOP op, CExpr... args) {
+			this.op = op;			
+			this.type = type;
+			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
+			for(CExpr r : args) {
+				tmp.add(r);
+			}
+			this.args = Collections.unmodifiableList(tmp); 
+		}
+		
+		public NaryOp(Type type, NOP op, Collection<CExpr> args) {
+			this.op = op;			
+			this.type = type;
+			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));			
+		}
+		
+		public Type type() {
+			return type;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NaryOp) {
+				NaryOp a = (NaryOp) o;
+				return op == a.op && type.equals(a.type)
+						&& args.equals(a.args);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return op.hashCode() + type.hashCode()
+					+ args.hashCode();
+		}
+		
+		public String toString() {
+			String rhs = "";
+			switch (op) {
+			case SETGEN: {
+				rhs += "{";
+				boolean firstTime = true;
+				for (CExpr r : args) {
+					if (!firstTime) {
+						rhs += ",";
+					}
+					firstTime = false;
+					rhs += r;
+				}
+				rhs += "}";
+				break;
+			}
+			case LISTGEN: {
+				rhs += "[";
+				boolean firstTime = true;
+				for (CExpr r : args) {
+					if (!firstTime) {
+						rhs += ",";
+					}
+					firstTime = false;
+					rhs += r;
+				}
+				rhs += "]";
+				break;
+			}
+			case SUBLIST:
+				rhs += args.get(0) + "[" + args.get(1) + ":" + args.get(2)
+						+ "]";
+				break;
+			}
+			return rhs;
+		}
+	}
+	
+	public enum NOP { 
+		SETGEN,
+		LISTGEN,
+		SUBLIST
 	}
 	
 	private static final ArrayList<CExpr> values = new ArrayList<CExpr>();

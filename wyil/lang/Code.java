@@ -50,22 +50,6 @@ public abstract class Code {
 			 Assign a = (Assign) c;
 			return new Assign((LVal) CExpr.substitute(binding, a.lhs), CExpr
 					.substitute(binding, a.rhs));
-		} else if(c instanceof UnOp) {
-			UnOp u = (UnOp) c;
-			return new UnOp(u.op, (LVal) CExpr.substitute(binding, u.lhs), CExpr
-					.substitute(binding, u.rhs));
-		} else if(c instanceof BinOp) {
-			BinOp u = (BinOp) c;
-			return new BinOp(u.op, (LVal) CExpr.substitute(binding, u.lhs), CExpr
-					.substitute(binding, u.rhs1), CExpr.substitute(binding,
-					u.rhs2));
-		} else if(c instanceof NaryOp) {
-			NaryOp u = (NaryOp) c;
-			ArrayList<CExpr> args = new ArrayList<CExpr>();
-			for (CExpr r : u.args) {
-				args.add(CExpr.substitute(binding, r));
-			}
-			return new NaryOp(u.op, (LVal) CExpr.substitute(binding, u.lhs), args);
 		} else if(c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
@@ -89,23 +73,6 @@ public abstract class Code {
 			Assign a = (Assign) c;
 			return new Assign((LVal) CExpr.registerShift(shift, a.lhs), CExpr
 					.registerShift(shift, a.rhs));
-		} else if (c instanceof UnOp) {
-			UnOp u = (UnOp) c;
-			return new UnOp(u.op, (LVal) CExpr.registerShift(shift, u.lhs), CExpr
-					.registerShift(shift, u.rhs));
-		} else if (c instanceof BinOp) {
-			BinOp u = (BinOp) c;
-			return new BinOp(u.op, (LVal) CExpr.registerShift(shift, u.lhs),
-					CExpr.registerShift(shift, u.rhs1), CExpr.registerShift(
-							shift, u.rhs2));
-		} else if (c instanceof NaryOp) {
-			NaryOp u = (NaryOp) c;
-			ArrayList<CExpr> args = new ArrayList<CExpr>();
-			for (CExpr r : u.args) {
-				args.add(CExpr.registerShift(shift, r));
-			}
-			return new NaryOp(u.op, (LVal) CExpr.registerShift(shift, u.lhs),
-					args);
 		} else if (c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.registerShift(shift, u.lhs),
@@ -175,153 +142,7 @@ public abstract class Code {
 		}		
 	}
 	
-	/**
-	 * This represents a simple assignment between two variables.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public final static class BinOp extends Code {
-		public final BOP op;		
-		public final LVal lhs;
-		public final CExpr rhs1;
-		public final CExpr rhs2;
-		
-		public BinOp(BOP op, LVal lhs, CExpr rhs1, CExpr rhs2) {
-			this.op = op;			
-			this.lhs = lhs;
-			this.rhs1 = rhs1;
-			this.rhs2 = rhs2;
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof BinOp) {
-				BinOp a = (BinOp) o;
-				return op == a.op && lhs.equals(a.lhs)
-						&& rhs1.equals(a.rhs1) && rhs2.equals(a.rhs2);
-				
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return op.hashCode() + lhs.hashCode()
-					+ rhs1.hashCode() + rhs2.hashCode();
-		}
-		
-		public String toString() {
-			return lhs + " := " + rhs1 + " " + op + " " + rhs2;
-		}		
-	}
 	
-	public final static class UnOp extends Code {
-		public final UOP op;		
-		public final LVal lhs;
-		public final CExpr rhs;		
-		
-		public UnOp(UOP op, LVal lhs, CExpr rhs) {
-			this.op = op;			
-			this.lhs = lhs;
-			this.rhs = rhs;
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof UnOp) {
-				UnOp a = (UnOp) o;
-				return op == a.op && lhs.equals(a.lhs)
-						&& rhs.equals(a.rhs);
-				
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return op.hashCode() + lhs.hashCode()
-					+ rhs.hashCode();
-		}
-		
-		public String toString() {
-			if(op == UOP.LENGTHOF){
-				return lhs + " := |" + rhs + "|";
-			} else {
-				return lhs + " := " + op + rhs;
-			}
-		}		
-	}
-	
-	public final static class NaryOp extends Code {
-		public final NOP op;		
-		public final LVal lhs;
-		public final List<CExpr> args;		
-		
-		public NaryOp(NOP op, LVal lhs, CExpr... args) {
-			this.op = op;			
-			this.lhs = lhs;
-			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
-			for(CExpr r : args) {
-				tmp.add(r);
-			}
-			this.args = Collections.unmodifiableList(tmp); 
-		}
-		
-		public NaryOp(NOP op, LVal lhs, Collection<CExpr> args) {
-			this.op = op;			
-			this.lhs = lhs;
-			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));			
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof NaryOp) {
-				NaryOp a = (NaryOp) o;
-				return op == a.op && lhs.equals(a.lhs)
-						&& args.equals(a.args);
-				
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return op.hashCode() + lhs.hashCode()
-					+ args.hashCode();
-		}
-		
-		public String toString() {
-			String rhs = "";
-			switch (op) {
-			case SETGEN: {
-				rhs += "{";
-				boolean firstTime = true;
-				for (CExpr r : args) {
-					if (!firstTime) {
-						rhs += ",";
-					}
-					firstTime = false;
-					rhs += r;
-				}
-				rhs += "}";
-				break;
-			}
-			case LISTGEN: {
-				rhs += "[";
-				boolean firstTime = true;
-				for (CExpr r : args) {
-					if (!firstTime) {
-						rhs += ",";
-					}
-					firstTime = false;
-					rhs += r;
-				}
-				rhs += "]";
-				break;
-			}
-			case SUBLIST:
-				rhs += args.get(0) + "[" + args.get(1) + ":" + args.get(2)
-						+ "]";
-				break;
-			}
-			return lhs + " := " + rhs;
-		}
-	}
 	
 	public final static class Invoke extends Code {
 		public final Type.Fun type;
@@ -578,40 +399,6 @@ public abstract class Code {
 		}
 	}
 	
-	public enum UOP { 
-		NEG() {
-			public String toString() { return "-"; }
-		},
-		NOT() {
-			public String toString() { return "!"; }
-		},
-		LENGTHOF() {
-			public String toString() { return "||"; }
-		}
-	}
-	public enum BOP { 
-		ADD{
-			public String toString() { return "+"; }
-		},
-		SUB{
-			public String toString() { return "-"; }
-		},
-		MUL{
-			public String toString() { return "*"; }
-		},
-		DIV{
-			public String toString() { return "/"; }
-		},
-		UNION{
-			public String toString() { return "+"; }
-		},
-		INTERSECT{
-			public String toString() { return "&"; }
-		},
-		DIFFERENCE{
-			public String toString() { return "-"; }
-		}
-	};	
 	public enum COP { 
 		EQ() {
 			public String toString() { return "=="; }
@@ -640,10 +427,5 @@ public abstract class Code {
 		SUBSETEQ{
 			public String toString() { return "<="; }
 		}
-	};	
-	public enum NOP { 
-		SETGEN,
-		LISTGEN,
-		SUBLIST
-	}
+	};		
 }

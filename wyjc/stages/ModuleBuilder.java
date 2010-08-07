@@ -304,21 +304,22 @@ public class ModuleBuilder {
 		return new Module.ConstDef(td.name(),Value.V_INT(BigInteger.ONE));
 	}
 	
-	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {		
-		Pair<Type,Block> p = types.get(new NameID(module,td.name()));
+	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
+		Pair<Type, Block> p = types.get(new NameID(module, td.name()));
 		Type t = p.first();
-		td.attributes().add(new Attribute.Type(t));		
-		if(td.constraint != null) {
+		td.attributes().add(new Attribute.Type(t));
+		if (td.constraint != null) {
 			// FIXME: at this point, would be good to add types for other
 			// exposed variables.
-			HashMap<String,Type> environment = new HashMap<String,Type>();
-			HashMap<String,Pair<Type,Block>> declared = new HashMap();
-			environment.put("$", t);			
-			Type tmp = resolve(0, td.constraint, environment, declared).first();			
-			checkType(tmp,Type.Bool.class, td.constraint);			
-		}						
-		return new Module.TypeDef(td.name(),t,p.second());
-	}		
+			HashMap<String, Type> environment = new HashMap<String, Type>();
+			HashMap<String, Pair<Type, Block>> declared = new HashMap();
+			environment.put("$", t);
+			CExpr tmp = resolve(0, td.constraint, environment, declared)
+					.first();
+			checkType(tmp.type(), Type.Bool.class, td.constraint);
+		}
+		return new Module.TypeDef(td.name(), t, p.second());
+	}	
 		
 	protected Module.Method resolve(FunDecl fd) {
 		
@@ -447,12 +448,11 @@ public class ModuleBuilder {
 		}
 		Block blk = new Block();
 		if(init != null) {
-			Pair<Type,Block> initT = resolve(0, init,environment, declared);
-			checkIsSubtype(type,initT.first(),init);
+			Pair<CExpr,Block> initT = resolve(0, init,environment, declared);
+			checkIsSubtype(type,initT.first().type(),init);
 			environment.put(s.name,type);
 			blk.addAll(initT.second());
-			blk.add(new Code.Assign(CExpr.VAR(type, s.name), CExpr.REG(initT
-					.first(), 0)));			
+			blk.add(new Code.Assign(CExpr.VAR(type, s.name), initT.first()));			
 			// Finally, need to actually check the constraints!						
 			if(constraint != null) {
 				blk.addAll(constraint);
@@ -468,38 +468,36 @@ public class ModuleBuilder {
 			HashMap<String,Pair<Type,Block>> declared) {
 		
 		Block blk = new Block();		
-		if(s.lhs instanceof Variable) {
+		if (s.lhs instanceof Variable) {
 			// perform type inference as a result of this assignment
-			Variable v = (Variable) s.lhs;			
+			Variable v = (Variable) s.lhs;
 			Type declared_t = declared.get(v.var).first();
-			if(declared_t == null) {
-				syntaxError("unknown variable",v);
+			if (declared_t == null) {
+				syntaxError("unknown variable", v);
 			}
-			Pair<Type,Block> rhs_tb = resolve(0, s.rhs, environment, declared);			
-			checkIsSubtype(declared_t,rhs_tb.first(),s.rhs);
-			environment.put(v.var, rhs_tb.first());			
-			blk.addAll(rhs_tb.second());			
-			blk.add(new Code.Assign(CExpr.VAR(rhs_tb.first(), v.var), CExpr.REG(
-					rhs_tb.first(), 0)));
+			Pair<CExpr, Block> rhs_tb = resolve(0, s.rhs, environment, declared);
+			Type rhs_t = rhs_tb.first().type();
+			checkIsSubtype(declared_t, rhs_t, s.rhs);
+			environment.put(v.var, rhs_t);
+			blk.addAll(rhs_tb.second());
+			blk.add(new Code.Assign(CExpr.VAR(rhs_t, v.var), rhs_tb.first()));
 		} else if(s.lhs instanceof ListAccess) {
 			ListAccess la = (ListAccess) s.lhs;
-			Pair<Type,Block> src_tb = resolve(0, la.src, environment, declared);			
-			Pair<Type,Block> index_tb = resolve(1, la.index, environment, declared);
-			Pair<Type,Block> rhs_tb = resolve(2, s.rhs, environment, declared);			
-			Type.List la_t = checkType(src_tb.first(),Type.List.class,la.src);
-			checkIsSubtype(la_t.element,rhs_tb.first(),s.rhs);
-			checkIsSubtype(Type.T_INT,index_tb.first(),la.index);
+			Pair<CExpr,Block> src_tb = resolve(0, la.src, environment, declared);			
+			Pair<CExpr,Block> index_tb = resolve(1, la.index, environment, declared);
+			Pair<CExpr,Block> rhs_tb = resolve(2, s.rhs, environment, declared);			
+			Type.List la_t = checkType(src_tb.first().type(),Type.List.class,la.src);
+			checkIsSubtype(la_t.element,rhs_tb.first().type(),s.rhs);
+			checkIsSubtype(Type.T_INT,index_tb.first().type(),la.index);
 			blk.addAll(src_tb.second());
 			blk.addAll(index_tb.second());
 			blk.addAll(rhs_tb.second());
-			blk.add(new Code.Assign(CExpr.LISTACCESS(
-					la_t, CExpr.REG(src_tb.first(), 0),
-					CExpr.REG(index_tb.first(), 1)), CExpr.REG(rhs_tb.first(),
-					2)));		
+			blk.add(new Code.Assign(CExpr.LISTACCESS(la_t, src_tb.first(),
+					index_tb.first()), rhs_tb.first()));		
 		} else {
-			Pair<Type,Block> rhs_tb = resolve(2, s.rhs, environment, declared);
-			Pair<Type,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
-			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);							
+			Pair<CExpr,Block> rhs_tb = resolve(2, s.rhs, environment, declared);
+			Pair<CExpr,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
+			checkIsSubtype(lhs_tb.first().type(), rhs_tb.first().type(), s.rhs);							
 			System.out.println("WARNING: Assign is missing cases");
 		}
 		
@@ -514,9 +512,10 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(Assert s, HashMap<String,Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		Pair<Type,Block> t = resolve(0, s.expr, environment, declared);
-		checkIsSubtype(t.first(),Type.T_BOOL,s.expr);
+	protected Block resolve(Assert s, HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
+		checkIsSubtype(t.first().type(), Type.T_BOOL, s.expr);
 		return null;
 	}
 
@@ -524,12 +523,12 @@ public class ModuleBuilder {
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		if (s.expr != null) {			
-			Pair<Type, Block> t = resolve(0, s.expr, environment, declared);
+			Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
 			Type.Fun ft = fd.attribute(Attribute.Fun.class).type;
-			checkIsSubtype(ft.ret, t.first(), s.expr);
+			checkIsSubtype(ft.ret, t.first().type(), s.expr);
 			Block blk = new Block();
 			blk.addAll(t.second());
-			blk.add(new Code.Return(ft.ret, CExpr.REG(t.first(), 0)));
+			blk.add(new Code.Return(ft.ret, t.first()));
 			return blk;
 		} else {
 			Block blk = new Block();
@@ -555,10 +554,10 @@ public class ModuleBuilder {
 	
 	protected Block resolve(Debug s, HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<Type, Block> t = resolve(0, s.expr, environment, declared);
-		checkIsSubtype(t.first(), Type.T_LIST(Type.T_INT), s.expr);
+		Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
+		checkIsSubtype(t.first().type(), Type.T_LIST(Type.T_INT), s.expr);
 		Block blk = t.second();
-		blk.add(new Code.Debug(CExpr.REG(t.first(), 0)));
+		blk.add(new Code.Debug(t.first()));
 		return blk;
 	}
 
@@ -679,51 +678,54 @@ public class ModuleBuilder {
 			return blk;
 		}
 		
-		Pair<Type,Block> lhs_tb = resolve(0,v.lhs, environment, declared);
-		Pair<Type,Block> rhs_tb = resolve(1,v.rhs, environment, declared);
+		Pair<CExpr,Block> lhs_tb = resolve(0,v.lhs, environment, declared);
+		Pair<CExpr,Block> rhs_tb = resolve(1,v.rhs, environment, declared);
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-		Type lhs_t = lhs_tb.first();
-		Type rhs_t = rhs_tb.first();
-		CExpr lvar = CExpr.REG(lhs_t,0);
-		CExpr rvar = CExpr.REG(rhs_t,1);
+		Type lhs_t = lhs_tb.first().type();
+		Type rhs_t = rhs_tb.first().type();
 		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
-		
+
 		if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
 				|| bop == BOp.GTEQ) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
-			checkIsSubtype(Type.T_REAL, rhs_t, v);			
-			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));			
+			checkIsSubtype(Type.T_REAL, rhs_t, v);
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
+					.first(), target));
 			return blk;
 		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
-			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);			
-			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));			
+			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
+					.first(), target));
 			return blk;
-		} else if(bop == BOp.EQ || bop == BOp.NEQ){
-			if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
-				syntaxError("Cannot compare types",v);
-			}			
-			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));
+		} else if (bop == BOp.EQ || bop == BOp.NEQ) {
+			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
+				syntaxError("Cannot compare types", v);
+			}
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
+					.first(), target));
 			return blk;
-		} else if(bop == BOp.ELEMENTOF) {
-			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t, v);
+		} else if (bop == BOp.ELEMENTOF) {
+			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
 			Type element;
-			if(rhs_t instanceof Type.Set) {
+			if (rhs_t instanceof Type.Set) {
 				Type.Set st = (Type.Set) rhs_t;
 				element = st.element;
 			} else {
 				Type.List st = (Type.List) rhs_t;
 				element = st.element;
-			}						
-			if(!Type.isSubtype(lhs_t, element) && !Type.isSubtype(element, lhs_t)) {
-				syntaxError("Cannot compare types",v);
 			}
-			lub = Type.leastUpperBound(lhs_t,element);
-			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));
+			if (!Type.isSubtype(lhs_t, element)
+					&& !Type.isSubtype(element, lhs_t)) {
+				syntaxError("Cannot compare types", v);
+			}
+			lub = Type.leastUpperBound(lhs_t, element);
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
+					.first(), target));
 			return blk;
-		} 		
-		
+		}
+
 		syntaxError("expected boolean expression",v);
 		return null;
 	}
@@ -753,7 +755,7 @@ public class ModuleBuilder {
 	 * @param declared
 	 * @return
 	 */
-	protected Pair<Type, Block> resolve(int target, Expr e,			
+	protected Pair<CExpr, Block> resolve(int target, Expr e,			
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		try {
 			if (e instanceof Constant) {
@@ -789,7 +791,7 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Pair<Type, Block> resolve(int target, Invoke s,
+	protected Pair<CExpr, Block> resolve(int target, Invoke s,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared)
 			throws ResolveError {
 		List<Expr> args = s.arguments;
@@ -800,18 +802,19 @@ public class ModuleBuilder {
 		
 		Type.Process receiver = null;
 		if(s.receiver != null) {			
-			Pair<Type,Block> tb = resolve(idx,s.receiver,environment, declared);
-			nargs.add(CExpr.REG(tb.first(),idx++));
-			checkType(tb.first(),Type.Process.class,s.receiver);
-			receiver = (Type.Process) tb.first();
+			Pair<CExpr,Block> tb = resolve(idx++,s.receiver,environment, declared);
+			Type type = tb.first().type();
+			nargs.add(tb.first());
+			checkType(type,Type.Process.class,s.receiver);
+			receiver = (Type.Process) type;
 			blk.addAll(tb.second());			
 		}
 		
 		ArrayList<Type> ptypes = new ArrayList<Type>();
 		for(Expr e : args) {			
-			Pair<Type,Block> e_tb = resolve(idx,e,environment, declared);
-			nargs.add(CExpr.REG(e_tb.first(),idx++));
-			ptypes.add(e_tb.first());
+			Pair<CExpr,Block> e_tb = resolve(idx++,e,environment, declared);
+			nargs.add(e_tb.first());
+			ptypes.add(e_tb.first().type());
 			blk.addAll(e_tb.second());
 		}
 		
@@ -833,64 +836,56 @@ public class ModuleBuilder {
 		
 		blk.add(new Code.Invoke(funtype, name, 0, lhs, nargs));
 		
-		return new Pair<Type,Block>(funtype.ret,blk);									
+		return new Pair<CExpr,Block>(lhs,blk);									
 	}
 			
-	protected Pair<Type, Block> resolve(int target, Constant c,
+	protected Pair<CExpr, Block> resolve(int target, Constant c,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		Block blk = new Block(new Code.Assign(CExpr.REG(c.value.type(), target),
-				c.value));		
-		return new Pair<Type,Block>(c.value.type(),blk);
+		return new Pair<CExpr,Block>(c.value,new Block());
 	}
 	
-	protected Pair<Type, Block> resolve(int target, Variable v,
+	protected Pair<CExpr, Block> resolve(int target, Variable v,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		Type t = environment.get(v.var);
 		if(t == null) {		
 			syntaxError("unknown variable",v);			
-		}
-		Block blk = new Block(new Code.Assign(CExpr.REG(t, target), CExpr
-				.VAR(t, v.var)));
-		return new Pair<Type, Block>(t, blk);
+		}		
+		return new Pair<CExpr, Block>(CExpr.VAR(t, v.var), new Block());
 	}		
 
-	protected Pair<Type, Block> resolve(int target, UnOp v,
+	protected Pair<CExpr, Block> resolve(int target, UnOp v,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		Pair<Type,Block> mhs = resolve(target,v.mhs,environment,declared);
+		Pair<CExpr,Block> mhs = resolve(target,v.mhs,environment,declared);
 		Block blk = mhs.second();
-		Type mhs_t = mhs.first();
+		Type mhs_t = mhs.first().type();
 		switch(v.op) {
 		case NEG:
-			checkIsSubtype(Type.T_REAL,mhs_t,v.mhs);
-			blk.add(new Code.UnOp(Code.UOP.NEG, CExpr.REG(mhs_t, target),
-					CExpr.REG(mhs_t, target)));
-			return new Pair<Type,Block>(mhs_t,blk);
+			checkIsSubtype(Type.T_REAL,mhs_t,v.mhs);			
+			return new Pair<CExpr, Block>(CExpr.UNOP(mhs_t, CExpr.UOP.NEG,
+					mhs.first()), blk);
 		case NOT:
 			checkIsSubtype(Type.T_BOOL,mhs_t,v.mhs);
-			blk.add(new Code.UnOp(Code.UOP.NOT, CExpr.REG(mhs_t, target),
-					CExpr.REG(mhs_t, target)));
-			return new Pair<Type,Block>(mhs_t,blk);
+			return new Pair<CExpr, Block>(CExpr.UNOP(mhs_t, CExpr.UOP.NOT,
+					mhs.first()), blk);
 		case LENGTHOF:
-			checkIsSubtype(Type.T_SET(Type.T_ANY),mhs_t,v.mhs);
-			blk.add(new Code.UnOp(Code.UOP.LENGTHOF, CExpr.REG(mhs_t, target),
-					CExpr.REG(mhs_t, target)));
-			return new Pair<Type,Block>(Type.T_INT,blk);
+			checkIsSubtype(Type.T_SET(Type.T_ANY), mhs_t, v.mhs);
+			return new Pair<CExpr, Block>(CExpr.UNOP(Type.T_INT,
+					CExpr.UOP.LENGTHOF, mhs.first()), blk);
 		default:
 			syntaxError("unexpected unary operator encountered",v);
 			return null;
 		}		
 	}
 	
-	protected Pair<Type, Block> resolve(int target, ListAccess v,
+	protected Pair<CExpr, Block> resolve(int target, ListAccess v,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<Type, Block> lhs_tb = resolve(target, v.src, environment, declared);
-		Pair<Type, Block> rhs_tb = resolve(target + 1, v.index, environment,
+		Pair<CExpr, Block> lhs_tb = resolve(target, v.src, environment,
 				declared);
-		CExpr.LVal lhs_v = CExpr.REG(lhs_tb.first(), target);
-		CExpr rhs_v = CExpr.REG(rhs_tb.first(), (target + 1));
-		Type lhs_t = lhs_tb.first();
-		Type rhs_t = rhs_tb.first();
+		Pair<CExpr, Block> rhs_tb = resolve(target + 1, v.index, environment,
+				declared);
+		Type lhs_t = lhs_tb.first().type();
+		Type rhs_t = rhs_tb.first().type();
 		checkType(lhs_t, Type.List.class, v);
 		checkIsSubtype(Type.T_INT, rhs_t, v);
 		Type.List lt = (Type.List) lhs_t;
@@ -898,36 +893,36 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-		blk.add(new Code.Assign(CExpr.REG(lt.element, target), CExpr
-				.LISTACCESS(lt, lhs_v, rhs_v)));
-		return new Pair<Type, Block>(lt.element, blk);
+		return new Pair<CExpr, Block>(CExpr.LISTACCESS(lt, lhs_tb.first(),
+				rhs_tb.first()), blk);
 	}
 	
-	protected Pair<Type, Block> resolve(int target, BinOp v,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		
+	protected Pair<CExpr, Block> resolve(int target, BinOp v,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+	
 		// could probably use a range test for this somehow
 		if (v.op == BOp.EQ || v.op == BOp.NEQ || v.op == BOp.LT
 				|| v.op == BOp.LTEQ || v.op == BOp.GT || v.op == BOp.GTEQ
 				|| v.op == BOp.SUBSET || v.op == BOp.SUBSETEQ
-				|| v.op == BOp.ELEMENTOF || v.op == BOp.AND || v.op == BOp.OR) {			
+				|| v.op == BOp.ELEMENTOF || v.op == BOp.AND || v.op == BOp.OR) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			Block blk = resolveCondition(trueLabel,v,environment,declared);
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL,target),Value.V_BOOL(false)));
+			Block blk = resolveCondition(trueLabel, v, environment, declared);
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+					.V_BOOL(false)));
 			blk.add(new Code.Goto(exitLabel));
 			blk.add(new Code.Label(trueLabel));
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL,target),Value.V_BOOL(true)));
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+					.V_BOOL(true)));
 			blk.add(new Code.Label(exitLabel));
-			return new Pair<Type,Block>(Type.T_BOOL,blk);
+			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, target), blk);
 		}
 		
-		Pair<Type,Block> lhs_tb = resolve(target,v.lhs, environment, declared);
-		Pair<Type,Block> rhs_tb = resolve(target+1,v.rhs, environment, declared);
-		CExpr lhs_v = CExpr.REG(lhs_tb.first(),target);
-		CExpr rhs_v = CExpr.REG(rhs_tb.first(),(target+1));		
-		Type lhs_t = lhs_tb.first();
-		Type rhs_t = rhs_tb.first();		
+		Pair<CExpr,Block> lhs_tb = resolve(target,v.lhs, environment, declared);
+		Pair<CExpr,Block> rhs_tb = resolve(target+1,v.rhs, environment, declared);		
+		Type lhs_t = lhs_tb.first().type();
+		Type rhs_t = rhs_tb.first().type();		
 		BOp bop = v.op;
 		
 		Block blk = new Block();
@@ -936,110 +931,98 @@ public class ModuleBuilder {
 
 		if (bop == BOp.SUB && Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t)) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			blk
-					.add(new Code.BinOp(Code.BOP.DIFFERENCE, CExpr.REG(Type
-							.leastUpperBound(lhs_t, rhs_t), target),
-							lhs_v, rhs_v));
-			return new Pair<Type, Block>(Type.leastUpperBound(lhs_t, rhs_t),
-					blk);
+			CExpr r = CExpr.BINOP(Type.leastUpperBound(lhs_t, rhs_t),
+					CExpr.BOP.DIFFERENCE, lhs_tb.first(), rhs_tb.first());
+			return new Pair<CExpr, Block>(r,blk);
 		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			blk
-					.add(new Code.BinOp(OP2BOP(bop, v), CExpr.REG(Type
-							.leastUpperBound(lhs_t, rhs_t), target),
-							lhs_v, rhs_v));
-			return new Pair<Type, Block>(Type.leastUpperBound(lhs_t, rhs_t),
-					blk);
+			CExpr r = CExpr.BINOP(Type.leastUpperBound(lhs_t, rhs_t),
+					OP2BOP(bop, v), lhs_tb.first(), rhs_tb.first());
+			return new Pair<CExpr, Block>(r,blk);			
 		} else if (bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			blk
-					.add(new Code.BinOp(OP2BOP(bop, v), CExpr.REG(Type
-							.leastUpperBound(lhs_t, rhs_t), target),
-							lhs_v, rhs_v));
-			return new Pair<Type, Block>(Type.leastUpperBound(lhs_t, rhs_t),
-					blk);
-		} else if (bop == BOp.OR || bop == BOp.AND) {
-			checkIsSubtype(Type.T_BOOL, lhs_t, v);
-			checkIsSubtype(Type.T_BOOL, rhs_t, v);
-			return new Pair<Type, Block>(Type.T_BOOL, blk);
-		}
+			CExpr r = CExpr.BINOP(Type.leastUpperBound(lhs_t, rhs_t),
+					OP2BOP(bop, v), lhs_tb.first(), rhs_tb.first());
+			return new Pair<CExpr, Block>(r,blk);						
+		} 
 			
 		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
 	}
 	
-	protected Pair<Type, Block> resolve(int target, NaryOp v,
+	protected Pair<CExpr, Block> resolve(int target, NaryOp v,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		Block blk = new Block();
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments",v);
 			}
-			Pair<Type,Block> src = resolve(target,v.arguments.get(0), environment, declared);
-			Pair<Type,Block> start = resolve(target+1,v.arguments.get(1), environment, declared);
-			Pair<Type,Block> end = resolve(target+2,v.arguments.get(2), environment, declared);
-			checkType(src.first(),Type.List.class,v.arguments.get(0));
-			checkType(start.first(),Type.Int.class,v.arguments.get(1));
-			checkType(end.first(),Type.Int.class,v.arguments.get(2));
+			Pair<CExpr,Block> src = resolve(target,v.arguments.get(0), environment, declared);
+			Pair<CExpr,Block> start = resolve(target+1,v.arguments.get(1), environment, declared);
+			Pair<CExpr,Block> end = resolve(target+2,v.arguments.get(2), environment, declared);
+			checkType(src.first().type(),Type.List.class,v.arguments.get(0));
+			checkType(start.first().type(),Type.Int.class,v.arguments.get(1));
+			checkType(end.first().type(),Type.Int.class,v.arguments.get(2));
 			blk.addAll(src.second());
 			blk.addAll(start.second());
 			blk.addAll(end.second());
-			blk.add(new Code.NaryOp(Code.NOP.SUBLIST, CExpr.REG(src.first(),
-					target), CExpr.REG(src.first(), target), CExpr.REG(start
-					.first(), (target + 1)), CExpr
-					.REG(end.first(), (target + 2))));
-			return new Pair<Type,Block>(((Type.List)src.first()).element,blk);
+			CExpr r = CExpr.NARYOP((Type.List)src.first().type(),
+					CExpr.NOP.SUBLIST, src.first(), start.first(), end.first());
+			return new Pair<CExpr, Block>(r,blk);			
 		} else {
 			Type etype = Type.T_VOID;
 
 			int idx = target;
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			for(Expr e : v.arguments) {				
-				Pair<Type,Block> t = resolve(idx,e, environment, declared);
-				args.add(CExpr.REG(t.first(),idx++));
-				etype = Type.leastUpperBound(t.first(),etype);
+				Pair<CExpr,Block> t = resolve(idx++,e, environment, declared);
+				args.add(t.first());
+				etype = Type.leastUpperBound(t.first().type(),etype);
 				blk.addAll(t.second());				
 			}		
 
 			if (v.nop == NOp.LISTGEN) {
 				etype = Type.T_LIST(etype);
-				blk.add(new Code.NaryOp(Code.NOP.LISTGEN, CExpr.REG(etype, target), args));				
+				return new Pair<CExpr, Block>(CExpr.NARYOP(etype,
+						CExpr.NOP.LISTGEN, args), blk);
 			} else {
 				etype = Type.T_SET(etype);
-				blk.add(new Code.NaryOp(Code.NOP.SETGEN, CExpr.REG(etype, target), args));
-			}
-			return new Pair<Type, Block>(etype, blk);
+				return new Pair<CExpr, Block>(CExpr.NARYOP(etype,
+						CExpr.NOP.SETGEN, args), blk);
+			}		
 		}
 	}
 	
-	protected Pair<Type, Block> resolve(int target, Comprehension e,
+	protected Pair<CExpr, Block> resolve(int target, Comprehension e,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
 		throw new RuntimeException("Need to implement type resolution for Comprehension");
 	}
 		
-	protected Pair<Type, Block> resolve(int target, TupleGen sg,
+	protected Pair<CExpr, Block> resolve(int target, TupleGen sg,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		HashMap<String, Type> types = new HashMap<String, Type>();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			Pair<Type, Block> tb = resolve(target, e.getValue(), environment,
+			Pair<CExpr, Block> tb = resolve(target, e.getValue(), environment,
 					declared);
-			types.put(e.getKey(), tb.first());
+			types.put(e.getKey(), tb.first().type());
 		}
-		return new Pair<Type, Block>(Type.T_TUPLE(types), null);
+		throw new RuntimeException("Need to implement type resolution for tuple generation");		
 	}
 	
-	protected Pair<Type, Block> resolve(int target, TupleAccess sg,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		Pair<Type, Block> lhs = resolve(target, sg.lhs, environment, declared);
+	protected Pair<CExpr, Block> resolve(int target, TupleAccess sg,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Pair<CExpr, Block> lhs = resolve(target, sg.lhs, environment, declared);
 		// FIXME: will need to determine effective tuple type here
-		Type.Tuple tup = checkType(lhs.first(), Type.Tuple.class, sg.lhs);
+		Type.Tuple tup = checkType(lhs.first().type(), Type.Tuple.class, sg.lhs);
 		Type ft = tup.types.get(sg.name);
 		if (ft == null) {
 			syntaxError("type has no field named: " + sg.name, sg.lhs);
 		}
-		return new Pair<Type, Block>(ft, null);
+		throw new RuntimeException(
+				"Need to implement type resolution for tuple access");
 	}
 	
 	protected Pair<Type,Block> resolve(UnresolvedType t) {		
@@ -1251,20 +1234,20 @@ public class ModuleBuilder {
 		return new Expr.UnOp(Expr.UOp.NOT,e);				
 	}
 	
-	public static Code.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	public static CExpr.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch(bop) {
 		case ADD:
-			return Code.BOP.ADD;
+			return CExpr.BOP.ADD;
 		case SUB:
-			return Code.BOP.SUB;
+			return CExpr.BOP.SUB;
 		case DIV:
-			return Code.BOP.DIV;
+			return CExpr.BOP.DIV;
 		case MUL:
-			return Code.BOP.MUL;
+			return CExpr.BOP.MUL;
 		case UNION:
-			return Code.BOP.UNION;			
+			return CExpr.BOP.UNION;			
 		case INTERSECTION:
-			return Code.BOP.INTERSECT;	
+			return CExpr.BOP.INTERSECT;	
 		}
 		syntaxError("unrecognised binary operation",elem);
 		return null;
