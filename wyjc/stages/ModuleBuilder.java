@@ -492,8 +492,8 @@ public class ModuleBuilder {
 			blk.addAll(src_tb.second());
 			blk.addAll(index_tb.second());
 			blk.addAll(rhs_tb.second());
-			blk.add(new Code.Assign(CExpr.LISTACCESS(la_t, src_tb.first(),
-					index_tb.first()), rhs_tb.first()));		
+			blk.add(new Code.Assign(CExpr.LISTACCESS(src_tb.first(), index_tb
+					.first()), rhs_tb.first()));		
 		} else {
 			Pair<CExpr,Block> rhs_tb = resolve(2, s.rhs, environment, declared);
 			Pair<CExpr,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
@@ -861,16 +861,16 @@ public class ModuleBuilder {
 		switch(v.op) {
 		case NEG:
 			checkIsSubtype(Type.T_REAL,mhs_t,v.mhs);			
-			return new Pair<CExpr, Block>(CExpr.UNOP(mhs_t, CExpr.UOP.NEG,
+			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.NEG,
 					mhs.first()), blk);
 		case NOT:
 			checkIsSubtype(Type.T_BOOL,mhs_t,v.mhs);
-			return new Pair<CExpr, Block>(CExpr.UNOP(mhs_t, CExpr.UOP.NOT,
+			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.NOT,
 					mhs.first()), blk);
 		case LENGTHOF:
 			checkIsSubtype(Type.T_SET(Type.T_ANY), mhs_t, v.mhs);
-			return new Pair<CExpr, Block>(CExpr.UNOP(Type.T_INT,
-					CExpr.UOP.LENGTHOF, mhs.first()), blk);
+			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
+					.first()), blk);
 		default:
 			syntaxError("unexpected unary operator encountered",v);
 			return null;
@@ -888,13 +888,11 @@ public class ModuleBuilder {
 		Type rhs_t = rhs_tb.first().type();
 		checkType(lhs_t, Type.List.class, v);
 		checkIsSubtype(Type.T_INT, rhs_t, v);
-		Type.List lt = (Type.List) lhs_t;
-
 		Block blk = new Block();
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-		return new Pair<CExpr, Block>(CExpr.LISTACCESS(lt, lhs_tb.first(),
-				rhs_tb.first()), blk);
+		return new Pair<CExpr, Block>(CExpr.LISTACCESS(lhs_tb.first(), rhs_tb
+				.first()), blk);
 	}
 	
 	protected Pair<CExpr, Block> resolve(int target, BinOp v,
@@ -928,24 +926,24 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-
+		Type lub = Type.leastUpperBound(lhs_t, rhs_t);
+		CExpr lhs = convert(lub,lhs_tb.first());
+		CExpr rhs = convert(lub,rhs_tb.first());
+		
 		if (bop == BOp.SUB && Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t)) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			CExpr r = CExpr.BINOP(Type.leastUpperBound(lhs_t, rhs_t),
-					CExpr.BOP.DIFFERENCE, lhs_tb.first(), rhs_tb.first());
+			CExpr r = CExpr.BINOP(CExpr.BOP.DIFFERENCE, lhs, rhs);
 			return new Pair<CExpr, Block>(r,blk);
 		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			CExpr r = CExpr.BINOP(Type.leastUpperBound(lhs_t, rhs_t),
-					OP2BOP(bop, v), lhs_tb.first(), rhs_tb.first());
+			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs, rhs);
 			return new Pair<CExpr, Block>(r,blk);			
 		} else if (bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			CExpr r = CExpr.BINOP(Type.leastUpperBound(lhs_t, rhs_t),
-					OP2BOP(bop, v), lhs_tb.first(), rhs_tb.first());
+			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs, rhs);
 			return new Pair<CExpr, Block>(r,blk);						
 		} 
 			
@@ -968,30 +966,25 @@ public class ModuleBuilder {
 			blk.addAll(src.second());
 			blk.addAll(start.second());
 			blk.addAll(end.second());
-			CExpr r = CExpr.NARYOP((Type.List)src.first().type(),
-					CExpr.NOP.SUBLIST, src.first(), start.first(), end.first());
+			CExpr r = CExpr.NARYOP(CExpr.NOP.SUBLIST, src.first(), start
+					.first(), end.first());
 			return new Pair<CExpr, Block>(r,blk);			
 		} else {
-			Type etype = Type.T_VOID;
-
 			int idx = target;
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			for(Expr e : v.arguments) {				
 				Pair<CExpr,Block> t = resolve(idx++,e, environment, declared);
-				args.add(t.first());
-				etype = Type.leastUpperBound(t.first().type(),etype);
+				args.add(t.first());				
 				blk.addAll(t.second());				
 			}		
 
 			if (v.nop == NOp.LISTGEN) {
-				etype = Type.T_LIST(etype);
-				return new Pair<CExpr, Block>(CExpr.NARYOP(etype,
-						CExpr.NOP.LISTGEN, args), blk);
+				return new Pair<CExpr, Block>(CExpr.NARYOP(CExpr.NOP.LISTGEN,
+						args), blk);
 			} else {
-				etype = Type.T_SET(etype);
-				return new Pair<CExpr, Block>(CExpr.NARYOP(etype,
-						CExpr.NOP.SETGEN, args), blk);
-			}		
+				return new Pair<CExpr, Block>(CExpr.NARYOP(CExpr.NOP.SETGEN,
+						args), blk);
+			}
 		}
 	}
 	
@@ -1091,6 +1084,15 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = resolve(ut.element);
 			return new Pair<Type,Block>(Type.T_PROCESS(p.first()),null);			
 		} 
+	}
+	
+	protected CExpr convert(Type toType, CExpr expr) {
+		Type fromType = expr.type();		
+		if (toType.equals(fromType)) {			
+			return expr;
+		} else {			
+			return CExpr.CONVERT(toType, expr);
+		}
 	}
 	
 	protected Type.Fun bindFunction(ModuleID mid, String name,

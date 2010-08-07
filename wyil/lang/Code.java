@@ -36,6 +36,19 @@ public abstract class Code {
 			Assign a = (Assign) c;			
 			CExpr.usedVariables(a.lhs,uses);
 			CExpr.usedVariables(a.rhs,uses);
+		} else if(c instanceof Debug) {
+			Debug a = (Debug) c;						
+			CExpr.usedVariables(a.rhs,uses);
+		} else if(c instanceof IfGoto) {
+			IfGoto a = (IfGoto) c;			
+			CExpr.usedVariables(a.lhs,uses);
+			CExpr.usedVariables(a.rhs,uses);
+		} else if(c instanceof Invoke) {
+			Invoke a = (Invoke) c;			
+			CExpr.usedVariables(a.lhs,uses);
+			for(CExpr arg : a.args){
+				CExpr.usedVariables(arg,uses);
+			}			
 		} 
 	}
 
@@ -50,10 +63,21 @@ public abstract class Code {
 			 Assign a = (Assign) c;
 			return new Assign((LVal) CExpr.substitute(binding, a.lhs), CExpr
 					.substitute(binding, a.rhs));
+		} else if(c instanceof Debug) {
+			Debug a = (Debug) c;
+			return new Debug(CExpr.substitute(binding, a.rhs));
 		} else if(c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
+		} else if(c instanceof Invoke) {
+			Invoke a = (Invoke) c;			
+			LVal lhs = (LVal) CExpr.substitute(binding, a.lhs);
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : a.args){
+				args.add(CExpr.substitute(binding,arg));
+			}			
+			return new Invoke(a.type,a.name,a.caseNum,lhs,args);
 		} else {
 			return c;
 		}
@@ -73,10 +97,21 @@ public abstract class Code {
 			Assign a = (Assign) c;
 			return new Assign((LVal) CExpr.registerShift(shift, a.lhs), CExpr
 					.registerShift(shift, a.rhs));
+		} else if (c instanceof Debug) {
+			Debug a = (Debug) c;
+			return new Debug((LVal) CExpr.registerShift(shift, a.rhs));
 		} else if (c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.registerShift(shift, u.lhs),
 					CExpr.registerShift(shift, u.rhs), u.target);
+		} else if(c instanceof Invoke) {
+			Invoke a = (Invoke) c;			
+			LVal lhs = (LVal) CExpr.registerShift(shift, a.lhs);
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : a.args){
+				args.add(CExpr.registerShift(shift,arg));
+			}			
+			return new Invoke(a.type,a.name,a.caseNum,lhs,args);
 		} else {
 			return c;
 		}

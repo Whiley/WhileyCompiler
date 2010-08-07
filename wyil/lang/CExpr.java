@@ -23,6 +23,21 @@ public abstract class CExpr {
 			BinOp v = (BinOp) r;
 			usedVariables(v.lhs,uses);
 			usedVariables(v.rhs,uses);
+		} else if(r instanceof UnOp) {
+			UnOp v = (UnOp) r;			
+			usedVariables(v.rhs,uses);
+		} else if(r instanceof NaryOp) {
+			NaryOp v = (NaryOp) r;
+			for(CExpr arg : v.args) {
+				usedVariables(arg,uses);
+			}
+		} else if(r instanceof Convert) {
+			Convert v = (Convert) r;			
+			usedVariables(v.rhs,uses);
+		} else if(r instanceof Value) {
+			
+		} else {
+			throw new IllegalArgumentException("Unknown expression encountered: " + r);
 		}
 	}
 	
@@ -48,13 +63,26 @@ public abstract class CExpr {
 			} 
 		} else if(r instanceof ListAccess) {
 			ListAccess la = (ListAccess) r;
-			return LISTACCESS(la.type, (LVal) substitute(binding, la.src),
+			return LISTACCESS((LVal) substitute(binding, la.src),
 					substitute(binding, la.index));
 		} else if (r instanceof BinOp) {
 			BinOp bop = (BinOp) r;
-			return BINOP(bop.type, bop.op, substitute(binding, bop.lhs),
+			return BINOP(bop.op, substitute(binding, bop.lhs),
 					substitute(binding, bop.rhs));
-		}
+		} else if (r instanceof UnOp) {
+			UnOp bop = (UnOp) r;
+			return UNOP(bop.op,substitute(binding, bop.rhs));
+		} else if (r instanceof Convert) {
+			Convert c = (Convert) r;
+			return CONVERT(c.type,substitute(binding, c.rhs));
+		} else if (r instanceof NaryOp) {
+			NaryOp bop = (NaryOp) r;
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : bop.args) {
+				args.add(substitute(binding, arg));
+			}
+			return NARYOP(bop.op, args);
+		} 
 		return r;
 	}
 		
@@ -62,7 +90,28 @@ public abstract class CExpr {
 		if (r instanceof Register) {
 			Register v = (Register) r;
 			return new Register(v.type,v.index + shift);
-		}
+		} else if(r instanceof ListAccess) {
+			ListAccess la = (ListAccess) r;
+			return LISTACCESS((LVal) registerShift(shift, la.src),
+					registerShift(shift, la.index));
+		} else if (r instanceof BinOp) {
+			BinOp bop = (BinOp) r;
+			return BINOP(bop.op, registerShift(shift, bop.lhs),
+					registerShift(shift, bop.rhs));
+		} else if (r instanceof UnOp) {
+			UnOp bop = (UnOp) r;
+			return UNOP(bop.op,registerShift(shift, bop.rhs));
+		} else if (r instanceof Convert) {
+			Convert c = (Convert) r;
+			return CONVERT(c.type,registerShift(shift, c.rhs));
+		} else if (r instanceof NaryOp) {
+			NaryOp bop = (NaryOp) r;
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : bop.args) {
+				args.add(registerShift(shift, arg));
+			}
+			return NARYOP(bop.op, args);
+		} 
 		return r;
 	}
 	
@@ -74,24 +123,28 @@ public abstract class CExpr {
 		return get(new Register(t,index));
 	}
 	
-	public static ListAccess LISTACCESS(Type.List t, CExpr src, CExpr index) {
-		return get(new ListAccess(t, src, index));
+	public static ListAccess LISTACCESS(CExpr src, CExpr index) {
+		return get(new ListAccess(src, index));
 	}
 
-	public static BinOp BINOP(Type t, BOP bop, CExpr lhs, CExpr rhs) {
-		return get(new BinOp(t, bop, lhs, rhs));
+	public static BinOp BINOP(BOP bop, CExpr lhs, CExpr rhs) {
+		return get(new BinOp(bop, lhs, rhs));
 	}
 	
-	public static UnOp UNOP(Type t, UOP uop, CExpr mhs) {
-		return get(new UnOp(t, uop, mhs));
+	public static UnOp UNOP(UOP uop, CExpr mhs) {
+		return get(new UnOp(uop, mhs));
 	}
 	
-	public static NaryOp NARYOP(Type t, NOP nop, CExpr... args) {
-		return get(new NaryOp(t, nop, args));
+	public static Convert CONVERT(Type t, CExpr mhs) {
+		return get(new Convert(t, mhs));
 	}
 	
-	public static NaryOp NARYOP(Type t, NOP nop, Collection<CExpr> args) {
-		return get(new NaryOp(t, nop, args));
+	public static NaryOp NARYOP(NOP nop, CExpr... args) {
+		return get(new NaryOp(nop, args));
+	}
+	
+	public static NaryOp NARYOP(NOP nop, Collection<CExpr> args) {
+		return get(new NaryOp(nop, args));
 	}
 	
 	public static class Variable extends LVar {
@@ -120,7 +173,7 @@ public abstract class CExpr {
 			return false;
 		}
 		public String toString() {
-			return "(" + type + ") " + name;
+			return name + "[" + type + "]";
 		}
 	}
 
@@ -154,40 +207,39 @@ public abstract class CExpr {
 			return false;
 		}
 		public String toString() {
-			return "(" + type + ") %" + index;
+			return "%" + index + "[" + type + "]";			
 		}
 	}
 	
-	public static class ListAccess extends LVal {
-		public final Type.List type;
+	public static class ListAccess extends LVal {		
 		public final CExpr src;
 		public final CExpr index;
 
-		ListAccess(Type.List type, CExpr src, CExpr index) {
-			this.type = type;
+		ListAccess(CExpr src, CExpr index) {			
 			this.src = src;
 			this.index = index;
 		}
 
 		public Type type() {
-			return type.element;
+			Type.List l = (Type.List) src.type();
+			return l.element;
 		}
 
 		public int hashCode() {
-			return type.hashCode() + src.hashCode() + index.hashCode();
+			return src.hashCode() + index.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof ListAccess) {
 				ListAccess v = (ListAccess) o;
-				return type.equals(v.type) && src.equals(v.src)
+				return src.equals(v.src)
 						&& index.equals(v.index);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "(" + type + ") " + src + "[" + index + "]";
+			return src + "[" + index + "]";
 		}
 	}
 	
@@ -199,25 +251,23 @@ public abstract class CExpr {
 	 */
 	public final static class BinOp extends CExpr {
 		public final BOP op;
-		public final Type type;
 		public final CExpr lhs;
 		public final CExpr rhs;
 
-		BinOp(Type type, BOP op, CExpr lhs, CExpr rhs) {
-			this.op = op;
-			this.type = type;
+		BinOp(BOP op, CExpr lhs, CExpr rhs) {
+			this.op = op;			
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 
 		public Type type() {
-			return type;
+			return Type.leastUpperBound(lhs.type(),rhs.type());
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof BinOp) {
 				BinOp a = (BinOp) o;
-				return op == a.op && type.equals(a.type) && lhs.equals(a.lhs)
+				return op == a.op && lhs.equals(a.lhs)
 						&& rhs.equals(a.rhs);
 
 			}
@@ -225,7 +275,7 @@ public abstract class CExpr {
 		}
 
 		public int hashCode() {
-			return op.hashCode() + type.hashCode() + lhs.hashCode()
+			return op.hashCode() + lhs.hashCode()
 					+ rhs.hashCode();
 		}
 
@@ -258,13 +308,11 @@ public abstract class CExpr {
 		}
 	};	
 	
-	public final static class UnOp extends CExpr {
-		public final UOP op;		
+	public final static class Convert extends CExpr {		
 		public final Type type;
 		public final CExpr rhs;		
 		
-		UnOp(Type type, UOP op, CExpr rhs) {
-			this.op = op;			
+		Convert(Type type, CExpr rhs) {				
 			this.type = type;
 			this.rhs = rhs;
 		}
@@ -274,16 +322,49 @@ public abstract class CExpr {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof UnOp) {
-				UnOp a = (UnOp) o;
-				return op == a.op && type.equals(a.type) && rhs.equals(a.rhs);
+			if (o instanceof Convert) {
+				Convert a = (Convert) o;
+				return type.equals(a.type) && rhs.equals(a.rhs);
 			}
 			return false;
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + type.hashCode()
-					+ rhs.hashCode();
+			return type.hashCode() + rhs.hashCode();
+		}
+		
+		public String toString() {
+			return "(" + type + ") " + rhs;
+		}		
+	}
+	
+	public final static class UnOp extends CExpr {
+		public final UOP op;				
+		public final CExpr rhs;		
+		
+		UnOp(UOP op, CExpr rhs) {
+			this.op = op;						
+			this.rhs = rhs;
+		}
+		
+		public Type type() {
+			if(op == UOP.LENGTHOF) {
+				return Type.T_INT;
+			} else {
+				return rhs.type();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof UnOp) {
+				UnOp a = (UnOp) o;
+				return op == a.op && rhs.equals(a.rhs);
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return op.hashCode() + rhs.hashCode();
 		}
 		
 		public String toString() {
@@ -310,12 +391,10 @@ public abstract class CExpr {
 
 	public final static class NaryOp extends CExpr {
 		public final NOP op;		
-		public final Type type;
 		public final List<CExpr> args;		
 		
-		NaryOp(Type type, NOP op, CExpr... args) {
-			this.op = op;			
-			this.type = type;
+		NaryOp(NOP op, CExpr... args) {
+			this.op = op;						
 			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
 			for(CExpr r : args) {
 				tmp.add(r);
@@ -323,29 +402,30 @@ public abstract class CExpr {
 			this.args = Collections.unmodifiableList(tmp); 
 		}
 		
-		public NaryOp(Type type, NOP op, Collection<CExpr> args) {
+		public NaryOp(NOP op, Collection<CExpr> args) {
 			this.op = op;			
-			this.type = type;
 			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));			
 		}
 		
 		public Type type() {
-			return type;
+			Type t = Type.T_VOID;
+			for(CExpr arg : args) {
+				t = Type.leastUpperBound(t,arg.type());
+			}
+			return t;
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NaryOp) {
 				NaryOp a = (NaryOp) o;
-				return op == a.op && type.equals(a.type)
-						&& args.equals(a.args);
+				return op == a.op && args.equals(a.args);
 				
 			}
 			return false;
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + type.hashCode()
-					+ args.hashCode();
+			return op.hashCode() + args.hashCode();
 		}
 		
 		public String toString() {
