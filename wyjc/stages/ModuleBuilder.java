@@ -466,8 +466,8 @@ public class ModuleBuilder {
 	
 	protected Block resolve(Assign s, HashMap<String, Type> environment,
 			HashMap<String,Pair<Type,Block>> declared) {
-		Pair<Type,Block> rhs_tb = resolve(0, s.rhs, environment, declared);
-		Block blk = new Block(rhs_tb.second());
+		
+		Block blk = new Block();		
 		if(s.lhs instanceof Variable) {
 			// perform type inference as a result of this assignment
 			Variable v = (Variable) s.lhs;			
@@ -475,11 +475,29 @@ public class ModuleBuilder {
 			if(declared_t == null) {
 				syntaxError("unknown variable",v);
 			}
+			Pair<Type,Block> rhs_tb = resolve(0, s.rhs, environment, declared);			
 			checkIsSubtype(declared_t,rhs_tb.first(),s.rhs);
 			environment.put(v.var, rhs_tb.first());			
+			blk.addAll(rhs_tb.second());			
 			blk.add(new Code.Assign(CExpr.VAR(rhs_tb.first(), v.var), CExpr.REG(
 					rhs_tb.first(), 0)));
+		} else if(s.lhs instanceof ListAccess) {
+			ListAccess la = (ListAccess) s.lhs;
+			Pair<Type,Block> src_tb = resolve(0, la.src, environment, declared);			
+			Pair<Type,Block> index_tb = resolve(1, la.index, environment, declared);
+			Pair<Type,Block> rhs_tb = resolve(2, s.rhs, environment, declared);			
+			Type.List la_t = checkType(src_tb.first(),Type.List.class,la.src);
+			checkIsSubtype(la_t.element,rhs_tb.first(),s.rhs);
+			checkIsSubtype(Type.T_INT,index_tb.first(),la.index);
+			blk.addAll(src_tb.second());
+			blk.addAll(index_tb.second());
+			blk.addAll(rhs_tb.second());
+			blk.add(new Code.Assign(CExpr.LISTACCESS(
+					la_t, CExpr.REG(src_tb.first(), 0),
+					CExpr.REG(index_tb.first(), 1)), CExpr.REG(rhs_tb.first(),
+					2)));		
 		} else {
+			Pair<Type,Block> rhs_tb = resolve(2, s.rhs, environment, declared);
 			Pair<Type,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
 			checkIsSubtype(lhs_tb.first(), rhs_tb.first(), s.rhs);							
 			System.out.println("WARNING: Assign is missing cases");
@@ -487,7 +505,7 @@ public class ModuleBuilder {
 		
 		// Finally, we need to add any constraints that may be coming from the
 		// declared type.
-		Variable target = (Variable) s.lhs; // FIXME
+		Variable target = (Variable) flattern(s.lhs); // FIXME
 		Block constraint = declared.get(target.var).second();
 		if(constraint != null) {
 			blk.addAll(constraint);
@@ -869,7 +887,7 @@ public class ModuleBuilder {
 		Pair<Type, Block> lhs_tb = resolve(target, v.src, environment, declared);
 		Pair<Type, Block> rhs_tb = resolve(target + 1, v.index, environment,
 				declared);
-		CExpr lhs_v = CExpr.REG(lhs_tb.first(), target);
+		CExpr.LVal lhs_v = CExpr.REG(lhs_tb.first(), target);
 		CExpr rhs_v = CExpr.REG(rhs_tb.first(), (target + 1));
 		Type lhs_t = lhs_tb.first();
 		Type rhs_t = rhs_tb.first();
@@ -880,8 +898,8 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-		blk.add(new Code.Assign(CExpr.REG(lt.element, target), CExpr.LISTACCESS(
-				lt, lhs_v, rhs_v)));
+		blk.add(new Code.Assign(CExpr.REG(lt.element, target), CExpr
+				.LISTACCESS(lt, lhs_v, rhs_v)));
 		return new Pair<Type, Block>(lt.element, blk);
 	}
 	
@@ -1185,6 +1203,21 @@ public class ModuleBuilder {
 		
 		return Type.substituteRecursiveTypes(t, binding);
 	}	
+	
+	public static Variable flattern(Expr e) {
+		if(e instanceof Variable) {
+			return (Variable) e;
+		} else if(e instanceof ListAccess) {
+			ListAccess la = (ListAccess) e;
+			return flattern(la.src);
+		} else if(e instanceof TupleAccess) {
+			TupleAccess la = (TupleAccess) e;
+			return flattern(la.lhs);
+		} else {
+			syntaxError("invalid lval",e);
+			return null;
+		}
+	}
 	
 	public static Expr invert(Expr e) {
 		if(e instanceof Expr.BinOp) {

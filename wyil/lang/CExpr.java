@@ -6,6 +6,7 @@ public abstract class CExpr {
 	public abstract Type type();
 	
 	public static abstract class LVal extends CExpr {}
+	public static abstract class LVar extends LVal {}
 	
 	public static void usedVariables(CExpr r, Set<String> uses) {
 		if (r instanceof Variable) {
@@ -57,11 +58,11 @@ public abstract class CExpr {
 		return get(new Register(t,index));
 	}
 	
-	public static ListAccess LISTACCESS(Type.List t, CExpr src, CExpr index) {
+	public static ListAccess LISTACCESS(Type.List t, LVal src, CExpr index) {
 		return get(new ListAccess(t, src, index));
 	}
 	
-	public static class Variable extends LVal {
+	public static class Variable extends LVar {
 		public final String name;
 		public final Type type;
 		
@@ -99,7 +100,7 @@ public abstract class CExpr {
 	 * @author djp
 	 * 
 	 */
-	public static class Register extends LVal {
+	public static class Register extends LVar {
 		public final int index;
 		public final Type type;
 		
@@ -127,10 +128,10 @@ public abstract class CExpr {
 	
 	public static class ListAccess extends LVal {
 		public final Type.List type;
-		public final CExpr src;
+		public final LVal src;
 		public final CExpr index;
 
-		ListAccess(Type.List type, CExpr src, CExpr index) {
+		ListAccess(Type.List type, LVal src, CExpr index) {
 			this.type = type;
 			this.src = src;
 			this.index = index;

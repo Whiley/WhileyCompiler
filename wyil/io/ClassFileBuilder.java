@@ -212,6 +212,9 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Assign c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
+		
+		makePreAssignment(c.lhs,slots,bytecodes);
+		
 		// Translate right-hand side
 		translate(c.rhs,slots,bytecodes);
 
@@ -219,7 +222,7 @@ public class ClassFileBuilder {
 		convert(c.lhs.type(), c.rhs.type(), slots, bytecodes);
 		
 		// Write assignment
-		makeAssignment(c.lhs,slots,bytecodes);		
+		makePostAssignment(c.lhs,slots,bytecodes);		
 	}
 
 	public void translate(Code.Return c, HashMap<String, Integer> slots,
@@ -234,7 +237,9 @@ public class ClassFileBuilder {
 
 	public void translate(Code.BinOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-
+		
+		makePreAssignment(c.lhs,slots,bytecodes);
+		
 		// translate 1st right-hand side
 		translate(c.rhs1, slots, bytecodes);
 
@@ -281,12 +286,14 @@ public class ClassFileBuilder {
 			break;
 		}
 		
-		makeAssignment(c.lhs,slots,bytecodes);		
+		makePostAssignment(c.lhs,slots,bytecodes);		
 	}
 
 	public void translate(Code.UnOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 
+		makePreAssignment(c.lhs,slots,bytecodes);
+		
 		// translate right-hand side
 		translate(c.rhs, slots, bytecodes);
 
@@ -325,11 +332,13 @@ public class ClassFileBuilder {
 		}
 		}
 		
-		makeAssignment(c.lhs,slots,bytecodes);		
+		makePostAssignment(c.lhs,slots,bytecodes);		
 	}
 	public void translate(Code.NaryOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 
+		makePreAssignment(c.lhs,slots,bytecodes);
+		
 		// translate right-hand side
 		for(CExpr r : c.args) {
 			translate(r, slots, bytecodes);
@@ -373,7 +382,7 @@ public class ClassFileBuilder {
 		}
 		
 		// store the result
-		makeAssignment(c.lhs,slots,bytecodes);		
+		makePostAssignment(c.lhs,slots,bytecodes);		
 	}
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {		
@@ -496,6 +505,8 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Invoke c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
+		makePreAssignment(c.lhs,slots,bytecodes);
+		
 		int idx=0;
 		// first, translate receiver (where appropriate)
 		if(c.type.receiver != null) {			
@@ -524,7 +535,7 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));		
 		// finally, make the assignment (where appropriate)
 		if(c.lhs != null) {
-			makeAssignment(c.lhs,slots,bytecodes);
+			makePostAssignment(c.lhs,slots,bytecodes);
 		} else if(c.lhs == null && c.type.ret != Type.T_VOID){
 			// in this case, the function being called does return something,
 			// but we're discarding it. Therefore, we need to pop the return
@@ -774,15 +785,21 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Pop(WHILEYTUPLE));
 		}
 	}
-
-	/**
-	 * Generate code to assign value on stack to the given LVal
-	 * @param lhs
-	 * @param slots
-	 * @param bytecodes
-	 */
-	public void makeAssignment(LVal lhs, HashMap<String, Integer> slots,
+	
+	public void makePreAssignment(LVal lhs, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
+		if(lhs instanceof CExpr.ListAccess) {
+			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
+			translate(v.src,slots,bytecodes);
+			convert(v.type,v.src.type(), slots, bytecodes);
+			translate(v.index,slots,bytecodes);
+			convert(Type.T_INT,v.index.type(), slots, bytecodes);						
+		} 
+	}
+	
+	public void makePostAssignment(LVal lhs, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		cloneRHS(lhs.type(),bytecodes);
 		if(lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;
 			bytecodes.add(new Bytecode.Store(slots.get(v.name),
@@ -791,10 +808,45 @@ public class ClassFileBuilder {
 			CExpr.Register v = (CExpr.Register) lhs;
 			bytecodes.add(new Bytecode.Store(slots.get("%" + v.index),
 					convertType(v.type)));
+		} else if(lhs instanceof CExpr.ListAccess) {
+			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
+			addWriteConversion(v.type.element,bytecodes);			
+			JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_INTEGER,JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
+					Bytecode.VIRTUAL));					
 		} else {
 			System.err.println("MISSING CODE FOR LVAL ASSIGNMENT");
 		}
 	}
+
+	/**
+	 * The cloneRHS method is responsible for cloning the right-hand side of an
+	 * assignment operation. This is necessary to ensure the correct value
+	 * semantics of wyil are preserved. An interesting question is how we might
+	 * avoid such cloning.
+	 * 
+	 * @param t
+	 * @param bytecodes
+	 */
+	private void cloneRHS(Type t, ArrayList<Bytecode> bytecodes) {
+		// Now, for list, set and tuple types we need to clone the object in
+		// question. In fact, this could be optimised in some situations
+		// where we know the old variable is not live.
+		if (t instanceof Type.List) {
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "clone", ftype,
+					Bytecode.VIRTUAL));
+		} else if (t instanceof Type.Set) {
+			JvmType.Function ftype = new JvmType.Function(WHILEYSET);
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "clone", ftype,
+					Bytecode.VIRTUAL));
+		} else if (t instanceof Type.Tuple) {
+			JvmType.Function ftype = new JvmType.Function(WHILEYTUPLE);
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "clone", ftype,
+					Bytecode.VIRTUAL));
+		}
+	}
+
 	
 	/**
 	 * The read conversion is necessary in situations where we're reading a

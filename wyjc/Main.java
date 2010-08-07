@@ -73,7 +73,7 @@ public class Main {
 		boolean nrc = false;
 		boolean cwa = true; // for simplicity!
 		boolean wyil = false;
-		boolean bytecodes = false;
+		boolean jvm = false;
 		boolean classfile = true;
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
@@ -102,8 +102,8 @@ public class Main {
 					nvc = true;
 				} else if(arg.equals("-nrc")) {					
 					nrc = true;
-				} else if(arg.equals("-bytecode")) {					
-					bytecodes = true;
+				} else if(arg.equals("-jvm")) {					
+					jvm = true;
 				} else if(arg.equals("-wyil")) {					
 					wyil = true;
 				} else if(arg.equals("-ncf")) {					
@@ -136,8 +136,8 @@ public class Main {
 		if(wyil) {
 			writers.add(new WyilWriter());
 		}
-		if(bytecodes) {
-			writers.add(new BytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
+		if(jvm) {
+			writers.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}
 		if(classfile) {
 			writers.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));
