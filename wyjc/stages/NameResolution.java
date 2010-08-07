@@ -215,6 +215,8 @@ public class NameResolution {
 				resolve((NaryOp)e, environment, imports);
 			} else if (e instanceof BinOp) {
 				resolve((BinOp)e, environment, imports);
+			} else if (e instanceof ListAccess) {
+				resolve((ListAccess)e, environment, imports);
 			} else if (e instanceof UnOp) {
 				resolve((UnOp)e, environment, imports);
 			} else if (e instanceof Invoke) {
@@ -275,6 +277,12 @@ public class NameResolution {
 	protected void resolve(BinOp v, HashSet<String> environment, ArrayList<PkgID> imports) {
 		resolve(v.lhs, environment, imports);
 		resolve(v.rhs, environment, imports);		
+	}
+	
+	protected void resolve(ListAccess v, HashSet<String> environment,
+			ArrayList<PkgID> imports) {
+		resolve(v.src, environment, imports);
+		resolve(v.index, environment, imports);
 	}
 	
 	protected void resolve(NaryOp v, HashSet<String> environment,

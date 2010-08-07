@@ -704,12 +704,7 @@ public class ModuleBuilder {
 			lub = Type.leastUpperBound(lhs_t,element);
 			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));
 			return blk;
-		} else if(bop == BOp.LISTACCESS) {
-			checkType(lhs_t, Type.List.class, v);
-			checkIsSubtype(Type.T_INT, rhs_t, v);			 
-			blk.add(new Code.IfGoto(lub,OP2COP(bop,v),lvar,rvar,target));
-			return blk;		
-		} 			
+		} 		
 		
 		syntaxError("expected boolean expression",v);
 		return null;
@@ -751,6 +746,8 @@ public class ModuleBuilder {
 				return resolve(target,(NaryOp)e, environment, declared);
 			} else if (e instanceof BinOp) {
 				return resolve(target,(BinOp)e, environment, declared);
+			} else if (e instanceof ListAccess) {
+				return resolve(target,(ListAccess)e, environment, declared);
 			} else if (e instanceof UnOp) {
 				return resolve(target,(UnOp)e, environment, declared);
 			} else if (e instanceof Invoke) {
@@ -866,6 +863,28 @@ public class ModuleBuilder {
 		}		
 	}
 	
+	protected Pair<Type, Block> resolve(int target, ListAccess v,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Pair<Type, Block> lhs_tb = resolve(target, v.src, environment, declared);
+		Pair<Type, Block> rhs_tb = resolve(target + 1, v.index, environment,
+				declared);
+		RVal lhs_v = RVal.REG(lhs_tb.first(), target);
+		RVal rhs_v = RVal.REG(rhs_tb.first(), (target + 1));
+		Type lhs_t = lhs_tb.first();
+		Type rhs_t = rhs_tb.first();
+		checkType(lhs_t, Type.List.class, v);
+		checkIsSubtype(Type.T_INT, rhs_t, v);
+		Type.List lt = (Type.List) lhs_t;
+
+		Block blk = new Block();
+		blk.addAll(lhs_tb.second());
+		blk.addAll(rhs_tb.second());
+		blk.add(new Code.Assign(RVal.REG(lt.element, target), RVal.LISTACCESS(
+				lt, lhs_v, rhs_v)));
+		return new Pair<Type, Block>(lt.element, blk);
+	}
+	
 	protected Pair<Type, Block> resolve(int target, BinOp v,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		
@@ -924,11 +943,6 @@ public class ModuleBuilder {
 							lhs_v, rhs_v));
 			return new Pair<Type, Block>(Type.leastUpperBound(lhs_t, rhs_t),
 					blk);
-		} else if (bop == BOp.LISTACCESS) {
-			checkType(lhs_t, Type.List.class, v);
-			checkIsSubtype(Type.T_INT, rhs_t, v);
-			Type.List lt = (Type.List) lhs_t;
-			return new Pair<Type, Block>(lt.element, blk);
 		} else if (bop == BOp.OR || bop == BOp.AND) {
 			checkIsSubtype(Type.T_BOOL, lhs_t, v);
 			checkIsSubtype(Type.T_BOOL, rhs_t, v);

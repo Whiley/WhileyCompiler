@@ -1,8 +1,6 @@
 package wyil.lang;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 public abstract class RVal {
 	public abstract Type type();
@@ -59,6 +57,9 @@ public abstract class RVal {
 		return get(new Register(t,index));
 	}
 	
+	public static ListAccess LISTACCESS(Type.List t, RVal src, RVal index) {
+		return get(new ListAccess(t, src, index));
+	}
 	
 	public static class Variable extends LVal {
 		public final String name;
@@ -121,6 +122,39 @@ public abstract class RVal {
 		}
 		public String toString() {
 			return "(" + type + ") %" + index;
+		}
+	}
+	
+	public static class ListAccess extends LVal {
+		public final Type.List type;
+		public final RVal src;
+		public final RVal index;
+
+		ListAccess(Type.List type, RVal src, RVal index) {
+			this.type = type;
+			this.src = src;
+			this.index = index;
+		}
+
+		public Type type() {
+			return type.element;
+		}
+
+		public int hashCode() {
+			return type.hashCode() + src.hashCode() + index.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof ListAccess) {
+				ListAccess v = (ListAccess) o;
+				return type.equals(v.type) && src.equals(v.src)
+						&& index.equals(v.index);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "(" + type + ") " + src + "[" + index + "]";
 		}
 	}
 	

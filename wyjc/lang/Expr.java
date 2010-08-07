@@ -81,6 +81,30 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	// A list access is very similar to a BinOp, except that it can be assiged.
+	public static class ListAccess extends SyntacticElement.Impl implements
+			Expr, LVal {		
+		public final Expr src;
+		public final Expr index;
+		
+		public ListAccess(Expr src, Expr index, Attribute... attributes) {
+			super(attributes);
+			this.src = src;
+			this.index = index;
+		}
+		
+		public ListAccess(Expr src, Expr index, Collection<Attribute> attributes) {
+			super(attributes);
+			this.src = src;
+			this.index = index;
+		}
+					
+		public String toString() {
+			return src + "[" + index + "]";
+		}
+	}
+
+
 
 	public enum UOp {
 		NOT,
@@ -241,10 +265,7 @@ public interface Expr extends SyntacticElement {
 		},
 		ELEMENTOF{
 			public String toString() { return "in"; }
-		},
-		LISTACCESS{
-			public String toString() { return "[]"; }
-		},
+		},		
 		LISTRANGE{
 			public String toString() { return ".."; }
 		},

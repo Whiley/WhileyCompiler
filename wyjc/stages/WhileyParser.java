@@ -684,8 +684,8 @@ public class WhileyParser {
 							start, index - 1), lhs, rhs, end);
 				} else {
 					match(RightSquare.class);							
-					lhs = new Expr.BinOp(Expr.BOp.LISTACCESS, lhs, rhs,
-							sourceAttr(start, index - 1));
+					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
+							index - 1));
 				}
 			} else if(lookahead instanceof Arrow) {								
 				match(Arrow.class);					

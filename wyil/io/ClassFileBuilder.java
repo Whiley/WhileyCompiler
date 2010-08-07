@@ -571,10 +571,20 @@ public class ClassFileBuilder {
 			RVal.Variable v = (RVal.Variable) r;
 			bytecodes.add(new Bytecode.Load(slots.get(v.name),
 					convertType(v.type)));
-		} else {
+		} else if(r instanceof RVal.Register) {
 			RVal.Register v = (RVal.Register) r;
 			bytecodes.add(new Bytecode.Load(slots.get("%" + v.index),
 					convertType(v.type)));
+		} else if(r instanceof RVal.ListAccess) {
+			RVal.ListAccess v = (RVal.ListAccess) r;
+			translate(v.src,slots,bytecodes);
+			convert(v.type,v.src.type(), slots, bytecodes);
+			translate(v.index,slots,bytecodes);
+			convert(Type.T_INT,v.index.type(), slots, bytecodes);
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,BIG_INTEGER);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
+					Bytecode.VIRTUAL));
+			addReadConversion(v.type(),bytecodes);			
 		}
 	}
 	
