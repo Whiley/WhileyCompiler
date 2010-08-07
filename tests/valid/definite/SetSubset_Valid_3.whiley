@@ -1,4 +1,4 @@
-void f({int} xs, {int} ys) where |xs| <= |ys|:
+void f({int} xs, {int} ys) requires |xs| <= |ys|:
     if xs ⊂ ys:
         print "XS IS A SUBSET"
     else:

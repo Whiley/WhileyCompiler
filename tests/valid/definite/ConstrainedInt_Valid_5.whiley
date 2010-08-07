@@ -6,7 +6,7 @@ void f(num x):
     y = x
     print str(y)
 
-void g(int x, int z) where (x == 1 || x == 2) && z in {1,2,3,x}:
+void g(int x, int z) requires (x == 1 || x == 2) && z in {1,2,3,x}:
     f(z)
 
 void System::main([string] args):

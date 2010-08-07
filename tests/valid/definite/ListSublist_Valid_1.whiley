@@ -1,6 +1,6 @@
-define posintlist as [int] where no { x in $ | x < 0 }
+define posintlist as [int] requires no { x in $ | x < 0 }
 
-int sum(posintlist ls) where $ >= 0:
+int sum(posintlist ls) requires $ >= 0:
     if(|ls| == 0):
         return 0
     else:

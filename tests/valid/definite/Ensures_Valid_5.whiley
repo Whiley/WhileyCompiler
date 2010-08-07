@@ -1,4 +1,4 @@
-int f(int x) where $ > x:
+int f(int x) requires $ > x:
     x = x + 1
     return x
 

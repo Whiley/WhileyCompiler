@@ -1,5 +1,5 @@
-define ur4nat as int where $ > 0
-define tur4nat as int where $ > 10
+define ur4nat as int requires $ > 0
+define tur4nat as int requires $ > 10
 define wur4nat as ur4nat|tur4nat
 
 void f(wur4nat x):

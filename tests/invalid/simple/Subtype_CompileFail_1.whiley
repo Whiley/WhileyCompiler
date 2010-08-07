@@ -1,4 +1,4 @@
-define scf1nat as int where $ >= 0
+define scf1nat as int requires $ >= 0
 
 void System::main([string] args):
     scf1nat x

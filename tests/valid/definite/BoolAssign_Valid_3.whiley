@@ -1,4 +1,4 @@
-int f(int x, int y) where x>=0 && y>=0 && $>0:
+int f(int x, int y) requires x>=0 && y>=0 && $>0:
     bool a
     a = x == y
     if(a):
@@ -6,7 +6,7 @@ int f(int x, int y) where x>=0 && y>=0 && $>0:
     else:
         return x + y
 
-int g(int x, int y) where x>=0 && y>=0 && $>0:
+int g(int x, int y) requires x>=0 && y>=0 && $>0:
     bool a
     a = x >= y
     if(!a):

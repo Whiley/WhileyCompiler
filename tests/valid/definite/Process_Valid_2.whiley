@@ -1,4 +1,4 @@
-define state as (int x, int y) where x < y
+define state as (int x, int y) requires x < y
 define pState as process state
 
 int pState::send(int x):

@@ -2,7 +2,7 @@ define ADD as 1
 define SUB as 2
 define MUL as 3
 define DIV as 4
-define binop as (int op, expr left, expr right) where op in {ADD,SUB,MUL,DIV}
+define binop as (int op, expr left, expr right) requires op in {ADD,SUB,MUL,DIV}
 define expr as int | binop
 
 void System::main([string] args):

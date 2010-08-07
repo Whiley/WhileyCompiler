@@ -1,4 +1,4 @@
-int f([int] xs) where no { x in xs | x < 0}:
+int f([int] xs) requires no { x in xs | x < 0}:
     return |xs|
 
 void System::main([string] args):

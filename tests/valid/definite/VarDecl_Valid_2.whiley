@@ -1,7 +1,7 @@
-void g(int z) where z > 1:
+void g(int z) requires z > 1:
     print str(z)
 
-void f(int x) where x > 0:
+void f(int x) requires x > 0:
     int y = x + 1
     g(y)
 

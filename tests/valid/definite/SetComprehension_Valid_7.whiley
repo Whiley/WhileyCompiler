@@ -1,5 +1,5 @@
 // this is a comment!
-void f({int} xs) where |xs| > 0:
+void f({int} xs) requires |xs| > 0:
     print str(xs)
 
 void System::main([string] args):

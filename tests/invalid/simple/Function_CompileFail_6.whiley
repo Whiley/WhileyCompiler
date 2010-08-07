@@ -1,5 +1,5 @@
-define anat as int where $ >= 0
-define bnat as int where 2*$ >= $
+define anat as int requires $ >= 0
+define bnat as int requires 2*$ >= $
 
 int f(anat x):
     return x

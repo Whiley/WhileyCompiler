@@ -1,8 +1,8 @@
-bool pred({int} xs) where !$ || no { z in xs | z < 0 }:
+bool pred({int} xs) requires !$ || no { z in xs | z < 0 }:
     {int} zs = { z | z in xs, z < 0 }
     return |zs| == 0
 
-int countOver({int} xs, int y) where pred(xs):
+int countOver({int} xs, int y) requires pred(xs):
     {int} tmp = { x | x in xs, x > y}
     return |tmp|
 

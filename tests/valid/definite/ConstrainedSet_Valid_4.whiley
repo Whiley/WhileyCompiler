@@ -1,4 +1,4 @@
-define pintset as {int} where |$| > 1
+define pintset as {int} requires |$| > 1
 
 void System::main([string] args):
     pintset p

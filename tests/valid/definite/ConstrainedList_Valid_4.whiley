@@ -1,4 +1,4 @@
-define state as (string input, int pos) where pos >= 0 && pos <= |input|
+define state as (string input, int pos) requires pos >= 0 && pos <= |input|
 
 char f(state st):
     if(st.pos < |st.input|):

@@ -1,4 +1,4 @@
-define fr6nat as int where $ >= 0
+define fr6nat as int requires $ >= 0
 
 {fr6nat} g({fr6nat} xs):
     return { y | y in xs, y > 1 }

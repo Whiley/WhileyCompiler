@@ -1,5 +1,5 @@
 // The current parser state
-define state as (string input, int pos) where pos >= 0 && pos <= |input|
+define state as (string input, int pos) requires pos >= 0 && pos <= |input|
 
 // A simple, recursive expression tree
 define expr as (int num) | (int op, expr lhs, expr rhs) | (string err)

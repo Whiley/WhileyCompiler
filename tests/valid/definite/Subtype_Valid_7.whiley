@@ -1,4 +1,4 @@
-define sr7nat as int where $ > 0
+define sr7nat as int requires $ > 0
 
 void System::main([string] args):
     (sr7nat f) x = (f:1)

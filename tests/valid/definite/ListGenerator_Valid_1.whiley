@@ -1,4 +1,4 @@
-void f([int] x) where |x| > 0:
+void f([int] x) requires |x| > 0:
      int z
      z = |x|
      print str(z)

@@ -1,4 +1,4 @@
-void f({int} xs, {int} ys, {int} zs) where zs == xs ∩ {1,2,3}:
+void f({int} xs, {int} ys, {int} zs) requires zs == xs ∩ {1,2,3}:
     print str(xs)
 
 void h({int} ys, {int} zs):

@@ -1,4 +1,4 @@
-define tac3ta as (int f1, int f2) where f1 < f2
+define tac3ta as (int f1, int f2) requires f1 < f2
 
 void System::main([string] args):
     tac3ta x = (f1:2,f2:3)

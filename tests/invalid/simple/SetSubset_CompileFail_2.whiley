@@ -1,4 +1,4 @@
-void f({real} x, {int} ys) where x ⊆ ys:
+void f({real} x, {int} ys) requires x ⊆ ys:
     print "X IS A SUBSET"
 
 void System::main([string] args):

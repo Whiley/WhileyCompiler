@@ -1,5 +1,5 @@
-define neg as int where $ < 0
-define pos as int where $ > 0
+define neg as int requires $ < 0
+define pos as int requires $ > 0
 
 define exp1 as neg | (exp1 rest)
 define exp2 as pos | (exp2 rest)
