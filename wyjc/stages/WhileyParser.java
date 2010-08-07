@@ -168,7 +168,7 @@ public class WhileyParser {
 		
 		match(RightBrace.class);
 		
-		Expr whereCondition = parseWhere();
+		Pair<Expr,Expr> conditions = parseRequiresEnsures();
 		
 		match(Colon.class);
 		matchEndLine();
@@ -176,7 +176,8 @@ public class WhileyParser {
 		List<Stmt> stmts = parseBlock(1);
 		
 		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes,
-				whereCondition, stmts, sourceAttr(start, index - 1));
+				conditions.first(), conditions.second(), stmts, sourceAttr(
+						start, index - 1));
 	}
 	
 	private Decl parseDefType(List<Modifier> modifiers) {		
@@ -283,6 +284,29 @@ public class WhileyParser {
 			return parseCondition();			
 		} else {
 			return null;
+		}
+	}
+	
+	private Pair<Expr, Expr> parseRequiresEnsures() {
+		checkNotEof();
+		if (index < tokens.size() && tokens.get(index).text.equals("requires")) {
+			// this is a constrained type
+			matchKeyword("requires");
+			Expr pre = parseCondition();
+			Expr post = null;
+			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				matchKeyword("ensures");
+				post = parseCondition();
+			}
+			return new Pair<Expr, Expr>(pre, post);
+		} else if (index < tokens.size()
+				&& tokens.get(index).text.equals("ensures")) {
+			// this is a constrained type
+			matchKeyword("ensures");
+			return new Pair<Expr, Expr>(null, parseCondition());
+		} else {
+			return new Pair<Expr,Expr>(null,null);
 		}
 	}
 	

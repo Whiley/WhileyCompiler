@@ -117,7 +117,8 @@ public class WhileyFile {
 		public final UnresolvedType receiver;
 		public final UnresolvedType ret;
 		public final ArrayList<Parameter> parameters;
-		public final Expr constraint;		
+		public final Expr precondition;
+		public final Expr postcondition;
 		public final ArrayList<Stmt> statements;
 		
 		/**
@@ -129,22 +130,24 @@ public class WhileyFile {
 		 *            The return type of this method
 		 * @param paramTypes -
 		 *            The list of parameter names and their types for this method
-		 * @param constraint -
+		 * @param precondition -
 		 *            The constraint which must hold true on entry and exit (maybe null)
 		 * @param statements -
 		 *            The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,
-				List<Parameter> parameters, Expr constraint,
-				List<Stmt> statements, Attribute... attributes) {
+				List<Parameter> parameters, Expr precondition,
+				Expr postcondition, List<Stmt> statements,
+				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;		
+			this.name = name;
 			this.receiver = receiver;
 			this.ret = ret;
 			this.parameters = new ArrayList<Parameter>(parameters);
-			this.constraint = constraint;			
+			this.precondition = precondition;
+			this.postcondition = postcondition;
 			this.statements = new ArrayList<Stmt>(statements);
 		}
 		

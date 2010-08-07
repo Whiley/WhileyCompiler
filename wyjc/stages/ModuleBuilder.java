@@ -332,7 +332,8 @@ public class ModuleBuilder {
 		HashMap<String,Type> environment = new HashMap<String,Type>();		
 				
 		ArrayList<String> parameterNames = new ArrayList<String>();
-		Block constraint = null;
+		Block precondition = null;
+		Block postcondition = null;
 		
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {						
@@ -340,6 +341,7 @@ public class ModuleBuilder {
 			environment.put(p.name(),t.first());
 			declared.put(p.name(),t);
 			parameterNames.add(p.name());
+			// FIXME: need to update the pre-condition here
 		}
 				
 		// method return type
@@ -352,18 +354,31 @@ public class ModuleBuilder {
 			declared.put("this", rec);
 		}
 				
-		if (fd.constraint != null) {
-			environment.put("$", ret.first());
+		if (fd.precondition != null) {			
 			String trueLabel = Block.freshLabel();
-			Block tmp = resolveCondition(trueLabel, fd.constraint, environment,
+			Block tmp = resolveCondition(trueLabel, fd.precondition, environment,
 					declared);
 			tmp.add(new Code.Fail("function precondition not satisfied"));
+			tmp.add(new Code.Label(trueLabel));			
+			if (precondition == null) {
+				precondition = tmp;
+			} else {
+				precondition.addAll(tmp);
+			}
+		}
+		
+		if (fd.postcondition != null) {
+			environment.put("$", ret.first());
+			String trueLabel = Block.freshLabel();
+			Block tmp = resolveCondition(trueLabel, fd.postcondition, environment,
+					declared);
+			tmp.add(new Code.Fail("function postcondition not satisfied"));
 			tmp.add(new Code.Label(trueLabel));
 			environment.remove("$");
-			if (constraint == null) {
-				constraint = tmp;
+			if (postcondition == null) {
+				postcondition = tmp;
 			} else {
-				constraint.addAll(tmp);
+				postcondition.addAll(tmp);
 			}
 		}
 		
@@ -379,7 +394,8 @@ public class ModuleBuilder {
 			blk.add(new Code.Return(tf.ret,null));
 		}
 		
-		Module.Case ncase = new Module.Case(parameterNames, constraint, null, blk);
+		Module.Case ncase = new Module.Case(parameterNames, precondition,
+				postcondition, blk);
 		return new Module.Method(fd.name(), tf, ncase);
 	}
 	

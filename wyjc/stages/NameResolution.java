@@ -116,9 +116,9 @@ public class NameResolution {
 			syntaxError(e.getMessage(), fd.receiver);
 		}
 			
-		if(fd.constraint != null) {
+		if(fd.precondition != null) {
 			environment.add("$");
-			resolve(fd.constraint, environment,imports);			
+			resolve(fd.precondition, environment,imports);			
 			environment.remove("$");
 		}
 		
