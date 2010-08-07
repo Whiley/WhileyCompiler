@@ -1,4 +1,4 @@
-utr12nat as int where $ >= 0
+define utr12nat as int where $ >= 0
 define intList as utr12nat|[int]
 
 define tupper as (int op, intList il) where op >= 0 && op <= 5

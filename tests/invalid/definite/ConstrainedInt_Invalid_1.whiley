@@ -1,6 +1,6 @@
 // this is a comment!
-define c1nat as int requires $ > 0
-define c1pnat as c1nat requires $ > 1
+define c1nat as int where $ > 0
+define c1pnat as c1nat where $ > 1
 
 void f(int x):
     c1pnat y

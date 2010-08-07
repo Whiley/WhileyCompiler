@@ -1,4 +1,4 @@
-define scf8nat as int requires $ > 0
+define scf8nat as int where $ > 0
 define scf8tup as (scf8nat f, int g) requires g > f 
 
 void System::main([string] args):

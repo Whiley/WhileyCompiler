@@ -1,4 +1,4 @@
-sr6nat as int where $ > 0
+define sr6nat as int where $ > 0
 define sr6tup as (sr6nat f, int g) requires g > f
 
 void System::main([string] args):

@@ -1,4 +1,4 @@
-sr3nat as int where $ > 0
+define sr3nat as int where $ > 0
 
 void System::main([string] args):
     [sr3nat] x = [1]

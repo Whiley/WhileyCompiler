@@ -1,4 +1,4 @@
-int g(int x) requires $ > 0 && $ <= 256:
+int g(int x) ensures $ > 0 && $ <= 256:
     if(x <= 0):
         return 1
     else:

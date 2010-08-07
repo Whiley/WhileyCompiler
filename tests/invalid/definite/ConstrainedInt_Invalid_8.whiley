@@ -1,4 +1,4 @@
-define frf1nat as int requires $ >= 0
+define frf1nat as int where $ >= 0
 
 void f(frf1nat y):
     print "F(NAT)"

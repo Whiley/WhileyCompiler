@@ -1,4 +1,4 @@
-byte as int where $ >=0 && $ <= 255
+define byte as int where $ >=0 && $ <= 255
 define bytes as (byte b1, byte b2)
 
 void System::main([string] args):

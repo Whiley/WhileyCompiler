@@ -1,8 +1,8 @@
-define pos as int requires $ > 0
+define pos as int where $ > 0
 define poslist as [pos]
 define plt as pos | poslist
 
-define nat as int requires $ >= 0
+define nat as int where $ >= 0
 define natlist as [nat]
 define nlt as nat | natlist
 

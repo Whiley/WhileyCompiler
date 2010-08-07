@@ -1,5 +1,5 @@
-pos as real where $ > 0
-neg as int where $ < 0
+define pos as real where $ > 0
+define neg as int where $ < 0
 define expr as pos|neg
 
 void f(expr e):

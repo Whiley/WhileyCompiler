@@ -1,4 +1,4 @@
-define scf6nat as int requires $ > 0
+define scf6nat as int where $ > 0
 define scf6tup as (scf6nat f, int g) requires g > f
 
 void System::main([string] args):
