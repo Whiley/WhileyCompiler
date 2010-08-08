@@ -37,6 +37,7 @@ public class ModuleBuilder {
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID,List<Type.Fun>> functions;	
 	private HashMap<NameID,Pair<Type,Block>> types;	
+	private HashMap<NameID,Value> constants;
 	private HashMap<NameID,Pair<UnresolvedType,Expr>> unresolved;
 	
 	public ModuleBuilder(ModuleLoader loader) {
@@ -54,7 +55,8 @@ public class ModuleBuilder {
 			modules.add(f.module);
 		}
 						
-		// Stage 1 ... resolve and check types of all named types
+		// Stage 1 ... resolve and check types of all named types + constants
+		generateConstants(files);
 		generateTypes(files);
 					
 		// Stage 2 ... resolve and check types for all functions / methods
@@ -105,6 +107,62 @@ public class ModuleBuilder {
 		}
 		return new Module(wf.module, wf.filename, methods.values(), types,
 				constants);
+	}
+	
+	/**
+	 * The following method visits every define constant statement in every whiley
+	 * file being compiled, and determines its true and value.  
+	 * 
+	 * @param files
+	 */
+	protected void generateConstants(List<WhileyFile> files) {
+		HashMap<NameID,Expr> exprs = new HashMap();
+		
+		// first construct list.
+		for(WhileyFile f : files) {
+			for(Decl d : f.declarations) {
+				if(d instanceof ConstDecl) {
+					ConstDecl cd = (ConstDecl) d;
+					NameID key = new NameID(f.module,cd.name());
+					exprs.put(key, cd.constant);					
+				}
+			}
+		}
+
+		for(NameID k : exprs.keySet()) {	
+			try {
+				Value v = expandConstant(k,exprs);
+				constants.put(k,v);
+				Type t = v.type();
+				if(t instanceof Type.Set) {
+					Type.Set st = (Type.Set) t;
+					types.put(k, new Pair<Type,Block>(st.element, null));
+				}
+			} catch(ResolveError rex) {
+				syntaxError(rex.getMessage(),exprs.get(k),rex);
+			}
+		}
+	}
+	
+	protected Value expandConstant(NameID key, HashMap<NameID, Expr> exprs)
+			throws ResolveError {
+		Expr e = exprs.get(key);
+		Value value = constants.get(key);
+		if(value != null) {
+			return value;
+		} else if(!modules.contains(key.module())) {
+			// indicates a non-local key
+			Module mi = loader.loadModule(key.module());
+			return mi.constant(key.name()).constant();
+		} else if(e == null) {
+			// this indicates a cyclic definition.
+			syntaxError("cyclic constant definition encountered",srcs.get(key));
+		} else {
+			exprs.put(key, null); // mark this node as visited
+		}
+			
+		// At this point, we need to replace every unresolved variable with a
+		// constant definition.
 	}
 	
 	/**

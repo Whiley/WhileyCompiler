@@ -206,8 +206,7 @@ public class WhileyParser {
 			matchEndLine();					
 			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,index-1));
 		
-		} catch(Exception e) {
-			e.printStackTrace();
+		} catch(Exception e) {	
 		}
 		
 		// Ok, failed parsing type constructor. So, backtrack and try for
