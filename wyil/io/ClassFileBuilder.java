@@ -514,7 +514,7 @@ public class ClassFileBuilder {
 		}
 		case LENGTHOF: {
 			JvmType.Function ftype = new JvmType.Function(T_INT);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "size",
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
 					ftype, Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
 			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
@@ -719,8 +719,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Dup(WHILEYSET));
 			translate(e, slots, bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));
-			// FIXME: there is a bug here for bool sets
-			bytecodes.add(new Bytecode.Pop(WHILEYSET));
+			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
 		}
 	}
 
@@ -734,7 +733,7 @@ public class ClassFileBuilder {
 			addWriteConversion(e.type(), bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add", ftype,
 					Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
 		}
 	}
 

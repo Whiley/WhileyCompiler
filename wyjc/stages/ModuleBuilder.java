@@ -623,8 +623,10 @@ public class ModuleBuilder {
 				return resolveCondition(target,(TupleAccess) e, environment, declared);
 			} else if (e instanceof TupleGen) {
 				return resolveCondition(target,(TupleGen) e, environment, declared);
+			} else if (e instanceof ListAccess) {
+				return resolveCondition(target,(ListAccess) e, environment, declared);
 			} else {				
-				syntaxError("expected boolean expression "
+				syntaxError("expected boolean expression, got: "
 							+ e.getClass().getName(), e);			
 			}
 		} catch(SyntaxError se) {
@@ -746,6 +748,18 @@ public class ModuleBuilder {
 		syntaxError("expected boolean expression",v);
 		return null;
 	}	
+	
+	protected Block resolveCondition(String target, ListAccess v,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
+		CExpr lhs = la.first();
+		checkType(lhs.type(), Type.Bool.class, v);
+		Block blk = la.second();
+		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
+				.V_BOOL(true), target));
+		return blk;
+	}
 	
 	/**
 	 * Target gives the name of the register to use to store the result of this

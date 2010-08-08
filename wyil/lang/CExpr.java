@@ -63,7 +63,7 @@ public abstract class CExpr {
 			} 
 		} else if(r instanceof ListAccess) {
 			ListAccess la = (ListAccess) r;
-			return LISTACCESS((LVal) substitute(binding, la.src),
+			return LISTACCESS(substitute(binding, la.src),
 					substitute(binding, la.index));
 		} else if (r instanceof BinOp) {
 			BinOp bop = (BinOp) r;
@@ -92,7 +92,7 @@ public abstract class CExpr {
 			return new Register(v.type,v.index + shift);
 		} else if(r instanceof ListAccess) {
 			ListAccess la = (ListAccess) r;
-			return LISTACCESS((LVal) registerShift(shift, la.src),
+			return LISTACCESS(registerShift(shift, la.src),
 					registerShift(shift, la.index));
 		} else if (r instanceof BinOp) {
 			BinOp bop = (BinOp) r;
