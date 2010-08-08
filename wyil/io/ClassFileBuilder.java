@@ -489,7 +489,7 @@ public class ClassFileBuilder {
 	}
 
 	public void translate(CExpr.UnOp c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes) {				
 		
 		translate(c.rhs, slots, bytecodes);
 		JvmType type = convertType(c.type());
@@ -527,11 +527,6 @@ public class ClassFileBuilder {
 	public void translate(CExpr.NaryOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 
-		// translate right-hand side
-		for(CExpr r : c.args) {
-			translate(r, slots, bytecodes);			
-		}
-
 		switch (c.op) {
 		case SETGEN: {
 			construct(WHILEYSET, slots, bytecodes);		
@@ -542,7 +537,7 @@ public class ClassFileBuilder {
 				translate(e, slots, bytecodes);
 				addWriteConversion(e.type(),bytecodes);
 				bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
-				bytecodes.add(new Bytecode.Pop(WHILEYSET));
+				bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
 			}
 			break;
 		}
@@ -550,16 +545,23 @@ public class ClassFileBuilder {
 			construct(WHILEYLIST, slots, bytecodes);		
 			JvmType.Function ftype = new JvmType.Function(T_BOOL,
 					JAVA_LANG_OBJECT);  
+
 			for(CExpr e : c.args) {
 				bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 				translate(e, slots, bytecodes);
 				addWriteConversion(e.type(),bytecodes);
 				bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
-				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+				bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
 			}
+
 			break;
 		}
 		case SUBLIST: {
+			// translate right-hand side
+			for(CExpr r : c.args) {
+				translate(r, slots, bytecodes);			
+			}
+
 			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_INTEGER,BIG_INTEGER);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
 					Bytecode.VIRTUAL));
@@ -726,7 +728,7 @@ public class ClassFileBuilder {
 	protected void translate(Value.List lv, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYLIST, slots, bytecodes);
-		JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);
+		JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
 		for (Value e : lv.values) {
 			bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 			translate(e, slots, bytecodes);
@@ -734,7 +736,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add", ftype,
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
-		}
+		}		
 	}
 
 	protected void translate(Value.Tuple expr, HashMap<String, Integer> slots,

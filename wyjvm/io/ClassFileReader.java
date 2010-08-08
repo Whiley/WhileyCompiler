@@ -351,7 +351,7 @@ public final class ClassFileReader {
 		
 		if(name.equals("Code")) {
 			// for now, do nothing.
-			// return parseCode(offset,name);
+			//return parseCode(offset,name);
 		} else if(name.equals("Exceptions")) {			
 			return parseExceptions(offset,name);
 		} else if(name.equals("InnerClasses")) {
@@ -656,15 +656,10 @@ public final class ClassFileReader {
 		return rf;
 	}
 	
-	/* ===========================================================
-	 * BEGIN PARSE CODE
-	 * ===========================================================
-	 * 
-	 * I want to put this method back into play sometime.  For now,
-	 * it's not strictly needed, but there's no reason why it can't 
-	 * be used to generate a list of Bytecode objects.
-
-	protected Attribute.Code parseCode(int offset, String name) {
+	/* ==========================
+	 *  BEGIN CODE	 
+	
+	protected Code parseCode(int offset, String name) {
 		int clen = read_i4(offset + 10);
 		int index = offset + 14 + clen;
 		
@@ -691,7 +686,7 @@ public final class ClassFileReader {
 		
 		// parse instruction sequence, including line numbers
 		// if available
-		Vector<Instruction> instructions = new Vector<Instruction>();		
+		ArrayList<Bytecode> instructions = new ArrayList<Bytecode>();		
 		int start=offset+14;
 		int line = -1;
 		int ltp = lineMapOffset + 2;
@@ -704,33 +699,37 @@ public final class ClassFileReader {
 					ltlen--;
 				}
 			}
-			Instruction i = parseInsn(pc,start,line);			
+			Bytecode i = parseInsn(pc,start,line);			
 			instructions.add(i);
 			pc += insnLength(pc,start);
 		}
-				
-		// setup other variables
-		int maxStack = read_u2(offset + 6);
-		int maxLocals = read_u2(offset + 8);
 		
-		return new Attribute.Code(name,maxStack,maxLocals,instructions);
+		return new Code(instructions,null,null);
 	}
 	
-	protected Instruction parseInsn(int offset, int start, int line) {				
+	protected Bytecode parseInsn(int offset, int start, int line) {				
 		int opcode = read_u1(offset);
 		int insn = opmap[opcode] & INSN_MASK;
 		
 		switch(insn) {				
 			case NOP:
+				return new Bytecode.Nop();
 			case SWAP:
+				return new Bytecode.Swap();
 			case POP:
+				return new Bytecode.Pop();
 			case DUP:
+				return new Bytecode.Dup(null);
 			case DUPX1:
+				return new Bytecode.DupX1();
 			case DUPX2:
+				return new Bytecode.DupX2();
 			case MONITORENTER:
+				return new Bytecode.MonitorEnter();
 			case MONITOREXIT:
+				return new Bytecode.MonitorExit();
 			case ARRAYLENGTH:
-				return new Instruction(insn,-1,line);
+				return new Bytecode.ArrayLength();
 			case ADD:
 			case SUB:
 			case DIV:
@@ -1249,13 +1248,10 @@ public final class ClassFileReader {
 			}
 		}
 		return handlers.toArray(new Pair[handlers.size()]);		
-	}
+	}	
+	 
+	 === END CODE */
 	
-	* ===========================================================
-	* END PARSE CODE 
-	* ===========================================================
-	*/
-
 	protected static final char BYTE = 'B';
 	protected static final char CHAR = 'C';
 	protected static final char DOUBLE = 'D';
