@@ -228,9 +228,15 @@ public class ClassFileBuilder {
 
 	
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {		
-		translate(c.lhs,slots,bytecodes);			
-		translate(c.rhs,slots,bytecodes);								
+			ArrayList<Bytecode> bytecodes) {	
+		if(c.op == Code.COP.ELEMOF) {
+			// special case, have to do things backwards
+			translate(c.rhs,slots,bytecodes);
+			translate(c.lhs,slots,bytecodes);								
+		} else {
+			translate(c.lhs,slots,bytecodes);			
+			translate(c.rhs,slots,bytecodes);
+		}
 		JvmType type = convertType(c.type);
 		if(c.type == Type.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an

@@ -1,4 +1,7 @@
-define PI as 3.14 * 2
+define PI as {1,2,3,4}
 
 void System::main([string] args):
-    print str(PI)
+    {int} xs = {1,2}
+    if |args| in xs:
+        print "asd"
+        
