@@ -31,6 +31,14 @@ public abstract class CExpr {
 			for(CExpr arg : v.args) {
 				usedVariables(arg,uses);
 			}
+		} else if (r instanceof Tuple) {
+			Tuple tup = (Tuple) r;			
+			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
+				usedVariables(e.getValue(),uses);				
+			}			
+		} else if (r instanceof TupleAccess) {
+			TupleAccess ta = (TupleAccess) r;
+			usedVariables(ta.lhs,uses);
 		} else if(r instanceof Convert) {
 			Convert v = (Convert) r;			
 			usedVariables(v.rhs,uses);
@@ -82,7 +90,19 @@ public abstract class CExpr {
 				args.add(substitute(binding, arg));
 			}
 			return NARYOP(bop.op, args);
+		} else if (r instanceof Tuple) {
+			Tuple tup = (Tuple) r;
+			HashMap<String,CExpr> values = new HashMap<String,CExpr>();
+			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
+				values.put(e.getKey(),substitute(binding, e.getValue()));				
+			}
+			return TUPLE(values);
+		} else if (r instanceof TupleAccess) {
+			TupleAccess ta = (TupleAccess) r;
+			return ACCESS(substitute(binding, ta.lhs),
+					ta.field);
 		} 
+		
 		return r;
 	}
 		
@@ -111,6 +131,17 @@ public abstract class CExpr {
 				args.add(registerShift(shift, arg));
 			}
 			return NARYOP(bop.op, args);
+		} else if (r instanceof Tuple) {
+			Tuple tup = (Tuple) r;
+			HashMap<String,CExpr> values = new HashMap<String,CExpr>();
+			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
+				values.put(e.getKey(),registerShift(shift, e.getValue()));				
+			}
+			return TUPLE(values);
+		} else if (r instanceof TupleAccess) {
+			TupleAccess ta = (TupleAccess) r;
+			return ACCESS(registerShift(shift, ta.lhs),
+					ta.field);
 		} 
 		return r;
 	}
@@ -145,6 +176,14 @@ public abstract class CExpr {
 	
 	public static NaryOp NARYOP(NOP nop, Collection<CExpr> args) {
 		return get(new NaryOp(nop, args));
+	}
+	
+	public static Tuple TUPLE(Map<String,CExpr> values) {
+		return get(new Tuple(values));
+	}
+	
+	public static TupleAccess ACCESS(CExpr lhs, String field) {
+		return get(new TupleAccess(lhs,field));
 	}
 	
 	public static class Variable extends LVar {
@@ -388,7 +427,6 @@ public abstract class CExpr {
 		}
 	}
 	
-
 	public final static class NaryOp extends CExpr {
 		public final NOP op;		
 		public final List<CExpr> args;		
@@ -474,6 +512,86 @@ public abstract class CExpr {
 		SETGEN,
 		LISTGEN,
 		SUBLIST
+	}
+	
+	public final static class Tuple extends CExpr {			
+		public final Map<String,CExpr> values;		
+		
+		Tuple(Map<String,CExpr> values) {
+			this.values = Collections.unmodifiableMap(values); 
+		}
+		
+		public Type type() {
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			for(Map.Entry<String,CExpr> e : values.entrySet()) {
+				Type t = e.getValue().type();
+				types.put(e.getKey(), t);
+			}
+			return Type.T_TUPLE(types);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Tuple) {
+				Tuple a = (Tuple) o;
+				return values.equals(a.values);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return values.hashCode();
+		}
+		
+		public String toString() {
+			String r = "(";
+			ArrayList<String> keys = new ArrayList<String>(values.keySet());
+			Collections.sort(keys);
+			for(String key : keys) {
+				r += key + ":" + values.get(key);
+			}
+			return r + ")";
+		}
+	}
+	
+	public final static class TupleAccess extends CExpr {		
+		public final CExpr lhs;
+		public final String field;
+
+		TupleAccess(CExpr lhs, String field) {			
+			this.lhs = lhs;
+			this.field = field;
+		}
+
+		public Type type() {
+			Type t = lhs.type();
+			// FIXME: bugs here for effective tuple types
+			Type.Tuple tt = (Type.Tuple) t;
+			Type r = tt.types.get(field);
+			if(r == null) {
+				return Type.T_VOID;
+			} else {
+				return r;
+			}
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof TupleAccess) {
+				TupleAccess a = (TupleAccess) o;
+				return lhs.equals(a.lhs)
+						&& field.equals(a.field);
+
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return field.hashCode() + lhs.hashCode();
+		}
+
+		public String toString() {
+			return lhs + "." + field;
+		}
 	}
 	
 	private static final ArrayList<CExpr> values = new ArrayList<CExpr>();

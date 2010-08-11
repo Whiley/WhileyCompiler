@@ -1149,13 +1149,15 @@ public class ModuleBuilder {
 		
 	protected Pair<CExpr, Block> resolve(int target, TupleGen sg,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		HashMap<String, Type> types = new HashMap<String, Type>();
+		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
+		Block blk = new Block();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
 			Pair<CExpr, Block> tb = resolve(target, e.getValue(), environment,
 					declared);
-			types.put(e.getKey(), tb.first().type());
+			values.put(e.getKey(), tb.first());
+			blk.addAll(tb.second());
 		}
-		throw new RuntimeException("Need to implement type resolution for tuple generation");		
+		return new Pair<CExpr,Block>(CExpr.TUPLE(values),blk);		
 	}
 	
 	protected Pair<CExpr, Block> resolve(int target, TupleAccess sg,
@@ -1168,8 +1170,8 @@ public class ModuleBuilder {
 		if (ft == null) {
 			syntaxError("type has no field named: " + sg.name, sg.lhs);
 		}
-		throw new RuntimeException(
-				"Need to implement type resolution for tuple access");
+		return new Pair<CExpr, Block>(CExpr.ACCESS(lhs.first(), sg.name), lhs
+				.second());
 	}
 	
 	protected Pair<Type,Block> resolve(UnresolvedType t) {		

@@ -424,6 +424,12 @@ public class ClassFileBuilder {
 			translate((CExpr.UnOp)r,slots,bytecodes);
 		} else if(r instanceof CExpr.NaryOp) {
 			translate((CExpr.NaryOp)r,slots,bytecodes);
+		} else if(r instanceof CExpr.Tuple) {
+			translate((CExpr.Tuple)r,slots,bytecodes);
+		} else if(r instanceof CExpr.TupleAccess) {
+			translate((CExpr.TupleAccess)r,slots,bytecodes);
+		} else {
+			throw new RuntimeException("Unknown expression encountered: " + r);
 		}
 	}
 	
@@ -453,6 +459,32 @@ public class ClassFileBuilder {
 		addReadConversion(v.type(),bytecodes);	
 	}
 	
+	public void translate(CExpr.TupleAccess c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		translate(c.lhs, slots, bytecodes);
+		
+		bytecodes.add(new Bytecode.LoadConst(c.field));
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));		
+		Type et = c.type();
+		addReadConversion(et,bytecodes);
+	}
+
+	public void translate(CExpr.Tuple expr, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+		construct(WHILEYTUPLE, slots, bytecodes);		
+		for(Map.Entry<String,CExpr> e : expr.values.entrySet()) {
+			Type et = e.getValue().type();
+			bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
+			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
+			translate(e.getValue(), slots, bytecodes);
+			addWriteConversion(et,bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"put",ftype,Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(WHILEYTUPLE));
+		}
+	}
+
 	public void translate(CExpr.BinOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		
@@ -542,7 +574,8 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Dup(WHILEYSET));
 				translate(e, slots, bytecodes);
 				addWriteConversion(e.type(),bytecodes);
-				bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
+				bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));
+				// FIXME: there is a bug here for bool lists
 				bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
 			}
 			break;
@@ -556,7 +589,8 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 				translate(e, slots, bytecodes);
 				addWriteConversion(e.type(),bytecodes);
-				bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));				// FIXME: there is a bug here for bool lists
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));
+				// FIXME: there is a bug here for bool lists
 				bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
 			}
 
