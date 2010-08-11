@@ -47,7 +47,8 @@ public class ModuleBuilder {
 	public List<Module> resolve(List<WhileyFile> files) {			
 		modules = new HashSet<ModuleID>();
 		functions = new HashMap<NameID,List<Type.Fun>>();
-		types = new HashMap<NameID,Pair<Type,Block>>();		
+		types = new HashMap<NameID,Pair<Type,Block>>();
+		constants = new HashMap<NameID,Value>();
 		unresolved = new HashMap<NameID,Pair<UnresolvedType,Expr>>();
 		
 		// now, init data
@@ -131,7 +132,7 @@ public class ModuleBuilder {
 
 		for(NameID k : exprs.keySet()) {	
 			try {
-				Value v = expandConstant(k,exprs);
+				Value v = expandConstant(k,exprs, new HashSet<NameID>());
 				constants.put(k,v);
 				Type t = v.type();
 				if(t instanceof Type.Set) {
@@ -143,8 +144,24 @@ public class ModuleBuilder {
 			}
 		}
 	}
-	
-	protected Value expandConstant(NameID key, HashMap<NameID, Expr> exprs)
+
+	/**
+	 * The expand constant method is responsible for turning a named constant
+	 * expression into a value. This is done by traversing the constant's
+	 * expression and recursively expanding any named constants it contains.
+	 * Simplification of constants is also performed where possible.
+	 * 
+	 * @param key
+	 *            --- name of constant we are expanding.
+	 * @param exprs
+	 *            --- mapping of all names to their( declared) expressions
+	 * @param visited
+	 *            --- set of all constants seen during this traversal (used to
+	 *            detect cycles).
+	 * @return
+	 * @throws ResolveError
+	 */
+	protected Value expandConstant(NameID key, HashMap<NameID, Expr> exprs, HashSet<NameID> visited)
 			throws ResolveError {
 		Expr e = exprs.get(key);
 		Value value = constants.get(key);
@@ -154,15 +171,56 @@ public class ModuleBuilder {
 			// indicates a non-local key
 			Module mi = loader.loadModule(key.module());
 			return mi.constant(key.name()).constant();
-		} else if(e == null) {
+		} else if(visited.contains(key)) {
 			// this indicates a cyclic definition.
-			syntaxError("cyclic constant definition encountered",srcs.get(key));
+			syntaxError("cyclic constant definition encountered",exprs.get(key));
 		} else {
-			exprs.put(key, null); // mark this node as visited
+			visited.add(key); // mark this node as visited
 		}
 			
 		// At this point, we need to replace every unresolved variable with a
 		// constant definition.
+		Value v = expandConstantHelper(e,exprs,visited);
+		constants.put(key, v);
+		return v;
+	}
+
+	/**
+	 * The following is a helper method for expandConstant. It takes a given
+	 * expression (rather than the name of a constant) and expands to a value
+	 * (where possible). If the expression contains, for example, method or
+	 * function declarations then this will certainly fail (producing a syntax
+	 * error).
+	 *  
+	 * @param key
+	 *            --- name of constant we are expanding.
+	 * @param exprs
+	 *            --- mapping of all names to their( declared) expressions
+	 * @param visited
+	 *            --- set of all constants seen during this traversal (used to
+	 *            detect cycles).
+	 */
+	protected Value expandConstantHelper(Expr expr, HashMap<NameID, Expr> exprs,
+			HashSet<NameID> visited) {
+		
+		if(expr instanceof Constant) {
+			Constant c = (Constant) expr;
+			return c.value;
+		} else if(expr instanceof NaryOp) {
+			Expr.NaryOp nop = (NaryOp) expr;
+			ArrayList<Value> values = new ArrayList<Value>();
+			for(Expr arg : nop.arguments) {
+				values.add(expandConstantHelper(arg,exprs,visited));
+			}
+			if(nop.nop == Expr.NOp.LISTGEN) {
+				return Value.V_LIST(values);
+			} else if(nop.nop == Expr.NOp.SETGEN) {
+				return Value.V_SET(values);
+			} 
+		} 
+		
+		syntaxError("invalid expression found in constant definition",expr);
+		return null;			
 	}
 	
 	/**
@@ -919,9 +977,19 @@ public class ModuleBuilder {
 	}
 	
 	protected Pair<CExpr, Block> resolve(int target, Variable v,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
 		Type t = environment.get(v.var);
-		if(t == null) {		
+		if(t == null) {
+			// Definitely not a variable.  Could be a constant though.
+			Attribute.Module mod = v.attribute(Attribute.Module.class);			
+			if(mod != null) {
+				NameID name = new NameID(mod.module,v.var);
+				// FIXME: bug here for constants declared outside compilation list
+				Value val = constants.get(name);
+				return new Pair<CExpr, Block>(val,new Block());
+			}
+			// Give up!
 			syntaxError("unknown variable",v);			
 		}		
 		return new Pair<CExpr, Block>(CExpr.VAR(t, v.var), new Block());
