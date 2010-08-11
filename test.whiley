@@ -1,5 +1,4 @@
-define PI as 3.14
+define PI as 3.14 * 2
 
 void System::main([string] args):
-    real y = PI
-    print str(y)
+    print str(PI)

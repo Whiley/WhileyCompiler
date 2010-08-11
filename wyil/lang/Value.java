@@ -29,6 +29,69 @@ public abstract class Value extends CExpr {
 		return get(new Tuple(values));
 	}
 
+	/**
+	 * Evaluate the given operation on the given values. If the evaluation is
+	 * impossible, then return null.
+	 * 
+	 * @param op
+	 * @param lhs
+	 * @param rhs
+	 * @return
+	 */
+	public static Value evaluate(CExpr.BOP op, Value lhs, Value rhs) {
+		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());		
+		lhs = convert(lub,lhs);
+		rhs = convert(lub,rhs);
+		if(lhs == null || rhs == null) {
+			return null;
+		} else if(lub instanceof Type.Int || lub instanceof Type.Real) {
+			return evaluateArith(op,lhs,rhs);
+		} 
+		// FIXME: need to add more cases!!!
+		return null;
+	}
+	
+	private static Value evaluateArith(CExpr.BOP op, Value lhs, Value rhs) {
+		if(lhs instanceof Int){
+			Int lv = (Int) lhs;
+			Int rv = (Int) rhs;
+			switch(op) {
+			case ADD:
+				return V_INT(lv.value.add(rv.value));
+			case SUB:
+				return V_INT(lv.value.subtract(rv.value));
+			case MUL:
+				return V_INT(lv.value.multiply(rv.value));
+			case DIV:
+				return V_INT(lv.value.divide(rv.value));
+			}
+		} else if(lhs instanceof Real) {
+			Real lv = (Real) lhs;
+			Real rv = (Real) rhs;
+			switch(op) {
+			case ADD:
+				return V_REAL(lv.value.add(rv.value));
+			case SUB:
+				return V_REAL(lv.value.subtract(rv.value));
+			case MUL:
+				return V_REAL(lv.value.multiply(rv.value));
+			case DIV:
+				return V_REAL(lv.value.divide(rv.value));
+			}
+		}
+		return null;
+	}
+	
+	public static Value convert(Type t, Value val) {
+		if (val.type().equals(t)) {
+			return val;
+		} else if (t instanceof Type.Real && val instanceof Int) {
+			Int i = (Int) val;
+			return new Real(new BigRational(i.value));
+		}
+		return null;
+	}
+
 	public static final class Bool extends Value {
 		public final boolean value;
 		private Bool(boolean value) {

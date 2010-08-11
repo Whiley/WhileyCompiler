@@ -206,6 +206,14 @@ public class ModuleBuilder {
 		if(expr instanceof Constant) {
 			Constant c = (Constant) expr;
 			return c.value;
+		} else if(expr instanceof BinOp) {
+			BinOp bop = (BinOp) expr;
+			Value lhs = expandConstantHelper(bop.lhs,exprs,visited);
+			Value rhs = expandConstantHelper(bop.rhs,exprs,visited);
+			Value v = Value.evaluate(OP2BOP(bop.op,expr),lhs,rhs);
+			if(v != null) {
+				return v;
+			}
 		} else if(expr instanceof NaryOp) {
 			Expr.NaryOp nop = (NaryOp) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
@@ -219,7 +227,7 @@ public class ModuleBuilder {
 			} 
 		} 
 		
-		syntaxError("invalid expression found in constant definition",expr);
+		syntaxError("invalid expression in constant definition",expr);
 		return null;			
 	}
 	
@@ -673,7 +681,7 @@ public class ModuleBuilder {
 	protected Block resolve(Debug s, HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
-		checkIsSubtype(t.first().type(), Type.T_LIST(Type.T_INT), s.expr);
+		checkIsSubtype(Type.T_LIST(Type.T_INT), t.first().type(), s.expr);
 		Block blk = t.second();
 		blk.add(new Code.Debug(t.first()));
 		return blk;
@@ -978,15 +986,19 @@ public class ModuleBuilder {
 	
 	protected Pair<CExpr, Block> resolve(int target, Variable v,
 			HashMap<String, Type> environment,
-			HashMap<String, Pair<Type, Block>> declared) {
+			HashMap<String, Pair<Type, Block>> declared) throws ResolveError {
 		Type t = environment.get(v.var);
 		if(t == null) {
 			// Definitely not a variable.  Could be a constant though.
 			Attribute.Module mod = v.attribute(Attribute.Module.class);			
 			if(mod != null) {
 				NameID name = new NameID(mod.module,v.var);
-				// FIXME: bug here for constants declared outside compilation list
 				Value val = constants.get(name);
+				if(val == null) {
+					// indicates a non-local constant definition
+					Module mi = loader.loadModule(mod.module);
+					val = mi.constant(v.var).constant();					
+				} 
 				return new Pair<CExpr, Block>(val,new Block());
 			}
 			// Give up!
@@ -1377,7 +1389,7 @@ public class ModuleBuilder {
 		} 
 		return new Expr.UnOp(Expr.UOp.NOT,e);				
 	}
-	
+		
 	public static CExpr.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch(bop) {
 		case ADD:
