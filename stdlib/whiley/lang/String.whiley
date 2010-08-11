@@ -29,5 +29,3 @@ public string str(* item):
         invokestatic wyil/jvm/rt/WhileyList.fromString:(Ljava/lang/String;)Lwyil/jvm/rt/WhileyList;
         areturn
     return "DUMMY" // dead code
-
-define constant as "STRING"

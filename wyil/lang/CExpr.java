@@ -99,7 +99,7 @@ public abstract class CExpr {
 			return TUPLE(values);
 		} else if (r instanceof TupleAccess) {
 			TupleAccess ta = (TupleAccess) r;
-			return ACCESS(substitute(binding, ta.lhs),
+			return TUPLEACCESS(substitute(binding, ta.lhs),
 					ta.field);
 		} 
 		
@@ -140,7 +140,7 @@ public abstract class CExpr {
 			return TUPLE(values);
 		} else if (r instanceof TupleAccess) {
 			TupleAccess ta = (TupleAccess) r;
-			return ACCESS(registerShift(shift, ta.lhs),
+			return TUPLEACCESS(registerShift(shift, ta.lhs),
 					ta.field);
 		} 
 		return r;
@@ -182,7 +182,7 @@ public abstract class CExpr {
 		return get(new Tuple(values));
 	}
 	
-	public static TupleAccess ACCESS(CExpr lhs, String field) {
+	public static TupleAccess TUPLEACCESS(CExpr lhs, String field) {
 		return get(new TupleAccess(lhs,field));
 	}
 	
@@ -554,7 +554,7 @@ public abstract class CExpr {
 		}
 	}
 	
-	public final static class TupleAccess extends CExpr {		
+	public final static class TupleAccess extends LVal {		
 		public final CExpr lhs;
 		public final String field;
 

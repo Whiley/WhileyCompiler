@@ -618,11 +618,23 @@ public class ModuleBuilder {
 			blk.addAll(rhs_tb.second());
 			blk.add(new Code.Assign(CExpr.LISTACCESS(src_tb.first(), index_tb
 					.first()), rhs_tb.first()));		
+		} else if(s.lhs instanceof TupleAccess) {
+			TupleAccess la = (TupleAccess) s.lhs;
+			Pair<CExpr,Block> src_tb = resolve(0, la.lhs, environment, declared);			
+			Pair<CExpr,Block> rhs_tb = resolve(1, s.rhs, environment, declared);	
+			// FIXME: problem with effective tuple types I think ?
+			Type.Tuple la_t = checkType(src_tb.first().type(),Type.Tuple.class,la.lhs);
+			Type field_t = la_t.types.get(la.name);
+			if(field_t == null) {
+				syntaxError("field does not exist",s.lhs);
+			}
+			checkIsSubtype(field_t,rhs_tb.first().type(),s.rhs);			
+			blk.addAll(src_tb.second());			
+			blk.addAll(rhs_tb.second());
+			blk.add(new Code.Assign(CExpr.TUPLEACCESS(src_tb.first(), la.name),
+					rhs_tb.first()));		
 		} else {
-			Pair<CExpr,Block> rhs_tb = resolve(2, s.rhs, environment, declared);
-			Pair<CExpr,Block> lhs_tb = resolve(0, s.lhs, environment, declared);
-			checkIsSubtype(lhs_tb.first().type(), rhs_tb.first().type(), s.rhs);							
-			System.out.println("WARNING: Assign is missing cases");
+			syntaxError("invalid lval encountered",s.lhs);
 		}
 		
 		// Finally, we need to add any constraints that may be coming from the
@@ -874,6 +886,18 @@ public class ModuleBuilder {
 	}	
 	
 	protected Block resolveCondition(String target, ListAccess v,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
+		CExpr lhs = la.first();
+		checkType(lhs.type(), Type.Bool.class, v);
+		Block blk = la.second();
+		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
+				.V_BOOL(true), target));
+		return blk;
+	}
+	
+	protected Block resolveCondition(String target, TupleAccess v,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
@@ -1170,7 +1194,7 @@ public class ModuleBuilder {
 		if (ft == null) {
 			syntaxError("type has no field named: " + sg.name, sg.lhs);
 		}
-		return new Pair<CExpr, Block>(CExpr.ACCESS(lhs.first(), sg.name), lhs
+		return new Pair<CExpr, Block>(CExpr.TUPLEACCESS(lhs.first(), sg.name), lhs
 				.second());
 	}
 	

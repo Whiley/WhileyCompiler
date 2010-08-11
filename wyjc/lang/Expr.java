@@ -174,7 +174,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class TupleAccess extends SyntacticElement.Impl implements
-			Expr {
+			LVal {
 		public final Expr lhs;
 		public final String name;
 

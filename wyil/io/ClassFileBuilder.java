@@ -802,7 +802,13 @@ public class ClassFileBuilder {
 			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
 			translate(v.src,slots,bytecodes);			
 			translate(v.index,slots,bytecodes);								
-		} 
+		} else if(lhs instanceof CExpr.TupleAccess) {
+			CExpr.TupleAccess la = (CExpr.TupleAccess) lhs;
+			translate(la.lhs, slots, bytecodes);
+			// FIXME: new any type is a hack, but it works
+			convert(Type.T_ANY,la.lhs.type(),slots, bytecodes);
+			bytecodes.add(new Bytecode.LoadConst(la.field));
+		}
 	}
 	
 	public void makePostAssignment(LVal lhs, HashMap<String, Integer> slots,
@@ -823,8 +829,18 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_INTEGER,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.VIRTUAL));					
+		} else if(lhs instanceof CExpr.TupleAccess) {		
+			CExpr.TupleAccess la = (CExpr.TupleAccess) lhs;
+			Type.Tuple tt = (Type.Tuple) la.lhs.type();
+			Type element_t = tt.types.get(la.field);
+			addWriteConversion(element_t, bytecodes);
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+					JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "put", ftype,
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		} else {
-			System.err.println("MISSING CODE FOR LVAL ASSIGNMENT");
+			throw new RuntimeException("Unknown lval encountered in assignment");
 		}
 	}
 
