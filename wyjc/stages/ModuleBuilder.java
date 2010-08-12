@@ -869,26 +869,25 @@ public class ModuleBuilder {
 		Type lhs_t = lhs_tb.first().type();
 		Type rhs_t = rhs_tb.first().type();
 		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
-
+		CExpr lhs = convert(lub,lhs_tb.first());
+		CExpr rhs = convert(lub,rhs_tb.first());
+		
 		if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
 				|| bop == BOp.GTEQ) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
 			return blk;
 		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
 			return blk;
 		} else if (bop == BOp.EQ || bop == BOp.NEQ) {
 			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
 				syntaxError("Cannot compare types", v);
 			}
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
 			return blk;
 		} else if (bop == BOp.ELEMENTOF) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
@@ -905,8 +904,7 @@ public class ModuleBuilder {
 				syntaxError("Cannot compare types", v);
 			}
 			lub = Type.leastUpperBound(lhs_t, element);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
 			return blk;
 		}
 
@@ -1087,7 +1085,15 @@ public class ModuleBuilder {
 		
 		if(funtype == null) {
 			syntaxError("invalid or ambiguous method call",s);
-		}			
+		}	
+		
+		// Apply parameter conversions as necessary
+		for(int i=0;i!=nargs.size();++i) {
+			Type p_t = funtype.params.get(i);
+			CExpr arg = nargs.get(i);
+			nargs.set(i, convert(p_t,arg));
+		}
+		
 		s.attributes().add(new Attribute.Fun(funtype));
 		NameID name = new NameID(modInfo.module,s.name);	
 		CExpr.LVal lhs = null;
