@@ -1225,10 +1225,22 @@ public class ModuleBuilder {
 			return new Pair<CExpr, Block>(r,blk);
 		} else if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV) {
-			checkIsSubtype(Type.T_REAL, lhs_t, v);
-			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs, rhs);
-			return new Pair<CExpr, Block>(r,blk);			
+			
+			if (bop == BOp.ADD
+					&& Type.isSubtype(Type.T_LIST(Type.T_ANY), lub)) {
+				CExpr r = CExpr.BINOP(CExpr.BOP.APPEND, lhs, rhs);
+				return new Pair<CExpr, Block>(r, blk);
+			} else if ((bop == BOp.ADD || bop == BOp.SUB)
+					&& Type.isSubtype(Type.T_SET(Type.T_ANY), lub)) {
+				CExpr.BOP op = bop == BOp.ADD ? CExpr.BOP.UNION
+						: CExpr.BOP.DIFFERENCE;
+				CExpr r = CExpr.BINOP(op, lhs, rhs);
+				return new Pair<CExpr, Block>(r, blk);
+			} else {
+				checkIsSubtype(Type.T_REAL, lub, v);			
+				CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs, rhs);
+				return new Pair<CExpr, Block>(r,blk);
+			}
 		} else if (bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);

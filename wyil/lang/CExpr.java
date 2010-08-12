@@ -352,6 +352,9 @@ public abstract class CExpr {
 		},
 		DIFFERENCE{
 			public String toString() { return "-"; }
+		},
+		APPEND{
+			public String toString() { return "+"; }
 		}
 	};	
 	

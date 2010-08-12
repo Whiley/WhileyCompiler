@@ -603,6 +603,10 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
 					Bytecode.VIRTUAL));
 			break;
+		case APPEND:			
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
+					Bytecode.VIRTUAL));
+			break;
 		}		
 	}
 
