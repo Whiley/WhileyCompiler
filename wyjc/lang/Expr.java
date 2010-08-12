@@ -123,6 +123,10 @@ public interface Expr extends SyntacticElement {
 			this.op = op;
 			this.mhs = mhs;			
 		}
+		
+		public String toString() {
+			return op + mhs.toString();
+		}
 	}
 	
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {

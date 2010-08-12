@@ -919,7 +919,7 @@ public class ModuleBuilder {
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		UOp uop = v.op;		
 		switch(uop) {
-		case NOT:						
+		case NOT:			
 			String label = Block.freshLabel();
 			Block blk = resolveCondition(label,v.mhs,environment,declared);
 			blk.add(new Code.Goto(target));
@@ -968,8 +968,6 @@ public class ModuleBuilder {
 	
 	protected Block resolveCondition(String target, Comprehension e,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
-		Type type;				
-		
 		if(e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
 			syntaxError("expected boolean expression",e);
 		}
@@ -1350,12 +1348,20 @@ public class ModuleBuilder {
 		}		
 				
 		String continueLabel = Block.freshLabel();
-		Block body = resolveCondition(continueLabel, invert(e.condition), environment,
-				declared);
-		body.addAll(value.second());
-		body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs, CExpr
-				.NARYOP(CExpr.NOP.SETGEN, value.first()))));
-		body.add(new Code.Label(continueLabel));
+		Block body;
+		if (e.condition != null) {
+			body = resolveCondition(continueLabel, invert(e.condition),
+					environment, declared);
+			body.addAll(value.second());
+			body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
+					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))));
+			body.add(new Code.Label(continueLabel));
+		} else {
+			body = new Block();
+			body.addAll(value.second());
+			body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
+					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))));
+		}
 		blk.add(new Code.Forall(sources,body));
 		
 		return new Pair<CExpr,Block>(lhs,blk);
@@ -1598,7 +1604,6 @@ public class ModuleBuilder {
 				return new BinOp(BOp.LTEQ,bop.lhs,bop.rhs,e.attributes());
 			case GTEQ:
 				return new BinOp(BOp.LT,bop.lhs,bop.rhs,e.attributes());
-			// FIXME: add more cases
 			}
 		} else if(e instanceof Expr.UnOp) {
 			UnOp uop = (UnOp) e;
