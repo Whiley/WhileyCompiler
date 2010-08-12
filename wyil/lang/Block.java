@@ -86,9 +86,13 @@ public final class Block extends ArrayList<Code> {
 	 * @param blk
 	 * @return
 	 */
-	public static Block relabel(Block blk) {
-		Block b = new Block();
+	public static Block relabel(Block blk) {		
 		HashMap<String, String> nlabels = new HashMap<String, String>();
+		return relabelHelper(blk,nlabels);
+	}
+	
+	private static Block relabelHelper(Block blk, HashMap<String,String> nlabels) {
+		Block b = new Block();
 		for (Code c : blk) {			
 			if (c instanceof Code.Label) {
 				Code.Label l = (Code.Label) c;
@@ -116,7 +120,7 @@ public final class Block extends ArrayList<Code> {
 				c = new Code.IfGoto(g.type, g.op, g.lhs, g.rhs, target);
 			} else if(c instanceof Code.Forall) {
 				Code.Forall fa = (Code.Forall) c; 
-				c = new Code.Forall(fa.sources,relabel(fa.body));
+				c = new Code.Forall(fa.sources,relabelHelper(fa.body,nlabels));
 			}
 			b.add(c);
 		}				

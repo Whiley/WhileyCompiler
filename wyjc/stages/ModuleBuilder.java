@@ -474,10 +474,10 @@ public class ModuleBuilder {
 			if(t.second() != null) {
 				if(precondition == null) {
 					precondition = new Block();
-				}
+				}				
 				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
-				binding.put("$",CExpr.VAR(t.first(),p.name));
-				precondition.addAll(Block.substitute(binding, t.second()));
+				binding.put("$",CExpr.VAR(t.first(),p.name));				
+				precondition.addAll(Block.substitute(binding, t.second()));				
 			}
 		}
 				

@@ -85,16 +85,51 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
-		} else if(c instanceof Forall) {
+		} else if(c instanceof Forall) {			
 			Forall a = (Forall) c;	
+			// First, we need to to check for captured variable clashes
+			HashMap<String,CExpr> rebinding = new HashMap<String,CExpr>();
+			
+			for (Map.Entry<String, CExpr> src : a.sources.entrySet()) {
+				if (binding.containsKey(src.getKey())) {
+					// this indicates a clash
+					Type t = src.getValue().type();
+					if (t instanceof Type.Set) {
+						t = ((Type.Set) t).element;
+					} else if (t instanceof Type.List) {
+						t = ((Type.List) t).element;
+					}
+					rebinding.put(src.getKey(), CExpr.VAR(t, newCaptureName(src
+							.getKey(), binding.keySet())));
+				}
+			}
+			
+			if(rebinding.size() != 0) {
+				// Ok, we encountered a clash between variables being
+				// substituted and captured variables. Therefore, rename the
+				// affected captured variables, before proceeding as normal.
+				Block body = Block.substitute(rebinding,a.body);
+				HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
+				for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
+					CExpr v = rebinding.get(src.getKey());
+					if(v != null) {						
+						srcs.put(((CExpr.Variable)v).name, src.getValue());
+					} else {
+						srcs.put(src.getKey(), src.getValue());
+					}
+				}	
+				a = new Forall(srcs,body);
+			} 
+			
 			HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
 			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
 				srcs.put(src.getKey(),CExpr.substitute(binding,src.getValue()));				
 			}
 			Block body = new Block();
 			for(Code code : a.body) {
-				body.add(substitute(binding,code));
-			}
+				body.add(substitute(binding,code));			
+			}						
+			
 			return new Forall(srcs, body);
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;						
@@ -111,6 +146,16 @@ public abstract class Code {
 			return c;
 		}
 	}	
+	
+	private static String newCaptureName(String old, Set<String> names) {
+		int idx = 1;
+		String name = old + "$" + idx;
+		while (names.contains(name)) {
+			idx = idx + 1;
+			name = old + "$" + idx;
+		}
+		return name;
+	}
 	
 	/**
 	 * The register shift method is responsible for mapping every register with
