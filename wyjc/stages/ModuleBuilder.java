@@ -78,32 +78,33 @@ public class ModuleBuilder {
 		return modules;
 	}
 
-	public Module resolve(WhileyFile wf) {		
-		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
+	public Module resolve(WhileyFile wf) {
+		HashMap<Pair<Type.Fun, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
-		for(WhileyFile.Decl d : wf.declarations) {				
+		for (WhileyFile.Decl d : wf.declarations) {
 			try {
-				if(d instanceof TypeDecl) {
-					types.add(resolve((TypeDecl)d,wf.module));
-				} else if(d instanceof ConstDecl) {
-					constants.add(resolve((ConstDecl)d));
-				} else if(d instanceof FunDecl) {
-					Module.Method mi = resolve((FunDecl)d);
-					Pair<Type.Fun,String> key = new Pair(mi.type(),mi.name());
+				if (d instanceof TypeDecl) {
+					types.add(resolve((TypeDecl) d, wf.module));
+				} else if (d instanceof ConstDecl) {
+					constants.add(resolve((ConstDecl) d));
+				} else if (d instanceof FunDecl) {
+					Module.Method mi = resolve((FunDecl) d);
+					Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
 					Module.Method method = methods.get(key);
-					if(method != null) {					
+					if (method != null) {
 						// coalesce cases
-						ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(method.cases());
+						ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
+								method.cases());
 						ncases.addAll(mi.cases());
-						mi = new Module.Method(mi.name(), mi.type(), ncases);					
+						mi = new Module.Method(mi.name(), mi.type(), ncases);
 					}
 					methods.put(key, mi);
-				}				
-			} catch(SyntaxError se) {
+				}
+			} catch (SyntaxError se) {
 				throw se;
-			} catch(Throwable ex) {
-				syntaxError("internal failure",d,ex);
+			} catch (Throwable ex) {
+				syntaxError("internal failure", d, ex);
 			}
 		}
 		return new Module(wf.module, wf.filename, methods.values(), types,
@@ -407,7 +408,7 @@ public class ModuleBuilder {
 		if (fd.receiver != null) {			
 			Type t = resolve(fd.receiver).first();
 			checkType(t, Type.Process.class, fd.receiver);
-			rec = (Type.ProcessName) t;					
+			rec = (Type.ProcessName) t; 
 		}
 		
 		Type.Fun ft = Type.T_FUN(rec, ret, parameters);
@@ -1067,8 +1068,7 @@ public class ModuleBuilder {
 			Pair<CExpr,Block> tb = resolve(idx++,s.receiver,environment, declared);
 			Type type = tb.first().type();
 			nargs.add(tb.first());
-			checkType(type,Type.Process.class,s.receiver);
-			receiver = (Type.Process) type;
+			receiver = checkType(type,Type.Process.class,s.receiver);			
 			blk.addAll(tb.second());			
 		}
 		
@@ -1090,8 +1090,9 @@ public class ModuleBuilder {
 		}	
 		
 		// Apply parameter conversions as necessary
-		for(int i=0;i!=nargs.size();++i) {
-			Type p_t = funtype.params.get(i);
+		int offset = s.receiver == null ? 0 : 1;
+		for(int i=offset;i!=nargs.size();++i) {
+			Type p_t = funtype.params.get(i-offset);
 			CExpr arg = nargs.get(i);
 			nargs.set(i, convert(p_t,arg));
 		}
