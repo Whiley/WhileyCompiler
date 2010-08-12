@@ -587,6 +587,9 @@ public abstract class Code {
 		},
 		SUBSETEQ{
 			public String toString() { return "<="; }
-		}
+		},
+		SUBTYPEEQ() {
+			public String toString() { return ":>"; }
+		}		
 	};		
 }

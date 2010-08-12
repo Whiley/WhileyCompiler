@@ -238,8 +238,12 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
-		if(c.op == Code.COP.ELEMOF) {
-			// special case, have to do things backwards
+
+		if(c.op == Code.COP.SUBTYPEEQ) {
+			// special case: don't translate rhs
+			translate(c.lhs,slots,bytecodes);			
+		} else if(c.op == Code.COP.ELEMOF) {
+			// special case: do things backwards
 			translate(c.rhs,slots,bytecodes);
 			translate(c.lhs,slots,bytecodes);								
 		} else {
@@ -337,11 +341,33 @@ public class ClassFileBuilder {
 				op = Bytecode.If.NE;
 				break;
 			}
+			case SUBTYPEEQ:
+			{				
+				Type rhs_t = ((Value.TypeConst)c.rhs).type;
+				translateTypeTest(rhs_t, bytecodes);
+				op = Bytecode.If.NE;
+			}
 			default:
 				throw new RuntimeException("unknown if condition encountered");
-			}		
+			}
+			
+			// do the jump
 			bytecodes.add(new Bytecode.If(op, c.target));
 		}
+	}
+	
+	// The purpose of this method is to translate a type test. We're testing to
+	// see whether what's on the top of the stack matches the given type of not.
+	// In the majority of situations this is pretty easy to do. For example,
+	// testing for an int corresponds to an instanceof against BigInteger. Some
+	// situations are a little harder; like testing for a union type.
+	protected void translateTypeTest(Type test, ArrayList<Bytecode> bytecodes) {
+		if (test instanceof Type.Bool) {
+			bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
+		} else {
+			bytecodes.add(new Bytecode.InstanceOf(
+					(JvmType.Reference) convertType(test)));
+		} 
 	}
 	
 	public void translate(Code.Invoke c, HashMap<String, Integer> slots,

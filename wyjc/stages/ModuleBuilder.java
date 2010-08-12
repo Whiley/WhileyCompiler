@@ -863,6 +863,8 @@ public class ModuleBuilder {
 			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
 			blk.add(new Code.Label(exitLabel));
 			return blk;
+		} else if (bop == BOp.TYPEEQ || bop == BOp.TYPEIMPLIES) {
+			return resolveTypeCondition(target,v,environment,declared);
 		}
 		
 		Pair<CExpr,Block> lhs_tb = resolve(0,v.lhs, environment, declared);
@@ -913,6 +915,34 @@ public class ModuleBuilder {
 
 		syntaxError("expected boolean expression",v);
 		return null;
+	}
+	
+	protected Block resolveTypeCondition(String target, BinOp v,
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
+		
+		Pair<CExpr,Block> lhs_tb = resolve(0,v.lhs, environment, declared);		
+		System.out.println("GOT: " + ((Expr.TypeConst)v.rhs).type);
+		Pair<Type,Block> rhs_tb = resolve(((Expr.TypeConst) v.rhs).type);
+		Type lhs_t = lhs_tb.first().type();
+		Type rhs_t = rhs_tb.first();
+		if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
+			syntaxError("incomparable types",v);
+		}
+		
+		Block blk = new Block();
+		String exitLabel = Block.freshLabel();
+		String trueLabel = Block.freshLabel();
+		blk.addAll(lhs_tb.second());
+		blk.add(new Code.IfGoto(Type.T_META, Code.COP.SUBTYPEEQ,
+				lhs_tb.first(), Value.V_TYPE(rhs_tb.first()), trueLabel));
+		blk.add(new Code.Goto(exitLabel));
+		blk.add(new Code.Label(trueLabel));
+		// FIXME: this seems most def broken.  need to chain I think.
+		if(rhs_tb.second() != null) {
+			blk.addAll(rhs_tb.second());
+		}
+		blk.add(new Code.Label(exitLabel));
+		return blk;
 	}
 	
 	protected Block resolveCondition(String target, UnOp v,

@@ -232,6 +232,8 @@ public class NameResolution {
 				resolve((TupleAccess) e, environment, imports);
 			} else if (e instanceof TupleGen) {
 				resolve((TupleGen) e, environment, imports);
+			} else if(e instanceof TypeConst) {
+				resolve((TypeConst) e, environment, imports);
 			} else {				
 				syntaxError("unknown expression encountered: "
 							+ e.getClass().getName(), e);								
@@ -314,8 +316,7 @@ public class NameResolution {
 		if(e.condition != null) {
 			resolve(e.condition,nenv,imports);
 		}	
-	}
-	
+	}	
 		
 	protected void resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) throws ResolveError {		
@@ -323,6 +324,12 @@ public class NameResolution {
 			resolve(e.getValue(),environment,imports);
 		}			
 	}
+	
+	protected void resolve(TypeConst tc, HashMap<String,Set<Expr>> environment,
+			ArrayList<PkgID> imports) throws ResolveError {		
+		resolve(tc.type,imports);			
+	}
+	
 	
 	protected void resolve(TupleAccess sg, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {
 		resolve(sg.lhs,environment,imports);			

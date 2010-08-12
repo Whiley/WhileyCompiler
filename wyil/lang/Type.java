@@ -32,6 +32,7 @@ public abstract class Type {
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
+	public static final Meta T_META = new Meta();
 	
 	public static Named T_NAMED(ModuleID module, String name, Type element) {
 		return get(new Named(module, name, element));
@@ -481,6 +482,18 @@ public abstract class Type {
 		}
 		public String toString() {
 			return "*";
+		}
+	}
+	public static final class Meta extends NonUnion {
+		private Meta() {}
+		public boolean equals(Object o) {
+			return o == T_META;
+		}
+		public int hashCode() {
+			return 1;
+		}
+		public String toString() {
+			return "#";
 		}
 	}
 	public static final class Void extends NonUnion {

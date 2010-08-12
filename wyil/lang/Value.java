@@ -29,6 +29,10 @@ public abstract class Value extends CExpr {
 		return get(new Tuple(values));
 	}
 
+	public static TypeConst V_TYPE(Type type) {
+		return get(new TypeConst(type));
+	}
+	
 	/**
 	 * Evaluate the given operation on the given values. If the evaluation is
 	 * impossible, then return null.
@@ -305,7 +309,28 @@ public abstract class Value extends CExpr {
 			return r + "}";
 		}
 	}
-	
+	public static final class TypeConst extends Value {
+		public final Type type;
+		private TypeConst(Type type) {
+			this.type = type;
+		}
+		public Type type() {
+			return Type.T_META;
+		}
+		public int hashCode() {
+			return type.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof TypeConst) {
+				TypeConst i = (TypeConst) o;
+				return type == i.type;
+			}
+			return false;
+		}
+		public String toString() {
+			return type.toString();
+		}
+	}
 	private static final ArrayList<Value> values = new ArrayList<Value>();
 	private static final HashMap<Value,Integer> cache = new HashMap<Value,Integer>();
 	
