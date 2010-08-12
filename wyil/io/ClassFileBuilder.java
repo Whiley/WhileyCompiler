@@ -363,6 +363,8 @@ public class ClassFileBuilder {
 			translate(r, slots, bytecodes);
 			if(!pt.equals(rt)) {			
 				addWriteConversion(rt,bytecodes);
+			} else {
+				cloneRHS(rt,bytecodes);
 			}
 		}
 		ModuleID mid = c.name.module();

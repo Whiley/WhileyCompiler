@@ -1,4 +1,7 @@
+void f([int] xs):
+    xs[0] = 1
+
 void System::main([string] args):
-    {int} xs = {0,1,2,3,4,5}
-    {int} ys = { x | x in xs, x > |args| }
+    [int] ys = [2]
+    f(ys)
     print str(ys)
