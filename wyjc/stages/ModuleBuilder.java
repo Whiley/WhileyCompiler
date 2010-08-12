@@ -1212,7 +1212,24 @@ public class ModuleBuilder {
 	
 	protected Pair<CExpr, Block> resolve(int target, Comprehension e,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
-		Type type;				
+		
+		// First, check for boolean cases which are handled mostly by
+		// resolveCondition.
+		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE) {
+			String trueLabel = Block.freshLabel();
+			String exitLabel = Block.freshLabel();
+			Block blk = resolveCondition(trueLabel, e, environment, declared);
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+					.V_BOOL(false)));
+			blk.add(new Code.Goto(exitLabel));
+			blk.add(new Code.Label(trueLabel));
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+					.V_BOOL(true)));
+			blk.add(new Code.Label(exitLabel));
+			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, target), blk);
+		}
+		
+		// Ok, non-boolean case.
 		
 		environment = new HashMap<String,Type>(environment);
 		HashMap<String,CExpr> sources = new HashMap<String,CExpr>();
@@ -1233,9 +1250,28 @@ public class ModuleBuilder {
 			environment.put(src.first(), src_t);
 		}
 		
-		// CExpr.Register lhs = CExpr.REG(type,target);
+		Pair<CExpr,Block> value = resolve(target+1,e.value,environment,declared);
+		Type type = value.first().type();;
+		CExpr.Register lhs;
+		
+		if(e.cop == Expr.COp.LISTCOMP) { 
+			lhs = CExpr.REG(Type.T_LIST(type),target);
+			blk.add(new Code.Assign(lhs,CExpr.NARYOP(CExpr.NOP.LISTGEN)));
+		} else {
+			lhs = CExpr.REG(Type.T_SET(type),target);			
+			blk.add(new Code.Assign(lhs,CExpr.NARYOP(CExpr.NOP.SETGEN)));
+		}		
 				
-		throw new RuntimeException("Need to implement comprehension");
+		String continueLabel = Block.freshLabel();
+		Block body = resolveCondition(continueLabel, invert(e.condition), environment,
+				declared);
+		body.addAll(value.second());
+		body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs, CExpr
+				.NARYOP(CExpr.NOP.SETGEN, value.first()))));
+		body.add(new Code.Label(continueLabel));
+		blk.add(new Code.Forall(sources,body));
+		
+		return new Pair<CExpr,Block>(lhs,blk);
 	}
 		
 	protected Pair<CExpr, Block> resolve(int target, TupleGen sg,
