@@ -457,14 +457,18 @@ public abstract class CExpr {
 		}
 		
 		public Type type() {
-			Type t = Type.T_VOID;
-			for(CExpr arg : args) {
-				t = Type.leastUpperBound(t,arg.type());
-			}
-			if(op == NOP.SETGEN){
-				return Type.T_SET(t);
+			if(op == NOP.SUBLIST) {
+				return args.get(0).type();
 			} else {
-				return Type.T_LIST(t);
+				Type t = Type.T_VOID;
+				for(CExpr arg : args) {
+					t = Type.leastUpperBound(t,arg.type());
+				}
+				if(op == NOP.SETGEN){
+					return Type.T_SET(t);
+				} else {
+					return Type.T_LIST(t);
+				}
 			}
 		}
 		
