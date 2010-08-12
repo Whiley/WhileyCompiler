@@ -1189,6 +1189,28 @@ public class ModuleBuilder {
 			environment.put(src.first(), src_t);
 		}
 		
+		Block body;		
+		switch(e.cop) {
+			case LISTCOMP:
+			case SETCOMP:
+				body = buildCompBody(e,environment,declared);
+		}
+		
+		String trueLab = Block.freshLabel();		
+		
+		= resolveCondition(trueLab, e.condition, environment, declared);		
+		
+		body.add(new Code.Label(trueLab));
+		CExpr.Register lhs = CExpr.REG(type,target);
+		
+		blk.add(new Code.Forall(sources,body));
+		return new Pair<CExpr,Block>(lhs,blk);
+	}
+	
+	protected Block buildCompBody(Comprehension e,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+
 		CExpr value = null;
 		if(e.cop == Expr.COp.LISTCOMP || e.cop == Expr.COp.SETCOMP) {
 			// FIXME: problem if comprehension value has side-effects
@@ -1199,14 +1221,6 @@ public class ModuleBuilder {
 		}
 		
 		
-		String trueLab = Block.freshLabel();		
-		Block condition = resolveCondition(trueLab, e.condition, environment, declared);		
-		condition.add(new Code.Fail("hmmmm, not sure what message to do here"));
-		condition.add(new Code.Label(trueLab));
-		CExpr.Register lhs = CExpr.REG(type,target);
-		
-		blk.add(new Code.Comprehension(lhs,OP2QOP(e.cop,e),value,sources,condition));
-		return new Pair<CExpr,Block>(lhs,blk);
 	}
 		
 	protected Pair<CExpr, Block> resolve(int target, TupleGen sg,
@@ -1496,20 +1510,5 @@ public class ModuleBuilder {
 		}
 		syntaxError("unrecognised binary operation", elem);
 		return null;
-	}
-	
-	public static Code.QOP OP2QOP(Expr.COp bop, SyntacticElement elem) {
-		switch(bop) {
-			case LISTCOMP:
-				return Code.QOP.LISTCOMP;
-			case SETCOMP:
-				return Code.QOP.SETCOMP;
-			case NONE:
-				return Code.QOP.NONE;
-			case SOME:
-				return Code.QOP.SOME;
-		}
-		syntaxError("unrecognised comprehension", elem);
-		return null;
-	}
+	}	
 }

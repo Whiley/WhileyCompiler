@@ -43,6 +43,15 @@ public abstract class Code {
 			IfGoto a = (IfGoto) c;			
 			CExpr.usedVariables(a.lhs,uses);
 			CExpr.usedVariables(a.rhs,uses);
+		} else if(c instanceof Forall) {
+			Forall a = (Forall) c;			
+			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
+				uses.add(src.getKey()); // IS THIS RIGHT?
+				CExpr.usedVariables(src.getValue(),uses);
+			}
+			for(Code code : a.body) {
+				usedVariables(code,uses);
+			}
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;			
 			if(a.lhs != null) {
@@ -72,6 +81,17 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
+		} else if(c instanceof Forall) {
+			Forall a = (Forall) c;	
+			HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
+			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
+				srcs.put(src.getKey(),CExpr.substitute(binding,src.getValue()));				
+			}
+			Block body = new Block();
+			for(Code code : a.body) {
+				body.add(substitute(binding,code));
+			}
+			return new Forall(srcs, body);
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;						
 			LVal lhs = a.lhs;
@@ -94,7 +114,7 @@ public abstract class Code {
 	 * that the registers of blocks inserted into other blocks do not collide.
 	 * 
 	 * @param shift
-	 * @param block
+	 * @param body
 	 * @return
 	 */
 	public static Code registerShift(int shift, Code c) {
@@ -109,6 +129,17 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.registerShift(shift, u.lhs),
 					CExpr.registerShift(shift, u.rhs), u.target);
+		} else if(c instanceof Forall) {
+			Forall a = (Forall) c;	
+			HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
+			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
+				srcs.put(src.getKey(),CExpr.registerShift(shift,src.getValue()));				
+			}
+			Block body = new Block();
+			for(Code code : a.body) {
+				body.add(registerShift(shift,code));
+			}
+			return new Forall(srcs, body);
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;			
 			LVal lhs = a.lhs;
@@ -442,54 +473,30 @@ public abstract class Code {
 		}
 	}
 
-	public final static class Comprehension extends Code {			
-		public final LVal lhs;
-		public final QOP op;
-		public final CExpr value;
+	public final static class Forall extends Code {									
 		public final Map<String,CExpr> sources;
-		public final Block condition;
+		public final Block body;
 		
-		public Comprehension(LVal lhs, QOP op, CExpr value, Map<String,CExpr> srcs, Block condition) {
-			if(op == QOP.SETCOMP || op == QOP.LISTCOMP) {
-				if(value == null) {
-					throw new IllegalArgumentException("value cannot be null for set or list comprehension.");
-				}
-			} else if(value != null) {
-				throw new IllegalArgumentException("value must be null unless set or list comprehension.");				
-			}
-			this.lhs = lhs;
-			this.op = op;
-			this.sources = Collections.unmodifiableMap(srcs);
-			this.value = value;
-			this.condition = condition;			
+		public Forall(Map<String,CExpr> srcs, Block body) {								
+			this.sources = Collections.unmodifiableMap(srcs);			
+			this.body = body;			
 		}
 				
 		public boolean equals(Object o) {
-			if (o instanceof Comprehension) {
-				Comprehension a = (Comprehension) o;
-				if (op == QOP.SETCOMP || op == QOP.LISTCOMP) {
-					return lhs.equals(a.lhs) && value.equals(a.value) && op == a.op
-							&& sources.equals(a.sources)
-							&& condition.equals(a.condition);
-				} else {
-					return lhs.equals(a.lhs) &&  op == a.op && sources.equals(a.sources)
-							&& condition.equals(a.condition);
-				}
+			if (o instanceof Forall) {
+				Forall a = (Forall) o;
+				return sources.equals(a.sources)
+						&& body.equals(a.body);
 			}
 			return false;
 		}
 		
-		public int hashCode() {
-			if (op == QOP.SETCOMP || op == QOP.LISTCOMP) {
-				return value.hashCode() + sources.hashCode()
-						+ condition.hashCode();
-			} else {
-				return sources.hashCode() + condition.hashCode();
-			}
+		public int hashCode() {			
+			return sources.hashCode() + body.hashCode();			
 		}
 		
 		public String toString() {
-			String s = "";
+			String s = "for ";
 			boolean firstTime=true;
 			for(Map.Entry<String,CExpr> e : sources.entrySet()) {
 				if(!firstTime) {
@@ -498,30 +505,15 @@ public abstract class Code {
 				firstTime=false;
 				s += e.getKey() + " in " + e.getValue();
 			}	
-			String cond = "";
-			for(Code c : condition) {
-				cond += "    " + c.toString();
+			s += ":";		
+			// FIXME: this is broken
+			for(Code c : body) {
+				s += "\n    " + c.toString();
 			}
-			if (op == QOP.SETCOMP || op == QOP.LISTCOMP) {
-				return "{" + value + " | " + s + "}:\n    " + cond;
-			} else {
-				return "{" + s + "}:\n    " + cond;							
-			}			
+			return s;			
 		}
 	}
-	
-
-	public enum QOP { 
-		SETCOMP,
-		LISTCOMP,
-		ALL,
-		SOME,
-		NONE,
-		ONE,
-		LONE
-	}
 		
-	
 	public enum COP { 
 		EQ() {
 			public String toString() { return "=="; }
