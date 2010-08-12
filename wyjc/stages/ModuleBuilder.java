@@ -521,7 +521,7 @@ public class ModuleBuilder {
 		}
 		
 		Block blk = new Block();
-		for (Stmt s : fd.statements) {						
+		for (Stmt s : fd.statements) {			
 			blk.addAll(resolve(s, fd, environment, declared));
 		}				
 		
@@ -667,9 +667,11 @@ public class ModuleBuilder {
 
 	protected Block resolve(Assert s, HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
-		checkIsSubtype(t.first().type(), Type.T_BOOL, s.expr);
-		return null;
+		String lab = Block.freshLabel();
+		Block blk = resolveCondition(lab, s.expr, environment, declared);
+		blk.add(new Code.Fail("assertion failed"));
+		blk.add(new Code.Label(lab));
+		return blk;
 	}
 
 	protected Block resolve(Return s, FunDecl fd,
