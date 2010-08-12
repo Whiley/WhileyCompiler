@@ -74,13 +74,14 @@ public class NameResolution {
 			if(td.constraint != null) {
 				HashSet<String> environment = new HashSet<String>();
 				environment.add("$");
+				addExposedNames(td.type,environment);
 				resolve(td.constraint,environment,imports);
 			}		
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
 			syntaxError(e.getMessage(), td);			
 		}
-	}
+	}	
 	
 	protected void resolve(FunDecl fd, ArrayList<PkgID> imports) {
 		HashSet<String> environment = new HashSet<String>();
@@ -347,6 +348,32 @@ public class NameResolution {
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			resolve(ut.element,imports);			
+		}  
+	}
+	
+	public static void addExposedNames(UnresolvedType t, HashSet<String> environment) {
+		if(t instanceof UnresolvedType.List) {
+			UnresolvedType.List lt = (UnresolvedType.List) t;
+			addExposedNames(lt.element,environment);
+		} else if(t instanceof UnresolvedType.Set) {
+			UnresolvedType.Set st = (UnresolvedType.Set) t;
+			addExposedNames(st.element,environment);			
+		} else if(t instanceof UnresolvedType.Tuple) {
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
+				addExposedNames(e.getValue(),environment);
+				environment.add(e.getKey());
+			}
+		} else if(t instanceof UnresolvedType.Named) {
+			// do nothing in this case
+		} else if(t instanceof UnresolvedType.Union) {
+			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			for(UnresolvedType b : ut.bounds) {
+				addExposedNames(b,environment);				
+			}
+		} else if(t instanceof UnresolvedType.Process) {	
+			UnresolvedType.Process ut = (UnresolvedType.Process) t;
+			addExposedNames(ut.element,environment);					
 		}  
 	}
 }
