@@ -72,7 +72,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		if(postcondition != null) {
 			// calculate reg target (see below)
 			HashSet<String> uses = new HashSet<String>();						
-			Block.usedVariables(precondition, uses);
+			Block.usedVariables(postcondition, uses);
 			int regTarget = uses.size();
 			postcondition = transform(regTarget,postcondition);
 		}
