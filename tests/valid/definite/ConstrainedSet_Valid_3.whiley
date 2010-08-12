@@ -1,4 +1,4 @@
-define posints as {int} requires no { x in $ | x < 0 }
+define posints as {int} where no { x in $ | x < 0 }
 
 void f(posints x):
     print str(x)

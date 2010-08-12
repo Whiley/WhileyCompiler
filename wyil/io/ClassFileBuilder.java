@@ -627,10 +627,15 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Label(exitLabel));
 			break;
 		}
-		case LENGTHOF: {
-			JvmType.Function ftype = new JvmType.Function(T_INT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
+		case LENGTHOF: {			
+			JvmType.Function ftype = new JvmType.Function(T_INT);			
+			if(Type.isSubtype(Type.T_LIST(Type.T_ANY),c.rhs.type())) {
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
+						ftype, Bytecode.VIRTUAL));
+			} else {
+				bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size",
 					ftype, Bytecode.VIRTUAL));
+			}
 			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
 			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
 			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",

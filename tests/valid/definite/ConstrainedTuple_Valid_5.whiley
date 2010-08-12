@@ -1,4 +1,4 @@
-define state as (string input, int pos) requires pos >= 0 && pos <= |input|
+define state as (string input, int pos) where pos >= 0 && pos <= |input|
 
 state parseWhiteSpace(state st):
     if(st.pos < |st.input| && st.input[st.pos] == ' '):
