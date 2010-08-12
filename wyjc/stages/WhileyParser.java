@@ -195,8 +195,7 @@ public class WhileyParser {
 		// constant).
 		
 		try {			
-			UnresolvedType t = parseType();
-			
+			UnresolvedType t = parseType();			
 			Expr constraint = null;
 			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type				

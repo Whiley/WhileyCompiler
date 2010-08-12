@@ -411,13 +411,12 @@ public class ModuleBuilder {
 		}
 		
 		Type.Fun ft = Type.T_FUN(rec, ret, parameters);
-		
-		List<Type.Fun> types = functions.get(fd.name);
+		NameID name = new NameID(module, fd.name);
+		List<Type.Fun> types = functions.get(name);
 		if(types == null) {
 			types = new ArrayList<Type.Fun>();
-			functions.put(new NameID(module, fd.name), types);
-		}
-		
+			functions.put(name, types);
+		}		
 		types.add(ft);		
 		fd.attributes().add(new Attribute.Fun(ft));
 	}
@@ -1391,11 +1390,10 @@ public class ModuleBuilder {
 			SyntacticElement elem) throws ResolveError {
 		
 		Type.Fun target = Type.T_FUN(receiver, Type.T_ANY,paramTypes);
-		Type.Fun candidate = null;
-								
+		Type.Fun candidate = null;				
+		
 		for (Type.Fun ft : lookupMethod(mid,name)) {										
-			Type funrec = ft.receiver;
-			
+			Type funrec = ft.receiver;			
 			if (receiver == funrec
 					|| (receiver != null && funrec != null && Type.isSubtype(
 							funrec, receiver))) {
@@ -1420,13 +1418,14 @@ public class ModuleBuilder {
 	
 	protected List<Type.Fun> lookupMethod(ModuleID mid, String name)
 			throws ResolveError {
+		
 		if (modules.contains(mid)) {
 			NameID key = new NameID(mid, name);
 			return functions.get(key);
 		} else {
 			Module module = loader.loadModule(mid);
 			ArrayList<Type.Fun> rs = new ArrayList<Type.Fun>();
-			for (Module.Method m : module.method(name)) {
+			for (Module.Method m : module.method(name)) {				
 				rs.add(m.type());
 			}
 			return rs;
