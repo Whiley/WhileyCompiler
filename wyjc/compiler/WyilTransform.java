@@ -20,12 +20,12 @@ public class WyilTransform implements Compiler.Stage {
 			logout.logTimedMessage("[" + module.filename() + "] applied " + name,
 					System.currentTimeMillis() - start);
 			return transform.apply(module);
-		} catch(Throwable ex) {
+		} catch(RuntimeException ex) {
 			logout.logTimedMessage("[" + module.filename()
 					+ "] failed on " + name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 			ex.printStackTrace();
-			return null;
+			throw ex;			
 		}
 	}
 }

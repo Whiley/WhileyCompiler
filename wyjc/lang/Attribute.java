@@ -54,6 +54,14 @@ public interface Attribute {
 		}
 	}
 	
+	public static final class Alias implements Attribute {
+		public final Expr alias;
+		
+		public Alias(Expr alias) {
+			this.alias = alias;
+		}
+	}
+	
 	public static class Source implements Attribute {
 		public final String filename;
 		public final int start;	

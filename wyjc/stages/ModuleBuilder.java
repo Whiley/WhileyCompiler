@@ -749,7 +749,7 @@ public class ModuleBuilder {
 	 * @return
 	 */
 	protected Block resolveCondition(String target, Expr e,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		try {
 			if (e instanceof Constant) {
 				return resolveCondition(target,(Constant)e, environment, declared);
@@ -783,11 +783,12 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolveCondition(String target, Constant c,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		checkType(c.value.type(),Type.Bool.class,c);
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+		checkType(c.value.type(), Type.Bool.class, c);
 		Value.Bool b = (Value.Bool) c.value;
 		Block blk = new Block();
-		if(b.value) {
+		if (b.value) {
 			blk.add(new Code.Goto(target));
 		} else {
 			// do nout
@@ -796,14 +797,40 @@ public class ModuleBuilder {
 	}
 		
 	protected Block resolveCondition(String target, Variable v,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) throws ResolveError {
 		Type t = environment.get(v.var);
-		if (t == null) {
-			syntaxError("unknown variable", v);
-		}
-		checkType(t, Type.Bool.class, v);
+		CExpr lhs;
 		Block blk = new Block();
-		blk.add(new Code.IfGoto(t, Code.COP.EQ, CExpr.VAR(t, v.var), Value
+		if (t == null) {
+			// Definitely not a variable. Could be an alias, or a constant
+			// though.
+			Attribute.Alias alias = v.attribute(Attribute.Alias.class);
+			if(alias != null) {				
+				Pair<CExpr,Block> p = resolve(0,alias.alias,environment,declared);
+				blk.addAll(p.second());
+				lhs = p.first();
+			} else {
+				Attribute.Module mod = v.attribute(Attribute.Module.class);			
+				if(mod != null) {
+					NameID name = new NameID(mod.module,v.var);
+					Value val = constants.get(name);
+					if(val == null) {
+						// indicates a non-local constant definition
+						Module mi = loader.loadModule(mod.module);
+						val = mi.constant(v.var).constant();					
+					} 
+					lhs = val;				
+				} else {
+					syntaxError("unknown variable", v);
+					return null; // dead code
+				}
+			}
+		} else {
+			lhs = CExpr.VAR(t,v.var);
+		}
+		checkType(t, Type.Bool.class, v);		
+		blk.add(new Code.IfGoto(t, Code.COP.EQ, lhs, Value
 				.V_BOOL(true), target));
 		return blk;
 	}
@@ -908,6 +935,18 @@ public class ModuleBuilder {
 	protected Block resolveCondition(String target, TupleAccess v,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
+		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
+		CExpr lhs = la.first();
+		checkType(lhs.type(), Type.Bool.class, v);
+		Block blk = la.second();
+		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
+				.V_BOOL(true), target));
+		return blk;
+	}
+	
+	protected Block resolveCondition(String target, Invoke v,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) throws ResolveError {
 		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
 		CExpr lhs = la.first();
 		checkType(lhs.type(), Type.Bool.class, v);
@@ -1063,7 +1102,12 @@ public class ModuleBuilder {
 			HashMap<String, Pair<Type, Block>> declared) throws ResolveError {
 		Type t = environment.get(v.var);
 		if(t == null) {
-			// Definitely not a variable.  Could be a constant though.
+			// Definitely not a variable. Could be an alias, or a constant
+			// though.
+			Attribute.Alias alias = v.attribute(Attribute.Alias.class);
+			if(alias != null) {
+				return resolve(0,alias.alias,environment,declared);				
+			} 
 			Attribute.Module mod = v.attribute(Attribute.Module.class);			
 			if(mod != null) {
 				NameID name = new NameID(mod.module,v.var);
