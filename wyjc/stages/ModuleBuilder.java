@@ -1161,6 +1161,13 @@ public class ModuleBuilder {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), mhs_t, v.mhs);
 			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
 					.first()), blk);
+		case PROCESSACCESS:
+			Type.Process t = checkType(mhs_t, Type.Process.class, v.mhs);
+			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.PROCESSACCESS, mhs
+					.first()), blk);
+		case PROCESSSPAWN:			
+			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.PROCESSSPAWN, mhs
+					.first()), blk);		
 		default:
 			syntaxError("unexpected unary operator encountered",v);
 			return null;
@@ -1561,10 +1568,14 @@ public class ModuleBuilder {
 		} else if(e instanceof TupleAccess) {
 			TupleAccess la = (TupleAccess) e;
 			return flattern(la.lhs);
-		} else {
-			syntaxError("invalid lval",e);
-			return null;
-		}
+		} else if(e instanceof UnOp) {
+			UnOp la = (UnOp) e;
+			if(la.op == Expr.UOp.PROCESSACCESS) {
+				return flattern(la.mhs);
+			}
+		} 
+		syntaxError("invalid lval",e);
+		return null;		
 	}
 	
 	public static Expr invert(Expr e) {

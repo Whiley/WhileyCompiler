@@ -612,18 +612,19 @@ public class ClassFileBuilder {
 
 	public void translate(CExpr.UnOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
-		
-		translate(c.rhs, slots, bytecodes);
+				
 		JvmType type = convertType(c.type());
 
 		switch (c.op) {
 		case NEG: {
+			translate(c.rhs, slots, bytecodes);
 			JvmType.Function ftype = new JvmType.Function(type);
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
 					ftype, Bytecode.VIRTUAL));
 			break;
 		}
 		case NOT: {
+			translate(c.rhs, slots, bytecodes);
 			String exitLabel = freshLabel();
 			String trueLabel = freshLabel();
 			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, trueLabel));
@@ -634,7 +635,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Label(exitLabel));
 			break;
 		}
-		case LENGTHOF: {			
+		case LENGTHOF: {
+			translate(c.rhs, slots, bytecodes);
 			JvmType.Function ftype = new JvmType.Function(T_INT);			
 			if(Type.isSubtype(Type.T_LIST(Type.T_ANY),c.rhs.type())) {
 				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
@@ -647,6 +649,27 @@ public class ClassFileBuilder {
 			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
 			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
 					ftype, Bytecode.STATIC));
+			break;
+		}
+		case PROCESSSPAWN:
+		{
+			bytecodes.add(new Bytecode.New(WHILEYPROCESS));
+			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
+			translate(c.rhs, slots, bytecodes);				
+			JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
+					Bytecode.SPECIAL));
+			break;
+		}
+		case PROCESSACCESS:
+		{
+			translate(c.rhs, slots, bytecodes);
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
+					Bytecode.VIRTUAL));
+			// finally, we need to cast the object we got back appropriately.		
+			Type.Process pt = (Type.Process) c.rhs.type();
+			addReadConversion(pt.element, bytecodes);
 			break;
 		}
 		}		

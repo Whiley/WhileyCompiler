@@ -400,6 +400,12 @@ public abstract class CExpr {
 		public Type type() {
 			if(op == UOP.LENGTHOF) {
 				return Type.T_INT;
+			} else if(op == UOP.PROCESSACCESS) {
+				// FIXME: need to flattern
+				Type.Process pt = (Type.Process) rhs.type();
+				return pt.element;
+			} else if(op == UOP.PROCESSSPAWN) {
+				return Type.T_PROCESS(rhs.type());				
 			} else {
 				return rhs.type();
 			}
@@ -435,6 +441,12 @@ public abstract class CExpr {
 		},
 		LENGTHOF() {
 			public String toString() { return "||"; }
+		},
+		PROCESSACCESS() {
+			public String toString() { return "*"; }
+		},
+		PROCESSSPAWN() {
+			public String toString() { return "spawn "; }
 		}
 	}
 	
