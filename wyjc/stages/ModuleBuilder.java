@@ -464,19 +464,26 @@ public class ModuleBuilder {
 				
 		ArrayList<String> parameterNames = new ArrayList<String>();
 		Block precondition = null;
-		Block postcondition = null;
-		
+				
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {						
 			Pair<Type,Block> t = resolve(p.type);
 			environment.put(p.name(),t.first());
 			declared.put(p.name(),t);
 			parameterNames.add(p.name());
-			// FIXME: need to update the pre-condition here
+			if(t.second() != null) {
+				if(precondition == null) {
+					precondition = new Block();
+				}
+				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+				binding.put("$",CExpr.VAR(t.first(),p.name));
+				precondition.addAll(Block.substitute(binding, t.second()));
+			}
 		}
 				
 		// method return type
 		Pair<Type,Block> ret = resolve(fd.ret);		
+		Block postcondition = ret.second();
 		
 		// method receiver type (if applicable)			
 		if(fd.receiver != null) {			
