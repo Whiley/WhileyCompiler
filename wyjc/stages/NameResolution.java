@@ -213,6 +213,8 @@ public class NameResolution {
 				resolve((Variable)e, environment, imports);
 			} else if (e instanceof NaryOp) {
 				resolve((NaryOp)e, environment, imports);
+			} else if (e instanceof Comprehension) {
+				resolve((Comprehension) e, environment, imports);
 			} else if (e instanceof BinOp) {
 				resolve((BinOp)e, environment, imports);
 			} else if (e instanceof ListAccess) {
@@ -286,26 +288,24 @@ public class NameResolution {
 	}
 	
 	protected void resolve(NaryOp v, HashSet<String> environment,
-			ArrayList<PkgID> imports) throws ResolveError {		
+			ArrayList<PkgID> imports) throws ResolveError {				
 		for(Expr e : v.arguments) {
 			resolve(e, environment, imports);
 		}		
 	}
 	
-	protected void resolve(Comprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {				
+	protected void resolve(Comprehension e, HashSet<String> environment, ArrayList<PkgID> imports) throws ResolveError {						
 		HashSet<String> nenv = new HashSet<String>(environment);
-		for(Pair<String,Expr> me : e.sources) {						
-			String s = me.first();						
+		for(Pair<String,Expr> me : e.sources) {														
 			resolve(me.second(),nenv,imports); 			
 			nenv.add(me.first());
-		}
-		
-		if(e.value != null) {
-			resolve(e.condition,nenv,imports);
+		}		
+		if(e.value != null) {			
+			resolve(e.value,nenv,imports);
 		}
 		if(e.condition != null) {
 			resolve(e.condition,nenv,imports);
-		}
+		}	
 	}
 	
 		

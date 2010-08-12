@@ -1168,7 +1168,45 @@ public class ModuleBuilder {
 	
 	protected Pair<CExpr, Block> resolve(int target, Comprehension e,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
-		throw new RuntimeException("Need to implement type resolution for Comprehension");
+		Type type;				
+		
+		environment = new HashMap<String,Type>(environment);
+		HashMap<String,CExpr> sources = new HashMap<String,CExpr>();
+		Block blk = new Block();
+		for(Pair<String,Expr> src : e.sources) {
+			Pair<CExpr,Block> r = resolve(0,src.second(),environment,declared);
+			Type src_t = r.first().type();
+			checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,src.second());
+			if(src_t instanceof Type.Set) {
+				src_t = ((Type.Set)src_t).element;
+			} else if(src_t instanceof Type.List) {
+				src_t = ((Type.List)src_t).element;
+			} else {
+				// FIXME: missing cases here
+			}
+			sources.put(src.first(),r.first());
+			blk.addAll(r.second());
+			environment.put(src.first(), src_t);
+		}
+		
+		CExpr value = null;
+		if(e.cop == Expr.COp.LISTCOMP || e.cop == Expr.COp.SETCOMP) {
+			// FIXME: problem if comprehension value has side-effects
+			value = resolve(0,e.value,environment,declared).first();
+			type = e.cop == Expr.COp.LISTCOMP ? Type.T_LIST(value.type()) : Type.T_SET(value.type());
+		} else {
+			type = Type.T_BOOL;
+		}
+		
+		
+		String trueLab = Block.freshLabel();		
+		Block condition = resolveCondition(trueLab, e.condition, environment, declared);		
+		condition.add(new Code.Fail("hmmmm, not sure what message to do here"));
+		condition.add(new Code.Label(trueLab));
+		CExpr.Register lhs = CExpr.REG(type,target);
+		
+		blk.add(new Code.Comprehension(lhs,OP2QOP(e.cop,e),value,sources,condition));
+		return new Pair<CExpr,Block>(lhs,blk);
 	}
 		
 	protected Pair<CExpr, Block> resolve(int target, TupleGen sg,
@@ -1457,6 +1495,21 @@ public class ModuleBuilder {
 			return Code.COP.ELEMOF;
 		}
 		syntaxError("unrecognised binary operation", elem);
+		return null;
+	}
+	
+	public static Code.QOP OP2QOP(Expr.COp bop, SyntacticElement elem) {
+		switch(bop) {
+			case LISTCOMP:
+				return Code.QOP.LISTCOMP;
+			case SETCOMP:
+				return Code.QOP.SETCOMP;
+			case NONE:
+				return Code.QOP.NONE;
+			case SOME:
+				return Code.QOP.SOME;
+		}
+		syntaxError("unrecognised comprehension", elem);
 		return null;
 	}
 }

@@ -889,7 +889,7 @@ public class WhileyParser {
 			token = tokens.get(index);
 		}
 		match(Bar.class);
-		Expr condition = parseCondition();
+		Expr condition = parseCondition();		
 		match(RightCurly.class);
 		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
 				sourceAttr(start, index - 1));
@@ -938,7 +938,7 @@ public class WhileyParser {
 			Expr condition = null;			
 			
 			for(int i=1;i!=exprs.size();++i) {
-				Expr v = exprs.get(i);
+				Expr v = exprs.get(i);				
 				if(v instanceof Expr.BinOp) {
 					Expr.BinOp eof = (Expr.BinOp) v;					
 					if (eof.op == Expr.BOp.ELEMENTOF
@@ -955,12 +955,14 @@ public class WhileyParser {
 						srcs.add(new Pair<String,Expr>(var,  eof.rhs));
 						continue;
 					} 					
-				} else if((i+1) == exprs.size()) {
+				} 
+				
+				if((i+1) == exprs.size()) {
 					condition = v;					
 				} else {
 					syntaxError("condition expected",v);
 				}
-			}
+			}			
 			return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs,
 					condition, sourceAttr(start, index - 1));
 		} else {	

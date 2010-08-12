@@ -441,6 +441,86 @@ public abstract class Code {
 			return "skip";
 		}
 	}
+
+	public final static class Comprehension extends Code {			
+		public final LVal lhs;
+		public final QOP op;
+		public final CExpr value;
+		public final Map<String,CExpr> sources;
+		public final Block condition;
+		
+		public Comprehension(LVal lhs, QOP op, CExpr value, Map<String,CExpr> srcs, Block condition) {
+			if(op == QOP.SETCOMP || op == QOP.LISTCOMP) {
+				if(value == null) {
+					throw new IllegalArgumentException("value cannot be null for set or list comprehension.");
+				}
+			} else if(value != null) {
+				throw new IllegalArgumentException("value must be null unless set or list comprehension.");				
+			}
+			this.lhs = lhs;
+			this.op = op;
+			this.sources = Collections.unmodifiableMap(srcs);
+			this.value = value;
+			this.condition = condition;			
+		}
+				
+		public boolean equals(Object o) {
+			if (o instanceof Comprehension) {
+				Comprehension a = (Comprehension) o;
+				if (op == QOP.SETCOMP || op == QOP.LISTCOMP) {
+					return lhs.equals(a.lhs) && value.equals(a.value) && op == a.op
+							&& sources.equals(a.sources)
+							&& condition.equals(a.condition);
+				} else {
+					return lhs.equals(a.lhs) &&  op == a.op && sources.equals(a.sources)
+							&& condition.equals(a.condition);
+				}
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			if (op == QOP.SETCOMP || op == QOP.LISTCOMP) {
+				return value.hashCode() + sources.hashCode()
+						+ condition.hashCode();
+			} else {
+				return sources.hashCode() + condition.hashCode();
+			}
+		}
+		
+		public String toString() {
+			String s = "";
+			boolean firstTime=true;
+			for(Map.Entry<String,CExpr> e : sources.entrySet()) {
+				if(!firstTime) {
+					s += ", ";
+				}
+				firstTime=false;
+				s += e.getKey() + " in " + e.getValue();
+			}	
+			String cond = "";
+			for(Code c : condition) {
+				cond += "    " + c.toString();
+			}
+			if (op == QOP.SETCOMP || op == QOP.LISTCOMP) {
+				return "{" + value + " | " + s + "}:\n    " + cond;
+			} else {
+				return "{" + s + "}:\n    " + cond;							
+			}			
+		}
+	}
+	
+
+	public enum QOP { 
+		SETCOMP,
+		LISTCOMP,
+		ALL,
+		SOME,
+		NONE,
+		ONE,
+		LONE
+	}
+		
 	
 	public enum COP { 
 		EQ() {
