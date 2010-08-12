@@ -648,8 +648,10 @@ public class ModuleBuilder {
 		Variable target = (Variable) flattern(s.lhs); // FIXME
 		Type declared_t = declared.get(target.var).first();
 		Block constraint = declared.get(target.var).second();
-		if(constraint != null) {
-			constraint = Block.substitute("$", CExpr.VAR(declared_t, target.var), constraint);
+		if (constraint != null) {
+			constraint = Block.relabel(constraint);
+			constraint = Block.substitute("$", CExpr
+					.VAR(declared_t, target.var), constraint);
 			blk.addAll(constraint);
 		}
 		

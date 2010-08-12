@@ -114,9 +114,13 @@ public final class Block extends ArrayList<Code> {
 					nlabels.put(g.target, target);
 				}
 				c = new Code.IfGoto(g.type, g.op, g.lhs, g.rhs, target);
-			}			
+			} else if(c instanceof Code.Forall) {
+				Code.Forall fa = (Code.Forall) c; 
+				c = new Code.Forall(fa.sources,relabel(fa.body));
+			}
 			b.add(c);
-		}
+		}				
+		
 		return b;
 	}
 	

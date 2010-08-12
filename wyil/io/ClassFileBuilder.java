@@ -86,6 +86,7 @@ public class ClassFileBuilder {
 		
 		// Finally, we need to eliminate any dead code that was introduced.		
 		new DeadCodeElimination().apply(cf);		
+		
 		return cf;
 	}	
 		

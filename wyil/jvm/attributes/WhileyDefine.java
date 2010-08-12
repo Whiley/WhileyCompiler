@@ -111,7 +111,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 		if(type != null) {
 			WhileyType.addPoolItems(type, constantPool);
-		}
+		}				
 	}
 	
 	protected void write(Value v, BinaryOutputStream writer,

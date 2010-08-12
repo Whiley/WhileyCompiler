@@ -56,7 +56,9 @@ public abstract class CExpr {
 	 * @param uses
 	 */
 	public static CExpr substitute(HashMap<String,CExpr> binding, CExpr r) {
-		if (r instanceof Variable) {
+		if(r instanceof Value) {
+			
+		} else if (r instanceof Variable) {
 			Variable v = (Variable) r;
 			CExpr rv = binding.get(v.name);
 			if (rv != null) {
@@ -101,13 +103,17 @@ public abstract class CExpr {
 			TupleAccess ta = (TupleAccess) r;
 			return TUPLEACCESS(substitute(binding, ta.lhs),
 					ta.field);
-		} 
+		} else {
+			throw new IllegalArgumentException("Invalid CExpr: " + r);
+		}
 		
 		return r;
 	}
 		
 	public static CExpr registerShift(int shift, CExpr r) {
-		if (r instanceof Register) {
+		if(r instanceof Variable || r instanceof Value) {
+			
+		} else if (r instanceof Register) {
 			Register v = (Register) r;
 			return new Register(v.type,v.index + shift);
 		} else if(r instanceof ListAccess) {
@@ -142,7 +148,9 @@ public abstract class CExpr {
 			TupleAccess ta = (TupleAccess) r;
 			return TUPLEACCESS(registerShift(shift, ta.lhs),
 					ta.field);
-		} 
+		} else {
+			throw new IllegalArgumentException("Invalid CExpr: " + r);
+		}
 		return r;
 	}
 	
