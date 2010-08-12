@@ -2,6 +2,7 @@ package wyil.io;
 
 import java.io.*;
 import java.util.*;
+
 import wyil.lang.*;
 import wyil.lang.Module.*;
 
@@ -79,7 +80,7 @@ public class WyilFileWriter {
 	
 	public static void write(int indent, Block blk, PrintWriter out) {
 		for(Code c : blk) {
-			write(0,c,out);
+			write(indent,c,out);
 		}
 	}
 	
@@ -87,12 +88,27 @@ public class WyilFileWriter {
 		if(c instanceof Code.Label) {
 			tabIndent(indent,out);
 			out.println(c);
+		} else if(c instanceof Code.Forall) {
+			write(indent,(Code.Forall)c,out);
 		} else {
 			tabIndent(indent+1,out);
 			out.println(c);
 		}
 	}	
-	
+	public static void write(int indent, Code.Forall c, PrintWriter out) {		
+		tabIndent(indent+1,out);
+		out.print("forall ");
+		boolean firstTime=true;
+		for(Map.Entry<String,CExpr> e : c.sources.entrySet()) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			out.print(e.getKey() + " in " + e.getValue());
+		}	
+		out.println(":");		
+		write(indent+1,c.body,out);		
+	}
 	public static void tabIndent(int indent, PrintWriter out) {
 		indent = indent * 4;
 		for(int i=0;i!=indent;++i) {

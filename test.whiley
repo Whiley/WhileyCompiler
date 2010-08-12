@@ -1,3 +1,4 @@
 void System::main([string] args):
-    (int x, int y) tup = (x:1345,y:2)
-    print str(tup.y)        
+    {int} xs = {|args|}
+    if some { x in xs | x == 0 }:
+        print "SOME ZERO"

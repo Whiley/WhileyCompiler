@@ -761,6 +761,8 @@ public class ModuleBuilder {
 				return resolveCondition(target,(TupleGen) e, environment, declared);
 			} else if (e instanceof ListAccess) {
 				return resolveCondition(target,(ListAccess) e, environment, declared);
+			} else if (e instanceof Comprehension) {
+				return resolveCondition(target,(Comprehension) e, environment, declared);
 			} else {				
 				syntaxError("expected boolean expression, got: "
 							+ e.getClass().getName(), e);			
@@ -906,6 +908,48 @@ public class ModuleBuilder {
 		Block blk = la.second();
 		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
 				.V_BOOL(true), target));
+		return blk;
+	}
+	
+	protected Block resolveCondition(String target, Comprehension e,
+			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
+		Type type;				
+		
+		if(e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
+			syntaxError("expected boolean expression",e);
+		}
+		
+		environment = new HashMap<String,Type>(environment);
+		HashMap<String,CExpr> sources = new HashMap<String,CExpr>();
+		Block blk = new Block();
+		for(Pair<String,Expr> src : e.sources) {
+			Pair<CExpr,Block> r = resolve(0,src.second(),environment,declared);
+			Type src_t = r.first().type();
+			checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,src.second());
+			if(src_t instanceof Type.Set) {
+				src_t = ((Type.Set)src_t).element;
+			} else if(src_t instanceof Type.List) {
+				src_t = ((Type.List)src_t).element;
+			} else {
+				// FIXME: missing cases here
+			}
+			sources.put(src.first(),r.first());
+			blk.addAll(r.second());
+			environment.put(src.first(), src_t);
+		}
+		
+		Block body;
+		if(e.cop == Expr.COp.NONE) { 			
+			String exitLabel = Block.freshLabel();
+			body = resolveCondition(exitLabel,e.condition,environment,declared);
+			blk.add(new Code.Forall(sources,body));
+			blk.add(new Code.Goto(target));
+			blk.add(new Code.Label(exitLabel));
+		} else { // SOME			
+			body = resolveCondition(target,e.condition,environment,declared);
+			blk.add(new Code.Forall(sources,body));			
+		} // ALL, LONE and ONE will be harder
+				
 		return blk;
 	}
 	
@@ -1189,38 +1233,9 @@ public class ModuleBuilder {
 			environment.put(src.first(), src_t);
 		}
 		
-		Block body;		
-		switch(e.cop) {
-			case LISTCOMP:
-			case SETCOMP:
-				body = buildCompBody(e,environment,declared);
-		}
-		
-		String trueLab = Block.freshLabel();		
-		
-		= resolveCondition(trueLab, e.condition, environment, declared);		
-		
-		body.add(new Code.Label(trueLab));
-		CExpr.Register lhs = CExpr.REG(type,target);
-		
-		blk.add(new Code.Forall(sources,body));
-		return new Pair<CExpr,Block>(lhs,blk);
-	}
-	
-	protected Block buildCompBody(Comprehension e,
-			HashMap<String, Type> environment,
-			HashMap<String, Pair<Type, Block>> declared) {
-
-		CExpr value = null;
-		if(e.cop == Expr.COp.LISTCOMP || e.cop == Expr.COp.SETCOMP) {
-			// FIXME: problem if comprehension value has side-effects
-			value = resolve(0,e.value,environment,declared).first();
-			type = e.cop == Expr.COp.LISTCOMP ? Type.T_LIST(value.type()) : Type.T_SET(value.type());
-		} else {
-			type = Type.T_BOOL;
-		}
-		
-		
+		// CExpr.Register lhs = CExpr.REG(type,target);
+				
+		throw new RuntimeException("Need to implement comprehension");
 	}
 		
 	protected Pair<CExpr, Block> resolve(int target, TupleGen sg,

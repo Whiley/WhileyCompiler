@@ -24,6 +24,7 @@ import java.util.*;
 import wyil.jvm.attributes.*;
 import wyil.jvm.rt.BigRational;
 import wyil.*;
+import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
 import wyil.lang.Code;
@@ -174,11 +175,16 @@ public class ClassFileBuilder {
 			slots.put(v,slot++);						
 		}				
 		
-		for(Code c : mcase.body()) {			
-			translate(c,slots,bytecodes);						
-		}		
+		translate(mcase.body(),slots,bytecodes);		
 		
 		return bytecodes;
+	}
+	
+	public void translate(Block blk, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		for (Code c : blk) {
+			translate(c, slots, bytecodes);
+		}
 	}
 	
 	public void translate(Code c, HashMap<String, Integer> slots,
@@ -191,6 +197,8 @@ public class ClassFileBuilder {
 			translate((Code.Goto)c,slots,bytecodes);
 		} else if(c instanceof Code.IfGoto) {
 			translate((Code.IfGoto)c,slots,bytecodes);
+		} else if(c instanceof Code.Forall) {
+			translate((Code.Forall)c,slots,bytecodes);
 		} else if(c instanceof Code.Invoke){
 			translate((Code.Invoke)c,slots,bytecodes);
 		} else if(c instanceof Code.Label){
@@ -376,6 +384,75 @@ public class ClassFileBuilder {
 		}
 	}
 	
+	public void translate(Code.Forall c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {		
+		HashMap<String,Integer> nslots = new HashMap<String,Integer>(slots);
+		ArrayList<Pair<String,CExpr>> nsources = new ArrayList();
+		
+		// NOTE. Could optimise this for certain cases, e.g. when the number of
+		// sources is 1 or 2.
+		
+		// FIXME, there is potentially a bug here as the order of execution is not
+		// specified.
+		for(Map.Entry<String,CExpr> p : c.sources.entrySet()) {
+			nsources.add(new Pair<String,CExpr>(p.getKey(),p.getValue()));					
+			nslots.put(p.getKey(),nslots.size());
+		}
+		
+		translateForallHelper(c, nsources, nslots, bytecodes);
+	}
+
+	protected void translateForallHelper(Code.Forall forall,
+			ArrayList<Pair<String, CExpr>> srcs,
+			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {
+
+		if (srcs.size() == 0) {
+			// base case --- evaluate condition and add value if true
+			translate(forall.body, slots, bytecodes);
+		} else {
+			// recursive case --- evaluate source and iterate
+			String loopLabel = freshLabel();
+			String exitLabel = freshLabel();
+			String iter = freshVar(slots);			
+			Pair<String, CExpr> src = srcs.get(0);
+			srcs.remove(0);
+			translate(src.second(), slots, bytecodes);
+			String srcVar = src.first();
+			Type srcType = src.second().type();
+			Type elementType;
+			if (srcType instanceof Type.Set) {
+				elementType = ((Type.Set) srcType).element;
+			} else {
+				elementType = ((Type.List) srcType).element;
+			}
+
+			JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+			bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
+					ftype, Bytecode.INTERFACE));
+			bytecodes.add(new Bytecode.Store(slots.get(iter),
+					JAVA_UTIL_ITERATOR));
+			bytecodes.add(new Bytecode.Label(loopLabel));
+			ftype = new JvmType.Function(T_BOOL);
+			bytecodes
+					.add(new Bytecode.Load(slots.get(iter), JAVA_UTIL_ITERATOR));
+			bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
+					ftype, Bytecode.INTERFACE));
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+			bytecodes
+					.add(new Bytecode.Load(slots.get(iter), JAVA_UTIL_ITERATOR));
+			ftype = new JvmType.Function(JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
+					ftype, Bytecode.INTERFACE));
+			addReadConversion(elementType, bytecodes);
+			bytecodes.add(new Bytecode.Store(slots.get(srcVar),
+					JAVA_LANG_OBJECT));
+
+			translateForallHelper(forall, srcs, slots, bytecodes);
+			bytecodes.add(new Bytecode.Goto(loopLabel));
+			bytecodes.add(new Bytecode.Label(exitLabel));
+		}
+	}
+
 	public void translate(Code.Goto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Goto(c.target));

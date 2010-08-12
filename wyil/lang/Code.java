@@ -45,12 +45,16 @@ public abstract class Code {
 			CExpr.usedVariables(a.rhs,uses);
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;			
-			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
-				uses.add(src.getKey()); // IS THIS RIGHT?
+			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {				
 				CExpr.usedVariables(src.getValue(),uses);
 			}
 			for(Code code : a.body) {
 				usedVariables(code,uses);
+			}
+			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {				
+				// FIXME: this is a problem if we can have multiple variables
+				// with the same name in a wyil method.
+				uses.remove(src.getKey());
 			}
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;			
@@ -506,7 +510,6 @@ public abstract class Code {
 				s += e.getKey() + " in " + e.getValue();
 			}	
 			s += ":";		
-			// FIXME: this is broken
 			for(Code c : body) {
 				s += "\n    " + c.toString();
 			}
