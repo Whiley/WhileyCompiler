@@ -46,7 +46,9 @@ public abstract class Value extends CExpr {
 			return null;
 		} else if(lub instanceof Type.Int || lub instanceof Type.Real) {
 			return evaluateArith(op,lhs,rhs);
-		} 
+		} else if(lub instanceof Type.Set) {
+			return evaluateSet(op,(Value.Set) lhs, (Value.Set) rhs);
+		}
 		// FIXME: need to add more cases!!!
 		return null;
 	}
@@ -78,6 +80,36 @@ public abstract class Value extends CExpr {
 			case DIV:
 				return V_REAL(lv.value.divide(rv.value));
 			}
+		}
+		return null;
+	}
+	
+	private static Value evaluateSet(CExpr.BOP op, Value.Set lhs, Value.Set rhs) {		
+		switch(op) {
+		case UNION:
+		{			
+			HashSet<Value> r = new HashSet<Value>(lhs.values);
+			r.addAll(rhs.values);
+			return V_SET(r);
+		}
+		case DIFFERENCE:
+		{			
+			HashSet<Value> r = new HashSet<Value>();
+			for(Value v : lhs.values) {
+				if(!(rhs.values.contains(v))) {
+					r.add(v);
+				}
+			}
+			return V_SET(r);
+		}
+		case INTERSECT:
+			HashSet<Value> r = new HashSet<Value>();
+			for(Value v : lhs.values) {
+				if(rhs.values.contains(v)) {
+					r.add(v);
+				}
+			}
+			return V_SET(r);
 		}
 		return null;
 	}

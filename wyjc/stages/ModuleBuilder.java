@@ -201,11 +201,18 @@ public class ModuleBuilder {
 	 *            detect cycles).
 	 */
 	protected Value expandConstantHelper(Expr expr, HashMap<NameID, Expr> exprs,
-			HashSet<NameID> visited) {
-		
+			HashSet<NameID> visited) throws ResolveError {		
 		if(expr instanceof Constant) {
 			Constant c = (Constant) expr;
 			return c.value;
+		} else if(expr instanceof Variable) {
+			// Note, this must be a constant definition of some sort
+			Variable v = (Variable) expr;
+			Attribute.Module mid = expr.attribute(Attribute.Module.class);
+			if(mid != null) {
+				NameID name = new NameID(mid.module,v.var);
+				return expandConstant(name,exprs,visited);
+			}
 		} else if(expr instanceof BinOp) {
 			BinOp bop = (BinOp) expr;
 			Value lhs = expandConstantHelper(bop.lhs,exprs,visited);
