@@ -530,7 +530,7 @@ public class ModuleBuilder {
 		
 		if(tf.ret == Type.T_VOID) {
 			// need to terminate method
-			blk.add(new Code.Return(tf.ret,null));
+			blk.add(new Code.Return(null));
 		}
 		
 		Module.Case ncase = new Module.Case(parameterNames, precondition,
@@ -684,11 +684,11 @@ public class ModuleBuilder {
 			checkIsSubtype(ft.ret, t.first().type(), s.expr);
 			Block blk = new Block();
 			blk.addAll(t.second());
-			blk.add(new Code.Return(ft.ret, t.first()));
+			blk.add(new Code.Return(convert(ft.ret, t.first())));
 			return blk;
 		} else {
 			Block blk = new Block();
-			blk.add(new Code.Return(Type.T_VOID, null));
+			blk.add(new Code.Return(null));
 			return blk;
 		}
 	}

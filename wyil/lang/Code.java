@@ -239,29 +239,27 @@ public abstract class Code {
 	}
 
 	public final static class Return extends Code {
-		public final Type type;
 		public final CExpr rhs;
 		
-		public Return(Type type,CExpr rhs) {
-			this.type = type;			
+		public Return(CExpr rhs) {					
 			this.rhs = rhs;
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Return) {
 				Return a = (Return) o;
-				return type.equals(a.type) && rhs.equals(a.rhs);
+				return rhs.equals(a.rhs);
 				
 			}
 			return false;
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + rhs.hashCode();			
+			return rhs.hashCode();			
 		}
 		
 		public String toString() {
-			return "return[" + type + "] " + rhs;
+			return "return " + rhs;
 		}		
 	}
 	

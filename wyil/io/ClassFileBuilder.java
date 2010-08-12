@@ -229,7 +229,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		if (c.rhs != null) {
 			translate(c.rhs, slots, bytecodes);
-			bytecodes.add(new Bytecode.Return(convertType(c.type)));
+			bytecodes.add(new Bytecode.Return(convertType(c.rhs.type())));
 		} else {		
 			bytecodes.add(new Bytecode.Return(null));
 		}
