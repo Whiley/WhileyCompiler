@@ -345,8 +345,23 @@ public class ClassFileBuilder {
 			{				
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
 				translateTypeTest(rhs_t, bytecodes);
-				op = Bytecode.If.NE;
-				break;
+				if(c.lhs instanceof CExpr.Variable) { 
+					// This covers the limited form of type inference currently
+					// supported in Whiley. Essentially, it works only for the
+					// case where we are testing against a variable.
+					CExpr.Variable v = (CExpr.Variable) c.lhs;
+					String exitLabel = freshLabel();
+					bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+					translate(c.lhs,slots,bytecodes);
+					addReadConversion(rhs_t,bytecodes);
+					JvmType rhs_jt = convertType(rhs_t);					
+					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));
+					bytecodes.add(new Bytecode.Goto(c.target));
+					bytecodes.add(new Bytecode.Label(exitLabel));
+					return;				
+				} else {
+					op = Bytecode.If.NE;
+				}
 			}
 			default:
 				throw new RuntimeException("unknown if condition encountered");
