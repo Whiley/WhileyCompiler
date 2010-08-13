@@ -590,10 +590,8 @@ public abstract class CExpr {
 			this.field = field;
 		}
 
-		public Type type() {
-			Type t = lhs.type();
-			// FIXME: bugs here for effective tuple types
-			Type.Tuple tt = (Type.Tuple) t;
+		public Type type() {			
+			Type.Tuple tt = Type.effectiveTupleType(lhs.type());			
 			Type r = tt.types.get(field);
 			if(r == null) {
 				return Type.T_VOID;

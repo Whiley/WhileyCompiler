@@ -359,7 +359,69 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Type substituteRecursiveTypes(Type t, Map<String,String> binding) {
+	public static Type renameRecursiveTypes(Type t, Map<String,String> binding) {
+		if (t instanceof Existential || t instanceof Void || t instanceof Bool
+				|| t instanceof Int || t instanceof Real || t instanceof Any
+				|| t instanceof Named) {
+			return t;
+		} else if(t instanceof List) {
+			List lt = (List) t;
+			return T_LIST(renameRecursiveTypes(lt.element, binding));
+		} else if(t instanceof Set) {
+			Set lt = (Set) t;
+			return T_SET(renameRecursiveTypes(lt.element, binding));			
+		} else if(t instanceof Process) {
+			Process lt = (Process) t;
+			return T_PROCESS(renameRecursiveTypes(lt.element, binding));			
+		} else if(t instanceof Union) {
+			Union ut = (Union) t;
+			HashSet<NonUnion> bounds = new HashSet<NonUnion>();
+			for(NonUnion b : ut.bounds) {
+				bounds.add((NonUnion)renameRecursiveTypes(b, binding));				
+			}
+			return T_UNION(bounds);			
+		} else if(t instanceof Tuple) {			
+			Tuple tt = (Tuple) t;			
+			HashMap<String,Type> fields = new HashMap<String,Type>();
+			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+				fields.put(b.getKey(), renameRecursiveTypes(b.getValue(),
+						binding));				
+			}
+			return T_TUPLE(fields);
+		} else if (t instanceof Recursive) {
+			Recursive lt = (Recursive) t;
+			String name = binding.get(lt.name);			
+			if (lt.type != null) {
+				return T_RECURSIVE(name, renameRecursiveTypes(lt.type,
+						binding));
+			} else {
+				return T_RECURSIVE(name, null);
+			}
+		} else {
+			Fun ft = (Fun) t;
+			ArrayList<Type> params = new ArrayList<Type>();
+			for(Type p : ft.params) {
+				params.add(renameRecursiveTypes(p, binding));
+			}
+			Type ret = renameRecursiveTypes(ft.ret, binding);
+			Process receiver = null;
+			if(ft.receiver != null) {
+				receiver = (Process) renameRecursiveTypes(ft.ret, binding);							
+			} 
+			return T_FUN(receiver,ret,params);
+		}
+	}
+
+	/**
+	 * The following method substitutes any occurrence of a given recursive type
+	 * by the type given in the binding. If no binding for a recursive type is
+	 * given, it remains as is.
+	 * 
+	 * @param t
+	 * @param binding
+	 * @return
+	 */
+	public static Type substituteRecursiveTypes(Type t, Map<String,Type> binding) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Bool
 				|| t instanceof Int || t instanceof Real || t instanceof Any
 				|| t instanceof Named) {
@@ -390,13 +452,15 @@ public abstract class Type {
 			return T_TUPLE(fields);
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
-			String name = binding.get(lt.name);
-			name = name == null ? lt.name : name;
+			Type type = binding.get(lt.name);
+			if(type != null) {
+				return type;
+			}
 			if (lt.type != null) {
-				return T_RECURSIVE(name, substituteRecursiveTypes(lt.type,
+				return T_RECURSIVE(lt.name, substituteRecursiveTypes(lt.type,
 						binding));
 			} else {
-				return T_RECURSIVE(name, null);
+				return T_RECURSIVE(lt.name, null);
 			}
 		} else {
 			Fun ft = (Fun) t;
@@ -476,6 +540,87 @@ public abstract class Type {
 		}
 	}
 
+	/**
+	 * The effective tuple type gives a subset of the visible fields which are
+	 * guaranteed to be in the type. For example, consider this type:
+	 * 
+	 * <pre>
+	 * (int op, int x) | (int op, [int] y)
+	 * </pre>
+	 * 
+	 * Here, the field op is guaranteed to be present. Therefore, the effective
+	 * tuple type is just <code>(int op)</code>.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static Type.Tuple effectiveTupleType(Type t) {
+
+		if(t instanceof Type.Tuple) {
+			return (Type.Tuple) t;
+		} else if(t instanceof Type.Union) {
+			Type.Union ut = (Type.Union) t;
+			return effectiveTupleType(commonType(ut.bounds));
+		} else if(t instanceof Type.Named) {
+			Type.Named nt = (Type.Named) t;
+			return effectiveTupleType(nt.type);
+		} else if(t instanceof Type.Recursive) {
+			// this is more tricky. We need to unroll the type once to ensure we
+			// don't lose the recursive information.
+			Type.Recursive rt = (Type.Recursive) t;
+			HashMap<String,Type> binding = new HashMap<String,Type>();
+			binding.put(rt.name, rt);
+			t = substituteRecursiveTypes(rt.type,binding);
+			return effectiveTupleType(t);
+		}		
+		return null;	
+	}
+	
+	
+	private static Type commonType(Collection<? extends Type> types) {		
+		Type type = types.iterator().next();
+		
+		if(type instanceof Type.Tuple) {
+			return commonTupleType(types);
+		} else if(type instanceof Type.List) {
+			// FIXME: to do			
+		} else if(type instanceof Type.Set) {
+			// FIXME: to do
+		} 
+		
+		return null;		
+	}
+
+	private static Type.Tuple commonTupleType(Collection<? extends Type> types) {
+		Type.Tuple rt = null;
+		for (Type pt : types) {
+			if(!(pt instanceof Type.Tuple)) {
+				return null;
+			}
+			Type.Tuple tt = (Type.Tuple) pt;
+			if (rt == null) {
+				rt = tt;
+			} else {
+				HashMap<String, Type> it = new HashMap<String, Type>();
+				for (Map.Entry<String, Type> ent : rt.types.entrySet()) {
+					Type ttt = tt.types.get(ent.getKey());
+					if (ttt != null) {
+						it.put(ent.getKey(), Type.leastUpperBound(ttt, ent
+								.getValue()));
+					}
+				}
+				
+				rt = new Type.Tuple(it);
+			}
+		}
+		if (rt != null && rt.types.size() > 0) {				
+			return rt;
+		} else {
+			return null;
+		}		
+	}
+
+	
 	// =============================================================
 	// Type Classes
 	// =============================================================

@@ -1308,8 +1308,15 @@ public class ClassFileBuilder {
 			Type.Named nt = (Type.Named) t;
 			return convertType(nt.type);
 		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;					
-			return JAVA_LANG_OBJECT;			
+			// There's an interesting question as to whether we need to do more
+			// here. For example, a union of a set and a list could result in
+			// contains ?
+			Type.Tuple tt = Type.effectiveTupleType(t);
+			if(tt != null) {
+				return WHILEYTUPLE;
+			} else {
+				return JAVA_LANG_OBJECT;
+			}
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.Recursive) {

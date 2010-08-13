@@ -1429,7 +1429,8 @@ public class ModuleBuilder {
 			HashMap<String, Pair<Type, Block>> declared) {
 		Pair<CExpr, Block> lhs = resolve(target, sg.lhs, environment, declared);
 		// FIXME: will need to determine effective tuple type here
-		Type.Tuple tup = checkType(lhs.first().type(), Type.Tuple.class, sg.lhs);
+		Type.Tuple ett = Type.effectiveTupleType(lhs.first().type());		
+		Type.Tuple tup = checkType(ett, Type.Tuple.class, sg.lhs);
 		Type ft = tup.types.get(sg.name);
 		if (ft == null) {
 			syntaxError("type has no field named: " + sg.name, sg.lhs);
@@ -1606,7 +1607,7 @@ public class ModuleBuilder {
 			binding.put(names.get(i), n);
 		}
 		
-		return Type.substituteRecursiveTypes(t, binding);
+		return Type.renameRecursiveTypes(t, binding);
 	}	
 	
 	public static Variable flattern(Expr e) {
