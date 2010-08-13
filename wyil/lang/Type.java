@@ -610,10 +610,14 @@ public abstract class Type {
 					}
 				}
 				
+				if(it.size() == 0) {
+					return null;
+				}
+				
 				rt = new Type.Tuple(it);
 			}
 		}
-		if (rt != null && rt.types.size() > 0) {				
+		if (rt != null) {				
 			return rt;
 		} else {
 			return null;
