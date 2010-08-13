@@ -586,11 +586,12 @@ public class ModuleBuilder {
 		}
 		Block blk = new Block();
 		if(init != null) {
-			Pair<CExpr,Block> initT = resolve(0, init,environment, declared);
-			checkIsSubtype(type,initT.first().type(),init);
-			environment.put(s.name,type);
-			blk.addAll(initT.second());
-			blk.add(new Code.Assign(CExpr.VAR(type, s.name), initT.first()));			
+			Pair<CExpr,Block> init_tb = resolve(0, init,environment, declared);
+			Type init_t = init_tb.first().type();
+			checkIsSubtype(type,init_t,init);
+			environment.put(s.name,init_t);
+			blk.addAll(init_tb.second());
+			blk.add(new Code.Assign(CExpr.VAR(type, s.name), init_tb.first()));			
 			// Finally, need to actually check the constraints!						
 			if(constraint != null) {
 				blk.addAll(constraint);

@@ -1,7 +1,6 @@
-void f([int] xs):
-    xs[0] = 1
+define IntList as (int|[int] op)
 
 void System::main([string] args):
-    [int] ys = [2]
-    f(ys)
-    print str(ys)
+    IntList x = (op:1)
+    (int op) y
+    y = x // OK
