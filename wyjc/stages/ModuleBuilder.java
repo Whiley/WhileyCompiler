@@ -591,7 +591,7 @@ public class ModuleBuilder {
 			checkIsSubtype(type,init_t,init);
 			environment.put(s.name,init_t);
 			blk.addAll(init_tb.second());
-			blk.add(new Code.Assign(CExpr.VAR(type, s.name), init_tb.first()));			
+			blk.add(new Code.Assign(CExpr.VAR(init_t, s.name), init_tb.first()));			
 			// Finally, need to actually check the constraints!						
 			if(constraint != null) {
 				blk.addAll(constraint);
