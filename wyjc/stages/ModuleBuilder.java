@@ -941,6 +941,7 @@ public class ModuleBuilder {
 		if(rhs_tb.second() != null) {
 			blk.addAll(rhs_tb.second());
 		}
+		blk.add(new Code.Goto(target));
 		blk.add(new Code.Label(exitLabel));
 		return blk;
 	}

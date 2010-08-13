@@ -346,6 +346,7 @@ public class ClassFileBuilder {
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
 				translateTypeTest(rhs_t, bytecodes);
 				op = Bytecode.If.NE;
+				break;
 			}
 			default:
 				throw new RuntimeException("unknown if condition encountered");
@@ -1307,14 +1308,10 @@ public class ClassFileBuilder {
 			Type.Named nt = (Type.Named) t;
 			return convertType(nt.type);
 		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;
-			Type c = Type.leastUpperBound(ut.bounds);
-			if(c != null) {
-				// there was some commonality between types
-				return convertType(c);
-			} else {
-				return JAVA_LANG_OBJECT;
-			}
+			Type.Union ut = (Type.Union) t;					
+			return JAVA_LANG_OBJECT;			
+		} else if(t instanceof Type.Meta) {							
+			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) t;
 			if(rt.type == null) {
