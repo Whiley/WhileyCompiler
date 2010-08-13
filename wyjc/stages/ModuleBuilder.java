@@ -596,7 +596,9 @@ public class ModuleBuilder {
 			if(constraint != null) {
 				blk.addAll(constraint);
 			}
-		} 
+		} else {
+			environment.put(s.name,type);
+		}
 
 		declared.put(s.name,new Pair<Type,Block>(type,constraint));
 				
@@ -724,12 +726,17 @@ public class ModuleBuilder {
 		String falseLab = Block.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
 				.freshLabel();
+		HashMap<String, Type> tenv = new HashMap<String,Type>(environment);
 		Block blk = resolveCondition(falseLab, invert(s.condition),
-				environment, declared);
+				tenv, declared);
 
-		// FIXME: need to perform some type inference here
-
-		HashMap<String, Type> tenv = new HashMap<String, Type>(environment);
+		// The form of type inference that i'm performing here is quite limited.
+		// In principle, I would like to perform more interesting forms of type
+		// inference. To really make this happen, I think we need to properly
+		// separate the wyil generation from type checking. That is, we first
+		// generate wyil code (without type checking it), and then type check it
+		// using a realy data-flow based type inference algorithm.
+		
 		HashMap<String, Pair<Type, Block>> tdec = new HashMap<String, Pair<Type, Block>>(
 				declared);
 		for (Stmt st : s.trueBranch) {
@@ -854,8 +861,8 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		
 		if (bop == BOp.OR) {
-			blk.addAll(resolveCondition(target, v.lhs, environment, declared));
-			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
+			blk.addAll(resolveCondition(target, v.lhs, new HashMap(environment), declared));
+			blk.addAll(resolveCondition(target, v.rhs, new HashMap(environment), declared));
 			return blk;
 		} else if (bop == BOp.AND) {
 			String exitLabel = Block.freshLabel();
@@ -929,14 +936,19 @@ public class ModuleBuilder {
 			syntaxError("incomparable types",v);
 		}
 		
-		GOT HERE: NEED TO ADD TYPE INFERENCE SOMEHOW?
-		
 		Block blk = new Block();
 		String exitLabel = Block.freshLabel();
 		String trueLabel = Block.freshLabel();
 		blk.addAll(lhs_tb.second());
 		blk.add(new Code.IfGoto(Type.T_META, Code.COP.SUBTYPEEQ,
 				lhs_tb.first(), Value.V_TYPE(rhs_tb.first()), trueLabel));
+		
+		// Perform the limited form of type inference currently supported
+		if(v.lhs instanceof Expr.Variable) {
+			Expr.Variable var = (Expr.Variable) v.lhs; 
+			environment.put(var.var,rhs_t);
+		}
+		
 		blk.add(new Code.Goto(exitLabel));
 		blk.add(new Code.Label(trueLabel));
 		if(rhs_tb.second() != null) {
