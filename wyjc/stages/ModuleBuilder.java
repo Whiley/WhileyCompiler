@@ -929,6 +929,8 @@ public class ModuleBuilder {
 			syntaxError("incomparable types",v);
 		}
 		
+		GOT HERE: NEED TO ADD TYPE INFERENCE SOMEHOW?
+		
 		Block blk = new Block();
 		String exitLabel = Block.freshLabel();
 		String trueLabel = Block.freshLabel();
@@ -940,6 +942,8 @@ public class ModuleBuilder {
 		if(rhs_tb.second() != null) {
 			Block constraint = rhs_tb.second();
 			
+			// recompute with updated environment.
+			lhs_tb = resolve(0,v.lhs, environment, declared);
 			// now substitute $ for the lhs
 			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 			binding.put("$", lhs_tb.first());

@@ -590,8 +590,11 @@ public abstract class CExpr {
 			this.field = field;
 		}
 
-		public Type type() {			
+		public Type type() {					
 			Type.Tuple tt = Type.effectiveTupleType(lhs.type());			
+			if(tt == null) {
+				return Type.T_VOID;
+			}
 			Type r = tt.types.get(field);
 			if(r == null) {
 				return Type.T_VOID;
