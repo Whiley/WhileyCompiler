@@ -132,7 +132,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 						constraint = transformConstraint(regTarget,constraint,ivk,c);
 						if(caseNum < ncases) {
 							nextLabel = Block.freshLabel();
-							constraint = chain(nextLabel, constraint);
+							constraint = Block.chain(nextLabel, constraint);
 						}						
 						blk.addAll(constraint);
 					}
@@ -182,16 +182,5 @@ public class MethodDispatchInliner implements ModuleTransform {
 			
 		}							
 		return Block.substitute(binding, constraint);
-	}
-	
-	public static Block chain(String target, Block block) {
-		Block nblock = new Block();
-		for(Code c : block) {
-			if(c instanceof Code.Fail) {
-				c = new Code.Goto(target);
-			}
-			nblock.add(c);			
-		}
-		return nblock;
 	}
 }

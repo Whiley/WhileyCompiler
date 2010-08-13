@@ -920,8 +920,7 @@ public class ModuleBuilder {
 	protected Block resolveTypeCondition(String target, BinOp v,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		
-		Pair<CExpr,Block> lhs_tb = resolve(0,v.lhs, environment, declared);		
-		System.out.println("GOT: " + ((Expr.TypeConst)v.rhs).type);
+		Pair<CExpr,Block> lhs_tb = resolve(0,v.lhs, environment, declared);				
 		Pair<Type,Block> rhs_tb = resolve(((Expr.TypeConst) v.rhs).type);
 		Type lhs_t = lhs_tb.first().type();
 		Type rhs_t = rhs_tb.first();
@@ -937,9 +936,23 @@ public class ModuleBuilder {
 				lhs_tb.first(), Value.V_TYPE(rhs_tb.first()), trueLabel));
 		blk.add(new Code.Goto(exitLabel));
 		blk.add(new Code.Label(trueLabel));
-		// FIXME: this seems most def broken.  need to chain I think.
 		if(rhs_tb.second() != null) {
-			blk.addAll(rhs_tb.second());
+			Block constraint = rhs_tb.second();
+			
+			// now substitute $ for the lhs
+			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+			binding.put("$", lhs_tb.first());
+			constraint = Block.substitute(binding,constraint);
+			
+			// Similarly, we need to make sure any labels used in the constraint do
+			// not collide with labels used at the inline point.
+			constraint = Block.relabel(constraint);
+			
+			// Now, chain failures to redirect to the exit point.
+			constraint = Block.chain(exitLabel, constraint);
+			
+			// all done!
+			blk.addAll(constraint);
 		}
 		blk.add(new Code.Goto(target));
 		blk.add(new Code.Label(exitLabel));

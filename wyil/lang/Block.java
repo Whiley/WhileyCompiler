@@ -127,6 +127,25 @@ public final class Block extends ArrayList<Code> {
 		
 		return b;
 	}
+
+	/**
+	 * This method is used to chain blocks together. More specifically, it
+	 * identifies fail points within a block and redirects them a given target.
+	 * 
+	 * @param target
+	 * @param block
+	 * @return
+	 */
+	public static Block chain(String target, Block block) {
+		Block nblock = new Block();
+		for(Code c : block) {
+			if(c instanceof Code.Fail) {
+				c = new Code.Goto(target);
+			}
+			nblock.add(c);			
+		}
+		return nblock;
+	}
 	
 	private static int idx=0;
 	public static String freshLabel() {
