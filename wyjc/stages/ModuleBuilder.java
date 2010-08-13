@@ -364,7 +364,7 @@ public class ModuleBuilder {
 			if(bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),null);
 			} else {
-				return new Pair<Type,Block>(Type.T_UNION(bounds),null);
+				return new Pair<Type,Block>(Type.leastUpperBound(bounds),null);
 			}
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
@@ -1497,7 +1497,7 @@ public class ModuleBuilder {
 			if(bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),null);
 			} else {
-				return new Pair<Type,Block>(Type.T_UNION(bounds),null);
+				return new Pair<Type,Block>(Type.leastUpperBound(bounds),null);
 			}
 		} else {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;

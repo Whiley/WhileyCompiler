@@ -667,7 +667,7 @@ public class ModuleLoader {
 					index = index + 1;
 					types.add(parseNonUnionType());
 				}
-				return Type.T_UNION(types);
+				return Type.leastUpperBound(types);
 			}
 
 			return type;

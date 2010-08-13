@@ -254,7 +254,7 @@ public class WhileyType implements BytecodeAttribute {
 					et = readType(input, constantPool);
 					bounds.add((Type.NonUnion) et);
 				}
-				return Type.T_UNION(bounds);
+				return Type.leastUpperBound(bounds);
 			case PROCESS_TYPE:
 				et = readType(input, constantPool);
 				return Type.T_PROCESS(et);

@@ -54,12 +54,14 @@ public abstract class Type {
 		return get(new Fun(receiver, ret, parameters));
 	}
 	
-	public static Union T_UNION(Collection<NonUnion> bounds) {
+	// both T_UNION methods must be private
+	private static Union T_UNION(Collection<NonUnion> bounds) {
 		return get(new Union(bounds));
 	}
-	public static Union T_UNION(NonUnion... bounds) {
+	private static Union T_UNION(NonUnion... bounds) {
 		return get(new Union(bounds));
 	}
+	
 	
 	public static Process T_PROCESS(Type element) {
 		return get(new Process(element));
@@ -213,7 +215,7 @@ public abstract class Type {
 			Set s2 = (Set) t2;
 			return T_SET(leastUpperBound(s1.element,s2.element));
 		} else {
-			return T_UNION((NonUnion) t1, (NonUnion) t2);
+			return T_UNION((NonUnion)t1,(NonUnion)t2);			
 		}
 	}
 
@@ -224,6 +226,15 @@ public abstract class Type {
 		}
 		return t;
 	}
+	
+	public static Type leastUpperBound(Type... types) {
+		Type t = T_VOID;
+		for(Type b : types) {
+			t = leastUpperBound(t,b);
+		}
+		return t;
+	}
+	
 	/**
 	 * Determine whether a given type contains an existential or not.
 	 * 
