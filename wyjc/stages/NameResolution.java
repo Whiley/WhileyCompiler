@@ -20,7 +20,7 @@ package wyjc.stages;
 
 import java.util.*;
 
-import static wyil.util.SyntaxError.*;
+import static wyjc.lang.WhileyFile.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
@@ -76,7 +76,7 @@ public class NameResolution {
 				HashMap<String,Set<Expr>> environment = new HashMap<String,Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
 				addExposedNames(new Expr.Variable("$", td.constraint
-						.attribute(Attributes.Source.class)), td.type,
+						.attribute(Attribute.Source.class)), td.type,
 						environment);
 				resolve(td.constraint,environment,imports);
 			}		
@@ -392,7 +392,7 @@ public class NameResolution {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				Expr s = new Expr.TupleAccess(src, e
-						.getKey(), src.attribute(Attributes.Source.class));
+						.getKey(), src.attribute(Attribute.Source.class));
 				addExposedNames(s,e.getValue(),environment);
 				Set<Expr> aliases = environment.get(e.getKey());
 				if(aliases == null) {

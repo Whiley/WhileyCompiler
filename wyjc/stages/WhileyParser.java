@@ -486,7 +486,7 @@ public class WhileyParser {
 			matchEndLine();
 			return b;
 		} catch(wyjvm.util.Parser.ParseError err) {	
-			Attributes.Source sa = sourceAttr(start,index-1);
+			Attribute.Source sa = sourceAttr(start,index-1);
 			throw new SyntaxError(err.getMessage(),filename,sa.start,sa.end,err);
 		}
 	}
@@ -1185,14 +1185,14 @@ public class WhileyParser {
 		}
 	}
 	
-	private Attributes.Source sourceAttr(int start, int end) {
+	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
-		return new Attributes.Source(filename,t1.start,t2.end());
+		return new Attribute.Source(filename,t1.start,t2.end());
 	}
 	
 	private void syntaxError(String msg, Expr e) {
-		Attributes.Source loc = e.attribute(Attributes.Source.class);
+		Attribute.Source loc = e.attribute(Attribute.Source.class);
 		throw new ParseError(msg, filename, loc.start, loc.end);
 	}
 	

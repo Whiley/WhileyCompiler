@@ -18,8 +18,7 @@
 
 package wyil.util;
 
-import wyjc.lang.Attributes;
-import wyjc.lang.SyntacticElement;
+import wyil.lang.Attribute;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser. 
@@ -104,35 +103,5 @@ public class SyntaxError extends RuntimeException {
 	 */
 	public int end() { return end; }
 	
-	public static final long serialVersionUID = 1l;
-	
-	public static void syntaxError(String msg, SyntacticElement elem) {
-		int start = -1;
-		int end = -1;
-		String filename = null;
-		
-		Attributes.Source attr = (Attributes.Source) elem.attribute(Attributes.Source.class);
-		if(attr != null) {
-			start=attr.start;
-			end=attr.end;
-			filename = attr.filename;
-		}
-		
-		throw new SyntaxError(msg, filename, start, end);
-	}
-
-	public static void syntaxError(String msg, SyntacticElement elem, Throwable ex) {
-		int start = -1;
-		int end = -1;
-		String filename = null;
-		
-		Attributes.Source attr = (Attributes.Source) elem.attribute(Attributes.Source.class);
-		if(attr != null) {
-			start=attr.start;
-			end=attr.end;
-			filename = attr.filename;
-		}
-		
-		throw new SyntaxError(msg, filename, start, end, ex);
-	}
+	public static final long serialVersionUID = 1l;	
 }

@@ -21,7 +21,7 @@ package wyjc.stages;
 import java.util.*;
 import java.math.BigInteger;
 
-import static wyil.util.SyntaxError.*;
+import static wyjc.lang.WhileyFile.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;

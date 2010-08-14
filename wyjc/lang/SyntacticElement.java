@@ -21,6 +21,7 @@ package wyjc.lang;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import wyil.lang.Attribute;
+import wyil.util.SyntaxError;
 
 /**
  * A Syntactic Element represents any part of the file for which is relevant

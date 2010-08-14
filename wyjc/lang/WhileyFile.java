@@ -3,6 +3,7 @@ package wyjc.lang;
 import java.util.*;
 import wyil.ModuleLoader;
 import wyil.lang.*;
+import wyil.util.SyntaxError;
 
 public class WhileyFile {
 	public final ModuleID module;
@@ -179,4 +180,35 @@ public class WhileyFile {
 			return name;
 		}
 	}	
+	
+	
+	public static void syntaxError(String msg, SyntacticElement elem) {
+		int start = -1;
+		int end = -1;
+		String filename = null;
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;
+			filename = attr.filename;
+		}
+		
+		throw new SyntaxError(msg, filename, start, end);
+	}
+
+	public static void syntaxError(String msg, SyntacticElement elem, Throwable ex) {
+		int start = -1;
+		int end = -1;
+		String filename = null;
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;
+			filename = attr.filename;
+		}
+		
+		throw new SyntaxError(msg, filename, start, end, ex);
+	}
 }

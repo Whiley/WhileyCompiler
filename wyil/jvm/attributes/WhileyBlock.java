@@ -1,7 +1,5 @@
 package wyil.jvm.attributes;
 
-import static wyil.util.SyntaxError.syntaxError;
-
 import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
