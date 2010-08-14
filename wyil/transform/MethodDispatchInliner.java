@@ -91,11 +91,12 @@ public class MethodDispatchInliner implements ModuleTransform {
 	
 	public Block transform(int regTarget, Block block) {
 		Block nblock = new Block();
-		for(Code c : block) {
+		for(int i=0;i!=block.size();++i) {
+			Code c = block.code(i);
 			if(c instanceof Code.Invoke) {
 				nblock.addAll(transform(regTarget,(Code.Invoke) c));												
 			} else {
-				nblock.add(c);
+				nblock.add(c,block.attributes(i));
 			}
 		}
 		return nblock;

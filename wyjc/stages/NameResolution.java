@@ -33,6 +33,7 @@ import wyjc.util.*;
 
 public class NameResolution {
 	private final ModuleLoader loader;	
+	private String filename;
 	
 	public NameResolution(ModuleLoader loader) {
 		this.loader = loader;
@@ -42,6 +43,7 @@ public class NameResolution {
 		ArrayList<PkgID> imports = new ArrayList<PkgID>();
 		
 		ModuleID id = wf.module;
+		filename = wf.filename;
 		
 		imports.add(id.pkg().append(id.module()));
 		imports.add(id.pkg().append("*"));
@@ -60,7 +62,7 @@ public class NameResolution {
 					resolve((ConstDecl)d,imports);					
 				}
 			} catch(ResolveError ex) {
-				syntaxError(ex.getMessage(),d);
+				syntaxError(ex.getMessage(),filename,d);
 			}
 		}				
 	}
@@ -82,7 +84,7 @@ public class NameResolution {
 			}		
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), td);			
+			syntaxError(e.getMessage(), filename,  td);			
 		}
 	}	
 	
@@ -96,7 +98,7 @@ public class NameResolution {
 				environment.put(p.name(),Collections.EMPTY_SET);
 			} catch (ResolveError e) {												
 				// Ok, we've hit a resolution error.
-				syntaxError(e.getMessage(), p, e);
+				syntaxError(e.getMessage(), filename, p, e);
 			}
 		}
 		
@@ -109,7 +111,7 @@ public class NameResolution {
 			resolve(fd.ret, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), fd.ret);
+			syntaxError(e.getMessage(), filename, fd.ret);
 		}
 		
 		// method receiver type (if applicable)
@@ -117,7 +119,7 @@ public class NameResolution {
 			resolve(fd.receiver, imports);			
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), fd.receiver);
+			syntaxError(e.getMessage(),filename,fd.receiver);
 		}
 			
 		if(fd.precondition != null) {
@@ -154,11 +156,11 @@ public class NameResolution {
 				resolve((UnOp)s, environment, imports);
 			} else {
 				syntaxError("unknown statement encountered: "
-						+ s.getClass().getName(), s);				
+						+ s.getClass().getName(), filename, s);				
 			}
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), s);			
+			syntaxError(e.getMessage(), filename, s);			
 		}
 	}
 	
@@ -237,14 +239,14 @@ public class NameResolution {
 				resolve((TypeConst) e, environment, imports);
 			} else {				
 				syntaxError("unknown expression encountered: "
-							+ e.getClass().getName(), e);								
+							+ e.getClass().getName(), filename, e);								
 			}
 		} catch(ResolveError re) {
-			syntaxError(re.getMessage(),e,re);			
+			syntaxError(re.getMessage(),filename,e,re);			
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
-			syntaxError("internal failure", e, ex);			
+			syntaxError("internal failure", filename, e, ex);			
 		}	
 	}
 	
@@ -278,7 +280,7 @@ public class NameResolution {
 		} else if (aliases.size() == 1) {
 			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
 		} else if (aliases.size() > 1) {
-			syntaxError("ambigous variable name", v);
+			syntaxError("ambigous variable name", filename, v);
 		}
 	}
 	

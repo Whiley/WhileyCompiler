@@ -28,6 +28,13 @@ public final class Block implements Iterable<Code> {
 		this.attributes.add(attrs);
 	}
 	
+	public void add(Code c, Collection<Attribute> attributes) {
+		codes.add(c);
+		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
+		attrs.addAll(attributes);
+		this.attributes.add(attrs);
+	}
+	
 	public void addAll(Block blk) {
 		this.codes.addAll(blk.codes);
 		this.attributes.addAll(blk.attributes);
@@ -108,8 +115,9 @@ public final class Block implements Iterable<Code> {
 	 */
 	public static Block substitute(HashMap<String, CExpr> binding, Block block) {
 		Block r = new Block();
-		for (Code c : block) {
-			r.add(Code.substitute(binding, c));
+		for (int i=0;i!=block.size();++i) {
+			Code c = block.code(i);
+			r.add(Code.substitute(binding, c),block.attributes(i));
 		}
 		return r;
 	}
@@ -125,8 +133,9 @@ public final class Block implements Iterable<Code> {
 	 */
 	public static Block registerShift(int shift, Block block) {
 		Block r = new Block();
-		for (Code c : block) {
-			r.add(Code.registerShift(shift, c));
+		for (int i=0;i!=block.size();++i) {
+			Code c = block.code(i);		
+			r.add(Code.registerShift(shift, c),block.attributes(i));
 		}
 		return r;
 	}
@@ -147,7 +156,8 @@ public final class Block implements Iterable<Code> {
 	
 	private static Block relabelHelper(Block blk, HashMap<String,String> nlabels) {
 		Block b = new Block();
-		for (Code c : blk) {			
+		for (int i=0;i!=blk.size();++i) {
+			Code c = blk.code(i);
 			if (c instanceof Code.Label) {
 				Code.Label l = (Code.Label) c;
 				String label = nlabels.get(l.label);
@@ -176,7 +186,7 @@ public final class Block implements Iterable<Code> {
 				Code.Forall fa = (Code.Forall) c; 
 				c = new Code.Forall(fa.sources,relabelHelper(fa.body,nlabels));
 			}
-			b.add(c);
+			b.add(c,blk.attributes(i));
 		}				
 		
 		return b;
@@ -192,11 +202,12 @@ public final class Block implements Iterable<Code> {
 	 */
 	public static Block chain(String target, Block block) {
 		Block nblock = new Block();
-		for(Code c : block) {
+		for(int i=0;i!=block.size();++i) {
+			Code c = block.code(i);
 			if(c instanceof Code.Fail) {
 				c = new Code.Goto(target);
 			}
-			nblock.add(c);			
+			nblock.add(c,block.attributes(i));			
 		}
 		return nblock;
 	}

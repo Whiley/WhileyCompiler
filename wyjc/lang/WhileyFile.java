@@ -182,31 +182,28 @@ public class WhileyFile {
 	}	
 	
 	
-	public static void syntaxError(String msg, SyntacticElement elem) {
+	public static void syntaxError(String msg, String filename, SyntacticElement elem) {
 		int start = -1;
 		int end = -1;
-		String filename = null;
 		
 		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
 		if(attr != null) {
 			start=attr.start;
-			end=attr.end;
-			filename = attr.filename;
+			end=attr.end;			
 		}
 		
 		throw new SyntaxError(msg, filename, start, end);
 	}
 
-	public static void syntaxError(String msg, SyntacticElement elem, Throwable ex) {
+	public static void syntaxError(String msg, String filename,
+			SyntacticElement elem, Throwable ex) {
 		int start = -1;
-		int end = -1;
-		String filename = null;
+		int end = -1;		
 		
 		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
 		if(attr != null) {
 			start=attr.start;
-			end=attr.end;
-			filename = attr.filename;
+			end=attr.end;			
 		}
 		
 		throw new SyntaxError(msg, filename, start, end, ex);

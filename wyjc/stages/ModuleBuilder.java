@@ -32,12 +32,14 @@ import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
 
 public class ModuleBuilder {
-	private final ModuleLoader loader;
+	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
+	private HashMap<NameID,WhileyFile> filemap;
 	private HashMap<NameID,List<Type.Fun>> functions;	
 	private HashMap<NameID,Pair<Type,Block>> types;	
 	private HashMap<NameID,Value> constants;
 	private HashMap<NameID,Pair<UnresolvedType,Expr>> unresolved;
+	private String filename;
 	
 	public ModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;
@@ -45,6 +47,7 @@ public class ModuleBuilder {
 	
 	public List<Module> resolve(List<WhileyFile> files) {			
 		modules = new HashSet<ModuleID>();
+		filemap = new HashMap<NameID,WhileyFile>();
 		functions = new HashMap<NameID,List<Type.Fun>>();
 		types = new HashMap<NameID,Pair<Type,Block>>();
 		constants = new HashMap<NameID,Value>();
@@ -78,6 +81,7 @@ public class ModuleBuilder {
 	}
 
 	public Module resolve(WhileyFile wf) {
+		this.filename = wf.filename;
 		HashMap<Pair<Type.Fun, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
@@ -103,7 +107,7 @@ public class ModuleBuilder {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				syntaxError("internal failure", d, ex);
+				syntaxError("internal failure", wf.filename, d, ex);
 			}
 		}
 		return new Module(wf.module, wf.filename, methods.values(), types,
@@ -140,7 +144,7 @@ public class ModuleBuilder {
 					types.put(k, new Pair<Type,Block>(st.element, null));
 				}
 			} catch(ResolveError rex) {
-				syntaxError(rex.getMessage(),exprs.get(k),rex);
+				syntaxError(rex.getMessage(),filemap.get(k).filename,exprs.get(k),rex);
 			}
 		}
 	}
@@ -173,14 +177,15 @@ public class ModuleBuilder {
 			return mi.constant(key.name()).constant();
 		} else if(visited.contains(key)) {
 			// this indicates a cyclic definition.
-			syntaxError("cyclic constant definition encountered",exprs.get(key));
+			syntaxError("cyclic constant definition encountered", filemap
+					.get(key).filename, exprs.get(key));
 		} else {
 			visited.add(key); // mark this node as visited
 		}
 			
 		// At this point, we need to replace every unresolved variable with a
 		// constant definition.
-		Value v = expandConstantHelper(e,exprs,visited);
+		Value v = expandConstantHelper(e,filemap.get(key).filename,exprs,visited);
 		constants.put(key, v);
 		return v;
 	}
@@ -200,7 +205,7 @@ public class ModuleBuilder {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 */
-	protected Value expandConstantHelper(Expr expr, HashMap<NameID, Expr> exprs,
+	protected Value expandConstantHelper(Expr expr, String filename, HashMap<NameID, Expr> exprs,
 			HashSet<NameID> visited) throws ResolveError {		
 		if(expr instanceof Constant) {
 			Constant c = (Constant) expr;
@@ -215,8 +220,8 @@ public class ModuleBuilder {
 			}
 		} else if(expr instanceof BinOp) {
 			BinOp bop = (BinOp) expr;
-			Value lhs = expandConstantHelper(bop.lhs,exprs,visited);
-			Value rhs = expandConstantHelper(bop.rhs,exprs,visited);
+			Value lhs = expandConstantHelper(bop.lhs,filename,exprs,visited);
+			Value rhs = expandConstantHelper(bop.rhs,filename,exprs,visited);
 			Value v = Value.evaluate(OP2BOP(bop.op,expr),lhs,rhs);
 			if(v != null) {
 				return v;
@@ -225,7 +230,7 @@ public class ModuleBuilder {
 			Expr.NaryOp nop = (NaryOp) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for(Expr arg : nop.arguments) {
-				values.add(expandConstantHelper(arg,exprs,visited));
+				values.add(expandConstantHelper(arg,filename,exprs,visited));
 			}
 			if(nop.nop == Expr.NOp.LISTGEN) {
 				return Value.V_LIST(values);
@@ -234,7 +239,7 @@ public class ModuleBuilder {
 			} 
 		} 
 		
-		syntaxError("invalid expression in constant definition",expr);
+		syntaxError("invalid expression in constant definition",filename,expr);
 		return null;			
 	}
 	
@@ -271,7 +276,7 @@ public class ModuleBuilder {
 				} 								
 				types.put(key,new Pair<Type,Block>(t,p.second()));				
 			} catch(ResolveError ex) {
-				syntaxError(ex.getMessage(),srcs.get(key),ex);
+				syntaxError(ex.getMessage(),filemap.get(key).filename,srcs.get(key),ex);
 			}
 		}
 	}
@@ -298,7 +303,7 @@ public class ModuleBuilder {
 		
 		// Ok, expand the type properly then
 		Pair<UnresolvedType,Expr> ut = unresolved.get(key);
-		t = expandType(ut.first(), cache);		
+		t = expandType(ut.first(), filemap.get(key).filename, cache);		
 		
 		// Resolve the constraint and generate an appropriate block.			
 		Block blk = t.second();
@@ -331,20 +336,21 @@ public class ModuleBuilder {
 		return t;		
 	}	
 	
-	protected Pair<Type,Block> expandType(UnresolvedType t, HashMap<NameID, Type> cache) {		
+	protected Pair<Type, Block> expandType(UnresolvedType t, String filename,
+			HashMap<NameID, Type> cache) {		
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
-			Pair<Type,Block> p = expandType(lt.element, cache);
+			Pair<Type,Block> p = expandType(lt.element, filename, cache);
 			return new Pair<Type,Block>(Type.T_LIST(p.first()),p.second());
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			Pair<Type,Block> p = expandType(st.element, cache);
+			Pair<Type,Block> p = expandType(st.element, filename, cache);
 			return new Pair<Type,Block>(Type.T_SET(p.first()),p.second());
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			HashMap<String,Type> types = new HashMap<String,Type>();
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
-				Pair<Type,Block> p = expandType(e.getValue(),cache);
+				Pair<Type,Block> p = expandType(e.getValue(),filename, cache);
 				types.put(e.getKey(),p.first());
 			}
 			return new Pair<Type,Block>(Type.T_TUPLE(types),null);
@@ -352,7 +358,7 @@ public class ModuleBuilder {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
 			for(UnresolvedType b : ut.bounds) {
-				Pair<Type,Block> p = expandType(b,cache);
+				Pair<Type,Block> p = expandType(b,filename, cache);
 				Type bt = p.first();
 				if(bt instanceof Type.NonUnion) {
 					bounds.add((Type.NonUnion)bt);
@@ -367,7 +373,7 @@ public class ModuleBuilder {
 			}
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Pair<Type,Block> p = expandType(ut.element,cache);
+			Pair<Type,Block> p = expandType(ut.element,filename, cache);
 			return new Pair<Type, Block>(Type.T_PROCESS(p.first()), p.second());			
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
@@ -383,7 +389,7 @@ public class ModuleBuilder {
 					return et;
 				}
 			} catch (ResolveError rex) {
-				syntaxError(rex.getMessage(), t, rex);
+				syntaxError(rex.getMessage(), filename, t, rex);
 				return null;
 			}			
 		}  else {
@@ -562,14 +568,14 @@ public class ModuleBuilder {
 				return resolve((Skip)s, fd, environment, declared);				
 			} else {
 				syntaxError("unknown statement encountered: "
-						+ s.getClass().getName(), s);				
+						+ s.getClass().getName(), fd.name, s);				
 			}
 		} catch(ResolveError rex) {
-			syntaxError(rex.getMessage(),s,rex);
+			syntaxError(rex.getMessage(),filename,s,rex);
 		} catch(SyntaxError sex) {
 			throw sex;
 		} catch(Exception ex) {
-			syntaxError("internal failure", s, ex);			
+			syntaxError("internal failure", filename, s, ex);			
 		}
 		return null;
 	}
@@ -591,7 +597,9 @@ public class ModuleBuilder {
 			checkIsSubtype(type,init_t,init);
 			environment.put(s.name,init_t);
 			blk.addAll(init_tb.second());
-			blk.add(new Code.Assign(CExpr.VAR(init_t, s.name), init_tb.first()));			
+			blk
+					.add(new Code.Assign(CExpr.VAR(init_t, s.name), init_tb
+							.first()), s.attribute(Attribute.Source.class));			
 			// Finally, need to actually check the constraints!						
 			if(constraint != null) {
 				blk.addAll(constraint);
@@ -614,14 +622,15 @@ public class ModuleBuilder {
 			Variable v = (Variable) s.lhs;
 			Type declared_t = declared.get(v.var).first();
 			if (declared_t == null) {
-				syntaxError("unknown variable", v);
+				syntaxError("unknown variable", filename, v);
 			}
 			Pair<CExpr, Block> rhs_tb = resolve(0, s.rhs, environment, declared);
 			Type rhs_t = rhs_tb.first().type();
 			checkIsSubtype(declared_t, rhs_t, s.rhs);
 			environment.put(v.var, rhs_t);
 			blk.addAll(rhs_tb.second());
-			blk.add(new Code.Assign(CExpr.VAR(rhs_t, v.var), rhs_tb.first()));
+			blk.add(new Code.Assign(CExpr.VAR(rhs_t, v.var), rhs_tb.first()), s
+					.attribute(Attribute.Source.class));
 		} else if(s.lhs instanceof ListAccess) {
 			ListAccess la = (ListAccess) s.lhs;
 			Pair<CExpr,Block> src_tb = resolve(0, la.src, environment, declared);			
@@ -634,7 +643,8 @@ public class ModuleBuilder {
 			blk.addAll(index_tb.second());
 			blk.addAll(rhs_tb.second());
 			blk.add(new Code.Assign(CExpr.LISTACCESS(src_tb.first(), index_tb
-					.first()), rhs_tb.first()));		
+					.first()), rhs_tb.first()), s
+					.attribute(Attribute.Source.class));		
 		} else if(s.lhs instanceof TupleAccess) {
 			TupleAccess la = (TupleAccess) s.lhs;
 			Pair<CExpr,Block> src_tb = resolve(0, la.lhs, environment, declared);			
@@ -643,15 +653,16 @@ public class ModuleBuilder {
 			Type.Tuple la_t = checkType(src_tb.first().type(),Type.Tuple.class,la.lhs);
 			Type field_t = la_t.types.get(la.name);
 			if(field_t == null) {
-				syntaxError("field does not exist",s.lhs);
+				syntaxError("field does not exist",filename,s.lhs);
 			}
 			checkIsSubtype(field_t,rhs_tb.first().type(),s.rhs);			
 			blk.addAll(src_tb.second());			
 			blk.addAll(rhs_tb.second());
 			blk.add(new Code.Assign(CExpr.TUPLEACCESS(src_tb.first(), la.name),
-					rhs_tb.first()));		
+					rhs_tb.first()), s
+					.attribute(Attribute.Source.class));		
 		} else {
-			syntaxError("invalid lval encountered",s.lhs);
+			syntaxError("invalid lval encountered",filename,s.lhs);
 		}
 		
 		// Finally, we need to add any constraints that may be coming from the
@@ -673,7 +684,8 @@ public class ModuleBuilder {
 			HashMap<String, Pair<Type, Block>> declared) {
 		String lab = Block.freshLabel();
 		Block blk = resolveCondition(lab, s.expr, environment, declared);
-		blk.add(new Code.Fail("assertion failed"));
+		blk.add(new Code.Fail("assertion failed"),s
+				.attribute(Attribute.Source.class));
 		blk.add(new Code.Label(lab));
 		return blk;
 	}
@@ -687,11 +699,13 @@ public class ModuleBuilder {
 			checkIsSubtype(ft.ret, t.first().type(), s.expr);
 			Block blk = new Block();
 			blk.addAll(t.second());
-			blk.add(new Code.Return(convert(ft.ret, t.first())));
+			blk.add(new Code.Return(convert(ft.ret, t.first())),s
+					.attribute(Attribute.Source.class));
 			return blk;
 		} else {
 			Block blk = new Block();
-			blk.add(new Code.Return(null));
+			blk.add(new Code.Return(null),s
+					.attribute(Attribute.Source.class));
 			return blk;
 		}
 	}
@@ -700,14 +714,16 @@ public class ModuleBuilder {
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		Block blk = new Block();
-		blk.add(new Code.ExternJvm(s.bytecodes));
+		blk.add(new Code.ExternJvm(s.bytecodes),s
+				.attribute(Attribute.Source.class));
 		return blk;
 	}
 	protected Block resolve(Skip s, FunDecl fd,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		Block blk = new Block();
-		blk.add(new Code.Skip());
+		blk.add(new Code.Skip(),s
+				.attribute(Attribute.Source.class));
 		return blk;
 	}
 	
@@ -716,7 +732,8 @@ public class ModuleBuilder {
 		Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
 		checkIsSubtype(Type.T_LIST(Type.T_INT), t.first().type(), s.expr);
 		Block blk = t.second();
-		blk.add(new Code.Debug(t.first()));
+		blk.add(new Code.Debug(t.first()),s
+				.attribute(Attribute.Source.class));
 		return blk;
 	}
 
@@ -791,12 +808,12 @@ public class ModuleBuilder {
 				return resolveCondition(target,(Comprehension) e, environment, declared);
 			} else {				
 				syntaxError("expected boolean expression, got: "
-							+ e.getClass().getName(), e);			
+							+ e.getClass().getName(), filename, e);			
 			}
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
-			syntaxError("internal failure", e, ex);			
+			syntaxError("internal failure", filename, e, ex);			
 		}	
 		
 		return null;
@@ -842,7 +859,7 @@ public class ModuleBuilder {
 					} 
 					lhs = val;				
 				} else {
-					syntaxError("unknown variable", v);
+					syntaxError("unknown variable", filename, v);
 					return null; // dead code
 				}
 			}
@@ -851,7 +868,8 @@ public class ModuleBuilder {
 		}
 		checkType(t, Type.Bool.class, v);		
 		blk.add(new Code.IfGoto(t, Code.COP.EQ, lhs, Value
-				.V_BOOL(true), target));
+				.V_BOOL(true), target),v
+				.attribute(Attribute.Source.class));
 		return blk;
 	}
 	
@@ -889,18 +907,21 @@ public class ModuleBuilder {
 				|| bop == BOp.GTEQ) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+					.attribute(Attribute.Source.class));
 			return blk;
 		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+					.attribute(Attribute.Source.class));
 			return blk;
 		} else if (bop == BOp.EQ || bop == BOp.NEQ) {
 			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
-				syntaxError("Cannot compare types", v);
+				syntaxError("Cannot compare types", filename, v);
 			}
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+					.attribute(Attribute.Source.class));
 			return blk;
 		} else if (bop == BOp.ELEMENTOF) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
@@ -914,14 +935,15 @@ public class ModuleBuilder {
 			}
 			if (!Type.isSubtype(lhs_t, element)
 					&& !Type.isSubtype(element, lhs_t)) {
-				syntaxError("Cannot compare types", v);
+				syntaxError("Cannot compare types", filename, v);
 			}
 			lub = Type.leastUpperBound(lhs_t, element);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target));
+			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+					.attribute(Attribute.Source.class));
 			return blk;
 		}
 
-		syntaxError("expected boolean expression",v);
+		syntaxError("expected boolean expression",filename,v);
 		return null;
 	}
 	
@@ -933,7 +955,7 @@ public class ModuleBuilder {
 		Type lhs_t = lhs_tb.first().type();
 		Type rhs_t = rhs_tb.first();
 		if(!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
-			syntaxError("incomparable types",v);
+			syntaxError("incomparable types",filename,v);
 		}
 		
 		Block blk = new Block();
@@ -941,7 +963,8 @@ public class ModuleBuilder {
 		String trueLabel = Block.freshLabel();
 		blk.addAll(lhs_tb.second());
 		blk.add(new Code.IfGoto(Type.T_META, Code.COP.SUBTYPEEQ,
-				lhs_tb.first(), Value.V_TYPE(rhs_tb.first()), trueLabel));
+				lhs_tb.first(), Value.V_TYPE(rhs_tb.first()), trueLabel),v
+				.attribute(Attribute.Source.class));
 		
 		// Perform the limited form of type inference currently supported
 		typeInference(lhs_tb.first(),rhs_t,environment);
@@ -1001,7 +1024,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Label(label));
 			return blk;
 		}
-		syntaxError("expected boolean expression",v);
+		syntaxError("expected boolean expression",filename,v);
 		return null;
 	}	
 	
@@ -1013,7 +1036,7 @@ public class ModuleBuilder {
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
 		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
-				.V_BOOL(true), target));
+				.V_BOOL(true), target),v.attribute(Attribute.Source.class));
 		return blk;
 	}
 	
@@ -1025,7 +1048,7 @@ public class ModuleBuilder {
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
 		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
-				.V_BOOL(true), target));
+				.V_BOOL(true), target),v.attribute(Attribute.Source.class));
 		return blk;
 	}
 	
@@ -1037,14 +1060,14 @@ public class ModuleBuilder {
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
 		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
-				.V_BOOL(true), target));
+				.V_BOOL(true), target),v.attribute(Attribute.Source.class));
 		return blk;
 	}
 	
 	protected Block resolveCondition(String target, Comprehension e,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
 		if(e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
-			syntaxError("expected boolean expression",e);
+			syntaxError("expected boolean expression",filename,e);
 		}
 		
 		environment = new HashMap<String,Type>(environment);
@@ -1116,12 +1139,12 @@ public class ModuleBuilder {
 				return resolve(target,(TupleGen) e, environment, declared);
 			} else {				
 				syntaxError("unknown expression encountered: "
-							+ e.getClass().getName(), e);			
+							+ e.getClass().getName(), filename,e);			
 			}
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
-			syntaxError("internal failure", e, ex);			
+			syntaxError("internal failure", filename,e, ex);			
 		}	
 		
 		return null;
@@ -1159,7 +1182,7 @@ public class ModuleBuilder {
 		Type.Fun funtype = bindFunction(modInfo.module, s.name, receiver, ptypes,s);
 		
 		if(funtype == null) {
-			syntaxError("invalid or ambiguous method call",s);
+			syntaxError("invalid or ambiguous method call",filename,s);
 		}	
 		
 		// Apply parameter conversions as necessary
@@ -1178,7 +1201,8 @@ public class ModuleBuilder {
 		// Now, if this method/function has one or more "cases" then we need to
 		// select the right one, based on the pre / post conditions. 
 		
-		blk.add(new Code.Invoke(funtype, name, 0, lhs, nargs));
+		blk.add(new Code.Invoke(funtype, name, 0, lhs, nargs),
+				s.attribute(Attribute.Source.class));
 		
 		return new Pair<CExpr,Block>(lhs,blk);									
 	}
@@ -1211,7 +1235,7 @@ public class ModuleBuilder {
 				return new Pair<CExpr, Block>(val,new Block());
 			}
 			// Give up!
-			syntaxError("unknown variable",v);			
+			syntaxError("unknown variable",filename,v);			
 		}		
 		return new Pair<CExpr, Block>(CExpr.VAR(t, v.var), new Block());
 	}		
@@ -1242,7 +1266,7 @@ public class ModuleBuilder {
 			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.PROCESSSPAWN, mhs
 					.first()), blk);		
 		default:
-			syntaxError("unexpected unary operator encountered",v);
+			syntaxError("unexpected unary operator encountered",filename,v);
 			return null;
 		}		
 	}
@@ -1278,11 +1302,11 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, v, environment, declared);
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
-					.V_BOOL(false)));
+					.V_BOOL(false)),v.attribute(Attribute.Source.class));
 			blk.add(new Code.Goto(exitLabel));
 			blk.add(new Code.Label(trueLabel));
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
-					.V_BOOL(true)));
+					.V_BOOL(true)),v.attribute(Attribute.Source.class));
 			blk.add(new Code.Label(exitLabel));
 			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, target), blk);
 		}
@@ -1337,7 +1361,7 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
-				syntaxError("incorrect number of arguments",v);
+				syntaxError("incorrect number of arguments",filename,v);
 			}
 			Pair<CExpr,Block> src = resolve(target,v.arguments.get(0), environment, declared);
 			Pair<CExpr,Block> start = resolve(target+1,v.arguments.get(1), environment, declared);
@@ -1380,11 +1404,11 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, e, environment, declared);
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
-					.V_BOOL(false)));
+					.V_BOOL(false)),e.attribute(Attribute.Source.class));
 			blk.add(new Code.Goto(exitLabel));
 			blk.add(new Code.Label(trueLabel));
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
-					.V_BOOL(true)));
+					.V_BOOL(true)),e.attribute(Attribute.Source.class));
 			blk.add(new Code.Label(exitLabel));
 			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, target), blk);
 		}
@@ -1416,10 +1440,12 @@ public class ModuleBuilder {
 		
 		if(e.cop == Expr.COp.LISTCOMP) { 
 			lhs = CExpr.REG(Type.T_LIST(type),target);
-			blk.add(new Code.Assign(lhs,CExpr.NARYOP(CExpr.NOP.LISTGEN)));
+			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.LISTGEN)), e
+					.attribute(Attribute.Source.class));
 		} else {
 			lhs = CExpr.REG(Type.T_SET(type),target);			
-			blk.add(new Code.Assign(lhs,CExpr.NARYOP(CExpr.NOP.SETGEN)));
+			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.SETGEN)), e
+					.attribute(Attribute.Source.class));
 		}		
 				
 		String continueLabel = Block.freshLabel();
@@ -1429,13 +1455,15 @@ public class ModuleBuilder {
 					environment, declared);
 			body.addAll(value.second());
 			body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
-					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))));
+					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
+					.attribute(Attribute.Source.class));
 			body.add(new Code.Label(continueLabel));
 		} else {
 			body = new Block();
 			body.addAll(value.second());
 			body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
-					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))));
+					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
+					.attribute(Attribute.Source.class));
 		}
 		blk.add(new Code.Forall(sources,body));
 		
@@ -1464,7 +1492,7 @@ public class ModuleBuilder {
 		Type.Tuple tup = checkType(ett, Type.Tuple.class, sg.lhs);
 		Type ft = tup.types.get(sg.name);
 		if (ft == null) {
-			syntaxError("type has no field named: " + sg.name, sg.lhs);
+			syntaxError("type has no field named: " + sg.name, filename, sg.lhs);
 		}
 		return new Pair<CExpr, Block>(CExpr.TUPLEACCESS(lhs.first(), sg.name), lhs
 				.second());
@@ -1510,7 +1538,7 @@ public class ModuleBuilder {
 					Module.TypeDef td = mi.type(dt.name);			
 					return new Pair<Type,Block>(td.type(),null);
 				} catch(ResolveError rex) {
-					syntaxError(rex.getMessage(),t,rex);
+					syntaxError(rex.getMessage(),filename,t,rex);
 					return null;
 				}
 			}
@@ -1603,7 +1631,7 @@ public class ModuleBuilder {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
-			syntaxError("expected type " + clazz.getName() + ", found " + t,
+			syntaxError("expected type " + clazz.getName() + ", found " + t,filename,
 					elem);
 			return null;
 		}
@@ -1612,7 +1640,7 @@ public class ModuleBuilder {
 	// Check t1 :> t2
 	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
 		if (!Type.isSubtype(t1, t2)) {
-			syntaxError("expected type " + t1 + ", found " + t2, elem);
+			syntaxError("expected type " + t1 + ", found " + t2, filename, elem);
 		}
 	}
 
@@ -1641,7 +1669,7 @@ public class ModuleBuilder {
 		return Type.renameRecursiveTypes(t, binding);
 	}	
 	
-	public static Variable flattern(Expr e) {
+	public Variable flattern(Expr e) {
 		if(e instanceof Variable) {
 			return (Variable) e;
 		} else if(e instanceof ListAccess) {
@@ -1656,7 +1684,7 @@ public class ModuleBuilder {
 				return flattern(la.mhs);
 			}
 		} 
-		syntaxError("invalid lval",e);
+		syntaxError("invalid lval",filename,e);
 		return null;		
 	}
 	
@@ -1691,7 +1719,7 @@ public class ModuleBuilder {
 		return new Expr.UnOp(Expr.UOp.NOT,e);				
 	}
 		
-	public static CExpr.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	public CExpr.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch(bop) {
 		case ADD:
 			return CExpr.BOP.ADD;
@@ -1706,11 +1734,11 @@ public class ModuleBuilder {
 		case INTERSECTION:
 			return CExpr.BOP.INTERSECT;	
 		}
-		syntaxError("unrecognised binary operation",elem);
+		syntaxError("unrecognised binary operation",filename,elem);
 		return null;
 	}
 	
-	public static Code.COP OP2COP(Expr.BOp bop, SyntacticElement elem) {
+	public Code.COP OP2COP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case EQ:
 			return Code.COP.EQ;
@@ -1731,7 +1759,7 @@ public class ModuleBuilder {
 		case ELEMENTOF:
 			return Code.COP.ELEMOF;
 		}
-		syntaxError("unrecognised binary operation", elem);
+		syntaxError("unrecognised binary operation", filename,elem);
 		return null;
 	}	
 }

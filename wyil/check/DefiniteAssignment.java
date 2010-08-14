@@ -1,6 +1,7 @@
 package wyil.check;
 
 import java.util.*;
+import wyil.util.*;
 import wyil.lang.*;
 import wyil.dfa.*;
 
@@ -25,7 +26,10 @@ import wyil.dfa.*;
  * 
  */
 public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<String>> implements ModuleCheck {
+	private String filename;
+	
 	public void check(Module module) {
+		filename = module.filename();
 		for(Module.Method method : module.methods()) {
 			check(method);
 		}
@@ -72,10 +76,13 @@ public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<Stri
 		return in;
 	}
 	
-	private void checkUses(HashSet<String> uses, IntersectionFlowSet<String> in) {
+	private void checkUses(HashSet<String> uses,
+			IntersectionFlowSet<String> in, Attribute.Source src) {		
 		for(String v : uses) {			
-			if(!in.contains(v)) {
-				throw new RuntimeException("variable " + v  + " might not have been initialised");
+			if(!in.contains(v)) {				
+				throw new SyntaxError("variable " + v
+						+ " might not be initialised", filename, src.start,
+						src.end);
 			}
 		}
 	}

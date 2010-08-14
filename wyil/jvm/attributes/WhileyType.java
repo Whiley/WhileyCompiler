@@ -19,9 +19,7 @@
 package wyil.jvm.attributes;
 
 import java.io.*;
-import java.math.*;
 import java.util.*;
-import wyil.util.*;
 import wyil.lang.*;
 import wyjvm.io.*;
 import wyjvm.lang.*;
