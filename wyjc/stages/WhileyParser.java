@@ -26,6 +26,7 @@ import wyil.lang.*;
 import wyil.jvm.rt.BigRational;
 import wyil.util.*;
 import wyjc.lang.*;
+import wyjc.lang.Attribute;
 import wyjc.lang.WhileyFile.*;
 import wyjc.util.*;
 import wyjvm.lang.Bytecode;

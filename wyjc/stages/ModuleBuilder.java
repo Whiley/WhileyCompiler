@@ -25,12 +25,11 @@ import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
-import wyil.lang.Type.Tuple;
 import wyjc.lang.*;
+import wyjc.lang.Attribute;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
-import wyjc.util.*;
 
 public class ModuleBuilder {
 	private final ModuleLoader loader;

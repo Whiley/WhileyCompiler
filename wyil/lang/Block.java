@@ -4,42 +4,63 @@ import java.util.*;
 
 public final class Block implements Iterable<Code> {
 	private final ArrayList<Code> codes;	
+	private final ArrayList<List<Attribute>> attributes;	
 	
 	public Block() {
 		this.codes = new ArrayList<Code>();
+		this.attributes = new ArrayList<List<Attribute>>();
 	}
-	public Block(Collection<Code> codes) {
-		this.codes = new ArrayList<Code>(codes);
+	public Block(Block blk) {
+		this.codes = new ArrayList<Code>(blk.codes);
+		this.attributes = new ArrayList<List<Attribute>>(blk.attributes);
 	}
-	public Block(Code... codes) {
-		this.codes = new ArrayList<Code>();
-		for(Code c : codes) {
-			this.codes.add(c);
-		}
-	}
-
+	
 	public Iterator<Code> iterator() {
 		return codes.iterator();
 	}
 	
-	public void add(Code c) {
+	public void add(Code c, Attribute... attributes) {
 		codes.add(c);
+		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
+		for(Attribute a : attributes) {
+			attrs.add(a);
+		}
+		this.attributes.add(attrs);
 	}
 	
 	public void addAll(Block blk) {
 		this.codes.addAll(blk.codes);
+		this.attributes.addAll(blk.attributes);
 	}
 	
-	public void add(int idx, Code c) {
+	public void add(int idx, Code c, Attribute... attributes) {
 		this.codes.add(idx,c);
+		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
+		for(Attribute a : attributes) {
+			attrs.add(a);
+		}
 	}
 	
 	public void remove(int idx) {
 		this.codes.remove(idx);
+		this.attributes.remove(idx);
 	}
 	
 	public Code code(int idx) {
 		return codes.get(idx);
+	}
+	
+	public List<Attribute> attributes(int idx) {
+		return attributes.get(idx);
+	}
+	
+	public <T extends Attribute> Attribute attribute(int idx, Class<T> clazz) {
+		for(Attribute a : attributes.get(idx)) {
+			if(clazz.isInstance(a)) {
+				return a;
+			}
+		}
+		return null;
 	}
 	
 	public int size() {

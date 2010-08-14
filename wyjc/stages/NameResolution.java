@@ -25,6 +25,7 @@ import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wyjc.lang.*;
+import wyjc.lang.Attribute;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;

@@ -129,9 +129,7 @@ public class WhileyDefine implements BytecodeAttribute {
 			output.println("  WhileyDefine: " + defName + " as " + type);
 		} else {
 			output.println("  WhileyDefine: " + defName + " as " + type);
-			for(Code c : block) {
-				wyil.io.WyilFileWriter.write(1,c,output);
-			}
+			wyil.io.WyilFileWriter.write(1,block,output);			
 		}
 	}
 	

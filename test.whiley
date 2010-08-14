@@ -1,3 +1,3 @@
 int f(int y):
-    int x
+    int x = 0
     return x

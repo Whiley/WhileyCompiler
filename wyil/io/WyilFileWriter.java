@@ -30,9 +30,7 @@ public class WyilFileWriter {
 		for(TypeDef td : module.types()) {
 			out.println("define " + td.name() + " as " + td.type());
 			if(td.constraint() != null) {
-				for(Code c : td.constraint()) {
-					write(0,c,out);
-				}
+				write(0,td.constraint(),out);				
 			}
 		}
 		if(!module.types().isEmpty()) {
@@ -79,21 +77,40 @@ public class WyilFileWriter {
 	}
 	
 	public static void write(int indent, Block blk, PrintWriter out) {
-		for(Code c : blk) {
-			write(indent,c,out);
+		for(int i=0;i!=blk.size();++i) {
+			write(indent,blk.code(i),blk.attributes(i),out);
 		}
 	}
 	
-	public static void write(int indent, Code c, PrintWriter out) {		
+	public static void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
+		String line;
 		if(c instanceof Code.Label) {
 			tabIndent(indent,out);
-			out.println(c);
+			line = c.toString();
 		} else if(c instanceof Code.Forall) {
-			write(indent,(Code.Forall)c,out);
+			write(indent,(Code.Forall)c,attributes,out);
+			return;
 		} else {
 			tabIndent(indent+1,out);
-			out.println(c);
+			line = c.toString();
 		}
+		
+		while(line.length() < 20) {
+			line += " ";
+		}
+		out.print(line);
+		if(attributes.size() > 0) {
+			out.print(" # ");
+			boolean firstTime=true;
+			for(Attribute a : attributes) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(a);			
+			}
+		}
+		out.println();
 	}	
 	public static void write(int indent, Code.Forall c, PrintWriter out) {		
 		tabIndent(indent+1,out);
