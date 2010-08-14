@@ -1,2 +1,3 @@
-int f(int x):
-    x = 1
+int f(int y):
+    int x
+    return x

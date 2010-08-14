@@ -1,7 +1,8 @@
 package wyil.check;
 
-import wyil.lang.*;
 import java.util.*;
+import wyil.lang.*;
+import wyil.dfa.*;
 
 /**
  * <p>
@@ -23,7 +24,7 @@ import java.util.*;
  * @author djp
  * 
  */
-public class DefiniteAssignment implements ModuleCheck {
+public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<String>> implements ModuleCheck {
 	public void check(Module module) {
 		for(Module.Method method : module.methods()) {
 			check(method);
@@ -37,8 +38,53 @@ public class DefiniteAssignment implements ModuleCheck {
 	}
 	
 	public void check(Module.Case cas) {
-		// the undefined set containts the names of all variables and registers
-		// which are undefined at any given point.
-		HashSet<String> undefined = new HashSet<String>();
+		// the undefined set contains the names of all variables and registers
+		// which are defined at any given point.
+		HashSet<String> defined = new HashSet<String>();
+		
+		for(String p : cas.parameterNames()) {
+			defined.add(p);
+		}
+	
+		start(cas,new IntersectionFlowSet<String>(defined),new IntersectionFlowSet<String>());
+	}
+	
+	public IntersectionFlowSet<String> transfer(Code stmt, IntersectionFlowSet<String> in) {		
+		HashSet<String> uses = new HashSet<String>(); 
+		Code.usedVariables(stmt,uses);
+		
+		if(stmt instanceof Code.Assign) {
+			Code.Assign ca = (Code.Assign) stmt;			
+			if(ca.lhs instanceof CExpr.Variable) {
+				CExpr.Variable v = (CExpr.Variable) ca.lhs;
+				uses.remove(v.name);
+				checkUses(uses,in);
+				in = in.add(v.name);
+			} else if(ca.lhs instanceof CExpr.Variable) {
+				CExpr.Register v = (CExpr.Register) ca.lhs;
+				uses.remove("%" + v.index);
+				checkUses(uses,in);
+				in = in.add("%" + v.index);
+			}
+		} else {
+			checkUses(uses,in);
+		}
+		return in;
+	}
+	
+	private void checkUses(HashSet<String> uses, IntersectionFlowSet<String> in) {
+		for(String v : uses) {			
+			if(!in.contains(v)) {
+				throw new RuntimeException("variable " + v  + " might not have been initialised");
+			}
+		}
+	}
+	
+	public IntersectionFlowSet<String> transfer(boolean branch, Code.IfGoto stmt,
+			IntersectionFlowSet<String> in) {
+		HashSet<String> uses = new HashSet<String>(); 
+		Code.usedVariables(stmt,uses);
+		checkUses(uses,in);
+		return in;
 	}
 }

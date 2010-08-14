@@ -4,8 +4,7 @@ import java.util.*;
 import wyil.lang.*;
 
 public abstract class ForwardAnalysis<T extends FlowSet> {
-	
-	
+		
 	protected final HashMap<Integer, T> stores = new HashMap<Integer, T>();	
 	protected final HashMap<String,Integer> labels = new HashMap(); 
 	
@@ -60,8 +59,8 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 				int target = labels.get(gto.target);
 				T t_store = transfer(true,gto,store);
 				T f_store = transfer(false,gto,store);				
-				merge(target,store,worklist);
-				merge(current+1,store,worklist);
+				merge(target,t_store,worklist);
+				merge(current+1,f_store,worklist);
 			} else if(stmt instanceof Code.Return) {
 				// collect the final store as the one at the end of the list
 				merge(body.size(),transfer(stmt,store),worklist);			
