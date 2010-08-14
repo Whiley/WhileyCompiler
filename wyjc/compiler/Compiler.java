@@ -24,7 +24,6 @@ import java.util.*;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
-import wyil.stages.*;
 import wyil.io.*;
 import wyjc.lang.*;
 import wyjc.stages.*;
