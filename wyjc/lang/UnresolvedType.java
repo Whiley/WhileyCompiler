@@ -1,6 +1,7 @@
 package wyjc.lang;
 
 import java.util.*;
+import wyil.lang.Attribute;
 
 public interface UnresolvedType extends SyntacticElement {
 
@@ -8,54 +9,54 @@ public interface UnresolvedType extends SyntacticElement {
 	}
 	
 	public static final class Any extends SyntacticElement.Impl implements NonUnion {
-		public Any(Attributes... attributes) {
+		public Any(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
 	public static final class Void extends SyntacticElement.Impl implements NonUnion {
-		public Void(Attributes... attributes) {
+		public Void(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
 
 	public static final class Existential extends SyntacticElement.Impl
 			implements NonUnion {
-		public Existential(Attributes... attributes) {
+		public Existential(Attribute... attributes) {
 			super(attributes);
 		}
 	}
 	public static final class Bool extends SyntacticElement.Impl implements NonUnion {
-		public Bool(Attributes... attributes) {
+		public Bool(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
 	public static final class Int extends SyntacticElement.Impl implements NonUnion {
-		public Int(Attributes... attributes) {
+		public Int(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
 	public static final class Real extends SyntacticElement.Impl implements NonUnion {
-		public Real(Attributes... attributes) {
+		public Real(Attribute... attributes) {
 			super(attributes);
 		}		
 	}
 	public static final class Named extends SyntacticElement.Impl implements NonUnion {		
 		public final String name;		
-		public Named(String name, Attributes... attributes) {
+		public Named(String name, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 		}		
 	}
 	public static final class List extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType element;
-		public List(UnresolvedType element, Attributes... attributes) {
+		public List(UnresolvedType element, Attribute... attributes) {
 			super(attributes);
 			this.element = element;			
 		}
 	}
 	public static final class Set extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType element;
-		public Set(UnresolvedType element, Attributes... attributes) {
+		public Set(UnresolvedType element, Attribute... attributes) {
 			super(attributes);
 			this.element = element;
 		}
@@ -63,7 +64,7 @@ public interface UnresolvedType extends SyntacticElement {
 	public static final class Union extends SyntacticElement.Impl implements UnresolvedType {
 		public final ArrayList<NonUnion> bounds;
 
-		public Union(Collection<NonUnion> bounds, Attributes... attributes) {
+		public Union(Collection<NonUnion> bounds, Attribute... attributes) {
 			if (bounds.size() < 2) {
 				new IllegalArgumentException(
 						"Cannot construct a type union with fewer than two bounds");
@@ -74,13 +75,13 @@ public interface UnresolvedType extends SyntacticElement {
 	
 	public static final class Process extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType element;
-		public Process(UnresolvedType element, Attributes... attributes) {
+		public Process(UnresolvedType element, Attribute... attributes) {
 			this.element = element;
 		}
 	}
 	public static final class Tuple extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
-		public Tuple(Map<String,UnresolvedType> types, Attributes... attributes) {
+		public Tuple(Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(

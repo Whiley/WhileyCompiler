@@ -2,6 +2,7 @@ package wyjc.lang;
 
 import java.util.*;
 
+import wyil.lang.Attribute;
 import wyjvm.lang.Bytecode;
 
 public interface Stmt extends SyntacticElement {
@@ -13,7 +14,7 @@ public interface Stmt extends SyntacticElement {
 		public final Expr initialiser;
 
 		public VarDecl(UnresolvedType type, String name, Expr init,
-				Attributes... attributes) {
+				Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 			this.name = name;
@@ -21,7 +22,7 @@ public interface Stmt extends SyntacticElement {
 		}
 
 		public VarDecl(UnresolvedType type, String name, Expr init,
-				Collection<Attributes> attributes) {
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.type = type;
 			this.name = name;
@@ -33,13 +34,13 @@ public interface Stmt extends SyntacticElement {
 		public final Expr.LVal lhs;
 		public final Expr rhs;
 
-		public Assign(Expr.LVal lhs, Expr rhs, Attributes... attributes) {
+		public Assign(Expr.LVal lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 
-		public Assign(Expr.LVal lhs, Expr rhs, Collection<Attributes> attributes) {
+		public Assign(Expr.LVal lhs, Expr rhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.rhs = rhs;
@@ -53,12 +54,12 @@ public interface Stmt extends SyntacticElement {
 	public static final class Assert extends SyntacticElement.Impl implements Stmt {
 		public final Expr expr;		
 
-		public Assert(Expr expr, Attributes... attributes) {
+		public Assert(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;			
 		}
 
-		public Assert(String msg, Expr expr, Collection<Attributes> attributes) {
+		public Assert(String msg, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.expr = expr;
 		}
@@ -71,12 +72,12 @@ public interface Stmt extends SyntacticElement {
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
 		public final Expr expr;		
 
-		public Return(Expr expr, Attributes... attributes) {
+		public Return(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;			
 		}
 
-		public Return(Expr expr, Collection<Attributes> attributes) {
+		public Return(Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.expr = expr;			
 		}
@@ -96,7 +97,7 @@ public interface Stmt extends SyntacticElement {
 		public final ArrayList<Stmt> falseBranch;
 		
 		public IfElse(Expr condition, List<Stmt> trueBranch,
-				List<Stmt> falseBranch, Attributes... attributes) {
+				List<Stmt> falseBranch, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
 			this.trueBranch = new ArrayList<Stmt>(trueBranch);			
@@ -104,7 +105,7 @@ public interface Stmt extends SyntacticElement {
 		}
 		
 		public IfElse(Expr condition, List<Stmt> trueBranch,
-				List<Stmt> falseBranch, Collection<Attributes> attributes) {
+				List<Stmt> falseBranch, Collection<Attribute> attributes) {
 			super(attributes);
 			this.condition = condition;
 			this.trueBranch = new ArrayList<Stmt>(trueBranch);
@@ -113,11 +114,11 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static class Skip extends SyntacticElement.Impl implements Stmt {
-		public Skip(Attributes... attributes) {
+		public Skip(Attribute... attributes) {
 			super(attributes);
 		}
 
-		public Skip(Collection<Attributes> attributes) {
+		public Skip(Collection<Attribute> attributes) {
 			super(attributes);
 		}
 	}
@@ -125,12 +126,12 @@ public interface Stmt extends SyntacticElement {
 	public static final class Debug extends Skip {
 		public final Expr expr;		
 
-		public Debug(Expr expr, Attributes... attributes) {
+		public Debug(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;			
 		}
 
-		public Debug(Expr expr, Collection<Attributes> attributes) {
+		public Debug(Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.expr = expr;			
 		}
@@ -143,12 +144,12 @@ public interface Stmt extends SyntacticElement {
 	public static final class ExternJvm extends Skip implements Stmt {
 		public ArrayList<Bytecode> bytecodes;
 		
-		public ExternJvm(Collection<Bytecode> bytecodes, Attributes... attributes) {
+		public ExternJvm(Collection<Bytecode> bytecodes, Attribute... attributes) {
 			super(attributes);
 			this.bytecodes = new ArrayList<Bytecode>(bytecodes);
 		}
 		
-		public ExternJvm(Collection<Bytecode> bytecodes, Collection<Attributes> attributes) {
+		public ExternJvm(Collection<Bytecode> bytecodes, Collection<Attribute> attributes) {
 			super(attributes);
 			this.bytecodes = new ArrayList<Bytecode>(bytecodes);
 		}		

@@ -37,7 +37,7 @@ public class WhileyFile {
 	public static class ImportDecl extends SyntacticElement.Impl implements Decl {
 		public ArrayList<String> pkg;
 		
-		public ImportDecl(List<String> pkg, Attributes... attributes) {
+		public ImportDecl(List<String> pkg, Attribute... attributes) {
 			super(attributes);
 			this.pkg = new ArrayList<String>(pkg);
 		}
@@ -55,7 +55,7 @@ public class WhileyFile {
 		public final String name;
 
 		public ConstDecl(List<Modifier> modifiers, Expr constant, String name,
-				Attributes... attributes) {
+				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
 			this.constant = constant;
@@ -87,7 +87,7 @@ public class WhileyFile {
 		public final String name;
 
 		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name, Expr constraint,
-				Attributes... attributes) {
+				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
 			this.type = type;
@@ -139,7 +139,7 @@ public class WhileyFile {
 				UnresolvedType receiver, UnresolvedType ret,
 				List<Parameter> parameters, Expr precondition,
 				Expr postcondition, List<Stmt> statements,
-				Attributes... attributes) {
+				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
@@ -169,7 +169,7 @@ public class WhileyFile {
 		public final UnresolvedType type;
 		public final String name;
 
-		public Parameter(UnresolvedType type, String name, Attributes... attributes) {
+		public Parameter(UnresolvedType type, String name, Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 			this.name = name;

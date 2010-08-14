@@ -30,7 +30,7 @@ import wyil.lang.Type;
  */
 public interface Attributes {
 
-	public static final class Fun implements Attributes {
+	public static final class Fun implements Attribute {
 		public final wyil.lang.Type.Fun type;
 
 		public Fun(wyil.lang.Type.Fun type) {
@@ -38,7 +38,7 @@ public interface Attributes {
 		}
 	}
 
-	public static final class Type implements Attributes {
+	public static final class Type implements Attribute {
 		public final wyil.lang.Type type;
 		
 		public Type(wyil.lang.Type type) {
@@ -46,7 +46,7 @@ public interface Attributes {
 		}		
 	}
 	
-	public static final class Module implements Attributes {
+	public static final class Module implements Attribute {
 		public final ModuleID module;
 		
 		public Module(ModuleID module) {
@@ -54,7 +54,7 @@ public interface Attributes {
 		}
 	}
 	
-	public static final class Alias implements Attributes {
+	public static final class Alias implements Attribute {
 		public final Expr alias;
 		
 		public Alias(Expr alias) {
@@ -62,7 +62,7 @@ public interface Attributes {
 		}
 	}
 	
-	public static class Source implements Attributes {
+	public static class Source implements Attribute {
 		public final String filename;
 		public final int start;	
 		public final int end;	
