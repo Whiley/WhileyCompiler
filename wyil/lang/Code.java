@@ -43,6 +43,11 @@ public abstract class Code {
 			IfGoto a = (IfGoto) c;			
 			CExpr.usedVariables(a.lhs,uses);
 			CExpr.usedVariables(a.rhs,uses);
+		} else if(c instanceof Return) {
+			Return a = (Return) c;			
+			if(a.rhs != null) {
+				CExpr.usedVariables(a.rhs,uses);
+			}
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;			
 			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {				
@@ -85,6 +90,12 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
+		} else if(c instanceof Return) {
+			Return a = (Return) c;
+			if (a.rhs != null) {
+				return new Return(CExpr.substitute(binding, a.rhs));
+			}
+			return a;
 		} else if(c instanceof Forall) {			
 			Forall a = (Forall) c;	
 			// First, we need to to check for captured variable clashes
@@ -178,6 +189,12 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.type, u.op, CExpr.registerShift(shift, u.lhs),
 					CExpr.registerShift(shift, u.rhs), u.target);
+		} else if(c instanceof Return) {
+			Return a = (Return) c;
+			if (a.rhs != null) {
+				return new Return(CExpr.registerShift(shift, a.rhs));
+			}
+			return a;
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
 			HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();

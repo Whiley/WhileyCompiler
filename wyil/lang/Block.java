@@ -2,17 +2,50 @@ package wyil.lang;
 
 import java.util.*;
 
-public final class Block extends ArrayList<Code> {
+public final class Block implements Iterable<Code> {
+	private final ArrayList<Code> codes;	
+	
 	public Block() {
-		super();
+		this.codes = new ArrayList<Code>();
 	}
 	public Block(Collection<Code> codes) {
-		super(codes);
+		this.codes = new ArrayList<Code>(codes);
 	}
 	public Block(Code... codes) {
-		super(Arrays.asList(codes));
+		this.codes = new ArrayList<Code>();
+		for(Code c : codes) {
+			this.codes.add(c);
+		}
 	}
 
+	public Iterator<Code> iterator() {
+		return codes.iterator();
+	}
+	
+	public void add(Code c) {
+		codes.add(c);
+	}
+	
+	public void addAll(Block blk) {
+		this.codes.addAll(blk.codes);
+	}
+	
+	public void add(int idx, Code c) {
+		this.codes.add(idx,c);
+	}
+	
+	public void remove(int idx) {
+		this.codes.remove(idx);
+	}
+	
+	public Code code(int idx) {
+		return codes.get(idx);
+	}
+	
+	public int size() {
+		return this.codes.size();
+	}
+		
 	/**
 	 * Determine the set of all used variables in this block.
 	 * 

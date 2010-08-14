@@ -15,7 +15,7 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 		stores.clear(); // need to reset for subsequent calls
 		labels.clear();
 		
-		List<Code> body = method.body();
+		Block body = method.body();
 		
 		// First, build the label map
 		int pos = 0;
@@ -41,7 +41,7 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 			}
 			
 
-			Code stmt = body.get(current);
+			Code stmt = body.code(current);
 
 			// prestore represents store going into this point
 			T store = stores.get(current);
