@@ -35,7 +35,7 @@ public interface SyntacticElement {
      * 
      * @return
      */
-	public List<Attribute> attributes();
+	public List<Attributes> attributes();
 	
 	/**
      * Get the first attribute of the given class type. This is useful
@@ -44,35 +44,35 @@ public interface SyntacticElement {
      * @param c
      * @return
      */
-	public <T extends Attribute> T attribute(Class<T> c);
+	public <T extends Attributes> T attribute(Class<T> c);
 	
 	public class Impl  implements SyntacticElement {
-		private List<Attribute> attributes;
+		private List<Attributes> attributes;
 		
 		public Impl() {
 			// I use copy on write here, since for the most part I don't expect
 			// attributes to change, and hence can be safely aliased. But, when they
 			// do change I need fresh copies.
-			attributes = new CopyOnWriteArrayList<Attribute>();
+			attributes = new CopyOnWriteArrayList<Attributes>();
 		}
 		
-		public Impl(Attribute x) {
-			attributes = new ArrayList<Attribute>();
+		public Impl(Attributes x) {
+			attributes = new ArrayList<Attributes>();
 			attributes.add(x);
 		}
 		
-		public Impl(Collection<Attribute> attributes) {
-			this.attributes = new ArrayList<Attribute>(attributes);			
+		public Impl(Collection<Attributes> attributes) {
+			this.attributes = new ArrayList<Attributes>(attributes);			
 		}
 		
-		public Impl(Attribute[] attributes) {
-			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));			
+		public Impl(Attributes[] attributes) {
+			this.attributes = new ArrayList<Attributes>(Arrays.asList(attributes));			
 		}
 		
-		public List<Attribute> attributes() { return attributes; }
+		public List<Attributes> attributes() { return attributes; }
 		
-		public <T extends Attribute> T attribute(Class<T> c) {
-			for(Attribute a : attributes) {
+		public <T extends Attributes> T attribute(Class<T> c) {
+			for(Attributes a : attributes) {
 				if(c.isInstance(a)) {
 					return (T) a;
 				}

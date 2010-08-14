@@ -28,9 +28,9 @@ import wyil.lang.Type;
  * @author djp
  * 
  */
-public interface Attribute {
+public interface Attributes {
 
-	public static final class Fun implements Attribute {
+	public static final class Fun implements Attributes {
 		public final wyil.lang.Type.Fun type;
 
 		public Fun(wyil.lang.Type.Fun type) {
@@ -38,7 +38,7 @@ public interface Attribute {
 		}
 	}
 
-	public static final class Type implements Attribute {
+	public static final class Type implements Attributes {
 		public final wyil.lang.Type type;
 		
 		public Type(wyil.lang.Type type) {
@@ -46,7 +46,7 @@ public interface Attribute {
 		}		
 	}
 	
-	public static final class Module implements Attribute {
+	public static final class Module implements Attributes {
 		public final ModuleID module;
 		
 		public Module(ModuleID module) {
@@ -54,7 +54,7 @@ public interface Attribute {
 		}
 	}
 	
-	public static final class Alias implements Attribute {
+	public static final class Alias implements Attributes {
 		public final Expr alias;
 		
 		public Alias(Expr alias) {
@@ -62,7 +62,7 @@ public interface Attribute {
 		}
 	}
 	
-	public static class Source implements Attribute {
+	public static class Source implements Attributes {
 		public final String filename;
 		public final int start;	
 		public final int end;	

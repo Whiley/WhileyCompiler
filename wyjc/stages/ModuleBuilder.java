@@ -26,7 +26,7 @@ import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wyjc.lang.*;
-import wyjc.lang.Attribute;
+import wyjc.lang.Attributes;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
@@ -208,7 +208,7 @@ public class ModuleBuilder {
 		} else if(expr instanceof Variable) {
 			// Note, this must be a constant definition of some sort
 			Variable v = (Variable) expr;
-			Attribute.Module mid = expr.attribute(Attribute.Module.class);
+			Attributes.Module mid = expr.attribute(Attributes.Module.class);
 			if(mid != null) {
 				NameID name = new NameID(mid.module,v.var);
 				return expandConstant(name,exprs,visited);
@@ -371,7 +371,7 @@ public class ModuleBuilder {
 			return new Pair<Type, Block>(Type.T_PROCESS(p.first()), p.second());			
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			Attribute.Module modInfo = dt.attribute(Attribute.Module.class);
+			Attributes.Module modInfo = dt.attribute(Attributes.Module.class);
 			NameID name = new NameID(modInfo.module,dt.name);
 			
 			try {
@@ -418,7 +418,7 @@ public class ModuleBuilder {
 			functions.put(name, types);
 		}		
 		types.add(ft);		
-		fd.attributes().add(new Attribute.Fun(ft));
+		fd.attributes().add(new Attributes.Fun(ft));
 	}
 
 	protected Module.ConstDef resolve(ConstDecl td) {
@@ -437,7 +437,7 @@ public class ModuleBuilder {
 	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
 		Pair<Type, Block> p = types.get(new NameID(module, td.name()));
 		Type t = p.first();
-		td.attributes().add(new Attribute.Type(t));
+		td.attributes().add(new Attributes.Type(t));
 		if (td.constraint != null) {
 			// FIXME: at this point, would be good to add types for other
 			// exposed variables.
@@ -525,7 +525,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(s, fd, environment, declared));
 		}				
 		
-		Type.Fun tf = fd.attribute(Attribute.Fun.class).type;
+		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 		
 		if(tf.ret == Type.T_VOID) {
 			// need to terminate method
@@ -683,7 +683,7 @@ public class ModuleBuilder {
 			HashMap<String, Pair<Type, Block>> declared) {
 		if (s.expr != null) {			
 			Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
-			Type.Fun ft = fd.attribute(Attribute.Fun.class).type;
+			Type.Fun ft = fd.attribute(Attributes.Fun.class).type;
 			checkIsSubtype(ft.ret, t.first().type(), s.expr);
 			Block blk = new Block();
 			blk.addAll(t.second());
@@ -825,13 +825,13 @@ public class ModuleBuilder {
 		if (t == null) {
 			// Definitely not a variable. Could be an alias, or a constant
 			// though.
-			Attribute.Alias alias = v.attribute(Attribute.Alias.class);
+			Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 			if(alias != null) {				
 				Pair<CExpr,Block> p = resolve(0,alias.alias,environment,declared);
 				blk.addAll(p.second());
 				lhs = p.first();
 			} else {
-				Attribute.Module mod = v.attribute(Attribute.Module.class);			
+				Attributes.Module mod = v.attribute(Attributes.Module.class);			
 				if(mod != null) {
 					NameID name = new NameID(mod.module,v.var);
 					Value val = constants.get(name);
@@ -1155,7 +1155,7 @@ public class ModuleBuilder {
 		
 		// First, determine the (static) type of the method/function being
 		// invoked
-		Attribute.Module modInfo = s.attribute(Attribute.Module.class);		
+		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		Type.Fun funtype = bindFunction(modInfo.module, s.name, receiver, ptypes,s);
 		
 		if(funtype == null) {
@@ -1170,7 +1170,7 @@ public class ModuleBuilder {
 			nargs.set(i, convert(p_t,arg));
 		}
 		
-		s.attributes().add(new Attribute.Fun(funtype));
+		s.attributes().add(new Attributes.Fun(funtype));
 		NameID name = new NameID(modInfo.module,s.name);	
 		CExpr.LVal lhs = null;
 		if(funtype.ret != Type.T_VOID) { lhs = CExpr.REG(funtype.ret, target);}
@@ -1195,11 +1195,11 @@ public class ModuleBuilder {
 		if(t == null) {
 			// Definitely not a variable. Could be an alias, or a constant
 			// though.
-			Attribute.Alias alias = v.attribute(Attribute.Alias.class);
+			Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 			if(alias != null) {
 				return resolve(0,alias.alias,environment,declared);				
 			} 
-			Attribute.Module mod = v.attribute(Attribute.Module.class);			
+			Attributes.Module mod = v.attribute(Attributes.Module.class);			
 			if(mod != null) {
 				NameID name = new NameID(mod.module,v.var);
 				Value val = constants.get(name);
@@ -1501,7 +1501,7 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.T_TUPLE(types),null);
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			ModuleID mid = dt.attribute(Attribute.Module.class).module;
+			ModuleID mid = dt.attribute(Attributes.Module.class).module;
 			if(modules.contains(mid)) {
 				return types.get(new NameID(mid,dt.name));
 			} else {

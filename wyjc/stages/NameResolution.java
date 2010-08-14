@@ -25,7 +25,7 @@ import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wyjc.lang.*;
-import wyjc.lang.Attribute;
+import wyjc.lang.Attributes;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
@@ -76,7 +76,7 @@ public class NameResolution {
 				HashMap<String,Set<Expr>> environment = new HashMap<String,Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
 				addExposedNames(new Expr.Variable("$", td.constraint
-						.attribute(Attribute.Source.class)), td.type,
+						.attribute(Attributes.Source.class)), td.type,
 						environment);
 				resolve(td.constraint,environment,imports);
 			}		
@@ -263,7 +263,7 @@ public class NameResolution {
 		}
 		
 		// Ok, resolve the module for this invoke
-		ivk.attributes().add(new Attribute.Module(mid));		
+		ivk.attributes().add(new Attributes.Module(mid));		
 	}
 	
 	protected void resolve(Variable v, HashMap<String, Set<Expr>> environment,
@@ -274,9 +274,9 @@ public class NameResolution {
 			// in some module. Therefore, we must determine which module this
 			// is, and then store that information for future use.
 			ModuleID mid = loader.resolve(v.var, imports);
-			v.attributes().add(new Attribute.Module(mid));
+			v.attributes().add(new Attributes.Module(mid));
 		} else if (aliases.size() == 1) {
-			v.attributes().add(new Attribute.Alias(aliases.iterator().next()));
+			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
 		} else if (aliases.size() > 1) {
 			syntaxError("ambigous variable name", v);
 		}
@@ -354,7 +354,7 @@ public class NameResolution {
 			// what module that is here, and save it for future use.
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
 			ModuleID mid = loader.resolve(dt.name, imports);			
-			t.attributes().add(new Attribute.Module(mid));
+			t.attributes().add(new Attributes.Module(mid));
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			for(UnresolvedType b : ut.bounds) {
@@ -392,7 +392,7 @@ public class NameResolution {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				Expr s = new Expr.TupleAccess(src, e
-						.getKey(), src.attribute(Attribute.Source.class));
+						.getKey(), src.attribute(Attributes.Source.class));
 				addExposedNames(s,e.getValue(),environment);
 				Set<Expr> aliases = environment.get(e.getKey());
 				if(aliases == null) {

@@ -18,7 +18,7 @@
 
 package wyil.util;
 
-import wyjc.lang.Attribute;
+import wyjc.lang.Attributes;
 import wyjc.lang.SyntacticElement;
 
 /**
@@ -111,7 +111,7 @@ public class SyntaxError extends RuntimeException {
 		int end = -1;
 		String filename = null;
 		
-		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		Attributes.Source attr = (Attributes.Source) elem.attribute(Attributes.Source.class);
 		if(attr != null) {
 			start=attr.start;
 			end=attr.end;
@@ -126,7 +126,7 @@ public class SyntaxError extends RuntimeException {
 		int end = -1;
 		String filename = null;
 		
-		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		Attributes.Source attr = (Attributes.Source) elem.attribute(Attributes.Source.class);
 		if(attr != null) {
 			start=attr.start;
 			end=attr.end;

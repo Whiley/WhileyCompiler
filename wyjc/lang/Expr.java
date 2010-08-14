@@ -12,7 +12,7 @@ public interface Expr extends SyntacticElement {
 	public static class Variable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;
 
-		public Variable(String var, Attribute... attributes) {
+		public Variable(String var, Attributes... attributes) {
 			super(attributes);
 			this.var = var;
 		}
@@ -25,7 +25,7 @@ public interface Expr extends SyntacticElement {
 	public static class NamedConstant extends Variable {
 		public final ModuleID mid;
 
-		public NamedConstant(String var, ModuleID mid, Attribute... attributes) {
+		public NamedConstant(String var, ModuleID mid, Attributes... attributes) {
 			super(var, attributes);
 			this.mid = mid;
 		}
@@ -38,7 +38,7 @@ public interface Expr extends SyntacticElement {
 	public static class Constant extends SyntacticElement.Impl implements Expr {
 		public final Value value;
 
-		public Constant(Value val, Attribute... attributes) {
+		public Constant(Value val, Attributes... attributes) {
 			super(attributes);
 			this.value = val;
 		}
@@ -51,7 +51,7 @@ public interface Expr extends SyntacticElement {
 	public static class TypeConst extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType type;
 
-		public TypeConst(UnresolvedType val, Attribute... attributes) {
+		public TypeConst(UnresolvedType val, Attributes... attributes) {
 			super(attributes);
 			this.type = val;
 		}
@@ -62,14 +62,14 @@ public interface Expr extends SyntacticElement {
 		public final Expr lhs;
 		public final Expr rhs;
 		
-		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
+		public BinOp(BOp op, Expr lhs, Expr rhs, Attributes... attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 		
-		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attributes> attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
@@ -87,13 +87,13 @@ public interface Expr extends SyntacticElement {
 		public final Expr src;
 		public final Expr index;
 		
-		public ListAccess(Expr src, Expr index, Attribute... attributes) {
+		public ListAccess(Expr src, Expr index, Attributes... attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
 		
-		public ListAccess(Expr src, Expr index, Collection<Attribute> attributes) {
+		public ListAccess(Expr src, Expr index, Collection<Attributes> attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
@@ -118,7 +118,7 @@ public interface Expr extends SyntacticElement {
 		public final UOp op;
 		public final Expr mhs;		
 		
-		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
+		public UnOp(UOp op, Expr mhs, Attributes... attributes) {
 			super(attributes);
 			this.op = op;
 			this.mhs = mhs;			
@@ -132,12 +132,12 @@ public interface Expr extends SyntacticElement {
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {
 		public final NOp nop;
 		public final ArrayList<Expr> arguments;
-		public NaryOp(NOp nop, Collection<Expr> arguments, Attribute... attributes) {
+		public NaryOp(NOp nop, Collection<Expr> arguments, Attributes... attributes) {
 			super(attributes);
 			this.nop = nop;
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
-		public NaryOp(NOp nop, Attribute attribute, Expr... arguments) {
+		public NaryOp(NOp nop, Attributes attribute, Expr... arguments) {
 			super(attribute);
 			this.nop = nop;
 			this.arguments = new ArrayList<Expr>();
@@ -161,7 +161,7 @@ public interface Expr extends SyntacticElement {
 		
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<String, Expr>> sources, Expr condition,
-				Attribute... attributes) {
+				Attributes... attributes) {
 			super(attributes);
 			this.cop = cop;
 			this.value = value;
@@ -182,7 +182,7 @@ public interface Expr extends SyntacticElement {
 		public final Expr lhs;
 		public final String name;
 
-		public TupleAccess(Expr lhs, String name, Attribute... attributes) {
+		public TupleAccess(Expr lhs, String name, Attributes... attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.name = name;
@@ -192,7 +192,7 @@ public interface Expr extends SyntacticElement {
 	public static class TupleGen extends SyntacticElement.Impl implements Expr {
 		public final HashMap<String,Expr> fields;		
 		
-		public TupleGen(Map<String, Expr> fields, Attribute... attributes) {
+		public TupleGen(Map<String, Expr> fields, Attributes... attributes) {
 			super(attributes);
 			this.fields = new HashMap<String, Expr>(fields);
 		}
@@ -204,7 +204,7 @@ public interface Expr extends SyntacticElement {
 		public final List<Expr> arguments;
 		
 		public Invoke(String name, Expr receiver, List<Expr> arguments,
-				Attribute... attributes) {
+				Attributes... attributes) {
 			super(attributes);
 			this.name = name;
 			this.receiver = receiver;
@@ -213,7 +213,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class Spawn extends UnOp implements Stmt {		
-		public Spawn(Expr mhs, Attribute... attributes) {
+		public Spawn(Expr mhs, Attributes... attributes) {
 			super(UOp.PROCESSSPAWN,mhs,attributes);							
 		}
 	}
