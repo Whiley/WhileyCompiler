@@ -1,7 +1,7 @@
 package wyjc.compiler;
 
 import wyil.lang.Module;
-import wyil.checks.ModuleCheck;
+import wyil.check.ModuleCheck;
 import wyil.util.Logger;
 
 public class WyilCheck implements Compiler.Stage {

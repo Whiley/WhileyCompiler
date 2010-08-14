@@ -1,4 +1,4 @@
-package wyil.checks;
+package wyil.check;
 
 import wyil.lang.*;
 
