@@ -582,7 +582,8 @@ public class ModuleBuilder {
 		Type type = tb.first();
 		Block constraint = tb.second();
 		if(constraint != null) {
-			constraint = Block.substitute("$", CExpr.VAR(type, s.name), tb.second());
+			constraint = Block.relabel(constraint);
+			constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);
 		}
 		Block blk = new Block();
 		if(init != null) {
@@ -860,14 +861,14 @@ public class ModuleBuilder {
 		BOp bop = v.op;		
 		Block blk = new Block();
 		
-		if (bop == BOp.OR) {
+		if (bop == BOp.OR) {			
 			blk.addAll(resolveCondition(target, v.lhs, new HashMap(environment), declared));
 			blk.addAll(resolveCondition(target, v.rhs, new HashMap(environment), declared));
 			return blk;
-		} else if (bop == BOp.AND) {
+		} else if (bop == BOp.AND) {			
 			String exitLabel = Block.freshLabel();
 			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), environment,
-					declared));
+					declared));			
 			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
 			blk.add(new Code.Label(exitLabel));
 			return blk;
@@ -944,11 +945,8 @@ public class ModuleBuilder {
 				lhs_tb.first(), Value.V_TYPE(rhs_tb.first()), trueLabel));
 		
 		// Perform the limited form of type inference currently supported
-		if(v.lhs instanceof Expr.Variable) {
-			Expr.Variable var = (Expr.Variable) v.lhs; 
-			environment.put(var.var,rhs_t);
-		}
-		
+		typeInference(lhs_tb.first(),rhs_t,environment);
+				
 		blk.add(new Code.Goto(exitLabel));
 		blk.add(new Code.Label(trueLabel));
 		if(rhs_tb.second() != null) {
@@ -974,6 +972,23 @@ public class ModuleBuilder {
 		blk.add(new Code.Goto(target));
 		blk.add(new Code.Label(exitLabel));
 		return blk;
+	}
+	
+	protected void typeInference(CExpr e, Type type, HashMap<String, Type> environment) {		
+		if(e instanceof CExpr.Variable) {
+			CExpr.Variable var = (CExpr.Variable) e; 			
+			environment.put(var.name,type);			
+		} else if(e instanceof CExpr.TupleAccess){
+			CExpr.TupleAccess et = (CExpr.TupleAccess) e;
+			Type t = et.lhs.type();
+			// FIXME: major problems here with named and union types.
+			if(t instanceof Type.Tuple) {
+				Type.Tuple tt = (Type.Tuple) t;
+				HashMap<String,Type> types = new HashMap<String,Type>(tt.types);
+				types.put(et.field,type);
+				typeInference(et.lhs,Type.T_TUPLE(types),environment);
+			}
+		}
 	}
 	
 	protected Block resolveCondition(String target, UnOp v,
