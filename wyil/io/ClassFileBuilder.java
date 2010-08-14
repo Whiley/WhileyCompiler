@@ -985,7 +985,7 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));					
 		} else if(lhs instanceof CExpr.TupleAccess) {		
 			CExpr.TupleAccess la = (CExpr.TupleAccess) lhs;
-			Type.Tuple tt = (Type.Tuple) la.lhs.type();
+			Type.Tuple tt = (Type.Tuple) Type.effectiveTupleType(la.lhs.type());
 			Type element_t = tt.types.get(la.field);
 			addWriteConversion(element_t, bytecodes);
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
