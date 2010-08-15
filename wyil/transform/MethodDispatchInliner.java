@@ -95,7 +95,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		for(Stmt s : block) {
 			Code c = s.code;
 			if(c instanceof Code.Invoke) {
-				nblock.addAll(transform(regTarget,(Code.Invoke) c, s.attributes()));												
+				nblock.addAll(transform(regTarget,(Code.Invoke) c, s));												
 			} else {
 				nblock.add(c,s.attributes());
 			}
@@ -103,20 +103,21 @@ public class MethodDispatchInliner implements ModuleTransform {
 		return nblock;
 	}
 	
-	public Block transform(int regTarget, Code.Invoke ivk, List<Attribute> attributes) {
+	public Block transform(int regTarget, Code.Invoke ivk, Stmt stmt) {
 		try {
 			Module module = loader.loadModule(ivk.name.module());
 			Module.Method method = module.method(ivk.name.name(),
 					ivk.type);
 			Block blk = new Block();
 			int ncases = method.cases().size();
+			Attribute.Source src = stmt.attribute(Attribute.Source.class);
 			if(ncases == 1) {				
 				Module.Case c = method.cases().get(0);
 				Block constraint = c.precondition();
 				if (constraint != null) {
-					blk.addAll(transformConstraint(regTarget,constraint,ivk,c));
+					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c));
 				}
-				blk.add(ivk,attributes);
+				blk.add(ivk,stmt.attributes());
 			} else {			
 				// This is the multi-case option, which is harder. Here, we need
 				// to chain together the constrain tests for multiple different
@@ -131,7 +132,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 					}
 					Block constraint = c.precondition();
 					if (constraint != null) {						
-						constraint = transformConstraint(regTarget,constraint,ivk,c);
+						constraint = transformConstraint(regTarget,constraint,ivk,src,c);
 						if(caseNum < ncases) {
 							nextLabel = Block.freshLabel();
 							constraint = Block.chain(nextLabel, constraint);
@@ -140,7 +141,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 					}
 					
 					blk.add(new Code.Invoke(ivk.type, ivk.name, caseNum, ivk.lhs,
-							ivk.args),attributes);
+							ivk.args),stmt.attributes());
 					
 					if(caseNum++ < ncases) {
 						blk.add(new Code.Goto(exitLabel));
@@ -155,8 +156,12 @@ public class MethodDispatchInliner implements ModuleTransform {
 	}
 	
 	public static Block transformConstraint(int regTarget, Block constraint,
-			Code.Invoke ivk, Module.Case c) {
-		// First, we need to perform the register shift. This is ensure that
+			Code.Invoke ivk, Attribute.Source src, Module.Case c) {
+		
+		// Update the source number information
+		constraint = resource(constraint,src); 
+		
+		// We need to perform the register shift. This is ensure that
 		// registers used in the constraint do not interfere with registers
 		// currently in use at the point where we inline it.
 		constraint = Block.registerShift(regTarget,constraint);
@@ -184,5 +189,17 @@ public class MethodDispatchInliner implements ModuleTransform {
 			
 		}							
 		return Block.substitute(binding, constraint);
+	}
+	
+	public static Block resource(Block block, Attribute.Source nsrc) {
+		Block nblock = new Block();
+		for(Stmt s : block) {
+			List<Attribute> attrs = s.attributes();
+			Attribute src = s.attribute(Attribute.Source.class);
+			attrs.remove(src);
+			attrs.add(nsrc);
+			nblock.add(s.code,attrs);
+		}
+		return nblock;
 	}
 }
