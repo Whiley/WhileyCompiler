@@ -26,7 +26,8 @@ import static wyil.util.SyntaxError.*;
  * @author djp
  * 
  */
-public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<String>> implements ModuleCheck {
+public class DefiniteAssignment extends
+		ForwardAnalysis<IntersectionFlowSet<String>> implements ModuleCheck {
 	private String filename;
 	
 	public void check(Module module) {
