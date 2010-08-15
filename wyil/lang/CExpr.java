@@ -220,7 +220,7 @@ public abstract class CExpr {
 			return false;
 		}
 		public String toString() {
-			return name + "[" + type + "]";
+			return name + "!" + type;
 		}
 	}
 
@@ -254,7 +254,7 @@ public abstract class CExpr {
 			return false;
 		}
 		public String toString() {
-			return "%" + index + "[" + type + "]";			
+			return "%" + index + "!" + type;			
 		}
 	}
 	

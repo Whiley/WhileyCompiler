@@ -313,7 +313,8 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			Block constraint = resolveCondition(trueLabel, ut.second(), env,
 					new HashMap());
-			constraint.add(new Code.Fail("type constraint not satisfied"));
+			constraint.add(new Code.Fail("type constraint not satisfied"), ut
+					.second().attribute(Attribute.Source.class));
 			constraint.add(new Code.Label(trueLabel));
 			if(blk == null) {				
 				t = new Pair<Type,Block>(t.first(),constraint);
@@ -502,7 +503,8 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			Block tmp = resolveCondition(trueLabel, fd.precondition, environment,
 					declared);
-			tmp.add(new Code.Fail("function precondition not satisfied"));
+			tmp.add(new Code.Fail("function precondition not satisfied"),
+					fd.precondition.attribute(Attribute.Source.class));
 			tmp.add(new Code.Label(trueLabel));			
 			if (precondition == null) {
 				precondition = tmp;
@@ -516,7 +518,8 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			Block tmp = resolveCondition(trueLabel, fd.postcondition, environment,
 					declared);
-			tmp.add(new Code.Fail("function postcondition not satisfied"));
+			tmp.add(new Code.Fail("function postcondition not satisfied"),
+					fd.postcondition.attribute(Attribute.Source.class));
 			tmp.add(new Code.Label(trueLabel));
 			environment.remove("$");
 			if (postcondition == null) {

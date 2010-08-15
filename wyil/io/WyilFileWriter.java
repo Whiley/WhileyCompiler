@@ -95,7 +95,7 @@ public class WyilFileWriter {
 			line = c.toString();
 		}
 		
-		while(line.length() < 20) {
+		while(line.length() < 40) {
 			line += " ";
 		}
 		out.print(line);

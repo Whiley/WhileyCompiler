@@ -3,6 +3,7 @@ package wyil.transform;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
@@ -94,7 +95,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		for(Stmt s : block) {
 			Code c = s.code;
 			if(c instanceof Code.Invoke) {
-				nblock.addAll(transform(regTarget,(Code.Invoke) c));												
+				nblock.addAll(transform(regTarget,(Code.Invoke) c, s.attributes()));												
 			} else {
 				nblock.add(c,s.attributes());
 			}
@@ -102,7 +103,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		return nblock;
 	}
 	
-	public Block transform(int regTarget, Code.Invoke ivk) {
+	public Block transform(int regTarget, Code.Invoke ivk, List<Attribute> attributes) {
 		try {
 			Module module = loader.loadModule(ivk.name.module());
 			Module.Method method = module.method(ivk.name.name(),
@@ -139,7 +140,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 					}
 					
 					blk.add(new Code.Invoke(ivk.type, ivk.name, caseNum, ivk.lhs,
-							ivk.args));
+							ivk.args),attributes);
 					
 					if(caseNum++ < ncases) {
 						blk.add(new Code.Goto(exitLabel));
