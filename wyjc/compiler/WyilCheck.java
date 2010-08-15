@@ -19,7 +19,7 @@ public class WyilCheck implements Compiler.Stage {
 		try {
 			logout.logTimedMessage("[" + module.filename() + "] performed " + name,
 					System.currentTimeMillis() - start);
-			// check.check(module);
+			check.check(module);
 			return module;
 		} catch(RuntimeException ex) {
 			logout.logTimedMessage("[" + module.filename()

@@ -71,6 +71,8 @@ public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<Stri
 				uses.remove("%" + v.index);
 				checkUses(uses,in,stmt);
 				in = in.add("%" + v.index);
+			} else {
+				checkUses(uses,in,stmt);
 			}
 		} else {
 			checkUses(uses,in,stmt);

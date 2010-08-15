@@ -549,42 +549,43 @@ public class ModuleBuilder {
 		return new Module.Method(fd.name(), tf, ncase);
 	}
 	
-	public Block resolve(Stmt s, FunDecl fd, HashMap<String, Type> environment,
+	public Block resolve(Stmt stmt, FunDecl fd, HashMap<String, Type> environment,
 			HashMap<String,Pair<Type,Block>> declared) {			
 		try {
-			if(s instanceof VarDecl) {
-				return resolve((VarDecl)s, environment, declared);
-			} else if(s instanceof Assign) {
-				return resolve((Assign)s, environment, declared);
-			} else if(s instanceof Assert) {
-				return resolve((Assert)s, environment, declared);
-			} else if(s instanceof Return) {
-				return resolve((Return)s, fd, environment, declared);
-			} else if(s instanceof Debug) {
-				return resolve((Debug)s, environment, declared);
-			} else if(s instanceof IfElse) {
-				return resolve((IfElse)s, fd, environment, declared);
-			} else if(s instanceof Invoke) {
-				Pair<CExpr,Block> p = resolve(0, (Invoke)s, environment, declared);
+			if(stmt instanceof VarDecl) {
+				return resolve((VarDecl)stmt, environment, declared);
+			} else if(stmt instanceof Assign) {
+				return resolve((Assign)stmt, environment, declared);
+			} else if(stmt instanceof Assert) {
+				return resolve((Assert)stmt, environment, declared);
+			} else if(stmt instanceof Return) {
+				return resolve((Return)stmt, fd, environment, declared);
+			} else if(stmt instanceof Debug) {
+				return resolve((Debug)stmt, environment, declared);
+			} else if(stmt instanceof IfElse) {
+				return resolve((IfElse)stmt, fd, environment, declared);
+			} else if(stmt instanceof Invoke) {
+				Pair<CExpr,Block> p = resolve(0, (Invoke)stmt, environment, declared);
 				Block blk = p.second();
-				blk.add(new Code.Assign(null, p.first()));
+				blk.add(new Code.Assign(null, p.first()), stmt
+						.attribute(Attribute.Source.class));
 				return blk;
-			} else if(s instanceof Spawn) {
-				return resolve(0, (UnOp)s, environment, declared).second();
-			} else if(s instanceof ExternJvm) {	
-				return resolve((ExternJvm)s, fd, environment, declared);
-			} else if(s instanceof Skip) {	
-				return resolve((Skip)s, fd, environment, declared);				
+			} else if(stmt instanceof Spawn) {
+				return resolve(0, (UnOp)stmt, environment, declared).second();
+			} else if(stmt instanceof ExternJvm) {	
+				return resolve((ExternJvm)stmt, fd, environment, declared);
+			} else if(stmt instanceof Skip) {	
+				return resolve((Skip)stmt, fd, environment, declared);				
 			} else {
 				syntaxError("unknown statement encountered: "
-						+ s.getClass().getName(), fd.name, s);				
+						+ stmt.getClass().getName(), fd.name, stmt);				
 			}
 		} catch(ResolveError rex) {
-			syntaxError(rex.getMessage(),filename,s,rex);
+			syntaxError(rex.getMessage(),filename,stmt,rex);
 		} catch(SyntaxError sex) {
 			throw sex;
 		} catch(Exception ex) {
-			syntaxError("internal failure", filename, s, ex);			
+			syntaxError("internal failure", filename, stmt, ex);			
 		}
 		return null;
 	}

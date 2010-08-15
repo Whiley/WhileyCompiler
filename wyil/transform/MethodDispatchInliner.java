@@ -104,7 +104,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		Block.usedVariables(mcase.body(), uses);
 		int regTarget = uses.size();
 		
-		Block body = transform(regTarget,mcase.body());
+		Block body = transform(regTarget,mcase.body());		
 		return new Module.Case(mcase.parameterNames(), precondition,
 				postcondition, body);
 	}
