@@ -78,17 +78,19 @@ public class WyilFileWriter {
 	
 	public static void write(int indent, Block blk, PrintWriter out) {
 		for(Stmt s : blk) {
+			if(s.code instanceof Code.End) {
+				indent--;
+			}
 			write(indent,s.code,s.attributes(),out);
+			if(s.code instanceof Code.Forall) {
+				indent++;
+			}
 		}
 	}
 	
 	public static void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
 		String line;
-		if(c instanceof Code.Label) {
-			tabIndent(indent,out);
-			line = c.toString();
-		} else if(c instanceof Code.Forall) {
-			write(indent,(Code.Forall)c,attributes,out);
+		if(c instanceof Code.End) {
 			return;
 		} else {
 			tabIndent(indent+1,out);
@@ -112,20 +114,6 @@ public class WyilFileWriter {
 		}
 		out.println();
 	}	
-	public static void write(int indent, Code.Forall c, PrintWriter out) {		
-		tabIndent(indent+1,out);
-		out.print("forall ");
-		boolean firstTime=true;
-		for(Map.Entry<String,CExpr> e : c.sources.entrySet()) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			out.print(e.getKey() + " in " + e.getValue());
-		}	
-		out.println(":");		
-		write(indent+1,c.body,out);		
-	}
 	public static void tabIndent(int indent, PrintWriter out) {
 		indent = indent * 4;
 		for(int i=0;i!=indent;++i) {

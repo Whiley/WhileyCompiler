@@ -49,18 +49,9 @@ public abstract class Code {
 				CExpr.usedVariables(a.rhs,uses);
 			}
 		} else if(c instanceof Forall) {
-			Forall a = (Forall) c;			
-			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {				
-				CExpr.usedVariables(src.getValue(),uses);
-			}
-			for(Stmt s : a.body) {
-				usedVariables(s.code,uses);
-			}
-			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {				
-				// FIXME: this is a problem if we can have multiple variables
-				// with the same name in a wyil method.
-				uses.remove(src.getKey());
-			}
+			Forall a = (Forall) c;	
+			CExpr.usedVariables(a.variable, uses);
+			CExpr.usedVariables(a.source, uses);						
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;			
 			if(a.lhs != null) {
@@ -97,51 +88,9 @@ public abstract class Code {
 			}
 			return a;
 		} else if(c instanceof Forall) {			
-			Forall a = (Forall) c;	
-			// First, we need to to check for captured variable clashes
-			HashMap<String,CExpr> rebinding = new HashMap<String,CExpr>();
-			
-			for (Map.Entry<String, CExpr> src : a.sources.entrySet()) {
-				if (binding.containsKey(src.getKey())) {
-					// this indicates a clash
-					Type t = src.getValue().type();
-					if (t instanceof Type.Set) {
-						t = ((Type.Set) t).element;
-					} else if (t instanceof Type.List) {
-						t = ((Type.List) t).element;
-					}
-					rebinding.put(src.getKey(), CExpr.VAR(t, newCaptureName(src
-							.getKey(), binding.keySet())));
-				}
-			}
-			
-			if(rebinding.size() != 0) {
-				// Ok, we encountered a clash between variables being
-				// substituted and captured variables. Therefore, rename the
-				// affected captured variables, before proceeding as normal.
-				Block body = Block.substitute(rebinding,a.body);
-				HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
-				for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
-					CExpr v = rebinding.get(src.getKey());
-					if(v != null) {						
-						srcs.put(((CExpr.Variable)v).name, src.getValue());
-					} else {
-						srcs.put(src.getKey(), src.getValue());
-					}
-				}	
-				a = new Forall(srcs,body);
-			} 
-			
-			HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
-			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
-				srcs.put(src.getKey(),CExpr.substitute(binding,src.getValue()));				
-			}
-			Block body = new Block();
-			for(Stmt s : a.body) {
-				body.add(substitute(binding,s.code),s.attributes());			
-			}						
-			
-			return new Forall(srcs, body);
+			Forall a = (Forall) c;				
+			// FIXME: definite problem here
+			return new Forall(a.name,a.variable,CExpr.substitute(binding,a.source));
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;						
 			LVal lhs = a.lhs;
@@ -197,15 +146,8 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
-			HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
-			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
-				srcs.put(src.getKey(),CExpr.registerShift(shift,src.getValue()));				
-			}
-			Block body = new Block();
-			for(Stmt s : a.body) {
-				body.add(registerShift(shift,s.code),s.attributes());
-			}
-			return new Forall(srcs, body);
+			return new Forall(a.name, (CExpr.LVar) CExpr.registerShift(shift,
+					a.variable), CExpr.registerShift(shift, a.source));
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;			
 			LVal lhs = a.lhs;
@@ -475,6 +417,29 @@ public abstract class Code {
 		}
 	}	
 	
+	public final static class End extends Code  {
+		public final String name;
+		
+		public End(String target) {
+			this.name = target;
+		}
+		
+		public int hashCode() {
+			return name.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof End) {
+				return name.equals(((End)o).name);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "end " + name;
+		}
+	}
+	
 	/**
 	 * This represents the target of a branching instruction
 	 * @author djp
@@ -538,42 +503,31 @@ public abstract class Code {
 	}
 
 	public final static class Forall extends Code {									
-		public final Map<String,CExpr> sources;
-		public final Block body;
+		public final String name;
+		public final CExpr.LVar variable;
+		public final CExpr source;
 		
-		public Forall(Map<String,CExpr> srcs, Block body) {								
-			this.sources = Collections.unmodifiableMap(srcs);			
-			this.body = body;			
+		public Forall(String name, CExpr.LVar variable, CExpr source) {								
+			this.name = name;
+			this.variable = variable;
+			this.source = source;
 		}
 				
 		public boolean equals(Object o) {
 			if (o instanceof Forall) {
 				Forall a = (Forall) o;
-				return sources.equals(a.sources)
-						&& body.equals(a.body);
+				return name.equals(a.name) && variable.equals(a.variable)
+						&& source.equals(a.source); 
 			}
 			return false;
 		}
 		
 		public int hashCode() {			
-			return sources.hashCode() + body.hashCode();			
+			return source.hashCode() + name.hashCode() + variable.hashCode();
 		}
 		
 		public String toString() {
-			String s = "for ";
-			boolean firstTime=true;
-			for(Map.Entry<String,CExpr> e : sources.entrySet()) {
-				if(!firstTime) {
-					s += ", ";
-				}
-				firstTime=false;
-				s += e.getKey() + " in " + e.getValue();
-			}	
-			s += ":";		
-			for(Stmt c : body) {
-				s += "\n    " + c.toString();
-			}
-			return s;			
+			return "for " + variable + " in " + source;												
 		}
 	}
 		

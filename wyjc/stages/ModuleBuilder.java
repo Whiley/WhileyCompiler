@@ -1074,8 +1074,8 @@ public class ModuleBuilder {
 		}
 		
 		environment = new HashMap<String,Type>(environment);
-		HashMap<String,CExpr> sources = new HashMap<String,CExpr>();
 		Block blk = new Block();
+		ArrayList<Pair<CExpr.LVar,CExpr>> sources = new ArrayList();		
 		for(Pair<String,Expr> src : e.sources) {
 			Pair<CExpr,Block> r = resolve(0,src.second(),environment,declared);
 			Type src_t = r.first().type();
@@ -1087,21 +1087,31 @@ public class ModuleBuilder {
 			} else {
 				// FIXME: missing cases here
 			}
-			sources.put(src.first(),r.first());
+			sources.add(new Pair(CExpr.VAR(src_t, src.first()), r.first()));
 			blk.addAll(r.second());
 			environment.put(src.first(), src_t);
 		}
-		
-		Block body;
+							
+		ArrayList<String> labels = new  ArrayList<String>();
+		for(Pair<CExpr.LVar, CExpr> ent : sources) {
+			String loopLabel = Block.freshLabel();
+			labels.add(loopLabel);
+			blk.add(new Code.Forall(loopLabel, ent.first(), ent.second()), e
+					.attribute(Attribute.Source.class));
+		}
 		if(e.cop == Expr.COp.NONE) { 			
-			String exitLabel = Block.freshLabel();
-			body = resolveCondition(exitLabel,e.condition,environment,declared);
-			blk.add(new Code.Forall(sources,body));
+			String exitLabel = Block.freshLabel();						
+			blk.addAll(resolveCondition(exitLabel,e.condition,environment,declared));
+			for(int i=(labels.size()-1);i>=0;--i) {			
+				blk.add(new Code.End(labels.get(i)));
+			}								
 			blk.add(new Code.Goto(target));
 			blk.add(new Code.Label(exitLabel));
-		} else { // SOME			
-			body = resolveCondition(target,e.condition,environment,declared);
-			blk.add(new Code.Forall(sources,body));			
+		} else { // SOME									
+			blk.addAll(resolveCondition(target,e.condition,environment,declared));
+			for(int i=(labels.size()-1);i>=0;--i) {			
+				blk.add(new Code.End(labels.get(i)));
+			}		
 		} // ALL, LONE and ONE will be harder
 				
 		return blk;
@@ -1419,7 +1429,7 @@ public class ModuleBuilder {
 		// Ok, non-boolean case.
 		
 		environment = new HashMap<String,Type>(environment);
-		HashMap<String,CExpr> sources = new HashMap<String,CExpr>();
+		ArrayList<Pair<CExpr.LVar,CExpr>> sources = new ArrayList();
 		Block blk = new Block();
 		for(Pair<String,Expr> src : e.sources) {
 			Pair<CExpr,Block> r = resolve(0,src.second(),environment,declared);
@@ -1432,7 +1442,7 @@ public class ModuleBuilder {
 			} else {
 				// FIXME: missing cases here
 			}
-			sources.put(src.first(),r.first());
+			sources.add(new Pair(CExpr.VAR(src_t, src.first()), r.first()));
 			blk.addAll(r.second());
 			environment.put(src.first(), src_t);
 		}
@@ -1450,26 +1460,34 @@ public class ModuleBuilder {
 			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.SETGEN)), e
 					.attribute(Attribute.Source.class));
 		}		
-				
+								
 		String continueLabel = Block.freshLabel();
-		Block body;
+		ArrayList<String> labels = new  ArrayList<String>();
+		for(Pair<CExpr.LVar, CExpr> ent : sources) {
+			String loopLabel = Block.freshLabel();
+			labels.add(loopLabel);
+			blk.add(new Code.Forall(loopLabel, ent.first(), ent.second()), e
+					.attribute(Attribute.Source.class));
+		}
 		if (e.condition != null) {
-			body = resolveCondition(continueLabel, invert(e.condition),
-					environment, declared);
-			body.addAll(value.second());
-			body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
+			blk.addAll(resolveCondition(continueLabel, invert(e.condition),
+					environment, declared));
+			blk.addAll(value.second());
+			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
 					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
 					.attribute(Attribute.Source.class));
-			body.add(new Code.Label(continueLabel));
-		} else {
-			body = new Block();
-			body.addAll(value.second());
-			body.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
+			blk.add(new Code.Label(continueLabel));
+		} else {			
+			blk.addAll(value.second());
+			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
 					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
 					.attribute(Attribute.Source.class));
 		}
-		blk.add(new Code.Forall(sources,body));
 		
+		for(int i=(labels.size()-1);i>=0;--i) {			
+			blk.add(new Code.End(labels.get(i)));
+		}
+				
 		return new Pair<CExpr,Block>(lhs,blk);
 	}
 		

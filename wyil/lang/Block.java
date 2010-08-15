@@ -2,6 +2,8 @@ package wyil.lang;
 
 import java.util.*;
 
+import wyil.lang.Code.Forall;
+
 public final class Block implements Iterable<Stmt> {
 	private final ArrayList<Stmt> stmts;	
 	
@@ -99,6 +101,41 @@ public final class Block implements Iterable<Stmt> {
 		Block r = new Block();
 		for (Stmt s : block) {			
 			r.add(Code.substitute(binding, s.code),s.attributes());
+			
+			/*
+			// First, we need to to check for captured variable clashes
+			HashMap<String,CExpr> rebinding = new HashMap<String,CExpr>();
+			
+			for (Map.Entry<String, CExpr> src : a.sources.entrySet()) {
+				if (binding.containsKey(src.getKey())) {
+					// this indicates a clash
+					Type t = src.getValue().type();
+					if (t instanceof Type.Set) {
+						t = ((Type.Set) t).element;
+					} else if (t instanceof Type.List) {
+						t = ((Type.List) t).element;
+					}
+					rebinding.put(src.getKey(), CExpr.VAR(t, newCaptureName(src
+							.getKey(), binding.keySet())));
+				}
+			}
+			
+			if(rebinding.size() != 0) {
+				// Ok, we encountered a clash between variables being
+				// substituted and captured variables. Therefore, rename the
+				// affected captured variables, before proceeding as normal.				
+				HashMap<String,CExpr> srcs = new HashMap<String,CExpr>();
+				for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {
+					CExpr v = rebinding.get(src.getKey());
+					if(v != null) {						
+						srcs.put(((CExpr.Variable)v).name, src.getValue());
+					} else {
+						srcs.put(src.getKey(), src.getValue());
+					}
+				}	
+				a = new Forall(srcs);
+			} 
+			*/
 		}
 		return r;
 	}
@@ -162,10 +199,7 @@ public final class Block implements Iterable<Stmt> {
 					nlabels.put(g.target, target);
 				}
 				c = new Code.IfGoto(g.type, g.op, g.lhs, g.rhs, target);
-			} else if(c instanceof Code.Forall) {
-				Code.Forall fa = (Code.Forall) c; 
-				c = new Code.Forall(fa.sources,relabelHelper(fa.body,nlabels));
-			}
+			} 
 			b.add(c,s.attributes());
 		}				
 		
