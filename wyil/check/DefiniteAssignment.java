@@ -62,12 +62,12 @@ public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<Stri
 		if(code instanceof Code.Assign) {
 			Code.Assign ca = (Code.Assign) code;			
 			if(ca.lhs instanceof CExpr.Variable) {
-				CExpr.Variable v = (CExpr.Variable) ca.lhs;
+				CExpr.Variable v = (CExpr.Variable) ca.lhs;				
 				uses.remove(v.name);
 				checkUses(uses,in,stmt);
 				in = in.add(v.name);
-			} else if(ca.lhs instanceof CExpr.Variable) {
-				CExpr.Register v = (CExpr.Register) ca.lhs;
+			} else if(ca.lhs instanceof CExpr.Register) {
+				CExpr.Register v = (CExpr.Register) ca.lhs;				
 				uses.remove("%" + v.index);
 				checkUses(uses,in,stmt);
 				in = in.add("%" + v.index);

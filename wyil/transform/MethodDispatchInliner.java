@@ -110,13 +110,13 @@ public class MethodDispatchInliner implements ModuleTransform {
 					ivk.type);
 			Block blk = new Block();
 			int ncases = method.cases().size();
-			if(ncases == 1) {
+			if(ncases == 1) {				
 				Module.Case c = method.cases().get(0);
 				Block constraint = c.precondition();
 				if (constraint != null) {
 					blk.addAll(transformConstraint(regTarget,constraint,ivk,c));
 				}
-				blk.add(ivk);
+				blk.add(ivk,attributes);
 			} else {			
 				// This is the multi-case option, which is harder. Here, we need
 				// to chain together the constrain tests for multiple different
