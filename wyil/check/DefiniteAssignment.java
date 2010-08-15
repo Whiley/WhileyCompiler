@@ -38,11 +38,11 @@ public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<Stri
 	
 	public void check(Module.Method method) {
 		for(Module.Case cas : method.cases()) {
-			check(cas);
+			check(cas,method);
 		}
 	}
 	
-	public void check(Module.Case cas) {
+	public void check(Module.Case cas,Module.Method method) {
 		// the undefined set contains the names of all variables and registers
 		// which are defined at any given point.
 		HashSet<String> defined = new HashSet<String>();
@@ -51,32 +51,54 @@ public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<Stri
 			defined.add(p);
 		}
 	
-		start(cas,new IntersectionFlowSet<String>(defined),new IntersectionFlowSet<String>());
+		if(method.type().receiver != null) {
+			defined.add("this");
+		}
+		
+		start(cas, new IntersectionFlowSet<String>(defined),
+				new IntersectionFlowSet<String>());
 	}
 	
 	public IntersectionFlowSet<String> transfer(Stmt stmt, IntersectionFlowSet<String> in) {		
 		Code code = stmt.code;
 		HashSet<String> uses = new HashSet<String>(); 
 		Code.usedVariables(code,uses);
-		
+		String nvar = null;
 		if(code instanceof Code.Assign) {
 			Code.Assign ca = (Code.Assign) code;			
 			if(ca.lhs instanceof CExpr.Variable) {
 				CExpr.Variable v = (CExpr.Variable) ca.lhs;				
 				uses.remove(v.name);
-				checkUses(uses,in,stmt);
-				in = in.add(v.name);
+				nvar = v.name;				
 			} else if(ca.lhs instanceof CExpr.Register) {
 				CExpr.Register v = (CExpr.Register) ca.lhs;				
-				uses.remove("%" + v.index);
-				checkUses(uses,in,stmt);
-				in = in.add("%" + v.index);
-			} else {
-				checkUses(uses,in,stmt);
+				uses.remove("%" + v.index);				
+				nvar = "%" + v.index;
+			} 
+		} else if(code instanceof Code.Forall) {
+			Code.Forall ca = (Code.Forall) code;			
+			if(ca.variable instanceof CExpr.Variable) {
+				CExpr.Variable v = (CExpr.Variable) ca.variable;				
+				uses.remove(v.name);
+				nvar = v.name;				
+			} else if(ca.variable instanceof CExpr.Register) {
+				CExpr.Register v = (CExpr.Register) ca.variable;				
+				uses.remove("%" + v.index);				
+				nvar = "%" + v.index;
 			}
-		} else {
-			checkUses(uses,in,stmt);
+		}		
+		
+		// FIXME: there is a bug here for the value of a variable after a forall
+		// or induction block. The bug is that variables defined by these
+		// looping blocks may never be initialise, in the case of immediate
+		// termination (e.g. the source is empty).
+		
+		checkUses(uses,in,stmt);
+		
+		if(nvar != null) {
+			in = in.add(nvar);
 		}
+		
 		return in;
 	}
 	
