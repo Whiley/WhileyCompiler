@@ -464,7 +464,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "." + label;
+			return label + ":"
 		}
 	}	
 	
@@ -527,7 +527,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "for " + variable + " in " + source;												
+			return name + ": for " + variable + " in " + source;												
 		}
 	}
 		

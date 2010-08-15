@@ -199,6 +199,22 @@ public final class Block implements Iterable<Stmt> {
 					nlabels.put(g.target, target);
 				}
 				c = new Code.IfGoto(g.type, g.op, g.lhs, g.rhs, target);
+			} else if (c instanceof Code.Forall) {
+				Code.Forall l = (Code.Forall) c;
+				String label = nlabels.get(l.name);
+				if (label == null) {
+					label = freshLabel();
+					nlabels.put(l.name, label);
+				}
+				c = new Code.Forall(label,l.variable,l.source);
+			} else if (c instanceof Code.End) {
+				Code.End l = (Code.End) c;
+				String label = nlabels.get(l.name);
+				if (label == null) {
+					label = freshLabel();
+					nlabels.put(l.name, label);
+				}
+				c = new Code.End(label);
 			} 
 			b.add(c,s.attributes());
 		}				
