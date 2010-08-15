@@ -1205,7 +1205,7 @@ public class ModuleBuilder {
 		// select the right one, based on the pre / post conditions. 
 		
 		blk.add(new Code.Invoke(funtype, name, 0, lhs, nargs),
-				s.attribute(Attribute.Source.class));
+				s.attribute(Attribute.Source.class));				
 		
 		return new Pair<CExpr,Block>(lhs,blk);									
 	}

@@ -2,25 +2,58 @@ package wyil.lang;
 
 import java.util.*;
 
-public final class Block extends ArrayList<Stmt> {
-		
+public final class Block implements Iterable<Stmt> {
+	private final ArrayList<Stmt> stmts;	
+	
 	public Block() {
+		this.stmts = new ArrayList<Stmt>();
 	}
 	
 	public Block(Collection<Stmt> stmts) {
-		super(stmts);
+		this.stmts = new ArrayList<Stmt>();
+		for(Stmt s : stmts) {
+			add(s.code,s.attributes());
+		}
 	}
 	
 	public void add(Code c, Attribute... attributes) {
-		super.add(new Stmt(c,attributes));
+		stmts.add(new Stmt(c,attributes));
 	}
 	
 	public void add(Code c, Collection<Attribute> attributes) {
-		super.add(new Stmt(c,attributes));		
+		stmts.add(new Stmt(c,attributes));		
 	}
 	
 	public void add(int idx, Code c, Attribute... attributes) {
-		super.add(idx,new Stmt(c,attributes));
+		stmts.add(idx,new Stmt(c,attributes));
+	}
+	
+	public void addAll(Collection<Stmt> stmts) {
+		for(Stmt s : stmts) {
+			add(s.code,s.attributes());
+		}
+	}
+	
+	public void addAll(Block stmts) {
+		for(Stmt s : stmts) {
+			add(s.code,s.attributes());
+		}
+	}
+	
+	public int size() {
+		return stmts.size();
+	}
+	
+	public Stmt get(int index) {
+		return stmts.get(index);
+	}
+	
+	public void remove(int index) {
+		stmts.remove(index);
+	}
+	
+	public Iterator<Stmt> iterator() {
+		return stmts.iterator();
 	}
 	
 	/**
