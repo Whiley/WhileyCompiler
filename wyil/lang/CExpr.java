@@ -114,7 +114,7 @@ public abstract class CExpr {
 			for(CExpr arg : a.args){
 				args.add(CExpr.substitute(binding,arg));
 			}			
-			return new Invoke(a.type,a.name,a.caseNum,args);
+			return INVOKE(a.type,a.name,a.caseNum,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -166,7 +166,7 @@ public abstract class CExpr {
 			for(CExpr arg : a.args){
 				args.add(CExpr.registerShift(shift,arg));
 			}			
-			return new Invoke(a.type,a.name,a.caseNum,args);
+			return INVOKE(a.type,a.name,a.caseNum,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}

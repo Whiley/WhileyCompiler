@@ -161,6 +161,9 @@ public abstract class Code {
 		}
 		
 		public String toString() {
+			if(lhs == null) {
+				return rhs.toString();
+			}
 			return lhs + " := " + rhs;
 		}		
 	}

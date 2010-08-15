@@ -224,7 +224,7 @@ public class ClassFileBuilder {
 			makePostAssignment(c.lhs,slots,bytecodes);
 		} else {
 			translate(c.rhs,slots,bytecodes);
-			Type ret_t = c.lhs.type();
+			Type ret_t = c.rhs.type();
 			if (ret_t != Type.T_VOID) {
 				// need to drop the rhs value, since it's not used.
 				bytecodes.add(new Bytecode.Pop(convertType(ret_t)));
@@ -245,7 +245,7 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
-
+	
 		if(c.op == Code.COP.SUBTYPEEQ) {
 			// special case: don't translate rhs
 			translate(c.lhs,slots,bytecodes);			

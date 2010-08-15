@@ -4,9 +4,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
+import wyil.lang.CExpr.BinOp;
+import wyil.lang.CExpr.Convert;
+import wyil.lang.CExpr.Invoke;
+import wyil.lang.CExpr.LVal;
+import wyil.lang.CExpr.ListAccess;
+import wyil.lang.CExpr.NaryOp;
+import wyil.lang.CExpr.Register;
+import wyil.lang.CExpr.Tuple;
+import wyil.lang.CExpr.TupleAccess;
+import wyil.lang.CExpr.UnOp;
+import wyil.lang.CExpr.Variable;
+import wyil.lang.Code.Assign;
+import wyil.lang.Code.Debug;
+import wyil.lang.Code.Forall;
+import wyil.lang.Code.IfGoto;
+import wyil.lang.Code.Return;
 import wyil.util.ResolveError;
 
 /**
@@ -19,6 +36,8 @@ import wyil.util.ResolveError;
  */
 public class MethodDispatchInliner implements ModuleTransform {
 	private final ModuleLoader loader;
+	private int regTarget;
+	
 	public MethodDispatchInliner(ModuleLoader loader) {
 		this.loader = loader;
 	}
@@ -92,16 +111,104 @@ public class MethodDispatchInliner implements ModuleTransform {
 	
 	public Block transform(int regTarget, Block block) {
 		Block nblock = new Block();
-		for (Stmt s : block) {
-			Code c = s.code;
-			nblock.add(c, s.attributes());			
+		for (Stmt stmt : block) {
+			Code c = stmt.code;
+			Block inserts = new Block();
+			this.regTarget = regTarget;
+			if (c instanceof Assign) {
+				Assign a = (Assign) c;
+				LVal lhs = null;
+				if (a.lhs != null) {
+					lhs = (LVal) transform(a.lhs, stmt, inserts);
+				}
+				CExpr rhs = transform(a.rhs, stmt, inserts);
+				if(rhs != null) {
+					c = new Assign(lhs, rhs);
+				} else {
+					c = null;
+				}
+			} else if (c instanceof Debug) {
+				Debug a = (Debug) c;
+				c = new Debug(transform(a.rhs, stmt, inserts));
+			} else if (c instanceof IfGoto) {
+				IfGoto u = (IfGoto) c;
+				c = new IfGoto(u.type, u.op, transform(u.lhs, stmt, inserts),
+						transform(u.rhs, stmt, inserts), u.target);
+			} else if (c instanceof Return) {
+				Return a = (Return) c;
+				if (a.rhs != null) {
+					c = new Return(transform(a.rhs, stmt, inserts));
+				}
+			} else if (c instanceof Forall) {
+				Forall a = (Forall) c;
+				c = new Forall(a.name, (CExpr.LVar) transform(a.variable, stmt,
+						inserts), transform(a.source, stmt, inserts));
+			}
+			nblock.addAll(inserts);
+			if(c != null) {
+				nblock.add(c, stmt.attributes());
+			}
 		}
 		return nblock;
 	}
 	
+	public CExpr transform(CExpr r, Stmt stmt, Block inserts) {
+		if(r instanceof ListAccess) {
+			ListAccess la = (ListAccess) r;
+			return CExpr.LISTACCESS(transform(la.src, stmt, inserts),
+					transform(la.index, stmt, inserts));
+		} else if (r instanceof BinOp) {
+			BinOp bop = (BinOp) r;
+			return CExpr.BINOP(bop.op, transform(bop.lhs, stmt, inserts),
+					transform(bop.rhs, stmt, inserts));
+		} else if (r instanceof UnOp) {
+			UnOp bop = (UnOp) r;
+			return CExpr.UNOP(bop.op,transform(bop.rhs, stmt, inserts));
+		} else if (r instanceof Convert) {
+			Convert c = (Convert) r;
+			return CExpr.CONVERT(c.type,transform(c.rhs, stmt, inserts));
+		} else if (r instanceof NaryOp) {
+			NaryOp bop = (NaryOp) r;
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : bop.args) {
+				args.add(transform(arg, stmt, inserts));
+			}
+			return CExpr.NARYOP(bop.op, args);
+		} else if (r instanceof Tuple) {
+			Tuple tup = (Tuple) r;
+			HashMap<String,CExpr> values = new HashMap<String,CExpr>();
+			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
+				values.put(e.getKey(),transform(e.getValue(), stmt, inserts));				
+			}
+			return CExpr.TUPLE(values);
+		} else if (r instanceof TupleAccess) {
+			TupleAccess ta = (TupleAccess) r;
+			return CExpr.TUPLEACCESS(transform(ta.lhs, stmt, inserts),
+					ta.field);
+		} else if(r instanceof Invoke) {
+			Invoke a = (Invoke) r;									
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : a.args){
+				args.add(transform(arg,stmt,inserts));
+			}			
+			CExpr.Invoke ivk = CExpr.INVOKE(a.type,a.name,a.caseNum,args);
+			inserts.addAll(transform(regTarget,ivk,stmt));
+			if(ivk.type.ret == Type.T_VOID) {
+				return null;
+			} else {
+				return CExpr.REG(a.type(),regTarget);
+			}
+		} 
+		
+		return r;	
+	}
+	
 	public Block transform(int regTarget, CExpr.Invoke ivk, Stmt stmt) {
 		try {
-			CExpr.LVar lhs = CExpr.REG(ivk.type.ret,regTarget);
+			CExpr.LVar lhs = null;
+			if(ivk.type.ret != Type.T_VOID) {
+				lhs = CExpr.REG(ivk.type.ret,regTarget);
+			}
 			Module module = loader.loadModule(ivk.name.module());
 			Module.Method method = module.method(ivk.name.name(),
 					ivk.type);
@@ -113,8 +220,8 @@ public class MethodDispatchInliner implements ModuleTransform {
 				Block constraint = c.precondition();
 				if (constraint != null) {
 					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c));
-				}
-				blk.add(new Code.Assign(lhs,ivk),stmt.attributes());
+				}				
+				blk.add(new Code.Assign(lhs,ivk),stmt.attributes());				
 			} else {			
 				// This is the multi-case option, which is harder. Here, we need
 				// to chain together the constrain tests for multiple different
@@ -136,7 +243,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 						}						
 						blk.addAll(constraint);
 					}
-					
+						
 					blk.add(new Code.Assign(lhs, CExpr.INVOKE(ivk.type,
 							ivk.name, caseNum, ivk.args)), stmt.attributes());
 
@@ -152,7 +259,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		}
 	}
 	
-	public static Block transformConstraint(int regTarget, Block constraint,
+	public Block transformConstraint(int regTarget, Block constraint,
 			CExpr.Invoke ivk, Attribute.Source src, Module.Case c) {
 		
 		// Update the source number information
@@ -161,7 +268,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		// We need to perform the register shift. This is ensure that
 		// registers used in the constraint do not interfere with registers
 		// currently in use at the point where we inline it.
-		constraint = Block.registerShift(regTarget,constraint);
+		constraint = Block.registerShift(this.regTarget,constraint);
 
 		// Similarly, we need to make sure any labels used in the constraint do
 		// not collide with labels used at the inline point.
