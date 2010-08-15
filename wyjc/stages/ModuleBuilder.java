@@ -129,7 +129,8 @@ public class ModuleBuilder {
 				if(d instanceof ConstDecl) {
 					ConstDecl cd = (ConstDecl) d;
 					NameID key = new NameID(f.module,cd.name());
-					exprs.put(key, cd.constant);					
+					exprs.put(key, cd.constant);
+					filemap.put(key, f);
 				}
 			}
 		}
@@ -261,6 +262,7 @@ public class ModuleBuilder {
 					unresolved.put(key, new Pair<UnresolvedType, Expr>(td.type,
 							td.constraint));
 					srcs.put(key,d);
+					filemap.put(key, f);
 				}
 			}
 		}
