@@ -486,7 +486,8 @@ public class ModuleBuilder {
 				}				
 				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 				binding.put("$",CExpr.VAR(t.first(),p.name));				
-				precondition.addAll(Block.substitute(binding, t.second()));				
+				precondition.addAll(Block.relabel(Block.substitute(binding, t
+						.second())));				
 			}
 		}
 				

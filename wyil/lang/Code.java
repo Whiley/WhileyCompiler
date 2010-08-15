@@ -89,8 +89,8 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {			
 			Forall a = (Forall) c;				
-			// FIXME: definite problem here
-			return new Forall(a.name,a.variable,CExpr.substitute(binding,a.source));
+			return new Forall(a.name, (CExpr.LVar) CExpr.substitute(binding,
+					a.variable), CExpr.substitute(binding, a.source));
 		} else if(c instanceof Invoke) {
 			Invoke a = (Invoke) c;						
 			LVal lhs = a.lhs;
@@ -106,16 +106,6 @@ public abstract class Code {
 			return c;
 		}
 	}	
-	
-	private static String newCaptureName(String old, Set<String> names) {
-		int idx = 1;
-		String name = old + "$" + idx;
-		while (names.contains(name)) {
-			idx = idx + 1;
-			name = old + "$" + idx;
-		}
-		return name;
-	}
 	
 	/**
 	 * The register shift method is responsible for mapping every register with
@@ -464,7 +454,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return label + ":"
+			return label + ":";
 		}
 	}	
 	
