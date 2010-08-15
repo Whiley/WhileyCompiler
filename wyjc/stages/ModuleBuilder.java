@@ -565,7 +565,10 @@ public class ModuleBuilder {
 			} else if(s instanceof IfElse) {
 				return resolve((IfElse)s, fd, environment, declared);
 			} else if(s instanceof Invoke) {
-				return resolve(0, (Invoke)s, environment, declared).second();
+				Pair<CExpr,Block> p = resolve(0, (Invoke)s, environment, declared);
+				Block blk = p.second();
+				blk.add(new Code.Assign(null, p.first()));
+				return blk;
 			} else if(s instanceof Spawn) {
 				return resolve(0, (UnOp)s, environment, declared).second();
 			} else if(s instanceof ExternJvm) {	
@@ -1211,16 +1214,13 @@ public class ModuleBuilder {
 		
 		s.attributes().add(new Attributes.Fun(funtype));
 		NameID name = new NameID(modInfo.module,s.name);	
-		CExpr.LVal lhs = null;
-		if(funtype.ret != Type.T_VOID) { lhs = CExpr.REG(funtype.ret, target);}
 		
 		// Now, if this method/function has one or more "cases" then we need to
 		// select the right one, based on the pre / post conditions. 
 		
-		blk.add(new Code.Invoke(funtype, name, 0, lhs, nargs),
-				s.attribute(Attribute.Source.class));				
 		
-		return new Pair<CExpr,Block>(lhs,blk);									
+		return new Pair<CExpr, Block>(CExpr.INVOKE(funtype, name, 0, nargs),
+				blk);									
 	}
 			
 	protected Pair<CExpr, Block> resolve(int target, Constant c,

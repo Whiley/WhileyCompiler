@@ -1,4 +1,6 @@
+int f(int x):
+    return x
+
 void System::main([string] args):
-    {int} xs = {1,2,3}
-    xs = {x | x in xs, x > |args|}
-    print str(xs)
+    int y = f(1)
+    print str(y)

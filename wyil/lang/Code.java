@@ -33,8 +33,10 @@ public abstract class Code {
 	 */
 	public static void usedVariables(Code c, Set<String> uses) {
 		if(c instanceof Assign) {
-			Assign a = (Assign) c;			
-			CExpr.usedVariables(a.lhs,uses);
+			Assign a = (Assign) c;
+			if(a.lhs != null) {
+				CExpr.usedVariables(a.lhs,uses);
+			}
 			CExpr.usedVariables(a.rhs,uses);
 		} else if(c instanceof Debug) {
 			Debug a = (Debug) c;						
@@ -52,14 +54,6 @@ public abstract class Code {
 			Forall a = (Forall) c;	
 			CExpr.usedVariables(a.variable, uses);
 			CExpr.usedVariables(a.source, uses);						
-		} else if(c instanceof Invoke) {
-			Invoke a = (Invoke) c;			
-			if(a.lhs != null) {
-				CExpr.usedVariables(a.lhs,uses);
-			}
-			for(CExpr arg : a.args){
-				CExpr.usedVariables(arg,uses);
-			}			
 		} 
 	}
 
@@ -71,9 +65,12 @@ public abstract class Code {
 	 */
 	public static Code substitute(HashMap<String,CExpr> binding, Code c) {
 		if(c instanceof Assign) {
-			 Assign a = (Assign) c;
-			return new Assign((LVal) CExpr.substitute(binding, a.lhs), CExpr
-					.substitute(binding, a.rhs));
+			Assign a = (Assign) c;
+			LVal lhs = null;
+			if(a.lhs != null) {
+				lhs = (LVal) CExpr.substitute(binding, a.lhs);
+			}
+			return new Assign(lhs, CExpr.substitute(binding, a.rhs));
 		} else if(c instanceof Debug) {
 			Debug a = (Debug) c;
 			return new Debug(CExpr.substitute(binding, a.rhs));
@@ -91,17 +88,6 @@ public abstract class Code {
 			Forall a = (Forall) c;				
 			return new Forall(a.name, (CExpr.LVar) CExpr.substitute(binding,
 					a.variable), CExpr.substitute(binding, a.source));
-		} else if(c instanceof Invoke) {
-			Invoke a = (Invoke) c;						
-			LVal lhs = a.lhs;
-			if(lhs != null) {
-				lhs = (LVal) CExpr.substitute(binding, a.lhs);
-			}
-			ArrayList<CExpr> args = new ArrayList<CExpr>();
-			for(CExpr arg : a.args){
-				args.add(CExpr.substitute(binding,arg));
-			}			
-			return new Invoke(a.type,a.name,a.caseNum,lhs,args);
 		} else {
 			return c;
 		}
@@ -118,9 +104,12 @@ public abstract class Code {
 	 */
 	public static Code registerShift(int shift, Code c) {
 		if (c instanceof Assign) {
-			Assign a = (Assign) c;
-			return new Assign((LVal) CExpr.registerShift(shift, a.lhs), CExpr
-					.registerShift(shift, a.rhs));
+			Assign a = (Assign) c;			
+			LVal lhs = null;
+			if(a.lhs != null) {
+				lhs = (LVal) CExpr.registerShift(shift, a.lhs);
+			}
+			return new Assign(lhs, CExpr.registerShift(shift, a.rhs));
 		} else if (c instanceof Debug) {
 			Debug a = (Debug) c;
 			return new Debug((LVal) CExpr.registerShift(shift, a.rhs));
@@ -138,17 +127,6 @@ public abstract class Code {
 			Forall a = (Forall) c;	
 			return new Forall(a.name, (CExpr.LVar) CExpr.registerShift(shift,
 					a.variable), CExpr.registerShift(shift, a.source));
-		} else if(c instanceof Invoke) {
-			Invoke a = (Invoke) c;			
-			LVal lhs = a.lhs;
-			if(lhs != null) {
-				lhs = (LVal) CExpr.registerShift(shift, a.lhs);
-			}			
-			ArrayList<CExpr> args = new ArrayList<CExpr>();
-			for(CExpr arg : a.args){
-				args.add(CExpr.registerShift(shift,arg));
-			}			
-			return new Invoke(a.type,a.name,a.caseNum,lhs,args);
 		} else {
 			return c;
 		}
@@ -211,84 +189,7 @@ public abstract class Code {
 			return "return " + rhs;
 		}		
 	}
-	
-	
-	
-	public final static class Invoke extends Code {
-		public final Type.Fun type;
-		public final NameID name;
-		public final LVal lhs;
-		public final List<CExpr> args;
-		public final int caseNum;
-
-		public Invoke(Type.Fun type, NameID name, int caseNum, LVal lhs, CExpr... args) {
-			this.type = type;
-			this.name = name;
-			this.caseNum = caseNum;
-			this.lhs = lhs;
-			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
-			for(CExpr r : args) {
-				tmp.add(r);
-			}
-			this.args = Collections.unmodifiableList(tmp); 
-		}
-
-		public Invoke(Type.Fun type, NameID name, int caseNum, LVal lhs,
-				Collection<CExpr> args) {
-			this.type = type;
-			this.name = name;
-			this.caseNum = caseNum;
-			this.lhs = lhs;
-			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Invoke) {
-				Invoke a = (Invoke) o;
-				if (lhs == null) {
-					return type.equals(a.type) && name.equals(a.name)
-							&& caseNum == a.caseNum && a.lhs == null
-							&& args.equals(a.args);
-				} else {
-					return type.equals(a.type) && name.equals(a.name)
-							&& caseNum == a.caseNum && lhs.equals(a.lhs)
-							&& args.equals(a.args);
-				}
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			if (lhs == null) {
-				return name.hashCode() + caseNum + type.hashCode() + args.hashCode();
-			} else {
-				return name.hashCode() + caseNum + type.hashCode() + lhs.hashCode()
-						+ args.hashCode();
-			}
-		}
-
-		public String toString() {
-			String rhs = "";
-			boolean firstTime = true;
-			for (CExpr v : args) {
-				if (!firstTime) {
-					rhs += ",";
-				}
-				firstTime = false;
-				rhs += v;
-			}
-			String n = name + ":" + type;
-			if(caseNum > 0) {
-				n += ":" + caseNum;
-			}
-			if(lhs == null) {
-				return n + ":(" + rhs + ")";
-			} else {
-				return lhs + " := " + n + ":(" + rhs + ")";
-			}
-		}
-	}
-	
+		
 	public final static class Debug extends Code {				
 		public final CExpr rhs;
 		

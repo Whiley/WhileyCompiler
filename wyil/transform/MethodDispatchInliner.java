@@ -94,17 +94,14 @@ public class MethodDispatchInliner implements ModuleTransform {
 		Block nblock = new Block();
 		for (Stmt s : block) {
 			Code c = s.code;
-			if (c instanceof Code.Invoke) {
-				nblock.addAll(transform(regTarget, (Code.Invoke) c, s));
-			} else {
-				nblock.add(c, s.attributes());
-			}
+			nblock.add(c, s.attributes());			
 		}
 		return nblock;
 	}
 	
-	public Block transform(int regTarget, Code.Invoke ivk, Stmt stmt) {
+	public Block transform(int regTarget, CExpr.Invoke ivk, Stmt stmt) {
 		try {
+			CExpr.LVar lhs = CExpr.REG(ivk.type.ret,regTarget);
 			Module module = loader.loadModule(ivk.name.module());
 			Module.Method method = module.method(ivk.name.name(),
 					ivk.type);
@@ -117,7 +114,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 				if (constraint != null) {
 					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c));
 				}
-				blk.add(ivk,stmt.attributes());
+				blk.add(new Code.Assign(lhs,ivk),stmt.attributes());
 			} else {			
 				// This is the multi-case option, which is harder. Here, we need
 				// to chain together the constrain tests for multiple different
@@ -140,9 +137,9 @@ public class MethodDispatchInliner implements ModuleTransform {
 						blk.addAll(constraint);
 					}
 					
-					blk.add(new Code.Invoke(ivk.type, ivk.name, caseNum, ivk.lhs,
-							ivk.args),stmt.attributes());
-					
+					blk.add(new Code.Assign(lhs, CExpr.INVOKE(ivk.type,
+							ivk.name, caseNum, ivk.args)), stmt.attributes());
+
 					if(caseNum++ < ncases) {
 						blk.add(new Code.Goto(exitLabel));
 					}
@@ -156,7 +153,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 	}
 	
 	public static Block transformConstraint(int regTarget, Block constraint,
-			Code.Invoke ivk, Attribute.Source src, Module.Case c) {
+			CExpr.Invoke ivk, Attribute.Source src, Module.Case c) {
 		
 		// Update the source number information
 		constraint = resource(constraint,src); 

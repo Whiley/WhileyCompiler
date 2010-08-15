@@ -202,8 +202,6 @@ public class ClassFileBuilder {
 			translate((Code.Forall)c,slots,bytecodes);
 		} else if(c instanceof Code.End) {
 			translate((Code.End)c,slots,bytecodes);
-		} else if(c instanceof Code.Invoke){
-			translate((Code.Invoke)c,slots,bytecodes);
 		} else if(c instanceof Code.Label){
 			translate((Code.Label)c,slots,bytecodes);
 		} else if(c instanceof Code.Debug){
@@ -218,13 +216,20 @@ public class ClassFileBuilder {
 	public void translate(Code.Assign c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		
-		makePreAssignment(c.lhs,slots,bytecodes);
-		
-		// Translate right-hand side
-		translate(c.rhs,slots,bytecodes);
-
-		// Write assignment
-		makePostAssignment(c.lhs,slots,bytecodes);		
+		if(c.lhs != null) {
+			makePreAssignment(c.lhs,slots,bytecodes);		
+			// Translate right-hand side
+			translate(c.rhs,slots,bytecodes);			
+			// Write assignment
+			makePostAssignment(c.lhs,slots,bytecodes);
+		} else {
+			translate(c.rhs,slots,bytecodes);
+			Type ret_t = c.lhs.type();
+			if (ret_t != Type.T_VOID) {
+				// need to drop the rhs value, since it's not used.
+				bytecodes.add(new Bytecode.Pop(convertType(ret_t)));
+			}
+		}
 	}
 
 	public void translate(Code.Return c, HashMap<String, Integer> slots,
@@ -388,49 +393,6 @@ public class ClassFileBuilder {
 		} 
 	}
 	
-	public void translate(Code.Invoke c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-		makePreAssignment(c.lhs,slots,bytecodes);
-		
-		int idx=0;
-		// first, translate receiver (where appropriate)
-		if(c.type.receiver != null) {			
-			CExpr r = c.args.get(idx++);
-			translate(r, slots, bytecodes);
-		}
-		// next, translate parameters
-		List<Type> params = c.type.params;
-		for(int i=0;i!=params.size();++i) {
-			Type pt = params.get(i);
-			CExpr r = c.args.get(idx++);
-			Type rt = r.type();
-			translate(r, slots, bytecodes);			
-			if(!pt.equals(rt)) {			
-				addWriteConversion(rt,bytecodes);
-			} else {
-				cloneRHS(rt,bytecodes);
-			}
-		}
-		ModuleID mid = c.name.module();
-		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
-		JvmType.Function type = (JvmType.Function) convertType(c.type);
-		String mangled = nameMangle(c.name.name(), c.type);
-		if(c.caseNum > 0) {
-			mangled += "$" + c.caseNum;
-		}
-		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
-				Bytecode.STATIC));		
-		// finally, make the assignment (where appropriate)
-		if(c.lhs != null) {
-			makePostAssignment(c.lhs,slots,bytecodes);
-		} else if(c.lhs == null && c.type.ret != Type.T_VOID){
-			// in this case, the function being called does return something,
-			// but we're discarding it. Therefore, we need to pop the return
-			// value off the stack
-			bytecodes.add(new Bytecode.Pop(convertType(c.type.ret)));
-		}
-	}
-	
 	public void translate(Code.Forall c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		translate(c.source, slots, bytecodes);
@@ -529,6 +491,8 @@ public class ClassFileBuilder {
 			translate((CExpr.Tuple)r,slots,bytecodes);
 		} else if(r instanceof CExpr.TupleAccess) {
 			translate((CExpr.TupleAccess)r,slots,bytecodes);
+		} else if(r instanceof CExpr.Invoke) {
+			translate((CExpr.Invoke)r,slots,bytecodes);
 		} else {
 			throw new RuntimeException("Unknown expression encountered: " + r);
 		}
@@ -743,6 +707,38 @@ public class ClassFileBuilder {
 		}	
 	}
 	
+	public void translate(CExpr.Invoke c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {		
+		int idx=0;
+		// first, translate receiver (where appropriate)
+		if(c.type.receiver != null) {			
+			CExpr r = c.args.get(idx++);
+			translate(r, slots, bytecodes);
+		}
+		// next, translate parameters
+		List<Type> params = c.type.params;
+		for(int i=0;i!=params.size();++i) {
+			Type pt = params.get(i);
+			CExpr r = c.args.get(idx++);
+			Type rt = r.type();
+			translate(r, slots, bytecodes);			
+			if(!pt.equals(rt)) {			
+				addWriteConversion(rt,bytecodes);
+			} else {
+				cloneRHS(rt,bytecodes);
+			}
+		}
+		ModuleID mid = c.name.module();
+		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
+		JvmType.Function type = (JvmType.Function) convertType(c.type);
+		String mangled = nameMangle(c.name.name(), c.type);
+		if(c.caseNum > 0) {
+			mangled += "$" + c.caseNum;
+		}
+		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
+				Bytecode.STATIC));				
+	}
+		
 	public void translate(Value v, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		if(v instanceof Value.Bool) {

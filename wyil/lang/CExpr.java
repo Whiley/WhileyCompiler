@@ -42,6 +42,11 @@ public abstract class CExpr {
 		} else if(r instanceof Convert) {
 			Convert v = (Convert) r;			
 			usedVariables(v.rhs,uses);
+		} else if(r instanceof Invoke) {
+			Invoke a = (Invoke) r;						
+			for(CExpr arg : a.args){
+				CExpr.usedVariables(arg,uses);
+			}			
 		} else if(r instanceof Value) {
 			
 		} else {
@@ -103,6 +108,13 @@ public abstract class CExpr {
 			TupleAccess ta = (TupleAccess) r;
 			return TUPLEACCESS(substitute(binding, ta.lhs),
 					ta.field);
+		} else if(r instanceof Invoke) {
+			Invoke a = (Invoke) r;									
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : a.args){
+				args.add(CExpr.substitute(binding,arg));
+			}			
+			return new Invoke(a.type,a.name,a.caseNum,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -148,6 +160,13 @@ public abstract class CExpr {
 			TupleAccess ta = (TupleAccess) r;
 			return TUPLEACCESS(registerShift(shift, ta.lhs),
 					ta.field);
+		} else if(r instanceof Invoke) {
+			Invoke a = (Invoke) r;						
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			for(CExpr arg : a.args){
+				args.add(CExpr.registerShift(shift,arg));
+			}			
+			return new Invoke(a.type,a.name,a.caseNum,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -193,6 +212,18 @@ public abstract class CExpr {
 	public static TupleAccess TUPLEACCESS(CExpr lhs, String field) {
 		return get(new TupleAccess(lhs,field));
 	}
+	
+	public static Invoke INVOKE(Type.Fun type, NameID name, int casenum,
+			CExpr... args) {
+		return get(new Invoke(type,name,casenum,args));
+	}
+	
+
+	public static Invoke INVOKE(Type.Fun type, NameID name, int casenum,
+			Collection<CExpr> args) {
+		return get(new Invoke(type,name,casenum,args));
+	}
+	
 	
 	public static class Variable extends LVar {
 		public final String name;
@@ -621,7 +652,68 @@ public abstract class CExpr {
 			return lhs + "." + field;
 		}
 	}
+	
+	public final static class Invoke extends CExpr {
+		public final Type.Fun type;
+		public final NameID name;
+		public final List<CExpr> args;
+		public final int caseNum;
+
+		Invoke(Type.Fun type, NameID name, int caseNum, CExpr... args) {
+			this.type = type;
+			this.name = name;
+			this.caseNum = caseNum;
+			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
+			for(CExpr r : args) {
+				tmp.add(r);
+			}
+			this.args = Collections.unmodifiableList(tmp); 
+		}
+
+		Invoke(Type.Fun type, NameID name, int caseNum,
+				Collection<CExpr> args) {
+			this.type = type;
+			this.name = name;
+			this.caseNum = caseNum;
+			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));
+		}
+
+		public Type type() {
+			return type.ret;
+		}
 		
+		public boolean equals(Object o) {
+			if (o instanceof Invoke) {
+				Invoke a = (Invoke) o;
+				return type.equals(a.type) && name.equals(a.name)
+				&& caseNum == a.caseNum && args.equals(a.args);				
+			}
+			return false;
+		}
+
+		public int hashCode() {			
+			return name.hashCode() + caseNum + type.hashCode() + args.hashCode();			
+		}
+
+		public String toString() {
+			String rhs = "";
+			boolean firstTime = true;
+			for (CExpr v : args) {
+				if (!firstTime) {
+					rhs += ",";
+				}
+				firstTime = false;
+				rhs += v;
+			}
+			String n = name.toString();
+			if(caseNum > 0) {
+				n += "$" + caseNum;
+			}			
+			return n + "(" + rhs + ")!" + type;			
+		}
+	}
+
+	
 	private static final ArrayList<CExpr> values = new ArrayList<CExpr>();
 	private static final HashMap<CExpr,Integer> cache = new HashMap<CExpr,Integer>();
 	
