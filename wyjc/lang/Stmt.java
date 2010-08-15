@@ -3,6 +3,7 @@ package wyjc.lang;
 import java.util.*;
 
 import wyil.lang.Attribute;
+import wyil.util.SyntacticElement;
 import wyjvm.lang.Bytecode;
 
 public interface Stmt extends SyntacticElement {

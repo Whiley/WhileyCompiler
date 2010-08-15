@@ -4,6 +4,7 @@ import java.util.*;
 
 import wyil.lang.*;
 import wyil.util.Pair;
+import wyil.util.SyntacticElement;
 
 public interface Expr extends SyntacticElement {
 

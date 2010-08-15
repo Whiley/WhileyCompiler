@@ -1,4 +1,3 @@
 int f(int y):
-    int x = 1
-    x = 2
+    int x
     return x

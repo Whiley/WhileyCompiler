@@ -16,12 +16,11 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.lang;
+package wyil.util;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import wyil.lang.Attribute;
-import wyil.util.SyntaxError;
 
 /**
  * A Syntactic Element represents any part of the file for which is relevant

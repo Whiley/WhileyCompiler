@@ -21,13 +21,13 @@ package wyjc.stages;
 import java.util.*;
 import java.math.BigInteger;
 
-import static wyjc.lang.WhileyFile.*;
+import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wyjc.lang.*;
-import wyjc.lang.Attributes;
 import wyjc.lang.WhileyFile.*;
+import wyjc.lang.Stmt;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
 

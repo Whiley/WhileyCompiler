@@ -103,5 +103,33 @@ public class SyntaxError extends RuntimeException {
 	 */
 	public int end() { return end; }
 	
-	public static final long serialVersionUID = 1l;	
+	public static final long serialVersionUID = 1l;
+	
+
+	public static void syntaxError(String msg, String filename, SyntacticElement elem) {
+		int start = -1;
+		int end = -1;
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;			
+		}
+		
+		throw new SyntaxError(msg, filename, start, end);
+	}
+
+	public static void syntaxError(String msg, String filename,
+			SyntacticElement elem, Throwable ex) {
+		int start = -1;
+		int end = -1;		
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;			
+		}
+		
+		throw new SyntaxError(msg, filename, start, end, ex);
+	}
 }

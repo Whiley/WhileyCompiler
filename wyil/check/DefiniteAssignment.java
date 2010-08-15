@@ -4,6 +4,7 @@ import java.util.*;
 import wyil.util.*;
 import wyil.lang.*;
 import wyil.dfa.*;
+import static wyil.util.SyntaxError.*;
 
 /**
  * <p>
@@ -53,45 +54,45 @@ public class DefiniteAssignment extends ForwardAnalysis<IntersectionFlowSet<Stri
 		start(cas,new IntersectionFlowSet<String>(defined),new IntersectionFlowSet<String>());
 	}
 	
-	public IntersectionFlowSet<String> transfer(Code stmt, IntersectionFlowSet<String> in) {		
+	public IntersectionFlowSet<String> transfer(Stmt stmt, IntersectionFlowSet<String> in) {		
+		Code code = stmt.code;
 		HashSet<String> uses = new HashSet<String>(); 
-		Code.usedVariables(stmt,uses);
+		Code.usedVariables(code,uses);
 		
-		if(stmt instanceof Code.Assign) {
-			Code.Assign ca = (Code.Assign) stmt;			
+		if(code instanceof Code.Assign) {
+			Code.Assign ca = (Code.Assign) code;			
 			if(ca.lhs instanceof CExpr.Variable) {
 				CExpr.Variable v = (CExpr.Variable) ca.lhs;
 				uses.remove(v.name);
-				checkUses(uses,in);
+				checkUses(uses,in,stmt);
 				in = in.add(v.name);
 			} else if(ca.lhs instanceof CExpr.Variable) {
 				CExpr.Register v = (CExpr.Register) ca.lhs;
 				uses.remove("%" + v.index);
-				checkUses(uses,in);
+				checkUses(uses,in,stmt);
 				in = in.add("%" + v.index);
 			}
 		} else {
-			checkUses(uses,in);
+			checkUses(uses,in,stmt);
 		}
 		return in;
 	}
 	
 	private void checkUses(HashSet<String> uses,
-			IntersectionFlowSet<String> in, Attribute.Source src) {		
-		for(String v : uses) {			
-			if(!in.contains(v)) {				
-				throw new SyntaxError("variable " + v
-						+ " might not be initialised", filename, src.start,
-						src.end);
+			IntersectionFlowSet<String> in, SyntacticElement elem) {
+		for (String v : uses) {
+			if (!in.contains(v)) {
+				syntaxError("variable " + v + " might not be initialised",
+						filename, elem);
 			}
 		}
 	}
 	
-	public IntersectionFlowSet<String> transfer(boolean branch, Code.IfGoto stmt,
+	public IntersectionFlowSet<String> transfer(boolean branch, Stmt stmt,
 			IntersectionFlowSet<String> in) {
 		HashSet<String> uses = new HashSet<String>(); 
-		Code.usedVariables(stmt,uses);
-		checkUses(uses,in);
+		Code.usedVariables(stmt.code,uses);
+		checkUses(uses,in,stmt);
 		return in;
 	}
 }

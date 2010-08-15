@@ -77,8 +77,8 @@ public class WyilFileWriter {
 	}
 	
 	public static void write(int indent, Block blk, PrintWriter out) {
-		for(int i=0;i!=blk.size();++i) {
-			write(indent,blk.code(i),blk.attributes(i),out);
+		for(Stmt s : blk) {
+			write(indent,s.code,s.attributes(),out);
 		}
 	}
 	

@@ -53,8 +53,8 @@ public abstract class Code {
 			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {				
 				CExpr.usedVariables(src.getValue(),uses);
 			}
-			for(Code code : a.body) {
-				usedVariables(code,uses);
+			for(Stmt s : a.body) {
+				usedVariables(s.code,uses);
 			}
 			for(Map.Entry<String,CExpr> src : a.sources.entrySet()) {				
 				// FIXME: this is a problem if we can have multiple variables
@@ -137,8 +137,8 @@ public abstract class Code {
 				srcs.put(src.getKey(),CExpr.substitute(binding,src.getValue()));				
 			}
 			Block body = new Block();
-			for(Code code : a.body) {
-				body.add(substitute(binding,code));			
+			for(Stmt s : a.body) {
+				body.add(substitute(binding,s.code),s.attributes());			
 			}						
 			
 			return new Forall(srcs, body);
@@ -202,8 +202,8 @@ public abstract class Code {
 				srcs.put(src.getKey(),CExpr.registerShift(shift,src.getValue()));				
 			}
 			Block body = new Block();
-			for(Code code : a.body) {
-				body.add(registerShift(shift,code));
+			for(Stmt s : a.body) {
+				body.add(registerShift(shift,s.code),s.attributes());
 			}
 			return new Forall(srcs, body);
 		} else if(c instanceof Invoke) {
@@ -570,7 +570,7 @@ public abstract class Code {
 				s += e.getKey() + " in " + e.getValue();
 			}	
 			s += ":";		
-			for(Code c : body) {
+			for(Stmt c : body) {
 				s += "\n    " + c.toString();
 			}
 			return s;			

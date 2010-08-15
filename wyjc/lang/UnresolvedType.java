@@ -2,6 +2,7 @@ package wyjc.lang;
 
 import java.util.*;
 import wyil.lang.Attribute;
+import wyil.util.SyntacticElement;
 
 public interface UnresolvedType extends SyntacticElement {
 

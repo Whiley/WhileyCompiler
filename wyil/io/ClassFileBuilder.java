@@ -183,8 +183,8 @@ public class ClassFileBuilder {
 	
 	public void translate(Block blk, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-		for (Code c : blk) {
-			translate(c, slots, bytecodes);
+		for (Stmt s : blk) {
+			translate(s.code, slots, bytecodes);
 		}
 	}
 	

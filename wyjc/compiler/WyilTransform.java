@@ -23,8 +23,7 @@ public class WyilTransform implements Compiler.Stage {
 		} catch(RuntimeException ex) {
 			logout.logTimedMessage("[" + module.filename()
 					+ "] failed on " + name + " (" + ex.getMessage() + ")",
-					System.currentTimeMillis() - start);
-			ex.printStackTrace();
+					System.currentTimeMillis() - start);			
 			throw ex;			
 		}
 	}

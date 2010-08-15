@@ -39,8 +39,8 @@ public class WhileyBlock implements BytecodeAttribute {
 	}
 	
 	public static void addPoolItems(Block block, Set<Constant.Info> constantPool) {
-		for(Code c : block) {
-			addPoolItems(c,constantPool);
+		for(Stmt s : block) {
+			addPoolItems(s.code,constantPool);
 		}
 	}
 	

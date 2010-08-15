@@ -2,78 +2,27 @@ package wyil.lang;
 
 import java.util.*;
 
-public final class Block implements Iterable<Code> {
-	private final ArrayList<Code> codes;	
-	private final ArrayList<List<Attribute>> attributes;	
-	
+public final class Block extends ArrayList<Stmt> {
+		
 	public Block() {
-		this.codes = new ArrayList<Code>();
-		this.attributes = new ArrayList<List<Attribute>>();
-	}
-	public Block(Block blk) {
-		this.codes = new ArrayList<Code>(blk.codes);
-		this.attributes = new ArrayList<List<Attribute>>(blk.attributes);
 	}
 	
-	public Iterator<Code> iterator() {
-		return codes.iterator();
+	public Block(Collection<Stmt> stmts) {
+		super(stmts);
 	}
 	
 	public void add(Code c, Attribute... attributes) {
-		codes.add(c);
-		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
-		for(Attribute a : attributes) {
-			attrs.add(a);
-		}
-		this.attributes.add(attrs);
+		super.add(new Stmt(c,attributes));
 	}
 	
 	public void add(Code c, Collection<Attribute> attributes) {
-		codes.add(c);
-		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
-		attrs.addAll(attributes);
-		this.attributes.add(attrs);
-	}
-	
-	public void addAll(Block blk) {
-		this.codes.addAll(blk.codes);
-		this.attributes.addAll(blk.attributes);
+		super.add(new Stmt(c,attributes));		
 	}
 	
 	public void add(int idx, Code c, Attribute... attributes) {
-		this.codes.add(idx,c);
-		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
-		for(Attribute a : attributes) {
-			attrs.add(a);
-		}
+		super.add(idx,new Stmt(c,attributes));
 	}
 	
-	public void remove(int idx) {
-		this.codes.remove(idx);
-		this.attributes.remove(idx);
-	}
-	
-	public Code code(int idx) {
-		return codes.get(idx);
-	}
-	
-	public List<Attribute> attributes(int idx) {
-		return attributes.get(idx);
-	}
-	
-	public <T extends Attribute> Attribute attribute(int idx, Class<T> clazz) {
-		for(Attribute a : attributes.get(idx)) {
-			if(clazz.isInstance(a)) {
-				return a;
-			}
-		}
-		return null;
-	}
-	
-	public int size() {
-		return this.codes.size();
-	}
-		
 	/**
 	 * Determine the set of all used variables in this block.
 	 * 
@@ -81,8 +30,8 @@ public final class Block implements Iterable<Code> {
 	 * @return
 	 */
 	public static <T extends Set<String>> T usedVariables(Block blk, T uses) {
-		for (Code c : blk) {
-			Code.usedVariables(c, uses);
+		for (Stmt s : blk) {
+			Code.usedVariables(s.code, uses);
 		}
 		return uses;
 	}
@@ -115,9 +64,8 @@ public final class Block implements Iterable<Code> {
 	 */
 	public static Block substitute(HashMap<String, CExpr> binding, Block block) {
 		Block r = new Block();
-		for (int i=0;i!=block.size();++i) {
-			Code c = block.code(i);
-			r.add(Code.substitute(binding, c),block.attributes(i));
+		for (Stmt s : block) {			
+			r.add(Code.substitute(binding, s.code),s.attributes());
 		}
 		return r;
 	}
@@ -133,9 +81,8 @@ public final class Block implements Iterable<Code> {
 	 */
 	public static Block registerShift(int shift, Block block) {
 		Block r = new Block();
-		for (int i=0;i!=block.size();++i) {
-			Code c = block.code(i);		
-			r.add(Code.registerShift(shift, c),block.attributes(i));
+		for (Stmt s : block) {				
+			r.add(Code.registerShift(shift, s.code),s.attributes());
 		}
 		return r;
 	}
@@ -156,8 +103,8 @@ public final class Block implements Iterable<Code> {
 	
 	private static Block relabelHelper(Block blk, HashMap<String,String> nlabels) {
 		Block b = new Block();
-		for (int i=0;i!=blk.size();++i) {
-			Code c = blk.code(i);
+		for (Stmt s : blk) {
+			Code c = s.code;
 			if (c instanceof Code.Label) {
 				Code.Label l = (Code.Label) c;
 				String label = nlabels.get(l.label);
@@ -186,7 +133,7 @@ public final class Block implements Iterable<Code> {
 				Code.Forall fa = (Code.Forall) c; 
 				c = new Code.Forall(fa.sources,relabelHelper(fa.body,nlabels));
 			}
-			b.add(c,blk.attributes(i));
+			b.add(c,s.attributes());
 		}				
 		
 		return b;
@@ -202,12 +149,12 @@ public final class Block implements Iterable<Code> {
 	 */
 	public static Block chain(String target, Block block) {
 		Block nblock = new Block();
-		for(int i=0;i!=block.size();++i) {
-			Code c = block.code(i);
+		for(Stmt s : block) {
+			Code c = s.code;
 			if(c instanceof Code.Fail) {
 				c = new Code.Goto(target);
 			}
-			nblock.add(c,block.attributes(i));			
+			nblock.add(c,s.attributes());			
 		}
 		return nblock;
 	}

@@ -19,9 +19,9 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 		
 		// First, build the label map
 		int pos = 0;
-		for(Code s : body) {
-			if(s instanceof Code.Label) {
-				Code.Label lab = (Code.Label) s;				
+		for(Stmt s : body) {
+			if(s.code instanceof Code.Label) {
+				Code.Label lab = (Code.Label) s.code;				
 				labels.put(lab.label,pos);
 			}
 			pos++;			
@@ -41,8 +41,9 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 			}
 			
 
-			Code stmt = body.code(current);
-
+			Stmt stmt = body.get(current);
+			Code code = stmt.code;
+			
 			// prestore represents store going into this point
 			T store = stores.get(current);
 
@@ -50,23 +51,23 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 				store = emptyStore;
 			}
 
-			if(stmt instanceof Code.Goto) {
-				Code.Goto gto = (Code.Goto) stmt;
+			if(code instanceof Code.Goto) {
+				Code.Goto gto = (Code.Goto) code;
 				int target = labels.get(gto.target);
 				merge(target,store,worklist);
-			} else if(stmt instanceof Code.IfGoto) {				
-				Code.IfGoto gto = (Code.IfGoto) stmt;
+			} else if(code instanceof Code.IfGoto) {				
+				Code.IfGoto gto = (Code.IfGoto) code;
 				int target = labels.get(gto.target);
-				T t_store = transfer(true,gto,store);
-				T f_store = transfer(false,gto,store);				
+				T t_store = transfer(true,stmt,store);
+				T f_store = transfer(false,stmt,store);				
 				merge(target,t_store,worklist);
 				merge(current+1,f_store,worklist);
-			} else if(stmt instanceof Code.Return) {
+			} else if(code instanceof Code.Return) {
 				// collect the final store as the one at the end of the list
 				merge(body.size(),transfer(stmt,store),worklist);			
-			} else if(!(stmt instanceof Code.Label)){				
+			} else if(!(code instanceof Code.Label)){				
 				merge(current+1,transfer(stmt,store),worklist);
-			} else if(stmt instanceof Code.Label) {
+			} else if(code instanceof Code.Label) {
 				merge(current+1,store,worklist);
 			}			
 		}
@@ -116,7 +117,7 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 	 * @param m FlowSet to use in evaluation
 	 */
 	
-	public abstract T transfer(Code stmt, T m);
+	public abstract T transfer(Stmt stmt, T m);
 	
 	/**
 	 * Transfer function for Code Expressions.  This is used primarily for
@@ -126,6 +127,6 @@ public abstract class ForwardAnalysis<T extends FlowSet> {
 	 * @param gto condition branch
 	 * @param m FlowSet to use in evaluation
 	 */
-	public abstract T transfer(boolean branch, Code.IfGoto gto, T m);
+	public abstract T transfer(boolean branch, Stmt gto, T m);
 
 }
