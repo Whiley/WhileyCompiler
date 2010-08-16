@@ -110,28 +110,28 @@ public class WhileyBlock implements BytecodeAttribute {
 		if(c instanceof Assign) {
 			Assign a = (Assign) c;
 			if(a.lhs != null) {
-				writer.write_u2(ASSIGN);
+				writer.write_u1(ASSIGN);
 				writeCExpr(a.lhs,writer,constantPool);
 				writeCExpr(a.rhs,writer,constantPool);
 			} else {
-				writer.write_u2(CODEEXPR);				
+				writer.write_u1(CODEEXPR);				
 				writeCExpr(a.rhs,writer,constantPool);
 			}			
 		} else if(c instanceof Code.Goto) {
 			Code.Goto a = (Code.Goto) c;			
-			writer.write_u2(GOTO);
+			writer.write_u1(GOTO);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 		} else if(c instanceof Code.Fail) {
 			Code.Fail a = (Code.Fail) c;			
-			writer.write_u2(FAIL);
+			writer.write_u1(FAIL);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.msg)));
 		} else if(c instanceof Code.Label) {
 			Code.Label a = (Code.Label) c;			
-			writer.write_u2(LABEL);
+			writer.write_u1(LABEL);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
 		} else if(c instanceof IfGoto) {
 			IfGoto a = (IfGoto) c;			
-			writer.write_u2(IFGOTO);
+			writer.write_u1(IFGOTO);
 			WhileyType.write(a.type, writer, constantPool);
 			writer.write_u2(COP2INT(a.op));
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
@@ -148,27 +148,48 @@ public class WhileyBlock implements BytecodeAttribute {
 		if(rval instanceof Value) {
 			writeValue((Value)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Variable) {
-			writeRVal((CExpr.Variable)rval,writer,constantPool);
+			writeCExpr((CExpr.Variable)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.Register) {
+			writeCExpr((CExpr.Register)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.UnOp) {
+			writeCExpr((CExpr.UnOp)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.BinOp) {
+			writeCExpr((CExpr.BinOp)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.NaryOp) {
+			writeCExpr((CExpr.NaryOp)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.Invoke) {
+			writeCExpr((CExpr.Invoke)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.Convert) {
+			writeCExpr((CExpr.Convert)rval,writer,constantPool);
 		} else {
-			writeRVal((CExpr.Register)rval,writer,constantPool);
+			throw new IllegalArgumentException("Unknown expression encountered: " + rval);
 		}
 	}	
 	
-	public static void writeRVal(CExpr.Variable expr, BinaryOutputStream writer,
+	public static void writeCExpr(CExpr.Variable expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		// The encoding of variables could be optimised to avoid using the
-		// constant pool in most, if not all cases.
-		writer.write_u2(VARIABLE);				
+		writer.write_u1(VARIABLE);				
 		int idx = constantPool.get(new Constant.Utf8(expr.name));							
 		writer.write_u2(idx);						
 	}
 	
-	public static void writeRVal(CExpr.Register expr, BinaryOutputStream writer,
+	public static void writeCExpr(CExpr.Register expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		// The encoding of variables could be optimised to avoid using the
-		// constant pool in most, if not all cases.
-		writer.write_u2(REGISTER);												
+		writer.write_u1(REGISTER);												
 		writer.write_u2(expr.index);						
+	}
+	
+	public static void writeCExpr(CExpr.UnOp expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(UOP2INT(expr.op));																			
+		writeCExpr(expr.rhs,writer,constantPool);
+	}
+	
+	public static void writeCExpr(CExpr.BinOp expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(BOP2INT(expr.op));												
+		writeCExpr(expr.lhs,writer,constantPool);						
+		writeCExpr(expr.rhs,writer,constantPool);
 	}
 	
 	protected static void writeValue(Value val, BinaryOutputStream writer,
@@ -379,7 +400,50 @@ public class WhileyBlock implements BytecodeAttribute {
 			return ELEMOF;
 		}
 		
-		throw new IllegalArgumentException("Invalid Code.COP encountered: " + op);
+		throw new IllegalArgumentException(
+				"Invalid conditional operation encountered: " + op);
+	}
+	
+	public static int BOP2INT(CExpr.BOP op) {
+		switch (op) {
+		case ADD:
+			return ADD;
+		case SUB:
+			return SUB;
+		case MUL:
+			return MUL;
+		case DIV:
+			return DIV;
+		case UNION:
+			return UNION;
+		case INTERSECT:
+			return INTERSECT;
+		case DIFFERENCE:
+			return DIFFERENCE;
+		case APPEND:
+			return APPEND;
+		}
+
+		throw new IllegalArgumentException(
+				"Invalid binary operation encountered: " + op);
+	}
+	
+	public static int UOP2INT(CExpr.UOP op) {
+		switch (op) {
+		case NEG:
+			return NEG;
+		case NOT:
+			return NOT;
+		case LENGTHOF:
+			return LENGTHOF;
+		case PROCESSACCESS:
+			return PROCESSACCESS;
+		case PROCESSSPAWN:
+			return PROCESSSPAWN;
+		}
+
+		throw new IllegalArgumentException(
+				"Invalid binary operation encountered: " + op);
 	}
 	
 	// =========== CODES ===============
@@ -404,73 +468,45 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int SUBSETEQ = 19;
 	private final static int ELEMOF = 20;
 	
+	// =========== UOP ===============
+	private final static int NEG = 0;
+	private final static int NOT = 1;
+	private final static int LENGTHOF = 2;
+	private final static int PROCESSACCESS = 3;
+	private final static int PROCESSSPAWN = 4;
+	
+	// =========== BOP ===============
+	private final static int ADD = 0;
+	private final static int SUB = 1;
+	private final static int MUL = 2;
+	private final static int DIV = 3;
+	private final static int UNION = 4;
+	private final static int INTERSECT = 5;
+	private final static int DIFFERENCE = 6;
+	private final static int APPEND = 7;
+	
 	
 	// =========== CEXPR ===============
 		
 	private final static int NULL = 0;
-	private final static int VARIABLE = 1;
-	private final static int REGISTER = 2;
-	private final static int INVOKE = 3;		
+	private final static int TRUE = 1;
+	private final static int FALSE = 2;	
+	private final static int INTVAL = 3;
+	private final static int REALVAL = 4;
+	private final static int SETVAL = 5;
+	private final static int LISTVAL = 6;
+	private final static int TUPLEVAL = 7;
+	private final static int TYPEVAL = 8;
 	
-	private final static int TRUE = 4;
-	private final static int FALSE = 5;
-	private final static int NONE = 7;
-	private final static int SOME = 10;
+	private final static int VARIABLE = 10;
+	private final static int REGISTER = 11;
+	private final static int INVOKE = 12;		
+	private final static int UNOP = 13;
+	private final static int BINOP = 14;
+	private final static int NARYOP = 15;
+	private final static int LISTACCESS = 16;
+	private final static int TUPLEACCESS = 17;
+	private final static int CONVERT = 18;
 	
-	
-	private final static int INTADD = 20;
-	private final static int INTDIV = 21;
-	private final static int INTEQ = 22;
-	private final static int INTGT = 23;
-	private final static int INTGTEQ = 24;
-	private final static int INTLT = 25;
-	private final static int INTLTEQ = 26;		
-	private final static int INTMUL = 27;
-	private final static int INTNEG = 28;
-	private final static int INTNEQ = 29;
-	private final static int INTSUB = 30;	
-	private final static int INTVAL = 31;
-	
-	private final static int REALADD = 40;
-	private final static int REALDIV = 41;
-	private final static int REALEQ = 42;
-	private final static int REALGT = 43;
-	private final static int REALGTEQ = 44;
-	private final static int REALLT = 45;
-	private final static int REALLTEQ = 46;		
-	private final static int REALMUL = 47;
-	private final static int REALNEG = 48;
-	private final static int REALNEQ = 49;
-	private final static int REALSUB = 50;	
-	private final static int REALVAL = 51;
-	
-	private final static int LISTACCESS = 60;
-	private final static int LISTELEMOF = 61;	
-	private final static int LISTEQ = 62;
-	private final static int LISTGEN = 63;
-	private final static int LISTLENGTH = 64;
-	private final static int LISTNEQ = 65;
-	private final static int LISTVAL = 66;
-		
-	private final static int SETCOMPREHENSION = 70;
-	private final static int SETDIFFERENCE = 71;
-	private final static int SETELEMOF = 72;	
-	private final static int SETEQ = 73;
-	private final static int SETGEN = 74;
-	private final static int SETINTERSECT = 75;
-	private final static int SETLENGTH = 76;
-	private final static int SETNEQ = 77;
-	private final static int SETSUBSET = 78;
-	private final static int SETSUBSETEQ = 79;
-	private final static int SETSUPSET = 80;
-	private final static int SETSUPSETEQ = 81;
-	private final static int SETUNION = 82;
-	private final static int SETVAL = 83;		
-		
-	private final static int TUPLEACCESS = 90;
-	private final static int TUPLEEQ = 91;
-	private final static int TUPLEGEN = 92;
-	private final static int TUPLENEQ = 93;	
-	private final static int TUPLEVAL = 94;
-
+				
 }
