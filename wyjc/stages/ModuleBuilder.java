@@ -701,13 +701,45 @@ public class ModuleBuilder {
 	protected Block resolve(Return s, FunDecl fd,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
+		
 		if (s.expr != null) {			
 			Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
 			Type.Fun ft = fd.attribute(Attributes.Fun.class).type;
 			checkIsSubtype(ft.ret, t.first().type(), s.expr);
 			Block blk = new Block();
 			blk.addAll(t.second());
-			blk.add(new Code.Return(convert(ft.ret, t.first())),s
+
+			CExpr r = convert(ft.ret, t.first()); 
+			Pair<Type,Block> ret = resolve(fd.ret);		
+			Block postcondition = ret.second();
+			
+			// First, check direct post condition.
+			if(fd.postcondition != null) {
+				// FIXME: need to handle shadows!				
+				String trueLabel = Block.freshLabel();
+				environment.put("$",ft.ret);
+				Block tmp = resolveCondition(trueLabel, fd.postcondition, environment,
+						declared);
+				if(postcondition == null) {
+					postcondition = tmp;
+				} else {
+					postcondition.addAll(tmp);
+				}				
+				environment.remove("$");
+				postcondition.add(new Code.Fail("function postcondition not satisfied"),
+						fd.postcondition.attribute(Attribute.Source.class));
+				postcondition.add(new Code.Label(trueLabel));				
+			}
+			
+			if(postcondition != null) {
+				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+				binding.put("$",r);				
+				blk.addAll(Block.relabel(Block.substitute(binding, postcondition)));	
+			}
+			
+			// Second, check 
+			
+			blk.add(new Code.Return(r),s
 					.attribute(Attribute.Source.class));
 			return blk;
 		} else {
