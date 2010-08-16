@@ -1,5 +1,7 @@
 package wyil.jvm.attributes;
 
+import static wyil.util.SyntaxError.syntaxError;
+
 import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -9,6 +11,13 @@ import java.util.Set;
 
 import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
+import wyil.lang.Code.Assign;
+import wyil.lang.Code.Debug;
+import wyil.lang.Code.Forall;
+import wyil.lang.Code.IfGoto;
+import wyil.lang.Code.Return;
+import wyil.util.SyntacticElement;
+import wyjc.lang.Expr;
 import wyjvm.io.*;
 import wyjvm.lang.*;
 
@@ -44,8 +53,31 @@ public class WhileyBlock implements BytecodeAttribute {
 		}
 	}
 	
-	public static void addPoolItems(Code code, Set<Constant.Info> constantPool) {
-		
+	public static void addPoolItems(Code c, Set<Constant.Info> constantPool) {
+		if(c instanceof Assign) {
+			Assign a = (Assign) c;
+			if(a.lhs != null) {
+				addPoolItems(a.lhs,constantPool);
+			} 								
+			addPoolItems(a.rhs,constantPool);						
+		} else if(c instanceof Code.Goto) {
+			Code.Goto a = (Code.Goto) c;			
+			constantPool.add(new Constant.Utf8(a.target));
+		} else if(c instanceof Code.Fail) {
+			Code.Fail a = (Code.Fail) c;			
+			constantPool.add(new Constant.Utf8(a.msg));			
+		} else if(c instanceof Code.Label) {
+			Code.Label a = (Code.Label) c;
+			constantPool.add(new Constant.Utf8(a.label));			
+		} else if(c instanceof IfGoto) {
+			IfGoto a = (IfGoto) c;
+			addPoolItems(a.lhs,constantPool);			
+			addPoolItems(a.rhs,constantPool);			
+			constantPool.add(new Constant.Utf8(a.target));
+		} else if(c instanceof Forall) {
+			Forall a = (Forall) c;	
+									
+		}
 	}
 	
 	public static void addPoolItems(CExpr rval, Set<Constant.Info> constantPool) {
@@ -53,21 +85,65 @@ public class WhileyBlock implements BytecodeAttribute {
 	}
 	
 	public void write(BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool, ClassLoader loader) {
-		// don't forget to write the name
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
+			throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		BinaryOutputStream iw = new BinaryOutputStream(out);
+
+		writeBlock(block, iw, constantPool);
+
+		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
+		writer.write_u4(out.size() + 2);
+		writer.write(out.toByteArray());
 	}
 
 	protected static void writeBlock(Block expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) {
-		
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u4(expr.size());
+		for(Stmt s : expr) {
+			writeCode(s.code, writer, constantPool);
+		}
 	}
 	
-	protected static void writeCode(Code code, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) {
-		
+	protected static void writeCode(Code c, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		if(c instanceof Assign) {
+			Assign a = (Assign) c;
+			if(a.lhs != null) {
+				writer.write_u2(ASSIGN);
+				writeCExpr(a.lhs,writer,constantPool);
+				writeCExpr(a.rhs,writer,constantPool);
+			} else {
+				writer.write_u2(CODEEXPR);				
+				writeCExpr(a.rhs,writer,constantPool);
+			}			
+		} else if(c instanceof Code.Goto) {
+			Code.Goto a = (Code.Goto) c;			
+			writer.write_u2(GOTO);
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
+		} else if(c instanceof Code.Fail) {
+			Code.Fail a = (Code.Fail) c;			
+			writer.write_u2(FAIL);
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.msg)));
+		} else if(c instanceof Code.Label) {
+			Code.Label a = (Code.Label) c;			
+			writer.write_u2(LABEL);
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
+		} else if(c instanceof IfGoto) {
+			IfGoto a = (IfGoto) c;			
+			writer.write_u2(IFGOTO);
+			WhileyType.write(a.type, writer, constantPool);
+			writer.write_u2(COP2INT(a.op));
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
+			writeCExpr(a.lhs,writer,constantPool);
+			writeCExpr(a.rhs,writer,constantPool);
+		} else if(c instanceof Forall) {
+			Forall a = (Forall) c;	
+									
+		} 
 	}	
 	
-	protected static void writeRVal(CExpr rval, BinaryOutputStream writer,
+	protected static void writeCExpr(CExpr rval, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(rval instanceof Value) {
 			writeValue((Value)rval,writer,constantPool);
@@ -281,6 +357,56 @@ public class WhileyBlock implements BytecodeAttribute {
 		}
 	}
 	
+	public static int COP2INT(Code.COP op) {
+		switch (op) {
+		case EQ:
+			return EQ;
+		case NEQ:
+			return NEQ;
+		case LT:
+			return LT;
+		case LTEQ:
+			return LTEQ;
+		case GT:
+			return GT;
+		case GTEQ:
+			return GTEQ;
+		case SUBSET:
+			return SUBSET;
+		case SUBSETEQ:
+			return SUBSETEQ;
+		case ELEMOF:
+			return ELEMOF;
+		}
+		
+		throw new IllegalArgumentException("Invalid Code.COP encountered: " + op);
+	}
+	
+	// =========== CODES ===============
+	
+	private final static int ASSIGN = 0;
+	private final static int CODEEXPR = 1;
+	private final static int GOTO = 2;
+	private final static int IFGOTO = 3;	
+	private final static int LABEL = 4;
+	private final static int FAIL = 5;
+	private final static int FORALL = 6;
+	
+	// =========== COP ===============
+	
+	private final static int EQ = 12;
+	private final static int NEQ = 13;
+	private final static int LT = 14;
+	private final static int LTEQ = 15;
+	private final static int GT = 16;
+	private final static int GTEQ = 17;
+	private final static int SUBSET = 18;
+	private final static int SUBSETEQ = 19;
+	private final static int ELEMOF = 20;
+	
+	
+	// =========== CEXPR ===============
+		
 	private final static int NULL = 0;
 	private final static int VARIABLE = 1;
 	private final static int REGISTER = 2;
@@ -288,16 +414,9 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	private final static int TRUE = 4;
 	private final static int FALSE = 5;
-	private final static int AND = 6;		
 	private final static int NONE = 7;
-	private final static int NOT = 8;
-	private final static int OR = 9;
 	private final static int SOME = 10;
-	private final static int UPDATE = 11;
-	private final static int BOOLEQ = 12;
-	private final static int BOOLNEQ = 13;
-	private final static int TYPEGATE = 14;
-	private final static int TYPEEQUALS = 15;
+	
 	
 	private final static int INTADD = 20;
 	private final static int INTDIV = 21;
