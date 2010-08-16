@@ -90,7 +90,7 @@ public class ModuleBuilder {
 				if (d instanceof TypeDecl) {
 					types.add(resolve((TypeDecl) d, wf.module));
 				} else if (d instanceof ConstDecl) {
-					constants.add(resolve((ConstDecl) d));
+					constants.add(resolve((ConstDecl) d, wf.module));
 				} else if (d instanceof FunDecl) {
 					Module.Method mi = resolve((FunDecl) d);
 					Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
@@ -142,7 +142,14 @@ public class ModuleBuilder {
 				Type t = v.type();
 				if(t instanceof Type.Set) {
 					Type.Set st = (Type.Set) t;
-					types.put(k, new Pair<Type,Block>(st.element, null));
+					Block block = new Block();
+					String label = Block.freshLabel();
+					CExpr var = CExpr.VAR(st.element,"$");
+					Attribute attr = exprs.get(k).attribute(Attribute.Source.class); 
+					block.add(new Code.IfGoto(st.element, Code.COP.ELEMOF, var, v, label),attr);
+					block.add(new Code.Fail("type constraint not satisfied"),attr);
+					block.add(new Code.Label(label));
+					types.put(k, new Pair<Type,Block>(st.element, block));
 				}
 			} catch(ResolveError rex) {
 				syntaxError(rex.getMessage(),filemap.get(k).filename,exprs.get(k),rex);
@@ -430,23 +437,14 @@ public class ModuleBuilder {
 		fd.attributes().add(new Attributes.Fun(ft));
 	}
 
-	protected Module.ConstDef resolve(ConstDecl td) {
-		// FIXME: this looks problematic if the constant contains method calls.
-		// The problem is that we may not have generated the type for the given
-		// method call, which means we won't be able to bind it. One option is
-		// simply to disallow function calls in constant definitions.
-		resolve(0, td.constant, new HashMap<String, Type>(),
-				new HashMap());
-		
-		// FIXME: broken
-		
-		return new Module.ConstDef(td.name(),Value.V_INT(BigInteger.ONE));
+	protected Module.ConstDef resolve(ConstDecl td, ModuleID module) {		
+		Value v = constants.get(new NameID(module, td.name()));		
+		return new Module.ConstDef(td.name(),v);
 	}
 	
 	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
 		Pair<Type, Block> p = types.get(new NameID(module, td.name()));
 		Type t = p.first();
-		td.attributes().add(new Attributes.Type(t));
 		if (td.constraint != null) {
 			// FIXME: at this point, would be good to add types for other
 			// exposed variables.

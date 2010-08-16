@@ -37,14 +37,6 @@ public interface Attributes {
 			this.type = type;
 		}
 	}
-
-	public static final class Type implements Attribute {
-		public final wyil.lang.Type type;
-		
-		public Type(wyil.lang.Type type) {
-			this.type = type;	
-		}		
-	}
 	
 	public static final class Module implements Attribute {
 		public final ModuleID module;
