@@ -126,12 +126,11 @@ public class TestHarness {
 	}
 		
 	protected void runtimeFailTest(String name) {				
-		final String[] args = new String[5];		
+		final String[] args = new String[4];		
 		args[0] = "-wp";			
-		args[1] = "lib/wyrt.jar";		
-		args[2] = "-debug:pcs";		
-		args[3] = "-nvc";		
-		args[4] = srcPath + File.separatorChar + name + ".whiley";
+		args[1] = "lib/wyrt.jar";						
+		args[2] = "-nvc";		
+		args[3] = srcPath + File.separatorChar + name + ".whiley";
 		
 		if(Main.run(args) != 0) { 
 			fail("couldn't compile test!");
