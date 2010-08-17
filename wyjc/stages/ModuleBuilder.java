@@ -351,11 +351,27 @@ public class ModuleBuilder {
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			Pair<Type,Block> p = expandType(lt.element, filename, cache);
-			return new Pair<Type,Block>(Type.T_LIST(p.first()),p.second());
+			Type rt = Type.T_LIST(p.first());
+			String label = Block.freshLabel();			
+			Block blk = new Block();
+			CExpr.LVar reg = CExpr.REG(p.first(),0);
+			// FIXME: need some line number information here?			
+			blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
+			blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
+			blk.add(new Code.End(label));
+			return new Pair<Type,Block>(rt,blk);
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
-			return new Pair<Type,Block>(Type.T_SET(p.first()),p.second());
+			Type rt = Type.T_SET(p.first());
+			String label = Block.freshLabel();			
+			Block blk = new Block();
+			CExpr.LVar reg = CExpr.REG(p.first(),0);
+			// FIXME: need some line number information here?			
+			blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
+			blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
+			blk.add(new Code.End(label));
+			return new Pair<Type,Block>(rt,blk);
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			HashMap<String,Type> types = new HashMap<String,Type>();
@@ -1817,4 +1833,9 @@ public class ModuleBuilder {
 		syntaxError("unrecognised binary operation", filename,elem);
 		return null;
 	}	
+	
+	private static int idx = 0;
+	public static String freshVar() {
+		return "$" + idx++;
+	}
 }
