@@ -1,6 +1,5 @@
 package wyil.jvm.attributes;
 
-import static wyil.util.SyntaxError.syntaxError;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -11,13 +10,8 @@ import java.util.Set;
 
 import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
-import wyil.lang.Code.Assign;
-import wyil.lang.Code.Debug;
-import wyil.lang.Code.Forall;
-import wyil.lang.Code.IfGoto;
-import wyil.lang.Code.Return;
-import wyil.util.SyntacticElement;
-import wyjc.lang.Expr;
+import wyil.lang.Stmt;
+import wyil.lang.Code.*;
 import wyjvm.io.*;
 import wyjvm.lang.*;
 
@@ -77,11 +71,38 @@ public class WhileyBlock implements BytecodeAttribute {
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
 									
+		} else {
+			throw new IllegalArgumentException("Invalid code for WhileyBlock: " + c);
 		}
 	}
 	
 	public static void addPoolItems(CExpr rval, Set<Constant.Info> constantPool) {
-		
+		if(rval instanceof CExpr.Variable) {
+			CExpr.Variable var = (CExpr.Variable) rval;
+			constantPool.add(new Constant.Utf8(var.name));
+		} else if(rval instanceof CExpr.UnOp) {
+			CExpr.UnOp c = (CExpr.UnOp)rval;
+			addPoolItems(c.rhs,constantPool);			
+		} else if(rval instanceof CExpr.BinOp) {
+			CExpr.BinOp bop = (CExpr.BinOp)rval; 
+			addPoolItems(bop.lhs,constantPool);
+			addPoolItems(bop.rhs,constantPool);			
+		} else if(rval instanceof CExpr.NaryOp) {
+			CExpr.NaryOp nop = (CExpr.NaryOp)rval; 
+			for(CExpr arg : nop.args) {
+				addPoolItems(arg,constantPool);
+			}
+		} else if(rval instanceof CExpr.Invoke) {
+			CExpr.Invoke ivk = (CExpr.Invoke)rval; 
+			for(CExpr arg : ivk.args) {
+				addPoolItems(arg,constantPool);
+			}			
+		} else if(rval instanceof CExpr.Convert) {
+			CExpr.Convert c = (CExpr.Convert)rval;
+			addPoolItems(c.rhs,constantPool);			
+		} else {
+			throw new IllegalArgumentException("Unknown expression encountered: " + rval);
+		}	
 	}
 	
 	public void write(BinaryOutputStream writer,
