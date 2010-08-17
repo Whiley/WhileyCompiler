@@ -438,6 +438,8 @@ public class ModuleLoader {
 						"WhileyPreCondition"), new WhileyBlock.Reader(
 						"WhileyPostCondition"));					
 
+		System.out.println("READING CLASS: " + filename);
+		
 		ClassFile cf = r.readClass();
 
 		Module mi = createModule(module,cf);

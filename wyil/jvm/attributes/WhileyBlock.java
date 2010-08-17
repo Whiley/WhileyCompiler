@@ -38,6 +38,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	}
 	
 	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {
+		constantPool.add(new Constant.Utf8(name));
 		addPoolItems(block, constantPool);
 	}
 	
@@ -71,15 +72,17 @@ public class WhileyBlock implements BytecodeAttribute {
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
 									
-		} else {
-			throw new IllegalArgumentException("Invalid code for WhileyBlock: " + c);
-		}
+		} 
 	}
 	
 	public static void addPoolItems(CExpr rval, Set<Constant.Info> constantPool) {
 		if(rval instanceof CExpr.Variable) {
 			CExpr.Variable var = (CExpr.Variable) rval;
 			constantPool.add(new Constant.Utf8(var.name));
+			WhileyType.addPoolItems(var.type, constantPool);
+		} else if(rval instanceof CExpr.Register) {
+			CExpr.Register var = (CExpr.Register) rval;		
+			WhileyType.addPoolItems(var.type, constantPool);
 		} else if(rval instanceof CExpr.UnOp) {
 			CExpr.UnOp c = (CExpr.UnOp)rval;
 			addPoolItems(c.rhs,constantPool);			
@@ -94,15 +97,21 @@ public class WhileyBlock implements BytecodeAttribute {
 			}
 		} else if(rval instanceof CExpr.Invoke) {
 			CExpr.Invoke ivk = (CExpr.Invoke)rval; 
+			addPoolItems(ivk.name, constantPool);
+			WhileyType.addPoolItems(ivk.type, constantPool);
 			for(CExpr arg : ivk.args) {
 				addPoolItems(arg,constantPool);
 			}			
 		} else if(rval instanceof CExpr.Convert) {
 			CExpr.Convert c = (CExpr.Convert)rval;
 			addPoolItems(c.rhs,constantPool);			
-		} else {
-			throw new IllegalArgumentException("Unknown expression encountered: " + rval);
-		}	
+		} 	
+	}
+	
+	public static void addPoolItems(NameID name, Set<Constant.Info> constantPool) {
+		constantPool.add(new Constant.Utf8(name.name()));
+		constantPool.add(new Constant.Utf8(name.module().module()));
+		constantPool.add(new Constant.Utf8(name.module().pkg().toString()));
 	}
 	
 	public void write(BinaryOutputStream writer,
@@ -111,32 +120,32 @@ public class WhileyBlock implements BytecodeAttribute {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		BinaryOutputStream iw = new BinaryOutputStream(out);
 
-		writeBlock(block, iw, constantPool);
+		write(block, iw, constantPool);
 
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
-		writer.write_u4(out.size() + 2);
+		writer.write_u4(out.size());
 		writer.write(out.toByteArray());
 	}
 
-	protected static void writeBlock(Block expr, BinaryOutputStream writer,
+	protected static void write(Block expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u4(expr.size());
 		for(Stmt s : expr) {
-			writeCode(s.code, writer, constantPool);
+			write(s.code, writer, constantPool);
 		}
 	}
 	
-	protected static void writeCode(Code c, BinaryOutputStream writer,
+	protected static void write(Code c, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(c instanceof Assign) {
 			Assign a = (Assign) c;
 			if(a.lhs != null) {
 				writer.write_u1(ASSIGN);
-				writeCExpr(a.lhs,writer,constantPool);
-				writeCExpr(a.rhs,writer,constantPool);
+				write(a.lhs,writer,constantPool);
+				write(a.rhs,writer,constantPool);
 			} else {
 				writer.write_u1(CODEEXPR);				
-				writeCExpr(a.rhs,writer,constantPool);
+				write(a.rhs,writer,constantPool);
 			}			
 		} else if(c instanceof Code.Goto) {
 			Code.Goto a = (Code.Goto) c;			
@@ -154,95 +163,134 @@ public class WhileyBlock implements BytecodeAttribute {
 			IfGoto a = (IfGoto) c;			
 			writer.write_u1(IFGOTO);
 			WhileyType.write(a.type, writer, constantPool);
-			writer.write_u2(COP2INT(a.op));
+			writer.write_u1(COP2INT(a.op));
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
-			writeCExpr(a.lhs,writer,constantPool);
-			writeCExpr(a.rhs,writer,constantPool);
-		} else if(c instanceof Forall) {
-			Forall a = (Forall) c;	
-									
-		} 
+			write(a.lhs,writer,constantPool);
+			write(a.rhs,writer,constantPool);			
+		} else {
+			throw new IllegalArgumentException("Code not permitted in WhileyBlock: " + c);
+		}
 	}	
 	
-	protected static void writeCExpr(CExpr rval, BinaryOutputStream writer,
+	protected static void write(CExpr rval, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(rval instanceof Value) {
-			writeValue((Value)rval,writer,constantPool);
+			write((Value)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Variable) {
-			writeCExpr((CExpr.Variable)rval,writer,constantPool);
+			write((CExpr.Variable)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Register) {
-			writeCExpr((CExpr.Register)rval,writer,constantPool);
+			write((CExpr.Register)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.UnOp) {
-			writeCExpr((CExpr.UnOp)rval,writer,constantPool);
+			write((CExpr.UnOp)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.BinOp) {
-			writeCExpr((CExpr.BinOp)rval,writer,constantPool);
+			write((CExpr.BinOp)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.NaryOp) {
-			writeCExpr((CExpr.NaryOp)rval,writer,constantPool);
+			write((CExpr.NaryOp)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Invoke) {
-			writeCExpr((CExpr.Invoke)rval,writer,constantPool);
+			write((CExpr.Invoke)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Convert) {
-			writeCExpr((CExpr.Convert)rval,writer,constantPool);
+			write((CExpr.Convert)rval,writer,constantPool);
 		} else {
 			throw new IllegalArgumentException("Unknown expression encountered: " + rval);
 		}
 	}	
 	
-	public static void writeCExpr(CExpr.Variable expr, BinaryOutputStream writer,
+	public static void write(CExpr.Variable expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(VARIABLE);				
-		int idx = constantPool.get(new Constant.Utf8(expr.name));							
+		int idx = constantPool.get(new Constant.Utf8(expr.name));		
 		writer.write_u2(idx);						
+		WhileyType.write(expr.type,writer,constantPool);
 	}
 	
-	public static void writeCExpr(CExpr.Register expr, BinaryOutputStream writer,
+	public static void write(CExpr.Register expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(REGISTER);												
-		writer.write_u2(expr.index);						
+		writer.write_u2(expr.index);					
+		WhileyType.write(expr.type,writer,constantPool);
 	}
 	
-	public static void writeCExpr(CExpr.UnOp expr, BinaryOutputStream writer,
+	public static void write(CExpr.UnOp expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(UOP2INT(expr.op));																			
-		writeCExpr(expr.rhs,writer,constantPool);
+		write(expr.rhs,writer,constantPool);
 	}
 	
-	public static void writeCExpr(CExpr.BinOp expr, BinaryOutputStream writer,
+	public static void write(CExpr.Convert expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(BOP2INT(expr.op));												
-		writeCExpr(expr.lhs,writer,constantPool);						
-		writeCExpr(expr.rhs,writer,constantPool);
+		writer.write_u1(CONVERT);
+		WhileyType.write(expr.type,writer,constantPool);
+		write(expr.rhs,writer,constantPool);
 	}
 	
-	protected static void writeValue(Value val, BinaryOutputStream writer,
+	public static void write(CExpr.Invoke expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		if(val instanceof Value.Bool) {
-			writeValue((Value.Bool) val, writer, constantPool);
-		} else if(val instanceof Value.Int) {
-			writeValue((Value.Int) val, writer, constantPool);
-		} else if(val instanceof Value.Real) {
-			writeValue((Value.Real) val, writer, constantPool);
-		} else if(val instanceof Value.Set) {
-			writeValue((Value.Set) val, writer, constantPool);
-		} else if(val instanceof Value.List) {
-			writeValue((Value.List) val, writer, constantPool);
-		} else if(val instanceof Value.Tuple) {
-			writeValue((Value.Tuple) val, writer, constantPool);
-		} 
-	}
-	
-	public static void writeValue(Value.Bool expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		
-		if(expr.value) {
-			writer.write_u2(TRUE);
-		} else {
-			writer.write_u2(FALSE);
+		writer.write_u1(INVOKE);			
+		writeNameId(expr.name,writer,constantPool);
+		WhileyType.write(expr.type,writer,constantPool);
+		writer.write_u1(expr.args.size());
+		for(CExpr arg : expr.args) {
+			write(arg,writer,constantPool);
 		}
 	}
 	
-	public static void writeValue(Value.Int expr, BinaryOutputStream writer,
+	public static void writeNameId(NameID name, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(INTVAL);
+		writeModuleId(name.module(),writer,constantPool);
+		int idx = constantPool.get(new Constant.Utf8(name.name()));							
+		writer.write_u2(idx);		
+	}
+	
+	public static void writeModuleId(ModuleID name, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writePkgId(name.pkg(),writer,constantPool);
+		int idx = constantPool.get(new Constant.Utf8(name.module()));							
+		writer.write_u2(idx);		
+	}
+	
+	public static void writePkgId(PkgID pkg, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {		
+		int idx = constantPool.get(new Constant.Utf8(pkg.toString()));							
+		writer.write_u2(idx);		
+	}
+	
+	public static void write(CExpr.BinOp expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(BOP2INT(expr.op));												
+		write(expr.lhs,writer,constantPool);						
+		write(expr.rhs,writer,constantPool);
+	}
+	
+	protected static void write(Value val, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		if(val instanceof Value.Bool) {
+			write((Value.Bool) val, writer, constantPool);
+		} else if(val instanceof Value.Int) {
+			write((Value.Int) val, writer, constantPool);
+		} else if(val instanceof Value.Real) {
+			write((Value.Real) val, writer, constantPool);
+		} else if(val instanceof Value.Set) {
+			write((Value.Set) val, writer, constantPool);
+		} else if(val instanceof Value.List) {
+			write((Value.List) val, writer, constantPool);
+		} else if(val instanceof Value.Tuple) {
+			write((Value.Tuple) val, writer, constantPool);
+		} 
+	}
+	
+	public static void write(Value.Bool expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		
+		if(expr.value) {
+			writer.write_u1(TRUE);
+		} else {
+			writer.write_u1(FALSE);
+		}
+	}
+	
+	public static void write(Value.Int expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(INTVAL);
 		BigInteger bi = expr.value;
 		byte[] bibytes = bi.toByteArray();
 		// FIXME: bug here for constants that require more than 65535 bytes
@@ -250,9 +298,9 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write(bibytes);
 	}
 	
-	public static void writeValue(Value.Real expr, BinaryOutputStream writer,
+	public static void write(Value.Real expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(REALVAL);
+		writer.write_u1(REALVAL);
 		BigRational br = expr.value;
 		BigInteger num = br.numerator();
 		BigInteger den = br.denominator();
@@ -268,31 +316,31 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write(denbytes);		
 	}
 	
-	public static void writeValue(Value.Set expr, BinaryOutputStream writer,
+	public static void write(Value.Set expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(SETVAL);
+		writer.write_u1(SETVAL);
 		writer.write_u2(expr.values.size());
 		for(Value v : expr.values) {
-			writeValue(v,writer,constantPool);
+			write(v,writer,constantPool);
 		}
 	}
 	
-	public static void writeValue(Value.List expr, BinaryOutputStream writer,
+	public static void write(Value.List expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(LISTVAL);
+		writer.write_u1(LISTVAL);
 		writer.write_u2(expr.values.size());
 		for(Value v : expr.values) {
-			writeValue(v,writer,constantPool);
+			write(v,writer,constantPool);
 		}
 	}
 	
-	public static void writeValue(Value.Tuple expr, BinaryOutputStream writer,
+	public static void write(Value.Tuple expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u2(TUPLEVAL);
+		writer.write_u1(TUPLEVAL);
 		writer.write_u2(expr.values.size());
 		for(Map.Entry<String,Value> v : expr.values.entrySet()) {
 			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
-			writeValue(v.getValue(), writer, constantPool);
+			write(v.getValue(), writer, constantPool);
 		}
 	}
 	
@@ -307,58 +355,108 @@ public class WhileyBlock implements BytecodeAttribute {
 		}
 		
 		public WhileyBlock read(BinaryInputStream reader,
-				Map<Integer, Constant.Info> constantPool) throws IOException {
+				Map<Integer, Constant.Info> constantPool) throws IOException {			
 			int idx = reader.read_u2();
+			int size = reader.read_u4(); // not needed
 			Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
 			return new WhileyBlock(utf8.str, readBlock(reader, constantPool));
 		}
 		
 		protected static Block readBlock(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {							
-			int code = reader.read_u2();
-			return readCodes(code,reader,constantPool);
+			int ncodes = reader.read_u4();			
+			Block block = new Block();
+			for(int i=0;i!=ncodes;++i) {
+				block.add(readCode(reader,constantPool));
+			}
+			return block;
 		}
 
-		protected static Block readCodes(int code, BinaryInputStream reader,
+		protected static Code readCode(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {							
-			Block blk = new Block();
-			return blk;
+			int code = reader.read_u1();
+			switch(code) {
+			case ASSIGN:
+			{				
+				CExpr.LVal lhs = (CExpr.LVal) readCExpr(reader,constantPool);
+				CExpr rhs = readCExpr(reader,constantPool);
+				return new Code.Assign(lhs,rhs);
+			}
+			case CODEEXPR:
+			{					
+				CExpr rhs = readCExpr(reader,constantPool);
+				return new Code.Assign(null,rhs);
+			}
+			case GOTO:
+			{				
+				int idx = reader.read_u2();
+				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
+				return new Code.Goto(target.str);
+			}
+			case LABEL:
+			{				
+				int idx = reader.read_u2();
+				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
+				return new Code.Label(target.str);
+			}
+			case FAIL:
+			{				
+				int idx = reader.read_u2();
+				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
+				return new Code.Fail(target.str);
+			}
+			case IFGOTO:
+			{							
+				Type type = WhileyType.Reader.readType(reader, constantPool);			
+				int cop = reader.read_u1();
+				int idx = reader.read_u2();
+				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);				
+				CExpr lhs = readCExpr(reader,constantPool);
+				CExpr rhs = readCExpr(reader,constantPool);
+				return new Code.IfGoto(type,INT2COP(cop),lhs,rhs,target.str);
+			}
+			}
+			throw new IllegalArgumentException("unknown code encountered: " + code);
 		}
 
 		protected static Value readValue(BinaryInputStream reader,
-				Map<Integer, Constant.Info> constantPool) throws IOException {
-			return (Value) readRVal(reader,constantPool);
-		}
-		protected static CExpr readRVal(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {		
-			int code = reader.read_u2();				
+			return (Value) readCExpr(reader,constantPool);
+		}
+		
+		protected static CExpr readCExpr(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {		
+			int code = reader.read_u1();				
 			switch (code) {
 			case VARIABLE:
-			{
+			{					
 				// The encoding of variables could be optimised to avoid using the
 				// constant pool in most, if not all cases.
 				int idx = reader.read_u2();			
-				Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
+				Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);				
 				Type type = WhileyType.Reader.readType(reader, constantPool);
 				return CExpr.VAR(type,utf8.str);
 			}
 			case REGISTER:
 			{
 				// The encoding of variables could be optimised to avoid using the
-				// constant pool in most, if not all cases.
+				// constant pool in most, if not all cases.				
 				int idx = reader.read_u2();							
 				Type type = WhileyType.Reader.readType(reader, constantPool);
 				return CExpr.REG(type,idx);
 			}
 			case INTVAL:			
-				int len = reader.read_u2();
+			{
+				int len = reader.read_u2();				
 				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger bi = new BigInteger(bytes);
-				return Value.V_INT(bi);			
+				return Value.V_INT(bi);
+			}
 			case REALVAL:			
-				len = reader.read_u2();
-				bytes = new byte[len];
+			{
+				int len = reader.read_u2();
+				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger num = new BigInteger(bytes);
 				len = reader.read_u2();
@@ -366,37 +464,134 @@ public class WhileyBlock implements BytecodeAttribute {
 				reader.read(bytes);
 				BigInteger den = new BigInteger(bytes);
 				BigRational br = new BigRational(num,den);
-				return Value.V_REAL(br);				
+				return Value.V_REAL(br);
+			}
 			case LISTVAL:
-				len = reader.read_u2();
+			{
+				int len = reader.read_u2();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
-					values.add((Value) readRVal(reader,constantPool));
+					values.add((Value) readCExpr(reader,constantPool));
 				}
-				return Value.V_LIST(values);			
+				return Value.V_LIST(values);
+			}
 			case SETVAL:
-				len = reader.read_u2();
-				values = new ArrayList<Value>();
+			{
+				int len = reader.read_u2();
+				ArrayList<Value> values = new ArrayList<Value>();
 				for(int i=0;i!=len;++i) {
-					values.add((Value) readRVal(reader,constantPool));
+					values.add((Value) readCExpr(reader,constantPool));
 				}
-				return Value.V_SET(values);			
+				return Value.V_SET(values);
+			}
 			case TUPLEVAL:
 			{
-				len = reader.read_u2();
+				int len = reader.read_u2();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();
 				for(int i=0;i!=len;++i) {
 					int idx = reader.read_u2();
 					Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
-					Value lhs = (Value) readRVal(reader, constantPool);
+					Value lhs = (Value) readCExpr(reader, constantPool);
 					tvs.put(utf8.str, lhs);
 				}
 				return Value.V_TUPLE(tvs);
 			}
-			default:
-				throw new RuntimeException("Unknown RVal encountered in WhileyBlock");
-			}		
+			case NEG:
+			case NOT:
+			case LENGTHOF:
+			case PROCESSSPAWN:
+			case PROCESSACCESS:
+			{
+				CExpr lhs = readCExpr(reader,constantPool);
+				return CExpr.UNOP(INT2UOP(code),lhs);
+			}
+			case ADD:				
+			case SUB:				
+			case MUL:				
+			case DIV:				
+			case UNION:				
+			case INTERSECT:				
+			case DIFFERENCE:				
+			case APPEND:
+			{
+				CExpr lhs = readCExpr(reader,constantPool);
+				CExpr rhs = readCExpr(reader,constantPool);
+				return CExpr.BINOP(INT2BOP(code),lhs,rhs);
+			}
+			case CONVERT:
+			{
+				Type t = WhileyType.Reader.readType(reader, constantPool);
+				CExpr lhs = readCExpr(reader,constantPool);
+				return CExpr.CONVERT(t, lhs);
+			}			
+			case INVOKE:
+			{
+				
+				NameID nid = readNameID(reader,constantPool);
+				Type.Fun type = (Type.Fun) WhileyType.Reader.readType(reader, constantPool);
+				// FIXME: need to split case num off of the name somehow?
+				int casenum = 1;
+				int nargs = reader.read_u1();
+				ArrayList<CExpr> args = new ArrayList<CExpr>();
+				for(int i=0;i!=nargs;++i) {
+					args.add(readCExpr(reader,constantPool));
+				}
+				return CExpr.INVOKE(type, nid, casenum, args);
+			}
+			case LISTACCESS:
+			case TUPLEACCESS:							
+			}						
+			throw new RuntimeException("Unknown CExpr encountered in WhileyBlock: " + code);
 		}
+	
+		public static PkgID readPkgID(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {
+			int idx = reader.read_u2();
+			Constant.Utf8 pkg = (Constant.Utf8) constantPool.get(idx);
+			return PkgID.fromString(pkg.str);
+		}
+		
+		public static ModuleID readModuleID(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {
+			PkgID pkg = readPkgID(reader,constantPool);
+			int idx = reader.read_u2();
+			Constant.Utf8 module = (Constant.Utf8) constantPool.get(idx);
+			return new ModuleID(pkg,module.str);
+		}
+		
+		public static NameID readNameID(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {
+			ModuleID mid = readModuleID(reader,constantPool);
+			int idx = reader.read_u2();
+			Constant.Utf8 name = (Constant.Utf8) constantPool.get(idx);			
+			return new NameID(mid,name.str);			
+		}
+	}
+	
+	public static Code.COP INT2COP(int op) {
+		switch (op) {
+		case EQ:
+			return Code.COP.EQ;
+		case NEQ:
+			return Code.COP.NEQ;
+		case LT:
+			return Code.COP.LT;
+		case LTEQ:
+			return Code.COP.LTEQ;
+		case GT:
+			return Code.COP.GT;
+		case GTEQ:
+			return Code.COP.GTEQ;
+		case SUBSET:
+			return Code.COP.SUBSET;
+		case SUBSETEQ:
+			return Code.COP.SUBSETEQ;
+		case ELEMOF:
+			return Code.COP.ELEMOF;
+		}
+		
+		throw new IllegalArgumentException(
+				"Invalid conditional operation encountered: " + op);
 	}
 	
 	public static int COP2INT(Code.COP op) {
@@ -449,6 +644,30 @@ public class WhileyBlock implements BytecodeAttribute {
 				"Invalid binary operation encountered: " + op);
 	}
 	
+	public static CExpr.BOP INT2BOP(int op) {
+		switch (op) {
+		case ADD:
+			return CExpr.BOP.ADD;
+		case SUB:
+			return CExpr.BOP.SUB;
+		case MUL:
+			return CExpr.BOP.MUL;
+		case DIV:
+			return CExpr.BOP.DIV;
+		case UNION:
+			return CExpr.BOP.UNION;
+		case INTERSECT:
+			return CExpr.BOP.INTERSECT;
+		case DIFFERENCE:
+			return CExpr.BOP.DIFFERENCE;
+		case APPEND:
+			return CExpr.BOP.APPEND;
+		}
+
+		throw new IllegalArgumentException(
+				"Invalid binary operation encountered: " + op);
+	}
+	
 	public static int UOP2INT(CExpr.UOP op) {
 		switch (op) {
 		case NEG:
@@ -467,6 +686,23 @@ public class WhileyBlock implements BytecodeAttribute {
 				"Invalid binary operation encountered: " + op);
 	}
 	
+	public static CExpr.UOP INT2UOP(int op) {
+		switch (op) {
+		case NEG:
+			return CExpr.UOP.NEG;
+		case NOT:
+			return CExpr.UOP.NOT;
+		case LENGTHOF:
+			return CExpr.UOP.LENGTHOF;
+		case PROCESSACCESS:
+			return CExpr.UOP.PROCESSACCESS;
+		case PROCESSSPAWN:
+			return CExpr.UOP.PROCESSSPAWN;
+		}
+
+		throw new IllegalArgumentException(
+				"Invalid binary operation encountered: " + op);
+	}
 	// =========== CODES ===============
 	
 	private final static int ASSIGN = 0;
@@ -489,24 +725,6 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int SUBSETEQ = 19;
 	private final static int ELEMOF = 20;
 	
-	// =========== UOP ===============
-	private final static int NEG = 0;
-	private final static int NOT = 1;
-	private final static int LENGTHOF = 2;
-	private final static int PROCESSACCESS = 3;
-	private final static int PROCESSSPAWN = 4;
-	
-	// =========== BOP ===============
-	private final static int ADD = 0;
-	private final static int SUB = 1;
-	private final static int MUL = 2;
-	private final static int DIV = 3;
-	private final static int UNION = 4;
-	private final static int INTERSECT = 5;
-	private final static int DIFFERENCE = 6;
-	private final static int APPEND = 7;
-	
-	
 	// =========== CEXPR ===============
 		
 	private final static int NULL = 0;
@@ -522,12 +740,26 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int VARIABLE = 10;
 	private final static int REGISTER = 11;
 	private final static int INVOKE = 12;		
-	private final static int UNOP = 13;
-	private final static int BINOP = 14;
-	private final static int NARYOP = 15;
-	private final static int LISTACCESS = 16;
-	private final static int TUPLEACCESS = 17;
-	private final static int CONVERT = 18;
+	private final static int LISTACCESS = 14;
+	private final static int TUPLEACCESS = 15;
+	private final static int CONVERT = 16;
 	
-				
+	// =========== UOP ===============
+	
+	private final static int NEG = 20;
+	private final static int NOT = 21;
+	private final static int LENGTHOF = 22;
+	private final static int PROCESSACCESS = 23;
+	private final static int PROCESSSPAWN = 24;
+	
+	// =========== BOP ===============
+	
+	private final static int ADD = 30;
+	private final static int SUB = 31;
+	private final static int MUL = 32;
+	private final static int DIV = 33;
+	private final static int UNION = 34;
+	private final static int INTERSECT = 35;
+	private final static int DIFFERENCE = 36;
+	private final static int APPEND = 37;				
 }

@@ -1,4 +1,4 @@
-int f(int x) ensures $ > 0:
+int f(char x):
     return x
 
 void System::main([string] args):

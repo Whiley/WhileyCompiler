@@ -116,7 +116,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	protected void write(Value v, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		WhileyBlock.writeValue(v,writer,constantPool);				
+		WhileyBlock.write(v,writer,constantPool);				
 	}
 	
 	public void print(PrintWriter output,

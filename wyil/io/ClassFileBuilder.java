@@ -147,7 +147,18 @@ public class ClassFileBuilder {
 		ArrayList<Bytecode> codes = translate(mcase, method);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);				
-		
+
+		if (mcase.precondition() != null) {
+			cm.attributes()
+					.add(
+							new WhileyBlock("WhileyPreCondition", mcase
+									.precondition()));
+		}
+		if (mcase.postcondition() != null) {
+			cm.attributes().add(
+					new WhileyBlock("WhileyPostCondition", mcase
+							.postcondition()));
+		}
 		return cm;
 	}
 	
