@@ -215,6 +215,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			write((CExpr.Convert)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.ListAccess) {
 			write((CExpr.ListAccess)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.TupleAccess) {
+			write((CExpr.TupleAccess)rval,writer,constantPool);
 		} else {
 			throw new IllegalArgumentException("Unknown expression encountered: " + rval);
 		}

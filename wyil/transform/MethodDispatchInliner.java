@@ -291,7 +291,8 @@ public class MethodDispatchInliner implements ModuleTransform {
 			// parameter type, then aren't we losing this?
 			binding.put(target, arg);
 			
-		}							
+		}									
+		
 		return Block.substitute(binding, constraint);
 	}
 	

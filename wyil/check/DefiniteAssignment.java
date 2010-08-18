@@ -115,8 +115,8 @@ public class DefiniteAssignment extends
 	
 	public IntersectionFlowSet<String> transfer(boolean branch, Stmt stmt,
 			IntersectionFlowSet<String> in) {
-		HashSet<String> uses = new HashSet<String>(); 
-		Code.usedVariables(stmt.code,uses);
+		HashSet<String> uses = new HashSet<String>(); 		
+		Code.usedVariables(stmt.code,uses);		
 		checkUses(uses,in,stmt);
 		return in;
 	}

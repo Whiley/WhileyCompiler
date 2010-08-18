@@ -148,16 +148,26 @@ public class ClassFileBuilder {
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);				
 
+		// Build up the binding we'll use for pre and post-conditions
+		List<String> params = mcase.parameterNames();
+		List<Type> paramTypes = method.type().params;
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+		
+		for(int i=0;i!=params.size();++i) {
+			String n = params.get(i);
+			binding.put(n,CExpr.VAR(paramTypes.get(i),"p" + i));
+		}
+		
 		if (mcase.precondition() != null) {
+			Block pc = Block.substitute(binding,mcase.precondition());
+			
 			cm.attributes()
-					.add(
-							new WhileyBlock("WhileyPreCondition", mcase
-									.precondition()));
+					.add(new WhileyBlock("WhileyPreCondition",pc));
 		}
 		if (mcase.postcondition() != null) {
+			Block pc = Block.substitute(binding,mcase.postcondition());
 			cm.attributes().add(
-					new WhileyBlock("WhileyPostCondition", mcase
-							.postcondition()));
+					new WhileyBlock("WhileyPostCondition", pc));
 		}
 		return cm;
 	}
