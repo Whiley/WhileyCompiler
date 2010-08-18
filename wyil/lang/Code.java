@@ -19,6 +19,7 @@
 package wyil.lang;
 
 import java.util.*;
+
 import wyil.lang.CExpr.LVal;
 import wyjvm.lang.Bytecode;
 
@@ -31,32 +32,50 @@ public abstract class Code {
 	/**
 	 * Determine which variables are used by this code.
 	 */
-	public static void usedVariables(Code c, Set<String> uses) {
+	public static <T> void match(Code c, Class<T> match, Collection<T> matches) {
+		if(match.isInstance(c)) {
+			matches.add((T)c);
+		}
+		
 		if(c instanceof Assign) {
 			Assign a = (Assign) c;
 			if(a.lhs != null) {
-				CExpr.usedVariables(a.lhs,uses);
+				CExpr.match(a.lhs,match,matches);
 			}
-			CExpr.usedVariables(a.rhs,uses);
+			CExpr.match(a.rhs,match,matches);
 		} else if(c instanceof Debug) {
 			Debug a = (Debug) c;						
-			CExpr.usedVariables(a.rhs,uses);
+			CExpr.match(a.rhs,match,matches);
 		} else if(c instanceof IfGoto) {
 			IfGoto a = (IfGoto) c;			
-			CExpr.usedVariables(a.lhs,uses);
-			CExpr.usedVariables(a.rhs,uses);
+			CExpr.match(a.lhs,match,matches);
+			CExpr.match(a.rhs,match,matches);
 		} else if(c instanceof Return) {
 			Return a = (Return) c;			
 			if(a.rhs != null) {
-				CExpr.usedVariables(a.rhs,uses);
+				CExpr.match(a.rhs,match,matches);
 			}
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
-			CExpr.usedVariables(a.variable, uses);
-			CExpr.usedVariables(a.source, uses);						
+			CExpr.match(a.variable, match,matches);
+			CExpr.match(a.source, match,matches);						
 		} 
 	}
 
+	public static HashSet<String> usedVariables(Code code) {
+		HashSet<CExpr.LVar> uses = new HashSet<CExpr.LVar>();		
+		Code.match(code,CExpr.LVar.class,uses);		
+		HashSet<String> r = new HashSet<String>();
+		for(CExpr.LVar v : uses) {
+			if(v instanceof CExpr.Variable) {
+				r.add(((CExpr.Variable)v).name);
+			} else {
+				r.add("%" + ((CExpr.Register)v).index);
+			}
+		}
+		return r;
+	}
+	
 	/**
 	 * Substitute all occurrences of variable from with variable to.
 	 * 

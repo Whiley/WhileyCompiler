@@ -1,5 +1,3 @@
-int f(char x):
+int f(int x) ensures x > $:
+    x = x + 1
     return x
-
-void System::main([string] args):
-    f(-1)

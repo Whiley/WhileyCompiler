@@ -79,13 +79,33 @@ public final class Block implements Iterable<Stmt> {
 	 * @param blk
 	 * @return
 	 */
-	public static <T extends Set<String>> T usedVariables(Block blk, T uses) {
+	public static <T> void match(Block blk, Class<T> match,
+			Collection<T> matches) {
 		for (Stmt s : blk) {
-			Code.usedVariables(s.code, uses);
+			Code.match(s.code, match, matches);
 		}
-		return uses;
 	}
 
+	/**
+	 * Determine the set of used variable names, which includes registers and
+	 * variables.
+	 */
+	public static HashSet<String> usedVariables(Block blk) {
+		HashSet<CExpr.LVar> uses = new HashSet<CExpr.LVar>();
+		for(Stmt stmt : blk) {
+			Code.match(stmt.code,CExpr.LVar.class,uses);
+		}
+		HashSet<String> r = new HashSet<String>();
+		for(CExpr.LVar v : uses) {
+			if(v instanceof CExpr.Variable) {
+				r.add(((CExpr.Variable)v).name);
+			} else {
+				r.add("%" + ((CExpr.Register)v).index);
+			}
+		}
+		return r;
+	}
+	
 	/**
 	 * Substitute all occurrences of variable from with variable to. Care must
 	 * be taken when using this method, to ensure misc temporary variables are
@@ -120,9 +140,9 @@ public final class Block implements Iterable<Stmt> {
 		// inputs up using the binding, whilst at the same time trying to avoid
 		// capturing any other variables used in the block.
 		
-		HashSet<String> uses = new HashSet<String>();
+		HashSet<CExpr.LVar> uses = new HashSet<CExpr.LVar>();
 		for(CExpr e : binding.values()) {
-			CExpr.usedVariables(e,uses);
+			CExpr.match(e,CExpr.LVar.class,uses);
 		}
 		
 		HashMap<String,CExpr> rebinding = new HashMap<String,CExpr>();
@@ -137,7 +157,7 @@ public final class Block implements Iterable<Stmt> {
 					name = "%" + ((CExpr.Register)fa.variable).index;
 				}
 				
-				if (uses.contains(name)) {
+				if (uses.contains(fa.variable)) {
 					// this indicates a clash
 					Type t = fa.variable.type();					
 					rebinding.put(name, CExpr.VAR(t, newCaptureName(name,

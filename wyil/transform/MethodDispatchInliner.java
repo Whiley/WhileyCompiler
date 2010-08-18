@@ -63,8 +63,8 @@ public class MethodDispatchInliner implements ModuleTransform {
 			// Now, calculate the register target. This is used to determine a safe
 			// register number that is guaranteed not to interfere with any register
 			// already being used in the body.
-			HashSet<String> uses = new HashSet<String>();				
-			Block.usedVariables(constraint, uses);
+			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
+			Block.match(constraint, CExpr.Register.class, uses);
 			int regTarget = uses.size();
 			constraint = transform(regTarget,constraint);
 			return new Module.TypeDef(type.name(), type.type(), constraint);
@@ -83,25 +83,25 @@ public class MethodDispatchInliner implements ModuleTransform {
 		Block precondition = mcase.precondition();
 		if(precondition != null) {
 			// calculate reg target (see below)
-			HashSet<String> uses = new HashSet<String>();						
-			Block.usedVariables(precondition, uses);
+			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
+			Block.match(precondition, CExpr.Register.class, uses);			
 			int regTarget = uses.size();			
 			precondition = transform(regTarget,precondition);
 		}
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
 			// calculate reg target (see below)
-			HashSet<String> uses = new HashSet<String>();						
-			Block.usedVariables(postcondition, uses);
+			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
+			Block.match(postcondition, CExpr.Register.class, uses);
 			int regTarget = uses.size();
 			postcondition = transform(regTarget,postcondition);
 		}
 		
 		// Now, calculate the register target. This is used to determine a safe
 		// register number that is guaranteed not to interfere with any register
-		// already being used in the body.
-		HashSet<String> uses = new HashSet<String>();				
-		Block.usedVariables(mcase.body(), uses);
+		// already being used in the body.		
+		HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
+		Block.match(mcase.body(), CExpr.Register.class, uses);
 		int regTarget = uses.size();
 		
 		Block body = transform(regTarget,mcase.body());		

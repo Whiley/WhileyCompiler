@@ -62,8 +62,7 @@ public class DefiniteAssignment extends
 	
 	public IntersectionFlowSet<String> transfer(Stmt stmt, IntersectionFlowSet<String> in) {		
 		Code code = stmt.code;
-		HashSet<String> uses = new HashSet<String>(); 
-		Code.usedVariables(code,uses);
+		HashSet<String> uses = Code.usedVariables(code);		
 		String nvar = null;
 		if(code instanceof Code.Assign) {
 			Code.Assign ca = (Code.Assign) code;			
@@ -115,8 +114,7 @@ public class DefiniteAssignment extends
 	
 	public IntersectionFlowSet<String> transfer(boolean branch, Stmt stmt,
 			IntersectionFlowSet<String> in) {
-		HashSet<String> uses = new HashSet<String>(); 		
-		Code.usedVariables(stmt.code,uses);		
+		HashSet<String> uses = Code.usedVariables(stmt.code);		
 		checkUses(uses,in,stmt);
 		return in;
 	}

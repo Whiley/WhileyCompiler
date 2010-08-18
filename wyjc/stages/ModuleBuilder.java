@@ -41,6 +41,14 @@ public class ModuleBuilder {
 	private HashMap<NameID,Pair<UnresolvedType,Expr>> unresolved;
 	private String filename;
 	
+	// The shadow set is used to (efficiently) aid the correct generation of
+	// runtime checks for post conditions. The key issue is that a post
+	// condition may refer to parameters of the method. However, if those
+	// parameters are modified during the method, then we must store their
+	// original value on entry for use in the post-condition runtime check.
+	// These stored values are called "shadows".   
+	private final HashMap<String,CExpr> shadows = new HashMap<String,CExpr>();
+	
 	public ModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;
 	}
@@ -535,7 +543,7 @@ public class ModuleBuilder {
 				precondition.addAll(tmp);
 			}
 		}
-		
+
 		if (fd.postcondition != null) {
 			environment.put("$", ret.first());
 			String trueLabel = Block.freshLabel();
@@ -549,15 +557,16 @@ public class ModuleBuilder {
 				postcondition = tmp;
 			} else {
 				postcondition.addAll(tmp);
-			}
+			}						
 		}
 		
+		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
+		
 		Block blk = new Block();
+		determineShadows(postcondition,parameterNames,tf,blk);				
 		for (Stmt s : fd.statements) {			
 			blk.addAll(resolve(s, fd, environment, declared));
-		}				
-		
-		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
+		}												
 		
 		if(tf.ret == Type.T_VOID) {
 			// need to terminate method
@@ -567,6 +576,40 @@ public class ModuleBuilder {
 		Module.Case ncase = new Module.Case(parameterNames, precondition,
 				postcondition, blk);
 		return new Module.Method(fd.name(), tf, ncase);
+	}
+	
+	/**
+	 * Determine which parameters require shadows. A parameter requires a shadow
+	 * if: it is used in the post-condition: and, it is modified in the method
+	 * body.
+	 * 
+	 * @param f
+	 */
+	protected void determineShadows(Block postcondition,
+			List<String> parameterNames, Type.Fun ft, Block body) {
+		shadows.clear();
+		if(postcondition != null) {
+			HashMap<String,Type> binding = new HashMap<String,Type>();
+			for(int i=0;i!=parameterNames.size();++i) {
+				String name = parameterNames.get(i);
+				Type t = ft.params.get(i);
+				binding.put(name,t);
+			}
+			
+			HashSet<CExpr.Variable> uses = new HashSet<CExpr.Variable>();		
+			Block.match(postcondition,CExpr.Variable.class,uses);			
+			
+			for (CExpr.Variable v : uses) {
+				if (!v.name.equals("$")) {
+					CExpr.LVar shadow = CExpr.VAR(binding.get(v.name), "$"
+							+ v.name);
+					shadows.put(v.name, shadow);
+					Code code = new Code.Assign(shadow, CExpr.VAR(binding
+							.get(v.name), v.name));
+					body.add(code);
+				}
+			}			
+		}		
 	}
 	
 	public Block resolve(Stmt stmt, FunDecl fd, HashMap<String, Type> environment,
@@ -756,6 +799,7 @@ public class ModuleBuilder {
 			if(postcondition != null) {
 				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 				binding.put("$",r);				
+				binding.putAll(shadows);
 				blk.addAll(Block.relabel(Block.substitute(binding, postcondition)));	
 			}
 			

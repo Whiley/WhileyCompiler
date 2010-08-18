@@ -8,44 +8,45 @@ public abstract class CExpr {
 	public static abstract class LVal extends CExpr {}
 	public static abstract class LVar extends LVal {}
 	
-	public static void usedVariables(CExpr r, Set<String> uses) {
+	public static <T> void match(CExpr r, Class<T> match, Collection<T> uses) {
+		if(match.isInstance(r)) {
+			uses.add((T)r);
+		}
 		if (r instanceof Variable) {
-			Variable v = (Variable) r;
-			uses.add(v.name);
+			
 		} else if(r instanceof Register) {
-			Register v = (Register) r;
-			uses.add("%" + v.index);
+			
 		} else if(r instanceof ListAccess) {
 			ListAccess v = (ListAccess) r;
-			usedVariables(v.src,uses);
-			usedVariables(v.index,uses);
+			match(v.src,match,uses);
+			match(v.index,match,uses);
 		} else if(r instanceof BinOp) {
 			BinOp v = (BinOp) r;
-			usedVariables(v.lhs,uses);
-			usedVariables(v.rhs,uses);
+			match(v.lhs,match,uses);
+			match(v.rhs,match,uses);
 		} else if(r instanceof UnOp) {
 			UnOp v = (UnOp) r;			
-			usedVariables(v.rhs,uses);
+			match(v.rhs,match,uses);
 		} else if(r instanceof NaryOp) {
 			NaryOp v = (NaryOp) r;
 			for(CExpr arg : v.args) {
-				usedVariables(arg,uses);
+				match(arg,match,uses);
 			}
 		} else if (r instanceof Tuple) {
 			Tuple tup = (Tuple) r;			
 			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
-				usedVariables(e.getValue(),uses);				
+				match(e.getValue(),match,uses);				
 			}			
 		} else if (r instanceof TupleAccess) {
 			TupleAccess ta = (TupleAccess) r;
-			usedVariables(ta.lhs,uses);
+			match(ta.lhs,match,uses);
 		} else if(r instanceof Convert) {
 			Convert v = (Convert) r;			
-			usedVariables(v.rhs,uses);
+			match(v.rhs,match,uses);
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;						
 			for(CExpr arg : a.args){
-				CExpr.usedVariables(arg,uses);
+				CExpr.match(arg,match,uses);
 			}			
 		} else if(r instanceof Value) {
 			

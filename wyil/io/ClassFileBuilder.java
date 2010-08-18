@@ -176,9 +176,8 @@ public class ClassFileBuilder {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();		
 		HashMap<String, Integer> slots = new HashMap<String, Integer>();		
 		
-		HashSet<String> uses = Block.usedVariables(mcase.body(),
-				new HashSet<String>());		
-		
+		HashSet<String> uses = Block.usedVariables(mcase.body());
+			
 		int slot = 0;
 		if(method.type().receiver != null) {
 			slots.put("this",slot++);
