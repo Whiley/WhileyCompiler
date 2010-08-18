@@ -762,8 +762,6 @@ public class WhileyBlock implements BytecodeAttribute {
 		switch (op) {
 		case NEG:
 			return NEG;
-		case NOT:
-			return NOT;
 		case LENGTHOF:
 			return LENGTHOF;
 		case PROCESSACCESS:
@@ -808,8 +806,6 @@ public class WhileyBlock implements BytecodeAttribute {
 		switch (op) {
 		case NEG:
 			return CExpr.UOP.NEG;
-		case NOT:
-			return CExpr.UOP.NOT;
 		case LENGTHOF:
 			return CExpr.UOP.LENGTHOF;
 		case PROCESSACCESS:

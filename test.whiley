@@ -1,3 +1,2 @@
-int f(int x) ensures x > $:
-    x = x + 1
-    return x
+bool f(int x) ensures !$ || x < 5:
+    return false

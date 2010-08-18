@@ -467,10 +467,7 @@ public abstract class CExpr {
 	public enum UOP { 
 		NEG() {
 			public String toString() { return "-"; }
-		},
-		NOT() {
-			public String toString() { return "!"; }
-		},
+		},		
 		LENGTHOF() {
 			public String toString() { return "||"; }
 		},

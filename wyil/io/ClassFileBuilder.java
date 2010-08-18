@@ -622,19 +622,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
 					ftype, Bytecode.VIRTUAL));
 			break;
-		}
-		case NOT: {
-			translate(c.rhs, slots, bytecodes);
-			String exitLabel = freshLabel();
-			String trueLabel = freshLabel();
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, trueLabel));
-			bytecodes.add(new Bytecode.LoadConst(0));
-			bytecodes.add(new Bytecode.Goto(exitLabel));
-			bytecodes.add(new Bytecode.Label(trueLabel));
-			bytecodes.add(new Bytecode.LoadConst(1));
-			bytecodes.add(new Bytecode.Label(exitLabel));
-			break;
-		}
+		}	
 		case LENGTHOF: {
 			translate(c.rhs, slots, bytecodes);
 			JvmType.Function ftype = new JvmType.Function(T_INT);			

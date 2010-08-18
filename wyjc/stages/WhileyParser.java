@@ -824,7 +824,7 @@ public class WhileyParser {
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Expr.UOp.NOT, parseCondition(),
+			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(),
 					sourceAttr(start, index - 1));
 		}
 		syntaxError("unrecognised term.",token);

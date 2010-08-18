@@ -546,7 +546,8 @@ public class ModuleBuilder {
 
 		if (fd.postcondition != null) {
 			environment.put("$", ret.first());
-			String trueLabel = Block.freshLabel();
+			String trueLabel = Block.freshLabel();						
+			
 			Block tmp = resolveCondition(trueLabel, fd.postcondition, 0,
 					environment, declared);
 			tmp.add(new Code.Fail("function postcondition not satisfied"),
@@ -997,14 +998,17 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		
 		if (bop == BOp.OR) {			
-			blk.addAll(resolveCondition(target, v.lhs, freeReg, new HashMap(environment), declared));
-			blk.addAll(resolveCondition(target, v.rhs, freeReg, new HashMap(environment), declared));
+			blk.addAll(resolveCondition(target, v.lhs, freeReg, new HashMap(
+					environment), declared));
+			blk.addAll(resolveCondition(target, v.rhs, freeReg, new HashMap(
+					environment), declared));
 			return blk;
 		} else if (bop == BOp.AND) {			
 			String exitLabel = Block.freshLabel();
-			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), freeReg, environment,
-					declared));			
-			blk.addAll(resolveCondition(target, v.rhs, freeReg, environment, declared));
+			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), freeReg,
+					environment, declared));
+			blk.addAll(resolveCondition(target, v.rhs, freeReg, environment,
+					declared));
 			blk.add(new Code.Label(exitLabel));
 			return blk;
 		} else if (bop == BOp.TYPEEQ || bop == BOp.TYPEIMPLIES) {
@@ -1394,8 +1398,18 @@ public class ModuleBuilder {
 					mhs.first()), blk);
 		case NOT:
 			checkIsSubtype(Type.T_BOOL,mhs_t,v.mhs);
-			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.NOT,
-					mhs.first()), blk);
+			String falseLabel = Block.freshLabel();
+			String exitLabel = Block.freshLabel();
+			// Ok, so there's a bit of inefficiency here ... so what?
+			blk = resolveCondition(falseLabel, v.mhs, freeReg, environment, declared);
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
+					.V_BOOL(true)),v.attribute(Attribute.Source.class));
+			blk.add(new Code.Goto(exitLabel));
+			blk.add(new Code.Label(falseLabel));
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
+					.V_BOOL(false)),v.attribute(Attribute.Source.class));
+			blk.add(new Code.Label(exitLabel));
+			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, freeReg), blk);			
 		case LENGTHOF:
 			checkIsSubtype(Type.T_SET(Type.T_ANY), mhs_t, v.mhs);
 			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
