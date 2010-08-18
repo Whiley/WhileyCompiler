@@ -1,4 +1,4 @@
-int f(int x) requires x+1 > 0 && $ < 0:
+int f(int x) requires x+1 > 0, ensures $ < 0:
     print str(x)
     return -1
 
