@@ -110,6 +110,14 @@ public class WhileyBlock implements BytecodeAttribute {
 		} else if(rval instanceof CExpr.Convert) {
 			CExpr.Convert c = (CExpr.Convert)rval;
 			addPoolItems(c.rhs,constantPool);			
+		} else if(rval instanceof CExpr.ListAccess) {
+			CExpr.ListAccess c = (CExpr.ListAccess)rval;
+			addPoolItems(c.src,constantPool);			
+			addPoolItems(c.index,constantPool);
+		} else if(rval instanceof CExpr.TupleAccess) {
+			CExpr.TupleAccess c = (CExpr.TupleAccess)rval;
+			addPoolItems(c.lhs,constantPool);			
+			constantPool.add(new Constant.Utf8(c.field));
 		} 	
 	}
 	
@@ -205,6 +213,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			write((CExpr.Invoke)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Convert) {
 			write((CExpr.Convert)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.ListAccess) {
+			write((CExpr.ListAccess)rval,writer,constantPool);
 		} else {
 			throw new IllegalArgumentException("Unknown expression encountered: " + rval);
 		}
@@ -274,6 +284,21 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write_u1(BOP2INT(expr.op));												
 		write(expr.lhs,writer,constantPool);						
 		write(expr.rhs,writer,constantPool);
+	}
+	
+	public static void write(CExpr.ListAccess expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(LISTACCESS);												
+		write(expr.src,writer,constantPool);						
+		write(expr.index,writer,constantPool);
+	}
+	
+	public static void write(CExpr.TupleAccess expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(TUPLEACCESS);
+		write(expr.lhs,writer,constantPool);
+		int idx = constantPool.get(new Constant.Utf8(expr.field));							
+		writer.write_u2(idx);										
 	}
 	
 	protected static void write(Value val, BinaryOutputStream writer,
@@ -571,8 +596,20 @@ public class WhileyBlock implements BytecodeAttribute {
 				return CExpr.INVOKE(type, nid, casenum, args);
 			}
 			case LISTACCESS:
-			case TUPLEACCESS:							
+			{
+				CExpr lhs = readCExpr(reader,constantPool);
+				CExpr rhs = readCExpr(reader,constantPool);
+				return CExpr.LISTACCESS(lhs,rhs);
+			}
+			case TUPLEACCESS:
+			{
+				CExpr lhs = readCExpr(reader,constantPool);
+				int idx = reader.read_u2();
+				Constant.Utf8 field = (Constant.Utf8) constantPool.get(idx);
+				return CExpr.TUPLEACCESS(lhs,field.str);
+			
 			}						
+			}
 			throw new RuntimeException("Unknown CExpr encountered in WhileyBlock: " + code);
 		}
 	
