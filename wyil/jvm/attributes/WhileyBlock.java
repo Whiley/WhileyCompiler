@@ -286,6 +286,15 @@ public class WhileyBlock implements BytecodeAttribute {
 		write(expr.rhs,writer,constantPool);
 	}
 	
+	public static void write(CExpr.NaryOp expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(NOP2INT(expr.op));
+		writer.write_u4(expr.args.size());
+		for(CExpr arg : expr.args) {
+			write(arg,writer,constantPool);
+		}
+	}
+	
 	public static void write(CExpr.ListAccess expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(LISTACCESS);												
@@ -606,9 +615,19 @@ public class WhileyBlock implements BytecodeAttribute {
 				CExpr lhs = readCExpr(reader,constantPool);
 				int idx = reader.read_u2();
 				Constant.Utf8 field = (Constant.Utf8) constantPool.get(idx);
-				return CExpr.TUPLEACCESS(lhs,field.str);
-			
-			}						
+				return CExpr.TUPLEACCESS(lhs,field.str);			
+			}			
+			case SETGEN:				
+			case LISTGEN:
+			case SUBLIST:
+			{
+				int len = reader.read_u4();
+				ArrayList<CExpr> args = new ArrayList<CExpr>();
+				for(int i=0;i!=len;++i) {
+					args.add(readCExpr(reader,constantPool));
+				}
+				return CExpr.NARYOP(INT2NOP(code), args);
+			}
 			}
 			throw new RuntimeException("Unknown CExpr encountered in WhileyBlock: " + code);
 		}
@@ -755,6 +774,34 @@ public class WhileyBlock implements BytecodeAttribute {
 				"Invalid binary operation encountered: " + op);
 	}
 	
+	public static int NOP2INT(CExpr.NOP op) {
+		switch (op) {
+		case SETGEN:
+			return SETGEN;
+		case LISTGEN:
+			return LISTGEN;
+		case SUBLIST:
+			return SUBLIST;		
+		}
+
+		throw new IllegalArgumentException(
+				"Invalid nary operation encountered: " + op);
+	}
+	
+	public static CExpr.NOP INT2NOP(int op) {
+		switch (op) {
+		case SETGEN:
+			return CExpr.NOP.SETGEN;
+		case LISTGEN:
+			return CExpr.NOP.LISTGEN;
+		case SUBLIST:
+			return CExpr.NOP.SUBLIST;		
+		}
+
+		throw new IllegalArgumentException(
+				"Invalid nary operation encountered: " + op);
+	}
+	
 	public static CExpr.UOP INT2UOP(int op) {
 		switch (op) {
 		case NEG:
@@ -831,5 +878,11 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int UNION = 34;
 	private final static int INTERSECT = 35;
 	private final static int DIFFERENCE = 36;
-	private final static int APPEND = 37;				
+	private final static int APPEND = 37;		
+	
+	// =========== NOP ===============
+	
+	private final static int SETGEN = 40;
+	private final static int LISTGEN = 41;
+	private final static int SUBLIST = 42;		
 }
