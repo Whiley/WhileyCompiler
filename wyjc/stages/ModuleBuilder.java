@@ -304,7 +304,7 @@ public class ModuleBuilder {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());			
-			return new Pair<Type,Block>(td.type(),null);
+			return new Pair<Type,Block>(td.type(),td.constraint());
 		}
 
 		// following is needed to terminate any recursion
@@ -347,7 +347,7 @@ public class ModuleBuilder {
 	}	
 	
 	protected Pair<Type, Block> expandType(UnresolvedType t, String filename,
-			HashMap<NameID, Type> cache) {		
+			HashMap<NameID, Type> cache) {				
 		if(t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
 			Pair<Type,Block> p = expandType(lt.element, filename, cache);
@@ -490,7 +490,7 @@ public class ModuleBuilder {
 				
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {						
-			Pair<Type,Block> t = resolve(p.type);
+			Pair<Type,Block> t = resolve(p.type);			
 			environment.put(p.name(),t.first());
 			declared.put(p.name(),t);
 			parameterNames.add(p.name());
@@ -1607,7 +1607,7 @@ public class ModuleBuilder {
 				try {
 					Module mi = loader.loadModule(mid);
 					Module.TypeDef td = mi.type(dt.name);			
-					return new Pair<Type,Block>(td.type(),null);
+					return new Pair<Type,Block>(td.type(),td.constraint());
 				} catch(ResolveError rex) {
 					syntaxError(rex.getMessage(),filename,t,rex);
 					return null;

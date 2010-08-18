@@ -86,7 +86,7 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {			
 			Forall a = (Forall) c;				
-			return new Forall(a.name, (CExpr.LVar) CExpr.substitute(binding,
+			return new Forall(a.label, (CExpr.LVar) CExpr.substitute(binding,
 					a.variable), CExpr.substitute(binding, a.source));
 		} else {
 			return c;
@@ -125,7 +125,7 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
-			return new Forall(a.name, (CExpr.LVar) CExpr.registerShift(shift,
+			return new Forall(a.label, (CExpr.LVar) CExpr.registerShift(shift,
 					a.variable), CExpr.registerShift(shift, a.source));
 		} else {
 			return c;
@@ -312,25 +312,25 @@ public abstract class Code {
 	}	
 	
 	public final static class End extends Code  {
-		public final String name;
+		public final String target;
 		
 		public End(String target) {
-			this.name = target;
+			this.target = target;
 		}
 		
 		public int hashCode() {
-			return name.hashCode();
+			return target.hashCode();
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof End) {
-				return name.equals(((End)o).name);
+				return target.equals(((End)o).target);
 			}
 			return false;
 		}
 		
 		public String toString() {
-			return "end " + name;
+			return "end " + target;
 		}
 	}
 	
@@ -397,12 +397,12 @@ public abstract class Code {
 	}
 
 	public final static class Forall extends Code {									
-		public final String name;
+		public final String label;
 		public final CExpr.LVar variable;
 		public final CExpr source;
 		
 		public Forall(String name, CExpr.LVar variable, CExpr source) {								
-			this.name = name;
+			this.label = name;
 			this.variable = variable;
 			this.source = source;
 		}
@@ -410,18 +410,18 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if (o instanceof Forall) {
 				Forall a = (Forall) o;
-				return name.equals(a.name) && variable.equals(a.variable)
+				return label.equals(a.label) && variable.equals(a.variable)
 						&& source.equals(a.source); 
 			}
 			return false;
 		}
 		
 		public int hashCode() {			
-			return source.hashCode() + name.hashCode() + variable.hashCode();
+			return source.hashCode() + label.hashCode() + variable.hashCode();
 		}
 		
 		public String toString() {
-			return name + ": for " + variable + " in " + source;												
+			return label + ": for " + variable + " in " + source;												
 		}
 	}
 		

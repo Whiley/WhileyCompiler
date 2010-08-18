@@ -64,6 +64,9 @@ public class WhileyBlock implements BytecodeAttribute {
 		} else if(c instanceof Code.Label) {
 			Code.Label a = (Code.Label) c;
 			constantPool.add(new Constant.Utf8(a.label));			
+		} else if(c instanceof Code.End) {
+			Code.End a = (Code.End) c;
+			constantPool.add(new Constant.Utf8(a.target));			
 		} else if(c instanceof IfGoto) {
 			IfGoto a = (IfGoto) c;
 			addPoolItems(a.lhs,constantPool);			
@@ -71,7 +74,9 @@ public class WhileyBlock implements BytecodeAttribute {
 			constantPool.add(new Constant.Utf8(a.target));
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
-									
+			constantPool.add(new Constant.Utf8(a.label));
+			addPoolItems(a.variable, constantPool);
+			addPoolItems(a.source, constantPool);
 		} 
 	}
 	
@@ -159,6 +164,10 @@ public class WhileyBlock implements BytecodeAttribute {
 			Code.Label a = (Code.Label) c;			
 			writer.write_u1(LABEL);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
+		} else if(c instanceof Code.End) {
+			Code.End a = (Code.End) c;			
+			writer.write_u1(END);
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 		} else if(c instanceof IfGoto) {
 			IfGoto a = (IfGoto) c;			
 			writer.write_u1(IFGOTO);
@@ -167,6 +176,12 @@ public class WhileyBlock implements BytecodeAttribute {
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 			write(a.lhs,writer,constantPool);
 			write(a.rhs,writer,constantPool);			
+		} else if(c instanceof Forall) {
+			Forall a = (Forall) c;	
+			writer.write_u1(FORALL);
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
+			write(a.variable,writer,constantPool);
+			write(a.source,writer,constantPool);
 		} else {
 			throw new IllegalArgumentException("Code not permitted in WhileyBlock: " + c);
 		}
@@ -359,7 +374,10 @@ public class WhileyBlock implements BytecodeAttribute {
 			int idx = reader.read_u2();
 			int size = reader.read_u4(); // not needed
 			Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
-			return new WhileyBlock(utf8.str, readBlock(reader, constantPool));
+			
+			Block block = readBlock(reader, constantPool);
+			
+			return new WhileyBlock(utf8.str, block);
 		}
 		
 		protected static Block readBlock(BinaryInputStream reader,
@@ -399,6 +417,12 @@ public class WhileyBlock implements BytecodeAttribute {
 				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
 				return new Code.Label(target.str);
 			}
+			case END:
+			{				
+				int idx = reader.read_u2();
+				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
+				return new Code.End(target.str);
+			}
 			case FAIL:
 			{				
 				int idx = reader.read_u2();
@@ -415,6 +439,14 @@ public class WhileyBlock implements BytecodeAttribute {
 				CExpr rhs = readCExpr(reader,constantPool);
 				return new Code.IfGoto(type,INT2COP(cop),lhs,rhs,target.str);
 			}
+			case FORALL:
+			{
+				int idx = reader.read_u2();
+				Constant.Utf8 label = (Constant.Utf8) constantPool.get(idx);
+				CExpr.LVar var = (CExpr.LVar) readCExpr(reader,constantPool);
+				CExpr src = readCExpr(reader,constantPool);
+				return new Code.Forall(label.str,var,src);
+			}	
 			}
 			throw new IllegalArgumentException("unknown code encountered: " + code);
 		}
@@ -712,6 +744,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int LABEL = 4;
 	private final static int FAIL = 5;
 	private final static int FORALL = 6;
+	private final static int END = 7;
 	
 	// =========== COP ===============
 	

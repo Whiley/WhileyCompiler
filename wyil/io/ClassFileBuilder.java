@@ -413,7 +413,7 @@ public class ClassFileBuilder {
 		} else {
 			srcVar = "%" + ((CExpr.Register)c.variable).index;
 		}
-		String exitLabel = c.name + "$exit";
+		String exitLabel = c.label + "$exit";
 		String iter = freshVar(slots);
 		Type srcType = c.source.type();
 		Type elementType;
@@ -427,7 +427,7 @@ public class ClassFileBuilder {
 				ftype, Bytecode.INTERFACE));
 		bytecodes.add(new Bytecode.Store(slots.get(iter),
 				JAVA_UTIL_ITERATOR));
-		bytecodes.add(new Bytecode.Label(c.name));
+		bytecodes.add(new Bytecode.Label(c.label));
 		ftype = new JvmType.Function(T_BOOL);
 		bytecodes
 				.add(new Bytecode.Load(slots.get(iter), JAVA_UTIL_ITERATOR));
@@ -446,8 +446,8 @@ public class ClassFileBuilder {
 
 	protected void translate(Code.End end,			
 			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Goto(end.name));
-		bytecodes.add(new Bytecode.Label(end.name + "$exit"));
+		bytecodes.add(new Bytecode.Goto(end.target));
+		bytecodes.add(new Bytecode.Label(end.target + "$exit"));
 	}
 
 	public void translate(Code.Goto c, HashMap<String, Integer> slots,

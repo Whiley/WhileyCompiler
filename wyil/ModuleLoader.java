@@ -437,9 +437,7 @@ public class ModuleLoader {
 				new WhileyDefine.Reader(), new WhileyBlock.Reader(
 						"WhileyPreCondition"), new WhileyBlock.Reader(
 						"WhileyPostCondition"));					
-
-		System.out.println("READING CLASS: " + filename);
-		
+				
 		ClassFile cf = r.readClass();
 
 		Module mi = createModule(module,cf);
@@ -557,8 +555,8 @@ public class ModuleLoader {
 		ArrayList<Module.ConstDef> constants = new ArrayList();
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
-			if(ba instanceof WhileyDefine) {
-				WhileyDefine wd = (WhileyDefine) ba;
+			if(ba instanceof WhileyDefine) {				
+				WhileyDefine wd = (WhileyDefine) ba;				
 				Type type = wd.type();							
 				if(type == null) {
 					// constant definition

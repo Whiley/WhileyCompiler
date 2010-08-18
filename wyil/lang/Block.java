@@ -58,6 +58,21 @@ public final class Block implements Iterable<Stmt> {
 		return stmts.iterator();
 	}
 	
+	public String toString() {
+		String r = "[";
+		
+		boolean firstTime=true;
+		for(Stmt s : stmts) {
+			if(!firstTime) {
+				r += ", ";
+			}
+			firstTime=false;
+			r += s.toString();
+		}
+		
+		return r + "]";
+	}
+	
 	/**
 	 * Determine the set of all used variables in this block.
 	 * 
@@ -223,18 +238,18 @@ public final class Block implements Iterable<Stmt> {
 				c = new Code.IfGoto(g.type, g.op, g.lhs, g.rhs, target);
 			} else if (c instanceof Code.Forall) {
 				Code.Forall l = (Code.Forall) c;
-				String label = nlabels.get(l.name);
+				String label = nlabels.get(l.label);
 				if (label == null) {
 					label = freshLabel();
-					nlabels.put(l.name, label);
+					nlabels.put(l.label, label);
 				}
 				c = new Code.Forall(label,l.variable,l.source);
 			} else if (c instanceof Code.End) {
 				Code.End l = (Code.End) c;
-				String label = nlabels.get(l.name);
+				String label = nlabels.get(l.target);
 				if (label == null) {
 					label = freshLabel();
-					nlabels.put(l.name, label);
+					nlabels.put(l.target, label);
 				}
 				c = new Code.End(label);
 			} 

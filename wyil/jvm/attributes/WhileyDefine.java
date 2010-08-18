@@ -87,13 +87,15 @@ public class WhileyDefine implements BytecodeAttribute {
 		BinaryOutputStream iw = new BinaryOutputStream(out);
 
 		if(type == null) {
-			iw.write_u1(0); // CONDITION ONLY			
+			iw.write_u1(0); // CONSTANT ONLY			
 			write(value,iw, constantPool);			
-		} else if(value == null) {
+		} else if(block == null) {
 			iw.write_u1(1); // TYPE ONLY
 			WhileyType.write(type, iw, constantPool);
 		} else {									
-			// unreachable			
+			iw.write_u1(2); // TYPE AND CONSTRAINT
+			WhileyType.write(type, iw, constantPool);
+			WhileyBlock.write(block, iw, constantPool);
 		}						
 		
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
@@ -111,7 +113,10 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 		if(type != null) {
 			WhileyType.addPoolItems(type, constantPool);
-		}				
+		}
+		if(block != null) {
+			WhileyBlock.addPoolItems(block, constantPool);
+		}
 	}
 	
 	protected void write(Value v, BinaryOutputStream writer,
@@ -156,7 +161,7 @@ public class WhileyDefine implements BytecodeAttribute {
 				Type type = WhileyType.Reader.readType(input,constantPool);
 				return new WhileyDefine(name,type,null);
 			} else {				
-				// both				
+				// both								
 				Type type = WhileyType.Reader.readType(input,constantPool);											
 				Block blk = WhileyBlock.Reader.readBlock(input,constantPool);
 				return new WhileyDefine(name,type,blk);
