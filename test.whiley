@@ -1,2 +1,7 @@
-bool f(int x) ensures !$ || x < 5:
-    return false
+define tup as (byte b)
+
+int f(tup x):
+    return x.b
+
+void System::main([string] args):
+    f((b:-1))

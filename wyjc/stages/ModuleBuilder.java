@@ -356,8 +356,8 @@ public class ModuleBuilder {
 	
 	protected Pair<Type, Block> expandType(UnresolvedType t, String filename,
 			HashMap<NameID, Type> cache) {				
-		if(t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
+		if(t instanceof UnresolvedType.List) {			
+			UnresolvedType.List lt = (UnresolvedType.List) t;			
 			Pair<Type,Block> p = expandType(lt.element, filename, cache);
 			Type rt = Type.T_LIST(p.first());
 			String label = Block.freshLabel();			
@@ -378,6 +378,7 @@ public class ModuleBuilder {
 			String label = Block.freshLabel();			
 			Block blk = null;
 			if(p.second() != null) {
+				blk = new Block();
 				CExpr.Register reg = CExpr.REG(p.first(),0);
 				// FIXME: need some line number information here?			
 				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
@@ -388,12 +389,23 @@ public class ModuleBuilder {
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			HashMap<String,Type> types = new HashMap<String,Type>();
+			Block blk = null;
+			CExpr.Variable tmp = CExpr.VAR(Type.T_VOID,"$");
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				Pair<Type,Block> p = expandType(e.getValue(),filename, cache);
 				types.put(e.getKey(),p.first());
-			}
-			// FIXME: bug here!!
-			return new Pair<Type,Block>(Type.T_TUPLE(types),null);
+				if(p.second() != null) {
+					if(blk == null) { blk = new Block(); }
+					HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+					binding.put("$", CExpr.TUPLEACCESS(tmp, e.getKey()));
+					blk.addAll(Block.substitute(binding,p.second()));
+				}
+			}			
+			Type type = Type.T_TUPLE(types);
+			// Need to update the self type properly
+			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+			binding.put("$", CExpr.VAR(type,"$"));
+			return new Pair<Type,Block>(type,blk);
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
@@ -521,7 +533,7 @@ public class ModuleBuilder {
 				
 		// method return type
 		Pair<Type,Block> ret = resolve(fd.ret);		
-		Block postcondition = ret.second();
+		Block postcondition = ret.second();		
 		
 		// method receiver type (if applicable)			
 		if(fd.receiver != null) {			
@@ -1687,21 +1699,55 @@ public class ModuleBuilder {
 		} else if(t instanceof UnresolvedType.Real) {
 			return new Pair<Type,Block>(Type.T_REAL,null);
 		} else if(t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
+			UnresolvedType.List lt = (UnresolvedType.List) t;			
 			Pair<Type,Block> p = resolve(lt.element);
-			return new Pair<Type,Block>(Type.T_LIST(p.first()),null);
+			Type rt = Type.T_LIST(p.first());
+			String label = Block.freshLabel();			
+			Block blk = null;
+			if(p.second() != null) {
+				blk = new Block();
+				CExpr.Register reg = CExpr.REG(p.first(),0);
+				// FIXME: need some line number information here?			
+				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
+				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
+				blk.add(new Code.End(label));
+			}
+			return new Pair<Type,Block>(rt,blk);
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			Pair<Type,Block> p = resolve(st.element);
-			return new Pair<Type,Block>(Type.T_SET(p.first()),null);			
+			Type rt = Type.T_SET(p.first());
+			String label = Block.freshLabel();			
+			Block blk = null;
+			if(p.second() != null) {
+				blk = new Block();
+				CExpr.Register reg = CExpr.REG(p.first(),0);
+				// FIXME: need some line number information here?			
+				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
+				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
+				blk.add(new Code.End(label));
+			}
+			return new Pair<Type,Block>(rt,blk);			
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			HashMap<String,Type> types = new HashMap<String,Type>();
+			HashMap<String,Type> types = new HashMap<String,Type>();			
+			Block blk = null;
+			CExpr.Variable tmp = CExpr.VAR(Type.T_VOID,"$");
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				Pair<Type,Block> p = resolve(e.getValue());
 				types.put(e.getKey(),p.first());
-			}
-			return new Pair<Type,Block>(Type.T_TUPLE(types),null);
+				if(p.second() != null) {
+					if(blk == null) { blk = new Block(); }
+					HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+					binding.put("$", CExpr.TUPLEACCESS(tmp, e.getKey()));
+					blk.addAll(Block.substitute(binding,p.second()));
+				}
+			}			
+			Type type = Type.T_TUPLE(types);
+			// Need to update the self type properly
+			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+			binding.put("$", CExpr.VAR(type,"$"));
+			return new Pair<Type,Block>(type,blk);			
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
 			ModuleID mid = dt.attribute(Attributes.Module.class).module;
