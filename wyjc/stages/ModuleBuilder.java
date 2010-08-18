@@ -353,24 +353,29 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = expandType(lt.element, filename, cache);
 			Type rt = Type.T_LIST(p.first());
 			String label = Block.freshLabel();			
-			Block blk = new Block();
-			CExpr.LVar reg = CExpr.REG(p.first(),0);
-			// FIXME: need some line number information here?			
-			blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
-			blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
-			blk.add(new Code.End(label));
+			Block blk = null;
+			if(p.second() != null) {
+				blk = new Block();
+				CExpr.LVar reg = CExpr.REG(p.first(),0);
+				// FIXME: need some line number information here?			
+				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
+				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
+				blk.add(new Code.End(label));
+			}
 			return new Pair<Type,Block>(rt,blk);
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
 			Type rt = Type.T_SET(p.first());
 			String label = Block.freshLabel();			
-			Block blk = new Block();
-			CExpr.LVar reg = CExpr.REG(p.first(),0);
-			// FIXME: need some line number information here?			
-			blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
-			blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
-			blk.add(new Code.End(label));
+			Block blk = null;
+			if(p.second() != null) {
+				CExpr.LVar reg = CExpr.REG(p.first(),0);
+				// FIXME: need some line number information here?			
+				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
+				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
+				blk.add(new Code.End(label));
+			}
 			return new Pair<Type,Block>(rt,blk);
 		} else if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
@@ -379,6 +384,7 @@ public class ModuleBuilder {
 				Pair<Type,Block> p = expandType(e.getValue(),filename, cache);
 				types.put(e.getKey(),p.first());
 			}
+			// FIXME: bug here!!
 			return new Pair<Type,Block>(Type.T_TUPLE(types),null);
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
