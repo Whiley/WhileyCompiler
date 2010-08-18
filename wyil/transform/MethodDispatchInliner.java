@@ -141,8 +141,8 @@ public class MethodDispatchInliner implements ModuleTransform {
 				}
 			} else if (c instanceof Forall) {
 				Forall a = (Forall) c;
-				c = new Forall(a.label, (CExpr.LVar) transform(a.variable, stmt,
-						inserts), transform(a.source, stmt, inserts));
+				c = new Forall(a.label, (CExpr.Register) transform(a.variable,
+						stmt, inserts), transform(a.source, stmt, inserts));
 			}
 			nblock.addAll(inserts);
 			if(c != null) {

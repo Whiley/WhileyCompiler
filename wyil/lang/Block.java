@@ -133,70 +133,14 @@ public final class Block implements Iterable<Stmt> {
 	 * @return
 	 */
 	public static Block substitute(HashMap<String, CExpr> binding, Block block) {
-		
-		// Overall, there is something slightly peverse about this method. It's
-		// really assuming that every block has a given set of input parameters
-		// ("$" for defines, parameter names, etc). Then, we're connecting these
-		// inputs up using the binding, whilst at the same time trying to avoid
-		// capturing any other variables used in the block.
-		
-		HashSet<CExpr.LVar> uses = new HashSet<CExpr.LVar>();
-		for(CExpr e : binding.values()) {
-			CExpr.match(e,CExpr.LVar.class,uses);
-		}
-		
-		HashMap<String,CExpr> rebinding = new HashMap<String,CExpr>();
-				
-		for(Stmt s : block) {
-			if(s.code instanceof Forall) {
-				Forall fa = (Forall) s.code;
-				String name;
-				if(fa.variable instanceof CExpr.Variable) {
-					name = ((CExpr.Variable)fa.variable).name;
-				} else {
-					name = "%" + ((CExpr.Register)fa.variable).index;
-				}
-				
-				if (uses.contains(fa.variable)) {
-					// this indicates a clash
-					Type t = fa.variable.type();					
-					rebinding.put(name, CExpr.VAR(t, newCaptureName(name,
-							binding.keySet())));
-				}
-			}
-		}
-		
-		if(rebinding.size() != 0) {
-			// Ok, we encountered a clash between variables being
-			// substituted and captured variables. Therefore, rename the
-			// affected captured variables, before proceeding as normal.
-			
-			block = rawSubstitute(rebinding,block);									
-		} 		
-	
-		// Now, it's safe to perform the original substitution.
-		return rawSubstitute(binding,block);
-	}
-	
-	private static String newCaptureName(String old, Set<String> names) {
-		int idx = 1;
-		String name = old + "$" + idx;
-		while (names.contains(name)) {
-			idx = idx + 1;
-			name = old + "$" + idx;
-		}
-		return name;
-	}
-	
-	private static Block rawSubstitute(HashMap<String, CExpr> binding, Block block) {
 		Block r = new Block();
 		for (Stmt s : block) {			
 			r.add(Code.substitute(binding, s.code),s.attributes());
 			
 		}
-		return r;
+		return r;				
 	}
-
+	
 	/**
 	 * The register shift method is responsible for mapping every register with
 	 * index i, to be a register with index i + shift. This is used to guarantee

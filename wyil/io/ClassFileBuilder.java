@@ -416,12 +416,7 @@ public class ClassFileBuilder {
 	public void translate(Code.Forall c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		translate(c.source, slots, bytecodes);
-		String srcVar;
-		if(c.variable instanceof CExpr.Variable) {
-			srcVar = ((CExpr.Variable)c.variable).name;
-		} else {
-			srcVar = "%" + ((CExpr.Register)c.variable).index;
-		}
+		String srcVar = "%" + c.variable.index;		
 		String exitLabel = c.label + "$exit";
 		String iter = freshVar(slots);
 		Type srcType = c.source.type();

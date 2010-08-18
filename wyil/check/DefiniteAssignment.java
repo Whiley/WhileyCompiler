@@ -77,15 +77,9 @@ public class DefiniteAssignment extends
 			} 
 		} else if(code instanceof Code.Forall) {
 			Code.Forall ca = (Code.Forall) code;			
-			if(ca.variable instanceof CExpr.Variable) {
-				CExpr.Variable v = (CExpr.Variable) ca.variable;				
-				uses.remove(v.name);
-				nvar = v.name;				
-			} else if(ca.variable instanceof CExpr.Register) {
-				CExpr.Register v = (CExpr.Register) ca.variable;				
-				uses.remove("%" + v.index);				
-				nvar = "%" + v.index;
-			}
+			CExpr.Register v = (CExpr.Register) ca.variable;				
+			uses.remove("%" + v.index);				
+			nvar = "%" + v.index;			
 		}		
 		
 		// FIXME: there is a bug here for the value of a variable after a forall

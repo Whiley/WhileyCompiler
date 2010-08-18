@@ -105,8 +105,8 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {			
 			Forall a = (Forall) c;				
-			return new Forall(a.label, (CExpr.LVar) CExpr.substitute(binding,
-					a.variable), CExpr.substitute(binding, a.source));
+			return new Forall(a.label, (CExpr.Register) CExpr.substitute(
+					binding, a.variable), CExpr.substitute(binding, a.source));
 		} else {
 			return c;
 		}
@@ -144,7 +144,7 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
-			return new Forall(a.label, (CExpr.LVar) CExpr.registerShift(shift,
+			return new Forall(a.label, (CExpr.Register) CExpr.registerShift(shift,
 					a.variable), CExpr.registerShift(shift, a.source));
 		} else {
 			return c;
@@ -417,10 +417,10 @@ public abstract class Code {
 
 	public final static class Forall extends Code {									
 		public final String label;
-		public final CExpr.LVar variable;
+		public final CExpr.Register variable;
 		public final CExpr source;
 		
-		public Forall(String name, CExpr.LVar variable, CExpr source) {								
+		public Forall(String name, CExpr.Register variable, CExpr source) {								
 			this.label = name;
 			this.variable = variable;
 			this.source = source;

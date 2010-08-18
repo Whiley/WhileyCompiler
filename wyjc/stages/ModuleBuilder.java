@@ -328,7 +328,7 @@ public class ModuleBuilder {
 			HashMap<String,Type> env = new HashMap<String,Type>();
 			env.put("$",t.first());
 			String trueLabel = Block.freshLabel();
-			Block constraint = resolveCondition(trueLabel, ut.second(), env,
+			Block constraint = resolveCondition(trueLabel, ut.second(), 0, env,
 					new HashMap());
 			constraint.add(new Code.Fail("type constraint not satisfied"), ut
 					.second().attribute(Attribute.Source.class));
@@ -364,7 +364,7 @@ public class ModuleBuilder {
 			Block blk = null;
 			if(p.second() != null) {
 				blk = new Block();
-				CExpr.LVar reg = CExpr.REG(p.first(),0);
+				CExpr.Register reg = CExpr.REG(p.first(),0);
 				// FIXME: need some line number information here?			
 				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
@@ -378,7 +378,7 @@ public class ModuleBuilder {
 			String label = Block.freshLabel();			
 			Block blk = null;
 			if(p.second() != null) {
-				CExpr.LVar reg = CExpr.REG(p.first(),0);
+				CExpr.Register reg = CExpr.REG(p.first(),0);
 				// FIXME: need some line number information here?			
 				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt,"$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p.second())));
@@ -532,8 +532,8 @@ public class ModuleBuilder {
 				
 		if (fd.precondition != null) {			
 			String trueLabel = Block.freshLabel();
-			Block tmp = resolveCondition(trueLabel, fd.precondition, environment,
-					declared);
+			Block tmp = resolveCondition(trueLabel, fd.precondition, 0,
+					environment, declared);
 			tmp.add(new Code.Fail("function precondition not satisfied"),
 					fd.precondition.attribute(Attribute.Source.class));
 			tmp.add(new Code.Label(trueLabel));			
@@ -547,8 +547,8 @@ public class ModuleBuilder {
 		if (fd.postcondition != null) {
 			environment.put("$", ret.first());
 			String trueLabel = Block.freshLabel();
-			Block tmp = resolveCondition(trueLabel, fd.postcondition, environment,
-					declared);
+			Block tmp = resolveCondition(trueLabel, fd.postcondition, 0,
+					environment, declared);
 			tmp.add(new Code.Fail("function postcondition not satisfied"),
 					fd.postcondition.attribute(Attribute.Source.class));
 			tmp.add(new Code.Label(trueLabel));
@@ -563,9 +563,11 @@ public class ModuleBuilder {
 		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 		
 		Block blk = new Block();
-		determineShadows(postcondition,parameterNames,tf,blk);				
+		
+		// free reg determines the first free register.
+		int freeReg = determineShadows(postcondition,parameterNames,tf,blk);				
 		for (Stmt s : fd.statements) {			
-			blk.addAll(resolve(s, fd, environment, declared));
+			blk.addAll(resolve(s, freeReg, fd, environment, declared));
 		}												
 		
 		if(tf.ret == Type.T_VOID) {
@@ -585,9 +587,10 @@ public class ModuleBuilder {
 	 * 
 	 * @param f
 	 */
-	protected void determineShadows(Block postcondition,
+	protected int determineShadows(Block postcondition,
 			List<String> parameterNames, Type.Fun ft, Block body) {
 		shadows.clear();
+		int freeReg = 0;
 		if(postcondition != null) {
 			HashMap<String,Type> binding = new HashMap<String,Type>();
 			for(int i=0;i!=parameterNames.size();++i) {
@@ -601,8 +604,8 @@ public class ModuleBuilder {
 			
 			for (CExpr.Variable v : uses) {
 				if (!v.name.equals("$")) {
-					CExpr.LVar shadow = CExpr.VAR(binding.get(v.name), "$"
-							+ v.name);
+					CExpr.LVar shadow = CExpr.REG(binding.get(v.name),
+							freeReg++);
 					shadows.put(v.name, shadow);
 					Code code = new Code.Assign(shadow, CExpr.VAR(binding
 							.get(v.name), v.name));
@@ -610,35 +613,37 @@ public class ModuleBuilder {
 				}
 			}			
 		}		
+		return freeReg;
 	}
 	
-	public Block resolve(Stmt stmt, FunDecl fd, HashMap<String, Type> environment,
+	public Block resolve(Stmt stmt, int freeReg, FunDecl fd,
+			HashMap<String, Type> environment,
 			HashMap<String,Pair<Type,Block>> declared) {			
 		try {
 			if(stmt instanceof VarDecl) {
-				return resolve((VarDecl)stmt, environment, declared);
+				return resolve((VarDecl)stmt, freeReg, environment, declared);
 			} else if(stmt instanceof Assign) {
-				return resolve((Assign)stmt, environment, declared);
+				return resolve((Assign)stmt, freeReg, environment, declared);
 			} else if(stmt instanceof Assert) {
-				return resolve((Assert)stmt, environment, declared);
+				return resolve((Assert)stmt, freeReg, environment, declared);
 			} else if(stmt instanceof Return) {
-				return resolve((Return)stmt, fd, environment, declared);
+				return resolve((Return)stmt, freeReg, fd, environment, declared);
 			} else if(stmt instanceof Debug) {
-				return resolve((Debug)stmt, environment, declared);
+				return resolve((Debug)stmt, freeReg, environment, declared);
 			} else if(stmt instanceof IfElse) {
-				return resolve((IfElse)stmt, fd, environment, declared);
+				return resolve((IfElse)stmt, freeReg, fd, environment, declared);
 			} else if(stmt instanceof Invoke) {
-				Pair<CExpr,Block> p = resolve(0, (Invoke)stmt, environment, declared);
+				Pair<CExpr,Block> p = resolve(freeReg, (Invoke)stmt, environment, declared);
 				Block blk = p.second();
 				blk.add(new Code.Assign(null, p.first()), stmt
 						.attribute(Attribute.Source.class));
 				return blk;
 			} else if(stmt instanceof Spawn) {
-				return resolve(0, (UnOp)stmt, environment, declared).second();
+				return resolve(freeReg, (UnOp)stmt, environment, declared).second();
 			} else if(stmt instanceof ExternJvm) {	
-				return resolve((ExternJvm)stmt, fd, environment, declared);
+				return resolve((ExternJvm)stmt, freeReg, fd, environment, declared);
 			} else if(stmt instanceof Skip) {	
-				return resolve((Skip)stmt, fd, environment, declared);				
+				return resolve((Skip)stmt, freeReg, fd, environment, declared);				
 			} else {
 				syntaxError("unknown statement encountered: "
 						+ stmt.getClass().getName(), fd.name, stmt);				
@@ -653,7 +658,7 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Block resolve(VarDecl s, HashMap<String, Type> environment,
+	protected Block resolve(VarDecl s, int freeReg, HashMap<String, Type> environment,
 			HashMap<String,Pair<Type,Block>> declared) throws ResolveError {
 		Expr init = s.initialiser;
 		Pair<Type,Block> tb = resolve(s.type);
@@ -665,7 +670,7 @@ public class ModuleBuilder {
 		}
 		Block blk = new Block();
 		if(init != null) {
-			Pair<CExpr,Block> init_tb = resolve(0, init,environment, declared);
+			Pair<CExpr,Block> init_tb = resolve(freeReg, init,environment, declared);
 			Type init_t = init_tb.first().type();
 			checkIsSubtype(type,init_t,init);
 			environment.put(s.name,init_t);
@@ -686,9 +691,10 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(Assign s, HashMap<String, Type> environment,
-			HashMap<String,Pair<Type,Block>> declared) {
-		
+	protected Block resolve(Assign s, int freeReg,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+
 		Block blk = new Block();		
 		if (s.lhs instanceof Variable) {
 			// perform type inference as a result of this assignment
@@ -697,7 +703,7 @@ public class ModuleBuilder {
 			if (declared_t == null) {
 				syntaxError("unknown variable", filename, v);
 			}
-			Pair<CExpr, Block> rhs_tb = resolve(0, s.rhs, environment, declared);
+			Pair<CExpr, Block> rhs_tb = resolve(freeReg, s.rhs, environment, declared);
 			Type rhs_t = rhs_tb.first().type();
 			checkIsSubtype(declared_t, rhs_t, s.rhs);
 			environment.put(v.var, rhs_t);
@@ -706,9 +712,9 @@ public class ModuleBuilder {
 					.attribute(Attribute.Source.class));
 		} else if(s.lhs instanceof ListAccess) {
 			ListAccess la = (ListAccess) s.lhs;
-			Pair<CExpr,Block> src_tb = resolve(0, la.src, environment, declared);			
-			Pair<CExpr,Block> index_tb = resolve(1, la.index, environment, declared);
-			Pair<CExpr,Block> rhs_tb = resolve(2, s.rhs, environment, declared);			
+			Pair<CExpr,Block> src_tb = resolve(freeReg, la.src, environment, declared);			
+			Pair<CExpr,Block> index_tb = resolve(freeReg+1, la.index, environment, declared);
+			Pair<CExpr,Block> rhs_tb = resolve(freeReg+2, s.rhs, environment, declared);			
 			Type.List la_t = checkType(src_tb.first().type(),Type.List.class,la.src);
 			checkIsSubtype(la_t.element,rhs_tb.first().type(),s.rhs);
 			checkIsSubtype(Type.T_INT,index_tb.first().type(),la.index);
@@ -720,8 +726,8 @@ public class ModuleBuilder {
 					.attribute(Attribute.Source.class));		
 		} else if(s.lhs instanceof TupleAccess) {
 			TupleAccess la = (TupleAccess) s.lhs;
-			Pair<CExpr,Block> src_tb = resolve(0, la.lhs, environment, declared);			
-			Pair<CExpr,Block> rhs_tb = resolve(1, s.rhs, environment, declared);	
+			Pair<CExpr,Block> src_tb = resolve(freeReg, la.lhs, environment, declared);			
+			Pair<CExpr,Block> rhs_tb = resolve(freeReg + 1, s.rhs, environment, declared);	
 			// FIXME: problem with effective tuple types I think ?
 			Type.Tuple la_t = checkType(src_tb.first().type(),Type.Tuple.class,la.lhs);
 			Type field_t = la_t.types.get(la.name);
@@ -753,22 +759,23 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(Assert s, HashMap<String, Type> environment,
+	protected Block resolve(Assert s, int freeReg, HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		String lab = Block.freshLabel();
-		Block blk = resolveCondition(lab, s.expr, environment, declared);
+		Block blk = resolveCondition(lab, s.expr, freeReg, environment,
+				declared);
 		blk.add(new Code.Fail("assertion failed"),s
 				.attribute(Attribute.Source.class));
 		blk.add(new Code.Label(lab));
 		return blk;
 	}
 
-	protected Block resolve(Return s, FunDecl fd,
+	protected Block resolve(Return s, int freeReg, FunDecl fd,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		
 		if (s.expr != null) {			
-			Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
+			Pair<CExpr, Block> t = resolve(freeReg, s.expr, environment, declared);
 			Type.Fun ft = fd.attribute(Attributes.Fun.class).type;
 			checkIsSubtype(ft.ret, t.first().type(), s.expr);
 			Block blk = new Block();
@@ -783,8 +790,8 @@ public class ModuleBuilder {
 				// FIXME: need to handle shadows!				
 				String trueLabel = Block.freshLabel();
 				environment.put("$",ft.ret);
-				Block tmp = resolveCondition(trueLabel, fd.postcondition, environment,
-						declared);
+				Block tmp = resolveCondition(trueLabel, fd.postcondition,
+						freeReg, environment, declared);
 				if(postcondition == null) {
 					postcondition = tmp;
 				} else {
@@ -800,7 +807,9 @@ public class ModuleBuilder {
 				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 				binding.put("$",r);				
 				binding.putAll(shadows);
-				blk.addAll(Block.relabel(Block.substitute(binding, postcondition)));	
+				postcondition = Block.registerShift(freeReg, postcondition);
+				postcondition = Block.substitute(binding, postcondition);
+				blk.addAll(Block.relabel(postcondition));	
 			}
 			
 			// Second, check 
@@ -816,7 +825,7 @@ public class ModuleBuilder {
 		}
 	}
 	
-	protected Block resolve(ExternJvm s, FunDecl fd,
+	protected Block resolve(ExternJvm s, int freeReg, FunDecl fd,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		Block blk = new Block();
@@ -824,7 +833,7 @@ public class ModuleBuilder {
 				.attribute(Attribute.Source.class));
 		return blk;
 	}
-	protected Block resolve(Skip s, FunDecl fd,
+	protected Block resolve(Skip s, int freeReg, FunDecl fd,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		Block blk = new Block();
@@ -833,17 +842,17 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(Debug s, HashMap<String, Type> environment,
+	protected Block resolve(Debug s, int freeReg,
+			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<CExpr, Block> t = resolve(0, s.expr, environment, declared);
+		Pair<CExpr, Block> t = resolve(freeReg, s.expr, environment, declared);
 		checkIsSubtype(Type.T_LIST(Type.T_INT), t.first().type(), s.expr);
 		Block blk = t.second();
-		blk.add(new Code.Debug(t.first()),s
-				.attribute(Attribute.Source.class));
+		blk.add(new Code.Debug(t.first()), s.attribute(Attribute.Source.class));
 		return blk;
 	}
 
-	protected Block resolve(IfElse s, FunDecl fd,
+	protected Block resolve(IfElse s, int freeReg, FunDecl fd,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		String falseLab = Block.freshLabel();
@@ -851,7 +860,7 @@ public class ModuleBuilder {
 				.freshLabel();
 		HashMap<String, Type> tenv = new HashMap<String,Type>(environment);
 		Block blk = resolveCondition(falseLab, invert(s.condition),
-				tenv, declared);
+				freeReg, tenv, declared);
 
 		// The form of type inference that i'm performing here is quite limited.
 		// In principle, I would like to perform more interesting forms of type
@@ -863,7 +872,7 @@ public class ModuleBuilder {
 		HashMap<String, Pair<Type, Block>> tdec = new HashMap<String, Pair<Type, Block>>(
 				declared);
 		for (Stmt st : s.trueBranch) {
-			blk.addAll(resolve(st, fd, tenv, tdec));
+			blk.addAll(resolve(st, freeReg, fd, tenv, tdec));
 		}
 		if (!s.falseBranch.isEmpty()) {
 			blk.add(new Code.Goto(exitLab));
@@ -872,7 +881,7 @@ public class ModuleBuilder {
 			HashMap<String, Pair<Type, Block>> fdec = new HashMap<String, Pair<Type, Block>>(
 					declared);
 			for (Stmt st : s.falseBranch) {
-				blk.addAll(resolve(st, fd, fenv, fdec));
+				blk.addAll(resolve(st, freeReg, fd, fenv, fdec));
 			}
 		}
 
@@ -891,27 +900,27 @@ public class ModuleBuilder {
 	 * @param declared
 	 * @return
 	 */
-	protected Block resolveCondition(String target, Expr e,
+	protected Block resolveCondition(String target, Expr e, int freeReg,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		try {
 			if (e instanceof Constant) {
-				return resolveCondition(target,(Constant)e, environment, declared);
+				return resolveCondition(target,(Constant)e, freeReg, environment, declared);
 			} else if (e instanceof Variable) {
-				return resolveCondition(target,(Variable)e, environment, declared);
+				return resolveCondition(target,(Variable)e, freeReg, environment, declared);
 			} else if (e instanceof BinOp) {
-				return resolveCondition(target,(BinOp)e, environment, declared);
+				return resolveCondition(target,(BinOp)e, freeReg, environment, declared);
 			} else if (e instanceof UnOp) {
-				return resolveCondition(target,(UnOp)e, environment, declared);
+				return resolveCondition(target,(UnOp)e, freeReg, environment, declared);
 			} else if (e instanceof Invoke) {
-				return resolveCondition(target,(Invoke)e, environment, declared);
+				return resolveCondition(target,(Invoke)e, freeReg, environment, declared);
 			} else if (e instanceof TupleAccess) {
-				return resolveCondition(target,(TupleAccess) e, environment, declared);
+				return resolveCondition(target,(TupleAccess) e, freeReg, environment, declared);
 			} else if (e instanceof TupleGen) {
-				return resolveCondition(target,(TupleGen) e, environment, declared);
+				return resolveCondition(target,(TupleGen) e, freeReg, environment, declared);
 			} else if (e instanceof ListAccess) {
-				return resolveCondition(target,(ListAccess) e, environment, declared);
+				return resolveCondition(target,(ListAccess) e, freeReg, environment, declared);
 			} else if (e instanceof Comprehension) {
-				return resolveCondition(target,(Comprehension) e, environment, declared);
+				return resolveCondition(target,(Comprehension) e, freeReg, environment, declared);
 			} else {				
 				syntaxError("expected boolean expression, got: "
 							+ e.getClass().getName(), filename, e);			
@@ -926,6 +935,7 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolveCondition(String target, Constant c,
+			int freeReg,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		checkType(c.value.type(), Type.Bool.class, c);
@@ -940,6 +950,7 @@ public class ModuleBuilder {
 	}
 		
 	protected Block resolveCondition(String target, Variable v,
+			int freeReg,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) throws ResolveError {
 		Type t = environment.get(v.var);
@@ -950,7 +961,7 @@ public class ModuleBuilder {
 			// though.
 			Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 			if(alias != null) {				
-				Pair<CExpr,Block> p = resolve(0,alias.alias,environment,declared);
+				Pair<CExpr,Block> p = resolve(freeReg,alias.alias,environment,declared);
 				blk.addAll(p.second());
 				lhs = p.first();
 			} else {
@@ -980,27 +991,28 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolveCondition(String target, BinOp v,
+			int freeReg,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
 		BOp bop = v.op;		
 		Block blk = new Block();
 		
 		if (bop == BOp.OR) {			
-			blk.addAll(resolveCondition(target, v.lhs, new HashMap(environment), declared));
-			blk.addAll(resolveCondition(target, v.rhs, new HashMap(environment), declared));
+			blk.addAll(resolveCondition(target, v.lhs, freeReg, new HashMap(environment), declared));
+			blk.addAll(resolveCondition(target, v.rhs, freeReg, new HashMap(environment), declared));
 			return blk;
 		} else if (bop == BOp.AND) {			
 			String exitLabel = Block.freshLabel();
-			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), environment,
+			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), freeReg, environment,
 					declared));			
-			blk.addAll(resolveCondition(target, v.rhs, environment, declared));
+			blk.addAll(resolveCondition(target, v.rhs, freeReg, environment, declared));
 			blk.add(new Code.Label(exitLabel));
 			return blk;
 		} else if (bop == BOp.TYPEEQ || bop == BOp.TYPEIMPLIES) {
-			return resolveTypeCondition(target,v,environment,declared);
+			return resolveTypeCondition(target,v,freeReg, environment,declared);
 		}
 		
-		Pair<CExpr,Block> lhs_tb = resolve(0,v.lhs, environment, declared);
-		Pair<CExpr,Block> rhs_tb = resolve(1,v.rhs, environment, declared);
+		Pair<CExpr,Block> lhs_tb = resolve(freeReg,v.lhs,environment, declared);
+		Pair<CExpr,Block> rhs_tb = resolve(freeReg+1,v.rhs, environment, declared);
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
 		Type lhs_t = lhs_tb.first().type();
@@ -1053,10 +1065,11 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Block resolveTypeCondition(String target, BinOp v,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		
-		Pair<CExpr,Block> lhs_tb = resolve(0,v.lhs, environment, declared);				
+	protected Block resolveTypeCondition(String target, BinOp v, int freeReg,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+	
+		Pair<CExpr,Block> lhs_tb = resolve(freeReg,v.lhs, environment, declared);				
 		Pair<Type,Block> rhs_tb = resolve(((Expr.TypeConst) v.rhs).type);
 		Type lhs_t = lhs_tb.first().type();
 		Type rhs_t = rhs_tb.first();
@@ -1102,7 +1115,8 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected void typeInference(CExpr e, Type type, HashMap<String, Type> environment) {		
+	protected void typeInference(CExpr e, Type type,
+			HashMap<String, Type> environment) {		
 		if(e instanceof CExpr.Variable) {
 			CExpr.Variable var = (CExpr.Variable) e; 			
 			environment.put(var.name,type);			
@@ -1119,13 +1133,14 @@ public class ModuleBuilder {
 		}
 	}
 	
-	protected Block resolveCondition(String target, UnOp v,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
+	protected Block resolveCondition(String target, UnOp v, int freeReg,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
 		UOp uop = v.op;		
 		switch(uop) {
 		case NOT:			
 			String label = Block.freshLabel();
-			Block blk = resolveCondition(label,v.mhs,environment,declared);
+			Block blk = resolveCondition(label,v.mhs,freeReg,environment,declared);
 			blk.add(new Code.Goto(target));
 			blk.add(new Code.Label(label));
 			return blk;
@@ -1134,10 +1149,10 @@ public class ModuleBuilder {
 		return null;
 	}	
 	
-	protected Block resolveCondition(String target, ListAccess v,
+	protected Block resolveCondition(String target, ListAccess v, int freeReg,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
+	Pair<CExpr, Block> la = resolve(freeReg, v, environment, declared);
 		CExpr lhs = la.first();
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
@@ -1146,10 +1161,10 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolveCondition(String target, TupleAccess v,
+	protected Block resolveCondition(String target, TupleAccess v, int freeReg,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
+		Pair<CExpr, Block> la = resolve(freeReg, v, environment, declared);
 		CExpr lhs = la.first();
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
@@ -1158,10 +1173,10 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolveCondition(String target, Invoke v,
+	protected Block resolveCondition(String target, Invoke v, int freeReg,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) throws ResolveError {
-		Pair<CExpr, Block> la = resolve(0, v, environment, declared);
+		Pair<CExpr, Block> la = resolve(freeReg, v, environment, declared);
 		CExpr lhs = la.first();
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
@@ -1171,16 +1186,18 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolveCondition(String target, Comprehension e,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
+			int freeReg, HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
 		if(e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
 			syntaxError("expected boolean expression",filename,e);
 		}
 		
 		environment = new HashMap<String,Type>(environment);
 		Block blk = new Block();
-		ArrayList<Pair<CExpr.LVar,CExpr>> sources = new ArrayList();		
+		ArrayList<Pair<CExpr.Register,CExpr>> sources = new ArrayList();
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		for(Pair<String,Expr> src : e.sources) {
-			Pair<CExpr,Block> r = resolve(0,src.second(),environment,declared);
+			Pair<CExpr,Block> r = resolve(freeReg,src.second(),environment,declared);
 			Type src_t = r.first().type();
 			checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,src.second());
 			if(src_t instanceof Type.Set) {
@@ -1190,69 +1207,81 @@ public class ModuleBuilder {
 			} else {
 				// FIXME: missing cases here
 			}
-			sources.add(new Pair(CExpr.VAR(src_t, src.first()), r.first()));
+			CExpr.Register reg = CExpr.REG(src_t,freeReg++);
+			sources.add(new Pair<CExpr.Register,CExpr>(reg, r.first()));
+			binding.put(src.first(),reg);
 			blk.addAll(r.second());
 			environment.put(src.first(), src_t);
 		}
 							
 		ArrayList<String> labels = new  ArrayList<String>();
-		for(Pair<CExpr.LVar, CExpr> ent : sources) {
+		for(Pair<CExpr.Register, CExpr> ent : sources) {
 			String loopLabel = Block.freshLabel();
 			labels.add(loopLabel);
 			blk.add(new Code.Forall(loopLabel, ent.first(), ent.second()), e
 					.attribute(Attribute.Source.class));
 		}
-		if(e.cop == Expr.COp.NONE) { 			
-			String exitLabel = Block.freshLabel();						
-			blk.addAll(resolveCondition(exitLabel,e.condition,environment,declared));
-			for(int i=(labels.size()-1);i>=0;--i) {			
+		if (e.cop == Expr.COp.NONE) {
+			String exitLabel = Block.freshLabel();
+			blk.addAll(resolveCondition(exitLabel, e.condition, freeReg,
+					environment, declared));
+			for (int i = (labels.size() - 1); i >= 0; --i) {
 				blk.add(new Code.End(labels.get(i)));
-			}								
+			}
 			blk.add(new Code.Goto(target));
 			blk.add(new Code.Label(exitLabel));
-		} else { // SOME									
-			blk.addAll(resolveCondition(target,e.condition,environment,declared));
-			for(int i=(labels.size()-1);i>=0;--i) {			
+		} else { // SOME
+			blk.addAll(resolveCondition(target, e.condition, freeReg,
+					environment, declared));
+			for (int i = (labels.size() - 1); i >= 0; --i) {
 				blk.add(new Code.End(labels.get(i)));
-			}		
+			}
 		} // ALL, LONE and ONE will be harder
 				
+		// Finally, we need to substitute the block to rename all occurrences of
+		// the quantified variables to be their actual registers.
+		blk = Block.substitute(binding,blk);
+		
 		return blk;
 	}
-	
+
 	/**
-	 * Target gives the name of the register to use to store the result of this
-	 * expression in.
+	 * Translate an expression in the context of a given type environment. The
+	 * "freeReg" --- free register --- identifies the first free register for
+	 * use as temporary storage. An expression differs from a statement in that
+	 * it may consume a register as part of the translation. Thus, compound
+	 * expressions, such as binop, will save the freeReg of one expression from
+	 * being used when translating a subsequent expression.
 	 * 
-	 * @param target
+	 * @param freeReg
 	 * @param e
 	 * @param environment
 	 * @param declared
 	 * @return
 	 */
-	protected Pair<CExpr, Block> resolve(int target, Expr e,			
+	protected Pair<CExpr, Block> resolve(int freeReg, Expr e,			
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		try {
 			if (e instanceof Constant) {
-				return resolve(target,(Constant)e, environment, declared);
+				return resolve(freeReg,(Constant)e, environment, declared);
 			} else if (e instanceof Variable) {
-				return resolve(target,(Variable)e, environment, declared);
+				return resolve(freeReg,(Variable)e, environment, declared);
 			} else if (e instanceof NaryOp) {
-				return resolve(target,(NaryOp)e, environment, declared);
+				return resolve(freeReg,(NaryOp)e, environment, declared);
 			} else if (e instanceof BinOp) {
-				return resolve(target,(BinOp)e, environment, declared);
+				return resolve(freeReg,(BinOp)e, environment, declared);
 			} else if (e instanceof ListAccess) {
-				return resolve(target,(ListAccess)e, environment, declared);
+				return resolve(freeReg,(ListAccess)e, environment, declared);
 			} else if (e instanceof UnOp) {
-				return resolve(target,(UnOp)e, environment, declared);
+				return resolve(freeReg,(UnOp)e, environment, declared);
 			} else if (e instanceof Invoke) {
-				return resolve(target,(Invoke)e, environment, declared);
+				return resolve(freeReg,(Invoke)e, environment, declared);
 			} else if (e instanceof Comprehension) {
-				return resolve(target,(Comprehension) e, environment, declared);
+				return resolve(freeReg,(Comprehension) e, environment, declared);
 			} else if (e instanceof TupleAccess) {
-				return resolve(target,(TupleAccess) e, environment, declared);
+				return resolve(freeReg,(TupleAccess) e, environment, declared);
 			} else if (e instanceof TupleGen) {
-				return resolve(target,(TupleGen) e, environment, declared);
+				return resolve(freeReg,(TupleGen) e, environment, declared);
 			} else {				
 				syntaxError("unknown expression encountered: "
 							+ e.getClass().getName(), filename,e);			
@@ -1266,13 +1295,13 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Pair<CExpr, Block> resolve(int target, Invoke s,
+	protected Pair<CExpr, Block> resolve(int freeReg, Invoke s,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared)
 			throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block();
 				
-		int idx=target;
+		int idx=freeReg;
 		ArrayList<CExpr> nargs = new ArrayList<CExpr>();
 		
 		Type.Process receiver = null;
@@ -1320,7 +1349,7 @@ public class ModuleBuilder {
 				blk);									
 	}
 			
-	protected Pair<CExpr, Block> resolve(int target, Constant c,
+	protected Pair<CExpr, Block> resolve(int freeReg, Constant c,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		return new Pair<CExpr,Block>(c.value,new Block());
 	}
@@ -1353,9 +1382,9 @@ public class ModuleBuilder {
 		return new Pair<CExpr, Block>(CExpr.VAR(t, v.var), new Block());
 	}		
 
-	protected Pair<CExpr, Block> resolve(int target, UnOp v,
+	protected Pair<CExpr, Block> resolve(int freeReg, UnOp v,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
-		Pair<CExpr,Block> mhs = resolve(target,v.mhs,environment,declared);
+		Pair<CExpr,Block> mhs = resolve(freeReg,v.mhs,environment,declared);
 		Block blk = mhs.second();
 		Type mhs_t = mhs.first().type();
 		switch(v.op) {
@@ -1384,12 +1413,12 @@ public class ModuleBuilder {
 		}		
 	}
 	
-	protected Pair<CExpr, Block> resolve(int target, ListAccess v,
+	protected Pair<CExpr, Block> resolve(int freeReg, ListAccess v,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<CExpr, Block> lhs_tb = resolve(target, v.src, environment,
+		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.src, environment,
 				declared);
-		Pair<CExpr, Block> rhs_tb = resolve(target + 1, v.index, environment,
+		Pair<CExpr, Block> rhs_tb = resolve(freeReg + 1, v.index, environment,
 				declared);
 		Type lhs_t = lhs_tb.first().type();
 		Type rhs_t = rhs_tb.first().type();
@@ -1402,10 +1431,10 @@ public class ModuleBuilder {
 				.first()), blk);
 	}
 	
-	protected Pair<CExpr, Block> resolve(int target, BinOp v,
+	protected Pair<CExpr, Block> resolve(int freeReg, BinOp v,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-	
+
 		// could probably use a range test for this somehow
 		if (v.op == BOp.EQ || v.op == BOp.NEQ || v.op == BOp.LT
 				|| v.op == BOp.LTEQ || v.op == BOp.GT || v.op == BOp.GTEQ
@@ -1413,19 +1442,19 @@ public class ModuleBuilder {
 				|| v.op == BOp.ELEMENTOF || v.op == BOp.AND || v.op == BOp.OR) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			Block blk = resolveCondition(trueLabel, v, environment, declared);
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+			Block blk = resolveCondition(trueLabel, v, freeReg, environment, declared);
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(false)),v.attribute(Attribute.Source.class));
 			blk.add(new Code.Goto(exitLabel));
 			blk.add(new Code.Label(trueLabel));
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)),v.attribute(Attribute.Source.class));
 			blk.add(new Code.Label(exitLabel));
-			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, target), blk);
+			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		}
 		
-		Pair<CExpr,Block> lhs_tb = resolve(target,v.lhs, environment, declared);
-		Pair<CExpr,Block> rhs_tb = resolve(target+1,v.rhs, environment, declared);		
+		Pair<CExpr,Block> lhs_tb = resolve(freeReg,v.lhs, environment, declared);
+		Pair<CExpr,Block> rhs_tb = resolve(freeReg+1,v.rhs, environment, declared);		
 		Type lhs_t = lhs_tb.first().type();
 		Type rhs_t = rhs_tb.first().type();		
 		BOp bop = v.op;
@@ -1466,19 +1495,21 @@ public class ModuleBuilder {
 			return new Pair<CExpr, Block>(r,blk);						
 		} 
 			
-		throw new RuntimeException("NEED TO ADD MORE CASES TO TYPE RESOLUTION BINOP");
+		syntaxError("unknown binary operation encountered",filename,v);
+		return null;
 	}
 	
-	protected Pair<CExpr, Block> resolve(int target, NaryOp v,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {		
-		Block blk = new Block();
+	protected Pair<CExpr, Block> resolve(int freeReg, NaryOp v,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+	Block blk = new Block();
 		if(v.nop == NOp.SUBLIST) {
 			if(v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments",filename,v);
 			}
-			Pair<CExpr,Block> src = resolve(target,v.arguments.get(0), environment, declared);
-			Pair<CExpr,Block> start = resolve(target+1,v.arguments.get(1), environment, declared);
-			Pair<CExpr,Block> end = resolve(target+2,v.arguments.get(2), environment, declared);
+			Pair<CExpr,Block> src = resolve(freeReg,v.arguments.get(0), environment, declared);
+			Pair<CExpr,Block> start = resolve(freeReg+1,v.arguments.get(1), environment, declared);
+			Pair<CExpr,Block> end = resolve(freeReg+2,v.arguments.get(2), environment, declared);
 			checkType(src.first().type(),Type.List.class,v.arguments.get(0));
 			checkType(start.first().type(),Type.Int.class,v.arguments.get(1));
 			checkType(end.first().type(),Type.Int.class,v.arguments.get(2));
@@ -1489,7 +1520,7 @@ public class ModuleBuilder {
 					.first(), end.first());
 			return new Pair<CExpr, Block>(r,blk);			
 		} else {
-			int idx = target;
+			int idx = freeReg;
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			for(Expr e : v.arguments) {				
 				Pair<CExpr,Block> t = resolve(idx++,e, environment, declared);
@@ -1507,30 +1538,32 @@ public class ModuleBuilder {
 		}
 	}
 	
-	protected Pair<CExpr, Block> resolve(int target, Comprehension e,
-			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {				
-		
+	protected Pair<CExpr, Block> resolve(int freeReg, Comprehension e,
+			HashMap<String, Type> environment,
+			HashMap<String, Pair<Type, Block>> declared) {
+	
 		// First, check for boolean cases which are handled mostly by
 		// resolveCondition.
 		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			Block blk = resolveCondition(trueLabel, e, environment, declared);
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+			Block blk = resolveCondition(trueLabel, e, freeReg, environment, declared);
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(false)),e.attribute(Attribute.Source.class));
 			blk.add(new Code.Goto(exitLabel));
 			blk.add(new Code.Label(trueLabel));
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, target), Value
+			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)),e.attribute(Attribute.Source.class));
 			blk.add(new Code.Label(exitLabel));
-			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, target), blk);
+			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		}
 		
 		// Ok, non-boolean case.
 		
 		environment = new HashMap<String,Type>(environment);
-		ArrayList<Pair<CExpr.LVar,CExpr>> sources = new ArrayList();
+		ArrayList<Pair<CExpr.Register,CExpr>> sources = new ArrayList();
 		Block blk = new Block();
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		for(Pair<String,Expr> src : e.sources) {
 			Pair<CExpr,Block> r = resolve(0,src.second(),environment,declared);
 			Type src_t = r.first().type();
@@ -1542,36 +1575,39 @@ public class ModuleBuilder {
 			} else {
 				// FIXME: missing cases here
 			}
-			sources.add(new Pair(CExpr.VAR(src_t, src.first()), r.first()));
+			CExpr.Register reg = CExpr.REG(src_t,freeReg++);
+			sources.add(new Pair<CExpr.Register,CExpr>(reg, r.first()));
+			binding.put(src.first(),reg);						
 			blk.addAll(r.second());
 			environment.put(src.first(), src_t);
 		}
 		
-		Pair<CExpr,Block> value = resolve(target+1,e.value,environment,declared);
+		Pair<CExpr,Block> value = resolve(freeReg+1,e.value,environment,declared);
 		Type type = value.first().type();;
 		CExpr.Register lhs;
 		
 		if(e.cop == Expr.COp.LISTCOMP) { 
-			lhs = CExpr.REG(Type.T_LIST(type),target);
+			lhs = CExpr.REG(Type.T_LIST(type),freeReg);
 			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.LISTGEN)), e
 					.attribute(Attribute.Source.class));
 		} else {
-			lhs = CExpr.REG(Type.T_SET(type),target);			
+			lhs = CExpr.REG(Type.T_SET(type),freeReg);			
 			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.SETGEN)), e
 					.attribute(Attribute.Source.class));
 		}		
 								
 		String continueLabel = Block.freshLabel();
 		ArrayList<String> labels = new  ArrayList<String>();
-		for(Pair<CExpr.LVar, CExpr> ent : sources) {
+		for(Pair<CExpr.Register, CExpr> ent : sources) {
 			String loopLabel = Block.freshLabel();
 			labels.add(loopLabel);
+			
 			blk.add(new Code.Forall(loopLabel, ent.first(), ent.second()), e
 					.attribute(Attribute.Source.class));
 		}
 		if (e.condition != null) {
 			blk.addAll(resolveCondition(continueLabel, invert(e.condition),
-					environment, declared));
+					freeReg, environment, declared));
 			blk.addAll(value.second());
 			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
 					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
@@ -1587,16 +1623,20 @@ public class ModuleBuilder {
 		for(int i=(labels.size()-1);i>=0;--i) {			
 			blk.add(new Code.End(labels.get(i)));
 		}
-				
+		
+		// Finally, we need to substitute the block to rename all occurrences of
+		// the quantified variables to be their actual registers.
+		blk = Block.substitute(binding,blk);		
+		
 		return new Pair<CExpr,Block>(lhs,blk);
 	}
 		
-	protected Pair<CExpr, Block> resolve(int target, TupleGen sg,
+	protected Pair<CExpr, Block> resolve(int freeReg, TupleGen sg,
 			HashMap<String, Type> environment, HashMap<String,Pair<Type,Block>> declared) {
 		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
 		Block blk = new Block();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			Pair<CExpr, Block> tb = resolve(target, e.getValue(), environment,
+			Pair<CExpr, Block> tb = resolve(freeReg, e.getValue(), environment,
 					declared);
 			values.put(e.getKey(), tb.first());
 			blk.addAll(tb.second());
@@ -1604,10 +1644,10 @@ public class ModuleBuilder {
 		return new Pair<CExpr,Block>(CExpr.TUPLE(values),blk);		
 	}
 	
-	protected Pair<CExpr, Block> resolve(int target, TupleAccess sg,
+	protected Pair<CExpr, Block> resolve(int freeReg, TupleAccess sg,
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
-		Pair<CExpr, Block> lhs = resolve(target, sg.lhs, environment, declared);
+		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs, environment, declared);
 		// FIXME: will need to determine effective tuple type here
 		Type.Tuple ett = Type.effectiveTupleType(lhs.first().type());		
 		Type.Tuple tup = checkType(ett, Type.Tuple.class, sg.lhs);

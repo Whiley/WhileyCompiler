@@ -479,7 +479,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			{
 				int idx = reader.read_u2();
 				Constant.Utf8 label = (Constant.Utf8) constantPool.get(idx);
-				CExpr.LVar var = (CExpr.LVar) readCExpr(reader,constantPool);
+				CExpr.Register var = (CExpr.Register) readCExpr(reader,constantPool);
 				CExpr src = readCExpr(reader,constantPool);
 				return new Code.Forall(label.str,var,src);
 			}	
