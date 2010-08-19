@@ -1,4 +1,4 @@
-package wyil.dfa;
+package wyil.util.dfa;
 
 import java.util.*;
 import wyil.lang.*;

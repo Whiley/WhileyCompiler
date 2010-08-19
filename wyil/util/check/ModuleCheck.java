@@ -1,4 +1,4 @@
-package wyil.check;
+package wyil.util.check;
 
 import wyil.lang.Module;
 

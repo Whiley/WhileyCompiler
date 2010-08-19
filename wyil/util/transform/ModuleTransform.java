@@ -1,4 +1,4 @@
-package wyil.transform;
+package wyil.util.transform;
 
 import wyil.lang.Module;
 

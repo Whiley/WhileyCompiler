@@ -828,8 +828,7 @@ public class ModuleBuilder {
 			Block postcondition = ret.second();
 			
 			// First, check direct post condition.
-			if(fd.postcondition != null) {
-				// FIXME: need to handle shadows!				
+			if(fd.postcondition != null) {			
 				String trueLabel = Block.freshLabel();
 				environment.put("$",ft.ret);
 				Block tmp = resolveCondition(trueLabel, fd.postcondition,

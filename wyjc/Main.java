@@ -23,9 +23,9 @@ import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.transform.*;
-import wyil.check.*;
 import wyil.util.*;
+import wyil.util.check.*;
+import wyil.util.transform.*;
 import wyjc.compiler.*;
 import wyjc.compiler.Compiler;
 import wyjc.util.*;

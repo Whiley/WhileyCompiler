@@ -1,8 +1,8 @@
 package wyjc.compiler;
 
 import wyil.lang.Module;
-import wyil.transform.ModuleTransform;
 import wyil.util.Logger;
+import wyil.util.transform.ModuleTransform;
 
 public class WyilTransform implements Compiler.Stage {
 	private String name;

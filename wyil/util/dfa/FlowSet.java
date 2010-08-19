@@ -1,4 +1,4 @@
-package wyil.dfa;
+package wyil.util.dfa;
 
 public interface FlowSet {
 

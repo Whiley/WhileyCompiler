@@ -1,4 +1,4 @@
-package wyil.dfa;
+package wyil.util.dfa;
 
 import java.util.*;
 
@@ -12,16 +12,16 @@ import java.util.*;
  * @author djp
  * 
  */
-public class IntersectionFlowSet<T> implements FlowSet, Cloneable, Iterable<T> {
+public class UnionFlowSet<T> implements FlowSet, Cloneable, Iterable<T> {
 	private HashSet<T> data = new HashSet<T>();
 	
-	public IntersectionFlowSet() {}
-	public IntersectionFlowSet(Collection<? extends T> src) { 
+	public UnionFlowSet() {}
+	public UnionFlowSet(Collection<? extends T> src) { 
 		data.addAll(src);
 	}
 	
-	public IntersectionFlowSet<T> clone() {
-		IntersectionFlowSet<T> r = new IntersectionFlowSet<T>();
+	public UnionFlowSet<T> clone() {
+		UnionFlowSet<T> r = new UnionFlowSet<T>();
 		r.data.addAll(this.data);
 		return r;
 	}
@@ -30,16 +30,16 @@ public class IntersectionFlowSet<T> implements FlowSet, Cloneable, Iterable<T> {
 		return data.iterator();
 	}
 	
-	public IntersectionFlowSet<T> join(FlowSet _fs) {		
-		if(_fs instanceof IntersectionFlowSet) {
-			IntersectionFlowSet<T> fs = (IntersectionFlowSet<T>) _fs;
-			return intersect(fs);	
+	public UnionFlowSet<T> join(FlowSet _fs) {		
+		if(_fs instanceof UnionFlowSet) {
+			UnionFlowSet<T> fs = (UnionFlowSet<T>) _fs;
+			return union(fs);			
 		}
 		return null;
 	}
 	
-	public IntersectionFlowSet<T> union(IntersectionFlowSet fs) {						
-		IntersectionFlowSet<T> tmp = (IntersectionFlowSet<T>) clone();
+	public UnionFlowSet<T> union(UnionFlowSet<T> fs) {							
+		UnionFlowSet<T> tmp = (UnionFlowSet<T>) clone();
 
 		if(tmp.data.addAll(fs.data)) {				
 			return fs;
@@ -48,24 +48,20 @@ public class IntersectionFlowSet<T> implements FlowSet, Cloneable, Iterable<T> {
 		}					
 	}
 	
-	public IntersectionFlowSet<T> intersect(IntersectionFlowSet fs) {						
-		IntersectionFlowSet<T> tmp = new IntersectionFlowSet<T>();		
-		for(T i : data) {			
+	public UnionFlowSet<T> intersect(UnionFlowSet _fs) {				
+		UnionFlowSet<T> fs = (UnionFlowSet<T>) _fs;
+		UnionFlowSet<T> tmp = new UnionFlowSet<T>();
+		for(T i : data) {
 			if(fs.contains(i)) {
 				tmp.data.add(i);
-			} 
+			}
 		}
-		
-		if(tmp.size() == size()) {
-			return this;
-		} else {		
-			return tmp;
-		}
+		return tmp;		
 	}
 	
-	public IntersectionFlowSet<T> add(T s) {
+	public UnionFlowSet<T> add(T s) {
 		if(!data.contains(s)) {
-			IntersectionFlowSet r = (IntersectionFlowSet) this.clone();			
+			UnionFlowSet r = (UnionFlowSet) this.clone();			
 			if(r.data.add(s)) {
 				return r;
 			}
@@ -73,9 +69,9 @@ public class IntersectionFlowSet<T> implements FlowSet, Cloneable, Iterable<T> {
 		return this;		
 	}
 	
-	public IntersectionFlowSet<T> addAll(Collection<T> s) {
+	public UnionFlowSet<T> addAll(Collection<T> s) {
 		if(!data.contains(s)) {
-			IntersectionFlowSet r = (IntersectionFlowSet) this.clone();			
+			UnionFlowSet r = (UnionFlowSet) this.clone();			
 			if(r.data.addAll(s)) {
 				return r;	
 			}			
@@ -83,9 +79,9 @@ public class IntersectionFlowSet<T> implements FlowSet, Cloneable, Iterable<T> {
 		return this;		
 	}	
 	
-	public IntersectionFlowSet<T> remove(T s) {
+	public UnionFlowSet<T> remove(T s) {
 		if(data.contains(s)) {
-			IntersectionFlowSet r = (IntersectionFlowSet) this.clone();			
+			UnionFlowSet r = (UnionFlowSet) this.clone();			
 			if(r.data.remove(s)) {
 				return r;	
 			}			
@@ -103,8 +99,8 @@ public class IntersectionFlowSet<T> implements FlowSet, Cloneable, Iterable<T> {
 	}
 	
 	public boolean equals(Object o) {
-		if(o instanceof IntersectionFlowSet) {
-			IntersectionFlowSet ufs = (IntersectionFlowSet) o;
+		if(o instanceof UnionFlowSet) {
+			UnionFlowSet ufs = (UnionFlowSet) o;
 			return data.equals(ufs.data);
 		}
 		return false;

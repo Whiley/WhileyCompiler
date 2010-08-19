@@ -1,9 +1,9 @@
-package wyil.check;
+package wyil.util.check;
 
 import java.util.*;
 import wyil.util.*;
+import wyil.util.dfa.*;
 import wyil.lang.*;
-import wyil.dfa.*;
 import static wyil.util.SyntaxError.*;
 
 /**
