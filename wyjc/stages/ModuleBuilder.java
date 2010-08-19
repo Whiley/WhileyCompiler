@@ -312,7 +312,7 @@ public class ModuleBuilder {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());			
-			return new Pair<Type,Block>(td.type(),td.constraint());
+			return new Pair<Type,Block>(td.type(),Block.relabel(td.constraint()));
 		}
 
 		// following is needed to terminate any recursion
@@ -417,6 +417,7 @@ public class ModuleBuilder {
 				} else {
 					bounds.addAll(((Type.Union)bt).bounds);
 				}
+				// FIXME: bug here!
 			}
 			if(bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),null);
@@ -525,7 +526,7 @@ public class ModuleBuilder {
 					precondition = new Block();
 				}				
 				HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
-				binding.put("$",CExpr.VAR(t.first(),p.name));				
+				binding.put("$",CExpr.VAR(t.first(),p.name));					
 				precondition.addAll(Block.relabel(Block.substitute(binding, t
 						.second())));				
 			}
@@ -1736,11 +1737,13 @@ public class ModuleBuilder {
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				Pair<Type,Block> p = resolve(e.getValue());
 				types.put(e.getKey(),p.first());
-				if(p.second() != null) {
-					if(blk == null) { blk = new Block(); }
-					HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+				if (p.second() != null) {
+					if (blk == null) {
+						blk = new Block();
+					}
+					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 					binding.put("$", CExpr.TUPLEACCESS(tmp, e.getKey()));
-					blk.addAll(Block.substitute(binding,p.second()));
+					blk.addAll(Block.substitute(binding, p.second()));
 				}
 			}			
 			Type type = Type.T_TUPLE(types);
@@ -1774,6 +1777,7 @@ public class ModuleBuilder {
 				} else {
 					bounds.addAll(((Type.Union)bt).bounds);
 				}
+				// FIXME: bug here
 			}
 			if(bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),null);
