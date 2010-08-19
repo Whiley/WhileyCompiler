@@ -95,7 +95,7 @@ public abstract class Code {
 			return new Debug(CExpr.substitute(binding, a.rhs));
 		} else if(c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
-			return new IfGoto(u.type, u.op, CExpr.substitute(binding, u.lhs),
+			return new IfGoto(u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
 		} else if(c instanceof Return) {
 			Return a = (Return) c;
@@ -134,7 +134,7 @@ public abstract class Code {
 			return new Debug((LVal) CExpr.registerShift(shift, a.rhs));
 		} else if (c instanceof IfGoto) {
 			IfGoto u = (IfGoto) c;
-			return new IfGoto(u.type, u.op, CExpr.registerShift(shift, u.lhs),
+			return new IfGoto(u.op, CExpr.registerShift(shift, u.lhs),
 					CExpr.registerShift(shift, u.rhs), u.target);
 		} else if(c instanceof Return) {
 			Return a = (Return) c;
@@ -269,28 +269,26 @@ public abstract class Code {
 	 */
 	public final static class IfGoto extends Code {
 		public final COP op;
-		public final Type type;
 		public final CExpr lhs;
 		public final CExpr rhs;
 		public final String target;
 
-		public IfGoto(Type type, COP op, CExpr lhs, CExpr rhs, String target) {
-			this.op = op;
-			this.type = type;
+		public IfGoto(COP op, CExpr lhs, CExpr rhs, String target) {
+			this.op = op;			
 			this.lhs = lhs;
 			this.rhs = rhs;
 			this.target = target;
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + type.hashCode() + lhs.hashCode()
+			return op.hashCode() + lhs.hashCode()
 					+ rhs.hashCode() + target.hashCode();
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof IfGoto) {
 				IfGoto ig = (IfGoto) o;
-				return op == ig.op && type.equals(ig.type)
+				return op == ig.op 
 						&& lhs.equals(ig.lhs) && rhs.equals(ig.rhs)
 						&& target.equals(ig.target);
 			}

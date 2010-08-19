@@ -202,7 +202,7 @@ public final class Block implements Iterable<Stmt> {
 					target = freshLabel();
 					nlabels.put(g.target, target);
 				}
-				c = new Code.IfGoto(g.type, g.op, g.lhs, g.rhs, target);
+				c = new Code.IfGoto(g.op, g.lhs, g.rhs, target);
 			} else if (c instanceof Code.Forall) {
 				Code.Forall l = (Code.Forall) c;
 				String label = nlabels.get(l.label);

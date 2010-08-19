@@ -132,7 +132,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 				c = new Debug(transform(a.rhs, stmt, inserts));
 			} else if (c instanceof IfGoto) {
 				IfGoto u = (IfGoto) c;
-				c = new IfGoto(u.type, u.op, transform(u.lhs, stmt, inserts),
+				c = new IfGoto(u.op, transform(u.lhs, stmt, inserts),
 						transform(u.rhs, stmt, inserts), u.target);
 			} else if (c instanceof Return) {
 				Return a = (Return) c;

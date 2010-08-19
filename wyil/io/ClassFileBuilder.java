@@ -277,8 +277,8 @@ public class ClassFileBuilder {
 			translate(c.lhs,slots,bytecodes);			
 			translate(c.rhs,slots,bytecodes);
 		}
-		JvmType type = convertType(c.type);
-		if(c.type == Type.T_BOOL) {
+		JvmType type = convertType(c.lhs.type());
+		if(c.lhs.type() == Type.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an
 			// object on the JVM stack. Therefore, we need to use the "if_cmp"
 			// bytecode, rather than calling .equals() and using "if" bytecode.
@@ -567,7 +567,8 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(c.field));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));		
-		Type et = c.type();
+		System.out.println("GOT: " + c.lhs.type());
+		Type et = c.type();		
 		addReadConversion(et,bytecodes);
 	}
 
@@ -1038,7 +1039,7 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"booleanValue", ftype, Bytecode.VIRTUAL));
-		} else {
+		} else {			
 			bytecodes.add(new Bytecode.CheckCast(convertType(et)));
 		}
 	}

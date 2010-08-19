@@ -154,7 +154,7 @@ public class ModuleBuilder {
 					String label = Block.freshLabel();
 					CExpr var = CExpr.VAR(st.element,"$");
 					Attribute attr = exprs.get(k).attribute(Attribute.Source.class); 
-					block.add(new Code.IfGoto(st.element, Code.COP.ELEMOF, var, v, label),attr);
+					block.add(new Code.IfGoto(Code.COP.ELEMOF, var, v, label),attr);
 					block.add(new Code.Fail("type constraint not satisfied"),attr);
 					block.add(new Code.Label(label));
 					types.put(k, new Pair<Type,Block>(st.element, block));
@@ -429,8 +429,8 @@ public class ModuleBuilder {
 				}
 				if (blk != null) {
 					nextLabel = Block.freshLabel();
-					blk.add(new Code.IfGoto(Type.T_VOID, Code.COP.NSUBTYPEEQ,
-							var, Value.V_TYPE(p.first()), nextLabel));
+					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
+							.V_TYPE(p.first()), nextLabel));
 					blk.addAll(Block.chain(nextLabel, p.second()));
 					blk.add(new Code.Goto(exitLabel));
 				} else {
@@ -1026,9 +1026,8 @@ public class ModuleBuilder {
 			lhs = CExpr.VAR(t,v.var);
 		}
 		checkType(t, Type.Bool.class, v);		
-		blk.add(new Code.IfGoto(t, Code.COP.EQ, lhs, Value
-				.V_BOOL(true), target),v
-				.attribute(Attribute.Source.class));
+		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
+				v.attribute(Attribute.Source.class));
 		return blk;
 	}
 	
@@ -1070,20 +1069,20 @@ public class ModuleBuilder {
 				|| bop == BOp.GTEQ) {
 			checkIsSubtype(Type.T_REAL, lhs_t, v);
 			checkIsSubtype(Type.T_REAL, rhs_t, v);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs, rhs, target),v
 					.attribute(Attribute.Source.class));
 			return blk;
 		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
 			checkIsSubtype(Type.T_SET(Type.T_ANY), lhs_t, v);
 			checkIsSubtype(Type.T_SET(Type.T_ANY), rhs_t, v);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs, rhs, target),v
 					.attribute(Attribute.Source.class));
 			return blk;
 		} else if (bop == BOp.EQ || bop == BOp.NEQ) {
 			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
 				syntaxError("Cannot compare types", filename, v);
 			}
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs, rhs, target),v
 					.attribute(Attribute.Source.class));
 			return blk;
 		} else if (bop == BOp.ELEMENTOF) {
@@ -1101,7 +1100,7 @@ public class ModuleBuilder {
 				syntaxError("Cannot compare types", filename, v);
 			}
 			lub = Type.leastUpperBound(lhs_t, element);
-			blk.add(new Code.IfGoto(lub, OP2COP(bop, v), lhs, rhs, target),v
+			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs, rhs, target),v
 					.attribute(Attribute.Source.class));
 			return blk;
 		}
@@ -1126,7 +1125,7 @@ public class ModuleBuilder {
 		String exitLabel = Block.freshLabel();
 		String trueLabel = Block.freshLabel();
 		blk.addAll(lhs_tb.second());
-		blk.add(new Code.IfGoto(Type.T_META, Code.COP.SUBTYPEEQ,
+		blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ,
 				lhs_tb.first(), Value.V_TYPE(rhs_tb.first()), trueLabel),v
 				.attribute(Attribute.Source.class));
 		
@@ -1201,7 +1200,7 @@ public class ModuleBuilder {
 		CExpr lhs = la.first();
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
-		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
+		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value
 				.V_BOOL(true), target),v.attribute(Attribute.Source.class));
 		return blk;
 	}
@@ -1213,7 +1212,7 @@ public class ModuleBuilder {
 		CExpr lhs = la.first();
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
-		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
+		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value
 				.V_BOOL(true), target),v.attribute(Attribute.Source.class));
 		return blk;
 	}
@@ -1225,7 +1224,7 @@ public class ModuleBuilder {
 		CExpr lhs = la.first();
 		checkType(lhs.type(), Type.Bool.class, v);
 		Block blk = la.second();
-		blk.add(new Code.IfGoto(lhs.type(), Code.COP.EQ, lhs, Value
+		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value
 				.V_BOOL(true), target),v.attribute(Attribute.Source.class));
 		return blk;
 	}
@@ -1817,7 +1816,7 @@ public class ModuleBuilder {
 				}
 				if (blk != null) {
 					nextLabel = Block.freshLabel();
-					blk.add(new Code.IfGoto(Type.T_VOID, Code.COP.NSUBTYPEEQ,
+					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ,
 							var, Value.V_TYPE(p.first()), nextLabel));
 					blk.addAll(Block.chain(nextLabel, p.second()));
 					blk.add(new Code.Goto(exitLabel));

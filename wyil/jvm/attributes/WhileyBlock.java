@@ -178,8 +178,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 		} else if(c instanceof IfGoto) {
 			IfGoto a = (IfGoto) c;			
-			writer.write_u1(IFGOTO);
-			WhileyType.write(a.type, writer, constantPool);
+			writer.write_u1(IFGOTO);			
 			writer.write_u1(COP2INT(a.op));
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 			write(a.lhs,writer,constantPool);
@@ -466,14 +465,13 @@ public class WhileyBlock implements BytecodeAttribute {
 				return new Code.Fail(target.str);
 			}
 			case IFGOTO:
-			{							
-				Type type = WhileyType.Reader.readType(reader, constantPool);			
+			{													
 				int cop = reader.read_u1();
 				int idx = reader.read_u2();
 				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);				
 				CExpr lhs = readCExpr(reader,constantPool);
 				CExpr rhs = readCExpr(reader,constantPool);
-				return new Code.IfGoto(type,INT2COP(cop),lhs,rhs,target.str);
+				return new Code.IfGoto(INT2COP(cop),lhs,rhs,target.str);
 			}
 			case FORALL:
 			{
