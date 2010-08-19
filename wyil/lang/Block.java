@@ -129,10 +129,11 @@ public final class Block implements Iterable<Stmt> {
 	 * 
 	 * @param from
 	 * @param to
-	 * @param block
+	 * @param block --- maybe null, in which case return is null
 	 * @return
 	 */
 	public static Block substitute(HashMap<String, CExpr> binding, Block block) {
+		if(block == null) { return null; }
 		Block r = new Block();
 		for (Stmt s : block) {			
 			r.add(Code.substitute(binding, s.code),s.attributes());
@@ -147,10 +148,11 @@ public final class Block implements Iterable<Stmt> {
 	 * that the registers of blocks inserted into other blocks do not collide.
 	 * 
 	 * @param shift --- amount to shift
-	 * @param block
+	 * @param block --- maybe null, in which case return is null
 	 * @return
 	 */
 	public static Block registerShift(int shift, Block block) {
+		if(block == null) { return null; }
 		Block r = new Block();
 		for (Stmt s : block) {				
 			r.add(Code.registerShift(shift, s.code),s.attributes());
@@ -164,10 +166,11 @@ public final class Block implements Iterable<Stmt> {
 	 * when bringing blocks in from the wild (e.g. as constraints for external
 	 * methods), as we have no idea what labels they may have.
 	 * 
-	 * @param blk
+	 * @param blk --- maybe null, in which case return is null.
 	 * @return
 	 */
-	public static Block relabel(Block blk) {		
+	public static Block relabel(Block blk) {	
+		if(blk == null) { return null; }
 		HashMap<String, String> nlabels = new HashMap<String, String>();
 		return relabelHelper(blk,nlabels);
 	}

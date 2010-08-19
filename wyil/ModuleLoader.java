@@ -563,12 +563,8 @@ public class ModuleLoader {
 					Module.ConstDef ci = new Module.ConstDef(wd.defName(),wd.value());
 					constants.add(ci);
 				} else {
-					// type definition					
-					Block constraint = wd.block();
-					if(constraint != null) {
-						constraint = Block.relabel(constraint);
-					}
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,constraint);					
+					// type definition										
+					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,wd.block());					
 					types.add(ti);
 				}
 			}
@@ -598,8 +594,8 @@ public class ModuleLoader {
 		WhileyBlock postcondition = (WhileyBlock) cm.attribute("WhileyPostCondition");
 		Module.Case mcase;
 		
-		Block preblk = precondition == null ? null : Block.relabel(precondition.block());
-		Block postblk = postcondition == null ? null : Block.relabel(postcondition.block());
+		Block preblk = precondition == null ? null : precondition.block();
+		Block postblk = postcondition == null ? null : postcondition.block();
 				
 		mcase = new Module.Case(parameterNames, preblk,postblk, null);				
 		return new Module.Method(stripCase(info.first()), type, mcase);

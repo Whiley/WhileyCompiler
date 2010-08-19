@@ -307,12 +307,12 @@ public class ModuleBuilder {
 		if(cached != null) { 
 			return new Pair<Type,Block>(cached,null); 
 		} else if(t != null) {
-			return t;
+			return new Pair<Type,Block>(t.first(),Block.relabel(t.second()));			
 		} else if(!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());			
-			return new Pair<Type,Block>(td.type(),td.constraint());
+			return new Pair<Type,Block>(td.type(),Block.relabel(td.constraint()));
 		}
 
 		// following is needed to terminate any recursion
@@ -678,10 +678,8 @@ public class ModuleBuilder {
 		Pair<Type,Block> tb = resolve(s.type);
 		Type type = tb.first();
 		Block constraint = tb.second();
-		if(constraint != null) {
-			constraint = Block.relabel(constraint);
-			constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);
-		}
+		constraint = Block.relabel(constraint);
+		constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);		
 		Block blk = new Block();
 		if(init != null) {
 			Pair<CExpr,Block> init_tb = resolve(freeReg, init,environment, declared);
@@ -1675,15 +1673,14 @@ public class ModuleBuilder {
 			HashMap<String, Type> environment,
 			HashMap<String, Pair<Type, Block>> declared) {
 		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs, environment, declared);
-		// FIXME: will need to determine effective tuple type here
 		Type.Tuple ett = Type.effectiveTupleType(lhs.first().type());		
 		Type.Tuple tup = checkType(ett, Type.Tuple.class, sg.lhs);
 		Type ft = tup.types.get(sg.name);
 		if (ft == null) {
 			syntaxError("type has no field named: " + sg.name, filename, sg.lhs);
 		}
-		return new Pair<CExpr, Block>(CExpr.TUPLEACCESS(lhs.first(), sg.name), lhs
-				.second());
+		return new Pair<CExpr, Block>(CExpr.TUPLEACCESS(lhs.first(), sg.name),
+				Block.relabel(lhs.second()));
 	}
 	
 	protected Pair<Type,Block> resolve(UnresolvedType t) {		
@@ -1753,14 +1750,15 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(type,blk);			
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			ModuleID mid = dt.attribute(Attributes.Module.class).module;
+			ModuleID mid = dt.attribute(Attributes.Module.class).module;			
 			if(modules.contains(mid)) {
-				return types.get(new NameID(mid,dt.name));
+				Pair<Type,Block> p = types.get(new NameID(mid,dt.name)); 
+				return new Pair<Type,Block>(p.first(),Block.relabel(p.second()));
 			} else {
 				try {
 					Module mi = loader.loadModule(mid);
-					Module.TypeDef td = mi.type(dt.name);			
-					return new Pair<Type,Block>(td.type(),td.constraint());
+					Module.TypeDef td = mi.type(dt.name);						
+					return new Pair<Type,Block>(td.type(),Block.relabel(td.constraint()));
 				} catch(ResolveError rex) {
 					syntaxError(rex.getMessage(),filename,t,rex);
 					return null;

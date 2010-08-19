@@ -189,7 +189,7 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void TupleAssign_Valid_2_RunTest() { runTest("TupleAssign_Valid_2"); }
  @Test public void TupleAssign_Valid_3_RunTest() { runTest("TupleAssign_Valid_3"); }
  @Test public void TupleAssign_Valid_4_RunTest() { runTest("TupleAssign_Valid_4"); }
- @Test public void TupleAssign_Valid_5_RunTest() { runTest("TupleAssign_Valid_5"); }
+ @Test public void TupleAssign_Valid_5_RunTest() { runTest("TupleAssign_Valid_5","-wyil"); }
  @Test public void TupleConversion_Valid_1_RunTest() { runTest("TupleConversion_Valid_1"); }
  @Test public void TupleDefine_Valid_1_RunTest() { runTest("TupleDefine_Valid_1"); }
  @Test public void TypeEquals_Valid_1_RunTest() { runTest("TypeEquals_Valid_1"); }

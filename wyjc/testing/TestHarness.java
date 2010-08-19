@@ -56,11 +56,14 @@ public class TestHarness {
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void runTest(String name) {				
-		final String[] args = new String[3];
+	protected void runTest(String name, String... params) {				
+		final String[] args = new String[3 + params.length];
 		args[0] = "-wp";		
 		args[1] = "lib/wyrt.jar";				
-		args[2] = srcPath + File.separatorChar + name + ".whiley";		
+		for(int i=0;i!=params.length;++i) {
+			args[i+2] = params[i];
+		}
+		args[args.length-1] = srcPath + File.separatorChar + name + ".whiley";		
 		
 		if(Main.run(args) != 0) { 
 			fail("couldn't compile test!");
