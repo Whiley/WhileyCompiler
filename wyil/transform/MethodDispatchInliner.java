@@ -261,7 +261,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 	
 	public Block transformConstraint(int regTarget, Block constraint,
 			CExpr.Invoke ivk, Attribute.Source src, Module.Case c) {
-		
+				
 		// Update the source number information
 		constraint = resource(constraint,src); 
 		
