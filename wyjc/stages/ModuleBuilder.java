@@ -312,7 +312,7 @@ public class ModuleBuilder {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());			
-			return new Pair<Type,Block>(td.type(),Block.relabel(td.constraint()));
+			return new Pair<Type,Block>(td.type(),td.constraint());
 		}
 
 		// following is needed to terminate any recursion
