@@ -65,7 +65,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 			// already being used in the body.
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
 			Block.match(constraint, CExpr.Register.class, uses);
-			int regTarget = uses.size();
+			int regTarget = CExpr.maxRegister(uses)+1;
 			constraint = transform(regTarget,constraint);
 			return new Module.TypeDef(type.name(), type.type(), constraint);
 		}
@@ -85,7 +85,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 			// calculate reg target (see below)
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
 			Block.match(precondition, CExpr.Register.class, uses);			
-			int regTarget = uses.size();			
+			int regTarget = CExpr.maxRegister(uses)+1;			
 			precondition = transform(regTarget,precondition);
 		}
 		Block postcondition = mcase.postcondition();
@@ -93,7 +93,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 			// calculate reg target (see below)
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
 			Block.match(postcondition, CExpr.Register.class, uses);
-			int regTarget = uses.size();
+			int regTarget = CExpr.maxRegister(uses)+1;
 			postcondition = transform(regTarget,postcondition);
 		}
 		
@@ -102,7 +102,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 		// already being used in the body.		
 		HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
 		Block.match(mcase.body(), CExpr.Register.class, uses);
-		int regTarget = uses.size();
+		int regTarget = CExpr.maxRegister(uses)+1;
 		
 		Block body = transform(regTarget,mcase.body());		
 		return new Module.Case(mcase.parameterNames(), precondition,
@@ -196,7 +196,7 @@ public class MethodDispatchInliner implements ModuleTransform {
 			if(ivk.type.ret == Type.T_VOID) {
 				return null;
 			} else {
-				return CExpr.REG(a.type(),regTarget);
+				return CExpr.REG(a.type(),regTarget++);
 			}
 		} 
 		

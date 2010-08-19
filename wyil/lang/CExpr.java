@@ -173,6 +173,25 @@ public abstract class CExpr {
 		}
 		return r;
 	}
+
+	/**
+	 * This method accepts a collection of registers, identifies the highest
+	 * numbered register it contains, and returns its index. In this way, we can
+	 * identify the index above which all registers slots are unused.
+	 * 
+	 * @param registers
+	 * @return --- the highest numbered register, or -1 if empty collection.
+	 *         Thus, it's always the case that adding one to the return value
+	 *         gives you an unused register and, furthermore, all indices above
+	 *         it are also guarnteed free.
+	 */
+	public static int maxRegister(Collection<Register> registers) {
+		int max = -1;
+		for(Register r : registers) {
+			max = Math.max(max, r.index);
+		}
+		return max;
+	}
 	
 	public static Variable VAR(Type t, String v) {
 		return get(new Variable(t,v));
