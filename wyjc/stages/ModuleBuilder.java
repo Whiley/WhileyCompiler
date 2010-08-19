@@ -405,25 +405,55 @@ public class ModuleBuilder {
 			// Need to update the self type properly
 			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 			binding.put("$", CExpr.VAR(type,"$"));
-			return new Pair<Type,Block>(type,blk);
+			return new Pair<Type,Block>(type,Block.substitute(binding,blk));
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
-			for(UnresolvedType b : ut.bounds) {
-				Pair<Type,Block> p = expandType(b,filename, cache);
+			Block blk = null;
+			String nextLabel = null; // used for chaining
+			String exitLabel = Block.freshLabel();
+			CExpr.Variable var = CExpr.VAR(Type.T_VOID,"$#");
+			for (UnresolvedType b : ut.bounds) {
+				if (nextLabel != null) { blk.add(new Code.Label(nextLabel)); }
+
+				Pair<Type, Block> p = expandType(b, filename, cache);
 				Type bt = p.first();
-				if(bt instanceof Type.NonUnion) {
-					bounds.add((Type.NonUnion)bt);
+				if (bt instanceof Type.NonUnion) {
+					bounds.add((Type.NonUnion) bt);
 				} else {
-					bounds.addAll(((Type.Union)bt).bounds);
+					bounds.addAll(((Type.Union) bt).bounds);
 				}
-				// FIXME: bug here!
+
+				if (blk == null && p.second() != null) {
+					blk = new Block();
+				}
+				if (blk != null) {
+					nextLabel = Block.freshLabel();
+					blk.add(new Code.IfGoto(Type.T_VOID, Code.COP.NSUBTYPEEQ,
+							var, Value.V_TYPE(p.first()), nextLabel));
+					blk.addAll(Block.chain(nextLabel, p.second()));
+					blk.add(new Code.Goto(exitLabel));
+				} else {
+					nextLabel = null;
+				}
 			}
+			
+			if(nextLabel != null) {
+				blk.add(new Code.Label(nextLabel));
+			}
+			// FIXME: need some line number information here
+			blk.add(new Code.Fail("type constraint not satisfied"));
+			blk.add(new Code.Label(exitLabel));						
+						
+			Type type; 
 			if(bounds.size() == 1) {
-				return new Pair<Type,Block>(bounds.iterator().next(),null);
+				type = bounds.iterator().next();
 			} else {
-				return new Pair<Type,Block>(Type.leastUpperBound(bounds),null);
+				type = Type.leastUpperBound(bounds);
 			}
+			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+			binding.put("$#",CExpr.VAR(type,"$"));
+			return new Pair<Type,Block>(type,Block.substitute(binding,blk));
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Pair<Type,Block> p = expandType(ut.element,filename, cache);
@@ -1747,7 +1777,7 @@ public class ModuleBuilder {
 			// Need to update the self type properly
 			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 			binding.put("$", CExpr.VAR(type,"$"));
-			return new Pair<Type,Block>(type,blk);			
+			return new Pair<Type,Block>(type,Block.substitute(binding,blk));			
 		} else if(t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
 			ModuleID mid = dt.attribute(Attributes.Module.class).module;			
@@ -1767,21 +1797,51 @@ public class ModuleBuilder {
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
-			for(UnresolvedType b : ut.bounds) {
-				Pair<Type,Block> p = resolve(b);
+			Block blk = null;
+			String nextLabel = null; // used for chaining
+			String exitLabel = Block.freshLabel();
+			CExpr.Variable var = CExpr.VAR(Type.T_VOID,"$#");
+			for (UnresolvedType b : ut.bounds) {
+				if (nextLabel != null) { blk.add(new Code.Label(nextLabel)); }
+
+				Pair<Type, Block> p = resolve(b);
 				Type bt = p.first();
-				if(bt instanceof Type.NonUnion) {
-					bounds.add((Type.NonUnion)bt);
+				if (bt instanceof Type.NonUnion) {
+					bounds.add((Type.NonUnion) bt);
 				} else {
-					bounds.addAll(((Type.Union)bt).bounds);
+					bounds.addAll(((Type.Union) bt).bounds);
 				}
-				// FIXME: bug here
+
+				if (blk == null && p.second() != null) {
+					blk = new Block();
+				}
+				if (blk != null) {
+					nextLabel = Block.freshLabel();
+					blk.add(new Code.IfGoto(Type.T_VOID, Code.COP.NSUBTYPEEQ,
+							var, Value.V_TYPE(p.first()), nextLabel));
+					blk.addAll(Block.chain(nextLabel, p.second()));
+					blk.add(new Code.Goto(exitLabel));
+				} else {
+					nextLabel = null;
+				}
 			}
+			
+			if(nextLabel != null) {
+				blk.add(new Code.Label(nextLabel));
+			}
+			// FIXME: need some line number information here
+			blk.add(new Code.Fail("type constraint not satisfied"));
+			blk.add(new Code.Label(exitLabel));						
+						
+			Type type; 
 			if(bounds.size() == 1) {
-				return new Pair<Type,Block>(bounds.iterator().next(),null);
+				type = bounds.iterator().next();
 			} else {
-				return new Pair<Type,Block>(Type.leastUpperBound(bounds),null);
+				type = Type.leastUpperBound(bounds);
 			}
+			HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+			binding.put("$#",CExpr.VAR(type,"$"));
+			return new Pair<Type,Block>(type,Block.substitute(binding,blk));			
 		} else {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Pair<Type,Block> p = resolve(ut.element);

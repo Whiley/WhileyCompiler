@@ -474,6 +474,9 @@ public abstract class Code {
 		},
 		SUBTYPEEQ() {
 			public String toString() { return ":>"; }
-		}		
+		},
+		NSUBTYPEEQ() {
+			public String toString() { return "!>"; }
+		}
 	};		
 }

@@ -266,7 +266,7 @@ public class ClassFileBuilder {
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
 	
-		if(c.op == Code.COP.SUBTYPEEQ) {
+		if(c.op == Code.COP.SUBTYPEEQ || c.op == Code.COP.NSUBTYPEEQ) {
 			// special case: don't translate rhs
 			translate(c.lhs,slots,bytecodes);			
 		} else if(c.op == Code.COP.ELEMOF) {
@@ -367,7 +367,7 @@ public class ClassFileBuilder {
 						ftype, Bytecode.INTERFACE));
 				op = Bytecode.If.NE;
 				break;
-			}
+			}			
 			case SUBTYPEEQ:
 			{				
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
@@ -389,6 +389,27 @@ public class ClassFileBuilder {
 				} else {
 					op = Bytecode.If.NE;
 				}
+				break;
+			}
+			case NSUBTYPEEQ:
+			{				
+				Type rhs_t = ((Value.TypeConst)c.rhs).type;
+				translateTypeTest(rhs_t, bytecodes);
+				if(c.lhs instanceof CExpr.Variable) { 
+					// This covers the limited form of type inference currently
+					// supported in Whiley. Essentially, it works only for the
+					// case where we are testing against a variable.
+					CExpr.Variable v = (CExpr.Variable) c.lhs;
+					bytecodes.add(new Bytecode.If(Bytecode.If.EQ, c.target));
+					translate(c.lhs,slots,bytecodes);
+					addReadConversion(rhs_t,bytecodes);
+					JvmType rhs_jt = convertType(rhs_t);					
+					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));
+					return;				
+				} else {
+					op = Bytecode.If.NE;
+				}
+				break;
 			}
 			default:
 				throw new RuntimeException("unknown if condition encountered");
