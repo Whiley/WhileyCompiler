@@ -10,8 +10,9 @@ import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
+import wyil.util.dfa.*;
 
-public class TypeInference implements ModuleTransform {
+public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 	private final ModuleLoader loader;
 	private String filename;
 
@@ -83,13 +84,19 @@ public class TypeInference implements ModuleTransform {
 	protected Block transform(Block block, HashMap<String, Type> environment) {
 		// FIXME: I'm ignoring actual type inference for now
 		Block nblock = new Block();
-		for (Stmt stmt : block) {
-			nblock.add(infer(stmt.code, stmt, environment), stmt.attributes());
+		HashMap<String,Integer> labels = new HashMap<String,Integer>();
+		for(int i=0;i!=block.size();++i) {
+			Stmt stmt = block.get(i);
+			Code code = stmt.code;
+			
+			
+			nblock.add(infer(stmt.code, stmt, environment, labels), stmt.attributes());
 		}
 		return nblock;
 	}
 	
-	protected Code infer(Code code, Stmt stmt, HashMap<String,Type> environment) {
+	protected Code infer(Code code, Stmt stmt,
+			HashMap<String, Type> environment) {
 		if(code instanceof Assign) {
 			return infer((Code.Assign)code,stmt,environment);
 		} else if(code instanceof IfGoto) {
@@ -100,13 +107,17 @@ public class TypeInference implements ModuleTransform {
 			return infer((Code.Forall)code,stmt,environment);
 		} else if(code instanceof Debug) {
 			return infer((Code.Debug)code,stmt,environment);
-		} 
+		} else if(code instanceof Label) {
+			return infer((Code.Label)code,stmt,environment);
+		}
 		return code;
 	}
 	
-	protected Code infer(Code.Forall code, Stmt stmt, HashMap<String,Type> environment) {
+	protected Code infer(Code.Forall code, Stmt stmt,
+			HashMap<String, Type> environment) {
+		
 		CExpr src = infer(code.source, stmt, environment);
-		Type src_t = src.type();
+		Type src_t = src.type();				
 		
 		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);
 		
