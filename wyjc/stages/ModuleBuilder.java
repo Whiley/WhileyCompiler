@@ -536,7 +536,7 @@ public class ModuleBuilder {
 	}
 
 	protected Module.Method resolve(FunDecl fd) {
-		HashMap<String, Pair<Type,Block>> constraints = new HashMap<String, Pair<Type,Block>>();
+		HashMap<String, Pair<Type, Block>> environment = new HashMap<String, Pair<Type, Block>>();
 		
 		ArrayList<String> parameterNames = new ArrayList<String>();
 		Block precondition = null;
@@ -544,7 +544,7 @@ public class ModuleBuilder {
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {
 			Pair<Type, Block> t = resolve(p.type);		
-			constraints.put(p.name(), t);
+			environment.put(p.name(), t);
 			parameterNames.add(p.name());
 			if (t.second() != null) {
 				if (precondition == null) {
@@ -564,13 +564,13 @@ public class ModuleBuilder {
 		// method receiver type (if applicable)
 		if (fd.receiver != null) {
 			Pair<Type, Block> rec = resolve(fd.receiver);		
-			constraints.put("this", rec);
+			environment.put("this", rec);
 		}
 
 		if (fd.precondition != null) {
 			String trueLabel = Block.freshLabel();
 			Block tmp = resolveCondition(trueLabel, fd.precondition, 0,
-					constraints);
+					environment);
 			tmp.add(new Code.Fail("function precondition not satisfied"),
 					fd.precondition.attribute(Attribute.Source.class));
 			tmp.add(new Code.Label(trueLabel));
@@ -582,14 +582,14 @@ public class ModuleBuilder {
 		}
 
 		if (fd.postcondition != null) {
-			constraints.put("$",ret);
+			environment.put("$",ret);
 			String trueLabel = Block.freshLabel();
 			Block tmp = resolveCondition(trueLabel, fd.postcondition, 0,
-					constraints);
+					environment);
 			tmp.add(new Code.Fail("function postcondition not satisfied"),
 					fd.postcondition.attribute(Attribute.Source.class));
 			tmp.add(new Code.Label(trueLabel));
-			constraints.remove("$");
+			environment.remove("$");
 			if (postcondition == null) {
 				postcondition = tmp;
 			} else {
@@ -604,7 +604,7 @@ public class ModuleBuilder {
 		// free reg determines the first free register.
 		int freeReg = determineShadows(postcondition, parameterNames, tf, blk);
 		for (Stmt s : fd.statements) {
-			blk.addAll(resolve(s, freeReg, fd, constraints));
+			blk.addAll(resolve(s, freeReg, fd, environment));
 		}
 
 		if (tf.ret == Type.T_VOID) {
@@ -770,33 +770,32 @@ public class ModuleBuilder {
 			blk.addAll(t.second());
 
 			Pair<Type, Block> ret = resolve(fd.ret);
-			Block postcondition = ret.second();
-
-			// First, check direct post condition.
+			
+			if(ret.second() != null) {
+				blk.addAll(ret.second());
+			}
+			
 			if (fd.postcondition != null) {
+				
+				// first, construct the postcondition block
 				String trueLabel = Block.freshLabel();
-				Block tmp = resolveCondition(trueLabel, fd.postcondition,
+				environment.put("$", new Pair<Type, Block>(Type.T_ANY, null));
+				Block postcondition = resolveCondition(trueLabel, fd.postcondition,
 						freeReg, environment);
-				if (postcondition == null) {
-					postcondition = tmp;
-				} else {
-					postcondition.addAll(tmp);
-				}
 				postcondition.add(new Code.Fail(
 						"function postcondition not satisfied"),
 						fd.postcondition.attribute(Attribute.Source.class));
 				postcondition.add(new Code.Label(trueLabel));
-			}
 
-			if (postcondition != null) {
+				// Now, write it into the block
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 				binding.put("$", t.first());
 				binding.putAll(shadows);
 				postcondition = Block.registerShift(freeReg, postcondition);
 				postcondition = Block.substitute(binding, postcondition);
 				blk.addAll(Block.relabel(postcondition));
-			}
-
+			}			
+			
 			// Second, check
 
 			blk.add(new Code.Return(t.first()), s

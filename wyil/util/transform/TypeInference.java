@@ -12,7 +12,7 @@ import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.dfa.*;
 
-public class TypeInference extends ForwardAnalysis implements ModuleTransform {
+public class TypeInference implements ModuleTransform {
 	private final ModuleLoader loader;
 	private String filename;
 
@@ -41,7 +41,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		if (constraint == null) {
 			return type;
 		} else {
-			HashMap<String,Type> environment = new HashMap<String,Type>();
+			Env environment = new Env();
 			environment.put("$", type.type());
 			constraint = transform(constraint, environment);
 			return new Module.TypeDef(type.name(), type.type(), constraint);
@@ -57,7 +57,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		HashMap<String,Type> environment = new HashMap<String,Type>();
+		Env environment = new Env();
 		
 		List<String> paramNames = mcase.parameterNames();
 		List<Type> paramTypes = method.type().params;
@@ -81,40 +81,59 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 				postcondition, body);
 	}
 	
-	protected Block transform(Block block, HashMap<String, Type> environment) {
-		// FIXME: I'm ignoring actual type inference for now
+	protected Block transform(Block block, Env environment) {
 		Block nblock = new Block();
-		HashMap<String,Integer> labels = new HashMap<String,Integer>();
+		HashMap<String,Env> flowsets = new HashMap<String,Env>();		
 		for(int i=0;i!=block.size();++i) {
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
 			
+			if(code instanceof Goto) {
+				Goto got = (Goto) code;
+				merge(got.target,environment,flowsets);
+				environment = null;
+			} else if(code instanceof IfGoto) {
+				IfGoto igot = (IfGoto) code;	
+				// FIXME: broken!
+				code = infer((Code.IfGoto)code,stmt,environment);
+				merge(igot.target,environment,flowsets);
+			} else if(code instanceof Assign) {
+				code = infer((Code.Assign)code,stmt,environment);
+			} else if(code instanceof Return) {
+				code = infer((Code.Return)code,stmt,environment);
+			} else if(code instanceof Forall) {
+				Code.Forall fall = (Code.Forall) code;
+				code = infer(fall,stmt,environment);
+			} else if(code instanceof Debug) {
+				code = infer((Code.Debug)code,stmt,environment);
+			} else if(code instanceof Label) {
+				Label label = (Label) code;
+				if(environment == null) {
+					environment = flowsets.get(label.label);
+				} else {
+					environment.join(flowsets.get(label.label));
+				}
+			}
 			
-			nblock.add(infer(stmt.code, stmt, environment, labels), stmt.attributes());
+			nblock.add(code, stmt.attributes());
 		}
 		return nblock;
 	}
 	
-	protected Code infer(Code code, Stmt stmt,
-			HashMap<String, Type> environment) {
-		if(code instanceof Assign) {
-			return infer((Code.Assign)code,stmt,environment);
-		} else if(code instanceof IfGoto) {
-			return infer((Code.IfGoto)code,stmt,environment);
-		} else if(code instanceof Return) {
-			return infer((Code.Return)code,stmt,environment);
-		} else if(code instanceof Forall) {
-			return infer((Code.Forall)code,stmt,environment);
-		} else if(code instanceof Debug) {
-			return infer((Code.Debug)code,stmt,environment);
-		} else if(code instanceof Label) {
-			return infer((Code.Label)code,stmt,environment);
+	protected void merge(String target, Env env,
+			HashMap<String, Env> flowsets) {
+		
+		Env e = flowsets.get(target);
+		if(e == null) {
+			flowsets.put(target, env);
+		} else {
+			e.join(env);
+			flowsets.put(target, env);
 		}
-		return code;
 	}
 	
 	protected Code infer(Code.Forall code, Stmt stmt,
-			HashMap<String, Type> environment) {
+			Env environment) {
 		
 		CExpr src = infer(code.source, stmt, environment);
 		Type src_t = src.type();				
@@ -134,7 +153,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 				code.variable.index), src);
 	}
 	
-	protected Code infer(Code.Assign code, Stmt stmt, HashMap<String,Type> environment) {
+	protected Code infer(Code.Assign code, Stmt stmt, Env environment) {
 		CExpr.LVal lhs = code.lhs;
 		
 		if(lhs instanceof LVar) {
@@ -160,14 +179,14 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return new Code.Assign(lhs,rhs);
 	}
 		
-	protected Code infer(Code.IfGoto code, Stmt stmt, HashMap<String,Type> environment) {
+	protected Code infer(Code.IfGoto code, Stmt stmt, Env environment) {
 		CExpr lhs = infer(code.lhs,stmt,environment);
 		CExpr rhs = infer(code.rhs,stmt,environment);
 		// FIXME: PERFORM TYPE INFERENCE
 		return new Code.IfGoto(code.op, lhs, rhs, code.target);
 	}
 	
-	protected Code infer(Code.Return code, Stmt stmt, HashMap<String,Type> environment) {
+	protected Code infer(Code.Return code, Stmt stmt, Env environment) {
 		CExpr rhs = code.rhs;
 		
 		if(rhs != null) {
@@ -177,13 +196,13 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return new Code.Return(rhs);
 	}
 	
-	protected Code infer(Code.Debug code, Stmt stmt, HashMap<String,Type> environment) {
+	protected Code infer(Code.Debug code, Stmt stmt, Env environment) {
 		CExpr rhs = infer(code.rhs,stmt, environment);
 		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
 		return new Code.Debug(rhs);
 	}
 	
-	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String, Type> environment) {
+	protected CExpr infer(CExpr e, Stmt stmt, Env environment) {
 
 		if (e instanceof Value) {
 			return e;
@@ -211,7 +230,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return null; // unreachable
 	}
 	
-	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(Variable v, Stmt stmt, Env environment) {
 		Type type = environment.get(v.name);
 		if(type == null) {
 			syntaxError("unknown variable: " + v,filename,stmt);
@@ -219,7 +238,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return CExpr.VAR(type,v.name);
 	}
 	
-	protected CExpr infer(Register v, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(Register v, Stmt stmt, Env environment) {
 		String name = "%" + v.index;
 		Type type = environment.get(name);
 		if(type == null) {
@@ -228,7 +247,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return CExpr.REG(type,v.index);
 	}
 	
-	protected CExpr infer(UnOp v, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(UnOp v, Stmt stmt, Env environment) {
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		Type rhs_t = rhs.type();
 		switch(v.op) {
@@ -245,7 +264,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return null;
 	}
 	
-	protected CExpr infer(BinOp v, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(BinOp v, Stmt stmt, Env environment) {
 		CExpr lhs = infer(v.lhs, stmt, environment);
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());
@@ -276,7 +295,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return CExpr.BINOP(v.op,convert(lub,lhs),convert(lub,rhs));				
 	}
 	
-	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(NaryOp v, Stmt stmt, Env environment) {
 		ArrayList<CExpr> args = new ArrayList<CExpr>();
 		for(CExpr arg : v.args) {
 			args.add(infer(arg,stmt,environment));
@@ -300,7 +319,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return null;
 	}
 	
-	protected CExpr infer(ListAccess e, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(ListAccess e, Stmt stmt, Env environment) {
 		CExpr src = infer(e.src,stmt,environment);
 		CExpr idx = infer(e.index,stmt,environment);
 		checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
@@ -308,7 +327,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return CExpr.LISTACCESS(e.src,e.index);
 	}
 		
-	protected CExpr infer(TupleAccess e, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(TupleAccess e, Stmt stmt, Env environment) {
 		CExpr lhs = infer(e.lhs,stmt,environment);				
 		Type.Tuple ett = Type.effectiveTupleType(lhs.type());				
 		if (ett == null) {
@@ -321,7 +340,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		return CExpr.TUPLEACCESS(lhs, e.field);
 	}
 	
-	protected CExpr infer(Tuple e, Stmt stmt, HashMap<String, Type> environment) {
+	protected CExpr infer(Tuple e, Stmt stmt, Env environment) {
 		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
 		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
 			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
@@ -330,7 +349,7 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 	}
 	
 	protected CExpr infer(Invoke ivk, Stmt stmt,
-			HashMap<String, Type> environment) {
+			Env environment) {
 		
 		ArrayList<CExpr> args = new ArrayList<CExpr>();
 		ArrayList<Type> types = new ArrayList<Type>();
@@ -456,4 +475,29 @@ public class TypeInference extends ForwardAnalysis implements ModuleTransform {
 		}
 	}
 
+	private static class Env extends HashMap<String,Type> {
+		public Env() {}
+		public Env(Map<String,Type> e) {
+			super(e);
+		}
+
+		public void join(Env other) {
+			if(other == null) { return; }
+			HashSet<String> keys = new HashSet<String>(keySet());
+			keys.addAll(other.keySet());
+			for (String key : keys) {
+				Type mt = get(key);
+				Type ot = other.get(key);
+				if (ot == null || mt == null) {
+					remove(key);
+				} else {
+					put(key, Type.leastUpperBound(mt, ot));
+				}
+			}
+		}
+		
+		public Env clone() {
+			return new Env(this);
+		}
+	}
 }
