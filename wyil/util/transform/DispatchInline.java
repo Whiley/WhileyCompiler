@@ -34,11 +34,11 @@ import wyil.util.ResolveError;
  * @author djp
  * 
  */
-public class MethodDispatchInliner implements ModuleTransform {
+public class DispatchInline implements ModuleTransform {
 	private final ModuleLoader loader;
 	private int regTarget;
 	
-	public MethodDispatchInliner(ModuleLoader loader) {
+	public DispatchInline(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	public Module apply(Module module) {
