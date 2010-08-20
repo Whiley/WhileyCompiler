@@ -44,7 +44,10 @@ public abstract class CExpr {
 			Convert v = (Convert) r;			
 			match(v.rhs,match,uses);
 		} else if(r instanceof Invoke) {
-			Invoke a = (Invoke) r;						
+			Invoke a = (Invoke) r;			
+			if(a.receiver != null) {
+				CExpr.match(a.receiver, match, uses);
+			}
 			for(CExpr arg : a.args){
 				CExpr.match(arg,match,uses);
 			}			
@@ -112,10 +115,14 @@ public abstract class CExpr {
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;									
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			CExpr receiver = a.receiver;
+			if(receiver != null) {
+				receiver = CExpr.substitute(binding,receiver);
+			}
 			for(CExpr arg : a.args){
 				args.add(CExpr.substitute(binding,arg));
 			}			
-			return INVOKE(a.type,a.name,a.caseNum,args);
+			return INVOKE(a.type,a.name,a.caseNum,receiver,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -164,10 +171,14 @@ public abstract class CExpr {
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;						
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			CExpr receiver = a.receiver;
+			if(receiver != null) {
+				receiver = registerShift(shift,receiver);
+			}
 			for(CExpr arg : a.args){
 				args.add(CExpr.registerShift(shift,arg));
-			}			
-			return INVOKE(a.type,a.name,a.caseNum,args);
+			}						
+			return INVOKE(a.type,a.name,a.caseNum,receiver,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -234,14 +245,14 @@ public abstract class CExpr {
 	}
 	
 	public static Invoke INVOKE(Type.Fun type, NameID name, int casenum,
-			CExpr... args) {
-		return get(new Invoke(type,name,casenum,args));
+			CExpr receiver, CExpr... args) {
+		return get(new Invoke(type,name,casenum,receiver,args));
 	}
 	
 
 	public static Invoke INVOKE(Type.Fun type, NameID name, int casenum,
-			Collection<CExpr> args) {
-		return get(new Invoke(type,name,casenum,args));
+			CExpr receiver, Collection<CExpr> args) {
+		return get(new Invoke(type,name,casenum,receiver,args));
 	}
 	
 	
@@ -673,13 +684,15 @@ public abstract class CExpr {
 	public final static class Invoke extends CExpr {
 		public final Type.Fun type;
 		public final NameID name;
+		public final CExpr receiver;
 		public final List<CExpr> args;
 		public final int caseNum;
 
-		Invoke(Type.Fun type, NameID name, int caseNum, CExpr... args) {
+		Invoke(Type.Fun type, NameID name, int caseNum, CExpr receiver, CExpr... args) {
 			this.type = type;
 			this.name = name;
 			this.caseNum = caseNum;
+			this.receiver = receiver;
 			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
 			for(CExpr r : args) {
 				tmp.add(r);
@@ -688,10 +701,11 @@ public abstract class CExpr {
 		}
 
 		Invoke(Type.Fun type, NameID name, int caseNum,
-				Collection<CExpr> args) {
+				CExpr receiver, Collection<CExpr> args) {
 			this.type = type;
 			this.name = name;
 			this.caseNum = caseNum;
+			this.receiver = receiver;
 			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));
 		}
 
@@ -702,8 +716,14 @@ public abstract class CExpr {
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke a = (Invoke) o;
-				return type.equals(a.type) && name.equals(a.name)
-				&& caseNum == a.caseNum && args.equals(a.args);				
+				if(receiver == null) {
+					return a.receiver == null && type.equals(a.type)
+							&& name.equals(a.name) && caseNum == a.caseNum
+							&& args.equals(a.args);
+				} else {
+					return type.equals(a.type) && name.equals(a.name)
+							&& caseNum == a.caseNum && args.equals(a.args);
+				}
 			}
 			return false;
 		}
@@ -726,7 +746,11 @@ public abstract class CExpr {
 			if(caseNum > 0) {
 				n += "$" + caseNum;
 			}			
-			return n + "(" + rhs + ")!" + type;			
+			if(receiver == null) {
+				return n + "(" + rhs + ")!" + type;
+			} else {
+				return receiver + "->" + n + "(" + rhs + ")!" + type;
+			}
 		}
 	}
 

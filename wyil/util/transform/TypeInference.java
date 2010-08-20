@@ -151,31 +151,32 @@ public class TypeInference implements ModuleTransform {
 		return new Code.Debug(rhs);
 	}
 	
-	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
-		
-		if(e instanceof Value) {
+	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String, Type> environment) {
+
+		if (e instanceof Value) {
 			return e;
-		} else if(e instanceof Variable) {
-			return infer((Variable)e,stmt,environment);
-		} else if(e instanceof Register) {
-			return infer((Register)e,stmt,environment);
-		} else if(e instanceof BinOp) {
-			return infer((BinOp)e,stmt,environment);
-		} else if(e instanceof UnOp) {
-			return infer((UnOp)e,stmt,environment);
-		} else if(e instanceof NaryOp) {
-			return infer((NaryOp)e,stmt,environment);
-		} else if(e instanceof ListAccess) {
-			return infer((ListAccess)e,stmt,environment);
-		} else if(e instanceof Tuple) {
-			return infer((Tuple)e,stmt,environment);
-		} else if(e instanceof TupleAccess) {
-			return infer((TupleAccess)e,stmt,environment);
-		} else if(e instanceof Invoke) {
-			
+		} else if (e instanceof Variable) {
+			return infer((Variable) e, stmt, environment);
+		} else if (e instanceof Register) {
+			return infer((Register) e, stmt, environment);
+		} else if (e instanceof BinOp) {
+			return infer((BinOp) e, stmt, environment);
+		} else if (e instanceof UnOp) {
+			return infer((UnOp) e, stmt, environment);
+		} else if (e instanceof NaryOp) {
+			return infer((NaryOp) e, stmt, environment);
+		} else if (e instanceof ListAccess) {
+			return infer((ListAccess) e, stmt, environment);
+		} else if (e instanceof Tuple) {
+			return infer((Tuple) e, stmt, environment);
+		} else if (e instanceof TupleAccess) {
+			return infer((TupleAccess) e, stmt, environment);
+		} else if (e instanceof Invoke) {
+			return infer((Invoke) e, stmt, environment);
 		}
-				
-		return e;
+
+		syntaxError("unknown expression encountered: " + e, filename, stmt);
+		return null; // unreachable
 	}
 	
 	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
@@ -190,7 +191,7 @@ public class TypeInference implements ModuleTransform {
 		String name = "%" + v.index;
 		Type type = environment.get(name);
 		if(type == null) {
-			syntaxError("unknown variable",filename,stmt);
+			syntaxError("unknown register: " + name,filename,stmt);
 		}
 		return CExpr.REG(type,v.index);
 	}
@@ -296,28 +297,68 @@ public class TypeInference implements ModuleTransform {
 		return CExpr.TUPLE(args);
 	}
 	
+	protected CExpr infer(Invoke ivk, Stmt stmt,
+			HashMap<String, Type> environment) {
+		
+		ArrayList<CExpr> args = new ArrayList<CExpr>();
+		ArrayList<Type> types = new ArrayList<Type>();
+		CExpr receiver = ivk.receiver;
+		Type.ProcessName receiverT = null;
+		if(receiver != null) {
+			receiver = infer(receiver, stmt, environment);
+			receiverT = checkType(receiver.type(),Type.ProcessName.class,stmt);
+		}
+		for (CExpr arg : ivk.args) {
+			arg = infer(arg, stmt, environment);
+			args.add(arg);
+			types.add(arg.type());
+		}
+		
+		try {
+			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
+
+			if (funtype == null) {
+				if (receiver == null) {
+					syntaxError("invalid or ambiguous function call", filename,
+							stmt);
+				} else {
+					syntaxError("invalid or ambiguous method call", filename,
+							stmt);
+				}
+			}
+
+			for (int i=0;i!=args.size();++i) {
+				Type type = types.get(i);
+				CExpr arg = args.get(i);
+				args.set(i,convert(type,arg));
+			}
+			
+			return CExpr.INVOKE(funtype, ivk.name, 0, receiver, args);
+		} catch (ResolveError ex) {
+			syntaxError(ex.getMessage(), filename, stmt);
+			return null; // unreachable
+		}
+	}
+	
 	/**
 	 * Bind function is responsible for determining the true type of a method or
 	 * function being invoked. To do this, it must find the function/method
 	 * with the most precise type that matches the argument types.
-	 * 
-	 * @param mid
-	 * @param name
+	 * 	 * 
+	 * @param nid
 	 * @param receiver
 	 * @param paramTypes
 	 * @param elem
 	 * @return
 	 * @throws ResolveError
 	 */
-	protected Type.Fun bindFunction(ModuleID mid, String name,
-			Type.Process receiver,
-			List<Type> paramTypes,
-			SyntacticElement elem) throws ResolveError {
+	protected Type.Fun bindFunction(NameID nid, Type.ProcessName receiver,
+			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 		
 		Type.Fun target = Type.T_FUN(receiver, Type.T_ANY,paramTypes);
 		Type.Fun candidate = null;				
 		
-		for (Type.Fun ft : lookupMethod(mid,name)) {										
+		for (Type.Fun ft : lookupMethod(nid.module(),nid.name())) {										
 			Type funrec = ft.receiver;			
 			if (receiver == funrec
 					|| (receiver != null && funrec != null && Type.isSubtype(

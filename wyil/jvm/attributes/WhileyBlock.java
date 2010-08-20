@@ -103,6 +103,9 @@ public class WhileyBlock implements BytecodeAttribute {
 		} else if(rval instanceof CExpr.Invoke) {
 			CExpr.Invoke ivk = (CExpr.Invoke)rval; 
 			addPoolItems(ivk.name, constantPool);
+			if(ivk.receiver != null) {
+				addPoolItems(ivk.receiver, constantPool);
+			}
 			WhileyType.addPoolItems(ivk.type, constantPool);
 			for(CExpr arg : ivk.args) {
 				addPoolItems(arg,constantPool);
@@ -251,9 +254,16 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	public static void write(CExpr.Invoke expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(INVOKE);			
+		if(expr.receiver != null) {
+			writer.write_u1(METHINVOKE);
+		} else {
+			writer.write_u1(FUNINVOKE);
+		}
 		writeNameId(expr.name,writer,constantPool);
 		WhileyType.write(expr.type,writer,constantPool);
+		if(expr.receiver != null) {
+			write(expr.receiver,writer,constantPool);
+		}
 		writer.write_u1(expr.args.size());
 		for(CExpr arg : expr.args) {
 			write(arg,writer,constantPool);
@@ -590,7 +600,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				CExpr lhs = readCExpr(reader,constantPool);
 				return CExpr.CONVERT(t, lhs);
 			}			
-			case INVOKE:
+			case FUNINVOKE:
 			{
 				
 				NameID nid = readNameID(reader,constantPool);
@@ -602,7 +612,22 @@ public class WhileyBlock implements BytecodeAttribute {
 				for(int i=0;i!=nargs;++i) {
 					args.add(readCExpr(reader,constantPool));
 				}
-				return CExpr.INVOKE(type, nid, casenum, args);
+				return CExpr.INVOKE(type, nid, casenum, null, args);
+			}
+			case METHINVOKE:
+			{
+				
+				NameID nid = readNameID(reader,constantPool);
+				Type.Fun type = (Type.Fun) WhileyType.Reader.readType(reader, constantPool);
+				// FIXME: need to split case num off of the name somehow?
+				int casenum = 1;
+				int nargs = reader.read_u1();
+				CExpr receiver = readCExpr(reader,constantPool);
+				ArrayList<CExpr> args = new ArrayList<CExpr>();
+				for(int i=0;i!=nargs;++i) {
+					args.add(readCExpr(reader,constantPool));
+				}
+				return CExpr.INVOKE(type, nid, casenum, receiver, args);
 			}
 			case LISTACCESS:
 			{
@@ -852,7 +877,8 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	private final static int VARIABLE = 10;
 	private final static int REGISTER = 11;
-	private final static int INVOKE = 12;		
+	private final static int FUNINVOKE = 12;
+	private final static int METHINVOKE = 13;		
 	private final static int LISTACCESS = 14;
 	private final static int TUPLEACCESS = 15;
 	private final static int CONVERT = 16;

@@ -186,12 +186,17 @@ public class MethodDispatchInliner implements ModuleTransform {
 			return CExpr.TUPLEACCESS(transform(ta.lhs, stmt, inserts),
 					ta.field);
 		} else if(r instanceof Invoke) {
-			Invoke a = (Invoke) r;									
-			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			Invoke a = (Invoke) r;							
+			CExpr receiver = a.receiver;
+			if(receiver != null) {
+				receiver = transform(receiver,stmt,inserts);
+			}
+			ArrayList<CExpr> args = new ArrayList<CExpr>();			
 			for(CExpr arg : a.args){
 				args.add(transform(arg,stmt,inserts));
 			}			
-			CExpr.Invoke ivk = CExpr.INVOKE(a.type,a.name,a.caseNum,args);
+			CExpr.Invoke ivk = CExpr.INVOKE(a.type, a.name, a.caseNum,
+					receiver, args);
 			inserts.addAll(transform(regTarget,ivk,stmt));
 			if(ivk.type.ret == Type.T_VOID) {
 				return null;
@@ -245,7 +250,8 @@ public class MethodDispatchInliner implements ModuleTransform {
 					}
 						
 					blk.add(new Code.Assign(lhs, CExpr.INVOKE(ivk.type,
-							ivk.name, caseNum, ivk.args)), stmt.attributes());
+							ivk.name, caseNum, ivk.receiver, ivk.args)), stmt
+							.attributes());
 
 					if(caseNum++ < ncases) {
 						blk.add(new Code.Goto(exitLabel));

@@ -1207,10 +1207,11 @@ public class ModuleBuilder {
 
 		int idx = freeReg;
 		ArrayList<CExpr> nargs = new ArrayList<CExpr>();
-
+		CExpr receiver = null;
+		
 		if (s.receiver != null) {
 			Pair<CExpr, Block> tb = resolve(idx++, s.receiver, environment);
-			nargs.add(tb.first());
+			receiver = tb.first();
 			blk.addAll(tb.second());
 		}
 
@@ -1225,7 +1226,8 @@ public class ModuleBuilder {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 		NameID name = new NameID(modInfo.module, s.name);
 
-		return new Pair<CExpr, Block>(CExpr.INVOKE(null, name, 0, nargs), blk);
+		return new Pair<CExpr, Block>(CExpr.INVOKE(
+				Type.T_FUN(null, Type.T_ANY), name, 0, receiver, nargs), blk);
 	}
 
 	protected Pair<CExpr, Block> resolve(int freeReg, Constant c,

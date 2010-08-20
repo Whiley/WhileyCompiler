@@ -733,18 +733,16 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(CExpr.Invoke c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {		
-		int idx=0;
+			ArrayList<Bytecode> bytecodes) {				
 		// first, translate receiver (where appropriate)
-		if(c.type.receiver != null) {			
-			CExpr r = c.args.get(idx++);
-			translate(r, slots, bytecodes);
+		if(c.type.receiver != null) {						
+			translate(c.receiver, slots, bytecodes);
 		}
 		// next, translate parameters
 		List<Type> params = c.type.params;
 		for(int i=0;i!=params.size();++i) {
 			Type pt = params.get(i);
-			CExpr r = c.args.get(idx++);
+			CExpr r = c.args.get(i);
 			Type rt = r.type();
 			translate(r, slots, bytecodes);			
 			if(!pt.equals(rt)) {			
