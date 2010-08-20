@@ -771,22 +771,25 @@ public class ModuleBuilder {
 
 			Pair<Type, Block> ret = resolve(fd.ret);
 			
-			if(ret.second() != null) {
-				blk.addAll(ret.second());
-			}
+			Block postcondition = ret.second();
 			
 			if (fd.postcondition != null) {
 				
 				// first, construct the postcondition block
 				String trueLabel = Block.freshLabel();
 				environment.put("$", new Pair<Type, Block>(Type.T_ANY, null));
-				Block postcondition = resolveCondition(trueLabel, fd.postcondition,
-						freeReg, environment);
+				if(postcondition == null) {
+					postcondition = new Block();
+				}
+				postcondition.addAll(resolveCondition(trueLabel, fd.postcondition,
+						freeReg, environment));
 				postcondition.add(new Code.Fail(
 						"function postcondition not satisfied"),
 						fd.postcondition.attribute(Attribute.Source.class));
 				postcondition.add(new Code.Label(trueLabel));
-
+			}
+			
+			if(postcondition != null) {
 				// Now, write it into the block
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 				binding.put("$", t.first());
