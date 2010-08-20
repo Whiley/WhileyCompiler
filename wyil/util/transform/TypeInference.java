@@ -105,15 +105,25 @@ public class TypeInference implements ModuleTransform {
 	protected Code infer(Code.Assign code, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr.LVal lhs = code.lhs;
 		
-		if(lhs instanceof Variable) {
-			Variable lhsv = (Variable) lhs;
-			lhsv = CExpr.VAR(Type.T_ANY,lhsv.name);
+		if(lhs instanceof LVar) {
+			// do nothing
 		} else if(lhs != null) {			
 			lhs = (CExpr.LVal) infer(lhs,stmt,environment);
 		}
+		
 		CExpr rhs = infer(code.rhs,stmt,environment);
+		
+		checkIsSubtype(lhs.type(),rhs.type(), stmt);
 
-		// FIXME: PERFORM TYPE INFERENCE
+		if(lhs instanceof Variable) {
+			Variable v = (Variable) lhs;
+			environment.put(v.name, rhs.type());
+			lhs = CExpr.VAR(rhs.type(),v.name);
+		} else if(lhs instanceof Register) {
+			Register v = (Register) lhs;
+			environment.put("%" + v.index, rhs.type());
+			lhs = CExpr.REG(rhs.type(),v.index);
+		} // FIXME: other cases
 		
 		return new Code.Assign(lhs,rhs);
 	}
@@ -147,6 +157,20 @@ public class TypeInference implements ModuleTransform {
 			return infer((Variable)e,stmt,environment);
 		} else if(e instanceof Register) {
 			return infer((Register)e,stmt,environment);
+		} else if(e instanceof BinOp) {
+			return infer((BinOp)e,stmt,environment);
+		} else if(e instanceof UnOp) {
+			return infer((UnOp)e,stmt,environment);
+		} else if(e instanceof NaryOp) {
+			return infer((NaryOp)e,stmt,environment);
+		} else if(e instanceof ListAccess) {
+			return infer((ListAccess)e,stmt,environment);
+		} else if(e instanceof Tuple) {
+			return infer((Tuple)e,stmt,environment);
+		} else if(e instanceof TupleAccess) {
+			return infer((TupleAccess)e,stmt,environment);
+		} else if(e instanceof Invoke) {
+			
 		}
 		
 		// FIXME: ADD MORE CASES!
@@ -170,15 +194,108 @@ public class TypeInference implements ModuleTransform {
 		}
 		return CExpr.REG(type,v.index);
 	}
-	/*
-	protected CExpr infer(TupleAccess e, HashMap<String,Type> environment) {
-		Type.Tuple ett = Type.effectiveTupleType(lhs.first().type());				
-		Type ft = tup.types.get(sg.name);
-		if (ft == null) {
-			syntaxError("type has no field named: " + sg.name, filename, sg.lhs);
+	
+	protected CExpr infer(UnOp v, Stmt stmt, HashMap<String,Type> environment) {
+		CExpr rhs = infer(v.rhs, stmt, environment);
+		Type rhs_t = rhs.type();
+		switch(v.op) {
+			case LENGTHOF:
+				checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
+				return CExpr.UNOP(v.op,rhs);
+			case PROCESSACCESS:
+				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
+				return CExpr.UNOP(v.op,rhs);
+			case PROCESSSPAWN:
+				return CExpr.UNOP(v.op,rhs);
 		}
+		syntaxError("unknown unary operation",filename,stmt);
+		return null;
 	}
-	*/
+	
+	protected CExpr infer(BinOp v, Stmt stmt, HashMap<String,Type> environment) {
+		CExpr lhs = infer(v.lhs, stmt, environment);
+		CExpr rhs = infer(v.rhs, stmt, environment);
+		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());
+		
+		if(Type.isSubtype(Type.T_LIST(Type.T_ANY),lub)) {
+			switch(v.op) {
+				case ADD:															
+					return CExpr.BINOP(CExpr.BOP.APPEND,convert(lub,lhs),convert(lub,rhs));
+				default:
+					syntaxError("Invalid operation on lists",filename,stmt);		
+			}	
+		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),lub)) {
+			switch(v.op) {
+				case ADD:															
+					return CExpr.BINOP(CExpr.BOP.UNION,convert(lub,lhs),convert(lub,rhs));
+				case SUB:															
+					return CExpr.BINOP(CExpr.BOP.DIFFERENCE,convert(lub,lhs),convert(lub,rhs));
+				case INTERSECT:															
+					return CExpr.BINOP(v.op,convert(lub,lhs),convert(lub,rhs));
+				default:
+					syntaxError("Invalid operation on sets",filename,stmt);			
+			}
+		} 
+		
+		// FIXME: more cases, including elem of
+		
+		checkIsSubtype(Type.T_REAL,lub,stmt);	
+		return CExpr.BINOP(v.op,convert(lub,lhs),convert(lub,rhs));				
+	}
+	
+	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Type> environment) {
+		ArrayList<CExpr> args = new ArrayList<CExpr>();
+		for(CExpr arg : v.args) {
+			args.add(infer(arg,stmt,environment));
+		}
+		
+		switch(v.op) {
+			case SETGEN:				
+			case LISTGEN:
+				return CExpr.NARYOP(v.op, args);
+			case SUBLIST:						
+				if(args.size() != 3) {
+					syntaxError("Invalid arguments for sublist operation",filename,stmt);
+				}
+				checkIsSubtype(Type.T_LIST(Type.T_ANY),args.get(0).type(),stmt);
+				checkIsSubtype(Type.T_INT,args.get(1).type(),stmt);
+				checkIsSubtype(Type.T_INT,args.get(2).type(),stmt);
+				return CExpr.NARYOP(v.op, args);
+		}
+		
+		syntaxError("Unknown nary operation",filename,stmt);
+		return null;
+	}
+	
+	protected CExpr infer(ListAccess e, Stmt stmt, HashMap<String,Type> environment) {
+		CExpr src = infer(e.src,stmt,environment);
+		CExpr idx = infer(e.index,stmt,environment);
+		checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
+		checkIsSubtype(Type.T_INT,idx.type(),stmt);
+		return CExpr.LISTACCESS(e.src,e.index);
+	}
+		
+	protected CExpr infer(TupleAccess e, Stmt stmt, HashMap<String,Type> environment) {
+		CExpr lhs = infer(e.lhs,stmt,environment);				
+		Type.Tuple ett = Type.effectiveTupleType(lhs.type());				
+		if (ett == null) {
+			syntaxError("tuple type required", filename, stmt);
+		}
+		Type ft = ett.types.get(e.field);
+		if (ft == null) {
+			syntaxError("type has no field named " + e.field, filename, stmt);
+		}
+		return CExpr.TUPLEACCESS(lhs, e.field);
+	}
+	
+	protected CExpr infer(Tuple e, Stmt stmt, HashMap<String, Type> environment) {
+		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
+		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
+			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
+		}
+		return CExpr.TUPLE(args);
+	}
+	
 	/**
 	 * Bind function is responsible for determining the true type of a method or
 	 * function being invoked. To do this, it must find the function/method
@@ -226,18 +343,13 @@ public class TypeInference implements ModuleTransform {
 	
 	protected List<Type.Fun> lookupMethod(ModuleID mid, String name)
 			throws ResolveError {
-
-		if (modules.contains(mid)) {
-			NameID key = new NameID(mid, name);
-			return functions.get(key);
-		} else {
-			Module module = loader.loadModule(mid);
-			ArrayList<Type.Fun> rs = new ArrayList<Type.Fun>();
-			for (Module.Method m : module.method(name)) {
-				rs.add(m.type());
-			}
-			return rs;
+		
+		Module module = loader.loadModule(mid);
+		ArrayList<Type.Fun> rs = new ArrayList<Type.Fun>();
+		for (Module.Method m : module.method(name)) {
+			rs.add(m.type());
 		}
+		return rs;		
 	}
 	
 

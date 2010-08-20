@@ -1,2 +1,2 @@
-void f(int x):
-    int y = x + 2
+void f([int] x):
+    [int] y = x + [2]

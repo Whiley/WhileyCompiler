@@ -1367,22 +1367,9 @@ public class ModuleBuilder {
 
 		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV) {
-			if (bop == BOp.ADD
-					&& Type.isSubtype(Type.T_LIST(Type.T_ANY), Type.T_ANY)) {
-				CExpr r = CExpr.BINOP(CExpr.BOP.APPEND, lhs_tb.first(), rhs_tb
-						.first());
-				return new Pair<CExpr, Block>(r, blk);
-			} else if ((bop == BOp.ADD || bop == BOp.SUB)
-					&& Type.isSubtype(Type.T_SET(Type.T_ANY), Type.T_ANY)) {
-				CExpr.BOP op = bop == BOp.ADD ? CExpr.BOP.UNION
-						: CExpr.BOP.DIFFERENCE;
-				CExpr r = CExpr.BINOP(op, lhs_tb.first(), rhs_tb.first());
-				return new Pair<CExpr, Block>(r, blk);
-			} else {
-				CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs_tb.first(), rhs_tb
-						.first());
-				return new Pair<CExpr, Block>(r, blk);
-			}
+			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs_tb.first(), rhs_tb
+					.first());
+			return new Pair<CExpr, Block>(r, blk);			
 		} else if (bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs_tb.first(), rhs_tb
 					.first());
