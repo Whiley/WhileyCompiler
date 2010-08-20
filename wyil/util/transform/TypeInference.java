@@ -96,10 +96,31 @@ public class TypeInference implements ModuleTransform {
 			return infer((Code.IfGoto)code,stmt,environment);
 		} else if(code instanceof Return) {
 			return infer((Code.Return)code,stmt,environment);
+		} else if(code instanceof Forall) {
+			return infer((Code.Forall)code,stmt,environment);
 		} else if(code instanceof Debug) {
 			return infer((Code.Debug)code,stmt,environment);
 		} 
 		return code;
+	}
+	
+	protected Code infer(Code.Forall code, Stmt stmt, HashMap<String,Type> environment) {
+		CExpr src = infer(code.source, stmt, environment);
+		Type src_t = src.type();
+		
+		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);
+		
+		Type elem_t;
+		if(src_t instanceof Type.List) {
+			elem_t = ((Type.List)src_t).element;
+		} else {
+			elem_t = ((Type.Set)src_t).element;
+		}
+		
+		environment.put("%" + code.variable.index, elem_t);
+		
+		return new Code.Forall(code.label, CExpr.REG(elem_t,
+				code.variable.index), src);
 	}
 	
 	protected Code infer(Code.Assign code, Stmt stmt, HashMap<String,Type> environment) {
@@ -182,7 +203,7 @@ public class TypeInference implements ModuleTransform {
 	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
 		Type type = environment.get(v.name);
 		if(type == null) {
-			syntaxError("unknown variable",filename,stmt);
+			syntaxError("unknown variable: " + v,filename,stmt);
 		}
 		return CExpr.VAR(type,v.name);
 	}
