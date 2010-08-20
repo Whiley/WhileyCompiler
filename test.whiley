@@ -1,4 +1,3 @@
 void f(int x):
-    [int] y
+    int y
     y = x
-    print y
