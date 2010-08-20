@@ -156,15 +156,15 @@ public class TypeInference implements ModuleTransform {
 	protected Code infer(Code.Assign code, Stmt stmt, Env environment) {
 		CExpr.LVal lhs = code.lhs;
 		
+
+		CExpr rhs = infer(code.rhs,stmt,environment);
+
 		if(lhs instanceof LVar) {
 			// do nothing
 		} else if(lhs != null) {			
 			lhs = (CExpr.LVal) infer(lhs,stmt,environment);
+			checkIsSubtype(lhs.type(),rhs.type(), stmt);
 		}
-		
-		CExpr rhs = infer(code.rhs,stmt,environment);
-		
-		checkIsSubtype(lhs.type(),rhs.type(), stmt);
 
 		if(lhs instanceof Variable) {
 			Variable v = (Variable) lhs;
