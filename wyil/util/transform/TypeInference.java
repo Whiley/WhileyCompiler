@@ -147,10 +147,12 @@ public class TypeInference implements ModuleTransform {
 	
 	protected Code infer(Code.Debug code, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr rhs = infer(code.rhs,stmt, environment);
-		return new Code.Return(rhs);
+		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
+		return new Code.Debug(rhs);
 	}
 	
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
+		
 		if(e instanceof Value) {
 			return e;
 		} else if(e instanceof Variable) {
@@ -172,9 +174,7 @@ public class TypeInference implements ModuleTransform {
 		} else if(e instanceof Invoke) {
 			
 		}
-		
-		// FIXME: ADD MORE CASES!
-		
+				
 		return e;
 	}
 	

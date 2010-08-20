@@ -723,6 +723,7 @@ public class ModuleBuilder {
 			}
 		}
 
+		environment.add(s.name);
 		constraints.put(s.name, constraint);
 
 		return blk;
