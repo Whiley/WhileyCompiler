@@ -267,7 +267,9 @@ public class DispatchInline implements ModuleTransform {
 	
 	public Block transformConstraint(int regTarget, Block constraint,
 			CExpr.Invoke ivk, Attribute.Source src, Module.Case c) {
-				
+		
+		System.out.println("CONSTRAINT(1): " + constraint);
+		
 		// Update the source number information
 		constraint = resource(constraint,src); 
 		
@@ -295,8 +297,8 @@ public class DispatchInline implements ModuleTransform {
 			// typing here. That is, if we need a conversion
 			// between the argument type and the constraint
 			// parameter type, then aren't we losing this?
-			binding.put(target, arg);
-			
+			System.out.println("ARGUMENT: " + arg);
+			binding.put(target, arg);			
 		}									
 		
 		return Block.substitute(binding, constraint);

@@ -24,6 +24,7 @@ import java.util.*;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
+import wyil.util.transform.TypeInference;
 import wyil.io.*;
 import wyjc.lang.*;
 import wyjc.stages.*;
@@ -33,7 +34,8 @@ import wyjvm.lang.ClassFile;
 public class Compiler implements Logger {	
 	private ModuleLoader loader;
 	protected NameResolution nameResolver;
-	protected ModuleBuilder typeResolver;		
+	protected ModuleBuilder moduleBuilder;
+	protected TypeInference typeInference;
 	protected ArrayList<Stage> stages;
 	protected ArrayList<Writer> writers;
 
@@ -50,7 +52,8 @@ public class Compiler implements Logger {
 		this.stages = new ArrayList<Stage>(stages);
 		this.writers = new ArrayList<Writer>(writers);
 		this.nameResolver = new NameResolution(loader);		
-		this.typeResolver = new ModuleBuilder(loader);	
+		this.moduleBuilder = new ModuleBuilder(loader);
+		this.typeInference = new TypeInference(loader);	
 	}
 	
 	/**
@@ -85,6 +88,7 @@ public class Compiler implements Logger {
 		}
 		
 		List<Module> modules = buildModules(wyfiles);		
+		modules = typeModules(modules);
 		for(Module m : modules) {
 			finishCompilation(m);
 		}
@@ -146,8 +150,22 @@ public class Compiler implements Logger {
 	
 	protected List<Module> buildModules(List<WhileyFile> files) {
 		long start = System.currentTimeMillis();		
-		List<Module> modules = typeResolver.resolve(files);
-		logTimedMessage("resolved types",
+		List<Module> modules = moduleBuilder.resolve(files);
+		logTimedMessage("built modules",
+				System.currentTimeMillis() - start);
+		return modules;		
+	}
+	
+	protected List<Module> typeModules(List<Module> files) {
+		long start = System.currentTimeMillis();			
+		for(Module m : files) {
+			loader.register(m);
+		}
+		ArrayList<Module> modules = new ArrayList<Module>();
+		for(Module m : files) {
+			modules.add(typeInference.apply(m));
+		}		
+		logTimedMessage("inferred types",
 				System.currentTimeMillis() - start);
 		return modules;		
 	}

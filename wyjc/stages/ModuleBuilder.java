@@ -25,6 +25,7 @@ import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
+import wyil.util.transform.TypeInference;
 import wyjc.lang.*;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt;
@@ -32,7 +33,7 @@ import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
 
 public class ModuleBuilder {
-	private final ModuleLoader loader;
+	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
 	private HashMap<NameID, List<Type.Fun>> functions;
@@ -50,7 +51,7 @@ public class ModuleBuilder {
 	private final HashMap<String, CExpr> shadows = new HashMap<String, CExpr>();
 
 	public ModuleBuilder(ModuleLoader loader) {
-		this.loader = loader;
+		this.loader = loader;		
 	}
 
 	public List<Module> resolve(List<WhileyFile> files) {
@@ -118,8 +119,9 @@ public class ModuleBuilder {
 				syntaxError("internal failure", wf.filename, d, ex);
 			}
 		}
+		
 		return new Module(wf.module, wf.filename, methods.values(), types,
-				constants);
+				constants);				
 	}
 
 	/**
