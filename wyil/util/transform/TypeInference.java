@@ -216,6 +216,8 @@ public class TypeInference implements ModuleTransform {
 			return infer((UnOp) e, stmt, environment);
 		} else if (e instanceof NaryOp) {
 			return infer((NaryOp) e, stmt, environment);
+		} else if (e instanceof Convert) {
+			return infer((Convert) e, stmt, environment);
 		} else if (e instanceof ListAccess) {
 			return infer((ListAccess) e, stmt, environment);
 		} else if (e instanceof Tuple) {
@@ -245,6 +247,11 @@ public class TypeInference implements ModuleTransform {
 			syntaxError("unknown register: " + name,filename,stmt);
 		}
 		return CExpr.REG(type,v.index);
+	}
+	
+	protected CExpr infer(Convert v, Stmt stmt, Env environment) {
+		CExpr rhs = infer(v.rhs, stmt, environment);
+		return CExpr.CONVERT(v.type,rhs);
 	}
 	
 	protected CExpr infer(UnOp v, Stmt stmt, Env environment) {
