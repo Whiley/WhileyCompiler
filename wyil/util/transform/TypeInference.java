@@ -182,8 +182,18 @@ public class TypeInference implements ModuleTransform {
 	protected Code infer(Code.IfGoto code, Stmt stmt, Env environment) {
 		CExpr lhs = infer(code.lhs,stmt,environment);
 		CExpr rhs = infer(code.rhs,stmt,environment);
+		Type lhs_t = lhs.type();
+		Type rhs_t = rhs.type();
+		
+		if(!Type.isSubtype(lhs_t,rhs_t) && !Type.isSubtype(rhs_t,lhs_t)) {
+			syntaxError("incomparable expressions",filename,stmt);
+		}
+		
+		Type lub = Type.leastUpperBound(lhs_t,rhs_t);		
+		
 		// FIXME: PERFORM TYPE INFERENCE
-		return new Code.IfGoto(code.op, lhs, rhs, code.target);
+		return new Code.IfGoto(code.op, convert(lub, lhs), convert(lub, rhs),
+				code.target);
 	}
 	
 	protected Code infer(Code.Return code, Stmt stmt, Env environment) {
@@ -388,7 +398,7 @@ public class TypeInference implements ModuleTransform {
 			}
 
 			for (int i=0;i!=args.size();++i) {
-				Type type = types.get(i);
+				Type type = funtype.params.get(i);
 				CExpr arg = args.get(i);
 				args.set(i,convert(type,arg));
 			}
