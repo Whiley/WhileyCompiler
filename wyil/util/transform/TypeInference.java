@@ -92,15 +92,36 @@ public class TypeInference implements ModuleTransform {
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
 			
+			if(code instanceof Label) {
+				Label label = (Label) code;
+				if(environment == null) {
+					environment = flowsets.get(label.label);
+				} else {
+					environment.join(flowsets.get(label.label));
+				}
+			}
+			
+			if(environment == null) {
+				continue; // this indicates dead-code
+			}
+			
 			if(code instanceof Goto) {
 				Goto got = (Goto) code;
 				merge(got.target,environment,flowsets);
 				environment = null;
 			} else if(code instanceof IfGoto) {
 				IfGoto igot = (IfGoto) code;	
-				// FIXME: broken!
-				code = infer((Code.IfGoto)code,stmt,environment);
-				merge(igot.target,environment,flowsets);
+				Env tenv = environment.clone();
+				code = infer((Code.IfGoto)code,stmt,tenv,environment);
+				// Observe that the following is needed because type inference
+				// can determine that an if-statement definitely is taken, or
+				// definitely isn't taken.
+				if(code instanceof Code.IfGoto) {
+					merge(igot.target,tenv,flowsets);
+				} else if(code instanceof Code.Goto) {
+					merge(igot.target,tenv,flowsets);
+					environment = null;
+				}
 			} else if(code instanceof Assign) {
 				code = infer((Code.Assign)code,stmt,environment);
 			} else if(code instanceof Return) {
@@ -110,14 +131,7 @@ public class TypeInference implements ModuleTransform {
 				code = infer(fall,stmt,environment);
 			} else if(code instanceof Debug) {
 				code = infer((Code.Debug)code,stmt,environment);
-			} else if(code instanceof Label) {
-				Label label = (Label) code;
-				if(environment == null) {
-					environment = flowsets.get(label.label);
-				} else {
-					environment.join(flowsets.get(label.label));
-				}
-			}
+			} 
 			
 			nblock.add(code, stmt.attributes());
 		}
@@ -183,9 +197,9 @@ public class TypeInference implements ModuleTransform {
 		return new Code.Assign(lhs,rhs);
 	}
 		
-	protected Code infer(Code.IfGoto code, Stmt stmt, Env environment) {
-		CExpr lhs = infer(code.lhs,stmt,environment);
-		CExpr rhs = infer(code.rhs,stmt,environment);
+	protected Code infer(Code.IfGoto code, Stmt stmt, Env trueEnv, Env falseEnv) {
+		CExpr lhs = infer(code.lhs,stmt,trueEnv);
+		CExpr rhs = infer(code.rhs,stmt,trueEnv);
 		Type lhs_t = lhs.type();
 		Type rhs_t = rhs.type();
 		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
@@ -231,13 +245,42 @@ public class TypeInference implements ModuleTransform {
 			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
 			break;
 		case NSUBTYPEEQ:
+			// this is a tad sneaky
+			Env tmp = trueEnv;
+			trueEnv = falseEnv;
+			falseEnv = tmp;
 		case SUBTYPEEQ:
-			Value.TypeConst tc = (Value.TypeConst) rhs; 
+			Value.TypeConst tc = (Value.TypeConst) rhs; 				
 			if (!Type.isSubtype(lhs_t, tc.type)
 					&& !Type.isSubtype(tc.type, lhs_t)) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
+				System.out.println("BYPASSING CODE");
+				if (code.op == Code.COP.NSUBTYPEEQ) {
+					return new Code.Goto(code.target);
+				} else {
+					return new Code.Skip();
+				}
 			}
+			// Now, perform the actual type inference
+			if(lhs instanceof CExpr.Variable) {
+				CExpr.Variable v = (CExpr.Variable) lhs;
+				// FIXME: want to use the GLB here, so that if we have a more
+				// precise type for the variable already then we don't
+				// compromise that.
+				trueEnv.put(v.name, tc.type);
+				// FIXME: want to use type difference here, so that we can
+				// register the fact that this definitely is not a particular
+				// type.
+			} else if(lhs instanceof CExpr.Register) {
+				CExpr.Register reg = (CExpr.Register) lhs;
+				// FIXME: want to use the GLB here, so that if we have a more
+				// precise type for the variable already then we don't
+				// compromise that.
+				trueEnv.put("%" + reg.index, tc.type);
+				// FIXME: want to use type difference here, so that we can
+				// register the fact that this definitely is not a particular
+				// type.				
+			}
+			
 			return new Code.IfGoto(code.op, lhs, rhs,code.target);
 		}
 				
