@@ -184,14 +184,59 @@ public class TypeInference implements ModuleTransform {
 		CExpr rhs = infer(code.rhs,stmt,environment);
 		Type lhs_t = lhs.type();
 		Type rhs_t = rhs.type();
+		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
 		
-		if(!Type.isSubtype(lhs_t,rhs_t) && !Type.isSubtype(rhs_t,lhs_t)) {
-			syntaxError("incomparable expressions",filename,stmt);
+		switch(code.op) {
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+			checkIsSubtype(Type.T_REAL, lub, stmt);
+			break;
+		case EQ:
+		case NEQ:
+			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
+				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
+						filename, stmt);
+			}
+			break;
+		case ELEMOF:
+		{
+			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
+			Type element;
+			if(rhs_t instanceof Type.List){
+				element = ((Type.List)rhs_t).element;
+			} else {
+				element = ((Type.Set)rhs_t).element;
+			}
+			if (!Type.isSubtype(element, lhs_t)) {
+				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
+						filename, stmt);
+			}
+			
+			return new Code.IfGoto(code.op, convert(element, lhs), rhs,
+					code.target);
+		}	
+		case SUBSET:
+		case SUBSETEQ:
+			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
+				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
+						filename, stmt);
+			}
+			checkIsSubtype(Type.T_SET(Type.T_ANY),lhs_t,stmt);
+			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
+			break;
+		case NSUBTYPEEQ:
+		case SUBTYPEEQ:
+			Value.TypeConst tc = (Value.TypeConst) rhs; 
+			if (!Type.isSubtype(lhs_t, tc.type)
+					&& !Type.isSubtype(tc.type, lhs_t)) {
+				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
+						filename, stmt);
+			}
+			return new Code.IfGoto(code.op, lhs, rhs,code.target);
 		}
-		
-		Type lub = Type.leastUpperBound(lhs_t,rhs_t);		
-		
-		// FIXME: PERFORM TYPE INFERENCE
+				
 		return new Code.IfGoto(code.op, convert(lub, lhs), convert(lub, rhs),
 				code.target);
 	}
