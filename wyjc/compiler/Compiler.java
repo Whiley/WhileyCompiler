@@ -23,8 +23,8 @@ import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.stages.TypeInference;
 import wyil.util.*;
-import wyil.util.transform.TypeInference;
 import wyil.io.*;
 import wyjc.lang.*;
 import wyjc.stages.*;

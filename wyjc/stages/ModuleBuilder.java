@@ -23,9 +23,9 @@ import java.math.BigInteger;
 
 import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
+import wyil.stages.TypeInference;
 import wyil.util.*;
 import wyil.lang.*;
-import wyil.util.transform.TypeInference;
 import wyjc.lang.*;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt;
