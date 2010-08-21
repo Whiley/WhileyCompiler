@@ -10,7 +10,7 @@ import wyil.io.*;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 
-public class ClassWriter implements Compiler.Writer {
+public class ClassWriter implements Compiler.Stage {
 	private ClassFileBuilder classBuilder;
 
 	public ClassWriter(ModuleLoader loader, int whileyMajorVersion,
@@ -19,7 +19,7 @@ public class ClassWriter implements Compiler.Writer {
 				whileyMinorVersion);
 	}
 		
-	public void write(Module m, Logger logout) {
+	public Module process(Module m, Logger logout) {
 		long start = System.currentTimeMillis();
 		ClassFile file = classBuilder.build(m);		
 		// calculate filename
@@ -35,6 +35,7 @@ public class ClassWriter implements Compiler.Writer {
 					+ "] failed writing class file (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 		}
+		return m;
 	}	
 	
 }

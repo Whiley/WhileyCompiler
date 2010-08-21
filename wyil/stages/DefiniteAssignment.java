@@ -2,7 +2,6 @@ package wyil.stages;
 
 import java.util.*;
 import wyil.util.*;
-import wyil.util.check.ModuleCheck;
 import wyil.util.dfa.*;
 import wyil.lang.*;
 import static wyil.util.SyntaxError.*;

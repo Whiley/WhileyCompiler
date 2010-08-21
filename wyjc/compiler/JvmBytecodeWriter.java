@@ -10,7 +10,7 @@ import wyil.io.*;
 import wyjvm.io.*;
 import wyjvm.lang.ClassFile;
 
-public class JvmBytecodeWriter implements Compiler.Writer {
+public class JvmBytecodeWriter implements Compiler.Stage {
 	private ClassFileBuilder classBuilder;
 
 	public JvmBytecodeWriter(ModuleLoader loader, int whileyMajorVersion,
@@ -19,7 +19,7 @@ public class JvmBytecodeWriter implements Compiler.Writer {
 				whileyMinorVersion);
 	}
 		
-	public void write(Module m, Logger logout) {
+	public Module process(Module m, Logger logout) {
 		long start = System.currentTimeMillis();
 		ClassFile file = classBuilder.build(m);		
 		// calculate filename
@@ -36,6 +36,7 @@ public class JvmBytecodeWriter implements Compiler.Writer {
 					+ "] failed writing jvm bytecode file (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 		}
+		return m;
 	}	
 	
 }

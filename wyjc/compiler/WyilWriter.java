@@ -10,9 +10,9 @@ import wyil.io.*;
 import wyjvm.io.*;
 import wyjvm.lang.ClassFile;
 
-public class WyilWriter implements Compiler.Writer {
+public class WyilWriter implements Compiler.Stage {
 	
-	public void write(Module m, Logger logout) {
+	public Module process(Module m, Logger logout) {
 		long start = System.currentTimeMillis();
 				
 		// calculate filename
@@ -29,6 +29,7 @@ public class WyilWriter implements Compiler.Writer {
 					+ "] failed writing wyil file (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 		}
+		return m;
 	}	
 	
 }

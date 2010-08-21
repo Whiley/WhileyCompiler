@@ -37,20 +37,14 @@ public class Compiler implements Logger {
 	protected ModuleBuilder moduleBuilder;
 	protected TypeInference typeInference;
 	protected ArrayList<Stage> stages;
-	protected ArrayList<Writer> writers;
 
 	public interface Stage {
 		public Module process(Module module, Logger logout);
 	}
-	public interface Writer {
-		public void write(Module module, Logger logout);
-	}
-			
-	public Compiler(ModuleLoader loader, List<Stage> stages,
-			List<Writer> writers) {
+	
+	public Compiler(ModuleLoader loader, List<Stage> stages) {
 		this.loader = loader;		
 		this.stages = new ArrayList<Stage>(stages);
-		this.writers = new ArrayList<Writer>(writers);
 		this.nameResolver = new NameResolution(loader);		
 		this.moduleBuilder = new ModuleBuilder(loader);
 		this.typeInference = new TypeInference(loader);	
@@ -133,11 +127,7 @@ public class Compiler implements Logger {
 		
 		for(Stage s : stages) {
 			module = s.process(module,this);
-		}
-		
-		for(Writer w : writers) {
-			w.write(module,this);
-		}
+		}		
 	}
 		
 	protected void resolveNames(WhileyFile m) {

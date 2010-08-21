@@ -25,7 +25,6 @@ import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.stages.*;
 import wyil.util.*;
-import wyil.util.check.*;
 import wyjc.compiler.*;
 import wyjc.compiler.Compiler;
 import wyjc.util.*;
@@ -134,18 +133,17 @@ public class Main {
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();		
 		stages.add(new WyilTransform("dispatch inline",new DispatchInline(loader)));
 		stages.add(new WyilTransform("type inference",new TypeInference(loader)));
-		stages.add(new WyilTransform("definite assignment",new DefiniteAssignment()));
-		ArrayList<Compiler.Writer> writers = new ArrayList<Compiler.Writer>();
+		stages.add(new WyilTransform("definite assignment",new DefiniteAssignment()));		
 		if(wyil) {
-			writers.add(new WyilWriter());
+			stages.add(new WyilWriter());
 		}
 		if(jvm) {
-			writers.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
+			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}
 		if(classfile) {
-			writers.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));
+			stages.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));
 		}
-		Compiler compiler = new Compiler(loader,stages,writers);
+		Compiler compiler = new Compiler(loader,stages);
 		
 		// Now, configure compiler and loader
 		loader.setLogger(compiler);
