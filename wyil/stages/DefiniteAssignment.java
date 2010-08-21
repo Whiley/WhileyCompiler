@@ -1,7 +1,8 @@
-package wyil.util.check;
+package wyil.stages;
 
 import java.util.*;
 import wyil.util.*;
+import wyil.util.check.ModuleCheck;
 import wyil.util.dfa.*;
 import wyil.lang.*;
 import static wyil.util.SyntaxError.*;
@@ -27,14 +28,15 @@ import static wyil.util.SyntaxError.*;
  * 
  */
 public class DefiniteAssignment extends
-		ForwardAnalysis<IntersectionFlowSet<String>> implements ModuleCheck {
+		ForwardAnalysis<IntersectionFlowSet<String>> implements ModuleTransform {
 	private String filename;
 	
-	public void check(Module module) {
+	public Module apply(Module module) {
 		filename = module.filename();
 		for(Module.Method method : module.methods()) {
 			check(method);
 		}
+		return module;
 	}
 	
 	public void check(Module.Method method) {

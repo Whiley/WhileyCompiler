@@ -134,7 +134,7 @@ public class Main {
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();		
 		stages.add(new WyilTransform("dispatch inline",new DispatchInline(loader)));
 		stages.add(new WyilTransform("type inference",new TypeInference(loader)));
-		stages.add(new WyilCheck("definite assignment",new DefiniteAssignment()));
+		stages.add(new WyilTransform("definite assignment",new DefiniteAssignment()));
 		ArrayList<Compiler.Writer> writers = new ArrayList<Compiler.Writer>();
 		if(wyil) {
 			writers.add(new WyilWriter());
