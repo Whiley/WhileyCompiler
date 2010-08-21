@@ -324,6 +324,9 @@ public class TypeInference implements ModuleTransform {
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		Type rhs_t = rhs.type();
 		switch(v.op) {
+			case NEG:
+				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
+				return CExpr.UNOP(v.op,rhs);
 			case LENGTHOF:
 				checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
 				return CExpr.UNOP(v.op,rhs);
@@ -333,7 +336,7 @@ public class TypeInference implements ModuleTransform {
 			case PROCESSSPAWN:
 				return CExpr.UNOP(v.op,rhs);
 		}
-		syntaxError("unknown unary operation",filename,stmt);
+		syntaxError("unknown unary operation: " + v.op,filename,stmt);
 		return null;
 	}
 	
