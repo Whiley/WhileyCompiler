@@ -43,7 +43,7 @@ public class TypeInference implements ModuleTransform {
 		} else {
 			Env environment = new Env();
 			environment.put("$", type.type());
-			constraint = transform(constraint, environment);
+			constraint = transform(constraint, environment, null);
 			return new Module.TypeDef(type.name(), type.type(), constraint);
 		}
 	}
@@ -65,23 +65,27 @@ public class TypeInference implements ModuleTransform {
 			environment.put(paramNames.get(i), paramTypes.get(i));
 		}
 		
+		if(method.type().receiver != null) {
+			environment.put("this", method.type().receiver);
+		}
+		
 		Block precondition = mcase.precondition();
 		if(precondition != null) {
-			precondition = transform(precondition, environment);
+			precondition = transform(precondition, environment, method);
 		}
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
 			environment.put("$",method.type().ret);
-			postcondition = transform(postcondition, environment);
+			postcondition = transform(postcondition, environment, method);
 			environment.remove("$");
 		}
 				
-		Block body = transform(mcase.body(), environment);		
+		Block body = transform(mcase.body(), environment, method);		
 		return new Module.Case(mcase.parameterNames(), precondition,
 				postcondition, body);
 	}
 	
-	protected Block transform(Block block, Env environment) {
+	protected Block transform(Block block, Env environment, Module.Method method) {
 		Block nblock = new Block();
 		HashMap<String,Env> flowsets = new HashMap<String,Env>();		
 		for(int i=0;i!=block.size();++i) {
@@ -100,7 +104,7 @@ public class TypeInference implements ModuleTransform {
 			} else if(code instanceof Assign) {
 				code = infer((Code.Assign)code,stmt,environment);
 			} else if(code instanceof Return) {
-				code = infer((Code.Return)code,stmt,environment);
+				code = infer((Code.Return)code,stmt,environment,method);
 			} else if(code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
 				code = infer(fall,stmt,environment);
@@ -241,11 +245,18 @@ public class TypeInference implements ModuleTransform {
 				code.target);
 	}
 	
-	protected Code infer(Code.Return code, Stmt stmt, Env environment) {
+	protected Code infer(Code.Return code, Stmt stmt, Env environment,
+			Module.Method method) {
 		CExpr rhs = code.rhs;
 		
 		if(rhs != null) {
-			rhs = infer(rhs,stmt,environment);
+			Type ret_t = method.type().ret;
+			if(ret_t == Type.T_VOID) {
+				syntaxError(
+						"cannot return value, as method has void return type",
+						filename, stmt);
+			}
+			rhs = convert(ret_t,infer(rhs,stmt,environment));
 		}
 		
 		return new Code.Return(rhs);
@@ -333,6 +344,7 @@ public class TypeInference implements ModuleTransform {
 				
 		if(Type.isSubtype(Type.T_LIST(Type.T_ANY),lub)) {
 			switch(v.op) {
+				case APPEND:
 				case ADD:															
 					return CExpr.BINOP(CExpr.BOP.APPEND,convert(lub,lhs),convert(lub,rhs));
 				default:
