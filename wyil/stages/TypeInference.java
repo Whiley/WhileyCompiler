@@ -95,11 +95,13 @@ public class TypeInference implements ModuleTransform {
 			if(code instanceof Label) {
 				Label label = (Label) code;
 				if(environment == null) {
-					environment = flowsets.get(label.label);
+					environment = flowsets.get(label.label);					
 				} else {
 					join(environment,flowsets.get(label.label));
 				}				
-			} else if(environment == null) {				
+			} 
+			
+			if(environment == null) {				
 				continue; // this indicates dead-code
 			} else if(code instanceof Goto) {
 				Goto got = (Goto) code;
