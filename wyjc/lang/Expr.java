@@ -188,6 +188,10 @@ public interface Expr extends SyntacticElement {
 			this.lhs = lhs;
 			this.name = name;
 		}
+		
+		public String toString() {
+			return lhs + "." + name;
+		}
 	}		
 
 	public static class TupleGen extends SyntacticElement.Impl implements Expr {

@@ -278,7 +278,7 @@ public class NameResolution {
 			// is, and then store that information for future use.
 			ModuleID mid = loader.resolve(v.var, imports);
 			v.attributes().add(new Attributes.Module(mid));
-		} else if (aliases.size() == 1) {
+		} else if (aliases.size() == 1) {			
 			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
 		} else if (aliases.size() > 1) {
 			syntaxError("ambigous variable name", filename, v);
@@ -390,7 +390,7 @@ public class NameResolution {
 		// Extended this method to handle lists and sets etc, is very difficult.
 		// The primary problem is that we need to expand expressions involved
 		// names exposed in this way into quantified
-		// expressions.
+		// expressions.		
 		if(t instanceof UnresolvedType.Tuple) {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
@@ -404,9 +404,10 @@ public class NameResolution {
 				}
 				aliases.add(s);
 			}
-		} else if(t instanceof UnresolvedType.Process) {	
+		} else if (t instanceof UnresolvedType.Process) {			
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			addExposedNames(new Expr.UnOp(Expr.UOp.PROCESSACCESS,src),ut.element,environment);					
-		}  
+			addExposedNames(new Expr.UnOp(Expr.UOp.PROCESSACCESS, src),
+					ut.element, environment);
+		}
 	}
 }

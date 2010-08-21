@@ -1,2 +1,1 @@
-void System::main([string] args):
-    print "HELLO WORLD"
+define state as (int x, int y) where x < y

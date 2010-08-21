@@ -410,6 +410,7 @@ public class TypeInference implements ModuleTransform {
 		CExpr lhs = infer(e.lhs,stmt,environment);				
 		Type.Tuple ett = Type.effectiveTupleType(lhs.type());				
 		if (ett == null) {
+			System.out.println("GOT: " + lhs.type());
 			syntaxError("tuple type required", filename, stmt);
 		}
 		Type ft = ett.types.get(e.field);

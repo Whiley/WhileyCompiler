@@ -163,7 +163,8 @@ public class Compiler implements Logger {
 		}
 		ArrayList<Module> modules = new ArrayList<Module>();
 		for(Module m : files) {
-			modules.add(typeInference.apply(m));
+			//modules.add(typeInference.apply(m));
+			modules.add(m);
 		}		
 		logTimedMessage("inferred types",
 				System.currentTimeMillis() - start);

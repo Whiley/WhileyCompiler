@@ -280,8 +280,8 @@ public class ModuleBuilder {
 		for (WhileyFile f : files) {
 			for (Decl d : f.declarations) {
 				if (d instanceof TypeDecl) {
-					TypeDecl td = (TypeDecl) d;
-					NameID key = new NameID(f.module, td.name());
+					TypeDecl td = (TypeDecl) d;					
+					NameID key = new NameID(f.module, td.name());					
 					unresolved.put(key, new Pair<UnresolvedType, Expr>(td.type,
 							td.constraint));
 					srcs.put(key, d);
@@ -291,9 +291,9 @@ public class ModuleBuilder {
 		}
 
 		// third expand all types
-		for (NameID key : unresolved.keySet()) {
+		for (NameID key : unresolved.keySet()) {			
 			try {
-				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();
+				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type, Block> p = expandType(key, cache);
 				Type t = simplifyRecursiveTypes(p.first());
 				if (Type.isExistential(t)) {
@@ -473,8 +473,11 @@ public class ModuleBuilder {
 			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Pair<Type, Block> p = expandType(ut.element, filename, cache);
-			return new Pair<Type, Block>(Type.T_PROCESS(p.first()), p.second());
+			Pair<Type, Block> p = expandType(ut.element, filename, cache);			
+			Type type = Type.T_PROCESS(p.first());
+			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
+			binding.put("$", CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(type, "$")));			
+			return new Pair<Type, Block>(type, Block.substitute(binding, p.second()));					
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
 			Attributes.Module modInfo = dt.attribute(Attributes.Module.class);
@@ -1569,7 +1572,7 @@ public class ModuleBuilder {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
 			ModuleID mid = dt.attribute(Attributes.Module.class).module;
 			if (modules.contains(mid)) {
-				Pair<Type, Block> p = types.get(new NameID(mid, dt.name));
+				Pair<Type, Block> p = types.get(new NameID(mid, dt.name));				
 				return new Pair<Type, Block>(p.first(), Block.relabel(p
 						.second()));
 			} else {
@@ -1635,8 +1638,11 @@ public class ModuleBuilder {
 			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
 		} else {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Pair<Type, Block> p = resolve(ut.element);
-			return new Pair<Type, Block>(Type.T_PROCESS(p.first()), null);
+			Pair<Type, Block> p = resolve(ut.element);			
+			Type type = Type.T_PROCESS(p.first());
+			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
+			binding.put("$", CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(type, "$")));			
+			return new Pair<Type, Block>(type, Block.substitute(binding, p.second()));					
 		}
 	}
 
