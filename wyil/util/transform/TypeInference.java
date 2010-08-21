@@ -41,7 +41,7 @@ public class TypeInference implements ModuleTransform {
 		if (constraint == null) {
 			return type;
 		} else {
-			Env environment = new Env();
+			HashMap<String,Type> environment = new HashMap<String,Type>();
 			environment.put("$", type.type());
 			constraint = transform(constraint, environment, null);
 			return new Module.TypeDef(type.name(), type.type(), constraint);
@@ -57,7 +57,7 @@ public class TypeInference implements ModuleTransform {
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		Env environment = new Env();
+		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
 		List<String> paramNames = mcase.parameterNames();
 		List<Type> paramTypes = method.type().params;
@@ -85,9 +85,9 @@ public class TypeInference implements ModuleTransform {
 				postcondition, body);
 	}
 	
-	protected Block transform(Block block, Env environment, Module.Method method) {
+	protected Block transform(Block block, HashMap<String,Type> environment, Module.Method method) {
 		Block nblock = new Block();
-		HashMap<String,Env> flowsets = new HashMap<String,Env>();		
+		HashMap<String,HashMap<String,Type>> flowsets = new HashMap<String,HashMap<String,Type>>();		
 		for(int i=0;i!=block.size();++i) {
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
@@ -97,7 +97,7 @@ public class TypeInference implements ModuleTransform {
 				if(environment == null) {
 					environment = flowsets.get(label.label);
 				} else {
-					environment.join(flowsets.get(label.label));
+					join(environment,flowsets.get(label.label));
 				}				
 			} else if(environment == null) {				
 				continue; // this indicates dead-code
@@ -107,7 +107,7 @@ public class TypeInference implements ModuleTransform {
 				environment = null;
 			} else if(code instanceof IfGoto) {
 				IfGoto igot = (IfGoto) code;	
-				Env tenv = environment.clone();
+				HashMap<String,Type> tenv = new HashMap<String,Type>(environment);
 				code = infer((Code.IfGoto)code,stmt,tenv,environment);
 				// Observe that the following is needed because type inference
 				// can determine that an if-statement definitely is taken, or
@@ -134,20 +134,20 @@ public class TypeInference implements ModuleTransform {
 		return nblock;
 	}
 	
-	protected void merge(String target, Env env,
-			HashMap<String, Env> flowsets) {
+	protected void merge(String target, HashMap<String,Type> env,
+			HashMap<String, HashMap<String,Type>> flowsets) {
 		
-		Env e = flowsets.get(target);
+		HashMap<String,Type> e = flowsets.get(target);
 		if(e == null) {
 			flowsets.put(target, env);
 		} else {
-			e.join(env);
+			join(e,env);
 			flowsets.put(target, env);
 		}
 	}
 	
 	protected Code infer(Code.Forall code, Stmt stmt,
-			Env environment) {
+			HashMap<String,Type> environment) {
 		
 		CExpr src = infer(code.source, stmt, environment);
 		Type src_t = src.type();				
@@ -167,7 +167,7 @@ public class TypeInference implements ModuleTransform {
 				code.variable.index), src);
 	}
 	
-	protected Code infer(Code.Assign code, Stmt stmt, Env environment) {
+	protected Code infer(Code.Assign code, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr.LVal lhs = code.lhs;
 		
 
@@ -193,7 +193,7 @@ public class TypeInference implements ModuleTransform {
 		return new Code.Assign(lhs,rhs);
 	}
 		
-	protected Code infer(Code.IfGoto code, Stmt stmt, Env trueEnv, Env falseEnv) {
+	protected Code infer(Code.IfGoto code, Stmt stmt, HashMap<String,Type> trueEnv, HashMap<String,Type> falseEnv) {
 		CExpr lhs = infer(code.lhs,stmt,trueEnv);
 		CExpr rhs = infer(code.rhs,stmt,trueEnv);
 		Type lhs_t = lhs.type();
@@ -242,7 +242,7 @@ public class TypeInference implements ModuleTransform {
 			break;
 		case NSUBTYPEEQ:
 			// this is a tad sneaky
-			Env tmp = trueEnv;
+			HashMap<String,Type> tmp = trueEnv;
 			trueEnv = falseEnv;
 			falseEnv = tmp;
 		case SUBTYPEEQ:
@@ -283,7 +283,7 @@ public class TypeInference implements ModuleTransform {
 				code.target);
 	}
 	
-	protected Code infer(Code.Return code, Stmt stmt, Env environment,
+	protected Code infer(Code.Return code, Stmt stmt, HashMap<String,Type> environment,
 			Module.Method method) {
 		CExpr rhs = code.rhs;
 		
@@ -300,13 +300,13 @@ public class TypeInference implements ModuleTransform {
 		return new Code.Return(rhs);
 	}
 	
-	protected Code infer(Code.Debug code, Stmt stmt, Env environment) {
+	protected Code infer(Code.Debug code, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr rhs = infer(code.rhs,stmt, environment);
 		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
 		return new Code.Debug(rhs);
 	}
 	
-	protected CExpr infer(CExpr e, Stmt stmt, Env environment) {
+	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
 
 		if (e instanceof Value) {
 			return e;
@@ -336,7 +336,7 @@ public class TypeInference implements ModuleTransform {
 		return null; // unreachable
 	}
 	
-	protected CExpr infer(Variable v, Stmt stmt, Env environment) {
+	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
 		Type type = environment.get(v.name);
 		if(type == null) {
 			syntaxError("unknown variable: " + v,filename,stmt);
@@ -344,7 +344,7 @@ public class TypeInference implements ModuleTransform {
 		return CExpr.VAR(type,v.name);
 	}
 	
-	protected CExpr infer(Register v, Stmt stmt, Env environment) {
+	protected CExpr infer(Register v, Stmt stmt, HashMap<String,Type> environment) {
 		String name = "%" + v.index;
 		Type type = environment.get(name);
 		if(type == null) {
@@ -353,12 +353,12 @@ public class TypeInference implements ModuleTransform {
 		return CExpr.REG(type,v.index);
 	}
 	
-	protected CExpr infer(Convert v, Stmt stmt, Env environment) {
+	protected CExpr infer(Convert v, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		return CExpr.CONVERT(v.type,rhs);
 	}
 	
-	protected CExpr infer(UnOp v, Stmt stmt, Env environment) {
+	protected CExpr infer(UnOp v, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		Type rhs_t = rhs.type();
 		switch(v.op) {
@@ -378,7 +378,7 @@ public class TypeInference implements ModuleTransform {
 		return null;
 	}
 	
-	protected CExpr infer(BinOp v, Stmt stmt, Env environment) {
+	protected CExpr infer(BinOp v, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr lhs = infer(v.lhs, stmt, environment);
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());
@@ -412,7 +412,7 @@ public class TypeInference implements ModuleTransform {
 		return CExpr.BINOP(v.op,convert(lub,lhs),convert(lub,rhs));				
 	}
 	
-	protected CExpr infer(NaryOp v, Stmt stmt, Env environment) {
+	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Type> environment) {
 		ArrayList<CExpr> args = new ArrayList<CExpr>();
 		for(CExpr arg : v.args) {
 			args.add(infer(arg,stmt,environment));
@@ -436,7 +436,7 @@ public class TypeInference implements ModuleTransform {
 		return null;
 	}
 	
-	protected CExpr infer(ListAccess e, Stmt stmt, Env environment) {
+	protected CExpr infer(ListAccess e, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr src = infer(e.src,stmt,environment);
 		CExpr idx = infer(e.index,stmt,environment);
 		checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
@@ -444,7 +444,7 @@ public class TypeInference implements ModuleTransform {
 		return CExpr.LISTACCESS(e.src,e.index);
 	}
 		
-	protected CExpr infer(TupleAccess e, Stmt stmt, Env environment) {
+	protected CExpr infer(TupleAccess e, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr lhs = infer(e.lhs,stmt,environment);				
 		Type.Tuple ett = Type.effectiveTupleType(lhs.type());				
 		if (ett == null) {
@@ -457,7 +457,7 @@ public class TypeInference implements ModuleTransform {
 		return CExpr.TUPLEACCESS(lhs, e.field);
 	}
 	
-	protected CExpr infer(Tuple e, Stmt stmt, Env environment) {
+	protected CExpr infer(Tuple e, Stmt stmt, HashMap<String,Type> environment) {
 		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
 		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
 			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
@@ -466,7 +466,7 @@ public class TypeInference implements ModuleTransform {
 	}
 	
 	protected CExpr infer(Invoke ivk, Stmt stmt,
-			Env environment) {
+			HashMap<String,Type> environment) {
 		
 		ArrayList<CExpr> args = new ArrayList<CExpr>();
 		ArrayList<Type> types = new ArrayList<Type>();
@@ -592,29 +592,21 @@ public class TypeInference implements ModuleTransform {
 		}
 	}
 
-	private static class Env extends HashMap<String,Type> {
-		public Env() {}
-		public Env(Map<String,Type> e) {
-			super(e);
+	public static void join(HashMap<String, Type> env1,
+			HashMap<String, Type> env2) {
+		if (env2 == null) {
+			return;
 		}
-
-		public void join(Env other) {
-			if(other == null) { return; }
-			HashSet<String> keys = new HashSet<String>(keySet());
-			keys.addAll(other.keySet());
-			for (String key : keys) {
-				Type mt = get(key);
-				Type ot = other.get(key);
-				if (ot == null || mt == null) {
-					remove(key);
-				} else {
-					put(key, Type.leastUpperBound(mt, ot));
-				}
+		HashSet<String> keys = new HashSet<String>(env1.keySet());
+		keys.addAll(env2.keySet());
+		for (String key : keys) {
+			Type mt = env1.get(key);
+			Type ot = env2.get(key);
+			if (ot == null || mt == null) {
+				env1.remove(key);
+			} else {
+				env1.put(key, Type.leastUpperBound(mt, ot));
 			}
-		}
-		
-		public Env clone() {
-			return new Env(this);
 		}
 	}
 }

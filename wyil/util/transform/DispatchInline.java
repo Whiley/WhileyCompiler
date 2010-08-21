@@ -224,7 +224,7 @@ public class DispatchInline implements ModuleTransform {
 				Module.Case c = method.cases().get(0);
 				Block constraint = c.precondition();
 				if (constraint != null) {
-					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c));
+					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c,method));
 				}				
 				blk.add(new Code.Assign(lhs,ivk),stmt.attributes());				
 			} else {			
@@ -241,7 +241,7 @@ public class DispatchInline implements ModuleTransform {
 					}
 					Block constraint = c.precondition();
 					if (constraint != null) {						
-						constraint = transformConstraint(regTarget,constraint,ivk,src,c);
+						constraint = transformConstraint(regTarget,constraint,ivk,src,c,method);
 						if(caseNum < ncases) {
 							nextLabel = Block.freshLabel();
 							constraint = Block.chain(nextLabel, constraint);
@@ -266,7 +266,8 @@ public class DispatchInline implements ModuleTransform {
 	}
 	
 	public Block transformConstraint(int regTarget, Block constraint,
-			CExpr.Invoke ivk, Attribute.Source src, Module.Case c) {
+			CExpr.Invoke ivk, Attribute.Source src, Module.Case c,
+			Module.Method method) {
 		
 		// Update the source number information
 		constraint = resource(constraint,src); 
@@ -298,7 +299,7 @@ public class DispatchInline implements ModuleTransform {
 			binding.put(target, arg);			
 		}									
 		
-		return Block.substitute(binding, constraint);
+		return  Block.substitute(binding, constraint);		
 	}
 	
 	public static Block resource(Block block, Attribute.Source nsrc) {
