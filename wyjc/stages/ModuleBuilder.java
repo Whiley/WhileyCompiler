@@ -424,7 +424,7 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
-			Block blk = null;
+			Block blk = new Block();
 			String nextLabel = null; // used for chaining
 			String exitLabel = Block.freshLabel();
 			CExpr.Variable var = CExpr.VAR(Type.T_VOID, "$#");
@@ -440,17 +440,16 @@ public class ModuleBuilder {
 				} else {
 					bounds.addAll(((Type.Union) bt).bounds);
 				}
-
-				if (blk == null && p.second() != null) {
-					blk = new Block();
-				}
-				if (blk != null) {
-					nextLabel = Block.freshLabel();
+								
+				nextLabel = Block.freshLabel();
+				if(p.second() != null) {
 					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
-							.V_TYPE(p.first()), nextLabel));
-					blk.addAll(Block.chain(nextLabel, p.second()));
+						.V_TYPE(p.first()), nextLabel));				
+					blk.addAll(Block.chain(nextLabel, p.second()));				
 					blk.add(new Code.Goto(exitLabel));
 				} else {
+					blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, var, Value
+							.V_TYPE(p.first()), exitLabel));	
 					nextLabel = null;
 				}
 			}
@@ -1589,7 +1588,7 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
-			Block blk = null;
+			Block blk = new Block();
 			String nextLabel = null; // used for chaining
 			String exitLabel = Block.freshLabel();
 			CExpr.Variable var = CExpr.VAR(Type.T_VOID, "$#");
@@ -1606,16 +1605,15 @@ public class ModuleBuilder {
 					bounds.addAll(((Type.Union) bt).bounds);
 				}
 
-				if (blk == null && p.second() != null) {
-					blk = new Block();
-				}
-				if (blk != null) {
-					nextLabel = Block.freshLabel();
+				nextLabel = Block.freshLabel();
+				if(p.second() != null) {
 					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
-							.V_TYPE(p.first()), nextLabel));
-					blk.addAll(Block.chain(nextLabel, p.second()));
+						.V_TYPE(p.first()), nextLabel));				
+					blk.addAll(Block.chain(nextLabel, p.second()));				
 					blk.add(new Code.Goto(exitLabel));
 				} else {
+					blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, var, Value
+							.V_TYPE(p.first()), exitLabel));	
 					nextLabel = null;
 				}
 			}

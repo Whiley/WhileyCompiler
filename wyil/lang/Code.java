@@ -208,7 +208,11 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "return " + rhs;
+			if(rhs == null) {
+				return "return";
+			} else {
+				return "return " + rhs;
+			}
 		}		
 	}
 		

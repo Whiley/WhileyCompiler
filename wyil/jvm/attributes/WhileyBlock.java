@@ -701,6 +701,11 @@ public class WhileyBlock implements BytecodeAttribute {
 			return Code.COP.SUBSETEQ;
 		case ELEMOF:
 			return Code.COP.ELEMOF;
+		case SUBTYPEEQ:
+			return Code.COP.SUBTYPEEQ;
+		case NSUBTYPEEQ:
+			return Code.COP.NSUBTYPEEQ;
+		
 		}
 		
 		throw new IllegalArgumentException(
@@ -727,6 +732,10 @@ public class WhileyBlock implements BytecodeAttribute {
 			return SUBSETEQ;
 		case ELEMOF:
 			return ELEMOF;
+		case SUBTYPEEQ:
+			return SUBTYPEEQ;
+		case NSUBTYPEEQ:
+			return NSUBTYPEEQ;
 		}
 		
 		throw new IllegalArgumentException(
@@ -862,6 +871,8 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int SUBSET = 18;
 	private final static int SUBSETEQ = 19;
 	private final static int ELEMOF = 20;
+	private final static int SUBTYPEEQ = 21;
+	private final static int NSUBTYPEEQ = 22;
 	
 	// =========== CEXPR ===============
 		

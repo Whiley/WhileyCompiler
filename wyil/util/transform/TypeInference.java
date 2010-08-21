@@ -98,14 +98,10 @@ public class TypeInference implements ModuleTransform {
 					environment = flowsets.get(label.label);
 				} else {
 					environment.join(flowsets.get(label.label));
-				}
-			}
-			
-			if(environment == null) {
+				}				
+			} else if(environment == null) {				
 				continue; // this indicates dead-code
-			}
-			
-			if(code instanceof Goto) {
+			} else if(code instanceof Goto) {
 				Goto got = (Goto) code;
 				merge(got.target,environment,flowsets);
 				environment = null;
@@ -121,7 +117,7 @@ public class TypeInference implements ModuleTransform {
 				} else if(code instanceof Code.Goto) {
 					merge(igot.target,tenv,flowsets);
 					environment = null;
-				}
+				}								
 			} else if(code instanceof Assign) {
 				code = infer((Code.Assign)code,stmt,environment);
 			} else if(code instanceof Return) {
@@ -252,11 +248,10 @@ public class TypeInference implements ModuleTransform {
 		case SUBTYPEEQ:
 			Value.TypeConst tc = (Value.TypeConst) rhs; 				
 			if (!Type.isSubtype(lhs_t, tc.type)
-					&& !Type.isSubtype(tc.type, lhs_t)) {
-				System.out.println("BYPASSING CODE");
+					&& !Type.isSubtype(tc.type, lhs_t)) {				
 				if (code.op == Code.COP.NSUBTYPEEQ) {
-					return new Code.Goto(code.target);
-				} else {
+					return new Code.Goto(code.target);					
+				} else {					
 					return new Code.Skip();
 				}
 			}
@@ -453,8 +448,7 @@ public class TypeInference implements ModuleTransform {
 		CExpr lhs = infer(e.lhs,stmt,environment);				
 		Type.Tuple ett = Type.effectiveTupleType(lhs.type());				
 		if (ett == null) {
-			System.out.println("GOT: " + lhs.type());
-			syntaxError("tuple type required", filename, stmt);
+			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
 		}
 		Type ft = ett.types.get(e.field);
 		if (ft == null) {
