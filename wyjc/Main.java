@@ -130,14 +130,13 @@ public class Main {
 		whileypath.addAll(bootpath);
 		
 		ModuleLoader loader = new ModuleLoader(whileypath);
-		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();		
-		stages.add(new WyilTransform("dispatch inline",new DispatchInline(loader)));
+		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();				
+		stages.add(new WyilTransform("dispatch inline",new DispatchInline(loader)));		
+		stages.add(new WyilTransform("type inference",new TypeInference(loader)));
+		stages.add(new WyilTransform("definite assignment",new DefiniteAssignment()));		
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}
-		stages.add(new WyilTransform("type inference",new TypeInference(loader)));
-		stages.add(new WyilTransform("definite assignment",new DefiniteAssignment()));		
-		
 		if(jvm) {
 			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}

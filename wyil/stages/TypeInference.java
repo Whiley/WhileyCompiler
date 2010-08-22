@@ -71,13 +71,14 @@ public class TypeInference implements ModuleTransform {
 		
 		Block precondition = mcase.precondition();
 		if(precondition != null) {
-			precondition = transform(precondition, environment, method);
+			HashMap<String,Type> preenv = new HashMap<String,Type>(environment);
+			precondition = transform(precondition, preenv, method);
 		}
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
-			environment.put("$",method.type().ret);
-			postcondition = transform(postcondition, environment, method);
-			environment.remove("$");
+			HashMap<String,Type> postenv = new HashMap<String,Type>(environment);
+			postenv.put("$",method.type().ret);
+			postcondition = transform(postcondition, postenv, method);			
 		}
 				
 		Block body = transform(mcase.body(), environment, method);		
@@ -87,8 +88,9 @@ public class TypeInference implements ModuleTransform {
 	
 	protected Block transform(Block block, HashMap<String,Type> environment, Module.Method method) {
 		Block nblock = new Block();
-		HashMap<String,HashMap<String,Type>> flowsets = new HashMap<String,HashMap<String,Type>>();		
-		for(int i=0;i!=block.size();++i) {
+		HashMap<String,HashMap<String,Type>> flowsets = new HashMap<String,HashMap<String,Type>>();							
+		
+		for(int i=0;i!=block.size();++i) {			
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
 			
@@ -248,11 +250,9 @@ public class TypeInference implements ModuleTransform {
 			falseEnv = tmp;
 		case SUBTYPEEQ:
 			Value.TypeConst tc = (Value.TypeConst) rhs; 							
-			/*
+			
 			if(Type.isSubtype(tc.type,lhs_t)) {
 				// DEFINITE TRUE CASE
-				System.out.println("GOT: " + tc.type + " :> " + lhs_t);
-				System.out.println("ELIMINATING: " + code);
 				if (code.op == Code.COP.SUBTYPEEQ) {
 					return new Code.Goto(code.target);					
 				} else {					
@@ -266,13 +266,11 @@ public class TypeInference implements ModuleTransform {
 					return new Code.Skip();
 				}
 			} 						
-			*/
-			typeInference(lhs,tc.type,trueEnv);
 			
-			return new Code.IfGoto(code.op, lhs, rhs,code.target);
+			typeInference(lhs,tc.type,trueEnv);
 		}
-				
-		return new Code.IfGoto(code.op, lhs, rhs, code.target);
+		
+		return new Code.IfGoto(code.op, lhs, rhs, code.target);				
 	}
 	
 	protected void typeInference(CExpr lhs, Type type, HashMap<String,Type> environment) {

@@ -183,6 +183,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 			write(a.lhs,writer,constantPool);
 			write(a.rhs,writer,constantPool);			
+		} else if(c instanceof Skip) {
+			// do nothing
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
 			writer.write_u1(FORALL);

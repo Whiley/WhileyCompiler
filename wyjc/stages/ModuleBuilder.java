@@ -451,7 +451,7 @@ public class ModuleBuilder {
 			// FIXME: need some line number information here
 			blk.add(new Code.Fail("type constraint not satisfied"));
 			blk.add(new Code.Label(exitLabel));
-
+			
 			Type type;
 			if (bounds.size() == 1) {
 				type = bounds.iterator().next();
@@ -1018,19 +1018,14 @@ public class ModuleBuilder {
 
 		Block blk = new Block();
 		String exitLabel = Block.freshLabel();
-		String trueLabel = Block.freshLabel();
 		blk.addAll(lhs_tb.second());
-		blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, lhs_tb.first(), Value
-				.V_TYPE(rhs_tb.first()), trueLabel), v
+		blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, lhs_tb.first(), Value
+				.V_TYPE(rhs_tb.first()), exitLabel), v
 				.attribute(Attribute.Source.class));
 
-		blk.add(new Code.Goto(exitLabel));
-		blk.add(new Code.Label(trueLabel));
 		if (rhs_tb.second() != null) {
 			Block constraint = rhs_tb.second();
 
-			// recompute with updated environment.
-			lhs_tb = resolve(0, v.lhs, environment);
 			// now substitute $ for the lhs
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$", lhs_tb.first());
