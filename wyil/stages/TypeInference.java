@@ -93,7 +93,7 @@ public class TypeInference implements ModuleTransform {
 		for(int i=0;i!=block.size();++i) {			
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
-			
+
 			if(code instanceof Label) {
 				Label label = (Label) code;
 				if(environment == null) {
@@ -274,7 +274,7 @@ public class TypeInference implements ModuleTransform {
 	}
 	
 	protected void typeInference(CExpr lhs, Type type, HashMap<String,Type> environment) {
-		// Now, perform the actual type inference
+		// Now, perform the actual type inference		
 		if(lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;
 			// FIXME: want to use the GLB here, so that if we have a more
@@ -296,7 +296,7 @@ public class TypeInference implements ModuleTransform {
 		} else if(lhs instanceof TupleAccess) {
 			TupleAccess ta = (TupleAccess) lhs;
 			Type.Tuple lhs_t = Type.effectiveTupleType(ta.lhs.type());
-			if(lhs_t != null) {
+			if(lhs_t != null) {				
 				HashMap<String,Type> ntypes = new HashMap<String,Type>(lhs_t.types);
 				// FIXME: need to use GLB here
 				ntypes.put(ta.field, type);				
@@ -456,7 +456,7 @@ public class TypeInference implements ModuleTransform {
 		CExpr idx = infer(e.index,stmt,environment);
 		checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
 		checkIsSubtype(Type.T_INT,idx.type(),stmt);
-		return CExpr.LISTACCESS(e.src,e.index);
+		return CExpr.LISTACCESS(src,idx);
 	}
 		
 	protected CExpr infer(TupleAccess e, Stmt stmt, HashMap<String,Type> environment) {

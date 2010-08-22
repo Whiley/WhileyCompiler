@@ -1,5 +1,5 @@
 define plist as [int] where |$| > 0 && $[0] == 0
-define expr as plist|int
+define expr as [int]|int
 define tup as (expr lhs, int p)
 
 void f(tup t):
@@ -11,3 +11,4 @@ void f(tup t):
 void System::main([string] args):
     f((lhs:[0],p:0))
     f((lhs:[0,1],p:0))
+    f((lhs:[1,1],p:0))

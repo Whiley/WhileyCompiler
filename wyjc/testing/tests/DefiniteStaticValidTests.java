@@ -200,6 +200,8 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_6_StaticTest() { verificationRunTest("TypeEquals_Valid_6"); }
  @Test public void TypeEquals_Valid_7_StaticTest() { verificationRunTest("TypeEquals_Valid_7"); }
  @Test public void TypeEquals_Valid_8_StaticTest() { verificationRunTest("TypeEquals_Valid_8"); }
+ @Test public void TypeEquals_Valid_9_StaticTest() { verificationRunTest("TypeEquals_Valid_9"); }
+ @Test public void TypeEquals_Valid_10_StaticTest() { verificationRunTest("TypeEquals_Valid_10"); }
  @Test public void UnionType_Valid_1_StaticTest() { verificationRunTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_10_StaticTest() { verificationRunTest("UnionType_Valid_10"); }
  @Test public void UnionType_Valid_11_StaticTest() { verificationRunTest("UnionType_Valid_11"); }

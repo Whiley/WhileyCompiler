@@ -317,8 +317,13 @@ public abstract class CExpr {
 		}
 
 		public Type type() {
-			Type.List l = (Type.List) src.type();
-			return l.element;
+			Type t = src.type();
+			if(t instanceof Type.List){ 
+				Type.List l = (Type.List) t;
+				return l.element;
+			} else {
+				return Type.T_VOID;
+			}
 		}
 
 		public int hashCode() {

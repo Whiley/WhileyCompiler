@@ -419,7 +419,7 @@ public class ClassFileBuilder {
 					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));
 					return;				
 				} else {
-					op = Bytecode.If.NE;
+					op = Bytecode.If.EQ;
 				}
 				break;
 			}
