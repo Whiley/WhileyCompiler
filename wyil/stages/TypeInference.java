@@ -502,7 +502,7 @@ public class TypeInference implements ModuleTransform {
 				}
 			}
 			
-			return CExpr.INVOKE(funtype, ivk.name, 0, receiver, args);
+			return CExpr.INVOKE(funtype, ivk.name, ivk.caseNum, receiver, args);
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable

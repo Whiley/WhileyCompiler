@@ -289,7 +289,7 @@ public class ClassFileBuilder {
 			convert(lub,c.rhs.type(),slots,bytecodes);
 		}		
 		
-		JvmType type = convertType(c.lhs.type());
+		JvmType type = convertType(lub);
 		if(lub == Type.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an
 			// object on the JVM stack. Therefore, we need to use the "if_cmp"
@@ -604,7 +604,7 @@ public class ClassFileBuilder {
 
 		convert(lub,c.rhs.type(),slots,bytecodes);
 		
-		JvmType type = convertType(c.lhs.type());
+		JvmType type = convertType(lub);
 		JvmType.Function ftype = new JvmType.Function(type,type);
 		
 		switch(c.op) {
@@ -766,7 +766,7 @@ public class ClassFileBuilder {
 		ModuleID mid = c.name.module();
 		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
 		JvmType.Function type = (JvmType.Function) convertType(c.type);
-		String mangled = nameMangle(c.name.name(), c.type);
+		String mangled = nameMangle(c.name.name(), c.type);		
 		if(c.caseNum > 0) {
 			mangled += "$" + c.caseNum;
 		}
