@@ -235,6 +235,54 @@ public abstract class Type {
 		return t;
 	}
 	
+	public static Type greatestLowerBound(Type t1, Type t2) {
+		
+		if(isSubtype(t1, t2, Collections.EMPTY_MAP)) {
+			return t2;
+		} else if(isSubtype(t2, t1, Collections.EMPTY_MAP)) {
+			return t1;
+		}
+		
+		if(t1 instanceof Union) {			
+			Union ut1 = (Union) t1;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
+			
+			for(NonUnion t : ut1.bounds) {					
+				Type glb = greatestLowerBound(t,t2);				
+				if(glb instanceof Union) {
+					Union ut = (Union) glb;
+					types.addAll(ut.bounds);
+				} else if(glb != T_VOID) {
+					types.add((NonUnion) glb);
+				}
+			}						
+			
+			return T_UNION(types);
+		} else if(t2 instanceof Union) {
+			Union ut2 = (Union) t2;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
+			
+			for(NonUnion t : ut2.bounds) {				
+				Type glb = greatestLowerBound(t1,t);				
+				if(glb != T_VOID) {
+					types.add((NonUnion) glb);
+				}				
+			}										
+			return T_UNION(types);			
+		} else if(t1 instanceof List && t2 instanceof List) {
+			List l1 = (List) t1;
+			List l2 = (List) t2;
+			return T_LIST(greatestLowerBound(l1.element,l2.element));
+		} else if(t1 instanceof Set && t2 instanceof Set) {
+			Set s1 = (Set) t1;
+			Set s2 = (Set) t2;
+			return T_SET(greatestLowerBound(s1.element,s2.element));
+		} else {
+			return T_VOID;			
+		}
+	}
+
+	
 	/**
 	 * Determine whether a given type contains an existential or not.
 	 * 

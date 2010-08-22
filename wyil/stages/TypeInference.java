@@ -235,7 +235,7 @@ public class TypeInference implements ModuleTransform {
 			return new Code.IfGoto(code.op, lhs, rhs, code.target);
 		}	
 		case SUBSET:
-		case SUBSETEQ:
+		case SUBSETEQ:			
 			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
@@ -277,19 +277,13 @@ public class TypeInference implements ModuleTransform {
 		// Now, perform the actual type inference		
 		if(lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;
-			// FIXME: want to use the GLB here, so that if we have a more
-			// precise type for the variable already then we don't
-			// compromise that.
-			environment.put(v.name, type);
+			environment.put(v.name, Type.greatestLowerBound(type,v.type));
 			// FIXME: want to use type difference here, so that we can
 			// register the fact that this definitely is not a particular
 			// type.
 		} else if(lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
-			// FIXME: want to use the GLB here, so that if we have a more
-			// precise type for the variable already then we don't
-			// compromise that.
-			environment.put("%" + reg.index, type);
+			environment.put("%" + reg.index, Type.greatestLowerBound(type,reg.type));
 			// FIXME: want to use type difference here, so that we can
 			// register the fact that this definitely is not a particular
 			// type.				

@@ -475,10 +475,10 @@ public abstract class Code {
 			public String toString() { return "<="; }
 		},
 		SUBTYPEEQ() {
-			public String toString() { return ":>"; }
+			public String toString() { return "<:"; }
 		},
 		NSUBTYPEEQ() {
-			public String toString() { return "!>"; }
+			public String toString() { return "<!"; }
 		}
 	};		
 }

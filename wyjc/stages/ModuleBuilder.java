@@ -1010,12 +1010,7 @@ public class ModuleBuilder {
 
 		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.lhs, environment);
 		Pair<Type, Block> rhs_tb = resolve(((Expr.TypeConst) v.rhs).type);
-		Type lhs_t = lhs_tb.first().type();
-		Type rhs_t = rhs_tb.first();
-		if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
-			syntaxError("incomparable types", filename, v);
-		}
-
+		
 		Block blk = new Block();
 		String exitLabel = Block.freshLabel();
 		blk.addAll(lhs_tb.second());
