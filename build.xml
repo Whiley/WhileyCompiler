@@ -21,7 +21,7 @@
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
     <wyjc srcdir="stdlib" includes="whiley/**/*.whiley" excludes="whiley/io/**" nvc="true"/>
     <jar destfile="lib/wyrt.jar">
-      <fileset dir="." includes="wyjc/jvm/rt**/*.class"/>
+      <fileset dir="." includes="wyil/jvm/rt**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
   </target>
