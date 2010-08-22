@@ -758,8 +758,7 @@ public class ClassFileBuilder {
 			Type rt = r.type();
 			translate(r, slots, bytecodes);			
 			if(!pt.equals(rt)) {
-				convert(pt,rt,slots,bytecodes);
-				addWriteConversion(rt,bytecodes);
+				convert(pt,rt,slots,bytecodes);				
 			} else {
 				cloneRHS(rt,bytecodes);
 			}
