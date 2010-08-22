@@ -40,9 +40,6 @@ public abstract class CExpr {
 		} else if (r instanceof TupleAccess) {
 			TupleAccess ta = (TupleAccess) r;
 			match(ta.lhs,match,uses);
-		} else if(r instanceof Convert) {
-			Convert v = (Convert) r;			
-			match(v.rhs,match,uses);
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;			
 			if(a.receiver != null) {
@@ -91,9 +88,6 @@ public abstract class CExpr {
 		} else if (r instanceof UnOp) {
 			UnOp bop = (UnOp) r;
 			return UNOP(bop.op,substitute(binding, bop.rhs));
-		} else if (r instanceof Convert) {
-			Convert c = (Convert) r;
-			return CONVERT(c.type,substitute(binding, c.rhs));
 		} else if (r instanceof NaryOp) {
 			NaryOp bop = (NaryOp) r;
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
@@ -147,9 +141,6 @@ public abstract class CExpr {
 		} else if (r instanceof UnOp) {
 			UnOp bop = (UnOp) r;
 			return UNOP(bop.op,registerShift(shift, bop.rhs));
-		} else if (r instanceof Convert) {
-			Convert c = (Convert) r;
-			return CONVERT(c.type,registerShift(shift, c.rhs));
 		} else if (r instanceof NaryOp) {
 			NaryOp bop = (NaryOp) r;
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
@@ -222,10 +213,6 @@ public abstract class CExpr {
 	
 	public static UnOp UNOP(UOP uop, CExpr mhs) {
 		return get(new UnOp(uop, mhs));
-	}
-	
-	public static Convert CONVERT(Type t, CExpr mhs) {
-		return get(new Convert(t, mhs));
 	}
 	
 	public static NaryOp NARYOP(NOP nop, CExpr... args) {
@@ -419,36 +406,6 @@ public abstract class CExpr {
 			public String toString() { return "+"; }
 		}
 	};	
-	
-	public final static class Convert extends CExpr {		
-		public final Type type;
-		public final CExpr rhs;		
-		
-		Convert(Type type, CExpr rhs) {				
-			this.type = type;
-			this.rhs = rhs;
-		}
-		
-		public Type type() {
-			return type;
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Convert) {
-				Convert a = (Convert) o;
-				return type.equals(a.type) && rhs.equals(a.rhs);
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return type.hashCode() + rhs.hashCode();
-		}
-		
-		public String toString() {
-			return "(" + type + ") " + rhs;
-		}		
-	}
 	
 	public final static class UnOp extends CExpr {
 		public final UOP op;				

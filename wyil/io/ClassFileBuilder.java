@@ -196,24 +196,24 @@ public class ClassFileBuilder {
 			slots.put(v,slot++);						
 		}				
 		
-		translate(mcase.body(),slots,bytecodes);		
+		translate(mcase.body(),slots,bytecodes,method);		
 		
 		return bytecodes;
 	}
 	
 	public void translate(Block blk, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes, Module.Method method) {
 		for (Stmt s : blk) {
-			translate(s.code, slots, bytecodes);
+			translate(s.code, slots, bytecodes, method);
 		}
 	}
 	
 	public void translate(Code c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes, Module.Method method) {
 		if(c instanceof Code.Assign) {
 			translate((Code.Assign)c,slots,bytecodes);
 		} else if(c instanceof Code.Return){
-			translate((Code.Return)c,slots,bytecodes);
+			translate((Code.Return)c,slots,bytecodes, method);
 		} else if(c instanceof Code.Goto) {
 			translate((Code.Goto)c,slots,bytecodes);
 		} else if(c instanceof Code.IfGoto) {
@@ -253,10 +253,13 @@ public class ClassFileBuilder {
 	}
 
 	public void translate(Code.Return c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes, Module.Method method) {
+		
 		if (c.rhs != null) {
 			translate(c.rhs, slots, bytecodes);
-			bytecodes.add(new Bytecode.Return(convertType(c.rhs.type())));
+			Type ret_t = method.type().ret;
+			convert(ret_t,c.rhs.type(),slots,bytecodes);			
+			bytecodes.add(new Bytecode.Return(convertType(ret_t)));
 		} else {		
 			bytecodes.add(new Bytecode.Return(null));
 		}
@@ -265,20 +268,29 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
-	
-		if(c.op == Code.COP.SUBTYPEEQ || c.op == Code.COP.NSUBTYPEEQ) {
+		
+		Type lub = Type.leastUpperBound(c.lhs.type(),c.rhs.type());
+		
+		if (c.op == Code.COP.SUBTYPEEQ || c.op == Code.COP.NSUBTYPEEQ) {
 			// special case: don't translate rhs
-			translate(c.lhs,slots,bytecodes);			
+			translate(c.lhs, slots, bytecodes);
 		} else if(c.op == Code.COP.ELEMOF) {
 			// special case: do things backwards
 			translate(c.rhs,slots,bytecodes);
-			translate(c.lhs,slots,bytecodes);								
+			translate(c.lhs,slots,bytecodes);
+			// FIXME: bug here related to conversion of element type
 		} else {
-			translate(c.lhs,slots,bytecodes);			
+			translate(c.lhs,slots,bytecodes);
+			
+			convert(lub,c.lhs.type(),slots,bytecodes);
+			
 			translate(c.rhs,slots,bytecodes);
-		}
+			
+			convert(lub,c.rhs.type(),slots,bytecodes);
+		}		
+		
 		JvmType type = convertType(c.lhs.type());
-		if(c.lhs.type() == Type.T_BOOL) {
+		if(lub == Type.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an
 			// object on the JVM stack. Therefore, we need to use the "if_cmp"
 			// bytecode, rather than calling .equals() and using "if" bytecode.
@@ -513,8 +525,6 @@ public class ClassFileBuilder {
 			translate((CExpr.Variable) r,slots,bytecodes);			
 		} else if(r instanceof CExpr.Register) {			
 			translate((CExpr.Register) r,slots,bytecodes);
-		} else if(r instanceof CExpr.Convert) {			
-			translate((CExpr.Convert) r,slots,bytecodes);
 		} else if(r instanceof CExpr.ListAccess) {
 			translate((CExpr.ListAccess)r,slots,bytecodes);
 		} else if(r instanceof CExpr.BinOp) {
@@ -533,13 +543,7 @@ public class ClassFileBuilder {
 			throw new RuntimeException("Unknown expression encountered: " + r);
 		}
 	}
-	
-	public void translate(CExpr.Convert v, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-		translate(v.rhs,slots,bytecodes);
-		convert(v.type,v.rhs.type(),slots,bytecodes);
-	}
-	
+		
 	public void translate(CExpr.Variable v, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {		
 		bytecodes.add(new Bytecode.Load(slots.get(v.name),
@@ -590,9 +594,16 @@ public class ClassFileBuilder {
 	public void translate(CExpr.BinOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		
+		Type lub = Type.leastUpperBound(c.lhs.type(),c.rhs.type());
+		
 		translate(c.lhs, slots, bytecodes);
+		
+		convert(lub,c.lhs.type(),slots,bytecodes);
+		
 		translate(c.rhs, slots, bytecodes);
 
+		convert(lub,c.rhs.type(),slots,bytecodes);
+		
 		JvmType type = convertType(c.lhs.type());
 		JvmType.Function ftype = new JvmType.Function(type,type);
 		
@@ -736,8 +747,9 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {				
 		// first, translate receiver (where appropriate)
 		if(c.type.receiver != null) {						
-			translate(c.receiver, slots, bytecodes);
+			translate(c.receiver, slots, bytecodes);						
 		}
+		
 		// next, translate parameters
 		List<Type> params = c.type.params;
 		for(int i=0;i!=params.size();++i) {
@@ -745,7 +757,8 @@ public class ClassFileBuilder {
 			CExpr r = c.args.get(i);
 			Type rt = r.type();
 			translate(r, slots, bytecodes);			
-			if(!pt.equals(rt)) {			
+			if(!pt.equals(rt)) {
+				convert(pt,rt,slots,bytecodes);
 				addWriteConversion(rt,bytecodes);
 			} else {
 				cloneRHS(rt,bytecodes);

@@ -8,22 +8,8 @@ import java.util.Map;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.lang.CExpr.BinOp;
-import wyil.lang.CExpr.Convert;
-import wyil.lang.CExpr.Invoke;
-import wyil.lang.CExpr.LVal;
-import wyil.lang.CExpr.ListAccess;
-import wyil.lang.CExpr.NaryOp;
-import wyil.lang.CExpr.Register;
-import wyil.lang.CExpr.Tuple;
-import wyil.lang.CExpr.TupleAccess;
-import wyil.lang.CExpr.UnOp;
-import wyil.lang.CExpr.Variable;
-import wyil.lang.Code.Assign;
-import wyil.lang.Code.Debug;
-import wyil.lang.Code.Forall;
-import wyil.lang.Code.IfGoto;
-import wyil.lang.Code.Return;
+import wyil.lang.CExpr.*;
+import wyil.lang.Code.*;
 import wyil.util.ResolveError;
 
 /**
@@ -164,9 +150,6 @@ public class DispatchInline implements ModuleTransform {
 		} else if (r instanceof UnOp) {
 			UnOp bop = (UnOp) r;
 			return CExpr.UNOP(bop.op,transform(bop.rhs, stmt, inserts));
-		} else if (r instanceof Convert) {
-			Convert c = (Convert) r;
-			return CExpr.CONVERT(c.type,transform(c.rhs, stmt, inserts));
 		} else if (r instanceof NaryOp) {
 			NaryOp bop = (NaryOp) r;
 			ArrayList<CExpr> args = new ArrayList<CExpr>();

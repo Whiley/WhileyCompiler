@@ -110,9 +110,6 @@ public class WhileyBlock implements BytecodeAttribute {
 			for(CExpr arg : ivk.args) {
 				addPoolItems(arg,constantPool);
 			}			
-		} else if(rval instanceof CExpr.Convert) {
-			CExpr.Convert c = (CExpr.Convert)rval;
-			addPoolItems(c.rhs,constantPool);			
 		} else if(rval instanceof CExpr.ListAccess) {
 			CExpr.ListAccess c = (CExpr.ListAccess)rval;
 			addPoolItems(c.src,constantPool);			
@@ -213,8 +210,6 @@ public class WhileyBlock implements BytecodeAttribute {
 			write((CExpr.NaryOp)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Invoke) {
 			write((CExpr.Invoke)rval,writer,constantPool);
-		} else if(rval instanceof CExpr.Convert) {
-			write((CExpr.Convert)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.ListAccess) {
 			write((CExpr.ListAccess)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.TupleAccess) {
@@ -244,14 +239,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write_u1(UOP2INT(expr.op));																			
 		write(expr.rhs,writer,constantPool);
 	}
-	
-	public static void write(CExpr.Convert expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(CONVERT);
-		WhileyType.write(expr.type,writer,constantPool);
-		write(expr.rhs,writer,constantPool);
-	}
-	
+		
 	public static void write(CExpr.Invoke expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(expr.receiver != null) {
@@ -594,12 +582,6 @@ public class WhileyBlock implements BytecodeAttribute {
 				CExpr rhs = readCExpr(reader,constantPool);
 				return CExpr.BINOP(INT2BOP(code),lhs,rhs);
 			}
-			case CONVERT:
-			{
-				Type t = WhileyType.Reader.readType(reader, constantPool);
-				CExpr lhs = readCExpr(reader,constantPool);
-				return CExpr.CONVERT(t, lhs);
-			}			
 			case FUNINVOKE:
 			{
 				
@@ -892,7 +874,6 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int METHINVOKE = 13;		
 	private final static int LISTACCESS = 14;
 	private final static int TUPLEACCESS = 15;
-	private final static int CONVERT = 16;
 	
 	// =========== UOP ===============
 	

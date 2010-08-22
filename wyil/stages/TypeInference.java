@@ -230,8 +230,7 @@ public class TypeInference implements ModuleTransform {
 						filename, stmt);
 			}
 			
-			return new Code.IfGoto(code.op, convert(element, lhs), rhs,
-					code.target);
+			return new Code.IfGoto(code.op, lhs, rhs, code.target);
 		}	
 		case SUBSET:
 		case SUBSETEQ:
@@ -257,32 +256,45 @@ public class TypeInference implements ModuleTransform {
 					return new Code.Skip();
 				}
 			}
-			// Now, perform the actual type inference
-			if(lhs instanceof CExpr.Variable) {
-				CExpr.Variable v = (CExpr.Variable) lhs;
-				// FIXME: want to use the GLB here, so that if we have a more
-				// precise type for the variable already then we don't
-				// compromise that.
-				trueEnv.put(v.name, tc.type);
-				// FIXME: want to use type difference here, so that we can
-				// register the fact that this definitely is not a particular
-				// type.
-			} else if(lhs instanceof CExpr.Register) {
-				CExpr.Register reg = (CExpr.Register) lhs;
-				// FIXME: want to use the GLB here, so that if we have a more
-				// precise type for the variable already then we don't
-				// compromise that.
-				trueEnv.put("%" + reg.index, tc.type);
-				// FIXME: want to use type difference here, so that we can
-				// register the fact that this definitely is not a particular
-				// type.				
-			}
+			
+			typeInference(lhs,tc.type,trueEnv);
 			
 			return new Code.IfGoto(code.op, lhs, rhs,code.target);
 		}
 				
-		return new Code.IfGoto(code.op, convert(lub, lhs), convert(lub, rhs),
-				code.target);
+		return new Code.IfGoto(code.op, lhs, rhs, code.target);
+	}
+	
+	protected void typeInference(CExpr lhs, Type type, HashMap<String,Type> environment) {
+		// Now, perform the actual type inference
+		if(lhs instanceof CExpr.Variable) {
+			CExpr.Variable v = (CExpr.Variable) lhs;
+			// FIXME: want to use the GLB here, so that if we have a more
+			// precise type for the variable already then we don't
+			// compromise that.
+			environment.put(v.name, type);
+			// FIXME: want to use type difference here, so that we can
+			// register the fact that this definitely is not a particular
+			// type.
+		} else if(lhs instanceof CExpr.Register) {
+			CExpr.Register reg = (CExpr.Register) lhs;
+			// FIXME: want to use the GLB here, so that if we have a more
+			// precise type for the variable already then we don't
+			// compromise that.
+			environment.put("%" + reg.index, type);
+			// FIXME: want to use type difference here, so that we can
+			// register the fact that this definitely is not a particular
+			// type.				
+		} else if(lhs instanceof TupleAccess) {
+			TupleAccess ta = (TupleAccess) lhs;
+			Type.Tuple lhs_t = Type.effectiveTupleType(ta.lhs.type());
+			if(lhs_t != null) {
+				HashMap<String,Type> ntypes = new HashMap<String,Type>(lhs_t.types);
+				// FIXME: need to use GLB here
+				ntypes.put(ta.field, type);				
+				typeInference(ta.lhs,Type.T_TUPLE(ntypes),environment);
+			}
+		}
 	}
 	
 	protected Code infer(Code.Return code, Stmt stmt, HashMap<String,Type> environment,
@@ -296,7 +308,7 @@ public class TypeInference implements ModuleTransform {
 						"cannot return value, as method has void return type",
 						filename, stmt);
 			}
-			rhs = convert(ret_t,infer(rhs,stmt,environment));
+			rhs = infer(rhs,stmt,environment);
 		}
 		
 		return new Code.Return(rhs);
@@ -322,8 +334,6 @@ public class TypeInference implements ModuleTransform {
 			return infer((UnOp) e, stmt, environment);
 		} else if (e instanceof NaryOp) {
 			return infer((NaryOp) e, stmt, environment);
-		} else if (e instanceof Convert) {
-			return infer((Convert) e, stmt, environment);
 		} else if (e instanceof ListAccess) {
 			return infer((ListAccess) e, stmt, environment);
 		} else if (e instanceof Tuple) {
@@ -355,11 +365,6 @@ public class TypeInference implements ModuleTransform {
 		return CExpr.REG(type,v.index);
 	}
 	
-	protected CExpr infer(Convert v, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		return CExpr.CONVERT(v.type,rhs);
-	}
-	
 	protected CExpr infer(UnOp v, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		Type rhs_t = rhs.type();
@@ -389,7 +394,7 @@ public class TypeInference implements ModuleTransform {
 			switch(v.op) {
 				case APPEND:
 				case ADD:															
-					return CExpr.BINOP(CExpr.BOP.APPEND,convert(lub,lhs),convert(lub,rhs));
+					return CExpr.BINOP(CExpr.BOP.APPEND,lhs,rhs);
 				default:
 					syntaxError("Invalid operation on lists",filename,stmt);		
 			}	
@@ -397,12 +402,12 @@ public class TypeInference implements ModuleTransform {
 			switch(v.op) {
 				case ADD:											
 				case UNION:
-					return CExpr.BINOP(CExpr.BOP.UNION,convert(lub,lhs),convert(lub,rhs));
+					return CExpr.BINOP(CExpr.BOP.UNION,lhs,rhs);
 				case DIFFERENCE:
 				case SUB:															
-					return CExpr.BINOP(CExpr.BOP.DIFFERENCE,convert(lub,lhs),convert(lub,rhs));
+					return CExpr.BINOP(CExpr.BOP.DIFFERENCE,lhs,rhs);
 				case INTERSECT:															
-					return CExpr.BINOP(v.op,convert(lub,lhs),convert(lub,rhs));
+					return CExpr.BINOP(v.op,lhs,rhs);
 				default:
 					syntaxError("Invalid operation on sets: " + v.op,filename,stmt);			
 			}
@@ -411,7 +416,7 @@ public class TypeInference implements ModuleTransform {
 		// FIXME: more cases, including elem of
 		
 		checkIsSubtype(Type.T_REAL,lub,stmt);	
-		return CExpr.BINOP(v.op,convert(lub,lhs),convert(lub,rhs));				
+		return CExpr.BINOP(v.op,lhs,rhs);				
 	}
 	
 	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Type> environment) {
@@ -496,12 +501,6 @@ public class TypeInference implements ModuleTransform {
 							stmt);
 				}
 			}
-
-			for (int i=0;i!=args.size();++i) {
-				Type type = funtype.params.get(i);
-				CExpr arg = args.get(i);
-				args.set(i,convert(type,arg));
-			}
 			
 			return CExpr.INVOKE(funtype, ivk.name, 0, receiver, args);
 		} catch (ResolveError ex) {
@@ -562,16 +561,6 @@ public class TypeInference implements ModuleTransform {
 		}
 		return rs;		
 	}
-	
-
-	protected CExpr convert(Type toType, CExpr expr) {
-		Type fromType = expr.type();		
-		if (toType.equals(fromType)) {			
-			return expr;
-		} else {			
-			return CExpr.CONVERT(toType, expr);
-		}
-	}	
 	
 	protected <T extends Type> T checkType(Type t, Class<T> clazz,
 			SyntacticElement elem) {
