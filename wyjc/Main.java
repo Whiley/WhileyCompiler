@@ -137,6 +137,7 @@ public class Main {
 		}
 		stages.add(new WyilTransform("type inference",new TypeInference(loader)));
 		stages.add(new WyilTransform("definite assignment",new DefiniteAssignment()));		
+		
 		if(jvm) {
 			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}

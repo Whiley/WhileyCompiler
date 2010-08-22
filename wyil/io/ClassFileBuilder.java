@@ -570,8 +570,7 @@ public class ClassFileBuilder {
 		
 		bytecodes.add(new Bytecode.LoadConst(c.field));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));		
-		System.out.println("GOT: " + c.lhs.type());
+		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));				
 		Type et = c.type();		
 		addReadConversion(et,bytecodes);
 	}

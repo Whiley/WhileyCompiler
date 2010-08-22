@@ -425,14 +425,9 @@ public class ModuleBuilder {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
 			Block blk = new Block();
-			String nextLabel = null; // used for chaining
 			String exitLabel = Block.freshLabel();
 			CExpr.Variable var = CExpr.VAR(Type.T_VOID, "$#");
-			for (UnresolvedType b : ut.bounds) {
-				if (nextLabel != null) {
-					blk.add(new Code.Label(nextLabel));
-				}
-
+			for (UnresolvedType b : ut.bounds) {			
 				Pair<Type, Block> p = expandType(b, filename, cache);
 				Type bt = p.first();
 				if (bt instanceof Type.NonUnion) {
@@ -440,22 +435,18 @@ public class ModuleBuilder {
 				} else {
 					bounds.addAll(((Type.Union) bt).bounds);
 				}
-								
-				nextLabel = Block.freshLabel();
+												
 				if(p.second() != null) {
+					String nextLabel = Block.freshLabel();
 					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
 						.V_TYPE(p.first()), nextLabel));				
 					blk.addAll(Block.chain(nextLabel, p.second()));				
 					blk.add(new Code.Goto(exitLabel));
+					blk.add(new Code.Label(nextLabel));
 				} else {
 					blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, var, Value
-							.V_TYPE(p.first()), exitLabel));	
-					nextLabel = null;
+							.V_TYPE(p.first()), exitLabel));						
 				}
-			}
-
-			if (nextLabel != null) {
-				blk.add(new Code.Label(nextLabel));
 			}
 			// FIXME: need some line number information here
 			blk.add(new Code.Fail("type constraint not satisfied"));
@@ -1588,15 +1579,10 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
-			Block blk = new Block();
-			String nextLabel = null; // used for chaining
+			Block blk = new Block();			
 			String exitLabel = Block.freshLabel();
 			CExpr.Variable var = CExpr.VAR(Type.T_VOID, "$#");
 			for (UnresolvedType b : ut.bounds) {
-				if (nextLabel != null) {
-					blk.add(new Code.Label(nextLabel));
-				}
-
 				Pair<Type, Block> p = resolve(b);
 				Type bt = p.first();
 				if (bt instanceof Type.NonUnion) {
@@ -1604,23 +1590,20 @@ public class ModuleBuilder {
 				} else {
 					bounds.addAll(((Type.Union) bt).bounds);
 				}
-
-				nextLabel = Block.freshLabel();
+			
 				if(p.second() != null) {
+					String nextLabel = Block.freshLabel();
 					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
 						.V_TYPE(p.first()), nextLabel));				
 					blk.addAll(Block.chain(nextLabel, p.second()));				
 					blk.add(new Code.Goto(exitLabel));
+					blk.add(new Code.Label(nextLabel));
 				} else {
 					blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, var, Value
-							.V_TYPE(p.first()), exitLabel));	
-					nextLabel = null;
+							.V_TYPE(p.first()), exitLabel));						
 				}
 			}
 
-			if (nextLabel != null) {
-				blk.add(new Code.Label(nextLabel));
-			}
 			// FIXME: need some line number information here
 			blk.add(new Code.Fail("type constraint not satisfied"));
 			blk.add(new Code.Label(exitLabel));

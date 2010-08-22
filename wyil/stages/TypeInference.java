@@ -247,16 +247,26 @@ public class TypeInference implements ModuleTransform {
 			trueEnv = falseEnv;
 			falseEnv = tmp;
 		case SUBTYPEEQ:
-			Value.TypeConst tc = (Value.TypeConst) rhs; 				
-			if (!Type.isSubtype(lhs_t, tc.type)
-					&& !Type.isSubtype(tc.type, lhs_t)) {				
+			Value.TypeConst tc = (Value.TypeConst) rhs; 							
+			/*
+			if(Type.isSubtype(tc.type,lhs_t)) {
+				// DEFINITE TRUE CASE
+				System.out.println("GOT: " + tc.type + " :> " + lhs_t);
+				System.out.println("ELIMINATING: " + code);
+				if (code.op == Code.COP.SUBTYPEEQ) {
+					return new Code.Goto(code.target);					
+				} else {					
+					return new Code.Skip();
+				}
+			} else if (!Type.isSubtype(lhs_t, tc.type)) {
+				// DEFINITE FALSE CASE
 				if (code.op == Code.COP.NSUBTYPEEQ) {
 					return new Code.Goto(code.target);					
 				} else {					
 					return new Code.Skip();
 				}
-			}
-			
+			} 						
+			*/
 			typeInference(lhs,tc.type,trueEnv);
 			
 			return new Code.IfGoto(code.op, lhs, rhs,code.target);
