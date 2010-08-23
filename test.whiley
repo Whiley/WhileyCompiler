@@ -1,6 +1,7 @@
-define bop as (int x, int y) where x > 0
-define expr as int|bop
+define expr as int|[int]
 
-void System::main([string] args):
-    expr e = 1
- 
+int f(expr e):
+    if e ~= int:
+        return e
+    else:
+        return |e| 

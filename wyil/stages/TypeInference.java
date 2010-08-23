@@ -267,34 +267,35 @@ public class TypeInference implements ModuleTransform {
 				}
 			} 						
 			
-			typeInference(lhs,tc.type,trueEnv);
+			typeInference(lhs,tc.type,trueEnv, falseEnv);
 		}
 		
 		return new Code.IfGoto(code.op, lhs, rhs, code.target);				
 	}
 	
-	protected void typeInference(CExpr lhs, Type type, HashMap<String,Type> environment) {
-		// Now, perform the actual type inference		
-		if(lhs instanceof CExpr.Variable) {
+	protected void typeInference(CExpr lhs, Type type,
+			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
+		// Now, perform the actual type inference
+		if (lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;
-			environment.put(v.name, Type.greatestLowerBound(type,v.type));
-			// FIXME: want to use type difference here, so that we can
-			// register the fact that this definitely is not a particular
-			// type.
-		} else if(lhs instanceof CExpr.Register) {
+			trueEnv.put(v.name, Type.greatestLowerBound(type, v.type));
+			falseEnv.put(v.name, Type.greatestDifference(v.type, type));
+		} else if (lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
-			environment.put("%" + reg.index, Type.greatestLowerBound(type,reg.type));
-			// FIXME: want to use type difference here, so that we can
-			// register the fact that this definitely is not a particular
-			// type.				
-		} else if(lhs instanceof TupleAccess) {
+			String name = "%" + reg.index;
+			trueEnv.put(name, Type.greatestLowerBound(type, reg.type));
+			falseEnv.put(name, Type.greatestDifference(reg.type, type));
+		} else if (lhs instanceof TupleAccess) {
 			TupleAccess ta = (TupleAccess) lhs;
 			Type.Tuple lhs_t = Type.effectiveTupleType(ta.lhs.type());
-			if(lhs_t != null) {				
-				HashMap<String,Type> ntypes = new HashMap<String,Type>(lhs_t.types);
-				// FIXME: need to use GLB here
-				ntypes.put(ta.field, type);				
-				typeInference(ta.lhs,Type.T_TUPLE(ntypes),environment);
+			if (lhs_t != null) {
+				HashMap<String, Type> ntypes = new HashMap<String, Type>(
+						lhs_t.types);
+				ntypes.put(ta.field, Type.greatestLowerBound(type, lhs_t.types
+						.get(ta.field)));
+				// FIXME: there is some kind of problem here, as we're replacing
+				// one type with an effective type ... seems dodgy.
+				typeInference(ta.lhs, Type.T_TUPLE(ntypes), trueEnv, falseEnv);
 			}
 		}
 	}

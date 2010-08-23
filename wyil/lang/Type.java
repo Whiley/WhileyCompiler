@@ -160,7 +160,17 @@ public abstract class Type {
 		
 		return false;
 	}
-	
+
+	/**
+	 * Compute the <i>least upper bound</i> of two types t1 and t2. The least upper
+	 * bound is a type t3 where <code>t3 :> t1</code>, <code>t3 :> t2</code> and
+	 * there does not exist a type t4, where <code>t3 :> t4</code>,
+	 * <code>t4 :> t1</code>, <code>t4 :> t2</code>.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
 	public static Type leastUpperBound(Type t1, Type t2) {
 		
 		if(isSubtype(t1, t2, Collections.EMPTY_MAP)) {
@@ -234,7 +244,17 @@ public abstract class Type {
 		}
 		return t;
 	}
-	
+
+	/**
+	 * Compute the <i>greatest lower bound</i> of two types t1 and t2. The
+	 * greatest lower bound is a type t3 where <code>t1 :> t3</code>,
+	 * <code>t2 :> t3</code> and there does not exist a type t4, where
+	 * <code>t1 :> t4</code>, <code>t2 :> t4</code> and <code>t4 :> t3</code>.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
 		
 		if(isSubtype(t1, t2, Collections.EMPTY_MAP)) {
@@ -281,7 +301,52 @@ public abstract class Type {
 			return T_VOID;			
 		}
 	}
-
+	
+	/**
+	 * Subtract t2 from t1.
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static Type greatestDifference(Type t1, Type t2) {
+		if(isSubtype(t2,t1)) {
+			return T_VOID;
+		} else if(t1 instanceof List && t2 instanceof List) {
+			List l1 = (List) t1;
+			List l2 = (List) t2;
+			return T_LIST(greatestDifference(l1.element,l2.element));
+		} else if(t1 instanceof Set && t2 instanceof Set) {
+			Set s1 = (Set) t1;
+			Set s2 = (Set) t2;
+			return T_SET(greatestDifference(s1.element,s2.element));
+		} else if(t1 instanceof Tuple && t2 instanceof Tuple) {
+			Tuple s1 = (Tuple) t1;
+			Tuple s2 = (Tuple) t2;
+			// FIXME: I think we could do better here
+			if (s1.types.keySet().equals(s2.types.keySet())) {
+				HashMap<String, Type> types = new HashMap<String, Type>();
+				for (String key : s1.types.keySet()) {
+					types.put(key, greatestDifference(s1.types.get(key),
+							s2.types.get(key)));
+				}
+			}
+		} else if(t2 instanceof Union) {
+			Union u = (Union) t2;
+			for(Type t : u.bounds) {
+				t1 = greatestDifference(t1,t);
+			}
+		} else if (t1 instanceof Union) {
+			Union u = (Union) t1;
+			Type lub = T_VOID;
+			// Could probably optimise this more
+			for (Type t : u.bounds) {
+				lub = leastUpperBound(lub, greatestDifference(t, t1));
+			}
+			return lub;
+		}
+		
+		return t1;
+	}
 	
 	/**
 	 * Determine whether a given type contains an existential or not.
@@ -844,6 +909,16 @@ public abstract class Type {
 				new IllegalArgumentException(
 						"Cannot construct a type union with fewer than two bounds");
 			}
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Union) {
+				Union l = (Union) o;
+				return bounds.equals(l.bounds);
+			}
+			return false;
+		}
+		public int hashCode() {
+			return bounds.hashCode();
 		}
 		public String toString() {
 			String r = "";
