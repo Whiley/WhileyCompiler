@@ -131,6 +131,9 @@ public class Main {
 		
 		ModuleLoader loader = new ModuleLoader(whileypath);
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();				
+		if(wyil) {
+			stages.add(new WyilWriter());
+		}
 		stages.add(new WyilTransform("dispatch inline",new DispatchInline(loader)));		
 		stages.add(new WyilTransform("type inference",new TypeInference(loader)));
 		stages.add(new WyilTransform("definite assignment",new DefiniteAssignment()));		

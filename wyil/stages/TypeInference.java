@@ -278,8 +278,10 @@ public class TypeInference implements ModuleTransform {
 		// Now, perform the actual type inference
 		if (lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;
-			trueEnv.put(v.name, Type.greatestLowerBound(type, v.type));
-			falseEnv.put(v.name, Type.greatestDifference(v.type, type));
+			Type glb = Type.greatestLowerBound(type, v.type);
+			Type gdiff = Type.greatestDifference(v.type, type);			
+			trueEnv.put(v.name, glb);
+			falseEnv.put(v.name, gdiff);
 		} else if (lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
 			String name = "%" + reg.index;
@@ -291,8 +293,8 @@ public class TypeInference implements ModuleTransform {
 			if (lhs_t != null) {
 				HashMap<String, Type> ntypes = new HashMap<String, Type>(
 						lhs_t.types);
-				ntypes.put(ta.field, Type.greatestLowerBound(type, lhs_t.types
-						.get(ta.field)));
+				Type glb = Type.greatestLowerBound(type, lhs_t.types.get(ta.field));				
+				ntypes.put(ta.field, glb);
 				// FIXME: there is some kind of problem here, as we're replacing
 				// one type with an effective type ... seems dodgy.
 				typeInference(ta.lhs, Type.T_TUPLE(ntypes), trueEnv, falseEnv);

@@ -350,7 +350,7 @@ public abstract class Type {
 			Type lub = T_VOID;
 			// Could probably optimise this more
 			for (Type t : u.bounds) {
-				lub = leastUpperBound(lub, greatestDifference(t, t1));
+				lub = leastUpperBound(lub, greatestDifference(t, t2));
 			}
 			return lub;
 		}
