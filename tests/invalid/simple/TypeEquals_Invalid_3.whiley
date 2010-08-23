@@ -6,6 +6,8 @@ void f(expr e):
         print "GOT INT"
     else:
         print "GOT BOB"
+    else:
+        print "GOT SOMETHING ELSE?"
 
 void System::main([string] args):
     expr e = 1
