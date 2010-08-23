@@ -117,11 +117,11 @@ public abstract class Type {
 		} else if(t1 instanceof Union && t2 instanceof Union) {			
 			Union u2 = (Union) t2;
 			for(Type t : u2.bounds) {
-				if(isSubtype(t1,t,environment)) {
-					return true;
+				if(!isSubtype(t1,t,environment)) {
+					return false;
 				}				
 			}
-			return false;
+			return true;
 		} else if(t1 instanceof Union) {
 			Union u1 = (Union) t1;
 			for(Type t : u1.bounds) {
