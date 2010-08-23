@@ -293,6 +293,14 @@ public abstract class Type {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
 			return T_LIST(greatestLowerBound(l1.element,l2.element));
+		} else if(t1 instanceof List && t2 instanceof Set) {
+			List l1 = (List) t1;
+			Set l2 = (Set) t2;
+			return T_LIST(greatestLowerBound(l1.element,l2.element));
+		} else if(t1 instanceof Set && t2 instanceof List) {
+			Set l1 = (Set) t1;
+			List l2 = (List) t2;
+			return T_LIST(greatestLowerBound(l1.element,l2.element));
 		} else if(t1 instanceof Set && t2 instanceof Set) {
 			Set s1 = (Set) t1;
 			Set s2 = (Set) t2;
@@ -311,6 +319,8 @@ public abstract class Type {
 	public static Type greatestDifference(Type t1, Type t2) {
 		if(isSubtype(t2,t1)) {
 			return T_VOID;
+		} else if(t2 == T_VOID) {
+			return t1;
 		} else if(t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
