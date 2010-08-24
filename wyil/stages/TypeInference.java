@@ -177,8 +177,8 @@ public class TypeInference implements ModuleTransform {
 
 		CExpr rhs = infer(code.rhs,stmt,environment);
 
-		if(lhs instanceof LVar) {
-			// do nothing
+		if(lhs instanceof LVar) {			
+			checkIsSubtype(lhs.type(),rhs.type(), stmt);
 		} else if(lhs != null) {			
 			lhs = (CExpr.LVal) infer(lhs,stmt,environment);
 			checkIsSubtype(lhs.type(),rhs.type(), stmt);
