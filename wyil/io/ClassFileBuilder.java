@@ -438,6 +438,15 @@ public class ClassFileBuilder {
 	// testing for an int corresponds to an instanceof against BigInteger. Some
 	// situations are a little harder; like testing for a union type.
 	protected void translateTypeTest(Type test, ArrayList<Bytecode> bytecodes) {
+		
+		GOT HERE
+		
+		// FIXME: this method is serious broken. There are a number of ways it
+		// could be fixed. I think one option is to determine the minimum
+		// "type difference" between the known type of the object being tested,
+		// and the type test it self. In many cases, this will dramatically
+		// reduce the range of options needed to distinguish types.  
+		
 		if (test instanceof Type.Bool) {
 			bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
 		} else {
@@ -1125,8 +1134,6 @@ public class ClassFileBuilder {
 			// nothing to do, in this particular case
 			return;
 		}
-		
-		System.out.println("CONVERTING LIST => LIST");
 		
 		// The following piece of code implements a java for-each loop which
 		// iterates every element of the input collection, and recursively

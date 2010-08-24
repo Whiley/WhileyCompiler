@@ -93,7 +93,7 @@ public class TypeInference implements ModuleTransform {
 		for(int i=0;i!=block.size();++i) {			
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
-
+						
 			if(code instanceof Label) {
 				Label label = (Label) code;
 				if(environment == null) {
@@ -112,7 +112,7 @@ public class TypeInference implements ModuleTransform {
 			} else if(code instanceof IfGoto) {
 				IfGoto igot = (IfGoto) code;	
 				HashMap<String,Type> tenv = new HashMap<String,Type>(environment);
-				code = infer((Code.IfGoto)code,stmt,tenv,environment);
+				code = infer((Code.IfGoto)code,stmt,tenv,environment);				
 				// Observe that the following is needed because type inference
 				// can determine that an if-statement definitely is taken, or
 				// definitely isn't taken.
@@ -126,6 +126,7 @@ public class TypeInference implements ModuleTransform {
 				code = infer((Code.Assign)code,stmt,environment);
 			} else if(code instanceof Return) {
 				code = infer((Code.Return)code,stmt,environment,method);
+				environment = null;
 			} else if(code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
 				code = infer(fall,stmt,environment);
@@ -252,13 +253,13 @@ public class TypeInference implements ModuleTransform {
 			Value.TypeConst tc = (Value.TypeConst) rhs; 							
 			
 			if(Type.isSubtype(tc.type,lhs_t)) {
-				// DEFINITE TRUE CASE
-				if (code.op == Code.COP.SUBTYPEEQ) {
+				// DEFINITE TRUE CASE				
+				if (code.op == Code.COP.SUBTYPEEQ) {					
 					return new Code.Goto(code.target);					
 				} else {					
 					return new Code.Skip();
 				}
-			} else if (!Type.isSubtype(lhs_t, tc.type)) {
+			} else if (!Type.isSubtype(lhs_t, tc.type)) {				
 				// DEFINITE FALSE CASE
 				if (code.op == Code.COP.NSUBTYPEEQ) {
 					return new Code.Goto(code.target);					
@@ -277,14 +278,14 @@ public class TypeInference implements ModuleTransform {
 			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
 		// Now, perform the actual type inference
 		if (lhs instanceof CExpr.Variable) {
-			CExpr.Variable v = (CExpr.Variable) lhs;
+			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(type, v.type);
 			Type gdiff = Type.greatestDifference(v.type, type);			
 			trueEnv.put(v.name, glb);
 			falseEnv.put(v.name, gdiff);
 		} else if (lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
-			String name = "%" + reg.index;
+			String name = "%" + reg.index;			
 			trueEnv.put(name, Type.greatestLowerBound(type, reg.type));
 			falseEnv.put(name, Type.greatestDifference(reg.type, type));
 		} else if (lhs instanceof TupleAccess) {

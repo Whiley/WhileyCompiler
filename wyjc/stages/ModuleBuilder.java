@@ -1052,6 +1052,7 @@ public class ModuleBuilder {
 		}
 		blk.add(new Code.Goto(target));
 		blk.add(new Code.Label(exitLabel));
+				
 		return blk;
 	}
 
