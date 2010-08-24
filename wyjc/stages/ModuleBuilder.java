@@ -692,6 +692,13 @@ public class ModuleBuilder {
 
 	protected Block resolve(VarDecl s, int freeReg,
 			HashMap<String, Pair<Type, Block>> environment) throws ResolveError {
+		
+		if(environment.get(s.name) != null) {
+			// This indicates that the variable in question has already been
+			// declared.
+			syntaxError("variable " + s.name + " already declared",filename,s);
+		}
+		
 		Expr init = s.initialiser;
 		Pair<Type, Block> tb = resolve(s.type);
 		Type type = tb.first();
