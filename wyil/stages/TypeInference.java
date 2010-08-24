@@ -314,6 +314,7 @@ public class TypeInference implements ModuleTransform {
 						filename, stmt);
 			}
 			rhs = infer(rhs,stmt,environment);
+			checkIsSubtype(ret_t,rhs.type(),stmt);
 		}
 		
 		return new Code.Return(rhs);
