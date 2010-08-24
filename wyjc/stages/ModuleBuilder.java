@@ -697,11 +697,17 @@ public class ModuleBuilder {
 			// This indicates that the variable in question has already been
 			// declared.
 			syntaxError("variable " + s.name + " already declared",filename,s);
-		}
+		} 
 		
 		Expr init = s.initialiser;
 		Pair<Type, Block> tb = resolve(s.type);
 		Type type = tb.first();
+		
+		if(type == Type.T_VOID) {
+			// clearly, this is insane.
+			syntaxError("variable cannot have void type",filename,s);
+		}
+		
 		Block constraint = tb.second();
 		constraint = Block.relabel(constraint);
 		constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);

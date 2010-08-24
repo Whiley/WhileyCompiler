@@ -118,6 +118,84 @@ public abstract class Value extends CExpr {
 		return null;
 	}
 	
+	public static CExpr evaluate(CExpr.NOP op, Collection args) {
+		// FIXME: hack for now
+		return CExpr.NARYOP(op, args);
+	}
+	
+	public static CExpr evaluate(CExpr.UOP op, Value mhs) {
+		// FIXME: hack for now
+		return CExpr.UNOP(op, mhs);
+	}
+	
+	public static Boolean evaluate(Code.COP op, Value lhs, Value rhs) {
+		Type lhs_t = lhs.type();
+		if(lhs_t instanceof Type.Int || lhs_t instanceof Type.Real) {
+			return evaluateArith(op,lhs,rhs);
+		} else if(op == Code.COP.ELEMOF && rhs instanceof Value.Set) {
+			Value.Set set = (Value.Set) rhs;
+			return set.values.contains(lhs);
+		} else if(op == Code.COP.ELEMOF && rhs instanceof Value.List) {
+			Value.List list = (Value.List) rhs;
+			return list.values.contains(lhs);
+		} else if(op == Code.COP.SUBSET || op == Code.COP.SUBSETEQ) {
+			return evaluateSet(op,lhs,rhs);
+		} else if(op == Code.COP.SUBTYPEEQ) {
+			TypeConst tc = (TypeConst) rhs;
+			return Type.isSubtype(tc.type,lhs_t);			
+		} else {
+			TypeConst tc = (TypeConst) rhs;
+			return !Type.isSubtype(tc.type,lhs_t);					
+		}
+	}
+	
+	public static Boolean evaluateSet(Code.COP op, Value lhs, Value rhs) {
+		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());		
+		Value.Set lv = (Value.Set) convert(lub,lhs); 
+		Value.Set rv = (Value.Set) convert(lub,rhs);
+		
+		if(op == Code.COP.SUBSETEQ){
+			return rv.values.containsAll(lv.values);
+		} else {
+			return rv.values.containsAll(lv.values)
+					&& rv.values.size() != lv.values.size();
+		}
+	}
+	
+	public static Boolean evaluateArith(Code.COP op, Value lhs, Value rhs) {
+		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());		
+		lhs = convert(lub,lhs);
+		rhs = convert(lub,rhs);
+		
+		Comparable lv;
+		Comparable rv;
+		
+		if(lub instanceof Type.Int) {
+			lv = ((Int)lhs).value;
+			rv = ((Int)rhs).value;			
+		} else {
+			lv = ((Real)lhs).value;
+			rv = ((Real)rhs).value;			
+		}		
+		
+		switch(op) {
+		case LT:
+			return lv.compareTo(rv) < 0;
+		case LTEQ:
+			return lv.compareTo(rv) <= 0;
+		case GT:
+			return lv.compareTo(rv) > 0;
+		case GTEQ:
+			return lv.compareTo(rv) >= 0;
+		case EQ:
+			return lv.equals(rv);
+		case NEQ:
+			return !lv.equals(rv);
+		}
+		
+		return null;
+	}
+	
 	public static Value convert(Type t, Value val) {
 		if (val.type().equals(t)) {
 			return val;
