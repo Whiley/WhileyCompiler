@@ -440,22 +440,44 @@ public class ClassFileBuilder {
 	// perform an instanceof BigInteger. Other situations are trickier. For
 	// example, testing a static type [int]|[bool] against type [int] is harder,
 	// since both are actually instances of java.util.List. 
-	protected void translateTypeTest(Type src, Type test, ArrayList<Bytecode> bytecodes) {
+	protected void translateTypeTest(Type src, Type test, ArrayList<Bytecode> bytecodes) {		
+		JvmType test_j = convertType(test);
 		
-		GOT HERE
+		// The list of conflicts represents those subtypes of src whose
+		// instanceof test will conflict with that of test. The idea is that if
+		// we have any conflicts then we need to dive deeper into the runtime
+		// structure of the object in question. 
+		ArrayList<Type> conflicts = new ArrayList<Type>();
 		
-		// FIXME: this method is serious broken. There are a number of ways it
-		// could be fixed. I think one option is to determine the minimum
-		// "type difference" between the known type of the object being tested,
-		// and the type test it self. In many cases, this will dramatically
-		// reduce the range of options needed to distinguish types.  
-		
-		if (test instanceof Type.Bool) {
-			bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
+		if (src instanceof Type.Union) {
+			Type.Union ut = (Type.Union) src;
+			for(Type.NonUnion nt : ut.bounds) {
+				JvmType nt_j = convertType(nt);
+				if(nt_j.equals(test_j) && !Type.isSubtype(test, nt)) {
+					conflicts.add(src);
+				}
+			}
 		} else {
-			bytecodes.add(new Bytecode.InstanceOf(
-					(JvmType.Reference) convertType(test)));
-		} 
+			JvmType nt_j = convertType(src);
+			if (nt_j.equals(test_j) && !Type.isSubtype(test, src)) {
+				conflicts.add(src);
+			}
+		}
+		
+		if(conflicts.size() == 0) {
+			// This is the base case. Here, there are no conflicts with the type
+			// being tested. This means that we can safely use an instanceof
+			// bytecode without the risk that this will inadvertently capture
+			// types which are not subtypes of that being tested.
+			if (test instanceof Type.Bool) {
+				bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
+			} else {
+				bytecodes.add(new Bytecode.InstanceOf(
+						(JvmType.Reference) convertType(test)));
+			}
+		} else {
+			System.out.println("TYPE CONFLICTS: " + conflicts);
+		}
 	}
 	
 	public void translate(Code.Forall c, HashMap<String, Integer> slots,

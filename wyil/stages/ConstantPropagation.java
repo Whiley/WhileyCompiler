@@ -112,6 +112,8 @@ public class ConstantPropagation implements ModuleTransform {
 				code = infer((Code.Assign)code,stmt,environment);
 			} else if(code instanceof Return) {
 				code = infer((Code.Return)code,stmt,environment,method);
+			} else if(code instanceof Fail) {				
+				environment = null;
 			} else if(code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
 				code = infer(fall,stmt,environment);

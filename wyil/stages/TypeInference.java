@@ -127,6 +127,8 @@ public class TypeInference implements ModuleTransform {
 			} else if(code instanceof Return) {
 				code = infer((Code.Return)code,stmt,environment,method);
 				environment = null;
+			} else if(code instanceof Fail) {				
+				environment = null;
 			} else if(code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
 				code = infer(fall,stmt,environment);
