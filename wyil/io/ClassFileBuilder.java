@@ -383,7 +383,7 @@ public class ClassFileBuilder {
 			case SUBTYPEEQ:
 			{				
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				translateTypeTest(rhs_t, bytecodes);
+				translateTypeTest(c.lhs.type(), rhs_t, bytecodes);
 				if(c.lhs instanceof CExpr.Variable) { 
 					// This covers the limited form of type inference currently
 					// supported in Whiley. Essentially, it works only for the
@@ -406,7 +406,7 @@ public class ClassFileBuilder {
 			case NSUBTYPEEQ:
 			{				
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				translateTypeTest(rhs_t, bytecodes);
+				translateTypeTest(c.lhs.type(), rhs_t, bytecodes);
 				if(c.lhs instanceof CExpr.Variable) { 
 					// This covers the limited form of type inference currently
 					// supported in Whiley. Essentially, it works only for the
@@ -433,11 +433,14 @@ public class ClassFileBuilder {
 	}
 	
 	// The purpose of this method is to translate a type test. We're testing to
-	// see whether what's on the top of the stack matches the given type of not.
-	// In the majority of situations this is pretty easy to do. For example,
-	// testing for an int corresponds to an instanceof against BigInteger. Some
-	// situations are a little harder; like testing for a union type.
-	protected void translateTypeTest(Type test, ArrayList<Bytecode> bytecodes) {
+	// see whether what's on the top of the stack (the value) is a subtype of
+	// the type being tested. The difference between value's static type and
+	// test type help to reduce the scope of the test. For example, if the
+	// static type is int|[int] and the test type is int, then all we need is to
+	// perform an instanceof BigInteger. Other situations are trickier. For
+	// example, testing a static type [int]|[bool] against type [int] is harder,
+	// since both are actually instances of java.util.List. 
+	protected void translateTypeTest(Type src, Type test, ArrayList<Bytecode> bytecodes) {
 		
 		GOT HERE
 		
