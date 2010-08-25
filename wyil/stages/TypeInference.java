@@ -95,18 +95,18 @@ public class TypeInference implements ModuleTransform {
 			Code code = stmt.code;
 						
 			if(code instanceof Label) {
-				Label label = (Label) code;
+				Label label = (Label) code;								
 				if(environment == null) {
 					environment = flowsets.get(label.label);					
 				} else {
 					join(environment,flowsets.get(label.label));
-				}				
+				}								
 			} 
 			
 			if(environment == null) {				
 				continue; // this indicates dead-code
 			} else if(code instanceof Goto) {
-				Goto got = (Goto) code;
+				Goto got = (Goto) code;				
 				merge(got.target,environment,flowsets);
 				environment = null;
 			} else if(code instanceof IfGoto) {
@@ -142,14 +142,14 @@ public class TypeInference implements ModuleTransform {
 	}
 	
 	protected void merge(String target, HashMap<String,Type> env,
-			HashMap<String, HashMap<String,Type>> flowsets) {
+			HashMap<String, HashMap<String,Type>> flowsets) {				
 		
 		HashMap<String,Type> e = flowsets.get(target);
-		if(e == null) {
-			flowsets.put(target, env);
+		if(e == null) {						
+			flowsets.put(target, new HashMap<String,Type>(env));
 		} else {
-			join(e,env);
-			flowsets.put(target, env);
+			join(e,env);			
+			flowsets.put(target, e);
 		}
 	}
 	
@@ -253,10 +253,10 @@ public class TypeInference implements ModuleTransform {
 			falseEnv = tmp;
 		case SUBTYPEEQ:
 			Value.TypeConst tc = (Value.TypeConst) rhs; 							
-			
+									
 			if(Type.isSubtype(tc.type,lhs_t)) {
 				// DEFINITE TRUE CASE				
-				if (code.op == Code.COP.SUBTYPEEQ) {					
+				if (code.op == Code.COP.SUBTYPEEQ) {
 					return new Code.Goto(code.target);					
 				} else {					
 					return new Code.Skip();
