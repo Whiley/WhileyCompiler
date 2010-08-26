@@ -739,11 +739,7 @@ public abstract class Type {
 						it.put(ent.getKey(), Type.leastUpperBound(ttt, ent
 								.getValue()));
 					}
-				}
-				
-				if(it.size() == 0) {
-					return null;
-				}
+				}				
 				
 				rt = new Type.Tuple(it);
 			}

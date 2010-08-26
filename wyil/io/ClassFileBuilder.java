@@ -456,8 +456,8 @@ public class ClassFileBuilder {
 					bytecodes);			
 		} else if(src instanceof Type.Set) {
 			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
-		} else if(src instanceof Type.Tuple) {			
-			translateTypeTest(trueTarget, (Type.Tuple) src, (Type.Tuple) test,
+		} else if(src instanceof Type.Tuple || Type.effectiveTupleType(src) != null) {				
+			translateTypeTest(trueTarget, src, (Type.Tuple) test,
 					bytecodes);			
 		} else if(test instanceof Type.Union){
 			Type.Union tt = (Type.Union) test;
@@ -508,10 +508,37 @@ public class ClassFileBuilder {
 		return type;
 	}
 	
-	protected void translateTypeTest(String trueTarget, Type.Tuple src,
+	protected void translateTypeTest(String trueTarget, Type src,
 			Type.Tuple test, ArrayList<Bytecode> bytecodes) {
-		System.out.println("CONFLICT: " + src + " ~~ " + test);
-		// FIXME: this test case is current broken because the loop above will catch all 
+		
+		if(src instanceof Type.Union) {
+			// Here, all bounds are guaranteed to be of tuple type.
+			Type.Union ut = (Type.Union) src;
+			
+			// attempt to find string which can uniquely identify test
+			HashSet<String> candidates = new HashSet<String>(test.types.keySet());
+			
+			for(Type.NonUnion nt : ut.bounds) {
+				if(!Type.isSubtype(test, nt)) {
+					Type.Tuple tt = (Type.Tuple) nt;
+					candidates.removeAll(tt.types.keySet());
+				}
+			}			
+			
+			if(!candidates.isEmpty()) {
+				String candidate = candidates.iterator().next();				
+				bytecodes.add(new Bytecode.LoadConst(candidate));
+				JvmType.Function fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", fun_t , Bytecode.VIRTUAL));
+				bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, trueTarget));
+				return;
+			}
+			// could do better here
+		} else {
+			Type.Tuple st = (Type.Tuple) src;
+			// could do better here
+		} 
+		throw new RuntimeException("Internal failure --- tuple type test cases not implemented");
 	}
 	
 	protected void translateTypeTest(String trueTarget, Type.List src, Type.SetList test,
