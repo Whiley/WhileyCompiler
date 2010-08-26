@@ -1032,12 +1032,9 @@ public abstract class Type {
 	}
 	public static final class Tuple extends NonUnion {
 		public final HashMap<String,Type> types;
-		private Tuple(Map<String,Type> types) {
-			if(types.size() == 0) {
-				throw new IllegalArgumentException(
-						"Cannot create type tuple with no fields");
-			}
-			this.types = new HashMap<String,Type>(types);
+		
+		private Tuple(Map<String,Type> types) {			
+			this.types = new HashMap<String,Type>(types);			
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Tuple) {
