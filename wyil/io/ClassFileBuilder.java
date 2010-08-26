@@ -383,45 +383,44 @@ public class ClassFileBuilder {
 			case SUBTYPEEQ:
 			{				
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				translateTypeTest(c.lhs.type(), rhs_t, bytecodes);
-				if(c.lhs instanceof CExpr.Variable) { 
+				String exitLabel = freshLabel();
+				String trueLabel = freshLabel();
+				translateTypeTest(trueLabel,c.lhs.type(), rhs_t, bytecodes);
+				bytecodes.add(new Bytecode.Goto(exitLabel));
+				bytecodes.add(new Bytecode.Label(trueLabel));
+				if(c.lhs instanceof CExpr.Variable) {					
 					// This covers the limited form of type inference currently
 					// supported in Whiley. Essentially, it works only for the
 					// case where we are testing against a variable.
-					CExpr.Variable v = (CExpr.Variable) c.lhs;
-					String exitLabel = freshLabel();
+					CExpr.Variable v = (CExpr.Variable) c.lhs;					
 					bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
 					translate(c.lhs,slots,bytecodes);
 					addReadConversion(rhs_t,bytecodes);
 					JvmType rhs_jt = convertType(rhs_t);					
-					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));
-					bytecodes.add(new Bytecode.Goto(c.target));
-					bytecodes.add(new Bytecode.Label(exitLabel));
-					return;				
-				} else {
-					op = Bytecode.If.NE;
+					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));					
 				}
-				break;
+				bytecodes.add(new Bytecode.Goto(c.target));
+				bytecodes.add(new Bytecode.Label(exitLabel));
+				return;				
 			}
 			case NSUBTYPEEQ:
-			{				
+			{	
+				String trueLabel = freshLabel();
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				translateTypeTest(c.lhs.type(), rhs_t, bytecodes);
+				translateTypeTest(trueLabel, c.lhs.type(), rhs_t, bytecodes);
+				bytecodes.add(new Bytecode.Goto(c.target));
+				bytecodes.add(new Bytecode.Label(trueLabel));
 				if(c.lhs instanceof CExpr.Variable) { 
 					// This covers the limited form of type inference currently
 					// supported in Whiley. Essentially, it works only for the
 					// case where we are testing against a variable.
-					CExpr.Variable v = (CExpr.Variable) c.lhs;
-					bytecodes.add(new Bytecode.If(Bytecode.If.EQ, c.target));
+					CExpr.Variable v = (CExpr.Variable) c.lhs;					
 					translate(c.lhs,slots,bytecodes);
 					addReadConversion(rhs_t,bytecodes);
 					JvmType rhs_jt = convertType(rhs_t);					
-					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));
-					return;				
-				} else {
-					op = Bytecode.If.EQ;
-				}
-				break;
+					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));								
+				} 
+				return;
 			}
 			default:
 				throw new RuntimeException("unknown if condition encountered");
@@ -440,46 +439,82 @@ public class ClassFileBuilder {
 	// perform an instanceof BigInteger. Other situations are trickier. For
 	// example, testing a static type [int]|[bool] against type [int] is harder,
 	// since both are actually instances of java.util.List. 
-	protected void translateTypeTest(Type src, Type test, ArrayList<Bytecode> bytecodes) {		
-		JvmType test_j = convertType(test);
+	protected void translateTypeTest(String trueTarget, Type src, Type test,
+			ArrayList<Bytecode> bytecodes) {		
 		
-		// The list of conflicts represents those subtypes of src whose
-		// instanceof test will conflict with that of test. The idea is that if
-		// we have any conflicts then we need to dive deeper into the runtime
-		// structure of the object in question. 
-		ArrayList<Type> conflicts = new ArrayList<Type>();
-		
-		if (src instanceof Type.Union) {
+		// First, determine the intersection of the actual type and the type
+		// we're testing for.  This is really an optimisation.
+		test = Type.greatestLowerBound(src,test);		
+			
+		if(src instanceof Type.Bool || src instanceof Type.Int) {
+			// in this case, we must succeed.
+			bytecodes.add(new Bytecode.Pop(convertType(src)));
+			bytecodes.add(new Bytecode.Goto(trueTarget));
+		} else if(src instanceof Type.Real) {
+		} else if(src instanceof Type.List) {
+			translateTypeTest(trueTarget,(Type.List)src,test,bytecodes);			
+		} else if(src instanceof Type.Set) {
+			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
+		} else if(src instanceof Type.Tuple) {			
+			translateTypeTest(trueTarget, (Type.Tuple) src, (Type.Tuple) test,
+					bytecodes);			
+		} else if(test instanceof Type.Union){
+			Type.Union tt = (Type.Union) test;
+			// FIXME: hack for now
+			throw new RuntimeException("GOT TEST UNION TYPE");
+		} else {
+			// Note, test cannot be a union here
 			Type.Union ut = (Type.Union) src;
-			for(Type.NonUnion nt : ut.bounds) {
-				JvmType nt_j = convertType(nt);
-				if(nt_j.equals(test_j) && !Type.isSubtype(test, nt)) {
-					conflicts.add(src);
+			
+			for(Type.NonUnion nt : ut.bounds) { 				
+				// Now, the following test must be true for at least one bound.
+				// Furthermore, it must be true for exactly one bound, since we
+				// are guaranteed that test is not a union type. 
+				//
+				// NOTE: this will probably break down in the presence of
+				// structural induction of tuple types.
+				
+				if(Type.isSubtype(nt, test)) {
+					bytecodes.add(new Bytecode.Dup(convertType(src)));
+					if (nt instanceof Type.Bool) {
+						bytecodes.add(new Bytecode.InstanceOf(
+								JvmTypes.JAVA_LANG_BOOLEAN));
+					} else {
+						bytecodes.add(new Bytecode.InstanceOf(
+								(JvmType.Reference) convertType(nt)));
+					}
+					String exitLabel = freshLabel();
+					bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+					translateTypeTest(trueTarget,nt,test,bytecodes);
+					bytecodes.add(new Bytecode.Label(exitLabel));
+					break;
 				}
 			}
-		} else {
-			JvmType nt_j = convertType(src);
-			if (nt_j.equals(test_j) && !Type.isSubtype(test, src)) {
-				conflicts.add(src);
-			}
-		}
+		}		
+	}
+	
+	protected void translateTypeTest(String falseTarget, Type.Tuple src,
+			Type.Tuple test, ArrayList<Bytecode> bytecodes) {
 		
-		if(conflicts.size() == 0) {
-			// This is the base case. Here, there are no conflicts with the type
-			// being tested. This means that we can safely use an instanceof
-			// bytecode without the risk that this will inadvertently capture
-			// types which are not subtypes of that being tested.
-			if (test instanceof Type.Bool) {
-				bytecodes.add(new Bytecode.InstanceOf(JvmTypes.JAVA_LANG_BOOLEAN));
-			} else {
-				bytecodes.add(new Bytecode.InstanceOf(
-						(JvmType.Reference) convertType(test)));
-			}
+		if(src.types.size() != test.types.size()) {
+			
 		} else {
-			System.out.println("TYPE CONFLICTS: " + conflicts);
+			// Now, try to find a field in one but not the other.
 		}
 	}
 	
+	protected void translateTypeTest(String falseTarget, Type.List src, Type test,
+			ArrayList<Bytecode> bytecodes) {
+		// NOTE: test guaranteed to be list or set on entry
+		System.out.println("LIST CONFLICT");
+	}
+	
+	protected void translateTypeTest(String falseTarget, Type.Set src, Type test,
+			ArrayList<Bytecode> bytecodes) {		
+		// NOTE: test guaranteed to be list or set on entry
+		System.out.println("SET CONFLICT");
+	}
+		
 	public void translate(Code.Forall c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		translate(c.source, slots, bytecodes);
