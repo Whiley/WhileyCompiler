@@ -539,16 +539,21 @@ public class ModuleBuilder {
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {
 			Pair<Type, Block> t = resolve(p.type);		
+			Block constraint = t.second();
+			if(constraint != null) {
+				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
+				binding.put("$", CExpr.VAR(t.first(), p.name));
+				constraint = Block.relabel(Block.substitute(binding, constraint));
+				t = new Pair<Type,Block>(t.first(),constraint);
+			}
+			
 			environment.put(p.name(), t);
 			parameterNames.add(p.name());
 			if (t.second() != null) {
 				if (precondition == null) {
 					precondition = new Block();
 				}
-				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-				binding.put("$", CExpr.VAR(t.first(), p.name));
-				precondition.addAll(Block.relabel(Block.substitute(binding, t
-						.second())));
+				precondition.addAll(constraint);
 			}
 		}
 
@@ -723,7 +728,7 @@ public class ModuleBuilder {
 				blk.addAll(constraint);
 			}
 		}
-
+		
 		environment.put(s.name, new Pair<Type, Block>(type, constraint));
 
 		return blk;
@@ -1040,17 +1045,15 @@ public class ModuleBuilder {
 			constraint = Block.substitute(binding, constraint);
 
 			// Similarly, we need to make sure any labels used in the constraint
-			// do
-			// not collide with labels used at the inline point.
+			// do not collide with labels used at the inline point.
 			constraint = Block.relabel(constraint);
-
-			// Now, chain failures to redirect to the exit point.
+			
+			// Now, chain failures to redirect to the next point.
 			constraint = Block.chain(exitLabel, constraint);
-
-			// all done!
-			blk.addAll(constraint);
-		}
-		blk.add(new Code.Goto(target));
+			blk.addAll(constraint);										
+		} 
+		
+		blk.add(new Code.Goto(target));	
 		blk.add(new Code.Label(exitLabel));
 				
 		return blk;

@@ -446,7 +446,7 @@ public class ClassFileBuilder {
 		// we're testing for.  This is really an optimisation.
 		test = Type.greatestLowerBound(src,test);		
 			
-		if(src instanceof Type.Bool || src instanceof Type.Int) {
+		if(Type.isSubtype(test, src)) {
 			// in this case, we must succeed.
 			bytecodes.add(new Bytecode.Pop(convertType(src)));
 			bytecodes.add(new Bytecode.Goto(trueTarget));
@@ -469,17 +469,18 @@ public class ClassFileBuilder {
 					narrowConversion((Type.NonUnion) test));
 			
 			bytecodes.add(new Bytecode.Dup(convertType(test)));
+			JvmType.Reference target_t;
 			if (test instanceof Type.Bool) {
-				bytecodes.add(new Bytecode.InstanceOf(
-						JvmTypes.JAVA_LANG_BOOLEAN));
+				target_t = JvmTypes.JAVA_LANG_BOOLEAN;
 			} else {
 				// FIXME: bug if test is REAL or SET
-				bytecodes.add(new Bytecode.InstanceOf(
-						(JvmType.Reference) convertType(test)));
+				target_t = (JvmType.Reference) convertType(test);
 			}		
 			String nextLabel = freshLabel();
 			String exitLabel = freshLabel();
+			bytecodes.add(new Bytecode.InstanceOf(target_t));
 			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
+			bytecodes.add(new Bytecode.CheckCast(target_t));
 			translateTypeTest(trueTarget,src,test,bytecodes);
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(nextLabel));

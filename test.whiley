@@ -1,9 +1,5 @@
-define intlist as [int]|[[int]]
+define nat as int where $ >= 0
 
-int f(intlist x):
-    if x ~= [int]:
-        return |x|
-    return 1 // unreachable
-
-void System::main([string] args):
-    print str(f([1,2,3]))
+int f(nat x):
+    print str(x)
+    
