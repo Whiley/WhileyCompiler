@@ -277,7 +277,11 @@ public abstract class Type {
 				}
 			}						
 			
-			return T_UNION(types);
+			if(types.size() == 1) {
+				return types.get(0);
+			} else {			
+				return T_UNION(types);
+			}
 		} else if(t2 instanceof Union) {
 			Union ut2 = (Union) t2;
 			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
@@ -287,8 +291,12 @@ public abstract class Type {
 				if(glb != T_VOID) {
 					types.add((NonUnion) glb);
 				}				
-			}										
-			return T_UNION(types);			
+			}		
+			if(types.size() == 1) {
+				return types.get(0);
+			} else {			
+				return T_UNION(types);
+			}					
 		} else if(t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
@@ -754,6 +762,10 @@ public abstract class Type {
 	
 	public static abstract class NonUnion extends Type {}
 	public static abstract class ProcessName extends NonUnion {}
+
+	public static abstract class SetList extends NonUnion {
+		public abstract Type element();
+	}
 	
 	public static final class Any extends NonUnion {
 		private Any() {}
@@ -863,10 +875,13 @@ public abstract class Type {
 			return name + "[" + type + "]";
 		}
 	}
-	public static final class List extends NonUnion {
+	public static final class List extends SetList {
 		public final Type element;
 		private List(Type element) {
 			this.element = element;
+		}
+		public Type element() {
+			return element;
 		}
 		public boolean equals(Object o) {
 			if(o instanceof List) {
@@ -882,10 +897,13 @@ public abstract class Type {
 			return "[" + element + "]";
 		}
 	}
-	public static final class Set extends NonUnion {
+	public static final class Set extends SetList {
 		public final Type element;
 		private Set(Type element) {
 			this.element = element;
+		}
+		public Type element() {
+			return element;
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Set) {

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import wyil.util.Pair;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.BytecodeAttribute;
@@ -105,20 +106,59 @@ public class Code implements BytecodeAttribute {
 		int max = 0;
 		int current = 0;
 		int idx = 0;
-		HashSet<Integer> handlerStarts = new HashSet<Integer>();
+		HashMap<Integer,Integer> starts = new HashMap<Integer,Integer>();
 		for(Handler h : handlers) {
-			handlerStarts.add(h.start);
+			starts.put(h.start,1);
 		}
+		
+		HashMap<String,Integer> labels = new HashMap<String,Integer>();
 		for(Bytecode b : bytecodes) {
-			if(handlerStarts.contains(idx)) {
+			if(b instanceof Bytecode.Label) {
+				Bytecode.Label lab = (Bytecode.Label) b;
+				labels.put(lab.name, idx);
+			}
+			idx = idx + 1;
+		}
+		
+		idx = 0;
+		for(Bytecode b : bytecodes) {
+			if(starts.containsKey(idx)) {
 				// This bytecode is the first of an exception handler. Such
 				// handlers begin with the thrown exception object on the stack,
 				// hence we must account for this.
-				current = current + 1;
+				current = Math.max(current,starts.get(idx));
 			}			
 									
 			current = current + b.stackDiff();			
-			max = Math.max(current,max);			
+			max = Math.max(current,max);	
+			
+			if(b instanceof Bytecode.Goto) {
+				Bytecode.Goto gto = (Bytecode.Goto) b;
+				int offset = labels.get(gto.label);
+				if(!starts.containsKey(offset)) {
+					starts.put(offset, current);
+				}
+				current = 0;
+			} else if(b instanceof Bytecode.If) {
+				Bytecode.If gto = (Bytecode.If) b;
+				int offset = labels.get(gto.label);
+				if(!starts.containsKey(offset)) {
+					starts.put(offset, current);
+				}
+			} else if(b instanceof Bytecode.Switch) {
+				Bytecode.Switch gto = (Bytecode.Switch) b;
+				for(Pair<Integer,String> c : gto.cases) {
+					int offset = labels.get(c.second());
+					if(!starts.containsKey(offset)) {
+						starts.put(offset, current);
+					}
+				}
+				int offset = labels.get(gto.defaultLabel);
+				if(!starts.containsKey(offset)) {
+					starts.put(offset, current);
+				}
+			}
+			
 			idx = idx + 1;
 		}
 		return max;

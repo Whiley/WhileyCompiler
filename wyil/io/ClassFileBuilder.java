@@ -452,7 +452,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Goto(trueTarget));
 		} else if(src instanceof Type.Real) {
 		} else if(src instanceof Type.List) {
-			translateTypeTest(trueTarget,(Type.List)src,test,bytecodes);			
+			translateTypeTest(trueTarget, (Type.List) src, (Type.SetList) test,
+					bytecodes);			
 		} else if(src instanceof Type.Set) {
 			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
 		} else if(src instanceof Type.Tuple) {			
@@ -462,57 +463,85 @@ public class ClassFileBuilder {
 			Type.Union tt = (Type.Union) test;
 			// FIXME: hack for now
 			throw new RuntimeException("GOT TEST UNION TYPE");
-		} else {
-			// Note, test cannot be a union here
-			Type.Union ut = (Type.Union) src;
+		} else if(src instanceof Type.Union) {
+			// Note, test cannot be a union here			
+			src = Type.greatestLowerBound(src,
+					narrowConversion((Type.NonUnion) test));
 			
-			for(Type.NonUnion nt : ut.bounds) { 				
-				// Now, the following test must be true for at least one bound.
-				// Furthermore, it must be true for exactly one bound, since we
-				// are guaranteed that test is not a union type. 
-				//
-				// NOTE: this will probably break down in the presence of
-				// structural induction of tuple types.
-				
-				if(Type.isSubtype(nt, test)) {
-					bytecodes.add(new Bytecode.Dup(convertType(src)));
-					if (nt instanceof Type.Bool) {
-						bytecodes.add(new Bytecode.InstanceOf(
-								JvmTypes.JAVA_LANG_BOOLEAN));
-					} else {
-						bytecodes.add(new Bytecode.InstanceOf(
-								(JvmType.Reference) convertType(nt)));
-					}
-					String exitLabel = freshLabel();
-					bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
-					translateTypeTest(trueTarget,nt,test,bytecodes);
-					bytecodes.add(new Bytecode.Label(exitLabel));
-					break;
-				}
-			}
-		}		
+			bytecodes.add(new Bytecode.Dup(convertType(test)));
+			if (test instanceof Type.Bool) {
+				bytecodes.add(new Bytecode.InstanceOf(
+						JvmTypes.JAVA_LANG_BOOLEAN));
+			} else {
+				// FIXME: bug if test is REAL or SET
+				bytecodes.add(new Bytecode.InstanceOf(
+						(JvmType.Reference) convertType(test)));
+			}		
+			String nextLabel = freshLabel();
+			String exitLabel = freshLabel();
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
+			translateTypeTest(trueTarget,src,test,bytecodes);
+			bytecodes.add(new Bytecode.Goto(exitLabel));
+			bytecodes.add(new Bytecode.Label(nextLabel));
+			bytecodes.add(new Bytecode.Pop(convertType(test)));
+			bytecodes.add(new Bytecode.Label(exitLabel));
+		} 
 	}
-	
-	protected void translateTypeTest(String falseTarget, Type.Tuple src,
-			Type.Tuple test, ArrayList<Bytecode> bytecodes) {
-		
-		if(src.types.size() != test.types.size()) {
-			
-		} else {
-			// Now, try to find a field in one but not the other.
+
+	/**
+	 * The following method produces a type which represents a narrowing of the
+	 * given type according to what will happen when we perform an instanceof
+	 * test on it.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	protected Type narrowConversion(Type.NonUnion type) {
+		if (type instanceof Type.List) {
+			return Type.T_LIST(Type.T_ANY);
+		} else if (type instanceof Type.Set) {
+			return Type.T_SET(Type.T_ANY);
+		} else if (type instanceof Type.Tuple) {
+			return Type.T_TUPLE(new HashMap<String,Type>());
 		}
+		return type;
 	}
 	
-	protected void translateTypeTest(String falseTarget, Type.List src, Type test,
+	protected void translateTypeTest(String trueTarget, Type.Tuple src,
+			Type.Tuple test, ArrayList<Bytecode> bytecodes) {
+		System.out.println("CONFLICT: " + src + " ~~ " + test);
+		// FIXME: this test case is current broken because the loop above will catch all 
+	}
+	
+	protected void translateTypeTest(String trueTarget, Type.List src, Type.SetList test,
 			ArrayList<Bytecode> bytecodes) {
-		// NOTE: test guaranteed to be list or set on entry
-		System.out.println("LIST CONFLICT");
+		JvmType src_j = convertType(src);
+		
+		// First, attempt to capture case when list is empty as this will always
+		// pass the type test.
+		String falseTarget = freshLabel();
+		bytecodes.add(new Bytecode.Dup(src_j));
+		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", fun_t , Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, falseTarget));
+		bytecodes.add(new Bytecode.Pop(src_j));
+		bytecodes.add(new Bytecode.Goto(trueTarget));
+		bytecodes.add(new Bytecode.Label(falseTarget));
+		
+		// Second, look at what's inside and go from there	
+		
+		// FIXME: there is still a bug in 
+		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
+		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));
+		translateTypeTest(trueTarget,src.element,test.element(),bytecodes);
 	}
 	
 	protected void translateTypeTest(String falseTarget, Type.Set src, Type test,
 			ArrayList<Bytecode> bytecodes) {		
 		// NOTE: test guaranteed to be list or set on entry
-		System.out.println("SET CONFLICT");
+		System.out.println("CONFLICT: " + src + " ~~ " + test);
+		
 	}
 		
 	public void translate(Code.Forall c, HashMap<String, Integer> slots,
