@@ -536,10 +536,14 @@ public class ClassFileBuilder {
 				return;
 			}
 			// could do better here
-		} else {
+		} else if(src instanceof Type.Tuple) {
+			System.out.println("GOT: " + src);
 			Type.Tuple st = (Type.Tuple) src;
 			// could do better here
-		} 
+		} else if(src instanceof Type.Recursive) {
+			translateTypeTest(trueTarget,Type.effectiveTupleType(src),test,bytecodes);
+			return;
+		}
 		throw new RuntimeException("Internal failure --- tuple type test cases not implemented");
 	}
 	
