@@ -159,6 +159,30 @@ public final class Block implements Iterable<Stmt> {
 		}
 		return r;
 	}
+
+	/**
+	 * This method updates the source attributes for all statements in a block.
+	 * This is typically done in conjunction with a substitution, when we're
+	 * inlining constraints from e.g. pre- and post-conditions.
+	 * 
+	 * @param block
+	 * @param nsrc
+	 * @return
+	 */
+	public static Block resource(Block block, Attribute.Source nsrc) {
+		if(block == null) {
+			return null;
+		}
+		Block nblock = new Block();
+		for(Stmt s : block) {
+			List<Attribute> attrs = s.attributes();
+			Attribute src = s.attribute(Attribute.Source.class);
+			attrs.remove(src);
+			attrs.add(nsrc);
+			nblock.add(s.code,attrs);
+		}
+		return nblock;
+	}
 	
 	/**
 	 * This method relabels a given block to ensure its labels do not clash with

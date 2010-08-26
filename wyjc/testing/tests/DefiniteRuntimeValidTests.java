@@ -53,6 +53,7 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_2_RunTest() { runTest("ConstrainedList_Valid_2"); }
  @Test public void ConstrainedList_Valid_3_RunTest() { runTest("ConstrainedList_Valid_3"); }
  @Test public void ConstrainedList_Valid_4_RunTest() { runTest("ConstrainedList_Valid_4"); }
+ @Test public void ConstrainedList_Valid_5_RunTest() { runTest("ConstrainedList_Valid_5"); }
  @Test public void ConstrainedSet_Valid_1_RunTest() { runTest("ConstrainedSet_Valid_1"); }
  @Test public void ConstrainedSet_Valid_2_RunTest() { runTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RunTest() { runTest("ConstrainedSet_Valid_3"); }
@@ -205,6 +206,7 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_11_RunTest() { runTest("TypeEquals_Valid_11"); }
  @Test public void TypeEquals_Valid_12_RunTest() { runTest("TypeEquals_Valid_12"); }
  @Test public void TypeEquals_Valid_13_RunTest() { runTest("TypeEquals_Valid_13"); }
+ @Test public void TypeEquals_Valid_14_RunTest() { runTest("TypeEquals_Valid_14"); }
  @Test public void UnionType_Valid_1_RunTest() { runTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_10_RunTest() { runTest("UnionType_Valid_10"); }
  @Test public void UnionType_Valid_11_RunTest() { runTest("UnionType_Valid_11"); }

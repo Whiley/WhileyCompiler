@@ -713,7 +713,8 @@ public class ModuleBuilder {
 			syntaxError("variable cannot have void type",filename,s);
 		}
 		
-		Block constraint = tb.second();
+		Block constraint = Block.resource(tb.second(), init
+				.attribute(Attribute.Source.class));		
 		constraint = Block.relabel(constraint);
 		constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);
 		Block blk = new Block();
@@ -756,6 +757,8 @@ public class ModuleBuilder {
 		Variable target = (Variable) flattern(s.lhs); // FIXME
 		Block constraint = environment.get(target.var).second();
 		if (constraint != null) {
+			constraint = Block.resource(constraint, s
+					.attribute(Attribute.Source.class));
 			constraint = Block.relabel(constraint);
 			constraint = Block.substitute("$", CExpr.VAR(environment.get(
 					target.var).first(), target.var), constraint);
@@ -807,6 +810,8 @@ public class ModuleBuilder {
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 				binding.put("$", t.first());
 				binding.putAll(shadows);
+				postcondition = Block.resource(postcondition, s.expr
+						.attribute(Attribute.Source.class));
 				postcondition = Block.registerShift(freeReg, postcondition);
 				postcondition = Block.substitute(binding, postcondition);
 				blk.addAll(Block.relabel(postcondition));
@@ -1043,11 +1048,11 @@ public class ModuleBuilder {
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$", lhs_tb.first());
 			constraint = Block.substitute(binding, constraint);
-
+			
 			// Similarly, we need to make sure any labels used in the constraint
 			// do not collide with labels used at the inline point.
 			constraint = Block.relabel(constraint);
-			
+			constraint = Block.resource(constraint, v.attribute(Attribute.Source.class));
 			// Now, chain failures to redirect to the next point.
 			constraint = Block.chain(exitLabel, constraint);
 			blk.addAll(constraint);										

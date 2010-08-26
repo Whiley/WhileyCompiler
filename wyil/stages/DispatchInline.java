@@ -253,7 +253,7 @@ public class DispatchInline implements ModuleTransform {
 			Module.Method method) {
 		
 		// Update the source number information
-		constraint = resource(constraint,src); 
+		constraint = Block.resource(constraint,src); 
 		
 		// We need to perform the register shift. This is ensure that
 		// registers used in the constraint do not interfere with registers
@@ -283,17 +283,5 @@ public class DispatchInline implements ModuleTransform {
 		}									
 		
 		return  Block.substitute(binding, constraint);		
-	}
-	
-	public static Block resource(Block block, Attribute.Source nsrc) {
-		Block nblock = new Block();
-		for(Stmt s : block) {
-			List<Attribute> attrs = s.attributes();
-			Attribute src = s.attribute(Attribute.Source.class);
-			attrs.remove(src);
-			attrs.add(nsrc);
-			nblock.add(s.code,attrs);
-		}
-		return nblock;
 	}
 }

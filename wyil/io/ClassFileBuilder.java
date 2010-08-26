@@ -24,7 +24,8 @@ import java.util.*;
 import wyil.jvm.attributes.*;
 import wyil.jvm.rt.BigRational;
 import wyil.*;
-import wyil.util.*;
+import static wyil.util.SyntaxError.*;
+import wyil.util.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
 import wyil.lang.Code;
@@ -43,6 +44,7 @@ public class ClassFileBuilder {
 	protected int WHILEY_MINOR_VERSION;
 	protected int WHILEY_MAJOR_VERSION;
 	protected ModuleLoader loader;	
+	protected String filename;
 	
 	public ClassFileBuilder(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
@@ -58,6 +60,8 @@ public class ClassFileBuilder {
 		modifiers.add(Modifier.ACC_FINAL);
 		ClassFile cf = new ClassFile(49, type, JAVA_LANG_OBJECT,
 				new ArrayList<JvmType.Clazz>(), modifiers);
+	
+		this.filename = module.filename();
 		
 		boolean addMainLauncher = false;		
 		
@@ -204,33 +208,40 @@ public class ClassFileBuilder {
 	public void translate(Block blk, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes, Module.Method method) {
 		for (Stmt s : blk) {
-			translate(s.code, slots, bytecodes, method);
+			translate(s, slots, bytecodes, method);
 		}
 	}
 	
-	public void translate(Code c, HashMap<String, Integer> slots,
+	public void translate(Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes, Module.Method method) {
-		if(c instanceof Code.Assign) {
-			translate((Code.Assign)c,slots,bytecodes);
-		} else if(c instanceof Code.Return){
-			translate((Code.Return)c,slots,bytecodes, method);
-		} else if(c instanceof Code.Goto) {
-			translate((Code.Goto)c,slots,bytecodes);
-		} else if(c instanceof Code.IfGoto) {
-			translate((Code.IfGoto)c,slots,bytecodes);
-		} else if(c instanceof Code.Forall) {
-			translate((Code.Forall)c,slots,bytecodes);
-		} else if(c instanceof Code.End) {
-			translate((Code.End)c,slots,bytecodes);
-		} else if(c instanceof Code.Label){
-			translate((Code.Label)c,slots,bytecodes);
-		} else if(c instanceof Code.Debug){
-			translate((Code.Debug)c,slots,bytecodes);
-		} else if(c instanceof Code.Fail){
-			translate((Code.Fail)c,slots,bytecodes);
-		} else if(c instanceof Code.ExternJvm){
-			translate((Code.ExternJvm)c,slots,bytecodes);
-		} 
+		try {
+			Code c = stmt.code;
+			if (c instanceof Code.Assign) {
+				translate((Code.Assign) c, slots, bytecodes);
+			} else if (c instanceof Code.Return) {
+				translate((Code.Return) c, slots, bytecodes, method);
+			} else if (c instanceof Code.Goto) {
+				translate((Code.Goto) c, slots, bytecodes);
+			} else if (c instanceof Code.IfGoto) {
+				translate((Code.IfGoto) c, stmt, slots, bytecodes);
+			} else if (c instanceof Code.Forall) {
+				translate((Code.Forall) c, slots, bytecodes);
+			} else if (c instanceof Code.End) {
+				translate((Code.End) c, slots, bytecodes);
+			} else if (c instanceof Code.Label) {
+				translate((Code.Label) c, slots, bytecodes);
+			} else if (c instanceof Code.Debug) {
+				translate((Code.Debug) c, slots, bytecodes);
+			} else if (c instanceof Code.Fail) {
+				translate((Code.Fail) c, slots, bytecodes);
+			} else if (c instanceof Code.ExternJvm) {
+				translate((Code.ExternJvm) c, slots, bytecodes);
+			}
+		} catch (SyntaxError ex) {
+			throw ex;
+		} catch (Exception ex) {		
+			syntaxError("internal failure", filename, stmt, ex);
+		}
 	}
 	
 	public void translate(Code.Assign c, HashMap<String, Integer> slots,
@@ -266,7 +277,7 @@ public class ClassFileBuilder {
 	}
 
 	
-	public void translate(Code.IfGoto c, HashMap<String, Integer> slots,
+	public void translate(Code.IfGoto c, Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
 		
 		Type lub = Type.leastUpperBound(c.lhs.type(),c.rhs.type());
@@ -385,7 +396,7 @@ public class ClassFileBuilder {
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
 				String exitLabel = freshLabel();
 				String trueLabel = freshLabel();
-				translateTypeTest(trueLabel,c.lhs.type(), rhs_t, bytecodes);
+				translateTypeTest(trueLabel,c.lhs.type(), rhs_t, stmt, bytecodes);
 				bytecodes.add(new Bytecode.Goto(exitLabel));
 				bytecodes.add(new Bytecode.Label(trueLabel));
 				if(c.lhs instanceof CExpr.Variable) {					
@@ -407,7 +418,7 @@ public class ClassFileBuilder {
 			{	
 				String trueLabel = freshLabel();
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				translateTypeTest(trueLabel, c.lhs.type(), rhs_t, bytecodes);
+				translateTypeTest(trueLabel, c.lhs.type(), rhs_t, stmt, bytecodes);
 				bytecodes.add(new Bytecode.Goto(c.target));
 				bytecodes.add(new Bytecode.Label(trueLabel));
 				if(c.lhs instanceof CExpr.Variable) { 
@@ -423,7 +434,8 @@ public class ClassFileBuilder {
 				return;
 			}
 			default:
-				throw new RuntimeException("unknown if condition encountered");
+				syntaxError("unknown if condition encountered",filename,stmt);
+				return;
 			}
 			
 			// do the jump
@@ -440,7 +452,7 @@ public class ClassFileBuilder {
 	// example, testing a static type [int]|[bool] against type [int] is harder,
 	// since both are actually instances of java.util.List. 
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
-			ArrayList<Bytecode> bytecodes) {		
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
 		
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
@@ -453,16 +465,16 @@ public class ClassFileBuilder {
 		} else if(src instanceof Type.Real) {
 		} else if(src instanceof Type.List) {
 			translateTypeTest(trueTarget, (Type.List) src, (Type.SetList) test,
-					bytecodes);			
+					stmt, bytecodes);			
 		} else if(src instanceof Type.Set) {
 			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
 		} else if(src instanceof Type.Tuple || Type.effectiveTupleType(src) != null) {				
-			translateTypeTest(trueTarget, src, (Type.Tuple) test,
+			translateTypeTest(trueTarget, src, (Type.Tuple) test, stmt,
 					bytecodes);			
 		} else if(test instanceof Type.Union){
 			Type.Union tt = (Type.Union) test;
 			// FIXME: hack for now
-			throw new RuntimeException("GOT TEST UNION TYPE");
+			syntaxError("Type test for union type not implemented",filename,stmt);
 		} else if(src instanceof Type.Union) {
 			// Note, test cannot be a union here			
 			src = Type.greatestLowerBound(src,
@@ -480,8 +492,8 @@ public class ClassFileBuilder {
 			String exitLabel = freshLabel();
 			bytecodes.add(new Bytecode.InstanceOf(target_t));
 			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
-			bytecodes.add(new Bytecode.CheckCast(target_t));
-			translateTypeTest(trueTarget,src,test,bytecodes);
+			addCheckCast(target_t,bytecodes);			
+			translateTypeTest(trueTarget,src,test,stmt,bytecodes);
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(nextLabel));
 			bytecodes.add(new Bytecode.Pop(convertType(test)));
@@ -509,7 +521,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translateTypeTest(String trueTarget, Type src,
-			Type.Tuple test, ArrayList<Bytecode> bytecodes) {
+			Type.Tuple test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
 		
 		if(src instanceof Type.Union) {
 			// Here, all bounds are guaranteed to be of tuple type.
@@ -537,18 +549,21 @@ public class ClassFileBuilder {
 			}
 			// could do better here
 		} else if(src instanceof Type.Tuple) {
-			System.out.println("GOT: " + src);
 			Type.Tuple st = (Type.Tuple) src;
 			// could do better here
 		} else if(src instanceof Type.Recursive) {
-			translateTypeTest(trueTarget,Type.effectiveTupleType(src),test,bytecodes);
+			Type.Recursive rt = (Type.Recursive) src;			
+			HashMap<String,Type> binding = new HashMap<String,Type>();
+			binding.put(rt.name, rt);
+			Type t = Type.substituteRecursiveTypes(rt.type,binding);
+			translateTypeTest(trueTarget,t,test,stmt,bytecodes);
 			return;
 		}
-		throw new RuntimeException("Internal failure --- tuple type test cases not implemented");
+		syntaxError("tuple type test cases not implemented",filename,stmt);
 	}
 	
 	protected void translateTypeTest(String trueTarget, Type.List src, Type.SetList test,
-			ArrayList<Bytecode> bytecodes) {
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {
 		JvmType src_j = convertType(src);
 		
 		// First, attempt to capture case when list is empty as this will always
@@ -568,7 +583,7 @@ public class ClassFileBuilder {
 		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
 		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));
-		translateTypeTest(trueTarget,src.element,test.element(),bytecodes);
+		translateTypeTest(trueTarget,src.element,test.element(),stmt,bytecodes);
 	}
 	
 	protected void translateTypeTest(String falseTarget, Type.Set src, Type test,
@@ -1180,8 +1195,8 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"booleanValue", ftype, Bytecode.VIRTUAL));
-		} else {			
-			bytecodes.add(new Bytecode.CheckCast(convertType(et)));
+		} else {	
+			addCheckCast(convertType(et),bytecodes);			
 		}
 	}
 
@@ -1199,6 +1214,16 @@ public class ClassFileBuilder {
 		} 
 	}
 
+	public void addCheckCast(JvmType type, ArrayList<Bytecode> bytecodes) {
+		// The following can happen in situations where a variable has type
+		// void. In principle, we could remove this as obvious dead-code, but
+		// for now I just avoid it.
+		if(type instanceof JvmType.Void) {
+			return;
+		}
+		bytecodes.add(new Bytecode.CheckCast(type));
+	}
+	
 	/**
 	 * The construct method provides a generic way to construct a Java object.
 	 * 
@@ -1375,7 +1400,7 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));
-		bytecodes.add(new Bytecode.CheckCast(convertType(fromType.element)));		
+		addCheckCast(convertType(fromType.element),bytecodes);		
 		convert(toType.element, fromType.element, slots,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
@@ -1406,7 +1431,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.LoadConst(key));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));					
-			bytecodes.add(new Bytecode.CheckCast(convertType(from)));
+			addCheckCast(convertType(from),bytecodes);			
 			if(!to.equals(from)) {
 				// now perform recursive conversion
 				convert(to,from,slots,bytecodes);
