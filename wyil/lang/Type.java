@@ -140,6 +140,22 @@ public abstract class Type {
 				}
 			}
 			return true;
+		} else if(t1 instanceof Recursive) {
+			Recursive rt1 = (Recursive) t1;
+			
+			if(t2 instanceof Recursive) {
+				// Here, we attempt to show an isomorphism between the two
+				// recursive types.
+				Recursive rt2 = (Recursive) t2;
+				HashMap<String,Type> binding = new HashMap<String,Type>();
+				binding.put(rt2.name, T_RECURSIVE(rt1.name,null));
+				Type rt2type = substituteRecursiveTypes(rt2.type,binding);
+				if(isSubtype(rt1.type,rt2type)) {
+					return true;
+				}
+			}
+			
+			return isSubtype(rt1.type,t2);
 		} else if(t1 instanceof Fun && t2 instanceof Fun) {
 			Fun f1 = (Fun) t1;
 			Fun f2 = (Fun) t2;

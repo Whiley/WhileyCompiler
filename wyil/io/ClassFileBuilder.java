@@ -525,11 +525,13 @@ public class ClassFileBuilder {
 				}
 			}			
 			
-			if(!candidates.isEmpty()) {
-				String candidate = candidates.iterator().next();				
+			if (!candidates.isEmpty()) {
+				String candidate = candidates.iterator().next();
 				bytecodes.add(new Bytecode.LoadConst(candidate));
-				JvmType.Function fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", fun_t , Bytecode.VIRTUAL));
+				JvmType.Function fun_t = new JvmType.Function(JAVA_LANG_OBJECT,
+						JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", fun_t,
+						Bytecode.VIRTUAL));
 				bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, trueTarget));
 				return;
 			}

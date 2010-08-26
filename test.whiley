@@ -1,6 +1,9 @@
-define tup1 as (int x, int y)
-define tup2 as (int x)
+define state as (string input, int pos)
+define expr as (int op, expr lhs) | (string err)
 
-tup2 f(tup1 x):
-    return x
+(expr e, state st) parseIdentifier(state st):
+    return (e:(err:"Got here"),st:st)
     
+void System::main([string] args):
+    (expr e, state st) r = parseIdentifier((input:"hello",pos:0))
+    print str(r.e)
