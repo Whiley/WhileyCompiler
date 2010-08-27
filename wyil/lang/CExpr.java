@@ -6,7 +6,9 @@ public abstract class CExpr {
 	public abstract Type type();
 	
 	public static abstract class LVal extends CExpr {}
-	public static abstract class LVar extends LVal {}
+	public static abstract class LVar extends LVal {
+		public abstract String name();
+	}
 	
 	public static <T> void match(CExpr r, Class<T> match, Collection<T> uses) {
 		if(match.isInstance(r)) {
@@ -194,6 +196,28 @@ public abstract class CExpr {
 		}
 		return max;
 	}
+
+	/**
+	 * This method accepts an expression which is used as the lhs of an
+	 * assignment. It returns the LVar which is actually updated by the
+	 * assignment.
+	 * 
+	 * @param lhs
+	 * @return
+	 */
+	public static LVar extractLVar(LVal lhs) {
+		if(lhs instanceof LVar) {
+			return (LVar) lhs;
+		} else if(lhs instanceof ListAccess) {
+			ListAccess la = (ListAccess) lhs;
+			return extractLVar((LVal) la.src);
+		} else if(lhs instanceof TupleAccess) {
+			TupleAccess la = (TupleAccess) lhs;
+			return extractLVar((LVal) la.lhs);
+		}
+		return null;
+	}
+	
 	
 	public static Variable VAR(Type t, String v) {
 		return get(new Variable(t,v));
@@ -261,6 +285,9 @@ public abstract class CExpr {
 		public int hashCode() {
 			return type.hashCode() + name.hashCode();
 		}
+		public String name() {
+			return name;
+		}
 		public boolean equals(Object o) {
 			if(o instanceof Variable) {
 				Variable v = (Variable) o;
@@ -302,7 +329,10 @@ public abstract class CExpr {
 			}
 			return false;
 		}
-		public String toString() {
+		public String name() {
+			return "%" + index;
+		}
+		public String toString() {			
 			return "%" + index + "!" + type;			
 		}
 	}
