@@ -7,11 +7,11 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wyil.util.SyntaxError.*;
 
-public class FailureChecker implements ModuleTransform {
+public class FailureCheck implements ModuleTransform {
 	private final ModuleLoader loader;
 	private String filename;
 
-	public FailureChecker(ModuleLoader loader) {
+	public FailureCheck(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
