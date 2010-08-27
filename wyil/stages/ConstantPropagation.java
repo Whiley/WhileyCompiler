@@ -270,7 +270,7 @@ public class ConstantPropagation implements ModuleTransform {
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		
 		if(lhs instanceof Value && rhs instanceof Value) {
-			return Value.evaluate(v.op, (Value) v.lhs, (Value) v.rhs);
+			return Value.evaluate(v.op, (Value) lhs, (Value) rhs);
 		}
 		
 		return CExpr.BINOP(v.op,lhs,rhs);				

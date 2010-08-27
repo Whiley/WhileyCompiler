@@ -130,8 +130,10 @@ public abstract class Value extends CExpr {
 	
 	public static Boolean evaluate(Code.COP op, Value lhs, Value rhs) {
 		Type lhs_t = lhs.type();
+		Type rhs_t = rhs.type();
+		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
 		
-		if(lhs_t instanceof Type.Int || lhs_t instanceof Type.Real) {
+		if(lub instanceof Type.Int || lub instanceof Type.Real) {
 			return evaluateArith(op,lhs,rhs);
 		} else if(op == Code.COP.EQ) {
 			return lhs.equals(rhs);
@@ -169,7 +171,7 @@ public abstract class Value extends CExpr {
 		}
 	}
 	
-	public static Boolean evaluateArith(Code.COP op, Value lhs, Value rhs) {
+	public static Boolean evaluateArith(Code.COP op, Value lhs, Value rhs) {		
 		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());		
 		lhs = convert(lub,lhs);
 		rhs = convert(lub,rhs);
