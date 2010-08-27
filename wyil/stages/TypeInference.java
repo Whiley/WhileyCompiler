@@ -132,6 +132,19 @@ public class TypeInference implements ModuleTransform {
 			} else if(code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
 				code = infer(fall,stmt,environment);
+				if(code instanceof Skip) {
+					// indicates the loop should be removed because it's
+					// unreachable, or is over an empty list.
+					while(i<block.size()) {
+						Stmt s = block.get(++i);						
+						if(s.code instanceof End) {
+							End e = (End) s.code;
+							if(e.target.equals(fall.label)) {
+								break;
+							}
+						}						
+					}
+				}								
 			} else if(code instanceof Debug) {
 				code = infer((Code.Debug)code,stmt,environment);
 			} 
@@ -159,13 +172,20 @@ public class TypeInference implements ModuleTransform {
 		CExpr src = infer(code.source, stmt, environment);
 		Type src_t = src.type();				
 		
-		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);
+		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);				
 		
 		Type elem_t;
 		if(src_t instanceof Type.List) {
 			elem_t = ((Type.List)src_t).element;
 		} else {
 			elem_t = ((Type.Set)src_t).element;
+		}
+		
+		if (elem_t == Type.T_VOID) {
+			// This indicates a loop over an empty list. This legitimately can
+			// happen as a result of substitution for contraints or pre/post
+			// conditions.
+			return new Code.Skip();
 		}
 		
 		environment.put("%" + code.variable.index, elem_t);
