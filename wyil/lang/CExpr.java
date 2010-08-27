@@ -205,15 +205,20 @@ public abstract class CExpr {
 	 * @param lhs
 	 * @return
 	 */
-	public static LVar extractLVar(LVal lhs) {
+	public static LVar extractLVar(CExpr lhs) {
 		if(lhs instanceof LVar) {
 			return (LVar) lhs;
 		} else if(lhs instanceof ListAccess) {
 			ListAccess la = (ListAccess) lhs;
-			return extractLVar((LVal) la.src);
+			return extractLVar(la.src);
 		} else if(lhs instanceof TupleAccess) {
 			TupleAccess la = (TupleAccess) lhs;
-			return extractLVar((LVal) la.lhs);
+			return extractLVar(la.lhs);
+		} else if(lhs instanceof UnOp) {
+			UnOp la = (UnOp) lhs;
+			if(la.op == CExpr.UOP.PROCESSACCESS){ 
+				return extractLVar((LVal) la.rhs);
+			}
 		}
 		return null;
 	}
