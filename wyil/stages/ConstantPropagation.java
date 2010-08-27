@@ -157,10 +157,10 @@ public class ConstantPropagation implements ModuleTransform {
 		} else if(lhs instanceof Register && rhs instanceof Value) {
 			Register v = (Register) lhs;
 			environment.put("%" + v.index, (Value) rhs);
-		} else {
+		} else if(lhs != null) {
 			// FIXME: we could do better here, actually. Particularly in the
 			// case of tuple accesses. Lists are harder, unless the index is
-			// itself a constant.
+			// itself a constant.			
 			LVar lv = CExpr.extractLVar(lhs);
 			// Now, remove the constant we have stored for this variable, since
 			// the variables value has changed in some manner that we haven't
