@@ -713,7 +713,7 @@ public class ModuleBuilder {
 			syntaxError("variable cannot have void type",filename,s);
 		}
 		
-		Block constraint = Block.resource(tb.second(), init
+		Block constraint = Block.resource(tb.second(), s
 				.attribute(Attribute.Source.class));		
 		constraint = Block.relabel(constraint);
 		constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);
