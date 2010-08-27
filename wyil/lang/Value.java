@@ -130,22 +130,29 @@ public abstract class Value extends CExpr {
 	
 	public static Boolean evaluate(Code.COP op, Value lhs, Value rhs) {
 		Type lhs_t = lhs.type();
+		
 		if(lhs_t instanceof Type.Int || lhs_t instanceof Type.Real) {
 			return evaluateArith(op,lhs,rhs);
-		} else if(op == Code.COP.ELEMOF && rhs instanceof Value.Set) {
+		} else if(op == Code.COP.EQ) {
+			return lhs.equals(rhs);
+		} else if(op == Code.COP.NEQ) {
+			return !lhs.equals(rhs);
+		} else if (op == Code.COP.ELEMOF && rhs instanceof Value.Set) {
 			Value.Set set = (Value.Set) rhs;
 			return set.values.contains(lhs);
-		} else if(op == Code.COP.ELEMOF && rhs instanceof Value.List) {
+		} else if (op == Code.COP.ELEMOF && rhs instanceof Value.List) {
 			Value.List list = (Value.List) rhs;
 			return list.values.contains(lhs);
-		} else if(op == Code.COP.SUBSET || op == Code.COP.SUBSETEQ) {
-			return evaluateSet(op,lhs,rhs);
-		} else if(op == Code.COP.SUBTYPEEQ) {
+		} else if (op == Code.COP.SUBSET || op == Code.COP.SUBSETEQ) {
+			return evaluateSet(op, lhs, rhs);
+		} else if (op == Code.COP.SUBTYPEEQ) {
 			TypeConst tc = (TypeConst) rhs;
-			return Type.isSubtype(tc.type,lhs_t);			
-		} else {
+			return Type.isSubtype(tc.type, lhs_t);
+		} else if(rhs instanceof TypeConst) {
 			TypeConst tc = (TypeConst) rhs;
 			return !Type.isSubtype(tc.type,lhs_t);					
+		} else {
+			return null;
 		}
 	}
 	

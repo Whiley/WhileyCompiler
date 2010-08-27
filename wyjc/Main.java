@@ -140,8 +140,8 @@ public class Main {
 				new TypeInference(loader)));
 		stages.add(new WyilTransform("definite assignment",
 				new DefiniteAssignment()));
-		//stages.add(new WyilTransform("constant propagation",
-		//		new ConstantPropagation(loader)));
+		stages.add(new WyilTransform("constant propagation",
+				new ConstantPropagation(loader)));
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}

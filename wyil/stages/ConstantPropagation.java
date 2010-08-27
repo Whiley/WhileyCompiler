@@ -112,6 +112,7 @@ public class ConstantPropagation implements ModuleTransform {
 				code = infer((Code.Assign)code,stmt,environment);
 			} else if(code instanceof Return) {
 				code = infer((Code.Return)code,stmt,environment,method);
+				environment = null;
 			} else if(code instanceof Fail) {				
 				environment = null;
 			} else if(code instanceof Forall) {
@@ -131,10 +132,10 @@ public class ConstantPropagation implements ModuleTransform {
 		
 		HashMap<String,Value> e = flowsets.get(target);
 		if(e == null) {
-			flowsets.put(target, env);
+			flowsets.put(target, new HashMap<String,Value>(env));
 		} else {
 			join(e,env);
-			flowsets.put(target, env);
+			flowsets.put(target, e);
 		}
 	}
 	
@@ -352,6 +353,7 @@ public class ConstantPropagation implements ModuleTransform {
 			Value mt = env1.get(key);
 			Value ot = env2.get(key);
 			if (ot instanceof Value && mt instanceof Value && ot.equals(mt)) {
+				System.out.println("MATCHED: " + ot + " : " + mt);
 				// ok
 			} else {
 				env1.remove(key);
