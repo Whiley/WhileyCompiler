@@ -1,5 +1,6 @@
 package wyil.stages;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import wyil.ModuleLoader;
+import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
 import wyil.lang.CExpr.*;
 import wyil.lang.Code.*;
@@ -144,9 +146,7 @@ public class PreconditionInline implements ModuleTransform {
 			return CExpr.LISTACCESS(transform(la.src, stmt, inserts),
 					transform(la.index, stmt, inserts));
 		} else if (r instanceof BinOp) {
-			BinOp bop = (BinOp) r;
-			return CExpr.BINOP(bop.op, transform(bop.lhs, stmt, inserts),
-					transform(bop.rhs, stmt, inserts));
+			return transform((BinOp)r,stmt,inserts);			
 		} else if (r instanceof UnOp) {
 			UnOp bop = (UnOp) r;
 			return CExpr.UNOP(bop.op,transform(bop.rhs, stmt, inserts));
@@ -189,6 +189,28 @@ public class PreconditionInline implements ModuleTransform {
 		} 
 		
 		return r;	
+	}
+	
+	public CExpr transform(BinOp bop, Stmt stmt, Block inserts) {		
+		CExpr lhs = transform(bop.lhs, stmt, inserts);
+		CExpr rhs = transform(bop.rhs, stmt, inserts);
+		if(bop.op == CExpr.BOP.DIV) {
+			String exitLabel = Block.freshLabel();
+			String checkLabel = Block.freshLabel();
+			Attribute.Source attr = stmt.attribute(Attribute.Source.class);
+			inserts.add(new Code.Check(checkLabel),attr);
+			if(rhs.type() == Type.T_INT) {
+				inserts.add(new IfGoto(Code.COP.NEQ, rhs, Value
+						.V_INT(BigInteger.ZERO), exitLabel), attr);
+			} else {
+				inserts.add(new IfGoto(Code.COP.NEQ, rhs, Value
+						.V_REAL(BigRational.ZERO), exitLabel), attr);
+			}
+			inserts.add(new Code.Fail("divide-by-zero possible"), attr);
+			inserts.add(new Code.Label(exitLabel), attr);
+			inserts.add(new Code.CheckEnd(checkLabel), attr);
+		}
+		return CExpr.BINOP(bop.op, lhs, rhs);
 	}
 	
 	public Block transform(int regTarget, CExpr.Invoke ivk, Stmt stmt) {
