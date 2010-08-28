@@ -61,8 +61,16 @@ public class TypeInference implements ModuleTransform {
 		
 		List<String> paramNames = mcase.parameterNames();
 		List<Type> paramTypes = method.type().params;
-		for(int i=0;i!=paramNames.size();++i) {
-			environment.put(paramNames.get(i), paramTypes.get(i));
+		
+		for (int i = 0; i != paramNames.size(); ++i) {
+			Type t = paramTypes.get(i);
+			environment.put(paramNames.get(i), t);
+			if (method.type().receiver == null
+					&& Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
+				// FIXME: add source information
+				syntaxError("function argument cannot have process type",
+						filename, mcase);
+			}
 		}
 		
 		if(method.type().receiver != null) {

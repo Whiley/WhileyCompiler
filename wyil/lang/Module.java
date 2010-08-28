@@ -182,7 +182,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}	
 	
-	public static class Case {
+	public static class Case extends SyntacticElement.Impl {
 		private final ArrayList<String> paramNames;
 		private final Block precondition;
 		private final Block postcondition;
