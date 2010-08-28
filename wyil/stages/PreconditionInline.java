@@ -15,9 +15,12 @@ import wyil.lang.Code.*;
 import wyil.util.ResolveError;
 
 /**
- * The purpose of the method dispatch inliner is to inline dispatch choices into
- * call-sites. This offers a useful optimisation in situations when we can
- * statically determine that a subset of cases is the dispatch target.
+ * The purpose of this transform is two-fold:
+ * <ol>
+ * <li>To inline dispatch choices into call-sites. This offers a useful optimisation in situations when we can
+ * statically determine that a subset of cases is the dispatch target.</li>
+ * <li>To inline preconditions for division and list access expressions</li>
+ * </ol>
  * 
  * @author djp
  * 
@@ -142,9 +145,7 @@ public class PreconditionInline implements ModuleTransform {
 	
 	public CExpr transform(CExpr r, Stmt stmt, Block inserts) {
 		if(r instanceof ListAccess) {
-			ListAccess la = (ListAccess) r;
-			return CExpr.LISTACCESS(transform(la.src, stmt, inserts),
-					transform(la.index, stmt, inserts));
+			return transform((ListAccess)r,stmt,inserts);			
 		} else if (r instanceof BinOp) {
 			return transform((BinOp)r,stmt,inserts);			
 		} else if (r instanceof UnOp) {
@@ -191,6 +192,34 @@ public class PreconditionInline implements ModuleTransform {
 		return r;	
 	}
 	
+	public CExpr transform(ListAccess la, Stmt stmt, Block inserts) {		
+		CExpr src = transform(la.src, stmt, inserts);
+		CExpr index = transform(la.index, stmt, inserts);
+		
+		// First, perform lower bound check
+		String exitLabel = Block.freshLabel();
+		String checkLabel = Block.freshLabel();
+		Attribute.Source attr = stmt.attribute(Attribute.Source.class);
+		inserts.add(new Code.Check(checkLabel),attr);		
+		inserts.add(new IfGoto(Code.COP.GTEQ, index, Value
+				.V_INT(BigInteger.ZERO), exitLabel), attr);	
+		inserts.add(new Code.Fail("negative array index"), attr);
+		inserts.add(new Code.Label(exitLabel), attr);
+		inserts.add(new Code.CheckEnd(checkLabel), attr);
+
+		// Second, perform upper bound check
+		exitLabel = Block.freshLabel();
+		checkLabel = Block.freshLabel();
+		inserts.add(new Code.Check(checkLabel),attr);				
+		inserts.add(new IfGoto(Code.COP.LT, index, CExpr.UNOP(
+					CExpr.UOP.LENGTHOF, src), exitLabel), attr);		
+		inserts.add(new Code.Fail("array index out-of-bounds"), attr);
+		inserts.add(new Code.Label(exitLabel), attr);
+		inserts.add(new Code.CheckEnd(checkLabel), attr);
+		
+		return CExpr.LISTACCESS(src, index);
+	}
+	
 	public CExpr transform(BinOp bop, Stmt stmt, Block inserts) {		
 		CExpr lhs = transform(bop.lhs, stmt, inserts);
 		CExpr rhs = transform(bop.rhs, stmt, inserts);
@@ -206,13 +235,12 @@ public class PreconditionInline implements ModuleTransform {
 				inserts.add(new IfGoto(Code.COP.NEQ, rhs, Value
 						.V_REAL(BigRational.ZERO), exitLabel), attr);
 			}
-			inserts.add(new Code.Fail("divide-by-zero possible"), attr);
+			inserts.add(new Code.Fail("divide by zero"), attr);
 			inserts.add(new Code.Label(exitLabel), attr);
 			inserts.add(new Code.CheckEnd(checkLabel), attr);
 		}
 		return CExpr.BINOP(bop.op, lhs, rhs);
 	}
-	
 	public Block transform(int regTarget, CExpr.Invoke ivk, Stmt stmt) {
 		try {
 			CExpr.LVar lhs = null;
