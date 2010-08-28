@@ -146,7 +146,26 @@ public abstract class Value extends CExpr {
 	}
 	
 	public static CExpr evaluate(CExpr.UOP op, Value mhs) {
-		// FIXME: hack for now
+		switch(op) {
+		case NEG:	
+			if(mhs instanceof Int) {
+				Int i = (Int) mhs;
+				return V_INT(i.value.negate());
+			} else if(mhs instanceof Real) {
+				Real i = (Real) mhs;
+				return V_REAL(i.value.negate());
+			}
+			break;
+		case LENGTHOF:		
+			if(mhs instanceof List) {
+				List l = (List) mhs;
+				return V_INT(BigInteger.valueOf(l.values.size()));
+			} else if(mhs instanceof Set) {
+				Set l = (Set) mhs;
+				return V_INT(BigInteger.valueOf(l.values.size()));				
+			}
+			break;
+		}
 		return CExpr.UNOP(op, mhs);
 	}
 	

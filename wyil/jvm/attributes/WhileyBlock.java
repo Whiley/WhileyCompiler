@@ -172,7 +172,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			Code.Label a = (Code.Label) c;			
 			writer.write_u1(LABEL);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
-		} else if(c instanceof Code.End) {
+		} else if(c instanceof Code.ForallEnd) {
 			Code.End a = (Code.End) c;			
 			writer.write_u1(FORALLEND);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
@@ -183,8 +183,11 @@ public class WhileyBlock implements BytecodeAttribute {
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 			write(a.lhs,writer,constantPool);
 			write(a.rhs,writer,constantPool);			
-		} else if(c instanceof Skip) {
-			// do nothing
+		} else if (c instanceof Skip || c instanceof Check
+				|| c instanceof Code.CheckEnd) {
+			// Do nothing for skip and also for check blocks. The reason we can
+			// ignore check blocks is that a precondition will necessary become
+			// a check block and nested check blocks add nothing useful.  
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
 			writer.write_u1(FORALL);

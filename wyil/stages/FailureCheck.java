@@ -50,7 +50,7 @@ public class FailureCheck implements ModuleTransform {
 				inCheck = false;
 			} else if (code instanceof Label) {
 				Label label = (Label) code;
-				reachable = reachables.contains(label.label);
+				reachable = reachable || reachables.contains(label.label);
 			} 
 				
 			if (code instanceof Fail) {
