@@ -145,7 +145,9 @@ public class Main {
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}
-		stages.add(new WyilTransform("failure checking",
+		stages.add(new WyilTransform("invoke check",
+				new InvokeCheck()));
+		stages.add(new WyilTransform("failure check",
 				new FailureCheck(loader)));		
 		if(jvm) {
 			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));

@@ -607,10 +607,10 @@ public class ModuleBuilder {
 			blk.addAll(resolve(s, freeReg, fd, environment));
 		}
 
-		if (tf.ret == Type.T_VOID) {
-			// need to terminate method
-			blk.add(new Code.Return(null));
-		}
+		// The following is sneaky. It guarantees that every method ends in a
+		// return. For methods that actually need a value, this is either
+		// removed as dead-code or remains and will cause an error.
+		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));
 
 		Module.Case ncase = new Module.Case(parameterNames, precondition,
 				postcondition, blk);
