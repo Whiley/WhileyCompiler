@@ -221,6 +221,10 @@ public class DispatchInline implements ModuleTransform {
 				int caseNum = 1;
 				String exitLabel = Block.freshLabel();
 				String nextLabel = null;
+				String lab = Block.freshLabel();
+				// I'm not entirely sure what the effect of putting all of this
+				// into a check block really is.  But, I think it should work ...
+				blk.add(new Code.Check(lab),stmt.attribute(Attribute.Source.class));
 				for (Module.Case c : method.cases()) {
 					if(caseNum > 1) {
 						blk.add(new Code.Label(nextLabel));
@@ -243,6 +247,7 @@ public class DispatchInline implements ModuleTransform {
 						blk.add(new Code.Goto(exitLabel));
 					}
 				}
+				blk.add(new Code.CheckEnd(lab),stmt.attribute(Attribute.Source.class));
 				blk.add(new Code.Label(exitLabel));
 			}
 			return blk;

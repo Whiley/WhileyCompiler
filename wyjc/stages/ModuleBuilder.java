@@ -761,9 +761,13 @@ public class ModuleBuilder {
 
 	protected Block resolve(Assert s, int freeReg,  HashMap<String, Pair<Type,Block>> constraints) {
 		String lab = Block.freshLabel();
-		Block blk = resolveCondition(lab, s.expr, freeReg, constraints);
+		String clab = Block.freshLabel();
+		Block blk = new Block();
+		blk.add(new Code.Check(clab),s.attribute(Attribute.Source.class));
+		blk.addAll(resolveCondition(lab, s.expr, freeReg, constraints));		
 		blk.add(new Code.Fail("assertion failed"), s
 				.attribute(Attribute.Source.class));
+		blk.add(new Code.CheckEnd(clab),s.attribute(Attribute.Source.class));
 		blk.add(new Code.Label(lab));
 		return blk;
 	}
