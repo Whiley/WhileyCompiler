@@ -12,11 +12,19 @@ import wyil.lang.CExpr.*;
 import wyil.lang.Code.*;
 import wyil.util.ResolveError;
 
-public class ExpressionPreconditionInline implements ModuleTransform {
+/**
+ * The purpose of the method dispatch inliner is to inline dispatch choices into
+ * call-sites. This offers a useful optimisation in situations when we can
+ * statically determine that a subset of cases is the dispatch target.
+ * 
+ * @author djp
+ * 
+ */
+public class PreconditionInline implements ModuleTransform {
 	private final ModuleLoader loader;
 	private int regTarget;
 	
-	public ExpressionPreconditionInline(ModuleLoader loader) {
+	public PreconditionInline(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	public Module apply(Module module) {

@@ -134,7 +134,7 @@ public class Main {
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}
-		stages.add(new WyilTransform("dispatch inline", new DispatchInline(
+		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
 		stages.add(new WyilTransform("type inference",
 				new TypeInference(loader)));
