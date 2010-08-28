@@ -34,35 +34,52 @@ public class FailureCheck implements ModuleTransform {
 		// The reachables set contains those labels which are known to be
 		// definitely reachable.
 		HashSet<String> reachables = new HashSet<String>();
+		boolean inCheck = false;
 		boolean reachable = true;
-
+		boolean runtimeChecks = false;
+		
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
 
-			if (code instanceof Label) {
+			if(code instanceof Check) {
+				reachables.clear();
+				inCheck = true;
+				reachable = true;
+			} else if(code instanceof CheckEnd) {
+				inCheck = false;
+			} else if (code instanceof Label) {
 				Label label = (Label) code;
 				reachable = reachables.contains(label.label);
-			}
-
-			if (!reachable) {
-				continue; // this potentially dead-code
+			} 
+				
+			if (code instanceof Fail) {
+				Fail f = (Fail) code;
+				if(reachable) {
+					syntaxError(f.msg,filename,stmt);
+				} else {
+					runtimeChecks = true;
+				}
+			} else if (!inCheck || (inCheck && !reachable)) {
+				continue; 
 			} else if (code instanceof Goto) {
 				Goto got = (Goto) code;
 				reachables.add(got.target);
 				reachable = false;
 			} else if (code instanceof IfGoto) {
-				IfGoto igot = (IfGoto) code;
-				// note, we cannot draw definite conclusions about conditionals.
+				// note, we could do better here, by considering dominators or
+				// similar
 				reachable = false;				
 			} else if (code instanceof Assign) {
 				
-			} else if (code instanceof Fail) {
-				// If we get here, then there is a path that is definitely
-				// executable.  Hence, there is an error in the code.
-				Fail f = (Fail) code;
-				syntaxError(f.msg,filename,stmt);
-			} 			
-		}		
+			} 		
+		}	
+		
+		if (runtimeChecks) {
+			// would be nice to do better than this by actually reporting line
+			// numbers, etc
+			System.err.println("*** WARNING: runtime check(s) in "
+					+ filename + ", " + method.name());
+		}
 	}
 }
