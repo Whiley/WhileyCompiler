@@ -55,6 +55,10 @@ public final class Block implements Iterable<Stmt> {
 		stmts.remove(index);
 	}
 	
+	public Block subblock(int start, int end) {
+		return new Block(stmts.subList(start, end));
+	}
+	
 	public Iterator<Stmt> iterator() {
 		return stmts.iterator();
 	}
@@ -137,8 +141,7 @@ public final class Block implements Iterable<Stmt> {
 		if(block == null) { return null; }
 		Block r = new Block();
 		for (Stmt s : block) {			
-			r.add(Code.substitute(binding, s.code),s.attributes());
-			
+			r.add(Code.substitute(binding, s.code),s.attributes());			
 		}
 		return r;				
 	}
@@ -231,55 +234,48 @@ public final class Block implements Iterable<Stmt> {
 	
 	private static Block relabelHelper(Block blk, HashMap<String,String> nlabels) {
 		Block b = new Block();
+		for(Stmt s : blk) {
+			Code c = s.code;
+			if(c instanceof Code.Label) {
+				Code.Label l = (Code.Label) c;
+				String label = freshLabel();
+				nlabels.put(l.label, label);
+			} else if(c instanceof Code.Start) {
+				Code.Start l = (Code.Start) c;
+				String label = freshLabel();
+				nlabels.put(l.label, label);
+			}
+		}
 		for (Stmt s : blk) {
 			Code c = s.code;
 			if (c instanceof Code.Label) {
 				Code.Label l = (Code.Label) c;
 				String label = nlabels.get(l.label);
-				if (label == null) {
-					label = freshLabel();
-					nlabels.put(l.label, label);
-				}
+				if (label == null) { label = l.label; }
 				c = new Code.Label(label);
 			} else if (c instanceof Code.Goto) {
 				Code.Goto g = (Code.Goto) c;
 				String target = nlabels.get(g.target);
-				if (target == null) {
-					target = freshLabel();
-					nlabels.put(g.target, target);
-				}
+				if (target == null) { target = g.target; }
 				c = new Code.Goto(target);
 			} else if (c instanceof Code.IfGoto) {
 				Code.IfGoto g = (Code.IfGoto) c;
 				String target = nlabels.get(g.target);
-				if (target == null) {
-					target = freshLabel();
-					nlabels.put(g.target, target);
-				}
+				if (target == null) { target = g.target; }
 				c = new Code.IfGoto(g.op, g.lhs, g.rhs, target);
 			} else if (c instanceof Code.Forall) {
 				Code.Forall l = (Code.Forall) c;
-				String label = nlabels.get(l.label);
-				if (label == null) {
-					label = freshLabel();
-					nlabels.put(l.label, label);
-				}
+				String label = nlabels.get(l.label);				
 				c = new Code.Forall(label,l.variable,l.source);
 			} else if (c instanceof Code.ForallEnd) {
 				Code.ForallEnd l = (Code.ForallEnd) c;
 				String label = nlabels.get(l.target);
-				if (label == null) {
-					label = freshLabel();
-					nlabels.put(l.target, label);
-				}
+				if (label == null) { label = l.target; }
 				c = new Code.ForallEnd(label);
 			} else if (c instanceof Code.CheckEnd) {
 				Code.CheckEnd l = (Code.CheckEnd) c;
 				String label = nlabels.get(l.target);
-				if (label == null) {
-					label = freshLabel();
-					nlabels.put(l.target, label);
-				}
+				if (label == null) { label = l.target; }
 				c = new Code.CheckEnd(label);
 			} 
 			b.add(c,s.attributes());

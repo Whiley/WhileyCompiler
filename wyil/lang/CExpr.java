@@ -74,8 +74,7 @@ public abstract class CExpr {
 			} 
 		} else if (r instanceof Register) {
 			Register v = (Register) r;
-			// FIXME: should changing the type of binding
-			CExpr rv = binding.get(v.toString());
+			CExpr rv = binding.get(v.name());
 			if (rv != null) {
 				return rv;
 			} 

@@ -1,8 +1,5 @@
-define nat as int where $ >= 0
-
-nat f(nat x):
-    return "a"
+define pset as {int} where no { x in $ | x < 0 }
 
 void System::main([string] args):
-    nat x = 1
-    x = f(x)
+    pset ys = {1,2,3,4}
+    print str(ys)

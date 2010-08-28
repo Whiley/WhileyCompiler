@@ -73,10 +73,11 @@ public class ConstantPropagation implements ModuleTransform {
 				postcondition, body);
 	}
 	
-	protected Block transform(Block block, HashMap<String,Value> environment, Module.Method method) {
+	protected Block transform(Block block, HashMap<String, Value> environment,
+			Module.Method method) {
 		Block nblock = new Block();
-		HashMap<String,HashMap<String,Value>> flowsets = new HashMap<String,HashMap<String,Value>>();							
-		
+		HashMap<String, HashMap<String, Value>> flowsets = new HashMap<String, HashMap<String, Value>>();
+
 		for(int i=0;i!=block.size();++i) {			
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
@@ -117,7 +118,36 @@ public class ConstantPropagation implements ModuleTransform {
 				environment = null;
 			} else if(code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
-				code = infer(fall,stmt,environment);
+				fall = infer(fall,stmt,environment);				
+				
+				if(fall.source instanceof Value) {
+					// This indicates a loop over a constant source set. In such
+					// cases, we can unroll the loop in order that it might be
+					// completely optimised away.
+					Block body = new Block();
+					while(++i < block.size()) {
+						stmt = block.get(i);
+						if(stmt.code instanceof Code.ForallEnd) {
+							Code.ForallEnd fend = (Code.ForallEnd) stmt.code;
+							if(fend.target.equals(fall.label)){
+								// end of loop body found
+								break;
+							}
+						}
+						body.add(stmt.code,stmt.attributes());
+					}					
+					Block blk = unrollFor(fall,body);
+					if(i<block.size()) {
+						blk.addAll(block.subblock(i+1,block.size()));
+					}
+					i=0; 
+					block = blk;
+					continue;
+				} else {
+					code = fall;
+				}
+				
+				code = fall;
 			} else if(code instanceof Debug) {
 				code = infer((Code.Debug)code,stmt,environment);
 			} 
@@ -125,6 +155,30 @@ public class ConstantPropagation implements ModuleTransform {
 			nblock.add(code, stmt.attributes());
 		}
 		return nblock;
+	}
+	
+	protected Block unrollFor(Code.Forall fall, Block body) {		
+		Block blk = new Block();
+		Collection<Value> values;
+		if(fall.source instanceof Value.List) {
+			Value.List l = (Value.List) fall.source;
+			values = l.values;
+		} else {
+			Value.Set s = (Value.Set) fall.source;
+			values = s.values;
+		}
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+		String var = fall.variable.name();
+		for(Value v : values) {
+			// first, relabel to avoid conflicts
+			Block tmp = Block.relabel(body);
+			// second, substitute value
+			binding.put(var, v);			
+			tmp = Block.substitute(binding,tmp);			
+			// finally,add to the target blk
+			blk.addAll(tmp);
+		}
+		return blk;
 	}
 	
 	protected void merge(String target, HashMap<String,Value> env,
@@ -139,7 +193,7 @@ public class ConstantPropagation implements ModuleTransform {
 		}
 	}
 	
-	protected Code infer(Code.Forall code, Stmt stmt,
+	protected Code.Forall infer(Code.Forall code, Stmt stmt,
 			HashMap<String,Value> environment) {
 		
 		CExpr src = infer(code.source, stmt, environment);		
