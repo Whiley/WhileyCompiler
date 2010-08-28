@@ -582,13 +582,14 @@ public class ModuleBuilder {
 		}
 
 		if (fd.postcondition != null) {
-			environment.put("$",ret);
-			String trueLabel = Block.freshLabel();
+			environment.put("$",ret);			
+			String trueLabel = Block.freshLabel();			
+			Attribute.Source attr = fd.postcondition.attribute(Attribute.Source.class);			
 			Block tmp = resolveCondition(trueLabel, fd.postcondition, 0,
 					environment);
 			tmp.add(new Code.Fail("function postcondition not satisfied"),
-					fd.postcondition.attribute(Attribute.Source.class));
-			tmp.add(new Code.Label(trueLabel));
+					attr);
+			tmp.add(new Code.Label(trueLabel));			
 			environment.remove("$");
 			if (postcondition == null) {
 				postcondition = tmp;
@@ -783,7 +784,7 @@ public class ModuleBuilder {
 			Pair<Type, Block> ret = resolve(fd.ret);
 			
 			Block postcondition = ret.second();
-			
+						
 			if (fd.postcondition != null) {
 				
 				// first, construct the postcondition block
@@ -791,7 +792,7 @@ public class ModuleBuilder {
 				environment.put("$", new Pair<Type, Block>(Type.T_ANY, null));
 				if(postcondition == null) {
 					postcondition = new Block();
-				}
+				}				
 				postcondition.addAll(resolveCondition(trueLabel, fd.postcondition,
 						freeReg, environment));
 				postcondition.add(new Code.Fail(

@@ -34,7 +34,7 @@ public class FailureCheck implements ModuleTransform {
 		// The reachables set contains those labels which are known to be
 		// definitely reachable.
 		HashSet<String> reachables = new HashSet<String>();
-		boolean inCheck = false;
+		int checkNesting = 0;
 		boolean reachable = true;
 		boolean runtimeChecks = false;
 		
@@ -44,10 +44,10 @@ public class FailureCheck implements ModuleTransform {
 
 			if(code instanceof Check) {
 				reachables.clear();
-				inCheck = true;
+				checkNesting++;
 				reachable = true;
 			} else if(code instanceof CheckEnd) {
-				inCheck = false;
+				checkNesting--;
 			} else if (code instanceof Label) {
 				Label label = (Label) code;
 				reachable = reachable || reachables.contains(label.label);
@@ -60,7 +60,7 @@ public class FailureCheck implements ModuleTransform {
 				} else {
 					runtimeChecks = true;
 				}
-			} else if (!inCheck || (inCheck && !reachable)) {
+			} else if (checkNesting == 0 || !reachable) {
 				continue; 
 			} else if (code instanceof Goto) {
 				Goto got = (Goto) code;
