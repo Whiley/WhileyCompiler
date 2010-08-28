@@ -281,7 +281,7 @@ public class PreconditionInline implements ModuleTransform {
 			inserts.add(new Code.Label(exitLabel), attr);
 			inserts.add(new Code.CheckEnd(checkLabel), attr);
 			
-			// Third, perform upper bound end check
+			// Fourth, perform upper bound end check
 			exitLabel = Block.freshLabel();
 			checkLabel = Block.freshLabel();
 			inserts.add(new Code.Check(checkLabel), attr);
@@ -289,7 +289,17 @@ public class PreconditionInline implements ModuleTransform {
 					CExpr.UOP.LENGTHOF, src), exitLabel), attr);
 			inserts.add(new Code.Fail("sublist end out-of-bounds"), attr);
 			inserts.add(new Code.Label(exitLabel), attr);
+			inserts.add(new Code.CheckEnd(checkLabel), attr);
+			
+			// Fifth, perform comparison check
+			exitLabel = Block.freshLabel();
+			checkLabel = Block.freshLabel();
+			inserts.add(new Code.Check(checkLabel), attr);
+			inserts.add(new IfGoto(Code.COP.LT, start, end, exitLabel), attr);
+			inserts.add(new Code.Fail("sublist start >= end"), attr);
+			inserts.add(new Code.Label(exitLabel), attr);
 			inserts.add(new Code.CheckEnd(checkLabel), attr);		
+
 		}
 		return CExpr.NARYOP(bop.op, args);
 	}
