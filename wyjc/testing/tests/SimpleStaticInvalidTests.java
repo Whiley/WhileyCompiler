@@ -43,6 +43,7 @@ public class SimpleStaticInvalidTests extends TestHarness {
  @Test public void Ensures_CompileFail_1_StaticTest() { contextFailTest("Ensures_CompileFail_1"); }
  @Test public void Ensures_CompileFail_3_StaticTest() { contextFailTest("Ensures_CompileFail_3"); }
  @Test public void Function_CompileFail_1_StaticTest() { contextFailTest("Function_CompileFail_1"); }
+ @Ignore("Known Issue")
  @Test public void Function_CompileFail_2_StaticTest() { contextFailTest("Function_CompileFail_2"); }
  @Test public void Function_CompileFail_3_StaticTest() { contextFailTest("Function_CompileFail_3"); }
  @Test public void Function_CompileFail_4_StaticTest() { contextFailTest("Function_CompileFail_4"); }

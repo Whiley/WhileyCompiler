@@ -328,16 +328,19 @@ public class TypeInference implements ModuleTransform {
 	protected Code infer(Code.Return code, Stmt stmt, HashMap<String,Type> environment,
 			Module.Method method) {
 		CExpr rhs = code.rhs;
+		Type ret_t = method.type().ret;
 		
 		if(rhs != null) {
-			Type ret_t = method.type().ret;
 			if(ret_t == Type.T_VOID) {
 				syntaxError(
-						"cannot return value, as method has void return type",
+						"cannot return value from method with void return type",
 						filename, stmt);
 			}
 			rhs = infer(rhs,stmt,environment);
 			checkIsSubtype(ret_t,rhs.type(),stmt);
+		} else if(ret_t != Type.T_VOID) {
+			syntaxError(
+					"missing return value",filename, stmt);
 		}
 		
 		return new Code.Return(rhs);
