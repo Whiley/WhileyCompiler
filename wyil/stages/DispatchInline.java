@@ -207,7 +207,10 @@ public class DispatchInline implements ModuleTransform {
 				Module.Case c = method.cases().get(0);
 				Block constraint = c.precondition();
 				if (constraint != null) {
+					String lab = Block.freshLabel();
+					blk.add(new Code.Check(lab),stmt.attribute(Attribute.Source.class));
 					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c,method));
+					blk.add(new Code.CheckEnd(lab),stmt.attribute(Attribute.Source.class));
 				}				
 				blk.add(new Code.Assign(lhs,ivk),stmt.attributes());				
 			} else {			
