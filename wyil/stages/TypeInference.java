@@ -94,69 +94,71 @@ public class TypeInference implements ModuleTransform {
 				postcondition, body);
 	}
 	
-	protected Block transform(Block block, HashMap<String,Type> environment, Module.Method method) {
+	protected Block transform(Block block, HashMap<String, Type> environment,
+			Module.Method method) {
 		Block nblock = new Block();
-		HashMap<String,HashMap<String,Type>> flowsets = new HashMap<String,HashMap<String,Type>>();							
-		
-		for(int i=0;i!=block.size();++i) {			
+		HashMap<String, HashMap<String, Type>> flowsets = new HashMap<String, HashMap<String, Type>>();
+
+		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
-						
-			if(code instanceof Label) {
-				Label label = (Label) code;								
-				if(environment == null) {
-					environment = flowsets.get(label.label);					
+
+			if (code instanceof Label) {
+				Label label = (Label) code;
+				if (environment == null) {
+					environment = flowsets.get(label.label);
 				} else {
-					join(environment,flowsets.get(label.label));
-				}								
-			} 
-			
-			if(environment == null) {				
+					join(environment, flowsets.get(label.label));
+				}
+			}
+
+			if (environment == null) {
 				continue; // this indicates dead-code
-			} else if(code instanceof Goto) {
-				Goto got = (Goto) code;				
-				merge(got.target,environment,flowsets);
+			} else if (code instanceof Goto) {
+				Goto got = (Goto) code;
+				merge(got.target, environment, flowsets);
 				environment = null;
-			} else if(code instanceof IfGoto) {
-				IfGoto igot = (IfGoto) code;	
-				HashMap<String,Type> tenv = new HashMap<String,Type>(environment);
-				code = infer((Code.IfGoto)code,stmt,tenv,environment);				
+			} else if (code instanceof IfGoto) {
+				IfGoto igot = (IfGoto) code;
+				HashMap<String, Type> tenv = new HashMap<String, Type>(
+						environment);
+				code = infer((Code.IfGoto) code, stmt, tenv, environment);
 				// Observe that the following is needed because type inference
 				// can determine that an if-statement definitely is taken, or
 				// definitely isn't taken.
-				if(code instanceof Code.IfGoto) {
-					merge(igot.target,tenv,flowsets);
-				} else if(code instanceof Code.Goto) {
-					merge(igot.target,tenv,flowsets);
+				if (code instanceof Code.IfGoto) {
+					merge(igot.target, tenv, flowsets);
+				} else if (code instanceof Code.Goto) {
+					merge(igot.target, tenv, flowsets);
 					environment = null;
-				}								
-			} else if(code instanceof Assign) {
-				code = infer((Code.Assign)code,stmt,environment);
-			} else if(code instanceof Return) {
-				code = infer((Code.Return)code,stmt,environment,method);
+				}
+			} else if (code instanceof Assign) {
+				code = infer((Code.Assign) code, stmt, environment);
+			} else if (code instanceof Return) {
+				code = infer((Code.Return) code, stmt, environment, method);
 				environment = null;
-			} else if(code instanceof Fail) {				
+			} else if (code instanceof Fail) {
 				environment = null;
-			} else if(code instanceof Forall) {
+			} else if (code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
-				code = infer(fall,stmt,environment);
-				if(code instanceof Skip) {
+				code = infer(fall, stmt, environment);
+				if (code instanceof Skip) {
 					// indicates the loop should be removed because it's
 					// unreachable, or is over an empty list.
-					while(i<block.size()) {
-						Stmt s = block.get(++i);						
-						if(s.code instanceof End) {
+					while (i < block.size()) {
+						Stmt s = block.get(++i);
+						if (s.code instanceof End) {
 							End e = (End) s.code;
-							if(e.target.equals(fall.label)) {
+							if (e.target.equals(fall.label)) {
 								break;
 							}
-						}						
+						}
 					}
-				}								
-			} else if(code instanceof Debug) {
-				code = infer((Code.Debug)code,stmt,environment);
-			} 
-			
+				}
+			} else if (code instanceof Debug) {
+				code = infer((Code.Debug) code, stmt, environment);
+			}
+
 			nblock.add(code, stmt.attributes());
 		}
 		return nblock;
