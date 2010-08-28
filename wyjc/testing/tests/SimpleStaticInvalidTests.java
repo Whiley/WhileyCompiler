@@ -82,8 +82,7 @@ public class SimpleStaticInvalidTests extends TestHarness {
  @Test public void MethodCall_CompileFail_5_StaticTest() { contextFailTest("MethodCall_CompileFail_5"); }
  @Test public void MethodCall_CompileFail_6_StaticTest() { contextFailTest("MethodCall_CompileFail_6"); }
  @Test public void MethodCall_CompileFail_7_StaticTest() { contextFailTest("MethodCall_CompileFail_7"); }
- @Test public void MethodCall_CompileFail_8_StaticTest() { contextFailTest("MethodCall_CompileFail_8"); }
- @Test public void MethodCall_CompileFail_9_StaticTest() { contextFailTest("MethodCall_CompileFail_9"); }
+ @Test public void MethodCall_CompileFail_8_StaticTest() { contextFailTest("MethodCall_CompileFail_8"); } 
  @Test public void ProcessAccess_CompileFail_1_StaticTest() { contextFailTest("ProcessAccess_CompileFail_1"); }
  @Test public void ProcessAccess_CompileFail_2_StaticTest() { contextFailTest("ProcessAccess_CompileFail_2"); }
  @Test public void Quantifiers_CompileFail_1_StaticTest() { contextFailTest("Quantifiers_CompileFail_1"); }
