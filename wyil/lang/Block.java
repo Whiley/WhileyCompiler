@@ -3,6 +3,7 @@ package wyil.lang;
 import java.util.*;
 
 import wyil.lang.Code.Forall;
+import wyil.util.SyntacticElement;
 
 public final class Block implements Iterable<Stmt> {
 	private final ArrayList<Stmt> stmts;	
@@ -141,6 +142,35 @@ public final class Block implements Iterable<Stmt> {
 		}
 		return r;				
 	}
+
+	public static void addCheck(int freeReg, Block block, Block constraint,
+			SyntacticElement elem) {
+		if (constraint == null) {
+			return;
+		}
+		Attribute.Source attr = elem.attribute(Attribute.Source.class);
+		constraint = resource(constraint, attr);
+		constraint = relabel(constraint);
+		constraint = registerShift(freeReg, constraint);
+		String label = freshLabel();
+		block.add(new Code.Check(label), attr);
+		block.addAll(constraint);
+		block.add(new Code.CheckEnd(label), attr);
+	}
+	
+	public static void addCheck(int freeReg, Block block, Block constraint,
+			HashMap<String, CExpr> binding, SyntacticElement elem) {
+		if(constraint == null) { return; }
+		Attribute.Source attr = elem.attribute(Attribute.Source.class);
+		constraint = resource(constraint,attr);
+		constraint = relabel(constraint);
+		constraint = registerShift(freeReg,constraint);
+		constraint = substitute(binding,constraint);
+		String label = freshLabel();
+		block.add(new Code.Check(label),attr);
+		block.addAll(constraint);
+		block.add(new Code.CheckEnd(label),attr);
+	}
 	
 	/**
 	 * The register shift method is responsible for mapping every register with
@@ -235,14 +265,22 @@ public final class Block implements Iterable<Stmt> {
 					nlabels.put(l.label, label);
 				}
 				c = new Code.Forall(label,l.variable,l.source);
-			} else if (c instanceof Code.End) {
-				Code.End l = (Code.End) c;
+			} else if (c instanceof Code.ForallEnd) {
+				Code.ForallEnd l = (Code.ForallEnd) c;
 				String label = nlabels.get(l.target);
 				if (label == null) {
 					label = freshLabel();
 					nlabels.put(l.target, label);
 				}
-				c = new Code.End(label);
+				c = new Code.ForallEnd(label);
+			} else if (c instanceof Code.CheckEnd) {
+				Code.CheckEnd l = (Code.CheckEnd) c;
+				String label = nlabels.get(l.target);
+				if (label == null) {
+					label = freshLabel();
+					nlabels.put(l.target, label);
+				}
+				c = new Code.CheckEnd(label);
 			} 
 			b.add(c,s.attributes());
 		}				

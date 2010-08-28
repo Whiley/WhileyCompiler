@@ -174,7 +174,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
 		} else if(c instanceof Code.End) {
 			Code.End a = (Code.End) c;			
-			writer.write_u1(END);
+			writer.write_u1(FORALLEND);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 		} else if(c instanceof IfGoto) {
 			IfGoto a = (IfGoto) c;			
@@ -452,11 +452,11 @@ public class WhileyBlock implements BytecodeAttribute {
 				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
 				return new Code.Label(target.str);
 			}
-			case END:
+			case FORALLEND:
 			{				
 				int idx = reader.read_u2();
 				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
-				return new Code.End(target.str);
+				return new Code.ForallEnd(target.str);
 			}
 			case FAIL:
 			{				
@@ -842,7 +842,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int LABEL = 4;
 	private final static int FAIL = 5;
 	private final static int FORALL = 6;
-	private final static int END = 7;
+	private final static int FORALLEND = 7;
 	
 	// =========== COP ===============
 	

@@ -53,7 +53,8 @@ public class FailureCheck implements ModuleTransform {
 				reachable = false;
 			} else if (code instanceof IfGoto) {
 				IfGoto igot = (IfGoto) code;
-				reachables.add(igot.target);				
+				// note, we cannot draw definite conclusions about conditionals.
+				reachable = false;				
 			} else if (code instanceof Assign) {
 				
 			} else if (code instanceof Fail) {

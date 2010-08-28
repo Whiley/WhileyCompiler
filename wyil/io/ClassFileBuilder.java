@@ -226,8 +226,8 @@ public class ClassFileBuilder {
 				translate((Code.IfGoto) c, stmt, slots, bytecodes);
 			} else if (c instanceof Code.Forall) {
 				translate((Code.Forall) c, slots, bytecodes);
-			} else if (c instanceof Code.End) {
-				translate((Code.End) c, slots, bytecodes);
+			} else if (c instanceof Code.ForallEnd) {
+				translate((Code.ForallEnd) c, slots, bytecodes);
 			} else if (c instanceof Code.Label) {
 				translate((Code.Label) c, slots, bytecodes);
 			} else if (c instanceof Code.Debug) {
@@ -628,7 +628,7 @@ public class ClassFileBuilder {
 				JAVA_LANG_OBJECT));	
 	}
 
-	protected void translate(Code.End end,			
+	protected void translate(Code.ForallEnd end,			
 			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Goto(end.target));
 		bytecodes.add(new Bytecode.Label(end.target + "$exit"));

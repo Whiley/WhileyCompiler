@@ -380,7 +380,7 @@ public class ModuleBuilder {
 				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
-				blk.add(new Code.End(label));
+				blk.add(new Code.ForallEnd(label));
 			}
 			return new Pair<Type, Block>(rt, blk);
 		} else if (t instanceof UnresolvedType.Set) {
@@ -396,7 +396,7 @@ public class ModuleBuilder {
 				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
-				blk.add(new Code.End(label));
+				blk.add(new Code.ForallEnd(label));
 			}
 			return new Pair<Type, Block>(rt, blk);
 		} else if (t instanceof UnresolvedType.Tuple) {
@@ -543,7 +543,7 @@ public class ModuleBuilder {
 			if(constraint != null) {
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 				binding.put("$", CExpr.VAR(t.first(), p.name));
-				constraint = Block.relabel(Block.substitute(binding, constraint));
+				constraint = Block.substitute(binding, constraint);
 				t = new Pair<Type,Block>(t.first(),constraint);
 			}
 			
@@ -714,8 +714,7 @@ public class ModuleBuilder {
 		}
 		
 		Block constraint = Block.resource(tb.second(), s
-				.attribute(Attribute.Source.class));		
-		constraint = Block.relabel(constraint);
+				.attribute(Attribute.Source.class));
 		constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);
 		Block blk = new Block();
 
@@ -725,9 +724,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Assign(CExpr.VAR(type, s.name), init_tb
 					.first()), s.attribute(Attribute.Source.class));
 			// Finally, need to actually check the constraints!
-			if (constraint != null) {
-				blk.addAll(constraint);
-			}
+			Block.addCheck(freeReg+1,blk,constraint,s);			
 		}
 		
 		environment.put(s.name, new Pair<Type, Block>(type, constraint));
@@ -755,15 +752,9 @@ public class ModuleBuilder {
 		// Finally, we need to add any constraints that may be coming from the
 		// declared type.
 		Variable target = (Variable) flattern(s.lhs); // FIXME
-		Block constraint = environment.get(target.var).second();
-		if (constraint != null) {
-			constraint = Block.resource(constraint, s
-					.attribute(Attribute.Source.class));
-			constraint = Block.relabel(constraint);
-			constraint = Block.substitute("$", CExpr.VAR(environment.get(
-					target.var).first(), target.var), constraint);
-			blk.addAll(constraint);
-		}
+		
+		Block constraint = environment.get(target.var).second();		
+		Block.addCheck(0,blk,constraint,s);		
 
 		return blk;
 	}
@@ -810,11 +801,7 @@ public class ModuleBuilder {
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 				binding.put("$", t.first());
 				binding.putAll(shadows);
-				postcondition = Block.resource(postcondition, s.expr
-						.attribute(Attribute.Source.class));
-				postcondition = Block.registerShift(freeReg, postcondition);
-				postcondition = Block.substitute(binding, postcondition);
-				blk.addAll(Block.relabel(postcondition));
+				Block.addCheck(freeReg,blk,postcondition,binding,s);				
 			}			
 			
 			// Second, check
@@ -1042,20 +1029,14 @@ public class ModuleBuilder {
 				.attribute(Attribute.Source.class));
 
 		if (rhs_tb.second() != null) {
-			Block constraint = rhs_tb.second();
-
-			// now substitute $ for the lhs
+			// Chain failures to redirect to the next point.			
+			// Create binding for $  
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$", lhs_tb.first());
-			constraint = Block.substitute(binding, constraint);
-			
-			// Similarly, we need to make sure any labels used in the constraint
-			// do not collide with labels used at the inline point.
-			constraint = Block.relabel(constraint);
-			constraint = Block.resource(constraint, v.attribute(Attribute.Source.class));
-			// Now, chain failures to redirect to the next point.
-			constraint = Block.chain(exitLabel, constraint);
-			blk.addAll(constraint);										
+			// add constraint
+			Block constraint = new Block();
+			Block.addCheck(freeReg,constraint,rhs_tb.second(),binding,v);
+			blk.addAll(Block.chain(exitLabel,constraint));
 		} 
 		
 		blk.add(new Code.Goto(target));	
@@ -1141,7 +1122,7 @@ public class ModuleBuilder {
 			blk.addAll(resolveCondition(exitLabel, e.condition, freeReg,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
-				blk.add(new Code.End(labels.get(i)));
+				blk.add(new Code.ForallEnd(labels.get(i)));
 			}
 			blk.add(new Code.Goto(target));
 			blk.add(new Code.Label(exitLabel));
@@ -1149,7 +1130,7 @@ public class ModuleBuilder {
 			blk.addAll(resolveCondition(target, e.condition, freeReg,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
-				blk.add(new Code.End(labels.get(i)));
+				blk.add(new Code.ForallEnd(labels.get(i)));
 			}
 		} // ALL, LONE and ONE will be harder
 
@@ -1474,7 +1455,7 @@ public class ModuleBuilder {
 		}
 
 		for (int i = (labels.size() - 1); i >= 0; --i) {
-			blk.add(new Code.End(labels.get(i)));
+			blk.add(new Code.ForallEnd(labels.get(i)));
 		}
 
 		// Finally, we need to substitute the block to rename all occurrences of
@@ -1500,7 +1481,7 @@ public class ModuleBuilder {
 			HashMap<String,Pair<Type,Block>> environment) {
 		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs, environment);
 		return new Pair<CExpr, Block>(CExpr.TUPLEACCESS(lhs.first(), sg.name),
-				Block.relabel(lhs.second()));
+				lhs.second());
 	}
 
 	protected Pair<Type, Block> resolve(UnresolvedType t) {
@@ -1529,7 +1510,7 @@ public class ModuleBuilder {
 				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
-				blk.add(new Code.End(label));
+				blk.add(new Code.ForallEnd(label));
 			}
 			return new Pair<Type, Block>(rt, blk);
 		} else if (t instanceof UnresolvedType.Set) {
@@ -1545,7 +1526,7 @@ public class ModuleBuilder {
 				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
-				blk.add(new Code.End(label));
+				blk.add(new Code.ForallEnd(label));
 			}
 			return new Pair<Type, Block>(rt, blk);
 		} else if (t instanceof UnresolvedType.Tuple) {
@@ -1606,7 +1587,7 @@ public class ModuleBuilder {
 				if(p.second() != null) {
 					String nextLabel = Block.freshLabel();
 					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
-						.V_TYPE(p.first()), nextLabel));				
+						.V_TYPE(p.first()), nextLabel));		
 					blk.addAll(Block.chain(nextLabel, p.second()));				
 					blk.add(new Code.Goto(exitLabel));
 					blk.add(new Code.Label(nextLabel));

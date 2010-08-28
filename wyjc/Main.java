@@ -142,8 +142,8 @@ public class Main {
 				new DefiniteAssignment()));
 		stages.add(new WyilTransform("constant propagation",
 				new ConstantPropagation(loader)));
-		stages.add(new WyilTransform("failure checking",
-				new FailureCheck(loader)));
+		//stages.add(new WyilTransform("failure checking",
+		//		new FailureCheck(loader)));
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}

@@ -332,7 +332,24 @@ public abstract class Code {
 		}
 	}	
 	
-	public final static class End extends Code  {
+	/**
+	 * A start code indicates the start of a special block.  
+	 * @author djp
+	 *
+	 */
+	public abstract static class Start extends Code  {
+		public final String label;
+		
+		public Start(String label) {
+			this.label = label;
+		}
+		
+		public int hashCode() {
+			return label.hashCode();
+		}		
+	}
+	
+	public abstract static class End extends Code  {
 		public final String target;
 		
 		public End(String target) {
@@ -417,35 +434,93 @@ public abstract class Code {
 		}
 	}
 
-	public final static class Forall extends Code {									
-		public final String label;
+	public final static class Forall extends Start {
 		public final CExpr.Register variable;
 		public final CExpr source;
-		
-		public Forall(String name, CExpr.Register variable, CExpr source) {								
-			this.label = name;
+
+		public Forall(String label, CExpr.Register variable, CExpr source) {
+			super(label);
 			this.variable = variable;
 			this.source = source;
 		}
-				
+
 		public boolean equals(Object o) {
 			if (o instanceof Forall) {
 				Forall a = (Forall) o;
 				return label.equals(a.label) && variable.equals(a.variable)
-						&& source.equals(a.source); 
+						&& source.equals(a.source);
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return source.hashCode() + label.hashCode() + variable.hashCode();
+		}
+
+		public String toString() {
+			return label + ": for " + variable + " in " + source;
+		}
+	}
+
+	public final static class ForallEnd extends End {
+		public ForallEnd(String label) {
+			super(label);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ForallEnd) {
+				return target.equals(((ForallEnd)o).target);
 			}
 			return false;
 		}
 		
-		public int hashCode() {			
-			return source.hashCode() + label.hashCode() + variable.hashCode();
+		public String toString() {
+			return "end for " + target;
+		}	
+	}
+	
+	/**
+	 * A Check code indicates the start of static check block, which is where
+	 * variables and constraints are tested to ensure they meet the various
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class Check extends Start {									
+		public Check(String label) {								
+			super(label);			
+		}
+				
+		public boolean equals(Object o) {
+			if (o instanceof Check) {
+				Check a = (Check) o;
+				return label.equals(a.label); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return label + ": check";												
+		}
+	}
+	
+	public final static class CheckEnd extends End {
+		public CheckEnd(String label) {
+			super(label);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof CheckEnd) {
+				return target.equals(((CheckEnd)o).target);
+			}
+			return false;
 		}
 		
 		public String toString() {
-			return label + ": for " + variable + " in " + source;												
-		}
+			return "end " + target;
+		}	
 	}
-		
+	
 	public enum COP { 
 		EQ() {
 			public String toString() { return "=="; }

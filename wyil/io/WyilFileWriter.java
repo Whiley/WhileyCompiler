@@ -82,7 +82,7 @@ public class WyilFileWriter {
 				indent--;
 			}
 			write(indent,s.code,s.attributes(),out);
-			if(s.code instanceof Code.Forall) {
+			if(s.code instanceof Code.Start) {
 				indent++;
 			}
 		}
