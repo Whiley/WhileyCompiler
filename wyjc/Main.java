@@ -71,6 +71,7 @@ public class Main {
 		boolean verbose = false;
 		boolean nvc = false;
 		boolean nrc = false;
+		boolean ncp = false;
 		boolean cwa = true; // for simplicity!
 		boolean wyil = false;
 		boolean jvm = false;
@@ -98,6 +99,8 @@ public class Main {
 					        							.split(File.pathSeparator));															
 					        				} else if (arg.equals("-verbose")) {
 					verbose = true;
+				} else if(arg.equals("-ncp")) {					
+					ncp = true;
 				} else if(arg.equals("-nvc")) {					
 					nvc = true;
 				} else if(arg.equals("-nrc")) {					
@@ -140,8 +143,10 @@ public class Main {
 				new TypeInference(loader)));
 		stages.add(new WyilTransform("definite assignment",
 				new DefiniteAssignment()));
-		stages.add(new WyilTransform("constant propagation",
-				new ConstantPropagation(loader)));
+		if(!ncp) {
+			stages.add(new WyilTransform("constant propagation",
+					new ConstantPropagation(loader)));
+		}
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}

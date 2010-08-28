@@ -415,7 +415,6 @@ public class ConstantPropagation implements ModuleTransform {
 			Value mt = env1.get(key);
 			Value ot = env2.get(key);
 			if (ot instanceof Value && mt instanceof Value && ot.equals(mt)) {
-				System.out.println("MATCHED: " + ot + " : " + mt);
 				// ok
 			} else {
 				env1.remove(key);

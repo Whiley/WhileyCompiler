@@ -52,6 +52,8 @@ public abstract class Value extends CExpr {
 			return evaluateArith(op,lhs,rhs);
 		} else if(lub instanceof Type.Set) {
 			return evaluateSet(op,(Value.Set) lhs, (Value.Set) rhs);
+		} else if(lub instanceof Type.List) {
+			return evaluateList(op,(Value.List) lhs, (Value.List) rhs);
 		}
 		// FIXME: need to add more cases!!!
 		return null;
@@ -114,6 +116,18 @@ public abstract class Value extends CExpr {
 				}
 			}
 			return V_SET(r);
+		}
+		return null;
+	}
+	
+	private static Value evaluateList(CExpr.BOP op, Value.List lhs, Value.List rhs) {		
+		switch(op) {
+		case APPEND:
+		{			
+			ArrayList<Value> r = new ArrayList<Value>(lhs.values);
+			r.addAll(rhs.values);
+			return V_LIST(r);
+		}		
 		}
 		return null;
 	}
@@ -204,8 +218,7 @@ public abstract class Value extends CExpr {
 		Value.Set lv = (Value.Set) convert(lub,lhs); 
 		Value.Set rv = (Value.Set) convert(lub,rhs);
 		
-		if(op == Code.COP.SUBSETEQ){
-			System.out.println("GOT: " + lv + " " + rv);
+		if(op == Code.COP.SUBSETEQ){			
 			return rv.values.containsAll(lv.values);
 		} else {
 			return rv.values.containsAll(lv.values)
