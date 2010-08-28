@@ -105,10 +105,10 @@ public class ConstantPropagation implements ModuleTransform {
 				// definitely isn't taken.
 				if(code instanceof Code.IfGoto) {
 					merge(igot.target,environment,flowsets);
-				} else if(code instanceof Code.Goto) {
+				} else if(code instanceof Code.Goto) {					
 					merge(igot.target,environment,flowsets);
 					environment = null;
-				}								
+				} 
 			} else if(code instanceof Assign) {
 				code = infer((Code.Assign)code,stmt,environment);
 			} else if(code instanceof Return) {
@@ -119,7 +119,7 @@ public class ConstantPropagation implements ModuleTransform {
 			} else if(code instanceof Forall) {
 				Code.Forall fall = (Code.Forall) code;
 				fall = infer(fall,stmt,environment);				
-				
+								
 				if(fall.source instanceof Value) {
 					// This indicates a loop over a constant source set. In such
 					// cases, we can unroll the loop in order that it might be
@@ -140,13 +140,11 @@ public class ConstantPropagation implements ModuleTransform {
 					if(i<block.size()) {
 						blk.addAll(block.subblock(i+1,block.size()));
 					}
-					i=0; 
-					block = blk;
+					i=-1; 
+					block = blk;					
 					continue;
-				} else {
-					code = fall;
-				}
-				
+				} 
+								
 				code = fall;
 			} else if(code instanceof Debug) {
 				code = infer((Code.Debug)code,stmt,environment);

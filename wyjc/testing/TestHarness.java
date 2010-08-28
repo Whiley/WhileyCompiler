@@ -75,27 +75,19 @@ public class TestHarness {
 	}
 	
 	
-	protected void parserFailTest(String name) {				
-		final String[] args = new String[5];
-		args[0] = "-wp";			
-		args[1] = "lib/wyrt.jar";
-		args[2] = "-debug:vcs";			
-		args[3] = "-nvc";		
-		args[4] = srcPath + File.separatorChar + name + ".whiley";
-		
-		if(Main.run(args) != Main.PARSE_ERROR) { 
+	protected void parserFailTest(String name) {
+		name = srcPath + File.separatorChar + name + ".whiley";
+
+		if (compile("-wp", "lib/wyrt.jar", "-nvc", "-wyil", name) != Main.PARSE_ERROR) {
 			fail("Test parsed when it shouldn't have!");
 		}
+
 	}
 	
 	protected void contextFailTest(String name) {				
-		final String[] args = new String[4];
-		args[0] = "-wp";			
-		args[1] = "lib/wyrt.jar";							
-		args[2] = "-nvc";		
-		args[3] = srcPath + File.separatorChar + name + ".whiley";
-		
-		if(Main.run(args) != Main.CONTEXT_ERROR) { 
+		name = srcPath + File.separatorChar + name + ".whiley";
+
+		if (compile("-wp", "lib/wyrt.jar", "-nvc", "-wyil", name) != Main.CONTEXT_ERROR) {
 			fail("Test compiled when it shouldn't have!");
 		}
 	}
@@ -145,22 +137,27 @@ public class TestHarness {
 		}
 	}
 	
-	private static String run(String path, String name, String[] args) {
-		try {						
-			// We need to have			
-			String classpath = "../../../" + File.pathSeparator + "." + File.pathSeparator + "../../../lib/wyrt.jar";	
-			classpath = classpath.replace('/',File.separatorChar);												
-			String tmp = "java -cp " + classpath + " " + name;						
-			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));			
-				
+	private static int compile(String... args) {
+		return Main.run(args);
+	}
+	
+	private static String run(String path, String name, String... args) {
+		try {
+			// We need to have
+			String classpath = "../../../" + File.pathSeparator + "."
+					+ File.pathSeparator + "../../../lib/wyrt.jar";
+			classpath = classpath.replace('/', File.separatorChar);
+			String tmp = "java -cp " + classpath + " " + name;
+			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
+
 			StringBuffer syserr = new StringBuffer();
 			StringBuffer sysout = new StringBuffer();
-			new StreamGrabber(p.getErrorStream(),syserr);
-			new StreamGrabber(p.getInputStream(),sysout);
-			int exitCode = p.waitFor();			
+			new StreamGrabber(p.getErrorStream(), syserr);
+			new StreamGrabber(p.getInputStream(), sysout);
+			int exitCode = p.waitFor();
 			System.err.println(syserr);
-			if(exitCode != 0) {
-				return null; 
+			if (exitCode != 0) {
+				return null;
 			} else {
 				return sysout.toString();
 			}
@@ -168,7 +165,7 @@ public class TestHarness {
 			ex.printStackTrace();
 			fail("Problem running compiled test");
 		}
-		
+
 		return null;
 	}
 	
