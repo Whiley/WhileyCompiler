@@ -283,7 +283,7 @@ public class TypeInference implements ModuleTransform {
 			falseEnv = tmp;
 		case SUBTYPEEQ:
 			Value.TypeConst tc = (Value.TypeConst) rhs; 							
-									
+			
 			if(Type.isSubtype(tc.type,lhs_t)) {
 				// DEFINITE TRUE CASE				
 				if (code.op == Code.COP.SUBTYPEEQ) {
