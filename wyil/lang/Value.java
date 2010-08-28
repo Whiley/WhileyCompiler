@@ -118,9 +118,31 @@ public abstract class Value extends CExpr {
 		return null;
 	}
 	
-	public static CExpr evaluate(CExpr.NOP op, Collection args) {
-		// FIXME: hack for now
-		return CExpr.NARYOP(op, args);
+	public static CExpr evaluate(CExpr.NOP op, java.util.List<Value> args) {
+		if(op == CExpr.NOP.LISTGEN) {
+			return Value.V_LIST(args); 
+		} else if(op == CExpr.NOP.SETGEN) {
+			return Value.V_SET(args);
+		} else if(op == CExpr.NOP.SUBLIST) {
+			Value src = args.get(0);
+			Value start = args.get(1);
+			Value end = args.get(2);
+			if (src instanceof List && start instanceof Int
+					&& end instanceof Int) {
+				List l = (List) src;
+				Int s = (Int) start;
+				Int e = (Int) end;
+				// FIXME: potential bug here
+				int si = s.value.intValue();
+				int ei = e.value.intValue();
+				if (si >= 0 && ei >= 0 && si < l.values.size()
+						&& ei <= l.values.size()) {
+					java.util.List nl = l.values.subList(si, ei);
+					return V_LIST(nl);
+				}				
+			}
+		} 		
+		return null;
 	}
 	
 	public static CExpr evaluate(CExpr.UOP op, Value mhs) {

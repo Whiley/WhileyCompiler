@@ -28,6 +28,7 @@ import wyil.util.ResolveError;
 public class PreconditionInline implements ModuleTransform {
 	private final ModuleLoader loader;
 	private int regTarget;
+	private String filename;
 	
 	public PreconditionInline(ModuleLoader loader) {
 		this.loader = loader;
@@ -35,6 +36,8 @@ public class PreconditionInline implements ModuleTransform {
 	public Module apply(Module module) {
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
 		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
+		
+		this.filename = filename;
 		
 		for(Module.TypeDef type : module.types()) {
 			types.add(transform(type));
@@ -152,12 +155,7 @@ public class PreconditionInline implements ModuleTransform {
 			UnOp bop = (UnOp) r;
 			return CExpr.UNOP(bop.op,transform(bop.rhs, stmt, inserts));
 		} else if (r instanceof NaryOp) {
-			NaryOp bop = (NaryOp) r;
-			ArrayList<CExpr> args = new ArrayList<CExpr>();
-			for(CExpr arg : bop.args) {
-				args.add(transform(arg, stmt, inserts));
-			}
-			return CExpr.NARYOP(bop.op, args);
+			return transform((NaryOp)r,stmt,inserts);			
 		} else if (r instanceof Tuple) {
 			Tuple tup = (Tuple) r;
 			HashMap<String,CExpr> values = new HashMap<String,CExpr>();
@@ -203,7 +201,7 @@ public class PreconditionInline implements ModuleTransform {
 		inserts.add(new Code.Check(checkLabel),attr);		
 		inserts.add(new IfGoto(Code.COP.GTEQ, index, Value
 				.V_INT(BigInteger.ZERO), exitLabel), attr);	
-		inserts.add(new Code.Fail("negative array index"), attr);
+		inserts.add(new Code.Fail("negative list index"), attr);
 		inserts.add(new Code.Label(exitLabel), attr);
 		inserts.add(new Code.CheckEnd(checkLabel), attr);
 
@@ -241,6 +239,61 @@ public class PreconditionInline implements ModuleTransform {
 		}
 		return CExpr.BINOP(bop.op, lhs, rhs);
 	}
+
+	public CExpr transform(NaryOp bop, Stmt stmt, Block inserts) {		
+		ArrayList<CExpr> args = new ArrayList<CExpr>();
+		for(CExpr arg : bop.args) {
+			args.add(transform(arg, stmt, inserts));
+		}
+		if (bop.op == CExpr.NOP.SUBLIST) {
+			CExpr src = args.get(0);
+			CExpr start = args.get(1);
+			CExpr end = args.get(2);			
+
+			// First, perform lower bound start check
+			String exitLabel = Block.freshLabel();
+			String checkLabel = Block.freshLabel();
+			Attribute.Source attr = stmt.attribute(Attribute.Source.class);
+			inserts.add(new Code.Check(checkLabel), attr);
+			inserts.add(new IfGoto(Code.COP.GTEQ, start, Value
+					.V_INT(BigInteger.ZERO), exitLabel), attr);
+			inserts.add(new Code.Fail("negative sublist start"), attr);
+			inserts.add(new Code.Label(exitLabel), attr);
+			inserts.add(new Code.CheckEnd(checkLabel), attr);
+
+			// Second, perform lower bound end check
+			exitLabel = Block.freshLabel();
+			checkLabel = Block.freshLabel();			
+			inserts.add(new Code.Check(checkLabel), attr);
+			inserts.add(new IfGoto(Code.COP.GTEQ, end, Value
+					.V_INT(BigInteger.ZERO), exitLabel), attr);
+			inserts.add(new Code.Fail("negative sublist end"), attr);
+			inserts.add(new Code.Label(exitLabel), attr);
+			inserts.add(new Code.CheckEnd(checkLabel), attr);
+
+			// Third, perform upper bound start check
+			exitLabel = Block.freshLabel();
+			checkLabel = Block.freshLabel();
+			inserts.add(new Code.Check(checkLabel), attr);
+			inserts.add(new IfGoto(Code.COP.LT, start, CExpr.UNOP(
+					CExpr.UOP.LENGTHOF, src), exitLabel), attr);
+			inserts.add(new Code.Fail("sublist start out-of-bounds"), attr);
+			inserts.add(new Code.Label(exitLabel), attr);
+			inserts.add(new Code.CheckEnd(checkLabel), attr);
+			
+			// Third, perform upper bound end check
+			exitLabel = Block.freshLabel();
+			checkLabel = Block.freshLabel();
+			inserts.add(new Code.Check(checkLabel), attr);
+			inserts.add(new IfGoto(Code.COP.LTEQ, start, CExpr.UNOP(
+					CExpr.UOP.LENGTHOF, src), exitLabel), attr);
+			inserts.add(new Code.Fail("sublist end out-of-bounds"), attr);
+			inserts.add(new Code.Label(exitLabel), attr);
+			inserts.add(new Code.CheckEnd(checkLabel), attr);		
+		}
+		return CExpr.NARYOP(bop.op, args);
+	}
+	
 	public Block transform(int regTarget, CExpr.Invoke ivk, Stmt stmt) {
 		try {
 			CExpr.LVar lhs = null;

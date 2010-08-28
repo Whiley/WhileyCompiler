@@ -285,7 +285,7 @@ public class ConstantPropagation implements ModuleTransform {
 			allValues &= arg instanceof Value;
 		}
 		
-		if(allValues) {
+		if(allValues) {			
 			return Value.evaluate(v.op, args);
 		}
 		
