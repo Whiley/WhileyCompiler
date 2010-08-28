@@ -205,6 +205,7 @@ public abstract class Value extends CExpr {
 		Value.Set rv = (Value.Set) convert(lub,rhs);
 		
 		if(op == Code.COP.SUBSETEQ){
+			System.out.println("GOT: " + lv + " " + rv);
 			return rv.values.containsAll(lv.values);
 		} else {
 			return rv.values.containsAll(lv.values)
@@ -252,6 +253,31 @@ public abstract class Value extends CExpr {
 		} else if (t instanceof Type.Real && val instanceof Int) {
 			Int i = (Int) val;
 			return new Real(new BigRational(i.value));
+		} else if(t instanceof Type.Set) {
+			Type.Set st = (Type.Set) t;
+			if(val instanceof List) {
+				List l = (List) val;
+				ArrayList<Value> vs = new ArrayList<Value>();
+				for(Value v : l.values) {
+					vs.add(convert(st.element,v));
+				}
+				return V_SET(vs);
+			} else if(val instanceof Set) {
+				Set s = (Set) val;
+				ArrayList<Value> vs = new ArrayList<Value>();
+				for(Value v : s.values) {
+					vs.add(convert(st.element,v));
+				}
+				return V_SET(vs);
+			}
+		} else if(t instanceof Type.List && val instanceof List) {
+			Type.Set st = (Type.Set) t;			
+			List l = (List) val;
+			ArrayList<Value> vs = new ArrayList<Value>();
+			for(Value v : l.values) {
+				vs.add(convert(st.element,v));
+			}
+			return V_LIST(vs);			
 		}
 		return null;
 	}
