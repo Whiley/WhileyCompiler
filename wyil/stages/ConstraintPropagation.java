@@ -21,6 +21,7 @@ import wyone.theory.numeric.*;
 import wyone.theory.list.*;
 import wyone.theory.set.*;
 import wyone.theory.tuple.*;
+import wyone.theory.quantifier.*;
 
 public class ConstraintPropagation implements ModuleTransform {
 	private final ModuleLoader loader;
@@ -172,6 +173,19 @@ public class ConstraintPropagation implements ModuleTransform {
 						f = WFormulas.and(new WEquality(true,o,n));
 					}
 				}
+			} else if(access instanceof ListAccess) {
+				ListAccess la = (ListAccess) lval;
+				WExpr src = infer(la.src,elem);
+				WExpr index = infer(la.index,elem);
+				WExpr nsrc = src.substitute(binding);
+				WVariable var = WVariable.freshVar();
+				WExpr o = new WListAccess(src,var);
+				WExpr n = new WListAccess(nsrc,var);
+				HashMap<WVariable,WExpr> srcs = new HashMap<WVariable,WExpr>();
+				srcs.put(var, src);
+				WFormula body = WFormulas.or(new WEquality(true, index, var),
+						new WEquality(true, o, n));
+				f = WFormulas.or(f,new WBoundedForall(true,srcs,body));
 			}
 		}
 		
@@ -295,6 +309,16 @@ public class ConstraintPropagation implements ModuleTransform {
 	protected WExpr infer(TupleAccess ta, SyntacticElement elem) {
 		WExpr rhs = infer(ta.lhs,elem);
 		return new WTupleAccess(rhs,ta.field);
+	}
+	
+	protected WExpr infer(Tuple t, SyntacticElement elem) {
+		ArrayList<String> fields = new ArrayList<String>(t.values.keySet());
+		ArrayList<WExpr> values = new ArrayList<WExpr>();
+		Collections.sort(fields);
+		for(String f : fields) {
+			values.add(infer(t.values.get(f),elem));
+		}		
+		return new WTupleConstructor(fields,values);
 	}
 	
 	protected WExpr infer(ListAccess ta, SyntacticElement elem) {

@@ -1,3 +1,3 @@
 void f(int y):
-    (int a,int b) x = (a:1,b:2)
-    x.a = 2
+    [int] xs = [1,2,3]
+    xs[0] = 2
