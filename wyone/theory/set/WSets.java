@@ -37,5 +37,5 @@ public class WSets {
 	
 	public static WFormula elementOf(WExpr lhs, WExpr rhs) {
 		return new WSubsetEq(true,new WSetConstructor(lhs),rhs);
-	}
+	}	
 }

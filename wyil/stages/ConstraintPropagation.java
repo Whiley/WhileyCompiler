@@ -186,10 +186,10 @@ public class ConstraintPropagation implements ModuleTransform {
 		
 		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 				wyone.Main.heuristic, wyone.Main.theories);		
-		if(tp instanceof Proof.Unsat) { trueCondition = null; }
+		if(tp instanceof Proof.Unsat) { trueCondition = null; }				
 		
 		// Determine condition for false branch, and check satisfiability
-		WFormula falseCondition = WFormulas.and(precondition,condition.not());			
+		WFormula falseCondition = WFormulas.and(precondition,condition.not());
 		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 				wyone.Main.heuristic, wyone.Main.theories);		
 		if(fp instanceof Proof.Unsat) {	falseCondition = null; }
@@ -540,6 +540,41 @@ public class ConstraintPropagation implements ModuleTransform {
 		case MUL:
 			return new Pair<WExpr, WFormula>(WNumerics.multiply(lhs.first(),
 					rhs.first()), constraints);
+		case UNION: {
+			WVariable rv = WVariable.freshVar();
+			WVariable vs = WVariable.freshVar();
+
+			HashMap<WVariable, WExpr> vars = new HashMap();
+			vars.put(rv, vs);
+			WSetConstructor sc = new WSetConstructor(rv);
+			WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs.first()), WSets
+					.subsetEq(sc, rhs.first()));
+			constraints = WFormulas.and(constraints, WSets.subsetEq(
+					lhs.first(), vs), WSets.subsetEq(rhs.first(), vs),
+					new WBoundedForall(true, vars, allc));
+			return new Pair<WExpr, WFormula>(rv, constraints);
+		}
+		case INTERSECT: {
+			WVariable rv = WVariable.freshVar();
+			WVariable vs = WVariable.freshVar();
+			HashMap<WVariable, WExpr> vars = new HashMap();
+			vars.put(rv, vs);				
+			WSetConstructor sc = new WSetConstructor(rv);
+			WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+					.subsetEq(sc, lhs.first()), WSets.subsetEq(sc, rhs.first())));
+			
+			vars = new HashMap();
+			vars.put(rv, lhs.first());
+			WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
+					.subsetEq(sc, rhs.first()), WSets.subsetEq(sc, vs)));
+			
+			constraints = WFormulas
+					.and(constraints, left, right, WSets.subsetEq(vs, lhs
+							.first()), WSets.subsetEq(vs, rhs.first()));
+
+			return new Pair<WExpr, WFormula>(rv, constraints);
+		}
+		
 		}
 
 		syntaxError("unknown binary operation encountered: " + v, filename,
