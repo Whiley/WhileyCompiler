@@ -12,6 +12,7 @@ import wyil.lang.CExpr.*;
 import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
+import wyil.util.SyntaxError;
 import wyil.util.Triple;
 import wyil.util.dfa.*;
 import wyone.core.*;
@@ -24,11 +25,13 @@ import wyone.theory.tuple.*;
 import wyone.theory.quantifier.*;
 
 public class ConstraintPropagation implements ModuleTransform {	
+	private ModuleLoader loader;
 	private String filename;
 	private int timeout;
 	
-	public ConstraintPropagation(int timeout) {
+	public ConstraintPropagation(ModuleLoader loader, int timeout) {
 		this.timeout = timeout;
+		this.loader = loader;
 	}
 	
 	public Module apply(Module module) {	
@@ -52,14 +55,13 @@ public class ConstraintPropagation implements ModuleTransform {
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		Pair<Block,WFormula> precondition = transform(mcase.precondition(),WBool.TRUE,method);		
-		Block body = transform(mcase.body(), precondition.second(), method).first();		
+		Pair<Block,WFormula> precondition = transform(mcase.precondition(),WBool.TRUE);		
+		Block body = transform(mcase.body(), precondition.second()).first();		
 		return new Module.Case(mcase.parameterNames(), precondition.first(),
 				mcase.postcondition(), body);
 	}
 	
-	protected Pair<Block,WFormula> transform(Block block, WFormula precondition,
-			Module.Method method) {
+	protected Pair<Block,WFormula> transform(Block block, WFormula precondition) {
 		Block nblock = new Block();
 		HashMap<String, WFormula> flowsets = new HashMap();
 		
@@ -291,26 +293,32 @@ public class ConstraintPropagation implements ModuleTransform {
 
 	protected Pair<WExpr,WFormula> infer(CExpr e, SyntacticElement elem) {
 
-		if (e instanceof Value) {
-			return new Pair<WExpr, WFormula>(infer((Value) e, elem), WBool.TRUE);
-		} else if (e instanceof Variable) {
-			return infer((Variable) e, elem);
-		} else if (e instanceof Register) {
-			return infer((Register) e, elem);
-		} else if (e instanceof BinOp) {
-			return infer((BinOp) e, elem);
-		} else if (e instanceof UnOp) {
-			return infer((UnOp) e, elem);
-		} else if (e instanceof NaryOp) {
-			return infer((NaryOp) e, elem);
-		} else if (e instanceof ListAccess) {
-			return infer((ListAccess) e, elem);
-		} else if (e instanceof Tuple) {
-			return infer((Tuple) e, elem);
-		} else if (e instanceof TupleAccess) {
-			return infer((TupleAccess) e, elem);
-		} else if (e instanceof Invoke) {
-			return infer((Invoke) e, elem);
+		try {
+			if (e instanceof Value) {
+				return new Pair<WExpr, WFormula>(infer((Value) e, elem), WBool.TRUE);
+			} else if (e instanceof Variable) {
+				return infer((Variable) e, elem);
+			} else if (e instanceof Register) {
+				return infer((Register) e, elem);
+			} else if (e instanceof BinOp) {
+				return infer((BinOp) e, elem);
+			} else if (e instanceof UnOp) {
+				return infer((UnOp) e, elem);
+			} else if (e instanceof NaryOp) {
+				return infer((NaryOp) e, elem);
+			} else if (e instanceof ListAccess) {
+				return infer((ListAccess) e, elem);
+			} else if (e instanceof Tuple) {
+				return infer((Tuple) e, elem);
+			} else if (e instanceof TupleAccess) {
+				return infer((TupleAccess) e, elem);
+			} else if (e instanceof Invoke) {
+				return infer((Invoke) e, elem);
+			}
+		} catch(SyntaxError se) {
+			throw se;
+		} catch(Exception ex) {
+			syntaxError("internal failure",filename,elem,ex);
 		}
 		
 		syntaxError("unknown condition encountered: " + e,filename,elem);
@@ -451,7 +459,8 @@ public class ConstraintPropagation implements ModuleTransform {
 		return null;
 	}
 	
-	protected Pair<WExpr,WFormula> infer(Invoke ivk, SyntacticElement elem) {
+	protected Pair<WExpr, WFormula> infer(Invoke ivk, SyntacticElement elem)
+			throws ResolveError {
 		WFormula constraints = WBool.TRUE;
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		for (CExpr e : ivk.args) {
@@ -460,11 +469,19 @@ public class ConstraintPropagation implements ModuleTransform {
 			constraints = WFormulas.and(p.second());
 		}
 
-		// FIXME: need to add type constraints on return
-		
-		return new Pair<WExpr, WFormula>(new WVariable("&" + ivk.name, args),
-				constraints);
+		WVariable rv = new WVariable("&" + ivk.name, args);
+		Module module = loader.loadModule(ivk.name.module());
+		Module.Method method = module.method(ivk.name.name(), ivk.type);
+		Module.Case mcase = method.cases().get(ivk.caseNum);
+		Block postcondition = mcase.postcondition();
+
+		WFormula pc = transform(postcondition, WBool.TRUE).second();
+		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+		binding.put(new WVariable("$"), rv);
+		constraints = WFormulas.and(constraints, pc.substitute(binding));
+		return new Pair<WExpr, WFormula>(rv, constraints);
 	}
+	
 	protected Pair<WExpr,WFormula> infer(TupleAccess ta, SyntacticElement elem) {
 		Pair<WExpr,WFormula> rhs = infer(ta.lhs,elem);
 		return new Pair<WExpr, WFormula>(
