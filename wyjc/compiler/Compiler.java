@@ -23,7 +23,7 @@ import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
-import wyil.stages.TypeInference;
+import wyil.stages.TypePropagation;
 import wyil.util.*;
 import wyil.io.*;
 import wyjc.lang.*;
@@ -35,7 +35,7 @@ public class Compiler implements Logger {
 	private ModuleLoader loader;
 	protected NameResolution nameResolver;
 	protected ModuleBuilder moduleBuilder;
-	protected TypeInference typeInference;
+	protected TypePropagation typeInference;
 	protected ArrayList<Stage> stages;
 
 	public interface Stage {
@@ -47,7 +47,7 @@ public class Compiler implements Logger {
 		this.stages = new ArrayList<Stage>(stages);
 		this.nameResolver = new NameResolution(loader);		
 		this.moduleBuilder = new ModuleBuilder(loader);
-		this.typeInference = new TypeInference(loader);	
+		this.typeInference = new TypePropagation(loader);	
 	}
 	
 	/**

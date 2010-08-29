@@ -139,8 +139,8 @@ public class Main {
 		}
 		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
-		stages.add(new WyilTransform("type inference",
-				new TypeInference(loader)));
+		stages.add(new WyilTransform("type propagation",
+				new TypePropagation(loader)));
 		stages.add(new WyilTransform("definite assignment",
 				new DefiniteAssignment()));
 		if(!ncp) {
@@ -149,7 +149,7 @@ public class Main {
 		}
 		if(!nvc) {
 			stages.add(new WyilTransform("constraint propagation",
-					new ConstantPropagation(loader)));
+					new ConstraintPropagation(loader)));
 		}
 		if(wyil) {
 			stages.add(new WyilWriter());

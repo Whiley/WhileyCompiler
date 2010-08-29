@@ -12,11 +12,11 @@ import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.dfa.*;
 
-public class TypeInference implements ModuleTransform {
+public class TypePropagation implements ModuleTransform {
 	private final ModuleLoader loader;
 	private String filename;
 
-	public TypeInference(ModuleLoader loader) {
+	public TypePropagation(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	

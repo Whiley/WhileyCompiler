@@ -12,11 +12,11 @@ import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import wyil.util.dfa.*;
 
-public class ConstraintInference implements ModuleTransform {
+public class ConstraintPropagation implements ModuleTransform {
 	private final ModuleLoader loader;
 	private String filename;
 
-	public ConstraintInference(ModuleLoader loader) {
+	public ConstraintPropagation(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
