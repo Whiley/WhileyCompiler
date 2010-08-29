@@ -131,6 +131,7 @@ public class ConstraintPropagation implements ModuleTransform {
 	
 	protected Triple<Stmt, WFormula, WFormula> infer(Code.IfGoto code,
 			WFormula precondition, SyntacticElement elem) {
+		
 		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
 		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
 		precondition = WFormulas.and(precondition,lhs_p.second(),rhs_p.second());		
@@ -140,7 +141,7 @@ public class ConstraintPropagation implements ModuleTransform {
 			condition = new WEquality(true,lhs_p.first(),rhs_p.first());
 			break;
 		case NEQ:
-			condition = new WEquality(true,lhs_p.first(),rhs_p.first());
+			condition = new WEquality(false,lhs_p.first(),rhs_p.first());
 			break;
 		case LT:
 			condition = WNumerics.lessThan(lhs_p.first(),rhs_p.first());
@@ -153,7 +154,16 @@ public class ConstraintPropagation implements ModuleTransform {
 			break;
 		case GTEQ:
 			condition = WNumerics.greaterThanEq(lhs_p.first(),rhs_p.first());
-			break;			
+			break;
+		case ELEMOF:
+			condition = WSets.elementOf(lhs_p.first(),rhs_p.first());
+			break;
+		case SUBSET:
+			condition = WSets.subset(lhs_p.first(),rhs_p.first());
+			break;
+		case SUBSETEQ:
+			condition = WSets.subsetEq(lhs_p.first(),rhs_p.first());
+			break;
 		}
 		
 		// Determine condition for true branch, and check satisfiability

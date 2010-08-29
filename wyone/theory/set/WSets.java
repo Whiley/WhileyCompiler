@@ -18,12 +18,24 @@
 package wyone.theory.set;
 
 import wyone.core.*;
+import wyone.theory.congruence.WEquality;
+import wyone.theory.logic.*;
 
 public class WSets {
-	public static WSubsetEq subsetEq(WExpr lhs, WExpr rhs) {
+	public static WFormula subsetEq(WExpr lhs, WExpr rhs) {
 		return new WSubsetEq(true,lhs,rhs);
 	}
-	public static WSubsetEq supsetEq(WExpr lhs, WExpr rhs) {
+
+	public static WFormula subset(WExpr lhs, WExpr rhs) {
+		return WFormulas.and(new WSubsetEq(true, lhs, rhs), new WEquality(
+				false, lhs, rhs));
+	}
+	
+	public static WFormula supsetEq(WExpr lhs, WExpr rhs) {
 		return new WSubsetEq(true,rhs,lhs);
+	}
+	
+	public static WFormula elementOf(WExpr lhs, WExpr rhs) {
+		return new WSubsetEq(true,new WSetConstructor(lhs),rhs);
 	}
 }
