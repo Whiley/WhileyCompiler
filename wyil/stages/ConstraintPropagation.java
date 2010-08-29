@@ -159,11 +159,10 @@ public class ConstraintPropagation implements ModuleTransform {
 		WFormula f = WBool.TRUE;		
 		
 		for(int i=1;i!=exprs.size();++i) {
-			CExpr access = exprs.get(i);
-			
-			if(access instanceof TupleAccess){
+			CExpr access = exprs.get(i);			
+			if(access instanceof TupleAccess){				
 				TupleAccess ta = (TupleAccess) lval;
-				Type.Tuple tt = Type.effectiveTupleType(ta.type());
+				Type.Tuple tt = Type.effectiveTupleType(ta.lhs.type());
 				WExpr src = infer(ta.lhs,elem);
 				WExpr nsrc = src.substitute(binding);
 				for(String field : tt.types.keySet()) {
@@ -187,12 +186,12 @@ public class ConstraintPropagation implements ModuleTransform {
 		} else if (lval instanceof ListAccess) {
 			ListAccess la = (ListAccess) lval;
 			List<CExpr> f = flattern(la.src, elem);
-			f.add(0, lval);
+			f.add(lval);
 			return f;
 		} else if (lval instanceof TupleAccess) {
 			TupleAccess la = (TupleAccess) lval;
 			List<CExpr> f = flattern(la.lhs, elem);
-			f.add(0, lval);
+			f.add(lval);
 			return f;
 		}
 
@@ -291,6 +290,17 @@ public class ConstraintPropagation implements ModuleTransform {
 		}
 		syntaxError("unknown unary operation: " + v.op,filename,elem);
 		return null;
+	}
+	
+	protected WExpr infer(TupleAccess ta, SyntacticElement elem) {
+		WExpr rhs = infer(ta.lhs,elem);
+		return new WTupleAccess(rhs,ta.field);
+	}
+	
+	protected WExpr infer(ListAccess ta, SyntacticElement elem) {
+		WExpr src = infer(ta.src,elem);
+		WExpr idx = infer(ta.index,elem);
+		return new WListAccess(src,idx);
 	}
 	
 	protected WExpr infer(BinOp v, SyntacticElement elem) {
