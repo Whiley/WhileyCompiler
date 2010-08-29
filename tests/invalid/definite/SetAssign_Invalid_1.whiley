@@ -5,6 +5,9 @@ void f({int} xs) requires |xs| > 4:
 void System::main([string] args):
     {int} ys
     {int} zs
-    ys = {1,2,3}
+    if |args| > 1:
+        ys = {1,2,3}
+    else:
+        ys = {1,2}
     zs = ys
     f(zs)

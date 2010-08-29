@@ -147,6 +147,10 @@ public class Main {
 			stages.add(new WyilTransform("constant propagation",
 					new ConstantPropagation(loader)));
 		}
+		if(!nvc) {
+			stages.add(new WyilTransform("constraint propagation",
+					new ConstantPropagation(loader)));
+		}
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}
