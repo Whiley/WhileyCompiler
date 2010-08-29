@@ -432,6 +432,20 @@ public class ConstraintPropagation implements ModuleTransform {
 		return null;
 	}
 	
+	protected Pair<WExpr,WFormula> infer(Invoke ivk, SyntacticElement elem) {
+		WFormula constraints = WBool.TRUE;
+		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		for (CExpr e : ivk.args) {
+			Pair<WExpr, WFormula> p = infer(e, elem);
+			args.add(p.first());
+			constraints = WFormulas.and(p.second());
+		}
+
+		// FIXME: need to add type constraints on return
+		
+		return new Pair<WExpr, WFormula>(new WVariable("&" + ivk.name, args),
+				constraints);
+	}
 	protected Pair<WExpr,WFormula> infer(TupleAccess ta, SyntacticElement elem) {
 		Pair<WExpr,WFormula> rhs = infer(ta.lhs,elem);
 		return new Pair<WExpr, WFormula>(

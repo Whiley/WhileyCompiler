@@ -57,20 +57,21 @@ public class TestHarness {
 	 *            Java file in the srcPath of the same name.
 	 */
 	protected void runTest(String name, String... params) {				
-		final String[] args = new String[3 + params.length];
-		args[0] = "-wp";		
-		args[1] = "lib/wyrt.jar";				
-		for(int i=0;i!=params.length;++i) {
-			args[i+2] = params[i];
+		final String[] args = new String[4 + params.length];
+		args[0] = "-wp";
+		args[1] = "lib/wyrt.jar";
+		args[2] = "-nvc";
+		for (int i = 0; i != params.length; ++i) {
+			args[i + 3] = params[i];
 		}
-		args[args.length-1] = srcPath + File.separatorChar + name + ".whiley";		
-		
-		if(Main.run(args) != 0) { 
+		args[args.length - 1] = srcPath + File.separatorChar + name + ".whiley";
+
+		if (Main.run(args) != 0) {
 			fail("couldn't compile test!");
 		} else {
-			String output = run(srcPath,name,args);				
-			compare(output, outputPath + File.separatorChar + name
-					+ "." + outputExtension);
+			String output = run(srcPath, name, args);
+			compare(output, outputPath + File.separatorChar + name + "."
+					+ outputExtension);
 		}
 	}
 	
@@ -93,44 +94,32 @@ public class TestHarness {
 	}
 	
 	protected void verificationFailTest(String name) {				
-		final String[] args = new String[4];
-		args[0] = "-wp";			
-		args[1] = "lib/wyrt.jar";				
-		args[2] = "-debug:vcs";		
-		args[3] = srcPath + File.separatorChar + name + ".whiley";
-		
-		if(Main.run(args) != Main.VERIFICATION_ERROR) { 
-			fail("Test passed verification when it shouldn't have!");
+		name = srcPath + File.separatorChar + name + ".whiley";
+
+		if (compile("-wp", "lib/wyrt.jar", "-wyil", name) != Main.VERIFICATION_ERROR) {
+			fail("Test compiled when it shouldn't have!");
 		}
 	}
 
 	protected void verificationRunTest(String name) {				
-		final String[] args = new String[4];
-		args[0] = "-wp";			
-		args[1] = "lib/wyrt.jar";				
-		args[2] = "-debug:vcs";			
-		args[3] = srcPath + File.separatorChar + name + ".whiley";		
+		String fullName = srcPath + File.separatorChar + name + ".whiley";
 		
-		if(Main.run(args) != 0) { 
+		if(compile("-wp", "lib/wyrt.jar", "-wyil", fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
-			String output = run(srcPath,name,args);				
+			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				
 			compare(output, outputPath + File.separatorChar + name
 					+ "." + outputExtension);
 		}
 	}
 		
 	protected void runtimeFailTest(String name) {				
-		final String[] args = new String[4];		
-		args[0] = "-wp";			
-		args[1] = "lib/wyrt.jar";						
-		args[2] = "-nvc";		
-		args[3] = srcPath + File.separatorChar + name + ".whiley";
+		String fullName = srcPath + File.separatorChar + name + ".whiley";
 		
-		if(Main.run(args) != 0) { 
+		if(compile("-wp", "lib/wyrt.jar", "-wyil", "-nvc", fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
-			String output = run(srcPath,name,args);				
+			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				
 			if(output != null) {
 				fail("test should have failed at runtime!");
 			}
