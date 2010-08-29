@@ -23,12 +23,12 @@ import wyone.theory.set.*;
 import wyone.theory.tuple.*;
 import wyone.theory.quantifier.*;
 
-public class ConstraintPropagation implements ModuleTransform {
-	private final ModuleLoader loader;
+public class ConstraintPropagation implements ModuleTransform {	
 	private String filename;
-
-	public ConstraintPropagation(ModuleLoader loader) {
-		this.loader = loader;
+	private int timeout;
+	
+	public ConstraintPropagation(int timeout) {
+		this.timeout = timeout;
 	}
 	
 	public Module apply(Module module) {	
@@ -82,21 +82,18 @@ public class ConstraintPropagation implements ModuleTransform {
 				precondition = null;
 			} else if (code instanceof IfGoto) {
 				IfGoto igot = (IfGoto) code;	
-				/*
-				Triple<Code, WFormula, WFormula> r = infer((Code.IfGoto) code,
-						stmt, precondition);
-				code = r.first();
+				
+				Triple<Stmt, WFormula, WFormula> r = infer((Code.IfGoto) code,
+						precondition, stmt);				
+				stmt = r.first();
+				code = stmt.code;
 				precondition = r.third();
-				// Observe that the following is needed because type inference
-				// can determine that an if-statement definitely is taken, or
-				// definitely isn't taken.
-				if (code instanceof Code.IfGoto) {
+				if(r.first() != null && precondition != null) {
 					merge(igot.target, r.second(), flowsets);
-				} else if (code instanceof Code.Goto) {
+				} else if(r.first() != null) {
 					merge(igot.target, r.second(), flowsets);
-					precondition = null;
 				}
-				*/
+				
 			} else if (code instanceof Assign) {
 				precondition = infer((Code.Assign) code, i, stmt, precondition);
 			} else if (code instanceof Fail || code instanceof Return) {
@@ -125,6 +122,63 @@ public class ConstraintPropagation implements ModuleTransform {
 			return f2;
 		}
 		return WFormulas.or(f1,f2);
+	}
+	
+	protected Triple<Stmt, WFormula, WFormula> infer(Code.IfGoto code,
+			WFormula precondition, SyntacticElement elem) {
+		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
+		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
+		precondition = WFormulas.and(precondition,lhs_p.second(),rhs_p.second());		
+		WFormula condition = null;
+		switch(code.op) {
+		case EQ:		
+			condition = new WEquality(true,lhs_p.first(),rhs_p.first());
+			break;
+		case NEQ:
+			condition = new WEquality(true,lhs_p.first(),rhs_p.first());
+			break;
+		case LT:
+			condition = WNumerics.lessThan(lhs_p.first(),rhs_p.first());
+			break;
+		case LTEQ:
+			condition = WNumerics.lessThanEq(lhs_p.first(),rhs_p.first());
+			break;
+		case GT:
+			condition = WNumerics.greaterThan(lhs_p.first(),rhs_p.first());
+			break;
+		case GTEQ:
+			condition = WNumerics.greaterThanEq(lhs_p.first(),rhs_p.first());
+			break;			
+		}
+		
+		// Determine condition for true branch, and check satisfiability
+		WFormula trueCondition = WFormulas.and(precondition,condition);
+		
+		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
+				wyone.Main.heuristic, wyone.Main.theories);		
+		if(tp instanceof Proof.Unsat) { trueCondition = null; }
+		
+		// Determine condition for false branch, and check satisfiability
+		WFormula falseCondition = WFormulas.and(precondition,condition.not());			
+		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
+				wyone.Main.heuristic, wyone.Main.theories);		
+		if(fp instanceof Proof.Unsat) {	falseCondition = null; }
+		
+		Stmt stmt;
+		if(trueCondition == null) {
+			stmt = new Stmt(new Code.Skip());
+		} else if(falseCondition == null) {
+			stmt = new Stmt(new Code.Goto(code.target));
+		} else {
+			// FIXME: this needs to be updated at some point
+			Attribute.BranchInfo bi = new Attribute.BranchInfo(true,true);
+			stmt = new Stmt(new Code.IfGoto(code.op, code.lhs, code.rhs,
+					code.target), bi, elem.attribute(Attribute.Source.class));
+		}
+		
+		// Finally, return what we've got
+		return new Triple<Stmt, WFormula, WFormula>(stmt, trueCondition,
+				falseCondition);
 	}
 	
 	protected WFormula infer(Code.Assign code, int index,

@@ -76,6 +76,7 @@ public class Main {
 		boolean wyil = false;
 		boolean jvm = false;
 		boolean classfile = true;
+		int timeout = 1000;
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
 		ArrayList<String> bootpath = new ArrayList<String>();
@@ -149,7 +150,7 @@ public class Main {
 		}
 		if(!nvc) {
 			stages.add(new WyilTransform("constraint propagation",
-					new ConstraintPropagation(loader)));
+					new ConstraintPropagation(timeout)));
 		}
 		if(wyil) {
 			stages.add(new WyilWriter());
@@ -158,6 +159,9 @@ public class Main {
 				new FunctionCheck(loader)));
 		stages.add(new WyilTransform("failure check",
 				new FailureCheck(loader)));		
+		if(wyil) {
+			stages.add(new WyilWriter());
+		}
 		if(jvm) {
 			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}

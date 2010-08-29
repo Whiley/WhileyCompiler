@@ -201,7 +201,7 @@ public class PreconditionInline implements ModuleTransform {
 		inserts.add(new Code.Check(checkLabel),attr);		
 		inserts.add(new IfGoto(Code.COP.GTEQ, index, Value
 				.V_INT(BigInteger.ZERO), exitLabel), attr);	
-		inserts.add(new Code.Fail("negative list index"), attr);
+		inserts.add(new Code.Fail("negative list index possible"), attr);
 		inserts.add(new Code.Label(exitLabel), attr);
 		inserts.add(new Code.CheckEnd(checkLabel), attr);
 
@@ -211,7 +211,7 @@ public class PreconditionInline implements ModuleTransform {
 		inserts.add(new Code.Check(checkLabel),attr);				
 		inserts.add(new IfGoto(Code.COP.LT, index, CExpr.UNOP(
 					CExpr.UOP.LENGTHOF, src), exitLabel), attr);		
-		inserts.add(new Code.Fail("array index out-of-bounds"), attr);
+		inserts.add(new Code.Fail("out-of-bounds list index possible"), attr);
 		inserts.add(new Code.Label(exitLabel), attr);
 		inserts.add(new Code.CheckEnd(checkLabel), attr);
 		
@@ -257,7 +257,7 @@ public class PreconditionInline implements ModuleTransform {
 			inserts.add(new Code.Check(checkLabel), attr);
 			inserts.add(new IfGoto(Code.COP.GTEQ, start, Value
 					.V_INT(BigInteger.ZERO), exitLabel), attr);
-			inserts.add(new Code.Fail("negative sublist start"), attr);
+			inserts.add(new Code.Fail("negative sublist start possible"), attr);
 			inserts.add(new Code.Label(exitLabel), attr);
 			inserts.add(new Code.CheckEnd(checkLabel), attr);
 
@@ -267,7 +267,7 @@ public class PreconditionInline implements ModuleTransform {
 			inserts.add(new Code.Check(checkLabel), attr);
 			inserts.add(new IfGoto(Code.COP.GTEQ, end, Value
 					.V_INT(BigInteger.ZERO), exitLabel), attr);
-			inserts.add(new Code.Fail("negative sublist end"), attr);
+			inserts.add(new Code.Fail("negative sublist end possible"), attr);
 			inserts.add(new Code.Label(exitLabel), attr);
 			inserts.add(new Code.CheckEnd(checkLabel), attr);
 

@@ -67,9 +67,18 @@ public class FailureCheck implements ModuleTransform {
 				reachables.add(got.target);
 				reachable = false;
 			} else if (code instanceof IfGoto) {
-				// note, we could do better here, by considering dominators or
-				// similar
-				reachable = false;				
+				IfGoto igot = (IfGoto) code;
+				Attribute.BranchInfo bi = stmt.attribute(Attribute.BranchInfo.class);
+				if(bi != null) {
+					if(bi.trueBranch) {
+						reachables.add(igot.target);
+					}
+					if(!bi.falseBranch) {
+						reachable = false;
+					}
+				} else {
+					reachable = false;
+				}
 			} else if (code instanceof Assign) {
 				
 			} 		

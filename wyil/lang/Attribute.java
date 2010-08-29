@@ -15,4 +15,20 @@ public interface Attribute {
 			return "@" + start + ":" + end;
 		}
 	}
+	
+	public static class BranchInfo implements Attribute {
+		public final boolean trueBranch;
+		public final boolean falseBranch;
+		
+		public BranchInfo(boolean tb, boolean fb) {
+			this.trueBranch = tb;
+			this.falseBranch = fb;
+		}
+		
+		public String toString() {
+			String r = trueBranch ? "T" : "?";
+			r += falseBranch ? "F" : "?";
+			return r;
+		}
+	}
 }
