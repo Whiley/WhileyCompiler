@@ -5,12 +5,22 @@ import static wyil.util.SyntaxError.syntaxError;
 import java.util.*;
 
 import wyil.ModuleLoader;
+import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
+import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
+import wyil.util.Triple;
 import wyil.util.dfa.*;
+import wyone.core.*;
+import wyone.theory.congruence.*;
+import wyone.theory.logic.*;
+import wyone.theory.numeric.*;
+import wyone.theory.list.*;
+import wyone.theory.set.*;
+import wyone.theory.tuple.*;
 
 public class ConstraintPropagation implements ModuleTransform {
 	private final ModuleLoader loader;
@@ -20,32 +30,16 @@ public class ConstraintPropagation implements ModuleTransform {
 		this.loader = loader;
 	}
 	
-	public Module apply(Module module) {
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
+	public Module apply(Module module) {	
 		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
 		
 		filename = module.filename();
 		
-		for(Module.TypeDef type : module.types()) {
-			types.add(transform(type));
-		}		
 		for(Module.Method method : module.methods()) {
 			methods.add(transform(method));
 		}
-		return new Module(module.id(), module.filename(), methods, types,
+		return new Module(module.id(), module.filename(), methods, module.types(),
 				module.constants());
-	}
-	
-	public Module.TypeDef transform(Module.TypeDef type) {
-		Block constraint = type.constraint();
-		if (constraint == null) {
-			return type;
-		} else {
-			HashMap<String,Type> environment = new HashMap<String,Type>();
-			environment.put("$", type.type());
-			constraint = transform(constraint, environment, null);
-			return new Module.TypeDef(type.name(), type.type(), constraint);
-		}
 	}
 	
 	public Module.Method transform(Module.Method method) {
@@ -57,410 +51,269 @@ public class ConstraintPropagation implements ModuleTransform {
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		HashMap<String,Type> environment = new HashMap<String,Type>();
-		
-		List<String> paramNames = mcase.parameterNames();
-		List<Type> paramTypes = method.type().params;
-		
-		for (int i = 0; i != paramNames.size(); ++i) {
-			Type t = paramTypes.get(i);
-			environment.put(paramNames.get(i), t);
-			if (method.type().receiver == null
-					&& Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
-				// FIXME: add source information
-				syntaxError("function argument cannot have process type",
-						filename, mcase);
-			}
-		}
-		
-		if(method.type().receiver != null) {
-			environment.put("this", method.type().receiver);
-		}
-		
-		Block precondition = mcase.precondition();
-		if(precondition != null) {
-			HashMap<String,Type> preenv = new HashMap<String,Type>(environment);
-			precondition = transform(precondition, preenv, method);
-		}
-		Block postcondition = mcase.postcondition();
-		if(postcondition != null) {
-			HashMap<String,Type> postenv = new HashMap<String,Type>(environment);
-			postenv.put("$",method.type().ret);
-			postcondition = transform(postcondition, postenv, method);			
-		}
-				
-		Block body = transform(mcase.body(), environment, method);		
-		return new Module.Case(mcase.parameterNames(), precondition,
-				postcondition, body);
+		WFormula precondition = WBool.TRUE;
+		Block body = transform(mcase.body(), precondition, method);		
+		return new Module.Case(mcase.parameterNames(), mcase.precondition(),
+				mcase.postcondition(), body);
 	}
 	
-	protected Block transform(Block block, HashMap<String, Type> environment,
+	protected Block transform(Block block, WFormula precondition,
 			Module.Method method) {
 		Block nblock = new Block();
-		HashMap<String, HashMap<String, Type>> flowsets = new HashMap<String, HashMap<String, Type>>();
-
+		HashMap<String, WFormula> flowsets = new HashMap();
+		
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
 
+			System.out.println(i + " : " + code + " // " + precondition);
+			
 			if (code instanceof Label) {
-				Label label = (Label) code;
-				if (environment == null) {
-					environment = flowsets.get(label.label);
-				} else {
-					join(environment, flowsets.get(label.label));
-				}
+				Label label = (Label) code;								
+				precondition = join(precondition, flowsets.get(label.label));				
 			}
 
-			if (environment == null) {
+			if (precondition == null) {
 				continue; // this indicates dead-code
 			} else if (code instanceof Goto) {
 				Goto got = (Goto) code;
-				merge(got.target, environment, flowsets);
-				environment = null;
+				merge(got.target, precondition, flowsets);
+				precondition = null;
 			} else if (code instanceof IfGoto) {
-				IfGoto igot = (IfGoto) code;
-				HashMap<String, Type> tenv = new HashMap<String, Type>(
-						environment);
-				code = infer((Code.IfGoto) code, stmt, tenv, environment);
+				IfGoto igot = (IfGoto) code;	
+				/*
+				Triple<Code, WFormula, WFormula> r = infer((Code.IfGoto) code,
+						stmt, precondition);
+				code = r.first();
+				precondition = r.third();
 				// Observe that the following is needed because type inference
 				// can determine that an if-statement definitely is taken, or
 				// definitely isn't taken.
 				if (code instanceof Code.IfGoto) {
-					merge(igot.target, tenv, flowsets);
+					merge(igot.target, r.second(), flowsets);
 				} else if (code instanceof Code.Goto) {
-					merge(igot.target, tenv, flowsets);
-					environment = null;
+					merge(igot.target, r.second(), flowsets);
+					precondition = null;
 				}
+				*/
 			} else if (code instanceof Assign) {
-				code = infer((Code.Assign) code, stmt, environment);
-			} else if (code instanceof Return) {
-				code = infer((Code.Return) code, stmt, environment, method);
-				environment = null;
-			} else if (code instanceof Fail) {
-				environment = null;
-			} else if (code instanceof Forall) {
-				Code.Forall fall = (Code.Forall) code;
-				code = infer(fall, stmt, environment);
-				if (code instanceof Skip) {
-					// indicates the loop should be removed because it's
-					// unreachable, or is over an empty list.
-					while (i < block.size()) {
-						Stmt s = block.get(++i);
-						if (s.code instanceof End) {
-							End e = (End) s.code;
-							if (e.target.equals(fall.label)) {
-								break;
-							}
-						}
-					}
-				}
-			} else if (code instanceof Debug) {
-				code = infer((Code.Debug) code, stmt, environment);
-			}
+				precondition = infer((Code.Assign) code, i, stmt, precondition);
+			} else if (code instanceof Fail || code instanceof Return) {
+				precondition = null;
+			} 
 
 			nblock.add(code, stmt.attributes());
 		}
 		return nblock;
 	}
 	
-	protected void merge(String target, HashMap<String,Type> env,
-			HashMap<String, HashMap<String,Type>> flowsets) {				
-		
-		HashMap<String,Type> e = flowsets.get(target);
-		if(e == null) {						
-			flowsets.put(target, new HashMap<String,Type>(env));
+	protected void merge(String target, WFormula precondition,
+			HashMap<String, WFormula> flowsets) {						
+		WFormula pc = flowsets.get(target);
+		if(pc == null) {						
+			flowsets.put(target, precondition);
 		} else {
-			join(e,env);			
-			flowsets.put(target, e);
+			flowsets.put(target, join(pc,precondition));
 		}
 	}
 	
-	protected Code infer(Code.Forall code, Stmt stmt,
-			HashMap<String,Type> environment) {
-		
-		CExpr src = infer(code.source, stmt, environment);
-		Type src_t = src.type();				
-		
-		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);				
-		
-		Type elem_t;
-		if(src_t instanceof Type.List) {
-			elem_t = ((Type.List)src_t).element;
-		} else {
-			elem_t = ((Type.Set)src_t).element;
+	public static WFormula join(WFormula f1, WFormula f2) {
+		if (f2 == null) {
+			return f1;
+		} else if(f1 == null) {
+			return f2;
 		}
-		
-		if (elem_t == Type.T_VOID) {
-			// This indicates a loop over an empty list. This legitimately can
-			// happen as a result of substitution for contraints or pre/post
-			// conditions.
-			return new Code.Skip();
-		}
-		
-		environment.put("%" + code.variable.index, elem_t);
-		
-		return new Code.Forall(code.label, CExpr.REG(elem_t,
-				code.variable.index), src);
+		return WFormulas.or(f1,f2);
 	}
 	
-	protected Code infer(Code.Assign code, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr.LVal lhs = code.lhs;
+	protected WFormula infer(Code.Assign code, int index,
+			SyntacticElement elem,
+			WFormula precondition) {
+		WExpr lhs = infer(code.lhs,elem);
+		WExpr rhs = infer(code.rhs,elem);
+
+		LVar lvar = CExpr.extractLVar(code.lhs);
+	
 		
-
-		CExpr rhs = infer(code.rhs,stmt,environment);
-
-		if(lhs instanceof LVar) {			
-			checkIsSubtype(lhs.type(),rhs.type(), stmt);
-		} else if(lhs != null) {			
-			lhs = (CExpr.LVal) infer(lhs,stmt,environment);
-			checkIsSubtype(lhs.type(),rhs.type(), stmt);
-		}
-
-		if(lhs instanceof Variable) {
-			Variable v = (Variable) lhs;
-			environment.put(v.name, rhs.type());
-			lhs = CExpr.VAR(rhs.type(),v.name);
-		} else if(lhs instanceof Register) {
-			Register v = (Register) lhs;
-			environment.put("%" + v.index, rhs.type());
-			lhs = CExpr.REG(rhs.type(),v.index);
-		} // FIXME: other cases
+		// Create shadows
+		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
+		binding.put(new WVariable(lvar.name()), new WVariable(lvar.name() + "$"
+				+ index));		
 		
-		return new Code.Assign(lhs,rhs);
+		rhs = rhs.substitute(binding);		
+		WFormula postcondition = precondition.substitute(binding);
+
+		// finally, put it altogether
+		return WFormulas.and(postcondition, new WEquality(true, lhs, rhs),
+				assignCondition(code.lhs, binding, elem));
 	}
 		
-	protected Code infer(Code.IfGoto code, Stmt stmt, HashMap<String,Type> trueEnv, HashMap<String,Type> falseEnv) {
-		CExpr lhs = infer(code.lhs,stmt,trueEnv);
-		CExpr rhs = infer(code.rhs,stmt,trueEnv);
-		Type lhs_t = lhs.type();
-		Type rhs_t = rhs.type();
-		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
+	protected WFormula assignCondition(LVal lval,
+			HashMap<WExpr, WExpr> binding, SyntacticElement elem) {
 		
-		switch(code.op) {
-		case LT:
-		case LTEQ:
-		case GT:
-		case GTEQ:
-			checkIsSubtype(Type.T_REAL, lub, stmt);
-			break;
-		case EQ:
-		case NEQ:
-			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
-			}
-			break;
-		case ELEMOF:
-		{
-			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
-			Type element;
-			if(rhs_t instanceof Type.List){
-				element = ((Type.List)rhs_t).element;
-			} else {
-				element = ((Type.Set)rhs_t).element;
-			}
-			if (!Type.isSubtype(element, lhs_t)) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
-			}
+		// the purpose of this method is to generate a condition which
+		// identifies that everything in the lhs base variable is identical to
+		// that in the shadowVariable, except for the particular element being
+		// updated.
+		List<CExpr> exprs = flattern(lval,elem);
+		WFormula f = WBool.TRUE;		
+		
+		for(int i=1;i!=exprs.size();++i) {
+			CExpr access = exprs.get(i);
 			
-			return new Code.IfGoto(code.op, lhs, rhs, code.target);
-		}	
-		case SUBSET:
-		case SUBSETEQ:			
-			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
-			}
-			checkIsSubtype(Type.T_SET(Type.T_ANY),lhs_t,stmt);
-			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
-			break;
-		case NSUBTYPEEQ:
-			// this is a tad sneaky
-			HashMap<String,Type> tmp = trueEnv;
-			trueEnv = falseEnv;
-			falseEnv = tmp;
-		case SUBTYPEEQ:
-			Value.TypeConst tc = (Value.TypeConst) rhs; 							
-			
-			if(Type.isSubtype(tc.type,lhs_t)) {
-				// DEFINITE TRUE CASE				
-				if (code.op == Code.COP.SUBTYPEEQ) {
-					return new Code.Goto(code.target);					
-				} else {					
-					return new Code.Skip();
+			if(access instanceof TupleAccess){
+				TupleAccess ta = (TupleAccess) lval;
+				Type.Tuple tt = Type.effectiveTupleType(ta.type());
+				WExpr src = infer(ta.lhs,elem);
+				WExpr nsrc = src.substitute(binding);
+				for(String field : tt.types.keySet()) {
+					if(!field.equals(ta.field)) {
+						WTupleAccess o = new WTupleAccess(src,field);
+						WTupleAccess n = new WTupleAccess(nsrc,field);
+						f = WFormulas.and(new WEquality(true,o,n));
+					}
 				}
-			} else if (!Type.isSubtype(lhs_t, tc.type)) {				
-				// DEFINITE FALSE CASE
-				if (code.op == Code.COP.NSUBTYPEEQ) {
-					return new Code.Goto(code.target);					
-				} else {					
-					return new Code.Skip();
-				}
-			} 						
-			
-			typeInference(lhs,tc.type,trueEnv, falseEnv);
-		}
-		
-		return new Code.IfGoto(code.op, lhs, rhs, code.target);				
-	}
-	
-	protected void typeInference(CExpr lhs, Type type,
-			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
-		// Now, perform the actual type inference
-		if (lhs instanceof CExpr.Variable) {
-			CExpr.Variable v = (CExpr.Variable) lhs;			
-			Type glb = Type.greatestLowerBound(type, v.type);
-			Type gdiff = Type.greatestDifference(v.type, type);			
-			trueEnv.put(v.name, glb);
-			falseEnv.put(v.name, gdiff);
-		} else if (lhs instanceof CExpr.Register) {
-			CExpr.Register reg = (CExpr.Register) lhs;
-			String name = "%" + reg.index;			
-			trueEnv.put(name, Type.greatestLowerBound(type, reg.type));
-			falseEnv.put(name, Type.greatestDifference(reg.type, type));
-		} else if (lhs instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) lhs;
-			Type.Tuple lhs_t = Type.effectiveTupleType(ta.lhs.type());
-			if (lhs_t != null) {
-				HashMap<String, Type> ntypes = new HashMap<String, Type>(
-						lhs_t.types);
-				Type glb = Type.greatestLowerBound(type, lhs_t.types.get(ta.field));				
-				ntypes.put(ta.field, glb);
-				// FIXME: there is some kind of problem here, as we're replacing
-				// one type with an effective type ... seems dodgy.
-				typeInference(ta.lhs, Type.T_TUPLE(ntypes), trueEnv, falseEnv);
 			}
 		}
+		
+		return f;
 	}
 	
-	protected Code infer(Code.Return code, Stmt stmt, HashMap<String,Type> environment,
-			Module.Method method) {
-		CExpr rhs = code.rhs;
-		Type ret_t = method.type().ret;
-		
-		if(rhs != null) {
-			if(ret_t == Type.T_VOID) {
-				syntaxError(
-						"cannot return value from method with void return type",
-						filename, stmt);
-			}
-			rhs = infer(rhs,stmt,environment);
-			checkIsSubtype(ret_t,rhs.type(),stmt);
-		} else if(ret_t != Type.T_VOID) {
-			syntaxError(
-					"missing return value",filename, stmt);
+	protected List<CExpr> flattern(CExpr lval, SyntacticElement elem) {
+		if (lval instanceof LVar) {
+			ArrayList<CExpr> r = new ArrayList<CExpr>();
+			r.add(lval);
+			return r;
+		} else if (lval instanceof ListAccess) {
+			ListAccess la = (ListAccess) lval;
+			List<CExpr> f = flattern(la.src, elem);
+			f.add(0, lval);
+			return f;
+		} else if (lval instanceof TupleAccess) {
+			TupleAccess la = (TupleAccess) lval;
+			List<CExpr> f = flattern(la.lhs, elem);
+			f.add(0, lval);
+			return f;
 		}
-		
-		return new Code.Return(rhs);
+
+		syntaxError("unknown lval encountered: " + lval, filename, elem);
+		return null;
 	}
-	
-	protected Code infer(Code.Debug code, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr rhs = infer(code.rhs,stmt, environment);
-		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
-		return new Code.Debug(rhs);
-	}
-	
-	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
+
+	protected WExpr infer(CExpr e, SyntacticElement elem) {
 
 		if (e instanceof Value) {
-			return e;
+			return infer((Value) e, elem);
 		} else if (e instanceof Variable) {
-			return infer((Variable) e, stmt, environment);
+			return infer((Variable) e, elem);
 		} else if (e instanceof Register) {
-			return infer((Register) e, stmt, environment);
+			return infer((Register) e, elem);
 		} else if (e instanceof BinOp) {
-			return infer((BinOp) e, stmt, environment);
+			return infer((BinOp) e, elem);
 		} else if (e instanceof UnOp) {
-			return infer((UnOp) e, stmt, environment);
+			return infer((UnOp) e, elem);
 		} else if (e instanceof NaryOp) {
-			return infer((NaryOp) e, stmt, environment);
+			return infer((NaryOp) e, elem);
 		} else if (e instanceof ListAccess) {
-			return infer((ListAccess) e, stmt, environment);
+			return infer((ListAccess) e, elem);
 		} else if (e instanceof Tuple) {
-			return infer((Tuple) e, stmt, environment);
+			return infer((Tuple) e, elem);
 		} else if (e instanceof TupleAccess) {
-			return infer((TupleAccess) e, stmt, environment);
+			return infer((TupleAccess) e, elem);
 		} else if (e instanceof Invoke) {
-			return infer((Invoke) e, stmt, environment);
+			return infer((Invoke) e, elem);
 		}
-
-		syntaxError("unknown expression encountered: " + e, filename, stmt);
+		
+		syntaxError("unknown condition encountered: " + e,filename,elem);
 		return null; // unreachable
 	}
 	
-	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
-		Type type = environment.get(v.name);
-		if(type == null) {
-			syntaxError("unknown variable: " + v,filename,stmt);
+	protected WValue infer(Value v, SyntacticElement elem) {		
+		if(v instanceof Value.Bool) {
+			Value.Bool vb = (Value.Bool) v;
+			if(vb.value) {
+				return WBool.TRUE;
+			} else {
+				return WBool.FALSE;
+			}
+		} else if(v instanceof Value.Int) {
+			Value.Int vi = (Value.Int) v;
+			return new WNumber(vi.value);
+		} else if(v instanceof Value.Real) {
+			Value.Real vr = (Value.Real) v;
+			BigRational br = vr.value;
+			return new WNumber(br.numerator(),br.denominator());			
+		} else if(v instanceof Value.Set) {
+			Value.Set vs = (Value.Set) v;			
+			HashSet<WValue> vals = new HashSet<WValue>();
+			for(Value e : vs.values) {
+				vals.add(infer(e,elem));
+			}
+			return new WSetVal(vals);
+		} else if(v instanceof Value.List) {
+			Value.List vl = (Value.List) v;
+			ArrayList<WValue> vals = new ArrayList<WValue>();
+			for(Value e : vl.values) {
+				vals.add(infer(e,elem));
+			}
+			return new WListVal(vals);
+		} else if(v instanceof Value.Tuple) {
+			Value.Tuple vt = (Value.Tuple) v;
+			ArrayList<String> fields = new ArrayList<String>(vt.values.keySet());
+			ArrayList<WValue> values = new ArrayList<WValue>();
+			Collections.sort(fields);
+			for(String f : fields) {			
+				values.add(infer(vt.values.get(f),elem));
+			}
+			return new WTupleVal(fields,values);
 		}
-		return CExpr.VAR(type,v.name);
+		
+		syntaxError("unknown value encountered: " + v,filename,elem);
+		return null; // unreachable
 	}
 	
-	protected CExpr infer(Register v, Stmt stmt, HashMap<String,Type> environment) {
+	protected WExpr infer(Variable v, SyntacticElement elem) {		
+		return new WVariable(v.name);
+	}
+	
+	protected WExpr infer(Register v, SyntacticElement elem) {
 		String name = "%" + v.index;
-		Type type = environment.get(name);
-		if(type == null) {
-			syntaxError("unknown register: " + name,filename,stmt);
-		}
-		return CExpr.REG(type,v.index);
+		return new WVariable(name);
 	}
 	
-	protected CExpr infer(UnOp v, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		Type rhs_t = rhs.type();
+	protected WExpr infer(UnOp v, SyntacticElement elem) {
+		WExpr rhs = infer(v.rhs,elem);		
 		switch(v.op) {
-			case NEG:
-				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
-				return CExpr.UNOP(v.op,rhs);
+			case NEG:				
+				return WNumerics.negate(rhs);
 			case LENGTHOF:
-				checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
-				return CExpr.UNOP(v.op,rhs);
-			case PROCESSACCESS:
-				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-				return CExpr.UNOP(v.op,rhs);
-			case PROCESSSPAWN:
-				return CExpr.UNOP(v.op,rhs);
+				return new WLengthOf(rhs);				
 		}
-		syntaxError("unknown unary operation: " + v.op,filename,stmt);
+		syntaxError("unknown unary operation: " + v.op,filename,elem);
 		return null;
 	}
 	
-	protected CExpr infer(BinOp v, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr lhs = infer(v.lhs, stmt, environment);
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());
-				
-		if(Type.isSubtype(Type.T_LIST(Type.T_ANY),lub)) {
-			switch(v.op) {
-				case APPEND:
-				case ADD:															
-					return CExpr.BINOP(CExpr.BOP.APPEND,lhs,rhs);
-				default:
-					syntaxError("Invalid operation on lists",filename,stmt);		
-			}	
-		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),lub)) {
-			switch(v.op) {
-				case ADD:											
-				case UNION:
-					return CExpr.BINOP(CExpr.BOP.UNION,lhs,rhs);
-				case DIFFERENCE:
-				case SUB:															
-					return CExpr.BINOP(CExpr.BOP.DIFFERENCE,lhs,rhs);
-				case INTERSECT:															
-					return CExpr.BINOP(v.op,lhs,rhs);
-				default:
-					syntaxError("Invalid operation on sets: " + v.op,filename,stmt);			
-			}
-		} 
-		
-		// FIXME: more cases, including elem of
-		
-		checkIsSubtype(Type.T_REAL,lub,stmt);	
-		return CExpr.BINOP(v.op,lhs,rhs);				
+	protected WExpr infer(BinOp v, SyntacticElement elem) {
+		WExpr lhs = infer(v.lhs, elem);
+		WExpr rhs = infer(v.rhs, elem);
+
+		switch (v.op) {
+		case ADD:
+			return WNumerics.add(lhs, rhs);
+		case SUB:
+			return WNumerics.subtract(lhs, rhs);
+		case DIV:
+			return WNumerics.divide(lhs, rhs);
+		case MUL:
+			return WNumerics.multiply(lhs, rhs);
+		}
+
+		syntaxError("unknown binary operation encountered: " + v, filename,
+				elem);
+		return null;
 	}
 	
+	/*
 	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Type> environment) {
 		ArrayList<CExpr> args = new ArrayList<CExpr>();
 		for(CExpr arg : v.args) {
@@ -550,96 +403,5 @@ public class ConstraintPropagation implements ModuleTransform {
 			return null; // unreachable
 		}
 	}
-	
-	/**
-	 * Bind function is responsible for determining the true type of a method or
-	 * function being invoked. To do this, it must find the function/method
-	 * with the most precise type that matches the argument types.
-	 * 	 * 
-	 * @param nid
-	 * @param receiver
-	 * @param paramTypes
-	 * @param elem
-	 * @return
-	 * @throws ResolveError
-	 */
-	protected Type.Fun bindFunction(NameID nid, Type.ProcessName receiver,
-			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
-		
-		Type.Fun target = Type.T_FUN(receiver, Type.T_ANY,paramTypes);
-		Type.Fun candidate = null;				
-		
-		for (Type.Fun ft : lookupMethod(nid.module(),nid.name())) {										
-			Type funrec = ft.receiver;			
-			if (receiver == funrec
-					|| (receiver != null && funrec != null && Type.isSubtype(
-							funrec, receiver))) {
-				// receivers match up OK ...
-				if (ft.params.size() == paramTypes.size()						
-						&& Type.isSubtype(ft, target)
-						&& (candidate == null || Type.isSubtype(candidate, ft))) {
-					// This declaration is a candidate. Now, we need to see if
-					// our
-					// candidate type signature is as precise as possible.
-					if (candidate == null) {
-						candidate = ft;
-					} else if (Type.isSubtype(candidate, ft)) {
-						candidate = ft;
-					}
-				}
-			}
-		}				
-		
-		return candidate;
-	}
-	
-	protected List<Type.Fun> lookupMethod(ModuleID mid, String name)
-			throws ResolveError {
-		
-		Module module = loader.loadModule(mid);
-		ArrayList<Type.Fun> rs = new ArrayList<Type.Fun>();
-		for (Module.Method m : module.method(name)) {
-			rs.add(m.type());
-		}
-		return rs;		
-	}
-	
-	protected <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem) {
-		if(t instanceof Type.Named) {
-			t = ((Type.Named)t).type;
-		}
-		if (clazz.isInstance(t)) {
-			return (T) t;
-		} else {
-			syntaxError("expected type " + clazz.getName() + ", found " + t,filename,
-					elem);
-			return null;
-		}
-	}
-	
-	// Check t1 :> t2
-	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (!Type.isSubtype(t1, t2)) {
-			syntaxError("expected type " + t1 + ", found " + t2, filename, elem);
-		}
-	}
-
-	public static void join(HashMap<String, Type> env1,
-			HashMap<String, Type> env2) {
-		if (env2 == null) {
-			return;
-		}
-		HashSet<String> keys = new HashSet<String>(env1.keySet());
-		keys.addAll(env2.keySet());
-		for (String key : keys) {
-			Type mt = env1.get(key);
-			Type ot = env2.get(key);
-			if (ot == null || mt == null) {
-				env1.remove(key);
-			} else {
-				env1.put(key, Type.leastUpperBound(mt, ot));
-			}
-		}
-	}
+	*/		
 }

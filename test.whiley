@@ -1,5 +1,3 @@
-define pset as {int} where no { x in $ | x < 0 }
-
-void System::main([string] args):
-    pset ys = {1,2,3,4}
-    print str(ys)
+void f(int y):
+    (int a,int b) x = (a:1,b:2)
+    x.a = 2
