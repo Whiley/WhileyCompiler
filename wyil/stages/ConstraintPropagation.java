@@ -54,11 +54,18 @@ public class ConstraintPropagation implements ModuleTransform {
 		return new Module.Method(method.name(), method.type(), cases);
 	}
 	
-	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		Pair<Block,WFormula> precondition = transform(mcase.precondition(),WBool.TRUE);		
-		Block body = transform(mcase.body(), precondition.second()).first();		
-		return new Module.Case(mcase.parameterNames(), precondition.first(),
-				mcase.postcondition(), body);
+	public Module.Case transform(Module.Case mcase, Module.Method method) {
+		if (mcase.precondition() != null) {
+			Pair<Block, WFormula> precondition = transform(
+					mcase.precondition(), WBool.TRUE);
+			Block body = transform(mcase.body(), precondition.second()).first();
+			return new Module.Case(mcase.parameterNames(),
+					precondition.first(), mcase.postcondition(), body);
+		} else {
+			Block body = transform(mcase.body(), WBool.TRUE).first();
+			return new Module.Case(mcase.parameterNames(),
+					mcase.precondition(), mcase.postcondition(), body);
+		}
 	}
 	
 	protected Pair<Block,WFormula> transform(Block block, WFormula precondition) {
@@ -67,46 +74,52 @@ public class ConstraintPropagation implements ModuleTransform {
 		
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
-			Code code = stmt.code;
+			try {				
+				Code code = stmt.code;
 
-			ArrayList<Attribute> attributes = new ArrayList<Attribute>();
-			
-			if (code instanceof Label) {
-				Label label = (Label) code;								
-				precondition = join(precondition, flowsets.get(label.label));				
-			}
+				ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 
-			WFormula tmp = precondition;
-			
-			if (precondition == null) {
-				continue; // this indicates dead-code
-			} else if (code instanceof Goto) {
-				Goto got = (Goto) code;
-				merge(got.target, precondition, flowsets);
-				precondition = null;
-			} else if (code instanceof IfGoto) {
-				IfGoto igot = (IfGoto) code;	
-				
-				Triple<Stmt, WFormula, WFormula> r = infer((Code.IfGoto) code,
-						precondition, stmt);				
-				stmt = r.first();
-				code = stmt.code;
-				precondition = r.third();
-				if(r.first() != null && precondition != null) {
-					merge(igot.target, r.second(), flowsets);
-				} else if(r.first() != null) {
-					merge(igot.target, r.second(), flowsets);
+				if (code instanceof Label) {
+					Label label = (Label) code;								
+					precondition = join(precondition, flowsets.get(label.label));				
 				}
-				
-			} else if (code instanceof Assign) {
-				precondition = infer((Code.Assign) code, i, stmt, precondition);
-			} else if (code instanceof Fail || code instanceof Return) {
-				precondition = null;
-			} 
-			
-			attributes.addAll(stmt.attributes());
-			attributes.add(new Attribute.PreCondition(tmp));
-			nblock.add(code, attributes);
+
+				WFormula tmp = precondition;
+
+				if (precondition == null) {
+					continue; // this indicates dead-code
+				} else if (code instanceof Goto) {
+					Goto got = (Goto) code;
+					merge(got.target, precondition, flowsets);
+					precondition = null;
+				} else if (code instanceof IfGoto) {
+					IfGoto igot = (IfGoto) code;	
+
+					Triple<Stmt, WFormula, WFormula> r = infer((Code.IfGoto) code,
+							precondition, stmt);				
+					stmt = r.first();
+					code = stmt.code;
+					precondition = r.third();
+					if(r.first() != null && precondition != null) {
+						merge(igot.target, r.second(), flowsets);
+					} else if(r.first() != null) {
+						merge(igot.target, r.second(), flowsets);
+					}
+
+				} else if (code instanceof Assign) {
+					precondition = infer((Code.Assign) code, i, stmt, precondition);
+				} else if (code instanceof Fail || code instanceof Return) {
+					precondition = null;
+				} 
+
+				attributes.addAll(stmt.attributes());
+				attributes.add(new Attribute.PreCondition(tmp));
+				nblock.add(code, attributes);
+			} catch(SyntaxError se) {
+				throw se;
+			} catch(Throwable ex) {
+				syntaxError("internal failure",filename,stmt,ex);
+			}
 		}
 		
 		return new Pair<Block,WFormula>(nblock,precondition);
@@ -474,11 +487,12 @@ public class ConstraintPropagation implements ModuleTransform {
 		Module.Method method = module.method(ivk.name.name(), ivk.type);
 		Module.Case mcase = method.cases().get(ivk.caseNum);
 		Block postcondition = mcase.postcondition();
-
-		WFormula pc = transform(postcondition, WBool.TRUE).second();
-		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
-		binding.put(new WVariable("$"), rv);
-		constraints = WFormulas.and(constraints, pc.substitute(binding));
+		if(postcondition != null) {
+			WFormula pc = transform(postcondition, WBool.TRUE).second();
+			HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+			binding.put(new WVariable("$"), rv);
+			constraints = WFormulas.and(constraints, pc.substitute(binding));
+		}
 		return new Pair<WExpr, WFormula>(rv, constraints);
 	}
 	
