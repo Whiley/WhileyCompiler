@@ -128,25 +128,27 @@ public class ConstraintPropagation implements ModuleTransform {
 	}
 	
 	protected WFormula infer(Code.Assign code, int index,
-			SyntacticElement elem,
-			WFormula precondition) {
-		WExpr lhs = infer(code.lhs,elem);
-		WExpr rhs = infer(code.rhs,elem);
+			SyntacticElement elem, WFormula precondition) {
+		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
+		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
+
+		WExpr rhs = rhs_p.first();
+		WExpr lhs = lhs_p.first();
 
 		LVar lvar = CExpr.extractLVar(code.lhs);
-	
-		
+
 		// Create shadows
-		HashMap<WExpr,WExpr> binding = new HashMap<WExpr,WExpr>();
+		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
 		binding.put(new WVariable(lvar.name()), new WVariable(lvar.name() + "$"
-				+ index));		
-		
-		rhs = rhs.substitute(binding);		
+				+ index));
+
+		rhs = rhs.substitute(binding);
 		WFormula postcondition = precondition.substitute(binding);
 
 		// finally, put it altogether
 		return WFormulas.and(postcondition, new WEquality(true, lhs, rhs),
-				assignCondition(code.lhs, binding, elem));
+				assignCondition(code.lhs, binding, elem), lhs_p.second(), rhs_p
+						.second());
 	}
 		
 	protected WFormula assignCondition(LVal lval,
@@ -157,39 +159,40 @@ public class ConstraintPropagation implements ModuleTransform {
 		// that in the shadowVariable, except for the particular element being
 		// updated.
 		List<CExpr> exprs = flattern(lval,elem);
-		WFormula f = WBool.TRUE;		
-		
+		WFormula constraint = WBool.TRUE;				
 		for(int i=1;i!=exprs.size();++i) {
 			CExpr access = exprs.get(i);			
 			if(access instanceof TupleAccess){				
 				TupleAccess ta = (TupleAccess) lval;
 				Type.Tuple tt = Type.effectiveTupleType(ta.lhs.type());
-				WExpr src = infer(ta.lhs,elem);
-				WExpr nsrc = src.substitute(binding);
+				Pair<WExpr, WFormula> src = infer(ta.lhs, elem);
+				WExpr nsrc = src.first().substitute(binding);
 				for(String field : tt.types.keySet()) {
 					if(!field.equals(ta.field)) {
-						WTupleAccess o = new WTupleAccess(src,field);
+						WTupleAccess o = new WTupleAccess(src.first(),field);
 						WTupleAccess n = new WTupleAccess(nsrc,field);
-						f = WFormulas.and(new WEquality(true,o,n));
+						constraint = WFormulas.and(constraint,new WEquality(true,o,n));
 					}
 				}
+				constraint = WFormulas.and(constraint,src.second());
 			} else if(access instanceof ListAccess) {
 				ListAccess la = (ListAccess) lval;
-				WExpr src = infer(la.src,elem);
-				WExpr index = infer(la.index,elem);
-				WExpr nsrc = src.substitute(binding);
+				Pair<WExpr, WFormula> src = infer(la.src,elem);
+				Pair<WExpr, WFormula> index = infer(la.index,elem);
+				WExpr nsrc = src.first().substitute(binding);
 				WVariable var = WVariable.freshVar();
-				WExpr o = new WListAccess(src,var);
+				WExpr o = new WListAccess(src.first(),var);
 				WExpr n = new WListAccess(nsrc,var);
 				HashMap<WVariable,WExpr> srcs = new HashMap<WVariable,WExpr>();
-				srcs.put(var, src);
-				WFormula body = WFormulas.or(new WEquality(true, index, var),
-						new WEquality(true, o, n));
-				f = WFormulas.or(f,new WBoundedForall(true,srcs,body));
+				srcs.put(var, src.first());
+				WFormula body = WFormulas.or(new WEquality(true, index.first(),
+						var), new WEquality(true, o, n));
+				constraint = WFormulas.and(constraint, new WBoundedForall(true,
+						srcs, body),src.second(),index.second());
 			}
 		}
 		
-		return f;
+		return constraint;
 	}
 	
 	protected List<CExpr> flattern(CExpr lval, SyntacticElement elem) {
@@ -213,10 +216,10 @@ public class ConstraintPropagation implements ModuleTransform {
 		return null;
 	}
 
-	protected WExpr infer(CExpr e, SyntacticElement elem) {
+	protected Pair<WExpr,WFormula> infer(CExpr e, SyntacticElement elem) {
 
 		if (e instanceof Value) {
-			return infer((Value) e, elem);
+			return new Pair<WExpr, WFormula>(infer((Value) e, elem), WBool.TRUE);
 		} else if (e instanceof Variable) {
 			return infer((Variable) e, elem);
 		} else if (e instanceof Register) {
@@ -285,61 +288,140 @@ public class ConstraintPropagation implements ModuleTransform {
 		return null; // unreachable
 	}
 	
-	protected WExpr infer(Variable v, SyntacticElement elem) {		
-		return new WVariable(v.name);
+	protected Pair<WExpr,WFormula> infer(Variable v, SyntacticElement elem) {		
+		return new Pair<WExpr,WFormula>(new WVariable(v.name),WBool.TRUE);
 	}
 	
-	protected WExpr infer(Register v, SyntacticElement elem) {
+	protected Pair<WExpr,WFormula> infer(Register v, SyntacticElement elem) {
 		String name = "%" + v.index;
-		return new WVariable(name);
+		return new Pair<WExpr,WFormula>(new WVariable(name),WBool.TRUE);
 	}
 	
-	protected WExpr infer(UnOp v, SyntacticElement elem) {
-		WExpr rhs = infer(v.rhs,elem);		
-		switch(v.op) {
-			case NEG:				
-				return WNumerics.negate(rhs);
-			case LENGTHOF:
-				return new WLengthOf(rhs);				
+	protected Pair<WExpr,WFormula> infer(UnOp v, SyntacticElement elem) {
+		Pair<WExpr,WFormula> rhs = infer(v.rhs,elem);		
+		switch (v.op) {
+		case NEG:
+			return new Pair<WExpr, WFormula>(WNumerics.negate(rhs.first()), rhs
+					.second());
+		case LENGTHOF:
+			return new Pair<WExpr, WFormula>(new WLengthOf(rhs.first()), rhs
+					.second());
 		}
 		syntaxError("unknown unary operation: " + v.op,filename,elem);
 		return null;
 	}
 	
-	protected WExpr infer(TupleAccess ta, SyntacticElement elem) {
-		WExpr rhs = infer(ta.lhs,elem);
-		return new WTupleAccess(rhs,ta.field);
+	protected Pair<WExpr,WFormula> infer(NaryOp v, SyntacticElement elem) {
+		switch (v.op) {
+		case LISTGEN: {
+			WFormula constraints = WBool.TRUE;
+			ArrayList<WExpr> args = new ArrayList<WExpr>();
+			for (CExpr e : v.args) {
+				Pair<WExpr, WFormula> p = infer(e, elem);
+				args.add(p.first());
+				constraints = WFormulas.and(p.second());
+			}
+
+			return new Pair<WExpr, WFormula>(new WListConstructor(args),
+					constraints);
+		}
+		case SETGEN: {
+			WFormula constraints = WBool.TRUE;
+			HashSet<WExpr> args = new HashSet<WExpr>();
+			for (CExpr e : v.args) {
+				Pair<WExpr, WFormula> p = infer(e, elem);
+				args.add(p.first());
+				constraints = WFormulas.and(p.second());
+			}
+
+			return new Pair<WExpr, WFormula>(new WSetConstructor(args),
+					constraints);
+		}		
+		case SUBLIST: {
+			Pair<WExpr,WFormula> src = infer(v.args.get(0), elem);
+			Pair<WExpr,WFormula> start = infer(v.args.get(1), elem);
+			Pair<WExpr,WFormula> end = infer(v.args.get(2), elem);
+
+			WVariable retVar = WVariable.freshVar();
+
+			// first, identify new length
+			WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar),
+					WNumerics.subtract(end.first(), start.first()));
+
+			// second, pump from src into retVar
+			WVariable i = WVariable.freshVar();
+			HashMap<WVariable, WExpr> variables = new HashMap();
+			variables.put(i, src.first());
+			WFormula lhs = WFormulas.and(
+					WNumerics.lessThanEq(start.first(), i), WNumerics.lessThan(
+							i, end.first()));
+			WFormula rhs = WExprs.equals(new WListAccess(src.first(), i),
+					new WListAccess(retVar, WNumerics
+							.subtract(i, start.first())));
+			WFormula forall1 = new WBoundedForall(true, variables, WFormulas
+					.implies(lhs, rhs));
+
+			// third, pump from retVar into src
+			variables = new HashMap<WVariable,WExpr>();
+			variables.put(i, retVar);
+			rhs = WExprs.equals(new WListAccess(src.first(), WNumerics.add(i,
+					start.first())), new WListAccess(retVar, i));
+			WFormula forall2 = new WBoundedForall(true, variables, rhs);
+
+			WFormula constraints = WFormulas.and(lenConstraints, forall1,
+					forall2, src.second(), start.second(), end.second());
+
+			return new Pair<WExpr,WFormula>(retVar,constraints);
+			}							
+		}
+		syntaxError("unknown nary operation: " + v.op,filename,elem);
+		return null;
 	}
 	
-	protected WExpr infer(Tuple t, SyntacticElement elem) {
+	protected Pair<WExpr,WFormula> infer(TupleAccess ta, SyntacticElement elem) {
+		Pair<WExpr,WFormula> rhs = infer(ta.lhs,elem);
+		return new Pair<WExpr, WFormula>(
+				new WTupleAccess(rhs.first(), ta.field), rhs.second());
+	}
+	
+	protected Pair<WExpr,WFormula> infer(Tuple t, SyntacticElement elem) {
 		ArrayList<String> fields = new ArrayList<String>(t.values.keySet());
 		ArrayList<WExpr> values = new ArrayList<WExpr>();
+		WFormula constraints = WBool.TRUE;
 		Collections.sort(fields);
 		for(String f : fields) {
-			values.add(infer(t.values.get(f),elem));
+			Pair<WExpr,WFormula> p = infer(t.values.get(f),elem);
+			values.add(p.first());
+			constraints = WFormulas.and(constraints,p.second());
 		}		
-		return new WTupleConstructor(fields,values);
+		return new Pair<WExpr, WFormula>(new WTupleConstructor(fields, values),
+				constraints);
 	}
 	
-	protected WExpr infer(ListAccess ta, SyntacticElement elem) {
-		WExpr src = infer(ta.src,elem);
-		WExpr idx = infer(ta.index,elem);
-		return new WListAccess(src,idx);
+	protected Pair<WExpr,WFormula> infer(ListAccess ta, SyntacticElement elem) {
+		Pair<WExpr,WFormula> src = infer(ta.src,elem);
+		Pair<WExpr,WFormula> idx = infer(ta.index,elem);
+		return new Pair<WExpr, WFormula>(new WListAccess(src.first(), idx
+				.first()), WFormulas.and(src.second(), idx.second()));
 	}
 	
-	protected WExpr infer(BinOp v, SyntacticElement elem) {
-		WExpr lhs = infer(v.lhs, elem);
-		WExpr rhs = infer(v.rhs, elem);
-
+	protected Pair<WExpr,WFormula> infer(BinOp v, SyntacticElement elem) {
+		Pair<WExpr,WFormula> lhs = infer(v.lhs, elem);
+		Pair<WExpr,WFormula> rhs = infer(v.rhs, elem);
+		WFormula constraints = WFormulas.and(lhs.second(),rhs.second());
 		switch (v.op) {
 		case ADD:
-			return WNumerics.add(lhs, rhs);
+			return new Pair<WExpr, WFormula>(WNumerics.add(lhs.first(), rhs
+					.first()), constraints);
 		case SUB:
-			return WNumerics.subtract(lhs, rhs);
+			return new Pair<WExpr, WFormula>(WNumerics.subtract(lhs.first(),
+					rhs.first()), constraints);
 		case DIV:
-			return WNumerics.divide(lhs, rhs);
+			return new Pair<WExpr, WFormula>(WNumerics.divide(lhs.first(), rhs
+					.first()), constraints);
 		case MUL:
-			return WNumerics.multiply(lhs, rhs);
+			return new Pair<WExpr, WFormula>(WNumerics.multiply(lhs.first(),
+					rhs.first()), constraints);
 		}
 
 		syntaxError("unknown binary operation encountered: " + v, filename,
