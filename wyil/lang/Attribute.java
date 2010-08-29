@@ -1,5 +1,7 @@
 package wyil.lang;
 
+import wyone.theory.logic.WFormula;
+
 public interface Attribute {
 	
 	public static class Source implements Attribute {
@@ -29,6 +31,18 @@ public interface Attribute {
 			String r = trueBranch ? "T" : "?";
 			r += falseBranch ? "F" : "?";
 			return r;
+		}
+	}
+	
+	public static class PreCondition implements Attribute {
+		public final WFormula condition;
+		
+		public PreCondition(WFormula condition) {
+			this.condition = condition;
+		}
+		
+		public String toString() {
+			return condition.toString();
 		}
 	}
 }

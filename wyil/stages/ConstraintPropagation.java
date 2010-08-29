@@ -52,13 +52,13 @@ public class ConstraintPropagation implements ModuleTransform {
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		WFormula precondition = WBool.TRUE;
-		Block body = transform(mcase.body(), precondition, method);		
-		return new Module.Case(mcase.parameterNames(), mcase.precondition(),
+		Pair<Block,WFormula> precondition = transform(mcase.precondition(),WBool.TRUE,method);		
+		Block body = transform(mcase.body(), precondition.second(), method).first();		
+		return new Module.Case(mcase.parameterNames(), precondition.first(),
 				mcase.postcondition(), body);
 	}
 	
-	protected Block transform(Block block, WFormula precondition,
+	protected Pair<Block,WFormula> transform(Block block, WFormula precondition,
 			Module.Method method) {
 		Block nblock = new Block();
 		HashMap<String, WFormula> flowsets = new HashMap();
@@ -67,13 +67,15 @@ public class ConstraintPropagation implements ModuleTransform {
 			Stmt stmt = block.get(i);
 			Code code = stmt.code;
 
-			System.out.println(i + " : " + code + " // " + precondition);
+			ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 			
 			if (code instanceof Label) {
 				Label label = (Label) code;								
 				precondition = join(precondition, flowsets.get(label.label));				
 			}
 
+			WFormula tmp = precondition;
+			
 			if (precondition == null) {
 				continue; // this indicates dead-code
 			} else if (code instanceof Goto) {
@@ -99,10 +101,13 @@ public class ConstraintPropagation implements ModuleTransform {
 			} else if (code instanceof Fail || code instanceof Return) {
 				precondition = null;
 			} 
-
-			nblock.add(code, stmt.attributes());
+			
+			attributes.addAll(stmt.attributes());
+			attributes.add(new Attribute.PreCondition(tmp));
+			nblock.add(code, attributes);
 		}
-		return nblock;
+		
+		return new Pair<Block,WFormula>(nblock,precondition);
 	}
 	
 	protected void merge(String target, WFormula precondition,
@@ -183,6 +188,10 @@ public class ConstraintPropagation implements ModuleTransform {
 	
 	protected WFormula infer(Code.Assign code, int index,
 			SyntacticElement elem, WFormula precondition) {
+		if(code.lhs == null) {
+			return precondition;
+		}
+		
 		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
 		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
 
