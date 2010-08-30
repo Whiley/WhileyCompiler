@@ -59,8 +59,8 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	public Module.Case propagate(Module.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
-		T init = initialStore();				
-		Block body = propagate(mcase.body(), init).first();
+		T init = initialStore();						
+		Block body = propagate(mcase.body(), init).first();		
 		return new Module.Case(mcase.parameterNames(),
 				mcase.precondition(), mcase.postcondition(), body);
 	}		
@@ -69,7 +69,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 		
 		Block nblock = new Block();
 		for(int i=0;i<block.size();++i) {						
-			Stmt stmt = block.get(i);
+			Stmt stmt = block.get(i);			
 			try {				
 				Code code = stmt.code;
 

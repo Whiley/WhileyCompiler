@@ -458,7 +458,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return label + ": for " + variable + " in " + source;
+			return "for " + variable + " in " + source + ":";
 		}
 	}
 
@@ -475,7 +475,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "end for " + target;
+			return "end";
 		}	
 	}
 	
@@ -500,7 +500,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return label + ": check";												
+			return "check:";												
 		}
 	}
 	

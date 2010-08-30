@@ -148,20 +148,24 @@ public class Main {
 			stages.add(new WyilTransform("constant propagation",
 					new ConstantPropagation(loader)));
 		}
+		if(wyil) {
+			stages.add(new WyilWriter());
+		}
 		if(!nvc) {
 			stages.add(new WyilTransform("constraint propagation",
 					new ConstraintPropagation(loader,timeout)));
-		}
+		}		
 		if(wyil) {
 			stages.add(new WyilWriter());
-		}
+		}		
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
 		stages.add(new WyilTransform("failure check",
-				new FailureCheck(loader)));		
+				new FailureCheck(loader)));				
 		if(wyil) {
 			stages.add(new WyilWriter());
 		}
+		
 		if(jvm) {
 			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}

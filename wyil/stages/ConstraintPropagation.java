@@ -23,6 +23,13 @@ import wyone.theory.type.*;
 
 public class ConstraintPropagation extends AbstractPropagation<WFormula> {	
 	private int timeout;
+	/**
+	 * The substitutions map is used to help in the translation of loops over
+	 * lists. It's something of an ugly hack, but it works effectively. Probably
+	 * a better solution would be to modify wyone to treat quantifiers over
+	 * lists in a different fashion.
+	 */
+	private HashMap<String,WExpr> substitutions = new HashMap<String,WExpr>();
 	
 	public ConstraintPropagation(ModuleLoader loader, int timeout) {
 		super(loader);
@@ -41,22 +48,22 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			init = WFormulas.and(init, WTypes.subtypeOf(new WVariable(n),
 					convert(t)));
 		}
-		
+
 		// Second, initialise from precondition (if present)
 		if (methodCase.precondition() != null) {
 			Pair<Block, WFormula> precondition = propagate(methodCase
 					.precondition(), init);
 
 			// reset the stores map
-			this.stores = new HashMap<String,WFormula>();
+			this.stores = new HashMap<String,WFormula>();			
 			return precondition.second();
-		} else {
+		} else {			
 			return init;
 		}
 	}
 		
 	protected Pair<Stmt,WFormula> propagate(Stmt stmt, WFormula store) {
-		// First, add on the precondition attribute
+		// First, add on the precondition attribute		
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>(stmt.attributes());
 		attributes.add(new Attribute.PreCondition(store));
 		stmt = new Stmt(stmt.code,attributes);
@@ -174,21 +181,25 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 		
 		if(start instanceof Code.Forall) {
 			Code.Forall fall = (Code.Forall) start;
-			WVariable var = new WVariable(fall.variable.name());
-			WVariable qvar = var;
+			WVariable var = new WVariable(fall.variable.name());			
 			// Convert the source collection 
 			Pair<WExpr,WFormula> src = infer(fall.source,stmt);
 			
-			if(fall.variable.type() instanceof Type.List) { 			
+			if (fall.source.type() instanceof Type.List) {
 				// We have to treat lists differently from sets because of the
 				// way wyone handles list quantification. It's kind of annoying,
 				// but there's not much we can do.
-				qvar = WVariable.freshVar();
-				store = WFormulas.and(store, new WEquality(true, var,
-						new WListAccess(src.first(), qvar)));
+				store = WFormulas.and(store, WNumerics.lessThanEq(WNumber.ZERO,
+						var), WNumerics.lessThan(var,
+						new WLengthOf(src.first())), WTypes.subtypeOf(var,
+						WIntType.T_INT), src.second());
+				substitutions
+						.put(var.name(), new WListAccess(src.first(), var));								
+			} else {
+				store = WFormulas.and(store, WSets.elementOf(var, src.first()),
+						WTypes.subtypeOf(var, convert(fall.variable.type())),
+						src.second());
 			}
-			store = WFormulas.and(store, WSets.elementOf(qvar, src.first()), src
-					.second());
 			
 			// Save the parent stores. We need to do this, so we can intercept
 			// all stores being emitted from the for block, in order that we can
@@ -197,6 +208,8 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			stores = new HashMap<String,WFormula>();
 			// Propagate through the body
 			Pair<Block,WFormula> r = propagate(body,store);
+			substitutions.remove(var.name()); // remove any substitution made
+											  // for a loop over list
 			body = r.first();
 			
 			// FIXME: there is a major bug here related to lists, since wyone
@@ -205,12 +218,12 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			
 			// Split for the formula into those bits which need to be
 			// quantified, and those which don't
-			Pair<WFormula, WFormula> split = splitFormula(fall.variable.name(),
+			Pair<WFormula, WFormula> split = splitFormula(var.name(),
 					r.second());			
 			// Universally quantify the condition emitted at the end of the
 			// body, as this captures what is true for every element in the
 			// source collection.
-			store = new WBoundedForall(true, qvar, src.first(), split.first());			
+			store = new WBoundedForall(true, var, src.first(), split.first());			
 			store = WFormulas.and(store,split.second());
 			
 			// Existentially quantify any breaks out of the loop. These
@@ -221,7 +234,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 				// Split for the formula into those bits which need to be
 				// quantified, and those which don't
 				split = splitFormula(fall.variable.name(), e.getValue()); 
-				WFormula exit = new WBoundedForall(false, qvar, src.first(),
+				WFormula exit = new WBoundedForall(false, var, src.first(),
 						split.first().not());				
 				exit = WFormulas.and(exit,split.second());
 				
@@ -443,12 +456,22 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 	}
 	
 	protected Pair<WExpr,WFormula> infer(Variable v, SyntacticElement elem) {		
-		return new Pair<WExpr,WFormula>(new WVariable(v.name),WBool.TRUE);
+		WExpr sub = substitutions.get(v.name());
+		if(sub != null) {
+			return new Pair<WExpr,WFormula>(sub,WBool.TRUE);
+		} else {
+			return new Pair<WExpr,WFormula>(new WVariable(v.name),WBool.TRUE);
+		}
 	}
 	
-	protected Pair<WExpr,WFormula> infer(Register v, SyntacticElement elem) {
-		String name = "%" + v.index;
-		return new Pair<WExpr,WFormula>(new WVariable(name),WBool.TRUE);
+	protected Pair<WExpr, WFormula> infer(Register v, SyntacticElement elem) {
+		WExpr sub = substitutions.get(v.name());
+		if (sub != null) {
+			return new Pair<WExpr, WFormula>(sub, WBool.TRUE);
+		} else {
+			return new Pair<WExpr, WFormula>(new WVariable(v.name()),
+					WBool.TRUE);
+		}
 	}
 	
 	protected Pair<WExpr,WFormula> infer(UnOp v, SyntacticElement elem) {
@@ -547,10 +570,12 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 		Module.Method method = module.method(ivk.name.name(), ivk.type);
 		Module.Case mcase = method.cases().get(ivk.caseNum);
 		Block postcondition = mcase.postcondition();
-		if(postcondition != null) {
-			WFormula pc = propagate(postcondition, WBool.TRUE).second();
+		if(postcondition != null) {			
+			WVariable var = new WVariable("$"); 
+			WFormula pc = propagate(postcondition,
+					WTypes.subtypeOf(var, convert(method.type().ret))).second();
 			HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
-			binding.put(new WVariable("$"), rv);
+			binding.put(var, rv);
 			constraints = WFormulas.and(constraints, pc.substitute(binding));
 		}
 		return new Pair<WExpr, WFormula>(rv, constraints);

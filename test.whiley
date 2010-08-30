@@ -1,4 +1,3 @@
-define pset as {int} where no { x in $ | x < 0 }
-
-void f(pset ys):
-    pset xs = ys
+[byte] f(int x) requires x == 0 || x == 169:
+    
+    return [x]
