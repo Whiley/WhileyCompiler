@@ -76,7 +76,7 @@ public class Main {
 		boolean wyil = false;
 		boolean jvm = false;
 		boolean classfile = true;
-		int timeout = 1000;
+		int timeout = 500;
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
 		ArrayList<String> bootpath = new ArrayList<String>();
