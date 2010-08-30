@@ -89,12 +89,14 @@ public class WyilFileWriter {
 	}
 	
 	public static void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
-		String line;
+		String line;		
 		if(c instanceof Code.End) {
+			tabIndent(indent+1,out);
+			out.println("end");
 			return;
 		} else {
 			tabIndent(indent+1,out);
-			line = c.toString();
+			line = c == null ? "null" : c.toString();
 		}
 		
 		while(line.length() < 40) {

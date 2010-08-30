@@ -68,7 +68,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	protected Pair<Block, T> propagate(Block block, T store) {
 		
 		Block nblock = new Block();
-		for(int i=0;i!=block.size();++i) {						
+		for(int i=0;i<block.size();++i) {						
 			Stmt stmt = block.get(i);
 			try {				
 				Code code = stmt.code;
@@ -87,7 +87,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
-				} else if (code instanceof Code.Start) {
+				} else if (code instanceof Code.Start) {					
 					Code.Start start = (Code.Start) code;
 					Code.End end = null;
 					// Note, I could make this more efficient!
@@ -102,7 +102,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 							}
 						}
 						body.add(stmt.code, stmt.attributes());
-					}
+					}										
 					Pair<Block, T> r = propagate(start, end, body, stmt, store);
 					nblock.addAll(r.first());
 					store = r.second();

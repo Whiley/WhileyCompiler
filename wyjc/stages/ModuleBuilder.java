@@ -749,7 +749,6 @@ public class ModuleBuilder {
 			syntaxError("invalid assignment", filename, s);
 		}
 		
-
 		// Finally, we need to add any constraints that may be coming from the
 		// declared type.
 		Variable target = (Variable) flattern(s.lhs); // FIXME
@@ -768,8 +767,8 @@ public class ModuleBuilder {
 		blk.addAll(resolveCondition(lab, s.expr, freeReg, constraints));		
 		blk.add(new Code.Fail("assertion failed"), s
 				.attribute(Attribute.Source.class));
-		blk.add(new Code.CheckEnd(clab),s.attribute(Attribute.Source.class));
 		blk.add(new Code.Label(lab));
+		blk.add(new Code.CheckEnd(clab),s.attribute(Attribute.Source.class));		
 		return blk;
 	}
 

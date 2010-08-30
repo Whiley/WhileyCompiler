@@ -158,10 +158,25 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 		
 		Block nblock = new Block();
 		nblock.add(start);
+		
 		if(start instanceof Code.Forall) {
 			Code.Forall fall = (Code.Forall) start;
+			WVariable var = new WVariable(fall.variable.name());
+			WVariable qvar = var;
 			// Convert the source collection 
 			Pair<WExpr,WFormula> src = infer(fall.source,stmt);
+			
+			if(fall.variable.type() instanceof Type.List) { 			
+				// We have to treat lists differently from sets because of the
+				// way wyone handles list quantification. It's kind of annoying,
+				// but there's not much we can do.
+				qvar = WVariable.freshVar();
+				store = WFormulas.and(store, new WEquality(true, var,
+						new WListAccess(src.first(), qvar)));
+			}
+			store = WFormulas.and(store, WSets.elementOf(qvar, src.first()), src
+					.second());
+			
 			// Save the parent stores. We need to do this, so we can intercept
 			// all stores being emitted from the for block, in order that we can
 			// properly quantify them.			
@@ -170,16 +185,21 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			// Propagate through the body
 			Pair<Block,WFormula> r = propagate(body,store);
 			body = r.first();
+			
+			// FIXME: there is a major bug here related to lists, since wyone
+			// models element of a list in an entirely different fashion to that
+			// of a set.
+			
 			// Split for the formula into those bits which need to be
 			// quantified, and those which don't
 			Pair<WFormula, WFormula> split = splitFormula(fall.variable.name(),
-					r.second());
+					r.second());			
 			// Universally quantify the condition emitted at the end of the
 			// body, as this captures what is true for every element in the
 			// source collection.
-			store = new WBoundedForall(true, new WVariable(
-					fall.variable.name()), src.first(), split.first());
+			store = new WBoundedForall(true, qvar, src.first(), split.first());			
 			store = WFormulas.and(store,split.second());
+			
 			// Existentially quantify any breaks out of the loop. These
 			// represent what is true for some elements in the source
 			// collection, but not necessarily all.
@@ -188,10 +208,10 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 				// Split for the formula into those bits which need to be
 				// quantified, and those which don't
 				split = splitFormula(fall.variable.name(), e.getValue()); 
-				// FIXME: do I need to negate the formula here???
-				WFormula exit = new WBoundedForall(false, new WVariable(
-						fall.variable.name()), src.first(), split.first().not());
-				exit = WFormulas.and(store, split.second());
+				WFormula exit = new WBoundedForall(false, qvar, src.first(),
+						split.first().not());				
+				exit = WFormulas.and(exit,split.second());
+				
 				// Now, join the exit store with anything in the parent stores
 				WFormula existing = stores.get(key);
 				if (existing == null) {
@@ -202,6 +222,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 					parentStores.put(key, join(exit, existing));
 				}
 			}
+			
 			// finally, put parent stores back
 			stores = parentStores;
 		} else {			
@@ -218,27 +239,14 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 	
 	// The following method splits a formula into two components: those bits
 	// which use the given variable (left), and those which don't (right). This
-	// is done to avoid quantifying more than is necessary when dealing with loops.
-	protected Pair<WFormula,WFormula> splitFormula(String var, WFormula f) {
-		System.out.println("========================================================");
-		System.out.println("SPLITTING: " + f + " FOR: " + var);
-		System.out.println("========================================================");
-		Pair<WFormula,WFormula> r = splitFormula2(var,f);
-		System.out.println("========================================================");
-		System.out.println("CONTAINS: " + r.first() + " FOR: " + var);
-		System.out.println("========================================================");
-		System.out.println("========================================================");
-		System.out.println("DOESN'T CONTAIN: " + r.second() + " FOR: " + var);
-		System.out.println("========================================================");		
-		return r;
-	}
-	protected Pair<WFormula,WFormula> splitFormula2(String var, WFormula f) {		
+	// is done to avoid quantifying more than is necessary when dealing with loops.	
+	protected Pair<WFormula,WFormula> splitFormula(String var, WFormula f) {		
 		if(f instanceof WConjunct) {
 			WConjunct c = (WConjunct) f;
 			WFormula ts = WBool.TRUE;
 			WFormula fs = WBool.TRUE;
 			for(WFormula st : c.subterms()) {
-				Pair<WFormula,WFormula> r = splitFormula2(var,st);
+				Pair<WFormula,WFormula> r = splitFormula(var,st);
 				ts = WFormulas.and(ts,r.first());
 				fs = WFormulas.and(fs,r.second());
 			}			
@@ -301,10 +309,10 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 				wyone.Main.heuristic, wyone.Main.theories);
 		if (tp instanceof Proof.Unsat) {
 			trueCondition = null;
-		}
-
+		}		
+		
 		// Determine condition for false branch, and check satisfiability
-		WFormula falseCondition = WFormulas.and(precondition, condition.not());
+		WFormula falseCondition = WFormulas.and(precondition, condition.not());		
 		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 				wyone.Main.heuristic, wyone.Main.theories);
 		if (fp instanceof Proof.Unsat) {
