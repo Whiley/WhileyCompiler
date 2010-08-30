@@ -30,15 +30,28 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 	}
 	
 	public WFormula initialStore() {
+		WFormula init = WBool.TRUE;
+		
+		// First, generate appropriate type constraints
+		List<String> paramNames = methodCase.parameterNames();
+		List<Type> paramTypes = method.type().params;
+		for(int i=0;i!=paramNames.size();++i) {
+			String n = paramNames.get(i);
+			Type t = paramTypes.get(i);
+			init = WFormulas.and(init, WTypes.subtypeOf(new WVariable(n),
+					convert(t)));
+		}
+		
+		// Second, initialise from precondition (if present)
 		if (methodCase.precondition() != null) {
 			Pair<Block, WFormula> precondition = propagate(methodCase
-					.precondition(), WBool.TRUE);
+					.precondition(), init);
 
 			// reset the stores map
 			this.stores = new HashMap<String,WFormula>();
 			return precondition.second();
 		} else {
-			return WBool.TRUE;
+			return init;
 		}
 	}
 		
