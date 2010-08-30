@@ -1,5 +1,7 @@
 package wyil.stages;
 
+import static wyil.util.SyntaxError.syntaxError;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +10,7 @@ import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
 
-public abstract class AbstractPropagation<T> {
+public abstract class AbstractPropagation<T> implements ModuleTransform {
 	protected ModuleLoader loader;
 	protected String filename;
 	protected Module.Method method;
@@ -55,85 +57,98 @@ public abstract class AbstractPropagation<T> {
 	
 	public Module.Case propagate(Module.Case mcase) {
 		this.methodCase = mcase;
-		T init = initialStore();
-		HashMap<String,T> stores = new HashMap<String,T>();
-		Block body = propagate(mcase.body(), init, stores);
+		T init = initialStore();		
+		Block body = propagate(mcase.body(), init).first();
 		return new Module.Case(mcase.parameterNames(),
 				mcase.precondition(), mcase.postcondition(), body);
 	}		
 	
-	protected Block propagate(Block block, T store, Map<String,T> stores) {
-		Block nblock = new Block();
-		for(int i=0;i!=block.size();++i) {
-			Stmt stmt = block.get(i);
-			Code code = stmt.code;
+	protected Pair<Block,T> propagate(Block block, T store) {
+		HashMap<String,T> stores = new HashMap<String,T>();
+		return propagate(block,store,stores);
+	}
 	
-			// First, check for a label which may have incoming information.
-			if(code instanceof Code.Label) {
-				Code.Label l = (Code.Label) code; 
-				T tmp = stores.get(l.label);
-				if(tmp != null && store != null) {
-					store = join(store,tmp);
-				} else if(tmp != null) {
-					store = tmp;
-				}
-			}
-			
-			if(store == null) {
-				// this indicates dead-code has been reached.
-				continue;
-			} else if(code instanceof Code.Start) {
-				Code.Start start = (Code.Start) code;
-				Code.End end = null;
-				// Note, I could make this more efficient!
-				Block body = new Block();
-				while(++i < block.size()) {
-					stmt = block.get(i);
-					if(stmt.code instanceof Code.End) {
-						end = (Code.End) stmt.code;
-						if(end.target.equals(start.label)){
-							// end of loop body found
-							break;
-						}
+	protected Pair<Block, T> propagate(Block block, T store,
+			Map<String, T> stores) {
+		
+		Block nblock = new Block();
+		for(int i=0;i!=block.size();++i) {			
+			Stmt stmt = block.get(i);
+			try {				
+				Code code = stmt.code;
+
+				// First, check for a label which may have incoming information.
+				if (code instanceof Code.Label) {
+					Code.Label l = (Code.Label) code;
+					T tmp = stores.get(l.label);
+					if (tmp != null && store != null) {
+						store = join(store, tmp);
+					} else if (tmp != null) {
+						store = tmp;
 					}
-					body.add(stmt.code,stmt.attributes());
 				}
-				Pair<Block,T> r = propagate(start,end,body,stmt,store);
-				nblock.addAll(r.first());
-				store = r.second();
-				continue;
-			} else if(code instanceof Code.IfGoto) {
-				Code.IfGoto ifgoto = (Code.IfGoto)code; 
-				Triple<Stmt,T,T> r = propagate(ifgoto,stmt,store);
-				stmt = r.first();
-				store = r.third();
-				
-				// Now, check to see if the statement has been updated, and
-				// process outgoing information accordingly.
-				if(stmt.code instanceof Code.IfGoto) {
-					Code.IfGoto gto = (Code.IfGoto) stmt.code;
-					merge(gto.target,r.second(),stores);
-				} else if(stmt.code instanceof Code.Goto) {
-					Code.Goto gto = (Code.Goto) stmt.code; 
-					merge(gto.target,r.second(),stores);	
+
+				if (store == null) {
+					// this indicates dead-code has been reached.
+					continue;
+				} else if (code instanceof Code.Start) {
+					Code.Start start = (Code.Start) code;
+					Code.End end = null;
+					// Note, I could make this more efficient!
+					Block body = new Block();
+					while (++i < block.size()) {
+						stmt = block.get(i);
+						if (stmt.code instanceof Code.End) {
+							end = (Code.End) stmt.code;
+							if (end.target.equals(start.label)) {
+								// end of loop body found
+								break;
+							}
+						}
+						body.add(stmt.code, stmt.attributes());
+					}
+					Pair<Block, T> r = propagate(start, end, body, stmt, store);
+					nblock.addAll(r.first());
+					store = r.second();
+					continue;
+				} else if (code instanceof Code.IfGoto) {
+					Code.IfGoto ifgoto = (Code.IfGoto) code;
+					Triple<Stmt, T, T> r = propagate(ifgoto, stmt, store);
+					stmt = r.first();
+					store = r.third();
+
+					// Now, check to see if the statement has been updated, and
+					// process outgoing information accordingly.
+					if (stmt.code instanceof Code.IfGoto) {
+						Code.IfGoto gto = (Code.IfGoto) stmt.code;
+						merge(gto.target, r.second(), stores);
+					} else if (stmt.code instanceof Code.Goto) {
+						Code.Goto gto = (Code.Goto) stmt.code;
+						merge(gto.target, r.second(), stores);
+						store = null;
+					}
+				} else if (code instanceof Code.Goto) {
+					Code.Goto gto = (Code.Goto) stmt.code;
+					merge(gto.target, store, stores);
 					store = null;
-				} 
-			} else if(code instanceof Code.Goto) {
-				Code.Goto gto = (Code.Goto) stmt.code; 
-				merge(gto.target,store,stores);
-				store = null;
-			} else {			
-				// This indicates a sequential statement was encountered.
-				Pair<Stmt,T> r = propagate(stmt,store);				
-				stmt = r.first();								
-				if (stmt.code instanceof Code.Fail
-						|| stmt.code instanceof Code.Return) {
-					store = null;
-				}				
+				} else {
+					// This indicates a sequential statement was encountered.
+					Pair<Stmt, T> r = propagate(stmt, store);
+					stmt = r.first();
+					if (stmt.code instanceof Code.Fail
+							|| stmt.code instanceof Code.Return) {
+						store = null;
+					}
+				}
+				nblock.add(stmt.code, stmt.attributes());
+			} catch (SyntaxError se) {
+				throw se;
+			} catch (Throwable ex) {
+				syntaxError("internal failure", filename, stmt, ex);
 			}
-			nblock.add(stmt.code,stmt.attributes());
 		}
-		return block;
+		
+		return new Pair<Block,T>(nblock,store);
 	}
 	
 	protected void merge(String target, T store, Map<String, T> stores) {

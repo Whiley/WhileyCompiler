@@ -9,11 +9,7 @@ import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
-import wyil.util.Pair;
-import wyil.util.ResolveError;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
-import wyil.util.Triple;
+import wyil.util.*;
 import wyil.util.dfa.*;
 import wyone.core.*;
 import wyone.theory.congruence.*;
@@ -25,234 +21,43 @@ import wyone.theory.tuple.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.type.*;
 
-public class ConstraintPropagation implements ModuleTransform {	
-	private ModuleLoader loader;
-	private String filename;
+public class ConstraintPropagation extends AbstractPropagation<WFormula> {	
 	private int timeout;
 	
 	public ConstraintPropagation(ModuleLoader loader, int timeout) {
-		this.timeout = timeout;
-		this.loader = loader;
+		super(loader);
+		this.timeout = timeout;	
 	}
 	
-	public Module apply(Module module) {	
-		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
-		
-		filename = module.filename();
-		
-		for(Module.Method method : module.methods()) {
-			methods.add(transform(method));
-		}
-		return new Module(module.id(), module.filename(), methods, module.types(),
-				module.constants());
-	}
-	
-	public Module.Method transform(Module.Method method) {
-		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
-		for (Module.Case c : method.cases()) {
-			cases.add(transform(c,method));
-		}
-		return new Module.Method(method.name(), method.type(), cases);
-	}
-	
-	public Module.Case transform(Module.Case mcase, Module.Method method) {
-		if (mcase.precondition() != null) {
-			Pair<Block, WFormula> precondition = transform(
-					mcase.precondition(), WBool.TRUE);
-			Block body = transform(mcase.body(), precondition.second()).first();
-			return new Module.Case(mcase.parameterNames(),
-					precondition.first(), mcase.postcondition(), body);
+	public WFormula initialStore() {
+		if (methodCase.precondition() != null) {
+			Pair<Block, WFormula> precondition = propagate(methodCase
+					.precondition(), WBool.TRUE);
+			return precondition.second();
 		} else {
-			Block body = transform(mcase.body(), WBool.TRUE).first();
-			return new Module.Case(mcase.parameterNames(),
-					mcase.precondition(), mcase.postcondition(), body);
+			return WBool.TRUE;
+		}
+	}
+		
+	protected Pair<Stmt,WFormula> propagate(Stmt stmt, WFormula store) {
+		// First, add on the precondition attribute
+		ArrayList<Attribute> attributes = new ArrayList<Attribute>(stmt.attributes());
+		attributes.add(new Attribute.PreCondition(store));
+		stmt = new Stmt(stmt.code,attributes);
+		
+		// second, check for assignment statements
+		if(stmt.code instanceof Assign) {
+			return new Pair<Stmt, WFormula>(stmt, infer(
+					(Code.Assign) stmt.code, stmt, store));
+		} else {					
+			return new Pair<Stmt,WFormula>(stmt,store);
 		}
 	}
 	
-	protected Pair<Block,WFormula> transform(Block block, WFormula precondition) {
-		return transform(block,precondition,new HashMap<String,WFormula>());
-	}
+	private static int index = 0; // probably could be better
+	protected WFormula infer(Code.Assign code, SyntacticElement elem,
+			WFormula precondition) {
 	
-	protected Pair<Block, WFormula> transform(Block block,
-			WFormula precondition, HashMap<String, WFormula> flowsets) {
-		Block nblock = new Block();		 
-		
-		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.get(i);
-			try {				
-				Code code = stmt.code;
-
-				ArrayList<Attribute> attributes = new ArrayList<Attribute>();
-
-				if (code instanceof Label) {
-					Label label = (Label) code;								
-					precondition = join(precondition, flowsets.get(label.label));				
-				}
-
-				WFormula tmp = precondition;
-
-				if (precondition == null) {
-					continue; // this indicates dead-code
-				} else if (code instanceof Goto) {
-					Goto got = (Goto) code;
-					merge(got.target, precondition, flowsets);
-					precondition = null;
-				} else if (code instanceof IfGoto) {
-					IfGoto igot = (IfGoto) code;	
-
-					Triple<Stmt, WFormula, WFormula> r = infer((Code.IfGoto) code,
-							precondition, stmt);				
-					stmt = r.first();
-					code = stmt.code;
-					precondition = r.third();
-					if(r.first() != null && precondition != null) {
-						merge(igot.target, r.second(), flowsets);
-					} else if(r.first() != null) {
-						merge(igot.target, r.second(), flowsets);
-					}
-
-				} else if(code instanceof Forall) {
-					Forall fall = (Forall) code;
-					// So, to deal with loops we need to add appropriate
-					// quantification. First, we begin by isolating the loop
-					// body
-					
-					Pair<WExpr,WFormula> src = infer(fall.source,stmt);
-					nblock.add(code, stmt.attributes());
-					attributes.add(new Attribute.PreCondition(tmp));
-					
-					Block body = new Block();
-					while(++i < block.size()) {
-						stmt = block.get(i);
-						if(stmt.code instanceof Code.ForallEnd) {
-							Code.ForallEnd fend = (Code.ForallEnd) stmt.code;
-							if(fend.target.equals(fall.label)){
-								// end of loop body found
-								break;
-							}
-						}
-						body.add(stmt.code,stmt.attributes());
-					}
-					// Now, propagate through the body
-					HashMap<String,WFormula> sets = new HashMap<String,WFormula>();
-					Pair<Block,WFormula> r = transform(body,precondition,sets);										
-					// FIXME: must simplify formula first to extract stuff
-					// not-involving the quantified variable.
-					precondition = new WBoundedForall(true, new WVariable(
-							fall.variable.name()), src.first(), r.second());
-					for(Map.Entry<String,WFormula> set : sets.entrySet()) {						
-						WFormula c = new WBoundedForall(true, new WVariable(
-								fall.variable.name()), src.first(), set.getValue());
-						merge(set.getKey(),c,flowsets);
-					}
-					nblock.addAll(r.first());					
-				} else if (code instanceof Assign) {
-					precondition = infer((Code.Assign) code, i, stmt, precondition);
-				} else if (code instanceof Fail || code instanceof Return) {
-					precondition = null;
-				} 
-
-				attributes.addAll(stmt.attributes());
-				attributes.add(new Attribute.PreCondition(tmp));
-				nblock.add(code, attributes);
-			} catch(SyntaxError se) {
-				throw se;
-			} catch(Throwable ex) {
-				syntaxError("internal failure",filename,stmt,ex);
-			}
-		}
-		
-		return new Pair<Block,WFormula>(nblock,precondition);
-	}
-	
-	protected void merge(String target, WFormula precondition,
-			HashMap<String, WFormula> flowsets) {						
-		WFormula pc = flowsets.get(target);
-		if(pc == null) {						
-			flowsets.put(target, precondition);
-		} else {
-			flowsets.put(target, join(pc,precondition));
-		}
-	}
-	
-	public static WFormula join(WFormula f1, WFormula f2) {
-		if (f2 == null) {
-			return f1;
-		} else if(f1 == null) {
-			return f2;
-		}
-		return WFormulas.or(f1,f2);
-	}
-	
-	protected Triple<Stmt, WFormula, WFormula> infer(Code.IfGoto code,
-			WFormula precondition, SyntacticElement elem) {
-		
-		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
-		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
-		precondition = WFormulas.and(precondition,lhs_p.second(),rhs_p.second());		
-		WFormula condition = null;
-		switch(code.op) {
-		case EQ:		
-			condition = new WEquality(true,lhs_p.first(),rhs_p.first());
-			break;
-		case NEQ:
-			condition = new WEquality(false,lhs_p.first(),rhs_p.first());
-			break;
-		case LT:
-			condition = WNumerics.lessThan(lhs_p.first(),rhs_p.first());
-			break;
-		case LTEQ:
-			condition = WNumerics.lessThanEq(lhs_p.first(),rhs_p.first());
-			break;
-		case GT:
-			condition = WNumerics.greaterThan(lhs_p.first(),rhs_p.first());
-			break;
-		case GTEQ:
-			condition = WNumerics.greaterThanEq(lhs_p.first(),rhs_p.first());
-			break;
-		case ELEMOF:
-			condition = WSets.elementOf(lhs_p.first(),rhs_p.first());
-			break;
-		case SUBSET:
-			condition = WSets.subset(lhs_p.first(),rhs_p.first());
-			break;
-		case SUBSETEQ:
-			condition = WSets.subsetEq(lhs_p.first(),rhs_p.first());
-			break;
-		}
-		
-		// Determine condition for true branch, and check satisfiability
-		WFormula trueCondition = WFormulas.and(precondition,condition);
-		
-		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
-				wyone.Main.heuristic, wyone.Main.theories);		
-		if(tp instanceof Proof.Unsat) { trueCondition = null; }				
-		
-		// Determine condition for false branch, and check satisfiability
-		WFormula falseCondition = WFormulas.and(precondition,condition.not());
-		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
-				wyone.Main.heuristic, wyone.Main.theories);		
-		if(fp instanceof Proof.Unsat) {	falseCondition = null; }
-		
-		Stmt stmt;
-		if(trueCondition == null) {
-			stmt = new Stmt(new Code.Skip());
-		} else if(falseCondition == null) {
-			stmt = new Stmt(new Code.Goto(code.target));
-		} else {
-			// FIXME: this needs to be updated at some point
-			Attribute.BranchInfo bi = new Attribute.BranchInfo(true,true);
-			stmt = new Stmt(new Code.IfGoto(code.op, code.lhs, code.rhs,
-					code.target), bi, elem.attribute(Attribute.Source.class));
-		}
-		
-		// Finally, return what we've got
-		return new Triple<Stmt, WFormula, WFormula>(stmt, trueCondition,
-				falseCondition);
-	}
-	
-	protected WFormula infer(Code.Assign code, int index,
-			SyntacticElement elem, WFormula precondition) {
 		if(code.lhs == null) {
 			return precondition;
 		}
@@ -345,8 +150,127 @@ public class ConstraintPropagation implements ModuleTransform {
 		return null;
 	}
 
-	protected Pair<WExpr,WFormula> infer(CExpr e, SyntacticElement elem) {
+	protected Pair<Block, WFormula> propagate(Code.Start start, Code.End end,
+			Block body, Stmt stmt, WFormula store) {
+		Block nblock = new Block();
+		nblock.add(start);
+		if(start instanceof Code.Check) {
+			Pair<Block,WFormula> r = propagate(body,store);
+			body = r.first();
+			store = r.second();
+		} else {
+			Pair<Block,WFormula> r = propagate(body,store);
+			body = r.first();
+			store = r.second();			
+		}
+		nblock.addAll(body);
+		nblock.add(end);
+		return new Pair<Block, WFormula>(nblock, store);
+	}
+		
+	/*
+	public void forall() {
+		// Now, propagate through the body
+		HashMap<String,WFormula> sets = new HashMap<String,WFormula>();
+		Pair<Block,WFormula> r = transform(body,precondition,sets);										
+		// FIXME: must simplify formula first to extract stuff
+		// not-involving the quantified variable.
+		precondition = new WBoundedForall(true, new WVariable(
+				fall.variable.name()), src.first(), r.second());
+		for(Map.Entry<String,WFormula> set : sets.entrySet()) {						
+			WFormula c = new WBoundedForall(true, new WVariable(
+					fall.variable.name()), src.first(), set.getValue());
+			merge(set.getKey(),c,flowsets);
+		}
 
+	}
+	*/
+	
+	protected Triple<Stmt, WFormula, WFormula> propagate(Code.IfGoto code,
+			Stmt elem, WFormula precondition) {
+
+		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
+		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
+		precondition = WFormulas.and(precondition, lhs_p.second(), rhs_p
+				.second());
+		WFormula condition = null;
+		switch (code.op) {
+		case EQ:
+			condition = new WEquality(true, lhs_p.first(), rhs_p.first());
+			break;
+		case NEQ:
+			condition = new WEquality(false, lhs_p.first(), rhs_p.first());
+			break;
+		case LT:
+			condition = WNumerics.lessThan(lhs_p.first(), rhs_p.first());
+			break;
+		case LTEQ:
+			condition = WNumerics.lessThanEq(lhs_p.first(), rhs_p.first());
+			break;
+		case GT:
+			condition = WNumerics.greaterThan(lhs_p.first(), rhs_p.first());
+			break;
+		case GTEQ:
+			condition = WNumerics.greaterThanEq(lhs_p.first(), rhs_p.first());
+			break;
+		case ELEMOF:
+			condition = WSets.elementOf(lhs_p.first(), rhs_p.first());
+			break;
+		case SUBSET:
+			condition = WSets.subset(lhs_p.first(), rhs_p.first());
+			break;
+		case SUBSETEQ:
+			condition = WSets.subsetEq(lhs_p.first(), rhs_p.first());
+			break;
+		}
+
+		// Determine condition for true branch, and check satisfiability
+		WFormula trueCondition = WFormulas.and(precondition, condition);
+
+		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
+				wyone.Main.heuristic, wyone.Main.theories);
+		if (tp instanceof Proof.Unsat) {
+			trueCondition = null;
+		}
+
+		// Determine condition for false branch, and check satisfiability
+		WFormula falseCondition = WFormulas.and(precondition, condition.not());
+		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
+				wyone.Main.heuristic, wyone.Main.theories);
+		if (fp instanceof Proof.Unsat) {
+			falseCondition = null;
+		}
+
+		Stmt stmt;
+		if (trueCondition == null) {
+			stmt = new Stmt(new Code.Skip(),elem.attributes());
+		} else if (falseCondition == null) {
+			stmt = new Stmt(new Code.Goto(code.target),elem.attributes());
+		} else {
+			// FIXME: this needs to be updated at some point
+			ArrayList<Attribute> attributes = new ArrayList<Attribute>();
+			attributes.addAll(elem.attributes());
+			attributes.add(new Attribute.BranchInfo(true, true));			
+			stmt = new Stmt(new Code.IfGoto(code.op, code.lhs, code.rhs,
+					code.target), attributes);
+		}
+
+		// Finally, return what we've got
+		return new Triple<Stmt, WFormula, WFormula>(stmt, trueCondition,
+				falseCondition);
+	}
+
+
+	protected WFormula join(WFormula f1, WFormula f2) {
+		if (f2 == null) {
+			return f1;
+		} else if(f1 == null) {
+			return f2;
+		}
+		return WFormulas.or(f1,f2);
+	}		
+	
+	protected Pair<WExpr,WFormula> infer(CExpr e, SyntacticElement elem) {
 		try {
 			if (e instanceof Value) {
 				return new Pair<WExpr, WFormula>(infer((Value) e, elem), WBool.TRUE);
@@ -529,7 +453,7 @@ public class ConstraintPropagation implements ModuleTransform {
 		Module.Case mcase = method.cases().get(ivk.caseNum);
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
-			WFormula pc = transform(postcondition, WBool.TRUE).second();
+			WFormula pc = propagate(postcondition, WBool.TRUE).second();
 			HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
 			binding.put(new WVariable("$"), rv);
 			constraints = WFormulas.and(constraints, pc.substitute(binding));
@@ -622,99 +546,14 @@ public class ConstraintPropagation implements ModuleTransform {
 				elem);
 		return null;
 	}
-	
-	/*
-	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Type> environment) {
-		ArrayList<CExpr> args = new ArrayList<CExpr>();
-		for(CExpr arg : v.args) {
-			args.add(infer(arg,stmt,environment));
-		}
-		
-		switch(v.op) {
-			case SETGEN:				
-			case LISTGEN:
-				return CExpr.NARYOP(v.op, args);
-			case SUBLIST:						
-				if(args.size() != 3) {
-					syntaxError("Invalid arguments for sublist operation",filename,stmt);
-				}
-				checkIsSubtype(Type.T_LIST(Type.T_ANY),args.get(0).type(),stmt);
-				checkIsSubtype(Type.T_INT,args.get(1).type(),stmt);
-				checkIsSubtype(Type.T_INT,args.get(2).type(),stmt);
-				return CExpr.NARYOP(v.op, args);
-		}
-		
-		syntaxError("Unknown nary operation",filename,stmt);
-		return null;
-	}
-	
-	protected CExpr infer(ListAccess e, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr src = infer(e.src,stmt,environment);
-		CExpr idx = infer(e.index,stmt,environment);
-		checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
-		checkIsSubtype(Type.T_INT,idx.type(),stmt);
-		return CExpr.LISTACCESS(src,idx);
-	}
-		
-	protected CExpr infer(TupleAccess e, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr lhs = infer(e.lhs,stmt,environment);				
-		Type.Tuple ett = Type.effectiveTupleType(lhs.type());				
-		if (ett == null) {
-			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
-		}
-		Type ft = ett.types.get(e.field);
-		if (ft == null) {
-			syntaxError("type has no field named " + e.field, filename, stmt);
-		}
-		return CExpr.TUPLEACCESS(lhs, e.field);
-	}
-	
-	protected CExpr infer(Tuple e, Stmt stmt, HashMap<String,Type> environment) {
-		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
-		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
-			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
-		}
-		return CExpr.TUPLE(args);
-	}
-	
-	protected CExpr infer(Invoke ivk, Stmt stmt,
-			HashMap<String,Type> environment) {
-		
-		ArrayList<CExpr> args = new ArrayList<CExpr>();
-		ArrayList<Type> types = new ArrayList<Type>();
-		CExpr receiver = ivk.receiver;
-		Type.ProcessName receiverT = null;
-		if(receiver != null) {
-			receiver = infer(receiver, stmt, environment);
-			receiverT = checkType(receiver.type(),Type.ProcessName.class,stmt);
-		}
-		for (CExpr arg : ivk.args) {
-			arg = infer(arg, stmt, environment);
-			args.add(arg);
-			types.add(arg.type());
-		}
-		
-		try {
-			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
 
-			if (funtype == null) {
-				if (receiver == null) {
-					syntaxError("invalid or ambiguous function call", filename,
-							stmt);
-				} else {
-					syntaxError("invalid or ambiguous method call", filename,
-							stmt);
-				}
-			}
-			
-			return CExpr.INVOKE(funtype, ivk.name, ivk.caseNum, receiver, args);
-		} catch (ResolveError ex) {
-			syntaxError(ex.getMessage(), filename, stmt);
-			return null; // unreachable
-		}
-	}
-	*/		
-	
+	/**
+	 * Convert a Wyil type into a Wyone type. Mostly, the conversion is
+	 * straightforward and obvious.
+	 * 
+	 * @param type
+	 * @return
+	 */
 	protected WType convert(Type type) {
 		if(type == Type.T_BOOL) {
 			return WBoolType.T_BOOL;
