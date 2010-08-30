@@ -68,15 +68,15 @@ public final class Solver extends Thread {
 	public Collection<InferenceRule> theories() {
 		return theories;
 	}
-	
+
 	/**
 	 * This method attempts to check whether the formula associated with this
 	 * solver is unsatisfiable or not, using the given theories and heuristic.
 	 * This method will run until completion and, hence, caution should be taken
 	 * since it may take a long time!
 	 * 
-	 * @param - timeout. The timeout in seconds, after which the solver stops
-	 *        searching and returns Proof.Unknown.
+	 * @param - timeout. The timeout in milli-seconds, after which the solver
+	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
 	public static Proof checkUnsatisfiable(int timeout, WFormula formula,
@@ -90,7 +90,7 @@ public final class Solver extends Thread {
 		try {
 			solver.start();
 			// now sleep
-			Thread.sleep(timeout * 1000);
+			Thread.sleep(timeout);
 			// signal solver to stop
 			solver.owner = null; // important
 			solver.interrupt();

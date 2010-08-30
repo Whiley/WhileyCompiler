@@ -99,7 +99,7 @@ public class DeadCodeElimination {
 			HashMap<String,Integer> labels,
 			List<Bytecode> bytecodes) {
 
-		while(index < bytecodes.size() && !visited.contains(index)) {			
+		while(index < bytecodes.size() && !visited.contains(index)) {	
 			visited.add(index);
 			Bytecode b = bytecodes.get(index);
 
