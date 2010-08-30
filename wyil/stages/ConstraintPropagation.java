@@ -170,26 +170,36 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			// Propagate through the body
 			Pair<Block,WFormula> r = propagate(body,store);
 			body = r.first();
+			// Split for the formula into those bits which need to be
+			// quantified, and those which don't
+			Pair<WFormula, WFormula> split = splitFormula(fall.variable.name(),
+					r.second());
 			// Universally quantify the condition emitted at the end of the
 			// body, as this captures what is true for every element in the
 			// source collection.
 			store = new WBoundedForall(true, new WVariable(
-					fall.variable.name()), src.first(), r.second());
+					fall.variable.name()), src.first(), split.first());
+			store = WFormulas.and(store,split.second());
 			// Existentially quantify any breaks out of the loop. These
 			// represent what is true for some elements in the source
 			// collection, but not necessarily all.
-			for(Map.Entry<String,WFormula> e : stores.entrySet()) {
+			for (Map.Entry<String, WFormula> e : stores.entrySet()) {
 				String key = e.getKey();
+				// Split for the formula into those bits which need to be
+				// quantified, and those which don't
+				split = splitFormula(fall.variable.name(), e.getValue()); 
+				// FIXME: do I need to negate the formula here???
 				WFormula exit = new WBoundedForall(false, new WVariable(
-						fall.variable.name()), src.first(), e.getValue());
+						fall.variable.name()), src.first(), split.first().not());
+				exit = WFormulas.and(store, split.second());
 				// Now, join the exit store with anything in the parent stores
 				WFormula existing = stores.get(key);
-				if(existing == null) {
+				if (existing == null) {
 					// was no existing store for parent
 					parentStores.put(key, exit);
 				} else {
 					// was something in parent, so join them together
-					parentStores.put(key, join(exit,existing));
+					parentStores.put(key, join(exit, existing));
 				}
 			}
 			// finally, put parent stores back
@@ -205,7 +215,47 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 		nblock.add(end);
 		return new Pair<Block, WFormula>(nblock, store);
 	}
-		
+	
+	// The following method splits a formula into two components: those bits
+	// which use the given variable (left), and those which don't (right). This
+	// is done to avoid quantifying more than is necessary when dealing with loops.
+	protected Pair<WFormula,WFormula> splitFormula(String var, WFormula f) {
+		System.out.println("========================================================");
+		System.out.println("SPLITTING: " + f + " FOR: " + var);
+		System.out.println("========================================================");
+		Pair<WFormula,WFormula> r = splitFormula2(var,f);
+		System.out.println("========================================================");
+		System.out.println("CONTAINS: " + r.first() + " FOR: " + var);
+		System.out.println("========================================================");
+		System.out.println("========================================================");
+		System.out.println("DOESN'T CONTAIN: " + r.second() + " FOR: " + var);
+		System.out.println("========================================================");		
+		return r;
+	}
+	protected Pair<WFormula,WFormula> splitFormula2(String var, WFormula f) {		
+		if(f instanceof WConjunct) {
+			WConjunct c = (WConjunct) f;
+			WFormula ts = WBool.TRUE;
+			WFormula fs = WBool.TRUE;
+			for(WFormula st : c.subterms()) {
+				Pair<WFormula,WFormula> r = splitFormula2(var,st);
+				ts = WFormulas.and(ts,r.first());
+				fs = WFormulas.and(fs,r.second());
+			}			
+			return new Pair<WFormula,WFormula>(ts,fs);
+		} else {
+			// not a conjunct, so check whether or not this uses var or not.
+			Set<WVariable> uses = WExprs.match(WVariable.class, f);
+			for (WVariable v : uses) {
+				if (v.name().equals(var)) {
+					return new Pair<WFormula, WFormula>(f, WBool.TRUE);
+				}
+			}
+			// Ok, doesn't use variable
+			return new Pair<WFormula, WFormula>(WBool.TRUE,f);
+		}
+	}
+	
 	protected Triple<Stmt, WFormula, WFormula> propagate(Code.IfGoto code,
 			Stmt elem, WFormula store) {
 
@@ -282,15 +332,17 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 				falseCondition);
 	}
 
-
 	protected WFormula join(WFormula f1, WFormula f2) {
 		if (f2 == null) {
 			return f1;
-		} else if(f1 == null) {
+		} else if (f1 == null) {
 			return f2;
 		}
-		return WFormulas.or(f1,f2);
-	}		
+		WFormula common = WFormulas.intersect(f1, f2);
+		f1 = WFormulas.factorOut(f1, common);
+		f2 = WFormulas.factorOut(f2, common);
+		return WFormulas.and(common, WFormulas.or(f1, f2));
+	}
 	
 	protected Pair<WExpr,WFormula> infer(CExpr e, SyntacticElement elem) {
 		try {
