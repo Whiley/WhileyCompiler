@@ -23,6 +23,7 @@ import wyone.theory.list.*;
 import wyone.theory.set.*;
 import wyone.theory.tuple.*;
 import wyone.theory.quantifier.*;
+import wyone.theory.type.*;
 
 public class ConstraintPropagation implements ModuleTransform {	
 	private ModuleLoader loader;
@@ -69,8 +70,12 @@ public class ConstraintPropagation implements ModuleTransform {
 	}
 	
 	protected Pair<Block,WFormula> transform(Block block, WFormula precondition) {
-		Block nblock = new Block();
-		HashMap<String, WFormula> flowsets = new HashMap();
+		return transform(block,precondition,new HashMap<String,WFormula>());
+	}
+	
+	protected Pair<Block, WFormula> transform(Block block,
+			WFormula precondition, HashMap<String, WFormula> flowsets) {
+		Block nblock = new Block();		 
 		
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
@@ -106,6 +111,41 @@ public class ConstraintPropagation implements ModuleTransform {
 						merge(igot.target, r.second(), flowsets);
 					}
 
+				} else if(code instanceof Forall) {
+					Forall fall = (Forall) code;
+					// So, to deal with loops we need to add appropriate
+					// quantification. First, we begin by isolating the loop
+					// body
+					
+					Pair<WExpr,WFormula> src = infer(fall.source,stmt);
+					nblock.add(code, stmt.attributes());
+					attributes.add(new Attribute.PreCondition(tmp));
+					
+					Block body = new Block();
+					while(++i < block.size()) {
+						stmt = block.get(i);
+						if(stmt.code instanceof Code.ForallEnd) {
+							Code.ForallEnd fend = (Code.ForallEnd) stmt.code;
+							if(fend.target.equals(fall.label)){
+								// end of loop body found
+								break;
+							}
+						}
+						body.add(stmt.code,stmt.attributes());
+					}
+					// Now, propagate through the body
+					HashMap<String,WFormula> sets = new HashMap<String,WFormula>();
+					Pair<Block,WFormula> r = transform(body,precondition,sets);										
+					// FIXME: must simplify formula first to extract stuff
+					// not-involving the quantified variable.
+					precondition = new WBoundedForall(true, new WVariable(
+							fall.variable.name()), src.first(), r.second());
+					for(Map.Entry<String,WFormula> set : sets.entrySet()) {						
+						WFormula c = new WBoundedForall(true, new WVariable(
+								fall.variable.name()), src.first(), set.getValue());
+						merge(set.getKey(),c,flowsets);
+					}
+					nblock.addAll(r.first());					
 				} else if (code instanceof Assign) {
 					precondition = infer((Code.Assign) code, i, stmt, precondition);
 				} else if (code instanceof Fail || code instanceof Return) {
@@ -247,7 +287,8 @@ public class ConstraintPropagation implements ModuleTransform {
 		// that in the shadowVariable, except for the particular element being
 		// updated.
 		List<CExpr> exprs = flattern(lval,elem);
-		WFormula constraint = WBool.TRUE;				
+		LVar variable = (LVar) exprs.get(0);
+		WFormula constraint = WTypes.subtypeOf(new WVariable(variable.name()),convert(variable.type()));				
 		for(int i=1;i!=exprs.size();++i) {
 			CExpr access = exprs.get(i);			
 			if(access instanceof TupleAccess){				
@@ -673,4 +714,31 @@ public class ConstraintPropagation implements ModuleTransform {
 		}
 	}
 	*/		
+	
+	protected WType convert(Type type) {
+		if(type == Type.T_BOOL) {
+			return WBoolType.T_BOOL;
+		} else if(type == Type.T_INT) {
+			return WIntType.T_INT;
+		} else if(type == Type.T_REAL) {
+			return WRealType.T_REAL;
+		} else if(type instanceof Type.List) {
+			Type.List tl = (Type.List) type;
+			return new WListType(convert(tl.element));			
+		} else if(type instanceof Type.Set) {
+			Type.Set tl = (Type.Set) type;
+			return new WSetType(convert(tl.element));			
+		} else if(type instanceof Type.Tuple) {
+			Type.Tuple tl = (Type.Tuple) type;
+			ArrayList<String> keys = new ArrayList<String>(tl.types.keySet());
+			ArrayList<wyone.util.Pair<String,WType>> types = new ArrayList();
+			Collections.sort(keys);
+			for(String key : keys) {
+				types.add(new wyone.util.Pair(key,convert(tl.types.get(key))));
+			}
+			return new WTupleType(types);
+		} else {
+			return WAnyType.T_ANY;
+		}
+	}
 }

@@ -1,3 +1,4 @@
-void f(int y):
-    [int] xs = [1,2,y]
-    xs[y] = 2
+define pset as {int} where no { x in $ | x < 0 }
+
+void f({int} ys):
+    pset xs = ys
