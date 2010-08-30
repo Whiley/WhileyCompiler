@@ -33,6 +33,9 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 		if (methodCase.precondition() != null) {
 			Pair<Block, WFormula> precondition = propagate(methodCase
 					.precondition(), WBool.TRUE);
+
+			// reset the stores map
+			this.stores = new HashMap<String,WFormula>();
 			return precondition.second();
 		} else {
 			return WBool.TRUE;
@@ -57,7 +60,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 	private static int index = 0; // probably could be better
 	protected WFormula infer(Code.Assign code, SyntacticElement elem,
 			WFormula precondition) {
-	
+		
 		if(code.lhs == null) {
 			return precondition;
 		}
@@ -152,6 +155,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 
 	protected Pair<Block, WFormula> propagate(Code.Start start, Code.End end,
 			Block body, Stmt stmt, WFormula store) {
+		
 		Block nblock = new Block();
 		nblock.add(start);
 		if(start instanceof Code.Forall) {
@@ -160,7 +164,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			Pair<WExpr,WFormula> src = infer(fall.source,stmt);
 			// Save the parent stores. We need to do this, so we can intercept
 			// all stores being emitted from the for block, in order that we can
-			// properly quantify them.
+			// properly quantify them.			
 			HashMap<String,WFormula> parentStores = stores;
 			stores = new HashMap<String,WFormula>();
 			// Propagate through the body
@@ -190,7 +194,8 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			}
 			// finally, put parent stores back
 			stores = parentStores;
-		} else {
+		} else {			
+			// Other kind of block, which we can ignore.
 			Pair<Block,WFormula> r = propagate(body,store);
 			body = r.first();
 			store = r.second();
@@ -201,30 +206,12 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 		return new Pair<Block, WFormula>(nblock, store);
 	}
 		
-	/*
-	public void forall() {
-		// Now, propagate through the body
-		HashMap<String,WFormula> sets = new HashMap<String,WFormula>();
-		Pair<Block,WFormula> r = transform(body,precondition,sets);										
-		// FIXME: must simplify formula first to extract stuff
-		// not-involving the quantified variable.
-		precondition = new WBoundedForall(true, new WVariable(
-				fall.variable.name()), src.first(), r.second());
-		for(Map.Entry<String,WFormula> set : sets.entrySet()) {						
-			WFormula c = new WBoundedForall(true, new WVariable(
-					fall.variable.name()), src.first(), set.getValue());
-			merge(set.getKey(),c,flowsets);
-		}
-
-	}
-	*/
-	
 	protected Triple<Stmt, WFormula, WFormula> propagate(Code.IfGoto code,
-			Stmt elem, WFormula precondition) {
+			Stmt elem, WFormula store) {
 
 		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
 		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
-		precondition = WFormulas.and(precondition, lhs_p.second(), rhs_p
+		WFormula precondition = WFormulas.and(store, lhs_p.second(), rhs_p
 				.second());
 		WFormula condition = null;
 		switch (code.op) {
@@ -274,16 +261,18 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			falseCondition = null;
 		}
 
-		Stmt stmt;
+		// Update attribute information
+		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
+		attributes.addAll(elem.attributes());		
+		attributes.add(new Attribute.PreCondition(store));
+		// Now, create new statement
+		Stmt stmt;		
 		if (trueCondition == null) {
-			stmt = new Stmt(new Code.Skip(),elem.attributes());
+			stmt = new Stmt(new Code.Skip(),attributes);
 		} else if (falseCondition == null) {
-			stmt = new Stmt(new Code.Goto(code.target),elem.attributes());
+			stmt = new Stmt(new Code.Goto(code.target),attributes);
 		} else {
-			// FIXME: this needs to be updated at some point
-			ArrayList<Attribute> attributes = new ArrayList<Attribute>();
-			attributes.addAll(elem.attributes());
-			attributes.add(new Attribute.BranchInfo(true, true));			
+			attributes.add(new Attribute.BranchInfo(true, true));
 			stmt = new Stmt(new Code.IfGoto(code.op, code.lhs, code.rhs,
 					code.target), attributes);
 		}

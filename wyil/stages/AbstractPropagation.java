@@ -58,8 +58,8 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	
 	public Module.Case propagate(Module.Case mcase) {
 		this.methodCase = mcase;
-		T init = initialStore();		
-		stores = new HashMap<String,T>();
+		this.stores = new HashMap<String,T>();
+		T init = initialStore();				
 		Block body = propagate(mcase.body(), init).first();
 		return new Module.Case(mcase.parameterNames(),
 				mcase.precondition(), mcase.postcondition(), body);
@@ -68,7 +68,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	protected Pair<Block, T> propagate(Block block, T store) {
 		
 		Block nblock = new Block();
-		for(int i=0;i!=block.size();++i) {			
+		for(int i=0;i!=block.size();++i) {						
 			Stmt stmt = block.get(i);
 			try {				
 				Code code = stmt.code;
@@ -131,6 +131,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 					// This indicates a sequential statement was encountered.
 					Pair<Stmt, T> r = propagate(stmt, store);
 					stmt = r.first();
+					store = r.second();
 					if (stmt.code instanceof Code.Fail
 							|| stmt.code instanceof Code.Return) {
 						store = null;
@@ -234,7 +235,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	/**
 	 * Join two abstract stores together producing a new abstract store. Observe
 	 * that this operation must not side-effect the two input stores. This is
-	 * because they may currently be stored in the flow-sets map.
+	 * because they may currently be stored in the stores map.
 	 * 
 	 * @param store1
 	 * @param store2
