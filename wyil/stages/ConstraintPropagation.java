@@ -154,15 +154,48 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			Block body, Stmt stmt, WFormula store) {
 		Block nblock = new Block();
 		nblock.add(start);
-		if(start instanceof Code.Check) {
+		if(start instanceof Code.Forall) {
+			Code.Forall fall = (Code.Forall) start;
+			// Convert the source collection 
+			Pair<WExpr,WFormula> src = infer(fall.source,stmt);
+			// Save the parent stores. We need to do this, so we can intercept
+			// all stores being emitted from the for block, in order that we can
+			// properly quantify them.
+			HashMap<String,WFormula> parentStores = stores;
+			stores = new HashMap<String,WFormula>();
+			// Propagate through the body
 			Pair<Block,WFormula> r = propagate(body,store);
 			body = r.first();
-			store = r.second();
+			// Universally quantify the condition emitted at the end of the
+			// body, as this captures what is true for every element in the
+			// source collection.
+			store = new WBoundedForall(true, new WVariable(
+					fall.variable.name()), src.first(), r.second());
+			// Existentially quantify any breaks out of the loop. These
+			// represent what is true for some elements in the source
+			// collection, but not necessarily all.
+			for(Map.Entry<String,WFormula> e : stores.entrySet()) {
+				String key = e.getKey();
+				WFormula exit = new WBoundedForall(false, new WVariable(
+						fall.variable.name()), src.first(), e.getValue());
+				// Now, join the exit store with anything in the parent stores
+				WFormula existing = stores.get(key);
+				if(existing == null) {
+					// was no existing store for parent
+					parentStores.put(key, exit);
+				} else {
+					// was something in parent, so join them together
+					parentStores.put(key, join(exit,existing));
+				}
+			}
+			// finally, put parent stores back
+			stores = parentStores;
 		} else {
 			Pair<Block,WFormula> r = propagate(body,store);
 			body = r.first();
-			store = r.second();			
-		}
+			store = r.second();
+		} 
+			
 		nblock.addAll(body);
 		nblock.add(end);
 		return new Pair<Block, WFormula>(nblock, store);

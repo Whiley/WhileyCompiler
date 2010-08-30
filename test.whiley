@@ -1,5 +1,4 @@
-define nat as int where $ >= 0
+define pset as {int} where no { x in $ | x < 0 }
 
-nat f(int x):
-    return x
-    
+void f({int} ys):
+    pset xs = ys

@@ -15,6 +15,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	protected String filename;
 	protected Module.Method method;
 	protected Module.Case methodCase;
+	protected HashMap<String,T> stores;
 	
 	public AbstractPropagation(ModuleLoader loader) {
 		this.loader = loader;
@@ -58,18 +59,13 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	public Module.Case propagate(Module.Case mcase) {
 		this.methodCase = mcase;
 		T init = initialStore();		
+		stores = new HashMap<String,T>();
 		Block body = propagate(mcase.body(), init).first();
 		return new Module.Case(mcase.parameterNames(),
 				mcase.precondition(), mcase.postcondition(), body);
 	}		
 	
-	protected Pair<Block,T> propagate(Block block, T store) {
-		HashMap<String,T> stores = new HashMap<String,T>();
-		return propagate(block,store,stores);
-	}
-	
-	protected Pair<Block, T> propagate(Block block, T store,
-			Map<String, T> stores) {
+	protected Pair<Block, T> propagate(Block block, T store) {
 		
 		Block nblock = new Block();
 		for(int i=0;i!=block.size();++i) {			
