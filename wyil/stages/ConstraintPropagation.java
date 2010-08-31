@@ -348,29 +348,18 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			return new Triple<Stmt, WFormula, WFormula>(elem, trueCondition,
 					falseCondition);
 		}
-		
-		System.out.println("==========================================================");
-		System.out.println("TRUE: " + trueCondition);		
-		long start = System.currentTimeMillis();
+				
 		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
-				wyone.Main.heuristic, wyone.Main.theories);
-		System.out.println(System.currentTimeMillis() - start + "ms");
-		if (tp instanceof Proof.Unsat) {
-			System.out.println("UNSAT");
+				wyone.Main.heuristic, wyone.Main.theories);		
+		if (tp instanceof Proof.Unsat) {			
 			trueCondition = null;
-		}								
-		start = System.currentTimeMillis();
-		System.out.println("--");
-		System.out.println("FALSE: " + falseCondition);		
+		}												
 		// Determine condition for false branch, and check satisfiability		
 		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
-				wyone.Main.heuristic, wyone.Main.theories);
-		System.out.println(System.currentTimeMillis() - start + "ms");		
+				wyone.Main.heuristic, wyone.Main.theories);			
 		if (fp instanceof Proof.Unsat) {
-			System.out.println("UNSAT");
 			falseCondition = null;
-		}			
-		System.out.println("==========================================================");
+		}					
 		// Update attribute information
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 		attributes.addAll(elem.attributes());		
@@ -591,7 +580,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			constraints = WFormulas.and(p.second());
 		}
 
-		WVariable rv = new WVariable("&" + ivk.name, args);
+		WVariable rv = new WVariable(ivk.name.toString(), args);
 		Module module = loader.loadModule(ivk.name.module());
 		Module.Method method = module.method(ivk.name.name(), ivk.type);
 		Module.Case mcase = method.cases().get(ivk.caseNum);
