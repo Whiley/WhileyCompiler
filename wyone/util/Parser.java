@@ -281,21 +281,25 @@ public class Parser {
 		parseWhiteSpace();
 		
 		int start = index;		
-		if (index < input.length() && input.charAt(index) == '(') {			
+		if(index == input.length()) {
+			throw new SyntaxError("syntax error", filename, start, index);
+		}
+		char c = input.charAt(index);
+		if (index < input.length() && c == '(') {			
 			return parseBracketedTerm();			
-		} else if (index < input.length() && input.charAt(index) == '[') {			
+		} else if (index < input.length() && c == '[') {			
 			return parseListTerm();			
-		} else if (index < input.length() && input.charAt(index) == '{') {			
+		} else if (index < input.length() && c == '{') {			
 			return parseSetTerm();			
-		} else if (index < input.length() && input.charAt(index) == '|') {			
+		} else if (index < input.length() && c == '|') {			
 			return parseLengthTerm();			
 		} else if (index < input.length()
-				&& Character.isJavaIdentifierStart(input.charAt(index))) {
+				&& (Character.isJavaIdentifierStart(c) || c == '%' || c == '$' || c == '&' || c == ':')) {
 			return parseIdentifierTerm();			
 		} else if (index < input.length()
-				&& Character.isDigit(input.charAt(index))) {
+				&& Character.isDigit(c)) {
 			return parseNumber();
-		} else if (input.charAt(index) == '-') {
+		} else if (c == '-') {
 			return parseNegation();
 		} else {
 			throw new SyntaxError("syntax error", filename, start, index);
@@ -417,7 +421,12 @@ public class Parser {
 	private String parseIdentifier() {		
 		String id = Character.toString(input.charAt(index));
 		index++; // skip past the identifier start
-		while(index < input.length() && Character.isJavaIdentifierPart(input.charAt(index))) {
+		if(index == input.length()) {
+			return id;
+		}
+		char c = input.charAt(index);
+		while (index < input.length() && Character.isJavaIdentifierPart(c)
+				|| c == '%' || c == '$' || c == ':') {
 			id += Character.toString(input.charAt(index));
 			index = index + 1;			
 		}

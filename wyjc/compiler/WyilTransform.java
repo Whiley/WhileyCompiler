@@ -17,9 +17,10 @@ public class WyilTransform implements Compiler.Stage {
 		long start = System.currentTimeMillis();
 			
 		try {
+			module = transform.apply(module);
 			logout.logTimedMessage("[" + module.filename() + "] applied " + name,
 					System.currentTimeMillis() - start);
-			return transform.apply(module);
+			return module;
 		} catch(RuntimeException ex) {
 			logout.logTimedMessage("[" + module.filename()
 					+ "] failed on " + name + " (" + ex.getMessage() + ")",

@@ -184,7 +184,7 @@ public class WBoundedForall  implements WFormula {
 		Set<WVariable> nocapture = new HashSet<WVariable>();
 
 		for(Map.Entry<WExpr,WExpr> e : binding.entrySet()) {
-			// nocapture.add(e.getKey());
+			nocapture.addAll(WExprs.match(WVariable.class,e.getKey()));
 			nocapture.addAll(WExprs.match(WVariable.class,e.getValue()));
 		}
 
