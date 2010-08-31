@@ -24,8 +24,10 @@ import wyone.core.*;
 import wyone.theory.congruence.WEquality;
 import wyone.theory.logic.WBool;
 import wyone.theory.logic.WFormula;
+import wyone.theory.logic.WFormulas;
 import wyone.theory.numeric.*;
-import wyone.theory.set.WSetConstructor;
+import wyone.theory.set.*;
+import wyone.theory.type.*;
 
 public class LengthOfClosure implements InferenceRule {
 
@@ -51,6 +53,9 @@ public class LengthOfClosure implements InferenceRule {
 		
 		if(lhs instanceof WLengthOf && rhs instanceof WNumber) {
 			l = (WLengthOf) lhs;
+			if(!(l.source() instanceof WVariable)) {
+				return; // to prevent cylcic inferences
+			}
 			WNumber n = (WNumber) rhs;
 			if(n.isInteger()) {
 				size = n.intValue();
@@ -60,6 +65,9 @@ public class LengthOfClosure implements InferenceRule {
 			}
 		} else if(rhs instanceof WLengthOf && lhs instanceof WNumber) {
 			l = (WLengthOf) rhs;
+			if(!(l.source() instanceof WVariable)) {
+				return; // to prevent cylcic inferences
+			}
 			WNumber n = (WNumber) lhs;
 			if(n.isInteger()) {
 				size = n.intValue();
@@ -71,20 +79,34 @@ public class LengthOfClosure implements InferenceRule {
 			return;
 		}
 		
-		WFormula nf;
-		
-		if(l.source().type(state) instanceof WListType) {
-			ArrayList<WExpr> vars = new ArrayList<WExpr>();			
+		WFormula nf = WBool.TRUE;
+		WType src_t = l.source().type(state); 
+		if(src_t instanceof WListType) {
+			WListType st = (WListType) src_t;
+			ArrayList vars = new ArrayList<WExpr>();			
 			for(int i=0;i!=size;++i) {
-				vars.add(WVariable.freshVar());
+				WVariable var = WVariable.freshVar(); 
+				nf = WFormulas.and(nf,WTypes.subtypeOf(var,st.element()));
+				vars.add(var);
+			}			
+			if(vars.size() == 0) {
+				nf = WFormulas.and(nf,new WEquality(true,l.source(),new WListVal(vars)));
+			} else {
+				nf = WFormulas.and(nf,new WEquality(true,l.source(),new WListConstructor(vars)));
 			}
-			nf = new WEquality(true,l.source(),new WListConstructor(vars));
-		} else {
-			HashSet<WExpr> vars = new HashSet<WExpr>();
+		} else if(src_t instanceof WSetType) {
+			WSetType st = (WSetType) src_t;
+			HashSet vars = new HashSet<WExpr>();
 			for(int i=0;i!=size;++i) {
-				vars.add(WVariable.freshVar());
+				WVariable var = WVariable.freshVar(); 
+				nf = WFormulas.and(nf,WTypes.subtypeOf(var,st.element()));
+				vars.add(var);
 			}
-			nf = new WEquality(true,l.source(),new WSetConstructor(vars));
+			if(vars.size() == 0) {
+				nf = WFormulas.and(nf,new WEquality(true,l.source(),new WSetVal(vars)));
+			} else {
+				nf = WFormulas.and(nf,new WEquality(true,l.source(),new WSetConstructor(vars)));
+			}
 		}
 		
 		state.infer(nf, solver);

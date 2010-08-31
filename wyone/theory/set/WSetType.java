@@ -23,6 +23,7 @@ import wyone.core.WType;
 import wyone.core.WValue;
 import wyone.theory.list.WListType;
 import wyone.theory.list.WListVal;
+import wyone.theory.type.WVoidType;
 
 public final class WSetType implements WType {
 	private final WType element;
@@ -35,12 +36,12 @@ public final class WSetType implements WType {
 		return element;
 	}
 	
-	public boolean isSubtype(WType o, Map<String, WType> environment) {
+	public boolean isSubtype(WType o, Map<String, WType> environment) {		
 		if(o instanceof WSetType) {			
 			WSetType sv = (WSetType) o;			
 			return element.isSubtype(sv.element, environment);
 		} else {
-			return false;
+			return o instanceof WVoidType;
 		}
 	}
 	

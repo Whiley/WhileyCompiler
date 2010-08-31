@@ -21,6 +21,7 @@ import java.util.*;
 
 import wyone.core.*;
 import wyone.theory.tuple.*;
+import wyone.theory.type.WVoidType;
 import wyone.util.*;
 
 public class WTupleType implements WType {
@@ -66,7 +67,7 @@ public class WTupleType implements WType {
 			
 			return true;
 		}
-		return false;
+		return val instanceof WVoidType;
 	}
 	
 	public boolean equals(Object o) {

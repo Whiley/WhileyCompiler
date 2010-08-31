@@ -21,6 +21,7 @@ import java.util.Map;
 
 import wyone.core.WType;
 import wyone.core.WValue;
+import wyone.theory.type.WVoidType;
 
 public class WRealType implements WType {
 	WRealType() {}
@@ -32,7 +33,7 @@ public class WRealType implements WType {
 	}
 	
 	public boolean isSubtype(WType o, Map<String, WType> environment) {				
-		return o instanceof WIntType || o instanceof WRealType;
+		return o instanceof WIntType || o instanceof WRealType || o instanceof WVoidType;
 	}
 	
 	public boolean equals(Object o) {

@@ -15,49 +15,35 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.theory.list;
+package wyone.theory.type;
 
 import java.util.Map;
 
 import wyone.core.WType;
-import wyone.core.WValue;
-import wyone.theory.set.WSetType;
-import wyone.theory.set.WSetVal;
-import wyone.theory.type.WVoidType;
 
-public final class WListType implements WType {
-	private final WType element;
+/**
+ * The VoidType is used to for situations when there is no possible type. For
+ * example, the element type of an empty set is void. The VoidType is a subtype
+ * of everything.
+ */
+public class WVoidType implements WType {
+	WVoidType() {}
 	
-	public WListType(WType element) {
-		this.element = element;
+	public static final WVoidType T_VOID = new WVoidType(); 
+	
+	public String toString() {
+		return "void";
 	}
 	
-	public WType element() {
-		return element;
-	}
-	
-	public boolean isSubtype(WType o, Map<String, WType> environment) {
-		if(o instanceof WListType) {			
-			WListType sv = (WListType) o;			
-			return element.isSubtype(sv.element, environment);
-		} else {
-			return  o instanceof WVoidType;
-		}
-	}
-	
-	public boolean equals(Object o) {
-		if(o instanceof WListType) {
-			WListType t = (WListType) o;
-			return element.equals(t.element);
-		}
+	public boolean isSubtype(WType o, Map<String, WType> environment) {				
 		return false;
 	}
 	
-	public int hashCode() {
-		return element.hashCode();
+	public boolean equals(Object o) {
+		return o instanceof WVoidType;
 	}
 	
-	public String toString() {
-		return "[" + element + "]";
+	public int hashCode() {
+		return 123;
 	}
 }

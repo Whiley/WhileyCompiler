@@ -27,6 +27,7 @@ import wyone.theory.tuple.WTupleConstructor;
 import wyone.theory.tuple.WTupleType;
 import wyone.theory.tuple.WTupleVal;
 import wyone.theory.type.WAnyType;
+import wyone.theory.type.WVoidType;
 import wyone.util.*;
 
 public class WSetVal extends WConstructor<WValue> implements WValue {
@@ -46,9 +47,7 @@ public class WSetVal extends WConstructor<WValue> implements WValue {
 	
 	public WSetType type(SolverState state) {
 		if(subterms.isEmpty()) {
-			// I think the following is definitely broken. It should be a void
-			// type of some sort.
-			return new WSetType(WAnyType.T_ANY);
+			return new WSetType(WVoidType.T_VOID);
 		} else {
 			// FIXME: following is inherently broken
 			return new WSetType(subterms.get(0).type(state));

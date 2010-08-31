@@ -14,22 +14,6 @@ import wyone.util.Pair;
 
 public class BoundedSetHeuristic implements SplitHeuristic {
 
-	/**
-	 * The following flag indicates that only explicit upper bounds (i.e. those
-	 * which are either set constructors, or set values) will be split. It's
-	 * better to do these before those which have only lower bounds, or worse
-	 * those which are unbounded.  This is because the potential state space for
-	 * exploration is much smaller.
-	 * 
-	 * In this case, we pick those first with the smallest difference between
-	 * the number of values in the lower and upper bound.
-	 */
-	private boolean splitFiniteBounded;
-
-	public BoundedSetHeuristic(boolean splitFiniteBounded) {
-		this.splitFiniteBounded = splitFiniteBounded;	
-	}
-	
 	public List<SolverState> split(SolverState state, Solver solver) {		
 		WSubsetEq seq = pickLeastBounded(state,solver);
 		if(seq != null) { return split(seq,state,solver); }

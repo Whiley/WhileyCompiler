@@ -44,10 +44,11 @@ public class Main {
 			new NotEqualsHeuristic(), 
 			new DisjunctHeuristic(),
 			new BoundedNumberHeuristic(true, true), 
-			new BoundedSetHeuristic(true),
-			new LengthOfHeuristic(),
-			new BoundedNumberHeuristic(true, false)			
-			);
+			new BoundedNumberHeuristic(true, false),
+			new BoundedSetHeuristic(),						
+			new UnboundedNumberHeuristic(true),
+			new UnboundedNumberHeuristic(false)
+	);
 
 	public static final InferenceRule[] theories = {		
 			new FourierMotzkinSolver(), 
