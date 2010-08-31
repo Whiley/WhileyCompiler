@@ -281,23 +281,22 @@ public class Parser {
 		parseWhiteSpace();
 		
 		int start = index;		
-		if(index == input.length()) {
+		if(index >= input.length()) {
 			throw new SyntaxError("syntax error", filename, start, index);
 		}
 		char c = input.charAt(index);
-		if (index < input.length() && c == '(') {			
+		if (c == '(') {			
 			return parseBracketedTerm();			
-		} else if (index < input.length() && c == '[') {			
+		} else if (c == '[') {			
 			return parseListTerm();			
-		} else if (index < input.length() && c == '{') {			
+		} else if (c == '{') {			
 			return parseSetTerm();			
-		} else if (index < input.length() && c == '|') {			
+		} else if (c == '|') {			
 			return parseLengthTerm();			
 		} else if (index < input.length()
-				&& (Character.isJavaIdentifierStart(c) || c == '%' || c == '$' || c == '&' || c == ':')) {
+				&& (Character.isJavaIdentifierStart(c) || c == '%' || c == '$' || c == ':')) {
 			return parseIdentifierTerm();			
-		} else if (index < input.length()
-				&& Character.isDigit(c)) {
+		} else if (Character.isDigit(c)) {
 			return parseNumber();
 		} else if (c == '-') {
 			return parseNegation();
@@ -373,9 +372,7 @@ public class Parser {
 			}
 			match(")");								
 		} 
-		
-		WExpr term; 
-		
+				
 		if(params == null) {
 			return  new WVariable(v);
 		} else {
@@ -425,10 +422,15 @@ public class Parser {
 			return id;
 		}
 		char c = input.charAt(index);
-		while (index < input.length() && Character.isJavaIdentifierPart(c)
+		while (Character.isJavaIdentifierPart(c)
 				|| c == '%' || c == '$' || c == ':') {
 			id += Character.toString(input.charAt(index));
-			index = index + 1;			
+			index = index + 1;
+			if(index < input.length()) {
+				c = input.charAt(index);
+			} else {
+				break;
+			}
 		}
 		return id;
 	}

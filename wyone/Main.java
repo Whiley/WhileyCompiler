@@ -83,7 +83,7 @@ public class Main {
 					System.exit(1);
 				} 				
 				
-				int timeout = 1; // seconds;
+				int timeout = 1000; // milli-seconds;
 				boolean proof = false;				
 				
 				int fileArgsBegin = 0;

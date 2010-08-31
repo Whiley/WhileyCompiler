@@ -2,7 +2,7 @@
   <property name="version" value="0.3.0"/>
 
   <target name="compile">
-    <javac debug="true" srcdir="." includeantruntime="true" includes="wyjc/**,wyil/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyone/testing/**"/> 
+    <javac debug="true" srcdir="." includeantruntime="true" includes="wyjc/**,wyil/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
   </target>
 
   <target name="build-wyjc" depends="compile">

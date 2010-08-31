@@ -30,6 +30,13 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 	 * lists in a different fashion.
 	 */
 	private HashMap<String,WExpr> substitutions = new HashMap<String,WExpr>();
+
+	/**
+	 * The following is used to count the nesting of check blocks. This helps us
+	 * target constraint checking to only occur within check blocks (leading to
+	 * better compilation times, although execution times may be worse).
+	 */
+	private int inCheckBlock = 0;
 	
 	public ConstraintPropagation(ModuleLoader loader, int timeout) {
 		super(loader);
@@ -253,7 +260,9 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			stores = parentStores;
 		} else {			
 			// Other kind of block, which we can ignore.
+			inCheckBlock++;
 			Pair<Block,WFormula> r = propagate(body,store);
+			inCheckBlock--;
 			body = r.first();
 			store = r.second();
 		} 
@@ -330,21 +339,38 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 
 		// Determine condition for true branch, and check satisfiability
 		WFormula trueCondition = WFormulas.and(precondition, condition);
-
+		WFormula falseCondition = WFormulas.and(precondition, condition.not());
+		
+		if (inCheckBlock == 0) {
+			// In this case, we're not in a check block ... so don't use the SMT
+			// solver.  This is really an optisation for now, since ideally we do 
+			// want to use the SMT solver to eliminate unreachable paths.
+			return new Triple<Stmt, WFormula, WFormula>(elem, trueCondition,
+					falseCondition);
+		}
+		
+		System.out.println("==========================================================");
+		System.out.println("TRUE: " + trueCondition);		
+		long start = System.currentTimeMillis();
 		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 				wyone.Main.heuristic, wyone.Main.theories);
+		System.out.println(System.currentTimeMillis() - start + "ms");
 		if (tp instanceof Proof.Unsat) {
+			System.out.println("UNSAT");
 			trueCondition = null;
-		}		
-		
-		// Determine condition for false branch, and check satisfiability
-		WFormula falseCondition = WFormulas.and(precondition, condition.not());		
+		}								
+		start = System.currentTimeMillis();
+		System.out.println("--");
+		System.out.println("FALSE: " + falseCondition);		
+		// Determine condition for false branch, and check satisfiability		
 		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 				wyone.Main.heuristic, wyone.Main.theories);
+		System.out.println(System.currentTimeMillis() - start + "ms");		
 		if (fp instanceof Proof.Unsat) {
+			System.out.println("UNSAT");
 			falseCondition = null;
-		}
-
+		}			
+		System.out.println("==========================================================");
 		// Update attribute information
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 		attributes.addAll(elem.attributes());		
