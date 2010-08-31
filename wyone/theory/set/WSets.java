@@ -17,6 +17,8 @@
 
 package wyone.theory.set;
 
+import java.util.HashSet;
+
 import wyone.core.*;
 import wyone.theory.congruence.WEquality;
 import wyone.theory.logic.*;
@@ -27,6 +29,23 @@ public class WSets {
 	}
 
 	public static WFormula subset(WExpr lhs, WExpr rhs) {
+		
+		if(rhs instanceof WSetConstructor || rhs instanceof WSetVal) {
+			// This is a useful optimisation case.
+			WFormula r = WBool.FALSE;
+			for(WExpr e : rhs.subterms()) {
+				HashSet elems = new HashSet(rhs.subterms());
+				elems.remove(e);					
+				if(rhs instanceof WSetConstructor) {
+					e = new WSetConstructor(elems);
+				} else {
+					e = new WSetVal(elems);
+				}
+				r = WFormulas.or(r,subsetEq(lhs,e));
+			}
+			return r;			
+		} 
+		
 		return WFormulas.and(new WSubsetEq(true, lhs, rhs), new WEquality(
 				false, lhs, rhs));
 	}

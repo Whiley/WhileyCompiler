@@ -44,6 +44,7 @@ public class Main {
 			new NotEqualsHeuristic(), 
 			new DisjunctHeuristic(),
 			new BoundedNumberHeuristic(true, true), 
+			new BoundedSetHeuristic(true),
 			new BoundedNumberHeuristic(true, false));
 
 	public static final InferenceRule[] theories = {		

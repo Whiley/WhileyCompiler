@@ -86,4 +86,40 @@ public class Sets {
 	@Test public void Sat_1() {
 		assertTrue(checkSat("xs <: {int} && xs == {1,2,3}"));
 	}
+	
+	@Test public void Sat_2() {
+		assertTrue(checkSat("xs <: {int} && xs {= {1,2,3}"));
+	}
+	
+	@Test public void Sat_3() {
+		assertTrue(checkSat("xs <: {int} && {1,2,3} {= xs"));
+	}
+	
+	@Test public void Sat_4() {
+		assertTrue(checkSat("xs <: {int} && ys <: {int} && xs == {1,2,3} && xs {= ys"));
+	}
+	
+	@Test public void Sat_5() {
+		assertTrue(checkSat("xs <: {int} && ys <: {int} && xs == {1,2,3} && xs {= ys && ys {= xs"));
+	}
+	
+	@Test public void Sat_6() {
+		assertTrue(checkSat("xs <: {int} && x <: int && x > 0 && xs == {x}"));
+	}
+	
+	@Test public void Sat_7() {
+		assertTrue(checkSat("xs <: {int} && x <: int && xs == {x}"));
+	}
+	
+	@Test public void Sat_8() {
+		assertTrue(checkSat("xs <: {int} && |xs| == 0"));
+	}
+	
+	@Test public void Sat_9() {
+		assertTrue(checkSat("xs <: {int} && |xs| == 1"));
+	}
+	
+	@Test public void Sat_10() {
+		assertTrue(checkSat("xs <: {int} && |xs| <= 2"));
+	}
 }

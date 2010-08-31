@@ -29,12 +29,16 @@ public class SubsetClosure implements InferenceRule {
 
 	public void infer(WFormula nlit, SolverState state, Solver solver) {
 		if(nlit instanceof WSubsetEq) {
-			WSubsetEq seq = (WSubsetEq) nlit;
+			WSubsetEq seq = (WSubsetEq) nlit;			
+			closeSubset(seq,state,solver);
 			if(seq.sign()) {
-				closeSubset(seq,state,solver);			
+				// uncertain whether any of the following rewrites apply to
+				// subset not eqs.
 				lubSubset(seq,state,solver);
 				inferSubsetLen(seq,state,solver);			
 				inferVariableEqs(seq.lhs(),seq.rhs(),state,solver);
+			} else {
+				
 			}
 		} else if(nlit instanceof WEquality) {
 			// FIXME: there's definitely more we can do here. For example, if
@@ -183,20 +187,22 @@ public class SubsetClosure implements InferenceRule {
 				WExpr fseq_lhs = fseq.lhs();
 				WExpr fseq_rhs = fseq.rhs();
 				
-				if(fseq.sign() && fseq_rhs.equals(seq_lhs)) {
-					if(seq_rhs.equals(fseq_lhs)) {						
+				if(seq.sign() && fseq_rhs.equals(seq_lhs)) {
+					if(fseq.sign() && seq_rhs.equals(fseq_lhs)) {						
 						WFormula nf = WExprs.equals(seq_lhs,seq_rhs);						
 						if(!state.contains(nf)) {							
 							state.infer(nf, solver);
 						}					
 					} else {
 						WFormula nf = WSets.subsetEq(fseq_lhs,seq_rhs);
+						if(!fseq.sign()) { nf = nf.not(); }
 						if(!state.contains(nf)) {							
 							state.infer(nf, solver);
 						}
 					}
 				} else if(fseq.sign()&& seq_rhs.equals(fseq_lhs)) {
 					WFormula nf = WSets.subsetEq(seq_lhs,fseq_rhs);					
+					if(!seq.sign()) { nf = nf.not(); }
 					if(!state.contains(nf)) {						
 						state.infer(nf, solver);
 					}
