@@ -53,20 +53,23 @@ public class SubsetClosure implements InferenceRule {
 		}
 	}	
 	
-	private void inferVariableNeqs(WEquality eq, SolverState state, Solver solver) {
+	private void inferVariableNeqs(WEquality eq, SolverState state,
+			Solver solver) {
 		WType lhs_t = eq.lhs().type(state);
-		if(!(lhs_t instanceof WSetType)) {
+		if (!(lhs_t instanceof WSetType)) {
 			return; // nothing doing here
 		}
 		WSetType type = (WSetType) lhs_t;
 		state.eliminate(eq); // not needed any longer
-		
-		WVariable skolem = WTypes.newSkolem(type.element(),state,solver);
+
+		WVariable skolem = WTypes.newSkolem(type.element(), state, solver);
 		WExpr setc = new WSetConstructor(skolem);
-		WFormula left = WFormulas.and(WSets.subsetEq(setc,eq.lhs()),WSets.subsetEq(setc,eq.rhs()).not()); 
-		WFormula right = WFormulas.and(WSets.subsetEq(setc,eq.rhs()),WSets.subsetEq(setc,eq.lhs()).not());
-		WFormula nf = WFormulas.or(left,right);		
-		if(!state.contains(nf)) {			
+		WFormula left = WFormulas.and(WSets.subsetEq(setc, eq.lhs()), WSets
+				.subsetEq(setc, eq.rhs()).not());
+		WFormula right = WFormulas.and(WSets.subsetEq(setc, eq.rhs()), WSets
+				.subsetEq(setc, eq.lhs()).not());
+		WFormula nf = WFormulas.or(left, right);
+		if (!state.contains(nf)) {
 			state.infer(nf, solver);
 		}
 	}

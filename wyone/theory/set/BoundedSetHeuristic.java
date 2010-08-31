@@ -25,31 +25,30 @@ public class BoundedSetHeuristic implements SplitHeuristic {
 	 * the number of values in the lower and upper bound.
 	 */
 	private boolean splitFiniteBounded;
-	
+
 	public BoundedSetHeuristic(boolean splitFiniteBounded) {
-		this.splitFiniteBounded = splitFiniteBounded;
+		this.splitFiniteBounded = splitFiniteBounded;	
 	}
 	
-	public List<SolverState> split(SolverState state, Solver solver) {
-		if(splitFiniteBounded) {
-			WSubsetEq seq = pickLeastBounded(state,solver);
-			if(seq != null) {			
-				return split(seq,state,solver);
-			}
-		} 
+	public List<SolverState> split(SolverState state, Solver solver) {		
+		WSubsetEq seq = pickLeastBounded(state,solver);
+		if(seq != null) { return split(seq,state,solver); }
+		 
 		return null;			
 	}
 	
 	public List<SolverState> split(WSubsetEq seq, SolverState lhs, Solver solver) {		
 		SolverState rhs = lhs.clone();
 		
-		System.out.println("STATE: " + lhs);
-		System.out.println("SPLITTING ON: " + seq);
-		
 		// left-split is easy
-		lhs.add(new WEquality(true,seq.lhs(),seq.rhs()), solver);
+		lhs.eliminate(seq);	
+		if(seq.lhs() instanceof WVariable) {
+			lhs.add(new WEquality(true,seq.lhs(),seq.rhs()), solver);
+		} else {
+			lhs.add(new WEquality(true,seq.rhs(),seq.lhs()), solver);
+		}
 		
-		// right-split is harder.
+		// right-split is slightly harder.
 		rhs.eliminate(seq);	
 		rhs.add(WSets.subset(seq.lhs(),seq.rhs()), solver);
 		
@@ -95,17 +94,5 @@ public class BoundedSetHeuristic implements SplitHeuristic {
 		} 				
 		
 		return rhsSize - lhsSize;
-	}
-	
-	private WExpr variable(WSubsetEq ieq) {
-		WExpr ieq_rhs = ieq.rhs();
-		if (ieq_rhs instanceof WRational) {
-			WRational r = (WRational) ieq_rhs;
-			List<WExpr> subterms = r.subterms();
-			if (subterms.size() == 1) {
-				return subterms.get(0);
-			}
-		} 
-		return ieq_rhs;		
 	}
 }

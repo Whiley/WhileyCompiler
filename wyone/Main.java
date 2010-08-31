@@ -45,7 +45,9 @@ public class Main {
 			new DisjunctHeuristic(),
 			new BoundedNumberHeuristic(true, true), 
 			new BoundedSetHeuristic(true),
-			new BoundedNumberHeuristic(true, false));
+			new LengthOfHeuristic(),
+			new BoundedNumberHeuristic(true, false)			
+			);
 
 	public static final InferenceRule[] theories = {		
 			new FourierMotzkinSolver(), 
