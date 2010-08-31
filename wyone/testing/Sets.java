@@ -82,4 +82,8 @@ public class Sets {
 	@Test public void Unsat_15() { 		
 		assertTrue(checkUnsat("xs <: {int} && ys <: {int} && y <: int && xs{=ys && {y}{!=ys && {y}{=xs"));
 	}	
+	
+	@Test public void Sat_1() {
+		assertTrue(checkSat("xs <: {int} && xs == {1,2,3}"));
+	}
 }
