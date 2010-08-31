@@ -118,7 +118,7 @@ public class WyilFileWriter {
 	}	
 	public static void tabIndent(int indent, PrintWriter out) {
 		indent = indent * 4;
-		for(int i=0;i!=indent;++i) {
+		for(int i=0;i<indent;++i) {
 			out.print(" ");
 		}
 	}
