@@ -43,11 +43,11 @@ public class Main {
 	public static final CompoundHeuristic heuristic = new CompoundHeuristic(
 			new NotEqualsHeuristic(), 
 			new DisjunctHeuristic(),
-			new BoundedNumberHeuristic(true, true), 
+			new BoundedNumberHeuristic(true, true), 			
+			new BoundedSetHeuristic(),			
 			new BoundedNumberHeuristic(true, false),
-			new BoundedSetHeuristic(),						
 			new UnboundedNumberHeuristic(true),
-			new UnboundedNumberHeuristic(false)
+			new UnboundedNumberHeuristic(false)		
 	);
 
 	public static final InferenceRule[] theories = {		

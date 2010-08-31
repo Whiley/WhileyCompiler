@@ -52,7 +52,7 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 
 	private List<SolverState> splitOnFirstSemiBounded(
 			HashMap<WExpr, Pair<Bound, Bound>> bounds, SolverState lhs,
-			Solver solver) {
+			Solver solver) {		
 		
 		for(Map.Entry<WExpr, Pair<Bound,Bound>> e : bounds.entrySet()) {
 			Bound low = e.getValue().first();
@@ -61,10 +61,10 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 				WExpr var = e.getKey();
 				SolverState rhs = lhs.clone();								
 				
-				if(low != null) {
+				if(low != null) {				
 					lhs.add(WExprs.equals(var,low.num), solver);
 					rhs.add(WNumerics.greaterThan(var,low.num), solver);
-				} else {
+				} else {					
 					lhs.add(WExprs.equals(var,high.num), solver);
 					rhs.add(WNumerics.lessThan(var,high.num), solver);					
 				}
@@ -107,7 +107,7 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		
 		WNumber mid = varlow.add(varhigh).divide(WNumber.TWO);		
 		SolverState rhs = lhs.clone();
-		
+				
 		lhs.add(WNumerics.lessThanEq(var,mid), solver);
 		rhs.add(WNumerics.greaterThan(var,mid), solver);
 		

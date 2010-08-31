@@ -134,4 +134,12 @@ public class Sets {
 	@Test public void Sat_13() {
 		assertTrue(checkSat("x <: int && xs <: {int} && |xs| == 2 && {x} {= xs && x > 4"));
 	}
+	
+	@Test public void Sat_14() {
+		assertTrue(checkSat("x <: int && y <: int && xs <: {int} && |xs| == 2 && {x,y} {= xs && y < 10 && x > y"));
+	}
+	
+	@Test public void Sat_15() {
+		assertTrue(checkSat("x <: int && y <: int && xs <: {int} && |xs| == 2 && {x,y} {= xs && x > y"));
+	}
 }

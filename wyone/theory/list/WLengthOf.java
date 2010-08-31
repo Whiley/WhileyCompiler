@@ -46,7 +46,7 @@ public class WLengthOf extends WConstructor<WExpr> implements WExpr {
 		WExpr ret;
 		
 		if(source instanceof WListConstructor) {			
-			WListConstructor c = (WListConstructor) source;			
+			WListConstructor c = (WListConstructor) source;				
 			return new WNumber(c.subterms().size());
 		} else if(source instanceof WListVal) {
 			WListVal c = (WListVal) source;			
@@ -54,6 +54,15 @@ public class WLengthOf extends WConstructor<WExpr> implements WExpr {
 		} else if(source instanceof WSetVal) {
 			WSetVal c = (WSetVal) source;			
 			return new WNumber(c.subterms().size());
+		} else if(source instanceof WSetConstructor) {
+			WSetConstructor c = (WSetConstructor) source;
+			int size = c.subterms().size();
+			if(size == 0 || size == 1) {
+				// in this case, we can be more definite
+				return new WNumber(size);
+			} else {
+				ret = new WLengthOf(source);
+			}
 		} else if(source != osource) {
 			ret = new WLengthOf(source);
 		} else {

@@ -61,7 +61,7 @@ public class CongruenceClosure implements InferenceRule {
 	
 	private void inferEquality(WEquality eq, SolverState state, Solver solver) {
 		
-		if(typeCheck(eq,state) != eq) {			
+		if(typeCheck(eq,state) != eq) {				
 			state.infer(WBool.FALSE,solver);
 			return; // no point going on.
 		}
@@ -109,7 +109,7 @@ public class CongruenceClosure implements InferenceRule {
 		// forms are added into the literal set.
 		for(WFormula f : state) {
 			if(f == eq) { continue; }			
-			WFormula nf = typeCheck(f.substitute(binding),state);						
+			WFormula nf = typeCheck(f.substitute(binding),state);									
 			if(nf != f) {
 				// f has been replaced!					
 				if(!isAssignment(f)) {

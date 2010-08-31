@@ -133,7 +133,7 @@ public final class SolverState implements Iterable<WFormula> {
 			for(InferenceRule ir : solver.theories()) {				
 				if(assertions.get(x)) {					
 					ir.infer(f, this, solver);
-					if(contains(WBool.FALSE)){
+					if(contains(WBool.FALSE)){				
 						return; // early termination
 					}
 				} else {
