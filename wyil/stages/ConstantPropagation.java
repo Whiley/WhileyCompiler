@@ -35,12 +35,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 	protected Pair<Block, HashMap<String, Value>> propagate(Code.Start start,
 			Code.End end, Block body, Stmt stmt, HashMap<String, Value> environment) {
 		
+		
+		
 		if(start instanceof Forall) {
 			Code.Forall fall = (Code.Forall) start;
 			CExpr source = infer(fall.source,stmt,environment);
 			fall = new Code.Forall(fall.label, fall.variable, source);
 			start = fall;
-			// Now, determine and eliminate loop-carried dependencies
+			
+			// Determine and eliminate loop-carried dependencies
 			environment = new HashMap<String,Value>(environment);
 			for(Stmt s : body) {
 				if(s.code instanceof Code.Assign) {
@@ -57,7 +60,19 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 				body = unrollFor(fall,body);
 				return propagate(body,environment);
 			}						
-		} 
+		} else if(start instanceof Loop) {
+			// Determine and eliminate loop-carried dependencies
+			environment = new HashMap<String,Value>(environment);
+			for(Stmt s : body) {
+				if(s.code instanceof Code.Assign) {
+					Code.Assign a = (Code.Assign) s.code;
+					if(a.lhs != null) {
+						LVar v = CExpr.extractLVar(a.lhs);						
+						environment.remove(v.name());
+					}
+				}
+			}			
+		}
 		
 		Pair<Block,HashMap<String,Value>> r = propagate(body,environment);
 		Block blk = new Block();
@@ -65,7 +80,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		blk.addAll(r.first());
 		blk.add(end);
 		
-		if(start instanceof Forall) { // should be loop
+		if(start instanceof Loop) { 
 			return new Pair(blk,join(environment,r.second()));
 		} else {
 			return new Pair(blk,r.second());

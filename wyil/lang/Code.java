@@ -434,10 +434,43 @@ public abstract class Code {
 		}
 	}
 
-	public abstract static class Loop extends Start {
+	public static class Loop extends Start {
 		public Loop(String label) {
 			super(label);		
-		}				
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Loop) {
+				Loop a = (Loop) o;
+				return label.equals(a.label);
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return label.hashCode();
+		}
+		
+		public String toString() {
+			return "loop";
+		}
+	}
+	
+	public static class LoopEnd extends End {
+		public LoopEnd(String label) {
+			super(label);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof LoopEnd) {
+				return target.equals(((LoopEnd)o).target);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "end";
+		}	
 	}
 	
 	public final static class Forall extends Loop {
@@ -468,7 +501,7 @@ public abstract class Code {
 		}
 	}
 
-	public final static class ForallEnd extends End {
+	public final static class ForallEnd extends LoopEnd {
 		public ForallEnd(String label) {
 			super(label);
 		}

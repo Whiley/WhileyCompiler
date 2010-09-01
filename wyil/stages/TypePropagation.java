@@ -431,7 +431,7 @@ public class TypePropagation implements ModuleTransform {
 		CExpr lhs = infer(v.lhs, stmt, environment);
 		CExpr rhs = infer(v.rhs, stmt, environment);
 		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());
-				
+
 		if(Type.isSubtype(Type.T_LIST(Type.T_ANY),lub)) {
 			switch(v.op) {
 				case APPEND:

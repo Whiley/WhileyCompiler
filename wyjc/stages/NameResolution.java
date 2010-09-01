@@ -151,6 +151,8 @@ public class NameResolution {
 				// do nothing
 			} else if(s instanceof IfElse) {
 				resolve((IfElse)s, environment, imports);
+			} else if(s instanceof While) {
+				resolve((While)s, environment, imports);
 			} else if(s instanceof Invoke) {
 				resolve((Invoke)s, environment, imports);
 			} else if(s instanceof Spawn) {
@@ -209,6 +211,18 @@ public class NameResolution {
 			for (Stmt st : s.falseBranch) {
 				resolve(st, environment, imports);
 			}
+		}
+	}
+	
+	protected void resolve(While s, HashMap<String,Set<Expr>> environment,
+			ArrayList<PkgID> imports) {
+		resolve(s.condition, environment, imports);
+		if(s.invariant != null) {
+			resolve(s.invariant, environment, imports);
+		}
+		environment = new HashMap<String,Set<Expr>>(environment);
+		for (Stmt st : s.body) {
+			resolve(st, environment, imports);
 		}
 	}
 	

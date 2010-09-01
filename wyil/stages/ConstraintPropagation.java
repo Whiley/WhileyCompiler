@@ -641,6 +641,52 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		case MUL:
 			return new Pair<WExpr, WFormula>(WNumerics.multiply(lhs.first(),
 					rhs.first()), constraints);
+		case APPEND: {
+			WVariable retVar = WVariable.freshVar();
+			
+			// first, identify new length					
+			WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar),
+					WNumerics.add(new WLengthOf(lhs.first()), new WLengthOf(rhs
+							.first())));
+
+			// second, pump from left src into retVar
+			WVariable i = WVariable.freshVar();
+			HashMap<WVariable,WExpr> variables = new HashMap();
+			variables.put(i,lhs.first());
+			WFormula wlhs = WExprs.equals(new WListAccess(lhs.first(), i),
+					new WListAccess(retVar, i));
+			WFormula forall1 = new WBoundedForall(true,variables,wlhs);
+			
+			// third, pump from right src into retVar
+			i = WVariable.freshVar();
+			variables = new HashMap();
+			variables.put(i,rhs.first());
+			WFormula wrhs = WExprs.equals(new WListAccess(rhs.first(), i),
+					new WListAccess(retVar, WNumerics.add(i,new WLengthOf(lhs.first()))));
+			WFormula forall2 = new WBoundedForall(true,variables,wrhs);
+			
+				// finally, pump from retvar into left src
+			i = WVariable.freshVar();
+			variables = new HashMap();
+			variables.put(i, retVar);
+			WFormula l1 = WNumerics.lessThan(i, new WLengthOf(lhs.first()));
+			WFormula r1 = WExprs.equals(new WListAccess(lhs.first(), i),
+					new WListAccess(retVar, i));
+			WFormula l2 = WNumerics
+					.greaterThanEq(i, new WLengthOf(lhs.first()));
+			WFormula r2 = WExprs.equals(new WListAccess(rhs.first(), WNumerics
+					.subtract(i, new WLengthOf(lhs.first()))), new WListAccess(
+					retVar, i));
+
+			WFormula forall3 = new WBoundedForall(true, variables, WFormulas
+					.and(WFormulas.implies(l1, r1), WFormulas.implies(l2, r2)));
+
+			constraints = WFormulas.and(constraints, lenConstraints, forall1,
+					forall2, forall3, WTypes.subtypeOf(retVar,
+							convert(v.type())));
+
+			return new Pair<WExpr, WFormula>(retVar, constraints);
+		}
 		case UNION: {
 			WVariable rv = WVariable.freshVar();
 			WVariable vs = WVariable.freshVar();

@@ -197,7 +197,6 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastUpperBound(Type t1, Type t2) {
-		
 		if(isSubtype(t1, t2, Collections.EMPTY_MAP)) {
 			return t1;
 		} else if(isSubtype(t2, t1, Collections.EMPTY_MAP)) {

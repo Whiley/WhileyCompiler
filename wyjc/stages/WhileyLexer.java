@@ -386,6 +386,7 @@ public class WhileyLexer {
 		"process",
 		"void",			
 		"if",
+		"while",
 		"else",
 		"where",
 		"requires",

@@ -669,6 +669,8 @@ public class ModuleBuilder {
 				return resolve((Debug) stmt, freeReg, environment);
 			} else if (stmt instanceof IfElse) {
 				return resolve((IfElse) stmt, freeReg, fd, environment);
+			} else if (stmt instanceof While) {
+				return resolve((While) stmt, freeReg, fd, environment);
 			} else if (stmt instanceof Invoke) {
 				Pair<CExpr, Block> p = resolve(freeReg, (Invoke) stmt,
 						environment);
@@ -871,6 +873,30 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected Block resolve(While s, int freeReg, FunDecl fd,
+			HashMap<String, Pair<Type, Block>> environment) {		
+		String label = Block.freshLabel();
+		String exitLab = Block.freshLabel();
+		
+		Block blk = new Block();
+		
+		blk.add(new Code.Loop(label), s.attribute(Attribute.Source.class));
+		
+		blk.addAll(resolveCondition(exitLab, invert(s.condition), freeReg,
+				environment));
+
+		HashMap<String, Pair<Type, Block>> dec = new HashMap<String, Pair<Type, Block>>(
+				environment);
+		for (Stmt st : s.body) {
+			blk.addAll(resolve(st, freeReg, fd, dec));
+		}		
+		blk.add(new Code.LoopEnd(label), s.attribute(Attribute.Source.class));
+		blk.add(new Code.Label(exitLab));
+
+		return blk;
+	}
+
+	
 	/**
 	 * Target gives the name of the register to use to store the result of this
 	 * expression in.

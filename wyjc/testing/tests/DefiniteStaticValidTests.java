@@ -221,4 +221,5 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void UnionType_Valid_9_StaticTest() { verificationRunTest("UnionType_Valid_9"); }
  @Test public void VarDecl_Valid_1_StaticTest() { verificationRunTest("VarDecl_Valid_1"); }
  @Test public void VarDecl_Valid_2_StaticTest() { verificationRunTest("VarDecl_Valid_2"); }
+ @Test public void While_Valid_1_StaticTest() { verificationRunTest("While_Valid_1"); }
 }
