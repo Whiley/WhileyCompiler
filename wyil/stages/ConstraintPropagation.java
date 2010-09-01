@@ -296,7 +296,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	protected Triple<Stmt, WFormula, WFormula> propagate(Code.IfGoto code,
 			Stmt elem, WFormula store) {
 
-		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
+		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);		
 		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
 		WFormula precondition = WFormulas.and(store, lhs_p.second(), rhs_p
 				.second());
@@ -329,6 +329,18 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		case SUBSETEQ:
 			condition = WSets.subsetEq(lhs_p.first(), rhs_p.first());
 			break;
+		case SUBTYPEEQ:
+		{
+			Value.TypeConst tc = (Value.TypeConst) code.rhs;
+			condition = WTypes.subtypeOf(lhs_p.first(), convert(tc.type));
+			break;
+		}
+		case NSUBTYPEEQ:
+		{
+			Value.TypeConst tc = (Value.TypeConst) code.rhs;
+			condition = WTypes.subtypeOf(lhs_p.first(), convert(tc.type)).not();
+			break;
+		}
 		}
 
 		// Determine condition for true and false branches
@@ -406,7 +418,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				return infer((TupleAccess) e, elem);
 			} else if (e instanceof Invoke) {
 				return infer((Invoke) e, elem);
-			}
+			} 
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
@@ -455,6 +467,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				values.add(infer(vt.values.get(f),elem));
 			}
 			return new WTupleVal(fields,values);
+		} else if(v instanceof Value.TypeConst) {
+			return null;
 		}
 		
 		syntaxError("unknown value encountered: " + v,filename,elem);
@@ -615,8 +629,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	}
 	
 	protected Pair<WExpr,WFormula> infer(BinOp v, SyntacticElement elem) {
-		Pair<WExpr,WFormula> lhs = infer(v.lhs, elem);
-		Pair<WExpr,WFormula> rhs = infer(v.rhs, elem);
+		Pair<WExpr,WFormula> lhs = infer(v.lhs, elem);		
+		Pair<WExpr,WFormula> rhs = infer(v.rhs, elem);		
 		WFormula constraints = WFormulas.and(lhs.second(),rhs.second());
 		switch (v.op) {
 		case ADD:
