@@ -9,32 +9,11 @@ import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
-import wyil.util.ResolveError;
-import wyil.util.SyntacticElement;
-import wyil.util.dfa.*;
+import wyil.util.*;
 
-public class ConstantPropagation implements ModuleTransform {
-	private final ModuleLoader loader;
-	private String filename;
-
+public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Value>> {	
 	public ConstantPropagation(ModuleLoader loader) {
-		this.loader = loader;
-	}
-	
-	public Module apply(Module module) {
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
-		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
-		
-		filename = module.filename();
-		
-		for(Module.TypeDef type : module.types()) {
-			types.add(transform(type));
-		}		
-		for(Module.Method method : module.methods()) {
-			methods.add(transform(method));
-		}
-		return new Module(module.id(), module.filename(), methods, types,
-				module.constants());
+		super(loader);
 	}
 	
 	public Module.TypeDef transform(Module.TypeDef type) {
@@ -43,116 +22,35 @@ public class ConstantPropagation implements ModuleTransform {
 			return type;
 		} else {
 			HashMap<String, Value> environment = new HashMap<String, Value>();
-			constraint = transform(constraint, environment, null);
+			constraint = propagate(constraint, environment).first();
 			return new Module.TypeDef(type.name(), type.type(), constraint);
 		}
 	}
 	
-	public Module.Method transform(Module.Method method) {
-		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
-		for (Module.Case c : method.cases()) {
-			cases.add(transform(c,method));
-		}
-		return new Module.Method(method.name(), method.type(), cases);
+	public HashMap<String,Value> initialStore() {		
+		return new HashMap<String,Value>();
+				
 	}
 	
-	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		HashMap<String,Value> environment = new HashMap<String,Value>();
-				
-		Block precondition = mcase.precondition();
-		if(precondition != null) {			
-			precondition = transform(precondition, environment, method);
-		}
-		Block postcondition = mcase.postcondition();
-		if(postcondition != null) {			
-			postcondition = transform(postcondition, environment, method);			
-		}
-				
-		Block body = transform(mcase.body(), environment, method);		
-		return new Module.Case(mcase.parameterNames(), precondition,
-				postcondition, body);
-	}
-	
-	protected Block transform(Block block, HashMap<String, Value> environment,
-			Module.Method method) {
-		Block nblock = new Block();
-		HashMap<String, HashMap<String, Value>> flowsets = new HashMap<String, HashMap<String, Value>>();
-
-		for(int i=0;i!=block.size();++i) {			
-			Stmt stmt = block.get(i);
-			Code code = stmt.code;
-
-			if(code instanceof Label) {
-				Label label = (Label) code;
-				if(environment == null) {
-					environment = flowsets.get(label.label);					
-				} else {
-					join(environment,flowsets.get(label.label));
-				}				
-			} 
-			
-			if(environment == null) {				
-				continue; // this indicates dead-code
-			} else if(code instanceof Goto) {
-				Goto got = (Goto) code;
-				merge(got.target,environment,flowsets);
-				environment = null;
-			} else if(code instanceof IfGoto) {
-				IfGoto igot = (IfGoto) code;					
-				code = infer((Code.IfGoto)code,stmt,environment);
-				// Observe that the following is needed because type inference
-				// can determine that an if-statement definitely is taken, or
-				// definitely isn't taken.
-				if(code instanceof Code.IfGoto) {
-					merge(igot.target,environment,flowsets);
-				} else if(code instanceof Code.Goto) {					
-					merge(igot.target,environment,flowsets);
-					environment = null;
-				} 
-			} else if(code instanceof Assign) {
-				code = infer((Code.Assign)code,stmt,environment);
-			} else if(code instanceof Return) {
-				code = infer((Code.Return)code,stmt,environment,method);
-				environment = null;
-			} else if(code instanceof Fail) {				
-				environment = null;
-			} else if(code instanceof Forall) {
-				Code.Forall fall = (Code.Forall) code;
-				fall = infer(fall,stmt,environment);				
-								
-				if(fall.source instanceof Value) {
-					// This indicates a loop over a constant source set. In such
-					// cases, we can unroll the loop in order that it might be
-					// completely optimised away.
-					Block body = new Block();
-					while(++i < block.size()) {
-						stmt = block.get(i);
-						if(stmt.code instanceof Code.ForallEnd) {
-							Code.ForallEnd fend = (Code.ForallEnd) stmt.code;
-							if(fend.target.equals(fall.label)){
-								// end of loop body found
-								break;
-							}
-						}
-						body.add(stmt.code,stmt.attributes());
-					}					
-					Block blk = unrollFor(fall,body);
-					if(i<block.size()) {
-						blk.addAll(block.subblock(i+1,block.size()));
-					}
-					i=-1; 
-					block = blk;					
-					continue;
-				} 
-								
-				code = fall;
-			} else if(code instanceof Debug) {
-				code = infer((Code.Debug)code,stmt,environment);
-			} 
-			
-			nblock.add(code, stmt.attributes());
-		}
-		return nblock;
+	protected Pair<Block, HashMap<String, Value>> propagate(Code.Start start,
+			Code.End end, Block body, Stmt stmt, HashMap<String, Value> environment) {
+		
+		if(start instanceof Forall) {
+			Code.Forall fall = (Code.Forall) start;
+			CExpr source = infer(fall.source,stmt,environment);
+			start = new Code.Forall(fall.label, fall.variable, source);
+			if(source instanceof Value) {
+				// ok, we can unroll the loop body --- yay!
+				body = unrollFor(fall,body);
+			}
+		} 
+		
+		body = propagate(body,environment).first();
+		Block blk = new Block();
+		blk.add(start);
+		blk.addAll(body);
+		blk.add(end);
+		return new Pair(blk,environment);
 	}
 	
 	protected Block unrollFor(Code.Forall fall, Block body) {		
@@ -177,71 +75,52 @@ public class ConstantPropagation implements ModuleTransform {
 			blk.addAll(tmp);
 		}
 		return blk;
-	}
+	}		
 	
-	protected void merge(String target, HashMap<String,Value> env,
-			HashMap<String, HashMap<String,Value>> flowsets) {
+	protected Pair<Stmt,HashMap<String,Value>> propagate(Stmt stmt, HashMap<String,Value> environment) {
 		
-		HashMap<String,Value> e = flowsets.get(target);
-		if(e == null) {
-			flowsets.put(target, new HashMap<String,Value>(env));
-		} else {
-			join(e,env);
-			flowsets.put(target, e);
+		
+		Code code = stmt.code;
+		if(stmt.code instanceof Code.Assign) {
+			return propagate((Code.Assign)stmt.code,stmt,environment);
+		} else if(stmt.code instanceof Code.Debug) {
+			code = propagate((Code.Debug)stmt.code,stmt,environment);
+		} else if(stmt.code instanceof Code.Return) {
+			code = propagate((Code.Return)stmt.code,stmt,environment);
 		}
-	}
-	
-	protected Code.Forall infer(Code.Forall code, Stmt stmt,
-			HashMap<String,Value> environment) {
 		
-		CExpr src = infer(code.source, stmt, environment);		
-		// Ok, could unroll loops here
-		return new Code.Forall(code.label, code.variable, src);
+		return new Pair(new Stmt(code,stmt.attributes()),environment);
 	}
 	
-	protected Code infer(Code.Assign code, Stmt stmt, HashMap<String,Value> environment) {
+	protected Pair<Stmt,HashMap<String,Value>> propagate(Code.Assign code, Stmt stmt, HashMap<String,Value> environment) {
 		CExpr.LVal lhs = code.lhs;
 		CExpr rhs = infer(code.rhs,stmt,environment);
 
 		if(lhs instanceof Variable && rhs instanceof Value) {
 			Variable v = (Variable) lhs;
+			environment = new HashMap<String,Value>(environment);
 			environment.put(v.name, (Value) rhs);			
 		} else if(lhs instanceof Register && rhs instanceof Value) {
 			Register v = (Register) lhs;
+			environment = new HashMap<String,Value>(environment);
 			environment.put("%" + v.index, (Value) rhs);
 		} else if(lhs != null) {
 			// FIXME: we could do better here, actually. Particularly in the
 			// case of tuple accesses. Lists are harder, unless the index is
 			// itself a constant.			
 			LVar lv = CExpr.extractLVar(lhs);
+			environment = new HashMap<String,Value>(environment);
 			// Now, remove the constant we have stored for this variable, since
 			// the variables value has changed in some manner that we haven't
 			// or can't fully track.
 			environment.remove(lv.name());
 		}
 		
-		return new Code.Assign(lhs,rhs);
+		stmt = new Stmt(new Code.Assign(lhs,rhs),stmt.attributes());
+		return new Pair(stmt,environment);
 	}
 	
-	
-	protected Code infer(Code.IfGoto code, Stmt stmt,
-			HashMap<String, Value> environment) {
-		CExpr lhs = infer(code.lhs, stmt, environment);
-		CExpr rhs = infer(code.rhs, stmt, environment);
-
-		if (lhs instanceof Value && rhs instanceof Value) {
-			boolean v = Value.evaluate(code.op, (Value) lhs, (Value) rhs);
-			if (v) {
-				return new Code.Goto(code.target);
-			} else {
-				return new Code.Skip();
-			}
-		}
-
-		return new Code.IfGoto(code.op, lhs, rhs, code.target);
-	}	
-	protected Code infer(Code.Return code, Stmt stmt, HashMap<String,Value> environment,
-			Module.Method method) {
+	protected Code propagate(Code.Return code, Stmt stmt, HashMap<String,Value> environment) {
 		CExpr rhs = code.rhs;
 		
 		if(rhs != null) {
@@ -257,11 +136,33 @@ public class ConstantPropagation implements ModuleTransform {
 		return new Code.Return(rhs);
 	}
 	
-	protected Code infer(Code.Debug code, Stmt stmt, HashMap<String,Value> environment) {
+	protected Code propagate(Code.Debug code, Stmt stmt, HashMap<String,Value> environment) {
 		CExpr rhs = infer(code.rhs,stmt, environment);		
 		return new Code.Debug(rhs);
 	}
 	
+
+	protected Triple<Stmt, HashMap<String, Value>, HashMap<String, Value>> propagate(
+			Code.IfGoto code, Stmt stmt, HashMap<String, Value> environment) {
+		CExpr lhs = infer(code.lhs, stmt, environment);
+		CExpr rhs = infer(code.rhs, stmt, environment);
+		Code ncode;
+		
+		if (lhs instanceof Value && rhs instanceof Value) {
+			boolean v = Value.evaluate(code.op, (Value) lhs, (Value) rhs);
+			if (v) {
+				ncode = new Code.Goto(code.target);
+			} else {
+				ncode = new Code.Skip();
+			}
+		} else {
+			ncode = new Code.IfGoto(code.op, lhs, rhs, code.target); 
+		}
+
+		stmt = new Stmt(ncode,stmt.attributes());
+		return new Triple(stmt,environment,environment);
+	}	
+
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Value> environment) {
 
 		if (e instanceof Value) {
@@ -406,19 +307,18 @@ public class ConstantPropagation implements ModuleTransform {
 		return CExpr.INVOKE(ivk.type, ivk.name, ivk.caseNum, receiver, args);		
 	}
 		
-	public static void join(HashMap<String,Value> env1,
-			HashMap<String,Value> env2) {		
-		if (env2 == null) { return; }
+	public HashMap<String, Value> join(HashMap<String, Value> env1,
+			HashMap<String, Value> env2) {
+		HashMap<String, Value> r = new HashMap<String, Value>();
 		HashSet<String> keys = new HashSet<String>(env1.keySet());
 		keys.addAll(env2.keySet());
 		for (String key : keys) {
 			Value mt = env1.get(key);
 			Value ot = env2.get(key);
 			if (ot instanceof Value && mt instanceof Value && ot.equals(mt)) {
-				// ok
-			} else {
-				env1.remove(key);
+				r.put(key, ot);
 			}
 		}
+		return r;
 	}
 }

@@ -47,8 +47,6 @@ public class ExpectedInference extends BackwardFlowAnalysis<Boolean> {
 			Attribute.BranchPredict e = new Attribute.BranchPredict(!trueDefFail,!falseDefFail);
 			ArrayList<Attribute> attrs = new ArrayList<Attribute>(stmt.attributes());
 			attrs.add(e);
-			System.out.println("CODE: " + ifgoto);
-			System.out.println("PREDICTION: " + e);
 			return new Pair<Stmt,Boolean>(new Stmt(ifgoto,attrs),trueDefFail && falseDefFail);
 		} else {
 			return new Pair<Stmt,Boolean>(stmt,false);
