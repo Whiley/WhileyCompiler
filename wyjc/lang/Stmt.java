@@ -112,6 +112,31 @@ public interface Stmt extends SyntacticElement {
 			this.body = new ArrayList<Stmt>(body);				
 		}		
 	}
+
+	public static final class For extends SyntacticElement.Impl implements Stmt {
+		public final String variable;		
+		public final Expr source;
+		public final Expr invariant;
+		public final ArrayList<Stmt> body;
+
+		public For(String variable, Expr source, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
+			super(attributes);
+			this.variable = variable;
+			this.source = source;
+			this.invariant = invariant;
+			this.body = new ArrayList<Stmt>(body);
+		}
+
+		public For(String variable, Expr source, Expr invariant,
+				Collection<Stmt> body, Collection<Attribute> attributes) {
+			super(attributes);
+			this.variable = variable;
+			this.source = source;
+			this.invariant = invariant;
+			this.body = new ArrayList<Stmt>(body);
+		}		
+	}
+
 	
 	public static final class IfElse extends SyntacticElement.Impl implements Stmt {
 		public final Expr condition;

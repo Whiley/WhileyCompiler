@@ -71,6 +71,7 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void Ensures_Valid_3_StaticTest() { verificationRunTest("Ensures_Valid_3"); }
  @Test public void Ensures_Valid_4_StaticTest() { verificationRunTest("Ensures_Valid_4"); }
  @Test public void Ensures_Valid_5_StaticTest() { verificationRunTest("Ensures_Valid_5"); }
+ @Test public void For_Valid_1_StaticTest() { verificationRunTest("For_Valid_1"); }
  @Test public void Function_Valid_1_StaticTest() { verificationRunTest("Function_Valid_1"); }
  @Test public void Function_Valid_10_StaticTest() { verificationRunTest("Function_Valid_10"); }
  @Test public void Function_Valid_11_StaticTest() { verificationRunTest("Function_Valid_11"); }

@@ -153,6 +153,8 @@ public class NameResolution {
 				resolve((IfElse)s, environment, imports);
 			} else if(s instanceof While) {
 				resolve((While)s, environment, imports);
+			} else if(s instanceof For) {
+				resolve((For)s, environment, imports);
 			} else if(s instanceof Invoke) {
 				resolve((Invoke)s, environment, imports);
 			} else if(s instanceof Spawn) {
@@ -226,6 +228,22 @@ public class NameResolution {
 		}
 	}
 	
+	protected void resolve(For s, HashMap<String,Set<Expr>> environment,
+			ArrayList<PkgID> imports) {
+		resolve(s.source, environment, imports);
+		if(s.invariant != null) {
+			resolve(s.invariant, environment, imports);
+		}
+		if (environment.containsKey(s.variable)) {
+			syntaxError("variable " + s.variable + " is alreaded defined",
+					filename, s);
+		}
+		environment = new HashMap<String,Set<Expr>>(environment);
+		environment.put(s.variable, Collections.EMPTY_SET);
+		for (Stmt st : s.body) {
+			resolve(st, environment, imports);
+		}
+	}
 	protected void resolve(Expr e, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) {
 		try {
 			if (e instanceof Constant) {

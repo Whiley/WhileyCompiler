@@ -323,6 +323,8 @@ public class WhileyParser {
 			return parseIf(indent);
 		} else if(token.text.equals("while")) {			
 			return parseWhile(indent);
+		} else if(token.text.equals("for")) {			
+			return parseFor(indent);
 		} else if(token.text.equals("extern")) {			
 			return parseExtern(indent);
 		} else if(token.text.equals("spawn")) {			
@@ -456,6 +458,24 @@ public class WhileyParser {
 		List<Stmt> blk = parseBlock(indent+1);								
 		
 		return new Stmt.While(condition,invariant,blk, sourceAttr(start,index-1));
+	}
+	
+	private Stmt parseFor(int indent) {
+		int start = index;
+		matchKeyword("for");						
+		Identifier id = matchIdentifier();
+		match(ElemOf.class);
+		Expr source = parseCondition();
+		Expr invariant = null;
+		if(tokens.get(index).text.equals("where")) {
+			matchKeyword("where");
+			invariant = parseCondition();
+		}
+		match(Colon.class);
+		matchEndLine();
+		List<Stmt> blk = parseBlock(indent+1);								
+		
+		return new Stmt.For(id.text,source,invariant,blk, sourceAttr(start,index-1));
 	}
 	
 	private Stmt parseExtern(int indent) {

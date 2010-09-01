@@ -671,6 +671,8 @@ public class ModuleBuilder {
 				return resolve((IfElse) stmt, freeReg, fd, environment);
 			} else if (stmt instanceof While) {
 				return resolve((While) stmt, freeReg, fd, environment);
+			} else if (stmt instanceof For) {
+				return resolve((For) stmt, freeReg, fd, environment);
 			} else if (stmt instanceof Invoke) {
 				Pair<CExpr, Block> p = resolve(freeReg, (Invoke) stmt,
 						environment);
@@ -686,13 +688,13 @@ public class ModuleBuilder {
 				return resolve((Skip) stmt, freeReg, fd, environment);
 			} else {
 				syntaxError("unknown statement encountered: "
-						+ stmt.getClass().getName(), fd.name, stmt);
+						+ stmt.getClass().getName(), filename, stmt);
 			}
 		} catch (ResolveError rex) {
 			syntaxError(rex.getMessage(), filename, stmt, rex);
 		} catch (SyntaxError sex) {
 			throw sex;
-		} catch (Exception ex) {
+		} catch (Exception ex) {			
 			syntaxError("internal failure", filename, stmt, ex);
 		}
 		return null;
@@ -896,6 +898,28 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected Block resolve(For s, int freeReg, FunDecl fd,
+			HashMap<String, Pair<Type, Block>> environment) {		
+		String label = Block.freshLabel();
+		Pair<CExpr,Block> source = resolve(freeReg,s.source,environment);
+		Block blk = new Block();
+		blk.addAll(source.second());
+		CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg); 
+		blk.add(new Code.Forall(label,reg,source.first()), s.attribute(Attribute.Source.class));
+		
+		HashMap<String, Pair<Type, Block>> dec = new HashMap<String, Pair<Type, Block>>(
+				environment);
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
+		binding.put(s.variable,reg);
+		dec.put(s.variable, new Pair<Type,Block>(Type.T_ANY,null));
+		for (Stmt st : s.body) {
+			Block b = resolve(st, freeReg+1, fd, dec);
+			blk.addAll(Block.substitute(binding, b));
+		}		
+		blk.add(new Code.ForallEnd(label), s.attribute(Attribute.Source.class));		
+
+		return blk;
+	}
 	
 	/**
 	 * Target gives the name of the register to use to store the result of this
