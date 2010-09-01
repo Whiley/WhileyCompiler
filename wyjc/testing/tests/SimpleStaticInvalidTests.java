@@ -152,4 +152,6 @@ public class SimpleStaticInvalidTests extends TestHarness {
  @Test public void Void_CompileFail_2_StaticTest() { contextFailTest("Void_CompileFail_2"); }
  @Test public void While_CompileFail_1_StaticTest() { contextFailTest("While_CompileFail_1"); }
  @Test public void While_CompileFail_2_StaticTest() { contextFailTest("While_CompileFail_2"); }
+ @Test public void While_CompileFail_3_StaticTest() { contextFailTest("While_CompileFail_3"); }
+ @Test public void While_CompileFail_4_StaticTest() { contextFailTest("While_CompileFail_4"); }
 }

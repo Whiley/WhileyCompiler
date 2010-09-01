@@ -91,4 +91,5 @@ public class DefiniteRuntimeInvalidTests extends TestHarness {
  @Test public void VarDecl_Invalid_1_RunTest() { runtimeFailTest("VarDecl_Invalid_1"); } 
  @Test public void While_Invalid_2_RunTest() { runtimeFailTest("While_Invalid_2"); }
  @Test public void While_Invalid_3_RunTest() { runtimeFailTest("While_Invalid_3"); }
+ @Test public void While_Invalid_4_RunTest() { runtimeFailTest("While_Invalid_4"); }
 }
