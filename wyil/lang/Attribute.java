@@ -34,6 +34,19 @@ public interface Attribute {
 		}
 	}
 	
+	public static class Expected implements Attribute {
+		public final boolean branch;		
+		
+		public Expected(boolean branch) {
+			this.branch = branch;
+		}
+		
+		public String toString() {
+			String r = branch ? "T" : "F";			 
+			return "E" + r;
+		}
+	}
+	
 	public static class PreCondition implements Attribute {
 		public final WFormula condition;
 		

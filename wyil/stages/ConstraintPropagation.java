@@ -31,16 +31,12 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 	 */
 	private HashMap<String,WExpr> substitutions = new HashMap<String,WExpr>();
 
-	/**
-	 * The following is used to count the nesting of check blocks. This helps us
-	 * target constraint checking to only occur within check blocks (leading to
-	 * better compilation times, although execution times may be worse).
-	 */
-	private int inCheckBlock = 0;
+	private boolean minimal;
 	
-	public ConstraintPropagation(ModuleLoader loader, int timeout) {
+	public ConstraintPropagation(ModuleLoader loader, boolean minimal, int timeout) {
 		super(loader);
 		this.timeout = timeout;	
+		this.minimal = minimal;
 	}
 	
 	public WFormula initialStore() {
@@ -260,9 +256,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			stores = parentStores;
 		} else {			
 			// Other kind of block, which we can ignore.
-			inCheckBlock++;
 			Pair<Block,WFormula> r = propagate(body,store);
-			inCheckBlock--;
 			body = r.first();
 			store = r.second();
 		} 
@@ -337,29 +331,26 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			break;
 		}
 
-		// Determine condition for true branch, and check satisfiability
+		// Determine condition for true and false branches
 		WFormula trueCondition = WFormulas.and(precondition, condition);
 		WFormula falseCondition = WFormulas.and(precondition, condition.not());
+		Attribute.Expected expected = elem.attribute(Attribute.Expected.class);		
 		
-		if (inCheckBlock == 0) {
-			// In this case, we're not in a check block ... so don't use the SMT
-			// solver.  This is really an optisation for now, since ideally we do 
-			// want to use the SMT solver to eliminate unreachable paths.
-			return new Triple<Stmt, WFormula, WFormula>(elem, trueCondition,
-					falseCondition);
+		if(!minimal || (expected != null && !expected.branch)) {		
+			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
+					wyone.Main.heuristic, wyone.Main.theories);		
+			if (tp instanceof Proof.Unsat) {			
+				trueCondition = null;
+			}
 		}
-				
-		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
-				wyone.Main.heuristic, wyone.Main.theories);		
-		if (tp instanceof Proof.Unsat) {			
-			trueCondition = null;
-		}												
-		// Determine condition for false branch, and check satisfiability		
-		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
-				wyone.Main.heuristic, wyone.Main.theories);			
-		if (fp instanceof Proof.Unsat) {
-			falseCondition = null;
-		}					
+		
+		if(!minimal || (expected != null && expected.branch)) {
+			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
+					wyone.Main.heuristic, wyone.Main.theories);			
+			if (fp instanceof Proof.Unsat) {
+				falseCondition = null;
+			}					
+		}
 		// Update attribute information
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 		attributes.addAll(elem.attributes());		
