@@ -152,6 +152,8 @@ public class Main {
 			stages.add(new WyilWriter());
 		}
 		if(!nvc) {
+			stages.add(new WyilTransform("branch prediction",
+					new ExpectedInference(loader)));
 			stages.add(new WyilTransform("constraint propagation",
 					new ConstraintPropagation(loader,true,timeout)));
 		}		

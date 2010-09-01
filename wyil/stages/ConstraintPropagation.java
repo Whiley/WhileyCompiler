@@ -21,7 +21,7 @@ import wyone.theory.tuple.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.type.*;
 
-public class ConstraintPropagation extends AbstractPropagation<WFormula> {	
+public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {	
 	private int timeout;
 	/**
 	 * The substitutions map is used to help in the translation of loops over
@@ -334,9 +334,9 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 		// Determine condition for true and false branches
 		WFormula trueCondition = WFormulas.and(precondition, condition);
 		WFormula falseCondition = WFormulas.and(precondition, condition.not());
-		Attribute.Expected expected = elem.attribute(Attribute.Expected.class);		
+		Attribute.BranchPredict expected = elem.attribute(Attribute.BranchPredict.class);		
 		
-		if(!minimal || (expected != null && !expected.branch)) {		
+		if(!minimal || (expected != null && !expected.trueBranch)) {		
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 					wyone.Main.heuristic, wyone.Main.theories);		
 			if (tp instanceof Proof.Unsat) {			
@@ -344,7 +344,7 @@ public class ConstraintPropagation extends AbstractPropagation<WFormula> {
 			}
 		}
 		
-		if(!minimal || (expected != null && expected.branch)) {
+		if(!minimal || (expected != null && !expected.falseBranch)) {
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);			
 			if (fp instanceof Proof.Unsat) {

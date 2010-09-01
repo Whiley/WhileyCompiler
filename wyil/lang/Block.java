@@ -31,15 +31,31 @@ public final class Block implements Iterable<Stmt> {
 		stmts.add(idx,new Stmt(c,attributes));
 	}
 	
+	public void add(int idx, Code c, Collection<Attribute> attributes) {
+		stmts.add(idx,new Stmt(c,attributes));
+	}
+	
 	public void addAll(Collection<Stmt> stmts) {
 		for(Stmt s : stmts) {
 			add(s.code,s.attributes());
 		}
 	}
 	
+	public void addAll(int idx, Collection<Stmt> stmts) {
+		for(Stmt s : stmts) {
+			add(idx,s.code,s.attributes());
+		}
+	}
+	
 	public void addAll(Block stmts) {
 		for(Stmt s : stmts) {
 			add(s.code,s.attributes());
+		}
+	}
+	
+	public void addAll(int idx, Block stmts) {
+		for(Stmt s : stmts) {
+			add(idx, s.code,s.attributes());
 		}
 	}
 	

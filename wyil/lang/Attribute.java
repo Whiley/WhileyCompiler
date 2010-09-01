@@ -34,17 +34,20 @@ public interface Attribute {
 		}
 	}
 	
-	public static class Expected implements Attribute {
-		public final boolean branch;		
+	public static class BranchPredict implements Attribute {
+		public final boolean trueBranch;
+		public final boolean falseBranch;
 		
-		public Expected(boolean branch) {
-			this.branch = branch;
+		public BranchPredict(boolean trueBranch, boolean falseBranch) {
+			this.trueBranch = trueBranch;
+			this.falseBranch = falseBranch;
 		}
 		
 		public String toString() {
-			String r = branch ? "T" : "F";			 
-			return "E" + r;
-		}
+			String r = trueBranch ? "T" : "";
+			r += falseBranch ? "F" : "";
+			return "e" + r;
+		}		
 	}
 	
 	public static class PreCondition implements Attribute {

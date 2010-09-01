@@ -10,14 +10,14 @@ import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.util.*;
 
-public abstract class AbstractPropagation<T> implements ModuleTransform {
+public abstract class BackwardFlowAnalysis<T> implements ModuleTransform {
 	protected ModuleLoader loader;
 	protected String filename;
 	protected Module.Method method;
 	protected Module.Case methodCase;
 	protected HashMap<String,T> stores;
 	
-	public AbstractPropagation(ModuleLoader loader) {
+	public BackwardFlowAnalysis(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
@@ -59,8 +59,8 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	public Module.Case propagate(Module.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
-		T init = initialStore();						
-		Block body = propagate(mcase.body(), init).first();		
+		T last = lastStore();						
+		Block body = propagate(mcase.body(), last).first();		
 		return new Module.Case(mcase.parameterNames(),
 				mcase.precondition(), mcase.postcondition(), body);
 	}		
@@ -68,7 +68,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	protected Pair<Block, T> propagate(Block block, T store) {
 		
 		Block nblock = new Block();
-		for(int i=0;i<block.size();++i) {						
+		for(int i=(block.size()-1);i>=0;--i) {						
 			Stmt stmt = block.get(i);			
 			try {				
 				Code code = stmt.code;
@@ -76,68 +76,46 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 				// First, check for a label which may have incoming information.
 				if (code instanceof Code.Label) {
 					Code.Label l = (Code.Label) code;
-					T tmp = stores.get(l.label);
-					if (tmp != null && store != null) {
-						store = join(store, tmp);
-					} else if (tmp != null) {
-						store = tmp;
-					}
+					stores.put(l.label,store);
 				}
 
-				if (store == null) {
-					// this indicates dead-code has been reached.
-					continue;
-				} else if (code instanceof Code.Start) {					
-					Code.Start start = (Code.Start) code;
-					Code.End end = null;
+				if (code instanceof Code.End) {					
+					Code.Start start = null;
+					Code.End end = (Code.End) code;
 					// Note, I could make this more efficient!
 					Block body = new Block();
-					while (++i < block.size()) {
+					while (--i >= 0) {						
 						stmt = block.get(i);
-						if (stmt.code instanceof Code.End) {
-							end = (Code.End) stmt.code;
+						if (stmt.code instanceof Code.Start) {
+							start = (Code.Start) stmt.code;
 							if (end.target.equals(start.label)) {
-								// end of loop body found
+								// start of loop body found
 								break;
 							}
 						}
 						body.add(stmt.code, stmt.attributes());
 					}										
 					Pair<Block, T> r = propagate(start, end, body, stmt, store);
-					nblock.addAll(r.first());
+					nblock.addAll(0,r.first());
 					store = r.second();
 					continue;
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
-					Triple<Stmt, T, T> r = propagate(ifgoto, stmt, store);
-					stmt = r.first();
-					store = r.third();
-
-					// Now, check to see if the statement has been updated, and
-					// process outgoing information accordingly.
-					if (stmt.code instanceof Code.IfGoto) {
-						Code.IfGoto gto = (Code.IfGoto) stmt.code;
-						merge(gto.target, r.second(), stores);
-					} else if (stmt.code instanceof Code.Goto) {
-						Code.Goto gto = (Code.Goto) stmt.code;
-						merge(gto.target, r.second(), stores);
-						store = null;
-					}
-				} else if (code instanceof Code.Goto) {
-					Code.Goto gto = (Code.Goto) stmt.code;
-					merge(gto.target, store, stores);
-					store = null;
-				} else {
-					// This indicates a sequential statement was encountered.
-					Pair<Stmt, T> r = propagate(stmt, store);
+					T trueStore = stores.get(ifgoto.target);
+					Pair<Stmt, T> r = propagate(ifgoto, stmt, trueStore,store);
 					stmt = r.first();
 					store = r.second();
-					if (stmt.code instanceof Code.Fail
-							|| stmt.code instanceof Code.Return) {
-						store = null;
-					}
+				} else if (code instanceof Code.Goto) {
+					Code.Goto gto = (Code.Goto) stmt.code;
+					store = stores.get(gto.target);					
+				} else {
+					// This indicates a sequential statement was encountered.					
+					Pair<Stmt, T> r = propagate(stmt, store);
+					stmt = r.first();
+					store = r.second();					
 				}
-				nblock.add(stmt.code, stmt.attributes());
+				// Must always add to front in backward analysis
+				nblock.add(0, stmt.code, stmt.attributes());
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
@@ -147,23 +125,13 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 		
 		return new Pair<Block,T>(nblock,store);
 	}
-	
-	protected void merge(String target, T store, Map<String, T> stores) {
-		T old = stores.get(target);
-		if (old == null) {
-			stores.put(target, store);
-		} else {
-			stores.put(target, join(old, store));
-		}
-	}
 
 	/**
 	 * <p>
-	 * Propagate through a conditional branch. This produces a potentially
-	 * updated statement, and two stores for the true and false branches
-	 * respectively. The code of the statement returned is either that of the
-	 * original statement, a Skip, or a Goto. The latter two indicate that the
-	 * code was proven definitely false, or definitely true (respectively).
+	 * Propagate back from a conditional branch. This produces a potentially
+	 * updated statement, and one store representing the state before the
+	 * branch. The method accepts two stores --- one originating from the true
+	 * branch, and the other from the false branch.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> if the returned statement is a goto, then the third element
@@ -175,18 +143,22 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	 *            --- the code of this statement
 	 * @param stmt
 	 *            --- this statement
-	 * @param store
-	 *            --- abstract store which holds true immediately before this
-	 *            statement.
+	 * @param trueStore
+	 *            --- abstract store which holds true immediately after this
+	 *            statement on the true branch.
+	 * @param falseStore
+	 *            --- abstract store which holds true immediately after this
+	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract Triple<Stmt,T,T> propagate(Code.IfGoto ifgoto, Stmt stmt, T store);
+	protected abstract Pair<Stmt, T> propagate(Code.IfGoto ifgoto, Stmt stmt,
+			T trueStore, T falseStore);
 
 	/**
 	 * <p>
-	 * Propagate through a block statement (e.g. loop, or check), producing a
+	 * Propagate back from a block statement (e.g. loop, or check), producing a
 	 * potentially updated block and the store which holds true immediately
-	 * after the statement
+	 * before the statement
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> the block returned must include the start and end code of
@@ -212,7 +184,7 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	
 	/**
 	 * <p>
-	 * Propagate through a sequential statement, producing a potentially updated
+	 * Propagate back from a sequential statement, producing a potentially updated
 	 * statement and the store which holds true immediately after the statement
 	 * </p>
 	 * 
@@ -224,14 +196,18 @@ public abstract class AbstractPropagation<T> implements ModuleTransform {
 	 * @return
 	 */
 	protected abstract Pair<Stmt,T> propagate(Stmt stmt, T store);
-	
+
 	/**
-	 * Determine the initial store for the current method case.
+	 * Generate the store which holds true immediately after the last statement
+	 * of the method-case body.  By default, this is null and the first return
+	 * statement encountered during the backwards propagation initialises things.
 	 * 
 	 * @return
 	 */
-	protected abstract T initialStore();
-
+	protected T lastStore() {
+		return null;
+	}
+	
 	/**
 	 * Join two abstract stores together producing a new abstract store. Observe
 	 * that this operation must not side-effect the two input stores. This is
