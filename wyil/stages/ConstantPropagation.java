@@ -43,6 +43,18 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 				// ok, we can unroll the loop body --- yay!
 				body = unrollFor(fall,body);
 			}
+			
+			// Now, determine and eliminate loop-carried dependencies
+			environment = new HashMap<String,Value>(environment);
+			for(Stmt s : body) {
+				if(s.code instanceof Code.Assign) {
+					Code.Assign a = (Code.Assign) s.code;
+					if(a.lhs != null) {
+						LVar v = CExpr.extractLVar(a.lhs);						
+						environment.remove(v.name());
+					}
+				}
+			}
 		} 
 		
 		Pair<Block,HashMap<String,Value>> r = propagate(body,environment);
@@ -50,7 +62,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		blk.add(start);
 		blk.addAll(r.first());
 		blk.add(end);
-		return new Pair(blk,join(environment,r.second()));
+		
+		if(start instanceof Forall) { // should be loop
+			return new Pair(blk,join(environment,r.second()));
+		} else {
+			return new Pair(blk,r.second());
+		}
 	}
 	
 	protected Block unrollFor(Code.Forall fall, Block body) {		

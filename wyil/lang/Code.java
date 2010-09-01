@@ -434,7 +434,13 @@ public abstract class Code {
 		}
 	}
 
-	public final static class Forall extends Start {
+	public abstract static class Loop extends Start {
+		public Loop(String label) {
+			super(label);		
+		}				
+	}
+	
+	public final static class Forall extends Loop {
 		public final CExpr.Register variable;
 		public final CExpr source;
 

@@ -3,10 +3,7 @@ package wyil.jvm.attributes;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
@@ -76,7 +73,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			Forall a = (Forall) c;	
 			constantPool.add(new Constant.Utf8(a.label));
 			addPoolItems(a.variable, constantPool);
-			addPoolItems(a.source, constantPool);
+			addPoolItems(a.source, constantPool);			
 		} 
 	}
 	
@@ -193,7 +190,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			writer.write_u1(FORALL);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
 			write(a.variable,writer,constantPool);
-			write(a.source,writer,constantPool);
+			write(a.source,writer,constantPool);			
 		} else {
 			throw new IllegalArgumentException("Code not permitted in WhileyBlock: " + c);
 		}
@@ -481,7 +478,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				int idx = reader.read_u2();
 				Constant.Utf8 label = (Constant.Utf8) constantPool.get(idx);
 				CExpr.Register var = (CExpr.Register) readCExpr(reader,constantPool);
-				CExpr src = readCExpr(reader,constantPool);
+				CExpr src = readCExpr(reader,constantPool);				
 				return new Code.Forall(label.str,var,src);
 			}	
 			}
