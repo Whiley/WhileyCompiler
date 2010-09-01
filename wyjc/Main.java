@@ -153,7 +153,7 @@ public class Main {
 		}
 		if(!nvc) {
 			stages.add(new WyilTransform("constraint propagation",
-					new ConstraintPropagation(loader,false,timeout)));
+					new ConstraintPropagation(loader,true,timeout)));
 		}		
 		if(wyil) {
 			stages.add(new WyilWriter());
