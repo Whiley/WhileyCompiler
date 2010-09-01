@@ -3,8 +3,8 @@
     [int] r = []
     // now do the reverse!
     while i > 0:
-        r = r + [ls[i]]
         i = i - 1
+        r = r + [ls[i]]
     return r
 
 void System::main([string] args):
