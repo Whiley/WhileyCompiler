@@ -65,7 +65,7 @@ public class TestHarness {
 			args[i + 3] = params[i];
 		}
 		args[args.length - 1] = srcPath + File.separatorChar + name + ".whiley";
-
+		
 		if (Main.run(args) != 0) {
 			fail("couldn't compile test!");
 		} else {

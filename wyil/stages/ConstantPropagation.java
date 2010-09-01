@@ -38,7 +38,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		if(start instanceof Forall) {
 			Code.Forall fall = (Code.Forall) start;
 			CExpr source = infer(fall.source,stmt,environment);
-			start = new Code.Forall(fall.label, fall.variable, source);
+			fall = new Code.Forall(fall.label, fall.variable, source);
+			start = fall;
 			if(source instanceof Value) {
 				// ok, we can unroll the loop body --- yay!
 				body = unrollFor(fall,body);
