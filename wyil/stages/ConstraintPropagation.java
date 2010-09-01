@@ -695,7 +695,9 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 * @return
 	 */
 	protected WType convert(Type type) {
-		if(type == Type.T_BOOL) {
+		if(type == Type.T_VOID) {
+			return WVoidType.T_VOID;
+		} else if(type == Type.T_BOOL) {
 			return WBoolType.T_BOOL;
 		} else if(type == Type.T_INT) {
 			return WIntType.T_INT;
