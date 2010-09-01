@@ -214,11 +214,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			substitutions.remove(var.name()); // remove any substitution made
 											  // for a loop over list
 			body = r.first();
-			
-			// FIXME: there is a major bug here related to lists, since wyone
-			// models element of a list in an entirely different fashion to that
-			// of a set.
-			
+						
 			// Split for the formula into those bits which need to be
 			// quantified, and those which don't
 			Pair<WFormula, WFormula> split = splitFormula(var.name(),
@@ -227,7 +223,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			// body, as this captures what is true for every element in the
 			// source collection.
 			store = new WBoundedForall(true, var, src.first(), split.first());			
-			store = WFormulas.and(store,split.second());
+			store = WFormulas.and(store,split.second());			
 			
 			// Existentially quantify any breaks out of the loop. These
 			// represent what is true for some elements in the source

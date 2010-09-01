@@ -1,6 +1,10 @@
-int countOver({int} xs):
-    {int} tmp = { x | x in xs, x > 1}
-    return |tmp|
+define pset as {int} where no { x in $ | x < 0 }
+
+void f(pset xs):
+    print "HELLO"
+
+void g({int} set):    
+    f({x | x in set, x >= 0})
 
 void System::main([string] args):
-    print str(countOver({0,1,2,3}))
+    g({1,2,3,4})
