@@ -275,7 +275,7 @@ public class PreconditionInline implements ModuleTransform {
 			exitLabel = Block.freshLabel();
 			checkLabel = Block.freshLabel();
 			inserts.add(new Code.Check(checkLabel), attr);
-			inserts.add(new IfGoto(Code.COP.LT, start, CExpr.UNOP(
+			inserts.add(new IfGoto(Code.COP.LTEQ, start, CExpr.UNOP(
 					CExpr.UOP.LENGTHOF, src), exitLabel), attr);
 			inserts.add(new Code.Fail("sublist start out-of-bounds"), attr);
 			inserts.add(new Code.Label(exitLabel), attr);
@@ -295,8 +295,8 @@ public class PreconditionInline implements ModuleTransform {
 			exitLabel = Block.freshLabel();
 			checkLabel = Block.freshLabel();
 			inserts.add(new Code.Check(checkLabel), attr);
-			inserts.add(new IfGoto(Code.COP.LT, start, end, exitLabel), attr);
-			inserts.add(new Code.Fail("sublist start >= end"), attr);
+			inserts.add(new IfGoto(Code.COP.LTEQ, start, end, exitLabel), attr);
+			inserts.add(new Code.Fail("sublist start > end"), attr);
 			inserts.add(new Code.Label(exitLabel), attr);
 			inserts.add(new Code.CheckEnd(checkLabel), attr);		
 

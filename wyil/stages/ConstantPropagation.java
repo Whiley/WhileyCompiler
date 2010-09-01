@@ -40,11 +40,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			CExpr source = infer(fall.source,stmt,environment);
 			fall = new Code.Forall(fall.label, fall.variable, source);
 			start = fall;
-			if(source instanceof Value) {
-				// ok, we can unroll the loop body --- yay!
-				body = unrollFor(fall,body);
-			}
-			
 			// Now, determine and eliminate loop-carried dependencies
 			environment = new HashMap<String,Value>(environment);
 			for(Stmt s : body) {
@@ -56,6 +51,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 					}
 				}
 			}
+			
+			if(source instanceof Value) {
+				// ok, we can unroll the loop body --- yay!
+				body = unrollFor(fall,body);
+				return propagate(body,environment);
+			}						
 		} 
 		
 		Pair<Block,HashMap<String,Value>> r = propagate(body,environment);
