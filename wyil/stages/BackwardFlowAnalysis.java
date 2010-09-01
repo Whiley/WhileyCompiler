@@ -69,7 +69,7 @@ public abstract class BackwardFlowAnalysis<T> implements ModuleTransform {
 		
 		Block nblock = new Block();
 		for(int i=(block.size()-1);i>=0;--i) {						
-			Stmt stmt = block.get(i);			
+			Stmt stmt = block.get(i);						
 			try {				
 				Code code = stmt.code;
 
@@ -77,9 +77,7 @@ public abstract class BackwardFlowAnalysis<T> implements ModuleTransform {
 				if (code instanceof Code.Label) {
 					Code.Label l = (Code.Label) code;
 					stores.put(l.label,store);
-				}
-
-				if (code instanceof Code.End) {					
+				} else if (code instanceof Code.End) {					
 					Code.Start start = null;
 					Code.End end = (Code.End) code;
 					// Note, I could make this more efficient!
@@ -93,15 +91,20 @@ public abstract class BackwardFlowAnalysis<T> implements ModuleTransform {
 								break;
 							}
 						}
-						body.add(stmt.code, stmt.attributes());
-					}										
-					Pair<Block, T> r = propagate(start, end, body, stmt, store);
+						body.add(0,stmt.code, stmt.attributes());
+					}			
+					
+					Pair<Block, T> r = propagate(start, end, body, stmt, store);										
+					
 					nblock.addAll(0,r.first());
 					store = r.second();
 					continue;
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
 					T trueStore = stores.get(ifgoto.target);
+					if(trueStore == null) {
+						System.out.println("PROBLEM");
+					}
 					Pair<Stmt, T> r = propagate(ifgoto, stmt, trueStore,store);
 					stmt = r.first();
 					store = r.second();

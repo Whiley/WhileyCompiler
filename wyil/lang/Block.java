@@ -41,9 +41,9 @@ public final class Block implements Iterable<Stmt> {
 		}
 	}
 	
-	public void addAll(int idx, Collection<Stmt> stmts) {
+	public void addAll(int idx, Collection<Stmt> stmts) {		
 		for(Stmt s : stmts) {
-			add(idx,s.code,s.attributes());
+			add(idx++,s.code,s.attributes());
 		}
 	}
 	
@@ -55,7 +55,7 @@ public final class Block implements Iterable<Stmt> {
 	
 	public void addAll(int idx, Block stmts) {
 		for(Stmt s : stmts) {
-			add(idx, s.code,s.attributes());
+			add(idx++, s.code,s.attributes());
 		}
 	}
 	
