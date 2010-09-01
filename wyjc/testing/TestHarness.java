@@ -96,7 +96,7 @@ public class TestHarness {
 	protected void verificationFailTest(String name) {				
 		name = srcPath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wp", "lib/wyrt.jar", "-wyil", name) != Main.VERIFICATION_ERROR) {
+		if (compile("-wp", "lib/wyrt.jar", "-wyil", name) != Main.CONTEXT_ERROR) {
 			fail("Test compiled when it shouldn't have!");
 		}
 	}

@@ -46,6 +46,7 @@ public class DefiniteRuntimeInvalidTests extends TestHarness {
  @Test public void ConstrainedSet_Invalid_3_RunTest() { runtimeFailTest("ConstrainedSet_Invalid_3"); }
 
  @Test public void Ensures_Invalid_1_RunTest() { runtimeFailTest("Ensures_Invalid_1"); }
+ @Test public void For_Invalid_1_RunTest() { runtimeFailTest("For_Invalid_1"); }
  @Test public void IntDiv_Invalid_1_RunTest() { runtimeFailTest("IntDiv_Invalid_1"); }
  @Test public void ListAppend_Invalid_3_RunTest() { runtimeFailTest("ListAppend_Invalid_3"); }
  @Test public void ListAppend_Invalid_4_RunTest() { runtimeFailTest("ListAppend_Invalid_4"); }
