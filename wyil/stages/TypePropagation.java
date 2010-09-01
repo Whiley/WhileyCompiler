@@ -393,7 +393,7 @@ public class TypePropagation implements ModuleTransform {
 	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
 		Type type = environment.get(v.name);
 		if(type == null) {
-			syntaxError("unknown variable: " + v,filename,stmt);
+			syntaxError("variable " + v.name()  + " is undefined",filename,stmt);
 		}
 		return CExpr.VAR(type,v.name);
 	}
@@ -402,7 +402,7 @@ public class TypePropagation implements ModuleTransform {
 		String name = "%" + v.index;
 		Type type = environment.get(name);
 		if(type == null) {
-			syntaxError("unknown register: " + name,filename,stmt);
+			syntaxError("register " + name + " is undefined",filename,stmt);
 		}
 		return CExpr.REG(type,v.index);
 	}

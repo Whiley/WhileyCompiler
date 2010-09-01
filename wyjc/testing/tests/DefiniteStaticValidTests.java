@@ -223,4 +223,6 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void VarDecl_Valid_2_StaticTest() { verificationRunTest("VarDecl_Valid_2"); }
  @Test public void While_Valid_1_StaticTest() { verificationRunTest("While_Valid_1"); }
  @Test public void While_Valid_2_StaticTest() { verificationRunTest("While_Valid_2"); }
+ @Test public void While_Valid_3_StaticTest() { verificationRunTest("While_Valid_3"); }
+ @Test public void While_Valid_4_StaticTest() { verificationRunTest("While_Valid_4"); }
 }

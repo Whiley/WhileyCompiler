@@ -225,4 +225,5 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void While_Valid_1_RunTest() { runTest("While_Valid_1"); }
  @Test public void While_Valid_2_RunTest() { runTest("While_Valid_2"); }
  @Test public void While_Valid_3_RunTest() { runTest("While_Valid_3"); }
+ @Test public void While_Valid_4_RunTest() { runTest("While_Valid_4"); }
 }
