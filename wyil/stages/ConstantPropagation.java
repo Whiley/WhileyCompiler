@@ -45,12 +45,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			}
 		} 
 		
-		body = propagate(body,environment).first();
+		Pair<Block,HashMap<String,Value>> r = propagate(body,environment);
 		Block blk = new Block();
 		blk.add(start);
-		blk.addAll(body);
+		blk.addAll(r.first());
 		blk.add(end);
-		return new Pair(blk,environment);
+		return new Pair(blk,join(environment,r.second()));
 	}
 	
 	protected Block unrollFor(Code.Forall fall, Block body) {		
