@@ -442,7 +442,7 @@ public abstract class CExpr {
 			public String toString() { return "-"; }
 		},
 		APPEND{
-			public String toString() { return "+"; }
+			public String toString() { return "++"; }
 		}
 	};	
 	

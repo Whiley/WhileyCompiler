@@ -284,7 +284,7 @@ public abstract class Value extends CExpr {
 				return V_SET(vs);
 			}
 		} else if(t instanceof Type.List && val instanceof List) {
-			Type.Set st = (Type.Set) t;			
+			Type.List st = (Type.List) t;			
 			List l = (List) val;
 			ArrayList<Value> vs = new ArrayList<Value>();
 			for(Value v : l.values) {
