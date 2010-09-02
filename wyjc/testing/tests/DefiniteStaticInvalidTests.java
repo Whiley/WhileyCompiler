@@ -103,4 +103,5 @@ public class DefiniteStaticInvalidTests extends TestHarness {
  @Test public void While_Invalid_2_StaticTest() { verificationFailTest("While_Invalid_2"); }
  @Test public void While_Invalid_3_StaticTest() { verificationFailTest("While_Invalid_3"); }
  @Test public void While_Invalid_4_StaticTest() { verificationFailTest("While_Invalid_4"); }
+ @Test public void While_Invalid_5_StaticTest() { verificationFailTest("While_Invalid_5"); }
 }

@@ -1,9 +1,9 @@
 [int] extract([int] ls):
     int i = 0
-    [int] r = [1]
+    [int] r = []
     // now do the reverse!
-    while i < |ls| where |r| > 0:
-        r = []
+    while i < |ls| where |r| < 2:
+        r = r + [ls[i]]
         i = i + 1
     return r
 

@@ -343,6 +343,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		
 	public HashMap<String, Value> join(HashMap<String, Value> env1,
 			HashMap<String, Value> env2) {
+		if(env1 == null) {
+			return env2;
+		} else if(env2 == null) {
+			return env1;
+		}
 		HashMap<String, Value> r = new HashMap<String, Value>();
 		HashSet<String> keys = new HashSet<String>(env1.keySet());
 		keys.addAll(env2.keySet());

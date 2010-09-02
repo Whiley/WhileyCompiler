@@ -877,11 +877,23 @@ public class ModuleBuilder {
 
 	protected Block resolve(While s, int freeReg, FunDecl fd,
 			HashMap<String, Pair<Type, Block>> environment) {		
+		String chklab = Block.freshLabel();
+		String entry = Block.freshLabel();
 		String label = Block.freshLabel();
+		String loopend = Block.freshLabel();
 		String exitLab = Block.freshLabel();
 		
 		Block blk = new Block();
 		
+		if(s.invariant != null) {
+			blk.add(new Code.Check(chklab));
+			blk.addAll(resolveCondition(entry, s.invariant, freeReg,
+					environment));
+			blk.add(new Code.Fail("loop invariant not satisfied on entry"), s
+					.attribute(Attribute.Source.class));
+			blk.add(new Code.Label(entry));
+			blk.add(new Code.CheckEnd(chklab));
+		}
 		blk.add(new Code.Loop(label), s.attribute(Attribute.Source.class));
 		
 		blk.addAll(resolveCondition(exitLab, invert(s.condition), freeReg,
@@ -892,7 +904,16 @@ public class ModuleBuilder {
 		for (Stmt st : s.body) {
 			blk.addAll(resolve(st, freeReg, fd, dec));
 		}		
-		blk.add(new Code.LoopEnd(label), s.attribute(Attribute.Source.class));
+		if(s.invariant != null) {
+			blk.add(new Code.Check(chklab));
+			blk.addAll(resolveCondition(loopend, s.invariant, freeReg,
+					environment));
+			blk.add(new Code.Fail("loop invariant not restored"), s
+					.attribute(Attribute.Source.class));
+			blk.add(new Code.Label(loopend));
+			blk.add(new Code.CheckEnd(chklab));
+		}
+		blk.add(new Code.LoopEnd(label), s.attribute(Attribute.Source.class));		
 		blk.add(new Code.Label(exitLab));
 
 		return blk;
