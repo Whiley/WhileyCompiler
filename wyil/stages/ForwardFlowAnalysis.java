@@ -69,7 +69,7 @@ public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
 		
 		Block nblock = new Block();
 		for(int i=0;i<block.size();++i) {						
-			Stmt stmt = block.get(i);			
+			Stmt stmt = block.get(i);								
 			try {				
 				Code code = stmt.code;
 
@@ -148,7 +148,7 @@ public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
 		return new Pair<Block,T>(nblock,store);
 	}
 	
-	protected void merge(String target, T store, Map<String, T> stores) {
+	protected void merge(String target, T store, Map<String, T> stores) {		
 		T old = stores.get(target);
 		if (old == null) {
 			stores.put(target, store);

@@ -22,6 +22,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (constraint == null) {
 			return type;
 		} else {
+			this.stores = new HashMap<String,Env>();
 			Env environment = new Env();
 			environment.put("$", type.type());
 			constraint = propagate(constraint, environment).first();
@@ -71,13 +72,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			postcondition = propagate(postcondition, postenv).first();			
 		}
 				
-		Block body = propagate(mcase.body(), environment).first();		
+		Block body = propagate(mcase.body(), environment).first();	
+		
 		return new Module.Case(mcase.parameterNames(), precondition,
 				postcondition, body);
 	}
 	
 	protected Pair<Stmt, Env> propagate(Stmt stmt,
 			Env environment) {
+		
 		Code code = stmt.code;
 		if(code instanceof Assign) {
 			return infer((Assign)code,stmt,environment);
