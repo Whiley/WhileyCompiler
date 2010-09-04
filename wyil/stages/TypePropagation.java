@@ -24,7 +24,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else {
 			Env environment = new Env();
 			environment.put("$", type.type());
-			constraint = transform(constraint, environment, null);
+			constraint = propagate(constraint, environment).first();
 			return new Module.TypeDef(type.name(), type.type(), constraint);
 		}
 	}
@@ -89,34 +89,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		stmt = new Stmt(code,stmt.attributes());
 		return new Pair<Stmt,Env>(stmt,environment);
-	}
-	
-	protected Code infer(Code.Forall code, Stmt stmt,
-			Env environment) {
-		
-		CExpr src = infer(code.source, stmt, environment);
-		Type src_t = src.type();				
-		
-		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);				
-		
-		Type elem_t;
-		if(src_t instanceof Type.List) {
-			elem_t = ((Type.List)src_t).element;
-		} else {
-			elem_t = ((Type.Set)src_t).element;
-		}
-		
-		if (elem_t == Type.T_VOID) {
-			// This indicates a loop over an empty list. This legitimately can
-			// happen as a result of substitution for contraints or pre/post
-			// conditions.
-			return new Code.Skip();
-		}
-		
-		environment.put("%" + code.variable.index, elem_t);
-		
-		return new Code.Forall(code.label, CExpr.REG(elem_t,
-				code.variable.index), src);
 	}
 	
 	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {
@@ -291,7 +263,109 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 	}
+	
+	protected Pair<Block, Env> propagate(Code.Start start, Code.End end,
+			Block body, Stmt stmt, Env environment) {
+		if (start instanceof Code.Forall) {
+			return propagate((Code.Forall) start, (Code.ForallEnd) end, body,
+					stmt, environment);
+		} else if (start instanceof Code.Loop) {
+			return propagate((Code.Loop) start, (Code.LoopEnd) end, body, stmt,
+					environment);
+		}
+
+		// Other blocks are not so tricky to handle.
+		Block blk = new Block();
+		blk.add(start);
+		Pair<Block, Env> r = propagate(body, environment);
+		blk.addAll(r.first());
+		blk.add(end);
+		return new Pair<Block, Env>(blk, r.second());
+	}
+	
+	protected Pair<Block, Env> propagate(Code.Forall start, Code.ForallEnd end,
+			Block body, Stmt stmt, Env environment) {
 		
+		CExpr src = infer(start.source, stmt, environment);
+		Type src_t = src.type();				
+		
+		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);				
+		
+		Type elem_t;
+		if(src_t instanceof Type.List) {
+			elem_t = ((Type.List)src_t).element;
+		} else {
+			elem_t = ((Type.Set)src_t).element;
+		}
+		
+		Block blk = new Block();
+		
+		if (elem_t == Type.T_VOID) {
+			// This indicates a loop over an empty list. This legitimately can
+			// happen as a result of substitution for contraints or pre/post
+			// conditions.
+			return new Pair<Block,Env>(blk,environment);
+		}
+				
+		blk.add(new Code.Forall(start.label, CExpr.REG(elem_t,
+				start.variable.index), src),stmt.attributes());
+				
+		// create environment specific for loop body
+		Env loopEnv = new Env(environment);
+		loopEnv.put("%" + start.variable.index, elem_t);
+	
+		Pair<Block,Env> r = propagate(body,loopEnv);
+		blk.addAll(r.first());
+		
+		// FIXME: at this point we should continue iterating until a fixed-point
+		// is reached.
+		
+		blk.add(end);
+		
+		// FIXME: need to generate the modifies set
+		return new Pair<Block,Env>(blk,join(environment,r.second()));
+	}
+	
+	protected Pair<Block, Env> propagate(Code.Loop start, Code.LoopEnd end,
+			Block body, Stmt stmt, Env environment) {
+		
+		HashSet<String> modifies = new HashSet<String>();
+		
+		for(Stmt s : body) {
+			if(s.code instanceof Code.Assign) {
+				Code.Assign a = (Code.Assign) s.code;
+				if(a.lhs != null) {
+					LVar v = CExpr.extractLVar(a.lhs);						
+					modifies.add(v.name());
+				}
+			}
+		}
+
+		Block blk = new Block();
+		
+		Pair<Block,Env> r = propagate(body,environment);
+		
+		// FIXME: we should keep iterating to reach a fixed point here
+		environment = join(environment,r.second());
+		
+		// now construct final modifies set		
+		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
+		for(String v : modifies) {
+			Type t = environment.get(v);
+			if(v.charAt(0) == '%') {
+				mods.add(CExpr.REG(t, Integer.parseInt(v.substring(1))));
+			} else {
+				mods.add(CExpr.VAR(t, v));
+			}
+		}
+		
+		blk.add(new Loop(start.label,mods),stmt.attributes());
+		blk.addAll(r.first());
+		blk.add(end);
+		
+		return new Pair<Block,Env>(blk,environment);
+	}
+	
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
 
 		if (e instanceof Value) {
@@ -555,22 +629,23 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 
-	public static void join(HashMap<String, Type> env1,
-			HashMap<String, Type> env2) {
+	public Env join(Env env1, Env env2) {
 		if (env2 == null) {
-			return;
+			return env1;
+		} else if (env1 == null) {
+			return env2;
 		}
 		HashSet<String> keys = new HashSet<String>(env1.keySet());
 		keys.addAll(env2.keySet());
+		Env env = new Env();
 		for (String key : keys) {
 			Type mt = env1.get(key);
 			Type ot = env2.get(key);
-			if (ot == null || mt == null) {
-				env1.remove(key);
-			} else {
-				env1.put(key, Type.leastUpperBound(mt, ot));
+			if (ot != null && mt != null) {
+				env.put(key, Type.leastUpperBound(mt, ot));
 			}
 		}
+		return env;
 	}
 	
 	public static class Env extends HashMap<String,Type> {
