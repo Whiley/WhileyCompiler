@@ -54,7 +54,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return environment;
 	}
 	
-	public Module.Case propagate(Module.Case mcase, Module.Method method) {		
+	public Module.Case propagate(Module.Case mcase) {		
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,Env>();
 		
@@ -71,7 +71,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			postenv.put("$",method.type().ret);
 			postcondition = propagate(postcondition, postenv).first();			
 		}
-				
+		
 		Block body = propagate(mcase.body(), environment).first();	
 		
 		return new Module.Case(mcase.parameterNames(), precondition,

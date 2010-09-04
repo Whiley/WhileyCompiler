@@ -13,6 +13,8 @@ import wyil.lang.*;
 import wyil.lang.CExpr.*;
 import wyil.lang.Code.*;
 import wyil.util.ResolveError;
+import wyil.util.SyntaxError;
+import static wyil.util.SyntaxError.*;
 
 /**
  * The purpose of this transform is two-fold:
@@ -37,7 +39,7 @@ public class PreconditionInline implements ModuleTransform {
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
 		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
 		
-		this.filename = filename;
+		this.filename = module.filename();
 		
 		for(Module.TypeDef type : module.types()) {
 			types.add(transform(type));
@@ -106,47 +108,53 @@ public class PreconditionInline implements ModuleTransform {
 	public Block transform(int regTarget, Block block) {
 		Block nblock = new Block();
 		for (Stmt stmt : block) {
-			Code c = stmt.code;
-			Block inserts = new Block();
-			this.regTarget = regTarget;
-			if (c instanceof Assign) {
-				Assign a = (Assign) c;
-				LVal lhs = null;
-				if (a.lhs != null) {
-					lhs = (LVal) transform(a.lhs, stmt, inserts);
+			try {
+				Code c = stmt.code;
+				Block inserts = new Block();
+				this.regTarget = regTarget;
+				if (c instanceof Assign) {
+					Assign a = (Assign) c;
+					LVal lhs = null;
+					if (a.lhs != null) {
+						lhs = (LVal) transform(a.lhs, stmt, inserts);
+					}
+					CExpr rhs = transform(a.rhs, stmt, inserts);
+					if(rhs != null) {
+						c = new Assign(lhs, rhs);
+					} else {
+						c = null;
+					}
+				} else if (c instanceof Debug) {
+					Debug a = (Debug) c;
+					c = new Debug(transform(a.rhs, stmt, inserts));
+				} else if (c instanceof IfGoto) {
+					IfGoto u = (IfGoto) c;
+					c = new IfGoto(u.op, transform(u.lhs, stmt, inserts),
+							transform(u.rhs, stmt, inserts), u.target);
+				} else if (c instanceof Return) {
+					Return a = (Return) c;
+					if (a.rhs != null) {
+						c = new Return(transform(a.rhs, stmt, inserts));
+					}
+				} else if (c instanceof Forall) {
+					Forall a = (Forall) c;
+					c = new Forall(a.label, (CExpr.Register) transform(a.variable,
+							stmt, inserts), transform(a.source, stmt, inserts));
 				}
-				CExpr rhs = transform(a.rhs, stmt, inserts);
-				if(rhs != null) {
-					c = new Assign(lhs, rhs);
-				} else {
-					c = null;
+				nblock.addAll(inserts);
+				if(c != null) {
+					nblock.add(c, stmt.attributes());
 				}
-			} else if (c instanceof Debug) {
-				Debug a = (Debug) c;
-				c = new Debug(transform(a.rhs, stmt, inserts));
-			} else if (c instanceof IfGoto) {
-				IfGoto u = (IfGoto) c;
-				c = new IfGoto(u.op, transform(u.lhs, stmt, inserts),
-						transform(u.rhs, stmt, inserts), u.target);
-			} else if (c instanceof Return) {
-				Return a = (Return) c;
-				if (a.rhs != null) {
-					c = new Return(transform(a.rhs, stmt, inserts));
-				}
-			} else if (c instanceof Forall) {
-				Forall a = (Forall) c;
-				c = new Forall(a.label, (CExpr.Register) transform(a.variable,
-						stmt, inserts), transform(a.source, stmt, inserts));
-			}
-			nblock.addAll(inserts);
-			if(c != null) {
-				nblock.add(c, stmt.attributes());
+			} catch(SyntaxError sex) {
+				throw sex;
+			} catch(Exception ex) {
+				syntaxError("internal failure",filename,stmt,ex);
 			}
 		}
 		return nblock;
 	}
 	
-	public CExpr transform(CExpr r, Stmt stmt, Block inserts) {
+	public CExpr transform(CExpr r, Stmt stmt, Block inserts) {		
 		if(r instanceof ListAccess) {
 			return transform((ListAccess)r,stmt,inserts);			
 		} else if (r instanceof BinOp) {
@@ -310,7 +318,7 @@ public class PreconditionInline implements ModuleTransform {
 			if(ivk.type.ret != Type.T_VOID) {
 				lhs = CExpr.REG(ivk.type.ret,regTarget);
 			}
-			Module module = loader.loadModule(ivk.name.module());			
+			Module module = loader.loadModule(ivk.name.module());						
 			Module.Method method = module.method(ivk.name.name(),
 					ivk.type);
 			Block blk = new Block();
