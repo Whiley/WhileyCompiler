@@ -76,7 +76,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				postcondition, body);
 	}
 	
-	protected Pair<Stmt, HashMap<String, Type>> propagate(Stmt stmt,
+	protected Pair<Stmt, Env> propagate(Stmt stmt,
 			Env environment) {
 		Code code = stmt.code;
 		if(code instanceof Assign) {
@@ -88,7 +88,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		stmt = new Stmt(code,stmt.attributes());
-		return new Pair<Stmt,HashMap<String,Type>>(stmt,environment);
+		return new Pair<Stmt,Env>(stmt,environment);
 	}
 	
 	protected Code infer(Code.Forall code, Stmt stmt,
@@ -207,9 +207,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			if (!Type.isSubtype(element, lhs_t)) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
-			}
-			
-			return new Code.IfGoto(code.op, lhs, rhs, code.target);
+			}			
+			break;
 		}	
 		case SUBSET:
 		case SUBSETEQ:			
@@ -220,34 +219,48 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(Type.T_SET(Type.T_ANY),lhs_t,stmt);
 			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
 			break;
-		case NSUBTYPEEQ:
-			// this is a tad sneaky
-			HashMap<String,Type> tmp = trueEnv;
-			trueEnv = falseEnv;
-			falseEnv = tmp;
+		case NSUBTYPEEQ:			
 		case SUBTYPEEQ:
 			Value.TypeConst tc = (Value.TypeConst) rhs; 							
+			Code ncode = code;
+			Env trueEnv = null;
+			Env falseEnv = null;
 			
 			if(Type.isSubtype(tc.type,lhs_t)) {
 				// DEFINITE TRUE CASE				
 				if (code.op == Code.COP.SUBTYPEEQ) {
-					return new Code.Goto(code.target);					
+					ncode = new Code.Goto(code.target);
+					trueEnv = environment;
 				} else {					
-					return new Code.Skip();
+					ncode = new Code.Skip();
+					falseEnv = environment;
 				}
 			} else if (!Type.isSubtype(lhs_t, tc.type)) {				
 				// DEFINITE FALSE CASE
 				if (code.op == Code.COP.NSUBTYPEEQ) {
-					return new Code.Goto(code.target);					
+					ncode = new Code.Goto(code.target);
+					trueEnv = environment;
 				} else {					
-					return new Code.Skip();
+					ncode = new Code.Skip();
+					falseEnv = environment;
 				}
-			} 						
-			
-			typeInference(lhs,tc.type,trueEnv, falseEnv);
+			} else {
+				trueEnv = new Env(environment);
+				falseEnv = new Env(environment);
+				typeInference(lhs,tc.type,trueEnv, falseEnv);
+			}
+			stmt = new Stmt(ncode,stmt.attributes());
+			if(code.op == Code.COP.SUBTYPEEQ) {
+				return new Triple(stmt,trueEnv,falseEnv);
+			} else {
+				// environments are the other way around!
+				return new Triple(stmt,falseEnv,trueEnv);
+			}
 		}
 		
-		return new Code.IfGoto(code.op, lhs, rhs, code.target);				
+		code = new Code.IfGoto(code.op, lhs, rhs, code.target);
+		stmt = new Stmt(code,stmt.attributes());
+		return new Triple<Stmt,Env,Env>(stmt,environment,environment);
 	}
 	
 	protected void typeInference(CExpr lhs, Type type,
