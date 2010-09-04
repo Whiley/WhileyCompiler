@@ -457,12 +457,13 @@ public abstract class Code {
 		public String toString() {
 			String r = "";
 			if(modifies.size() > 0) {
-				r += " modifies ";
+				r += " ";
 				boolean firstTime = true;
 				for(CExpr.LVar v : modifies) {
 					if(!firstTime) {
 						r += ", ";
 					}
+					firstTime=false;
 					r += v.name();
 				}
 			}

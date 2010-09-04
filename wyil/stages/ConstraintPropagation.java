@@ -43,7 +43,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 * The saveVcs flag is used to indicate that verification conditions should
 	 * be stored in attributes for debugging (or other) purposes.
 	 */
-	private boolean saveVcs = false;
+	private boolean saveVcs = true;
 	
 	public ConstraintPropagation(ModuleLoader loader, boolean minimal, int timeout) {
 		super(loader);
@@ -292,6 +292,16 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	
 	protected Pair<Block, WFormula> propagate(Code.Loop start, Code.LoopEnd end,
 			Block body, Stmt stmt, WFormula store) {
+		
+		// Create shadows of loop variables
+		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+		for(LVar v : start.modifies) { 
+			binding.put(new WVariable(v.name()), new WVariable(v.name() + "$"
+				+ index));
+		}		
+		store = store.substitute(binding);
+		
+		// At this point, we need to assume the loop invariant.
 		
 		Block nblock = new Block();
 		nblock.add(start);
