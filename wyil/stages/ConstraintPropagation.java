@@ -179,87 +179,113 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	protected Pair<Block, WFormula> propagate(Code.Start start, Code.End end,
 			Block body, Stmt stmt, WFormula store) {
 		
+		if(start instanceof Code.Forall){
+			return propagate((Code.Forall)start,(Code.ForallEnd)end,body,stmt,store);
+		} else if(start instanceof Code.Loop){
+			return propagate((Code.Loop)start,(Code.LoopEnd)end,body,stmt,store);
+		} 
+		
 		Block nblock = new Block();
 		nblock.add(start);
 		
-		if(start instanceof Code.Forall) {
-			Code.Forall fall = (Code.Forall) start;
-			WVariable var = new WVariable(fall.variable.name());			
-			// Convert the source collection 
-			Pair<WExpr,WFormula> src = infer(fall.source,stmt);
-			
-			if (fall.source.type() instanceof Type.List) {
-				// We have to treat lists differently from sets because of the
-				// way wyone handles list quantification. It's kind of annoying,
-				// but there's not much we can do.
-				store = WFormulas.and(store, WNumerics.lessThanEq(WNumber.ZERO,
-						var), WNumerics.lessThan(var,
-						new WLengthOf(src.first())), WTypes.subtypeOf(var,
-						WIntType.T_INT), src.second());
-				substitutions
-						.put(var.name(), new WListAccess(src.first(), var));								
-			} else {
-				store = WFormulas.and(store, WSets.elementOf(var, src.first()),
-						WTypes.subtypeOf(var, convert(fall.variable.type())),
-						src.second());
-			}
-			
-			// Save the parent stores. We need to do this, so we can intercept
-			// all stores being emitted from the for block, in order that we can
-			// properly quantify them.			
-			HashMap<String,WFormula> parentStores = stores;
-			stores = new HashMap<String,WFormula>();
-			// Propagate through the body
-			Pair<Block,WFormula> r = propagate(body,store);
-			substitutions.remove(var.name()); // remove any substitution made
-											  // for a loop over list
-			body = r.first();
-						
-			// Split for the formula into those bits which need to be
-			// quantified, and those which don't
-			Pair<WFormula, WFormula> split = splitFormula(var.name(),
-					r.second());			
-			// Universally quantify the condition emitted at the end of the
-			// body, as this captures what is true for every element in the
-			// source collection.
-			store = new WBoundedForall(true, var, src.first(), split.first());			
-			store = WFormulas.and(store,split.second());			
-			
-			// Existentially quantify any breaks out of the loop. These
-			// represent what is true for some elements in the source
-			// collection, but not necessarily all.
-			for (Map.Entry<String, WFormula> e : stores.entrySet()) {
-				String key = e.getKey();
-				// Split for the formula into those bits which need to be
-				// quantified, and those which don't
-				split = splitFormula(fall.variable.name(), e.getValue()); 
-				WFormula exit = new WBoundedForall(false, var, src.first(),
-						split.first().not());				
-				exit = WFormulas.and(exit,split.second());
-				
-				// Now, join the exit store with anything in the parent stores
-				WFormula existing = stores.get(key);
-				if (existing == null) {
-					// was no existing store for parent
-					parentStores.put(key, exit);
-				} else {
-					// was something in parent, so join them together
-					parentStores.put(key, join(exit, existing));
-				}
-			}
-			
-			// finally, put parent stores back
-			stores = parentStores;
-		} else {			
-			// Other kind of block, which we can ignore.
-			Pair<Block,WFormula> r = propagate(body,store);
-			body = r.first();
-			store = r.second();
-		} 
-			
+		Pair<Block,WFormula> r = propagate(body,store);
+		body = r.first();
+		store = r.second();
+	
 		nblock.addAll(body);
 		nblock.add(end);
 		return new Pair<Block, WFormula>(nblock, store);
+	}
+	
+	protected Pair<Block, WFormula> propagate(Code.Forall start, Code.ForallEnd end,
+			Block body, Stmt stmt, WFormula store) {
+		Block nblock = new Block();
+		nblock.add(start);		
+		Code.Forall fall = (Code.Forall) start;
+		WVariable var = new WVariable(fall.variable.name());			
+		// Convert the source collection 
+		Pair<WExpr,WFormula> src = infer(fall.source,stmt);
+		
+		if (fall.source.type() instanceof Type.List) {
+			// We have to treat lists differently from sets because of the
+			// way wyone handles list quantification. It's kind of annoying,
+			// but there's not much we can do.
+			store = WFormulas.and(store, WNumerics.lessThanEq(WNumber.ZERO,
+					var), WNumerics.lessThan(var,
+					new WLengthOf(src.first())), WTypes.subtypeOf(var,
+					WIntType.T_INT), src.second());
+			substitutions
+					.put(var.name(), new WListAccess(src.first(), var));								
+		} else {
+			store = WFormulas.and(store, WSets.elementOf(var, src.first()),
+					WTypes.subtypeOf(var, convert(fall.variable.type())),
+					src.second());
+		}
+		
+		// Save the parent stores. We need to do this, so we can intercept
+		// all stores being emitted from the for block, in order that we can
+		// properly quantify them.			
+		HashMap<String,WFormula> parentStores = stores;
+		stores = new HashMap<String,WFormula>();
+		// Propagate through the body
+		Pair<Block,WFormula> r = propagate(body,store);
+		substitutions.remove(var.name()); // remove any substitution made
+										  // for a loop over list
+		body = r.first();
+					
+		// Split for the formula into those bits which need to be
+		// quantified, and those which don't
+		Pair<WFormula, WFormula> split = splitFormula(var.name(),
+				r.second());			
+		// Universally quantify the condition emitted at the end of the
+		// body, as this captures what is true for every element in the
+		// source collection.
+		store = new WBoundedForall(true, var, src.first(), split.first());			
+		store = WFormulas.and(store,split.second());			
+		
+		// Existentially quantify any breaks out of the loop. These
+		// represent what is true for some elements in the source
+		// collection, but not necessarily all.
+		for (Map.Entry<String, WFormula> e : stores.entrySet()) {
+			String key = e.getKey();
+			// Split for the formula into those bits which need to be
+			// quantified, and those which don't
+			split = splitFormula(fall.variable.name(), e.getValue()); 
+			WFormula exit = new WBoundedForall(false, var, src.first(),
+					split.first().not());				
+			exit = WFormulas.and(exit,split.second());
+			
+			// Now, join the exit store with anything in the parent stores
+			WFormula existing = stores.get(key);
+			if (existing == null) {
+				// was no existing store for parent
+				parentStores.put(key, exit);
+			} else {
+				// was something in parent, so join them together
+				parentStores.put(key, join(exit, existing));
+			}
+		}
+		
+		// finally, put parent stores back
+		stores = parentStores;
+
+		nblock.addAll(body);
+		nblock.add(end);
+		return new Pair<Block, WFormula>(nblock, store);
+	}
+	
+	protected Pair<Block, WFormula> propagate(Code.Loop start, Code.LoopEnd end,
+			Block body, Stmt stmt, WFormula store) {
+		
+		Block nblock = new Block();
+		nblock.add(start);
+		Pair<Block,WFormula> r = propagate(body,store);
+		body = r.first();
+		store = r.second();
+		nblock.addAll(body);
+		nblock.add(end);
+		
+		return new Pair<Block, WFormula>(nblock, store);	
 	}
 	
 	// The following method splits a formula into two components: those bits

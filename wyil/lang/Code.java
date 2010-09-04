@@ -435,24 +435,38 @@ public abstract class Code {
 	}
 
 	public static class Loop extends Start {
-		public Loop(String label) {
+		public final HashSet<CExpr.LVar> modifies;
+		
+		public Loop(String label, Set<CExpr.LVar> modifies) {
 			super(label);		
+			this.modifies = new HashSet<CExpr.LVar>(modifies); 
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop a = (Loop) o;
-				return label.equals(a.label);
+				return label.equals(a.label) && a.modifies.equals(modifies);
 			}
 			return false;
 		}
 
 		public int hashCode() {
-			return label.hashCode();
+			return label.hashCode() + modifies.hashCode();
 		}
 		
 		public String toString() {
-			return "loop";
+			String r = "";
+			if(modifies.size() > 0) {
+				r += " modifies ";
+				boolean firstTime = true;
+				for(CExpr.LVar v : modifies) {
+					if(!firstTime) {
+						r += ", ";
+					}
+					r += v.name();
+				}
+			}
+			return "loop" + r + ":";
 		}
 	}
 	
@@ -478,7 +492,7 @@ public abstract class Code {
 		public final CExpr source;
 
 		public Forall(String label, CExpr.Register variable, CExpr source) {
-			super(label);
+			super(label, Collections.EMPTY_SET); // FIXME
 			this.variable = variable;
 			this.source = source;
 		}

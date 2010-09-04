@@ -894,7 +894,9 @@ public class ModuleBuilder {
 			blk.add(new Code.Label(entry));
 			blk.add(new Code.CheckEnd(chklab));
 		}
-		blk.add(new Code.Loop(label), s.attribute(Attribute.Source.class));
+		
+		blk.add(new Code.Loop(label, Collections.EMPTY_SET), s
+				.attribute(Attribute.Source.class));
 		
 		blk.addAll(resolveCondition(exitLab, invert(s.condition), freeReg,
 				environment));

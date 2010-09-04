@@ -8,58 +8,31 @@ import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
-import wyil.util.ResolveError;
-import wyil.util.SyntacticElement;
+import wyil.util.*;
 import wyil.util.dfa.*;
 
-public class TypePropagation implements ModuleTransform {
-	private final ModuleLoader loader;
-	private String filename;
+public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 	public TypePropagation(ModuleLoader loader) {
-		this.loader = loader;
+		super(loader);
 	}
-	
-	public Module apply(Module module) {
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
-		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
 		
-		filename = module.filename();
-		
-		for(Module.TypeDef type : module.types()) {
-			types.add(transform(type));
-		}		
-		for(Module.Method method : module.methods()) {
-			methods.add(transform(method));
-		}
-		return new Module(module.id(), module.filename(), methods, types,
-				module.constants());
-	}
-	
-	public Module.TypeDef transform(Module.TypeDef type) {
+	public Module.TypeDef propagate(Module.TypeDef type) {
 		Block constraint = type.constraint();
 		if (constraint == null) {
 			return type;
 		} else {
-			HashMap<String,Type> environment = new HashMap<String,Type>();
+			Env environment = new Env();
 			environment.put("$", type.type());
 			constraint = transform(constraint, environment, null);
 			return new Module.TypeDef(type.name(), type.type(), constraint);
 		}
 	}
 	
-	public Module.Method transform(Module.Method method) {
-		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
-		for (Module.Case c : method.cases()) {
-			cases.add(transform(c,method));
-		}
-		return new Module.Method(method.name(), method.type(), cases);
-	}
-	
-	public Module.Case transform(Module.Case mcase, Module.Method method) {		
-		HashMap<String,Type> environment = new HashMap<String,Type>();
+	public Env initialStore() {
+		Env environment = new Env();
 		
-		List<String> paramNames = mcase.parameterNames();
+		List<String> paramNames = methodCase.parameterNames();
 		List<Type> paramTypes = method.type().params;
 		
 		for (int i = 0; i != paramNames.size(); ++i) {
@@ -69,7 +42,7 @@ public class TypePropagation implements ModuleTransform {
 					&& Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
 				// FIXME: add source information
 				syntaxError("function argument cannot have process type",
-						filename, mcase);
+						filename, methodCase);
 			}
 		}
 		
@@ -77,107 +50,49 @@ public class TypePropagation implements ModuleTransform {
 			environment.put("this", method.type().receiver);
 		}
 		
+		return environment;
+	}
+	
+	public Module.Case propagate(Module.Case mcase, Module.Method method) {		
+		this.methodCase = mcase;
+		this.stores = new HashMap<String,Env>();
+		
+		Env environment = initialStore();
+		
 		Block precondition = mcase.precondition();
 		if(precondition != null) {
-			HashMap<String,Type> preenv = new HashMap<String,Type>(environment);
-			precondition = transform(precondition, preenv, method);
+			Env preenv = new Env(environment);
+			precondition = propagate(precondition, preenv).first();
 		}
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
-			HashMap<String,Type> postenv = new HashMap<String,Type>(environment);
+			Env postenv = new Env(environment);
 			postenv.put("$",method.type().ret);
-			postcondition = transform(postcondition, postenv, method);			
+			postcondition = propagate(postcondition, postenv).first();			
 		}
 				
-		Block body = transform(mcase.body(), environment, method);		
+		Block body = propagate(mcase.body(), environment).first();		
 		return new Module.Case(mcase.parameterNames(), precondition,
 				postcondition, body);
 	}
 	
-	protected Block transform(Block block, HashMap<String, Type> environment,
-			Module.Method method) {
-		Block nblock = new Block();
-		HashMap<String, HashMap<String, Type>> flowsets = new HashMap<String, HashMap<String, Type>>();
-
-		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.get(i);
-			Code code = stmt.code;
-
-			if (code instanceof Label) {
-				Label label = (Label) code;
-				if (environment == null) {
-					environment = flowsets.get(label.label);
-				} else {
-					join(environment, flowsets.get(label.label));
-				}
-			}
-
-			if (environment == null) {
-				continue; // this indicates dead-code
-			} else if (code instanceof Goto) {
-				Goto got = (Goto) code;
-				merge(got.target, environment, flowsets);
-				environment = null;
-			} else if (code instanceof IfGoto) {
-				IfGoto igot = (IfGoto) code;
-				HashMap<String, Type> tenv = new HashMap<String, Type>(
-						environment);
-				code = infer((Code.IfGoto) code, stmt, tenv, environment);
-				// Observe that the following is needed because type inference
-				// can determine that an if-statement definitely is taken, or
-				// definitely isn't taken.
-				if (code instanceof Code.IfGoto) {
-					merge(igot.target, tenv, flowsets);
-				} else if (code instanceof Code.Goto) {
-					merge(igot.target, tenv, flowsets);
-					environment = null;
-				}
-			} else if (code instanceof Assign) {
-				code = infer((Code.Assign) code, stmt, environment);
-			} else if (code instanceof Return) {
-				code = infer((Code.Return) code, stmt, environment, method);
-				environment = null;
-			} else if (code instanceof Fail) {
-				environment = null;
-			} else if (code instanceof Forall) {
-				Code.Forall fall = (Code.Forall) code;
-				code = infer(fall, stmt, environment);
-				if (code instanceof Skip) {
-					// indicates the loop should be removed because it's
-					// unreachable, or is over an empty list.
-					while (i < block.size()) {
-						Stmt s = block.get(++i);
-						if (s.code instanceof End) {
-							End e = (End) s.code;
-							if (e.target.equals(fall.label)) {
-								break;
-							}
-						}
-					}
-				}
-			} else if (code instanceof Debug) {
-				code = infer((Code.Debug) code, stmt, environment);
-			}
-
-			nblock.add(code, stmt.attributes());
+	protected Pair<Stmt, HashMap<String, Type>> propagate(Stmt stmt,
+			Env environment) {
+		Code code = stmt.code;
+		if(code instanceof Assign) {
+			return infer((Assign)code,stmt,environment);
+		} else if(code instanceof Debug) {
+			code = infer((Debug)code,stmt,environment);
+		} else if(code instanceof Return) {
+			code = infer((Return)code,stmt,environment);
 		}
-		return nblock;
-	}
-	
-	protected void merge(String target, HashMap<String,Type> env,
-			HashMap<String, HashMap<String,Type>> flowsets) {				
 		
-		HashMap<String,Type> e = flowsets.get(target);
-		if(e == null) {						
-			flowsets.put(target, new HashMap<String,Type>(env));
-		} else {
-			join(e,env);			
-			flowsets.put(target, e);
-		}
+		stmt = new Stmt(code,stmt.attributes());
+		return new Pair<Stmt,HashMap<String,Type>>(stmt,environment);
 	}
 	
 	protected Code infer(Code.Forall code, Stmt stmt,
-			HashMap<String,Type> environment) {
+			Env environment) {
 		
 		CExpr src = infer(code.source, stmt, environment);
 		Type src_t = src.type();				
@@ -204,10 +119,12 @@ public class TypePropagation implements ModuleTransform {
 				code.variable.index), src);
 	}
 	
-	protected Code infer(Code.Assign code, Stmt stmt, HashMap<String,Type> environment) {
+	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {
+		
+		environment = new Env(environment);
+		
 		CExpr.LVal lhs = code.lhs;
 		
-
 		CExpr rhs = infer(code.rhs,stmt,environment);
 
 		if(lhs instanceof LVar) {			
@@ -227,12 +144,39 @@ public class TypePropagation implements ModuleTransform {
 			lhs = CExpr.REG(rhs.type(),v.index);
 		} // FIXME: other cases
 		
-		return new Code.Assign(lhs,rhs);
+		stmt = new Stmt(new Code.Assign(lhs, rhs), stmt.attributes());
+		return new Pair<Stmt,Env>(stmt,environment);
 	}
 		
-	protected Code infer(Code.IfGoto code, Stmt stmt, HashMap<String,Type> trueEnv, HashMap<String,Type> falseEnv) {
-		CExpr lhs = infer(code.lhs,stmt,trueEnv);
-		CExpr rhs = infer(code.rhs,stmt,trueEnv);
+	protected Code infer(Code.Return code, Stmt stmt, Env environment) {
+		CExpr rhs = code.rhs;
+		Type ret_t = method.type().ret;
+		
+		if(rhs != null) {
+			if(ret_t == Type.T_VOID) {
+				syntaxError(
+						"cannot return value from method with void return type",
+						filename, stmt);
+			}
+			rhs = infer(rhs,stmt,environment);
+			checkIsSubtype(ret_t,rhs.type(),stmt);
+		} else if(ret_t != Type.T_VOID) {
+			syntaxError(
+					"missing return value",filename, stmt);
+		}
+		
+		return new Code.Return(rhs);
+	}
+	
+	protected Code infer(Code.Debug code, Stmt stmt, Env environment) {
+		CExpr rhs = infer(code.rhs,stmt, environment);
+		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
+		return new Code.Debug(rhs);
+	}
+	
+	protected Triple<Stmt,Env,Env> propagate(Code.IfGoto code, Stmt stmt, Env environment) {
+		CExpr lhs = infer(code.lhs,stmt,environment);
+		CExpr rhs = infer(code.rhs,stmt,environment);
 		Type lhs_t = lhs.type();
 		Type rhs_t = rhs.type();
 		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
@@ -334,34 +278,7 @@ public class TypePropagation implements ModuleTransform {
 			}
 		}
 	}
-	
-	protected Code infer(Code.Return code, Stmt stmt, HashMap<String,Type> environment,
-			Module.Method method) {
-		CExpr rhs = code.rhs;
-		Type ret_t = method.type().ret;
 		
-		if(rhs != null) {
-			if(ret_t == Type.T_VOID) {
-				syntaxError(
-						"cannot return value from method with void return type",
-						filename, stmt);
-			}
-			rhs = infer(rhs,stmt,environment);
-			checkIsSubtype(ret_t,rhs.type(),stmt);
-		} else if(ret_t != Type.T_VOID) {
-			syntaxError(
-					"missing return value",filename, stmt);
-		}
-		
-		return new Code.Return(rhs);
-	}
-	
-	protected Code infer(Code.Debug code, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr rhs = infer(code.rhs,stmt, environment);
-		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
-		return new Code.Debug(rhs);
-	}
-	
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
 
 		if (e instanceof Value) {
@@ -640,6 +557,14 @@ public class TypePropagation implements ModuleTransform {
 			} else {
 				env1.put(key, Type.leastUpperBound(mt, ot));
 			}
+		}
+	}
+	
+	public static class Env extends HashMap<String,Type> {
+		public Env() {
+		}
+		public Env(Map<String,Type> v) {
+			super(v);
 		}
 	}
 }
