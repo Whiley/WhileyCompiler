@@ -202,22 +202,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Env falseEnv = null;
 			
 			if(Type.isSubtype(tc.type,lhs_t)) {
-				// DEFINITE TRUE CASE				
+				// DEFINITE TRUE CASE		
+				trueEnv = environment;
 				if (code.op == Code.COP.SUBTYPEEQ) {
-					ncode = new Code.Goto(code.target);
-					trueEnv = environment;
+					ncode = new Code.Goto(code.target);					
 				} else {					
-					ncode = new Code.Skip();
-					falseEnv = environment;
+					ncode = new Code.Skip();					
 				}
 			} else if (!Type.isSubtype(lhs_t, tc.type)) {				
 				// DEFINITE FALSE CASE
+				falseEnv = environment;
 				if (code.op == Code.COP.NSUBTYPEEQ) {
-					ncode = new Code.Goto(code.target);
-					trueEnv = environment;
+					ncode = new Code.Goto(code.target);					
 				} else {					
-					ncode = new Code.Skip();
-					falseEnv = environment;
+					ncode = new Code.Skip();					
 				}
 			} else {
 				trueEnv = new Env(environment);
@@ -282,7 +280,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		blk.add(start);
 		Pair<Block, Env> r = propagate(body, environment);
 		blk.addAll(r.first());
-		blk.add(end);
+		blk.add(end);		
 		return new Pair<Block, Env>(blk, r.second());
 	}
 	
@@ -325,7 +323,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		blk.add(end);
 		
-		// FIXME: need to generate the modifies set
+		// FIXME: need to generate the modifies set		
 		return new Pair<Block,Env>(blk,join(environment,r.second()));
 	}
 	

@@ -31,7 +31,19 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 */
 	private HashMap<String,WExpr> substitutions = new HashMap<String,WExpr>();
 
+	/**
+	 * The minimal flag indicates that only conditions which are marked with an
+	 * Attribute.BranchPrediction will be considered for verification checking.
+	 * Essentially, this is the minimal amount of work we need to do to verify
+	 * that a given method is correct.
+	 */
 	private boolean minimal;
+
+	/**
+	 * The saveVcs flag is used to indicate that verification conditions should
+	 * be stored in attributes for debugging (or other) purposes.
+	 */
+	private boolean saveVcs = false;
 	
 	public ConstraintPropagation(ModuleLoader loader, boolean minimal, int timeout) {
 		super(loader);
@@ -68,7 +80,11 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	protected Pair<Stmt,WFormula> propagate(Stmt stmt, WFormula store) {
 		// First, add on the precondition attribute		
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>(stmt.attributes());
-		attributes.add(new Attribute.PreCondition(store));
+		
+		if(saveVcs) {
+			attributes.add(new Attribute.PreCondition(store));
+		}
+		
 		stmt = new Stmt(stmt.code,attributes);
 		
 		// second, check for assignment statements
@@ -388,7 +404,11 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// Update attribute information
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 		attributes.addAll(elem.attributes());		
-		attributes.add(new Attribute.PreCondition(store));
+		
+		if(saveVcs) {
+			attributes.add(new Attribute.PreCondition(store));
+		}
+		
 		// Now, create new statement
 		Stmt stmt;		
 		if (trueCondition == null) {
