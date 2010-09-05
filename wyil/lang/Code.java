@@ -436,16 +436,25 @@ public abstract class Code {
 
 	public static class Loop extends Start {
 		public final HashSet<CExpr.LVar> modifies;
+		public final Block invariant;
 		
-		public Loop(String label, Set<CExpr.LVar> modifies) {
+		public Loop(String label, Block invariant, Set<CExpr.LVar> modifies) {
 			super(label);		
+			this.invariant = invariant;
 			this.modifies = new HashSet<CExpr.LVar>(modifies); 
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop a = (Loop) o;
-				return label.equals(a.label) && a.modifies.equals(modifies);
+				if (invariant != null) {
+					return label.equals(a.label)
+							&& invariant.equals(a.invariant)
+							&& a.modifies.equals(modifies);
+				} else {
+					return label.equals(a.label) && a.invariant == null
+							&& a.modifies.equals(modifies);
+				}
 			}
 			return false;
 		}
@@ -493,7 +502,7 @@ public abstract class Code {
 		public final CExpr source;
 
 		public Forall(String label, CExpr.Register variable, CExpr source) {
-			super(label, Collections.EMPTY_SET); // FIXME
+			super(label, null, Collections.EMPTY_SET); // FIXME
 			this.variable = variable;
 			this.source = source;
 		}

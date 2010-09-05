@@ -293,7 +293,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	protected Pair<Block, WFormula> propagate(Code.Loop start, Code.LoopEnd end,
 			Block body, Stmt stmt, WFormula store) {
 		
-		// Create shadows of loop variables
+		// Create loop variable shadows
 		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
 		for(LVar v : start.modifies) { 
 			binding.put(new WVariable(v.name()), new WVariable(v.name() + "$"
@@ -301,7 +301,14 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		}		
 		store = store.substitute(binding);
 		
-		// At this point, we need to assume the loop invariant.
+		System.out.println("AFTER: " + store);
+		
+		if(start.invariant != null) {			
+			// Assume loop invariant
+			store = propagate(start.invariant,store).second();
+		}
+		
+		System.out.println("NOW: " + store);
 		
 		Block nblock = new Block();
 		nblock.add(start);
@@ -399,15 +406,15 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		if(!minimal || (expected != null && !expected.trueBranch)) {		
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 					wyone.Main.heuristic, wyone.Main.theories);		
-			if (tp instanceof Proof.Unsat) {			
+			if (tp instanceof Proof.Unsat) {							
 				trueCondition = null;
 			}
 		}
 		
-		if(!minimal || (expected != null && !expected.falseBranch)) {
+		if(!minimal || (expected != null && !expected.falseBranch)) {			
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);			
-			if (fp instanceof Proof.Unsat) {
+			if (fp instanceof Proof.Unsat) {				
 				falseCondition = null;
 			}					
 		}

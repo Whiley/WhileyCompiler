@@ -70,6 +70,10 @@ public class Lists {
 				+ "&& (3 <= x || [1.0,2.0,3.0][x]==l[x])"));
 	}
 	
+	@Test public void Unsat_12() {
+		assertTrue(checkUnsat("|r|==|r|+1 && r<:[int]"));
+	}
+	
 	@Test public void Sat_1() { 
 		assertTrue(checkSat("l <: [int] && i <: int && |l| == 2 && l[0] == 1 && l[1] == 2"));
 	}

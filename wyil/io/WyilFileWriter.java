@@ -82,7 +82,15 @@ public class WyilFileWriter {
 				indent--;
 			}
 			write(indent,s.code,s.attributes(),out);
-			if(s.code instanceof Code.Start) {
+			if(s.code instanceof Code.Loop) {
+				Code.Loop loop = (Code.Loop) s.code; 
+				indent++;				
+				if(loop.invariant != null) {
+					tabIndent(indent+1,out);
+					out.println("invariant:");
+					write(indent+1,loop.invariant,out);
+				}
+			} else if(s.code instanceof Code.Start) {
 				indent++;
 			}
 		}

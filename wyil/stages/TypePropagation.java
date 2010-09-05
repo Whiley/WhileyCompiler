@@ -331,6 +331,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Block body, Stmt stmt, Env environment) {
 		
 		HashSet<String> modifies = new HashSet<String>();
+		Block invariant = start.invariant;
+		
+		if(invariant != null) {
+			invariant = propagate(invariant,environment).first();
+		}
 		
 		for(Stmt s : body) {
 			if(s.code instanceof Code.Assign) {
@@ -360,7 +365,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		blk.add(new Loop(start.label,mods),stmt.attributes());
+		blk.add(new Loop(start.label,invariant,mods),stmt.attributes());
 		blk.addAll(r.first());
 		blk.add(end);
 		

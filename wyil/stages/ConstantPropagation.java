@@ -61,17 +61,18 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 				return propagate(body,environment);
 			}						
 		} else if(start instanceof Loop) {
+			Loop loop = (Loop) start;
+			
 			// Determine and eliminate loop-carried dependencies
 			environment = new HashMap<String,Value>(environment);
-			for(Stmt s : body) {
-				if(s.code instanceof Code.Assign) {
-					Code.Assign a = (Code.Assign) s.code;
-					if(a.lhs != null) {
-						LVar v = CExpr.extractLVar(a.lhs);						
-						environment.remove(v.name());
-					}
-				}
-			}			
+			for(LVar v : loop.modifies) {
+				environment.remove(v.name());
+			}
+			Block invariant = loop.invariant;
+			if(invariant != null) {
+				invariant = propagate(invariant,environment).first();
+			}
+			start = new Code.Loop(start.label, invariant, loop.modifies);
 		}
 		
 		Pair<Block,HashMap<String,Value>> r = propagate(body,environment);

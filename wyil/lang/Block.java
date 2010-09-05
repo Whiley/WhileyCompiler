@@ -288,6 +288,20 @@ public final class Block implements Iterable<Stmt> {
 				String label = nlabels.get(l.target);
 				if (label == null) { label = l.target; }
 				c = new Code.ForallEnd(label);
+			} else if (c instanceof Code.Loop) {
+				Code.Loop l = (Code.Loop) c;
+				String label = nlabels.get(l.label);				
+				c = new Code.Loop(label,l.invariant,l.modifies);
+			} else if (c instanceof Code.LoopEnd) {
+				Code.LoopEnd l = (Code.LoopEnd) c;
+				String label = nlabels.get(l.target);
+				if (label == null) { label = l.target; }
+				c = new Code.LoopEnd(label);
+			} else if (c instanceof Code.Check) {
+				Code.Check l = (Code.Check) c;
+				String label = nlabels.get(l.label);
+				if (label == null) { label = l.label; }
+				c = new Code.Check(label);
 			} else if (c instanceof Code.CheckEnd) {
 				Code.CheckEnd l = (Code.CheckEnd) c;
 				String label = nlabels.get(l.target);

@@ -1,4 +1,4 @@
 void System::main([string] args):
     [int] xs = [1,2,3]
-    for st in xs:
-        print str(st)
+    [int] ys = xs + [4]
+    assert |ys| != |xs|

@@ -494,7 +494,9 @@ public class Parser {
 		} else {
 			String id = parseIdentifier();
 			WType r;
-			if(id.equals("int")) {
+			if(id.equals("void")) {
+				r = WIntType.T_INT;
+			} else if(id.equals("int")) {
 				r = WIntType.T_INT;
 			} else if(id.equals("real")) {
 				r = WRealType.T_REAL;

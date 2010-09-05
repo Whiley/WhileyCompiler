@@ -883,19 +883,22 @@ public class ModuleBuilder {
 		String loopend = Block.freshLabel();
 		String exitLab = Block.freshLabel();
 		
+		Block invariant = null;
 		Block blk = new Block();
 		
 		if(s.invariant != null) {
-			blk.add(new Code.Check(chklab));
-			blk.addAll(resolveCondition(entry, s.invariant, freeReg,
+			invariant = new Block();
+			invariant.add(new Code.Check(chklab));
+			invariant.addAll(resolveCondition(entry, s.invariant, freeReg,
 					environment));
-			blk.add(new Code.Fail("loop invariant not satisfied on entry"), s
+			invariant.add(new Code.Fail("loop invariant not satisfied"), s
 					.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(entry));
-			blk.add(new Code.CheckEnd(chklab));
-		}
+			invariant.add(new Code.Label(entry));
+			invariant.add(new Code.CheckEnd(chklab));
+			blk.addAll(Block.relabel(invariant));
+		}		
 		
-		blk.add(new Code.Loop(label, Collections.EMPTY_SET), s
+		blk.add(new Code.Loop(label, invariant, Collections.EMPTY_SET), s
 				.attribute(Attribute.Source.class));
 		
 		blk.addAll(resolveCondition(exitLab, invert(s.condition), freeReg,
