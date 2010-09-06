@@ -109,6 +109,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 
 		WExpr rhs = rhs_p.first();
 		WExpr lhs = lhs_p.first();
+		WFormula rhs_c = rhs_p.second();
 
 		LVar lvar = CExpr.extractLVar(code.lhs);
 
@@ -116,14 +117,14 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
 		binding.put(new WVariable(lvar.name()), new WVariable(lvar.name() + "$"
 				+ index));
-
+		
 		rhs = rhs.substitute(binding);
+		rhs_c = rhs_c.substitute(binding);
 		WFormula postcondition = precondition.substitute(binding);
 
 		// finally, put it altogether
 		return WFormulas.and(postcondition, new WEquality(true, lhs, rhs),
-				assignCondition(code.lhs, binding, elem), lhs_p.second(), rhs_p
-						.second());
+				assignCondition(code.lhs, binding, elem), lhs_p.second(), rhs_c);
 	}
 		
 	protected WFormula assignCondition(LVal lval,
@@ -752,23 +753,23 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		}
 		case UNION: {
 			WVariable rv = WVariable.freshVar();
-			WVariable vs = WVariable.freshVar();
+			WVariable rs = WVariable.freshVar();
 
 			HashMap<WVariable, WExpr> vars = new HashMap();
-			vars.put(rv, vs);
+			vars.put(rv, rs);
 			WSetConstructor sc = new WSetConstructor(rv);
 			WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs.first()), WSets
 					.subsetEq(sc, rhs.first()));
 			constraints = WFormulas.and(constraints, WSets.subsetEq(
-					lhs.first(), vs), WSets.subsetEq(rhs.first(), vs),
+					lhs.first(), rs), WSets.subsetEq(rhs.first(), rs),
 					new WBoundedForall(true, vars, allc));
-			return new Pair<WExpr, WFormula>(rv, constraints);
+			return new Pair<WExpr, WFormula>(rs, constraints);
 		}
 		case INTERSECT: {
 			WVariable rv = WVariable.freshVar();
-			WVariable vs = WVariable.freshVar();
+			WVariable rs = WVariable.freshVar();
 			HashMap<WVariable, WExpr> vars = new HashMap();
-			vars.put(rv, vs);				
+			vars.put(rv, rs);				
 			WSetConstructor sc = new WSetConstructor(rv);
 			WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
 					.subsetEq(sc, lhs.first()), WSets.subsetEq(sc, rhs.first())));
@@ -776,13 +777,13 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			vars = new HashMap();
 			vars.put(rv, lhs.first());
 			WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
-					.subsetEq(sc, rhs.first()), WSets.subsetEq(sc, vs)));
+					.subsetEq(sc, rhs.first()), WSets.subsetEq(sc, rs)));
 			
 			constraints = WFormulas
-					.and(constraints, left, right, WSets.subsetEq(vs, lhs
-							.first()), WSets.subsetEq(vs, rhs.first()));
+					.and(constraints, left, right, WSets.subsetEq(rs, lhs
+							.first()), WSets.subsetEq(rs, rhs.first()));
 
-			return new Pair<WExpr, WFormula>(rv, constraints);
+			return new Pair<WExpr, WFormula>(rs, constraints);
 		}
 		
 		}
