@@ -887,6 +887,8 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		
 		if(s.invariant != null) {
+			// FIXME: what I should be doing is loading the invariant into the
+			// for, and then inlining it in the PreconditionInline state.
 			invariant = new Block();
 			invariant.add(new Code.Check(chklab));
 			invariant.addAll(resolveCondition(entry, s.invariant, freeReg,
@@ -932,6 +934,8 @@ public class ModuleBuilder {
 		Block invariant = null;
 		
 		if(s.invariant != null) {
+			// FIXME: what I should be doing is loading the invariant into the
+			// for, and then inlining it in the PreconditionInline state.
 			String chklab = Block.freshLabel();
 			String entry = Block.freshLabel();				
 			invariant = new Block();
