@@ -473,7 +473,7 @@ public abstract class Code {
 						r += ", ";
 					}
 					firstTime=false;
-					r += v.name();
+					r += v;
 				}
 			}
 			return "loop" + r + ":";

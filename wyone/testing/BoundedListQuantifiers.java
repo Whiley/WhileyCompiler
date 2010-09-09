@@ -67,4 +67,9 @@ public class BoundedListQuantifiers {
 	public void Sat_1() {
 		assertTrue(checkSat("xs <: [int] && xs==[1,2] && all [ i : xs | xs[i] > 0 ]"));
 	}
+	
+	@Test
+	public void Sat_2() {
+		assertTrue(checkSat("all [x : xs | (0 <= (x-|r$4|) || r$4[x]==xs[x]) && (0 > (x-|r$4|) || [ls[i$5]][(x-|r$4|)]==xs[x])]"));
+	}	
 }

@@ -116,7 +116,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// Create shadows
 		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
 		binding.put(new WVariable(lvar.name()), new WVariable(lvar.name() + "$"
-				+ index));
+				+ index++));
 		
 		rhs = rhs.substitute(binding);
 		rhs_c = rhs_c.substitute(binding);
@@ -298,18 +298,14 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
 		for(LVar v : start.modifies) { 
 			binding.put(new WVariable(v.name()), new WVariable(v.name() + "$"
-				+ index));
+				+ index++));
 		}		
 		store = store.substitute(binding);
-		
-		System.out.println("AFTER: " + store);
 		
 		if(start.invariant != null) {			
 			// Assume loop invariant
 			store = propagate(start.invariant,store).second();
 		}
-		
-		System.out.println("NOW: " + store);
 		
 		Block nblock = new Block();
 		nblock.add(start);
@@ -404,18 +400,22 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		WFormula falseCondition = WFormulas.and(precondition, condition.not());
 		Attribute.BranchPredict expected = elem.attribute(Attribute.BranchPredict.class);		
 		
-		if(!minimal || (expected != null && !expected.trueBranch)) {		
+		if(!minimal || (expected != null && !expected.trueBranch)) {
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 					wyone.Main.heuristic, wyone.Main.theories);		
-			if (tp instanceof Proof.Unsat) {							
+			if (tp instanceof Proof.Unsat) {
+				System.out.println("CODE: " + code);
+				System.out.println("UNSAT: " + trueCondition);				
 				trueCondition = null;
 			}
 		}
-		
+				
 		if(!minimal || (expected != null && !expected.falseBranch)) {			
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);			
-			if (fp instanceof Proof.Unsat) {				
+			if (fp instanceof Proof.Unsat) {
+				System.out.println("CODE: " + code);
+				System.out.println("UNSAT: " + falseCondition);
 				falseCondition = null;
 			}					
 		}
