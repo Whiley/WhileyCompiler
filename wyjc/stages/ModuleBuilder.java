@@ -929,6 +929,22 @@ public class ModuleBuilder {
 		String label = Block.freshLabel();
 		Pair<CExpr,Block> source = resolve(freeReg,s.source,environment);
 		Block blk = new Block();
+		Block invariant = null;
+		
+		if(s.invariant != null) {
+			String chklab = Block.freshLabel();
+			String entry = Block.freshLabel();				
+			invariant = new Block();
+			invariant.add(new Code.Check(chklab));
+			invariant.addAll(resolveCondition(entry, s.invariant, freeReg,
+					environment));
+			invariant.add(new Code.Fail("loop invariant not satisfied"), s
+					.attribute(Attribute.Source.class));
+			invariant.add(new Code.Label(entry));
+			invariant.add(new Code.CheckEnd(chklab));
+			blk.addAll(Block.relabel(invariant));
+		}
+		
 		blk.addAll(source.second());
 		CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg); 
 		blk.add(new Code.Forall(label,reg,source.first()), s.attribute(Attribute.Source.class));
@@ -937,11 +953,25 @@ public class ModuleBuilder {
 				environment);
 		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		binding.put(s.variable,reg);
+		
 		dec.put(s.variable, new Pair<Type,Block>(Type.T_ANY,null));
 		for (Stmt st : s.body) {
 			Block b = resolve(st, freeReg+1, fd, dec);
 			blk.addAll(Block.substitute(binding, b));
+		}
+				
+		if(s.invariant != null) {
+			String chklab = Block.freshLabel();				
+			String loopend = Block.freshLabel();
+			blk.add(new Code.Check(chklab));
+			blk.addAll(resolveCondition(loopend, s.invariant, freeReg,
+					environment));
+			blk.add(new Code.Fail("loop invariant not restored"), s
+					.attribute(Attribute.Source.class));
+			blk.add(new Code.Label(loopend));
+			blk.add(new Code.CheckEnd(chklab));
 		}		
+		
 		blk.add(new Code.ForallEnd(label), s.attribute(Attribute.Source.class));		
 
 		return blk;
