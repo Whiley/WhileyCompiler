@@ -404,8 +404,6 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 					wyone.Main.heuristic, wyone.Main.theories);		
 			if (tp instanceof Proof.Unsat) {
-				System.out.println("CODE: " + code);
-				System.out.println("UNSAT: " + trueCondition);				
 				trueCondition = null;
 			}
 		}
@@ -414,8 +412,6 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);			
 			if (fp instanceof Proof.Unsat) {
-				System.out.println("CODE: " + code);
-				System.out.println("UNSAT: " + falseCondition);
 				falseCondition = null;
 			}					
 		}
