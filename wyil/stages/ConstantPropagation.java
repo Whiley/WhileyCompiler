@@ -34,27 +34,26 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 	
 	protected Pair<Block, HashMap<String, Value>> propagate(Code.Start start,
 			Code.End end, Block body, Stmt stmt, HashMap<String, Value> environment) {
-		
-		
-		
+					
 		if(start instanceof Forall) {
 			Code.Forall fall = (Code.Forall) start;
 			CExpr source = infer(fall.source,stmt,environment);
-			fall = new Code.Forall(fall.label, fall.variable, source);
-			start = fall;
-			
 			// Determine and eliminate loop-carried dependencies
 			environment = new HashMap<String,Value>(environment);
-			for(Stmt s : body) {
-				if(s.code instanceof Code.Assign) {
-					Code.Assign a = (Code.Assign) s.code;
-					if(a.lhs != null) {
-						LVar v = CExpr.extractLVar(a.lhs);						
-						environment.remove(v.name());
-					}
-				}
+			for(LVar v : fall.modifies) {
+				environment.remove(v.name());
+			}
+			// Propagate constants into invariant
+			Block invariant = fall.invariant;
+			if(invariant != null) {
+				invariant = propagate(invariant,environment).first();
 			}
 			
+			// Update code
+			fall = new Code.Forall(fall.label, invariant, fall.variable, source, fall.modifies);
+			start = fall;
+			
+			// Unroll loop if possible
 			if(source instanceof Value) {
 				// ok, we can unroll the loop body --- yay!
 				body = unrollFor(fall,body);
@@ -68,11 +67,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			for(LVar v : loop.modifies) {
 				environment.remove(v.name());
 			}
+			
+			// Propagate constants into invariant
 			Block invariant = loop.invariant;
 			if(invariant != null) {
 				invariant = propagate(invariant,environment).first();
 			}
+			
+			// Update code
 			start = new Code.Loop(start.label, invariant, loop.modifies);
+			
+			// Can we unroll the loop here I wonder?
 		}
 		
 		Pair<Block,HashMap<String,Value>> r = propagate(body,environment);

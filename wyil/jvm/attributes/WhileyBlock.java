@@ -73,7 +73,10 @@ public class WhileyBlock implements BytecodeAttribute {
 			Forall a = (Forall) c;	
 			constantPool.add(new Constant.Utf8(a.label));
 			addPoolItems(a.variable, constantPool);
-			addPoolItems(a.source, constantPool);			
+			addPoolItems(a.source, constantPool);	
+			for(CExpr.LVar v : a.modifies) {
+				addPoolItems(v, constantPool);
+			}
 		} 
 	}
 	
@@ -190,7 +193,11 @@ public class WhileyBlock implements BytecodeAttribute {
 			writer.write_u1(FORALL);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
 			write(a.variable,writer,constantPool);
-			write(a.source,writer,constantPool);			
+			write(a.source,writer,constantPool);	
+			writer.write_u2(a.modifies.size());
+			for(CExpr.LVar v : a.modifies) {
+				write(v,writer,constantPool);
+			}
 		} else {
 			throw new IllegalArgumentException("Code not permitted in WhileyBlock: " + c);
 		}
@@ -479,7 +486,13 @@ public class WhileyBlock implements BytecodeAttribute {
 				Constant.Utf8 label = (Constant.Utf8) constantPool.get(idx);
 				CExpr.Register var = (CExpr.Register) readCExpr(reader,constantPool);
 				CExpr src = readCExpr(reader,constantPool);				
-				return new Code.Forall(label.str,var,src);
+				ArrayList<CExpr.LVar> modifies = new ArrayList<CExpr.LVar>();
+				int nmods = reader.read_u2();
+				for(int i=0;i!=nmods;++i) {
+					modifies.add((CExpr.LVar) readCExpr(reader,constantPool));
+				}
+				// FIXME: problem with modifies
+				return new Code.Forall(label.str,null,var,src,modifies);
 			}	
 			}
 			throw new IllegalArgumentException("unknown code encountered: " + code);

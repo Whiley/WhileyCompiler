@@ -282,7 +282,8 @@ public final class Block implements Iterable<Stmt> {
 			} else if (c instanceof Code.Forall) {
 				Code.Forall l = (Code.Forall) c;
 				String label = nlabels.get(l.label);				
-				c = new Code.Forall(label,l.variable,l.source);
+				c = new Code.Forall(label, l.invariant, l.variable, l.source,
+						l.modifies);
 			} else if (c instanceof Code.ForallEnd) {
 				Code.ForallEnd l = (Code.ForallEnd) c;
 				String label = nlabels.get(l.target);

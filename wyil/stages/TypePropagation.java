@@ -287,6 +287,25 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Pair<Block, Env> propagate(Code.Forall start, Code.ForallEnd end,
 			Block body, Stmt stmt, Env environment) {
 		
+		// First, create modifies set and type the invariant
+		HashSet<String> modifies = new HashSet<String>();
+		Block invariant = start.invariant;
+				
+		if(invariant != null) {		
+			invariant = propagate(invariant,environment).first();			
+		}
+		
+		for(Stmt s : body) {
+			if(s.code instanceof Code.Assign) {
+				Code.Assign a = (Code.Assign) s.code;
+				if(a.lhs != null) {
+					LVar v = CExpr.extractLVar(a.lhs);						
+					modifies.add(v.name());
+				}
+			}
+		}
+		
+		// Now, type the source 
 		CExpr src = infer(start.source, stmt, environment);
 		Type src_t = src.type();				
 		
@@ -308,22 +327,33 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return new Pair<Block,Env>(blk,environment);
 		}
 				
-		blk.add(new Code.Forall(start.label, CExpr.REG(elem_t,
-				start.variable.index), src),stmt.attributes());
-				
+		
 		// create environment specific for loop body
 		Env loopEnv = new Env(environment);
 		loopEnv.put("%" + start.variable.index, elem_t);
 	
 		Pair<Block,Env> r = propagate(body,loopEnv);
+			
+		// FIXME: we should keep iterating to reach a fixed point here
+		environment = join(environment,r.second());
+		
+		// now construct final modifies set		
+		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
+		for(String v : modifies) {
+			Type t = environment.get(v);
+			if(v.charAt(0) == '%') {
+				mods.add(CExpr.REG(t, Integer.parseInt(v.substring(1))));
+			} else {
+				mods.add(CExpr.VAR(t, v));
+			}
+		}
+		
+		// Finally, update the code
+		blk.add(new Code.Forall(start.label, invariant, CExpr.REG(elem_t,
+				start.variable.index), src, mods), stmt.attributes());
 		blk.addAll(r.first());
-		
-		// FIXME: at this point we should continue iterating until a fixed-point
-		// is reached.
-		
 		blk.add(end);
-		
-		// FIXME: need to generate the modifies set		
+					
 		return new Pair<Block,Env>(blk,join(environment,r.second()));
 	}
 	

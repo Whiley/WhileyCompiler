@@ -105,8 +105,9 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {			
 			Forall a = (Forall) c;				
-			return new Forall(a.label, (CExpr.Register) CExpr.substitute(
-					binding, a.variable), CExpr.substitute(binding, a.source));
+			return new Forall(a.label, a.invariant, (CExpr.Register) CExpr
+					.substitute(binding, a.variable), CExpr.substitute(binding,
+					a.source), a.modifies);
 		} else {
 			return c;
 		}
@@ -144,8 +145,9 @@ public abstract class Code {
 			return a;
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
-			return new Forall(a.label, (CExpr.Register) CExpr.registerShift(shift,
-					a.variable), CExpr.registerShift(shift, a.source));
+			return new Forall(a.label, a.invariant, (CExpr.Register) CExpr
+					.registerShift(shift, a.variable), CExpr.registerShift(
+					shift, a.source), a.modifies);
 		} else {
 			return c;
 		}
@@ -437,13 +439,14 @@ public abstract class Code {
 	public static class Loop extends Start {
 		public final HashSet<CExpr.LVar> modifies;
 		public final Block invariant;
-		
-		public Loop(String label, Block invariant, Set<CExpr.LVar> modifies) {
-			super(label);		
+
+		public Loop(String label, Block invariant,
+				Collection<CExpr.LVar> modifies) {
+			super(label);
 			this.invariant = invariant;
-			this.modifies = new HashSet<CExpr.LVar>(modifies); 
+			this.modifies = new HashSet<CExpr.LVar>(modifies);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop a = (Loop) o;
@@ -462,17 +465,17 @@ public abstract class Code {
 		public int hashCode() {
 			return label.hashCode() + modifies.hashCode();
 		}
-		
+
 		public String toString() {
 			String r = "";
-			if(modifies.size() > 0) {
+			if (modifies.size() > 0) {
 				r += " ";
 				boolean firstTime = true;
-				for(CExpr.LVar v : modifies) {
-					if(!firstTime) {
+				for (CExpr.LVar v : modifies) {
+					if (!firstTime) {
 						r += ", ";
 					}
-					firstTime=false;
+					firstTime = false;
 					r += v;
 				}
 			}
@@ -501,12 +504,20 @@ public abstract class Code {
 		public final CExpr.Register variable;
 		public final CExpr source;
 
-		public Forall(String label, CExpr.Register variable, CExpr source) {
-			super(label, null, Collections.EMPTY_SET); // FIXME
+		public Forall(String label, Block invariant, CExpr.Register variable,
+				CExpr source) {
+			super(label, invariant, Collections.EMPTY_SET);
 			this.variable = variable;
 			this.source = source;
 		}
 
+		public Forall(String label, Block invariant, CExpr.Register variable,
+				CExpr source, Collection<CExpr.LVar> modifies) {
+			super(label, invariant, modifies);
+			this.variable = variable;
+			this.source = source;
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof Forall) {
 				Forall a = (Forall) o;

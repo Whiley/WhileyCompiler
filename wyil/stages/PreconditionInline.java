@@ -138,9 +138,20 @@ public class PreconditionInline implements ModuleTransform {
 					}
 				} else if (c instanceof Forall) {
 					Forall a = (Forall) c;
-					c = new Forall(a.label, (CExpr.Register) transform(a.variable,
-							stmt, inserts), transform(a.source, stmt, inserts));
-				}
+					Block invariant = a.invariant;
+					if(invariant != null) {
+						invariant = transform(regTarget,invariant);
+					}
+					c = new Forall(a.label, invariant,a.variable,
+							transform(a.source, stmt, inserts), a.modifies);
+				} else if (c instanceof Loop) {
+					Loop l = (Loop) c;
+					Block invariant = l.invariant;
+					if(invariant != null) {
+						invariant = transform(regTarget,invariant);
+					}					
+					c = new Loop(l.label, invariant, l.modifies);
+				} 
 				nblock.addAll(inserts);
 				if(c != null) {
 					nblock.add(c, stmt.attributes());

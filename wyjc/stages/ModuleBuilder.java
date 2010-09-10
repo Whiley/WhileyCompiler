@@ -377,7 +377,7 @@ public class ModuleBuilder {
 				blk = new Block();
 				CExpr.Register reg = CExpr.REG(p.first(), 0);
 				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
+				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
 				blk.add(new Code.ForallEnd(label));
@@ -393,7 +393,7 @@ public class ModuleBuilder {
 				blk = new Block();
 				CExpr.Register reg = CExpr.REG(p.first(), 0);
 				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
+				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
 				blk.add(new Code.ForallEnd(label));
@@ -951,7 +951,8 @@ public class ModuleBuilder {
 		
 		blk.addAll(source.second());
 		CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg); 
-		blk.add(new Code.Forall(label,reg,source.first()), s.attribute(Attribute.Source.class));
+		blk.add(new Code.Forall(label, invariant, reg, source.first()), s
+				.attribute(Attribute.Source.class));
 		
 		HashMap<String, Pair<Type, Block>> dec = new HashMap<String, Pair<Type, Block>>(
 				environment);
@@ -1228,8 +1229,9 @@ public class ModuleBuilder {
 		for (Pair<CExpr.Register, CExpr> ent : sources) {
 			String loopLabel = Block.freshLabel();
 			labels.add(loopLabel);
-			blk.add(new Code.Forall(loopLabel, ent.first(), ent.second()), e
-					.attribute(Attribute.Source.class));
+			blk
+					.add(new Code.Forall(loopLabel, null, ent.first(), ent
+							.second()), e.attribute(Attribute.Source.class));
 		}
 		if (e.cop == Expr.COp.NONE) {
 			String exitLabel = Block.freshLabel();
@@ -1550,8 +1552,9 @@ public class ModuleBuilder {
 			String loopLabel = Block.freshLabel();
 			labels.add(loopLabel);
 
-			blk.add(new Code.Forall(loopLabel, ent.first(), ent.second()), e
-					.attribute(Attribute.Source.class));
+			blk
+					.add(new Code.Forall(loopLabel, null, ent.first(), ent
+							.second()), e.attribute(Attribute.Source.class));
 		}
 		if (e.condition != null) {
 			blk.addAll(resolveCondition(continueLabel, invert(e.condition),
@@ -1621,7 +1624,7 @@ public class ModuleBuilder {
 				blk = new Block();
 				CExpr.Register reg = CExpr.REG(p.first(), 0);
 				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
+				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
 				blk.add(new Code.ForallEnd(label));
@@ -1637,7 +1640,7 @@ public class ModuleBuilder {
 				blk = new Block();
 				CExpr.Register reg = CExpr.REG(p.first(), 0);
 				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, reg, CExpr.VAR(rt, "$")));
+				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
 				blk.add(new Code.ForallEnd(label));
