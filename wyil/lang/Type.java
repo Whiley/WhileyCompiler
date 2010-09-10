@@ -156,9 +156,15 @@ public abstract class Type {
 				// Here, we attempt to show an isomorphism between the two
 				// recursive types.
 				Recursive rt2 = (Recursive) t2;
+				Type rt2type = rt2.type;
+				if(rt2type == null) {
+					// recursive case, need to unroll
+					rt2type = environment.get(rt2.name);
+					if(rt2type == null) { return false; }
+				}
 				HashMap<String,Type> binding = new HashMap<String,Type>();
 				binding.put(rt2.name, T_RECURSIVE(rt1.name,null));
-				Type rt2type = substituteRecursiveTypes(rt2.type,binding);
+				rt2type = substituteRecursiveTypes(rt2type,binding);
 				if(isSubtype(rt1type,rt2type,environment)) {
 					return true;
 				}

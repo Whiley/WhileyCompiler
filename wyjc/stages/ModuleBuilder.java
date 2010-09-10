@@ -26,6 +26,7 @@ import wyil.ModuleLoader;
 import wyil.stages.TypePropagation;
 import wyil.util.*;
 import wyil.lang.*;
+import wyil.lang.Code.IfGoto;
 import wyjc.lang.*;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt;
@@ -295,11 +296,13 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type, Block> p = expandType(key, cache);
-				Type t = simplifyRecursiveTypes(p.first());
+				p = simplifyRecursiveTypes(p);
+				Type t = p.first();
+				Block blk = p.second();
 				if (Type.isExistential(t)) {
 					t = Type.T_NAMED(key.module(), key.name(), t);
 				}
-				types.put(key, new Pair<Type, Block>(t, p.second()));
+				types.put(key, new Pair<Type, Block>(t, blk));
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
@@ -314,7 +317,16 @@ public class ModuleBuilder {
 		Type cached = cache.get(key);
 
 		if (cached != null) {
-			return new Pair<Type, Block>(cached, null);
+			Block blk = null;
+			if(cached instanceof Type.Recursive) {
+				Type.Recursive r = (Type.Recursive) cached;				
+				if(r.type == null) {
+					// need to put in place the recursive call.
+					blk = new Block();
+					blk.add(new Code.Recurse(CExpr.VAR(Type.T_ANY,"$")));
+				}
+			}
+			return new Pair<Type, Block>(cached, blk);
 		} else if (t != null) {
 			return new Pair<Type, Block>(t.first(), Block.relabel(t.second()));
 		} else if (!modules.contains(key.module())) {
@@ -338,14 +350,14 @@ public class ModuleBuilder {
 		boolean isOpenRecursive = Type.isOpenRecursive(key, t.first());
 		if (isOpenRecursive) {
 			t = new Pair<Type, Block>(Type.T_RECURSIVE(key.toString(), t
-					.first()), null);
+					.first()), t.second());
 		}
 		
 		// Resolve the constraint and generate an appropriate block.
-		Block blk = t.second();
+		Block blk = t.second();		
 		if (ut.second() != null) {
 			HashMap<String, Pair<Type, Block>> environment = new HashMap<String, Pair<Type, Block>>();
-			environment.put("$", t);
+			environment.put("$", new Pair(Type.T_ANY,null));
 			String trueLabel = Block.freshLabel();
 			Block constraint = resolveCondition(trueLabel, ut.second(), 0,
 					environment);
@@ -359,16 +371,19 @@ public class ModuleBuilder {
 				blk.addAll(constraint); // affects t
 			}
 		}
-
+		
 		if(t.second() != null && isOpenRecursive) {
+			// For the case of a recursive type, we need to create an inductive
+			// block which traverses the recursive structure checking any
+			// constraints as necessary.
 			String lab = Block.freshLabel();
-			CExpr src = CExpr.VAR(t.first(), "$");
-			CExpr.Register var = CExpr.REG(t.first(),0);
+			CExpr src = CExpr.VAR(Type.T_ANY, "$");
+			CExpr.Register var = CExpr.REG(Type.T_ANY,0);			
 			blk = Block.registerShift(1,t.second());
 			blk.add(0,new Code.Induct(lab, var, src));
 			blk.add(new Code.InductEnd(lab));
-			t = new Pair<Type, Block>(t.first(), blk);
-		}
+			t = new Pair<Type, Block>(t.first(), blk);			
+		}				
 		
 		// finally, store it in the cache
 		cache.put(key, t.first());
@@ -387,9 +402,9 @@ public class ModuleBuilder {
 			Block blk = null;
 			if (p.second() != null) {
 				blk = new Block();
-				CExpr.Register reg = CExpr.REG(p.first(), 0);
+				CExpr.Register reg = CExpr.REG(Type.T_ANY, 0);
 				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
+				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(Type.T_ANY, "$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
 				blk.add(new Code.ForallEnd(label));
@@ -403,9 +418,10 @@ public class ModuleBuilder {
 			Block blk = null;
 			if (p.second() != null) {
 				blk = new Block();
-				CExpr.Register reg = CExpr.REG(p.first(), 0);
+				CExpr.Register reg = CExpr.REG(Type.T_ANY, 0);
 				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
+				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(Type.T_ANY,
+						"$")));
 				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
 						.second())));
 				blk.add(new Code.ForallEnd(label));
@@ -415,7 +431,7 @@ public class ModuleBuilder {
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();
 			Block blk = null;
-			CExpr.Variable tmp = CExpr.VAR(Type.T_VOID, "$");
+			CExpr.Variable tmp = CExpr.VAR(Type.T_ANY, "$");
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
 				Pair<Type, Block> p = expandType(e.getValue(), filename, cache);
 				types.put(e.getKey(), p.first());
@@ -431,14 +447,14 @@ public class ModuleBuilder {
 			Type type = Type.T_TUPLE(types);
 			// Need to update the self type properly
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", CExpr.VAR(type, "$"));
+			binding.put("$", CExpr.VAR(Type.T_ANY, "$"));
 			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
 			Block blk = new Block();
 			String exitLabel = Block.freshLabel();
-			CExpr.Variable var = CExpr.VAR(Type.T_VOID, "$#");
+			CExpr.Variable var = CExpr.VAR(Type.T_ANY, "$#");
 			for (UnresolvedType b : ut.bounds) {			
 				Pair<Type, Block> p = expandType(b, filename, cache);
 				Type bt = p.first();
@@ -471,14 +487,14 @@ public class ModuleBuilder {
 				type = Type.leastUpperBound(bounds);
 			}
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$#", CExpr.VAR(type, "$"));
+			binding.put("$#", CExpr.VAR(Type.T_ANY, "$"));
 			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Pair<Type, Block> p = expandType(ut.element, filename, cache);			
 			Type type = Type.T_PROCESS(p.first());
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(type, "$")));			
+			binding.put("$", CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(Type.T_ANY, "$")));			
 			return new Pair<Type, Block>(type, Block.substitute(binding, p.second()));					
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
@@ -554,7 +570,7 @@ public class ModuleBuilder {
 			Block constraint = t.second();
 			if(constraint != null) {
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-				binding.put("$", CExpr.VAR(t.first(), p.name));
+				binding.put("$", CExpr.VAR(Type.T_ANY, p.name));
 				constraint = Block.substitute(binding, constraint);
 				t = new Pair<Type,Block>(t.first(),constraint);
 			}
@@ -1756,7 +1772,8 @@ public class ModuleBuilder {
 	 * @param t
 	 * @return
 	 */
-	public static Type simplifyRecursiveTypes(Type t) {
+	public static Pair<Type,Block> simplifyRecursiveTypes(Pair<Type,Block> p) {
+		Type t = p.first();
 		Set<String> _names = Type.recursiveTypeNames(t);
 		ArrayList<String> names = new ArrayList<String>(_names);
 		HashMap<String, String> binding = new HashMap<String, String>();
@@ -1771,7 +1788,26 @@ public class ModuleBuilder {
 			binding.put(names.get(i), n);
 		}
 
-		return Type.renameRecursiveTypes(t, binding);
+		t = Type.renameRecursiveTypes(t, binding);
+		
+		// At this stage, we need to update any type tests that involve the
+		// recursive type
+		Block blk = p.second();
+		Block nblk = new Block();
+		for(wyil.lang.Stmt s : blk) {
+			if(s.code instanceof Code.IfGoto){
+				IfGoto ig = (IfGoto) s.code;
+				if(ig.rhs instanceof Value.TypeConst) {
+					Value.TypeConst r = (Value.TypeConst) ig.rhs;
+					r = Value.V_TYPE(Type.renameRecursiveTypes(r.type, binding));
+					ig = new Code.IfGoto(ig.op, ig.lhs, r, ig.target);
+					s = new wyil.lang.Stmt(ig,s.attributes());
+				}
+			} 
+			nblk.add(s.code,s.attributes());			
+		}
+		
+		return new Pair<Type,Block>(t,nblk);
 	}
 
 	public Variable flattern(Expr e) {

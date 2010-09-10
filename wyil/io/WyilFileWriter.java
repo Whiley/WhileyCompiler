@@ -18,8 +18,8 @@ public class WyilFileWriter {
 	}
 	
 	public void write(Module module) {
-		out.println("module " + module.id());
-		out.println("source file " + module.filename());
+		out.println("module: " + module.id());
+		out.println("source-file: " + module.filename());
 		out.println();
 		for(ConstDef cd : module.constants()) {
 			out.println("define " + cd.name() + " as " + cd.constant());

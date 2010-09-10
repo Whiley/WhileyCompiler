@@ -149,7 +149,7 @@ public class Main {
 					new ConstantPropagation(loader)));
 		}
 		if(wyil) {
-			stages.add(new WyilWriter());
+//			stages.add(new WyilWriter());
 		}
 		if(!nvc) {
 			stages.add(new WyilTransform("branch prediction",
@@ -158,14 +158,14 @@ public class Main {
 					new ConstraintPropagation(loader,true,timeout)));
 		}		
 		if(wyil) {
-			stages.add(new WyilWriter());
+		//	stages.add(new WyilWriter());
 		}		
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
 		stages.add(new WyilTransform("failure check",
 				new FailureCheck(loader)));				
 		if(wyil) {
-			stages.add(new WyilWriter());
+	//		stages.add(new WyilWriter());
 		}
 		
 		if(jvm) {

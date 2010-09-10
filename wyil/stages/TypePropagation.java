@@ -200,7 +200,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Code ncode = code;
 			Env trueEnv = null;
 			Env falseEnv = null;
-			
+								
 			if(Type.isSubtype(tc.type,lhs_t)) {
 				// DEFINITE TRUE CASE		
 				trueEnv = environment;
@@ -218,6 +218,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					ncode = new Code.Skip();					
 				}
 			} else {
+				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);
 				trueEnv = new Env(environment);
 				falseEnv = new Env(environment);
 				typeInference(lhs,tc.type,trueEnv, falseEnv);
@@ -369,8 +370,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		// First, create modifies set and type the invariant
 		// create environment specific for loop body
-		Env loopEnv = new Env(environment);
-		Type lvar_t = start.source.type();
+		Env loopEnv = new Env(environment);		
 		String lvar = "%" + start.variable.index;
 		loopEnv.put(lvar, src_t);
 	
@@ -378,7 +378,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		// Finally, update the code
 		Block blk = new Block();
-		blk.add(new Code.Induct(start.label, CExpr.REG(lvar_t,
+		blk.add(new Code.Induct(start.label, CExpr.REG(src_t,
 				start.variable.index), src), stmt.attributes());
 		blk.addAll(r.first());
 		blk.add(end);
