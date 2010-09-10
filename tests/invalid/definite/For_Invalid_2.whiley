@@ -5,6 +5,6 @@ int sum({int} xs) ensures $ >= 0:
     return r
 
 void System::main([string] args):
-    int z = sum({1,2,3,4,5})
+    int z = sum({-1,-2,-3,-4,5})
     print str(z)
     
