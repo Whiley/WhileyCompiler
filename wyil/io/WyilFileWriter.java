@@ -100,7 +100,7 @@ public class WyilFileWriter {
 		String line;		
 		if(c instanceof Code.End) {
 			tabIndent(indent+1,out);
-			out.println("end");
+			out.println(c);
 			return;
 		} else {
 			tabIndent(indent+1,out);

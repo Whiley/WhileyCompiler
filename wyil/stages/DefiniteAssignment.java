@@ -81,6 +81,11 @@ public class DefiniteAssignment extends
 			CExpr.Register v = (CExpr.Register) ca.variable;				
 			uses.remove("%" + v.index);				
 			nvar = "%" + v.index;			
+		} else if(code instanceof Code.Induct) {
+			Code.Induct ca = (Code.Induct) code;			
+			CExpr.Register v = (CExpr.Register) ca.variable;				
+			uses.remove("%" + v.index);				
+			nvar = "%" + v.index;			
 		}		
 		
 		// FIXME: there is a bug here for the value of a variable after a forall

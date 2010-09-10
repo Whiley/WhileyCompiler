@@ -55,6 +55,13 @@ public abstract class Code {
 			if(a.rhs != null) {
 				CExpr.match(a.rhs,match,matches);
 			}
+		} else if(c instanceof Recurse) {
+			Recurse a = (Recurse) c;						
+			CExpr.match(a.rhs,match,matches);			
+		} else if(c instanceof Induct) {
+			Induct a = (Induct) c;	
+			CExpr.match(a.variable, match,matches);
+			CExpr.match(a.source, match,matches);						
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
 			CExpr.match(a.variable, match,matches);
@@ -103,6 +110,14 @@ public abstract class Code {
 				return new Return(CExpr.substitute(binding, a.rhs));
 			}
 			return a;
+		} else if(c instanceof Recurse) {
+			Recurse a = (Recurse) c;			
+			return new Recurse(CExpr.substitute(binding, a.rhs));			
+		} else if(c instanceof Induct) {			
+			Induct a = (Induct) c;				
+			return new Induct(a.label, (CExpr.Register) CExpr
+					.substitute(binding, a.variable), CExpr.substitute(binding,
+					a.source));
 		} else if(c instanceof Forall) {			
 			Forall a = (Forall) c;				
 			return new Forall(a.label, a.invariant, (CExpr.Register) CExpr
@@ -143,6 +158,13 @@ public abstract class Code {
 				return new Return(CExpr.registerShift(shift, a.rhs));
 			}
 			return a;
+		} else if(c instanceof Recurse) {
+			Recurse a = (Recurse) c;			
+			return new Recurse(CExpr.registerShift(shift, a.rhs));			
+		} else if(c instanceof Induct) {
+			Induct i = (Induct) c;			
+			return new Induct(i.label, (CExpr.Register) CExpr.registerShift(shift,
+					i.variable), CExpr.registerShift(shift, i.source));			
 		} else if(c instanceof Forall) {
 			Forall a = (Forall) c;	
 			return new Forall(a.label, a.invariant, (CExpr.Register) CExpr
@@ -482,7 +504,77 @@ public abstract class Code {
 			return "loop" + r + ":";
 		}
 	}
+
+	public static class Recurse extends Code {
+		public final CExpr rhs;
+		
+		public Recurse(CExpr rhs) {
+			this.rhs = rhs;
+		}
+		
+		public int hashCode() {
+			return rhs.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Recurse) {
+				Recurse r = (Recurse) o;
+				return rhs.equals(r.rhs);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "recurse " + rhs;
+		}
+	}
 	
+	public static class Induct extends Start {
+		public final CExpr.Register variable;
+		public final CExpr source;
+
+		public Induct(String label, CExpr.Register variable, CExpr source) {
+			super(label);
+			this.variable = variable;
+			this.source = source;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Induct) {
+				Induct a = (Induct) o;
+				return label.equals(a.label) && a.variable.equals(variable)
+						&& a.source.equals(source);
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return label.hashCode() + variable.hashCode() + source.hashCode();
+		}
+
+		public String toString() {
+			return "induct %" + variable.index + " over " + source;
+		}
+	}
+
+
+	public final static class InductEnd extends LoopEnd {
+		public InductEnd(String label) {
+			super(label);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof InductEnd) {
+				return target.equals(((InductEnd) o).target);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "end ";
+		}
+	}
+
 	public static class LoopEnd extends End {
 		public LoopEnd(String label) {
 			super(label);
@@ -535,22 +627,22 @@ public abstract class Code {
 			return "for " + variable + " in " + source + ":";
 		}
 	}
-
+	
 	public final static class ForallEnd extends LoopEnd {
 		public ForallEnd(String label) {
 			super(label);
 		}
-		
+
 		public boolean equals(Object o) {
-			if(o instanceof ForallEnd) {
-				return target.equals(((ForallEnd)o).target);
+			if (o instanceof ForallEnd) {
+				return target.equals(((ForallEnd) o).target);
 			}
 			return false;
 		}
-		
+
 		public String toString() {
 			return "end";
-		}	
+		}
 	}
 	
 	/**
@@ -591,7 +683,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "end " + target;
+			return "end ";
 		}	
 	}
 	

@@ -36,6 +36,8 @@ public class DefiniteRuntimeInvalidTests extends TestHarness {
  @Test public void ConstrainedInt_Invalid_5_RunTest() { runtimeFailTest("ConstrainedInt_Invalid_5"); }
  @Test public void ConstrainedInt_Invalid_6_RunTest() { runtimeFailTest("ConstrainedInt_Invalid_6"); }
  @Test public void ConstrainedInt_Invalid_7_RunTest() { runtimeFailTest("ConstrainedInt_Invalid_7"); }
+ 
+ @Ignore("Known Bug") 
  @Test public void ConstrainedInt_Invalid_8_RunTest() { runtimeFailTest("ConstrainedInt_Invalid_8"); }
  @Test public void ConstrainedInt_Invalid_9_RunTest() { runtimeFailTest("ConstrainedInt_Invalid_9"); } 
  @Test public void ConstrainedList_Invalid_1_RunTest() { runtimeFailTest("ConstrainedList_Invalid_1"); }

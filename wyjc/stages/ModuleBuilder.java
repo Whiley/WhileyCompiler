@@ -335,7 +335,8 @@ public class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		if (Type.isOpenRecursive(key, t.first())) {
+		boolean isOpenRecursive = Type.isOpenRecursive(key, t.first());
+		if (isOpenRecursive) {
 			t = new Pair<Type, Block>(Type.T_RECURSIVE(key.toString(), t
 					.first()), null);
 		}
@@ -351,13 +352,24 @@ public class ModuleBuilder {
 			constraint.add(new Code.Fail("type constraint not satisfied"), ut
 					.second().attribute(Attribute.Source.class));
 			constraint.add(new Code.Label(trueLabel));
-			if (blk == null) {
+
+			if (blk == null) { 
 				t = new Pair<Type, Block>(t.first(), constraint);
 			} else {
 				blk.addAll(constraint); // affects t
 			}
 		}
 
+		if(t.second() != null && isOpenRecursive) {
+			String lab = Block.freshLabel();
+			CExpr src = CExpr.VAR(t.first(), "$");
+			CExpr.Register var = CExpr.REG(t.first(),0);
+			blk = Block.registerShift(1,t.second());
+			blk.add(0,new Code.Induct(lab, var, src));
+			blk.add(new Code.InductEnd(lab));
+			t = new Pair<Type, Block>(t.first(), blk);
+		}
+		
 		// finally, store it in the cache
 		cache.put(key, t.first());
 

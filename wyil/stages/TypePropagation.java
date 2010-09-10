@@ -273,6 +273,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if (start instanceof Code.Loop) {
 			return propagate((Code.Loop) start, (Code.LoopEnd) end, body, stmt,
 					environment);
+		} else if (start instanceof Code.Induct) {
+			return propagate((Code.Induct) start, (Code.InductEnd) end, body,
+					stmt, environment);
 		}
 
 		// Other blocks are not so tricky to handle.
@@ -353,6 +356,30 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Finally, update the code
 		blk.add(new Code.Forall(start.label, invariant, CExpr.REG(elem_t,
 				start.variable.index), src, mods), stmt.attributes());
+		blk.addAll(r.first());
+		blk.add(end);
+					
+		return new Pair<Block,Env>(blk,join(environment,r.second()));
+	}
+	
+	protected Pair<Block, Env> propagate(Code.Induct start, Code.InductEnd end,
+			Block body, Stmt stmt, Env environment) {
+		CExpr src = infer(start.source, stmt, environment);
+		Type src_t = src.type();			
+		
+		// First, create modifies set and type the invariant
+		// create environment specific for loop body
+		Env loopEnv = new Env(environment);
+		Type lvar_t = start.source.type();
+		String lvar = "%" + start.variable.index;
+		loopEnv.put(lvar, src_t);
+	
+		Pair<Block,Env> r = propagate(body,loopEnv);
+		
+		// Finally, update the code
+		Block blk = new Block();
+		blk.add(new Code.Induct(start.label, CExpr.REG(lvar_t,
+				start.variable.index), src), stmt.attributes());
 		blk.addAll(r.first());
 		blk.add(end);
 					
