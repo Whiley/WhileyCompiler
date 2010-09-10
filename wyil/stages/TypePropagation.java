@@ -330,17 +330,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		// create environment specific for loop body
 		Env loopEnv = new Env(environment);
-		loopEnv.put("%" + start.variable.index, elem_t);
+		String loopVar = "%" + start.variable.index;
+		loopEnv.put(loopVar, elem_t);
 	
 		Pair<Block,Env> r = propagate(body,loopEnv);
 			
 		// FIXME: we should keep iterating to reach a fixed point here
 		environment = join(environment,r.second());
 		
-		// now construct final modifies set		
+		// now construct final modifies set						
 		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
 		for(String v : modifies) {
 			Type t = environment.get(v);
+			if(t == null) { continue; }
 			if(v.charAt(0) == '%') {
 				mods.add(CExpr.REG(t, Integer.parseInt(v.substring(1))));
 			} else {
