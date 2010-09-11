@@ -7,25 +7,18 @@ import wyil.ModuleLoader;
 import wyil.lang.Module;
 import wyil.util.Logger;
 import wyil.io.*;
-import wyjvm.io.*;
-import wyjvm.lang.ClassFile;
 import wyjvm.util.Validation;
 
-public class JvmBytecodeWriter implements Compiler.Stage {
-	private ClassFileBuilder classBuilder;
-	private Validation validator = new Validation();
-	
-	public JvmBytecodeWriter(ModuleLoader loader, int whileyMajorVersion,
-			int whileyMinorVersion) {
-		classBuilder = new ClassFileBuilder(loader, whileyMajorVersion,
-				whileyMinorVersion);
+public class JvmBytecodeValidator implements Compiler.Stage {
+	private Validation validator;
+
+	public JvmBytecodeValidator() {
+		validator = new Validation();
 	}
 		
 	public Module process(Module m, Logger logout) {
 		long start = System.currentTimeMillis();
 		ClassFile file = classBuilder.build(m);		
-		validator.apply(file);
-		
 		// calculate filename
 		String filename = m.filename().replace(".whiley", ".jvm");
 		try {

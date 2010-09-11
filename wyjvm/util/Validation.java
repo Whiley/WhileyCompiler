@@ -19,6 +19,7 @@ package wyjvm.util;
 
 import java.util.*;
 import wyjvm.lang.*;
+import wyjvm.attributes.*;
 
 /**
  * <p>
@@ -66,7 +67,30 @@ public class Validation {
 		}		
 	}
 	
-	public void checkMethod(ClassFile.Method method, ClassFile paren) {
-		
+	public void checkMethod(ClassFile.Method method, ClassFile parent) {
+		Code code = method.attribute(Code.class);
+		if(code != null) {
+			checkCode(code,method,parent);
+		}
+	}
+	
+	public void checkCode(Code code, ClassFile.Method method, ClassFile parent) {
+		checkLabels(code,method,parent);
+	}
+	
+	public void checkLabels(Code code, ClassFile.Method method, ClassFile parent) {
+		HashSet<String> labels = new HashSet<String>();
+		for(Bytecode b : code.bytecodes()) {
+			if(b instanceof Bytecode.Label) {
+				Bytecode.Label lab = (Bytecode.Label) b;
+				if(labels.contains(lab.name)) {
+					// need better error reporting system.
+					throw new IllegalArgumentException("Duplicate label \""
+							+ lab.name + "\" in method " + method.name() + ", "
+							+ method.type());
+				}
+				labels.add(lab.name);
+			}
+		}
 	}
 }

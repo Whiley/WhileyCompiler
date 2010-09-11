@@ -169,6 +169,7 @@ public class Main {
 		}
 		
 		if(jvm) {
+			stages.add(new JvmBytecodeValidator());
 			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
 		}
 		if(classfile) {

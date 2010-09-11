@@ -489,10 +489,10 @@ public class ClassFile {
 			return new ArrayList();
 		}
 		
-		public BytecodeAttribute attribute(Class c) {
+		public <T extends BytecodeAttribute> T attribute(Class<T> c) {
 			for(BytecodeAttribute a : attributes) {
 				if(c.isInstance(a)) {
-					return a;
+					return (T) a;
 				}
 			}
 			return null;
