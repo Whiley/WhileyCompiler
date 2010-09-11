@@ -204,9 +204,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			if(Type.isSubtype(tc.type,lhs_t)) {				
 				// DEFINITE TRUE CASE		
 				trueEnv = environment;
-				if (code.op == Code.COP.SUBTYPEEQ) {					
+				if (code.op == Code.COP.SUBTYPEEQ) {									
 					ncode = new Code.Goto(code.target);					
-				} else {					
+				} else {									
 					ncode = new Code.Skip();					
 				}
 			} else if (!Type.isSubtype(lhs_t, tc.type)) {								
@@ -214,7 +214,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				falseEnv = environment;
 				if (code.op == Code.COP.NSUBTYPEEQ) {					
 					ncode = new Code.Goto(code.target);					
-				} else {									
+				} else {													
 					ncode = new Code.Skip();					
 				}
 			} else {
@@ -244,8 +244,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(type, v.type);
 			Type gdiff = Type.greatestDifference(v.type, type);			
-			trueEnv.put(v.name, glb);
-			falseEnv.put(v.name, gdiff);
+			trueEnv.put(v.name, glb);			
+			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
 			String name = "%" + reg.index;			

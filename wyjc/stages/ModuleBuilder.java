@@ -296,7 +296,7 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type, Block> p = expandType(key, cache);
-				p = simplifyRecursiveTypes(p);
+				p = simplifyRecursiveTypes(key.toString(),p);
 				Type t = p.first();
 				Block blk = p.second();
 				if (Type.isExistential(t)) {
@@ -380,8 +380,11 @@ public class ModuleBuilder {
 			CExpr src = CExpr.VAR(Type.T_ANY, "$");
 			CExpr.Register var = CExpr.REG(Type.T_ANY,0);			
 			blk = Block.registerShift(1,t.second());
+
+			/* REMOVE ME!!
 			// Must close any types used in subtype tests. This is awkward, but
 			// necessary.
+			
 			for(int i=0;i!=blk.size();++i) {
 				wyil.lang.Stmt stmt = blk.get(i);
 				if(stmt.code instanceof Code.IfGoto){
@@ -399,6 +402,8 @@ public class ModuleBuilder {
 					}
 				} 
 			}
+			*/
+			
 			// finally, create the inductive block
 			blk.add(0,new Code.Induct(lab, var, src));
 			blk.add(new Code.InductEnd(lab));
@@ -1792,7 +1797,8 @@ public class ModuleBuilder {
 	 * @param t
 	 * @return
 	 */
-	public static Pair<Type,Block> simplifyRecursiveTypes(Pair<Type,Block> p) {
+	public static Pair<Type, Block> simplifyRecursiveTypes(String key,
+			Pair<Type, Block> p) {
 		Type t = p.first();
 		Set<String> _names = Type.recursiveTypeNames(t);
 		ArrayList<String> names = new ArrayList<String>(_names);
@@ -1814,12 +1820,22 @@ public class ModuleBuilder {
 		// recursive type
 		Block blk = p.second();
 		Block nblk = new Block();
+		HashMap<String,Type> tbinding = new HashMap<String,Type>();
+		tbinding.put(key, t);
 		for(wyil.lang.Stmt s : blk) {
 			if(s.code instanceof Code.IfGoto){
 				IfGoto ig = (IfGoto) s.code;
 				if(ig.rhs instanceof Value.TypeConst) {					
-					Value.TypeConst r = (Value.TypeConst) ig.rhs;
-					r = Value.V_TYPE(Type.renameRecursiveTypes(r.type, binding));
+					Value.TypeConst r = (Value.TypeConst) ig.rhs;					
+					r = Value.V_TYPE(Type.substituteRecursiveTypes(r.type,tbinding));
+					// The following line was previously used, as I was
+					// concerned about nested recursive types and making sure
+					// they were all appropriately renamed. However, it's
+					// unclear to me whether or not nested recursive types (i.e
+					// those other than the one being processed, identified by
+					// key) can actually occur.
+					//
+					// r = Value.V_TYPE(Type.renameRecursiveTypes(r.type, binding));
 					ig = new Code.IfGoto(ig.op, ig.lhs, r, ig.target);
 					s = new wyil.lang.Stmt(ig,s.attributes());
 				}
