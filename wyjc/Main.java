@@ -103,6 +103,15 @@ public class Main {
 					PipelineModifier pmod = new PipelineModifier(POP.APPEND,
 							name[0], null, options);
 					pipelineMods.add(pmod);	
+				} else if(arg.startsWith("-C")) { 
+					String[] name = args[i].substring(2).split(":");
+					Map<String, String> options = Collections.EMPTY_MAP;
+					if (name.length > 1) {
+						options = splitOptions(name[1]);
+					}
+					PipelineModifier pmod = new PipelineModifier(POP.REPLACE,
+							name[0], null, options);
+					pipelineMods.add(pmod);	
 				} else if(arg.startsWith("-N")) { 
 					String name = args[i].substring(2);					
 					PipelineModifier pmod = new PipelineModifier(POP.REMOVE,
@@ -331,7 +340,7 @@ public class Main {
 		stages
 				.add(new WyilTransform("failure check",
 						new FailureCheck(loader)));
-		stages.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));
+		stages.add(new ClassWriter(loader));
 		
 		// Second, make requested pipeline adjustments
 		registerDefaultStages();
@@ -340,10 +349,18 @@ public class Main {
 			case APPEND:
 				stages.add(Compiler.constructStage(p.name,loader,p.options));
 				break;
-			case REMOVE:			
+			case REPLACE:
+			{
+				int index = matchStage(p.name,stages);
+				stages.set(index,Compiler.constructStage(p.name,loader,p.options));
+				break;
+			}
+			case REMOVE:
+			{
 				int index = matchStage(p.name,stages);
 				stages.remove(index);
 				break;			
+			}
 			}			
 		}
 		
@@ -354,6 +371,7 @@ public class Main {
 	public static void registerDefaultStages() {
 		Compiler.registerStage("wyil",WyilWriter.class);
 		Compiler.registerStage("jvm",JvmBytecodeWriter.class);
+		Compiler.registerStage("class",ClassWriter.class);
 	}
 	
 	private static int matchStage(String match, List<Compiler.Stage> stages) {
