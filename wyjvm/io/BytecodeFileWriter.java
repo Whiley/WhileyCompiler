@@ -144,8 +144,8 @@ public class BytecodeFileWriter {
 		
 		output.println(");");
 		
-		for(BytecodeAttribute a : method.attributes()) {
-			a.print(output,poolMap,loader);
+		for(BytecodeAttribute a : method.attributes()) {			
+			a.print(output,poolMap,loader);			
 		}					
 	}	
 	protected void writeModifiers(List<Modifier> modifiers) {	

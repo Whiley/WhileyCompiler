@@ -558,7 +558,7 @@ public abstract class Code {
 	}
 
 
-	public final static class InductEnd extends LoopEnd {
+	public final static class InductEnd extends End {
 		public InductEnd(String label) {
 			super(label);
 		}

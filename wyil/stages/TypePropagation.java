@@ -201,20 +201,24 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Env trueEnv = null;
 			Env falseEnv = null;
 								
-			if(Type.isSubtype(tc.type,lhs_t)) {
+			if(Type.isSubtype(tc.type,lhs_t)) {				
 				// DEFINITE TRUE CASE		
 				trueEnv = environment;
 				if (code.op == Code.COP.SUBTYPEEQ) {
+					System.out.println("TRUE: " + code);
 					ncode = new Code.Goto(code.target);					
-				} else {					
+				} else {
+					System.out.println("FALSE: " + code);
 					ncode = new Code.Skip();					
 				}
-			} else if (!Type.isSubtype(lhs_t, tc.type)) {				
-				// DEFINITE FALSE CASE
+			} else if (!Type.isSubtype(lhs_t, tc.type)) {								
+				// DEFINITE FALSE CASE				
 				falseEnv = environment;
 				if (code.op == Code.COP.NSUBTYPEEQ) {
+					System.out.println("TRUE: " + code);
 					ncode = new Code.Goto(code.target);					
-				} else {					
+				} else {				
+					System.out.println("FALSE: " + code);
 					ncode = new Code.Skip();					
 				}
 			} else {

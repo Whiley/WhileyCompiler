@@ -72,6 +72,8 @@ public class Compiler implements Logger {
 	}
 
 	public List<WhileyFile> compile(List<File> files) throws IOException {
+		long startTime = System.currentTimeMillis();
+		
 		ArrayList<WhileyFile> wyfiles = new ArrayList<WhileyFile>();
 		for (File f : files) {
 			WhileyFile wf = innerParse(f);			
@@ -88,6 +90,9 @@ public class Compiler implements Logger {
 		for(Module m : modules) {
 			finishCompilation(m);
 		}
+		
+		long endTime = System.currentTimeMillis();
+		logTotalTime("Compiled " + files.size() + " file(s)",endTime-startTime);
 		
 		return wyfiles;
 	}
@@ -179,6 +184,28 @@ public class Compiler implements Logger {
 		logout.print(time);
 		logout.println("ms]");
 	}	
+	
+	public void logTotalTime(String msg, long time) {
+		
+		for (int i = 0; i <= 85; ++i) {
+			logout.print("=");
+		}
+		
+		logout.println();
+		
+		logout.print(msg);
+		logout.print(" ");
+
+		String t = Long.toString(time);
+
+		for (int i = 0; i < (80 - msg.length() - t.length()); ++i) {
+			logout.print(".");
+		}
+
+		logout.print(" [");
+		logout.print(time);
+		logout.println("ms]");
+	}
 	
 	protected static final HashMap<String, Class<? extends Stage>> registeredStages = new HashMap<String, Class<? extends Stage>>();
 

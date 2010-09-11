@@ -60,7 +60,7 @@ public class TestHarness {
 		final String[] args = new String[4 + params.length];
 		args[0] = "-wp";
 		args[1] = "lib/wyrt.jar";
-		args[2] = "-nvc";
+		args[2] = "-Nvc";
 		for (int i = 0; i != params.length; ++i) {
 			args[i + 3] = params[i];
 		}
@@ -79,7 +79,7 @@ public class TestHarness {
 	protected void parserFailTest(String name) {
 		name = srcPath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wp", "lib/wyrt.jar", "-nvc", "-wyil", name) != Main.PARSE_ERROR) {
+		if (compile("-wp", "lib/wyrt.jar", "-Nvc", name) != Main.PARSE_ERROR) {
 			fail("Test parsed when it shouldn't have!");
 		}
 
@@ -88,7 +88,7 @@ public class TestHarness {
 	protected void contextFailTest(String name) {				
 		name = srcPath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wp", "lib/wyrt.jar", "-nvc", "-wyil", name) != Main.CONTEXT_ERROR) {
+		if (compile("-wp", "lib/wyrt.jar", "-Nvc", name) != Main.CONTEXT_ERROR) {
 			fail("Test compiled when it shouldn't have!");
 		}
 	}
@@ -96,7 +96,7 @@ public class TestHarness {
 	protected void verificationFailTest(String name) {				
 		name = srcPath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wp", "lib/wyrt.jar", "-wyil", name) != Main.CONTEXT_ERROR) {
+		if (compile("-wp", "lib/wyrt.jar", name) != Main.CONTEXT_ERROR) {
 			fail("Test compiled when it shouldn't have!");
 		}
 	}
@@ -104,7 +104,7 @@ public class TestHarness {
 	protected void verificationRunTest(String name) {				
 		String fullName = srcPath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-wp", "lib/wyrt.jar", "-wyil", fullName) != 0) { 
+		if(compile("-wp", "lib/wyrt.jar", fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				
@@ -116,7 +116,7 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = srcPath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-wp", "lib/wyrt.jar", "-wyil", "-nvc", fullName) != 0) { 
+		if(compile("-wp", "lib/wyrt.jar", "-Nvc", fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				

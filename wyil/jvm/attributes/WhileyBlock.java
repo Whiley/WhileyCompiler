@@ -77,6 +77,14 @@ public class WhileyBlock implements BytecodeAttribute {
 			for(CExpr.LVar v : a.modifies) {
 				addPoolItems(v, constantPool);
 			}
+		} else if(c instanceof Induct) {
+			Induct a = (Induct) c;	
+			constantPool.add(new Constant.Utf8(a.label));
+			addPoolItems(a.variable, constantPool);
+			addPoolItems(a.source, constantPool);				
+		} else if(c instanceof Recurse) {
+			Recurse a = (Recurse) c;	
+			addPoolItems(a.rhs, constantPool);						
 		} 
 	}
 	
@@ -176,6 +184,10 @@ public class WhileyBlock implements BytecodeAttribute {
 			Code.End a = (Code.End) c;			
 			writer.write_u1(FORALLEND);
 			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
+		} else if(c instanceof Code.InductEnd) {
+			Code.End a = (Code.End) c;			
+			writer.write_u1(INDUCTEND);
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.target)));
 		} else if(c instanceof IfGoto) {
 			IfGoto a = (IfGoto) c;			
 			writer.write_u1(IFGOTO);			
@@ -198,6 +210,16 @@ public class WhileyBlock implements BytecodeAttribute {
 			for(CExpr.LVar v : a.modifies) {
 				write(v,writer,constantPool);
 			}
+		} else if(c instanceof Induct) {
+			Induct a = (Induct) c;	
+			writer.write_u1(INDUCT);
+			writer.write_u2(constantPool.get(new Constant.Utf8(a.label)));
+			write(a.variable,writer,constantPool);
+			write(a.source,writer,constantPool);				
+		} else if(c instanceof Recurse) {
+			Recurse a = (Recurse) c;	
+			writer.write_u1(RECURSE);
+			write(a.rhs,writer,constantPool);				
 		} else {
 			throw new IllegalArgumentException("Code not permitted in WhileyBlock: " + c);
 		}
@@ -465,6 +487,12 @@ public class WhileyBlock implements BytecodeAttribute {
 				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
 				return new Code.ForallEnd(target.str);
 			}
+			case INDUCTEND:
+			{				
+				int idx = reader.read_u2();
+				Constant.Utf8 target = (Constant.Utf8) constantPool.get(idx);
+				return new Code.InductEnd(target.str);
+			}
 			case FAIL:
 			{				
 				int idx = reader.read_u2();
@@ -493,7 +521,20 @@ public class WhileyBlock implements BytecodeAttribute {
 				}
 				// FIXME: problem with modifies
 				return new Code.Forall(label.str,null,var,src,modifies);
-			}	
+			}
+			case INDUCT:
+			{
+				int idx = reader.read_u2();
+				Constant.Utf8 label = (Constant.Utf8) constantPool.get(idx);
+				CExpr.Register var = (CExpr.Register) readCExpr(reader,constantPool);
+				CExpr src = readCExpr(reader,constantPool);				
+				return new Code.Induct(label.str,var,src);
+			}
+			case RECURSE:
+			{
+				CExpr rhs = readCExpr(reader,constantPool);				
+				return new Code.Recurse(rhs);
+			}
 			}
 			throw new IllegalArgumentException("unknown code encountered: " + code);
 		}
@@ -856,6 +897,9 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int FAIL = 5;
 	private final static int FORALL = 6;
 	private final static int FORALLEND = 7;
+	private final static int INDUCT = 8;
+	private final static int INDUCTEND = 9;
+	private final static int RECURSE = 10;
 	
 	// =========== COP ===============
 	

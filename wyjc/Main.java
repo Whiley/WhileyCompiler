@@ -333,7 +333,7 @@ public class Main {
 				new ConstantPropagation(loader)));
 		stages.add(new WyilTransform("branch prediction",
 				new ExpectedInference(loader)));
-		stages.add(new WyilTransform("constraint propagation",
+		stages.add(new WyilTransform("verification check",
 				new ConstraintPropagation(loader, true, 1000)));
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
