@@ -88,9 +88,6 @@ public class ClassFileBuilder {
 		cf.attributes().add(
 				new WhileyVersion(WHILEY_MAJOR_VERSION, WHILEY_MINOR_VERSION));
 		
-		// Finally, we need to eliminate any dead code that was introduced.		
-		new DeadCodeElimination().apply(cf);		
-		
 		return cf;
 	}	
 		

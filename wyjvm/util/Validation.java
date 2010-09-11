@@ -44,11 +44,11 @@ import wyjvm.attributes.*;
  * 
  */
 public class Validation {
-	public void apply(ClassFile cf) {
+	public void apply(ClassFile cf) {		
 		checkNoIdenticalMethod(cf);
 		for(ClassFile.Method m : cf.methods()) {
 			checkMethod(m,cf);
-		}
+		}		
 	}
 	
 	public void checkNoIdenticalMethod(ClassFile cf) {
@@ -80,6 +80,8 @@ public class Validation {
 	
 	public void checkLabels(Code code, ClassFile.Method method, ClassFile parent) {
 		HashSet<String> labels = new HashSet<String>();
+		
+		// First, check no two identical labels
 		for(Bytecode b : code.bytecodes()) {
 			if(b instanceof Bytecode.Label) {
 				Bytecode.Label lab = (Bytecode.Label) b;
@@ -90,6 +92,32 @@ public class Validation {
 							+ method.type());
 				}
 				labels.add(lab.name);
+			}
+		}
+		
+		// Second, check every branch target exists
+		for(Bytecode b : code.bytecodes()) {
+			if(b instanceof Bytecode.Branch) {
+				Bytecode.Branch br = (Bytecode.Branch) b;
+				if(!labels.contains(br.label)){
+					throw new IllegalArgumentException("Unknown branch target \""
+							+ br.label + "\" in method " + method.name() + ", "
+							+ method.type());
+				}
+			} else if(b instanceof Bytecode.Switch) {
+				Bytecode.Switch sw = (Bytecode.Switch) b;
+				if(!labels.contains(sw.defaultLabel)){
+					throw new IllegalArgumentException("Unknown branch target \""
+							+ sw.defaultLabel + "\" in method " + method.name() + ", "
+							+ method.type());
+				}
+				for(wyil.util.Pair<Integer,String> c : sw.cases) {
+					if(!labels.contains(c.second())){
+						throw new IllegalArgumentException("Unknown branch target \""
+								+ c.second() + "\" in method " + method.name() + ", "
+								+ method.type());
+					}
+				}
 			}
 		}
 	}
