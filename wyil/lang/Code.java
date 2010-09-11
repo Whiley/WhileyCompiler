@@ -553,7 +553,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "induct %" + variable.index + " over " + source;
+			return "induct %" + variable.index + " over " + source + ":";
 		}
 	}
 

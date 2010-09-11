@@ -43,9 +43,12 @@ public class WyilFileWriter {
 			out.println();
 		}
 		for(TypeDef td : module.types()) {
-			out.println("define " + td.name() + " as " + td.type());
+			out.print("define " + td.name() + " as " + td.type());
 			if(td.constraint() != null) {
+				out.println(":");
 				write(0,td.constraint(),out);				
+			} else {
+				out.println();
 			}
 		}
 		if(!module.types().isEmpty()) {
