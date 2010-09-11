@@ -20,6 +20,7 @@ package wyjc.compiler;
 
 import java.io.*;
 import java.util.*;
+import java.lang.reflect.*;
 
 import wyil.*;
 import wyil.lang.*;
@@ -177,4 +178,44 @@ public class Compiler implements Logger {
 		logout.print(time);
 		logout.println("ms]");
 	}	
+	
+	protected static final HashMap<String, Class<? extends Stage>> registeredStages = new HashMap<String, Class<? extends Stage>>();
+
+	/**
+	 * Register a compiler stage with the system. A compiler stage requires a
+	 * constructor which accepts a Map<String,String> argument.
+	 * 
+	 * @param handle
+	 * @param stage
+	 */
+	public static void registerStage(String handle, Class<? extends Stage> stage) {
+		registeredStages.put(handle, stage);
+	}
+
+	/**
+	 * Construct an instance of a given compiler stage, using the given argument
+	 * list. A constructor which accepts parameter Map<String,String> will be
+	 * called. If such a constructor doesn't exist, an exception will be raised.
+	 * 
+	 * @param handle
+	 * @param options
+	 * @return
+	 */
+	public static Stage constructStage(String handle, Map<String,String> options) {
+		Class<? extends Stage> sc = registeredStages.get(handle);
+		
+		try {
+			if(sc != null) {				
+				Constructor<? extends Stage> c = sc.getConstructor(Map.class);
+				Stage stage = (Stage) c.newInstance(options);		
+				return stage;
+			}
+		} catch(NoSuchMethodException e) {
+		} catch(InstantiationException e) {
+		} catch(InvocationTargetException e) {
+		} catch(IllegalAccessException e) {					
+		}
+		
+		throw new IllegalArgumentException("invalid stage " + handle);
+	}
 }

@@ -80,7 +80,9 @@ public class Main {
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
 		ArrayList<String> bootpath = new ArrayList<String>();
+		ArrayList<Pair<String, Map<String, String>>> pipelineAppends = new ArrayList();
 		int fileArgsBegin = 0;
+		
 		for (int i = 0; i != args.length; ++i) {
 			if (args[i].startsWith("-")) {
 				String arg = args[i];
@@ -100,24 +102,16 @@ public class Main {
 					        							.split(File.pathSeparator));															
 					        				} else if (arg.equals("-verbose")) {
 					verbose = true;
-				} else if(arg.equals("-ncp")) {					
-					ncp = true;
-				} else if(arg.equals("-nvc")) {					
-					nvc = true;
-				} else if(arg.equals("-nrc")) {					
-					nrc = true;
-				} else if(arg.equals("-jvm")) {					
-					jvm = true;
-				} else if(arg.equals("-wyil")) {					
-					wyil = true;
-				} else if(arg.equals("-ncf")) {					
-					classfile = false;
+				} else if(arg.startsWith("-A")) {
+					String[] name = args[i].substring(2).split(":");
+					HashMap<String,String> options = new HashMap<String,String>();					
+					pipelineAppends.add(new Pair(name[0],options));
 				} else {
 					throw new RuntimeException("Unknown option: " + args[i]);
 				}
 
 				fileArgsBegin = i + 1;
-			}
+			} 
 		}
 		
 		if(fileArgsBegin == args.length) {
@@ -134,38 +128,29 @@ public class Main {
 		whileypath.addAll(bootpath);
 		
 		ModuleLoader loader = new ModuleLoader(whileypath);
-		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();				
-		if(wyil) {
-			stages.add(new WyilWriter());
-		}
+		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();						
 		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
-		stages.add(new WyilTransform("type propagation",
-				new TypePropagation(loader)));
+		stages.add(new WyilTransform("type propagation", new TypePropagation(
+				loader)));
 		stages.add(new WyilTransform("definite assignment",
 				new DefiniteAssignment()));
-		if(!ncp) {
-			stages.add(new WyilTransform("constant propagation",
-					new ConstantPropagation(loader)));
-		}
-		if(wyil) {
-//			stages.add(new WyilWriter());
-		}
-		if(!nvc) {
-			stages.add(new WyilTransform("branch prediction",
-					new ExpectedInference(loader)));
-			stages.add(new WyilTransform("constraint propagation",
-					new ConstraintPropagation(loader,true,timeout)));
-		}		
-		if(wyil) {
-		//	stages.add(new WyilWriter());
-		}		
+		stages.add(new WyilTransform("constant propagation",
+				new ConstantPropagation(loader)));
+		stages.add(new WyilTransform("branch prediction",
+				new ExpectedInference(loader)));
+		stages.add(new WyilTransform("constraint propagation",
+				new ConstraintPropagation(loader, true, timeout)));
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
-		stages.add(new WyilTransform("failure check",
-				new FailureCheck(loader)));				
-		if(wyil) {
-	//		stages.add(new WyilWriter());
+		stages
+				.add(new WyilTransform("failure check",
+						new FailureCheck(loader)));
+
+		// Now, make requested pipeline adjustments
+		registerDefaultStages();
+		for (Pair<String, Map<String, String>> p : pipelineAppends) {
+			stages.add(Compiler.constructStage(p.first(),p.second()));
 		}
 		
 		if(jvm) {
@@ -242,7 +227,7 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		System.exit(run(args));			
 	}
-	
+			
 	/**
 	 * Print out information regarding command-line arguments
 	 * 
@@ -290,7 +275,11 @@ public class Main {
 		}
 	}	
 	
-		/**
+	public static void registerDefaultStages() {
+		Compiler.registerStage("wyil",WyilWriter.class);
+	}
+	
+	/**
 	 * This method simply reads in the input file, and prints out a
 	 * given line of text, with little markers (i.e. '^') placed
 	 * underneath a portion of it.  

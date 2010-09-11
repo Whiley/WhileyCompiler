@@ -2,6 +2,7 @@ package wyjc.compiler;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import wyil.ModuleLoader;
 import wyil.lang.Module;
@@ -10,7 +11,11 @@ import wyil.io.*;
 import wyjvm.io.*;
 import wyjvm.lang.ClassFile;
 
-public class WyilWriter implements Compiler.Stage {
+public class WyilWriter implements Compiler.Stage {	
+	
+	public WyilWriter(Map<String, String> options) {
+
+	}
 	
 	public Module process(Module m, Logger logout) {
 		long start = System.currentTimeMillis();
