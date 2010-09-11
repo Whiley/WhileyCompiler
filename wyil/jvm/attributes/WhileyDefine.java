@@ -134,7 +134,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			output.println("  WhileyDefine: " + defName + " as " + type);
 		} else {
 			output.println("  WhileyDefine: " + defName + " as " + type);
-			wyil.io.WyilFileWriter.write(1,block,output);			
+			wyil.io.WyilFileWriter wyfw = new wyil.io.WyilFileWriter(output);
+			wyfw.write(1,block,output);			
 		}
 	}
 	
