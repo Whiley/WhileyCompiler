@@ -2,6 +2,7 @@ package wyjc.compiler;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.Module;
@@ -14,13 +15,16 @@ import wyjvm.util.Validation;
 
 public class JvmBytecodeWriter implements Compiler.Stage {
 	private ClassFileBuilder classBuilder;
-	
-	public JvmBytecodeWriter(ModuleLoader loader, int whileyMajorVersion,
-			int whileyMinorVersion) {
-		classBuilder = new ClassFileBuilder(loader, whileyMajorVersion,
-				whileyMinorVersion);
+
+	public JvmBytecodeWriter(ModuleLoader loader, Map<String, String> options) {
+		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
+				wyjc.Main.MINOR_VERSION);
 	}
-		
+	
+	public String name() {
+		return "jvm file writer";
+	}
+	
 	public Module process(Module m, Logger logout) {
 		long start = System.currentTimeMillis();		
 		ClassFile file = classBuilder.build(m);				

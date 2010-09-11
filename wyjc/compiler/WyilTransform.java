@@ -13,6 +13,10 @@ public class WyilTransform implements Compiler.Stage {
 		this.transform = transform;
 	}
 	
+	public String name() {
+		return name;
+	}
+	
 	public Module process(Module module, Logger logout) {
 		long start = System.currentTimeMillis();
 			

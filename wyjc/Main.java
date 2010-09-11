@@ -69,18 +69,10 @@ public class Main {
 	
 	public static int run(String[] args) {		
 		boolean verbose = false;
-		boolean nvc = false;
-		boolean nrc = false;
-		boolean ncp = false;
-		boolean cwa = true; // for simplicity!
-		boolean wyil = false;
-		boolean jvm = false;
-		boolean classfile = true;
-		int timeout = 500;
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
 		ArrayList<String> bootpath = new ArrayList<String>();
-		ArrayList<Pair<String, Map<String, String>>> pipelineAppends = new ArrayList();
+		ArrayList<PipelineModifier> pipelineMods = new ArrayList();		
 		int fileArgsBegin = 0;
 		
 		for (int i = 0; i != args.length; ++i) {
@@ -102,10 +94,20 @@ public class Main {
 					        							.split(File.pathSeparator));															
 					        				} else if (arg.equals("-verbose")) {
 					verbose = true;
-				} else if(arg.startsWith("-A")) {
+				} else if(arg.startsWith("-X")) { 
 					String[] name = args[i].substring(2).split(":");
-					HashMap<String,String> options = new HashMap<String,String>();					
-					pipelineAppends.add(new Pair(name[0],options));
+					Map<String, String> options = Collections.EMPTY_MAP;
+					if (name.length > 1) {
+						options = splitOptions(name[1]);
+					}
+					PipelineModifier pmod = new PipelineModifier(POP.APPEND,
+							name[0], null, options);
+					pipelineMods.add(pmod);	
+				} else if(arg.startsWith("-N")) { 
+					String name = args[i].substring(2);					
+					PipelineModifier pmod = new PipelineModifier(POP.REMOVE,
+							name, null, null);
+					pipelineMods.add(pmod);
 				} else {
 					throw new RuntimeException("Unknown option: " + args[i]);
 				}
@@ -126,50 +128,20 @@ public class Main {
 		
 		whileypath.add(0,".");
 		whileypath.addAll(bootpath);
-		
-		ModuleLoader loader = new ModuleLoader(whileypath);
-		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();						
-		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
-				loader)));
-		stages.add(new WyilTransform("type propagation", new TypePropagation(
-				loader)));
-		stages.add(new WyilTransform("definite assignment",
-				new DefiniteAssignment()));
-		stages.add(new WyilTransform("constant propagation",
-				new ConstantPropagation(loader)));
-		stages.add(new WyilTransform("branch prediction",
-				new ExpectedInference(loader)));
-		stages.add(new WyilTransform("constraint propagation",
-				new ConstraintPropagation(loader, true, timeout)));
-		stages.add(new WyilTransform("function check",
-				new FunctionCheck(loader)));
-		stages
-				.add(new WyilTransform("failure check",
-						new FailureCheck(loader)));
 
-		// Now, make requested pipeline adjustments
-		registerDefaultStages();
-		for (Pair<String, Map<String, String>> p : pipelineAppends) {
-			stages.add(Compiler.constructStage(p.first(),p.second()));
-		}
-		
-		if(jvm) {
-			stages.add(new JvmBytecodeWriter(loader,MAJOR_VERSION,MINOR_VERSION));
-		}
-		if(classfile) {
-			stages.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));
-		}
-		Compiler compiler = new Compiler(loader,stages);
-		
-		// Now, configure compiler and loader
-		loader.setLogger(compiler);
-		loader.setClosedWorldAssumption(cwa);
-			
-		if(verbose) {
-			compiler.setLogOut(System.err);
-		}
-		
-		try {
+			try {
+			ModuleLoader loader = new ModuleLoader(whileypath);
+			ArrayList<Compiler.Stage> stages = constructPipeline(pipelineMods,loader);
+			Compiler compiler = new Compiler(loader,stages);
+
+			// Now, configure compiler and loader
+			loader.setLogger(compiler);
+			loader.setClosedWorldAssumption(true);
+
+			if(verbose) {
+				compiler.setLogOut(System.err);
+			}
+
 			try {
 				ArrayList<File> files = new ArrayList<File>();
 				for(int i=fileArgsBegin;i!=args.length;++i) {
@@ -275,10 +247,6 @@ public class Main {
 		}
 	}	
 	
-	public static void registerDefaultStages() {
-		Compiler.registerStage("wyil",WyilWriter.class);
-	}
-	
 	/**
 	 * This method simply reads in the input file, and prints out a
 	 * given line of text, with little markers (i.e. '^') placed
@@ -316,5 +284,135 @@ public class Main {
 			errout.print("^");
 		}
 		errout.println("");		
-	}		
+	}
+
+	/**
+	 * This splits strings of the form "x=y,v=w" into distinct components and
+	 * puts them into a map. In the case of a string like "x,y=z" then x is
+	 * loaded with the empty string.
+	 * 
+	 * @param str
+	 * @return
+	 */
+	private static Map<String, String> splitOptions(String str) {
+		HashMap<String, String> options = new HashMap<String, String>();
+		String[] splits = str.split(",");
+		for (String s : splits) {
+			String[] p = s.split("=");
+			if (p.length == 1) {
+				options.put(p[0], "");
+			} else {
+				options.put(p[0], p[1]);
+			}
+		}
+		return options;
+	}
+
+	private static ArrayList<Compiler.Stage> constructPipeline(
+			List<PipelineModifier> pmods, ModuleLoader loader) {
+
+		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
+		
+		// First, construct the default pipeline
+		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
+				loader)));
+		stages.add(new WyilTransform("type propagation", new TypePropagation(
+				loader)));
+		stages.add(new WyilTransform("definite assignment",
+				new DefiniteAssignment()));
+		stages.add(new WyilTransform("constant propagation",
+				new ConstantPropagation(loader)));
+		stages.add(new WyilTransform("branch prediction",
+				new ExpectedInference(loader)));
+		stages.add(new WyilTransform("constraint propagation",
+				new ConstraintPropagation(loader, true, 1000)));
+		stages.add(new WyilTransform("function check",
+				new FunctionCheck(loader)));
+		stages
+				.add(new WyilTransform("failure check",
+						new FailureCheck(loader)));
+		stages.add(new ClassWriter(loader, MAJOR_VERSION, MINOR_VERSION));
+		
+		// Second, make requested pipeline adjustments
+		registerDefaultStages();
+		for (PipelineModifier p : pmods) {
+			switch(p.op) {
+			case APPEND:
+				stages.add(Compiler.constructStage(p.name,loader,p.options));
+				break;
+			case REMOVE:			
+				int index = matchStage(p.name,stages);
+				stages.remove(index);
+				break;			
+			}			
+		}
+		
+		return stages;
+	}
+	
+
+	public static void registerDefaultStages() {
+		Compiler.registerStage("wyil",WyilWriter.class);
+		Compiler.registerStage("jvm",JvmBytecodeWriter.class);
+	}
+	
+	private static int matchStage(String match, List<Compiler.Stage> stages) {
+		int i=0;
+		for(Compiler.Stage stage : stages) {
+			if(matchStageName(match,stage.name())) {
+				return i;
+			}
+			++i;
+		}
+		throw new IllegalArgumentException("invalid stage name \"" + match + "\"");
+	}
+	
+	private static boolean matchStageName(String match, String name) {
+		if(match.equals(name) || name.startsWith(match)) {
+			return true;
+		}
+		String initials = splitInitials(name);
+		if(match.equals(initials)) {
+			return true;
+		}
+		return false;
+	}
+	
+	private static String splitInitials(String name) {
+		String[] words = name.split(" ");
+		String r = "";
+		for(String w : words) {
+			r += w.charAt(0);
+		}
+		return r;
+	}
+	
+	/**
+	 * The pipeline modifier captures a requested adjustment to the compilation
+	 * pipeline.
+	 * 
+	 * @author djp
+	 */
+	private static class PipelineModifier {
+		public final POP op;
+		public final String name;
+		public final String arg;
+		public final Map<String,String> options;
+		
+		public PipelineModifier(POP pop, String name, String arg,
+				Map<String, String> options) {
+			this.op = pop;
+			this.name = name;
+			this.arg = arg;
+			this.options = options;
+		}
+	}
+	
+	private enum POP {
+		APPEND,
+		BEFORE,
+		AFTER,
+		REPLACE,
+		REMOVE
+	}
 }

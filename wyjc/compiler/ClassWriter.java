@@ -20,7 +20,11 @@ public class ClassWriter implements Compiler.Stage {
 		classBuilder = new ClassFileBuilder(loader, whileyMajorVersion,
 				whileyMinorVersion);
 	}
-		
+	
+	public String name() {
+		return "class file writer";
+	}
+	
 	public Module process(Module m, Logger logout) {
 		long start = System.currentTimeMillis();
 		ClassFile file = classBuilder.build(m);

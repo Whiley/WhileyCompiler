@@ -40,6 +40,7 @@ public class Compiler implements Logger {
 	protected ArrayList<Stage> stages;
 
 	public interface Stage {
+		public String name();
 		public Module process(Module module, Logger logout);
 	}
 	
@@ -183,31 +184,43 @@ public class Compiler implements Logger {
 
 	/**
 	 * Register a compiler stage with the system. A compiler stage requires a
-	 * constructor which accepts a Map<String,String> argument.
+	 * constructor which accepts a ModuleLoader, and Map<String,String> arguments
 	 * 
 	 * @param handle
 	 * @param stage
 	 */
 	public static void registerStage(String handle, Class<? extends Stage> stage) {
-		registeredStages.put(handle, stage);
+		try {			
+			Constructor<? extends Stage> c = stage.getConstructor(
+					ModuleLoader.class, Map.class);			
+			registeredStages.put(handle, stage);
+			return;
+		} catch(NoSuchMethodException e) {
+		} 
+		throw new IllegalArgumentException("cannot register stage \""
+				+ handle + "\" - missing required constructor");
 	}
 
 	/**
 	 * Construct an instance of a given compiler stage, using the given argument
-	 * list. A constructor which accepts parameter Map<String,String> will be
-	 * called. If such a constructor doesn't exist, an exception will be raised.
+	 * list. A constructor which accepts a ModuleLoader, and Map<String,String>
+	 * arguments will be called. If such a constructor doesn't exist, an
+	 * exception will be raised.
 	 * 
 	 * @param handle
 	 * @param options
 	 * @return
 	 */
-	public static Stage constructStage(String handle, Map<String,String> options) {
+	public static Stage constructStage(String handle, ModuleLoader loader,
+			Map<String, String> options) {
+		
 		Class<? extends Stage> sc = registeredStages.get(handle);
 		
 		try {
-			if(sc != null) {				
-				Constructor<? extends Stage> c = sc.getConstructor(Map.class);
-				Stage stage = (Stage) c.newInstance(options);		
+			if (sc != null) {
+				Constructor<? extends Stage> c = sc.getConstructor(
+						ModuleLoader.class, Map.class);
+				Stage stage = (Stage) c.newInstance(loader, options);
 				return stage;
 			}
 		} catch(NoSuchMethodException e) {
@@ -217,5 +230,5 @@ public class Compiler implements Logger {
 		}
 		
 		throw new IllegalArgumentException("invalid stage " + handle);
-	}
+	}	
 }

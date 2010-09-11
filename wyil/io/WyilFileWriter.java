@@ -8,6 +8,9 @@ import wyil.lang.Module.*;
 
 public class WyilFileWriter {
 	private PrintWriter out;
+	private boolean writeTypes;
+	private boolean writeLabels;
+	private boolean writeAttributes;
 	
 	public WyilFileWriter(Writer os) {
 		out = new PrintWriter(os);
@@ -15,6 +18,18 @@ public class WyilFileWriter {
 	
 	public WyilFileWriter(OutputStream os) {
 		out = new PrintWriter(os);
+	}
+	
+	public void setWriteTypes(boolean flag) {
+		writeTypes = flag;
+	}
+	
+	public void setWriteLabels(boolean flag) {
+		writeLabels = flag;
+	}
+	
+	public void setWriteAttributes(boolean flag) {
+		writeAttributes = flag;
 	}
 	
 	public void write(Module module) {
@@ -43,13 +58,13 @@ public class WyilFileWriter {
 		out.flush();
 	}
 	
-	public static void write(Method method, PrintWriter out) {
+	public void write(Method method, PrintWriter out) {
 		for (Case c : method.cases()) {
 			write(c, method, out);
 		}
 	}
 	
-	public static void write(Case mcase, Method method, PrintWriter out) {
+	public void write(Case mcase, Method method, PrintWriter out) {
 		Type.Fun ft = method.type(); 
 		out.print(ft.ret + " " + method.name() + "(");
 		List<Type> pts = ft.params;
@@ -76,7 +91,7 @@ public class WyilFileWriter {
 		write(0,mcase.body(),out);	
 	}
 	
-	public static void write(int indent, Block blk, PrintWriter out) {
+	public void write(int indent, Block blk, PrintWriter out) {
 		for(Stmt s : blk) {
 			if(s.code instanceof Code.End) {
 				indent--;
@@ -96,34 +111,48 @@ public class WyilFileWriter {
 		}
 	}
 	
-	public static void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
-		String line;		
+	public void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
+		String line = "null";		
+		tabIndent(indent+1,out);
+	
+		// First, write out code	
 		if(c instanceof Code.End) {
-			tabIndent(indent+1,out);
-			out.println(c);
-			return;
+			Code.End cend = (Code.End)c;
+			if(writeLabels) {
+				line = "end " + cend.target;
+			} else {
+				line = "end";
+			}
+		} else if(c instanceof Code.Start) {
+			Code.Start cstart = (Code.Start)c;
+			if(writeLabels) {
+				line = "." + cstart.label + " " + c.toString();
+			} else {
+				line = c.toString();
+			}
 		} else {
-			tabIndent(indent+1,out);
-			line = c == null ? "null" : c.toString();
+			line = c.toString();
 		}
 		
+		// Second, write attributes				
 		while(line.length() < 40) {
 			line += " ";
 		}
 		out.print(line);
-		if(attributes.size() > 0) {
+		if (writeAttributes && attributes.size() > 0) {
 			out.print(" # ");
-			boolean firstTime=true;
-			for(Attribute a : attributes) {
-				if(!firstTime) {
+			boolean firstTime = true;
+			for (Attribute a : attributes) {
+				if (!firstTime) {
 					out.print(", ");
 				}
-				firstTime=false;
-				out.print(a);			
+				firstTime = false;
+				out.print(a);
 			}
 		}
 		out.println();
-	}	
+	}
+	
 	public static void tabIndent(int indent, PrintWriter out) {
 		indent = indent * 4;
 		for(int i=0;i<indent;++i) {
