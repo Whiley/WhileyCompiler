@@ -391,6 +391,18 @@ public abstract class Type {
 				lub = leastUpperBound(lub, greatestDifference(t, t2));
 			}
 			return lub;
+		} else if(t1 instanceof Recursive) {
+			Recursive r = (Recursive) t1;
+			Type r_type = r.type;
+			HashMap<String,Type> binding = new HashMap<String,Type>();
+			binding.put(r.name, r);
+			r_type = substituteRecursiveTypes(r_type,binding);			
+			Type gdiff = greatestDifference(r_type,t2);
+			if(!r_type.equals(gdiff)) {
+				// something changed so return new type
+				return gdiff;
+			} 
+			// Otherwise, nothing changed so keep original type for continuity
 		}
 		
 		return t1;
