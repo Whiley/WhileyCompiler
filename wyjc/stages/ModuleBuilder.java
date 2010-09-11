@@ -1816,12 +1816,16 @@ public class ModuleBuilder {
 
 		t = Type.renameRecursiveTypes(t, binding);
 		
+
+		Block blk = p.second();
+		if(blk == null) { return new Pair<Type,Block>(t,blk); }
+
 		// At this stage, we need to update any type tests that involve the
 		// recursive type
-		Block blk = p.second();
 		Block nblk = new Block();
 		HashMap<String,Type> tbinding = new HashMap<String,Type>();
 		tbinding.put(key, t);
+		
 		for(wyil.lang.Stmt s : blk) {
 			if(s.code instanceof Code.IfGoto){
 				IfGoto ig = (IfGoto) s.code;
@@ -1841,7 +1845,7 @@ public class ModuleBuilder {
 				}
 			} 
 			nblk.add(s.code,s.attributes());			
-		}
+		}		
 		
 		return new Pair<Type,Block>(t,nblk);
 	}
