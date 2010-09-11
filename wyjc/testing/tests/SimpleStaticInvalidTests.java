@@ -99,6 +99,7 @@ public class SimpleStaticInvalidTests extends TestHarness {
  @Test public void RecursiveType_Invalid_4_StaticTest() { contextFailTest("RecursiveType_Invalid_4"); }
  @Test public void RecursiveType_Invalid_5_StaticTest() { contextFailTest("RecursiveType_Invalid_5"); }
  @Test public void RecursiveType_Invalid_6_StaticTest() { contextFailTest("RecursiveType_Invalid_6"); }
+ @Test public void RecursiveType_Invalid_7_StaticTest() { contextFailTest("RecursiveType_Invalid_7"); }
  @Test public void Return_CompileFail_1_StaticTest() { contextFailTest("Return_CompileFail_1"); }
  @Test public void Return_CompileFail_10_StaticTest() { contextFailTest("Return_CompileFail_10"); }
  @Test public void Return_CompileFail_11_StaticTest() { contextFailTest("Return_CompileFail_11"); }
