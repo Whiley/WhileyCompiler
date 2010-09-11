@@ -67,6 +67,14 @@ public final class Block implements Iterable<Stmt> {
 		return stmts.get(index);
 	}
 	
+	public void set(int index, Code code, Attribute... attributes) {
+		stmts.set(index,new Stmt(code,attributes));
+	}
+	
+	public void set(int index, Code code, Collection<Attribute> attributes) {
+		stmts.set(index, new Stmt(code, attributes));
+	}
+	
 	public void remove(int index) {
 		stmts.remove(index);
 	}
@@ -344,8 +352,8 @@ public final class Block implements Iterable<Stmt> {
 		return nblock;
 	}
 	
-	private static int idx=0;
+	private static int _idx=0;
 	public static String freshLabel() {
-		return "blklab" + idx++;
+		return "blklab" + _idx++;
 	}
 }

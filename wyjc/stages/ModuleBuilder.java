@@ -380,6 +380,26 @@ public class ModuleBuilder {
 			CExpr src = CExpr.VAR(Type.T_ANY, "$");
 			CExpr.Register var = CExpr.REG(Type.T_ANY,0);			
 			blk = Block.registerShift(1,t.second());
+			// Must close any types used in subtype tests. This is awkward, but
+			// necessary.
+			for(int i=0;i!=blk.size();++i) {
+				wyil.lang.Stmt stmt = blk.get(i);
+				if(stmt.code instanceof Code.IfGoto){
+					IfGoto ig = (IfGoto) stmt.code;
+					if(ig.rhs instanceof Value.TypeConst) {
+						Value.TypeConst r = (Value.TypeConst) ig.rhs;
+						// At this point, we've now found a type test.
+						if(Type.isOpenRecursive(key, r.type)) {														
+							// Ok, it's an open recursive type so we must
+							// close it.
+							r = Value.V_TYPE(Type.T_RECURSIVE(key.toString(),r.type));
+							ig = new Code.IfGoto(ig.op, ig.lhs, r, ig.target);
+							blk.set(i,ig,stmt.attributes());	
+						}						
+					}
+				} 
+			}
+			// finally, create the inductive block
 			blk.add(0,new Code.Induct(lab, var, src));
 			blk.add(new Code.InductEnd(lab));
 			t = new Pair<Type, Block>(t.first(), blk);			
@@ -1797,7 +1817,7 @@ public class ModuleBuilder {
 		for(wyil.lang.Stmt s : blk) {
 			if(s.code instanceof Code.IfGoto){
 				IfGoto ig = (IfGoto) s.code;
-				if(ig.rhs instanceof Value.TypeConst) {
+				if(ig.rhs instanceof Value.TypeConst) {					
 					Value.TypeConst r = (Value.TypeConst) ig.rhs;
 					r = Value.V_TYPE(Type.renameRecursiveTypes(r.type, binding));
 					ig = new Code.IfGoto(ig.op, ig.lhs, r, ig.target);
