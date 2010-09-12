@@ -1,4 +1,4 @@
-define etype as (int mode, int rest)
+define etype as {int mode, int rest}
 define Ptype as process etype
 
 int Ptype::get():
@@ -8,7 +8,7 @@ int Ptype::get():
     return this->mode
 
 void System::main([string] args):
-    Ptype p = spawn (mode:1,rest:2)
+    Ptype p = spawn {mode:1,rest:2}
     print str(*p)
     int x = p->get()
     print str(*p)

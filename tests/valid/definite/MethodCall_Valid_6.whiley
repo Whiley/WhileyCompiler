@@ -1,7 +1,7 @@
-define wmcr6tup as (int x, int y)
+define wmcr6tup as {int x, int y}
 
 wmcr6tup System::f(System x, int y):
-    return (x:y,y:x->get())
+    return {x:y,y:x->get()}
 
 int System::get():
     return 1

@@ -1,4 +1,4 @@
-define msg as (int op, int s)
+define msg as {int op, int s}
 
 void f(msg m):
     print str(m)

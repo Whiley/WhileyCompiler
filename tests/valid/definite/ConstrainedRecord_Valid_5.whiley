@@ -1,4 +1,4 @@
-define state as (string input, int pos) where pos >= 0 && pos <= |input|
+define state as {string input, int pos} where pos >= 0 && pos <= |input|
 
 state parseWhiteSpace(state st):
     if(st.pos < |st.input| && st.input[st.pos] == ' '):
@@ -11,6 +11,6 @@ state parseTerm(state st):
     return st
 
 void System::main([string] args):
-    state st = (input:"  Hello",pos:0)
+    state st = {input:"  Hello",pos:0}
     st = parseTerm(st)
     print str(st)

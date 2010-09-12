@@ -785,35 +785,6 @@ public class WhileyParser {
 				// this indicates just an expression surrounded by braces
 				match(RightBrace.class);
 				return v;
-			} else if(v instanceof Expr.Variable){			
-				// this indicates a tuple value.				)
-				match(Colon.class);
-				Expr e = parseMulDivExpression();
-				HashMap<String,Expr> exprs = new HashMap<String,Expr>();
-				exprs.put(((Expr.Variable) v).var, e);
-				checkNotEof();
-				token = tokens.get(index);
-				while(!(token instanceof RightBrace)) {
-					if(token instanceof Comma) {
-						match(Comma.class);
-						checkNotEof();
-						token = tokens.get(index);
-					}
-					Identifier n = matchIdentifier();
-
-					if(exprs.containsKey(n.text)) {
-						syntaxError("duplicate tuple key",n);
-					}
-
-					match(Colon.class);
-					e = parseMulDivExpression();				
-					exprs.put(n.text,e);
-					checkNotEof();
-					token = tokens.get(index);					
-				} 
-				match(RightBrace.class);
-
-				return new Expr.RecordGen(exprs,sourceAttr(start, index - 1));
 			} 
 		} else if(token instanceof Star) {
 			// this indicates a process dereference
@@ -954,7 +925,12 @@ public class WhileyParser {
 			setComp=true;
 			match(Bar.class);
 			firstTime=true;
-		} 
+		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
+				&& exprs.get(0) instanceof Expr.Variable) {
+			// this is a record constructor
+			Expr.Variable v = (Expr.Variable)exprs.get(0); 
+			return parseRecordVal(start,v.var);
+		}
 		
 		checkNotEof();
 		token = tokens.get(index);
@@ -1008,6 +984,36 @@ public class WhileyParser {
 					start, index - 1));
 		}
 	}
+	
+	private Expr parseRecordVal(int start, String ident) {
+
+		// this indicates a tuple value.				)
+		match(Colon.class);
+		Expr e = parseMulDivExpression();
+		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
+		exprs.put(ident, e);
+		checkNotEof();
+		Token token = tokens.get(index);
+		while(!(token instanceof RightCurly)) {			
+			match(Comma.class);
+			checkNotEof();
+			token = tokens.get(index);			
+			Identifier n = matchIdentifier();
+
+			if(exprs.containsKey(n.text)) {
+				syntaxError("duplicate tuple key",n);
+			}
+
+			match(Colon.class);
+			e = parseMulDivExpression();				
+			exprs.put(n.text,e);
+			checkNotEof();
+			token = tokens.get(index);					
+		} 
+		match(RightCurly.class);
+
+		return new Expr.RecordGen(exprs,sourceAttr(start, index - 1));
+	} 
 	
 	private Expr parseLengthOf() {
 		int start = index;
@@ -1115,35 +1121,40 @@ public class WhileyParser {
 		} else if(token.text.equals("process")) {
 			matchKeyword("process");
 			t = new UnresolvedType.Process(parseType(),sourceAttr(start,index-1));			
-		} else if(token instanceof LeftBrace) {
-		
-			match(LeftBrace.class);
-			HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();
-			checkNotEof();
-			token = tokens.get(index);
-			while(!(token instanceof RightBrace)) {
-				UnresolvedType tmp = parseType();
-				
-				Token n = matchIdentifier();
-				if(types.containsKey(n)) {
-					syntaxError("duplicate tuple key",n);
-				}								
-				types.put(n.text, tmp);
-				checkNotEof();
-				token = tokens.get(index);			
-				if(token instanceof Comma) {
-					match(Comma.class);
-					checkNotEof();
-					token = tokens.get(index);
-				}
-			}
-			match(RightBrace.class);
-			t = new UnresolvedType.Record(types, sourceAttr(start,index-1));
 		} else if(token instanceof LeftCurly) {
 			match(LeftCurly.class);
 			t = parseType();
-			match(RightCurly.class);
-			t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
+			checkNotEof();
+			if(tokens.get(index) instanceof RightCurly) {
+				// set type
+				match(RightCurly.class);
+				t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
+			} else {				
+				// record type
+				HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();
+				Token n = matchIdentifier();
+				if(types.containsKey(n)) {
+					syntaxError("duplicate tuple key",n);
+				}
+				types.put(n.text, t);				
+				checkNotEof();
+				token = tokens.get(index);
+				while(!(token instanceof RightCurly)) {
+					match(Comma.class);
+					checkNotEof();
+					token = tokens.get(index);
+					UnresolvedType tmp = parseType();					
+					n = matchIdentifier();
+					if(types.containsKey(n)) {
+						syntaxError("duplicate tuple key",n);
+					}								
+					types.put(n.text, tmp);					
+					checkNotEof();
+					token = tokens.get(index);								
+				}				
+				match(RightCurly.class);
+				t = new UnresolvedType.Record(types, sourceAttr(start,index-1));				
+			} 
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);
 			t = parseType();

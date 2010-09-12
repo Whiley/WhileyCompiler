@@ -1,4 +1,4 @@
-define state as (string input, int pos) where pos >= 0 && pos <= |input|
+define state as {string input, int pos} where pos >= 0 && pos <= |input|
 
 char f(state st):
     if(st.pos < |st.input|):
@@ -7,6 +7,6 @@ char f(state st):
     return ' '
 
 void System::main([string] args):
-    char c = f((input:"hello",pos:0))
+    char c = f({input:"hello",pos:0})
     print str(c)
  

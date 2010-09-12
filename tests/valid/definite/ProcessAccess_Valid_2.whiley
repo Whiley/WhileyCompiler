@@ -1,4 +1,4 @@
-define state as (int x, int y)
+define state as {int x, int y}
 define pState as process state
 
 void pState::send(int z):
@@ -7,5 +7,5 @@ void pState::send(int z):
     print str(z)
 
 void System::main([string] args):
-    pState ps = spawn (x:1,y:2)
+    pState ps = spawn {x:1,y:2}
     ps->send(1)

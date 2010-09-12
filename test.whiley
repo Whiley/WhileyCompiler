@@ -1,6 +1,6 @@
-define posLink as (posList next, nat data)
-define posList as int | posLink
+define point as { int x, int y }
 
-int | U[ (U|int next, nat data) ]
+void System::main([string] args):
+    point p = {x:1,y:2}
+    print str(p)
 
-U[ int | (U next, nat data) ]
