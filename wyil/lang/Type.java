@@ -714,29 +714,29 @@ public abstract class Type {
 	}
 
 	/**
-	 * The effective tuple type gives a subset of the visible fields which are
+	 * The effective record type gives a subset of the visible fields which are
 	 * guaranteed to be in the type. For example, consider this type:
 	 * 
 	 * <pre>
-	 * (int op, int x) | (int op, [int] y)
+	 * {int op, int x} | {int op, [int] y}
 	 * </pre>
 	 * 
 	 * Here, the field op is guaranteed to be present. Therefore, the effective
-	 * tuple type is just <code>(int op)</code>.
+	 * record type is just <code>{int op}</code>.
 	 * 
 	 * @param t
 	 * @return
 	 */
-	public static Type.Record effectiveTupleType(Type t) {
+	public static Type.Record effectiveRecordType(Type t) {
 
 		if(t instanceof Type.Record) {
 			return (Type.Record) t;
 		} else if(t instanceof Type.Union) {
 			Type.Union ut = (Type.Union) t;
-			return effectiveTupleType(commonType(ut.bounds));
+			return effectiveRecordType(commonType(ut.bounds));
 		} else if(t instanceof Type.Named) {
 			Type.Named nt = (Type.Named) t;
-			return effectiveTupleType(nt.type);
+			return effectiveRecordType(nt.type);
 		} else if(t instanceof Type.Recursive) {
 			// this is more tricky. We need to unroll the type once to ensure we
 			// don't lose the recursive information.
@@ -744,7 +744,7 @@ public abstract class Type {
 			HashMap<String,Type> binding = new HashMap<String,Type>();
 			binding.put(rt.name, rt);
 			t = substituteRecursiveTypes(rt.type,binding);
-			return effectiveTupleType(t);
+			return effectiveRecordType(t);
 		}		
 		return null;	
 	}

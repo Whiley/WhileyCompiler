@@ -5,29 +5,29 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class WhileyTuple extends HashMap<String, Object> implements
-		Comparable<WhileyTuple> {
-	public WhileyTuple() {
+public final class WhileyRecord extends HashMap<String, Object> implements
+		Comparable<WhileyRecord> {
+	public WhileyRecord() {
 		super();
 	}
 
-	public WhileyTuple(Map<String,Object> c) {
+	public WhileyRecord(Map<String,Object> c) {
 		super(c);
 	}
 
-	public WhileyTuple clone() {
-		return new WhileyTuple(this);
+	public WhileyRecord clone() {
+		return new WhileyRecord(this);
 	}
 	
-	public boolean equals(WhileyTuple t) {
+	public boolean equals(WhileyRecord t) {
 		return super.equals(t);
 	}	
 	
-	public boolean notEquals(WhileyTuple t) {
+	public boolean notEquals(WhileyRecord t) {
 		return !super.equals(t);
 	}
 
-	public int compareTo(WhileyTuple t) {
+	public int compareTo(WhileyRecord t) {
 		ArrayList<String> mKeys = new ArrayList<String>(keySet());
 		ArrayList<String> tKeys = new ArrayList<String>(t.keySet());
 		Collections.sort(mKeys);
@@ -58,7 +58,7 @@ public final class WhileyTuple extends HashMap<String, Object> implements
 	}
 	
 	public String toString() {
-		String r = "(";
+		String r = "{";
 		boolean firstTime = true;
 
 		ArrayList<String> ss = new ArrayList<String>(keySet());
@@ -71,6 +71,6 @@ public final class WhileyTuple extends HashMap<String, Object> implements
 			firstTime = false;
 			r = r + s + ":" + get(s).toString();
 		}
-		return r + ")";
+		return r + "}";
 	}
 }

@@ -141,7 +141,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			CExpr access = exprs.get(i);			
 			if(access instanceof RecordAccess){				
 				RecordAccess ta = (RecordAccess) lval;
-				Type.Record tt = Type.effectiveTupleType(ta.lhs.type());
+				Type.Record tt = Type.effectiveRecordType(ta.lhs.type());
 				Pair<WExpr, WFormula> src = infer(ta.lhs, elem);
 				WExpr nsrc = src.first().substitute(binding);
 				for(String field : tt.types.keySet()) {

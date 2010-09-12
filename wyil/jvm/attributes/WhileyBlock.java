@@ -334,7 +334,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	public static void write(CExpr.RecordAccess expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(TUPLEACCESS);
+		writer.write_u1(RECORDACCESS);
 		write(expr.lhs,writer,constantPool);
 		int idx = constantPool.get(new Constant.Utf8(expr.field));							
 		writer.write_u2(idx);										
@@ -415,7 +415,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	public static void write(Value.Record expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(TUPLEVAL);
+		writer.write_u1(RECORDVAL);
 		writer.write_u2(expr.values.size());
 		for(Map.Entry<String,Value> v : expr.values.entrySet()) {
 			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
@@ -604,7 +604,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				}
 				return Value.V_SET(values);
 			}
-			case TUPLEVAL:
+			case RECORDVAL:
 			{
 				int len = reader.read_u2();
 				HashMap<String,Value> tvs = new HashMap<String,Value>();
@@ -673,7 +673,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				CExpr rhs = readCExpr(reader,constantPool);
 				return CExpr.LISTACCESS(lhs,rhs);
 			}
-			case TUPLEACCESS:
+			case RECORDACCESS:
 			{
 				CExpr lhs = readCExpr(reader,constantPool);
 				int idx = reader.read_u2();
@@ -924,7 +924,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int REALVAL = 4;
 	private final static int SETVAL = 5;
 	private final static int LISTVAL = 6;
-	private final static int TUPLEVAL = 7;
+	private final static int RECORDVAL = 7;
 	private final static int TYPEVAL = 8;
 	
 	private final static int VARIABLE = 10;
@@ -932,7 +932,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int FUNINVOKE = 12;
 	private final static int METHINVOKE = 13;		
 	private final static int LISTACCESS = 14;
-	private final static int TUPLEACCESS = 15;
+	private final static int RECORDACCESS = 15;
 	
 	// =========== UOP ===============
 	

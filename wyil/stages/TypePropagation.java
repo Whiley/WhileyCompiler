@@ -257,7 +257,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			falseEnv.put(name, Type.greatestDifference(reg.type, type));
 		} else if (lhs instanceof RecordAccess) {
 			RecordAccess ta = (RecordAccess) lhs;
-			Type.Record lhs_t = Type.effectiveTupleType(ta.lhs.type());
+			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());
 			if (lhs_t != null) {
 				HashMap<String, Type> ntypes = new HashMap<String, Type>(
 						lhs_t.types);
@@ -568,7 +568,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr lhs = infer(e.lhs,stmt,environment);				
-		Type.Record ett = Type.effectiveTupleType(lhs.type());				
+		Type.Record ett = Type.effectiveRecordType(lhs.type());				
 		if (ett == null) {
 			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
 		}

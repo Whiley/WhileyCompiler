@@ -482,7 +482,7 @@ public class ClassFileBuilder {
 					stmt, bytecodes);			
 		} else if(src instanceof Type.Set) {
 			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
-		} else if(src instanceof Type.Record || Type.effectiveTupleType(src) != null) {				
+		} else if(src instanceof Type.Record || Type.effectiveRecordType(src) != null) {				
 			translateTypeTest(trueTarget, src, (Type.Record) test, stmt,
 					bytecodes);			
 		} else if(test instanceof Type.Union){
@@ -544,7 +544,7 @@ public class ClassFileBuilder {
 			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
 		
 		if(src instanceof Type.Union) {
-			// Here, all bounds are guaranteed to be of tuple type.
+			// Here, all bounds are guaranteed to be of record type.
 			Type.Union ut = (Type.Union) src;
 			
 			// attempt to find string which can uniquely identify test
@@ -562,7 +562,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.LoadConst(candidate));
 				JvmType.Function fun_t = new JvmType.Function(JAVA_LANG_OBJECT,
 						JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", fun_t,
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", fun_t,
 						Bytecode.VIRTUAL));
 				bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, trueTarget));
 				return;
@@ -579,7 +579,7 @@ public class ClassFileBuilder {
 			translateTypeTest(trueTarget,t,test,stmt,bytecodes);
 			return;
 		}
-		syntaxError("tuple type test cases not implemented",filename,stmt);
+		syntaxError("record type test cases not implemented",filename,stmt);
 	}
 	
 	protected void translateTypeTest(String trueTarget, Type.List src, Type.SetList test,
@@ -742,7 +742,7 @@ public class ClassFileBuilder {
 		
 		bytecodes.add(new Bytecode.LoadConst(c.field));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));				
+		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));				
 		Type et = c.type();		
 		addReadConversion(et,bytecodes);
 	}
@@ -750,15 +750,15 @@ public class ClassFileBuilder {
 	public void translate(CExpr.Record expr, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-		construct(WHILEYTUPLE, slots, bytecodes);		
+		construct(WHILEYRECORD, slots, bytecodes);		
 		for(Map.Entry<String,CExpr> e : expr.values.entrySet()) {
 			Type et = e.getValue().type();
-			bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
+			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
 			translate(e.getValue(), slots, bytecodes);
 			addWriteConversion(et,bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"put",ftype,Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(WHILEYTUPLE));
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 		}
 	}
 
@@ -1118,16 +1118,16 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-		construct(WHILEYTUPLE, slots, bytecodes);
+		construct(WHILEYRECORD, slots, bytecodes);
 		for (Map.Entry<String, Value> e : expr.values.entrySet()) {
 			Type et = e.getValue().type();
-			bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
+			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
 			translate(e.getValue(), slots, bytecodes);
 			addWriteConversion(et, bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "put", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype,
 					Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(WHILEYTUPLE));
+			bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 		}
 	}
 	
@@ -1166,12 +1166,12 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));					
 		} else if(lhs instanceof CExpr.RecordAccess) {		
 			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
-			Type.Record tt = (Type.Record) Type.effectiveTupleType(la.lhs.type());
+			Type.Record tt = (Type.Record) Type.effectiveRecordType(la.lhs.type());
 			Type element_t = tt.types.get(la.field);
 			addWriteConversion(element_t, bytecodes);
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 					JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "put", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype,
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		} else {
@@ -1189,7 +1189,7 @@ public class ClassFileBuilder {
 	 * @param bytecodes
 	 */
 	private void cloneRHS(Type t, ArrayList<Bytecode> bytecodes) {
-		// Now, for list, set and tuple types we need to clone the object in
+		// Now, for list, set and record types we need to clone the object in
 		// question. In fact, this could be optimised in some situations
 		// where we know the old variable is not live.
 		if (t instanceof Type.List) {
@@ -1201,8 +1201,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "clone", ftype,
 					Bytecode.VIRTUAL));
 		} else if (t instanceof Type.Record) {
-			JvmType.Function ftype = new JvmType.Function(WHILEYTUPLE);
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "clone", ftype,
+			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD);
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "clone", ftype,
 					Bytecode.VIRTUAL));
 		}
 	}
@@ -1443,29 +1443,29 @@ public class ClassFileBuilder {
 		slots = (HashMap) slots.clone();
 		String oldtup = freshVar(slots);
 		String newtup = freshVar(slots);
-		bytecodes.add(new Bytecode.Store(slots.get(oldtup),WHILEYTUPLE));
-		construct(WHILEYTUPLE,slots,bytecodes);
-		bytecodes.add(new Bytecode.Store(slots.get(newtup),WHILEYTUPLE));		
+		bytecodes.add(new Bytecode.Store(slots.get(oldtup),WHILEYRECORD));
+		construct(WHILEYRECORD,slots,bytecodes);
+		bytecodes.add(new Bytecode.Store(slots.get(newtup),WHILEYRECORD));		
 				
 		for(String key : toType.types.keySet()) {
 			Type to = toType.types.get(key);
 			Type from = fromType.types.get(key);					
-			bytecodes.add(new Bytecode.Load(slots.get(newtup),WHILEYTUPLE));
+			bytecodes.add(new Bytecode.Load(slots.get(newtup),WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(key));
-			bytecodes.add(new Bytecode.Load(slots.get(oldtup),WHILEYTUPLE));
+			bytecodes.add(new Bytecode.Load(slots.get(oldtup),WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(key));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));					
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));					
 			addCheckCast(convertType(from),bytecodes);			
 			if(!to.equals(from)) {
 				// now perform recursive conversion
 				convert(to,from,slots,bytecodes);
 			}			
 			ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"put",ftype,Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
-		bytecodes.add(new Bytecode.Load(slots.get(newtup),WHILEYTUPLE));		
+		bytecodes.add(new Bytecode.Load(slots.get(newtup),WHILEYRECORD));		
 	}
 	
 	public void convert(Type toType, Type.Bool fromType,
@@ -1478,7 +1478,7 @@ public class ClassFileBuilder {
 	
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyil.jvm.rt","WhileyList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
-	public final static JvmType.Clazz WHILEYTUPLE = new JvmType.Clazz("wyil.jvm.rt","WhileyTuple");	
+	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyil.jvm.rt","WhileyRecord");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
 			"wyil.jvm.rt", "WhileyProcess");
 	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
@@ -1505,7 +1505,7 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Set) {
 			return WHILEYSET;
 		} else if(t instanceof Type.Record) {
-			return WHILEYTUPLE;
+			return WHILEYRECORD;
 		} else if(t instanceof Type.Process) {
 			return WHILEYPROCESS;
 		} else if(t instanceof Type.Named) {
@@ -1515,9 +1515,9 @@ public class ClassFileBuilder {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
 			// contains ?
-			Type.Record tt = Type.effectiveTupleType(t);
+			Type.Record tt = Type.effectiveRecordType(t);
 			if(tt != null) {
-				return WHILEYTUPLE;
+				return WHILEYRECORD;
 			} else {
 				return JAVA_LANG_OBJECT;
 			}
