@@ -36,8 +36,8 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void BoolList_Valid_1_StaticTest() { verificationRunTest("BoolList_Valid_1"); }
  @Test public void BoolRequires_Valid_1_StaticTest() { verificationRunTest("BoolRequires_Valid_1"); }
  @Test public void BoolReturn_Valid_1_StaticTest() { verificationRunTest("BoolReturn_Valid_1"); }
- @Test public void BoolTuple_Valid_1_StaticTest() { verificationRunTest("BoolTuple_Valid_1"); }
- @Test public void BoolTuple_Valid_2_StaticTest() { verificationRunTest("BoolTuple_Valid_2"); }
+ @Test public void BoolRecord_Valid_1_StaticTest() { verificationRunTest("BoolRecord_Valid_1"); }
+ @Test public void BoolRecord_Valid_2_StaticTest() { verificationRunTest("BoolRecord_Valid_2"); }
  @Test public void ConstrainedInt_Valid_1_StaticTest() { verificationRunTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_10_StaticTest() { verificationRunTest("ConstrainedInt_Valid_10"); }
  @Test public void ConstrainedInt_Valid_11_StaticTest() { verificationRunTest("ConstrainedInt_Valid_11"); }
@@ -57,11 +57,11 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void ConstrainedSet_Valid_2_StaticTest() { verificationRunTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_StaticTest() { verificationRunTest("ConstrainedSet_Valid_3"); }
  @Test public void ConstrainedSet_Valid_4_StaticTest() { verificationRunTest("ConstrainedSet_Valid_4"); }
- @Test public void ConstrainedTuple_Valid_1_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_1"); }
- @Test public void ConstrainedTuple_Valid_2_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_2"); }
- @Test public void ConstrainedTuple_Valid_3_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_3"); }
- @Test public void ConstrainedTuple_Valid_4_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_4"); }
- @Test public void ConstrainedTuple_Valid_5_StaticTest() { verificationRunTest("ConstrainedTuple_Valid_5"); }
+ @Test public void ConstrainedRecord_Valid_1_StaticTest() { verificationRunTest("ConstrainedRecord_Valid_1"); }
+ @Test public void ConstrainedRecord_Valid_2_StaticTest() { verificationRunTest("ConstrainedRecord_Valid_2"); }
+ @Test public void ConstrainedRecord_Valid_3_StaticTest() { verificationRunTest("ConstrainedRecord_Valid_3"); }
+ @Test public void ConstrainedRecord_Valid_4_StaticTest() { verificationRunTest("ConstrainedRecord_Valid_4"); }
+ @Test public void ConstrainedRecord_Valid_5_StaticTest() { verificationRunTest("ConstrainedRecord_Valid_5"); }
  @Test public void Define_Valid_1_StaticTest() { verificationRunTest("Define_Valid_1"); }
  @Test public void Define_Valid_2_StaticTest() { verificationRunTest("Define_Valid_2"); }
  @Test public void Define_Valid_3_StaticTest() { verificationRunTest("Define_Valid_3"); }
@@ -187,14 +187,14 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void Subtype_Valid_7_StaticTest() { verificationRunTest("Subtype_Valid_7"); }
  @Test public void Subtype_Valid_8_StaticTest() { verificationRunTest("Subtype_Valid_8"); }
  @Test public void Subtype_Valid_9_StaticTest() { verificationRunTest("Subtype_Valid_9"); }
- @Test public void TupleAccess_Valid_1_StaticTest() { verificationRunTest("TupleAccess_Valid_1"); }
- @Test public void TupleAssign_Valid_1_StaticTest() { verificationRunTest("TupleAssign_Valid_1"); }
- @Test public void TupleAssign_Valid_2_StaticTest() { verificationRunTest("TupleAssign_Valid_2"); }
- @Test public void TupleAssign_Valid_3_StaticTest() { verificationRunTest("TupleAssign_Valid_3"); }
- @Test public void TupleAssign_Valid_4_StaticTest() { verificationRunTest("TupleAssign_Valid_4"); }
- @Test public void TupleAssign_Valid_5_StaticTest() { verificationRunTest("TupleAssign_Valid_5"); }
- @Test public void TupleConversion_Valid_1_StaticTest() { verificationRunTest("TupleConversion_Valid_1"); }
- @Test public void TupleDefine_Valid_1_StaticTest() { verificationRunTest("TupleDefine_Valid_1"); }
+ @Test public void RecordAccess_Valid_1_StaticTest() { verificationRunTest("RecordAccess_Valid_1"); }
+ @Test public void RecordAssign_Valid_1_StaticTest() { verificationRunTest("RecordAssign_Valid_1"); }
+ @Test public void RecordAssign_Valid_2_StaticTest() { verificationRunTest("RecordAssign_Valid_2"); }
+ @Test public void RecordAssign_Valid_3_StaticTest() { verificationRunTest("RecordAssign_Valid_3"); }
+ @Test public void RecordAssign_Valid_4_StaticTest() { verificationRunTest("RecordAssign_Valid_4"); }
+ @Test public void RecordAssign_Valid_5_StaticTest() { verificationRunTest("RecordAssign_Valid_5"); }
+ @Test public void RecordConversion_Valid_1_StaticTest() { verificationRunTest("RecordConversion_Valid_1"); }
+ @Test public void RecordDefine_Valid_1_StaticTest() { verificationRunTest("RecordDefine_Valid_1"); }
  @Test public void TypeEquals_Valid_1_StaticTest() { verificationRunTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_StaticTest() { verificationRunTest("TypeEquals_Valid_2"); }
  @Test public void TypeEquals_Valid_3_StaticTest() { verificationRunTest("TypeEquals_Valid_3"); }

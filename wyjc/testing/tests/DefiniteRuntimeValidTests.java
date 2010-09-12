@@ -36,8 +36,8 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void BoolList_Valid_1_RunTest() { runTest("BoolList_Valid_1"); }
  @Test public void BoolRequires_Valid_1_RunTest() { runTest("BoolRequires_Valid_1"); }
  @Test public void BoolReturn_Valid_1_RunTest() { runTest("BoolReturn_Valid_1"); }
- @Test public void BoolTuple_Valid_1_RunTest() { runTest("BoolTuple_Valid_1"); }
- @Test public void BoolTuple_Valid_2_RunTest() { runTest("BoolTuple_Valid_2"); }
+ @Test public void BoolRecord_Valid_1_RunTest() { runTest("BoolRecord_Valid_1"); }
+ @Test public void BoolRecord_Valid_2_RunTest() { runTest("BoolRecord_Valid_2"); }
  @Test public void ConstrainedInt_Valid_1_RunTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_10_RunTest() { runTest("ConstrainedInt_Valid_10"); }
  @Test public void ConstrainedInt_Valid_11_RunTest() { runTest("ConstrainedInt_Valid_11"); }
@@ -58,11 +58,11 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void ConstrainedSet_Valid_2_RunTest() { runTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RunTest() { runTest("ConstrainedSet_Valid_3"); }
  @Test public void ConstrainedSet_Valid_4_RunTest() { runTest("ConstrainedSet_Valid_4"); }
- @Test public void ConstrainedTuple_Valid_1_RunTest() { runTest("ConstrainedTuple_Valid_1"); }
- @Test public void ConstrainedTuple_Valid_2_RunTest() { runTest("ConstrainedTuple_Valid_2"); }
- @Test public void ConstrainedTuple_Valid_3_RunTest() { runTest("ConstrainedTuple_Valid_3"); }
- @Test public void ConstrainedTuple_Valid_4_RunTest() { runTest("ConstrainedTuple_Valid_4"); }
- @Test public void ConstrainedTuple_Valid_5_RunTest() { runTest("ConstrainedTuple_Valid_5"); }
+ @Test public void ConstrainedRecord_Valid_1_RunTest() { runTest("ConstrainedRecord_Valid_1"); }
+ @Test public void ConstrainedRecord_Valid_2_RunTest() { runTest("ConstrainedRecord_Valid_2"); }
+ @Test public void ConstrainedRecord_Valid_3_RunTest() { runTest("ConstrainedRecord_Valid_3"); }
+ @Test public void ConstrainedRecord_Valid_4_RunTest() { runTest("ConstrainedRecord_Valid_4"); }
+ @Test public void ConstrainedRecord_Valid_5_RunTest() { runTest("ConstrainedRecord_Valid_5"); }
  @Test public void Define_Valid_1_RunTest() { runTest("Define_Valid_1"); }
  @Test public void Define_Valid_2_RunTest() { runTest("Define_Valid_2"); }
  @Test public void Define_Valid_3_RunTest() { runTest("Define_Valid_3"); }
@@ -188,14 +188,14 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void Subtype_Valid_7_RunTest() { runTest("Subtype_Valid_7"); }
  @Test public void Subtype_Valid_8_RunTest() { runTest("Subtype_Valid_8"); }
  @Test public void Subtype_Valid_9_RunTest() { runTest("Subtype_Valid_9"); }
- @Test public void TupleAccess_Valid_1_RunTest() { runTest("TupleAccess_Valid_1"); }
- @Test public void TupleAssign_Valid_1_RunTest() { runTest("TupleAssign_Valid_1"); }
- @Test public void TupleAssign_Valid_2_RunTest() { runTest("TupleAssign_Valid_2"); }
- @Test public void TupleAssign_Valid_3_RunTest() { runTest("TupleAssign_Valid_3"); }
- @Test public void TupleAssign_Valid_4_RunTest() { runTest("TupleAssign_Valid_4"); }
- @Test public void TupleAssign_Valid_5_RunTest() { runTest("TupleAssign_Valid_5","-wyil"); }
- @Test public void TupleConversion_Valid_1_RunTest() { runTest("TupleConversion_Valid_1"); }
- @Test public void TupleDefine_Valid_1_RunTest() { runTest("TupleDefine_Valid_1"); }
+ @Test public void RecordAccess_Valid_1_RunTest() { runTest("RecordAccess_Valid_1"); }
+ @Test public void RecordAssign_Valid_1_RunTest() { runTest("RecordAssign_Valid_1"); }
+ @Test public void RecordAssign_Valid_2_RunTest() { runTest("RecordAssign_Valid_2"); }
+ @Test public void RecordAssign_Valid_3_RunTest() { runTest("RecordAssign_Valid_3"); }
+ @Test public void RecordAssign_Valid_4_RunTest() { runTest("RecordAssign_Valid_4"); }
+ @Test public void RecordAssign_Valid_5_RunTest() { runTest("RecordAssign_Valid_5","-wyil"); }
+ @Test public void RecordConversion_Valid_1_RunTest() { runTest("RecordConversion_Valid_1"); }
+ @Test public void RecordDefine_Valid_1_RunTest() { runTest("RecordDefine_Valid_1"); }
  @Test public void TypeEquals_Valid_1_RunTest() { runTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_RunTest() { runTest("TypeEquals_Valid_2"); }
  @Test public void TypeEquals_Valid_3_RunTest() { runTest("TypeEquals_Valid_3"); }
