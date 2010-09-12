@@ -67,8 +67,8 @@ public abstract class Type {
 		return get(new Process(element));
 	}
 	
-	public static Tuple T_TUPLE(Map<String,Type> types) {
-		return get(new Tuple(types));
+	public static Record T_TUPLE(Map<String,Type> types) {
+		return get(new Record(types));
 	}
 	
 	public static Recursive T_RECURSIVE(String name, Type element) {
@@ -130,9 +130,9 @@ public abstract class Type {
 				}
 			}
 			return false;
-		} else if(t1 instanceof Tuple && t2 instanceof Tuple) {
-			Tuple tt1 = (Tuple) t1;
-			Tuple tt2 = (Tuple) t2;
+		} else if(t1 instanceof Record && t2 instanceof Record) {
+			Record tt1 = (Record) t1;
+			Record tt2 = (Record) t2;
 			for(Map.Entry<String,Type> e : tt1.types.entrySet()) {
 				Type t = tt2.types.get(e.getKey());
 				if(!isSubtype(e.getValue(),t,environment)) {
@@ -367,9 +367,9 @@ public abstract class Type {
 			Set s1 = (Set) t1;
 			Set s2 = (Set) t2;
 			return T_SET(greatestDifference(s1.element,s2.element));
-		} else if(t1 instanceof Tuple && t2 instanceof Tuple) {
-			Tuple s1 = (Tuple) t1;
-			Tuple s2 = (Tuple) t2;
+		} else if(t1 instanceof Record && t2 instanceof Record) {
+			Record s1 = (Record) t1;
+			Record s2 = (Record) t2;
 			// FIXME: I think we could do better here
 			if (s1.types.keySet().equals(s2.types.keySet())) {
 				HashMap<String, Type> types = new HashMap<String, Type>();
@@ -437,8 +437,8 @@ public abstract class Type {
 				}
 			}
 			return false;
-		} else if(t instanceof Tuple) {			
-			Tuple tt = (Tuple) t;
+		} else if(t instanceof Record) {			
+			Record tt = (Record) t;
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				if (isExistential(b.getValue())) {
 					return true;
@@ -496,8 +496,8 @@ public abstract class Type {
 				names.addAll(recursiveTypeNames(b));				
 			}
 			return names;
-		} else if(t instanceof Tuple) {			
-			Tuple tt = (Tuple) t;
+		} else if(t instanceof Record) {			
+			Record tt = (Record) t;
 			HashSet<String> names = new HashSet<String>();
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				names.addAll(recursiveTypeNames(b.getValue()));				
@@ -553,8 +553,8 @@ public abstract class Type {
 				bounds.add((NonUnion)renameRecursiveTypes(b, binding));				
 			}
 			return T_UNION(bounds);			
-		} else if(t instanceof Tuple) {			
-			Tuple tt = (Tuple) t;			
+		} else if(t instanceof Record) {			
+			Record tt = (Record) t;			
 			HashMap<String,Type> fields = new HashMap<String,Type>();
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				fields.put(b.getKey(), renameRecursiveTypes(b.getValue(),
@@ -615,8 +615,8 @@ public abstract class Type {
 				bounds.add((NonUnion)substituteRecursiveTypes(b, binding));				
 			}
 			return T_UNION(bounds);			
-		} else if(t instanceof Tuple) {			
-			Tuple tt = (Tuple) t;			
+		} else if(t instanceof Record) {			
+			Record tt = (Record) t;			
 			HashMap<String,Type> fields = new HashMap<String,Type>();
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				fields.put(b.getKey(), substituteRecursiveTypes(b.getValue(),
@@ -680,8 +680,8 @@ public abstract class Type {
 				}
 			}
 			return false;
-		} else if(t instanceof Type.Tuple) {			
-			Type.Tuple tt = (Tuple) t;
+		} else if(t instanceof Type.Record) {			
+			Type.Record tt = (Record) t;
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				if (isOpenRecursive(key,b.getValue())) {
 					return true;
@@ -727,10 +727,10 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Type.Tuple effectiveTupleType(Type t) {
+	public static Type.Record effectiveTupleType(Type t) {
 
-		if(t instanceof Type.Tuple) {
-			return (Type.Tuple) t;
+		if(t instanceof Type.Record) {
+			return (Type.Record) t;
 		} else if(t instanceof Type.Union) {
 			Type.Union ut = (Type.Union) t;
 			return effectiveTupleType(commonType(ut.bounds));
@@ -753,7 +753,7 @@ public abstract class Type {
 	private static Type commonType(Collection<? extends Type> types) {		
 		Type type = types.iterator().next();
 		
-		if(type instanceof Type.Tuple) {
+		if(type instanceof Type.Record) {
 			return commonTupleType(types);
 		} else if(type instanceof Type.List) {
 			// FIXME: to do			
@@ -764,13 +764,13 @@ public abstract class Type {
 		return null;		
 	}
 
-	private static Type.Tuple commonTupleType(Collection<? extends Type> types) {
-		Type.Tuple rt = null;
+	private static Type.Record commonTupleType(Collection<? extends Type> types) {
+		Type.Record rt = null;
 		for (Type pt : types) {
-			if(!(pt instanceof Type.Tuple)) {
+			if(!(pt instanceof Type.Record)) {
 				return null;
 			}
-			Type.Tuple tt = (Type.Tuple) pt;
+			Type.Record tt = (Type.Record) pt;
 			if (rt == null) {
 				rt = tt;
 			} else {
@@ -783,7 +783,7 @@ public abstract class Type {
 					}
 				}				
 				
-				rt = new Type.Tuple(it);
+				rt = new Type.Record(it);
 			}
 		}
 		if (rt != null) {				
@@ -1068,15 +1068,15 @@ public abstract class Type {
 			return "process " + element;
 		}
 	}
-	public static final class Tuple extends NonUnion {
+	public static final class Record extends NonUnion {
 		public final HashMap<String,Type> types;
 		
-		private Tuple(Map<String,Type> types) {			
+		private Record(Map<String,Type> types) {			
 			this.types = new HashMap<String,Type>(types);			
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Tuple) {
-				Tuple l = (Tuple) o;
+			if(o instanceof Record) {
+				Record l = (Record) o;
 				return types.equals(l.types);
 			}
 			return false;

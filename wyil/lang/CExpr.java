@@ -646,7 +646,7 @@ public abstract class CExpr {
 		}
 
 		public Type type() {					
-			Type.Tuple tt = Type.effectiveTupleType(lhs.type());			
+			Type.Record tt = Type.effectiveTupleType(lhs.type());			
 			if(tt == null) {
 				return Type.T_VOID;
 			}

@@ -62,8 +62,8 @@ public class WhileyType implements BytecodeAttribute {
 		} else if(type instanceof Type.Set) {
 			Type.Set st = (Type.Set) type;
 			addPoolItems(st.element,constantPool);
-		} else if(type instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) type;
+		} else if(type instanceof Type.Record) {
+			Type.Record tt = (Type.Record) type;
 			for(Map.Entry<String,Type> p : tt.types.entrySet()) {
 				Constant.Utf8 utf8 = new Constant.Utf8(p.getKey());
 				Constant.addPoolItem(utf8,constantPool);
@@ -123,8 +123,8 @@ public class WhileyType implements BytecodeAttribute {
 			Type.Set st = (Type.Set) t;
 			writer.write_u1(SET_TYPE );			
 			write(st.element,writer,constantPool);
-		} else if(t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
+		} else if(t instanceof Type.Record) {
+			Type.Record tt = (Type.Record) t;
 			writer.write_u1(TUPLE_TYPE );
 			// FIXME: bug here if number of entries > 64K
 			writer.write_u2(tt.types.size());

@@ -482,8 +482,8 @@ public class ClassFileBuilder {
 					stmt, bytecodes);			
 		} else if(src instanceof Type.Set) {
 			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
-		} else if(src instanceof Type.Tuple || Type.effectiveTupleType(src) != null) {				
-			translateTypeTest(trueTarget, src, (Type.Tuple) test, stmt,
+		} else if(src instanceof Type.Record || Type.effectiveTupleType(src) != null) {				
+			translateTypeTest(trueTarget, src, (Type.Record) test, stmt,
 					bytecodes);			
 		} else if(test instanceof Type.Union){
 			Type.Union tt = (Type.Union) test;
@@ -534,14 +534,14 @@ public class ClassFileBuilder {
 			return Type.T_LIST(Type.T_ANY);
 		} else if (type instanceof Type.Set) {
 			return Type.T_SET(Type.T_ANY);
-		} else if (type instanceof Type.Tuple) {
+		} else if (type instanceof Type.Record) {
 			return Type.T_TUPLE(new HashMap<String,Type>());
 		}
 		return type;
 	}
 	
 	protected void translateTypeTest(String trueTarget, Type src,
-			Type.Tuple test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
+			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
 		
 		if(src instanceof Type.Union) {
 			// Here, all bounds are guaranteed to be of tuple type.
@@ -552,7 +552,7 @@ public class ClassFileBuilder {
 			
 			for(Type.NonUnion nt : ut.bounds) {
 				if(!Type.isSubtype(test, nt)) {
-					Type.Tuple tt = (Type.Tuple) nt;
+					Type.Record tt = (Type.Record) nt;
 					candidates.removeAll(tt.types.keySet());
 				}
 			}			
@@ -568,8 +568,8 @@ public class ClassFileBuilder {
 				return;
 			}
 			// could do better here
-		} else if(src instanceof Type.Tuple) {
-			Type.Tuple st = (Type.Tuple) src;
+		} else if(src instanceof Type.Record) {
+			Type.Record st = (Type.Record) src;
 			// could do better here
 		} else if(src instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) src;			
@@ -1166,7 +1166,7 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));					
 		} else if(lhs instanceof CExpr.TupleAccess) {		
 			CExpr.TupleAccess la = (CExpr.TupleAccess) lhs;
-			Type.Tuple tt = (Type.Tuple) Type.effectiveTupleType(la.lhs.type());
+			Type.Record tt = (Type.Record) Type.effectiveTupleType(la.lhs.type());
 			Type element_t = tt.types.get(la.field);
 			addWriteConversion(element_t, bytecodes);
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
@@ -1200,7 +1200,7 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(WHILEYSET);
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "clone", ftype,
 					Bytecode.VIRTUAL));
-		} else if (t instanceof Type.Tuple) {
+		} else if (t instanceof Type.Record) {
 			JvmType.Function ftype = new JvmType.Function(WHILEYTUPLE);
 			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "clone", ftype,
 					Bytecode.VIRTUAL));
@@ -1290,8 +1290,8 @@ public class ClassFileBuilder {
 			convert((Type.Set) toType, (Type.List) fromType, slots, bytecodes);			
 		} else if(toType instanceof Type.Set && fromType instanceof Type.Set) {
 			convert((Type.Set) toType, (Type.Set) fromType, slots, bytecodes);			
-		} else if(toType instanceof Type.Tuple && fromType instanceof Type.Tuple) {
-			convert((Type.Tuple) toType, (Type.Tuple) fromType, slots, bytecodes);
+		} else if(toType instanceof Type.Record && fromType instanceof Type.Record) {
+			convert((Type.Record) toType, (Type.Record) fromType, slots, bytecodes);
 		} else {
 			// every other kind of conversion is either a syntax error (which
 			// should have been caught by TypeChecker); or, a nop (since no
@@ -1437,7 +1437,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slots.get(tmp),WHILEYSET));
 	}
 	
-	public void convert(Type.Tuple toType, Type.Tuple fromType,
+	public void convert(Type.Record toType, Type.Record fromType,
 			HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		slots = (HashMap) slots.clone();
@@ -1504,7 +1504,7 @@ public class ClassFileBuilder {
 			return WHILEYLIST;
 		} else if(t instanceof Type.Set) {
 			return WHILEYSET;
-		} else if(t instanceof Type.Tuple) {
+		} else if(t instanceof Type.Record) {
 			return WHILEYTUPLE;
 		} else if(t instanceof Type.Process) {
 			return WHILEYPROCESS;
@@ -1515,7 +1515,7 @@ public class ClassFileBuilder {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
 			// contains ?
-			Type.Tuple tt = Type.effectiveTupleType(t);
+			Type.Record tt = Type.effectiveTupleType(t);
 			if(tt != null) {
 				return WHILEYTUPLE;
 			} else {
@@ -1595,8 +1595,8 @@ public class ClassFileBuilder {
 				r += type2str(b);
 			}			
 			return r;
-		} else if(t instanceof Type.Tuple) {
-			Type.Tuple st = (Type.Tuple) t;
+		} else if(t instanceof Type.Record) {
+			Type.Record st = (Type.Record) t;
 			ArrayList<String> keys = new ArrayList<String>(st.types.keySet());
 			Collections.sort(keys);
 			String r="(";

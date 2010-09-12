@@ -141,7 +141,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			CExpr access = exprs.get(i);			
 			if(access instanceof TupleAccess){				
 				TupleAccess ta = (TupleAccess) lval;
-				Type.Tuple tt = Type.effectiveTupleType(ta.lhs.type());
+				Type.Record tt = Type.effectiveTupleType(ta.lhs.type());
 				Pair<WExpr, WFormula> src = infer(ta.lhs, elem);
 				WExpr nsrc = src.first().substitute(binding);
 				for(String field : tt.types.keySet()) {
@@ -811,8 +811,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		} else if(type instanceof Type.Set) {
 			Type.Set tl = (Type.Set) type;
 			return new WSetType(convert(tl.element));			
-		} else if(type instanceof Type.Tuple) {
-			Type.Tuple tl = (Type.Tuple) type;
+		} else if(type instanceof Type.Record) {
+			Type.Record tl = (Type.Record) type;
 			ArrayList<String> keys = new ArrayList<String>(tl.types.keySet());
 			ArrayList<wyone.util.Pair<String,WType>> types = new ArrayList();
 			Collections.sort(keys);
