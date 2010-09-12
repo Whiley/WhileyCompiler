@@ -705,10 +705,10 @@ public class ClassFileBuilder {
 			translate((CExpr.UnOp)r,slots,bytecodes);
 		} else if(r instanceof CExpr.NaryOp) {
 			translate((CExpr.NaryOp)r,slots,bytecodes);
-		} else if(r instanceof CExpr.Tuple) {
-			translate((CExpr.Tuple)r,slots,bytecodes);
-		} else if(r instanceof CExpr.TupleAccess) {
-			translate((CExpr.TupleAccess)r,slots,bytecodes);
+		} else if(r instanceof CExpr.Record) {
+			translate((CExpr.Record)r,slots,bytecodes);
+		} else if(r instanceof CExpr.RecordAccess) {
+			translate((CExpr.RecordAccess)r,slots,bytecodes);
 		} else if(r instanceof CExpr.Invoke) {
 			translate((CExpr.Invoke)r,slots,bytecodes);
 		} else {
@@ -736,7 +736,7 @@ public class ClassFileBuilder {
 		addReadConversion(v.type(),bytecodes);	
 	}
 	
-	public void translate(CExpr.TupleAccess c, HashMap<String, Integer> slots,
+	public void translate(CExpr.RecordAccess c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		translate(c.lhs, slots, bytecodes);
 		
@@ -747,7 +747,7 @@ public class ClassFileBuilder {
 		addReadConversion(et,bytecodes);
 	}
 
-	public void translate(CExpr.Tuple expr, HashMap<String, Integer> slots,
+	public void translate(CExpr.Record expr, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 		construct(WHILEYTUPLE, slots, bytecodes);		
@@ -1137,8 +1137,8 @@ public class ClassFileBuilder {
 			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
 			translate(v.src,slots,bytecodes);			
 			translate(v.index,slots,bytecodes);								
-		} else if(lhs instanceof CExpr.TupleAccess) {
-			CExpr.TupleAccess la = (CExpr.TupleAccess) lhs;
+		} else if(lhs instanceof CExpr.RecordAccess) {
+			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
 			translate(la.lhs, slots, bytecodes);
 			// FIXME: new any type is a hack, but it works
 			convert(Type.T_ANY,la.lhs.type(),slots, bytecodes);
@@ -1164,8 +1164,8 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_INTEGER,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.VIRTUAL));					
-		} else if(lhs instanceof CExpr.TupleAccess) {		
-			CExpr.TupleAccess la = (CExpr.TupleAccess) lhs;
+		} else if(lhs instanceof CExpr.RecordAccess) {		
+			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
 			Type.Record tt = (Type.Record) Type.effectiveTupleType(la.lhs.type());
 			Type element_t = tt.types.get(la.field);
 			addWriteConversion(element_t, bytecodes);

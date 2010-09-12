@@ -122,8 +122,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			CExpr.ListAccess c = (CExpr.ListAccess)rval;
 			addPoolItems(c.src,constantPool);			
 			addPoolItems(c.index,constantPool);
-		} else if(rval instanceof CExpr.TupleAccess) {
-			CExpr.TupleAccess c = (CExpr.TupleAccess)rval;
+		} else if(rval instanceof CExpr.RecordAccess) {
+			CExpr.RecordAccess c = (CExpr.RecordAccess)rval;
 			addPoolItems(c.lhs,constantPool);			
 			constantPool.add(new Constant.Utf8(c.field));
 		} 	
@@ -243,8 +243,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			write((CExpr.Invoke)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.ListAccess) {
 			write((CExpr.ListAccess)rval,writer,constantPool);
-		} else if(rval instanceof CExpr.TupleAccess) {
-			write((CExpr.TupleAccess)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.RecordAccess) {
+			write((CExpr.RecordAccess)rval,writer,constantPool);
 		} else {
 			throw new IllegalArgumentException("Unknown expression encountered: " + rval);
 		}
@@ -332,7 +332,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		write(expr.index,writer,constantPool);
 	}
 	
-	public static void write(CExpr.TupleAccess expr, BinaryOutputStream writer,
+	public static void write(CExpr.RecordAccess expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(TUPLEACCESS);
 		write(expr.lhs,writer,constantPool);
@@ -678,7 +678,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				CExpr lhs = readCExpr(reader,constantPool);
 				int idx = reader.read_u2();
 				Constant.Utf8 field = (Constant.Utf8) constantPool.get(idx);
-				return CExpr.TUPLEACCESS(lhs,field.str);			
+				return CExpr.RECORDACCESS(lhs,field.str);			
 			}			
 			case SETGEN:				
 			case LISTGEN:

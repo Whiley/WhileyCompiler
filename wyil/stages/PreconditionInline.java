@@ -175,16 +175,16 @@ public class PreconditionInline implements ModuleTransform {
 			return CExpr.UNOP(bop.op,transform(bop.rhs, stmt, inserts));
 		} else if (r instanceof NaryOp) {
 			return transform((NaryOp)r,stmt,inserts);			
-		} else if (r instanceof Tuple) {
-			Tuple tup = (Tuple) r;
+		} else if (r instanceof Record) {
+			Record tup = (Record) r;
 			HashMap<String,CExpr> values = new HashMap<String,CExpr>();
 			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
 				values.put(e.getKey(),transform(e.getValue(), stmt, inserts));				
 			}
-			return CExpr.TUPLE(values);
-		} else if (r instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) r;
-			return CExpr.TUPLEACCESS(transform(ta.lhs, stmt, inserts),
+			return CExpr.RECORD(values);
+		} else if (r instanceof RecordAccess) {
+			RecordAccess ta = (RecordAccess) r;
+			return CExpr.RECORDACCESS(transform(ta.lhs, stmt, inserts),
 					ta.field);
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;							

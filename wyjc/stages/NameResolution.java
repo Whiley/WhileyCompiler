@@ -264,10 +264,10 @@ public class NameResolution {
 				resolve((Invoke)e, environment, imports);
 			} else if (e instanceof Comprehension) {
 				resolve((Comprehension) e, environment, imports);
-			} else if (e instanceof TupleAccess) {
-				resolve((TupleAccess) e, environment, imports);
-			} else if (e instanceof TupleGen) {
-				resolve((TupleGen) e, environment, imports);
+			} else if (e instanceof RecordAccess) {
+				resolve((RecordAccess) e, environment, imports);
+			} else if (e instanceof RecordGen) {
+				resolve((RecordGen) e, environment, imports);
 			} else if(e instanceof TypeConst) {
 				resolve((TypeConst) e, environment, imports);
 			} else {				
@@ -354,7 +354,7 @@ public class NameResolution {
 		}	
 	}	
 		
-	protected void resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
+	protected void resolve(RecordGen sg, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) throws ResolveError {		
 		for(Map.Entry<String,Expr> e : sg.fields.entrySet()) {
 			resolve(e.getValue(),environment,imports);
@@ -367,7 +367,7 @@ public class NameResolution {
 	}
 	
 	
-	protected void resolve(TupleAccess sg, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {
+	protected void resolve(RecordAccess sg, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {
 		resolve(sg.lhs,environment,imports);			
 	}
 	
@@ -378,8 +378,8 @@ public class NameResolution {
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			resolve(st.element,imports);
-		} else if(t instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+		} else if(t instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				resolve(e.getValue(),imports);
 			}
@@ -423,10 +423,10 @@ public class NameResolution {
 		// The primary problem is that we need to expand expressions involved
 		// names exposed in this way into quantified
 		// expressions.		
-		if(t instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+		if(t instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
-				Expr s = new Expr.TupleAccess(src, e
+				Expr s = new Expr.RecordAccess(src, e
 						.getKey(), src.attribute(Attribute.Source.class));
 				addExposedNames(s,e.getValue(),environment);
 				Set<Expr> aliases = environment.get(e.getKey());

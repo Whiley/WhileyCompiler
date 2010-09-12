@@ -80,9 +80,9 @@ public interface UnresolvedType extends SyntacticElement {
 			this.element = element;
 		}
 	}
-	public static final class Tuple extends SyntacticElement.Impl implements NonUnion {
+	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,UnresolvedType> types;
-		public Tuple(Map<String,UnresolvedType> types, Attribute... attributes) {
+		public Record(Map<String,UnresolvedType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(

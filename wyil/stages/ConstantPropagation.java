@@ -219,10 +219,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			return infer((NaryOp) e, stmt, environment);
 		} else if (e instanceof ListAccess) {
 			return infer((ListAccess) e, stmt, environment);
-		} else if (e instanceof Tuple) {
-			return infer((Tuple) e, stmt, environment);
-		} else if (e instanceof TupleAccess) {
-			return infer((TupleAccess) e, stmt, environment);
+		} else if (e instanceof Record) {
+			return infer((Record) e, stmt, environment);
+		} else if (e instanceof RecordAccess) {
+			return infer((RecordAccess) e, stmt, environment);
 		} else if (e instanceof Invoke) {
 			return infer((Invoke) e, stmt, environment);
 		}
@@ -302,7 +302,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		return CExpr.LISTACCESS(src,idx);
 	}
 		
-	protected CExpr infer(TupleAccess e, Stmt stmt,
+	protected CExpr infer(RecordAccess e, Stmt stmt,
 			HashMap<String, Value> environment) {
 		CExpr lhs = infer(e.lhs, stmt, environment);
 		if (lhs instanceof Value.Record) {
@@ -314,10 +314,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			}
 			return v;
 		}
-		return CExpr.TUPLEACCESS(lhs, e.field);
+		return CExpr.RECORDACCESS(lhs, e.field);
 	}
 	
-	protected CExpr infer(Tuple e, Stmt stmt, HashMap<String,Value> environment) {
+	protected CExpr infer(Record e, Stmt stmt, HashMap<String,Value> environment) {
 		HashMap args = new HashMap();
 		boolean allValues = true;
 		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
@@ -328,7 +328,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		if(allValues) {
 			return Value.V_RECORD(args);
 		} else {
-			return CExpr.TUPLE(args);
+			return CExpr.RECORD(args);
 		}
 	}
 	

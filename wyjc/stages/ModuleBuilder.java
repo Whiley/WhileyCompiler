@@ -452,8 +452,8 @@ public class ModuleBuilder {
 				blk.add(new Code.ForallEnd(label));
 			}
 			return new Pair<Type, Block>(rt, blk);
-		} else if (t instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+		} else if (t instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();
 			Block blk = null;
 			CExpr.Variable tmp = CExpr.VAR(Type.T_ANY, "$");
@@ -465,7 +465,7 @@ public class ModuleBuilder {
 						blk = new Block();
 					}
 					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-					binding.put("$", CExpr.TUPLEACCESS(tmp, e.getKey()));
+					binding.put("$", CExpr.RECORDACCESS(tmp, e.getKey()));
 					blk.addAll(Block.substitute(binding, p.second()));
 				}
 			}
@@ -1060,11 +1060,11 @@ public class ModuleBuilder {
 			} else if (e instanceof Invoke) {
 				return resolveCondition(target, (Invoke) e, freeReg,
 						environment);
-			} else if (e instanceof TupleAccess) {
-				return resolveCondition(target, (TupleAccess) e, freeReg,
+			} else if (e instanceof RecordAccess) {
+				return resolveCondition(target, (RecordAccess) e, freeReg,
 						environment);
-			} else if (e instanceof TupleGen) {
-				return resolveCondition(target, (TupleGen) e, freeReg,
+			} else if (e instanceof RecordGen) {
+				return resolveCondition(target, (RecordGen) e, freeReg,
 						environment);
 			} else if (e instanceof ListAccess) {
 				return resolveCondition(target, (ListAccess) e, freeReg,
@@ -1238,7 +1238,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolveCondition(String target, TupleAccess v, int freeReg,
+	protected Block resolveCondition(String target, RecordAccess v, int freeReg,
 			HashMap<String,Pair<Type,Block>> environment) {
 		Pair<CExpr, Block> la = resolve(freeReg, v, environment);
 		CExpr lhs = la.first();
@@ -1342,10 +1342,10 @@ public class ModuleBuilder {
 				return resolve(freeReg, (Invoke) e, environment);
 			} else if (e instanceof Comprehension) {
 				return resolve(freeReg, (Comprehension) e, environment);
-			} else if (e instanceof TupleAccess) {
-				return resolve(freeReg, (TupleAccess) e, environment);
-			} else if (e instanceof TupleGen) {
-				return resolve(freeReg, (TupleGen) e, environment);
+			} else if (e instanceof RecordAccess) {
+				return resolve(freeReg, (RecordAccess) e, environment);
+			} else if (e instanceof RecordGen) {
+				return resolve(freeReg, (RecordGen) e, environment);
 			} else {
 				syntaxError("unknown expression encountered: "
 						+ e.getClass().getName(), filename, e);
@@ -1635,7 +1635,7 @@ public class ModuleBuilder {
 		return new Pair<CExpr, Block>(lhs, blk);
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, TupleGen sg,
+	protected Pair<CExpr, Block> resolve(int freeReg, RecordGen sg,
 			HashMap<String,Pair<Type,Block>> environment) {
 		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
 		Block blk = new Block();
@@ -1644,13 +1644,13 @@ public class ModuleBuilder {
 			values.put(e.getKey(), tb.first());
 			blk.addAll(tb.second());
 		}
-		return new Pair<CExpr, Block>(CExpr.TUPLE(values), blk);
+		return new Pair<CExpr, Block>(CExpr.RECORD(values), blk);
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, TupleAccess sg,
+	protected Pair<CExpr, Block> resolve(int freeReg, RecordAccess sg,
 			HashMap<String,Pair<Type,Block>> environment) {
 		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs, environment);
-		return new Pair<CExpr, Block>(CExpr.TUPLEACCESS(lhs.first(), sg.name),
+		return new Pair<CExpr, Block>(CExpr.RECORDACCESS(lhs.first(), sg.name),
 				lhs.second());
 	}
 
@@ -1699,8 +1699,8 @@ public class ModuleBuilder {
 				blk.add(new Code.ForallEnd(label));
 			}
 			return new Pair<Type, Block>(rt, blk);
-		} else if (t instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+		} else if (t instanceof UnresolvedType.Record) {
+			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();
 			Block blk = null;
 			CExpr.Variable tmp = CExpr.VAR(Type.T_VOID, "$");
@@ -1712,7 +1712,7 @@ public class ModuleBuilder {
 						blk = new Block();
 					}
 					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-					binding.put("$", CExpr.TUPLEACCESS(tmp, e.getKey()));
+					binding.put("$", CExpr.RECORDACCESS(tmp, e.getKey()));
 					blk.addAll(Block.substitute(binding, p.second()));
 				}
 			}
@@ -1856,8 +1856,8 @@ public class ModuleBuilder {
 		} else if (e instanceof ListAccess) {
 			ListAccess la = (ListAccess) e;
 			return flattern(la.src);
-		} else if (e instanceof TupleAccess) {
-			TupleAccess la = (TupleAccess) e;
+		} else if (e instanceof RecordAccess) {
+			RecordAccess la = (RecordAccess) e;
 			return flattern(la.lhs);
 		} else if (e instanceof UnOp) {
 			UnOp la = (UnOp) e;

@@ -34,13 +34,13 @@ public abstract class CExpr {
 			for(CExpr arg : v.args) {
 				match(arg,match,uses);
 			}
-		} else if (r instanceof Tuple) {
-			Tuple tup = (Tuple) r;			
+		} else if (r instanceof Record) {
+			Record tup = (Record) r;			
 			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
 				match(e.getValue(),match,uses);				
 			}			
-		} else if (r instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) r;
+		} else if (r instanceof RecordAccess) {
+			RecordAccess ta = (RecordAccess) r;
 			match(ta.lhs,match,uses);
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;			
@@ -96,16 +96,16 @@ public abstract class CExpr {
 				args.add(substitute(binding, arg));
 			}
 			return NARYOP(bop.op, args);
-		} else if (r instanceof Tuple) {
-			Tuple tup = (Tuple) r;
+		} else if (r instanceof Record) {
+			Record tup = (Record) r;
 			HashMap<String,CExpr> values = new HashMap<String,CExpr>();
 			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
 				values.put(e.getKey(),substitute(binding, e.getValue()));				
 			}
-			return TUPLE(values);
-		} else if (r instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) r;
-			return TUPLEACCESS(substitute(binding, ta.lhs),
+			return RECORD(values);
+		} else if (r instanceof RecordAccess) {
+			RecordAccess ta = (RecordAccess) r;
+			return RECORDACCESS(substitute(binding, ta.lhs),
 					ta.field);
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;									
@@ -149,16 +149,16 @@ public abstract class CExpr {
 				args.add(registerShift(shift, arg));
 			}
 			return NARYOP(bop.op, args);
-		} else if (r instanceof Tuple) {
-			Tuple tup = (Tuple) r;
+		} else if (r instanceof Record) {
+			Record tup = (Record) r;
 			HashMap<String,CExpr> values = new HashMap<String,CExpr>();
 			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
 				values.put(e.getKey(),registerShift(shift, e.getValue()));				
 			}
-			return TUPLE(values);
-		} else if (r instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) r;
-			return TUPLEACCESS(registerShift(shift, ta.lhs),
+			return RECORD(values);
+		} else if (r instanceof RecordAccess) {
+			RecordAccess ta = (RecordAccess) r;
+			return RECORDACCESS(registerShift(shift, ta.lhs),
 					ta.field);
 		} else if(r instanceof Invoke) {
 			Invoke a = (Invoke) r;						
@@ -210,8 +210,8 @@ public abstract class CExpr {
 		} else if(lhs instanceof ListAccess) {
 			ListAccess la = (ListAccess) lhs;
 			return extractLVar(la.src);
-		} else if(lhs instanceof TupleAccess) {
-			TupleAccess la = (TupleAccess) lhs;
+		} else if(lhs instanceof RecordAccess) {
+			RecordAccess la = (RecordAccess) lhs;
 			return extractLVar(la.lhs);
 		} else if(lhs instanceof UnOp) {
 			UnOp la = (UnOp) lhs;
@@ -251,12 +251,12 @@ public abstract class CExpr {
 		return get(new NaryOp(nop, args));
 	}
 	
-	public static Tuple TUPLE(Map<String,CExpr> values) {
-		return get(new Tuple(values));
+	public static Record RECORD(Map<String,CExpr> values) {
+		return get(new Record(values));
 	}
 	
-	public static TupleAccess TUPLEACCESS(CExpr lhs, String field) {
-		return get(new TupleAccess(lhs,field));
+	public static RecordAccess RECORDACCESS(CExpr lhs, String field) {
+		return get(new RecordAccess(lhs,field));
 	}
 	
 	public static Invoke INVOKE(Type.Fun type, NameID name, int casenum,
@@ -596,10 +596,10 @@ public abstract class CExpr {
 		SUBLIST
 	}
 	
-	public final static class Tuple extends CExpr {			
+	public final static class Record extends CExpr {			
 		public final Map<String,CExpr> values;		
 		
-		Tuple(Map<String,CExpr> values) {
+		Record(Map<String,CExpr> values) {
 			this.values = Collections.unmodifiableMap(values); 
 		}
 		
@@ -613,8 +613,8 @@ public abstract class CExpr {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Tuple) {
-				Tuple a = (Tuple) o;
+			if(o instanceof Record) {
+				Record a = (Record) o;
 				return values.equals(a.values);
 				
 			}
@@ -636,11 +636,11 @@ public abstract class CExpr {
 		}
 	}
 	
-	public final static class TupleAccess extends LVal {		
+	public final static class RecordAccess extends LVal {		
 		public final CExpr lhs;
 		public final String field;
 
-		TupleAccess(CExpr lhs, String field) {			
+		RecordAccess(CExpr lhs, String field) {			
 			this.lhs = lhs;
 			this.field = field;
 		}
@@ -659,8 +659,8 @@ public abstract class CExpr {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof TupleAccess) {
-				TupleAccess a = (TupleAccess) o;
+			if (o instanceof RecordAccess) {
+				RecordAccess a = (RecordAccess) o;
 				return lhs.equals(a.lhs)
 						&& field.equals(a.field);
 

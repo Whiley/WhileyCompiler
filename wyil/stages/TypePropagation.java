@@ -255,8 +255,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String name = "%" + reg.index;			
 			trueEnv.put(name, Type.greatestLowerBound(type, reg.type));
 			falseEnv.put(name, Type.greatestDifference(reg.type, type));
-		} else if (lhs instanceof TupleAccess) {
-			TupleAccess ta = (TupleAccess) lhs;
+		} else if (lhs instanceof RecordAccess) {
+			RecordAccess ta = (RecordAccess) lhs;
 			Type.Record lhs_t = Type.effectiveTupleType(ta.lhs.type());
 			if (lhs_t != null) {
 				HashMap<String, Type> ntypes = new HashMap<String, Type>(
@@ -451,10 +451,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return infer((NaryOp) e, stmt, environment);
 		} else if (e instanceof ListAccess) {
 			return infer((ListAccess) e, stmt, environment);
-		} else if (e instanceof Tuple) {
-			return infer((Tuple) e, stmt, environment);
-		} else if (e instanceof TupleAccess) {
-			return infer((TupleAccess) e, stmt, environment);
+		} else if (e instanceof Record) {
+			return infer((Record) e, stmt, environment);
+		} else if (e instanceof RecordAccess) {
+			return infer((RecordAccess) e, stmt, environment);
 		} else if (e instanceof Invoke) {
 			return infer((Invoke) e, stmt, environment);
 		}
@@ -566,7 +566,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return CExpr.LISTACCESS(src,idx);
 	}
 		
-	protected CExpr infer(TupleAccess e, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr lhs = infer(e.lhs,stmt,environment);				
 		Type.Record ett = Type.effectiveTupleType(lhs.type());				
 		if (ett == null) {
@@ -576,15 +576,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (ft == null) {
 			syntaxError("type has no field named " + e.field, filename, stmt);
 		}
-		return CExpr.TUPLEACCESS(lhs, e.field);
+		return CExpr.RECORDACCESS(lhs, e.field);
 	}
 	
-	protected CExpr infer(Tuple e, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(Record e, Stmt stmt, HashMap<String,Type> environment) {
 		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
 		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
 			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
 		}
-		return CExpr.TUPLE(args);
+		return CExpr.RECORD(args);
 	}
 	
 	protected CExpr infer(Invoke ivk, Stmt stmt,

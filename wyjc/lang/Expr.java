@@ -178,12 +178,12 @@ public interface Expr extends SyntacticElement {
 		SOME, // implies value == null
 	}
 	
-	public static class TupleAccess extends SyntacticElement.Impl implements
+	public static class RecordAccess extends SyntacticElement.Impl implements
 			LVal {
 		public final Expr lhs;
 		public final String name;
 
-		public TupleAccess(Expr lhs, String name, Attribute... attributes) {
+		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.name = name;
@@ -194,10 +194,10 @@ public interface Expr extends SyntacticElement {
 		}
 	}		
 
-	public static class TupleGen extends SyntacticElement.Impl implements Expr {
+	public static class RecordGen extends SyntacticElement.Impl implements Expr {
 		public final HashMap<String,Expr> fields;		
 		
-		public TupleGen(Map<String, Expr> fields, Attribute... attributes) {
+		public RecordGen(Map<String, Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new HashMap<String, Expr>(fields);
 		}

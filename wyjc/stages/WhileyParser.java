@@ -737,12 +737,12 @@ public class WhileyParser {
 				} else {					
 					lhs = new Expr.UnOp(Expr.UOp.PROCESSACCESS, lhs,
 							sourceAttr(start, index - 1));
-					lhs = new Expr.TupleAccess(lhs, name, sourceAttr(start,index - 1));			
+					lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));			
 				}
 			} else {				
 				match(Dot.class);
 				String name = matchIdentifier().text;				
-				lhs =  new Expr.TupleAccess(lhs, name, sourceAttr(start,index - 1));
+				lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
 			}
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
@@ -813,7 +813,7 @@ public class WhileyParser {
 				} 
 				match(RightBrace.class);
 
-				return new Expr.TupleGen(exprs,sourceAttr(start, index - 1));
+				return new Expr.RecordGen(exprs,sourceAttr(start, index - 1));
 			} 
 		} else if(token instanceof Star) {
 			// this indicates a process dereference
@@ -1138,7 +1138,7 @@ public class WhileyParser {
 				}
 			}
 			match(RightBrace.class);
-			t = new UnresolvedType.Tuple(types, sourceAttr(start,index-1));
+			t = new UnresolvedType.Record(types, sourceAttr(start,index-1));
 		} else if(token instanceof LeftCurly) {
 			match(LeftCurly.class);
 			t = parseType();

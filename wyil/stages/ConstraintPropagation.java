@@ -139,8 +139,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		WFormula constraint = WTypes.subtypeOf(new WVariable(variable.name()),convert(variable.type()));				
 		for(int i=1;i!=exprs.size();++i) {
 			CExpr access = exprs.get(i);			
-			if(access instanceof TupleAccess){				
-				TupleAccess ta = (TupleAccess) lval;
+			if(access instanceof RecordAccess){				
+				RecordAccess ta = (RecordAccess) lval;
 				Type.Record tt = Type.effectiveTupleType(ta.lhs.type());
 				Pair<WExpr, WFormula> src = infer(ta.lhs, elem);
 				WExpr nsrc = src.first().substitute(binding);
@@ -182,8 +182,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			List<CExpr> f = flattern(la.src, elem);
 			f.add(lval);
 			return f;
-		} else if (lval instanceof TupleAccess) {
-			TupleAccess la = (TupleAccess) lval;
+		} else if (lval instanceof RecordAccess) {
+			RecordAccess la = (RecordAccess) lval;
 			List<CExpr> f = flattern(la.lhs, elem);
 			f.add(lval);
 			return f;
@@ -468,10 +468,10 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				return infer((NaryOp) e, elem);
 			} else if (e instanceof ListAccess) {
 				return infer((ListAccess) e, elem);
-			} else if (e instanceof Tuple) {
-				return infer((Tuple) e, elem);
-			} else if (e instanceof TupleAccess) {
-				return infer((TupleAccess) e, elem);
+			} else if (e instanceof Record) {
+				return infer((Record) e, elem);
+			} else if (e instanceof RecordAccess) {
+				return infer((RecordAccess) e, elem);
 			} else if (e instanceof Invoke) {
 				return infer((Invoke) e, elem);
 			} 
@@ -657,13 +657,13 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		return new Pair<WExpr, WFormula>(rv, constraints);
 	}
 	
-	protected Pair<WExpr,WFormula> infer(TupleAccess ta, SyntacticElement elem) {
+	protected Pair<WExpr,WFormula> infer(RecordAccess ta, SyntacticElement elem) {
 		Pair<WExpr,WFormula> rhs = infer(ta.lhs,elem);
 		return new Pair<WExpr, WFormula>(
 				new WTupleAccess(rhs.first(), ta.field), rhs.second());
 	}
 	
-	protected Pair<WExpr,WFormula> infer(Tuple t, SyntacticElement elem) {
+	protected Pair<WExpr,WFormula> infer(Record t, SyntacticElement elem) {
 		ArrayList<String> fields = new ArrayList<String>(t.values.keySet());
 		ArrayList<WExpr> values = new ArrayList<WExpr>();
 		WFormula constraints = WBool.TRUE;
