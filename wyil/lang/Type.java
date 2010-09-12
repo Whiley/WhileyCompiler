@@ -142,7 +142,7 @@ public abstract class Type {
 			return true;
 		} else if(t1 instanceof Recursive) {
 			Recursive rt1 = (Recursive) t1;
-			Type rt1type = rt1.type;
+			Type rt1type = rt1.type;						
 			
 			if(rt1type == null) {
 				// recursive case, need to unroll
