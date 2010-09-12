@@ -48,16 +48,11 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
 public class AntTask extends MatchingTask {
 	private File srcdir;
 	private boolean noVerificationChecks = false;
-	private boolean noRuntimeChecks = false;
-
+	
 	public void setNvc(boolean b) {		
 		noVerificationChecks=b;
 	}
-	
-	public void setNrc(boolean b) {		
-		noRuntimeChecks=b;
-	}
-	
+		
     public void setSrcdir (File srcdir) {
         this.srcdir = srcdir;
     }
@@ -73,11 +68,9 @@ public class AntTask extends MatchingTask {
         
         // Now, construct the parameters list for whiley.Main.run
         int nparams = files.length;
-        if(noVerificationChecks) { nparams ++; }
-        if(noRuntimeChecks) { nparams ++; }
+        if(noVerificationChecks) { nparams ++; }        
         ArrayList<String> params = new ArrayList<String>();        
-        if(noVerificationChecks) { params.add("-nvc"); }
-        if(noRuntimeChecks) { params.add("-nrc"); }
+        if(noVerificationChecks) { params.add("-Nvc"); }        
         int nfiles = 0;
         for(String f : files) {
         	String fname = srcdir.getPath() + File.separatorChar + f;
