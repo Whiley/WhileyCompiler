@@ -393,43 +393,16 @@ public class ClassFileBuilder {
 			case SUBTYPEEQ:
 			{				
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				String exitLabel = freshLabel();
-				String trueLabel = freshLabel();
-				translateTypeTest(trueLabel,c.lhs.type(), rhs_t, stmt, bytecodes);
-				bytecodes.add(new Bytecode.Goto(exitLabel));
-				bytecodes.add(new Bytecode.Label(trueLabel));
-				if(c.lhs instanceof CExpr.Variable) {					
-					// This covers the limited form of type inference currently
-					// supported in Whiley. Essentially, it works only for the
-					// case where we are testing against a variable.
-					CExpr.Variable v = (CExpr.Variable) c.lhs;					
-					bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
-					translate(c.lhs,slots,bytecodes);
-					addReadConversion(rhs_t,bytecodes);
-					JvmType rhs_jt = convertType(rhs_t);					
-					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));					
-				}
-				bytecodes.add(new Bytecode.Goto(c.target));
-				bytecodes.add(new Bytecode.Label(exitLabel));
+				translateTypeTest(c.target,c.lhs, rhs_t, stmt, slots, bytecodes);				
 				return;				
 			}
 			case NSUBTYPEEQ:
 			{	
 				String trueLabel = freshLabel();
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				translateTypeTest(trueLabel, c.lhs.type(), rhs_t, stmt, bytecodes);
+				translateTypeTest(trueLabel, c.lhs, rhs_t, stmt, slots, bytecodes);
 				bytecodes.add(new Bytecode.Goto(c.target));
-				bytecodes.add(new Bytecode.Label(trueLabel));
-				if(c.lhs instanceof CExpr.Variable) { 
-					// This covers the limited form of type inference currently
-					// supported in Whiley. Essentially, it works only for the
-					// case where we are testing against a variable.
-					CExpr.Variable v = (CExpr.Variable) c.lhs;					
-					translate(c.lhs,slots,bytecodes);
-					addReadConversion(rhs_t,bytecodes);
-					JvmType rhs_jt = convertType(rhs_t);					
-					bytecodes.add(new Bytecode.Store(slots.get(v.name),rhs_jt));								
-				} 
+				bytecodes.add(new Bytecode.Label(trueLabel));				
 				return;
 			}
 			default:
@@ -442,6 +415,49 @@ public class ClassFileBuilder {
 		}
 	}
 	
+	protected void translateTypeTest(String trueTarget, CExpr src, Type test,
+			Stmt stmt, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		
+		// This method (including the helper) is pretty screwed up. It needs a
+		// serious rethink to catch all cases, and to be efficient.
+		
+		Type src_t = src.type();		
+		String exitLabel = freshLabel();
+		String trueLabel = freshLabel();
+		translateTypeTestHelper(trueLabel, src.type(), test, stmt, bytecodes);
+		
+		if(src instanceof CExpr.LVar) {					
+			// This covers the limited form of type inference currently
+			// supported in Whiley. Essentially, it works only for the
+			// case where we are testing against a variable.
+			CExpr.LVar v = (CExpr.LVar) src;				
+			Type gdiff = Type.greatestDifference(src_t,test);
+			translate(src,slots,bytecodes);
+			addReadConversion(gdiff,bytecodes);
+			JvmType rhs_jt = convertType(gdiff);					
+			bytecodes.add(new Bytecode.Store(slots.get(v.name()),rhs_jt));					
+		}
+		
+		bytecodes.add(new Bytecode.Goto(exitLabel));
+		bytecodes.add(new Bytecode.Label(trueLabel));
+		
+		if(src instanceof CExpr.LVar) {					
+			// This covers the limited form of type inference currently
+			// supported in Whiley. Essentially, it works only for the
+			// case where we are testing against a variable.
+			CExpr.LVar v = (CExpr.LVar) src;
+			Type glb = Type.greatestLowerBound(src_t,test);		
+			translate(src,slots,bytecodes);
+			addReadConversion(glb,bytecodes);
+			JvmType rhs_jt = convertType(glb);					
+			bytecodes.add(new Bytecode.Store(slots.get(v.name()),rhs_jt));					
+		}
+		
+		bytecodes.add(new Bytecode.Goto(trueTarget));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+	}
+	
 	// The purpose of this method is to translate a type test. We're testing to
 	// see whether what's on the top of the stack (the value) is a subtype of
 	// the type being tested. The difference between value's static type and
@@ -450,14 +466,13 @@ public class ClassFileBuilder {
 	// perform an instanceof BigInteger. Other situations are trickier. For
 	// example, testing a static type [int]|[bool] against type [int] is harder,
 	// since both are actually instances of java.util.List. 
-	protected void translateTypeTest(String trueTarget, Type src, Type test,
+	protected void translateTypeTestHelper(String trueTarget, Type src, Type test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
 		
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
-		test = Type.greatestLowerBound(src,test);		
-			
-		if(Type.isSubtype(test, src)) {
+		test = Type.greatestLowerBound(src,test);				
+		if(Type.isSubtype(test, src)) {			
 			// in this case, we must succeed.
 			bytecodes.add(new Bytecode.Pop(convertType(src)));
 			bytecodes.add(new Bytecode.Goto(trueTarget));
@@ -492,12 +507,18 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.InstanceOf(target_t));
 			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
 			addCheckCast(target_t,bytecodes);			
-			translateTypeTest(trueTarget,src,test,stmt,bytecodes);
+			translateTypeTestHelper(trueTarget,src,test,stmt,bytecodes);
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(nextLabel));
 			bytecodes.add(new Bytecode.Pop(convertType(test)));
 			bytecodes.add(new Bytecode.Label(exitLabel));
-		} 
+		} else if(src instanceof Type.Recursive) {
+			Type.Recursive tr = (Type.Recursive) src;
+			if(tr.type == null) {
+				syntaxError("Problem with type test for recursive type",filename,stmt);
+			}
+			translateTypeTestHelper(trueTarget,tr.type,test,stmt,bytecodes);
+		}
 	}
 
 	/**
@@ -582,7 +603,7 @@ public class ClassFileBuilder {
 		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
 		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));
-		translateTypeTest(trueTarget,src.element,test.element(),stmt,bytecodes);
+		translateTypeTestHelper(trueTarget,src.element,test.element(),stmt,bytecodes);
 	}
 	
 	protected void translateTypeTest(String falseTarget, Type.Set src, Type test,
