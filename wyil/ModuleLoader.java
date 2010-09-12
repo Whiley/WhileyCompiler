@@ -732,7 +732,7 @@ public class ModuleLoader {
 					lookahead = desc.charAt(index);					
 				}
 				index++; // skip right brace
-				return Type.T_TUPLE(types);	
+				return Type.T_RECORD(types);	
 			}
 			throw new RuntimeException("invalid type descriptor: "
 					+ desc);	

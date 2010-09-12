@@ -609,7 +609,7 @@ public abstract class CExpr {
 				Type t = e.getValue().type();
 				types.put(e.getKey(), t);
 			}
-			return Type.T_TUPLE(types);
+			return Type.T_RECORD(types);
 		}
 		
 		public boolean equals(Object o) {

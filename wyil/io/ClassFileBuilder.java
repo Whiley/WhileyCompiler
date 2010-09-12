@@ -535,7 +535,7 @@ public class ClassFileBuilder {
 		} else if (type instanceof Type.Set) {
 			return Type.T_SET(Type.T_ANY);
 		} else if (type instanceof Type.Record) {
-			return Type.T_TUPLE(new HashMap<String,Type>());
+			return Type.T_RECORD(new HashMap<String,Type>());
 		}
 		return type;
 	}

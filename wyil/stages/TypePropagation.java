@@ -265,7 +265,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				ntypes.put(ta.field, glb);
 				// FIXME: there is some kind of problem here, as we're replacing
 				// one type with an effective type ... seems dodgy.
-				typeInference(ta.lhs, Type.T_TUPLE(ntypes), trueEnv, falseEnv);
+				typeInference(ta.lhs, Type.T_RECORD(ntypes), trueEnv, falseEnv);
 			}
 		}
 	}

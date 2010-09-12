@@ -451,7 +451,7 @@ public abstract class Value extends CExpr {
 			for (Map.Entry<String, Value> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
 			}
-			return Type.T_TUPLE(types);
+			return Type.T_RECORD(types);
 		}
 		public int hashCode() {
 			return values.hashCode();

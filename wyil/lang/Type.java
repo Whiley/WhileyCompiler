@@ -67,7 +67,7 @@ public abstract class Type {
 		return get(new Process(element));
 	}
 	
-	public static Record T_TUPLE(Map<String,Type> types) {
+	public static Record T_RECORD(Map<String,Type> types) {
 		return get(new Record(types));
 	}
 	
@@ -560,7 +560,7 @@ public abstract class Type {
 				fields.put(b.getKey(), renameRecursiveTypes(b.getValue(),
 						binding));				
 			}
-			return T_TUPLE(fields);
+			return T_RECORD(fields);
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
 			String name = binding.get(lt.name);			
@@ -622,7 +622,7 @@ public abstract class Type {
 				fields.put(b.getKey(), substituteRecursiveTypes(b.getValue(),
 						binding));				
 			}
-			return T_TUPLE(fields);
+			return T_RECORD(fields);
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
 			Type type = binding.get(lt.name);
@@ -1087,7 +1087,7 @@ public abstract class Type {
 		public String toString() {
 			ArrayList<String> fields = new ArrayList<String>(types.keySet());
 			Collections.sort(fields);
-			String r = "(";
+			String r = "{";
 			boolean firstTime=true;
 			for(String f : fields) {
 				if(!firstTime) {
@@ -1096,7 +1096,7 @@ public abstract class Type {
 				firstTime=false;
 				r += types.get(f) + " " + f;
 			}
-			return r + ")";
+			return r + "}";
 		}
 	}
 	public static final class Recursive extends NonUnion {

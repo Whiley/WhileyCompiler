@@ -242,7 +242,7 @@ public class WhileyType implements BytecodeAttribute {
 					et = readType(input, constantPool);
 					types.put(key, et);
 				}
-				return Type.T_TUPLE(types);
+				return Type.T_RECORD(types);
 			case UNION_TYPE:
 				nents = input.read_u2();
 				ArrayList<Type.NonUnion> bounds = new ArrayList<Type.NonUnion>();

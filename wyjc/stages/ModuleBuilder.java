@@ -469,7 +469,7 @@ public class ModuleBuilder {
 					blk.addAll(Block.substitute(binding, p.second()));
 				}
 			}
-			Type type = Type.T_TUPLE(types);
+			Type type = Type.T_RECORD(types);
 			// Need to update the self type properly
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$", CExpr.VAR(Type.T_ANY, "$"));
@@ -1716,7 +1716,7 @@ public class ModuleBuilder {
 					blk.addAll(Block.substitute(binding, p.second()));
 				}
 			}
-			Type type = Type.T_TUPLE(types);
+			Type type = Type.T_RECORD(types);
 			// Need to update the self type properly
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$", CExpr.VAR(type, "$"));
