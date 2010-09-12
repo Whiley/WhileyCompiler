@@ -352,8 +352,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			write((Value.Set) val, writer, constantPool);
 		} else if(val instanceof Value.List) {
 			write((Value.List) val, writer, constantPool);
-		} else if(val instanceof Value.Tuple) {
-			write((Value.Tuple) val, writer, constantPool);
+		} else if(val instanceof Value.Record) {
+			write((Value.Record) val, writer, constantPool);
 		} 
 	}
 	
@@ -413,7 +413,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		}
 	}
 	
-	public static void write(Value.Tuple expr, BinaryOutputStream writer,
+	public static void write(Value.Record expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u1(TUPLEVAL);
 		writer.write_u2(expr.values.size());
@@ -614,7 +614,7 @@ public class WhileyBlock implements BytecodeAttribute {
 					Value lhs = (Value) readCExpr(reader, constantPool);
 					tvs.put(utf8.str, lhs);
 				}
-				return Value.V_TUPLE(tvs);
+				return Value.V_RECORD(tvs);
 			}
 			case NEG:
 			case NOT:

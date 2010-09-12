@@ -514,8 +514,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				vals.add(infer(e,elem));
 			}
 			return new WListVal(vals);
-		} else if(v instanceof Value.Tuple) {
-			Value.Tuple vt = (Value.Tuple) v;
+		} else if(v instanceof Value.Record) {
+			Value.Record vt = (Value.Record) v;
 			ArrayList<String> fields = new ArrayList<String>(vt.values.keySet());
 			ArrayList<WValue> values = new ArrayList<WValue>();
 			Collections.sort(fields);

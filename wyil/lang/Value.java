@@ -25,8 +25,8 @@ public abstract class Value extends CExpr {
 		return get(new List(values));
 	}
 	
-	public static Tuple V_TUPLE(Map<String,Value> values) {
-		return get(new Tuple(values));
+	public static Record V_RECORD(Map<String,Value> values) {
+		return get(new Record(values));
 	}
 
 	public static TypeConst V_TYPE(Type type) {
@@ -440,9 +440,9 @@ public abstract class Value extends CExpr {
 		}
 	}
 	
-	public static class Tuple extends Value {
+	public static class Record extends Value {
 		public final HashMap<String,Value> values;
-		private Tuple(Map<String,Value> value) {
+		private Record(Map<String,Value> value) {
 			this.values = new HashMap<String,Value>(value);
 		}
 
@@ -457,8 +457,8 @@ public abstract class Value extends CExpr {
 			return values.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Tuple) {
-				Tuple i = (Tuple) o;
+			if(o instanceof Record) {
+				Record i = (Record) o;
 				return values.equals(i.values);
 			}
 			return false;
@@ -471,7 +471,7 @@ public abstract class Value extends CExpr {
 					r += ",";
 				}
 				firstTime=false;
-				r += v.getKey() + ":" + v.getValue();
+				r += v.getKey() + ":=" + v.getValue();
 			}
 			return r + "}";
 		}

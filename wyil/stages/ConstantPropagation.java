@@ -305,8 +305,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 	protected CExpr infer(TupleAccess e, Stmt stmt,
 			HashMap<String, Value> environment) {
 		CExpr lhs = infer(e.lhs, stmt, environment);
-		if (lhs instanceof Value.Tuple) {
-			Value.Tuple t = (Value.Tuple) lhs;
+		if (lhs instanceof Value.Record) {
+			Value.Record t = (Value.Record) lhs;
 			Value v = t.values.get(e.field);
 			if (v == null) {
 				syntaxError("tuple does not have field " + e.field, filename,
@@ -326,7 +326,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			allValues &= arg instanceof Value;
 		}
 		if(allValues) {
-			return Value.V_TUPLE(args);
+			return Value.V_RECORD(args);
 		} else {
 			return CExpr.TUPLE(args);
 		}

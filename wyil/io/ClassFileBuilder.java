@@ -957,8 +957,8 @@ public class ClassFileBuilder {
 			translate((Value.Set)v,slots,bytecodes);
 		} else if(v instanceof Value.List) {
 			translate((Value.List)v,slots,bytecodes);
-		} else if(v instanceof Value.Tuple) {
-			translate((Value.Tuple)v,slots,bytecodes);
+		} else if(v instanceof Value.Record) {
+			translate((Value.Record)v,slots,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
@@ -1114,7 +1114,7 @@ public class ClassFileBuilder {
 		}		
 	}
 
-	protected void translate(Value.Tuple expr, HashMap<String, Integer> slots,
+	protected void translate(Value.Record expr, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
