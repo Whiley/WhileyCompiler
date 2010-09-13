@@ -1,4 +1,4 @@
-define state as (int x, int y)
+define state as {int x, int y}
 define pState as process state
 
 void pState::f():

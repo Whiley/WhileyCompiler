@@ -1,8 +1,8 @@
 define neg as int where $ < 0
 define pos as int where $ > 0
 
-define exp1 as neg | (exp1 rest)
-define exp2 as pos | (exp2 rest)
+define exp1 as neg | {exp1 rest}
+define exp2 as pos | {exp2 rest}
 
 
 exp2 f(exp1 e1):

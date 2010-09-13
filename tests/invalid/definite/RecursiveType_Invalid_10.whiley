@@ -1,6 +1,6 @@
-define LinkedList as int | (LinkedList next, int data)
+define LinkedList as int | {LinkedList next, int data}
 
-define posLink as (posList next, nat data)
+define posLink as {posList next, nat data}
 define posList as int | posLink
 
 nat sum(LinkedList list):
@@ -10,7 +10,7 @@ nat sum(LinkedList list):
         return list.data + sum(list.next)
 
 void System::main([string] args):
-    LinkedList l = (next:1,data:1)
+    LinkedList l = { next:1, data:1 }
     print str(sum(l))
-    l = (next:l,data:-2)
+    l = { next:l, data:-2 }
     print str(sum(l))    
