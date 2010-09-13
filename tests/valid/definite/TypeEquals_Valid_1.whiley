@@ -1,4 +1,4 @@
-define bop as (int x, int y) where x > 0
+define bop as {int x, int y} where x > 0
 define expr as int|bop
 
 void f(expr e):
@@ -10,6 +10,6 @@ void f(expr e):
 void System::main([string] args):
     expr e = 1
     f(e)
-    e = (x:1,y:2)
+    e = {x:1,y:2}
     f(e)
  

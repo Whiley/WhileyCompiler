@@ -20,7 +20,7 @@
 
 package whiley.lang
 
-define Time as process (int dummy)
+define Time as process {int dummy}
 
 int Time::currentTime():
     extern jvm:                
