@@ -629,7 +629,12 @@ public abstract class CExpr {
 			String r = "(";
 			ArrayList<String> keys = new ArrayList<String>(values.keySet());
 			Collections.sort(keys);
+			boolean firstTime=true;
 			for(String key : keys) {
+				if(!firstTime) {
+					r += ", ";
+				}
+				firstTime=false;
 				r += key + ":" + values.get(key);
 			}
 			return r + ")";

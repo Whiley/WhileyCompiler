@@ -268,6 +268,8 @@ public class NameResolution {
 				resolve((RecordAccess) e, environment, imports);
 			} else if (e instanceof RecordGen) {
 				resolve((RecordGen) e, environment, imports);
+			} else if (e instanceof TupleGen) {
+				resolve((TupleGen) e, environment, imports);
 			} else if(e instanceof TypeConst) {
 				resolve((TypeConst) e, environment, imports);
 			} else {				
@@ -360,6 +362,13 @@ public class NameResolution {
 			resolve(e.getValue(),environment,imports);
 		}			
 	}
+
+	protected void resolve(TupleGen sg, HashMap<String,Set<Expr>> environment,
+			ArrayList<PkgID> imports) throws ResolveError {		
+		for(Expr e : sg.fields) {
+			resolve(e,environment,imports);
+		}			
+	}
 	
 	protected void resolve(TypeConst tc, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) throws ResolveError {		
@@ -382,6 +391,11 @@ public class NameResolution {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
 				resolve(e.getValue(),imports);
+			}
+		} else if(t instanceof UnresolvedType.Tuple) {
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			for(UnresolvedType e : tt.types) {
+				resolve(e,imports);
 			}
 		} else if(t instanceof UnresolvedType.Named) {
 			// This case corresponds to a user-defined type. This will be

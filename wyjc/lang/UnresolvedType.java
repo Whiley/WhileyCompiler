@@ -91,4 +91,15 @@ public interface UnresolvedType extends SyntacticElement {
 			this.types = new HashMap<String,UnresolvedType>(types);
 		}
 	}
+	public static final class Tuple extends SyntacticElement.Impl implements NonUnion {
+		public final ArrayList<UnresolvedType> types;
+		public Tuple(Collection<UnresolvedType> types, Attribute... attributes) {
+			super(attributes);
+			if(types.size() == 0) {
+				throw new IllegalArgumentException(
+						"Cannot create type tuple with no fields");
+			}
+			this.types = new ArrayList<UnresolvedType>(types);
+		}
+	}
 }

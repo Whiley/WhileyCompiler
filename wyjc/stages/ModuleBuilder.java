@@ -1066,6 +1066,9 @@ public class ModuleBuilder {
 			} else if (e instanceof RecordGen) {
 				return resolveCondition(target, (RecordGen) e, freeReg,
 						environment);
+			} else if (e instanceof TupleGen) {
+				return resolveCondition(target, (TupleGen) e, freeReg,
+						environment);
 			} else if (e instanceof ListAccess) {
 				return resolveCondition(target, (ListAccess) e, freeReg,
 						environment);
@@ -1346,6 +1349,8 @@ public class ModuleBuilder {
 				return resolve(freeReg, (RecordAccess) e, environment);
 			} else if (e instanceof RecordGen) {
 				return resolve(freeReg, (RecordGen) e, environment);
+			} else if (e instanceof TupleGen) {
+				return resolve(freeReg, (TupleGen) e, environment);
 			} else {
 				syntaxError("unknown expression encountered: "
 						+ e.getClass().getName(), filename, e);
@@ -1647,6 +1652,20 @@ public class ModuleBuilder {
 		return new Pair<CExpr, Block>(CExpr.RECORD(values), blk);
 	}
 
+	protected Pair<CExpr, Block> resolve(int freeReg, TupleGen sg,
+			HashMap<String,Pair<Type,Block>> environment) {
+		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
+		Block blk = new Block();
+		int idx=0;
+		for (Expr e : sg.fields) {
+			String name = "$" + idx++;
+			Pair<CExpr, Block> tb = resolve(freeReg, e, environment);
+			values.put(name, tb.first());
+			blk.addAll(tb.second());
+		}
+		return new Pair<CExpr, Block>(CExpr.RECORD(values), blk);
+	}
+
 	protected Pair<CExpr, Block> resolve(int freeReg, RecordAccess sg,
 			HashMap<String,Pair<Type,Block>> environment) {
 		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs, environment);
@@ -1699,7 +1718,32 @@ public class ModuleBuilder {
 				blk.add(new Code.ForallEnd(label));
 			}
 			return new Pair<Type, Block>(rt, blk);
-		} else if (t instanceof UnresolvedType.Record) {
+		} else if (t instanceof UnresolvedType.Tuple) {
+			// At the moment, a tuple is compiled down to a wyil record.
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			Block blk = null;
+			CExpr.Variable tmp = CExpr.VAR(Type.T_VOID, "$");
+			int idx=0;
+			for (UnresolvedType e : tt.types) {
+				String name = "$" + idx++;
+				Pair<Type, Block> p = resolve(e);
+				types.put(name, p.first());
+				if (p.second() != null) {
+					if (blk == null) {
+						blk = new Block();
+					}
+					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
+					binding.put("$", CExpr.RECORDACCESS(tmp, name));
+					blk.addAll(Block.substitute(binding, p.second()));
+				}
+			}
+			Type type = Type.T_RECORD(types);
+			// Need to update the self type properly
+			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
+			binding.put("$", CExpr.VAR(type, "$"));
+			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
+		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();
 			Block blk = null;

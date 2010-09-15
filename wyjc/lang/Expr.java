@@ -203,6 +203,15 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public static class TupleGen extends SyntacticElement.Impl implements LVal {
+		public final ArrayList<Expr> fields;		
+		
+		public TupleGen(Collection<Expr> fields, Attribute... attributes) {
+			super(attributes);
+			this.fields = new ArrayList<Expr>(fields);
+		}
+	}
+	
 	public static class Invoke extends SyntacticElement.Impl implements Expr,Stmt {
 		public final String name;
 		public final Expr receiver;

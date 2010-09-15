@@ -786,6 +786,17 @@ public class WhileyParser {
 				match(RightBrace.class);
 				return v;
 			} 
+			ArrayList<Expr> exprs = new ArrayList<Expr>();
+			exprs.add(v);
+			// tuple constructor
+			do {
+				match(Comma.class);
+				exprs.add(parseCondition());
+				checkNotEof();
+				token = tokens.get(index);
+			} while(!(token instanceof RightBrace));
+			match(RightBrace.class);
+			return new Expr.TupleGen(exprs);
 		} else if(token instanceof Star) {
 			// this indicates a process dereference
 			match(Star.class);
@@ -1121,6 +1132,22 @@ public class WhileyParser {
 		} else if(token.text.equals("process")) {
 			matchKeyword("process");
 			t = new UnresolvedType.Process(parseType(),sourceAttr(start,index-1));			
+		} else if(token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			types.add(parseType());
+			match(Comma.class);
+			types.add(parseType());
+			checkNotEof();
+			token = tokens.get(index);
+			while(!(token instanceof RightBrace)) {
+				match(Comma.class);
+				types.add(parseType());
+				checkNotEof();
+				token = tokens.get(index);
+			}
+			match(RightBrace.class);
+			return new UnresolvedType.Tuple(types);
 		} else if(token instanceof LeftCurly) {
 			match(LeftCurly.class);
 			t = parseType();
