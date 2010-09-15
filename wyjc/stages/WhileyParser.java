@@ -329,7 +329,7 @@ public class WhileyParser {
 			return parseExtern(indent);
 		} else if(token.text.equals("spawn")) {			
 			return parseSpawn();
-		} else if (isTypeStart(token)) {
+		} else if (isTypeStart()) {
 			return parseVarDecl();
 		} else if ((index + 1) < tokens.size()
 				&& tokens.get(index + 1) instanceof LeftBrace) {
@@ -1195,15 +1195,24 @@ public class WhileyParser {
 		return t;
 	}		
 	
-	private boolean isTypeStart(Token token) {		
+	private boolean isTypeStart() {
+		checkNotEof();
+		Token token = tokens.get(index);
 		if(token instanceof Keyword) {
 			return token.text.equals("int") || token.text.equals("void")
 					|| token.text.equals("bool") || token.text.equals("real")
 					|| token.text.equals("?") || token.text.equals("*")
 					|| token.text.equals("process");			
+		} else if(token instanceof LeftBrace) {
+			// Left brace is a difficult situation, since it can represent the
+			// start of a tuple expression or the start of a typle lval.
+			int tmp = index;
+			match(LeftBrace.class);
+			boolean r = isTypeStart();
+			index = tmp;
+			return r;
 		} else {
-			return token instanceof LeftCurly || token instanceof LeftSquare
-					|| token instanceof LeftBrace;
+			return token instanceof LeftCurly || token instanceof LeftSquare;
 		}
 	}
 	

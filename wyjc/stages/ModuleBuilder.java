@@ -793,11 +793,35 @@ public class ModuleBuilder {
 	protected Block resolve(Assign s, int freeReg,
 			HashMap<String, Pair<Type, Block>> environment) {
 
-		Block blk = new Block();
-		Pair<CExpr, Block> lhs_tb = resolve(freeReg, s.lhs, environment);
+		Block blk = new Block();		
 		Pair<CExpr, Block> rhs_tb = resolve(freeReg + 1, s.rhs, environment);
 		
-		if(lhs_tb.first() instanceof CExpr.LVal) {		
+		if(s.lhs instanceof TupleGen) {
+			// this indicates a tuple assignment which must be treated specially.
+			TupleGen tg = (TupleGen) s.lhs;			
+			CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg);
+			blk.addAll(rhs_tb.second());
+			blk.add(new Code.Assign(reg, rhs_tb.first()), s
+					.attribute(Attribute.Source.class));
+			int idx=0;
+			for(Expr e : tg.fields) {
+				if(!(e instanceof Variable)) {
+					syntaxError("variable expected",filename,e);
+				}
+				Variable v = (Variable) e;
+				blk.add(new Code.Assign(CExpr.VAR(Type.T_ANY, v.var), CExpr
+						.RECORDACCESS(reg, "$" + idx++)), e
+						.attribute(Attribute.Source.class));
+				Block constraint = environment.get(v.var).second();		
+				Block.addCheck(0,blk,constraint,s);		
+			}
+			return blk;
+		}
+		
+		Pair<CExpr, Block> lhs_tb = resolve(freeReg, s.lhs, environment);
+
+		if(lhs_tb.first() instanceof CExpr.LVal) {
+			
 			blk.addAll(lhs_tb.second());
 			blk.addAll(rhs_tb.second());
 			blk.add(new Code.Assign(((CExpr.LVal)lhs_tb.first()), rhs_tb
@@ -1659,7 +1683,7 @@ public class ModuleBuilder {
 		int idx=0;
 		for (Expr e : sg.fields) {
 			String name = "$" + idx++;
-			Pair<CExpr, Block> tb = resolve(freeReg, e, environment);
+			Pair<CExpr, Block> tb = resolve(freeReg, e	, environment);
 			values.put(name, tb.first());
 			blk.addAll(tb.second());
 		}
