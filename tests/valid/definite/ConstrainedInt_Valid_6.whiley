@@ -3,7 +3,6 @@ define num as {1,2,3,4}
 define bignum as {1,2,3,4,5,6,7}
 
 void f(num x):
-    num y
     y = x
     print str(y)
 

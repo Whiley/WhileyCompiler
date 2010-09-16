@@ -3,7 +3,6 @@ void f([int] a) requires |a| > 0:
      print str(a)
 
 void System::main([string] args):
-     [int] b
      b = [1,2,3]
      print str(b)
      f(b)

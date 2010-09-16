@@ -1,6 +1,5 @@
 void System::main([string] args):
-    {int} xs = {1,2,3}
-    [int] ys = [2,3,4]
-    {int} zs
+    xs = {1,2,3}
+    ys = [2,3,4]
     zs = xs ∩ ys
     print str(zs)

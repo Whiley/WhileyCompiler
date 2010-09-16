@@ -1,4 +1,6 @@
+int f(byte b):
+    return b + 1
+
 void System::main([string] args):
-    byte b
-    b = 1
+    b = f(10)
     print str(b)

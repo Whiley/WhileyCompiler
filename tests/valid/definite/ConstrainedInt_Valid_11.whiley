@@ -8,8 +8,6 @@ b_nat f(a_nat x):
         return f(x-1)
 
 void System::main([string] args):
-    int x = |args|
-    
-    x = f(x)
-    
+    x = |args|    
+    x = f(x)    
     print str(x)

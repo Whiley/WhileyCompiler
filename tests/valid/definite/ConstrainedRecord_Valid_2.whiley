@@ -8,6 +8,6 @@ byte f(UNIT x):
     return x.op
 
 void System::main([string] args):
-    byte bytes = f({op:NOP})
+    bytes = f({op:NOP})
     print str(bytes)
 

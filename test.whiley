@@ -1,4 +1,4 @@
 void System::main([string] args):
-    (x,y) = 1,2
-    print str(x)
-    print str(y)
+    p = {x:(1,2), y:2}
+    print str(p.x)
+    print str(p.y)

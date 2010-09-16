@@ -1,7 +1,4 @@
 void System::main([string] args):
-     [[int]] a1
-     [[int]] a2
-     
      a1 = [[1,2,3],[0]]
      a2 = a1
      a2[0] = [3,4,5]

@@ -9,6 +9,6 @@ even f(oddeven x):
     return x
     
 void System::main([string] args):
-    oddeven y = 1
+    y = 1
     y = f(1)
     print str(y)

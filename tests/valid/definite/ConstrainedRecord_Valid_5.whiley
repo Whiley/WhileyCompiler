@@ -11,6 +11,6 @@ state parseTerm(state st):
     return st
 
 void System::main([string] args):
-    state st = {input:"  Hello",pos:0}
+    st = {input:"  Hello",pos:0}
     st = parseTerm(st)
     print str(st)

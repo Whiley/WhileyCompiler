@@ -337,7 +337,7 @@ public class WhileyParser {
 			return parseSkip();
 		} else {
 			int start = index;
-			Expr t = parseTupleTerm();
+			Expr t = parseTupleExpression();
 			if(t instanceof Expr.Invoke) {
 				matchEndLine();
 				return (Expr.Invoke) t;
@@ -526,7 +526,7 @@ public class WhileyParser {
 	private Stmt parseAssign() {		
 		// standard assignment
 		int start = index;
-		Expr lhs = parseTupleTerm();		
+		Expr lhs = parseTupleExpression();		
 		if(!(lhs instanceof Expr.LVal)) {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
 		}				
@@ -536,6 +536,25 @@ public class WhileyParser {
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start,
 				index - 1));		
 	}	
+	
+
+	private Expr parseTupleExpression() {
+		Expr e = parseCondition();
+
+		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			// this is a tuple constructor
+			ArrayList<Expr> exprs = new ArrayList<Expr>();
+			exprs.add(e);
+			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				exprs.add(parseCondition());
+				checkNotEof();
+			}
+			return new Expr.TupleGen(exprs);
+		} else {
+			return e;
+		}
+	}
 	
 	private Expr parseCondition() {
 		checkNotEof();
@@ -649,7 +668,7 @@ public class WhileyParser {
 	
 	private Expr parseAddSubExpression() {
 		int start = index;
-		Expr lhs = parseTupleTerm();
+		Expr lhs = parseIndexTerm();
 
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
@@ -675,24 +694,6 @@ public class WhileyParser {
 		}	
 		
 		return lhs;
-	}
-	
-	private Expr parseTupleTerm() {
-		Expr e = parseIndexTerm();
-		
-		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
-			// this is a tuple constructor
-			ArrayList<Expr> exprs = new ArrayList<Expr>();
-			exprs.add(e);
-			while(index < tokens.size() && tokens.get(index) instanceof Comma) {		
-				match(Comma.class);
-				exprs.add(parseCondition());
-				checkNotEof();			
-			} 		
-			return new Expr.TupleGen(exprs);
-		} else {
-			return e;
-		}
 	}
 	
 	private Expr parseIndexTerm() {
@@ -774,7 +775,7 @@ public class WhileyParser {
 		if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			checkNotEof();
-			Expr v = parseCondition();
+			Expr v = parseTupleExpression();
 			checkNotEof();
 			token = tokens.get(index);			
 			match(RightBrace.class);

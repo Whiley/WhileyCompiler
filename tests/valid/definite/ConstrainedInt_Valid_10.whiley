@@ -10,7 +10,7 @@ anat btoa(bnat x):
     return x
 
 void System::main([string] args):
-    int x = 1
+    x = 1
     print str(atob(x))
     print str(btoa(x))
     

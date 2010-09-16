@@ -7,6 +7,6 @@ char f(state st):
     return ' '
 
 void System::main([string] args):
-    char c = f({input:"hello",pos:0})
+    c = f({input:"hello",pos:0})
     print str(c)
  

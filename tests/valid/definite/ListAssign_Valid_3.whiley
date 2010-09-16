@@ -1,6 +1,4 @@
 void f(int i):
-    [int] arr1
-    [int] arr2
     arr1 = [1,2,64]
     arr2 = arr1
     if i != |arr1|:

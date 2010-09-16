@@ -1,5 +1,4 @@
 void System::main([string] args):
-     int x
      x = 112233445566778899
      print str(x)
      x = x + 1

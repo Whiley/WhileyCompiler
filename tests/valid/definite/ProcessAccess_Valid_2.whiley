@@ -7,5 +7,5 @@ void pState::send(int z):
     print str(z)
 
 void System::main([string] args):
-    pState ps = spawn {x:1,y:2}
+    ps = spawn {x:1,y:2}
     ps->send(1)

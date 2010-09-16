@@ -9,5 +9,5 @@ void pState::send(int x):
     print str(x)
 
 void System::main([string] args):
-    pState ps = spawn {x:1,y:2}
+    ps = spawn {x:1,y:2}
     ps->send(1)

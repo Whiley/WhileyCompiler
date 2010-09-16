@@ -8,5 +8,5 @@ expr parseIdentifier():
     return {err:"err"}
 
 void System::main([string] args):
-    expr e = parseTerm()
+    e = parseTerm()
     print str(e)

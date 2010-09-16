@@ -8,6 +8,6 @@ int g(int x) ensures $ > 0 && $ < 125:
     return {g(x)}
 
 void System::main([string] args):
-    {byte} bytes = f(0)
+    bytes = f(0)
     print str(bytes)
 

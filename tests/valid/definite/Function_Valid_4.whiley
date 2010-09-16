@@ -7,6 +7,5 @@ void f(fr4nat x):
     print str(x)
 
 void System::main([string] args):
-    fr4nat y
     y = 1
     f(g(y))

@@ -2,9 +2,6 @@
     return [1,2]
 
 void System::main([string] args):
-     [int] a1
-     [int] a2
-     
      a1 = f()
      a2 = f()
      a2[0] = 0

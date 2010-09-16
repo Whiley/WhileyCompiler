@@ -8,8 +8,8 @@ int Ptype::get():
     return this->mode
 
 void System::main([string] args):
-    Ptype p = spawn {mode:1,rest:2}
+    p = spawn {mode:1,rest:2}
     print str(*p)
-    int x = p->get()
+    x = p->get()
     print str(*p)
     print str(x)

@@ -7,5 +7,5 @@ void f({int} x):
     print str(x)
 
 void System::main([string] args):
-    {fr6nat} ys = {1,2,3}
+    ys = {1,2,3}
     f(g(ys))

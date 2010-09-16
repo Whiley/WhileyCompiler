@@ -1,6 +1,6 @@
 void System::main([string] args):
-    bool x = true
-    bool y = false
+    x = true
+    y = false
     print str(x)
     print str(y)
     print "AND"

@@ -5,5 +5,5 @@ void g(fcode f):
     print str(f)
 
 void System::main([string] args):
-    tcode x = 1
+    x = 1
     g(x)

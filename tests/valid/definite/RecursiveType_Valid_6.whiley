@@ -7,9 +7,9 @@ define asbinop as {int op, expr left, expr right} where op in {ADD,SUB}
 define expr as int | binop
 
 void System::main([string] args):
-    asbinop bop1 = {op:ADD,left:1,right:2}
-    binop bop2 = bop1
-    expr e1 = bop1
-    expr e2 = {op:SUB,left:bop1,right:2}
+    bop1 = {op:ADD,left:1,right:2}
+    bop2 = bop1
+    e1 = bop1
+    e2 = {op:SUB,left:bop1,right:2}
     print str(e1)
     print str(e2)
