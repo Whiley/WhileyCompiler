@@ -329,6 +329,8 @@ public class WhileyParser {
 			return parseExtern(indent);
 		} else if(token.text.equals("spawn")) {			
 			return parseSpawn();
+		} else if(isTupleDeclStart()) {
+			return parseTupleDecl();
 		} else if (isTypeStart()) {
 			return parseVarDecl();
 		} else if ((index + 1) < tokens.size()
@@ -532,17 +534,13 @@ public class WhileyParser {
 	private Stmt parseVarDecl() {
 		int start = index;
 		List<Stmt.VarDeclComp> decls = new ArrayList();
-		
-		if(isTupleDeclStart()) {
-			decls.add(parseTupleDeclComp());
-		} else {
-			UnresolvedType type = parseType();
-			decls.add(parseVarDeclComp(type));		
-			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
-				match(Comma.class);
-				decls.add(parseVarDeclComp(type));
-			}
-		}
+
+		UnresolvedType type = parseType();
+		decls.add(parseVarDeclComp(type));		
+		while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			match(Comma.class);
+			decls.add(parseVarDeclComp(type));
+		}		
 		
 		matchEndLine();
 		return new Stmt.VarDecl(decls, sourceAttr(start, index - 1));
@@ -556,12 +554,19 @@ public class WhileyParser {
 			checkNotEof();
 			Token token = tokens.get(index);
 			index = start;
-			if (token instanceof RightBrace || token instanceof Comma) {
-				return false;
-			}
-			return true;
+			if (token instanceof Identifier) {
+				return true;
+			}			
 		}
 		return false;
+	}
+	
+	private Stmt parseTupleDecl() {
+		int start = index;
+		List<Stmt.VarDeclComp> decls = new ArrayList();
+		decls.add(parseTupleDeclComp());
+		matchEndLine();
+		return new Stmt.VarDecl(decls, sourceAttr(start, index - 1));
 	}
 	
 	private Stmt.VarDeclComp parseTupleDeclComp() {
