@@ -905,9 +905,17 @@ public class ModuleBuilder {
 			if(postcondition != null) {
 				// Now, write it into the block
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-				binding.put("$", t.first());
+				if(t.first() instanceof CExpr.LVar) {
+					binding.put("$", t.first());
+				} else {
+					// The following is done to prevent problems with
+					// substitution into type test positions.
+					CExpr.Register tmp = CExpr.REG(Type.T_ANY, freeReg+1);
+					blk.add(new Code.Assign(tmp,t.first()));
+					binding.put("$", tmp);
+				}
 				binding.putAll(shadows);
-				Block.addCheck(freeReg,blk,postcondition,binding,s);				
+				Block.addCheck(freeReg+2,blk,postcondition,binding,s);				
 			}			
 			
 			// Second, check
@@ -1780,6 +1788,7 @@ public class ModuleBuilder {
 					}
 					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 					binding.put("$", CExpr.RECORDACCESS(tmp, name));
+					// FIXME: possible bug here for union types
 					blk.addAll(Block.substitute(binding, p.second()));
 				}
 			}
