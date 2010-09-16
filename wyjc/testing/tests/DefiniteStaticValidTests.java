@@ -91,6 +91,7 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void IntConst_Valid_1_StaticTest() { verificationRunTest("IntConst_Valid_1"); }
  @Test public void IntDefine_Valid_1_StaticTest() { verificationRunTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_StaticTest() { verificationRunTest("IntDiv_Valid_1"); }
+ @Test public void IntMul_Valid_1_RunTest() { verificationRunTest("IntMul_Valid_1"); }
  @Test public void IntEquals_Valid_1_StaticTest() { verificationRunTest("IntEquals_Valid_1"); }
  @Test public void IntOp_Valid_1_StaticTest() { verificationRunTest("IntOp_Valid_1"); }
  @Ignore("Known Bug") @Test public void IntersectionType_Valid_1_StaticTest() { verificationRunTest("IntersectionType_Valid_1"); }

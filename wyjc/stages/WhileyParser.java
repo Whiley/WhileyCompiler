@@ -361,7 +361,7 @@ public class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseMulDivExpression();
+			Expr e = parseAddSubExpression();
 			args.add(e);
 			
 		}
@@ -378,7 +378,7 @@ public class WhileyParser {
 		Expr e = null;
 		if (index < tokens.size()
 				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof Comment)) {
-			e = parseCondition();
+			e = parseTupleExpression();
 		}
 		matchEndLine();
 		return new Stmt.Return(e, sourceAttr(start, index - 1));
@@ -403,7 +403,7 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("print");		
 		checkNotEof();
-		Expr e = parseMulDivExpression();
+		Expr e = parseAddSubExpression();
 		matchEndLine();		
 		return new Stmt.Debug(e, sourceAttr(start,index-1));
 	}
@@ -592,45 +592,45 @@ public class WhileyParser {
 					sc.condition, sourceAttr(start, index - 1));			
 		} // should do FOR here;  could also do lone and one
 		
-		Expr lhs = parseMulDivExpression();
+		Expr lhs = parseAddSubExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
-			Expr rhs = parseMulDivExpression();			
+			Expr rhs = parseAddSubExpression();			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.TypeEquals) {
 			return parseTypeEquals(lhs,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
 			match(WhileyLexer.ElemOf.class);			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
 			match(WhileyLexer.SubsetEquals.class);			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
 			match(WhileyLexer.Subset.class);			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
@@ -646,29 +646,10 @@ public class WhileyParser {
 				index - 1));
 	}
 	
-	private Expr parseMulDivExpression() {
-		int start = index;
-		Expr lhs = parseAddSubExpression();
-		
-		if (index < tokens.size() && tokens.get(index) instanceof Star) {
-			match(Star.class);
-			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof RightSlash) {
-			match(RightSlash.class);
-			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
-					index - 1));
-		}
 
-		return lhs;
-	}
-	
 	private Expr parseAddSubExpression() {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		Expr lhs = parseMulDivExpression();
 
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
@@ -696,6 +677,26 @@ public class WhileyParser {
 		return lhs;
 	}
 	
+	private Expr parseMulDivExpression() {
+		int start = index;
+		Expr lhs = parseIndexTerm();
+		
+		if (index < tokens.size() && tokens.get(index) instanceof Star) {
+			match(Star.class);
+			Expr rhs = parseMulDivExpression();
+			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof RightSlash) {
+			match(RightSlash.class);
+			Expr rhs = parseMulDivExpression();
+			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
+					index - 1));
+		}
+
+		return lhs;
+	}	
+	
 	private Expr parseIndexTerm() {
 		checkNotEof();
 		int start = index;
@@ -709,11 +710,11 @@ public class WhileyParser {
 			start = index;
 			if(lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
-				Expr rhs = parseMulDivExpression();
+				Expr rhs = parseAddSubExpression();
 				lookahead = tokens.get(index);
 				if(lookahead instanceof Colon) {
 					match(Colon.class);
-					Expr end = parseMulDivExpression();
+					Expr end = parseAddSubExpression();
 					match(RightSquare.class);
 					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
 							start, index - 1), lhs, rhs, end);
@@ -783,7 +784,7 @@ public class WhileyParser {
 		} else if(token instanceof Star) {
 			// this indicates a process dereference
 			match(Star.class);
-			Expr e = parseMulDivExpression();
+			Expr e = parseAddSubExpression();
 			return new Expr.UnOp(Expr.UOp.PROCESSACCESS, e, sourceAttr(start,
 					index - 1));
 		} else if ((index + 1) < tokens.size()
@@ -837,7 +838,7 @@ public class WhileyParser {
 	private Expr.Spawn parseSpawn() {
 		int start = index;
 		matchKeyword("spawn");
-		Expr state = parseMulDivExpression();
+		Expr state = parseAddSubExpression();
 		return new Expr.Spawn(state, sourceAttr(start,index - 1));
 	}
 	
@@ -983,7 +984,7 @@ public class WhileyParser {
 
 		// this indicates a tuple value.				)
 		match(Colon.class);
-		Expr e = parseMulDivExpression();
+		Expr e = parseAddSubExpression();
 		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
 		exprs.put(ident, e);
 		checkNotEof();
@@ -999,7 +1000,7 @@ public class WhileyParser {
 			}
 
 			match(Colon.class);
-			e = parseMulDivExpression();				
+			e = parseAddSubExpression();				
 			exprs.put(n.text,e);
 			checkNotEof();
 			token = tokens.get(index);					
@@ -1051,7 +1052,7 @@ public class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseMulDivExpression();
+			Expr e = parseAddSubExpression();
 			args.add(e);		
 		}
 		match(RightBrace.class);		

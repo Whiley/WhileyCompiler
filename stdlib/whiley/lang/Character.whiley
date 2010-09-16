@@ -30,3 +30,6 @@ public bool isLowerCase(char c):
 
 public bool isLetter(char c):
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+
+public bool isNumeric(char c):
+    return '0' <= c && c <= '9'
