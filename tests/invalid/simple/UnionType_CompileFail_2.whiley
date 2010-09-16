@@ -5,7 +5,6 @@ void f(int y):
     print str(y)
 
 void System::main([string] args):
-    IntReal x
     x = 123
     f(x)
     x = 1.234

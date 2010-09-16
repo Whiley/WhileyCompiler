@@ -1,4 +1,3 @@
-void f(int x):
-     bool z
-     z = x
+bool f(int x):
+     return x
 

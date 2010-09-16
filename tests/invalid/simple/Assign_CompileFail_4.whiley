@@ -1,4 +1,3 @@
-void f():
-     int z
-     z = true
+int f():
+     return true
 

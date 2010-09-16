@@ -1,3 +1,3 @@
 void System::main([string] args):
-    int x = y
+    x = y
     print str(x)

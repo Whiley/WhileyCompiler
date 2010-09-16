@@ -1,3 +1,2 @@
-void f(bool x):
-     int z
-     z = !x
+int f(bool x):
+     return !x

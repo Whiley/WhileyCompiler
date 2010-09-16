@@ -6,7 +6,7 @@ IntList f(IntList il):
     return il
 
 void System::main([string] args):
-    IntList x = {op:[1], mode:1}
+    x = {op:[1], mode:1}
     print str(x)
     x = f(x)
     print str(x)  

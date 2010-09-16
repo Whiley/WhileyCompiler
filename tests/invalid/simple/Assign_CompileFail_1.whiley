@@ -1,3 +1,2 @@
-void f():
-     bool z
-     z = 1
+int f():     
+    return true

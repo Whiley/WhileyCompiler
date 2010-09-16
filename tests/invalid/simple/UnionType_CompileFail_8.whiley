@@ -5,6 +5,9 @@ define MUL as 3
 define DIV as 4
 define bop as {int op, int lhs, int rhs} where op in {ADD,SUB,MUL,DIV}
 
+bop f(bop b):
+    return x
+
 void System::main([string] args):
-    bop b = {op:0, lhs:1, rhs:2}
-    print str(b)
+    b = {op:0, lhs:1, rhs:2}
+    print str(f(b))

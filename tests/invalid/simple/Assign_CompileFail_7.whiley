@@ -1,3 +1,2 @@
-void f(int x, int y):
-     int z
-     z = x < y
+int f(int x, int y):
+     return x < y

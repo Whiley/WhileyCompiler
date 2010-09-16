@@ -1,4 +1,8 @@
+[string] f([string] args):
+    return r
+
 void System::main([string] args):
-    [int] l = [1,2,3]
-    [string] r = args + l
+    l = [1,2,3]
+    r = args + l
+    f(r)
     print str(r)

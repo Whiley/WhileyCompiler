@@ -7,6 +7,9 @@ define asbinop as {int op, expr left, expr right} where op in {ADD,SUB}
 define expr as int | binop
 define asexpr as int | asbinop
 
+asexpr f(asexpr e):
+    return e
+
 void System::main([string] args):
-    expr e1 = {op:MUL,left:1,right:2}
-    asexpr e2 = e1
+    e1 = {op:MUL,left:1,right:2}
+    f(e1)    

@@ -1,2 +1,2 @@
-void f():
-    void z
+void f(void z):
+

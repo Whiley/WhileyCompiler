@@ -1,3 +1,2 @@
-void f(int x):
-    [int] a 
-    x = a
+int f([int] a):
+    return a

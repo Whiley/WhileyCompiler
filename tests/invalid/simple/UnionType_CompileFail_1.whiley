@@ -1,11 +1,14 @@
 // this is a comment!
 define IntReal as int | real
 
+int f(int x):
+    return x
+
 void System::main([string] args):
-    IntReal x
-    int y
-    x = 1.23
+    if |args| > 0:
+        x = 1.23
+    else:
+        x = 1
     print str(x)
-    y = x
-    print str(y)
+    f(x)
 

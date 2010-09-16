@@ -1,4 +1,3 @@
-void f(int x, int y):
-     bool z
-     z = x + y
+bool f(int x, int y):
+     return  + y
 
