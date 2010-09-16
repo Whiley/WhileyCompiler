@@ -329,10 +329,6 @@ public class WhileyParser {
 			return parseExtern(indent);
 		} else if(token.text.equals("spawn")) {			
 			return parseSpawn();
-		} else if(isTupleDeclStart()) {
-			return parseTupleDecl();
-		} else if (isTypeStart()) {
-			return parseVarDecl();
 		} else if ((index + 1) < tokens.size()
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
@@ -341,12 +337,8 @@ public class WhileyParser {
 			return parseSkip();
 		} else {
 			int start = index;
-			Expr t = parseIndexTerm();
-			if (t instanceof Expr.Variable && (index < tokens.size()
-					&& !(tokens.get(index) instanceof Equals))) {
-				index = start;
-				return parseVarDecl();
-			} else if(t instanceof Expr.Invoke) {
+			Expr t = parseTupleTerm();
+			if(t instanceof Expr.Invoke) {
 				matchEndLine();
 				return (Expr.Invoke) t;
 			} else {
@@ -529,87 +521,12 @@ public class WhileyParser {
 			Attribute.Source sa = sourceAttr(start,index-1);
 			throw new SyntaxError(err.getMessage(),filename,sa.start,sa.end,err);
 		}
-	}
-	
-	private Stmt parseVarDecl() {
-		int start = index;
-		List<Stmt.VarDeclComp> decls = new ArrayList();
-
-		UnresolvedType type = parseType();
-		decls.add(parseVarDeclComp(type));		
-		while (index < tokens.size() && tokens.get(index) instanceof Comma) {
-			match(Comma.class);
-			decls.add(parseVarDeclComp(type));
-		}		
-		
-		matchEndLine();
-		return new Stmt.VarDecl(decls, sourceAttr(start, index - 1));
-	}
-	
-	private boolean isTupleDeclStart() {
-		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			int start = index;
-			match(LeftBrace.class);
-			UnresolvedType t = parseType();			
-			checkNotEof();
-			Token token = tokens.get(index);
-			index = start;
-			if (token instanceof Identifier) {
-				return true;
-			}			
-		}
-		return false;
-	}
-	
-	private Stmt parseTupleDecl() {
-		int start = index;
-		List<Stmt.VarDeclComp> decls = new ArrayList();
-		decls.add(parseTupleDeclComp());
-		matchEndLine();
-		return new Stmt.VarDecl(decls, sourceAttr(start, index - 1));
-	}
-	
-	private Stmt.VarDeclComp parseTupleDeclComp() {
-		int start = index;
-		ArrayList<Pair<UnresolvedType, String>> decls = new ArrayList();
-		match(LeftBrace.class);
-		UnresolvedType t = parseType();
-		Identifier var = matchIdentifier();
-		decls.add(new Pair(t,var.text));
-		while (index < tokens.size() && tokens.get(index) instanceof Comma) {
-			match(Comma.class);
-			t = parseType();
-			var = matchIdentifier();
-			decls.add(new Pair(t,var.text));			
-		}
-		match(RightBrace.class);
-		Expr initialiser = null;
-		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
-			match(Equals.class);
-			initialiser = parseCondition();
-		}
-		return new Stmt.VarDeclComp(decls, initialiser, sourceAttr(start,
-				index - 1));
-	}
-	
-	private Stmt.VarDeclComp parseVarDeclComp(UnresolvedType type) {
-		int start = index;
-		ArrayList<Pair<UnresolvedType, String>> decls = new ArrayList();		
-		Identifier var = matchIdentifier();
-		Expr initialiser = null;
-		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
-			match(Equals.class);
-			initialiser = parseCondition();
-		}
-		decls.add(new Pair(type, var.text));
-		return new Stmt.VarDeclComp(decls, initialiser, sourceAttr(start,
-				index - 1));
-	}
+	}		
 	
 	private Stmt parseAssign() {		
 		// standard assignment
 		int start = index;
-		Expr lhs = parseIndexTerm();		
+		Expr lhs = parseTupleTerm();		
 		if(!(lhs instanceof Expr.LVal)) {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
 		}				
@@ -732,7 +649,7 @@ public class WhileyParser {
 	
 	private Expr parseAddSubExpression() {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		Expr lhs = parseTupleTerm();
 
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
@@ -758,6 +675,24 @@ public class WhileyParser {
 		}	
 		
 		return lhs;
+	}
+	
+	private Expr parseTupleTerm() {
+		Expr e = parseIndexTerm();
+		
+		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
+			// this is a tuple constructor
+			ArrayList<Expr> exprs = new ArrayList<Expr>();
+			exprs.add(e);
+			while(index < tokens.size() && tokens.get(index) instanceof Comma) {		
+				match(Comma.class);
+				exprs.add(parseCondition());
+				checkNotEof();			
+			} 		
+			return new Expr.TupleGen(exprs);
+		} else {
+			return e;
+		}
 	}
 	
 	private Expr parseIndexTerm() {
@@ -841,24 +776,9 @@ public class WhileyParser {
 			checkNotEof();
 			Expr v = parseCondition();
 			checkNotEof();
-			token = tokens.get(index);
-			
-			if(token instanceof RightBrace) {
-				// this indicates just an expression surrounded by braces
-				match(RightBrace.class);
-				return v;
-			} 
-			ArrayList<Expr> exprs = new ArrayList<Expr>();
-			exprs.add(v);
-			// tuple constructor
-			do {
-				match(Comma.class);
-				exprs.add(parseCondition());
-				checkNotEof();
-				token = tokens.get(index);
-			} while(!(token instanceof RightBrace));
+			token = tokens.get(index);			
 			match(RightBrace.class);
-			return new Expr.TupleGen(exprs);
+			return v;			 		
 		} else if(token instanceof Star) {
 			// this indicates a process dereference
 			match(Star.class);

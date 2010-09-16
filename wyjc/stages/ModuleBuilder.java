@@ -698,9 +698,7 @@ public class ModuleBuilder {
 
 	public Block resolve(Stmt stmt, int freeReg, FunDecl fd) {
 		try {
-			if (stmt instanceof VarDecl) {
-				return resolve((VarDecl) stmt, freeReg);
-			} else if (stmt instanceof Assign) {
+			if (stmt instanceof Assign) {
 				return resolve((Assign) stmt, freeReg);
 			} else if (stmt instanceof Assert) {
 				return resolve((Assert) stmt, freeReg);
@@ -739,57 +737,7 @@ public class ModuleBuilder {
 		}
 		return null;
 	}
-
-	protected Block resolve(VarDecl s, int freeReg) throws ResolveError {
-		Block blk = new Block();
-		
-		for(VarDeclComp vdc : s.decls) { 
-			Pair<CExpr, Block> init_tb = null;
-			
-			if (vdc.initialiser != null) {
-				 init_tb = resolve(freeReg, vdc.initialiser);
-				 blk.addAll(init_tb.second());
-				 if(vdc.types.size() > 1) {
-					 CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg);
-					 blk.add(new Code.Assign(reg, init_tb.first()), s
-							.attribute(Attribute.Source.class));
-				 }
-			}
-			
-			int idx = 0;
-			for(Pair<UnresolvedType,String> p : vdc.types) { 
-				Pair<Type, Block> tb = resolve(p.first());
-				Type type = tb.first();
-
-				if(type == Type.T_VOID) {
-					// clearly, this is insane.
-					syntaxError("variable cannot have void type",filename,s);
-				}
-
-				Block constraint = Block.resource(tb.second(), s
-						.attribute(Attribute.Source.class));
-				constraint = Block.substitute("$", CExpr.VAR(type, p.second()), constraint);				
-				
-				if (vdc.initialiser != null) {	
-					if(vdc.types.size() == 1) {
-						blk.add(new Code.Assign(CExpr.VAR(type, p.second()), init_tb
-							.first()), s.attribute(Attribute.Source.class));
-					} else {
-						// Slightly more complicate case.
-						CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg);
-						blk.add(new Code.Assign(CExpr.VAR(type, p.second()),
-								CExpr.RECORDACCESS(reg, "$" + idx++)), s
-								.attribute(Attribute.Source.class));
-					}
-					// Finally, need to actually check the constraints!
-					Block.addCheck(freeReg+1,blk,constraint,s);			
-				}
-			}
-		}
-		
-		return blk;
-	}
-
+	
 	protected Block resolve(Assign s, int freeReg) {
 
 		Block blk = new Block();		

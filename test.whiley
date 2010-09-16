@@ -1,3 +1,4 @@
 void System::main([string] args):
-    x = 1
+    (x,y) = 1,2
     print str(x)
+    print str(y)

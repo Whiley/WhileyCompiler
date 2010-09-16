@@ -137,9 +137,7 @@ public class NameResolution {
 	
 	public void resolve(Stmt s, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) {
 		try {
-			if(s instanceof VarDecl) {
-				resolve((VarDecl)s, environment, imports);
-			} else if(s instanceof Assign) {
+			if(s instanceof Assign) {
 				resolve((Assign)s, environment, imports);
 			} else if(s instanceof Assert) {
 				resolve((Assert)s, environment, imports);
@@ -167,21 +165,7 @@ public class NameResolution {
 			// Ok, we've hit a resolution error.
 			syntaxError(e.getMessage(), filename, s);			
 		}
-	}
-	
-	protected void resolve(VarDecl s, HashMap<String, Set<Expr>> environment,
-			ArrayList<PkgID> imports) throws ResolveError {
-		for (VarDeclComp vdc : s.decls) {
-			Expr init = vdc.initialiser;
-			if (init != null) {
-				resolve(init, environment, imports);
-			}
-			for (Pair<UnresolvedType, String> p : vdc.types) {
-				environment.put(p.second(), Collections.EMPTY_SET);
-				resolve(p.first(), imports);
-			}
-		}
-	}
+	}	
 
 	protected void resolve(Assign s, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
@@ -192,7 +176,7 @@ public class NameResolution {
 			TupleGen tg = (TupleGen) s.lhs;
 			for(Expr e : tg.fields) {
 				if(e instanceof Variable) {
-					Variable v = (Variable) s.lhs;
+					Variable v = (Variable) e;
 					environment.put(v.var, Collections.EMPTY_SET);
 				} else {
 					syntaxError("variable expected",filename,e);
