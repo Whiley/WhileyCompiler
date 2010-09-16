@@ -8,7 +8,7 @@ void System::g([int] z):
     print str(z)
 
 void System::main([string] args):
-    IntList x = 123
+    x = 123
     this->f(x)
     x = [1,2,3]
     this->g(x)

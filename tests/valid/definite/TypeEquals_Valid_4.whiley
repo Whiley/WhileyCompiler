@@ -5,7 +5,7 @@ define expr as {int}|bool
 
 void f(expr e):
     if e ~= {int}:
-        {int} t = g(e)
+        t = g(e)
         print "GOT: " + str(t)
     else:
         print "GOT SOMETHING ELSE?"

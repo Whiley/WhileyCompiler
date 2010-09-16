@@ -4,7 +4,7 @@ define msg2 as {int index}
 
 define msgType as msg1 | msg2
 
-void f(mstType m):
+void f(msgType m):
     print str(m)
 
 void System::main([string] args):

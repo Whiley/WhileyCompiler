@@ -11,5 +11,5 @@ define nat as int where $ >= 0
     return r
 
 void System::main([string] args):
-    [nat] rs = extract([-2,-3,1,2,-23,3,2345,4,5])
+    rs = extract([-2,-3,1,2,-23,3,2345,4,5])
     print str(rs)

@@ -1294,11 +1294,9 @@ public class ModuleBuilder {
 			blk.addAll(tb.second());
 		}
 
-		ArrayList<Type> ptypes = new ArrayList<Type>();
 		for (Expr e : args) {
 			Pair<CExpr, Block> e_tb = resolve(idx++, e);
 			nargs.add(e_tb.first());
-			ptypes.add(e_tb.first().type());
 			blk.addAll(e_tb.second());
 		}
 
