@@ -417,6 +417,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
 		for(String v : modifies) {
 			Type t = environment.get(v);
+			if(t == null) { continue; }
 			if(v.charAt(0) == '%') {
 				mods.add(CExpr.REG(t, Integer.parseInt(v.substring(1))));
 			} else {
