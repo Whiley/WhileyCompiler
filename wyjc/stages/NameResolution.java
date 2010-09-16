@@ -169,16 +169,20 @@ public class NameResolution {
 		}
 	}
 	
-	protected void resolve(VarDecl s, HashMap<String,Set<Expr>> environment,
+	protected void resolve(VarDecl s, HashMap<String, Set<Expr>> environment,
 			ArrayList<PkgID> imports) throws ResolveError {
-		Expr init = s.initialiser;
-		resolve(s.type, imports);
-		if(init != null) {
-			resolve(init,environment, imports);
+		for (VarDeclComp vdc : s.decls) {
+			Expr init = vdc.initialiser;
+			if (init != null) {
+				resolve(init, environment, imports);
+			}
+			for (Pair<UnresolvedType, String> p : vdc.types) {
+				environment.put(p.second(), Collections.EMPTY_SET);
+				resolve(p.first(), imports);
+			}
 		}
-		environment.put(s.name,Collections.EMPTY_SET);		
 	}
-	
+
 	protected void resolve(Assign s, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
 		resolve(s.lhs, environment, imports);

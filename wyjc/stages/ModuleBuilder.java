@@ -755,38 +755,59 @@ public class ModuleBuilder {
 
 	protected Block resolve(VarDecl s, int freeReg,
 			HashMap<String, Pair<Type, Block>> environment) throws ResolveError {
-		
-		if(environment.get(s.name) != null) {
-			// This indicates that the variable in question has already been
-			// declared.
-			syntaxError("variable " + s.name + " already declared",filename,s);
-		} 
-		
-		Expr init = s.initialiser;
-		Pair<Type, Block> tb = resolve(s.type);
-		Type type = tb.first();
-		
-		if(type == Type.T_VOID) {
-			// clearly, this is insane.
-			syntaxError("variable cannot have void type",filename,s);
-		}
-		
-		Block constraint = Block.resource(tb.second(), s
-				.attribute(Attribute.Source.class));
-		constraint = Block.substitute("$", CExpr.VAR(type, s.name), constraint);
 		Block blk = new Block();
+		
+		for(VarDeclComp vdc : s.decls) { 
+			Pair<CExpr, Block> init_tb = null;
+			
+			if (vdc.initialiser != null) {
+				 init_tb = resolve(freeReg, vdc.initialiser, environment);
+				 blk.addAll(init_tb.second());
+				 if(vdc.types.size() > 1) {
+					 CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg);
+					 blk.add(new Code.Assign(reg, init_tb.first()), s
+							.attribute(Attribute.Source.class));
+				 }
+			}
+			
+			int idx = 0;
+			for(Pair<UnresolvedType,String> p : vdc.types) { 
+				if(environment.get(p.second()) != null) {
+					// This indicates that the variable in question has already been
+					// declared.
+					syntaxError("variable " + p.second() + " already declared",filename,s);
+				} 
 
-		if (init != null) {
-			Pair<CExpr, Block> init_tb = resolve(freeReg, init, environment);
-			blk.addAll(init_tb.second());
-			blk.add(new Code.Assign(CExpr.VAR(type, s.name), init_tb
-					.first()), s.attribute(Attribute.Source.class));
-			// Finally, need to actually check the constraints!
-			Block.addCheck(freeReg+1,blk,constraint,s);			
+				Pair<Type, Block> tb = resolve(p.first());
+				Type type = tb.first();
+
+				if(type == Type.T_VOID) {
+					// clearly, this is insane.
+					syntaxError("variable cannot have void type",filename,s);
+				}
+
+				Block constraint = Block.resource(tb.second(), s
+						.attribute(Attribute.Source.class));
+				constraint = Block.substitute("$", CExpr.VAR(type, p.second()), constraint);
+				environment.put(p.second(), new Pair<Type, Block>(type, constraint));
+				
+				if (vdc.initialiser != null) {	
+					if(vdc.types.size() == 1) {
+						blk.add(new Code.Assign(CExpr.VAR(type, p.second()), init_tb
+							.first()), s.attribute(Attribute.Source.class));
+					} else {
+						// Slightly more complicate case.
+						CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg);
+						blk.add(new Code.Assign(CExpr.VAR(type, p.second()),
+								CExpr.RECORDACCESS(reg, "$" + idx++)), s
+								.attribute(Attribute.Source.class));
+					}
+					// Finally, need to actually check the constraints!
+					Block.addCheck(freeReg+1,blk,constraint,s);			
+				}
+			}
 		}
 		
-		environment.put(s.name, new Pair<Type, Block>(type, constraint));
-
 		return blk;
 	}
 

@@ -572,7 +572,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (ett == null) {
 			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
 		}
-		Type ft = ett.types.get(e.field);
+		Type ft = ett.types.get(e.field);		
 		if (ft == null) {
 			syntaxError("type has no field named " + e.field, filename, stmt);
 		}

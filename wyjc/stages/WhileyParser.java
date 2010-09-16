@@ -531,19 +531,76 @@ public class WhileyParser {
 	
 	private Stmt parseVarDecl() {
 		int start = index;
-		UnresolvedType type = parseType();
+		List<Stmt.VarDeclComp> decls = new ArrayList();
+		
+		if(isTupleDeclStart()) {
+			decls.add(parseTupleDeclComp());
+		} else {
+			UnresolvedType type = parseType();
+			decls.add(parseVarDeclComp(type));		
+			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				decls.add(parseVarDeclComp(type));
+			}
+		}
+		
+		matchEndLine();
+		return new Stmt.VarDecl(decls, sourceAttr(start, index - 1));
+	}
+	
+	private boolean isTupleDeclStart() {
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			int start = index;
+			match(LeftBrace.class);
+			UnresolvedType t = parseType();			
+			checkNotEof();
+			Token token = tokens.get(index);
+			index = start;
+			if (token instanceof RightBrace || token instanceof Comma) {
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	private Stmt.VarDeclComp parseTupleDeclComp() {
+		int start = index;
+		ArrayList<Pair<UnresolvedType, String>> decls = new ArrayList();
+		match(LeftBrace.class);
+		UnresolvedType t = parseType();
+		Identifier var = matchIdentifier();
+		decls.add(new Pair(t,var.text));
+		while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			match(Comma.class);
+			t = parseType();
+			var = matchIdentifier();
+			decls.add(new Pair(t,var.text));			
+		}
+		match(RightBrace.class);
+		Expr initialiser = null;
+		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
+			match(Equals.class);
+			initialiser = parseCondition();
+		}
+		return new Stmt.VarDeclComp(decls, initialiser, sourceAttr(start,
+				index - 1));
+	}
+	
+	private Stmt.VarDeclComp parseVarDeclComp(UnresolvedType type) {
+		int start = index;
+		ArrayList<Pair<UnresolvedType, String>> decls = new ArrayList();		
 		Identifier var = matchIdentifier();
 		Expr initialiser = null;
 		if (index < tokens.size() && tokens.get(index) instanceof Equals) {
 			match(Equals.class);
 			initialiser = parseCondition();
 		}
-
-		matchEndLine();
-		return new Stmt.VarDecl(type, var.text, initialiser, sourceAttr(
-				start, index - 1));
+		decls.add(new Pair(type, var.text));
+		return new Stmt.VarDeclComp(decls, initialiser, sourceAttr(start,
+				index - 1));
 	}
-		
+	
 	private Stmt parseAssign() {		
 		// standard assignment
 		int start = index;

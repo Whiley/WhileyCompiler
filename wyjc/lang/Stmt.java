@@ -3,31 +3,44 @@ package wyjc.lang;
 import java.util.*;
 
 import wyil.lang.Attribute;
-import wyil.util.SyntacticElement;
+import wyil.util.*;
 import wyjvm.lang.Bytecode;
 
 public interface Stmt extends SyntacticElement {
+
+	public static final class VarDeclComp extends SyntacticElement.Impl {
+		public final List<Pair<UnresolvedType, String>> types;
+		public final Expr initialiser;
+
+		public VarDeclComp(Collection<Pair<UnresolvedType, String>> types,
+				Expr initialiser, Attribute... attributes) {
+			super(attributes);
+			this.types = new ArrayList(types);
+			this.initialiser = initialiser;
+		}
+		
+		public VarDeclComp(Collection<Pair<UnresolvedType, String>> types,
+				Expr initialiser, Collection<Attribute> attributes) {
+			super(attributes);
+			this.types = new ArrayList(types);
+			this.initialiser = initialiser;
+		}
+	}
 	
 	public static final class VarDecl extends SyntacticElement.Impl implements
 			Stmt {
-		public final UnresolvedType type;
-		public final String name;
-		public final Expr initialiser;
+		public final List<VarDeclComp> decls;
 
-		public VarDecl(UnresolvedType type, String name, Expr init,
+		public VarDecl(Collection<VarDeclComp> decls,
 				Attribute... attributes) {
 			super(attributes);
-			this.type = type;
-			this.name = name;
-			this.initialiser = init;
+			this.decls = new ArrayList<VarDeclComp>(decls);
 		}
 
-		public VarDecl(UnresolvedType type, String name, Expr init,
+		public VarDecl(Collection<VarDeclComp> decls,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.type = type;
-			this.name = name;
-			this.initialiser = init;
+			this.decls = new ArrayList<VarDeclComp>(decls);
 		}
 	}
 	

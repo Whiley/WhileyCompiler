@@ -195,6 +195,9 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void RecordAssign_Valid_5_StaticTest() { verificationRunTest("RecordAssign_Valid_5"); }
  @Test public void RecordConversion_Valid_1_StaticTest() { verificationRunTest("RecordConversion_Valid_1"); }
  @Test public void RecordDefine_Valid_1_StaticTest() { verificationRunTest("RecordDefine_Valid_1"); }
+ @Test public void TupleType_Valid_1_StaticTest() { verificationRunTest("TupleType_Valid_1"); }
+ @Test public void TupleType_Valid_2_StaticTest() { verificationRunTest("TupleType_Valid_2"); }
+ @Test public void TupleType_Valid_3_StaticTest() { verificationRunTest("TupleType_Valid_3"); }
  @Test public void TypeEquals_Valid_1_StaticTest() { verificationRunTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_StaticTest() { verificationRunTest("TypeEquals_Valid_2"); }
  @Test public void TypeEquals_Valid_3_StaticTest() { verificationRunTest("TypeEquals_Valid_3"); }

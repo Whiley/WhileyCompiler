@@ -138,7 +138,7 @@ public class Main {
 		whileypath.add(0,".");
 		whileypath.addAll(bootpath);
 
-			try {
+		try {
 			ModuleLoader loader = new ModuleLoader(whileypath);
 			ArrayList<Compiler.Stage> stages = constructPipeline(pipelineMods,loader);
 			Compiler compiler = new Compiler(loader,stages);
@@ -322,7 +322,7 @@ public class Main {
 
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
 		
-		// First, construct the default pipeline
+		// First, construct the default pipeline		
 		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
 		stages.add(new WyilTransform("type propagation", new TypePropagation(
