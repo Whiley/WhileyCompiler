@@ -185,7 +185,22 @@ public class NameResolution {
 
 	protected void resolve(Assign s, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
-		resolve(s.lhs, environment, imports);
+		if(s.lhs instanceof Variable) {
+			Variable v = (Variable) s.lhs;
+			environment.put(v.var, Collections.EMPTY_SET);
+		} else if(s.lhs instanceof TupleGen) {
+			TupleGen tg = (TupleGen) s.lhs;
+			for(Expr e : tg.fields) {
+				if(e instanceof Variable) {
+					Variable v = (Variable) s.lhs;
+					environment.put(v.var, Collections.EMPTY_SET);
+				} else {
+					syntaxError("variable expected",filename,e);
+				}
+			}
+		} else {
+			resolve(s.lhs, environment, imports);
+		}
 		resolve(s.rhs, environment, imports);	
 	}
 
