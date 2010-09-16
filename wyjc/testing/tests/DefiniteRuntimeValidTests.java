@@ -218,6 +218,7 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void UnionType_Valid_11_RunTest() { runTest("UnionType_Valid_11"); }
  @Test public void UnionType_Valid_12_RunTest() { runTest("UnionType_Valid_12"); }
  @Test public void UnionType_Valid_13_RunTest() { runTest("UnionType_Valid_13"); }
+ @Test public void UnionType_Valid_14_RunTest() { runTest("UnionType_Valid_14"); }
  @Test public void UnionType_Valid_2_RunTest() { runTest("UnionType_Valid_2"); }
  @Ignore("Known Bug") @Test public void UnionType_Valid_3_RunTest() { runTest("UnionType_Valid_3"); }
  @Test public void UnionType_Valid_4_RunTest() { runTest("UnionType_Valid_4"); }
