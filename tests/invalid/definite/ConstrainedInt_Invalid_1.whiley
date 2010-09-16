@@ -2,10 +2,8 @@
 define c1nat as int where $ > 0
 define c1pnat as c1nat where $ > 1
 
-void f(int x):
-    c1pnat y
-    y = x
-    print str(y)
+c1pnat f(int x):
+    return x
 
 void System::main([string] args):
-    f(-1)
+    print str(f(-1))

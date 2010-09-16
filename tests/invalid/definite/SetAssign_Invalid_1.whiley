@@ -3,8 +3,6 @@ void f({int} xs) requires |xs| > 4:
     print str(xs)
 
 void System::main([string] args):
-    {int} ys
-    {int} zs
     if |args| > 1:
         ys = {1,2,3}
     else:

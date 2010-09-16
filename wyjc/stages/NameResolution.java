@@ -205,16 +205,24 @@ public class NameResolution {
 		resolve(s.expr, environment, imports);		
 	}
 
-	protected void resolve(IfElse s, HashMap<String,Set<Expr>> environment,
+	protected void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
 		resolve(s.condition, environment, imports);
-		environment = new HashMap<String,Set<Expr>>(environment);
+		HashMap<String, Set<Expr>> tenv = new HashMap<String, Set<Expr>>(
+				environment);
 		for (Stmt st : s.trueBranch) {
-			resolve(st, environment, imports);
+			resolve(st, tenv, imports);
 		}
-		if (s.falseBranch != null) {			
+		if (s.falseBranch != null) {
+			HashMap<String, Set<Expr>> fenv = new HashMap<String, Set<Expr>>(
+					environment);
 			for (Stmt st : s.falseBranch) {
 				resolve(st, environment, imports);
+			}
+			for (Map.Entry<String, Set<Expr>> p : tenv.entrySet()) {
+				if (fenv.containsKey(p.getKey())) {
+					environment.put(p.getKey(), Collections.EMPTY_SET);
+				}
 			}
 		}
 	}

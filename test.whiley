@@ -1,4 +1,6 @@
 void System::main([string] args):
-    p = {x:(1,2), y:2}
-    print str(p.x)
-    print str(p.y)
+    if |args| > 0:
+        x = 1
+    else:
+        x = 2
+    print str(x)

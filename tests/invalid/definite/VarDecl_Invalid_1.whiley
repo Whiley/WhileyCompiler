@@ -1,5 +1,5 @@
 void f(int x) requires x >= 0:
-    int y = 10 / x
+    y = 10 / x
     print str(x)
     print str(y)
 

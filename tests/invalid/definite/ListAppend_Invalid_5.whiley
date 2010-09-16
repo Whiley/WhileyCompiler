@@ -7,5 +7,5 @@ int g([int] left, plistv6 right):
     return f(left + right)
 
 void System::main([string] args):
-    int r = g([1,2,-1],[6,7,8])
+    r = g([1,2,-1],[6,7,8])
     print str(r)

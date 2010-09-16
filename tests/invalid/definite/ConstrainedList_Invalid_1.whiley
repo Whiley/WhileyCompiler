@@ -2,6 +2,6 @@
     return [x]
 
 void System::main([string] args):
-    [byte] bytes = f(256)
+    bytes = f(256)
     print str(bytes)
 

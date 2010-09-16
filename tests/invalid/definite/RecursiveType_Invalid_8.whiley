@@ -9,5 +9,5 @@ exp2 f(exp1 e1):
     return e1
 
 void System::main([string] args):
-    exp2 x = f(-1)
+    x = f(-1)
     print str(x)

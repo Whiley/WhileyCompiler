@@ -2,7 +2,6 @@
 define c3num as {1,2,3,4}
 
 void f(c3num x):
-    c3num y
     y = x
     print str(y)
 

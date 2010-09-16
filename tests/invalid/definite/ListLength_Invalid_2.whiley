@@ -1,5 +1,4 @@
 void System::main([string] args):
-    [int] arr
     if |args| > 0:
         arr = [1,2,4]
     else:

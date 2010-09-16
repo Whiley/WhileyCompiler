@@ -10,7 +10,7 @@ nat sum(LinkedList list):
         return list.data + sum(list.next)
 
 void System::main([string] args):
-    LinkedList l = { next:1, data:1 }
+    l = { next:1, data:1 }
     print str(sum(l))
     l = { next:l, data:-2 }
     print str(sum(l))    

@@ -1,6 +1,4 @@
 void f([int] x, int i) requires |x| > 0:
-    int y
-    int z
     if i < 0 || i >= |x|:
         i = 1
     y = x[i]
@@ -10,7 +8,6 @@ void f([int] x, int i) requires |x| > 0:
     print str(z)
 
 void System::main([string] args):
-    [int] arr
     arr = [1,2,3]
     f(arr, 1)
     print str(arr)    

@@ -7,5 +7,5 @@ posList f(LinkedList list):
     return list
 
 void System::main([string] args):
-    LinkedList l = { next:{ next:1, data:-1 }, data:1 }
+    l = { next:{ next:1, data:-1 }, data:1 }
     print str(f(l))

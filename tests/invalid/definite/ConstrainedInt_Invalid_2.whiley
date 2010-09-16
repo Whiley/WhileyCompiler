@@ -1,11 +1,9 @@
 // this is a comment!
 define c2nat as int where $ < 10
 
-void f(c2nat x):
-    c2nat y
+c2nat f(c2nat x):
     x = x + 1
-    y = x
-    print str(y)
+    return x
 
 void System::main([string] args):
-    f(9)
+    print str(f(9))

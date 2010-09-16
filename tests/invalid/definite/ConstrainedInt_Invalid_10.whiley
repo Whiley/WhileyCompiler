@@ -2,10 +2,8 @@
 define irf3nat as int where $ < 10
 define pirf3nat as irf3nat where $ > 0
 
-void f(int x):
-    pirf3nat y
-    y = x
-    print str(y)
+pirf3nat f(int x):
+    return x
 
 void System::main([string] args):
-    f(11)
+    print str(f(11))
