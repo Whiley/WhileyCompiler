@@ -11,6 +11,6 @@ void f(expr e):
         print "GOT SOMETHING ELSE?"
 
 void System::main([string] args):
-    expr e = {1,2,3,4}
+    e = {1,2,3,4}
     f(e)
  

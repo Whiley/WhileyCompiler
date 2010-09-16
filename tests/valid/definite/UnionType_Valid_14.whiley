@@ -7,5 +7,5 @@ nlist f(int x):
         return f(x-1)
 
 void System::main([string] args):
-    nlist x = f(2)    
+    x = f(2)    
     print str(x)

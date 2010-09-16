@@ -1,8 +1,8 @@
 define nat as int where $ >= 0
 
 [nat] extract([int] ls):
-    int i = 0
-    [nat] r = []
+    i = 0
+    r = []
     // now do the reverse!
     while i < |ls|:
         if(ls[i] >= 0):

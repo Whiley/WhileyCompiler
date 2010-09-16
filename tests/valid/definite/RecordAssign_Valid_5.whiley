@@ -2,7 +2,6 @@ define byte as int where $ >=0 && $ <= 255
 define bytes as { byte b1, byte b2 }
 
 bytes f(int a) requires a > 0 && a < 10:
-    bytes bs
     bs = {b1:a,b2:a+1}
     return bs
 

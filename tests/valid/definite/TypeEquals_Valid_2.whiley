@@ -9,7 +9,7 @@ void f(expr e):
         print "GOT SOMETHING ELSE?"
 
 void System::main([string] args):
-    expr e = 1
+    e = 1
     f(e)
     e = [1,2,3,4]
     f(e)

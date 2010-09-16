@@ -1,10 +1,12 @@
 define tac2ta as {int f1, int f2} where f1 < f2
 define tac2tb as {int f1, int f2} where (f1+1) < f2
 
+tac2tb f(tac2ta x):
+    return x
+
 void System::main([string] args):
-    tac2ta x = {f1:2,f2:3}
-    tac2tb y
+    x = {f1:2,f2:3}
     print str(x)
     x.f1 = 1
-    y = x
+    y = f(x)
     print str(y)

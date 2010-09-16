@@ -9,7 +9,7 @@ int f(intlist x):
     return 1 
 
 void System::main([string] args):
-    int x = f([1,2,3])
+    x = f([1,2,3])
     print str(x)
     x = f(123)
     print str(x)

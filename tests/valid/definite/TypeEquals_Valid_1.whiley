@@ -8,7 +8,7 @@ void f(expr e):
         print "GOT BOB"
 
 void System::main([string] args):
-    expr e = 1
+    e = 1
     f(e)
     e = {x:1,y:2}
     f(e)

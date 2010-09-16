@@ -1,8 +1,8 @@
 define nat as int where $ >= 0
 
 nat sum([nat] ls):
-    int i=0
-    int sum = 0
+    i=0
+    sum = 0
     while i < |ls| where i >= 0 && sum >= 0:
         sum = sum + ls[i]
         i = i + 1

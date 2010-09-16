@@ -7,7 +7,7 @@ int f(expr e):
         return -1
     
 void System::main([string] args):
-    int x = f({err:"Hello World"})
+    x = f({err:"Hello World"})
     print str(x)
     x = f({op:1,lhs:{err:"Gotcha"}})
     print str(x)

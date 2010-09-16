@@ -7,6 +7,6 @@ int f(tupper y) ensures $ >= 0:
     return y.op
 
 void System::main([string] args):
-    tupper x = {op:1,il:1}
+    x = {op:1,il:1}
     print str(x)
     f(x)

@@ -7,5 +7,5 @@ nlist f(int i, [nlist] xs):
         return xs[i]
 
 void System::main([string] args):
-    nlist x = f(2, [2,3,4])    
+    x = f(2, [2,3,4])    
     print str(x)

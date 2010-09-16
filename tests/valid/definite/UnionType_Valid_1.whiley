@@ -1,10 +1,7 @@
-// this is a comment!
-define IntList as int|[int]
-
-void System::main([string] args):
-    IntList x
-    x = 1
-    print str(x)
-    x = [1,2,3]
+void System::main([string] args):    
+    if |args| == 1:
+        x = 1
+    else:
+        x = [1,2,3]
     print str(x)
 

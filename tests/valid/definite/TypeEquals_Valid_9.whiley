@@ -10,7 +10,7 @@ int f(expr e):
         return -1 // unreachable
 
 void System::main([string] args):
-    int x = f(1)
+    x = f(1)
     print str(x)
     x = f({x:4,y:10})   
     print str(x)
