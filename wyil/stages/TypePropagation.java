@@ -108,8 +108,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				lhs = (CExpr.LVal) infer(code.lhs,stmt,environment);
 			}	
 			// Update the type of the lhs
-			lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);
-			System.out.println("GOT: " + lhs);
+			lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);			
 		}
 		
 		stmt = new Stmt(new Code.Assign(lhs, rhs), stmt.attributes());
