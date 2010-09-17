@@ -1,5 +1,8 @@
+int f({real} xs):
+    return |xs|
+
 void System::main([string] args):
-    ys = {1.0234234,1.12}
+    ys = {{1,2},{1}}
     xs = {1,2,3,4}
-    xs = xs ∩ ys
-    print str(xs)
+    x = f(xs ∩ ys)
+    print str(x)

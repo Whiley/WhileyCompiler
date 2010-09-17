@@ -11,6 +11,6 @@ void f(expr e):
 void System::main([string] args):
     e = 1
     f(e)
-    e = (x:1,y:2)
+    e = {x:1,y:2}
     f(e)
  

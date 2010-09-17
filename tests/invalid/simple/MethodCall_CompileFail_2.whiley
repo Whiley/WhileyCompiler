@@ -1,4 +1,4 @@
-define dummy as process (int x)
+define dummy as process {int x}
 
 void dummy::f(int x):
     print str(x)

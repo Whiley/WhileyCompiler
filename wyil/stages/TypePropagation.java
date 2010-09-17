@@ -104,11 +104,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(code.lhs != null) {
 			if(code.lhs instanceof CExpr.LVar) {
 				lhs = code.lhs;
-			} else {
+			} else {	
 				lhs = (CExpr.LVal) infer(code.lhs,stmt,environment);
 			}	
 			// Update the type of the lhs
 			lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);
+			System.out.println("GOT: " + lhs);
 		}
 		
 		stmt = new Stmt(new Code.Assign(lhs, rhs), stmt.attributes());
