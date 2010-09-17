@@ -313,17 +313,8 @@ public class ModuleBuilder {
 	protected Pair<Type, Block> expandType(NameID key,
 			HashMap<NameID, Type> cache) throws ResolveError {
 		
-		// NOTE: It seems like a useful optimisation here is to actually look in
-		// the types map and see whether we've already resolved this type or
-		// not. This prevents against needless traversal of the typedef graph.
-		// HOWEVER, it doesn't work. The problem is subtle, and occurs with
-		// recursive types. In particular, if we do this, the order in which
-		// choose the first node in a set of recursive nodes affects the final
-		// type(s) we get and, critically, this depends on the order.
-		// 
-		// Note, we must use types to handle constants
 		Type cached = cache.get(key);
-		Value v = constants.get(key);
+		Pair<Type, Block> t = types.get(key);
 		
 		if (cached != null) {
 			Block blk = null;
@@ -336,8 +327,8 @@ public class ModuleBuilder {
 				}
 			}
 			return new Pair<Type, Block>(cached, blk);
-		} else if(v != null) {
-			return types.get(key);
+		} else if(t != null) {
+			return new Pair<Type, Block>(t.first(), Block.relabel(t.second()));
 		} else if (!modules.contains(key.module())) {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
@@ -351,7 +342,7 @@ public class ModuleBuilder {
 
 		// Ok, expand the type properly then
 		Pair<UnresolvedType, Expr> ut = unresolved.get(key);
-		Pair<Type, Block> t = expandType(ut.first(), filemap.get(key).filename,
+		t = expandType(ut.first(), filemap.get(key).filename,
 				cache);
 
 		// Now, we need to test whether the current type is open and recursive
