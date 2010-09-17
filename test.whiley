@@ -1,6 +1,6 @@
 void System::main([string] args):
-    if |args| > 0:
-        x = 1
-    else:
-        x = 2
-    print str(x)
+    x = [1]
+    y = 1
+    x,y = (1,2)
+    x = x + 1
+    print str(x)   

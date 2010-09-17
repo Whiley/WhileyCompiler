@@ -466,12 +466,14 @@ public abstract class Value extends CExpr {
 		public String toString() {
 			String r = "{";
 			boolean firstTime=true;
-			for(Map.Entry<String,Value> v : values.entrySet()) {
+			ArrayList<String> keys = new ArrayList<String>(values.keySet());
+			Collections.sort(keys);
+			for(String key : keys) {
 				if(!firstTime) {
 					r += ",";
 				}
 				firstTime=false;
-				r += v.getKey() + ":=" + v.getValue();
+				r += key + ":=" + values.get(key);
 			}
 			return r + "}";
 		}

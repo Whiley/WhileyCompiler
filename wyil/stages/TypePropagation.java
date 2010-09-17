@@ -109,20 +109,54 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(lhs.type(),rhs.type(), stmt);
 		}
 
-		if(lhs instanceof Variable) {
-			Variable v = (Variable) lhs;
-			environment.put(v.name, rhs.type());
-			lhs = CExpr.VAR(rhs.type(),v.name);
-		} else if(lhs instanceof Register) {
-			Register v = (Register) lhs;
-			environment.put("%" + v.index, rhs.type());
-			lhs = CExpr.REG(rhs.type(),v.index);
-		} // FIXME: other cases
+		lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);
 		
 		stmt = new Stmt(new Code.Assign(lhs, rhs), stmt.attributes());
 		return new Pair<Stmt,Env>(stmt,environment);
 	}
+	
+	protected CExpr typeInference(CExpr lhs, Type type, Env environment) {
+		if(lhs instanceof Variable) {
+			Variable v = (Variable) lhs;
+			environment.put(v.name, type);
+			return CExpr.VAR(type,v.name);
+		} else if(lhs instanceof Register) {
+			Register v = (Register) lhs;
+			environment.put("%" + v.index, type);
+			return CExpr.REG(type,v.index);
+		} else if(lhs instanceof RecordAccess) {
+			RecordAccess r = (RecordAccess) lhs;		
+			Type lhs_t = updateRecordFieldType(r.lhs.type(),r.field,type);			
+			lhs = typeInference(r.lhs, lhs_t, environment);			
+			return CExpr.RECORDACCESS(lhs, r.field);
+		}	
 		
+		// default, don't do anything
+		return lhs;
+	}
+	
+	protected Type updateRecordFieldType(Type src, String field, Type type) {
+		if(src instanceof Type.Record) {
+			Type.Record rt = (Type.Record) src;
+			HashMap<String,Type> types = new HashMap<String,Type>(rt.types);
+			types.put(field, type);
+			return Type.T_RECORD(types);
+		} else if(src instanceof Type.Named) {
+			Type.Named nd = (Type.Named) src;
+			return Type.T_NAMED(nd.module, nd.name, updateRecordFieldType(nd.type,field,type));
+		} else if(src instanceof Type.Union) {
+			Type.Union tu = (Type.Union) src;
+			Type t = Type.T_VOID;
+			for(Type b : tu.bounds) {
+				t = Type.leastUpperBound(t,updateRecordFieldType(b,field,type));
+			}
+			return t;
+		} // recursive case is here
+		
+		// no can do
+		return type;
+	}
+	
 	protected Code infer(Code.Return code, Stmt stmt, Env environment) {
 		CExpr rhs = code.rhs;
 		Type ret_t = method.type().ret;

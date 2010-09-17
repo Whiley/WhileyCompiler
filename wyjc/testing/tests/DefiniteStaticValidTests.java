@@ -221,6 +221,7 @@ public class DefiniteStaticValidTests extends TestHarness {
  @Test public void UnionType_Valid_13_StaticTest() { verificationRunTest("UnionType_Valid_13"); }
  @Test public void UnionType_Valid_14_StaticTest() { verificationRunTest("UnionType_Valid_14"); }
  @Test public void UnionType_Valid_15_StaticTest() { verificationRunTest("UnionType_Valid_15"); }
+ @Test public void UnionType_Valid_16_StaticTest() { verificationRunTest("UnionType_Valid_16"); }
  @Test public void UnionType_Valid_2_StaticTest() { verificationRunTest("UnionType_Valid_2"); }
  @Ignore("Known Bug") @Test public void UnionType_Valid_3_StaticTest() { verificationRunTest("UnionType_Valid_3"); }
  @Test public void UnionType_Valid_4_StaticTest() { verificationRunTest("UnionType_Valid_4"); }

@@ -62,9 +62,8 @@ public final class WhileyRecord extends HashMap<String, Object> implements
 		boolean firstTime = true;
 
 		ArrayList<String> ss = new ArrayList<String>(keySet());
-		Collections.sort(ss);
-
-		for (String s : ss) {
+		Collections.sort(ss);		
+		for (String s : ss) {	
 			if (!firstTime) {
 				r = r + ",";
 			}
