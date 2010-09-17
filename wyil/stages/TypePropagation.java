@@ -97,19 +97,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {
 		
 		environment = new Env(environment);
-		
-		CExpr.LVal lhs = code.lhs;
-		
+				
 		CExpr rhs = infer(code.rhs,stmt,environment);
-
-		if(lhs instanceof LVar) {			
-			checkIsSubtype(lhs.type(),rhs.type(), stmt);
-		} else if(lhs != null) {			
-			lhs = (CExpr.LVal) infer(lhs,stmt,environment);
-			checkIsSubtype(lhs.type(),rhs.type(), stmt);
+		CExpr.LVal lhs = null;
+		
+		if(code.lhs != null) {
+			if(code.lhs instanceof CExpr.LVar) {
+				lhs = code.lhs;
+			} else {
+				lhs = (CExpr.LVal) infer(code.lhs,stmt,environment);
+			}	
+			// Update the type of the lhs
+			lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);
 		}
-
-		lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);
 		
 		stmt = new Stmt(new Code.Assign(lhs, rhs), stmt.attributes());
 		return new Pair<Stmt,Env>(stmt,environment);
@@ -124,7 +124,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Register v = (Register) lhs;
 			environment.put("%" + v.index, type);
 			return CExpr.REG(type,v.index);
-		} else if(lhs instanceof RecordAccess) {
+		} else if(lhs instanceof ListAccess) {
+			ListAccess la = (ListAccess) lhs;
+			Type.List tl = (Type.List) la.src.type();
+			Type elem_t = Type.leastUpperBound(tl.element,type);
+			lhs = typeInference(la.src,Type.T_LIST(elem_t),environment);
+			return CExpr.LISTACCESS(lhs, la.index);
+		} else if(lhs instanceof RecordAccess) {		
 			RecordAccess r = (RecordAccess) lhs;		
 			Type lhs_t = updateRecordFieldType(r.lhs.type(),r.field,type);			
 			lhs = typeInference(r.lhs, lhs_t, environment);			
