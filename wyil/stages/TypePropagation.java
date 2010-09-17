@@ -94,8 +94,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return new Pair<Stmt,Env>(stmt,environment);
 	}
 	
-	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {
-		
+	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {		
 		environment = new Env(environment);
 				
 		CExpr rhs = infer(code.rhs,stmt,environment);

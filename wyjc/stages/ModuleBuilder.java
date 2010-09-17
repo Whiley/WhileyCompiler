@@ -312,10 +312,19 @@ public class ModuleBuilder {
 
 	protected Pair<Type, Block> expandType(NameID key,
 			HashMap<NameID, Type> cache) throws ResolveError {
-
-		Pair<Type, Block> t = types.get(key);
+		
+		// NOTE: It seems like a useful optimisation here is to actually look in
+		// the types map and see whether we've already resolved this type or
+		// not. This prevents against needless traversal of the typedef graph.
+		// HOWEVER, it doesn't work. The problem is subtle, and occurs with
+		// recursive types. In particular, if we do this, the order in which
+		// choose the first node in a set of recursive nodes affects the final
+		// type(s) we get and, critically, this depends on the order.
+		// 
+		// Note, we must use types to handle constants
 		Type cached = cache.get(key);
-
+		Value v = constants.get(key);
+		
 		if (cached != null) {
 			Block blk = null;
 			if(cached instanceof Type.Recursive) {
@@ -327,8 +336,8 @@ public class ModuleBuilder {
 				}
 			}
 			return new Pair<Type, Block>(cached, blk);
-		} else if (t != null) {
-			return new Pair<Type, Block>(t.first(), Block.relabel(t.second()));
+		} else if(v != null) {
+			return types.get(key);
 		} else if (!modules.contains(key.module())) {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
@@ -342,7 +351,8 @@ public class ModuleBuilder {
 
 		// Ok, expand the type properly then
 		Pair<UnresolvedType, Expr> ut = unresolved.get(key);
-		t = expandType(ut.first(), filemap.get(key).filename, cache);
+		Pair<Type, Block> t = expandType(ut.first(), filemap.get(key).filename,
+				cache);
 
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
@@ -378,29 +388,6 @@ public class ModuleBuilder {
 			CExpr.Register var = CExpr.REG(Type.T_ANY,0);			
 			blk = Block.registerShift(1,t.second());
 
-			/* REMOVE ME!!
-			// Must close any types used in subtype tests. This is awkward, but
-			// necessary.
-			
-			for(int i=0;i!=blk.size();++i) {
-				wyil.lang.Stmt stmt = blk.get(i);
-				if(stmt.code instanceof Code.IfGoto){
-					IfGoto ig = (IfGoto) stmt.code;
-					if(ig.rhs instanceof Value.TypeConst) {
-						Value.TypeConst r = (Value.TypeConst) ig.rhs;
-						// At this point, we've now found a type test.
-						if(Type.isOpenRecursive(key, r.type)) {														
-							// Ok, it's an open recursive type so we must
-							// close it.
-							r = Value.V_TYPE(Type.T_RECURSIVE(key.toString(),r.type));
-							ig = new Code.IfGoto(ig.op, ig.lhs, r, ig.target);
-							blk.set(i,ig,stmt.attributes());	
-						}						
-					}
-				} 
-			}
-			*/
-			
 			// finally, create the inductive block
 			blk.add(0,new Code.Induct(lab, var, src));
 			blk.add(new Code.InductEnd(lab));
