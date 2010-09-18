@@ -348,7 +348,7 @@ public class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpenRecursive(key, t.first());
+		boolean isOpenRecursive = Type.isOpenRecursive(key.toString(), t.first());
 		if (isOpenRecursive) {
 			t = new Pair<Type, Block>(Type.T_RECURSIVE(key.toString(), t
 					.first()), t.second());

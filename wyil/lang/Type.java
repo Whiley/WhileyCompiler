@@ -144,23 +144,35 @@ public abstract class Type {
 			Recursive rt1 = (Recursive) t1;
 			Type rt1type = rt1.type;						
 			
-			if(rt1type == null) {
+			if (rt1type instanceof Type.Union) {
+				// recursive type not normalised; so normalise then try again.
+				return isSubtype(unfactor(rt1), t2);
+			} else if (rt1type == null) {
 				// recursive case, need to unroll
 				rt1type = environment.get(rt1.name);
-				if(rt1type == null) { return false; }
+				if (rt1type == null) {
+					return false;
+				}
 			} else {
-				environment = new HashMap<String,Type>(environment);
+				environment = new HashMap<String, Type>(environment);
 				environment.put(rt1.name, rt1.type);
 			}
-			if(t2 instanceof Recursive) {
+			
+			if (t2 instanceof Recursive) {
 				// Here, we attempt to show an isomorphism between the two
 				// recursive types.
 				Recursive rt2 = (Recursive) t2;
 				Type rt2type = rt2.type;
-				if(rt2type == null) {
+				if (rt2type instanceof Type.Union) {
+					// recursive type not normalised; so normalise then try
+					// again.
+					return isSubtype(rt2, rt2);
+				} else if (rt2type == null) {
 					// recursive case, need to unroll
 					rt2type = environment.get(rt2.name);
-					if(rt2type == null) { return false; }
+					if (rt2type == null) {
+						return false;
+					}
 				}
 				HashMap<String,Type> binding = new HashMap<String,Type>();
 				binding.put(rt2.name, T_RECURSIVE(rt1.name,null));
@@ -657,7 +669,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpenRecursive(NameID key, Type t) {
+	public static boolean isOpenRecursive(String key, Type t) {
 		if (t instanceof Type.Void || t instanceof Type.Bool
 				|| t instanceof Type.Int || t instanceof Type.Real
 				|| t instanceof Type.Any || t instanceof Type.Named
@@ -690,7 +702,7 @@ public abstract class Type {
 			return false;
 		} else if(t instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) t;
-			if(rt.name.equals(key.toString())) {
+			if(rt.name.equals(key)) {
 				return rt.type == null;
 			} else if(rt.type != null) {
 				return isOpenRecursive(key,rt.type); 
@@ -713,6 +725,127 @@ public abstract class Type {
 		}
 	}
 
+	/**
+	 * <p>
+	 * The purpose of this method is to move recursive types into a normal form.
+	 * This is necessary to ensure that subtyping works as expected. For
+	 * example, consider these types:
+	 * </p>
+	 * 
+	 * <pre>
+	 * X[int|{X next}]
+	 * int|Y[{int|Y next}]
+	 * </pre>
+	 * <p>
+	 * These types can be considered equivalent. However, under the subtype
+	 * relation implemented above, they are not considered subtypes. This is
+	 * because unrollowing either of the types does not produce the other. For
+	 * example, unrolling the first gives this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * X[int|{int|{X next} next}]
+	 * </pre>
+	 * <p>
+	 * Unfortunately, this is still not a subtype of the second.
+	 * </p>
+	 * <p>
+	 * To resolve this issue, we normalise recursive types by unfactoring them
+	 * where possible. Factoring is where we push types into the recursive
+	 * block, as follows
+	 * </p>
+	 * 
+	 * <pre>
+	 * X[int|{X next}] ===> int|X[{{int|Y next}]
+	 * </pre>
+	 */
+	public static Type normaliseRecursiveTypes(Type t) {
+		if (t instanceof Type.Void || t instanceof Type.Bool
+				|| t instanceof Type.Int || t instanceof Type.Real
+				|| t instanceof Type.Any || t instanceof Type.Named
+				|| t instanceof Type.Existential) {
+			return t;
+		} else if(t instanceof Type.List) {
+			Type.List lt = (Type.List) t;
+			return Type.T_LIST(normaliseRecursiveTypes(lt.element));
+		} else if(t instanceof Type.Set) {
+			Type.Set lt = (Type.Set) t;
+			return Type.T_SET(normaliseRecursiveTypes(lt.element));			
+		} else if(t instanceof Type.Process) {
+			Type.Process lt = (Type.Process) t;
+			return Type.T_PROCESS(normaliseRecursiveTypes(lt.element));			
+		} else if(t instanceof Type.Record) {			
+			Type.Record tt = (Record) t;
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+				types.put(b.getKey(), normaliseRecursiveTypes(b.getValue()));				
+			}
+			return T_RECORD(types);
+		} else if (t instanceof Type.Recursive) {
+			Type.Recursive rt = (Type.Recursive) t;
+			if (rt.type == null) {
+				return rt;
+			} else {
+				Type element = normaliseRecursiveTypes(rt.type);
+				return unfactor(T_RECURSIVE(rt.name, element));				
+			}
+		} else if(t instanceof Type.Fun) {		
+			Type.Fun ft = (Type.Fun) t;
+			ArrayList<Type> params = new ArrayList<Type>();
+			for(Type p : ft.params) {
+				params.add(normaliseRecursiveTypes(p));
+			}
+			Type ret = normaliseRecursiveTypes(ft.ret);
+			Type.ProcessName receiver = ft.receiver;
+			if(receiver != null) {
+				receiver = (Type.ProcessName) normaliseRecursiveTypes(receiver);
+			}
+			return T_FUN(receiver,ret,params);
+		} else if(t instanceof Type.Union) {
+			Type.Union ut = (Type.Union) t;
+			Type lub = Type.T_VOID;
+			
+			for (Type b : ut.bounds) {
+				lub = leastUpperBound(lub, normaliseRecursiveTypes(b));
+			}
+
+			return lub;
+		} 
+		
+		return t;
+	}
+	
+	public static Type unfactor(Type.Recursive type) {		
+		if(type.type instanceof Union) {			
+			Type.Union ut = (Type.Union) type.type;			
+			Type factors = T_VOID;
+			Type opens = T_VOID;
+			for(Type b : ut.bounds) {
+				if(!isOpenRecursive(type.name,b)) {
+					factors = leastUpperBound(factors,b);
+				} else {
+					opens = leastUpperBound(opens,b);
+				}
+			}
+			
+			if(factors == T_VOID) {
+				// nothing doing here
+				return type;
+			} 
+			
+			HashMap<String,Type> binding = new HashMap<String,Type>();
+			binding.put(type.name, leastUpperBound(factors, T_RECURSIVE(
+					type.name, null)));
+			// FIXME: there is a bug here for sure as substitute recursive types
+			// doesn't do quite what you'd expect.
+			Type elem = substituteRecursiveTypes(opens,binding);			
+			return leastUpperBound(factors,T_RECURSIVE(type.name,elem));
+		}		
+		
+		// no unfactoring possible
+		return type;
+	}
+	
 	/**
 	 * The effective record type gives a subset of the visible fields which are
 	 * guaranteed to be in the type. For example, consider this type:
