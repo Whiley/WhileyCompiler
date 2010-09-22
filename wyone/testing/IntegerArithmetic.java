@@ -146,6 +146,10 @@ public class IntegerArithmetic {
 				"0 > i && ((0 <= i && 0 > -|x| && 0 > (-|x|+i)) || ((0 > j || 0 <= (-|x|+j)) && i==0.0 && 0 > -|x|))"));
 	}			
 	
+	@Test public void Unsat_27() {
+		assertTrue(checkUnsat("2*z <: int && x==2*z && x>0 && x<1"));
+	}
+	
 	/*
 	 * ============= SAT TESTS ==============
 	 */
@@ -193,6 +197,10 @@ public class IntegerArithmetic {
 	
 	@Test public void Sat_10() {
 		assertTrue(checkSat("x <: int && x<=5 && 10<=2*x"));
+	}
+	
+	@Test public void Sat_11() {
+		assertTrue(checkSat("0<=(-10+x) && y==z && x<:int && y<:int && x==2*y && z<:int && 0<=(5-z)"));
 	}
 	
 }

@@ -400,7 +400,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		WFormula falseCondition = WFormulas.and(precondition, condition.not());
 		Attribute.BranchPredict expected = elem.attribute(Attribute.BranchPredict.class);		
 		
-		if(!minimal || (expected != null && !expected.trueBranch)) {
+		if(!minimal || (expected != null && !expected.trueBranch)) {			
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 					wyone.Main.heuristic, wyone.Main.theories);		
 			if (tp instanceof Proof.Unsat) {
@@ -411,7 +411,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		if(!minimal || (expected != null && !expected.falseBranch)) {			
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);			
-			if (fp instanceof Proof.Unsat) {
+			if (fp instanceof Proof.Unsat) {				
 				falseCondition = null;
 			}					
 		}
