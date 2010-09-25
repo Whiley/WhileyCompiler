@@ -28,11 +28,11 @@ public class CongruenceClosure implements InferenceRule {
 		if(nlit instanceof WEquality) {		
 			WEquality eq = (WEquality) nlit;			
 			if(eq.sign()) {				
-				inferEquality(eq, state, solver);	
+				inferEquality(eq, state, solver);				
 				return;
 			} 			
 		} 
-		inferFormula(nlit,state,solver);		
+		inferFormula(nlit,state,solver);				
 	}
 	
 	private void inferFormula(WFormula formula, SolverState state, Solver solver) {
@@ -112,7 +112,7 @@ public class CongruenceClosure implements InferenceRule {
 			WFormula nf = typeCheck(f.substitute(binding),state);									
 			if(nf != f) {
 				// f has been replaced!					
-				if(!isAssignment(f)) {
+				if(!isAssignment(f)) {					
 					state.eliminate(f);
 				}							
 				state.infer(nf,solver);							

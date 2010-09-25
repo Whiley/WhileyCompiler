@@ -17,8 +17,10 @@
 
 package wyone.theory.type;
 
+import java.util.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
+import wyone.theory.congruence.*;
 
 public class WTypes {
 
@@ -32,17 +34,31 @@ public class WTypes {
 	 */
 	public static WType type(WExpr e, SolverState state) {
 		// NOTE: would be nice to make this more efficient
+		HashSet<WExpr> aliases = new HashSet<WExpr>();
+		aliases.add(e);
+		
+		for(WFormula f : state) {
+			if(f instanceof WEquality) {
+				WEquality weq = (WEquality) f;
+				if(weq.sign() && (weq.lhs().equals(e) || weq.rhs().equals(e))) {
+					aliases.add(weq.lhs());
+					aliases.add(weq.rhs());
+				}
+			}
+		}
+		
 		for(WFormula f : state) {
 			if(f instanceof WSubtype) {
-				// FIXME: probably would make more sense to build up a LUB from
+				// FIXME: probably would make more sense to build up a GLB from
 				// all possible types.
 				WSubtype st = (WSubtype) f;
-				if(e.equals(st.lhs())) {
+				if(aliases.contains(st.lhs())) {
 					WType t = st.rhs();					
 					return t;
 				}
 			}
 		}
+		
 		return WAnyType.T_ANY;
 	}	
 	

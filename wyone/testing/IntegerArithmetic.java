@@ -147,7 +147,12 @@ public class IntegerArithmetic {
 	}			
 	
 	@Test public void Unsat_27() {
-		assertTrue(checkUnsat("2*z <: int && x==2*z && x>0 && x<1"));
+		assertTrue(checkUnsat("2*x <: int && z==2*x && z>0 && z<1"));
+	}
+	
+	@Test public void Unsat_28() {
+		// This one is a real challenge I think
+		assertTrue(checkUnsat("2*x <: int && z==4*x && z>0 && z<1"));
 	}
 	
 	/*
@@ -200,7 +205,7 @@ public class IntegerArithmetic {
 	}
 	
 	@Test public void Sat_11() {
-		assertTrue(checkSat("0<=(-10+x) && y==z && x<:int && y<:int && x==2*y && z<:int && 0<=(5-z)"));
+		assertTrue(checkSat("10<=x && y==z && x<:int && y<:int && x==2*y && z<:int && z<=5"));
 	}
 	
 }

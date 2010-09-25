@@ -151,7 +151,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 		// First, check for the "real shadow"
 		if (atom_t instanceof WIntType
 				&& below.poly instanceof WNumber
-				&& above.poly instanceof WNumber) {
+				&& above.poly instanceof WNumber) {			
 			WNumber bp = (WNumber) below.poly;
 			WNumber up = (WNumber) above.poly;						
 			// Note, the following is guaranteed to work because the above and

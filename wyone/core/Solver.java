@@ -203,7 +203,7 @@ public final class Solver extends Thread {
 	protected Proof checkModel(Map<WVariable, WValue> model) {										
 		// Check formula does indeed evaluate to true		
 		WFormula f = formula.substitute((Map) model);
-				
+		
 		if(f == WBool.TRUE) {
 			return new Proof.Sat(model);
 		} else {			
