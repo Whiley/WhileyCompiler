@@ -38,11 +38,11 @@ public class DefiniteStaticInvalidTests extends TestHarness {
  // following fails because we must detect ambiguity
  @Ignore("Known Bug") @Test public void ConstrainedInt_Invalid_8_StaticTest() { verificationFailTest("ConstrainedInt_Invalid_8"); }
  @Test public void ConstrainedInt_Invalid_9_StaticTest() { verificationFailTest("ConstrainedInt_Invalid_9"); }
- @Test public void ConstrainedInt_Invalid_11_RunTest() { verificationFailTest("ConstrainedInt_Invalid_11"); }
+ @Test public void ConstrainedInt_Invalid_11_StaticTest() { verificationFailTest("ConstrainedInt_Invalid_11"); }
  @Test public void ConstrainedList_Invalid_1_StaticTest() { verificationFailTest("ConstrainedList_Invalid_1"); }
  @Test public void ConstrainedList_Invalid_2_StaticTest() { verificationFailTest("ConstrainedList_Invalid_2"); } 
  @Test public void ConstrainedList_Invalid_3_StaticTest() { verificationFailTest("ConstrainedList_Invalid_3"); }
- @Test public void ConstrainedSet_Invalid_1_RunTest() { verificationFailTest("ConstrainedSet_Invalid_1"); }
+ @Test public void ConstrainedSet_Invalid_1_StaticTest() { verificationFailTest("ConstrainedSet_Invalid_1"); }
  @Test public void ConstrainedSet_Invalid_2_StaticTest() { verificationFailTest("ConstrainedSet_Invalid_2"); }
  @Test public void ConstrainedSet_Invalid_3_StaticTest() { verificationFailTest("ConstrainedSet_Invalid_3"); } 
  @Test public void Ensures_Invalid_1_StaticTest() { verificationFailTest("Ensures_Invalid_1"); }
