@@ -1,6 +1,8 @@
 define scf1nat as int where $ >= 0
 
+int f(sc1nat x):
+    return x
+
 void System::main([string] args):
-    scf1nat x
     x = -1
-    print str(x)
+    f(x)
