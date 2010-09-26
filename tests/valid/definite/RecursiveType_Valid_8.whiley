@@ -9,7 +9,7 @@ expr parse(string input):
     r = parseAddSubExpr({input:input,pos:0})
     return r.e
 
-(expr e, state st) parseAddSubExpr(state st):    
+{expr e, state st} parseAddSubExpr(state st):    
     return {e:{num:1},st:st}
 
 void System::main([string] args):

@@ -323,7 +323,7 @@ public class Main {
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
 		
 		// First, construct the default pipeline
-		//stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));
+		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));
 		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
 		stages.add(new WyilTransform("type propagation", new TypePropagation(

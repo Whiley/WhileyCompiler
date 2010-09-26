@@ -390,6 +390,7 @@ public abstract class Type {
 					types.put(key, greatestDifference(s1.types.get(key),
 							s2.types.get(key)));
 				}
+				return T_RECORD(types);
 			}
 		} else if(t2 instanceof Union) {
 			Union u = (Union) t2;
@@ -410,7 +411,7 @@ public abstract class Type {
 			HashMap<String,Type> binding = new HashMap<String,Type>();
 			binding.put(r.name, r);
 			r_type = substituteRecursiveTypes(r_type,binding);			
-			Type gdiff = greatestDifference(r_type,t2);
+			Type gdiff = greatestDifference(r_type,t2);			
 			if(!r_type.equals(gdiff)) {
 				// something changed so return new type
 				return gdiff;
@@ -817,6 +818,12 @@ public abstract class Type {
 		} 
 		
 		return t;
+	}
+	
+	public static Type unroll(Type.Recursive rt) {
+		HashMap<String,Type> binding = new HashMap<String,Type>();
+		binding.put(rt.name, rt);
+		return substituteRecursiveTypes(rt.type,binding);
 	}
 	
 	public static Type unfactor(Type.Recursive type) {		

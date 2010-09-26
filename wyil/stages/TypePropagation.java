@@ -180,7 +180,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				t = Type.leastUpperBound(t,updateRecordFieldType(b,field,type));
 			}
 			return t;
-		} // recursive case is here
+		} else if(src instanceof Type.Recursive) {			
+			Type.Recursive rt = (Type.Recursive) src;
+			return updateRecordFieldType(Type.unroll(rt),field,type);
+		}
 		
 		// no can do
 		return type;
@@ -307,6 +310,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(type, v.type);
 			Type gdiff = Type.greatestDifference(v.type, type);	
+			
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
@@ -315,13 +319,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv.put(name, Type.greatestLowerBound(type, reg.type));
 			falseEnv.put(name, Type.greatestDifference(reg.type, type));
 		} else if (lhs instanceof RecordAccess) {
-			RecordAccess ta = (RecordAccess) lhs;
-			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());
+			RecordAccess ta = (RecordAccess) lhs;			
+			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());			
 			if (lhs_t != null) {
 				HashMap<String, Type> ntypes = new HashMap<String, Type>(
 						lhs_t.types);
 				Type glb = Type.greatestLowerBound(type, lhs_t.types.get(ta.field));				
-				ntypes.put(ta.field, glb);
+				ntypes.put(ta.field, glb);				
 				// FIXME: there is some kind of problem here, as we're replacing
 				// one type with an effective type ... seems dodgy.
 				typeInference(ta.lhs, Type.T_RECORD(ntypes), trueEnv, falseEnv);
@@ -627,7 +631,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 		
 	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr lhs = infer(e.lhs,stmt,environment);				
+		CExpr lhs = infer(e.lhs,stmt,environment);		
 		Type.Record ett = Type.effectiveRecordType(lhs.type());				
 		if (ett == null) {
 			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
