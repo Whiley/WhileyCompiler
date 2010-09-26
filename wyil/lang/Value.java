@@ -23,6 +23,9 @@ import java.util.*;
 import wyil.jvm.rt.BigRational;
 
 public abstract class Value extends CExpr {	
+
+	public static final Null V_NULL = new Null();
+	
 	public static Bool V_BOOL(boolean value) {
 		return get(new Bool(value));
 	}
@@ -313,6 +316,21 @@ public abstract class Value extends CExpr {
 		return null;
 	}
 
+	public static final class Null extends Value {				
+		public Type type() {
+			return Type.T_NULL;
+		}
+		public int hashCode() {
+			return 0;
+		}
+		public boolean equals(Object o) {			
+			return o instanceof Null;
+		}
+		public String toString() {
+			return "null";
+		}
+	}
+	
 	public static final class Bool extends Value {
 		public final boolean value;
 		private Bool(boolean value) {

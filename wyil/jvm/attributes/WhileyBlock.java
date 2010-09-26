@@ -359,7 +359,9 @@ public class WhileyBlock implements BytecodeAttribute {
 	
 	protected static void write(Value val, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		if(val instanceof Value.Bool) {
+		if(val instanceof Value.Null) {
+			write((Value.Null) val, writer, constantPool);
+		} else if(val instanceof Value.Bool) {
 			write((Value.Bool) val, writer, constantPool);
 		} else if(val instanceof Value.Int) {
 			write((Value.Int) val, writer, constantPool);
@@ -372,6 +374,11 @@ public class WhileyBlock implements BytecodeAttribute {
 		} else if(val instanceof Value.Record) {
 			write((Value.Record) val, writer, constantPool);
 		} 
+	}
+	
+	public static void write(Value.Null expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {				
+		writer.write_u1(NULL);
 	}
 	
 	public static void write(Value.Bool expr, BinaryOutputStream writer,

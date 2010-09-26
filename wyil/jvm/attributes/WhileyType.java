@@ -109,6 +109,8 @@ public class WhileyType implements BytecodeAttribute {
 			writer.write_u1(EXISTENTIAL_TYPE );
 		} else if(t == Type.T_VOID) {
 			writer.write_u1(VOID_TYPE);
+		} else if(t == Type.T_NULL) {
+			writer.write_u1(NULL_TYPE );
 		} else if(t == Type.T_BOOL) {
 			writer.write_u1(BOOL_TYPE );			
 		} else if(t == Type.T_INT) {			
@@ -221,6 +223,8 @@ public class WhileyType implements BytecodeAttribute {
 				return Type.T_EXISTENTIAL;
 			case VOID_TYPE:
 				return Type.T_VOID;
+			case NULL_TYPE:
+				return Type.T_NULL;
 			case BOOL_TYPE:
 				return Type.T_BOOL;
 			case INT_TYPE:
@@ -306,19 +310,20 @@ public class WhileyType implements BytecodeAttribute {
 	public static final int EXISTENTIAL_TYPE = 1;
 	public static final int ANY_TYPE = 2;
 	public static final int VOID_TYPE = 3;
-	public static final int BOOL_TYPE = 4;
-	public static final int INT_TYPE = 5;
-	public static final int REAL_TYPE = 6;
-	public static final int LIST_TYPE = 7;
-	public static final int SET_TYPE = 8;
-	public static final int TUPLE_TYPE = 9;
-	public static final int UNION_TYPE = 10;
-	public static final int INTERSECTION_TYPE = 11;
-	public static final int PROCESS_TYPE = 12;
-	public static final int NAMED_TYPE = 13;
-	public static final int FUN_TYPE = 14;
-	public static final int METH_TYPE = 15;
-	public static final int RECURSIVE_TYPE = 16;
-	public static final int RECURSIVE_LEAF = 17;
+	public static final int NULL_TYPE = 4;
+	public static final int BOOL_TYPE = 5;
+	public static final int INT_TYPE = 6;
+	public static final int REAL_TYPE = 7;
+	public static final int LIST_TYPE = 8;
+	public static final int SET_TYPE = 9;
+	public static final int TUPLE_TYPE = 10;
+	public static final int UNION_TYPE = 11;
+	public static final int INTERSECTION_TYPE = 12;
+	public static final int PROCESS_TYPE = 13;
+	public static final int NAMED_TYPE = 14;
+	public static final int FUN_TYPE = 15;
+	public static final int METH_TYPE = 16;
+	public static final int RECURSIVE_TYPE = 17;
+	public static final int RECURSIVE_LEAF = 18;
 	public static final int CONSTRAINT_MASK = 32;
 }

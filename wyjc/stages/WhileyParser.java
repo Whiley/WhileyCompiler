@@ -792,6 +792,10 @@ public class WhileyParser {
 				&& tokens.get(index + 1) instanceof LeftBrace) {				
 			// must be a method invocation			
 			return parseInvokeExpr();
+		} else if (token.text.equals("null")) {
+			matchKeyword("null");			
+			return new Expr.Constant(Value.V_NULL,
+					sourceAttr(start, index - 1));
 		} else if (token.text.equals("true")) {
 			matchKeyword("true");			
 			return new Expr.Constant(Value.V_BOOL(true),
@@ -1101,6 +1105,9 @@ public class WhileyParser {
 		} else if(token instanceof Star) {
 			match(Star.class);
 			t = new UnresolvedType.Any(sourceAttr(start,index-1));
+		} else if(token.text.equals("null")) {
+			matchKeyword("null");
+			t = new UnresolvedType.Null(sourceAttr(start,index-1));
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");
 			t = new UnresolvedType.Int(sourceAttr(start,index-1));

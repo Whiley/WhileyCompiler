@@ -23,6 +23,8 @@ package whiley.lang
 define string as [char]
 
 public string str(* item):
+    if item ~= null:
+        return "null"
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;

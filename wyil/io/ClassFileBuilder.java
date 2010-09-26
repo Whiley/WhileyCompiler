@@ -493,20 +493,25 @@ public class ClassFileBuilder {
 			// Note, test cannot be a union here			
 			src = Type.greatestLowerBound(src,
 					narrowConversion((Type.NonUnion) test));
-			
-			bytecodes.add(new Bytecode.Dup(convertType(test)));
-			JvmType.Reference target_t;
-			if (test instanceof Type.Bool) {
-				target_t = JvmTypes.JAVA_LANG_BOOLEAN;
-			} else {
-				// FIXME: bug if test is REAL or SET
-				target_t = (JvmType.Reference) convertType(test);
-			}		
+			bytecodes.add(new Bytecode.Dup(convertType(test)));				
 			String nextLabel = freshLabel();
-			String exitLabel = freshLabel();
-			bytecodes.add(new Bytecode.InstanceOf(target_t));
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
-			addCheckCast(target_t,bytecodes);			
+			String exitLabel = freshLabel();		
+			
+			if(test instanceof Type.Null) {				
+				bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, nextLabel));				
+			} else {
+				JvmType.Reference target_t;
+				if (test instanceof Type.Bool) {			
+					target_t = JvmTypes.JAVA_LANG_BOOLEAN;
+				} else {
+					// FIXME: bug if test is REAL or SET
+					target_t = (JvmType.Reference) convertType(test);
+				}				
+				bytecodes.add(new Bytecode.InstanceOf(target_t));
+				bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
+				addCheckCast(target_t,bytecodes);				
+			}			
+			
 			translateTypeTestHelper(trueTarget,src,test,stmt,bytecodes);
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(nextLabel));
@@ -947,7 +952,9 @@ public class ClassFileBuilder {
 		
 	public void translate(Value v, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-		if(v instanceof Value.Bool) {
+		if(v instanceof Value.Null) {
+			translate((Value.Null)v,slots,bytecodes);
+		} else if(v instanceof Value.Bool) {
 			translate((Value.Bool)v,slots,bytecodes);
 		} else if(v instanceof Value.Int) {
 			translate((Value.Int)v,slots,bytecodes);
@@ -962,6 +969,11 @@ public class ClassFileBuilder {
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
+	}
+	
+	protected void translate(Value.Null e, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.LoadConst(null));
 	}
 	
 	protected void translate(Value.Bool e, HashMap<String, Integer> slots,
@@ -1494,6 +1506,8 @@ public class ClassFileBuilder {
 			return T_VOID;
 		} else if(t == Type.T_ANY) {
 			return JAVA_LANG_OBJECT;
+		} else if(t == Type.T_NULL) {
+			return JAVA_LANG_OBJECT;
 		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
 		} else if(t instanceof Type.Int) {
@@ -1571,6 +1585,8 @@ public class ClassFileBuilder {
 			return "*";
 		} else if(t == Type.T_VOID) {
 			return "V";
+		} else if(t == Type.T_NULL) {
+			return "O";
 		} else if(t instanceof Type.Bool) {
 			return "B";
 		} else if(t instanceof Type.Int) {

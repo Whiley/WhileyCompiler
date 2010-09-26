@@ -1553,6 +1553,8 @@ public class ModuleBuilder {
 			return new Pair<Type, Block>(Type.T_EXISTENTIAL, null);
 		} else if (t instanceof UnresolvedType.Void) {
 			return new Pair<Type, Block>(Type.T_VOID, null);
+		} else if (t instanceof UnresolvedType.Null) {
+			return new Pair<Type, Block>(Type.T_NULL, null);
 		} else if (t instanceof UnresolvedType.Bool) {
 			return new Pair<Type, Block>(Type.T_BOOL, null);
 		} else if (t instanceof UnresolvedType.Int) {

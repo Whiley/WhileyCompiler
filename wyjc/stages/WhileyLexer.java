@@ -380,6 +380,7 @@ public class WhileyLexer {
 	public static final String[] keywords = {		
 		"true",
 		"false",
+		"null",
 		"int",
 		"real",
 		"bool",

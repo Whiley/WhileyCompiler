@@ -511,7 +511,10 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			} else {
 				return WBool.FALSE;
 			}
-		} else if(v instanceof Value.Int) {
+		} else if(v instanceof Value.Null) {
+			// This is not a long term solution
+			return new WNumber(0);
+		} else if(v instanceof Value.Int) {		
 			Value.Int vi = (Value.Int) v;
 			return new WNumber(vi.value);
 		} else if(v instanceof Value.Real) {

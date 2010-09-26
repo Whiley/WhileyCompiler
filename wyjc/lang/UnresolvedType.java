@@ -37,7 +37,11 @@ public interface UnresolvedType extends SyntacticElement {
 			super(attributes);
 		}		
 	}
-
+	public static final class Null extends SyntacticElement.Impl implements NonUnion {
+		public Null(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
 	public static final class Existential extends SyntacticElement.Impl
 			implements NonUnion {
 		public Existential(Attribute... attributes) {

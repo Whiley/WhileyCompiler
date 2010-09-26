@@ -28,6 +28,7 @@ public abstract class Type {
 		
 	public static final Any T_ANY = new Any();
 	public static final Void T_VOID = new Void();
+	public static final Null T_NULL = new Null();
 	public static final Existential T_EXISTENTIAL = new Existential();
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
@@ -972,6 +973,18 @@ public abstract class Type {
 		}
 		public String toString() {
 			return "void";
+		}
+	}
+	public static final class Null extends NonUnion {
+		private Null() {}
+		public boolean equals(Object o) {
+			return o == T_NULL;
+		}
+		public int hashCode() {
+			return 1;
+		}
+		public String toString() {
+			return "null";
 		}
 	}
 	public static final class Existential extends NonUnion {
