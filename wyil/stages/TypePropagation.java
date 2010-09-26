@@ -306,7 +306,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(type, v.type);
-			Type gdiff = Type.greatestDifference(v.type, type);			
+			Type gdiff = Type.greatestDifference(v.type, type);	
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
