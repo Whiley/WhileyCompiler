@@ -41,7 +41,10 @@ public class LengthOfClosure implements InferenceRule {
 		}
 		
 		if(nlit instanceof WEquality) {
-			infer((WEquality)nlit,state,solver);
+			WEquality weq = (WEquality) nlit;
+			if(weq.sign()) {
+				infer((WEquality)nlit,state,solver);
+			}
 		}
 	}
 	
@@ -54,24 +57,26 @@ public class LengthOfClosure implements InferenceRule {
 		if(lhs instanceof WLengthOf && rhs instanceof WNumber) {
 			l = (WLengthOf) lhs;
 			if(!(l.source() instanceof WVariable)) {
-				return; // to prevent cylcic inferences
+				return; // to prevent cyclic inferences
 			}
 			WNumber n = (WNumber) rhs;
 			if(n.isInteger()) {
 				size = n.intValue();
 			} else {
+				// Size of list is not an integer
 				state.infer(WBool.FALSE, solver);
 				return;
 			}
 		} else if(rhs instanceof WLengthOf && lhs instanceof WNumber) {
 			l = (WLengthOf) rhs;
 			if(!(l.source() instanceof WVariable)) {
-				return; // to prevent cylcic inferences
+				return; // to prevent cyclic inferences
 			}
 			WNumber n = (WNumber) lhs;
 			if(n.isInteger()) {
 				size = n.intValue();
 			} else {
+				// Size of list is not an integer
 				state.infer(WBool.FALSE, solver);
 				return;
 			}

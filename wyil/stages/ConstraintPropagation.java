@@ -426,10 +426,10 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			}
 		}
 				
-		if(!minimal || (expected != null && !expected.falseBranch)) {			
+		if(!minimal || (expected != null && !expected.falseBranch)) {
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);			
-			if (fp instanceof Proof.Unsat) {				
+			if (fp instanceof Proof.Unsat) {
 				falseCondition = null;
 			}					
 		}

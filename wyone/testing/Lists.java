@@ -86,4 +86,8 @@ public class Lists {
 		assertTrue(checkSat("l2 <: [int] && l1 <: [int] && l1==[1.0,2.0,3.0] && l2[2.0]==2.0 && l2[2.0]!=|l1|"));
 	}	
 	
+	@Test public void Sat_4() { 
+		assertTrue(checkSat("(arr==[1.0,2.0] || arr==[1.0,2.0,3.0]) && |arr|!=4.0 && arr<:[int]"));
+	}			
+	
 }
