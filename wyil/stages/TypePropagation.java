@@ -120,7 +120,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if(code.lhs != null) {
 			if(code.lhs instanceof CExpr.LVar) {
-				lhs = code.lhs;
+				CExpr.LVar lv = (CExpr.LVar) code.lhs; 
+				lhs = lv;
+				
+				// Simple test
+				if(lv.name().equals("this")) {
+					syntaxError("cannot assign to variable this",filename,stmt);
+				}
 			} else {	
 				lhs = (CExpr.LVal) infer(code.lhs,stmt,environment);
 			}	
