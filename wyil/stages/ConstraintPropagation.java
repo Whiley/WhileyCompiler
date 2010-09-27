@@ -158,7 +158,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		for(int i=1;i!=exprs.size();++i) {
 			CExpr access = exprs.get(i);			
 			if(access instanceof RecordAccess){				
-				RecordAccess ta = (RecordAccess) lval;
+				RecordAccess ta = (RecordAccess) access;
 				Type.Record tt = Type.effectiveRecordType(ta.lhs.type());
 				Pair<WExpr, WFormula> src = infer(ta.lhs, elem);
 				WExpr nsrc = src.first().substitute(binding);
@@ -171,7 +171,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				}
 				constraint = WFormulas.and(constraint,src.second());
 			} else if(access instanceof ListAccess) {
-				ListAccess la = (ListAccess) lval;
+				ListAccess la = (ListAccess) access;
 				Pair<WExpr, WFormula> src = infer(la.src,elem);
 				Pair<WExpr, WFormula> index = infer(la.index,elem);
 				WExpr nsrc = src.first().substitute(binding);
@@ -423,15 +423,19 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		if(!minimal || (expected != null && !expected.trueBranch)) {			
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 					wyone.Main.heuristic, wyone.Main.theories);
+			//System.out.println("CHECKING(1): " + trueCondition);
 			if (tp instanceof Proof.Unsat) {
+				//System.out.println("UNSAT(1)");
 				trueCondition = null;
 			}
 		}
 				
 		if(!minimal || (expected != null && !expected.falseBranch)) {			
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
-					wyone.Main.heuristic, wyone.Main.theories);			
+					wyone.Main.heuristic, wyone.Main.theories);	
+			//System.out.println("CHECKING(2): " + falseCondition);
 			if (fp instanceof Proof.Unsat) {
+				//System.out.println("UNSAT(2)");
 				falseCondition = null;
 			}					
 		}
