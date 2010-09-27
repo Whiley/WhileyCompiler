@@ -593,6 +593,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			return new Pair<WExpr, WFormula>(new WLengthOf(rhs.first()), rhs
 					.second());
 		case PROCESSACCESS :
+		{
 				if (v.rhs instanceof Variable) {
 					Variable var = (Variable) v.rhs;
 					if (var.name.equals("this")) {
@@ -603,6 +604,13 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				}
 				WVariable wvar = WVariable.freshVar();
 				return new Pair<WExpr, WFormula>(wvar, WBool.TRUE);
+		}
+		case PROCESSSPAWN:
+		{
+			// not sure what else we can do here
+			WVariable wvar = WVariable.freshVar();
+			return new Pair<WExpr, WFormula>(wvar, WBool.TRUE);
+		}
 		}
 		syntaxError("unknown unary operation: " + v.op,filename,elem);
 		return null;

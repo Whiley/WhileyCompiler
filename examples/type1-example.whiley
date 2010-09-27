@@ -6,6 +6,6 @@ int f(posint x) ensures $ < 0:
     return -x
 
 void System::main([string] args):
-    int x = |args|
+    x = |args|
     if(x > 0):
         f(x)        

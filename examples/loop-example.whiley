@@ -10,6 +10,6 @@ int sum(posintlist ls) ensures $ >= 0:
     return sum(ls,0)
 
 void System::main([string] args):
-    int c = sum([1,2,3,4,5,6,7])
+    c = sum([1,2,3,4,5,6,7])
     print str(c)
     
