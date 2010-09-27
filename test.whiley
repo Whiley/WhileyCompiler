@@ -1,10 +1,14 @@
-void f(int|null x):
-    if x ~= null:
-        print "GOT NULL"
-    else:
-        print "GOT INT"
+define PAWN as 0
+define KNIGHT as 1 
 
-void System::main([string] args):
-    x = null
-    f(x)
-    f(1)
+define PieceKind as { PAWN, KNIGHT }
+define Piece as { PieceKind kind, bool colour }
+
+define Row as [Piece] where |$| == 8
+define Board as [Row] where |$| == 8
+
+bool validMove(Board board):
+    return validSingleMove(board)
+
+bool validSingleMove(Board board):
+    return false // temporary
