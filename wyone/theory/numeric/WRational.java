@@ -147,12 +147,19 @@ public final class WRational implements WExpr {
 		} else if(lhs instanceof WVariable) {
 			WVariable v = (WVariable) lhs;
 			r = subtract(new WPolynomial(v));			
-		} else {
+		} else if(lhs instanceof WRational) {
 			r = subtract((WRational)lhs);
+		} else {
+			r = subtract(new WPolynomial(lhs));
 		}
 		
 		if(r instanceof WRational) {
 			WRational rat = (WRational) r;
+			
+			if(rat.isConstant()) {
+				return WBool.FALSE; // ? 
+			}
+			
 			WExpr v = rat.atoms().iterator().next();
 			Pair<WPolynomial,WPolynomial> p = rat.rearrangeFor(v);
 			
