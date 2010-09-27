@@ -207,6 +207,12 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			List<CExpr> f = flattern(la.lhs, elem);
 			f.add(lval);
 			return f;
+		} else if (lval instanceof UnOp) {
+			UnOp la = (UnOp) lval;
+			// should only be process access here
+			List<CExpr> f = flattern(la.rhs, elem);
+			f.add(lval);
+			return f;
 		}
 
 		syntaxError("unknown lval encountered: " + lval, filename, elem);
