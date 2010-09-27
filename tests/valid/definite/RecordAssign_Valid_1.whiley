@@ -4,8 +4,7 @@ tac1tup f():
     return {f1:1,f2:3}
 
 void System::main([string] args):
-    x = f()
-    x.f1 = 2
+    x = f()    
+    x.f1 = x.f2 - 2
     assert x.f1 != x.f2
-    assert x.f1 == 2
     print str(x)

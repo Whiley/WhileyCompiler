@@ -586,6 +586,17 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		case LENGTHOF:
 			return new Pair<WExpr, WFormula>(new WLengthOf(rhs.first()), rhs
 					.second());
+		case PROCESSACCESS :
+				if (v.rhs instanceof Variable) {
+					Variable var = (Variable) v.rhs;
+					if (var.name.equals("this")) {
+						// this is a very special case
+						return new Pair<WExpr, WFormula>(new WVariable("this"),
+								WBool.TRUE);
+					}
+				}
+				WVariable wvar = WVariable.freshVar();
+				return new Pair<WExpr, WFormula>(wvar, WBool.TRUE);
 		}
 		syntaxError("unknown unary operation: " + v.op,filename,elem);
 		return null;
