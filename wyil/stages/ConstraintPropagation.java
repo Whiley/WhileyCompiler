@@ -182,8 +182,10 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				srcs.put(var, src.first());
 				WFormula body = WFormulas.or(new WEquality(true, index.first(),
 						var), new WEquality(true, o, n));
-				constraint = WFormulas.and(constraint, new WBoundedForall(true,
-						srcs, body),src.second(),index.second());
+				constraint = WFormulas.and(constraint, new WEquality(true,
+						new WLengthOf(src.first()), new WLengthOf(nsrc)),
+						new WBoundedForall(true, srcs, body), src.second(),
+						index.second());
 			}
 		}
 		
@@ -420,13 +422,13 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		
 		if(!minimal || (expected != null && !expected.trueBranch)) {			
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
-					wyone.Main.heuristic, wyone.Main.theories);		
+					wyone.Main.heuristic, wyone.Main.theories);
 			if (tp instanceof Proof.Unsat) {
 				trueCondition = null;
 			}
 		}
 				
-		if(!minimal || (expected != null && !expected.falseBranch)) {
+		if(!minimal || (expected != null && !expected.falseBranch)) {			
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);			
 			if (fp instanceof Proof.Unsat) {
