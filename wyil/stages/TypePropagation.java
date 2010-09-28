@@ -362,10 +362,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		HashSet<String> modifies = new HashSet<String>();
 		Block invariant = start.invariant;
 				
-		if(invariant != null) {		
-			invariant = propagate(invariant,environment).first();			
-		}
-		
 		for(Stmt s : body) {
 			if(s.code instanceof Code.Assign) {
 				Code.Assign a = (Code.Assign) s.code;
@@ -404,11 +400,22 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		String loopVar = "%" + start.variable.index;
 		loopEnv.put(loopVar, elem_t);
 	
-		Pair<Block,Env> r = propagate(body,loopEnv);
-			
-		// FIXME: we should keep iterating to reach a fixed point here
+		Pair<Block,Env> r = null;
+		Env old = null;
+		do {
+			// iterate until a fixed point reached
+			old = r != null ? r.second() : loopEnv;			 			
+			r = propagate(body,old);
+		 } while(!r.second().equals(old));				
+		
 		environment = join(environment,r.second());
 		
+		if(invariant != null) {
+			// we have to propagate the invariant here, since we must wait until
+			// the proper environment is known.
+			invariant = propagate(invariant,environment).first();			
+		}
+				
 		// now construct final modifies set						
 		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
 		for(String v : modifies) {
@@ -459,10 +466,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		HashSet<String> modifies = new HashSet<String>();
 		Block invariant = start.invariant;
 		
-		if(invariant != null) {
-			invariant = propagate(invariant,environment).first();
-		}
-		
 		for(Stmt s : body) {
 			if(s.code instanceof Code.Assign) {
 				Code.Assign a = (Code.Assign) s.code;
@@ -473,13 +476,23 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 
-		Block blk = new Block();
-		
+		Block blk = new Block();		
 		Pair<Block,Env> r = propagate(body,environment);
+		Env old = null;
+		do {
+			// iterate until a fixed point reached
+			old = r != null ? r.second() : environment;			 			
+			r = propagate(body,old);
+		 } while(!r.second().equals(old));
 		
-		// FIXME: we should keep iterating to reach a fixed point here
 		environment = join(environment,r.second());
 		
+		if(invariant != null) {
+			// we have to propagate the invariant here, since we must wait until
+			// the proper environment is known.
+			invariant = propagate(invariant,environment).first();			
+		}
+						
 		// now construct final modifies set		
 		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
 		for(String v : modifies) {

@@ -623,8 +623,21 @@ public abstract class Code {
 			return source.hashCode() + label.hashCode() + variable.hashCode();
 		}
 
-		public String toString() {
-			return "for " + variable + " in " + source + ":";
+		public String toString() {			
+			if(modifies.isEmpty()) {
+				return "for " + variable + " in " + source + ":";
+			} else {
+				String r = "modifies ";
+				boolean firstTime=true;
+				for(CExpr.LVar m : modifies) {
+					if(!firstTime) {
+						r += ", ";
+					}
+					firstTime=false;
+					r += m.name();
+				}
+				return "for " + variable + " in " + source + " " + r + ":";
+			}
 		}
 	}
 	
