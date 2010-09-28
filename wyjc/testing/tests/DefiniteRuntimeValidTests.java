@@ -78,6 +78,8 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void Function_Valid_1_RunTest() { runTest("Function_Valid_1"); }
  @Test public void Function_Valid_10_RunTest() { runTest("Function_Valid_10"); }
  @Test public void Function_Valid_11_RunTest() { runTest("Function_Valid_11"); }
+ @Test public void Function_Valid_12_RunTest() { runTest("Function_Valid_12"); }
+ @Test public void Function_Valid_13_RunTest() { runTest("Function_Valid_13"); }
  @Test public void Function_Valid_2_RunTest() { runTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RunTest() { runTest("Function_Valid_3"); }
  @Test public void Function_Valid_4_RunTest() { runTest("Function_Valid_4"); }

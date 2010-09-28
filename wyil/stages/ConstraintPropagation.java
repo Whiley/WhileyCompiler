@@ -717,7 +717,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			WVariable var = new WVariable("$"); 
 			WFormula pc = propagate(postcondition,
 					WTypes.subtypeOf(var, convert(method.type().ret))).second();			
-			binding.put(var, rv);			
+			binding.put(var, rv);						
 			constraints = WFormulas.and(constraints, pc.substitute(binding));
 		}
 		
