@@ -218,7 +218,7 @@ public class Main {
 				{ "version", "Print version information" },
 				{ "verbose",
 						"Print detailed information on what the compiler is doing" },				
-				{ "nvc",
+				{ "Nvc",
 						"Don't check constraints at compile time" }, 
 				{ "nrc",
 				"Don't check constraints at runtime\n" } ,				

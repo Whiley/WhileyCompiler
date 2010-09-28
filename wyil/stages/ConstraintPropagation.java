@@ -63,6 +63,14 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 */
 	private boolean saveVcs = true;
 	
+	/**
+	 * Provide additional debug information
+	 * @param loader
+	 * @param minimal
+	 * @param timeout
+	 */
+	private boolean debug = false;
+	
 	public ConstraintPropagation(ModuleLoader loader, boolean minimal, int timeout) {
 		super(loader);
 		this.timeout = timeout;	
@@ -154,7 +162,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// updated.
 		List<CExpr> exprs = flattern(lval,elem);
 		LVar variable = (LVar) exprs.get(0);
-		WFormula constraint = WTypes.subtypeOf(new WVariable(variable.name()),convert(variable.type()));				
+		WFormula constraint = WTypes.subtypeOf(new WVariable(variable.name()),
+				convert(variable.type()));				
 		for(int i=1;i!=exprs.size();++i) {
 			CExpr access = exprs.get(i);			
 			if(access instanceof RecordAccess){				
@@ -429,9 +438,11 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		if(!minimal || (expected != null && !expected.trueBranch)) {			
 			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
 					wyone.Main.heuristic, wyone.Main.theories);
-			//System.out.println("CHECKING(1): " + trueCondition);
+			if(debug) {
+				System.out.println("CHECKING(1): " + trueCondition);
+			}
 			if (tp instanceof Proof.Unsat) {
-				//System.out.println("UNSAT(1)");
+				if(debug) { System.out.println("UNSAT(1)"); }
 				trueCondition = null;
 			}
 		}
@@ -439,9 +450,9 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		if(!minimal || (expected != null && !expected.falseBranch)) {			
 			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
 					wyone.Main.heuristic, wyone.Main.theories);	
-			//System.out.println("CHECKING(2): " + falseCondition);
+			if(debug) { System.out.println("CHECKING(2): " + falseCondition); }
 			if (fp instanceof Proof.Unsat) {
-				//System.out.println("UNSAT(2)");
+				if(debug) { System.out.println("UNSAT(2)"); }
 				falseCondition = null;
 			}					
 		}
@@ -687,25 +698,29 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			throws ResolveError {
 		WFormula constraints = WBool.TRUE;
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
+		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+		Module module = loader.loadModule(ivk.name.module());
+		Module.Method method = module.method(ivk.name.name(), ivk.type);
+		Module.Case mcase = method.cases().get(ivk.caseNum);
+		List<String> params = mcase.parameterNames();
+		int idx=0;
 		for (CExpr e : ivk.args) {
-			Pair<WExpr, WFormula> p = infer(e, elem);
+			Pair<WExpr, WFormula> p = infer(e, elem);			
+			binding.put(new WVariable(params.get(idx++)), p.first());
 			args.add(p.first());
 			constraints = WFormulas.and(p.second());
 		}
 
 		WVariable rv = new WVariable(ivk.name.toString(), args);
-		Module module = loader.loadModule(ivk.name.module());
-		Module.Method method = module.method(ivk.name.name(), ivk.type);
-		Module.Case mcase = method.cases().get(ivk.caseNum);
 		Block postcondition = mcase.postcondition();
-		if(postcondition != null) {			
+		if(postcondition != null) {						
 			WVariable var = new WVariable("$"); 
 			WFormula pc = propagate(postcondition,
-					WTypes.subtypeOf(var, convert(method.type().ret))).second();
-			HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
-			binding.put(var, rv);
+					WTypes.subtypeOf(var, convert(method.type().ret))).second();			
+			binding.put(var, rv);			
 			constraints = WFormulas.and(constraints, pc.substitute(binding));
 		}
+		
 		return new Pair<WExpr, WFormula>(rv, constraints);
 	}
 	

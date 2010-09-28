@@ -138,7 +138,7 @@ public class BoundedForallClosure implements InferenceRule {
 				skolem = WTypes.newSkolem(((WSetType)type).element(),state,solver);
 				WFormula seq = WSets.elementOf(skolem,src);
 				constraints = WFormulas.and(constraints,seq);
-			}
+			} 
 			binding.put(var,skolem);			
 		}
 		WFormula nf = bf.formula().substitute(binding);
