@@ -129,9 +129,10 @@ public class WhileyParser {
 			}
 		}
 		
+		int end = index;
 		matchEndLine();
 		
-		return new ImportDecl(pkg, sourceAttr(start, index - 1));
+		return new ImportDecl(pkg, sourceAttr(start, end - 1));
 	}
 	
 	private FunDecl parseFunction(List<Modifier> modifiers) {			
@@ -172,13 +173,14 @@ public class WhileyParser {
 		Pair<Expr,Expr> conditions = parseRequiresEnsures();
 		
 		match(Colon.class);
+		int end = index;
 		matchEndLine();
 		
 		List<Stmt> stmts = parseBlock(1);
 		
 		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes,
 				conditions.first(), conditions.second(), stmts, sourceAttr(
-						start, index - 1));
+						start, end - 1));
 	}
 	
 	private Decl parseDefType(List<Modifier> modifiers) {		
@@ -202,9 +204,10 @@ public class WhileyParser {
 				// this is a constrained type				
 				matchKeyword("where");
 				constraint = parseCondition();							
-			}					
+			}
+			int end = index;
 			matchEndLine();					
-			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,index-1));
+			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
 		
 		} catch(Exception e) {	
 		}
@@ -213,9 +216,9 @@ public class WhileyParser {
 		// expression.
 		index = mid;	
 		Expr e = parseCondition();
-		
+		int end = index;
 		matchEndLine();		
-		return new ConstDecl(modifiers, e, name.text, sourceAttr(start,index-1));
+		return new ConstDecl(modifiers, e, name.text, sourceAttr(start,end-1));
 	}
 	
 	private List<Modifier> parseModifiers() {
@@ -366,10 +369,11 @@ public class WhileyParser {
 			
 		}
 		match(RightBrace.class);
+		int end = index;
 		matchEndLine();				
 		
 		// no receiver is possible in this case.
-		return new Expr.Invoke(name.text, null, args, sourceAttr(start,index-1));
+		return new Expr.Invoke(name.text, null, args, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseReturn() {
@@ -380,8 +384,9 @@ public class WhileyParser {
 				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof Comment)) {
 			e = parseTupleExpression();
 		}
+		int end = index;
 		matchEndLine();
-		return new Stmt.Return(e, sourceAttr(start, index - 1));
+		return new Stmt.Return(e, sourceAttr(start, end - 1));
 	}
 	
 	private Stmt parseAssert() {
@@ -389,8 +394,9 @@ public class WhileyParser {
 		matchKeyword("assert");				
 		checkNotEof();
 		Expr e = parseCondition();
+		int end = index;
 		matchEndLine();		
-		return new Stmt.Assert(e, sourceAttr(start,index-1));
+		return new Stmt.Assert(e, sourceAttr(start,end));
 	}
 	
 	private Stmt parseSkip() {
@@ -404,8 +410,9 @@ public class WhileyParser {
 		matchKeyword("print");		
 		checkNotEof();
 		Expr e = parseAddSubExpression();
+		int end = index;
 		matchEndLine();		
-		return new Stmt.Debug(e, sourceAttr(start,index-1));
+		return new Stmt.Debug(e, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseIf(int indent) {
@@ -413,6 +420,7 @@ public class WhileyParser {
 		matchKeyword("if");						
 		Expr c = parseCondition();								
 		match(Colon.class);
+		int end = index;
 		matchEndLine();
 		List<Stmt> tblk = parseBlock(indent+1);				
 		List<Stmt> fblk = Collections.EMPTY_LIST;
@@ -435,7 +443,7 @@ public class WhileyParser {
 			}
 		}		
 		
-		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,index-1));
+		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseWhile(int indent) {
@@ -448,10 +456,11 @@ public class WhileyParser {
 			invariant = parseCondition();
 		}
 		match(Colon.class);
+		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
 		
-		return new Stmt.While(condition,invariant,blk, sourceAttr(start,index-1));
+		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseFor(int indent) {
@@ -466,10 +475,11 @@ public class WhileyParser {
 			invariant = parseCondition();
 		}
 		match(Colon.class);
+		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
 		
-		return new Stmt.For(id.text,source,invariant,blk, sourceAttr(start,index-1));
+		return new Stmt.For(id.text,source,invariant,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseExtern(int indent) {
@@ -480,6 +490,7 @@ public class WhileyParser {
 			syntaxError("unsupported extern language: " + tok,tok);
 		}		
 		match(Colon.class);
+		int end = index;
 		matchEndLine();
 		Tabs tabs = null;
 		
@@ -499,7 +510,7 @@ public class WhileyParser {
 			}
 		}
 		
-		return new Stmt.ExternJvm(bytecodes,sourceAttr(start,index-1));
+		return new Stmt.ExternJvm(bytecodes,sourceAttr(start,end-1));
 	}		
 	
 	private Bytecode parseBytecode() {
@@ -532,9 +543,10 @@ public class WhileyParser {
 		}				
 		match(Equals.class);		
 		Expr rhs = parseCondition();
+		int end = index;
 		matchEndLine();
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start,
-				index - 1));		
+				end - 1));		
 	}	
 	
 
