@@ -268,9 +268,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			// Assume loop invariant
 			store = propagate(start.invariant,store).second();
 		}
-		
-		WFormula exitStore = store; // this is all we'll know at the end
-		
+				
 		WVariable var = new WVariable(fall.variable.name());			
 		// Convert the source collection 
 		Pair<WExpr,WFormula> src = infer(fall.source,stmt);		
@@ -289,9 +287,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 					WTypes.subtypeOf(var, convert(fall.variable.type())),
 					src.second());
 		}
-
-		
-		
+				
 		// Save the parent stores. We need to do this, so we can intercept
 		// all stores being emitted from the for block, in order that we can
 		// properly quantify them.			
@@ -341,7 +337,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 
 		nblock.addAll(body);
 		nblock.add(end);
-		return new Pair<Block, WFormula>(nblock, exitStore);
+		return new Pair<Block, WFormula>(nblock, store);
 	}
 	
 	protected Pair<Block, WFormula> propagate(Code.Loop start, Code.LoopEnd end,

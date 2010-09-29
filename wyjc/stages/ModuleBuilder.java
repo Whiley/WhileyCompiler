@@ -816,13 +816,11 @@ public class ModuleBuilder {
 				blk.add(new Code.Return(tmp), s
 						.attribute(Attribute.Source.class));
 				return blk;
-			}			
-			
-			// Second, check
-
-			blk.add(new Code.Return(t.first()), s
-					.attribute(Attribute.Source.class));
-			return blk;
+			} else {
+				blk.add(new Code.Return(t.first()), s
+						.attribute(Attribute.Source.class));
+				return blk;
+			}
 		} else {
 			Block blk = new Block();
 			blk.add(new Code.Return(null), s.attribute(Attribute.Source.class));
