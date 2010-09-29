@@ -804,7 +804,7 @@ public class ModuleBuilder {
 					// The following is done to prevent problems with
 					// substitution into type test positions.
 					CExpr.Register tmp = CExpr.REG(Type.T_ANY, freeReg+1);
-					blk.add(new Code.Assign(tmp,t.first()));
+					blk.add(new Code.Assign(tmp,t.first()),s.attribute(Attribute.Source.class));
 					binding.put("$", tmp);
 				}
 				binding.putAll(shadows);

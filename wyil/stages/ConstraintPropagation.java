@@ -254,10 +254,26 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		Block nblock = new Block();
 		nblock.add(start);		
 		Code.Forall fall = (Code.Forall) start;
+		
+		// Create loop variable shadows
+		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+		for(LVar v : start.modifies) { 
+			binding.put(new WVariable(v.name()), new WVariable(v.name() + "$"
+				+ index++));
+		}		
+		
+		store = store.substitute(binding);				
+		
+		if(start.invariant != null) {			
+			// Assume loop invariant
+			store = propagate(start.invariant,store).second();
+		}
+		
+		WFormula exitStore = store; // this is all we'll know at the end
+		
 		WVariable var = new WVariable(fall.variable.name());			
 		// Convert the source collection 
-		Pair<WExpr,WFormula> src = infer(fall.source,stmt);
-		
+		Pair<WExpr,WFormula> src = infer(fall.source,stmt);		
 		if (fall.source.type() instanceof Type.List) {
 			// We have to treat lists differently from sets because of the
 			// way wyone handles list quantification. It's kind of annoying,
@@ -273,6 +289,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 					WTypes.subtypeOf(var, convert(fall.variable.type())),
 					src.second());
 		}
+
+		
 		
 		// Save the parent stores. We need to do this, so we can intercept
 		// all stores being emitted from the for block, in order that we can
@@ -323,7 +341,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 
 		nblock.addAll(body);
 		nblock.add(end);
-		return new Pair<Block, WFormula>(nblock, store);
+		return new Pair<Block, WFormula>(nblock, exitStore);
 	}
 	
 	protected Pair<Block, WFormula> propagate(Code.Loop start, Code.LoopEnd end,
@@ -335,12 +353,14 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			binding.put(new WVariable(v.name()), new WVariable(v.name() + "$"
 				+ index++));
 		}		
+		
 		store = store.substitute(binding);
 		
 		if(start.invariant != null) {			
 			// Assume loop invariant
 			store = propagate(start.invariant,store).second();
 		}
+		WFormula exitStore = store; // this is all we'll know at the end
 		
 		Block nblock = new Block();
 		nblock.add(start);
@@ -350,7 +370,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		nblock.addAll(body);
 		nblock.add(end);
 		
-		return new Pair<Block, WFormula>(nblock, store);	
+		return new Pair<Block, WFormula>(nblock, exitStore);	
 	}
 	
 	// The following method splits a formula into two components: those bits

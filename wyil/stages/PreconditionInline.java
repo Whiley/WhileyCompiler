@@ -356,7 +356,7 @@ public class PreconditionInline implements ModuleTransform {
 			if(ncases == 1) {				
 				Module.Case c = method.cases().get(0);
 				Block constraint = c.precondition();
-				if (constraint != null) {
+				if (constraint != null) {					
 					String lab = Block.freshLabel();
 					blk.add(new Code.Check(lab),stmt.attribute(Attribute.Source.class));
 					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c,method));
