@@ -264,6 +264,12 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		
 		store = store.substitute(binding);				
 		
+		for(LVar v : start.modifies) {
+			WVariable var = new WVariable(v.name());
+			WType var_t = convert(v.type());
+			store = WFormulas.and(store,WTypes.subtypeOf(var,var_t));			
+		}
+		
 		if(start.invariant != null) {			
 			// Assume loop invariant
 			store = propagate(start.invariant,store).second();
@@ -354,6 +360,12 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		}		
 		
 		store = store.substitute(binding);
+		
+		for(LVar v : start.modifies) {
+			WVariable var = new WVariable(v.name());
+			WType var_t = convert(v.type());
+			store = WFormulas.and(store,WTypes.subtypeOf(var,var_t));			
+		}
 		
 		if(start.invariant != null) {			
 			// Assume loop invariant
@@ -455,21 +467,21 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		Attribute.BranchPredict expected = elem.attribute(Attribute.BranchPredict.class);		
 		
 		if(!minimal || (expected != null && !expected.trueBranch)) {			
-			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
-					wyone.Main.heuristic, wyone.Main.theories);
 			if(debug) {
 				System.out.println("CHECKING(1): " + trueCondition);
 			}
+			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
+					wyone.Main.heuristic, wyone.Main.theories);			
 			if (tp instanceof Proof.Unsat) {
 				if(debug) { System.out.println("UNSAT(1)"); }
 				trueCondition = null;
 			}
 		}
 				
-		if(!minimal || (expected != null && !expected.falseBranch)) {			
-			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
-					wyone.Main.heuristic, wyone.Main.theories);	
+		if(!minimal || (expected != null && !expected.falseBranch)) {
 			if(debug) { System.out.println("CHECKING(2): " + falseCondition); }
+			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
+					wyone.Main.heuristic, wyone.Main.theories);				
 			if (fp instanceof Proof.Unsat) {
 				if(debug) { System.out.println("UNSAT(2)"); }
 				falseCondition = null;

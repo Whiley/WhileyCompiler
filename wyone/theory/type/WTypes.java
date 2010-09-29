@@ -33,21 +33,30 @@ public class WTypes {
 	 * that this will evaluate to.
 	 */
 	public static WType type(WExpr e, SolverState state) {
-		// NOTE: would be nice to make this more efficient
 		HashSet<WExpr> aliases = new HashSet<WExpr>();
 		aliases.add(e);
 		
-		for(WFormula f : state) {
-			if(f instanceof WEquality) {
-				WEquality weq = (WEquality) f;
-				if(weq.sign() && (weq.lhs().equals(e) || weq.rhs().equals(e))) {
-					aliases.add(weq.lhs());
-					aliases.add(weq.rhs());
+		// NOTE: would be nice to make this more efficient
+		//
+		// (yeah, like that's gonna happen)
+		
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			for (WFormula f : state) {
+				if (f instanceof WEquality) {
+					WEquality weq = (WEquality) f;
+					if (weq.sign()
+							&& (aliases.contains(weq.lhs()) || aliases
+									.contains(weq.rhs()))) {
+						changed |= aliases.add(weq.lhs());
+						changed |= aliases.add(weq.rhs());
+					}
 				}
 			}
 		}
 		
-		WType t = WAnyType.T_ANY; 
+		WType t = WAnyType.T_ANY; 				
 		
 		for(WFormula f : state) {
 			if(f instanceof WSubtype) {
