@@ -72,7 +72,7 @@ public final class WTupleVal extends WConstructor<WValue> implements WValue {
 				r += ",";
 			}
 			firstTime=false;
-			r += fields.get(i) + ":";
+			r += fields.get(i) + "=";
 			r += subterms.get(i).toString();
 		}
 		return r + ")";

@@ -87,7 +87,7 @@ public final class WTupleConstructor extends WConstructor<WExpr> implements WExp
 				r += ",";
 			}
 			firstTime=false;
-			r += fields.get(i) + ":";
+			r += fields.get(i) + "=";
 			r += subterms.get(i).toString();
 		}
 		return r + ")";

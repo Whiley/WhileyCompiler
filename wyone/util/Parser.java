@@ -157,6 +157,11 @@ public class Parser {
 			match("<:");
 			WType rhs = parseType();
 			return WTypes.subtypeOf(lhs, rhs);
+		} if ((index + 2) < input.length() && input.charAt(index) == '<'
+				&& input.charAt(index + 1) == '!' && input.charAt(index + 2) == ':') {
+			match("<!:");
+			WType rhs = parseType();
+			return WTypes.subtypeOf(lhs, rhs).not();
 		} else if ((index + 1) < input.length() && input.charAt(index) == '<'
 				&& input.charAt(index + 1) == '=') {
 			match("<=");
@@ -383,7 +388,7 @@ public class Parser {
 	private WExpr parseBracketedTerm() {
 		match("(");
 		WExpr e;					
-		if(lookahead(2).equals(":")) {				
+		if(lookahead(2).equals("=")) {				
 			// this indicates a tuple constructor
 			ArrayList<String> fields = new ArrayList();
 			ArrayList<WExpr> items = new ArrayList();
@@ -393,8 +398,8 @@ public class Parser {
 					match(",");						
 				}
 				firstTime = false;
-				String id = parseIdentifier();
-				match(":");
+				String id = parseIdentifier();				
+				match("=");
 				WExpr val = parseExpression();
 				fields.add(id);
 				items.add(val);					

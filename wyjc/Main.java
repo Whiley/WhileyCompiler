@@ -335,7 +335,7 @@ public class Main {
 		stages.add(new WyilTransform("branch prediction",
 				new ExpectedInference(loader)));
 		stages.add(new WyilTransform("verification check",
-				new ConstraintPropagation(loader, true, 1000)));
+				new ConstraintPropagation(loader, true, 250)));
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
 		stages

@@ -18,11 +18,12 @@
 package wyone.core;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import wyone.theory.congruence.*;
 import wyone.theory.logic.*;
 
-public final class Solver extends Thread {
+public final class Solver implements Callable<Proof> {
 	
 	public static boolean debug = false;
 	
@@ -41,17 +42,9 @@ public final class Solver extends Thread {
 	 * The formula being tested for satisfiability
 	 */
 	private final WFormula formula;
-	
-	/**
-	 * The following fields are used for the return value.
-	 */
-	private volatile Thread owner;		
-	private volatile Proof value;
-	private volatile RuntimeException exception;
-	
+		
 	Solver(WFormula formula, 
-			SplitHeuristic heuristic,InferenceRule... theories) {
-		this.owner = Thread.currentThread();
+			SplitHeuristic heuristic,InferenceRule... theories) {		
 		this.formula = formula;
 		this.theories = new ArrayList<InferenceRule>();
 		this.splitHeuristic = heuristic;
@@ -79,53 +72,38 @@ public final class Solver extends Thread {
 	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
-	public static Proof checkUnsatisfiable(int timeout, WFormula formula,
+	public static synchronized Proof checkUnsatisfiable(int timeout, WFormula formula,
 			SplitHeuristic heuristic,
 			InferenceRule... theories) {		
 		
 		// System.out.println("UNSAT: " + formula + " : " + types);
+ 
+		// The following uses the java.util.concurrent library to enforce a
+		// timeout on how long the solver will run for.
+		ExecutorService es = Executors.newSingleThreadExecutor ();
+		FutureTask<Proof> task = new FutureTask<Proof>(new Solver(formula,
+				heuristic, theories));
+		es.submit(task);
 		
-		Solver solver = new Solver(formula,heuristic,theories);
-				
-		try {
-			solver.start();
-			// now sleep
-			Thread.sleep(timeout);
-			// signal solver to stop
-			solver.owner = null; // important
-			solver.interrupt();
-			Thread.yield(); // let other threads run
-			// return unknown result
-			return Proof.UNKNOWN;			
-		} catch(InterruptedException e) {
-			// caught signal from solver
-		}	
-
-		// indicates solver completed
-		if(solver.exception != null) {
-			// propagate solver exception
-			throw solver.exception;
-		} else {
-			return solver.value;
+		Proof r = Proof.UNKNOWN;
+		
+		try {			
+			r = task.get(timeout,TimeUnit.MILLISECONDS);				
+		} catch(ExecutionException ee) {
+			throw (RuntimeException) ee.getCause();
+		} catch(InterruptedException ie) {
+			
+		} catch(TimeoutException ie) {
+			// timeout
 		}
+		
+		es.shutdown();
+		
+		return r;
 	}
 	
-	public void run() {
-		try {
-			value = checkUnsatisfiable();			
-			if(owner != null) {
-				owner.interrupt();
-				Thread.yield(); // let other threads run
-			}
-		} catch(RuntimeException e) {
-			exception = e;	
-			if(owner != null) {
-				owner.interrupt();
-				Thread.yield(); // let other threads run
-			}
-		} catch(InterruptedException e) {
-			
-		}												
+	public Proof call() {					
+		return checkUnsatisfiable();				
 	}
 	
 	/**
@@ -136,19 +114,17 @@ public final class Solver extends Thread {
 	 * 
 	 * @return
 	 */
-	private Proof checkUnsatisfiable() throws InterruptedException {		
+	private Proof checkUnsatisfiable() {		
 		SolverState.reset_state();
 		SolverState facts = new SolverState();
 		facts.add(formula, this);
 		return checkUnsatisfiable(facts,0);
 	}
 
-	protected Proof checkUnsatisfiable(SolverState state, int level) throws InterruptedException {		
+	protected Proof checkUnsatisfiable(SolverState state, int level) {		
 		if(debug) { indent(level); System.out.println("STATE: " + state); }
 		
-		if(Thread.currentThread().isInterrupted()) {			
-			throw new InterruptedException();
-		} else if(state.contains(WBool.FALSE)) {			
+		if(state.contains(WBool.FALSE)) {			
 			// Here, we've reached a contradiction on this branch			
 			return Proof.UNSAT;
 		} else {			
