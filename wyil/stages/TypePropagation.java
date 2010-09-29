@@ -288,7 +288,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);				
 				trueEnv = new Env(environment);
 				falseEnv = new Env(environment);
-				typeInference(lhs,tc.type,trueEnv, falseEnv);				
+				typeInference(lhs,tc.type,tc.type,trueEnv, falseEnv);				
 			}
 			stmt = new Stmt(ncode,stmt.attributes());
 			if(code.op == Code.COP.SUBTYPEEQ) {
@@ -304,34 +304,43 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return new Triple<Stmt,Env,Env>(stmt,environment,environment);
 	}
 	
-	protected void typeInference(CExpr lhs, Type type,
+	protected void typeInference(CExpr lhs, Type trueType, Type falseType,
 			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
 		// Now, perform the actual type inference
 		if (lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
-			Type glb = Type.greatestLowerBound(type, v.type);
-			Type gdiff = Type.greatestDifference(v.type, type);				
+			Type glb = Type.greatestLowerBound(v.type, trueType);
+			Type gdiff = Type.greatestDifference(v.type, falseType);	
+			//System.out.println("GLB: " + trueType + "&" + v.type + " = " + glb);
+			//System.out.println("GDIFF: " + v.type + "-" + falseType + " = " + gdiff);
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
 			String name = "%" + reg.index;			
-			Type glb = Type.greatestLowerBound(type, reg.type);
-			Type gdiff = Type.greatestDifference(reg.type, type);
-			//System.out.println("GLB: " + type + "&" + reg.type + " = " + glb);
-			//System.out.println("GDIFF: " + reg.type + "-" + type + " = " + gdiff);
+			Type glb = Type.greatestLowerBound(reg.type,trueType);
+			Type gdiff = Type.greatestDifference(reg.type, falseType);
+			//System.out.println("GLB: " + trueType + "&" + reg.type + " = " + glb);
+			//System.out.println("GDIFF: " + reg.type + "-" + falseType + " = " + gdiff);
 			trueEnv.put(name, glb);
 			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {
-			RecordAccess ta = (RecordAccess) lhs;			
-			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());			
+			RecordAccess ta = (RecordAccess) lhs;
+			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());
 			if (lhs_t != null) {
-				HashMap<String, Type> ntypes = new HashMap<String, Type>();								
-				Type glb = Type.greatestLowerBound(type, lhs_t.types.get(ta.field));				
-				ntypes.put(ta.field, glb);				
-				// FIXME: there is some kind of problem here, as we're replacing
-				// one type with an effective type ... seems dodgy.
-				typeInference(ta.lhs, Type.T_RECORD(ntypes), trueEnv, falseEnv);
+				HashMap<String, Type> ttypes = new HashMap<String, Type>();
+				HashMap<String, Type> ftypes = new HashMap<String, Type>();
+				for (Map.Entry<String, Type> e : lhs_t.types.entrySet()) {
+					String key = e.getKey();
+					ttypes.put(key, e.getValue());
+					ftypes.put(key, Type.T_VOID);
+				}
+				Type glb = Type.greatestLowerBound(trueType, lhs_t.types
+						.get(ta.field));				
+				ttypes.put(ta.field, glb);
+				ftypes.put(ta.field, glb);
+				typeInference(ta.lhs, Type.T_RECORD(ttypes), Type
+						.T_RECORD(ftypes), trueEnv, falseEnv);
 			}
 		}
 	}
@@ -647,7 +656,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 		
 	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr lhs = infer(e.lhs,stmt,environment);		
+		CExpr lhs = infer(e.lhs,stmt,environment);			
 		Type.Record ett = Type.effectiveRecordType(lhs.type());				
 		if (ett == null) {
 			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);

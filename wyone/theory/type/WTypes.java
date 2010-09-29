@@ -47,19 +47,23 @@ public class WTypes {
 			}
 		}
 		
+		WType t = WAnyType.T_ANY; 
+		
 		for(WFormula f : state) {
 			if(f instanceof WSubtype) {
 				// FIXME: probably would make more sense to build up a GLB from
 				// all possible types.
 				WSubtype st = (WSubtype) f;
 				if(aliases.contains(st.lhs())) {
-					WType t = st.rhs();					
-					return t;
+					WType tmp = st.rhs();					
+					if(t.isSubtype(tmp, Collections.EMPTY_MAP)) {
+						t = tmp;
+					}
 				}
 			}
-		}
+		}		
 		
-		return WAnyType.T_ANY;
+		return t;
 	}	
 	
 	public static WVariable newSkolem(WType t, SolverState state,

@@ -83,11 +83,11 @@ public abstract class Type {
 	/**
 	 * Return true iff t2 is a subtype of t1
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {
-		return isSubtype(t1,t2,Collections.EMPTY_MAP);
+	public static boolean isSubtype(Type t1, Type t2) {		
+		return isSubtype(t1,t2,Collections.EMPTY_MAP);				
 	}
 	
-	private static boolean isSubtype(Type t1, Type t2, Map<String,Type> environment) {
+	private static boolean isSubtype(Type t1, Type t2, Map<String,Type> environment) {		
 		if(t1 == t2 || 
 				(t2 instanceof Void) ||
 				(t1 instanceof Any) ||
@@ -276,10 +276,8 @@ public abstract class Type {
 				for (Map.Entry<String,Type> e : r2.types.entrySet()) {
 					String key = e.getKey();
 					Type rt2 = e.getValue();
-					Type rt1 = r1.types.get(key);
-					if(rt1 != null) {					
-						types.put(key, leastUpperBound(rt1,rt2));
-					}
+					Type rt1 = r1.types.get(key);					
+					types.put(key, leastUpperBound(rt1,rt2));					
 				}
 				return T_RECORD(types);
 			}
@@ -376,31 +374,19 @@ public abstract class Type {
 		} else if(t1 instanceof Record && t2 instanceof Record) {
 			Record r1 = (Record) t1;
 			Record r2 = (Record) t2;
-			HashMap<String,Type> types = new HashMap<String,Type>();
-			for(Map.Entry<String,Type> e : r1.types.entrySet()) {
-				String key = e.getKey();
-				Type rt1 = e.getValue();
-				Type rt2 = r2.types.get(key);
-				if(rt2 != null) {
-					rt1 = greatestLowerBound(rt1,rt2);
-				}
-				types.put(key, rt1);
+			if(r1.types.keySet().equals(r2.types.keySet())) {
+				HashMap<String,Type> types = new HashMap<String,Type>();
+				for(Map.Entry<String,Type> e : r1.types.entrySet()) {
+					String key = e.getKey();
+					Type rt1 = e.getValue();
+					Type rt2 = r2.types.get(key);					
+					types.put(key, greatestLowerBound(rt1,rt2));
+				}			
+				return T_RECORD(types);
 			}
-			for(Map.Entry<String,Type> e : r2.types.entrySet()) {
-				String key = e.getKey();
-				Type rt2 = e.getValue();
-				Type rt1 = r1.types.get(key);
-				if(rt1 == null) {
-					types.put(key, rt2);	
-				} else {
-					// do nothing here since the glb was already put in by the
-					// first loop.
-				}
-			}
-			return T_RECORD(types);
-		} else {
-			return T_VOID;			
-		}
+		} 
+		
+		return T_VOID;					
 	}
 	
 	/**
@@ -426,17 +412,18 @@ public abstract class Type {
 			Record r1 = (Record) t1;
 			Record r2 = (Record) t2;
 						
-			HashMap<String, Type> types = new HashMap<String, Type>(r1.types);
-			for (Map.Entry<String,Type> e : r2.types.entrySet()) {
-				String key = e.getKey();
-				Type rt2 = e.getValue();
-				Type rt1 = r1.types.get(key);
-				if(rt1 != null) {					
-					types.put(key, greatestDifference(rt1,rt2));
+			if (r1.types.keySet().equals(r2.types.keySet())) {
+				HashMap<String, Type> types = new HashMap<String, Type>(
+						r1.types);
+				for (Map.Entry<String, Type> e : r2.types.entrySet()) {
+					String key = e.getKey();
+					Type rt2 = e.getValue();
+					Type rt1 = r1.types.get(key);
+					types.put(key, greatestDifference(rt1, rt2));
 				}
+				return T_RECORD(types);
 			}
-			
-			return T_RECORD(types);			
+						
 		} else if(t2 instanceof Union) {
 			Union u = (Union) t2;
 			for(Type t : u.bounds) {
