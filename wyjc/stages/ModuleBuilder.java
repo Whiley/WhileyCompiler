@@ -1472,7 +1472,7 @@ public class ModuleBuilder {
 
 		Pair<CExpr, Block> value = resolve(freeReg + 1, e.value);
 		Type type = value.first().type();
-		;
+		
 		CExpr.Register lhs;
 
 		if (e.cop == Expr.COp.LISTCOMP) {
@@ -1485,6 +1485,17 @@ public class ModuleBuilder {
 					.attribute(Attribute.Source.class));
 		}
 
+		Block loopInvariant = null;
+		
+		// At this point, it would be good to determine an appropriate loop
+		// invariant for a set comprehension. This is easy enough in the case of
+		// a single variable comprehension, but actually rather difficult for a
+		// multi-variable comprehension.
+		//
+		// For example, consider <code>{x+y | x in xs, y in ys, x<0 && y<0}</code>
+		// 
+		// What is an appropriate loop invariant here?
+		
 		String continueLabel = Block.freshLabel();
 		ArrayList<String> labels = new ArrayList<String>();
 		for (Pair<CExpr.Register, CExpr> ent : sources) {
@@ -1492,9 +1503,10 @@ public class ModuleBuilder {
 			labels.add(loopLabel);
 
 			blk
-					.add(new Code.Forall(loopLabel, null, ent.first(), ent
+					.add(new Code.Forall(loopLabel, loopInvariant, ent.first(), ent
 							.second()), e.attribute(Attribute.Source.class));
 		}
+		
 		if (e.condition != null) {
 			blk.addAll(resolveCondition(continueLabel, invert(e.condition),
 					freeReg));

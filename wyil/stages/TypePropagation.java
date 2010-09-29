@@ -199,6 +199,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 						"cannot return value from method with void return type",
 						filename, stmt);
 			}
+			
 			rhs = infer(rhs,stmt,environment);
 			checkIsSubtype(ret_t,rhs.type(),stmt);
 		} else if(ret_t != Type.T_VOID) {
@@ -284,10 +285,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					ncode = new Code.Skip();					
 				}
 			} else {
-				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);
+				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);				
 				trueEnv = new Env(environment);
 				falseEnv = new Env(environment);
-				typeInference(lhs,tc.type,trueEnv, falseEnv);
+				typeInference(lhs,tc.type,trueEnv, falseEnv);				
 			}
 			stmt = new Stmt(ncode,stmt.attributes());
 			if(code.op == Code.COP.SUBTYPEEQ) {
@@ -309,21 +310,23 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (lhs instanceof CExpr.Variable) {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(type, v.type);
-			Type gdiff = Type.greatestDifference(v.type, type);	
-			
+			Type gdiff = Type.greatestDifference(v.type, type);				
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
 			String name = "%" + reg.index;			
-			trueEnv.put(name, Type.greatestLowerBound(type, reg.type));
-			falseEnv.put(name, Type.greatestDifference(reg.type, type));
+			Type glb = Type.greatestLowerBound(type, reg.type);
+			Type gdiff = Type.greatestDifference(reg.type, type);
+			//System.out.println("GLB: " + type + "&" + reg.type + " = " + glb);
+			//System.out.println("GDIFF: " + reg.type + "-" + type + " = " + gdiff);
+			trueEnv.put(name, glb);
+			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {
 			RecordAccess ta = (RecordAccess) lhs;			
 			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());			
 			if (lhs_t != null) {
-				HashMap<String, Type> ntypes = new HashMap<String, Type>(
-						lhs_t.types);
+				HashMap<String, Type> ntypes = new HashMap<String, Type>();								
 				Type glb = Type.greatestLowerBound(type, lhs_t.types.get(ta.field));				
 				ntypes.put(ta.field, glb);				
 				// FIXME: there is some kind of problem here, as we're replacing

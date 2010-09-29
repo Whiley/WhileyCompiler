@@ -644,7 +644,7 @@ public abstract class CExpr {
 		}
 		
 		public String toString() {
-			String r = "(";
+			String r = "{";
 			ArrayList<String> keys = new ArrayList<String>(values.keySet());
 			Collections.sort(keys);
 			boolean firstTime=true;
@@ -655,7 +655,7 @@ public abstract class CExpr {
 				firstTime=false;
 				r += key + ":" + values.get(key);
 			}
-			return r + ")";
+			return r + "}";
 		}
 	}
 	
