@@ -1,18 +1,21 @@
-bool pred({int} xs) ensures !$ || no { z in xs | z < 0 }:
-    zs = { z | z in xs, z < 0 }
-    return |zs| == 0
+// Define the set of positive numbers
+define pset as {int} where no { y in $ | y <= 0 }
 
-int countOver({int} xs, int y) requires pred(xs):
-    tmp = { x | x in xs, x > y}
-    return |tmp|
+// Define the set of negative numbers
+define nset as {int} where no { y in $ | y >= 0 }
 
-int indirectCountOver({int} ys) requires no { y in ys | y < 5 }:
-    return countOver(ys,10)
+// negate accepts a set of positive numbers, and negates them all.
+nset negate(pset xs):
+    r = {}
+    for x in xs where no { y in r | y >= 0 }:
+        r = r + {-x}
+    return r
+
+// The broken method forces a symbolic proof
+//
+//nset broken(pset xs):
+//    return negate(xs ∪ {-1})
 
 void System::main([string] args):
-    c1 = countOver({1,2,3,4},1)
-    c2 = countOver({1,2,3,4},3)
-    print str(c1)
-    print str(c2)
-//    int c3 = indirectCountOver({5,123,12465,1123})
-//    print str(c3)
+    xs = negate({1,2,3,4})
+    print str(xs)

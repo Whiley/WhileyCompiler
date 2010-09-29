@@ -69,7 +69,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 * @param minimal
 	 * @param timeout
 	 */
-	private boolean debug = false;
+	private boolean debug = true;
 	
 	public ConstraintPropagation(ModuleLoader loader, boolean minimal, int timeout) {
 		super(loader);
