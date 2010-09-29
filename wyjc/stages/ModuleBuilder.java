@@ -798,17 +798,24 @@ public class ModuleBuilder {
 			if(postcondition != null) {
 				// Now, write it into the block
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
+				CExpr.LVar tmp;
+				
 				if(t.first() instanceof CExpr.LVar) {
-					binding.put("$", t.first());
+					tmp = (CExpr.LVar) t.first();					
 				} else {
 					// The following is done to prevent problems with
 					// substitution into type test positions.
-					CExpr.Register tmp = CExpr.REG(Type.T_ANY, freeReg+1);
+					tmp = CExpr.REG(Type.T_ANY, freeReg+1);
 					blk.add(new Code.Assign(tmp,t.first()),s.attribute(Attribute.Source.class));
-					binding.put("$", tmp);
+					
 				}
+				binding.put("$", tmp);
 				binding.putAll(shadows);
-				Block.addCheck(freeReg+2,blk,postcondition,binding,s);				
+				Block.addCheck(freeReg+2,blk,postcondition,binding,s);
+				// now, just return the temporary variable
+				blk.add(new Code.Return(tmp), s
+						.attribute(Attribute.Source.class));
+				return blk;
 			}			
 			
 			// Second, check
