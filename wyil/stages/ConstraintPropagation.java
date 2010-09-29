@@ -268,7 +268,9 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			// Assume loop invariant
 			store = propagate(start.invariant,store).second();
 		}
-				
+		
+		WFormula exitStore = store;
+		
 		WVariable var = new WVariable(fall.variable.name());			
 		// Convert the source collection 
 		Pair<WExpr,WFormula> src = infer(fall.source,stmt);		
@@ -307,6 +309,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// body, as this captures what is true for every element in the
 		// source collection.
 		store = new WBoundedForall(true, var, src.first(), split.first());			
+		exitStore = WFormulas.and(exitStore,store,src.second());
 		store = WFormulas.and(store,split.second());			
 		
 		// Existentially quantify any breaks out of the loop. These
@@ -337,7 +340,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 
 		nblock.addAll(body);
 		nblock.add(end);
-		return new Pair<Block, WFormula>(nblock, store);
+		return new Pair<Block, WFormula>(nblock, exitStore);
 	}
 	
 	protected Pair<Block, WFormula> propagate(Code.Loop start, Code.LoopEnd end,
