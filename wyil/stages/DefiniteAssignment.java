@@ -19,6 +19,7 @@
 package wyil.stages;
 
 import java.util.*;
+
 import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
@@ -94,6 +95,35 @@ public class DefiniteAssignment extends
 		
 		return new Pair<Stmt,HashSet<String>>(stmt,in);
 	}
+		
+	public Triple<Stmt, HashSet<String>, HashSet<String>> propagate(
+			Code.IfGoto igoto, Stmt stmt, HashSet<String> in) {
+		HashSet<String> uses = Code.usedVariables(stmt.code);		
+		checkUses(uses,in,stmt);
+		return new Triple(stmt,in,in);
+	}
+	
+	public Pair<Block, HashSet<String>> propagate(Code.Start start,
+			Code.End end, Block body, Stmt stmt, HashSet<String> in) {
+		
+		if(start instanceof Code.Forall) {
+			in = new HashSet<String>(in);
+			Code.Forall fall = (Code.Forall) start;
+			in.add(fall.variable.name());
+		} else if(start instanceof Code.Induct) {
+			in = new HashSet<String>(in);
+			Code.Induct ind = (Code.Induct) start;
+			in.add(ind.variable.name());
+		}
+		
+		Pair<Block,HashSet<String>> r = propagate(body,in);
+		Block blk = new Block();
+		blk.add(start);
+		blk.addAll(r.first());
+		blk.add(end);
+		
+		return new Pair<Block,HashSet<String>>(blk,join(in,r.second()));
+	}
 	
 	private void checkUses(HashSet<String> uses,
 			HashSet<String> in, SyntacticElement elem) {
@@ -105,10 +135,5 @@ public class DefiniteAssignment extends
 		}
 	}
 	
-	public Triple<Stmt, HashSet<String>, HashSet<String>> transfer(
-			Code.IfGoto igoto, Stmt stmt, HashSet<String> in) {
-		HashSet<String> uses = Code.usedVariables(stmt.code);		
-		checkUses(uses,in,stmt);
-		return new Triple(stmt,in,in);
-	}
+	
 }
