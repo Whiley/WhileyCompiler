@@ -20,6 +20,7 @@ package wyil.stages;
 
 import java.util.*;
 
+import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
@@ -47,7 +48,10 @@ import static wyil.util.SyntaxError.*;
  */
 public class DefiniteAssignment extends
 		ForwardFlowAnalysis<HashSet<String>> implements ModuleTransform {
-	private String filename;
+	
+	public DefiniteAssignment(ModuleLoader loader) {
+		super(loader);
+	}
 			
 	public HashSet<String> initialStore() {
 		HashSet<String> defined = new HashSet<String>();
@@ -125,6 +129,17 @@ public class DefiniteAssignment extends
 		return new Pair<Block,HashSet<String>>(blk,join(in,r.second()));
 	}
 	
+	protected HashSet<String> join(HashSet<String> s1, HashSet<String> s2) {
+		HashSet<String> r = new HashSet<String>();
+		// set intersection
+		for (String s : s1) {
+			if (s2.contains(s)) {
+				r.add(s);
+			}
+		}
+		return r;
+	}
+	
 	private void checkUses(HashSet<String> uses,
 			HashSet<String> in, SyntacticElement elem) {
 		for (String v : uses) {
@@ -134,6 +149,4 @@ public class DefiniteAssignment extends
 			}
 		}
 	}
-	
-	
 }

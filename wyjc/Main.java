@@ -329,7 +329,7 @@ public class Main {
 		stages.add(new WyilTransform("type propagation", new TypePropagation(
 				loader)));
 		stages.add(new WyilTransform("definite assignment",
-				new DefiniteAssignment()));
+				new DefiniteAssignment(loader)));
 		stages.add(new WyilTransform("constant propagation",
 				new ConstantPropagation(loader)));
 		stages.add(new WyilTransform("branch prediction",
