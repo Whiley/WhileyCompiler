@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.stages;
+package wyil.util.dfa;
 
 import static wyil.util.SyntaxError.syntaxError;
 
@@ -26,6 +26,7 @@ import java.util.Map;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
+import wyil.stages.ModuleTransform;
 import wyil.util.*;
 
 public abstract class BackwardFlowAnalysis<T> implements ModuleTransform {

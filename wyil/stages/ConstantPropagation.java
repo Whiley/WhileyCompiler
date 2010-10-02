@@ -28,6 +28,7 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
 import wyil.util.*;
+import wyil.util.dfa.ForwardFlowAnalysis;
 
 public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Value>> {	
 	public ConstantPropagation(ModuleLoader loader) {
