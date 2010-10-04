@@ -41,6 +41,8 @@ public class WhileyProcess {
 	
 	public static WhileyProcess systemProcess() {
 		// Not sure what the default value should be yet!!!
-		return new WhileyProcess(null);
+		HashMap<String,Object> fields = new HashMap<String,Object>();
+		fields.put("out",new WhileyProcess(null));
+		return new WhileyProcess(new WhileyRecord(fields));
 	}
 }
