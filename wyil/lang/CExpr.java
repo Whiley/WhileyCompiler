@@ -478,8 +478,16 @@ public abstract class CExpr {
 				return Type.T_INT;
 			} else if(op == UOP.PROCESSACCESS) {
 				// FIXME: need to flattern
-				Type.Process pt = (Type.Process) rhs.type();
-				return pt.element;
+				Type pt = (Type) rhs.type();				
+				if(pt instanceof Type.Named) {
+					pt = ((Type.Named) pt).type;					
+				} 
+				
+				if(pt instanceof Type.Process) {
+					return ((Type.Process)pt).element;
+				} else {
+					return Type.T_ANY; // unknown
+				}
 			} else if(op == UOP.PROCESSSPAWN) {
 				return Type.T_PROCESS(rhs.type());				
 			} else {

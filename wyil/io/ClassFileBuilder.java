@@ -111,7 +111,7 @@ public class ClassFileBuilder {
 		codes
 				.add(new Bytecode.Invoke(
 						owner,
-						"main$Nwhiley.lang.System;System;P?$V[[I]]",
+						"main$Nwhiley.lang.System;System;P(out:Nwhiley.lang.System;SystemOutWriter;P?rest:?)$V[[I]]",
 						// "main$Nwhiley.lang.System;System;P?$V[Nwhiley.lang.String;string;[I]]",
 						ft3, Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
@@ -865,7 +865,11 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 					Bytecode.VIRTUAL));
 			// finally, we need to cast the object we got back appropriately.		
-			Type.Process pt = (Type.Process) c.rhs.type();
+			Type t = (Type.ProcessName) c.rhs.type();			
+			if(t instanceof Type.Named) {
+				t = ((Type.Named) t).type;					
+			} 
+			Type.Process pt = (Type.Process) t; 
 			addReadConversion(pt.element, bytecodes);
 			break;
 		}

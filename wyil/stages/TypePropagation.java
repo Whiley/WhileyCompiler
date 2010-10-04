@@ -655,7 +655,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return CExpr.LISTACCESS(src,idx);
 	}
 		
-	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {
+	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {		
 		CExpr lhs = infer(e.lhs,stmt,environment);			
 		Type.Record ett = Type.effectiveRecordType(lhs.type());				
 		if (ett == null) {
