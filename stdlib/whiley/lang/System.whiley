@@ -20,4 +20,9 @@
 
 package whiley.lang
 
-define System as process ?
+define SystemOutWriter as process ?
+define System as process { SystemOutWriter out, ? rest}
+
+// Print a given string to stdout
+void SystemOutWriter::println([int] str):
+    print str

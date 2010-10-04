@@ -1,2 +1,2 @@
 void System::main([string] args):
-    x = x + 1
+    out->println("HELLO WORLD")
