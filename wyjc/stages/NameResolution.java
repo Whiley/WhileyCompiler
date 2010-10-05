@@ -123,10 +123,8 @@ public class NameResolution {
 			syntaxError(e.getMessage(),filename,fd.receiver);
 		}
 			
-		if(fd.precondition != null) {
-			environment.put("$",Collections.EMPTY_SET);
-			resolve(fd.precondition, environment,imports);			
-			environment.remove("$");
+		if(fd.precondition != null) {			
+			resolve(fd.precondition, environment,imports);						
 		}
 		
 		if(fd.postcondition != null) {

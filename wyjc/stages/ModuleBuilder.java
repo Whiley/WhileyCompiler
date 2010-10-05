@@ -749,6 +749,7 @@ public class ModuleBuilder {
 			// This is a special case, needed to prevent field inference from
 			// thinking it's a field.
 			Variable v = (Variable) s.lhs;
+			blk.addAll(rhs_tb.second());
 			blk.add(new Code.Assign(CExpr.VAR(Type.T_ANY,v.var), rhs_tb
 					.first()), s.attribute(Attribute.Source.class));
 		} else {
@@ -1084,9 +1085,9 @@ public class ModuleBuilder {
 			syntaxError("unknown variable \"" + v.var + "\"",filename,v);
 			return null;
 		}
-				
+						
 		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
-				v.attribute(Attribute.Source.class));
+				v.attribute(Attribute.Source.class));			
 		
 		return blk;
 	}
@@ -1103,7 +1104,7 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), freeReg));
 			blk.addAll(resolveCondition(target, v.rhs, freeReg));
-			blk.add(new Code.Label(exitLabel));
+			blk.add(new Code.Label(exitLabel));			
 			return blk;
 		} else if (bop == BOp.TYPEEQ || bop == BOp.TYPEIMPLIES) {
 			return resolveTypeCondition(target, v, freeReg);
@@ -1448,7 +1449,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Label(trueLabel));
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)), v.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(exitLabel));
+			blk.add(new Code.Label(exitLabel));			
 			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		}
 
