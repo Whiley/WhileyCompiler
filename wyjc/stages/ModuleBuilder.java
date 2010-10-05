@@ -630,6 +630,8 @@ public class ModuleBuilder {
 			blk.addAll(resolve(s, freeReg));
 		}
 
+		currentFunDecl = null;
+		
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
@@ -1035,9 +1037,13 @@ public class ModuleBuilder {
 		CExpr lhs = null;
 		Block blk = new Block();
 		// First, check whether this is an alias or a 
-		Attributes.Alias alias = v.attribute(Attributes.Alias.class);		
-		Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
+		Attributes.Alias alias = v.attribute(Attributes.Alias.class);					
 		Attributes.Module mod = v.attribute(Attributes.Module.class);
+		Type.Fun tf = null;
+		
+		if(currentFunDecl != null) {
+			tf = currentFunDecl.attribute(Attributes.Fun.class).type;
+		}
 		
 		// Second, see if it's a field of the receiver
 		if (alias != null) {
@@ -1049,7 +1055,7 @@ public class ModuleBuilder {
 				// Ok, must be a local variable
 				lhs = CExpr.VAR(Type.T_ANY, v.var);	
 			}
-		} else if(tf.receiver != null) {
+		} else if(tf != null && tf.receiver != null) {
 			Type pt = tf.receiver;
 			if(pt instanceof Type.Named) {
 				pt = ((Type.Named)pt).type;
@@ -1341,22 +1347,24 @@ public class ModuleBuilder {
 			}
 		}
 		
-		Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
-		
-		// Second, see if it's a field of the receiver
-		if(tf.receiver != null) {
-			Type pt = tf.receiver;
-			if(pt instanceof Type.Named) {
-				pt = ((Type.Named)pt).type;
-			}
-			if(pt instanceof Type.Process) {
-				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
-				if(ert != null && ert.types.containsKey(v.var)) {
-					// Bingo, this is an implicit field dereference
-					CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
-							Type.T_ANY, "this"));					
-					CExpr.RecordAccess ra = CExpr.RECORDACCESS(thiz, v.var);
-					return new Pair<CExpr,Block>(ra, new Block());
+		if(currentFunDecl != null) {
+			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
+
+			// Second, see if it's a field of the receiver
+			if(tf.receiver != null) {
+				Type pt = tf.receiver;
+				if(pt instanceof Type.Named) {
+					pt = ((Type.Named)pt).type;
+				}
+				if(pt instanceof Type.Process) {
+					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
+					if(ert != null && ert.types.containsKey(v.var)) {
+						// Bingo, this is an implicit field dereference
+						CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
+								Type.T_ANY, "this"));					
+						CExpr.RecordAccess ra = CExpr.RECORDACCESS(thiz, v.var);
+						return new Pair<CExpr,Block>(ra, new Block());
+					}
 				}
 			}
 		}
