@@ -136,6 +136,10 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void Process_Valid_2_RunTest() { runTest("Process_Valid_2"); }
  @Test public void Process_Valid_3_RunTest() { runTest("Process_Valid_3"); }
  @Test public void Process_Valid_4_RunTest() { runTest("Process_Valid_4"); }
+ @Test public void Process_Valid_5_RunTest() { runTest("Process_Valid_5"); }
+ @Test public void Process_Valid_6_RunTest() { runTest("Process_Valid_6"); }
+ @Test public void Process_Valid_7_RunTest() { runTest("Process_Valid_7"); }
+ @Test public void Process_Valid_8_RunTest() { runTest("Process_Valid_8"); }
  @Test public void Quantifiers_Valid_1_RunTest() { runTest("Quantifiers_Valid_1"); }
  @Test public void RealConst_Valid_1_RunTest() { runTest("RealConst_Valid_1"); }
  @Test public void RealDiv_Valid_1_RunTest() { runTest("RealDiv_Valid_1"); }

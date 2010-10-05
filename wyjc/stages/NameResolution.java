@@ -318,15 +318,26 @@ public class NameResolution {
 			ArrayList<PkgID> imports) throws ResolveError {
 		Set<Expr> aliases = environment.get(v.var);
 		if (aliases == null) {
-			// This variable access must correspond with a constant definition
+			// This variable access may correspond with a constant definition
 			// in some module. Therefore, we must determine which module this
 			// is, and then store that information for future use.
-			ModuleID mid = loader.resolve(v.var, imports);
-			v.attributes().add(new Attributes.Module(mid));
+			try {
+				ModuleID mid = loader.resolve(v.var, imports);
+				v.attributes().add(new Attributes.Module(mid));
+			} catch(ResolveError err) {
+				// In this case, we may still be OK if this is a method, and the
+				// this receiver contains a field with the appropriate name. At
+				// this point in time, we cannot be sure whether or not this is
+				// the case and we must wait until ModuleBuilder to determine
+				// this.								
+			}
 		} else if (aliases.size() == 1) {			
 			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
 		} else if (aliases.size() > 1) {
 			syntaxError("ambigous variable name", filename, v);
+		} else {
+			// following signals a local variable			
+			v.attributes().add(new Attributes.Alias(null));
 		}
 	}
 	

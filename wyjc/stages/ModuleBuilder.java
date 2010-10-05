@@ -42,6 +42,7 @@ public class ModuleBuilder {
 	private HashMap<NameID, Value> constants;
 	private HashMap<NameID, Pair<UnresolvedType, Expr>> unresolved;
 	private String filename;
+	private FunDecl currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
 	// runtime checks for post conditions. The key issue is that a post
@@ -618,6 +619,7 @@ public class ModuleBuilder {
 			}
 		}
 
+		currentFunDecl = fd;
 		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 
 		Block blk = new Block();
@@ -625,7 +627,7 @@ public class ModuleBuilder {
 		// free reg determines the first free register.
 		int freeReg = determineShadows(postcondition, parameterNames, tf, blk);
 		for (Stmt s : fd.statements) {
-			blk.addAll(resolve(s, freeReg, fd));
+			blk.addAll(resolve(s, freeReg));
 		}
 
 		// The following is sneaky. It guarantees that every method ends in a
@@ -674,22 +676,22 @@ public class ModuleBuilder {
 		return freeReg;
 	}
 
-	public Block resolve(Stmt stmt, int freeReg, FunDecl fd) {
+	public Block resolve(Stmt stmt, int freeReg) {
 		try {
 			if (stmt instanceof Assign) {
 				return resolve((Assign) stmt, freeReg);
 			} else if (stmt instanceof Assert) {
 				return resolve((Assert) stmt, freeReg);
 			} else if (stmt instanceof Return) {
-				return resolve((Return) stmt, freeReg, fd);
+				return resolve((Return) stmt, freeReg);
 			} else if (stmt instanceof Debug) {
 				return resolve((Debug) stmt, freeReg);
 			} else if (stmt instanceof IfElse) {
-				return resolve((IfElse) stmt, freeReg, fd);
+				return resolve((IfElse) stmt, freeReg);
 			} else if (stmt instanceof While) {
-				return resolve((While) stmt, freeReg, fd);
+				return resolve((While) stmt, freeReg);
 			} else if (stmt instanceof For) {
-				return resolve((For) stmt, freeReg, fd);
+				return resolve((For) stmt, freeReg);
 			} else if (stmt instanceof Invoke) {
 				Pair<CExpr, Block> p = resolve(freeReg, (Invoke) stmt);
 				Block blk = p.second();
@@ -699,9 +701,9 @@ public class ModuleBuilder {
 			} else if (stmt instanceof Spawn) {
 				return resolve(freeReg, (UnOp) stmt).second();
 			} else if (stmt instanceof ExternJvm) {
-				return resolve((ExternJvm) stmt, freeReg, fd);
+				return resolve((ExternJvm) stmt, freeReg);
 			} else if (stmt instanceof Skip) {
-				return resolve((Skip) stmt, freeReg, fd);
+				return resolve((Skip) stmt, freeReg);
 			} else {
 				syntaxError("unknown statement encountered: "
 						+ stmt.getClass().getName(), filename, stmt);
@@ -741,16 +743,25 @@ public class ModuleBuilder {
 			return blk;
 		}
 		
-		Pair<CExpr, Block> lhs_tb = resolve(freeReg, s.lhs);
-
-		if(lhs_tb.first() instanceof CExpr.LVal) {
-			
-			blk.addAll(lhs_tb.second());
-			blk.addAll(rhs_tb.second());
-			blk.add(new Code.Assign(((CExpr.LVal)lhs_tb.first()), rhs_tb
+		if(s.lhs instanceof Variable) {
+			// This is a special case, needed to prevent field inference from
+			// thinking it's a field.
+			Variable v = (Variable) s.lhs;
+			blk.add(new Code.Assign(CExpr.VAR(Type.T_ANY,v.var), rhs_tb
 					.first()), s.attribute(Attribute.Source.class));
 		} else {
-			syntaxError("invalid assignment", filename, s);
+
+			Pair<CExpr, Block> lhs_tb = resolve(freeReg, s.lhs);
+
+			if(lhs_tb.first() instanceof CExpr.LVal) {
+
+				blk.addAll(lhs_tb.second());
+				blk.addAll(rhs_tb.second());
+				blk.add(new Code.Assign(((CExpr.LVal)lhs_tb.first()), rhs_tb
+						.first()), s.attribute(Attribute.Source.class));
+			} else {
+				syntaxError("invalid assignment", filename, s);
+			}
 		}
 		
 		return blk;
@@ -769,29 +780,29 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(Return s, int freeReg, FunDecl fd) {
+	protected Block resolve(Return s, int freeReg) {
 
 		if (s.expr != null) {
 			Pair<CExpr, Block> t = resolve(freeReg, s.expr);
 			Block blk = new Block();
 			blk.addAll(t.second());
 
-			Pair<Type, Block> ret = resolve(fd.ret);
+			Pair<Type, Block> ret = resolve(currentFunDecl.ret);
 			
 			Block postcondition = ret.second();
 						
-			if (fd.postcondition != null) {
+			if (currentFunDecl.postcondition != null) {
 				
 				// first, construct the postcondition block
 				String trueLabel = Block.freshLabel();				
 				if(postcondition == null) {
 					postcondition = new Block();
 				}				
-				postcondition.addAll(resolveCondition(trueLabel, fd.postcondition,
+				postcondition.addAll(resolveCondition(trueLabel, currentFunDecl.postcondition,
 						freeReg));
 				postcondition.add(new Code.Fail(
 						"function postcondition not satisfied"),
-						fd.postcondition.attribute(Attribute.Source.class));
+						currentFunDecl.postcondition.attribute(Attribute.Source.class));
 				postcondition.add(new Code.Label(trueLabel));
 			}
 			
@@ -828,14 +839,14 @@ public class ModuleBuilder {
 		}
 	}
 
-	protected Block resolve(ExternJvm s, int freeReg, FunDecl fd) {
+	protected Block resolve(ExternJvm s, int freeReg) {
 		Block blk = new Block();
 		blk.add(new Code.ExternJvm(s.bytecodes), s
 				.attribute(Attribute.Source.class));
 		return blk;
 	}
 
-	protected Block resolve(Skip s, int freeReg, FunDecl fd) {
+	protected Block resolve(Skip s, int freeReg) {
 		Block blk = new Block();
 		blk.add(new Code.Skip(), s.attribute(Attribute.Source.class));
 		return blk;
@@ -848,20 +859,20 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(IfElse s, int freeReg, FunDecl fd) {
+	protected Block resolve(IfElse s, int freeReg) {
 		String falseLab = Block.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
 				.freshLabel();
 		Block blk = resolveCondition(falseLab, invert(s.condition), freeReg);
 
 		for (Stmt st : s.trueBranch) {
-			blk.addAll(resolve(st, freeReg, fd));
+			blk.addAll(resolve(st, freeReg));
 		}
 		if (!s.falseBranch.isEmpty()) {
 			blk.add(new Code.Goto(exitLab));
 			blk.add(new Code.Label(falseLab));
 			for (Stmt st : s.falseBranch) {
-				blk.addAll(resolve(st, freeReg, fd));
+				blk.addAll(resolve(st, freeReg));
 			}
 		}
 
@@ -870,7 +881,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(While s, int freeReg, FunDecl fd) {		
+	protected Block resolve(While s, int freeReg) {		
 		String chklab = Block.freshLabel();
 		String entry = Block.freshLabel();
 		String label = Block.freshLabel();
@@ -899,7 +910,7 @@ public class ModuleBuilder {
 		blk.addAll(resolveCondition(exitLab, invert(s.condition), freeReg));
 
 		for (Stmt st : s.body) {
-			blk.addAll(resolve(st, freeReg, fd));
+			blk.addAll(resolve(st, freeReg));
 		}		
 		if(s.invariant != null) {
 			blk.add(new Code.Check(chklab));
@@ -915,7 +926,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(For s, int freeReg, FunDecl fd) {		
+	protected Block resolve(For s, int freeReg) {		
 		String label = Block.freshLabel();
 		Pair<CExpr,Block> source = resolve(freeReg,s.source);
 		Block blk = new Block();
@@ -945,7 +956,7 @@ public class ModuleBuilder {
 		binding.put(s.variable,reg);
 				
 		for (Stmt st : s.body) {
-			Block b = resolve(st, freeReg+1, fd);
+			Block b = resolve(st, freeReg+1);
 			blk.addAll(Block.substitute(binding, b));
 		}
 				
@@ -1021,32 +1032,56 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveCondition(String target, Variable v, int freeReg) throws ResolveError {
-		CExpr lhs;
+		CExpr lhs = null;
 		Block blk = new Block();
 		// First, check whether this is an alias or a 
-		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
+		Attributes.Alias alias = v.attribute(Attributes.Alias.class);		
+		Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
+		Attributes.Module mod = v.attribute(Attributes.Module.class);
+		
+		// Second, see if it's a field of the receiver
 		if (alias != null) {
-			Pair<CExpr, Block> p = resolve(freeReg, alias.alias);
-			blk.addAll(p.second());
-			lhs = p.first();
-		} else {
-			// Now, check whether this is a constant or not
-			Attributes.Module mod = v.attribute(Attributes.Module.class);
-			if (mod != null) {
-				NameID name = new NameID(mod.module, v.var);
-				Value val = constants.get(name);
-				if (val == null) {
-					// indicates a non-local constant definition
-					Module mi = loader.loadModule(mod.module);
-					val = mi.constant(v.var).constant();
+			if(alias.alias != null) {
+				Pair<CExpr, Block> p = resolve(freeReg, alias.alias);
+				blk.addAll(p.second());
+				lhs = p.first();
+			} else {
+				// Ok, must be a local variable
+				lhs = CExpr.VAR(Type.T_ANY, v.var);	
+			}
+		} else if(tf.receiver != null) {
+			Type pt = tf.receiver;
+			if(pt instanceof Type.Named) {
+				pt = ((Type.Named)pt).type;
+			}
+			if(pt instanceof Type.Process) {
+				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
+				if(ert != null && ert.types.containsKey(v.var)) {
+					// Bingo, this is an implicit field dereference
+					CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
+							Type.T_ANY, "this"));					
+					lhs = CExpr.RECORDACCESS(thiz, v.var);					
 				}
-				lhs = val;
-			} 
-		}		
-		// Ok, must be a local variable
-		lhs = CExpr.VAR(Type.T_ANY, v.var);		
+			}
+		} else if (mod != null) {
+			NameID name = new NameID(mod.module, v.var);
+			Value val = constants.get(name);
+			if (val == null) {
+				// indicates a non-local constant definition
+				Module mi = loader.loadModule(mod.module);
+				val = mi.constant(v.var).constant();
+			}
+			lhs = val;
+		} 
+		
+		if(lhs == null) {
+			syntaxError("unknown variable \"" + v.var + "\"",filename,v);
+			return null;
+		}
+				
 		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
 				v.attribute(Attribute.Source.class));
+		
 		return blk;
 	}
 
@@ -1298,10 +1333,35 @@ public class ModuleBuilder {
 		// First, check if this is an alias or not
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 		if (alias != null) {
-			return resolve(0, alias.alias);
+			// Must be a local variable	
+			if(alias.alias == null) {
+				return new Pair<CExpr, Block>(CExpr.VAR(Type.T_ANY, v.var), new Block());
+			} else {
+				return resolve(0, alias.alias);
+			}
 		}
 		
-		// Second, see if it's a constant
+		Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
+		
+		// Second, see if it's a field of the receiver
+		if(tf.receiver != null) {
+			Type pt = tf.receiver;
+			if(pt instanceof Type.Named) {
+				pt = ((Type.Named)pt).type;
+			}
+			if(pt instanceof Type.Process) {
+				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
+				if(ert != null && ert.types.containsKey(v.var)) {
+					// Bingo, this is an implicit field dereference
+					CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
+							Type.T_ANY, "this"));					
+					CExpr.RecordAccess ra = CExpr.RECORDACCESS(thiz, v.var);
+					return new Pair<CExpr,Block>(ra, new Block());
+				}
+			}
+		}
+		
+		// Third, see if it's a constant
 		Attributes.Module mod = v.attribute(Attributes.Module.class);
 		if (mod != null) {
 			NameID name = new NameID(mod.module, v.var);
@@ -1313,9 +1373,10 @@ public class ModuleBuilder {
 			}
 			return new Pair<CExpr, Block>(val, new Block());
 		}
-		
-		// Finally, assume it must be a local variable
-		return new Pair<CExpr, Block>(CExpr.VAR(Type.T_ANY, v.var), new Block());
+				
+		// must be an error
+		syntaxError("unknown variable \"" + v.var + "\"",filename,v);
+		return null;
 	}
 
 	protected Pair<CExpr, Block> resolve(int freeReg, UnOp v) {
