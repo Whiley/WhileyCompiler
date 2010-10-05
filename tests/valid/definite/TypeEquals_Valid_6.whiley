@@ -4,9 +4,9 @@ define tup as {expr lhs, int p}
 
 void f(tup t):
     if t.lhs ~= plist && |t.lhs| > 0 && t.lhs[0] == 0:
-        print "MATCH" + str(t.lhs)
+        out->println("MATCH" + str(t).lhs)
     else:
-        print "NO MATCH"
+        out->println("NO MATCH")
 
 void System::main([string] args):
     f({lhs:[0],p:0})

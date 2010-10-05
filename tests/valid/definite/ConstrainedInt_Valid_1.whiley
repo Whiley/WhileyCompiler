@@ -1,9 +1,9 @@
 // this is a comment!
 define cr1nat as int where $ < 10
 
-void f(cr1nat x):
+string f(cr1nat x):
     y = x
-    print str(y)
+    return str(y)
 
 void System::main([string] args):
-    f(9)
+    out->println(f(9))

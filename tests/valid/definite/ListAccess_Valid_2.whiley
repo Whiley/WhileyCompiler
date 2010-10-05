@@ -4,17 +4,17 @@ void f([int] x, int i) requires |x| > 0:
     y = x[i]
     z = x[i]
     assert y == z
-    print str(y)
-    print str(z)
+    out->println(str(y))
+    out->println(str(z))
 
 void System::main([string] args):
     arr = [1,2,3]
     f(arr, 1)
-    print str(arr)
+    out->println(str(arr))
     f(arr, 2)
-    print str(arr)
+    out->println(str(arr))
     f(arr, 3)
-    print str(arr)
+    out->println(str(arr))
     f(arr, -1)
-    print str(arr)
+    out->println(str(arr))
     f(arr, 4)

@@ -1,10 +1,10 @@
 void f(int x):
     if(x < 10):
-        print "LESS THAN"
+        out->println("LESS THAN")
     else if(x > 10):
-        print "GREATER THAN"
+        out->println("GREATER THAN")
     else:
-        print "EQUALS"
+        out->println("EQUALS")
 
 void System::main([string] args):
     f(1)

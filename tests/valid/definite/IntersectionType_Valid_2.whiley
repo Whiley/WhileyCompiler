@@ -8,7 +8,7 @@ define itr2nat ∩ lten as bounded
 void System::main([string] args):
     bounded x
     x = 1.1231
-    print str(x)
+    out->println(str(x))
     x = 0.923 
-    print str(x)
+    out->println(str(x))
 

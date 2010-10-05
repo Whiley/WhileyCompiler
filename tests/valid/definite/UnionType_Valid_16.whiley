@@ -1,7 +1,7 @@
 define IntList as {int op, [real] rest}|{int op, int mode}
 
 void f(IntList y):
-    print str(y)
+    out->println(str(y))
 
 void System::main([string] args):
     x = {op:1, rest:[1.23]}

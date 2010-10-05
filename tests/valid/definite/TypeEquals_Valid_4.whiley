@@ -6,9 +6,9 @@ define expr as {int}|bool
 void f(expr e):
     if e ~= {int}:
         t = g(e)
-        print "GOT: " + str(t)
+        out->println("GOT): " + str(t)
     else:
-        print "GOT SOMETHING ELSE?"
+        out->println("GOT SOMETHING ELSE)?"
 
 void System::main([string] args):
     e = {1,2,3,4}

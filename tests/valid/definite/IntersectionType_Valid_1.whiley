@@ -7,7 +7,7 @@ define itr1nat ∩ lten as bounded
 void System::main([string] args):
     bounded x
     x = 1
-    print str(x)
+    out->println(str(x))
     x = 5
-    print str(x)
+    out->println(str(x))
 

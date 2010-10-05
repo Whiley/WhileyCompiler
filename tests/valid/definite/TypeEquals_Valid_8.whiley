@@ -4,9 +4,9 @@ define expr as pos|neg
 
 void f(expr e):
     if e ~= pos:
-        print "POSITIVE: " + str(e)
+        out->println("POSITIVE): " + str(e)
     else:
-        print "NEGATIVE: " + str(e)
+        out->println("NEGATIVE): " + str(e)
 
 void System::main([string] args):
     f(-1)

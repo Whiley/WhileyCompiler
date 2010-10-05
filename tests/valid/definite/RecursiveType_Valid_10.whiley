@@ -12,4 +12,4 @@ void System::main([string] args):
     l1 = { next: l1, data: 23}
     l1 = { next: l1, data: 234}
     x = sum(l1)
-    print str(x)
+    out->println(str(x))

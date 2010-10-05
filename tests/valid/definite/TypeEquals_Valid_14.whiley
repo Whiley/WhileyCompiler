@@ -8,6 +8,6 @@ int f(expr e):
     
 void System::main([string] args):
     x = f({err:"Hello World"})
-    print str(x)
+    out->println(str(x))
     x = f({op:1,lhs:{err:"Gotcha"}})
-    print str(x)
+    out->println(str(x))

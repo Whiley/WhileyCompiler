@@ -9,6 +9,6 @@ void System::main([string] args):
     e1 = {op:ADD,left:1,right:2}
     e2 = {op:SUB,left:e1,right:2}
     e3 = {op:SUB,left:{op:MUL,left:2,right:2},right:2}
-    print str(e1)
-    print str(e2)
-    print str(e3)
+    out->println(str(e1))
+    out->println(str(e2))
+    out->println(str(e3))

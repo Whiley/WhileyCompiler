@@ -1,8 +1,8 @@
-void f(bool b):
-    print str(b)
+string f(bool b):
+    return str(b)
 
 void System::main([string] args):
     x = true
-    f(x)
+    out->println(f(x))
     x = false
-    f(x)
+    out->println(f(x))

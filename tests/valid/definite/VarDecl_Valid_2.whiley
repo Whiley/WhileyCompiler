@@ -1,5 +1,5 @@
 void g(int z) requires z > 1:
-    print str(z)
+    out->println(str(z))
 
 void f(int x) requires x > 0:
     y = x + 1

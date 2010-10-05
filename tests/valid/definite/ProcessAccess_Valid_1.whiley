@@ -4,12 +4,12 @@ define Ptype as process etype
 int Ptype::get():
     this->mode = 1
     this->rest = 123
-    print str(*this)   
+    out->println(str(*this)   )
     return this->mode
 
 void System::main([string] args):
     p = spawn {mode:1,rest:2}
-    print str(*p)
+    out->println(str(*p))
     x = p->get()
-    print str(*p)
-    print str(x)
+    out->println(str(*p))
+    out->println(str(x))

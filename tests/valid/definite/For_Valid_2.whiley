@@ -4,4 +4,4 @@ void System::main([string] args):
     r = 0
     for x in xs where r >= 0:
         r = r + x    
-    print str(r)
+    out->println(str(r))

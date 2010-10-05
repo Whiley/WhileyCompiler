@@ -10,4 +10,4 @@ int f(int i, [nlist] xs):
 
 void System::main([string] args):
     x = f(2, [2,3,4])    
-    print str(x)
+    out->println(str(x))

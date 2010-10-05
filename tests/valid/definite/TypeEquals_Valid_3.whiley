@@ -2,11 +2,11 @@ define expr as {int}|bool
 
 void f(expr e):
     if e ~= {int}:
-        print "GOT {INT}"
+        out->println("GOT ){INT}"
     else if e ~= bool:
-        print "GOT BOOL"
+        out->println("GOT BOOL")
     else:
-        print "GOT SOMETHING ELSE?"
+        out->println("GOT SOMETHING ELSE)?"
 
 void System::main([string] args):
     e = true

@@ -1044,15 +1044,15 @@ public class ModuleBuilder {
 		
 		if(currentFunDecl != null) {
 			tf = currentFunDecl.attribute(Attributes.Fun.class).type;
-		}
+		}			
 		
 		// Second, see if it's a field of the receiver
 		if (alias != null) {
-			if(alias.alias != null) {
+			if(alias.alias != null) {				
 				Pair<CExpr, Block> p = resolve(freeReg, alias.alias);
 				blk.addAll(p.second());
 				lhs = p.first();
-			} else {
+			} else {				
 				// Ok, must be a local variable
 				lhs = CExpr.VAR(Type.T_ANY, v.var);	
 			}
@@ -1337,13 +1337,14 @@ public class ModuleBuilder {
 	}
 
 	protected Pair<CExpr, Block> resolve(int target, Variable v) throws ResolveError {
-		// First, check if this is an alias or not
+		// First, check if this is an alias or not				
+		
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 		if (alias != null) {
 			// Must be a local variable	
-			if(alias.alias == null) {
+			if(alias.alias == null) {				
 				return new Pair<CExpr, Block>(CExpr.VAR(Type.T_ANY, v.var), new Block());
-			} else {
+			} else {								
 				return resolve(0, alias.alias);
 			}
 		}

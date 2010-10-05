@@ -3,5 +3,5 @@ void System::main([string] args):
         x = 1
     else:
         x = [1,2,3]
-    print str(x)
+    out->println(str(x))
 

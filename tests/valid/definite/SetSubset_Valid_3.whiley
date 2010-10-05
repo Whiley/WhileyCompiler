@@ -1,8 +1,8 @@
 void f({int} xs, {int} ys) requires |xs| <= |ys|:
     if xs ⊂ ys:
-        print "XS IS A SUBSET"
+        out->println("XS IS A SUBSET")
     else:
-        print "XS IS NOT A SUBSET"
+        out->println("XS IS NOT A SUBSET")
 
 void System::main([string] args):
     f({1,2},{1,2,3})

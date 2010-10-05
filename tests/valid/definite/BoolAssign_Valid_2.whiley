@@ -1,10 +1,10 @@
 void System::main([string] args):
     x = true
     y = false
-    print str(x)
-    print str(y)
-    print "AND"
+    out->println(str(x))
+    out->println(str(y))
+    out->println("AND")
     x = x && y
-    print str(x)
-    print "NOT"
-    print str(!x)
+    out->println(str(x))
+    out->println("NOT")
+    out->println(str(!x))

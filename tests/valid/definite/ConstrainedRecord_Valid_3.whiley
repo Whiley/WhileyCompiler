@@ -4,4 +4,4 @@ define btup as {byte op, byte index}
     return [b.op,b.index]
 
 void System::main([string] args):
-    print str(f({op:1,index:2}))
+    out->println(str(f({op:1,index:2})))

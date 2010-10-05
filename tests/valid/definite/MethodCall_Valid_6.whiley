@@ -7,4 +7,4 @@ int System::get():
     return 1
 
 void System::main([string] args):
-    print str(this->f(this,1))
+    out->println(str(this-)>f(this,1))

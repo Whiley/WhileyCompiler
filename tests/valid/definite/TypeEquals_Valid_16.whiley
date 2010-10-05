@@ -1,8 +1,8 @@
 void f(int|null x):
     if x ~= null:
-        print "GOT NULL"
+        out->println("GOT NULL")
     else:
-        print "GOT INT"
+        out->println("GOT INT")
 
 void System::main([string] args):
     x = null

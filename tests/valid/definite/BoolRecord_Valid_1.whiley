@@ -1,5 +1,5 @@
 void System::main([string] args):
     x = {flag:true,code:0}
-    print str(x)
+    out->println(str(x))
     x.flag = false
-    print str(x)
+    out->println(str(x))

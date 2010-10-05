@@ -9,6 +9,6 @@
 
 void System::main([string] args):
     rs = extract([1,2,3,4,5,6,7])
-    print str(rs)
+    out->println(str(rs))
     rs = extract([])
-    print str(rs)
+    out->println(str(rs))

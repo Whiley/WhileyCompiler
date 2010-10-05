@@ -1,14 +1,14 @@
 define msg as {int op, int s}
 
-void f(msg m):
-    print str(m)
+string f(msg m):
+    return (str(m))
 
-void f([int] ls):
-    print str(ls)
+string f([int] ls):
+    return (str(ls))
 
-void f([real] ls):
-    print str(ls)
+string f([real] ls):
+    return (str(ls))
 
 void System::main([string] args):
-    f([1,2,3])
-    f([1.2,2.2,3.3])
+    out->println(f([1,2,3]))
+    out->println(f([1.2,2.2,3.3]))

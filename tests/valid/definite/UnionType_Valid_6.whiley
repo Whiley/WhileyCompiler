@@ -5,7 +5,7 @@ define msg2 as {int index}
 define msgType as msg1 | msg2
 
 void f(msgType m):
-    print str(m)
+    out->println(str(m))
 
 void System::main([string] args):
     x = {op:11,data:[]}

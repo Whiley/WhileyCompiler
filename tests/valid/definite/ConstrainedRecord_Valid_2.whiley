@@ -9,5 +9,5 @@ byte f(UNIT x):
 
 void System::main([string] args):
     bytes = f({op:NOP})
-    print str(bytes)
+    out->println(str(bytes))
 

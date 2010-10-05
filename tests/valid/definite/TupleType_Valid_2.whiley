@@ -3,4 +3,4 @@
 
 void System::main([string] args):
     x = f(1)
-    print str(x)
+    out->println(str(x))

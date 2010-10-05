@@ -5,8 +5,8 @@ int f(int x):
         return 2
 
 void System::main([string] args):
-    print str(f(1))
-    print str(f(10))
-    print str(f(11))
-    print str(f(1212))
-    print str(f(-1212))
+    out->println(str(f(1)))
+    out->println(str(f(10)))
+    out->println(str(f(11)))
+    out->println(str(f(1212)))
+    out->println(str(f(-1212)))

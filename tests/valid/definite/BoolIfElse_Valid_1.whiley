@@ -1,9 +1,9 @@
-void f(bool b):
+string f(bool b):
     if(b):
-        print "TRUE"
+        return "TRUE"
     else:
-        print "FALSE"
+        return "FALSE"
 
 void System::main([string] args):
-    f(true)
-    f(false)
+    out->println(f(true))
+    out->println(f(false))

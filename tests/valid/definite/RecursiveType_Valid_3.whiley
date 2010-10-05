@@ -3,4 +3,4 @@ define expr as nat | {int op, expr left, expr right}
 
 void System::main([string] args):
     e = 14897
-    print str(e)
+    out->println(str(e))

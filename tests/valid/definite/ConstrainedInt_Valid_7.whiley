@@ -2,12 +2,12 @@
 define nat as int where $ > 0
 define num as {1,2,3,4}
 
-void f(num x):
+string f(num x):
     y = x
-    print str(y)
+    return str(y)
 
-void g(int x, nat z) requires (x == 1 || x == 2) && z in {1,2,3,x}:
-    f(z)
+string g(int x, nat z) requires (x == 1 || x == 2) && z in {1,2,3,x}:
+    return f(z)
 
 void System::main([string] args):
-    g(1,3)
+    out->println(g(1,3))

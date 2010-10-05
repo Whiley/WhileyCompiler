@@ -1,14 +1,14 @@
 void f(int x):
-    print "F(INT)"
+    out->println("F(INT)")
 
 void f(real y):
-    print "F(REAL)"
+    out->println("F(REAL)")
 
 void f([int] xs):
-    print "F([int])"
+    out->println("F()[int])"
 
 void f({int} xs):
-    print "F({int})"
+    out->println("F(){int})"
 
 
 void System::main([string] args):

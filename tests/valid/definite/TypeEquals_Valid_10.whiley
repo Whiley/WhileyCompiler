@@ -11,6 +11,6 @@ int f(expr e):
 
 void System::main([string] args):
     x = f(1)
-    print str(x)
+    out->println(str(x))
     x = f({x:4,y:10})   
-    print str(x)
+    out->println(str(x))

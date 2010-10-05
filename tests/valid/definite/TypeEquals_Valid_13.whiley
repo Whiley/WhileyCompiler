@@ -10,7 +10,7 @@ int f(intlist x):
 
 void System::main([string] args):
     x = f([1,2,3])
-    print str(x)
+    out->println(str(x))
     x = f(123)
-    print str(x)
+    out->println(str(x))
 

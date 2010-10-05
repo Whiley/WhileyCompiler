@@ -1,5 +1,5 @@
 void f({int} xs, {int} ys, {int} zs) requires zs == xs ∩ ys:
-    print str(xs)
+    out->println(str(xs))
 
 void g({int} ys):
     f(ys,ys,ys)

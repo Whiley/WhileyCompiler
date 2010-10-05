@@ -5,6 +5,6 @@ void System::main([string] args):
     x = {op:1}
     x.op = 1
     y = x // OK
-    print str(y)
+    out->println(str(y))
     x = {op:[1,2,3]} // OK
-    print str(x)
+    out->println(str(x))

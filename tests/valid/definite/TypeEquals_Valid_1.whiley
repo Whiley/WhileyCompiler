@@ -3,9 +3,9 @@ define expr as int|bop
 
 void f(expr e):
     if e ~= int:
-        print "GOT INT"
+        out->println("GOT INT")
     else:
-        print "GOT BOB"
+        out->println("GOT BOB")
 
 void System::main([string] args):
     e = 1

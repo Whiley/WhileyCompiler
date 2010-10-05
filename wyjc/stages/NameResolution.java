@@ -79,8 +79,8 @@ public class NameResolution {
 				HashMap<String,Set<Expr>> environment = new HashMap<String,Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
 				addExposedNames(new Expr.Variable("$", td.constraint
-						.attribute(Attribute.Source.class)), td.type,
-						environment);
+						.attribute(Attribute.Source.class),
+						new Attributes.Alias(null)), td.type, environment);
 				resolve(td.constraint,environment,imports);
 			}		
 		} catch (ResolveError e) {												
@@ -340,7 +340,7 @@ public class NameResolution {
 		} else if (aliases.size() > 1) {
 			syntaxError("ambigous variable name", filename, v);
 		} else {
-			// following signals a local variable						
+			// following signals a local variable			
 			v.attributes().add(new Attributes.Alias(null));
 		}
 	}
@@ -446,7 +446,7 @@ public class NameResolution {
 	 * a define statement like this:
 	 * 
 	 * <pre>
-	 * define tup as (int x, int y) where x < y
+	 * define tup as {int x, int y} where x < y
 	 * </pre>
 	 * 
 	 * In this case, <code>x</code> and <code>y</code> are "exposed" --- meaning

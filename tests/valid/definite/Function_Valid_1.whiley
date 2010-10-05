@@ -1,11 +1,9 @@
-void f(real x):
-    print "GOT REAL"
-    print str(x)
+string f(real x):
+    return "GOT REAL"
 
-void f(int x):
-    print "GOT INT"
-    print str(x)
+string f(int x):
+    return "GOT INT"
 
 void System::main([string] args):
-    f(1)
-    f(1.23)
+    out->println(f(1))
+    out->println(f(1.23))

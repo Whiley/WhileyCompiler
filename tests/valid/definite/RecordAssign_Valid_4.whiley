@@ -7,6 +7,6 @@ bytes f(byte b):
 void System::main([string] args):
     b = 1
     bs = f(b)
-    print str(bs)
+    out->println(str(bs))
     bs = {b1:b,b2:b}
-    print str(bs)
+    out->println(str(bs))

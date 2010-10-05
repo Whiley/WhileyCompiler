@@ -9,5 +9,5 @@ int g(int x) ensures $ > 0 && $ < 125:
 
 void System::main([string] args):
     bytes = f(0)
-    print str(bytes)
+    out->println(str(bytes))
 

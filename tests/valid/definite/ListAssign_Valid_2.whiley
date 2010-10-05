@@ -3,5 +3,5 @@ void System::main([string] args):
     arr2 = arr1
     arr2[2] = 3
     assert arr2[2] == |arr1|
-    print str(arr1)
-    print str(arr2)
+    out->println(str(arr1))
+    out->println(str(arr2))

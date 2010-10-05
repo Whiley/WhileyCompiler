@@ -7,4 +7,4 @@ void System::main([string] args):
     x = f()    
     x.f1 = x.f2 - 2
     assert x.f1 != x.f2
-    print str(x)
+    out->println(str(x))

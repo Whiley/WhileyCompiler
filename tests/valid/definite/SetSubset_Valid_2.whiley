@@ -1,5 +1,5 @@
 void f({int} xs, {int} ys) requires xs ⊆ ys:
-    print "XS IS A SUBSET"
+    out->println("XS IS A SUBSET")
 
 void System::main([string] args):
     f({1,2,3},{1,2,3})

@@ -1,5 +1,5 @@
 void f({int} xs) requires |xs| < 3:
-    print str(xs)
+    out->println(str(xs))
 
 void g({int} ys):
     f(ys ∩ {1,2})

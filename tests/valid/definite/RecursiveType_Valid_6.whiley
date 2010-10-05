@@ -11,5 +11,5 @@ void System::main([string] args):
     bop2 = bop1
     e1 = bop1
     e2 = {op:SUB,left:bop1,right:2}
-    print str(e1)
-    print str(e2)
+    out->println(str(e1))
+    out->println(str(e2))

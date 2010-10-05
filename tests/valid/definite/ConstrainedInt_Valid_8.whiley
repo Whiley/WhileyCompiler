@@ -2,9 +2,9 @@ define byte as int where $ >=0 && $ <= 255
 define codeOp as { 1, 2, 3, 4 }
 define code as {codeOp op, [int] payload}
 
-void f(code x):
+string f(code x):
     y = x.op
-    print str(y)
+    return str(y)
 
 void System::main([string] args):
-    f({op:1,payload:[1]})
+    out->println(f({op:1,payload:[1]}))

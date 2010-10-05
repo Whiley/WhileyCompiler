@@ -1,5 +1,5 @@
 void f([int] x):
-     print str(|x|)
+     out->println(str()|x|)
 
 void System::main([string] args):
      arr = []

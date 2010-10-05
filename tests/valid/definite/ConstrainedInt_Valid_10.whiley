@@ -11,7 +11,7 @@ anat btoa(bnat x):
 
 void System::main([string] args):
     x = 1
-    print str(atob(x))
-    print str(btoa(x))
+    out->println(str(atob(x)))
+    out->println(str(btoa(x)))
     
     

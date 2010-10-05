@@ -2,9 +2,9 @@ define intreal as int|real
 
 //void f(intreal x):
 //    if(x in int):
-//        print "Got int"
+//        out->println("Got int")
 //    else:
-//        print "Got real"
+//        out->println("Got real")
 
 void System::main([string] args):
     f(1)

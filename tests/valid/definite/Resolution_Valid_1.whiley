@@ -3,4 +3,4 @@ int f(byte b):
 
 void System::main([string] args):
     b = f(10)
-    print str(b)
+    out->println(str(b))

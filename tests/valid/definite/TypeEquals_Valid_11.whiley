@@ -7,5 +7,5 @@ string getMessage(imsg m):
         return str(m)
 
 void System::main([string] args):
-    print getMessage({msg:"HELLO WORLD"})
-    print getMessage(1)
+    out->println(getMessage(){msg:"HELLO WORLD"})
+    out->println(getMessage(1))

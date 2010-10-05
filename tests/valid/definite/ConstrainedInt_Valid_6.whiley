@@ -2,12 +2,12 @@
 define num as {1,2,3,4}
 define bignum as {1,2,3,4,5,6,7}
 
-void f(num x):
+string f(num x):
     y = x
-    print str(y)
+    return str(y)
 
-void g({bignum} zs, int z) requires z in {x | x in zs, x < 5}:
-    f(z)
+string g({bignum} zs, int z) requires z in {x | x in zs, x < 5}:
+    return f(z)
 
 void System::main([string] args):
-    g({1,2,3,5},3)
+    out->println(g({1,2,3,5},3))

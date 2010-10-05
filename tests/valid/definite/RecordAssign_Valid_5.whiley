@@ -6,6 +6,6 @@ bytes f(int a) requires a > 0 && a < 10:
     return bs
 
 void System::main([string] args):
-    print str(f(1))
-    print str(f(2))
-    print str(f(9))
+    out->println(str(f(1)))
+    out->println(str(f(2)))
+    out->println(str(f(9)))

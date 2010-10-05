@@ -3,5 +3,5 @@
 
 void System::main([string] args):
     x,y = f(1)
-    print str(x)
-    print str(y)
+    out->println(str(x))
+    out->println(str(y))

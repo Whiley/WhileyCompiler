@@ -1,5 +1,5 @@
 void f([int] xs):
-    print str(xs)
+    out->println(str(xs))
 
 void System::main([string] args):
     f([1,4])

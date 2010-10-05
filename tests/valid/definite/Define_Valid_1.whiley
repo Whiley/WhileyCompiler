@@ -7,6 +7,6 @@ void System::main([string] args):
      li = [1,2,3]     
      p = {x:1,y:2}
      x = p.x     
-     print str(x)
-     print str(|si|)
-     print str(li[0])
+     out->println(str(x))
+     out->println(str(|si|))
+     out->println(str(li[0]))

@@ -1,6 +1,6 @@
 // this is a comment!
 void f({int} xs) requires no { w in xs | w < 0}:
-    print str(xs)
+    out->println(str(xs))
 
 void System::main([string] args):
     ys = {1,2,3}
