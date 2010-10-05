@@ -129,6 +129,12 @@ public class NameResolution {
 			environment.remove("$");
 		}
 		
+		if(fd.postcondition != null) {
+			environment.put("$",Collections.EMPTY_SET);
+			resolve(fd.postcondition, environment,imports);			
+			environment.remove("$");
+		}
+		
 		List<Stmt> stmts = fd.statements;
 		for (int i=0;i!=stmts.size();++i) {
 			resolve(stmts.get(i), environment, imports);							
@@ -336,7 +342,7 @@ public class NameResolution {
 		} else if (aliases.size() > 1) {
 			syntaxError("ambigous variable name", filename, v);
 		} else {
-			// following signals a local variable			
+			// following signals a local variable						
 			v.attributes().add(new Attributes.Alias(null));
 		}
 	}
