@@ -4,8 +4,6 @@ void f([int] x, int i) requires |x| > 0:
     y = x[i]
     z = x[i]
     assert y == z
-    out->println(str(y))
-    out->println(str(z))
 
 void System::main([string] args):
     arr = [1,2,3]

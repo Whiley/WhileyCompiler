@@ -2,12 +2,13 @@
 define ir1nat as int where $ > 0
 define pir1nat as ir1nat where $ > 1
 
-void f(int x):
+string f(int x):
     if x > 2:
         y = x
-        out->println(str(y))
+        return str(y)
+    return ""
 
 void System::main([string] args):
-    f(1)
-    f(2)
-    f(3)
+    out->println(f(1))
+    out->println(f(2))
+    out->println(f(3))

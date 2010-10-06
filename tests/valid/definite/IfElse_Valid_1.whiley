@@ -1,14 +1,14 @@
-void f(int x):
+string f(int x):
     if(x < 10):
-        out->println("LESS THAN")
+        return "LESS THAN"
     else if(x > 10):
-        out->println("GREATER THAN")
+        return "GREATER THAN"
     else:
-        out->println("EQUALS")
+        return "EQUALS"
 
 void System::main([string] args):
-    f(1)
-    f(10)
-    f(11)
-    f(1212)
-    f(-1212)
+    out->println(f(1))
+    out->println(f(10))
+    out->println(f(11))
+    out->println(f(1212))
+    out->println(f(-1212))

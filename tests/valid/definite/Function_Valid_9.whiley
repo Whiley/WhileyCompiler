@@ -1,18 +1,18 @@
-void f(int x):
-    out->println("F(INT)")
+string f(int x):
+    return "F(INT)"
 
-void f(real y):
-    out->println("F(REAL)")
+string f(real y):
+    return "F(REAL)"
 
-void f([int] xs):
-    out->println("F()[int])"
+string f([int] xs):
+    return "F([int])"
 
-void f({int} xs):
-    out->println("F(){int})"
+string f({int} xs):
+    return "F({int})"
 
 
 void System::main([string] args):
-    f(1.0)
-    f(1)
-    f([1,2,3])
-    f({1,2,3})
+    out->println(f(1.0))
+    out->println(f(1))
+    out->println(f([1,2,3]))
+    out->println(f({1,2,3}))

@@ -1,12 +1,10 @@
-void f(int x, real y):
-    out->println(str(x))
-    out->println(str(y))
+string f(int x, real y):
     if x == y:
-        out->println("EQUAL")
+        return "EQUAL"
     else:
-        out->println("NOT EQUAL")
+        return "NOT EQUAL"
 
 void System::main([string] args):
-    f(1,4.0)
-    f(1,4.2)
-    f(0,0)
+    out->println(f(1,4.0))
+    out->println(f(1,4.2))
+    out->println(f(0,0))

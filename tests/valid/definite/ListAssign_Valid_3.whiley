@@ -1,4 +1,4 @@
-void f(int i):
+string f(int i):
     arr1 = [1,2,64]
     arr2 = arr1
     if i != |arr1|:
@@ -6,9 +6,8 @@ void f(int i):
     else:
         arr2[2] = i
     assert arr2[2] == |arr1|
-    out->println(str(arr1))
-    out->println(str(arr2))
+    return str(arr1) + str(arr2)
 
 void System::main([string] args):
-    f(2)
-    f(3)
+    out->println(f(2))
+    out->println(f(3))
