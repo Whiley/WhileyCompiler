@@ -100,9 +100,10 @@ public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
 						store = join(store, tmp);
 					} else if (tmp != null) {
 						store = tmp;
-					}
+					}					
 				}
-
+				
+				
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;

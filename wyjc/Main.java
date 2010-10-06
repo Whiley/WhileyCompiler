@@ -326,6 +326,7 @@ public class Main {
 		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));
 		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
+		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));
 		stages.add(new WyilTransform("type propagation", new TypePropagation(
 				loader)));
 		stages.add(new WyilTransform("definite assignment",

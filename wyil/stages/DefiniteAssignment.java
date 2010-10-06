@@ -67,7 +67,7 @@ public class DefiniteAssignment extends
 		return defined;
 	}
 	
-	public Pair<Stmt,HashSet<String>> propagate(Stmt stmt, HashSet<String> in) {		
+	public Pair<Stmt,HashSet<String>> propagate(Stmt stmt, HashSet<String> in) {						
 		Code code = stmt.code;
 		HashSet<String> uses = Code.usedVariables(code);		
 		String nvar = null;
@@ -84,16 +84,11 @@ public class DefiniteAssignment extends
 				nvar = "%" + v.index;
 			} 
 		} 	
-		
-		// FIXME: there is a bug here for the value of a variable after a forall
-		// or induction block. The bug is that variables defined by these
-		// looping blocks may never be initialise, in the case of immediate
-		// termination (e.g. the source is empty).
-		
+				
 		checkUses(uses,in,stmt);
 		
 		if(nvar != null) {
-			in = new HashSet<String>(in);
+			in = new HashSet<String>(in);			
 			in.add(nvar);
 		}
 		
@@ -126,10 +121,14 @@ public class DefiniteAssignment extends
 		blk.addAll(r.first());
 		blk.add(end);
 		
-		return new Pair<Block,HashSet<String>>(blk,join(in,r.second()));
+		if(start instanceof Code.Loop) {
+			return new Pair<Block,HashSet<String>>(blk,join(in,r.second()));
+		} else {
+			return new Pair<Block,HashSet<String>>(blk,r.second());
+		}
 	}
 	
-	protected HashSet<String> join(HashSet<String> s1, HashSet<String> s2) {
+	protected HashSet<String> join(HashSet<String> s1, HashSet<String> s2) {		
 		HashSet<String> r = new HashSet<String>();
 		// set intersection
 		for (String s : s1) {
