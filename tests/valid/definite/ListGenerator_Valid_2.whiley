@@ -1,8 +1,10 @@
-void f([[int]] x) requires |x| > 0:
+string f([[int]] x) requires |x| > 0:
     if(|x[0]| > 2):
-        out->println(str(x)[0][1])
+        return str(x[0][1])
+    else:
+        return ""
 
 
 void System::main([string] args):
      arr = [[1,2,3],[1]]
-     f(arr)
+     out->println(f(arr))

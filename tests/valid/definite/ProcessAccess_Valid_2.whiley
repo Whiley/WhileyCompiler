@@ -2,9 +2,9 @@ define state as {int x, int y}
 define pState as process state
 
 void pState::send(int z):
-    out->println(str(this-)>x)
-    out->println(str(this-)>y)
-    out->println(str(z))
+    print str(this->x)
+    print str(this->y)
+    print str(z)
 
 void System::main([string] args):
     ps = spawn {x:1,y:2}

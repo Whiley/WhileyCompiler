@@ -1,10 +1,10 @@
 void f([int] xs, [real] ys):
-    out->println(str(xs))
-    out->println(str(ys))
+    print str(xs)
+    print str(ys)
     if xs == ys:
-        out->println("EQUAL")
+        print "EQUAL"
     else:
-        out->println("NOT EQUAL")
+        print "NOT EQUAL"
 
 void System::main([string] args):
     f([1,4],[1.0,4.0])

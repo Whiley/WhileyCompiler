@@ -4,7 +4,7 @@ define Ptype as process etype
 int Ptype::get():
     this->mode = 1
     this->rest = 123
-    out->println(str(*this)   )
+    print str(*this)
     return this->mode
 
 void System::main([string] args):

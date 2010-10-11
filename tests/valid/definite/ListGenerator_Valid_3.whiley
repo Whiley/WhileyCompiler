@@ -1,6 +1,6 @@
-void f([int] x):
-     out->println(str()|x|)
+string f([int] x):
+     return str(|x|)
 
 void System::main([string] args):
      arr = []
-     f(arr)
+     out->println(f(arr))
