@@ -1,8 +1,8 @@
 real g(int x):
      return x / 3.0
 
-void f(int x, int y) requires x>=0 && y>0:
-    out->println(str(g(x)))
+string f(int x, int y) requires x>=0 && y>0:
+    return str(g(x))
 
 void System::main([string] args):
-     f(1,2)
+     out->println(f(1,2))

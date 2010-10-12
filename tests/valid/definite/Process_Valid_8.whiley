@@ -1,11 +1,11 @@
 define MyProc as process { bool flag }
 
-void MyProc::run():
+void MyProc::run(System sys):
     if flag:
-        out->println("TRUE")
+        sys->out->println("TRUE")
     else:
-        out->println("FALSE")
+        sys->out->println("FALSE")
 
 void System::main([string] args):
     mproc = spawn { flag:false }     
-    mproc->run()
+    mproc->run(this)
