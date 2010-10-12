@@ -1,5 +1,5 @@
-void f({real} ls):
-    out->println(str(ls))
+string f({real} ls):
+    return str(ls)
 
 void System::main([string] args):
-    f({1,2,3})
+    out->println(f({1,2,3}))

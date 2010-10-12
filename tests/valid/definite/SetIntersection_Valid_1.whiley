@@ -1,10 +1,10 @@
-void f({int} xs) requires xs ⊆ {1,2,3}:
-    out->println(str(xs))
+string f({int} xs) requires xs ⊆ {1,2,3}:
+    return str(xs)
 
-void g({int} ys):
-    f(ys ∩ {1,2,3})
+string g({int} ys):
+    return f(ys ∩ {1,2,3})
 
 void System::main([string] args):
-    g({1,2,3,4})
-    g({2})
-    g({})
+    out->println(g({1,2,3,4}))
+    out->println(g({2}))
+    out->println(g({}))

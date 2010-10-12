@@ -1,7 +1,7 @@
-void f({int} xs):
-    out->println(str(xs))
+string f({int} xs):
+    return str(xs)
 
 void System::main([string] args):
-    f({1,4})
-    f({})
-    f(∅)
+    out->println(f({1,4}))
+    out->println(f({}))
+    out->println(f(∅))
