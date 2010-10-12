@@ -1,9 +1,9 @@
 define realtup as {real op}
 
-void f(realtup t):
+string f(realtup t):
     x = t.op
-    out->println(str(t))
+    return str(t)
 
 void System::main([string] args):
     t = {op:1}
-    f(t)
+    out->println(f(t))

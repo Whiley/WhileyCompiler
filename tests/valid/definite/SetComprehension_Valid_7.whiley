@@ -1,6 +1,6 @@
 // this is a comment!
 string f({int} xs) requires |xs| > 0:
-    returbn str(xs)
+    return str(xs)
 
 void System::main([string] args):
     ys = {1,2,3}

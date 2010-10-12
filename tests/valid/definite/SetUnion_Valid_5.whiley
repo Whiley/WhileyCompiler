@@ -1,9 +1,9 @@
-void f({int} xs) requires |xs| > 0:
-    out->println(str(xs))
+string f({int} xs) requires |xs| > 0:
+    return str(xs)
 
-void g({int} ys):
-    f(ys ∪ {1})
+string g({int} ys):
+    return f(ys ∪ {1})
 
 void System::main([string] args):
-    g({})
-    g({2})
+    out->println(g({}))
+    out->println(g({2}))

@@ -1,16 +1,16 @@
 define expr as {int}|bool
 
-void f(expr e):
+string f(expr e):
     if e ~= {int}:
-        out->println("GOT ){INT}"
+        return "GOT {INT}"
     else if e ~= bool:
-        out->println("GOT BOOL")
+        return "GOT BOOL"
     else:
-        out->println("GOT SOMETHING ELSE)?"
+        return "GOT SOMETHING ELSE?"
 
 void System::main([string] args):
     e = true
-    f(e)
+    out->println(f(e))
     e = {1,2,3,4}
-    f(e)
+    out->println(f(e))
  

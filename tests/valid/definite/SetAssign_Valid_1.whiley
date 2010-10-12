@@ -1,8 +1,8 @@
 // this is a comment!
-void f({int} xs) requires |xs| > 0:
-    out->println(str(xs))
+string f({int} xs) requires |xs| > 0:
+    return str(xs)
 
 void System::main([string] args):
     ys = {1,2,3}
     zs = ys
-    f(zs)
+    out->println(f(zs))
