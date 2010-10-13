@@ -3,12 +3,12 @@ define msg2 as {int op, [{int dum}] data}
 
 define msgType as msg1 | msg2
 
-void f(msgType m):
-    out->println(str(m))
+string f(msgType m):
+    return str(m)
 
 void System::main([string] args):
     x = {op:1,data:[1,2,3]}
-    f(x)
+    out->println(f(x))
     list = x.data
     out->println(str(list))
     

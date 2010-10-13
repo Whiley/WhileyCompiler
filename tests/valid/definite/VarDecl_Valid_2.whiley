@@ -1,9 +1,9 @@
-void g(int z) requires z > 1:
-    out->println(str(z))
+string g(int z) requires z > 1:
+    return str(z)
 
-void f(int x) requires x > 0:
+string f(int x) requires x > 0:
     y = x + 1
-    g(y)
+    return g(y)
 
 void System::main([string] args):
-    f(1)
+    out->println(f(1))

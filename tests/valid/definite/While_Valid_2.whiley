@@ -9,6 +9,6 @@ nat sum([nat] ls):
     return sum
 
 void System::main([string] args):
-    out->println(str(sum()[]))
-    out->println(str(sum()[1,2,3]))
-    out->println(str(sum()[12387,98123,12398,12309,0]))
+    out->println(str(sum([])))
+    out->println(str(sum([1,2,3])))
+    out->println(str(sum([12387,98123,12398,12309,0])))

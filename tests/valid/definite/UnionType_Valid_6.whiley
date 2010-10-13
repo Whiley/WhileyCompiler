@@ -4,9 +4,9 @@ define msg2 as {int index}
 
 define msgType as msg1 | msg2
 
-void f(msgType m):
-    out->println(str(m))
+string f(msgType m):
+    return str(m)
 
 void System::main([string] args):
     x = {op:11,data:[]}
-    f(x)
+    out->println(f(x))

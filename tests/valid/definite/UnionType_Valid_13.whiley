@@ -8,10 +8,10 @@ define BRANCH as {branchCode op, int16 offset}
 
 define byteCode as STORE | BRANCH
 
-void f(byteCode b):
-    out->println(str(b))
+string f(byteCode b):
+    return str(b)
 
 void System::main([string] args):
     b = {op:0,index:1}
-    f(b)
+    out->println(f(b))
 

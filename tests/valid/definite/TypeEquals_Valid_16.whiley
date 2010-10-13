@@ -1,10 +1,10 @@
-void f(int|null x):
+string f(int|null x):
     if x ~= null:
-        out->println("GOT NULL")
+        return "GOT NULL"
     else:
-        out->println("GOT INT")
+        return "GOT INT"
 
 void System::main([string] args):
     x = null
-    f(x)
-    f(1)
+    out->println(f(x))
+    out->println(f(1))

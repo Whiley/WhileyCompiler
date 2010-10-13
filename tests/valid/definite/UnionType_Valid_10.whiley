@@ -1,15 +1,15 @@
 define IntList as {int op, [real] rest}|{int op, int mode}
 
-void f(IntList y):
-    out->println(str(y))
+string f(IntList y):
+    return str(y)
 
-void g({int op, int mode} z):
-    out->println(str(z))
+string g({int op, int mode} z):
+    return str(z)
 
 void System::main([string] args):
     x = {op:1, rest:[1.23]}
-    f(x)
+    out->println(f(x))
     x = {op:1.23, mode: 0}
     x.op = 123 // OK
-    g(x)
+    out->println(g(x))
     
