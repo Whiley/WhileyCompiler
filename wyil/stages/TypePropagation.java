@@ -65,7 +65,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		if(method.type().receiver != null) {
+		if(method.type().receiver != null) {					
 			environment.put("this", method.type().receiver);
 		}
 		
@@ -113,8 +113,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {		
-		environment = new Env(environment);
-				
+		environment = new Env(environment);				
+		
 		CExpr rhs = infer(code.rhs,stmt,environment);
 		CExpr.LVal lhs = null;
 		
@@ -655,9 +655,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return CExpr.LISTACCESS(src,idx);
 	}
 		
-	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {		
-		CExpr lhs = infer(e.lhs,stmt,environment);			
-		Type.Record ett = Type.effectiveRecordType(lhs.type());				
+	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {								
+		CExpr lhs = infer(e.lhs,stmt,environment);							
+		Type.Record ett = Type.effectiveRecordType(lhs.type());		
 		if (ett == null) {
 			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
 		}

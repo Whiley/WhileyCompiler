@@ -748,8 +748,9 @@ public abstract class CExpr {
 							&& name.equals(a.name) && caseNum == a.caseNum
 							&& args.equals(a.args);
 				} else {
-					return type.equals(a.type) && name.equals(a.name)
-							&& caseNum == a.caseNum && args.equals(a.args);
+					return receiver.equals(a.receiver) && type.equals(a.type)
+							&& name.equals(a.name) && caseNum == a.caseNum
+							&& args.equals(a.args);
 				}
 			}
 			return false;

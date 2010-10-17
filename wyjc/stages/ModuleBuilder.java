@@ -698,7 +698,7 @@ public class ModuleBuilder {
 				Pair<CExpr, Block> p = resolve(freeReg, (Invoke) stmt);
 				Block blk = p.second();
 				blk.add(new Code.Assign(null, p.first()), stmt
-						.attribute(Attribute.Source.class));
+						.attribute(Attribute.Source.class));				
 				return blk;
 			} else if (stmt instanceof Spawn) {
 				return resolve(freeReg, (UnOp) stmt).second();
@@ -751,7 +751,7 @@ public class ModuleBuilder {
 			Variable v = (Variable) s.lhs;
 			blk.addAll(rhs_tb.second());
 			blk.add(new Code.Assign(CExpr.VAR(Type.T_ANY,v.var), rhs_tb
-					.first()), s.attribute(Attribute.Source.class));
+					.first()), s.attribute(Attribute.Source.class));			
 		} else {
 
 			Pair<CExpr, Block> lhs_tb = resolve(freeReg, s.lhs);
@@ -761,7 +761,7 @@ public class ModuleBuilder {
 				blk.addAll(lhs_tb.second());
 				blk.addAll(rhs_tb.second());
 				blk.add(new Code.Assign(((CExpr.LVal)lhs_tb.first()), rhs_tb
-						.first()), s.attribute(Attribute.Source.class));
+						.first()), s.attribute(Attribute.Source.class));				
 			} else {
 				syntaxError("invalid assignment", filename, s);
 			}
@@ -1323,8 +1323,8 @@ public class ModuleBuilder {
 			Pair<CExpr, Block> e_tb = resolve(idx++, e);
 			nargs.add(e_tb.first());
 			blk.addAll(e_tb.second());
-		}
-
+		}	
+		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 		NameID name = new NameID(modInfo.module, s.name);
 
@@ -1360,7 +1360,7 @@ public class ModuleBuilder {
 				}
 				if(pt instanceof Type.Process) {
 					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
-					if(ert != null && ert.types.containsKey(v.var)) {
+					if(ert != null && ert.types.containsKey(v.var)) {						
 						// Bingo, this is an implicit field dereference
 						CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
 								Type.T_ANY, "this"));					
@@ -1412,7 +1412,7 @@ public class ModuleBuilder {
 		case LENGTHOF:
 			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
 					.first()), blk);
-		case PROCESSACCESS:
+		case PROCESSACCESS:			
 			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.PROCESSACCESS,
 					mhs.first()), blk);
 		case PROCESSSPAWN:
@@ -1629,7 +1629,7 @@ public class ModuleBuilder {
 	}
 
 	protected Pair<CExpr, Block> resolve(int freeReg, RecordAccess sg) {
-		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs);
+		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs);		
 		return new Pair<CExpr, Block>(CExpr.RECORDACCESS(lhs.first(), sg.name),
 				lhs.second());
 	}
