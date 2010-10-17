@@ -985,8 +985,7 @@ public class WhileyParser {
 		Token token = tokens.get(index);
 		
 		if(token instanceof RightCurly) {
-			match(RightCurly.class);
-			skipWhiteSpace();
+			match(RightCurly.class);			
 			// empty set definition
 			Value v = Value.V_SET(new ArrayList<Value>()); 
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
