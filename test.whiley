@@ -1,2 +1,3 @@
-void System::main([string] args):
-    out->println("Hello World")
+define rec as {
+ int field 
+}
