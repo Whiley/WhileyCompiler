@@ -13,10 +13,12 @@
                 r=r+1
             i=i+1
         while l < |lhs|:
-            items[i] = lhs[l] 
+            items[i] = lhs[l]
+            i=i+1 
             l=l+1
         while r < |rhs|:
             items[i] = rhs[r] 
+            i=i+1 
             r=r+1
     return items
 
