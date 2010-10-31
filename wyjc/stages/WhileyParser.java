@@ -771,8 +771,17 @@ public class WhileyParser {
 				if(lookahead instanceof Colon) {
 					match(Colon.class);
 					skipWhiteSpace();
-					
-					Expr end = parseAddSubExpression();
+					lookahead = tokens.get(index);
+					Expr end;
+					if(lookahead instanceof RightSquare) {
+						// In this case, no end of the slice has been provided.
+						// Therefore, it is taken to be the length of the source
+						// expression.						
+						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
+								.attribute(Attribute.Source.class));
+					} else {
+						end = parseAddSubExpression();						
+					}
 					match(RightSquare.class);
 					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
 							start, index - 1), lhs, rhs, end);

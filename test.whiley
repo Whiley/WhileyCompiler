@@ -2,7 +2,7 @@
     if |items| > 1:
         pivot = |items| / 2
         lhs = sort(items[0:pivot])
-        rhs = sort(items[pivot:|items|])
+        rhs = sort(items[pivot:])
         l,r,i = (0,0,0)
         while i < |items| && l < |lhs| && r < |rhs|:
             if lhs[l] <= rhs[r]:
