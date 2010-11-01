@@ -333,10 +333,13 @@ public class Main {
 				new DefiniteAssignment(loader)));
 		stages.add(new WyilTransform("constant propagation",
 				new ConstantPropagation(loader)));
-		stages.add(new WyilTransform("branch prediction",
-				new ExpectedInference(loader)));
-		stages.add(new WyilTransform("verification check",
-				new ConstraintPropagation(loader, true, 250)));
+		// Following stages are currently commented out, since verification is
+		// very flakey.
+		//
+		//stages.add(new WyilTransform("branch prediction",
+		//		new ExpectedInference(loader)));
+		//stages.add(new WyilTransform("verification check",
+		//		new ConstraintPropagation(loader, true, 250)));
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
 		stages

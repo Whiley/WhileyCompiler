@@ -1,5 +1,5 @@
 <project name="whiley" default="stdlib">  
-  <property name="version" value="0.3.0"/>
+  <property name="version" value="0.3.1"/>
 
   <target name="compile">
     <javac debug="true" srcdir="." includeantruntime="true" includes="wyjc/**,wyil/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
@@ -19,7 +19,7 @@
 
   <target name="stdlib" depends="build-wyjc">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
-    <wyjc srcdir="stdlib" includes="whiley/**/*.whiley" excludes="whiley/io/**" nvc="true"/>
+    <wyjc srcdir="stdlib" includes="whiley/**/*.whiley" excludes="whiley/io/**"/>
     <jar destfile="lib/wyrt.jar">
       <fileset dir="." includes="wyil/jvm/rt**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
