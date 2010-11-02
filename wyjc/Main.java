@@ -69,6 +69,7 @@ public class Main {
 	
 	public static int run(String[] args) {		
 		boolean verbose = false;
+		boolean verification = false;
 		
 		ArrayList<String> whileypath = new ArrayList<String>();
 		ArrayList<String> bootpath = new ArrayList<String>();
@@ -117,6 +118,8 @@ public class Main {
 					PipelineModifier pmod = new PipelineModifier(POP.REMOVE,
 							name, null, null);
 					pipelineMods.add(pmod);
+				} else if(arg.equals("-V")) { 
+					verification = true;
 				} else {
 					throw new RuntimeException("Unknown option: " + args[i]);
 				}
@@ -140,7 +143,7 @@ public class Main {
 
 		try {
 			ModuleLoader loader = new ModuleLoader(whileypath);
-			ArrayList<Compiler.Stage> stages = constructPipeline(pipelineMods,loader);
+			ArrayList<Compiler.Stage> stages = constructPipeline(pipelineMods,loader,verification);
 			Compiler compiler = new Compiler(loader,stages);
 
 			// Now, configure compiler and loader
@@ -318,7 +321,8 @@ public class Main {
 	}
 
 	private static ArrayList<Compiler.Stage> constructPipeline(
-			List<PipelineModifier> pmods, ModuleLoader loader) {
+			List<PipelineModifier> pmods, ModuleLoader loader,
+			boolean verification) {
 
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
 		
@@ -336,10 +340,12 @@ public class Main {
 		// Following stages are currently commented out, since verification is
 		// very flakey.
 		//
-		//stages.add(new WyilTransform("branch prediction",
-		//		new ExpectedInference(loader)));
-		//stages.add(new WyilTransform("verification check",
-		//		new ConstraintPropagation(loader, true, 250)));
+		if(verification) {
+			stages.add(new WyilTransform("branch prediction",
+					new ExpectedInference(loader)));
+			stages.add(new WyilTransform("verification check",
+					new ConstraintPropagation(loader, true, 250)));
+		}
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
 		stages

@@ -36,7 +36,7 @@ public final class WhileySet extends HashSet {
 	public String toString() {
 		String r = "{";
 		boolean firstTime=true;
-		ArrayList<String> ss = new ArrayList<String>(this);		
+		ArrayList<Comparable> ss = new ArrayList<Comparable>(this);		
 		Collections.sort(ss);
 
 		for(Object o : ss) {
