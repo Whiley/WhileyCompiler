@@ -82,6 +82,19 @@ public final class WhileyList extends ArrayList {
 		return ret;
 	}	
 	
+	public static String toString(WhileyList list) {
+		String r = "";
+		for(Object o : list) {
+			if(o instanceof BigInteger) {
+				int v = ((BigInteger)o).intValue();
+				r += (char) v;
+			} else {
+				throw new RuntimeException("Invalid WhileyList");
+			}
+		}
+		return r;
+	}
+	
 	/**
 	 * The following method is used by the main launcher to convert from Java's
 	 * main(String[] args) into whiley's main([string] args) format.

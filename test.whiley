@@ -1,6 +1,5 @@
-[real] f([int] items):    
-    items[0] = 1.2
-    return items
+import whiley.io.*
 
 void System::main([string] args):
-    out->println(str(f([1,2,3])))
+    fin = this->openFile("test.whiley")
+    out->println(str(fin))
