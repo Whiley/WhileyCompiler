@@ -696,16 +696,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		try {
 			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
 
-			if (funtype == null) {
-				if (receiver == null) {
-					syntaxError("invalid or ambiguous function call", filename,
-							stmt);
-				} else {
-					syntaxError("invalid or ambiguous method call", filename,
-							stmt);
-				}
-			}
-			
 			return CExpr.INVOKE(funtype, ivk.name, ivk.caseNum, receiver, args);
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
@@ -731,7 +721,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type.Fun target = Type.T_FUN(receiver, Type.T_ANY,paramTypes);
 		Type.Fun candidate = null;				
 		
-		for (Type.Fun ft : lookupMethod(nid.module(),nid.name())) {										
+		List<Type.Fun> targets = lookupMethod(nid.module(),nid.name()); 
+		
+		for (Type.Fun ft : targets) {										
 			Type funrec = ft.receiver;			
 			if (receiver == funrec
 					|| (receiver != null && funrec != null && Type.isSubtype(
@@ -752,7 +744,40 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}				
 		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {
+			String msg = "no match for " + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for(Type.Fun ft : targets) {
+				if(firstTime) {
+					msg += "\n\tfound " + nid.name() +  parameterString(ft.params);
+				} else {
+					msg += "\n\tand " + nid.name() +  parameterString(ft.params);
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			
+			syntaxError(msg,filename,elem);
+		}
+		
 		return candidate;
+	}
+	
+	private String parameterString(List<Type> paramTypes) {
+		String paramStr = "(";
+		boolean firstTime = true;
+		for(Type t : paramTypes) {
+			if(!firstTime) {
+				paramStr += ",";
+			}
+			firstTime=false;
+			paramStr += t;
+		}
+		return paramStr + ")";
 	}
 	
 	protected List<Type.Fun> lookupMethod(ModuleID mid, String name)

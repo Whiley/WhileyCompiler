@@ -313,6 +313,7 @@ public class Main {
 		}		
 								
 		errout.println(fileArg + ":" + line + ": " + message);
+		//errout.println();
 		errout.println(lineText);	
 		for (int i = 0; i <= start; ++i) {
 			if (lineText.charAt(i) == '\t') {
