@@ -1471,8 +1471,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(slots.get(oldtup),WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(key));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));					
-			addCheckCast(convertType(from),bytecodes);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
+			addReadConversion(from,bytecodes);			
 			if(!to.equals(from)) {
 				// now perform recursive conversion
 				convert(to,from,slots,bytecodes);
