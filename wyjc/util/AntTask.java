@@ -48,6 +48,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
 public class AntTask extends MatchingTask {
 	private File srcdir;
 	private boolean noVerificationChecks = false;
+	private boolean verbose = false;
 	
 	public void setNvc(boolean b) {		
 		noVerificationChecks=b;
@@ -57,6 +58,10 @@ public class AntTask extends MatchingTask {
         this.srcdir = srcdir;
     }
 
+    public void setVerbose(boolean b) {
+    	verbose=b;
+    }
+    
     public void execute() throws BuildException {
         if (srcdir == null) {
             throw new BuildException("srcdir must be specified");
@@ -71,6 +76,7 @@ public class AntTask extends MatchingTask {
         if(noVerificationChecks) { nparams ++; }        
         ArrayList<String> params = new ArrayList<String>();        
         if(noVerificationChecks) { params.add("-Nvc"); }        
+        if(verbose) { params.add("-verbose"); }
         int nfiles = 0;
         for(String f : files) {
         	String fname = srcdir.getPath() + File.separatorChar + f;

@@ -19,6 +19,7 @@
 package wyjc;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 import wyil.ModuleLoader;
@@ -133,9 +134,37 @@ public class Main {
 			return UNKNOWN_ERROR;
 		}
 		
-		if(bootpath.isEmpty()) {			
-			String jarfile = Main.class.getPackage().getImplementationTitle();
-			bootpath.add(jarfile);
+		if(bootpath.isEmpty()) {
+			// In this case, no explicit bootpath has been specified on the
+			// command-line. The challenge is that we want to automatically put
+			// the wyrt.jar (Whiley Runtime Library) on the bootpath. To do
+			// this, we want to try and determine the jarfile that was used to
+			// get us to this point. Typically,
+			// "java -jar wyjc.jar file.whiley". We can use wyjc.jar in place of
+			// wyrt.jar, as it contains the same things.
+			//
+			try {
+				URI location = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+				//String jarfile = Main.class.getPackage().getImplementationTitle();
+				if(location != null) {
+					// The following code is a hack to determine the location of
+					// the enclosing jar file.
+					String jarfile = location.toURL().getFile().toString();
+					
+					if(!jarfile.endsWith(".jar")) {
+						// This seems to happen when calling from the ant task.
+						// For some reason, despite me asking it to use a
+						// particular jar file, it does not. Instead, it loads
+						// using the CLASSPATH environment variable, which means
+						// "."
+						jarfile += "stdlib";
+					}
+					
+					bootpath.add(jarfile);
+				}
+			} catch(Exception e) {
+				// just ignore.
+			}
 		}
 		
 		whileypath.add(0,".");
