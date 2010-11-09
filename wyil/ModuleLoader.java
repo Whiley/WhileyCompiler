@@ -382,8 +382,7 @@ public class ModuleLoader {
 		
 		// Second, try whileypath
 		for (String dir : whileypath) {			
-			// check if whileypath entry is a jarfile or a directory
-			System.out.println("GOT: " + dir);
+			// check if whileypath entry is a jarfile or a directory		
 			if (!dir.endsWith(".jar")) {
 				// dir is not a Jar file, so I assume it's a directory.				
 				pkgInfo = lookForPackage(dir,pkg,filePkg);
