@@ -10,3 +10,9 @@ FileInputStream System::openFile(string fileName):
         areturn
     // the following line is dead code
     return spawn {fileName: ""}
+
+void System::close(FileInputStream fin):
+    extern jvm:
+        aload 1
+        invokestatic wyil/jvm/rt/WhileyIO.closeFile:(Lwyil/jvm/rt/WhileyProcess;)V;
+    
