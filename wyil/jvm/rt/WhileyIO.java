@@ -30,7 +30,7 @@ public class WhileyIO {
 		}
 	}
 	
-	public WhileyList readFile(WhileyProcess p, BigInteger max) {
+	public static WhileyList readFile(WhileyProcess p, BigInteger max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
@@ -46,6 +46,28 @@ public class WhileyIO {
 			// what to do here??
 		}
 		
-		return r;
+		return r;		
+	}
+	
+	private static final int CHUNK_SIZE = 1024;
+	public static WhileyList readFile(WhileyProcess p) {		
+		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
+				.get("$fin");
+		
+		WhileyList r = new WhileyList();				
+		try {
+			int nbytes = 0;
+			do {
+				byte[] bytes = new byte[CHUNK_SIZE];
+				nbytes = fin.read(bytes);
+				for(int i=0;i!=nbytes;++i) {
+					r.add(BigInteger.valueOf(bytes[i]));
+				}
+			} while(nbytes == CHUNK_SIZE);			
+		} catch (IOException ioe) {
+			// what to do here??
+		}
+		
+		return r;		
 	}
 }

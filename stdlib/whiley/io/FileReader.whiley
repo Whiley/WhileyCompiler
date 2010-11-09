@@ -15,6 +15,14 @@ void FileReader::close():
     extern jvm:
         aload 0
         invokestatic wyil/jvm/rt/WhileyIO.closeFile:(Lwyil/jvm/rt/WhileyProcess;)V;
+
+// read the whole file
+[byte] FileReader::read():
+    extern jvm:
+        aload 0
+        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;)Lwyil/jvm/rt/WhileyList;
+        areturn
+    return []
     
 // read at most max bytes 
 [byte] FileReader::read(int max):
