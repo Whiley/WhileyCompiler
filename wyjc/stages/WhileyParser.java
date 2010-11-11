@@ -1184,13 +1184,14 @@ public class WhileyParser {
 			types.add((UnresolvedType.NonUnion) t);
 			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
 				match(Bar.class);
-				t = parseBaseType();				
+				skipWhiteSpace();
+				t = parseBaseType();
 				types.add((UnresolvedType.NonUnion) t);
 			}
 			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
 		} else {
 			return t;
-		}
+	}
 	}
 	
 	private UnresolvedType parseBaseType() {				
