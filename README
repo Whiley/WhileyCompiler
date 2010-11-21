@@ -1,0 +1,22 @@
+======================================================================
+ __        ___     _ _                              
+ \ \      / / |__ (_) | ___ _   _    ___  _ __ __ _ 
+  \ \ /\ / /| '_ \| | |/ _ \ | | |  / _ \| '__/ _` |
+   \ V  V / | | | | | |  __/ |_| |_| (_) | | | (_| |
+    \_/\_/  |_| |_|_|_|\___|\__, (_)\___/|_|  \__, |
+                            |___/             |___/ 
+
+======================================================================
+
+Whiley is a programming language particularly suited to
+safety-critical systems. It is a hybrid object-oriented and functional
+programming language which employs extended static checking to
+eliminate errors at compile time, including divide-by-zero, array
+out-of-bounds and null dereference errors.  Whiley compiles to the
+Java Virtual Machine and is fully inter-operable with existing Java
+applications.
+
+======================================================================
+
+To find out more, visit http://whiley.org
+
