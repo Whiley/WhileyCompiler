@@ -1,0 +1,62 @@
+define state as ([int] input,int pos) where (($.pos>=0) && ($.pos<=|$.input|)) && (no {$X0 in $.input | !(($X0>=0) && ($X0<=1114111))})
+
+define nonEmptyState as ([int] input,int pos) where ($.pos<|$.input|) && ((($.pos>=0) && ($.pos<=|$.input|)) && (no {$X0 in $.input | !(($X0>=0) && ($X0<=1114111))}))
+
+define expr as X[([int] err)|(int num)|(X lhs,int op,X rhs)] where ($[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})
+
+X[([int] err)|(int num)|(X lhs,int op,X rhs)] parse([int] input) requires no {$X0 in input | !(($X0>=0) && ($X0<=1114111))}, ensures ($[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))}):
+  check (((input:input,pos:0).pos>=0) && ((input:input,pos:0).pos<=|(input:input,pos:0).input|)) && (no {$X0 in (input:input,pos:0).input | !(($X0>=0) && ($X0<=1114111))}), "function precondition not satisfied"
+  check (((parseAddSubExpr((input:input,pos:0)).st.pos>=0) && (parseAddSubExpr((input:input,pos:0)).st.pos<=|parseAddSubExpr((input:input,pos:0)).st.input|)) && (no {$X0 in parseAddSubExpr((input:input,pos:0)).st.input | !(($X0>=0) && ($X0<=1114111))})) && ((parseAddSubExpr((input:input,pos:0)).e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})), "constraint for variable r not satisfied"
+  (X[([int] err)|(int num)|(X lhs,int op,X rhs)] e,([int] input,int pos) st) r = parseAddSubExpr((input:input,pos:0)) where (((r.st.pos>=0) && (r.st.pos<=|r.st.input|)) && (no {rX0 in r.st.input | !((rX0>=0) && (rX0<=1114111))})) && ((r.e[rX0] ~= ([int] err) => no {rX0r0 in rX0.err | !((rX0r0>=0) && (rX0r0<=1114111))}))
+  check (r.e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))}), "function postcondition not satisfied"
+  return r.e
+
+(X[([int] err)|(int num)|(X lhs,int op,X rhs)] e,([int] input,int pos) st) parseAddSubExpr(([int] input,int pos) st) requires ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), ensures ((($.st.pos>=0) && ($.st.pos<=|$.st.input|)) && (no {$X0 in $.st.input | !(($X0>=0) && ($X0<=1114111))})) && (($.e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})):
+  check ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), "function precondition not satisfied"
+  check (((parseTerm(st).st.pos>=0) && (parseTerm(st).st.pos<=|parseTerm(st).st.input|)) && (no {$X0 in parseTerm(st).st.input | !(($X0>=0) && ($X0<=1114111))})) && ((parseTerm(st).e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})), "constraint for variable lhs not satisfied"
+  (X[([int] err)|(int num)|(X lhs,int op,X rhs)] e,([int] input,int pos) st) lhs = parseTerm(st) where (((lhs.st.pos>=0) && (lhs.st.pos<=|lhs.st.input|)) && (no {lhsX0 in lhs.st.input | !((lhsX0>=0) && (lhsX0<=1114111))})) && ((lhs.e[lhsX0] ~= ([int] err) => no {lhsX0lhs0 in lhsX0.err | !((lhsX0lhs0>=0) && (lhsX0lhs0<=1114111))}))
+  check (((lhs.st.pos>=0) && (lhs.st.pos<=|lhs.st.input|)) && (no {$X0 in lhs.st.input | !(($X0>=0) && ($X0<=1114111))})) && ((lhs.e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})), "function postcondition not satisfied"
+  return lhs
+
+(X[([int] err)|(int num)|(X lhs,int op,X rhs)] e,([int] input,int pos) st) parseTerm(([int] input,int pos) st) requires ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), ensures ((($.st.pos>=0) && ($.st.pos<=|$.st.input|)) && (no {$X0 in $.st.input | !(($X0>=0) && ($X0<=1114111))})) && (($.e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})):
+  check ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), "function precondition not satisfied"
+  st = parseWhiteSpace(st)
+  check ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), "constraint for variable st not satisfied"
+  if(st.pos<|st.input|):
+    check st.pos>=0, "list index might be negative"
+    check st.pos<|st.input|, "list index might exceed length"
+    check (st.input[st.pos]>=0) && (st.input[st.pos]<=1114111), "function precondition not satisfied"
+    if(isLetter(st.input[st.pos])):
+      check ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), "function precondition not satisfied"
+      check (((parseIdentifier(st).st.pos>=0) && (parseIdentifier(st).st.pos<=|parseIdentifier(st).st.input|)) && (no {$X0 in parseIdentifier(st).st.input | !(($X0>=0) && ($X0<=1114111))})) && ((parseIdentifier(st).e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})), "function postcondition not satisfied"
+      return parseIdentifier(st)
+  check ((((e:(err:[101, 120, 112, 101, 99, 116, 105, 110, 103, 32, 110, 117, 109, 98, 101, 114, 32, 111, 114, 32, 118, 97, 114, 105, 97, 98, 108, 101]),st:st).st.pos>=0) && ((e:(err:[101, 120, 112, 101, 99, 116, 105, 110, 103, 32, 110, 117, 109, 98, 101, 114, 32, 111, 114, 32, 118, 97, 114, 105, 97, 98, 108, 101]),st:st).st.pos<=|(e:(err:[101, 120, 112, 101, 99, 116, 105, 110, 103, 32, 110, 117, 109, 98, 101, 114, 32, 111, 114, 32, 118, 97, 114, 105, 97, 98, 108, 101]),st:st).st.input|)) && (no {$X0 in (e:(err:[101, 120, 112, 101, 99, 116, 105, 110, 103, 32, 110, 117, 109, 98, 101, 114, 32, 111, 114, 32, 118, 97, 114, 105, 97, 98, 108, 101]),st:st).st.input | !(($X0>=0) && ($X0<=1114111))})) && (no {$X0$0 in (e:(err:[101, 120, 112, 101, 99, 116, 105, 110, 103, 32, 110, 117, 109, 98, 101, 114, 32, 111, 114, 32, 118, 97, 114, 105, 97, 98, 108, 101]),st:st).e.err | !(($X0$0>=0) && ($X0$0<=1114111))}), "function postcondition not satisfied"
+  return (e:(err:[101, 120, 112, 101, 99, 116, 105, 110, 103, 32, 110, 117, 109, 98, 101, 114, 32, 111, 114, 32, 118, 97, 114, 105, 97, 98, 108, 101]),st:st)
+
+(X[([int] err)|(int num)|(X lhs,int op,X rhs)] e,([int] input,int pos) st) parseIdentifier(([int] input,int pos) st) requires ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), ensures ((($.st.pos>=0) && ($.st.pos<=|$.st.input|)) && (no {$X0 in $.st.input | !(($X0>=0) && ($X0<=1114111))})) && (($.e[$X0] ~= ([int] err) => no {$X0$0 in $X0.err | !(($X0$0>=0) && ($X0$0<=1114111))})):
+  check ((((e:(err:[71, 111, 116, 32, 104, 101, 114, 101]),st:st).st.pos>=0) && ((e:(err:[71, 111, 116, 32, 104, 101, 114, 101]),st:st).st.pos<=|(e:(err:[71, 111, 116, 32, 104, 101, 114, 101]),st:st).st.input|)) && (no {$X0 in (e:(err:[71, 111, 116, 32, 104, 101, 114, 101]),st:st).st.input | !(($X0>=0) && ($X0<=1114111))})) && (no {$X0$0 in (e:(err:[71, 111, 116, 32, 104, 101, 114, 101]),st:st).e.err | !(($X0$0>=0) && ($X0$0<=1114111))}), "function postcondition not satisfied"
+  return (e:(err:[71, 111, 116, 32, 104, 101, 114, 101]),st:st)
+
+([int] input,int pos) parseWhiteSpace(([int] input,int pos) st) requires ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), ensures (($.pos>=0) && ($.pos<=|$.input|)) && (no {$X0 in $.input | !(($X0>=0) && ($X0<=1114111))}):
+  check st.pos>=0, "list index might be negative"
+  check st.pos<|st.input|, "list index might exceed length"
+  check (st.input[st.pos]>=0) && (st.input[st.pos]<=1114111), "function precondition not satisfied"
+  if((st.pos<|st.input|) && (isWhiteSpace(st.input[st.pos]))):
+    check (((input:st.input,pos:st.pos+1).pos>=0) && ((input:st.input,pos:st.pos+1).pos<=|(input:st.input,pos:st.pos+1).input|)) && (no {$X0 in (input:st.input,pos:st.pos+1).input | !(($X0>=0) && ($X0<=1114111))}), "function precondition not satisfied"
+    check ((parseWhiteSpace((input:st.input,pos:st.pos+1)).pos>=0) && (parseWhiteSpace((input:st.input,pos:st.pos+1)).pos<=|parseWhiteSpace((input:st.input,pos:st.pos+1)).input|)) && (no {$X0 in parseWhiteSpace((input:st.input,pos:st.pos+1)).input | !(($X0>=0) && ($X0<=1114111))}), "function postcondition not satisfied"
+    return parseWhiteSpace((input:st.input,pos:st.pos+1))
+  else:
+    check ((st.pos>=0) && (st.pos<=|st.input|)) && (no {$X0 in st.input | !(($X0>=0) && ($X0<=1114111))}), "function postcondition not satisfied"
+    return st
+
+bool isWhiteSpace(int c) requires (c>=0) && (c<=1114111):
+  return (c==32) || ((c==9) || (c==10))
+
+public void main([[int]] args) requires no {$X4 in args | !no {$X0 in $X4 | !(($X0>=0) && ($X0<=1114111))}}:
+  if(|args|>0):
+    check 0<|args|, "list index might exceed length"
+    check no {$X0 in args[0] | !(($X0>=0) && ($X0<=1114111))}, "function precondition not satisfied"
+    parse(args[0])
+  else:
+    print [110, 111, 32, 112, 97, 114, 97, 109, 101, 116, 101, 114, 32, 112, 114, 111, 118, 105, 100, 101, 100, 33]
+
