@@ -145,10 +145,7 @@ public abstract class Type {
 			Recursive rt1 = (Recursive) t1;
 			Type rt1type = rt1.type;						
 			
-			if (rt1type instanceof Type.Union) {
-				// recursive type not normalised; so normalise then try again.
-				return isSubtype(unfactor(rt1), t2);
-			} else if (rt1type == null) {
+			if (rt1type == null) {
 				// recursive case, need to unroll
 				rt1type = environment.get(rt1.name);
 				if (rt1type == null) {
