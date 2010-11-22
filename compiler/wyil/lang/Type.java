@@ -1095,7 +1095,7 @@ public abstract class Type {
 			return type.hashCode() + module.hashCode() + name.hashCode();
 		}
 		public String toString() {
-			return name + "[" + type + "]";
+			return name + "<" + type + ">";
 		}
 	}
 	public static final class List extends SetList {
@@ -1316,7 +1316,7 @@ public abstract class Type {
 			if(type == null) {
 				return name;
 			} else {				
-				return name + "[" + type + "]";
+				return name + "<" + type + ">";
 			}
 		}
 	}

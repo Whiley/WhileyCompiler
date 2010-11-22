@@ -2,17 +2,19 @@
 define SyntaxError as { string err }
 
 // The current parser state
-define state as { string input, int pos } where pos >= 0 && pos <= |input|
+define State as { string input, int pos } where pos >= 0 && pos <= |input|
+
+define SExpr as SyntaxError | Expr
 
 // Top-level parse method
-expr parse(string input):
+SExpr parse(string input):
     init = {input: input, pos: 0}
     (e,st) = parseAddSubExpr(init)
     if st.pos != |input|:
         return {err:"junk at end of input"}
     return e
 
-(expr, state) parseAddSubExpr(state st):    
+(SExpr, State) parseAddSubExpr(State st):    
     // First, pass left-hand side
     (lhs,st) = parseMulDivExpr(st)
     st = parseWhiteSpace(st)
@@ -31,7 +33,7 @@ expr parse(string input):
     // No right-hand side
     return (lhs,st)
 
-(expr, state) parseMulDivExpr(state st):    
+(SExpr, State) parseMulDivExpr(State st):    
     // First, pass left-hand side
     (lhs,st) = parseTerm(st)
     st = parseWhiteSpace(st)
@@ -50,7 +52,7 @@ expr parse(string input):
     // No right-hand side
     return (lhs,st)
 
-(expr, state) parseTerm(state st):
+(SExpr, State) parseTerm(State st):
     st = parseWhiteSpace(st)    
     if st.pos < |st.input|:
         if isLetter(st.input[st.pos]):
@@ -59,7 +61,7 @@ expr parse(string input):
             return parseNumber(st)
     return ({err:"expecting number or variable"},st)
 
-(var, state) parseIdentifier(state st):    
+(Var, State) parseIdentifier(State st):    
     txt = ""
     // inch forward until end of identifier reached
     while st.pos < |st.input| && isLetter(st.input[st.pos]):
@@ -67,17 +69,16 @@ expr parse(string input):
         st.pos = st.pos + 1
     return ({id:txt}, st)
 
-(expr, state) parseNumber(state st):    
+(Expr, State) parseNumber(State st):    
     n = 0
     // inch forward until end of identifier reached
     while st.pos < |st.input| && isNumeric(st.input[st.pos]):
         n = n + st.input[st.pos] - '0'
-        st.pos = st.pos + 1
-    
+        st.pos = st.pos + 1    
     return n, st
 
 // Parse all whitespace upto end-of-file
-state parseWhiteSpace(state st):
+State parseWhiteSpace(State st):
     while st.pos < |st.input| && isWhiteSpace(st.input[st.pos]):
         st.pos = st.pos + 1
     return st

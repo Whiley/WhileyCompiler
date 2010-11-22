@@ -8,23 +8,23 @@ define MUL as 2
 define DIV as 3
 
 // binary operation
-define bop as { ADD, SUB, MUL, DIV }
-define binop as { bop op, expr lhs, expr rhs } 
+define BOp as { ADD, SUB, MUL, DIV }
+define BinOp as { BOp op, Expr lhs, Expr rhs } 
 
 // variables
-define var as { string id }
+define Var as { string id }
 
 // list access
 define ListAccess as { 
-    expr src, 
-    expr index
+    Expr src, 
+    Expr index
 } 
 
 // expression tree
-define expr as real |  // constant
-    var |              // variable
-    binop |            // binary operator
-    [expr] |           // list constructor
+define Expr as real |  // constant
+    Var |              // variable
+    BinOp |            // binary operator
+    [Expr] |           // list constructor
     ListAccess         // list access
  
 // values
@@ -34,12 +34,12 @@ define value as real | [value] | null
 // Expression Evaluator
 // ====================================================
 
-value evaluate(expr e):
+value evaluate(Expr e):
     if e ~= int:
         return e
-    else if e ~= var:
+    else if e ~= Var:
         return 0 // temporary hack for now
-    else if e ~= binop:
+    else if e ~= BinOp:
         lhs = evaluate(e.lhs)
         rhs = evaluate(e.rhs)
         // check if stuck
@@ -59,7 +59,7 @@ value evaluate(expr e):
         src = evaluate(e.src)
         index = evaluate(e.index)
         // santity checks
-        if src ~= [expr] && index ~= int &&
+        if src ~= [Expr] && index ~= int &&
             index >= 0 && index < |src|:
             return src[index]
         else:
