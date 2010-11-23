@@ -18,22 +18,22 @@ applications.
 
 To find out more, visit http://whiley.org
 
-======================================================================
-
+----------------------------------------------------------------------
 Whiley Developement Kit
 ----------------------------------------------------------------------
 
-Welcome to the Whiley Development Kit.  This will allow you compile
-and run Whiley programs on the Java Virtual Machine.  Whiley will
-operate on any system that can run Java including Windows, Mac OS and
-Linux.  Whiley is released under the GNU General Public License,
-version 3 --- see the LICENSE file for more on this.
+The Whiley Development Kit will allow you compile and run Whiley
+programs on the Java Virtual Machine.  Whiley will operate on any
+system that can run Java including Windows, Mac OS and Linux.  Whiley
+is released under the GNU General Public License, version 3 --- see
+the LICENSE file for more on this.
 
 Finally, to learn more about the Whiley language, visit
 http://whiley.org.  There you will find a range of documentation,
 including an overview of the aims and objectives of Whiley, and an
 introduction into the syntax of the language.
 
+----------------------------------------------------------------------
 Installation
 ----------------------------------------------------------------------
 
@@ -58,7 +58,8 @@ Hello World
 (note: the whiley command is just a wrapper for java -cp
 lib/wyrt.jar).
 
-Running the Jar Directly
+----------------------------------------------------------------------
+Executable Jar
 ----------------------------------------------------------------------
 
 If you're running on a Windows system without cygwin, or you're having
