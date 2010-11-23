@@ -2,11 +2,9 @@
 Types
 ========================================================
 
-1.2) Add support for recursive data types.
+1.2) Add support for symbols.
 
-1.3) Add support for symbols.
-
-1.4) Add support for map types ?
+1.3) Add support for map types ?
      > yes, since we can have some nice index notation if we do this.
 
 ========================================================
@@ -23,12 +21,6 @@ Expressions + Statements
 
 2.5) Add support for more quantifiers --- e.g. one, lone, etc.
 
-2.6) Add support for a "type test" --- isa or something.
-
-2.7) Add "CharVal" expression
-
-2.8) Add support for loop statements.
-
 ========================================================
 Methods
 ========================================================
@@ -36,8 +28,6 @@ Methods
 3.1) Resolve issue with post-conditions which reference parameters.
 
 3.2) Add support for narrowing the method dispatch table.
-
-3.3) Add support for (static) method binding, and overloading.
 
 3.4) Add support for packages.
 
