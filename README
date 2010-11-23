@@ -1,4 +1,3 @@
-======================================================================
  __        ___     _ _                              
  \ \      / / |__ (_) | ___ _   _    ___  _ __ __ _ 
   \ \ /\ / /| '_ \| | |/ _ \ | | |  / _ \| '__/ _` |
@@ -6,6 +5,8 @@
     \_/\_/  |_| |_|_|_|\___|\__, (_)\___/|_|  \__, |
                             |___/             |___/ 
 
+======================================================================
+Introduction
 ======================================================================
 
 Whiley is a programming language particularly suited to
@@ -18,9 +19,9 @@ applications.
 
 To find out more, visit http://whiley.org
 
-----------------------------------------------------------------------
+======================================================================
 Whiley Developement Kit
-----------------------------------------------------------------------
+======================================================================
 
 The Whiley Development Kit will allow you compile and run Whiley
 programs on the Java Virtual Machine.  Whiley will operate on any
@@ -33,9 +34,9 @@ http://whiley.org.  There you will find a range of documentation,
 including an overview of the aims and objectives of Whiley, and an
 introduction into the syntax of the language.
 
-----------------------------------------------------------------------
+======================================================================
 Installation
-----------------------------------------------------------------------
+======================================================================
 
 To install the Whiley Development Kit, unpack the tarball into an
 appropriate directory (as you've probably already done).  You then
@@ -58,9 +59,9 @@ Hello World
 (note: the whiley command is just a wrapper for java -cp
 lib/wyrt.jar).
 
-----------------------------------------------------------------------
+======================================================================
 Executable Jar
-----------------------------------------------------------------------
+======================================================================
 
 If you're running on a Windows system without cygwin, or you're having
 trouble getting the wyjc scripts to work, then a useful alternative is
