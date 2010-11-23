@@ -419,6 +419,8 @@ public class ClassFileBuilder {
 			Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		
+		System.out.println("TRANSLATING: " + test);
+		
 		// This method (including the helper) is pretty screwed up. It needs a
 		// serious rethink to catch all cases, and to be efficient.
 		
@@ -468,6 +470,8 @@ public class ClassFileBuilder {
 	// since both are actually instances of java.util.List. 
 	protected void translateTypeTestHelper(String trueTarget, Type src, Type test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
+
+		System.out.println("GOT: " + src);
 		
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
