@@ -13,7 +13,7 @@
       <attribute name="Main-Class" value="wyjc.Main"/>
       <attribute name="Implementation-Version" value="${version}-${build.number}"/>
     </manifest>
-    <jar destfile="lib/wyjc.jar" basedir="." includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
+    <jar destfile="lib/wyjc.jar" basedir="src" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
     <delete dir="tmp"/>
   </target>
 
@@ -21,7 +21,7 @@
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
     <wyjc srcdir="stdlib" includes="whiley/**/*.whiley"/>
     <jar destfile="lib/wyrt.jar">
-      <fileset dir="." includes="wyil/jvm/rt**/*.class"/>
+      <fileset dir="src" includes="wyil/jvm/rt**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
   </target>
