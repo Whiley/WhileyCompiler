@@ -1,29 +1,3 @@
-Wone Suggested Plan
-
-1) Fix up states to always add new stuff to end, and then backtrack.
-
-2) Simplify reasoning about constraints over arbitrary types
-
-3) Fix up quantification
-
-Whiley Suggested Plan (since there's a lot to do):
-
-1) Modify notation for comprehensions, to avoid ambiguity.
-
-2) Update Wone to generate Models [hard]
-
-4) Finish union types, add instanceof tests
-
-5) Sort out public / export modifiers
-
-6) Add support for recursive data types [easy]
-
-7) Add support for list concatenation
-
-9) Attempt to write JVM bytecode assembler benchmark [?]
-
-10) Sort out threading of processes
-
 ========================================================
 Types
 ========================================================
