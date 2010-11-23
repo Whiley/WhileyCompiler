@@ -303,6 +303,7 @@ public class ModuleBuilder {
 				if (Type.isExistential(t)) {
 					t = Type.T_NAMED(key.module(), key.name(), t);
 				}
+							
 				types.put(key, new Pair<Type, Block>(t, blk));
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
