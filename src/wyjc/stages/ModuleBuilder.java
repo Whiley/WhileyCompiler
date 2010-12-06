@@ -297,8 +297,12 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type, Block> p = expandType(key, cache);
+				Type t = p.first();
 				//p = simplifyRecursiveTypes(key.toString(),p);
-				Type t = Type.T_NAMED(key,p.first());						
+				if (Type.isExistential(t)) {
+					t = Type.T_NAMED(key, t);
+				}
+										
 				Block blk = p.second();
 							
 				types.put(key, new Pair<Type, Block>(t, blk));
@@ -501,9 +505,14 @@ public class ModuleBuilder {
 			NameID name = new NameID(modInfo.module, dt.name);
 
 			try {
-				Pair<Type, Block> et = expandType(name, cache);				
-				return new Pair<Type, Block>(Type.T_NAMED(new NameID(
-						modInfo.module, dt.name), et.first()), et.second());				
+				Pair<Type, Block> et = expandType(name, cache);
+				if (Type.isExistential(et.first())) {
+					return new Pair<Type, Block>(Type.T_NAMED(new NameID(
+							modInfo.module, dt.name), et.first()), et.second());
+				} else {
+					return et;
+				}
+								
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filename, t, rex);
 				return null;
