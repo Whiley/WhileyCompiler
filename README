@@ -29,6 +29,15 @@ system that can run Java including Windows, Mac OS and Linux.  Whiley
 is released under the GNU General Public License, version 3 --- see
 the LICENSE file for more on this.
 
+Finally, to learn more about the Whiley language, visit
+http://whiley.org.  There you will find a range of documentation,
+including an overview of the aims and objectives of Whiley, and an
+introduction into the syntax of the language.
+
+======================================================================
+Installation
+======================================================================
+
 To install the Whiley Development Kit, unpack the tarball into an
 appropriate directory (as you've probably already done).  You then
 need to make sure that PATH environment variable points to the bin/
