@@ -35,8 +35,8 @@ public abstract class Type {
 	public static final Real T_REAL = new Real();
 	public static final Meta T_META = new Meta();
 	
-	public static Named T_NAMED(ModuleID module, String name, Type element) {
-		return get(new Named(module, name, element));
+	public static Named T_NAMED(NameID name, Type element) {
+		return get(new Named(name, element));
 	}
 	
 	public static List T_LIST(Type element) {
@@ -72,7 +72,7 @@ public abstract class Type {
 		return get(new Record(types));
 	}
 	
-	public static Recursive T_RECURSIVE(String name, Type element) {
+	public static Recursive T_RECURSIVE(NameID name, Type element) {
 		return get(new Recursive(name,element));
 	}
 	
@@ -87,7 +87,7 @@ public abstract class Type {
 		return isSubtype(t1,t2,Collections.EMPTY_MAP);				
 	}
 	
-	private static boolean isSubtype(Type t1, Type t2, Map<String,Type> environment) {		
+	private static boolean isSubtype(Type t1, Type t2, Map<NameID,Type> environment) {		
 		if(t1 == t2 || 
 				(t2 instanceof Void) ||
 				(t1 instanceof Any) ||
@@ -152,7 +152,7 @@ public abstract class Type {
 					return false;
 				}
 			} else {
-				environment = new HashMap<String, Type>(environment);
+				environment = new HashMap<NameID, Type>(environment);
 				environment.put(rt1.name, rt1.type);
 			}
 			
@@ -172,7 +172,7 @@ public abstract class Type {
 						return false;
 					}
 				}
-				HashMap<String,Type> binding = new HashMap<String,Type>();
+				HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 				binding.put(rt2.name, T_RECURSIVE(rt1.name,null));
 				rt2type = substituteRecursiveTypes(rt2type,binding);
 				if(isSubtype(rt1type,rt2type,environment)) {
@@ -437,7 +437,7 @@ public abstract class Type {
 		} else if(t1 instanceof Recursive) {
 			Recursive r = (Recursive) t1;
 			Type r_type = r.type;
-			HashMap<String,Type> binding = new HashMap<String,Type>();
+			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 			binding.put(r.name, r);
 			r_type = substituteRecursiveTypes(r_type,binding);			
 			Type gdiff = greatestDifference(r_type,t2);			
@@ -517,7 +517,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static java.util.Set<String> recursiveTypeNames(Type t) {
+	public static java.util.Set<NameID> recursiveTypeNames(Type t) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
 				|| t instanceof Any) {			
@@ -536,21 +536,21 @@ public abstract class Type {
 			return recursiveTypeNames(lt.type);
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
-			HashSet<String> names = new HashSet<String>();
+			HashSet<NameID> names = new HashSet<NameID>();
 			for(Type b : ut.bounds) {
 				names.addAll(recursiveTypeNames(b));				
 			}
 			return names;
 		} else if(t instanceof Record) {			
 			Record tt = (Record) t;
-			HashSet<String> names = new HashSet<String>();
+			HashSet<NameID> names = new HashSet<NameID>();
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				names.addAll(recursiveTypeNames(b.getValue()));				
 			}
 			return names;
 		} else if (t instanceof Recursive) {			
 			Recursive lt = (Recursive) t;
-			HashSet<String> names = new HashSet<String>();
+			HashSet<NameID> names = new HashSet<NameID>();
 			names.add(lt.name);
 			if(lt.type != null) {
 				names.addAll(recursiveTypeNames(lt.type));
@@ -558,7 +558,7 @@ public abstract class Type {
 			return names;
 		} else {
 			Fun ft = (Fun) t;
-			HashSet<String> names = new HashSet<String>();
+			HashSet<NameID> names = new HashSet<NameID>();
 			for(Type p : ft.params) {
 				names.addAll(recursiveTypeNames(p));				
 			}
@@ -577,7 +577,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Type renameRecursiveTypes(Type t, Map<String,String> binding) {
+	public static Type renameRecursiveTypes(Type t, Map<NameID,NameID> binding) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
 				|| t instanceof Any
@@ -609,7 +609,7 @@ public abstract class Type {
 			return T_RECORD(fields);
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
-			String name = binding.get(lt.name);			
+			NameID name = binding.get(lt.name);			
 			if (lt.type != null) {
 				return T_RECURSIVE(name, renameRecursiveTypes(lt.type,
 						binding));
@@ -640,7 +640,7 @@ public abstract class Type {
 	 * @param binding
 	 * @return
 	 */
-	public static Type substituteRecursiveTypes(Type t, Map<String,Type> binding) {
+	public static Type substituteRecursiveTypes(Type t, Map<NameID,Type> binding) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
 				|| t instanceof Any || t instanceof Named) {
@@ -703,7 +703,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpenRecursive(String key, Type t) {
+	public static boolean isOpenRecursive(NameID key, Type t) {
 		if (t instanceof Type.Void || t instanceof Type.Null
 				|| t instanceof Type.Bool || t instanceof Type.Int
 				|| t instanceof Type.Real || t instanceof Type.Any
@@ -850,7 +850,7 @@ public abstract class Type {
 	}
 	
 	public static Type unroll(Type.Recursive rt) {
-		HashMap<String,Type> binding = new HashMap<String,Type>();
+		HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 		binding.put(rt.name, rt);
 		return substituteRecursiveTypes(rt.type,binding);
 	}
@@ -873,7 +873,7 @@ public abstract class Type {
 				return type;
 			} 
 			
-			HashMap<String,Type> binding = new HashMap<String,Type>();
+			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 			binding.put(type.name, leastUpperBound(factors, T_RECURSIVE(
 					type.name, null)));
 			// FIXME: there is a bug here for sure as substitute recursive types
@@ -914,7 +914,7 @@ public abstract class Type {
 			// this is more tricky. We need to unroll the type once to ensure we
 			// don't lose the recursive information.
 			Type.Recursive rt = (Type.Recursive) t;
-			HashMap<String,Type> binding = new HashMap<String,Type>();
+			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 			binding.put(rt.name, rt);
 			t = substituteRecursiveTypes(rt.type,binding);
 			return effectiveRecordType(t);
@@ -1074,28 +1074,26 @@ public abstract class Type {
 			return "real";
 		}
 	}
-	public static final class Named extends ProcessName {
-		public final ModuleID module;
-		public final String name;
+	public static class Named extends ProcessName {
+		public final NameID name;		
 		public final Type type;
-		private Named(ModuleID mid, String name, Type element) {
-			this.module = mid;
+		private Named(NameID name, Type element) {			
 			this.name = name;
 			this.type = element;
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Named) {
 				Named l = (Named) o;
-				return type.equals(l.type) && module.equals(l.module)
+				return type.equals(l.type)
 						&& name.equals(l.name); 
 			}
 			return false;
 		}
 		public int hashCode() {
-			return type.hashCode() + module.hashCode() + name.hashCode();
+			return type.hashCode() + name.hashCode();
 		}
 		public String toString() {
-			return name + "<" + type + ">";
+			return name + ":" + type;
 		}
 	}
 	public static final class List extends SetList {
@@ -1284,23 +1282,13 @@ public abstract class Type {
 			return r + "}";
 		}
 	}
-	public static final class Recursive extends NonUnion {
-		public final String name;
-		public final Type type;
-		private Recursive(String name, Type element) {
-			this.name = name;
-			this.type = element;
+	public static final class Recursive extends Named {				
+		private Recursive(NameID name, Type element) {
+			super(name,element);
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Recursive) {
-				Recursive l = (Recursive) o;				
-				if(type == null && l.type == null) {
-					return name.equals(l.name);
-				} else if(l.type != null){
-					// FIXME: should do isomorphic test here?
-					return name.equals(l.name) && type.equals(l.type); 
-				}
-				return false;
+			if(o instanceof Recursive) {							
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -1312,13 +1300,14 @@ public abstract class Type {
 				return name.hashCode();
 			}
 		}
+		
 		public String toString() {
 			if(type == null) {
-				return name;
-			} else {				
-				return name + "<" + type + ">";
+				return name.toString();
+			} else {
+				return name + "#" + type;
 			}
-		}
+		}		
 	}
 	private static final ArrayList<Type> types = new ArrayList<Type>();
 	private static final HashMap<Type,Integer> cache = new HashMap<Type,Integer>();

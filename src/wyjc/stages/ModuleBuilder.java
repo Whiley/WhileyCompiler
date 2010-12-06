@@ -297,12 +297,9 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type, Block> p = expandType(key, cache);
-				p = simplifyRecursiveTypes(key.toString(),p);
-				Type t = p.first();
+				//p = simplifyRecursiveTypes(key.toString(),p);
+				Type t = Type.T_NAMED(key,p.first());						
 				Block blk = p.second();
-				if (Type.isExistential(t)) {
-					t = Type.T_NAMED(key.module(), key.name(), t);
-				}
 							
 				types.put(key, new Pair<Type, Block>(t, blk));
 			} catch (ResolveError ex) {
@@ -340,7 +337,7 @@ public class ModuleBuilder {
 		}
 
 		// following is needed to terminate any recursion
-		cache.put(key, Type.T_RECURSIVE(key.toString(), null));
+		cache.put(key, Type.T_RECURSIVE(key, null));
 
 		// Ok, expand the type properly then
 		Pair<UnresolvedType, Expr> ut = unresolved.get(key);
@@ -350,9 +347,9 @@ public class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpenRecursive(key.toString(), t.first());
+		boolean isOpenRecursive = Type.isOpenRecursive(key, t.first());
 		if (isOpenRecursive) {
-			t = new Pair<Type, Block>(Type.T_RECURSIVE(key.toString(), t
+			t = new Pair<Type, Block>(Type.T_RECURSIVE(key, t
 					.first()), t.second());
 		}
 		
@@ -504,13 +501,9 @@ public class ModuleBuilder {
 			NameID name = new NameID(modInfo.module, dt.name);
 
 			try {
-				Pair<Type, Block> et = expandType(name, cache);
-				if (Type.isExistential(et.first())) {
-					return new Pair<Type, Block>(Type.T_NAMED(modInfo.module,
-							dt.name, et.first()), et.second());
-				} else {
-					return et;
-				}
+				Pair<Type, Block> et = expandType(name, cache);				
+				return new Pair<Type, Block>(Type.T_NAMED(new NameID(
+						modInfo.module, dt.name), et.first()), et.second());				
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filename, t, rex);
 				return null;
@@ -1806,6 +1799,9 @@ public class ModuleBuilder {
 	 * @param t
 	 * @return
 	 */
+	/*
+	 * For the moment, this is retired
+	 
 	public static Pair<Type, Block> simplifyRecursiveTypes(String key,
 			Pair<Type, Block> p) {
 		Type t = p.first();
@@ -1858,7 +1854,7 @@ public class ModuleBuilder {
 		
 		return new Pair<Type,Block>(t,nblk);
 	}
-
+    */
 	public Variable flattern(Expr e) {
 		if (e instanceof Variable) {
 			return (Variable) e;

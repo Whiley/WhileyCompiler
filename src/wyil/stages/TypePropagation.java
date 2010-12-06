@@ -172,7 +172,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return Type.T_RECORD(types);
 		} else if(src instanceof Type.Named) {
 			Type.Named nd = (Type.Named) src;
-			return Type.T_NAMED(nd.module, nd.name, updateRecordFieldType(nd.type,field,type));
+			return Type.T_NAMED(nd.name, updateRecordFieldType(nd.type,field,type));
 		} else if(src instanceof Type.Union) {
 			Type.Union tu = (Type.Union) src;
 			Type t = Type.T_VOID;

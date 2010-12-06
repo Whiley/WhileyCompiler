@@ -703,8 +703,8 @@ public class ModuleLoader {
 				}
 				String name = desc.substring(start,index);
 				index++;				
-				return Type.T_NAMED(ModuleID.fromString(pkg), name,
-							parseType());			
+				return Type.T_NAMED(new NameID(ModuleID.fromString(pkg),
+							name), parseType());			
 			case '[': 
 				Type et = parseType();
 				lookahead = desc.charAt(index);

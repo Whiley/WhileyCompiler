@@ -78,17 +78,12 @@ public class WhileyType implements BytecodeAttribute {
 			Type.Process st = (Type.Process) type;
 			addPoolItems(st.element,constantPool);
 		} else if(type instanceof Type.Named) {
+			// Covered Type.Recursive as well
 			Type.Named lt = (Type.Named) type;
-			Constant.Utf8 utf8 = new Constant.Utf8(lt.module.toString());
+			Constant.Utf8 utf8 = new Constant.Utf8(lt.name.module().toString());
 			Constant.addPoolItem(utf8,constantPool);
-			utf8 = new Constant.Utf8(lt.name);	
+			utf8 = new Constant.Utf8(lt.name.name());	
 			Constant.addPoolItem(utf8,constantPool);
-			addPoolItems(lt.type,constantPool);
-		} else if(type instanceof Type.Recursive) {
-			Type.Recursive lt = (Type.Recursive) type;
-			String name = lt.name;
-			Constant.Utf8 utf8 = new Constant.Utf8(name);
-			Constant.addPoolItem(utf8,constantPool);					
 			if(lt.type != null) {
 				addPoolItems(lt.type,constantPool);
 			}
@@ -147,27 +142,28 @@ public class WhileyType implements BytecodeAttribute {
 			Type.Process st = (Type.Process) t;
 			writer.write_u1(PROCESS_TYPE );			
 			write(st.element,writer,constantPool);
-		} else if(t instanceof Type.Named) {			
-			Type.Named st = (Type.Named) t;
-			writer.write_u1(NAMED_TYPE );
-			Constant.Utf8 utf8 = new Constant.Utf8(st.module.toString());
-			writer.write_u2(constantPool.get(utf8));
-			utf8 = new Constant.Utf8(st.name);
-			writer.write_u2(constantPool.get(utf8));
-			write(st.type,writer,constantPool);
 		} else if(t instanceof Type.Recursive) {
 			Type.Recursive st = (Type.Recursive) t;
 			if(st.type != null) {
 				writer.write_u1(RECURSIVE_TYPE );				
 			} else {
 				writer.write_u1(RECURSIVE_LEAF);
-			}
-			String name = st.name;
-			Constant.Utf8 utf8 = new Constant.Utf8(name);
-			writer.write_u2(constantPool.get(utf8));			
+			}			
+			Constant.Utf8 utf8 = new Constant.Utf8(st.name.module().toString());
+			writer.write_u2(constantPool.get(utf8));
+			utf8 = new Constant.Utf8(st.name.name());
+			writer.write_u2(constantPool.get(utf8));					
 			if(st.type != null) {
 				write(st.type,writer,constantPool);
 			}
+		} else if(t instanceof Type.Named) {			
+			Type.Named st = (Type.Named) t;
+			writer.write_u1(NAMED_TYPE );
+			Constant.Utf8 utf8 = new Constant.Utf8(st.name.module().toString());
+			writer.write_u2(constantPool.get(utf8));
+			utf8 = new Constant.Utf8(st.name.name());
+			writer.write_u2(constantPool.get(utf8));
+			write(st.type,writer,constantPool);
 		} else if(t instanceof Type.Fun) {
 			Type.Fun st = (Type.Fun) t;
 			writer.write_u1(FUN_TYPE );	
@@ -263,18 +259,20 @@ public class WhileyType implements BytecodeAttribute {
 				String name = ((Constant.Utf8) constantPool
 						.get(input.read_u2())).str;
 				et = readType(input, constantPool);
-				return Type.T_NAMED(module, name, et);
+				return Type.T_NAMED(new NameID(module, name), et);
 			}
 			case RECURSIVE_TYPE: {
+				ModuleID module = readModule(input, constantPool);
 				String name = ((Constant.Utf8) constantPool
 						.get(input.read_u2())).str;
 				et = readType(input, constantPool);
-				return Type.T_RECURSIVE(name, et);
+				return Type.T_RECURSIVE(new NameID(module,name), et);
 			}
 			case RECURSIVE_LEAF: {
+				ModuleID module = readModule(input, constantPool);
 				String name = ((Constant.Utf8) constantPool
 						.get(input.read_u2())).str;
-				return Type.T_RECURSIVE(name, null);
+				return Type.T_RECURSIVE(new NameID(module,name), null);
 			}
 			case FUN_TYPE: {
 				Type ret = readType(input, constantPool);

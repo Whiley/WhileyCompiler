@@ -582,7 +582,7 @@ public class ClassFileBuilder {
 			// could do better here
 		} else if(src instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) src;			
-			HashMap<String,Type> binding = new HashMap<String,Type>();
+			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 			binding.put(rt.name, rt);
 			Type t = Type.substituteRecursiveTypes(rt.type,binding);
 			translateTypeTest(trueTarget,t,test,stmt,bytecodes);
@@ -1632,9 +1632,17 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Process) {
 			Type.Process st = (Type.Process) t;
 			return "P" + type2str(st.element);
+		} else if(t instanceof Type.Recursive) {
+			Type.Recursive rt = (Type.Recursive) t;
+			if(rt.type == null) {
+				return rt.name.module() + ";" + rt.name.name();				
+			} else {
+				return "U" + rt.name.module() + ";" + rt.name.name() + ";"
+				+ type2str(rt.type);				
+			}
 		} else if(t instanceof Type.Named) {
 			Type.Named st = (Type.Named) t;
-			return "N" + st.module + ";" + st.name + ";"
+			return "N" + st.name.module() + ";" + st.name.name() + ";"
 					+ type2str(st.type);
 		} else if(t instanceof Type.Fun) {
 			Type.Fun ft = (Type.Fun) t;
@@ -1647,13 +1655,6 @@ public class ClassFileBuilder {
 				r += type2str(pt);
 			}
 			return r;
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
-			if(rt.type == null) {
-				return rt.name;
-			} else {
-				return rt.name + ":" + type2str(rt.type);
-			}
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}
