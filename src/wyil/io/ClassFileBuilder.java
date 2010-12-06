@@ -471,8 +471,6 @@ public class ClassFileBuilder {
 	protected void translateTypeTestHelper(String trueTarget, Type src, Type test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
 
-		System.out.println("GOT: " + src);
-		
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
 		test = Type.greatestLowerBound(src,test);				
@@ -521,13 +519,9 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Label(nextLabel));
 			bytecodes.add(new Bytecode.Pop(convertType(test)));
 			bytecodes.add(new Bytecode.Label(exitLabel));
-		} else if(src instanceof Type.Recursive) {
-			Type.Recursive tr = (Type.Recursive) src;
-			if(tr.type == null) {
-				syntaxError("Problem with type test for recursive type",filename,stmt);
-			}
-			translateTypeTestHelper(trueTarget,tr.type,test,stmt,bytecodes);
-		}
+		} 
+		
+		// need to handle recursive types somehow
 	}
 
 	/**
@@ -580,7 +574,10 @@ public class ClassFileBuilder {
 		} else if(src instanceof Type.Record) {
 			Type.Record st = (Type.Record) src;
 			// could do better here
-		} else if(src instanceof Type.Recursive) {
+		} 
+		
+		/* Need to update!
+		else if(src instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) src;			
 			HashMap<String,Type> binding = new HashMap<String,Type>();
 			binding.put(rt.name, rt);
@@ -588,6 +585,8 @@ public class ClassFileBuilder {
 			translateTypeTest(trueTarget,t,test,stmt,bytecodes);
 			return;
 		}
+		*/
+		
 		syntaxError("record type test cases not implemented",filename,stmt);
 	}
 	
@@ -869,10 +868,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 					Bytecode.VIRTUAL));
 			// finally, we need to cast the object we got back appropriately.		
-			Type t = (Type.ProcessName) c.rhs.type();			
-			if(t instanceof Type.Named) {
-				t = ((Type.Named) t).type;					
-			} 
+			Type t = (Type.Process) c.rhs.type();						
 			Type.Process pt = (Type.Process) t; 
 			addReadConversion(pt.element, bytecodes);
 			break;
@@ -1530,9 +1526,6 @@ public class ClassFileBuilder {
 			return WHILEYRECORD;
 		} else if(t instanceof Type.Process) {
 			return WHILEYPROCESS;
-		} else if(t instanceof Type.Named) {
-			Type.Named nt = (Type.Named) t;
-			return convertType(nt.type);
 		} else if(t instanceof Type.Union) {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
@@ -1545,13 +1538,9 @@ public class ClassFileBuilder {
 			}
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
-			if(rt.type == null) {
-				return JAVA_LANG_OBJECT;
-			} else {
-				return convertType(rt.type);
-			}
+		} else if(t instanceof Type.Recurse) {
+			Type.Recurse rt = (Type.Recurse) t;			
+			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.Fun) {
 			Type.Fun ft = (Type.Fun) t; 
 			ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
@@ -1587,29 +1576,35 @@ public class ClassFileBuilder {
 	}
 	
 	protected String type2str(Type t) {
+		String r = "";
+			
+			
+		if(t.name != null) {			
+			r = "N"+ t.name.module().toString() + ";" + t.name.name() + ";";						
+		}
+		
 		if(t == Type.T_EXISTENTIAL) {
-			return "?";
+			r += "?";
 		} else if(t == Type.T_ANY) {
-			return "*";
+			r += "*";
 		} else if(t == Type.T_VOID) {
-			return "V";
+			r += "V";
 		} else if(t == Type.T_NULL) {
-			return "O";
+			r += "O";
 		} else if(t instanceof Type.Bool) {
-			return "B";
+			r += "B";
 		} else if(t instanceof Type.Int) {
-			return "I";
+			r += "I";
 		} else if(t instanceof Type.Real) {
-			return "R";
+			r += "R";
 		} else if(t instanceof Type.List) {
 			Type.List st = (Type.List) t;
-			return "[" + type2str(st.element) + "]";
+			r += "[" + type2str(st.element) + "]";
 		} else if(t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
-			return "{" + type2str(st.element) + "}";
+			r += "{" + type2str(st.element) + "}";
 		} else if(t instanceof Type.Union) {
-			Type.Union st = (Type.Union) t;
-			String r = "";
+			Type.Union st = (Type.Union) t;			
 			boolean firstTime=true;
 			for(Type b : st.bounds) {
 				if(!firstTime) {
@@ -1617,45 +1612,38 @@ public class ClassFileBuilder {
 				}
 				firstTime=false;
 				r += type2str(b);
-			}			
-			return r;
+			}						
 		} else if(t instanceof Type.Record) {
 			Type.Record st = (Type.Record) t;
 			ArrayList<String> keys = new ArrayList<String>(st.types.keySet());
 			Collections.sort(keys);
-			String r="(";
+			r="(";
 			for(String k : keys) {
 				Type kt = st.types.get(k);
 				r += k + ":" + type2str(kt);
 			}			
-			return r + ")";
+			r += ")";
 		} else if(t instanceof Type.Process) {
 			Type.Process st = (Type.Process) t;
 			return "P" + type2str(st.element);
-		} else if(t instanceof Type.Named) {
-			Type.Named st = (Type.Named) t;
-			return "N" + st.module + ";" + st.name + ";"
-					+ type2str(st.type);
 		} else if(t instanceof Type.Fun) {
-			Type.Fun ft = (Type.Fun) t;
-			String r = "";
+			Type.Fun ft = (Type.Fun) t;			
 			if(ft.receiver != null) {
 				r += type2str(ft.receiver) + "$";
 			}				
 			r += type2str(ft.ret);
 			for(Type pt : ft.params) {
 				r += type2str(pt);
-			}
-			return r;
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
-			if(rt.type == null) {
-				return rt.name;
-			} else {
-				return rt.name + ":" + type2str(rt.type);
-			}
+			}			
+		} else if(t instanceof Type.Recurse) {
+			Type.Recurse rt = (Type.Recurse) t;
+			r += rt.name;			
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}
+		
+		if(t.name != null) { r += ";"; }
+		
+		return r;
 	}
 }
