@@ -56,14 +56,6 @@ public class WhileyType implements BytecodeAttribute {
 
 	protected static void addPoolItems(Type type,
 			Set<Constant.Info> constantPool) {
-		
-		if(type.name != null) {						
-			Constant.Utf8 utf8 = new Constant.Utf8(type.name.module().toString());
-			Constant.addPoolItem(utf8,constantPool);
-			utf8 = new Constant.Utf8(type.name.name());	
-			Constant.addPoolItem(utf8,constantPool);			
-		} 
-		
 		if(type instanceof Type.List) {
 			Type.List lt = (Type.List) type;
 			addPoolItems(lt.element,constantPool);
@@ -85,13 +77,21 @@ public class WhileyType implements BytecodeAttribute {
 		} else if(type instanceof Type.Process) {
 			Type.Process st = (Type.Process) type;
 			addPoolItems(st.element,constantPool);
-		} else if(type instanceof Type.Recurse) {
-			Type.Recurse lt = (Type.Recurse) type;
-			NameID name = lt.name;
-			Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
-			Constant.addPoolItem(utf8,constantPool);					
-			utf8 = new Constant.Utf8(name.name().toString());
+		} else if(type instanceof Type.Named) {
+			Type.Named lt = (Type.Named) type;
+			Constant.Utf8 utf8 = new Constant.Utf8(lt.module.toString());
 			Constant.addPoolItem(utf8,constantPool);
+			utf8 = new Constant.Utf8(lt.name);	
+			Constant.addPoolItem(utf8,constantPool);
+			addPoolItems(lt.type,constantPool);
+		} else if(type instanceof Type.Recursive) {
+			Type.Recursive lt = (Type.Recursive) type;
+			String name = lt.name;
+			Constant.Utf8 utf8 = new Constant.Utf8(name);
+			Constant.addPoolItem(utf8,constantPool);					
+			if(lt.type != null) {
+				addPoolItems(lt.type,constantPool);
+			}
 		} else if(type instanceof Type.Fun) {
 			Type.Fun ft = (Type.Fun) type;
 			for(Type t : ft.params) {
@@ -103,15 +103,6 @@ public class WhileyType implements BytecodeAttribute {
 		
 	public static void write(Type t, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		
-		if(t.name != null) {						
-			writer.write_u1(NAMED_TYPE);
-			Constant.Utf8 utf8 = new Constant.Utf8(t.name.module().toString());
-			writer.write_u2(constantPool.get(utf8));
-			utf8 = new Constant.Utf8(t.name.name());
-			writer.write_u2(constantPool.get(utf8));			
-		} 
-		
 		if(t == Type.T_ANY) {
 			writer.write_u1(ANY_TYPE );
 		} else if(t == Type.T_EXISTENTIAL) {
@@ -156,14 +147,27 @@ public class WhileyType implements BytecodeAttribute {
 			Type.Process st = (Type.Process) t;
 			writer.write_u1(PROCESS_TYPE );			
 			write(st.element,writer,constantPool);
-		} else if(t instanceof Type.Recurse) {
-			Type.Recurse st = (Type.Recurse) t;			
-			writer.write_u1(RECURSIVE_LEAF);			
-			NameID name = st.name;
-			Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
-			writer.write_u2(constantPool.get(utf8));			
-			utf8 = new Constant.Utf8(name.name());
+		} else if(t instanceof Type.Named) {			
+			Type.Named st = (Type.Named) t;
+			writer.write_u1(NAMED_TYPE );
+			Constant.Utf8 utf8 = new Constant.Utf8(st.module.toString());
 			writer.write_u2(constantPool.get(utf8));
+			utf8 = new Constant.Utf8(st.name);
+			writer.write_u2(constantPool.get(utf8));
+			write(st.type,writer,constantPool);
+		} else if(t instanceof Type.Recursive) {
+			Type.Recursive st = (Type.Recursive) t;
+			if(st.type != null) {
+				writer.write_u1(RECURSIVE_TYPE );				
+			} else {
+				writer.write_u1(RECURSIVE_LEAF);
+			}
+			String name = st.name;
+			Constant.Utf8 utf8 = new Constant.Utf8(name);
+			writer.write_u2(constantPool.get(utf8));			
+			if(st.type != null) {
+				write(st.type,writer,constantPool);
+			}
 		} else if(t instanceof Type.Fun) {
 			Type.Fun st = (Type.Fun) t;
 			writer.write_u1(FUN_TYPE );	
@@ -259,14 +263,19 @@ public class WhileyType implements BytecodeAttribute {
 				String name = ((Constant.Utf8) constantPool
 						.get(input.read_u2())).str;
 				et = readType(input, constantPool);
-				return Type.nameType(new NameID(module, name), et);
-			}			
-			case RECURSIVE_LEAF : {
-					ModuleID module = readModule(input, constantPool);
-					String name = ((Constant.Utf8) constantPool.get(input
-							.read_u2())).str;
-					return Type.T_RECURSE(new NameID(module, name));
-				}
+				return Type.T_NAMED(module, name, et);
+			}
+			case RECURSIVE_TYPE: {
+				String name = ((Constant.Utf8) constantPool
+						.get(input.read_u2())).str;
+				et = readType(input, constantPool);
+				return Type.T_RECURSIVE(name, et);
+			}
+			case RECURSIVE_LEAF: {
+				String name = ((Constant.Utf8) constantPool
+						.get(input.read_u2())).str;
+				return Type.T_RECURSIVE(name, null);
+			}
 			case FUN_TYPE: {
 				Type ret = readType(input, constantPool);
 				int count = input.read_u2();

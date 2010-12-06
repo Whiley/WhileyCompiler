@@ -477,7 +477,12 @@ public abstract class CExpr {
 			if(op == UOP.LENGTHOF) {
 				return Type.T_INT;
 			} else if(op == UOP.PROCESSACCESS) {
+				// FIXME: need to flattern
 				Type pt = (Type) rhs.type();				
+				if(pt instanceof Type.Named) {
+					pt = ((Type.Named) pt).type;					
+				} 
+				
 				if(pt instanceof Type.Process) {
 					return ((Type.Process)pt).element;
 				} else {

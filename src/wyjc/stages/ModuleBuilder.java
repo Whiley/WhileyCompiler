@@ -297,9 +297,13 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type, Block> p = expandType(key, cache);
-				// p = simplifyRecursiveTypes(key.toString(),p); // probably doesn't make sense
-				Type t = Type.nameType(new NameID(key.module(), key.name()), p.first());
-				Block blk = p.second();							
+				p = simplifyRecursiveTypes(key.toString(),p);
+				Type t = p.first();
+				Block blk = p.second();
+				if (Type.isExistential(t)) {
+					t = Type.T_NAMED(key.module(), key.name(), t);
+				}
+							
 				types.put(key, new Pair<Type, Block>(t, blk));
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
@@ -316,7 +320,6 @@ public class ModuleBuilder {
 		
 		if (cached != null) {
 			Block blk = null;
-			/* FIXME: Following needs to be updated after move away from recursives
 			if(cached instanceof Type.Recursive) {
 				Type.Recursive r = (Type.Recursive) cached;				
 				if(r.type == null) {
@@ -325,8 +328,6 @@ public class ModuleBuilder {
 					blk.add(new Code.Recurse(CExpr.VAR(Type.T_ANY,"$")));
 				}
 			}
-			
-			*/
 			return new Pair<Type, Block>(cached, blk);
 		} else if(t != null) {
 			return new Pair<Type, Block>(t.first(), Block.relabel(t.second()));
@@ -339,7 +340,7 @@ public class ModuleBuilder {
 		}
 
 		// following is needed to terminate any recursion
-		cache.put(key, Type.T_RECURSE(key));
+		cache.put(key, Type.T_RECURSIVE(key.toString(), null));
 
 		// Ok, expand the type properly then
 		Pair<UnresolvedType, Expr> ut = unresolved.get(key);
@@ -349,7 +350,11 @@ public class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpenRecursive(key, t.first());
+		boolean isOpenRecursive = Type.isOpenRecursive(key.toString(), t.first());
+		if (isOpenRecursive) {
+			t = new Pair<Type, Block>(Type.T_RECURSIVE(key.toString(), t
+					.first()), t.second());
+		}
 		
 		// Resolve the constraint and generate an appropriate block.
 		Block blk = t.second();		
@@ -500,8 +505,12 @@ public class ModuleBuilder {
 
 			try {
 				Pair<Type, Block> et = expandType(name, cache);
-				return new Pair<Type, Block>(Type.nameType(new NameID(modInfo.module,
-							dt.name), et.first()), et.second());				
+				if (Type.isExistential(et.first())) {
+					return new Pair<Type, Block>(Type.T_NAMED(modInfo.module,
+							dt.name, et.first()), et.second());
+				} else {
+					return et;
+				}
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filename, t, rex);
 				return null;
@@ -523,11 +532,11 @@ public class ModuleBuilder {
 		Type ret = resolve(fd.ret).first();
 
 		// method receiver type (if applicable)
-		Type.Process rec = null;
+		Type.ProcessName rec = null;
 		if (fd.receiver != null) {
 			Type t = resolve(fd.receiver).first();
 			checkType(t, Type.Process.class, fd.receiver);
-			rec = (Type.Process) t;
+			rec = (Type.ProcessName) t;
 		}
 
 		Type.Fun ft = Type.T_FUN(rec, ret, parameters);
@@ -1049,7 +1058,10 @@ public class ModuleBuilder {
 				lhs = CExpr.VAR(Type.T_ANY, v.var);	
 			}
 		} else if(tf != null && tf.receiver != null) {
-			Type pt = tf.receiver;			
+			Type pt = tf.receiver;
+			if(pt instanceof Type.Named) {
+				pt = ((Type.Named)pt).type;
+			}
 			if(pt instanceof Type.Process) {
 				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
 				if(ert != null && ert.types.containsKey(v.var)) {
@@ -1343,7 +1355,10 @@ public class ModuleBuilder {
 
 			// Second, see if it's a field of the receiver
 			if(tf.receiver != null) {
-				Type pt = tf.receiver;				
+				Type pt = tf.receiver;
+				if(pt instanceof Type.Named) {
+					pt = ((Type.Named)pt).type;
+				}
 				if(pt instanceof Type.Process) {
 					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
 					if(ert != null && ert.types.containsKey(v.var)) {						
@@ -1784,6 +1799,66 @@ public class ModuleBuilder {
 		}
 	}
 
+	/**
+	 * The purpose of this method is to making the naming of recursive types a
+	 * little more human-readable.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static Pair<Type, Block> simplifyRecursiveTypes(String key,
+			Pair<Type, Block> p) {
+		Type t = p.first();
+		Set<String> _names = Type.recursiveTypeNames(t);
+		ArrayList<String> names = new ArrayList<String>(_names);
+		HashMap<String, String> binding = new HashMap<String, String>();
+
+		for (int i = 0; i != names.size(); ++i) {
+			int let = (i + 20) % 26;
+			int num = i / 26;
+			String n = "" + (char) ('A' + let);
+			if (num > 0) {
+				n += num;
+			}
+			binding.put(names.get(i), n);
+		}
+
+		t = Type.renameRecursiveTypes(t, binding);
+		
+
+		Block blk = p.second();
+		if(blk == null) { return new Pair<Type,Block>(t,blk); }
+
+		// At this stage, we need to update any type tests that involve the
+		// recursive type
+		Block nblk = new Block();
+		HashMap<String,Type> tbinding = new HashMap<String,Type>();
+		tbinding.put(key, t);
+		
+		for(wyil.lang.Stmt s : blk) {
+			if(s.code instanceof Code.IfGoto){
+				IfGoto ig = (IfGoto) s.code;
+				if(ig.rhs instanceof Value.TypeConst) {					
+					Value.TypeConst r = (Value.TypeConst) ig.rhs;					
+					r = Value.V_TYPE(Type.substituteRecursiveTypes(r.type,tbinding));
+					// The following line was previously used, as I was
+					// concerned about nested recursive types and making sure
+					// they were all appropriately renamed. However, it's
+					// unclear to me whether or not nested recursive types (i.e
+					// those other than the one being processed, identified by
+					// key) can actually occur.
+					//
+					// r = Value.V_TYPE(Type.renameRecursiveTypes(r.type, binding));
+					ig = new Code.IfGoto(ig.op, ig.lhs, r, ig.target);
+					s = new wyil.lang.Stmt(ig,s.attributes());
+				}
+			} 
+			nblk.add(s.code,s.attributes());			
+		}		
+		
+		return new Pair<Type,Block>(t,nblk);
+	}
+
 	public Variable flattern(Expr e) {
 		if (e instanceof Variable) {
 			return (Variable) e;
@@ -1881,7 +1956,10 @@ public class ModuleBuilder {
 	}
 
 	protected <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem) {		
+			SyntacticElement elem) {
+		if (t instanceof Type.Named) {
+			t = ((Type.Named) t).type;
+		}
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {

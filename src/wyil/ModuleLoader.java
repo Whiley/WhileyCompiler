@@ -642,7 +642,7 @@ public class ModuleLoader {
 		String name = split[0];
 		Type.Fun ft = new TypeParser(split[split.length - 1]).parseRestFunType();
 		if(split.length > 2) {
-			Type.Process rec = (Type.Process) new TypeParser(split[1]).parseType();
+			Type.ProcessName rec = (Type.ProcessName) new TypeParser(split[1]).parseType();
 			ft = Type.T_FUN(rec,ft.ret,ft.params);
 		} 
 		return new Pair<String,Type.Fun>(name,ft);		
@@ -703,8 +703,7 @@ public class ModuleLoader {
 				}
 				String name = desc.substring(start,index);
 				index++;				
-				// Following line will fail.  Temporary fix whilst removing Type.Named
-				return (Type.NonUnion) Type.nameType(new NameID(ModuleID.fromString(pkg), name),
+				return Type.T_NAMED(ModuleID.fromString(pkg), name,
 							parseType());			
 			case '[': 
 				Type et = parseType();
