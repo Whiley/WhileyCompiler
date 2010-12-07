@@ -1083,7 +1083,7 @@ public abstract class Type {
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Named) {
-				Named l = (Named) o;
+				Named l = (Named) o;				
 				return type.equals(l.type)
 						&& name.equals(l.name); 
 			}
@@ -1287,8 +1287,13 @@ public abstract class Type {
 			super(name,element);
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Recursive) {							
-				return super.equals(o);
+			if(o instanceof Recursive) {
+				Recursive r = (Recursive) o;
+				if(type != null) {
+					return name.equals(r.name) && type.equals(r.type);
+				} else {
+					return name.equals(r.name) && r.type == null;
+				}
 			}
 			return false;
 		}
