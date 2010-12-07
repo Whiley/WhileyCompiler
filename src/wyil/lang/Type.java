@@ -456,7 +456,13 @@ public abstract class Type {
 				}
 			}
 			
-			return greatestDifference(unroll(r1),t2);						
+			r1_type = unroll(r1);
+			Type tmp = greatestDifference(unroll(r1),t2);
+			if(tmp.equals(r1_type)) {
+				return r1; // no change
+			} else {
+				return tmp;
+			}
 		} 
 		
 		return t1;

@@ -303,9 +303,9 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Pair<Type, Block> p = expandType(key, cache);
+				Pair<Type, Block> p = expandType(key, cache);				
+				p = fixRecursiveTypeTests(key,p);
 				Type t = p.first();
-				//p = simplifyRecursiveTypes(key.toString(),p);
 				if (Type.isExistential(t)) {
 					t = Type.T_NAMED(key, t);
 				}
@@ -1808,43 +1808,16 @@ public class ModuleBuilder {
 		}
 	}
 
-	/**
-	 * The purpose of this method is to making the naming of recursive types a
-	 * little more human-readable.
-	 * 
-	 * @param t
-	 * @return
-	 */
-	/*
-	 * For the moment, this is retired
-	 
-	public static Pair<Type, Block> simplifyRecursiveTypes(String key,
+	public static Pair<Type, Block> fixRecursiveTypeTests(NameID key,
 			Pair<Type, Block> p) {
-		Type t = p.first();
-		Set<String> _names = Type.recursiveTypeNames(t);
-		ArrayList<String> names = new ArrayList<String>(_names);
-		HashMap<String, String> binding = new HashMap<String, String>();
-
-		for (int i = 0; i != names.size(); ++i) {
-			int let = (i + 20) % 26;
-			int num = i / 26;
-			String n = "" + (char) ('A' + let);
-			if (num > 0) {
-				n += num;
-			}
-			binding.put(names.get(i), n);
-		}
-
-		t = Type.renameRecursiveTypes(t, binding);
-		
-
+		Type t = p.first();		
 		Block blk = p.second();
 		if(blk == null) { return new Pair<Type,Block>(t,blk); }
 
 		// At this stage, we need to update any type tests that involve the
 		// recursive type
 		Block nblk = new Block();
-		HashMap<String,Type> tbinding = new HashMap<String,Type>();
+		HashMap<NameID,Type> tbinding = new HashMap<NameID,Type>();
 		tbinding.put(key, t);
 		
 		for(wyil.lang.Stmt s : blk) {
@@ -1870,7 +1843,7 @@ public class ModuleBuilder {
 		
 		return new Pair<Type,Block>(t,nblk);
 	}
-    */
+    
 	public Variable flattern(Expr e) {
 		if (e instanceof Variable) {
 			return (Variable) e;
