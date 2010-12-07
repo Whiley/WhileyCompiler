@@ -1294,9 +1294,13 @@ public abstract class Type {
 			return r + "}";
 		}
 	}
-	public static final class Recursive extends Named {				
-		private Recursive(NameID name, Type element) {
-			super(name,element);
+	public static final class Recursive extends NonUnion {				
+		public final NameID name;
+		public final Type type;
+		
+		private Recursive(NameID name, Type type) {
+			this.name = name;
+			this.type = type;
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Recursive) {

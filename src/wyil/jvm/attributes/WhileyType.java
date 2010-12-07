@@ -87,6 +87,15 @@ public class WhileyType implements BytecodeAttribute {
 			if(lt.type != null) {
 				addPoolItems(lt.type,constantPool);
 			}
+		} else if(type instanceof Type.Recursive) {
+			Type.Recursive lt = (Type.Recursive) type;
+			Constant.Utf8 utf8 = new Constant.Utf8(lt.name.module().toString());
+			Constant.addPoolItem(utf8,constantPool);
+			utf8 = new Constant.Utf8(lt.name.name());	
+			Constant.addPoolItem(utf8,constantPool);
+			if(lt.type != null) {
+				addPoolItems(lt.type,constantPool);
+			}
 		} else if(type instanceof Type.Fun) {
 			Type.Fun ft = (Type.Fun) type;
 			for(Type t : ft.params) {
