@@ -486,7 +486,8 @@ public class ClassFileBuilder {
 			// Easy case		
 			bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, trueTarget));
 		} else if(test instanceof Type.Int) {
-			syntaxError("Type test for int type not implemented",filename,stmt);
+			translateTypeTest(trueTarget, src, (Type.Int) test,
+					stmt, bytecodes);
 		} else if(test instanceof Type.Real) {
 			syntaxError("Type test for real type not implemented",filename,stmt);
 		} else if(test instanceof Type.List) {
@@ -506,6 +507,58 @@ public class ClassFileBuilder {
 		}
 	}
 
+	/**
+	 * Check that a value of the given src type is an int. The main difficulty
+	 * here, is that it may not be enough to just test whether the value is a
+	 * BigInteger. For example, if src has type real then we have a BigRational,
+	 * and we must call the isInteger() method instead.
+	 * 
+	 * @param trueTarget
+	 * @param src
+	 * @param test
+	 * @param stmt
+	 * @param bytecodes
+	 */
+	protected void translateTypeTest(String trueTarget, Type src, Type.Int test,
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+		
+		// NOTE: on entry we know that src cannot be a Type.Int, since this case
+		// would have been already caught.
+		
+		// ======================================================================
+		// Perform the (appropriate) type test  
+		// ======================================================================
+				
+		if(Type.greatestLowerBound(src,Type.T_REAL) == Type.T_INT) {
+			// In this case, it's impossible for the value to be real. Thus, src
+			// must be a union of types and we must distinguish an int by
+			// checking for BigInteger.
+			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
+		} else {
+			// In this case, we're definitely looking for a real value. So,
+			// perform an instanceof BigRational (if necessary). 
+			String falseTarget = freshLabel();
+			
+			if (src != Type.T_REAL) {
+				String nextTarget = freshLabel();			
+				bytecodes.add(new Bytecode.Dup(convertType(src)));
+				bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
+				bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
+				bytecodes.add(new Bytecode.Pop(convertType(src)));
+				bytecodes.add(new Bytecode.Goto(falseTarget));
+				bytecodes.add(new Bytecode.Label(nextTarget));
+				bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
+			}
+			
+			// Now, we definitely have a BigRational ... but is it an integer?			
+			JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_BOOL);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
+			bytecodes.add(new Bytecode.Label(falseTarget));			
+		}
+	}
+	
 	/**
 	 * Check that a value of the given src type matches the list type given by
 	 * test. If src is not a list, then we must begin by performing an
@@ -535,10 +588,15 @@ public class ClassFileBuilder {
 			// an instanceof test.		
 			nsrc = (Type.List) src;
 		} else {
+			String nextTarget = freshLabel();		
 			bytecodes.add(new Bytecode.Dup(convertType(src)));		
 			bytecodes.add(new Bytecode.InstanceOf(WHILEYLIST));
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
+			bytecodes.add(new Bytecode.Pop(convertType(src)));
+			bytecodes.add(new Bytecode.Goto(falseTarget));
+			bytecodes.add(new Bytecode.Label(nextTarget));
 			addCheckCast(WHILEYLIST,bytecodes);				
+			
 			nsrc = (Type.List) Type.greatestLowerBound(src, Type.T_LIST(Type.T_ANY));
 			
 			if(Type.isSubtype(test,nsrc)) {
@@ -557,7 +615,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", fun_t , Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, falseTarget));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
 		bytecodes.add(new Bytecode.Pop(WHILEYLIST));
 		bytecodes.add(new Bytecode.Goto(trueTarget));
 		bytecodes.add(new Bytecode.Label(nextTarget));
