@@ -473,18 +473,24 @@ public class ClassFileBuilder {
 				
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
-		test = Type.greatestLowerBound(src,test);				
-		if(Type.isSubtype(test, src)) {			
+		test = Type.greatestLowerBound(src,test);	
+		
+		if(test == Type.T_VOID) {
+			// in this case, we must fail.
+			bytecodes.add(new Bytecode.Pop(convertType(src)));			
+		} else if(Type.isSubtype(test, src)) {			
 			// in this case, we must succeed.
 			bytecodes.add(new Bytecode.Pop(convertType(src)));
 			bytecodes.add(new Bytecode.Goto(trueTarget));
-		} else if(src instanceof Type.Real) {
-		} else if(src instanceof Type.List) {
+		} else if(test instanceof Type.Real) {
+			
+			
+		} else if(test instanceof Type.List) {
 			translateTypeTest(trueTarget, (Type.List) src, (Type.SetList) test,
 					stmt, bytecodes);			
-		} else if(src instanceof Type.Set) {
+		} else if(test instanceof Type.Set) {
 			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
-		} else if(src instanceof Type.Record || Type.effectiveRecordType(src) != null) {				
+		} else if(test instanceof Type.Record || Type.effectiveRecordType(src) != null) {				
 			translateTypeTest(trueTarget, src, (Type.Record) test, stmt,
 					bytecodes);			
 		} else if(test instanceof Type.Union){
