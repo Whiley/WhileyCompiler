@@ -277,13 +277,20 @@ public class ModuleBuilder {
 	 */
 	protected void generateTypes(List<WhileyFile> files) {
 		HashMap<NameID, SyntacticElement> srcs = new HashMap();
-
+		
+		// The declOrder list is basically a hack. It ensures that types are
+		// visited in the order that they are declared. This helps give some
+		// sense to the way recursive types are handled, but a more general
+		// solution could easily be found.
+		ArrayList<NameID> declOrder = new ArrayList<NameID>();
+		
 		// second construct list.
 		for (WhileyFile f : files) {
 			for (Decl d : f.declarations) {
 				if (d instanceof TypeDecl) {
 					TypeDecl td = (TypeDecl) d;					
-					NameID key = new NameID(f.module, td.name());					
+					NameID key = new NameID(f.module, td.name());
+					declOrder.add(key);
 					unresolved.put(key, new Pair<UnresolvedType, Expr>(td.type,
 							td.constraint));
 					srcs.put(key, d);
@@ -293,7 +300,7 @@ public class ModuleBuilder {
 		}
 
 		// third expand all types
-		for (NameID key : unresolved.keySet()) {			
+		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type, Block> p = expandType(key, cache);

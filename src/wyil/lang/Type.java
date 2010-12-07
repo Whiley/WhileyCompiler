@@ -435,21 +435,28 @@ public abstract class Type {
 			}
 			return lub;
 		} else if(t1 instanceof Recursive) {
-			Recursive r = (Recursive) t1;
-			Type r_type = r.type;
-			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
-			binding.put(r.name, r);
+			Recursive r1 = (Recursive) t1;
+			Type r1_type = r1.type;
 			
-			// FIXME: this line looks broken
-			if(r_type != null) {
-				r_type = substituteRecursiveTypes(r_type,binding);			
-				Type gdiff = greatestDifference(r_type,t2);			
-				if(!r_type.equals(gdiff)) {
-					// something changed so return new type
-					return gdiff;
-				} 
+			if(t2 instanceof Recursive) {
+				Recursive r2 = (Recursive) t2;
+				Type r2_type = r2.type;
+				
+				if(r1.name.equals(r2.name)) {
+					return T_VOID;
+				} else if(r1.type != null && r2.type != null) {
+					HashMap<NameID,NameID> binding = new HashMap();
+					binding.put(r2.name, r1.name);
+					r1_type = greatestDifference(r1_type,renameRecursiveTypes(r2_type,binding));
+					if(isOpenRecursive(r1.name,r1_type)) {
+						return T_RECURSIVE(r1.name,r1_type);
+					} else {
+						return r1_type;
+					}
+				}
 			}
-			// Otherwise, nothing changed so keep original type for continuity
+			
+			return greatestDifference(unroll(r1),t2);						
 		} 
 		
 		return t1;
@@ -803,26 +810,26 @@ public abstract class Type {
 	 * X[int|{X next}] ===> int|X[{{int|Y next}]
 	 * </pre>
 	 */
-	public static Type normaliseRecursiveTypes(Type t) {
+	public static Type normaliseRecursiveType(Type t) {
 		if (t instanceof Type.Void || t instanceof Type.Null
 				|| t instanceof Type.Bool || t instanceof Type.Int
 				|| t instanceof Type.Real || t instanceof Type.Any
-				|| t instanceof Type.Existential) {
+				|| t instanceof Type.Existential || t instanceof Type.Named) {
 			return t;
 		} else if(t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
-			return Type.T_LIST(normaliseRecursiveTypes(lt.element));
+			return Type.T_LIST(normaliseRecursiveType(lt.element));
 		} else if(t instanceof Type.Set) {
 			Type.Set lt = (Type.Set) t;
-			return Type.T_SET(normaliseRecursiveTypes(lt.element));			
+			return Type.T_SET(normaliseRecursiveType(lt.element));			
 		} else if(t instanceof Type.Process) {
 			Type.Process lt = (Type.Process) t;
-			return Type.T_PROCESS(normaliseRecursiveTypes(lt.element));			
+			return Type.T_PROCESS(normaliseRecursiveType(lt.element));			
 		} else if(t instanceof Type.Record) {			
 			Type.Record tt = (Record) t;
 			HashMap<String,Type> types = new HashMap<String,Type>();
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
-				types.put(b.getKey(), normaliseRecursiveTypes(b.getValue()));				
+				types.put(b.getKey(), normaliseRecursiveType(b.getValue()));				
 			}
 			return T_RECORD(types);
 		} else if (t instanceof Type.Recursive) {
@@ -830,21 +837,19 @@ public abstract class Type {
 			if (rt.type == null) {
 				return rt;
 			} else {
-				Type element = normaliseRecursiveTypes(rt.type);
+				Type element = normaliseRecursiveType(rt.type);
 				return unfactor(T_RECURSIVE(rt.name, element));				
 			}
-		} else if(t instanceof Type.Named) {
-			return t;
 		} else if(t instanceof Type.Fun) {		
 			Type.Fun ft = (Type.Fun) t;
 			ArrayList<Type> params = new ArrayList<Type>();
 			for(Type p : ft.params) {
-				params.add(normaliseRecursiveTypes(p));
+				params.add(normaliseRecursiveType(p));
 			}
-			Type ret = normaliseRecursiveTypes(ft.ret);
+			Type ret = normaliseRecursiveType(ft.ret);
 			Type.ProcessName receiver = ft.receiver;
 			if(receiver != null) {
-				receiver = (Type.ProcessName) normaliseRecursiveTypes(receiver);
+				receiver = (Type.ProcessName) normaliseRecursiveType(receiver);
 			}
 			return T_FUN(receiver,ret,params);
 		} else if(t instanceof Type.Union) {
@@ -852,7 +857,7 @@ public abstract class Type {
 			Type lub = Type.T_VOID;
 			
 			for (Type b : ut.bounds) {
-				lub = leastUpperBound(lub, normaliseRecursiveTypes(b));
+				lub = leastUpperBound(lub, normaliseRecursiveType(b));
 			}
 
 			return lub;
@@ -1326,7 +1331,7 @@ public abstract class Type {
 			if(type == null) {
 				return name.toString();
 			} else {
-				return name + "#" + type;
+				return name + "<" + type + ">";
 			}
 		}		
 	}

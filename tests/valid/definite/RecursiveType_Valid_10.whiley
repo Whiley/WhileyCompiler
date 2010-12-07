@@ -9,7 +9,5 @@ int sum(LinkedList l):
 
 void System::main([string] args):
     l1 = { next: null, data: 1}
-    l1 = { next: l1, data: 23}
-    l1 = { next: l1, data: 234}
     x = sum(l1)
     out->println(str(x))

@@ -7,6 +7,13 @@ define SUB as 1
 define MUL as 2
 define DIV as 3
 
+// expression tree
+define Expr as real |  // constant
+    Var |              // variable
+    BinOp |            // binary operator
+    [Expr] |           // list constructor
+    ListAccess         // list access
+ 
 // binary operation
 define BOp as { ADD, SUB, MUL, DIV }
 define BinOp as { BOp op, Expr lhs, Expr rhs } 
@@ -20,13 +27,6 @@ define ListAccess as {
     Expr index
 } 
 
-// expression tree
-define Expr as real |  // constant
-    Var |              // variable
-    BinOp |            // binary operator
-    [Expr] |           // list constructor
-    ListAccess         // list access
- 
 // values
 define value as real | [value] | null
 
