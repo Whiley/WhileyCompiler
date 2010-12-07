@@ -418,7 +418,9 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, CExpr src, Type test,
 			Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-						
+		
+		System.out.println("TYPE TEST: " + src + " ~= " + test);
+		
 		// This method (including the helper) is pretty screwed up. It needs a
 		// serious rethink to catch all cases, and to be efficient.
 		

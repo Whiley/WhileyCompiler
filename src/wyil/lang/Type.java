@@ -660,9 +660,11 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type substituteRecursiveTypes(Type t, Map<NameID,Type> binding) {
+		if (t == null) { throw new IllegalArgumentException("substituteRecursiveTypes cannot be called on null"); }
+		
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
-				|| t instanceof Any) {
+				|| t instanceof Any || t instanceof Named) {
 			return t;
 		} else if(t instanceof List) {
 			List lt = (List) t;
@@ -700,8 +702,6 @@ public abstract class Type {
 			} else {
 				return T_RECURSIVE(lt.name, null);
 			}
-		} else if (t instanceof Named) {
-			return t;
 		} else {		
 			Fun ft = (Fun) t;
 			ArrayList<Type> params = new ArrayList<Type>();
@@ -714,7 +714,7 @@ public abstract class Type {
 				receiver = (Process) substituteRecursiveTypes(ft.ret, binding);							
 			} 
 			return T_FUN(receiver,ret,params);
-		}
+		}		
 	}
 	
 	/**
@@ -934,10 +934,9 @@ public abstract class Type {
 			// this is more tricky. We need to unroll the type once to ensure we
 			// don't lose the recursive information.
 			Type.Recursive rt = (Type.Recursive) t;
-			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
-			binding.put(rt.name, rt);
-			t = substituteRecursiveTypes(rt.type,binding);
-			return effectiveRecordType(t);
+			if(rt.type != null) {
+				return effectiveRecordType(unroll(rt));
+			}
 		} else if(t instanceof Type.Named) {
 			Type.Named nt = (Type.Named) t;
 			return effectiveRecordType(nt.type);
