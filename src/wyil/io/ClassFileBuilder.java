@@ -548,8 +548,6 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, Type src,
 			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
 
-		System.out.println("TYPE TEST: " + src + " ~= " + test);
-		
 		if(src instanceof Type.Union) {
 			// Here, all bounds are guaranteed to be of record type.
 			Type.Union ut = (Type.Union) src;
