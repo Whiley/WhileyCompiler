@@ -427,7 +427,7 @@ public class ClassFileBuilder {
 		Type src_t = src.type();		
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
-		translateTypeTestHelper(trueLabel, src.type(), test, stmt, bytecodes);
+		translateTypeTest(trueLabel, src.type(), test, stmt, bytecodes);
 		
 		if(src instanceof CExpr.LVar) {					
 			// This covers the limited form of type inference currently
@@ -468,7 +468,7 @@ public class ClassFileBuilder {
 	// perform an instanceof BigInteger. Other situations are trickier. For
 	// example, testing a static type [int]|[bool] against type [int] is harder,
 	// since both are actually instances of java.util.List. 
-	protected void translateTypeTestHelper(String trueTarget, Type src, Type test,
+	protected void translateTypeTest(String trueTarget, Type src, Type test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
 				
 		// First, determine the intersection of the actual type and the type
@@ -482,55 +482,27 @@ public class ClassFileBuilder {
 			// in this case, we must succeed.
 			bytecodes.add(new Bytecode.Pop(convertType(src)));
 			bytecodes.add(new Bytecode.Goto(trueTarget));
+		} else if (test instanceof Type.Null) {
+			// Easy case		
+			bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, trueTarget));
+		} else if(test instanceof Type.Int) {
+			syntaxError("Type test for int type not implemented",filename,stmt);
 		} else if(test instanceof Type.Real) {
-			
-			
+			syntaxError("Type test for real type not implemented",filename,stmt);
 		} else if(test instanceof Type.List) {
-			translateTypeTest(trueTarget, (Type.List) src, (Type.SetList) test,
+			translateTypeTest(trueTarget, src, (Type.List) test,
 					stmt, bytecodes);			
 		} else if(test instanceof Type.Set) {
-			translateTypeTest(trueTarget,(Type.Set)src,test,bytecodes);			
-		} else if(test instanceof Type.Record || Type.effectiveRecordType(src) != null) {				
+			translateTypeTest(trueTarget,src, (Type.Set) test,bytecodes);			
+		} else if(test instanceof Type.Record) {				
 			translateTypeTest(trueTarget, src, (Type.Record) test, stmt,
 					bytecodes);			
 		} else if(test instanceof Type.Union){
-			Type.Union tt = (Type.Union) test;
-			// FIXME: hack for now
-			syntaxError("Type test for union type not implemented",filename,stmt);
-		} else if(src instanceof Type.Union) {
-			// Note, test cannot be a union here			
-			src = Type.greatestLowerBound(src,
-					narrowConversion((Type.NonUnion) test));
-			bytecodes.add(new Bytecode.Dup(convertType(test)));				
-			String nextLabel = freshLabel();
-			String exitLabel = freshLabel();		
-			
-			if(test instanceof Type.Null) {				
-				bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, nextLabel));				
-			} else {
-				JvmType.Reference target_t;
-				if (test instanceof Type.Bool) {			
-					target_t = JvmTypes.JAVA_LANG_BOOLEAN;
-				} else {
-					// FIXME: bug if test is REAL or SET
-					target_t = (JvmType.Reference) convertType(test);
-				}				
-				bytecodes.add(new Bytecode.InstanceOf(target_t));
-				bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
-				addCheckCast(target_t,bytecodes);				
-			}			
-			
-			translateTypeTestHelper(trueTarget,src,test,stmt,bytecodes);
-			bytecodes.add(new Bytecode.Goto(exitLabel));
-			bytecodes.add(new Bytecode.Label(nextLabel));
-			bytecodes.add(new Bytecode.Pop(convertType(test)));
-			bytecodes.add(new Bytecode.Label(exitLabel));
-		} else if(src instanceof Type.Recursive) {
-			Type.Recursive tr = (Type.Recursive) src;
-			if(tr.type == null) {
-				syntaxError("Problem with type test for recursive type",filename,stmt);
-			}
-			translateTypeTestHelper(trueTarget,tr.type,test,stmt,bytecodes);
+			translateTypeTest(trueTarget, src, (Type.Union) test, stmt,
+					bytecodes);			
+		} else if(test instanceof Type.Recursive) {
+			translateTypeTest(trueTarget, src, (Type.Recursive) test, stmt,
+					bytecodes);				
 		}
 	}
 
@@ -595,7 +567,7 @@ public class ClassFileBuilder {
 		syntaxError("record type test cases not implemented",filename,stmt);
 	}
 	
-	protected void translateTypeTest(String trueTarget, Type.List src, Type.SetList test,
+	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {
 		JvmType src_j = convertType(src);
 		
@@ -616,14 +588,54 @@ public class ClassFileBuilder {
 		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
 		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));
-		translateTypeTestHelper(trueTarget,src.element,test.element(),stmt,bytecodes);
+		translateTypeTest(trueTarget,src.element,test.element(),stmt,bytecodes);
 	}
 	
-	protected void translateTypeTest(String falseTarget, Type.Set src, Type test,
+	protected void translateTypeTest(String falseTarget, Type src, Type.Set test,
 			ArrayList<Bytecode> bytecodes) {		
 		// NOTE: test guaranteed to be list or set on entry
 		System.out.println("CONFLICT: " + src + " ~~ " + test);
 		
+	}
+	
+	protected void translateTypeTest(String falseTarget, Type src, Type.Union test,
+			ArrayList<Bytecode> bytecodes) {
+		// Note, test cannot be a union here			
+		src = Type.greatestLowerBound(src,
+				narrowConversion((Type.NonUnion) test));
+		bytecodes.add(new Bytecode.Dup(convertType(test)));				
+		String nextLabel = freshLabel();
+		String exitLabel = freshLabel();		
+		
+		if(test instanceof Type.Null) {				
+			bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, nextLabel));				
+		} else {
+			JvmType.Reference target_t;
+			if (test instanceof Type.Bool) {			
+				target_t = JvmTypes.JAVA_LANG_BOOLEAN;
+			} else {
+				// FIXME: bug if test is REAL or SET
+				target_t = (JvmType.Reference) convertType(test);
+			}				
+			bytecodes.add(new Bytecode.InstanceOf(target_t));
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
+			addCheckCast(target_t,bytecodes);				
+		}			
+		
+		translateTypeTest(trueTarget,src,test,stmt,bytecodes);
+		bytecodes.add(new Bytecode.Goto(exitLabel));
+		bytecodes.add(new Bytecode.Label(nextLabel));
+		bytecodes.add(new Bytecode.Pop(convertType(test)));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+	}
+
+	public void translate(String falseTarget, Type src, Type.Recursive test,
+			ArrayList<Bytecode> bytecodes) { {
+		Type.Recursive tr = (Type.Recursive) src;
+		
+		if(tr.type == null) {
+			syntaxError("Problem with type test for recursive type",filename,stmt);
+		}		
 	}
 	
 	public void translate(Code.Loop c, HashMap<String, Integer> slots,
