@@ -170,9 +170,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			HashMap<String,Type> types = new HashMap<String,Type>(rt.types);
 			types.put(field, type);
 			return Type.T_RECORD(types);
-		} else if(src instanceof Type.Named) {
-			Type.Named nd = (Type.Named) src;
-			return Type.T_NAMED(nd.name, updateRecordFieldType(nd.type,field,type));
 		} else if(src instanceof Type.Union) {
 			Type.Union tu = (Type.Union) src;
 			Type t = Type.T_VOID;
@@ -183,7 +180,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(src instanceof Type.Recursive) {			
 			Type.Recursive rt = (Type.Recursive) src;
 			return updateRecordFieldType(Type.unroll(rt),field,type);
-		}
+		} else if(src instanceof Type.Named) {
+			Type.Named nd = (Type.Named) src;
+			return Type.T_NAMED(nd.name, updateRecordFieldType(nd.type,field,type));
+		} 
 		
 		// no can do
 		return type;

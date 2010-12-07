@@ -93,12 +93,6 @@ public abstract class Type {
 				(t1 instanceof Any) ||
 				(t1 instanceof Real && t2 instanceof Int)) {
 			return true;
-		} else if(t1 instanceof Named) {
-			Named t = (Named) t1;
-			return isSubtype(t.type,t2, environment);
-		} else if(t2 instanceof Named) {
-			Named t = (Named) t2;
-			return isSubtype(t1,t.type, environment);
 		} else if(t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
@@ -181,6 +175,12 @@ public abstract class Type {
 			}
 			
 			return isSubtype(rt1type,t2,environment);
+		} else if(t1 instanceof Named) {
+			Named t = (Named) t1;
+			return isSubtype(t.type,t2, environment);
+		} else if(t2 instanceof Named) {
+			Named t = (Named) t2;
+			return isSubtype(t1,t.type, environment);
 		} else if(t1 instanceof Fun && t2 instanceof Fun) {
 			Fun f1 = (Fun) t1;
 			Fun f2 = (Fun) t2;
@@ -439,12 +439,16 @@ public abstract class Type {
 			Type r_type = r.type;
 			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 			binding.put(r.name, r);
-			r_type = substituteRecursiveTypes(r_type,binding);			
-			Type gdiff = greatestDifference(r_type,t2);			
-			if(!r_type.equals(gdiff)) {
-				// something changed so return new type
-				return gdiff;
-			} 
+			
+			// FIXME: this line looks broken
+			if(r_type != null) {
+				r_type = substituteRecursiveTypes(r_type,binding);			
+				Type gdiff = greatestDifference(r_type,t2);			
+				if(!r_type.equals(gdiff)) {
+					// something changed so return new type
+					return gdiff;
+				} 
+			}
 			// Otherwise, nothing changed so keep original type for continuity
 		} 
 		
@@ -461,8 +465,7 @@ public abstract class Type {
 		if (t instanceof Existential) {
 			return true;
 		} else if (t instanceof Void || t instanceof Null || t instanceof Bool
-				|| t instanceof Int || t instanceof Real || t instanceof Any
-				|| t instanceof Named) {
+				|| t instanceof Int || t instanceof Real || t instanceof Any) {
 			return false;
 		} else if(t instanceof List) {
 			List lt = (List) t;
@@ -494,6 +497,8 @@ public abstract class Type {
 			if(lt.type != null) {
 				return isExistential(lt.type);	
 			}
+			return false;
+		} else if (t instanceof Named) {
 			return false;
 		} else {
 			Fun ft = (Fun) t;
@@ -531,9 +536,6 @@ public abstract class Type {
 		} else if(t instanceof Process) {
 			Process lt = (Process) t;
 			return recursiveTypeNames(lt.element);
-		} else if(t instanceof Named) {
-			Named lt = (Named) t;
-			return recursiveTypeNames(lt.type);
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
 			HashSet<NameID> names = new HashSet<NameID>();
@@ -556,6 +558,9 @@ public abstract class Type {
 				names.addAll(recursiveTypeNames(lt.type));
 			}
 			return names;
+		} else if(t instanceof Named) {
+			Named lt = (Named) t;
+			return recursiveTypeNames(lt.type);
 		} else {
 			Fun ft = (Fun) t;
 			HashSet<NameID> names = new HashSet<NameID>();
@@ -580,8 +585,7 @@ public abstract class Type {
 	public static Type renameRecursiveTypes(Type t, Map<NameID,NameID> binding) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
-				|| t instanceof Any
-				|| t instanceof Named) {
+				|| t instanceof Any) {
 			return t;
 		} else if(t instanceof List) {
 			List lt = (List) t;
@@ -616,6 +620,8 @@ public abstract class Type {
 			} else {
 				return T_RECURSIVE(name, null);
 			}
+		} else if (t instanceof Named) {
+			return t;
 		} else {
 			Fun ft = (Fun) t;
 			ArrayList<Type> params = new ArrayList<Type>();
@@ -643,7 +649,7 @@ public abstract class Type {
 	public static Type substituteRecursiveTypes(Type t, Map<NameID,Type> binding) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
-				|| t instanceof Any || t instanceof Named) {
+				|| t instanceof Any) {
 			return t;
 		} else if(t instanceof List) {
 			List lt = (List) t;
@@ -681,7 +687,9 @@ public abstract class Type {
 			} else {
 				return T_RECURSIVE(lt.name, null);
 			}
-		} else {
+		} else if (t instanceof Named) {
+			return t;
+		} else {		
 			Fun ft = (Fun) t;
 			ArrayList<Type> params = new ArrayList<Type>();
 			for(Type p : ft.params) {
@@ -707,7 +715,7 @@ public abstract class Type {
 		if (t instanceof Type.Void || t instanceof Type.Null
 				|| t instanceof Type.Bool || t instanceof Type.Int
 				|| t instanceof Type.Real || t instanceof Type.Any
-				|| t instanceof Type.Named || t instanceof Type.Existential) {
+				|| t instanceof Type.Existential) {
 			return false;
 		} else if(t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
@@ -743,6 +751,8 @@ public abstract class Type {
 			} else {
 				return false;
 			}
+		} else if(t instanceof Type.Named) {
+			return false;
 		} else {		
 			Type.Fun ft = (Type.Fun) t;
 			for(Type p : ft.params) {
@@ -797,7 +807,7 @@ public abstract class Type {
 		if (t instanceof Type.Void || t instanceof Type.Null
 				|| t instanceof Type.Bool || t instanceof Type.Int
 				|| t instanceof Type.Real || t instanceof Type.Any
-				|| t instanceof Type.Named || t instanceof Type.Existential) {
+				|| t instanceof Type.Existential) {
 			return t;
 		} else if(t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
@@ -823,6 +833,8 @@ public abstract class Type {
 				Type element = normaliseRecursiveTypes(rt.type);
 				return unfactor(T_RECURSIVE(rt.name, element));				
 			}
+		} else if(t instanceof Type.Named) {
+			return t;
 		} else if(t instanceof Type.Fun) {		
 			Type.Fun ft = (Type.Fun) t;
 			ArrayList<Type> params = new ArrayList<Type>();
@@ -907,9 +919,6 @@ public abstract class Type {
 		} else if(t instanceof Type.Union) {
 			Type.Union ut = (Type.Union) t;
 			return effectiveRecordType(commonType(ut.bounds));
-		} else if(t instanceof Type.Named) {
-			Type.Named nt = (Type.Named) t;
-			return effectiveRecordType(nt.type);
 		} else if(t instanceof Type.Recursive) {
 			// this is more tricky. We need to unroll the type once to ensure we
 			// don't lose the recursive information.
@@ -918,7 +927,10 @@ public abstract class Type {
 			binding.put(rt.name, rt);
 			t = substituteRecursiveTypes(rt.type,binding);
 			return effectiveRecordType(t);
-		}		
+		} else if(t instanceof Type.Named) {
+			Type.Named nt = (Type.Named) t;
+			return effectiveRecordType(nt.type);
+		} 		
 		return null;	
 	}
 	
