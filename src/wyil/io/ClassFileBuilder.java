@@ -507,24 +507,74 @@ public class ClassFileBuilder {
 	}
 
 	/**
-	 * The following method produces a type which represents a narrowing of the
-	 * given type according to what will happen when we perform an instanceof
-	 * test on it.
+	 * Check that a value of the given src type matches the list type given by
+	 * test. If src is not a list, then we must begin by performing an
+	 * instanceof WHILEYLIST. If this is true, then we may need to further
+	 * distinguish the elements of the list. For example, testing [real] ~=
+	 * [int] requires iterating the elements of the list to check that they are
+	 * all indeed ints.
 	 * 
-	 * @param t
-	 * @return
+	 * @param trueTarget
+	 * @param src
+	 * @param test
+	 * @param stmt
+	 * @param bytecodes
 	 */
-	protected Type narrowConversion(Type.NonUnion type) {
-		if (type instanceof Type.List) {
-			return Type.T_LIST(Type.T_ANY);
-		} else if (type instanceof Type.Set) {
-			return Type.T_SET(Type.T_ANY);
-		} else if (type instanceof Type.Record) {
-			return Type.T_RECORD(new HashMap<String,Type>());
+	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+
+		// ======================================================================
+		// First, perform the actual type test (if necessary) 
+		// ======================================================================
+		
+		Type.List nsrc;
+		String falseTarget = freshLabel();
+		
+		if(src instanceof Type.List) {
+			// We already know the value is a list, so we don't need to perform
+			// an instanceof test.		
+			nsrc = (Type.List) src;
+		} else {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));		
+			bytecodes.add(new Bytecode.InstanceOf(WHILEYLIST));
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
+			addCheckCast(WHILEYLIST,bytecodes);				
+			nsrc = (Type.List) Type.greatestLowerBound(src, Type.T_LIST(Type.T_ANY));
+			
+			if(Type.isSubtype(test,nsrc)) {
+				// Getting here indicates that the instanceof test was
+				// sufficient to be certain that the type test succeeds.			
+				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+				bytecodes.add(new Bytecode.Goto(trueTarget));						
+			}
 		}
-		return type;
+						
+		// ======================================================================
+		// Second, check empty list case (as this always passes) 
+		// ======================================================================		
+		
+		String nextTarget = freshLabel();
+		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", fun_t , Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, falseTarget));
+		bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+		bytecodes.add(new Bytecode.Goto(trueTarget));
+		bytecodes.add(new Bytecode.Label(nextTarget));
+		
+		// ======================================================================
+		// Third, check elements of list (tricky)
+		// ======================================================================		
+						
+		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
+		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));			
+		translateTypeTest(trueTarget,nsrc.element,test.element(),stmt,bytecodes);
+		
+		// Add the false label for the case when the original instanceof test fails
+		bytecodes.add(new Bytecode.Label(falseTarget));
 	}
-	
+		
 	protected void translateTypeTest(String trueTarget, Type src,
 			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
 
@@ -565,30 +615,6 @@ public class ClassFileBuilder {
 			return;
 		}
 		syntaxError("record type test cases not implemented",filename,stmt);
-	}
-	
-	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {
-		JvmType src_j = convertType(src);
-		
-		// First, attempt to capture case when list is empty as this will always
-		// pass the type test.
-		String falseTarget = freshLabel();
-		bytecodes.add(new Bytecode.Dup(src_j));
-		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", fun_t , Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, falseTarget));
-		bytecodes.add(new Bytecode.Pop(src_j));
-		bytecodes.add(new Bytecode.Goto(trueTarget));
-		bytecodes.add(new Bytecode.Label(falseTarget));
-		
-		// Second, look at what's inside and go from there	
-		
-		// FIXME: there is still a bug in 
-		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
-		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));
-		translateTypeTest(trueTarget,src.element,test.element(),stmt,bytecodes);
 	}
 	
 	protected void translateTypeTest(String falseTarget, Type src, Type.Set test,
