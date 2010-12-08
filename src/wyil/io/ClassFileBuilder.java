@@ -417,9 +417,7 @@ public class ClassFileBuilder {
 	
 	protected void translateTypeTest(String trueTarget, CExpr src, Type test,
 			Stmt stmt, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-		
-		System.out.println("TYPE TEST: " + src + " ~= " + test);
+			ArrayList<Bytecode> bytecodes) {				
 		
 		// This method (including the helper) is pretty screwed up. It needs a
 		// serious rethink to catch all cases, and to be efficient.
@@ -484,7 +482,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Goto(trueTarget));
 		} else if (test instanceof Type.Null) {
 			// Easy case		
-			bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, trueTarget));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NULL, trueTarget));
 		} else if(test instanceof Type.Int) {
 			translateTypeTest(trueTarget, src, (Type.Int) test,
 					stmt, bytecodes);
