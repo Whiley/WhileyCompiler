@@ -473,6 +473,8 @@ public class ClassFileBuilder {
 		// we're testing for.  This is really an optimisation.
 		test = Type.greatestLowerBound(src,test);	
 		
+		System.out.println("TESTING: " + src + " ~= " + test);
+		
 		if(test == Type.T_VOID) {
 			// in this case, we must fail.
 			bytecodes.add(new Bytecode.Pop(convertType(src)));			
