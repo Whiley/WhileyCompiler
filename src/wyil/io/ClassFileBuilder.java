@@ -508,10 +508,10 @@ public class ClassFileBuilder {
 	}
 
 	/**
-	 * Check that a value of the given src type is an int. The main difficulty
-	 * here, is that it may not be enough to just test whether the value is a
-	 * BigInteger. For example, if src has type real then we have a BigRational,
-	 * and we must call the isInteger() method instead.
+	 * Check that a value of the given src type is an integer. The main
+	 * difficulty here, is that it may not be enough to just test whether the
+	 * value is a BigInteger. For example, if src has type real then we have a
+	 * BigRational, and we must call the isInteger() method instead.
 	 * 
 	 * @param trueTarget
 	 * @param src
