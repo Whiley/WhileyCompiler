@@ -683,37 +683,42 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, Type src,
 			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
 
+		JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_OBJECT);
+		
 		// ======================================================================
 		// First, perform an instanceof test (if necessary) 
 		// ======================================================================
 				
 		String falseTarget = freshLabel();
 		
-		if(!(src instanceof Type.Record)) {	
-			bytecodes.add(new Bytecode.Dup(convertType(src)));		
-			bytecodes.add(new Bytecode.InstanceOf(WHILEYRECORD));
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));			
-			addCheckCast(WHILEYRECORD,bytecodes);				
+		if(!(src instanceof Type.Record)) {
 			
-			// Narrow the type down to a record (which we now know is true)			
-			src = narrowRecordType(src);
-		
-			if(Type.isSubtype(test,src)) {
-				// Getting here indicates that the instanceof test was
-				// sufficient to be certain that the type test succeeds.			
-				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-				bytecodes.add(new Bytecode.Goto(trueTarget));
-				bytecodes.add(new Bytecode.Label(falseTarget));
-				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-				return;
+			if(Type.effectiveRecordType(src) == null) {				
+				// not guaranteed to have a record here, so ensure we do.
+				bytecodes.add(new Bytecode.Dup(convertType(src)));		
+				bytecodes.add(new Bytecode.InstanceOf(WHILEYRECORD));
+				bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));			
+				addCheckCast(WHILEYRECORD,bytecodes);	
+
+				// Narrow the type down to a record (which we now know is true)			
+				src = narrowRecordType(src);
+			
+				if(Type.isSubtype(test,src)) {
+					// Getting here indicates that the instanceof test was
+					// sufficient to be certain that the type test succeeds.			
+					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
+					bytecodes.add(new Bytecode.Goto(trueTarget));
+					bytecodes.add(new Bytecode.Label(falseTarget));
+					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
+					return;
+				}
 			}
 			
 			// ======================================================================
 			// Second, determine if correct fields present  
 			// ======================================================================
 			
-			Set<String> fields = identifyDistinguishingFields(src,test.types.keySet()); 
-			JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_OBJECT);
+			Set<String> fields = identifyDistinguishingFields(src,test.types.keySet()); 			
 			
 			for(String f : fields) {
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
@@ -734,12 +739,37 @@ public class ClassFileBuilder {
 				return;
 			}
 		}
-				
+		
 		// ======================================================================
 		// Third, perform (minimal) number of type tests for fields (i.e. S-DEPTH) 
 		// ======================================================================
 		
-		syntaxError("missing cases for record type tests",filename,stmt);
+		// Note, we could potentially do better here by avoid multiple look ups
+		// of the same field. This can happen if the field in question is used
+		// for distinguishing different records (see above). 
+		
+		Type.Record nsrc = Type.effectiveRecordType(src);
+		
+		for(Map.Entry<String,Type> e : test.types.entrySet()) {
+			String field = e.getKey();
+			Type testType = e.getValue();
+			Type srcType = nsrc.types.get(field);
+			if(!Type.isSubtype(testType,srcType)) {
+				// this field needs to be checked
+				String nextTarget = freshLabel();
+				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(field));				
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", fun_t , Bytecode.VIRTUAL));
+				addReadConversion(srcType,bytecodes);
+				translateTypeTest(nextTarget,srcType,testType,stmt,bytecodes);
+				bytecodes.add(new Bytecode.Goto(falseTarget));
+				bytecodes.add(new Bytecode.Label(nextTarget));
+			}
+		}
+		
+		// Ok, we have a match!
+		bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
+		bytecodes.add(new Bytecode.Goto(trueTarget));
 		
 		bytecodes.add(new Bytecode.Label(falseTarget));
 		bytecodes.add(new Bytecode.Pop(WHILEYRECORD));

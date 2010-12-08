@@ -115,8 +115,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return denominator;
 	}
 	
-	public boolean isInteger() {
-		System.out.println("BIG RAT: " + denominator.equals(BigInteger.ONE));
+	public boolean isInteger() {		
 		return denominator.equals(BigInteger.ONE);
 	}
 	
