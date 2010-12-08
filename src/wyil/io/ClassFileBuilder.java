@@ -522,6 +522,8 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, Type src, Type.Int test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {
 		
+		System.out.println("INT TEST");
+		
 		// NOTE: on entry we know that src cannot be a Type.Int, since this case
 		// would have been already caught.
 		
@@ -533,12 +535,17 @@ public class ClassFileBuilder {
 			// In this case, it's impossible for the value to be real. Thus, src
 			// must be a union of types and we must distinguish an int by
 			// checking for BigInteger.
+			
+			System.out.println("CASE 1");
+			
 			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		} else {
 			// In this case, we're definitely looking for a real value. So,
 			// perform an instanceof BigRational (if necessary). 
 			String falseTarget = freshLabel();
+			
+			System.out.println("CASE 2a");
 			
 			if (src != Type.T_REAL) {
 				String nextTarget = freshLabel();			
@@ -551,7 +558,12 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
 			}
 			
-			// Now, we definitely have a BigRational ... but is it an integer?			
+			System.out.println("CASE 2b");
+			
+			// =================================================================
+			// Check whether our BigRational is an integer	
+			// =================================================================
+			
 			JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
@@ -575,7 +587,9 @@ public class ClassFileBuilder {
 	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {
-
+		
+		System.out.println("LIST TEST");
+		
 		// ======================================================================
 		// First, perform the actual type test (if necessary) 
 		// ======================================================================
@@ -685,6 +699,7 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String falseTarget, Type src, Type.Union test,
 			ArrayList<Bytecode> bytecodes) {
 		// Note, test cannot be a union here			
+		/*
 		src = Type.greatestLowerBound(src,
 				narrowConversion((Type.NonUnion) test));
 		bytecodes.add(new Bytecode.Dup(convertType(test)));				
@@ -711,15 +726,12 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(nextLabel));
 		bytecodes.add(new Bytecode.Pop(convertType(test)));
 		bytecodes.add(new Bytecode.Label(exitLabel));
+		*/
 	}
 
 	public void translate(String falseTarget, Type src, Type.Recursive test,
-			ArrayList<Bytecode> bytecodes) { {
-		Type.Recursive tr = (Type.Recursive) src;
-		
-		if(tr.type == null) {
-			syntaxError("Problem with type test for recursive type",filename,stmt);
-		}		
+			ArrayList<Bytecode> bytecodes) { 
+				
 	}
 	
 	public void translate(Code.Loop c, HashMap<String, Integer> slots,
