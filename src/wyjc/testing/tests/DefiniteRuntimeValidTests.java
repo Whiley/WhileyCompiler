@@ -231,6 +231,8 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_17_RunTest() { runTest("TypeEquals_Valid_17"); }
  @Test public void TypeEquals_Valid_18_RunTest() { runTest("TypeEquals_Valid_18"); }
  @Test public void TypeEquals_Valid_19_RunTest() { runTest("TypeEquals_Valid_19"); }
+ @Test public void TypeEquals_Valid_20_RunTest() { runTest("TypeEquals_Valid_20"); }
+ @Test public void TypeEquals_Valid_21_RunTest() { runTest("TypeEquals_Valid_21"); }
  @Test public void UnionType_Valid_1_RunTest() { runTest("UnionType_Valid_1"); }
  @Test public void UnionType_Valid_10_RunTest() { runTest("UnionType_Valid_10"); }
  @Test public void UnionType_Valid_11_RunTest() { runTest("UnionType_Valid_11"); }
