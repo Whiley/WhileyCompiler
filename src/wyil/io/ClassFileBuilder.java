@@ -713,7 +713,7 @@ public class ClassFileBuilder {
 			// Second, determine if correct fields present  
 			// ======================================================================
 			
-			List<String> fields = identifyDistinguishingFields(src,test.types.keySet()); 
+			Set<String> fields = identifyDistinguishingFields(src,test.types.keySet()); 
 			JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_STRING);
 			
 			for(String f : fields) {
@@ -724,6 +724,8 @@ public class ClassFileBuilder {
 			}
 			
 			src = narrowRecordType(src,test.types.keySet());
+			
+			System.out.println("GOT: " + src);
 			
 			if(Type.isSubtype(test,src)) {
 				// Getting here indicates that distinguishing fields test was
@@ -770,6 +772,9 @@ public class ClassFileBuilder {
 			types.put(f, Type.T_ANY);
 		}
 		Type ub = Type.T_RECORD(types);
+		
+		System.out.println(t + " & " + ub + " = " + Type.greatestLowerBound(t, ub));
+		
 		return Type.greatestLowerBound(t, ub);
 	}
 	
@@ -783,20 +788,67 @@ public class ClassFileBuilder {
 	 * @param test
 	 * @return
 	 */
-	protected List<String> identifyDistinguishingFields(Type src, Set<String> fields) {
+	protected Set<String> identifyDistinguishingFields(Type src, Set<String> fields) {
 		if(src instanceof Type.Recursive) {
 			src = Type.unroll((Type.Recursive)src);
 		}
 		
 		if(src instanceof Type.Record) {
-			return Collections.EMPTY_LIST;
+			return Collections.EMPTY_SET;
 		}
+		
+		// The real challenge with all of these methods is understanding what
+		// the possible type forms are at any point.
+		
+		Type.Union ut = (Type.Union) src; 
 		
 		boolean finished = false;
+		HashSet<String> solution = new HashSet<String>();
 		
 		while(!finished) {
+			HashMap<String,Integer> conflicts = new HashMap<String,Integer>();
 			
+			// First, initialise conflicts
+			
+			for(String f : fields) {
+				conflicts.put(f, 0);
+			}
+			
+			// Second, count conflicts
+			
+			for(Type t : ut.bounds) {
+				// FIXME: following obviously broken, as unsure if t is record
+				Type.Record rt = (Type.Record) t;
+				Set<String> rt_types_keySet = rt.types.keySet(); 
+				if(rt_types_keySet.containsAll(solution)) {
+					// only count conflicts from records not already discounted.
+					for(String f : rt_types_keySet) {
+						Integer conflict = conflicts.get(f);
+						if(conflict != null) { conflicts.put(f, conflict+1); }
+					}
+				}
+			}						
+			
+			// Third, chose least conflict
+			
+			String chosen = null;
+			int min = Integer.MAX_VALUE;
+			
+			// Now, identifiy least conflict
+			for(Map.Entry<String,Integer> c : conflicts.entrySet()) {
+				int val = c.getValue();
+				String key = c.getKey();
+				if(!solution.contains(key) && val < min) {
+					min = val;
+					chosen = key;					
+				}
+			}
+			
+			solution.add(chosen);			
+			if(min == 1) { finished = true; }
 		}
+		
+		return solution;
 	}
 	
 	protected void translateTypeTest(String falseTarget, Type src, Type.Set test,
