@@ -492,7 +492,7 @@ public class ClassFileBuilder {
 			translateTypeTest(trueTarget, src, (Type.List) test,
 					stmt, bytecodes);			
 		} else if(test instanceof Type.Set) {
-			translateTypeTest(trueTarget,src, (Type.Set) test,bytecodes);			
+			translateTypeTest(trueTarget, src, (Type.Set) test, stmt, bytecodes);			
 		} else if(test instanceof Type.Record) {				
 			translateTypeTest(trueTarget, src, (Type.Record) test, stmt,
 					bytecodes);			
@@ -638,6 +638,83 @@ public class ClassFileBuilder {
 		// Add the false label for the case when the original instanceof test fails
 		bytecodes.add(new Bytecode.Label(falseTarget));
 		bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+	}
+
+	/**
+	 * Check that a value of the given src type matches the set type given by
+	 * test. If src is not a set, then we must begin by performing an
+	 * instanceof WHILEYSET. If this is true, then we may need to further
+	 * distinguish the elements of the list. For example, testing {real} ~=
+	 * {int} requires iterating the elements of the list to check that they are
+	 * all indeed ints.
+	 * 
+	 * @param trueTarget --- target branch if test succeeds
+	 * @param src --- type of expression being tested
+	 * @param test --- type of test
+	 * @param stmt --- stmt containing test (useful for line number info)
+	 * @param bytecodes --- list of bytecodes (to which test is appended) 
+	 */
+	protected void translateTypeTest(String trueTarget, Type src, Type.Set test,
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+		
+		// ======================================================================
+		// First, perform an instanceof test (if necessary) 
+		// ======================================================================
+		
+		Type.Set nsrc;
+		String falseTarget = freshLabel();
+		
+		if(src instanceof Type.List) {
+			// We already know the value is a list, so we don't need to perform
+			// an instanceof test.		
+			nsrc = (Type.Set) src;
+		} else {			
+			bytecodes.add(new Bytecode.Dup(convertType(src)));		
+			bytecodes.add(new Bytecode.InstanceOf(WHILEYSET));
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
+			addCheckCast(WHILEYSET,bytecodes);				
+			
+			// FIXME: this is a bug as we're guaranteed to have a set type
+			// here. For example, int|{int}|{real} & [*] ==> {int}|{real} (by S-UNION2)
+			nsrc = (Type.Set) Type.greatestLowerBound(src, Type.T_SET(Type.T_ANY));
+			
+			if(Type.isSubtype(test,nsrc)) {
+				// Getting here indicates that the instanceof test was
+				// sufficient to be certain that the type test succeeds.			
+				bytecodes.add(new Bytecode.Pop(WHILEYSET));
+				bytecodes.add(new Bytecode.Goto(trueTarget));				
+				bytecodes.add(new Bytecode.Label(falseTarget));
+				bytecodes.add(new Bytecode.Pop(WHILEYSET));
+				return;
+			}
+		}
+						
+		// ======================================================================
+		// Second, check empty set case (as this always passes) 
+		// ======================================================================		
+		
+		String nextTarget = freshLabel();
+		bytecodes.add(new Bytecode.Dup(WHILEYSET));
+		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size", fun_t , Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
+		bytecodes.add(new Bytecode.Pop(WHILEYSET));
+		bytecodes.add(new Bytecode.Goto(trueTarget));
+		bytecodes.add(new Bytecode.Label(nextTarget));
+		
+		// ======================================================================
+		// Third, check elements of list (tricky)
+		// ======================================================================		
+						
+		fun_t = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "iterator", fun_t , Bytecode.VIRTUAL));			
+		fun_t = new JvmType.Function(JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", fun_t , Bytecode.INTERFACE));			
+		translateTypeTest(trueTarget,nsrc.element,test.element(),stmt,bytecodes);
+		
+		// Add the false label for the case when the original instanceof test fails
+		bytecodes.add(new Bytecode.Label(falseTarget));
+		bytecodes.add(new Bytecode.Pop(WHILEYSET));
 	}
 
 	/**
@@ -878,13 +955,6 @@ public class ClassFileBuilder {
 		}
 		
 		return solution;
-	}
-	
-	protected void translateTypeTest(String falseTarget, Type src, Type.Set test,
-			ArrayList<Bytecode> bytecodes) {		
-		// NOTE: test guaranteed to be list or set on entry
-		System.out.println("CONFLICT: " + src + " ~~ " + test);
-		
 	}
 	
 	protected void translateTypeTest(String falseTarget, Type src, Type.Union test,
