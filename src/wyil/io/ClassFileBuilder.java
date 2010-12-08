@@ -612,7 +612,9 @@ public class ClassFileBuilder {
 				// Getting here indicates that the instanceof test was
 				// sufficient to be certain that the type test succeeds.			
 				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-				bytecodes.add(new Bytecode.Goto(trueTarget));						
+				bytecodes.add(new Bytecode.Goto(trueTarget));
+				bytecodes.add(new Bytecode.Label(falseTarget));
+				return;
 			}
 		}
 						
@@ -689,14 +691,10 @@ public class ClassFileBuilder {
 				
 		String falseTarget = freshLabel();
 		
-		if(!(src instanceof Type.Record)) {
-			String nextTarget = freshLabel();		
+		if(!(src instanceof Type.Record)) {	
 			bytecodes.add(new Bytecode.Dup(convertType(src)));		
 			bytecodes.add(new Bytecode.InstanceOf(WHILEYRECORD));
-			bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
-			bytecodes.add(new Bytecode.Pop(convertType(src)));
-			bytecodes.add(new Bytecode.Goto(falseTarget));
-			bytecodes.add(new Bytecode.Label(nextTarget));
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));			
 			addCheckCast(WHILEYRECORD,bytecodes);				
 			
 			// Narrow the type down to a record (which we now know is true)			
@@ -706,7 +704,9 @@ public class ClassFileBuilder {
 				// Getting here indicates that the instanceof test was
 				// sufficient to be certain that the type test succeeds.			
 				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-				bytecodes.add(new Bytecode.Goto(trueTarget));						
+				bytecodes.add(new Bytecode.Goto(trueTarget));
+				bytecodes.add(new Bytecode.Label(falseTarget));
+				return;
 			}
 			
 			// ======================================================================
@@ -714,7 +714,7 @@ public class ClassFileBuilder {
 			// ======================================================================
 			
 			Set<String> fields = identifyDistinguishingFields(src,test.types.keySet()); 
-			JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_STRING);
+			JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_OBJECT);
 			
 			for(String f : fields) {
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
@@ -725,13 +725,14 @@ public class ClassFileBuilder {
 			
 			src = narrowRecordType(src,test.types.keySet());
 			
-			System.out.println("GOT: " + src);
-			
 			if(Type.isSubtype(test,src)) {
 				// Getting here indicates that distinguishing fields test was
 				// sufficient to be certain that the type test succeeds.			
 				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-				bytecodes.add(new Bytecode.Goto(trueTarget));						
+				bytecodes.add(new Bytecode.Goto(trueTarget));				
+				bytecodes.add(new Bytecode.Label(falseTarget));
+				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
+				return;
 			}
 		}
 				
@@ -740,6 +741,9 @@ public class ClassFileBuilder {
 		// ======================================================================
 		
 		syntaxError("missing cases for record type tests",filename,stmt);
+		
+		bytecodes.add(new Bytecode.Label(falseTarget));
+		bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 	}
 	
 	// The following method should be replaced in future by a GLB test, using an
@@ -771,9 +775,7 @@ public class ClassFileBuilder {
 		for(String f : fields) {
 			types.put(f, Type.T_ANY);
 		}
-		Type ub = Type.T_RECORD(types);
-		
-		System.out.println(t + " & " + ub + " = " + Type.greatestLowerBound(t, ub));
+		Type ub = Type.T_RECORD(types);				
 		
 		return Type.greatestLowerBound(t, ub);
 	}

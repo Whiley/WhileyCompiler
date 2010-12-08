@@ -128,12 +128,19 @@ public abstract class Type {
 		} else if(t1 instanceof Record && t2 instanceof Record) {
 			Record tt1 = (Record) t1;
 			Record tt2 = (Record) t2;
+			
+			if(!tt1.types.keySet().equals(tt2.types.keySet())) {
+				// this won't be sufficient in the case of open records.
+				return false;
+			}						
+			
 			for(Map.Entry<String,Type> e : tt1.types.entrySet()) {
 				Type t = tt2.types.get(e.getKey());
 				if(!isSubtype(e.getValue(),t,environment)) {
 					return false;
 				}
 			}
+			
 			return true;
 		} else if(t1 instanceof Recursive) {
 			Recursive rt1 = (Recursive) t1;
@@ -316,13 +323,13 @@ public abstract class Type {
 			return t2;
 		} else if(isSubtype(t2, t1, Collections.EMPTY_MAP)) {
 			return t1;
-		}
+		}		
 		
 		if(t1 instanceof Union) {			
 			Union ut1 = (Union) t1;
 			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
-			
-			for(NonUnion t : ut1.bounds) {					
+															
+			for(NonUnion t : ut1.bounds) {				
 				Type glb = greatestLowerBound(t,t2);				
 				if(glb instanceof Union) {
 					Union ut = (Union) glb;
@@ -368,7 +375,7 @@ public abstract class Type {
 			Set s1 = (Set) t1;
 			Set s2 = (Set) t2;
 			return T_SET(greatestLowerBound(s1.element,s2.element));
-		} else if(t1 instanceof Record && t2 instanceof Record) {
+		} else if(t1 instanceof Record && t2 instanceof Record) {			
 			Record r1 = (Record) t1;
 			Record r2 = (Record) t2;
 			if(r1.types.keySet().equals(r2.types.keySet())) {
