@@ -594,14 +594,10 @@ public class ClassFileBuilder {
 			// We already know the value is a list, so we don't need to perform
 			// an instanceof test.		
 			nsrc = (Type.List) src;
-		} else {
-			String nextTarget = freshLabel();		
+		} else {			
 			bytecodes.add(new Bytecode.Dup(convertType(src)));		
 			bytecodes.add(new Bytecode.InstanceOf(WHILEYLIST));
-			bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
-			bytecodes.add(new Bytecode.Pop(convertType(src)));
-			bytecodes.add(new Bytecode.Goto(falseTarget));
-			bytecodes.add(new Bytecode.Label(nextTarget));
+			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
 			addCheckCast(WHILEYLIST,bytecodes);				
 			
 			// FIXME: this is a bug as we're guaranteed to have a list type
@@ -612,8 +608,9 @@ public class ClassFileBuilder {
 				// Getting here indicates that the instanceof test was
 				// sufficient to be certain that the type test succeeds.			
 				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-				bytecodes.add(new Bytecode.Goto(trueTarget));
+				bytecodes.add(new Bytecode.Goto(trueTarget));				
 				bytecodes.add(new Bytecode.Label(falseTarget));
+				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
 				return;
 			}
 		}
@@ -642,6 +639,7 @@ public class ClassFileBuilder {
 		
 		// Add the false label for the case when the original instanceof test fails
 		bytecodes.add(new Bytecode.Label(falseTarget));
+		bytecodes.add(new Bytecode.Pop(WHILEYLIST));
 	}
 
 	/**
@@ -706,6 +704,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 				bytecodes.add(new Bytecode.Goto(trueTarget));
 				bytecodes.add(new Bytecode.Label(falseTarget));
+				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 				return;
 			}
 			
