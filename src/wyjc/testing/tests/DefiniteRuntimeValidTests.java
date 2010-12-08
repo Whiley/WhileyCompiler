@@ -160,6 +160,7 @@ public class DefiniteRuntimeValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_11_RunTest() { runTest("RecursiveType_Valid_11"); }
  @Test public void RecursiveType_Valid_12_RunTest() { runTest("RecursiveType_Valid_12"); }
  @Test public void RecursiveType_Valid_13_RunTest() { runTest("RecursiveType_Valid_13"); }
+ @Test public void RecursiveType_Valid_14_RunTest() { runTest("RecursiveType_Valid_14"); }
  @Test public void Requires_Valid_1_RunTest() { runTest("Requires_Valid_1"); }
  @Test public void Resolution_Valid_1_RunTest() { runTest("Resolution_Valid_1"); }
  @Test public void SetAssign_Valid_1_RunTest() { runTest("SetAssign_Valid_1"); }
