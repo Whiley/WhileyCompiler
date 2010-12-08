@@ -956,13 +956,43 @@ public class ClassFileBuilder {
 		
 		return solution;
 	}
-	
+
+	/**
+	 * Check that a value of the given src type matches the union type given by
+	 * test. The challenge here is to implement this efficiently, by avoiding
+	 * unnecessarily repeating instanceof tests.
+	 * 
+	 * @param trueTarget
+	 *            --- target branch if test succeeds
+	 * @param src
+	 *            --- type of expression being tested
+	 * @param test
+	 *            --- type of test
+	 * @param stmt
+	 *            --- stmt containing test (useful for line number info)
+	 * @param bytecodes
+	 *            --- list of bytecodes (to which test is appended)
+	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.Union test,
-			ArrayList<Bytecode> bytecodes) {
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+			
+		// FIXME: at the moment, this approach is not very efficient!
 		
-		// The challenge of this is how can it be implemented efficiently. That
-		// is, how can we avoid resting whether the value is an instanceof a
-		// record multiple times?
+		String trampoline = freshLabel();
+		String falseLabel = freshLabel();
+		
+		for(Type t : test.bounds) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			translateTypeTest(trampoline,src,t,stmt, bytecodes);
+		}
+		
+		bytecodes.add(new Bytecode.Pop(convertType(src)));
+		bytecodes.add(new Bytecode.Goto(falseLabel));
+		bytecodes.add(new Bytecode.Label(trampoline));
+		bytecodes.add(new Bytecode.Pop(convertType(src)));
+		bytecodes.add(new Bytecode.Goto(trueTarget));
+		bytecodes.add(new Bytecode.Label(falseLabel));
+		
 	}
 
 	public void translate(String falseTarget, Type src, Type.Recursive test,
