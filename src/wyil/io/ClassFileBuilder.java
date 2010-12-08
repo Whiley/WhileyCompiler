@@ -935,7 +935,7 @@ public class ClassFileBuilder {
 				}
 			}						
 			
-			// Third, chose least conflict
+			// Third, select least conflict
 			
 			String chosen = null;
 			int min = Integer.MAX_VALUE;
@@ -957,42 +957,17 @@ public class ClassFileBuilder {
 		return solution;
 	}
 	
-	protected void translateTypeTest(String falseTarget, Type src, Type.Union test,
+	protected void translateTypeTest(String trueTarget, Type src, Type.Union test,
 			ArrayList<Bytecode> bytecodes) {
-		// Note, test cannot be a union here			
-		/*
-		src = Type.greatestLowerBound(src,
-				narrowConversion((Type.NonUnion) test));
-		bytecodes.add(new Bytecode.Dup(convertType(test)));				
-		String nextLabel = freshLabel();
-		String exitLabel = freshLabel();		
 		
-		if(test instanceof Type.Null) {				
-			bytecodes.add(new Bytecode.If(Bytecode.If.NONNULL, nextLabel));				
-		} else {
-			JvmType.Reference target_t;
-			if (test instanceof Type.Bool) {			
-				target_t = JvmTypes.JAVA_LANG_BOOLEAN;
-			} else {
-				// FIXME: bug if test is REAL or SET
-				target_t = (JvmType.Reference) convertType(test);
-			}				
-			bytecodes.add(new Bytecode.InstanceOf(target_t));
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, nextLabel));
-			addCheckCast(target_t,bytecodes);				
-		}			
-		
-		translateTypeTest(trueTarget,src,test,stmt,bytecodes);
-		bytecodes.add(new Bytecode.Goto(exitLabel));
-		bytecodes.add(new Bytecode.Label(nextLabel));
-		bytecodes.add(new Bytecode.Pop(convertType(test)));
-		bytecodes.add(new Bytecode.Label(exitLabel));
-		*/
+		// The challenge of this is how can it be implemented efficiently. That
+		// is, how can we avoid resting whether the value is an instanceof a
+		// record multiple times?
 	}
 
 	public void translate(String falseTarget, Type src, Type.Recursive test,
 			ArrayList<Bytecode> bytecodes) { 
-				
+		// this is definitely the hardest case		
 	}
 	
 	public void translate(Code.Loop c, HashMap<String, Integer> slots,
