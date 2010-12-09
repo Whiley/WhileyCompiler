@@ -267,7 +267,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Code ncode = code;
 			Env trueEnv = null;
 			Env falseEnv = null;
-								
+			
 			if(Type.isSubtype(tc.type,lhs_t)) {				
 				// DEFINITE TRUE CASE		
 				trueEnv = environment;
@@ -276,7 +276,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				} else {					
 					ncode = new Code.Skip();					
 				}
-			} else if (!Type.isSubtype(lhs_t, tc.type)) {								
+			} else if (Type.greatestLowerBound(lhs_t, tc.type) == Type.T_VOID) {
 				// DEFINITE FALSE CASE				
 				falseEnv = environment;
 				if (code.op == Code.COP.NSUBTYPEEQ) {					

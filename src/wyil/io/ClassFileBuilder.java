@@ -471,9 +471,7 @@ public class ClassFileBuilder {
 				
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
-		test = Type.greatestLowerBound(src,test);	
-		
-		System.out.println("TESTING: " + src + " ~= " + test);
+		test = Type.greatestLowerBound(src,test);					
 		
 		if(test == Type.T_VOID) {
 			// in this case, we must fail.

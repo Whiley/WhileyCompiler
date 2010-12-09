@@ -88,10 +88,8 @@ public abstract class Type {
 	}
 	
 	private static boolean isSubtype(Type t1, Type t2, Map<NameID,Type> environment) {		
-		if(t1 == t2 || 
-				(t2 instanceof Void) ||
-				(t1 instanceof Any) ||
-				(t1 instanceof Real && t2 instanceof Int)) {
+		if (t1 == t2 || (t2 instanceof Void) || (t1 instanceof Any)
+				|| (t1 instanceof Real && t2 instanceof Int)) {
 			return true;
 		} else if(t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
@@ -109,15 +107,8 @@ public abstract class Type {
 			Process l1 = (Process) t1;
 			Process l2 = (Process) t2;
 			return isSubtype(l1.element,l2.element,environment);
-		} else if(t1 instanceof Union && t2 instanceof Union) {			
-			Union u2 = (Union) t2;
-			for(Type t : u2.bounds) {
-				if(!isSubtype(t1,t,environment)) {
-					return false;
-				}				
-			}
-			return true;
-		} else if(t1 instanceof Union) {
+		} else if(t1 instanceof Union) {			
+			// RULE: S-UNION1			
 			Union u1 = (Union) t1;
 			for(Type t : u1.bounds) {
 				if(isSubtype(t,t2,environment)) {
@@ -125,6 +116,15 @@ public abstract class Type {
 				}
 			}
 			return false;
+		} else if(t2 instanceof Union) {
+			// RULE: S-UNION2
+			Union u2 = (Union) t2;
+			for(Type t : u2.bounds) {
+				if(!isSubtype(t1,t,environment)) {
+					return false;
+				}
+			}
+			return true;
 		} else if(t1 instanceof Record && t2 instanceof Record) {
 			Record tt1 = (Record) t1;
 			Record tt2 = (Record) t2;
