@@ -268,7 +268,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Env trueEnv = null;
 			Env falseEnv = null;
 			
-			if(Type.isSubtype(tc.type,lhs_t)) {				
+			System.out.println(lhs_t + " ~= " + tc.type);
+			
+			if(Type.isSubtype(tc.type,lhs_t)) {					
 				// DEFINITE TRUE CASE		
 				trueEnv = environment;
 				if (code.op == Code.COP.SUBTYPEEQ) {					
@@ -276,7 +278,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				} else {					
 					ncode = new Code.Skip();					
 				}
-			} else if (Type.greatestLowerBound(lhs_t, tc.type) == Type.T_VOID) {
+			} else if (Type.greatestLowerBound(lhs_t, tc.type) == Type.T_VOID) {				
 				// DEFINITE FALSE CASE				
 				falseEnv = environment;
 				if (code.op == Code.COP.NSUBTYPEEQ) {					
@@ -311,8 +313,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(v.type, trueType);
 			Type gdiff = Type.greatestDifference(v.type, falseType);	
-			//System.out.println("GLB(1): " + trueType + "&" + v.type + " = " + glb);
-			//System.out.println("GDIFF(1): " + v.type + "-" + falseType + " = " + gdiff);
+			System.out.println("GLB(1): " + trueType + "&" + v.type + " = " + glb);
+			System.out.println("GDIFF(1): " + v.type + "-" + falseType + " = " + gdiff);
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
@@ -320,8 +322,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String name = "%" + reg.index;			
 			Type glb = Type.greatestLowerBound(reg.type,trueType);
 			Type gdiff = Type.greatestDifference(reg.type, falseType);
-			//System.out.println("GLB(2): " + trueType + "&" + reg.type + " = " + glb);
-			//System.out.println("GDIFF(2): " + reg.type + "-" + falseType + " = " + gdiff);
+			System.out.println("GLB(2): " + trueType + "&" + reg.type + " = " + glb);
+			 System.out.println("GDIFF(2): " + reg.type + "-" + falseType + " = " + gdiff);
 			trueEnv.put(name, glb);
 			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {

@@ -6,7 +6,7 @@ string f(int x):
     else:
         nst = syntaxError("problem")
     // check for error
-    if nst ~= SyntaxError:
+    if nst ~= {[int] msg}:
         return "error"
     else:
         return nst.input
