@@ -22,8 +22,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses( { DefiniteRuntimeInvalidTests.class,
-		DefiniteStaticInvalidTests.class, SimpleStaticInvalidTests.class,
-		DefiniteRuntimeValidTests.class, DefiniteStaticValidTests.class })
+@Suite.SuiteClasses( { BaseValidTests.class, BaseInvalidTests.class })
 public class AllTests {
 }
