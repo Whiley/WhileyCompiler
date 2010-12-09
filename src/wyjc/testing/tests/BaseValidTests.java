@@ -56,8 +56,6 @@ public class BaseValidTests extends TestHarness {
  @Test public void IntEquals_Valid_1_RuntimeTest() { runTest("IntEquals_Valid_1"); }
  @Test public void IntMul_Valid_1_RuntimeTest() { runTest("IntMul_Valid_1"); }
  @Test public void IntOp_Valid_1_RuntimeTest() { runTest("IntOp_Valid_1"); }
- @Test public void IntersectionType_Valid_1_RuntimeTest() { runTest("IntersectionType_Valid_1"); }
- @Test public void IntersectionType_Valid_2_RuntimeTest() { runTest("IntersectionType_Valid_2"); }
  @Test public void ListAccess_Valid_3_RuntimeTest() { runTest("ListAccess_Valid_3"); }
  @Test public void ListAppend_Valid_1_RuntimeTest() { runTest("ListAppend_Valid_1"); }
  @Test public void ListAppend_Valid_2_RuntimeTest() { runTest("ListAppend_Valid_2"); }
@@ -147,8 +145,7 @@ public class BaseValidTests extends TestHarness {
  @Test public void UnionType_Valid_14_RuntimeTest() { runTest("UnionType_Valid_14"); }
  @Test public void UnionType_Valid_15_RuntimeTest() { runTest("UnionType_Valid_15"); }
  @Test public void UnionType_Valid_16_RuntimeTest() { runTest("UnionType_Valid_16"); }
- @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); }
- @Test public void UnionType_Valid_3_RuntimeTest() { runTest("UnionType_Valid_3"); }
+ @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); } 
  @Test public void UnionType_Valid_8_RuntimeTest() { runTest("UnionType_Valid_8"); }
  @Test public void UnionType_Valid_9_RuntimeTest() { runTest("UnionType_Valid_9"); }
  @Test public void VarDecl_Valid_1_RuntimeTest() { runTest("VarDecl_Valid_1"); }
