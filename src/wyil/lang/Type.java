@@ -87,19 +87,23 @@ public abstract class Type {
 		return isSubtype(t1,t2,Collections.EMPTY_MAP);				
 	}
 	
-	private static boolean isSubtype(Type t1, Type t2, Map<NameID,Type> environment) {		
+	private static boolean isSubtype(Type t1, Type t2, Map<NameID,Type> environment) {					
+		
 		if (t1 == t2 || (t2 instanceof Void) || (t1 instanceof Any)
 				|| (t1 instanceof Real && t2 instanceof Int)) {
 			return true;
 		} else if(t1 instanceof List && t2 instanceof List) {
+			// RULE: S-LIST
 			List l1 = (List) t1;
 			List l2 = (List) t2;
 			return isSubtype(l1.element,l2.element,environment);
 		} else if(t1 instanceof Set && t2 instanceof Set) {
+			// RULE: S-SET
 			Set l1 = (Set) t1;
 			Set l2 = (Set) t2;
 			return isSubtype(l1.element,l2.element,environment);
 		} else if(t1 instanceof Set && t2 instanceof List) {
+			// This rule surely should not be here
 			Set l1 = (Set) t1;
 			List l2 = (List) t2;
 			return isSubtype(l1.element,l2.element,environment);
@@ -126,6 +130,7 @@ public abstract class Type {
 			}
 			return true;
 		} else if(t1 instanceof Record && t2 instanceof Record) {
+			// RULE: S-DEPTH
 			Record tt1 = (Record) t1;
 			Record tt2 = (Record) t2;
 			
