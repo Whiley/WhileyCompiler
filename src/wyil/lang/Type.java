@@ -107,6 +107,16 @@ public abstract class Type {
 			Process l1 = (Process) t1;
 			Process l2 = (Process) t2;
 			return isSubtype(l1.element,l2.element);
+		} else if(t2 instanceof Union) {
+			// RULE: S-UNION2
+			// NOTE: must check S-UNION2 before S-UNION1
+			Union u2 = (Union) t2;
+			for(Type t : u2.bounds) {
+				if(!isSubtype(t1,t)) {
+					return false;
+				}
+			}
+			return true;
 		} else if(t1 instanceof Union) {			
 			// RULE: S-UNION1			
 			Union u1 = (Union) t1;
@@ -116,15 +126,6 @@ public abstract class Type {
 				}
 			}
 			return false;
-		} else if(t2 instanceof Union) {
-			// RULE: S-UNION2
-			Union u2 = (Union) t2;
-			for(Type t : u2.bounds) {
-				if(!isSubtype(t1,t)) {
-					return false;
-				}
-			}
-			return true;
 		} else if(t1 instanceof Record && t2 instanceof Record) {
 			// RULE: S-DEPTH
 			Record tt1 = (Record) t1;
