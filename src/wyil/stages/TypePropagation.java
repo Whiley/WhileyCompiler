@@ -179,7 +179,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return t;
 		} else if(src instanceof Type.Recursive) {			
 			Type.Recursive rt = (Type.Recursive) src;
-			return updateRecordFieldType(Type.unroll(rt),field,type);
+			return updateRecordFieldType(Type.unfold(rt),field,type);
 		} else if(src instanceof Type.Named) {
 			Type.Named nd = (Type.Named) src;
 			return Type.T_NAMED(nd.name, updateRecordFieldType(nd.type,field,type));
@@ -267,9 +267,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Code ncode = code;
 			Env trueEnv = null;
 			Env falseEnv = null;
-			
-			System.out.println(tc.type + " & " + lhs_t + " = "
-					+ Type.greatestLowerBound(lhs_t, tc.type));
 			
 			if(Type.isSubtype(tc.type,lhs_t)) {				
 				// DEFINITE TRUE CASE		

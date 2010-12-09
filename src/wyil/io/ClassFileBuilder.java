@@ -855,7 +855,7 @@ public class ClassFileBuilder {
 	protected Type narrowRecordType(Type t) {
 		
 		if(t instanceof Type.Recursive) {
-			t = Type.unroll((Type.Recursive)t);
+			t = Type.unfold((Type.Recursive)t);
 		}
 		
 		if(t instanceof Type.Record) {
@@ -896,7 +896,7 @@ public class ClassFileBuilder {
 	 */
 	protected Set<String> identifyDistinguishingFields(Type src, Set<String> fields) {
 		if(src instanceof Type.Recursive) {
-			src = Type.unroll((Type.Recursive)src);
+			src = Type.unfold((Type.Recursive)src);
 		}
 		
 		if(src instanceof Type.Record) {

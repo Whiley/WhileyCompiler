@@ -83,11 +83,7 @@ public abstract class Type {
 	/**
 	 * Return true iff t2 is a subtype of t1
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {		
-		return isSubtype(t1,t2,Collections.EMPTY_MAP);				
-	}
-	
-	private static boolean isSubtype(Type t1, Type t2, Map<NameID,Type> environment) {					
+	public static boolean isSubtype(Type t1, Type t2) {					
 		
 		if (t1 == t2 || (t2 instanceof Void) || (t1 instanceof Any)
 				|| (t1 instanceof Real && t2 instanceof Int)) {
@@ -96,26 +92,26 @@ public abstract class Type {
 			// RULE: S-LIST
 			List l1 = (List) t1;
 			List l2 = (List) t2;
-			return isSubtype(l1.element,l2.element,environment);
+			return isSubtype(l1.element,l2.element);
 		} else if(t1 instanceof Set && t2 instanceof Set) {
 			// RULE: S-SET
 			Set l1 = (Set) t1;
 			Set l2 = (Set) t2;
-			return isSubtype(l1.element,l2.element,environment);
+			return isSubtype(l1.element,l2.element);
 		} else if(t1 instanceof Set && t2 instanceof List) {
 			// This rule surely should not be here
 			Set l1 = (Set) t1;
 			List l2 = (List) t2;
-			return isSubtype(l1.element,l2.element,environment);
+			return isSubtype(l1.element,l2.element);
 		} else if(t1 instanceof Process && t2 instanceof Process) {
 			Process l1 = (Process) t1;
 			Process l2 = (Process) t2;
-			return isSubtype(l1.element,l2.element,environment);
+			return isSubtype(l1.element,l2.element);
 		} else if(t1 instanceof Union) {			
 			// RULE: S-UNION1			
 			Union u1 = (Union) t1;
 			for(Type t : u1.bounds) {
-				if(isSubtype(t,t2,environment)) {
+				if(isSubtype(t,t2)) {
 					return true;
 				}
 			}
@@ -124,7 +120,7 @@ public abstract class Type {
 			// RULE: S-UNION2
 			Union u2 = (Union) t2;
 			for(Type t : u2.bounds) {
-				if(!isSubtype(t1,t,environment)) {
+				if(!isSubtype(t1,t)) {
 					return false;
 				}
 			}
@@ -141,58 +137,34 @@ public abstract class Type {
 			
 			for(Map.Entry<String,Type> e : tt1.types.entrySet()) {
 				Type t = tt2.types.get(e.getKey());
-				if(!isSubtype(e.getValue(),t,environment)) {
+				if(!isSubtype(e.getValue(),t)) {
 					return false;
 				}
 			}
 			
 			return true;
+		} else if(t1 instanceof Recursive && t2 instanceof Recursive) {
+			// S-RECURSE
+			Recursive r1 = (Recursive) t1;
+			Recursive r2 = (Recursive) t2;
+			HashMap<NameID,NameID> binding = new HashMap<NameID,NameID>();
+			binding.put(r2.name, r1.name);
+			r2 = (Recursive) renameRecursiveTypes(r2,binding);
+			return isSubtype(r1,r2);
 		} else if(t1 instanceof Recursive) {
-			Recursive rt1 = (Recursive) t1;
-			Type rt1type = rt1.type;						
-			
-			if (rt1type == null) {
-				// recursive case, need to unroll
-				rt1type = environment.get(rt1.name);
-				if (rt1type == null) {
-					return false;
-				}
-			} else {
-				environment = new HashMap<NameID, Type>(environment);
-				environment.put(rt1.name, rt1.type);
-			}
-			
-			if (t2 instanceof Recursive) {
-				// Here, we attempt to show an isomorphism between the two
-				// recursive types.
-				Recursive rt2 = (Recursive) t2;
-				Type rt2type = rt2.type;
-				if (rt2type instanceof Type.Union) {
-					// recursive type not normalised; so normalise then try
-					// again.
-					return isSubtype(rt2, rt2);
-				} else if (rt2type == null) {
-					// recursive case, need to unroll
-					rt2type = environment.get(rt2.name);
-					if (rt2type == null) {
-						return false;
-					}
-				}
-				HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
-				binding.put(rt2.name, T_RECURSIVE(rt1.name,null));
-				rt2type = substituteRecursiveTypes(rt2type,binding);
-				if(isSubtype(rt1type,rt2type,environment)) {
-					return true;
-				}
-			}
-			
-			return isSubtype(rt1type,t2,environment);
+			// Q-UNFOLD
+			Recursive r1 = (Recursive) t1;
+			return isSubtype(unfold(r1),t2);			
+		} else if(t2 instanceof Recursive) {			
+			// Q-UNFOLD
+			Recursive r2 = (Recursive) t2;
+			return isSubtype(t1,unfold(r2));			
 		} else if(t1 instanceof Named) {
 			Named t = (Named) t1;
-			return isSubtype(t.type,t2, environment);
+			return isSubtype(t.type,t2);
 		} else if(t2 instanceof Named) {
 			Named t = (Named) t2;
-			return isSubtype(t1,t.type, environment);
+			return isSubtype(t1,t.type);
 		} else if(t1 instanceof Fun && t2 instanceof Fun) {
 			Fun f1 = (Fun) t1;
 			Fun f2 = (Fun) t2;
@@ -204,11 +176,11 @@ public abstract class Type {
 			for(int i=0;i!=f1_params.size();++i) {
 				Type tt1 = f1_params.get(i);
 				Type tt2 = f2_params.get(i);
-				if(!isSubtype(tt1,tt2,environment)) {
+				if(!isSubtype(tt1,tt2)) {
 					return false;
 				}
 			}
-			return isSubtype(f2.ret,f1.ret,environment);
+			return isSubtype(f2.ret,f1.ret);
 		}
 		
 		return false;
@@ -225,49 +197,10 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastUpperBound(Type t1, Type t2) {
-		if(isSubtype(t1, t2, Collections.EMPTY_MAP)) {
+		if(isSubtype(t1, t2)) {
 			return t1;
-		} else if(isSubtype(t2, t1, Collections.EMPTY_MAP)) {
+		} else if(isSubtype(t2, t1)) {
 			return t2;
-		}
-		
-		if(t1 instanceof Union && t2 instanceof Union) {
-			Union ut1 = (Union) t1;
-			Union ut2 = (Union) t2;
-			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut1.bounds);
-			
-			// FIXME: this is totally broken because it doesn't eliminate
-			// subsumed types. I really need to work harder here, but for now
-			// i'm slacking off...
-			types.addAll(ut2.bounds);
-			
-			return T_UNION(types);			
-		} else if(t1 instanceof Union) {			
-			Union ut1 = (Union) t1;
-			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut1.bounds);
-			
-			for(int i=0;i!=types.size();++i) {
-				NonUnion t = types.get(i);
-				if(isSubtype(t2, t, Collections.EMPTY_MAP)) {
-					types.set(i, (NonUnion) t2);
-					return T_UNION(types);
-				}
-			}						
-			types.add((NonUnion) t2);
-			return T_UNION(types);
-		} else if(t2 instanceof Union) {
-			Union ut2 = (Union) t2;
-			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut2.bounds);
-			
-			for(int i=0;i!=types.size();++i) {
-				NonUnion t = types.get(i);
-				if(isSubtype(t1, t, Collections.EMPTY_MAP)) {
-					types.set(i, (NonUnion) t1);			
-					return T_UNION(types);
-				}
-			}					
-			types.add((NonUnion) t1);			
-			return T_UNION(types);			
 		} else if(t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
@@ -289,8 +222,44 @@ public abstract class Type {
 					types.put(key, leastUpperBound(rt1,rt2));					
 				}
 				return T_RECORD(types);
-			}
-								
+			}								
+		} else if(t1 instanceof Union && t2 instanceof Union) {
+			Union ut1 = (Union) t1;
+			Union ut2 = (Union) t2;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut1.bounds);
+			
+			// FIXME: this is totally broken because it doesn't eliminate
+			// subsumed types. I really need to work harder here, but for now
+			// i'm slacking off...
+			types.addAll(ut2.bounds);
+			
+			return T_UNION(types);			
+		} else if(t1 instanceof Union) {			
+			Union ut1 = (Union) t1;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut1.bounds);
+			
+			for(int i=0;i!=types.size();++i) {
+				NonUnion t = types.get(i);
+				if(isSubtype(t2, t)) {
+					types.set(i, (NonUnion) t2);
+					return T_UNION(types);
+				}
+			}						
+			types.add((NonUnion) t2);
+			return T_UNION(types);
+		} else if(t2 instanceof Union) {
+			Union ut2 = (Union) t2;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>(ut2.bounds);
+			
+			for(int i=0;i!=types.size();++i) {
+				NonUnion t = types.get(i);
+				if(isSubtype(t1, t)) {
+					types.set(i, (NonUnion) t1);			
+					return T_UNION(types);
+				}
+			}					
+			types.add((NonUnion) t1);			
+			return T_UNION(types);			
 		} 
 		
 		return T_UNION((NonUnion)t1,(NonUnion)t2);					
@@ -324,55 +293,21 @@ public abstract class Type {
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
 		
-		if(isSubtype(t1, t2, Collections.EMPTY_MAP)) {
+		if(isSubtype(t1, t2)) {			
 			return t2;
-		} else if(isSubtype(t2, t1, Collections.EMPTY_MAP)) {
+		} else if(isSubtype(t2, t1)) {
 			return t1;
-		}		
-		
-		if(t1 instanceof Union) {			
-			Union ut1 = (Union) t1;
-			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
-															
-			for(NonUnion t : ut1.bounds) {				
-				Type glb = greatestLowerBound(t,t2);				
-				if(glb instanceof Union) {
-					Union ut = (Union) glb;
-					types.addAll(ut.bounds);
-				} else if(glb != T_VOID) {
-					types.add((NonUnion) glb);
-				}
-			}						
-			
-			if(types.size() == 1) {
-				return types.get(0);
-			} else {			
-				return T_UNION(types);
-			}
-		} else if(t2 instanceof Union) {
-			Union ut2 = (Union) t2;
-			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
-			
-			for(NonUnion t : ut2.bounds) {				
-				Type glb = greatestLowerBound(t1,t);				
-				if(glb != T_VOID) {
-					types.add((NonUnion) glb);
-				}				
-			}		
-			if(types.size() == 1) {
-				return types.get(0);
-			} else {			
-				return T_UNION(types);
-			}					
 		} else if(t1 instanceof List && t2 instanceof List) {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
 			return T_LIST(greatestLowerBound(l1.element,l2.element));
 		} else if(t1 instanceof List && t2 instanceof Set) {
+			// FIXME: this rule should not be here
 			List l1 = (List) t1;
 			Set l2 = (Set) t2;
 			return T_LIST(greatestLowerBound(l1.element,l2.element));
 		} else if(t1 instanceof Set && t2 instanceof List) {
+			// FIXME: this rule should not be here
 			Set l1 = (Set) t1;
 			List l2 = (List) t2;
 			return T_LIST(greatestLowerBound(l1.element,l2.element));
@@ -393,7 +328,54 @@ public abstract class Type {
 				}			
 				return T_RECORD(types);
 			}
-		} 
+		} else if(t1 instanceof Union) {			
+			
+			Union ut1 = (Union) t1;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
+															
+			for(NonUnion t : ut1.bounds) {				
+				Type glb = greatestLowerBound(t,t2);				
+				if(glb instanceof Union) {
+					Union ut = (Union) glb;
+					types.addAll(ut.bounds);
+				} else if(glb != T_VOID) {
+					types.add((NonUnion) glb);
+				}
+			}						
+			
+			if(types.size() == 1) {
+				return types.get(0);
+			} else {			
+				return T_UNION(types);
+			}
+		} else if(t2 instanceof Union) {
+			
+			Union ut2 = (Union) t2;
+			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
+			
+			for(NonUnion t : ut2.bounds) {				
+				Type glb = greatestLowerBound(t1,t);				
+				if(glb instanceof Union) {
+					Union ut = (Union) glb;
+					types.addAll(ut.bounds);
+				} else if(glb != T_VOID) {
+					types.add((NonUnion) glb);
+				}				
+			}		
+			if(types.size() == 1) {
+				return types.get(0);
+			} else {			
+				return T_UNION(types);
+			}					
+		} else if(t1 instanceof Recursive && t2 instanceof Recursive) {
+			// FIXME: this rule is broken
+		} else if(t1 instanceof Recursive) {
+			Recursive r1 = (Recursive) t1;
+			return greatestLowerBound(unfold(r1),t2);
+		} else if(t2 instanceof Recursive) {			
+			Recursive r2 = (Recursive) t2;
+			return greatestLowerBound(t1, unfold(r2));			
+		}
 		
 		return T_VOID;					
 	}
@@ -468,8 +450,8 @@ public abstract class Type {
 				}
 			}
 			
-			r1_type = unroll(r1);
-			Type tmp = greatestDifference(unroll(r1),t2);
+			r1_type = unfold(r1);
+			Type tmp = greatestDifference(unfold(r1),t2);
 			if(tmp.equals(r1_type)) {
 				return r1; // no change
 			} else {
@@ -884,7 +866,7 @@ public abstract class Type {
 		return t;
 	}
 	
-	public static Type unroll(Type.Recursive rt) {
+	public static Type unfold(Type.Recursive rt) {
 		HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
 		binding.put(rt.name, rt);
 		return substituteRecursiveTypes(rt.type,binding);
@@ -947,7 +929,7 @@ public abstract class Type {
 			// don't lose the recursive information.
 			Type.Recursive rt = (Type.Recursive) t;
 			if(rt.type != null) {
-				return effectiveRecordType(unroll(rt));
+				return effectiveRecordType(unfold(rt));
 			}
 		} else if(t instanceof Type.Named) {
 			Type.Named nt = (Type.Named) t;
