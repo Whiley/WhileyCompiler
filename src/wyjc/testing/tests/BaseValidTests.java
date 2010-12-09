@@ -95,8 +95,7 @@ public class BaseValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_10_RuntimeTest() { runTest("RecursiveType_Valid_10"); }
  @Test public void RecursiveType_Valid_11_RuntimeTest() { runTest("RecursiveType_Valid_11"); }
  @Test public void RecursiveType_Valid_12_RuntimeTest() { runTest("RecursiveType_Valid_12"); }
- @Test public void RecursiveType_Valid_13_RuntimeTest() { runTest("RecursiveType_Valid_13"); }
- @Test public void RecursiveType_Valid_14_RuntimeTest() { runTest("RecursiveType_Valid_14"); }
+ @Test public void RecursiveType_Valid_13_RuntimeTest() { runTest("RecursiveType_Valid_13"); } 
  @Test public void RecursiveType_Valid_2_RuntimeTest() { runTest("RecursiveType_Valid_2"); }
  @Test public void RecursiveType_Valid_4_RuntimeTest() { runTest("RecursiveType_Valid_4"); }
  @Test public void RecursiveType_Valid_7_RuntimeTest() { runTest("RecursiveType_Valid_7"); }
