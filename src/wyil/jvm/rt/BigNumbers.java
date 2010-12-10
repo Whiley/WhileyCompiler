@@ -33,6 +33,14 @@ import java.math.BigInteger;
  */
 public final class BigNumbers {
 	
+	// NOTE; this is not an efficient implementation!!!
+	// See these:
+	//
+	// * http://www.apfloat.org/apfloat_java/
+	//
+	// * http://jscience.org/
+	
+	
 	/**
 	 * Construct an unbounded integer from an int.
 	 * 
@@ -65,7 +73,11 @@ public final class BigNumbers {
 	}
 	
 	public static byte[] valueOf(BigInteger bi) {
-		return null;
+		byte[] bytes = bi.toByteArray();
+		byte[] nbytes = new byte[bytes.length+1];
+		System.arraycopy(bytes,0,nbytes,1,bytes.length);
+		nbytes[0] = 0;
+		return nbytes;
 	}
 	
 	
@@ -75,14 +87,30 @@ public final class BigNumbers {
 		System.arraycopy(bytes,1,nbytes,0,nbytes.length);
 		return new BigInteger(nbytes);
 	}
-	
-	
+		
 	private static byte[] intAdd(byte[] lhs, byte[] rhs) {
 		BigInteger l = toBigInteger(lhs);
 		BigInteger r = toBigInteger(rhs);		
 		return valueOf(l.add(r));
 	}
 	
+	private static byte[] intSub(byte[] lhs, byte[] rhs) {
+		BigInteger l = toBigInteger(lhs);
+		BigInteger r = toBigInteger(rhs);		
+		return valueOf(l.subtract(r));
+	}
+	
+	private static byte[] intMul(byte[] lhs, byte[] rhs) {
+		BigInteger l = toBigInteger(lhs);
+		BigInteger r = toBigInteger(rhs);		
+		return valueOf(l.multiply(r));
+	}
+	
+	private static byte[] intDiv(byte[] lhs, byte[] rhs) {
+		BigInteger l = toBigInteger(lhs);
+		BigInteger r = toBigInteger(rhs);		
+		return valueOf(l.divide(r));
+	}
 	
 	// ==================================================================================
 	// Private Methods
