@@ -155,11 +155,11 @@ public abstract class Type {
 		} else if(t1 instanceof Recursive) {
 			// Q-UNFOLD
 			Recursive r1 = (Recursive) t1;
-			return isSubtype(unfold(r1),t2);			
+			if(r1.type != null) { return isSubtype(unfold(r1),t2); }			
 		} else if(t2 instanceof Recursive) {			
 			// Q-UNFOLD
 			Recursive r2 = (Recursive) t2;
-			return isSubtype(t1,unfold(r2));			
+			if(r2.type != null) { return isSubtype(t1,unfold(r2));	 }
 		} else if(t1 instanceof Named) {
 			Named t = (Named) t1;
 			return isSubtype(t.type,t2);
