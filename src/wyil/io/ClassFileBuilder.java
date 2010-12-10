@@ -524,44 +524,33 @@ public class ClassFileBuilder {
 		// would have been already caught.
 		
 		// ======================================================================
-		// Perform the (appropriate) type test  
+		// Perform the instanceof BigRational (if necessary)  
 		// ======================================================================
 				
-		if(Type.greatestLowerBound(src,Type.T_REAL) == Type.T_INT) {
-			// In this case, it's impossible for the value to be real. Thus, src
-			// must be a union of types and we must distinguish an int by
-			// checking for BigInteger.
-			
-			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));
-			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
-		} else {
-			// In this case, we're definitely looking for a real value. So,
-			// perform an instanceof BigRational (if necessary). 
-			String falseTarget = freshLabel();
-			
-			if (src != Type.T_REAL) {
-				String nextTarget = freshLabel();			
-				bytecodes.add(new Bytecode.Dup(convertType(src)));
-				bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
-				bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
-				bytecodes.add(new Bytecode.Pop(convertType(src)));
-				bytecodes.add(new Bytecode.Goto(falseTarget));
-				bytecodes.add(new Bytecode.Label(nextTarget));
-				bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
-			}
-			
-			// =================================================================
-			// Check whether our BigRational is an integer	
-			// =================================================================
-			
-			// FIXME: there's a bug here, since once we know isInteger then we
-			// obviously have to extract a BigInteger object at some point.
-			
-			JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_BOOL);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
-			bytecodes.add(new Bytecode.Label(falseTarget));			
+		String falseTarget = freshLabel();
+
+		if (!Type.isSubtype(Type.T_REAL, src)) {			
+			String nextTarget = freshLabel();			
+			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
+			bytecodes.add(new Bytecode.Pop(convertType(src)));
+			bytecodes.add(new Bytecode.Goto(falseTarget));
+			bytecodes.add(new Bytecode.Label(nextTarget));
+			bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
 		}
+
+		// =================================================================
+		// Check whether our BigRational is an integer	
+		// =================================================================
+
+		// FIXME: there's a bug here, since once we know isInteger then we
+		// obviously have to extract a BigInteger object at some point.
+
+		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_BOOL);
+		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
+		bytecodes.add(new Bytecode.Label(falseTarget));				
 	}
 	
 	/**
@@ -1117,7 +1106,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {		
 		translate(v.src,slots,bytecodes);		
 		translate(v.index,slots,bytecodes);		
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,BIG_INTEGER);
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
 				Bytecode.VIRTUAL));
 		addReadConversion(v.type(),bytecodes);	
@@ -1223,10 +1212,9 @@ public class ClassFileBuilder {
 			} else {
 				bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size",
 					ftype, Bytecode.VIRTUAL));
-			}
-			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
-			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
+			}			
+			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
 					ftype, Bytecode.STATIC));
 			break;
 		}
@@ -1297,7 +1285,7 @@ public class ClassFileBuilder {
 				translate(r, slots, bytecodes);			
 			}
 
-			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_INTEGER,BIG_INTEGER);
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_RATIONAL,BIG_RATIONAL);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
 					Bytecode.VIRTUAL));
 			break;
@@ -1373,10 +1361,16 @@ public class ClassFileBuilder {
 	protected void translate(Value.Int e, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		BigInteger v = e.value;
-		if(v.bitLength() < 64) {			
+		
+		if(v.bitLength() < 32) {			
+			bytecodes.add(new Bytecode.LoadConst(v.intValue()));
+			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
+					Bytecode.STATIC));
+		} else if(v.bitLength() < 64) {			
 			bytecodes.add(new Bytecode.LoadConst(v.longValue()));
-			JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,T_LONG);
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf", ftype,
+			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_LONG);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
 					Bytecode.STATIC));
 		} else {
 			// in this context, we need to use a byte array to construct the
@@ -1384,8 +1378,8 @@ public class ClassFileBuilder {
 			byte[] bytes = v.toByteArray();
 			JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
 			
-			bytecodes.add(new Bytecode.New(BIG_INTEGER));		
-			bytecodes.add(new Bytecode.Dup(BIG_INTEGER));			
+			bytecodes.add(new Bytecode.New(BIG_RATIONAL));		
+			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));			
 			bytecodes.add(new Bytecode.LoadConst(bytes.length));
 			bytecodes.add(new Bytecode.New(bat));
 			for(int i=0;i!=bytes.length;++i) {
@@ -1396,7 +1390,7 @@ public class ClassFileBuilder {
 			}			
 			
 			JvmType.Function ftype = new JvmType.Function(T_VOID,bat);						
-			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "<init>", ftype,
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,
 					Bytecode.SPECIAL));
 		}		
 	}
@@ -1559,7 +1553,7 @@ public class ClassFileBuilder {
 			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
 			Type.List lt = (Type.List) v.src.type();
 			addWriteConversion(lt.element,bytecodes);			
-			JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_INTEGER,JAVA_LANG_OBJECT);
+			JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_RATIONAL,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.VIRTUAL));					
 		} else if(lhs instanceof CExpr.RecordAccess) {		
@@ -1679,9 +1673,9 @@ public class ClassFileBuilder {
 			// this is either going into a union type, or the any type
 			convert(toType, (Type.Bool) fromType, slots, bytecodes);
 		} else if(toType == Type.T_REAL && fromType == Type.T_INT) {			
-			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
-					Bytecode.STATIC));			
+			
+			// no longer need to convert between them!
+			
 		} else if(toType instanceof Type.List && fromType instanceof Type.List) {
 			convert((Type.List) toType, (Type.List) fromType, slots, bytecodes);			
 		} else if(toType instanceof Type.Set && fromType instanceof Type.List) {
@@ -1878,8 +1872,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyil.jvm.rt","WhileyRecord");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
-			"wyil.jvm.rt", "WhileyProcess");
-	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
+			"wyil.jvm.rt", "WhileyProcess");	
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyil.jvm.rt","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
@@ -1897,7 +1890,7 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
 		} else if(t instanceof Type.Int) {
-			return BIG_INTEGER;
+			return BIG_RATIONAL;
 		} else if(t instanceof Type.Real) {
 			return BIG_RATIONAL;
 		} else if(t instanceof Type.List) {
