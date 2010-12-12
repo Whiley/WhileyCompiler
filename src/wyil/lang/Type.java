@@ -151,7 +151,7 @@ public abstract class Type {
 			HashMap<NameID,NameID> binding = new HashMap<NameID,NameID>();
 			binding.put(r2.name, r1.name);
 			r2 = (Recursive) renameRecursiveTypes(r2,binding);
-			return isSubtype(r1,r2);
+			return isSubtype(r1.type,r2.type);
 		} else if(t1 instanceof Recursive) {
 			// Q-UNFOLD
 			Recursive r1 = (Recursive) t1;
