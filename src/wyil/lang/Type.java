@@ -622,6 +622,7 @@ public abstract class Type {
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
 			NameID name = binding.get(lt.name);			
+			if(name == null) { name = lt.name; }
 			if (lt.type != null) {
 				return T_RECURSIVE(name, renameRecursiveTypes(lt.type,
 						binding));
