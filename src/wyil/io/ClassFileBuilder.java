@@ -487,7 +487,8 @@ public class ClassFileBuilder {
 			translateTypeTest(trueTarget, src, (Type.Int) test,
 					stmt, bytecodes);
 		} else if(test instanceof Type.Real) {
-			syntaxError("Type test for real type not implemented",filename,stmt);
+			translateTypeTest(trueTarget, src, (Type.Real) test,
+					stmt, bytecodes);			
 		} else if(test instanceof Type.List) {
 			translateTypeTest(trueTarget, src, (Type.List) test,
 					stmt, bytecodes);			
@@ -551,6 +552,25 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
 		bytecodes.add(new Bytecode.Label(falseTarget));				
+	}
+	
+	/**
+	 * Check that a value of the given src type is an real. 
+	 * 
+	 * @param trueTarget --- target branch if test succeeds
+	 * @param src --- type of expression being tested
+	 * @param test --- type of test
+	 * @param stmt --- stmt containing test (useful for line number info)
+	 * @param bytecodes --- list of bytecodes (to which test is appended) 	 
+	 */
+	protected void translateTypeTest(String trueTarget, Type src, Type.Real test,
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+		
+		// NOTE: on entry we know that src cannot be a Type.Real, since this case
+		// would have been already caught.
+									
+		bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));				
 	}
 	
 	/**
@@ -984,9 +1004,10 @@ public class ClassFileBuilder {
 		
 	}
 
-	public void translate(String falseTarget, Type src, Type.Recursive test,
-			ArrayList<Bytecode> bytecodes) { 
-		// this is definitely the hardest case		
+	public void translateTypeTest(String trueTarget, Type src, Type.Recursive test,
+			Stmt stmt, ArrayList<Bytecode> bytecodes) { 
+		// this is definitely the hardest case	
+		System.out.println("NEED TO IMPLEMENT RECURSIVE CASE");
 	}
 	
 	public void translate(Code.Loop c, HashMap<String, Integer> slots,
