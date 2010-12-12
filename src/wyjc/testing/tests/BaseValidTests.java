@@ -135,6 +135,7 @@ public class BaseValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_23_RuntimeTest() { runTest("TypeEquals_Valid_23"); }
  @Test public void TypeEquals_Valid_24_RuntimeTest() { runTest("TypeEquals_Valid_24"); }
  @Test public void TypeEquals_Valid_25_RuntimeTest() { runTest("TypeEquals_Valid_25"); }
+ @Test public void TypeEquals_Valid_26_RuntimeTest() { runTest("TypeEquals_Valid_26"); }
  @Test public void TypeEquals_Valid_3_RuntimeTest() { runTest("TypeEquals_Valid_3"); }
  @Test public void TypeEquals_Valid_4_RuntimeTest() { runTest("TypeEquals_Valid_4"); }
  @Test public void TypeEquals_Valid_7_RuntimeTest() { runTest("TypeEquals_Valid_7"); }
