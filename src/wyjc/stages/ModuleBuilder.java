@@ -493,7 +493,7 @@ public class ModuleBuilder {
 			Type type;
 			if (bounds.size() == 1) {
 				type = bounds.iterator().next();
-			} else {
+			} else {				
 				type = Type.leastUpperBound(bounds);
 			}
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();

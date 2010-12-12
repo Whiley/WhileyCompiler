@@ -43,12 +43,12 @@ public final class WhileyList extends ArrayList {
 		return new WhileyList(this);
 	}
 	
-	public Object get(BigInteger index) {	
+	public Object get(BigRational index) {	
 		int idx = index.intValue();
 		return get(idx); 		
 	}
 	
-	public WhileyList sublist(BigInteger start, BigInteger end) {
+	public WhileyList sublist(BigRational start, BigRational end) {
 		int st = start.intValue();
 		int en = end.intValue();
 		WhileyList r = new WhileyList();
@@ -64,15 +64,16 @@ public final class WhileyList extends ArrayList {
 		return r;
 	}
 	
-	public void set(BigInteger index, Object val) {	
+	public void set(BigRational index, Object val) {	
 		int idx = index.intValue();
 		set(idx,val); 		
 	}
 	
-	public static WhileyList range(BigInteger start, BigInteger end) {
+	public static WhileyList range(BigRational start, BigRational end) {
 		WhileyList ret = new WhileyList();
 		
-		BigInteger dir = BigInteger.valueOf(end.compareTo(start));
+		// FIXME: seems ludicrously inefficient!
+		BigRational dir = BigRational.valueOf(end.compareTo(start));
 		
 		while(!start.equals(end)) {
 			ret.add(start);
@@ -114,15 +115,15 @@ public final class WhileyList extends ArrayList {
 		WhileyList r = new WhileyList();
 		for(int i=0;i!=s.length();++i) {
 			int c = s.charAt(i);
-			r.add(BigInteger.valueOf(c));
+			r.add(BigRational.valueOf(c));
 		}
 		return r;
 	}
 	
 	public static void println(WhileyList list) {
 		for(Object o : list) {
-			if(o instanceof BigInteger) {
-				BigInteger bi = (BigInteger) o;
+			if(o instanceof BigRational) {
+				BigRational bi = (BigRational) o;
 				System.out.print((char)bi.intValue());
 			}
 		}

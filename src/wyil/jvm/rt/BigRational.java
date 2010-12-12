@@ -193,16 +193,20 @@ public final class BigRational extends Number implements Comparable<BigRational>
      * it returns the number as a fraction.
      */ 
 	public String toString() {		
-		BigDecimal bd = round(10);
-		BigRational br = new BigRational(bd);
-		if(this.equals(br)) {
-			String s = bd.toString();
-			if(!s.contains(".")) {
-				s += ".0";
-			}
-			return s;
+		if(isInteger()) {
+			return numerator.toString();
 		} else {
-			return "(" + numerator + "/" + denominator + ")";
+			BigDecimal bd = round(10);
+			BigRational br = new BigRational(bd);
+			if(this.equals(br)) {
+				String s = bd.toString();
+				if(!s.contains(".")) {
+					s += ".0";
+				}
+				return s;
+			} else {
+				return "(" + numerator + "/" + denominator + ")";
+			}
 		}
 	}
 	
