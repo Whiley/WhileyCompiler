@@ -1011,9 +1011,10 @@ public abstract class Type {
 				if(!firstTime) {
 					r += ", ";
 				}
+				firstTime=false;
 				r += toShortString(f.getValue()) + " " + f.getKey();				
 			}
-			return r;
+			return r + "}";
 		} else if(t instanceof Union) {			
 			Union ut = (Union) t;
 			String r = "";
@@ -1022,6 +1023,7 @@ public abstract class Type {
 				if(!firstTime) {
 					r += "|";
 				}
+				firstTime=false;
 				r += toShortString(b);				
 			}
 			return r;

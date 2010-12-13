@@ -63,7 +63,19 @@ public class WyilFileWriter {
 			out.println();
 		}
 		for(TypeDef td : module.types()) {
-			out.print("define " + td.name() + " as " + td.type());
+			Type t = td.type();
+			if(t instanceof Type.Named) {
+				t = ((Type.Named)t).type;
+			} else if(t instanceof Type.Recursive) {
+				t = ((Type.Recursive)t).type;
+			}
+			String t_str;
+			if((codeFlags & Code.SHORT_TYPES) != 0) {
+				t_str = Type.toShortString(t);
+			} else {
+				t_str = t.toString();
+			}
+			out.print("define " + td.name() + " as " + t_str);
 			if(td.constraint() != null) {
 				out.println(":");
 				write(0,td.constraint(),out);				
