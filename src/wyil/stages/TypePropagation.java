@@ -268,6 +268,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Env trueEnv = null;
 			Env falseEnv = null;
 			
+			System.out.println("CHECKING: " + Type.toShortString(lhs_t) + " ~= " + Type.toShortString(tc.type));
+			
+			System.out.println("GLB: " + Type.greatestLowerBound(lhs_t, tc.type));
+			
 			if(Type.isSubtype(tc.type,lhs_t)) {					
 				// DEFINITE TRUE CASE		
 				trueEnv = environment;
@@ -277,6 +281,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					ncode = new Code.Skip();					
 				}
 			} else if (Type.greatestLowerBound(lhs_t, tc.type) == Type.T_VOID) {				
+				System.out.println("DEF FALSE");
 				// DEFINITE FALSE CASE				
 				falseEnv = environment;
 				if (code.op == Code.COP.NSUBTYPEEQ) {					

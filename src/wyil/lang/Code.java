@@ -63,9 +63,11 @@ public abstract class Code {
 		} else if(code instanceof Label) {
 			Label a = (Label) code;						
 			return a.label + ":";
-		}else if(code instanceof Goto) {
+		} else if(code instanceof Goto) {
 			Goto a = (Goto) code;						
 			return "goto " + a.target;
+		} else if(code instanceof Skip) {
+			return "skip";
 		} else if(code instanceof IfGoto) {
 			IfGoto a = (IfGoto) code;			
 			return "if " + CExpr.toString(a.lhs, flags) + " " + a.op.toString()
@@ -90,6 +92,13 @@ public abstract class Code {
 			Forall a = (Forall) code;	
 			return "for " + CExpr.toString(a.variable, flags) + " in "
 					+ CExpr.toString(a.source, flags) + ":";	
+		} else if(code instanceof Loop) {
+			Loop a = (Loop) code;
+			String r = "loop ";
+			for(CExpr.LVar lv : a.modifies) {
+				r += lv;
+			}
+			return r + ":";	
 		} else {
 			throw new IllegalArgumentException("Unknown code encountered: " + code);
 		}

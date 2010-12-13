@@ -994,8 +994,9 @@ public abstract class Type {
 	 * @return
 	 */
 	public static String toShortString(Type t) {
-		if (t instanceof Any || t instanceof Void || t instanceof Null || t instanceof Real
-				|| t instanceof Int || t instanceof Bool || t instanceof Meta) {
+		if (t instanceof Any || t instanceof Void || t instanceof Null
+				|| t instanceof Real || t instanceof Int || t instanceof Bool
+				|| t instanceof Meta || t instanceof Existential) {
 			return t.toString();
 		} else if(t instanceof Set) {
 			Set st = (Set) t;
@@ -1027,6 +1028,9 @@ public abstract class Type {
 				r += toShortString(b);				
 			}
 			return r;
+		} else if (t instanceof Process) {
+			Process pt = (Process) t;
+			return "process " + toShortString(pt.element);
 		} else if(t instanceof Named) {			
 			Named nt = (Named) t;
 			return nt.name.toString();

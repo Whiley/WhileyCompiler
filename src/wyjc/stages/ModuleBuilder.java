@@ -38,7 +38,7 @@ public class ModuleBuilder {
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
 	private HashMap<NameID, List<Type.Fun>> functions;
-	private HashMap<NameID, Pair<Type, Block>> types;
+	private HashMap<NameID, Triple<Type, Block, Boolean>> types;
 	private HashMap<NameID, Value> constants;
 	private HashMap<NameID, Pair<UnresolvedType, Expr>> unresolved;
 	private String filename;
@@ -60,7 +60,7 @@ public class ModuleBuilder {
 		modules = new HashSet<ModuleID>();
 		filemap = new HashMap<NameID, WhileyFile>();
 		functions = new HashMap<NameID, List<Type.Fun>>();
-		types = new HashMap<NameID, Pair<Type, Block>>();
+		types = new HashMap<NameID, Triple<Type, Block, Boolean>>();
 		constants = new HashMap<NameID, Value>();
 		unresolved = new HashMap<NameID, Pair<UnresolvedType, Expr>>();
 
@@ -164,7 +164,7 @@ public class ModuleBuilder {
 					block.add(new Code.Fail("type constraint not satisfied"),
 							attr);
 					block.add(new Code.Label(label));
-					types.put(k, new Pair<Type, Block>(st.element, block));
+					types.put(k, new Triple<Type, Block, Boolean>(st.element, block, true));
 				}
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filemap.get(k).filename, exprs
@@ -312,7 +312,7 @@ public class ModuleBuilder {
 										
 				Block blk = p.second();
 							
-				types.put(key, new Pair<Type, Block>(t, blk));
+				types.put(key, new Triple<Type, Block, Boolean>(t, blk, blk != null));
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
@@ -320,11 +320,23 @@ public class ModuleBuilder {
 		}
 	}
 
-	protected Pair<Type, Block> expandType(NameID key,
+	/**
+	 * This is a deeply complex method!
+	 * 
+	 * @param key
+	 * @param cache
+	 * @return A triple of the form <T,B,C>, where T is the type, B is the
+	 *         constraint block and C indicates whether or not this is in fact a
+	 *         constrained type. The latter is useful since it means we can
+	 *         throw away unnecessary constraint blocks when the type in
+	 *         question is not actually constrained.
+	 * @throws ResolveError
+	 */
+	protected Triple<Type, Block, Boolean> expandType(NameID key,
 			HashMap<NameID, Type> cache) throws ResolveError {
 		
 		Type cached = cache.get(key);
-		Pair<Type, Block> t = types.get(key);
+		Triple<Type, Block, Boolean> t = types.get(key);
 		
 		if (cached != null) {
 			Block blk = null;
@@ -336,15 +348,15 @@ public class ModuleBuilder {
 					blk.add(new Code.Recurse(CExpr.VAR(Type.T_ANY,"$")));
 				}
 			}
-			return new Pair<Type, Block>(cached, blk);
+			return new Triple<Type, Block, Boolean>(cached, blk, false);
 		} else if(t != null) {
-			return new Pair<Type, Block>(t.first(), Block.relabel(t.second()));
+			return new Triple<Type, Block, Boolean>(t.first(), Block.relabel(t.second()),t.third());
 		} else if (!modules.contains(key.module())) {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());
-			return new Pair<Type, Block>(td.type(), Block.relabel(td
-					.constraint()));
+			return new Triple<Type, Block, Boolean>(td.type(), Block.relabel(td
+					.constraint()), td.constraint() != null);
 		}
 
 		// following is needed to terminate any recursion
@@ -360,8 +372,8 @@ public class ModuleBuilder {
 		// recursive type.
 		boolean isOpenRecursive = Type.isOpenRecursive(key, t.first());
 		if (isOpenRecursive) {
-			t = new Pair<Type, Block>(Type.T_RECURSIVE(key, t
-					.first()), t.second());
+			t = new Triple<Type, Block, Boolean>(Type.T_RECURSIVE(key, t
+					.first()), t.second(), t.third());
 		}
 		
 		// Resolve the constraint and generate an appropriate block.
@@ -374,13 +386,14 @@ public class ModuleBuilder {
 			constraint.add(new Code.Label(trueLabel));
 
 			if (blk == null) { 
-				t = new Pair<Type, Block>(t.first(), constraint);
+				t = new Triple<Type, Block, Boolean>(t.first(), constraint, true);
 			} else {
-				blk.addAll(constraint); // affects t
+				blk.addAll(constraint); 
+				t = new Triple<Type, Block, Boolean>(t.first(), blk, true);
 			}
 		}
 		
-		if(t.second() != null && isOpenRecursive) {
+		if(t.second() != null && t.third() && isOpenRecursive) {			
 			// For the case of a recursive type, we need to create an inductive
 			// block which traverses the recursive structure checking any
 			// constraints as necessary.
@@ -392,8 +405,15 @@ public class ModuleBuilder {
 			// finally, create the inductive block
 			blk.add(0,new Code.Induct(lab, var, src));
 			blk.add(new Code.InductEnd(lab));
-			t = new Pair<Type, Block>(t.first(), blk);			
-		}				
+			t = new Triple<Type, Block, Boolean>(t.first(), blk, true);			
+		} else if(t.second() != null && isOpenRecursive) {
+			// If we get here, then this indicates that we didn't find any
+			// constraints within the recursive type itself. Therefore, we can
+			// discard the constraint block that has been generated. Observe
+			// that, by definition, this is non-null since it will at least
+			// include the "recurse" statements.
+			t = new Triple<Type, Block, Boolean>(t.first(), null,false);	
+		}
 		
 		// finally, store it in the cache
 		cache.put(key, t.first());
@@ -402,11 +422,11 @@ public class ModuleBuilder {
 		return t;
 	}
 
-	protected Pair<Type, Block> expandType(UnresolvedType t, String filename,
+	protected Triple<Type, Block, Boolean> expandType(UnresolvedType t, String filename,
 			HashMap<NameID, Type> cache) {
 		if (t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
-			Pair<Type, Block> p = expandType(lt.element, filename, cache);
+			Triple<Type, Block, Boolean> p = expandType(lt.element, filename, cache);
 			Type rt = Type.T_LIST(p.first());
 			String label = Block.freshLabel();
 			Block blk = null;
@@ -419,10 +439,10 @@ public class ModuleBuilder {
 						.second())));
 				blk.add(new Code.ForallEnd(label));
 			}
-			return new Pair<Type, Block>(rt, blk);
+			return new Triple<Type, Block, Boolean>(rt, blk, p.third());
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			Pair<Type, Block> p = expandType(st.element, filename, cache);
+			Triple<Type, Block, Boolean> p = expandType(st.element, filename, cache);
 			Type rt = Type.T_SET(p.first());
 			String label = Block.freshLabel();
 			Block blk = null;
@@ -436,14 +456,15 @@ public class ModuleBuilder {
 						.second())));
 				blk.add(new Code.ForallEnd(label));
 			}
-			return new Pair<Type, Block>(rt, blk);
+			return new Triple<Type, Block, Boolean>(rt, blk, p.third());			
 		} else if (t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();
 			Block blk = null;
 			CExpr.Variable tmp = CExpr.VAR(Type.T_ANY, "$");
+			boolean constraint = false;
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
-				Pair<Type, Block> p = expandType(e.getValue(), filename, cache);
+				Triple<Type, Block, Boolean> p = expandType(e.getValue(), filename, cache);
 				types.put(e.getKey(), p.first());
 				if (p.second() != null) {
 					if (blk == null) {
@@ -453,27 +474,29 @@ public class ModuleBuilder {
 					binding.put("$", CExpr.RECORDACCESS(tmp, e.getKey()));
 					blk.addAll(Block.substitute(binding, p.second()));
 				}
+				constraint |= p.third();
 			}
 			Type type = Type.T_RECORD(types);
 			// Need to update the self type properly
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$", CExpr.VAR(Type.T_ANY, "$"));
-			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
+			return new Triple<Type, Block, Boolean>(type, Block.substitute(binding, blk), constraint);
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
 			Block blk = new Block();
 			String exitLabel = Block.freshLabel();
 			CExpr.Variable var = CExpr.VAR(Type.T_ANY, "$#");
+			boolean constraint = false;
 			for (UnresolvedType b : ut.bounds) {			
-				Pair<Type, Block> p = expandType(b, filename, cache);
+				Triple<Type, Block, Boolean> p = expandType(b, filename, cache);
 				Type bt = p.first();
 				if (bt instanceof Type.NonUnion) {
 					bounds.add((Type.NonUnion) bt);
 				} else {
 					bounds.addAll(((Type.Union) bt).bounds);
 				}
-												
+				constraint |= p.third();								
 				if(p.second() != null) {
 					String nextLabel = Block.freshLabel();
 					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
@@ -498,24 +521,25 @@ public class ModuleBuilder {
 			}
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$#", CExpr.VAR(Type.T_ANY, "$"));
-			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
+			return new Triple<Type, Block, Boolean>(type, Block.substitute(binding, blk), constraint);
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Pair<Type, Block> p = expandType(ut.element, filename, cache);			
+			Triple<Type, Block, Boolean> p = expandType(ut.element, filename, cache);			
 			Type type = Type.T_PROCESS(p.first());
 			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 			binding.put("$", CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(Type.T_ANY, "$")));			
-			return new Pair<Type, Block>(type, Block.substitute(binding, p.second()));					
+			return new Triple<Type, Block, Boolean>(type, Block.substitute(binding, p.second()), p.third());					
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
 			Attributes.Module modInfo = dt.attribute(Attributes.Module.class);
 			NameID name = new NameID(modInfo.module, dt.name);
 
 			try {
-				Pair<Type, Block> et = expandType(name, cache);
+				Triple<Type, Block, Boolean> et = expandType(name, cache);								
+				
 				if (Type.isExistential(et.first())) {
-					return new Pair<Type, Block>(Type.T_NAMED(new NameID(
-							modInfo.module, dt.name), et.first()), et.second());
+					return new Triple<Type, Block, Boolean>(Type.T_NAMED(new NameID(
+							modInfo.module, dt.name), et.first()), et.second(), et.third());
 				} else {
 					return et;
 				}
@@ -525,8 +549,8 @@ public class ModuleBuilder {
 				return null;
 			}
 		} else {
-			// for base cases
-			return resolve(t);
+			// for base cases			
+			return new Triple<Type,Block,Boolean>(resolve(t).first(),null,false);
 		}
 	}
 
