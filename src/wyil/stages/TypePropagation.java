@@ -316,17 +316,25 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(v.type, trueType);
 			Type gdiff = Type.greatestDifference(v.type, falseType);	
-			//System.out.println("\nGLB(1): " + trueType + "&" + v.type + " = " + glb);
-			//System.out.println("GDIFF(1): " + v.type + "-" + falseType + " = " + gdiff);
+			//System.out.println("\nGLB(1): " + Type.toShortString(trueType)
+			//		+ " & " + Type.toShortString(v.type) + " = "
+			//		+ Type.toShortString(glb));
+			//System.out.println("GDIFF(1): " + Type.toShortString(v.type) + " - "
+			//		+ Type.toShortString(falseType) + " = "
+			//		+ Type.toShortString(gdiff));
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
 			CExpr.Register reg = (CExpr.Register) lhs;
-			String name = "%" + reg.index;			
+			String name = "%" + reg.index;						
 			Type glb = Type.greatestLowerBound(reg.type,trueType);
 			Type gdiff = Type.greatestDifference(reg.type, falseType);
-			// System.out.println("\nGLB(2): " + trueType + "&" + reg.type + " = " + glb);
-			// System.out.println("GDIFF(2): " + reg.type + "-" + falseType + " = " + gdiff);
+//			System.out.println("\nGLB(2): " + Type.toShortString(trueType)
+//					+ " & " + Type.toShortString(reg.type) + " = "
+//					+ Type.toShortString(glb));
+//			System.out.println("GDIFF(2): " + Type.toShortString(reg.type) + " - "
+//					+ Type.toShortString(falseType) + " = "
+//					+ Type.toShortString(gdiff));
 			trueEnv.put(name, glb);
 			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {
@@ -760,16 +768,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			int count = 0;
 			for(Type.Fun ft : targets) {
 				if(firstTime) {
-					msg += "\n\tfound " + nid.name() +  parameterString(ft.params);
+					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params);
 				} else {
-					msg += "\n\tand " + nid.name() +  parameterString(ft.params);
+					msg += "\n\tand: " + nid.name() +  parameterString(ft.params);
 				}				
 				if(++count < targets.size()) {
 					msg += ",";
 				}
 			}
 			
-			syntaxError(msg,filename,elem);
+			syntaxError(msg + "\n",filename,elem);
 		}
 		
 		return candidate;
