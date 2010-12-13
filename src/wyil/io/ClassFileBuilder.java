@@ -767,6 +767,8 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, Type src,
 			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
 
+		System.out.println("GOT: " + src + " ~= " + test);
+		
 		JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_OBJECT);
 		
 		// ======================================================================
@@ -777,7 +779,8 @@ public class ClassFileBuilder {
 		
 		if(!(src instanceof Type.Record)) {
 			
-			if(Type.effectiveRecordType(src) == null) {				
+			if(Type.effectiveRecordType(src) == null) {	
+				System.out.println("STAGE 1");
 				// not guaranteed to have a record here, so ensure we do.
 				bytecodes.add(new Bytecode.Dup(convertType(src)));		
 				bytecodes.add(new Bytecode.InstanceOf(WHILEYRECORD));
@@ -787,7 +790,9 @@ public class ClassFileBuilder {
 				// Narrow the type down to a record (which we now know is true)			
 				src = narrowRecordType(src);
 			
-				if(Type.isSubtype(test,src)) {
+				System.out.println("Narrowed to: " + src);
+				
+				if(Type.isSubtype(test,src)) {				
 					// Getting here indicates that the instanceof test was
 					// sufficient to be certain that the type test succeeds.			
 					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
@@ -796,6 +801,8 @@ public class ClassFileBuilder {
 					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 					return;
 				}
+				
+				System.out.println("Stage 3");
 			}
 			
 			// ======================================================================
@@ -874,6 +881,7 @@ public class ClassFileBuilder {
 		Type.Union u = (Type.Union) t;
 		Type lub = Type.T_VOID;
 		for(Type b : u.bounds) {
+			System.out.println("NEED TO CONVERT INTO RECORD NORMAL FORM");				
 			if(b instanceof Type.Record) {
 				lub = Type.leastUpperBound(lub,b);
 			}
@@ -983,8 +991,8 @@ public class ClassFileBuilder {
 	 *            --- list of bytecodes (to which test is appended)
 	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.Union test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {
-			
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {	
+		
 		// FIXME: at the moment, this approach is not very efficient!
 		
 		String trampoline = freshLabel();

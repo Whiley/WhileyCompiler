@@ -21,7 +21,7 @@ SExpr sbuild(int i):
 
 // Main method
 public void System::main([string] args):
-    i = 0
+    i = -5
     while i < 10:
         e = sbuild(i)
         if e ~= SyntaxError:
