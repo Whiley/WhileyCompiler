@@ -815,8 +815,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
-			syntaxError("expected type " + clazz.getName() + ", found " + t,filename,
-					elem);
+			syntaxError("expected type " + clazz.getName() + ", found "
+					+ Type.toShortString(t), filename, elem);
 			return null;
 		}
 	}
@@ -824,7 +824,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	// Check t1 :> t2
 	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
 		if (!Type.isSubtype(t1, t2)) {
-			syntaxError("expected type " + t1 + ", found " + t2, filename, elem);
+			syntaxError("expected type " + Type.toShortString(t1) + ", found "
+					+ Type.toShortString(t2), filename, elem);
 		}
 	}
 

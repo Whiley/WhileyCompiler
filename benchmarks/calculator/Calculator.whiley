@@ -2,7 +2,7 @@
 public void System::main([string] args):
     if(|args| > 0):
         e = parse(args[0])
-        if e ~= SyntaxError:
+        if e ~= {[int] err}:
             print "syntax error: " + e.err
         else:
             result = evaluate(e)

@@ -1013,8 +1013,27 @@ public class ClassFileBuilder {
 
 	public void translateTypeTest(String trueTarget, Type src, Type.Recursive test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) { 
-		// this is definitely the hardest case	
+		
+		// FACT: src is either a Type.Recursive, or a Type.Union. It cannot be
+		// anything else, because otherwise the (original) glb of src and test
+		// would have produced a Type.Recursive.  
+				
 		System.err.println("NEED TO IMPLEMENT RECURSIVE CASE");
+		System.err.println("TEST: " + Type.toShortString(src) + " ~= " + Type.toShortString(test));
+		System.err.println("LINE: " + filename + ":" + stmt.attribute(Attribute.Source.class));
+		
+		if(src instanceof Type.Recursive) {
+			Type.Recursive rsrc = (Type.Recursive) src;
+			System.err.println("NEED TO IMPLEMENT RECURSIVE CASE");
+			System.err.println("TEST: " + Type.toShortString(src) + " ~= " + Type.toShortString(test));
+		} else {
+			// must be a union
+			
+			// note, this approach is not efficient!
+			Type.Union usrc = (Type.Union) src;
+			Type ntest = Type.unfold(test);  
+			translateTypeTest(trueTarget,usrc,ntest,stmt,bytecodes);
+		}
 	}
 	
 	public void translate(Code.Loop c, HashMap<String, Integer> slots,
