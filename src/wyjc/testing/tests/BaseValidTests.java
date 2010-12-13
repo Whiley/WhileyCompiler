@@ -140,15 +140,16 @@ public class BaseValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_4_RuntimeTest() { runTest("TypeEquals_Valid_4"); }
  @Test public void TypeEquals_Valid_7_RuntimeTest() { runTest("TypeEquals_Valid_7"); }
  @Test public void UnionType_Valid_1_RuntimeTest() { runTest("UnionType_Valid_1"); }
+ @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); } 
+ @Test public void UnionType_Valid_8_RuntimeTest() { runTest("UnionType_Valid_8"); }
+ @Test public void UnionType_Valid_9_RuntimeTest() { runTest("UnionType_Valid_9"); }
  @Test public void UnionType_Valid_10_RuntimeTest() { runTest("UnionType_Valid_10"); }
  @Test public void UnionType_Valid_11_RuntimeTest() { runTest("UnionType_Valid_11"); }
  @Test public void UnionType_Valid_13_RuntimeTest() { runTest("UnionType_Valid_13"); }
  @Test public void UnionType_Valid_14_RuntimeTest() { runTest("UnionType_Valid_14"); }
  @Test public void UnionType_Valid_15_RuntimeTest() { runTest("UnionType_Valid_15"); }
  @Test public void UnionType_Valid_16_RuntimeTest() { runTest("UnionType_Valid_16"); }
- @Test public void UnionType_Valid_2_RuntimeTest() { runTest("UnionType_Valid_2"); } 
- @Test public void UnionType_Valid_8_RuntimeTest() { runTest("UnionType_Valid_8"); }
- @Test public void UnionType_Valid_9_RuntimeTest() { runTest("UnionType_Valid_9"); }
+ @Test public void UnionType_Valid_17_RuntimeTest() { runTest("UnionType_Valid_17"); }
  @Test public void VarDecl_Valid_1_RuntimeTest() { runTest("VarDecl_Valid_1"); }
  @Test public void While_Valid_1_RuntimeTest() { runTest("While_Valid_1"); }
 }

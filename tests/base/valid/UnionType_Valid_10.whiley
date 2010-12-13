@@ -12,4 +12,3 @@ void System::main([string] args):
     x = {op:1.23, mode: 0}
     x.op = 123 // OK
     out->println(g(x))
-    
