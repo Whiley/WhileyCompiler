@@ -309,7 +309,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected void typeInference(CExpr lhs, Type trueType, Type falseType,
 			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
 		
-		System.out.println(lhs + " => " + trueType + " => " + falseType);
+		// System.out.println(lhs + " => " + trueType + " => " + falseType);
 		
 		// Now, perform the actual type inference
 		if (lhs instanceof CExpr.Variable) {			
@@ -325,8 +325,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String name = "%" + reg.index;			
 			Type glb = Type.greatestLowerBound(reg.type,trueType);
 			Type gdiff = Type.greatestDifference(reg.type, falseType);
-			System.out.println("\nGLB(2): " + trueType + "&" + reg.type + " = " + glb);
-			System.out.println("GDIFF(2): " + reg.type + "-" + falseType + " = " + gdiff);
+			// System.out.println("\nGLB(2): " + trueType + "&" + reg.type + " = " + glb);
+			// System.out.println("GDIFF(2): " + reg.type + "-" + falseType + " = " + gdiff);
 			trueEnv.put(name, glb);
 			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {
@@ -341,7 +341,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					ftypes.put(key, Type.T_VOID);
 				}
 				Type glb = Type.greatestLowerBound(trueType, lhs_t.types
-						.get(ta.field));				
+						.get(ta.field));	
+				
+				//System.out.println("\nGLB(3): " + trueType + " & " + lhs_t.types.get(ta.field) + " = " + glb);
+				
 				ttypes.put(ta.field, glb);
 				ftypes.put(ta.field, glb);
 				typeInference(ta.lhs, Type.T_RECORD(ttypes), Type

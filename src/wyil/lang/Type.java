@@ -206,10 +206,6 @@ public abstract class Type {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
 			return T_LIST(leastUpperBound(l1.element,l2.element));
-		} else if(t1 instanceof Set && t2 instanceof Set) {
-			Set s1 = (Set) t1;
-			Set s2 = (Set) t2;
-			return T_SET(leastUpperBound(s1.element,s2.element));
 		} else if(t1 instanceof Record && t2 instanceof Record) {
 			Record r1 = (Record) t1;
 			Record r2 = (Record) t2;
@@ -302,16 +298,6 @@ public abstract class Type {
 			List l1 = (List) t1;
 			List l2 = (List) t2;
 			return T_LIST(greatestLowerBound(l1.element,l2.element));
-		} else if(t1 instanceof List && t2 instanceof Set) {
-			// FIXME: this rule should not be here
-			List l1 = (List) t1;
-			Set l2 = (Set) t2;
-			return T_LIST(greatestLowerBound(l1.element,l2.element));
-		} else if(t1 instanceof Set && t2 instanceof List) {
-			// FIXME: this rule should not be here
-			Set l1 = (Set) t1;
-			List l2 = (List) t2;
-			return T_LIST(greatestLowerBound(l1.element,l2.element));
 		} else if(t1 instanceof Set && t2 instanceof Set) {
 			Set s1 = (Set) t1;
 			Set s2 = (Set) t2;
@@ -324,50 +310,27 @@ public abstract class Type {
 				for(Map.Entry<String,Type> e : r1.types.entrySet()) {
 					String key = e.getKey();
 					Type rt1 = e.getValue();
-					Type rt2 = r2.types.get(key);					
-					types.put(key, greatestLowerBound(rt1,rt2));
+					Type rt2 = r2.types.get(key);			
+					Type glb = greatestLowerBound(rt1,rt2);
+					if(glb == T_VOID) { return glb; }
+					types.put(key, glb);
 				}			
 				return T_RECORD(types);
 			}
 		} else if(t1 instanceof Union) {			
-			
-			Union ut1 = (Union) t1;
-			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
-															
+			Union ut1 = (Union) t1;			
+			Type glb = T_VOID;
 			for(NonUnion t : ut1.bounds) {				
-				Type glb = greatestLowerBound(t,t2);				
-				if(glb instanceof Union) {
-					Union ut = (Union) glb;
-					types.addAll(ut.bounds);
-				} else if(glb != T_VOID) {
-					types.add((NonUnion) glb);
-				}
-			}						
-			
-			if(types.size() == 1) {
-				return types.get(0);
-			} else {			
-				return T_UNION(types);
-			}
-		} else if(t2 instanceof Union) {
-			
-			Union ut2 = (Union) t2;
-			ArrayList<NonUnion> types = new ArrayList<NonUnion>();
-			
-			for(NonUnion t : ut2.bounds) {				
-				Type glb = greatestLowerBound(t1,t);				
-				if(glb instanceof Union) {
-					Union ut = (Union) glb;
-					types.addAll(ut.bounds);
-				} else if(glb != T_VOID) {
-					types.add((NonUnion) glb);
-				}				
+				glb = leastUpperBound(glb,greatestLowerBound(t,t2));											
 			}		
-			if(types.size() == 1) {
-				return types.get(0);
-			} else {			
-				return T_UNION(types);
-			}					
+			return glb;
+		} else if(t2 instanceof Union) {			
+			Union ut2 = (Union) t2;			
+			Type glb = T_VOID;
+			for(NonUnion t : ut2.bounds) {				
+				glb = leastUpperBound(glb,greatestLowerBound(t1,t));											
+			}		
+			return glb;					
 		} else if(t1 instanceof Recursive && t2 instanceof Recursive) {
 			// FIXME: this rule is broken
 		} else if(t1 instanceof Recursive) {
