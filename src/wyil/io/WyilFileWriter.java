@@ -26,7 +26,7 @@ import wyil.lang.Module.*;
 
 public class WyilFileWriter {
 	private PrintWriter out;
-	private boolean writeTypes;
+	private int codeFlags = Code.SHORT_TYPES;	
 	private boolean writeLabels;
 	private boolean writeAttributes;
 	
@@ -39,7 +39,9 @@ public class WyilFileWriter {
 	}
 	
 	public void setWriteTypes(boolean flag) {
-		writeTypes = flag;
+		if(flag) {
+			codeFlags |= Code.INTERNAL_TYPES;
+		}
 	}
 	
 	public void setWriteLabels(boolean flag) {
@@ -96,7 +98,11 @@ public class WyilFileWriter {
 			if(i!=0) {
 				out.print(", ");
 			}
-			out.print(t + " " + n);
+			if((codeFlags & Code.SHORT_TYPES) != 0) {
+				out.print(Type.toShortString(t) + " " + n);
+			} else {
+				out.print(t + " " + n);
+			}
 		}
 		out.println("):");
 		
@@ -146,13 +152,14 @@ public class WyilFileWriter {
 			}
 		} else if(c instanceof Code.Start) {
 			Code.Start cstart = (Code.Start)c;
+			String c_string = Code.toString(c,codeFlags);
 			if(writeLabels) {
-				line = "." + cstart.label + " " + c.toString();
+				line = "." + cstart.label + " " + c_string;
 			} else {
-				line = c.toString();
+				line = c_string;					
 			}
 		} else {
-			line = c.toString();
+			line = Code.toString(c,codeFlags);			
 		}
 		
 		// Second, write attributes				

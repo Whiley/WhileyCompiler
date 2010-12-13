@@ -29,6 +29,72 @@ public abstract class Code {
 	// =============== Methods ==================
 	// ==========================================
 	
+	public static final int INTERNAL_TYPES = 1;
+	public static final int SHORT_TYPES = 2;
+
+	/**
+	 * The following method turns a Code into a string. There are several flags
+	 * that can be provided:
+	 * <ul>
+	 * <li><b>INTERNAL_TYPES</b>: include internal type information. That is,
+	 * the determined type of each expression is reported as well.</li>
+	 * <li><b>SHORT_TYPES</b>: display only the short form of a type. In the
+	 * case of recursive or named types, only the name is returned</li>
+	 * </ul>
+	 * 
+	 * @param code
+	 * @param flags
+	 * @return
+	 */
+	public static String toString(Code code, int flags) {
+		if(code instanceof Assign) {
+			Assign a = (Assign) code;
+			if(a.lhs != null) {
+				return CExpr.toString(a.lhs,flags) + " = " + CExpr.toString(a.rhs,flags);
+			} else {
+				return CExpr.toString(a.rhs,flags);
+			}			
+		} else if(code instanceof Debug) {
+			Debug a = (Debug) code;						
+			return "debug " + CExpr.toString(a.rhs,flags);
+		} else if(code instanceof Fail) {
+			Fail a = (Fail) code;						
+			return "fail " + a.msg;
+		} else if(code instanceof Label) {
+			Label a = (Label) code;						
+			return a.label + ":";
+		}else if(code instanceof Goto) {
+			Goto a = (Goto) code;						
+			return "goto " + a.target;
+		} else if(code instanceof IfGoto) {
+			IfGoto a = (IfGoto) code;			
+			return "if " + CExpr.toString(a.lhs, flags) + " " + a.op.toString()
+					+ " " + CExpr.toString(a.rhs, flags) + " goto " + a.target;
+		} else if(code instanceof Return) {
+			Return a = (Return) code;			
+			if(a.rhs != null) {
+				return "return " + CExpr.toString(a.rhs, flags);
+			}
+			return "return";
+		} else if(code instanceof Recurse) {
+			Recurse a = (Recurse) code;						
+			return "recurse " + CExpr.toString(a.rhs, flags);		
+		} else if(code instanceof Check) {
+			Check a = (Check) code;						
+			return "check:";
+		} else if(code instanceof Induct) {
+			Induct a = (Induct) code;	
+			return "induct " + CExpr.toString(a.variable, flags) + " over "
+					+ CExpr.toString(a.source, flags) + ":";
+		} else if(code instanceof Forall) {
+			Forall a = (Forall) code;	
+			return "for " + CExpr.toString(a.variable, flags) + " in "
+					+ CExpr.toString(a.source, flags) + ":";	
+		} else {
+			throw new IllegalArgumentException("Unknown code encountered: " + code);
+		}
+	}
+	
 	/**
 	 * Determine which variables are used by this code.
 	 */

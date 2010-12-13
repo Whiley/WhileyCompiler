@@ -468,7 +468,10 @@ public class ClassFileBuilder {
 	// since both are actually instances of java.util.List. 
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
-				
+		
+		System.out.println("TESTING(0): " + src + " ~= " + test);
+		
+		
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
 		test = Type.greatestLowerBound(src,test);					
@@ -504,6 +507,8 @@ public class ClassFileBuilder {
 			translateTypeTest(trueTarget, src, (Type.Recursive) test, stmt,
 					bytecodes);				
 		}
+		
+		System.out.println("--------------------------------");
 	}
 
 	/**
@@ -590,6 +595,8 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {
 		
+		System.err.println("TESTING(1): " + src + " ~= " + test);
+		
 		// ======================================================================
 		// First, perform an instanceof test (if necessary) 
 		// ======================================================================
@@ -611,7 +618,10 @@ public class ClassFileBuilder {
 			// here. For example, int|[int]|[real] & [*] ==> [int]|[real] (by S-UNION2)
 			nsrc = (Type.List) Type.greatestLowerBound(src, Type.T_LIST(Type.T_ANY));
 			
+			System.err.println("TESTING(2): " + nsrc + " ~= " + test);
+			
 			if(Type.isSubtype(test,nsrc)) {
+				System.err.println("YEAH DONE");
 				// Getting here indicates that the instanceof test was
 				// sufficient to be certain that the type test succeeds.			
 				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
@@ -1007,7 +1017,7 @@ public class ClassFileBuilder {
 	public void translateTypeTest(String trueTarget, Type src, Type.Recursive test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) { 
 		// this is definitely the hardest case	
-		System.out.println("NEED TO IMPLEMENT RECURSIVE CASE");
+		System.err.println("NEED TO IMPLEMENT RECURSIVE CASE");
 	}
 	
 	public void translate(Code.Loop c, HashMap<String, Integer> slots,

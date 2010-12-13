@@ -984,6 +984,57 @@ public abstract class Type {
 		}		
 	}
 
+	/**
+	 * The following method converts a type into a "short string". In this case,
+	 * named types are return only their name, rather than their actually body.
+	 * This method is useful for printing out type information, which can
+	 * otherwise be quite bukly and unreadable.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static String toShortString(Type t) {
+		if (t instanceof Any || t instanceof Void || t instanceof Null || t instanceof Real
+				|| t instanceof Int || t instanceof Bool || t instanceof Meta) {
+			return t.toString();
+		} else if(t instanceof Set) {
+			Set st = (Set) t;
+			return "{" + toShortString(st.element) + "}";
+		} else if(t instanceof List) {
+			List lt = (List) t;
+			return "[" + toShortString(lt.element) + "]";
+		} else if(t instanceof Record) {
+			Record rt = (Record) t;
+			String r = "{";
+			boolean firstTime = true;
+			for(Map.Entry<String,Type> f : rt.types.entrySet()) {
+				if(!firstTime) {
+					r += ", ";
+				}
+				r += toShortString(f.getValue()) + " " + f.getKey();				
+			}
+			return r;
+		} else if(t instanceof Union) {			
+			Union ut = (Union) t;
+			String r = "";
+			boolean firstTime = true;
+			for(Type b : ut.bounds) {
+				if(!firstTime) {
+					r += "|";
+				}
+				r += toShortString(b);				
+			}
+			return r;
+		} else if(t instanceof Named) {			
+			Named nt = (Named) t;
+			return nt.name.toString();
+		} else if(t instanceof Recursive) {			
+			Recursive nt = (Recursive) t;
+			return nt.name.toString();
+		} else {
+			throw new IllegalArgumentException("Unknown type encountered: " + t);
+		}
+	}
 	
 	// =============================================================
 	// Type Classes

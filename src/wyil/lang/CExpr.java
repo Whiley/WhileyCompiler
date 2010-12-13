@@ -23,9 +23,40 @@ import java.util.*;
 public abstract class CExpr {
 	public abstract Type type();
 	
-	public static abstract class LVal extends CExpr {}
-	public static abstract class LVar extends LVal {
-		public abstract String name();
+	public static final int INTERNAL_TYPES = 1;
+	public static final int SHORT_TYPES = 2;
+
+	/**
+	 * The following method turns a CExpr into a string. There are several flags
+	 * that can be provided:
+	 * <ul>
+	 * <li><b>INTERNAL_TYPES</b>: include internal type information. That is,
+	 * the determined type of each expression is reported as well.</li>
+	 * <li><b>SHORT_TYPES</b>: display only the short form of a type. In the
+	 * case of recursive or named types, only the name is returned</li>
+	 * </ul>
+	 * 
+	 * @param code
+	 * @param flags
+	 * @return
+	 */
+	public static String toString(CExpr r, int flags) {
+		String str;
+		if(r instanceof Value.TypeConst) {
+			Value.TypeConst tc = (Value.TypeConst) r;
+			str = Type.toShortString(tc.type);
+		} else {
+			str = r.toString();
+		}
+		if((flags & INTERNAL_TYPES) != 0) {
+			str += "!";
+			if((flags & SHORT_TYPES) != 0) {
+				str += Type.toShortString(r.type());
+			} else {
+				str += r.type();
+			}
+		}
+		return str;
 	}
 	
 	public static <T> void match(CExpr r, Class<T> match, Collection<T> uses) {
@@ -288,6 +319,11 @@ public abstract class CExpr {
 		return get(new Invoke(type,name,casenum,receiver,args));
 	}
 	
+	public static abstract class LVal extends CExpr {}
+	public static abstract class LVar extends LVal {
+		public abstract String name();
+	}
+	
 	
 	public static class Variable extends LVar {
 		public final String name;
@@ -318,7 +354,7 @@ public abstract class CExpr {
 			return false;
 		}
 		public String toString() {
-			return name + "!" + type;
+			return name;
 		}
 	}
 
@@ -355,7 +391,7 @@ public abstract class CExpr {
 			return "%" + index;
 		}
 		public String toString() {			
-			return "%" + index + "!" + type;			
+			return "%" + index;			
 		}
 	}
 	
@@ -775,9 +811,9 @@ public abstract class CExpr {
 				n += "$" + caseNum;
 			}			
 			if(receiver == null) {
-				return n + "(" + rhs + ")!" + type;
+				return n + "(" + rhs + ")";
 			} else {
-				return receiver + "->" + n + "(" + rhs + ")!" + type;
+				return receiver + "->" + n + "(" + rhs + ")";
 			}
 		}
 	}
