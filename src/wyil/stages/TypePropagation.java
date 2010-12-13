@@ -783,7 +783,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				paramStr += ",";
 			}
 			firstTime=false;
-			paramStr += t;
+			paramStr += Type.toShortString(t);
 		}
 		return paramStr + ")";
 	}
