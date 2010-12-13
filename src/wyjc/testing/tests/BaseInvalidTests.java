@@ -37,6 +37,7 @@ public class BaseInvalidTests extends TestHarness {
  @Test public void DefiniteAssign_CompileFail_4_StaticTest() { contextFailTest("DefiniteAssign_CompileFail_4"); }
  @Test public void For_CompileFail_1_StaticTest() { contextFailTest("For_CompileFail_1"); }
  @Test public void Function_CompileFail_1_StaticTest() { contextFailTest("Function_CompileFail_1"); }
+ @Ignore("Known Bug")
  @Test public void Function_CompileFail_2_StaticTest() { contextFailTest("Function_CompileFail_2"); }
  @Test public void Function_CompileFail_3_StaticTest() { contextFailTest("Function_CompileFail_3"); }
  @Test public void Function_CompileFail_4_StaticTest() { contextFailTest("Function_CompileFail_4"); }
@@ -76,6 +77,7 @@ public class BaseInvalidTests extends TestHarness {
  @Test public void RealAdd_CompileFail_1_StaticTest() { contextFailTest("RealAdd_CompileFail_1"); }
  @Test public void RealDiv_CompileFail_1_StaticTest() { contextFailTest("RealDiv_CompileFail_1"); }
  @Test public void RecursiveType_Invalid_4_StaticTest() { contextFailTest("RecursiveType_Invalid_4"); }
+ @Test public void RecursiveType_Invalid_5_StaticTest() { contextFailTest("RecursiveType_Invalid_5"); }
  @Test public void Return_CompileFail_1_StaticTest() { contextFailTest("Return_CompileFail_1"); }
  @Test public void Return_CompileFail_10_StaticTest() { contextFailTest("Return_CompileFail_10"); }
  @Test public void Return_CompileFail_11_StaticTest() { contextFailTest("Return_CompileFail_11"); }
