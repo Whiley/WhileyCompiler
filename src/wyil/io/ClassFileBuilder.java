@@ -28,6 +28,7 @@ import static wyil.util.SyntaxError.*;
 import wyil.util.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
+import wyil.lang.Type;
 import wyil.lang.Code;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
@@ -766,9 +767,7 @@ public class ClassFileBuilder {
 	 */
 	protected void translateTypeTest(String trueTarget, Type src,
 			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
-
-		System.out.println("GOT: " + src + " ~= " + test);
-		
+				
 		JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_OBJECT);
 		
 		// ======================================================================
@@ -779,8 +778,7 @@ public class ClassFileBuilder {
 		
 		if(!(src instanceof Type.Record)) {
 			
-			if(Type.effectiveRecordType(src) == null) {	
-				System.out.println("STAGE 1");
+			if(Type.effectiveRecordType(src) == null) {					
 				// not guaranteed to have a record here, so ensure we do.
 				bytecodes.add(new Bytecode.Dup(convertType(src)));		
 				bytecodes.add(new Bytecode.InstanceOf(WHILEYRECORD));
@@ -788,9 +786,7 @@ public class ClassFileBuilder {
 				addCheckCast(WHILEYRECORD,bytecodes);	
 
 				// Narrow the type down to a record (which we now know is true)			
-				src = narrowRecordType(src);
-			
-				System.out.println("Narrowed to: " + src);
+				src = narrowRecordType(src);							
 				
 				if(Type.isSubtype(test,src)) {				
 					// Getting here indicates that the instanceof test was
@@ -800,9 +796,7 @@ public class ClassFileBuilder {
 					bytecodes.add(new Bytecode.Label(falseTarget));
 					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 					return;
-				}
-				
-				System.out.println("Stage 3");
+				}								
 			}
 			
 			// ======================================================================
@@ -869,22 +863,27 @@ public class ClassFileBuilder {
 	// The following method should be replaced in future by a GLB test, using an
 	// "open" record type (which currently doesn't exist).
 	protected Type narrowRecordType(Type t) {
-		
-		if(t instanceof Type.Recursive) {
+
+		if (t instanceof Type.Any || t instanceof Type.Void || t instanceof Type.Null
+				|| t instanceof Type.Real || t instanceof Type.Int || t instanceof Type.Bool
+				|| t instanceof Type.Meta || t instanceof Type.Existential
+				|| t instanceof Type.Process || t instanceof Type.List
+				|| t instanceof Type.Set) {
+			return Type.T_VOID;
+		} else if(t instanceof Type.Record) {
+				return (Type) t;
+		} else if(t instanceof Type.Named) {
+			t = ((Type.Named)t).type;
+		} else if(t instanceof Type.Recursive) {
 			t = Type.unfold((Type.Recursive)t);
 		}
 		
-		if(t instanceof Type.Record) {
-			return (Type) t;
-		}
+		// Ok, must be union ...
 						
 		Type.Union u = (Type.Union) t;
 		Type lub = Type.T_VOID;
-		for(Type b : u.bounds) {
-			System.out.println("NEED TO CONVERT INTO RECORD NORMAL FORM");				
-			if(b instanceof Type.Record) {
-				lub = Type.leastUpperBound(lub,b);
-			}
+		for(Type b : u.bounds) {						
+			lub = Type.leastUpperBound(narrowRecordType(b),lub);			
 		}
 		
 		return lub;

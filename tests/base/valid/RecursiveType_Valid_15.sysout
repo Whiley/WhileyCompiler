@@ -1,0 +1,15 @@
+{lhs:5,rhs:{lhs:6,rhs:{lhs:7,rhs:{lhs:8,rhs:{lhs:9,rhs:{lhs:10,rhs:1}}}}}}
+{lhs:6,rhs:{lhs:7,rhs:{lhs:8,rhs:{lhs:9,rhs:{lhs:10,rhs:1}}}}}
+{lhs:7,rhs:{lhs:8,rhs:{lhs:9,rhs:{lhs:10,rhs:1}}}}
+{lhs:8,rhs:{lhs:9,rhs:{lhs:10,rhs:1}}}
+{lhs:9,rhs:{lhs:10,rhs:1}}
+{lhs:10,rhs:1}
+1
+2
+3
+4
+5
+6
+7
+8
+9
