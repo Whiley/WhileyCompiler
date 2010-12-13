@@ -289,7 +289,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else {
 				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);				
 				trueEnv = new Env(environment);
-				falseEnv = new Env(environment);				
+				falseEnv = new Env(environment);						
 				typeInference(lhs,tc.type,tc.type,trueEnv, falseEnv);				
 			}
 			stmt = new Stmt(ncode,stmt.attributes());
@@ -308,6 +308,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected void typeInference(CExpr lhs, Type trueType, Type falseType,
 			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
+		
+		System.out.println(lhs + " => " + trueType + " => " + falseType);
+		
 		// Now, perform the actual type inference
 		if (lhs instanceof CExpr.Variable) {			
 			CExpr.Variable v = (CExpr.Variable) lhs;			
