@@ -59,7 +59,7 @@ public abstract class Code {
 			return "debug " + CExpr.toString(a.rhs,flags);
 		} else if(code instanceof Fail) {
 			Fail a = (Fail) code;						
-			return "fail " + a.msg;
+			return "fail \"" + a.msg + "\"";
 		} else if(code instanceof Label) {
 			Label a = (Label) code;						
 			return a.label + ":";

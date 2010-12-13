@@ -130,7 +130,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else {	
 				lhs = (CExpr.LVal) infer(code.lhs,stmt,environment);
 			}	
-			// Update the type of the lhs
+			// Update the type of the lhs						
+			
 			lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);			
 		}
 		
@@ -263,7 +264,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			break;
 		case NSUBTYPEEQ:			
 		case SUBTYPEEQ:
-			Value.TypeConst tc = (Value.TypeConst) rhs; 							
+			Value.TypeConst tc = (Value.TypeConst) rhs;
+						
 			Code ncode = code;
 			Env trueEnv = null;
 			Env falseEnv = null;
@@ -311,7 +313,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(v.type, trueType);
 			Type gdiff = Type.greatestDifference(v.type, falseType);	
-			//System.out.println("GLB(1): " + trueType + "&" + v.type + " = " + glb);
+			//System.out.println("\nGLB(1): " + trueType + "&" + v.type + " = " + glb);
 			//System.out.println("GDIFF(1): " + v.type + "-" + falseType + " = " + gdiff);
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
@@ -320,8 +322,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String name = "%" + reg.index;			
 			Type glb = Type.greatestLowerBound(reg.type,trueType);
 			Type gdiff = Type.greatestDifference(reg.type, falseType);
-			//System.out.println("GLB(2): " + trueType + "&" + reg.type + " = " + glb);
-			//System.out.println("GDIFF(2): " + reg.type + "-" + falseType + " = " + gdiff);
+			System.out.println("\nGLB(2): " + trueType + "&" + reg.type + " = " + glb);
+			System.out.println("GDIFF(2): " + reg.type + "-" + falseType + " = " + gdiff);
 			trueEnv.put(name, glb);
 			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {
@@ -656,7 +658,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 		
 	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {								
-		CExpr lhs = infer(e.lhs,stmt,environment);							
+		CExpr lhs = infer(e.lhs,stmt,environment);					
 		Type.Record ett = Type.effectiveRecordType(lhs.type());		
 		if (ett == null) {
 			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);

@@ -993,10 +993,10 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static String toShortString(Type t) {
+	public static String toShortString(Type t) {		
 		if (t instanceof Any || t instanceof Void || t instanceof Null
 				|| t instanceof Real || t instanceof Int || t instanceof Bool
-				|| t instanceof Meta || t instanceof Existential) {
+				|| t instanceof Meta || t instanceof Existential) {			
 			return t.toString();
 		} else if(t instanceof Set) {
 			Set st = (Set) t;
