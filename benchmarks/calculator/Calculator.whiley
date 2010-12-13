@@ -4,7 +4,7 @@ public void System::main([string] args):
         e = parse(args[0])
         if e ~= SyntaxError:
             print "syntax error: " + e.err
-        else if e ~= Expr:
+        else:
             result = evaluate(e)
             print str(result)
     else:
