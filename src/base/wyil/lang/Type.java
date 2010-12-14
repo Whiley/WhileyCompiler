@@ -332,7 +332,26 @@ public abstract class Type {
 			}		
 			return glb;					
 		} else if(t1 instanceof Recursive && t2 instanceof Recursive) {
-			// FIXME: this rule is broken
+			Recursive r1 = (Recursive) t1;
+			Recursive r2 = (Recursive) t2;
+			
+			if(r1.name.equals(r2.name)) {
+				return r1;
+			} else if(r1.type == null || r2.type == null) {
+				return T_VOID;
+			} 
+			
+			HashMap<NameID,NameID> binding = new HashMap();
+			binding.put(r2.name, r1.name);
+			
+			Type glb = greatestLowerBound(r1.type,renameRecursiveTypes(r2.type,binding));
+			
+			if(isOpenRecursive(r1.name,glb)) {
+				return T_RECURSIVE(r1.name,glb);
+			} else {
+				return glb;
+			}
+			
 		} else if(t1 instanceof Recursive) {
 			Recursive r1 = (Recursive) t1;
 			return greatestLowerBound(unfold(r1),t2);

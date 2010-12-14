@@ -458,7 +458,7 @@ public class ClassFileBuilder {
 	// since both are actually instances of java.util.List. 
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
-				
+		
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
 		test = Type.greatestLowerBound(src,test);					
@@ -578,7 +578,7 @@ public class ClassFileBuilder {
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 
 	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {				
+			Stmt stmt, ArrayList<Bytecode> bytecodes) {								
 		
 		// ======================================================================
 		// First, perform an instanceof test (if necessary) 
@@ -1013,7 +1013,7 @@ public class ClassFileBuilder {
 			System.err.println("TEST: " + Type.toShortString(src) + " ~= " + Type.toShortString(test));
 			System.err.println("LINE: " + filename + ":" + stmt.attribute(Attribute.Source.class));
 		} else {
-			// must be a union
+			// must be a union						
 			
 			// note, this approach is not efficient!
 			Type.Union usrc = (Type.Union) src;
