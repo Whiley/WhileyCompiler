@@ -311,6 +311,11 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return new BigRational(num, den);
 	}
 	
+	public BigRational intDivide(final BigRational r) {
+		BigInteger num = numerator.divide(r.numerator);		
+		return new BigRational(num);
+	}
+	
 	// =========================================================
 	// ========================= OTHER =========================
 	// =========================================================

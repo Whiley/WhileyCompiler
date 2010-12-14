@@ -1200,9 +1200,14 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
 					Bytecode.VIRTUAL));
 			break;
-		case DIV:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
+		case DIV:						
+			if(lub == Type.T_INT) {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "intDivide", ftype,
+						Bytecode.VIRTUAL));
+			} else {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
 					Bytecode.VIRTUAL));
+			}
 			break;
 		case UNION:			
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
