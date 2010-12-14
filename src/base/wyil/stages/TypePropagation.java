@@ -35,17 +35,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		super(loader);
 	}
 		
-	public Module.TypeDef propagate(Module.TypeDef type) {
-		Block constraint = type.constraint();
-		if (constraint == null) {
-			return type;
-		} else {
-			this.stores = new HashMap<String,Env>();
-			Env environment = new Env();
-			environment.put("$", type.type());
-			constraint = propagate(constraint, environment).first();
-			return new Module.TypeDef(type.name(), type.type(), constraint);
-		}
+	public Module.TypeDef propagate(Module.TypeDef type) {		
+		return type;		
 	}
 	
 	public Env initialStore() {
@@ -76,24 +67,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,Env>();
 		
-		Env environment = initialStore();
-		
-		Block precondition = mcase.precondition();
-		if(precondition != null) {
-			Env preenv = new Env(environment);
-			precondition = propagate(precondition, preenv).first();
-		}
-		Block postcondition = mcase.postcondition();
-		if(postcondition != null) {
-			Env postenv = new Env(environment);
-			postenv.put("$",method.type().ret);
-			postcondition = propagate(postcondition, postenv).first();			
-		}
-		
+		Env environment = initialStore();		
 		Block body = propagate(mcase.body(), environment).first();	
 		
-		return new Module.Case(mcase.parameterNames(), precondition,
-				postcondition, body);
+		return new Module.Case(mcase.parameterNames(),body);
 	}
 	
 	protected Pair<Stmt, Env> propagate(Stmt stmt,

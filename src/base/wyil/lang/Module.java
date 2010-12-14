@@ -116,13 +116,11 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public static class TypeDef {
 		private String name;
-		private Type type;
-		private Block constraint;
+		private Type type;		
 
-		public TypeDef(String name, Type type, Block constraint) {			
+		public TypeDef(String name, Type type) {			
 			this.name = name;
-			this.type = type;			
-			this.constraint = constraint;
+			this.type = type;						
 		}
 
 		public String name() {
@@ -131,10 +129,6 @@ public class Module extends ModuleLoader.Skeleton {
 
 		public Type type() {
 			return type;
-		}
-		
-		public Block constraint() {
-			return constraint;
 		}
 	}
 	
@@ -202,30 +196,17 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public static class Case extends SyntacticElement.Impl {
 		private final ArrayList<String> paramNames;
-		private final Block precondition;
-		private final Block postcondition;
 		private final Block body;
 
-		public Case(Collection<String> paramNames, Block precondition,
-				Block postcondition, Block body) {
+		public Case(Collection<String> paramNames, Block body) {
 			this.paramNames = new ArrayList<String>(paramNames);
-			this.precondition = precondition;
-			this.postcondition = postcondition;
 			this.body = body;
 		}
 
 		public Block body() {
 			return body;
 		}
-		
-		public Block precondition() {
-			return precondition;
-		}
-		
-		public Block postcondition() {
-			return postcondition;
-		}
-		
+				
 		public List<String> parameterNames() {
 			return paramNames;
 		}

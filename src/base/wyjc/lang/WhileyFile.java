@@ -102,17 +102,15 @@ public class WhileyFile {
 	
 	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
 		public final List<Modifier> modifiers;
-		public final UnresolvedType type;	
-		public final Expr constraint;
+		public final UnresolvedType type;			
 		public final String name;
 
-		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name, Expr constraint,
+		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
 			this.type = type;
-			this.name = name;
-			this.constraint = constraint;
+			this.name = name;			
 		}
 
 		public boolean isPublic() {
@@ -137,8 +135,6 @@ public class WhileyFile {
 		public final UnresolvedType receiver;
 		public final UnresolvedType ret;
 		public final ArrayList<Parameter> parameters;
-		public final Expr precondition;
-		public final Expr postcondition;
 		public final ArrayList<Stmt> statements;
 		
 		/**
@@ -157,8 +153,7 @@ public class WhileyFile {
 		 */
 		public FunDecl(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,
-				List<Parameter> parameters, Expr precondition,
-				Expr postcondition, List<Stmt> statements,
+				List<Parameter> parameters, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
@@ -166,8 +161,6 @@ public class WhileyFile {
 			this.receiver = receiver;
 			this.ret = ret;
 			this.parameters = new ArrayList<Parameter>(parameters);
-			this.precondition = precondition;
-			this.postcondition = postcondition;
 			this.statements = new ArrayList<Stmt>(statements);
 		}
 		

@@ -562,7 +562,7 @@ public class ModuleLoader {
 					constants.add(ci);
 				} else {
 					// type definition										
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,null);					
+					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type);					
 					types.add(ti);
 				}
 			}
@@ -590,7 +590,7 @@ public class ModuleLoader {
 		}
 		Module.Case mcase;
 				
-		mcase = new Module.Case(parameterNames, null,null, null);				
+		mcase = new Module.Case(parameterNames,null);				
 		return new Module.Method(stripCase(info.first()), type, mcase);
 	}
 	

@@ -38,9 +38,9 @@ public class ModuleBuilder {
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
 	private HashMap<NameID, List<Type.Fun>> functions;
-	private HashMap<NameID, Triple<Type, Block, Boolean>> types;
+	private HashMap<NameID, Type> types;
 	private HashMap<NameID, Value> constants;
-	private HashMap<NameID, Pair<UnresolvedType, Expr>> unresolved;
+	private HashMap<NameID, UnresolvedType> unresolved;
 	private String filename;
 	private FunDecl currentFunDecl;
 
@@ -60,9 +60,9 @@ public class ModuleBuilder {
 		modules = new HashSet<ModuleID>();
 		filemap = new HashMap<NameID, WhileyFile>();
 		functions = new HashMap<NameID, List<Type.Fun>>();
-		types = new HashMap<NameID, Triple<Type, Block, Boolean>>();
+		types = new HashMap<NameID, Type>();
 		constants = new HashMap<NameID, Value>();
-		unresolved = new HashMap<NameID, Pair<UnresolvedType, Expr>>();
+		unresolved = new HashMap<NameID, UnresolvedType>();
 
 		// now, init data
 		for (WhileyFile f : files) {
@@ -153,18 +153,8 @@ public class ModuleBuilder {
 				constants.put(k, v);
 				Type t = v.type();
 				if (t instanceof Type.Set) {
-					Type.Set st = (Type.Set) t;
-					Block block = new Block();
-					String label = Block.freshLabel();
-					CExpr var = CExpr.VAR(st.element, "$");
-					Attribute attr = exprs.get(k).attribute(
-							Attribute.Source.class);
-					block.add(new Code.IfGoto(Code.COP.ELEMOF, var, v, label),
-							attr);
-					block.add(new Code.Fail("type constraint not satisfied (4)"),
-							attr);
-					block.add(new Code.Label(label));
-					types.put(k, new Triple<Type, Block, Boolean>(st.element, block, true));
+					Type.Set st = (Type.Set) t;					
+					types.put(k, st.element);
 				}
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filemap.get(k).filename, exprs
@@ -291,8 +281,7 @@ public class ModuleBuilder {
 					TypeDecl td = (TypeDecl) d;					
 					NameID key = new NameID(f.module, td.name());
 					declOrder.add(key);
-					unresolved.put(key, new Pair<UnresolvedType, Expr>(td.type,
-							td.constraint));
+					unresolved.put(key, td.type);
 					srcs.put(key, d);
 					filemap.put(key, f);
 				}
@@ -303,16 +292,11 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Pair<Type, Block> p = expandType(key, cache);				
-				p = fixRecursiveTypeTests(key,p);
-				Type t = p.first();
+				Type t = expandType(key, cache);								
 				if (Type.isExistential(t)) {
 					t = Type.T_NAMED(key, t);
 				}
-										
-				Block blk = p.second();
-							
-				types.put(key, new Triple<Type, Block, Boolean>(t, blk, blk != null));
+				types.put(key, t);
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
@@ -332,217 +316,94 @@ public class ModuleBuilder {
 	 *         question is not actually constrained.
 	 * @throws ResolveError
 	 */
-	protected Triple<Type, Block, Boolean> expandType(NameID key,
+	protected Type expandType(NameID key,
 			HashMap<NameID, Type> cache) throws ResolveError {
 		
 		Type cached = cache.get(key);
-		Triple<Type, Block, Boolean> t = types.get(key);
+		Type t = types.get(key);
 		
-		if (cached != null) {
-			Block blk = null;
-			if(cached instanceof Type.Recursive) {
-				Type.Recursive r = (Type.Recursive) cached;				
-				if(r.type == null) {
-					// need to put in place the recursive call.
-					blk = new Block();
-					blk.add(new Code.Recurse(CExpr.VAR(Type.T_ANY,"$")));
-				}
-			}
-			return new Triple<Type, Block, Boolean>(cached, blk, false);
+		if (cached != null) {			
+			return cached;
 		} else if(t != null) {
-			return new Triple<Type, Block, Boolean>(t.first(), Block.relabel(t.second()),t.third());
+			return t;
 		} else if (!modules.contains(key.module())) {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());
-			return new Triple<Type, Block, Boolean>(td.type(), Block.relabel(td
-					.constraint()), td.constraint() != null);
+			return td.type();
 		}
 
 		// following is needed to terminate any recursion
 		cache.put(key, Type.T_RECURSIVE(key, null));
 
-		// Ok, expand the type properly then
-		Pair<UnresolvedType, Expr> ut = unresolved.get(key);
-		t = expandType(ut.first(), filemap.get(key).filename,
+		// now, expand the type fully		
+		t = expandType(unresolved.get(key), filemap.get(key).filename,
 				cache);
 
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpenRecursive(key, t.first());
+		boolean isOpenRecursive = Type.isOpenRecursive(key, t);
 		if (isOpenRecursive) {
-			t = new Triple<Type, Block, Boolean>(Type.T_RECURSIVE(key, t
-					.first()), t.second(), t.third());
+			t = Type.T_RECURSIVE(key, t);
 		}
-		
-		// Resolve the constraint and generate an appropriate block.
-		Block blk = t.second();		
-		if (ut.second() != null) {
-			String trueLabel = Block.freshLabel();
-			Block constraint = resolveCondition(trueLabel, ut.second(), 0);
-			constraint.add(new Code.Fail("type constraint not satisfied (1)"), ut
-					.second().attribute(Attribute.Source.class));
-			constraint.add(new Code.Label(trueLabel));
-
-			if (blk == null) { 
-				t = new Triple<Type, Block, Boolean>(t.first(), constraint, true);
-			} else {
-				blk.addAll(constraint); 
-				t = new Triple<Type, Block, Boolean>(t.first(), blk, true);
-			}
-		}
-		
-		if(t.second() != null && t.third() && isOpenRecursive) {			
-			// For the case of a recursive type, we need to create an inductive
-			// block which traverses the recursive structure checking any
-			// constraints as necessary.
-			String lab = Block.freshLabel();
-			CExpr src = CExpr.VAR(Type.T_ANY, "$");
-			CExpr.Register var = CExpr.REG(Type.T_ANY,0);			
-			blk = Block.registerShift(1,t.second());
-
-			// finally, create the inductive block
-			blk.add(0,new Code.Induct(lab, var, src));
-			blk.add(new Code.InductEnd(lab));
-			t = new Triple<Type, Block, Boolean>(t.first(), blk, true);			
-		} else if(t.second() != null && isOpenRecursive) {
-			// If we get here, then this indicates that we didn't find any
-			// constraints within the recursive type itself. Therefore, we can
-			// discard the constraint block that has been generated. Observe
-			// that, by definition, this is non-null since it will at least
-			// include the "recurse" statements.
-			t = new Triple<Type, Block, Boolean>(t.first(), null,false);	
-		}
-		
+					
 		// finally, store it in the cache
-		cache.put(key, t.first());
+		cache.put(key, t);
 
 		// Done
 		return t;
 	}
 
-	protected Triple<Type, Block, Boolean> expandType(UnresolvedType t, String filename,
+	protected Type expandType(UnresolvedType t, String filename,
 			HashMap<NameID, Type> cache) {
 		if (t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
-			Triple<Type, Block, Boolean> p = expandType(lt.element, filename, cache);
-			Type rt = Type.T_LIST(p.first());
-			String label = Block.freshLabel();
-			Block blk = null;
-			if (p.second() != null) {
-				blk = new Block();
-				CExpr.Register reg = CExpr.REG(Type.T_ANY, 0);
-				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(Type.T_ANY, "$")));
-				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
-						.second())));
-				blk.add(new Code.ForallEnd(label));
-			}
-			return new Triple<Type, Block, Boolean>(rt, blk, p.third());
+			UnresolvedType.List lt = (UnresolvedType.List) t;			
+			return Type.T_LIST(expandType(lt.element, filename, cache));			
 		} else if (t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			Triple<Type, Block, Boolean> p = expandType(st.element, filename, cache);
-			Type rt = Type.T_SET(p.first());
-			String label = Block.freshLabel();
-			Block blk = null;
-			if (p.second() != null) {
-				blk = new Block();
-				CExpr.Register reg = CExpr.REG(Type.T_ANY, 0);
-				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(Type.T_ANY,
-						"$")));
-				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
-						.second())));
-				blk.add(new Code.ForallEnd(label));
-			}
-			return new Triple<Type, Block, Boolean>(rt, blk, p.third());			
+			UnresolvedType.Set st = (UnresolvedType.Set) t;			
+			return Type.T_SET(expandType(st.element, filename, cache));					
 		} else if (t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String, Type> types = new HashMap<String, Type>();
-			Block blk = null;
-			CExpr.Variable tmp = CExpr.VAR(Type.T_ANY, "$");
-			boolean constraint = false;
+			HashMap<String, Type> types = new HashMap<String, Type>();								
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
-				Triple<Type, Block, Boolean> p = expandType(e.getValue(), filename, cache);
-				types.put(e.getKey(), p.first());
-				if (p.second() != null) {
-					if (blk == null) {
-						blk = new Block();
-					}
-					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-					binding.put("$", CExpr.RECORDACCESS(tmp, e.getKey()));
-					blk.addAll(Block.substitute(binding, p.second()));
-				}
-				constraint |= p.third();
+				Type p = expandType(e.getValue(), filename, cache);
+				types.put(e.getKey(), p);				
 			}
-			Type type = Type.T_RECORD(types);
-			// Need to update the self type properly
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", CExpr.VAR(Type.T_ANY, "$"));
-			return new Triple<Type, Block, Boolean>(type, Block.substitute(binding, blk), constraint);
+			return Type.T_RECORD(types);						
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
-			Block blk = new Block();
-			String exitLabel = Block.freshLabel();
-			CExpr.Variable var = CExpr.VAR(Type.T_ANY, "$#");
-			boolean constraint = false;
 			for(int i=0;i!=ut.bounds.size();++i) {
 				UnresolvedType b = ut.bounds.get(i);
 				
-				Triple<Type, Block, Boolean> p = expandType(b, filename, cache);
-				Type bt = p.first();
+				Type bt = expandType(b, filename, cache);				
 				if (bt instanceof Type.NonUnion) {
 					bounds.add((Type.NonUnion) bt);
 				} else {
 					bounds.addAll(((Type.Union) bt).bounds);
-				}
-				constraint |= p.third();								
-				
-				if(p.second() != null) {
-					String nextLabel = Block.freshLabel();
-					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
-						.V_TYPE(p.first()), nextLabel));				
-					blk.addAll(Block.chain(nextLabel, p.second()));				
-					blk.add(new Code.Goto(exitLabel));
-					blk.add(new Code.Label(nextLabel));
-				} else {
-					blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, var, Value
-							.V_TYPE(p.first()), exitLabel));						
-				}
+				}				
 			}
-			// FIXME: need some line number information here
-			blk.add(new Code.Fail("type constraint not satisfied (2)"));
-			blk.add(new Code.Label(exitLabel));
 			
 			Type type;
 			if (bounds.size() == 1) {
-				type = bounds.iterator().next();
+				return bounds.iterator().next();
 			} else {				
-				type = Type.leastUpperBound(bounds);
-			}
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$#", CExpr.VAR(Type.T_ANY, "$"));
-			return new Triple<Type, Block, Boolean>(type, Block.substitute(binding, blk), constraint);
+				return Type.leastUpperBound(bounds);
+			}			
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Triple<Type, Block, Boolean> p = expandType(ut.element, filename, cache);			
-			Type type = Type.T_PROCESS(p.first());
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(Type.T_ANY, "$")));			
-			return new Triple<Type, Block, Boolean>(type, Block.substitute(binding, p.second()), p.third());					
+			return Type.T_PROCESS(expandType(ut.element, filename, cache));							
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
 			Attributes.Module modInfo = dt.attribute(Attributes.Module.class);
 			NameID name = new NameID(modInfo.module, dt.name);
 
 			try {
-				Triple<Type, Block, Boolean> et = expandType(name, cache);								
+				Type et = expandType(name, cache);								
 				
-				if (Type.isExistential(et.first())) {
-					return new Triple<Type, Block, Boolean>(Type.T_NAMED(new NameID(
-							modInfo.module, dt.name), et.first()), et.second(), et.third());
+				if (Type.isExistential(et)) {
+					return Type.T_NAMED(new NameID(modInfo.module, dt.name), et);
 				} else {
 					return et;
 				}
@@ -553,7 +414,7 @@ public class ModuleBuilder {
 			}
 		} else {
 			// for base cases			
-			return new Triple<Type,Block,Boolean>(resolve(t).first(),null,false);
+			return resolve(t);
 		}
 	}
 
@@ -561,16 +422,16 @@ public class ModuleBuilder {
 
 		ArrayList<Type> parameters = new ArrayList<Type>();
 		for (WhileyFile.Parameter p : fd.parameters) {
-			parameters.add(resolve(p.type).first());
+			parameters.add(resolve(p.type));
 		}
 
 		// method return type
-		Type ret = resolve(fd.ret).first();
+		Type ret = resolve(fd.ret);
 
 		// method receiver type (if applicable)
 		Type.ProcessName rec = null;
 		if (fd.receiver != null) {
-			Type t = resolve(fd.receiver).first();
+			Type t = resolve(fd.receiver);
 			checkType(t, Type.Process.class, fd.receiver);
 			rec = (Type.ProcessName) t;
 		}
@@ -592,79 +453,32 @@ public class ModuleBuilder {
 	}
 
 	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
-		Pair<Type, Block> p = types.get(new NameID(module, td.name()));			
-		return new Module.TypeDef(td.name(), p.first(), p.second());
+		return new Module.TypeDef(td.name(), types.get(new NameID(module, td.name())));
 	}
 
 	protected Module.Method resolve(FunDecl fd) {
 		ArrayList<String> parameterNames = new ArrayList<String>();
-		Block precondition = null;
-
+		
 		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {
-			Pair<Type, Block> t = resolve(p.type);		
-			Block constraint = t.second();
-			if(constraint != null) {
-				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-				binding.put("$", CExpr.VAR(Type.T_ANY, p.name));
-				constraint = Block.substitute(binding, constraint);
-				t = new Pair<Type,Block>(t.first(),constraint);
-			}
-						
-			parameterNames.add(p.name());
-			if (t.second() != null) {
-				if (precondition == null) {
-					precondition = new Block();
-				}
-				precondition.addAll(constraint);
-			}
+			parameterNames.add(p.name());			
 		}
 
 		// method return type
-		Pair<Type, Block> ret = resolve(fd.ret);
-		Block postcondition = ret.second();
+		Type ret = resolve(fd.ret);		
 
 		// method receiver type (if applicable)
 		if (fd.receiver != null) {
-			Pair<Type, Block> rec = resolve(fd.receiver);					
+			Type rec = resolve(fd.receiver);					
 		}
-
-		if (fd.precondition != null) {
-			String trueLabel = Block.freshLabel();
-			Block tmp = resolveCondition(trueLabel, fd.precondition, 0);
-			tmp.add(new Code.Fail("function precondition not satisfied"),
-					fd.precondition.attribute(Attribute.Source.class));
-			tmp.add(new Code.Label(trueLabel));
-			if (precondition == null) {
-				precondition = tmp;
-			} else {
-				precondition.addAll(tmp);
-			}
-		}
-
-		if (fd.postcondition != null) {				
-			String trueLabel = Block.freshLabel();			
-			Attribute.Source attr = fd.postcondition.attribute(Attribute.Source.class);			
-			Block tmp = resolveCondition(trueLabel, fd.postcondition, 0);
-			tmp.add(new Code.Fail("function postcondition not satisfied"),
-					attr);
-			tmp.add(new Code.Label(trueLabel));						
-			if (postcondition == null) {
-				postcondition = tmp;
-			} else {
-				postcondition.addAll(tmp);
-			}
-		}
-
+		
 		currentFunDecl = fd;
 		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 
 		Block blk = new Block();
-
-		// free reg determines the first free register.
-		int freeReg = determineShadows(postcondition, parameterNames, tf, blk);
+		
 		for (Stmt s : fd.statements) {
-			blk.addAll(resolve(s, freeReg));
+			blk.addAll(resolve(s, 0));
 		}
 
 		currentFunDecl = null;
@@ -674,45 +488,8 @@ public class ModuleBuilder {
 		// removed as dead-code or remains and will cause an error.
 		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));
 
-		Module.Case ncase = new Module.Case(parameterNames, precondition,
-				postcondition, blk);
+		Module.Case ncase = new Module.Case(parameterNames, blk);
 		return new Module.Method(fd.name(), tf, ncase);
-	}
-
-	/**
-	 * Determine which parameters require shadows. A parameter requires a shadow
-	 * if: it is used in the post-condition: and, it is modified in the method
-	 * body.
-	 * 
-	 * @param f
-	 */
-	protected int determineShadows(Block postcondition,
-			List<String> parameterNames, Type.Fun ft, Block body) {
-		shadows.clear();
-		int freeReg = 0;
-		if (postcondition != null) {
-			HashMap<String, Type> binding = new HashMap<String, Type>();
-			for (int i = 0; i != parameterNames.size(); ++i) {
-				String name = parameterNames.get(i);
-				Type t = ft.params.get(i);
-				binding.put(name, t);
-			}
-
-			HashSet<CExpr.Variable> uses = new HashSet<CExpr.Variable>();
-			Block.match(postcondition, CExpr.Variable.class, uses);
-
-			for (CExpr.Variable v : uses) {
-				if (!v.name.equals("$")) {
-					CExpr.LVar shadow = CExpr.REG(binding.get(v.name),
-							freeReg++);
-					shadows.put(v.name, shadow);
-					Code code = new Code.Assign(shadow, CExpr.VAR(binding
-							.get(v.name), v.name));
-					body.add(code);
-				}
-			}
-		}
-		return freeReg;
 	}
 
 	public Block resolve(Stmt stmt, int freeReg) {
@@ -827,51 +604,11 @@ public class ModuleBuilder {
 			Block blk = new Block();
 			blk.addAll(t.second());
 
-			Pair<Type, Block> ret = resolve(currentFunDecl.ret);
-			
-			Block postcondition = ret.second();
+			Type ret = resolve(currentFunDecl.ret);
 						
-			if (currentFunDecl.postcondition != null) {
-				
-				// first, construct the postcondition block
-				String trueLabel = Block.freshLabel();				
-				if(postcondition == null) {
-					postcondition = new Block();
-				}				
-				postcondition.addAll(resolveCondition(trueLabel, currentFunDecl.postcondition,
-						freeReg));
-				postcondition.add(new Code.Fail(
-						"function postcondition not satisfied"),
-						currentFunDecl.postcondition.attribute(Attribute.Source.class));
-				postcondition.add(new Code.Label(trueLabel));
-			}
-			
-			if(postcondition != null) {
-				// Now, write it into the block
-				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-				CExpr.LVar tmp;
-				
-				if(t.first() instanceof CExpr.LVar) {
-					tmp = (CExpr.LVar) t.first();					
-				} else {
-					// The following is done to prevent problems with
-					// substitution into type test positions.
-					tmp = CExpr.REG(Type.T_ANY, freeReg+1);
-					blk.add(new Code.Assign(tmp,t.first()),s.attribute(Attribute.Source.class));
-					
-				}
-				binding.put("$", tmp);
-				binding.putAll(shadows);
-				Block.addCheck(freeReg+2,blk,postcondition,binding,s);
-				// now, just return the temporary variable
-				blk.add(new Code.Return(tmp), s
-						.attribute(Attribute.Source.class));
-				return blk;
-			} else {
-				blk.add(new Code.Return(t.first()), s
-						.attribute(Attribute.Source.class));
-				return blk;
-			}
+			blk.add(new Code.Return(t.first()), s
+					.attribute(Attribute.Source.class));
+			return blk;			
 		} else {
 			Block blk = new Block();
 			blk.add(new Code.Return(null), s.attribute(Attribute.Source.class));
@@ -931,19 +668,6 @@ public class ModuleBuilder {
 		Block invariant = null;
 		Block blk = new Block();
 		
-		if(s.invariant != null) {
-			// FIXME: what I should be doing is loading the invariant into the
-			// for, and then inlining it in the PreconditionInline state.
-			invariant = new Block();
-			invariant.add(new Code.Check(chklab));
-			invariant.addAll(resolveCondition(entry, s.invariant, freeReg));
-			invariant.add(new Code.Fail("loop invariant not satisfied"), s
-					.attribute(Attribute.Source.class));
-			invariant.add(new Code.Label(entry));
-			invariant.add(new Code.CheckEnd(chklab));
-			blk.addAll(Block.relabel(invariant));
-		}		
-		
 		blk.add(new Code.Loop(label, invariant, Collections.EMPTY_SET), s
 				.attribute(Attribute.Source.class));
 		
@@ -952,14 +676,7 @@ public class ModuleBuilder {
 		for (Stmt st : s.body) {
 			blk.addAll(resolve(st, freeReg));
 		}		
-		if(s.invariant != null) {
-			blk.add(new Code.Check(chklab));
-			blk.addAll(resolveCondition(loopend, s.invariant, freeReg));
-			blk.add(new Code.Fail("loop invariant not restored"), s
-					.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(loopend));
-			blk.add(new Code.CheckEnd(chklab));
-		}
+		
 		blk.add(new Code.LoopEnd(label), s.attribute(Attribute.Source.class));		
 		blk.add(new Code.Label(exitLab));
 
@@ -972,21 +689,6 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		Block invariant = null;
 		
-		if(s.invariant != null) {
-			// FIXME: what I should be doing is loading the invariant into the
-			// for, and then inlining it in the PreconditionInline state.
-			String chklab = Block.freshLabel();
-			String entry = Block.freshLabel();				
-			invariant = new Block();
-			invariant.add(new Code.Check(chklab));
-			invariant.addAll(resolveCondition(entry, s.invariant, freeReg));
-			invariant.add(new Code.Fail("loop invariant not satisfied"), s
-					.attribute(Attribute.Source.class));
-			invariant.add(new Code.Label(entry));
-			invariant.add(new Code.CheckEnd(chklab));
-			blk.addAll(Block.relabel(invariant));
-		}
-		
 		blk.addAll(source.second());
 		CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg); 
 		blk.add(new Code.Forall(label, invariant, reg, source.first()), s
@@ -998,17 +700,6 @@ public class ModuleBuilder {
 		for (Stmt st : s.body) {
 			Block b = resolve(st, freeReg+1);
 			blk.addAll(Block.substitute(binding, b));
-		}
-				
-		if(s.invariant != null) {
-			String chklab = Block.freshLabel();				
-			String loopend = Block.freshLabel();
-			blk.add(new Code.Check(chklab));
-			blk.addAll(resolveCondition(loopend, s.invariant, freeReg));
-			blk.add(new Code.Fail("loop invariant not restored"), s
-					.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(loopend));
-			blk.add(new Code.CheckEnd(chklab));
 		}		
 		
 		blk.add(new Code.ForallEnd(label), s.attribute(Attribute.Source.class));		
@@ -1178,25 +869,14 @@ public class ModuleBuilder {
 	protected Block resolveTypeCondition(String target, BinOp v, int freeReg) {
 
 		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.lhs);
-		Pair<Type, Block> rhs_tb = resolve(((Expr.TypeConst) v.rhs).type);
+		Type rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
 		
 		Block blk = new Block();
 		String exitLabel = Block.freshLabel();
 		blk.addAll(lhs_tb.second());
 		blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, lhs_tb.first(), Value
-				.V_TYPE(rhs_tb.first()), exitLabel), v
+				.V_TYPE(rhs_t), exitLabel), v
 				.attribute(Attribute.Source.class));
-
-		if (rhs_tb.second() != null) {
-			// Chain failures to redirect to the next point.			
-			// Create binding for $  
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", lhs_tb.first());
-			// add constraint
-			Block constraint = new Block();
-			Block.addCheck(freeReg,constraint,rhs_tb.second(),binding,v);
-			blk.addAll(Block.chain(exitLabel,constraint));
-		} 
 		
 		blk.add(new Code.Goto(target));	
 		blk.add(new Code.Label(exitLabel));
@@ -1671,114 +1351,54 @@ public class ModuleBuilder {
 				lhs.second());
 	}
 
-	protected Pair<Type, Block> resolve(UnresolvedType t) {
+	protected Type resolve(UnresolvedType t) {
 		if (t instanceof UnresolvedType.Any) {
-			return new Pair<Type, Block>(Type.T_ANY, null);
+			return Type.T_ANY;
 		} else if (t instanceof UnresolvedType.Existential) {
-			return new Pair<Type, Block>(Type.T_EXISTENTIAL, null);
+			return Type.T_EXISTENTIAL;
 		} else if (t instanceof UnresolvedType.Void) {
-			return new Pair<Type, Block>(Type.T_VOID, null);
+			return Type.T_VOID;
 		} else if (t instanceof UnresolvedType.Null) {
-			return new Pair<Type, Block>(Type.T_NULL, null);
+			return Type.T_NULL;
 		} else if (t instanceof UnresolvedType.Bool) {
-			return new Pair<Type, Block>(Type.T_BOOL, null);
+			return Type.T_BOOL;
 		} else if (t instanceof UnresolvedType.Int) {
-			return new Pair<Type, Block>(Type.T_INT, null);
+			return Type.T_INT;
 		} else if (t instanceof UnresolvedType.Real) {
-			return new Pair<Type, Block>(Type.T_REAL, null);
+			return Type.T_REAL;
 		} else if (t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
-			Pair<Type, Block> p = resolve(lt.element);
-			Type rt = Type.T_LIST(p.first());
-			String label = Block.freshLabel();
-			Block blk = null;
-			if (p.second() != null) {
-				blk = new Block();
-				CExpr.Register reg = CExpr.REG(p.first(), 0);
-				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
-				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
-						.second())));
-				blk.add(new Code.ForallEnd(label));
-			}
-			return new Pair<Type, Block>(rt, blk);
+			UnresolvedType.List lt = (UnresolvedType.List) t;			
+			return Type.T_LIST(resolve(lt.element));			
 		} else if (t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;
-			Pair<Type, Block> p = resolve(st.element);
-			Type rt = Type.T_SET(p.first());
-			String label = Block.freshLabel();
-			Block blk = null;
-			if (p.second() != null) {
-				blk = new Block();
-				CExpr.Register reg = CExpr.REG(p.first(), 0);
-				// FIXME: need some line number information here?
-				blk.add(new Code.Forall(label, null, reg, CExpr.VAR(rt, "$")));
-				blk.addAll(Block.substitute("$", reg, Block.registerShift(1, p
-						.second())));
-				blk.add(new Code.ForallEnd(label));
-			}
-			return new Pair<Type, Block>(rt, blk);
+			UnresolvedType.Set st = (UnresolvedType.Set) t;			
+			return Type.T_SET(resolve(st.element));			
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			HashMap<String,Type> types = new HashMap<String,Type>();
-			Block blk = null;
-			CExpr.Variable tmp = CExpr.VAR(Type.T_VOID, "$");
+			HashMap<String,Type> types = new HashMap<String,Type>();			
 			int idx=0;
 			for (UnresolvedType e : tt.types) {
 				String name = "$" + idx++;
-				Pair<Type, Block> p = resolve(e);
-				types.put(name, p.first());
-				if (p.second() != null) {
-					if (blk == null) {
-						blk = new Block();
-					}
-					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-					binding.put("$", CExpr.RECORDACCESS(tmp, name));
-					// FIXME: possible bug here for union types
-					blk.addAll(Block.substitute(binding, p.second()));
-				}
+				types.put(name, resolve(e));				
 			}
-			Type type = Type.T_RECORD(types);
-			// Need to update the self type properly
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", CExpr.VAR(type, "$"));
-			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
+			return Type.T_RECORD(types);			
 		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String, Type> types = new HashMap<String, Type>();
-			Block blk = null;
-			CExpr.Variable tmp = CExpr.VAR(Type.T_VOID, "$");
+			HashMap<String, Type> types = new HashMap<String, Type>();			
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
-				Pair<Type, Block> p = resolve(e.getValue());
-				types.put(e.getKey(), p.first());
-				if (p.second() != null) {
-					if (blk == null) {
-						blk = new Block();
-					}
-					HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-					binding.put("$", CExpr.RECORDACCESS(tmp, e.getKey()));
-					blk.addAll(Block.substitute(binding, p.second()));
-				}
+				types.put(e.getKey(), resolve(e.getValue()));				
 			}
-			Type type = Type.T_RECORD(types);
-			// Need to update the self type properly
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", CExpr.VAR(type, "$"));
-			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
+			return Type.T_RECORD(types);
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
 			ModuleID mid = dt.attribute(Attributes.Module.class).module;
 			if (modules.contains(mid)) {
-				Pair<Type, Block> p = types.get(new NameID(mid, dt.name));				
-				return new Pair<Type, Block>(p.first(), Block.relabel(p
-						.second()));
+				return types.get(new NameID(mid, dt.name));								
 			} else {
 				try {
 					Module mi = loader.loadModule(mid);
 					Module.TypeDef td = mi.type(dt.name);
-					return new Pair<Type, Block>(td.type(), Block.relabel(td
-							.constraint()));
+					return td.type();
 				} catch (ResolveError rex) {
 					syntaxError(rex.getMessage(), filename, t, rex);
 					return null;
@@ -1786,52 +1406,25 @@ public class ModuleBuilder {
 			}
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
-			Block blk = new Block();			
-			String exitLabel = Block.freshLabel();
-			CExpr.Variable var = CExpr.VAR(Type.T_VOID, "$#");
-			for (UnresolvedType b : ut.bounds) {
-				Pair<Type, Block> p = resolve(b);
-				Type bt = p.first();
+			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();			
+			for (UnresolvedType b : ut.bounds) {				
+				Type bt = resolve(b);
 				if (bt instanceof Type.NonUnion) {
 					bounds.add((Type.NonUnion) bt);
 				} else {
 					bounds.addAll(((Type.Union) bt).bounds);
-				}
-			
-				if(p.second() != null) {
-					String nextLabel = Block.freshLabel();
-					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
-						.V_TYPE(p.first()), nextLabel));		
-					blk.addAll(Block.chain(nextLabel, p.second()));				
-					blk.add(new Code.Goto(exitLabel));
-					blk.add(new Code.Label(nextLabel));
-				} else {
-					blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, var, Value
-							.V_TYPE(p.first()), exitLabel));						
-				}
+				}			
 			}
-
-			// FIXME: need some line number information here
-			blk.add(new Code.Fail("type constraint not satisfied (3)"));
-			blk.add(new Code.Label(exitLabel));
 
 			Type type;
 			if (bounds.size() == 1) {
-				type = bounds.iterator().next();
+				return bounds.iterator().next();
 			} else {
-				type = Type.leastUpperBound(bounds);
-			}
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$#", CExpr.VAR(type, "$"));
-			return new Pair<Type, Block>(type, Block.substitute(binding, blk));
+				return Type.leastUpperBound(bounds);
+			}			
 		} else {
-			UnresolvedType.Process ut = (UnresolvedType.Process) t;
-			Pair<Type, Block> p = resolve(ut.element);			
-			Type type = Type.T_PROCESS(p.first());
-			HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-			binding.put("$", CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(type, "$")));			
-			return new Pair<Type, Block>(type, Block.substitute(binding, p.second()));					
+			UnresolvedType.Process ut = (UnresolvedType.Process) t;			
+			return Type.T_PROCESS(resolve(ut.element));							
 		}
 	}
 

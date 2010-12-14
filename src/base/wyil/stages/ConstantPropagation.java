@@ -35,15 +35,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		super(loader);
 	}
 	
-	public Module.TypeDef transform(Module.TypeDef type) {
-		Block constraint = type.constraint();
-		if (constraint == null) {
-			return type;
-		} else {
-			HashMap<String, Value> environment = new HashMap<String, Value>();
-			constraint = propagate(constraint, environment).first();
-			return new Module.TypeDef(type.name(), type.type(), constraint);
-		}
+	public Module.TypeDef transform(Module.TypeDef type) {		
+		return type;		
 	}
 	
 	public HashMap<String,Value> initialStore() {		

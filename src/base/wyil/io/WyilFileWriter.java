@@ -75,13 +75,7 @@ public class WyilFileWriter {
 			} else {
 				t_str = t.toString();
 			}
-			out.print("define " + td.name() + " as " + t_str);
-			if(td.constraint() != null) {
-				out.println(":");
-				write(0,td.constraint(),out);				
-			} else {
-				out.println();
-			}
+			out.println("define " + td.name() + " as " + t_str);			
 		}
 		if(!module.types().isEmpty()) {
 			out.println();
@@ -116,16 +110,7 @@ public class WyilFileWriter {
 				out.print(t + " " + n);
 			}
 		}
-		out.println("):");
-		
-		if(mcase.precondition() != null) {
-			out.println("precondition: ");
-			write(0,mcase.precondition(),out);			
-		}
-		if(mcase.postcondition() != null) {
-			out.println("postcondition: ");
-			write(0,mcase.postcondition(),out);			
-		}
+		out.println("):");				
 		out.println("body: ");
 		write(0,mcase.body(),out);	
 	}

@@ -168,10 +168,7 @@ public class WhileyParser {
 					index - 1)));
 		}
 		
-		match(RightBrace.class);
-		
-		Pair<Expr,Expr> conditions = parseRequiresEnsures();
-		
+		match(RightBrace.class);		
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
@@ -179,8 +176,7 @@ public class WhileyParser {
 		List<Stmt> stmts = parseBlock(1);
 		
 		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes,
-				conditions.first(), conditions.second(), stmts, sourceAttr(
-						start, end - 1));
+				stmts, sourceAttr(start, end - 1));
 	}
 	
 	private Decl parseDefType(List<Modifier> modifiers) {		
@@ -198,17 +194,10 @@ public class WhileyParser {
 		// constant).
 		
 		try {			
-			UnresolvedType t = parseType();			
-			Expr constraint = null;
-			if(index < tokens.size() && tokens.get(index).text.equals("where")) {
-				// this is a constrained type				
-				matchKeyword("where");
-				skipWhiteSpace();
-				constraint = parseCondition();							
-			}
+			UnresolvedType t = parseType();								
 			int end = index;			
 			matchEndLine();			
-			return new TypeDecl(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
+			return new TypeDecl(modifiers, t, name.text, sourceAttr(start,end-1));
 		
 		} catch(Exception e) {	
 		}
@@ -276,42 +265,6 @@ public class WhileyParser {
 			return getIndent();
 		} else {
 			return null;
-		}
-	}
-	
-	private Expr parseWhere() {
-		skipWhiteSpace();
-		checkNotEof();		
-		if(index < tokens.size() && tokens.get(index).text.equals("where")) {
-			// this is a constrained type				
-			matchKeyword("where");
-			return parseCondition();			
-		} else {
-			return null;
-		}
-	}
-	
-	private Pair<Expr, Expr> parseRequiresEnsures() {
-		skipWhiteSpace();
-		checkNotEof();
-		if (index < tokens.size() && tokens.get(index).text.equals("requires")) {
-			// this is a constrained type
-			matchKeyword("requires");
-			Expr pre = parseCondition();
-			Expr post = null;
-			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
-				match(Comma.class);
-				matchKeyword("ensures");
-				post = parseCondition();
-			}
-			return new Pair<Expr, Expr>(pre, post);
-		} else if (index < tokens.size()
-				&& tokens.get(index).text.equals("ensures")) {
-			// this is a constrained type
-			matchKeyword("ensures");
-			return new Pair<Expr, Expr>(null, parseCondition());
-		} else {
-			return new Pair<Expr,Expr>(null,null);
 		}
 	}
 	
@@ -452,18 +405,13 @@ public class WhileyParser {
 	private Stmt parseWhile(int indent) {
 		int start = index;
 		matchKeyword("while");						
-		Expr condition = parseCondition();
-		Expr invariant = null;
-		if(tokens.get(index).text.equals("where")) {
-			matchKeyword("where");
-			invariant = parseCondition();
-		}
+		Expr condition = parseCondition();			
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
 		
-		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
+		return new Stmt.While(condition,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseFor(int indent) {
@@ -471,18 +419,13 @@ public class WhileyParser {
 		matchKeyword("for");						
 		Identifier id = matchIdentifier();
 		match(ElemOf.class);
-		Expr source = parseCondition();
-		Expr invariant = null;
-		if(tokens.get(index).text.equals("where")) {
-			matchKeyword("where");
-			invariant = parseCondition();
-		}
+		Expr source = parseCondition();		
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
 		
-		return new Stmt.For(id.text,source,invariant,blk, sourceAttr(start,end-1));
+		return new Stmt.For(id.text,source,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseExtern(int indent) {

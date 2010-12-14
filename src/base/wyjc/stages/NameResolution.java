@@ -74,15 +74,7 @@ public class NameResolution {
 	
 	protected void resolve(TypeDecl td, ArrayList<PkgID> imports) throws ResolveError {
 		try {
-			resolve(td.type, imports);			
-			if(td.constraint != null) {
-				HashMap<String,Set<Expr>> environment = new HashMap<String,Set<Expr>>();
-				environment.put("$", Collections.EMPTY_SET);
-				addExposedNames(new Expr.Variable("$", td.constraint
-						.attribute(Attribute.Source.class),
-						new Attributes.Alias(null)), td.type, environment);
-				resolve(td.constraint,environment,imports);
-			}		
+			resolve(td.type, imports);						
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
 			syntaxError(e.getMessage(), filename,  td);			
@@ -121,16 +113,6 @@ public class NameResolution {
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
 			syntaxError(e.getMessage(),filename,fd.receiver);
-		}
-			
-		if(fd.precondition != null) {			
-			resolve(fd.precondition, environment,imports);						
-		}
-		
-		if(fd.postcondition != null) {
-			environment.put("$",Collections.EMPTY_SET);
-			resolve(fd.postcondition, environment,imports);			
-			environment.remove("$");
 		}
 		
 		List<Stmt> stmts = fd.statements;
@@ -233,10 +215,7 @@ public class NameResolution {
 	
 	protected void resolve(While s, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
-		resolve(s.condition, environment, imports);
-		if(s.invariant != null) {
-			resolve(s.invariant, environment, imports);
-		}
+		resolve(s.condition, environment, imports);		
 		environment = new HashMap<String,Set<Expr>>(environment);
 		for (Stmt st : s.body) {
 			resolve(st, environment, imports);
@@ -245,10 +224,7 @@ public class NameResolution {
 	
 	protected void resolve(For s, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
-		resolve(s.source, environment, imports);
-		if(s.invariant != null) {
-			resolve(s.invariant, environment, imports);
-		}
+		resolve(s.source, environment, imports);		
 		if (environment.containsKey(s.variable)) {
 			syntaxError("variable " + s.variable + " is alreaded defined",
 					filename, s);
