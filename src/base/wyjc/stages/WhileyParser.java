@@ -697,7 +697,7 @@ public class WhileyParser {
 		checkNotEof();
 		int start = index;
 		int ostart = index;		
-		Expr lhs = parseRangeTerm();
+		Expr lhs = parseTerm();
 		
 		Token lookahead = tokens.get(index);
 		
@@ -709,10 +709,27 @@ public class WhileyParser {
 				match(LeftSquare.class);
 				skipWhiteSpace();
 				
-				Expr rhs = parseAddSubExpression();
 				lookahead = tokens.get(index);
-				if(lookahead instanceof Colon) {
-					match(Colon.class);
+				
+				if (lookahead instanceof DotDot) {
+					// this indicates a sublist without a starting expression;
+					// hence, start point defaults to zero
+					match(DotDot.class);
+					skipWhiteSpace();
+					lookahead = tokens.get(index);
+					Expr end = parseAddSubExpression();
+					match(RightSquare.class);
+					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
+							index - 1), lhs, new Expr.Constant(Value
+							.V_INT(BigInteger.ZERO), sourceAttr(start,
+							index - 1)), end);
+				}
+				
+				Expr rhs = parseAddSubExpression();
+				
+				lookahead = tokens.get(index);
+				if(lookahead instanceof DotDot) {					
+					match(DotDot.class);
 					skipWhiteSpace();
 					lookahead = tokens.get(index);
 					Expr end;
@@ -762,23 +779,7 @@ public class WhileyParser {
 		
 		return lhs;		
 	}
-	
-	public Expr parseRangeTerm() {
-		int start = index;
-		Expr st = parseTerm();
 		
-		if ((index + 1) < tokens.size()				
-				&& tokens.get(index) instanceof DotDot) {						
-			match(DotDot.class);			
-			skipWhiteSpace();
-			Expr ed = parseTerm();
-			return new Expr.BinOp(Expr.BOp.LISTRANGE, st, ed, sourceAttr(start,
-					index - 1));
-		} else {
-			return st;
-		}
-	}
-	
 	private Expr parseTerm() {		
 		checkNotEof();		
 		
