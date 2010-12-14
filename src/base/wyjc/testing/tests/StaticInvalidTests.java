@@ -21,8 +21,8 @@ package wyjc.testing.tests;
 import org.junit.*;
 import wyjc.testing.TestHarness;
 
-public class BaseInvalidTests extends TestHarness {
- public BaseInvalidTests() {
+public class StaticInvalidTests extends TestHarness {
+ public StaticInvalidTests() {
   super("tests/base/invalid","tests/base/invalid","sysout");
  }
 

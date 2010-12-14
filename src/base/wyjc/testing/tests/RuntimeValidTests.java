@@ -21,8 +21,8 @@ package wyjc.testing.tests;
 import org.junit.*;
 import wyjc.testing.TestHarness;
 
-public class BaseValidTests extends TestHarness {
- public BaseValidTests() {
+public class RuntimeValidTests extends TestHarness {
+ public RuntimeValidTests() {
   super("tests/base/valid","tests/base/valid","sysout");
  }
 
