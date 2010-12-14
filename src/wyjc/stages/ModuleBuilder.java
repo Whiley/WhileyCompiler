@@ -161,7 +161,7 @@ public class ModuleBuilder {
 							Attribute.Source.class);
 					block.add(new Code.IfGoto(Code.COP.ELEMOF, var, v, label),
 							attr);
-					block.add(new Code.Fail("type constraint not satisfied"),
+					block.add(new Code.Fail("type constraint not satisfied (4)"),
 							attr);
 					block.add(new Code.Label(label));
 					types.put(k, new Triple<Type, Block, Boolean>(st.element, block, true));
@@ -381,7 +381,7 @@ public class ModuleBuilder {
 		if (ut.second() != null) {
 			String trueLabel = Block.freshLabel();
 			Block constraint = resolveCondition(trueLabel, ut.second(), 0);
-			constraint.add(new Code.Fail("type constraint not satisfied"), ut
+			constraint.add(new Code.Fail("type constraint not satisfied (1)"), ut
 					.second().attribute(Attribute.Source.class));
 			constraint.add(new Code.Label(trueLabel));
 
@@ -488,7 +488,9 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			CExpr.Variable var = CExpr.VAR(Type.T_ANY, "$#");
 			boolean constraint = false;
-			for (UnresolvedType b : ut.bounds) {			
+			for(int i=0;i!=ut.bounds.size();++i) {
+				UnresolvedType b = ut.bounds.get(i);
+				
 				Triple<Type, Block, Boolean> p = expandType(b, filename, cache);
 				Type bt = p.first();
 				if (bt instanceof Type.NonUnion) {
@@ -497,6 +499,7 @@ public class ModuleBuilder {
 					bounds.addAll(((Type.Union) bt).bounds);
 				}
 				constraint |= p.third();								
+				
 				if(p.second() != null) {
 					String nextLabel = Block.freshLabel();
 					blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, var, Value
@@ -510,7 +513,7 @@ public class ModuleBuilder {
 				}
 			}
 			// FIXME: need some line number information here
-			blk.add(new Code.Fail("type constraint not satisfied"));
+			blk.add(new Code.Fail("type constraint not satisfied (2)"));
 			blk.add(new Code.Label(exitLabel));
 			
 			Type type;
@@ -1810,7 +1813,7 @@ public class ModuleBuilder {
 			}
 
 			// FIXME: need some line number information here
-			blk.add(new Code.Fail("type constraint not satisfied"));
+			blk.add(new Code.Fail("type constraint not satisfied (3)"));
 			blk.add(new Code.Label(exitLabel));
 
 			Type type;

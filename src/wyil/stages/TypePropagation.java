@@ -203,9 +203,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 			rhs = infer(rhs,stmt,environment);
 			
-			System.out.println("CHECKING: " + Type.toShortString(ret_t)
-					+ " :> " + Type.toShortString(rhs.type()));
-			
 			checkIsSubtype(ret_t,rhs.type(),stmt);
 		} else if(ret_t != Type.T_VOID) {
 			syntaxError(
