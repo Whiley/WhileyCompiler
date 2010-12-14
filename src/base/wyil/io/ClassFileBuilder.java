@@ -72,7 +72,7 @@ public class ClassFileBuilder {
 		}
 		for(Module.TypeDef td : module.types()) {			
 			Type t = td.type();			
-			WhileyDefine wd = new WhileyDefine(td.name(),t,td.constraint());
+			WhileyDefine wd = new WhileyDefine(td.name(),t);
 			cf.attributes().add(wd);
 		}
 		for(Module.Method method : module.methods()) {				
@@ -160,17 +160,6 @@ public class ClassFileBuilder {
 			binding.put(n,CExpr.VAR(paramTypes.get(i),"p" + i));
 		}
 		
-		if (mcase.precondition() != null) {
-			Block pc = Block.substitute(binding,mcase.precondition());
-			
-			cm.attributes()
-					.add(new WhileyBlock("WhileyPreCondition",pc));
-		}
-		if (mcase.postcondition() != null) {
-			Block pc = Block.substitute(binding,mcase.postcondition());
-			cm.attributes().add(
-					new WhileyBlock("WhileyPostCondition", pc));
-		}
 		return cm;
 	}
 	

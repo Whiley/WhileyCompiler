@@ -21,8 +21,10 @@ package wyil.jvm.attributes;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.util.*;
 
+import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
@@ -40,8 +42,7 @@ import wyjvm.lang.Constant;
  */
 public class WhileyDefine implements BytecodeAttribute {
 	private String defName;
-	private Value value;
-	private Block block;
+	private Value value;	
 	private Type type;
 	
 	public WhileyDefine(String name, Value expr) {
@@ -49,10 +50,9 @@ public class WhileyDefine implements BytecodeAttribute {
 		this.value = expr;
 	}
 	
-	public WhileyDefine(String name, Type type, Block block) {
+	public WhileyDefine(String name, Type type) {
 		this.defName = name;
-		this.type = type;
-		this.block = block;		
+		this.type = type;	
 	}
 	
 	public String name() {
@@ -70,11 +70,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	public Value value() {
 		return value;
 	}
-	
-	public Block block() {
-		return block;
-	}
-	
+		
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {		
@@ -89,14 +85,10 @@ public class WhileyDefine implements BytecodeAttribute {
 		if(type == null) {
 			iw.write_u1(0); // CONSTANT ONLY			
 			write(value,iw, constantPool);			
-		} else if(block == null) {
+		} else {
 			iw.write_u1(1); // TYPE ONLY
 			WhileyType.write(type, iw, constantPool);
-		} else {									
-			iw.write_u1(2); // TYPE AND CONSTRAINT
-			WhileyType.write(type, iw, constantPool);
-			WhileyBlock.write(block, iw, constantPool);
-		}						
+		} 					
 		
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
 		writer.write_u4(out.size() + 2);		
@@ -108,20 +100,15 @@ public class WhileyDefine implements BytecodeAttribute {
 		Constant.addPoolItem(new Constant.Utf8(name()), constantPool);	
 		Constant.addPoolItem(new Constant.Utf8(defName), constantPool);
 		
+		/*
+		 * Following will need to be put back in place to catch field names of record values
 		if(value != null) {
-			WhileyBlock.addPoolItems(value, constantPool);
+			addPoolItems(value, constantPool);
 		}
+		*/
 		if(type != null) {
 			WhileyType.addPoolItems(type, constantPool);
-		}
-		if(block != null) {
-			WhileyBlock.addPoolItems(block, constantPool);
-		}
-	}
-	
-	protected void write(Value v, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {		
-		WhileyBlock.write(v,writer,constantPool);				
+		}		
 	}
 	
 	public void print(PrintWriter output,
@@ -130,14 +117,102 @@ public class WhileyDefine implements BytecodeAttribute {
 
 		if (type == null) {
 			output.println("  WhileyDefine: " + defName + " as " + value);
-		} else if (block == null) {
-			output.println("  WhileyDefine: " + defName + " as " + type);
 		} else {
 			output.println("  WhileyDefine: " + defName + " as " + type);
-			wyil.io.WyilFileWriter wyfw = new wyil.io.WyilFileWriter(output);
-			wyfw.write(1,block,output);			
+		} 
+	}
+	
+
+	protected static void write(Value val, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		if(val instanceof Value.Null) {
+			write((Value.Null) val, writer, constantPool);
+		} else if(val instanceof Value.Bool) {
+			write((Value.Bool) val, writer, constantPool);
+		} else if(val instanceof Value.Int) {
+			write((Value.Int) val, writer, constantPool);
+		} else if(val instanceof Value.Real) {
+			write((Value.Real) val, writer, constantPool);
+		} else if(val instanceof Value.Set) {
+			write((Value.Set) val, writer, constantPool);
+		} else if(val instanceof Value.List) {
+			write((Value.List) val, writer, constantPool);
+		} else if(val instanceof Value.Record) {
+			write((Value.Record) val, writer, constantPool);
+		} 
+	}
+	
+	public static void write(Value.Null expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {				
+		writer.write_u1(NULL);
+	}
+	
+	public static void write(Value.Bool expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		
+		if(expr.value) {
+			writer.write_u1(TRUE);
+		} else {
+			writer.write_u1(FALSE);
 		}
 	}
+	
+	public static void write(Value.Int expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(INTVAL);
+		BigInteger bi = expr.value;
+		byte[] bibytes = bi.toByteArray();
+		// FIXME: bug here for constants that require more than 65535 bytes
+		writer.write_u2(bibytes.length);
+		writer.write(bibytes);
+	}
+	
+	public static void write(Value.Real expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(REALVAL);
+		BigRational br = expr.value;
+		BigInteger num = br.numerator();
+		BigInteger den = br.denominator();
+		
+		byte[] numbytes = num.toByteArray();
+		// FIXME: bug here for constants that require more than 65535 bytes
+		writer.write_u2(numbytes.length);
+		writer.write(numbytes);
+		
+		byte[] denbytes = den.toByteArray();
+		// FIXME: bug here for constants that require more than 65535 bytes
+		writer.write_u2(denbytes.length);
+		writer.write(denbytes);		
+	}
+	
+	public static void write(Value.Set expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(SETVAL);
+		writer.write_u2(expr.values.size());
+		for(Value v : expr.values) {
+			write(v,writer,constantPool);
+		}
+	}
+	
+	public static void write(Value.List expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(LISTVAL);
+		writer.write_u2(expr.values.size());
+		for(Value v : expr.values) {
+			write(v,writer,constantPool);
+		}
+	}
+	
+	public static void write(Value.Record expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {
+		writer.write_u1(RECORDVAL);
+		writer.write_u2(expr.values.size());
+		for(Map.Entry<String,Value> v : expr.values.entrySet()) {
+			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
+			write(v.getValue(), writer, constantPool);
+		}
+	}
+	
 	
 	public static class Reader implements BytecodeAttributeReader {		
 		public String name() {
@@ -155,18 +230,85 @@ public class WhileyDefine implements BytecodeAttribute {
 			
 			if(sw == 0) {				
 				// Condition only
-				Value value = WhileyBlock.Reader.readValue(input,constantPool);				
+				Value value = readValue(input,constantPool);				
 				return new WhileyDefine(name,value);			
-			} else if(sw == 1) {
+			} else {
 				// type only
 				Type type = WhileyType.Reader.readType(input,constantPool);
-				return new WhileyDefine(name,type,null);
-			} else {				
-				// both								
-				Type type = WhileyType.Reader.readType(input,constantPool);											
-				Block blk = WhileyBlock.Reader.readBlock(input,constantPool);
-				return new WhileyDefine(name,type,blk);
+				return new WhileyDefine(name,type);
+			} 
+		}
+		
+		protected static Value readValue(BinaryInputStream reader,
+				Map<Integer, Constant.Info> constantPool) throws IOException {		
+			int code = reader.read_u1();				
+			switch (code) {			
+			case INTVAL:			
+			{
+				int len = reader.read_u2();				
+				byte[] bytes = new byte[len];
+				reader.read(bytes);
+				BigInteger bi = new BigInteger(bytes);
+				return Value.V_INT(bi);
 			}
-		}						
+			case REALVAL:			
+			{
+				int len = reader.read_u2();
+				byte[] bytes = new byte[len];
+				reader.read(bytes);
+				BigInteger num = new BigInteger(bytes);
+				len = reader.read_u2();
+				bytes = new byte[len];
+				reader.read(bytes);
+				BigInteger den = new BigInteger(bytes);
+				BigRational br = new BigRational(num,den);
+				return Value.V_REAL(br);
+			}
+			case LISTVAL:
+			{
+				int len = reader.read_u2();
+				ArrayList<Value> values = new ArrayList<Value>();
+				for(int i=0;i!=len;++i) {
+					values.add((Value) readValue(reader,constantPool));
+				}
+				return Value.V_LIST(values);
+			}
+			case SETVAL:
+			{
+				int len = reader.read_u2();
+				ArrayList<Value> values = new ArrayList<Value>();
+				for(int i=0;i!=len;++i) {
+					values.add((Value) readValue(reader,constantPool));
+				}
+				return Value.V_SET(values);
+			}
+			case RECORDVAL:
+			{
+				int len = reader.read_u2();
+				HashMap<String,Value> tvs = new HashMap<String,Value>();
+				for(int i=0;i!=len;++i) {
+					int idx = reader.read_u2();
+					Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
+					Value lhs = (Value) readValue(reader, constantPool);
+					tvs.put(utf8.str, lhs);
+				}
+				return Value.V_RECORD(tvs);
+			}			
+			}
+			throw new RuntimeException("Unknown Value encountered in WhileyDefine: " + code);
+		}
 	}	
+	
+	// =========================================================================
+	// Value Identifiers
+	// =========================================================================
+	
+	private final static int NULL = 0;
+	private final static int TRUE = 1;
+	private final static int FALSE = 2;	
+	private final static int INTVAL = 3;
+	private final static int REALVAL = 4;
+	private final static int SETVAL = 5;
+	private final static int LISTVAL = 6;
+	private final static int RECORDVAL = 7;		
 }

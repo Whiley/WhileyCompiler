@@ -434,9 +434,7 @@ public class ModuleLoader {
 		long time = System.currentTimeMillis();		
 		
 		ClassFileReader r = new ClassFileReader(input,
-				new WhileyDefine.Reader(), new WhileyBlock.Reader(
-						"WhileyPreCondition"), new WhileyBlock.Reader(
-						"WhileyPostCondition"));					
+				new WhileyDefine.Reader());					
 				
 		ClassFile cf = r.readClass();
 
@@ -564,7 +562,7 @@ public class ModuleLoader {
 					constants.add(ci);
 				} else {
 					// type definition										
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,wd.block());					
+					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,null);					
 					types.add(ti);
 				}
 			}
@@ -590,14 +588,9 @@ public class ModuleLoader {
 		for (int i = 0; i != type.params.size(); ++i) {
 			parameterNames.add("p" + i);
 		}
-		WhileyBlock precondition = (WhileyBlock) cm.attribute("WhileyPreCondition");
-		WhileyBlock postcondition = (WhileyBlock) cm.attribute("WhileyPostCondition");
 		Module.Case mcase;
-		
-		Block preblk = precondition == null ? null : precondition.block();
-		Block postblk = postcondition == null ? null : postcondition.block();
 				
-		mcase = new Module.Case(parameterNames, preblk,postblk, null);				
+		mcase = new Module.Case(parameterNames, null,null, null);				
 		return new Module.Method(stripCase(info.first()), type, mcase);
 	}
 	

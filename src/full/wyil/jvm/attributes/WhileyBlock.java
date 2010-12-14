@@ -357,96 +357,6 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write_u2(idx);										
 	}
 	
-	protected static void write(Value val, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		if(val instanceof Value.Null) {
-			write((Value.Null) val, writer, constantPool);
-		} else if(val instanceof Value.Bool) {
-			write((Value.Bool) val, writer, constantPool);
-		} else if(val instanceof Value.Int) {
-			write((Value.Int) val, writer, constantPool);
-		} else if(val instanceof Value.Real) {
-			write((Value.Real) val, writer, constantPool);
-		} else if(val instanceof Value.Set) {
-			write((Value.Set) val, writer, constantPool);
-		} else if(val instanceof Value.List) {
-			write((Value.List) val, writer, constantPool);
-		} else if(val instanceof Value.Record) {
-			write((Value.Record) val, writer, constantPool);
-		} 
-	}
-	
-	public static void write(Value.Null expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {				
-		writer.write_u1(NULL);
-	}
-	
-	public static void write(Value.Bool expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		
-		if(expr.value) {
-			writer.write_u1(TRUE);
-		} else {
-			writer.write_u1(FALSE);
-		}
-	}
-	
-	public static void write(Value.Int expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(INTVAL);
-		BigInteger bi = expr.value;
-		byte[] bibytes = bi.toByteArray();
-		// FIXME: bug here for constants that require more than 65535 bytes
-		writer.write_u2(bibytes.length);
-		writer.write(bibytes);
-	}
-	
-	public static void write(Value.Real expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(REALVAL);
-		BigRational br = expr.value;
-		BigInteger num = br.numerator();
-		BigInteger den = br.denominator();
-		
-		byte[] numbytes = num.toByteArray();
-		// FIXME: bug here for constants that require more than 65535 bytes
-		writer.write_u2(numbytes.length);
-		writer.write(numbytes);
-		
-		byte[] denbytes = den.toByteArray();
-		// FIXME: bug here for constants that require more than 65535 bytes
-		writer.write_u2(denbytes.length);
-		writer.write(denbytes);		
-	}
-	
-	public static void write(Value.Set expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(SETVAL);
-		writer.write_u2(expr.values.size());
-		for(Value v : expr.values) {
-			write(v,writer,constantPool);
-		}
-	}
-	
-	public static void write(Value.List expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(LISTVAL);
-		writer.write_u2(expr.values.size());
-		for(Value v : expr.values) {
-			write(v,writer,constantPool);
-		}
-	}
-	
-	public static void write(Value.Record expr, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u1(RECORDVAL);
-		writer.write_u2(expr.values.size());
-		for(Map.Entry<String,Value> v : expr.values.entrySet()) {
-			writer.write_u2(constantPool.get(new Constant.Utf8(v.getKey())));
-			write(v.getValue(), writer, constantPool);
-		}
-	}
-	
 	public static class Reader implements BytecodeAttributeReader { 		
 		private final String name;
 		
@@ -940,17 +850,8 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final static int NSUBTYPEEQ = 22;
 	
 	// =========== CEXPR ===============
-		
-	private final static int NULL = 0;
-	private final static int TRUE = 1;
-	private final static int FALSE = 2;	
-	private final static int INTVAL = 3;
-	private final static int REALVAL = 4;
-	private final static int SETVAL = 5;
-	private final static int LISTVAL = 6;
-	private final static int RECORDVAL = 7;
-	private final static int TYPEVAL = 8;
 	
+	private final static int TYPEVAL = 8;
 	private final static int VARIABLE = 10;
 	private final static int REGISTER = 11;
 	private final static int FUNINVOKE = 12;
