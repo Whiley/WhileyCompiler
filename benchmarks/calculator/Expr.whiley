@@ -28,13 +28,13 @@ define ListAccess as {
 } 
 
 // values
-define value as real | [value] | null
+define Value as real | [Value]
 
 // ====================================================
 // Expression Evaluator
 // ====================================================
 
-value evaluate(Expr e):
+null|Value evaluate(Expr e):
     if e ~= int:
         return e
     else if e ~= Var:
@@ -55,11 +55,20 @@ value evaluate(Expr e):
         else if rhs != 0:
             return lhs / rhs
         return null // divide by zero
+    else if e ~= [Expr]:
+        r = []
+        for i in e:
+            v = evaluate(i)
+            if v ~= null:
+                return v // stuck
+            else:
+                r = r + [v]
+        return r
     else if e ~= ListAccess:
         src = evaluate(e.src)
         index = evaluate(e.index)
         // santity checks
-        if src ~= [Expr] && index ~= int &&
+        if src ~= [Value] && index ~= int &&
             index >= 0 && index < |src|:
             return src[index]
         else:
