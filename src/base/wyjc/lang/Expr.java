@@ -212,6 +212,15 @@ public interface Expr extends SyntacticElement {
 		}
 	}		
 
+	public static class DictionaryGen extends SyntacticElement.Impl implements Expr {
+		public final ArrayList<Pair<Expr,Expr>> pairs;		
+		
+		public DictionaryGen(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
+			super(attributes);
+			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
+		}
+	}
+	
 	public static class RecordGen extends SyntacticElement.Impl implements Expr {
 		public final HashMap<String,Expr> fields;		
 		

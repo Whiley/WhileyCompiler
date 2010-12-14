@@ -954,6 +954,9 @@ public class WhileyParser {
 			setComp=true;
 			match(Bar.class);
 			firstTime=true;
+		} else if(index < tokens.size() && tokens.get(index) instanceof Arrow) {
+			// this is a dictionary constructor
+			return parseDictionaryVal(start,exprs.get(0));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
 				&& exprs.get(0) instanceof Expr.Variable) {
 			// this is a record constructor
@@ -1014,6 +1017,28 @@ public class WhileyParser {
 			return new Expr.NaryOp(Expr.NOp.SETGEN, exprs, sourceAttr(
 					start, index - 1));
 		}
+	}
+	
+	private Expr parseDictionaryVal(int start, Expr key) {
+		match(Arrow.class);
+		ArrayList<Pair<Expr,Expr>> pairs = new ArrayList<Pair<Expr,Expr>>();
+		Expr value = parseCondition();
+		pairs.add(new Pair<Expr,Expr>(key,value));
+		skipWhiteSpace();
+		Token token = tokens.get(index);		
+		while(!(token instanceof RightCurly)) {									
+			match(Comma.class);
+			skipWhiteSpace();
+			key = parseCondition();
+			match(Arrow.class);
+			value = parseCondition();
+			pairs.add(new Pair<Expr,Expr>(key,value));
+			skipWhiteSpace();
+			checkNotEof();
+			token = tokens.get(index);
+		}
+		match(RightCurly.class);
+		return new Expr.DictionaryGen(pairs,sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseRecordVal(int start, String ident) {
@@ -1197,6 +1222,12 @@ public class WhileyParser {
 				// set type
 				match(RightCurly.class);
 				t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
+			} else if(tokens.get(index) instanceof Arrow) {
+				// map type
+				match(Arrow.class);
+				UnresolvedType v = parseType();			
+				match(RightCurly.class);
+				t = new UnresolvedType.Dictionary(t,v,sourceAttr(start,index-1));				
 			} else {				
 				// record type
 				HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();

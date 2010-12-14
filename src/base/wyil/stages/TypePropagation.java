@@ -644,9 +644,18 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected CExpr infer(ListAccess e, Stmt stmt, HashMap<String,Type> environment) {
 		CExpr src = infer(e.src,stmt,environment);
 		CExpr idx = infer(e.index,stmt,environment);
-		checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
-		checkIsSubtype(Type.T_INT,idx.type(),stmt);
-		return CExpr.LISTACCESS(src,idx);
+		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src.type())) {			
+			// this indicates a dictionary access, rather than a list access			
+			// FIXME: need "effective dictionary type" or similar here
+			Type.Dictionary dict = (Type.Dictionary) src.type();			
+			checkIsSubtype(dict.key,idx.type(),stmt);
+			// OK, it's a hit
+			return CExpr.LISTACCESS(src,idx);
+		} else {
+			checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
+			checkIsSubtype(Type.T_INT,idx.type(),stmt);
+			return CExpr.LISTACCESS(src,idx);
+		}
 	}
 		
 	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {								

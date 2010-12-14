@@ -389,6 +389,10 @@ public class NameResolution {
 		} else if(t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			resolve(st.element,imports);
+		} else if(t instanceof UnresolvedType.Dictionary) {
+			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;
+			resolve(st.key,imports);
+			resolve(st.value,imports);
 		} else if(t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {

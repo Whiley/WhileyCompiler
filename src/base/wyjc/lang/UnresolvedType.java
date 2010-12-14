@@ -84,6 +84,15 @@ public interface UnresolvedType extends SyntacticElement {
 			this.element = element;
 		}
 	}
+	public static final class Dictionary extends SyntacticElement.Impl implements NonUnion {
+		public final UnresolvedType key;
+		public final UnresolvedType value;
+		public Dictionary(UnresolvedType key,UnresolvedType value, Attribute... attributes) {
+			super(attributes);
+			this.key=key;
+			this.value=value;
+		}
+	}
 	public static final class Union extends SyntacticElement.Impl implements UnresolvedType {
 		public final ArrayList<NonUnion> bounds;
 

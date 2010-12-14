@@ -1138,10 +1138,21 @@ public class ClassFileBuilder {
 	public void translate(CExpr.ListAccess v, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {		
 		translate(v.src,slots,bytecodes);		
-		translate(v.index,slots,bytecodes);		
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,BIG_RATIONAL);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-				Bytecode.VIRTUAL));
+		translate(v.index,slots,bytecodes);				
+		Type src_t = v.src.type();
+		
+		if (Type.isSubtype(Type.T_LIST(Type.T_ANY), src_t)) {
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+					BIG_RATIONAL);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
+					Bytecode.VIRTUAL));
+		} else {
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+					JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
+					Bytecode.VIRTUAL));
+		}
+
 		addReadConversion(v.type(),bytecodes);	
 	}
 	
@@ -1908,6 +1919,7 @@ public class ClassFileBuilder {
 	
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyil.jvm.rt","WhileyList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
+	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("java.util","HashMap");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyil.jvm.rt","WhileyRecord");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
 			"wyil.jvm.rt", "WhileyProcess");	
@@ -1935,6 +1947,8 @@ public class ClassFileBuilder {
 			return WHILEYLIST;
 		} else if(t instanceof Type.Set) {
 			return WHILEYSET;
+		} else if(t instanceof Type.Dictionary) {
+			return WHILEYMAP;
 		} else if(t instanceof Type.Record) {
 			return WHILEYRECORD;
 		} else if(t instanceof Type.Process) {
@@ -2016,6 +2030,9 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			return "{" + type2str(st.element) + "}";
+		} else if(t instanceof Type.Dictionary) {
+			Type.Dictionary st = (Type.Dictionary) t;
+			return "{" + type2str(st.key) + "->" + type2str(st.value) + "}";
 		} else if(t instanceof Type.Union) {
 			Type.Union st = (Type.Union) t;
 			String r = "";

@@ -409,6 +409,9 @@ public abstract class CExpr {
 			if(t instanceof Type.List){ 
 				Type.List l = (Type.List) t;
 				return l.element;
+			} else if(t instanceof Type.Dictionary) {
+				Type.Dictionary l = (Type.Dictionary) t;
+				return l.value;
 			} else {
 				return Type.T_VOID;
 			}

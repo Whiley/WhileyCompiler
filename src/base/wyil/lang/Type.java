@@ -47,6 +47,10 @@ public abstract class Type {
 		return get(new Set(element));
 	}
 	
+	public static Dictionary T_DICTIONARY(Type key,Type value) {
+		return get(new Dictionary(key,value));
+	}
+	
 	public static Fun T_FUN(ProcessName receiver, Type ret, Type... parameters) {
 		return get(new Fun(receiver, ret,parameters));
 	}
@@ -98,11 +102,11 @@ public abstract class Type {
 			Set l1 = (Set) t1;
 			Set l2 = (Set) t2;
 			return isSubtype(l1.element,l2.element);
-		} else if(t1 instanceof Set && t2 instanceof List) {
-			// This rule surely should not be here
-			Set l1 = (Set) t1;
-			List l2 = (List) t2;
-			return isSubtype(l1.element,l2.element);
+		} else if(t1 instanceof Dictionary && t2 instanceof Dictionary) {
+			// RULE: S-DICTIONARY
+			Dictionary l1 = (Dictionary) t1;
+			Dictionary l2 = (Dictionary) t2;			
+			return isSubtype(l1.key,l2.key) && isSubtype(l1.key,l2.key);
 		} else if(t1 instanceof Process && t2 instanceof Process) {
 			Process l1 = (Process) t1;
 			Process l2 = (Process) t2;
@@ -983,6 +987,9 @@ public abstract class Type {
 		} else if(t instanceof Set) {
 			Set st = (Set) t;
 			return "{" + toShortString(st.element) + "}";
+		} else if(t instanceof Dictionary) {
+			Dictionary st = (Dictionary) t;
+			return "{" + toShortString(st.key) + "->" + toShortString(st.value) + "}";
 		} else if(t instanceof List) {
 			List lt = (List) t;
 			return "[" + toShortString(lt.element) + "]";
@@ -1195,6 +1202,29 @@ public abstract class Type {
 		}
 		public String toString() {
 			return "{" + element + "}";
+		}
+	}
+	public static final class Dictionary extends NonUnion {
+		public final Type key;
+		public final Type value;
+		
+		private Dictionary(Type key,Type value) {
+			this.key = key;
+			this.value = value;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Dictionary) {
+				Dictionary l = (Dictionary) o;
+				return key.equals(l.key) && value.equals(l.value);
+			}
+			return false;
+		}
+		public int hashCode() {
+			return key.hashCode() + value.hashCode();
+		}
+		public String toString() {
+			return "{" + key + "->" + value + "}";
 		}
 	}
 	public static final class Union extends Type {

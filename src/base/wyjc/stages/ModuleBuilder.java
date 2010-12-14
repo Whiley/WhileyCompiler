@@ -363,6 +363,10 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;			
 			return Type.T_SET(expandType(st.element, filename, cache));					
+		} else if (t instanceof UnresolvedType.Dictionary) {
+			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;			
+			return Type.T_DICTIONARY(expandType(st.key, filename, cache),
+					expandType(st.value, filename, cache));					
 		} else if (t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();								
@@ -1372,6 +1376,9 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;			
 			return Type.T_SET(resolve(st.element));			
+		} else if (t instanceof UnresolvedType.Dictionary) {
+			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;			
+			return Type.T_DICTIONARY(resolve(st.key),resolve(st.value));					
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
@@ -1390,7 +1397,7 @@ public class ModuleBuilder {
 			}
 			return Type.T_RECORD(types);
 		} else if (t instanceof UnresolvedType.Named) {
-			UnresolvedType.Named dt = (UnresolvedType.Named) t;
+			UnresolvedType.Named dt = (UnresolvedType.Named) t;			
 			ModuleID mid = dt.attribute(Attributes.Module.class).module;
 			if (modules.contains(mid)) {
 				return types.get(new NameID(mid, dt.name));								
