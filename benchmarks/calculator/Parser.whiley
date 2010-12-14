@@ -2,7 +2,7 @@
 define SyntaxError as { string err }
 
 // The current parser state
-define State as { string input, int pos } where pos >= 0 && pos <= |input|
+define State as { string input, int pos }
 
 define SExpr as SyntaxError | Expr
 
@@ -17,17 +17,29 @@ SExpr parse(string input):
 (SExpr, State) parseAddSubExpr(State st):    
     // First, pass left-hand side
     (lhs,st) = parseMulDivExpr(st)
+    
+    if lhs ~= SyntaxError:
+        return lhs,st    
+    
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
     if st.pos < |st.input| && st.input[st.pos] == '+':
         // add expression
         st.pos = st.pos + 1
         (rhs,st) = parseAddSubExpr(st)
+        
+        if rhs ~= SyntaxError:
+            return rhs,st    
+        
         return {op: ADD, lhs: lhs, rhs: rhs},st
     else if st.pos < |st.input| && st.input[st.pos] == '-':
         // subtract expression
         st.pos = st.pos + 1
         (rhs,st) = parseAddSubExpr(st)
+        
+        if rhs ~= SyntaxError:
+            return rhs,st    
+        
         return {op: SUB, lhs: lhs, rhs: rhs},st
     
     // No right-hand side
@@ -36,17 +48,29 @@ SExpr parse(string input):
 (SExpr, State) parseMulDivExpr(State st):    
     // First, pass left-hand side
     (lhs,st) = parseTerm(st)
+    
+    if lhs ~= SyntaxError:
+        return lhs,st    
+    
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
     if st.pos < |st.input| && st.input[st.pos] == '*':
         // add expression
         st.pos = st.pos + 1
         (rhs,st) = parseMulDivExpr(st)        
+        
+        if rhs ~= SyntaxError:
+            return rhs,st           
+        
         return {op: MUL, lhs: lhs, rhs: rhs}, st
     else if st.pos < |st.input| && st.input[st.pos] == '/':
         // subtract expression
         st.pos = st.pos + 1
         (rhs,st) = parseMulDivExpr(st)
+        
+        if rhs ~= SyntaxError:
+            return rhs,st           
+        
         return {op: DIV, lhs: lhs, rhs: rhs}, st
     
     // No right-hand side
