@@ -1016,16 +1016,13 @@ public class ClassFileBuilder {
 		
 		// FACT: src is either a Type.Recursive, or a Type.Union. It cannot be
 		// anything else, because otherwise the (original) glb of src and test
-		// would have produced a Type.Recursive.  
-				
-		System.err.println("NEED TO IMPLEMENT RECURSIVE CASE");
-		System.err.println("TEST: " + Type.toShortString(src) + " ~= " + Type.toShortString(test));
-		System.err.println("LINE: " + filename + ":" + stmt.attribute(Attribute.Source.class));
+		// would have produced a Type.Recursive.  		
 		
 		if(src instanceof Type.Recursive) {
 			Type.Recursive rsrc = (Type.Recursive) src;
 			System.err.println("NEED TO IMPLEMENT RECURSIVE CASE");
 			System.err.println("TEST: " + Type.toShortString(src) + " ~= " + Type.toShortString(test));
+			System.err.println("LINE: " + filename + ":" + stmt.attribute(Attribute.Source.class));
 		} else {
 			// must be a union
 			
