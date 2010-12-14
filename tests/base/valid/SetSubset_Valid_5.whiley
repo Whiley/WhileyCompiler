@@ -1,7 +1,10 @@
-string f({int} xs, {int} ys) requires xs ⊆ ys:
-    return "XS IS A SUBSET"
+string f({int} xs, {int} ys):
+    if xs ⊆ ys:
+        return "XS IS A SUBSET"
+    else:
+        return "FAILED"
 
-string g({int} xs, {int} ys) requires xs ⊆ ys:
+string g({int} xs, {int} ys):
     return f(xs,ys)
 
 void System::main([string] args):

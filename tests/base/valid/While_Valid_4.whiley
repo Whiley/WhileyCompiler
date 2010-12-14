@@ -1,8 +1,8 @@
-[int] extract([int] ls) ensures |$| > 0:
+[int] extract([int] ls):
     i = 0
     r = [1]
     // now do the reverse!
-    while i < |ls| where |r| > 0 && i >= 0:
+    while i < |ls|:
         r = r + [ls[i]]
         i = i + 1
     return r

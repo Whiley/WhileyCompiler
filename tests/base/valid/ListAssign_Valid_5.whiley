@@ -1,4 +1,4 @@
-[int] f() ensures |$| > 1:
+[int] f():
     return [1,2]
 
 void System::main([string] args):

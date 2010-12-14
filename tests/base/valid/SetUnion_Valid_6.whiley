@@ -1,5 +1,8 @@
-string f({int} xs, {int} ys, {int} zs) requires zs == xs ∪ ys:
-    return str(xs)
+string f({int} xs, {int} ys, {int} zs):
+    if zs == xs ∪ ys:
+        return str(xs)
+    else:
+        return "FAILED"
 
 string g({int} ys):
     return f(ys,ys,ys)

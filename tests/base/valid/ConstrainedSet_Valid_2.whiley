@@ -1,4 +1,4 @@
-int g(int x) ensures $ > 0 && $ < 125:
+int g(int x):
     if(x <= 0 || x >= 125):
         return 1
     else:

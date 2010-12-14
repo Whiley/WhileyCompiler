@@ -1,4 +1,4 @@
-void f([int] x) requires |x| > 0:
+void f([int] x):
     y = x[0]
     z = x[0]
     assert y == z

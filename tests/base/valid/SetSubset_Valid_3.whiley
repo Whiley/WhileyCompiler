@@ -1,4 +1,4 @@
-string f({int} xs, {int} ys) requires |xs| <= |ys|:
+string f({int} xs, {int} ys):
     if xs ⊂ ys:
         return "XS IS A SUBSET"
     else:

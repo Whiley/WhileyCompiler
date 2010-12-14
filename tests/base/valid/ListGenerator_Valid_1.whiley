@@ -1,4 +1,4 @@
-void f([int] x) requires |x| > 0:
+void f([int] x):
     z = |x|
     print str(z)
     print str(x[z-1])

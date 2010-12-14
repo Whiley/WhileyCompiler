@@ -1,4 +1,4 @@
-int f([int] xs) requires no { x in xs | x < 0}:
+int f([int] xs):
     return |xs|
 
 void System::main([string] args):

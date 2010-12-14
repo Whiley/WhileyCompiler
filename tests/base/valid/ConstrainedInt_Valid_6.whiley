@@ -6,7 +6,7 @@ string f(num x):
     y = x
     return str(y)
 
-string g({bignum} zs, int z) requires z in {x | x in zs, x < 5}:
+string g({bignum} zs, int z):
     return f(z)
 
 void System::main([string] args):

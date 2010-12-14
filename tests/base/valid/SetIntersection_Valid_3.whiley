@@ -1,4 +1,4 @@
-string f({int} xs) requires |xs| < 3:
+string f({int} xs):
     return str(xs)
 
 string g({int} ys):

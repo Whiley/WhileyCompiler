@@ -1,4 +1,4 @@
-define fr2nat as int where $ >= 0
+define fr2nat as int
 
 string f(fr2nat x):
     return str(x)

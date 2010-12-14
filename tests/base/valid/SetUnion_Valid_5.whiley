@@ -1,5 +1,8 @@
-string f({int} xs) requires |xs| > 0:
-    return str(xs)
+string f({int} xs):
+    if |xs| > 0:
+        return str(xs)
+    else:
+        return "FAILED"
 
 string g({int} ys):
     return f(ys ∪ {1})

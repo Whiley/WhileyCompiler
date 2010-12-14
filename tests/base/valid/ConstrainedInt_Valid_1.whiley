@@ -1,5 +1,5 @@
 // this is a comment!
-define cr1nat as int where $ < 10
+define cr1nat as int
 
 string f(cr1nat x):
     y = x

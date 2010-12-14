@@ -1,4 +1,4 @@
-define posints as {int} where no { x in $ | x < 0 }
+define posints as {int}
 
 string f(posints x):
     return str(x)

@@ -1,6 +1,6 @@
-define posintlist as [int] where no { x in $ | x < 0 }
+define posintlist as [int]
 
-int sum(posintlist ls) ensures $ >= 0:
+int sum(posintlist ls):
     if(|ls| == 0):
         return 0
     else:

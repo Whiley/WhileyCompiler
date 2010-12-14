@@ -1,4 +1,4 @@
-string f([int] a) requires |a| > 0:
+string f([int] a):
      a[0] = 5
      return str(a)
 

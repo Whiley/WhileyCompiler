@@ -1,7 +1,7 @@
-string g(int z) requires z > 1:
+string g(int z):
     return str(z)
 
-string f(int x) requires x > 0:
+string f(int x):
     y = x + 1
     return g(y)
 

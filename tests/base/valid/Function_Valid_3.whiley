@@ -1,8 +1,8 @@
-define fr3nat as int where $ >= 0
+define fr3nat as int
 
 string f(int x):
     return str(x)
 
 void System::main([string] args):
-    y = 1
+    y = 234987234987234982304980130982398723
     out->println(f(y))

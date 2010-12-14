@@ -1,4 +1,4 @@
-int f(int x, int y) requires y != 0:
+int f(int x, int y):
     return x / y
 
 void System::main([string] args):

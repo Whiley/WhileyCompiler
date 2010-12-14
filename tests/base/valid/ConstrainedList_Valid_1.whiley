@@ -1,4 +1,4 @@
-[byte] f(int x) requires x == 0 || x == 169:
+[byte] f(int x):
     return [x]
 
 void System::main([string] args):

@@ -1,4 +1,4 @@
-string f([[int]] x) requires |x| > 0:
+string f([[int]] x):
     if(|x[0]| > 2):
         return str(x[0][1])
     else:

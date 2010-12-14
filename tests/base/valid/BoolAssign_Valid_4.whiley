@@ -1,4 +1,4 @@
-int f(int x, int y) requires x>=0 && y>=0, ensures $>0:
+int f(int x, int y):
     a = true
     
     if(x < y):

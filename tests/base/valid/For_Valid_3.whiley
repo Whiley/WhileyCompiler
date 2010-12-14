@@ -1,6 +1,6 @@
-int sum({nat} xs) ensures $ >= 0:
+int sum({nat} xs):
     r = 0
-    for x in xs where r >= 0:
+    for x in xs:
         r = r + x
     return r
 

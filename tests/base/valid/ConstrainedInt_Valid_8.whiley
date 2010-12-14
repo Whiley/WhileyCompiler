@@ -1,4 +1,4 @@
-define byte as int where $ >=0 && $ <= 255
+define byte as int
 define codeOp as { 1, 2, 3, 4 }
 define code as {codeOp op, [int] payload}
 

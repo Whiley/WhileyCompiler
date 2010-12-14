@@ -1,4 +1,4 @@
-void f([int] x, int i) requires |x| > 0:
+void f([int] x, int i):
     if(i < 0 || i >= |x|):
         i = 0
     y = x[i]

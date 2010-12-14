@@ -1,8 +1,8 @@
-int f(int x) ensures $ > x:
+int f(int x):
     return x+1
 
 
-int g(int x, int y) requires x > y:
+int g(int x, int y):
     return x+y
 
 void System::main([string] args):

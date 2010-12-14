@@ -1,4 +1,4 @@
-string f({int} xs, {int} ys, {int} zs) requires zs == xs ∩ ys:
+string f({int} xs, {int} ys, {int} zs):
     return str(xs)
 
 string g({int} ys):

@@ -1,5 +1,5 @@
 // this is a comment!
-string f({int} xs) requires |xs| > 0:
+string f({int} xs):
     return str(xs)
 
 void System::main([string] args):
