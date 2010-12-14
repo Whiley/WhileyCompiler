@@ -2,7 +2,7 @@
   <property name="version" value="0.3.2"/>
 
   <target name="compile">
-    <javac debug="true" srcdir="src/" includeantruntime="true" includes="wyjc/**,wyil/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
+    <javac debug="true" srcdir="src/base" includeantruntime="true" includes="wyjc/**,wyil/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
   </target>
 
   <target name="build-wyjc" depends="compile">
@@ -13,7 +13,7 @@
       <attribute name="Main-Class" value="wyjc.Main"/>
       <attribute name="Implementation-Version" value="${version}-${build.number}"/>
     </manifest>
-    <jar destfile="lib/wyjc.jar" basedir="src" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
+    <jar destfile="lib/wyjc.jar" basedir="src/base" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
     <delete dir="tmp"/>
   </target>
 
@@ -21,7 +21,7 @@
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
     <wyjc verbose="true" srcdir="stdlib" includes="whiley/**/*.whiley"/>
     <jar destfile="lib/wyrt.jar">
-      <fileset dir="src" includes="wyil/jvm/rt**/*.class"/>
+      <fileset dir="src/base" includes="wyil/jvm/rt**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
   </target>
@@ -35,7 +35,7 @@
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
     <jar destfile="wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
+      <fileset dir="src/base" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -44,7 +44,7 @@
   <target name="distsrc" depends="stdlib">
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
-    <fileset dir="src" includes="wyjc/**/*.java,wyjvm/**/*.java,wyil/**/*.java,wyone/**/*.java"/>
+    <fileset dir="src/base" includes="wyjc/**/*.java,wyjvm/**/*.java,wyil/**/*.java,wyone/**/*.java"/>
     <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
     <fileset dir="." includes="examples/**/*.whiley"/>
     <fileset dir="." includes="stdlib/**/*.whiley"/>
@@ -56,9 +56,9 @@
     <fileset dir="." includes="lib/wyrt.jar,lib/wyjc.jar"/>
   </copy>
   <tar destfile="wdk-src-v${version}.tar" longfile="gnu">  
-    <tarfileset dir="src" includes="wdk-v${version}/**/*.java"/>
-    <tarfileset dir="src" includes="wdk-v${version}/**/*.whiley"/>
-    <tarfileset dir="src" includes="wdk-v${version}/**/*.sysout"/>
+    <tarfileset dir="src/base" includes="wdk-v${version}/**/*.java"/>
+    <tarfileset dir="src/base" includes="wdk-v${version}/**/*.whiley"/>
+    <tarfileset dir="src/base" includes="wdk-v${version}/**/*.sysout"/>
     <tarfileset dir="." filemode="755">
       <include name="wdk-v${version}/bin/wyjc"/>
       <include name="wdk-v${version}/bin/whiley"/>

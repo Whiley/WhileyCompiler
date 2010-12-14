@@ -357,30 +357,15 @@ public class Main {
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
 		
 		// First, construct the default pipeline
-		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));
-		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
-				loader)));
-		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));
+		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));		
 		stages.add(new WyilTransform("type propagation", new TypePropagation(
 				loader)));
 		stages.add(new WyilTransform("definite assignment",
 				new DefiniteAssignment(loader)));
 		stages.add(new WyilTransform("constant propagation",
 				new ConstantPropagation(loader)));
-		// Following stages are currently commented out, since verification is
-		// very flakey.
-		//
-		if(verification) {
-			stages.add(new WyilTransform("branch prediction",
-					new ExpectedInference(loader)));
-			stages.add(new WyilTransform("verification check",
-					new ConstraintPropagation(loader, true, 250)));
-		}
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
-		stages
-				.add(new WyilTransform("failure check",
-						new FailureCheck(loader)));
 		stages.add(new ClassWriter(loader));
 		
 		// Second, make requested pipeline adjustments
