@@ -1,6 +1,6 @@
 // this is a comment!
-define ir1nat as int where $ > 0
-define pir1nat as ir1nat where $ > 1
+define ir1nat as int
+define pir1nat as ir1nat
 
 string f(int x):
     if x > 2:

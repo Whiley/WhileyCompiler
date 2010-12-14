@@ -1,4 +1,4 @@
-define plist as [int] where |$| > 0 && $[0] == 0
+define plist as [int]
 define expr as [int]|int
 define tup as {expr lhs, int p}
 

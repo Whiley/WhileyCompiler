@@ -1,4 +1,4 @@
-define byte as int where $ >=0 && $ <= 255
+define byte as int
 define bytes as {byte b1, byte b2}
 
 bytes f(byte b):

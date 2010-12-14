@@ -1,9 +1,9 @@
-define nat as int where $ >= 0
+define nat as int
 
 nat sum([nat] ls):
     i=0
     sum = 0
-    while i < |ls| where i >= 0 && sum >= 0:
+    while i < |ls|:
         sum = sum + ls[i]
         i = i + 1
     return sum

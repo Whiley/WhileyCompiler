@@ -1,4 +1,4 @@
-define bop as {int x, int y} where x > 0
+define bop as {int x, int y}
 define expr as int|bop
 
 string f(expr e):

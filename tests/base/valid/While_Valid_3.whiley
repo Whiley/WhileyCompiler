@@ -1,4 +1,4 @@
-define nat as int where $ >= 0
+define nat as int
 
 [nat] extract([int] ls):
     i = 0

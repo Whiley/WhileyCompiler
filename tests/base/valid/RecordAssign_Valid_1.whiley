@@ -1,4 +1,4 @@
-define tac1tup as {int f1, int f2} where f1 < f2
+define tac1tup as {int f1, int f2}
 
 tac1tup f():
     return {f1:1,f2:3}

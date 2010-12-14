@@ -1,4 +1,4 @@
-define sr4set as {int} where |$| > 0
+define sr4set as {int}
 
 void System::main([string] args):
     x = {1}

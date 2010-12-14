@@ -2,7 +2,7 @@
     i = 0
     r = []
     // now do the reverse!
-    while i < |ls| where no { x in r | x < 0 }:        
+    while i < |ls|:        
         if ls[i] < 0:
             r = r + [-ls[i]]
         else:

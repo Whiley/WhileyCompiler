@@ -1,4 +1,4 @@
-define point as {int x, int y} where $.x > 0 && $.y > 0
+define point as {int x, int y}
 
 point f(point x):
     return x

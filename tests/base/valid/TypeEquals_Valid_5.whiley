@@ -1,5 +1,5 @@
-define pos as int where $ > 0
-define neg as int where $ < 0
+define pos as int
+define neg as int
 define expr as pos|neg
 
 string f(expr e):

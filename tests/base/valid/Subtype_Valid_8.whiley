@@ -1,5 +1,5 @@
-define sr8nat as int where $ > 0
-define sr8tup as {sr8nat f, int g} where g > f 
+define sr8nat as int
+define sr8tup as {sr8nat f, int g}
 
 void System::main([string] args):
     x = [{f:1,g:3},{f:4,g:8}]
