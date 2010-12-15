@@ -102,15 +102,17 @@ public class WhileyFile {
 	
 	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
 		public final List<Modifier> modifiers;
-		public final UnresolvedType type;			
+		public final UnresolvedType type;
+		public final Expr constraint;
 		public final String name;
 
 		public TypeDecl(List<Modifier> modifiers, UnresolvedType type, String name,
-				Attribute... attributes) {
+				Expr constraint, Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
 			this.type = type;
 			this.name = name;			
+			this.constraint = constraint;
 		}
 
 		public boolean isPublic() {
@@ -125,35 +127,45 @@ public class WhileyFile {
 		public String name() { return name; }		
 		
 		public String toString() {
-			return "define " + type + " as " + name;
+			if(constraint != null) {
+				return "define " + type + " as " + name + " where " + constraint;
+			} else {
+				return "define " + type + " as " + name;
+			}
 		}
 	}
 
-	public final static class FunDecl extends SyntacticElement.Impl implements Decl {
-		public final ArrayList<Modifier> modifiers; 
+	public final static class FunDecl extends SyntacticElement.Impl implements
+			Decl {
+		public final ArrayList<Modifier> modifiers;
 		public final String name;
 		public final UnresolvedType receiver;
 		public final UnresolvedType ret;
 		public final ArrayList<Parameter> parameters;
+		public final Expr precondition;
+		public final Expr postcondition;
 		public final ArrayList<Stmt> statements;
-		
+
 		/**
 		 * Construct an object representing a Whiley function.
 		 * 
-		 * @param name -
-		 *            The name of the function.
-		 * @param returnType -
-		 *            The return type of this method
-		 * @param paramTypes -
-		 *            The list of parameter names and their types for this method
-		 * @param precondition -
-		 *            The constraint which must hold true on entry and exit (maybe null)
-		 * @param statements -
-		 *            The Statements making up the function body.
+		 * @param name
+		 *            - The name of the function.
+		 * @param returnType
+		 *            - The return type of this method
+		 * @param paramTypes
+		 *            - The list of parameter names and their types for this
+		 *            method
+		 * @param precondition
+		 *            - The constraint which must hold true on entry and exit
+		 *            (maybe null)
+		 * @param statements
+		 *            - The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,
-				List<Parameter> parameters, List<Stmt> statements,
+				List<Parameter> parameters, Expr precondition,
+				Expr postcondition, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
@@ -161,18 +173,20 @@ public class WhileyFile {
 			this.receiver = receiver;
 			this.ret = ret;
 			this.parameters = new ArrayList<Parameter>(parameters);
+			this.precondition = precondition;
+			this.postcondition = postcondition;
 			this.statements = new ArrayList<Stmt>(statements);
 		}
-		
+
 		public boolean isPublic() {
-			for(Modifier m : modifiers) {
-				if(m instanceof Modifier.Public) {
+			for (Modifier m : modifiers) {
+				if (m instanceof Modifier.Public) {
 					return true;
 				}
 			}
 			return false;
 		}
-		
+
 		public String name() {
 			return name;
 		}

@@ -88,12 +88,14 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class While extends SyntacticElement.Impl implements Stmt {
-		public final Expr condition;		
+		public final Expr condition;
+		public final Expr invariant;	
 		public final ArrayList<Stmt> body;
 
-		public While(Expr condition, Collection<Stmt> body, Attribute... attributes) {
+		public While(Expr condition, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
+			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
 		}
 
@@ -101,6 +103,7 @@ public interface Stmt extends SyntacticElement {
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.condition = condition;
+			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);				
 		}		
 	}
@@ -108,20 +111,23 @@ public interface Stmt extends SyntacticElement {
 	public static final class For extends SyntacticElement.Impl implements Stmt {
 		public final String variable;		
 		public final Expr source;
+		public final Expr invariant;
 		public final ArrayList<Stmt> body;
 
-		public For(String variable, Expr source, Collection<Stmt> body, Attribute... attributes) {
+		public For(String variable, Expr source, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.variable = variable;
-			this.source = source;			
+			this.source = source;		
+			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
 		}
 
-		public For(String variable, Expr source,
+		public For(String variable, Expr source, Expr invariant,
 				Collection<Stmt> body, Collection<Attribute> attributes) {
 			super(attributes);
 			this.variable = variable;
-			this.source = source;			
+			this.source = source;	
+			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
 		}		
 	}
