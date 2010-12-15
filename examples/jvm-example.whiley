@@ -1,9 +1,9 @@
-define Wacky as process (int d)
+define Wacky as process {int d}
 
 void Wacky::doSomething():
     extern jvm:
         invokestatic Helper.doStuff:()V;
 
 void System::main([string] args):
-    Wacky wp = spawn (d:1)
+    wp = spawn {d:1}
     wp->doSomething()
