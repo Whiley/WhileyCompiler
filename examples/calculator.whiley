@@ -1,5 +1,5 @@
 // ====================================================
-// A simple, recursive expression tree
+// A simple calculator for expressions
 // ====================================================
 
 define ADD as 0
@@ -90,7 +90,7 @@ SExpr parse(string input):
     init = {input: input, pos: 0}
     (e,st) = parseAddSubExpr(init)
     if st.pos != |input|:
-        return {err:"junk at end of input"}
+        return {err:"junk at end of input: " + st.input[st.pos..]}
     return e
 
 (SExpr, State) parseAddSubExpr(State st):    
@@ -162,6 +162,8 @@ SExpr parse(string input):
             return parseIdentifier(st)
         else if isNumeric(st.input[st.pos]):
             return parseNumber(st)
+        else if st.input[st.pos] == '[':
+            return parseList(st)
     return ({err:"expecting number or variable"},st)
 
 (Var, State) parseIdentifier(State st):    
@@ -180,6 +182,26 @@ SExpr parse(string input):
         st.pos = st.pos + 1    
     return n, st
 
+(SExpr, State) parseList(State st):    
+    st.pos = st.pos + 1 // skip '['
+    st = parseWhiteSpace(st)
+    l = [] // initial list
+    firstTime = true
+    while st.pos < |st.input| && st.input[st.pos] != ']':
+        if !firstTime && st.input[st.pos] != ',':
+            return {err: "expecting comma"},st
+        else if !firstTime:
+            st.pos = st.pos + 1 // skip ','
+        firstTime = false
+        e,st = parseAddSubExpr(st)
+        // perform annoying error check    
+        if e ~= SyntaxError:
+            return e,st        
+        l = l + [e]
+        st = parseWhiteSpace(st)
+    st.pos = st.pos + 1
+    return l,st
+ 
 // Parse all whitespace upto end-of-file
 State parseWhiteSpace(State st):
     while st.pos < |st.input| && isWhiteSpace(st.input[st.pos]):
@@ -200,7 +222,7 @@ public void System::main([string] args):
         if e ~= {[int] err}:
             print "syntax error: " + e.err
         else:
-            result = evaluate(e,{"x"->1})
+            result = evaluate(e,{"x"->1,"y"->2})
             print str(result)
     else:
         print "no parameter provided!"
