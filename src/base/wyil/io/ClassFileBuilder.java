@@ -1647,11 +1647,21 @@ public class ClassFileBuilder {
 					convertType(v.type)));
 		} else if(lhs instanceof CExpr.ListAccess) {
 			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
-			Type.List lt = (Type.List) v.src.type();
-			addWriteConversion(lt.element,bytecodes);			
-			JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_RATIONAL,JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
-					Bytecode.VIRTUAL));					
+			Type src_t = v.src.type();
+			if(src_t instanceof Type.List) { 
+				Type.List lt = (Type.List) v.src.type();
+				addWriteConversion(lt.element,bytecodes);			
+				JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_RATIONAL,JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
+						Bytecode.VIRTUAL));					
+			} else {
+				Type.Dictionary lt = (Type.Dictionary) v.src.type();
+				addWriteConversion(lt.value,bytecodes);			
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+						JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
+						Bytecode.VIRTUAL));
+			}
 		} else if(lhs instanceof CExpr.RecordAccess) {		
 			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
 			Type.Record tt = (Type.Record) Type.effectiveRecordType(la.lhs.type());

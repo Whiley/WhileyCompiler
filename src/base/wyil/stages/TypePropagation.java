@@ -131,10 +131,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return CExpr.REG(type,v.index);
 		} else if(lhs instanceof ListAccess) {
 			ListAccess la = (ListAccess) lhs;
-			Type.List tl = (Type.List) la.src.type();
-			Type elem_t = Type.leastUpperBound(tl.element,type);
-			lhs = typeInference(la.src,Type.T_LIST(elem_t),environment);
-			return CExpr.LISTACCESS(lhs, la.index);
+			Type la_src_t = la.src.type();
+			if(la_src_t instanceof Type.List) {
+				Type.List tl = (Type.List) la.src.type();
+				Type elem_t = Type.leastUpperBound(tl.element,type);
+				lhs = typeInference(la.src,Type.T_LIST(elem_t),environment);
+				return CExpr.LISTACCESS(lhs, la.index);
+			} else {
+				Type.Dictionary tl = (Type.Dictionary) la.src.type();
+				Type key_t = Type.leastUpperBound(tl.key,la.index.type());
+				Type val_t = Type.leastUpperBound(tl.value,type);
+				lhs = typeInference(la.src,Type.T_DICTIONARY(key_t,val_t),environment);
+				return CExpr.LISTACCESS(lhs, la.index);
+			}
 		} else if(lhs instanceof RecordAccess) {		
 			RecordAccess r = (RecordAccess) lhs;		
 			Type lhs_t = updateRecordFieldType(r.lhs.type(),r.field,type);			

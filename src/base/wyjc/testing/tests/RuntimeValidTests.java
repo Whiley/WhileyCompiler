@@ -68,6 +68,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_1_RuntimeTest() { runTest("Dictionary_Valid_1"); }
  @Test public void Dictionary_Valid_2_RuntimeTest() { runTest("Dictionary_Valid_2"); }
  @Test public void Dictionary_Valid_3_RuntimeTest() { runTest("Dictionary_Valid_3"); }
+ @Test public void Dictionary_Valid_4_RuntimeTest() { runTest("Dictionary_Valid_4"); }
  @Test public void For_Valid_1_RuntimeTest() { runTest("For_Valid_1"); }
  @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
