@@ -107,6 +107,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAssign_Valid_4_RuntimeTest() { runTest("ListAssign_Valid_4"); }
  @Test public void ListAssign_Valid_5_RuntimeTest() { runTest("ListAssign_Valid_5"); }
  @Test public void ListAssign_Valid_6_RuntimeTest() { runTest("ListAssign_Valid_6"); }
+ @Test public void ListAssign_Valid_7_RuntimeTest() { runTest("ListAssign_Valid_7"); }
  @Test public void ListConversion_Valid_1_RuntimeTest() { runTest("ListConversion_Valid_1"); }
  @Test public void ListElemOf_Valid_1_RuntimeTest() { runTest("ListElemOf_Valid_1"); }
  @Test public void ListEmpty_Valid_1_RuntimeTest() { runTest("ListEmpty_Valid_1"); }

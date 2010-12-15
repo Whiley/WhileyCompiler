@@ -102,6 +102,14 @@ public abstract class Type {
 			Set l1 = (Set) t1;
 			Set l2 = (Set) t2;
 			return isSubtype(l1.element,l2.element);
+		} else if(t1 instanceof Set && t2 instanceof List) {
+			// This rule surely should not be here
+			Set l1 = (Set) t1;
+			List l2 = (List) t2;
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			types.put("key", Type.T_INT);
+			types.put("value", l2.element);
+			return isSubtype(l1.element,Type.T_RECORD(types));
 		} else if(t1 instanceof Dictionary && t2 instanceof Dictionary) {
 			// RULE: S-DICTIONARY
 			Dictionary l1 = (Dictionary) t1;
