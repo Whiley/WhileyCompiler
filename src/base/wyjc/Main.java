@@ -144,13 +144,14 @@ public class Main {
 			// wyrt.jar, as it contains the same things.
 			//
 			try {
-				URI location = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();
-				//String jarfile = Main.class.getPackage().getImplementationTitle();
+				// String jarfile = Main.class.getPackage().getImplementationTitle();
+				// bootpath.add(jarfile);
+				
+				URI location = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
 				if(location != null) {
 					// The following code is a hack to determine the location of
 					// the enclosing jar file.
-					String jarfile = location.toURL().getFile().toString();
-					
+					String jarfile = location.toURL().getFile().toString();					
 					if(!jarfile.endsWith(".jar")) {
 						// This seems to happen when calling from the ant task.
 						// For some reason, despite me asking it to use a
@@ -159,9 +160,8 @@ public class Main {
 						// "."
 						jarfile += "stdlib";
 					}
-					
 					bootpath.add(jarfile);
-				}
+				}				
 			} catch(Exception e) {
 				// just ignore.
 			}
