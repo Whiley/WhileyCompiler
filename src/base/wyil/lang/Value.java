@@ -21,6 +21,7 @@ package wyil.lang;
 import java.math.BigInteger;
 import java.util.*;
 import wyil.jvm.rt.BigRational;
+import wyil.util.Pair;
 
 public abstract class Value extends CExpr {	
 
@@ -48,6 +49,11 @@ public abstract class Value extends CExpr {
 	
 	public static Record V_RECORD(Map<String,Value> values) {
 		return get(new Record(values));
+	}
+
+	public static Dictionary V_DICTIONARY(
+			java.util.Set<Pair<Value, Value>> values) {
+		return get(new Dictionary(values));
 	}
 
 	public static TypeConst V_TYPE(Type type) {
@@ -514,6 +520,59 @@ public abstract class Value extends CExpr {
 			return r + "}";
 		}
 	}
+	
+	public static class Dictionary extends Value {
+		public final HashMap<Value,Value> values;
+		private Dictionary(Map<Value,Value> value) {
+			this.values = new HashMap<Value,Value>(value);
+		}
+		private Dictionary(java.util.Set<Pair<Value,Value>> values) {
+			this.values = new HashMap<Value,Value>();
+			for(Pair<Value,Value> p : values) {
+				this.values.put(p.first(), p.second());
+			}
+		}
+		public Type type() {
+			Type key = Type.T_VOID;
+			Type value = Type.T_VOID;
+			for (Map.Entry<Value, Value> e : values.entrySet()) {
+				key = Type.leastUpperBound(key,e.getKey().type());
+				value = Type.leastUpperBound(value,e.getKey().type());
+			}
+			return Type.T_DICTIONARY(key,value);
+		}
+		public int hashCode() {
+			return values.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Dictionary) {
+				Dictionary i = (Dictionary) o;
+				return values.equals(i.values);
+			}
+			return false;
+		}
+		public String toString() {
+			String r = "{";
+			boolean firstTime=true;
+			ArrayList<String> keystr = new ArrayList<String>();
+			HashMap<String,Value> keymap = new HashMap<String,Value>();
+			for(Value key : values.keySet()) {
+				keystr.add(key.toString());
+				keymap.put(key.toString(), key);
+			}
+			Collections.sort(keystr);
+			for(String key : keystr) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				Value k = keymap.get(key); 
+				r += k + "->" + values.get(k);
+			}
+			return r + "}";
+		}
+	}
+	
 	public static final class TypeConst extends Value {
 		public final Type type;
 		private TypeConst(Type type) {

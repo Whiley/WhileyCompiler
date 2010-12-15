@@ -1013,6 +1013,8 @@ public class ModuleBuilder {
 				return resolve(freeReg, (RecordGen) e);
 			} else if (e instanceof TupleGen) {
 				return resolve(freeReg, (TupleGen) e);
+			} else if (e instanceof DictionaryGen) {
+				return resolve(freeReg, (DictionaryGen) e);
 			} else {
 				syntaxError("unknown expression encountered: "
 						+ e.getClass().getName(), filename, e);
@@ -1349,6 +1351,19 @@ public class ModuleBuilder {
 		return new Pair<CExpr, Block>(CExpr.RECORD(values), blk);
 	}
 
+	protected Pair<CExpr, Block> resolve(int freeReg, DictionaryGen sg) {
+		HashSet<Pair<CExpr, CExpr>> values = new HashSet<Pair<CExpr, CExpr>>();
+		Block blk = new Block();		
+		for (Pair<Expr,Expr> e : sg.pairs) {			
+			Pair<CExpr, Block> kb = resolve(freeReg, e.first());
+			Pair<CExpr, Block> vb = resolve(freeReg, e.second());
+			values.add(new Pair<CExpr,CExpr>(kb.first(),vb.first()));
+			blk.addAll(kb.second());
+			blk.addAll(vb.second());
+		}
+		return new Pair<CExpr, Block>(CExpr.DICTIONARY(values), blk);
+	}
+	
 	protected Pair<CExpr, Block> resolve(int freeReg, RecordAccess sg) {
 		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs);		
 		return new Pair<CExpr, Block>(CExpr.RECORDACCESS(lhs.first(), sg.name),

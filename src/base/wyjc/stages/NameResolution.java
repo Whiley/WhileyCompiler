@@ -261,6 +261,8 @@ public class NameResolution {
 				resolve((RecordGen) e, environment, imports);
 			} else if (e instanceof TupleGen) {
 				resolve((TupleGen) e, environment, imports);
+			} else if (e instanceof DictionaryGen) {
+				resolve((DictionaryGen) e, environment, imports);
 			} else if(e instanceof TypeConst) {
 				resolve((TypeConst) e, environment, imports);
 			} else {				
@@ -369,6 +371,14 @@ public class NameResolution {
 			ArrayList<PkgID> imports) throws ResolveError {		
 		for(Expr e : sg.fields) {
 			resolve(e,environment,imports);
+		}			
+	}
+	
+	protected void resolve(DictionaryGen sg, HashMap<String,Set<Expr>> environment,
+			ArrayList<PkgID> imports) throws ResolveError {		
+		for(Pair<Expr,Expr> e : sg.pairs) {
+			resolve(e.first(),environment,imports);
+			resolve(e.second(),environment,imports);
 		}			
 	}
 	

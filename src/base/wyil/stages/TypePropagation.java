@@ -20,7 +20,11 @@ package wyil.stages;
 
 import static wyil.util.SyntaxError.syntaxError;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
@@ -534,6 +538,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return infer((NaryOp) e, stmt, environment);
 		} else if (e instanceof ListAccess) {
 			return infer((ListAccess) e, stmt, environment);
+		} else if (e instanceof Dictionary) {
+			return infer((Dictionary) e, stmt, environment);
 		} else if (e instanceof Record) {
 			return infer((Record) e, stmt, environment);
 		} else if (e instanceof RecordAccess) {
@@ -679,6 +685,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return CExpr.RECORD(args);
 	}
 	
+	protected CExpr infer(Dictionary e, Stmt stmt, HashMap<String,Type> environment) {
+		HashSet<Pair<CExpr,CExpr>> args = new HashSet();
+		for (Pair<CExpr,CExpr> v : e.values) {
+			CExpr key = infer(v.first(), stmt, environment);
+			CExpr value = infer(v.second(), stmt, environment);
+			args.add(new Pair<CExpr,CExpr>(key,value));			
+		}
+		return CExpr.DICTIONARY(args);
+	}
 	protected CExpr infer(Invoke ivk, Stmt stmt,
 			HashMap<String,Type> environment) {
 		

@@ -25,6 +25,7 @@ import wyil.jvm.attributes.*;
 import wyil.jvm.rt.BigRational;
 import wyil.*;
 import static wyil.util.SyntaxError.*;
+import wyil.util.Pair;
 import wyil.util.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
@@ -1114,7 +1115,9 @@ public class ClassFileBuilder {
 			translate((CExpr.UnOp)r,slots,bytecodes);
 		} else if(r instanceof CExpr.NaryOp) {
 			translate((CExpr.NaryOp)r,slots,bytecodes);
-		} else if(r instanceof CExpr.Record) {
+		} else if(r instanceof CExpr.Dictionary) {
+			translate((CExpr.Dictionary)r,slots,bytecodes);
+		}  else if(r instanceof CExpr.Record) {
 			translate((CExpr.Record)r,slots,bytecodes);
 		} else if(r instanceof CExpr.RecordAccess) {
 			translate((CExpr.RecordAccess)r,slots,bytecodes);
@@ -1182,6 +1185,27 @@ public class ClassFileBuilder {
 		}
 	}
 
+	protected void translate(CExpr.Dictionary expr, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+		
+		construct(WHILEYMAP, slots, bytecodes);
+		
+		for (Pair<CExpr, CExpr> e : expr.values) {		
+			Type kt = e.first().type();
+			Type vt = e.second().type();
+			bytecodes.add(new Bytecode.Dup(WHILEYMAP));			
+			translate(e.first(), slots, bytecodes);
+			addWriteConversion(kt, bytecodes);
+			translate(e.second(), slots, bytecodes);
+			addWriteConversion(vt, bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(WHILEYMAP));
+		}
+	}	
+	
 	public void translate(CExpr.BinOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		
@@ -1389,6 +1413,8 @@ public class ClassFileBuilder {
 			translate((Value.List)v,slots,bytecodes);
 		} else if(v instanceof Value.Record) {
 			translate((Value.Record)v,slots,bytecodes);
+		} else if(v instanceof Value.Dictionary) {
+			translate((Value.Dictionary)v,slots,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
@@ -1569,6 +1595,27 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype,
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
+		}
+	}
+	
+	protected void translate(Value.Dictionary expr, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+		
+		construct(WHILEYMAP, slots, bytecodes);
+		
+		for (Map.Entry<Value, Value> e : expr.values.entrySet()) {
+			Type kt = e.getKey().type();
+			Type vt = e.getValue().type();
+			bytecodes.add(new Bytecode.Dup(WHILEYMAP));			
+			translate(e.getKey(), slots, bytecodes);
+			addWriteConversion(kt, bytecodes);
+			translate(e.getValue(), slots, bytecodes);
+			addWriteConversion(vt, bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(WHILEYMAP));
 		}
 	}
 	

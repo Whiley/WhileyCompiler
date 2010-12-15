@@ -233,6 +233,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			return infer((ListAccess) e, stmt, environment);
 		} else if (e instanceof Record) {
 			return infer((Record) e, stmt, environment);
+		} else if (e instanceof CExpr.Dictionary) {
+			return infer((CExpr.Dictionary) e, stmt, environment);
 		} else if (e instanceof RecordAccess) {
 			return infer((RecordAccess) e, stmt, environment);
 		} else if (e instanceof Invoke) {
@@ -341,6 +343,23 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			return Value.V_RECORD(args);
 		} else {
 			return CExpr.RECORD(args);
+		}
+	}
+	
+	protected CExpr infer(CExpr.Dictionary e, Stmt stmt, HashMap<String,Value> environment) {
+		HashSet args = new HashSet();
+		boolean allValues = true;
+		for (Pair<CExpr, CExpr> v : e.values) {
+			CExpr key = infer(v.first(), stmt, environment);
+			CExpr value = infer(v.second(), stmt, environment);
+			args.add(new Pair(key,value));
+			allValues &= key instanceof Value;
+			allValues &= value instanceof Value;
+		}
+		if(allValues) {
+			return Value.V_DICTIONARY(args);
+		} else {
+			return CExpr.DICTIONARY(args);
 		}
 	}
 	

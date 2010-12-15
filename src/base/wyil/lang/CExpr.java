@@ -20,6 +20,8 @@ package wyil.lang;
 
 import java.util.*;
 
+import wyil.util.Pair;
+
 public abstract class CExpr {
 	public abstract Type type();
 	
@@ -88,6 +90,12 @@ public abstract class CExpr {
 			for(Map.Entry<String,CExpr> e : tup.values.entrySet()) {
 				match(e.getValue(),match,uses);				
 			}			
+		} else if (r instanceof Dictionary) {
+			Dictionary tup = (Dictionary) r;			
+			for(Pair<CExpr,CExpr> e : tup.values) {
+				match(e.first(),match,uses);				
+				match(e.second(),match,uses);
+			}			
 		} else if (r instanceof RecordAccess) {
 			RecordAccess ta = (RecordAccess) r;
 			match(ta.lhs,match,uses);
@@ -152,6 +160,15 @@ public abstract class CExpr {
 				values.put(e.getKey(),substitute(binding, e.getValue()));				
 			}
 			return RECORD(values);
+		} else if (r instanceof Dictionary) {
+			Dictionary tup = (Dictionary) r;
+			HashSet<Pair<CExpr,CExpr>> values = new HashSet();
+			for(Pair<CExpr,CExpr> e : tup.values) {
+				CExpr key = substitute(binding, e.first());
+				CExpr value = substitute(binding, e.second());
+				values.add(new Pair(key,value));				
+			}
+			return DICTIONARY(values);
 		} else if (r instanceof RecordAccess) {
 			RecordAccess ta = (RecordAccess) r;
 			return RECORDACCESS(substitute(binding, ta.lhs),
@@ -205,6 +222,15 @@ public abstract class CExpr {
 				values.put(e.getKey(),registerShift(shift, e.getValue()));				
 			}
 			return RECORD(values);
+		} else if (r instanceof Dictionary) {
+			Dictionary tup = (Dictionary) r;
+			HashSet<Pair<CExpr,CExpr>> values = new HashSet();
+			for(Pair<CExpr,CExpr> e : tup.values) {
+				CExpr key = registerShift(shift, e.first());
+				CExpr value = registerShift(shift, e.second());
+				values.add(new Pair(key,value));				
+			}
+			return DICTIONARY(values);
 		} else if (r instanceof RecordAccess) {
 			RecordAccess ta = (RecordAccess) r;
 			return RECORDACCESS(registerShift(shift, ta.lhs),
@@ -300,10 +326,14 @@ public abstract class CExpr {
 		return get(new NaryOp(nop, args));
 	}
 	
+	public static Dictionary DICTIONARY(Set<Pair<CExpr,CExpr>> values) {
+		return get(new Dictionary(values));
+	}
+	
 	public static Record RECORD(Map<String,CExpr> values) {
 		return get(new Record(values));
 	}
-	
+		
 	public static RecordAccess RECORDACCESS(CExpr lhs, String field) {
 		return get(new RecordAccess(lhs,field));
 	}
@@ -701,6 +731,50 @@ public abstract class CExpr {
 				}
 				firstTime=false;
 				r += key + ":" + values.get(key);
+			}
+			return r + "}";
+		}
+	}
+	
+	public final static class Dictionary extends CExpr {			
+		public final Set<Pair<CExpr,CExpr>> values;		
+		
+		Dictionary(Set<Pair<CExpr,CExpr>> values) {
+			this.values = Collections.unmodifiableSet(values); 
+		}
+		
+		public Type type() {
+			Type key = Type.T_VOID;
+			Type value = Type.T_VOID;			
+			for(Pair<CExpr,CExpr> e : values) {
+				key = Type.leastUpperBound(key,e.first().type());
+				value = Type.leastUpperBound(value,e.first().type());
+			}
+			return Type.T_DICTIONARY(key,value);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Dictionary) {
+				Dictionary a = (Dictionary) o;
+				return values.equals(a.values);
+				
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return values.hashCode();
+		}
+		
+		public String toString() {
+			String r = "{";			
+			boolean firstTime=true;
+			for(Pair<CExpr,CExpr> e : values) {			
+				if(!firstTime) {
+					r += ", ";
+				}
+				firstTime=false;
+				r += e.first().toString()+ "->" + e.second().toString();
 			}
 			return r + "}";
 		}
