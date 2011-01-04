@@ -116,7 +116,7 @@ public abstract class Code {
 			Assign a = (Assign) c;
 			if(a.lhs != null) {
 				CExpr.match(a.lhs,match,matches);
-			}
+			}			
 			CExpr.match(a.rhs,match,matches);
 		} else if(c instanceof Debug) {
 			Debug a = (Debug) c;						

@@ -180,13 +180,15 @@ public abstract class Value extends CExpr {
 						&& ei <= l.values.size()) {
 					java.util.List nl = l.values.subList(si, ei);
 					return V_LIST(nl);
-				}				
+				} else {
+					return CExpr.NARYOP(op, l,s,e);
+				}
 			}
 		} 		
-		return null;
+		throw new IllegalArgumentException("Invalid operands to Value.evaluate(NOP,Value...)");		
 	}
 	
-	public static CExpr evaluate(CExpr.UOP op, Value mhs) {
+	public static Value evaluate(CExpr.UOP op, Value mhs) {
 		switch(op) {
 		case NEG:	
 			if(mhs instanceof Int) {
@@ -207,7 +209,7 @@ public abstract class Value extends CExpr {
 			}
 			break;
 		}
-		return CExpr.UNOP(op, mhs);
+		throw new IllegalArgumentException("Invalid operands to Value.evaluate(UOP,Value)");			
 	}
 	
 	public static Boolean evaluate(Code.COP op, Value lhs, Value rhs) {
@@ -236,7 +238,7 @@ public abstract class Value extends CExpr {
 			TypeConst tc = (TypeConst) rhs;
 			return !Type.isSubtype(tc.type,lhs_t);					
 		} else {
-			return null;
+			throw new IllegalArgumentException("Invalid operands to Value.evaluate(COP,Value,Value)");
 		}
 	}
 	

@@ -677,7 +677,7 @@ public abstract class CExpr {
 				break;
 			}
 			case SUBLIST:
-				rhs += args.get(0) + "[" + args.get(1) + ":" + args.get(2)
+				rhs += args.get(0) + "[" + args.get(1) + ".." + args.get(2)
 						+ "]";
 				break;
 			}
