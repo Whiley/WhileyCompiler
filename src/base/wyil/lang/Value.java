@@ -188,7 +188,7 @@ public abstract class Value extends CExpr {
 		throw new IllegalArgumentException("Invalid operands to Value.evaluate(NOP,Value...)");		
 	}
 	
-	public static Value evaluate(CExpr.UOP op, Value mhs) {
+	public static CExpr evaluate(CExpr.UOP op, Value mhs) {
 		switch(op) {
 		case NEG:	
 			if(mhs instanceof Int) {
@@ -208,6 +208,9 @@ public abstract class Value extends CExpr {
 				return V_INT(BigInteger.valueOf(l.values.size()));				
 			}
 			break;
+		case PROCESSSPAWN:
+		case PROCESSACCESS:
+			return CExpr.UNOP(op,mhs);		
 		}
 		throw new IllegalArgumentException("Invalid operands to Value.evaluate(UOP,Value)");			
 	}
