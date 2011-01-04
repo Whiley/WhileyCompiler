@@ -74,7 +74,7 @@ public abstract class Value extends CExpr {
 		lhs = convert(lub,lhs);
 		rhs = convert(lub,rhs);
 		if(lhs == null || rhs == null) {
-			return null;
+			throw new IllegalArgumentException("Invalid arguments supplied to evaluate(BOP,Value,Value)");
 		} else if(lub instanceof Type.Int || lub instanceof Type.Real) {
 			return evaluateArith(op,lhs,rhs);
 		} else if(lub instanceof Type.Set) {
@@ -82,8 +82,7 @@ public abstract class Value extends CExpr {
 		} else if(lub instanceof Type.List) {
 			return evaluateList(op,(Value.List) lhs, (Value.List) rhs);
 		}
-		// FIXME: need to add more cases!!!
-		return null;
+		throw new IllegalArgumentException("Missing cases in evaluate(BOP,Value,Value)");
 	}
 	
 	private static Value evaluateArith(CExpr.BOP op, Value lhs, Value rhs) {
@@ -289,7 +288,7 @@ public abstract class Value extends CExpr {
 			return !lv.equals(rv);
 		}
 		
-		return null;
+		throw new IllegalArgumentException("Invalid operands to Value.evaluateArith(COP,Value,Value)");
 	}
 	
 	public static Value convert(Type t, Value val) {
