@@ -65,7 +65,7 @@ public class TestHarness {
 		}
 		args[args.length - 1] = srcPath + File.separatorChar + name + ".whiley";
 		
-		if (Main.run(args) != 0) {
+		if (new Main().run(args) != 0) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(srcPath, name, args);
@@ -126,7 +126,7 @@ public class TestHarness {
 	}
 	
 	private static int compile(String... args) {
-		return Main.run(args);
+		return new Main().run(args);
 	}
 	
 	private static String run(String path, String name, String... args) {

@@ -91,7 +91,7 @@ public class AntTask extends MatchingTask {
         if(nfiles > 0) {
         	log("Compiling " + nfiles + " source file(s)");
         	// Finally, run the whiley compiler        	
-			int exitCode = Main.run(params.toArray(new String[params.size()]));        
+			int exitCode = new Main().run(params.toArray(new String[params.size()]));        
 
         	if(exitCode != 0) {
         		throw new BuildException("compilation errors");

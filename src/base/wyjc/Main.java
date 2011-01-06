@@ -72,7 +72,7 @@ public class Main {
 		}
 	}
 	
-	public static int run(String[] args) {		
+	public int run(String[] args) {		
 		boolean verbose = false;
 		boolean verification = false;
 		
@@ -176,7 +176,7 @@ public class Main {
 
 		try {
 			ModuleLoader loader = new ModuleLoader(whileypath);
-			ArrayList<Compiler.Stage> stages = constructPipeline(pipelineMods,loader,verification);
+			List<Compiler.Stage> stages = constructPipeline(pipelineMods,loader,verification);
 			Compiler compiler = new Compiler(loader,stages);
 
 			// Now, configure compiler and loader
@@ -242,36 +242,26 @@ public class Main {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		System.exit(run(args));			
+		System.exit(new Main().run(args));			
 	}
 			
 	/**
 	 * Print out information regarding command-line arguments
 	 * 
 	 */
-	public static void usage() {
+	public void usage() {
 		String[][] info = {
 				{ "version", "Print version information" },
 				{ "verbose",
-						"Print detailed information on what the compiler is doing" },				
-				{ "Nvc",
-						"Don't check constraints at compile time" }, 
-				{ "nrc",
-				"Don't check constraints at runtime\n" } ,				
-				{"whileypath <path>", "Specify where to find whiley (class) files"},
-				{"wp <path>", "Specify where to find whiley (class) files"},
-				{"bootpath <path>",
-				"Specify where to find whiley standard library (class) files"},
-				{"bp <path>", "Specify where to find whiley standard library (class) files"},				
-				{ "debug:lexer",
-				"Generate debug information for the lexer" },
-				{ "debug:checks",
-				"Generate debug information on generated checks" },
-				{ "debug:pcs",
-				"Generate debug information on propagated conditions" },
-				{ "debug:vcs",
-				"Generate debug information on verification conditions" }};
-		System.out.println("usage: wjc <options> <source-files>");
+						"Print detailed information on what the compiler is doing" },
+				{ "whileypath <path>",
+						"Specify where to find whiley (class) files" },
+				{ "wp <path>", "Specify where to find whiley (class) files" },
+				{ "bootpath <path>",
+						"Specify where to find whiley standard library (class) files" },
+				{ "bp <path>",
+						"Specify where to find whiley standard library (class) files" }, };
+		System.out.println("usage: wyjc <options> <source-files>");
 		System.out.println("Options:");
 
 		// first, work out gap information
@@ -302,7 +292,7 @@ public class Main {
 	 * @param end - the end position of the offending region.
 	 * @param message - the message to print about the error
 	 */
-	public static void outputSourceError(String fileArg, int start, int end,
+	public void outputSourceError(String fileArg, int start, int end,
 			String message) throws IOException {
 		BufferedReader in = new BufferedReader(new InputStreamReader(
 				new FileInputStream(fileArg), "UTF8"));
@@ -340,7 +330,7 @@ public class Main {
 	 * @param str
 	 * @return
 	 */
-	private static Map<String, String> splitOptions(String str) {
+	private Map<String, String> splitOptions(String str) {
 		HashMap<String, String> options = new HashMap<String, String>();
 		String[] splits = str.split(",");
 		for (String s : splits) {
@@ -354,10 +344,15 @@ public class Main {
 		return options;
 	}
 
-	private static ArrayList<Compiler.Stage> constructPipeline(
+	protected List<Compiler.Stage> constructPipeline(
 			List<PipelineModifier> pmods, ModuleLoader loader,
 			boolean verification) {
-
+		List<Compiler.Stage> stages = defaultPipeline(loader); 
+		applyPipelineMods(stages,pmods,loader);		
+		return stages;
+	}
+	
+	protected List<Compiler.Stage> defaultPipeline(ModuleLoader loader) {
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
 		
 		// First, construct the default pipeline
@@ -372,6 +367,11 @@ public class Main {
 				new FunctionCheck(loader)));
 		stages.add(new ClassWriter(loader));
 		
+		return stages;
+	}
+	
+	protected void applyPipelineMods(List<Compiler.Stage> stages,
+			List<PipelineModifier> pmods, ModuleLoader loader) { 
 		// Second, make requested pipeline adjustments
 		registerDefaultStages();
 		for (PipelineModifier p : pmods) {
@@ -392,19 +392,17 @@ public class Main {
 				break;			
 			}
 			}			
-		}
-		
-		return stages;
+		}		
 	}
 	
 
-	public static void registerDefaultStages() {
+	public void registerDefaultStages() {
 		Compiler.registerStage("wyil",WyilWriter.class);
 		Compiler.registerStage("jvm",JvmBytecodeWriter.class);
 		Compiler.registerStage("class",ClassWriter.class);
 	}
 	
-	private static int matchStage(String match, List<Compiler.Stage> stages) {
+	private int matchStage(String match, List<Compiler.Stage> stages) {
 		int i=0;
 		for(Compiler.Stage stage : stages) {
 			if(matchStageName(match,stage.name())) {
@@ -415,7 +413,7 @@ public class Main {
 		throw new IllegalArgumentException("invalid stage name \"" + match + "\"");
 	}
 	
-	private static boolean matchStageName(String match, String name) {
+	private boolean matchStageName(String match, String name) {
 		if(match.equals(name) || name.startsWith(match)) {
 			return true;
 		}
@@ -426,7 +424,7 @@ public class Main {
 		return false;
 	}
 	
-	private static String splitInitials(String name) {
+	private String splitInitials(String name) {
 		String[] words = name.split(" ");
 		String r = "";
 		for(String w : words) {

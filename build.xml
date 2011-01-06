@@ -2,7 +2,8 @@
   <property name="version" value="0.3.3"/>
 
   <target name="compile">
-    <javac debug="true" srcdir="src/base" includeantruntime="true" includes="wyjc/**,wyil/**,wyone/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
+    <javac debug="true" srcdir="src/base" includeantruntime="true" includes="wyjc/**,wyil/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
+    <javac debug="true" srcdir="src/full" classpath="src/base" includeantruntime="true" includes="wyjx/Main.java,wyone/**" excludes="wyone/testing/**"/> 
   </target>
 
   <target name="build-wyjc" depends="compile">
@@ -17,7 +18,22 @@
     <delete dir="tmp"/>
   </target>
 
-  <target name="stdlib" depends="build-wyjc">
+  <target name="build-wyjx" depends="compile">
+    <buildnumber file="build.num"/>
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Main-Class" value="wyjx.Main"/>
+      <attribute name="Implementation-Version" value="${version}-${build.number}"/>
+    </manifest>
+    <jar destfile="lib/wyjx.jar"  manifest="tmp/MANIFEST.MF">
+      <fileset dir="src/base" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
+      <fileset dir="src/full" includes="wyjx/**/*.class,wyone/**/*.class"/>
+    </jar>
+    <delete dir="tmp"/>
+  </target>
+
+  <target name="stdlib" depends="build-wyjc,build-wyjx">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
     <jar destfile="lib/wyrt.jar">
