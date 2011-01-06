@@ -3,7 +3,7 @@
 
   <target name="compile">
     <javac debug="true" srcdir="src/base" includeantruntime="true" includes="wyjc/**,wyil/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
-    <javac debug="true" srcdir="src/full" classpath="src/base" includeantruntime="true" includes="wyjx/Main.java,wyone/**" excludes="wyone/testing/**"/> 
+<!--    <javac debug="true" srcdir="src/full" classpath="src/base" includeantruntime="true" includes="wyjx/Main.java,wyone/**" excludes="wyone/testing/**"/> -->
   </target>
 
   <target name="build-wyjc" depends="compile">
@@ -33,7 +33,7 @@
     <delete dir="tmp"/>
   </target>
 
-  <target name="stdlib" depends="build-wyjc,build-wyjx">
+  <target name="stdlib" depends="build-wyjc">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
     <jar destfile="lib/wyrt.jar">

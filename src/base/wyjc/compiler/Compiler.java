@@ -26,17 +26,13 @@ import wyil.*;
 import wyil.lang.*;
 import wyil.stages.TypePropagation;
 import wyil.util.*;
-import wyil.io.*;
 import wyjc.lang.*;
 import wyjc.stages.*;
-import wyjvm.io.ClassFileWriter;
-import wyjvm.lang.ClassFile;
 
 public class Compiler implements Logger {	
 	private ModuleLoader loader;
 	protected NameResolution nameResolver;
-	protected ModuleBuilder moduleBuilder;
-	protected TypePropagation typeInference;
+	protected ModuleBuilder moduleBuilder;	
 	protected ArrayList<Stage> stages;
 
 	public interface Stage {
@@ -48,8 +44,7 @@ public class Compiler implements Logger {
 		this.loader = loader;		
 		this.stages = new ArrayList<Stage>(stages);
 		this.nameResolver = new NameResolution(loader);		
-		this.moduleBuilder = new ModuleBuilder(loader);
-		this.typeInference = new TypePropagation(loader);	
+		this.moduleBuilder = new ModuleBuilder(loader);		
 	}
 	
 	/**
@@ -159,9 +154,8 @@ public class Compiler implements Logger {
 			loader.register(m);
 		}
 		ArrayList<Module> modules = new ArrayList<Module>();
-		for(Module m : files) {
-			modules.add(typeInference.apply(m));									
-			// modules.add(m);
+		for(Module m : files) {								
+			modules.add(m);
 		}		
 		logTimedMessage("inferred types",
 				System.currentTimeMillis() - start);
