@@ -21,7 +21,8 @@ package wyil.io;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.jvm.attributes.*;
+import wyil.jvm.attributes.WhileyDefine;
+import wyil.jvm.attributes.WhileyVersion;
 import wyil.jvm.rt.BigRational;
 import wyil.*;
 import static wyil.util.SyntaxError.*;
@@ -33,6 +34,7 @@ import wyil.lang.Type;
 import wyil.lang.Code;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
+import wyjx.jvm.attributes.*;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

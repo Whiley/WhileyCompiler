@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.stages;
+package wyjx.stages;
 
 import java.util.*;
 import java.math.BigInteger;

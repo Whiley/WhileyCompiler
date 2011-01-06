@@ -24,11 +24,15 @@ import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.stages.*;
+import wyil.stages.ConstantPropagation;
+import wyil.stages.DefiniteAssignment;
+import wyil.stages.FunctionCheck;
+import wyil.stages.TypePropagation;
 import wyil.util.*;
 import wyjc.compiler.*;
 import wyjc.compiler.Compiler;
 import wyjc.util.*;
+import wyjx.stages.*;
 
 public class Main {
 	public static final int PARSE_ERROR = 1;

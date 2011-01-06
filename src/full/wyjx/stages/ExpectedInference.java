@@ -16,16 +16,16 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.stages;
+package wyjx.stages;
 
 import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.stages.*;
 import wyil.util.Pair;
 import wyil.util.dfa.BackwardFlowAnalysis;
 import wyil.lang.Code.*;
+import wyjx.stages.*;
 import static wyil.util.SyntaxError.*;
 
 /**

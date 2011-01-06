@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.stages;
+package wyjx.stages;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -30,6 +30,7 @@ import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
 import wyil.lang.CExpr.*;
 import wyil.lang.Code.*;
+import wyil.stages.ModuleTransform;
 import wyil.util.ResolveError;
 import wyil.util.SyntaxError;
 import static wyil.util.SyntaxError.*;

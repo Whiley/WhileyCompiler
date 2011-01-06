@@ -16,15 +16,15 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.jvm.attributes;
+package wyjx.jvm.attributes;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyil.jvm.attributes.WhileyType;
 import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
-import wyil.lang.Stmt;
 import wyil.lang.Code.*;
 import wyjvm.io.*;
 import wyjvm.lang.*;

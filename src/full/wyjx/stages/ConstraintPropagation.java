@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.stages;
+package wyjx.stages;
 
 import static wyil.util.SyntaxError.syntaxError;
 

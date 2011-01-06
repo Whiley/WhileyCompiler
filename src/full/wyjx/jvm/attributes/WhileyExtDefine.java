@@ -16,13 +16,15 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.jvm.attributes;
+package wyjx.jvm.attributes;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import wyil.jvm.attributes.WhileyDefine;
+import wyil.jvm.attributes.WhileyType;
 import wyil.lang.*;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;

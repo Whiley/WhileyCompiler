@@ -16,13 +16,14 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.stages;
+package wyjx.stages;
 
 import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Code.*;
+import wyil.stages.ModuleTransform;
 import static wyil.util.SyntaxError.*;
 
 public class FailureCheck implements ModuleTransform {
