@@ -31,7 +31,6 @@ import wyjc.lang.*;
 import wyjc.stages.*;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
-import wyjx.stages.ModuleBuilder;
 
 public class Compiler implements Logger {	
 	private ModuleLoader loader;

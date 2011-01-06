@@ -32,7 +32,6 @@ import wyil.util.*;
 import wyjc.compiler.*;
 import wyjc.compiler.Compiler;
 import wyjc.util.*;
-import wyjx.stages.*;
 
 public class Main {
 	public static final int PARSE_ERROR = 1;
