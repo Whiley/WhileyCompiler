@@ -80,8 +80,10 @@ public class Compiler implements Logger {
 			resolveNames(m);			
 		}
 		
-		List<Module> modules = buildModules(wyfiles);		
-		modules = typeModules(modules);
+		List<Module> modules = buildModules(wyfiles);				
+		for(Module m : modules) {
+			loader.register(m);
+		}
 		for(Module m : modules) {
 			finishCompilation(m);
 		}
@@ -146,21 +148,7 @@ public class Compiler implements Logger {
 		logTimedMessage("built modules",
 				System.currentTimeMillis() - start);
 		return modules;		
-	}
-	
-	protected List<Module> typeModules(List<Module> files) {
-		long start = System.currentTimeMillis();			
-		for(Module m : files) {
-			loader.register(m);
-		}
-		ArrayList<Module> modules = new ArrayList<Module>();
-		for(Module m : files) {								
-			modules.add(m);
-		}		
-		logTimedMessage("inferred types",
-				System.currentTimeMillis() - start);
-		return modules;		
-	}
+	}	
 	
 	/**
 	 * This method is just a helper to format the output
