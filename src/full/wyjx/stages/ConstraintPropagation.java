@@ -41,6 +41,7 @@ import wyone.theory.type.*;
 
 public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {	
 	private int timeout;
+
 	/**
 	 * The substitutions map is used to help in the translation of loops over
 	 * lists. It's something of an ugly hack, but it works effectively. Probably
