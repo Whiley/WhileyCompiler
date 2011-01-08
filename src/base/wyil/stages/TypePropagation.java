@@ -33,13 +33,33 @@ import wyil.lang.CExpr.*;
 import wyil.util.*;
 import wyil.util.dfa.*;
 
+/**
+ * <p>
+ * The type propagation stage propagates type information in a flow-sensitive
+ * fashion from declared parameter and return types through assigned
+ * expressions, to determine types for all intermediate expressions and
+ * variables. In some cases, this process will actually update the underlying
+ * expressions to reflect the correct operator. For example, an expression
+ * <code>a+b</code> will always initially be parsed as a CExpr.BinOp with ADD
+ * operator. However, if type propagation determines that <code>a</code> and
+ * <code>b</code> have set type, then the operator will be updated to a UNION.
+ * </p>
+ * <p>
+ * <b<Note:</b> currently, this stage does not propagate through type definitions.
+ * </p>
+ * 
+ * @author djp
+ * 
+ */
 public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 	public TypePropagation(ModuleLoader loader) {
 		super(loader);
 	}
 		
-	public Module.TypeDef propagate(Module.TypeDef type) {		
+	public Module.TypeDef propagate(Module.TypeDef type) {
+		// TypeDef's do not need to be typed, since they are typed by
+		// ModuleBuilder.
 		return type;		
 	}
 	
