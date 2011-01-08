@@ -33,7 +33,7 @@ import wyjc.lang.Stmt;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
 
-public class ModuleBuilder {
+public class ExtendedModuleBuilder {
 	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
@@ -52,7 +52,7 @@ public class ModuleBuilder {
 	// These stored values are called "shadows".
 	private final HashMap<String, CExpr> shadows = new HashMap<String, CExpr>();
 
-	public ModuleBuilder(ModuleLoader loader) {
+	public ExtendedModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;		
 	}
 

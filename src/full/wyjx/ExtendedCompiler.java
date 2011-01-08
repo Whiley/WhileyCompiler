@@ -15,7 +15,7 @@ public class ExtendedCompiler extends wyjc.compiler.Compiler {
 	
 	protected List<Module> buildModules(List<WhileyFile> files) {
 		long start = System.currentTimeMillis();		
-		List<Module> modules = new ModuleBuilder(loader).resolve(files);
+		List<Module> modules = new ExtendedModuleBuilder(loader).resolve(files);
 		logTimedMessage("built modules",
 				System.currentTimeMillis() - start);
 		return modules;		
