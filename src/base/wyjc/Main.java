@@ -176,7 +176,7 @@ public class Main {
 		try {
 			ModuleLoader loader = new ModuleLoader(whileypath);
 			List<Compiler.Stage> stages = constructPipeline(pipelineMods,loader,verification);
-			Compiler compiler = new Compiler(loader,stages);
+			Compiler compiler = createCompiler(loader,stages);
 
 			// Now, configure compiler and loader
 			loader.setLogger(compiler);
@@ -321,6 +321,11 @@ public class Main {
 		errout.println("");		
 	}
 
+	protected Compiler createCompiler(ModuleLoader loader,
+			List<Compiler.Stage> stages) {
+		return new Compiler(loader, stages);
+	}
+	
 	/**
 	 * This splits strings of the form "x=y,v=w" into distinct components and
 	 * puts them into a map. In the case of a string like "x,y=z" then x is
@@ -329,7 +334,7 @@ public class Main {
 	 * @param str
 	 * @return
 	 */
-	private Map<String, String> splitOptions(String str) {
+	protected Map<String, String> splitOptions(String str) {
 		HashMap<String, String> options = new HashMap<String, String>();
 		String[] splits = str.split(",");
 		for (String s : splits) {

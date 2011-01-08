@@ -47,6 +47,10 @@ public class Main extends wyjc.Main {
 		}
 	}	
 
+	protected Compiler createCompiler(List<Compiler.Stage> stages, ModuleLoader loader) {
+		return new ExtendedCompiler(stages,loader);
+	}
+	
 	protected List<Compiler.Stage> defaultPipeline(ModuleLoader loader) {
 		ArrayList<Compiler.Stage> stages = new ArrayList<Compiler.Stage>();
 		

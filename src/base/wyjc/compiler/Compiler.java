@@ -30,9 +30,7 @@ import wyjc.lang.*;
 import wyjc.stages.*;
 
 public class Compiler implements Logger {	
-	private ModuleLoader loader;
-	protected NameResolution nameResolver;
-	protected ModuleBuilder moduleBuilder;	
+	protected ModuleLoader loader;
 	protected ArrayList<Stage> stages;
 
 	public interface Stage {
@@ -42,9 +40,7 @@ public class Compiler implements Logger {
 	
 	public Compiler(ModuleLoader loader, List<Stage> stages) {
 		this.loader = loader;		
-		this.stages = new ArrayList<Stage>(stages);
-		this.nameResolver = new NameResolution(loader);		
-		this.moduleBuilder = new ModuleBuilder(loader);		
+		this.stages = new ArrayList<Stage>(stages);				
 	}
 	
 	/**
@@ -136,7 +132,7 @@ public class Compiler implements Logger {
 		
 	protected void resolveNames(WhileyFile m) {
 		long start = System.currentTimeMillis();		
-		nameResolver.resolve(m);
+		new NameResolution(loader).resolve(m);
 		logTimedMessage("[" + m.filename + "] resolved names",
 				System.currentTimeMillis() - start);		
 		
@@ -144,7 +140,7 @@ public class Compiler implements Logger {
 	
 	protected List<Module> buildModules(List<WhileyFile> files) {
 		long start = System.currentTimeMillis();		
-		List<Module> modules = moduleBuilder.resolve(files);
+		List<Module> modules = new ModuleBuilder(loader).resolve(files);
 		logTimedMessage("built modules",
 				System.currentTimeMillis() - start);
 		return modules;		
