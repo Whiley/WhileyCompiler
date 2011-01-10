@@ -680,11 +680,18 @@ public class ExtendedModuleBuilder {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));
-
-		Module.Case ncase = new Module.Case(parameterNames, precondition,
-				postcondition, blk);
-		return new Module.Method(fd.name(), tf, ncase);
+		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));		
+				
+		List<Attribute> caseAttrs = new ArrayList<Attribute>();
+		if(precondition != null) {
+			caseAttrs.add(new Precondition(precondition));
+		} 
+		if(postcondition != null) {
+			caseAttrs.add(new Postcondition(postcondition));
+		}
+		List<Module.Case> ncases = new ArrayList<Module.Case>();
+		ncases.add(new Module.Case(parameterNames, blk, caseAttrs));
+		return new Module.Method(fd.name(), tf, ncases);
 	}
 
 	/**

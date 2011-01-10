@@ -212,11 +212,19 @@ public class Module extends ModuleLoader.Skeleton {
 		private final ArrayList<String> paramNames;
 		private final Block body;
 
-		public Case(Collection<String> paramNames, Block body) {
+		public Case(Collection<String> paramNames, Block body, Attribute... attributes) {
+			super(attributes);
 			this.paramNames = new ArrayList<String>(paramNames);
 			this.body = body;
 		}
 
+		public Case(Collection<String> paramNames, Block body,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.paramNames = new ArrayList<String>(paramNames);
+			this.body = body;
+		}
+		
 		public Block body() {
 			return body;
 		}
