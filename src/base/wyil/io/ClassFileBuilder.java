@@ -34,7 +34,6 @@ import wyil.lang.Type;
 import wyil.lang.Code;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
-import wyjx.jvm.attributes.*;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

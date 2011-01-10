@@ -28,7 +28,6 @@ import wyil.lang.*;
 import wyil.util.*;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.*;
-import wyjx.jvm.attributes.*;
 
 /**
  * The module loader is a critical component of the Whiley compiler. It is
