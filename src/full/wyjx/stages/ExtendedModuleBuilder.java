@@ -32,6 +32,7 @@ import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
+import wyjx.attributes.*;
 
 public class ExtendedModuleBuilder {
 	private final ModuleLoader loader;	
@@ -355,8 +356,10 @@ public class ExtendedModuleBuilder {
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());
-			return new Triple<Type, Block, Boolean>(td.type(), Block.relabel(td
-					.constraint()), td.constraint() != null);
+			Constraint cattr = td.attribute(Constraint.class);
+			Block constraint = cattr != null ? cattr.constraint : null;
+			return new Triple<Type, Block, Boolean>(td.type(), Block
+					.relabel(constraint), constraint != null);
 		}
 
 		// following is needed to terminate any recursion
@@ -592,8 +595,13 @@ public class ExtendedModuleBuilder {
 	}
 
 	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
-		Pair<Type, Block> p = types.get(new NameID(module, td.name()));			
-		return new Module.TypeDef(td.name(), p.first(), p.second());
+		Pair<Type, Block> p = types.get(new NameID(module, td.name()));
+		if (p.second() != null) {
+			return new Module.TypeDef(td.name(), p.first(), new Constraint(p
+					.second()));
+		} else {
+			return new Module.TypeDef(td.name(), p.first());
+		}
 	}
 
 	protected Module.Method resolve(FunDecl fd) {

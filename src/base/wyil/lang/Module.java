@@ -114,15 +114,22 @@ public class Module extends ModuleLoader.Skeleton {
 				|| method(name).size() > 0;
 	}
 	
-	public static class TypeDef {
+	public static class TypeDef extends SyntacticElement.Impl {
 		private String name;
 		private Type type;		
 
-		public TypeDef(String name, Type type) {			
+		public TypeDef(String name, Type type, Attribute... attributes) {
+			super(attributes);
 			this.name = name;
 			this.type = type;						
 		}
 
+		public TypeDef(String name, Type type, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+			this.type = type;						
+		}
+		
 		public String name() {
 			return name;
 		}
@@ -132,11 +139,18 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}
 	
-	public static class ConstDef {
+	public static class ConstDef extends SyntacticElement.Impl {
 		private String name;		
 		private Value constant;
 		
-		public ConstDef(String name, Value constant) {
+		public ConstDef(String name, Value constant,  Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.constant = constant;
+		}
+		
+		public ConstDef(String name, Value constant,  Collection<Attribute> attributes) {
+			super(attributes);
 			this.name = name;
 			this.constant = constant;
 		}
@@ -150,23 +164,23 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}
 		
-	public static class Method {
+	public static class Method extends SyntacticElement.Impl {
 		private String name;		
 		private Type.Fun type;
 		private List<Case> cases;
-		
-		public Method(String name, Type.Fun type, Case... cases) {
+				
+		public Method(String name, Type.Fun type,
+				Collection<Case> cases, Attribute... attributes) {
+			super(attributes);
 			this.name = name;
 			this.type = type;
-			ArrayList<Case> tmp = new ArrayList<Case>();
-			for (Case c : cases) {
-				tmp.add(c);
-			}
-			this.cases = Collections.unmodifiableList(tmp);
+			this.cases = Collections
+					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
 		public Method(String name, Type.Fun type,
-				Collection<Case> cases) {
+				Collection<Case> cases, Collection<Attribute> attributes) {
+			super(attributes);
 			this.name = name;
 			this.type = type;
 			this.cases = Collections

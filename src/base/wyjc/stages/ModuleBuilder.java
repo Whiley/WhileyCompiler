@@ -492,8 +492,9 @@ public class ModuleBuilder {
 		// removed as dead-code or remains and will cause an error.
 		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));
 
-		Module.Case ncase = new Module.Case(parameterNames, blk);
-		return new Module.Method(fd.name(), tf, ncase);
+		List<Module.Case> ncases = new ArrayList<Module.Case>();
+		ncases.add(new Module.Case(parameterNames, blk));
+		return new Module.Method(fd.name(), tf, ncases);
 	}
 
 	public Block resolve(Stmt stmt, int freeReg) {

@@ -588,10 +588,11 @@ public class ModuleLoader {
 		for (int i = 0; i != type.params.size(); ++i) {
 			parameterNames.add("p" + i);
 		}
-		Module.Case mcase;
-				
-		mcase = new Module.Case(parameterNames,null);				
-		return new Module.Method(stripCase(info.first()), type, mcase);
+		
+		List<Module.Case> mcases = new ArrayList<Module.Case>();
+		mcases.add(new Module.Case(parameterNames,null));
+		
+		return new Module.Method(stripCase(info.first()), type, mcases);
 	}
 	
 	/**

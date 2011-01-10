@@ -32,14 +32,6 @@ import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.BytecodeAttributeReader;
 import wyjvm.lang.Constant;
 
-/**
- * The WhileyVersion attribute is simply a marker used to indicate that a class
- * file was generated from a whiley source file. This is useful in
- * multi-platform scenarios where we might have multiple source languages.
- * 
- * @author djp
- * 
- */
 public class WhileyDefine implements BytecodeAttribute {
 	private String defName;
 	private Value value;
