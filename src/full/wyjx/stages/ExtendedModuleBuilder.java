@@ -1792,8 +1792,9 @@ public class ExtendedModuleBuilder {
 				try {
 					Module mi = loader.loadModule(mid);
 					Module.TypeDef td = mi.type(dt.name);
-					return new Pair<Type, Block>(td.type(), Block.relabel(td
-							.constraint()));
+					Constraint cattr = td.attribute(Constraint.class);
+					Block constraint = cattr != null ? cattr.constraint : null;
+					return new Pair<Type, Block>(td.type(), Block.relabel(constraint));
 				} catch (ResolveError rex) {
 					syntaxError(rex.getMessage(), filename, t, rex);
 					return null;

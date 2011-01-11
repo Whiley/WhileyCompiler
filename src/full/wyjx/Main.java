@@ -56,19 +56,21 @@ public class Main extends wyjc.Main {
 		
 		// First, construct the default pipeline
 		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));	
+		
 		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
-
+		
 		stages.add(new WyilTransform("type propagation", new TypePropagation(
 				loader)));
 		stages.add(new WyilTransform("definite assignment",
 				new DefiniteAssignment(loader)));
+		
 		stages.add(new WyilTransform("constant propagation",
 				new ConstantPropagation(loader)));
+		
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
-		stages.add(new WyilTransform("failure check",
-				new FailureCheck(loader)));		
+		
 		stages.add(new ClassWriter(loader));
 		
 		return stages;

@@ -33,6 +33,9 @@ import wyil.lang.Code.*;
 import wyil.stages.ModuleTransform;
 import wyil.util.ResolveError;
 import wyil.util.SyntaxError;
+import wyjx.attributes.Constraint;
+import wyjx.attributes.Postcondition;
+import wyjx.attributes.Precondition;
 import static wyil.util.SyntaxError.*;
 
 /**
@@ -71,7 +74,11 @@ public class PreconditionInline implements ModuleTransform {
 	}
 	
 	public Module.TypeDef transform(Module.TypeDef type) {
-		Block constraint = type.constraint();
+		// extract constraint attribute
+		Constraint cattr = type.attribute(Constraint.class);
+		Block constraint = cattr != null ? cattr.constraint : null;
+		
+		// now, update it if it exists
 		if(constraint == null) {
 			return type;
 		} else {
@@ -82,7 +89,9 @@ public class PreconditionInline implements ModuleTransform {
 			Block.match(constraint, CExpr.Register.class, uses);
 			int regTarget = CExpr.maxRegister(uses)+1;
 			constraint = transform(regTarget,constraint);
-			return new Module.TypeDef(type.name(), type.type(), constraint);
+			// FIXME:  issue here as other attributes are lost 
+			return new Module.TypeDef(type.name(), type.type(), new Constraint(
+					constraint));
 		}
 	}
 	
@@ -95,7 +104,10 @@ public class PreconditionInline implements ModuleTransform {
 	}
 	
 	public Module.Case transform(Module.Case mcase) {
-		Block precondition = mcase.precondition();
+		// extract constraint attribute
+		Precondition preattr = mcase.attribute(Precondition.class);
+		Block precondition = preattr != null ? preattr.constraint : null;
+				
 		if(precondition != null) {
 			// calculate reg target (see below)
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
@@ -103,7 +115,9 @@ public class PreconditionInline implements ModuleTransform {
 			int regTarget = CExpr.maxRegister(uses)+1;			
 			precondition = transform(regTarget,precondition);
 		}
-		Block postcondition = mcase.postcondition();
+		Postcondition postattr = mcase.attribute(Postcondition.class);
+		Block postcondition = postattr != null ? postattr.constraint : null;
+		
 		if(postcondition != null) {
 			// calculate reg target (see below)
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
@@ -119,9 +133,11 @@ public class PreconditionInline implements ModuleTransform {
 		Block.match(mcase.body(), CExpr.Register.class, uses);
 		int regTarget = CExpr.maxRegister(uses)+1;
 		
-		Block body = transform(regTarget,mcase.body());		
-		return new Module.Case(mcase.parameterNames(), precondition,
-				postcondition, body);
+		Block body = transform(regTarget,mcase.body());	
+		
+		// FIXME: again, other attributes are lost here.
+		return new Module.Case(mcase.parameterNames(), body, new Precondition(
+				precondition), new Postcondition(postcondition));
 	}
 	
 	public Block transform(int regTarget, Block block) {
@@ -351,16 +367,18 @@ public class PreconditionInline implements ModuleTransform {
 			Module module = loader.loadModule(ivk.name.module());						
 			Module.Method method = module.method(ivk.name.name(),
 					ivk.type);
+						
 			Block blk = new Block();
 			int ncases = method.cases().size();
 			Attribute.Source src = stmt.attribute(Attribute.Source.class);
 			if(ncases == 1) {				
 				Module.Case c = method.cases().get(0);
-				Block constraint = c.precondition();
-				if (constraint != null) {					
+				Precondition preattr = c.attribute(Precondition.class);
+				Block precondition = preattr != null ? preattr.constraint : null;								
+				if (precondition != null) {					
 					String lab = Block.freshLabel();
 					blk.add(new Code.Check(lab),stmt.attribute(Attribute.Source.class));
-					blk.addAll(transformConstraint(regTarget,constraint,ivk,src,c,method));
+					blk.addAll(transformConstraint(regTarget,precondition,ivk,src,c,method));
 					blk.add(new Code.CheckEnd(lab),stmt.attribute(Attribute.Source.class));
 				}				
 				blk.add(new Code.Assign(lhs,ivk),stmt.attributes());				
@@ -379,15 +397,16 @@ public class PreconditionInline implements ModuleTransform {
 				for (Module.Case c : method.cases()) {
 					if(caseNum > 1) {
 						blk.add(new Code.Label(nextLabel));
-					}
-					Block constraint = c.precondition();
-					if (constraint != null) {						
-						constraint = transformConstraint(regTarget,constraint,ivk,src,c,method);
+					}										
+					Precondition preattr = c.attribute(Precondition.class);
+					Block precondition = preattr != null ? preattr.constraint : null;
+					if (precondition != null) {						
+						precondition = transformConstraint(regTarget,precondition,ivk,src,c,method);
 						if(caseNum < ncases) {
 							nextLabel = Block.freshLabel();
-							constraint = Block.chain(nextLabel, constraint);
+							precondition = Block.chain(nextLabel, precondition);
 						}						
-						blk.addAll(constraint);
+						blk.addAll(precondition);
 					}
 						
 					blk.add(new Code.Assign(lhs, CExpr.INVOKE(ivk.type,
