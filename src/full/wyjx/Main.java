@@ -47,7 +47,7 @@ public class Main extends wyjc.Main {
 		}
 	}	
 
-	protected Compiler createCompiler(List<Compiler.Stage> stages, ModuleLoader loader) {
+	protected Compiler createCompiler(ModuleLoader loader,List<Compiler.Stage> stages) {		
 		return new ExtendedCompiler(stages,loader);
 	}
 	
@@ -57,11 +57,16 @@ public class Main extends wyjc.Main {
 		// First, construct the default pipeline
 		stages.add(new WyilWriter(loader,Collections.EMPTY_MAP));	
 		
+		// FIXME: this is a bug as it must run before all other stages
+		stages.add(new WyilTransform("type propagation", new TypePropagation(
+				loader)));
+		
 		stages.add(new WyilTransform("dispatch inline", new PreconditionInline(
 				loader)));
 		
 		stages.add(new WyilTransform("type propagation", new TypePropagation(
 				loader)));
+		
 		stages.add(new WyilTransform("definite assignment",
 				new DefiniteAssignment(loader)));
 		

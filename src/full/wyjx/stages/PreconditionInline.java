@@ -364,7 +364,7 @@ public class PreconditionInline implements ModuleTransform {
 			if(ivk.type.ret != Type.T_VOID) {
 				lhs = CExpr.REG(ivk.type.ret,regTarget);
 			}
-			Module module = loader.loadModule(ivk.name.module());						
+			Module module = loader.loadModule(ivk.name.module());
 			Module.Method method = module.method(ivk.name.name(),
 					ivk.type);
 						
