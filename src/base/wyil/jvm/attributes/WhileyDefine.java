@@ -44,15 +44,30 @@ public class WhileyDefine implements BytecodeAttribute {
 	private String defName;
 	private Value value;	
 	private Type type;
+	private List<BytecodeAttribute> attributes;
 	
-	public WhileyDefine(String name, Value expr) {
+	public WhileyDefine(String name, Value expr, BytecodeAttribute... attributes) {
 		this.defName = name;		
 		this.value = expr;
+		this.attributes = Arrays.asList(attributes);
 	}
 	
-	public WhileyDefine(String name, Type type) {
+	public WhileyDefine(String name, Value expr, Collection<BytecodeAttribute> attributes) {
+		this.defName = name;		
+		this.value = expr;
+		this.attributes = new ArrayList<BytecodeAttribute>(attributes);
+	}
+	
+	public WhileyDefine(String name, Type type, BytecodeAttribute... attributes) {
 		this.defName = name;
 		this.type = type;	
+		this.attributes = Arrays.asList(attributes);		
+	}
+	
+	public WhileyDefine(String name, Type type, Collection<BytecodeAttribute> attributes) {
+		this.defName = name;
+		this.type = type;	
+		this.attributes = new ArrayList<BytecodeAttribute>(attributes);
 	}
 	
 	public String name() {
@@ -90,10 +105,15 @@ public class WhileyDefine implements BytecodeAttribute {
 			WhileyType.write(type, iw, constantPool);
 		} 					
 		
+		iw.write_u2(attributes.size());
+		for(BytecodeAttribute a : attributes) {
+			a.write(iw, constantPool, loader);
+		}
+		
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
 		writer.write_u4(out.size() + 2);		
-		writer.write_u2(constantPool.get(new Constant.Utf8(defName)));
-		writer.write(out.toByteArray());				
+		writer.write_u2(constantPool.get(new Constant.Utf8(defName)));		
+		writer.write(out.toByteArray());			
 	}	
 		
 	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {		
@@ -109,6 +129,10 @@ public class WhileyDefine implements BytecodeAttribute {
 		if(type != null) {
 			WhileyType.addPoolItems(type, constantPool);
 		}		
+		
+		for(BytecodeAttribute attr : attributes) {
+			attr.addPoolItems(constantPool, loader);
+		}
 	}
 	
 	public void print(PrintWriter output,
@@ -230,16 +254,26 @@ public class WhileyDefine implements BytecodeAttribute {
 			
 			if(sw == 0) {				
 				// Condition only
-				Value value = readValue(input,constantPool);				
-				return new WhileyDefine(name,value);			
+				Value value = readValue(input,constantPool);
+				int nattrs = input.read_u2();
+				ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
+				for(int i=0;i!=nattrs;++i) {
+					// WHAT TO DO HERE?
+				}
+				return new WhileyDefine(name,value,attrs);			
 			} else {
 				// type only
 				Type type = WhileyType.Reader.readType(input,constantPool);
-				return new WhileyDefine(name,type);
+				int nattrs = input.read_u2();
+				ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
+				for(int i=0;i!=nattrs;++i) {
+					// WHAT TO DO HERE?
+				}
+				return new WhileyDefine(name,type,attrs);
 			} 
 		}
 		
-		protected static Value readValue(BinaryInputStream reader,
+		public static Value readValue(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {		
 			int code = reader.read_u1();				
 			switch (code) {			
@@ -303,12 +337,12 @@ public class WhileyDefine implements BytecodeAttribute {
 	// Value Identifiers
 	// =========================================================================
 	
-	private final static int NULL = 0;
-	private final static int TRUE = 1;
-	private final static int FALSE = 2;	
-	private final static int INTVAL = 3;
-	private final static int REALVAL = 4;
-	private final static int SETVAL = 5;
-	private final static int LISTVAL = 6;
-	private final static int RECORDVAL = 7;		
+	public final static int NULL = 0;
+	public final static int TRUE = 1;
+	public final static int FALSE = 2;	
+	public final static int INTVAL = 3;
+	public final static int REALVAL = 4;
+	public final static int SETVAL = 5;
+	public final static int LISTVAL = 6;
+	public final static int RECORDVAL = 7;		
 }

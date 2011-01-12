@@ -36,7 +36,7 @@ import wyjvm.lang.*;
 public class WhileyType implements BytecodeAttribute {	
 	private Type type;
 	
-	public WhileyType(Type type) {		
+	private WhileyType(Type type) {		
 		this.type = type;
 	}
 	
@@ -54,7 +54,7 @@ public class WhileyType implements BytecodeAttribute {
 	}
 	
 
-	protected static void addPoolItems(Type type,
+	public static void addPoolItems(Type type,
 			Set<Constant.Info> constantPool) {
 		if(type instanceof Type.List) {
 			Type.List lt = (Type.List) type;
