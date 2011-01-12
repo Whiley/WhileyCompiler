@@ -35,7 +35,10 @@
 
   <target name="stdlib" depends="build-wyjc,build-wyjx">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
-    <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
+    <taskdef name="wyjx" classname="wyjx.util.AntTask" classpath="lib/wyjx.jar"/>
+
+    <wyjx verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
+
     <jar destfile="lib/wyrt.jar">
       <fileset dir="src/base" includes="wyil/jvm/rt**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
