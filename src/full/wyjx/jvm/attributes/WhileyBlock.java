@@ -245,7 +245,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	protected static void write(CExpr rval, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(rval instanceof Value) {
-			write((Value)rval,writer,constantPool);
+			WhileyDefine.write((Value)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Variable) {
 			write((CExpr.Variable)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.Register) {

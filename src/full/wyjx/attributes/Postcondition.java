@@ -10,4 +10,10 @@ public class Postcondition extends WhileyBlock implements Attribute {
 		super("Postcondition",constraint);
 		this.constraint = constraint;
 	}
+	
+	public static class Reader extends WhileyBlock.Reader {
+		public Reader() {
+			super("Postcondition");
+		}
+	}
 }

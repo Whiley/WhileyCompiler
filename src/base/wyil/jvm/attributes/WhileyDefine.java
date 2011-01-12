@@ -43,6 +43,10 @@ public class WhileyDefine implements BytecodeAttribute {
 	private String defName;
 	private Value value;	
 	private Type type;
+	
+	// FIXME: at the moment we list BytecodeAttributes here. But these are very
+	// JVM specific. What we really want are WyilAttributes here instead, and a
+	// generic way of converting from bytes to them.
 	private List<BytecodeAttribute> attributes;
 	
 	public WhileyDefine(String name, Value expr, BytecodeAttribute... attributes) {
@@ -75,6 +79,10 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	public String defName() {
 		return defName;
+	}
+	
+	public List<BytecodeAttribute> attributes() {
+		return Collections.unmodifiableList(attributes);
 	}
 	
 	public Type type() {
@@ -146,7 +154,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	}
 	
 
-	protected static void write(Value val, BinaryOutputStream writer,
+	public static void write(Value val, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(val instanceof Value.Null) {
 			write((Value.Null) val, writer, constantPool);
@@ -238,9 +246,26 @@ public class WhileyDefine implements BytecodeAttribute {
 	
 	
 	public static class Reader implements BytecodeAttribute.Reader {		
+		private HashMap<String,BytecodeAttribute.Reader> attributeReaders;
+		
+		public Reader(Collection<BytecodeAttribute.Reader> readers) {
+			this.attributeReaders = new HashMap<String,BytecodeAttribute.Reader>();
+			for(BytecodeAttribute.Reader r : readers) {
+				attributeReaders.put(r.name(),r);
+			}	
+		}
+		
+		public Reader(BytecodeAttribute.Reader... readers) {
+			this.attributeReaders = new HashMap<String,BytecodeAttribute.Reader>();
+			for(BytecodeAttribute.Reader r : readers) {
+				attributeReaders.put(r.name(),r);
+			}	
+		}
+		
 		public String name() {
 			return "WhileyDefine";
 		}
+		
 		
 		public WhileyDefine read(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
@@ -251,19 +276,21 @@ public class WhileyDefine implements BytecodeAttribute {
 			String name = ((Constant.Utf8) constantPool.get(nameIdx)).str;
 			int sw = input.read_u1();			
 			
-			if(sw == 0) {				
+			if (sw == 0) {
 				// Condition only
-				Value value = readValue(input,constantPool);
+				Value value = readValue(input, constantPool);
 				int nattrs = input.read_u2();
-				ArrayList<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(nattrs,input, constantPool, loader.attributeReaders()
-				return new WhileyDefine(name,value,attrs);			
+				List<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(
+						nattrs, input, constantPool, attributeReaders);
+				return new WhileyDefine(name, value, attrs);
 			} else {
 				// type only
-				Type type = WhileyType.Reader.readType(input,constantPool);
+				Type type = WhileyType.Reader.readType(input, constantPool);
 				int nattrs = input.read_u2();
-				ArrayList<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(nattrs,input, constantPool, loader.attributeReaders()				
-				return new WhileyDefine(name,type,attrs);
-			} 
+				List<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(
+						nattrs, input, constantPool, attributeReaders);
+				return new WhileyDefine(name, type, attrs);
+			}
 		}
 		
 		public static Value readValue(BinaryInputStream reader,

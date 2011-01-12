@@ -68,13 +68,27 @@ public class ClassFileBuilder {
 		
 		boolean addMainLauncher = false;		
 		
-		for(Module.ConstDef d : module.constants()) {						
-			WhileyDefine wd = new WhileyDefine(d.name(),d.constant());
+		for(Module.ConstDef cd : module.constants()) {	
+			// FIXME: this is an ugly hack for now
+			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
+			for(Attribute a : cd.attributes()) {
+				if(a instanceof BytecodeAttribute) {
+					attrs.add((BytecodeAttribute)a);
+				}
+			}
+			WhileyDefine wd = new WhileyDefine(cd.name(),cd.constant(),attrs);
 			cf.attributes().add(wd);
 		}
-		for(Module.TypeDef td : module.types()) {			
+		for(Module.TypeDef td : module.types()) {
+			// FIXME: this is an ugly hack for now
+			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
+			for(Attribute a : td.attributes()) {
+				if(a instanceof BytecodeAttribute) {
+					attrs.add((BytecodeAttribute)a);
+				}
+			}
 			Type t = td.type();			
-			WhileyDefine wd = new WhileyDefine(td.name(),t);
+			WhileyDefine wd = new WhileyDefine(td.name(),t,attrs);
 			cf.attributes().add(wd);
 		}
 		for(Module.Method method : module.methods()) {				

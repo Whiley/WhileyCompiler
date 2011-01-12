@@ -8,6 +8,7 @@ import wyil.ModuleLoader;
 import wyil.stages.*;
 import wyjc.compiler.*;
 import wyjc.compiler.Compiler;
+import wyjx.attributes.*;
 import wyjx.stages.*;
 
 public class Main extends wyjc.Main {
@@ -47,7 +48,12 @@ public class Main extends wyjc.Main {
 		}
 	}	
 
-	protected Compiler createCompiler(ModuleLoader loader,List<Compiler.Stage> stages) {		
+	protected Compiler createCompiler(ModuleLoader loader,List<Compiler.Stage> stages) {	
+		// You know what? this is an ugly thing to do :|
+		loader.attributeReaders().add(new Constraint.Reader());
+		loader.attributeReaders().add(new Precondition.Reader());
+		loader.attributeReaders().add(new Postcondition.Reader());
+		// Ok, can now create the extended compiler
 		return new ExtendedCompiler(stages,loader);
 	}
 	

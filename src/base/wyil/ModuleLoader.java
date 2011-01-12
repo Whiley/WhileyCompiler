@@ -457,7 +457,7 @@ public class ModuleLoader {
 		
 		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
 				attributeReaders); 		
-		readers.add(new WhileyDefine.Reader());		
+		readers.add(new WhileyDefine.Reader(attributeReaders));		
 		ClassFileReader r = new ClassFileReader(input,readers);									
 		ClassFile cf = r.readClass();
 
@@ -578,6 +578,7 @@ public class ModuleLoader {
 		for(BytecodeAttribute ba : cf.attributes()) {
 			if(ba instanceof WhileyDefine) {				
 				WhileyDefine wd = (WhileyDefine) ba;				
+				System.out.println("GOT: " + wd.defName() + " with " + wd.attributes().size());
 				Type type = wd.type();							
 				if(type == null) {
 					// constant definition
