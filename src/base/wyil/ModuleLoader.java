@@ -62,8 +62,14 @@ public class ModuleLoader {
      * A map from module names in the form "xxx.yyy" to skeleton objects. This
      * is required to permit preregistration of source files during compilation.
      */
-	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();  
-			
+	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
+
+	/**
+	 * A map from attribute names to attribute readers. The readers are used to
+	 * decode unknown attributes, which can then be used by wyil clients. 
+	 */
+	private ArrayList<BytecodeAttribute.Reader> attributeReaders;
+	
 	/**
 	 * A Package object contains information about a particular package,
 	 * including the following information:
@@ -131,14 +137,22 @@ public class ModuleLoader {
 	 */
 	private Logger logger;
 	
-	public ModuleLoader(Collection<String> whileypath, Logger logger) {
+	public ModuleLoader(Collection<String> whileypath, Logger logger, BytecodeAttribute.Reader... readers) {
 		this.logger = logger;
-		this.whileypath = new ArrayList<String>(whileypath);		
+		this.whileypath = new ArrayList<String>(whileypath);
+		this.attributeReaders = new ArrayList<BytecodeAttribute.Reader>();
+		for(BytecodeAttribute.Reader r : readers) {
+			this.attributeReaders.add(r);
+		}
 	}
 	
-	public ModuleLoader(Collection<String> whileypath) {
+	public ModuleLoader(Collection<String> whileypath, BytecodeAttribute.Reader... readers) {
 		this.logger = Logger.NULL;
 		this.whileypath = new ArrayList<String>(whileypath);		
+		this.attributeReaders = new ArrayList<BytecodeAttribute.Reader>();
+		for(BytecodeAttribute.Reader r : readers) {
+			this.attributeReaders.add(r);
+		}
 	}
 	
 	public void setClosedWorldAssumption(boolean flag) {
@@ -151,6 +165,14 @@ public class ModuleLoader {
 	 */
 	public void setLogger(Logger logger) {
 		this.logger = logger;
+	}
+	
+	/**
+	 * Get the list of attribute readers
+	 * @return
+	 */
+	public List<BytecodeAttribute.Reader> attributeReaders() {
+		return attributeReaders;
 	}
 	
 	/**
@@ -433,9 +455,10 @@ public class ModuleLoader {
 			InputStream input) throws IOException {
 		long time = System.currentTimeMillis();		
 		
-		ClassFileReader r = new ClassFileReader(input,
-				new WhileyDefine.Reader());					
-				
+		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
+				attributeReaders); 		
+		readers.add(new WhileyDefine.Reader());		
+		ClassFileReader r = new ClassFileReader(input,readers);									
 		ClassFile cf = r.readClass();
 
 		Module mi = createModule(module,cf);

@@ -255,19 +255,13 @@ public class WhileyDefine implements BytecodeAttribute {
 				// Condition only
 				Value value = readValue(input,constantPool);
 				int nattrs = input.read_u2();
-				ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
-				for(int i=0;i!=nattrs;++i) {
-					// FIXME: WHAT TO DO HERE?
-				}
+				ArrayList<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(nattrs,input, constantPool, loader.attributeReaders()
 				return new WhileyDefine(name,value,attrs);			
 			} else {
 				// type only
 				Type type = WhileyType.Reader.readType(input,constantPool);
 				int nattrs = input.read_u2();
-				ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
-				for(int i=0;i!=nattrs;++i) {
-					// FIXME: WHAT TO DO HERE?
-				}
+				ArrayList<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(nattrs,input, constantPool, loader.attributeReaders()				
 				return new WhileyDefine(name,type,attrs);
 			} 
 		}

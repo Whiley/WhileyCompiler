@@ -45,18 +45,43 @@ public final class ClassFileReader {
 	}
 	
 	/**
-	 * Construct reader for classfile from InputStream
+	 * Construct reader for classfile. This method looks in all the places
+	 * specified by the VM's CLASSPATH.
 	 * 
 	 * @param fileName
 	 *            The filename of the java classfile. Use dot notation for
 	 *            specifying packages.
 	 */
 	
+	public ClassFileReader(String fileName,
+			Collection<BytecodeAttribute.Reader> readers) throws IOException {
+		this(readClass(fileName), readers);
+	}
+	
+	/**
+	 * Construct reader for classfile from InputStream
+	 * 
+	 * @param fileName
+	 *            The filename of the java classfile. Use dot notation for
+	 *            specifying packages.
+	 */	
 	public ClassFileReader(InputStream in,
 			BytecodeAttribute.Reader... readers) throws IOException {
 		this(readStream(in), readers);		
 	}
-			
+	
+	/**
+	 * Construct reader for classfile from InputStream
+	 * 
+	 * @param fileName
+	 *            The filename of the java classfile. Use dot notation for
+	 *            specifying packages.
+	 */	
+	public ClassFileReader(InputStream in,
+			Collection<BytecodeAttribute.Reader> readers) throws IOException {
+		this(readStream(in), readers);		
+	}
+	
 	/**
 	 * Construct reader from byte array representing classfile.
 	 * 
@@ -64,6 +89,23 @@ public final class ClassFileReader {
 	 * @throws ClassFormatError if the classfile is invalid.
 	 */
 	public ClassFileReader(byte[] b, BytecodeAttribute.Reader... readers) {						
+		bytes = b;			
+		int nitems = read_u2(8);
+		items = new int[nitems];			
+		constantPool = new HashMap<Integer,Constant.Info>();
+		this.attributeReaders = new HashMap<String,BytecodeAttribute.Reader>();
+		for(BytecodeAttribute.Reader c : readers) {
+			this.attributeReaders.put(c.name(),c);
+		}
+	}
+	
+	/**
+	 * Construct reader from byte array representing classfile.
+	 * 
+	 * @param b the byte array!
+	 * @throws ClassFormatError if the classfile is invalid.
+	 */
+	public ClassFileReader(byte[] b, Collection<BytecodeAttribute.Reader> readers) {						
 		bytes = b;			
 		int nitems = read_u2(8);
 		items = new int[nitems];			
