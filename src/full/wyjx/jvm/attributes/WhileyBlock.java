@@ -167,8 +167,7 @@ public class WhileyBlock implements BytecodeAttribute {
 
 	protected static void write(Block expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		writer.write_u4(expr.size());
-		System.out.println("WRITTEN: " + expr.size());
+		writer.write_u4(expr.size());		
 		for(Stmt s : expr) {
 			write(s.code, writer, constantPool);
 		}
@@ -384,8 +383,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			int ncodes = (int) reader.read_u4();						
 			Block block = new Block();
 			for(int i=0;i!=ncodes;++i) {
-				block.add(readCode(reader,constantPool));
-				System.out.println("READ: " + block.get(i));
+				block.add(readCode(reader,constantPool));				
 			}
 			return block;
 		}
@@ -485,11 +483,56 @@ public class WhileyBlock implements BytecodeAttribute {
 			int code = reader.read_u1();				
 			switch (code) {
 			case WhileyDefine.INTVAL:			
-			case WhileyDefine.REALVAL:
+			{
+				int len = reader.read_u2();				
+				byte[] bytes = new byte[len];
+				reader.read(bytes);
+				BigInteger bi = new BigInteger(bytes);
+				return Value.V_INT(bi);
+			}
+			case WhileyDefine.REALVAL:			
+			{
+				int len = reader.read_u2();
+				byte[] bytes = new byte[len];
+				reader.read(bytes);
+				BigInteger num = new BigInteger(bytes);
+				len = reader.read_u2();
+				bytes = new byte[len];
+				reader.read(bytes);
+				BigInteger den = new BigInteger(bytes);
+				BigRational br = new BigRational(num,den);
+				return Value.V_REAL(br);
+			}
 			case WhileyDefine.LISTVAL:
+			{
+				int len = reader.read_u2();
+				ArrayList<Value> values = new ArrayList<Value>();
+				for(int i=0;i!=len;++i) {
+					values.add((Value) readValue(reader,constantPool));
+				}
+				return Value.V_LIST(values);
+			}
 			case WhileyDefine.SETVAL:
+			{
+				int len = reader.read_u2();
+				ArrayList<Value> values = new ArrayList<Value>();
+				for(int i=0;i!=len;++i) {
+					values.add((Value) readValue(reader,constantPool));
+				}
+				return Value.V_SET(values);
+			}
 			case WhileyDefine.RECORDVAL:
-				return WhileyDefine.Reader.readValue(reader,constantPool);			
+			{
+				int len = reader.read_u2();
+				HashMap<String,Value> tvs = new HashMap<String,Value>();
+				for(int i=0;i!=len;++i) {
+					int idx = reader.read_u2();
+					Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
+					Value lhs = (Value) readValue(reader, constantPool);
+					tvs.put(utf8.str, lhs);
+				}
+				return Value.V_RECORD(tvs);
+			}						
 			case VARIABLE:
 			{					
 				// The encoding of variables could be optimised to avoid using the
