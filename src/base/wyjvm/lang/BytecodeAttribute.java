@@ -20,6 +20,7 @@ package wyjvm.lang;
 import java.util.*;
 import java.io.*;
 
+import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 
 public interface BytecodeAttribute {
@@ -90,4 +91,69 @@ public interface BytecodeAttribute {
 		}
 	}
 
+	public static class Fn {
+		/**
+		 * Read a list of BytecodeAttributes from an input stream, using the
+		 * given constant pool and readers map to decode them.
+		 * 
+		 * @param count
+		 *            --- number of attributes to read
+		 * @param input
+		 *            --- input stream to read from
+		 * @param constantPool
+		 *            --- pool for decoding constants
+		 * @param readers
+		 *            --- list of decoders for reading attributes
+		 * @return
+		 */
+		public static List<BytecodeAttribute> read(int count, BinaryInputStream input,
+				Map<Integer, Constant.Info> constantPool,
+				Map<String, BytecodeAttributeReader> readers)
+				throws IOException {
+			ArrayList<BytecodeAttribute> attributes = new ArrayList<BytecodeAttribute>();
+			for(int i=0;i!=count;++i) {
+				attributes.add(read(input,constantPool,readers));
+			}
+			return attributes;
+		}
+
+		/**
+		 * Read a BytecodeAttribute from an input stream, using the given
+		 * constant pool and readers map to decode them.
+		 * 
+		 * @param input
+		 *            --- input stream to read from
+		 * @param constantPool
+		 *            --- pool for decoding constants
+		 * @param readers
+		 *            --- list of decoders for reading attributes
+		 * @return
+		 */
+		public static BytecodeAttribute read(BinaryInputStream input,
+				Map<Integer, Constant.Info> constantPool,
+				Map<String, BytecodeAttributeReader> readers)
+				throws IOException {						
+			int index =  input.read_u2();
+			int len = (int) input.read_u4() + 6;
+			Constant.Utf8 cu = (Constant.Utf8) constantPool.get(index);											
+			byte[] bs = new byte[len];
+			for(int i=0;i!=len;++i) {
+				bs[i] = (byte) input.read();
+			}
+							
+			BytecodeAttributeReader reader = readers.get(cu.str);
+
+			if(reader != null) {			
+				try {
+					return reader.read(new BinaryInputStream(
+							new ByteArrayInputStream(bs)), constantPool);
+				} catch(IOException ioex) {
+					throw new RuntimeException(ioex.getMessage(),ioex);
+				}
+			} else {		
+				// unknown attribute		
+				return new BytecodeAttribute.Unknown(cu.str,bs);
+			}
+		}
+	}
 }

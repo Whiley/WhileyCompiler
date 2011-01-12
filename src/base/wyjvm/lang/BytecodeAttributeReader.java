@@ -26,5 +26,5 @@ public interface BytecodeAttributeReader {
 	public String name();
 	
 	public BytecodeAttribute read(BinaryInputStream input,
-			Map<Integer, Constant.Info> constantPool) throws IOException;
+			Map<Integer, Constant.Info> constantPool) throws IOException;		
 }

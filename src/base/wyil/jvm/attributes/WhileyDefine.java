@@ -258,7 +258,7 @@ public class WhileyDefine implements BytecodeAttribute {
 				int nattrs = input.read_u2();
 				ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 				for(int i=0;i!=nattrs;++i) {
-					// WHAT TO DO HERE?
+					// FIXME: WHAT TO DO HERE?
 				}
 				return new WhileyDefine(name,value,attrs);			
 			} else {
@@ -267,7 +267,7 @@ public class WhileyDefine implements BytecodeAttribute {
 				int nattrs = input.read_u2();
 				ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
 				for(int i=0;i!=nattrs;++i) {
-					// WHAT TO DO HERE?
+					// FIXME: WHAT TO DO HERE?
 				}
 				return new WhileyDefine(name,type,attrs);
 			} 

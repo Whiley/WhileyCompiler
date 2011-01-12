@@ -31,6 +31,15 @@ public class BinaryInputStream extends InputStream {
 		return input.read();		
 	}
 
+	public int read_i1() throws IOException {
+		return read();
+	}
+	
+	public int read_i4() throws IOException {
+		return ((read() & 0xFF) << 24) | ((read() & 0xFF) << 16)
+				| ((read() & 0xFF) << 8) | (read() & 0xFF);
+	}
+	
 	public int read_u1() throws IOException {
 		return read() & 0xFF;
 	}
@@ -38,8 +47,9 @@ public class BinaryInputStream extends InputStream {
 	public int read_u2() throws IOException {
 		return (read_u1() << 8) | read_u1();
 	}
-
-	public int read_u4() throws IOException {
+		
+	public long read_u4() throws IOException {
+		// FIXME: this is most definitely broken
 		return (read_u1() << 24) | (read_u1() << 16) | (read_u1() << 8)
 				| read_u1();
 	}
