@@ -108,7 +108,7 @@ public interface BytecodeAttribute {
 		 */
 		public static List<BytecodeAttribute> read(int count, BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool,
-				Map<String, BytecodeAttributeReader> readers)
+				Map<String, BytecodeAttribute.Reader> readers)
 				throws IOException {
 			ArrayList<BytecodeAttribute> attributes = new ArrayList<BytecodeAttribute>();
 			for(int i=0;i!=count;++i) {
@@ -131,7 +131,7 @@ public interface BytecodeAttribute {
 		 */
 		public static BytecodeAttribute read(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool,
-				Map<String, BytecodeAttributeReader> readers)
+				Map<String, BytecodeAttribute.Reader> readers)
 				throws IOException {						
 			int index =  input.read_u2();
 			int len = (int) input.read_u4() + 6;
@@ -141,7 +141,7 @@ public interface BytecodeAttribute {
 				bs[i] = (byte) input.read();
 			}
 							
-			BytecodeAttributeReader reader = readers.get(cu.str);
+			BytecodeAttribute.Reader reader = readers.get(cu.str);
 
 			if(reader != null) {			
 				try {
@@ -155,5 +155,21 @@ public interface BytecodeAttribute {
 				return new BytecodeAttribute.Unknown(cu.str,bs);
 			}
 		}
+	}
+
+	/**
+	 * A BytecodeAttribute.Reader is an interface used for reading a given kind
+	 * of BytecodeAttribute. The name returned by the reader is used to
+	 * determine those bytecode attributes it will read (i.e. those with the
+	 * same name).
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static interface Reader {
+		public String name();
+		
+		public BytecodeAttribute read(BinaryInputStream input,
+				Map<Integer, Constant.Info> constantPool) throws IOException;		
 	}
 }

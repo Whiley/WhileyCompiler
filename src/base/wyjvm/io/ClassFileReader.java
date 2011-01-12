@@ -28,7 +28,7 @@ public final class ClassFileReader {
 	private final byte[] bytes;      // byte array of class
 	private final int[] items;       // start indices of constant pool items	
 	private final HashMap<Integer,Constant.Info> constantPool;		
-	private final HashMap<String,BytecodeAttributeReader> attributeReaders;
+	private final HashMap<String,BytecodeAttribute.Reader> attributeReaders;
 	
 	/**
 	 * Construct reader for classfile. This method looks in all the places
@@ -40,7 +40,7 @@ public final class ClassFileReader {
 	 */
 	
 	public ClassFileReader(String fileName,
-			BytecodeAttributeReader... readers) throws IOException {
+			BytecodeAttribute.Reader... readers) throws IOException {
 		this(readClass(fileName), readers);
 	}
 	
@@ -53,7 +53,7 @@ public final class ClassFileReader {
 	 */
 	
 	public ClassFileReader(InputStream in,
-			BytecodeAttributeReader... readers) throws IOException {
+			BytecodeAttribute.Reader... readers) throws IOException {
 		this(readStream(in), readers);		
 	}
 			
@@ -63,13 +63,13 @@ public final class ClassFileReader {
 	 * @param b the byte array!
 	 * @throws ClassFormatError if the classfile is invalid.
 	 */
-	public ClassFileReader(byte[] b, BytecodeAttributeReader... readers) {						
+	public ClassFileReader(byte[] b, BytecodeAttribute.Reader... readers) {						
 		bytes = b;			
 		int nitems = read_u2(8);
 		items = new int[nitems];			
 		constantPool = new HashMap<Integer,Constant.Info>();
-		this.attributeReaders = new HashMap<String,BytecodeAttributeReader>();
-		for(BytecodeAttributeReader c : readers) {
+		this.attributeReaders = new HashMap<String,BytecodeAttribute.Reader>();
+		for(BytecodeAttribute.Reader c : readers) {
 			this.attributeReaders.put(c.name(),c);
 		}
 	}
@@ -366,7 +366,7 @@ public final class ClassFileReader {
 			bs[i] = bytes[offset+i];
 		}
 						
-		BytecodeAttributeReader reader = attributeReaders.get(name);
+		BytecodeAttribute.Reader reader = attributeReaders.get(name);
 
 		if(reader != null) {			
 			try {

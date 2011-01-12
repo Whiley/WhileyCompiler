@@ -29,7 +29,6 @@ import wyil.lang.*;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
-import wyjvm.lang.BytecodeAttributeReader;
 import wyjvm.lang.Constant;
 
 /**
@@ -238,7 +237,7 @@ public class WhileyDefine implements BytecodeAttribute {
 	}
 	
 	
-	public static class Reader implements BytecodeAttributeReader {		
+	public static class Reader implements BytecodeAttribute.Reader {		
 		public String name() {
 			return "WhileyDefine";
 		}

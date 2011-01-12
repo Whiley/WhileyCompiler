@@ -19,10 +19,12 @@
 package wyil.jvm.attributes;
 
 import java.io.*;
+
 import java.util.*;
 import wyil.lang.*;
 import wyjvm.io.*;
 import wyjvm.lang.*;
+
 /**
  * A WhileyCondition attribute corresponds to a whiley.ast.exprs.Condition
  * expression. The purpose of the attribute is to allow the conditions to be
@@ -32,7 +34,6 @@ import wyjvm.lang.*;
  * @author djp
  * 
  */
-
 public class WhileyType implements BytecodeAttribute {	
 	private Type type;
 	
@@ -204,7 +205,7 @@ public class WhileyType implements BytecodeAttribute {
 		output.print(name() + ":");
 	}
 
-	public static class Reader implements BytecodeAttributeReader {
+	public static class Reader implements BytecodeAttribute.Reader {
 		public String name() {
 			return "WhileyType";
 		}

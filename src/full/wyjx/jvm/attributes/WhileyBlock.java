@@ -357,7 +357,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		writer.write_u2(idx);										
 	}
 	
-	public static class Reader implements BytecodeAttributeReader { 		
+	public static class Reader implements BytecodeAttribute.Reader { 		
 		private final String name;
 		
 		public Reader(String name) {
@@ -370,7 +370,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		public WhileyBlock read(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {			
 			int idx = reader.read_u2();
-			int size = reader.read_u4(); // not needed
+			int size = (int) reader.read_u4(); // not needed
 			Constant.Utf8 utf8 = (Constant.Utf8) constantPool.get(idx);
 			
 			Block block = readBlock(reader, constantPool);
@@ -380,7 +380,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		
 		protected static Block readBlock(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {							
-			int ncodes = reader.read_u4();			
+			int ncodes = (int) reader.read_u4();			
 			Block block = new Block();
 			for(int i=0;i!=ncodes;++i) {
 				block.add(readCode(reader,constantPool));
@@ -573,7 +573,7 @@ public class WhileyBlock implements BytecodeAttribute {
 			case LISTGEN:
 			case SUBLIST:
 			{
-				int len = reader.read_u4();
+				int len = (int) reader.read_u4();
 				ArrayList<CExpr> args = new ArrayList<CExpr>();
 				for(int i=0;i!=len;++i) {
 					args.add(readCExpr(reader,constantPool));
