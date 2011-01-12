@@ -577,7 +577,8 @@ public class ModuleLoader {
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
 			if(ba instanceof WhileyDefine) {				
-				WhileyDefine wd = (WhileyDefine) ba;								
+				WhileyDefine wd = (WhileyDefine) ba;				
+				System.out.println("GOT: " + wd.defName() + " with " + wd.attributes().size());
 				Type type = wd.type();							
 				if(type == null) {
 					// constant definition

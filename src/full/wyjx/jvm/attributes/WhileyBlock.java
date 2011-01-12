@@ -168,6 +168,7 @@ public class WhileyBlock implements BytecodeAttribute {
 	protected static void write(Block expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		writer.write_u4(expr.size());
+		System.out.println("WRITTEN: " + expr.size());
 		for(Stmt s : expr) {
 			write(s.code, writer, constantPool);
 		}
@@ -380,10 +381,11 @@ public class WhileyBlock implements BytecodeAttribute {
 		
 		protected static Block readBlock(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {							
-			int ncodes = (int) reader.read_u4();			
+			int ncodes = (int) reader.read_u4();						
 			Block block = new Block();
 			for(int i=0;i!=ncodes;++i) {
 				block.add(readCode(reader,constantPool));
+				System.out.println("READ: " + block.get(i));
 			}
 			return block;
 		}

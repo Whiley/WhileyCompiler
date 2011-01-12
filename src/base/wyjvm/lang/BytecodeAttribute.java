@@ -132,15 +132,25 @@ public interface BytecodeAttribute {
 		public static BytecodeAttribute read(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool,
 				Map<String, BytecodeAttribute.Reader> readers)
-				throws IOException {						
+				throws IOException {
+			
 			int index =  input.read_u2();
-			int len = (int) input.read_u4() + 6;
+			int origLen = (int) input.read_u4();
+			int len = origLen + 6;
 			Constant.Utf8 cu = (Constant.Utf8) constantPool.get(index);											
 			byte[] bs = new byte[len];
-			for(int i=0;i!=len;++i) {
+			for(int i=6;i!=len;++i) {
 				bs[i] = (byte) input.read();
 			}
-							
+			
+			// restore the header data we've already read
+			bs[0] = (byte) ((index >> 8) & 0xFF);
+			bs[1] = (byte) (index & 0xFF);
+			bs[2] = (byte) ((origLen >> 24) & 0xFF);
+			bs[3] = (byte) ((origLen >> 16) & 0xFF);
+			bs[4] = (byte) ((origLen >> 8) & 0xFF);
+			bs[5] = (byte) (origLen & 0xFF);
+			
 			BytecodeAttribute.Reader reader = readers.get(cu.str);
 
 			if(reader != null) {			
