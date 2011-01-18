@@ -1,7 +1,7 @@
 package wyjx.attributes;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.*;
 
 import wyil.lang.*;
 import wyjvm.io.BinaryInputStream;
@@ -9,11 +9,11 @@ import wyjvm.lang.Constant;
 import wyjx.jvm.attributes.WhileyBlock;
 
 public class Precondition extends WhileyBlock implements Attribute {
-	public final Block constraint;
+	public final Block constraint;	
 	
 	public Precondition(Block constraint) {
 		super("Precondition",constraint);
-		this.constraint = constraint;
+		this.constraint = constraint;		
 	}
 	
 	public static class Reader extends WhileyBlock.Reader {

@@ -79,9 +79,11 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// First, generate appropriate type constraints
 		List<String> paramNames = methodCase.parameterNames();
 		List<Type> paramTypes = method.type().params;
+		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		for(int i=0;i!=paramNames.size();++i) {
-			String n = paramNames.get(i);
+			String n = paramNames.get(i);			
 			Type t = paramTypes.get(i);
+			binding.put("$" + i, CExpr.VAR(t,n));
 			init = WFormulas.and(init, WTypes.subtypeOf(new WVariable(n),
 					convert(t)));
 		}
@@ -91,6 +93,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		Block precondition = preattr != null ? preattr.constraint : null;
 		
 		if (precondition != null) {			
+			precondition = Block.substitute(binding,precondition);
 			Pair<Block, WFormula> condition = propagate(precondition, init);
 
 			// reset the stores map

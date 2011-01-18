@@ -609,6 +609,7 @@ public class ExtendedModuleBuilder {
 		Block precondition = null;
 
 		// method parameter types
+		HashMap<String,CExpr> pbinding = new HashMap<String,CExpr>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			Pair<Type, Block> t = resolve(p.type);		
 			Block constraint = t.second();
@@ -617,6 +618,7 @@ public class ExtendedModuleBuilder {
 				binding.put("$", CExpr.VAR(Type.T_ANY, p.name));
 				constraint = Block.substitute(binding, constraint);
 				t = new Pair<Type,Block>(t.first(),constraint);
+				pbinding.put(p.name(), CExpr.VAR(Type.T_ANY,"$" + idx));
 			}
 						
 			parameterNames.add(p.name());
@@ -625,6 +627,8 @@ public class ExtendedModuleBuilder {
 					precondition = new Block();
 				}
 				precondition.addAll(constraint);
+				// normalise the precondition names here
+				precondition = Block.substitute(pbinding,constraint);
 			}
 		}
 

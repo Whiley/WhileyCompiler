@@ -451,7 +451,7 @@ public class PreconditionInline implements ModuleTransform {
 		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		for (int i = 0; i != ivk.args.size(); ++i) {
 			CExpr arg = ivk.args.get(i);
-			String target = c.parameterNames().get(i);
+			String target = "$" + i;
 			// FIXME: feels like some kind of problem related to
 			// typing here. That is, if we need a conversion
 			// between the argument type and the constraint
