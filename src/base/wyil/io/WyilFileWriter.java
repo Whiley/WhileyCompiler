@@ -111,6 +111,12 @@ public class WyilFileWriter {
 			}
 		}
 		out.println("):");				
+		for(Attribute a : mcase.attributes()) {
+			if(a instanceof wyjvm.lang.BytecodeAttribute) {
+				wyjvm.lang.BytecodeAttribute ba = (wyjvm.lang.BytecodeAttribute) a;
+				out.println("attribute: " + ba.name());
+			}
+		}
 		out.println("body: ");
 		write(0,mcase.body(),out);	
 	}

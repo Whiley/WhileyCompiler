@@ -24,6 +24,7 @@ import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.stages.ModuleTransform;
+import wyjx.attributes.*;
 import static wyil.util.SyntaxError.*;
 
 public class FailureCheck implements ModuleTransform {
@@ -87,7 +88,7 @@ public class FailureCheck implements ModuleTransform {
 				reachable = false;
 			} else if (code instanceof IfGoto) {
 				IfGoto igot = (IfGoto) code;
-				Attribute.BranchInfo bi = stmt.attribute(Attribute.BranchInfo.class);
+				BranchInfo bi = stmt.attribute(BranchInfo.class);
 				if(bi != null) {
 					if(bi.trueBranch) {
 						reachables.add(igot.target);

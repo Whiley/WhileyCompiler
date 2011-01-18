@@ -29,6 +29,7 @@ import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
 import wyil.util.*;
 import wyil.util.dfa.*;
+import wyjx.attributes.*;
 import wyone.core.*;
 import wyone.theory.congruence.*;
 import wyone.theory.logic.*;
@@ -57,12 +58,6 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 * that a given method is correct.
 	 */
 	private boolean minimal;
-
-	/**
-	 * The saveVcs flag is used to indicate that verification conditions should
-	 * be stored in attributes for debugging (or other) purposes.
-	 */
-	private boolean saveVcs = true;
 	
 	/**
 	 * Provide additional debug information
@@ -92,13 +87,15 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		}
 
 		// Second, initialise from precondition (if present)
-		if (methodCase.precondition() != null) {
-			Pair<Block, WFormula> precondition = propagate(methodCase
-					.precondition(), init);
+		Precondition preattr = methodCase.attribute(Precondition.class);
+		Block precondition = preattr != null ? preattr.constraint : null;
+		
+		if (precondition != null) {
+			Pair<Block, WFormula> condition = propagate(precondition, init);
 
 			// reset the stores map
 			this.stores = new HashMap<String,WFormula>();			
-			return precondition.second();
+			return condition.second();
 		} else {			
 			return init;
 		}
@@ -107,10 +104,6 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	protected Pair<Stmt,WFormula> propagate(Stmt stmt, WFormula store) {
 		// First, add on the precondition attribute		
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>(stmt.attributes());
-		
-		if(saveVcs) {
-			attributes.add(new Attribute.PreCondition(store));
-		}
 		
 		stmt = new Stmt(stmt.code,attributes);
 		
@@ -464,37 +457,29 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 
 		// Determine condition for true and false branches
 		WFormula trueCondition = WFormulas.and(precondition, condition);
-		WFormula falseCondition = WFormulas.and(precondition, condition.not());
-		Attribute.BranchPredict expected = elem.attribute(Attribute.BranchPredict.class);		
-		
-		if(!minimal || (expected != null && !expected.trueBranch)) {			
-			if(debug) {
-				System.out.println("CHECKING(1): " + trueCondition);
-			}
-			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
-					wyone.Main.heuristic, wyone.Main.theories);			
-			if (tp instanceof Proof.Unsat) {
-				if(debug) { System.out.println("UNSAT(1)"); }
-				trueCondition = null;
-			}
+		WFormula falseCondition = WFormulas.and(precondition, condition.not());				
+
+		if(debug) {
+			System.out.println("CHECKING(1): " + trueCondition);
 		}
+		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
+				wyone.Main.heuristic, wyone.Main.theories);			
+		if (tp instanceof Proof.Unsat) {
+			if(debug) { System.out.println("UNSAT(1)"); }
+			trueCondition = null;
+		}	
 				
-		if(!minimal || (expected != null && !expected.falseBranch)) {
-			if(debug) { System.out.println("CHECKING(2): " + falseCondition); }
-			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
-					wyone.Main.heuristic, wyone.Main.theories);				
-			if (fp instanceof Proof.Unsat) {
-				if(debug) { System.out.println("UNSAT(2)"); }
-				falseCondition = null;
-			}					
-		}
+		if(debug) { System.out.println("CHECKING(2): " + falseCondition); }
+		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
+				wyone.Main.heuristic, wyone.Main.theories);				
+		if (fp instanceof Proof.Unsat) {
+			if(debug) { System.out.println("UNSAT(2)"); }
+			falseCondition = null;
+		}					
+		
 		// Update attribute information
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 		attributes.addAll(elem.attributes());		
-		
-		if(saveVcs) {
-			attributes.add(new Attribute.PreCondition(store));
-		}
 		
 		// Now, create new statement
 		Stmt stmt;		
@@ -503,7 +488,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		} else if (falseCondition == null) {
 			stmt = new Stmt(new Code.Goto(code.target),attributes);
 		} else {
-			attributes.add(new Attribute.BranchInfo(true, true));
+			attributes.add(new BranchInfo(true, true));
 			stmt = new Stmt(new Code.IfGoto(code.op, code.lhs, code.rhs,
 					code.target), attributes);
 		}
@@ -744,7 +729,9 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		}
 
 		WVariable rv = new WVariable(ivk.name.toString(), args);
-		Block postcondition = mcase.postcondition();
+		Postcondition postattr = methodCase.attribute(Postcondition.class);
+		Block postcondition = postattr != null ? postattr.constraint : null;
+		
 		if(postcondition != null) {						
 			WVariable var = new WVariable("$"); 
 			WFormula pc = propagate(postcondition,
