@@ -83,7 +83,7 @@ public class Main extends wyjc.Main {
 				new FunctionCheck(loader)));
 		
 		stages.add(new WyilTransform("verification check",
-				new ConstraintPropagation(loader, true, 250)));
+				new ConstraintPropagation(loader, 250)));
 		
 		stages.add(new WyilTransform("failure check",
 				new FailureCheck(loader)));

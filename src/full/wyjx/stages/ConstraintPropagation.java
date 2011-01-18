@@ -52,14 +52,6 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	private HashMap<String,WExpr> substitutions = new HashMap<String,WExpr>();
 
 	/**
-	 * The minimal flag indicates that only conditions which are marked with an
-	 * Attribute.BranchPrediction will be considered for verification checking.
-	 * Essentially, this is the minimal amount of work we need to do to verify
-	 * that a given method is correct.
-	 */
-	private boolean minimal;
-	
-	/**
 	 * Provide additional debug information
 	 * @param loader
 	 * @param minimal
@@ -67,10 +59,9 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 */
 	private boolean debug = false;
 	
-	public ConstraintPropagation(ModuleLoader loader, boolean minimal, int timeout) {
+	public ConstraintPropagation(ModuleLoader loader, int timeout) {
 		super(loader);
-		this.timeout = timeout;	
-		this.minimal = minimal;
+		this.timeout = timeout;			
 	}
 	
 	public WFormula initialStore() {
@@ -93,7 +84,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		Block precondition = preattr != null ? preattr.constraint : null;
 		
 		if (precondition != null) {			
-			precondition = Block.substitute(binding,precondition);
+			precondition = Block.substitute(binding,precondition);			
 			Pair<Block, WFormula> condition = propagate(precondition, init);
 
 			// reset the stores map

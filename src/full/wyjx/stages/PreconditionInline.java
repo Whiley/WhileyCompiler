@@ -113,7 +113,7 @@ public class PreconditionInline implements ModuleTransform {
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
 			Block.match(precondition, CExpr.Register.class, uses);			
 			int regTarget = CExpr.maxRegister(uses)+1;			
-			preattr = new Precondition(transform(regTarget,precondition));
+			preattr = new Precondition(transform(regTarget,precondition));			
 		}
 		Postcondition postattr = mcase.attribute(Postcondition.class);
 		Block postcondition = postattr != null ? postattr.constraint : null;
@@ -459,6 +459,7 @@ public class PreconditionInline implements ModuleTransform {
 			binding.put(target, arg);			
 		}									
 		
-		return  Block.substitute(binding, constraint);		
+		Block b = Block.substitute(binding, constraint);		
+		return b;
 	}
 }

@@ -611,14 +611,14 @@ public class ExtendedModuleBuilder {
 		// method parameter types
 		HashMap<String,CExpr> pbinding = new HashMap<String,CExpr>();
 		for (WhileyFile.Parameter p : fd.parameters) {
-			Pair<Type, Block> t = resolve(p.type);		
+			Pair<Type, Block> t = resolve(p.type);
+			pbinding.put(p.name(), CExpr.VAR(t.first(),"$" + idx));
 			Block constraint = t.second();
 			if(constraint != null) {
 				HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 				binding.put("$", CExpr.VAR(Type.T_ANY, p.name));
 				constraint = Block.substitute(binding, constraint);
-				t = new Pair<Type,Block>(t.first(),constraint);
-				pbinding.put(p.name(), CExpr.VAR(Type.T_ANY,"$" + idx));
+				t = new Pair<Type,Block>(t.first(),constraint);				
 			}
 						
 			parameterNames.add(p.name());
@@ -627,8 +627,6 @@ public class ExtendedModuleBuilder {
 					precondition = new Block();
 				}
 				precondition.addAll(constraint);
-				// normalise the precondition names here
-				precondition = Block.substitute(pbinding,constraint);
 			}
 		}
 
@@ -651,7 +649,7 @@ public class ExtendedModuleBuilder {
 				precondition = tmp;
 			} else {
 				precondition.addAll(tmp);
-			}
+			}			
 		}
 
 		if (fd.postcondition != null) {				
@@ -665,7 +663,7 @@ public class ExtendedModuleBuilder {
 				postcondition = tmp;
 			} else {
 				postcondition.addAll(tmp);
-			}
+			}			
 		}
 
 		currentFunDecl = fd;
@@ -687,10 +685,14 @@ public class ExtendedModuleBuilder {
 		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));		
 				
 		List<Attribute> caseAttrs = new ArrayList<Attribute>();
-		if(precondition != null) {			
+		if(precondition != null) {
+			// normalise the precondition names here			
+			precondition = Block.substitute(pbinding,precondition);			
 			caseAttrs.add(new Precondition(precondition));
 		} 
 		if(postcondition != null) {
+			// normalise postcondition names here
+			postcondition = Block.substitute(pbinding,postcondition);
 			caseAttrs.add(new Postcondition(postcondition));
 		}
 		List<Module.Case> ncases = new ArrayList<Module.Case>();
