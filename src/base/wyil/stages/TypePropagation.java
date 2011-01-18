@@ -94,7 +94,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env environment = initialStore();		
 		Block body = propagate(mcase.body(), environment).first();	
 		
-		return new Module.Case(mcase.parameterNames(),body);
+		return new Module.Case(mcase.parameterNames(),body,mcase.attributes());
 	}
 	
 	protected Pair<Stmt, Env> propagate(Stmt stmt,

@@ -80,7 +80,7 @@ public abstract class BackwardFlowAnalysis<T> implements ModuleTransform {
 		this.stores = new HashMap<String,T>();
 		T last = lastStore();						
 		Block body = propagate(mcase.body(), last).first();		
-		return new Module.Case(mcase.parameterNames(), body);
+		return new Module.Case(mcase.parameterNames(), body, mcase.attributes());
 	}		
 	
 	protected Pair<Block, T> propagate(Block block, T store) {

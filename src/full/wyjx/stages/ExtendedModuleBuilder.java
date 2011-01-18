@@ -683,7 +683,7 @@ public class ExtendedModuleBuilder {
 		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));		
 				
 		List<Attribute> caseAttrs = new ArrayList<Attribute>();
-		if(precondition != null) {
+		if(precondition != null) {			
 			caseAttrs.add(new Precondition(precondition));
 		} 
 		if(postcondition != null) {

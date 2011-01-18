@@ -80,7 +80,7 @@ public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
 		this.stores = new HashMap<String,T>();
 		T init = initialStore();
 		Block body = propagate(mcase.body(), init).first();		
-		return new Module.Case(mcase.parameterNames(), body);
+		return new Module.Case(mcase.parameterNames(), body, mcase.attributes());
 	}		
 	
 	protected Pair<Block, T> propagate(Block block, T store) {

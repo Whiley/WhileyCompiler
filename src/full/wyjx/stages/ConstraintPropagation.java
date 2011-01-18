@@ -90,7 +90,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		Precondition preattr = methodCase.attribute(Precondition.class);
 		Block precondition = preattr != null ? preattr.constraint : null;
 		
-		if (precondition != null) {
+		if (precondition != null) {			
 			Pair<Block, WFormula> condition = propagate(precondition, init);
 
 			// reset the stores map
