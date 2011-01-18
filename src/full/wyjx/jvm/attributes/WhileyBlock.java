@@ -34,6 +34,8 @@ public class WhileyBlock implements BytecodeAttribute {
 	private final String name;
 	
 	public WhileyBlock(String name, Block block) {
+		if(block == null) { throw new IllegalArgumentException("Block cannot be null in WhileyBlock(String,Block))"); }
+		if(name == null) { throw new IllegalArgumentException("String cannot be null in WhileyBlock(String,Block))"); }		
 		this.block = block;
 		this.name = name;
 	}

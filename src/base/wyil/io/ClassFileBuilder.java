@@ -162,9 +162,15 @@ public class ClassFileBuilder {
 			name = name + "$" + caseNum;
 		}
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
+		for(Attribute a : mcase.attributes()) {
+			if(a instanceof BytecodeAttribute) {
+				// FIXME: this is a hack
+				cm.attributes().add((BytecodeAttribute)a);
+			}
+		}
 		ArrayList<Bytecode> codes = translate(mcase, method);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
-		cm.attributes().add(code);				
+		cm.attributes().add(code);		
 
 		// Build up the binding we'll use for pre and post-conditions
 		List<String> params = mcase.parameterNames();

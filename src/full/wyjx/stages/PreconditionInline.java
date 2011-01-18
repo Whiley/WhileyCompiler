@@ -107,13 +107,13 @@ public class PreconditionInline implements ModuleTransform {
 		// extract constraint attribute
 		Precondition preattr = mcase.attribute(Precondition.class);
 		Block precondition = preattr != null ? preattr.constraint : null;
-				
+		
 		if(precondition != null) {
 			// calculate reg target (see below)
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
 			Block.match(precondition, CExpr.Register.class, uses);			
 			int regTarget = CExpr.maxRegister(uses)+1;			
-			precondition = transform(regTarget,precondition);
+			preattr = new Precondition(transform(regTarget,precondition));
 		}
 		Postcondition postattr = mcase.attribute(Postcondition.class);
 		Block postcondition = postattr != null ? postattr.constraint : null;
@@ -123,7 +123,7 @@ public class PreconditionInline implements ModuleTransform {
 			HashSet<CExpr.Register> uses = new HashSet<CExpr.Register>();				
 			Block.match(postcondition, CExpr.Register.class, uses);
 			int regTarget = CExpr.maxRegister(uses)+1;
-			postcondition = transform(regTarget,postcondition);
+			postattr = new Postcondition(transform(regTarget,postcondition));
 		}
 		
 		// Now, calculate the register target. This is used to determine a safe
@@ -136,8 +136,7 @@ public class PreconditionInline implements ModuleTransform {
 		Block body = transform(regTarget,mcase.body());	
 		
 		// FIXME: again, other attributes are lost here.
-		return new Module.Case(mcase.parameterNames(), body, new Precondition(
-				precondition), new Postcondition(postcondition));
+		return new Module.Case(mcase.parameterNames(), body, preattr, postattr);
 	}
 	
 	public Block transform(int regTarget, Block block) {

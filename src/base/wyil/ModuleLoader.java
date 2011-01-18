@@ -581,11 +581,25 @@ public class ModuleLoader {
 				Type type = wd.type();							
 				if(type == null) {
 					// constant definition
-					Module.ConstDef ci = new Module.ConstDef(wd.defName(),wd.value());
+					List<Attribute> attrs = new ArrayList<Attribute>();		
+					for(BytecodeAttribute bba : wd.attributes()) {			
+						// Ooh, this is such a hack ...						
+						if(bba instanceof Attribute) {							
+							attrs.add((Attribute)bba);
+						}
+					}
+					Module.ConstDef ci = new Module.ConstDef(wd.defName(),wd.value(),attrs);
 					constants.add(ci);
 				} else {
-					// type definition										
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type);					
+					// type definition
+					List<Attribute> attrs = new ArrayList<Attribute>();		
+					for(BytecodeAttribute bba : wd.attributes()) {			
+						// Ooh, this is such a hack ...						
+						if(bba instanceof Attribute) {								
+							attrs.add((Attribute)bba);
+						}
+					}
+					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,attrs);					
 					types.add(ti);
 				}
 			}
@@ -612,8 +626,15 @@ public class ModuleLoader {
 			parameterNames.add("p" + i);
 		}
 		
+		List<Attribute> attrs = new ArrayList<Attribute>();		
+		for(BytecodeAttribute ba : cm.attributes()) {			
+			// Ooh, this is such a hack ...
+			if(ba instanceof Attribute) {				
+				attrs.add((Attribute)ba);
+			}
+		}
 		List<Module.Case> mcases = new ArrayList<Module.Case>();
-		mcases.add(new Module.Case(parameterNames,null));
+		mcases.add(new Module.Case(parameterNames,null,attrs));
 		
 		return new Module.Method(stripCase(info.first()), type, mcases);
 	}
