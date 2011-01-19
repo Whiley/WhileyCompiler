@@ -709,29 +709,28 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			throws ResolveError {
 		WFormula constraints = WBool.TRUE;
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
-		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();		
 		Module module = loader.loadModule(ivk.name.module());
-		Module.Method method = module.method(ivk.name.name(), ivk.type);
-		Module.Case mcase = method.cases().get(ivk.caseNum);
-		List<String> params = mcase.parameterNames();
+		Module.Method method = module.method(ivk.name.name(), ivk.type);		
 		int idx=0;
 		for (CExpr e : ivk.args) {
 			Pair<WExpr, WFormula> p = infer(e, elem);			
-			binding.put(new WVariable(params.get(idx++)), p.first());
+			binding.put(new WVariable("$" + idx++), p.first());
 			args.add(p.first());
 			constraints = WFormulas.and(p.second());
 		}
 
-		WVariable rv = new WVariable(ivk.name.toString(), args);
-		Postcondition postattr = methodCase.attribute(Postcondition.class);
-		Block postcondition = postattr != null ? postattr.constraint : null;
+		constraints = constraints.substitute(binding);
 		
-		if(postcondition != null) {						
+		WVariable rv = new WVariable(ivk.name.toString(), args);
+		Postcondition postattr = methodCase.attribute(Postcondition.class);	
+		Block postcondition = postattr != null ? postattr.constraint : null;		
+		if(postcondition != null) {								
 			WVariable var = new WVariable("$"); 
 			WFormula pc = propagate(postcondition,
 					WTypes.subtypeOf(var, convert(method.type().ret))).second();			
 			binding.put(var, rv);						
-			constraints = WFormulas.and(constraints, pc.substitute(binding));
+			constraints = WFormulas.and(constraints, pc.substitute(binding));			
 		}
 		
 		return new Pair<WExpr, WFormula>(rv, constraints);

@@ -370,7 +370,7 @@ public class PreconditionInline implements ModuleTransform {
 			Block blk = new Block();
 			int ncases = method.cases().size();
 			Attribute.Source src = stmt.attribute(Attribute.Source.class);
-			if(ncases == 1) {				
+			if(ncases == 1) {						
 				Module.Case c = method.cases().get(0);
 				Precondition preattr = c.attribute(Precondition.class);
 				Block precondition = preattr != null ? preattr.constraint : null;								
@@ -378,10 +378,10 @@ public class PreconditionInline implements ModuleTransform {
 					String lab = Block.freshLabel();
 					blk.add(new Code.Check(lab),stmt.attribute(Attribute.Source.class));
 					blk.addAll(transformConstraint(regTarget,precondition,ivk,src,c,method));
-					blk.add(new Code.CheckEnd(lab),stmt.attribute(Attribute.Source.class));
+					blk.add(new Code.CheckEnd(lab),stmt.attribute(Attribute.Source.class));					
 				}				
 				blk.add(new Code.Assign(lhs,ivk),stmt.attributes());				
-			} else {			
+			} else {							
 				// This is the multi-case option, which is harder. Here, we need
 				// to chain together the constrain tests for multiple different
 				// method cases. Thus, if one fails we move onto try the next

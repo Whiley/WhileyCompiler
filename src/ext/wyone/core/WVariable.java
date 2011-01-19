@@ -134,6 +134,6 @@ public class WVariable extends WConstructor<WExpr> implements WExpr {
 	
 	private static int fvidx = 0;
 	public static WVariable freshVar() {
-		return new WVariable("$" + fvidx++);
+		return new WVariable("#" + fvidx++);
 	}
 }

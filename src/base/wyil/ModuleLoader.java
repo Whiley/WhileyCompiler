@@ -623,12 +623,12 @@ public class ModuleLoader {
 		ArrayList<String> parameterNames = new ArrayList<String>();
 		Type.Fun type = info.second();
 		for (int i = 0; i != type.params.size(); ++i) {
-			parameterNames.add("p" + i);
+			parameterNames.add("$" + i);
 		}
 		
 		List<Attribute> attrs = new ArrayList<Attribute>();		
 		for(BytecodeAttribute ba : cm.attributes()) {			
-			// Ooh, this is such a hack ...
+			// Ooh, this is such a hack ...			
 			if(ba instanceof Attribute) {				
 				attrs.add((Attribute)ba);
 			}

@@ -692,7 +692,7 @@ public class ExtendedModuleBuilder {
 		} 
 		if(postcondition != null) {
 			// normalise postcondition names here
-			postcondition = Block.substitute(pbinding,postcondition);
+			postcondition = Block.substitute(pbinding,postcondition);			
 			caseAttrs.add(new Postcondition(postcondition));
 		}
 		List<Module.Case> ncases = new ArrayList<Module.Case>();

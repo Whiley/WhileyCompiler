@@ -74,9 +74,7 @@ public final class Solver implements Callable<Proof> {
 	 */
 	public static synchronized Proof checkUnsatisfiable(int timeout, WFormula formula,
 			SplitHeuristic heuristic,
-			InferenceRule... theories) {		
-		
-		// System.out.println("UNSAT: " + formula + " : " + types);
+			InferenceRule... theories) {				
  
 		// The following uses the java.util.concurrent library to enforce a
 		// timeout on how long the solver will run for.
