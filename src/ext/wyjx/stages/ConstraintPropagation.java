@@ -723,8 +723,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			binding.put(new WVariable("$" + idx++), p.first());
 			args.add(p.first());
 			constraints = WFormulas.and(p.second());
-		}
-
+		}		
 		constraints = constraints.substitute(binding);
 		
 		WVariable rv = new WVariable(ivk.name.toString(), args);

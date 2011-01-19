@@ -79,9 +79,6 @@ public class Main extends wyjc.Main {
 		stages.add(new WyilTransform("constant propagation",
 				new ConstantPropagation(loader)));
 
-		stages.add(new WyilTransform("function check",
-				new FunctionCheck(loader)));
-		
 		stages.add(new WyilTransform("branch prediction",
 				new ExpectedInference(loader)));
 		
@@ -91,6 +88,9 @@ public class Main extends wyjc.Main {
 		stages.add(new WyilTransform("failure check",
 				new FailureCheck(loader)));
 		
+		stages.add(new WyilTransform("function check",
+				new FunctionCheck(loader)));
+						
 		stages.add(new ClassWriter(loader));
 		
 		return stages;
