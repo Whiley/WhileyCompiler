@@ -1597,9 +1597,4 @@ public class ModuleBuilder {
 		}
 	}
 
-	private static int idx = 0;
-
-	public static String freshVar() {
-		return "$" + idx++;
-	}
 }
