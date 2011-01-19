@@ -82,6 +82,9 @@ public class Main extends wyjc.Main {
 		stages.add(new WyilTransform("function check",
 				new FunctionCheck(loader)));
 		
+		stages.add(new WyilTransform("branch prediction",
+				new ExpectedInference(loader)));
+		
 		stages.add(new WyilTransform("verification check",
 				new ConstraintPropagation(loader, 250)));
 		

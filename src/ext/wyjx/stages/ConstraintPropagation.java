@@ -452,24 +452,29 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// Determine condition for true and false branches
 		WFormula trueCondition = WFormulas.and(precondition, condition);
 		WFormula falseCondition = WFormulas.and(precondition, condition.not());				
-
-		if(debug) {
-			System.out.println("CHECKING(1): " + trueCondition);
+		BranchPredict expected = elem.attribute(BranchPredict.class);		
+		
+		if(expected != null && !expected.trueBranch) {			
+			if(debug) {
+				System.out.println("CHECKING(1): " + trueCondition);
+			}
+			Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
+					wyone.Main.heuristic, wyone.Main.theories);			
+			if (tp instanceof Proof.Unsat) {
+				if(debug) { System.out.println("UNSAT(1)"); }
+				trueCondition = null;
+			}
 		}
-		Proof tp = Solver.checkUnsatisfiable(timeout, trueCondition,
-				wyone.Main.heuristic, wyone.Main.theories);			
-		if (tp instanceof Proof.Unsat) {
-			if(debug) { System.out.println("UNSAT(1)"); }
-			trueCondition = null;
-		}	
 				
-		if(debug) { System.out.println("CHECKING(2): " + falseCondition); }
-		Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
-				wyone.Main.heuristic, wyone.Main.theories);				
-		if (fp instanceof Proof.Unsat) {
-			if(debug) { System.out.println("UNSAT(2)"); }
-			falseCondition = null;
-		}					
+		if(expected != null && !expected.falseBranch) {
+			if(debug) { System.out.println("CHECKING(2): " + falseCondition); }
+			Proof fp = Solver.checkUnsatisfiable(timeout, falseCondition,
+					wyone.Main.heuristic, wyone.Main.theories);				
+			if (fp instanceof Proof.Unsat) {
+				if(debug) { System.out.println("UNSAT(2)"); }
+				falseCondition = null;
+			}					
+		}
 		
 		// Update attribute information
 		ArrayList<Attribute> attributes = new ArrayList<Attribute>();
