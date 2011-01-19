@@ -23,7 +23,7 @@ import wyjx.testing.TestHarness;
 
 public class StaticInvalidTests extends TestHarness {
  public StaticInvalidTests() {
-  super("tests/full/invalid","tests/full/invalid","sysout");
+  super("tests/ext/invalid","tests/ext/invalid","sysout");
  }
 
  @Test public void ConstrainedInt_Invalid_1_StaticTest() { contextFailTest("ConstrainedInt_Invalid_1"); }

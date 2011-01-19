@@ -3,7 +3,7 @@
 
   <target name="compile">
     <javac debug="true" srcdir="src/base" includeantruntime="true" includes="wyjc/**,wyil/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
-<!--    <javac debug="true" srcdir="src/full" classpath="src/base" includeantruntime="true" includes="wyjx/Main.java,wyone/**" excludes="wyone/testing/**"/> -->
+<!--    <javac debug="true" srcdir="src/ext" classpath="src/base" includeantruntime="true" includes="wyjx/Main.java,wyone/**" excludes="wyone/testing/**"/> -->
   </target>
 
   <target name="build-wyjc" depends="compile">
@@ -28,7 +28,7 @@
     </manifest>
     <jar destfile="lib/wyjx.jar"  manifest="tmp/MANIFEST.MF">
       <fileset dir="src/base" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
-      <fileset dir="src/full" includes="wyjx/**/*.class,wyone/**/*.class"/>
+      <fileset dir="src/ext" includes="wyjx/**/*.class,wyone/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
   </target>
