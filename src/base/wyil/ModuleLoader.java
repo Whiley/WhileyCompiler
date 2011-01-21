@@ -576,6 +576,7 @@ public class ModuleLoader {
 		ArrayList<Module.ConstDef> constants = new ArrayList();
 		
 		for(BytecodeAttribute ba : cf.attributes()) {
+			
 			if(ba instanceof WhileyDefine) {				
 				WhileyDefine wd = (WhileyDefine) ba;								
 				Type type = wd.type();							
@@ -628,8 +629,8 @@ public class ModuleLoader {
 		
 		List<Attribute> attrs = new ArrayList<Attribute>();		
 		for(BytecodeAttribute ba : cm.attributes()) {			
-			// Ooh, this is such a hack ...			
-			if(ba instanceof Attribute) {				
+			// Ooh, this is such a hack ...					
+			if(ba instanceof Attribute) {						
 				attrs.add((Attribute)ba);
 			}
 		}

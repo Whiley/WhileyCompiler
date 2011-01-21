@@ -57,7 +57,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 * @param minimal
 	 * @param timeout
 	 */
-	private boolean debug = false;
+	private boolean debug = true;
 	
 	public ConstraintPropagation(ModuleLoader loader, int timeout) {
 		super(loader);
@@ -716,25 +716,31 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		ArrayList<WExpr> args = new ArrayList<WExpr>();
 		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();		
 		Module module = loader.loadModule(ivk.name.module());
-		Module.Method method = module.method(ivk.name.name(), ivk.type);		
+		Module.Method method = module.method(ivk.name.name(), ivk.type);
+		Module.Case mcase = method.cases().get(ivk.caseNum);
+		
+		// FIXME: I believe there is a bug here, in that register names may
+		// interfere between the original condition and that being added (but I
+		// could be wrong).
+		
 		int idx=0;
 		for (CExpr e : ivk.args) {
 			Pair<WExpr, WFormula> p = infer(e, elem);			
 			binding.put(new WVariable("$" + idx++), p.first());
 			args.add(p.first());
-			constraints = WFormulas.and(p.second());
+			constraints = WFormulas.and(constraints,p.second());
 		}		
 		constraints = constraints.substitute(binding);
 		
 		WVariable rv = new WVariable(ivk.name.toString(), args);
-		Postcondition postattr = methodCase.attribute(Postcondition.class);	
+		Postcondition postattr = mcase.attribute(Postcondition.class);
 		Block postcondition = postattr != null ? postattr.constraint : null;		
-		if(postcondition != null) {								
+		if(postcondition != null) {
 			WVariable var = new WVariable("$"); 
 			WFormula pc = propagate(postcondition,
 					WTypes.subtypeOf(var, convert(method.type().ret))).second();			
 			binding.put(var, rv);						
-			constraints = WFormulas.and(constraints, pc.substitute(binding));			
+			constraints = WFormulas.and(constraints, pc.substitute(binding));				
 		}
 		
 		return new Pair<WExpr, WFormula>(rv, constraints);

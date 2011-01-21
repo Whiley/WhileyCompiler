@@ -33,5 +33,5 @@ public interface Attribute {
 			return "@" + start + ":" + end;
 		}
 	}
-	
+		
 }

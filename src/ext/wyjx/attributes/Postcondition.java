@@ -24,7 +24,8 @@ public class Postcondition extends WhileyBlock implements Attribute {
 		
 		public WhileyBlock read(BinaryInputStream reader,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
-			return new Postcondition(super.read(reader,constantPool).block());
+			Block constraint = super.read(reader,constantPool).block();			
+			return new Postcondition(constraint);
 		}
 	}
 }
