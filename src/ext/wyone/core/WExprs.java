@@ -32,11 +32,11 @@ public class WExprs {
 	}
 	
 	private static final AtomicInteger cid = new AtomicInteger(0);
-	
+
 	/**
-	 * The following method identifies any matching subterms. The method is
-	 * currently used during Quantifier Instantiation to identify the set of
-	 * quantified variables which need to be replaced.
+	 * The following method identifies any matching subterms. This is done by
+	 * traversing the entire tree of subterms for an expression and looking for
+	 * matches, rather than just traversing a single level.
 	 * 
 	 * @param <T>
 	 * @param match

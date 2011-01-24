@@ -20,7 +20,6 @@ package wyone.theory.numeric;
 import java.util.*;
 
 import wyone.core.*;
-import wyone.theory.logic.*;
 import wyone.util.*;
 
 /**
@@ -29,7 +28,7 @@ import wyone.util.*;
  * @author djp
  * 
  */
-public final class WInequality extends WConstructor<WExpr> implements WLiteral {		
+public final class WInequality extends WConstructor<WExpr> implements WConstraint {		
 	private boolean sign;
 	/**
 	 * Construct an inequality from left and right rationals. So, this generates
@@ -59,7 +58,7 @@ public final class WInequality extends WConstructor<WExpr> implements WLiteral {
 		return new WInequality(!sign,rhs());
 	}
 	
-	public WLiteral substitute(Map<WExpr, WExpr> binding) {
+	public WConstraint substitute(Map<WExpr, WExpr> binding) {
 		WExpr orhs = subterms.get(0);
 		WExpr rhs = orhs.substitute(binding);		
 		
@@ -76,11 +75,6 @@ public final class WInequality extends WConstructor<WExpr> implements WLiteral {
 		} else {
 			return this;
 		}
-	}
-	
-	public WLiteral rearrange(WExpr rhs) {
-		// no idea what to do here ...
-		throw new RuntimeException("Not sure how to rearrange equality!");
 	}
 	
 	public String toString() {

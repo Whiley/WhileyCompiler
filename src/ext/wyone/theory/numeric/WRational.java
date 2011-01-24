@@ -21,8 +21,6 @@ import java.math.*;
 import java.util.*;
 
 import wyone.core.*;
-import wyone.theory.congruence.*;
-import wyone.theory.logic.*;
 import wyone.util.*;
 
 /**

@@ -21,10 +21,6 @@ import java.math.BigInteger;
 import java.util.Collections;
 
 import wyone.core.*;
-import wyone.theory.logic.WBool;
-import wyone.theory.logic.WFormula;
-import wyone.theory.logic.WFormulas;
-import wyone.theory.logic.WLiteral;
 import wyone.util.Pair;
 
 public class WNumerics {
@@ -140,27 +136,27 @@ public class WNumerics {
 		} 	
 	}
 				
-	public static WFormula lessThan(WExpr lhs, WExpr rhs) {
+	public static WConstraint lessThan(WExpr lhs, WExpr rhs) {
 		return inequals(false,rhs,lhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static WFormula lessThanEq(WExpr lhs, WExpr rhs) {		
+	public static WConstraint lessThanEq(WExpr lhs, WExpr rhs) {		
 		return inequals(true,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static WFormula greaterThan(WExpr lhs, WExpr rhs) {
+	public static WConstraint greaterThan(WExpr lhs, WExpr rhs) {
 		return inequals(false,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static WFormula greaterThanEq(WExpr lhs, WExpr rhs) {
+	public static WConstraint greaterThanEq(WExpr lhs, WExpr rhs) {
 		return inequals(true,rhs,lhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	private static WFormula inequals(boolean sign, WExpr lhs, WExpr rhs) {
+	private static WConstraint inequals(boolean sign, WExpr lhs, WExpr rhs) {
 		return inequals(sign, rational(lhs),rational(rhs));
 	}
 	
-	private static WFormula inequals(boolean sign, WRational lhs, WRational rhs) {		
+	private static WConstraint inequals(boolean sign, WRational lhs, WRational rhs) {		
 		if(lhs.denominator().equals(WPolynomial.ONE)) {		
 			return inequals(sign,lhs.numerator(),rhs);
 		} else if(rhs.denominator().equals(WPolynomial.ONE)) {
@@ -187,10 +183,10 @@ public class WNumerics {
 			}			
 		} else {
 			// Ok, can't break down any more ... so disjunction required			
-			WFormula gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
-			WFormula ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
-			gtz = WFormulas.and(gtz,new WInequality(false,subtract(WNumber.ZERO,normalise(lhs.denominator()))));
-			ltz = WFormulas.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WNumber.ZERO)));
+			WConstraint gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
+			WConstraint ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
+			gtz = WConstraints.and(gtz,new WInequality(false,subtract(WNumber.ZERO,normalise(lhs.denominator()))));
+			ltz = WConstraints.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WNumber.ZERO)));
 			return WFormulas.or(ltz,gtz);			
 		}
 	}	

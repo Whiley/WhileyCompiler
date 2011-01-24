@@ -19,8 +19,6 @@ package wyone.core;
 
 import java.util.*;
 
-import wyone.theory.logic.*;
-
 public final class SolverState implements Iterable<WConstraint> {
 	/**
 	 * The assignment is a global mapping of formulas to integer numbers

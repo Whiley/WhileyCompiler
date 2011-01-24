@@ -19,8 +19,6 @@ package wyone.core;
 
 import java.util.*;
 
-import wyone.theory.logic.*;
-
 public interface WExpr extends Comparable<WExpr> {
 
 	/**

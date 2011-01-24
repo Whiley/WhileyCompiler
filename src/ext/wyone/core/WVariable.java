@@ -19,9 +19,6 @@ package wyone.core;
 
 import java.util.*;
 
-import wyone.theory.congruence.*;
-import wyone.theory.logic.*;
-
 /**
  * <p>
  * A variable is a component of a Wyone expression for which we need to infer a

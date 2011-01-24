@@ -21,7 +21,6 @@ import java.util.*;
 import java.math.*;
 
 import wyone.core.*;
-import wyone.theory.logic.*;
 
 public final class WNumber implements WValue {
 	private static final WNumber[] cache = new WNumber[20];

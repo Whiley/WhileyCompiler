@@ -22,7 +22,6 @@ import static wyone.theory.numeric.FourierMotzkinSolver.rearrange;
 import java.util.*;
 
 import wyone.core.*;
-import wyone.theory.logic.WFormula;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
 import wyone.util.Pair;
 

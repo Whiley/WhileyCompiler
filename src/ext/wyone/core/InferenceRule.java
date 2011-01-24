@@ -17,8 +17,6 @@
 
 package wyone.core;
 
-import wyone.theory.logic.*;
-
 public interface InferenceRule {
 	
 	/**
