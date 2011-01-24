@@ -179,20 +179,10 @@ public final class WNumber implements WValue {
 		return this;
 	}
 	
-	public List<WFormula> subterms() {
+	public List<WExpr> subterms() {
 		return Collections.EMPTY_LIST;
 	}
-	
-	public WLiteral rearrange(WExpr lhs) {
-		if(lhs instanceof WNumber && this.equals(lhs)) {
-			return WBool.TRUE;			
-		} else if(lhs instanceof WValue) {
-			return WBool.FALSE;
-		} else {
-			return lhs.rearrange(this);
-		}
-	}
-	
+		
 	public boolean equals(Object o) {
 		if (o instanceof WNumber) {
 			WNumber r = (WNumber) o;

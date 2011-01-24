@@ -21,8 +21,6 @@ import java.util.*;
 
 import wyone.theory.congruence.*;
 import wyone.theory.logic.*;
-import wyone.theory.type.WTypes;
-import wyone.util.WConstructor;
 
 /**
  * <p>
@@ -92,28 +90,6 @@ public class WVariable extends WConstructor<WExpr> implements WExpr {
 		WExpr d = binding.get(r);
 		if(d != null) { return d; }
 		else return r;
-	}
-	
-	public WLiteral rearrange(WExpr lhs) {
-		if(lhs instanceof WVariable) {			
-			if(this.equals(lhs)) {
-				return WBool.TRUE;
-			} else {
-				// NOTE. We have to be very careful here not to disturb the
-				// ordering that may have been set by previous assignments.
-				return new WEquality(true,this,lhs);
-			} 					
-		} else if(lhs instanceof WValue) {
-			// Here, we have an assignment
-			return new WEquality(true,this,lhs);
-		} else {
-			// Using double dispatch here is sneaky, but it does ensure that
-			// more complex forms of expression get the opportunity to
-			// rearrange, In particular, if the lhs was a rational of some kind
-			// that reference this variable, then we want to take that into
-			// account.  e.g. x-1 == x => -1 = 0 => false
-			return lhs.rearrange(this);
-		}
 	}
 	
 	public WType type(SolverState state) {
