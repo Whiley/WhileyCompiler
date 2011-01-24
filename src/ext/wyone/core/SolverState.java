@@ -21,18 +21,18 @@ import java.util.*;
 
 import wyone.theory.logic.*;
 
-public final class SolverState implements Iterable<WFormula> {
+public final class SolverState implements Iterable<WConstraint> {
 	/**
 	 * The assignment is a global mapping of formulas to integer numbers
 	 * which are, in effect, unique references for them.
 	 */
-	private static HashMap<WFormula,Integer> assignments = new HashMap<WFormula,Integer>();
+	private static HashMap<WConstraint,Integer> assignments = new HashMap<WConstraint,Integer>();
 
 	/**
 	 * The rassignments lists is the inverse map of the assignments list. Each
 	 * formula is located at a given index.
 	 */
-	private static ArrayList<WFormula> rassignments = new ArrayList<WFormula>();
+	private static ArrayList<WConstraint> rassignments = new ArrayList<WConstraint>();
 	
 	/**
 	 * The assertions bitset detemines which assigned facts are currently
@@ -58,45 +58,39 @@ public final class SolverState implements Iterable<WFormula> {
 		this.eliminations = (BitSet) eliminations.clone();
 	}
 	
-	public boolean contains(WFormula f) {
+	public boolean contains(WConstraint f) {
 		Integer x = assignments.get(f);
 		return x != null ? assertions.get(x) : false;				
 	}
 	
-	public Iterator<WFormula> iterator() {
+	public Iterator<WConstraint> iterator() {
 		return new AssertionIterator(assertions,0);
 	}
 
-	public void add(WFormula f, Solver solver) {		
-		if(f == WBool.TRUE) {
-			// do nothing
-		} else {
-			worklist.clear();
-			internal_add(f);
-			infer(solver);			
-		}
-		
+	/**
+	 * The add method is designed to be called by external clients. This method
+	 * will not only add the given constraints, but will then infer all possible
+	 * implied constraints as well.
+	 * 
+	 * @param f
+	 * @param solver
+	 */
+	public void add(WConstraint f, Solver solver) {		
+		worklist.clear();
+		internal_add(f);
+		infer(solver);					
 	}
 
 	/**
 	 * The infer method is designed to be called by inference rules. This method
-	 * doesn't immediately infer consequences of the formula f; it assumes we're
+	 * doesn't immediately infer consequences from the expression; it assumes we're
 	 * already in the process of doing that.
 	 * 
 	 * @param f
 	 * @param solver
 	 */
-	public void infer(WFormula f, Solver solver) {			
-		if(f == WBool.TRUE) {
-			// do nothing
-		} else if(f instanceof WConjunct) {
-			WConjunct c = (WConjunct) f;				
-			for(WFormula p : c.subterms()) {
-				infer(p,solver);
-			}
-		} else {
-			internal_add(f);		
-		}		
+	public void infer(WConstraint f, Solver solver) {			
+		internal_add(f);					
 	}
 
 	/**
@@ -113,7 +107,7 @@ public final class SolverState implements Iterable<WFormula> {
 	 * 
 	 * @param f
 	 */
-	public void eliminate(WFormula oldf) {
+	public void eliminate(WConstraint oldf) {
 		Integer x = assignments.get(oldf);							
 		if(x != null) {			
 			assertions.clear(x);			
@@ -128,7 +122,7 @@ public final class SolverState implements Iterable<WFormula> {
 	private void infer(Solver solver) {		
 		for(int i=0;i!=worklist.size();++i) {
 			Integer x = worklist.get(i);			
-			WFormula f = rassignments.get(x);
+			WConstraint f = rassignments.get(x);
 			//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 			for(InferenceRule ir : solver.theories()) {				
 				if(assertions.get(x)) {					
@@ -144,84 +138,6 @@ public final class SolverState implements Iterable<WFormula> {
 		}		
 	}
 	
-	/**
-	 * The purpose of this method is to reduce a complex formula (e.g.
-	 * disjunction) in the presence of existing literals. For example, x==1|x!=2
-	 * reduces to true if x==1 is already asserted.
-	 * 
-	 * @param f
-	 * @return
-	 */
-	public WFormula reduce(WFormula f) {		
-		if(f instanceof WBool) {
-			return f;
-		} else if (f instanceof WLiteral) {			
-			if (contains(f)) {				
-				return WBool.TRUE;
-			} else if (contains(f.not())) {				
-				return WBool.FALSE;
-			} else {				
-				return f;
-			}
-		} else if(f instanceof WConjunct) {
-			WConjunct c = (WConjunct) f;
-			HashSet<WFormula> lits = new HashSet<WFormula>();
-			boolean changed=false;
-			for(WFormula dl : c) {
-				WFormula d = reduce(dl);
-				changed |= dl != d;
-				if(d == WBool.FALSE) {
-					return WBool.FALSE; 
-				} else if(d != WBool.TRUE) {
-					if(d instanceof WConjunct) {
-						WConjunct cd = (WConjunct) d;
-						lits.addAll(cd.subterms());
-					} else {					
-						lits.add(d);
-					}
-				} 
-			}
-			if(lits.size() == 0) {
-				return WBool.TRUE;
-			} else if(lits.size() == 1) {
-				return lits.iterator().next();
-			} else if(changed) {
-				return new WConjunct(lits);
-			} else {
-				return c;
-			}
-		} else if(f instanceof WDisjunct) {
-			WDisjunct d = (WDisjunct) f;
-			HashSet<WFormula> lits = new HashSet<WFormula>();
-			boolean changed = false;
-			for(WFormula cl : d) {
-				WFormula c = reduce(cl);
-				changed |= cl != c;
-				if(c == WBool.TRUE) {
-					return WBool.TRUE; 
-				} else if(c != WBool.FALSE) {
-					if(c instanceof WDisjunct) {
-						WDisjunct cd = (WDisjunct) c;
-						lits.addAll(cd.subterms());
-					} else {
-						lits.add(c);
-					}
-				}
-			}
-			if(lits.size() == 0) {
-				return WBool.FALSE;
-			} else if(lits.size() == 1) {
-				return lits.iterator().next();
-			} else if(changed) {
-				return new WDisjunct(lits);
-			} else {
-				return d;
-			}
-		}
-		
-		return f;
-	}	
-
 	public SolverState clone() {
 		SolverState nls = new SolverState(assertions, eliminations);				
 		return nls;
@@ -230,7 +146,7 @@ public final class SolverState implements Iterable<WFormula> {
 	public String toString() {
 		String r = "[";
 		boolean firstTime=true;
-		for(WFormula f : this) {
+		for(WConstraint f : this) {
 			if(!firstTime) {
 				r += ", ";
 			}
@@ -242,21 +158,11 @@ public final class SolverState implements Iterable<WFormula> {
 	}
 	
 	public static void reset_state() {
-		rassignments = new ArrayList<WFormula>();
+		rassignments = new ArrayList<WConstraint>();
 		assignments = new HashMap();
 	}
 	
-	private void internal_add(WFormula f) {		
-		f = reduce(f); 		
-		
-		if(f instanceof WConjunct) {
-			WConjunct wc = (WConjunct) f;
-			for(WFormula nf : wc.subterms()) {
-				internal_add(nf);
-			}
-			return;
-		} 
-				
+	private void internal_add(WConstraint f) {				
 		Integer x = assignments.get(f);
 		
 		if(x == null) {			
@@ -272,7 +178,7 @@ public final class SolverState implements Iterable<WFormula> {
 		}
 	}
 		
-	private static final class AssertionIterator implements Iterator<WFormula> {
+	private static final class AssertionIterator implements Iterator<WConstraint> {
 		private final BitSet assertions;
 		private int index;
 		
@@ -286,8 +192,8 @@ public final class SolverState implements Iterable<WFormula> {
 			return index != -1;
 		}
 		
-		public WFormula next() {
-			WFormula f = rassignments.get(index); 
+		public WConstraint next() {
+			WConstraint f = rassignments.get(index); 
 			index = assertions.nextSetBit(index+1);
 			return f;
 		}

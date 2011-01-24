@@ -39,13 +39,13 @@ public final class Solver implements Callable<Proof> {
 	private final SplitHeuristic splitHeuristic;
 	
 	/**
-	 * The formula being tested for satisfiability
+	 * The wyone program being tested for satisfiability
 	 */
-	private final WFormula formula;
+	private final List<WConstraint> program;
 		
-	Solver(WFormula formula, 
+	Solver(List<WConstraint> program, 
 			SplitHeuristic heuristic,InferenceRule... theories) {		
-		this.formula = formula;
+		this.program = program;
 		this.theories = new ArrayList<InferenceRule>();
 		this.splitHeuristic = heuristic;
 		for (InferenceRule t : theories) {
@@ -63,23 +63,23 @@ public final class Solver implements Callable<Proof> {
 	}
 
 	/**
-	 * This method attempts to check whether the formula associated with this
-	 * solver is unsatisfiable or not, using the given theories and heuristic.
-	 * This method will run until completion and, hence, caution should be taken
-	 * since it may take a long time!
+	 * This method attempts to check whether the given program is unsatisfiable
+	 * or not, using the given theories and heuristic. This method will run
+	 * until completion and, hence, caution should be taken since it may take a
+	 * long time!
 	 * 
 	 * @param - timeout. The timeout in milli-seconds, after which the solver
 	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
-	public static synchronized Proof checkUnsatisfiable(int timeout, WFormula formula,
+	public static synchronized Proof checkUnsatisfiable(int timeout, List<WConstraint> program,
 			SplitHeuristic heuristic,
 			InferenceRule... theories) {				
  
 		// The following uses the java.util.concurrent library to enforce a
 		// timeout on how long the solver will run for.
 		ExecutorService es = Executors.newSingleThreadExecutor ();
-		FutureTask<Proof> task = new FutureTask<Proof>(new Solver(formula,
+		FutureTask<Proof> task = new FutureTask<Proof>(new Solver(program,
 				heuristic, theories));
 		es.submit(task);
 		
@@ -115,7 +115,7 @@ public final class Solver implements Callable<Proof> {
 	private Proof checkUnsatisfiable() {		
 		SolverState.reset_state();
 		SolverState facts = new SolverState();
-		facts.add(formula, this);
+		facts.addAll(program, this);
 		return checkUnsatisfiable(facts,0);
 	}
 

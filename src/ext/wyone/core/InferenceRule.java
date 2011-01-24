@@ -32,5 +32,5 @@ public interface InferenceRule {
 	 * @param state
 	 *            --- The current solver instance
 	 */
-	public void infer(WFormula delta, SolverState state, Solver solver);
+	public void infer(WConstraint delta, SolverState state, Solver solver);
 }

@@ -20,9 +20,6 @@ package wyone.core;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import wyone.theory.congruence.*;
-import wyone.theory.logic.WLiteral;
-
 public class WExprs {
 
 	/**
@@ -36,31 +33,6 @@ public class WExprs {
 	
 	private static final AtomicInteger cid = new AtomicInteger(0);
 	
-	/**
-	 * Return a literal representing the equality of two expressions. Where
-	 * possible, this will be normalised.
-	 * 
-	 * @param formulas
-	 * @return
-	 */
-	public static WLiteral equals(WExpr lhs, WExpr rhs) {
-		// This is the normalisation step
-		return lhs.rearrange(rhs);
-	}
-	
-	/**
-	 * Return a literal representing the unequality of two expressions. Where
-	 * possible, this should be normalised.
-	 * 
-	 * @param formulas
-	 * @return
-	 */	
-	public static WLiteral notEquals(WExpr lhs, WExpr rhs) {
-		// FIXME: it would be nice to normalise here somehow.
-		return new WEquality(false,lhs,rhs).substitute(Collections.EMPTY_MAP);						
-	}
-	
-
 	/**
 	 * The following method identifies any matching subterms. The method is
 	 * currently used during Quantifier Instantiation to identify the set of

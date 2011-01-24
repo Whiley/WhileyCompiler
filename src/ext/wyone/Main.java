@@ -40,41 +40,29 @@ import wyone.util.*;
  */
 public class Main {
 	
-	public static final CompoundHeuristic heuristic = new CompoundHeuristic(
-			new NotEqualsHeuristic(), 
-			new DisjunctHeuristic(),
-			new BoundedNumberHeuristic(true, true), 			
-			new BoundedSetHeuristic(),			
+	public static final CompoundHeuristic heuristic = new CompoundHeuristic(			
+			new BoundedNumberHeuristic(true, true), 						
 			new BoundedNumberHeuristic(true, false),
 			new UnboundedNumberHeuristic(true),
 			new UnboundedNumberHeuristic(false)		
 	);
 
 	public static final InferenceRule[] theories = {		
-			new FourierMotzkinSolver(), 
-			new CongruenceClosure(),
-			new DisjunctInference(),
-			new TypeClosure(), 
-			new TupleClosure(), 
-			new SubsetClosure(),
-			new BoundedForallClosure(), 
-			new ListForallClosure(),
-			new ListLengthClosure(), 
-			new LengthOfClosure() 
+			new FourierMotzkinSolver()
 		};
 
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);
-		WFormula f = parser.parseInput();		
-		Proof r = Solver.checkUnsatisfiable(1000, f,
+		List<WConstraint> program = parser.parseInput();		
+		Proof r = Solver.checkUnsatisfiable(1000, program,
 				heuristic, theories);		
 		return r instanceof Proof.Unsat;
 	}
 	
 	public static boolean checkSat(String input) {		
 		Parser parser = new Parser(input);
-		WFormula f = parser.parseInput();
-		Proof r = Solver.checkUnsatisfiable(1000, f,
+		List<WConstraint> p = parser.parseInput();
+		Proof r = Solver.checkUnsatisfiable(1000, program,
 				heuristic, theories);
 		return r instanceof Proof.Sat;
 	}
@@ -111,9 +99,9 @@ public class Main {
 				long start = System.currentTimeMillis();
 				
 				Parser parser = new Parser(new File(args[fileArgsBegin]));
-				WFormula f = parser.parseInput();								
-				System.out.println("Parsed: " + f);				
-				Proof r = Solver.checkUnsatisfiable(timeout, f,
+				List<WConstraint> program = parser.parseInput();								
+				System.out.println("Parsed: " + program);				
+				Proof r = Solver.checkUnsatisfiable(timeout, program,
 						heuristic, theories);
 				
 				if(r instanceof Proof.Unsat) {

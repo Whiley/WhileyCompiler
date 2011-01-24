@@ -1,8 +1,10 @@
 package wyone.core;
 
 /**
- * This class represents a constraint over one or more variables. For example,
- * "x < 5" is a constraint over variable "x".
+ * <p>This represents a constraint over one or more variables. For example, "x < 5"
+ * is a constraint over variable "x". Constraints are really the key driving
+ * force in Wyone, as they represent pieces of "knowledge" with which we can
+ * move towards a satisfying solution, or a proof of unsatisfiability.</p>
  * 
  * @author djp
  * 
