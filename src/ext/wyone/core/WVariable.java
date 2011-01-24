@@ -40,10 +40,10 @@ import wyone.util.WConstructor;
  * </p>
  * 
  * <p>
- * Finally, a <i>model</i> is an assignment of (concrete) wone variables to
- * values. A <i>concrete wone</i> variable is one whose parameters are either
- * themselves concrete variables, or are values. Thus, a model is all that is
- * required to reduce a given wone formula to a true or false value.
+ * Finally, a <i>model</i> is an assignment of (concrete) Wyone variables to
+ * values. A <i>concrete Wyone</i> variable is one whose parameters are either
+ * themselves concrete variables, or are values.  Thus, a model is all that is
+ * required to satisfy a given Wyone program.
  * </p>
  * 
  * @author djp

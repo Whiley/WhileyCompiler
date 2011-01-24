@@ -57,17 +57,6 @@ public interface WExpr extends Comparable<WExpr> {
 	public WExpr substitute(Map<WExpr,WExpr> binding);
 
 	/**
-	 * The following method rearranges an expression, given that it's return
-	 * value is known to equal another expression. This helps us to ensure that
-	 * equalities are expressed in a normalised form, and also to identify
-	 * assignments.
-	 * 
-	 * @param returnValue
-	 * @return
-	 */
-	public WLiteral rearrange(WExpr returnValue);
-
-	/**
 	 * The following method returns the set of parameters to this expression
 	 * constructor, in the order they are given.
 	 * 
