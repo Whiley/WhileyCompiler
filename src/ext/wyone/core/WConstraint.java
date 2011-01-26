@@ -1,5 +1,7 @@
 package wyone.core;
 
+import java.util.Map;
+
 /**
  * <p>This represents a constraint over one or more variables. For example, "x < 5"
  * is a constraint over variable "x". Constraints are really the key driving
@@ -10,5 +12,5 @@ package wyone.core;
  * 
  */
 public interface WConstraint extends WExpr {
-
+	public WConstraint substitute(Map<WExpr,WExpr> binding);
 }

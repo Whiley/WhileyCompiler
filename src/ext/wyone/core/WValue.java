@@ -87,6 +87,10 @@ public class WValue implements WExpr {
 		public Constraint(Value.Bool b) {
 			super(b);
 		}
+		
+		public Constraint substitute(Map<WExpr,WExpr> binding) {
+			return this;
+		}
 	}
 	
 	// ====================================================================

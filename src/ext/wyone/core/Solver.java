@@ -173,12 +173,13 @@ public final class Solver implements Callable<Proof> {
 	 */
 	protected Proof checkModel(Map<WVariable, WValue> model) {										
 		// Check formula does indeed evaluate to true		
-		WFormula f = formula.substitute((Map) model);
-						
-		if(f == WBool.TRUE) {
-			return new Proof.Sat(model);
-		} else {			
-			return Proof.UNKNOWN;
+		for(WConstraint c : program) {
+			WConstraint f = c.substitute((Map) model);
+			if(f == WValue.FALSE) {
+				return Proof.UNKNOWN; 
+			}
 		}
+								
+		return new Proof.Sat(model);		
 	}	
 }

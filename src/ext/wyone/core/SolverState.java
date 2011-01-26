@@ -67,7 +67,7 @@ public final class SolverState implements Iterable<WConstraint> {
 
 	/**
 	 * The add method is designed to be called by external clients. This method
-	 * will not only add the given constraints, but will then infer all possible
+	 * will not only add the given constraint, but will then infer all possible
 	 * implied constraints as well.
 	 * 
 	 * @param f
@@ -79,6 +79,22 @@ public final class SolverState implements Iterable<WConstraint> {
 		infer(solver);					
 	}
 
+	/**
+	 * The add method is designed to be called by external clients. This method
+	 * will not only add the given constraints, but will then infer all possible
+	 * implied constraints as well.
+	 * 
+	 * @param f
+	 * @param solver
+	 */
+	public void addAll(Collection<WConstraint> fs, Solver solver) {		
+		worklist.clear();
+		for(WConstraint f : fs) {
+			internal_add(f);
+		}
+		infer(solver);					
+	}
+	
 	/**
 	 * The infer method is designed to be called by inference rules. This method
 	 * doesn't immediately infer consequences from the expression; it assumes we're
