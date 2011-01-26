@@ -20,9 +20,6 @@ package wyone.core;
 import java.util.*;
 import java.util.concurrent.*;
 
-import wyone.theory.congruence.*;
-import wyone.theory.logic.*;
-
 public final class Solver implements Callable<Proof> {
 	
 	public static boolean debug = false;
@@ -122,7 +119,7 @@ public final class Solver implements Callable<Proof> {
 	protected Proof checkUnsatisfiable(SolverState state, int level) {		
 		if(debug) { indent(level); System.out.println("STATE: " + state); }
 		
-		if(state.contains(WBool.FALSE)) {			
+		if(state.contains(WValue.FALSE)) {			
 			// Here, we've reached a contradiction on this branch			
 			return Proof.UNSAT;
 		} else {			

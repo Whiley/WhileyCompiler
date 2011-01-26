@@ -1,6 +1,8 @@
 package wyone.theory.type;
 
 import java.util.*;
+
+import wyil.lang.Type;
 import wyone.core.*;
 
 public class WTypes {
@@ -26,19 +28,21 @@ public class WTypes {
 	 * Determine the type of a given expression; that is, the type of the value
 	 * that this will evaluate to.
 	 */
-	public static WType type(WExpr e, SolverState state) {
-		WType t = WAnyType.T_ANY;
+	public static Type type(WVariable e, SolverState state) {
+		Type t = Type.T_ANY;
 
+		// An interesting question here, is whether or not we really do need to
+		// build up the lub. If the type combining inference rule is
+		// functioning, then shouldn't there only ever be one instance of a
+		// matching type declaration?
+		
 		for(WConstraint f : state) {
 			if(f instanceof WTypeDecl) {
 				// FIXME: probably would make more sense to build up a GLB from
 				// all possible types.
-				WSubtype st = (WSubtype) f;
-				if(aliases.contains(st.lhs())) {
-					WType tmp = st.rhs();
-					if(t.isSubtype(tmp, Collections.EMPTY_MAP)) {
-						t = tmp;
-					}
+				WTypeDecl st = (WTypeDecl) f;
+				if(st.var().equals(e)) {
+					t = Type.leastUpperBound(t,st.declType());
 				}
 			}
 		}

@@ -125,7 +125,7 @@ public final class SolverState implements Iterable<WConstraint> {
 			for(InferenceRule ir : solver.theories()) {				
 				if(assertions.get(x)) {					
 					ir.infer(f, this, solver);
-					if(contains(WBool.FALSE)){				
+					if(contains(WValue.FALSE)){				
 						return; // early termination
 					}
 				} else {

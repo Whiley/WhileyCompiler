@@ -18,6 +18,8 @@
 package wyone.core;
 
 import java.util.*;
+import wyil.lang.Type;
+import wyone.theory.type.WTypes;
 
 /**
  * <p>
@@ -89,7 +91,7 @@ public class WVariable extends WConstructor<WExpr> implements WExpr {
 		else return r;
 	}
 	
-	public WType type(SolverState state) {
+	public Type type(SolverState state) {
 		return WTypes.type(this,state);		
 	}
 	
