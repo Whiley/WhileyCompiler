@@ -18,6 +18,7 @@
 package wyone.core;
 
 import java.util.*;
+import wyil.lang.Type;
 
 public interface WExpr extends Comparable<WExpr> {
 
@@ -73,5 +74,5 @@ public interface WExpr extends Comparable<WExpr> {
 	 * @param state
 	 * @return
 	 */
-	public WType type(SolverState state);
+	public Type type(SolverState state);
 }
