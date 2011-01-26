@@ -15,7 +15,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.core;
+package wyone.theory.type;
 
 import java.util.Map;
 
