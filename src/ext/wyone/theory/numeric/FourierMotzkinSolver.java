@@ -38,7 +38,7 @@ import static wyone.theory.numeric.WNumerics.*;
  * @author djp
  * 
  */
-public final class FourierMotzkinSolver implements InferenceRule {	
+public final class FourierMotzkinSolver implements Solver.Rule {	
 	
 	public void infer(Constraint delta, Solver.State state, Solver solver) {								
 		if (delta instanceof WInequality) {			

@@ -47,7 +47,7 @@ public class Main {
 			new UnboundedNumberHeuristic(false)		
 	);
 
-	public static final InferenceRule[] theories = {		
+	public static final Rule[] theories = {		
 			new FourierMotzkinSolver()
 		};
 

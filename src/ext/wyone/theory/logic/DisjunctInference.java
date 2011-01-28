@@ -19,7 +19,7 @@ package wyone.theory.logic;
 
 import wyone.core.*;
 
-public final class DisjunctInference implements InferenceRule {
+public final class DisjunctInference implements Solver.Rule {
 
 	public void infer(Constraint delta, Solver.State state, Solver solver) {
 		// Now, substitute it, potentially reducing the disjunct.

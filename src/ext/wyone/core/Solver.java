@@ -28,7 +28,7 @@ public final class Solver implements Callable<Proof> {
 	/**
 	 * The list of theories to use when performing local inference.
 	 */
-	private final ArrayList<InferenceRule> theories;
+	private final ArrayList<Rule> theories;
 
 	/**
 	 * This is the heuristic used to split states in two based on disjunctions
@@ -42,11 +42,11 @@ public final class Solver implements Callable<Proof> {
 	private final List<Constraint> program;
 		
 	Solver(List<Constraint> program, 
-			Heuristic heuristic,InferenceRule... theories) {		
+			Heuristic heuristic,Rule... theories) {		
 		this.program = program;
-		this.theories = new ArrayList<InferenceRule>();
+		this.theories = new ArrayList<Rule>();
 		this.splitHeuristic = heuristic;
-		for (InferenceRule t : theories) {
+		for (Rule t : theories) {
 			this.theories.add(t);
 		}
 	}
@@ -56,7 +56,7 @@ public final class Solver implements Callable<Proof> {
 	 * 
 	 * @return
 	 */
-	public Collection<InferenceRule> theories() {
+	public Collection<Rule> theories() {
 		return theories;
 	}
 
@@ -72,7 +72,7 @@ public final class Solver implements Callable<Proof> {
 	 */
 	public static synchronized Proof checkUnsatisfiable(int timeout, List<Constraint> program,
 			Heuristic heuristic,
-			InferenceRule... theories) {				
+			Rule... theories) {				
  
 		// The following uses the java.util.concurrent library to enforce a
 		// timeout on how long the solver will run for.
@@ -314,7 +314,7 @@ public final class Solver implements Callable<Proof> {
 				Integer x = worklist.get(i);			
 				Constraint f = rassignments.get(x);
 				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
-				for(InferenceRule ir : solver.theories()) {				
+				for(Rule ir : solver.theories()) {				
 					if(assertions.get(x)) {					
 						ir.infer(f, this, solver);
 						if(contains(WValue.FALSE)){				
@@ -414,5 +414,39 @@ public final class Solver implements Callable<Proof> {
 		 * @return
 		 */
 		public List<Solver.State> split(Solver.State state, Solver solver); 
+	}
+
+	/**
+	 * An inference rule represents a way of generating new constraints from
+	 * existing ones. In some cases, the new constraints may subsume the old
+	 * ones. For example, suppose we have:
+	 * 
+	 * <pre>
+	 * x < 1
+	 * y < 0
+	 * x == y
+	 * </pre>
+	 * 
+	 * In this case, we might generate <code>x < 0</code> by applying an
+	 * inference rule which substitutes y for x in the program. Thus,
+	 * <code>x<0</code> will subsume <code>x<1</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public interface Rule {
+		
+		/**
+		 * Given a set of facts, delta, infer all new facts which arise as a
+		 * consequence of this in the given state.
+		 * 
+		 * @param delta
+		 *            --- Formula recently added to state
+		 * @param state
+		 *            --- A current solver state
+		 * @param state
+		 *            --- The current solver instance
+		 */
+		public void infer(Constraint delta, Solver.State state, Solver solver);
 	}
 }
