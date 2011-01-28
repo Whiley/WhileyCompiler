@@ -15,7 +15,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.theory.disjunct;
+package wyone.theory.logic;
 
 import java.util.*;
 
