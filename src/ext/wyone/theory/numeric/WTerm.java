@@ -150,7 +150,7 @@ public final class WTerm implements Comparable<WTerm> {
 	}
 
 	public WExpr expand(Map<WExpr,WExpr> binding) {
-		WExpr r = new WValue.Number(coefficient);
+		WExpr r = WValue.V_NUM(coefficient);
 		for(WExpr a : subterms) {				
 			WExpr e = a.substitute(binding);			
 			r = WNumerics.multiply(r,e);			

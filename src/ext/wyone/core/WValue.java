@@ -43,7 +43,7 @@ import wyil.lang.Value;
 public class WValue<T extends Value> implements WExpr {
 	protected T value; 
 
-	public WValue(T value) {
+	WValue(T value) {
 		this.value = value;
 	}
 	
@@ -86,21 +86,25 @@ public class WValue<T extends Value> implements WExpr {
 		return this;
 	}
 
-	private static class Constraint extends WValue<Value.Bool> implements WConstraint {
-		public Constraint(Value.Bool b) {
-			super(b);
+	public static class Bool extends WValue<Value.Bool> implements WConstraint {
+		Bool(boolean b) {
+			super(Value.V_BOOL(b));
 		}
 		
-		public Constraint substitute(Map<WExpr,WExpr> binding) {
+		public Bool substitute(Map<WExpr,WExpr> binding) {
 			return this;
+		}
+		
+		public boolean sign() {
+			return value.value;
 		}
 	}
 	
 	public static class Number extends WValue<Value.Real> {
-		public Number(BigRational r) {
+		Number(BigRational r) {
 			super(Value.V_REAL(r));
 		}
-		public Number(BigInteger r) {
+		Number(BigInteger r) {
 			super(Value.V_REAL(BigRational.valueOf(r)));
 		}
 		
@@ -126,7 +130,7 @@ public class WValue<T extends Value> implements WExpr {
 		
 		public Number divide(Number n) {
 			return new Number(value.value.divide(n.value.value));
-		}
+		}		
 		
 		public Number negate() {
 			return new Number(value.value.negate());
@@ -134,11 +138,28 @@ public class WValue<T extends Value> implements WExpr {
 	}
 	
 	// ====================================================================
+	// CONSTRUCTORS
+	// ====================================================================
+	
+	public static Bool V_BOOL(boolean v) {
+		return new Bool(v);
+	}
+	
+	public static Number V_NUM(BigInteger v) {
+		return new Number(v);
+	}
+	
+	public static Number V_NUM(BigRational v) {
+		return new Number(v);
+	}
+	
+	
+	// ====================================================================
 	// CONSTANTS
 	// ====================================================================
 	
-	public final static Constraint FALSE = new Constraint(Value.V_BOOL(false));
-	public final static Constraint TRUE = new Constraint(Value.V_BOOL(true));
+	public final static Bool FALSE = new Bool(false);
+	public final static Bool TRUE = new Bool(true);
 	
 	public final static Number ZERO = new Number(BigRational.ZERO);
 	public final static Number ONE = new Number(BigRational.ONE);

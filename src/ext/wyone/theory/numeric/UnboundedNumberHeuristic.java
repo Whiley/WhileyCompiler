@@ -23,7 +23,7 @@ import java.util.*;
 
 import wyone.core.*;
 import wyone.theory.congruence.WEquality;
-import wyone.theory.logic.WFormula;
+import wyone.theory.disjunct.WFormula;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
 import wyone.theory.set.WSubsetEq;
 import wyone.util.Pair;

@@ -96,7 +96,7 @@ public final class WRational implements WExpr {
 	}
 	
 	public WValue constant() {
-		return new WValue(Value.V_REAL(new BigRational(numerator.constant(),denominator.constant())));
+		return WValue.V_NUM(new BigRational(numerator.constant(),denominator.constant()));
 	}
 	
 	public Set<WExpr> atoms() {

@@ -22,6 +22,7 @@ import java.util.Collections;
 
 import wyone.core.*;
 import wyone.util.Pair;
+import wyone.theory.disjunct.*;
 
 public class WNumerics {
 
@@ -37,7 +38,7 @@ public class WNumerics {
 	
 	public static WExpr normalise(WPolynomial p) {
 		if(p.isConstant()) {
-			return new WValue.Number(p.constant());
+			return WValue.V_NUM(p.constant());
 		} else if(p.isAtom()) {
 			return p.atom();
 		} else {
@@ -185,9 +186,9 @@ public class WNumerics {
 			// Ok, can't break down any more ... so disjunction required			
 			WConstraint gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
 			WConstraint ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
-			gtz = WConstraints.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
-			ltz = WConstraints.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
-			return WFormulas.or(ltz,gtz);			
+			gtz = WDisjunct.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
+			ltz = WDis.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
+			return WDisjunct.or(ltz,gtz);			
 		}
 	}	
 	
@@ -207,7 +208,7 @@ public class WNumerics {
 			WConstraint ltz = new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
 			gtz = WFormulas.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(rhs.denominator()))));
 			ltz = WFormulas.and(ltz,new WInequality(false,subtract(normalise(rhs.denominator()),WValue.Number.ZERO)));
-			return WFormulas.or(ltz,gtz);	
+			return WDisjunct.or(ltz,gtz);	
 		}
 	}
 	
@@ -227,7 +228,7 @@ public class WNumerics {
 			WFormula ltz = new WInequality(sign,subtract(normalise(lhs.numerator()),normalise(rhs.multiply(lhs.denominator()))));
 			gtz = WFormulas.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
 			ltz = WFormulas.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
-			return WFormulas.or(ltz,gtz);		
+			return WDisjunct.or(ltz,gtz);		
 		}
 	}		
 }

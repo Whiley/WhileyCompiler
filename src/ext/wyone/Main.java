@@ -22,7 +22,7 @@ import java.util.*;
 
 import wyone.core.*;
 import wyone.theory.congruence.*;
-import wyone.theory.logic.*;
+import wyone.theory.disjunct.*;
 import wyone.theory.numeric.*;
 import wyone.theory.tuple.*;
 import wyone.theory.quantifier.*;

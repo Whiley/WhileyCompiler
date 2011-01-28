@@ -32,7 +32,7 @@ import wyil.util.dfa.*;
 import wyjx.attributes.*;
 import wyone.core.*;
 import wyone.theory.congruence.*;
-import wyone.theory.logic.*;
+import wyone.theory.disjunct.*;
 import wyone.theory.numeric.*;
 import wyone.theory.list.*;
 import wyone.theory.set.*;

@@ -22,14 +22,14 @@ import java.util.*;
 import java.math.*;
 
 import wyone.core.*;
+import wyone.theory.disjunct.*;
 import wyone.theory.list.*;
 import wyone.theory.set.*;
-import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 import wyone.theory.quantifier.*;
 import wyone.theory.tuple.*;
 import wyone.theory.type.*;
-import static wyone.theory.logic.WFormulas.*;
+import static wyone.theory.disjunct.WFormulas.*;
 import static wyone.theory.numeric.WNumerics.*;
 import static wyone.theory.set.WSets.*;
 
