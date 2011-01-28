@@ -24,7 +24,7 @@ import wyone.util.Pair;
 
 public final class DisjunctHeuristic implements SplitHeuristic {
 
-	public List<SolverState> split(SolverState state, Solver solver) {
+	public List<Solver.State> split(Solver.State state, Solver solver) {
 		for (WConstraint f : state) {
 			if (f instanceof WDisjunct) {				
 				return split((WDisjunct) f, state, solver);
@@ -34,17 +34,17 @@ public final class DisjunctHeuristic implements SplitHeuristic {
 		return null;
 	}
 
-	private static List<SolverState> split(WDisjunct d, SolverState state,
+	private static List<Solver.State> split(WDisjunct d, Solver.State state,
 			Solver solver) {				
-		ArrayList<SolverState> splits = new ArrayList<SolverState>();
+		ArrayList<Solver.State> splits = new ArrayList<Solver.State>();
 		state.eliminate(d);
 		WConstraint split = d.iterator().next();				
 		
-		SolverState left = state.clone();		
+		Solver.State left = state.clone();		
 		left.add(split, solver);
 		splits.add(left);
 		
-		SolverState right = state;					
+		Solver.State right = state;					
 		if (d.subterms().size() > 1) {
 			HashSet<WConstraint> subterms = new HashSet<WConstraint>(d.subterms());
 			subterms.remove(split);

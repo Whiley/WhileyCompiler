@@ -4,6 +4,7 @@ import java.util.*;
 
 import wyil.lang.Type;
 import wyone.core.*;
+import static wyone.core.Constructor.*;
 
 public class WTypes {
 	// This file is part of the Wyone automated theorem prover.
@@ -28,7 +29,7 @@ public class WTypes {
 	 * Determine the type of a given expression; that is, the type of the value
 	 * that this will evaluate to.
 	 */
-	public static Type type(WVariable e, SolverState state) {
+	public static Type type(Variable e, Solver.State state) {
 		Type t = Type.T_ANY;
 
 		// An interesting question here, is whether or not we really do need to

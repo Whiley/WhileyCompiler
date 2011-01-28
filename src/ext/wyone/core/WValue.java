@@ -40,18 +40,18 @@ import wyil.lang.Value;
  * @author djp
  * 
  */
-public class WValue<T extends Value> implements WExpr {
-	protected T value; 
+public class WValue<T extends Value> implements Constructor, Comparable<WValue> {
+	public final T value; 
 
 	WValue(T value) {
 		this.value = value;
 	}
 	
-	public Type type(SolverState state) {
+	public Type type(Solver.State state) {
 		return value.type();
 	}
 	
-	public List<WExpr> subterms() {
+	public List<Constructor> subterms() {
 		return Collections.EMPTY_LIST;
 	}
 	
@@ -67,22 +67,15 @@ public class WValue<T extends Value> implements WExpr {
 		return value.hashCode();
 	}
 	
-	public int compareTo(WExpr e) {
-		if(e instanceof WValue) {
-			WValue v = (WValue) e;
-			throw new RuntimeException("Need to implement WValue.compareTo()");
-		} else if(e.cid() < CID) {
-			return -1;
-		} else {
-			return 1;
-		}
+	public int compareTo(WValue v) {		
+		return value.compareTo(v.value);
 	}
 	
 	/**
 	 * Substituting into a value has no effect. However, we need this method
 	 * because it overrides Expr.substitute.
 	 */
-	public WValue substitute(Map<WExpr,WExpr> binding) {
+	public WValue substitute(Map<Constructor,Constructor> binding) {
 		return this;
 	}
 
@@ -91,12 +84,16 @@ public class WValue<T extends Value> implements WExpr {
 			super(Value.V_BOOL(b));
 		}
 		
-		public Bool substitute(Map<WExpr,WExpr> binding) {
+		public Bool substitute(Map<Constructor,Constructor> binding) {
 			return this;
 		}
 		
 		public boolean sign() {
 			return value.value;
+		}
+		
+		public Bool not() {
+			return new Bool(!value.value);
 		}
 	}
 	
@@ -163,15 +160,5 @@ public class WValue<T extends Value> implements WExpr {
 	
 	public final static Number ZERO = new Number(BigRational.ZERO);
 	public final static Number ONE = new Number(BigRational.ONE);
-	public final static Number MONE = new Number(BigRational.MONE);
-	
-	// ====================================================================
-	// CID
-	// ====================================================================
-	
-	public int cid() {
-		return CID;
-	}
-	
-	private static final int CID = WExprs.registerCID();
+	public final static Number MONE = new Number(BigRational.MONE);	
 }

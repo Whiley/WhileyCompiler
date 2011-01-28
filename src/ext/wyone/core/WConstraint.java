@@ -11,6 +11,16 @@ import java.util.Map;
  * @author djp
  * 
  */
-public interface WConstraint extends WExpr {
-	public WConstraint substitute(Map<WExpr,WExpr> binding);
+public interface WConstraint extends Constructor {
+	public WConstraint substitute(Map<Constructor,Constructor> binding);
+
+	/**
+	 * Compute the inverse of a constraint. This is a fundamental operation that
+	 * all constraints must support. For example, if we have inferred A, then we
+	 * need to know whether !A is already inferred (in which case, the
+	 * constraint program is unsatisfiable).
+	 * 
+	 * @return
+	 */
+	public WConstraint not();
 }

@@ -47,7 +47,7 @@ import wyone.util.*;
  * 
  */
 
-public final class WRational implements WExpr {		
+public final class WRational implements Constructor {		
 	private WPolynomial numerator;
 	private WPolynomial denominator;
 	
@@ -87,7 +87,7 @@ public final class WRational implements WExpr {
 		return denominator;
 	}
 	
-	public Type type(SolverState state) {		
+	public Type type(Solver.State state) {		
 		return Type.T_REAL;		
 	}
 		
@@ -99,14 +99,14 @@ public final class WRational implements WExpr {
 		return WValue.V_NUM(new BigRational(numerator.constant(),denominator.constant()));
 	}
 	
-	public Set<WExpr> atoms() {
-		HashSet<WExpr> atoms = new HashSet<WExpr>(numerator.atoms());
+	public Set<Constructor> atoms() {
+		HashSet<Constructor> atoms = new HashSet<Constructor>(numerator.atoms());
 		atoms.addAll(denominator.atoms());
 		return atoms;
 	}
 	
-	public List<WExpr> subterms() {
-		ArrayList<WExpr> subterms = new ArrayList<WExpr>();
+	public List<Constructor> subterms() {
+		ArrayList<Constructor> subterms = new ArrayList<Constructor>();
 		subterms.addAll(numerator.atoms());
 		subterms.addAll(denominator.atoms());
 		return subterms;
@@ -116,16 +116,16 @@ public final class WRational implements WExpr {
 		return numerator.isAtom() && denominator.equals(WPolynomial.ONE);
 	}
 	
-	public WExpr atom() {
+	public Constructor atom() {
 		return numerator.atom();
 	}
 	
-	public WExpr substitute(Map<WExpr, WExpr> binding) {
-		Set<WExpr> vars = numerator.atoms();
+	public Constructor substitute(Map<Constructor, Constructor> binding) {
+		Set<Constructor> vars = numerator.atoms();
 		vars.addAll(denominator.atoms());		
 		boolean changed = false;
-		for(WExpr v : vars) {					
-			WExpr val = v.substitute(binding);
+		for(Constructor v : vars) {					
+			Constructor val = v.substitute(binding);
 			if(val != v) {				
 				changed = true;
 				break; 
@@ -134,8 +134,8 @@ public final class WRational implements WExpr {
 		if(!changed) {			
 			return this;
 		} else {						
-			WExpr num = numerator.expand(binding);
-			WExpr den = denominator.expand(binding);			
+			Constructor num = numerator.expand(binding);
+			Constructor den = denominator.expand(binding);			
 			return WNumerics.divide(num,den);			
 		}	
 	}		
@@ -150,7 +150,7 @@ public final class WRational implements WExpr {
 	 * @param var
 	 * @return
 	 */
-	public Pair<WPolynomial,WPolynomial> rearrangeFor(WExpr atom) {		
+	public Pair<WPolynomial,WPolynomial> rearrangeFor(Constructor atom) {		
 		WPolynomial lhs = WPolynomial.ZERO;
 		WPolynomial rhs = WPolynomial.ZERO;
 		
@@ -312,20 +312,6 @@ public final class WRational implements WExpr {
 		return new WRational(numerator.negate(),denominator());
 	}
 	
-	public int compareTo(WExpr e) {
-		if (e instanceof WRational) {
-			// this is fairly difficult to do for sure.
-			WRational r = (WRational) e;
-			WPolynomial lhs = numerator.multiply(r.denominator);
-			WPolynomial rhs = r.numerator.multiply(denominator);
-			return lhs.compareTo(rhs);
-		} else if(CID < e.cid()) {
-			return -1;
-		} else {
-			return 1;
-		}
-	}
-	
 	public boolean equals(Object o) {
 		if(o instanceof WRational) {			
 			WRational r = (WRational) o;
@@ -338,7 +324,7 @@ public final class WRational implements WExpr {
 	
 	public int hashCode() {		
 		// we have to be careful here to ensure the Java contract.
-		Set<WExpr> fvs = numerator.atoms();
+		Set<Constructor> fvs = numerator.atoms();
 		fvs.addAll(denominator.atoms());
 		return fvs.hashCode();
 	}
@@ -356,8 +342,5 @@ public final class WRational implements WExpr {
 			return "(" + numerator + ") / (" + denominator + ")";
 		}
 	}
-	
-	private final static int CID = WExprs.registerCID();
-	public int cid() { return CID; }
 }
 

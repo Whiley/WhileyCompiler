@@ -19,6 +19,7 @@ package wyone.theory.numeric;
 
 import java.util.*;
 
+import static wyone.core.Constructor.*;
 import wyil.lang.Type;
 import wyone.core.*;
 import wyone.util.*;
@@ -29,7 +30,7 @@ import wyone.util.*;
  * @author djp
  * 
  */
-public final class WInequality extends WConstructor<WExpr> implements WConstraint {		
+public final class WInequality extends Uninterpreted<Constructor> implements WConstraint {		
 	private boolean sign;
 	/**
 	 * Construct an inequality from left and right rationals. So, this generates
@@ -38,7 +39,7 @@ public final class WInequality extends WConstructor<WExpr> implements WConstrain
 	 * @param sign 
 	 * @param rhs --- right-hand side (lhs is zero)
 	 */
-	WInequality(boolean sign, WExpr rhs) {	
+	WInequality(boolean sign, Constructor rhs) {	
 		super(sign ? "<=" : ">",rhs);
 		this.sign = sign;
 	}
@@ -47,11 +48,11 @@ public final class WInequality extends WConstructor<WExpr> implements WConstrain
 		return sign;
 	}
 	
-	public WExpr rhs() {
+	public Constructor rhs() {
 		return subterms.get(0);
 	}
 	
-	public Type type(SolverState state) {
+	public Type type(Solver.State state) {
 		return Type.T_BOOL;
 	}
 	
@@ -59,9 +60,9 @@ public final class WInequality extends WConstructor<WExpr> implements WConstrain
 		return new WInequality(!sign,rhs());
 	}
 	
-	public WConstraint substitute(Map<WExpr, WExpr> binding) {
-		WExpr orhs = subterms.get(0);
-		WExpr rhs = orhs.substitute(binding);		
+	public WConstraint substitute(Map<Constructor, Constructor> binding) {
+		Constructor orhs = subterms.get(0);
+		Constructor rhs = orhs.substitute(binding);		
 		
 		if (rhs instanceof WValue.Number) {			
 			WValue.Number nrhs = (WValue.Number) rhs;

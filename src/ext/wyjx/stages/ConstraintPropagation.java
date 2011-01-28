@@ -49,7 +49,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	 * a better solution would be to modify wyone to treat quantifiers over
 	 * lists in a different fashion.
 	 */
-	private HashMap<String,WExpr> substitutions = new HashMap<String,WExpr>();
+	private HashMap<String,Constructor> substitutions = new HashMap<String,Constructor>();
 
 	/**
 	 * Provide additional debug information
@@ -75,7 +75,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			String n = paramNames.get(i);			
 			Type t = paramTypes.get(i);
 			binding.put("$" + i, CExpr.VAR(t,n));
-			init = WFormulas.and(init, WTypes.subtypeOf(new WVariable(n),
+			init = Logic.and(init, WTypes.subtypeOf(new Variable(n),
 					convert(t)));
 		}
 
@@ -118,18 +118,18 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			return precondition;
 		}
 		
-		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);
-		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
+		Pair<Constructor, WFormula> lhs_p = infer(code.lhs, elem);
+		Pair<Constructor, WFormula> rhs_p = infer(code.rhs, elem);
 
-		WExpr rhs = rhs_p.first();
-		WExpr lhs = lhs_p.first();
+		Constructor rhs = rhs_p.first();
+		Constructor lhs = lhs_p.first();
 		WFormula rhs_c = rhs_p.second();
 
 		LVar lvar = CExpr.extractLVar(code.lhs);
 
 		// Create shadows
-		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
-		binding.put(new WVariable(lvar.name()), new WVariable(lvar.name() + "$"
+		HashMap<Constructor, Constructor> binding = new HashMap<Constructor, Constructor>();
+		binding.put(new Variable(lvar.name()), new Variable(lvar.name() + "$"
 				+ index++));
 		
 		rhs = rhs.substitute(binding);
@@ -137,12 +137,12 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		WFormula postcondition = precondition.substitute(binding);
 
 		// finally, put it altogether
-		return WFormulas.and(postcondition, new WEquality(true, lhs, rhs),
+		return Logic.and(postcondition, new WEquality(true, lhs, rhs),
 				assignCondition(code.lhs, binding, elem), lhs_p.second(), rhs_c);
 	}
 		
 	protected WFormula assignCondition(LVal lval,
-			HashMap<WExpr, WExpr> binding, SyntacticElement elem) {
+			HashMap<Constructor, Constructor> binding, SyntacticElement elem) {
 		
 		// the purpose of this method is to generate a condition which
 		// identifies that everything in the lhs base variable is identical to
@@ -150,36 +150,36 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// updated.
 		List<CExpr> exprs = flattern(lval,elem);
 		LVar variable = (LVar) exprs.get(0);
-		WFormula constraint = WTypes.subtypeOf(new WVariable(variable.name()),
+		WFormula constraint = WTypes.subtypeOf(new Variable(variable.name()),
 				convert(variable.type()));				
 		for(int i=1;i!=exprs.size();++i) {
 			CExpr access = exprs.get(i);			
 			if(access instanceof RecordAccess){				
 				RecordAccess ta = (RecordAccess) access;
 				Type.Record tt = Type.effectiveRecordType(ta.lhs.type());
-				Pair<WExpr, WFormula> src = infer(ta.lhs, elem);
-				WExpr nsrc = src.first().substitute(binding);
+				Pair<Constructor, WFormula> src = infer(ta.lhs, elem);
+				Constructor nsrc = src.first().substitute(binding);
 				for(String field : tt.types.keySet()) {
 					if(!field.equals(ta.field)) {
 						WTupleAccess o = new WTupleAccess(src.first(),field);
 						WTupleAccess n = new WTupleAccess(nsrc,field);
-						constraint = WFormulas.and(constraint,new WEquality(true,o,n));
+						constraint = Logic.and(constraint,new WEquality(true,o,n));
 					}
 				}
-				constraint = WFormulas.and(constraint,src.second());
+				constraint = Logic.and(constraint,src.second());
 			} else if(access instanceof ListAccess) {
 				ListAccess la = (ListAccess) access;
-				Pair<WExpr, WFormula> src = infer(la.src,elem);
-				Pair<WExpr, WFormula> index = infer(la.index,elem);
-				WExpr nsrc = src.first().substitute(binding);
-				WVariable var = WVariable.freshVar();
-				WExpr o = new WListAccess(src.first(),var);
-				WExpr n = new WListAccess(nsrc,var);
-				HashMap<WVariable,WExpr> srcs = new HashMap<WVariable,WExpr>();
+				Pair<Constructor, WFormula> src = infer(la.src,elem);
+				Pair<Constructor, WFormula> index = infer(la.index,elem);
+				Constructor nsrc = src.first().substitute(binding);
+				Variable var = Variable.freshVar();
+				Constructor o = new WListAccess(src.first(),var);
+				Constructor n = new WListAccess(nsrc,var);
+				HashMap<Variable,Constructor> srcs = new HashMap<Variable,Constructor>();
 				srcs.put(var, src.first());
-				WFormula body = WFormulas.or(new WEquality(true, index.first(),
+				WFormula body = Logic.or(new WEquality(true, index.first(),
 						var), new WEquality(true, o, n));
-				constraint = WFormulas.and(constraint, new WEquality(true,
+				constraint = Logic.and(constraint, new WEquality(true,
 						new WLengthOf(src.first()), new WLengthOf(nsrc)),
 						new WBoundedForall(true, srcs, body), src.second(),
 						index.second());
@@ -244,18 +244,18 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		Code.Forall fall = (Code.Forall) start;
 		
 		// Create loop variable shadows
-		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+		HashMap<Constructor, Constructor> binding = new HashMap<Constructor, Constructor>();
 		for(LVar v : start.modifies) { 
-			binding.put(new WVariable(v.name()), new WVariable(v.name() + "$"
+			binding.put(new Variable(v.name()), new Variable(v.name() + "$"
 				+ index++));
 		}		
 		
 		store = store.substitute(binding);				
 		
 		for(LVar v : start.modifies) {
-			WVariable var = new WVariable(v.name());
+			Variable var = new Variable(v.name());
 			WType var_t = convert(v.type());
-			store = WFormulas.and(store,WTypes.subtypeOf(var,var_t));			
+			store = Logic.and(store,WTypes.subtypeOf(var,var_t));			
 		}
 		
 		if(start.invariant != null) {			
@@ -265,21 +265,21 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		
 		WFormula exitStore = store;
 		
-		WVariable var = new WVariable(fall.variable.name());			
+		Variable var = new Variable(fall.variable.name());			
 		// Convert the source collection 
-		Pair<WExpr,WFormula> src = infer(fall.source,stmt);		
+		Pair<Constructor,WFormula> src = infer(fall.source,stmt);		
 		if (fall.source.type() instanceof Type.List) {
 			// We have to treat lists differently from sets because of the
 			// way wyone handles list quantification. It's kind of annoying,
 			// but there's not much we can do.
-			store = WFormulas.and(store, WNumerics.lessThanEq(WNumber.ZERO,
+			store = Logic.and(store, WNumerics.lessThanEq(WNumber.ZERO,
 					var), WNumerics.lessThan(var,
 					new WLengthOf(src.first())), WTypes.subtypeOf(var,
 					WIntType.T_INT), src.second());
 			substitutions
 					.put(var.name(), new WListAccess(src.first(), var));								
 		} else {
-			store = WFormulas.and(store, WSets.elementOf(var, src.first()),
+			store = Logic.and(store, WSets.elementOf(var, src.first()),
 					WTypes.subtypeOf(var, convert(fall.variable.type())),
 					src.second());
 		}
@@ -303,8 +303,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// body, as this captures what is true for every element in the
 		// source collection.
 		store = new WBoundedForall(true, var, src.first(), split.first());			
-		exitStore = WFormulas.and(exitStore,store,src.second());
-		store = WFormulas.and(store,split.second());			
+		exitStore = Logic.and(exitStore,store,src.second());
+		store = Logic.and(store,split.second());			
 		
 		// Existentially quantify any breaks out of the loop. These
 		// represent what is true for some elements in the source
@@ -316,7 +316,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			split = splitFormula(fall.variable.name(), e.getValue()); 
 			WFormula exit = new WBoundedForall(false, var, src.first(),
 					split.first().not());				
-			exit = WFormulas.and(exit,split.second());
+			exit = Logic.and(exit,split.second());
 			
 			// Now, join the exit store with anything in the parent stores
 			WFormula existing = stores.get(key);
@@ -341,18 +341,18 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			Block body, Stmt stmt, WFormula store) {
 		
 		// Create loop variable shadows
-		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();
+		HashMap<Constructor, Constructor> binding = new HashMap<Constructor, Constructor>();
 		for(LVar v : start.modifies) { 
-			binding.put(new WVariable(v.name()), new WVariable(v.name() + "$"
+			binding.put(new Variable(v.name()), new Variable(v.name() + "$"
 				+ index++));
 		}		
 		
 		store = store.substitute(binding);
 		
 		for(LVar v : start.modifies) {
-			WVariable var = new WVariable(v.name());
+			Variable var = new Variable(v.name());
 			WType var_t = convert(v.type());
-			store = WFormulas.and(store,WTypes.subtypeOf(var,var_t));			
+			store = Logic.and(store,WTypes.subtypeOf(var,var_t));			
 		}
 		
 		if(start.invariant != null) {			
@@ -382,14 +382,14 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			WFormula fs = WBool.TRUE;
 			for(WFormula st : c.subterms()) {
 				Pair<WFormula,WFormula> r = splitFormula(var,st);
-				ts = WFormulas.and(ts,r.first());
-				fs = WFormulas.and(fs,r.second());
+				ts = Logic.and(ts,r.first());
+				fs = Logic.and(fs,r.second());
 			}			
 			return new Pair<WFormula,WFormula>(ts,fs);
 		} else {
 			// not a conjunct, so check whether or not this uses var or not.
-			Set<WVariable> uses = WExprs.match(WVariable.class, f);
-			for (WVariable v : uses) {
+			Set<Variable> uses = WExprs.match(Variable.class, f);
+			for (Variable v : uses) {
 				if (v.name().equals(var)) {
 					return new Pair<WFormula, WFormula>(f, WBool.TRUE);
 				}
@@ -402,9 +402,9 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	protected Triple<Stmt, WFormula, WFormula> propagate(Code.IfGoto code,
 			Stmt elem, WFormula store) {
 
-		Pair<WExpr, WFormula> lhs_p = infer(code.lhs, elem);		
-		Pair<WExpr, WFormula> rhs_p = infer(code.rhs, elem);
-		WFormula precondition = WFormulas.and(store, lhs_p.second(), rhs_p
+		Pair<Constructor, WFormula> lhs_p = infer(code.lhs, elem);		
+		Pair<Constructor, WFormula> rhs_p = infer(code.rhs, elem);
+		WFormula precondition = Logic.and(store, lhs_p.second(), rhs_p
 				.second());
 		WFormula condition = null;
 		switch (code.op) {
@@ -450,8 +450,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		}
 
 		// Determine condition for true and false branches
-		WFormula trueCondition = WFormulas.and(precondition, condition);
-		WFormula falseCondition = WFormulas.and(precondition, condition.not());				
+		WFormula trueCondition = Logic.and(precondition, condition);
+		WFormula falseCondition = Logic.and(precondition, condition.not());				
 		BranchPredict expected = elem.attribute(BranchPredict.class);		
 		
 		if(expected != null && !expected.trueBranch) {			
@@ -503,16 +503,16 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		} else if (f1 == null) {
 			return f2;
 		}
-		WFormula common = WFormulas.intersect(f1, f2);
-		f1 = WFormulas.factorOut(f1, common);
-		f2 = WFormulas.factorOut(f2, common);
-		return WFormulas.and(common, WFormulas.or(f1, f2));
+		WFormula common = Logic.intersect(f1, f2);
+		f1 = Logic.factorOut(f1, common);
+		f2 = Logic.factorOut(f2, common);
+		return Logic.and(common, Logic.or(f1, f2));
 	}
 	
-	protected Pair<WExpr,WFormula> infer(CExpr e, SyntacticElement elem) {
+	protected Pair<Constructor,WFormula> infer(CExpr e, SyntacticElement elem) {
 		try {
 			if (e instanceof Value) {
-				return new Pair<WExpr, WFormula>(infer((Value) e, elem), WBool.TRUE);
+				return new Pair<Constructor, WFormula>(infer((Value) e, elem), WBool.TRUE);
 			} else if (e instanceof Variable) {
 				return infer((Variable) e, elem);
 			} else if (e instanceof Register) {
@@ -591,33 +591,33 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		return null; // unreachable
 	}
 	
-	protected Pair<WExpr,WFormula> infer(Variable v, SyntacticElement elem) {		
-		WExpr sub = substitutions.get(v.name());
+	protected Pair<Constructor,WFormula> infer(Variable v, SyntacticElement elem) {		
+		Constructor sub = substitutions.get(v.name());
 		if(sub != null) {
-			return new Pair<WExpr,WFormula>(sub,WBool.TRUE);
+			return new Pair<Constructor,WFormula>(sub,WBool.TRUE);
 		} else {
-			return new Pair<WExpr,WFormula>(new WVariable(v.name),WBool.TRUE);
+			return new Pair<Constructor,WFormula>(new Variable(v.name),WBool.TRUE);
 		}
 	}
 	
-	protected Pair<WExpr, WFormula> infer(Register v, SyntacticElement elem) {
-		WExpr sub = substitutions.get(v.name());
+	protected Pair<Constructor, WFormula> infer(Register v, SyntacticElement elem) {
+		Constructor sub = substitutions.get(v.name());
 		if (sub != null) {
-			return new Pair<WExpr, WFormula>(sub, WBool.TRUE);
+			return new Pair<Constructor, WFormula>(sub, WBool.TRUE);
 		} else {
-			return new Pair<WExpr, WFormula>(new WVariable(v.name()),
+			return new Pair<Constructor, WFormula>(new Variable(v.name()),
 					WBool.TRUE);
 		}
 	}
 	
-	protected Pair<WExpr,WFormula> infer(UnOp v, SyntacticElement elem) {
-		Pair<WExpr,WFormula> rhs = infer(v.rhs,elem);		
+	protected Pair<Constructor,WFormula> infer(UnOp v, SyntacticElement elem) {
+		Pair<Constructor,WFormula> rhs = infer(v.rhs,elem);		
 		switch (v.op) {
 		case NEG:
-			return new Pair<WExpr, WFormula>(WNumerics.negate(rhs.first()), rhs
+			return new Pair<Constructor, WFormula>(WNumerics.negate(rhs.first()), rhs
 					.second());
 		case LENGTHOF:
-			return new Pair<WExpr, WFormula>(new WLengthOf(rhs.first()), rhs
+			return new Pair<Constructor, WFormula>(new WLengthOf(rhs.first()), rhs
 					.second());
 		case PROCESSACCESS :
 		{
@@ -625,96 +625,96 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 					Variable var = (Variable) v.rhs;
 					if (var.name.equals("this")) {
 						// this is a very special case
-						return new Pair<WExpr, WFormula>(new WVariable("this"),
+						return new Pair<Constructor, WFormula>(new Variable("this"),
 								WBool.TRUE);
 					}
 				}
-				WVariable wvar = WVariable.freshVar();
-				return new Pair<WExpr, WFormula>(wvar, WBool.TRUE);
+				Variable wvar = Variable.freshVar();
+				return new Pair<Constructor, WFormula>(wvar, WBool.TRUE);
 		}
 		case PROCESSSPAWN:
 		{
 			// not sure what else we can do here
-			WVariable wvar = WVariable.freshVar();
-			return new Pair<WExpr, WFormula>(wvar, WBool.TRUE);
+			Variable wvar = Variable.freshVar();
+			return new Pair<Constructor, WFormula>(wvar, WBool.TRUE);
 		}
 		}
 		syntaxError("unknown unary operation: " + v.op,filename,elem);
 		return null;
 	}
 	
-	protected Pair<WExpr,WFormula> infer(NaryOp v, SyntacticElement elem) {
+	protected Pair<Constructor,WFormula> infer(NaryOp v, SyntacticElement elem) {
 		switch (v.op) {
 		case LISTGEN: {
 			WFormula constraints = WBool.TRUE;
-			ArrayList<WExpr> args = new ArrayList<WExpr>();
+			ArrayList<Constructor> args = new ArrayList<Constructor>();
 			for (CExpr e : v.args) {
-				Pair<WExpr, WFormula> p = infer(e, elem);
+				Pair<Constructor, WFormula> p = infer(e, elem);
 				args.add(p.first());
-				constraints = WFormulas.and(p.second());
+				constraints = Logic.and(p.second());
 			}
 
-			return new Pair<WExpr, WFormula>(new WListConstructor(args),
+			return new Pair<Constructor, WFormula>(new WListConstructor(args),
 					constraints);
 		}
 		case SETGEN: {
 			WFormula constraints = WBool.TRUE;
-			HashSet<WExpr> args = new HashSet<WExpr>();
+			HashSet<Constructor> args = new HashSet<Constructor>();
 			for (CExpr e : v.args) {
-				Pair<WExpr, WFormula> p = infer(e, elem);
+				Pair<Constructor, WFormula> p = infer(e, elem);
 				args.add(p.first());
-				constraints = WFormulas.and(p.second());
+				constraints = Logic.and(p.second());
 			}
 
-			return new Pair<WExpr, WFormula>(new WSetConstructor(args),
+			return new Pair<Constructor, WFormula>(new WSetConstructor(args),
 					constraints);
 		}		
 		case SUBLIST: {
-			Pair<WExpr,WFormula> src = infer(v.args.get(0), elem);
-			Pair<WExpr,WFormula> start = infer(v.args.get(1), elem);
-			Pair<WExpr,WFormula> end = infer(v.args.get(2), elem);
+			Pair<Constructor,WFormula> src = infer(v.args.get(0), elem);
+			Pair<Constructor,WFormula> start = infer(v.args.get(1), elem);
+			Pair<Constructor,WFormula> end = infer(v.args.get(2), elem);
 
-			WVariable retVar = WVariable.freshVar();
+			Variable retVar = Variable.freshVar();
 
 			// first, identify new length
 			WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar),
 					WNumerics.subtract(end.first(), start.first()));
 
 			// second, pump from src into retVar
-			WVariable i = WVariable.freshVar();
-			HashMap<WVariable, WExpr> variables = new HashMap();
+			Variable i = Variable.freshVar();
+			HashMap<Variable, Constructor> variables = new HashMap();
 			variables.put(i, src.first());
-			WFormula lhs = WFormulas.and(
+			WFormula lhs = Logic.and(
 					WNumerics.lessThanEq(start.first(), i), WNumerics.lessThan(
 							i, end.first()));
 			WFormula rhs = WExprs.equals(new WListAccess(src.first(), i),
 					new WListAccess(retVar, WNumerics
 							.subtract(i, start.first())));
-			WFormula forall1 = new WBoundedForall(true, variables, WFormulas
+			WFormula forall1 = new WBoundedForall(true, variables, Logic
 					.implies(lhs, rhs));
 
 			// third, pump from retVar into src
-			variables = new HashMap<WVariable,WExpr>();
+			variables = new HashMap<Variable,Constructor>();
 			variables.put(i, retVar);
 			rhs = WExprs.equals(new WListAccess(src.first(), WNumerics.add(i,
 					start.first())), new WListAccess(retVar, i));
 			WFormula forall2 = new WBoundedForall(true, variables, rhs);
 
-			WFormula constraints = WFormulas.and(lenConstraints, forall1,
+			WFormula constraints = Logic.and(lenConstraints, forall1,
 					forall2, src.second(), start.second(), end.second());
 
-			return new Pair<WExpr,WFormula>(retVar,constraints);
+			return new Pair<Constructor,WFormula>(retVar,constraints);
 			}							
 		}
 		syntaxError("unknown nary operation: " + v.op,filename,elem);
 		return null;
 	}
 	
-	protected Pair<WExpr, WFormula> infer(Invoke ivk, SyntacticElement elem)
+	protected Pair<Constructor, WFormula> infer(Invoke ivk, SyntacticElement elem)
 			throws ResolveError {
 		WFormula constraints = WBool.TRUE;
-		ArrayList<WExpr> args = new ArrayList<WExpr>();
-		HashMap<WExpr, WExpr> binding = new HashMap<WExpr, WExpr>();		
+		ArrayList<Constructor> args = new ArrayList<Constructor>();
+		HashMap<Constructor, Constructor> binding = new HashMap<Constructor, Constructor>();		
 		Module module = loader.loadModule(ivk.name.module());
 		Module.Method method = module.method(ivk.name.name(), ivk.type);
 		Module.Case mcase = method.cases().get(ivk.caseNum);
@@ -725,73 +725,73 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		
 		int idx=0;
 		for (CExpr e : ivk.args) {
-			Pair<WExpr, WFormula> p = infer(e, elem);			
-			binding.put(new WVariable("$" + idx++), p.first());
+			Pair<Constructor, WFormula> p = infer(e, elem);			
+			binding.put(new Variable("$" + idx++), p.first());
 			args.add(p.first());
-			constraints = WFormulas.and(constraints,p.second());
+			constraints = Logic.and(constraints,p.second());
 		}		
 		constraints = constraints.substitute(binding);
 		
-		WVariable rv = new WVariable(ivk.name.toString(), args);
+		Variable rv = new Variable(ivk.name.toString(), args);
 		Postcondition postattr = mcase.attribute(Postcondition.class);
 		Block postcondition = postattr != null ? postattr.constraint : null;		
 		if(postcondition != null) {
-			WVariable var = new WVariable("$"); 
+			Variable var = new Variable("$"); 
 			WFormula pc = propagate(postcondition,
 					WTypes.subtypeOf(var, convert(method.type().ret))).second();			
 			binding.put(var, rv);						
-			constraints = WFormulas.and(constraints, pc.substitute(binding));				
+			constraints = Logic.and(constraints, pc.substitute(binding));				
 		}
 		
-		return new Pair<WExpr, WFormula>(rv, constraints);
+		return new Pair<Constructor, WFormula>(rv, constraints);
 	}
 	
-	protected Pair<WExpr,WFormula> infer(RecordAccess ta, SyntacticElement elem) {
-		Pair<WExpr,WFormula> rhs = infer(ta.lhs,elem);
-		return new Pair<WExpr, WFormula>(
+	protected Pair<Constructor,WFormula> infer(RecordAccess ta, SyntacticElement elem) {
+		Pair<Constructor,WFormula> rhs = infer(ta.lhs,elem);
+		return new Pair<Constructor, WFormula>(
 				new WTupleAccess(rhs.first(), ta.field), rhs.second());
 	}
 	
-	protected Pair<WExpr,WFormula> infer(Record t, SyntacticElement elem) {
+	protected Pair<Constructor,WFormula> infer(Record t, SyntacticElement elem) {
 		ArrayList<String> fields = new ArrayList<String>(t.values.keySet());
-		ArrayList<WExpr> values = new ArrayList<WExpr>();
+		ArrayList<Constructor> values = new ArrayList<Constructor>();
 		WFormula constraints = WBool.TRUE;
 		Collections.sort(fields);
 		for(String f : fields) {
-			Pair<WExpr,WFormula> p = infer(t.values.get(f),elem);
+			Pair<Constructor,WFormula> p = infer(t.values.get(f),elem);
 			values.add(p.first());
-			constraints = WFormulas.and(constraints,p.second());
+			constraints = Logic.and(constraints,p.second());
 		}		
-		return new Pair<WExpr, WFormula>(new WTupleConstructor(fields, values),
+		return new Pair<Constructor, WFormula>(new WTupleConstructor(fields, values),
 				constraints);
 	}
 	
-	protected Pair<WExpr,WFormula> infer(ListAccess ta, SyntacticElement elem) {
-		Pair<WExpr,WFormula> src = infer(ta.src,elem);
-		Pair<WExpr,WFormula> idx = infer(ta.index,elem);
-		return new Pair<WExpr, WFormula>(new WListAccess(src.first(), idx
-				.first()), WFormulas.and(src.second(), idx.second()));
+	protected Pair<Constructor,WFormula> infer(ListAccess ta, SyntacticElement elem) {
+		Pair<Constructor,WFormula> src = infer(ta.src,elem);
+		Pair<Constructor,WFormula> idx = infer(ta.index,elem);
+		return new Pair<Constructor, WFormula>(new WListAccess(src.first(), idx
+				.first()), Logic.and(src.second(), idx.second()));
 	}
 	
-	protected Pair<WExpr,WFormula> infer(BinOp v, SyntacticElement elem) {
-		Pair<WExpr,WFormula> lhs = infer(v.lhs, elem);		
-		Pair<WExpr,WFormula> rhs = infer(v.rhs, elem);		
-		WFormula constraints = WFormulas.and(lhs.second(),rhs.second());
+	protected Pair<Constructor,WFormula> infer(BinOp v, SyntacticElement elem) {
+		Pair<Constructor,WFormula> lhs = infer(v.lhs, elem);		
+		Pair<Constructor,WFormula> rhs = infer(v.rhs, elem);		
+		WFormula constraints = Logic.and(lhs.second(),rhs.second());
 		switch (v.op) {
 		case ADD:
-			return new Pair<WExpr, WFormula>(WNumerics.add(lhs.first(), rhs
+			return new Pair<Constructor, WFormula>(WNumerics.add(lhs.first(), rhs
 					.first()), constraints);
 		case SUB:
-			return new Pair<WExpr, WFormula>(WNumerics.subtract(lhs.first(),
+			return new Pair<Constructor, WFormula>(WNumerics.subtract(lhs.first(),
 					rhs.first()), constraints);
 		case DIV:
-			return new Pair<WExpr, WFormula>(WNumerics.divide(lhs.first(), rhs
+			return new Pair<Constructor, WFormula>(WNumerics.divide(lhs.first(), rhs
 					.first()), constraints);
 		case MUL:
-			return new Pair<WExpr, WFormula>(WNumerics.multiply(lhs.first(),
+			return new Pair<Constructor, WFormula>(WNumerics.multiply(lhs.first(),
 					rhs.first()), constraints);
 		case APPEND: {
-			WVariable retVar = WVariable.freshVar();
+			Variable retVar = Variable.freshVar();
 			
 			// first, identify new length					
 			WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar),
@@ -799,15 +799,15 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 							.first())));
 
 			// second, pump from left src into retVar
-			WVariable i = WVariable.freshVar();
-			HashMap<WVariable,WExpr> variables = new HashMap();
+			Variable i = Variable.freshVar();
+			HashMap<Variable,Constructor> variables = new HashMap();
 			variables.put(i,lhs.first());
 			WFormula wlhs = WExprs.equals(new WListAccess(lhs.first(), i),
 					new WListAccess(retVar, i));
 			WFormula forall1 = new WBoundedForall(true,variables,wlhs);
 			
 			// third, pump from right src into retVar
-			i = WVariable.freshVar();
+			i = Variable.freshVar();
 			variables = new HashMap();
 			variables.put(i,rhs.first());
 			WFormula wrhs = WExprs.equals(new WListAccess(rhs.first(), i),
@@ -815,7 +815,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			WFormula forall2 = new WBoundedForall(true,variables,wrhs);
 			
 				// finally, pump from retvar into left src
-			i = WVariable.freshVar();
+			i = Variable.freshVar();
 			variables = new HashMap();
 			variables.put(i, retVar);
 			WFormula l1 = WNumerics.lessThan(i, new WLengthOf(lhs.first()));
@@ -827,48 +827,48 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 					.subtract(i, new WLengthOf(lhs.first()))), new WListAccess(
 					retVar, i));
 
-			WFormula forall3 = new WBoundedForall(true, variables, WFormulas
-					.and(WFormulas.implies(l1, r1), WFormulas.implies(l2, r2)));
+			WFormula forall3 = new WBoundedForall(true, variables, Logic
+					.and(Logic.implies(l1, r1), Logic.implies(l2, r2)));
 
-			constraints = WFormulas.and(constraints, lenConstraints, forall1,
+			constraints = Logic.and(constraints, lenConstraints, forall1,
 					forall2, forall3, WTypes.subtypeOf(retVar,
 							convert(v.type())));
 
-			return new Pair<WExpr, WFormula>(retVar, constraints);
+			return new Pair<Constructor, WFormula>(retVar, constraints);
 		}
 		case UNION: {
-			WVariable rv = WVariable.freshVar();
-			WVariable rs = WVariable.freshVar();
+			Variable rv = Variable.freshVar();
+			Variable rs = Variable.freshVar();
 
-			HashMap<WVariable, WExpr> vars = new HashMap();
+			HashMap<Variable, Constructor> vars = new HashMap();
 			vars.put(rv, rs);
 			WSetConstructor sc = new WSetConstructor(rv);
-			WFormula allc = WFormulas.or(WSets.subsetEq(sc, lhs.first()), WSets
+			WFormula allc = Logic.or(WSets.subsetEq(sc, lhs.first()), WSets
 					.subsetEq(sc, rhs.first()));
-			constraints = WFormulas.and(constraints, WSets.subsetEq(
+			constraints = Logic.and(constraints, WSets.subsetEq(
 					lhs.first(), rs), WSets.subsetEq(rhs.first(), rs),
 					new WBoundedForall(true, vars, allc));
-			return new Pair<WExpr, WFormula>(rs, constraints);
+			return new Pair<Constructor, WFormula>(rs, constraints);
 		}
 		case INTERSECT: {
-			WVariable rv = WVariable.freshVar();
-			WVariable rs = WVariable.freshVar();
-			HashMap<WVariable, WExpr> vars = new HashMap();
+			Variable rv = Variable.freshVar();
+			Variable rs = Variable.freshVar();
+			HashMap<Variable, Constructor> vars = new HashMap();
 			vars.put(rv, rs);				
 			WSetConstructor sc = new WSetConstructor(rv);
-			WFormula left = new WBoundedForall(true, vars, WFormulas.and(WSets
+			WFormula left = new WBoundedForall(true, vars, Logic.and(WSets
 					.subsetEq(sc, lhs.first()), WSets.subsetEq(sc, rhs.first())));
 			
 			vars = new HashMap();
 			vars.put(rv, lhs.first());
-			WFormula right = new WBoundedForall(true, vars, WFormulas.implies(WSets
+			WFormula right = new WBoundedForall(true, vars, Logic.implies(WSets
 					.subsetEq(sc, rhs.first()), WSets.subsetEq(sc, rs)));
 			
-			constraints = WFormulas
+			constraints = Logic
 					.and(constraints, left, right, WSets.subsetEq(rs, lhs
 							.first()), WSets.subsetEq(rs, rhs.first()));
 
-			return new Pair<WExpr, WFormula>(rs, constraints);
+			return new Pair<Constructor, WFormula>(rs, constraints);
 		}
 		
 		}

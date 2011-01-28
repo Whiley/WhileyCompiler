@@ -37,5 +37,5 @@ public interface SplitHeuristic {
 	 * @param state
 	 * @return
 	 */
-	public List<SolverState> split(SolverState state, Solver solver); 
+	public List<Solver.State> split(Solver.State state, Solver solver); 
 }

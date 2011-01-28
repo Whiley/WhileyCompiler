@@ -17,6 +17,7 @@
 
 package wyone.core;
 
+import static wyone.core.Constructor.*;
 import java.util.*;
 
 public abstract class Proof {	
@@ -33,17 +34,17 @@ public abstract class Proof {
 	}
 	
 	public final static class Sat extends Proof {
-		private HashMap<WVariable,WValue> model;
+		private HashMap<Variable,WValue> model;
 		
 		public Sat() {
 			this.model = new HashMap();
 		}
 		
-		public Sat(Map<WVariable,WValue> model) {
+		public Sat(Map<Variable,WValue> model) {
 			this.model = new HashMap(model);
 		}
 		
-		public Map<WVariable,WValue> model() {
+		public Map<Variable,WValue> model() {
 			return model;
 		}		
 	}	

@@ -3,11 +3,12 @@ package wyone.theory.type;
 import java.util.*;
 import wyil.lang.Type;
 import wyone.core.*;
+import static wyone.core.Constructor.*;
 
-public class WTypeDecl extends WConstructor<WVariable> implements WConstraint {
+public class WTypeDecl extends Uninterpreted<Variable> implements WConstraint {
 	protected final Type type;
 	
-	public WTypeDecl(Type type, WVariable var) {
+	public WTypeDecl(Type type, Variable var) {
 		super("<:" + type.toString(),var);
 		this.type = type;	
 	}
@@ -16,15 +17,15 @@ public class WTypeDecl extends WConstructor<WVariable> implements WConstraint {
 		return type;
 	}
 	
-	public WVariable var() {
-		return (WVariable) subterms().get(0);
+	public Variable var() {
+		return (Variable) subterms().get(0);
 	}		
 	
-	public Type type(SolverState st) {
+	public Type type(Solver.State st) {
 		return Type.T_BOOL;
 	}
 		
-	public WConstraint substitute(Map<WExpr,WExpr> binding) {
+	public WConstraint substitute(Map<Constructor,Constructor> binding) {
 		return null;
 	}	
 }

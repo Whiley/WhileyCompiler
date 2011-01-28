@@ -25,7 +25,7 @@ import static wyone.theory.numeric.WNumerics.*;
 
 public class NotEqualsHeuristic implements SplitHeuristic {
 	
-	public List<SolverState> split(SolverState state,Solver solver) {
+	public List<Solver.State> split(Solver.State state,Solver solver) {
 		
 		for(WConstraint f : state) {
 			if(f instanceof WEquality) {
@@ -40,12 +40,12 @@ public class NotEqualsHeuristic implements SplitHeuristic {
 	}
 	
 		
-	private List<SolverState> split(WEquality d, SolverState lhs, Solver solver) {		
+	private List<Solver.State> split(WEquality d, Solver.State lhs, Solver solver) {		
 		lhs.eliminate(d);		
-		SolverState rhs = lhs.clone();		
+		Solver.State rhs = lhs.clone();		
 		lhs.add(lessThan(d.lhs(),d.rhs()), solver);
 		rhs.add(greaterThan(d.lhs(),d.rhs()), solver);						
-		ArrayList<SolverState> splits = new ArrayList<SolverState>();
+		ArrayList<Solver.State> splits = new ArrayList<Solver.State>();
 		splits.add(lhs);		
 		splits.add(rhs);
 		return splits;

@@ -21,7 +21,7 @@ import wyone.core.*;
 
 public final class DisjunctInference implements InferenceRule {
 
-	public void infer(WConstraint delta, SolverState state, Solver solver) {
+	public void infer(WConstraint delta, Solver.State state, Solver solver) {
 		// Now, substitute it, potentially reducing the disjunct.
 		for (WConstraint f : state) {
 			if (f instanceof WDisjunct) {				

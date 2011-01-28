@@ -23,7 +23,7 @@ import java.util.*;
 import wyil.jvm.rt.BigRational;
 import wyil.util.Pair;
 
-public abstract class Value extends CExpr {	
+public abstract class Value extends CExpr implements Comparable<Value> {	
 
 	public static final Null V_NULL = new Null();
 	

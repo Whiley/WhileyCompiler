@@ -20,6 +20,7 @@ package wyone.theory.numeric;
 import java.util.*;
 import java.math.*;
 
+import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.util.Pair;
 
@@ -64,7 +65,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 		}		
 	}
 	
-	public WPolynomial(WExpr atom) {
+	public WPolynomial(Constructor atom) {
 		terms = new HashSet<WTerm>();
 		terms.add(new WTerm(1,atom));
 	}
@@ -154,12 +155,12 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 		return true;
 	}
 		
-	public WExpr atom() {		
+	public Constructor atom() {		
 		return terms.iterator().next().atoms().get(0);
 	}
 	
-	public Set<WExpr> atoms() {
-		HashSet<WExpr> fvs = new HashSet();
+	public Set<Constructor> atoms() {
+		HashSet<Constructor> fvs = new HashSet();
 		for(WTerm e : terms) {
 			fvs.addAll(e.atoms());			
 		}
@@ -447,13 +448,13 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	 * 2x&circ;2 + xy + 2 ======&gt; (2x+y, 2) 
 	 * </pre>
 	 */
-	public Pair<WPolynomial,WPolynomial> factoriseFor(WExpr atom) {
+	public Pair<WPolynomial,WPolynomial> factoriseFor(Constructor atom) {
 		WPolynomial factor = new WPolynomial(0);
 		WPolynomial remainder = new WPolynomial(0);
 		
 		for(WTerm t : terms) {
 			if(t.atoms().contains(atom)) {
-				ArrayList<WExpr> atoms = new ArrayList(t.atoms());
+				ArrayList<Constructor> atoms = new ArrayList(t.atoms());
 				atoms.remove(atom); // remove one instance of var only
 				factor = factor.add(new WTerm(t.coefficient(),atoms));
 			} else {
@@ -532,7 +533,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 			} else if (e.atoms().size() > 0) {
 				firstTime = false;
 			}
-			for (WExpr v : e.atoms()) {
+			for (Constructor v : e.atoms()) {
 				if (!ffirstTime) {
 					r += "*";
 				}
@@ -555,12 +556,12 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
      * @param environment
      * @return
      */
-	public WPolynomial substitute(Map<WVariable,WVariable> environment) {
+	public WPolynomial substitute(Map<Variable,Variable> environment) {
 		WPolynomial r = new WPolynomial();
 		boolean changed=false;
 		for (WTerm e : terms) {
-			ArrayList<WExpr> nvars = new ArrayList<WExpr>();
-			for (WExpr v : e.atoms()) {
+			ArrayList<Constructor> nvars = new ArrayList<Constructor>();
+			for (Constructor v : e.atoms()) {
 				if(environment.containsKey(v)) {
 					nvars.add(environment.get(v));
 					changed=true;
@@ -577,8 +578,8 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 		}
 	}	
 	
-	public WExpr expand(Map<WExpr,WExpr> binding) {
-		WExpr r = WValue.ZERO;
+	public Constructor expand(Map<Constructor,Constructor> binding) {
+		Constructor r = WValue.ZERO;
 		for(WTerm t : terms) {			
 			r = WNumerics.add(r,t.expand(binding));			
 		}

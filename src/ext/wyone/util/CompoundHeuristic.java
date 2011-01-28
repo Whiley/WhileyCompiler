@@ -42,9 +42,9 @@ public final class CompoundHeuristic implements SplitHeuristic {
 		this.heuristics = new ArrayList<SplitHeuristic>(heuristics);		
 	}
 	
-	public List<SolverState> split(SolverState state,Solver solver) {
+	public List<State> split(State state,Solver solver) {
 		for(SplitHeuristic h : heuristics) {
-			List<SolverState> r = h.split(state,solver);
+			List<State> r = h.split(state,solver);
 			if(r != null) {				
 				return r;
 			}

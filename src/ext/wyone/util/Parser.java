@@ -102,7 +102,7 @@ public class Parser {
 			match("[");
 						
 			parseWhiteSpace();
-			HashMap<WVariable,WExpr> vars = new HashMap<WVariable,WExpr>();			
+			HashMap<Variable,Constructor> vars = new HashMap<Variable,Constructor>();			
 			boolean firstTime=true;
 			while(!lookahead().equals("|")) {		
 				if(!firstTime) {
@@ -112,8 +112,8 @@ public class Parser {
 				firstTime=false;
 				String v = parseIdentifier();				
 				match(":");				
-				WExpr src = parseExpression();				
-				WVariable var = new WVariable(v); 
+				Constructor src = parseExpression();				
+				Variable var = new Variable(v); 
 				vars.put(var,src);
 				// type is ignored for now								
 				parseWhiteSpace();
@@ -126,7 +126,7 @@ public class Parser {
 			match("some");			
 			match("[");			
 			parseWhiteSpace();
-			HashMap<WVariable,WExpr> vars = new HashMap<WVariable,WExpr>();			
+			HashMap<Variable,Constructor> vars = new HashMap<Variable,Constructor>();			
 			boolean firstTime=true;
 			while(!lookahead().equals("|")) {		
 				if(!firstTime) {
@@ -136,8 +136,8 @@ public class Parser {
 				firstTime=false;
 				String v = parseIdentifier();
 				match(":");				
-				WExpr src = parseExpression();				
-				WVariable var = new WVariable(v); 
+				Constructor src = parseExpression();				
+				Variable var = new Variable(v); 
 				vars.put(var,src);
 				// type is ignored for now								
 				parseWhiteSpace();
@@ -148,7 +148,7 @@ public class Parser {
 			return new WBoundedForall(false,vars,f);							
 		} 
 			
-		WExpr lhs = parseExpression();
+		Constructor lhs = parseExpression();
 		
 		parseWhiteSpace();				 
 		
@@ -165,53 +165,53 @@ public class Parser {
 		} else if ((index + 1) < input.length() && input.charAt(index) == '<'
 				&& input.charAt(index + 1) == '=') {
 			match("<=");
-			WExpr rhs = parseExpression();			
+			Constructor rhs = parseExpression();			
 			return lessThanEq(lhs, rhs);
 		} else if (index < input.length() && input.charAt(index) == '<') {
 			match("<");
-			WExpr rhs = parseExpression();
+			Constructor rhs = parseExpression();
 			return lessThan(lhs,rhs);			
 		} else if ((index + 1) < input.length() && input.charAt(index) == '>'
 				&& input.charAt(index + 1) == '=') {
 			match(">=");
-			WExpr rhs = parseExpression();
+			Constructor rhs = parseExpression();
 			return greaterThanEq(lhs,rhs);
 		} else if (index < input.length() && input.charAt(index) == '>') {
 			match(">");
-			WExpr rhs = parseExpression();
+			Constructor rhs = parseExpression();
 			return greaterThan(lhs,rhs);			
 		} else if ((index + 1) < input.length() && input.charAt(index) == '='
 				&& input.charAt(index + 1) == '=') {
 			match("==");
-			WExpr rhs = parseExpression();			
+			Constructor rhs = parseExpression();			
 			return WExprs.equals(lhs,rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '=') {
 			match("!=");
-			WExpr rhs = parseExpression();
+			Constructor rhs = parseExpression();
 			return WExprs.notEquals(lhs, rhs);			
 		} else if ((index + 1) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '=') {
 			match("{=");
-			WExpr rhs = parseExpression();			
+			Constructor rhs = parseExpression();			
 			return subsetEq(lhs, rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '='
 				&& input.charAt(index + 1) == '}') {
 			match("=}");
-			WExpr rhs = parseExpression();			
+			Constructor rhs = parseExpression();			
 			return supsetEq(lhs, rhs);
 		} else if ((index + 2) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '!') {
 			match("{!=");
-			WExpr rhs = parseExpression();			
+			Constructor rhs = parseExpression();			
 			return subsetEq(lhs, rhs).not();
 		} else if ((index + 2) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '}') {
 			match("=!}");
-			WExpr rhs = parseExpression();			
+			Constructor rhs = parseExpression();			
 			return supsetEq(lhs, rhs).not();
-		} else if(lhs instanceof WVariable) {
-			WVariable v = (WVariable) lhs;
+		} else if(lhs instanceof Variable) {
+			Variable v = (Variable) lhs;
 			return new WPredicate(true,v.name(),v.subterms());
 		} else {
 			// will need more here
@@ -220,8 +220,8 @@ public class Parser {
 		} 					
 	}
 	
-	private WExpr parseExpression( ) {				
-		WExpr lhs = parseMulDivExpression();
+	private Constructor parseExpression( ) {				
+		Constructor lhs = parseMulDivExpression();
 		
 		parseWhiteSpace();				 
 		
@@ -234,7 +234,7 @@ public class Parser {
 				match("-");
 			}
 
-			WExpr rhs = parseMulDivExpression();
+			Constructor rhs = parseMulDivExpression();
 			if (add) {
 				lhs = add(lhs, rhs);
 			} else {
@@ -245,14 +245,14 @@ public class Parser {
 		return lhs;
 	}
 	
-	private WExpr parseMulDivExpression( ) {
+	private Constructor parseMulDivExpression( ) {
 		int start = index;
-		WExpr lhs = parseIndexTerm();
+		Constructor lhs = parseIndexTerm();
 		parseWhiteSpace();
 		
 		if(index < input.length() && input.charAt(index) == '*') {
 			match("*");
-			WExpr rhs = parseExpression();
+			Constructor rhs = parseExpression();
 			return multiply(lhs,rhs);			
 		} else if(index < input.length() && input.charAt(index) == '/') {
 			throw new SyntaxError("Support for divide is lacking", filename,
@@ -262,8 +262,8 @@ public class Parser {
 		}
 	}
 	
-	private WExpr parseIndexTerm() {
-		WExpr term = parseTerm();
+	private Constructor parseIndexTerm() {
+		Constructor term = parseTerm();
 		String lookahead = lookahead();
 		while(lookahead.equals(".") || lookahead.equals("[")) {				
 			if(lookahead.equals(".")) {
@@ -272,7 +272,7 @@ public class Parser {
 				term = new WTupleAccess(term,field);
 			} else {
 				match("[");										
-				WExpr index = parseExpression();									
+				Constructor index = parseExpression();									
 				match("]");
 				term = new WListAccess(term,index);	
 			}
@@ -282,7 +282,7 @@ public class Parser {
 		return term;		
 	}
 	
-	private WExpr parseTerm() {
+	private Constructor parseTerm() {
 		parseWhiteSpace();
 		
 		int start = index;		
@@ -310,16 +310,16 @@ public class Parser {
 		}
 	}
 	
-	private WExpr parseLengthTerm() {
+	private Constructor parseLengthTerm() {
 		match("|");
-		WExpr r = parseExpression();
+		Constructor r = parseExpression();
 		match("|");		
 		return new WLengthOf(r);
 	}
 	
-	private WExpr parseListTerm() {
+	private Constructor parseListTerm() {
 		match("[");
-		ArrayList<WExpr> params = new ArrayList<WExpr>();
+		ArrayList<Constructor> params = new ArrayList<Constructor>();
 		String lookahead = lookahead();
 		boolean firstTime = true;
 		while(!lookahead.equals("]")) {
@@ -336,9 +336,9 @@ public class Parser {
 	}
 	
 
-	private WExpr parseSetTerm() {		
+	private Constructor parseSetTerm() {		
 		match("{");
-		HashSet<WExpr> params = new HashSet<WExpr>();
+		HashSet<Constructor> params = new HashSet<Constructor>();
 		String lookahead = lookahead();
 		boolean firstTime = true;
 		while(!lookahead.equals("}")) {
@@ -354,16 +354,16 @@ public class Parser {
 		return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
 	}
 	
-	private WExpr parseIdentifierTerm() {
+	private Constructor parseIdentifierTerm() {
 		int start = index;		
 		String v = parseIdentifier();
 		
-		ArrayList<WExpr> params = null;
+		ArrayList<Constructor> params = null;
 		
 		if(lookahead().equals("(")) {
 			// this indicates a function application
 			match("(");
-			params = new ArrayList<WExpr>();
+			params = new ArrayList<Constructor>();
 			String lookahead = lookahead();
 			boolean firstTime = true;
 			while(!lookahead.equals(")")) {
@@ -379,19 +379,19 @@ public class Parser {
 		} 
 				
 		if(params == null) {
-			return  new WVariable(v);
+			return  new Variable(v);
 		} else {
-			return new WVariable(v,params);
+			return new Variable(v,params);
 		}					
 	}
 	
-	private WExpr parseBracketedTerm() {
+	private Constructor parseBracketedTerm() {
 		match("(");
-		WExpr e;					
+		Constructor e;					
 		if(lookahead(2).equals("=")) {				
 			// this indicates a tuple constructor
 			ArrayList<String> fields = new ArrayList();
-			ArrayList<WExpr> items = new ArrayList();
+			ArrayList<Constructor> items = new ArrayList();
 			boolean firstTime = true;
 			while(!lookahead().equals(")")) {
 				if(!firstTime) {
@@ -400,7 +400,7 @@ public class Parser {
 				firstTime = false;
 				String id = parseIdentifier();				
 				match("=");
-				WExpr val = parseExpression();
+				Constructor val = parseExpression();
 				fields.add(id);
 				items.add(val);					
 			}
@@ -414,9 +414,9 @@ public class Parser {
 		return e;
 	}
 	
-	private WExpr parseNegation() {		
+	private Constructor parseNegation() {		
 		match("-");
-		WExpr e = parseIndexTerm();		
+		Constructor e = parseIndexTerm();		
 		return negate(e);
 	}
 	
@@ -440,7 +440,7 @@ public class Parser {
 		return id;
 	}
 	
-	private WExpr parseNumber() {
+	private Constructor parseNumber() {
 		int start = index;
 		while (index < input.length() && Character.isDigit(input.charAt(index))) {
 			index = index + 1;

@@ -23,17 +23,6 @@ import java.util.concurrent.atomic.*;
 public class WExprs {
 
 	/**
-	 * The following method is provided so that subtypes of WExpr can register
-	 * for a CID and, in turn, can implement compareTo in safe fashion across
-	 * all possible WExpr implementations.
-	 */	
-	public static int registerCID() {
-		return cid.getAndAdd(1);
-	}
-	
-	private static final AtomicInteger cid = new AtomicInteger(0);
-
-	/**
 	 * The following method identifies any matching subterms. This is done by
 	 * traversing the entire tree of subterms for an expression and looking for
 	 * matches, rather than just traversing a single level.
@@ -42,12 +31,12 @@ public class WExprs {
 	 * @param match
 	 * @return
 	 */
-	public static <T> Set<T> match(Class<T> match, WExpr expr) {
+	public static <T> Set<T> match(Class<T> match, Constructor expr) {
 		HashSet<T> matches = new HashSet<T>(); 		
 		if(match.isInstance(expr)) {
 			matches.add((T)expr);
 		}
-		for(WExpr p : expr.subterms()) {
+		for(Constructor p : expr.subterms()) {
 			matches.addAll(match(match,p));
 		}
 		return matches;

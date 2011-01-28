@@ -35,23 +35,23 @@ public class UnboundedNumberHeuristic implements SplitHeuristic {
 		this.isInteger = isInteger;
 	}
 	
-	public List<SolverState> split(SolverState state, Solver solver) {
+	public List<Solver.State> split(Solver.State state, Solver solver) {
 		return splitOnFirstUnbounded(state,solver);		
 	}
 
-	private List<SolverState> splitOnFirstUnbounded(SolverState state,
+	private List<Solver.State> splitOnFirstUnbounded(Solver.State state,
 			Solver solver) {		
-		HashSet<WVariable> unbounded = new HashSet<WVariable>();
+		HashSet<Variable> unbounded = new HashSet<Variable>();
 		for(WFormula f : state) {
 			if(f instanceof WEquality) {
 				WEquality weq = (WEquality) f;
-				if (weq.sign() && weq.lhs() instanceof WVariable
+				if (weq.sign() && weq.lhs() instanceof Variable
 						&& weq.rhs() instanceof WNumber) {
 					continue; // skip assignment
 				}
 			}
-			Set<WVariable> vars = WExprs.match(WVariable.class, f);
-			for(WVariable v : vars) {
+			Set<Variable> vars = WExprs.match(Variable.class, f);
+			for(Variable v : vars) {
 				if(isInteger && v.type(state) == WIntType.T_INT) {
 					unbounded.add(v);
 				} else if(!isInteger && v.type(state) == WRealType.T_REAL) {
@@ -62,13 +62,13 @@ public class UnboundedNumberHeuristic implements SplitHeuristic {
 		if(unbounded.isEmpty()) {
 			return null;
 		}
-		WVariable v = unbounded.iterator().next();
-		SolverState rhs = state.clone();
+		Variable v = unbounded.iterator().next();
+		Solver.State rhs = state.clone();
 		
 		state.infer(WNumerics.greaterThanEq(WNumber.ZERO, v), solver);
 		rhs.infer(WNumerics.lessThan(v,WNumber.ZERO), solver);
 		
-		ArrayList<SolverState> states = new ArrayList<SolverState>();
+		ArrayList<Solver.State> states = new ArrayList<Solver.State>();
 		states.add(state);
 		states.add(rhs);
 		return states;

@@ -29,44 +29,44 @@ public final class WTerm implements Comparable<WTerm> {
 	public static final WTerm ONE = new WTerm(1);
 	
 	private final BigInteger coefficient;
-	private final List<WExpr> subterms;	
+	private final List<Constructor> subterms;	
 
-	public WTerm(int coeff, List<WExpr> atoms) {
+	public WTerm(int coeff, List<Constructor> atoms) {
 		coefficient = BigInteger.valueOf(coeff);
 		if(coeff != 0) {
-			this.subterms = new ArrayList<WExpr>(atoms);
+			this.subterms = new ArrayList<Constructor>(atoms);
 			Collections.sort(this.subterms);
 		} else {
-			this.subterms = new ArrayList<WExpr>();
+			this.subterms = new ArrayList<Constructor>();
 		}		
 	}
 
-	public WTerm(int coeff, WExpr... atoms) {
+	public WTerm(int coeff, Constructor... atoms) {
 		coefficient = BigInteger.valueOf(coeff);
-		this.subterms = new ArrayList<WExpr>();
+		this.subterms = new ArrayList<Constructor>();
 		if(coeff != 0) {
-			for(WExpr v : atoms) {
+			for(Constructor v : atoms) {
 				this.subterms.add(v);
 			}
 			Collections.sort(this.subterms);
 		}
 	}
 
-	public WTerm(BigInteger coeff, List<WExpr> atoms) {
+	public WTerm(BigInteger coeff, List<Constructor> atoms) {
 		coefficient = coeff;
 		if(!coeff.equals(BigInteger.ZERO)) {
-			this.subterms = new ArrayList<WExpr>(atoms);
+			this.subterms = new ArrayList<Constructor>(atoms);
 			Collections.sort(this.subterms);
 		} else {
-			this.subterms = new ArrayList<WExpr>();
+			this.subterms = new ArrayList<Constructor>();
 		}				
 	}
 
-	public WTerm(BigInteger coeff, WExpr... atoms) {
+	public WTerm(BigInteger coeff, Constructor... atoms) {
 		coefficient = coeff;
-		this.subterms = new ArrayList<WExpr>();
+		this.subterms = new ArrayList<Constructor>();
 		if (!coeff.equals(BigInteger.ZERO)) {
-			for (WExpr v : atoms) {
+			for (Constructor v : atoms) {
 				this.subterms.add(v);
 			}
 			Collections.sort(this.subterms);
@@ -77,7 +77,7 @@ public final class WTerm implements Comparable<WTerm> {
 		return coefficient;
 	}
 	
-	public List<WExpr> atoms() {
+	public List<Constructor> atoms() {
 		return Collections.unmodifiableList(subterms);
 	}
 	
@@ -101,7 +101,7 @@ public final class WTerm implements Comparable<WTerm> {
 			r += coefficient.toString();
 		} 
 		boolean firstTime=true;
-		for(WExpr v : subterms) {
+		for(Constructor v : subterms) {
 			if(!firstTime) {
 				r += "*";
 			}
@@ -134,8 +134,8 @@ public final class WTerm implements Comparable<WTerm> {
 			return -1;
 		}
 		for (int i = 0; i < Math.min(subterms.size(), e.subterms.size()); ++i) {
-			WExpr v = subterms.get(i);
-			WExpr ev = e.subterms.get(i);
+			Constructor v = subterms.get(i);
+			Constructor ev = e.subterms.get(i);
 			int r = v.compareTo(ev);
 			if (r != 0) {
 				return r;
@@ -149,10 +149,10 @@ public final class WTerm implements Comparable<WTerm> {
 		return subterms.isEmpty() || coefficient.equals(BigInteger.ZERO);
 	}
 
-	public WExpr expand(Map<WExpr,WExpr> binding) {
-		WExpr r = WValue.V_NUM(coefficient);
-		for(WExpr a : subterms) {				
-			WExpr e = a.substitute(binding);			
+	public Constructor expand(Map<Constructor,Constructor> binding) {
+		Constructor r = WValue.V_NUM(coefficient);
+		for(Constructor a : subterms) {				
+			Constructor e = a.substitute(binding);			
 			r = WNumerics.multiply(r,e);			
 		}
 		return r;
@@ -203,7 +203,7 @@ public final class WTerm implements Comparable<WTerm> {
 	}
 	
 	public WTerm multiply(WTerm e) {
-		ArrayList<WExpr> nvars = new ArrayList<WExpr>(subterms);
+		ArrayList<Constructor> nvars = new ArrayList<Constructor>(subterms);
 		nvars.addAll(e.subterms);	
 		return new WTerm(coefficient.multiply(e.coefficient),nvars);
 	}	
@@ -216,8 +216,8 @@ public final class WTerm implements Comparable<WTerm> {
 		if (subterms.containsAll(t.subterms)
 				&& coefficient.compareTo(t.coefficient) >= 0) {				
 			BigInteger[] ncoeff = coefficient.divideAndRemainder(t.coefficient);			
-			ArrayList<WExpr> nvars = new ArrayList<WExpr>(subterms);
-			for(WExpr v : t.subterms) {
+			ArrayList<Constructor> nvars = new ArrayList<Constructor>(subterms);
+			for(Constructor v : t.subterms) {
 				nvars.remove(v);
 			}			
 			WTerm quotient = new WTerm(ncoeff[0],nvars);
@@ -235,9 +235,9 @@ public final class WTerm implements Comparable<WTerm> {
 	
 	private int maxPower() {
 		int max = 0;
-		WExpr last = null;
+		Constructor last = null;
 		int cur = 0;
-		for(WExpr v : subterms){
+		for(Constructor v : subterms){
 			if(last == null) {
 				cur = 1;
 				last = v;

@@ -39,8 +39,8 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		this.isInteger = isInteger;
 	}
 	
-	public List<SolverState> split(SolverState state, Solver solver) {
-		HashMap<WExpr, Pair<Bound, Bound>> bounds = determineVariableBounds(
+	public List<Solver.State> split(Solver.State state, Solver solver) {
+		HashMap<Constructor, Pair<Bound, Bound>> bounds = determineVariableBounds(
 				state, solver);
 		if (strict) {
 			return splitOnSmallestBounded(bounds, state, solver);
@@ -49,16 +49,16 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		}
 	}
 
-	private List<SolverState> splitOnFirstSemiBounded(
-			HashMap<WExpr, Pair<Bound, Bound>> bounds, SolverState lhs,
+	private List<Solver.State> splitOnFirstSemiBounded(
+			HashMap<Constructor, Pair<Bound, Bound>> bounds, Solver.State lhs,
 			Solver solver) {		
 		
-		for(Map.Entry<WExpr, Pair<Bound,Bound>> e : bounds.entrySet()) {
+		for(Map.Entry<Constructor, Pair<Bound,Bound>> e : bounds.entrySet()) {
 			Bound low = e.getValue().first();
 			Bound high = e.getValue().second();
 			if(low != null || high != null) {							
-				WExpr var = e.getKey();
-				SolverState rhs = lhs.clone();								
+				Constructor var = e.getKey();
+				Solver.State rhs = lhs.clone();								
 				
 				if(low != null) {				
 					lhs.add(WExprs.equals(var,low.num), solver);
@@ -68,7 +68,7 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 					rhs.add(WNumerics.lessThan(var,high.num), solver);					
 				}
 
-				ArrayList<SolverState> splits = new ArrayList<SolverState>();				
+				ArrayList<Solver.State> splits = new ArrayList<Solver.State>();				
 				splits.add(lhs);
 				splits.add(rhs);
 				return splits;						
@@ -78,15 +78,15 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		return null;
 	}
 	
-	private List<SolverState> splitOnSmallestBounded(
-			HashMap<WExpr, Pair<Bound, Bound>> bounds, SolverState lhs,
+	private List<Solver.State> splitOnSmallestBounded(
+			HashMap<Constructor, Pair<Bound, Bound>> bounds, Solver.State lhs,
 			Solver solver) {
 		WNumber minDiff = null;
-		WExpr var = null;
+		Constructor var = null;
 		WNumber varlow = null;
 		WNumber varhigh = null;
 		
-		for(Map.Entry<WExpr, Pair<Bound,Bound>> e : bounds.entrySet()) {
+		for(Map.Entry<Constructor, Pair<Bound,Bound>> e : bounds.entrySet()) {
 			Bound low = e.getValue().first();
 			Bound high = e.getValue().second();
 			if(low != null && high != null) {
@@ -105,25 +105,25 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		}								
 		
 		WNumber mid = varlow.add(varhigh).divide(WNumber.TWO);		
-		SolverState rhs = lhs.clone();
+		Solver.State rhs = lhs.clone();
 				
 		lhs.add(WNumerics.lessThanEq(var,mid), solver);
 		rhs.add(WNumerics.greaterThan(var,mid), solver);
 		
-		ArrayList<SolverState> splits = new ArrayList<SolverState>();
+		ArrayList<Solver.State> splits = new ArrayList<Solver.State>();
 		splits.add(lhs);
 		splits.add(rhs);
 		return splits;
 	}
 	
-	private HashMap<WExpr, Pair<Bound,Bound>> determineVariableBounds(
-			SolverState state, Solver solver) {
-		HashMap<WExpr,Pair<Bound,Bound>> bounds = new HashMap();
+	private HashMap<Constructor, Pair<Bound,Bound>> determineVariableBounds(
+			Solver.State state, Solver solver) {
+		HashMap<Constructor,Pair<Bound,Bound>> bounds = new HashMap();
 		
 		for(WFormula f : state) {
 			if(f instanceof WInequality) {				
 				WInequality wieq = (WInequality) f;
-				WExpr var = variable(wieq);									
+				Constructor var = variable(wieq);									
 				WType t = var.type(state);
 				if(isInteger && t instanceof WIntType) {
 					updateBounds(wieq,var,true,bounds);
@@ -136,11 +136,11 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		return bounds;
 	}
 	
-	private WExpr variable(WInequality ieq) {
-		WExpr ieq_rhs = ieq.rhs();
+	private Constructor variable(WInequality ieq) {
+		Constructor ieq_rhs = ieq.rhs();
 		if (ieq_rhs instanceof WRational) {
 			WRational r = (WRational) ieq_rhs;
-			List<WExpr> subterms = r.subterms();
+			List<Constructor> subterms = r.subterms();
 			if (subterms.size() == 1) {
 				return subterms.get(0);
 			}
@@ -148,8 +148,8 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		return ieq_rhs;		
 	}
 	
-	private static void updateBounds(WInequality wieq, WExpr var,
-			boolean isInteger, HashMap<WExpr, Pair<Bound, Bound>> bounds) {
+	private static void updateBounds(WInequality wieq, Constructor var,
+			boolean isInteger, HashMap<Constructor, Pair<Bound, Bound>> bounds) {
 		Pair<BoundUpdate,BoundUpdate> r = rearrange(wieq,var);		
 		BoundUpdate below = r.first();
 		BoundUpdate above = r.second();				
@@ -161,8 +161,8 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		}					
 	}
 	
-	private static void updateUpperBound(BoundUpdate above, WExpr var,
-			boolean isInteger, HashMap<WExpr, Pair<Bound, Bound>> bounds) {
+	private static void updateUpperBound(BoundUpdate above, Constructor var,
+			boolean isInteger, HashMap<Constructor, Pair<Bound, Bound>> bounds) {
 
 		WNumber up = (WNumber) above.poly;
 		boolean isStrict = above.sign;
@@ -187,8 +187,8 @@ public class BoundedNumberHeuristic implements SplitHeuristic {
 		}
 	}
 	
-	private static void updateLowerBound(BoundUpdate below, WExpr var,
-			boolean isInteger, HashMap<WExpr, Pair<Bound, Bound>> bounds) {
+	private static void updateLowerBound(BoundUpdate below, Constructor var,
+			boolean isInteger, HashMap<Constructor, Pair<Bound, Bound>> bounds) {
 		
 		WNumber bp = (WNumber) below.poly;
 		boolean isStrict = below.sign;

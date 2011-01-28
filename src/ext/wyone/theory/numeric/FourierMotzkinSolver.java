@@ -40,17 +40,17 @@ import static wyone.theory.numeric.WNumerics.*;
  */
 public final class FourierMotzkinSolver implements InferenceRule {	
 	
-	public void infer(WConstraint delta, SolverState state, Solver solver) {								
+	public void infer(WConstraint delta, Solver.State state, Solver solver) {								
 		if (delta instanceof WInequality) {			
 			WInequality eq = (WInequality) delta;
 			internal_infer(eq, state, solver);			
 		} 		
 	}
 
-	private static void internal_infer(WInequality ieq, SolverState state,
+	private static void internal_infer(WInequality ieq, Solver.State state,
 			Solver solver) {				
-		WExpr ieq_rhs = ieq.rhs();
-		WExpr v;
+		Constructor ieq_rhs = ieq.rhs();
+		Constructor v;
 		
 		if(ieq_rhs instanceof WRational) {			
 			v = ieq_rhs.subterms().iterator().next();
@@ -86,7 +86,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 		}	
 	}
 
-	public static boolean usesVariable(WExpr f, WExpr v) {
+	public static boolean usesVariable(Constructor f, Constructor v) {
 		if(f instanceof WRational) {
 			WRational r = (WRational) f;
 			return r.subterms().contains(v);
@@ -96,11 +96,11 @@ public final class FourierMotzkinSolver implements InferenceRule {
 	}
 	
 	public static Pair<BoundUpdate, BoundUpdate> rearrange(WInequality ieq,
-			WExpr v) {
+			Constructor v) {
 		// Now, we factorise the lower bound for the variable in question.
 		// Notice that we know the remainder will be zero by construction.		
-		Pair<WExpr,WExpr> r = rearrangeFor(v,ieq);		
-		WExpr factor = r.second();		
+		Pair<Constructor,Constructor> r = rearrangeFor(v,ieq);		
+		Constructor factor = r.second();		
 		
 		if (factor instanceof WValue.Number) {
 			BoundUpdate lower = null;
@@ -141,9 +141,9 @@ public final class FourierMotzkinSolver implements InferenceRule {
 	}
 	
 	private static void internal_infer(BoundUpdate below, BoundUpdate above,
-			SolverState state, Solver solver) {		
-		WExpr lb;
-		WExpr ub;
+			Solver.State state, Solver solver) {		
+		Constructor lb;
+		Constructor ub;
 		Type atom_t = above.atom.type(state);
 		boolean belowSign = below.sign;
 		boolean aboveSign = above.sign;				
@@ -215,12 +215,12 @@ public final class FourierMotzkinSolver implements InferenceRule {
      * 
      */	
 	public final static class BoundUpdate {
-		public final WExpr atom;
-		public final WExpr poly;
+		public final Constructor atom;
+		public final Constructor poly;
 		public final WValue.Number factor;
 		public final Boolean sign; // true indicates strict inequality
 		
-		public BoundUpdate(WExpr v, WExpr p, WValue.Number i, Boolean s) {
+		public BoundUpdate(Constructor v, Constructor p, WValue.Number i, Boolean s) {
 			atom = v;
 			poly = p;
 			factor = i;
