@@ -140,9 +140,9 @@ public class WValue<T extends Value> implements WExpr {
 	public final static Constraint FALSE = new Constraint(Value.V_BOOL(false));
 	public final static Constraint TRUE = new Constraint(Value.V_BOOL(true));
 	
-	public final static WValue ZERO = new WValue(Value.V_REAL(BigRational.ZERO));
-	public final static WValue ONE = new WValue(Value.V_REAL(BigRational.ONE));
-	public final static WValue MONE = new WValue(Value.V_REAL(BigRational.MONE));
+	public final static Number ZERO = new Number(BigRational.ZERO);
+	public final static Number ONE = new Number(BigRational.ONE);
+	public final static Number MONE = new Number(BigRational.MONE);
 	
 	// ====================================================================
 	// CID

@@ -19,6 +19,7 @@ package wyone.theory.numeric;
 
 import java.util.*;
 
+import wyil.lang.Type;
 import wyone.core.*;
 import wyone.util.*;
 
@@ -50,8 +51,8 @@ public final class WInequality extends WConstructor<WExpr> implements WConstrain
 		return subterms.get(0);
 	}
 	
-	public WType type(SolverState state) {
-		return WBoolType.T_BOOL;
+	public Type type(SolverState state) {
+		return Type.T_BOOL;
 	}
 	
 	public WInequality not() {
@@ -62,13 +63,13 @@ public final class WInequality extends WConstructor<WExpr> implements WConstrain
 		WExpr orhs = subterms.get(0);
 		WExpr rhs = orhs.substitute(binding);		
 		
-		if (rhs instanceof WNumber) {			
-			WNumber nrhs = (WNumber) rhs;
-			int nc = WNumber.ZERO.compareTo(nrhs);
+		if (rhs instanceof WValue.Number) {			
+			WValue.Number nrhs = (WValue.Number) rhs;
+			int nc = WValue.ZERO.compareTo(nrhs);
 			if (sign) {
-				return nc <= 0 ? WBool.TRUE : WBool.FALSE;
+				return nc <= 0 ? WValue.TRUE : WValue.FALSE;
 			} else {
-				return nc > 0 ? WBool.TRUE : WBool.FALSE;
+				return nc > 0 ? WValue.TRUE : WValue.FALSE;
 			}
 		} else if(rhs != orhs){
 			return new WInequality(sign, rhs);

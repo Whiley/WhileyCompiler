@@ -19,8 +19,8 @@ package wyone.theory.numeric;
 
 import java.util.*;
 
+import wyil.lang.Type;
 import wyone.core.*;
-import wyone.theory.logic.*;
 import wyone.util.*;
 import static wyone.theory.numeric.WNumerics.*;
 
@@ -40,7 +40,7 @@ import static wyone.theory.numeric.WNumerics.*;
  */
 public final class FourierMotzkinSolver implements InferenceRule {	
 	
-	public void infer(WFormula delta, SolverState state, Solver solver) {								
+	public void infer(WConstraint delta, SolverState state, Solver solver) {								
 		if (delta instanceof WInequality) {			
 			WInequality eq = (WInequality) delta;
 			internal_infer(eq, state, solver);			
@@ -62,7 +62,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 		BoundUpdate upper = update.second();						
 		
 		if(lower != null) {				
-			for(WFormula f : state) {
+			for(WConstraint f : state) {
 				if(f instanceof WInequality && usesVariable(((WInequality)f).rhs(),v)) {
 					WInequality i = (WInequality) f;
 					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);						
@@ -73,7 +73,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 				}
 			}
 		} else if(upper != null) {				
-			for(WFormula f : state) {
+			for(WConstraint f : state) {
 				if(f instanceof WInequality && usesVariable(((WInequality)f).rhs(),v)) {						
 					WInequality i = (WInequality) f;
 					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);
@@ -102,20 +102,20 @@ public final class FourierMotzkinSolver implements InferenceRule {
 		Pair<WExpr,WExpr> r = rearrangeFor(v,ieq);		
 		WExpr factor = r.second();		
 		
-		if (factor instanceof WNumber) {
+		if (factor instanceof WValue.Number) {
 			BoundUpdate lower = null;
 			BoundUpdate upper = null;
 
-			WNumber constant = (WNumber) factor;
+			WValue.Number constant = (WValue.Number) factor;
 			// look at the sign of the coefficient to
 			// determine whether or not we have an upper or lower bound.			
-			if (constant.compareTo(WNumber.ZERO) < 0) {
+			if (constant.compareTo(WValue.Number.ZERO) < 0) {
 				if (ieq.sign()) {					
-					lower = new BoundUpdate(v, negate(r.first()), (WNumber) negate(constant), false);
+					lower = new BoundUpdate(v, negate(r.first()), (WValue.Number) negate(constant), false);
 				} else {					
-					upper = new BoundUpdate(v, negate(r.first()), (WNumber) negate(constant), true);
+					upper = new BoundUpdate(v, negate(r.first()), (WValue.Number) negate(constant), true);
 				}
-			} else if (constant.compareTo(WNumber.ZERO) > 0) {
+			} else if (constant.compareTo(WValue.Number.ZERO) > 0) {
 				if (ieq.sign()) {					
 					upper = new BoundUpdate(v, r.first(), constant, false);
 				} else {										
@@ -144,27 +144,27 @@ public final class FourierMotzkinSolver implements InferenceRule {
 			SolverState state, Solver solver) {		
 		WExpr lb;
 		WExpr ub;
-		WType atom_t = above.atom.type(state);
+		Type atom_t = above.atom.type(state);
 		boolean belowSign = below.sign;
 		boolean aboveSign = above.sign;				
 		
 		// First, check for the "real shadow"
-		if (atom_t instanceof WIntType
-				&& below.poly instanceof WNumber
-				&& above.poly instanceof WNumber) {			
-			WNumber bp = (WNumber) below.poly;
-			WNumber up = (WNumber) above.poly;						
+		if (atom_t instanceof Type.Int
+				&& below.poly instanceof WValue.Number
+				&& above.poly instanceof WValue.Number) {			
+			WValue.Number bp = (WValue.Number) below.poly;
+			WValue.Number up = (WValue.Number) above.poly;						
 			// Note, the following is guaranteed to work because the above and
 			// below factors are normalised to be always positive; that way, we
 			// can ignore the divide by negative number case.
 			if(belowSign) {
-				lb = bp.divide(below.factor).add(WNumber.ONE).ceil();
+				lb = bp.divide(below.factor).add(WValue.ONE).ceil();
 				belowSign=false;
 			} else {
 				lb = bp.divide(below.factor).ceil();
 			}
 			if(aboveSign) {
-				ub = up.divide(above.factor).subtract(WNumber.ONE).floor();
+				ub = up.divide(above.factor).subtract(WValue.ONE).floor();
 				aboveSign=false;
 			} else {
 				ub = up.divide(above.factor).floor();
@@ -173,13 +173,13 @@ public final class FourierMotzkinSolver implements InferenceRule {
 			lb = below.poly;
 			ub = above.poly;
 			
-			if(atom_t instanceof WIntType && belowSign) {
+			if(atom_t instanceof Type.Int && belowSign) {
 				belowSign=false;
-				lb = add(lb,WNumber.ONE);
+				lb = add(lb,WValue.Number.ONE);
 			}
-			if(atom_t instanceof WIntType && aboveSign) {
+			if(atom_t instanceof Type.Int && aboveSign) {
 				aboveSign=false;
-				ub = subtract(ub,WNumber.ONE);
+				ub = subtract(ub,WValue.Number.ONE);
 			}
 			
 			lb = multiply(lb,above.factor);		
@@ -187,13 +187,13 @@ public final class FourierMotzkinSolver implements InferenceRule {
 		}
 		
 		if(lb.equals(ub) && (belowSign || aboveSign)) {			
-			state.infer(WBool.FALSE,solver);
+			state.infer(WValue.FALSE,solver);
 		} else {			
 			// Second, generate new inequalities
 			if(lb.equals(ub)) {				
 				state.infer(WExprs.equals(lb,above.atom),solver);
 			} else {
-				WFormula f;
+				WConstraint f;
 
 				if (belowSign || aboveSign) {					
 					f = lessThan(lb, ub);
@@ -217,10 +217,10 @@ public final class FourierMotzkinSolver implements InferenceRule {
 	public final static class BoundUpdate {
 		public final WExpr atom;
 		public final WExpr poly;
-		public final WNumber factor;
+		public final WValue.Number factor;
 		public final Boolean sign; // true indicates strict inequality
 		
-		public BoundUpdate(WExpr v, WExpr p, WNumber i, Boolean s) {
+		public BoundUpdate(WExpr v, WExpr p, WValue.Number i, Boolean s) {
 			atom = v;
 			poly = p;
 			factor = i;
