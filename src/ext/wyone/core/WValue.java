@@ -79,7 +79,7 @@ public class WValue<T extends Value> implements Constructor, Comparable<WValue> 
 		return this;
 	}
 
-	public static class Bool extends WValue<Value.Bool> implements WConstraint {
+	public static class Bool extends WValue<Value.Bool> implements Constraint {
 		Bool(boolean b) {
 			super(Value.V_BOOL(b));
 		}

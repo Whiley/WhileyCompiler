@@ -24,7 +24,7 @@ import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.util.*;
 
-public final class WConjunct extends Uninterpreted<WConstraint> implements WConstraint {	
+public final class WConjunct extends Uninterpreted<Constraint> implements Constraint {	
 	
 	/**
 	 * <p>
@@ -33,7 +33,7 @@ public final class WConjunct extends Uninterpreted<WConstraint> implements WCons
 	 * 
 	 * @param clauses
 	 */
-	public WConjunct(Set<WConstraint> fs) {
+	public WConjunct(Set<Constraint> fs) {
 		super("&&",fs);
 	}			
 	
@@ -49,12 +49,12 @@ public final class WConjunct extends Uninterpreted<WConstraint> implements WCons
 	 * @param binding
 	 * @return
 	 */
-	public WConstraint substitute(Map<Constructor,Constructor> binding) {	
-		HashSet<WConstraint> nparams = new HashSet<WConstraint>();
+	public Constraint substitute(Map<Constructor,Constructor> binding) {	
+		HashSet<Constraint> nparams = new HashSet<Constraint>();
 		boolean pchanged = false;
 		boolean composite = true;
-		for(WConstraint p : subterms) {						
-			WConstraint np = p.substitute(binding);			
+		for(Constraint p : subterms) {						
+			Constraint np = p.substitute(binding);			
 			composite &= np instanceof WValue;			
 			if(np instanceof WConjunct) {
 				WConjunct c = (WConjunct) np;
@@ -91,9 +91,9 @@ public final class WConjunct extends Uninterpreted<WConstraint> implements WCons
 	}	
 	
 	public WDisjunct not() {
-		HashSet<WConstraint> nparams = new HashSet<WConstraint>();
-		for(WConstraint p : subterms) {
-			WConstraint np = p.not();																
+		HashSet<Constraint> nparams = new HashSet<Constraint>();
+		for(Constraint p : subterms) {
+			Constraint np = p.not();																
 			nparams.add(np);											
 		}				
 		return new WDisjunct(nparams);		 
@@ -102,7 +102,7 @@ public final class WConjunct extends Uninterpreted<WConstraint> implements WCons
 	public String toString() {
 		boolean firstTime = true;
 		String r = "";
-		for(WConstraint f : subterms) {
+		for(Constraint f : subterms) {
 			if(!firstTime) {
 				r += " && ";
 			}

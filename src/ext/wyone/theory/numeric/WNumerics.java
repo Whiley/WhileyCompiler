@@ -137,27 +137,27 @@ public class WNumerics {
 		} 	
 	}
 				
-	public static WConstraint lessThan(Constructor lhs, Constructor rhs) {
+	public static Constraint lessThan(Constructor lhs, Constructor rhs) {
 		return inequals(false,rhs,lhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static WConstraint lessThanEq(Constructor lhs, Constructor rhs) {		
+	public static Constraint lessThanEq(Constructor lhs, Constructor rhs) {		
 		return inequals(true,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static WConstraint greaterThan(Constructor lhs, Constructor rhs) {
+	public static Constraint greaterThan(Constructor lhs, Constructor rhs) {
 		return inequals(false,lhs,rhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static WConstraint greaterThanEq(Constructor lhs, Constructor rhs) {
+	public static Constraint greaterThanEq(Constructor lhs, Constructor rhs) {
 		return inequals(true,rhs,lhs).substitute(Collections.EMPTY_MAP);
 	}
 	
-	private static WConstraint inequals(boolean sign, Constructor lhs, Constructor rhs) {
+	private static Constraint inequals(boolean sign, Constructor lhs, Constructor rhs) {
 		return inequals(sign, rational(lhs),rational(rhs));
 	}
 		
-	private static WConstraint inequals(boolean sign, WRational lhs, WRational rhs) {		
+	private static Constraint inequals(boolean sign, WRational lhs, WRational rhs) {		
 		if(lhs.denominator().equals(WPolynomial.ONE)) {		
 			return inequals(sign,lhs.numerator(),rhs);
 		} else if(rhs.denominator().equals(WPolynomial.ONE)) {
@@ -184,15 +184,15 @@ public class WNumerics {
 			}			
 		} else {
 			// Ok, can't break down any more ... so disjunction required			
-			WConstraint gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
-			WConstraint ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
+			Constraint gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
+			Constraint ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
 			gtz = Logic.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
 			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
 			return Logic.or(ltz,gtz);			
 		}
 	}	
 	
-	private static WConstraint inequals(boolean sign, WPolynomial lhs, WRational rhs) {				
+	private static Constraint inequals(boolean sign, WPolynomial lhs, WRational rhs) {				
 		if(rhs.denominator().isConstant()) {
 			BigInteger constant = rhs.denominator().constant();
 			int r = constant.compareTo(BigInteger.ZERO);
@@ -204,15 +204,15 @@ public class WNumerics {
 				return WValue.FALSE;
 			}			
 		} else {
-			WConstraint gtz = new WInequality(sign,subtract(normalise(lhs.multiply(rhs.denominator())),normalise(rhs.numerator())));
-			WConstraint ltz = new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
+			Constraint gtz = new WInequality(sign,subtract(normalise(lhs.multiply(rhs.denominator())),normalise(rhs.numerator())));
+			Constraint ltz = new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
 			gtz = Logic.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(rhs.denominator()))));
 			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(rhs.denominator()),WValue.Number.ZERO)));
 			return Logic.or(ltz,gtz);	
 		}
 	}
 	
-	private static WConstraint inequals(boolean sign, WRational lhs, WPolynomial rhs) {		
+	private static Constraint inequals(boolean sign, WRational lhs, WPolynomial rhs) {		
 		if(lhs.denominator().isConstant()) {			
 			BigInteger constant = lhs.denominator().constant();
 			int r = constant.compareTo(BigInteger.ZERO);
@@ -224,8 +224,8 @@ public class WNumerics {
 				return WValue.FALSE;
 			}
 		} else {
-			WConstraint gtz = new WInequality(sign,subtract(normalise(rhs.multiply(lhs.denominator())),normalise(lhs.numerator())));
-			WConstraint ltz = new WInequality(sign,subtract(normalise(lhs.numerator()),normalise(rhs.multiply(lhs.denominator()))));
+			Constraint gtz = new WInequality(sign,subtract(normalise(rhs.multiply(lhs.denominator())),normalise(lhs.numerator())));
+			Constraint ltz = new WInequality(sign,subtract(normalise(lhs.numerator()),normalise(rhs.multiply(lhs.denominator()))));
 			gtz = Logic.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
 			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
 			return Logic.or(ltz,gtz);		

@@ -19,7 +19,7 @@ package wyone.theory.logic;
 
 import java.util.*;
 
-import wyone.core.WConstraint;
+import wyone.core.Constraint;
 import wyone.core.WValue;
 
 public class Logic {
@@ -29,8 +29,8 @@ public class Logic {
 	 * @param formulas
 	 * @return
 	 */
-	public static WConstraint and(WConstraint... formulas) {
-		HashSet<WConstraint> fs = new HashSet<WConstraint>();
+	public static Constraint and(Constraint... formulas) {
+		HashSet<Constraint> fs = new HashSet<Constraint>();
 		Collections.addAll(fs, formulas);
 		return new WConjunct(fs).substitute(Collections.EMPTY_MAP);		
 	}
@@ -40,21 +40,21 @@ public class Logic {
 	 * @param formulas
 	 * @return
 	 */
-	public static WConstraint or(WConstraint... formulas) {		
-		HashSet<WConstraint> fs = new HashSet<WConstraint>();
+	public static Constraint or(Constraint... formulas) {		
+		HashSet<Constraint> fs = new HashSet<Constraint>();
 		Collections.addAll(fs, formulas);
 		return new WDisjunct(fs).substitute(Collections.EMPTY_MAP);		
 	}	
 		
-	public static WConstraint implies(WConstraint f1, WConstraint f2) {
+	public static Constraint implies(Constraint f1, Constraint f2) {
 		return or(f1.not(),f2).substitute(Collections.EMPTY_MAP);
 	}
 	
-	public static WConstraint iff(WConstraint f1, WConstraint f2) {
+	public static Constraint iff(Constraint f1, Constraint f2) {
 		return and(implies(f1,f2),implies(f2,f1)).substitute(Collections.EMPTY_MAP);
 	}		
 	
-	public static WConstraint not(WConstraint f) {
+	public static Constraint not(Constraint f) {
 		return f.not().substitute(Collections.EMPTY_MAP);
 	}
 
@@ -66,7 +66,7 @@ public class Logic {
 	 * @param f2
 	 * @return
 	 */
-	public static WConstraint intersect(WConstraint f1, WConstraint f2) {
+	public static Constraint intersect(Constraint f1, Constraint f2) {
 		if(f1.equals(f2)) {
 			return f1;
 		}
@@ -74,13 +74,13 @@ public class Logic {
 		if (f1 instanceof WConjunct && f2 instanceof WConjunct) {
 			WConjunct c1 = (WConjunct) f1;
 			WConjunct c2 = (WConjunct) f2;
-			HashSet<WConstraint> common = new HashSet<WConstraint>();
-			for (WConstraint c : c1.subterms()) {
+			HashSet<Constraint> common = new HashSet<Constraint>();
+			for (Constraint c : c1.subterms()) {
 				if (c2.subterms().contains(c)) {
 					common.add(c);
 				}
 			}
-			for (WConstraint c : c2.subterms()) {
+			for (Constraint c : c2.subterms()) {
 				if (c1.subterms().contains(c)) {
 					common.add(c);
 				}
@@ -108,7 +108,7 @@ public class Logic {
 	 * @param f2
 	 * @return
 	 */
-	public static WConstraint factorOut(WConstraint f1, WConstraint f2) {
+	public static Constraint factorOut(Constraint f1, Constraint f2) {
 		if(f1.equals(f2)) {
 			return WValue.TRUE;
 		}
@@ -116,12 +116,12 @@ public class Logic {
 		if (f1 instanceof WConjunct && f2 instanceof WConjunct) {
 			WConjunct c1 = (WConjunct) f1;
 			WConjunct c2 = (WConjunct) f2;
-			HashSet<WConstraint> difference = new HashSet<WConstraint>(c1.subterms());
+			HashSet<Constraint> difference = new HashSet<Constraint>(c1.subterms());
 			difference.removeAll(c2.subterms());
 			return new WConjunct(difference).substitute(Collections.EMPTY_MAP);
 		} else if (f1 instanceof WConjunct) {
 			WConjunct c1 = (WConjunct) f1;
-			HashSet<WConstraint> difference = new HashSet<WConstraint>(c1.subterms());
+			HashSet<Constraint> difference = new HashSet<Constraint>(c1.subterms());
 			difference.remove(f2);
 			return new WConjunct(difference).substitute(Collections.EMPTY_MAP);
 		} else if (f2 instanceof WConjunct) {

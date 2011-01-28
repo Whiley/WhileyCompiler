@@ -24,7 +24,7 @@ import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.util.*;
 
-public final class WDisjunct extends Uninterpreted<WConstraint> implements WConstraint {		
+public final class WDisjunct extends Uninterpreted<Constraint> implements Constraint {		
 	/**
 	 * <p>
 	 * Construct a formula from a collection of formulas.
@@ -32,7 +32,7 @@ public final class WDisjunct extends Uninterpreted<WConstraint> implements WCons
 	 * 
 	 * @param clauses
 	 */
-	public WDisjunct(Set<WConstraint> fs) {
+	public WDisjunct(Set<Constraint> fs) {
 		super("||",fs);		
 	}
 
@@ -52,12 +52,12 @@ public final class WDisjunct extends Uninterpreted<WConstraint> implements WCons
 	 * @param binding
 	 * @return
 	 */
-	public WConstraint substitute(Map<Constructor,Constructor> binding) {	
-		HashSet<WConstraint> nparams = new HashSet<WConstraint>();
+	public Constraint substitute(Map<Constructor,Constructor> binding) {	
+		HashSet<Constraint> nparams = new HashSet<Constraint>();
 		boolean pchanged = false;
 		boolean composite = true;
-		for(WConstraint p : subterms) {
-			WConstraint np = p.substitute(binding);			
+		for(Constraint p : subterms) {
+			Constraint np = p.substitute(binding);			
 			composite &= np instanceof WValue;			
 			if(np instanceof WDisjunct) {	
 				WDisjunct c = (WDisjunct) np;
@@ -73,7 +73,7 @@ public final class WDisjunct extends Uninterpreted<WConstraint> implements WCons
 			}
 		}		
 		if(composite) {			
-			for(WConstraint e : nparams) {				
+			for(Constraint e : nparams) {				
 				WValue.Bool b = (WValue.Bool) e;
 				if(b.sign()) {
 					return WValue.TRUE;
@@ -94,9 +94,9 @@ public final class WDisjunct extends Uninterpreted<WConstraint> implements WCons
 	}	
 		
 	public WConjunct not() {
-		HashSet<WConstraint> nparams = new HashSet<WConstraint>();
-		for(WConstraint p : subterms) {
-			WConstraint np = p.not();																
+		HashSet<Constraint> nparams = new HashSet<Constraint>();
+		for(Constraint p : subterms) {
+			Constraint np = p.not();																
 			nparams.add(np);											
 		}				
 		return new WConjunct(nparams);		 
@@ -105,7 +105,7 @@ public final class WDisjunct extends Uninterpreted<WConstraint> implements WCons
 	public String toString() {
 		boolean firstTime = true;
 		String r = "";
-		for(WConstraint f : subterms) {
+		for(Constraint f : subterms) {
 			if(!firstTime) {
 				r += " || ";
 			}

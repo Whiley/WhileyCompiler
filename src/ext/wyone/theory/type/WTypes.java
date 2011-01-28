@@ -37,7 +37,7 @@ public class WTypes {
 		// functioning, then shouldn't there only ever be one instance of a
 		// matching type declaration?
 		
-		for(WConstraint f : state) {
+		for(Constraint f : state) {
 			if(f instanceof WTypeDecl) {
 				// FIXME: probably would make more sense to build up a GLB from
 				// all possible types.

@@ -39,9 +39,9 @@ public final class Solver implements Callable<Proof> {
 	/**
 	 * The wyone program being tested for satisfiability
 	 */
-	private final List<WConstraint> program;
+	private final List<Constraint> program;
 		
-	Solver(List<WConstraint> program, 
+	Solver(List<Constraint> program, 
 			Heuristic heuristic,InferenceRule... theories) {		
 		this.program = program;
 		this.theories = new ArrayList<InferenceRule>();
@@ -70,7 +70,7 @@ public final class Solver implements Callable<Proof> {
 	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
-	public static synchronized Proof checkUnsatisfiable(int timeout, List<WConstraint> program,
+	public static synchronized Proof checkUnsatisfiable(int timeout, List<Constraint> program,
 			Heuristic heuristic,
 			InferenceRule... theories) {				
  
@@ -177,8 +177,8 @@ public final class Solver implements Callable<Proof> {
 	 */
 	protected Proof checkModel(Map<Variable, WValue> model) {										
 		// Check formula does indeed evaluate to true		
-		for(WConstraint c : program) {
-			WConstraint f = c.substitute((Map) model);
+		for(Constraint c : program) {
+			Constraint f = c.substitute((Map) model);
 			if(f != WValue.TRUE) {
 				return Proof.UNKNOWN; 
 			}
@@ -195,18 +195,18 @@ public final class Solver implements Callable<Proof> {
 	 * @author djp
 	 * 
 	 */
-	public final static class State implements Iterable<WConstraint> {
+	public final static class State implements Iterable<Constraint> {
 		/**
 		 * The assignment is a global mapping of formulas to integer numbers
 		 * which are, in effect, unique references for them.
 		 */
-		private static HashMap<WConstraint,Integer> assignments = new HashMap<WConstraint,Integer>();
+		private static HashMap<Constraint,Integer> assignments = new HashMap<Constraint,Integer>();
 
 		/**
 		 * The rassignments lists is the inverse map of the assignments list. Each
 		 * formula is located at a given index.
 		 */
-		private static ArrayList<WConstraint> rassignments = new ArrayList<WConstraint>();
+		private static ArrayList<Constraint> rassignments = new ArrayList<Constraint>();
 		
 		/**
 		 * The assertions bitset detemines which assigned facts are currently
@@ -232,12 +232,12 @@ public final class Solver implements Callable<Proof> {
 			this.eliminations = (BitSet) eliminations.clone();
 		}
 		
-		public boolean contains(WConstraint f) {
+		public boolean contains(Constraint f) {
 			Integer x = assignments.get(f);
 			return x != null ? assertions.get(x) : false;				
 		}
 		
-		public Iterator<WConstraint> iterator() {
+		public Iterator<Constraint> iterator() {
 			return new AssertionIterator(assertions,0);
 		}
 
@@ -249,7 +249,7 @@ public final class Solver implements Callable<Proof> {
 		 * @param f
 		 * @param solver
 		 */
-		public void add(WConstraint f, Solver solver) {		
+		public void add(Constraint f, Solver solver) {		
 			worklist.clear();
 			internal_add(f);
 			infer(solver);					
@@ -263,9 +263,9 @@ public final class Solver implements Callable<Proof> {
 		 * @param f
 		 * @param solver
 		 */
-		public void addAll(Collection<WConstraint> fs, Solver solver) {		
+		public void addAll(Collection<Constraint> fs, Solver solver) {		
 			worklist.clear();
-			for(WConstraint f : fs) {
+			for(Constraint f : fs) {
 				internal_add(f);
 			}
 			infer(solver);					
@@ -279,7 +279,7 @@ public final class Solver implements Callable<Proof> {
 		 * @param f
 		 * @param solver
 		 */
-		public void infer(WConstraint f, Solver solver) {			
+		public void infer(Constraint f, Solver solver) {			
 			internal_add(f);					
 		}
 
@@ -297,7 +297,7 @@ public final class Solver implements Callable<Proof> {
 		 * 
 		 * @param f
 		 */
-		public void eliminate(WConstraint oldf) {
+		public void eliminate(Constraint oldf) {
 			Integer x = assignments.get(oldf);							
 			if(x != null) {			
 				assertions.clear(x);			
@@ -312,7 +312,7 @@ public final class Solver implements Callable<Proof> {
 		private void infer(Solver solver) {		
 			for(int i=0;i!=worklist.size();++i) {
 				Integer x = worklist.get(i);			
-				WConstraint f = rassignments.get(x);
+				Constraint f = rassignments.get(x);
 				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 				for(InferenceRule ir : solver.theories()) {				
 					if(assertions.get(x)) {					
@@ -336,7 +336,7 @@ public final class Solver implements Callable<Proof> {
 		public String toString() {
 			String r = "[";
 			boolean firstTime=true;
-			for(WConstraint f : this) {
+			for(Constraint f : this) {
 				if(!firstTime) {
 					r += ", ";
 				}
@@ -348,11 +348,11 @@ public final class Solver implements Callable<Proof> {
 		}
 		
 		public static void reset_state() {
-			rassignments = new ArrayList<WConstraint>();
+			rassignments = new ArrayList<Constraint>();
 			assignments = new HashMap();
 		}
 		
-		private void internal_add(WConstraint f) {				
+		private void internal_add(Constraint f) {				
 			Integer x = assignments.get(f);
 			
 			if(x == null) {			
@@ -368,7 +368,7 @@ public final class Solver implements Callable<Proof> {
 			}
 		}
 			
-		private static final class AssertionIterator implements Iterator<WConstraint> {
+		private static final class AssertionIterator implements Iterator<Constraint> {
 			private final BitSet assertions;
 			private int index;
 			
@@ -382,8 +382,8 @@ public final class Solver implements Callable<Proof> {
 				return index != -1;
 			}
 			
-			public WConstraint next() {
-				WConstraint f = rassignments.get(index); 
+			public Constraint next() {
+				Constraint f = rassignments.get(index); 
 				index = assertions.nextSetBit(index+1);
 				return f;
 			}

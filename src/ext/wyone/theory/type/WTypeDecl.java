@@ -5,7 +5,7 @@ import wyil.lang.Type;
 import wyone.core.*;
 import static wyone.core.Constructor.*;
 
-public class WTypeDecl extends Uninterpreted<Variable> implements WConstraint {
+public class WTypeDecl extends Uninterpreted<Variable> implements Constraint {
 	protected final Type type;
 	
 	public WTypeDecl(Type type, Variable var) {
@@ -25,7 +25,7 @@ public class WTypeDecl extends Uninterpreted<Variable> implements WConstraint {
 		return Type.T_BOOL;
 	}
 		
-	public WConstraint substitute(Map<Constructor,Constructor> binding) {
+	public Constraint substitute(Map<Constructor,Constructor> binding) {
 		return null;
 	}	
 }

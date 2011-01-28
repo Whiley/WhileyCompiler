@@ -40,7 +40,7 @@ import static wyone.theory.numeric.WNumerics.*;
  */
 public final class FourierMotzkinSolver implements InferenceRule {	
 	
-	public void infer(WConstraint delta, Solver.State state, Solver solver) {								
+	public void infer(Constraint delta, Solver.State state, Solver solver) {								
 		if (delta instanceof WInequality) {			
 			WInequality eq = (WInequality) delta;
 			internal_infer(eq, state, solver);			
@@ -62,7 +62,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 		BoundUpdate upper = update.second();						
 		
 		if(lower != null) {				
-			for(WConstraint f : state) {
+			for(Constraint f : state) {
 				if(f instanceof WInequality && usesVariable(((WInequality)f).rhs(),v)) {
 					WInequality i = (WInequality) f;
 					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);						
@@ -73,7 +73,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 				}
 			}
 		} else if(upper != null) {				
-			for(WConstraint f : state) {
+			for(Constraint f : state) {
 				if(f instanceof WInequality && usesVariable(((WInequality)f).rhs(),v)) {						
 					WInequality i = (WInequality) f;
 					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);
@@ -193,7 +193,7 @@ public final class FourierMotzkinSolver implements InferenceRule {
 			if(lb.equals(ub)) {				
 				state.infer(WExprs.equals(lb,above.atom),solver);
 			} else {
-				WConstraint f;
+				Constraint f;
 
 				if (belowSign || aboveSign) {					
 					f = lessThan(lb, ub);

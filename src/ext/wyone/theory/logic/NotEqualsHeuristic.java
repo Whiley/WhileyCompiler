@@ -27,7 +27,7 @@ public class NotEqualsHeuristic implements Solver.Heuristic {
 	
 	public List<Solver.State> split(Solver.State state,Solver solver) {
 		
-		for(WConstraint f : state) {
+		for(Constraint f : state) {
 			if(f instanceof WEquality) {
 				WEquality weq = (WEquality) f;
 				if(!weq.sign()) {

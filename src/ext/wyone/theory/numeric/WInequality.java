@@ -30,7 +30,7 @@ import wyone.util.*;
  * @author djp
  * 
  */
-public final class WInequality extends Uninterpreted<Constructor> implements WConstraint {		
+public final class WInequality extends Uninterpreted<Constructor> implements Constraint {		
 	private boolean sign;
 	/**
 	 * Construct an inequality from left and right rationals. So, this generates
@@ -60,7 +60,7 @@ public final class WInequality extends Uninterpreted<Constructor> implements WCo
 		return new WInequality(!sign,rhs());
 	}
 	
-	public WConstraint substitute(Map<Constructor, Constructor> binding) {
+	public Constraint substitute(Map<Constructor, Constructor> binding) {
 		Constructor orhs = subterms.get(0);
 		Constructor rhs = orhs.substitute(binding);		
 		
