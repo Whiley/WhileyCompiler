@@ -30,7 +30,7 @@ import wyone.util.*;
  * @author djp
  * 
  */
-public final class WInequality extends Uninterpreted<Constructor> implements Constraint {		
+public final class WInequality extends Base<Constructor> implements Constraint {		
 	private boolean sign;
 	/**
 	 * Construct an inequality from left and right rationals. So, this generates

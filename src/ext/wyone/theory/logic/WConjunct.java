@@ -24,7 +24,7 @@ import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.util.*;
 
-public final class WConjunct extends Uninterpreted<Constraint> implements Constraint {	
+public final class WConjunct extends Base<Constraint> implements Constraint {	
 	
 	/**
 	 * <p>

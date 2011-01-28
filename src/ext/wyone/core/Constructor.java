@@ -78,11 +78,11 @@ public interface Constructor {
 	 * @author djp
 	 * 
 	 */
-	public static class Uninterpreted<T extends Constructor> implements Iterable<T> {
+	public static class Base<T extends Constructor> implements Iterable<T> {
 		protected final String name; // constructor name
 		protected final ArrayList<T> subterms; 	
 		
-		public Uninterpreted(String name, T... subterms) {
+		public Base(String name, T... subterms) {
 			assert name != null;
 			this.name = name;		
 			this.subterms = new ArrayList<T>();
@@ -91,7 +91,7 @@ public interface Constructor {
 			}		
 		}		
 		
-		public Uninterpreted(String name, Collection<T> subterms) {
+		public Base(String name, Collection<T> subterms) {
 			assert name != null;
 			this.name = name;		
 			this.subterms = new ArrayList<T>(subterms);
@@ -136,8 +136,8 @@ public interface Constructor {
 		}
 			
 		public boolean equals(Object o) {
-			if (o instanceof Uninterpreted) {
-				Uninterpreted f = (Uninterpreted) o;
+			if (o instanceof Base) {
+				Base f = (Base) o;
 				return name.equals(f.name) && subterms.equals(f.subterms);
 			}
 			return false;
@@ -173,7 +173,7 @@ public interface Constructor {
 	 * @author djp
 	 * 
 	 */
-	public static class Variable extends Uninterpreted<Constructor> implements Constructor {	
+	public static class Variable extends Base<Constructor> implements Constructor {	
 		public Variable(String var, Constructor... args) {
 			super(var,args);
 		}

@@ -5,7 +5,7 @@ import wyil.lang.Type;
 import wyone.core.*;
 import static wyone.core.Constructor.*;
 
-public class WTypeDecl extends Uninterpreted<Variable> implements Constraint {
+public class WTypeDecl extends Base<Variable> implements Constraint {
 	protected final Type type;
 	
 	public WTypeDecl(Type type, Variable var) {

@@ -24,7 +24,7 @@ import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.util.*;
 
-public final class WDisjunct extends Uninterpreted<Constraint> implements Constraint {		
+public final class WDisjunct extends Base<Constraint> implements Constraint {		
 	/**
 	 * <p>
 	 * Construct a formula from a collection of formulas.
