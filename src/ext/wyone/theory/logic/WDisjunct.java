@@ -58,12 +58,12 @@ public final class WDisjunct extends Uninterpreted<Constraint> implements Constr
 		boolean composite = true;
 		for(Constraint p : subterms) {
 			Constraint np = p.substitute(binding);			
-			composite &= np instanceof WValue;			
+			composite &= np instanceof Value;			
 			if(np instanceof WDisjunct) {	
 				WDisjunct c = (WDisjunct) np;
 				nparams.addAll(c.subterms);
 				pchanged = true;
-			} else if(np == WValue.FALSE){				
+			} else if(np == Value.FALSE){				
 				pchanged=true;
 			} else if(np != p) {								
 				nparams.add(np);				
@@ -74,17 +74,17 @@ public final class WDisjunct extends Uninterpreted<Constraint> implements Constr
 		}		
 		if(composite) {			
 			for(Constraint e : nparams) {				
-				WValue.Bool b = (WValue.Bool) e;
+				Value.Bool b = (Value.Bool) e;
 				if(b.sign()) {
-					return WValue.TRUE;
+					return Value.TRUE;
 				}
 			}
-			return WValue.FALSE;			
+			return Value.FALSE;			
 		} else if(nparams.size() == 1) {
 			return nparams.iterator().next();
 		} else if(pchanged) {			
 			if(nparams.size() == 0) {
-				return WValue.FALSE;			
+				return Value.FALSE;			
 			} else {							
 				return new WDisjunct(nparams);
 			} 

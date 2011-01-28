@@ -34,17 +34,17 @@ public abstract class Proof {
 	}
 	
 	public final static class Sat extends Proof {
-		private HashMap<Variable,WValue> model;
+		private HashMap<Variable,Value> model;
 		
 		public Sat() {
 			this.model = new HashMap();
 		}
 		
-		public Sat(Map<Variable,WValue> model) {
+		public Sat(Map<Variable,Value> model) {
 			this.model = new HashMap(model);
 		}
 		
-		public Map<Variable,WValue> model() {
+		public Map<Variable,Value> model() {
 			return model;
 		}		
 	}	

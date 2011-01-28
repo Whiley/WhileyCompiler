@@ -150,7 +150,7 @@ public final class WTerm implements Comparable<WTerm> {
 	}
 
 	public Constructor expand(Map<Constructor,Constructor> binding) {
-		Constructor r = WValue.V_NUM(coefficient);
+		Constructor r = Value.V_NUM(coefficient);
 		for(Constructor a : subterms) {				
 			Constructor e = a.substitute(binding);			
 			r = WNumerics.multiply(r,e);			

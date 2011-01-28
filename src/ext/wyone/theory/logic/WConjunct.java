@@ -55,12 +55,12 @@ public final class WConjunct extends Uninterpreted<Constraint> implements Constr
 		boolean composite = true;
 		for(Constraint p : subterms) {						
 			Constraint np = p.substitute(binding);			
-			composite &= np instanceof WValue;			
+			composite &= np instanceof Value;			
 			if(np instanceof WConjunct) {
 				WConjunct c = (WConjunct) np;
 				nparams.addAll(c.subterms);
 				pchanged=true;
-			} else if(p==WValue.TRUE) {
+			} else if(p==Value.TRUE) {
 				pchanged=true;
 			} else if(np != p) {						
 				nparams.add(np);				
@@ -71,17 +71,17 @@ public final class WConjunct extends Uninterpreted<Constraint> implements Constr
 		}		
 		if(composite) {			
 			for(Constructor e : nparams) {				
-				WValue.Bool b = (WValue.Bool) e;
+				Value.Bool b = (Value.Bool) e;
 				if(!b.sign()) {
-					return WValue.Bool.FALSE;
+					return Value.Bool.FALSE;
 				}
 			}
-			return WValue.TRUE;
+			return Value.TRUE;
 		} else if(nparams.size() == 1) {
 			return nparams.iterator().next();
 		} else if(pchanged) {
 			if(nparams.size() == 0) {
-				return WValue.TRUE;			
+				return Value.TRUE;			
 			} else {
 				return new WConjunct(nparams);
 			}

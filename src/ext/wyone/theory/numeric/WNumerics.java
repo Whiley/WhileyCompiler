@@ -38,7 +38,7 @@ public class WNumerics {
 	
 	public static Constructor normalise(WPolynomial p) {
 		if(p.isConstant()) {
-			return WValue.V_NUM(p.constant());
+			return Value.V_NUM(p.constant());
 		} else if(p.isAtom()) {
 			return p.atom();
 		} else {
@@ -47,8 +47,8 @@ public class WNumerics {
 	}	
 	
 	public static WRational rational(Constructor r) {
-		if(r instanceof WValue.Number) {
-			WValue.Number n = (WValue.Number) r;
+		if(r instanceof Value.Number) {
+			Value.Number n = (Value.Number) r;
 			return new WRational(new WPolynomial(n.numerator()),new WPolynomial(n.denominator()));
 		} else if(r instanceof WRational) {
 			return (WRational) r;
@@ -58,8 +58,8 @@ public class WNumerics {
 	}
 	
 	public static Constructor negate(Constructor expr) {
-		if(expr instanceof WValue.Number) {
-			return ((WValue.Number)expr).negate();
+		if(expr instanceof Value.Number) {
+			return ((Value.Number)expr).negate();
 		} else if(expr instanceof WRational) {
 			// must be a rational
 			WRational r = (WRational) expr;
@@ -71,9 +71,9 @@ public class WNumerics {
 	}
 		
 	public static Constructor add(Constructor lhs, Constructor rhs) {
-		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
-			WValue.Number l = (WValue.Number) lhs;
-			WValue.Number r = (WValue.Number) rhs;
+		if (lhs instanceof Value.Number && rhs instanceof Value.Number) {
+			Value.Number l = (Value.Number) lhs;
+			Value.Number r = (Value.Number) rhs;
 			return l.add(r);
 		} else {
 			return normalise(rational(lhs).add(rational(rhs)));
@@ -81,9 +81,9 @@ public class WNumerics {
 	}
 	
 	public static Constructor subtract(Constructor lhs, Constructor rhs) {
-		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
-			WValue.Number l = (WValue.Number) lhs;
-			WValue.Number r = (WValue.Number) rhs;
+		if (lhs instanceof Value.Number && rhs instanceof Value.Number) {
+			Value.Number l = (Value.Number) lhs;
+			Value.Number r = (Value.Number) rhs;
 			return l.subtract(r);
 		} else {
 			return normalise(rational(lhs).subtract(rational(rhs)));
@@ -91,9 +91,9 @@ public class WNumerics {
 	}
 	
 	public static Constructor multiply(Constructor lhs, Constructor rhs) {
-		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
-			WValue.Number l = (WValue.Number) lhs;
-			WValue.Number r = (WValue.Number) rhs;
+		if (lhs instanceof Value.Number && rhs instanceof Value.Number) {
+			Value.Number l = (Value.Number) lhs;
+			Value.Number r = (Value.Number) rhs;
 			return l.multiply(r);
 		} else {
 			return normalise(rational(lhs).multiply(rational(rhs)));
@@ -101,9 +101,9 @@ public class WNumerics {
 	}
 	
 	public static Constructor divide(Constructor lhs, Constructor rhs) {
-		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
-			WValue.Number l = (WValue.Number) lhs;
-			WValue.Number r = (WValue.Number) rhs;
+		if (lhs instanceof Value.Number && rhs instanceof Value.Number) {
+			Value.Number l = (Value.Number) lhs;
+			Value.Number r = (Value.Number) rhs;
 			return l.divide(r);
 		} else {
 			return normalise(rational(lhs).divide(rational(rhs)));
@@ -125,7 +125,7 @@ public class WNumerics {
 		Constructor rhs = eq.rhs();	
 				
 		if(rhs.equals(atom)) {
-			return new Pair<Constructor,Constructor>(WValue.Number.ZERO,WValue.MONE);
+			return new Pair<Constructor,Constructor>(Value.Number.ZERO,Value.MONE);
 		} else if(rhs instanceof WRational){
 			WRational r = (WRational) rhs;
 			Pair<WPolynomial,WPolynomial> p = r.rearrangeFor(atom);			
@@ -133,7 +133,7 @@ public class WNumerics {
 			Constructor f = normalise(new WRational(p.second()));
 			return new Pair<Constructor,Constructor>(l,f);
 		} else  {			
-			return new Pair<Constructor,Constructor>(rhs,WValue.Number.ZERO);
+			return new Pair<Constructor,Constructor>(rhs,Value.Number.ZERO);
 		} 	
 	}
 				
@@ -170,7 +170,7 @@ public class WNumerics {
 			} else if (r > 0) {
 				return inequals(sign,lhs.numerator(),rhs.multiply(constant));
 			} else {
-				return WValue.FALSE;
+				return Value.FALSE;
 			}
 		} else if(rhs.denominator().isConstant()) {			
 			BigInteger constant = rhs.denominator().constant();					
@@ -180,14 +180,14 @@ public class WNumerics {
 			} else if (r > 0) {
 				return inequals(sign,lhs.multiply(constant),rhs.denominator());
 			} else {
-				return WValue.FALSE;
+				return Value.FALSE;
 			}			
 		} else {
 			// Ok, can't break down any more ... so disjunction required			
 			Constraint gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
 			Constraint ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
-			gtz = Logic.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
-			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
+			gtz = Logic.and(gtz,new WInequality(false,subtract(Value.Number.ZERO,normalise(lhs.denominator()))));
+			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),Value.Number.ZERO)));
 			return Logic.or(ltz,gtz);			
 		}
 	}	
@@ -201,13 +201,13 @@ public class WNumerics {
 			} else if (r > 0) {				
 				return new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(constant))));
 			} else {
-				return WValue.FALSE;
+				return Value.FALSE;
 			}			
 		} else {
 			Constraint gtz = new WInequality(sign,subtract(normalise(lhs.multiply(rhs.denominator())),normalise(rhs.numerator())));
 			Constraint ltz = new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
-			gtz = Logic.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(rhs.denominator()))));
-			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(rhs.denominator()),WValue.Number.ZERO)));
+			gtz = Logic.and(gtz,new WInequality(false,subtract(Value.Number.ZERO,normalise(rhs.denominator()))));
+			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(rhs.denominator()),Value.Number.ZERO)));
 			return Logic.or(ltz,gtz);	
 		}
 	}
@@ -221,13 +221,13 @@ public class WNumerics {
 			} else if (r > 0) {				
 				return new WInequality(sign,subtract(normalise(rhs.multiply(constant)),normalise(lhs.numerator())));
 			} else {
-				return WValue.FALSE;
+				return Value.FALSE;
 			}
 		} else {
 			Constraint gtz = new WInequality(sign,subtract(normalise(rhs.multiply(lhs.denominator())),normalise(lhs.numerator())));
 			Constraint ltz = new WInequality(sign,subtract(normalise(lhs.numerator()),normalise(rhs.multiply(lhs.denominator()))));
-			gtz = Logic.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
-			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
+			gtz = Logic.and(gtz,new WInequality(false,subtract(Value.Number.ZERO,normalise(lhs.denominator()))));
+			ltz = Logic.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),Value.Number.ZERO)));
 			return Logic.or(ltz,gtz);		
 		}
 	}		

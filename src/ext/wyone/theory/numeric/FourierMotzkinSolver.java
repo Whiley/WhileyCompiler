@@ -102,20 +102,20 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		Pair<Constructor,Constructor> r = rearrangeFor(v,ieq);		
 		Constructor factor = r.second();		
 		
-		if (factor instanceof WValue.Number) {
+		if (factor instanceof Value.Number) {
 			BoundUpdate lower = null;
 			BoundUpdate upper = null;
 
-			WValue.Number constant = (WValue.Number) factor;
+			Value.Number constant = (Value.Number) factor;
 			// look at the sign of the coefficient to
 			// determine whether or not we have an upper or lower bound.			
-			if (constant.compareTo(WValue.Number.ZERO) < 0) {
+			if (constant.compareTo(Value.Number.ZERO) < 0) {
 				if (ieq.sign()) {					
-					lower = new BoundUpdate(v, negate(r.first()), (WValue.Number) negate(constant), false);
+					lower = new BoundUpdate(v, negate(r.first()), (Value.Number) negate(constant), false);
 				} else {					
-					upper = new BoundUpdate(v, negate(r.first()), (WValue.Number) negate(constant), true);
+					upper = new BoundUpdate(v, negate(r.first()), (Value.Number) negate(constant), true);
 				}
-			} else if (constant.compareTo(WValue.Number.ZERO) > 0) {
+			} else if (constant.compareTo(Value.Number.ZERO) > 0) {
 				if (ieq.sign()) {					
 					upper = new BoundUpdate(v, r.first(), constant, false);
 				} else {										
@@ -150,21 +150,21 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		
 		// First, check for the "real shadow"
 		if (atom_t instanceof Type.Int
-				&& below.poly instanceof WValue.Number
-				&& above.poly instanceof WValue.Number) {			
-			WValue.Number bp = (WValue.Number) below.poly;
-			WValue.Number up = (WValue.Number) above.poly;						
+				&& below.poly instanceof Value.Number
+				&& above.poly instanceof Value.Number) {			
+			Value.Number bp = (Value.Number) below.poly;
+			Value.Number up = (Value.Number) above.poly;						
 			// Note, the following is guaranteed to work because the above and
 			// below factors are normalised to be always positive; that way, we
 			// can ignore the divide by negative number case.
 			if(belowSign) {
-				lb = bp.divide(below.factor).add(WValue.ONE).ceil();
+				lb = bp.divide(below.factor).add(Value.ONE).ceil();
 				belowSign=false;
 			} else {
 				lb = bp.divide(below.factor).ceil();
 			}
 			if(aboveSign) {
-				ub = up.divide(above.factor).subtract(WValue.ONE).floor();
+				ub = up.divide(above.factor).subtract(Value.ONE).floor();
 				aboveSign=false;
 			} else {
 				ub = up.divide(above.factor).floor();
@@ -175,11 +175,11 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			
 			if(atom_t instanceof Type.Int && belowSign) {
 				belowSign=false;
-				lb = add(lb,WValue.Number.ONE);
+				lb = add(lb,Value.Number.ONE);
 			}
 			if(atom_t instanceof Type.Int && aboveSign) {
 				aboveSign=false;
-				ub = subtract(ub,WValue.Number.ONE);
+				ub = subtract(ub,Value.Number.ONE);
 			}
 			
 			lb = multiply(lb,above.factor);		
@@ -187,7 +187,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		}
 		
 		if(lb.equals(ub) && (belowSign || aboveSign)) {			
-			state.infer(WValue.FALSE,solver);
+			state.infer(Value.FALSE,solver);
 		} else {			
 			// Second, generate new inequalities
 			if(lb.equals(ub)) {				
@@ -217,10 +217,10 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 	public final static class BoundUpdate {
 		public final Constructor atom;
 		public final Constructor poly;
-		public final WValue.Number factor;
+		public final Value.Number factor;
 		public final Boolean sign; // true indicates strict inequality
 		
-		public BoundUpdate(Constructor v, Constructor p, WValue.Number i, Boolean s) {
+		public BoundUpdate(Constructor v, Constructor p, Value.Number i, Boolean s) {
 			atom = v;
 			poly = p;
 			factor = i;

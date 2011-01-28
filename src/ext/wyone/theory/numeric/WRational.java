@@ -22,7 +22,6 @@ import java.util.*;
 
 import wyil.jvm.rt.BigRational;
 import wyil.lang.Type;
-import wyil.lang.Value;
 import wyone.core.*;
 import wyone.util.*;
 
@@ -95,8 +94,8 @@ public final class WRational implements Constructor {
 		return numerator.isConstant() && denominator.isConstant();
 	}
 	
-	public WValue constant() {
-		return WValue.V_NUM(new BigRational(numerator.constant(),denominator.constant()));
+	public Value constant() {
+		return Value.V_NUM(new BigRational(numerator.constant(),denominator.constant()));
 	}
 	
 	public Set<Constructor> atoms() {
@@ -189,7 +188,7 @@ public final class WRational implements Constructor {
 		return new WRational(top, denominator);
 	}
 	
-	public WRational add(WValue.Number r) {
+	public WRational add(Value.Number r) {
 		WPolynomial top = denominator.multiply(r.numerator());
 		top = top.add(numerator.multiply(r.denominator()));
 		return new WRational(top, denominator.multiply(r.denominator()));
@@ -265,7 +264,7 @@ public final class WRational implements Constructor {
 		return new WRational(top, denominator);
 	}
 	
-	public WRational multiply(WValue.Number r) {
+	public WRational multiply(Value.Number r) {
 		WPolynomial top = numerator.multiply(r.numerator());		
 		return new WRational(top, denominator.multiply(r.denominator()));
 	}

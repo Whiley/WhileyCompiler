@@ -120,7 +120,7 @@ public final class Solver implements Callable<Proof> {
 	protected Proof checkUnsatisfiable(State state, int level) {		
 		if(debug) { indent(level); System.out.println("STATE: " + state); }
 		
-		if(state.contains(WValue.FALSE)) {			
+		if(state.contains(Value.FALSE)) {			
 			// Here, we've reached a contradiction on this branch			
 			return Proof.UNSAT;
 		} else {			
@@ -131,7 +131,7 @@ public final class Solver implements Callable<Proof> {
 			if(substates == null) {
 				// At this point, we've run out of things to try. So, have we
 				// found a model or not ?
-				HashMap<Variable,WValue> valuation = new HashMap<Variable,WValue>();
+				HashMap<Variable,Value> valuation = new HashMap<Variable,Value>();
 				
 				/*
 				 * FIXME: need to put this back ... when I figured out how I identify assignments.
@@ -175,11 +175,11 @@ public final class Solver implements Callable<Proof> {
 	 * @param types --- types of formula
 	 * @return
 	 */
-	protected Proof checkModel(Map<Variable, WValue> model) {										
+	protected Proof checkModel(Map<Variable, Value> model) {										
 		// Check formula does indeed evaluate to true		
 		for(Constraint c : program) {
 			Constraint f = c.substitute((Map) model);
-			if(f != WValue.TRUE) {
+			if(f != Value.TRUE) {
 				return Proof.UNKNOWN; 
 			}
 		}
@@ -317,7 +317,7 @@ public final class Solver implements Callable<Proof> {
 				for(Rule ir : solver.theories()) {				
 					if(assertions.get(x)) {					
 						ir.infer(f, this, solver);
-						if(contains(WValue.FALSE)){				
+						if(contains(Value.FALSE)){				
 							return; // early termination
 						}
 					} else {

@@ -20,7 +20,7 @@ package wyone.theory.logic;
 import java.util.*;
 
 import wyone.core.Constraint;
-import wyone.core.WValue;
+import wyone.core.Value;
 
 public class Logic {
 	
@@ -98,7 +98,7 @@ public class Logic {
 			}
 		}
 		
-		return WValue.TRUE;
+		return Value.TRUE;
 	}
 	
 	/**
@@ -110,7 +110,7 @@ public class Logic {
 	 */
 	public static Constraint factorOut(Constraint f1, Constraint f2) {
 		if(f1.equals(f2)) {
-			return WValue.TRUE;
+			return Value.TRUE;
 		}
 		
 		if (f1 instanceof WConjunct && f2 instanceof WConjunct) {

@@ -184,7 +184,7 @@ public interface Constructor {
 		
 		public boolean isConcrete() {
 			for(Constructor p : subterms) {
-				if(!(p instanceof WValue)) {
+				if(!(p instanceof Value)) {
 					return false;
 				}
 			}

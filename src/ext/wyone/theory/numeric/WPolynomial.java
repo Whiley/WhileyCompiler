@@ -579,7 +579,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	}	
 	
 	public Constructor expand(Map<Constructor,Constructor> binding) {
-		Constructor r = WValue.ZERO;
+		Constructor r = Value.ZERO;
 		for(WTerm t : terms) {			
 			r = WNumerics.add(r,t.expand(binding));			
 		}

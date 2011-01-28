@@ -542,7 +542,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		return null; // unreachable
 	}
 	
-	protected WValue infer(Value v, SyntacticElement elem) {		
+	protected Value infer(Value v, SyntacticElement elem) {		
 		if(v instanceof Value.Bool) {
 			Value.Bool vb = (Value.Bool) v;
 			if(vb.value) {
@@ -562,14 +562,14 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			return new WNumber(br.numerator(),br.denominator());			
 		} else if(v instanceof Value.Set) {
 			Value.Set vs = (Value.Set) v;			
-			HashSet<WValue> vals = new HashSet<WValue>();
+			HashSet<Value> vals = new HashSet<Value>();
 			for(Value e : vs.values) {
 				vals.add(infer(e,elem));
 			}
 			return new WSetVal(vals);
 		} else if(v instanceof Value.List) {
 			Value.List vl = (Value.List) v;
-			ArrayList<WValue> vals = new ArrayList<WValue>();
+			ArrayList<Value> vals = new ArrayList<Value>();
 			for(Value e : vl.values) {
 				vals.add(infer(e,elem));
 			}
@@ -577,7 +577,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		} else if(v instanceof Value.Record) {
 			Value.Record vt = (Value.Record) v;
 			ArrayList<String> fields = new ArrayList<String>(vt.values.keySet());
-			ArrayList<WValue> values = new ArrayList<WValue>();
+			ArrayList<Value> values = new ArrayList<Value>();
 			Collections.sort(fields);
 			for(String f : fields) {			
 				values.add(infer(vt.values.get(f),elem));

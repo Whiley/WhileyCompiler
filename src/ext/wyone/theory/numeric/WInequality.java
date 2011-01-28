@@ -64,13 +64,13 @@ public final class WInequality extends Uninterpreted<Constructor> implements Con
 		Constructor orhs = subterms.get(0);
 		Constructor rhs = orhs.substitute(binding);		
 		
-		if (rhs instanceof WValue.Number) {			
-			WValue.Number nrhs = (WValue.Number) rhs;
-			int nc = WValue.ZERO.compareTo(nrhs);
+		if (rhs instanceof Value.Number) {			
+			Value.Number nrhs = (Value.Number) rhs;
+			int nc = Value.ZERO.compareTo(nrhs);
 			if (sign) {
-				return nc <= 0 ? WValue.TRUE : WValue.FALSE;
+				return nc <= 0 ? Value.TRUE : Value.FALSE;
 			} else {
-				return nc > 0 ? WValue.TRUE : WValue.FALSE;
+				return nc > 0 ? Value.TRUE : Value.FALSE;
 			}
 		} else if(rhs != orhs){
 			return new WInequality(sign, rhs);
