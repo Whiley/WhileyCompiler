@@ -65,8 +65,8 @@ public class UnboundedNumberHeuristic implements Solver.Heuristic {
 		Variable v = unbounded.iterator().next();
 		Solver.State rhs = state.clone();
 		
-		state.infer(WNumerics.greaterThanEq(WNumber.ZERO, v), solver);
-		rhs.infer(WNumerics.lessThan(v,WNumber.ZERO), solver);
+		state.infer(Numerics.greaterThanEq(WNumber.ZERO, v), solver);
+		rhs.infer(Numerics.lessThan(v,WNumber.ZERO), solver);
 		
 		ArrayList<Solver.State> states = new ArrayList<Solver.State>();
 		states.add(state);

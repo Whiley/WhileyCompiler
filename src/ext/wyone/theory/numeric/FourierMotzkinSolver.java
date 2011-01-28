@@ -22,7 +22,7 @@ import java.util.*;
 import wyil.lang.Type;
 import wyone.core.*;
 import wyone.util.*;
-import static wyone.theory.numeric.WNumerics.*;
+import static wyone.theory.numeric.Numerics.*;
 
 /**
  * <p>
@@ -41,18 +41,18 @@ import static wyone.theory.numeric.WNumerics.*;
 public final class FourierMotzkinSolver implements Solver.Rule {	
 	
 	public void infer(Constraint delta, Solver.State state, Solver solver) {								
-		if (delta instanceof WInequality) {			
-			WInequality eq = (WInequality) delta;
+		if (delta instanceof Inequality) {			
+			Inequality eq = (Inequality) delta;
 			internal_infer(eq, state, solver);			
 		} 		
 	}
 
-	private static void internal_infer(WInequality ieq, Solver.State state,
+	private static void internal_infer(Inequality ieq, Solver.State state,
 			Solver solver) {				
 		Constructor ieq_rhs = ieq.rhs();
 		Constructor v;
 		
-		if(ieq_rhs instanceof WRational) {			
+		if(ieq_rhs instanceof Rational) {			
 			v = ieq_rhs.subterms().iterator().next();
 		} else {
 			v = ieq_rhs;
@@ -63,8 +63,8 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		
 		if(lower != null) {				
 			for(Constraint f : state) {
-				if(f instanceof WInequality && usesVariable(((WInequality)f).rhs(),v)) {
-					WInequality i = (WInequality) f;
+				if(f instanceof Inequality && usesVariable(((Inequality)f).rhs(),v)) {
+					Inequality i = (Inequality) f;
 					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);						
 					upper = bound.second();						
 					if(upper != null) {													
@@ -74,8 +74,8 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			}
 		} else if(upper != null) {				
 			for(Constraint f : state) {
-				if(f instanceof WInequality && usesVariable(((WInequality)f).rhs(),v)) {						
-					WInequality i = (WInequality) f;
+				if(f instanceof Inequality && usesVariable(((Inequality)f).rhs(),v)) {						
+					Inequality i = (Inequality) f;
 					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);
 					lower = bound.first();
 					if(lower != null) {							
@@ -87,15 +87,15 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 	}
 
 	public static boolean usesVariable(Constructor f, Constructor v) {
-		if(f instanceof WRational) {
-			WRational r = (WRational) f;
+		if(f instanceof Rational) {
+			Rational r = (Rational) f;
 			return r.subterms().contains(v);
 		} else {
 			return f.equals(v);
 		}
 	}
 	
-	public static Pair<BoundUpdate, BoundUpdate> rearrange(WInequality ieq,
+	public static Pair<BoundUpdate, BoundUpdate> rearrange(Inequality ieq,
 			Constructor v) {
 		// Now, we factorise the lower bound for the variable in question.
 		// Notice that we know the remainder will be zero by construction.		

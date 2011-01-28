@@ -20,18 +20,18 @@ package wyone.theory.numeric;
 import java.util.*;
 import java.math.*;
 
-import static wyone.theory.numeric.WNumerics.*;
+import static wyone.theory.numeric.Numerics.*;
 import wyone.core.*;
 import wyone.util.*;
 
-public final class WTerm implements Comparable<WTerm> {
-	public static final WTerm ZERO = new WTerm(0);
-	public static final WTerm ONE = new WTerm(1);
+public final class Term implements Comparable<Term> {
+	public static final Term ZERO = new Term(0);
+	public static final Term ONE = new Term(1);
 	
 	private final BigInteger coefficient;
 	private final List<Constructor> subterms;	
 
-	public WTerm(int coeff, List<Constructor> atoms) {
+	public Term(int coeff, List<Constructor> atoms) {
 		coefficient = BigInteger.valueOf(coeff);
 		if(coeff != 0) {
 			this.subterms = new ArrayList<Constructor>(atoms);
@@ -41,7 +41,7 @@ public final class WTerm implements Comparable<WTerm> {
 		}		
 	}
 
-	public WTerm(int coeff, Constructor... atoms) {
+	public Term(int coeff, Constructor... atoms) {
 		coefficient = BigInteger.valueOf(coeff);
 		this.subterms = new ArrayList<Constructor>();
 		if(coeff != 0) {
@@ -52,7 +52,7 @@ public final class WTerm implements Comparable<WTerm> {
 		}
 	}
 
-	public WTerm(BigInteger coeff, List<Constructor> atoms) {
+	public Term(BigInteger coeff, List<Constructor> atoms) {
 		coefficient = coeff;
 		if(!coeff.equals(BigInteger.ZERO)) {
 			this.subterms = new ArrayList<Constructor>(atoms);
@@ -62,7 +62,7 @@ public final class WTerm implements Comparable<WTerm> {
 		}				
 	}
 
-	public WTerm(BigInteger coeff, Constructor... atoms) {
+	public Term(BigInteger coeff, Constructor... atoms) {
 		coefficient = coeff;
 		this.subterms = new ArrayList<Constructor>();
 		if (!coeff.equals(BigInteger.ZERO)) {
@@ -82,10 +82,10 @@ public final class WTerm implements Comparable<WTerm> {
 	}
 	
 	public boolean equals(Object o) {
-		if (!(o instanceof WTerm)) {
+		if (!(o instanceof Term)) {
 			return false;
 		}
-		WTerm e = (WTerm) o;
+		Term e = (Term) o;
 		return e.coefficient.equals(coefficient)
 		&& e.subterms.equals(subterms);
 	}		
@@ -115,7 +115,7 @@ public final class WTerm implements Comparable<WTerm> {
 		return subterms.hashCode();
 	}
 
-	public int compareTo(WTerm e) {
+	public int compareTo(Term e) {
 		int maxp = maxPower();
 		int emaxp = e.maxPower();
 		if(maxp > emaxp) {
@@ -153,66 +153,66 @@ public final class WTerm implements Comparable<WTerm> {
 		Constructor r = Value.V_NUM(coefficient);
 		for(Constructor a : subterms) {				
 			Constructor e = a.substitute(binding);			
-			r = WNumerics.multiply(r,e);			
+			r = Numerics.multiply(r,e);			
 		}
 		return r;
 	}
 	
-	public WPolynomial add(int i) {		
-		return new WPolynomial(this).add(i);
+	public Polynomial add(int i) {		
+		return new Polynomial(this).add(i);
 	}
 	
-	public WPolynomial add(BigInteger i) {		
-		return new WPolynomial(this).add(i);
+	public Polynomial add(BigInteger i) {		
+		return new Polynomial(this).add(i);
 	}
 	
-	public WPolynomial add(WTerm e) {		
-		return new WPolynomial(this).add(e);
+	public Polynomial add(Term e) {		
+		return new Polynomial(this).add(e);
 	}
 	
-	public WPolynomial add(WPolynomial p) {		
-		return new WPolynomial(this).add(p);
+	public Polynomial add(Polynomial p) {		
+		return new Polynomial(this).add(p);
 	}
 	
-	public WPolynomial subtract(int i) {		
-		return new WPolynomial(this).subtract(i);
+	public Polynomial subtract(int i) {		
+		return new Polynomial(this).subtract(i);
 	}
 	
-	public WPolynomial subtract(BigInteger i) {		
-		return new WPolynomial(this).subtract(i);
+	public Polynomial subtract(BigInteger i) {		
+		return new Polynomial(this).subtract(i);
 	}
 	
-	public WPolynomial subtract(WTerm e) {		
-		return new WPolynomial(this).subtract(e);
+	public Polynomial subtract(Term e) {		
+		return new Polynomial(this).subtract(e);
 	}
 	
-	public WPolynomial subtract(WPolynomial p) {		
-		return new WPolynomial(this).subtract(p);
+	public Polynomial subtract(Polynomial p) {		
+		return new Polynomial(this).subtract(p);
 	}
 	
-	public WTerm multiply(int i) {
-		return new WTerm(coefficient.multiply(BigInteger.valueOf(i)),subterms);
+	public Term multiply(int i) {
+		return new Term(coefficient.multiply(BigInteger.valueOf(i)),subterms);
 	}
 	
-	public WTerm multiply(long i) {
-		return new WTerm(coefficient.multiply(BigInteger.valueOf(i)),subterms);
+	public Term multiply(long i) {
+		return new Term(coefficient.multiply(BigInteger.valueOf(i)),subterms);
 	}
 	
-	public WTerm multiply(BigInteger i) {
-		return new WTerm(coefficient.multiply(i),subterms);
+	public Term multiply(BigInteger i) {
+		return new Term(coefficient.multiply(i),subterms);
 	}
 	
-	public WTerm multiply(WTerm e) {
+	public Term multiply(Term e) {
 		ArrayList<Constructor> nvars = new ArrayList<Constructor>(subterms);
 		nvars.addAll(e.subterms);	
-		return new WTerm(coefficient.multiply(e.coefficient),nvars);
+		return new Term(coefficient.multiply(e.coefficient),nvars);
 	}	
 	
-	public WPolynomial multiply(WPolynomial e) {
+	public Polynomial multiply(Polynomial e) {
 		return e.multiply(this);		
 	}	
 	
-	public Pair<WTerm,WTerm> divide(WTerm t) {
+	public Pair<Term,Term> divide(Term t) {
 		if (subterms.containsAll(t.subterms)
 				&& coefficient.compareTo(t.coefficient) >= 0) {				
 			BigInteger[] ncoeff = coefficient.divideAndRemainder(t.coefficient);			
@@ -220,8 +220,8 @@ public final class WTerm implements Comparable<WTerm> {
 			for(Constructor v : t.subterms) {
 				nvars.remove(v);
 			}			
-			WTerm quotient = new WTerm(ncoeff[0],nvars);
-			WTerm remainder = new WTerm(ncoeff[1],nvars);			
+			Term quotient = new Term(ncoeff[0],nvars);
+			Term remainder = new Term(ncoeff[1],nvars);			
 			return new Pair(quotient,remainder);		
 		} else {
 			// no division is possible.
@@ -229,8 +229,8 @@ public final class WTerm implements Comparable<WTerm> {
 		}
 	}
 	
-	public WTerm negate() {
-		return new WTerm(coefficient.negate(),subterms);
+	public Term negate() {
+		return new Term(coefficient.negate(),subterms);
 	}		
 	
 	private int maxPower() {

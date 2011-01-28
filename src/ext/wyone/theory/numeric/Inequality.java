@@ -30,7 +30,7 @@ import wyone.util.*;
  * @author djp
  * 
  */
-public final class WInequality extends Base<Constructor> implements Constraint {		
+public final class Inequality extends Base<Constructor> implements Constraint {		
 	private boolean sign;
 	/**
 	 * Construct an inequality from left and right rationals. So, this generates
@@ -39,7 +39,7 @@ public final class WInequality extends Base<Constructor> implements Constraint {
 	 * @param sign 
 	 * @param rhs --- right-hand side (lhs is zero)
 	 */
-	WInequality(boolean sign, Constructor rhs) {	
+	Inequality(boolean sign, Constructor rhs) {	
 		super(sign ? "<=" : ">",rhs);
 		this.sign = sign;
 	}
@@ -56,8 +56,8 @@ public final class WInequality extends Base<Constructor> implements Constraint {
 		return Type.T_BOOL;
 	}
 	
-	public WInequality not() {
-		return new WInequality(!sign,rhs());
+	public Inequality not() {
+		return new Inequality(!sign,rhs());
 	}
 	
 	public Constraint substitute(Map<Constructor, Constructor> binding) {
@@ -73,7 +73,7 @@ public final class WInequality extends Base<Constructor> implements Constraint {
 				return nc > 0 ? Value.TRUE : Value.FALSE;
 			}
 		} else if(rhs != orhs){
-			return new WInequality(sign, rhs);
+			return new Inequality(sign, rhs);
 		} else {
 			return this;
 		}

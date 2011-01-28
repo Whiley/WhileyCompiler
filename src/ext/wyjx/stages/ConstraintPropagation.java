@@ -272,8 +272,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			// We have to treat lists differently from sets because of the
 			// way wyone handles list quantification. It's kind of annoying,
 			// but there's not much we can do.
-			store = Logic.and(store, WNumerics.lessThanEq(WNumber.ZERO,
-					var), WNumerics.lessThan(var,
+			store = Logic.and(store, Numerics.lessThanEq(WNumber.ZERO,
+					var), Numerics.lessThan(var,
 					new WLengthOf(src.first())), WTypes.subtypeOf(var,
 					WIntType.T_INT), src.second());
 			substitutions
@@ -415,16 +415,16 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			condition = new WEquality(false, lhs_p.first(), rhs_p.first());
 			break;
 		case LT:
-			condition = WNumerics.lessThan(lhs_p.first(), rhs_p.first());
+			condition = Numerics.lessThan(lhs_p.first(), rhs_p.first());
 			break;
 		case LTEQ:
-			condition = WNumerics.lessThanEq(lhs_p.first(), rhs_p.first());
+			condition = Numerics.lessThanEq(lhs_p.first(), rhs_p.first());
 			break;
 		case GT:
-			condition = WNumerics.greaterThan(lhs_p.first(), rhs_p.first());
+			condition = Numerics.greaterThan(lhs_p.first(), rhs_p.first());
 			break;
 		case GTEQ:
-			condition = WNumerics.greaterThanEq(lhs_p.first(), rhs_p.first());
+			condition = Numerics.greaterThanEq(lhs_p.first(), rhs_p.first());
 			break;
 		case ELEMOF:
 			condition = WSets.elementOf(lhs_p.first(), rhs_p.first());
@@ -614,7 +614,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		Pair<Constructor,WFormula> rhs = infer(v.rhs,elem);		
 		switch (v.op) {
 		case NEG:
-			return new Pair<Constructor, WFormula>(WNumerics.negate(rhs.first()), rhs
+			return new Pair<Constructor, WFormula>(Numerics.negate(rhs.first()), rhs
 					.second());
 		case LENGTHOF:
 			return new Pair<Constructor, WFormula>(new WLengthOf(rhs.first()), rhs
@@ -678,17 +678,17 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 
 			// first, identify new length
 			WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar),
-					WNumerics.subtract(end.first(), start.first()));
+					Numerics.subtract(end.first(), start.first()));
 
 			// second, pump from src into retVar
 			Variable i = Variable.freshVar();
 			HashMap<Variable, Constructor> variables = new HashMap();
 			variables.put(i, src.first());
 			WFormula lhs = Logic.and(
-					WNumerics.lessThanEq(start.first(), i), WNumerics.lessThan(
+					Numerics.lessThanEq(start.first(), i), Numerics.lessThan(
 							i, end.first()));
 			WFormula rhs = WExprs.equals(new WListAccess(src.first(), i),
-					new WListAccess(retVar, WNumerics
+					new WListAccess(retVar, Numerics
 							.subtract(i, start.first())));
 			WFormula forall1 = new WBoundedForall(true, variables, Logic
 					.implies(lhs, rhs));
@@ -696,7 +696,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			// third, pump from retVar into src
 			variables = new HashMap<Variable,Constructor>();
 			variables.put(i, retVar);
-			rhs = WExprs.equals(new WListAccess(src.first(), WNumerics.add(i,
+			rhs = WExprs.equals(new WListAccess(src.first(), Numerics.add(i,
 					start.first())), new WListAccess(retVar, i));
 			WFormula forall2 = new WBoundedForall(true, variables, rhs);
 
@@ -779,23 +779,23 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		WFormula constraints = Logic.and(lhs.second(),rhs.second());
 		switch (v.op) {
 		case ADD:
-			return new Pair<Constructor, WFormula>(WNumerics.add(lhs.first(), rhs
+			return new Pair<Constructor, WFormula>(Numerics.add(lhs.first(), rhs
 					.first()), constraints);
 		case SUB:
-			return new Pair<Constructor, WFormula>(WNumerics.subtract(lhs.first(),
+			return new Pair<Constructor, WFormula>(Numerics.subtract(lhs.first(),
 					rhs.first()), constraints);
 		case DIV:
-			return new Pair<Constructor, WFormula>(WNumerics.divide(lhs.first(), rhs
+			return new Pair<Constructor, WFormula>(Numerics.divide(lhs.first(), rhs
 					.first()), constraints);
 		case MUL:
-			return new Pair<Constructor, WFormula>(WNumerics.multiply(lhs.first(),
+			return new Pair<Constructor, WFormula>(Numerics.multiply(lhs.first(),
 					rhs.first()), constraints);
 		case APPEND: {
 			Variable retVar = Variable.freshVar();
 			
 			// first, identify new length					
 			WFormula lenConstraints = WExprs.equals(new WLengthOf(retVar),
-					WNumerics.add(new WLengthOf(lhs.first()), new WLengthOf(rhs
+					Numerics.add(new WLengthOf(lhs.first()), new WLengthOf(rhs
 							.first())));
 
 			// second, pump from left src into retVar
@@ -811,19 +811,19 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			variables = new HashMap();
 			variables.put(i,rhs.first());
 			WFormula wrhs = WExprs.equals(new WListAccess(rhs.first(), i),
-					new WListAccess(retVar, WNumerics.add(i,new WLengthOf(lhs.first()))));
+					new WListAccess(retVar, Numerics.add(i,new WLengthOf(lhs.first()))));
 			WFormula forall2 = new WBoundedForall(true,variables,wrhs);
 			
 				// finally, pump from retvar into left src
 			i = Variable.freshVar();
 			variables = new HashMap();
 			variables.put(i, retVar);
-			WFormula l1 = WNumerics.lessThan(i, new WLengthOf(lhs.first()));
+			WFormula l1 = Numerics.lessThan(i, new WLengthOf(lhs.first()));
 			WFormula r1 = WExprs.equals(new WListAccess(lhs.first(), i),
 					new WListAccess(retVar, i));
-			WFormula l2 = WNumerics
+			WFormula l2 = Numerics
 					.greaterThanEq(i, new WLengthOf(lhs.first()));
-			WFormula r2 = WExprs.equals(new WListAccess(rhs.first(), WNumerics
+			WFormula r2 = WExprs.equals(new WListAccess(rhs.first(), Numerics
 					.subtract(i, new WLengthOf(lhs.first()))), new WListAccess(
 					retVar, i));
 

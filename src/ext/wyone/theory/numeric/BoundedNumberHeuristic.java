@@ -62,10 +62,10 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 				
 				if(low != null) {				
 					lhs.add(WExprs.equals(var,low.num), solver);
-					rhs.add(WNumerics.greaterThan(var,low.num), solver);
+					rhs.add(Numerics.greaterThan(var,low.num), solver);
 				} else {					
 					lhs.add(WExprs.equals(var,high.num), solver);
-					rhs.add(WNumerics.lessThan(var,high.num), solver);					
+					rhs.add(Numerics.lessThan(var,high.num), solver);					
 				}
 
 				ArrayList<Solver.State> splits = new ArrayList<Solver.State>();				
@@ -107,8 +107,8 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		WNumber mid = varlow.add(varhigh).divide(WNumber.TWO);		
 		Solver.State rhs = lhs.clone();
 				
-		lhs.add(WNumerics.lessThanEq(var,mid), solver);
-		rhs.add(WNumerics.greaterThan(var,mid), solver);
+		lhs.add(Numerics.lessThanEq(var,mid), solver);
+		rhs.add(Numerics.greaterThan(var,mid), solver);
 		
 		ArrayList<Solver.State> splits = new ArrayList<Solver.State>();
 		splits.add(lhs);
@@ -121,8 +121,8 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		HashMap<Constructor,Pair<Bound,Bound>> bounds = new HashMap();
 		
 		for(WFormula f : state) {
-			if(f instanceof WInequality) {				
-				WInequality wieq = (WInequality) f;
+			if(f instanceof Inequality) {				
+				Inequality wieq = (Inequality) f;
 				Constructor var = variable(wieq);									
 				WType t = var.type(state);
 				if(isInteger && t instanceof WIntType) {
@@ -136,10 +136,10 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		return bounds;
 	}
 	
-	private Constructor variable(WInequality ieq) {
+	private Constructor variable(Inequality ieq) {
 		Constructor ieq_rhs = ieq.rhs();
-		if (ieq_rhs instanceof WRational) {
-			WRational r = (WRational) ieq_rhs;
+		if (ieq_rhs instanceof Rational) {
+			Rational r = (Rational) ieq_rhs;
 			List<Constructor> subterms = r.subterms();
 			if (subterms.size() == 1) {
 				return subterms.get(0);
@@ -148,7 +148,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		return ieq_rhs;		
 	}
 	
-	private static void updateBounds(WInequality wieq, Constructor var,
+	private static void updateBounds(Inequality wieq, Constructor var,
 			boolean isInteger, HashMap<Constructor, Pair<Bound, Bound>> bounds) {
 		Pair<BoundUpdate,BoundUpdate> r = rearrange(wieq,var);		
 		BoundUpdate below = r.first();

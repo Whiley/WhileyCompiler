@@ -30,7 +30,7 @@ import wyone.theory.quantifier.*;
 import wyone.theory.tuple.*;
 import wyone.theory.type.*;
 import static wyone.theory.disjunct.WFormulas.*;
-import static wyone.theory.numeric.WNumerics.*;
+import static wyone.theory.numeric.Numerics.*;
 import static wyone.theory.set.WSets.*;
 
 public class Parser {

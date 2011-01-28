@@ -46,26 +46,26 @@ import wyone.util.*;
  * 
  */
 
-public final class WRational implements Constructor {		
-	private WPolynomial numerator;
-	private WPolynomial denominator;
+public final class Rational implements Constructor {		
+	private Polynomial numerator;
+	private Polynomial denominator;
 	
-	public WRational(WPolynomial i) {
+	public Rational(Polynomial i) {
 		numerator = i;
-		denominator = new WPolynomial(1);
+		denominator = new Polynomial(1);
 	}
 	
-	public WRational(WPolynomial i, WPolynomial j) {
+	public Rational(Polynomial i, Polynomial j) {
 		// Now, we attempt to do some simplification here. The main reason is
 		// that, if this rational is actually a constant, then we want to know
 		// this explicitly. For example, 2x / x -> 2. Thus, we can always
 		// compare a rational against a constant value (such as one or zero) and
 		// be confident of the result.
-		Pair<WPolynomial, WPolynomial> tmp = i.divide(j);
+		Pair<Polynomial, Polynomial> tmp = i.divide(j);
 
-		if (tmp.second().equals(WPolynomial.ZERO)) {
+		if (tmp.second().equals(Polynomial.ZERO)) {
 			numerator = tmp.first();
-			denominator = WPolynomial.ONE;
+			denominator = Polynomial.ONE;
 		} else {
 			// FIXME: we may require better normalisation here ?
 			if (j.isConstant() && j.constant().compareTo(BigInteger.ZERO) < 0) {
@@ -78,11 +78,11 @@ public final class WRational implements Constructor {
 		}
 	}
 		
-	public WPolynomial numerator() {
+	public Polynomial numerator() {
 		return numerator;
 	}
 	
-	public WPolynomial denominator() {
+	public Polynomial denominator() {
 		return denominator;
 	}
 	
@@ -112,7 +112,7 @@ public final class WRational implements Constructor {
 	}
 	
 	public boolean isAtom() {
-		return numerator.isAtom() && denominator.equals(WPolynomial.ONE);
+		return numerator.isAtom() && denominator.equals(Polynomial.ONE);
 	}
 	
 	public Constructor atom() {
@@ -135,7 +135,7 @@ public final class WRational implements Constructor {
 		} else {						
 			Constructor num = numerator.expand(binding);
 			Constructor den = denominator.expand(binding);			
-			return WNumerics.divide(num,den);			
+			return Numerics.divide(num,den);			
 		}	
 	}		
 		
@@ -149,11 +149,11 @@ public final class WRational implements Constructor {
 	 * @param var
 	 * @return
 	 */
-	public Pair<WPolynomial,WPolynomial> rearrangeFor(Constructor atom) {		
-		WPolynomial lhs = WPolynomial.ZERO;
-		WPolynomial rhs = WPolynomial.ZERO;
+	public Pair<Polynomial,Polynomial> rearrangeFor(Constructor atom) {		
+		Polynomial lhs = Polynomial.ZERO;
+		Polynomial rhs = Polynomial.ZERO;
 		
-		for(WTerm t : numerator) {
+		for(Term t : numerator) {
 			if(t.atoms().contains(atom)) {
 				lhs = lhs.subtract(t); 				
 			} else {
@@ -166,156 +166,156 @@ public final class WRational implements Constructor {
 		// sides by the denominator [I think]. There will probably be a bug if
 		// the denominator contains the variable, but not the numerator.
 		
-		Pair<WPolynomial,WPolynomial> p = lhs.factoriseFor(atom);
+		Pair<Polynomial,Polynomial> p = lhs.factoriseFor(atom);
 		rhs = rhs.add(p.second());
 		
-		return new Pair<WPolynomial,WPolynomial>(rhs,p.first());
+		return new Pair<Polynomial,Polynomial>(rhs,p.first());
 	}
 	
 	/* =========================================================== */
 	/* ========================== ADDITION ======================= */
 	/* =========================================================== */
 	
-	public WRational add(int i) {
-		WPolynomial top = denominator.multiply(i);
+	public Rational add(int i) {
+		Polynomial top = denominator.multiply(i);
 		top = top.add(numerator);
-		return new WRational(top, denominator);
+		return new Rational(top, denominator);
 	}
 	
-	public WRational add(BigInteger i) {
-		WPolynomial top = denominator.multiply(i);
+	public Rational add(BigInteger i) {
+		Polynomial top = denominator.multiply(i);
 		top = top.add(numerator);
-		return new WRational(top, denominator);
+		return new Rational(top, denominator);
 	}
 	
-	public WRational add(Value.Number r) {
-		WPolynomial top = denominator.multiply(r.numerator());
+	public Rational add(Value.Number r) {
+		Polynomial top = denominator.multiply(r.numerator());
 		top = top.add(numerator.multiply(r.denominator()));
-		return new WRational(top, denominator.multiply(r.denominator()));
+		return new Rational(top, denominator.multiply(r.denominator()));
 	}
 	
-	public WRational add(WTerm i) {
-		WPolynomial top = denominator.multiply(i);
+	public Rational add(Term i) {
+		Polynomial top = denominator.multiply(i);
 		top = top.add(numerator);
-		return new WRational(top, denominator);
+		return new Rational(top, denominator);
 	}
 	
-	public WRational add(WPolynomial p) {
-		WPolynomial top = denominator.multiply(p);
+	public Rational add(Polynomial p) {
+		Polynomial top = denominator.multiply(p);
 		top = top.add(numerator);
-		return new WRational(top, denominator);
+		return new Rational(top, denominator);
 	}
 	
-	public WRational add(WRational r) {
-		WPolynomial top = r.numerator().multiply(denominator);
+	public Rational add(Rational r) {
+		Polynomial top = r.numerator().multiply(denominator);
 		top = top.add(numerator.multiply(r.denominator));
-		return new WRational(top, denominator.multiply(r.denominator));
+		return new Rational(top, denominator.multiply(r.denominator));
 	}
 	
 	/* =========================================================== */
 	/* ======================= SUBTRACTION ======================= */
 	/* =========================================================== */
 
-	public WRational subtract(int i) {
-		WPolynomial top = numerator;
+	public Rational subtract(int i) {
+		Polynomial top = numerator;
 		top = top.subtract(denominator.multiply(i));
-		return new WRational(top, denominator);
+		return new Rational(top, denominator);
 	}
 	
-	public WRational subtract(WTerm t) {
-		WPolynomial top = numerator;
+	public Rational subtract(Term t) {
+		Polynomial top = numerator;
 		top = top.subtract(denominator.multiply(t));
-		return new WRational(top, denominator);
+		return new Rational(top, denominator);
 	}
 	
-	public WRational subtract(WPolynomial p) {
-		WPolynomial top = numerator;
+	public Rational subtract(Polynomial p) {
+		Polynomial top = numerator;
 		top = top.subtract(denominator.multiply(p));
-		return new WRational(top, denominator);
+		return new Rational(top, denominator);
 	}
 	
-	public WRational subtract(WRational r) {
-		WPolynomial top = numerator.multiply(r.denominator);
+	public Rational subtract(Rational r) {
+		Polynomial top = numerator.multiply(r.denominator);
 		top = top.subtract(denominator.multiply(r.numerator));
-		return new WRational(top, denominator.multiply(r.denominator));
+		return new Rational(top, denominator.multiply(r.denominator));
 	}
 	
 	/* =========================================================== */
 	/* ====================== MULTIPLICATION ===================== */
 	/* =========================================================== */
 
-	public WRational multiply(int i) {
-		WPolynomial top = numerator.multiply(i);		
-		return new WRational(top, denominator);
+	public Rational multiply(int i) {
+		Polynomial top = numerator.multiply(i);		
+		return new Rational(top, denominator);
 	}
 	
-	public WRational multiply(BigInteger i) {
-		WPolynomial top = numerator.multiply(i);		
-		return new WRational(top, denominator);
+	public Rational multiply(BigInteger i) {
+		Polynomial top = numerator.multiply(i);		
+		return new Rational(top, denominator);
 	}
 	
-	public WRational multiply(WTerm t) {
-		WPolynomial top = numerator.multiply(t);		
-		return new WRational(top, denominator);
+	public Rational multiply(Term t) {
+		Polynomial top = numerator.multiply(t);		
+		return new Rational(top, denominator);
 	}
 	
-	public WRational multiply(WPolynomial p) {
-		WPolynomial top = numerator.multiply(p);		
-		return new WRational(top, denominator);
+	public Rational multiply(Polynomial p) {
+		Polynomial top = numerator.multiply(p);		
+		return new Rational(top, denominator);
 	}
 	
-	public WRational multiply(Value.Number r) {
-		WPolynomial top = numerator.multiply(r.numerator());		
-		return new WRational(top, denominator.multiply(r.denominator()));
+	public Rational multiply(Value.Number r) {
+		Polynomial top = numerator.multiply(r.numerator());		
+		return new Rational(top, denominator.multiply(r.denominator()));
 	}
 	
-	public WRational multiply(WRational r) {
-		WPolynomial top = numerator.multiply(r.numerator());		
-		return new WRational(top, denominator.multiply(r.denominator));
+	public Rational multiply(Rational r) {
+		Polynomial top = numerator.multiply(r.numerator());		
+		return new Rational(top, denominator.multiply(r.denominator));
 	}
 	
 	/* =========================================================== */
 	/* ========================= DIVISION ======================== */
 	/* =========================================================== */
 
-	public WRational divide(int r) {
-		WPolynomial top = numerator;		
-		return new WRational(top, denominator.multiply(r));
+	public Rational divide(int r) {
+		Polynomial top = numerator;		
+		return new Rational(top, denominator.multiply(r));
 	}
 	
-	public WRational divide(BigInteger r) {
-		WPolynomial top = numerator;		
-		return new WRational(top, denominator.multiply(r));
+	public Rational divide(BigInteger r) {
+		Polynomial top = numerator;		
+		return new Rational(top, denominator.multiply(r));
 	}
 	
-	public WRational divide(WTerm r) {
-		WPolynomial top = numerator;		
-		return new WRational(top, denominator.multiply(r));
+	public Rational divide(Term r) {
+		Polynomial top = numerator;		
+		return new Rational(top, denominator.multiply(r));
 	}
 	
-	public WRational divide(WPolynomial r) {
-		WPolynomial top = numerator;		
-		return new WRational(top, denominator.multiply(r));
+	public Rational divide(Polynomial r) {
+		Polynomial top = numerator;		
+		return new Rational(top, denominator.multiply(r));
 	}
 	
-	public WRational divide(WRational r) {
-		WPolynomial top = numerator.multiply(r.denominator());		
-		return new WRational(top, denominator.multiply(r.numerator));
+	public Rational divide(Rational r) {
+		Polynomial top = numerator.multiply(r.denominator());		
+		return new Rational(top, denominator.multiply(r.numerator));
 	}
 	
 	/* =========================================================== */
 	/* =========================== OTHER ========================= */
 	/* =========================================================== */
 
-	public WRational negate() {		
-		return new WRational(numerator.negate(),denominator());
+	public Rational negate() {		
+		return new Rational(numerator.negate(),denominator());
 	}
 	
 	public boolean equals(Object o) {
-		if(o instanceof WRational) {			
-			WRational r = (WRational) o;
-			WPolynomial lhs = numerator.multiply(r.denominator);
-			WPolynomial rhs = r.numerator.multiply(denominator);
+		if(o instanceof Rational) {			
+			Rational r = (Rational) o;
+			Polynomial lhs = numerator.multiply(r.denominator);
+			Polynomial rhs = r.numerator.multiply(denominator);
 			return lhs.equals(rhs);
 		}
 		return false;
@@ -329,7 +329,7 @@ public final class WRational implements Constructor {
 	}
 	
 	public String toString() {
-		if (denominator.equals(WPolynomial.ONE)) {
+		if (denominator.equals(Polynomial.ONE)) {
 			return numerator.toString();
 		} else if (numerator.isConstant() && denominator.isConstant()) {
 			return numerator + " / " + denominator;

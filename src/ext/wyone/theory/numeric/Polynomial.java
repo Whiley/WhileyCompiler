@@ -31,72 +31,72 @@ import wyone.util.Pair;
  * @author djp
  * 
  */
-public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomial> {
-	public static final WPolynomial MTWO = new WPolynomial(-2);
-	public static final WPolynomial MONE = new WPolynomial(-1);
-	public static final WPolynomial ZERO = new WPolynomial(0);	
-	public static final WPolynomial ONE = new WPolynomial(1);
-	public static final WPolynomial TWO = new WPolynomial(2);
-	public static final WPolynomial THREE = new WPolynomial(3);
-	public static final WPolynomial FOUR = new WPolynomial(4);
-	public static final WPolynomial FIVE = new WPolynomial(5);	
-	public static final WPolynomial TEN = new WPolynomial(10);
+public final class Polynomial implements Iterable<Term>, Comparable<Polynomial> {
+	public static final Polynomial MTWO = new Polynomial(-2);
+	public static final Polynomial MONE = new Polynomial(-1);
+	public static final Polynomial ZERO = new Polynomial(0);	
+	public static final Polynomial ONE = new Polynomial(1);
+	public static final Polynomial TWO = new Polynomial(2);
+	public static final Polynomial THREE = new Polynomial(3);
+	public static final Polynomial FOUR = new Polynomial(4);
+	public static final Polynomial FIVE = new Polynomial(5);	
+	public static final Polynomial TEN = new Polynomial(10);
 	
 	// NOTE: ZERO is represented only by the empty set of terms and not, for
 	// example, as a single term with no variables and zero coefficient.
 	//
-	private final HashSet<WTerm> terms;	
+	private final HashSet<Term> terms;	
 	
-	public WPolynomial() {
-		terms = new HashSet<WTerm>();		
+	public Polynomial() {
+		terms = new HashSet<Term>();		
 	}
 	
-	public WPolynomial(int constant) {
-		terms = new HashSet<WTerm>();
+	public Polynomial(int constant) {
+		terms = new HashSet<Term>();
 		if(constant != 0) {
-			this.terms.add(new WTerm(constant));
+			this.terms.add(new Term(constant));
 		}
 	}
 	
-	public WPolynomial(BigInteger constant) {
-		terms = new HashSet<WTerm>();
+	public Polynomial(BigInteger constant) {
+		terms = new HashSet<Term>();
 		if(!constant.equals(BigInteger.ZERO)) {
-			this.terms.add(new WTerm(constant));
+			this.terms.add(new Term(constant));
 		}		
 	}
 	
-	public WPolynomial(Constructor atom) {
-		terms = new HashSet<WTerm>();
-		terms.add(new WTerm(1,atom));
+	public Polynomial(Constructor atom) {
+		terms = new HashSet<Term>();
+		terms.add(new Term(1,atom));
 	}
 	
-	public WPolynomial(WTerm term) {
-		terms = new HashSet<WTerm>();
+	public Polynomial(Term term) {
+		terms = new HashSet<Term>();
 		if(!term.coefficient().equals(BigInteger.ZERO)) {
 			this.terms.add(term);
 		}
 	}
 	
-	public WPolynomial(WTerm... terms) {
-		this.terms = new HashSet<WTerm>();
-		for (WTerm t : terms) {
+	public Polynomial(Term... terms) {
+		this.terms = new HashSet<Term>();
+		for (Term t : terms) {
 			if (!t.coefficient().equals(BigInteger.ZERO)) {
 				this.terms.add(t);
 			}
 		}		
 	}	
 	
-	public WPolynomial(Set<WTerm> terms) {
-		this.terms = new HashSet<WTerm>();
-		for (WTerm t : terms) {
+	public Polynomial(Set<Term> terms) {
+		this.terms = new HashSet<Term>();
+		for (Term t : terms) {
 			if (!t.coefficient().equals(BigInteger.ZERO)) {
 				this.terms.add(t);
 			}
 		}			
 	}
 	
-	public WPolynomial(WPolynomial poly) {		
-		this.terms = (HashSet<WTerm>) poly.terms.clone();
+	public Polynomial(Polynomial poly) {		
+		this.terms = (HashSet<Term>) poly.terms.clone();
 	}
 
 	/* =========================================================== */
@@ -104,16 +104,16 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	/* =========================================================== */
 
 
-	public Iterator<WTerm> iterator() {
+	public Iterator<Term> iterator() {
 		return terms.iterator();
 	}
 	
-	public Set<WTerm> terms() {
+	public Set<Term> terms() {
 		return Collections.unmodifiableSet(terms);
 	}
 	
 	public boolean isConstant() {
-		for(WTerm e : terms) {
+		for(Term e : terms) {
 			if(!e.isConstant()) {
 				return false;
 			}
@@ -127,14 +127,14 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	 */
 	public BigInteger constant() {
 		BigInteger c = BigInteger.ZERO;
-		for(WTerm e : terms) {
+		for(Term e : terms) {
 			c = c.add(e.coefficient());
 		}
 		return c;
 	}
 	
 	public boolean isLinear() {
-		for(WTerm e : terms) {
+		for(Term e : terms) {
 			if(e.atoms().size() > 1) {
 				return false;
 			}
@@ -146,7 +146,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 		if(terms.size() != 1) {
 			return false;
 		}
-		WTerm t = terms.iterator().next();
+		Term t = terms.iterator().next();
 		if (t.atoms().size() != 1
 				|| !t.coefficient().equals(BigInteger.ONE)) {
 			return false;
@@ -161,7 +161,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	
 	public Set<Constructor> atoms() {
 		HashSet<Constructor> fvs = new HashSet();
-		for(WTerm e : terms) {
+		for(Term e : terms) {
 			fvs.addAll(e.atoms());			
 		}
 		return fvs;
@@ -171,30 +171,30 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	/* ========================== ADDITION ======================= */
 	/* =========================================================== */
 	
-	public WPolynomial add(int i) {
-		return add(new WTerm(i));
+	public Polynomial add(int i) {
+		return add(new Term(i));
 	}
 	
-	public WPolynomial add(BigInteger i) {
-		return add(new WTerm(i));
+	public Polynomial add(BigInteger i) {
+		return add(new Term(i));
 	}
 	
-	public WPolynomial add(WTerm e) {
+	public Polynomial add(Term e) {
 		final BigInteger zero = BigInteger.ZERO;
 		
-		for(WTerm me : terms) {
+		for(Term me : terms) {
 			if (me.atoms().equals(e.atoms())) {
 				BigInteger ncoeff = me.coefficient().add(e.coefficient());
-				WPolynomial r = new WPolynomial(this);
+				Polynomial r = new Polynomial(this);
 				r.terms.remove(me);
 				if (!(ncoeff.equals(zero))) {
-					r = r.add(new WTerm(ncoeff, me.atoms()));
+					r = r.add(new Term(ncoeff, me.atoms()));
 				}
 				return r;
 			}
 		}		
 		if(!e.coefficient().equals(zero)) {
-			WPolynomial r = new WPolynomial(this);		
+			Polynomial r = new Polynomial(this);		
 			r.terms.add(e);
 			return r;		
 		} else {
@@ -202,9 +202,9 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 		}
 	}
 	
-	public WPolynomial add(WPolynomial poly) {
-		WPolynomial r = this;
-		for(WTerm e : poly.terms) {
+	public Polynomial add(Polynomial poly) {
+		Polynomial r = this;
+		for(Term e : poly.terms) {
 			r = r.add(e);
 		}
 		return r;
@@ -214,23 +214,23 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	/* ========================= SUBTRACTION ===================== */
 	/* =========================================================== */
 	
-	public WPolynomial subtract(int i) {
-		return subtract(new WTerm(i));
+	public Polynomial subtract(int i) {
+		return subtract(new Term(i));
 	}
 	
-	public WPolynomial subtract(BigInteger i) {
-		return subtract(new WTerm(i));
+	public Polynomial subtract(BigInteger i) {
+		return subtract(new Term(i));
 	}
 	
-	public WPolynomial subtract(WTerm e) {
-		WTerm ne = new WTerm(e.coefficient().negate(), e.atoms());
+	public Polynomial subtract(Term e) {
+		Term ne = new Term(e.coefficient().negate(), e.atoms());
 		return add(ne);
 	}
 	
 
-	public WPolynomial subtract(WPolynomial poly) {
-		WPolynomial r = this;
-		for (WTerm e : poly.terms) {			
+	public Polynomial subtract(Polynomial poly) {
+		Polynomial r = this;
+		for (Term e : poly.terms) {			
 			r = r.subtract(e);
 		}
 		return r;
@@ -240,25 +240,25 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	/* ======================= MULTIPLICATION ==================== */
 	/* =========================================================== */
 	
-	public WPolynomial multiply(int i) {
-		return multiply(new WTerm(i));		
+	public Polynomial multiply(int i) {
+		return multiply(new Term(i));		
 	}
 	
-	public WPolynomial multiply(BigInteger i) {
-		return multiply(new WTerm(i));		
+	public Polynomial multiply(BigInteger i) {
+		return multiply(new Term(i));		
 	}
 	
-	public WPolynomial multiply(WTerm e1) {
-		WPolynomial r = new WPolynomial();
-		for (WTerm e2 : terms) {
+	public Polynomial multiply(Term e1) {
+		Polynomial r = new Polynomial();
+		for (Term e2 : terms) {
 			r = r.add(e1.multiply(e2));
 		}	
 		return r;
 	}
 	
-	public WPolynomial multiply(WPolynomial poly) {
-		WPolynomial r = new WPolynomial();
-		for (WTerm e : poly.terms) {			
+	public Polynomial multiply(Polynomial poly) {
+		Polynomial r = new Polynomial();
+		for (Term e : poly.terms) {			
 			r = r.add(this.multiply(e));
 		}
 		return r;
@@ -293,23 +293,23 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	 * <b>NOTE: THE IMPLEMENTATION OF THIS METHOD IS CURRENTLY BUGGY. IN
 	 * PARTICULAR, IT CAN RETURN NEGATIVE INTEGERS UNLIKE NORMAL GCD</b>
 	 */
-	public WPolynomial gcd(WPolynomial a) {		
-		final WPolynomial zero = WPolynomial.ZERO;
-		WPolynomial b = this;
-		WPolynomial c;				
+	public Polynomial gcd(Polynomial a) {		
+		final Polynomial zero = Polynomial.ZERO;
+		Polynomial b = this;
+		Polynomial c;				
 						
 		// First, decide the right way around for a + b
 		
 		// BUG HERE: currently there is a bug here, since it doesn't always make
 		// the right choice. In particular, if both polynomials are in fact
 		// integers, then it doesn't always pick the largest.
-		Pair<WPolynomial,WPolynomial> r = a.divide(b);				
+		Pair<Polynomial,Polynomial> r = a.divide(b);				
 		
 		if(r.first().equals(zero)) {			
 			r = a.divide(b);
 			if(r.first().equals(zero)) {
 				// a + b are mutually indivisible
-				return WPolynomial.ONE;
+				return Polynomial.ONE;
 			} else {
 				// b is divisible by a, but not the other way around.
 				c = a;
@@ -318,12 +318,12 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 			}
 		}		
 		
-		while (!b.equals(WPolynomial.ZERO)) {			
+		while (!b.equals(Polynomial.ZERO)) {			
 			r = a.divide(b); 
 			c = r.second();			
-			if (c.equals(WPolynomial.ZERO)) {
+			if (c.equals(Polynomial.ZERO)) {
 				return b;
-			} else if(r.first().equals(WPolynomial.ZERO)) {
+			} else if(r.first().equals(Polynomial.ZERO)) {
 				// no further division is possible.
 				return b;
 			}
@@ -347,12 +347,12 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	 * For more information on polynomial division see: &lt;a href=&quot;http://en.wikipedia.org/wiki/Polynomial_long_division&quot;&gt;wikipedia&lt;/a&gt;
 	 * 
 	 */
-	public Pair<WPolynomial,WPolynomial> divide(WTerm t1) {
-		WPolynomial quotient = new WPolynomial(0);
-		WPolynomial remainder = new WPolynomial(0);
+	public Pair<Polynomial,Polynomial> divide(Term t1) {
+		Polynomial quotient = new Polynomial(0);
+		Polynomial remainder = new Polynomial(0);
 		
-		for(WTerm t2 : terms) {
-			Pair<WTerm,WTerm> r = t2.divide(t1);
+		for(Term t2 : terms) {
+			Pair<Term,Term> r = t2.divide(t1);
 			quotient = quotient.add(r.first());
 			remainder = remainder.add(r.second());
 		}
@@ -374,14 +374,14 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	 * For more information on polynomial long division see: &lt;a href=&quot;http://en.wikipedia.org/wiki/Polynomial_long_division&quot;&gt;wikipedia&lt;/a&gt;
 	 * 
 	 */
-	public Pair<WPolynomial,WPolynomial> divide(WPolynomial x) {
+	public Pair<Polynomial,Polynomial> divide(Polynomial x) {
 		
 		// Ok, yes, this piece of code is horribly inefficient. But, it's tough
 		// even to make it work properly, let alone make it work fast.
 
-		WTerm max = null;
+		Term max = null;
 		
-		for(WTerm t : x) {
+		for(Term t : x) {
 			if (max == null || max.compareTo(t) > 0) {
 				max = t;
 			}
@@ -392,33 +392,33 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 			throw new ArithmeticException("polynomial division by zero");
 		}
 		
-		ArrayList<WTerm> myterms = new ArrayList<WTerm>(terms);		
+		ArrayList<Term> myterms = new ArrayList<Term>(terms);		
 		Collections.sort(myterms);
 		
-		for(WTerm t1 : myterms) {
-			Pair<WTerm,WTerm> d = t1.divide(max);	
-			if(!d.first().equals(WTerm.ZERO)) {			
-				WTerm quotient = d.first();	
+		for(Term t1 : myterms) {
+			Pair<Term,Term> d = t1.divide(max);	
+			if(!d.first().equals(Term.ZERO)) {			
+				Term quotient = d.first();	
 
-				WPolynomial remainder = this.subtract(x.multiply(quotient));				
+				Polynomial remainder = this.subtract(x.multiply(quotient));				
 
-				Pair<WPolynomial,WPolynomial> r = remainder.divide(x);										
+				Pair<Polynomial,Polynomial> r = remainder.divide(x);										
 				return new Pair(r.first().add(quotient),r.second());
 			}	
 		}
 		
 		// base case for recursion.
-		return new Pair(WPolynomial.ZERO,this);
+		return new Pair(Polynomial.ZERO,this);
 	}
 	
 	/* =========================================================== */
 	/* ========================== NEGATION ======================= */
 	/* =========================================================== */
 
-	public WPolynomial negate() {
-		WPolynomial r = new WPolynomial(0);
+	public Polynomial negate() {
+		Polynomial r = new Polynomial(0);
 		
-		for(WTerm t : terms) {
+		for(Term t : terms) {
 			r.terms.add(t.negate());
 		}
 		
@@ -448,15 +448,15 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	 * 2x&circ;2 + xy + 2 ======&gt; (2x+y, 2) 
 	 * </pre>
 	 */
-	public Pair<WPolynomial,WPolynomial> factoriseFor(Constructor atom) {
-		WPolynomial factor = new WPolynomial(0);
-		WPolynomial remainder = new WPolynomial(0);
+	public Pair<Polynomial,Polynomial> factoriseFor(Constructor atom) {
+		Polynomial factor = new Polynomial(0);
+		Polynomial remainder = new Polynomial(0);
 		
-		for(WTerm t : terms) {
+		for(Term t : terms) {
 			if(t.atoms().contains(atom)) {
 				ArrayList<Constructor> atoms = new ArrayList(t.atoms());
 				atoms.remove(atom); // remove one instance of var only
-				factor = factor.add(new WTerm(t.coefficient(),atoms));
+				factor = factor.add(new Term(t.coefficient(),atoms));
 			} else {
 				remainder = remainder.add(t);
 			}
@@ -469,8 +469,8 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	/* ============================ OTHER ======================== */
 	/* =========================================================== */
 
-	public int compareTo(WPolynomial p) {
-		Collection<WTerm> p_terms = p.terms;
+	public int compareTo(Polynomial p) {
+		Collection<Term> p_terms = p.terms;
 		
 		if(terms.size() < p_terms.size()) {
 			return -1;
@@ -478,11 +478,11 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 			return 1;
 		}
 		
-		Iterator<WTerm> mi = terms.iterator();
-		Iterator<WTerm> pi = p_terms.iterator();
+		Iterator<Term> mi = terms.iterator();
+		Iterator<Term> pi = p_terms.iterator();
 		while(mi.hasNext()) {		
-			WTerm mt = mi.next();
-			WTerm pt = pi.next();
+			Term mt = mi.next();
+			Term pt = pi.next();
 			int c = mt.compareTo(pt);
 			if(c != 0) {
 				return c;
@@ -492,8 +492,8 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	}
 	
 	public boolean equals(Object o) {
-		if(o instanceof WPolynomial) {
-			WPolynomial p = (WPolynomial) o;
+		if(o instanceof Polynomial) {
+			Polynomial p = (Polynomial) o;
 			return p.terms.equals(terms);
 		}
 		return false;
@@ -513,7 +513,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 		if(terms.size() > 1) {
 			r += "(";
 		}
-		for (WTerm e : terms) {			
+		for (Term e : terms) {			
 			if (!firstTime) {
 				if (e.coefficient().compareTo(BigInteger.ZERO) > 0) {
 					r += "+";					
@@ -556,10 +556,10 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
      * @param environment
      * @return
      */
-	public WPolynomial substitute(Map<Variable,Variable> environment) {
-		WPolynomial r = new WPolynomial();
+	public Polynomial substitute(Map<Variable,Variable> environment) {
+		Polynomial r = new Polynomial();
 		boolean changed=false;
-		for (WTerm e : terms) {
+		for (Term e : terms) {
 			ArrayList<Constructor> nvars = new ArrayList<Constructor>();
 			for (Constructor v : e.atoms()) {
 				if(environment.containsKey(v)) {
@@ -569,7 +569,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 					nvars.add(v);
 				}
 			}
-			r = r.add(new WTerm(e.coefficient(), nvars));
+			r = r.add(new Term(e.coefficient(), nvars));
 		}
 		if(changed) {
 			return r;
@@ -580,8 +580,8 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	
 	public Constructor expand(Map<Constructor,Constructor> binding) {
 		Constructor r = Value.ZERO;
-		for(WTerm t : terms) {			
-			r = WNumerics.add(r,t.expand(binding));			
+		for(Term t : terms) {			
+			r = Numerics.add(r,t.expand(binding));			
 		}
 		return r;
 	}	
