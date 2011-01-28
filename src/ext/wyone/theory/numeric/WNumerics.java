@@ -37,7 +37,7 @@ public class WNumerics {
 	
 	public static WExpr normalise(WPolynomial p) {
 		if(p.isConstant()) {
-			return new WNumber(p.constant());
+			return new WValue.Number(p.constant());
 		} else if(p.isAtom()) {
 			return p.atom();
 		} else {
@@ -46,8 +46,8 @@ public class WNumerics {
 	}	
 	
 	public static WRational rational(WExpr r) {
-		if(r instanceof WNumber) {
-			WNumber n = (WNumber) r;
+		if(r instanceof WValue.Number) {
+			WValue.Number n = (WValue.Number) r;
 			return new WRational(new WPolynomial(n.numerator()),new WPolynomial(n.denominator()));
 		} else if(r instanceof WRational) {
 			return (WRational) r;
@@ -57,8 +57,8 @@ public class WNumerics {
 	}
 	
 	public static WExpr negate(WExpr expr) {
-		if(expr instanceof WNumber) {
-			return ((WNumber)expr).negate();
+		if(expr instanceof WValue.Number) {
+			return ((WValue.Number)expr).negate();
 		} else if(expr instanceof WRational) {
 			// must be a rational
 			WRational r = (WRational) expr;
@@ -70,9 +70,9 @@ public class WNumerics {
 	}
 		
 	public static WExpr add(WExpr lhs, WExpr rhs) {
-		if (lhs instanceof WNumber && rhs instanceof WNumber) {
-			WNumber l = (WNumber) lhs;
-			WNumber r = (WNumber) rhs;
+		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
+			WValue.Number l = (WValue.Number) lhs;
+			WValue.Number r = (WValue.Number) rhs;
 			return l.add(r);
 		} else {
 			return normalise(rational(lhs).add(rational(rhs)));
@@ -80,9 +80,9 @@ public class WNumerics {
 	}
 	
 	public static WExpr subtract(WExpr lhs, WExpr rhs) {
-		if (lhs instanceof WNumber && rhs instanceof WNumber) {
-			WNumber l = (WNumber) lhs;
-			WNumber r = (WNumber) rhs;
+		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
+			WValue.Number l = (WValue.Number) lhs;
+			WValue.Number r = (WValue.Number) rhs;
 			return l.subtract(r);
 		} else {
 			return normalise(rational(lhs).subtract(rational(rhs)));
@@ -90,9 +90,9 @@ public class WNumerics {
 	}
 	
 	public static WExpr multiply(WExpr lhs, WExpr rhs) {
-		if (lhs instanceof WNumber && rhs instanceof WNumber) {
-			WNumber l = (WNumber) lhs;
-			WNumber r = (WNumber) rhs;
+		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
+			WValue.Number l = (WValue.Number) lhs;
+			WValue.Number r = (WValue.Number) rhs;
 			return l.multiply(r);
 		} else {
 			return normalise(rational(lhs).multiply(rational(rhs)));
@@ -100,9 +100,9 @@ public class WNumerics {
 	}
 	
 	public static WExpr divide(WExpr lhs, WExpr rhs) {
-		if (lhs instanceof WNumber && rhs instanceof WNumber) {
-			WNumber l = (WNumber) lhs;
-			WNumber r = (WNumber) rhs;
+		if (lhs instanceof WValue.Number && rhs instanceof WValue.Number) {
+			WValue.Number l = (WValue.Number) lhs;
+			WValue.Number r = (WValue.Number) rhs;
 			return l.divide(r);
 		} else {
 			return normalise(rational(lhs).divide(rational(rhs)));
@@ -124,7 +124,7 @@ public class WNumerics {
 		WExpr rhs = eq.rhs();	
 				
 		if(rhs.equals(atom)) {
-			return new Pair<WExpr,WExpr>(WNumber.ZERO,WNumber.MONE);
+			return new Pair<WExpr,WExpr>(WValue.Number.ZERO,WValue.MONE);
 		} else if(rhs instanceof WRational){
 			WRational r = (WRational) rhs;
 			Pair<WPolynomial,WPolynomial> p = r.rearrangeFor(atom);			
@@ -132,7 +132,7 @@ public class WNumerics {
 			WExpr f = normalise(new WRational(p.second()));
 			return new Pair<WExpr,WExpr>(l,f);
 		} else  {			
-			return new Pair<WExpr,WExpr>(rhs,WNumber.ZERO);
+			return new Pair<WExpr,WExpr>(rhs,WValue.Number.ZERO);
 		} 	
 	}
 				
@@ -155,7 +155,7 @@ public class WNumerics {
 	private static WConstraint inequals(boolean sign, WExpr lhs, WExpr rhs) {
 		return inequals(sign, rational(lhs),rational(rhs));
 	}
-	
+		
 	private static WConstraint inequals(boolean sign, WRational lhs, WRational rhs) {		
 		if(lhs.denominator().equals(WPolynomial.ONE)) {		
 			return inequals(sign,lhs.numerator(),rhs);
@@ -169,7 +169,7 @@ public class WNumerics {
 			} else if (r > 0) {
 				return inequals(sign,lhs.numerator(),rhs.multiply(constant));
 			} else {
-				return WBool.FALSE;
+				return WValue.FALSE;
 			}
 		} else if(rhs.denominator().isConstant()) {			
 			BigInteger constant = rhs.denominator().constant();					
@@ -179,19 +179,19 @@ public class WNumerics {
 			} else if (r > 0) {
 				return inequals(sign,lhs.multiply(constant),rhs.denominator());
 			} else {
-				return WBool.FALSE;
+				return WValue.FALSE;
 			}			
 		} else {
 			// Ok, can't break down any more ... so disjunction required			
 			WConstraint gtz = inequals(sign,lhs.numerator(),rhs.multiply(lhs.denominator()));
 			WConstraint ltz = inequals(sign,rhs.multiply(lhs.denominator()),lhs.numerator());
-			gtz = WConstraints.and(gtz,new WInequality(false,subtract(WNumber.ZERO,normalise(lhs.denominator()))));
-			ltz = WConstraints.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WNumber.ZERO)));
+			gtz = WConstraints.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
+			ltz = WConstraints.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
 			return WFormulas.or(ltz,gtz);			
 		}
 	}	
 	
-	private static WFormula inequals(boolean sign, WPolynomial lhs, WRational rhs) {				
+	private static WConstraint inequals(boolean sign, WPolynomial lhs, WRational rhs) {				
 		if(rhs.denominator().isConstant()) {
 			BigInteger constant = rhs.denominator().constant();
 			int r = constant.compareTo(BigInteger.ZERO);
@@ -200,18 +200,18 @@ public class WNumerics {
 			} else if (r > 0) {				
 				return new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(constant))));
 			} else {
-				return WBool.FALSE;
+				return WValue.FALSE;
 			}			
 		} else {
-			WFormula gtz = new WInequality(sign,subtract(normalise(lhs.multiply(rhs.denominator())),normalise(rhs.numerator())));
-			WFormula ltz = new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
-			gtz = WFormulas.and(gtz,new WInequality(false,subtract(WNumber.ZERO,normalise(rhs.denominator()))));
-			ltz = WFormulas.and(ltz,new WInequality(false,subtract(normalise(rhs.denominator()),WNumber.ZERO)));
+			WConstraint gtz = new WInequality(sign,subtract(normalise(lhs.multiply(rhs.denominator())),normalise(rhs.numerator())));
+			WConstraint ltz = new WInequality(sign,subtract(normalise(rhs.numerator()),normalise(lhs.multiply(rhs.denominator()))));
+			gtz = WFormulas.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(rhs.denominator()))));
+			ltz = WFormulas.and(ltz,new WInequality(false,subtract(normalise(rhs.denominator()),WValue.Number.ZERO)));
 			return WFormulas.or(ltz,gtz);	
 		}
 	}
 	
-	private static WFormula inequals(boolean sign, WRational lhs, WPolynomial rhs) {		
+	private static WConstraint inequals(boolean sign, WRational lhs, WPolynomial rhs) {		
 		if(lhs.denominator().isConstant()) {			
 			BigInteger constant = lhs.denominator().constant();
 			int r = constant.compareTo(BigInteger.ZERO);
@@ -220,13 +220,13 @@ public class WNumerics {
 			} else if (r > 0) {				
 				return new WInequality(sign,subtract(normalise(rhs.multiply(constant)),normalise(lhs.numerator())));
 			} else {
-				return WBool.FALSE;
+				return WValue.FALSE;
 			}
 		} else {
 			WFormula gtz = new WInequality(sign,subtract(normalise(rhs.multiply(lhs.denominator())),normalise(lhs.numerator())));
 			WFormula ltz = new WInequality(sign,subtract(normalise(lhs.numerator()),normalise(rhs.multiply(lhs.denominator()))));
-			gtz = WFormulas.and(gtz,new WInequality(false,subtract(WNumber.ZERO,normalise(lhs.denominator()))));
-			ltz = WFormulas.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WNumber.ZERO)));
+			gtz = WFormulas.and(gtz,new WInequality(false,subtract(WValue.Number.ZERO,normalise(lhs.denominator()))));
+			ltz = WFormulas.and(ltz,new WInequality(false,subtract(normalise(lhs.denominator()),WValue.Number.ZERO)));
 			return WFormulas.or(ltz,gtz);		
 		}
 	}		

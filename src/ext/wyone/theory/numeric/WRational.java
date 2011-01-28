@@ -20,6 +20,9 @@ package wyone.theory.numeric;
 import java.math.*;
 import java.util.*;
 
+import wyil.jvm.rt.BigRational;
+import wyil.lang.Type;
+import wyil.lang.Value;
 import wyone.core.*;
 import wyone.util.*;
 
@@ -84,16 +87,16 @@ public final class WRational implements WExpr {
 		return denominator;
 	}
 	
-	public WType type(SolverState state) {		
-		return WRealType.T_REAL;		
+	public Type type(SolverState state) {		
+		return Type.T_REAL;		
 	}
 		
 	public boolean isConstant() {
 		return numerator.isConstant() && denominator.isConstant();
 	}
 	
-	public WNumber constant() {
-		return new WNumber(numerator.constant(),denominator.constant());
+	public WValue constant() {
+		return new WValue(Value.V_REAL(new BigRational(numerator.constant(),denominator.constant())));
 	}
 	
 	public Set<WExpr> atoms() {
@@ -136,50 +139,10 @@ public final class WRational implements WExpr {
 			return WNumerics.divide(num,den);			
 		}	
 	}		
-	
-	public WLiteral rearrange(WExpr lhs) {
-		// THIS METHOD IS SUCH A CLUDGE RIGHT NOW --- ARRRGGHHH
-		WExpr r;
-		if(lhs instanceof WNumber) {
-			r = WNumerics.subtract(this,lhs);
-		} else if(lhs instanceof WVariable) {
-			WVariable v = (WVariable) lhs;
-			r = subtract(new WPolynomial(v));			
-		} else if(lhs instanceof WRational) {
-			r = subtract((WRational)lhs);
-		} else {
-			r = subtract(new WPolynomial(lhs));
-		}
 		
-		if(r instanceof WRational) {
-			WRational rat = (WRational) r;
-			
-			if(rat.isConstant()) {
-				return WBool.FALSE; // ? 
-			}
-			
-			WExpr v = rat.atoms().iterator().next();
-			Pair<WPolynomial,WPolynomial> p = rat.rearrangeFor(v);
-			
-			rat = new WRational(p.first(),p.second());
-			if(rat.isAtom()) {
-				return new WEquality(true,v,rat.atom()); 
-			} else if(rat.isConstant()) {
-				return new WEquality(true,v,rat.constant());
-			} else {		
-				return new WEquality(true,v,rat);
-			}
-		} else if(r instanceof WVariable) {
-			WVariable v = (WVariable) r;
-			return new WEquality(true,v,WNumber.ZERO);
-		} else {
-			return WBool.FALSE;
-		}
-	}
-	
 	/**
 	 * <p>The purpose of this method is to rearrange the rational, such that it now
-	 * equals the given atom.  For example:</p>
+	 * equals the given atom.  For example, for atom x we have:</p>
 	 * <pre>
 	 * 2x+y / 1 ==> -y/2
 	 * </pre>
@@ -226,7 +189,7 @@ public final class WRational implements WExpr {
 		return new WRational(top, denominator);
 	}
 	
-	public WRational add(WNumber r) {
+	public WRational add(WValue.Number r) {
 		WPolynomial top = denominator.multiply(r.numerator());
 		top = top.add(numerator.multiply(r.denominator()));
 		return new WRational(top, denominator.multiply(r.denominator()));
@@ -302,7 +265,7 @@ public final class WRational implements WExpr {
 		return new WRational(top, denominator);
 	}
 	
-	public WRational multiply(WNumber r) {
+	public WRational multiply(WValue.Number r) {
 		WPolynomial top = numerator.multiply(r.numerator());		
 		return new WRational(top, denominator.multiply(r.denominator()));
 	}

@@ -578,7 +578,7 @@ public final class WPolynomial implements Iterable<WTerm>, Comparable<WPolynomia
 	}	
 	
 	public WExpr expand(Map<WExpr,WExpr> binding) {
-		WExpr r = WNumber.ZERO;
+		WExpr r = WValue.ZERO;
 		for(WTerm t : terms) {			
 			r = WNumerics.add(r,t.expand(binding));			
 		}

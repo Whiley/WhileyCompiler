@@ -17,9 +17,12 @@
 
 package wyone.core;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import wyil.jvm.rt.BigRational;
 import wyil.lang.Type;
 import wyil.lang.Value;
 
@@ -37,10 +40,10 @@ import wyil.lang.Value;
  * @author djp
  * 
  */
-public class WValue implements WExpr {
-	private Value value; 
+public class WValue<T extends Value> implements WExpr {
+	protected T value; 
 
-	public WValue(Value value) {
+	public WValue(T value) {
 		this.value = value;
 	}
 	
@@ -83,7 +86,7 @@ public class WValue implements WExpr {
 		return this;
 	}
 
-	private static class Constraint extends WValue implements WConstraint {
+	private static class Constraint extends WValue<Value.Bool> implements WConstraint {
 		public Constraint(Value.Bool b) {
 			super(b);
 		}
@@ -93,12 +96,53 @@ public class WValue implements WExpr {
 		}
 	}
 	
+	public static class Number extends WValue<Value.Real> {
+		public Number(BigRational r) {
+			super(Value.V_REAL(r));
+		}
+		public Number(BigInteger r) {
+			super(Value.V_REAL(BigRational.valueOf(r)));
+		}
+		
+		public BigInteger numerator() {
+			return value.value.numerator();
+		}
+		
+		public BigInteger denominator() {
+			return value.value.denominator();
+		}
+		
+		public Number add(Number n) {
+			return new Number(value.value.add(n.value.value));
+		}
+		
+		public Number subtract(Number n) {
+			return new Number(value.value.subtract(n.value.value));
+		}
+		
+		public Number multiply(Number n) {
+			return new Number(value.value.multiply(n.value.value));
+		}
+		
+		public Number divide(Number n) {
+			return new Number(value.value.divide(n.value.value));
+		}
+		
+		public Number negate() {
+			return new Number(value.value.negate());
+		}
+	}
+	
 	// ====================================================================
 	// CONSTANTS
 	// ====================================================================
 	
 	public final static Constraint FALSE = new Constraint(Value.V_BOOL(false));
 	public final static Constraint TRUE = new Constraint(Value.V_BOOL(true));
+	
+	public final static WValue ZERO = new WValue(Value.V_REAL(BigRational.ZERO));
+	public final static WValue ONE = new WValue(Value.V_REAL(BigRational.ONE));
+	public final static WValue MONE = new WValue(Value.V_REAL(BigRational.MONE));
 	
 	// ====================================================================
 	// CID

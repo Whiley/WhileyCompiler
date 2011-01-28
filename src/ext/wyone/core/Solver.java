@@ -131,6 +131,9 @@ public final class Solver implements Callable<Proof> {
 				// At this point, we've run out of things to try. So, have we
 				// found a model or not ?
 				HashMap<WVariable,WValue> valuation = new HashMap<WVariable,WValue>();
+				
+				/*
+				 * FIXME: need to put this back ... when I figured out how I identify assignments.
 				for(WFormula f : state) {
 					if (f instanceof WEquality) {
 						WEquality eq = (WEquality) f;
@@ -142,7 +145,7 @@ public final class Solver implements Callable<Proof> {
 						}
 					}
 				}
-				
+				*/
 				return checkModel(valuation);
 			} else {				
 				for(SolverState s : substates) {
@@ -175,7 +178,7 @@ public final class Solver implements Callable<Proof> {
 		// Check formula does indeed evaluate to true		
 		for(WConstraint c : program) {
 			WConstraint f = c.substitute((Map) model);
-			if(f == WValue.FALSE) {
+			if(f != WValue.TRUE) {
 				return Proof.UNKNOWN; 
 			}
 		}
