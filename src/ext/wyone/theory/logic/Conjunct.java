@@ -24,7 +24,8 @@ import static wyone.core.Constructor.*;
 import wyone.core.*;
 import wyone.util.*;
 
-public final class WDisjunct extends Base<Constraint> implements Constraint {		
+public final class Conjunct extends Base<Constraint> implements Constraint {	
+	
 	/**
 	 * <p>
 	 * Construct a formula from a collection of formulas.
@@ -32,14 +33,10 @@ public final class WDisjunct extends Base<Constraint> implements Constraint {
 	 * 
 	 * @param clauses
 	 */
-	public WDisjunct(Set<Constraint> fs) {
-		super("||",fs);		
-	}
-
-	// =================================================================
-	// REQUIRED METHODS
-	// =================================================================
-
+	public Conjunct(Set<Constraint> fs) {
+		super("&&",fs);
+	}			
+	
 	public Type type(Solver.State state) {		
 		return Type.T_BOOL;		
 	}	
@@ -56,50 +53,50 @@ public final class WDisjunct extends Base<Constraint> implements Constraint {
 		HashSet<Constraint> nparams = new HashSet<Constraint>();
 		boolean pchanged = false;
 		boolean composite = true;
-		for(Constraint p : subterms) {
+		for(Constraint p : subterms) {						
 			Constraint np = p.substitute(binding);			
 			composite &= np instanceof Value;			
-			if(np instanceof WDisjunct) {	
-				WDisjunct c = (WDisjunct) np;
+			if(np instanceof Conjunct) {
+				Conjunct c = (Conjunct) np;
 				nparams.addAll(c.subterms);
-				pchanged = true;
-			} else if(np == Value.FALSE){				
 				pchanged=true;
-			} else if(np != p) {								
+			} else if(p==Value.TRUE) {
+				pchanged=true;
+			} else if(np != p) {						
 				nparams.add(np);				
-				pchanged=true;				
-			} else {
-				nparams.add(np);
+				pchanged=true;	
+			} else { 
+				nparams.add(p);
 			}
 		}		
 		if(composite) {			
-			for(Constraint e : nparams) {				
+			for(Constructor e : nparams) {				
 				Value.Bool b = (Value.Bool) e;
-				if(b.sign()) {
-					return Value.TRUE;
+				if(!b.sign()) {
+					return Value.Bool.FALSE;
 				}
 			}
-			return Value.FALSE;			
+			return Value.TRUE;
 		} else if(nparams.size() == 1) {
 			return nparams.iterator().next();
-		} else if(pchanged) {			
+		} else if(pchanged) {
 			if(nparams.size() == 0) {
-				return Value.FALSE;			
-			} else {							
-				return new WDisjunct(nparams);
-			} 
-		} else {	
+				return Value.TRUE;			
+			} else {
+				return new Conjunct(nparams);
+			}
+		} else {
 			return this;
 		}
 	}	
-		
-	public WConjunct not() {
+	
+	public Disjunct not() {
 		HashSet<Constraint> nparams = new HashSet<Constraint>();
 		for(Constraint p : subterms) {
 			Constraint np = p.not();																
 			nparams.add(np);											
 		}				
-		return new WConjunct(nparams);		 
+		return new Disjunct(nparams);		 
 	}
 	
 	public String toString() {
@@ -107,9 +104,9 @@ public final class WDisjunct extends Base<Constraint> implements Constraint {
 		String r = "";
 		for(Constraint f : subterms) {
 			if(!firstTime) {
-				r += " || ";
+				r += " && ";
 			}
-			firstTime=false;			
+			firstTime=false;
 			r += "(" + f + ")";			
 		}
 		return r;

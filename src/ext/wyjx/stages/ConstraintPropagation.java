@@ -376,8 +376,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 	// which use the given variable (left), and those which don't (right). This
 	// is done to avoid quantifying more than is necessary when dealing with loops.	
 	protected Pair<WFormula,WFormula> splitFormula(String var, WFormula f) {		
-		if(f instanceof WConjunct) {
-			WConjunct c = (WConjunct) f;
+		if(f instanceof Conjunct) {
+			Conjunct c = (Conjunct) f;
 			WFormula ts = WBool.TRUE;
 			WFormula fs = WBool.TRUE;
 			for(WFormula st : c.subterms()) {

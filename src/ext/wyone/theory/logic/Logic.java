@@ -32,7 +32,7 @@ public class Logic {
 	public static Constraint and(Constraint... formulas) {
 		HashSet<Constraint> fs = new HashSet<Constraint>();
 		Collections.addAll(fs, formulas);
-		return new WConjunct(fs).substitute(Collections.EMPTY_MAP);		
+		return new Conjunct(fs).substitute(Collections.EMPTY_MAP);		
 	}
 	
 	/**
@@ -43,7 +43,7 @@ public class Logic {
 	public static Constraint or(Constraint... formulas) {		
 		HashSet<Constraint> fs = new HashSet<Constraint>();
 		Collections.addAll(fs, formulas);
-		return new WDisjunct(fs).substitute(Collections.EMPTY_MAP);		
+		return new Disjunct(fs).substitute(Collections.EMPTY_MAP);		
 	}	
 		
 	public static Constraint implies(Constraint f1, Constraint f2) {
@@ -71,9 +71,9 @@ public class Logic {
 			return f1;
 		}
 		
-		if (f1 instanceof WConjunct && f2 instanceof WConjunct) {
-			WConjunct c1 = (WConjunct) f1;
-			WConjunct c2 = (WConjunct) f2;
+		if (f1 instanceof Conjunct && f2 instanceof Conjunct) {
+			Conjunct c1 = (Conjunct) f1;
+			Conjunct c2 = (Conjunct) f2;
 			HashSet<Constraint> common = new HashSet<Constraint>();
 			for (Constraint c : c1.subterms()) {
 				if (c2.subterms().contains(c)) {
@@ -85,14 +85,14 @@ public class Logic {
 					common.add(c);
 				}
 			}
-			return new WConjunct(common).substitute(Collections.EMPTY_MAP);
-		} else if (f1 instanceof WConjunct) {
-			WConjunct c1 = (WConjunct) f1;
+			return new Conjunct(common).substitute(Collections.EMPTY_MAP);
+		} else if (f1 instanceof Conjunct) {
+			Conjunct c1 = (Conjunct) f1;
 			if (c1.subterms().contains(f2)) {
 				return f2;
 			}
-		} else if (f2 instanceof WConjunct) {
-			WConjunct c2 = (WConjunct) f2;
+		} else if (f2 instanceof Conjunct) {
+			Conjunct c2 = (Conjunct) f2;
 			if (c2.subterms().contains(f1)) {
 				return f1;
 			}
@@ -113,18 +113,18 @@ public class Logic {
 			return Value.TRUE;
 		}
 		
-		if (f1 instanceof WConjunct && f2 instanceof WConjunct) {
-			WConjunct c1 = (WConjunct) f1;
-			WConjunct c2 = (WConjunct) f2;
+		if (f1 instanceof Conjunct && f2 instanceof Conjunct) {
+			Conjunct c1 = (Conjunct) f1;
+			Conjunct c2 = (Conjunct) f2;
 			HashSet<Constraint> difference = new HashSet<Constraint>(c1.subterms());
 			difference.removeAll(c2.subterms());
-			return new WConjunct(difference).substitute(Collections.EMPTY_MAP);
-		} else if (f1 instanceof WConjunct) {
-			WConjunct c1 = (WConjunct) f1;
+			return new Conjunct(difference).substitute(Collections.EMPTY_MAP);
+		} else if (f1 instanceof Conjunct) {
+			Conjunct c1 = (Conjunct) f1;
 			HashSet<Constraint> difference = new HashSet<Constraint>(c1.subterms());
 			difference.remove(f2);
-			return new WConjunct(difference).substitute(Collections.EMPTY_MAP);
-		} else if (f2 instanceof WConjunct) {
+			return new Conjunct(difference).substitute(Collections.EMPTY_MAP);
+		} else if (f2 instanceof Conjunct) {
 			// I don't think this case makes sense
 		}
 		

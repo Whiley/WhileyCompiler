@@ -24,7 +24,7 @@ public final class DisjunctInference implements Solver.Rule {
 	public void infer(Constraint delta, Solver.State state, Solver solver) {
 		// Now, substitute it, potentially reducing the disjunct.
 		for (Constraint f : state) {
-			if (f instanceof WDisjunct) {				
+			if (f instanceof Disjunct) {				
 				Constraint nf = state.reduce(f);				
 				if (nf != f && nf != Value.TRUE) {
 					state.eliminate(f);

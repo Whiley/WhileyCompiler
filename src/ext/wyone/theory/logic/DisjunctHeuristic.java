@@ -26,15 +26,15 @@ public final class DisjunctHeuristic implements Solver.Heuristic {
 
 	public List<Solver.State> split(Solver.State state, Solver solver) {
 		for (Constraint f : state) {
-			if (f instanceof WDisjunct) {				
-				return split((WDisjunct) f, state, solver);
+			if (f instanceof Disjunct) {				
+				return split((Disjunct) f, state, solver);
 			}
 		}
 
 		return null;
 	}
 
-	private static List<Solver.State> split(WDisjunct d, Solver.State state,
+	private static List<Solver.State> split(Disjunct d, Solver.State state,
 			Solver solver) {				
 		ArrayList<Solver.State> splits = new ArrayList<Solver.State>();
 		state.eliminate(d);
@@ -49,7 +49,7 @@ public final class DisjunctHeuristic implements Solver.Heuristic {
 			HashSet<Constraint> subterms = new HashSet<Constraint>(d.subterms());
 			subterms.remove(split);
 			right.add(
-					new WDisjunct(subterms).substitute(Collections.EMPTY_MAP),
+					new Disjunct(subterms).substitute(Collections.EMPTY_MAP),
 					solver);
 		}		
 		right.add(split.not(), solver);
