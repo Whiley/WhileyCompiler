@@ -19,9 +19,7 @@ package wyone.theory.logic;
 
 import java.util.*;
 
-import wyone.core.Solver;
-import wyone.core.SolverState;
-import wyone.core.SplitHeuristic;
+import wyone.core.*;
 import wyone.theory.congruence.*;
 import static wyone.theory.numeric.WNumerics.*;
 
@@ -29,7 +27,7 @@ public class NotEqualsHeuristic implements SplitHeuristic {
 	
 	public List<SolverState> split(SolverState state,Solver solver) {
 		
-		for(WFormula f : state) {
+		for(WConstraint f : state) {
 			if(f instanceof WEquality) {
 				WEquality weq = (WEquality) f;
 				if(!weq.sign()) {

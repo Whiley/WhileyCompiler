@@ -19,10 +19,7 @@ package wyone.theory.logic;
 
 import java.util.*;
 
-import wyone.core.Solver;
-import wyone.core.SolverState;
-import wyone.core.SplitHeuristic;
-import wyone.core.WVariable;
+import wyone.core.*;
 import wyone.util.Pair;
 
 public final class DisjunctHeuristic implements SplitHeuristic {
@@ -41,7 +38,7 @@ public final class DisjunctHeuristic implements SplitHeuristic {
 			Solver solver) {				
 		ArrayList<SolverState> splits = new ArrayList<SolverState>();
 		state.eliminate(d);
-		WFormula split = d.iterator().next();				
+		WConstraint split = d.iterator().next();				
 		
 		SolverState left = state.clone();		
 		left.add(split, solver);
@@ -49,7 +46,7 @@ public final class DisjunctHeuristic implements SplitHeuristic {
 		
 		SolverState right = state;					
 		if (d.subterms().size() > 1) {
-			HashSet<WFormula> subterms = new HashSet<WFormula>(d.subterms());
+			HashSet<WConstraint> subterms = new HashSet<WConstraint>(d.subterms());
 			subterms.remove(split);
 			right.add(
 					new WDisjunct(subterms).substitute(Collections.EMPTY_MAP),
