@@ -25,7 +25,7 @@ import wyone.core.*;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
 import wyone.util.Pair;
 
-public class BoundedNumberHeuristic implements SplitHeuristic {
+public class BoundedNumberHeuristic implements Solver.Heuristic {
 	private final boolean strict;
 	private final boolean isInteger;
 	

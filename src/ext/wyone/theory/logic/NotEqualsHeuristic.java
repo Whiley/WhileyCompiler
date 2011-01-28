@@ -23,7 +23,7 @@ import wyone.core.*;
 import wyone.theory.congruence.*;
 import static wyone.theory.numeric.WNumerics.*;
 
-public class NotEqualsHeuristic implements SplitHeuristic {
+public class NotEqualsHeuristic implements Solver.Heuristic {
 	
 	public List<Solver.State> split(Solver.State state,Solver solver) {
 		

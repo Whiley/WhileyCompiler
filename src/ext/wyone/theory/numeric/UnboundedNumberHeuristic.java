@@ -28,7 +28,7 @@ import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
 import wyone.theory.set.WSubsetEq;
 import wyone.util.Pair;
 
-public class UnboundedNumberHeuristic implements SplitHeuristic {
+public class UnboundedNumberHeuristic implements Solver.Heuristic {
 	private final boolean isInteger;
 	
 	public UnboundedNumberHeuristic(boolean isInteger) {

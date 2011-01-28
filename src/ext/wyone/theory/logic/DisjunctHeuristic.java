@@ -22,7 +22,7 @@ import java.util.*;
 import wyone.core.*;
 import wyone.util.Pair;
 
-public final class DisjunctHeuristic implements SplitHeuristic {
+public final class DisjunctHeuristic implements Solver.Heuristic {
 
 	public List<Solver.State> split(Solver.State state, Solver solver) {
 		for (WConstraint f : state) {

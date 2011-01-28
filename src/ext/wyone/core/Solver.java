@@ -34,7 +34,7 @@ public final class Solver implements Callable<Proof> {
 	 * This is the heuristic used to split states in two based on disjunctions
 	 * and other split points.
 	 */
-	private final SplitHeuristic splitHeuristic;
+	private final Heuristic splitHeuristic;
 	
 	/**
 	 * The wyone program being tested for satisfiability
@@ -42,7 +42,7 @@ public final class Solver implements Callable<Proof> {
 	private final List<WConstraint> program;
 		
 	Solver(List<WConstraint> program, 
-			SplitHeuristic heuristic,InferenceRule... theories) {		
+			Heuristic heuristic,InferenceRule... theories) {		
 		this.program = program;
 		this.theories = new ArrayList<InferenceRule>();
 		this.splitHeuristic = heuristic;
@@ -71,7 +71,7 @@ public final class Solver implements Callable<Proof> {
 	 * @return
 	 */
 	public static synchronized Proof checkUnsatisfiable(int timeout, List<WConstraint> program,
-			SplitHeuristic heuristic,
+			Heuristic heuristic,
 			InferenceRule... theories) {				
  
 		// The following uses the java.util.concurrent library to enforce a
@@ -392,5 +392,27 @@ public final class Solver implements Callable<Proof> {
 				throw new UnsupportedOperationException();
 			}
 		}
+	}
+	
+
+	/**
+	 * A split heuristic is used to split a given solver state into one or more
+	 * sub-states. For example, the split might be done on a disjunction, whereby
+	 * the different operands of the disjunction are asserted in corresponding
+	 * sub-states.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public interface Heuristic {
+		
+		/**
+		 * Given a solver state, generate as many sub-states as possible. If the
+		 * returned list is empty, this indicates no further splits are possible.
+		 * 
+		 * @param state
+		 * @return
+		 */
+		public List<Solver.State> split(Solver.State state, Solver solver); 
 	}
 }

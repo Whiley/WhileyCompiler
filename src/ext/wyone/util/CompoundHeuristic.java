@@ -28,22 +28,22 @@ import wyone.core.*;
  * @author djp
  * 
  */
-public final class CompoundHeuristic implements SplitHeuristic {
-	private final ArrayList<SplitHeuristic> heuristics;
+public final class CompoundHeuristic implements Heuristic {
+	private final ArrayList<Heuristic> heuristics;
 	
-	public CompoundHeuristic(SplitHeuristic...heuristics) {
-		this.heuristics = new ArrayList<SplitHeuristic>();
-		for(SplitHeuristic h : heuristics) {
+	public CompoundHeuristic(Heuristic...heuristics) {
+		this.heuristics = new ArrayList<Heuristic>();
+		for(Heuristic h : heuristics) {
 			this.heuristics.add(h);
 		}
 	}
 	
-	public CompoundHeuristic(Collection<SplitHeuristic> heuristics) {
-		this.heuristics = new ArrayList<SplitHeuristic>(heuristics);		
+	public CompoundHeuristic(Collection<Heuristic> heuristics) {
+		this.heuristics = new ArrayList<Heuristic>(heuristics);		
 	}
 	
 	public List<State> split(State state,Solver solver) {
-		for(SplitHeuristic h : heuristics) {
+		for(Heuristic h : heuristics) {
 			List<State> r = h.split(state,solver);
 			if(r != null) {				
 				return r;
