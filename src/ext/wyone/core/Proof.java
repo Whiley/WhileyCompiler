@@ -20,6 +20,25 @@ package wyone.core;
 import static wyone.core.Constructor.*;
 import java.util.*;
 
+/**
+ * <p>
+ * An instance of Proof is returned by the solver after working on a constraint
+ * program. There are three options for any proof:
+ * </p>
+ * <ul>
+ * <li><b>Unsatisfiable.</b> This means the solver has shown no possible
+ * assignment of variables to values can satisfy the constraint program.</li>
+ * <li><b>Unknown.</b> This means the solver was unable to make a decision
+ * regarding the given constraint program. Usually, this occurs because of a
+ * time-out.</li>
+ * <li><b>Satisfiable.</b> The solver found an assigned of variables to values
+ * which satisfied the constraint program. The determined assignment is included
+ * as evidence.</li>
+ * </ul>
+ * 
+ * @author djp
+ * 
+ */
 public abstract class Proof {	
 	
 	public final static Proof UNSAT = new Unsat();
