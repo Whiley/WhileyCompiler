@@ -26,9 +26,9 @@ public final class Solver implements Callable<Proof> {
 	public static boolean debug = false;
 	
 	/**
-	 * The list of theories to use when performing local inference.
+	 * The list of inference rules to use when performing local inference.
 	 */
-	private final ArrayList<Rule> theories;
+	private final ArrayList<Rule> rules;
 
 	/**
 	 * This is the heuristic used to split states in two based on disjunctions
@@ -37,6 +37,18 @@ public final class Solver implements Callable<Proof> {
 	private final Heuristic splitHeuristic;
 	
 	/**
+	 * The assignment is a global mapping of formulas to integer numbers
+	 * which are, in effect, unique references for them.
+	 */
+	private final HashMap<Constraint,Integer> assignments = new HashMap<Constraint,Integer>();
+
+	/**
+	 * The rassignments lists is the inverse map of the assignments list. Each
+	 * formula is located at a given index.
+	 */
+	private final ArrayList<Constraint> rassignments = new ArrayList<Constraint>();
+
+	/**
 	 * The wyone program being tested for satisfiability
 	 */
 	private final List<Constraint> program;
@@ -44,21 +56,12 @@ public final class Solver implements Callable<Proof> {
 	Solver(List<Constraint> program, 
 			Heuristic heuristic,Rule... theories) {		
 		this.program = program;
-		this.theories = new ArrayList<Rule>();
+		this.rules = new ArrayList<Rule>();
 		this.splitHeuristic = heuristic;
 		for (Rule t : theories) {
-			this.theories.add(t);
+			this.rules.add(t);
 		}
-	}
-	
-	/**
-	 * Access the theories being used in this solver.
-	 * 
-	 * @return
-	 */
-	public Collection<Rule> theories() {
-		return theories;
-	}
+	}	
 
 	/**
 	 * This method attempts to check whether the given program is unsatisfiable
@@ -98,6 +101,9 @@ public final class Solver implements Callable<Proof> {
 		return r;
 	}
 	
+	/**
+	 * The following method is needed for the Callable interface
+	 */
 	public Proof call() {					
 		return checkUnsatisfiable();				
 	}
@@ -111,7 +117,10 @@ public final class Solver implements Callable<Proof> {
 	 * @return
 	 */
 	private Proof checkUnsatisfiable() {		
-		State.reset_state();
+		// First, make sure these are reset properly
+		rassignments.clear();
+		assignments.clear();
+		// now beging the process
 		State facts = new State();
 		facts.addAll(program, this);
 		return checkUnsatisfiable(facts,0);
@@ -186,7 +195,7 @@ public final class Solver implements Callable<Proof> {
 								
 		return new Proof.Sat(model);		
 	}
-
+	
 	/**
 	 * The solver state represents one state in the current search for a
 	 * satisfying solution by a given solver. The state includes all currently
@@ -195,19 +204,8 @@ public final class Solver implements Callable<Proof> {
 	 * @author djp
 	 * 
 	 */
-	public final static class State implements Iterable<Constraint> {
-		/**
-		 * The assignment is a global mapping of formulas to integer numbers
-		 * which are, in effect, unique references for them.
-		 */
-		private static HashMap<Constraint,Integer> assignments = new HashMap<Constraint,Integer>();
-
-		/**
-		 * The rassignments lists is the inverse map of the assignments list. Each
-		 * formula is located at a given index.
-		 */
-		private static ArrayList<Constraint> rassignments = new ArrayList<Constraint>();
-		
+	public final class State implements Iterable<Constraint> {
+				
 		/**
 		 * The assertions bitset detemines which assigned facts are currently
 		 * active.
@@ -215,11 +213,20 @@ public final class Solver implements Callable<Proof> {
 		private final BitSet assertions;
 
 		/**
-		 * The eliminations bitset detemines which assigned facts were active, but
-		 * have been subsumed by something else.
+		 * The eliminations bitset detemines which assigned facts were active,
+		 * but have been subsumed by something else. This is needed to prevent
+		 * cyclic inference, where we repeatedly infer a fact which was
+		 * previosly subsumed, and then subsume it again.
 		 */
 		private final BitSet eliminations;
 
+		/**
+		 * The worklist is used to hold the set of new constraints which have
+		 * been inferred as a result of adding some constraint to the state.
+		 * Essentially, this list identifies the delta of new constraints as a
+		 * result of the add.
+		 */
+		private final ArrayList<Integer> worklist = new ArrayList<Integer>();
 		
 		public State() {
 			assertions = new BitSet();
@@ -284,13 +291,6 @@ public final class Solver implements Callable<Proof> {
 		}
 
 		/**
-		 * The following worklist is a bit of a hack, but it works nicely. Making it
-		 * static certainly improves overall performance, however there will be a
-		 * distinct problem when moving to a parallel solver implementation.
-		 */
-		private static final ArrayList<Integer> worklist = new ArrayList<Integer>();
-		
-		/**
 		 * A formula is eliminated if it is implied by something else already present
 		 * in the state. This is useful for reducing the overall number of formulas
 		 * being considered. For example, x < 2 is subsumed by x < 1.
@@ -314,7 +314,7 @@ public final class Solver implements Callable<Proof> {
 				Integer x = worklist.get(i);			
 				Constraint f = rassignments.get(x);
 				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
-				for(Rule ir : solver.theories()) {				
+				for(Rule ir : solver.rules) {				
 					if(assertions.get(x)) {					
 						ir.infer(f, this, solver);
 						if(contains(Value.FALSE)){				
@@ -347,11 +347,6 @@ public final class Solver implements Callable<Proof> {
 			return r;
 		}
 		
-		public static void reset_state() {
-			rassignments = new ArrayList<Constraint>();
-			assignments = new HashMap();
-		}
-		
 		private void internal_add(Constraint f) {				
 			Integer x = assignments.get(f);
 			
@@ -366,34 +361,33 @@ public final class Solver implements Callable<Proof> {
 				assertions.set(x);			
 				worklist.add(x);			
 			}
-		}
-			
-		private static final class AssertionIterator implements Iterator<Constraint> {
-			private final BitSet assertions;
-			private int index;
-			
-			public AssertionIterator(BitSet assertions, int start) {			
-				this.assertions = assertions;
-				// initialise the index position
-				index = assertions.nextSetBit(start);			
-			}
-			
-			public boolean hasNext() {
-				return index != -1;
-			}
-			
-			public Constraint next() {
-				Constraint f = rassignments.get(index); 
-				index = assertions.nextSetBit(index+1);
-				return f;
-			}
-			
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
-		}
+		}				
 	}
 	
+	private final class AssertionIterator implements Iterator<Constraint> {
+		private final BitSet assertions;
+		private int index;
+		
+		public AssertionIterator(BitSet assertions, int start) {			
+			this.assertions = assertions;
+			// initialise the index position
+			index = assertions.nextSetBit(start);			
+		}
+		
+		public boolean hasNext() {
+			return index != -1;
+		}
+		
+		public Constraint next() {
+			Constraint f = rassignments.get(index); 
+			index = assertions.nextSetBit(index+1);
+			return f;
+		}
+		
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+	}
 
 	/**
 	 * A split heuristic is used to split a given solver state into one or more

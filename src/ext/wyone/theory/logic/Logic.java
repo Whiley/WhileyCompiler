@@ -25,25 +25,21 @@ import wyone.core.Value;
 public class Logic {
 	
 	/**
-	 * Return the logical AND of one or more formulas.
+	 * Return the logical AND of one or more constraints.
 	 * @param formulas
 	 * @return
 	 */
-	public static Constraint and(Constraint... formulas) {
-		HashSet<Constraint> fs = new HashSet<Constraint>();
-		Collections.addAll(fs, formulas);
-		return new Conjunct(fs).substitute(Collections.EMPTY_MAP);		
+	public static Constraint and(Constraint... formulas) {				
+		return new Conjunct(Arrays.asList(formulas)).substitute(Collections.EMPTY_MAP);		
 	}
 	
 	/**
-	 * Return the logical OR of one or more formulas.
+	 * Return the logical OR of one or more constraints.
 	 * @param formulas
 	 * @return
 	 */
-	public static Constraint or(Constraint... formulas) {		
-		HashSet<Constraint> fs = new HashSet<Constraint>();
-		Collections.addAll(fs, formulas);
-		return new Disjunct(fs).substitute(Collections.EMPTY_MAP);		
+	public static Constraint or(Constraint... formulas) {				
+		return new Disjunct(Arrays.asList(formulas)).substitute(Collections.EMPTY_MAP);		
 	}	
 		
 	public static Constraint implies(Constraint f1, Constraint f2) {

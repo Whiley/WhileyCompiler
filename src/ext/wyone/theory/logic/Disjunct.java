@@ -32,7 +32,7 @@ public final class Disjunct extends Base<Constraint> implements Constraint {
 	 * 
 	 * @param clauses
 	 */
-	public Disjunct(Set<Constraint> fs) {
+	public Disjunct(Collection<Constraint> fs) {
 		super("||",fs);		
 	}
 
@@ -53,7 +53,7 @@ public final class Disjunct extends Base<Constraint> implements Constraint {
 	 * @return
 	 */
 	public Constraint substitute(Map<Constructor,Constructor> binding) {	
-		HashSet<Constraint> nparams = new HashSet<Constraint>();
+		ArrayList<Constraint> nparams = new ArrayList<Constraint>();
 		boolean pchanged = false;
 		boolean composite = true;
 		for(Constraint p : subterms) {
@@ -94,7 +94,7 @@ public final class Disjunct extends Base<Constraint> implements Constraint {
 	}	
 		
 	public Conjunct not() {
-		HashSet<Constraint> nparams = new HashSet<Constraint>();
+		ArrayList<Constraint> nparams = new ArrayList<Constraint>();
 		for(Constraint p : subterms) {
 			Constraint np = p.not();																
 			nparams.add(np);											
