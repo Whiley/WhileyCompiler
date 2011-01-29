@@ -22,6 +22,7 @@ import java.util.*;
 import wyil.lang.Type;
 import wyone.core.*;
 import wyone.util.*;
+import wyone.theory.congruence.*;
 import static wyone.theory.numeric.Numerics.*;
 
 /**
@@ -191,7 +192,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		} else {			
 			// Second, generate new inequalities
 			if(lb.equals(ub)) {				
-				state.infer(Constructors.equals(lb,above.atom),solver);
+				state.infer(Equality.equals(lb,above.atom),solver);
 			} else {
 				Constraint f;
 

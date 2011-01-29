@@ -97,4 +97,12 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			return lhs() + "!=" + rhs();
 		}
 	}
+	
+	public static Constraint equals(Constructor lhs, Constructor rhs) {
+		return new Equality(true,lhs,rhs).substitute(Collections.EMPTY_MAP);
+	}
+	
+	public static Constraint notEquals(Constructor lhs, Constructor rhs) {
+		return new Equality(false,lhs,rhs).substitute(Collections.EMPTY_MAP);
+	}
 }

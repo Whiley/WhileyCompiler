@@ -32,6 +32,7 @@ import wyone.theory.numeric.*;
 import static wyone.core.Constructor.*;
 import static wyone.theory.logic.Logic.*;
 import static wyone.theory.numeric.Numerics.*;
+import static wyone.theory.congruence.Equality.*;
 // import static wyone.theory.set.WSets.*;
 
 public class Parser {

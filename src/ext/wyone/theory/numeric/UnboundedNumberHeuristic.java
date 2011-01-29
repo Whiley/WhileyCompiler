@@ -24,9 +24,7 @@ import java.util.*;
 import wyil.lang.Type;
 import static wyone.core.Constructor.*;
 import wyone.core.*;
-//import wyone.theory.congruence.WEquality;
-import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
-import wyone.util.Pair;
+import wyone.theory.congruence.Equality;
 
 public class UnboundedNumberHeuristic implements Solver.Heuristic {
 	private final boolean isInteger;

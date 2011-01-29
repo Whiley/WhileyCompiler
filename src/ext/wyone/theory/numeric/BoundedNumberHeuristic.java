@@ -24,6 +24,7 @@ import java.util.*;
 import wyil.lang.Type;
 import wyone.core.*;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
+import wyone.theory.congruence.*;
 import wyone.util.Pair;
 
 public class BoundedNumberHeuristic implements Solver.Heuristic {
@@ -62,10 +63,10 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 				Solver.State rhs = lhs.clone();								
 				
 				if(low != null) {				
-					lhs.add(Constructors.equals(var,low.num), solver);
+					lhs.add(Equality.equals(var,low.num), solver);
 					rhs.add(Numerics.greaterThan(var,low.num), solver);
 				} else {					
-					lhs.add(Constructors.equals(var,high.num), solver);
+					lhs.add(Equality.equals(var,high.num), solver);
 					rhs.add(Numerics.lessThan(var,high.num), solver);					
 				}
 
