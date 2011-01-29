@@ -21,7 +21,7 @@ import java.io.*;
 import java.util.*;
 
 import wyone.core.*;
-// import wyone.theory.congruence.*;
+import wyone.theory.congruence.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 // import wyone.theory.tuple.*;
@@ -47,7 +47,9 @@ public class Main {
 	);
 
 	public static final Solver.Rule[] theories = {		
-			new FourierMotzkinSolver()
+		new CongruenceClosure(),	
+		new FourierMotzkinSolver(),
+		new DisjunctInference()
 		};
 
 	public static boolean checkUnsat(String input) {		
