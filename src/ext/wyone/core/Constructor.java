@@ -20,7 +20,7 @@ package wyone.core;
 import java.util.*;
 
 import wyil.lang.Type;
-import wyone.theory.type.WTypes;
+import wyone.theory.type.*;
 
 /**
  * A constructor represents some kind of expression which makes up some, or all
@@ -275,7 +275,7 @@ public interface Constructor extends Comparable<Constructor> {
 		}
 		
 		public Type type(Solver.State state) {
-			return WTypes.type(this,state);		
+			return Subtype.type(this,state);		
 		}
 		
 		public String toString() {

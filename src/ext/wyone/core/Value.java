@@ -99,6 +99,10 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		return new Number(v);
 	}
 	
+	public static Number V_NUM(BigInteger num, BigInteger den) {
+		return new Number(new BigRational(num,den));
+	}
+	
 	public static Number V_NUM(BigRational v) {
 		return new Number(v);
 	}

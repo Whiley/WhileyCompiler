@@ -21,17 +21,19 @@ import java.io.*;
 import java.util.*;
 import java.math.*;
 
+import wyil.lang.Type;
 import wyone.core.*;
-import wyone.theory.disjunct.*;
-import wyone.theory.list.*;
-import wyone.theory.set.*;
+import wyone.theory.logic.*;
+// import wyone.theory.list.*;
+// import wyone.theory.set.*;
 import wyone.theory.numeric.*;
-import wyone.theory.quantifier.*;
-import wyone.theory.tuple.*;
+// import wyone.theory.quantifier.*;
+// import wyone.theory.tuple.*;
 import wyone.theory.type.*;
-import static wyone.theory.disjunct.WFormulas.*;
+import static wyone.core.Constructor.*;
+import static wyone.theory.logic.Logic.*;
 import static wyone.theory.numeric.Numerics.*;
-import static wyone.theory.set.WSets.*;
+// import static wyone.theory.set.WSets.*;
 
 public class Parser {
 	private String filename;
@@ -57,32 +59,32 @@ public class Parser {
 		index = 0;		
 	}
 		
-	public WFormula parseInput() {
+	public Constraint parseInput() {
 		return parseFormula();		
 	}	
 	
-	private WFormula parseFormula() {
+	private Constraint parseFormula() {
 		return parseConjunctDisjunct();
 	}
 	
-	private WFormula parseConjunctDisjunct() {
-		WFormula c1 = parsePredicate();
+	private Constraint parseConjunctDisjunct() {
+		Constraint c1 = parsePredicate();
 		
 		parseWhiteSpace();				 
 		
 		if(index < input.length() && input.charAt(index) == '&') {
 			match("&&");
-			WFormula c2 = parseConjunctDisjunct();			
+			Constraint c2 = parseConjunctDisjunct();			
 			return and(c1,c2);
 		} else if(index < input.length() && input.charAt(index) == '|') {
 			match("||");
-			WFormula c2 = parseConjunctDisjunct();			
+			Constraint c2 = parseConjunctDisjunct();			
 			return or(c1,c2);
 		}
 		return c1;
 	}
 		
-	private WFormula parsePredicate() {
+	private Constraint parsePredicate() {
 		parseWhiteSpace();
 		
 		int start = index;
@@ -91,7 +93,7 @@ public class Parser {
 		
 		if(lookahead.equals("(")) {
 			match("(");			
-			WFormula r = parseConjunctDisjunct();			
+			Constraint r = parseConjunctDisjunct();			
 			match(")");
 			return r;
 		} else if(lookahead.equals("!")) {
@@ -119,7 +121,7 @@ public class Parser {
 				parseWhiteSpace();
 			}
 			match("|");
-			WFormula f = parseConjunctDisjunct();			
+			Constraint f = parseConjunctDisjunct();			
 			match("]");
 			return new WBoundedForall(true,vars,f);						
 		} else if(lookahead.equals("some")) {			
@@ -143,7 +145,7 @@ public class Parser {
 				parseWhiteSpace();
 			}
 			match("|");
-			WFormula f = parseConjunctDisjunct();			
+			Constraint f = parseConjunctDisjunct();			
 			match("]");
 			return new WBoundedForall(false,vars,f);							
 		} 
@@ -155,13 +157,13 @@ public class Parser {
 		if ((index + 1) < input.length() && input.charAt(index) == '<'
 				&& input.charAt(index + 1) == ':') {
 			match("<:");
-			WType rhs = parseType();
-			return WTypes.subtypeOf(lhs, rhs);
+			Type rhs = parseType();
+			return new WTypeDecl(rhs,lhs);
 		} if ((index + 2) < input.length() && input.charAt(index) == '<'
 				&& input.charAt(index + 1) == '!' && input.charAt(index + 2) == ':') {
 			match("<!:");
-			WType rhs = parseType();
-			return WTypes.subtypeOf(lhs, rhs).not();
+			Type rhs = parseType();
+			return new WTypeDecl(rhs,lhs).not();
 		} else if ((index + 1) < input.length() && input.charAt(index) == '<'
 				&& input.charAt(index + 1) == '=') {
 			match("<=");
@@ -184,12 +186,12 @@ public class Parser {
 				&& input.charAt(index + 1) == '=') {
 			match("==");
 			Constructor rhs = parseExpression();			
-			return Constructors.equals(lhs,rhs);
+			return equals(lhs,rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '=') {
 			match("!=");
 			Constructor rhs = parseExpression();
-			return Constructors.notEquals(lhs, rhs);			
+			return notEquals(lhs, rhs);			
 		} else if ((index + 1) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '=') {
 			match("{=");
@@ -456,57 +458,58 @@ public class Parser {
 			lhs = lhs + rhs;
 			BigInteger bottom = BigInteger.valueOf(10);
 			bottom = bottom.pow(rhs.length());
-			return new WNumber(new BigInteger(lhs),bottom);
+			return Value.V_NUM(new BigInteger(lhs),bottom);
 		} else {
-			return new WNumber(new BigInteger(input.substring(start, index)));
+			return Value.V_NUM(new BigInteger(input.substring(start, index)));
 		}
 	}
 	
-	private WType parseType() {
+	private Type parseType() {
 		parseWhiteSpace();
 		
 		int start = index;
 		
 		if(input.charAt(index) == '?') {
 			match("?");
-			return WAnyType.T_ANY;
+			return Type.T_ANY;
 		} else if(input.charAt(index) == '{') {
 			match("{");
-			WType et = parseType();
+			Type et = parseType();
 			match("}");
-			return new WSetType(et);
+			return Type.T_SET(et);
 		} else if(input.charAt(index) == '[') {
 			match("[");
-			WType et = parseType();
+			Type et = parseType();
 			match("]");
-			return new WListType(et);
+			return Type.T_LIST(et);
 		} else if(input.charAt(index) == '(') {
 			match("(");
 			boolean firstTime=true;
-			ArrayList<Pair<String,WType>> types = new ArrayList();
+			Map<String,Type> types = new HashMap();
 			do {
 				if(!firstTime) {
 					match(",");
 				}
 				firstTime=false;
-				WType type = parseType();
+				Type type = parseType();
 				parseWhiteSpace();
 				String field = parseIdentifier();
-				types.add(new Pair(field,type));
+				types.put(field,type);
 			} while (index < input.length() && input.charAt(index) == ',');		
 			match(")");
-			return new WTupleType(types);
+			return Type.T_RECORD(types);
 		} else {
 			String id = parseIdentifier();
-			WType r;
+			Type r;
+			// FIXME: this needs improving
 			if(id.equals("void")) {
-				r = WIntType.T_INT;
+				r = Type.T_INT;
 			} else if(id.equals("int")) {
-				r = WIntType.T_INT;
+				r = Type.T_INT;
 			} else if(id.equals("real")) {
-				r = WRealType.T_REAL;
+				r = Type.T_REAL;
 			} else if(id.equals("bool")) {
-				r = WBoolType.T_BOOL;
+				r = Type.T_BOOL;
 			} else {
 				throw new SyntaxError("unknown type", filename, start,
 						index - 1);				
