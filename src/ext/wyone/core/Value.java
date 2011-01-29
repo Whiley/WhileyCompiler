@@ -116,6 +116,7 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 	
 	public final static Number ZERO = new Number(BigRational.ZERO);
 	public final static Number ONE = new Number(BigRational.ONE);
+	public final static Number TWO = new Number(BigRational.valueOf(2));
 	public final static Number MONE = new Number(BigRational.MONE);	
 	
 	// ====================================================================
@@ -174,6 +175,10 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		
 		public Number negate() {
 			return new Number(value.value.negate());
+		}
+		
+		public boolean isInteger() {
+			return value.value.isInteger();
 		}
 		
 		public Number ceil() {

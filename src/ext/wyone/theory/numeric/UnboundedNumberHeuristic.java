@@ -21,11 +21,11 @@ import static wyone.theory.numeric.FourierMotzkinSolver.rearrange;
 
 import java.util.*;
 
+import wyil.lang.Type;
+import static wyone.core.Constructor.*;
 import wyone.core.*;
-import wyone.theory.congruence.WEquality;
-import wyone.theory.disjunct.WFormula;
+//import wyone.theory.congruence.WEquality;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
-import wyone.theory.set.WSubsetEq;
 import wyone.util.Pair;
 
 public class UnboundedNumberHeuristic implements Solver.Heuristic {
@@ -42,19 +42,19 @@ public class UnboundedNumberHeuristic implements Solver.Heuristic {
 	private List<Solver.State> splitOnFirstUnbounded(Solver.State state,
 			Solver solver) {		
 		HashSet<Variable> unbounded = new HashSet<Variable>();
-		for(WFormula f : state) {
+		for(Constraint f : state) {
 			if(f instanceof WEquality) {
 				WEquality weq = (WEquality) f;
 				if (weq.sign() && weq.lhs() instanceof Variable
-						&& weq.rhs() instanceof WNumber) {
+						&& weq.rhs() instanceof Value.Number) {
 					continue; // skip assignment
 				}
 			}
-			Set<Variable> vars = Constructors.match(Variable.class, f);
+			Set<Variable> vars = Helpers.match(Variable.class, f);
 			for(Variable v : vars) {
-				if(isInteger && v.type(state) == WIntType.T_INT) {
+				if(isInteger && v.type(state) == Type.T_INT) {
 					unbounded.add(v);
-				} else if(!isInteger && v.type(state) == WRealType.T_REAL) {
+				} else if(!isInteger && v.type(state) == Type.T_REAL) {
 					unbounded.add(v);
 				}
 			}
@@ -65,8 +65,8 @@ public class UnboundedNumberHeuristic implements Solver.Heuristic {
 		Variable v = unbounded.iterator().next();
 		Solver.State rhs = state.clone();
 		
-		state.infer(Numerics.greaterThanEq(WNumber.ZERO, v), solver);
-		rhs.infer(Numerics.lessThan(v,WNumber.ZERO), solver);
+		state.infer(Numerics.greaterThanEq(Value.ZERO, v), solver);
+		rhs.infer(Numerics.lessThan(v,Value.ZERO), solver);
 		
 		ArrayList<Solver.State> states = new ArrayList<Solver.State>();
 		states.add(state);

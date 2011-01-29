@@ -21,6 +21,7 @@ import static wyone.theory.numeric.FourierMotzkinSolver.rearrange;
 
 import java.util.*;
 
+import wyil.lang.Type;
 import wyone.core.*;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
 import wyone.util.Pair;
@@ -81,16 +82,16 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 	private List<Solver.State> splitOnSmallestBounded(
 			HashMap<Constructor, Pair<Bound, Bound>> bounds, Solver.State lhs,
 			Solver solver) {
-		WNumber minDiff = null;
+		Value.Number minDiff = null;
 		Constructor var = null;
-		WNumber varlow = null;
-		WNumber varhigh = null;
+		Value.Number varlow = null;
+		Value.Number varhigh = null;
 		
 		for(Map.Entry<Constructor, Pair<Bound,Bound>> e : bounds.entrySet()) {
 			Bound low = e.getValue().first();
 			Bound high = e.getValue().second();
 			if(low != null && high != null) {
-				WNumber diff = high.num.subtract(low.num);
+				Value.Number diff = high.num.subtract(low.num);
 				if(minDiff == null || diff.compareTo(minDiff) < 0) {
 					var = e.getKey();
 					varlow = low.num;
@@ -104,7 +105,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 			return null;
 		}								
 		
-		WNumber mid = varlow.add(varhigh).divide(WNumber.TWO);		
+		Value.Number mid = varlow.add(varhigh).divide(Value.TWO);		
 		Solver.State rhs = lhs.clone();
 				
 		lhs.add(Numerics.lessThanEq(var,mid), solver);
@@ -120,14 +121,14 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 			Solver.State state, Solver solver) {
 		HashMap<Constructor,Pair<Bound,Bound>> bounds = new HashMap();
 		
-		for(WFormula f : state) {
+		for(Constraint f : state) {
 			if(f instanceof Inequality) {				
 				Inequality wieq = (Inequality) f;
 				Constructor var = variable(wieq);									
-				WType t = var.type(state);
-				if(isInteger && t instanceof WIntType) {
+				Type t = var.type(state);
+				if(isInteger && t instanceof Type.Int) {
 					updateBounds(wieq,var,true,bounds);
-				} else if(!isInteger && t instanceof WRealType) {
+				} else if(!isInteger && t instanceof Type.Real) {
 					updateBounds(wieq,var,false,bounds);
 				}								
 			}
@@ -164,13 +165,13 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 	private static void updateUpperBound(BoundUpdate above, Constructor var,
 			boolean isInteger, HashMap<Constructor, Pair<Bound, Bound>> bounds) {
 
-		WNumber up = (WNumber) above.poly;
+		Value.Number up = (Value.Number) above.poly;
 		boolean isStrict = above.sign;
 		
 		up = up.divide(above.factor);
 		
 		if (isInteger && isStrict && up.isInteger()) {
-			up = up.subtract(WNumber.ONE).floor();
+			up = up.subtract(Value.Number.ONE).floor();
 			isStrict = false;
 		} else if (isInteger) {
 			up = up.floor();
@@ -190,13 +191,13 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 	private static void updateLowerBound(BoundUpdate below, Constructor var,
 			boolean isInteger, HashMap<Constructor, Pair<Bound, Bound>> bounds) {
 		
-		WNumber bp = (WNumber) below.poly;
+		Value.Number bp = (Value.Number) below.poly;
 		boolean isStrict = below.sign;
 		
 		bp = bp.divide(below.factor);
 		
 		if(isInteger && isStrict && bp.isInteger()) {
-			bp = bp.add(WNumber.ONE).ceil();
+			bp = bp.add(Value.Number.ONE).ceil();
 			isStrict = false; 
 		} else if(isInteger) {
 			bp = bp.ceil();
@@ -216,8 +217,8 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 	
 	private final static class Bound implements Comparable<Bound> {
 		public final boolean sign;
-		public final WNumber num;
-		public Bound(boolean sign, WNumber num) {
+		public final Value.Number num;
+		public Bound(boolean sign, Value.Number num) {
 			this.sign = sign;
 			this.num = num;
 		}
