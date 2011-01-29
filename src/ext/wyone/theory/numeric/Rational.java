@@ -311,6 +311,23 @@ public final class Rational implements Constructor {
 		return new Rational(numerator.negate(),denominator());
 	}
 	
+	public int compareTo(Constructor e) {
+		if (e instanceof Rational) {
+			// this is fairly difficult to do for sure.
+			Rational r = (Rational) e;
+			Polynomial lhs = numerator.multiply(r.denominator);
+			Polynomial rhs = r.numerator.multiply(denominator);
+			return lhs.compareTo(rhs);
+		} else if(CID < e.cid()) {
+			return -1;
+		} else {
+			return 1;
+		}
+	}
+
+	private final static int CID = Helpers.registerCID();
+	public int cid() { return CID; }
+	
 	public boolean equals(Object o) {
 		if(o instanceof Rational) {			
 			Rational r = (Rational) o;

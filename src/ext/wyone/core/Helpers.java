@@ -20,12 +20,37 @@ package wyone.core;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-public class Constructors {
+/**
+ * The Helpers class contains various helper methods which don't have a logical
+ * home within the core.
+ * 
+ * @author djp
+ * 
+ */
+public class Helpers {
 
 	/**
-	 * The following method identifies any matching subterms. This is done by
-	 * traversing the entire tree of subterms for an expression and looking for
-	 * matches, rather than just traversing a single level.
+	 * <p>
+	 * The following method is provided so that subtypes of WExpr can register
+	 * for a CID and, in turn, can implement compareTo in safe fashion across
+	 * all possible WExpr implementations.
+	 * </p>
+	 * <p>
+	 * The reason for requiring that all constructors have a cid() method is to
+	 * ensure we can always construct a sorted sequence of constructors. This
+	 * simplifies various algorithms (e.g. for factoring polynomials).
+	 * </p>
+	 */	
+	public static int registerCID() {
+		return cid.getAndAdd(1);
+	}
+	
+	private static final AtomicInteger cid = new AtomicInteger(0);
+	
+	/**
+	 * The following method identifies any matching subterms in a constructor.
+	 * This is done by traversing the entire tree of subterms for an expression
+	 * and looking for matches, rather than just traversing a single level.
 	 * 
 	 * @param <T>
 	 * @param match

@@ -39,7 +39,7 @@ import wyil.lang.Type;
  * @author djp
  * 
  */
-public class Value<T extends wyil.lang.Value> implements Constructor, Comparable<Value> {
+public class Value<T extends wyil.lang.Value> implements Constructor, Comparable<Constructor> {
 	public final T value; 
 
 	Value(T value) {
@@ -66,8 +66,14 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		return value.hashCode();
 	}
 	
-	public int compareTo(Value v) {		
-		return value.compareTo(v.value);
+	public int compareTo(Constructor v) {	
+		if(v instanceof Value) {			
+			return value.compareTo(((Value)v).value);
+		} else if(CID < v.cid()) {
+			return -1; 
+		} else {
+			return 1;
+		}
 	}
 	
 	/**
@@ -78,6 +84,8 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		return this;
 	}
 
+	private final static int CID = Helpers.registerCID();
+	public int cid() { return CID; }
 
 	// ====================================================================
 	// CONSTRUCTORS

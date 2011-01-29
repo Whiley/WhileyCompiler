@@ -30,7 +30,25 @@ import wyone.theory.type.WTypes;
  * @author djp
  * 
  */
-public interface Constructor {
+public interface Constructor extends Comparable<Constructor> {
+
+	/**
+	 * <p>
+	 * The cid is a specifier used to carve up the domain of constructors into
+	 * distinct regions of different values. The purpose of the cid is to
+	 * simplify the task of implementing the compareTo method for any given
+	 * implementation of Constructor.
+	 * </p>
+	 * <p>
+	 * The reason for requiring that all constructors have a cid() method is to
+	 * ensure we can always construct a sorted sequence of constructors. This
+	 * simplifies various algorithms (e.g. for factoring polynomials).
+	 * </p>
+	 * 
+	 * @return
+	 */
+	public int cid();
+	
 	/**
 	 * <p>
 	 * This method replaces all occurrences of a given expression with another
@@ -125,6 +143,34 @@ public interface Constructor {
 			return subterms;
 		}
 		
+		public int compareTo(Constructor e) {				
+			if(e instanceof Base) {
+				Base<Constructor> c = (Base<Constructor>) e;
+				if(subterms.size() < c.subterms().size()) {
+					return -1;
+				} else if(subterms.size() > c.subterms().size()) {
+					return 1;
+				} 
+
+				int nc = name.compareTo(c.name());
+				if(nc != 0) {
+					return nc;
+				}
+
+				for(int i=0;i!=subterms.size();++i) {
+					Constructor p1 = subterms.get(i);
+					Constructor p2 = c.subterms().get(i);
+					nc = p1.compareTo(p2);
+					if(nc != 0) { return nc; }
+				}
+
+				return 0;
+			} else if(cid() < e.cid()){
+				return -1;
+			} else {
+				return 1;
+			}
+		}	
 		// =================================================================
 		// OBJECT METHODS
 		// =================================================================
@@ -154,6 +200,9 @@ public interface Constructor {
 		public int hashCode() {
 			return name.hashCode() + subterms.hashCode();
 		}	
+		
+		private final static int CID = Helpers.registerCID();
+		public int cid() { return CID; }
 	}
 	
 	/**
@@ -182,6 +231,8 @@ public interface Constructor {
 	 * 
 	 */
 	public static class Variable extends Base<Constructor> implements Constructor {	
+		private final static int CID = Helpers.registerCID(); 
+		
 		public Variable(String var, Constructor... args) {
 			super(var,args);
 		}
@@ -198,6 +249,8 @@ public interface Constructor {
 			}
 			return true;
 		}
+		
+		public int cid() { return CID; }
 		
 		public Constructor substitute(Map<Constructor,Constructor> binding) {		
 			// First, recursively check for substitutions
