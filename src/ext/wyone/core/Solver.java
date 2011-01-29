@@ -47,8 +47,8 @@ public final class Solver implements Callable<Proof> {
 	 * The rassignments lists is the inverse map of the assignments list. Each
 	 * formula is located at a given index.
 	 */
-	private final ArrayList<Constraint> rassignments = new ArrayList<Constraint>();
-
+	private final ArrayList<Constraint> rassignments = new ArrayList<Constraint>();	
+	
 	/**
 	 * The wyone constraint program being tested for satisfiability
 	 */

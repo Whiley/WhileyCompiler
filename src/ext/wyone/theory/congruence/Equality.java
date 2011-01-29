@@ -78,17 +78,12 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			return this;
 		} else {			
 			if(sign) {			
-				return lhs.rearrange(rhs);
+				return Equality.equals(lhs,rhs);
 			} else {
-				return new Equality(false,lhs,rhs);
+				return Equality.notEquals(lhs,rhs);
 			}
 		}
 	}		
-	
-	public Constraint rearrange(Constructor rhs) {
-		// no idea what to do here ...
-		throw new RuntimeException("Not sure how to rearrange equality!");
-	}
 	
 	public String toString() {
 		if(sign) {

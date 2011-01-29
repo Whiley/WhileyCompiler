@@ -27,12 +27,12 @@ import wyone.theory.logic.*;
 // import wyone.theory.list.*;
 // import wyone.theory.set.*;
 import wyone.theory.numeric.*;
+import wyone.theory.congruence.Equality;
 // import wyone.theory.quantifier.*;
 // import wyone.theory.tuple.*;
 import static wyone.core.Constructor.*;
 import static wyone.theory.logic.Logic.*;
 import static wyone.theory.numeric.Numerics.*;
-import static wyone.theory.congruence.Equality.*;
 // import static wyone.theory.set.WSets.*;
 
 public class Parser {
@@ -123,7 +123,8 @@ public class Parser {
 			match("|");
 			Constraint f = parseConjunctDisjunct();			
 			match("]");
-			return new WBoundedForall(true,vars,f);						
+			// FIXME: return new WBoundedForall(true,vars,f);
+			return null;
 		} else if(lookahead.equals("some")) {			
 			match("some");			
 			match("[");			
@@ -147,7 +148,8 @@ public class Parser {
 			match("|");
 			Constraint f = parseConjunctDisjunct();			
 			match("]");
-			return new WBoundedForall(false,vars,f);							
+			// FIXME: return new WBoundedForall(false,vars,f);
+			return null;
 		} 
 			
 		Constructor lhs = parseExpression();
@@ -186,40 +188,41 @@ public class Parser {
 				&& input.charAt(index + 1) == '=') {
 			match("==");
 			Constructor rhs = parseExpression();			
-			return equals(lhs,rhs);
+			return Equality.equals(lhs,rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '=') {
 			match("!=");
 			Constructor rhs = parseExpression();
-			return notEquals(lhs, rhs);			
+			return Equality.notEquals(lhs, rhs);			
 		} else if ((index + 1) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '=') {
 			match("{=");
 			Constructor rhs = parseExpression();			
-			return subsetEq(lhs, rhs);
+			//FIXME: return subsetEq(lhs, rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '='
 				&& input.charAt(index + 1) == '}') {
 			match("=}");
 			Constructor rhs = parseExpression();			
-			return supsetEq(lhs, rhs);
+			//FIXME: return supsetEq(lhs, rhs);
 		} else if ((index + 2) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '!') {
 			match("{!=");
 			Constructor rhs = parseExpression();			
-			return subsetEq(lhs, rhs).not();
+			//FIXME: return subsetEq(lhs, rhs).not();
 		} else if ((index + 2) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '}') {
 			match("=!}");
 			Constructor rhs = parseExpression();			
-			return supsetEq(lhs, rhs).not();
+			//FIXME: return supsetEq(lhs, rhs).not();
 		} else if(lhs instanceof Variable) {
 			Variable v = (Variable) lhs;
-			return new WPredicate(true,v.name(),v.subterms());
+			//FIXME: return new WPredicate(true,v.name(),v.subterms());
 		} else {
 			// will need more here
 			throw new SyntaxError("syntax error", filename, start,
 						index - 1);			
-		} 					
+		} 			
+		return null;
 	}
 	
 	private Constructor parseExpression( ) {				
@@ -266,6 +269,7 @@ public class Parser {
 	
 	private Constructor parseIndexTerm() {
 		Constructor term = parseTerm();
+		/* FIXME: 
 		String lookahead = lookahead();
 		while(lookahead.equals(".") || lookahead.equals("[")) {				
 			if(lookahead.equals(".")) {
@@ -280,7 +284,7 @@ public class Parser {
 			}
 			lookahead = lookahead();
 		}
-		
+		*/
 		return term;		
 	}
 	
@@ -316,7 +320,8 @@ public class Parser {
 		match("|");
 		Constructor r = parseExpression();
 		match("|");		
-		return new WLengthOf(r);
+		// FIXME: return new WLengthOf(r);
+		return null;
 	}
 	
 	private Constructor parseListTerm() {
@@ -334,7 +339,8 @@ public class Parser {
 			lookahead = lookahead();
 		}
 		match("]");
-		return new WListConstructor(params).substitute(Collections.EMPTY_MAP);
+		// return new WListConstructor(params).substitute(Collections.EMPTY_MAP);
+		return null;
 	}
 	
 
@@ -353,7 +359,8 @@ public class Parser {
 			lookahead = lookahead();
 		}		
 		match("}");		
-		return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
+		// return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
+		return null;
 	}
 	
 	private Constructor parseIdentifierTerm() {
@@ -406,7 +413,8 @@ public class Parser {
 				fields.add(id);
 				items.add(val);					
 			}
-			e = new WTupleConstructor(fields,items);				
+			// FIXME: e = new WTupleConstructor(fields,items);
+			e = null;
 		} else {
 			// normal bracketed expression
 			e = parseExpression();				

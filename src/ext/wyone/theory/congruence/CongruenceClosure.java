@@ -21,7 +21,6 @@ import java.util.*;
 import wyil.lang.Type;
 import static wyone.core.Constructor.*;
 import wyone.core.*;
-import wyone.theory.logic.*;
 
 public class CongruenceClosure implements Solver.Rule {
 
@@ -41,12 +40,12 @@ public class CongruenceClosure implements Solver.Rule {
 	
 		for(Constraint f : state) {
 			if(f instanceof Equality) {
-				Equality weq = (Equality) f;
-				if(weq.sign()) {
+				Equality eq = (Equality) f;
+				if(eq.sign()) {
 					// FIXME: there is a subtle problem here, when we have multiple
 					// possible assignments for a variable. This can arise when we
 					// don't eliminate assignments in inferEquality.
-					binding.put(weq.lhs(),weq.rhs());					
+					binding.put(eq.lhs(),eq.rhs());					
 				}
 			}
 		}
@@ -69,25 +68,25 @@ public class CongruenceClosure implements Solver.Rule {
 		
 		// So, at this point we have an equality of the form lhs == rhs.
 		// This equality should have been normalised into a form where lhs
-		// represents a single "effective-variable", and rhs represents other
+		// represents a single "effective variable", and rhs represents other
 		// stuff. Observe that lhs is no guaranteed to be an instanceof
-		// wVariable (unforatunately); this is because of tupple and list
-		// accessors --- which are not WVariables as they are "interpreted".
+		// Variable (unfortunately); this is because of tuple and list
+		// accessors --- which are not Variables as they are "interpreted".
 		// That is, given a value for the target variable their value can be
 		// immediately deduced.
 		//
-		// Now, our objective at this point is to substitute all occurrences of
+		// Our objective at this point is to substitute all occurrences of
 		// the lhs with the rhs, such that this equality is the only place where
 		// the lhs now exists. When the lhs is actually an instance of
-		// WVariable, then this will be an "assignment".
+		// Variable, then this will be an "assignment".
 		//
-		// Some issues can arise from other equalities which now on a new form.
-		// For example, consider this:
+		// Some issues can arise from other equalities which now take on a new
+		// form.  For example, consider this:
 		//
-		// t1.x < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2*
+		// t1.x < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2
 		// 
-		// Here, last equality is the one being added. So, after substituting t1
-		// for t2, we get this state:
+		// Here, the last equality is the one being added. So, after
+		// substituting t1 for t2, we get this state:
 		//
 		// t2.x < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2
 		//
