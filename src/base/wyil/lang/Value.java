@@ -339,6 +339,13 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 		public String toString() {
 			return "null";
 		}
+		public int compareTo(Value v) {
+			if(v instanceof Null) {
+				return 0;
+			} else {
+				return 1; // everything is above null
+			}
+		}
 	}
 	
 	public static final class Bool extends Value {
@@ -359,12 +366,25 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			}
 			return false;
 		}
+		public int compareTo(Value v) {
+			if(v instanceof Bool) {
+				Bool b = (Bool) v;
+				if(value == b.value) {
+					return 0;
+				} else if(value) {
+					return 1;
+				} 
+			} else if(v instanceof Null) {
+				return 1; 
+			} 
+			return -1;			
+		}
 		public String toString() {
 			if(value) { return "true"; }
 			else {
 				return "false";
 			}
-		}
+		}		
 	}
 	public static final class Int extends Value {
 		public final BigInteger value;
@@ -383,6 +403,15 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 				return value.equals(i.value);
 			}
 			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Int) {
+				Int i = (Int) v;
+				return value.compareTo(i.value); 
+			} else if(v instanceof Null || v instanceof Bool) {
+				return 1; 
+			} 
+			return -1;			
 		}
 		public String toString() {
 			return value.toString();
@@ -406,6 +435,15 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 				return value.equals(i.value);
 			}
 			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Real) {
+				Real i = (Real) v;
+				return value.compareTo(i.value); 
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Int) {
+				return 1; 
+			} 
+			return -1;			
 		}
 		public String toString() {
 			return value.toString();
@@ -434,6 +472,28 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 				return values.equals(i.values);
 			}
 			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof List) {
+				List l = (List) v;
+				if(values.size() < l.values.size()) {
+					return -1;
+				} else if(values.size() > l.values.size()) {
+					return 1;
+				} else {
+					for(int i=0;i!=values.size();++i) {
+						Value v1 = values.get(i);
+						Value v2 = l.values.get(i);
+						int c = v1.compareTo(v2);
+						if(c != 0) { return c; }
+					}
+					return 0;
+				}
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Int || v instanceof Real) {
+				return 1; 
+			} 
+			return -1;			
 		}
 		public String toString() {
 			String r = "[";
@@ -472,6 +532,35 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			}
 			return false;
 		}
+		public int compareTo(Value v) {
+			if(v instanceof Set) {
+				Set l = (Set) v;
+				if(values.size() < l.values.size()) {
+					return -1;
+				} else if(values.size() > l.values.size()) {
+					return 1;
+				} else {
+					// this case is slightly awkward, since we can't rely on the
+					// iteration order for HashSet.
+					ArrayList<Value> vs1 = new ArrayList<Value>(values);
+					ArrayList<Value> vs2 = new ArrayList<Value>(l.values);
+					Collections.sort(vs1);
+					Collections.sort(vs2);
+					for(int i=0;i!=values.size();++i) {
+						Value v1 = vs1.get(i);
+						Value v2 = vs2.get(i);
+						int c = v1.compareTo(v2);
+						if(c != 0) { return c; }
+					}
+					return 0;
+				}
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Int || v instanceof Real
+					|| v instanceof List) {
+				return 1;
+			}
+			return -1;			
+		}
 		public String toString() {
 			String r = "{";
 			boolean firstTime=true;
@@ -508,6 +597,37 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 				return values.equals(i.values);
 			}
 			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Record) {
+				Record l = (Record) v;
+				if(values.size() < l.values.size()) {
+					return -1;
+				} else if(values.size() > l.values.size()) {
+					return 1;
+				} else {
+					ArrayList<String> vs1 = new ArrayList<String>(values.keySet());
+					ArrayList<String> vs2 = new ArrayList<String>(l.values.keySet());
+					Collections.sort(vs1);
+					Collections.sort(vs2);
+					for(int i=0;i!=values.size();++i) {
+						String s1 = vs1.get(i);
+						String s2 = vs2.get(i);
+						int c = s1.compareTo(s2);
+						if(c != 0) { return c; }
+						Value v1 = values.get(s1);
+						Value v2 = l.values.get(s1);
+						c = v1.compareTo(v2);
+						if(c != 0) { return c; }
+					}
+					return 0;
+				}
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Int || v instanceof Real
+					|| v instanceof Set || v instanceof List) {
+				return 1; 
+			} 
+			return -1;			
 		}
 		public String toString() {
 			String r = "{";
@@ -555,6 +675,38 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			}
 			return false;
 		}
+		public int compareTo(Value v) {
+			if(v instanceof Dictionary) {
+				Dictionary l = (Dictionary) v;
+				if(values.size() < l.values.size()) {
+					return -1;
+				} else if(values.size() > l.values.size()) {
+					return 1;
+				} else {
+					ArrayList<Value> vs1 = new ArrayList<Value>(values.keySet());
+					ArrayList<Value> vs2 = new ArrayList<Value>(l.values.keySet());
+					Collections.sort(vs1);
+					Collections.sort(vs2);
+					for(int i=0;i!=values.size();++i) {
+						Value k1 = vs1.get(i);
+						Value k2 = vs2.get(i);
+						int c = k1.compareTo(k2);
+						if(c != 0) { return c; }
+						Value v1 = values.get(k1);
+						Value v2 = l.values.get(k1);
+						c = v1.compareTo(v2);
+						if(c != 0) { return c; }
+					}
+					return 0;
+				}
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Int || v instanceof Real
+					|| v instanceof Set || v instanceof List
+					|| v instanceof Record) {
+				return 1;
+			}
+			return -1;			
+		}
 		public String toString() {
 			String r = "{";
 			boolean firstTime=true;
@@ -594,6 +746,15 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 				return type == i.type;
 			}
 			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof TypeConst) {
+				TypeConst t = (TypeConst) v;
+				// FIXME: following is an ugly hack!
+				return type.toString().compareTo(t.toString());
+			} else {
+				return 1; // everything is above a type constant
+			}					
 		}
 		public String toString() {
 			return type.toString();
