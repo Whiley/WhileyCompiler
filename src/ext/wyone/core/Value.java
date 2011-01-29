@@ -76,6 +76,10 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		}
 	}
 	
+	public String toString() {
+		return value.toString();
+	}
+	
 	/**
 	 * Substituting into a value has no effect. However, we need this method
 	 * because it overrides Expr.substitute.
