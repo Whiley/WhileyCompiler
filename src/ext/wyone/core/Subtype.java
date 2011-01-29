@@ -1,9 +1,8 @@
-package wyone.theory.type;
+package wyone.core;
 
 import java.util.*;
 import wyil.lang.Type;
 import wyone.core.*;
-import wyone.core.Constructor.Variable;
 import static wyone.core.Constructor.*;
 
 public class Subtype extends Base<Constructor> implements Constraint {

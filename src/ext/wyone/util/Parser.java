@@ -29,7 +29,6 @@ import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 // import wyone.theory.quantifier.*;
 // import wyone.theory.tuple.*;
-import wyone.theory.type.*;
 import static wyone.core.Constructor.*;
 import static wyone.theory.logic.Logic.*;
 import static wyone.theory.numeric.Numerics.*;
@@ -158,12 +157,12 @@ public class Parser {
 				&& input.charAt(index + 1) == ':') {
 			match("<:");
 			Type rhs = parseType();
-			return new WTypeDecl(rhs,lhs);
+			return new Subtype(true,rhs,lhs);
 		} if ((index + 2) < input.length() && input.charAt(index) == '<'
 				&& input.charAt(index + 1) == '!' && input.charAt(index + 2) == ':') {
 			match("<!:");
 			Type rhs = parseType();
-			return new WTypeDecl(rhs,lhs).not();
+			return new Subtype(false,rhs,lhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '<'
 				&& input.charAt(index + 1) == '=') {
 			match("<=");
