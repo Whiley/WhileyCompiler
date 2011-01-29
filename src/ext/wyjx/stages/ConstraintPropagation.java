@@ -137,7 +137,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		WFormula postcondition = precondition.substitute(binding);
 
 		// finally, put it altogether
-		return Logic.and(postcondition, new WEquality(true, lhs, rhs),
+		return Logic.and(postcondition, new Equality(true, lhs, rhs),
 				assignCondition(code.lhs, binding, elem), lhs_p.second(), rhs_c);
 	}
 		
@@ -163,7 +163,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 					if(!field.equals(ta.field)) {
 						WTupleAccess o = new WTupleAccess(src.first(),field);
 						WTupleAccess n = new WTupleAccess(nsrc,field);
-						constraint = Logic.and(constraint,new WEquality(true,o,n));
+						constraint = Logic.and(constraint,new Equality(true,o,n));
 					}
 				}
 				constraint = Logic.and(constraint,src.second());
@@ -177,9 +177,9 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				Constructor n = new WListAccess(nsrc,var);
 				HashMap<Variable,Constructor> srcs = new HashMap<Variable,Constructor>();
 				srcs.put(var, src.first());
-				WFormula body = Logic.or(new WEquality(true, index.first(),
-						var), new WEquality(true, o, n));
-				constraint = Logic.and(constraint, new WEquality(true,
+				WFormula body = Logic.or(new Equality(true, index.first(),
+						var), new Equality(true, o, n));
+				constraint = Logic.and(constraint, new Equality(true,
 						new WLengthOf(src.first()), new WLengthOf(nsrc)),
 						new WBoundedForall(true, srcs, body), src.second(),
 						index.second());
@@ -409,10 +409,10 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		WFormula condition = null;
 		switch (code.op) {
 		case EQ:
-			condition = new WEquality(true, lhs_p.first(), rhs_p.first());
+			condition = new Equality(true, lhs_p.first(), rhs_p.first());
 			break;
 		case NEQ:
-			condition = new WEquality(false, lhs_p.first(), rhs_p.first());
+			condition = new Equality(false, lhs_p.first(), rhs_p.first());
 			break;
 		case LT:
 			condition = Numerics.lessThan(lhs_p.first(), rhs_p.first());

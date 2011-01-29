@@ -43,8 +43,8 @@ public class UnboundedNumberHeuristic implements Solver.Heuristic {
 			Solver solver) {		
 		HashSet<Variable> unbounded = new HashSet<Variable>();
 		for(Constraint f : state) {
-			if(f instanceof WEquality) {
-				WEquality weq = (WEquality) f;
+			if(f instanceof Equality) {
+				Equality weq = (Equality) f;
 				if (weq.sign() && weq.lhs() instanceof Variable
 						&& weq.rhs() instanceof Value.Number) {
 					continue; // skip assignment

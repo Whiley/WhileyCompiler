@@ -28,10 +28,10 @@ public class NotEqualsHeuristic implements Solver.Heuristic {
 	public List<Solver.State> split(Solver.State state,Solver solver) {
 		
 		for(Constraint f : state) {
-			if(f instanceof WEquality) {
-				WEquality weq = (WEquality) f;
+			if(f instanceof Equality) {
+				Equality weq = (Equality) f;
 				if(!weq.sign()) {
-					return split((WEquality)f, state, solver);
+					return split((Equality)f, state, solver);
 				}
 			}
 		}
@@ -40,7 +40,7 @@ public class NotEqualsHeuristic implements Solver.Heuristic {
 	}
 	
 		
-	private List<Solver.State> split(WEquality d, Solver.State lhs, Solver solver) {		
+	private List<Solver.State> split(Equality d, Solver.State lhs, Solver solver) {		
 		lhs.eliminate(d);		
 		Solver.State rhs = lhs.clone();		
 		lhs.add(lessThan(d.lhs(),d.rhs()), solver);
