@@ -22,6 +22,14 @@ import java.util.*;
 import wyil.lang.Type;
 import wyone.theory.type.WTypes;
 
+/**
+ * A constructor represents some kind of expression which makes up some, or all
+ * of a constraint.  A constructor may have one or more subterms, unless it's a
+ * variable (in which case it may have none).  
+ * 
+ * @author djp
+ * 
+ */
 public interface Constructor {
 	/**
 	 * <p>

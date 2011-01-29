@@ -61,10 +61,10 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 				Solver.State rhs = lhs.clone();								
 				
 				if(low != null) {				
-					lhs.add(WExprs.equals(var,low.num), solver);
+					lhs.add(Constructors.equals(var,low.num), solver);
 					rhs.add(Numerics.greaterThan(var,low.num), solver);
 				} else {					
-					lhs.add(WExprs.equals(var,high.num), solver);
+					lhs.add(Constructors.equals(var,high.num), solver);
 					rhs.add(Numerics.lessThan(var,high.num), solver);					
 				}
 

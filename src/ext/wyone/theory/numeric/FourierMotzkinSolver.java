@@ -191,7 +191,7 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		} else {			
 			// Second, generate new inequalities
 			if(lb.equals(ub)) {				
-				state.infer(WExprs.equals(lb,above.atom),solver);
+				state.infer(Constructors.equals(lb,above.atom),solver);
 			} else {
 				Constraint f;
 

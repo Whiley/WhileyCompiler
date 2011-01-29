@@ -20,7 +20,7 @@ package wyone.core;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-public class WExprs {
+public class Constructors {
 
 	/**
 	 * The following method identifies any matching subterms. This is done by

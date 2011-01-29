@@ -50,7 +50,7 @@ public class UnboundedNumberHeuristic implements Solver.Heuristic {
 					continue; // skip assignment
 				}
 			}
-			Set<Variable> vars = WExprs.match(Variable.class, f);
+			Set<Variable> vars = Constructors.match(Variable.class, f);
 			for(Variable v : vars) {
 				if(isInteger && v.type(state) == WIntType.T_INT) {
 					unbounded.add(v);

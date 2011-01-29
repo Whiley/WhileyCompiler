@@ -184,12 +184,12 @@ public class Parser {
 				&& input.charAt(index + 1) == '=') {
 			match("==");
 			Constructor rhs = parseExpression();			
-			return WExprs.equals(lhs,rhs);
+			return Constructors.equals(lhs,rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '=') {
 			match("!=");
 			Constructor rhs = parseExpression();
-			return WExprs.notEquals(lhs, rhs);			
+			return Constructors.notEquals(lhs, rhs);			
 		} else if ((index + 1) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '=') {
 			match("{=");
