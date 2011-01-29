@@ -21,14 +21,13 @@ import java.io.*;
 import java.util.*;
 
 import wyone.core.*;
-import wyone.theory.congruence.*;
-import wyone.theory.disjunct.*;
+// import wyone.theory.congruence.*;
+import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
-import wyone.theory.tuple.*;
-import wyone.theory.quantifier.*;
-import wyone.theory.list.*;
-import wyone.theory.set.*;
-import wyone.theory.type.*;
+// import wyone.theory.tuple.*;
+// import wyone.theory.quantifier.*;
+// import wyone.theory.list.*;
+// import wyone.theory.set.*;
 import wyone.util.*;
 
 /**
@@ -47,13 +46,13 @@ public class Main {
 			new UnboundedNumberHeuristic(false)		
 	);
 
-	public static final Rule[] theories = {		
+	public static final Solver.Rule[] theories = {		
 			new FourierMotzkinSolver()
 		};
 
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);
-		List<Constraint> program = parser.parseInput();		
+		Constraint program = parser.parseInput();		
 		Proof r = Solver.checkUnsatisfiable(1000, program,
 				heuristic, theories);		
 		return r instanceof Proof.Unsat;
@@ -61,7 +60,7 @@ public class Main {
 	
 	public static boolean checkSat(String input) {		
 		Parser parser = new Parser(input);
-		List<Constraint> p = parser.parseInput();
+		Constraint program = parser.parseInput();
 		Proof r = Solver.checkUnsatisfiable(1000, program,
 				heuristic, theories);
 		return r instanceof Proof.Sat;
@@ -99,7 +98,7 @@ public class Main {
 				long start = System.currentTimeMillis();
 				
 				Parser parser = new Parser(new File(args[fileArgsBegin]));
-				List<Constraint> program = parser.parseInput();								
+				Constraint program = parser.parseInput();								
 				System.out.println("Parsed: " + program);				
 				Proof r = Solver.checkUnsatisfiable(timeout, program,
 						heuristic, theories);

@@ -20,6 +20,7 @@ package wyone.core;
 import static wyone.core.Constructor.*;
 import java.util.*;
 import java.util.concurrent.*;
+import wyone.theory.logic.Conjunct;
 
 public final class Solver implements Callable<Proof> {
 	
@@ -49,11 +50,11 @@ public final class Solver implements Callable<Proof> {
 	private final ArrayList<Constraint> rassignments = new ArrayList<Constraint>();
 
 	/**
-	 * The wyone program being tested for satisfiability
+	 * The wyone constraint program being tested for satisfiability
 	 */
-	private final List<Constraint> program;
+	private final Constraint program;
 		
-	Solver(List<Constraint> program, 
+	Solver(Constraint program, 
 			Heuristic heuristic,Rule... theories) {		
 		this.program = program;
 		this.rules = new ArrayList<Rule>();
@@ -73,7 +74,7 @@ public final class Solver implements Callable<Proof> {
 	 *        stops searching and returns Proof.Unknown.
 	 * @return
 	 */
-	public static synchronized Proof checkUnsatisfiable(int timeout, List<Constraint> program,
+	public static synchronized Proof checkUnsatisfiable(int timeout, Constraint program,
 			Heuristic heuristic,
 			Rule... theories) {				
  
@@ -121,9 +122,9 @@ public final class Solver implements Callable<Proof> {
 		rassignments.clear();
 		assignments.clear();
 		// now beging the process
-		State facts = new State();
-		facts.addAll(program, this);
-		return checkUnsatisfiable(facts,0);
+		State init = new State();
+		init.add(program, this);
+		return checkUnsatisfiable(init,0);
 	}
 
 	protected Proof checkUnsatisfiable(State state, int level) {		
@@ -185,13 +186,11 @@ public final class Solver implements Callable<Proof> {
 	 * @return
 	 */
 	protected Proof checkModel(Map<Variable, Value> model) {										
-		// Check formula does indeed evaluate to true		
-		for(Constraint c : program) {
-			Constraint f = c.substitute((Map) model);
-			if(f != Value.TRUE) {
-				return Proof.UNKNOWN; 
-			}
-		}
+		// Check program does indeed evaluate to true		
+		Constraint f = program.substitute((Map) model);
+		if(f != Value.TRUE) {
+			return Proof.UNKNOWN; 
+		}		
 								
 		return new Proof.Sat(model);		
 	}
@@ -258,23 +257,7 @@ public final class Solver implements Callable<Proof> {
 		 */
 		public void add(Constraint f, Solver solver) {		
 			worklist.clear();
-			internal_add(f);
-			infer(solver);					
-		}
-
-		/**
-		 * The add method is designed to be called by external clients. This method
-		 * will not only add the given constraints, but will then infer all possible
-		 * implied constraints as well.
-		 * 
-		 * @param f
-		 * @param solver
-		 */
-		public void addAll(Collection<Constraint> fs, Solver solver) {		
-			worklist.clear();
-			for(Constraint f : fs) {
-				internal_add(f);
-			}
+			internal_add(f);			
 			infer(solver);					
 		}
 		
@@ -348,18 +331,27 @@ public final class Solver implements Callable<Proof> {
 		}
 		
 		private void internal_add(Constraint f) {				
-			Integer x = assignments.get(f);
-			
-			if(x == null) {			
-				// no previous assignment, so make one
-				int assignment = assignments.size();
-				assignments.put(f,assignment);
-				rassignments.add(f);
-				assertions.set(assignment);
-				worklist.add(assignment);						
-			} else if (!assertions.get(x) && !eliminations.get(x)) {
-				assertions.set(x);			
-				worklist.add(x);			
+			if(f instanceof Conjunct) {
+				// We never add a conjunct directly; rather, we always break it
+				// down into its constituent constraints.
+				Conjunct c = (Conjunct) f;
+				for(Constraint nc : c.subterms()) {
+					internal_add(nc);
+				}
+			} else {
+				Integer x = assignments.get(f);
+
+				if(x == null) {			
+					// no previous assignment, so make one
+					int assignment = assignments.size();
+					assignments.put(f,assignment);
+					rassignments.add(f);
+					assertions.set(assignment);
+					worklist.add(assignment);						
+				} else if (!assertions.get(x) && !eliminations.get(x)) {
+					assertions.set(x);			
+					worklist.add(x);			
+				}
 			}
 		}				
 	}
