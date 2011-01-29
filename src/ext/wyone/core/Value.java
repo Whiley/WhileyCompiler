@@ -175,5 +175,13 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		public Number negate() {
 			return new Number(value.value.negate());
 		}
+		
+		public Number ceil() {
+			return V_NUM(value.value.ceil());
+		}
+		
+		public Number floor() {
+			return V_NUM(value.value.floor());
+		}
 	}
 }

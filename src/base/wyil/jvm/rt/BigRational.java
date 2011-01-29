@@ -323,6 +323,24 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return new BigRational(numerator.negate(),denominator);
 	}
 	
+	public BigRational ceil() {		
+		BigInteger i = numerator;
+		BigInteger d = numerator.compareTo(BigInteger.ZERO) >= 0 ? BigInteger.ONE : BigInteger.valueOf(-1);
+		while (!i.divideAndRemainder(denominator)[1].equals(BigInteger.ZERO)) {
+			i = i.add(d);
+		}		
+		return new BigRational(i, denominator);
+	}
+	
+	public BigRational floor() {
+		BigInteger i = numerator;
+		BigInteger d = numerator.compareTo(BigInteger.ZERO) < 0 ? BigInteger.ONE : BigInteger.valueOf(-1);
+		while (!i.divideAndRemainder(denominator)[1].equals(BigInteger.ZERO)) {
+			i = i.add(d);
+		}		
+		return new BigRational(i, denominator);
+	}
+	
 	public static BigRational valueOf(int num, int den) {		
 		return new BigRational(BigInteger.valueOf(num),BigInteger.valueOf(den));		
 	}
