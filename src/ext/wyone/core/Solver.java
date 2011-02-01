@@ -142,20 +142,15 @@ public final class Solver implements Callable<Proof> {
 				// found a model or not ?
 				HashMap<Variable,Value> valuation = new HashMap<Variable,Value>();
 				
-				/*
-				 * FIXME: need to put this back ... when I figured out how I identify assignments.
-				for(WFormula f : state) {
-					if (f instanceof WEquality) {
-						WEquality eq = (WEquality) f;
-						WExpr lhs = eq.lhs();
-						WExpr rhs = eq.rhs();
-						if (lhs instanceof WVariable && rhs instanceof WValue
-								&& ((WVariable) lhs).isConcrete()) {
-							valuation.put((WVariable) lhs, (WValue) rhs);
+				for(Constraint f : state) {
+					if (f instanceof Equality) {
+						Equality eq = (Equality) f;
+						if(eq.isAssignment()) {
+							valuation.put((Variable) eq.lhs(), (Value) eq.rhs());
 						}
 					}
 				}
-				*/
+				
 				return checkModel(valuation);
 			} else {				
 				for(State s : substates) {

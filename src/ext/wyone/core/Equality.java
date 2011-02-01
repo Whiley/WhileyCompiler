@@ -62,6 +62,15 @@ public final class Equality extends Base<Constructor> implements Constraint {
 		return new Equality(!sign,lhs(),rhs());
 	}
 	
+	public boolean isAssignment() {			
+		Constructor lhs = lhs();
+		if(lhs instanceof Variable && rhs() instanceof Value) {
+			Variable v = (Variable) lhs;
+			return v.isConcrete();			
+		}
+		return false;			
+	}	
+	
 	public Constraint substitute(Map<Constructor, Constructor> binding) {				
 		Constructor olhs = subterms.get(0);
 		Constructor orhs = subterms.get(1);
@@ -224,21 +233,13 @@ public final class Equality extends Base<Constructor> implements Constraint {
 				Constraint nf = typeCheck(f.substitute(binding),state);									
 				if(nf != f) {				
 					// f has been replaced!					
-					if(!isAssignment(f)) {					
+					if (!(f instanceof Equality)
+							|| !((Equality) f).isAssignment()) {					
 						state.eliminate(f);
 					}							
 					state.infer(nf,solver);							
 				}
 			}
-		}	
-		
-		private static boolean isAssignment(Constraint f) {
-			if (f instanceof Equality) {
-				Equality weq = (Equality) f;
-				return weq.lhs() instanceof Variable
-						&& weq.rhs() instanceof Value;
-			}
-			return false;
 		}	
 		
 		public Constraint typeCheck(Constraint f, Solver.State state) {
