@@ -73,12 +73,10 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		// matching type declaration?
 		
 		for(Constraint f : state) {
-			if(f instanceof Subtype) {
-				// FIXME: probably would make more sense to build up a GLB from
-				// all possible types.
+			if(f instanceof Subtype) {				
 				Subtype st = (Subtype) f;
 				if(st.rhs().equals(e)) {
-					t = Type.leastUpperBound(t,st.lhs());
+					t = Type.greatestLowerBound(t,st.lhs());
 				}
 			}
 		}

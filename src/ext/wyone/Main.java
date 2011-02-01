@@ -51,7 +51,7 @@ public class Main {
 		new Subtype.Closure(),
 		new FourierMotzkinSolver(),
 		new DisjunctReduction()
-		};
+	};
 
 	public static boolean checkUnsat(String input) {		
 		Parser parser = new Parser(input);

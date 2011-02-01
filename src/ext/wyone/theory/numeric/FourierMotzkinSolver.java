@@ -148,7 +148,8 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			Solver.State state, Solver solver) {		
 		Constructor lb;
 		Constructor ub;
-		Type atom_t = above.atom.type(state);
+		Type atom_t = above.atom.type(state);				
+		
 		boolean belowSign = below.sign;
 		boolean aboveSign = above.sign;				
 		

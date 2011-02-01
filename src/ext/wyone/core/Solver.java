@@ -306,7 +306,7 @@ public final class Solver implements Callable<Proof> {
 						break;
 					}
 				}		
-				// System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
+				//System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
 			}		
 		}
 		
