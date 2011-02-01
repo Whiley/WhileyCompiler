@@ -138,7 +138,48 @@ public final class Rational implements Constructor {
 			return Numerics.divide(num,den);			
 		}	
 	}		
+	
+	public Constraint equate(Constructor lhs) {
+		// THIS METHOD IS SUCH A CLUDGE RIGHT NOW --- ARRRGGHHH
 		
+		Constructor r;
+		if(lhs instanceof Number) {
+			r = Numerics.subtract(this,lhs);
+		} else if(lhs instanceof Variable) {
+			Variable v = (Variable) lhs;
+			r = subtract(new Polynomial(v));			
+		} else if(lhs instanceof Rational) {
+			r = subtract((Rational)lhs);
+		} else {
+			r = subtract(new Polynomial(lhs));
+		}
+		
+		if(r instanceof Rational) {
+			Rational rat = (Rational) r;
+			
+			if(rat.isConstant()) {
+				return Value.FALSE; // ? 
+			}
+			
+			Constructor v = rat.atoms().iterator().next();
+			Pair<Polynomial,Polynomial> p = rat.rearrangeFor(v);
+			
+			rat = new Rational(p.first(),p.second());
+			if(rat.isAtom()) {
+				return new Equality(true,v,rat.atom()); 
+			} else if(rat.isConstant()) {
+				return new Equality(true,v,rat.constant());
+			} else {		
+				return new Equality(true,v,rat);
+			}
+		} else if(r instanceof Variable) {
+			Variable v = (Variable) r;
+			return new Equality(true,v,Value.ZERO);
+		} else {
+			return Value.FALSE;
+		}
+	}
+	
 	/**
 	 * <p>The purpose of this method is to rearrange the rational, such that it now
 	 * equals the given atom.  For example, for atom x we have:</p>

@@ -15,7 +15,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.theory.congruence;
+package wyone.core;
 
 import java.util.*;
 import wyil.lang.Type;
@@ -73,16 +73,22 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			} else {
 				return b.not();
 			}
-		} else if(olhs == lhs && orhs == rhs) {			
-			// to ensure substitute contract is met
-			return this;
-		} else {			
-			if(sign) {			
-				return Equality.equals(lhs,rhs);
+		} else if(lhs.equals(rhs)) {
+			if(sign) {
+				return Value.TRUE;
 			} else {
-				return Equality.notEquals(lhs,rhs);
+				return Value.FALSE;
+			}
+		} else {
+			Constraint nf = lhs.equate(rhs);
+			// following is needed to meet requirements of Contract.substitute()
+			if(nf.equals(this)) {
+				return this;
+			} else {
+				return nf;
 			}
 		}
+		
 	}		
 	
 	public String toString() {

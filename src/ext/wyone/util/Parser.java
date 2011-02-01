@@ -27,7 +27,6 @@ import wyone.theory.logic.*;
 // import wyone.theory.list.*;
 // import wyone.theory.set.*;
 import wyone.theory.numeric.*;
-import wyone.theory.congruence.Equality;
 // import wyone.theory.quantifier.*;
 // import wyone.theory.tuple.*;
 import static wyone.core.Constructor.*;

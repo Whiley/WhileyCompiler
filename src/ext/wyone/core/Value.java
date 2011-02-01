@@ -24,6 +24,7 @@ import java.util.Map;
 
 import wyil.jvm.rt.BigRational;
 import wyil.lang.Type;
+import wyone.core.Constructor.Variable;
 
 /**
  * <p>
@@ -60,6 +61,24 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 			return value.equals(v.value);
 		}
 		return false;
+	}
+	
+	public Constraint equate(Constructor other) {
+
+		// Observe it should be impossible to get here with other being an
+		// instanceof Value. The method Equality.equals() will take care of
+		// that.
+		
+		if(other instanceof Variable) {			
+			return new Equality(true,other,this);			 				
+		} else {
+			// Using double dispatch here is sneaky, but it does ensure that
+			// more complex forms of expression get the opportunity to
+			// rearrange, In particular, if the lhs was a rational of some kind
+			// that reference this variable, then we want to take that into
+			// account.  e.g. x-1 == x => -1 = 0 => false
+			return other.equate(this);
+		}
 	}
 	
 	public int hashCode() {

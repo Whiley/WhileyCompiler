@@ -24,7 +24,7 @@ import wyone.theory.logic.Conjunct;
 
 public final class Solver implements Callable<Proof> {
 	
-	public static boolean debug = false;
+	public static boolean debug = true;
 	
 	/**
 	 * The list of inference rules to use when performing local inference.
@@ -75,8 +75,7 @@ public final class Solver implements Callable<Proof> {
 	 * @return
 	 */
 	public static synchronized Proof checkUnsatisfiable(int timeout, Constraint program,
-			Heuristic heuristic,
-			Rule... theories) {				
+			Heuristic heuristic, Rule... theories) {				
  
 		// The following uses the java.util.concurrent library to enforce a
 		// timeout on how long the solver will run for.
@@ -296,7 +295,7 @@ public final class Solver implements Callable<Proof> {
 			for(int i=0;i!=worklist.size();++i) {
 				Integer x = worklist.get(i);			
 				Constraint f = rassignments.get(x);
-				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
+				System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 				for(Rule ir : solver.rules) {				
 					if(assertions.get(x)) {					
 						ir.infer(f, this, solver);
@@ -307,7 +306,7 @@ public final class Solver implements Callable<Proof> {
 						break;
 					}
 				}		
-				//System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
+				System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
 			}		
 		}
 		

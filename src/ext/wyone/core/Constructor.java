@@ -73,8 +73,50 @@ public interface Constructor extends Comparable<Constructor> {
 	public Constructor substitute(Map<Constructor,Constructor> binding);
 
 	/**
-	 * The following method returns the set of parameters to this expression
-	 * constructor, in the order they are given.
+	 * <p>
+	 * Equality --- or <i>congruence</i> --- is a fundamental concept which
+	 * underlies almost all other theories. As such, it is given special status
+	 * through this method, which enables normalisation of equalities across
+	 * multiple theories.
+	 * <p>
+	 * <p>
+	 * The basic issue of normalising equalities is that it requires specialised
+	 * knowledge, that only an individual theory will have. For example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * x+1 != x+1
+	 * x-1 == 1
+	 * {1,2,3} == x+y
+	 * </pre>
+	 * <p>
+	 * The first two examples above require knowledge of <i>arithmetic
+	 * expressions</i> to be normalised. However, the third one requires
+	 * knowledge of <i>set expressions</i>, and it does not make sense to ask
+	 * the arithmetic theory to normalise it.
+	 * </p>
+	 * <p>
+	 * The solution adopted to this problem exploits <i>double dispatch</i> to
+	 * ensure the appropriate theory gets to control normalisation. What happens
+	 * is that, for a given equality <code>lhs == rhs</code>, we invoke
+	 * <code>lhs.equate(rhs)</code>. If the <code>lhs</code> is a constructor
+	 * from some theory, then it will simply control the normalisation process.
+	 * However, if the lhs is either a variable, or a value, then it will invoke
+	 * <code>rhs.equate(lhs)</code>, giving the right-hand side a chance to
+	 * control normalisation. (<b>NOTE:</b: in the case of just values and/or
+	 * variables on the right-hand side, then the second invoke is not made, as
+	 * this would result in an infinite loop).
+	 * </p>
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public Constraint equate(Constructor c);
+	
+	/**
+	 * The following method returns the list of parameters to this expression
+	 * constructor, in the order they are given. A constructor with no subterms
+	 * is referred to as being <b>indivisible</b>.
 	 * 
 	 * @return
 	 */
@@ -103,7 +145,7 @@ public interface Constructor extends Comparable<Constructor> {
 	 * @author djp
 	 * 
 	 */
-	public static class Base<T extends Constructor> implements Iterable<T> {
+	public static abstract class Base<T extends Constructor> implements Iterable<T>, Constructor {
 		protected final String name; // constructor name
 		protected final ArrayList<T> subterms; 	
 		
@@ -137,7 +179,22 @@ public interface Constructor extends Comparable<Constructor> {
 		// =================================================================
 		// REQUIRED METHODS
 		// =================================================================
-
+		
+		public abstract Constructor substitute(
+				Map<Constructor, Constructor> binding);
+					
+		public Constraint equate(Constructor other) {
+			if(other instanceof Variable) {			
+				return new Equality(true,other,this);				 				
+			} else {
+				// In this case, there's not much we can do. This will happen if
+				// a specialised constructor for some theory does not offer any
+				// useful mechanism for normalising equalities.
+				return new Equality(true,this,other);
+			}
+		}
+		
+		
 		public List<T> subterms() {
 			return subterms;
 		}
@@ -170,6 +227,7 @@ public interface Constructor extends Comparable<Constructor> {
 				return 1;
 			}
 		}	
+		
 		// =================================================================
 		// OBJECT METHODS
 		// =================================================================
@@ -273,6 +331,28 @@ public interface Constructor extends Comparable<Constructor> {
 			else return r;
 		}
 		
+		public Constraint equate(Constructor other) {
+			if(other instanceof Variable) {			
+				if(this.equals(other)) {
+					return Value.TRUE;
+				} else {
+					// NOTE. We have to be very careful here not to disturb the
+					// ordering that may have been set by previous assignments.
+					return new Equality(true,this,other);
+				} 					
+			} else if(other instanceof Value) {
+				// Here, we have an assignment
+				return new Equality(true,this,other);
+			} else {
+				// Using double dispatch here is sneaky, but it does ensure that
+				// more complex forms of expression get the opportunity to
+				// rearrange, In particular, if the lhs was a rational of some kind
+				// that reference this variable, then we want to take that into
+				// account.  e.g. x-1 == x => -1 = 0 => false
+				return other.equate(this);
+			}
+		}
+				
 		public Type type(Solver.State state) {
 			return Subtype.type(this,state);		
 		}
