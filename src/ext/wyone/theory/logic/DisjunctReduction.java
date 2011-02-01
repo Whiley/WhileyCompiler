@@ -20,8 +20,10 @@ package wyone.theory.logic;
 import java.util.*;
 import wyone.core.*;
 
-public final class DisjunctInference implements Solver.Rule {
+public final class DisjunctReduction implements Solver.Rule {
 
+	public String name() { return "Disjunct Reduction"; }
+	
 	public void infer(Constraint delta, Solver.State state, Solver solver) {
 		// Now, substitute it, potentially reducing the disjunct.
 		HashMap<Constructor,Constructor> binding = null;
@@ -30,9 +32,9 @@ public final class DisjunctInference implements Solver.Rule {
 				if(binding == null) {
 					binding = new HashMap();
 					binding.put(delta, Value.TRUE);
-				}
-				Constraint nf = f.substitute(binding);				
-				if (nf != f && nf != Value.TRUE) {
+				}				
+				Constraint nf = f.substitute(binding);								
+				if (nf != f && nf != Value.TRUE) {					
 					state.eliminate(f);
 					state.infer(nf,solver);
 				}

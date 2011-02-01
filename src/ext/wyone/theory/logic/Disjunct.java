@@ -65,7 +65,7 @@ public final class Disjunct extends Base<Constraint> implements Constraint {
 				pchanged = true;
 			} else if(np == Value.FALSE){				
 				pchanged=true;
-			} else if(np != p) {								
+			} else if(np != p) {							
 				nparams.add(np);				
 				pchanged=true;				
 			} else {

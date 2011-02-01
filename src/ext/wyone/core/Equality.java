@@ -85,6 +85,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			if(nf.equals(this)) {
 				return this;
 			} else {
+				System.out.println(nf + " not equal " + this);
 				return nf;
 			}
 		}

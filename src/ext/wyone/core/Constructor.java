@@ -248,7 +248,7 @@ public interface Constructor extends Comparable<Constructor> {
 			
 		public boolean equals(Object o) {
 			if (o instanceof Base) {
-				Base f = (Base) o;
+				Base f = (Base) o;				
 				return name.equals(f.name) && subterms.equals(f.subterms);
 			}
 			return false;

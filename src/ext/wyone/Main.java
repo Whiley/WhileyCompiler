@@ -49,7 +49,7 @@ public class Main {
 	public static final Solver.Rule[] theories = {		
 		new CongruenceClosure(),	
 		new FourierMotzkinSolver(),
-		new DisjunctInference()
+		new DisjunctReduction()
 		};
 
 	public static boolean checkUnsat(String input) {		

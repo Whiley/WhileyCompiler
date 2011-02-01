@@ -41,6 +41,10 @@ import static wyone.theory.numeric.Numerics.*;
  */
 public final class FourierMotzkinSolver implements Solver.Rule {	
 	
+	public String name() {
+		return "Linear Arithmetic";
+	}
+	
 	public void infer(Constraint delta, Solver.State state, Solver solver) {								
 		if (delta instanceof Inequality) {			
 			Inequality eq = (Inequality) delta;

@@ -430,8 +430,8 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			return value.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Int) {
-				Int i = (Int) o;
+			if(o instanceof Real) {
+				Real i = (Real) o;
 				return value.equals(i.value);
 			}
 			return false;

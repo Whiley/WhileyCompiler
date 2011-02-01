@@ -94,7 +94,7 @@ public final class Solver implements Callable<Proof> {
 			
 		} catch(TimeoutException ie) {
 			// timeout
-		}
+		}				
 		
 		es.shutdown();
 		
@@ -297,7 +297,7 @@ public final class Solver implements Callable<Proof> {
 				Constraint f = rassignments.get(x);
 				// System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 				for(Rule ir : solver.rules) {				
-					if(assertions.get(x)) {					
+					if(assertions.get(x)) {							
 						ir.infer(f, this, solver);
 						if(contains(Value.FALSE)){				
 							return; // early termination
@@ -420,6 +420,14 @@ public final class Solver implements Callable<Proof> {
 	 * 
 	 */
 	public interface Rule {
+
+		/**
+		 * Every rule must have a unique name, which is used for debugging and
+		 * identification purposes.
+		 * 
+		 * @return
+		 */
+		public String name();
 		
 		/**
 		 * Given a set of facts, delta, infer all new facts which arise as a

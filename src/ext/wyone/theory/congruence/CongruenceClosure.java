@@ -24,6 +24,10 @@ import wyone.core.*;
 
 public class CongruenceClosure implements Solver.Rule {
 
+	public String name() {
+		return "Congruence Closure";
+	}
+	
 	public void infer(Constraint nlit, Solver.State state, Solver solver) {				
 		if(nlit instanceof Equality) {		
 			Equality eq = (Equality) nlit;			
