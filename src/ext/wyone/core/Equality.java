@@ -92,6 +92,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			}
 		} else {			
 			Constraint nf = lhs.equate(rhs);			
+			nf = sign ? nf : nf.not();
 			// following is needed to meet requirements of Contract.substitute()
 			if(nf.equals(this)) {
 				return this;

@@ -41,7 +41,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		// need to check the type here!
 		if(nrhs instanceof Value) {
 			Value v = (Value) nrhs;
-			if(Type.isSubtype(type,v.type(null))) {
+			if(Type.isSubtype(type,v.type(null))) {				
 				return sign ? Value.TRUE : Value.FALSE;
 			} else {
 				return sign ? Value.FALSE : Value.TRUE;				

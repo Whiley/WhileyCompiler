@@ -424,7 +424,11 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			this.value = value;
 		}
 		public Type type() {
-			return Type.T_REAL;
+			if(value.isInteger()) {
+				return Type.T_INT;
+			} else {
+				return Type.T_REAL;
+			}
 		}
 		public int hashCode() {
 			return value.hashCode();

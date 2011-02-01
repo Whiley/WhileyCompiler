@@ -290,7 +290,7 @@ public final class Solver implements Callable<Proof> {
 			for(int i=0;i!=worklist.size();++i) {
 				Integer x = worklist.get(i);			
 				Constraint f = rassignments.get(x);
-				// System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
+				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 				for(Rule ir : solver.rules) {				
 					if(assertions.get(x)) {							
 						ir.infer(f, this, solver);
