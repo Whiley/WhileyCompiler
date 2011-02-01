@@ -140,11 +140,10 @@ public final class Rational implements Constructor {
 	}		
 	
 	public Constraint equate(Constructor lhs) {
-		// THIS METHOD IS SUCH A CLUDGE RIGHT NOW --- ARRRGGHHH
-		
+		// THIS METHOD IS SUCH A CLUDGE RIGHT NOW --- ARRRGGHHH		
 		Constructor r;
-		if(lhs instanceof Number) {
-			r = Numerics.subtract(this,lhs);
+		if(lhs instanceof Value.Number) {			
+			r = Numerics.subtract(this,lhs);			
 		} else if(lhs instanceof Variable) {
 			Variable v = (Variable) lhs;
 			r = subtract(new Polynomial(v));			

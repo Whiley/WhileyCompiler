@@ -110,8 +110,7 @@ public class CongruenceClosure implements Solver.Rule {
 		for(Constraint f : state) {
 			if(f == eq) { continue; }			
 			Constraint nf = typeCheck(f.substitute(binding),state);									
-			if(nf != f) {
-				System.out.println("INFERRED: " + nf);
+			if(nf != f) {				
 				// f has been replaced!					
 				if(!isAssignment(f)) {					
 					state.eliminate(f);
