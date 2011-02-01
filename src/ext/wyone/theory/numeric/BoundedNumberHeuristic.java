@@ -24,7 +24,6 @@ import java.util.*;
 import wyil.lang.Type;
 import wyone.core.*;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
-import wyone.theory.congruence.*;
 import wyone.util.Pair;
 
 public class BoundedNumberHeuristic implements Solver.Heuristic {

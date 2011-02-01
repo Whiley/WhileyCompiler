@@ -22,7 +22,6 @@ import java.util.*;
 import wyil.lang.Type;
 import wyone.core.*;
 import wyone.util.*;
-import wyone.theory.congruence.*;
 import static wyone.theory.numeric.Numerics.*;
 
 /**

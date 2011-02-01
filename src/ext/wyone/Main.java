@@ -21,7 +21,6 @@ import java.io.*;
 import java.util.*;
 
 import wyone.core.*;
-import wyone.theory.congruence.*;
 import wyone.theory.logic.*;
 import wyone.theory.numeric.*;
 // import wyone.theory.tuple.*;
@@ -40,6 +39,7 @@ import wyone.util.*;
 public class Main {
 	
 	public static final CompoundHeuristic heuristic = new CompoundHeuristic(			
+			new DisjunctHeuristic(),			
 			new BoundedNumberHeuristic(true, true), 						
 			new BoundedNumberHeuristic(true, false),
 			new UnboundedNumberHeuristic(true),
@@ -47,7 +47,8 @@ public class Main {
 	);
 
 	public static final Solver.Rule[] theories = {		
-		new CongruenceClosure(),	
+		new Equality.Closure(),
+		new Subtype.Closure(),
 		new FourierMotzkinSolver(),
 		new DisjunctReduction()
 		};

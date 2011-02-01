@@ -85,4 +85,70 @@ public class Subtype extends Base<Constructor> implements Constraint {
 
 		return t;
 	}
+	
+	/**
+	 * <p>The subtype closure rule simply checks for conflicting or redundant type
+	 * constraints on a particular variable. For example, if we have
+	 * <code>x <: int</code> and <code>x <: [int]</code> then we have a conflict.
+	 * Similarly, if we have <code>x <: int</code> and <code>x <: real</code> then
+	 * the latter constraint is redundant, and can be eliminated.</p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class Closure implements Solver.Rule {
+		
+		public String name() {
+			return "Type Closure";
+		}
+		
+		public void infer(Constraint nlit, Solver.State state, Solver solver) {				
+			if(nlit instanceof Subtype) {			
+				inferSubtype((Subtype)nlit,state,solver);			
+			}		
+		}
+		
+		protected void inferSubtype(Subtype ws, Solver.State state,
+				Solver solver) {
+			
+			boolean wsign = ws.sign();
+			Constructor lhs = ws.rhs();
+			Type rhs = ws.lhs();
+			
+			// FIXME: this loop can be further improved now that I have brought
+			// in the proper wyil Type
+			for(Constraint f : state) {			
+				if(f instanceof Subtype && f!=ws) {				
+					Subtype st = (Subtype) f;
+					Type st_rhs = st.lhs();				
+					if(st.lhs().equals(lhs)) {					
+						boolean subst = Type.isSubtype(rhs,st_rhs);
+						boolean stsub = Type.isSubtype(st_rhs,rhs);
+						boolean signs = wsign == st.sign();
+						// ok, this is icky
+						if(subst && wsign && signs) {
+							// ws is subsumed by st
+							state.eliminate(ws);
+							return;
+						} else if(stsub && wsign && signs) {
+							// st is subsumed by ws
+							state.eliminate(st);
+						} else if(stsub && wsign && !signs) {
+							// error
+							state.infer(Value.FALSE, solver);
+							return;
+						} else if(subst && !wsign && !signs) {
+							// error
+							state.infer(Value.FALSE, solver);
+							return;
+						} else if(!subst && !stsub && wsign && signs) {
+							state.infer(Value.FALSE, solver);
+							return;
+						}											
+					}
+				}
+			}
+		}
+	}
+
 }

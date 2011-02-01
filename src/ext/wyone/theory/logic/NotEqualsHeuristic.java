@@ -20,7 +20,6 @@ package wyone.theory.logic;
 import java.util.*;
 
 import wyone.core.*;
-import wyone.theory.congruence.*;
 import static wyone.theory.numeric.Numerics.*;
 
 public class NotEqualsHeuristic implements Solver.Heuristic {

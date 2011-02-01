@@ -18,9 +18,11 @@
 package wyone.core;
 
 import java.util.*;
+
 import wyil.lang.Type;
 import static wyone.core.Constructor.*;
 import wyone.core.*;
+import wyone.core.Constructor.Variable;
 import wyone.theory.logic.*;
 import wyone.util.*;
 
@@ -106,5 +108,161 @@ public final class Equality extends Base<Constructor> implements Constraint {
 	
 	public static Constraint notEquals(Constructor lhs, Constructor rhs) {
 		return new Equality(false,lhs,rhs).substitute(Collections.EMPTY_MAP);
+	}
+
+	/**
+	 * <p>
+	 * The equality closure is a rule for inferring new facts based on equality,
+	 * whilst eliminating those which are subsumed. For example, if we have:
+	 * </p>
+	 * 
+	 * <pre>
+	 * x < 0
+	 * y > 0
+	 * x == y
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, equality closure infers <code>y < 0</code>, and eliminate
+	 * <code>x < 0</code>. This allows the linear arithmetic theory to identify
+	 * the contradiction.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class Closure implements Solver.Rule {
+
+		public String name() {
+			return "Congruence Closure";
+		}
+		
+		public void infer(Constraint nlit, Solver.State state, Solver solver) {				
+			if(nlit instanceof Equality) {		
+				Equality eq = (Equality) nlit;			
+				if(eq.sign()) {				
+					inferEquality(eq, state, solver);				
+					return;
+				} 			
+			} 
+			inferFormula(nlit,state,solver);				
+		}
+		
+		private void inferFormula(Constraint formula, Solver.State state, Solver solver) {
+			HashMap<Constructor,Constructor> binding = new HashMap<Constructor,Constructor>();
+		
+			for(Constraint f : state) {
+				if(f instanceof Equality) {
+					Equality eq = (Equality) f;
+					if(eq.sign()) {
+						// FIXME: there is a subtle problem here, when we have multiple
+						// possible assignments for a variable. This can arise when we
+						// don't eliminate assignments in inferEquality.
+						binding.put(eq.lhs(),eq.rhs());					
+					}
+				}
+			}
+			
+			Constraint nf = formula.substitute(binding);
+			if(nf != formula) {			
+				state.eliminate(formula);	
+				if(!state.contains(nf)) {				
+					state.infer(nf,solver);
+				}
+			}
+		}
+		
+		private void inferEquality(Equality eq, Solver.State state, Solver solver) {
+			
+			if(typeCheck(eq,state) != eq) {				
+				state.infer(Value.FALSE,solver);
+				return; // no point going on.
+			}
+			
+			// So, at this point we have an equality of the form lhs == rhs.
+			// This equality should have been normalised into a form where lhs
+			// represents a single "effective variable", and rhs represents other
+			// stuff. Observe that lhs is no guaranteed to be an instanceof
+			// Variable (unfortunately); this is because of tuple and list
+			// accessors --- which are not Variables as they are "interpreted".
+			// That is, given a value for the target variable their value can be
+			// immediately deduced.
+			//
+			// Our objective at this point is to substitute all occurrences of
+			// the lhs with the rhs, such that this equality is the only place where
+			// the lhs now exists. When the lhs is actually an instance of
+			// Variable, then this will be an "assignment".
+			//
+			// Some issues can arise from other equalities which now take on a new
+			// form.  For example, consider this:
+			//
+			// t1.x < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2
+			// 
+			// Here, the last equality is the one being added. So, after
+			// substituting t1 for t2, we get this state:
+			//
+			// t2.x < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2
+			//
+			// But, we now need to substitute for t2.x as well, in order to get
+			// here:
+			//
+			// t2.y < 0 && t2.x == t2.y && t2.y > 0 && t1 == t2
+			//
+			// This then gives the contradiction.
+			//
+			// What we're really trying to do is choose a representative from the
+			// class of equivalences, and ensure that all constraints are in terms
+			// of the current representatives.
+				
+			HashMap<Constructor, Constructor> binding = new HashMap<Constructor,Constructor>();
+			binding.put(eq.lhs(),eq.rhs());
+			
+			// Second, we iterate all existing literals and attempt to simplify
+			// them. Those which are simplified are subsumed, and their simplified
+			// forms are added into the literal set.
+			for(Constraint f : state) {
+				if(f == eq) { continue; }			
+				Constraint nf = typeCheck(f.substitute(binding),state);									
+				if(nf != f) {				
+					// f has been replaced!					
+					if(!isAssignment(f)) {					
+						state.eliminate(f);
+					}							
+					state.infer(nf,solver);							
+				}
+			}
+		}	
+		
+		private static boolean isAssignment(Constraint f) {
+			if (f instanceof Equality) {
+				Equality weq = (Equality) f;
+				return weq.lhs() instanceof Variable
+						&& weq.rhs() instanceof Value;
+			}
+			return false;
+		}	
+		
+		public Constraint typeCheck(Constraint f, Solver.State state) {
+			// sanity check assignments. Not strictly necessary, but useful to
+			// ensure early termination when the type of an assignment is clearly
+			// wrong.
+			if(f instanceof Equality) {
+				Equality weq = (Equality) f;
+				Constructor lhs = weq.lhs();
+				Constructor rhs = weq.rhs();
+				if (lhs instanceof Variable && rhs instanceof Value) {
+					Variable var = (Variable) lhs;
+					Value val = (Value) rhs;
+					Type t = Subtype.type(var,state);
+					// Type can currently be null if represents a quantified
+					// variable.
+					if(t != null && !Type.isSubtype(t,val.type(null))) {					
+						return Value.FALSE;
+					}
+				}
+			}
+			
+			return f;
+		}
 	}
 }
