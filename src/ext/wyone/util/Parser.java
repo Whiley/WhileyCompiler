@@ -216,6 +216,7 @@ public class Parser {
 		} else if(lhs instanceof Variable) {
 			Variable v = (Variable) lhs;
 			//FIXME: return new WPredicate(true,v.name(),v.subterms());
+			return Equality.equals(v,Value.TRUE);
 		} else {
 			// will need more here
 			throw new SyntaxError("syntax error", filename, start,
