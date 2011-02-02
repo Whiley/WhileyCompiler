@@ -51,7 +51,11 @@ public final class Inequality extends Base<Constructor> implements Constraint {
 	public Constructor rhs() {
 		return subterms.get(0);
 	}
-		
+	
+	public Type type(Solver.State state) {
+		return Type.T_BOOL;
+	}
+	
 	public Inequality not() {
 		return new Inequality(!sign,rhs());
 	}

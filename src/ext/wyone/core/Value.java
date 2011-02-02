@@ -47,7 +47,7 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		this.value = value;
 	}
 	
-	public Type type() {
+	public Type type(Solver.State state) {
 		return value.type();
 	}
 	

@@ -124,6 +124,19 @@ public interface Constructor extends Comparable<Constructor> {
 	public List<? extends Constructor> subterms();
 
 	/**
+	 * The following method gives the type of this expression. That is, the type
+	 * of the value that this expression will evaluate to. A reference to the
+	 * solver state is required in order to handle variables, whose type is
+	 * determined by the current state. This is particularly useful for compound
+	 * values, such as tuples and lists. In such cases, we need to know whether
+	 * the element is an integer or not.
+	 * 
+	 * @param state
+	 * @return
+	 */
+	public Type type(Solver.State state);
+
+	/**
 	 * <p>
 	 * This is a basic constructor implementation which is provided to simplify
 	 * developing other constructors. This is because, in many cases, one can
@@ -353,6 +366,10 @@ public interface Constructor extends Comparable<Constructor> {
 				// account.  e.g. x-1 == x => -1 = 0 => false
 				return other.equate(this);
 			}
+		}
+		
+		public Type type(Solver.State state) {
+			return Subtype.type(this,state);
 		}
 		
 		public String toString() {
