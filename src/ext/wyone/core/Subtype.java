@@ -113,30 +113,9 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		}
 		
 		public void infer(Constraint nlit, Solver.State state, Solver solver) {							
-			if(nlit instanceof Subtype) {			
-				Subtype st = (Subtype) nlit;
-				if(st.rhs() instanceof Rational) {
-					rewriteSubtype(st,state,solver);
-				} else {
-					inferSubtype(st,state,solver);
-				}
+			if(nlit instanceof Subtype) {						
+				inferSubtype((Subtype) nlit,state,solver);				
 			}		
-		}
-		
-		protected void rewriteSubtype(Subtype ws, Solver.State state, Solver solver) {
-			// FIXME: somehow this method seems rather like a cludge ...			
-			Rational rhs = (Rational) ws.rhs();			
-			state.eliminate(ws);
-			Variable nv = Variable.freshVar();
-			state.infer(new Subtype(ws.sign(),ws.lhs(),nv), solver);			
-			Constructor atom = rhs.subterms().get(0);
-			Pair<Polynomial,Polynomial> p = rhs.rearrangeFor(atom);
-			Constructor l = Numerics.normalise(new Rational(p.first()));
-			Constructor f = Numerics.normalise(new Rational(p.second()));			
-			Constructor nrhs = Numerics.multiply(Numerics.subtract(l,nv), new Rational(rhs.denominator()));								
-			nrhs = Numerics.divide(nrhs,f);			
-			// finally, infer the equality that binds this altogether
-			state.infer(Equality.equals(atom,nrhs), solver);						
 		}
 		
 		protected void inferSubtype(Subtype ws, Solver.State state,

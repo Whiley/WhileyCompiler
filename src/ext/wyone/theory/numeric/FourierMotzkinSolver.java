@@ -146,70 +146,104 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 	
 	private static void internal_infer(BoundUpdate below, BoundUpdate above,
 			Solver.State state, Solver solver) {		
-		Constructor lb;
-		Constructor ub;	
-		Type atom_t = above.atom.type(state);						
 		
 		boolean belowSign = below.sign;
 		boolean aboveSign = above.sign;				
 		
-		// First, check for the "real shadow"
-		if (atom_t instanceof Type.Int
-				&& below.poly instanceof Value.Number
-				&& above.poly instanceof Value.Number) {			
-			Value.Number bp = (Value.Number) below.poly;
-			Value.Number up = (Value.Number) above.poly;						
-			// Note, the following is guaranteed to work because the above and
-			// below factors are normalised to be always positive; that way, we
-			// can ignore the divide by negative number case.
-			if(belowSign) {
-				lb = bp.divide(below.factor).add(Value.ONE).ceil();
-				belowSign=false;
-			} else {
-				lb = bp.divide(below.factor).ceil();
-			}
-			if(aboveSign) {
-				ub = up.divide(above.factor).subtract(Value.ONE).floor();
-				aboveSign=false;
-			} else {
-				ub = up.divide(above.factor).floor();
-			}								
-		} else {
-			lb = below.poly;
-			ub = above.poly;
+		for(Rational factor : intConstraints(above.atom, state)) { 			
+			Constructor lb = below.poly;
+			Constructor ub = above.poly;	
 			
-			if(atom_t instanceof Type.Int && belowSign) {
-				belowSign=false;
-				lb = add(lb,Value.Number.ONE);
-			}
-			if(atom_t instanceof Type.Int && aboveSign) {
-				aboveSign=false;
-				ub = subtract(ub,Value.Number.ONE);
+			System.out.println("GOT HERE ---- FIXING FM ELIMINATION");
+			
+			// First, check for the "real shadow"
+			if (lb instanceof Value.Number
+					&& ub instanceof Value.Number) {			
+				Value.Number bp = (Value.Number) lb;
+				Value.Number up = (Value.Number) ub;						
+				// Note, the following is guaranteed to work because the above and
+				// below factors are normalised to be always positive; that way, we
+				// can ignore the divide by negative number case.
+				if(belowSign) {
+					lb = bp.divide(below.factor).add(Value.ONE).ceil();
+					belowSign=false;
+				} else {
+					lb = bp.divide(below.factor).ceil();
+				}
+				if(aboveSign) {
+					ub = up.divide(above.factor).subtract(Value.ONE).floor();
+					aboveSign=false;
+				} else {
+					ub = up.divide(above.factor).floor();
+				}								
+			} else {
+				if(belowSign) {
+					belowSign=false;
+					lb = add(lb,Value.Number.ONE);
+				}
+				if(aboveSign) {
+					aboveSign=false;
+					ub = subtract(ub,Value.Number.ONE);
+				}
+
+				lb = multiply(lb,above.factor);		
+				ub = multiply(ub,below.factor);
 			}
 			
-			lb = multiply(lb,above.factor);		
-			ub = multiply(ub,below.factor);
+			internalInferInequality(lb,above.atom,ub,belowSign,aboveSign,state,solver);
 		}
 		
-		if(lb.equals(ub) && (belowSign || aboveSign)) {			
+		// now do the real bounds. This could be simplified in the case that the
+		// atom is determined outright to be an integer
+		internalInferInequality(below.poly,above.atom,above.poly,belowSign,aboveSign,state,solver);
+	}
+	
+	public static List<Rational> intConstraints(Constructor atom, Solver.State state) {
+		ArrayList<Rational> factors = new ArrayList<Rational>();
+		for(Constraint c : state) {
+			if(c instanceof Subtype) {
+				Subtype st = (Subtype) c;
+				if(st.rhs().equals(atom)) {
+					// This is the easiest case. It means the atom in question
+					// is definitely typed as an integer
+					factors.add(new Rational(Polynomial.ONE));					
+					break; // no need to identify any more factors
+				} else if (st.rhs() instanceof Rational
+						&& st.rhs().subterms().contains(atom)) {
+					// The harder case, where we have a constraint of the form
+					// e.g. "int 2*x", where we're looking for atom "x".
+					// In such case, we'll return two as the factor.					
+					factors.add((Rational) st.rhs());
+				}
+			}
+		}
+		System.out.println("Subtype factors for " + atom + " : " + factors);
+		return factors;
+	}
+	
+	public static void internalInferInequality(Constructor below,
+			Constructor atom, Constructor above, boolean belowSign,
+			boolean aboveSign, Solver.State state, Solver solver) {
+
+		if(below.equals(above) && (belowSign || aboveSign)) {			
 			state.infer(Value.FALSE,solver);
 		} else {			
 			// Second, generate new inequalities
-			if(lb.equals(ub)) {				
-				state.infer(Equality.equals(lb,above.atom),solver);
+			if(below.equals(above)) {				
+				state.infer(Equality.equals(below,atom),solver);
 			} else {
 				Constraint f;
 
 				if (belowSign || aboveSign) {					
-					f = lessThan(lb, ub);
+					f = lessThan(below, above);
 				} else {
-					f = lessThanEq(lb, ub);													
+					f = lessThanEq(below, above);													
 				}				
 				state.infer(f,solver);										
 			} 
 		}
 	}
-		
+	
 	/**
      * A bound update represents an incremental update to the lower or upper
      * bound of some variable. These are identified specifically, in order that
