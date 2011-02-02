@@ -133,26 +133,19 @@ public final class Solver implements Callable<Proof> {
 			// Here, we've reached a contradiction on this branch			
 			return Proof.UNSAT;
 		} else {			
+			Proof r = checkModel(state);
+			
+			if(r != Proof.UNKNOWN) {
+				return r;
+			}
 			// This is the recursive case; we need to find a way to further
 			// split the facts.
-			List<State> substates = splitHeuristic.split(state, this);
+			List<State> substates = splitHeuristic.split(state, this);						
 			
-			if(substates == null) {
-				// At this point, we've run out of things to try. So, have we
-				// found a model or not ?
-				HashMap<Variable,Value> valuation = new HashMap<Variable,Value>();
-				
-				for(Constraint f : state) {
-					if (f instanceof Equality) {
-						Equality eq = (Equality) f;
-						if(eq.isAssignment()) {
-							valuation.put((Variable) eq.lhs(), (Value) eq.rhs());
-						}
-					}
-				}
-				
-				return checkModel(valuation);
-			} else {				
+			if(substates == null) {				
+				// run out of things to try
+				return Proof.UNKNOWN;
+			} else {								
 				for(State s : substates) {
 					Proof p = checkUnsatisfiable(s, level+1);
 					if(!(p instanceof Proof.Unsat)) {						
@@ -179,8 +172,20 @@ public final class Solver implements Callable<Proof> {
 	 * @param types --- types of formula
 	 * @return
 	 */
-	protected Proof checkModel(Map<Variable, Value> model) {										
-		// Check program does indeed evaluate to true		
+	protected Proof checkModel(Solver.State state) {										
+		// Check program does indeed evaluate to true	
+		// At this point, we've run out of things to try. So, have we
+		// found a model or not ?
+		HashMap<Variable,Value> model = new HashMap<Variable,Value>();
+		
+		for(Constraint f : state) {
+			if (f instanceof Equality) {
+				Equality eq = (Equality) f;
+				if(eq.isAssignment()) {
+					model.put((Variable) eq.lhs(), (Value) eq.rhs());
+				}
+			}
+		}
 		Constraint f = program.substitute((Map) model);
 		if(f != Value.TRUE) {
 			return Proof.UNKNOWN; 
@@ -297,7 +302,7 @@ public final class Solver implements Callable<Proof> {
 			for(int i=0;i!=worklist.size();++i) {
 				Integer x = worklist.get(i);			
 				Constraint f = rassignments.get(x);
-				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
+				// System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 				for(Rule ir : solver.rules) {				
 					if(assertions.get(x)) {		
 						//System.out.println("GOING IN: " + ir.name());
@@ -310,7 +315,7 @@ public final class Solver implements Callable<Proof> {
 						break;
 					}
 				}		
-				//System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
+				// System.out.println("STATE AFTER: " + this + " (" + System.identityHashCode(this) + ")");
 			}		
 		}
 		

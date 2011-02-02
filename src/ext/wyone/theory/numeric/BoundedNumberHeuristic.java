@@ -45,25 +45,26 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 				state, solver);
 		if (strict) {
 			return splitOnSmallestBounded(bounds, state, solver);
-		} else {
+		} else {			
 			return splitOnFirstSemiBounded(bounds, state, solver);
 		}
 	}
 
 	private List<Solver.State> splitOnFirstSemiBounded(
 			HashMap<Constructor, Pair<Bound, Bound>> bounds, Solver.State lhs,
-			Solver solver) {		
+			Solver solver) {						
 		
 		for(Map.Entry<Constructor, Pair<Bound,Bound>> e : bounds.entrySet()) {
 			Bound low = e.getValue().first();
 			Bound high = e.getValue().second();
+						
 			if(low != null || high != null) {							
 				Constructor var = e.getKey();
 				Solver.State rhs = lhs.clone();								
 				
 				if(low != null) {				
 					lhs.add(Equality.equals(var,low.num), solver);
-					rhs.add(Numerics.greaterThan(var,low.num), solver);
+					rhs.add(Numerics.greaterThan(var,low.num), solver);					
 				} else {					
 					lhs.add(Equality.equals(var,high.num), solver);
 					rhs.add(Numerics.lessThan(var,high.num), solver);					
@@ -120,6 +121,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 	private HashMap<Constructor, Pair<Bound,Bound>> determineVariableBounds(
 			Solver.State state, Solver solver) {
 		HashMap<Constructor,Pair<Bound,Bound>> bounds = new HashMap();
+		HashSet<Constructor> assigned = new HashSet();
 		
 		for(Constraint f : state) {
 			if(f instanceof Inequality) {				
@@ -131,7 +133,16 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 				} else if(!isInteger && t instanceof Type.Real) {
 					updateBounds(wieq,var,false,bounds);
 				}								
+			} else if(f instanceof Equality) {
+				Equality eq = (Equality) f;
+				if(eq.isAssignment()) {
+					assigned.add(eq.lhs());
+				}
 			}
+		}
+		
+		for(Constructor c : assigned) {
+			bounds.remove(c);
 		}
 		
 		return bounds;
@@ -178,7 +189,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		}
 		
 		Bound bound = new Bound(isStrict, up);
-		Pair<Bound, Bound> bs = bounds.get(var);
+		Pair<Bound, Bound> bs = bounds.get(var);		
 		if (bs == null) {
 			bounds.put(var, new Pair<Bound, Bound>(null, bound));
 		} else if (bs.second() == null || bs.second().compareTo(bound) > 0) {
@@ -235,6 +246,10 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 			} else {
 				return 0;
 			}
+		}
+		
+		public String toString() {
+			return sign ? num + " < " : " <= " + num;
 		}
 	}
 }
