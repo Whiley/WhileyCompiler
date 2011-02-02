@@ -20,6 +20,7 @@ package wyone.core;
 import java.util.*;
 
 import wyil.lang.Type;
+import wyone.theory.numeric.Rational;
 
 /**
  * A constructor represents some kind of expression which makes up some, or all
@@ -343,6 +344,20 @@ public interface Constructor extends Comparable<Constructor> {
 			} else if(other instanceof Value) {
 				// Here, we have an assignment
 				return new Equality(true,this,other);
+			} else if(other instanceof Rational) {
+				// this is a bit of a hack, and doesn't fit into the real idea
+				// behind equate(). Basically, I don't want to normalise this
+				// equality unless doing so will actually lead to something
+				// better. Doing this gives greater control over what is an
+				// assignment, and what is not. This is necessary for correctly
+				// support subtype closure.
+				Rational rhs = (Rational) other;
+				if(rhs.subterms().contains(this)) {
+					return other.equate(this);
+				} else {
+					// no optimisation possible
+					return new Equality(true,this,other);
+				}
 			} else {
 				// Using double dispatch here is sneaky, but it does ensure that
 				// more complex forms of expression get the opportunity to

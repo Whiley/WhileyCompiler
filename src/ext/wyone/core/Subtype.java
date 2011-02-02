@@ -123,8 +123,8 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		}
 		
 		protected void rewriteSubtype(Subtype ws, Solver.State state, Solver solver) {
-			// FIXME: somehow this method seems rather like a cludge ...
-			Rational rhs = (Rational) ws.rhs();
+			// FIXME: somehow this method seems rather like a cludge ...			
+			Rational rhs = (Rational) ws.rhs();			
 			state.eliminate(ws);
 			Variable nv = Variable.freshVar();
 			state.infer(new Subtype(ws.sign(),ws.lhs(),nv), solver);			
