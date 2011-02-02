@@ -54,10 +54,6 @@ public final class Equality extends Base<Constructor> implements Constraint {
 		return subterms.get(1);
 	}
 	
-	public Type type(Solver.State state) {
-		return Type.T_BOOL;
-	}
-	
 	public Equality not() {
 		return new Equality(!sign,lhs(),rhs());
 	}

@@ -86,19 +86,6 @@ public final class Rational implements Constructor {
 		return denominator;
 	}
 	
-	public Type type(Solver.State state) {				
-		// we have to try and be as precise as possible here
-		if(denominator == Polynomial.ONE) {
-			for(Constructor c : numerator.atoms()) {
-				if(!(c.type(state) instanceof Type.Int)) {					
-					return Type.T_REAL;
-				}
-			}			
-			return Type.T_INT;
-		} 		
-		return Type.T_REAL;
-	}
-		
 	public boolean isConstant() {
 		return numerator.isConstant() && denominator.isConstant();
 	}

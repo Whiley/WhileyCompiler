@@ -29,10 +29,6 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		return subterms().get(0);
 	}		
 	
-	public Type type(Solver.State st) {
-		return Type.T_BOOL;
-	}
-	
 	public Subtype not() {
 		return new Subtype(!sign,lhs(),rhs());
 	}
@@ -43,7 +39,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		// need to check the type here!
 		if(nrhs instanceof Value) {
 			Value v = (Value) nrhs;
-			if(Type.isSubtype(type,v.type(null))) {				
+			if(Type.isSubtype(type,v.type())) {				
 				return sign ? Value.TRUE : Value.FALSE;
 			} else {
 				return sign ? Value.FALSE : Value.TRUE;				
@@ -62,30 +58,6 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		return tmp != null ? tmp : r;		
 	}	
 	
-	/**
-	 * Determine the type of a given expression; that is, the type of the value
-	 * that this will evaluate to.
-	 */
-	public static Type type(Variable e, Solver.State state) {
-		Type t = Type.T_ANY;
-
-		// An interesting question here, is whether or not we really do need to
-		// build up the lub. If the type combining inference rule is
-		// functioning, then shouldn't there only ever be one instance of a
-		// matching type declaration?
-		
-		for(Constraint f : state) {
-			if(f instanceof Subtype) {				
-				Subtype st = (Subtype) f;
-				if(st.rhs().equals(e)) {
-					t = Type.greatestLowerBound(t,st.lhs());
-				}
-			}
-		}
-
-		return t;
-	}
-
 	/**
 	 * <p>
 	 * The subtype closure rule simply checks for conflicting or redundant type
