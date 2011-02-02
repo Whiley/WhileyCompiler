@@ -39,7 +39,8 @@ import wyone.util.*;
 public class Main {
 	
 	public static final CompoundHeuristic heuristic = new CompoundHeuristic(			
-			new DisjunctHeuristic(),			
+			new DisjunctHeuristic(),		
+			new NotEqualsHeuristic(),
 			new BoundedNumberHeuristic(true, true), 						
 			new BoundedNumberHeuristic(true, false),
 			new UnboundedNumberHeuristic(true),

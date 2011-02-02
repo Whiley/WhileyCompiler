@@ -215,7 +215,8 @@ public final class Rational implements Constructor {
 		// sides by the denominator [I think]. There will probably be a bug if
 		// the denominator contains the variable, but not the numerator.
 		
-		Pair<Polynomial,Polynomial> p = lhs.factoriseFor(atom);
+		Pair<Polynomial,Polynomial> p = lhs.factoriseFor(atom);				
+		
 		rhs = rhs.add(p.second());
 		
 		return new Pair<Polynomial,Polynomial>(rhs,p.first());

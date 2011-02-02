@@ -125,15 +125,16 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		protected void rewriteSubtype(Subtype ws, Solver.State state, Solver solver) {
 			// FIXME: somehow this method seems rather like a cludge ...
 			Rational rhs = (Rational) ws.rhs();
-			//state.eliminate(ws);
+			state.eliminate(ws);
 			Variable nv = Variable.freshVar();
 			state.infer(new Subtype(ws.sign(),ws.lhs(),nv), solver);			
 			Constructor atom = rhs.subterms().get(0);
 			Pair<Polynomial,Polynomial> p = rhs.rearrangeFor(atom);
 			Constructor l = Numerics.normalise(new Rational(p.first()));
 			Constructor f = Numerics.normalise(new Rational(p.second()));			
-			Constructor nrhs = Numerics.divide(Numerics.subtract(l,nv),f);		
-			// at this point, the objective is to replace all occurences of atom
+			Constructor nrhs = Numerics.multiply(Numerics.subtract(l,nv), new Rational(rhs.denominator()));								
+			nrhs = Numerics.divide(nrhs,f);
+			// at this point, the objective is to replace all occurrences of atom
 			// with nrhs
 			
 			HashMap<Constructor, Constructor> binding = new HashMap<Constructor,Constructor>();
@@ -144,7 +145,10 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			// forms are added into the literal set.
 			for(Constraint c : state) {									
 				Constraint nc = c.substitute(binding);									
-				if(nc != c) {				
+				if(nc != c && !(c instanceof Subtype)) {	
+					// the choice to not substitute for subtypes is a hack.
+					// Otherwise you can end up in an infinite loop inferring
+					// subtypes
 					//state.eliminate(c);										
 					state.infer(nc,solver);							
 				}
@@ -176,7 +180,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 					}
 				}
 			}
-			
+					
 			if(ws.sign() && !ws.lhs().equals(glb)) {					
 				//state.eliminate(ws);
 				state.infer(new Subtype(true,glb,ws.rhs()), solver);

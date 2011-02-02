@@ -89,7 +89,7 @@ public final class Solver implements Callable<Proof> {
 		try {			
 			r = task.get(timeout,TimeUnit.MILLISECONDS);				
 		} catch(ExecutionException ee) {
-			throw (RuntimeException) ee.getCause();
+			throw new RuntimeException(ee);
 		} catch(InterruptedException ie) {
 			
 		} catch(TimeoutException ie) {
