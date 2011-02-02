@@ -147,8 +147,8 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 	private static void internal_infer(BoundUpdate below, BoundUpdate above,
 			Solver.State state, Solver solver) {		
 		Constructor lb;
-		Constructor ub;
-		Type atom_t = above.atom.type(state);				
+		Constructor ub;	
+		Type atom_t = above.atom.type(state);						
 		
 		boolean belowSign = below.sign;
 		boolean aboveSign = above.sign;				

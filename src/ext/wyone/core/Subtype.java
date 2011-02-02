@@ -1,8 +1,10 @@
 package wyone.core;
 
 import java.util.*;
+
 import wyil.lang.Type;
-import wyone.core.*;
+import wyone.theory.numeric.*;
+import wyone.util.Pair;
 import static wyone.core.Constructor.*;
 
 public class Subtype extends Base<Constructor> implements Constraint {
@@ -83,13 +85,22 @@ public class Subtype extends Base<Constructor> implements Constraint {
 
 		return t;
 	}
-	
+
 	/**
-	 * <p>The subtype closure rule simply checks for conflicting or redundant type
+	 * <p>
+	 * The subtype closure rule simply checks for conflicting or redundant type
 	 * constraints on a particular variable. For example, if we have
-	 * <code>x <: int</code> and <code>x <: [int]</code> then we have a conflict.
-	 * Similarly, if we have <code>x <: int</code> and <code>x <: real</code> then
-	 * the latter constraint is redundant, and can be eliminated.</p>
+	 * <code>x <: int</code> and <code>x <: [int]</code> then we have a
+	 * conflict. Similarly, if we have <code>x <: int</code> and
+	 * <code>x <: real</code> then the latter constraint is redundant, and can
+	 * be eliminated.
+	 * </p>
+	 * <p>
+	 * Subtype closure must also rewrite complex subtype constraints into
+	 * simpler ones, where possible. For example, <code>2*x <: int</code>
+	 * rewrites to <code>2*x == #1 && int #1</code> (where #1 is a fresh
+	 * variable).
+	 * </p>
 	 * 
 	 * @author djp
 	 * 
@@ -100,51 +111,75 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			return "Type Closure";
 		}
 		
-		public void infer(Constraint nlit, Solver.State state, Solver solver) {				
+		public void infer(Constraint nlit, Solver.State state, Solver solver) {							
 			if(nlit instanceof Subtype) {			
-				inferSubtype((Subtype)nlit,state,solver);			
+				Subtype st = (Subtype) nlit;
+				if(st.rhs() instanceof Rational) {
+					rewriteSubtype(st,state,solver);
+				} else {
+					inferSubtype(st,state,solver);
+				}
 			}		
 		}
 		
-		protected void inferSubtype(Subtype ws, Solver.State state,
-				Solver solver) {
+		protected void rewriteSubtype(Subtype ws, Solver.State state, Solver solver) {
+			// FIXME: somehow this method seems rather like a cludge ...
+			Rational rhs = (Rational) ws.rhs();
+			state.eliminate(ws);
+			Variable nv = Variable.freshVar();
+			state.infer(new Subtype(ws.sign(),ws.lhs(),nv), solver);			
+			Constructor atom = rhs.subterms().get(0);
+			Pair<Polynomial,Polynomial> p = rhs.rearrangeFor(atom);
+			Constructor l = Numerics.normalise(new Rational(p.first()));
+			Constructor f = Numerics.normalise(new Rational(p.second()));			
+			Constructor nrhs = Numerics.divide(Numerics.subtract(l,nv),f);		
+			// at this point, the objective is to replace all occurences of atom
+			// with nrhs
 			
-			boolean wsign = ws.sign();
-			Constructor lhs = ws.rhs();
-			Type rhs = ws.lhs();
+			HashMap<Constructor, Constructor> binding = new HashMap<Constructor,Constructor>();
+			binding.put(atom,nrhs);
+			
+			// Second, we iterate all existing literals and attempt to simplify
+			// them. Those which are simplified are subsumed, and their simplified
+			// forms are added into the literal set.
+			for(Constraint c : state) {									
+				Constraint nc = c.substitute(binding);									
+				if(nc != c) {				
+					state.eliminate(c);										
+					state.infer(nc,solver);							
+				}
+			}
+			
+			// finally, infer the equality that binds this altogether
+			state.infer(Equality.equals(nv,rhs), solver);						
+		}
+		
+		protected void inferSubtype(Subtype ws, Solver.State state,
+				Solver solver) {			
+			Type glb = ws.lhs();
+			Type diff = Type.T_VOID;
 			
 			// FIXME: this loop can be further improved now that I have brought
 			// in the proper wyil Type
 			for(Constraint f : state) {			
-				if(f instanceof Subtype && f!=ws) {				
-					Subtype st = (Subtype) f;
-					Type st_rhs = st.lhs();				
-					if(st.lhs().equals(lhs)) {					
-						boolean subst = Type.isSubtype(rhs,st_rhs);
-						boolean stsub = Type.isSubtype(st_rhs,rhs);
-						boolean signs = wsign == st.sign();
-						// ok, this is icky
-						if(subst && wsign && signs) {
-							// ws is subsumed by st
-							state.eliminate(ws);
-							return;
-						} else if(stsub && wsign && signs) {
-							// st is subsumed by ws
-							state.eliminate(st);
-						} else if(stsub && wsign && !signs) {
-							// error
-							state.infer(Value.FALSE, solver);
-							return;
-						} else if(subst && !wsign && !signs) {
-							// error
-							state.infer(Value.FALSE, solver);
-							return;
-						} else if(!subst && !stsub && wsign && signs) {
-							state.infer(Value.FALSE, solver);
-							return;
-						}											
+				if(f instanceof Subtype) {				
+					Subtype st = (Subtype) f;						
+					if(st.rhs().equals(ws.rhs())) {
+						if(st.sign()) {
+							glb = Type.greatestLowerBound(glb,st.lhs());  
+						} else {
+							// FIXME: will need to do something here. The
+							// problem with the idea below, is simply that it's
+							// not precise enough.
+							// diff = Type.leastUpperBound(diff,st.lhs());
+						}
 					}
 				}
+			}
+			
+			if(ws.sign() && !ws.lhs().equals(glb)) {					
+				state.eliminate(ws);
+				state.infer(new Subtype(true,glb,ws.rhs()), solver);
 			}
 		}
 	}

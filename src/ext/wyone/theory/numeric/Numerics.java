@@ -26,7 +26,7 @@ import wyone.theory.logic.*;
 
 public class Numerics {
 
-	private static Constructor normalise(Rational r) {
+	public static Constructor normalise(Rational r) {
 		if(r.isConstant()) {
 			return r.constant();
 		} else if(r.isAtom()) {

@@ -171,22 +171,17 @@ public final class Equality extends Base<Constructor> implements Constraint {
 					}
 				}
 			}
-			
+						
 			Constraint nf = formula.substitute(binding);
-			if(nf != formula) {			
+			if(nf != formula) {							
 				state.eliminate(formula);	
-				if(!state.contains(nf)) {				
+				if(!state.contains(nf)) {					
 					state.infer(nf,solver);
 				}
 			}
 		}
 		
 		private void inferEquality(Equality eq, Solver.State state, Solver solver) {
-			
-			if(typeCheck(eq,state) != eq) {				
-				state.infer(Value.FALSE,solver);
-				return; // no point going on.
-			}
 			
 			// So, at this point we have an equality of the form lhs == rhs.
 			// This equality should have been normalised into a form where lhs
@@ -230,8 +225,8 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			// them. Those which are simplified are subsumed, and their simplified
 			// forms are added into the literal set.
 			for(Constraint f : state) {
-				if(f == eq) { continue; }			
-				Constraint nf = typeCheck(f.substitute(binding),state);									
+				if(f == eq) { continue; }							
+				Constraint nf = f.substitute(binding);									
 				if(nf != f) {				
 					// f has been replaced!					
 					if (!(f instanceof Equality)
@@ -242,28 +237,5 @@ public final class Equality extends Base<Constructor> implements Constraint {
 				}
 			}
 		}	
-		
-		public Constraint typeCheck(Constraint f, Solver.State state) {
-			// sanity check assignments. Not strictly necessary, but useful to
-			// ensure early termination when the type of an assignment is clearly
-			// wrong.
-			if(f instanceof Equality) {
-				Equality weq = (Equality) f;
-				Constructor lhs = weq.lhs();
-				Constructor rhs = weq.rhs();
-				if (lhs instanceof Variable && rhs instanceof Value) {
-					Variable var = (Variable) lhs;
-					Value val = (Value) rhs;
-					Type t = Subtype.type(var,state);
-					// Type can currently be null if represents a quantified
-					// variable.
-					if(t != null && !Type.isSubtype(t,val.type(null))) {					
-						return Value.FALSE;
-					}
-				}
-			}
-			
-			return f;
-		}
 	}
 }
