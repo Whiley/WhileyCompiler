@@ -174,10 +174,8 @@ public final class Equality extends Base<Constructor> implements Constraint {
 						
 			Constraint nf = formula.substitute(binding);
 			if(nf != formula) {							
-				state.eliminate(formula);	
-				if(!state.contains(nf)) {					
-					state.infer(nf,solver);
-				}
+				//state.eliminate(formula);									
+				state.infer(nf,solver);				
 			}
 		}
 		
@@ -231,7 +229,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 					// f has been replaced!					
 					if (!(f instanceof Equality)
 							|| !((Equality) f).isAssignment()) {					
-						state.eliminate(f);
+						//state.eliminate(f);
 					}							
 					state.infer(nf,solver);							
 				}

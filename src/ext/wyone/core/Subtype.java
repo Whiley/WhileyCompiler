@@ -125,7 +125,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		protected void rewriteSubtype(Subtype ws, Solver.State state, Solver solver) {
 			// FIXME: somehow this method seems rather like a cludge ...
 			Rational rhs = (Rational) ws.rhs();
-			state.eliminate(ws);
+			//state.eliminate(ws);
 			Variable nv = Variable.freshVar();
 			state.infer(new Subtype(ws.sign(),ws.lhs(),nv), solver);			
 			Constructor atom = rhs.subterms().get(0);
@@ -145,7 +145,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			for(Constraint c : state) {									
 				Constraint nc = c.substitute(binding);									
 				if(nc != c) {				
-					state.eliminate(c);										
+					//state.eliminate(c);										
 					state.infer(nc,solver);							
 				}
 			}
@@ -178,7 +178,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			}
 			
 			if(ws.sign() && !ws.lhs().equals(glb)) {					
-				state.eliminate(ws);
+				//state.eliminate(ws);
 				state.infer(new Subtype(true,glb,ws.rhs()), solver);
 			}
 		}

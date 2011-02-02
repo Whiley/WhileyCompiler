@@ -282,18 +282,11 @@ public final class Solver implements Callable<Proof> {
 			}
 			*/
 			
-			// For the moment, I have disabled elimination. The reason is that
-			// my inference rules are currently inconsistent, in the sense that
-			// they can result in a loss of information. This happens with
-			// primarily respect to rewriting of subtype constraints.
-			
-			/*
 			Integer x = assignments.get(oldf);							
 			if(x != null) {			
 				assertions.clear(x);			
 				eliminations.set(x);
-			}
-			*/		
+			}				
 		}
 
 		/**
@@ -304,10 +297,12 @@ public final class Solver implements Callable<Proof> {
 			for(int i=0;i!=worklist.size();++i) {
 				Integer x = worklist.get(i);			
 				Constraint f = rassignments.get(x);
-				// System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
+				//System.out.println("STATE BEFORE: " + this + " (" + System.identityHashCode(this) + "), i=" + i + "/" + worklist.size() + " : " + f);
 				for(Rule ir : solver.rules) {				
-					if(assertions.get(x)) {							
+					if(assertions.get(x)) {		
+						//System.out.println("GOING IN: " + ir.name());
 						ir.infer(f, this, solver);
+						//System.out.println("DONE: " + ir.name());
 						if(contains(Value.FALSE)){				
 							return; // early termination
 						}
