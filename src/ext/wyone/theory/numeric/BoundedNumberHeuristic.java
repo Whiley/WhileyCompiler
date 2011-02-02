@@ -121,7 +121,6 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 	private HashMap<Constructor, Pair<Bound,Bound>> determineVariableBounds(
 			Solver.State state, Solver solver) {
 		HashMap<Constructor,Pair<Bound,Bound>> bounds = new HashMap();
-		HashSet<Constructor> assigned = new HashSet();
 		
 		for(Constraint f : state) {
 			if(f instanceof Inequality) {				
@@ -133,16 +132,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 				} else if(!isInteger && t instanceof Type.Real) {
 					updateBounds(wieq,var,false,bounds);
 				}								
-			} else if(f instanceof Equality) {
-				Equality eq = (Equality) f;
-				if(eq.isAssignment()) {
-					assigned.add(eq.lhs());
-				}
-			}
-		}
-		
-		for(Constructor c : assigned) {
-			bounds.remove(c);
+			} 
 		}
 		
 		return bounds;

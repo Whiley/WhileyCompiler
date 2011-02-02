@@ -133,29 +133,9 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			Constructor l = Numerics.normalise(new Rational(p.first()));
 			Constructor f = Numerics.normalise(new Rational(p.second()));			
 			Constructor nrhs = Numerics.multiply(Numerics.subtract(l,nv), new Rational(rhs.denominator()));								
-			nrhs = Numerics.divide(nrhs,f);
-			// at this point, the objective is to replace all occurrences of atom
-			// with nrhs
-			
-			HashMap<Constructor, Constructor> binding = new HashMap<Constructor,Constructor>();
-			binding.put(atom,nrhs);
-			
-			// Second, we iterate all existing literals and attempt to simplify
-			// them. Those which are simplified are subsumed, and their simplified
-			// forms are added into the literal set.
-			for(Constraint c : state) {									
-				Constraint nc = c.substitute(binding);									
-				if(nc != c && !(c instanceof Subtype)) {	
-					// the choice to not substitute for subtypes is a hack.
-					// Otherwise you can end up in an infinite loop inferring
-					// subtypes
-					//state.eliminate(c);										
-					state.infer(nc,solver);							
-				}
-			}
-			
+			nrhs = Numerics.divide(nrhs,f);			
 			// finally, infer the equality that binds this altogether
-			state.infer(Equality.equals(nv,rhs), solver);						
+			state.infer(Equality.equals(atom,nrhs), solver);						
 		}
 		
 		protected void inferSubtype(Subtype ws, Solver.State state,
@@ -182,7 +162,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 			}
 					
 			if(ws.sign() && !ws.lhs().equals(glb)) {					
-				//state.eliminate(ws);
+				state.eliminate(ws);
 				state.infer(new Subtype(true,glb,ws.rhs()), solver);
 			}
 		}
