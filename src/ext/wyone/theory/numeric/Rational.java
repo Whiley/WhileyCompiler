@@ -52,7 +52,7 @@ public final class Rational implements Constructor {
 	
 	public Rational(Polynomial i) {
 		numerator = i;
-		denominator = new Polynomial(1);
+		denominator = Polynomial.ONE;
 	}
 	
 	public Rational(Polynomial i, Polynomial j) {
@@ -213,7 +213,7 @@ public final class Rational implements Constructor {
 		// FIXME: originally, I had lhs = lhs.multiply(denominator)
 		// this doesn't seem to work because I'm basically multiplying both
 		// sides by the denominator [I think]. There will probably be a bug if
-		// the denominator contains the variable, but not the numerator.
+		// the denominator contains the variable, but not the numerator.				
 		
 		Pair<Polynomial,Polynomial> p = lhs.factoriseFor(atom);				
 		
@@ -343,12 +343,12 @@ public final class Rational implements Constructor {
 		return new Rational(top, denominator.multiply(r));
 	}
 	
-	public Rational divide(Polynomial r) {
+	public Rational divide(Polynomial r) {		
 		Polynomial top = numerator;		
 		return new Rational(top, denominator.multiply(r));
 	}
 	
-	public Rational divide(Rational r) {
+	public Rational divide(Rational r) {		
 		Polynomial top = numerator.multiply(r.denominator());		
 		return new Rational(top, denominator.multiply(r.numerator));
 	}

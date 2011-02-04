@@ -81,7 +81,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		
 		// normalise sign.
 		BigInteger zero = BigInteger.ZERO;
-		if(zero.compareTo(numerator) > 0 && zero.compareTo(denominator) > 0) {
+		if(zero.compareTo(denominator) > 0) {
 			numerator = numerator.negate();
 			denominator = denominator.negate();
 		} else if(zero.compareTo(denominator) == 0) {
@@ -196,15 +196,17 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		if(isInteger()) {
 			return numerator.toString();
 		} else {
+
 			BigDecimal bd = round(10);
 			BigRational br = new BigRational(bd);
-			if(this.equals(br)) {
+			if (this.equals(br)) {
 				String s = bd.toString();
-				if(!s.contains(".")) {
+				if (!s.contains(".")) {
 					s += ".0";
 				}
 				return s;
 			} else {
+
 				return "(" + numerator + "/" + denominator + ")";
 			}
 		}
@@ -305,7 +307,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return new BigRational(numerator,den);
 	}
 	
-	public BigRational divide(final BigRational r) {
+	public BigRational divide(final BigRational r) {		
 		BigInteger num = numerator.multiply(r.denominator);
 		BigInteger den = denominator.multiply(r.numerator);
 		return new BigRational(num, den);

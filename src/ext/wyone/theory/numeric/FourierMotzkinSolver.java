@@ -60,30 +60,50 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			v = ieq_rhs.subterms().iterator().next();
 		} else {
 			v = ieq_rhs;
-		}		
-		Pair<BoundUpdate,BoundUpdate> update = rearrange(ieq,v);
-		BoundUpdate lower = update.first();
-		BoundUpdate upper = update.second();						
+		}
 		
-		if(lower != null) {				
-			for(Constraint f : state) {
-				if(f instanceof Inequality && usesVariable(((Inequality)f).rhs(),v)) {
-					Inequality i = (Inequality) f;
-					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);						
-					upper = bound.second();						
-					if(upper != null) {													
-						internal_infer(lower,upper,state,solver);
+		// The purpose of the integer constraints are to identify those terms
+		// involving v which are constrained to be an integer. This is then fed
+		// into the constraint closure component which can perform additional
+		// simplifications.
+		List<Rational> intConstraints = intConstraints(v,state);		
+		boolean isInteger = true;
+		if(intConstraints.isEmpty()) {
+			// in this case, there are no integer constraints on v.
+			intConstraints.add(new Rational(new Polynomial(v)));
+			isInteger = false;
+		}
+		
+		for(Rational factor : intConstraints) {
+			Pair<BoundUpdate,BoundUpdate> update = rearrange(ieq,factor,v);
+			BoundUpdate lower = update.first();
+			BoundUpdate upper = update.second();						
+
+			if(lower != null) {				
+				// what happens to the divisor ??
+				for (Constraint f : state) {
+					if (f instanceof Inequality
+							&& usesVariable(((Inequality) f).rhs(), v)) {
+						Inequality i = (Inequality) f;						
+						Pair<BoundUpdate, BoundUpdate> bound = rearrange(i, factor, v);
+						upper = bound.second();
+						if (upper != null) {
+							internal_infer(lower, factor, upper, isInteger,
+									state, solver);
+						}
 					}
 				}
-			}
-		} else if(upper != null) {				
-			for(Constraint f : state) {
-				if(f instanceof Inequality && usesVariable(((Inequality)f).rhs(),v)) {						
-					Inequality i = (Inequality) f;
-					Pair<BoundUpdate,BoundUpdate> bound = rearrange(i,v);
-					lower = bound.first();
-					if(lower != null) {							
-						internal_infer(lower,upper,state,solver);
+			} else if(upper != null) {		
+				for (Constraint f : state) {					
+					if (f instanceof Inequality
+							&& usesVariable(((Inequality) f).rhs(), v)) {
+						Inequality i = (Inequality) f;				
+						Pair<BoundUpdate, BoundUpdate> bound = rearrange(i, factor, v);
+						lower = bound.first();
+						if (lower != null) {
+							internal_infer(lower, factor, upper, isInteger,
+									state, solver);
+						}
 					}
 				}
 			}
@@ -100,11 +120,25 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 	}
 	
 	public static Pair<BoundUpdate, BoundUpdate> rearrange(Inequality ieq,
-			Constructor v) {
+			Rational term, Constructor v) {
 		// Now, we factorise the lower bound for the variable in question.
 		// Notice that we know the remainder will be zero by construction.		
-		Pair<Constructor,Constructor> r = rearrangeFor(v,ieq);		
+		Pair<Constructor,Constructor> r = rearrangeFor(v,ieq);				
 		Constructor factor = r.second();		
+		Constructor remainder = r.first();
+		
+		if(term != null) {
+			Pair<Polynomial,Polynomial> p = term.rearrangeFor(v);		
+			// FIXME: need to user deivisor
+			Constructor divisor = Numerics.normalise(term.denominator());
+			factor = Numerics.divide(factor,new Rational(p.second()).negate());		
+			remainder = Numerics.subtract(remainder,new Rational(p.first()));
+			
+			
+			// Need to sort out use of divisor and issue when e.g. int x*y
+			// constraint prevents normal inference from happening.
+			System.err.println("FM ELIMINATION NOT FINISHED");
+		}		
 		
 		if (factor instanceof Value.Number) {
 			BoundUpdate lower = null;
@@ -115,15 +149,15 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			// determine whether or not we have an upper or lower bound.			
 			if (constant.compareTo(Value.Number.ZERO) < 0) {
 				if (ieq.sign()) {					
-					lower = new BoundUpdate(v, negate(r.first()), (Value.Number) negate(constant), false);
+					lower = new BoundUpdate(v, negate(remainder), (Value.Number) negate(constant), false);
 				} else {					
-					upper = new BoundUpdate(v, negate(r.first()), (Value.Number) negate(constant), true);
+					upper = new BoundUpdate(v, negate(remainder), (Value.Number) negate(constant), true);
 				}
 			} else if (constant.compareTo(Value.Number.ZERO) > 0) {
 				if (ieq.sign()) {					
-					upper = new BoundUpdate(v, r.first(), constant, false);
+					upper = new BoundUpdate(v, remainder, constant, false);
 				} else {										
-					lower = new BoundUpdate(v, r.first(), constant, true);
+					lower = new BoundUpdate(v, remainder, constant, true);
 				}
 			}
 			/*
@@ -141,61 +175,69 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			// do about this so we silently drop it ... making the system
 			// unsound.
 			return new Pair(null, null);
-		}
+		}				
 	}
 	
-	private static void internal_infer(BoundUpdate below, BoundUpdate above,
-			Solver.State state, Solver solver) {		
+	private static void internal_infer(BoundUpdate below, Constructor term, BoundUpdate above,
+			boolean isInteger, Solver.State state, Solver solver) {		
 		
 		boolean belowSign = below.sign;
 		boolean aboveSign = above.sign;				
+		Constructor lb = below.poly;
+		Constructor ub = above.poly;
 		
-		for(Rational factor : intConstraints(above.atom, state)) { 			
-			Constructor lb = below.poly;
-			Constructor ub = above.poly;	
-			
-			System.out.println("GOT HERE ---- FIXING FM ELIMINATION");
-			
-			// First, check for the "real shadow"
-			if (lb instanceof Value.Number
-					&& ub instanceof Value.Number) {			
-				Value.Number bp = (Value.Number) lb;
-				Value.Number up = (Value.Number) ub;						
-				// Note, the following is guaranteed to work because the above and
-				// below factors are normalised to be always positive; that way, we
-				// can ignore the divide by negative number case.
-				if(belowSign) {
-					lb = bp.divide(below.factor).add(Value.ONE).ceil();
-					belowSign=false;
-				} else {
-					lb = bp.divide(below.factor).ceil();
-				}
-				if(aboveSign) {
-					ub = up.divide(above.factor).subtract(Value.ONE).floor();
-					aboveSign=false;
-				} else {
-					ub = up.divide(above.factor).floor();
-				}								
+		// First, check for the "real shadow"
+		if (isInteger && lb instanceof Value.Number
+				&& ub instanceof Value.Number) {				
+			Value.Number bp = (Value.Number) lb;
+			Value.Number up = (Value.Number) ub;						
+			// Note, the following is guaranteed to work because the above and
+			// below factors are normalised to be always positive; that way, we
+			// can ignore the divide by negative number case.			
+			if(belowSign) {				
+				lb = bp.divide(below.factor).add(Value.ONE).ceil();				
+				belowSign=false;
 			} else {
-				if(belowSign) {
-					belowSign=false;
-					lb = add(lb,Value.Number.ONE);
-				}
-				if(aboveSign) {
-					aboveSign=false;
-					ub = subtract(ub,Value.Number.ONE);
-				}
-
-				lb = multiply(lb,above.factor);		
-				ub = multiply(ub,below.factor);
+				lb = bp.divide(below.factor).ceil();
 			}
-			
-			internalInferInequality(lb,above.atom,ub,belowSign,aboveSign,state,solver);
+			if(aboveSign) {							
+				ub = up.divide(above.factor).subtract(Value.ONE).floor();
+				aboveSign=false;
+			} else {
+				ub = up.divide(above.factor).floor();
+			}								
+		} else {
+			if(belowSign && isInteger) {
+				belowSign=false;
+				lb = add(lb,Value.Number.ONE);
+			}
+			if(aboveSign && isInteger) {
+				aboveSign=false;
+				ub = subtract(ub,Value.Number.ONE);
+			}
+
+			lb = multiply(lb,above.factor);		
+			ub = multiply(ub,below.factor);			
 		}
 		
-		// now do the real bounds. This could be simplified in the case that the
-		// atom is determined outright to be an integer
-		internalInferInequality(below.poly,above.atom,above.poly,belowSign,aboveSign,state,solver);
+		if(lb.equals(above) && (belowSign || aboveSign)) {			
+			state.infer(Value.FALSE,solver);
+		} else {			
+			// Second, generate new inequalities
+			if(lb.equals(above)) {				
+				state.infer(Equality.equals(lb,term),solver);
+			} else {
+				Constraint f;
+
+				if (belowSign || aboveSign) {		
+					f = lessThan(lb, ub);
+				} else {					
+					f = lessThanEq(lb, ub);													
+				}				
+								
+				state.infer(f,solver);										
+			} 
+		}		
 	}
 	
 	public static List<Rational> intConstraints(Constructor atom, Solver.State state) {
@@ -204,9 +246,8 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			if(c instanceof Subtype) {
 				Subtype st = (Subtype) c;
 				if(st.rhs().equals(atom)) {
-					// This is the easiest case. It means the atom in question
-					// is definitely typed as an integer
-					factors.add(new Rational(Polynomial.ONE));					
+					// This is the easiest case. 
+					factors.add(new Rational(new Polynomial(atom)));					
 					break; // no need to identify any more factors
 				} else if (st.rhs() instanceof Rational
 						&& st.rhs().subterms().contains(atom)) {
@@ -216,33 +257,9 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 					factors.add((Rational) st.rhs());
 				}
 			}
-		}
-		System.out.println("Subtype factors for " + atom + " : " + factors);
+		}			
 		return factors;
-	}
-	
-	public static void internalInferInequality(Constructor below,
-			Constructor atom, Constructor above, boolean belowSign,
-			boolean aboveSign, Solver.State state, Solver solver) {
-
-		if(below.equals(above) && (belowSign || aboveSign)) {			
-			state.infer(Value.FALSE,solver);
-		} else {			
-			// Second, generate new inequalities
-			if(below.equals(above)) {				
-				state.infer(Equality.equals(below,atom),solver);
-			} else {
-				Constraint f;
-
-				if (belowSign || aboveSign) {					
-					f = lessThan(below, above);
-				} else {
-					f = lessThanEq(below, above);													
-				}				
-				state.infer(f,solver);										
-			} 
-		}
-	}
+	}	
 	
 	/**
      * A bound update represents an incremental update to the lower or upper
@@ -255,8 +272,8 @@ public final class FourierMotzkinSolver implements Solver.Rule {
      */	
 	public final static class BoundUpdate {
 		public final Constructor atom;
-		public final Constructor poly;
-		public final Value.Number factor;
+		public Constructor poly;
+		public Value.Number factor;
 		public final Boolean sign; // true indicates strict inequality
 		
 		public BoundUpdate(Constructor v, Constructor p, Value.Number i, Boolean s) {

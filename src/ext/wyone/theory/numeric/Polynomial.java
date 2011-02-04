@@ -448,7 +448,7 @@ public final class Polynomial implements Iterable<Term>, Comparable<Polynomial> 
 	 * 2x&circ;2 + xy + 2 ======&gt; (2x+y, 2) 
 	 * </pre>
 	 */
-	public Pair<Polynomial,Polynomial> factoriseFor(Constructor atom) {
+	public Pair<Polynomial,Polynomial> factoriseFor(Constructor atom) {		
 		Polynomial factor = new Polynomial(0);
 		Polynomial remainder = new Polynomial(0);
 		

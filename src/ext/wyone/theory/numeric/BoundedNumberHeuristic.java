@@ -152,7 +152,8 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 	
 	private static void updateBounds(Inequality wieq, Constructor var,
 			boolean isInteger, HashMap<Constructor, Pair<Bound, Bound>> bounds) {
-		Pair<BoundUpdate,BoundUpdate> r = rearrange(wieq,var);		
+		// FIXME: could possibly do better here?
+		Pair<BoundUpdate,BoundUpdate> r = rearrange(wieq,null,var);		
 		BoundUpdate below = r.first();
 		BoundUpdate above = r.second();				
 		
