@@ -1429,6 +1429,7 @@ public class ClassFileBuilder {
 		// next, translate parameters
 		Type.Fun ft = (Type.Fun) c.target.type();
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.LoadConst(null));
 		bytecodes.add(new Bytecode.LoadConst(ft.params.size()));
 		bytecodes.add(new Bytecode.New(arrT));
 		
@@ -1437,6 +1438,7 @@ public class ClassFileBuilder {
 			Type pt = params.get(i);
 			CExpr r = c.args.get(i);
 			Type rt = r.type();
+			bytecodes.add(new Bytecode.Dup(arrT));
 			bytecodes.add(new Bytecode.LoadConst(i));						
 			translate(r, slots, bytecodes);			
 			if(!pt.equals(rt)) {
@@ -1452,6 +1454,8 @@ public class ClassFileBuilder {
 		
 		bytecodes.add(new Bytecode.Invoke(owner, "invoke", type,
 				Bytecode.VIRTUAL));				
+		System.out.println("READ CONVERSION: " + ft.ret);
+		addReadConversion(ft.ret,bytecodes);	
 	}
 	
 	public void translate(Value v, HashMap<String, Integer> slots,

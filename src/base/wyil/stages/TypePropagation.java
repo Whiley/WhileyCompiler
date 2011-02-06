@@ -115,9 +115,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {		
 		environment = new Env(environment);				
-		
-		CExpr rhs = infer(code.rhs,stmt,environment);
+				
 		CExpr.LVal lhs = null;
+		CExpr rhs;
 		
 		if(code.lhs != null) {
 			if(code.lhs instanceof CExpr.LVar) {
@@ -132,8 +132,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				lhs = (CExpr.LVal) infer(code.lhs,stmt,environment);
 			}	
 			// Update the type of the lhs						
-			
+			rhs = infer(code.rhs,stmt,environment);
 			lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);			
+		} else {
+			// I by pass infer(CExpr) here, since that method requires all
+			// expressions to have a non-void return type.
+			if(code.rhs instanceof DirectInvoke) {				
+				rhs = infer((DirectInvoke)code.rhs,stmt,environment);
+			} else if(code.rhs instanceof IndirectInvoke) {
+				rhs = infer((IndirectInvoke)code.rhs,stmt,environment);
+			} else {
+				syntaxError("invalid expression",filename,stmt);
+				return null; // dead code
+			}
 		}
 		
 		stmt = new Stmt(new Code.Assign(lhs, rhs), stmt.attributes());
@@ -554,35 +565,44 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
 
 		if(e instanceof Value.FunConst) {
-			return infer((Value.FunConst)e,stmt,environment);
+			e =  infer((Value.FunConst)e,stmt,environment);
 		} else if (e instanceof Value) {			
-			return e;
+			
 		} else if (e instanceof Variable) {
-			return infer((Variable) e, stmt, environment);
+			e = infer((Variable) e, stmt, environment);
 		} else if (e instanceof Register) {
-			return infer((Register) e, stmt, environment);
+			e = infer((Register) e, stmt, environment);
 		} else if (e instanceof BinOp) {
-			return infer((BinOp) e, stmt, environment);
+			e = infer((BinOp) e, stmt, environment);
 		} else if (e instanceof UnOp) {
-			return infer((UnOp) e, stmt, environment);
+			e = infer((UnOp) e, stmt, environment);
 		} else if (e instanceof NaryOp) {
-			return infer((NaryOp) e, stmt, environment);
+			e = infer((NaryOp) e, stmt, environment);
 		} else if (e instanceof ListAccess) {
-			return infer((ListAccess) e, stmt, environment);
+			e = infer((ListAccess) e, stmt, environment);
 		} else if (e instanceof Dictionary) {
-			return infer((Dictionary) e, stmt, environment);
+			e = infer((Dictionary) e, stmt, environment);
 		} else if (e instanceof Record) {
-			return infer((Record) e, stmt, environment);
+			e = infer((Record) e, stmt, environment);
 		} else if (e instanceof RecordAccess) {
-			return infer((RecordAccess) e, stmt, environment);
+			e = infer((RecordAccess) e, stmt, environment);
 		} else if (e instanceof DirectInvoke) {
-			return infer((DirectInvoke) e, stmt, environment);
+			e = infer((DirectInvoke) e, stmt, environment);
 		} else if (e instanceof IndirectInvoke) {
-			return infer((IndirectInvoke) e, stmt, environment);
+			e = infer((IndirectInvoke) e, stmt, environment);
+		} else {
+			syntaxError("unknown expression encountered: " + e, filename, stmt);
+			return null; // unreachable
 		}
-
-		syntaxError("unknown expression encountered: " + e, filename, stmt);
-		return null; // unreachable
+		
+		if(e.type() == Type.T_VOID) {
+			// Observe, expressions cannot have void return types. This can
+			// happen, for example, if we have a function pointer which returns
+			// void. Since void is a subtype of everything, then the system will
+			// think everything is ok ... when it's not.
+			syntaxError("expressions cannot return void!", filename, stmt);
+		}
+		return e;
 	}
 	
 	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
