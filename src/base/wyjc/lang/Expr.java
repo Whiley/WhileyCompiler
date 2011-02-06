@@ -75,7 +75,19 @@ public interface Expr extends SyntacticElement {
 			this.type = val;
 		}
 	}
-		
+	
+	public static class FunConst extends SyntacticElement.Impl implements Expr {
+
+		public String name;
+		public final List<UnresolvedType> paramTypes;
+
+		public FunConst(String name, List<UnresolvedType> paramTypes, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.paramTypes = paramTypes;
+		}
+	}
+	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public final BOp op;
 		public final Expr lhs;

@@ -60,6 +60,10 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 		return get(new TypeConst(type));
 	}
 	
+	public static FunConst V_FUN(NameID name, Type.Fun type) {
+		return get(new FunConst(name,type));
+	}
+	
 	/**
 	 * Evaluate the given operation on the given values. If the evaluation is
 	 * impossible, then return null.
@@ -762,6 +766,41 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 		}
 		public String toString() {
 			return type.toString();
+		}
+	}
+	
+	public static final class FunConst extends Value {
+		public final NameID name;
+		public final Type.Fun type;
+		
+		private FunConst(NameID name, Type.Fun type) {
+			this.name = name;
+			this.type = type;
+		}
+		public Type type() {
+			return type.ret;
+		}
+		public int hashCode() {
+			return type.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof FunConst) {
+				FunConst i = (FunConst) o;
+				return name.equals(i.name) && type == i.type;
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof FunConst) {
+				FunConst t = (FunConst) v;
+				// FIXME: following is an ugly hack!
+				return type.toString().compareTo(t.toString());
+			} else {
+				return 1; // everything is above a type constant
+			}					
+		}
+		public String toString() {
+			return "&" + name.toString() + ":" + type.toString();
 		}
 	}
 	private static final ArrayList<Value> values = new ArrayList<Value>();

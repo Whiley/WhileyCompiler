@@ -220,8 +220,8 @@ public class PreconditionInline implements ModuleTransform {
 			RecordAccess ta = (RecordAccess) r;
 			return CExpr.RECORDACCESS(transform(ta.lhs, stmt, inserts),
 					ta.field);
-		} else if(r instanceof Invoke) {
-			Invoke a = (Invoke) r;							
+		} else if(r instanceof DirectInvoke) {
+			DirectInvoke a = (DirectInvoke) r;							
 			CExpr receiver = a.receiver;
 			if(receiver != null) {
 				receiver = transform(receiver,stmt,inserts);
@@ -230,7 +230,7 @@ public class PreconditionInline implements ModuleTransform {
 			for(CExpr arg : a.args){
 				args.add(transform(arg,stmt,inserts));
 			}			
-			CExpr.Invoke ivk = CExpr.INVOKE(a.type, a.name, a.caseNum,
+			CExpr.DirectInvoke ivk = CExpr.DIRECTINVOKE(a.type, a.name, a.caseNum,
 					receiver, args);
 			inserts.addAll(transform(regTarget,ivk,stmt));
 			if(ivk.type.ret == Type.T_VOID) {
@@ -357,7 +357,7 @@ public class PreconditionInline implements ModuleTransform {
 		return CExpr.NARYOP(bop.op, args);
 	}
 	
-	public Block transform(int regTarget, CExpr.Invoke ivk, Stmt stmt) {
+	public Block transform(int regTarget, CExpr.DirectInvoke ivk, Stmt stmt) {
 		try {
 			CExpr.LVar lhs = null;
 			if(ivk.type.ret != Type.T_VOID) {
@@ -408,7 +408,7 @@ public class PreconditionInline implements ModuleTransform {
 						blk.addAll(precondition);
 					}
 						
-					blk.add(new Code.Assign(lhs, CExpr.INVOKE(ivk.type,
+					blk.add(new Code.Assign(lhs, CExpr.DIRECTINVOKE(ivk.type,
 							ivk.name, caseNum, ivk.receiver, ivk.args)), stmt
 							.attributes());
 
@@ -426,7 +426,7 @@ public class PreconditionInline implements ModuleTransform {
 	}
 	
 	public Block transformConstraint(int regTarget, Block constraint,
-			CExpr.Invoke ivk, Attribute.Source src, Module.Case c,
+			CExpr.DirectInvoke ivk, Attribute.Source src, Module.Case c,
 			Module.Method method) {
 		
 		// Update the source number information

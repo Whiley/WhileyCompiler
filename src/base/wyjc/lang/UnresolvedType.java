@@ -19,6 +19,7 @@
 package wyjc.lang;
 
 import java.util.*;
+
 import wyil.lang.Attribute;
 import wyil.util.SyntacticElement;
 
@@ -133,4 +134,17 @@ public interface UnresolvedType extends SyntacticElement {
 			this.types = new ArrayList<UnresolvedType>(types);
 		}
 	}
+	public static final class Fun extends SyntacticElement.Impl
+	implements NonUnion {
+		public final UnresolvedType ret;
+		public final ArrayList<UnresolvedType> paramTypes;
+
+		public Fun(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
+				Attribute... attributes) {
+			super(attributes);
+			this.ret = ret;
+			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+		}
+	}
 }
+

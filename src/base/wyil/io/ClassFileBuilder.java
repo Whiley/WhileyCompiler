@@ -1142,8 +1142,8 @@ public class ClassFileBuilder {
 			translate((CExpr.Record)r,slots,bytecodes);
 		} else if(r instanceof CExpr.RecordAccess) {
 			translate((CExpr.RecordAccess)r,slots,bytecodes);
-		} else if(r instanceof CExpr.Invoke) {
-			translate((CExpr.Invoke)r,slots,bytecodes);
+		} else if(r instanceof CExpr.DirectInvoke) {
+			translate((CExpr.DirectInvoke)r,slots,bytecodes);
 		} else {
 			throw new RuntimeException("Unknown expression encountered: " + r);
 		}
@@ -1387,7 +1387,7 @@ public class ClassFileBuilder {
 		}	
 	}
 	
-	public void translate(CExpr.Invoke c, HashMap<String, Integer> slots,
+	public void translate(CExpr.DirectInvoke c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		// first, translate receiver (where appropriate)
 		if(c.type.receiver != null) {						

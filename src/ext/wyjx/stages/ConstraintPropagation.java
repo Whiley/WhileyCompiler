@@ -302,8 +302,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		// Universally quantify the condition emitted at the end of the
 		// body, as this captures what is true for every element in the
 		// source collection.
-		store = new WBoundedForall(true, var, src.first(), split.first());			
-		exitStore = Logic.and(exitStore,store,src.second());
+		store = new WBoundedForall(true, var, target.first(), split.first());			
+		exitStore = Logic.and(exitStore,store,target.second());
 		store = Logic.and(store,split.second());			
 		
 		// Existentially quantify any breaks out of the loop. These
@@ -314,7 +314,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 			// Split for the formula into those bits which need to be
 			// quantified, and those which don't
 			split = splitFormula(fall.variable.name(), e.getValue()); 
-			WFormula exit = new WBoundedForall(false, var, src.first(),
+			WFormula exit = new WBoundedForall(false, var, target.first(),
 					split.first().not());				
 			exit = Logic.and(exit,split.second());
 			
@@ -529,8 +529,8 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 				return infer((Record) e, elem);
 			} else if (e instanceof RecordAccess) {
 				return infer((RecordAccess) e, elem);
-			} else if (e instanceof Invoke) {
-				return infer((Invoke) e, elem);
+			} else if (e instanceof DirectInvoke) {
+				return infer((DirectInvoke) e, elem);
 			} 
 		} catch(SyntaxError se) {
 			throw se;
@@ -710,7 +710,7 @@ public class ConstraintPropagation extends ForwardFlowAnalysis<WFormula> {
 		return null;
 	}
 	
-	protected Pair<Constructor, WFormula> infer(Invoke ivk, SyntacticElement elem)
+	protected Pair<Constructor, WFormula> infer(DirectInvoke ivk, SyntacticElement elem)
 			throws ResolveError {
 		WFormula constraints = WBool.TRUE;
 		ArrayList<Constructor> args = new ArrayList<Constructor>();

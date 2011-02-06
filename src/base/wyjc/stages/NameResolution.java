@@ -25,11 +25,11 @@ import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
 import wyjc.lang.*;
-import wyjc.lang.Attributes;
 import wyjc.lang.WhileyFile.*;
 import wyjc.lang.Stmt;
 import wyjc.lang.Stmt.*;
 import wyjc.lang.Expr.*;
+import wyjc.stages.WhileyLexer.AddressOf;
 import wyjc.util.*;
 
 public class NameResolution {
@@ -289,6 +289,8 @@ public class NameResolution {
 				resolve((DictionaryGen) e, environment, imports);
 			} else if(e instanceof TypeConst) {
 				resolve((TypeConst) e, environment, imports);
+			} else if(e instanceof FunConst) {
+				resolve((FunConst) e, environment, imports);
 			} else {				
 				syntaxError("unknown expression encountered: "
 							+ e.getClass().getName(), filename, e);								
@@ -308,16 +310,20 @@ public class NameResolution {
 		for(Expr e : ivk.arguments) {						
 			resolve(e, environment, imports);
 		}
-		
-		ModuleID mid = loader.resolve(ivk.name,imports);
-		Expr target = ivk.receiver;
-		
-		if(target != null) {
-			resolve(target,environment,imports);
+
+		if(!environment.containsKey(ivk.name)) {
+			// only look for non-local function binding if there is not a local
+			// variable with the same name.
+			ModuleID mid = loader.resolve(ivk.name,imports);
+			Expr target = ivk.receiver;
+
+			if(target != null) {
+				resolve(target,environment,imports);
+			}
+
+			// Ok, resolve the module for this invoke
+			ivk.attributes().add(new Attributes.Module(mid));		
 		}
-		
-		// Ok, resolve the module for this invoke
-		ivk.attributes().add(new Attributes.Module(mid));		
 	}
 	
 	protected void resolve(Variable v, HashMap<String, Set<Expr>> environment,
@@ -411,6 +417,16 @@ public class NameResolution {
 		resolve(tc.type,imports);			
 	}
 	
+	protected void resolve(FunConst tc, HashMap<String,Set<Expr>> environment,
+			ArrayList<PkgID> imports) throws ResolveError {		
+		
+		for(UnresolvedType t : tc.paramTypes) {
+			resolve(t,imports);
+		}
+		
+		ModuleID mid = loader.resolve(tc.name,imports);		
+		tc.attributes().add(new Attributes.Module(mid));
+	}	
 	
 	protected void resolve(RecordAccess sg, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {
 		resolve(sg.lhs,environment,imports);			
@@ -452,6 +468,12 @@ public class NameResolution {
 		} else if(t instanceof UnresolvedType.Process) {	
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			resolve(ut.element,imports);			
+		} else if(t instanceof UnresolvedType.Fun) {	
+			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;
+			resolve(ut.ret,imports);
+			for(UnresolvedType p : ut.paramTypes) {
+				resolve(p,imports);
+			}
 		}  
 	}
 

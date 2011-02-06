@@ -1016,6 +1016,8 @@ public class ModuleBuilder {
 				return resolve(freeReg, (TupleGen) e);
 			} else if (e instanceof DictionaryGen) {
 				return resolve(freeReg, (DictionaryGen) e);
+			} else if (e instanceof FunConst) {
+				return resolve(freeReg, (FunConst) e);
 			} else {
 				syntaxError("unknown expression encountered: "
 						+ e.getClass().getName(), filename, e);
@@ -1050,16 +1052,36 @@ public class ModuleBuilder {
 		}	
 		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
-		NameID name = new NameID(modInfo.module, s.name);
+		if(modInfo != null) {
+			NameID name = new NameID(modInfo.module, s.name);
 
-		return new Pair<CExpr, Block>(CExpr.INVOKE(
-				Type.T_FUN(null, Type.T_ANY), name, 0, receiver, nargs), blk);
+			return new Pair<CExpr, Block>(CExpr.DIRECTINVOKE(
+					Type.T_FUN(null, Type.T_ANY), name, 0, receiver, nargs), blk);
+		} else {
+			// FIXME: need some way to support non-variable targets.
+			CExpr target = CExpr.VAR(Type.T_ANY,s.name);
+			return new Pair<CExpr, Block>(CExpr.INDIRECTINVOKE(
+					Type.T_FUN(null, Type.T_ANY), target, receiver, nargs), blk);	
+		}
 	}
 
 	protected Pair<CExpr, Block> resolve(int freeReg, Constant c) {
 		return new Pair<CExpr, Block>(c.value, new Block());
 	}
 
+	protected Pair<CExpr, Block> resolve(int freeReg, FunConst s) {
+		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
+		NameID name = new NameID(modInfo.module, s.name);		
+		ArrayList<Type> paramTypes = new ArrayList<Type>();
+		for(UnresolvedType p : s.paramTypes) {
+			paramTypes.add(resolve(p));
+		}
+		Type.Fun tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
+		
+		return new Pair<CExpr, Block>(Value.V_FUN(
+				name, tf), new Block());
+	}
+	
 	protected Pair<CExpr, Block> resolve(int target, Variable v) throws ResolveError {
 		// First, check if this is an alias or not				
 		
@@ -1445,9 +1467,17 @@ public class ModuleBuilder {
 			} else {
 				return Type.leastUpperBound(bounds);
 			}			
-		} else {
+		} else if(t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;			
 			return Type.T_PROCESS(resolve(ut.element));							
+		} else {
+			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
+			ArrayList<Type> paramTypes = new ArrayList<Type>();
+			for(UnresolvedType p : ut.paramTypes) {
+				paramTypes.add(resolve(p));
+			}
+			// FIXME: need to add support for receiver types
+			return Type.T_FUN(null,resolve(ut.ret),paramTypes);							
 		}
 	}
 

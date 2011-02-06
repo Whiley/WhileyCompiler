@@ -1386,7 +1386,7 @@ public class ExtendedModuleBuilder {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 		NameID name = new NameID(modInfo.module, s.name);
 
-		return new Pair<CExpr, Block>(CExpr.INVOKE(
+		return new Pair<CExpr, Block>(CExpr.DIRECTINVOKE(
 				Type.T_FUN(null, Type.T_ANY), name, 0, receiver, nargs), blk);
 	}
 

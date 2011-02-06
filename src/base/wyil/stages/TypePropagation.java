@@ -573,8 +573,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return infer((Record) e, stmt, environment);
 		} else if (e instanceof RecordAccess) {
 			return infer((RecordAccess) e, stmt, environment);
-		} else if (e instanceof Invoke) {
-			return infer((Invoke) e, stmt, environment);
+		} else if (e instanceof DirectInvoke) {
+			return infer((DirectInvoke) e, stmt, environment);
 		}
 
 		syntaxError("unknown expression encountered: " + e, filename, stmt);
@@ -723,7 +723,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		return CExpr.DICTIONARY(args);
 	}
-	protected CExpr infer(Invoke ivk, Stmt stmt,
+	protected CExpr infer(DirectInvoke ivk, Stmt stmt,
 			HashMap<String,Type> environment) {
 		
 		ArrayList<CExpr> args = new ArrayList<CExpr>();
@@ -743,7 +743,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		try {
 			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
 
-			return CExpr.INVOKE(funtype, ivk.name, ivk.caseNum, receiver, args);
+			return CExpr.DIRECTINVOKE(funtype, ivk.name, ivk.caseNum, receiver, args);
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable

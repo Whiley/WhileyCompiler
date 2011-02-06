@@ -893,11 +893,38 @@ public class WhileyParser {
 			match(Shreak.class);
 			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(),
 					sourceAttr(start, index - 1));
-		}
+		} else if (token instanceof AddressOf) {
+		      return parseFunVal();
+	    }
 		syntaxError("unrecognised term.",token);
 		return null;		
 	}
 	
+	private Expr parseFunVal() {
+		int start = index;
+		match(AddressOf.class);
+		String funName = matchIdentifier().text;
+		ArrayList<UnresolvedType> paramTypes = new ArrayList<UnresolvedType>();
+
+		if (tokens.get(index) instanceof LeftBrace) {
+			// parse parameter types
+			match(LeftBrace.class);
+			boolean firstTime = true;
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (!firstTime) {
+					match(Comma.class);
+				}
+				firstTime = false;
+				UnresolvedType ut = parseType();
+				paramTypes.add(ut);
+			}
+			match(RightBrace.class);
+		}
+
+		return new Expr.FunConst(funName, paramTypes, sourceAttr(start, index - 1));
+	}
+
 	private Expr.Spawn parseSpawn() {
 		int start = index;
 		matchKeyword("spawn");
@@ -1203,9 +1230,24 @@ public class WhileyParser {
 				types.add((UnresolvedType.NonUnion) t);
 			}
 			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
+		} else if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			// this is a function type
+			match(LeftBrace.class);
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			boolean firstTime = true;
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (!firstTime) {
+					match(Comma.class);
+				}
+				firstTime = false;
+				types.add(parseType());
+			}
+			match(RightBrace.class);
+			return new UnresolvedType.Fun(t, types);
 		} else {
 			return t;
-	}
+		}
 	}
 	
 	private UnresolvedType parseBaseType() {				

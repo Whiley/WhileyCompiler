@@ -237,8 +237,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			return infer((CExpr.Dictionary) e, stmt, environment);
 		} else if (e instanceof RecordAccess) {
 			return infer((RecordAccess) e, stmt, environment);
-		} else if (e instanceof Invoke) {
-			return infer((Invoke) e, stmt, environment);
+		} else if (e instanceof DirectInvoke) {
+			return infer((DirectInvoke) e, stmt, environment);
 		}
 
 		syntaxError("unknown expression encountered: " + e, filename, stmt);
@@ -363,7 +363,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		}
 	}
 	
-	protected CExpr infer(Invoke ivk, Stmt stmt,
+	protected CExpr infer(DirectInvoke ivk, Stmt stmt,
 			HashMap<String,Value> environment) {		
 		ArrayList<CExpr> args = new ArrayList<CExpr>();		
 		CExpr receiver = ivk.receiver;		
@@ -375,7 +375,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			args.add(arg);
 		}
 		
-		return CExpr.INVOKE(ivk.type, ivk.name, ivk.caseNum, receiver, args);		
+		return CExpr.DIRECTINVOKE(ivk.type, ivk.name, ivk.caseNum, receiver, args);		
 	}
 		
 	public HashMap<String, Value> join(HashMap<String, Value> env1,

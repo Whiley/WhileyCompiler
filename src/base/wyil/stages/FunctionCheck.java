@@ -56,9 +56,9 @@ public class FunctionCheck implements ModuleTransform {
 			Code code = stmt.code;
 			
 			// Check for message sends
-			ArrayList<CExpr.Invoke> ivks = new ArrayList<CExpr.Invoke>();
-			Code.match(code,CExpr.Invoke.class,ivks);
-			for(CExpr.Invoke ivk : ivks) {
+			ArrayList<CExpr.DirectInvoke> ivks = new ArrayList<CExpr.DirectInvoke>();
+			Code.match(code,CExpr.DirectInvoke.class,ivks);
+			for(CExpr.DirectInvoke ivk : ivks) {
 				if(ivk.receiver != null) {
 					syntaxError("cannot send message from function",filename,stmt);
 				}

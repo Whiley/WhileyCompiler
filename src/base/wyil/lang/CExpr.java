@@ -99,8 +99,8 @@ public abstract class CExpr {
 		} else if (r instanceof RecordAccess) {
 			RecordAccess ta = (RecordAccess) r;
 			match(ta.lhs,match,uses);
-		} else if(r instanceof Invoke) {
-			Invoke a = (Invoke) r;			
+		} else if(r instanceof DirectInvoke) {
+			DirectInvoke a = (DirectInvoke) r;			
 			if(a.receiver != null) {
 				CExpr.match(a.receiver, match, uses);
 			}
@@ -173,8 +173,8 @@ public abstract class CExpr {
 			RecordAccess ta = (RecordAccess) r;
 			return RECORDACCESS(substitute(binding, ta.lhs),
 					ta.field);
-		} else if(r instanceof Invoke) {
-			Invoke a = (Invoke) r;									
+		} else if(r instanceof DirectInvoke) {
+			DirectInvoke a = (DirectInvoke) r;									
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			CExpr receiver = a.receiver;
 			if(receiver != null) {
@@ -183,7 +183,7 @@ public abstract class CExpr {
 			for(CExpr arg : a.args){
 				args.add(CExpr.substitute(binding,arg));
 			}			
-			return INVOKE(a.type,a.name,a.caseNum,receiver,args);
+			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -235,8 +235,8 @@ public abstract class CExpr {
 			RecordAccess ta = (RecordAccess) r;
 			return RECORDACCESS(registerShift(shift, ta.lhs),
 					ta.field);
-		} else if(r instanceof Invoke) {
-			Invoke a = (Invoke) r;						
+		} else if(r instanceof DirectInvoke) {
+			DirectInvoke a = (DirectInvoke) r;						
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			CExpr receiver = a.receiver;
 			if(receiver != null) {
@@ -245,7 +245,7 @@ public abstract class CExpr {
 			for(CExpr arg : a.args){
 				args.add(CExpr.registerShift(shift,arg));
 			}						
-			return INVOKE(a.type,a.name,a.caseNum,receiver,args);
+			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -338,15 +338,19 @@ public abstract class CExpr {
 		return get(new RecordAccess(lhs,field));
 	}
 	
-	public static Invoke INVOKE(Type.Fun type, NameID name, int casenum,
+	public static DirectInvoke INVOKE(Type.Fun type, NameID name, int casenum,
 			CExpr receiver, CExpr... args) {
-		return get(new Invoke(type,name,casenum,receiver,args));
+		return get(new DirectInvoke(type,name,casenum,receiver,args));
 	}
 	
-
-	public static Invoke INVOKE(Type.Fun type, NameID name, int casenum,
+	public static DirectInvoke DIRECTINVOKE(Type.Fun type, NameID name, int casenum,
 			CExpr receiver, Collection<CExpr> args) {
-		return get(new Invoke(type,name,casenum,receiver,args));
+		return get(new DirectInvoke(type,name,casenum,receiver,args));
+	}
+	
+	public static IndirectInvoke INDIRECTINVOKE(Type.Fun type, CExpr target,
+			CExpr receiver, Collection<CExpr> args) {
+		return get(new IndirectInvoke(type, target, receiver, args));
 	}
 	
 	public static abstract class LVal extends CExpr {}
@@ -820,15 +824,25 @@ public abstract class CExpr {
 			return lhs + "." + field;
 		}
 	}
-	
-	public final static class Invoke extends CExpr {
+
+	/**
+	 * <p>
+	 * A direct invoke statement represents a direct invocation of a function or
+	 * method. That is, where name used refers to a function or method defined
+	 * outside the scope of the current function/method.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class DirectInvoke extends CExpr {
 		public final Type.Fun type;
 		public final NameID name;
 		public final CExpr receiver;
 		public final List<CExpr> args;
 		public final int caseNum;
 
-		Invoke(Type.Fun type, NameID name, int caseNum, CExpr receiver, CExpr... args) {
+		DirectInvoke(Type.Fun type, NameID name, int caseNum, CExpr receiver, CExpr... args) {
 			this.type = type;
 			this.name = name;
 			this.caseNum = caseNum;
@@ -840,7 +854,7 @@ public abstract class CExpr {
 			this.args = Collections.unmodifiableList(tmp); 
 		}
 
-		Invoke(Type.Fun type, NameID name, int caseNum,
+		DirectInvoke(Type.Fun type, NameID name, int caseNum,
 				CExpr receiver, Collection<CExpr> args) {
 			this.type = type;
 			this.name = name;
@@ -854,8 +868,8 @@ public abstract class CExpr {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof Invoke) {
-				Invoke a = (Invoke) o;
+			if (o instanceof DirectInvoke) {
+				DirectInvoke a = (DirectInvoke) o;
 				if(receiver == null) {
 					return a.receiver == null && type.equals(a.type)
 							&& name.equals(a.name) && caseNum == a.caseNum
@@ -895,6 +909,83 @@ public abstract class CExpr {
 		}
 	}
 
+	/**
+	 * <p>
+	 * An indirect invoke represents the indirect invocation of a function or
+	 * method through a "function pointer". A function point is a local variable
+	 * of function type.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public final static class IndirectInvoke extends CExpr {
+		public final Type.Fun type;
+		public final CExpr target;
+		public final CExpr receiver;
+		public final List<CExpr> args;		
+
+		IndirectInvoke(Type.Fun type, CExpr name, CExpr receiver, CExpr... args) {
+			this.type = type;
+			this.target = name;			
+			this.receiver = receiver;
+			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
+			for(CExpr r : args) {
+				tmp.add(r);
+			}
+			this.args = Collections.unmodifiableList(tmp); 
+		}
+
+		IndirectInvoke(Type.Fun type, CExpr name, 
+				CExpr receiver, Collection<CExpr> args) {
+			this.type = type;
+			this.target = name;			
+			this.receiver = receiver;
+			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));
+		}
+
+		public Type type() {
+			return type.ret;
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof DirectInvoke) {
+				DirectInvoke a = (DirectInvoke) o;
+				if(receiver == null) {
+					return a.receiver == null && type.equals(a.type)
+							&& target.equals(a.name)
+							&& args.equals(a.args);
+				} else {
+					return receiver.equals(a.receiver) && type.equals(a.type)
+							&& target.equals(a.name)
+							&& args.equals(a.args);
+				}
+			}
+			return false;
+		}
+
+		public int hashCode() {			
+			return target.hashCode() + type.hashCode() + args.hashCode();			
+		}
+
+		public String toString() {
+			String rhs = "";
+			boolean firstTime = true;
+			for (CExpr v : args) {
+				if (!firstTime) {
+					rhs += ",";
+				}
+				firstTime = false;
+				rhs += v;
+			}
+			String n = target.toString();					
+			if(receiver == null) {
+				return n + "(" + rhs + ")";
+			} else {
+				return receiver + "->" + n + "(" + rhs + ")";
+			}
+		}
+	}
 	
 	private static final ArrayList<CExpr> values = new ArrayList<CExpr>();
 	private static final HashMap<CExpr,Integer> cache = new HashMap<CExpr,Integer>();

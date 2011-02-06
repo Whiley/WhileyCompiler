@@ -127,8 +127,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			for(CExpr arg : nop.args) {
 				addPoolItems(arg,constantPool);
 			}
-		} else if(rval instanceof CExpr.Invoke) {
-			CExpr.Invoke ivk = (CExpr.Invoke)rval; 
+		} else if(rval instanceof CExpr.DirectInvoke) {
+			CExpr.DirectInvoke ivk = (CExpr.DirectInvoke)rval; 
 			addPoolItems(ivk.name, constantPool);
 			if(ivk.receiver != null) {
 				addPoolItems(ivk.receiver, constantPool);
@@ -258,8 +258,8 @@ public class WhileyBlock implements BytecodeAttribute {
 			write((CExpr.BinOp)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.NaryOp) {
 			write((CExpr.NaryOp)rval,writer,constantPool);
-		} else if(rval instanceof CExpr.Invoke) {
-			write((CExpr.Invoke)rval,writer,constantPool);
+		} else if(rval instanceof CExpr.DirectInvoke) {
+			write((CExpr.DirectInvoke)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.ListAccess) {
 			write((CExpr.ListAccess)rval,writer,constantPool);
 		} else if(rval instanceof CExpr.RecordAccess) {
@@ -290,7 +290,7 @@ public class WhileyBlock implements BytecodeAttribute {
 		write(expr.rhs,writer,constantPool);
 	}
 		
-	public static void write(CExpr.Invoke expr, BinaryOutputStream writer,
+	public static void write(CExpr.DirectInvoke expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(expr.receiver != null) {
 			writer.write_u1(METHINVOKE);
@@ -586,7 +586,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				for(int i=0;i!=nargs;++i) {
 					args.add(readCExpr(reader,constantPool));
 				}
-				return CExpr.INVOKE(type, nid, casenum, null, args);
+				return CExpr.DIRECTINVOKE(type, nid, casenum, null, args);
 			}
 			case METHINVOKE:
 			{
@@ -601,7 +601,7 @@ public class WhileyBlock implements BytecodeAttribute {
 				for(int i=0;i!=nargs;++i) {
 					args.add(readCExpr(reader,constantPool));
 				}
-				return CExpr.INVOKE(type, nid, casenum, receiver, args);
+				return CExpr.DIRECTINVOKE(type, nid, casenum, receiver, args);
 			}
 			case LISTACCESS:
 			{
