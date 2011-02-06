@@ -156,7 +156,7 @@ public class ClassFileBuilder {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);		
-		JvmType.Function ft = (JvmType.Function) convertType(method.type());		
+		JvmType.Function ft = convertFunType(method.type());		
 		String name = nameMangle(method.name(),method.type());
 		if(method.cases().size() > 1) {
 			name = name + "$" + caseNum;
@@ -1144,6 +1144,8 @@ public class ClassFileBuilder {
 			translate((CExpr.RecordAccess)r,slots,bytecodes);
 		} else if(r instanceof CExpr.DirectInvoke) {
 			translate((CExpr.DirectInvoke)r,slots,bytecodes);
+		} else if(r instanceof CExpr.IndirectInvoke) {
+			translate((CExpr.IndirectInvoke)r,slots,bytecodes);
 		} else {
 			throw new RuntimeException("Unknown expression encountered: " + r);
 		}
@@ -1409,7 +1411,7 @@ public class ClassFileBuilder {
 		}
 		ModuleID mid = c.name.module();
 		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
-		JvmType.Function type = (JvmType.Function) convertType(c.type);
+		JvmType.Function type = convertFunType(c.type);
 		String mangled = nameMangle(c.name.name(), c.type);		
 		if(c.caseNum > 0) {
 			mangled += "$" + c.caseNum;
@@ -1417,7 +1419,41 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
 				Bytecode.STATIC));				
 	}
+	
+	public void translate(CExpr.IndirectInvoke c, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {				
 		
+		translate(c.target,slots,bytecodes);		
+		// FIXME: add support for receiver!			
+		
+		// next, translate parameters
+		Type.Fun ft = (Type.Fun) c.target.type();
+		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.LoadConst(ft.params.size()));
+		bytecodes.add(new Bytecode.New(arrT));
+		
+		List<Type> params = ft.params;
+		for(int i=0;i!=params.size();++i) {
+			Type pt = params.get(i);
+			CExpr r = c.args.get(i);
+			Type rt = r.type();
+			bytecodes.add(new Bytecode.LoadConst(i));						
+			translate(r, slots, bytecodes);			
+			if(!pt.equals(rt)) {
+				convert(pt,rt,slots,bytecodes);				
+			} else {
+				cloneRHS(rt,bytecodes);
+			}		
+			bytecodes.add(new Bytecode.ArrayStore(arrT));			
+		}
+		
+		JvmType.Clazz owner = new JvmType.Clazz("java.lang.reflect","Method");		
+		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,arrT);		
+		
+		bytecodes.add(new Bytecode.Invoke(owner, "invoke", type,
+				Bytecode.VIRTUAL));				
+	}
+	
 	public void translate(Value v, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		if(v instanceof Value.Null) {
@@ -1436,6 +1472,8 @@ public class ClassFileBuilder {
 			translate((Value.Record)v,slots,bytecodes);
 		} else if(v instanceof Value.Dictionary) {
 			translate((Value.Dictionary)v,slots,bytecodes);
+		} else if(v instanceof Value.FunConst) {
+			translate((Value.FunConst)v,slots,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
@@ -1638,6 +1676,12 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(WHILEYMAP));
 		}
+	}
+	
+	protected void translate(Value.FunConst e, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {
+		// FIXME: temporary hack
+		bytecodes.add(new Bytecode.LoadConst(null));
 	}
 	
 	public void makePreAssignment(LVal lhs, HashMap<String, Integer> slots,
@@ -2003,10 +2047,24 @@ public class ClassFileBuilder {
 			"wyil.jvm.rt", "WhileyProcess");	
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyil.jvm.rt","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
+	private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");
 	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang","AssertionError");
 	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util","Collection");	
+	
+	public JvmType.Function convertFunType(Type.Fun t) {		
+		Type.Fun ft = (Type.Fun) t; 
+		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
+		if(ft.receiver != null) {
+			paramTypes.add(convertType(ft.receiver));
+		}
+		for(Type pt : ft.params) {
+			paramTypes.add(convertType(pt));
+		}
+		JvmType rt = convertType(ft.ret);			
+		return new JvmType.Function(rt,paramTypes);		
+	}
 	
 	public JvmType convertType(Type t) {
 		if(t == Type.T_VOID) {
@@ -2053,17 +2111,8 @@ public class ClassFileBuilder {
 			} else {
 				return convertType(rt.type);
 			}
-		} else if(t instanceof Type.Fun) {
-			Type.Fun ft = (Type.Fun) t; 
-			ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-			if(ft.receiver != null) {
-				paramTypes.add(convertType(ft.receiver));
-			}
-			for(Type pt : ft.params) {
-				paramTypes.add(convertType(pt));
-			}
-			JvmType rt = convertType(ft.ret);
-			return new JvmType.Function(rt,paramTypes);
+		} else if(t instanceof Type.Fun) {						
+			return JAVA_LANG_REFLECT_METHOD;
 		}else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}		
