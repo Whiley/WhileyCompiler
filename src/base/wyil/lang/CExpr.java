@@ -107,6 +107,15 @@ public abstract class CExpr {
 			for(CExpr arg : a.args){
 				CExpr.match(arg,match,uses);
 			}			
+		} else if(r instanceof IndirectInvoke) {
+			IndirectInvoke a = (IndirectInvoke) r;			
+			if(a.receiver != null) {
+				CExpr.match(a.receiver, match, uses);
+			}
+			CExpr.match(a.target, match, uses);
+			for(CExpr arg : a.args){
+				CExpr.match(arg,match,uses);
+			}			
 		} else if(r instanceof Value) {
 			
 		} else {
@@ -184,6 +193,18 @@ public abstract class CExpr {
 				args.add(CExpr.substitute(binding,arg));
 			}			
 			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,args);
+		} else if(r instanceof IndirectInvoke) {
+			IndirectInvoke a = (IndirectInvoke) r;									
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			CExpr receiver = a.receiver;			
+			if(receiver != null) {
+				receiver = CExpr.substitute(binding,receiver);
+			}
+			CExpr target = CExpr.substitute(binding,a.target);
+			for(CExpr arg : a.args){
+				args.add(CExpr.substitute(binding,arg));
+			}			
+			return INDIRECTINVOKE(target,receiver,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
@@ -246,6 +267,18 @@ public abstract class CExpr {
 				args.add(CExpr.registerShift(shift,arg));
 			}						
 			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,args);
+		} else if(r instanceof IndirectInvoke) {
+			IndirectInvoke a = (IndirectInvoke) r;						
+			ArrayList<CExpr> args = new ArrayList<CExpr>();
+			CExpr receiver = a.receiver;
+			if(receiver != null) {
+				receiver = registerShift(shift,receiver);
+			}
+			CExpr target = registerShift(shift,a.target);
+			for(CExpr arg : a.args){
+				args.add(CExpr.registerShift(shift,arg));
+			}						
+			return INDIRECTINVOKE(target,receiver,args);
 		} else {
 			throw new IllegalArgumentException("Invalid CExpr: " + r);
 		}
