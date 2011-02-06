@@ -778,7 +778,7 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			this.type = type;
 		}
 		public Type type() {
-			return type.ret;
+			return type;
 		}
 		public int hashCode() {
 			return type.hashCode();

@@ -553,7 +553,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
 
-		if (e instanceof Value) {
+		if(e instanceof Value.FunConst) {
+			return infer((Value.FunConst)e,stmt,environment);
+		} else if (e instanceof Value) {			
 			return e;
 		} else if (e instanceof Variable) {
 			return infer((Variable) e, stmt, environment);
@@ -575,6 +577,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return infer((RecordAccess) e, stmt, environment);
 		} else if (e instanceof DirectInvoke) {
 			return infer((DirectInvoke) e, stmt, environment);
+		} else if (e instanceof IndirectInvoke) {
+			return infer((IndirectInvoke) e, stmt, environment);
 		}
 
 		syntaxError("unknown expression encountered: " + e, filename, stmt);
@@ -723,6 +727,49 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		return CExpr.DICTIONARY(args);
 	}
+	
+	protected CExpr infer(Value.FunConst ivk, Stmt stmt,
+			HashMap<String,Type> environment) {
+		try {
+			List<Type.Fun> targets = lookupMethod(ivk.name.module(),ivk.name.name());
+			String msg;
+			if(ivk.type.params.size() == 1 && ivk.type.params.get(0) == Type.T_ANY) {
+				if(targets.size() == 1) {
+					return Value.V_FUN(ivk.name, targets.get(0));
+				}
+				msg = "ambiguous function or method reference";
+			} else {
+
+				for(Type.Fun ft : targets) {
+					if(ivk.type.params.equals(ft.params)) {
+						return Value.V_FUN(ivk.name, ft);
+					}
+				}
+				
+				msg = "no match for " + ivk;
+			}
+			// failed to find an identical match
+			
+			boolean firstTime = true;
+			int count = 0;
+			for(Type.Fun ft : targets) {
+				if(firstTime) {
+					msg += "\n\tfound: " + ivk.name.name() +  parameterString(ft.params);
+				} else {
+					msg += "\n\tand: " + ivk.name.name() +  parameterString(ft.params);
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+
+			syntaxError(msg + "\n",filename,stmt);			
+		} catch(ResolveError ex) {
+			syntaxError(ex.getMessage(),filename,stmt);			
+		}
+		return null;
+	}
+	
 	protected CExpr infer(DirectInvoke ivk, Stmt stmt,
 			HashMap<String,Type> environment) {
 		
@@ -748,6 +795,30 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable
 		}
+	}
+	
+	protected CExpr infer(IndirectInvoke ivk, Stmt stmt,
+			HashMap<String,Type> environment) {
+		
+		ArrayList<CExpr> args = new ArrayList<CExpr>();		
+		CExpr receiver = ivk.receiver;
+		CExpr target = ivk.target;
+		
+		Type.ProcessName receiverT = null;
+		if(receiver != null) {
+			receiver = infer(receiver, stmt, environment);
+			receiverT = checkType(receiver.type(),Type.ProcessName.class,stmt);
+		}
+		
+		target = infer(target, stmt, environment);
+		checkType(target.type(),Type.Fun.class,stmt);
+		
+		for (CExpr arg : ivk.args) {
+			arg = infer(arg, stmt, environment);
+			args.add(arg);			
+		}						
+		
+		return CExpr.INDIRECTINVOKE(target, receiver, args);		
 	}
 	
 	/**

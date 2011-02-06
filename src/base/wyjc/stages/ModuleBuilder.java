@@ -1060,8 +1060,8 @@ public class ModuleBuilder {
 		} else {
 			// FIXME: need some way to support non-variable targets.
 			CExpr target = CExpr.VAR(Type.T_ANY,s.name);
-			return new Pair<CExpr, Block>(CExpr.INDIRECTINVOKE(
-					Type.T_FUN(null, Type.T_ANY), target, receiver, nargs), blk);	
+			return new Pair<CExpr, Block>(CExpr.INDIRECTINVOKE(target,
+					receiver, nargs), blk);	
 		}
 	}
 

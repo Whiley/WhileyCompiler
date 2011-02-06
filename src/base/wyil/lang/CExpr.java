@@ -348,9 +348,9 @@ public abstract class CExpr {
 		return get(new DirectInvoke(type,name,casenum,receiver,args));
 	}
 	
-	public static IndirectInvoke INDIRECTINVOKE(Type.Fun type, CExpr target,
+	public static IndirectInvoke INDIRECTINVOKE(CExpr target,
 			CExpr receiver, Collection<CExpr> args) {
-		return get(new IndirectInvoke(type, target, receiver, args));
+		return get(new IndirectInvoke(target, receiver, args));
 	}
 	
 	public static abstract class LVal extends CExpr {}
@@ -919,14 +919,12 @@ public abstract class CExpr {
 	 * @author djp
 	 * 
 	 */
-	public final static class IndirectInvoke extends CExpr {
-		public final Type.Fun type;
+	public final static class IndirectInvoke extends CExpr {		
 		public final CExpr target;
 		public final CExpr receiver;
 		public final List<CExpr> args;		
 
-		IndirectInvoke(Type.Fun type, CExpr name, CExpr receiver, CExpr... args) {
-			this.type = type;
+		IndirectInvoke(CExpr name, CExpr receiver, CExpr... args) {			
 			this.target = name;			
 			this.receiver = receiver;
 			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
@@ -935,29 +933,34 @@ public abstract class CExpr {
 			}
 			this.args = Collections.unmodifiableList(tmp); 
 		}
-
-		IndirectInvoke(Type.Fun type, CExpr name, 
-				CExpr receiver, Collection<CExpr> args) {
-			this.type = type;
+	
+		IndirectInvoke(CExpr name, 
+				CExpr receiver, Collection<CExpr> args) {			
 			this.target = name;			
 			this.receiver = receiver;
 			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));
 		}
 
 		public Type type() {
-			return type.ret;
+			Type t = target.type();
+			if(t instanceof Type.Fun) {
+				Type.Fun ft = (Type.Fun) t;
+				return ft.ret;
+			} else {
+				return Type.T_VOID;
+			}
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof DirectInvoke) {
-				DirectInvoke a = (DirectInvoke) o;
+			if (o instanceof IndirectInvoke) {
+				IndirectInvoke a = (IndirectInvoke) o;
 				if(receiver == null) {
-					return a.receiver == null && type.equals(a.type)
-							&& target.equals(a.name)
+					return a.receiver == null
+							&& target.equals(a.target)
 							&& args.equals(a.args);
 				} else {
-					return receiver.equals(a.receiver) && type.equals(a.type)
-							&& target.equals(a.name)
+					return receiver.equals(a.receiver)
+							&& target.equals(a.target)
 							&& args.equals(a.args);
 				}
 			}
@@ -965,7 +968,7 @@ public abstract class CExpr {
 		}
 
 		public int hashCode() {			
-			return target.hashCode() + type.hashCode() + args.hashCode();			
+			return target.hashCode() + target.hashCode() + args.hashCode();			
 		}
 
 		public String toString() {

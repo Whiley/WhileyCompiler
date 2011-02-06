@@ -1034,6 +1034,22 @@ public abstract class Type {
 		} else if(t instanceof Recursive) {			
 			Recursive nt = (Recursive) t;
 			return nt.name.toString();
+		} else if(t instanceof Fun) {
+			Fun ft = (Fun) t;
+			String args = "";
+			boolean firstTime=true;
+			for(Type arg : ft.params) {
+				if(!firstTime) {
+					args += ",";
+				}
+				firstTime=false;
+				args += arg;
+			}
+			if(ft.receiver != null) {
+				return ft.receiver + ":: " + ft.ret + "(" + args + ")";
+			} else {
+				return ft.ret + "(" + args + ")";
+			}
 		} else {
 			throw new IllegalArgumentException("Unknown type encountered: " + t);
 		}

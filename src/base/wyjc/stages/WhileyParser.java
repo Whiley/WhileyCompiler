@@ -920,6 +920,8 @@ public class WhileyParser {
 				paramTypes.add(ut);
 			}
 			match(RightBrace.class);
+		} else {
+			paramTypes.add(new UnresolvedType.Any(sourceAttr(start, index - 1)));
 		}
 
 		return new Expr.FunConst(funName, paramTypes, sourceAttr(start, index - 1));
