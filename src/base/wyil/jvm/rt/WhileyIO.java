@@ -3,6 +3,7 @@ package wyil.jvm.rt;
 import java.math.*;
 import java.util.*;
 import java.io.*;
+import java.lang.reflect.*;
 
 public class WhileyIO {
 	public static WhileyProcess openFile(WhileyList name) {
@@ -69,5 +70,19 @@ public class WhileyIO {
 		}
 		
 		return r;		
+	}
+	
+	public static Method functionRef(String clazz, String name) {
+		try {
+			Class cl = Class.forName(clazz);
+			for(Method m : cl.getDeclaredMethods()) {
+				if(m.getName().equals(name)) {
+					return m;
+				}
+			}
+			throw new RuntimeException("Method Not Found: " + clazz + ":" + name);
+		} catch(ClassNotFoundException e) {
+			throw new RuntimeException("Class Not Found: " + clazz);
+		}
 	}
 }

@@ -1453,8 +1453,7 @@ public class ClassFileBuilder {
 		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,arrT);		
 		
 		bytecodes.add(new Bytecode.Invoke(owner, "invoke", type,
-				Bytecode.VIRTUAL));				
-		System.out.println("READ CONVERSION: " + ft.ret);
+				Bytecode.VIRTUAL));						
 		addReadConversion(ft.ret,bytecodes);	
 	}
 	
@@ -1684,8 +1683,11 @@ public class ClassFileBuilder {
 	
 	protected void translate(Value.FunConst e, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
-		// FIXME: temporary hack
-		bytecodes.add(new Bytecode.LoadConst(null));
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
+		NameID nid = e.name;		
+		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()));
+		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
+		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
 	}
 	
 	public void makePreAssignment(LVal lhs, HashMap<String, Integer> slots,
@@ -2045,6 +2047,7 @@ public class ClassFileBuilder {
 	
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyil.jvm.rt","WhileyList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
+	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyil.jvm.rt","WhileyIO");
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("java.util","HashMap");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyil.jvm.rt","WhileyRecord");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
