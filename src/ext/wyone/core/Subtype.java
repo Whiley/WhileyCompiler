@@ -2,8 +2,6 @@ package wyone.core;
 
 import java.util.*;
 
-import wyone.theory.numeric.*;
-import wyone.util.Pair;
 import static wyone.core.Constructor.*;
 
 public class Subtype extends Base<Constructor> implements Constraint {

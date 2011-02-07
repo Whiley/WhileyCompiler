@@ -18,9 +18,11 @@
 package wyone.core;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import wyil.jvm.rt.BigRational;
 
@@ -70,7 +72,7 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 	 * Substituting into a value has no effect. However, we need this method
 	 * because it overrides Expr.substitute.
 	 */
-	public Value substitute(Map<Constructor,Constructor> binding) {
+	public Value substitute(java.util.Map<Constructor,Constructor> binding) {
 		return this;
 	}
 
@@ -99,6 +101,11 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 		return new Number(v);
 	}
 	
+
+	public static Strung V_STR(String str) {
+		return new Strung(str);
+	}
+	
 	// ====================================================================
 	// CONSTANTS
 	// ====================================================================
@@ -115,19 +122,15 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 	// IMPLEMENTATIONS
 	// ====================================================================
 		
-	public static class Bool extends Value implements Constraint {
+	public static final class Bool extends Value implements Constraint {
 		public final boolean value;
 		
 		Bool(boolean b) {
 			value = b;
 		}
 		
-		public Bool substitute(Map<Constructor,Constructor> binding) {
+		public Bool substitute(java.util.Map<Constructor,Constructor> binding) {
 			return this;
-		}
-		
-		public boolean sign() {
-			return value;
 		}
 		
 		public Bool not() {
@@ -166,7 +169,8 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 		}				
 	}
 	
-	public static class Number extends Value {
+
+	public static final class Number extends Value {
 		public final BigRational value;
 		
 		Number(BigRational value) {
@@ -242,5 +246,156 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 				return -1;
 			}
 		}
-	}			
+	}
+		
+	public static final class Strung extends Value {
+		public final String value;
+		private Strung(String value) {
+			this.value = value;
+		}
+		
+		public Type type() {
+			return Type.T_STRING;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Strung) {
+				Strung b = (Strung) o;
+				return value.equals(b.value);
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return 10;
+		}
+		
+		public int compareTo(Constructor c) {
+			if (c instanceof Value && c instanceof Strung) {
+				Strung b = (Strung) c;
+				return value.compareTo(b.value);
+			} else if (c instanceof Bool || c instanceof Number) {
+				return 1;
+			} else {
+				return -1;
+			}
+		}	
+		
+		public String toString() {
+			return "\"" + value + "\"";
+		}
+	}
+	
+	public static final class Map extends Value {
+		public final Value from;
+		public final Value to;
+		
+		private Map(Value from, Value to ) {
+			this.from = from;
+			this.to = to;
+		}
+		
+		public Type type() {
+			return Type.T_MAP(from.type(),to.type());
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Map) {
+				Map m = (Map) o;
+				return from.equals(m.from) && to.equals(m.to);
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return from.hashCode() + to.hashCode();
+		}
+		
+		public int compareTo(Constructor c) {
+			if (c instanceof Value && c instanceof Map) {
+				Map m = (Map) c;
+				int r = from.compareTo(m.from);
+				if(r == 0) { 
+					r = to.compareTo(m.to);
+				}
+				return r;
+			} else if (c instanceof Bool || c instanceof Number
+					|| c instanceof Strung) {
+				return 1;
+			} else {
+				return -1;
+			}
+		}	
+		
+		public String toString() {
+			return from + "-> " + to;
+		}
+	}
+	
+	public static final class Set extends Value {
+		public final HashSet<Value> values;
+		private Set(Collection<Value> value) {
+			this.values = new HashSet<Value>(value);
+		}
+		public Type type() {
+			if(values.isEmpty()) {
+				return Type.T_SET(Type.T_VOID);
+			} else {
+				// FIXME: need to use lub here
+				return Type.T_SET(values.iterator().next().type());
+			}
+		}
+		public int hashCode() {
+			return values.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Set) {
+				Set i = (Set) o;
+				return values.equals(i.values);
+			}
+			return false;
+		}
+		public int compareTo(Constructor v) {			
+			if(v instanceof Set) {
+				Set l = (Set) v;
+				if(values.size() < l.values.size()) {
+					return -1;
+				} else if(values.size() > l.values.size()) {
+					return 1;
+				} else {
+					// this case is slightly awkward, since we can't rely on the
+					// iteration order for HashSet.
+					ArrayList<Value> vs1 = new ArrayList<Value>(values);
+					ArrayList<Value> vs2 = new ArrayList<Value>(l.values);
+					Collections.sort(vs1);
+					Collections.sort(vs2);
+					for(int i=0;i!=values.size();++i) {
+						Value v1 = vs1.get(i);
+						Value v2 = vs2.get(i);
+						int c = v1.compareTo(v2);
+						if(c != 0) { return c; }
+					}
+					return 0;
+				}
+			} else if (v instanceof Bool
+					|| v instanceof Number					
+					|| v instanceof Strung
+					|| v instanceof Map) {
+				return 1;
+			}
+			return -1;			
+		}
+		public String toString() {
+			String r = "{";
+			boolean firstTime=true;
+			for(Value v : values) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				r += v;
+			}
+			return r + "}";
+		}
+	}	
 }

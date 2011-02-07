@@ -75,7 +75,7 @@ public final class Disjunct extends Base<Constraint> implements Constraint {
 		if(composite) {			
 			for(Constraint e : nparams) {				
 				Value.Bool b = (Value.Bool) e;
-				if(b.sign()) {
+				if(b.value) {
 					return Value.TRUE;
 				}
 			}

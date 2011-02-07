@@ -72,7 +72,7 @@ public final class Conjunct extends Base<Constraint> implements Constraint {
 		if(composite) {			
 			for(Constructor e : nparams) {				
 				Value.Bool b = (Value.Bool) e;
-				if(!b.sign()) {
+				if(!b.value) {
 					return Value.Bool.FALSE;
 				}
 			}
