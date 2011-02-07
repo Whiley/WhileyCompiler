@@ -189,11 +189,12 @@ public abstract class Type {
 			for(int i=0;i!=f1_params.size();++i) {
 				Type tt1 = f1_params.get(i);
 				Type tt2 = f2_params.get(i);
-				if(!isSubtype(tt1,tt2)) {
+				// NOTE: parameter types must be *contravariant*.
+				if(!isSubtype(tt2,tt1)) {
 					return false;
 				}
 			}
-			return isSubtype(f2.ret,f1.ret);
+			return isSubtype(f1.ret,f2.ret);
 		}
 		
 		return false;
