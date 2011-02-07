@@ -42,7 +42,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		// need to check the type here!
 		if(nrhs instanceof Value) {
 			Value v = (Value) nrhs;
-			if(Type.isSubtype(type,v.type(null))) {				
+			if(Type.isSubtype(type,v.type())) {				
 				return sign ? Value.TRUE : Value.FALSE;
 			} else {
 				return sign ? Value.FALSE : Value.TRUE;				
@@ -65,7 +65,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 	 * Determine the type of a given expression; that is, the type of the value
 	 * that this will evaluate to.
 	 */
-	public static Type type(Variable e, Solver.State state) {
+	public static Type type(Constructor c, Solver.State state) {
 		Type t = Type.T_ANY;
 
 		// An interesting question here, is whether or not we really do need to
@@ -77,7 +77,7 @@ public class Subtype extends Base<Constructor> implements Constraint {
 		for(Constraint f : state) {
 			if(f instanceof Subtype) {				
 				Subtype st = (Subtype) f;
-				if(st.rhs().equals(e)) {
+				if(st.rhs().equals(c)) {
 					t = Type.greatestLowerBound(t,st.lhs());
 				}
 			}

@@ -21,7 +21,6 @@ import static wyone.theory.numeric.FourierMotzkinSolver.rearrange;
 
 import java.util.*;
 
-import wyil.lang.Type;
 import static wyone.core.Constructor.*;
 import wyone.core.*;
 
@@ -49,9 +48,9 @@ public class UnboundedNumberHeuristic implements Solver.Heuristic {
 			}
 			Set<Variable> vars = Helpers.match(Variable.class, f);
 			for(Variable v : vars) {
-				if(isInteger && v.type(state) == Type.T_INT) {
+				if(isInteger && Subtype.type(v,state) == Type.T_INT) {
 					unbounded.add(v);
-				} else if(!isInteger && v.type(state) == Type.T_REAL) {
+				} else if(!isInteger && Subtype.type(v,state) == Type.T_REAL) {
 					unbounded.add(v);
 				}
 			}

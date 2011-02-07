@@ -21,7 +21,6 @@ import static wyone.theory.numeric.FourierMotzkinSolver.rearrange;
 
 import java.util.*;
 
-import wyil.lang.Type;
 import wyone.core.*;
 import wyone.theory.numeric.FourierMotzkinSolver.BoundUpdate;
 import wyone.util.Pair;
@@ -127,7 +126,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 			if(f instanceof Inequality) {				
 				Inequality wieq = (Inequality) f;
 				Constructor var = variable(wieq);									
-				Type t = var.type(state);
+				Type t = Subtype.type(var,state);
 				if(isInteger && t instanceof Type.Int) {
 					updateBounds(wieq,var,true,bounds);
 				} else if(!isInteger && t instanceof Type.Real) {

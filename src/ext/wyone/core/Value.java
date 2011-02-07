@@ -19,13 +19,10 @@ package wyone.core;
 
 import java.math.BigInteger;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import wyil.jvm.rt.BigRational;
-import wyil.lang.Type;
-import wyone.core.Constructor.Variable;
 
 /**
  * <p>
@@ -77,6 +74,8 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 		return this;
 	}
 
+	public abstract Type type();
+	
 	private final static int CID = Helpers.registerCID();
 	public int cid() { return CID; }
 
@@ -85,7 +84,7 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 	// ====================================================================
 	
 	public static Bool V_BOOL(boolean v) {
-		return new Bool(v);
+		return new Bool(v);		
 	}
 	
 	public static Number V_NUM(BigInteger v) {
@@ -135,6 +134,10 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 			return new Bool(!value);
 		}
 		
+		public Type type() {
+			return Type.T_BOOL;
+		}
+		
 		public boolean equals(Object o) {
 			if(o instanceof Bool) {
 				Bool b = (Bool) o;
@@ -160,7 +163,7 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 			} else {
 				return -1;
 			}
-		}
+		}				
 	}
 	
 	public static class Number extends Value {
@@ -179,6 +182,14 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 		
 		public BigInteger denominator() {
 			return value.denominator();
+		}
+		
+		public Type type() {
+			if(value.isInteger()) {
+				return Type.T_INT;
+			} else {
+				return Type.T_REAL;
+			}
 		}
 		
 		public Number add(Number n) {
