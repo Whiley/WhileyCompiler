@@ -115,8 +115,6 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		ArrayList<Solver.State> splits = new ArrayList<Solver.State>();
 		splits.add(lhs);
 		splits.add(rhs);
-		
-		System.out.println("GOT: " + lhs);
 				
 		return splits;
 	}
