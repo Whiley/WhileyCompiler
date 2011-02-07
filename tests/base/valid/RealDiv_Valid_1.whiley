@@ -1,5 +1,5 @@
 real g(int x):
-     return x / 3.0
+     return x / 3.123
 
 string f(int x, int y):
     return str(g(x))
