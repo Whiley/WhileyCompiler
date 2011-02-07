@@ -21,7 +21,6 @@ import java.io.*;
 import java.util.*;
 import java.math.*;
 
-import wyil.lang.Type;
 import wyone.core.*;
 import wyone.theory.logic.*;
 // import wyone.theory.list.*;
@@ -485,27 +484,6 @@ public class Parser {
 			Type et = parseType();
 			match("}");
 			return Type.T_SET(et);
-		} else if(input.charAt(index) == '[') {
-			match("[");
-			Type et = parseType();
-			match("]");
-			return Type.T_LIST(et);
-		} else if(input.charAt(index) == '(') {
-			match("(");
-			boolean firstTime=true;
-			Map<String,Type> types = new HashMap();
-			do {
-				if(!firstTime) {
-					match(",");
-				}
-				firstTime=false;
-				Type type = parseType();
-				parseWhiteSpace();
-				String field = parseIdentifier();
-				types.put(field,type);
-			} while (index < input.length() && input.charAt(index) == ',');		
-			match(")");
-			return Type.T_RECORD(types);
 		} else {
 			String id = parseIdentifier();
 			Type r;

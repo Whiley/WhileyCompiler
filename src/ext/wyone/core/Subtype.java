@@ -2,7 +2,6 @@ package wyone.core;
 
 import java.util.*;
 
-import wyil.lang.Type;
 import wyone.theory.numeric.*;
 import wyone.util.Pair;
 import static wyone.core.Constructor.*;

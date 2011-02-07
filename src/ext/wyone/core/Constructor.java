@@ -355,10 +355,6 @@ public interface Constructor extends Comparable<Constructor> {
 			}
 		}
 		
-		public Type type(Solver.State state) {
-			return Subtype.type(this,state);
-		}
-		
 		public String toString() {
 			if(subterms.size() == 0) {
 				return name;

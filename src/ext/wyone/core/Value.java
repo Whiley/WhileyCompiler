@@ -41,28 +41,15 @@ import wyone.core.Constructor.Variable;
  * @author djp
  * 
  */
-public class Value<T extends wyil.lang.Value> implements Constructor, Comparable<Constructor> {
-	public final T value; 
-
-	Value(T value) {
-		this.value = value;
-	}
-	
-	public Type type(Solver.State state) {
-		return value.type();
-	}
+public abstract class Value implements Constructor, Comparable<Constructor> {
 	
 	public List<Constructor> subterms() {
 		return Collections.EMPTY_LIST;
 	}
 	
-	public boolean equals(Object o) {
-		if(o instanceof Value) {
-			Value v = (Value) o;
-			return value.equals(v.value);
-		}
-		return false;
-	}
+	public abstract boolean equals(Object o);
+	public abstract int hashCode();
+	public abstract int compareTo(Constructor c);
 	
 	public Constraint equate(Constructor other) {
 
@@ -81,30 +68,12 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 			return other.equate(this);
 		}
 	}
-	
-	public int hashCode() {
-		return value.hashCode();
-	}
-	
-	public int compareTo(Constructor v) {	
-		if(v instanceof Value) {			
-			return value.compareTo(((Value)v).value);
-		} else if(CID < v.cid()) {
-			return -1; 
-		} else {
-			return 1;
-		}
-	}
-	
-	public String toString() {
-		return value.toString();
-	}
-	
+		
 	/**
 	 * Substituting into a value has no effect. However, we need this method
 	 * because it overrides Expr.substitute.
 	 */
-	public Value<T> substitute(Map<Constructor,Constructor> binding) {
+	public Value substitute(Map<Constructor,Constructor> binding) {
 		return this;
 	}
 
@@ -147,9 +116,11 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 	// IMPLEMENTATIONS
 	// ====================================================================
 		
-	public static class Bool extends Value<wyil.lang.Value.Bool> implements Constraint {
+	public static class Bool extends Value implements Constraint {
+		public final boolean value;
+		
 		Bool(boolean b) {
-			super(wyil.lang.Value.V_BOOL(b));
+			value = b;
 		}
 		
 		public Bool substitute(Map<Constructor,Constructor> binding) {
@@ -157,68 +128,108 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		}
 		
 		public boolean sign() {
-			return value.value;
+			return value;
 		}
 		
 		public Bool not() {
-			return new Bool(!value.value);
+			return new Bool(!value);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Bool) {
+				Bool b = (Bool) o;
+				return value == b.value;
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return value ? 1 : 0;
+		}
+		
+		public int compareTo(Constructor c) {
+			if(c instanceof Value && c instanceof Bool) {
+				Bool b = (Bool) c;
+				if(value == b.value) {
+					return 0;
+				} else if(value) {
+					return 1;
+				} else {
+					return -1;
+				}
+			} else {
+				return -1;
+			}
 		}
 	}
 	
-	public static class Number extends Value<wyil.lang.Value.Real> {
-		Number(BigRational r) {
-			super(wyil.lang.Value.V_REAL(r));
+	public static class Number extends Value {
+		public final BigRational value;
+		
+		Number(BigRational value) {
+			this.value = value;
 		}
 		Number(BigInteger r) {
-			super(wyil.lang.Value.V_REAL(BigRational.valueOf(r)));
+			this.value = BigRational.valueOf(r);
 		}
 		
 		public BigInteger numerator() {
-			return value.value.numerator();
+			return value.numerator();
 		}
 		
 		public BigInteger denominator() {
-			return value.value.denominator();
+			return value.denominator();
 		}
 		
 		public Number add(Number n) {
-			return new Number(value.value.add(n.value.value));
+			return new Number(value.add(n.value));
 		}
 		
 		public Number subtract(Number n) {
-			return new Number(value.value.subtract(n.value.value));
+			return new Number(value.subtract(n.value));
 		}
 		
 		public Number multiply(Number n) {
-			return new Number(value.value.multiply(n.value.value));
+			return new Number(value.multiply(n.value));
 		}
 		
 		public Number divide(Number n) {
-			return new Number(value.value.divide(n.value.value));
+			return new Number(value.divide(n.value));
 		}		
 		
 		public Number negate() {
-			return new Number(value.value.negate());
+			return new Number(value.negate());
 		}
 		
 		public boolean isInteger() {
-			return value.value.isInteger();
+			return value.isInteger();
 		}
 		
 		public Number ceil() {
-			return V_NUM(value.value.ceil());
+			return V_NUM(value.ceil());
 		}
 		
 		public Number floor() {
-			return V_NUM(value.value.floor());
+			return V_NUM(value.floor());
 		}
-	}		
-	
-	private static Map<String,wyil.lang.Value> convert(Map<String,Value> values) {
-		HashMap<String,wyil.lang.Value> nmap = new HashMap();
-		for(Map.Entry<String, Value> e : values.entrySet()) {
-			nmap.put(e.getKey(), e.getValue().value);
+		
+		public boolean equals(Object o) {
+			return value.equals(o);
 		}
-		return nmap;
-	}
+		
+		public int hashCode() {
+			return value.hashCode();
+		}
+		
+		public int compareTo(Constructor c) {
+			if(c instanceof Value && c instanceof Bool) {
+				return 1;
+			} else if(c instanceof Number) {
+				Number n = (Number) c;
+				return value.compareTo(n.value);
+			} else {
+				return -1;
+			}
+		}
+	}			
 }
