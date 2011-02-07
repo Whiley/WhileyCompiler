@@ -105,7 +105,7 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		if(var == null) {
 			return null;
 		}								
-		
+						
 		Value.Number mid = varlow.add(varhigh).divide(Value.TWO);		
 		Solver.State rhs = lhs.clone();
 				
@@ -115,6 +115,9 @@ public class BoundedNumberHeuristic implements Solver.Heuristic {
 		ArrayList<Solver.State> splits = new ArrayList<Solver.State>();
 		splits.add(lhs);
 		splits.add(rhs);
+		
+		System.out.println("GOT: " + lhs);
+				
 		return splits;
 	}
 	

@@ -127,17 +127,13 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 		Constructor factor = r.second();		
 		Constructor remainder = r.first();
 		
+		
 		if(term != null) {
 			Pair<Polynomial,Polynomial> p = term.rearrangeFor(v);		
-			// FIXME: need to user deivisor
 			Constructor divisor = Numerics.normalise(term.denominator());
-			factor = Numerics.divide(factor,new Rational(p.second()).negate());		
-			remainder = Numerics.subtract(remainder,new Rational(p.first()));
-			
-			
-			// Need to sort out use of divisor and issue when e.g. int x*y
-			// constraint prevents normal inference from happening.
-			System.err.println("FM ELIMINATION NOT FINISHED");
+			factor = Numerics.divide(factor,new Rational(p.second()).negate());					
+			remainder = Numerics.subtract(remainder,new Rational(p.first()));			
+			remainder = Numerics.divide(remainder,divisor);
 		}		
 		
 		if (factor instanceof Value.Number) {
@@ -162,11 +158,19 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			}
 			/*
 			if(lower != null) {
-				System.out.println("LOWER: " + lower.poly + ", " + lower.factor + " : " + lower.sign);
+				if(lower.sign) {
+					System.out.println(lower.factor + "*" + v + " > " + lower.poly);
+				} else {
+					System.out.println(lower.factor + "*" + v + " >= " + lower.poly);
+				}			
 			}
 			if(upper != null) {
-				System.out.println("UPPER: " + upper.poly + ", " + upper.factor + " : " + upper.sign);
-			}
+				if(upper.sign) {
+					System.out.println(upper.factor + "*" + v + " < " + upper.poly);
+				} else {
+					System.out.println(upper.factor + "*" + v + " <= " + upper.poly);
+				}			
+			}			
 			*/
 			return new Pair<BoundUpdate, BoundUpdate>(lower, upper);
 		} else {
@@ -220,11 +224,11 @@ public final class FourierMotzkinSolver implements Solver.Rule {
 			ub = multiply(ub,below.factor);			
 		}
 		
-		if(lb.equals(above) && (belowSign || aboveSign)) {			
+		if(lb.equals(ub) && (belowSign || aboveSign)) {			
 			state.infer(Value.FALSE,solver);
 		} else {			
 			// Second, generate new inequalities
-			if(lb.equals(above)) {				
+			if(lb.equals(ub)) {				
 				state.infer(Equality.equals(lb,term),solver);
 			} else {
 				Constraint f;

@@ -869,14 +869,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				// receivers match up OK ...				
 				if (ft.params.size() == paramTypes.size()						
 						&& paramSubtypes(ft, target)
-						&& (candidate == null || paramSubtypes(candidate,ft))) {
-					// This declaration is a candidate. Now, we need to see if
-					// our candidate type signature is as precise as possible.
-					if (candidate == null) {
-						candidate = ft;
-					} else if (paramSubtypes(candidate,ft)) {
-						candidate = ft;
-					}
+						&& (candidate == null || paramSubtypes(candidate,ft))) {					
+					candidate = ft;					
 				}
 			}
 		}				
