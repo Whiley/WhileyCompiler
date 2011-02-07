@@ -1,5 +1,5 @@
 int f(int x):
-    return x + 1
+    return x * 12
 
 real g(real(int) func):
     return func(1)
