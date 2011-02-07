@@ -131,14 +131,6 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		return new Number(v);
 	}
 	
-	public static Record V_RECORD(Map<String,wyil.lang.Value> values) {
-		return new Record(values);
-	}
-	
-	public static Record V_RECORDb(Map<String,Value> values) {
-		return new Record(convert(values));
-	}
-	
 	// ====================================================================
 	// CONSTANTS
 	// ====================================================================
@@ -220,17 +212,7 @@ public class Value<T extends wyil.lang.Value> implements Constructor, Comparable
 		public Number floor() {
 			return V_NUM(value.value.floor());
 		}
-	}
-	
-	public static class Record extends Value<wyil.lang.Value.Record> {
-		public Record(Map<String,wyil.lang.Value> values) {
-			super(wyil.lang.Value.V_RECORD(values));
-		}		
-		
-		public Value field(String name) {
-			return create(value.values.get(name));
-		}
-	}
+	}		
 	
 	private static Map<String,wyil.lang.Value> convert(Map<String,Value> values) {
 		HashMap<String,wyil.lang.Value> nmap = new HashMap();
