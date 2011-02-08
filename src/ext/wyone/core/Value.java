@@ -99,11 +99,18 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 	
 	public static Number V_NUM(BigRational v) {
 		return new Number(v);
-	}
-	
+	}	
 
 	public static Strung V_STR(String str) {
 		return new Strung(str);
+	}
+	
+	public static Map V_MAP(Value from, Value to) {
+		return new Map(from,to);
+	}
+	
+	public static Set V_SET(java.util.Set<Value> items) {
+		return new Set(items);
 	}
 	
 	// ====================================================================

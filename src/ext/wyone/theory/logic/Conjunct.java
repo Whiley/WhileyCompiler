@@ -36,11 +36,7 @@ public final class Conjunct extends Base<Constraint> implements Constraint {
 	public Conjunct(Collection<Constraint> fs) {
 		super("&&",fs);
 	}			
-	
-	public Type type(Solver.State state) {		
-		return Type.T_BOOL;		
-	}	
-	
+		
 	/**
 	 * This method substitutes all variable names for names given in the
 	 * binding. If no binding is given for a variable, then it retains its

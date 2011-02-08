@@ -24,14 +24,13 @@ import java.math.*;
 import wyone.core.*;
 import wyone.theory.logic.*;
 // import wyone.theory.list.*;
-// import wyone.theory.set.*;
 import wyone.theory.numeric.*;
+import wyone.theory.set.*;
 // import wyone.theory.quantifier.*;
 // import wyone.theory.tuple.*;
 import static wyone.core.Constructor.*;
 import static wyone.theory.logic.Logic.*;
 import static wyone.theory.numeric.Numerics.*;
-// import static wyone.theory.set.WSets.*;
 
 public class Parser {
 	private String filename;
@@ -358,8 +357,7 @@ public class Parser {
 			lookahead = lookahead();
 		}		
 		match("}");		
-		// return new WSetConstructor(params).substitute(Collections.EMPTY_MAP);
-		return null;
+		return new SetConstructor(params).substitute(Collections.EMPTY_MAP);		
 	}
 	
 	private Constructor parseIdentifierTerm() {
