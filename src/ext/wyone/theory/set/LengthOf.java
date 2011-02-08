@@ -15,24 +15,19 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.theory.list;
+package wyone.theory.set;
 
+import java.math.BigInteger;
 import java.util.Map;
 
-import wyone.util.*;
 import wyone.core.*;
-import wyone.theory.congruence.WEquality;
-import wyone.theory.logic.*;
-import wyone.theory.numeric.WIntType;
-import wyone.theory.numeric.WNumber;
-import wyone.theory.set.*;
 
-public class WLengthOf extends WConstructor<WExpr> implements WExpr {
-	public WLengthOf(WExpr source) {
+public class LengthOf extends Constructor.Base<Constructor> implements Constructor {
+	public LengthOf(Constructor source) {
 		super("|..|", source);
 	}
 
-	public WExpr source() {
+	public Constructor source() {
 		return subterms().get(0);
 	}
 	
@@ -40,49 +35,34 @@ public class WLengthOf extends WConstructor<WExpr> implements WExpr {
 		return "|" + source() + "|";		
 	}
 	
-	public WExpr substitute(Map<WExpr,WExpr> binding) {
-		WExpr osource = source();				
-		WExpr source = osource.substitute(binding);				
-		WExpr ret;
+	public Constructor substitute(Map<Constructor,Constructor> binding) {
+		Constructor osource = source();				
+		Constructor source = osource.substitute(binding);				
+		Constructor ret;
 		
-		if(source instanceof WListConstructor) {			
-			WListConstructor c = (WListConstructor) source;				
-			return new WNumber(c.subterms().size());
-		} else if(source instanceof WListVal) {
-			WListVal c = (WListVal) source;			
-			return new WNumber(c.subterms().size());
-		} else if(source instanceof WSetVal) {
-			WSetVal c = (WSetVal) source;			
-			return new WNumber(c.subterms().size());
-		} else if(source instanceof WSetConstructor) {
-			WSetConstructor c = (WSetConstructor) source;
+		if(source instanceof Value.Set) {
+			Value.Set c = (Value.Set) source;			
+			return Value.V_NUM(BigInteger.valueOf(c.subterms().size()));
+		} else if(source instanceof SetConstructor) {
+			SetConstructor c = (SetConstructor) source;
 			int size = c.subterms().size();
 			if(size == 0 || size == 1) {
 				// in this case, we can be more definite
-				return new WNumber(size);
+				return Value.V_NUM(BigInteger.valueOf(size));
 			} else {
-				ret = new WLengthOf(source);
+				ret = new LengthOf(source);
 			}
 		} else if(source != osource) {
-			ret = new WLengthOf(source);
+			ret = new LengthOf(source);
 		} else {
 			ret = this;
 		}
 		
-		WExpr r = binding.get(ret);
+		Constructor r = binding.get(ret);
 		if(r != null) { 
 			return r;
 		} else {		
 			return ret;
 		}
-	}
-	
-	public WLiteral rearrange(WExpr e) {
-		// No idea what i'm supposed to do here. 
-		return new WEquality(true,this,e);
-	}
-		
-	public WType type(SolverState state) {
-		return WIntType.T_INT;
-	}
+	}	
 }

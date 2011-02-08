@@ -195,22 +195,22 @@ public class Parser {
 				&& input.charAt(index + 1) == '=') {
 			match("{=");
 			Constructor rhs = parseExpression();			
-			//FIXME: return subsetEq(lhs, rhs);
+			return SubsetEq.subsetEq(lhs, rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '='
 				&& input.charAt(index + 1) == '}') {
 			match("=}");
 			Constructor rhs = parseExpression();			
-			//FIXME: return supsetEq(lhs, rhs);
+			return SubsetEq.supsetEq(lhs, rhs);
 		} else if ((index + 2) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '!') {
 			match("{!=");
 			Constructor rhs = parseExpression();			
-			//FIXME: return subsetEq(lhs, rhs).not();
+			return SubsetEq.subsetEq(lhs, rhs).not();
 		} else if ((index + 2) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '}') {
 			match("=!}");
 			Constructor rhs = parseExpression();			
-			//FIXME: return supsetEq(lhs, rhs).not();
+			return SubsetEq.supsetEq(lhs, rhs).not();
 		} else if(lhs instanceof Variable) {
 			Variable v = (Variable) lhs;
 			//FIXME: return new WPredicate(true,v.name(),v.subterms());
@@ -219,8 +219,7 @@ public class Parser {
 			// will need more here
 			throw new SyntaxError("syntax error", filename, start,
 						index - 1);			
-		} 			
-		return null;
+		} 					
 	}
 	
 	private Constructor parseExpression( ) {				
@@ -318,8 +317,7 @@ public class Parser {
 		match("|");
 		Constructor r = parseExpression();
 		match("|");		
-		// FIXME: return new WLengthOf(r);
-		return null;
+		return new LengthOf(r);		
 	}
 	
 	private Constructor parseListTerm() {

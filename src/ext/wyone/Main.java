@@ -26,7 +26,7 @@ import wyone.theory.numeric.*;
 // import wyone.theory.tuple.*;
 // import wyone.theory.quantifier.*;
 // import wyone.theory.list.*;
-// import wyone.theory.set.*;
+import wyone.theory.set.*;
 import wyone.util.*;
 
 /**
@@ -51,6 +51,7 @@ public class Main {
 		new Equality.Closure(),
 		new Subtype.Closure(),
 		new FourierMotzkinSolver(),
+		new SubsetClosure(),
 		new DisjunctReduction()
 	};
 

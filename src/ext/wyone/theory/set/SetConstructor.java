@@ -10,6 +10,10 @@ public class SetConstructor extends Constructor.Base<Constructor> {
 		super("{}",items);
 	}
 	
+	public SetConstructor(Constructor item) {
+		super("{}",item);
+	}
+	
 	public Constructor substitute(Map<Constructor,Constructor> binding) {
 		HashSet nitems = new HashSet();		
 		boolean pchanged = false;

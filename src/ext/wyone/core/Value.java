@@ -89,6 +89,10 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 		return new Bool(v);		
 	}
 	
+	public static Number V_NUM(int v) {
+		return new Number(BigInteger.valueOf(v));
+	}
+	
 	public static Number V_NUM(BigInteger v) {
 		return new Number(v);
 	}

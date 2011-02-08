@@ -20,10 +20,10 @@ package wyone.theory.set;
 import java.util.*;
 
 import wyone.core.*;
+import wyone.core.Constructor.Base;
 import wyone.theory.logic.*;
-import wyone.util.WConstructor;
 
-public class WSubsetEq extends WConstructor<WExpr> implements WLiteral {
+public class SubsetEq extends Base<Constructor> implements Constraint {
 	private boolean sign;
 
 	/**
@@ -35,7 +35,7 @@ public class WSubsetEq extends WConstructor<WExpr> implements WLiteral {
 	 * @param lhs
 	 * @param rhs
 	 */
-	public WSubsetEq(boolean sign, WExpr lhs, WExpr rhs) {
+	public SubsetEq(boolean sign, Constructor lhs, Constructor rhs) {
 		super(sign ? "{=" : "!{=",lhs,rhs);
 		this.sign = sign;
 	}
@@ -44,72 +44,63 @@ public class WSubsetEq extends WConstructor<WExpr> implements WLiteral {
 		return sign;
 	}
 	
-	public WLiteral not() {
-		return new WSubsetEq(!sign,lhs(),rhs());
+	public SubsetEq not() {
+		return new SubsetEq(!sign,lhs(),rhs());
 	}
 	
-	public WBoolType type(SolverState state) {
-		return WBoolType.T_BOOL;
-	}
-	
-	public WExpr lhs() {
+	public Constructor lhs() {
 		return subterms.get(0);
 	}
 
-	public WExpr rhs() {
+	public Constructor rhs() {
 		return subterms.get(1);
 	}
 	
-	public WLiteral rearrange(WExpr rhs) {
-		// no idea what to do here ...
-		throw new RuntimeException("Not sure how to rearrange subset!");
-	}
-	
-	public WLiteral substitute(Map<WExpr,WExpr> binding) {
-		WExpr lhs = lhs();
-		WExpr rhs = rhs();
-		WExpr nlhs = lhs.substitute(binding);
-		WExpr nrhs = rhs.substitute(binding);
+	public Constraint substitute(Map<Constructor,Constructor> binding) {
+		Constructor lhs = lhs();
+		Constructor rhs = rhs();
+		Constructor nlhs = lhs.substitute(binding);
+		Constructor nrhs = rhs.substitute(binding);
 		
-		List<? extends WExpr> nlhsElems = null;		
-		List<? extends WExpr> nrhsElems = null;
+		List<? extends Constructor> nlhsElems = null;		
+		List<? extends Constructor> nrhsElems = null;
 		
-		if(nlhs instanceof WSetConstructor || nlhs instanceof WSetVal) {			
+		if(nlhs instanceof SetConstructor || nlhs instanceof Value.Set) {			
 			nlhsElems = lhs.subterms();	
 		} 
 		
-		if(nrhs instanceof WSetConstructor || nrhs instanceof WSetVal) {			
+		if(nrhs instanceof SetConstructor || nrhs instanceof Value.Set) {			
 			nrhsElems = rhs.subterms();	
 		} 	
 		
 		
-		if(nlhs instanceof WSetVal && nrhs instanceof WSetVal) {
+		if(nlhs instanceof Value.Set && nrhs instanceof Value.Set) {
 			// here, we can compute a final value.
-			WValue vlhs = (WValue) nlhs;
-			WValue vrhs = (WValue) nrhs;
+			Value vlhs = (Value) nlhs;
+			Value vrhs = (Value) nrhs;
 			boolean r = vrhs.subterms().containsAll(vlhs.subterms());			
 			if(sign) {
-				return r ? WBool.TRUE : WBool.FALSE;
+				return r ? Value.TRUE : Value.FALSE;
 			} else {
-				return r ? WBool.FALSE : WBool.TRUE;
+				return r ? Value.FALSE : Value.TRUE;
 			}			
 		} else if(nrhsElems != null && nlhsElems != null && nrhsElems.containsAll(nlhsElems)) {
 			if(sign) {
-				return WBool.TRUE;
+				return Value.TRUE;
 			} else {
-				return WBool.FALSE;
+				return Value.FALSE;
 			}
 		} 
 		
-		WLiteral r;
+		Constraint r;
 		
 		if(lhs != nlhs || rhs != nrhs) {
-			r = new WSubsetEq(sign,nlhs,nrhs); 			
+			r = new SubsetEq(sign,nlhs,nrhs); 			
 		} else {
 			r = this;
 		}
 		
-		WLiteral tmp = (WLiteral) binding.get(r);
+		Constraint tmp = (Constraint) binding.get(r);
 		return tmp != null ? tmp : r;
 	}
 	
@@ -120,4 +111,38 @@ public class WSubsetEq extends WConstructor<WExpr> implements WLiteral {
 			return lhs().toString() + "{!=" + rhs().toString();			
 		}
 	}
+	
+	public static Constraint subsetEq(Constructor lhs, Constructor rhs) {
+		return new SubsetEq(true,lhs,rhs);
+	}
+
+	public static Constraint subset(Constructor lhs, Constructor rhs) {
+		
+		if(rhs instanceof SetConstructor || rhs instanceof Value.Set) {
+			// This is a useful optimisation case.
+			Constraint r = Value.FALSE;
+			for(Constructor e : rhs.subterms()) {
+				HashSet elems = new HashSet(rhs.subterms());
+				elems.remove(e);					
+				if(rhs instanceof SetConstructor) {
+					e = new SetConstructor(elems);
+				} else {
+					e = Value.V_SET(elems);
+				}
+				r = Logic.or(r,subsetEq(lhs,e));
+			}
+			return r;			
+		} 
+		
+		return Logic.and(new SubsetEq(true, lhs, rhs), Equality.notEquals(lhs, rhs));
+	}
+	
+	public static Constraint supsetEq(Constructor lhs, Constructor rhs) {
+		return new SubsetEq(true,rhs,lhs);
+	}
+	
+	public static Constraint elementOf(Constructor lhs, Constructor rhs) {		
+		return new SubsetEq(true,new SetConstructor(lhs),rhs);
+	}	
+
 }

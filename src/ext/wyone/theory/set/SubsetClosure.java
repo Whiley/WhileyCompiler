@@ -20,16 +20,17 @@ package wyone.theory.set;
 import java.util.*;
 import wyone.core.*;
 import wyone.theory.numeric.*;
-import wyone.theory.type.WTypes;
-import wyone.theory.list.*;
 import wyone.theory.logic.*;
-import wyone.theory.congruence.*;
 
-public class SubsetClosure implements InferenceRule {
+public class SubsetClosure implements Solver.Rule {
 
-	public void infer(WFormula nlit, SolverState state, Solver solver) {
-		if(nlit instanceof WSubsetEq) {
-			WSubsetEq seq = (WSubsetEq) nlit;			
+	public String name() {
+		return "Subset Closure";
+	}
+	
+	public void infer(Constraint nlit, Solver.State state, Solver solver) {
+		if(nlit instanceof SubsetEq) {
+			SubsetEq seq = (SubsetEq) nlit;			
 			closeSubset(seq,state,solver);
 			if(seq.sign()) {
 				// uncertain whether any of the following rewrites apply to
@@ -40,11 +41,11 @@ public class SubsetClosure implements InferenceRule {
 			} else {
 				
 			}
-		} else if(nlit instanceof WEquality) {
+		} else if(nlit instanceof Equality) {
 			// FIXME: there's definitely more we can do here. For example, if
 			// the number of elements in one is less than the other, then we
 			// know some of the elements are the same.
-			WEquality eq = (WEquality) nlit;
+			Equality eq = (Equality) nlit;
 			if(eq.sign()) {
 				inferVariableEqs(eq.lhs(),eq.rhs(),state,solver);
 			} else {
@@ -53,36 +54,38 @@ public class SubsetClosure implements InferenceRule {
 		}
 	}	
 	
-	private void inferVariableNeqs(WEquality eq, SolverState state,
+	private void inferVariableNeqs(Equality eq, Solver.State state,
 			Solver solver) {
-		WType lhs_t = eq.lhs().type(state);
-		if (!(lhs_t instanceof WSetType)) {
+		/* FIXME: put back!
+		Type lhs_t = eq.lhs().type(state);
+		if (!(lhs_t instanceof Type.Set)) {
 			return; // nothing doing here
 		}
-		WSetType type = (WSetType) lhs_t;
+		Type.Set type = (Type.Set) lhs_t;
 		state.eliminate(eq); // not needed any longer
 
-		WVariable skolem = WTypes.newSkolem(type.element(), state, solver);
-		WExpr setc = new WSetConstructor(skolem);
-		WFormula left = WFormulas.and(WSets.subsetEq(setc, eq.lhs()), WSets
+		Variable skolem = WTypes.newSkolem(type.element(), state, solver);
+		Constructor setc = new SetConstructor(skolem);
+		Constraint left = Logic.and(SubsetEq.subsetEq(setc, eq.lhs()), SubsetEq
 				.subsetEq(setc, eq.rhs()).not());
-		WFormula right = WFormulas.and(WSets.subsetEq(setc, eq.rhs()), WSets
+		Constraint right = Logic.and(SubsetEq.subsetEq(setc, eq.rhs()), SubsetEq
 				.subsetEq(setc, eq.lhs()).not());
-		WFormula nf = WFormulas.or(left, right);
+		Constraint nf = Logic.or(left, right);
 		if (!state.contains(nf)) {
 			state.infer(nf, solver);
 		}
+		*/
 	}
 	
-	private void inferVariableEqs(WExpr lhs, WExpr rhs, SolverState state, Solver solver) {
-		List<? extends WExpr> lhsElems = null;		
-		List<? extends WExpr> rhsElems = null;
+	private void inferVariableEqs(Constructor lhs, Constructor rhs, Solver.State state, Solver solver) {
+		List<? extends Constructor> lhsElems = null;		
+		List<? extends Constructor> rhsElems = null;
 		
-		if(lhs instanceof WSetConstructor || lhs instanceof WSetVal) {			
+		if(lhs instanceof SetConstructor || lhs instanceof Value.Set) {			
 			lhsElems = lhs.subterms();	
 		} 
 		
-		if(rhs instanceof WSetConstructor || rhs instanceof WSetVal) {			
+		if(rhs instanceof SetConstructor || rhs instanceof Value.Set) {			
 			rhsElems = rhs.subterms();	
 		} 				
 		
@@ -90,14 +93,14 @@ public class SubsetClosure implements InferenceRule {
 			return; // can't do anything
 		}
 				
-		for(WExpr l : lhsElems) {
-			WFormula af = null;
-			for(WExpr r : rhsElems) {
-				WFormula nf = WExprs.equals(l,r);
+		for(Constructor l : lhsElems) {
+			Constraint af = null;
+			for(Constructor r : rhsElems) {
+				Constraint nf = Equality.equals(l,r);
 				if(af == null) {
 					af = nf;
 				} else {
-					af = WFormulas.or(af,nf);
+					af = Logic.or(af,nf);
 				}
 			}													
 			
@@ -107,40 +110,40 @@ public class SubsetClosure implements InferenceRule {
 		}
 	}
 	
-	private void inferSubsetLen(WSubsetEq seq, SolverState state, Solver solver) {		
-		WExpr lhs = seq.lhs();
-		WExpr rhs = seq.rhs();
+	private void inferSubsetLen(SubsetEq seq, Solver.State state, Solver solver) {		
+		Constructor lhs = seq.lhs();
+		Constructor rhs = seq.rhs();
 		
 		// FIXME: the following is not needed in all cases
-		WFormula f = WNumerics.lessThanEq(new WLengthOf(seq.lhs()),new WLengthOf(seq.rhs()));
+		Constraint f = Numerics.lessThanEq(new LengthOf(seq.lhs()),new LengthOf(seq.rhs()));
 		if(!state.contains(f)) {			
 			state.infer(f,solver);
 		}
 		
 		// First, do stuff based on length of lhs
-		if(lhs instanceof WSetVal) {
+		if(lhs instanceof Value.Set) {
 			// Easy case.
 			
-			WSetVal v = (WSetVal) lhs;
-			WFormula nf = WNumerics.lessThanEq(new WNumber(v.subterms().size()),
-					new WLengthOf(rhs));
+			Value.Set v = (Value.Set) lhs;
+			Constraint nf = Numerics.lessThanEq(Value.V_NUM(v.subterms().size()),
+					new LengthOf(rhs));
 			if(!state.contains(nf)) {				
 				state.infer(nf, solver);
 			}
-		} else if(lhs instanceof WSetConstructor) {
+		} else if(lhs instanceof SetConstructor) {
 			// Harder case			
-			WSetConstructor v = (WSetConstructor) lhs;
+			SetConstructor v = (SetConstructor) lhs;
 			int min = 0;
 			
-			for(WExpr e : v.subterms()) {
-				if(e instanceof WValue) {
+			for(Constructor e : v.subterms()) {
+				if(e instanceof Value) {
 					min++;
 				}
 			}
 			
 			if(min > 0) {
-				WFormula nf = WNumerics.lessThanEq(new WNumber(min),
-						new WLengthOf(rhs));
+				Constraint nf = Numerics.lessThanEq(Value.V_NUM(min),
+						new LengthOf(rhs));
 
 				if(!state.contains(nf)) {					
 					state.infer(nf, solver);
@@ -149,29 +152,29 @@ public class SubsetClosure implements InferenceRule {
 		}
 		
 		// Now, do stuff based on size of rhs.
-		if (rhs instanceof WSetVal) {
+		if (rhs instanceof Value.Set) {
 			// Easy case.
 
-			WSetVal v = (WSetVal) rhs;
-			WFormula nf = WNumerics.lessThanEq(new WLengthOf(lhs),
-					new WNumber(v.subterms().size()));
+			Value.Set v = (Value.Set) rhs;
+			Constraint nf = Numerics.lessThanEq(new LengthOf(lhs),
+					Value.V_NUM(v.subterms().size()));
 			if (!state.contains(nf)) {					
 				state.infer(nf, solver);
 			}
-		} else if (rhs instanceof WSetConstructor) {
+		} else if (rhs instanceof SetConstructor) {
 			// Harder case
-			WSetConstructor v = (WSetConstructor) rhs;
+			SetConstructor v = (SetConstructor) rhs;
 			int min = 0;
 
-			for (WExpr e : v.subterms()) {
-				if (e instanceof WValue) {
+			for (Constructor e : v.subterms()) {
+				if (e instanceof Value) {
 					min++;
 				}
 			}
 
 			if (min > 0) {
-				WFormula nf = WNumerics.lessThanEq(new WLengthOf(lhs),
-						new WNumber(min));
+				Constraint nf = Numerics.lessThanEq(new LengthOf(lhs),
+						Value.V_NUM(min));
 
 				if (!state.contains(nf)) {					
 					state.infer(nf, solver);
@@ -180,31 +183,31 @@ public class SubsetClosure implements InferenceRule {
 		}
 	}
 	
-	private void closeSubset(WSubsetEq seq, SolverState state, Solver solver) {		
-		WExpr seq_lhs = seq.lhs();
-		WExpr seq_rhs = seq.rhs();
+	private void closeSubset(SubsetEq seq, Solver.State state, Solver solver) {		
+		Constructor seq_lhs = seq.lhs();
+		Constructor seq_rhs = seq.rhs();
 		
-		for(WFormula f : state) {
-			if(f instanceof WSubsetEq) {								
-				WSubsetEq fseq = (WSubsetEq) f;
-				WExpr fseq_lhs = fseq.lhs();
-				WExpr fseq_rhs = fseq.rhs();
+		for(Constraint f : state) {
+			if(f instanceof SubsetEq) {								
+				SubsetEq fseq = (SubsetEq) f;
+				Constructor fseq_lhs = fseq.lhs();
+				Constructor fseq_rhs = fseq.rhs();
 				
 				if(seq.sign() && fseq_rhs.equals(seq_lhs)) {
 					if(fseq.sign() && seq_rhs.equals(fseq_lhs)) {						
-						WFormula nf = WExprs.equals(seq_lhs,seq_rhs);						
+						Constraint nf = Equality.equals(seq_lhs,seq_rhs);						
 						if(!state.contains(nf)) {							
 							state.infer(nf, solver);
 						}					
 					} else {
-						WFormula nf = WSets.subsetEq(fseq_lhs,seq_rhs);
+						Constraint nf = SubsetEq.subsetEq(fseq_lhs,seq_rhs);
 						if(!fseq.sign()) { nf = nf.not(); }
 						if(!state.contains(nf)) {							
 							state.infer(nf, solver);
 						}
 					}
 				} else if(fseq.sign()&& seq_rhs.equals(fseq_lhs)) {
-					WFormula nf = WSets.subsetEq(seq_lhs,fseq_rhs);					
+					Constraint nf = SubsetEq.subsetEq(seq_lhs,fseq_rhs);					
 					if(!seq.sign()) { nf = nf.not(); }
 					if(!state.contains(nf)) {						
 						state.infer(nf, solver);
@@ -214,52 +217,52 @@ public class SubsetClosure implements InferenceRule {
 		}
 	}
 	
-	private void lubSubset(WSubsetEq seq, SolverState state, Solver solver) {		
-		WExpr seq_lhs = seq.lhs();
-		WExpr seq_rhs = seq.rhs();
+	private void lubSubset(SubsetEq seq, Solver.State state, Solver solver) {		
+		Constructor seq_lhs = seq.lhs();
+		Constructor seq_rhs = seq.rhs();
 		List seq_lhs_terms = null;
 		boolean seq_lhs_isval = false;
 		
-		if(seq_lhs instanceof WSetConstructor) {
-			WSetConstructor c = (WSetConstructor) seq_lhs;
+		if(seq_lhs instanceof SetConstructor) {
+			SetConstructor c = (SetConstructor) seq_lhs;
 			seq_lhs_terms = c.subterms();
-		} else if(seq_lhs instanceof WSetVal) {
-			WSetVal c = (WSetVal) seq_lhs;
+		} else if(seq_lhs instanceof Value.Set) {
+			Value.Set c = (Value.Set) seq_lhs;
 			seq_lhs_terms = c.subterms();
 			seq_lhs_isval = true;
 		}
 		
-		for (WFormula f : state) {
-			if (f instanceof WSubsetEq) {
-				WSubsetEq fseq = (WSubsetEq) f;
-				WExpr fseq_lhs = fseq.lhs();
-				WExpr fseq_rhs = fseq.rhs();
+		for (Constraint f : state) {
+			if (f instanceof SubsetEq) {
+				SubsetEq fseq = (SubsetEq) f;
+				Constructor fseq_lhs = fseq.lhs();
+				Constructor fseq_rhs = fseq.rhs();
 				if (fseq.sign() && seq_lhs_terms != null && fseq_rhs.equals(seq_rhs)) {
-					if (fseq_lhs instanceof WSetConstructor) {
-						WSetConstructor c = (WSetConstructor) fseq_lhs;
-						HashSet<WExpr> nterms = new HashSet<WExpr>();
+					if (fseq_lhs instanceof SetConstructor) {
+						SetConstructor c = (SetConstructor) fseq_lhs;
+						HashSet<Constructor> nterms = new HashSet<Constructor>();
 						nterms.addAll(seq_lhs_terms);
 						nterms.addAll(c.subterms());
-						WSetConstructor nc = new WSetConstructor(nterms);
-						WFormula nf = WSets.subsetEq(nc, seq_rhs);
+						SetConstructor nc = new SetConstructor(nterms);
+						Constraint nf = SubsetEq.subsetEq(nc, seq_rhs);
 						if (!state.contains(nf)) {
 							state.eliminate(seq);
 							state.eliminate(f);										
 							state.infer(nf, solver);
 						}
-					} else if (fseq_lhs instanceof WSetVal) {
-						WSetVal c = (WSetVal) fseq_lhs;
-						HashSet nterms = new HashSet<WExpr>();
+					} else if (fseq_lhs instanceof Value.Set) {
+						Value.Set c = (Value.Set) fseq_lhs;
+						HashSet nterms = new HashSet<Constructor>();
 						nterms.addAll(seq_lhs_terms);
 						nterms.addAll(c.subterms());
-						WExpr nc;
+						Constructor nc;
 						if (seq_lhs_isval) {
-							nc = new WSetVal(nterms);
+							nc = Value.V_SET(nterms);
 						} else {
-							nc = new WSetConstructor(nterms);
+							nc = new SetConstructor(nterms);
 						}
 
-						WFormula nf = WSets.subsetEq(nc, seq_rhs);
+						Constraint nf = SubsetEq.subsetEq(nc, seq_rhs);
 						if (!state.contains(nf)) {
 							state.eliminate(seq);
 							state.eliminate(f);									
