@@ -92,6 +92,8 @@ public class SubsetClosure implements Solver.Rule {
 		if(lhsElems == null || rhsElems == null) {
 			return; // can't do anything
 		}
+		
+		System.out.println("GOT HERE: " + lhsElems + " : " + rhsElems);
 				
 		for(Constructor l : lhsElems) {
 			Constraint af = null;

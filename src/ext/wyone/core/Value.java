@@ -356,6 +356,11 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 				return Type.T_SET(values.iterator().next().type());
 			}
 		}
+		public List<Constructor> subterms() {
+			ArrayList vals = new ArrayList<Value>(values);
+			Collections.sort(vals);
+			return vals;
+		}
 		public int hashCode() {
 			return values.hashCode();
 		}
