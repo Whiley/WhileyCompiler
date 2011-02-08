@@ -195,22 +195,22 @@ public class Parser {
 				&& input.charAt(index + 1) == '=') {
 			match("{=");
 			Constructor rhs = parseExpression();			
-			return SubsetEq.subsetEq(lhs, rhs);
+			return Sets.subsetEq(lhs, rhs);
 		} else if ((index + 1) < input.length() && input.charAt(index) == '='
 				&& input.charAt(index + 1) == '}') {
 			match("=}");
 			Constructor rhs = parseExpression();			
-			return SubsetEq.supsetEq(lhs, rhs);
+			return Sets.supsetEq(lhs, rhs);
 		} else if ((index + 2) < input.length() && input.charAt(index) == '{'
 				&& input.charAt(index + 1) == '!') {
 			match("{!=");
 			Constructor rhs = parseExpression();			
-			return SubsetEq.subsetEq(lhs, rhs).not();
+			return Sets.subsetEq(lhs, rhs).not();
 		} else if ((index + 2) < input.length() && input.charAt(index) == '!'
 				&& input.charAt(index + 1) == '}') {
 			match("=!}");
 			Constructor rhs = parseExpression();			
-			return SubsetEq.supsetEq(lhs, rhs).not();
+			return Sets.supsetEq(lhs, rhs).not();
 		} else if(lhs instanceof Variable) {
 			Variable v = (Variable) lhs;
 			//FIXME: return new WPredicate(true,v.name(),v.subterms());

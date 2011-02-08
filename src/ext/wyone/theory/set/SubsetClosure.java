@@ -65,7 +65,7 @@ public class SubsetClosure implements Solver.Rule {
 		state.eliminate(eq); // not needed any longer
 
 		Variable skolem = WTypes.newSkolem(type.element(), state, solver);
-		Constructor setc = new SetConstructor(skolem);
+		Constructor setc = new Set(skolem);
 		Constraint left = Logic.and(SubsetEq.subsetEq(setc, eq.lhs()), SubsetEq
 				.subsetEq(setc, eq.rhs()).not());
 		Constraint right = Logic.and(SubsetEq.subsetEq(setc, eq.rhs()), SubsetEq
@@ -202,14 +202,14 @@ public class SubsetClosure implements Solver.Rule {
 							state.infer(nf, solver);
 						}					
 					} else {
-						Constraint nf = SubsetEq.subsetEq(fseq_lhs,seq_rhs);
+						Constraint nf = Sets.subsetEq(fseq_lhs,seq_rhs);
 						if(!fseq.sign()) { nf = nf.not(); }
 						if(!state.contains(nf)) {							
 							state.infer(nf, solver);
 						}
 					}
 				} else if(fseq.sign()&& seq_rhs.equals(fseq_lhs)) {
-					Constraint nf = SubsetEq.subsetEq(seq_lhs,fseq_rhs);					
+					Constraint nf = Sets.subsetEq(seq_lhs,fseq_rhs);					
 					if(!seq.sign()) { nf = nf.not(); }
 					if(!state.contains(nf)) {						
 						state.infer(nf, solver);
@@ -246,7 +246,7 @@ public class SubsetClosure implements Solver.Rule {
 						nterms.addAll(seq_lhs_terms);
 						nterms.addAll(c.subterms());
 						SetConstructor nc = new SetConstructor(nterms);
-						Constraint nf = SubsetEq.subsetEq(nc, seq_rhs);
+						Constraint nf = Sets.subsetEq(nc, seq_rhs);
 						if (!state.contains(nf)) {
 							state.eliminate(seq);
 							state.eliminate(f);										
@@ -264,7 +264,7 @@ public class SubsetClosure implements Solver.Rule {
 							nc = new SetConstructor(nterms);
 						}
 
-						Constraint nf = SubsetEq.subsetEq(nc, seq_rhs);
+						Constraint nf = Sets.subsetEq(nc, seq_rhs);
 						if (!state.contains(nf)) {
 							state.eliminate(seq);
 							state.eliminate(f);									

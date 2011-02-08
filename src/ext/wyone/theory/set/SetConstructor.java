@@ -1,19 +1,21 @@
 package wyone.theory.set;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
 
 import wyone.core.Constructor;
 import wyone.core.Value;
 
 public class SetConstructor extends Constructor.Base<Constructor> {
-	public SetConstructor(Set<Constructor> items) {
+		
+	public SetConstructor(java.util.Set<Constructor> items) {
 		super("{}",items);
 	}
-	
+
 	public SetConstructor(Constructor item) {
 		super("{}",item);
 	}
-	
+
 	public Constructor substitute(Map<Constructor,Constructor> binding) {
 		HashSet nitems = new HashSet();		
 		boolean pchanged = false;
@@ -36,7 +38,7 @@ public class SetConstructor extends Constructor.Base<Constructor> {
 			return this;
 		}
 	}
-	
+
 	public String toString() {
 		String r = "{";
 		boolean firstTime=true;
