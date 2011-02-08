@@ -46,7 +46,7 @@ public class SubsetClosure implements Solver.Rule {
 			// the number of elements in one is less than the other, then we
 			// know some of the elements are the same.
 			Equality eq = (Equality) nlit;
-			if(eq.sign()) {
+			if(eq.sign()) {				
 				inferVariableEqs(eq.lhs(),eq.rhs(),state,solver);
 			} else {
 				inferVariableNeqs(eq,state,solver);
@@ -89,25 +89,51 @@ public class SubsetClosure implements Solver.Rule {
 			rhsElems = rhs.subterms();	
 		} 				
 		
-		if(lhsElems == null || rhsElems == null) {
-			return; // can't do anything
-		}
-		
-		System.out.println("GOT HERE: " + lhsElems + " : " + rhsElems);
-				
-		for(Constructor l : lhsElems) {
-			Constraint af = null;
-			for(Constructor r : rhsElems) {
-				Constraint nf = Equality.equals(l,r);
-				if(af == null) {
-					af = nf;
-				} else {
-					af = Logic.or(af,nf);
+		if(lhsElems != null && rhsElems != null) {
+			for(Constructor l : lhsElems) {
+				Constraint af = null;
+				for(Constructor r : rhsElems) {
+					Constraint nf = Equality.equals(l,r);
+					if(af == null) {
+						af = nf;
+					} else {
+						af = Logic.or(af,nf);
+					}
+				}													
+
+				if(af != null && !state.contains(af)) {				
+					state.infer(af, solver);
 				}
-			}													
+			}
+		} else if(lhsElems != null) {
+			int min=0;		
+			for(Constructor e : lhsElems) {
+				if(e instanceof Value) {
+					min++;
+				}
+			}
 			
-			if(af != null && !state.contains(af)) {				
-				state.infer(af, solver);
+			state.infer(Numerics.lessThanEq(new LengthOf(rhs), Value.V_NUM(lhsElems.size())),solver);
+			
+			if(min > 0) {
+				Constraint nf = Numerics.lessThanEq(Value.V_NUM(min),
+						new LengthOf(rhs));							
+				state.infer(nf, solver);				
+			}
+		} else if(rhsElems != null) {
+			int min=0;		
+			for(Constructor e : rhsElems) {
+				if(e instanceof Value) {
+					min++;
+				}
+			}
+			
+			state.infer(Numerics.lessThanEq(new LengthOf(lhs), Value.V_NUM(rhsElems.size())),solver);
+			
+			if(min > 0) {
+				Constraint nf = Numerics.lessThanEq(Value.V_NUM(min),
+						new LengthOf(lhs));							
+				state.infer(nf, solver);				
 			}
 		}
 	}

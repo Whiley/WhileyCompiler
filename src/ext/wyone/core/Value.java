@@ -257,6 +257,10 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 				return -1;
 			}
 		}
+		
+		public String toString() {
+			return value.toString();
+		}
 	}
 		
 	public static final class Strung extends Value {

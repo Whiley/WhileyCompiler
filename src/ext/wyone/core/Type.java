@@ -275,6 +275,9 @@ public class Type {
 		public boolean equals(Object o) {
 			return o instanceof Set && element.equals(((Set) o).element);
 		}
+		public String toString() {
+			return "{" + element + "}";
+		}
 	}
 	
 	private static final ArrayList<Type> types = new ArrayList<Type>();
