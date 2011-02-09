@@ -1,5 +1,5 @@
 <project name="whiley" default="stdlib">  
-  <property name="version" value="0.3.4"/>
+  <property name="version" value="0.3.3"/>
 
   <target name="compile">
     <javac debug="true" srcdir="src/base" includeantruntime="true" includes="wyjc/**,wyil/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
@@ -64,7 +64,7 @@
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
     <fileset dir="." includes="src/base/wyjc/**/*.java,src/base/wyjvm/**/*.java,src/base/wyil/**/*.java"/>
-    <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
+    <fileset dir="." includes="tests/base/**/*.whiley,tests/base/**/*.sysout"/>
     <fileset dir="." includes="examples/**/*.whiley"/>
     <fileset dir="." includes="stdlib/**/*.whiley"/>
     <fileset dir=".">
