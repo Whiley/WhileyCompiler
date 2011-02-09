@@ -1,8 +1,6 @@
 define And, Or, Not, True, False
-
 define Bool as True | False
-
-define Term as Set | Value | Rational
+define Term as And | Or | Not | Bool
 
 rewrite Not(Bool t):
     => True, if t == False
