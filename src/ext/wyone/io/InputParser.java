@@ -15,7 +15,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.util;
+package wyone.io;
 
 import java.io.*;
 import java.util.*;
@@ -26,18 +26,19 @@ import wyone.theory.logic.*;
 // import wyone.theory.list.*;
 import wyone.theory.numeric.*;
 import wyone.theory.set.*;
+import wyone.util.SyntaxError;
 // import wyone.theory.quantifier.*;
 // import wyone.theory.tuple.*;
 import static wyone.core.Constructor.*;
 import static wyone.theory.logic.Logic.*;
 import static wyone.theory.numeric.Numerics.*;
 
-public class Parser {
+public class InputParser {
 	private String filename;
 	private String input;
 	private int index;
 	
-	public Parser(File file) throws IOException {		
+	public InputParser(File file) throws IOException {		
 		this.filename = file.getPath();
 		BufferedReader in = new BufferedReader(new FileReader(filename));
 		
@@ -50,7 +51,7 @@ public class Parser {
 		index = 0;		
 	}
 	
-	public Parser(String input) {		
+	public InputParser(String input) {		
 		this.filename = "";		
 		this.input = input;
 		index = 0;		

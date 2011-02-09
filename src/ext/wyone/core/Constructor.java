@@ -20,7 +20,6 @@ package wyone.core;
 import java.util.*;
 
 import wyil.lang.Type;
-import wyone.theory.numeric.Rational;
 
 /**
  * A constructor represents some kind of expression which makes up some, or all
