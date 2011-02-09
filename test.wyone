@@ -1,0 +1,19 @@
+define And, Or, Not, True, False
+
+define Bool as True | False
+
+define Term as Set | Value | Rational
+
+rewrite Not(Bool t):
+    => True, if t == False
+    => False, if t == True
+
+rewrite And({Term} xs):
+    => true, if true in this
+    => false, if xs == {false}
+
+rewrite Or({Term} xs):
+    => false, if false in xs
+    => true, if xs == {true}
+
+    
