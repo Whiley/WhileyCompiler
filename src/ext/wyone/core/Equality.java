@@ -94,9 +94,9 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			Constraint nf = lhs.equate(rhs);			
 			nf = sign ? nf : nf.not();
 			// following is needed to meet requirements of Contract.substitute()
-			if(nf.equals(this)) {
+			if(nf.equals(this)) {			
 				return this;
-			} else {				
+			} else {								
 				return nf;
 			}
 		}
@@ -225,7 +225,7 @@ public final class Equality extends Base<Constructor> implements Constraint {
 			for(Constraint f : state) {
 				if(f == eq) { continue; }							
 				Constraint nf = f.substitute(binding);									
-				if(nf != f) {				
+				if(nf != f) {								
 					// f has been replaced!					
 					if (!(f instanceof Equality)
 							|| !((Equality) f).isAssignment()) {					

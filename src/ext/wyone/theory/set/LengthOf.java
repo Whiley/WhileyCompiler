@@ -39,26 +39,27 @@ public class LengthOf extends Constructor.Base<Constructor> implements Construct
 		Constructor osource = source();				
 		Constructor source = osource.substitute(binding);				
 		Constructor ret;
-		
+				
 		if(source instanceof Value.Set) {
 			Value.Set c = (Value.Set) source;			
 			return Value.V_NUM(BigInteger.valueOf(c.subterms().size()));
-		} else if(source instanceof SetConstructor) {
+		} else if(source instanceof SetConstructor) {			
 			SetConstructor c = (SetConstructor) source;
 			int size = c.subterms().size();
 			if(size == 0 || size == 1) {
 				// in this case, we can be more definite
 				return Value.V_NUM(BigInteger.valueOf(size));
-			} else {
-				ret = new LengthOf(source);
-			}
-		} else if(source != osource) {
+			} 
+		} 
+		
+		if(source != osource) {			
 			ret = new LengthOf(source);
 		} else {
 			ret = this;
 		}
 		
-		Constructor r = binding.get(ret);
+		Constructor r = binding.get(ret);				
+		
 		if(r != null) { 
 			return r;
 		} else {		

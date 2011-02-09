@@ -177,7 +177,14 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 			} else {
 				return -1;
 			}
-		}				
+		}	
+		
+		public String toString() {
+			if(value) { return "true"; }
+			else {
+				return "false";
+			}
+		}
 	}
 	
 
@@ -240,7 +247,10 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 		}
 		
 		public boolean equals(Object o) {
-			return value.equals(o);
+			if(o instanceof Number) {
+				return value.equals(((Number)o).value);
+			}
+			return false;
 		}
 		
 		public int hashCode() {
