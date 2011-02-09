@@ -20,15 +20,9 @@ package wyone;
 import java.io.*;
 import java.util.*;
 
+import wyil.util.SyntaxError;
 import wyone.core.*;
-import wyone.io.InputParser;
-import wyone.theory.logic.*;
-import wyone.theory.numeric.*;
-// import wyone.theory.tuple.*;
-// import wyone.theory.quantifier.*;
-// import wyone.theory.list.*;
-import wyone.theory.set.*;
-import wyone.util.*;
+import wyone.io.*;
 
 /**
  * This class provides a simple text interface to the Solver, allowing simple
