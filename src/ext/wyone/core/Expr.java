@@ -20,7 +20,7 @@ package wyone.core;
 
 import java.util.*;
 
-import wyil.lang.*;
+import wyil.lang.Attribute;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;
 
@@ -41,23 +41,10 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class NamedConstant extends Variable {
-		public final ModuleID mid;
-
-		public NamedConstant(String var, ModuleID mid, Attribute... attributes) {
-			super(var, attributes);
-			this.mid = mid;
-		}
-		
-		public String toString() {
-			return mid + ":" + var;
-		}
-	}
-
 	public static class Constant extends SyntacticElement.Impl implements Expr {
-		public final Value value;
+		public final Object value;
 
-		public Constant(Value val, Attribute... attributes) {
+		public Constant(Object val, Attribute... attributes) {
 			super(attributes);
 			this.value = val;
 		}
@@ -73,18 +60,6 @@ public interface Expr extends SyntacticElement {
 		public TypeConst(Type val, Attribute... attributes) {
 			super(attributes);
 			this.type = val;
-		}
-	}
-	
-	public static class FunConst extends SyntacticElement.Impl implements Expr {
-
-		public String name;
-		public final List<Type> paramTypes;
-
-		public FunConst(String name, List<Type> paramTypes, Attribute... attributes) {
-			super(attributes);
-			this.name = name;
-			this.paramTypes = paramTypes;
 		}
 	}
 	
@@ -138,9 +113,7 @@ public interface Expr extends SyntacticElement {
 	public enum UOp {
 		NOT,
 		NEG,
-		LENGTHOF,
-		PROCESSACCESS,
-		PROCESSSPAWN
+		LENGTHOF		
 	}
 	
 	public static class UnOp extends SyntacticElement.Impl implements Expr {

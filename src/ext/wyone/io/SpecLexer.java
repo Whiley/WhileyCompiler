@@ -23,7 +23,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyil.jvm.rt.BigRational;
-import wyone.util.SyntaxError;
+import wyil.util.SyntaxError;
 
 public class SpecLexer {	
 	private String filename;
