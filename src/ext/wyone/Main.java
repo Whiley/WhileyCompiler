@@ -51,6 +51,7 @@ public class Main {
 		new Equality.Closure(),
 		new Subtype.Closure(),
 		new FourierMotzkinSolver(),
+		new LengthOfClosure(),
 		new SubsetClosure(),
 		new DisjunctReduction()
 	};

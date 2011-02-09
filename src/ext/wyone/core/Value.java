@@ -238,6 +238,10 @@ public abstract class Value implements Constructor, Comparable<Constructor> {
 			return value.isInteger();
 		}
 		
+		public int intValue() {
+			return value.intValue();
+		}
+		
 		public Number ceil() {
 			return V_NUM(value.ceil());
 		}
