@@ -280,13 +280,8 @@ public class SpecLexer {
 			return new RightCurly(pos++);
 		} else if(c == '+') {
 			return new Plus(pos++);
-		} else if(c == '-') {
-			if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
-				pos += 2;
-				return new Arrow("->",pos-2);
-			} else {
-				return new Minus(pos++);				
-			}			
+		} else if(c == '-') {			
+			return new Minus(pos++);									
 		} else if(c == '*') {
 			return new Star(pos++);
 		} else if(c == '&') {
@@ -322,6 +317,9 @@ public class SpecLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new EqualsEquals(pos-2);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
+				pos += 2;
+				return new Arrow("=>",pos-2);
 			} else {
 				return new Equals(pos++);				
 			}
@@ -383,28 +381,14 @@ public class SpecLexer {
 		"null",
 		"int",
 		"real",
-		"bool",
-		"process",
+		"bool",		
 		"void",			
-		"if",
-		"while",
-		"else",
-		"where",
-		"requires",
-		"ensures",
+		"if",		
 		"as",
-		"for",
-		"assert",
-		"debug",
-		"print",
-		"return",
-		"define",		
-		"function",
-		"import",
-		"package",
-		"public",
-		"extern",
-		"spawn"
+		"term",
+		"terms",
+		"class",
+		"rewrite"
 	};
 	
 	public Token scanIdentifier() {

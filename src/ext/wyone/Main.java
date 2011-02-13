@@ -58,8 +58,10 @@ public class Main {
 				
 				long start = System.currentTimeMillis();
 				
-				SpecParser parser = new SpecParser(new File(args[fileArgsBegin]));
-				
+				String specfile = args[fileArgsBegin];
+				SpecLexer lexer = new SpecLexer(specfile);
+				SpecParser parser = new SpecParser(specfile,lexer.scan());
+				SpecFile spec = parser.parse();
 				start = System.currentTimeMillis() - start;
 				System.out.println("Time: " + start + "ms");				
 				

@@ -1,6 +1,8 @@
-define And, Or, Not, True, False
-define Bool as True | False
-define Term as And | Or | Not | Bool
+terms And, Or, Not, True, False
+
+class Bool as True | False
+
+class Term as And | Or | Not | Bool
 
 rewrite Not(Bool t):
     => True, if t == False
@@ -13,5 +15,3 @@ rewrite And({Term} xs):
 rewrite Or({Term} xs):
     => false, if false in xs
     => true, if xs == {true}
-
-    

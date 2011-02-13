@@ -1,14 +1,12 @@
 package wyone.io;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 import wyil.jvm.rt.BigRational;
 import wyil.lang.Attribute;
 import wyil.util.*;
+import static wyone.core.SpecFile.*;
 import static wyone.io.SpecLexer.*;
 import wyone.core.*;
 
@@ -22,30 +20,164 @@ public class SpecParser {
 		this.tokens = new ArrayList<Token>(tokens); 
 	}
 	
-	private Expr parseCondition(boolean dictionaryStart) {
+	public SpecFile parse() {
+		ArrayList<Decl> decls = new ArrayList<Decl>();
+		
+		while(index < tokens.size()) {			
+			Token t = tokens.get(index);
+			if (t instanceof NewLine || t instanceof Comment) {
+				matchEndLine();
+			} else {
+				Token lookahead = tokens.get(index);
+				
+				if(lookahead.text.equals("term")) {		
+					decls.add(parseTermDecl());
+				} else if(lookahead.text.equals("terms")) {		
+					decls.addAll(parseTermsDecl());
+				} else if(lookahead.text.equals("class")) {		
+					decls.add(parseClassDecl());
+				} else {			
+					decls.add(parseRewriteDecl());
+				}				
+			}
+		}
+		
+		return new SpecFile(filename,decls);
+	}
+		
+	private Decl parseTermDecl() {
+		int start = index;
+		matchKeyword("term");
+		String name = matchIdentifier().text;
+		matchEndLine();
+		return new TermDecl(name, sourceAttr(start,index-1));
+	}
+	
+	private List<TermDecl> parseTermsDecl() {		
+		matchKeyword("terms");
+		int start = index;
+		ArrayList<TermDecl> terms = new ArrayList();		
+		String name = matchIdentifier().text;
+		terms.add(new TermDecl(name,sourceAttr(start,index-1)));
+		do {
+			match(Comma.class);
+			start = index;
+			name = matchIdentifier().text;
+			terms.add(new TermDecl(name,sourceAttr(start,index-1)));
+		} while(index < tokens.size() && tokens.get(index) instanceof Comma);
+		matchEndLine();
+		return terms;
+	}
+	
+	private Decl parseClassDecl() {
+		int start = index;
+		matchKeyword("class");
+		String name = matchIdentifier().text;
+		matchKeyword("as");
+		ArrayList<String> children = new ArrayList<String>();
+		boolean firstTime=true;
+		do {
+			if(!firstTime) {
+				match(Bar.class);
+			}
+			firstTime=false;
+			children.add(matchIdentifier().text);
+		} while(index < tokens.size() && tokens.get(index) instanceof Bar);
+		matchEndLine();
+		return new ClassDecl(name, children, sourceAttr(start,index-1));
+	}
+	
+	private Decl parseRewriteDecl() {
+		int start = index;
+		matchKeyword("rewrite");
+		String name = matchIdentifier().text;
+		ArrayList<Pair<TypeDecl,String>> params = new ArrayList();
+		match(LeftBrace.class);
+		boolean firstTime=true;
+		while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+			if(!firstTime) {
+				match(Comma.class);
+			}
+			int pstart = index;
+			firstTime=false;
+			Type type = parseType();
+			String param = matchIdentifier().text;
+			params.add(new Pair<TypeDecl,String>(new TypeDecl(type,sourceAttr(pstart,index-1)),param));
+		}
+		match(RightBrace.class);
+		match(Colon.class);
+		matchEndLine();
+		List<RuleDecl> rules = parseRuleBlock(1);
+		return new RewriteDecl(name,params,rules,sourceAttr(start,index-1));
+	}
+	
+	public List<RuleDecl> parseRuleBlock(int indent) {
+		Tabs tabs = getIndent();
+		
+		ArrayList<RuleDecl> rules = new ArrayList<RuleDecl>();
+		while(tabs != null && tabs.ntabs == indent) {
+			index = index + 1;
+			rules.add(parseRule());			
+			tabs = getIndent();			
+		}
+		
+		return rules;		
+	}
+	
+	private Tabs getIndent() {
+		// FIXME: there's still a bug here for empty lines with arbitrary tabs
+		if (index < tokens.size() && tokens.get(index) instanceof Tabs) {
+			return (Tabs) tokens.get(index);
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof Comment) {
+			// This indicates a completely empty line. In which case, we just
+			// ignore it.
+			matchEndLine();
+			return getIndent();
+		} else {
+			return null;
+		}
+	}
+	
+	public RuleDecl parseRule() {
+		int start = index;
+		match(Arrow.class);
+		Expr result = parseAddSubExpression();
+		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
+			match(Comma.class);
+			matchKeyword("if");
+			Expr condition = parseCondition();
+			matchEndLine();
+			return new RuleDecl(result,condition,sourceAttr(start,index-1));
+		} else {
+			return new RuleDecl(result,null,sourceAttr(start,index-1));
+		}
+	}
+	
+	private Expr parseCondition() {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseConditionExpression(dictionaryStart);		
+		Expr c1 = parseConditionExpression();		
 		
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
 			skipWhiteSpace();
 			
-			Expr c2 = parseCondition(dictionaryStart);			
+			Expr c2 = parseCondition();			
 			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			skipWhiteSpace();
 			
-			Expr c2 = parseCondition(dictionaryStart);
+			Expr c2 = parseCondition();
 			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		
 	}
 		
-	private Expr parseConditionExpression(boolean dictionaryStart) {		
+	private Expr parseConditionExpression() {		
 		int start = index;
 		
 		if (index < tokens.size()
@@ -66,43 +198,42 @@ public class SpecParser {
 					sc.condition, sourceAttr(start, index - 1));			
 		} // should do FOR here;  could also do lone and one
 		
-		Expr lhs = parseAddSubExpression(dictionaryStart);
+		Expr lhs = parseAddSubExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			skipWhiteSpace();
  			
- 			Expr rhs = parseAddSubExpression(dictionaryStart);
+ 			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
-			skipWhiteSpace();
-			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			skipWhiteSpace();			
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);			
+			Expr rhs = parseAddSubExpression();			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.TypeEquals) {
 			return parseTypeEquals(lhs,start);			
@@ -110,19 +241,19 @@ public class SpecParser {
 			match(SpecLexer.ElemOf.class);			
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.SubsetEquals) {
 			match(SpecLexer.SubsetEquals.class);			
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.Subset) {
 			match(SpecLexer.Subset.class);			
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
@@ -141,28 +272,28 @@ public class SpecParser {
 	}
 	
 
-	private Expr parseAddSubExpression(boolean dictionaryStart) {
+	private Expr parseAddSubExpression() {
 		int start = index;
-		Expr lhs = parseMulDivExpression(dictionaryStart);
+		Expr lhs = parseMulDivExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
 			skipWhiteSpace();
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Union) {
 			match(Union.class);
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.UNION, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -170,7 +301,7 @@ public class SpecParser {
 			match(Intersection.class);
 			skipWhiteSpace();
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.INTERSECTION, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}	
@@ -178,15 +309,15 @@ public class SpecParser {
 		return lhs;
 	}
 	
-	private Expr parseMulDivExpression(boolean dictionaryStart) {
+	private Expr parseMulDivExpression() {
 		int start = index;
-		Expr lhs = parseIndexTerm(dictionaryStart);
+		Expr lhs = parseIndexTerm();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
 			skipWhiteSpace();
 			
-			Expr rhs = parseMulDivExpression(dictionaryStart);
+			Expr rhs = parseMulDivExpression();
 			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -194,7 +325,7 @@ public class SpecParser {
 			match(RightSlash.class);
 			skipWhiteSpace();
 			
-			Expr rhs = parseMulDivExpression(dictionaryStart);
+			Expr rhs = parseMulDivExpression();
 			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -202,7 +333,7 @@ public class SpecParser {
 		return lhs;
 	}	
 	
-	private Expr parseIndexTerm(boolean dictionaryStart) {
+	private Expr parseIndexTerm() {
 		checkNotEof();
 		int start = index;
 		int ostart = index;		
@@ -211,7 +342,7 @@ public class SpecParser {
 		Token lookahead = tokens.get(index);
 		
 		while (lookahead instanceof LeftSquare || lookahead instanceof Dot
-				|| lookahead instanceof LeftBrace || (!dictionaryStart && lookahead instanceof Arrow)) {
+				|| lookahead instanceof LeftBrace) {
 			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
@@ -226,14 +357,14 @@ public class SpecParser {
 					match(DotDot.class);
 					skipWhiteSpace();
 					lookahead = tokens.get(index);
-					Expr end = parseAddSubExpression(false);
+					Expr end = parseAddSubExpression();
 					match(RightSquare.class);
 					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
 							index - 1), lhs, new Expr.Constant(BigInteger.ZERO,
 							sourceAttr(start, index - 1)), end);
 				}
 				
-				Expr rhs = parseAddSubExpression(false);
+				Expr rhs = parseAddSubExpression();
 				
 				lookahead = tokens.get(index);
 				if(lookahead instanceof DotDot) {					
@@ -248,7 +379,7 @@ public class SpecParser {
 						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
 								.attribute(Attribute.Source.class));
 					} else {
-						end = parseAddSubExpression(false);						
+						end = parseAddSubExpression();						
 					}
 					match(RightSquare.class);
 					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
@@ -340,14 +471,14 @@ public class SpecParser {
 	}
 	
 	private Expr parseTupleExpression() {
-		Expr e = parseCondition(false);		
+		Expr e = parseCondition();		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a tuple constructor
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseCondition(false));
+				exprs.add(parseCondition());
 				checkNotEof();
 			}
 			return new Expr.TupleGen(exprs);
@@ -370,7 +501,7 @@ public class SpecParser {
 				skipWhiteSpace();
 			}
 			firstTime=false;
-			exprs.add(parseCondition(false));
+			exprs.add(parseCondition());
 			skipWhiteSpace();
 			checkNotEof();
 			token = tokens.get(index);
@@ -408,7 +539,7 @@ public class SpecParser {
 			}
 			match(SpecLexer.ElemOf.class);
 			skipWhiteSpace();
-			Expr src = parseConditionExpression(false);			
+			Expr src = parseConditionExpression();			
 			srcs.add(new Pair(var,src));
 			skipWhiteSpace();
 			checkNotEof();
@@ -416,7 +547,7 @@ public class SpecParser {
 		}
 		match(Bar.class);
 		skipWhiteSpace();
-		Expr condition = parseCondition(false);
+		Expr condition = parseCondition();
 		skipWhiteSpace();
 		match(RightCurly.class);
 		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
@@ -438,7 +569,7 @@ public class SpecParser {
 		
 		// NOTE: in the following, dictionaryStart must be true as this could be
 		// the start of a dictionary constructor.
-		exprs.add(parseCondition(true)); 
+		exprs.add(parseCondition()); 
 		skipWhiteSpace();
 		
 		boolean setComp = false;
@@ -466,7 +597,7 @@ public class SpecParser {
 				skipWhiteSpace();
 			}
 			firstTime=false;
-			exprs.add(parseCondition(false));
+			exprs.add(parseCondition());
 			skipWhiteSpace();
 			checkNotEof();
 			token = tokens.get(index);
@@ -516,16 +647,16 @@ public class SpecParser {
 	private Expr parseDictionaryVal(int start, Expr key) {
 		ArrayList<Pair<Expr,Expr>> pairs = new ArrayList<Pair<Expr,Expr>>();		
 		match(Arrow.class);
-		Expr value = parseCondition(false);	
+		Expr value = parseCondition();	
 		pairs.add(new Pair<Expr,Expr>(key,value));
 		skipWhiteSpace();
 		Token token = tokens.get(index);		
 		while(!(token instanceof RightCurly)) {									
 			match(Comma.class);
 			skipWhiteSpace();
-			key = parseCondition(true);
+			key = parseCondition();
 			match(Arrow.class);
-			value = parseCondition(false);
+			value = parseCondition();
 			pairs.add(new Pair<Expr,Expr>(key,value));
 			skipWhiteSpace();
 			checkNotEof();
@@ -540,7 +671,7 @@ public class SpecParser {
 		// this indicates a record value.				
 		match(Colon.class);
 		skipWhiteSpace();
-		Expr e = parseAddSubExpression(false);
+		Expr e = parseAddSubExpression();
 		skipWhiteSpace();
 		
 		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
@@ -560,7 +691,7 @@ public class SpecParser {
 
 			match(Colon.class);
 			skipWhiteSpace();
-			e = parseAddSubExpression(false);				
+			e = parseAddSubExpression();				
 			exprs.put(n.text,e);
 			checkNotEof();
 			token = tokens.get(index);					
@@ -574,7 +705,7 @@ public class SpecParser {
 		int start = index;
 		match(Bar.class);
 		skipWhiteSpace();
-		Expr e = parseIndexTerm(false);
+		Expr e = parseIndexTerm();
 		skipWhiteSpace();
 		match(Bar.class);
 		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
@@ -584,7 +715,7 @@ public class SpecParser {
 		int start = index;
 		match(Minus.class);
 		skipWhiteSpace();
-		Expr e = parseIndexTerm(false);
+		Expr e = parseIndexTerm();
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
