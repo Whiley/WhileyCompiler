@@ -28,24 +28,24 @@ import wyil.lang.Type;
  * @author djp
  * 
  */
-public final class Constructor implements Comparable<Constructor> {
+public class Constructor {
 
 	public final String name; // constructor name
-	public final ArrayList<Constructor> subterms;
+	public final ArrayList<Object> subterms;
 
-	public Constructor(String name, Constructor... subterms) {
+	public Constructor(String name, Object... subterms) {
 		assert name != null;
 		this.name = name;
-		this.subterms = new ArrayList<Constructor>();
-		for (Constructor p : subterms) {
+		this.subterms = new ArrayList<Object>();
+		for (Object p : subterms) {
 			this.subterms.add(p);
 		}
 	}
 
-	public Constructor(String name, Collection<Constructor> subterms) {
+	public Constructor(String name, Collection<Object> subterms) {
 		assert name != null;
 		this.name = name;
-		this.subterms = new ArrayList<Constructor>(subterms);
+		this.subterms = new ArrayList<Object>(subterms);
 	}
 
 	/**
@@ -55,7 +55,7 @@ public final class Constructor implements Comparable<Constructor> {
 	 * 
 	 * @return
 	 */
-	public List<Constructor> subterms() {
+	public List<Object> subterms() {
 		return subterms;
 	}
 
@@ -89,6 +89,7 @@ public final class Constructor implements Comparable<Constructor> {
 		return this;
 	}
 
+	/*
 	public int compareTo(Constructor c) {
 		int nc = name.compareTo(c.name);
 		if (nc != 0) {
@@ -112,7 +113,7 @@ public final class Constructor implements Comparable<Constructor> {
 
 		return 0;
 	}
-
+	 */
 	// =================================================================
 	// OBJECT METHODS
 	// =================================================================
@@ -121,7 +122,7 @@ public final class Constructor implements Comparable<Constructor> {
 		String r = name + "(";
 		boolean firstTime = true;
 
-		for (Constructor p : subterms) {
+		for (Object p : subterms) {
 			if (!firstTime) {
 				r = r + ",";
 			}

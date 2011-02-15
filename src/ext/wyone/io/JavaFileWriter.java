@@ -23,6 +23,7 @@ public class JavaFileWriter {
 	public void write(SpecFile spec) {
 		int lindex = spec.filename.lastIndexOf('.');
 		String className = spec.filename.substring(0,lindex);	
+		out.println("import java.util.*;");
 		out.println("import wyone.core.*;");
 		out.println();
 		out.println("public class " + className + " {");
@@ -51,9 +52,9 @@ public class JavaFileWriter {
 	}
 		
 	public void write(TermDecl decl) {
-		indent(1);out.println("public static " + decl.name + " extends Constructor {");
+		indent(1);out.println("public static class " + decl.name + " extends Constructor {");
 		indent(2);out.println("public " + decl.name + "(Collection<Constructor> subterms) {");
-		indent(3);out.println("super(" + decl.name + ",subterms);");
+		indent(3);out.println("super(\"" + decl.name + "\",subterms);");
 		indent(2);out.println("}");
 		indent(1);out.println("}");
 	}
@@ -103,7 +104,9 @@ public class JavaFileWriter {
 				indent(4);out.print("rewrite((" + name + ") target");
 				i=0;
 				for(Pair<TypeDecl,String> p : rd.types) {
-					out.print(",  target.subterms.get(" + i++ + ")");
+					out.print(",  (");
+					write(p.first().type);
+					out.print(") target.subterms.get(" + i++ + ")");
 				}
 				out.println(");");
 				indent(3);out.println("}");

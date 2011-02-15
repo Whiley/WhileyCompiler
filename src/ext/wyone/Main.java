@@ -65,7 +65,7 @@ public class Main {
 				new JavaFileWriter(System.out).write(spec);
 				
 				start = System.currentTimeMillis() - start;
-				System.out.println("Time: " + start + "ms");				
+				System.err.println("Time: " + start + "ms");				
 				
 			} catch(SyntaxError e) {				
 				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
