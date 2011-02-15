@@ -29,26 +29,41 @@ public interface Type extends SyntacticElement {
 		public Any(Attribute... attributes) {
 			super(attributes);
 		}		
+		public String toString() {
+			return "*";
+		}
 	}
 	public static final class Void extends SyntacticElement.Impl implements Type {
 		public Void(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
+		public String toString() {
+			return "void";
+		}
 	}	
 	public static final class Bool extends SyntacticElement.Impl implements Type {
 		public Bool(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
+		public String toString() {
+			return "bool";
+		}
 	}
 	public static final class Int extends SyntacticElement.Impl implements Type {
 		public Int(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
+		public String toString() {
+			return "int";
+		}
 	}
 	public static final class Real extends SyntacticElement.Impl implements Type {
 		public Real(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
+		public String toString() {
+			return "real";
+		}
 	}
 	public static final class Named extends SyntacticElement.Impl implements Type {		
 		public final String name;		
@@ -56,6 +71,9 @@ public interface Type extends SyntacticElement {
 			super(attributes);
 			this.name = name;
 		}		
+		public String toString() {
+			return name;
+		}
 	}
 	public static final class List extends SyntacticElement.Impl implements Type {
 		public final Type element;
@@ -63,12 +81,18 @@ public interface Type extends SyntacticElement {
 			super(attributes);
 			this.element = element;			
 		}
+		public String toString() {
+			return "[" + element + "]";			
+		}
 	}
 	public static final class Set extends SyntacticElement.Impl implements Type {
 		public final Type element;
 		public Set(Type element, Attribute... attributes) {
 			super(attributes);
 			this.element = element;
+		}
+		public String toString() {
+			return "{" + element + "}";			
 		}
 	}	
 	public static final class Record extends SyntacticElement.Impl implements Type {
