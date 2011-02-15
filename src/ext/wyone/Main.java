@@ -62,6 +62,8 @@ public class Main {
 				SpecLexer lexer = new SpecLexer(specfile);
 				SpecParser parser = new SpecParser(specfile,lexer.scan());
 				SpecFile spec = parser.parse();
+				new JavaFileWriter(System.out).write(spec);
+				
 				start = System.currentTimeMillis() - start;
 				System.out.println("Time: " + start + "ms");				
 				
