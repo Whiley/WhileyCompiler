@@ -26,10 +26,28 @@ public class JavaFileWriter {
 		out.println("import java.util.*;");
 		out.println("import wyone.core.*;");
 		out.println();
-		out.println("public class " + className + " {");
+		out.println("public final class " + className + " {");
+		
+		HashMap<String,Set<String>> hierarhcy = new HashMap<String,Set<String>>();
+		for(Decl d : spec.declarations) {
+			if(d instanceof ClassDecl) {
+				ClassDecl cd = (ClassDecl) d;
+				for(String child : cd.children) {
+					Set<String> parents = hierarhcy.get(child);
+					if(parents == null) {
+						parents = new HashSet<String>();
+						hierarhcy.put(child,parents);
+					}
+					parents.add(cd.name);
+				}
+			}
+		}
+		
 		for(Decl d : spec.declarations) {
 			if(d instanceof TermDecl) {
-				write((TermDecl) d);
+				write((TermDecl) d, hierarhcy);
+			} else if(d instanceof ClassDecl) {
+				write((ClassDecl) d, hierarhcy);
 			} else if(d instanceof RewriteDecl) {
 				write((RewriteDecl) d);
 			}
@@ -51,20 +69,59 @@ public class JavaFileWriter {
 		out.flush();
 	}
 		
-	public void write(TermDecl decl) {
-		indent(1);out.println("public static class " + decl.name + " extends Constructor {");
+	public void write(TermDecl decl, HashMap<String,Set<String>> hierarchy) {
+		indent(1);out.print("public final static class " + decl.name + " extends Constructor");
+		Set<String> parents = hierarchy.get(decl.name);
+		if(parents != null) {
+			out.print(" implements ");
+			boolean firstTime=true;
+			for(String parent : parents) {
+				if(!firstTime) {
+					out.print(",");
+				}
+				firstTime=false;
+				out.print(parent);
+			}
+		}
+		out.println(" {");
 		indent(2);out.println("public " + decl.name + "(Collection<Constructor> subterms) {");
 		indent(3);out.println("super(\"" + decl.name + "\",subterms);");
 		indent(2);out.println("}");
-		indent(1);out.println("}");
+		indent(1);out.println("}\n");
 	}
 	
-	public void write(ClassDecl decl) {
-		// not sure what I should do here.
+	public void write(ClassDecl decl, HashMap<String,Set<String>> hierarchy) {
+		indent(1);out.print("public static interface " + decl.name);
+		Set<String> parents = hierarchy.get(decl.name);
+		if(parents != null) {
+			out.print(" extends ");
+			boolean firstTime=true;
+			for(String parent : parents) {
+				if(!firstTime) {
+					out.print(",");
+				}
+				firstTime=false;
+				out.print(parent);
+			}
+		}
+		out.println(" {");
+		// will need more here
+		indent(1);out.println("}\n");
 	}
 	
 	public void write(RewriteDecl decl) {		
-		indent(1);out.print("public static Constructor rewrite(" + decl.name + " target");
+		// FIRST COMMENT CODE FROM SPEC FILE
+		indent(1);out.print("// rewrite " + decl.name + "(");
+		for(Pair<TypeDecl,String> td : decl.types){						
+			out.print(td.first().type);
+			out.print(" ");
+			out.print(td.second());
+		}
+		out.println("):");
+		
+		// NOW PRINT REAL CODE
+		String mangle = nameMangle(decl.types);				
+		indent(1);out.print("public static Constructor rewrite" + mangle + "(" + decl.name + " target");
 		if(!decl.types.isEmpty()) {
 			out.print(", ");
 		}
@@ -75,7 +132,7 @@ public class JavaFileWriter {
 		}
 		out.println(") {");
 		
-		indent(1);out.println("}");
+		indent(1);out.println("return null; }\n");
 	}
 	
 	public void write(HashMap<String,List<RewriteDecl>> dispatchTable) {
@@ -101,7 +158,8 @@ public class JavaFileWriter {
 					}
 				}
 				out.println(") {");
-				indent(4);out.print("rewrite((" + name + ") target");
+				indent(4);out.print("return rewrite");out.print(nameMangle(rd.types));
+				out.print("((" + name + ") target");
 				i=0;
 				for(Pair<TypeDecl,String> p : rd.types) {
 					out.print(",  (");
@@ -113,6 +171,7 @@ public class JavaFileWriter {
 			}
 			indent(2);out.println("}");
 		}
+		indent(2);out.println("return target;");
 		indent(1);out.println("}");
 	}
 	public void write(Type type) {
@@ -127,6 +186,18 @@ public class JavaFileWriter {
 		} else if(type instanceof Type.Set){
 			out.write("HashSet");
 		} 
+	}
+	
+	protected String nameMangle(Collection<Pair<TypeDecl,String>> types) {
+		String mangle = "_";
+		for(Pair<TypeDecl,String> td : types) {	
+			String str = Type.type2str(td.first().type);
+			for(int i=0;i!=str.length();++i) {
+				char c = str.charAt(i);
+				mangle = mangle + Integer.toHexString(c);
+			}
+		}		
+		return mangle;
 	}
 	
 	protected void indent(int level)  {
