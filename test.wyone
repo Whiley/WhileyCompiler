@@ -6,7 +6,7 @@ class Term as And | Or | Not | Bool
 
 rewrite Not(Bool t):
     => True, if t == False
-    => False, if t == True
+    => False
 
 rewrite And({Term} xs):
     => true, if true in this

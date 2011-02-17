@@ -6,11 +6,13 @@ import java.io.Writer;
 import java.util.*;
 
 import wyil.util.Pair;
+import static wyil.util.SyntaxError.*;
 import wyone.core.*;
 import static wyone.core.SpecFile.*;
 
 public class JavaFileWriter {
 	private PrintWriter out;
+	private SpecFile specfile;
 	
 	public JavaFileWriter(Writer os) {
 		out = new PrintWriter(os);
@@ -21,6 +23,7 @@ public class JavaFileWriter {
 	}
 	
 	public void write(SpecFile spec) {
+		specfile = spec;
 		int lindex = spec.filename.lastIndexOf('.');
 		String className = spec.filename.substring(0,lindex);	
 		out.println("import java.util.*;");
@@ -126,20 +129,49 @@ public class JavaFileWriter {
 				out.println("=> " + rd.result);
 			}
 		}
+		
 		// NOW PRINT REAL CODE
 		String mangle = nameMangle(decl.types);				
-		indent(1);out.print("public static Constructor rewrite" + mangle + "(" + decl.name + " target");
+		indent(1);out.print("public static Constructor rewrite" + mangle + "(final " + decl.name + " target");
 		if(!decl.types.isEmpty()) {
 			out.print(", ");
 		}
 		for(Pair<TypeDecl,String> td : decl.types){						
+			out.print("final ");
 			write(td.first().type);
 			out.print(" ");
 			out.print(td.second());
 		}
 		out.println(") {");
-		
-		indent(1);out.println("return null; }\n");
+		boolean defCase = false; 
+		for(RuleDecl rd : decl.rules) {
+			indent(2);
+			if(rd.condition != null && defCase) {
+				// this indicates a syntax error since it means we've got a
+				// default case before a conditional case.
+				syntaxError("case cannot be reached",specfile.filename,rd);
+			} else if(rd.condition != null) {				
+				out.print("if(");
+				write(rd.condition);
+				out.println(") {");
+				indent(3);
+				out.print("return ");
+				write(rd.result);
+				out.println(";");
+				indent(2);
+				out.println("}");
+			} else {
+				defCase = true;
+				out.print("return ");
+				write(rd.result);
+				out.println(";");
+			}
+		}
+		if(!defCase) {
+			indent(2);
+			out.println("return target");
+		}
+		indent(1);out.println("}\n");
 	}
 	
 	public void write(HashMap<String,List<RewriteDecl>> dispatchTable) {
@@ -181,6 +213,11 @@ public class JavaFileWriter {
 		indent(2);out.println("return target;");
 		indent(1);out.println("}");
 	}
+	
+	public void write(Expr expr) {
+		out.print("...");
+	}
+	
 	public void write(Type type) {
 		if(type instanceof Type.Int) {
 			out.write("BigInteger");
