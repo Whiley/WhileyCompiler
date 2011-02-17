@@ -13,9 +13,9 @@ rewrite Not(Bool t):
     => False
 
 rewrite And({Term} xs):
-    => True, if True in xs
-    => False, if xs == {False}
-
-rewrite Or({Term} xs):
     => False, if False in xs
     => True, if xs == {True}
+
+rewrite Or({Term} xs):
+    => True, if True in xs
+    => False, if xs == {False}

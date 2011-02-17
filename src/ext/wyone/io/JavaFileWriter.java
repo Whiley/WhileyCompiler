@@ -154,6 +154,22 @@ public class JavaFileWriter {
 			out.print("c" + idx++ + ".hashCode()");
 		}		
 		out.println(";");				
+		indent(2);out.println("}");		
+		// now write the toString method
+		indent(2);out.println("public String toString() {");
+		indent(3);out.print("return \"" + decl.name + "\"");
+		if(decl.params.isEmpty()) {		
+			out.println(";");
+		} else {
+			out.print(" + \"(\"");
+			idx = 0;		
+			for(Type t : decl.params) {					
+				out.print(" + ");							
+				firstTime=false;
+				out.print("c" + idx++);
+			}		
+			out.println(" + \")\";");							
+		}
 		indent(2);out.println("}");
 		indent(1);out.println("}\n");
 		// now write the generator method
