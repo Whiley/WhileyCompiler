@@ -6,8 +6,10 @@ import java.io.Writer;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyil.jvm.rt.BigRational;
 import wyil.util.Pair;
 import wyil.util.SyntacticElement;
+import wyil.util.SyntaxError;
 import static wyil.util.SyntaxError.*;
 import wyone.core.*;
 import static wyone.core.Expr.*;
@@ -30,6 +32,7 @@ public class JavaFileWriter {
 		int lindex = spec.filename.lastIndexOf('.');
 		String className = spec.filename.substring(0,lindex);	
 		out.println("import java.util.*;");		
+		out.println("import java.math.*;");
 		out.println();
 		out.println("public final class " + className + " {");
 		
@@ -72,6 +75,8 @@ public class JavaFileWriter {
 			}
 		}
 		write(dispatchTable);
+		writeParser();
+		writeMainMethod();
 		out.println("}");
 		out.flush();
 	}
@@ -505,6 +510,164 @@ public class JavaFileWriter {
 			}
 		}		
 		return mangle;
+	}
+	
+	protected void writeMainMethod() {
+		indent(1);out.println("public static void main(String[] args) {");
+		indent(2);out.println("Parser parser = new Parser(args[0]);");
+		indent(2);out.println("Constructor c = parser.parseTerm();");
+		indent(2);out.println("System.out.println(\"PARSED: \" + c);");
+		indent(2);out.println("System.out.println(\"REWROTE: \" + rewrite(c));");
+		indent(1);out.println("}");
+	}
+	
+	protected void writeParser() {
+		indent(1);out.println("public static final class Parser {");
+		indent(2);out.println("private final String input;");
+		indent(2);out.println("private int pos;");		
+		writeParserConstructor();
+		writeParseTerm();
+		writeParseSet();
+		writeParseNumber();		
+		writeParseIdentifier();
+		writeMatch();
+		writeSkipWhiteSpace();
+		indent(1);out.println("}");
+		writeSyntaxError();
+	}
+	
+	protected void writeParserConstructor() {
+		indent(2);out.println("public Parser(String input) {");
+		indent(3);out.println("this.input = input;");
+		indent(3);out.println("this.pos = 0;");
+		indent(2);out.println("}");
+	}
+	
+	protected void writeParseSet() {
+		indent(2);out.println("protected HashSet parseSet() {");
+		indent(3);out.println("HashSet r = new HashSet();");
+		indent(3);out.println("match(\"{\");");
+		indent(3);out.println("boolean firstTime=true;");
+		indent(3);out.println("while(pos < input.length() && input.charAt(pos) != '}') {");
+		indent(4);out.println("if(!firstTime) {");
+		indent(5);out.println("match(\",\");");
+		indent(4);out.println("}");
+		indent(4);out.println("firstTime=false;");
+		indent(4);out.println("r.add(parseTerm());");
+		indent(3);out.println("}");
+		indent(3);out.println("match(\"}\");");
+		indent(3);out.println("return r;");
+		indent(2);out.println("}");
+	}
+	
+	protected void writeParseNumber() {
+		indent(2);out.println("protected Number parseNumber() {");		
+		indent(3);out.println("int start = pos;");
+		indent(3);out.println("while (pos < input.length() && Character.isDigit(input.charAt(pos))) {");
+		indent(4);out.println("pos = pos + 1;");
+		indent(3);out.println("}");		
+		indent(3);out.println("return new BigInteger(input.substring(start, pos));");								
+		indent(2);out.println("}");		
+	}
+	
+	protected void writeParseTerm() {
+		indent(2);out.println("protected Constructor parseTerm() {");
+		indent(3);out.println("int start = pos;");
+		indent(3);out.println("String name = parseIdentifier();");
+		for(Decl d : specfile.declarations) {
+			if(d instanceof TermDecl) {
+				TermDecl td = (TermDecl) d;
+				indent(3);out.println("if(name.equals(\"" + td.name + "\")) { return parse" + td.name + "(); }");
+			}
+		}
+		indent(3);out.println("throw new SyntaxError(\"unrecognised term: \" + name,start,pos);");
+		indent(2);out.println("}");
+		for(Decl d : specfile.declarations) {
+			if(d instanceof TermDecl) {				
+				writeParseTerm((TermDecl) d);
+			}
+		}
+	}
+	
+	protected void writeParseTerm(TermDecl term) {
+		indent(2);out.println("public " + term.name +" parse" + term.name + "() {");		
+		
+		if(term.params.isEmpty()) {
+			indent(3);out.println("return " + term.name + ";");
+		} else {
+			indent(3);out.println("match(\"(\");");
+			int idx=0;
+			for(Type t : term.params) {
+				indent(3);write(t);out.print(" e" + idx++ + " = ");
+				writeTypeDispatch(t);
+				out.println(";");				
+			}
+			indent(3);out.println("match(\")\");");
+			indent(3);out.print("return " + term.name + "(");		
+			for(int i=0;i!=term.params.size();i++) {
+				if(i != 0) {
+					out.print(", ");
+				}
+				out.print("e" + i);
+			}
+			out.println(");");
+		}	
+		indent(2);out.println("}");
+	}
+	
+	public void writeTypeDispatch(Type t) {
+		if(t instanceof Type.Set) {
+			out.print("parseSet()");
+		} else if(t instanceof Type.Int) {
+			out.print("parseNumber()");
+		} else 	{	
+			Type.Named tn = (Type.Named) t;
+			out.print("(" + tn.name + ") parseTerm()");
+		}
+	}
+	
+	public void writeParseIdentifier() {
+		indent(2);out.println("protected String parseIdentifier() {");
+		indent(3);out.println("int start = pos;");		
+		indent(3);out.println("while (pos < input.length() &&");
+		indent(4);out.println("Character.isJavaIdentifierPart(input.charAt(pos))) {");
+		indent(4);out.println("pos++;");								
+		indent(3);out.println("}");		
+		indent(3);out.println("return input.substring(start,pos);");
+		indent(2);out.println("}");
+	}	
+	protected void writeMatch() {
+		indent(2);out.println("protected void match(String x) {");
+		indent(3);out.println("skipWhiteSpace();");			
+		indent(3);out.println("if((input.length()-pos) < x.length()) {");
+		indent(4);out.println("throw new SyntaxError(\"expecting \" + x,pos,pos);");
+		indent(3);out.println("}");
+		indent(3);out.println("if(!input.substring(pos,pos+x.length()).equals(x)) {");
+		indent(4);out.println("throw new SyntaxError(\"expecting \" + x,pos,pos);");			
+		indent(3);out.println("}");
+		indent(3);out.println("pos += x.length();");
+		indent(2);out.println("}");
+	}
+	
+	protected void writeSkipWhiteSpace() {
+		indent(2);out.println("protected void skipWhiteSpace() {");
+		indent(3);out.println("while (pos < input.length() && Character.isWhitespace(input.charAt(pos))) {");			
+		indent(4);out.println("pos = pos + 1;");
+		indent(3);out.println("}");
+		indent(2);out.println("}");		
+	}
+	
+	protected void writeSyntaxError() {
+		indent(1);out.println("public static final class SyntaxError extends RuntimeException {");				
+		indent(2);out.println("public final int start;");
+		indent(2);out.println("public final int end;");		
+			
+		indent(2);out.println("public SyntaxError(String msg, int start, int end) {");
+		indent(3);out.println("super(msg);");		
+		indent(3);out.println("this.start=start;");		
+		indent(3);out.println("this.end=end;");		
+		indent(2);out.println("}");
+		indent(1);out.println("}");
 	}
 	
 	protected void indent(int level)  {
