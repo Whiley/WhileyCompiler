@@ -209,16 +209,11 @@ public class JavaFileWriter {
 	}
 	
 	public void write(ClassDecl decl, HashMap<String,Set<String>> hierarchy) {
-		indent(1);out.print("public static interface " + decl.name);
+		indent(1);out.print("public static interface " + decl.name + " extends Constructor");
 		Set<String> parents = hierarchy.get(decl.name);
-		if(parents != null) {
-			out.print(" extends ");
-			boolean firstTime=true;
-			for(String parent : parents) {
-				if(!firstTime) {
-					out.print(",");
-				}
-				firstTime=false;
+		if(parents != null) {			
+			for(String parent : parents) {				
+				out.print(",");								
 				out.print(parent);
 			}
 		}
@@ -310,10 +305,40 @@ public class JavaFileWriter {
 		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			write(e.getKey(),e.getValue());
 		}
+		
+		writeRewriteSet();		
+	}
+	
+	public void writeRewriteSet() {
+		indent(1);out.println("public static HashSet rewrite(HashSet os) {");
+		indent(2);out.println("HashSet rs = new HashSet();");
+		indent(2);out.println("for(Object o : os) {");
+		indent(3);out.println("rs.add(rewrite(o));");
+		indent(2);out.println("}");
+		indent(2);out.println("return rs;");
+		indent(1);out.println("}");
 	}
 	
 	public void write(String name, List<RewriteDecl> rules) {
+		int nparams = 0;
+		// FIXME: this is a hack
+		for(Decl d : specfile.declarations) {
+			if(d instanceof TermDecl) {
+				TermDecl td = (TermDecl) d;
+				if(td.name.equals(name)) {
+					nparams = td.params.size();
+				}
+			}
+		}
 		indent(1);out.println("public static Constructor rewrite(" + name + " target) {");
+		indent(2);out.print("target = " + name + "(");
+		for(int i=0;i!=nparams;++i) {
+			if(i != 0) {
+				out.print(", ");
+			}
+			out.print("rewrite(target.c" + i + ")");
+		}
+		out.println(");");
 		for(RewriteDecl r : rules) {
 			String mangle = nameMangle(r.types);
 			indent(2);out.print("if(");
