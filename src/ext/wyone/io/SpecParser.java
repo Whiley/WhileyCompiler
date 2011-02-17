@@ -32,8 +32,6 @@ public class SpecParser {
 				
 				if(lookahead.text.equals("term")) {		
 					decls.add(parseTermDecl());
-				} else if(lookahead.text.equals("terms")) {		
-					decls.addAll(parseTermsDecl());
 				} else if(lookahead.text.equals("class")) {		
 					decls.add(parseClassDecl());
 				} else {			
@@ -49,26 +47,25 @@ public class SpecParser {
 		int start = index;
 		matchKeyword("term");
 		String name = matchIdentifier().text;
+		ArrayList<Type> params = new ArrayList<Type>();
+		
+		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			match(LeftBrace.class);
+			boolean firstTime=true;
+			while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+				if(!firstTime) {
+					match(Comma.class);
+				}
+				firstTime=false;							
+				params.add(parseType());
+			}
+			match(RightBrace.class);
+		}
+		
 		matchEndLine();
-		return new TermDecl(name, sourceAttr(start,index-1));
+		return new TermDecl(name, params, sourceAttr(start,index-1));
 	}
-	
-	private List<TermDecl> parseTermsDecl() {		
-		matchKeyword("terms");
-		int start = index;
-		ArrayList<TermDecl> terms = new ArrayList();		
-		String name = matchIdentifier().text;
-		terms.add(new TermDecl(name,sourceAttr(start,index-1)));
-		do {
-			match(Comma.class);
-			start = index;
-			name = matchIdentifier().text;
-			terms.add(new TermDecl(name,sourceAttr(start,index-1)));
-		} while(index < tokens.size() && tokens.get(index) instanceof Comma);
-		matchEndLine();
-		return terms;
-	}
-	
+		
 	private Decl parseClassDecl() {
 		int start = index;
 		matchKeyword("class");

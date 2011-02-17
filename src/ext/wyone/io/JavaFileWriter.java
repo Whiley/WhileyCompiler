@@ -76,7 +76,20 @@ public class JavaFileWriter {
 	}
 		
 	public void write(TermDecl decl, HashMap<String,Set<String>> hierarchy) {
-		indent(1);out.print("public final static class " + decl.name + " extends Constructor");
+		indent(1);out.print("// " + decl.name);
+		if(!decl.params.isEmpty()) {
+			out.print("(");
+			boolean firstTime=true;
+			for(Type t : decl.params) {
+				if(!firstTime) {
+					out.print(",");
+				}
+				out.print(t);
+			}	
+			out.print(")");
+		}
+		out.println();
+		indent(1);out.print("public final static class " + decl.name);
 		Set<String> parents = hierarchy.get(decl.name);
 		if(parents != null) {
 			out.print(" implements ");
@@ -90,9 +103,85 @@ public class JavaFileWriter {
 			}
 		}
 		out.println(" {");
-		indent(2);out.println("public " + decl.name + "(Collection<Constructor> subterms) {");
-		indent(3);out.println("super(\"" + decl.name + "\",subterms);");
+		int idx=0;
+		for(Type t : decl.params) {
+			indent(2);out.println("public final c" + idx++ + ";");
+		}		
+		indent(2);out.print("private " + decl.name + "(");
+		boolean firstTime=true;
+		idx=0;
+		for(Type t : decl.params) {
+			if(!firstTime) {
+				out.print(",");
+			}
+			firstTime=false;
+			write(t);
+			out.print(" c" + idx++);
+		}
+		out.println(") {");
+		idx = 0;
+		for(Type t : decl.params) {									
+			indent(3);out.println("this.c" + idx + "=c" + idx++ + ";");
+		}
+		indent(2);out.println("}");				
+		// now write the equals method
+		indent(2);out.println("public boolean equals(Object o) {");
+		indent(3);out.println("if(o instanceof " + decl.name + ") {");
+		indent(4);out.println(decl.name + " v = (" + decl.name + ") o;");
+		indent(4);out.print("return ");
+		if(decl.params.isEmpty()) {
+			out.println("true;");
+		} else {
+			idx = 0;
+			firstTime=true;
+			for(Type t : decl.params) {		
+				if(!firstTime) {
+					out.println(" && ");				
+				}
+				firstTime=false;
+				out.print("c" + idx + ".equals(v.c" + idx++ + ")");
+			}		
+			out.println(";");
+		}
+		indent(3);out.println("}");
+		indent(3);out.println("return false;");
 		indent(2);out.println("}");
+		// now write the hashCode method
+		indent(2);out.println("public int hashCode() {");
+		indent(3);out.print("return " + decl.name.hashCode());
+		idx = 0;		
+		for(Type t : decl.params) {					
+			out.print(" + ");							
+			firstTime=false;
+			out.print("c" + idx++ + ".hashCode()");
+		}		
+		out.println(";");				
+		indent(2);out.println("}");
+		indent(1);out.println("}\n");
+		// now write the generator method
+		indent(1);out.print("public static " + decl.name + " " + decl.name + "(");
+		firstTime=true;
+		idx=0;
+		for(Type t : decl.params) {
+			if(!firstTime) {
+				out.print(",");
+			}
+			firstTime=false;
+			write(t);
+			out.print(" c" + idx++);
+		}
+		out.println(") {");
+		indent(2);out.print("return new " + decl.name + "(");
+		idx = 0;
+		firstTime=true;
+		for(Type t : decl.params) {	
+			if(!firstTime) {
+				out.print(",");
+			}
+			firstTime=false;
+			out.print("c" + idx++);
+		}
+		out.println(");");			
 		indent(1);out.println("}\n");
 	}
 	

@@ -17,10 +17,12 @@ public class SpecFile {
 	
 	public static class TermDecl extends SyntacticElement.Impl implements Decl {
 		public final String name;
+		public final ArrayList<Type> params;
 		
-		public TermDecl(String n, Attribute... attributes) {
+		public TermDecl(String n, Collection<Type> params, Attribute... attributes) {
 			super(attributes);
 			this.name = n;
+			this.params = new ArrayList<Type>(params);
 		}		
 	}
 	

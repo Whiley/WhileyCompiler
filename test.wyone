@@ -1,4 +1,8 @@
-terms And, Or, Not, True, False
+term And({Term})
+term Or({Term})
+term Not(Term)
+term True
+term False
 
 class Bool as True | False
 
