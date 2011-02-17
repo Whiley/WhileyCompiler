@@ -243,6 +243,20 @@ public interface Expr extends SyntacticElement {
 		SUBLIST					
 	}
 	
+	public static class Invoke extends SyntacticElement.Impl implements Expr {
+		public final String name;
+		public final Expr receiver;
+		public final List<Expr> arguments;
+		
+		public Invoke(String name, Expr receiver, List<Expr> arguments,
+				Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.receiver = receiver;
+			this.arguments = arguments;
+		}
+	}
+	
 	public static class Comprehension extends SyntacticElement.Impl implements Expr {
 		public final COp cop;
 		public final Expr value;

@@ -424,7 +424,7 @@ public class SpecParser {
 				&& token instanceof Identifier
 				&& tokens.get(index + 1) instanceof LeftBrace) {				
 			// must be a method invocation			
-			//return parseInvokeExpr();
+			return parseInvokeExpr();
 		} else if (token.text.equals("null")) {
 			matchKeyword("null");			
 			return new Expr.Constant(null,
@@ -728,6 +728,29 @@ public class SpecParser {
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
+	private Expr.Invoke parseInvokeExpr() {		
+		int start = index;
+		Identifier name = matchIdentifier();		
+		match(LeftBrace.class);
+		skipWhiteSpace();
+		boolean firstTime=true;
+		ArrayList<Expr> args = new ArrayList<Expr>();
+		while (index < tokens.size()
+				&& !(tokens.get(index) instanceof RightBrace)) {
+			if(!firstTime) {
+				match(Comma.class);
+				skipWhiteSpace();
+			} else {
+				firstTime=false;
+			}			
+			Expr e = parseAddSubExpression();
+			skipWhiteSpace();
+			args.add(e);		
+		}
+		match(RightBrace.class);		
+		return new Expr.Invoke(name.text, null, args, sourceAttr(start,index-1));
+	}
+	
 	private Expr parseString() {
 		int start = index;
 		String s = match(Strung.class).string;		
