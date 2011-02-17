@@ -9,13 +9,13 @@ class Bool as True | False
 class Term as And | Or | Not | Bool
 
 rewrite Not(Bool t):
-    => True, if t == False()
+    => True, if t == False
     => False
 
 rewrite And({Term} xs):
-    => true, if True in this
-    => false, if xs == {False()}
+    => True, if True in xs
+    => False, if xs == {False}
 
 rewrite Or({Term} xs):
-    => False, if False() in xs
-    => True, if xs == {True()}
+    => False, if False in xs
+    => True, if xs == {True}

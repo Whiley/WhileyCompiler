@@ -244,16 +244,26 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class Invoke extends SyntacticElement.Impl implements Expr {
-		public final String name;
-		public final Expr receiver;
+		public final String name;		
 		public final List<Expr> arguments;
 		
-		public Invoke(String name, Expr receiver, List<Expr> arguments,
+		public Invoke(String name, List<Expr> arguments,
 				Attribute... attributes) {
 			super(attributes);
-			this.name = name;
-			this.receiver = receiver;
+			this.name = name;			
 			this.arguments = arguments;
+		}
+		
+		public String toString() {
+			String r = name + "(";
+			boolean firstTime=true;
+			for(Expr e : arguments) {
+				if(!firstTime) {
+					r += ",";
+				}
+				r += e;
+			}
+			return r + ")";
 		}
 	}
 	

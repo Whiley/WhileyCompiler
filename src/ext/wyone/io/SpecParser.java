@@ -745,7 +745,7 @@ public class SpecParser {
 			args.add(e);		
 		}
 		match(RightBrace.class);		
-		return new Expr.Invoke(name.text, null, args, sourceAttr(start,index-1));
+		return new Expr.Invoke(name.text, args, sourceAttr(start,index-1));
 	}
 	
 	private Expr parseString() {

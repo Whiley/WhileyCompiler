@@ -16,7 +16,7 @@ import static wyone.core.SpecFile.*;
 public class JavaFileWriter {
 	private PrintWriter out;
 	private SpecFile specfile;
-	
+		
 	public JavaFileWriter(Writer os) {
 		out = new PrintWriter(os);
 	}
@@ -29,10 +29,11 @@ public class JavaFileWriter {
 		specfile = spec;
 		int lindex = spec.filename.lastIndexOf('.');
 		String className = spec.filename.substring(0,lindex);	
-		out.println("import java.util.*;");
-		out.println("import wyone.core.*;");
+		out.println("import java.util.*;");		
 		out.println();
 		out.println("public final class " + className + " {");
+		
+		indent(1);out.println("public interface Constructor {}\n");
 		
 		HashMap<String,Set<String>> hierarhcy = new HashMap<String,Set<String>>();
 		for(Decl d : spec.declarations) {
@@ -89,16 +90,11 @@ public class JavaFileWriter {
 			out.print(")");
 		}
 		out.println();
-		indent(1);out.print("public final static class " + decl.name);
+		indent(1);out.print("public final static class " + decl.name + " implements Constructor" );
 		Set<String> parents = hierarchy.get(decl.name);
-		if(parents != null) {
-			out.print(" implements ");
-			boolean firstTime=true;
-			for(String parent : parents) {
-				if(!firstTime) {
-					out.print(",");
-				}
-				firstTime=false;
+		if(parents != null) {				
+			for(String parent : parents) {				
+				out.print(",");								
 				out.print(parent);
 			}
 		}
@@ -106,7 +102,7 @@ public class JavaFileWriter {
 		int idx=0;
 		for(Type t : decl.params) {
 			indent(2);out.print("public final ");
-			write(t);
+			write(t);			
 			out.println(" c" + idx++ + ";");
 		}		
 		indent(2);out.print("private " + decl.name + "(");
@@ -161,30 +157,34 @@ public class JavaFileWriter {
 		indent(2);out.println("}");
 		indent(1);out.println("}\n");
 		// now write the generator method
-		indent(1);out.print("public static " + decl.name + " " + decl.name + "(");
-		firstTime=true;
-		idx=0;
-		for(Type t : decl.params) {
-			if(!firstTime) {
-				out.print(",");
+		if(decl.params.isEmpty()) {
+			indent(1);out.println("public static final " + decl.name + " " + decl.name + " = new " + decl.name + "();\n");
+		} else {
+			indent(1);out.print("public static " + decl.name + " " + decl.name + "(");
+			firstTime=true;
+			idx=0;
+			for(Type t : decl.params) {
+				if(!firstTime) {
+					out.print(",");
+				}
+				firstTime=false;
+				write(t);
+				out.print(" c" + idx++);
 			}
-			firstTime=false;
-			write(t);
-			out.print(" c" + idx++);
-		}
-		out.println(") {");
-		indent(2);out.print("return new " + decl.name + "(");
-		idx = 0;
-		firstTime=true;
-		for(Type t : decl.params) {	
-			if(!firstTime) {
-				out.print(",");
+			out.println(") {");
+			indent(2);out.print("return new " + decl.name + "(");
+			idx = 0;
+			firstTime=true;
+			for(Type t : decl.params) {	
+				if(!firstTime) {
+					out.print(",");
+				}
+				firstTime=false;
+				out.print("c" + idx++);
 			}
-			firstTime=false;
-			out.print("c" + idx++);
+			out.println(");");			
+			indent(1);out.println("}\n");
 		}
-		out.println(");");			
-		indent(1);out.println("}\n");
 	}
 	
 	public void write(ClassDecl decl, HashMap<String,Set<String>> hierarchy) {
@@ -269,43 +269,58 @@ public class JavaFileWriter {
 	}
 	
 	public void write(HashMap<String,List<RewriteDecl>> dispatchTable) {
+		// First, write outermost dispatch
 		indent(1);out.println("public static Constructor rewrite(Constructor target) {");
 		boolean firstTime=true;
 		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
-			String name = e.getKey();
-			List<RewriteDecl> rules = e.getValue();
+			String name = e.getKey();			
 			indent(2);
 			if(!firstTime) {
 				out.print("else ");
 			}
 			firstTime=false;
-			out.println("if(target instanceof " + name + ") {");
-			int i=0;
-			for(RewriteDecl rd : rules) {
-				indent(3);out.println("if(target.subterms.size() == " + Integer.toString(rd.types.size()));
-				for(Pair<TypeDecl,String> p : rd.types) {
-					indent(3);out.print(" && target.subterms.get(" + i++ + ") instanceof ");
-					write(p.first().type);
-					if(i != rd.types.size()) {
-						out.println();
-					}
-				}
-				out.println(") {");
-				indent(4);out.print("return rewrite");out.print(nameMangle(rd.types));
-				out.print("((" + name + ") target");
-				i=0;
-				for(Pair<TypeDecl,String> p : rd.types) {
-					out.print(",  (");
-					write(p.first().type);
-					out.print(") target.subterms.get(" + i++ + ")");
-				}
-				out.println(");");
-				indent(3);out.println("}");
-			}
+			out.println("if(target instanceof " + name + ") {");			
+			indent(3);out.println("return rewrite((" + name + ") target);");							
 			indent(2);out.println("}");
 		}
 		indent(2);out.println("return target;");
-		indent(1);out.println("}");
+		indent(1);out.println("}\n");
+		
+		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
+			write(e.getKey(),e.getValue());
+		}
+	}
+	
+	public void write(String name, List<RewriteDecl> rules) {
+		indent(1);out.println("public static Constructor rewrite(" + name + " target) {");
+		for(RewriteDecl r : rules) {
+			String mangle = nameMangle(r.types);
+			indent(2);out.print("if(");
+			int idx=0;
+			boolean firstTime=true;
+			for(Pair<TypeDecl,String> t : r.types) {
+				if(!firstTime) {
+					out.print(" && ");
+				}
+				firstTime=false;
+				out.print("target.c" + idx++ + " instanceof ");
+				write(t.first().type);				
+			}
+			out.println(") {");
+			indent(3);out.print("return rewrite" + mangle + "(target");
+			idx=0;			
+			for(Pair<TypeDecl,String> t : r.types) {				
+				out.print(", ");				
+				firstTime=false;
+				out.print("(");
+				write(t.first().type);
+				out.print(") target.c" + idx++);				
+			}
+			out.println(");");
+			indent(2);out.println("}");
+		}
+		indent(2);out.println("return target;");
+		indent(1);out.println("}\n");
 	}
 	
 	public void write(Expr expr) {
@@ -315,6 +330,8 @@ public class JavaFileWriter {
 			write((Variable)expr);
 		} else if(expr instanceof BinOp) {
 			write((BinOp)expr);
+		}  else if(expr instanceof NaryOp) {
+			write((NaryOp)expr);
 		} else {		
 			out.print("...");
 		}
@@ -323,8 +340,7 @@ public class JavaFileWriter {
 	public void write(Constant c) {
 		writeConstant(c.value,c);
 	}
-	public void writeConstant(Object v, SyntacticElement elem) {		
-		
+	public void writeConstant(Object v, SyntacticElement elem) {				
 		if(v instanceof Boolean) {
 			out.print(v);
 		} else if(v instanceof BigInteger) {
@@ -421,6 +437,32 @@ public class JavaFileWriter {
 		default:
 			syntaxError("unknown binary operator encountered: " + bop,specfile.filename,bop);
 		}		
+	}
+	
+	public void write(NaryOp nop) {				
+		
+		switch(nop.nop) {
+		case SETGEN:
+			out.print("new HashSet(){{");
+			for(Expr e : nop.arguments) {
+				out.print("add(");
+				write(e);
+				out.print(");");
+			}
+			out.print("}}");
+			break;
+		case LISTGEN:
+			out.print("new ArrayList(){{");
+			for(Expr e : nop.arguments) {
+				out.print("add(");
+				write(e);
+				out.print(");");
+			}
+			out.print("}}");
+			break;
+		default:
+			syntaxError("need to implement sublist!",specfile.filename,nop);
+		} 
 	}
 	
 	public void write(Type type) {
