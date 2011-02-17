@@ -105,7 +105,9 @@ public class JavaFileWriter {
 		out.println(" {");
 		int idx=0;
 		for(Type t : decl.params) {
-			indent(2);out.println("public final c" + idx++ + ";");
+			indent(2);out.print("public final ");
+			write(t);
+			out.println(" c" + idx++ + ";");
 		}		
 		indent(2);out.print("private " + decl.name + "(");
 		boolean firstTime=true;
@@ -261,7 +263,7 @@ public class JavaFileWriter {
 		}
 		if(!defCase) {
 			indent(2);
-			out.println("return target");
+			out.println("return target;");
 		}
 		indent(1);out.println("}\n");
 	}
