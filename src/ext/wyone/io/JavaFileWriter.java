@@ -118,7 +118,14 @@ public class JavaFileWriter {
 			out.print(td.second());
 		}
 		out.println("):");
-		
+		for(RuleDecl rd : decl.rules) {
+			indent(1);out.print("// ");
+			if(rd.condition != null) {
+				out.println("=> " + rd.result + ", if " + rd.condition);
+			} else {
+				out.println("=> " + rd.result);
+			}
+		}
 		// NOW PRINT REAL CODE
 		String mangle = nameMangle(decl.types);				
 		indent(1);out.print("public static Constructor rewrite" + mangle + "(" + decl.name + " target");

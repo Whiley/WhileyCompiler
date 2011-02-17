@@ -83,10 +83,75 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public String toString() {
-			return "(" + op + " " + lhs + " " + rhs + ")";
+			
+			return lhs + " " + op + " " + rhs;
 		}
 	}
 
+
+	public enum BOp { 
+		AND {
+			public String toString() { return "&&"; }
+		},
+		OR{
+			public String toString() { return "||"; }
+		},
+		ADD{
+			public String toString() { return "+"; }
+		},
+		SUB{
+			public String toString() { return "-"; }
+		},
+		MUL{
+			public String toString() { return "*"; }
+		},
+		DIV{
+			public String toString() { return "/"; }
+		},		
+		UNION{
+			public String toString() { return "+"; }
+		},
+		INTERSECTION{
+			public String toString() { return "&"; }
+		},
+		EQ{
+			public String toString() { return "=="; }
+		},
+		NEQ{
+			public String toString() { return "!="; }
+		},
+		LT{
+			public String toString() { return "<"; }
+		},
+		LTEQ{
+			public String toString() { return "<="; }
+		},
+		GT{
+			public String toString() { return ">"; }
+		},
+		GTEQ{
+			public String toString() { return ">="; }
+		},
+		SUBSET{
+			public String toString() { return "<"; }
+		},
+		SUBSETEQ{
+			public String toString() { return "<="; }
+		},
+		ELEMENTOF{
+			public String toString() { return "in"; }
+		},		
+		LISTRANGE{
+			public String toString() { return ".."; }
+		},
+		TYPEEQ{
+			public String toString() { return "~=="; }
+		},
+		TYPEIMPLIES {
+			public String toString() { return "~=>"; }
+		}
+	};
+	
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static class ListAccess extends SyntacticElement.Impl implements
 			Expr, LVal {		
@@ -145,6 +210,29 @@ public interface Expr extends SyntacticElement {
 			this.arguments = new ArrayList<Expr>();
 			for(Expr a : arguments) {
 				this.arguments.add(a);
+			}
+		}
+		public String toString() {
+			switch(nop) {
+				case SETGEN:					 
+				case LISTGEN:
+				{
+					String args = "";
+					boolean firstTime=true;
+					for(Expr e : arguments) {
+						if(!firstTime) {
+							args += ",";
+						}
+						args += e;
+					}
+					if(nop == NOp.SETGEN) {
+						return "{" + args + "}";
+					} else {
+						return "[" + args + "]";
+					}
+				}	
+				default:
+					return arguments.get(0) + "[" + arguments.get(1) + ".." + arguments.get(2) + "]";
 			}
 		}
 	}
@@ -220,68 +308,5 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
 		}
-	}
-		
-	public enum BOp { 
-		AND {
-			public String toString() { return "&&"; }
-		},
-		OR{
-			public String toString() { return "||"; }
-		},
-		ADD{
-			public String toString() { return "+"; }
-		},
-		SUB{
-			public String toString() { return "-"; }
-		},
-		MUL{
-			public String toString() { return "*"; }
-		},
-		DIV{
-			public String toString() { return "/"; }
-		},		
-		UNION{
-			public String toString() { return "+"; }
-		},
-		INTERSECTION{
-			public String toString() { return "&"; }
-		},
-		EQ{
-			public String toString() { return "=="; }
-		},
-		NEQ{
-			public String toString() { return "!="; }
-		},
-		LT{
-			public String toString() { return "<"; }
-		},
-		LTEQ{
-			public String toString() { return "<="; }
-		},
-		GT{
-			public String toString() { return ">"; }
-		},
-		GTEQ{
-			public String toString() { return ">="; }
-		},
-		SUBSET{
-			public String toString() { return "<"; }
-		},
-		SUBSETEQ{
-			public String toString() { return "<="; }
-		},
-		ELEMENTOF{
-			public String toString() { return "in"; }
-		},		
-		LISTRANGE{
-			public String toString() { return ".."; }
-		},
-		TYPEEQ{
-			public String toString() { return "~=="; }
-		},
-		TYPEIMPLIES {
-			public String toString() { return "~=>"; }
-		}
-	};
+	}		
 }
