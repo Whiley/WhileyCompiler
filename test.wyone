@@ -9,8 +9,8 @@ rewrite Not(Bool t):
     => False
 
 rewrite And({Term} xs):
-    => true, if true in this
-    => false, if xs == {false}
+    => true, if True in this
+    => false, if xs == {False}
 
 rewrite Or({Term} xs):
     => false, if false in xs

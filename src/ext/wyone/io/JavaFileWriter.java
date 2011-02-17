@@ -3,11 +3,14 @@ package wyone.io;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.math.BigInteger;
 import java.util.*;
 
 import wyil.util.Pair;
+import wyil.util.SyntacticElement;
 import static wyil.util.SyntaxError.*;
 import wyone.core.*;
+import static wyone.core.Expr.*;
 import static wyone.core.SpecFile.*;
 
 public class JavaFileWriter {
@@ -215,7 +218,118 @@ public class JavaFileWriter {
 	}
 	
 	public void write(Expr expr) {
-		out.print("...");
+		if(expr instanceof Constant) {
+			write((Constant)expr);			
+		} else if(expr instanceof Variable) {
+			write((Variable)expr);
+		} else if(expr instanceof BinOp) {
+			write((BinOp)expr);
+		} else {		
+			out.print("...");
+		}
+	}
+	
+	public void write(Constant c) {
+		writeConstant(c.value,c);
+	}
+	public void writeConstant(Object v, SyntacticElement elem) {		
+		
+		if(v instanceof Boolean) {
+			out.print(v);
+		} else if(v instanceof BigInteger) {
+			BigInteger bi = (BigInteger) v;
+			out.print("new BigInteger(\"" + bi.toString() + "\")");
+		} else if(v instanceof HashSet) {
+			HashSet hs = (HashSet) v;
+			out.print("new HashSet(){{");
+			for(Object o : hs) {
+				out.print("add(");
+				writeConstant(o,elem);
+				out.print(");");
+			}
+			out.print("}}");
+		} else {
+			syntaxError("unknown constant encountered (" + v + ")",specfile.filename,elem);
+		}
+	}
+	
+	public void write(Variable v) {
+		out.print(v.var);
+	}
+	
+	public void write(BinOp bop) {
+		
+		switch(bop.op) {
+		case ADD:
+			write(bop.lhs);
+			out.print(".add(");
+			write(bop.rhs);
+			out.print(")");
+			break;
+		case SUB:
+			write(bop.lhs);
+			out.print(".subtract(");
+			write(bop.rhs);
+			out.print(")");
+			break;
+		case MUL:
+			write(bop.lhs);
+			out.print(".multiply(");
+			write(bop.rhs);
+			out.print(")");
+			break;
+		case DIV:
+			write(bop.lhs);
+			out.print(".divide(");
+			write(bop.rhs);
+			out.print(")");
+			break;
+		case EQ:
+			write(bop.lhs);
+			out.print(".equals(");
+			write(bop.rhs);
+			out.print(")");
+			break;
+		case NEQ:
+			out.print("!");
+			write(bop.lhs);
+			out.print(".equals(");
+			write(bop.rhs);
+			out.print(")");
+			break;
+		case LT:
+			write(bop.lhs);
+			out.print(".compareTo(");
+			write(bop.rhs);
+			out.print(")<0");
+			break;
+		case LTEQ:
+			write(bop.lhs);
+			out.print(".compareTo(");
+			write(bop.rhs);
+			out.print(")<=0");
+			break;
+		case GT:
+			write(bop.lhs);
+			out.print(".compareTo(");
+			write(bop.rhs);
+			out.print(")>0");
+			break;
+		case GTEQ:
+			write(bop.lhs);
+			out.print(".compareTo(");
+			write(bop.rhs);
+			out.print(")>=0");
+			break;
+		case ELEMENTOF:
+			write(bop.rhs);
+			out.print(".contains(");
+			write(bop.lhs);
+			out.print(")");
+			break;
+		default:
+			syntaxError("unknown binary operator encountered: " + bop,specfile.filename,bop);
+		}		
 	}
 	
 	public void write(Type type) {
