@@ -5,7 +5,6 @@ term Var(string)
 term True
 term False
 
-
 class Bool as True | False
 class Term as And | Or | Not | Bool | Var
 
@@ -14,7 +13,7 @@ rewrite Not(Bool t):
     => False
 
 rewrite And({Term} xs):
-    => False, if False in xs
+    => let ys = False in ys, if False in xs
     => True, if xs == {True}
 
 rewrite Or({Term} xs):

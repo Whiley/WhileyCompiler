@@ -139,15 +139,32 @@ public class SpecParser {
 	public RuleDecl parseRule() {
 		int start = index;
 		match(Arrow.class);
-		Expr result = parseAddSubExpression();
+		ArrayList<Pair<String,Expr>> lets = new ArrayList();
+		if(index < tokens.size() && tokens.get(index).text.equals("let")) {
+			matchKeyword("let");
+			boolean firstTime=true;
+			do {
+				if(!firstTime) {
+					match(Comma.class);
+				}
+				firstTime=false;
+				String id = matchIdentifier().text;
+				match(Equals.class);
+				Expr rhs = parseAddSubExpression();
+				lets.add(new Pair(id,rhs));
+				skipWhiteSpace();
+			} while(index < tokens.size() && tokens.get(index) instanceof Comma);
+			match(ElemOf.class);
+		}
+		Expr result = parseAddSubExpression();		
 		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
 			match(Comma.class);
 			matchKeyword("if");
 			Expr condition = parseCondition();
 			matchEndLine();
-			return new RuleDecl(result,condition,sourceAttr(start,index-1));
+			return new RuleDecl(lets,result,condition,sourceAttr(start,index-1));
 		} else {
-			return new RuleDecl(result,null,sourceAttr(start,index-1));
+			return new RuleDecl(lets,result,null,sourceAttr(start,index-1));
 		}
 	}
 	

@@ -258,6 +258,14 @@ public class JavaFileWriter {
 		out.println(") {");
 		boolean defCase = false; 
 		for(RuleDecl rd : decl.rules) {
+			
+			for(Pair<String,Expr> p : rd.lets) {
+				indent(2);
+				// FIXME: need to know the type!!
+				out.print("Object " + p.first() + " = ");
+				write(p.second());
+				out.println(";");
+			}
 			indent(2);
 			if(rd.condition != null && defCase) {
 				// this indicates a syntax error since it means we've got a
