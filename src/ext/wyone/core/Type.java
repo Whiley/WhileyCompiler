@@ -69,6 +69,14 @@ public abstract class Type extends SyntacticElement.Impl implements SyntacticEle
 			return "real";
 		}
 	}
+	public static final class Strung  extends Type {				
+		public Strung(Attribute... attributes) {
+			super(attributes);			
+		}		
+		public String toString() {
+			return "string";
+		}
+	}
 	public static final class Named  extends Type {		
 		public final String name;		
 		public Named(String name, Attribute... attributes) {

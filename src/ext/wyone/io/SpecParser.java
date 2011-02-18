@@ -776,6 +776,9 @@ public class SpecParser {
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
 			t = new Type.Bool(sourceAttr(start,index-1));
+		} else if(token.text.equals("string")) {
+			matchKeyword("string");
+			t = new Type.Strung(sourceAttr(start,index-1));
 		} else if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			skipWhiteSpace();

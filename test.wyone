@@ -1,12 +1,13 @@
 term And({Term})
 term Or({Term})
 term Not(Term)
+term Var(string)
 term True
 term False
 
-class Bool as True | False
 
-class Term as And | Or | Not | Bool
+class Bool as True | False
+class Term as And | Or | Not | Bool | Var
 
 rewrite Not(Bool t):
     => True, if t == False

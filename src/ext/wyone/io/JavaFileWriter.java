@@ -1,5 +1,7 @@
 package wyone.io;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -31,6 +33,7 @@ public class JavaFileWriter {
 		specfile = spec;
 		int lindex = spec.filename.lastIndexOf('.');
 		String className = spec.filename.substring(0,lindex);	
+		out.println("import java.io.*;");
 		out.println("import java.util.*;");		
 		out.println("import java.math.*;");
 		out.println();
@@ -519,6 +522,8 @@ public class JavaFileWriter {
 			out.write("BigInteger");
 		} else if(type instanceof Type.Bool) {
 			out.write("boolean");
+		} else if(type instanceof Type.Strung) {
+			out.write("String");
 		} else if(type instanceof Type.Named) {
 			out.write(((Type.Named)type).name);
 		} else if(type instanceof Type.List){
@@ -541,11 +546,21 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeMainMethod() {
-		indent(1);out.println("public static void main(String[] args) {");
-		indent(2);out.println("Parser parser = new Parser(args[0]);");
-		indent(2);out.println("Constructor c = parser.parseTerm();");
-		indent(2);out.println("System.out.println(\"PARSED: \" + c);");
-		indent(2);out.println("System.out.println(\"REWROTE: \" + rewrite(c));");
+		indent(1);out.println("public static void main(String[] args) throws IOException {");
+		indent(3);out.println("BufferedReader in = new BufferedReader(new FileReader(args[0]));");		
+		indent(3);out.println("StringBuffer text = new StringBuffer();");
+		indent(3);out.println("while (in.ready()) {");
+		indent(4);out.println("text.append(in.readLine());");
+		indent(4);out.println("text.append(\"\\n\");");
+		indent(3);out.println("}");
+		indent(2);out.println("try {");
+		indent(3);out.println("Parser parser = new Parser(text.toString());");
+		indent(3);out.println("Constructor c = parser.parseTerm();");
+		indent(3);out.println("System.out.println(\"PARSED: \" + c);");
+		indent(3);out.println("System.out.println(\"REWROTE: \" + rewrite(c));");
+		indent(2);out.println("} catch(SyntaxError ex) {");
+		indent(3);out.println("System.err.println(ex.getMessage());");
+		indent(2);out.println("}");
 		indent(1);out.println("}");
 	}
 	
@@ -557,6 +572,7 @@ public class JavaFileWriter {
 		writeParseTerm();
 		writeParseSet();
 		writeParseNumber();		
+		writeParseStrung();
 		writeParseIdentifier();
 		writeMatch();
 		writeSkipWhiteSpace();
@@ -597,6 +613,52 @@ public class JavaFileWriter {
 		indent(3);out.println("return new BigInteger(input.substring(start, pos));");								
 		indent(2);out.println("}");		
 	}
+	
+	protected void writeParseStrung() {
+		indent(2);out.println("protected String parseStrung() {");		
+		indent(3);out.println("match(\"\\\"\");");				
+		indent(3);out.println("String r = \"\";");
+		indent(3);out.println("while(pos < input.length() && input.charAt(pos) != \'\\\"\') {");
+		indent(4);out.println("if (input.charAt(pos) == '\\\\') {");
+		indent(6);out.println("pos=pos+1;");
+		indent(6);out.println("switch (input.charAt(pos)) {");
+		indent(6);out.println("case 'b' :");
+		indent(7);out.println("r = r + '\\b';");
+		indent(7);out.println("break;");
+		indent(6);out.println("case 't' :");
+		indent(7);out.println("r = r + '\\t';");
+		indent(7);out.println("break;");
+		indent(6);out.println("case 'n' :");
+		indent(7);out.println("r = r + '\\n';");
+		indent(7);out.println("break;");
+		indent(6);out.println("case 'f' :");
+		indent(7);out.println("r = r + '\\f';");
+		indent(7);out.println("break;");
+		indent(6);out.println("case 'r' :");
+		indent(7);out.println("r = r + '\\r';");
+		indent(7);out.println("break;");
+		indent(6);out.println("case '\"' :");
+		indent(7);out.println("r = r + '\\\"';");
+		indent(7);out.println("break;");
+		indent(6);out.println("case '\\\'' :");
+		indent(7);out.println("r = r + '\\'';");
+		indent(7);out.println("break;");
+		indent(6);out.println("case '\\\\' :");
+		indent(7);out.println("r = r + '\\\\';");
+		indent(7);out.println("break;");
+		indent(6);out.println("default :");
+		indent(7);out.println("throw new SyntaxError(\"unknown escape character\",pos,pos);");							
+		indent(6);out.println("}");		
+		indent(5);out.println("} else {");
+		indent(6);out.println("r = r + input.charAt(pos);");
+		indent(4);out.println("}");
+		indent(4);out.println("pos=pos+1;");
+		indent(3);out.println("}");
+		indent(3);out.println("pos=pos+1;");
+		indent(3);out.println("return r;");
+		indent(2);out.println("}");		
+	}
+	
 	
 	protected void writeParseTerm() {
 		indent(2);out.println("protected Constructor parseTerm() {");
@@ -648,6 +710,8 @@ public class JavaFileWriter {
 			out.print("parseSet()");
 		} else if(t instanceof Type.Int) {
 			out.print("parseNumber()");
+		} else if(t instanceof Type.Strung) {
+			out.print("parseStrung()");
 		} else 	{	
 			Type.Named tn = (Type.Named) t;
 			out.print("(" + tn.name + ") parseTerm()");
