@@ -313,29 +313,32 @@ public class JavaFileWriter {
 		indent(1);out.println("public static HashSet rewrite(HashSet os) {");
 		indent(2);out.println("HashSet rs = new HashSet();");
 		indent(2);out.println("for(Object o : os) {");
-		indent(3);out.println("rs.add(rewrite(o));");
+		// FIXME: the following line is broken
+		indent(3);out.println("rs.add(rewrite((Constructor) o));");
 		indent(2);out.println("}");
 		indent(2);out.println("return rs;");
 		indent(1);out.println("}");
 	}
 	
 	public void write(String name, List<RewriteDecl> rules) {
-		int nparams = 0;
+		List<Type> params = null;
 		// FIXME: this is a hack
 		for(Decl d : specfile.declarations) {
 			if(d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
 				if(td.name.equals(name)) {
-					nparams = td.params.size();
+					params = td.params;
 				}
 			}
 		}
 		indent(1);out.println("public static Constructor rewrite(" + name + " target) {");
 		indent(2);out.print("target = " + name + "(");
-		for(int i=0;i!=nparams;++i) {
+		for(int i=0;i!=params.size();++i) {
+			Type t= params.get(i);
 			if(i != 0) {
 				out.print(", ");
 			}
+			out.print("(");write(t);out.print(")");			
 			out.print("rewrite(target.c" + i + ")");
 		}
 		out.println(");");
