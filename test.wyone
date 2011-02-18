@@ -13,8 +13,9 @@ rewrite Not(Bool t):
     => False
 
 rewrite And({Term} xs):
-    => let ys = False in ys, if False in xs
+    => False, if False in xs
     => True, if xs == {True}
+    => False, if some { x in xs | Not(x) in xs }
 
 rewrite Or({Term} xs):
     => True, if True in xs

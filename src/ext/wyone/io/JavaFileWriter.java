@@ -257,35 +257,30 @@ public class JavaFileWriter {
 		}
 		out.println(") {");
 		boolean defCase = false; 
-		for(RuleDecl rd : decl.rules) {
-			
-			for(Pair<String,Expr> p : rd.lets) {
-				indent(2);
+		for(RuleDecl rd : decl.rules) {			
+			for(Pair<String,Expr> p : rd.lets) {				
 				// FIXME: need to know the type!!
-				out.print("Object " + p.first() + " = ");
-				write(p.second());
-				out.println(";");
-			}
-			indent(2);
+				Pair<List<String>,String> r = translate(p.second());
+				write(r.first(),2);
+				indent(2);out.println("Object " + p.first() + " = " + r.second() + ";");								
+			}			
 			if(rd.condition != null && defCase) {
 				// this indicates a syntax error since it means we've got a
 				// default case before a conditional case.
 				syntaxError("case cannot be reached",specfile.filename,rd);
-			} else if(rd.condition != null) {				
-				out.print("if(");
-				write(rd.condition);
-				out.println(") {");
-				indent(3);
-				out.print("return ");
-				write(rd.result);
-				out.println(";");
-				indent(2);
-				out.println("}");
+			} else if(rd.condition != null) {								
+				Pair<List<String>,String> r = translate(rd.condition);
+				write(r.first(),2);						
+				indent(2);out.println("if(" + r.second() + ") {");								
+				r = translate(rd.result);
+				write(r.first(),3);
+				indent(3);out.println("return " + r.second() + ";");				
+				indent(2);out.println("}");
 			} else {
-				defCase = true;
-				out.print("return ");
-				write(rd.result);
-				out.println(";");
+				defCase = true;				
+				Pair<List<String>,String> r = translate(rd.result);
+				write(r.first(),2);
+				indent(2);out.println("return " + r.second() + ";");				
 			}
 		}
 		if(!defCase) {
@@ -383,146 +378,201 @@ public class JavaFileWriter {
 		indent(1);out.println("}\n");
 	}
 	
-	public void write(Expr expr) {
-		if(expr instanceof Constant) {
-			write((Constant)expr);			
-		} else if(expr instanceof Variable) {
-			write((Variable)expr);
-		} else if(expr instanceof BinOp) {
-			write((BinOp)expr);
-		}  else if(expr instanceof NaryOp) {
-			write((NaryOp)expr);
-		} else {		
-			out.print("...");
+	public void write(List<String> inserts, int level) {
+		for(String s : inserts) {
+			indent(level);out.println(s);
 		}
 	}
 	
-	public void write(Constant c) {
-		writeConstant(c.value,c);
+	public Pair<List<String>,String> translate(Expr expr) {
+		if(expr instanceof Constant) {
+			return translate((Constant)expr);			
+		} else if(expr instanceof Variable) {
+			return translate((Variable)expr);
+		} else if(expr instanceof BinOp) {
+			return translate((BinOp)expr);
+		} else if(expr instanceof NaryOp) {
+			return translate((NaryOp)expr);
+		} else if(expr instanceof Comprehension) {
+			return translate((Comprehension)expr);
+		} else if(expr instanceof Invoke) {
+			return translate((Invoke)expr);
+		} else {		
+			syntaxError("unknown expression encountered",specfile.filename,expr);
+			return null;
+		}
 	}
-	public void writeConstant(Object v, SyntacticElement elem) {				
+	
+	public Pair<List<String>,String> translate(Constant c) {
+		return translate(c.value,c);
+	}
+	public Pair<List<String>,String> translate(Object v, SyntacticElement elem) {				
+		String r=null;
+		List<String> inserts = Collections.EMPTY_LIST;
 		if(v instanceof Boolean) {
-			out.print(v);
+			r = v.toString();
 		} else if(v instanceof BigInteger) {
 			BigInteger bi = (BigInteger) v;
-			out.print("new BigInteger(\"" + bi.toString() + "\")");
+			r = "new BigInteger(\"" + bi.toString() + "\")";
 		} else if(v instanceof HashSet) {
 			HashSet hs = (HashSet) v;
-			out.print("new HashSet(){{");
+			r = "new HashSet(){{";
 			for(Object o : hs) {
-				out.print("add(");
-				writeConstant(o,elem);
-				out.print(");");
+				Pair<List<String>,String> is = translate(o,elem);
+				inserts = concat(inserts,is.first());
+				r = r + "add(" + is.second() + ");";
+								
 			}
-			out.print("}}");
+			r = r + "}}";
 		} else {
-			syntaxError("unknown constant encountered (" + v + ")",specfile.filename,elem);
+			syntaxError("unknown constant encountered (" + v + ")",specfile.filename,elem);			
 		}
+		return new Pair(inserts,r);
 	}
 	
-	public void write(Variable v) {
-		out.print(v.var);
+	public Pair<List<String>,String> translate(Variable v) {
+		return new Pair(Collections.EMPTY_LIST,v.var);
 	}
 	
-	public void write(BinOp bop) {
-		
+	public Pair<List<String>,String> translate(BinOp bop) {
+		Pair<List<String>,String> lhs = translate(bop.lhs);
+		Pair<List<String>,String> rhs = translate(bop.rhs);
+		List<String> inserts = concat(lhs.first(),rhs.first());
 		switch(bop.op) {
-		case ADD:
-			write(bop.lhs);
-			out.print(".add(");
-			write(bop.rhs);
-			out.print(")");
-			break;
+		case ADD:						
+			return new Pair(inserts,lhs.second() + ".add(" + rhs.second() + ")");						
 		case SUB:
-			write(bop.lhs);
-			out.print(".subtract(");
-			write(bop.rhs);
-			out.print(")");
-			break;
+			return new Pair(inserts,lhs.second() + ".subtract(" + rhs.second() + ")");			
 		case MUL:
-			write(bop.lhs);
-			out.print(".multiply(");
-			write(bop.rhs);
-			out.print(")");
-			break;
+			return new Pair(inserts,lhs.second() + ".multiply(" + rhs.second() + ")");			
 		case DIV:
-			write(bop.lhs);
-			out.print(".divide(");
-			write(bop.rhs);
-			out.print(")");
-			break;
+			return new Pair(inserts,lhs.second() + ".divide(" + rhs.second() + ")");			
 		case EQ:
-			write(bop.lhs);
-			out.print(".equals(");
-			write(bop.rhs);
-			out.print(")");
-			break;
+			return new Pair(inserts,lhs.second() + ".equals(" + rhs.second() + ")");						
 		case NEQ:
-			out.print("!");
-			write(bop.lhs);
-			out.print(".equals(");
-			write(bop.rhs);
-			out.print(")");
-			break;
+			return new Pair(inserts,"!" + lhs.second() + ".equals(" + rhs.second() + ")");			
 		case LT:
-			write(bop.lhs);
-			out.print(".compareTo(");
-			write(bop.rhs);
-			out.print(")<0");
-			break;
+			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")<0");			
 		case LTEQ:
-			write(bop.lhs);
-			out.print(".compareTo(");
-			write(bop.rhs);
-			out.print(")<=0");
-			break;
+			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")<=0");			
 		case GT:
-			write(bop.lhs);
-			out.print(".compareTo(");
-			write(bop.rhs);
-			out.print(")>0");
-			break;
+			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>0");			
 		case GTEQ:
-			write(bop.lhs);
-			out.print(".compareTo(");
-			write(bop.rhs);
-			out.print(")>=0");
-			break;
+			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>=0");			
 		case ELEMENTOF:
-			write(bop.rhs);
-			out.print(".contains(");
-			write(bop.lhs);
-			out.print(")");
-			break;
+			return new Pair(inserts,rhs.second() + ".contains(" + lhs.second() + ")");			
 		default:
 			syntaxError("unknown binary operator encountered: " + bop,specfile.filename,bop);
+			return null;
 		}		
 	}
 	
-	public void write(NaryOp nop) {				
-		
+	public Pair<List<String>,String> translate(NaryOp nop) {				
+		List<String> inserts = Collections.EMPTY_LIST;
+		String r = null;
 		switch(nop.nop) {
 		case SETGEN:
-			out.print("new HashSet(){{");
+			r="new HashSet(){{";
 			for(Expr e : nop.arguments) {
-				out.print("add(");
-				write(e);
-				out.print(");");
+				Pair<List<String>,String> p = translate(e);
+				inserts = concat(inserts,p.first());
+				r = r + "add(" + p.second() + ");";								
 			}
-			out.print("}}");
+			r = r + "}}";
 			break;
 		case LISTGEN:
-			out.print("new ArrayList(){{");
+			r="new ArrayList(){{";
 			for(Expr e : nop.arguments) {
-				out.print("add(");
-				write(e);
-				out.print(");");
+				Pair<List<String>,String> p = translate(e);
+				inserts = concat(inserts,p.first());
+				r = r + "add(" + p.second() + ");";								
 			}
-			out.print("}}");
+			r = r + "}}";			
 			break;
 		default:
 			syntaxError("need to implement sublist!",specfile.filename,nop);
 		} 
+		
+		return new Pair(inserts,r);
+	}
+	
+	public  Pair<List<String>,String> translate(Invoke ivk) {
+		List<String> inserts = Collections.EMPTY_LIST;
+		String r = ivk.name + "(";
+		boolean firstTime=true;
+		for(Expr e : ivk.arguments) {
+			Pair<List<String>,String> es = translate(e);
+			inserts = concat(inserts,es.first());
+			if(!firstTime) {
+				r += ", ";
+			}
+			firstTime=false;
+			r += es.second();
+		}
+		
+		return new Pair(inserts,r + ")");
+	}
+	
+	public  Pair<List<String>,String> translate(Comprehension c) {
+		if(c.cop == COp.SOME) {
+			return translateSome(c);
+		} else {
+			return translateAll(c);
+		}
+	}
+	
+	public Pair<List<String>,String> translateSome(Comprehension c) {
+		ArrayList<String> inserts = new ArrayList<String>();
+		String tmp = freshVar();
+		inserts.add("boolean " + tmp + " = false;");
+		int l=0;
+		for(Pair<String,Expr> src : c.sources) {
+			Pair<List<String>,String> r = translate(src.second());
+			for(String i : r.first()) {
+				inserts.add(indentStr(l) + i);
+			}
+			String tmp2 = freshVar();
+			inserts.add(indentStr(l++) + "for(Object " + tmp2 + " : " + r.second() + ") {");
+			// FIXME: need type information here
+			inserts.add(indentStr(l) + "Object " + src.first() + " = " + tmp2 + ";");
+		}
+		Pair<List<String>,String> r = translate(c.condition);
+		for(String i : r.first()) {
+			inserts.add(indentStr(l) + i);
+		}
+		inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + " = true; }");
+		
+		for(Pair<String,Expr> src : c.sources) {
+			inserts.add(indentStr(--l) + "}");
+		}
+		return new Pair(inserts,tmp);
+	}
+	
+	public Pair<List<String>,String> translateAll(Comprehension c) {
+		ArrayList<String> inserts = new ArrayList<String>();
+		String tmp = freshVar();
+		inserts.add("boolean " + tmp + " = true;");
+		int l=0;
+		for(Pair<String,Expr> src : c.sources) {
+			Pair<List<String>,String> r = translate(src.second());
+			for(String i : r.first()) {
+				inserts.add(indentStr(l) + i);
+			}
+			String tmp2 = freshVar();
+			inserts.add(indentStr(l++) + "for(Object " + tmp2 + " : " + r.second() + ") {");
+			// FIXME: need type information here
+			inserts.add(indentStr(l) + "Object " + src.first() + " = " + tmp2 + ";");
+		}
+		Pair<List<String>,String> r = translate(c.condition);
+		for(String i : r.first()) {
+			inserts.add(indentStr(l) + i);
+		}
+		inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + " = false; }");
+		
+		for(Pair<String,Expr> src : c.sources) {
+			inserts.add(indentStr(--l) + "}");
+		}
+		return new Pair(inserts,tmp);
 	}
 	
 	public void write(Type type) {
@@ -770,9 +820,29 @@ public class JavaFileWriter {
 		indent(1);out.println("}");
 	}
 	
+	protected List<String> concat(List<String> xs, List<String> ys) {
+		ArrayList<String> zs = new ArrayList<String>();
+		zs.addAll(xs);
+		zs.addAll(ys);
+		return zs;
+	}
+	
 	protected void indent(int level)  {
 		for(int i=0;i!=level;++i) {
 			out.print("\t");
 		}
+	}
+	
+	protected String indentStr(int level)  {
+		String r="";
+		for(int i=0;i!=level;++i) {
+			r = r + "\t";
+		}
+		return r;
+	}
+	
+	protected int tmpIndex = 0;
+	protected String freshVar() {
+		return "tmp" + tmpIndex++;
 	}
 }
