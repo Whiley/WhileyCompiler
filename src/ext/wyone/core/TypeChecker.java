@@ -9,8 +9,21 @@ import static wyil.util.SyntaxError.*;
 
 public class TypeChecker {
 	private String filename;
+	// The hierarchy holds, for each type, the set of its children
+	private final HashMap<String,Set<String>> hierarchy = new HashMap<String,Set<String>>();
+	
 	public void check(SpecFile spec) {
 		filename = spec.filename;
+		hierarchy.clear();
+				
+		for(Decl d : spec.declarations) {
+			if(d instanceof ClassDecl) {
+				ClassDecl cd = (ClassDecl) d;
+				List<String> children = cd.children;
+				hierarchy.put(cd.name,new HashSet<String>(children));
+			}
+		}
+		
 		for(Decl d : spec.declarations) {
 			if(d instanceof RewriteDecl) {
 				check((RewriteDecl)d);
@@ -73,8 +86,6 @@ public class TypeChecker {
 	    Object v = c.value;
 	    if (v instanceof Boolean) {
 	      return Type.T_BOOL;
-	    } else if (v instanceof Character) {
-	      return Type.T_CHAR;
 	    } else if (v instanceof Integer) {
 	      return Type.T_INT;
 	    } else if (v instanceof Double) {
@@ -86,179 +97,37 @@ public class TypeChecker {
 	    return null;
 	  }
 
-	  protected Type resolve(FunConst c, HashMap<String,Type> environment)
-	      throws ResolveError {
-	    ModuleID mid = c.attribute(Attribute.Module.class).module;
-	    ArrayList<Type> types = new ArrayList<Type>();
-	    for (UnresolvedType ut : c.paramTypes) {
-	      types.add(resolve(ut));
-	    }
-	    NameID nid = new NameID(mid, c.name);
-	    return bindFunction(nid, types, c);
-	  }
-
 	  protected Type resolve(Variable v, HashMap<String,Type> environment)
 	      throws ResolveError {
 	    Type v_t = environment.get(v.var);
 	    if (v_t != null) {
 	      return v_t;
-	    }
-	    // Not a variable, but could be a constant
-	    Attribute.Module mattr = v.attribute(Attribute.Module.class);
-	    if (mattr != null) {
-	      Expr constant = constants.get(new NameID(mattr.module, v.var));
-	      return resolve(constant, environment);
-	    }
+	    }	  
 	    syntaxError("variable not defined", filename, v);
 	    return null;
 	  }
 
 	  protected Type resolve(Invoke ivk, HashMap<String,Type> environment) {
+	    
+		  ArrayList<Type> types = new ArrayList<Type>();
 
-	    // First, we look for a local variable with the matching name
+		  for (Expr arg : ivk.arguments) {
+			  Type arg_t = resolve(arg, environment);
+			  types.add(arg_t);
+		  }
 
-	    Type t = environment.get(ivk.name);
-	    if (t instanceof Type.Fun) {
-	      Type.Fun ft = (Type.Fun) t;
-	      if (ivk.arguments.size() != ft.params.size()) {
-	        syntaxError("incorrect arguments for function call", filename, ivk);
-	      }
-	      for (int i = 0; i != ft.params.size(); ++i) {
-	        Expr arg = ivk.arguments.get(i);
-	        Type pt = ft.params.get(i);
-	        Type at = resolve(arg, environment);
-	        checkSubtype(pt, at, arg);
-	      }
+		  // Second, we assume it's not a local variable and look outside the
+		  // scope.
 
-	      ivk.indirect = true;
-
-	      return ft.ret;
-	    } else {
-
-	      ArrayList<Type> types = new ArrayList<Type>();
-
-	      for (Expr arg : ivk.arguments) {
-	        Type arg_t = resolve(arg, environment);
-	        types.add(arg_t);
-	      }
-
-	      // Second, we assume it's not a local variable and look outside the
-	      // scope.
-
-	      try {
-	        // FIXME: when putting name spacing back in, we'll need to fix this.
-	        ModuleID mid = ivk.attribute(Attribute.Module.class).module;
-	        NameID nid = new NameID(mid, ivk.name);
-	        Type.Fun funtype = bindFunction(nid, types, ivk);
-	        // now, update the invoke
-	        ivk.attributes().add(new Attribute.FunType(funtype));
-	        return funtype.ret;
-	      } catch (ResolveError ex) {
-	        syntaxError(ex.getMessage(), filename, ivk);
-	        return null; // unreachable
-	      }
-	    }
+		  try {
+			  
+			  return funtype.ret;
+		  } catch (ResolveError ex) {
+			  syntaxError(ex.getMessage(), filename, ivk);
+			  return null; // unreachable
+		  }
 	  }
-
-	  /**
-	   * Bind function is responsible for determining the true type of a method or
-	   * function being invoked. To do this, it must find the function/method with
-	   * the most precise type that matches the argument types. *
-	   * 
-	   * @param nid
-	   * @param receiver
-	   * @param paramTypes
-	   * @param elem
-	   * @return
-	   * @throws ResolveError
-	   */
-	  protected Type.Fun bindFunction(NameID nid, List<Type> paramTypes,
-	      SyntacticElement elem) throws ResolveError {
-	    Type receiver = null; // dummy
-	    Type.Fun target = Type.T_FUN(null, Type.T_ANY, paramTypes);
-	    Type.Fun candidate = null;
-
-	    List<Type.Fun> targets = lookupMethod(nid);
-
-	    for (Type.Fun ft : targets) {
-	      Type funrec = ft.receiver;
-	      if (receiver == funrec
-	          || (receiver != null && funrec != null && Type.isSubtype(funrec,
-	              receiver))) {
-	        // receivers match up OK ...
-	        if (ft.params.size() == paramTypes.size() && paramSubtypes(ft, target)
-	            && (candidate == null || paramSubtypes(candidate, ft))) {
-	          candidate = ft;
-	        }
-	      }
-	    }
-
-	    // Check whether we actually found something. If not, print a useful
-	    // error message.
-	    if (candidate == null) {
-	      String msg = "no match for " + nid.name() + parameterString(paramTypes);
-	      boolean firstTime = true;
-	      int count = 0;
-	      for (Type.Fun ft : targets) {
-	        if (firstTime) {
-	          msg += "\n\tfound: " + nid.name() + parameterString(ft.params);
-	        } else {
-	          msg += "\n\tand: " + nid.name() + parameterString(ft.params);
-	        }
-	        if (++count < targets.size()) {
-	          msg += ",";
-	        }
-	      }
-
-	      syntaxError(msg + "\n", filename, elem);
-	    }
-
-	    return candidate;
-	  }
-
-	  private boolean paramSubtypes(Type.Fun f1, Type.Fun f2) {
-	    List<Type> f1_params = f1.params;
-	    List<Type> f2_params = f2.params;
-	    if (f1_params.size() == f2_params.size()) {
-	      for (int i = 0; i != f1_params.size(); ++i) {
-	        if (!Type.isSubtype(f1_params.get(i), f2_params.get(i))) {
-	          return false;
-	        }
-	      }
-	      return true;
-	    }
-	    return false;
-	  }
-
-	  private String parameterString(List<Type> paramTypes) {
-	    String paramStr = "(";
-	    boolean firstTime = true;
-	    for (Type t : paramTypes) {
-	      if (!firstTime) {
-	        paramStr += ",";
-	      }
-	      firstTime = false;
-	      paramStr += Type.toShortString(t);
-	    }
-	    return paramStr + ")";
-	  }
-
-	  protected List<Type.Fun> lookupMethod(NameID nid) throws ResolveError {
-	    List<Type.Fun> matches = functions.get(nid);
-
-	    if (matches == null) {
-	      Module m = loader.loadModule(nid.module());
-	      List<FunDecl> fmatches = m.functions(nid.name());
-	      matches = new ArrayList<Type.Fun>();
-	      for (FunDecl fd : fmatches) {
-	        partResolve(m.id(), fd);
-	        matches.add(fd.attribute(Attribute.FunType.class).type);
-	      }
-	    }
-
-	    return matches;
-	  }
-
+	 
 	  protected Type resolve(UnOp uop, HashMap<String,Type> environment) throws ResolveError {
 	    Type t = resolve(uop.mhs, environment);
 	    switch (uop.op) {
@@ -286,13 +155,13 @@ public class TypeChecker {
 
 	    switch (bop.op) {
 	    case ADD: {
-	      if (Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t)
-	          || Type.isSubtype(Type.T_SET(Type.T_ANY), rhs_t)) {
+	      if (Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t, hierarchy)
+	          || Type.isSubtype(Type.T_SET(Type.T_ANY), rhs_t, hierarchy)) {
 	        checkSubtype(Type.T_SET(Type.T_ANY), lhs_t, bop.lhs);
 	        checkSubtype(Type.T_SET(Type.T_ANY), rhs_t, bop.rhs);
 	        // need to update operation
 	        bop.op = BOp.UNION;
-	        return Type.leastUpperBound(lhs_t, rhs_t);
+	        return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 	      }
 	    }
 	    case SUB:
@@ -300,14 +169,10 @@ public class TypeChecker {
 	    case MUL: {
 	      checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
 	      checkSubtype(Type.T_REAL, rhs_t, bop.rhs);
-	      return Type.leastUpperBound(lhs_t, rhs_t);
+	      return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 	    }    
 	    case EQ:
-	    case NEQ: {
-	    	Type lub = Type.greatestLowerBound(lhs_t, rhs_t);
-	    	if(lub == Type.T_VOID) {
-	    		syntaxError("incomparable types: " + lhs_t + ", " + rhs_t,filename,bop);
-	    	}
+	    case NEQ: {	    	
 	    	return Type.T_BOOL;
 	    }    
 	    case LT:
@@ -347,7 +212,7 @@ public class TypeChecker {
 	      Type lub = Type.T_VOID;
 	      for (Expr e : nop.arguments) {
 	        Type t = resolve(e, environment);
-	        lub = Type.leastUpperBound(lub, t);
+	        lub = Type.leastUpperBound(lub, t, hierarchy);
 	      }
 
 	      if (nop.op == NOp.SETGEN) {
@@ -371,44 +236,15 @@ public class TypeChecker {
 
 	  protected Type resolve(RecordAccess ra, HashMap<String,Type> environment) {
 	    Type src = resolve(ra.lhs, environment);
-	    Type.Record ert = Type.effectiveRecordType(src);
-	    if (ert == null) {
-	      syntaxError("expected record type, got " + src, filename, ra.lhs);
+	    if(!(src instanceof Type.Record)) {
+	    	syntaxError("expected record type, got " + src, filename, ra.lhs);
 	    }
+	    Type.Record ert = (Type.Record)src; 	    
 	    Type t = ert.types.get(ra.name);
 	    if (t == null) {
 	      syntaxError("no such field in type: " + ert, filename, ra);
 	    }
 	    return t;
-	  }
-
-	  protected Type resolve(DictionaryGen rg, HashMap<String,Type> environment) {
-	    Type keyType = Type.T_VOID;
-	    Type valueType = Type.T_VOID;
-
-	    for (Pair<Expr, Expr> p : rg.pairs) {
-	      Type kt = resolve(p.first(), environment);
-	      Type vt = resolve(p.second(), environment);
-	      keyType = Type.leastUpperBound(keyType, kt);
-	      valueType = Type.leastUpperBound(valueType, vt);
-	    }
-
-	    return Type.T_DICTIONARY(keyType, valueType);
-	  }
-
-	  protected Type resolve(Access ra, HashMap<String,Type> environment) {
-	    Type src = resolve(ra.src, environment);
-	    Type idx = resolve(ra.index, environment);
-	    Type.Dictionary edt = Type.effectiveDictionaryType(src);
-
-	    if (edt == null) {
-	      syntaxError("expected dictionary or list type, got " + src, filename,
-	          ra.src);
-	    }
-
-	    checkSubtype(edt.key, idx, ra.index);
-
-	    return edt.value;
 	  }
 
 	  protected Type resolve(TupleGen rg, HashMap<String,Type> environment) {
@@ -422,4 +258,17 @@ public class TypeChecker {
 	    return Type.T_RECORD(types);
 	  }
 
+	   /**
+	   * Check whether t1 :> t2; that is, whether t2 is a subtype of t1.
+	   * 
+	   * @param t1
+	   * @param t2
+	   * @param elem
+	   */
+	  public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
+
+	    if (!Type.isSubtype(t1, t2, hierarchy)) {
+	      syntaxError("expecting type " + t1 + ", got type " + t2, filename, elem);
+	    }
+	  }
 }

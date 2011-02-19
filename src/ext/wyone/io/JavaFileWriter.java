@@ -470,7 +470,7 @@ public class JavaFileWriter {
 	public Pair<List<String>,String> translate(NaryOp nop) {				
 		List<String> inserts = Collections.EMPTY_LIST;
 		String r = null;
-		switch(nop.nop) {
+		switch(nop.op) {
 		case SETGEN:
 			r="new HashSet(){{";
 			for(Expr e : nop.arguments) {

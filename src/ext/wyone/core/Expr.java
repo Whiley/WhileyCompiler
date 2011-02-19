@@ -64,7 +64,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
-		public final BOp op;
+		public BOp op;
 		public final Expr lhs;
 		public final Expr rhs;
 		
@@ -197,23 +197,23 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {
-		public final NOp nop;
+		public final NOp op;
 		public final ArrayList<Expr> arguments;
 		public NaryOp(NOp nop, Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
-			this.nop = nop;
+			this.op = nop;
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
 		public NaryOp(NOp nop, Attribute attribute, Expr... arguments) {
 			super(attribute);
-			this.nop = nop;
+			this.op = nop;
 			this.arguments = new ArrayList<Expr>();
 			for(Expr a : arguments) {
 				this.arguments.add(a);
 			}
 		}
 		public String toString() {
-			switch(nop) {
+			switch(op) {
 				case SETGEN:					 
 				case LISTGEN:
 				{
@@ -225,7 +225,7 @@ public interface Expr extends SyntacticElement {
 						}
 						args += e;
 					}
-					if(nop == NOp.SETGEN) {
+					if(op == NOp.SETGEN) {
 						return "{" + args + "}";
 					} else {
 						return "[" + args + "]";

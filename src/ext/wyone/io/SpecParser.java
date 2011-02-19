@@ -780,22 +780,22 @@ public class SpecParser {
 		
 		if(token instanceof Star) {
 			match(Star.class);
-			t = new Type.Any(sourceAttr(start,index-1));
+			t = Type.T_ANY;
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
-			t = new Type.Int(sourceAttr(start,index-1));
+			t = Type.T_INT;
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
-			t = new Type.Real(sourceAttr(start,index-1));
+			t = Type.T_REAL;
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = new Type.Void(sourceAttr(start,index-1));
+			t = Type.T_VOID;
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = new Type.Bool(sourceAttr(start,index-1));
+			t = Type.T_BOOL;
 		} else if(token.text.equals("string")) {
 			matchKeyword("string");
-			t = new Type.Strung(sourceAttr(start,index-1));
+			t = Type.T_STRING;
 		} else if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			skipWhiteSpace();
@@ -814,7 +814,7 @@ public class SpecParser {
 				token = tokens.get(index);
 			}
 			match(RightBrace.class);
-			return new Type.Tuple(types);
+			return Type.T_TUPLE(types);
 		} else if(token instanceof LeftCurly) {		
 			match(LeftCurly.class);
 			skipWhiteSpace();
@@ -824,7 +824,7 @@ public class SpecParser {
 			if(tokens.get(index) instanceof RightCurly) {
 				// set type
 				match(RightCurly.class);
-				t = new Type.Set(t,sourceAttr(start,index-1));
+				t = Type.T_SET(t);
 			} else {				
 				// record type
 				HashMap<String,Type> types = new HashMap<String,Type>();
@@ -853,7 +853,7 @@ public class SpecParser {
 					token = tokens.get(index);								
 				}				
 				match(RightCurly.class);
-				t = new Type.Record(types, sourceAttr(start,index-1));				
+				t = Type.T_RECORD(types);				
 			} 
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);
@@ -861,10 +861,10 @@ public class SpecParser {
 			t = parseType();
 			skipWhiteSpace();
 			match(RightSquare.class);
-			t = new Type.List(t,sourceAttr(start,index-1));
+			t = Type.T_LIST(t);
 		} else {		
 			Identifier id = matchIdentifier();			
-			t = new Type.Named(id.text,sourceAttr(start,index-1));			
+			t = Type.T_NAMED(id.text);			
 		}		
 		
 		return t;
