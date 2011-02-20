@@ -182,8 +182,23 @@ public class TypeChecker {
 	        bop.op = BOp.UNION;
 	        return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 	      }
+	      checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
+	      checkSubtype(Type.T_REAL, rhs_t, bop.rhs);
+	      return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
 	    }
-	    case SUB:
+	    case SUB: {
+	    	if (Type.isSubtype(Type.T_SET(Type.T_ANY), lhs_t, hierarchy)
+	    			|| Type.isSubtype(Type.T_SET(Type.T_ANY), rhs_t, hierarchy)) {
+	    		checkSubtype(Type.T_SET(Type.T_ANY), lhs_t, bop.lhs);
+	    		checkSubtype(Type.T_SET(Type.T_ANY), rhs_t, bop.rhs);
+	    		// need to update operation
+	    		bop.op = BOp.DIFFERENCE;
+	    		return lhs_t;
+	    	}
+	    	checkSubtype(Type.T_REAL, lhs_t, bop.lhs);
+	    	checkSubtype(Type.T_REAL, rhs_t, bop.rhs);
+	    	return Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+	    }
 	    case DIV:
 	    case MUL: {
 	      checkSubtype(Type.T_REAL, lhs_t, bop.lhs);

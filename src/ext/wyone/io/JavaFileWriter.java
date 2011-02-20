@@ -462,6 +462,10 @@ public class JavaFileWriter {
 			return new Pair(inserts,lhs.second() + ".compareTo(" + rhs.second() + ")>=0");			
 		case ELEMENTOF:
 			return new Pair(inserts,rhs.second() + ".contains(" + lhs.second() + ")");			
+		case UNION:
+			return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() + ");addAll(" + rhs.second() + ");}}");
+		case DIFFERENCE:
+			return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() + ");removeAll(" + rhs.second() + ");}}");			
 		default:
 			syntaxError("unknown binary operator encountered: " + bop,specfile.filename,bop);
 			return null;

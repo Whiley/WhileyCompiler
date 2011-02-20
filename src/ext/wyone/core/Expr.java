@@ -114,6 +114,9 @@ public interface Expr extends SyntacticElement {
 		INTERSECTION{
 			public String toString() { return "&"; }
 		},
+		DIFFERENCE{
+			public String toString() { return "-"; }
+		},
 		EQ{
 			public String toString() { return "=="; }
 		},
