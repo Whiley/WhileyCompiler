@@ -22,4 +22,4 @@ rewrite Or({Term} xs):
     => True, if True in xs
     => False, if xs == {False}
     => True, if some { x in xs | Not(x) in xs }
-    => Or(xs - {False})
+    => Or(xs & {False})
