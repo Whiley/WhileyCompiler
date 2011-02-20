@@ -288,8 +288,8 @@ public class SpecLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '&') {
 				pos += 2;
 				return new LogicalAnd("&&",pos-2);
-			} else {
-				return new AddressOf("&",pos++);
+			} else {				
+				return new BitwiseAnd("&",pos++);
 			}
 		} else if(c == '|') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '|') {
@@ -629,8 +629,8 @@ public class SpecLexer {
 	public static class LogicalNot extends Token {
 		public LogicalNot(String text, int pos) { super(text,pos);	}
 	}
-	public static class AddressOf extends Token {
-		public AddressOf(String text, int pos) { super(text,pos);	}
+	public static class BitwiseAnd extends Token {
+		public BitwiseAnd(String text, int pos) { super(text,pos);	}
 	}
 	public static class BitwiseOr extends Token {
 		public BitwiseOr(String text, int pos) { super(text,pos);	}

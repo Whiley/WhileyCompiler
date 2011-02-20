@@ -227,9 +227,15 @@ public class TypeChecker {
 	    	 checkSubtype(Type.T_SET(Type.T_ANY),rhs_t,bop.rhs);
 	    	 Type element = ((Type.SetList)rhs_t).element();
 	    	 checkSubtype(element,lhs_t,bop.lhs);
-	    	 return Type.T_BOOL;
-	    }
-
+	    	 return Type.T_BOOL;	    
+	    case INTERSECTION : {				
+				checkSubtype(Type.T_SET(Type.T_ANY), lhs_t, bop.lhs);
+				checkSubtype(Type.T_SET(Type.T_ANY), rhs_t, bop.rhs);
+				// FIXME: should really determine glb of lhs and rhs
+				return lhs_t;				
+			}
+		}
+	    
 	    syntaxError("unknown binary expression encountered", filename, bop);
 	    return null;
 	  }

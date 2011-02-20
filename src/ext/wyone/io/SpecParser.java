@@ -251,6 +251,11 @@ public class SpecParser {
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.TypeEquals) {
 			return parseTypeEquals(lhs,start);			
+		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.BitwiseAnd) {
+			match(SpecLexer.BitwiseAnd.class);			
+			skipWhiteSpace();			
+			Expr rhs = parseAddSubExpression();
+			return new Expr.BinOp(Expr.BOp.INTERSECTION,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof SpecLexer.ElemOf) {
 			match(SpecLexer.ElemOf.class);			
 			skipWhiteSpace();
@@ -757,7 +762,7 @@ public class SpecParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseAddSubExpression();
+			Expr e = parseConditionExpression();
 			skipWhiteSpace();
 			args.add(e);		
 		}
