@@ -16,6 +16,7 @@ import static wyil.util.SyntaxError.*;
 import wyone.core.*;
 import static wyone.core.Expr.*;
 import static wyone.core.SpecFile.*;
+import static wyone.core.Attributes.*;
 
 public class JavaFileWriter {
 	private PrintWriter out;
@@ -521,26 +522,26 @@ public class JavaFileWriter {
 		}
 	}
 	
-	public Pair<List<String>,String> translateSome(Comprehension c) {
-		ArrayList<String> inserts = new ArrayList<String>();
+	public Pair<List<String>,String> translateSome(Comprehension c) {		
+		ArrayList<String> inserts = new ArrayList<String>();		
 		String tmp = freshVar();
 		inserts.add("boolean " + tmp + " = false;");
 		int l=0;
 		for(Pair<String,Expr> src : c.sources) {
 			Pair<List<String>,String> r = translate(src.second());
+			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
 			for(String i : r.first()) {
 				inserts.add(indentStr(l) + i);
-			}
-			String tmp2 = freshVar();
-			inserts.add(indentStr(l++) + "for(Object " + tmp2 + " : " + r.second() + ") {");
-			// FIXME: need type information here
-			inserts.add(indentStr(l) + "Object " + src.first() + " = " + tmp2 + ";");
+			}			
+			inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
+					+ src.first() + " : (HashSet<" + typeStr(type.element)
+					+ ">) " + r.second() + ") {");			
 		}
 		Pair<List<String>,String> r = translate(c.condition);
 		for(String i : r.first()) {
 			inserts.add(indentStr(l) + i);
 		}
-		inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + " = true; }");
+		inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + " = true; break; }");
 		
 		for(Pair<String,Expr> src : c.sources) {
 			inserts.add(indentStr(--l) + "}");
@@ -549,25 +550,25 @@ public class JavaFileWriter {
 	}
 	
 	public Pair<List<String>,String> translateAll(Comprehension c) {
-		ArrayList<String> inserts = new ArrayList<String>();
+		ArrayList<String> inserts = new ArrayList<String>();		
 		String tmp = freshVar();
 		inserts.add("boolean " + tmp + " = true;");
 		int l=0;
 		for(Pair<String,Expr> src : c.sources) {
 			Pair<List<String>,String> r = translate(src.second());
+			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
 			for(String i : r.first()) {
 				inserts.add(indentStr(l) + i);
-			}
-			String tmp2 = freshVar();
-			inserts.add(indentStr(l++) + "for(Object " + tmp2 + " : " + r.second() + ") {");
-			// FIXME: need type information here
-			inserts.add(indentStr(l) + "Object " + src.first() + " = " + tmp2 + ";");
+			}			
+			inserts.add(indentStr(l++) + "for(" + typeStr(type.element) + " "
+					+ src.first() + " : (HashSet<" + typeStr(type.element)
+					+ ">) " + r.second() + ") {");			
 		}
 		Pair<List<String>,String> r = translate(c.condition);
 		for(String i : r.first()) {
 			inserts.add(indentStr(l) + i);
 		}
-		inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + " = false; }");
+		inserts.add(indentStr(l) + "if(!" + r.second() + ") { " + tmp + " = false; break; }");
 		
 		for(Pair<String,Expr> src : c.sources) {
 			inserts.add(indentStr(--l) + "}");
@@ -576,19 +577,23 @@ public class JavaFileWriter {
 	}
 	
 	public void write(Type type) {
+		out.print(typeStr(type));
+	}
+	public String typeStr(Type type) {
 		if(type instanceof Type.Int) {
-			out.write("BigInteger");
+			return "BigInteger";
 		} else if(type instanceof Type.Bool) {
-			out.write("boolean");
+			return "boolean";
 		} else if(type instanceof Type.Strung) {
-			out.write("String");
+			return "String";
 		} else if(type instanceof Type.Named) {
-			out.write(((Type.Named)type).name);
+			return ((Type.Named)type).name;
 		} else if(type instanceof Type.List){
-			out.write("ArrayList");
+			return "ArrayList";
 		} else if(type instanceof Type.Set){
-			out.write("HashSet");
+			return "HashSet";
 		} 
+		throw new RuntimeException("unknown type encountered: " + type);
 	}
 	
 	protected String nameMangle(Collection<Pair<TypeDecl,String>> types) {

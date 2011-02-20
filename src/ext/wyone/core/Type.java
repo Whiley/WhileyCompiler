@@ -49,6 +49,10 @@ public abstract class Type {
 		return get(new Tuple(types));
 	}
 
+	public static Fun T_FUN(Type ret, Collection<Type> types) {
+		return get(new Fun(ret,types));
+	}
+	
 	/**
 	 * Return true if t2 is a subtype of t1 in the context of the given type
 	 * hierarchy. The type hierarchy maps a given type to its parents (which are
@@ -99,7 +103,7 @@ public abstract class Type {
 			}
 
 			return true;
-		} else if (t1 instanceof Named && t2 instanceof Named) {
+		} else if (t1 instanceof Named && t2 instanceof Named) {			
 			Named n1 = (Named) t1;
 			Named n2 = (Named) t2;
 			if(n1.name.equals(n2.name)) {
@@ -108,7 +112,7 @@ public abstract class Type {
 				java.util.Set<String> children = hierarchy.get(n1.name);
 				if(children != null) {
 					for (String n1child : children) {
-						if (isSubtype(Type.T_NAMED(n1child), n1, hierarchy)) {
+						if (isSubtype(Type.T_NAMED(n1child), n2, hierarchy)) {
 							return true;
 						}
 					}
@@ -254,6 +258,46 @@ public abstract class Type {
 			this.types = new ArrayList<Type>(types);
 		}
 	}	
+	
+	public static final class Fun extends Type {		
+		public final Type ret;
+		public final ArrayList<Type> params;
+		
+		private Fun(Type ret, Type... parameters) {
+			this.ret = ret;			
+			this.params = new ArrayList<Type>();
+			for(Type t : parameters) {
+				this.params.add(t);
+			}
+		}
+		private Fun(Type ret, Collection<Type> parameters) {
+			this.ret = ret;			
+			this.params = new ArrayList<Type>(parameters);			
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Fun) {
+				Fun fun = (Fun) o;				
+				return ret.equals(fun.ret) && params.equals(fun.params);								
+			}
+			return false;
+		}
+		public int hashCode() {
+			return ret.hashCode() + params.hashCode();
+		}
+		public String toString() {
+			String r = "";			
+			r += "(";
+			boolean firstTime=true;
+			for(Type p : params) {
+				if(!firstTime) {
+					r +=",";
+				}
+				firstTime=false;
+				r += p;
+			}
+			return r + ")" + ret;
+		}
+	}
 	
 	public static String type2str(Type t) {
 		if(t instanceof Any) {

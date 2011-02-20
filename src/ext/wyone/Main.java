@@ -33,21 +33,21 @@ import wyone.io.*;
  */
 public class Main {
 		
-	public static void main(String[] args) {	
+	public static void main(String[] args) {		
 		try {
+			boolean verbose = false;			
 			try {
 				if(args.length == 0) {
 					System.out.println("usage: java wyone.Main <spec-file>");
 					System.exit(1);
 				} 				
-				
-				boolean debug = false;			
+								
 				int fileArgsBegin = 0;
 				for (int i = 0; i != args.length; ++i) {
 					if (args[i].startsWith("-")) {
 						String arg = args[i];
-						if (arg.equals("-debug")) {
-							debug = true;
+						if (arg.equals("-verbose")) {
+							verbose = true;
 						} else {
 							throw new RuntimeException("Unknown option: " + args[i]);
 						}
@@ -62,6 +62,7 @@ public class Main {
 				SpecLexer lexer = new SpecLexer(specfile);
 				SpecParser parser = new SpecParser(specfile,lexer.scan());
 				SpecFile spec = parser.parse();
+				new TypeChecker().check(spec);
 				new JavaFileWriter(System.out).write(spec);
 				
 				start = System.currentTimeMillis() - start;
@@ -69,6 +70,10 @@ public class Main {
 				
 			} catch(SyntaxError e) {				
 				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
+				
+				if(verbose) {
+					e.printStackTrace(System.err);
+				}
 			}
 		} catch(IOException e) {
 			System.err.println("i/o error: " + e.getMessage());

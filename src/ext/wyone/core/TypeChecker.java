@@ -12,6 +12,12 @@ public class TypeChecker {
 	// The hierarchy holds, for each type, the set of its children
 	private final HashMap<String,Set<String>> hierarchy = new HashMap<String,Set<String>>();
 	
+	// functions map function names to their function types.
+	private final HashMap<String,Type.Fun> functions = new HashMap<String,Type.Fun>();
+	
+	// globals contains the list of global variables
+	private final HashMap<String,Type> globals = new HashMap();
+	
 	public void check(SpecFile spec) {
 		filename = spec.filename;
 		hierarchy.clear();
@@ -21,6 +27,14 @@ public class TypeChecker {
 				ClassDecl cd = (ClassDecl) d;
 				List<String> children = cd.children;
 				hierarchy.put(cd.name,new HashSet<String>(children));
+			} else if(d instanceof TermDecl) {
+				TermDecl td = (TermDecl) d;
+				if(td.params.isEmpty()) {
+					globals.put(td.name, Type.T_NAMED(td.name));
+				} else {
+					Type.Fun ft = Type.T_FUN(Type.T_NAMED(td.name),td.params);
+					functions.put(td.name, ft);
+				}
 			}
 		}
 		
@@ -46,40 +60,47 @@ public class TypeChecker {
 		for(Pair<String,Expr> let : rule.lets) {			
 			environment.put(let.first(), resolve(let.second(),environment));
 		}
-		resolve(rule.condition,environment);
+		if(rule.condition != null) {
+			resolve(rule.condition,environment);
+		}
+		resolve(rule.result,environment);
 	}
 		
 	protected Type resolve(Expr e, HashMap<String,Type> environment) {
-	    try {
+	    Type type = null;
+		try {
 	      if (e instanceof Constant) {
-	        return resolve((Constant) e, environment);
+	        type = resolve((Constant) e, environment);
 	      } else if (e instanceof Variable) {
-	        return resolve((Variable) e, environment);
+	        type = resolve((Variable) e, environment);
 	      } else if (e instanceof UnOp) {
-	        return resolve((UnOp) e, environment);
+	        type = resolve((UnOp) e, environment);
 	      } else if (e instanceof Invoke) {
-	        return resolve((Invoke) e, environment);
+	        type = resolve((Invoke) e, environment);
 	      } else if (e instanceof BinOp) {
-	        return resolve((BinOp) e, environment);
+	        type = resolve((BinOp) e, environment);
 	      } else if (e instanceof NaryOp) {
-	        return resolve((NaryOp) e, environment);
+	        type = resolve((NaryOp) e, environment);
+	      } else if(e instanceof Comprehension) {
+	    	type = resolve((Comprehension) e,environment);  
 	      } else if (e instanceof RecordGen) {
-	        return resolve((RecordGen) e, environment);
+	        type = resolve((RecordGen) e, environment);
 	      } else if (e instanceof RecordAccess) {
-	        return resolve((RecordAccess) e, environment);
+	        type = resolve((RecordAccess) e, environment);
 	      } else if (e instanceof DictionaryGen) {
-	        return resolve((DictionaryGen) e, environment);
+	        type = resolve((DictionaryGen) e, environment);
 	      } else if (e instanceof TupleGen) {
-	        return resolve((TupleGen) e, environment);
+	        type = resolve((TupleGen) e, environment);
 	      } else {
 	        syntaxError("unknown expression encountered", filename, e);
 	      }
 	    } catch (SyntaxError se) {
 	      throw se;
-	    } catch (Exception ex) {
-	      syntaxError("internal failure", filename, e, ex);
+	    } catch (Exception ex) {	    	
+	    	syntaxError("internal failure", filename, e, ex);
 	    }
-	    return null;
+	    e.attributes().add(new Attributes.TypeAttr(type));
+	    return type;
 	  }
 
 	  protected Type resolve(Constant c, HashMap<String,Type> environment) {
@@ -100,9 +121,9 @@ public class TypeChecker {
 	  protected Type resolve(Variable v, HashMap<String,Type> environment)
 	      throws ResolveError {
 	    Type v_t = environment.get(v.var);
-	    if (v_t != null) {
-	      return v_t;
-	    }	  
+	    if (v_t != null) { return v_t; }
+	    v_t = globals.get(v.var);
+	    if (v_t != null) { return v_t; }
 	    syntaxError("variable not defined", filename, v);
 	    return null;
 	  }
@@ -118,14 +139,12 @@ public class TypeChecker {
 
 		  // Second, we assume it's not a local variable and look outside the
 		  // scope.
-
-		  try {
-			  
-			  return funtype.ret;
-		  } catch (ResolveError ex) {
-			  syntaxError(ex.getMessage(), filename, ivk);
-			  return null; // unreachable
+		  
+		  Type.Fun funtype = functions.get(ivk.name);
+		  if(funtype == null) {
+			  syntaxError("function not declared",filename,ivk);
 		  }
+		  return funtype.ret;
 	  }
 	 
 	  protected Type resolve(UnOp uop, HashMap<String,Type> environment) throws ResolveError {
@@ -189,6 +208,11 @@ public class TypeChecker {
 	      checkSubtype(Type.T_BOOL, rhs_t, bop.rhs);
 	      return Type.T_BOOL;
 	    }
+	    case ELEMENTOF:
+	    	 checkSubtype(Type.T_SET(Type.T_ANY),rhs_t,bop.rhs);
+	    	 Type element = ((Type.SetList)rhs_t).element();
+	    	 checkSubtype(element,lhs_t,bop.lhs);
+	    	 return Type.T_BOOL;
 	    }
 
 	    syntaxError("unknown binary expression encountered", filename, bop);
@@ -223,6 +247,23 @@ public class TypeChecker {
 	    }
 	  }
 
+	  protected Type resolve(Comprehension comp, HashMap<String,Type> environment) {
+		  HashMap<String,Type> nenv = new HashMap(environment);
+		  for(Pair<String,Expr> src : comp.sources) {
+			  if(environment.containsKey(src.first())) {
+				  syntaxError("variable " + src.first() + " already declared",filename,comp);
+			  }
+			  Type t = resolve(src.second(),nenv);
+			  nenv.put(src.first(), t);
+		  }
+		  resolve(comp.condition,nenv);
+		  if(comp.cop == COp.SETCOMP || comp.cop == COp.LISTCOMP) {
+			  Type r_t = resolve(comp.value,nenv);
+			  return Type.T_SET(r_t);
+		  }
+		  return Type.T_BOOL;
+	  }
+	  
 	  protected Type resolve(RecordGen rg, HashMap<String,Type> environment) {
 	    HashMap<String, Type> types = new HashMap<String, Type>();
 
@@ -265,8 +306,7 @@ public class TypeChecker {
 	   * @param t2
 	   * @param elem
 	   */
-	  public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
-
+	  public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {		  
 	    if (!Type.isSubtype(t1, t2, hierarchy)) {
 	      syntaxError("expecting type " + t1 + ", got type " + t2, filename, elem);
 	    }
