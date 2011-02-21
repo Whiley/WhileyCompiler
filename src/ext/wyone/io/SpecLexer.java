@@ -226,7 +226,7 @@ public class SpecLexer {
 	static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
-			'*', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '.','~',
+			'*', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '#', '.','~',
 			UC_FORALL,
 			UC_EXISTS,
 			UC_EMPTYSET,
@@ -282,6 +282,8 @@ public class SpecLexer {
 			return new Plus(pos++);
 		} else if(c == '-') {			
 			return new Minus(pos++);									
+		} else if(c == '#') {
+			return new Hash(pos++);
 		} else if(c == '*') {
 			return new Star(pos++);
 		} else if(c == '&') {
@@ -550,6 +552,9 @@ public class SpecLexer {
 	}
 	public static class Star extends Token {
 		public Star(int pos) { super("*",pos);	}
+	}
+	public static class Hash extends Token {
+		public Hash(int pos) { super("#",pos);	}
 	}
 	public static class LeftSlash extends Token {
 		public LeftSlash(int pos) { super("\\",pos);	}

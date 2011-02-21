@@ -592,8 +592,8 @@ public class JavaFileWriter {
 			return "boolean";
 		} else if(type instanceof Type.Strung) {
 			return "String";
-		} else if(type instanceof Type.Named) {
-			return ((Type.Named)type).name;
+		} else if(type instanceof Type.Term) {
+			return ((Type.Term)type).name;
 		} else if(type instanceof Type.List){
 			return "ArrayList";
 		} else if(type instanceof Type.Set){
@@ -782,7 +782,7 @@ public class JavaFileWriter {
 		} else if(t instanceof Type.Strung) {
 			out.print("parseStrung()");
 		} else 	{	
-			Type.Named tn = (Type.Named) t;
+			Type.Term tn = (Type.Term) t;
 			out.print("(" + tn.name + ") parseTerm()");
 		}
 	}

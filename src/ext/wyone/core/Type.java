@@ -37,8 +37,12 @@ public abstract class Type {
 		return get(new List(element));
 	}
 	
-	public static Named T_NAMED(String name) {
-		return get(new Named(name));
+	public static Term T_TERM(String name, Type... params) {
+		return get(new Term(name,params));
+	}
+	
+	public static Term T_TERM(String name, Collection<Type> params) {
+		return get(new Term(name,params));
 	}
 	
 	public static Record T_RECORD(Map<String,Type> types) {
@@ -103,16 +107,16 @@ public abstract class Type {
 			}
 
 			return true;
-		} else if (t1 instanceof Named && t2 instanceof Named) {			
-			Named n1 = (Named) t1;
-			Named n2 = (Named) t2;
+		} else if (t1 instanceof Term && t2 instanceof Term) {			
+			Term n1 = (Term) t1;
+			Term n2 = (Term) t2;
 			if(n1.name.equals(n2.name)) {
 				return true;
 			} else {
 				java.util.Set<String> children = hierarchy.get(n1.name);
 				if(children != null) {
 					for (String n1child : children) {
-						if (isSubtype(Type.T_NAMED(n1child), n2, hierarchy)) {
+						if (isSubtype(Type.T_TERM(n1child), n2, hierarchy)) {
 							return true;
 						}
 					}
@@ -200,13 +204,45 @@ public abstract class Type {
 			return "string";
 		}
 	}
-	public static final class Named  extends Type {		
-		public final String name;		
-		private Named(String name) {			
+	public static final class Term  extends Type {		
+		public final String name;
+		public final ArrayList<Type> params;
+		private Term(String name, Collection<Type> params) {			
 			this.name = name;
+			this.params = new ArrayList<Type>(params);
+		}
+		private Term(String name, Type... params) {			
+			this.name = name;
+			this.params = new ArrayList<Type>();
+			for(Type t : params) {
+				this.params.add(t);
+			}
 		}		
-		public String toString() {
-			return name;
+		public int hashCode() {
+			return name.hashCode() + params.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Term) {
+				Term t = (Term) o;
+				return t.name.equals(name) && params.equals(t.params);
+			}
+			return false;
+		}
+		public String toString() {			
+			if(params.isEmpty()) {
+				return name;
+			} else {
+				String r = name + "(";
+				boolean firstTime=true;
+				for(Type t : params) {
+					if(!firstTime) {
+						r += ",";
+					}
+					firstTime=false;
+					r += t;
+				}
+				return r + ")";
+			}			
 		}
 	}
 	
@@ -222,6 +258,16 @@ public abstract class Type {
 		public Type element() {
 			return element;
 		}
+		public boolean equals(Object o) {
+			if(o instanceof List) {
+				List l = (List) o;
+				return element.equals(l.element);				
+			}
+			return false;
+		}
+		public int hashCode() {
+			return element.hashCode() * element.hashCode();
+		}
 		public String toString() {
 			return "[" + element + "]";			
 		}
@@ -233,6 +279,16 @@ public abstract class Type {
 		}
 		public Type element() {
 			return element;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Set) {
+				Set l = (Set) o;
+				return element.equals(l.element);				
+			}
+			return false;
+		}
+		public int hashCode() {
+			return element.hashCode() * element.hashCode();
 		}
 		public String toString() {
 			return "{" + element + "}";			
@@ -247,6 +303,16 @@ public abstract class Type {
 			}
 			this.types = new HashMap<String,Type>(types);
 		}
+		public boolean equals(Object o) {
+			if(o instanceof Record) {
+				Record l = (Record) o;
+				return types.equals(l.types);				
+			}
+			return false;
+		}
+		public int hashCode() {
+			return types.hashCode();
+		}
 	}
 	public static final class Tuple  extends Type {
 		public final ArrayList<Type> types;
@@ -256,6 +322,16 @@ public abstract class Type {
 						"Cannot create type tuple with no fields");
 			}
 			this.types = new ArrayList<Type>(types);
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Tuple) {
+				Tuple l = (Tuple) o;
+				return types.equals(l.types);				
+			}
+			return false;
+		}
+		public int hashCode() {
+			return types.hashCode();
 		}
 	}	
 	
@@ -326,8 +402,8 @@ public abstract class Type {
 				r += k + ":" + type2str(kt);
 			}			
 			return r + ")";
-		} else if(t instanceof Type.Named) {
-			Type.Named st = (Type.Named) t;
+		} else if(t instanceof Type.Term) {
+			Type.Term st = (Type.Term) t;
 			return "N" + st.name + ";";
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);

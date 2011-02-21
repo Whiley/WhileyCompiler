@@ -178,6 +178,28 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	public static class TermAccess extends SyntacticElement.Impl implements
+			Expr, LVal {		
+		public final Expr src;
+		public final int index;
+		
+		public TermAccess(Expr src, int index, Attribute... attributes) {
+			super(attributes);
+			this.src = src;
+			this.index = index;
+		}
+		
+		public TermAccess(Expr src, int index, Collection<Attribute> attributes) {
+			super(attributes);
+			this.src = src;
+			this.index = index;
+		}
+					
+		public String toString() {
+			return src + "#" + index;
+		}
+	}
+	
 	public enum UOp {
 		NOT,
 		NEG,

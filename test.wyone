@@ -10,7 +10,10 @@ class Term as And | Or | Not | Bool | Var
 
 rewrite Not(Bool t):
     => True, if t == False
-    => False
+    => False, if t == True
+
+rewrite Not(And(*) t):
+    => let rs = { Not(x) | x in t#0 } in Or(rs)
 
 rewrite And({Term} xs):
     => False, if False in xs

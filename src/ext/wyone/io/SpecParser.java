@@ -156,7 +156,8 @@ public class SpecParser {
 			} while(index < tokens.size() && tokens.get(index) instanceof Comma);
 			match(ElemOf.class);
 		}
-		Expr result = parseAddSubExpression();		
+		Expr result = parseAddSubExpression();
+		skipWhiteSpace();
 		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
 			match(Comma.class);
 			matchKeyword("if");
@@ -361,7 +362,7 @@ public class SpecParser {
 		Token lookahead = tokens.get(index);
 		
 		while (lookahead instanceof LeftSquare || lookahead instanceof Dot
-				|| lookahead instanceof LeftBrace) {
+				|| lookahead instanceof LeftBrace || lookahead instanceof Hash) {
 			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
@@ -408,6 +409,11 @@ public class SpecParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 							index - 1));
 				}
+			} else if(lookahead instanceof Hash) {
+				match(Hash.class);
+				BigInteger x = match(Int.class).value;		
+				// FIXME: should check size here
+				lhs = new Expr.TermAccess(lhs, x.intValue(), sourceAttr(start,index - 1));
 			} else {				
 				match(Dot.class);
 				String name = matchIdentifier().text;				
@@ -868,8 +874,18 @@ public class SpecParser {
 			match(RightSquare.class);
 			t = Type.T_LIST(t);
 		} else {		
-			Identifier id = matchIdentifier();			
-			t = Type.T_NAMED(id.text);			
+			Identifier id = matchIdentifier();
+			ArrayList<Type> types = new ArrayList<Type>();
+			if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+				match(LeftBrace.class);				
+				types.add(parseType());
+				while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+					match(Comma.class);
+					types.add(parseType());
+				}
+				match(RightBrace.class);
+			}
+			t = Type.T_TERM(id.text,types);	
 		}		
 		
 		return t;

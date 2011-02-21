@@ -30,9 +30,9 @@ public class TypeChecker {
 			} else if(d instanceof TermDecl) {
 				TermDecl td = (TermDecl) d;
 				if(td.params.isEmpty()) {
-					globals.put(td.name, Type.T_NAMED(td.name));
+					globals.put(td.name, Type.T_TERM(td.name));
 				} else {
-					Type.Fun ft = Type.T_FUN(Type.T_NAMED(td.name),td.params);
+					Type.Fun ft = Type.T_FUN(Type.T_TERM(td.name),td.params);
 					functions.put(td.name, ft);
 				}
 			}
@@ -47,7 +47,8 @@ public class TypeChecker {
 	
 	public void check(RewriteDecl rd) {			
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		for(Pair<TypeDecl,String> td : rd.types){						
+		for(Pair<TypeDecl,String> td : rd.types){
+			System.out.println("GOT: " + td.first().type + " FOR " + td.second());
 			environment.put(td.second(), td.first().type);
 		}
 		
@@ -87,6 +88,10 @@ public class TypeChecker {
 	        type = resolve((RecordGen) e, environment);
 	      } else if (e instanceof RecordAccess) {
 	        type = resolve((RecordAccess) e, environment);
+	      } else if (e instanceof ListAccess) {
+	        type = resolve((ListAccess) e, environment);
+	      } else if (e instanceof TermAccess) {
+	        type = resolve((TermAccess) e, environment);
 	      } else if (e instanceof DictionaryGen) {
 	        type = resolve((DictionaryGen) e, environment);
 	      } else if (e instanceof TupleGen) {
@@ -309,6 +314,30 @@ public class TypeChecker {
 	    return t;
 	  }
 
+	  protected Type resolve(ListAccess ra, HashMap<String,Type> environment) {
+		  Type src_t = resolve(ra.src, environment);
+		  Type idx_t = resolve(ra.index, environment);
+		  if(!(src_t instanceof Type.List)) {
+			  syntaxError("expected list of term type, got " + src_t, filename, ra.src);
+		  }
+		  checkSubtype(Type.T_INT,idx_t,ra.index);
+		  Type.List rt = (Type.List)src_t; 	    		    
+		  return rt.element;
+	  }
+	  
+	  protected Type resolve(TermAccess ra, HashMap<String,Type> environment) {
+		  Type src_t = resolve(ra.src, environment);		  
+		  if(!(src_t instanceof Type.Term)) {
+			  syntaxError("expected list of term type, got " + src_t, filename, ra.src);
+		  }
+		  Type.Term tt = (Type.Term) src_t;
+		  System.out.println("GOT: " + tt);
+		  if(ra.index >= tt.params.size()) {
+			  syntaxError("term index out-of-bounds", filename, ra);
+		  }		  	   
+		  return tt.params.get(ra.index);
+	  }
+	  
 	  protected Type resolve(TupleGen rg, HashMap<String,Type> environment) {
 	    HashMap<String, Type> types = new HashMap<String, Type>();
 	    // FIXME: add proper support for tuple types.
