@@ -175,9 +175,13 @@ public class JavaFileWriter {
 		} else {
 			out.print(" + \"(\"");
 			idx = 0;		
-			for(Type t : decl.params) {					
-				out.print(" + ");							
+			firstTime=true;
+			for(Type t : decl.params) {
+				if(!firstTime) {
+					out.print("+ \",\"");
+				}
 				firstTime=false;
+				out.print(" + ");											
 				out.print("c" + idx++);
 			}		
 			out.println(" + \")\";");							
@@ -881,7 +885,12 @@ public class JavaFileWriter {
 		} else {
 			indent(3);out.println("match(\"(\");");
 			int idx=0;
+			boolean firstTime=true;
 			for(Type t : term.params) {
+				if(!firstTime) {
+					indent(3);out.println("match(\",\");");
+				}
+				firstTime=false;
 				indent(3);write(t);out.print(" e" + idx++ + " = ");
 				writeTypeDispatch(t);
 				out.println(";");				

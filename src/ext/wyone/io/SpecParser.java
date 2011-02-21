@@ -54,7 +54,7 @@ public class SpecParser {
 			boolean firstTime=true;
 			while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
 				if(!firstTime) {
-					match(Comma.class);
+					match(Comma.class);						
 				}
 				firstTime=false;							
 				params.add(parseType());
@@ -785,6 +785,7 @@ public class SpecParser {
 	}
 		
 	private Type parseType() {				
+		skipWhiteSpace();
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);

@@ -1,12 +1,19 @@
+term True
+term False
+class Bool as True | False
+
 term And({Term})
 term Or({Term})
 term Not(Term)
-term Var(string)
-term True
-term False
+class LogicTerm as And | Or | Not | Bool
 
-class Bool as True | False
-class Term as And | Or | Not | Bool | Var
+term Equals(Term, Term)
+term NotEquals(Term, Term)
+class Congruence as Equals | NotEquals
+
+term Var(string)
+
+class Term as LogicTerm | Congruence | Var
 
 rewrite Not(Bool t):
     => True, if t == False
