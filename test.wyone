@@ -61,8 +61,7 @@ rewrite Equals(Value x, Value y):
 
 rewrite Equals(Term x, Term y):
     => True, if x == y
-
-
+    => Equals(y,x), if !(x ~= Var(*)) && y ~= Var(*)
 
 // ==================================================
 // Overall Theory

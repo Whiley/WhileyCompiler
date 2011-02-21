@@ -410,6 +410,8 @@ public class JavaFileWriter {
 			return translate((Constant)expr);			
 		} else if(expr instanceof Variable) {
 			return translate((Variable)expr, environment);
+		} else if(expr instanceof UnOp) {
+			return translate((UnOp)expr, environment);
 		} else if(expr instanceof BinOp) {
 			return translate((BinOp)expr, environment);
 		} else if(expr instanceof NaryOp) {
@@ -465,6 +467,19 @@ public class JavaFileWriter {
 		}
 	}
 	
+	public Pair<List<String>,String> translate(UnOp uop, HashMap<String,Type> environment) {
+		Pair<List<String>,String> mhs = translate(uop.mhs, environment);
+		switch(uop.op) {
+		case NEG:
+			return new Pair(mhs.first(),"-" + mhs.second());
+		case NOT:
+			return new Pair(mhs.first(),"!" + mhs.second());
+		default:
+			syntaxError("unrecognised unary expression", specfile.filename,uop);
+			return null;
+		}
+	}
+	
 	public Pair<List<String>,String> translate(BinOp bop, HashMap<String,Type> environment) {
 		if(bop.op == BOp.TYPEEQ) {			
 			return translateTypeEquals(bop.lhs,bop.rhs.attribute(TypeAttr.class).type, environment);
@@ -481,6 +496,10 @@ public class JavaFileWriter {
 			return new Pair(inserts,lhs.second() + ".multiply(" + rhs.second() + ")");			
 		case DIV:
 			return new Pair(inserts,lhs.second() + ".divide(" + rhs.second() + ")");			
+		case AND:
+			return new Pair(inserts,lhs.second() + " && " + rhs.second() + "");
+		case OR:
+			return new Pair(inserts,lhs.second() + " || " + rhs.second() + "");
 		case EQ:
 			return new Pair(inserts,lhs.second() + ".equals(" + rhs.second() + ")");						
 		case NEQ:
