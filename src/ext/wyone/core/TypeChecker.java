@@ -279,7 +279,9 @@ public class TypeChecker {
 				  syntaxError("variable " + src.first() + " already declared",filename,comp);
 			  }
 			  Type t = resolve(src.second(),nenv);
-			  nenv.put(src.first(), t);
+			  checkSubtype(Type.T_SET(Type.T_ANY),t, src.second());
+			  Type.SetList sl = (Type.SetList) t;
+			  nenv.put(src.first(), sl.element());
 		  }
 		  if(comp.condition != null) {
 			  resolve(comp.condition,nenv);
