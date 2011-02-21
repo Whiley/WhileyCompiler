@@ -55,6 +55,12 @@ term Equals(Term, Term)
 term NotEquals(Term, Term)
 class Congruence as Equals | NotEquals
 
+rewrite Not(Equals x):
+    => NotEquals(x#0,x#1)
+
+rewrite Not(NotEquals x):
+    => Equals(x#0,x#1)
+
 rewrite Equals(Value x, Value y):
     => True, if x == y
     => False, if x != y
