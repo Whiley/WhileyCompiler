@@ -77,6 +77,8 @@ public class TypeChecker {
 	        type = resolve((UnOp) e, environment);
 	      } else if (e instanceof Invoke) {
 	        type = resolve((Invoke) e, environment);
+	      } else if(e instanceof TypeConst) {
+	    	type = resolve((TypeConst)e, environment);  
 	      } else if (e instanceof BinOp) {
 	        type = resolve((BinOp) e, environment);
 	      } else if (e instanceof NaryOp) {
@@ -151,7 +153,11 @@ public class TypeChecker {
 		  return funtype.ret;
 	  }
 	 
-	  protected Type resolve(UnOp uop, HashMap<String,Type> environment) throws ResolveError {
+	  protected Type resolve(TypeConst tc, HashMap<String,Type> environment)  {
+		  return tc.type;
+	  }
+	  
+	  protected Type resolve(UnOp uop, HashMap<String,Type> environment) {
 	    Type t = resolve(uop.mhs, environment);
 	    switch (uop.op) {
 	    case LENGTHOF:
@@ -171,6 +177,13 @@ public class TypeChecker {
 
 	  protected Type resolve(BinOp bop, HashMap<String,Type> environment)
 	      throws ResolveError {
+		  
+		  if(bop.op == BOp.OR) {
+			  // TODO: the following is needed because of type inference.
+			  // unfortunately, it is still a bit of a hack.
+			  environment = new HashMap<String,Type>(environment);
+		  }
+		  
 	    Type lhs_t = resolve(bop.lhs, environment);
 	    Type rhs_t = resolve(bop.rhs, environment);
 
@@ -238,6 +251,16 @@ public class TypeChecker {
 				// FIXME: should really determine glb of lhs and rhs
 				return lhs_t;				
 			}
+	    case TYPEEQ:{
+	    	checkSubtype(lhs_t, rhs_t, bop.lhs);
+	    	if(bop.lhs instanceof Variable) {
+	    		// type inference
+	    		Variable v = (Variable) bop.lhs;
+	    		// FIXME: should compute glb here
+	    		environment.put(v.var, rhs_t);	    		
+	    	}
+	    	return Type.T_BOOL;
+	    }
 		}
 	    
 	    syntaxError("unknown binary expression encountered", filename, bop);

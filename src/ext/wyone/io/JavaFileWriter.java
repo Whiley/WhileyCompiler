@@ -440,6 +440,9 @@ public class JavaFileWriter {
 	}
 	
 	public Pair<List<String>,String> translate(BinOp bop) {
+		if(bop.op == BOp.TYPEEQ) {			
+			return translateTypeEquals(bop.lhs,bop.rhs.attribute(TypeAttr.class).type);
+		}
 		Pair<List<String>,String> lhs = translate(bop.lhs);
 		Pair<List<String>,String> rhs = translate(bop.rhs);
 		List<String> inserts = concat(lhs.first(),rhs.first());
@@ -471,11 +474,17 @@ public class JavaFileWriter {
 		case DIFFERENCE:
 			return new Pair(inserts,"new HashSet(){{addAll(" + lhs.second() + ");removeAll(" + rhs.second() + ");}}");			
 		case INTERSECTION:
-			return new Pair(inserts,"new HashSet(){{for(Object o : " + lhs.second() + "){if(" + rhs.second() + ".contains(o)){add(o);}}}}");
+			return new Pair(inserts,"new HashSet(){{for(Object o : " + lhs.second() + "){if(" + rhs.second() + ".contains(o)){add(o);}}}}");		
 		default:
 			syntaxError("unknown binary operator encountered: " + bop,specfile.filename,bop);
 			return null;
 		}		
+	}
+	
+	public Pair<List<String>,String> translateTypeEquals(Expr src, Type rhs) {
+		Pair<List<String>,String> lhs = translate(src);
+		String mangle = type2HexStr(rhs);
+		return new Pair(lhs.first(),"typeof_" + mangle + "(" + lhs.second() +")");		
 	}
 	
 	public Pair<List<String>,String> translate(NaryOp nop) {				
@@ -604,6 +613,7 @@ public class JavaFileWriter {
 	public void write(Type type) {
 		out.print(typeStr(type));
 	}
+	
 	public String typeStr(Type type) {
 		if(type instanceof Type.Int) {
 			return "BigInteger";
@@ -624,14 +634,20 @@ public class JavaFileWriter {
 	protected String nameMangle(Collection<Pair<TypeDecl,String>> types) {
 		String mangle = "_";
 		for(Pair<TypeDecl,String> td : types) {	
-			String str = Type.type2str(td.first().type);
-			for(int i=0;i!=str.length();++i) {
-				char c = str.charAt(i);
-				mangle = mangle + Integer.toHexString(c);
-			}
+			mangle = mangle + type2HexStr(td.first().type);			
 		}		
 		return mangle;
 	}
+	
+	public String type2HexStr(Type t) {
+		String mangle = "";
+		String str = Type.type2str(t);
+		for(int i=0;i!=str.length();++i) {
+			char c = str.charAt(i);
+			mangle = mangle + Integer.toHexString(c);
+		}
+		return mangle;
+	}	
 	
 	protected void writeMainMethod() {
 		indent(1);out.println("public static void main(String[] args) throws IOException {");
