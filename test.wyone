@@ -12,6 +12,9 @@ rewrite Not(Bool t):
     => True, if t == False
     => False, if t == True
 
+rewrite Not(Not(*) x):
+    => x#0
+
 rewrite Not(And({Term}) t):
     => let rs = { Not(x) | x in t#0 } 
        in Or(rs)
