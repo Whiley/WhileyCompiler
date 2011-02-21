@@ -47,8 +47,7 @@ public class TypeChecker {
 	
 	public void check(RewriteDecl rd) {			
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		for(Pair<TypeDecl,String> td : rd.types){
-			System.out.println("GOT: " + td.first().type + " FOR " + td.second());
+		for(Pair<TypeDecl,String> td : rd.types){			
 			environment.put(td.second(), td.first().type);
 		}
 		
@@ -282,7 +281,9 @@ public class TypeChecker {
 			  Type t = resolve(src.second(),nenv);
 			  nenv.put(src.first(), t);
 		  }
-		  resolve(comp.condition,nenv);
+		  if(comp.condition != null) {
+			  resolve(comp.condition,nenv);
+		  }
 		  if(comp.cop == COp.SETCOMP || comp.cop == COp.LISTCOMP) {
 			  Type r_t = resolve(comp.value,nenv);
 			  return Type.T_SET(r_t);
@@ -330,8 +331,7 @@ public class TypeChecker {
 		  if(!(src_t instanceof Type.Term)) {
 			  syntaxError("expected list of term type, got " + src_t, filename, ra.src);
 		  }
-		  Type.Term tt = (Type.Term) src_t;
-		  System.out.println("GOT: " + tt);
+		  Type.Term tt = (Type.Term) src_t;		  
 		  if(ra.index >= tt.params.size()) {
 			  syntaxError("term index out-of-bounds", filename, ra);
 		  }		  	   

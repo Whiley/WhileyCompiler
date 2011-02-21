@@ -260,10 +260,12 @@ public class JavaFileWriter {
 		boolean defCase = false; 
 		for(RuleDecl rd : decl.rules) {			
 			for(Pair<String,Expr> p : rd.lets) {				
-				// FIXME: need to know the type!!
 				Pair<List<String>,String> r = translate(p.second());
 				write(r.first(),2);
-				indent(2);out.println("Object " + p.first() + " = " + r.second() + ";");								
+				indent(2);
+				Type t = p.second().attribute(TypeAttr.class).type;
+				write(t);
+				out.println(" " + p.first() + " = " + r.second() + ";");								
 			}			
 			if(rd.condition != null && defCase) {
 				// this indicates a syntax error since it means we've got a
@@ -398,6 +400,8 @@ public class JavaFileWriter {
 			return translate((Comprehension)expr);
 		} else if(expr instanceof Invoke) {
 			return translate((Invoke)expr);
+		} else if(expr instanceof TermAccess) {
+			return translate((TermAccess)expr);
 		} else {		
 			syntaxError("unknown expression encountered",specfile.filename,expr);
 			return null;
@@ -523,8 +527,10 @@ public class JavaFileWriter {
 	public  Pair<List<String>,String> translate(Comprehension c) {
 		if(c.cop == COp.SOME) {
 			return translateSome(c);
+		} else if(c.cop == COp.SETCOMP){
+			return translateSetComp(c);
 		} else {
-			return translateAll(c);
+			return null;
 		}
 	}
 	
@@ -555,10 +561,10 @@ public class JavaFileWriter {
 		return new Pair(inserts,tmp);
 	}
 	
-	public Pair<List<String>,String> translateAll(Comprehension c) {
+	public Pair<List<String>,String> translateSetComp(Comprehension c) {
 		ArrayList<String> inserts = new ArrayList<String>();		
 		String tmp = freshVar();
-		inserts.add("boolean " + tmp + " = true;");
+		inserts.add("HashSet " + tmp + " = new HashSet();");
 		int l=0;
 		for(Pair<String,Expr> src : c.sources) {
 			Pair<List<String>,String> r = translate(src.second());
@@ -570,16 +576,29 @@ public class JavaFileWriter {
 					+ src.first() + " : (HashSet<" + typeStr(type.element)
 					+ ">) " + r.second() + ") {");			
 		}
-		Pair<List<String>,String> r = translate(c.condition);
-		for(String i : r.first()) {
+		Pair<List<String>,String> val = translate(c.value);
+		for(String i : val.first()) {
 			inserts.add(indentStr(l) + i);
 		}
-		inserts.add(indentStr(l) + "if(!" + r.second() + ") { " + tmp + " = false; break; }");
+		if(c.condition != null) {
+			Pair<List<String>,String> r = translate(c.condition);
+			for(String i : r.first()) {
+				inserts.add(indentStr(l) + i);
+			}
+			inserts.add(indentStr(l) + "if(!" + r.second() + ") { " + tmp + ".add(" + val.second() + ");}");
+		} else {
+			inserts.add(indentStr(l) + tmp + ".add(" + val.second() + ");");
+		}
 		
 		for(Pair<String,Expr> src : c.sources) {
 			inserts.add(indentStr(--l) + "}");
 		}
 		return new Pair(inserts,tmp);
+	}
+	
+	public Pair<List<String>,String> translate(TermAccess ta) {
+		Pair<List<String>,String> src = translate(ta.src);
+		return new Pair(src.first(),src.second() + ".c" + ta.index);
 	}
 	
 	public void write(Type type) {
