@@ -404,7 +404,11 @@ public abstract class Type {
 			return r + ")";
 		} else if(t instanceof Type.Term) {
 			Type.Term st = (Type.Term) t;
-			return "N" + st.name + ";";
+			String r = "T" + st.name;
+			for(Type p : st.params){
+				r += type2str(p);
+			}
+			return r;
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}

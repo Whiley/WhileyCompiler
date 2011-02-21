@@ -14,6 +14,7 @@ import wyil.util.SyntacticElement;
 import wyil.util.SyntaxError;
 import static wyil.util.SyntaxError.*;
 import wyone.core.*;
+import wyone.core.SpecFile.TypeDecl;
 import static wyone.core.Expr.*;
 import static wyone.core.SpecFile.*;
 import static wyone.core.Attributes.*;
@@ -21,6 +22,7 @@ import static wyone.core.Attributes.*;
 public class JavaFileWriter {
 	private PrintWriter out;
 	private SpecFile specfile;
+	private HashSet<Type> typeTests = new HashSet<Type>();
 		
 	public JavaFileWriter(Writer os) {
 		out = new PrintWriter(os);
@@ -79,6 +81,7 @@ public class JavaFileWriter {
 			}
 		}
 		write(dispatchTable);
+		writeTypeTests();
 		writeParser();
 		writeMainMethod();
 		out.println("}");
@@ -244,7 +247,7 @@ public class JavaFileWriter {
 			}
 		}
 		
-		// NOW PRINT REAL CODE
+		// NOW PRINT REAL CODE		
 		String mangle = nameMangle(decl.types);				
 		indent(1);out.print("public static Constructor rewrite" + mangle + "(final " + decl.name + " target");
 		if(!decl.types.isEmpty()) {
@@ -256,14 +259,20 @@ public class JavaFileWriter {
 			out.print(" ");
 			out.print(td.second());
 		}
+		HashMap<String,Type> environment = new HashMap<String,Type>();
+		for(Pair<TypeDecl,String> td : decl.types){			
+			environment.put(td.second(), td.first().type);
+		}
 		out.println(") {");
 		boolean defCase = false; 
 		for(RuleDecl rd : decl.rules) {			
 			for(Pair<String,Expr> p : rd.lets) {				
-				Pair<List<String>,String> r = translate(p.second());
+				Pair<List<String>,String> r = translate(p.second(),environment);
 				write(r.first(),2);
 				indent(2);
 				Type t = p.second().attribute(TypeAttr.class).type;
+				environment.put(p.first(), t);
+				out.print("final ");
 				write(t);
 				out.println(" " + p.first() + " = " + r.second() + ";");								
 			}			
@@ -272,16 +281,16 @@ public class JavaFileWriter {
 				// default case before a conditional case.
 				syntaxError("case cannot be reached",specfile.filename,rd);
 			} else if(rd.condition != null) {								
-				Pair<List<String>,String> r = translate(rd.condition);
+				Pair<List<String>,String> r = translate(rd.condition, environment);
 				write(r.first(),2);						
 				indent(2);out.println("if(" + r.second() + ") {");								
-				r = translate(rd.result);
+				r = translate(rd.result, environment);
 				write(r.first(),3);
 				indent(3);out.println("return " + r.second() + ";");				
 				indent(2);out.println("}");
 			} else {
 				defCase = true;				
-				Pair<List<String>,String> r = translate(rd.result);
+				Pair<List<String>,String> r = translate(rd.result, environment);
 				write(r.first(),2);
 				indent(2);out.println("return " + r.second() + ";");				
 			}
@@ -360,9 +369,9 @@ public class JavaFileWriter {
 				if(!firstTime) {
 					out.print(" && ");
 				}
-				firstTime=false;
-				out.print("target.c" + idx++ + " instanceof ");
-				write(t.first().type);				
+				firstTime=false;				
+				typeTests.add(t.first().type);
+				out.print("typeof_" + type2HexStr(t.first().type) + "(target.c" + idx++ + ")");							
 			}
 			out.println(") {");
 			indent(3);out.print("return rewrite" + mangle + "(target");
@@ -387,21 +396,21 @@ public class JavaFileWriter {
 		}
 	}
 	
-	public Pair<List<String>,String> translate(Expr expr) {
+	public Pair<List<String>,String> translate(Expr expr, HashMap<String,Type> environment) {
 		if(expr instanceof Constant) {
 			return translate((Constant)expr);			
 		} else if(expr instanceof Variable) {
-			return translate((Variable)expr);
+			return translate((Variable)expr, environment);
 		} else if(expr instanceof BinOp) {
-			return translate((BinOp)expr);
+			return translate((BinOp)expr, environment);
 		} else if(expr instanceof NaryOp) {
-			return translate((NaryOp)expr);
+			return translate((NaryOp)expr, environment);
 		} else if(expr instanceof Comprehension) {
-			return translate((Comprehension)expr);
+			return translate((Comprehension)expr, environment);
 		} else if(expr instanceof Invoke) {
-			return translate((Invoke)expr);
+			return translate((Invoke)expr, environment);
 		} else if(expr instanceof TermAccess) {
-			return translate((TermAccess)expr);
+			return translate((TermAccess)expr, environment);
 		} else {		
 			syntaxError("unknown expression encountered",specfile.filename,expr);
 			return null;
@@ -435,16 +444,24 @@ public class JavaFileWriter {
 		return new Pair(inserts,r);
 	}
 	
-	public Pair<List<String>,String> translate(Variable v) {
-		return new Pair(Collections.EMPTY_LIST,v.var);
+	public Pair<List<String>,String> translate(Variable v, HashMap<String,Type> environment) {
+		Type actual = v.attribute(TypeAttr.class).type;
+		Type declared = environment.get(v.var);
+		if(actual != declared) {
+			// the need to insert this case arises from the possibility of type
+			// inference resulting in the type of a variable being updated.
+			return new Pair(Collections.EMPTY_LIST,"((" + typeStr(actual) + ") " + v.var + ")");
+		} else {
+			return new Pair(Collections.EMPTY_LIST,v.var);
+		}
 	}
 	
-	public Pair<List<String>,String> translate(BinOp bop) {
+	public Pair<List<String>,String> translate(BinOp bop, HashMap<String,Type> environment) {
 		if(bop.op == BOp.TYPEEQ) {			
-			return translateTypeEquals(bop.lhs,bop.rhs.attribute(TypeAttr.class).type);
+			return translateTypeEquals(bop.lhs,bop.rhs.attribute(TypeAttr.class).type, environment);
 		}
-		Pair<List<String>,String> lhs = translate(bop.lhs);
-		Pair<List<String>,String> rhs = translate(bop.rhs);
+		Pair<List<String>,String> lhs = translate(bop.lhs, environment);
+		Pair<List<String>,String> rhs = translate(bop.rhs, environment);
 		List<String> inserts = concat(lhs.first(),rhs.first());
 		switch(bop.op) {
 		case ADD:						
@@ -481,20 +498,21 @@ public class JavaFileWriter {
 		}		
 	}
 	
-	public Pair<List<String>,String> translateTypeEquals(Expr src, Type rhs) {
-		Pair<List<String>,String> lhs = translate(src);
+	public Pair<List<String>,String> translateTypeEquals(Expr src, Type rhs, HashMap<String,Type> environment) {
+		Pair<List<String>,String> lhs = translate(src, environment);
 		String mangle = type2HexStr(rhs);
+		typeTests.add(rhs);
 		return new Pair(lhs.first(),"typeof_" + mangle + "(" + lhs.second() +")");		
 	}
 	
-	public Pair<List<String>,String> translate(NaryOp nop) {				
+	public Pair<List<String>,String> translate(NaryOp nop, HashMap<String,Type> environment) {				
 		List<String> inserts = Collections.EMPTY_LIST;
 		String r = null;
 		switch(nop.op) {
 		case SETGEN:
 			r="new HashSet(){{";
 			for(Expr e : nop.arguments) {
-				Pair<List<String>,String> p = translate(e);
+				Pair<List<String>,String> p = translate(e, environment);
 				inserts = concat(inserts,p.first());
 				r = r + "add(" + p.second() + ");";								
 			}
@@ -503,7 +521,7 @@ public class JavaFileWriter {
 		case LISTGEN:
 			r="new ArrayList(){{";
 			for(Expr e : nop.arguments) {
-				Pair<List<String>,String> p = translate(e);
+				Pair<List<String>,String> p = translate(e, environment);
 				inserts = concat(inserts,p.first());
 				r = r + "add(" + p.second() + ");";								
 			}
@@ -516,12 +534,12 @@ public class JavaFileWriter {
 		return new Pair(inserts,r);
 	}
 	
-	public  Pair<List<String>,String> translate(Invoke ivk) {
+	public  Pair<List<String>,String> translate(Invoke ivk, HashMap<String,Type> environment) {
 		List<String> inserts = Collections.EMPTY_LIST;
 		String r = ivk.name + "(";
 		boolean firstTime=true;
 		for(Expr e : ivk.arguments) {
-			Pair<List<String>,String> es = translate(e);
+			Pair<List<String>,String> es = translate(e, environment);
 			inserts = concat(inserts,es.first());
 			if(!firstTime) {
 				r += ", ";
@@ -533,23 +551,23 @@ public class JavaFileWriter {
 		return new Pair(inserts,r + ")");
 	}
 	
-	public  Pair<List<String>,String> translate(Comprehension c) {
+	public  Pair<List<String>,String> translate(Comprehension c, HashMap<String,Type> environment) {
 		if(c.cop == COp.SOME) {
-			return translateSome(c);
+			return translateSome(c, environment);
 		} else if(c.cop == COp.SETCOMP){
-			return translateSetComp(c);
+			return translateSetComp(c, environment);
 		} else {
 			return null;
 		}
 	}
 	
-	public Pair<List<String>,String> translateSome(Comprehension c) {		
+	public Pair<List<String>,String> translateSome(Comprehension c, HashMap<String,Type> environment) {		
 		ArrayList<String> inserts = new ArrayList<String>();		
 		String tmp = freshVar();
 		inserts.add("boolean " + tmp + " = false;");
 		int l=0;
 		for(Pair<String,Expr> src : c.sources) {
-			Pair<List<String>,String> r = translate(src.second());
+			Pair<List<String>,String> r = translate(src.second(), environment);
 			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
 			for(String i : r.first()) {
 				inserts.add(indentStr(l) + i);
@@ -558,7 +576,7 @@ public class JavaFileWriter {
 					+ src.first() + " : (HashSet<" + typeStr(type.element)
 					+ ">) " + r.second() + ") {");			
 		}
-		Pair<List<String>,String> r = translate(c.condition);
+		Pair<List<String>,String> r = translate(c.condition, environment);
 		for(String i : r.first()) {
 			inserts.add(indentStr(l) + i);
 		}
@@ -570,13 +588,13 @@ public class JavaFileWriter {
 		return new Pair(inserts,tmp);
 	}
 	
-	public Pair<List<String>,String> translateSetComp(Comprehension c) {
+	public Pair<List<String>,String> translateSetComp(Comprehension c, HashMap<String,Type> environment) {
 		ArrayList<String> inserts = new ArrayList<String>();		
 		String tmp = freshVar();
 		inserts.add("HashSet " + tmp + " = new HashSet();");
 		int l=0;
 		for(Pair<String,Expr> src : c.sources) {
-			Pair<List<String>,String> r = translate(src.second());
+			Pair<List<String>,String> r = translate(src.second(), environment);
 			Type.Set type = (Type.Set) src.second().attribute(TypeAttr.class).type;
 			for(String i : r.first()) {
 				inserts.add(indentStr(l) + i);
@@ -585,16 +603,16 @@ public class JavaFileWriter {
 					+ src.first() + " : (HashSet<" + typeStr(type.element)
 					+ ">) " + r.second() + ") {");			
 		}
-		Pair<List<String>,String> val = translate(c.value);
+		Pair<List<String>,String> val = translate(c.value, environment);
 		for(String i : val.first()) {
 			inserts.add(indentStr(l) + i);
 		}
 		if(c.condition != null) {
-			Pair<List<String>,String> r = translate(c.condition);
+			Pair<List<String>,String> r = translate(c.condition, environment);
 			for(String i : r.first()) {
 				inserts.add(indentStr(l) + i);
 			}
-			inserts.add(indentStr(l) + "if(!" + r.second() + ") { " + tmp + ".add(" + val.second() + ");}");
+			inserts.add(indentStr(l) + "if(" + r.second() + ") { " + tmp + ".add(" + val.second() + ");}");
 		} else {
 			inserts.add(indentStr(l) + tmp + ".add(" + val.second() + ");");
 		}
@@ -605,8 +623,8 @@ public class JavaFileWriter {
 		return new Pair(inserts,tmp);
 	}
 	
-	public Pair<List<String>,String> translate(TermAccess ta) {
-		Pair<List<String>,String> src = translate(ta.src);
+	public Pair<List<String>,String> translate(TermAccess ta, HashMap<String,Type> environment) {
+		Pair<List<String>,String> src = translate(ta.src, environment);
 		return new Pair(src.first(),src.second() + ".c" + ta.index);
 	}
 	
@@ -648,6 +666,76 @@ public class JavaFileWriter {
 		}
 		return mangle;
 	}	
+	
+	protected void writeTypeTests() {
+		HashSet<Type> worklist = new HashSet<Type>(typeTests);
+		while(!worklist.isEmpty()) {			
+			Type t = worklist.iterator().next();
+			worklist.remove(t);
+			writeTypeTest(t,worklist);
+		}
+	}
+	
+	protected void writeTypeTest(Type type, HashSet<Type> worklist) {
+		String mangle = type2HexStr(type);
+		indent(1);out.println("// " + type);
+		indent(1);out.println("protected static boolean typeof_" + mangle + "(Object value) {");
+		if(type instanceof Type.Any) {
+			indent(2);out.println("return true;");
+		} else if(type instanceof Type.Int) {
+			indent(2);out.println("return (value instanceof BigInteger);");
+		} else if(type instanceof Type.Bool) {
+			indent(2);out.println("return (value instanceof Boolean);");			
+		} else if(type instanceof Type.Strung) {
+			indent(2);out.println("return (value instanceof String);");			
+		} else if(type instanceof Type.Term) {
+			Type.Term tt = (Type.Term) type;
+			indent(2);out.println("if(value instanceof " + tt.name + ") {");
+			indent(3);out.println(tt.name + " term = (" + tt.name + ") value;");
+			for(int i=0;i!=tt.params.size();++i) {			
+				Type pt = tt.params.get(i);
+				String pt_mangle = type2HexStr(pt);
+				indent(3);out.println("if(!typeof_" + pt_mangle + "(term.c" + i +")) { return false; }");								
+				if(typeTests.add(pt)) {				
+					worklist.add(pt);
+				}
+			}
+			indent(3);out.println("return true;");
+			indent(2);out.println("}");
+			indent(2);out.println("return false;");											
+		} else if(type instanceof Type.List){
+			Type.List tl = (Type.List) type;
+			mangle = type2HexStr(tl.element());
+			indent(2);out.println("if(value instanceof ArrayList) {");
+			indent(3);out.println("ArrayList ls = (ArrayList) value;");
+			indent(3);out.println("for(Object o : ls) {");
+			indent(4);out.println("if(!typeof_" + mangle + "(o)) { return false; }");
+			indent(3);out.println("}");
+			indent(3);out.println("return true;");
+			indent(2);out.println("}");
+			indent(2);out.println("return false;");		
+			if(typeTests.add(tl.element)) {				
+				worklist.add(tl.element);
+			}
+		} else if(type instanceof Type.Set){
+			Type.Set tl = (Type.Set) type;
+			mangle = type2HexStr(tl.element());
+			indent(2);out.println("if(value instanceof HashSet) {");
+			indent(3);out.println("HashSet ls = (HashSet) value;");
+			indent(3);out.println("for(Object o : ls) {");
+			indent(4);out.println("if(!typeof_" + mangle + "(o)) { return false; }");
+			indent(3);out.println("}");
+			indent(3);out.println("return true;");
+			indent(2);out.println("}");
+			indent(2);out.println("return false;");
+			if(typeTests.add(tl.element)) {				
+				worklist.add(tl.element);
+			}
+		} else {
+			throw new RuntimeException("internal failure --- type test not implemented (" + type + ")");
+		}		
+		indent(1);out.println("}");
+	}
 	
 	protected void writeMainMethod() {
 		indent(1);out.println("public static void main(String[] args) throws IOException {");

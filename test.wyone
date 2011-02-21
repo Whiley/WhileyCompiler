@@ -25,7 +25,7 @@ rewrite And({Term} xs):
     => True, if xs == {True}
     => False, if some { x in xs | Not(x) in xs }
     => let ys = { x#0 | x in xs, x ~= And({*}) } 
-       in And(xs - {True})
+       in And(xs - ys - {True})
 
 rewrite Or({Term} xs):
     => True, if True in xs
