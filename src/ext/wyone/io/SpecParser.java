@@ -146,7 +146,8 @@ public class SpecParser {
 			do {
 				if(!firstTime) {
 					match(Comma.class);
-				}
+					skipWhiteSpace();
+				}				
 				firstTime=false;
 				String id = matchIdentifier().text;
 				match(Equals.class);

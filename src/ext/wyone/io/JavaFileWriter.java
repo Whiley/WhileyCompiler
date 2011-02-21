@@ -633,7 +633,9 @@ public class JavaFileWriter {
 	}
 	
 	public String typeStr(Type type) {
-		if(type instanceof Type.Int) {
+		if(type instanceof Type.Any) {
+			return "Object";
+		} else if(type instanceof Type.Int) {
 			return "BigInteger";
 		} else if(type instanceof Type.Bool) {
 			return "boolean";
