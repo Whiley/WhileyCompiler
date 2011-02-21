@@ -257,7 +257,12 @@ public class JavaFileWriter {
 		if(!decl.types.isEmpty()) {
 			out.print(", ");
 		}
-		for(Pair<TypeDecl,String> td : decl.types){						
+		boolean firstTime=true;
+		for(Pair<TypeDecl,String> td : decl.types){
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
 			out.print("final ");
 			write(td.first().type);
 			out.print(" ");

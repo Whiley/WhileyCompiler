@@ -1,19 +1,20 @@
+// ==================================================
+// Theory of Values
+// ==================================================
+
 term True
 term False
 class Bool as True | False
+class Value as Bool
+
+// ==================================================
+// Theory of Logical Connectives
+// ==================================================
 
 term And({Term})
 term Or({Term})
 term Not(Term)
-class LogicTerm as And | Or | Not | Bool
-
-term Equals(Term, Term)
-term NotEquals(Term, Term)
-class Congruence as Equals | NotEquals
-
-term Var(string)
-
-class Term as LogicTerm | Congruence | Var
+class LogicTerm as And | Or | Not
 
 rewrite Not(Bool t):
     => True, if t == False
@@ -45,4 +46,30 @@ rewrite Or({Term} xs):
     => let ys = { x | x in xs, x ~= Or({*}) },
            zs = { z | y in ys, z in y#0 }
        in Or(((xs - ys) - {False}) + zs)
+
+// ==================================================
+// Theory of Congruence
+// ==================================================
+
+term Equals(Term, Term)
+term NotEquals(Term, Term)
+class Congruence as Equals | NotEquals
+
+rewrite Equals(Value x, Value y):
+    => True, if x == y
+    => False, if x != y
+
+rewrite Equals(Term x, Term y):
+    => True, if x == y
+
+
+
+// ==================================================
+// Overall Theory
+// ==================================================
+
+term Var(string)
+
+class Term as Value | LogicTerm | Congruence | Var
+
 
