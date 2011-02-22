@@ -38,7 +38,7 @@ public class SpecFile {
 	}
 	
 	public static class RewriteDecl extends SyntacticElement.Impl implements Decl {
-		public final String name;
+		public final String name;		
 		public final ArrayList<Pair<TypeDecl,String>> types;
 		public final ArrayList<RuleDecl> rules;
 		public RewriteDecl(String n, Collection<Pair<TypeDecl,String>> types, 

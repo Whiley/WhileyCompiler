@@ -52,29 +52,53 @@ rewrite Or({Term} xs):
 // ==================================================
 
 term Equals(Term, Term)
-term NotEquals(Term, Term)
-class Congruence as Equals | NotEquals
-
-rewrite Not(Equals x):
-    => NotEquals(x#0,x#1)
-
-rewrite Not(NotEquals x):
-    => Equals(x#0,x#1)
 
 rewrite Equals(Value x, Value y):
     => True, if x == y
     => False, if x != y
 
+rewrite And({Term} xs):
+    => let ys = { Equals(x#1,x#0) | x in xs, x~=Equals(*,*) && !(x#0~=Value && x#1~=Value) && x#0 != x#1 }
+       in And(xs + ys)
+
+rewrite And({Term} xs):
+    => let ys = { Equals(x#0,y#1) | x in xs, y in xs, x!=y && x~=Equals(*,*) && y~=Equals(*,*) && x#1 == y#0 && x#0 != y#1 }
+       in And(xs + ys)
+
 rewrite Equals(Term x, Term y):
     => True, if x == y
-    => Equals(y,x), if !(x ~= Var(*)) && y ~= Var(*)
 
+rewrite Not(Equals(Value, Value) x):
+    => True, if x#0 != x#1
+    => False, if x#0 == x#1
+
+rewrite Not(Equals(Term, Term) x):
+    => False, if x#0 == x#1
+
+// ==================================================
+// Theory of Arithmetic
+// ==================================================
+
+term Num(int)
+term Neg(Arith)
+term Add({Arith})
+term Mul({Arith})
+term Div(Arith,Arith)
+
+class Arith as Num | Add | Mul | Div | Neg | Var 
+
+rewrite Neg(Num(int) x):
+    => Num(-x#0)
+
+rewrite Neg(Neg(Arith) x):
+    => x#0
+	
 // ==================================================
 // Overall Theory
 // ==================================================
 
 term Var(string)
 
-class Term as Value | LogicTerm | Congruence | Var
+class Term as Value | LogicTerm | Equals | Var | Arith
 
 
