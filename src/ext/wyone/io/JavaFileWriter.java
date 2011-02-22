@@ -486,7 +486,7 @@ public class JavaFileWriter {
 		Pair<List<String>,String> mhs = translate(uop.mhs, environment);
 		switch(uop.op) {
 		case NEG:
-			return new Pair(mhs.first(),"-" + mhs.second());
+			return new Pair(mhs.first(), mhs.second()+ ".negate()");
 		case NOT:
 			return new Pair(mhs.first(),"!" + mhs.second());
 		default:

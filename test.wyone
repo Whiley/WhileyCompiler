@@ -5,10 +5,7 @@
 term True
 term False
 class Bool as True | False
-
-term Num(int)
-
-class Value as Bool | Num
+class Value as Bool
 
 // ==================================================
 // Theory of Logical Connectives
@@ -79,11 +76,26 @@ rewrite Not(Equals(Term, Term) x):
     => False, if x#0 == x#1
 
 // ==================================================
+// Theory of Arithmetic
+// ==================================================
+
+term Num(int)
+term Neg(Arith)
+term Add({Arith})
+term Mul({Arith})
+term Div(Arith,Arith)
+
+class Arith as Num | Add | Mul | Div | Neg | Var 
+
+rewrite Neg(Num(int) x):
+    => Num(-x#0)
+	
+// ==================================================
 // Overall Theory
 // ==================================================
 
 term Var(string)
 
-class Term as Value | LogicTerm | Equals | Var
+class Term as Value | LogicTerm | Equals | Var | Arith
 
 
