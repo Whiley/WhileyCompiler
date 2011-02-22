@@ -61,6 +61,10 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.type = val;
 		}
+		
+		public String toString() {
+			return type.toString();
+		}
 	}
 	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
@@ -217,7 +221,13 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public String toString() {
-			return op + mhs.toString();
+			if(op == UOp.NOT) {
+				return "!" + mhs.toString();
+			} else if(op == UOp.NEG) {
+				return "-" + mhs.toString();
+			} else {
+				return "|" + mhs.toString() + "|";
+			}
 		}
 	}
 	
@@ -357,5 +367,5 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
 		}
-	}		
+	}			
 }

@@ -158,7 +158,13 @@ public class TypeChecker {
 	  }
 	  
 	  protected Type resolve(UnOp uop, HashMap<String,Type> environment) {
-	    Type t = resolve(uop.mhs, environment);
+	    if(uop.op == UOp.NOT) {
+			// this is necessary to prevent type inference in the presence of
+			// invert type tests. e.g. <code>!x~=Var(*) && y~=Var(*)</code>
+			// should not update the type of x.
+	    	environment = new HashMap<String,Type>(environment);
+	    }
+		Type t = resolve(uop.mhs, environment);
 	    switch (uop.op) {
 	    case LENGTHOF:
 	      checkSubtype(Type.T_SET(Type.T_ANY), t, uop.mhs);
@@ -167,7 +173,7 @@ public class TypeChecker {
 	    case NEG:
 	      checkSubtype(Type.T_REAL, t, uop.mhs);
 	      return t;
-	    case NOT:
+	    case NOT:	    	
 	      checkSubtype(Type.T_BOOL, t, uop.mhs);
 	      return t;
 	    }
@@ -356,7 +362,7 @@ public class TypeChecker {
 		  if(!(src_t instanceof Type.Term)) {
 			  syntaxError("expected list of term type, got " + src_t, filename, ra.src);
 		  }
-		  Type.Term tt = (Type.Term) src_t;		  
+		  Type.Term tt = (Type.Term) src_t;		  		  
 		  if(ra.index >= tt.params.size()) {
 			  syntaxError("term index out-of-bounds", filename, ra);
 		  }		  	   
