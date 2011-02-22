@@ -5,7 +5,10 @@
 term True
 term False
 class Bool as True | False
-class Value as Bool
+
+term Num(int)
+
+class Value as Bool | Num
 
 // ==================================================
 // Theory of Logical Connectives
@@ -58,7 +61,7 @@ rewrite Equals(Value x, Value y):
     => False, if x != y
 
 rewrite And({Term} xs):
-    => let ys = { Equals(x#1,x#0) | x in xs, x~=Equals(*,*) && !(x#0~=Value) && !(x#1~=Value) && x#0 != x#1 }
+    => let ys = { Equals(x#1,x#0) | x in xs, x~=Equals(*,*) && !(x#0~=Value && x#1~=Value) && x#0 != x#1 }
        in And(xs + ys)
 
 rewrite And({Term} xs):

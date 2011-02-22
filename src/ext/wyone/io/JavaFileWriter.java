@@ -860,7 +860,7 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeParseNumber() {
-		indent(2);out.println("protected Number parseNumber() {");		
+		indent(2);out.println("protected BigInteger parseNumber() {");		
 		indent(3);out.println("int start = pos;");
 		indent(3);out.println("while (pos < input.length() && Character.isDigit(input.charAt(pos))) {");
 		indent(4);out.println("pos = pos + 1;");
