@@ -322,18 +322,22 @@ public class JavaFileWriter {
 	public void write(HashMap<String,List<RewriteDecl>> dispatchTable) {
 		// First, write outermost dispatch
 		indent(1);out.println("public static Constructor rewrite(Constructor target) {");
+		indent(2);out.println("Constructor otarget;");
+		indent(2);out.println("do {");
+		indent(3);out.println("otarget = target;");
 		boolean firstTime=true;
 		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			String name = e.getKey();			
-			indent(2);
+			indent(3);
 			if(!firstTime) {
 				out.print("else ");
 			}
 			firstTime=false;
 			out.println("if(target instanceof " + name + ") {");			
-			indent(3);out.println("return rewrite((" + name + ") target);");							
-			indent(2);out.println("}");
+			indent(4);out.println("target = rewrite((" + name + ") target);");							
+			indent(3);out.println("}");
 		}
+		indent(2);out.println("} while(target != otarget);");
 		indent(2);out.println("return target;");
 		indent(1);out.println("}\n");
 		
