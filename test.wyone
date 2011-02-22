@@ -58,11 +58,11 @@ rewrite Equals(Value x, Value y):
     => False, if x != y
 
 rewrite And({Term} xs):
-    => let ys = { Equals(x#1,x#0) | x in xs, x~=Equals(*,*) }
+    => let ys = { Equals(x#1,x#0) | x in xs, x~=Equals(*,*) && !(x#0~=Value) && !(x#1~=Value) && x#0 != x#1 }
        in And(xs + ys)
 
 rewrite And({Term} xs):
-    => let ys = { Equals(x#0,y#1) | x in xs, y in xs, x!=y && x~=Equals(*,*) && y~=Equals(*,*) && x#1 == y#0  }
+    => let ys = { Equals(x#0,y#1) | x in xs, y in xs, x!=y && x~=Equals(*,*) && y~=Equals(*,*) && x#1 == y#0 && x#0 != y#1 }
        in And(xs + ys)
 
 rewrite Equals(Term x, Term y):
