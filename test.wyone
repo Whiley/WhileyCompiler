@@ -89,6 +89,9 @@ class Arith as Num | Add | Mul | Div | Neg | Var
 
 rewrite Neg(Num(int) x):
     => Num(-x#0)
+
+rewrite Neg(Neg(Arith) x):
+    => x#0
 	
 // ==================================================
 // Overall Theory
