@@ -57,15 +57,16 @@ public class JavaFileWriter {
 					parents.add(cd.name);
 				}
 			}
-		}
+		}								
 		
+		HashSet<String> used = new HashSet<String>();
 		for(Decl d : spec.declarations) {
 			if(d instanceof TermDecl) {
 				write((TermDecl) d, hierarhcy);
 			} else if(d instanceof ClassDecl) {
 				write((ClassDecl) d, hierarhcy);
 			} else if(d instanceof RewriteDecl) {
-				write((RewriteDecl) d);
+				write((RewriteDecl) d, used);
 			}
 		}		
 		HashMap<String,List<RewriteDecl>> dispatchTable = new HashMap();
@@ -82,6 +83,7 @@ public class JavaFileWriter {
 		}
 		write(dispatchTable);
 		writeTypeTests();
+		writeCache();
 		writeParser();
 		writeMainMethod();
 		out.println("}");
@@ -204,7 +206,7 @@ public class JavaFileWriter {
 				out.print(" c" + idx++);
 			}
 			out.println(") {");
-			indent(2);out.print("return new " + decl.name + "(");
+			indent(2);out.print("return get(new " + decl.name + "(");
 			idx = 0;
 			firstTime=true;
 			for(Type t : decl.params) {	
@@ -214,7 +216,7 @@ public class JavaFileWriter {
 				firstTime=false;
 				out.print("c" + idx++);
 			}
-			out.println(");");			
+			out.println("));");			
 			indent(1);out.println("}\n");
 		}
 	}
@@ -233,7 +235,7 @@ public class JavaFileWriter {
 		indent(1);out.println("}\n");
 	}
 	
-	public void write(RewriteDecl decl) {		
+	public void write(RewriteDecl decl, HashSet<String> used) {		
 		// FIRST COMMENT CODE FROM SPEC FILE
 		indent(1);out.print("// rewrite " + decl.name + "(");
 		for(Pair<TypeDecl,String> td : decl.types){						
@@ -251,8 +253,14 @@ public class JavaFileWriter {
 			}
 		}
 		
-		// NOW PRINT REAL CODE		
-		String mangle = nameMangle(decl.types);				
+		// NOW PRINT REAL CODE				
+		String _mangle = nameMangle(decl.types);
+		String mangle = null;
+		int i=0;
+		do {			
+			mangle = _mangle + "_" + i++;
+		} while(used.contains(decl.name + mangle));
+		used.add(decl.name + mangle);
 		indent(1);out.print("public static Constructor rewrite" + mangle + "(final " + decl.name + " target");
 		if(!decl.types.isEmpty()) {
 			out.print(", ");
@@ -369,8 +377,15 @@ public class JavaFileWriter {
 			out.print("rewrite(target.c" + i + ")");
 		}
 		out.println(");");
+		HashSet<String> used = new HashSet<String>();
 		for(RewriteDecl r : rules) {
-			String mangle = nameMangle(r.types);
+			String _mangle = nameMangle(r.types);
+			String mangle = null;
+			int i=0;
+			do {
+				mangle = _mangle + "_" + i++;
+			} while(used.contains(r.name + mangle));
+			used.add(r.name + mangle);
 			indent(2);out.print("if(");
 			int idx=0;
 			boolean firstTime=true;
@@ -383,7 +398,7 @@ public class JavaFileWriter {
 				out.print("typeof_" + type2HexStr(t.first().type) + "(target.c" + idx++ + ")");							
 			}
 			out.println(") {");
-			indent(3);out.print("return rewrite" + mangle + "(target");
+			indent(3);out.print("Constructor tmp = rewrite" + mangle + "(target");			
 			idx=0;			
 			for(Pair<TypeDecl,String> t : r.types) {				
 				out.print(", ");				
@@ -393,6 +408,7 @@ public class JavaFileWriter {
 				out.print(") target.c" + idx++);				
 			}
 			out.println(");");
+			indent(3);out.println("if(tmp != target) { return tmp; }");
 			indent(2);out.println("}");
 		}
 		indent(2);out.println("return target;");
@@ -767,6 +783,21 @@ public class JavaFileWriter {
 		indent(1);out.println("}");
 	}
 	
+	protected void writeCache() {
+		indent(1);out.println("private static final ArrayList<Object> items = new ArrayList<Object>();");
+		indent(1);out.println("private static final HashMap<Object,Integer> cache = new HashMap<Object,Integer>();");
+		indent(1);out.println("private static <T> T get(T obj) {");
+		indent(2);out.println("Integer idx = cache.get(obj);");
+		indent(2);out.println("if(idx != null) {");
+		indent(3);out.println("return (T) items.get(idx);");
+		indent(2);out.println("} else {");				
+		indent(3);out.println("cache.put(obj, items.size());");
+		indent(3);out.println("items.add(obj);");	
+		indent(3);out.println("return obj;");
+		indent(2);out.println("}");
+		indent(1);out.println("}");	
+	}
+	
 	protected void writeMainMethod() {
 		indent(1);out.println("public static void main(String[] args) throws IOException {");
 		indent(3);out.println("BufferedReader in = new BufferedReader(new FileReader(args[0]));");		
@@ -813,13 +844,16 @@ public class JavaFileWriter {
 		indent(2);out.println("protected HashSet parseSet() {");
 		indent(3);out.println("HashSet r = new HashSet();");
 		indent(3);out.println("match(\"{\");");
+		indent(3);out.println("skipWhiteSpace();");
 		indent(3);out.println("boolean firstTime=true;");
 		indent(3);out.println("while(pos < input.length() && input.charAt(pos) != '}') {");
 		indent(4);out.println("if(!firstTime) {");
 		indent(5);out.println("match(\",\");");
+		indent(4);out.println("skipWhiteSpace();");
 		indent(4);out.println("}");
 		indent(4);out.println("firstTime=false;");
 		indent(4);out.println("r.add(parseTerm());");
+		indent(3);out.println("skipWhiteSpace();");
 		indent(3);out.println("}");
 		indent(3);out.println("match(\"}\");");
 		indent(3);out.println("return r;");

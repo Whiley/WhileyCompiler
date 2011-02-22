@@ -65,9 +65,20 @@ rewrite Equals(Value x, Value y):
     => True, if x == y
     => False, if x != y
 
+rewrite And({Term} xs):
+    => let ys = { Equals(x#0,y#1) | x in xs, y in xs, x!=y && x~=Equals(*,*) && y~=Equals(*,*) && x#1 == y#0  }
+       in And(xs + ys)
+
 rewrite Equals(Term x, Term y):
     => True, if x == y
     => Equals(y,x), if !(x ~= Var(*)) && y ~= Var(*)
+
+rewrite NotEquals(Value x, Value y):
+    => True, if x != y
+    => False, if x == y
+
+rewrite NotEquals(Term x, Term y):
+    => False, if x == y
 
 // ==================================================
 // Overall Theory
