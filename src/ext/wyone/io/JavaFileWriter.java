@@ -324,15 +324,10 @@ public class JavaFileWriter {
 		indent(1);out.println("public static Constructor rewrite(Constructor target) {");
 		indent(2);out.println("Constructor otarget;");
 		indent(2);out.println("do {");
-		indent(3);out.println("otarget = target;");
-		boolean firstTime=true;
+		indent(3);out.println("otarget = target;");		
 		for(Map.Entry<String,List<RewriteDecl>> e : dispatchTable.entrySet()) {
 			String name = e.getKey();			
-			indent(3);
-			if(!firstTime) {
-				out.print("else ");
-			}
-			firstTime=false;
+			indent(3);						
 			out.println("if(target instanceof " + name + ") {");			
 			indent(4);out.println("target = rewrite((" + name + ") target);");							
 			indent(3);out.println("}");
