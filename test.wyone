@@ -1,16 +1,27 @@
+// ==================================================
+// Theory of Values
+// ==================================================
+
+term True
+term False
+class Bool as True | False
+class Value as Bool
+
+// ==================================================
+// Theory of Logical Connectives
+// ==================================================
+
 term And({Term})
 term Or({Term})
 term Not(Term)
-term Var(string)
-term True
-term False
-
-class Bool as True | False
-class Term as And | Or | Not | Bool | Var
+class LogicTerm as And | Or | Not
 
 rewrite Not(Bool t):
     => True, if t == False
     => False, if t == True
+
+rewrite Not(Not(*) x):
+    => x#0
 
 rewrite Not(And({Term}) t):
     => let rs = { Not(x) | x in t#0 } 
@@ -24,11 +35,46 @@ rewrite And({Term} xs):
     => False, if False in xs
     => True, if xs == {True}
     => False, if some { x in xs | Not(x) in xs }
-    => let ys = { x#0 | x in xs, x ~= And({*}) } 
-       in And(xs - {True})
+    => let ys = { x | x in xs, x ~= And({*}) },
+           zs = { z | y in ys, z in y#0 }
+       in And(((xs - ys) - {True}) + zs)
 
 rewrite Or({Term} xs):
     => True, if True in xs
     => False, if xs == {False}
     => True, if some { x in xs | Not(x) in xs }
-    => Or(xs - {False})
+    => let ys = { x | x in xs, x ~= Or({*}) },
+           zs = { z | y in ys, z in y#0 }
+       in Or(((xs - ys) - {False}) + zs)
+
+// ==================================================
+// Theory of Congruence
+// ==================================================
+
+term Equals(Term, Term)
+term NotEquals(Term, Term)
+class Congruence as Equals | NotEquals
+
+rewrite Not(Equals x):
+    => NotEquals(x#0,x#1)
+
+rewrite Not(NotEquals x):
+    => Equals(x#0,x#1)
+
+rewrite Equals(Value x, Value y):
+    => True, if x == y
+    => False, if x != y
+
+rewrite Equals(Term x, Term y):
+    => True, if x == y
+    => Equals(y,x), if !(x ~= Var(*)) && y ~= Var(*)
+
+// ==================================================
+// Overall Theory
+// ==================================================
+
+term Var(string)
+
+class Term as Value | LogicTerm | Congruence | Var
+
+
