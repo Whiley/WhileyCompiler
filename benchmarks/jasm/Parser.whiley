@@ -29,11 +29,6 @@ ClassFile|SyntaxError parseClassFile(string input):
 (bool|SyntaxError,state) parseClassOrInterface(state st):
     nst = match(".",st)
     // check for error
-
-    // NOTE: the following line should be testing against a syntax 
-    // error.  However, without verification enabled this test cannot be
-    // proven.
-
     if nst ~= {[int] msg}:
         return (nst,st)
     // ok ...
@@ -98,7 +93,7 @@ SyntaxError|state match(string m, state st):
     st = parseWhiteSpace(st)
     if (st.pos + |m|) > |st.input|:
         return syntaxError("expected " + m)
-    ss = st.input[st.pos:st.pos+|m|]
+    ss = st.input[st.pos..st.pos+|m|]
     if ss != m:
         return syntaxError("expected " + m)
     return {pos: st.pos+|m|,input: st.input}
