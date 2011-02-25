@@ -29,6 +29,6 @@ void FileReader::close():
     extern jvm:
         aload 0
         aload 1
-        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;Ljava/math/BigInteger;)Lwyil/jvm/rt/WhileyList;
+        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;Lwyil/jvm/rt/BigRational;)Lwyil/jvm/rt/WhileyList;
         areturn
     return []

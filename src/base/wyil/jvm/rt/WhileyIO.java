@@ -31,7 +31,7 @@ public class WhileyIO {
 		}
 	}
 	
-	public static WhileyList readFile(WhileyProcess p, BigInteger max) {		
+	public static WhileyList readFile(WhileyProcess p, BigRational max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
