@@ -10,26 +10,34 @@ void System::main([string] args):
     if game ~= SyntaxError:
         out->println("syntax error: " + game.msg)
     else:
+        sign = false
+        r = ""
         for m in game:
-            out->println(str(m))
+            if !sign:
+                r = move2str(m)
+            else:
+                out->println(r + " " + move2str(m))
+            sign = !sign
+        if sign:
+            out->println(r)
 
 void System::usage():
     out->println("usage: chess file")
 
-string str(Move m):
-    if m ~= SingleMove:
-        return str(m.piece) + str(m.from) + "-" + str(m.to)
-    else if m ~= SingleTake:
-        return str(m.piece) + str(m.from) + "x" + str(m.to)
+string move2str(Move m):
+    if m ~= SingleTake: 
+        return piece2str(m.piece) + pos2str(m.from) + "x" + piece2str(m.taken) + pos2str(m.to)
+    else if m ~= SingleMove:
+        return piece2str(m.piece) + pos2str(m.from) + "-" + pos2str(m.to)   
     else:
         // check move
-        return str(m.move) + "+"  
+        return move2str(m.move) + "+"  
 
-string str(Piece p):
+string piece2str(Piece p):
     if p.kind == PAWN:
         return ""
     else:
         return [PIECE_CHARS[p.kind]]
 
-string str(Pos p):
+string pos2str(Pos p):
     return ['a' + p.col,'0' + p.row]

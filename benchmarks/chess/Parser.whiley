@@ -5,7 +5,7 @@ define SyntaxError as {string msg}
     pos = 0
     finished = false
     moves = []
-    while pos < |input| || finished:        
+    while pos < |input| && !finished:        
         line = parseLine(input,pos)
         split = splitLine(line)
         whiteMove = parseMove(split[0], true)
@@ -25,7 +25,7 @@ string parseLine(string input, int pos):
     return input[start..pos]
 
 int nextLine(string input, int pos):
-    while pos < |input| && (input[pos] == '\n' && input[pos] == '\r'):
+    while pos < |input| && (input[pos] == '\n' || input[pos] == '\r'):
         pos = pos + 1
     return pos
 
@@ -43,9 +43,23 @@ int nextLine(string input, int pos):
     return splits        
 
 Move parseMove(string input, bool isWhite):
-    lookahead = input[0]
-    index = 1
-    
+    piece = parsePiece(input[0],isWhite)
+    if piece.kind == PAWN:
+        index = 0
+    else:
+        index = 1
+    from = parsePos(input[index..index+2])
+    if input[index+2] == 'x':
+        taken = parsePiece(input[index+3],!isWhite)
+        if taken.kind == PAWN:
+            index = index - 1
+        to = parsePos(input[index+4..index+6]) 
+        return { piece: piece, from: from, to: to, taken: taken }
+    else:
+        to = parsePos(input[index+3..index+5])
+        return { piece: piece, from: from, to: to }
+
+Piece parsePiece(char lookahead, bool isWhite):
     if lookahead == 'N':
         piece = KNIGHT
     else if lookahead == 'B':
@@ -60,17 +74,8 @@ Move parseMove(string input, bool isWhite):
     else:    
         // ignoring castling for now
         piece = PAWN
-        index = 0
-    // now, add piece color
-    piece = {kind: piece, colour: isWhite}
-    from = parsePos(input[index..index+2])
-    if input[index+2] == 'x':
-        isTake = true
-    else:
-        isTake = false
-    to = parsePos(input[index+3..index+5])
-    return { piece: piece, from: from, to: to }
-
+    return {kind: piece, colour: isWhite}
+    
 Pos parsePos(string input):
     c = input[0] - 'a'
     r = input[1] - '0'
