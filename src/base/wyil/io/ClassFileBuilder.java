@@ -67,7 +67,7 @@ public class ClassFileBuilder {
 		this.filename = module.filename();
 		
 		boolean addMainLauncher = false;		
-		
+				
 		for(Module.ConstDef cd : module.constants()) {	
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
@@ -79,6 +79,7 @@ public class ClassFileBuilder {
 			WhileyDefine wd = new WhileyDefine(cd.name(),cd.constant(),attrs);
 			cf.attributes().add(wd);
 		}
+		
 		for(Module.TypeDef td : module.types()) {
 			// FIXME: this is an ugly hack for now
 			ArrayList<BytecodeAttribute> attrs = new ArrayList<BytecodeAttribute>();
@@ -151,6 +152,7 @@ public class ClassFileBuilder {
 	
 	public ClassFile.Method build(int caseNum, Module.Case mcase,
 			Module.Method method) {		
+		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
@@ -161,6 +163,7 @@ public class ClassFileBuilder {
 		if(method.cases().size() > 1) {
 			name = name + "$" + caseNum;
 		}
+		
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
 		for(Attribute a : mcase.attributes()) {
 			if(a instanceof BytecodeAttribute) {
@@ -171,7 +174,7 @@ public class ClassFileBuilder {
 		ArrayList<Bytecode> codes = translate(mcase, method);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);		
-
+		
 		// Build up the binding we'll use for pre and post-conditions
 		List<String> params = mcase.parameterNames();
 		List<Type> paramTypes = method.type().params;
@@ -216,8 +219,8 @@ public class ClassFileBuilder {
 	
 	public void translate(Block blk, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes, Module.Method method) {
-		for (Stmt s : blk) {
-			translate(s, slots, bytecodes, method);
+		for (Stmt s : blk) {			
+			translate(s, slots, bytecodes, method);			
 		}
 	}
 	
@@ -292,6 +295,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {	
 		
 		Type lub = Type.leastUpperBound(c.lhs.type(),c.rhs.type());
+		
 		
 		if (c.op == Code.COP.SUBTYPEEQ || c.op == Code.COP.NSUBTYPEEQ) {
 			// special case: don't translate rhs
@@ -430,7 +434,7 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, CExpr src, Type test,
 			Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
-		
+
 		// This method (including the helper) is pretty screwed up. It needs a
 		// serious rethink to catch all cases, and to be efficient.
 		
@@ -443,8 +447,8 @@ public class ClassFileBuilder {
 			// This covers the limited form of type inference currently
 			// supported in Whiley. Essentially, it works only for the
 			// case where we are testing against a variable.
-			CExpr.LVar v = (CExpr.LVar) src;				
-			Type gdiff = Type.greatestDifference(src_t,test);
+			CExpr.LVar v = (CExpr.LVar) src;			
+			Type gdiff = Type.greatestDifference(src_t,test);			
 			translate(src,slots,bytecodes);
 			addReadConversion(gdiff,bytecodes);
 			JvmType rhs_jt = convertType(gdiff);					
@@ -459,7 +463,7 @@ public class ClassFileBuilder {
 			// supported in Whiley. Essentially, it works only for the
 			// case where we are testing against a variable.
 			CExpr.LVar v = (CExpr.LVar) src;
-			Type glb = Type.greatestLowerBound(src_t,test);		
+			Type glb = Type.greatestLowerBound(src_t,test);			
 			translate(src,slots,bytecodes);
 			addReadConversion(glb,bytecodes);
 			JvmType rhs_jt = convertType(glb);					
@@ -467,7 +471,7 @@ public class ClassFileBuilder {
 		}
 		
 		bytecodes.add(new Bytecode.Goto(trueTarget));
-		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));						
 	}
 	
 	// The purpose of this method is to translate a type test. We're testing to
@@ -480,11 +484,11 @@ public class ClassFileBuilder {
 	// since both are actually instances of java.util.List. 
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
 			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
-		
+						
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
 		test = Type.greatestLowerBound(src,test);					
-		
+				
 		if(test == Type.T_VOID) {
 			// in this case, we must fail.
 			bytecodes.add(new Bytecode.Pop(convertType(src)));			
@@ -908,7 +912,7 @@ public class ClassFileBuilder {
 		}
 		Type ub = Type.T_RECORD(types);				
 		
-		return Type.greatestLowerBound(t, ub);
+		return Type.greatestLowerBound(t, ub);		
 	}
 	
 	/**
@@ -938,7 +942,7 @@ public class ClassFileBuilder {
 		boolean finished = false;
 		HashSet<String> solution = new HashSet<String>();
 		
-		while(!finished) {
+		while(!finished) {			
 			HashMap<String,Integer> conflicts = new HashMap<String,Integer>();
 			
 			// First, initialise conflicts
@@ -977,8 +981,8 @@ public class ClassFileBuilder {
 				}
 			}
 			
-			solution.add(chosen);			
-			if(min == 1) { finished = true; }
+			solution.add(chosen);				
+			if(min == 1 || solution.size() == fields.size()) { finished = true; }
 		}
 		
 		return solution;

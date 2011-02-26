@@ -8,3 +8,4 @@ int stackDiff_load(LOAD load) ensures $==1 || $==2:
 int stackDiff_binop(BINOP store) ensures $==-1 || $==-2:
     return -slotSize(jvmType(store.op))
 
+

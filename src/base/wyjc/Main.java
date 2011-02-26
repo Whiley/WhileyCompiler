@@ -259,7 +259,7 @@ public class Main {
 				{ "bootpath <path>",
 						"Specify where to find whiley standard library (class) files" },
 				{ "bp <path>",
-						"Specify where to find whiley standard library (class) files" }, };
+						"Specify where to find whiley standard library (class) files" }};
 		System.out.println("usage: wyjc <options> <source-files>");
 		System.out.println("Options:");
 
