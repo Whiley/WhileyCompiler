@@ -22,15 +22,15 @@ define Piece as { PieceKind kind, bool colour }
 // Positions
 // =============================================================
 
-define RowCol as int where 0 <= $ && $ <= 8
+define RowCol as int // where 0 <= $ && $ <= 8
 define Pos as { RowCol col, RowCol row } 
 
 // =============================================================
 // board
 // =============================================================
 
-define Row as [Piece] where |$| == 8
-define Board as [Row] where |$| == 8
+define Row as [Piece] // where |$| == 8
+define Board as [Row] // where |$| == 8
 
 // =============================================================
 // Moves

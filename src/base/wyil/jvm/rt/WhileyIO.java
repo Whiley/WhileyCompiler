@@ -31,7 +31,7 @@ public class WhileyIO {
 		}
 	}
 	
-	public static WhileyList readFile(WhileyProcess p, BigInteger max) {		
+	public static WhileyList readFile(WhileyProcess p, BigRational max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
@@ -40,7 +40,7 @@ public class WhileyIO {
 		try {
 			int nbytes = fin.read(bytes);
 			for(int i=0;i!=nbytes;++i) {
-				r.add(BigInteger.valueOf(bytes[i]));
+				r.add(BigRational.valueOf(bytes[i]));
 			}
 			System.out.println("READ: " + nbytes);
 		} catch (IOException ioe) {
@@ -62,7 +62,7 @@ public class WhileyIO {
 				byte[] bytes = new byte[CHUNK_SIZE];
 				nbytes = fin.read(bytes);
 				for(int i=0;i!=nbytes;++i) {
-					r.add(BigInteger.valueOf(bytes[i]));
+					r.add(BigRational.valueOf(bytes[i]));
 				}
 			} while(nbytes == CHUNK_SIZE);			
 		} catch (IOException ioe) {
