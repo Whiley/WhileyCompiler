@@ -78,5 +78,5 @@ Piece parsePiece(char lookahead, bool isWhite):
     
 Pos parsePos(string input):
     c = input[0] - 'a'
-    r = input[1] - '0'
+    r = input[1] - '1'
     return { col: c, row: r }
