@@ -82,19 +82,22 @@ bool validMove(Move move, Board board):
         return validPieceMove(move.piece,move.from,move.to,true,board) &&
             validPiece(move.taken,move.to,board)
     else if move ~= SingleMove:
-        return validPieceMove(move.piece,move.from,move.to,false,board)
+        return validPieceMove(move.piece,move.from,move.to,false,board) &&
+            squareAt(move.to,board) ~= null
     return false
 
 bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
     if validPiece(piece,from,board):
         if piece.kind == PAWN:
             return validPawnMove(piece.colour,from,to,isTake,board)        
+        else if piece.kind == KNIGHT:
+            return validKnightMove(piece.colour,from,to,isTake,board)
     return false
 
 // Check whether a given piece is actually at a given position in the
 // board.
 bool validPiece(Piece piece, Pos pos, Board board):
-    sq = board[pos.row][pos.col]
+    sq = squareAt(pos,board)
     if sq ~= null:
         return false
     else:
@@ -121,6 +124,11 @@ bool validPawnMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
     // looks like we're all good
     return true    
 
+bool validKnightMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
+    diffcol = max(from.col,to.col) - min(from.col,to.col)
+    diffrow = max(from.row,to.row) - min(from.row,to.row)
+    return (diffcol == 2 && diffrow == 1) || (diffcol == 1 && diffrow == 2)
+
 // =============================================================
 // Apply Move
 // =============================================================
@@ -140,3 +148,18 @@ Board applySingleMove(SingleMove move, Board board):
 // =============================================================
 // Helper Functions
 // =============================================================
+
+Square squareAt(Pos p, Board b):
+    return b[p.row][p.col]
+
+int max(int a, int b):
+    if a < b:
+        return b
+    else:
+        return a
+
+int min(int a, int b):
+    if a > b:
+        return b
+    else:
+        return a
