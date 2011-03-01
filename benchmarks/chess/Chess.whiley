@@ -92,6 +92,8 @@ bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
             return validPawnMove(piece.colour,from,to,isTake,board)        
         else if piece.kind == KNIGHT:
             return validKnightMove(piece.colour,from,to,isTake,board)
+        else if piece.kind == BISHOP:
+            return validBishopMove(piece.colour,from,to,isTake,board)
     return false
 
 // Check whether a given piece is actually at a given position in the
@@ -129,6 +131,9 @@ bool validKnightMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
     diffrow = max(from.row,to.row) - min(from.row,to.row)
     return (diffcol == 2 && diffrow == 1) || (diffcol == 1 && diffrow == 2)
 
+bool validBishopMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
+    return clearDiaganolExcept(from,to,board)
+
 // =============================================================
 // Apply Move
 // =============================================================
@@ -151,6 +156,37 @@ Board applySingleMove(SingleMove move, Board board):
 
 Square squareAt(Pos p, Board b):
     return b[p.row][p.col]
+
+// The following method checks whether the given diaganol is completely
+// clear, excluding the end points. Observe that this doesn't
+// guarantee a given diaganol move is valid, since this function does not
+// ensure anything about the relative positions of the given pieces.
+bool clearDiaganolExcept(Pos from, Pos to, Board board):
+    // check this is really a diaganol
+    diffcol = max(from.col,to.col) - min(from.col,to.col)
+    diffrow = max(from.row,to.row) - min(from.row,to.row)
+    if diffcol != diffrow:
+        return false
+    // determine the col and row signs
+    colinc = sign(from.col,to.col)
+    rowinc = sign(from.row,to.row)
+    // finally, walk the line!
+    row = from.row + rowinc
+    col = from.col + colinc
+    while row != to.row && col != to.col:
+        if board[row][col] ~= null:
+            col = col + colinc
+            row = row + rowinc
+        else:
+            return false
+    // ok, looks like we're clear
+    return true 
+
+int sign(int x, int y):
+    if x < y:
+        return 1
+    else:
+        return -1
 
 int max(int a, int b):
     if a < b:
