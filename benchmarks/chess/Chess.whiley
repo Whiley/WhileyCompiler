@@ -78,11 +78,11 @@ define Move as CheckMove | SimpleMove
 // The purpose of the validMove method is to check whether or not a
 // move is valid on a given board.
 bool validMove(Move move, Board board):
-    if move ~= SingleMove:
+    if move ~= SingleTake:
+        return validPieceMove(move.piece,move.from,move.to,true,board) &&
+            validPiece(move.taken,move.to,board)
+    else if move ~= SingleMove:
         return validPieceMove(move.piece,move.from,move.to,false,board)
-    else if move ~= SingleTake:
-        return validPieceMove(move.piece,move.from,move.to,true,board) && 
-            validPiece(move.taken,move.from,board)
     return false
 
 bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
@@ -111,7 +111,7 @@ bool validPawnMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
     if rowdiff <= 0 || rowdiff > 2 || (!isTake && from.col != to.col):
         return false
     // check that column difference is one for take
-    if isTake && (from.col != to.col - 1 || from.col != to.col + 1):
+    if isTake && from.col != (to.col - 1) && from.col != (to.col + 1):
         return false
     // check if rowdiff is 2 that on the starting rank
     if isWhite && rowdiff == 2 && from.row != 1:
