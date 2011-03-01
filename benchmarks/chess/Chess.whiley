@@ -94,6 +94,8 @@ bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
             return validKnightMove(piece.colour,from,to,isTake,board)
         else if piece.kind == BISHOP:
             return validBishopMove(piece.colour,from,to,isTake,board)
+        else if piece.kind == ROOK:
+            return validRookMove(piece.colour,from,to,isTake,board)
     return false
 
 // Check whether a given piece is actually at a given position in the
@@ -134,12 +136,16 @@ bool validKnightMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
 bool validBishopMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
     return clearDiaganolExcept(from,to,board)
 
+bool validRookMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
+    return clearRowExcept(from,to,board) || clearColumnExcept(from,to,board)
+
 // =============================================================
 // Apply Move
 // =============================================================
 
 Board applyMove(Move move, Board board):
     if move ~= SingleMove:
+        // SingleTake is processed in the same way
         return applySingleMove(move,board)
     return board
 
@@ -156,6 +162,41 @@ Board applySingleMove(SingleMove move, Board board):
 
 Square squareAt(Pos p, Board b):
     return b[p.row][p.col]
+
+// The following method checks whether a given row is completely
+// clear, excluding the end points. Observe that this doesn't
+// guarantee a given diaganol move is valid, since this function does not
+// ensure anything about the relative positions of the given pieces.
+bool clearRowExcept(Pos from, Pos to, Board board):
+    // check this is really a row
+    if from.row != to.row || from.col == to.col:
+        return false
+    inc = sign(from.col,to.col)
+    row = from.row
+    col = from.col + inc
+    while col != to.col:
+        if board[row][col] ~= null:
+            col = col + inc
+        else:
+            return false        
+    return true
+
+// The following method checks whether a given column is completely
+// clear, excluding the end points. Observe that this doesn't
+// guarantee a given diaganol move is valid, since this function does not
+// ensure anything about the relative positions of the given pieces.
+bool clearColumnExcept(Pos from, Pos to, Board board):
+    if from.col != to.col || from.row == to.row:
+        return false
+    inc = sign(from.row,to.row)
+    row = from.row + inc
+    col = from.col
+    while row != to.row:
+        if board[row][col] ~= null:
+            row = row + inc
+        else:
+            return false            
+    return true
 
 // The following method checks whether the given diaganol is completely
 // clear, excluding the end points. Observe that this doesn't
