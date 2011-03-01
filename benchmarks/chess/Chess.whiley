@@ -96,6 +96,8 @@ bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
             return validBishopMove(piece.colour,from,to,isTake,board)
         else if piece.kind == ROOK:
             return validRookMove(piece.colour,from,to,isTake,board)
+        else if piece.kind == QUEEN:
+            return validQueenMove(piece.colour,from,to,isTake,board)
     return false
 
 // Check whether a given piece is actually at a given position in the
@@ -138,6 +140,10 @@ bool validBishopMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
 
 bool validRookMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
     return clearRowExcept(from,to,board) || clearColumnExcept(from,to,board)
+
+bool validQueenMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
+    return clearRowExcept(from,to,board) || clearColumnExcept(from,to,board) ||
+        clearDiaganolExcept(from,to,board)
 
 // =============================================================
 // Apply Move
