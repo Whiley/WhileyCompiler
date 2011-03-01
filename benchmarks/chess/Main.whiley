@@ -9,18 +9,28 @@ void System::main([string] args):
     game = parseChessGame(contents)
     if game ~= SyntaxError:
         out->println("syntax error: " + game.msg)
-    else:
+    else:     
+        board = startingChessBoard  
+        r = ""       
+        i = 0
+        invalid = false
         sign = false
-        r = ""
-        board = startingChessBoard
-        out->println(board2str(board))
-        for m in game:
-            if !sign:
-                r = move2str(m)
+        while i < |game| && !invalid:
+            move = game[i]
+            if validMove(move,board):
+                if !sign:
+                    r = move2str(move)
+                else:
+                    out->println(r + " " + move2str(move))
+                sign = !sign
+                i = i +1
             else:
-                out->println(r + " " + move2str(m))
-            sign = !sign
-        if sign:
+                invalid = true
+        if invalid:
+            out->println(board2str(board))
+            out->println("The following move is invalid")
+            out->println(move2str(game[i]))
+        else if sign:
             out->println(r)
 
 void System::usage():
