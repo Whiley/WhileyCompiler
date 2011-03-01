@@ -4,8 +4,8 @@ import java.util.*;
 
 import static wyone.core.Expr.*;
 import static wyone.core.SpecFile.*;
-import wyil.util.*;
-import static wyil.util.SyntaxError.*;
+import wyone.util.*;
+import static wyone.util.SyntaxError.*;
 
 public class TypeChecker {
 	private String filename;
@@ -105,7 +105,7 @@ public class TypeChecker {
 	    } catch (Exception ex) {	    	
 	    	syntaxError("internal failure", filename, e, ex);
 	    }
-	    e.attributes().add(new Attributes.TypeAttr(type));
+	    e.attributes().add(new Attribute.TypeAttr(type));
 	    return type;
 	  }
 
@@ -124,8 +124,7 @@ public class TypeChecker {
 	    return null;
 	  }
 
-	  protected Type resolve(Variable v, HashMap<String,Type> environment)
-	      throws ResolveError {
+	  protected Type resolve(Variable v, HashMap<String,Type> environment) {
 	    Type v_t = environment.get(v.var);
 	    if (v_t != null) { return v_t; }
 	    v_t = globals.get(v.var);
@@ -181,8 +180,7 @@ public class TypeChecker {
 	    return null;
 	  }
 
-	  protected Type resolve(BinOp bop, HashMap<String,Type> environment)
-	      throws ResolveError {
+	  protected Type resolve(BinOp bop, HashMap<String,Type> environment) {
 		  
 		  if(bop.op == BOp.OR) {
 			  // TODO: the following is needed because of type inference.

@@ -3,9 +3,8 @@ package wyone.io;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.jvm.rt.BigRational;
-import wyil.lang.Attribute;
-import wyil.util.*;
+import wyone.core.Attribute;
+import wyone.util.*;
 import static wyone.core.SpecFile.*;
 import static wyone.io.SpecLexer.*;
 import wyone.core.*;

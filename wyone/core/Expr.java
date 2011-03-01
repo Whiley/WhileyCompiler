@@ -20,9 +20,7 @@ package wyone.core;
 
 import java.util.*;
 
-import wyil.lang.Attribute;
-import wyil.util.Pair;
-import wyil.util.SyntacticElement;
+import wyone.util.*;
 
 public interface Expr extends SyntacticElement {
 

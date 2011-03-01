@@ -1,23 +1,18 @@
 package wyone.io;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.jvm.rt.BigRational;
-import wyil.util.Pair;
-import wyil.util.SyntacticElement;
-import wyil.util.SyntaxError;
-import static wyil.util.SyntaxError.*;
+import wyone.util.*;
+import static wyone.util.SyntaxError.*;
 import wyone.core.*;
 import wyone.core.SpecFile.TypeDecl;
 import static wyone.core.Expr.*;
 import static wyone.core.SpecFile.*;
-import static wyone.core.Attributes.*;
+import static wyone.core.Attribute.*;
 
 public class JavaFileWriter {
 	private PrintWriter out;

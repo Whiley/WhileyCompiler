@@ -20,7 +20,7 @@ package wyone;
 import java.io.*;
 import java.util.*;
 
-import wyil.util.SyntaxError;
+import wyone.util.SyntaxError;
 import wyone.core.*;
 import wyone.io.*;
 

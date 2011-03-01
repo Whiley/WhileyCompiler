@@ -1,8 +1,7 @@
 package wyone.core;
 
 import java.util.*;
-import wyil.util.*;
-import wyil.lang.Attribute;
+import wyone.util.*;
 
 public class SpecFile {
 	public final String filename;
