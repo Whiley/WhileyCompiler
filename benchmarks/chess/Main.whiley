@@ -12,6 +12,7 @@ void System::main([string] args):
     else:
         sign = false
         r = ""
+        board = startingChessBoard
         for m in game:
             if !sign:
                 r = move2str(m)

@@ -18,6 +18,20 @@ define PIECE_CHARS as [ 'P', 'N', 'B', 'R', 'Q', 'K' ]
 define PieceKind as { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, EMPTY }
 define Piece as { PieceKind kind, bool colour }
 
+define WHITE_PAWN as { kind: PAWN, colour: true }
+define WHITE_KNIGHT as { kind: KNIGHT, colour: true }
+define WHITE_BISHOP as { kind: BISHOP, colour: true }
+define WHITE_ROOK as { kind: ROOK, colour: true }
+define WHITE_QUEEN as { kind: QUEEN, colour: true }
+define WHITE_KING as { kind: KING, colour: true }
+
+define BLACK_PAWN as { kind: PAWN, colour: false }
+define BLACK_KNIGHT as { kind: KNIGHT, colour: false }
+define BLACK_BISHOP as { kind: BISHOP, colour: false }
+define BLACK_ROOK as { kind: ROOK, colour: false }
+define BLACK_QUEEN as { kind: QUEEN, colour: false }
+define BLACK_KING as { kind: KING, colour: false }
+
 // =============================================================
 // Positions
 // =============================================================
@@ -31,6 +45,10 @@ define Pos as { RowCol col, RowCol row }
 
 define Row as [Piece] // where |$| == 8
 define Board as [Row] // where |$| == 8
+
+define startingChessBoard as [
+    [ BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN ]
+]
 
 // =============================================================
 // Moves
