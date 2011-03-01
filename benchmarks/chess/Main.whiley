@@ -13,6 +13,7 @@ void System::main([string] args):
         sign = false
         r = ""
         board = startingChessBoard
+        out->println(board2str(board))
         for m in game:
             if !sign:
                 r = move2str(m)
@@ -24,6 +25,30 @@ void System::main([string] args):
 
 void System::usage():
     out->println("usage: chess file")
+
+define BLACK_PIECE_CHARS as [ 'P', 'N', 'B', 'R', 'Q', 'K' ]
+
+string board2str(Board b):
+    r = ""
+    i=8
+    while i >= 1:
+        r = r + str(i) + row2str(b[i-1])
+        i = i - 1
+    return r + "  a b c d e f g h\n"
+
+string row2str(Row row):
+    r = ""
+    for square in row:
+        r = r + "|" + square2str(square)
+    return r + "|\n"
+
+string square2str(Square p):
+    if p ~= null:
+        return "_"
+    else if p.colour:
+        return [PIECE_CHARS[p.kind]]
+    else:
+        return [BLACK_PIECE_CHARS[p.kind]]
 
 string move2str(Move m):
     if m ~= SingleTake: 

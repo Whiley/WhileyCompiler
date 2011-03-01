@@ -12,10 +12,9 @@ define BISHOP as 2
 define ROOK as 3
 define QUEEN as 4
 define KING as 5
-define EMPTY as 6 // shouldn't need this
 define PIECE_CHARS as [ 'P', 'N', 'B', 'R', 'Q', 'K' ]
 
-define PieceKind as { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, EMPTY }
+define PieceKind as { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING }
 define Piece as { PieceKind kind, bool colour }
 
 define WHITE_PAWN as { kind: PAWN, colour: true }
@@ -43,11 +42,19 @@ define Pos as { RowCol col, RowCol row }
 // board
 // =============================================================
 
-define Row as [Piece] // where |$| == 8
+define Square as Piece | null
+define Row as [Square] // where |$| == 8
 define Board as [Row] // where |$| == 8
 
 define startingChessBoard as [
-    [ BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN ]
+    [ WHITE_ROOK,WHITE_KNIGHT,WHITE_BISHOP,WHITE_QUEEN,WHITE_KING,WHITE_BISHOP,WHITE_KNIGHT,WHITE_ROOK ], // rank 1
+    [ WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN ],          // rank 2
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 3
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 4
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 5
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 6
+    [ BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN ],          // rank 7
+    [ BLACK_ROOK,BLACK_KNIGHT,BLACK_BISHOP,BLACK_QUEEN,BLACK_KING,BLACK_BISHOP,BLACK_KNIGHT,BLACK_ROOK ]  // rank 8
 ]
 
 // =============================================================
