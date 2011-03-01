@@ -264,6 +264,17 @@ public class ExtendedModuleBuilder {
 			} else if (nop.nop == Expr.NOp.SETGEN) {
 				return Value.V_SET(values);
 			}
+		} else if (expr instanceof RecordGen) {
+			RecordGen rg = (RecordGen) expr;
+			HashMap<String,Value> values = new HashMap<String,Value>();
+			for(Map.Entry<String,Expr> e : rg.fields.entrySet()) {
+				Value v = expandConstantHelper(e.getValue(),filename,exprs,visited);
+				if(v == null) {
+					return null;
+				}
+				values.put(e.getKey(), v);
+			}
+			return Value.V_RECORD(values);
 		}
 
 		syntaxError("invalid expression in constant definition", filename, expr);

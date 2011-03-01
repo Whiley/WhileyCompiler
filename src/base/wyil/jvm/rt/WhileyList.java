@@ -86,8 +86,8 @@ public final class WhileyList extends ArrayList {
 	public static String toString(WhileyList list) {
 		String r = "";
 		for(Object o : list) {
-			if(o instanceof BigInteger) {
-				int v = ((BigInteger)o).intValue();
+			if(o instanceof BigRational) {
+				int v = ((BigRational)o).intValue();
 				r += (char) v;
 			} else {
 				throw new RuntimeException("Invalid WhileyList");

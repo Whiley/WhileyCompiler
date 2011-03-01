@@ -20,14 +20,9 @@ package wyone;
 import java.io.*;
 import java.util.*;
 
+import wyil.util.SyntaxError;
 import wyone.core.*;
-import wyone.theory.logic.*;
-import wyone.theory.numeric.*;
-// import wyone.theory.tuple.*;
-// import wyone.theory.quantifier.*;
-// import wyone.theory.list.*;
-import wyone.theory.set.*;
-import wyone.util.*;
+import wyone.io.*;
 
 /**
  * This class provides a simple text interface to the Solver, allowing simple
@@ -37,62 +32,22 @@ import wyone.util.*;
  * 
  */
 public class Main {
-	
-	public static final CompoundHeuristic heuristic = new CompoundHeuristic(			
-			new DisjunctHeuristic(),		
-			new NotEqualsHeuristic(),
-			new BoundedNumberHeuristic(true, true), 						
-			new BoundedNumberHeuristic(true, false),
-			new UnboundedNumberHeuristic(true),
-			new UnboundedNumberHeuristic(false)		
-	);
-
-	public static final Solver.Rule[] theories = {		
-		new Equality.Closure(),
-		new Subtype.Closure(),
-		new FourierMotzkinSolver(),
-		new LengthOfClosure(),
-		new SubsetClosure(),
-		new DisjunctReduction()
-	};
-
-	public static boolean checkUnsat(String input) {		
-		Parser parser = new Parser(input);
-		Constraint program = parser.parseInput();		
-		Proof r = Solver.checkUnsatisfiable(1000, program,
-				heuristic, theories);		
-		return r instanceof Proof.Unsat;
-	}
-	
-	public static boolean checkSat(String input) {		
-		Parser parser = new Parser(input);
-		Constraint program = parser.parseInput();
-		Proof r = Solver.checkUnsatisfiable(1000, program,
-				heuristic, theories);
-		return r instanceof Proof.Sat;
-	}
-	
-	public static void main(String[] args) {	
+		
+	public static void main(String[] args) {		
 		try {
+			boolean verbose = false;			
 			try {
 				if(args.length == 0) {
-					System.out.println("usage: java Solve <input-file>");
+					System.out.println("usage: java wyone.Main <spec-file>");
 					System.exit(1);
 				} 				
-				
-				int timeout = 1000; // milli-seconds;
-				boolean proof = false;				
-				
+								
 				int fileArgsBegin = 0;
 				for (int i = 0; i != args.length; ++i) {
 					if (args[i].startsWith("-")) {
 						String arg = args[i];
-						if(arg.equals("-timeout")) {
-							timeout = Integer.parseInt(args[++i]);
-						} else if (arg.equals("-proof")) {
-							proof = true;
-						} else if (arg.equals("-debug")) {
-							Solver.debug = true;
+						if (arg.equals("-verbose")) {
+							verbose = true;
 						} else {
 							throw new RuntimeException("Unknown option: " + args[i]);
 						}
@@ -103,47 +58,27 @@ public class Main {
 				
 				long start = System.currentTimeMillis();
 				
-				Parser parser = new Parser(new File(args[fileArgsBegin]));
-				Constraint program = parser.parseInput();								
-				System.out.println("Parsed: " + program);				
-				Proof r = Solver.checkUnsatisfiable(timeout, program,
-						heuristic, theories);
-				
-				if(r instanceof Proof.Unsat) {
-					System.out.println("Unsatisfiable");
-				} else if(r instanceof Proof.Sat) {
-					Proof.Sat satp = (Proof.Sat) r;
-					System.out.println("Satisfiable: " + satp.model());
-				} else {
-					System.out.println("Satisfiability Unknown");
-				}												
+				String specfile = args[fileArgsBegin];
+				SpecLexer lexer = new SpecLexer(specfile);
+				SpecParser parser = new SpecParser(specfile,lexer.scan());
+				SpecFile spec = parser.parse();
+				new TypeChecker().check(spec);
+				new JavaFileWriter(System.out).write(spec);
 				
 				start = System.currentTimeMillis() - start;
-				System.out.println("Time: " + start + "ms");				
+				System.err.println("Time: " + start + "ms");				
 				
 			} catch(SyntaxError e) {				
 				outputSourceError(e.filename(),e.start(),e.end(),e.getMessage());
+				
+				if(verbose) {
+					e.printStackTrace(System.err);
+				}
 			}
 		} catch(IOException e) {
 			System.err.println("i/o error: " + e.getMessage());
 		}
-	}	
-			
-	public static void printLine(int indent, int width) {
-		indent(indent);
-		
-		for(int i=indent;i<width;++i) {
-			System.out.print("=");
-		}
-		
-		System.out.println();
-	}
-	
-	public static void indent(int indent) {
-		for(int i=0;i!=indent;++i) {
-			System.out.print(" ");
-		}
-	}
+	}					
 	
 	/**
 	 * This method simply reads in the input file, and prints out a

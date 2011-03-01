@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyjc.stages;
+package wyone.io;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -25,21 +25,21 @@ import java.util.*;
 import wyil.jvm.rt.BigRational;
 import wyil.util.SyntaxError;
 
-public class WhileyLexer {	
+public class SpecLexer {	
 	private String filename;
 	private StringBuffer input;
 	private int pos;
 	
-	public WhileyLexer(String filename) throws IOException {
+	public SpecLexer(String filename) throws IOException {
 		this(new InputStreamReader(new FileInputStream(filename),"UTF8"));
 		this.filename = filename;
 	}
 	
-	public WhileyLexer(InputStream instream) throws IOException {
+	public SpecLexer(InputStream instream) throws IOException {
 		this(new InputStreamReader(instream,"UTF8"));		
 	}
 	
-	public WhileyLexer(Reader reader) throws IOException {
+	public SpecLexer(Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
 		
 		StringBuffer text = new StringBuffer();
@@ -127,9 +127,6 @@ public class WhileyLexer {
 					break;
 				case 'n':
 					c = '\n';
-					break;
-				case 'r':
-					c = '\r';
 					break;
 				default:
 					syntaxError("unrecognised escape character",pos);
@@ -229,7 +226,7 @@ public class WhileyLexer {
 	static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
-			'*', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '.','~',
+			'*', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '#', '.','~',
 			UC_FORALL,
 			UC_EXISTS,
 			UC_EMPTYSET,
@@ -283,21 +280,18 @@ public class WhileyLexer {
 			return new RightCurly(pos++);
 		} else if(c == '+') {
 			return new Plus(pos++);
-		} else if(c == '-') {
-			if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
-				pos += 2;
-				return new Arrow("->",pos-2);
-			} else {
-				return new Minus(pos++);				
-			}			
+		} else if(c == '-') {			
+			return new Minus(pos++);									
+		} else if(c == '#') {
+			return new Hash(pos++);
 		} else if(c == '*') {
 			return new Star(pos++);
 		} else if(c == '&') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '&') {
 				pos += 2;
 				return new LogicalAnd("&&",pos-2);
-			} else {
-				return new AddressOf("&",pos++);
+			} else {				
+				return new BitwiseAnd("&",pos++);
 			}
 		} else if(c == '|') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '|') {
@@ -325,6 +319,9 @@ public class WhileyLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new EqualsEquals(pos-2);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
+				pos += 2;
+				return new Arrow("=>",pos-2);
 			} else {
 				return new Equals(pos++);				
 			}
@@ -386,28 +383,16 @@ public class WhileyLexer {
 		"null",
 		"int",
 		"real",
-		"bool",
-		"process",
+		"bool",			
+		"string",
 		"void",			
-		"if",
-		"while",
-		"else",
-		"where",
-		"requires",
-		"ensures",
+		"if",		
 		"as",
-		"for",
-		"assert",
-		"debug",
-		"print",
-		"return",
-		"define",		
-		"function",
-		"import",
-		"package",
-		"public",
-		"extern",
-		"spawn"
+		"term",
+		"terms",
+		"class",
+		"rewrite",		
+		"let"
 	};
 	
 	public Token scanIdentifier() {
@@ -568,6 +553,9 @@ public class WhileyLexer {
 	public static class Star extends Token {
 		public Star(int pos) { super("*",pos);	}
 	}
+	public static class Hash extends Token {
+		public Hash(int pos) { super("#",pos);	}
+	}
 	public static class LeftSlash extends Token {
 		public LeftSlash(int pos) { super("\\",pos);	}
 	}
@@ -646,8 +634,8 @@ public class WhileyLexer {
 	public static class LogicalNot extends Token {
 		public LogicalNot(String text, int pos) { super(text,pos);	}
 	}
-	public static class AddressOf extends Token {
-		public AddressOf(String text, int pos) { super(text,pos);	}
+	public static class BitwiseAnd extends Token {
+		public BitwiseAnd(String text, int pos) { super(text,pos);	}
 	}
 	public static class BitwiseOr extends Token {
 		public BitwiseOr(String text, int pos) { super(text,pos);	}
