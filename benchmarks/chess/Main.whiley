@@ -15,28 +15,36 @@ void System::main([string] args):
         i = 0
         invalid = false
         sign = false
+        // process each move in turn, updating the board
         while i < |game| && !invalid:
             move = game[i]
             if validMove(move,board):
+                board = applyMove(move,board)
                 if !sign:
                     r = move2str(move)
                 else:
-                    out->println(r + " " + move2str(move))
+                    out->println(str((i/2)+1) + " " + r + " " + move2str(move))
                 sign = !sign
-                i = i +1
+                i = i + 1
             else:
                 invalid = true
+        if sign:
+            out->println(str((i/2)+1) + " " + r)
+        // print out board
+        out->println("\nCurrent board:\n")
+        out->println(board2str(board))
+        // now check whether last move was invalid
         if invalid:
-            out->println(board2str(board))
-            out->println("The following move is invalid")
-            out->println(move2str(game[i]))
-        else if sign:
-            out->println(r)
+            out->println("Invalid move:\n")
+            if sign:
+                out->println(str((i/2)+1) + " ... " + move2str(game[i]))
+            else:
+                out->println(move2str(game[i]))
 
 void System::usage():
     out->println("usage: chess file")
 
-define BLACK_PIECE_CHARS as [ 'P', 'N', 'B', 'R', 'Q', 'K' ]
+define BLACK_PIECE_CHARS as [ 'p', 'n', 'b', 'r', 'q', 'k' ]
 
 string board2str(Board b):
     r = ""
@@ -76,4 +84,4 @@ string piece2str(Piece p):
         return [PIECE_CHARS[p.kind]]
 
 string pos2str(Pos p):
-    return ['a' + p.col,'0' + p.row]
+    return ['a' + p.col,'1' + p.row]

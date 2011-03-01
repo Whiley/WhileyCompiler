@@ -79,8 +79,64 @@ define Move as CheckMove | SimpleMove
 // move is valid on a given board.
 bool validMove(Move move, Board board):
     if move ~= SingleMove:
-        return validSingleMove(move,board)
+        return validPieceMove(move.piece,move.from,move.to,false,board)
+    else if move ~= SingleTake:
+        return validPieceMove(move.piece,move.from,move.to,true,board) && 
+            validPiece(move.taken,move.from,board)
     return false
 
-bool validSingleMove(SingleMove move, Board board):
-    return false // temporary
+bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
+    if validPiece(piece,from,board):
+        if piece.kind == PAWN:
+            return validPawnMove(piece.colour,from,to,isTake,board)        
+    return false
+
+// Check whether a given piece is actually at a given position in the
+// board.
+bool validPiece(Piece piece, Pos pos, Board board):
+    sq = board[pos.row][pos.col]
+    if sq ~= null:
+        return false
+    else:
+        return sq == piece
+
+bool validPawnMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
+    // calculate row difference
+    if (isWhite):
+        rowdiff = to.row - from.row
+    else:
+        rowdiff = from.row - to.row        
+    // check row difference either 1 or 2, and column 
+    // fixed (unless take)
+    if rowdiff <= 0 || rowdiff > 2 || (!isTake && from.col != to.col):
+        return false
+    // check that column difference is one for take
+    if isTake && (from.col != to.col - 1 || from.col != to.col + 1):
+        return false
+    // check if rowdiff is 2 that on the starting rank
+    if isWhite && rowdiff == 2 && from.row != 1:
+        return false
+    else if !isWhite && rowdiff == 2 && from.row != 6:
+        return false
+    // looks like we're all good
+    return true    
+
+// =============================================================
+// Apply Move
+// =============================================================
+
+Board applyMove(Move move, Board board):
+    if move ~= SingleMove:
+        return applySingleMove(move,board)
+    return board
+
+Board applySingleMove(SingleMove move, Board board):
+    from = move.from
+    to = move.to
+    board[from.row][from.col] = null
+    board[to.row][to.col] = move.piece
+    return board
+
+// =============================================================
+// Helper Functions
+// =============================================================
