@@ -72,7 +72,7 @@ define Move as CheckMove | SimpleMove
 // en passant
 
 // =============================================================
-// Valid Move Check
+// Valid Move Dispatch
 // =============================================================
 
 // The purpose of the validMove method is to check whether or not a
@@ -98,6 +98,8 @@ bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
             return validRookMove(piece.colour,from,to,isTake,board)
         else if piece.kind == QUEEN:
             return validQueenMove(piece.colour,from,to,isTake,board)
+        else if piece.kind == KING:
+            return validKingMove(piece.colour,from,to,isTake,board)
     return false
 
 // Check whether a given piece is actually at a given position in the
@@ -108,6 +110,10 @@ bool validPiece(Piece piece, Pos pos, Board board):
         return false
     else:
         return sq == piece
+
+// =============================================================
+// Individual Piece Moves
+// =============================================================
 
 bool validPawnMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
     // calculate row difference
@@ -144,6 +150,11 @@ bool validRookMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
 bool validQueenMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
     return clearRowExcept(from,to,board) || clearColumnExcept(from,to,board) ||
         clearDiaganolExcept(from,to,board)
+
+bool validKingMove(bool isWhite, Pos from, Pos to, bool isTake, Board board):
+    diffcol = max(from.col,to.col) - min(from.col,to.col)
+    diffrow = max(from.row,to.row) - min(from.row,to.row)
+    return diffcol == 1 || diffrow == 1
 
 // =============================================================
 // Apply Move
