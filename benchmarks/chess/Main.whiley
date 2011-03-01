@@ -10,6 +10,7 @@ void System::main([string] args):
     if game ~= SyntaxError:
         out->println("syntax error: " + game.msg)
     else:     
+        out->println("Moves taken:\n")
         board = startingChessBoard  
         r = ""       
         i = 0
@@ -75,7 +76,7 @@ string move2str(Move m):
         return piece2str(m.piece) + pos2str(m.from) + "-" + pos2str(m.to)   
     else:
         // check move
-        return move2str(m.move) + "+"  
+        return move2str(m.check) + "+"  
 
 string piece2str(Piece p):
     if p.kind == PAWN:

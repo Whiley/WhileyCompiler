@@ -43,21 +43,28 @@ int nextLine(string input, int pos):
     return splits        
 
 Move parseMove(string input, bool isWhite):
-    piece = parsePiece(input[0],isWhite)
-    if piece.kind == PAWN:
-        index = 0
-    else:
-        index = 1
+    index = parseWhiteSpace(0,input)
+    piece = parsePiece(input[index],isWhite)
+    if piece.kind != PAWN:
+        index = index + 1
     from = parsePos(input[index..index+2])
-    if input[index+2] == 'x':
-        taken = parsePiece(input[index+3],!isWhite)
-        if taken.kind == PAWN:
-            index = index - 1
-        to = parsePos(input[index+4..index+6]) 
-        return { piece: piece, from: from, to: to, taken: taken }
+    index = index + 2
+    if input[index] == 'x':
+        index = index + 1
+        taken = parsePiece(input[index],!isWhite)
+        if taken.kind != PAWN:
+            index = index + 1
+        to = parsePos(input[index..index+2])
+        index = index + 2
+        move = { piece: piece, from: from, to: to, taken: taken }
     else:
-        to = parsePos(input[index+3..index+5])
-        return { piece: piece, from: from, to: to }
+        to = parsePos(input[index+1..index+3])
+        move = { piece: piece, from: from, to: to }
+        index = index + 3
+    // test for a check move
+    if index < |input| && input[index] == '+':
+        move = {check: move} 
+    return move
 
 Piece parsePiece(char lookahead, bool isWhite):
     if lookahead == 'N':
@@ -80,3 +87,14 @@ Pos parsePos(string input):
     c = input[0] - 'a'
     r = input[1] - '1'
     return { col: c, row: r }
+
+int parseWhiteSpace(int index, string input):
+    while index < |input| && isWhiteSpace(input[index]):
+        index = index + 1
+    return index
+
+
+bool isWhiteSpace(char c):
+    return c == ' ' || c == '\t'
+
+
