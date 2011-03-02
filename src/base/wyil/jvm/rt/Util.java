@@ -4,17 +4,21 @@ import java.util.*;
 
 public class Util {
 
+	private static final boolean debug = false;
+	
 	static { 
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			public void run() {
-				System.err.println("===========================================");
-				System.err.println("CLONING STATS");
-				System.err.println("===========================================");
-				System.err.println("list clones: " + nlist_clones);
-				System.err.println("set clones: " + nset_clones);
-				System.err.println("record clones: " + nrecord_clones);
-			}
-		});
+		if(debug) {
+			Runtime.getRuntime().addShutdownHook(new Thread(){
+				public void run() {
+					System.err.println("===========================================");
+					System.err.println("CLONING STATS");
+					System.err.println("===========================================");
+					System.err.println("list clones: " + nlist_clones);
+					System.err.println("set clones: " + nset_clones);
+					System.err.println("record clones: " + nrecord_clones);
+				}
+			});
+		}
 	}	
 	
 	private static int nlist_clones = 0;
