@@ -40,7 +40,7 @@ public final class WhileyList extends ArrayList {
 	}
 	
 	public WhileyList clone() {
-		return new WhileyList(this);
+		return Util.list_clone(this);		
 	}
 	
 	public Object get(BigRational index) {	
@@ -128,5 +128,5 @@ public final class WhileyList extends ArrayList {
 			}
 		}
 		System.out.println("");
-	}
+	}	
 }

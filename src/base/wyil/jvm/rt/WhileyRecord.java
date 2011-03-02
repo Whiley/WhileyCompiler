@@ -34,7 +34,7 @@ public final class WhileyRecord extends HashMap<String, Object> implements
 	}
 
 	public WhileyRecord clone() {
-		return new WhileyRecord(this);
+		return Util.record_clone(this);		
 	}
 	
 	public boolean equals(WhileyRecord t) {

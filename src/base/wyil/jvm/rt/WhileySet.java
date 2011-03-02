@@ -30,7 +30,7 @@ public final class WhileySet extends HashSet {
 	}
 	
 	public WhileySet clone() {
-		return new WhileySet(this);
+		return Util.set_clone(this);		
 	}
 	
 	public String toString() {
