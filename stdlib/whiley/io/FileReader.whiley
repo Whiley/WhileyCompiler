@@ -6,7 +6,7 @@ define FileReader as process { string fileName }
 FileReader System::openFile(string fileName):
     extern jvm:
         aload 1
-        invokestatic wyil/jvm/rt/WhileyIO.openFile:(Lwyil/jvm/rt/WhileyList;)Lwyil/jvm/rt/WhileyProcess;
+        invokestatic wyil/jvm/rt/WhileyIO.openFile:(Ljava/util/ArrayList;)Lwyil/jvm/rt/WhileyProcess;
         areturn
     // the following line is dead code
     return spawn {fileName: ""}
@@ -20,7 +20,7 @@ void FileReader::close():
 [byte] FileReader::read():
     extern jvm:
         aload 0
-        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;)Lwyil/jvm/rt/WhileyList;
+        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;)Ljava/util/ArrayList;
         areturn
     return []
     
@@ -29,6 +29,6 @@ void FileReader::close():
     extern jvm:
         aload 0
         aload 1
-        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;Lwyil/jvm/rt/BigRational;)Lwyil/jvm/rt/WhileyList;
+        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;Lwyil/jvm/rt/BigRational;)Ljava/util/ArrayList;
         areturn
     return []

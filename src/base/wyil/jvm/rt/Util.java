@@ -1,14 +1,14 @@
 package wyil.jvm.rt;
 
-import java.util.Map;
+import java.util.*;
 
 public class Util {
 
 	public static Object clone(Object o) {
 		if(o instanceof BigRational || o instanceof Boolean || o == null) {
 			return o;
-		} else if(o instanceof WhileyList) {
-			return list_clone((WhileyList)o);
+		} else if(o instanceof ArrayList) {
+			return list_clone((ArrayList)o);
 		} else if(o instanceof WhileySet) {
 			return set_clone((WhileySet)o);
 		} else {
@@ -16,8 +16,8 @@ public class Util {
 		} 
 	}
 	
-	public static WhileyList list_clone(WhileyList in) {
-		WhileyList l = new WhileyList();
+	public static ArrayList list_clone(ArrayList in) {
+		ArrayList l = new ArrayList();
 		for(Object o : in) {
 			l.add(clone(o));
 		}
@@ -47,10 +47,10 @@ public class Util {
 	 * @param end
 	 * @return
 	 */
-	public static WhileyList sublist(WhileyList list, BigRational start, BigRational end) {
+	public static ArrayList sublist(ArrayList list, BigRational start, BigRational end) {
 		int st = start.intValue();
 		int en = end.intValue();
-		WhileyList r = new WhileyList();
+		ArrayList r = new ArrayList();
 		for(int i=st;i!=en;++i) {
 			r.add(list.get(i));
 		}
@@ -62,8 +62,8 @@ public class Util {
 	 * @param rhs
 	 * @return
 	 */
-	public static WhileyList append(WhileyList lhs, WhileyList rhs) {
-		WhileyList r = new WhileyList(lhs);
+	public static ArrayList append(ArrayList lhs, ArrayList rhs) {
+		ArrayList r = new ArrayList(lhs);
 		r.addAll(rhs);
 		return r;
 	}
@@ -74,8 +74,8 @@ public class Util {
 	 * @param end
 	 * @return
 	 */
-	public static WhileyList range(BigRational start, BigRational end) {
-		WhileyList ret = new WhileyList();
+	public static ArrayList range(BigRational start, BigRational end) {
+		ArrayList ret = new ArrayList();
 		
 		// FIXME: seems ludicrously inefficient!
 		BigRational dir = BigRational.valueOf(end.compareTo(start));
@@ -95,8 +95,8 @@ public class Util {
 	 * @param args
 	 * @return
 	 */
-	public static WhileyList fromStringList(String[] args) {
-		WhileyList r = new WhileyList();
+	public static ArrayList fromStringList(String[] args) {
+		ArrayList r = new ArrayList();
 		for(String s : args) {
 			r.add(fromString(s));
 		}
@@ -108,11 +108,29 @@ public class Util {
 	 * @param s
 	 * @return
 	 */
-	public static WhileyList fromString(String s) {
-		WhileyList r = new WhileyList();
+	public static ArrayList fromString(String s) {
+		ArrayList r = new ArrayList();
 		for(int i=0;i!=s.length();++i) {
 			int c = s.charAt(i);
 			r.add(BigRational.valueOf(c));
+		}
+		return r;
+	}
+
+	/**
+	 * Convert a Whiley list into a Java String
+	 * @param list
+	 * @return
+	 */
+	public static String toString(ArrayList list) {
+		String r = "";
+		for(Object o : list) {
+			if(o instanceof BigRational) {
+				int v = ((BigRational)o).intValue();
+				r += (char) v;
+			} else {
+				throw new RuntimeException("Invalid Whiley List");
+			}
 		}
 		return r;
 	}
@@ -123,7 +141,7 @@ public class Util {
 	 * 
 	 * @param list
 	 */
-	public static void debug(WhileyList list) {
+	public static void debug(ArrayList list) {
 		for(Object o : list) {
 			if(o instanceof BigRational) {
 				BigRational bi = (BigRational) o;

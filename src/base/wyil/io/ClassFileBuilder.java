@@ -2057,7 +2057,7 @@ public class ClassFileBuilder {
 	}
 	
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyil.jvm.rt","Util");
-	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyil.jvm.rt","WhileyList");
+	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("java.util","ArrayList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
 	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyil.jvm.rt","WhileyIO");
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("java.util","HashMap");

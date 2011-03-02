@@ -6,10 +6,10 @@ import java.io.*;
 import java.lang.reflect.*;
 
 public class WhileyIO {
-	public static WhileyProcess openFile(WhileyList name) {
+	public static WhileyProcess openFile(ArrayList name) {
 		WhileyRecord r = new WhileyRecord();
 		try {
-			String filename = WhileyList.toString(name);
+			String filename = Util.toString(name);
 			FileInputStream fin = new FileInputStream(filename);
 			r.put("fileName", name);
 			r.put("$fin", fin);
@@ -31,11 +31,11 @@ public class WhileyIO {
 		}
 	}
 	
-	public static WhileyList readFile(WhileyProcess p, BigRational max) {		
+	public static ArrayList readFile(WhileyProcess p, BigRational max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
-		WhileyList r = new WhileyList();
+		ArrayList r = new ArrayList();
 		byte[] bytes = new byte[max.intValue()];		
 		try {
 			int nbytes = fin.read(bytes);
@@ -51,11 +51,11 @@ public class WhileyIO {
 	}
 	
 	private static final int CHUNK_SIZE = 1024;
-	public static WhileyList readFile(WhileyProcess p) {		
+	public static ArrayList readFile(WhileyProcess p) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
-		WhileyList r = new WhileyList();				
+		ArrayList r = new ArrayList();				
 		try {
 			int nbytes = 0;
 			do {
