@@ -48,16 +48,6 @@ public final class WhileyList extends ArrayList {
 		return get(idx); 		
 	}
 	
-	public WhileyList sublist(BigRational start, BigRational end) {
-		int st = start.intValue();
-		int en = end.intValue();
-		WhileyList r = new WhileyList();
-		for(int i=st;i!=en;++i) {
-			r.add(get(i));
-		}
-		return r;
-	}
-	
 	public WhileyList append(WhileyList rhs) {
 		WhileyList r = new WhileyList(this);
 		r.addAll(rhs);
@@ -67,21 +57,7 @@ public final class WhileyList extends ArrayList {
 	public void set(BigRational index, Object val) {	
 		int idx = index.intValue();
 		set(idx,val); 		
-	}
-	
-	public static WhileyList range(BigRational start, BigRational end) {
-		WhileyList ret = new WhileyList();
-		
-		// FIXME: seems ludicrously inefficient!
-		BigRational dir = BigRational.valueOf(end.compareTo(start));
-		
-		while(!start.equals(end)) {
-			ret.add(start);
-			start = start.add(dir);
-		}
-		
-		return ret;
-	}	
+	}		
 	
 	public static String toString(WhileyList list) {
 		String r = "";
@@ -94,39 +70,5 @@ public final class WhileyList extends ArrayList {
 			}
 		}
 		return r;
-	}
-	
-	/**
-	 * The following method is used by the main launcher to convert from Java's
-	 * main(String[] args) into whiley's main([string] args) format.
-	 * 
-	 * @param args
-	 * @return
-	 */
-	public static WhileyList fromStringList(String[] args) {
-		WhileyList r = new WhileyList();
-		for(String s : args) {
-			r.add(fromString(s));
-		}
-		return r;
-	}
-	
-	public static WhileyList fromString(String s) {
-		WhileyList r = new WhileyList();
-		for(int i=0;i!=s.length();++i) {
-			int c = s.charAt(i);
-			r.add(BigRational.valueOf(c));
-		}
-		return r;
-	}
-	
-	public static void println(WhileyList list) {
-		for(Object o : list) {
-			if(o instanceof BigRational) {
-				BigRational bi = (BigRational) o;
-				System.out.print((char)bi.intValue());
-			}
-		}
-		System.out.println("");
-	}	
+	}		
 }

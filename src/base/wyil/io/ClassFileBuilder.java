@@ -123,7 +123,7 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Load(0,strArr));
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
-		codes.add(new Bytecode.Invoke(WHILEYLIST,"fromStringList",ft2,Bytecode.STATIC));
+		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
 		JvmType.Function ft3 = new JvmType.Function(T_VOID, WHILEYPROCESS, WHILEYLIST);
 		
 		codes
@@ -1106,7 +1106,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		translate(c.rhs,slots,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_VOID,WHILEYLIST);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "println", ftype,
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "debug", ftype,
 				Bytecode.STATIC));
 	}
 	public void translate(Code.Fail c, HashMap<String, Integer> slots,
@@ -1385,9 +1385,9 @@ public class ClassFileBuilder {
 				translate(r, slots, bytecodes);			
 			}
 
-			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,BIG_RATIONAL,BIG_RATIONAL);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
-					Bytecode.VIRTUAL));
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,BIG_RATIONAL,BIG_RATIONAL);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "sublist", ftype,
+					Bytecode.STATIC));
 			break;
 		}
 		}	
@@ -2048,7 +2048,7 @@ public class ClassFileBuilder {
 		// done deal!
 	}
 	
-	
+	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyil.jvm.rt","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyil.jvm.rt","WhileyList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
 	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyil.jvm.rt","WhileyIO");
