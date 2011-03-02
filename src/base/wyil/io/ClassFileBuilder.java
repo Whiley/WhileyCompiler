@@ -321,10 +321,10 @@ public class ClassFileBuilder {
 			// object on the JVM stack. Therefore, we need to use the "if_cmp"
 			// bytecode, rather than calling .equals() and using "if" bytecode.
 			switch(c.op) {
-			case EQ:
+			case EQ:				
 				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.EQ, type, c.target));
 				break;			
-			case NEQ:
+			case NEQ:				
 				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, c.target));				
 				break;			
 			}
@@ -334,18 +334,38 @@ public class ClassFileBuilder {
 			int op;
 			switch(c.op) {
 			case EQ:
-			{
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
-						Bytecode.VIRTUAL));			
+			{				
+				if(Type.isSubtype(c.lhs.type(), Type.T_NULL)) {
+					// this indicates an interesting special case. The left
+						// handside of this equality can be null. Therefore, we
+						// cannot directly call "equals()" on this method, since
+						// this would cause a null pointer exception!
+					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
+							Bytecode.STATIC));
+				} else {
+					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
+							Bytecode.VIRTUAL));								
+				}
 				op = Bytecode.If.NE;
 				break;
 			}
 			case NEQ:
 			{
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
-						Bytecode.VIRTUAL));
+				if(Type.isSubtype(c.lhs.type(), Type.T_NULL)) {
+					// this indicates an interesting special case. The left
+						// handside of this equality can be null. Therefore, we
+						// cannot directly call "equals()" on this method, since
+						// this would cause a null pointer exception!
+					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
+							Bytecode.STATIC));
+				} else {
+					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
+							Bytecode.VIRTUAL));
+				}
 				op = Bytecode.If.EQ;
 				break;
 			}
@@ -1826,8 +1846,10 @@ public class ClassFileBuilder {
 		// for now I just avoid it.
 		if(type instanceof JvmType.Void) {
 			return;
+		} else if(!type.equals(JAVA_LANG_OBJECT)) {
+			// pointless to add a cast for object
+			bytecodes.add(new Bytecode.CheckCast(type));
 		}
-		bytecodes.add(new Bytecode.CheckCast(type));
 	}
 	
 	/**

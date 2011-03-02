@@ -136,6 +136,18 @@ public class Util {
 	}
 
 	/**
+	 * This method is used for the special case when the left-hand side of an
+	 * equality operation may be null.
+	 * 
+	 * @param o1
+	 * @param o2
+	 * @return
+	 */
+	public static boolean equals(Object o1, Object o2) {
+		return (o1 != null && o1.equals(o2)) || o2 == null;
+	}
+	
+	/**
 	 * The following method is used for printing debug output arising from debug
 	 * statements.
 	 * 
