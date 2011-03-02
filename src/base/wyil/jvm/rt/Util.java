@@ -4,6 +4,23 @@ import java.util.*;
 
 public class Util {
 
+	static { 
+		Runtime.getRuntime().addShutdownHook(new Thread(){
+			public void run() {
+				System.err.println("===========================================");
+				System.err.println("CLONING STATS");
+				System.err.println("===========================================");
+				System.err.println("list clones: " + nlist_clones);
+				System.err.println("set clones: " + nset_clones);
+				System.err.println("record clones: " + nrecord_clones);
+			}
+		});
+	}	
+	
+	private static int nlist_clones = 0;
+	private static int nset_clones = 0;
+	private static int nrecord_clones = 0;
+	
 	public static Object clone(Object o) {
 		if(o instanceof BigRational || o instanceof Boolean || o == null) {
 			return o;
@@ -17,14 +34,16 @@ public class Util {
 	}
 	
 	public static ArrayList list_clone(ArrayList in) {
+		nlist_clones++;
 		ArrayList l = new ArrayList();
 		for(Object o : in) {
 			l.add(clone(o));
-		}
+		}		
 		return l;
 	}
 	
 	public static WhileySet set_clone(WhileySet in) {
+		nset_clones++;
 		WhileySet l = new WhileySet();
 		for(Object o : in) {
 			l.add(clone(o));
@@ -33,6 +52,7 @@ public class Util {
 	}
 	
 	public static WhileyRecord record_clone(WhileyRecord in) {
+		nrecord_clones++;
 		WhileyRecord l = new WhileyRecord();
 		for(Map.Entry<String,Object> o : in.entrySet()) {
 			l.put(o.getKey(),clone(o.getValue()));
