@@ -82,17 +82,17 @@ bool validMove(Move move, Board board):
     if move ~= SingleTake:
         return validPieceMove(move.piece,move.from,move.to,true,board) &&
             validPiece(move.taken,move.to,board) && 
-            !inCheck(!(move.piece.colour), nboard) && 
+            !inCheck(!move.piece.colour, nboard) && 
             !inCheck(move.piece.colour, nboard)
     else if move ~= SingleMove:
         return validPieceMove(move.piece,move.from,move.to,false,board) &&
             squareAt(move.to,board) ~= null && 
-            !inCheck(!(move.piece.colour), nboard) &&
+            !inCheck(!move.piece.colour, nboard) &&
             !inCheck(move.piece.colour, nboard)
     else if move ~= CheckMove:
         m = move.check
         return validPieceMove(m.piece,m.from,m.to,false,board) && 
-            inCheck(!(m.piece.colour), nboard) && 
+            inCheck(!m.piece.colour, nboard) && 
             !inCheck(m.piece.colour, nboard)
     return false
 
@@ -282,9 +282,7 @@ int sign(int x, int y):
 Pos|null findPiece(Piece p, Board b):
     for r in range(0,8):
         for c in range(0,8):
-            tmp = b[r][c]    
-            // FIXME: shouldn't need to check against null
-            if !(tmp ~= null) && tmp == p:
+            if b[r][c] == p:
                 // ok, we've located the piece
                 return { row: r, col: c }            
     // could find the piece
