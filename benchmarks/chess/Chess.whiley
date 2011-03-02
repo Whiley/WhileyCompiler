@@ -80,12 +80,13 @@ define Move as CheckMove | SimpleMove
 bool validMove(Move move, Board board):
     if move ~= SingleTake:
         return validPieceMove(move.piece,move.from,move.to,true,board) &&
-            validPiece(move.taken,move.to,board)
+            validPiece(move.taken,move.to,board) && !inCheck(!(move.piece.colour), applyMove(move,board))
     else if move ~= SingleMove:
         return validPieceMove(move.piece,move.from,move.to,false,board) &&
-            squareAt(move.to,board) ~= null
+            squareAt(move.to,board) ~= null && !inCheck(!(move.piece.colour), applyMove(move,board))
     else if move ~= CheckMove:
-        return validCheckMove(move.check, board)
+        m = move.check
+        return validPieceMove(m.piece,m.from,m.to,false,board) && inCheck(!(m.piece.colour), applyMove(m,board))
     return false
 
 bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
@@ -113,18 +114,24 @@ bool validPiece(Piece piece, Pos pos, Board board):
     else:
         return sq == piece
 
-bool validCheckMove(SimpleMove move, Board board):
-    if !validMove(move,board): 
-        return false
-    board = applyMove(move,board)
-    if move.piece.colour:
-        kpos = findPiece(BLACK_KING,board)
+// Determine whether the board is in check after the given move, with
+// respect to the opposite colour of the move.
+bool inCheck(bool isWhite, Board board):
+    if isWhite:
+        kpos = findPiece(WHITE_KING,board)
     else:
-        kpos = findPiece(WHITE_KING,board)    
+        kpos = findPiece(BLACK_KING,board)    
     if kpos ~= null:
         return false // dead-code!
-    // now check possible to take king
-    return validPieceMove(move.piece,move.to,kpos,true,board) 
+    // check every possible piece cannot take king
+    for r in range(0,8):
+        for c in range(0,8):
+            tmp = board[r][c]
+            if !(tmp ~= null) && tmp.colour == !isWhite && 
+                validPieceMove(tmp,{row: r, col: c},kpos,true,board):
+                return true
+    // no checks found
+    return false
 
 // =============================================================
 // Individual Piece Moves
@@ -260,7 +267,7 @@ int sign(int x, int y):
         return 1
     else:
         return -1
-
+    
 // This method finds a given piece.  It's used primarily to locate
 // kings on the board to check if they are in check.
 Pos|null findPiece(Piece p, Board b):
