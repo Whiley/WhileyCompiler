@@ -78,15 +78,24 @@ define Move as CheckMove | SimpleMove
 // The purpose of the validMove method is to check whether or not a
 // move is valid on a given board.
 bool validMove(Move move, Board board):
+    // FIXME: there is a problem here related to cloning of lists
+    //nboard = applyMove(move,board)
+    nboard = board
     if move ~= SingleTake:
         return validPieceMove(move.piece,move.from,move.to,true,board) &&
-            validPiece(move.taken,move.to,board) && !inCheck(!(move.piece.colour), applyMove(move,board))
+            validPiece(move.taken,move.to,board) && 
+            !inCheck(!(move.piece.colour), nboard) && 
+            !inCheck(move.piece.colour, nboard)
     else if move ~= SingleMove:
         return validPieceMove(move.piece,move.from,move.to,false,board) &&
-            squareAt(move.to,board) ~= null && !inCheck(!(move.piece.colour), applyMove(move,board))
+            squareAt(move.to,board) ~= null && 
+            !inCheck(!(move.piece.colour), nboard) &&
+            !inCheck(move.piece.colour, nboard)
     else if move ~= CheckMove:
         m = move.check
-        return validPieceMove(m.piece,m.from,m.to,false,board) && inCheck(!(m.piece.colour), applyMove(m,board))
+        return validPieceMove(m.piece,m.from,m.to,false,board) && 
+            inCheck(!(m.piece.colour), nboard) && 
+            !inCheck(m.piece.colour, nboard)
     return false
 
 bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
@@ -121,7 +130,7 @@ bool inCheck(bool isWhite, Board board):
         kpos = findPiece(WHITE_KING,board)
     else:
         kpos = findPiece(BLACK_KING,board)    
-    if kpos ~= null:
+    if kpos ~= null:   
         return false // dead-code!
     // check every possible piece cannot take king
     for r in range(0,8):
