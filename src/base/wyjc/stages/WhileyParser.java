@@ -993,8 +993,7 @@ public class WhileyParser {
 			checkNotEof();
 			token = tokens.get(index);
 		}
-		match(Bar.class);
-		
+		match(Bar.class);		
 		Expr condition = parseCondition(false);
 		
 		match(RightCurly.class);
@@ -1227,7 +1226,9 @@ public class WhileyParser {
 			types.add((UnresolvedType.NonUnion) t);
 			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
 				match(Bar.class);
-				
+				// the following is needed because the lexer filter cannot
+				// distinguish between a lengthof operator, and union type.
+				skipWhiteSpace();
 				t = parseBaseType();
 				types.add((UnresolvedType.NonUnion) t);
 			}
@@ -1378,6 +1379,12 @@ public class WhileyParser {
 			return r;
 		} else {
 			return token instanceof LeftCurly || token instanceof LeftSquare;
+		}
+	}
+
+	private void skipWhiteSpace() {
+		while (index < tokens.size() && isWhiteSpace(tokens.get(index))) {
+			index++;
 		}
 	}
 

@@ -17,12 +17,14 @@ public class WhileyFilter {
 		ArrayList<Token> result = new ArrayList<Token>();				
 		boolean afterNewLine = true;		
 		Token last = null;		
-		for(int i=0;i!=tokens.size();++i) {
+		int ncurly = 0;
+		int nsquare = 0;
+		for(int i=0;i!=tokens.size();++i) {			
 			Token t = tokens.get(i);
 			Token next = (i+1) < tokens.size() ? tokens.get(i+1) : null;
 			boolean afterFlag = leftNonTerminator(last);						
 			boolean beforeFlag = rightNonTerminator(next);
-			last = t;
+			boolean withinBraces = ncurly > 0 || nsquare > 0;			
 			if(t instanceof Tabs && !afterNewLine) {
 				// don't add in this case
 			} else if(t instanceof Comment) {						
@@ -31,11 +33,22 @@ public class WhileyFilter {
 				// or this case				
 			} else if(isWhiteSpace(t) && beforeFlag) {
 				// or this case
+			} else if(isWhiteSpace(t) && withinBraces) {
+				// or this case!
 			} else {
 				result.add(t);
+				last = t;
 			}
 			if(t instanceof NewLine) {
 				afterNewLine = true;
+			} else if(t instanceof LeftCurly) {
+				ncurly++;
+			} else if(t instanceof RightCurly) {
+				ncurly = Math.max(0, ncurly-1);
+			} else if(t instanceof LeftSquare) {
+				ncurly++;
+			} else if(t instanceof RightSquare) {
+				ncurly = Math.max(0, ncurly-1);
 			}
 		}
 		
