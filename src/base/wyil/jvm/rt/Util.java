@@ -47,13 +47,24 @@ public class Util {
 	 * @param end
 	 * @return
 	 */
-	public static final WhileyList sublist(WhileyList list, BigRational start, BigRational end) {
+	public static WhileyList sublist(WhileyList list, BigRational start, BigRational end) {
 		int st = start.intValue();
 		int en = end.intValue();
 		WhileyList r = new WhileyList();
 		for(int i=st;i!=en;++i) {
 			r.add(list.get(i));
 		}
+		return r;
+	}
+	
+	/**
+	 * Append two lists together
+	 * @param rhs
+	 * @return
+	 */
+	public static WhileyList append(WhileyList lhs, WhileyList rhs) {
+		WhileyList r = new WhileyList(lhs);
+		r.addAll(rhs);
 		return r;
 	}
 	

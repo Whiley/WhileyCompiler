@@ -1172,8 +1172,11 @@ public class ClassFileBuilder {
 		Type src_t = v.src.type();
 		
 		if (Type.isSubtype(Type.T_LIST(Type.T_ANY), src_t)) {
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-					BIG_RATIONAL);
+			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue", ftype,
+					Bytecode.VIRTUAL));
+			ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+					T_INT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
 					Bytecode.VIRTUAL));
 		} else {
@@ -1284,8 +1287,9 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 			break;
 		case APPEND:			
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
-					Bytecode.VIRTUAL));
+			ftype = new JvmType.Function(type,type,type);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
+					Bytecode.STATIC));
 			break;
 		}		
 	}
@@ -1699,7 +1703,10 @@ public class ClassFileBuilder {
 		if(lhs instanceof CExpr.ListAccess) {
 			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
 			translate(v.src,slots,bytecodes);			
-			translate(v.index,slots,bytecodes);								
+			translate(v.index,slots,bytecodes);	
+			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue", ftype,
+					Bytecode.VIRTUAL));
 		} else if(lhs instanceof CExpr.RecordAccess) {
 			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
 			translate(la.lhs, slots, bytecodes);
@@ -1725,10 +1732,11 @@ public class ClassFileBuilder {
 			Type src_t = v.src.type();
 			if(src_t instanceof Type.List) { 
 				Type.List lt = (Type.List) v.src.type();
-				addWriteConversion(lt.element,bytecodes);			
-				JvmType.Function ftype = new JvmType.Function(T_VOID,BIG_RATIONAL,JAVA_LANG_OBJECT);
+				addWriteConversion(lt.element,bytecodes);											
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT,JAVA_LANG_OBJECT);				
 				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 						Bytecode.VIRTUAL));					
+				bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 			} else {
 				Type.Dictionary lt = (Type.Dictionary) v.src.type();
 				addWriteConversion(lt.value,bytecodes);			
@@ -1766,9 +1774,9 @@ public class ClassFileBuilder {
 		// question. In fact, this could be optimised in some situations
 		// where we know the old variable is not live.
 		if (t instanceof Type.List) {
-			JvmType.Function ftype = new JvmType.Function(WHILEYLIST);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "clone", ftype,
-					Bytecode.VIRTUAL));
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "list_clone", ftype,
+					Bytecode.STATIC));
 		} else if (t instanceof Type.Set) {
 			JvmType.Function ftype = new JvmType.Function(WHILEYSET);
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "clone", ftype,

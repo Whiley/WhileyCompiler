@@ -43,22 +43,6 @@ public final class WhileyList extends ArrayList {
 		return Util.list_clone(this);		
 	}
 	
-	public Object get(BigRational index) {	
-		int idx = index.intValue();
-		return get(idx); 		
-	}
-	
-	public WhileyList append(WhileyList rhs) {
-		WhileyList r = new WhileyList(this);
-		r.addAll(rhs);
-		return r;
-	}
-	
-	public void set(BigRational index, Object val) {	
-		int idx = index.intValue();
-		set(idx,val); 		
-	}		
-	
 	public static String toString(WhileyList list) {
 		String r = "";
 		for(Object o : list) {
