@@ -1,8 +1,0 @@
-And({
-	Or({
-		Equals(Var("X"),Num(1)),
-		Equals(Var("X"),Num(2))
-	}),
-	Equals(Var("X"),Num(3))
-})
-	

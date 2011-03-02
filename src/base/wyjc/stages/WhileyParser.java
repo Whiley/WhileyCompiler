@@ -891,7 +891,7 @@ public class WhileyParser {
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(),
+			return new Expr.UnOp(Expr.UOp.NOT, parseIndexTerm(false),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof AddressOf) {
 		      return parseFunVal();
