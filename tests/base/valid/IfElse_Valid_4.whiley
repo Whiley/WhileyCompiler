@@ -20,7 +20,9 @@ int sum_3(LinkedList ls):
         return null
 
 void System::main([string] args):
-    ls = [1,2,3,4]
+    ls = { val: 1, next: null}
+    ls = { val: 2, next: ls}
+    ls = { val: 3, next: ls}
     print str(sum_1(ls))
     print str(sum_2(ls))
     print str(sum_3(ls))
