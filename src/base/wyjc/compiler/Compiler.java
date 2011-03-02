@@ -103,7 +103,7 @@ public class Compiler implements Logger {
 	public WhileyFile innerParse(File file) throws IOException {
 		long start = System.currentTimeMillis();	
 		WhileyLexer wlexer = new WhileyLexer(file.getPath());		
-		List<WhileyLexer.Token> tokens = wlexer.scan();		
+		List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer.scan());		
 
 		WhileyParser wfr = new WhileyParser(file.getPath(),tokens);	
 		logTimedMessage("[" + file + "] Parsing complete", System

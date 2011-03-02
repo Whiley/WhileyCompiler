@@ -201,7 +201,7 @@ public class WhileyParser {
 			if (index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type
 				matchKeyword("where");
-				skipWhiteSpace();
+				
 				constraint = parseCondition(false);
 			}
 			int end = index;			
@@ -278,7 +278,7 @@ public class WhileyParser {
 	}
 	
 	private Pair<Expr, Expr> parseRequiresEnsures() {
-		skipWhiteSpace();
+		
 		checkNotEof();
 		if (index < tokens.size() && tokens.get(index).text.equals("requires")) {
 			// this is a constrained type
@@ -563,14 +563,14 @@ public class WhileyParser {
 		
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
-			skipWhiteSpace();
+			
 			
 			Expr c2 = parseCondition(dictionaryStart);			
 			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
-			skipWhiteSpace();
+			
 			
 			Expr c2 = parseCondition(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
@@ -585,7 +585,7 @@ public class WhileyParser {
 		if (index < tokens.size()
 				&& tokens.get(index) instanceof WhileyLexer.None) {
 			match(WhileyLexer.None.class);
-			skipWhiteSpace();
+			
 			
 			Expr.Comprehension sc = parseQuantifierSet();
 			return new Expr.Comprehension(Expr.COp.NONE, null, sc.sources,
@@ -593,7 +593,7 @@ public class WhileyParser {
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof WhileyLexer.Some) {
 			match(WhileyLexer.Some.class);
-			skipWhiteSpace();
+			
 			
 			Expr.Comprehension sc = parseQuantifierSet();			
 			return new Expr.Comprehension(Expr.COp.SOME, null, sc.sources,
@@ -604,37 +604,37 @@ public class WhileyParser {
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
- 			skipWhiteSpace();
+ 			
  			
  			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
@@ -642,19 +642,19 @@ public class WhileyParser {
 			return parseTypeEquals(lhs,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
 			match(WhileyLexer.ElemOf.class);			
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
 			match(WhileyLexer.SubsetEquals.class);			
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
 			match(WhileyLexer.Subset.class);			
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
@@ -665,7 +665,7 @@ public class WhileyParser {
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
 		match(WhileyLexer.TypeEquals.class);			
-		skipWhiteSpace();
+		
 		
 		UnresolvedType type = parseType();
 		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));				
@@ -681,20 +681,20 @@ public class WhileyParser {
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
-			skipWhiteSpace();
+			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Union) {
 			match(Union.class);
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.UNION, lhs, rhs, sourceAttr(start,
@@ -702,7 +702,7 @@ public class WhileyParser {
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof Intersection) {
 			match(Intersection.class);
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseAddSubExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.INTERSECTION, lhs, rhs, sourceAttr(
@@ -718,7 +718,7 @@ public class WhileyParser {
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseMulDivExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
@@ -726,7 +726,7 @@ public class WhileyParser {
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightSlash) {
 			match(RightSlash.class);
-			skipWhiteSpace();
+			
 			
 			Expr rhs = parseMulDivExpression(dictionaryStart);
 			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
@@ -750,7 +750,7 @@ public class WhileyParser {
 			start = index;
 			if(lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
-				skipWhiteSpace();
+				
 				
 				lookahead = tokens.get(index);
 				
@@ -758,7 +758,7 @@ public class WhileyParser {
 					// this indicates a sublist without a starting expression;
 					// hence, start point defaults to zero
 					match(DotDot.class);
-					skipWhiteSpace();
+					
 					lookahead = tokens.get(index);
 					Expr end = parseAddSubExpression(false);
 					match(RightSquare.class);
@@ -773,7 +773,7 @@ public class WhileyParser {
 				lookahead = tokens.get(index);
 				if(lookahead instanceof DotDot) {					
 					match(DotDot.class);
-					skipWhiteSpace();
+					
 					lookahead = tokens.get(index);
 					Expr end;
 					if(lookahead instanceof RightSquare) {
@@ -831,10 +831,10 @@ public class WhileyParser {
 		
 		if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			skipWhiteSpace();
+			
 			checkNotEof();			
 			Expr v = parseTupleExpression();			
-			skipWhiteSpace();
+			
 			checkNotEof();
 			token = tokens.get(index);			
 			match(RightBrace.class);
@@ -842,7 +842,7 @@ public class WhileyParser {
 		} else if(token instanceof Star) {
 			// this indicates a process dereference
 			match(Star.class);
-			skipWhiteSpace();
+			
 			Expr e = parseAddSubExpression(false);
 			return new Expr.UnOp(Expr.UOp.PROCESSACCESS, e, sourceAttr(start,
 					index - 1));
@@ -930,7 +930,7 @@ public class WhileyParser {
 	private Expr.Spawn parseSpawn() {
 		int start = index;
 		matchKeyword("spawn");
-		skipWhiteSpace();
+		
 		Expr state = parseAddSubExpression(false);
 		return new Expr.Spawn(state, sourceAttr(start,index - 1));
 	}
@@ -939,18 +939,18 @@ public class WhileyParser {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match(LeftSquare.class);
-		skipWhiteSpace();
+		
 		boolean firstTime = true;
 		checkNotEof();
 		Token token = tokens.get(index);
 		while(!(token instanceof RightSquare)) {
 			if(!firstTime) {
 				match(Comma.class);
-				skipWhiteSpace();
+				
 			}
 			firstTime=false;
 			exprs.add(parseCondition(false));
-			skipWhiteSpace();
+			
 			checkNotEof();
 			token = tokens.get(index);
 		}
@@ -962,7 +962,7 @@ public class WhileyParser {
 	private Expr.Comprehension parseQuantifierSet() {
 		int start = index;		
 		match(LeftCurly.class);
-		skipWhiteSpace();
+		
 		Token token = tokens.get(index);			
 		boolean firstTime = true;						
 		List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
@@ -970,11 +970,11 @@ public class WhileyParser {
 		while(!(token instanceof Bar)) {						
 			if(!firstTime) {
 				match(Comma.class);
-				skipWhiteSpace();
+				
 			}
 			firstTime=false;
 			Identifier id = matchIdentifier();
-			skipWhiteSpace();
+			
 			String var = id.text;
 			if(vars.contains(var)) {
 				syntaxError(
@@ -986,17 +986,17 @@ public class WhileyParser {
 				vars.add(var);
 			}
 			match(WhileyLexer.ElemOf.class);
-			skipWhiteSpace();
+			
 			Expr src = parseConditionExpression(false);			
 			srcs.add(new Pair(var,src));
-			skipWhiteSpace();
+			
 			checkNotEof();
 			token = tokens.get(index);
 		}
 		match(Bar.class);
-		skipWhiteSpace();
+		
 		Expr condition = parseCondition(false);
-		skipWhiteSpace();
+		
 		match(RightCurly.class);
 		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
 				sourceAttr(start, index - 1));
@@ -1005,7 +1005,7 @@ public class WhileyParser {
 	private Expr parseSetVal() {
 		int start = index;		
 		match(LeftCurly.class);
-		skipWhiteSpace();
+		
 		ArrayList<Expr> exprs = new ArrayList<Expr>();	
 		Token token = tokens.get(index);
 		
@@ -1019,7 +1019,7 @@ public class WhileyParser {
 		// NOTE: in the following, dictionaryStart must be true as this could be
 		// the start of a dictionary constructor.
 		exprs.add(parseCondition(true)); 
-		skipWhiteSpace();
+		
 		
 		boolean setComp = false;
 		boolean firstTime = false;
@@ -1043,11 +1043,11 @@ public class WhileyParser {
 		while(!(token instanceof RightCurly)) {						
 			if(!firstTime) {
 				match(Comma.class);
-				skipWhiteSpace();
+				
 			}
 			firstTime=false;
 			exprs.add(parseCondition(false));
-			skipWhiteSpace();
+			
 			checkNotEof();
 			token = tokens.get(index);
 		}
@@ -1098,16 +1098,16 @@ public class WhileyParser {
 		match(Arrow.class);
 		Expr value = parseCondition(false);	
 		pairs.add(new Pair<Expr,Expr>(key,value));
-		skipWhiteSpace();
+		
 		Token token = tokens.get(index);		
 		while(!(token instanceof RightCurly)) {									
 			match(Comma.class);
-			skipWhiteSpace();
+			
 			key = parseCondition(true);
 			match(Arrow.class);
 			value = parseCondition(false);
 			pairs.add(new Pair<Expr,Expr>(key,value));
-			skipWhiteSpace();
+			
 			checkNotEof();
 			token = tokens.get(index);
 		}
@@ -1119,9 +1119,9 @@ public class WhileyParser {
 
 		// this indicates a record value.				
 		match(Colon.class);
-		skipWhiteSpace();
+		
 		Expr e = parseAddSubExpression(false);
-		skipWhiteSpace();
+		
 		
 		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
 		exprs.put(ident, e);
@@ -1129,7 +1129,7 @@ public class WhileyParser {
 		Token token = tokens.get(index);
 		while(!(token instanceof RightCurly)) {			
 			match(Comma.class);
-			skipWhiteSpace();
+			
 			checkNotEof();
 			token = tokens.get(index);			
 			Identifier n = matchIdentifier();
@@ -1139,7 +1139,7 @@ public class WhileyParser {
 			}
 
 			match(Colon.class);
-			skipWhiteSpace();
+			
 			e = parseAddSubExpression(false);				
 			exprs.put(n.text,e);
 			checkNotEof();
@@ -1153,9 +1153,9 @@ public class WhileyParser {
 	private Expr parseLengthOf() {
 		int start = index;
 		match(Bar.class);
-		skipWhiteSpace();
+		
 		Expr e = parseIndexTerm(false);
-		skipWhiteSpace();
+		
 		match(Bar.class);
 		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
 	}
@@ -1163,7 +1163,7 @@ public class WhileyParser {
 	private Expr parseNegation() {
 		int start = index;
 		match(Minus.class);
-		skipWhiteSpace();
+		
 		Expr e = parseIndexTerm(false);
 		
 		if(e instanceof Expr.Constant) {
@@ -1186,19 +1186,19 @@ public class WhileyParser {
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
-		skipWhiteSpace();
+		
 		boolean firstTime=true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightBrace)) {
 			if(!firstTime) {
 				match(Comma.class);
-				skipWhiteSpace();
+				
 			} else {
 				firstTime=false;
 			}			
 			Expr e = parseAddSubExpression(false);
-			skipWhiteSpace();
+			
 			args.add(e);		
 		}
 		match(RightBrace.class);		
@@ -1227,7 +1227,7 @@ public class WhileyParser {
 			types.add((UnresolvedType.NonUnion) t);
 			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
 				match(Bar.class);
-				skipWhiteSpace();
+				
 				t = parseBaseType();
 				types.add((UnresolvedType.NonUnion) t);
 			}
@@ -1284,17 +1284,17 @@ public class WhileyParser {
 			t = new UnresolvedType.Process(parseType(),sourceAttr(start,index-1));			
 		} else if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			skipWhiteSpace();
+			
 			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
 			types.add(parseType());
 			match(Comma.class);
-			skipWhiteSpace();
+			
 			types.add(parseType());
 			checkNotEof();
 			token = tokens.get(index);
 			while(!(token instanceof RightBrace)) {
 				match(Comma.class);
-				skipWhiteSpace();
+				
 				types.add(parseType());
 				checkNotEof();
 				token = tokens.get(index);
@@ -1303,9 +1303,9 @@ public class WhileyParser {
 			return new UnresolvedType.Tuple(types);
 		} else if(token instanceof LeftCurly) {		
 			match(LeftCurly.class);
-			skipWhiteSpace();
+			
 			t = parseType();			
-			skipWhiteSpace();
+			
 			checkNotEof();
 			if(tokens.get(index) instanceof RightCurly) {
 				// set type
@@ -1325,18 +1325,18 @@ public class WhileyParser {
 					syntaxError("duplicate tuple key",n);
 				}
 				types.put(n.text, t);
-				skipWhiteSpace();
+				
 				checkNotEof();
 				token = tokens.get(index);
 				while(!(token instanceof RightCurly)) {
 					match(Comma.class);
-					skipWhiteSpace();
+					
 					checkNotEof();
 					token = tokens.get(index);
 					UnresolvedType tmp = parseType();
-					skipWhiteSpace();
+					
 					n = matchIdentifier();
-					skipWhiteSpace();
+					
 					if(types.containsKey(n)) {
 						syntaxError("duplicate tuple key",n);
 					}								
@@ -1348,10 +1348,8 @@ public class WhileyParser {
 				t = new UnresolvedType.Record(types, sourceAttr(start,index-1));				
 			} 
 		} else if(token instanceof LeftSquare) {
-			match(LeftSquare.class);
-			skipWhiteSpace();
-			t = parseType();
-			skipWhiteSpace();
+			match(LeftSquare.class);			
+			t = parseType();			
 			match(RightSquare.class);
 			t = new UnresolvedType.List(t,sourceAttr(start,index-1));
 		} else {		
@@ -1380,12 +1378,6 @@ public class WhileyParser {
 			return r;
 		} else {
 			return token instanceof LeftCurly || token instanceof LeftSquare;
-		}
-	}
-
-	private void skipWhiteSpace() {
-		while (index < tokens.size() && isWhiteSpace(tokens.get(index))) {
-			index++;
 		}
 	}
 
