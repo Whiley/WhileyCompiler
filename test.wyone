@@ -1,0 +1,104 @@
+// ==================================================
+// Theory of Values
+// ==================================================
+
+term True
+term False
+class Bool as True | False
+class Value as Bool
+
+// ==================================================
+// Theory of Logical Connectives
+// ==================================================
+
+term And({Term})
+term Or({Term})
+term Not(Term)
+class LogicTerm as And | Or | Not
+
+rewrite Not(Bool t):
+    => True, if t == False
+    => False, if t == True
+
+rewrite Not(Not(*) x):
+    => x#0
+
+rewrite Not(And({Term}) t):
+    => let rs = { Not(x) | x in t#0 } 
+       in Or(rs)
+
+rewrite Not(Or({Term}) t):
+    => let rs = { Not(x) | x in t#0 } 
+       in And(rs)
+
+rewrite And({Term} xs):
+    => False, if False in xs
+    => True, if xs == {True}
+    => False, if some { x in xs | Not(x) in xs }
+    => let ys = { x | x in xs, x ~= And({*}) },
+           zs = { z | y in ys, z in y#0 }
+       in And(((xs - ys) - {True}) + zs)
+
+rewrite Or({Term} xs):
+    => True, if True in xs
+    => False, if xs == {False}
+    => True, if some { x in xs | Not(x) in xs }
+    => let ys = { x | x in xs, x ~= Or({*}) },
+           zs = { z | y in ys, z in y#0 }
+       in Or(((xs - ys) - {False}) + zs)
+
+// ==================================================
+// Theory of Congruence
+// ==================================================
+
+term Equals(Term, Term)
+
+rewrite Equals(Value x, Value y):
+    => True, if x == y
+    => False, if x != y
+
+rewrite And({Term} xs):
+    => let ys = { Equals(x#1,x#0) | x in xs, x~=Equals(*,*) && !(x#0~=Value && x#1~=Value) && x#0 != x#1 }
+       in And(xs + ys)
+
+rewrite And({Term} xs):
+    => let ys = { Equals(x#0,y#1) | x in xs, y in xs, x!=y && x~=Equals(*,*) && y~=Equals(*,*) && x#1 == y#0 && x#0 != y#1 }
+       in And(xs + ys)
+
+rewrite Equals(Term x, Term y):
+    => True, if x == y
+
+rewrite Not(Equals(Value, Value) x):
+    => True, if x#0 != x#1
+    => False, if x#0 == x#1
+
+rewrite Not(Equals(Term, Term) x):
+    => False, if x#0 == x#1
+
+// ==================================================
+// Theory of Arithmetic
+// ==================================================
+
+term Num(int)
+term Neg(Arith)
+term Add({Arith})
+term Mul({Arith})
+term Div(Arith,Arith)
+
+class Arith as Num | Add | Mul | Div | Neg | Var 
+
+rewrite Neg(Num(int) x):
+    => Num(-x#0)
+
+rewrite Neg(Neg(Arith) x):
+    => x#0
+	
+// ==================================================
+// Overall Theory
+// ==================================================
+
+term Var(string)
+
+class Term as Value | LogicTerm | Equals | Var | Arith
+
+
