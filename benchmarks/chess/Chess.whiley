@@ -78,9 +78,8 @@ define Move as CheckMove | SimpleMove
 // The purpose of the validMove method is to check whether or not a
 // move is valid on a given board.
 bool validMove(Move move, Board board):
-    // FIXME: there is a problem here related to cloning of lists
-    //nboard = applyMove(move,board)
     nboard = board
+    nboard = applyMove(move,nboard)
     if move ~= SingleTake:
         return validPieceMove(move.piece,move.from,move.to,true,board) &&
             validPiece(move.taken,move.to,board) && 
@@ -195,6 +194,8 @@ Board applyMove(Move move, Board board):
     if move ~= SingleMove:
         // SingleTake is processed in the same way
         return applySingleMove(move,board)
+    else if move ~= CheckMove:
+        return applyMove(move.check,board)
     return board
 
 Board applySingleMove(SingleMove move, Board board):
