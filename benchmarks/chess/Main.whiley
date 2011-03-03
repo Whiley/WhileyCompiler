@@ -51,7 +51,7 @@ string board2str(Board b):
     r = ""
     i=8
     while i >= 1:
-        r = r + str(i) + row2str(b[i-1])
+        r = r + str(i) + row2str(b.rows[i-1])
         i = i - 1
     return r + "  a b c d e f g h\n"
 
@@ -74,6 +74,11 @@ string move2str(Move m):
         return piece2str(m.piece) + pos2str(m.from) + "x" + piece2str(m.taken) + pos2str(m.to)
     else if m ~= SingleMove:
         return piece2str(m.piece) + pos2str(m.from) + "-" + pos2str(m.to)   
+    else if m ~= CastleMove:
+        if m.kingSide:
+            return "O-O"
+        else:
+            return "O-O-O"
     else:
         // check move
         return move2str(m.check) + "+"  

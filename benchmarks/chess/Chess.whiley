@@ -44,9 +44,15 @@ define Pos as { RowCol col, RowCol row }
 
 define Square as Piece | null
 define Row as [Square] // where |$| == 8
-define Board as [Row] // where |$| == 8
+define Board as {
+    [Row] rows, 
+    bool whiteCastleKingSide,
+    bool whiteCastleQueenSide,
+    bool blackCastleKingSide,
+    bool blackCastleQueenSide
+}    
 
-define startingChessBoard as [
+define startingChessRows as [
     [ WHITE_ROOK,WHITE_KNIGHT,WHITE_BISHOP,WHITE_QUEEN,WHITE_KING,WHITE_BISHOP,WHITE_KNIGHT,WHITE_ROOK ], // rank 1
     [ WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN ],          // rank 2
     [ null, null, null, null, null, null, null, null ],                                                   // rank 3
@@ -57,6 +63,14 @@ define startingChessBoard as [
     [ BLACK_ROOK,BLACK_KNIGHT,BLACK_BISHOP,BLACK_QUEEN,BLACK_KING,BLACK_BISHOP,BLACK_KNIGHT,BLACK_ROOK ]  // rank 8
 ]
 
+define startingChessBoard as {
+    rows: startingChessRows,
+    whiteCastleKingSide: false,
+    whiteCastleQueenSide: false,
+    blackCastleKingSide: false,
+    blackCastleQueenSide: false
+}
+
 // =============================================================
 // Moves
 // =============================================================
@@ -65,8 +79,9 @@ define SingleMove as { Piece piece, Pos from, Pos to }
 define SingleTake as { Piece piece, Pos from, Pos to, Piece taken }
 define SimpleMove as SingleMove | SingleTake
 
-define CheckMove as { SimpleMove check }
-define Move as CheckMove | SimpleMove
+define CastleMove as { bool isWhite, bool kingSide }
+define CheckMove as { Move check }
+define Move as CheckMove | CastleMove | SimpleMove
 
 // castling
 // en passant
@@ -79,21 +94,37 @@ define Move as CheckMove | SimpleMove
 // move is valid on a given board.
 bool validMove(Move move, Board board):
     nboard = applyMove(move,board)
+    // first, test the check status of this side, and the opposition
+    // side.
+    if move ~= CheckMove:
+        move = move.check
+        oppCheck = true
+    else:
+        // normal expectation of opposition
+        oppCheck = false
+    // Now, identify what colour I am
+    if move ~= CastleMove:
+        isWhite = move.isWhite
+    else if move ~= CastleMove:
+        isWhite = move.piece.isWhite
+    else:
+        isWhite = false // deadcode
+    // finally, check everything is OK
+    return !inCheck(isWhite,nboard) && // I'm in check?
+        oppCheck == inCheck(!isWhite,nboard) && // oppo in check?
+        internalValidMove(move, board) // move otherwise ok?
+
+bool internalValidMove(Move move, Board board):
     if move ~= SingleTake:
         return validPieceMove(move.piece,move.from,move.to,true,board) &&
-            validPiece(move.taken,move.to,board) && 
-            !inCheck(!move.piece.colour, nboard) && 
-            !inCheck(move.piece.colour, nboard)
+            validPiece(move.taken,move.to,board)
     else if move ~= SingleMove:
         return validPieceMove(move.piece,move.from,move.to,false,board) &&
-            squareAt(move.to,board) ~= null && 
-            !inCheck(!move.piece.colour, nboard) &&
-            !inCheck(move.piece.colour, nboard)
-    else if move ~= CheckMove:
-        m = move.check
-        return validPieceMove(m.piece,m.from,m.to,false,board) && 
-            inCheck(!m.piece.colour, nboard) && 
-            !inCheck(m.piece.colour, nboard)
+            squareAt(move.to,board) ~= null
+    else if move ~= CastleMove:
+        return validCastle(move, board)
+    // the following should be dead-code, but to remove it requires
+    // more structuring of CheckMoves
     return false
 
 bool validPieceMove(Piece piece, Pos from, Pos to, bool isTake, Board board):
@@ -133,12 +164,24 @@ bool inCheck(bool isWhite, Board board):
     // check every possible piece cannot take king
     for r in range(0,8):
         for c in range(0,8):
-            tmp = board[r][c]
+            tmp = board.rows[r][c]
             if !(tmp ~= null) && tmp.colour == !isWhite && 
                 validPieceMove(tmp,{row: r, col: c},kpos,true,board):
                 return true
     // no checks found
     return false
+
+bool validCastle(CastleMove move, Board board):
+    if move.isWhite:
+        if move.kingSide:
+            return board.whiteCastleKingSide
+        else:
+            return board.whiteCastleQueenSide
+    else:
+        if move.kingSide:
+            return board.blackCastleKingSide
+        else:
+            return board.blackCastleQueenSide
 
 // =============================================================
 // Individual Piece Moves
@@ -195,13 +238,27 @@ Board applyMove(Move move, Board board):
         return applySingleMove(move,board)
     else if move ~= CheckMove:
         return applyMove(move.check,board)
+    else if move ~= CastleMove:
+        return applyMove(move,board)
     return board
 
 Board applySingleMove(SingleMove move, Board board):
     from = move.from
     to = move.to
-    board[from.row][from.col] = null
-    board[to.row][to.col] = move.piece
+    board.rows[from.row][from.col] = null
+    board.rows[to.row][to.col] = move.piece
+    return board
+
+Board applyCastleMove(CastleMove move, Board board):
+    row = 8
+    col = 1
+    if move.isWhite:
+        row = 1
+    if move.kingSide:
+        col = 8
+    p = board.rows[row][4]
+    board.rows[row][4] = board.rows[row][col]             
+    board.rows[row][col] = p
     return board
 
 // =============================================================
@@ -209,7 +266,7 @@ Board applySingleMove(SingleMove move, Board board):
 // =============================================================
 
 Square squareAt(Pos p, Board b):
-    return b[p.row][p.col]
+    return b.rows[p.row][p.col]
 
 // The following method checks whether a given row is completely
 // clear, excluding the end points. Observe that this doesn't
@@ -223,7 +280,7 @@ bool clearRowExcept(Pos from, Pos to, Board board):
     row = from.row
     col = from.col + inc
     while col != to.col:
-        if board[row][col] ~= null:
+        if board.rows[row][col] ~= null:
             col = col + inc
         else:
             return false        
@@ -240,7 +297,7 @@ bool clearColumnExcept(Pos from, Pos to, Board board):
     row = from.row + inc
     col = from.col
     while row != to.row:
-        if board[row][col] ~= null:
+        if board.rows[row][col] ~= null:
             row = row + inc
         else:
             return false            
@@ -263,7 +320,7 @@ bool clearDiaganolExcept(Pos from, Pos to, Board board):
     row = from.row + rowinc
     col = from.col + colinc
     while row != to.row && col != to.col:
-        if board[row][col] ~= null:
+        if board.rows[row][col] ~= null:
             col = col + colinc
             row = row + rowinc
         else:
@@ -282,7 +339,7 @@ int sign(int x, int y):
 Pos|null findPiece(Piece p, Board b):
     for r in range(0,8):
         for c in range(0,8):
-            if b[r][c] == p:
+            if b.rows[r][c] == p:
                 // ok, we've located the piece
                 return { row: r, col: c }            
     // could find the piece
