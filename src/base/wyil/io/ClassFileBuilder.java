@@ -343,7 +343,7 @@ public class ClassFileBuilder {
 					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
 							Bytecode.STATIC));
-				} else {
+				} else {					
 					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
 							Bytecode.VIRTUAL));								
@@ -908,9 +908,9 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Record) {
 				return (Type) t;
 		} else if(t instanceof Type.Named) {
-			t = ((Type.Named)t).type;
+			return narrowRecordType(((Type.Named)t).type);
 		} else if(t instanceof Type.Recursive) {
-			t = Type.unfold((Type.Recursive)t);
+			return narrowRecordType(Type.unfold((Type.Recursive)t));
 		}
 		
 		// Ok, must be union ...

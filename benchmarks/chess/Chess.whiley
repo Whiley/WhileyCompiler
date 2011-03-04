@@ -65,10 +65,10 @@ define startingChessRows as [
 
 define startingChessBoard as {
     rows: startingChessRows,
-    whiteCastleKingSide: false,
-    whiteCastleQueenSide: false,
-    blackCastleKingSide: false,
-    blackCastleQueenSide: false
+    whiteCastleKingSide: true,
+    whiteCastleQueenSide: true,
+    blackCastleKingSide: true,
+    blackCastleQueenSide: true
 }
 
 // =============================================================
@@ -172,16 +172,22 @@ bool inCheck(bool isWhite, Board board):
     return false
 
 bool validCastle(CastleMove move, Board board):
+    // FIXME: this functionis still broken, since we have to check
+    // that we're not castling through check :(
     if move.isWhite:
         if move.kingSide:
-            return board.whiteCastleKingSide
+            return board.whiteCastleKingSide && 
+                board.rows[0][5] == null && board.rows[0][6] == null
         else:
-            return board.whiteCastleQueenSide
+            return board.whiteCastleQueenSide && 
+                board.rows[0][1] == null && board.rows[0][2] == null && board.rows[0][3] == null
     else:
         if move.kingSide:
-            return board.blackCastleKingSide
+            return board.blackCastleKingSide && 
+                board.rows[7][5] == null && board.rows[7][6] == null
         else:
-            return board.blackCastleQueenSide
+            return board.blackCastleQueenSide && 
+                board.rows[7][1] == null && board.rows[7][2] == null && board.rows[7][3] == null
 
 // =============================================================
 // Individual Piece Moves
@@ -239,7 +245,7 @@ Board applyMove(Move move, Board board):
     else if move ~= CheckMove:
         return applyMove(move.check,board)
     else if move ~= CastleMove:
-        return applyMove(move,board)
+        return applyCastleMove(move,board)
     return board
 
 Board applySingleMove(SingleMove move, Board board):
@@ -250,15 +256,21 @@ Board applySingleMove(SingleMove move, Board board):
     return board
 
 Board applyCastleMove(CastleMove move, Board board):
-    row = 8
-    col = 1
+    row = 7
     if move.isWhite:
-        row = 1
+        row = 0
+    king = board.rows[row][4]
+    board.rows[row][4] = null   
     if move.kingSide:
-        col = 8
-    p = board.rows[row][4]
-    board.rows[row][4] = board.rows[row][col]             
-    board.rows[row][col] = p
+        rook = board.rows[row][7]
+        board.rows[row][7] = null
+        board.rows[row][6] = king
+        board.rows[row][5] = rook
+    else:
+        rook = board.rows[row][0]
+        board.rows[row][0] = null
+        board.rows[row][2] = king
+        board.rows[row][3] = rook
     return board
 
 // =============================================================

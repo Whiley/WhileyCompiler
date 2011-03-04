@@ -44,10 +44,12 @@ int nextLine(string input, int pos):
 
 Move parseMove(string input, bool isWhite):
     // first, we check for castling moves
-    if input == "O-O":
-        move = { isWhite: isWhite, kingSide: true }
-    else if input == "O-O-O":
+    if |input| >= 5 && input[0..5] == "O-O-O":
         move = { isWhite: isWhite, kingSide: false }
+        index = 5
+    else if |input| >= 3 && input[0..3] == "O-O":
+        move = { isWhite: isWhite, kingSide: true }
+        index = 3
     else:
         // not a castling move
         index = parseWhiteSpace(0,input)
