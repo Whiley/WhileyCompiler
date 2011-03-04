@@ -345,7 +345,7 @@ public class ModuleBuilder {
 		}
 
 		// following is needed to terminate any recursion
-		cache.put(key, Type.T_RECURSIVE(key, null));
+		cache.put(key, Type.T_RECURSIVE(key.toString(), null));
 
 		// now, expand the type fully		
 		t = expandType(unresolved.get(key), filemap.get(key).filename,
@@ -354,9 +354,9 @@ public class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpenRecursive(key, t);
+		boolean isOpenRecursive = Type.isOpenRecursive(key.toString(), t);
 		if (isOpenRecursive) {
-			t = Type.T_RECURSIVE(key, t);
+			t = Type.T_RECURSIVE(key.toString(), t);
 		}
 					
 		// finally, store it in the cache
@@ -1491,43 +1491,7 @@ public class ModuleBuilder {
 			return Type.T_FUN(null,resolve(ut.ret),paramTypes);							
 		}
 	}
-
-	public static Pair<Type, Block> fixRecursiveTypeTests(NameID key,
-			Pair<Type, Block> p) {
-		Type t = p.first();		
-		Block blk = p.second();
-		if(blk == null) { return new Pair<Type,Block>(t,blk); }
-
-		// At this stage, we need to update any type tests that involve the
-		// recursive type
-		Block nblk = new Block();
-		HashMap<NameID,Type> tbinding = new HashMap<NameID,Type>();
-		tbinding.put(key, t);
-		
-		for(wyil.lang.Stmt s : blk) {
-			if(s.code instanceof Code.IfGoto){
-				IfGoto ig = (IfGoto) s.code;
-				if(ig.rhs instanceof Value.TypeConst) {					
-					Value.TypeConst r = (Value.TypeConst) ig.rhs;					
-					r = Value.V_TYPE(Type.substituteRecursiveTypes(r.type,tbinding));
-					// The following line was previously used, as I was
-					// concerned about nested recursive types and making sure
-					// they were all appropriately renamed. However, it's
-					// unclear to me whether or not nested recursive types (i.e
-					// those other than the one being processed, identified by
-					// key) can actually occur.
-					//
-					// r = Value.V_TYPE(Type.renameRecursiveTypes(r.type, binding));
-					ig = new Code.IfGoto(ig.op, ig.lhs, r, ig.target);
-					s = new wyil.lang.Stmt(ig,s.attributes());
-				}
-			} 
-			nblk.add(s.code,s.attributes());			
-		}		
-		
-		return new Pair<Type,Block>(t,nblk);
-	}
-    
+	
 	public Variable flattern(Expr e) {
 		if (e instanceof Variable) {
 			return (Variable) e;

@@ -2229,10 +2229,9 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) t;
 			if(rt.type == null) {
-				return rt.name.module() + ";" + rt.name.name();				
+				return rt.name;				
 			} else {
-				return "U" + rt.name.module() + ";" + rt.name.name() + ";"
-				+ type2str(rt.type);				
+				return "U" + rt.name + ";" + type2str(rt.type);				
 			}
 		} else if(t instanceof Type.Named) {
 			Type.Named st = (Type.Named) t;

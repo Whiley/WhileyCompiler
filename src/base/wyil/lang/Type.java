@@ -76,7 +76,7 @@ public abstract class Type {
 		return get(new Record(types));
 	}
 	
-	public static Recursive T_RECURSIVE(NameID name, Type element) {
+	public static Recursive T_RECURSIVE(String name, Type element) {
 		return get(new Recursive(name,element));
 	}
 	
@@ -160,7 +160,7 @@ public abstract class Type {
 			// S-RECURSE
 			Recursive r1 = (Recursive) t1;
 			Recursive r2 = (Recursive) t2;
-			HashMap<NameID,NameID> binding = new HashMap<NameID,NameID>();
+			HashMap<String,String> binding = new HashMap<String,String>();
 			binding.put(r2.name, r1.name);
 			r2 = (Recursive) renameRecursiveTypes(r2,binding);
 			return isSubtype(r1.type,r2.type);
@@ -354,7 +354,7 @@ public abstract class Type {
 				return T_VOID;
 			} 
 			
-			HashMap<NameID,NameID> binding = new HashMap();
+			HashMap<String,String> binding = new HashMap();
 			binding.put(r2.name, r1.name);
 			
 			Type glb = greatestLowerBound(r1.type,renameRecursiveTypes(r2.type,binding));
@@ -435,7 +435,7 @@ public abstract class Type {
 				if(r1.name.equals(r2.name)) {
 					return T_VOID;
 				} else if(r1.type != null && r2.type != null) {
-					HashMap<NameID,NameID> binding = new HashMap();
+					HashMap<String,String> binding = new HashMap();
 					binding.put(r2.name, r1.name);
 					r1_type = greatestDifference(r1_type,renameRecursiveTypes(r2_type,binding));
 					if(isOpenRecursive(r1.name,r1_type)) {
@@ -525,7 +525,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static java.util.Set<NameID> recursiveTypeNames(Type t) {
+	public static java.util.Set<String> recursiveTypeNames(Type t) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
 				|| t instanceof Any) {			
@@ -541,21 +541,21 @@ public abstract class Type {
 			return recursiveTypeNames(lt.element);
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
-			HashSet<NameID> names = new HashSet<NameID>();
+			HashSet<String> names = new HashSet<String>();
 			for(Type b : ut.bounds) {
 				names.addAll(recursiveTypeNames(b));				
 			}
 			return names;
 		} else if(t instanceof Record) {			
 			Record tt = (Record) t;
-			HashSet<NameID> names = new HashSet<NameID>();
+			HashSet<String> names = new HashSet<String>();
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
 				names.addAll(recursiveTypeNames(b.getValue()));				
 			}
 			return names;
 		} else if (t instanceof Recursive) {			
 			Recursive lt = (Recursive) t;
-			HashSet<NameID> names = new HashSet<NameID>();
+			HashSet<String> names = new HashSet<String>();
 			names.add(lt.name);
 			if(lt.type != null) {
 				names.addAll(recursiveTypeNames(lt.type));
@@ -566,7 +566,7 @@ public abstract class Type {
 			return recursiveTypeNames(lt.type);
 		} else {
 			Fun ft = (Fun) t;
-			HashSet<NameID> names = new HashSet<NameID>();
+			HashSet<String> names = new HashSet<String>();
 			for(Type p : ft.params) {
 				names.addAll(recursiveTypeNames(p));				
 			}
@@ -585,7 +585,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Type renameRecursiveTypes(Type t, Map<NameID,NameID> binding) {
+	public static Type renameRecursiveTypes(Type t, Map<String,String> binding) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
 				|| t instanceof Any) {
@@ -616,7 +616,7 @@ public abstract class Type {
 			return T_RECORD(fields);
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
-			NameID name = binding.get(lt.name);			
+			String name = binding.get(lt.name);			
 			if(name == null) { name = lt.name; }
 			if (lt.type != null) {
 				return T_RECURSIVE(name, renameRecursiveTypes(lt.type,
@@ -650,7 +650,7 @@ public abstract class Type {
 	 * @param binding
 	 * @return
 	 */
-	public static Type substituteRecursiveTypes(Type t, Map<NameID,Type> binding) {
+	public static Type substituteRecursiveTypes(Type t, Map<String,Type> binding) {
 		if (t == null) { throw new IllegalArgumentException("substituteRecursiveTypes cannot be called on null"); }
 		
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
@@ -715,7 +715,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpenRecursive(NameID key, Type t) {
+	public static boolean isOpenRecursive(String key, Type t) {
 		if (t instanceof Type.Void || t instanceof Type.Null
 				|| t instanceof Type.Bool || t instanceof Type.Int
 				|| t instanceof Type.Real || t instanceof Type.Any
@@ -864,7 +864,7 @@ public abstract class Type {
 	}
 	
 	public static Type unfold(Type.Recursive rt) {
-		HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
+		HashMap<String,Type> binding = new HashMap<String,Type>();
 		binding.put(rt.name, rt);
 		return substituteRecursiveTypes(rt.type,binding);
 	}
@@ -887,7 +887,7 @@ public abstract class Type {
 				return type;
 			} 
 			
-			HashMap<NameID,Type> binding = new HashMap<NameID,Type>();
+			HashMap<String,Type> binding = new HashMap<String,Type>();
 			binding.put(type.name, leastUpperBound(factors, T_RECURSIVE(
 					type.name, null)));
 			// FIXME: there is a bug here for sure as substitute recursive types
@@ -905,7 +905,60 @@ public abstract class Type {
 	 * based on the algorithm for minimising DFAs.
 	 */
 	public static Type minimise(Type t) {
+		ArrayList<HashSet<Type>> equivs = partitionEquivs(t);
+		System.out.println("GOT: " + equivs);
 		return null;
+	}
+
+	/**
+	 * This method takes a type and identifies all equivalences within it. Thus,
+	 * two types in the same equivalence class are considered to be
+	 * "equivalent", and can be merged.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	private static ArrayList<HashSet<Type>> partitionEquivs(Type t) {
+		ArrayList<HashSet<Type>> equivs = new ArrayList();
+		// first, initialise equivalence set
+		HashSet<Type> components = new HashSet<Type>();
+		initialiseEquivs(t,components);
+		equivs.add(components);
+		// second, split out equivalences until no further changes.
+		return equivs;
+	}
+	
+	/**
+	 * This method simply walks down the type splitting out every subcomponent.
+	 * @param t
+	 */
+	private static void initialiseEquivs(Type t, HashSet<Type> equivs) {
+		equivs.add(t);
+		
+		// now, recurse compound types
+		if(t instanceof Type.List) {
+			Type.List lt = (Type.List) t;
+			initialiseEquivs(lt.element,equivs);
+		} else if(t instanceof Type.Set) {
+			Type.Set lt = (Type.Set) t;
+			initialiseEquivs(lt.element,equivs);
+		} else if(t instanceof Type.Process) {
+			Type.Process lt = (Type.Process) t;
+			initialiseEquivs(lt.element,equivs);
+		} else if(t instanceof Type.Record) {			
+			Type.Record tt = (Record) t;			
+			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+				initialiseEquivs(b.getValue(),equivs);	
+			}			
+		} else if (t instanceof Type.Recursive) {
+			Type.Recursive rt = (Type.Recursive) t;
+			initialiseEquivs(rt.type,equivs);
+		} else if(t instanceof Type.Union) {
+			Type.Union ut = (Type.Union) t;
+			for(Type b : ut.bounds) {
+				initialiseEquivs(b,equivs);
+			}
+		} 
 	}
 	
 	/**
@@ -1403,10 +1456,10 @@ public abstract class Type {
 		}
 	}
 	public static final class Recursive extends NonUnion {				
-		public final NameID name;
+		public final String name;
 		public final Type type;
 		
-		private Recursive(NameID name, Type type) {
+		private Recursive(String name, Type type) {
 			this.name = name;
 			this.type = type;
 		}
@@ -1450,5 +1503,20 @@ public abstract class Type {
 			types.add(type);	
 			return type;
 		}
+	}
+	
+	public static void main(String[] args) {
+		HashMap<String,Type> types = new HashMap<String,Type>();
+		types.put("data",T_INT);
+		types.put("next",T_RECURSIVE("X",null));
+		Type t6 = T_RECORD(types);
+		Type t4 = T_RECURSIVE("X",leastUpperBound(T_NULL,t6));
+		types = new HashMap<String,Type>(types);
+		types.put("data", T_INT);
+		types.put("next", t4);
+		Type t3 = T_RECORD(types);
+		Type t1 = leastUpperBound(T_NULL,t3);
+		System.out.println("TYPE: " + t1);
+		minimise(t1);
 	}
 }
