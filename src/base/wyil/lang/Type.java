@@ -899,6 +899,14 @@ public abstract class Type {
 		// no unfactoring possible
 		return type;
 	}
+
+	/**
+	 * The following implements an algorithm for minimising recursive types,
+	 * based on the algorithm for minimising DFAs.
+	 */
+	public static Type minimise(Type t) {
+		return null;
+	}
 	
 	/**
 	 * The effective record type gives a subset of the visible fields which are
