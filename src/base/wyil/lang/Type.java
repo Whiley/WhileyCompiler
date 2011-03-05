@@ -924,7 +924,10 @@ public abstract class Type {
 	private static ArrayList<HashSet<Type>> partitionEquivs(Type t) {
 		// first, extract the components
 		HashSet<Type> components = new HashSet<Type>();		
-		initialiseEquivs(t,components);
+		// The var map is necessary to constructing a mapping between type
+		// variables and their recursive unfoldings.  
+		HashMap<String,Recursive> varmap = new HashMap<String,Recursive>();
+		initialiseEquivs(t,components,varmap);
 		
 		// second, initialise partitions, and reverse partition map		
 		ArrayList<HashSet<Type>> partitions = new ArrayList();						
@@ -937,7 +940,7 @@ public abstract class Type {
 		while(changed) {
 			changed = false;
 			for(int i = 0; i != partitions.size(); ++i) {
-				changed |= splitPartition(i,partitions,rpartitions);
+				changed |= splitPartition(i,partitions,rpartitions,varmap);
 			}
 		}
 		
@@ -953,7 +956,10 @@ public abstract class Type {
 	 * @param partitions
 	 * @return
 	 */
-	private static boolean splitPartition(int idx, ArrayList<HashSet<Type>> partitions, HashMap<Type,Integer> rpartitions) {
+	private static boolean splitPartition(int idx,
+			ArrayList<HashSet<Type>> partitions,
+			HashMap<Type, Integer> rpartitions,
+			HashMap<String,Recursive> varmap) {
 		// The pivot is what we'll use to split the partition. Essentially, I'll
 		// find all those equivalent to the pivot, and all those which are not
 		// equivalent => thus, either we make two new sets or there is no change
@@ -965,7 +971,7 @@ public abstract class Type {
 		boolean change = false;
 		
 		for(Type t : partition) {
-			if(partitionEquiv(t,pivot,rpartitions)) {
+			if(partitionEquiv(t,pivot,rpartitions,varmap)) {
 				// t is equivalent to pivot --> so no change
 				equivs.add(t);
 			} else {
@@ -1005,7 +1011,8 @@ public abstract class Type {
 	 * @return
 	 */
 	private static boolean partitionEquiv(Type t1, Type t2,
-			HashMap<Type, Integer> rpartitions) {
+			HashMap<Type, Integer> rpartitions,
+			HashMap<String,Recursive> varmap) {
 				
 		
 		// First, deal with simple non-compound types.
@@ -1015,27 +1022,7 @@ public abstract class Type {
 			return t1.getClass() == t2.getClass();
 		}
 		
-		// First, we split off any recursive wrappers. This is because
-		// recursive wrappers are not considered part of the
-		// "shape" of a type. Rather they simply indicate a "back-edge"
-		// in the recursive structure of the type. As such, they do not
-		// affect the partition equivalence of two types are just
-		// ignored here.
-		if(t1 instanceof Recursive) {			
-			Type.Recursive tr = (Type.Recursive) t1;						
-			if(tr.type == null) {
-				return rpartitions.get(tr).equals(rpartitions.get(t2));				
-			} else {							
-				return partitionEquiv(tr.type,t2,rpartitions);
-			}
-		} else if(t2 instanceof Recursive) {
-			Type.Recursive tr = (Type.Recursive) t2;
-			if(tr.type == null) {
-				return rpartitions.get(tr).equals(rpartitions.get(t1));				
-			} else {							
-				return partitionEquiv(t1,tr.type,rpartitions);
-			}			
-		}
+		
 		
 		// finally, deal with other compound types
 		if(t1 instanceof Set && t2 instanceof Set) {
@@ -1068,13 +1055,47 @@ public abstract class Type {
 			}
 			return true;
 		} else if(t1 instanceof Union && t2 instanceof Union) {
-			// this must be the hard case!!
-			Union u1 = (Union) t1;
+			// FIXME: I think there is a bug when we are comparing a union with
+			// a non-union type. The bug arises in the case that all bounds of
+			// the union are, in fact, equivalent.  No idea how to fix this.
+			Union u1 = (Union) t1;	
 			Union u2 = (Union) t2;
-			
-			// this is the very hard case :(
+			for(Type b1 : u1.bounds) {
+				boolean b1matched = false;
+				for(Type b2 : u2.bounds) {
+					if(partitionEquiv(b1,b2,rpartitions,varmap)) {
+						b1matched = true;
+						break;
+					}
+				}
+				if(!b1matched) { return false; }
+			}				
+			for(Type b2 : u2.bounds) {
+				boolean b2matched = false;
+				for(Type b1 : u1.bounds) {
+					if(partitionEquiv(b1,b2,rpartitions,varmap)) {
+						b2matched = true;
+						break;
+					}
+				}
+				if(!b2matched) { return false; }
+			}
 			return true;
-		} 
+		} else if(t1 instanceof Recursive) {			
+			Type.Recursive tr = (Type.Recursive) t1;						
+			if(tr.type == null) {
+				return partitionEquiv(varmap.get(tr.name).type,t2,rpartitions,varmap);			
+			} else {							
+				return partitionEquiv(tr.type,t2,rpartitions,varmap);
+			}
+		} else if(t2 instanceof Recursive) {
+			Type.Recursive tr = (Type.Recursive) t2;
+			if(tr.type == null) {
+				return partitionEquiv(t1,varmap.get(tr.name).type,rpartitions,varmap);			
+			} else {							
+				return partitionEquiv(t1,tr.type,rpartitions,varmap);
+			}			
+		}
 						
 		return false;
 	}
@@ -1083,35 +1104,33 @@ public abstract class Type {
 	 * This method simply walks down the type splitting out every subcomponent.
 	 * @param t
 	 */
-	private static void initialiseEquivs(Type t, HashSet<Type> equivs) {
+	private static void initialiseEquivs(Type t, HashSet<Type> equivs, HashMap<String,Recursive> varmap) {		
 		equivs.add(t);
-		
 		// now, recurse compound types
-		if(t instanceof Type.List) {
+		if(t instanceof Type.List) {			
 			Type.List lt = (Type.List) t;
-			initialiseEquivs(lt.element,equivs);
+			initialiseEquivs(lt.element,equivs,varmap);
 		} else if(t instanceof Type.Set) {
 			Type.Set lt = (Type.Set) t;
-			initialiseEquivs(lt.element,equivs);
+			initialiseEquivs(lt.element,equivs,varmap);
 		} else if(t instanceof Type.Process) {
 			Type.Process lt = (Type.Process) t;
-			initialiseEquivs(lt.element,equivs);
+			initialiseEquivs(lt.element,equivs,varmap);
 		} else if(t instanceof Type.Record) {			
 			Type.Record tt = (Record) t;			
 			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
-				initialiseEquivs(b.getValue(),equivs);	
+				initialiseEquivs(b.getValue(),equivs,varmap);	
 			}			
 		} else if (t instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) t;
 			if(rt.type != null) {
-				initialiseEquivs(rt.type,equivs);
-			} else {
-				// need to do something here, that's for sure.
-			}
+				varmap.put(rt.name, rt);
+				initialiseEquivs(rt.type,equivs,varmap);
+			} 
 		} else if(t instanceof Type.Union) {
 			Type.Union ut = (Type.Union) t;
 			for(Type b : ut.bounds) {
-				initialiseEquivs(b,equivs);
+				initialiseEquivs(b,equivs,varmap);
 			}
 		} 
 	}
@@ -1661,17 +1680,28 @@ public abstract class Type {
 	}
 	
 	public static void main(String[] args) {
+		
+		Type t1 = unfold(linkedList("X"));
+		Type t2 = outerUnfold(linkedList("Y"));
+		System.out.println("TYPE: " + t1);
+		System.out.println("TYPE: " + t2);
+		Type t3 = leastUpperBound(t1,t2);
+		System.out.println("TYPE: " + t3);
+		minimise(t2);
+	}
+	
+	public static Type.Recursive outerUnfold(Type.Recursive rt) {
+		HashMap<String, Type> binding = new HashMap<String, Type>();
+		binding.put(rt.name, rt.type);
+		return Type.T_RECURSIVE(rt.name,
+				substituteRecursiveTypes(rt.type, binding));
+	}
+
+	public static Type.Recursive linkedList(String var) {
 		HashMap<String,Type> types = new HashMap<String,Type>();
 		types.put("data",T_INT);
-		types.put("next",T_RECURSIVE("X",null));
+		types.put("next",T_RECURSIVE(var,null));
 		Type t6 = T_RECORD(types);
-		Type t4 = T_RECURSIVE("X",leastUpperBound(T_NULL,t6));
-		types = new HashMap<String,Type>(types);
-		types.put("data", T_INT);
-		types.put("next", t4);
-		Type t3 = T_RECORD(types);
-		Type t1 = leastUpperBound(T_NULL,t3);
-		System.out.println("TYPE: " + t1);
-		minimise(t1);
+		return T_RECURSIVE(var,leastUpperBound(T_NULL,t6));		
 	}
 }
