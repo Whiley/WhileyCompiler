@@ -2,8 +2,6 @@ package wyil.lang;
 
 import java.util.*;
 
-
-import wyil.lang.Type.NonUnion;
 import wyil.util.Pair;
 
 public abstract class NewType {
@@ -98,7 +96,7 @@ public abstract class NewType {
 		}
 	}
 	// =============================================================
-	// Compound Types
+	// Compound Type
 	// =============================================================
 
 	/**
@@ -277,6 +275,16 @@ public abstract class NewType {
 		}
 	}
 	
+	// =============================================================
+	// Compound Faces
+	// =============================================================
+
+	/*
+	 * The compound faces are not technically necessary, as they simply provide
+	 * interfaces to the underlying components of a compound type. However, they
+	 * certainly make it more pleasant to use this library.
+	 */
+	
 	public static final class Set extends Compound {
 		Set(Component[] components) {
 			super(components);
@@ -384,6 +392,7 @@ public abstract class NewType {
 	// =============================================================
 	// Components
 	// =============================================================
+
 	private static final byte K_VOID = 0;
 	private static final byte K_ANY = 1;
 	private static final byte K_NULL = 2;
