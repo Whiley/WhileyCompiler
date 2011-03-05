@@ -906,7 +906,10 @@ public abstract class Type {
 	 */
 	public static Type minimise(Type t) {
 		ArrayList<HashSet<Type>> equivs = partitionEquivs(t);
-		System.out.println("GOT: " + equivs);
+		int idx = 0;
+		for(HashSet<Type> equiv : equivs) {
+			System.out.println("#" + idx++ + ": " + equiv);
+		}
 		return null;
 	}
 
@@ -919,13 +922,161 @@ public abstract class Type {
 	 * @return
 	 */
 	private static ArrayList<HashSet<Type>> partitionEquivs(Type t) {
-		ArrayList<HashSet<Type>> equivs = new ArrayList();
-		// first, initialise equivalence set
-		HashSet<Type> components = new HashSet<Type>();
+		// first, extract the components
+		HashSet<Type> components = new HashSet<Type>();		
 		initialiseEquivs(t,components);
-		equivs.add(components);
+		
+		// second, initialise partitions, and reverse partition map		
+		ArrayList<HashSet<Type>> partitions = new ArrayList();						
+		partitions.add(components);
+		HashMap<Type,Integer> rpartitions = new HashMap<Type,Integer>();
+		for(Type component : components) {
+			rpartitions.put(component, 0);
+		}
+		boolean changed = true;
+		while(changed) {
+			changed = false;
+			for(int i = 0; i != partitions.size(); ++i) {
+				changed |= splitPartition(i,partitions,rpartitions);
+			}
+		}
+		
 		// second, split out equivalences until no further changes.
-		return equivs;
+		return partitions;
+	}
+
+	/**
+	 * This method is responsible for iterating all elements of a partition and
+	 * separating them out as much as possible.
+	 * 
+	 * @param partition
+	 * @param partitions
+	 * @return
+	 */
+	private static boolean splitPartition(int idx, ArrayList<HashSet<Type>> partitions, HashMap<Type,Integer> rpartitions) {
+		// The pivot is what we'll use to split the partition. Essentially, I'll
+		// find all those equivalent to the pivot, and all those which are not
+		// equivalent => thus, either we make two new sets or there is no change
+		// to the old set.
+		HashSet<Type> partition = partitions.get(idx);
+		Type pivot = partition.iterator().next();
+		HashSet<Type> equivs = new HashSet<Type>();
+		HashSet<Type> nequivs = new HashSet<Type>();
+		boolean change = false;
+		
+		for(Type t : partition) {
+			if(partitionEquiv(t,pivot,rpartitions)) {
+				// t is equivalent to pivot --> so no change
+				equivs.add(t);
+			} else {
+				// t is not equivalent to pivot
+				nequivs.add(t);
+				change = true;
+			}
+		}
+		
+		if(change) {
+			partitions.set(idx,equivs);
+			int neqidx = partitions.size();
+			partitions.add(nequivs);
+			for(Type t : nequivs) {
+				rpartitions.put(t,neqidx);
+			}
+		}		
+		
+		return change;
+	}
+
+	/**
+	 * The purpose of this method is to determine whether two types are
+	 * "partition" equivalent. That is, given the current partitioning of types
+	 * are they equivalent. Two types are not equivalent if they have a
+	 * different "shape" (e.g. NULL is never equivalent to INT; or a record is
+	 * never equivalent to a list). Furthermore, two types are not equivalent if
+	 * one or more of their (immediate) children is in a different partition.
+	 * 
+	 * @param t1
+	 *            --- first type to check equivalence of
+	 * @param t2
+	 *            --- second type to check equivalence of	
+	 * @param rpartitions
+	 *            --- maps types to their partition numbers (i.e. same number ==
+	 *            same partition).
+	 * @return
+	 */
+	private static boolean partitionEquiv(Type t1, Type t2,
+			HashMap<Type, Integer> rpartitions) {
+				
+		
+		// First, deal with simple non-compound types.
+		if (t1 instanceof Void || t1 instanceof Null || t1 instanceof Any
+				|| t1 instanceof Int || t1 instanceof Real) {
+			// FIXME: need to deal with existential types here.
+			return t1.getClass() == t2.getClass();
+		}
+		
+		// First, we split off any recursive wrappers. This is because
+		// recursive wrappers are not considered part of the
+		// "shape" of a type. Rather they simply indicate a "back-edge"
+		// in the recursive structure of the type. As such, they do not
+		// affect the partition equivalence of two types are just
+		// ignored here.
+		if(t1 instanceof Recursive) {			
+			Type.Recursive tr = (Type.Recursive) t1;						
+			if(tr.type == null) {
+				return rpartitions.get(tr).equals(rpartitions.get(t2));				
+			} else {							
+				return partitionEquiv(tr.type,t2,rpartitions);
+			}
+		} else if(t2 instanceof Recursive) {
+			Type.Recursive tr = (Type.Recursive) t2;
+			if(tr.type == null) {
+				return rpartitions.get(tr).equals(rpartitions.get(t1));				
+			} else {							
+				return partitionEquiv(t1,tr.type,rpartitions);
+			}			
+		}
+		
+		// finally, deal with other compound types
+		if(t1 instanceof Set && t2 instanceof Set) {
+			Set s1 = (Set) t1;
+			Set s2 = (Set) t2;
+			return rpartitions.get(s1.element).equals(rpartitions.get(s2.element));
+		} else if(t1 instanceof List && t2 instanceof List) {
+			List l1 = (List) t1;
+			List l2 = (List) t2;
+			return rpartitions.get(l1.element).equals(rpartitions.get(l2.element));
+		} else if(t1 instanceof Dictionary && t2 instanceof Dictionary) {
+			Dictionary d1 = (Dictionary) t1;
+			Dictionary d2 = (Dictionary) t2;
+			return rpartitions.get(d1.key).equals(rpartitions.get(d2.key))
+					&& rpartitions.get(d1.value).equals(
+							rpartitions.get(d2.value)); 
+		} else if(t1 instanceof Record && t2 instanceof Record) {
+			Record r1 = (Record) t1;
+			Record r2 = (Record) t2;
+			java.util.Set<String> r1keys = r1.types.keySet();
+			if(!r1keys.equals(r2.types.keySet())) {
+				return false;
+			}
+			for(String key : r1keys) {
+				Type r1t = r1.types.get(key);
+				Type r2t = r2.types.get(key);
+				if(!rpartitions.get(r1t).equals(rpartitions.get(r2t))) {
+					return false;
+				}
+			}
+			return true;
+		} else if(t1 instanceof Union && t2 instanceof Union) {
+			// this must be the hard case!!
+			Union u1 = (Union) t1;
+			Union u2 = (Union) t2;
+			
+			// this is the very hard case :(
+			return true;
+		} 
+						
+		return false;
 	}
 	
 	/**
@@ -952,7 +1103,11 @@ public abstract class Type {
 			}			
 		} else if (t instanceof Type.Recursive) {
 			Type.Recursive rt = (Type.Recursive) t;
-			initialiseEquivs(rt.type,equivs);
+			if(rt.type != null) {
+				initialiseEquivs(rt.type,equivs);
+			} else {
+				// need to do something here, that's for sure.
+			}
 		} else if(t instanceof Type.Union) {
 			Type.Union ut = (Type.Union) t;
 			for(Type b : ut.bounds) {
@@ -1155,7 +1310,7 @@ public abstract class Type {
 	public static final class Void extends NonUnion {
 		private Void() {}
 		public boolean equals(Object o) {
-			return o == T_VOID;
+			return this == o;
 		}
 		public int hashCode() {
 			return 1;
@@ -1167,10 +1322,10 @@ public abstract class Type {
 	public static final class Null extends NonUnion {
 		private Null() {}
 		public boolean equals(Object o) {
-			return o == T_NULL;
+			return this == o;
 		}
 		public int hashCode() {
-			return 1;
+			return 2;
 		}
 		public String toString() {
 			return "null";
