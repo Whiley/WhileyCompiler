@@ -905,24 +905,7 @@ public abstract class Type {
 	 * based on the algorithm for minimising DFAs.
 	 */
 	public static Type minimise(Type t) {
-		ArrayList<HashSet<Type>> equivs = partitionEquivs(t);
-		int idx = 0;
-		for(HashSet<Type> equiv : equivs) {
-			System.out.println("#" + idx++ + ": " + equiv);
-		}
-		return null;
-	}
-
-	/**
-	 * This method takes a type and identifies all equivalences within it. Thus,
-	 * two types in the same equivalence class are considered to be
-	 * "equivalent", and can be merged.
-	 * 
-	 * @param t
-	 * @return
-	 */
-	private static ArrayList<HashSet<Type>> partitionEquivs(Type t) {
-		// first, extract the components
+		// first, extract components
 		HashSet<Type> components = new HashSet<Type>();		
 		// The var map is necessary to constructing a mapping between type
 		// variables and their recursive unfoldings.  
@@ -943,11 +926,10 @@ public abstract class Type {
 				changed |= splitPartition(i,partitions,rpartitions,varmap);
 			}
 		}
-		
-		// second, split out equivalences until no further changes.
-		return partitions;
-	}
-
+				
+		return rebuild(t,partitions,rpartitions,new HashMap());		
+	}		
+	
 	/**
 	 * This method is responsible for iterating all elements of a partition and
 	 * separating them out as much as possible.
@@ -1021,10 +1003,8 @@ public abstract class Type {
 			// FIXME: need to deal with existential types here.
 			return t1.getClass() == t2.getClass();
 		}
-		
-		
-		
-		// finally, deal with other compound types
+					
+		// now, deal with other compound types
 		if(t1 instanceof Set && t2 instanceof Set) {
 			Set s1 = (Set) t1;
 			Set s2 = (Set) t2;
@@ -1133,6 +1113,81 @@ public abstract class Type {
 				initialiseEquivs(b,equivs,varmap);
 			}
 		} 
+	}
+
+	/**
+	 * This method rebuilds a type by merging all components in the same
+	 * partition.
+	 * 
+	 * @param t --- the type to be rebuilt
+	 * @param partition --- a list of equivalent components
+	 * @param rpartitions --- a map from component to partition number
+	 * @return
+	 */
+	private static Type rebuild(Type t, ArrayList<HashSet<Type>> partitions,
+			HashMap<Type, Integer> rpartitions, HashMap<Integer,String> visited) {
+		int pnum = rpartitions.get(t);
+		String var = visited.get(pnum);
+		
+		if(var != null) {
+			// indicates we've already visited this node and, hence, we can put
+			// in the recursive variable.
+			return T_RECURSIVE(var,null);
+		}
+		
+		HashSet<Type> partition = partitions.get(pnum);
+		boolean recursive = false;
+		for(Type component : partition) {
+			if(component instanceof Type.Recursive) {
+				// Q) is it possible for component to have null type here?
+				recursive = true;
+				break;
+			}
+		}
+		
+		if(recursive) {
+			// TODO: better variable naming
+			var = "X" + visited.size();
+			visited.put(pnum, var);
+		} 
+
+		// remove old recursive wrapper (if there is one)
+		while(t instanceof Recursive) {
+			Recursive r = (Recursive) t;
+			t = r.type; // can t be null now?
+		}
+		
+		if(t instanceof Set) {
+			Set s = (Set) t;
+			t = T_SET(rebuild(s.element,partitions,rpartitions,visited));
+		} else if(t instanceof List) {
+			List l = (List) t;
+			t = T_LIST(rebuild(l.element,partitions,rpartitions,visited));
+		} else if(t instanceof Dictionary) {
+			Dictionary d = (Dictionary) t;
+			t = T_DICTIONARY(rebuild(d.key,partitions,rpartitions,visited),
+					rebuild(d.value,partitions,rpartitions,visited));
+		} else if(t instanceof Record) {
+			Record r = (Record) t;
+			HashMap<String,Type> types = new HashMap<String,Type>();
+			for(Map.Entry<String,Type> e : r.types.entrySet()) {
+				types.put(e.getKey(),rebuild(e.getValue(),partitions,rpartitions,visited));
+			}
+			t = T_RECORD(types);
+		} else if(t instanceof Union) {
+			Union u = (Union) t;
+			t = T_VOID;
+			for(Type bound : u.bounds) {
+				Type tmp = rebuild(bound,partitions,rpartitions,visited);
+				t = leastUpperBound(tmp,t);
+			}
+		} 
+		
+		if(recursive) {
+			return T_RECURSIVE(var,t);
+		} else {
+			return t;
+		}
 	}
 	
 	/**
@@ -1681,13 +1736,10 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		
-		Type t1 = unfold(linkedList("X"));
-		Type t2 = outerUnfold(linkedList("Y"));
-		System.out.println("TYPE: " + t1);
-		System.out.println("TYPE: " + t2);
-		Type t3 = leastUpperBound(t1,t2);
-		System.out.println("TYPE: " + t3);
-		minimise(t2);
+		Type t1 = unfold(binaryTree("X"));
+		System.out.println("BEFORE: " + t1);
+		t1 = minimise(t1);
+		System.out.println("AFTER: " + t1);
 	}
 	
 	public static Type.Recursive outerUnfold(Type.Recursive rt) {
@@ -1696,11 +1748,20 @@ public abstract class Type {
 		return Type.T_RECURSIVE(rt.name,
 				substituteRecursiveTypes(rt.type, binding));
 	}
-
+	
 	public static Type.Recursive linkedList(String var) {
 		HashMap<String,Type> types = new HashMap<String,Type>();
 		types.put("data",T_INT);
 		types.put("next",T_RECURSIVE(var,null));
+		Type t6 = T_RECORD(types);
+		return T_RECURSIVE(var,leastUpperBound(T_NULL,t6));		
+	}
+	
+	public static Type.Recursive binaryTree(String var) {
+		HashMap<String,Type> types = new HashMap<String,Type>();
+		types.put("data",T_INT);
+		types.put("left",T_RECURSIVE(var,null));
+		types.put("right",T_RECURSIVE(var,null));
 		Type t6 = T_RECORD(types);
 		return T_RECURSIVE(var,leastUpperBound(T_NULL,t6));		
 	}
