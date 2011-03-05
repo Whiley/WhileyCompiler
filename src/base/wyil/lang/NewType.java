@@ -15,14 +15,84 @@ public abstract class NewType {
 	public static final Null T_NULL = new Null();	
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
-	public static final Real T_REAL = new Real();	
+	public static final Rational T_RATIONAL = new Rational();	
+	
+	
+	// =============================================================
+	// Type operations
+	// =============================================================
+
+	/**
+	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
+	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
+	 * all possible values described by the type <code>t2</code> is a subset of
+	 * that described by <code>t1</code>.
+	 */
+	public boolean isSubtype(Type t1, Type t2) {
+		return false;
+	}
+	
+	/**
+	 * Compute the <i>least upper bound</i> of two types t1 and t2. The least upper
+	 * bound is a type t3 where <code>t3 :> t1</code>, <code>t3 :> t2</code> and
+	 * there does not exist a type t4, where <code>t3 :> t4</code>,
+	 * <code>t4 :> t1</code>, <code>t4 :> t2</code>.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static NewType leastUpperBound(NewType t1, NewType t2) {
+		return null;
+	}
+	
+	/**
+	 * Compute the <i>greatest lower bound</i> of two types t1 and t2. The
+	 * greatest lower bound is a type t3 where <code>t1 :> t3</code>,
+	 * <code>t2 :> t3</code> and there does not exist a type t4, where
+	 * <code>t1 :> t4</code>, <code>t2 :> t4</code> and <code>t4 :> t3</code>.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static NewType greatestLowerBound(NewType t1, NewType t2) {
+		return null;
+	}
+	
 	
 	// =============================================================
 	// Primitive Types
 	// =============================================================
-	public static abstract class NonUnion extends NewType {}		
+
+	/**
+	 * A non-union type represents a type which is not a Union. This is useful
+	 * for describing the bounds of a union type, because it's never the case
+	 * that a union type is a bound of another union type.
+	 */
+	public static abstract class NonUnion extends NewType {}
+
+	/**
+	 * A leaf type represents a type which has no component types. For example,
+	 * primitive types like <code>int</code> and <code>real</code> are leaf
+	 * types.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static class Leaf extends NonUnion {}
-	
+
+	/**
+	 * A void type represents the type whose variables cannot exist! That is,
+	 * they cannot hold any possible value. Void is used to represent the return
+	 * type of a function which does not return anything. However, it is also
+	 * used to represent the element type of an empty list of set. <b>NOTE:</b>
+	 * the void type is a subtype of everything; that is, it is bottom in the
+	 * type lattice.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Void extends Leaf {
 		private Void() {}
 		public boolean equals(Object o) {
@@ -34,7 +104,15 @@ public abstract class NewType {
 		public String toString() {
 			return "void";
 		}
-	}	
+	}
+
+	/**
+	 * The type any represents the type whose variables may hold any possible
+	 * value. <b>NOTE:</b> the any type is top in the type lattice.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Any extends Leaf {
 		private Any() {}
 		public boolean equals(Object o) {
@@ -47,6 +125,20 @@ public abstract class NewType {
 			return "*";
 		}
 	}
+
+	/**
+	 * The null type is a special type which should be used to show the absence
+	 * of something. It is distinct from void, since variables can hold the
+	 * special <code>null</code> value (where as there is no special "void"
+	 * value). With all of the problems surrounding <code>null</code> and
+	 * <code>NullPointerException</code>s in languages like Java and C, it may
+	 * seem that this type should be avoided. However, it remains a very useful
+	 * abstraction to have around and, in Whiley, it is treated in a completely
+	 * safe manner (unlike e.g. Java).
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Null extends Leaf {
 		private Null() {}
 		public boolean equals(Object o) {
@@ -59,6 +151,11 @@ public abstract class NewType {
 			return "null";
 		}
 	}
+	/**
+	 * Represents the set of boolean values (i.e. true and false)
+	 * @author djp
+	 *
+	 */
 	public static final class Bool extends Leaf {
 		private Bool() {}
 		public boolean equals(Object o) {
@@ -71,6 +168,16 @@ public abstract class NewType {
 			return "bool";
 		}
 	}
+
+	/**
+	 * Represents the set of (unbound) integer values. Since integer types in
+	 * Whiley are unbounded, there is no equivalent to Java's
+	 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for <code>int</code>
+	 * types.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Int extends Leaf {
 		private Int() {}
 		public boolean equals(Object o) {
@@ -83,16 +190,23 @@ public abstract class NewType {
 			return "int";
 		}	
 	}
-	public static final class Real extends Leaf {
-		private Real() {}
+
+	/**
+	 * Represents the set of (unbound) rational numbers. 
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Rational extends Leaf {
+		private Rational() {}
 		public boolean equals(Object o) {
-			return o == T_REAL;
+			return o == T_RATIONAL;
 		}
 		public int hashCode() {
 			return 5;
 		}
 		public String toString() {
-			return "real";
+			return "rat";
 		}
 	}
 	// =============================================================
@@ -219,8 +333,8 @@ public abstract class NewType {
 				return T_BOOL;
 			case K_INT:
 				return T_INT;
-			case K_REAL:
-				return T_REAL;
+			case K_RATIONAL:
+				return T_RATIONAL;
 			case K_SET:
 				return new Set(components);
 			case K_LIST:
@@ -284,25 +398,49 @@ public abstract class NewType {
 	 * interfaces to the underlying components of a compound type. However, they
 	 * certainly make it more pleasant to use this library.
 	 */
-	
+
+	/**
+	 * A set type describes set values whose elements are subtypes of the
+	 * element type. For example, <code>{1,2,3}</code> is an instance of set
+	 * type <code>{int}</code>; however, <code>{1.345}</code> is not.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Set extends Compound {
-		Set(Component[] components) {
+		private Set(Component[] components) {
 			super(components);
 		}
 		public NewType element() {
 			return extract(1);
 		}		
 	}
+
+	/**
+	 * A list type describes list values whose elements are subtypes of the
+	 * element type. For example, <code>[1,2,3]</code> is an instance of list
+	 * type <code>[int]</code>; however, <code>[1.345]</code> is not.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class List extends Compound {
-		List(Component[] components) {
+		private List(Component[] components) {
 			super(components);
 		}
 		public NewType element() {
 			return extract(1);
 		}		
 	}
+
+	/**
+	 * A reference (aka pointer) represents a reference to an object on a heap.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Reference extends Compound {
-		Reference(Component[] components) {
+		private Reference(Component[] components) {
 			super(components);
 		}
 		public NewType element() {
@@ -310,8 +448,18 @@ public abstract class NewType {
 			return extract(i);			
 		}		
 	}
+
+	/**
+	 * A dictionary represents a one-many mapping from variables of one type to
+	 * variables of another type. For example, the dictionary type
+	 * <code>int->real</code> represents a map from integers to real values. A
+	 * valid instance of this type might be <code>{1->1.2,2->3}</code>.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Dictionary extends Compound {
-		Dictionary(Component[] components) {
+		private Dictionary(Component[] components) {
 			super(components);
 		}
 		public NewType key() {
@@ -323,8 +471,18 @@ public abstract class NewType {
 			return extract(p.second());			
 		}
 	}
+
+	/**
+	 * A record is made up of a number of fields, each of which has a unique
+	 * name. Each field has a corresponding type. One can think of a record as a
+	 * special kind of "fixed" dictionary (i.e. where we know exactly which
+	 * entries we have).
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Record extends Compound {
-		Record(Component[] components) {
+		private Record(Component[] components) {
 			super(components);
 		}
 
@@ -358,11 +516,27 @@ public abstract class NewType {
 			return r;
 		}
 	}
+
+	/**
+	 * A union type represents a type whose variables may hold values from any
+	 * of its "bounds". For example, the union type null|int indicates a
+	 * variable can either hold an integer value, or null. <b>NOTE:</b>There
+	 * must be at least two bounds for a union type to make sense.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Union extends Compound {
-		Union(Component[] components) {
+		private Union(Component[] components) {
 			super(components);
 		}
-		HashSet<NonUnion> bounds() {
+
+		/**
+		 * Return the bounds of this union type.
+		 * 
+		 * @return
+		 */
+		public HashSet<NonUnion> bounds() {
 			Integer[] fields = (Integer[]) components[0].data;
 			HashSet r = new HashSet<NonUnion>();
 			for(int i : fields) {
@@ -371,15 +545,34 @@ public abstract class NewType {
 			return r;
 		}
 	}
+
+	/**
+	 * A function type, consisting of a list of zero or more parameters and a
+	 * return type.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Fun extends Compound {
 		Fun(Component[] components) {
 			super(components);
 		}
-		
+
+		/**
+		 * Get the return type of this function type.
+		 * 
+		 * @return
+		 */
 		public NewType ret() {
 			Integer[] fields = (Integer[]) components[0].data;
 			return extract(fields[0]);
 		}
+
+		/**
+		 * Get the parameter types of this function type.
+		 * 
+		 * @return
+		 */
 		public ArrayList<NewType> params() {
 			Integer[] fields = (Integer[]) components[0].data;
 			ArrayList<NewType> r = new ArrayList<NewType>();
@@ -398,7 +591,7 @@ public abstract class NewType {
 	private static final byte K_NULL = 2;
 	private static final byte K_BOOL = 3;
 	private static final byte K_INT = 4;
-	private static final byte K_REAL = 5;
+	private static final byte K_RATIONAL = 5;
 	private static final byte K_SET = 6;
 	private static final byte K_LIST = 7;
 	private static final byte K_DICTIONARY = 8;
@@ -432,6 +625,7 @@ public abstract class NewType {
 				if(data == null) {
 					return kind == c.kind && c.data == null;
 				} else {
+					// FIXME: this is broken!!!
 					return kind == c.kind && data.equals(c.data);
 				}
 			}
