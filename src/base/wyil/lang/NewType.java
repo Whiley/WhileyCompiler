@@ -15,8 +15,41 @@ public abstract class NewType {
 	public static final Null T_NULL = new Null();	
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
-	public static final Rational T_RATIONAL = new Rational();	
+	public static final Rational T_RATIONAL = new Rational();
+
+	/**
+	 * Construct a set type using the given element type.
+	 * 
+	 * @param element
+	 */
+	public static final Set T_SET(NewType element) {
+		if (element instanceof Leaf) {
+			return new Set(new Component[] { new Component(K_SET, 1),
+					new Component(leafKind((Leaf) element), null) });
+		} else {
+			// Compound type
+			Component[] components = insertComponent(((Compound) element).components);
+			components[0] = new Component(K_SET, 1);
+			return new Set(components);
+		}
+	}
 	
+	/**
+	 * Construct a list type using the given element type.
+	 * 
+	 * @param element
+	 */
+	public static final List T_LIST(NewType element) {
+		if (element instanceof Leaf) {
+			return new List(new Component[] { new Component(K_LIST, 1),
+					new Component(leafKind((Leaf) element), null) });
+		} else {
+			// Compound type
+			Component[] components = insertComponent(((Compound) element).components);
+			components[0] = new Component(K_LIST, 1);
+			return new List(components);
+		}
+	}
 	
 	// =============================================================
 	// Type operations
@@ -59,7 +92,52 @@ public abstract class NewType {
 	public static NewType greatestLowerBound(NewType t1, NewType t2) {
 		return null;
 	}
-	
+
+	/**
+	 * Let <code>S</code> be determined by subtracting the set of values
+	 * described by type <code>t2</code> from that described by <code>t1</code>.
+	 * Then, this method returns the <i>least</i> type <code>t3</code> which
+	 * covers <code>S</code> (that is, every value in <code>S</code> is in the
+	 * set of values described by <code>t3</code>). Unfortunately, in some
+	 * cases, <code>t3</code> may contain other (spurious) values not found in
+	 * <code>S</code>.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static NewType leastDifference(NewType t1, NewType t2) {
+		return null;
+	}
+
+	/**
+	 * Determine whether two types are <i>structurally isomorphic</i> or not.
+	 * Two types which are not identical may be structurally isomorphic (that
+	 * is, have the same structure). This operation is very similar to the well
+	 * known <i>graph isomorphism</i> problem. As such, this operation will, in
+	 * the worst case, require an exponential number of steps.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static boolean isomorphic(NewType t1, NewType t2) {
+		// I have a rather distinct feeling that I don't need to implement this
+		// method!
+		return false;
+	}
+
+	/**
+	 * Minimise the given type to produce a <i>canonical</i> form. That is, any
+	 * two non-identical types <code>t1</code>, <code>t2</code> which encode the
+	 * same type, we have that <code>minimise(t1).equals(minimise(t2))</code>.
+	 * 
+	 * @param t1
+	 * @return
+	 */
+	public static NewType minimise(NewType t1) {
+		return null;
+	}
 	
 	// =============================================================
 	// Primitive Types
@@ -229,6 +307,41 @@ public abstract class NewType {
 		}
 
 		/**
+		 * Determine the hashCode of a type.
+		 */
+		public int hashCode() {
+			int r = 0;
+			for(Component c : components) {
+				r = r + c.hashCode();
+			}
+			return r;
+		}
+
+		/**
+		 * This method compares two compound types to test whether they are
+		 * <i>identical</i>. Observe that it does not perform an
+		 * <i>isomorphism</i> test. Thus, two distinct types which are
+		 * structurally isomorphic will <b>not</b> be considered equal under
+		 * this method. <b>NOTE:</b> to test whether two types are structurally
+		 * isomorphic, using the <code>isomorphic(t1,t20</code> method.
+		 */
+		public boolean equals(Object o) {
+			if(o instanceof Compound) {
+				Component[] cs = ((Compound) o).components;
+				if(cs.length != components.length) {
+					return false;
+				}
+				for(int i=0;i!=cs.length;++i) {
+					if(!components[i].equals(cs[i])) {
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
+		}
+		
+		/**
 		 * The extract method basically performs a DFS from the root, extracts
 		 * what it finds and minimises it.
 		 * 
@@ -257,100 +370,6 @@ public abstract class NewType {
 			return construct(ncomponents);
 		}
 
-		/**
-		 * The remap method takes a node, and mapping from vertices in the old
-		 * space to the those in the new space. It then applies this mapping, so
-		 * that the node produced refers to vertices in the new space. Or, in
-		 * other words, it transposes the component into the new space.
-		 * 
-		 * @param node
-		 *            --- component to be transposed.
-		 * @param rmap
-		 *            --- mapping from integers in old space to those in new
-		 *            space.
-		 * @return
-		 */
-		public Component remap(Component node, int[] rmap) {
-			Object data;
-
-			switch (node.kind) {
-			case K_SET:
-			case K_LIST:
-			case K_REFERENCE:
-				// unary nodes
-				Integer element = (Integer) node.data;
-				data = rmap[element];
-				break;
-			case K_DICTIONARY:
-				// binary node
-				Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-				data = new Pair(rmap[p.first()], rmap[p.second()]);
-				break;
-			case K_UNION:
-			case K_FUNCTION:
-				// nary node
-				int[] bounds = (int[]) node.data;
-				int[] nbounds = new int[bounds.length];
-				for (int i = 0; i != bounds.length; ++i) {
-					nbounds[i] = rmap[bounds[i]];
-				}
-				data = nbounds;
-				break;
-			case K_RECORD:
-				// labeled nary node
-				Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-				Pair<String, Integer>[] nfields = new Pair[fields.length];
-				for (int i = 0; i != fields.length; ++i) {
-					Pair<String, Integer> field = fields[i];
-					nfields[i] = new Pair(field.first(), rmap[field.second()]);
-				}
-				data = nfields;
-				break;
-			default:
-				return node;
-			}
-			return new Component(node.kind, data);
-		}
-
-		/**
-		 * The construct methods constructs a Type from an array of Components.
-		 * It carefully ensures the kind of the root component matches the class
-		 * created (e.g. a kind K_SET results in a class Set).
-		 * 
-		 * @param ncomponents
-		 * @return
-		 */
-		private final static NewType construct(Component[] components) {
-			Component root = components[0];
-			switch(root.kind) {
-			case K_VOID:
-				return T_VOID;
-			case K_ANY:
-				return T_ANY;
-			case K_NULL:
-				return T_NULL;			
-			case K_BOOL:
-				return T_BOOL;
-			case K_INT:
-				return T_INT;
-			case K_RATIONAL:
-				return T_RATIONAL;
-			case K_SET:
-				return new Set(components);
-			case K_LIST:
-				return new List(components);
-			case K_DICTIONARY:
-				return new Dictionary(components);
-			case K_RECORD:
-				return new Record(components);
-			case K_UNION:
-				return new Union(components);
-			case K_FUNCTION:
-				return new Fun(components);
-			default:
-				throw new IllegalArgumentException("invalid component kind: " + root.kind);
-			}
-		}
 		
 		private final void dfs(int index, BitSet visited,
 				ArrayList<Integer> extracted) {
@@ -386,6 +405,10 @@ public abstract class NewType {
 				}
 				break;			
 			}
+		}
+		
+		public String toString() {
+			return "null";
 		}
 	}
 	
@@ -639,4 +662,137 @@ public abstract class NewType {
 			}
 		}
 	}
+	
+	private static final byte leafKind(Leaf leaf) {
+		if(leaf instanceof Void) {
+			return K_VOID;
+		} else if(leaf instanceof Any) {
+			return K_ANY;
+		} else if(leaf instanceof Null) {
+			return K_NULL;
+		} else if(leaf instanceof Bool) {
+			return K_BOOL;
+		} else if(leaf instanceof Int) {
+			return K_INT;
+		} else if(leaf instanceof Rational) {
+			return K_RATIONAL;
+		} else {
+			// should be dead code
+			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
+		}
+	}
+
+	/**
+	 * This method inserts a black component at the head of the components
+	 * array, whilst remapping all existing components appropriately.
+	 * 
+	 * @param components
+	 * @return
+	 */
+	private static Component[] insertComponent(Component[] components) {
+		Component[] ncomponents = new Component[components.length+1];		
+		int[] rmap = new int[components.length];
+		for(int i=0;i!=components.length;++i) {
+			rmap[i] = i+1;			
+		}
+		for(int i=0;i!=components.length;++i) {
+			ncomponents[i+1] = remap(components[i],rmap);			
+		}
+		return ncomponents;
+	}
+	
+	/**
+	 * The remap method takes a node, and mapping from vertices in the old
+	 * space to the those in the new space. It then applies this mapping, so
+	 * that the node produced refers to vertices in the new space. Or, in
+	 * other words, it transposes the component into the new space.
+	 * 
+	 * @param node
+	 *            --- component to be transposed.
+	 * @param rmap
+	 *            --- mapping from integers in old space to those in new
+	 *            space.
+	 * @return
+	 */
+	public static Component remap(Component node, int[] rmap) {
+		Object data;
+
+		switch (node.kind) {
+		case K_SET:
+		case K_LIST:
+		case K_REFERENCE:
+			// unary nodes
+			Integer element = (Integer) node.data;
+			data = rmap[element];
+			break;
+		case K_DICTIONARY:
+			// binary node
+			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
+			data = new Pair(rmap[p.first()], rmap[p.second()]);
+			break;
+		case K_UNION:
+		case K_FUNCTION:
+			// nary node
+			int[] bounds = (int[]) node.data;
+			int[] nbounds = new int[bounds.length];
+			for (int i = 0; i != bounds.length; ++i) {
+				nbounds[i] = rmap[bounds[i]];
+			}
+			data = nbounds;
+			break;
+		case K_RECORD:
+			// labeled nary node
+			Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
+			Pair<String, Integer>[] nfields = new Pair[fields.length];
+			for (int i = 0; i != fields.length; ++i) {
+				Pair<String, Integer> field = fields[i];
+				nfields[i] = new Pair(field.first(), rmap[field.second()]);
+			}
+			data = nfields;
+			break;
+		default:
+			return node;
+		}
+		return new Component(node.kind, data);
+	}
+
+	/**
+	 * The construct methods constructs a Type from an array of Components.
+	 * It carefully ensures the kind of the root component matches the class
+	 * created (e.g. a kind K_SET results in a class Set).
+	 * 
+	 * @param ncomponents
+	 * @return
+	 */
+	private final static NewType construct(Component[] components) {
+		Component root = components[0];
+		switch(root.kind) {
+		case K_VOID:
+			return T_VOID;
+		case K_ANY:
+			return T_ANY;
+		case K_NULL:
+			return T_NULL;			
+		case K_BOOL:
+			return T_BOOL;
+		case K_INT:
+			return T_INT;
+		case K_RATIONAL:
+			return T_RATIONAL;
+		case K_SET:
+			return new Set(components);
+		case K_LIST:
+			return new List(components);
+		case K_DICTIONARY:
+			return new Dictionary(components);
+		case K_RECORD:
+			return new Record(components);
+		case K_UNION:
+			return new Union(components);
+		case K_FUNCTION:
+			return new Fun(components);
+		default:
+			throw new IllegalArgumentException("invalid component kind: " + root.kind);
+		}
+	}		
 }
