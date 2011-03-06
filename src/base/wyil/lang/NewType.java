@@ -316,14 +316,188 @@ public abstract class NewType {
 	}
 
 	/**
-	 * Minimise the given type to produce a <i>canonical</i> form. That is, any
-	 * two non-identical types <code>t1</code>, <code>t2</code> which encode the
-	 * same type, we have that <code>minimise(t1).equals(minimise(t2))</code>.
+	 * Minimise the given type to produce a fully minimised version of a given
+	 * type.
 	 * 
 	 * @param type
 	 * @return
 	 */
-	public static NewType minimise(NewType type) {
+	private static NewType minimise(NewType type) {
+		if(type instanceof Leaf) {
+			return type;
+		}
+		Compound compound = (Compound) type;		
+		BitSet matrix = buildSubtypeMatrix(compound.components);
+		
+	}
+
+	/**
+	 * This method determines the complete subtyping relationship between each
+	 * node in the type graph. The resulting matrix <code>r</code> is organised
+	 * into row-major order, where <code>r[i][j]</code> implies
+	 * <code>i <: j</code>. The algorithm works by initially assuming that all
+	 * subtypes hold. Then, it iteratively considers every relationship cross
+	 * off those that no longer hold, until there is no change in the matrix.
+	 * 
+	 * @param components
+	 * @return
+	 */
+	private static BitSet buildSubtypeMatrix(Component[] components) {
+		int ncomponents = components.length;
+		BitSet matrix = new BitSet(ncomponents * ncomponents);
+		// intially assume all subtype relationships hold 
+		matrix.set(0,matrix.size(),true);
+		
+		boolean changed = true;
+		while(changed) {
+			changed=false;
+			for(int i=0;i!=ncomponents;i++) {
+				for(int j=0;j!=ncomponents;j++) {					
+					boolean isj = isSubtype(i,j,components,matrix);
+					boolean jsi = isSubtype(j,i,components,matrix);					
+					if(matrix.get((i*ncomponents)+j) != isj || matrix.get((j*ncomponents)+i) != jsi) {
+						matrix.set((i*ncomponents)+j,isj);
+						matrix.set((j*ncomponents)+i,jsi);
+						changed = true;
+					}
+				}	
+			}
+		}
+		
+		return matrix;
+	}
+
+	/**
+	 * Check that component <code>c1</code> is a subtype of component
+	 * <code>c2</code> in the given subtype matrix. This matrix is represented
+	 * in row-major form, with <code>r[i][j]</code> indicating that
+	 * <code>i <: j</code>.
+	 * 
+	 * @param c1
+	 * @param c2
+	 * @param ncomponents
+	 * @param matrix
+	 * @return
+	 */
+	private static boolean isSubtype(int n1, int n2, Component[] components, BitSet matrix) {
+		Component c1 = components[n1];
+		Component c2 = components[n2];
+		int ncomponents = components.length;
+		
+		if(c1.kind == c2.kind) { 
+
+			switch(c1.kind) {
+			case K_SET:
+			case K_LIST:
+			case K_REFERENCE: {
+				// unary node
+				int e1 = (Integer) c1.data;
+				int e2 = (Integer) c2.data;
+				return matrix.get((e1*ncomponents)+e2);
+			}
+			case K_DICTIONARY: {
+				// binary node
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
+				return matrix.get((p1.first() * ncomponents) + p2.first())
+				&& matrix.get((p1.second() * ncomponents) + p2.second());
+			}		
+			case K_FUNCTION:  {
+				// nary nodes
+				int[] elems1 = (int[]) c1.data;
+				int[] elems2 = (int[]) c2.data;
+				if(elems1.length != elems2.length){
+					return false;
+				}
+				for(int i=0;i!=elems1.length;++i) {
+					int e1 = elems1[i];
+					int e2 = elems1[i];
+					if(!matrix.get((e1*ncomponents)+e2)) {
+						return false;
+					}
+				}
+				return true;
+			}
+			case K_RECORD:
+				// labeled nary nodes
+				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
+				if(fields1.length != fields2.length) {
+					return false;
+				}
+				// FIXME: need to take into account depth subtyping here.
+				for (int i = 0; i != fields1.length; ++i) {
+					Pair<String, Integer> e1 = fields1[i];
+					Pair<String, Integer> e2 = fields2[i];
+					if (!e1.first().equals(e2.first())
+							|| matrix
+							.get((e1.second() * ncomponents) + e2.second())) {
+						return false;
+					}
+				}
+				return true;
+			case K_UNION: {
+				// This is the hardest (i.e. most expensive) case. Essentially, I
+				// just check that for each bound in one component, there is an
+				// equivalent bound in the other.
+				int[] bounds1 = (int[]) c1.data;
+				int[] bounds2 = (int[]) c2.data;
+
+				// check every bound in c1 is a subtype of some bound in c2.
+				for(int i : bounds1) {
+					boolean matched=false;
+					for(int j : bounds2) {
+						if(matrix.get((i*ncomponents)+j)) {
+							matched = true;
+							break;
+						}
+					}
+					if(!matched) { return false; }
+				}
+
+				return true;
+			}
+			case K_LABEL:
+				throw new IllegalArgumentException("attempting to minimise open recurisve type");		
+			default:
+				// primitive types true immediately
+				return true;
+			}		
+		} else if (c1.kind == K_UNION){
+			int[] bounds1 = (int[]) c1.data;		
+
+			// check every bound in c1 is a subtype of some bound in c2.
+			for(int i : bounds1) {				
+				if(!matrix.get((i*ncomponents)+n2)) {
+					return false;
+				}								
+			}
+
+			return true;
+		} else if (c2.kind == K_UNION) {
+			int[] bounds2 = (int[]) c2.data;		
+
+			// check every bound in c1 is a subtype of some bound in c2.
+			for(int j : bounds2) {				
+				if(!matrix.get((n1*ncomponents)+j)) {
+					return true;
+				}								
+			}
+
+			return false;
+		}
+		return false;
+	}
+	
+	/**
+	 * The aim of this method is to fold down recursive types. For example,
+	 * <code>null|{X<null|{X next}> next</code> can be minimised to
+	 * <code>X<null|{X next}</code>
+	 * 
+	 * @param type
+	 * @return
+	 */
+	private static NewType minimiseRecursive(NewType type) {
 		// first, check for leaf node since these are already minimised!
 		if(type instanceof Leaf) { return type; } 
 		// ok, non-leaf node ... now we need to do some work.
@@ -555,11 +729,14 @@ public abstract class NewType {
 			int to = (Integer) rebuild(p.second(),graph,rpartitions,p2cmap,ncomponents);
 			data = new Pair(from,to);
 			break;
-		}		
+		}
+		case K_UNION: 
 		case K_FUNCTION: {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
 			for(int i = 0; i!=elems.length;++i) {
+				// FACTOID: it's impossible for us to get a repeat entry from
+				// rebuild here, provided that we have first minimised unions.
 				nelems[i]  = (Integer) rebuild(elems[i],graph,rpartitions,p2cmap,ncomponents);
 			}			
 			data = nelems;
@@ -575,52 +752,7 @@ public abstract class NewType {
 			}
 			data = nelems;			
 			break;
-		}
-		case K_UNION: {
-			int[] elems = (int[]) node.data;					
-			HashSet<Integer> items = new HashSet<Integer>();
-			for(int i = 0; i!=elems.length;++i) {
-				int ni = (Integer) rebuild(elems[i],graph,rpartitions,p2cmap,ncomponents);
-				items.add(ni);  
-			}			
-			if(items.size() == 1) {
-				// In this case, we have just one node left which means this
-				// union node should be removed. In fact, this is a non-trivial
-				// operation since rebuilding this single node may have itself
-				// created vertices on the ncomponents stack. Therefore, we need
-				// to shift those nodes which have been created up one. 
-				int[] rmap = new int[ncomponents.size()];
-				for(int i=0;i!=ncomponents.size();++i) {
-					if(i > nidx) {
-						rmap[i] = i-1;
-					} else {
-						rmap[i] = i;
-					}
-				}
-				// now remove my reserved slot, since I don't need it
-				ncomponents.remove(nidx);
-				// next, shift nodes up the index
-				for(int i=nidx;i!=ncomponents.size();++i) {
-					ncomponents.set(i,remap(ncomponents.get(i),rmap));
-				}		
-				// finally, fix up the p2cmap as well!
-				for(int i=0;i!=p2cmap.length;++i) {
-					int j = p2cmap[i];
-					if(j > nidx) {
-						p2cmap[i] = j-1;
-					}
-				}
-				return nidx;
-			} else {
-				int[] nelems = new int[items.size()];
-				int i=0;
-				for(Integer j : items) {
-					nelems[i++] = j;
-				}				
-				data = nelems;
-			}
-			break;			
-		}
+		}		
 		}
 		// finally, create the new node!!!
 		ncomponents.set(nidx, new Component(node.kind,data));
@@ -1077,8 +1209,7 @@ public abstract class NewType {
 					middle += ",";
 				}
 				Pair<String, Integer> f = fields[i];
-				middle += f.first() + ": "
-						+ toString(f.second(), visited, headers, graph);
+				middle += toString(f.second(), visited, headers, graph) + " " + f.first();
 			}
 			middle = middle + "}";
 			break;
