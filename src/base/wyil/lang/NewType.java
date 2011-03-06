@@ -582,17 +582,18 @@ public abstract class NewType {
 			HashSet<Integer> nelems = new HashSet<Integer>();			
 			for(int i : elems) { nelems.add(i); }
 			
-			
 			for(int i=0;i!=elems.length;i++) {
 				int n1 = elems[i];
 				for(int j=0;j<elems.length;j++) {
 					if(i==j) { continue; }
-					int n2 = elems[j];					
-					if(matrix.get((n2*graph_size)+n1)) {						
+					int n2 = elems[j];				
+					if (matrix.get((n2 * graph_size) + n1)
+							// following prevent all equivalences being removed.
+							&& (!matrix.get((n1 * graph_size) + n2) || i < j)) {						
 						nelems.remove(n2);												
 					}
 				}	
-			}			
+			}		
 			
 			// ok, let's see what we've got left			
 			if (nelems.size() == 1) {				
@@ -1534,10 +1535,10 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {		
-		NewType leaf = T_RECURSIVE("Y",linkedList(2,"Y"));
+		NewType leaf = T_RECURSIVE("Y",linkedList(3,"Y"));
 		HashMap<String,NewType> fields = new HashMap<String,NewType>();
 		fields.put("next",leaf);
-		fields.put("data",T_UNION(T_INT,T_INT));	 
+		fields.put("data",T_UNION(T_INT,T_RATIONAL));	 
 		NewType type = T_UNION(T_NULL,T_RECORD(fields));		
 		System.out.println("BEFORE: " + type);
 		type = minimise(type);
@@ -1553,7 +1554,7 @@ public abstract class NewType {
 		}
 		HashMap<String,NewType> fields = new HashMap<String,NewType>();
 		fields.put("next",leaf);
-		fields.put("data",T_INT);	 
+		fields.put("data",T_RATIONAL);	 
 		return T_UNION(T_NULL,T_RECORD(fields));		
 	}	
 }
