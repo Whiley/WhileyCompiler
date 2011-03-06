@@ -319,13 +319,6 @@ public abstract class NewType {
 	// =============================================================
 
 	/**
-	 * A non-union type represents a type which is not a Union. This is useful
-	 * for describing the bounds of a union type, because it's never the case
-	 * that a union type is a bound of another union type.
-	 */
-	public static abstract class NonUnion extends NewType {}
-
-	/**
 	 * A leaf type represents a type which has no component types. For example,
 	 * primitive types like <code>int</code> and <code>real</code> are leaf
 	 * types.
@@ -333,7 +326,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static class Leaf extends NonUnion {}
+	public static class Leaf extends NewType {}
 
 	/**
 	 * A void type represents the type whose variables cannot exist! That is,
@@ -812,7 +805,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static final class Set extends Compound {
+	public static final class Set extends Compound  {
 		private Set(Component[] components) {
 			super(components);
 		}
@@ -829,7 +822,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static final class List extends Compound {
+	public static final class List extends Compound  {
 		private List(Component[] components) {
 			super(components);
 		}
@@ -844,7 +837,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static final class Reference extends Compound {
+	public static final class Reference extends Compound  {
 		private Reference(Component[] components) {
 			super(components);
 		}
@@ -863,7 +856,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static final class Dictionary extends Compound {
+	public static final class Dictionary extends Compound  {
 		private Dictionary(Component[] components) {
 			super(components);
 		}
@@ -886,7 +879,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static final class Record extends Compound {
+	public static final class Record extends Compound  {
 		private Record(Component[] components) {
 			super(components);
 		}
@@ -941,9 +934,9 @@ public abstract class NewType {
 		 * 
 		 * @return
 		 */
-		public HashSet<NonUnion> bounds() {
-			Integer[] fields = (Integer[]) components[0].data;
-			HashSet r = new HashSet<NonUnion>();
+		public HashSet<NewType> bounds() {
+			int[] fields = (int[]) components[0].data;
+			HashSet<NewType> r = new HashSet<NewType>();
 			for(int i : fields) {
 				r.add(extract(i));
 			}
@@ -958,7 +951,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static final class Fun extends Compound {
+	public static final class Fun extends Compound  {
 		Fun(Component[] components) {
 			super(components);
 		}
@@ -1217,5 +1210,11 @@ public abstract class NewType {
 		NewType tmp = T_UNION(T_NULL,T_RECORD(fields));
 		NewType type = T_RECURSIVE("Z",tmp);		
 		System.out.println("GOT: " + type);
+	}
+		
+	public static void indent(int indent) {
+		for(int i=0;i!=indent;++i) {
+			System.out.print(" ");
+		}
 	}
 }
