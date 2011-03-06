@@ -2,6 +2,7 @@ package wyil.lang;
 
 import java.util.*;
 
+import wyil.lang.Type.Recursive;
 import wyil.util.Pair;
 
 public abstract class NewType {
@@ -307,11 +308,270 @@ public abstract class NewType {
 	 * two non-identical types <code>t1</code>, <code>t2</code> which encode the
 	 * same type, we have that <code>minimise(t1).equals(minimise(t2))</code>.
 	 * 
-	 * @param t1
+	 * @param type
 	 * @return
 	 */
-	public static NewType minimise(NewType t1) {
-		return null;
+	public static NewType minimise(NewType type) {
+		// first, check for leaf node since these are already minimised!
+		if(type instanceof Leaf) { return type; } 
+		// ok, non-leaf node ... now we need to do some work.
+		Compound c = (Compound) type;
+		Component[] components = c.components;
+		// partitions holds the equivalence sets of nodes. Initially, all nodes
+		// are considered equivalent and we then separate out nodes which are
+		// not equivalent.
+		ArrayList<HashSet<Integer>> partitions = new ArrayList();
+		// rpartitions maps each node to its index in partitions. 
+		int[] rpartitions = new int[c.components.length];
+		// initialise partitions and rpartitions
+		partitions.add(new HashSet());
+		for(int i=0;i!=components.length;++i) {
+			partitions.get(0).add(i);
+			rpartitions[i] = 0;
+		}
+		// now, we need to iteratively separate partitions until we can do no
+		// more work.
+		boolean changed = true;
+		while(changed) {
+			changed = false;
+			for(int i = 0; i != partitions.size(); ++i) {
+				changed |= splitPartition(i,partitions,rpartitions,components);
+			}
+		}
+		// finally, we need to rebuild the original type whilst taking into
+		// account the equivalences we have identified.
+		return mergeNodes(components,partitions,rpartitions);
+	}
+	
+	/**
+	 * This method is responsible for iterating all elements of a partition and
+	 * separating them out as much as possible.
+	 * 
+	 * @param idx
+	 *            --- partition number to split
+	 * @param partitions
+	 *            --- partition map
+	 * @param rpartitions
+	 *            --- reverse partition map
+	 * @return
+	 */
+	private static boolean splitPartition(int idx,
+			ArrayList<HashSet<Integer>> partitions, int[] rpartitions,
+			Component[] components) {
+		// The pivot is what we'll use to split the partition. Essentially, I'll
+		// find all those equivalent to the pivot, and all those which are not
+		// equivalent => thus, either we make two new sets or there is no change
+		// to the old set.
+		HashSet<Integer> partition = partitions.get(idx);
+		Integer pivot = partition.iterator().next();
+		HashSet<Integer> equivs = new HashSet<Integer>();
+		HashSet<Integer> nequivs = new HashSet<Integer>();
+		boolean change = false;
+		
+		for(Integer i : partition) {
+			if(partitionEquiv(components[i],components[pivot],rpartitions)) {
+				// node is equivalent to pivot --> so no change
+				equivs.add(i);
+			} else {
+				// node is not equivalent to pivot
+				nequivs.add(i);
+				change = true;
+			}
+		}
+		
+		if(change) {
+			partitions.set(idx,equivs);
+			int neqidx = partitions.size();
+			partitions.add(nequivs);
+			for(Integer i : nequivs) {
+				rpartitions[i] = neqidx;
+			}
+		}		
+		
+		return change;
+	}
+	
+	/**
+	 * The purpose of this method is to determine whether two nodes are
+	 * "partition" equivalent. That is, given the current partitioning 
+	 * are they equivalent. Two nodes are not equivalent if they have a
+	 * different kind (e.g. NULL is never equivalent to INT; or a record is
+	 * never equivalent to a list). Furthermore, two types are not equivalent if
+	 * one or more of their (immediate) children is in a different partition.
+	 * 
+	 * @param t1
+	 *            --- first type to check equivalence of
+	 * @param t2
+	 *            --- second type to check equivalence of	
+	 * @param rpartitions
+	 *            --- maps types to their partition numbers (i.e. same number ==
+	 *            same partition).
+	 * @return
+	 */
+	private static boolean partitionEquiv(Component c1, Component c2,
+			int[] rpartitions) {
+		if(c1.kind != c2.kind) { return false; }
+		switch(c1.kind) {
+		case K_SET:
+		case K_LIST:
+		case K_REFERENCE: {
+			// unary node
+			Integer e1 = (Integer) c1.data;
+			Integer e2 = (Integer) c2.data;
+			return rpartitions[e1] == rpartitions[e2];
+		}
+		case K_DICTIONARY: {
+			// binary node
+			Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
+			Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
+			return rpartitions[p1.first()] == rpartitions[p2.first()] && 
+				rpartitions[p1.second()] == rpartitions[p2.second()];
+		}		
+		case K_FUNCTION:  {
+			// nary nodes
+			int[] elems1 = (int[]) c1.data;
+			int[] elems2 = (int[]) c2.data;
+			if(elems1.length != elems2.length){
+				return false;
+			}
+			for(int i=0;i!=elems1.length;++i) {
+				int e1 = elems1[i];
+				int e2 = elems1[i];
+				if(rpartitions[e1] != rpartitions[e2]) {
+					return false;
+				}
+			}
+			return true;
+		}
+		case K_RECORD:
+			// labeled nary nodes
+			Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+			Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
+			if(fields1.length != fields2.length) {
+				return false;
+			}
+			for(int i=0;i!=fields1.length;++i) {
+				Pair<String,Integer> e1 = fields1[i];
+				Pair<String,Integer> e2 = fields2[i];
+				if (!e1.first().equals(e2.first())
+						|| rpartitions[e1.second()] != rpartitions[e2.second()]) {
+					return false;
+				}
+			}
+			return true;
+		case K_UNION: {
+			// This is the hardest (i.e. most expensive) case. Essentially, I
+			// just check that for each bound in one component, there is an
+			// equivalent bound in the other.
+			int[] bounds1 = (int[]) c1.data;
+			int[] bounds2 = (int[]) c2.data;
+			
+			// check every bound in c1 is equivalent to some bound in c2.
+			for(int i : bounds1) {
+				boolean matched=false;
+				for(int j : bounds2) {
+					if(rpartitions[i] == rpartitions[j]) {
+						matched = true;
+						break;
+					}
+				}
+				if(!matched) { return false; }
+			}
+			
+			// check every bound in c2 is equivalent to some bound in c1.
+			for(int j : bounds2) {
+				boolean matched=false;
+				for(int i : bounds1) {
+					if(rpartitions[i] == rpartitions[j]) {
+						matched = true;
+						break;
+					}
+				}
+				if(!matched) { return false; }
+			}
+			return true;
+		}
+		case K_LABEL:
+			throw new IllegalArgumentException("attempting to minimise open recurisve type");		
+		default:
+			// primitive types true immediately
+			return true;
+		}		
+	}
+
+	/**
+	 * This method merges nodes together in the given component graph according
+	 * to the given partitioning. So, if e.g. nodes 1 and 4 are in the same
+	 * partition then they are merged together.
+	 */
+	private static NewType mergeNodes(Component[] graph, 
+			ArrayList<HashSet<Integer>> partitions,
+			int[] rpartitions) {				
+		ArrayList<Component> ncomponents = new ArrayList<Component>();
+		// the p2cmap is maps partition numbers to their component indices.		
+		int[] p2cmap = new int[partitions.size()];
+		Arrays.fill(p2cmap,-1);
+		rebuild(0,graph,rpartitions,p2cmap,ncomponents);		
+		return construct(ncomponents.toArray(new Component[partitions.size()]));
+	}
+	
+	private static int rebuild(int idx, Component[] graph, int[] rpartitions,
+			int[] p2cmap, ArrayList<Component> ncomponents) {
+		Component node = graph[idx]; 
+		int partition = rpartitions[idx];
+		int nidx = p2cmap[partition];
+		if(nidx != -1) {
+			// component already constructed for this equivalence class
+			return nidx;
+		} 
+		nidx = ncomponents.size(); // my new index
+		p2cmap[partition] = nidx; // update the map accordingly
+		ncomponents.add(null); // reserve space for my node
+		
+		Object data = null;
+		switch(node.kind) {
+		case K_SET:
+		case K_LIST:
+		case K_REFERENCE: {
+			int element = (Integer) node.data;
+			data = (Integer) rebuild(element,graph,rpartitions,p2cmap,ncomponents);
+			break;
+		}
+		case K_DICTIONARY: {
+			Pair<Integer,Integer> p = (Pair) node.data;
+			int from = (Integer) rebuild(p.first(),graph,rpartitions,p2cmap,ncomponents);
+			int to = (Integer) rebuild(p.second(),graph,rpartitions,p2cmap,ncomponents);
+			data = new Pair(from,to);
+			break;
+		}
+		case K_UNION:
+		case K_FUNCTION: {
+			int[] elems = (int[]) node.data;
+			int[] nelems = new int[elems.length];
+			for(int i = 0; i!=elems.length;++i) {
+				// FIXME: there's a bug here when we have equivalent bounds. In
+				// such case, rebuild may return the same number for more than
+				// one bound, leading to repeat entries in nelems. 			
+				nelems[i]  = (Integer) rebuild(elems[i],graph,rpartitions,p2cmap,ncomponents);
+			}			
+			data = nelems;
+			break;			
+		}
+		case K_RECORD: {
+			Pair<String,Integer>[] elems = (Pair[]) node.data;
+			Pair<String,Integer>[] nelems = new Pair[elems.length];
+			for(int i=0;i!=elems.length;++i) {
+				Pair<String,Integer> p = elems[i];
+				int j = (Integer) rebuild(p.second(),graph,rpartitions,p2cmap,ncomponents);
+				nelems[i] = new Pair<String,Integer>(p.first(),j);
+			}
+			data = nelems;			
+			break;
+		}
+		}
+		// finally, create the new node!!!
+		ncomponents.set(nidx, new Component(node.kind,data));
+		return nidx;
 	}
 	
 	// =============================================================
@@ -1204,17 +1464,22 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {
-		HashMap<String,NewType> fields = new HashMap<String,NewType>();
-		fields.put("next",T_LABEL("Z"));
-		fields.put("data",T_INT);	 
-		NewType tmp = T_UNION(T_NULL,T_RECORD(fields));
-		NewType type = T_RECURSIVE("Z",tmp);		
-		System.out.println("GOT: " + type);
+		NewType type = T_RECURSIVE("Z",linkedList(3,"Z"));		
+		System.out.println("BEFORE: " + type);
+		type = minimise(type);
+		System.out.println("AFTER: " + type);
 	}
-		
-	public static void indent(int indent) {
-		for(int i=0;i!=indent;++i) {
-			System.out.print(" ");
+	
+	public static NewType linkedList(int nlinks, String label) {
+		NewType leaf;
+		if(nlinks == 0) {
+			leaf = T_LABEL("Z");
+		} else {
+			leaf = linkedList(nlinks-1,label);
 		}
-	}
+		HashMap<String,NewType> fields = new HashMap<String,NewType>();
+		fields.put("next",leaf);
+		fields.put("data",T_INT);	 
+		return T_UNION(T_NULL,T_RECORD(fields));		
+	}	
 }
