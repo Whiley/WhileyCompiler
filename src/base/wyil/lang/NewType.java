@@ -805,7 +805,8 @@ public abstract class NewType {
 			// necessary in order to mark the start of a recursive type.
 			BitSet headers = new BitSet(components.length);
 			BitSet visited = new BitSet(components.length); 
-			findHeaders(0,visited,headers,components);
+			BitSet onStack = new BitSet(components.length);
+			findHeaders(0,visited,onStack,headers,components);
 			visited.clear();
 			String[] titles = new String[components.length];
 			int count = 0;
@@ -880,6 +881,8 @@ public abstract class NewType {
 	 *            --- the index to search from.
 	 * @param visited
 	 *            --- the set of vertices already visited.
+	 * @param onStack
+	 *            --- the set of nodes currently on the DFS path from the root.
 	 * @param headers
 	 *            --- header nodes discovered during this search are set to true
 	 *            in this bitset.
@@ -887,12 +890,15 @@ public abstract class NewType {
 	 *            --- the component graph.
 	 */
 	private final static void findHeaders(int index, BitSet visited,
-			BitSet headers, Component[] graph) {
+			BitSet onStack, BitSet headers, Component[] graph) {
 		if(visited.get(index)) {
 			// node already visited
-			headers.set(index);
+			if(onStack.get(index)) {
+				headers.set(index);
+			}
 			return; 
 		} 		
+		onStack.set(index);
 		visited.set(index);
 		Component node = graph[index];
 		switch(node.kind) {
@@ -900,30 +906,31 @@ public abstract class NewType {
 		case K_LIST:
 		case K_REFERENCE:
 			// unary nodes
-			findHeaders((Integer) node.data,visited,headers,graph);
+			findHeaders((Integer) node.data,visited,onStack,headers,graph);
 			break;
 		case K_DICTIONARY:
 			// binary node
 			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
-			findHeaders(p.first(),visited,headers,graph);
-			findHeaders(p.second(),visited,headers,graph);
+			findHeaders(p.first(),visited,onStack,headers,graph);
+			findHeaders(p.second(),visited,onStack,headers,graph);
 			break;
 		case K_UNION:
 		case K_FUNCTION:
 			// nary node
 			int[] bounds = (int[]) node.data;
 			for(Integer b : bounds) {
-				findHeaders(b,visited,headers,graph);
+				findHeaders(b,visited,onStack,headers,graph);
 			}
 			break;
 		case K_RECORD:
 			// labeled nary node
 			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
 			for(Pair<String,Integer> f : fields) {
-				findHeaders(f.second(),visited,headers,graph);
+				findHeaders(f.second(),visited,onStack,headers,graph);
 			}
 			break;			
 		}
+		onStack.set(index,false);
 	}
 
 	/**
@@ -947,8 +954,9 @@ public abstract class NewType {
 		if (visited.get(index)) {
 			// node already visited
 			return headers[index];
+		} else if(headers[index] != null) {
+			visited.set(index);
 		}
-		visited.set(index);
 		Component node = graph[index];
 		String middle;
 		switch (node.kind) {
@@ -1463,8 +1471,16 @@ public abstract class NewType {
 		}
 	}
 	
-	public static void main(String[] args) {
-		NewType type = T_RECURSIVE("Z",linkedList(3,"Z"));		
+	public static void main(String[] args) {		
+		
+		/*
+		NewType leaf = T_RECURSIVE("Z",linkedList(3,"Z"));
+		HashMap<String,NewType> fields = new HashMap<String,NewType>();
+		fields.put("next",leaf);
+		fields.put("data",T_UNION(T_INT,T_INT));	 
+		NewType type = T_UNION(T_NULL,T_RECORD(fields));	
+		*/
+		NewType type = T_UNION(T_INT,T_INT);
 		System.out.println("BEFORE: " + type);
 		type = minimise(type);
 		System.out.println("AFTER: " + type);
