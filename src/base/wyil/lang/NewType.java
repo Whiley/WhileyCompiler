@@ -323,12 +323,22 @@ public abstract class NewType {
 	 * @return
 	 */
 	private static NewType minimise(NewType type) {
-		if(type instanceof Leaf) {
+		// leaf types never need minmising!
+		if (type instanceof Leaf) {
 			return type;
 		}
-		Compound compound = (Compound) type;		
-		BitSet matrix = buildSubtypeMatrix(compound.components);
-		
+		// compound types need minimising.
+		Component[] components = ((Compound) type).components;
+		/* debug code
+		for(int i=0;i!=components.length;++i) {
+			System.out.println(i + ": " + components[i]);
+		}
+		*/
+		BitSet matrix = buildSubtypeMatrix(components);		
+		ArrayList<Component> ncomponents = new ArrayList<Component>();
+		int[] allocated = new int[components.length];
+		rebuild(0, components, allocated, ncomponents, matrix);
+		return construct(ncomponents.toArray(new Component[ncomponents.size()]));		
 	}
 
 	/**
@@ -430,7 +440,7 @@ public abstract class NewType {
 					Pair<String, Integer> e1 = fields1[i];
 					Pair<String, Integer> e2 = fields2[i];
 					if (!e1.first().equals(e2.first())
-							|| matrix
+							|| !matrix
 							.get((e1.second() * ncomponents) + e2.second())) {
 						return false;
 					}
@@ -488,230 +498,25 @@ public abstract class NewType {
 		}
 		return false;
 	}
-	
-	/**
-	 * The aim of this method is to fold down recursive types. For example,
-	 * <code>null|{X<null|{X next}> next</code> can be minimised to
-	 * <code>X<null|{X next}</code>
-	 * 
-	 * @param type
-	 * @return
-	 */
-	private static NewType minimiseRecursive(NewType type) {
-		// first, check for leaf node since these are already minimised!
-		if(type instanceof Leaf) { return type; } 
-		// ok, non-leaf node ... now we need to do some work.
-		Compound c = (Compound) type;
-		Component[] components = c.components;
-		// partitions holds the equivalence sets of nodes. Initially, all nodes
-		// are considered equivalent and we then separate out nodes which are
-		// not equivalent.
-		ArrayList<HashSet<Integer>> partitions = new ArrayList();
-		// rpartitions maps each node to its index in partitions. 
-		int[] rpartitions = new int[c.components.length];
-		// initialise partitions and rpartitions
-		partitions.add(new HashSet());
-		for(int i=0;i!=components.length;++i) {
-			partitions.get(0).add(i);
-			rpartitions[i] = 0;
-		}
-		// now, we need to iteratively separate partitions until we can do no
-		// more work.
-		boolean changed = true;
-		while(changed) {
-			changed = false;
-			for(int i = 0; i != partitions.size(); ++i) {
-				changed |= splitPartition(i,partitions,rpartitions,components);
-			}
-		}
-		// finally, we need to rebuild the original type whilst taking into
-		// account the equivalences we have identified.
-		return mergeNodes(components,partitions,rpartitions);
-	}
-	
-	/**
-	 * This method is responsible for iterating all elements of a partition and
-	 * separating them out as much as possible.
-	 * 
-	 * @param idx
-	 *            --- partition number to split
-	 * @param partitions
-	 *            --- partition map
-	 * @param rpartitions
-	 *            --- reverse partition map
-	 * @return
-	 */
-	private static boolean splitPartition(int idx,
-			ArrayList<HashSet<Integer>> partitions, int[] rpartitions,
-			Component[] components) {
-		// The pivot is what we'll use to split the partition. Essentially, I'll
-		// find all those equivalent to the pivot, and all those which are not
-		// equivalent => thus, either we make two new sets or there is no change
-		// to the old set.
-		HashSet<Integer> partition = partitions.get(idx);
-		Integer pivot = partition.iterator().next();
-		HashSet<Integer> equivs = new HashSet<Integer>();
-		HashSet<Integer> nequivs = new HashSet<Integer>();
-		boolean change = false;
-		
-		for(Integer i : partition) {
-			if(partitionEquiv(components[i],components[pivot],rpartitions)) {
-				// node is equivalent to pivot --> so no change
-				equivs.add(i);
-			} else {
-				// node is not equivalent to pivot
-				nequivs.add(i);
-				change = true;
-			}
-		}
-		
-		if(change) {
-			partitions.set(idx,equivs);
-			int neqidx = partitions.size();
-			partitions.add(nequivs);
-			for(Integer i : nequivs) {
-				rpartitions[i] = neqidx;
-			}
-		}		
-		
-		return change;
-	}
-	
-	/**
-	 * The purpose of this method is to determine whether two nodes are
-	 * "partition" equivalent. That is, given the current partitioning 
-	 * are they equivalent. Two nodes are not equivalent if they have a
-	 * different kind (e.g. NULL is never equivalent to INT; or a record is
-	 * never equivalent to a list). Furthermore, two types are not equivalent if
-	 * one or more of their (immediate) children is in a different partition.
-	 * 
-	 * @param t1
-	 *            --- first type to check equivalence of
-	 * @param t2
-	 *            --- second type to check equivalence of	
-	 * @param rpartitions
-	 *            --- maps types to their partition numbers (i.e. same number ==
-	 *            same partition).
-	 * @return
-	 */
-	private static boolean partitionEquiv(Component c1, Component c2,
-			int[] rpartitions) {
-		if(c1.kind != c2.kind) { return false; }
-		switch(c1.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_REFERENCE: {
-			// unary node
-			Integer e1 = (Integer) c1.data;
-			Integer e2 = (Integer) c2.data;
-			return rpartitions[e1] == rpartitions[e2];
-		}
-		case K_DICTIONARY: {
-			// binary node
-			Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
-			Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-			return rpartitions[p1.first()] == rpartitions[p2.first()] && 
-				rpartitions[p1.second()] == rpartitions[p2.second()];
-		}		
-		case K_FUNCTION:  {
-			// nary nodes
-			int[] elems1 = (int[]) c1.data;
-			int[] elems2 = (int[]) c2.data;
-			if(elems1.length != elems2.length){
-				return false;
-			}
-			for(int i=0;i!=elems1.length;++i) {
-				int e1 = elems1[i];
-				int e2 = elems1[i];
-				if(rpartitions[e1] != rpartitions[e2]) {
-					return false;
-				}
-			}
-			return true;
-		}
-		case K_RECORD:
-			// labeled nary nodes
-			Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-			Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
-			if(fields1.length != fields2.length) {
-				return false;
-			}
-			for(int i=0;i!=fields1.length;++i) {
-				Pair<String,Integer> e1 = fields1[i];
-				Pair<String,Integer> e2 = fields2[i];
-				if (!e1.first().equals(e2.first())
-						|| rpartitions[e1.second()] != rpartitions[e2.second()]) {
-					return false;
-				}
-			}
-			return true;
-		case K_UNION: {
-			// This is the hardest (i.e. most expensive) case. Essentially, I
-			// just check that for each bound in one component, there is an
-			// equivalent bound in the other.
-			int[] bounds1 = (int[]) c1.data;
-			int[] bounds2 = (int[]) c2.data;
-			
-			// check every bound in c1 is equivalent to some bound in c2.
-			for(int i : bounds1) {
-				boolean matched=false;
-				for(int j : bounds2) {
-					if(rpartitions[i] == rpartitions[j]) {
-						matched = true;
-						break;
-					}
-				}
-				if(!matched) { return false; }
-			}
-			
-			// check every bound in c2 is equivalent to some bound in c1.
-			for(int j : bounds2) {
-				boolean matched=false;
-				for(int i : bounds1) {
-					if(rpartitions[i] == rpartitions[j]) {
-						matched = true;
-						break;
-					}
-				}
-				if(!matched) { return false; }
-			}
-			return true;
-		}
-		case K_LABEL:
-			throw new IllegalArgumentException("attempting to minimise open recurisve type");		
-		default:
-			// primitive types true immediately
-			return true;
-		}		
-	}
 
-	/**
-	 * This method merges nodes together in the given component graph according
-	 * to the given partitioning. So, if e.g. nodes 1 and 4 are in the same
-	 * partition then they are merged together.
-	 */
-	private static NewType mergeNodes(Component[] graph, 
-			ArrayList<HashSet<Integer>> partitions,
-			int[] rpartitions) {				
-		ArrayList<Component> ncomponents = new ArrayList<Component>();
-		// the p2cmap is maps partition numbers to their component indices.		
-		int[] p2cmap = new int[partitions.size()];
-		Arrays.fill(p2cmap,-1);
-		rebuild(0,graph,rpartitions,p2cmap,ncomponents);		
-		return construct(ncomponents.toArray(new Component[partitions.size()]));
-	}
-	
-	private static int rebuild(int idx, Component[] graph, int[] rpartitions,
-			int[] p2cmap, ArrayList<Component> ncomponents) {
-		Component node = graph[idx]; 
-		int partition = rpartitions[idx];
-		int nidx = p2cmap[partition];
-		if(nidx != -1) {
+	private static int rebuild(int idx, Component[] graph, int[] allocated,
+			ArrayList<Component> ncomponents, BitSet matrix) {
+		int graph_size = graph.length;
+		Component node = graph[idx]; 		
+		int cidx = allocated[idx];		
+		if(cidx > 0) {
 			// component already constructed for this equivalence class
-			return nidx;
+			return cidx - 1;
 		} 
-		nidx = ncomponents.size(); // my new index
-		p2cmap[partition] = nidx; // update the map accordingly
+		
+		cidx = ncomponents.size(); // my new index
+		// now, allocate all components in equivalence class
+		for(int i=0;i!=graph_size;++i) {
+			if(matrix.get((i*graph_size)+idx) && matrix.get((idx*graph_size)+i)) {
+				allocated[i] = cidx + 1; 
+			}
+		}
+		 
 		ncomponents.add(null); // reserve space for my node
 		
 		Object data = null;
@@ -720,13 +525,13 @@ public abstract class NewType {
 		case K_LIST:
 		case K_REFERENCE: {
 			int element = (Integer) node.data;
-			data = (Integer) rebuild(element,graph,rpartitions,p2cmap,ncomponents);
+			data = (Integer) rebuild(element,graph,allocated,ncomponents,matrix);
 			break;
 		}
 		case K_DICTIONARY: {
 			Pair<Integer,Integer> p = (Pair) node.data;
-			int from = (Integer) rebuild(p.first(),graph,rpartitions,p2cmap,ncomponents);
-			int to = (Integer) rebuild(p.second(),graph,rpartitions,p2cmap,ncomponents);
+			int from = (Integer) rebuild(p.first(),graph,allocated,ncomponents,matrix);
+			int to = (Integer) rebuild(p.second(),graph,allocated,ncomponents,matrix);
 			data = new Pair(from,to);
 			break;
 		}
@@ -735,9 +540,9 @@ public abstract class NewType {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
 			for(int i = 0; i!=elems.length;++i) {
-				// FACTOID: it's impossible for us to get a repeat entry from
-				// rebuild here, provided that we have first minimised unions.
-				nelems[i]  = (Integer) rebuild(elems[i],graph,rpartitions,p2cmap,ncomponents);
+				// FIXME: I need to deal with unions which need to be simplified
+				// or eliminated entirely.
+				nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,ncomponents,matrix);
 			}			
 			data = nelems;
 			break;			
@@ -747,7 +552,7 @@ public abstract class NewType {
 			Pair<String,Integer>[] nelems = new Pair[elems.length];
 			for(int i=0;i!=elems.length;++i) {
 				Pair<String,Integer> p = elems[i];
-				int j = (Integer) rebuild(p.second(),graph,rpartitions,p2cmap,ncomponents);
+				int j = (Integer) rebuild(p.second(),graph,allocated,ncomponents,matrix);
 				nelems[i] = new Pair<String,Integer>(p.first(),j);
 			}
 			data = nelems;			
@@ -755,8 +560,8 @@ public abstract class NewType {
 		}		
 		}
 		// finally, create the new node!!!
-		ncomponents.set(nidx, new Component(node.kind,data));
-		return nidx;
+		ncomponents.set(cidx, new Component(node.kind,data));
+		return cidx;
 	}
 	
 	// =============================================================
@@ -1490,6 +1295,19 @@ public abstract class NewType {
 				return kind + data.hashCode();
 			}
 		}
+		
+		public final static String[] kinds = { "void", "any", "null", "bool",
+				"int", "rat", "dict", "set", "list", "ref", "record", "union",
+				"fun", "label" };
+		public String toString() {
+			if(data instanceof Pair[]) {
+				return kinds[kind] + " : " + Arrays.toString((Pair[])data);
+			} else if(data instanceof int[]) {
+				return kinds[kind] + " : " + Arrays.toString((int[])data);				
+			} else {
+				return kinds[kind] + " : " + data;
+			}
+		}
 	}
 	
 	private static final Component[] components(NewType t) {
@@ -1657,12 +1475,7 @@ public abstract class NewType {
 	
 	public static void main(String[] args) {		
 				
-		NewType leaf = T_RECURSIVE("Z",linkedList(3,"Z"));
-		HashMap<String,NewType> fields = new HashMap<String,NewType>();
-		fields.put("next",leaf);
-		fields.put("data",T_UNION(T_INT,T_INT));	 
-		NewType type = T_UNION(T_NULL,T_RECORD(fields));	
-		
+		NewType type = T_RECURSIVE("Z",linkedList(1,"Z"));
 		System.out.println("BEFORE: " + type);
 		type = minimise(type);
 		System.out.println("AFTER: " + type);
