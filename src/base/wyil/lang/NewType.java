@@ -51,6 +51,22 @@ public abstract class NewType {
 		}
 	}
 	
+	/**
+	 * Construct a dictionary type using the given key and value types.
+	 * 
+	 * @param element
+	 */
+	public static final Dictionary T_DICTIONARY(NewType key, NewType value) {
+		Component[] keyComps = components(key);
+		Component[] valueComps = components(value);
+		Component[] components = new Component[1 + keyComps.length + valueComps.length];
+			
+		insertComponents(1,keyComps,components);
+		insertComponents(1+keyComps.length,valueComps,components);
+		components[0] = new Component(K_DICTIONARY, new Pair(1,1+keyComps.length));
+		return new Dictionary(components);		
+	}
+	
 	// =============================================================
 	// Type operations
 	// =============================================================
@@ -354,7 +370,7 @@ public abstract class NewType {
 			BitSet visited = new BitSet(components.length);
 			// extracted maps new indices to old indices
 			ArrayList<Integer> extracted = new ArrayList<Integer>();
-			dfs(root,visited,extracted);
+			subgraph(root,visited,extracted,components);
 			// rextracted is the reverse of extracted
 			int[] rextracted = new int[extracted.size()];
 			int i=0;
@@ -369,46 +385,253 @@ public abstract class NewType {
 				
 			return construct(ncomponents);
 		}
-
 		
-		private final void dfs(int index, BitSet visited,
-				ArrayList<Integer> extracted) {
-			extracted.add(index);
-			visited.set(index);
-			Component node = components[index];
-			switch(node.kind) {
-			case K_SET:
-			case K_LIST:
-			case K_REFERENCE:
-				// unary nodes
-				dfs((Integer) node.data,visited,extracted);
-				break;
-			case K_DICTIONARY:
-				// binary node
-				Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
-				dfs(p.first(),visited,extracted);
-				dfs(p.second(),visited,extracted);
-				break;
-			case K_UNION:
-			case K_FUNCTION:
-				// nary node
-				int[] bounds = (int[]) node.data;
-				for(Integer b : bounds) {
-					dfs(b,visited,extracted);
-				}
-				break;
-			case K_RECORD:
-				// labeled nary node
-				Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
-				for(Pair<String,Integer> f : fields) {
-					dfs(f.second(),visited,extracted);
-				}
-				break;			
-			}
-		}
+		
 		
 		public String toString() {
+			// First, we need to find the headers of the computation. This is
+			// necessary in order to mark the start of a recursive type.
+			BitSet headers = new BitSet(components.length);
+			BitSet visited = new BitSet(components.length); 
+			findHeaders(0,visited,headers,components);
+			visited.clear();
+			String[] titles = new String[components.length];
+			int count = 0;
+			for(int i=0;i!=components.length;++i) {
+				if(headers.get(i)) {
+					titles[i] = headerTitle(count++);
+				}
+			}
+			return toString(0,visited,titles,components);
+		}
+	}
+
+	/**
+	 * The following method recursively extracts the subgraph rooted at
+	 * <code>index</code> in the given component graph using a depth-first
+	 * search. Vertices in the subgraph are added to <code>extracted</code> in
+	 * the order they are visited.
+	 * 
+	 * @param index
+	 *            --- the node to extract the subgraph from.
+	 * @param visited
+	 *            --- the set of vertices already visited
+	 * @param extracted
+	 *            --- the list of vertices that make up the subgraph which is
+	 *            built by this method.
+	 * @param graph
+	 *            --- the component graph.
+	 */
+	private final static void subgraph(int index, BitSet visited,
+			ArrayList<Integer> extracted, Component[] graph) {
+		if(visited.get(index)) { return; } // node already visited}
+		extracted.add(index);
+		visited.set(index);
+		Component node = graph[index];
+		switch(node.kind) {
+		case K_SET:
+		case K_LIST:
+		case K_REFERENCE:
+			// unary nodes
+			subgraph((Integer) node.data,visited,extracted,graph);
+			break;
+		case K_DICTIONARY:
+			// binary node
+			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
+			subgraph(p.first(),visited,extracted,graph);
+			subgraph(p.second(),visited,extracted,graph);
+			break;
+		case K_UNION:
+		case K_FUNCTION:
+			// nary node
+			int[] bounds = (int[]) node.data;
+			for(Integer b : bounds) {
+				subgraph(b,visited,extracted,graph);
+			}
+			break;
+		case K_RECORD:
+			// labeled nary node
+			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
+			for(Pair<String,Integer> f : fields) {
+				subgraph(f.second(),visited,extracted,graph);
+			}
+			break;			
+		}
+	}
+
+	/**
+	 * The following method traverses the component graph using a depth-first
+	 * search to identify nodes which are "loop headers". That is, they are the
+	 * target of one or more recursive edgesin the graph.
+	 * 
+	 * @param index
+	 *            --- the index to search from.
+	 * @param visited
+	 *            --- the set of vertices already visited.
+	 * @param headers
+	 *            --- header nodes discovered during this search are set to true
+	 *            in this bitset.
+	 * @param graph
+	 *            --- the component graph.
+	 */
+	private final static void findHeaders(int index, BitSet visited,
+			BitSet headers, Component[] graph) {
+		if(visited.get(index)) {
+			// node already visited
+			headers.set(index);
+			return; 
+		} 		
+		visited.set(index);
+		Component node = graph[index];
+		switch(node.kind) {
+		case K_SET:
+		case K_LIST:
+		case K_REFERENCE:
+			// unary nodes
+			findHeaders((Integer) node.data,visited,headers,graph);
+			break;
+		case K_DICTIONARY:
+			// binary node
+			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
+			findHeaders(p.first(),visited,headers,graph);
+			findHeaders(p.second(),visited,headers,graph);
+			break;
+		case K_UNION:
+		case K_FUNCTION:
+			// nary node
+			int[] bounds = (int[]) node.data;
+			for(Integer b : bounds) {
+				findHeaders(b,visited,headers,graph);
+			}
+			break;
+		case K_RECORD:
+			// labeled nary node
+			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
+			for(Pair<String,Integer> f : fields) {
+				findHeaders(f.second(),visited,headers,graph);
+			}
+			break;			
+		}
+	}
+
+	/**
+	 * The following method constructs a string representation of the underlying
+	 * graph. This representation may be an expanded version of the underling
+	 * graph, since one cannot easily represent aliasing in the type graph in a
+	 * textual manner.
+	 * 
+	 * @param index
+	 *            --- the index to start from
+	 * @param visited
+	 *            --- the set of vertices already visited.
+	 * @param headers
+	 *            --- an array of strings which identify the name to be given to
+	 *            each header.
+	 * @param graph
+	 *            --- the component graph.
+	 */
+	private final static String toString(int index, BitSet visited,
+			String[] headers, Component[] graph) {
+		if (visited.get(index)) {
+			// node already visited
+			return headers[index];
+		}
+		visited.set(index);
+		Component node = graph[index];
+		String middle;
+		switch (node.kind) {
+		case K_VOID:
+			return "void";
+		case K_ANY:
+			return "any";
+		case K_NULL:
 			return "null";
+		case K_BOOL:
+			return "bool";
+		case K_INT:
+			return "int";
+		case K_RATIONAL:
+			return "rat";
+		case K_SET:
+			middle = "{" + toString((Integer) node.data, visited, headers, graph)
+					+ "}";
+			break;
+		case K_LIST:
+			middle = "[" + toString((Integer) node.data, visited, headers, graph)
+					+ "]";
+			break;
+		case K_REFERENCE:
+			middle = "*" + toString((Integer) node.data, visited, headers, graph);
+			break;
+		case K_DICTIONARY: {
+			// binary node
+			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
+			String k = toString(p.first(), visited, headers, graph);
+			String v = toString(p.second(), visited, headers, graph);
+			middle = "{" + k + "->" + v + "}";
+			break;
+		}
+		case K_UNION: {
+			int[] bounds = (int[]) node.data;
+			middle = "";
+			for (int i = 0; i != bounds.length; ++i) {
+				if (i != 0) {
+					middle += "|";
+				}
+				middle += toString(bounds[i], visited, headers, graph);
+			}
+			break;
+		}
+		case K_FUNCTION: {
+			middle = "";
+			int[] bounds = (int[]) node.data;
+			String ret = toString(bounds[0], visited, headers, graph);
+			for (int i = 1; i != bounds.length; ++i) {
+				if (i != 0) {
+					middle += ",";
+				}
+				middle += toString(bounds[i], visited, headers, graph);
+			}
+			middle = ret + "(" + middle + ")";
+			break;
+		}
+		case K_RECORD: {
+			// labeled nary node
+			middle = "{";
+			Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
+			for (int i = 0; i != fields.length; ++i) {
+				if (i != 0) {
+					middle += ",";
+				}
+				Pair<String, Integer> f = fields[i];
+				middle += f.first() + ": "
+						+ toString(f.second(), visited, headers, graph);
+			}
+			middle = middle + "}";
+			break;
+		}
+		default: 
+			throw new IllegalArgumentException("Invalid type encountered");
+		}
+		
+		// Finally, check whether this is a header node, or not. If it is a
+		// header then we need to insert the recursive type.
+		String header = headers[index];
+		if(header != null) {
+			return header + "<" + middle + ">";
+		} else {
+			return middle;
+		}
+	}
+	
+	private static final char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
+	private static String headerTitle(int count) {
+		String r = Character.toString(headers[count%headers.length]);
+		int n = count / headers.length;
+		if(n > 0) {
+			return r + n;
+		} else {
+			return r;
 		}
 	}
 	
@@ -663,6 +886,15 @@ public abstract class NewType {
 		}
 	}
 	
+	private static final Component[] components(NewType t) {
+		if (t instanceof Leaf) {
+			return new Component[]{new Component(leafKind((Leaf) t), null)};
+		} else {
+			// compound type
+			return ((Compound)t).components;
+		}
+	}
+	
 	private static final byte leafKind(Leaf leaf) {
 		if(leaf instanceof Void) {
 			return K_VOID;
@@ -700,7 +932,28 @@ public abstract class NewType {
 		}
 		return ncomponents;
 	}
-	
+
+	/**
+	 * The method inserts the components in
+	 * <code>from</from> into those in <code>into</code> at the given index.
+	 * This method remaps components in <code>from</code>, but does not remap
+	 * any components in <code>into</code>
+	 * 
+	 * @param start
+	 * @param from
+	 * @param into
+	 * @return
+	 */
+	private static Component[] insertComponents(int start, Component[] from, Component[] into) {
+		int[] rmap = new int[from.length];
+		for(int i=0;i!=from.length;++i) {
+			rmap[i] = i+start;			
+		}
+		for(int i=0;i!=from.length;++i) {
+			into[i+start] = remap(from[i],rmap);			
+		}
+		return into;
+	}
 	/**
 	 * The remap method takes a node, and mapping from vertices in the old
 	 * space to the those in the new space. It then applies this mapping, so
@@ -794,5 +1047,10 @@ public abstract class NewType {
 		default:
 			throw new IllegalArgumentException("invalid component kind: " + root.kind);
 		}
-	}		
+	}
+	
+	public static void main(String[] args) {
+		NewType nt = T_DICTIONARY(T_INT,T_LIST(T_INT));
+		System.out.println("GOT: " + nt);
+	}
 }
