@@ -433,10 +433,17 @@ public abstract class NewType {
 				if(elems1.length != elems2.length){
 					return false;
 				}
-				for(int i=0;i!=elems1.length;++i) {
-					int e1 = elems1[i];
-					int e2 = elems1[i];
-					if(!matrix.get((e1*ncomponents)+e2)) {
+				// Check return value first (which is covariant)
+				int e1 = elems1[0];
+				int e2 = elems2[0];
+				if(!matrix.get((e1*ncomponents)+e2)) {
+					return false;
+				}
+				// Now, check parameters (which are contra-variant)
+				for(int i=1;i<elems1.length;++i) {
+					e1 = elems1[i];
+					e2 = elems2[i];
+					if(!matrix.get((e2*ncomponents)+e1)) {
 						return false;
 					}
 				}
@@ -1534,12 +1541,11 @@ public abstract class NewType {
 		}
 	}
 	
-	public static void main(String[] args) {		
-		NewType leaf = T_RECURSIVE("Y",linkedList(3,"Y"));
-		HashMap<String,NewType> fields = new HashMap<String,NewType>();
-		fields.put("next",leaf);
-		fields.put("data",T_UNION(T_INT,T_RATIONAL));	 
-		NewType type = T_UNION(T_NULL,T_RECORD(fields));		
+	public static void main(String[] args) {				
+		Fun ft1 = T_FUN(T_VOID,T_INT);
+		Fun ft2 = T_FUN(T_VOID,T_RATIONAL);
+		NewType type = T_UNION(ft1,ft2);
+		
 		System.out.println("BEFORE: " + type);
 		type = minimise(type);
 		System.out.println("AFTER: " + type);
