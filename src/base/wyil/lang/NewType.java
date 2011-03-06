@@ -329,12 +329,26 @@ public abstract class NewType {
 		}
 		// compound types need minimising.
 		Component[] components = ((Compound) type).components;
+		
 		/* debug code
 		for(int i=0;i!=components.length;++i) {
 			System.out.println(i + ": " + components[i]);
 		}
 		*/
-		BitSet matrix = buildSubtypeMatrix(components);		
+		BitSet matrix = buildSubtypeMatrix(components);	
+		
+		/* debug code
+		for(int i=0;i!=components.length;++i) {
+			for(int j=0;j!=components.length;++j) {
+				if(matrix.get((i*components.length)+j)) {
+					System.out.print(" 1");
+				} else {
+					System.out.print(" 0");
+				}
+			}	
+			System.out.println();
+		}
+		*/
 		ArrayList<Component> ncomponents = new ArrayList<Component>();
 		int[] allocated = new int[components.length];
 		rebuild(0, components, allocated, ncomponents, matrix);
@@ -378,8 +392,8 @@ public abstract class NewType {
 	}
 
 	/**
-	 * Check that component <code>c1</code> is a subtype of component
-	 * <code>c2</code> in the given subtype matrix. This matrix is represented
+	 * Check that node <code>n1</code> is a subtype of component
+	 * <code>n2</code> in the given subtype matrix. This matrix is represented
 	 * in row-major form, with <code>r[i][j]</code> indicating that
 	 * <code>i <: j</code>.
 	 * 
@@ -473,6 +487,12 @@ public abstract class NewType {
 				// primitive types true immediately
 				return true;
 			}		
+		} else if(c1.kind == K_INT && c2.kind == K_RATIONAL) {
+			return true;
+		} else if(c1.kind == K_VOID) {
+			return true;
+		} else if(c2.kind == K_ANY) {
+			return true;
 		} else if (c1.kind == K_UNION){
 			int[] bounds1 = (int[]) c1.data;		
 
@@ -487,15 +507,13 @@ public abstract class NewType {
 		} else if (c2.kind == K_UNION) {
 			int[] bounds2 = (int[]) c2.data;		
 
-			// check every bound in c1 is a subtype of some bound in c2.
+			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(!matrix.get((n1*ncomponents)+j)) {
+				if(matrix.get((n1*ncomponents)+j)) {
 					return true;
 				}								
 			}
-
-			return false;
-		}
+		} 
 		return false;
 	}
 
@@ -534,14 +552,11 @@ public abstract class NewType {
 			int to = (Integer) rebuild(p.second(),graph,allocated,ncomponents,matrix);
 			data = new Pair(from,to);
 			break;
-		}
-		case K_UNION: 
+		}		
 		case K_FUNCTION: {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
-			for(int i = 0; i!=elems.length;++i) {
-				// FIXME: I need to deal with unions which need to be simplified
-				// or eliminated entirely.
+			for(int i = 0; i!=elems.length;++i) {				
 				nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,ncomponents,matrix);
 			}			
 			data = nelems;
@@ -557,7 +572,52 @@ public abstract class NewType {
 			}
 			data = nelems;			
 			break;
-		}		
+		}	
+		case K_UNION: {
+			int[] elems = (int[]) node.data;
+			
+			// The aim here is to try and remove equivalent nodes, and nodes
+			// which are subsumed by other nodes.
+			
+			HashSet<Integer> nelems = new HashSet<Integer>();			
+			for(int i : elems) { nelems.add(i); }
+			
+			
+			for(int i=0;i!=elems.length;i++) {
+				int n1 = elems[i];
+				for(int j=0;j<elems.length;j++) {
+					if(i==j) { continue; }
+					int n2 = elems[j];					
+					if(matrix.get((n2*graph_size)+n1)) {						
+						nelems.remove(n2);												
+					}
+				}	
+			}			
+			
+			// ok, let's see what we've got left			
+			if (nelems.size() == 1) {				
+				// ok, union node should be removed as it's entirely subsumed. I
+				// need to undo what I've already done in allocating a new node.
+				ncomponents.remove(cidx);		
+				for (int i = 0; i != graph_size; ++i) {
+					if (matrix.get((i * graph_size) + idx)
+							&& matrix.get((idx * graph_size) + i)) {
+						allocated[i] = 0;
+					}
+				}
+				return rebuild(nelems.iterator().next(), graph, allocated, ncomponents,
+						matrix);
+			} else {
+				int[] melems = new int[elems.length];
+				int i=0;
+				for (Integer j : nelems) {
+					melems[i++] = (Integer) rebuild(j, graph,
+							allocated, ncomponents, matrix);
+				}
+				data = melems;
+			}
+			break;			
+		}
 		}
 		// finally, create the new node!!!
 		ncomponents.set(cidx, new Component(node.kind,data));
@@ -1474,8 +1534,11 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {		
-				
-		NewType type = T_RECURSIVE("Z",linkedList(1,"Z"));
+		NewType leaf = T_RECURSIVE("Y",linkedList(2,"Y"));
+		HashMap<String,NewType> fields = new HashMap<String,NewType>();
+		fields.put("next",leaf);
+		fields.put("data",T_UNION(T_INT,T_INT));	 
+		NewType type = T_UNION(T_NULL,T_RECORD(fields));		
 		System.out.println("BEFORE: " + type);
 		type = minimise(type);
 		System.out.println("AFTER: " + type);
@@ -1484,7 +1547,7 @@ public abstract class NewType {
 	public static NewType linkedList(int nlinks, String label) {
 		NewType leaf;
 		if(nlinks == 0) {
-			leaf = T_LABEL("Z");
+			leaf = T_LABEL(label);
 		} else {
 			leaf = linkedList(nlinks-1,label);
 		}
