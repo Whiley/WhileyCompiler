@@ -169,6 +169,63 @@ public abstract class NewType {
 	public static final NewType T_LABEL(String label) {
 		return new Compound(new Component[]{new Component(K_LABEL,label)});
 	}
+
+	/**
+	 * Close a recursive type using a given label. Essentially, this traverses
+	 * the given type and routes each occurrence of the label to recursively
+	 * point to the type's root. For example, we construct the recursive type
+	 * <code>X<null|{X next}></code> as follows:
+	 * 
+	 * <pre>
+	 * HashMap<String,Type> fields = new HashMap<String,Type>();
+	 * fields.put("next",T_LABEL("X"));	 * 
+	 * Type tmp = T_UNION(T_NULL,T_RECORD(fields));
+	 * Type type = T_RECURSIVE("X",tmp);
+	 * </pre>
+	 * 
+	 * <b>NOTE:</b> it is invalid to close a type which does not contain at
+	 * least one instance of the given label. Doing this will cause an exception
+	 * to be raised.
+	 * 
+	 * @param label
+	 *            --- label to be used for closing.
+	 * @param type
+	 *            --- type to be closed.
+	 * @return
+	 */
+	public static final NewType T_RECURSIVE(String label, NewType type) {
+		// first stage, identify all matching labels
+		if(type instanceof Leaf) { throw new IllegalArgumentException("cannot close a leaf type"); }
+		Compound compound = (Compound) type;
+		Component[] components = compound.components;
+		int[] rmap = new int[components.length];		
+		int nmatches = 0;
+		for(int i=0;i!=components.length;++i) {
+			Component c = components[i];
+			if(c.kind == K_LABEL && c.data.equals(label)) {
+				rmap[i] = 0;
+				nmatches++;
+			} else {
+				rmap[i] = i - nmatches;
+			}
+		}
+		if (nmatches == 0) {
+			throw new IllegalArgumentException(
+					"type cannot be closed, as it contains no matching labels");
+		}
+		Component[] ncomponents = new Component[components.length-nmatches];
+		nmatches = 0;
+		for(int i=0;i!=components.length;++i) {
+			Component c = components[i];
+			if(c.kind == K_LABEL && c.data.equals(label)) {				
+				nmatches++;
+			} else {
+				ncomponents[i-nmatches] = remap(components[i],rmap);
+			}
+		}
+		return construct(ncomponents);
+	}
+	
 	// =============================================================
 	// Type operations
 	// =============================================================
@@ -1071,7 +1128,7 @@ public abstract class NewType {
 	 *            space.
 	 * @return
 	 */
-	public static Component remap(Component node, int[] rmap) {
+	private static Component remap(Component node, int[] rmap) {
 		Object data;
 
 		switch (node.kind) {
@@ -1154,7 +1211,11 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {
-		NewType nt = T_FUN(T_INT,T_LIST(T_INT));
-		System.out.println("GOT: " + nt);
+		HashMap<String,NewType> fields = new HashMap<String,NewType>();
+		fields.put("next",T_LABEL("Z"));
+		fields.put("data",T_INT);	 
+		NewType tmp = T_UNION(T_NULL,T_RECORD(fields));
+		NewType type = T_RECURSIVE("Z",tmp);		
+		System.out.println("GOT: " + type);
 	}
 }
