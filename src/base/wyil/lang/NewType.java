@@ -75,17 +75,29 @@ public abstract class NewType {
 	 * @param element
 	 */
 	private static final Union T_UNION(NewType... bounds) {
+		if(bounds.length < 1) {
+			throw new IllegalArgumentException("Union requires more than one bound");
+		}
+		// include child unions
+		ArrayList<NewType> nbounds = new ArrayList<NewType>();
+		for(NewType t : bounds) {
+			if(t instanceof Union) {
+				nbounds.addAll(((Union)t).bounds());
+			} else {
+				nbounds.add(t);
+			}
+		}
 		int len = 1;
-		for(NewType b : bounds) {
+		for(NewType b : nbounds) {
 			// could be optimised slightly
 			len += components(b).length;
 		}		
 		Component[] components = new Component[len];
-		int[] children = new int[bounds.length];
+		int[] children = new int[nbounds.size()];
 		int start = 1;
-		for(int i=0;i!=bounds.length;++i) {
+		for(int i=0;i!=nbounds.size();++i) {
 			children[i] = start;
-			Component[] comps = components(bounds[i]);
+			Component[] comps = components(nbounds.get(i));
 			insertComponents(start,comps,components);
 			start += comps.length;
 		}
@@ -543,15 +555,11 @@ public abstract class NewType {
 			int to = (Integer) rebuild(p.second(),graph,rpartitions,p2cmap,ncomponents);
 			data = new Pair(from,to);
 			break;
-		}
-		case K_UNION:
+		}		
 		case K_FUNCTION: {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
 			for(int i = 0; i!=elems.length;++i) {
-				// FIXME: there's a bug here when we have equivalent bounds. In
-				// such case, rebuild may return the same number for more than
-				// one bound, leading to repeat entries in nelems. 			
 				nelems[i]  = (Integer) rebuild(elems[i],graph,rpartitions,p2cmap,ncomponents);
 			}			
 			data = nelems;
@@ -567,6 +575,51 @@ public abstract class NewType {
 			}
 			data = nelems;			
 			break;
+		}
+		case K_UNION: {
+			int[] elems = (int[]) node.data;					
+			HashSet<Integer> items = new HashSet<Integer>();
+			for(int i = 0; i!=elems.length;++i) {
+				int ni = (Integer) rebuild(elems[i],graph,rpartitions,p2cmap,ncomponents);
+				items.add(ni);  
+			}			
+			if(items.size() == 1) {
+				// In this case, we have just one node left which means this
+				// union node should be removed. In fact, this is a non-trivial
+				// operation since rebuilding this single node may have itself
+				// created vertices on the ncomponents stack. Therefore, we need
+				// to shift those nodes which have been created up one. 
+				int[] rmap = new int[ncomponents.size()];
+				for(int i=0;i!=ncomponents.size();++i) {
+					if(i > nidx) {
+						rmap[i] = i-1;
+					} else {
+						rmap[i] = i;
+					}
+				}
+				// now remove my reserved slot, since I don't need it
+				ncomponents.remove(nidx);
+				// next, shift nodes up the index
+				for(int i=nidx;i!=ncomponents.size();++i) {
+					ncomponents.set(i,remap(ncomponents.get(i),rmap));
+				}		
+				// finally, fix up the p2cmap as well!
+				for(int i=0;i!=p2cmap.length;++i) {
+					int j = p2cmap[i];
+					if(j > nidx) {
+						p2cmap[i] = j-1;
+					}
+				}
+				return nidx;
+			} else {
+				int[] nelems = new int[items.size()];
+				int i=0;
+				for(Integer j : items) {
+					nelems[i++] = j;
+				}				
+				data = nelems;
+			}
+			break;			
 		}
 		}
 		// finally, create the new node!!!
@@ -1472,15 +1525,13 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {		
-		
-		/*
+				
 		NewType leaf = T_RECURSIVE("Z",linkedList(3,"Z"));
 		HashMap<String,NewType> fields = new HashMap<String,NewType>();
 		fields.put("next",leaf);
 		fields.put("data",T_UNION(T_INT,T_INT));	 
 		NewType type = T_UNION(T_NULL,T_RECORD(fields));	
-		*/
-		NewType type = T_UNION(T_INT,T_INT);
+		
 		System.out.println("BEFORE: " + type);
 		type = minimise(type);
 		System.out.println("AFTER: " + type);
