@@ -17,6 +17,7 @@ public abstract class NewType {
 	public static final Int T_INT = new Int();
 	public static final Rational T_RATIONAL = new Rational();
 
+	
 	/**
 	 * Construct a set type using the given element type.
 	 * 
@@ -67,6 +68,107 @@ public abstract class NewType {
 		return new Dictionary(components);		
 	}
 	
+	/**
+	 * Construct a union type using the given type bounds
+	 * 
+	 * @param element
+	 */
+	private static final Union T_UNION(NewType... bounds) {
+		int len = 1;
+		for(NewType b : bounds) {
+			// could be optimised slightly
+			len += components(b).length;
+		}		
+		Component[] components = new Component[len];
+		int[] children = new int[bounds.length];
+		int start = 1;
+		for(int i=0;i!=bounds.length;++i) {
+			children[i] = start;
+			Component[] comps = components(bounds[i]);
+			insertComponents(start,comps,components);
+			start += comps.length;
+		}
+		components[0] = new Component(K_UNION, children);
+		return new Union(components);		
+	}
+
+	/**
+	 * Construct a function type using the given return and parameter types.
+	 * 
+	 * @param element
+	 */
+	private static final Fun T_FUN(NewType ret, NewType... params) {
+		Component[] retcomps = components(ret); 
+		int len = 1 + retcomps.length;
+		for(NewType b : params) {
+			// could be optimised slightly
+			len += components(b).length;
+		}		
+		Component[] components = new Component[len];
+		int[] children = new int[1 + params.length];
+		insertComponents(1,retcomps,components);
+		children[0] = 1;
+		int start = 1 + retcomps.length;		
+		for(int i=0;i!=params.length;++i) {
+			children[i+1] = start;
+			Component[] comps = components(params[i]);
+			insertComponents(start,comps,components);
+			start += comps.length;
+		}
+		components[0] = new Component(K_FUNCTION, children);
+		return new Fun(components);		
+	}
+	
+	/**
+	 * Construct a record type using the given fields.
+	 * 
+	 * @param element
+	 */
+	private static final Record T_RECORD(Map<String,NewType> fields) {		
+		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
+		Collections.sort(keys);		
+		int len = 1;
+		for(int i=0;i!=keys.size();++i) {
+			String k = keys.get(i);
+			NewType t = fields.get(k);			
+			len += components(t).length;
+		}
+		Component[] components = new Component[len];
+		Pair<String,Integer>[] children = new Pair[fields.size()];
+		int start = 1;
+		for(int i=0;i!=children.length;++i) {			
+			String k = keys.get(i);
+			children[i] = new Pair<String,Integer>(k,start);
+			Component[] comps = components(fields.get(k));
+			insertComponents(start,comps,components);
+			start += comps.length;
+		}
+		components[0] = new Component(K_RECORD,children);
+		return new Record(components);
+	}
+
+	/**
+	 * Construct a label type. These are used in the construction of recursive
+	 * types. Essentially, a label corresponds to the leaf of a recursive type,
+	 * which we can then "close" later on as we build up the type. For example,
+	 * we construct the recursive type <code>X<null|{X next}></code> as follows:
+	 * 
+	 * <pre>
+	 * HashMap<String,Type> fields = new HashMap<String,Type>();
+	 * fields.put("next",T_LABEL("X"));	 * 
+	 * Type tmp = T_UNION(T_NULL,T_RECORD(fields));
+	 * Type type = T_RECURSIVE("X",tmp);
+	 * </pre>
+	 * 
+	 * <b>NOTE:</b> a type containing a label is not considered valid until it
+	 * is closed using a recursive type.
+	 * 
+	 * @param label
+	 * @return
+	 */
+	public static final NewType T_LABEL(String label) {
+		return new Compound(new Component[]{new Component(K_LABEL,label)});
+	}
 	// =============================================================
 	// Type operations
 	// =============================================================
@@ -315,7 +417,7 @@ public abstract class NewType {
 	 * actual Compound class (i.e. if its kind is K_SET, then this is an
 	 * instance of Set).
 	 */
-	private static abstract class Compound extends NewType {
+	private static class Compound extends NewType {
 		protected final Component[] components;
 		
 		public Compound(Component[] components) {
@@ -587,7 +689,7 @@ public abstract class NewType {
 			int[] bounds = (int[]) node.data;
 			String ret = toString(bounds[0], visited, headers, graph);
 			for (int i = 1; i != bounds.length; ++i) {
-				if (i != 0) {
+				if (i != 1) {
 					middle += ",";
 				}
 				middle += toString(bounds[i], visited, headers, graph);
@@ -828,6 +930,7 @@ public abstract class NewType {
 			return r;
 		}
 	}
+	
 	// =============================================================
 	// Components
 	// =============================================================
@@ -845,6 +948,7 @@ public abstract class NewType {
 	private static final byte K_RECORD = 10;
 	private static final byte K_UNION = 11;
 	private static final byte K_FUNCTION = 12;
+	private static final byte K_LABEL = 13;
 
 	/**
 	 * A component represents a node in the type graph. Each node has a kind,
@@ -1050,7 +1154,7 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {
-		NewType nt = T_DICTIONARY(T_INT,T_LIST(T_INT));
+		NewType nt = T_FUN(T_INT,T_LIST(T_INT));
 		System.out.println("GOT: " + nt);
 	}
 }
