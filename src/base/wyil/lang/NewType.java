@@ -324,23 +324,6 @@ public abstract class NewType {
 	}
 
 	/**
-	 * Determine whether two types are <i>structurally isomorphic</i> or not.
-	 * Two types which are not identical may be structurally isomorphic (that
-	 * is, have the same structure). This operation is very similar to the well
-	 * known <i>graph isomorphism</i> problem. As such, this operation will, in
-	 * the worst case, require an exponential number of steps.
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static boolean isomorphic(NewType t1, NewType t2) {
-		// I have a rather distinct feeling that I don't need to implement this
-		// method!
-		return false;
-	}
-
-	/**
 	 * Minimise the given type to produce a fully minimised version of a given
 	 * type.
 	 * 
