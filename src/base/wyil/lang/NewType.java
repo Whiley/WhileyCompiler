@@ -22,6 +22,14 @@ import java.util.*;
 
 import wyil.util.Pair;
 
+/**
+ * A structural type. See
+ * http://whiley.org/2011/03/07/implementing-structural-types/ for more on how
+ * this class works.
+ * 
+ * @author djp
+ * 
+ */
 public abstract class NewType {
 
 	// =============================================================
