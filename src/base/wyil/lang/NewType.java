@@ -1,8 +1,25 @@
+// This file is part of the Whiley-to-Java Compiler (wyjc).
+//
+// The Whiley-to-Java Compiler is free software; you can redistribute 
+// it and/or modify it under the terms of the GNU General Public 
+// License as published by the Free Software Foundation; either 
+// version 3 of the License, or (at your option) any later version.
+//
+// The Whiley-to-Java Compiler is distributed in the hope that it 
+// will be useful, but WITHOUT ANY WARRANTY; without even the 
+// implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+// PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public 
+// License along with the Whiley-to-Java Compiler. If not, see 
+// <http://www.gnu.org/licenses/>
+//
+// Copyright 2010, David James Pearce. 
+
 package wyil.lang;
 
 import java.util.*;
 
-import wyil.lang.Type.Recursive;
 import wyil.util.Pair;
 
 public abstract class NewType {
@@ -26,13 +43,13 @@ public abstract class NewType {
 	 */
 	public static final Set T_SET(NewType element) {
 		if (element instanceof Leaf) {
-			return new Set(new Component[] { new Component(K_SET, 1),
-					new Component(leafKind((Leaf) element), null) });
+			return new Set(new Node[] { new Node(K_SET, 1),
+					new Node(leafKind((Leaf) element), null) });
 		} else {
 			// Compound type
-			Component[] components = insertComponent(((Compound) element).components);
-			components[0] = new Component(K_SET, 1);
-			return new Set(components);
+			Node[] nodes = insertComponent(((Compound) element).nodes);
+			nodes[0] = new Node(K_SET, 1);
+			return new Set(nodes);
 		}
 	}
 	
@@ -43,13 +60,13 @@ public abstract class NewType {
 	 */
 	public static final List T_LIST(NewType element) {
 		if (element instanceof Leaf) {
-			return new List(new Component[] { new Component(K_LIST, 1),
-					new Component(leafKind((Leaf) element), null) });
+			return new List(new Node[] { new Node(K_LIST, 1),
+					new Node(leafKind((Leaf) element), null) });
 		} else {
 			// Compound type
-			Component[] components = insertComponent(((Compound) element).components);
-			components[0] = new Component(K_LIST, 1);
-			return new List(components);
+			Node[] nodes = insertComponent(((Compound) element).nodes);
+			nodes[0] = new Node(K_LIST, 1);
+			return new List(nodes);
 		}
 	}
 	
@@ -59,14 +76,14 @@ public abstract class NewType {
 	 * @param element
 	 */
 	public static final Dictionary T_DICTIONARY(NewType key, NewType value) {
-		Component[] keyComps = components(key);
-		Component[] valueComps = components(value);
-		Component[] components = new Component[1 + keyComps.length + valueComps.length];
+		Node[] keyComps = nodes(key);
+		Node[] valueComps = nodes(value);
+		Node[] nodes = new Node[1 + keyComps.length + valueComps.length];
 			
-		insertComponents(1,keyComps,components);
-		insertComponents(1+keyComps.length,valueComps,components);
-		components[0] = new Component(K_DICTIONARY, new Pair(1,1+keyComps.length));
-		return new Dictionary(components);		
+		insertNodes(1,keyComps,nodes);
+		insertNodes(1+keyComps.length,valueComps,nodes);
+		nodes[0] = new Node(K_DICTIONARY, new Pair(1,1+keyComps.length));
+		return new Dictionary(nodes);		
 	}
 	
 	/**
@@ -90,19 +107,19 @@ public abstract class NewType {
 		int len = 1;
 		for(NewType b : nbounds) {
 			// could be optimised slightly
-			len += components(b).length;
+			len += nodes(b).length;
 		}		
-		Component[] components = new Component[len];
+		Node[] nodes = new Node[len];
 		int[] children = new int[nbounds.size()];
 		int start = 1;
 		for(int i=0;i!=nbounds.size();++i) {
 			children[i] = start;
-			Component[] comps = components(nbounds.get(i));
-			insertComponents(start,comps,components);
+			Node[] comps = nodes(nbounds.get(i));
+			insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
-		components[0] = new Component(K_UNION, children);
-		return new Union(components);		
+		nodes[0] = new Node(K_UNION, children);
+		return new Union(nodes);		
 	}
 
 	/**
@@ -111,25 +128,25 @@ public abstract class NewType {
 	 * @param element
 	 */
 	private static final Fun T_FUN(NewType ret, NewType... params) {
-		Component[] retcomps = components(ret); 
+		Node[] retcomps = nodes(ret); 
 		int len = 1 + retcomps.length;
 		for(NewType b : params) {
 			// could be optimised slightly
-			len += components(b).length;
+			len += nodes(b).length;
 		}		
-		Component[] components = new Component[len];
+		Node[] nodes = new Node[len];
 		int[] children = new int[1 + params.length];
-		insertComponents(1,retcomps,components);
+		insertNodes(1,retcomps,nodes);
 		children[0] = 1;
 		int start = 1 + retcomps.length;		
 		for(int i=0;i!=params.length;++i) {
 			children[i+1] = start;
-			Component[] comps = components(params[i]);
-			insertComponents(start,comps,components);
+			Node[] comps = nodes(params[i]);
+			insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
-		components[0] = new Component(K_FUNCTION, children);
-		return new Fun(components);		
+		nodes[0] = new Node(K_FUNCTION, children);
+		return new Fun(nodes);		
 	}
 	
 	/**
@@ -144,20 +161,20 @@ public abstract class NewType {
 		for(int i=0;i!=keys.size();++i) {
 			String k = keys.get(i);
 			NewType t = fields.get(k);			
-			len += components(t).length;
+			len += nodes(t).length;
 		}
-		Component[] components = new Component[len];
+		Node[] nodes = new Node[len];
 		Pair<String,Integer>[] children = new Pair[fields.size()];
 		int start = 1;
 		for(int i=0;i!=children.length;++i) {			
 			String k = keys.get(i);
 			children[i] = new Pair<String,Integer>(k,start);
-			Component[] comps = components(fields.get(k));
-			insertComponents(start,comps,components);
+			Node[] comps = nodes(fields.get(k));
+			insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
-		components[0] = new Component(K_RECORD,children);
-		return new Record(components);
+		nodes[0] = new Node(K_RECORD,children);
+		return new Record(nodes);
 	}
 
 	/**
@@ -180,7 +197,7 @@ public abstract class NewType {
 	 * @return
 	 */
 	public static final NewType T_LABEL(String label) {
-		return new Compound(new Component[]{new Component(K_LABEL,label)});
+		return new Compound(new Node[]{new Node(K_LABEL,label)});
 	}
 
 	/**
@@ -210,11 +227,11 @@ public abstract class NewType {
 		// first stage, identify all matching labels
 		if(type instanceof Leaf) { throw new IllegalArgumentException("cannot close a leaf type"); }
 		Compound compound = (Compound) type;
-		Component[] components = compound.components;
-		int[] rmap = new int[components.length];		
+		Node[] nodes = compound.nodes;
+		int[] rmap = new int[nodes.length];		
 		int nmatches = 0;
-		for(int i=0;i!=components.length;++i) {
-			Component c = components[i];
+		for(int i=0;i!=nodes.length;++i) {
+			Node c = nodes[i];
 			if(c.kind == K_LABEL && c.data.equals(label)) {
 				rmap[i] = 0;
 				nmatches++;
@@ -226,17 +243,17 @@ public abstract class NewType {
 			throw new IllegalArgumentException(
 					"type cannot be closed, as it contains no matching labels");
 		}
-		Component[] ncomponents = new Component[components.length-nmatches];
+		Node[] newnodes = new Node[nodes.length-nmatches];
 		nmatches = 0;
-		for(int i=0;i!=components.length;++i) {
-			Component c = components[i];
+		for(int i=0;i!=nodes.length;++i) {
+			Node c = nodes[i];
 			if(c.kind == K_LABEL && c.data.equals(label)) {				
 				nmatches++;
 			} else {
-				ncomponents[i-nmatches] = remap(components[i],rmap);
+				newnodes[i-nmatches] = remap(nodes[i],rmap);
 			}
 		}
-		return construct(ncomponents);
+		return construct(newnodes);
 	}
 	
 	// =============================================================
@@ -328,14 +345,14 @@ public abstract class NewType {
 			return type;
 		}
 		// compound types need minimising.
-		Component[] components = ((Compound) type).components;
+		Node[] nodes = ((Compound) type).nodes;
 		
 		/* debug code
 		for(int i=0;i!=components.length;++i) {
 			System.out.println(i + ": " + components[i]);
 		}
 		*/
-		BitSet matrix = buildSubtypeMatrix(components);	
+		BitSet matrix = buildSubtypeMatrix(nodes);	
 		
 		/* debug code
 		for(int i=0;i!=components.length;++i) {
@@ -349,10 +366,10 @@ public abstract class NewType {
 			System.out.println();
 		}
 		*/
-		ArrayList<Component> ncomponents = new ArrayList<Component>();
-		int[] allocated = new int[components.length];
-		rebuild(0, components, allocated, ncomponents, matrix);
-		return construct(ncomponents.toArray(new Component[ncomponents.size()]));		
+		ArrayList<Node> newnodes = new ArrayList<Node>();
+		int[] allocated = new int[nodes.length];
+		rebuild(0, nodes, allocated, newnodes, matrix);
+		return construct(newnodes.toArray(new Node[newnodes.size()]));		
 	}
 
 	/**
@@ -363,25 +380,25 @@ public abstract class NewType {
 	 * subtypes hold. Then, it iteratively considers every relationship cross
 	 * off those that no longer hold, until there is no change in the matrix.
 	 * 
-	 * @param components
+	 * @param nodes
 	 * @return
 	 */
-	private static BitSet buildSubtypeMatrix(Component[] components) {
-		int ncomponents = components.length;
-		BitSet matrix = new BitSet(ncomponents * ncomponents);
+	private static BitSet buildSubtypeMatrix(Node[] nodes) {
+		int numNodes = nodes.length;
+		BitSet matrix = new BitSet(numNodes * numNodes);
 		// intially assume all subtype relationships hold 
 		matrix.set(0,matrix.size(),true);
 		
 		boolean changed = true;
 		while(changed) {
 			changed=false;
-			for(int i=0;i!=ncomponents;i++) {
-				for(int j=0;j!=ncomponents;j++) {					
-					boolean isj = isSubtype(i,j,components,matrix);
-					boolean jsi = isSubtype(j,i,components,matrix);					
-					if(matrix.get((i*ncomponents)+j) != isj || matrix.get((j*ncomponents)+i) != jsi) {
-						matrix.set((i*ncomponents)+j,isj);
-						matrix.set((j*ncomponents)+i,jsi);
+			for(int i=0;i!=numNodes;i++) {
+				for(int j=0;j!=numNodes;j++) {					
+					boolean isj = isSubtype(i,j,nodes,matrix);
+					boolean jsi = isSubtype(j,i,nodes,matrix);					
+					if(matrix.get((i*numNodes)+j) != isj || matrix.get((j*numNodes)+i) != jsi) {
+						matrix.set((i*numNodes)+j,isj);
+						matrix.set((j*numNodes)+i,jsi);
 						changed = true;
 					}
 				}	
@@ -392,21 +409,21 @@ public abstract class NewType {
 	}
 
 	/**
-	 * Check that node <code>n1</code> is a subtype of component
+	 * Check that node <code>n1</code> is a subtype of node
 	 * <code>n2</code> in the given subtype matrix. This matrix is represented
 	 * in row-major form, with <code>r[i][j]</code> indicating that
 	 * <code>i <: j</code>.
 	 * 
 	 * @param c1
 	 * @param c2
-	 * @param ncomponents
+	 * @param nodes
 	 * @param matrix
 	 * @return
 	 */
-	private static boolean isSubtype(int n1, int n2, Component[] components, BitSet matrix) {
-		Component c1 = components[n1];
-		Component c2 = components[n2];
-		int ncomponents = components.length;
+	private static boolean isSubtype(int n1, int n2, Node[] nodes, BitSet matrix) {
+		Node c1 = nodes[n1];
+		Node c2 = nodes[n2];
+		int numNodes = nodes.length;
 		
 		if(c1.kind == c2.kind) { 
 
@@ -417,14 +434,14 @@ public abstract class NewType {
 				// unary node
 				int e1 = (Integer) c1.data;
 				int e2 = (Integer) c2.data;
-				return matrix.get((e1*ncomponents)+e2);
+				return matrix.get((e1*numNodes)+e2);
 			}
 			case K_DICTIONARY: {
 				// binary node
 				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-				return matrix.get((p1.first() * ncomponents) + p2.first())
-				&& matrix.get((p1.second() * ncomponents) + p2.second());
+				return matrix.get((p1.first() * numNodes) + p2.first())
+				&& matrix.get((p1.second() * numNodes) + p2.second());
 			}		
 			case K_FUNCTION:  {
 				// nary nodes
@@ -436,14 +453,14 @@ public abstract class NewType {
 				// Check return value first (which is covariant)
 				int e1 = elems1[0];
 				int e2 = elems2[0];
-				if(!matrix.get((e1*ncomponents)+e2)) {
+				if(!matrix.get((e1*numNodes)+e2)) {
 					return false;
 				}
 				// Now, check parameters (which are contra-variant)
 				for(int i=1;i<elems1.length;++i) {
 					e1 = elems1[i];
 					e2 = elems2[i];
-					if(!matrix.get((e2*ncomponents)+e1)) {
+					if(!matrix.get((e2*numNodes)+e1)) {
 						return false;
 					}
 				}
@@ -462,14 +479,14 @@ public abstract class NewType {
 					Pair<String, Integer> e2 = fields2[i];
 					if (!e1.first().equals(e2.first())
 							|| !matrix
-							.get((e1.second() * ncomponents) + e2.second())) {
+							.get((e1.second() * numNodes) + e2.second())) {
 						return false;
 					}
 				}
 				return true;
 			case K_UNION: {
 				// This is the hardest (i.e. most expensive) case. Essentially, I
-				// just check that for each bound in one component, there is an
+				// just check that for each bound in one node, there is an
 				// equivalent bound in the other.
 				int[] bounds1 = (int[]) c1.data;
 				int[] bounds2 = (int[]) c2.data;
@@ -478,7 +495,7 @@ public abstract class NewType {
 				for(int i : bounds1) {
 					boolean matched=false;
 					for(int j : bounds2) {
-						if(matrix.get((i*ncomponents)+j)) {
+						if(matrix.get((i*numNodes)+j)) {
 							matched = true;
 							break;
 						}
@@ -505,7 +522,7 @@ public abstract class NewType {
 
 			// check every bound in c1 is a subtype of some bound in c2.
 			for(int i : bounds1) {				
-				if(!matrix.get((i*ncomponents)+n2)) {
+				if(!matrix.get((i*numNodes)+n2)) {
 					return false;
 				}								
 			}
@@ -516,7 +533,7 @@ public abstract class NewType {
 
 			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(matrix.get((n1*ncomponents)+j)) {
+				if(matrix.get((n1*numNodes)+j)) {
 					return true;
 				}								
 			}
@@ -524,25 +541,25 @@ public abstract class NewType {
 		return false;
 	}
 
-	private static int rebuild(int idx, Component[] graph, int[] allocated,
-			ArrayList<Component> ncomponents, BitSet matrix) {
+	private static int rebuild(int idx, Node[] graph, int[] allocated,
+			ArrayList<Node> newNodes, BitSet matrix) {
 		int graph_size = graph.length;
-		Component node = graph[idx]; 		
+		Node node = graph[idx]; 		
 		int cidx = allocated[idx];		
 		if(cidx > 0) {
-			// component already constructed for this equivalence class
+			// node already constructed for this equivalence class
 			return cidx - 1;
 		} 
 		
-		cidx = ncomponents.size(); // my new index
-		// now, allocate all components in equivalence class
+		cidx = newNodes.size(); // my new index
+		// now, allocate all nodes in equivalence class
 		for(int i=0;i!=graph_size;++i) {
 			if(matrix.get((i*graph_size)+idx) && matrix.get((idx*graph_size)+i)) {
 				allocated[i] = cidx + 1; 
 			}
 		}
 		 
-		ncomponents.add(null); // reserve space for my node
+		newNodes.add(null); // reserve space for my node
 		
 		Object data = null;
 		switch(node.kind) {
@@ -550,13 +567,13 @@ public abstract class NewType {
 		case K_LIST:
 		case K_REFERENCE: {
 			int element = (Integer) node.data;
-			data = (Integer) rebuild(element,graph,allocated,ncomponents,matrix);
+			data = (Integer) rebuild(element,graph,allocated,newNodes,matrix);
 			break;
 		}
 		case K_DICTIONARY: {
 			Pair<Integer,Integer> p = (Pair) node.data;
-			int from = (Integer) rebuild(p.first(),graph,allocated,ncomponents,matrix);
-			int to = (Integer) rebuild(p.second(),graph,allocated,ncomponents,matrix);
+			int from = (Integer) rebuild(p.first(),graph,allocated,newNodes,matrix);
+			int to = (Integer) rebuild(p.second(),graph,allocated,newNodes,matrix);
 			data = new Pair(from,to);
 			break;
 		}		
@@ -564,7 +581,7 @@ public abstract class NewType {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
 			for(int i = 0; i!=elems.length;++i) {				
-				nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,ncomponents,matrix);
+				nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,newNodes,matrix);
 			}			
 			data = nelems;
 			break;			
@@ -574,7 +591,7 @@ public abstract class NewType {
 			Pair<String,Integer>[] nelems = new Pair[elems.length];
 			for(int i=0;i!=elems.length;++i) {
 				Pair<String,Integer> p = elems[i];
-				int j = (Integer) rebuild(p.second(),graph,allocated,ncomponents,matrix);
+				int j = (Integer) rebuild(p.second(),graph,allocated,newNodes,matrix);
 				nelems[i] = new Pair<String,Integer>(p.first(),j);
 			}
 			data = nelems;			
@@ -606,21 +623,21 @@ public abstract class NewType {
 			if (nelems.size() == 1) {				
 				// ok, union node should be removed as it's entirely subsumed. I
 				// need to undo what I've already done in allocating a new node.
-				ncomponents.remove(cidx);		
+				newNodes.remove(cidx);		
 				for (int i = 0; i != graph_size; ++i) {
 					if (matrix.get((i * graph_size) + idx)
 							&& matrix.get((idx * graph_size) + i)) {
 						allocated[i] = 0;
 					}
 				}
-				return rebuild(nelems.iterator().next(), graph, allocated, ncomponents,
+				return rebuild(nelems.iterator().next(), graph, allocated, newNodes,
 						matrix);
 			} else {
 				int[] melems = new int[elems.length];
 				int i=0;
 				for (Integer j : nelems) {
 					melems[i++] = (Integer) rebuild(j, graph,
-							allocated, ncomponents, matrix);
+							allocated, newNodes, matrix);
 				}
 				data = melems;
 			}
@@ -628,7 +645,7 @@ public abstract class NewType {
 		}
 		}
 		// finally, create the new node!!!
-		ncomponents.set(cidx, new Component(node.kind,data));
+		newNodes.set(cidx, new Node(node.kind,data));
 		return cidx;
 	}
 	
@@ -786,10 +803,10 @@ public abstract class NewType {
 	 * instance of Set).
 	 */
 	private static class Compound extends NewType {
-		protected final Component[] components;
+		protected final Node[] nodes;
 		
-		public Compound(Component[] components) {
-			this.components = components;
+		public Compound(Node[] nodes) {
+			this.nodes = nodes;
 		}
 
 		/**
@@ -797,7 +814,7 @@ public abstract class NewType {
 		 */
 		public int hashCode() {
 			int r = 0;
-			for(Component c : components) {
+			for(Node c : nodes) {
 				r = r + c.hashCode();
 			}
 			return r;
@@ -813,12 +830,12 @@ public abstract class NewType {
 		 */
 		public boolean equals(Object o) {
 			if(o instanceof Compound) {
-				Component[] cs = ((Compound) o).components;
-				if(cs.length != components.length) {
+				Node[] cs = ((Compound) o).nodes;
+				if(cs.length != nodes.length) {
 					return false;
 				}
 				for(int i=0;i!=cs.length;++i) {
-					if(!components[i].equals(cs[i])) {
+					if(!nodes[i].equals(cs[i])) {
 						return false;
 					}
 				}
@@ -837,23 +854,23 @@ public abstract class NewType {
 		 */
 		protected final NewType extract(int root) {
 			// First, we perform the DFS.
-			BitSet visited = new BitSet(components.length);
+			BitSet visited = new BitSet(nodes.length);
 			// extracted maps new indices to old indices
 			ArrayList<Integer> extracted = new ArrayList<Integer>();
-			subgraph(root,visited,extracted,components);
+			subgraph(root,visited,extracted,nodes);
 			// rextracted is the reverse of extracted
 			int[] rextracted = new int[extracted.size()];
 			int i=0;
 			for(int j : extracted) {
 				rextracted[i++]=j;
 			}
-			Component[] ncomponents = new Component[extracted.size()];
+			Node[] newNodes = new Node[extracted.size()];
 			i=0;
 			for(int j : extracted) {
-				ncomponents[i++] = remap(components[j],rextracted);  
+				newNodes[i++] = remap(nodes[j],rextracted);  
 			}
 				
-			return construct(ncomponents);
+			return construct(newNodes);
 		}
 		
 		
@@ -861,27 +878,27 @@ public abstract class NewType {
 		public String toString() {
 			// First, we need to find the headers of the computation. This is
 			// necessary in order to mark the start of a recursive type.
-			BitSet headers = new BitSet(components.length);
-			BitSet visited = new BitSet(components.length); 
-			BitSet onStack = new BitSet(components.length);
-			findHeaders(0,visited,onStack,headers,components);
+			BitSet headers = new BitSet(nodes.length);
+			BitSet visited = new BitSet(nodes.length); 
+			BitSet onStack = new BitSet(nodes.length);
+			findHeaders(0,visited,onStack,headers,nodes);
 			visited.clear();
-			String[] titles = new String[components.length];
+			String[] titles = new String[nodes.length];
 			int count = 0;
-			for(int i=0;i!=components.length;++i) {
+			for(int i=0;i!=nodes.length;++i) {
 				if(headers.get(i)) {
 					titles[i] = headerTitle(count++);
 				}
 			}
-			return toString(0,visited,titles,components);
+			return toString(0,visited,titles,nodes);
 		}
 	}
 
 	/**
 	 * The following method recursively extracts the subgraph rooted at
-	 * <code>index</code> in the given component graph using a depth-first
-	 * search. Vertices in the subgraph are added to <code>extracted</code> in
-	 * the order they are visited.
+	 * <code>index</code> in the given graph using a depth-first search.
+	 * Vertices in the subgraph are added to <code>extracted</code> in the order
+	 * they are visited.
 	 * 
 	 * @param index
 	 *            --- the node to extract the subgraph from.
@@ -891,14 +908,14 @@ public abstract class NewType {
 	 *            --- the list of vertices that make up the subgraph which is
 	 *            built by this method.
 	 * @param graph
-	 *            --- the component graph.
+	 *            --- the graph.
 	 */
 	private final static void subgraph(int index, BitSet visited,
-			ArrayList<Integer> extracted, Component[] graph) {
+			ArrayList<Integer> extracted, Node[] graph) {
 		if(visited.get(index)) { return; } // node already visited}
 		extracted.add(index);
 		visited.set(index);
-		Component node = graph[index];
+		Node node = graph[index];
 		switch(node.kind) {
 		case K_SET:
 		case K_LIST:
@@ -931,7 +948,7 @@ public abstract class NewType {
 	}
 
 	/**
-	 * The following method traverses the component graph using a depth-first
+	 * The following method traverses the graph using a depth-first
 	 * search to identify nodes which are "loop headers". That is, they are the
 	 * target of one or more recursive edgesin the graph.
 	 * 
@@ -945,10 +962,10 @@ public abstract class NewType {
 	 *            --- header nodes discovered during this search are set to true
 	 *            in this bitset.
 	 * @param graph
-	 *            --- the component graph.
+	 *            --- the graph.
 	 */
 	private final static void findHeaders(int index, BitSet visited,
-			BitSet onStack, BitSet headers, Component[] graph) {
+			BitSet onStack, BitSet headers, Node[] graph) {
 		if(visited.get(index)) {
 			// node already visited
 			if(onStack.get(index)) {
@@ -958,7 +975,7 @@ public abstract class NewType {
 		} 		
 		onStack.set(index);
 		visited.set(index);
-		Component node = graph[index];
+		Node node = graph[index];
 		switch(node.kind) {
 		case K_SET:
 		case K_LIST:
@@ -1005,17 +1022,17 @@ public abstract class NewType {
 	 *            --- an array of strings which identify the name to be given to
 	 *            each header.
 	 * @param graph
-	 *            --- the component graph.
+	 *            --- the graph.
 	 */
 	private final static String toString(int index, BitSet visited,
-			String[] headers, Component[] graph) {
+			String[] headers, Node[] graph) {
 		if (visited.get(index)) {
 			// node already visited
 			return headers[index];
 		} else if(headers[index] != null) {
 			visited.set(index);
 		}
-		Component node = graph[index];
+		Node node = graph[index];
 		String middle;
 		switch (node.kind) {
 		case K_VOID:
@@ -1118,7 +1135,7 @@ public abstract class NewType {
 
 	/*
 	 * The compound faces are not technically necessary, as they simply provide
-	 * interfaces to the underlying components of a compound type. However, they
+	 * interfaces to the underlying nodes of a compound type. However, they
 	 * certainly make it more pleasant to use this library.
 	 */
 
@@ -1131,8 +1148,8 @@ public abstract class NewType {
 	 * 
 	 */
 	public static final class Set extends Compound  {
-		private Set(Component[] components) {
-			super(components);
+		private Set(Node[] nodes) {
+			super(nodes);
 		}
 		public NewType element() {
 			return extract(1);
@@ -1148,8 +1165,8 @@ public abstract class NewType {
 	 * 
 	 */
 	public static final class List extends Compound  {
-		private List(Component[] components) {
-			super(components);
+		private List(Node[] nodes) {
+			super(nodes);
 		}
 		public NewType element() {
 			return extract(1);
@@ -1163,11 +1180,11 @@ public abstract class NewType {
 	 * 
 	 */
 	public static final class Reference extends Compound  {
-		private Reference(Component[] components) {
-			super(components);
+		private Reference(Node[] nodes) {
+			super(nodes);
 		}
 		public NewType element() {
-			int i = (Integer) components[0].data;
+			int i = (Integer) nodes[0].data;
 			return extract(i);			
 		}		
 	}
@@ -1182,15 +1199,15 @@ public abstract class NewType {
 	 * 
 	 */
 	public static final class Dictionary extends Compound  {
-		private Dictionary(Component[] components) {
-			super(components);
+		private Dictionary(Node[] nodes) {
+			super(nodes);
 		}
 		public NewType key() {
-			Pair<Integer,Integer> p = (Pair) components[0].data;
+			Pair<Integer,Integer> p = (Pair) nodes[0].data;
 			return extract(p.first());
 		}
 		public NewType value() {
-			Pair<Integer,Integer> p = (Pair) components[0].data;
+			Pair<Integer,Integer> p = (Pair) nodes[0].data;
 			return extract(p.second());			
 		}
 	}
@@ -1205,8 +1222,8 @@ public abstract class NewType {
 	 * 
 	 */
 	public static final class Record extends Compound  {
-		private Record(Component[] components) {
-			super(components);
+		private Record(Node[] nodes) {
+			super(nodes);
 		}
 
 		/**
@@ -1217,7 +1234,7 @@ public abstract class NewType {
 		 * @return
 		 */
 		public HashSet<String> keys() {
-			Pair<String,Integer>[] fields = (Pair[]) components[0].data;
+			Pair<String,Integer>[] fields = (Pair[]) nodes[0].data;
 			HashSet<String> r = new HashSet<String>();
 			for(Pair<String,Integer> f : fields) {
 				r.add(f.first());
@@ -1231,7 +1248,7 @@ public abstract class NewType {
 		 * @return
 		 */
 		public HashMap<String,NewType> fields() {
-			Pair<String,Integer>[] fields = (Pair[]) components[0].data;
+			Pair<String,Integer>[] fields = (Pair[]) nodes[0].data;
 			HashMap<String,NewType> r = new HashMap<String,NewType>();
 			for(Pair<String,Integer> f : fields) {
 				r.put(f.first(),extract(f.second()));
@@ -1250,8 +1267,8 @@ public abstract class NewType {
 	 * 
 	 */
 	public static final class Union extends Compound {
-		private Union(Component[] components) {
-			super(components);
+		private Union(Node[] nodes) {
+			super(nodes);
 		}
 
 		/**
@@ -1260,7 +1277,7 @@ public abstract class NewType {
 		 * @return
 		 */
 		public HashSet<NewType> bounds() {
-			int[] fields = (int[]) components[0].data;
+			int[] fields = (int[]) nodes[0].data;
 			HashSet<NewType> r = new HashSet<NewType>();
 			for(int i : fields) {
 				r.add(extract(i));
@@ -1277,8 +1294,8 @@ public abstract class NewType {
 	 * 
 	 */
 	public static final class Fun extends Compound  {
-		Fun(Component[] components) {
-			super(components);
+		Fun(Node[] nodes) {
+			super(nodes);
 		}
 
 		/**
@@ -1287,7 +1304,7 @@ public abstract class NewType {
 		 * @return
 		 */
 		public NewType ret() {
-			Integer[] fields = (Integer[]) components[0].data;
+			Integer[] fields = (Integer[]) nodes[0].data;
 			return extract(fields[0]);
 		}
 
@@ -1297,7 +1314,7 @@ public abstract class NewType {
 		 * @return
 		 */
 		public ArrayList<NewType> params() {
-			Integer[] fields = (Integer[]) components[0].data;
+			Integer[] fields = (Integer[]) nodes[0].data;
 			ArrayList<NewType> r = new ArrayList<NewType>();
 			for(int i=1;i<fields.length;++i) {
 				r.add(extract(i));
@@ -1326,27 +1343,26 @@ public abstract class NewType {
 	private static final byte K_LABEL = 13;
 
 	/**
-	 * A component represents a node in the type graph. Each node has a kind,
-	 * along with a data value identifying any children. For set, list and
-	 * reference kinds the data value is an Integer; for records, it's a
-	 * Pair<String,Integer>[] (sorted by key). For dictionaries, it's a
-	 * Pair<Integer,Integer> and, for unions and functions it's int[] (for
-	 * functions first element is return).
+	 * Represents a node in the type graph. Each node has a kind, along with a
+	 * data value identifying any children. For set, list and reference kinds
+	 * the data value is an Integer; for records, it's a Pair<String,Integer>[]
+	 * (sorted by key). For dictionaries, it's a Pair<Integer,Integer> and, for
+	 * unions and functions it's int[] (for functions first element is return).
 	 * 
 	 * @author djp
 	 * 
 	 */
-	private static final class Component {
+	private static final class Node {
 		final byte kind;
 		final Object data;
 		
-		public Component(byte kind, Object data) {
+		public Node(byte kind, Object data) {
 			this.kind = kind;
 			this.data = data;
 		}
 		public boolean equals(final Object o) {
-			if(o instanceof Component) {
-				Component c= (Component) o;
+			if(o instanceof Node) {
+				Node c= (Node) o;
 				if(data == null) {
 					return kind == c.kind && c.data == null;
 				} else {
@@ -1378,12 +1394,12 @@ public abstract class NewType {
 		}
 	}
 	
-	private static final Component[] components(NewType t) {
+	private static final Node[] nodes(NewType t) {
 		if (t instanceof Leaf) {
-			return new Component[]{new Component(leafKind((Leaf) t), null)};
+			return new Node[]{new Node(leafKind((Leaf) t), null)};
 		} else {
 			// compound type
-			return ((Compound)t).components;
+			return ((Compound)t).nodes;
 		}
 	}
 	
@@ -1407,36 +1423,36 @@ public abstract class NewType {
 	}
 
 	/**
-	 * This method inserts a black component at the head of the components
-	 * array, whilst remapping all existing components appropriately.
+	 * This method inserts a blank node at the head of the nodes
+	 * array, whilst remapping all existing nodes appropriately.
 	 * 
-	 * @param components
+	 * @param nodes
 	 * @return
 	 */
-	private static Component[] insertComponent(Component[] components) {
-		Component[] ncomponents = new Component[components.length+1];		
-		int[] rmap = new int[components.length];
-		for(int i=0;i!=components.length;++i) {
+	private static Node[] insertComponent(Node[] nodes) {
+		Node[] newnodes = new Node[nodes.length+1];		
+		int[] rmap = new int[nodes.length];
+		for(int i=0;i!=nodes.length;++i) {
 			rmap[i] = i+1;			
 		}
-		for(int i=0;i!=components.length;++i) {
-			ncomponents[i+1] = remap(components[i],rmap);			
+		for(int i=0;i!=nodes.length;++i) {
+			newnodes[i+1] = remap(nodes[i],rmap);			
 		}
-		return ncomponents;
+		return newnodes;
 	}
 
 	/**
-	 * The method inserts the components in
+	 * The method inserts the nodes in
 	 * <code>from</from> into those in <code>into</code> at the given index.
-	 * This method remaps components in <code>from</code>, but does not remap
-	 * any components in <code>into</code>
+	 * This method remaps nodes in <code>from</code>, but does not remap
+	 * any in <code>into</code>
 	 * 
 	 * @param start
 	 * @param from
 	 * @param into
 	 * @return
 	 */
-	private static Component[] insertComponents(int start, Component[] from, Component[] into) {
+	private static Node[] insertNodes(int start, Node[] from, Node[] into) {
 		int[] rmap = new int[from.length];
 		for(int i=0;i!=from.length;++i) {
 			rmap[i] = i+start;			
@@ -1450,16 +1466,16 @@ public abstract class NewType {
 	 * The remap method takes a node, and mapping from vertices in the old
 	 * space to the those in the new space. It then applies this mapping, so
 	 * that the node produced refers to vertices in the new space. Or, in
-	 * other words, it transposes the component into the new space.
+	 * other words, it transposes the node into the new space.
 	 * 
 	 * @param node
-	 *            --- component to be transposed.
+	 *            --- node to be transposed.
 	 * @param rmap
 	 *            --- mapping from integers in old space to those in new
 	 *            space.
 	 * @return
 	 */
-	private static Component remap(Component node, int[] rmap) {
+	private static Node remap(Node node, int[] rmap) {
 		Object data;
 
 		switch (node.kind) {
@@ -1498,19 +1514,19 @@ public abstract class NewType {
 		default:
 			return node;
 		}
-		return new Component(node.kind, data);
+		return new Node(node.kind, data);
 	}
 
 	/**
 	 * The construct methods constructs a Type from an array of Components.
-	 * It carefully ensures the kind of the root component matches the class
+	 * It carefully ensures the kind of the root node matches the class
 	 * created (e.g. a kind K_SET results in a class Set).
 	 * 
-	 * @param ncomponents
+	 * @param nodes
 	 * @return
 	 */
-	private final static NewType construct(Component[] components) {
-		Component root = components[0];
+	private final static NewType construct(Node[] nodes) {
+		Node root = nodes[0];
 		switch(root.kind) {
 		case K_VOID:
 			return T_VOID;
@@ -1525,19 +1541,19 @@ public abstract class NewType {
 		case K_RATIONAL:
 			return T_RATIONAL;
 		case K_SET:
-			return new Set(components);
+			return new Set(nodes);
 		case K_LIST:
-			return new List(components);
+			return new List(nodes);
 		case K_DICTIONARY:
-			return new Dictionary(components);
+			return new Dictionary(nodes);
 		case K_RECORD:
-			return new Record(components);
+			return new Record(nodes);
 		case K_UNION:
-			return new Union(components);
+			return new Union(nodes);
 		case K_FUNCTION:
-			return new Fun(components);
+			return new Fun(nodes);
 		default:
-			throw new IllegalArgumentException("invalid component kind: " + root.kind);
+			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
 	}
 	
