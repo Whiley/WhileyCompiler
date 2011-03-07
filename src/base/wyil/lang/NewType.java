@@ -1542,8 +1542,8 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {				
-		Fun ft1 = T_FUN(T_VOID,T_INT);
-		Fun ft2 = T_FUN(T_VOID,T_RATIONAL);
+		Fun ft1 = T_FUN(T_RATIONAL,T_INT);
+		Fun ft2 = T_FUN(T_INT,T_RATIONAL);
 		NewType type = T_UNION(ft1,ft2);
 		
 		System.out.println("BEFORE: " + type);
