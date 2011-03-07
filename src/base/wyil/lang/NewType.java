@@ -99,7 +99,7 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	private static final Union T_UNION(NewType... bounds) {
+	public static final Union T_UNION(NewType... bounds) {
 		if(bounds.length < 1) {
 			throw new IllegalArgumentException("Union requires more than one bound");
 		}
@@ -135,7 +135,7 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	private static final Fun T_FUN(NewType ret, NewType... params) {
+	public static final Fun T_FUN(NewType ret, NewType... params) {
 		Node[] retcomps = nodes(ret); 
 		int len = 1 + retcomps.length;
 		for(NewType b : params) {
@@ -162,7 +162,7 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	private static final Record T_RECORD(Map<String,NewType> fields) {		
+	public static final Record T_RECORD(Map<String,NewType> fields) {		
 		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
 		Collections.sort(keys);		
 		int len = 1;
@@ -289,7 +289,7 @@ public abstract class NewType {
 	 * @return
 	 */
 	public static NewType leastUpperBound(NewType t1, NewType t2) {
-		return null;
+		return minimise(T_UNION(t1,t2)); // so easy
 	}
 	
 	/**
@@ -324,8 +324,25 @@ public abstract class NewType {
 	}
 
 	/**
-	 * Minimise the given type to produce a fully minimised version of a given
-	 * type.
+	 * The effective record type gives a subset of the visible fields which are
+	 * guaranteed to be in the type. For example, consider this type:
+	 * 
+	 * <pre>
+	 * {int op, int x} | {int op, [int] y}
+	 * </pre>
+	 * 
+	 * Here, the field op is guaranteed to be present. Therefore, the effective
+	 * record type is just <code>{int op}</code>.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static Record effectiveRecordType(NewType t) {
+		return null;
+	}
+	
+	/**
+	 * Minimise the given type to produce a fully minimised version.
 	 * 
 	 * @param type
 	 * @return
