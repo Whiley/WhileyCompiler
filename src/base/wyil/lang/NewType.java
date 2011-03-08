@@ -42,7 +42,30 @@ public abstract class NewType {
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
 	public static final Rational T_RATIONAL = new Rational();
-
+	
+	/**
+	 * Construct a tuple type using the given element types.
+	 * 
+	 * @param element
+	 */
+	public static final Tuple T_TUPLE(NewType... elements) {
+		int len = 1;
+		for(NewType b : elements) {
+			// could be optimised slightly
+			len += nodes(b).length;
+		}		
+		Node[] nodes = new Node[len];
+		int[] children = new int[elements.length];
+		int start = 1;
+		for(int i=0;i!=elements.length;++i) {
+			children[i] = start;
+			Node[] comps = nodes(elements[i]);
+			insertNodes(start,comps,nodes);
+			start += comps.length;
+		}
+		nodes[0] = new Node(K_TUPLE, children);		
+		return new Tuple(nodes);
+	}
 	
 	/**
 	 * Construct a set type using the given element type.
@@ -518,8 +541,26 @@ public abstract class NewType {
 				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
 				return subtypeMatrix.get((p1.first() * g2Size) + p2.first())
-				&& subtypeMatrix.get((p1.second() * g2Size) + p2.second());
+						&& subtypeMatrix.get((p1.second() * g2Size)
+								+ p2.second());
 			}		
+			case K_TUPLE:  {
+				// nary nodes
+				int[] elems1 = (int[]) c1.data;
+				int[] elems2 = (int[]) c2.data;
+				if(elems1.length != elems2.length){
+					return false;
+				}
+				for(int i=0;i<elems1.length;++i) {
+					int e1 = elems1[i];
+					int e2 = elems2[i];					
+					if(!subtypeMatrix.get((e1*g2Size)+e2)) {
+						System.out.println("FAILED: " + e1 + " : " + e2);
+						return false;
+					}
+				}
+				return true;
+			}
 			case K_FUNCTION:  {
 				// nary nodes
 				int[] elems1 = (int[]) c1.data;
@@ -654,6 +695,7 @@ public abstract class NewType {
 			data = new Pair(from,to);
 			break;
 		}		
+		case K_TUPLE:
 		case K_FUNCTION: {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
@@ -1006,6 +1048,7 @@ public abstract class NewType {
 			subgraph(p.first(),visited,extracted,graph);
 			subgraph(p.second(),visited,extracted,graph);
 			break;
+		case K_TUPLE:
 		case K_UNION:
 		case K_FUNCTION:
 			// nary node
@@ -1066,6 +1109,7 @@ public abstract class NewType {
 			findHeaders(p.first(),visited,onStack,headers,graph);
 			findHeaders(p.second(),visited,onStack,headers,graph);
 			break;
+		case K_TUPLE:
 		case K_UNION:
 		case K_FUNCTION:
 			// nary node
@@ -1154,6 +1198,18 @@ public abstract class NewType {
 			}
 			break;
 		}
+		case K_TUPLE: {
+			middle = "";
+			int[] bounds = (int[]) node.data;			
+			for (int i = 0; i != bounds.length; ++i) {
+				if (i != 0) {
+					middle += ",";
+				}
+				middle += toString(bounds[i], visited, headers, graph);
+			}
+			middle = "(" + middle + ")";
+			break;
+		}
 		case K_FUNCTION: {
 			middle = "";
 			int[] bounds = (int[]) node.data;
@@ -1194,6 +1250,7 @@ public abstract class NewType {
 			return middle;
 		}
 	}
+
 	
 	private static final char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
 	private static String headerTitle(int count) {
@@ -1206,6 +1263,113 @@ public abstract class NewType {
 		}
 	}
 	
+	/**
+	 * This method is used primarily for debugging. Essentially, it provides a
+	 * raw view of the underlying graph for a given type.
+	 * 
+	 * @param type --- type to prring
+	 * @return
+	 */
+	private final static String toGraphString(NewType type) {
+		if(type instanceof Leaf) {			
+			return type.toString();
+		}		
+		Compound graph = (Compound) type;
+		String r = "";
+		Node[] nodes = graph.nodes;
+		for(int i=0;i!=nodes.length;++i) {
+			if(i != 0) { r += "\n"; }
+			Node node = nodes[i];		
+			r += i + ": ";		
+			switch (node.kind) {
+			case K_VOID:
+				r += "void";
+				break;
+			case K_ANY:
+				r += "any";
+				break;
+			case K_NULL:
+				r +=  "null";
+				break;
+			case K_BOOL:
+				r +=  "bool";
+				break;
+			case K_INT:
+				r +=  "int";
+				break;
+			case K_RATIONAL:
+				r +=  "rat";
+				break;
+			case K_SET:
+				r += "{" + (Integer) node.data + "}";
+				break;
+			case K_LIST:
+				r += "[" + (Integer) node.data + "]";								
+				break;
+			case K_REFERENCE:
+				r += "*" + (Integer) node.data;				
+				break;
+			case K_DICTIONARY: {
+				// binary node
+				Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
+				r += "{" + p.first() + "->" + p.second() + "}";
+				break;
+			}
+			case K_UNION: {
+				int[] bounds = (int[]) node.data;			
+				for (int j = 0; j != bounds.length; ++j) {
+					if (j != 0) {
+						r += "|";
+					}
+					r += bounds[i];
+				}
+				break;
+			}
+			case K_TUPLE: {				
+				r += "(";
+				int[] bounds = (int[]) node.data;			
+				for (int j = 0; j != bounds.length; ++j) {
+					if (j != 0) {
+						r += ",";
+					}
+					r += bounds[i];
+				}
+				r += ")";
+				break;
+			}
+			case K_FUNCTION: {				
+				int[] bounds = (int[]) node.data;
+				r += bounds[0] + "(";
+				for (int j = 1; j != bounds.length; ++j) {
+					if (i != 1) {
+						r += ",";
+					}
+					r += bounds[i];
+				}
+				r += ")";
+				break;
+			}
+			case K_RECORD: {
+				// labeled nary node
+				r += "{";
+				Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
+				for (int j = 0; j != fields.length; ++j) {
+					if (j != 0) {
+						r += ",";
+					}
+					Pair<String, Integer> f = fields[i];
+					r += f.second() + " " + f.first();
+				}
+				r += "}";
+				break;
+			}
+			default: 
+				throw new IllegalArgumentException("Invalid type encountered");
+			}
+		}
+		return r;
+	}
+	
 	// =============================================================
 	// Compound Faces
 	// =============================================================
@@ -1215,6 +1379,28 @@ public abstract class NewType {
 	 * interfaces to the underlying nodes of a compound type. However, they
 	 * certainly make it more pleasant to use this library.
 	 */
+
+	/**
+	 * A tuple type describes a compound type made up of two or more
+	 * subcomponents. It is similar to a record, except that fields are
+	 * effectively anonymous.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Tuple extends Compound  {
+		private Tuple(Node[] nodes) {
+			super(nodes);
+		}		
+		public java.util.List<NewType> elements() {
+			int[] values = (int[]) nodes[0].data;
+			ArrayList<NewType> elems = new ArrayList<NewType>();
+			for(Integer i : values) {
+				elems.add(extract(i));
+			}
+			return elems;
+		}		
+	}
 
 	/**
 	 * A set type describes set values whose elements are subtypes of the
@@ -1410,14 +1596,15 @@ public abstract class NewType {
 	private static final byte K_BOOL = 3;
 	private static final byte K_INT = 4;
 	private static final byte K_RATIONAL = 5;
-	private static final byte K_SET = 6;
-	private static final byte K_LIST = 7;
-	private static final byte K_DICTIONARY = 8;
-	private static final byte K_REFERENCE = 9;
-	private static final byte K_RECORD = 10;
-	private static final byte K_UNION = 11;
-	private static final byte K_FUNCTION = 12;
-	private static final byte K_LABEL = 13;
+	private static final byte K_TUPLE = 6;
+	private static final byte K_SET = 7;
+	private static final byte K_LIST = 8;
+	private static final byte K_DICTIONARY = 9;	
+	private static final byte K_REFERENCE = 10;
+	private static final byte K_RECORD = 12;
+	private static final byte K_UNION = 13;
+	private static final byte K_FUNCTION = 14;
+	private static final byte K_LABEL = 15;
 
 	/**
 	 * Represents a node in the type graph. Each node has a kind, along with a
@@ -1568,6 +1755,7 @@ public abstract class NewType {
 			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
 			data = new Pair(rmap[p.first()], rmap[p.second()]);
 			break;
+		case K_TUPLE:
 		case K_UNION:
 		case K_FUNCTION:
 			// nary node
@@ -1617,6 +1805,8 @@ public abstract class NewType {
 			return T_INT;
 		case K_RATIONAL:
 			return T_RATIONAL;
+		case K_TUPLE:
+			return new Tuple(nodes);
 		case K_SET:
 			return new Set(nodes);
 		case K_LIST:
@@ -1635,9 +1825,10 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {				
-		NewType ft1 = minimise(T_FUN(T_INT,T_RATIONAL));
-		NewType ft2 = minimise(T_FUN(T_RATIONAL,T_INT));		
-		
+		NewType ft2 = minimise(T_TUPLE(T_INT,T_INT));
+		NewType ft1 = minimise(T_TUPLE(T_RATIONAL,T_INT));		
+		System.out.println(toGraphString(ft1));
+		System.out.println(toGraphString(ft2));
 		System.out.println(ft1 + " :> " + ft2 + " : " + isSubtype(ft1,ft2));		
 	}
 	
