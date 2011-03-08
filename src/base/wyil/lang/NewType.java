@@ -415,8 +415,8 @@ public abstract class NewType {
 			changed=false;
 			for(int i=0;i!=g1Size;i++) {
 				for(int j=0;j!=g1Size;j++) {					
-					boolean isj = isSubtype(i,graph,j,graph,matrix);
-					boolean jsi = isSubtype(j,graph,i,graph,matrix);					
+					boolean isj = isSubtype(i,graph,j,graph,matrix,matrix);
+					boolean jsi = isSubtype(j,graph,i,graph,matrix,matrix);					
 					if(matrix.get((i*g1Size)+j) != isj || matrix.get((j*g1Size)+i) != jsi) {
 						matrix.set((i*g1Size)+j,isj);
 						matrix.set((j*g1Size)+i,jsi);
@@ -467,8 +467,8 @@ public abstract class NewType {
 			changed=false;
 			for(int i=0;i!=g1Size;i++) {
 				for(int j=0;j!=g2Size;j++) {					
-					boolean isj = isSubtype(i,graph1,j,graph2,subtypeMatrix);
-					boolean jsi = isSubtype(j,graph2,i,graph1,suptypeMatrix);									
+					boolean isj = isSubtype(i,graph1,j,graph2,subtypeMatrix,suptypeMatrix);
+					boolean jsi = isSubtype(j,graph2,i,graph1,suptypeMatrix,subtypeMatrix);									
 					if(subtypeMatrix.get((i*g2Size)+j) != isj) {
 						subtypeMatrix.set((i*g2Size)+j,isj);
 						changed = true;
@@ -494,10 +494,10 @@ public abstract class NewType {
 	 * @param c1
 	 * @param c2
 	 * @param graph1
-	 * @param matrix
+	 * @param subtypeMatrix
 	 * @return
 	 */
-	private static boolean isSubtype(int n1, Node[] graph1, int n2, Node[] graph2, BitSet matrix) {
+	private static boolean isSubtype(int n1, Node[] graph1, int n2, Node[] graph2, BitSet subtypeMatrix, BitSet suptypeMatrix) {
 		Node c1 = graph1[n1];
 		Node c2 = graph2[n2];		
 		int g2Size = graph2.length;
@@ -511,14 +511,14 @@ public abstract class NewType {
 				// unary node
 				int e1 = (Integer) c1.data;
 				int e2 = (Integer) c2.data;
-				return matrix.get((e1*g2Size)+e2);
+				return subtypeMatrix.get((e1*g2Size)+e2);
 			}
 			case K_DICTIONARY: {
 				// binary node
 				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-				return matrix.get((p1.first() * g2Size) + p2.first())
-				&& matrix.get((p1.second() * g2Size) + p2.second());
+				return subtypeMatrix.get((p1.first() * g2Size) + p2.first())
+				&& subtypeMatrix.get((p1.second() * g2Size) + p2.second());
 			}		
 			case K_FUNCTION:  {
 				// nary nodes
@@ -530,14 +530,14 @@ public abstract class NewType {
 				// Check return value first (which is covariant)
 				int e1 = elems1[0];
 				int e2 = elems2[0];
-				if(!matrix.get((e1*g2Size)+e2)) {
+				if(!subtypeMatrix.get((e1*g2Size)+e2)) {
 					return false;
 				}
 				// Now, check parameters (which are contra-variant)
 				for(int i=1;i<elems1.length;++i) {
 					e1 = elems1[i];
 					e2 = elems2[i];
-					if(!matrix.get((e2*g2Size)+e1)) {
+					if(!suptypeMatrix.get((e1*g2Size)+e2)) {
 						return false;
 					}
 				}
@@ -555,7 +555,7 @@ public abstract class NewType {
 					Pair<String, Integer> e1 = fields1[i];
 					Pair<String, Integer> e2 = fields2[i];
 					if (!e1.first().equals(e2.first())
-							|| !matrix
+							|| !subtypeMatrix
 							.get((e1.second() * g2Size) + e2.second())) {
 						return false;
 					}
@@ -572,7 +572,7 @@ public abstract class NewType {
 				for(int i : bounds1) {
 					boolean matched=false;
 					for(int j : bounds2) {
-						if(matrix.get((i*g2Size)+j)) {
+						if(subtypeMatrix.get((i*g2Size)+j)) {
 							matched = true;
 							break;
 						}
@@ -599,7 +599,7 @@ public abstract class NewType {
 
 			// check every bound in c1 is a subtype of some bound in c2.
 			for(int i : bounds1) {				
-				if(!matrix.get((i*g2Size)+n2)) {
+				if(!subtypeMatrix.get((i*g2Size)+n2)) {
 					return false;
 				}								
 			}
@@ -610,7 +610,7 @@ public abstract class NewType {
 
 			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(matrix.get((n1*g2Size)+j)) {
+				if(subtypeMatrix.get((n1*g2Size)+j)) {
 					return true;
 				}								
 			}
@@ -1635,8 +1635,8 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {				
-		NewType ft1 = minimise(T_RECURSIVE("X",linkedList(2,T_INT,"X")));
-		NewType ft2 = minimise(T_RECURSIVE("X",linkedList(1,T_RATIONAL,"X")));
+		NewType ft1 = minimise(T_FUN(T_INT,T_RATIONAL));
+		NewType ft2 = minimise(T_FUN(T_RATIONAL,T_INT));		
 		
 		System.out.println(ft1 + " :> " + ft2 + " : " + isSubtype(ft1,ft2));		
 	}
