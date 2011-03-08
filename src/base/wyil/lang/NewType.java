@@ -274,8 +274,12 @@ public abstract class NewType {
 	 * all possible values described by the type <code>t2</code> is a subset of
 	 * that described by <code>t1</code>.
 	 */
-	public boolean isSubtype(Type t1, Type t2) {
-		return false;
+	public static boolean isSubtype(NewType t1, NewType t2) {		
+		Node[] g1 = nodes(t1);
+		Node[] g2 = nodes(t2);
+		Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(g1,g2);
+		BitSet suptypeMatrix = matrices.second();
+		return suptypeMatrix.get(0); // compare root of g1 against root of g2 
 	}
 	
 	/**
@@ -381,32 +385,41 @@ public abstract class NewType {
 	}
 
 	/**
-	 * This method determines the complete subtyping relationship between each
-	 * node in the type graph. The resulting matrix <code>r</code> is organised
-	 * into row-major order, where <code>r[i][j]</code> implies
+	 * <p>
+	 * This method determines both the subtype and supertype relationship
+	 * between each node in the type graph. The resulting matrix <code>r</code>
+	 * is organised into row-major order, where <code>r[i][j]</code> implies
 	 * <code>i <: j</code>. The algorithm works by initially assuming that all
 	 * subtypes hold. Then, it iteratively considers every relationship cross
 	 * off those that no longer hold, until there is no change in the matrix.
+	 * </p>
 	 * 
-	 * @param nodes
+	 * <p>
+	 * <b>NOTE:</b>The only reason we can compute both subtype and supertype
+	 * relations in one matrix is because its for one matrix and, hence, they
+	 * are symmetrical
+	 * </p>
+	 * 
+	 * @param graph
+	 *            --- graph to compute the matrix for
 	 * @return
 	 */
-	private static BitSet buildSubtypeMatrix(Node[] nodes) {
-		int numNodes = nodes.length;
-		BitSet matrix = new BitSet(numNodes * numNodes);
+	private static BitSet buildSubtypeMatrix(Node[] graph) {
+		int g1Size = graph.length;		
+		BitSet matrix = new BitSet(g1Size * g1Size);
 		// intially assume all subtype relationships hold 
 		matrix.set(0,matrix.size(),true);
 		
 		boolean changed = true;
 		while(changed) {
 			changed=false;
-			for(int i=0;i!=numNodes;i++) {
-				for(int j=0;j!=numNodes;j++) {					
-					boolean isj = isSubtype(i,j,nodes,matrix);
-					boolean jsi = isSubtype(j,i,nodes,matrix);					
-					if(matrix.get((i*numNodes)+j) != isj || matrix.get((j*numNodes)+i) != jsi) {
-						matrix.set((i*numNodes)+j,isj);
-						matrix.set((j*numNodes)+i,jsi);
+			for(int i=0;i!=g1Size;i++) {
+				for(int j=0;j!=g1Size;j++) {					
+					boolean isj = isSubtype(i,graph,j,graph,matrix);
+					boolean jsi = isSubtype(j,graph,i,graph,matrix);					
+					if(matrix.get((i*g1Size)+j) != isj || matrix.get((j*g1Size)+i) != jsi) {
+						matrix.set((i*g1Size)+j,isj);
+						matrix.set((j*g1Size)+i,jsi);
 						changed = true;
 					}
 				}	
@@ -417,6 +430,62 @@ public abstract class NewType {
 	}
 
 	/**
+	 * <p>
+	 * This method determines the complete subtype and supertype relationship
+	 * between each node in the type graphs <code>g1</code> and <code>g2</code>.
+	 * The resulting matrix <code>r</code> is organised into row-major order,
+	 * where <code>r[i][j]</code> implies <code>i <: j</code> if <code>i</code>
+	 * is a node in <code>g1</code>, and <code>j</code> a node in
+	 * <code>g2</code>. The algorithm works by initially assuming that all
+	 * subtypes hold. Then, it iteratively considers every relationship cross
+	 * off those that no longer hold, until there is no change in the matrix.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b>we must generate two matrices, because we have comparing two
+	 * different graphs.
+	 * </p>
+	 * 
+	 * @param graph1
+	 *            --- graph whose nodes form the rows of the matrices
+	 * @param graph2
+	 *            --- graph whose nodes form the columns of the matrics
+	 * @return --- A pair <code><m1,m2></code> of matrices, where
+	 *         <code>m1</code> is the subtype matrix and <code>m2</code> is the
+	 *         supertype matrix.
+	 */
+	private static Pair<BitSet,BitSet> buildSubtypeMatrices(Node[] graph1,Node[] graph2) {
+		int g1Size = graph1.length;
+		int g2Size = graph2.length;		
+		BitSet subtypeMatrix = new BitSet(g1Size * g2Size);
+		BitSet suptypeMatrix = new BitSet(g1Size * g2Size);
+		// intially assume all subtype relationships hold 
+		subtypeMatrix.set(0,subtypeMatrix.size(),true);
+		suptypeMatrix.set(0,suptypeMatrix.size(),true);
+		
+		boolean changed = true;
+		while(changed) {
+			changed=false;
+			for(int i=0;i!=g1Size;i++) {
+				for(int j=0;j!=g2Size;j++) {					
+					boolean isj = isSubtype(i,graph1,j,graph2,subtypeMatrix);
+					boolean jsi = isSubtype(j,graph2,i,graph1,suptypeMatrix);									
+					if(subtypeMatrix.get((i*g2Size)+j) != isj) {
+						subtypeMatrix.set((i*g2Size)+j,isj);
+						changed = true;
+					}
+					if(suptypeMatrix.get((i*g2Size)+j) != jsi) {
+						suptypeMatrix.set((i*g2Size)+j,jsi);
+						changed = true;
+					}
+				}	
+			}
+		}
+		
+		return new Pair<BitSet,BitSet>(subtypeMatrix,suptypeMatrix);
+	}
+
+	
+	/**
 	 * Check that node <code>n1</code> is a subtype of node
 	 * <code>n2</code> in the given subtype matrix. This matrix is represented
 	 * in row-major form, with <code>r[i][j]</code> indicating that
@@ -424,14 +493,14 @@ public abstract class NewType {
 	 * 
 	 * @param c1
 	 * @param c2
-	 * @param nodes
+	 * @param graph1
 	 * @param matrix
 	 * @return
 	 */
-	private static boolean isSubtype(int n1, int n2, Node[] nodes, BitSet matrix) {
-		Node c1 = nodes[n1];
-		Node c2 = nodes[n2];
-		int numNodes = nodes.length;
+	private static boolean isSubtype(int n1, Node[] graph1, int n2, Node[] graph2, BitSet matrix) {
+		Node c1 = graph1[n1];
+		Node c2 = graph2[n2];		
+		int g2Size = graph2.length;
 		
 		if(c1.kind == c2.kind) { 
 
@@ -442,14 +511,14 @@ public abstract class NewType {
 				// unary node
 				int e1 = (Integer) c1.data;
 				int e2 = (Integer) c2.data;
-				return matrix.get((e1*numNodes)+e2);
+				return matrix.get((e1*g2Size)+e2);
 			}
 			case K_DICTIONARY: {
 				// binary node
 				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-				return matrix.get((p1.first() * numNodes) + p2.first())
-				&& matrix.get((p1.second() * numNodes) + p2.second());
+				return matrix.get((p1.first() * g2Size) + p2.first())
+				&& matrix.get((p1.second() * g2Size) + p2.second());
 			}		
 			case K_FUNCTION:  {
 				// nary nodes
@@ -461,14 +530,14 @@ public abstract class NewType {
 				// Check return value first (which is covariant)
 				int e1 = elems1[0];
 				int e2 = elems2[0];
-				if(!matrix.get((e1*numNodes)+e2)) {
+				if(!matrix.get((e1*g2Size)+e2)) {
 					return false;
 				}
 				// Now, check parameters (which are contra-variant)
 				for(int i=1;i<elems1.length;++i) {
 					e1 = elems1[i];
 					e2 = elems2[i];
-					if(!matrix.get((e2*numNodes)+e1)) {
+					if(!matrix.get((e2*g2Size)+e1)) {
 						return false;
 					}
 				}
@@ -487,7 +556,7 @@ public abstract class NewType {
 					Pair<String, Integer> e2 = fields2[i];
 					if (!e1.first().equals(e2.first())
 							|| !matrix
-							.get((e1.second() * numNodes) + e2.second())) {
+							.get((e1.second() * g2Size) + e2.second())) {
 						return false;
 					}
 				}
@@ -503,7 +572,7 @@ public abstract class NewType {
 				for(int i : bounds1) {
 					boolean matched=false;
 					for(int j : bounds2) {
-						if(matrix.get((i*numNodes)+j)) {
+						if(matrix.get((i*g2Size)+j)) {
 							matched = true;
 							break;
 						}
@@ -530,7 +599,7 @@ public abstract class NewType {
 
 			// check every bound in c1 is a subtype of some bound in c2.
 			for(int i : bounds1) {				
-				if(!matrix.get((i*numNodes)+n2)) {
+				if(!matrix.get((i*g2Size)+n2)) {
 					return false;
 				}								
 			}
@@ -541,7 +610,7 @@ public abstract class NewType {
 
 			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(matrix.get((n1*numNodes)+j)) {
+				if(matrix.get((n1*g2Size)+j)) {
 					return true;
 				}								
 			}
@@ -1566,25 +1635,22 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {				
-		Fun ft1 = T_FUN(T_RATIONAL,T_INT);
-		Fun ft2 = T_FUN(T_INT,T_RATIONAL);
-		NewType type = T_UNION(ft1,ft2);
+		NewType ft1 = minimise(T_RECURSIVE("X",linkedList(2,T_INT,"X")));
+		NewType ft2 = minimise(T_RECURSIVE("X",linkedList(1,T_RATIONAL,"X")));
 		
-		System.out.println("BEFORE: " + type);
-		type = minimise(type);
-		System.out.println("AFTER: " + type);
+		System.out.println(ft1 + " :> " + ft2 + " : " + isSubtype(ft1,ft2));		
 	}
 	
-	public static NewType linkedList(int nlinks, String label) {
+	public static NewType linkedList(int nlinks, NewType dataType, String label) {
 		NewType leaf;
 		if(nlinks == 0) {
 			leaf = T_LABEL(label);
 		} else {
-			leaf = linkedList(nlinks-1,label);
+			leaf = linkedList(nlinks-1,dataType,label);
 		}
 		HashMap<String,NewType> fields = new HashMap<String,NewType>();
 		fields.put("next",leaf);
-		fields.put("data",T_RATIONAL);	 
+		fields.put("data",dataType);	 
 		return T_UNION(T_NULL,T_RECORD(fields));		
 	}	
 }
