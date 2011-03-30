@@ -14,7 +14,7 @@ void System::main([string] args):
         rawSize = 0
         size = 0
         for e in zf.entries:
-            out->println(rightAlign(e.rawSize,8) + " " + ZIP_COMPRESSION_METHODS[e.method] + " " +
+            out->println(rightAlign(e.rawSize,8) + " " + rightAlign(ZIP_COMPRESSION_METHODS[e.method],8) + " " +
                 rightAlign(e.size,6) + " " + hexStr(e.crc) + " " + e.name)
             rawSize = rawSize + e.rawSize
             size = size + e.size

@@ -33,26 +33,21 @@ define ZIP_LOCAL_HEADER as 0x04034b50
 
 // Compression Methods
 define ZIP_COMPRESSION_METHODS as [
-    "None",
+    "Stored",
     "Shrunk",
     "Reduced 1",
     "Reduced 2",
     "Reduced 3",
     "Reduced 4",    
     "Imploded",
-    "",
+    "", // reserved
     "Deflated",
     "Deflate64",
-    "PKWARE",
-    "",
-    "LZMA",
-    "",
-    "",
-    "",
-    "IBM TERSE",
-    "LZ77",
-    "WavPack",
-    "PPMd"
+    "Pkware",
+    "", // reserved
+    "BAip2",
+    "", // reserved
+    "LZMA"
 ]
 
 define ZipError as { string msg, int offset }
