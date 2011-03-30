@@ -39,8 +39,8 @@ public class WhileyIO {
 		byte[] bytes = new byte[max.intValue()];		
 		try {
 			int nbytes = fin.read(bytes);
-			for(int i=0;i!=nbytes;++i) {
-				r.add(BigRational.valueOf(bytes[i]));
+			for(int i=0;i!=nbytes;++i) {				
+				r.add(BigRational.valueOf(bytes[i] & 0xFF));
 			}
 			System.out.println("READ: " + nbytes);
 		} catch (IOException ioe) {
@@ -62,7 +62,7 @@ public class WhileyIO {
 				byte[] bytes = new byte[CHUNK_SIZE];
 				nbytes = fin.read(bytes);
 				for(int i=0;i!=nbytes;++i) {
-					r.add(BigRational.valueOf(bytes[i]));
+					r.add(BigRational.valueOf(bytes[i] & 0xFF));
 				}
 			} while(nbytes == CHUNK_SIZE);			
 		} catch (IOException ioe) {

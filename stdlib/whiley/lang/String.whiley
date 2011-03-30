@@ -31,3 +31,17 @@ public string str(* item):
         invokestatic wyil/jvm/rt/Util.fromString:(Ljava/lang/String;)Ljava/util/ArrayList;
         areturn
     return "DUMMY" // dead code
+
+// Convert an integer into a hex string
+public string hexStr(int item):    
+    r = []
+    while item > 0:
+        v = item / 16
+        w = item - (v*16)
+        if w <= 9:                
+            r = r + ['0' + w]
+        else:
+            w = w - 10
+            r = r + ['A' + w]
+        item = v
+    return r
