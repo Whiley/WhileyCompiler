@@ -92,10 +92,15 @@ public class WhileyLexer {
 	}
 	
 	public Token scanDigits() {		
+		if (pos < (input.length() + 1) && input.charAt(pos) == '0'
+				&& input.charAt(pos+1) == 'x') {			
+			return scanHexDigits();
+		}
+
 		int start = pos;
 		while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 			pos = pos + 1;
-		}
+		}		
 		if(pos < input.length() && input.charAt(pos) == '.') {
 			pos = pos + 1;			
 			if(pos < input.length() && input.charAt(pos) == '.') {
@@ -113,6 +118,42 @@ public class WhileyLexer {
 			BigInteger r = new BigInteger(input.substring(start, pos));
 			return new Int(r,input.substring(start,pos),start);			
 		}		
+	}
+	
+	public Token scanHexDigits() {		
+		int start = pos;
+		pos += 2; // skip "0x"
+		while (pos < input.length()
+				&& isHexDigit(input.charAt(pos))) {			
+			pos = pos + 1;
+		}		
+		BigInteger r = BigInteger.ZERO;
+		BigInteger base = BigInteger.ONE;
+		BigInteger sixteen = BigInteger.valueOf(16);
+		int first = start+2;
+		int tmp = pos;		
+		while(tmp > first) {			
+			BigInteger d = BigInteger.valueOf(hexDigit(input.charAt(--tmp)));			
+			r = r.add(d.multiply(base));
+			base = base.multiply(sixteen);
+		}
+		
+		return new Int(r,input.substring(start,pos),start);						
+	}
+	
+	public int hexDigit(char c) {
+		if('0' <= c && c <= '9') { 
+			return c - '0';
+		} else if('a' <= c && c <= 'f') {
+			return 10 + (c - 'a');
+		} else {
+			return 10 + (c - 'A');
+		}
+	}
+	
+	public boolean isHexDigit(char c) {
+		return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f')
+				|| ('A' <= c && c <= 'F');
 	}
 	
 	public Token scanChar() {

@@ -39,9 +39,9 @@ public string hexStr(int item):
         v = item / 16
         w = item - (v*16)
         if w <= 9:                
-            r = r + ['0' + w]
+            r = ['0' + w] + r
         else:
             w = w - 10
-            r = r + ['A' + w]
+            r = ['A' + w] + r
         item = v
     return r
