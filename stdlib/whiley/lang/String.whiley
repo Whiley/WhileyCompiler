@@ -42,6 +42,6 @@ public string hexStr(int item):
             r = ['0' + w] + r
         else:
             w = w - 10
-            r = ['A' + w] + r
+            r = ['a' + w] + r
         item = v
     return r
