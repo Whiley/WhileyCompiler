@@ -32,16 +32,28 @@
 define ZIP_LOCAL_HEADER as 0x04034b50
 
 // Compression Methods
-define ZIP_COMPRESSION_NONE as 0
-define ZIP_COMPRESSION_LZW as 1
-define ZIP_COMPRESSION_REDUCED_1 as 2
-define ZIP_COMPRESSION_REDUCED_2 as 3
-define ZIP_COMPRESSION_REDUCED_3 as 4
-define ZIP_COMPRESSION_REDUCED_4 as 5
-define ZIP_COMPRESSION_IMPLODED_1 as 6
-define ZIP_COMPRESSION_IMPLODED_2 as 7
-define ZIP_COMPRESSION_IMPLODED_3 as 8
-define ZIP_COMPRESSION_IMPLODED_4 as 9
+define ZIP_COMPRESSION_METHODS as [
+    "None",
+    "Shrunk",
+    "Reduced 1",
+    "Reduced 2",
+    "Reduced 3",
+    "Reduced 4",    
+    "Imploded",
+    "",
+    "Deflated",
+    "Deflate64",
+    "PKWARE",
+    "",
+    "LZMA",
+    "",
+    "",
+    "",
+    "IBM TERSE",
+    "LZ77",
+    "WavPack",
+    "PPMd"
+]
 
 define ZipError as { string msg, int offset }
 
