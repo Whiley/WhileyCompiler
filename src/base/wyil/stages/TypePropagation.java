@@ -70,6 +70,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return type;		
 	}
 	
+	public Module.ConstDef propagate(Module.ConstDef def) {		
+		Value v = (Value) infer(def.constant(),null,new Env());
+		return new Module.ConstDef(def.name(), v, def.attributes());
+	}
+	
 	public Env initialStore() {
 		Env environment = new Env();
 		
@@ -573,8 +578,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 		if(e instanceof Value.FunConst) {
 			e =  infer((Value.FunConst)e,stmt,environment);
+		} else if (e instanceof Value.List) {			
+			e = infer((Value.List)e, stmt, environment);
+		} else if (e instanceof Value.Set) {			
+			e = infer((Value.Set)e, stmt, environment);
+		} else if (e instanceof Value.Dictionary) {			
+			e = infer((Value.Dictionary)e, stmt, environment);
+		} else if (e instanceof Value.Record) {			
+			e = infer((Value.Record)e, stmt, environment);
 		} else if (e instanceof Value) {			
-			
+			// nop on leaves
 		} else if (e instanceof Variable) {
 			e = infer((Variable) e, stmt, environment);
 		} else if (e instanceof Register) {
@@ -610,6 +623,41 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			syntaxError("expressions cannot return void!", filename, stmt);
 		}
 		return e;
+	}
+	
+	protected CExpr infer(Value.List v, Stmt stmt, HashMap<String,Type> environment) {
+		ArrayList<Value> values = new ArrayList();
+		for(Value e : v.values) {
+			values.add((Value)infer(e,stmt,environment));
+		}
+		return Value.V_LIST(values);
+	}
+	
+	protected CExpr infer(Value.Set v, Stmt stmt, HashMap<String,Type> environment) {
+		HashSet<Value> values = new HashSet();
+		for(Value e : v.values) {
+			values.add((Value)infer(e,stmt,environment));
+		}
+		return Value.V_SET(values);
+	}
+	
+	protected CExpr infer(Value.Dictionary v, Stmt stmt, HashMap<String,Type> environment) {
+		HashSet<Pair<Value,Value>> values = new HashSet();
+		for(Map.Entry<Value,Value> e : v.values.entrySet()) {
+			Value key = (Value)infer(e.getKey(),stmt,environment); 
+			Value val = (Value)infer(e.getValue(),stmt,environment);
+			values.add(new Pair<Value,Value>(key,val));
+		}
+		return Value.V_DICTIONARY(values);
+	}
+	
+	protected CExpr infer(Value.Record v, Stmt stmt, HashMap<String,Type> environment) {
+		HashMap<String,Value> values = new HashMap();
+		for(Map.Entry<String,Value> e : v.values.entrySet()) {			
+			Value val = (Value)infer(e.getValue(),stmt,environment);
+			values.put(e.getKey(),val);
+		}
+		return Value.V_RECORD(values);
 	}
 	
 	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
@@ -756,7 +804,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected CExpr infer(Value.FunConst ivk, Stmt stmt,
-			HashMap<String,Type> environment) {
+			HashMap<String,Type> environment) {		
 		try {
 			List<Type.Fun> targets = lookupMethod(ivk.name.module(),ivk.name.name());
 			String msg;

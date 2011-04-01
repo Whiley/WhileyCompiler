@@ -271,6 +271,17 @@ public class ModuleBuilder {
 				values.put(e.getKey(), v);
 			}
 			return Value.V_RECORD(values);
+		} else if(expr instanceof FunConst) {
+			FunConst f = (FunConst) expr;
+			Attributes.Module mid = expr.attribute(Attributes.Module.class);
+			if (mid != null) {
+				NameID name = new NameID(mid.module, f.name);
+				ArrayList<Type> paramTypes = new ArrayList<Type>();
+				for(UnresolvedType p : f.paramTypes) {
+					paramTypes.add(resolve(p));
+				}				
+				return Value.V_FUN(name, Type.T_FUN(null,Type.T_ANY, paramTypes));	
+			}					
 		}
 
 		syntaxError("invalid expression in constant definition", filename, expr);
