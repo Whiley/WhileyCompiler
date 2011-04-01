@@ -23,37 +23,36 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.lang;
+package whiley.io
 
-import java.util.*;
-import wyil.util.*;
+define FileWriter as process { string fileName }
 
-public final class Stmt extends SyntacticElement.Impl {
-	public final Code code;
-	
-	public Stmt(Code code, Attribute... attributes) {
-		super(attributes);
-		this.code = code;
-	}
-	
-	public Stmt(Code code, Collection<Attribute> attributes) {
-		super(attributes);
-		this.code = code;
-	}
-	
-	public String toString() {
-		String r = code.toString();
-		if(attributes().size() > 0) {
-			r += " # ";
-			boolean firstTime=true;
-			for(Attribute a : attributes()) {
-				if(!firstTime) {
-					r += ", ";
-				}
-				firstTime=false;
-				r += a;
-			}
-		}
-		return r;
-	}
-}
+FileWriter System::openWriter(string fileName):
+    extern jvm:
+        aload 1
+        invokestatic wyil/jvm/rt/WhileyIO.openReader:(Ljava/util/ArrayList;)Lwyil/jvm/rt/WhileyProcess;
+        areturn
+    // the following line is dead code
+    return spawn {fileName: ""}
+
+void FileWriter::close():
+    extern jvm:
+        aload 0
+        invokestatic wyil/jvm/rt/WhileyIO.closeFile:(Lwyil/jvm/rt/WhileyProcess;)V;
+
+// read the whole file
+void FileWriter::write([byte] data):
+    extern jvm:
+        aload 0
+        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;)Ljava/util/ArrayList;
+        areturn
+    return []
+    
+// read at most max bytes 
+void FileWriter::write([byte] data, int max):
+    extern jvm:
+        aload 0
+        aload 1
+        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;Lwyil/jvm/rt/BigRational;)Ljava/util/ArrayList;
+        areturn
+    return []
