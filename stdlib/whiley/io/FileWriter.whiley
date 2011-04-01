@@ -25,15 +25,15 @@
 
 package whiley.io
 
-define FileWriter as process { string fileName }
+define FileWriter as process { string fileName, int writer }
 
 FileWriter System::openWriter(string fileName):
     extern jvm:
         aload 1
-        invokestatic wyil/jvm/rt/WhileyIO.openReader:(Ljava/util/ArrayList;)Lwyil/jvm/rt/WhileyProcess;
+        invokestatic wyil/jvm/rt/WhileyIO.openWriter:(Ljava/util/ArrayList;)Lwyil/jvm/rt/WhileyProcess;
         areturn
     // the following line is dead code
-    return spawn {fileName: ""}
+    return spawn {fileName: "", writer: 0}
 
 void FileWriter::close():
     extern jvm:
@@ -44,15 +44,5 @@ void FileWriter::close():
 void FileWriter::write([byte] data):
     extern jvm:
         aload 0
-        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;)Ljava/util/ArrayList;
-        areturn
-    return []
-    
-// read at most max bytes 
-void FileWriter::write([byte] data, int max):
-    extern jvm:
-        aload 0
         aload 1
-        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;Lwyil/jvm/rt/BigRational;)Ljava/util/ArrayList;
-        areturn
-    return []
+        invokestatic wyil/jvm/rt/WhileyIO.writeFile:(Lwyil/jvm/rt/WhileyProcess;Ljava/util/List;)V

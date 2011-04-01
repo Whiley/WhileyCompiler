@@ -46,11 +46,32 @@ public class WhileyIO {
 		return null;
 	}
 	
+	public static WhileyProcess openWriter(ArrayList name) {
+		WhileyRecord r = new WhileyRecord();
+		try {
+			String filename = Util.toString(name);
+			FileOutputStream fout = new FileOutputStream(filename);
+			r.put("fileName", name);
+			r.put("$fout", fout);
+			WhileyProcess p = new WhileyProcess(r);
+			return p;
+		} catch(FileNotFoundException e) {
+			r.put("msg", e.getMessage());			
+		}
+		return null;
+	}
+	
 	public static void closeFile(WhileyProcess p) {
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
-				.get("$fin");
+				.get("$fin");		
 		try {
-			fin.close();
+			if(fin != null) {
+				fin.close();
+			} else {
+				FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
+				.get("$fout");		
+				fout.close();
+			}
 		} catch (IOException ioe) {
 			// what to do here??
 		}
@@ -95,6 +116,22 @@ public class WhileyIO {
 		}
 		
 		return r;		
+	}
+	
+	public static void writeFile(WhileyProcess p, List bytes) {		
+		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
+				.get("$fout");
+				
+		try {
+			byte[] bs = new byte[bytes.size()];
+			for(int i=0;i!=bs.length;++i) {
+				BigRational r = (BigRational) bytes.get(i); 
+				bs[i] = r.byteValue();
+			}
+			fout.write(bs);			
+		} catch (IOException ioe) {
+			// what to do here??
+		}		
 	}
 	
 	public static Method functionRef(String clazz, String name) {
