@@ -50,6 +50,17 @@ int le2uint([byte] bytes):
         idx = idx + 1
     return val
 
+// Convert a byte array in big endian form into an unsigned int
+int be2uint([byte] bytes):
+    idx = 0
+    val = 0
+    base = 256 * |bytes|
+    while idx < |bytes|:
+        val = val + (bytes[idx] * base)
+        base = base / 256
+        idx = idx + 1
+    return val
+
 // Convert a byte array into an array of bits where, for each byte,
 // the least significant bit comes first.
 [bool] lsf2bits([byte] bytes):
