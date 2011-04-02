@@ -885,7 +885,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			receiverT = checkType(receiver.type(),Type.ProcessName.class,stmt);
 		}
 		
-		target = infer(target, stmt, environment);
+		target = infer(target, stmt, environment);		
 		checkType(target.type(),Type.Fun.class,stmt);
 		
 		for (CExpr arg : ivk.args) {

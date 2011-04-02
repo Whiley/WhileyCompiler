@@ -471,12 +471,11 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			this.values = new ArrayList<Value>(value);
 		}
 		public Type type() {
-			if(values.isEmpty()) {
-				return Type.T_LIST(Type.T_VOID);
-			} else {
-				// FIXME: need to use lub here
-				return Type.T_LIST(values.get(0).type());
+			Type t = Type.T_VOID;
+			for(Value arg : values) {
+				t = Type.leastUpperBound(t,arg.type());
 			}
+			return Type.T_LIST(t);			
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -530,12 +529,11 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			this.values = new HashSet<Value>(value);
 		}
 		public Type type() {
-			if(values.isEmpty()) {
-				return Type.T_SET(Type.T_VOID);
-			} else {
-				// FIXME: need to use lub here
-				return Type.T_SET(values.iterator().next().type());
+			Type t = Type.T_VOID;
+			for(Value arg : values) {
+				t = Type.leastUpperBound(t,arg.type());
 			}
+			return Type.T_SET(t);	
 		}
 		public int hashCode() {
 			return values.hashCode();
