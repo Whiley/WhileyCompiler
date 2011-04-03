@@ -429,6 +429,7 @@ public class WhileyLexer {
 	}
 	
 	public static final String[] keywords = {		
+		"skip",
 		"true",
 		"false",
 		"null",
@@ -438,6 +439,11 @@ public class WhileyLexer {
 		"process",
 		"void",			
 		"if",
+		"switch",
+		"break",
+		"case",
+		"default",
+		"throw",
 		"while",
 		"else",
 		"where",

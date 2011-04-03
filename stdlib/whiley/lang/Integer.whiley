@@ -52,13 +52,13 @@ int le2uint([byte] bytes):
 
 // Convert a byte array in big endian form into an unsigned int
 int be2uint([byte] bytes):
-    idx = 0
+    idx = |bytes|
     val = 0
-    base = 256 * |bytes|
-    while idx < |bytes|:
+    base = 1
+    while idx > 0:
+        idx = idx - 1
         val = val + (bytes[idx] * base)
-        base = base / 256
-        idx = idx + 1
+        base = base * 256
     return val
 
 // Convert a byte array into an array of bits where, for each byte,

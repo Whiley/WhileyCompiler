@@ -312,7 +312,9 @@ public class WhileyParser {
 		checkNotEof();
 		Token token = tokens.get(index);
 		
-		if(token.text.equals("return")) {
+		if(token.text.equals("skip")) {
+			return parseSkip();
+		} else if(token.text.equals("return")) {
 			return parseReturn();
 		} else if(token.text.equals("assert")) {
 			return parseAssert();
@@ -320,6 +322,8 @@ public class WhileyParser {
 			return parsePrint();
 		} else if(token.text.equals("if")) {			
 			return parseIf(indent);
+		} else if(token.text.equals("switch")) {			
+			return parseSwitch(indent);
 		} else if(token.text.equals("while")) {			
 			return parseWhile(indent);
 		} else if(token.text.equals("for")) {			
@@ -332,8 +336,6 @@ public class WhileyParser {
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
 			return parseInvokeStmt();			
-		} else if (token instanceof NewLine || token instanceof Comment) {			
-			return parseSkip();
 		} else {
 			int start = index;
 			Expr t = parseTupleExpression();
@@ -397,6 +399,7 @@ public class WhileyParser {
 	
 	private Stmt parseSkip() {
 		int start = index;
+		matchKeyword("skip");
 		matchEndLine();		
 		return new Stmt.Skip(sourceAttr(start,index-1));
 	}
@@ -440,6 +443,11 @@ public class WhileyParser {
 		}		
 		
 		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,end-1));
+	}
+	
+	private Stmt parseSwitch(int indent) {
+		System.out.println("GOT HERE");
+		return null;
 	}
 	
 	private Stmt parseWhile(int indent) {
