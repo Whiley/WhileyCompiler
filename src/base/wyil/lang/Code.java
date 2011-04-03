@@ -28,6 +28,7 @@ package wyil.lang;
 import java.util.*;
 
 import wyil.lang.CExpr.LVal;
+import wyil.util.Pair;
 import wyjvm.lang.Bytecode;
 
 public abstract class Code {
@@ -407,6 +408,49 @@ public abstract class Code {
 	
 		public String toString() {
 			return "if " + lhs + " " + op + " " + rhs + " goto " + target;
+		}
+	}	
+	
+	/**
+	 * This represents a multi-branch instruction
+	 * @author djp
+	 *
+	 */
+	public final static class Switch extends Code {		
+		public final CExpr value;
+		public final ArrayList<Pair<Value,String>> branches;
+		public final String defaultTarget;
+
+		public Switch(CExpr value, String defaultTarget, List<Pair<Value,String>> branches) {
+			this.value = value;
+			this.branches = new ArrayList<Pair<Value,String>>(branches);
+			this.defaultTarget = defaultTarget;
+		}
+		
+		public int hashCode() {
+			return value.hashCode() + defaultTarget.hashCode()
+					+ branches.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Switch) {
+				Switch ig = (Switch) o;
+				return value.equals(ig.value)&&  
+						defaultTarget.equals(ig.defaultTarget)&& 
+						branches.equals(ig.branches);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			String table = "";
+			boolean firstTime=true;
+			for(Pair<Value,String> p : branches) {
+				if(!firstTime) { table += ", "; }
+				table += p.first() + "->" + p.second();
+			}
+			table += ", *->" + defaultTarget;
+			return "switch " + value + " " + table;
 		}
 	}	
 	

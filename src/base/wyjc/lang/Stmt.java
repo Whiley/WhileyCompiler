@@ -163,30 +163,30 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {
-		public final Expr condition; // needs to proved a constant
+		public final Expr value; // needs to proved a constant
 		public final ArrayList<Stmt> stmts;
 		
 		public Case(Expr condition, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
-			this.condition = condition;
+			this.value = condition;
 			this.stmts = new ArrayList<Stmt>(statements);
 		}
 	}	
 	
 	public static final class Switch extends SyntacticElement.Impl implements Stmt {		
-		public final Expr condition;
+		public final Expr expr;
 		public final ArrayList<Case> cases;		
 		
 		public Switch(Expr condition, List<Case> cases, Attribute... attributes) {
 			super(attributes);
-			this.condition = condition;
+			this.expr = condition;
 			this.cases = new ArrayList<Case>(cases);								
 		}
 		
 		public Switch(Expr condition, List<Case> cases, Collection<Attribute> attributes) {			
 			super(attributes);
-			this.condition = condition;
+			this.expr = condition;
 			this.cases = new ArrayList<Case>(cases);								
 		}		
 	}

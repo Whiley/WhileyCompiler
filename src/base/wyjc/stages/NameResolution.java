@@ -160,6 +160,8 @@ public class NameResolution {
 				// do nothing
 			} else if(s instanceof IfElse) {
 				resolve((IfElse)s, environment, imports);
+			} else if(s instanceof Switch) {
+				resolve((Switch)s, environment, imports);
 			} else if(s instanceof While) {
 				resolve((While)s, environment, imports);
 			} else if(s instanceof For) {
@@ -234,6 +236,18 @@ public class NameResolution {
 				if (fenv.containsKey(p.getKey())) {
 					environment.put(p.getKey(), Collections.EMPTY_SET);
 				}
+			}
+		}
+	}
+	
+	protected void resolve(Switch s, HashMap<String, Set<Expr>> environment,
+			ArrayList<PkgID> imports) {
+		resolve(s.expr, environment, imports);
+		for(Stmt.Case c : s.cases){
+			HashMap<String, Set<Expr>> nenv = new HashMap<String, Set<Expr>>(
+					environment);
+			if(c.value != null) {
+				resolve(c.value,nenv,imports);
 			}
 		}
 	}

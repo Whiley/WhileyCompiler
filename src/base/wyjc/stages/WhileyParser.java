@@ -445,9 +445,48 @@ public class WhileyParser {
 		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,end-1));
 	}
 	
+	public Stmt.Case parseCase(int indent) {
+		checkNotEof();
+		int start = index;
+		Expr condition;
+		if(index < tokens.size() && tokens.get(index).text.equals("default")) {				
+			matchKeyword("default");
+			condition = null;
+		} else {
+			matchKeyword("case");
+			condition = parseCondition(false);
+		}		
+		match(Colon.class);
+		int end = index;
+		matchEndLine();		
+		List<Stmt> stmts = parseBlock(indent+1);
+		return new Stmt.Case(condition,stmts,sourceAttr(start,end-1));
+	}
+	
+	private ArrayList<Stmt.Case> parseCaseBlock(int indent) {
+		Tabs tabs = null;
+		
+		tabs = getIndent();
+		
+		ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
+		while(tabs != null && tabs.ntabs >= indent) {
+			index = index + 1;
+			cases.add(parseCase(indent));			
+			tabs = getIndent();			
+		}
+		
+		return cases;
+	}
+	
 	private Stmt parseSwitch(int indent) {
-		System.out.println("GOT HERE");
-		return null;
+		int start = index;
+		matchKeyword("switch");
+		Expr c = parseAddSubExpression(false);								
+		match(Colon.class);
+		int end = index;
+		matchEndLine();
+		ArrayList<Stmt.Case> cases = parseCaseBlock(indent+1);		
+		return new Stmt.Switch(c, cases, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseWhile(int indent) {
@@ -455,10 +494,10 @@ public class WhileyParser {
 		matchKeyword("while");						
 		Expr condition = parseCondition(false);
 		Expr invariant = null;
-		if(tokens.get(index).text.equals("where")) {
+		if (tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
 			invariant = parseCondition(false);
-			}
+		}
 		match(Colon.class);
 		int end = index;
 		matchEndLine();

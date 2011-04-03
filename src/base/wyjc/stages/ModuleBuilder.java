@@ -538,6 +538,8 @@ public class ModuleBuilder {
 				return resolve((Debug) stmt, freeReg);
 			} else if (stmt instanceof IfElse) {
 				return resolve((IfElse) stmt, freeReg);
+			} else if (stmt instanceof Switch) {
+				return resolve((Switch) stmt, freeReg);
 			} else if (stmt instanceof While) {
 				return resolve((While) stmt, freeReg);
 			} else if (stmt instanceof For) {
@@ -692,6 +694,51 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected Block resolve(Switch s, int freeReg) {
+		String exitLab = Block.freshLabel();		
+		Pair<CExpr,Block> _blk = resolve(freeReg, s.expr);		
+		Block blk = _blk.second();
+		String defaultTarget = exitLab;
+		ArrayList<Pair<Value,String>> cases = new ArrayList();
+		HashSet<Value> caseValues = new HashSet<Value>();
+		for(Stmt.Case c : s.cases) {			
+			if(c.value == null) {
+				// indicates the default block
+				if(defaultTarget != exitLab) {
+					syntaxError("duplicate default label",filename,c);
+				} else {
+					defaultTarget = Block.freshLabel();	
+					blk.add(new Code.Label(defaultTarget), c.attributes());
+					for (Stmt st : c.stmts) {
+						blk.addAll(resolve(st, freeReg));
+					}					
+				}
+			} else if(defaultTarget == exitLab) {
+				Pair<CExpr,Block> b = resolve(freeReg, c.value);				
+				if(b.first() instanceof Value) {
+					String target = Block.freshLabel();	
+					blk.add(new Code.Label(target), c.attributes());
+					Value v = (Value) b.first();
+					if(caseValues.contains(v)) {
+						syntaxError("duplicate case label",filename,c);
+					}
+					caseValues.add(v);
+					cases.add(new Pair(v,target));
+					for (Stmt st : c.stmts) {
+						blk.addAll(resolve(st, freeReg));
+					}				
+				} else {
+					syntaxError("constant expression required",filename,c);
+				}
+			} else {
+				syntaxError("unreachable code",filename,c);
+			}
+		}
+				
+		blk.add(new Code.Switch(_blk.first(),defaultTarget,cases));
+		return blk;
+	}
+	
 	protected Block resolve(While s, int freeReg) {		
 		String chklab = Block.freshLabel();
 		String entry = Block.freshLabel();
