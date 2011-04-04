@@ -148,9 +148,10 @@ public class WhileyFile {
 		public final String name;
 		public final UnresolvedType receiver;
 		public final UnresolvedType ret;
+		public final UnresolvedType throwType;
 		public final ArrayList<Parameter> parameters;
 		public final Expr precondition;
-		public final Expr postcondition;
+		public final Expr postcondition;		
 		public final ArrayList<Stmt> statements;
 
 		/**
@@ -172,7 +173,8 @@ public class WhileyFile {
 		public FunDecl(List<Modifier> modifiers, String name,
 				UnresolvedType receiver, UnresolvedType ret,
 				List<Parameter> parameters, Expr precondition,
-				Expr postcondition, List<Stmt> statements,
+				Expr postcondition, UnresolvedType throwType, 
+				List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
@@ -183,6 +185,7 @@ public class WhileyFile {
 			this.precondition = precondition;
 			this.postcondition = postcondition;
 			this.statements = new ArrayList<Stmt>(statements);
+			this.throwType = throwType;
 		}
 
 		public boolean isPublic() {

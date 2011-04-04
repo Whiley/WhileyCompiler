@@ -176,7 +176,8 @@ public class WhileyParser {
 		}
 		
 		match(RightBrace.class);	
-		Pair<Expr,Expr> conditions = parseRequiresEnsures();		
+		Pair<Expr,Expr> conditions = parseRequiresEnsures();	
+		UnresolvedType throwType = parseThrowsClause();
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
@@ -184,8 +185,8 @@ public class WhileyParser {
 		List<Stmt> stmts = parseBlock(1);
 		
 		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes,
-				conditions.first(), conditions.second(), stmts, sourceAttr(
-						start, end - 1));
+				conditions.first(), conditions.second(), throwType, stmts,
+				sourceAttr(start, end - 1));
 	}
 	
 	private Decl parseDefType(List<Modifier> modifiers) {		
@@ -284,6 +285,14 @@ public class WhileyParser {
 		}
 	}
 	
+	private UnresolvedType parseThrowsClause() {
+		checkNotEof();
+		if (index < tokens.size() && tokens.get(index).text.equals("throws")) {
+			matchKeyword("throws");
+			return parseType();
+		}
+		return new UnresolvedType.Void();
+	}
 	private Pair<Expr, Expr> parseRequiresEnsures() {
 		
 		checkNotEof();

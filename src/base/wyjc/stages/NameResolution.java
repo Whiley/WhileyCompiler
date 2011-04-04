@@ -114,9 +114,10 @@ public class NameResolution {
 			environment.put("this",Collections.EMPTY_SET);
 		}
 		
-		// method return type
+		// method return and throw types
 		try {
 			resolve(fd.ret, imports);
+			resolve(fd.throwType, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
 			syntaxError(e.getMessage(), filename, fd.ret);
