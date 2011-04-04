@@ -724,6 +724,8 @@ public class ModuleLoader {
 			switch (lookahead) {
 			case '*':
 				return Type.T_ANY;
+			case 'O':
+				return Type.T_NULL;
 			case '?':
 				return Type.T_EXISTENTIAL;
 			case 'V':
