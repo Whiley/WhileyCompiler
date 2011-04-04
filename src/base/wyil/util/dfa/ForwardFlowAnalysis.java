@@ -29,6 +29,7 @@ import static wyil.util.SyntaxError.syntaxError;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wyil.ModuleLoader;
@@ -149,6 +150,29 @@ public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
 						merge(gto.target, r.second(), stores);
 						store = null;
 					}
+				} else if (code instanceof Code.Switch) {
+					Code.Switch sw = (Code.Switch) code;
+					Pair<Stmt, List<T>> r = propagate(sw, stmt, store);
+					stmt = r.first();					
+
+					// Now, check to see if the statement has been updated, and
+					// process outgoing information accordingly.
+					if (stmt.code instanceof Code.Switch) {
+						// assert r.second().size() == nsw.branches.size()
+						Code.Switch nsw = (Code.Switch) stmt.code;
+						for(int j=0;j!=nsw.branches.size();++j){
+							String target = nsw.branches.get(j).second();
+							T nstore = r.second().get(j);
+							merge(target, nstore, stores);
+						}
+						merge(sw.defaultTarget, store, stores);
+						store = null;
+					} else if (stmt.code instanceof Code.Goto) {
+						// assert r.second().size() == 1
+						Code.Goto gto = (Code.Goto) stmt.code;
+						merge(gto.target, r.second().get(0), stores);
+						store = null;
+					}
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					merge(gto.target, store, stores);
@@ -208,6 +232,26 @@ public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
 	 */
 	protected abstract Triple<Stmt,T,T> propagate(Code.IfGoto ifgoto, Stmt stmt, T store);
 
+	/**
+	 * <p>
+	 * Propagate through a multi-way branch. This produces a potentially updated
+	 * statement, and multiple stores for the various branches. The code of the
+	 * statement returned is either that of the original statement, a Skip, a
+	 * Goto, or a switch statement with a reduced number of branches. 
+	 * </p>
+	 * <p>	
+	 * 
+	 * @param sw
+	 *            --- the code of this statement
+	 * @param stmt
+	 *            --- this statement
+	 * @param store
+	 *            --- abstract store which holds true immediately before this
+	 *            statement.
+	 * @return
+	 */
+	protected abstract Pair<Stmt,List<T>> propagate(Code.Switch sw, Stmt stmt, T store);
+	
 	/**
 	 * <p>
 	 * Propagate through a block statement (e.g. loop, or check), producing a

@@ -109,6 +109,17 @@ public class DefiniteAssignment extends
 		return new Triple(stmt,in,in);
 	}
 	
+	public Pair<Stmt, List<HashSet<String>>> propagate(Code.Switch sw,
+			Stmt stmt, HashSet<String> in) {
+		HashSet<String> uses = Code.usedVariables(stmt.code);
+		checkUses(uses, in, stmt);
+		ArrayList<HashSet<String>> stores = new ArrayList();
+		for (int i = 0; i != sw.branches.size(); ++i) {
+			stores.add(in);
+		}
+		return new Pair(stmt, stores);
+	}
+		
 	public Pair<Block, HashSet<String>> propagate(Code.Start start,
 			Code.End end, Block body, Stmt stmt, HashSet<String> in) {
 		

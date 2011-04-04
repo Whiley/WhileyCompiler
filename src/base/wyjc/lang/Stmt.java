@@ -174,6 +174,13 @@ public interface Stmt extends SyntacticElement {
 		}
 	}	
 	
+	public static final class Break extends SyntacticElement.Impl implements Stmt {
+		public Break(Attribute... attributes) {
+			super(attributes);
+			// TODO: update to include labelled breaks
+		}
+	}
+	
 	public static final class Switch extends SyntacticElement.Impl implements Stmt {		
 		public final Expr expr;
 		public final ArrayList<Case> cases;		

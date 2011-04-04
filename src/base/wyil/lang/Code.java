@@ -80,6 +80,17 @@ public abstract class Code {
 			IfGoto a = (IfGoto) code;			
 			return "if " + CExpr.toString(a.lhs, flags) + " " + a.op.toString()
 					+ " " + CExpr.toString(a.rhs, flags) + " goto " + a.target;
+		} else if(code instanceof Switch) {
+			Switch s = (Switch) code;
+			String table = "";
+			boolean firstTime=true;
+			for(Pair<Value,String> p : s.branches) {
+				if(!firstTime) { table += ", "; }
+				firstTime=false;
+				table += CExpr.toString(p.first(),flags) + "->" + p.second();
+			}
+			table += ", *->" + s.defaultTarget;
+			return "switch " + CExpr.toString(s.value,flags) + " " + table;
 		} else if(code instanceof Return) {
 			Return a = (Return) code;			
 			if(a.rhs != null) {
@@ -133,6 +144,12 @@ public abstract class Code {
 			IfGoto a = (IfGoto) c;			
 			CExpr.match(a.lhs,match,matches);
 			CExpr.match(a.rhs,match,matches);
+		}  else if(c instanceof Switch) {
+			Switch a = (Switch) c;			
+			CExpr.match(a.value,match,matches);
+			for(Pair<Value,String> p : a.branches) {
+				CExpr.match(p.first(),match,matches);
+			}
 		} else if(c instanceof Return) {
 			Return a = (Return) c;			
 			if(a.rhs != null) {
@@ -187,6 +204,10 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
+		} else if(c instanceof Switch) {
+			Switch s = (Switch) c;
+			return new Switch(CExpr.substitute(binding, s.value),
+					s.defaultTarget, s.branches);
 		} else if(c instanceof Return) {
 			Return a = (Return) c;
 			if (a.rhs != null) {
@@ -235,6 +256,10 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.op, CExpr.registerShift(shift, u.lhs),
 					CExpr.registerShift(shift, u.rhs), u.target);
+		} else if (c instanceof Switch) {
+			Switch s = (Switch) c;
+			return new Switch(CExpr.registerShift(shift, s.value),
+					s.defaultTarget, s.branches);
 		} else if(c instanceof Return) {
 			Return a = (Return) c;
 			if (a.rhs != null) {
@@ -447,6 +472,7 @@ public abstract class Code {
 			boolean firstTime=true;
 			for(Pair<Value,String> p : branches) {
 				if(!firstTime) { table += ", "; }
+				firstTime=false;
 				table += p.first() + "->" + p.second();
 			}
 			table += ", *->" + defaultTarget;

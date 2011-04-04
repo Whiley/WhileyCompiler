@@ -48,6 +48,7 @@ public class ModuleBuilder {
 	private HashMap<NameID, Type> types;
 	private HashMap<NameID, Value> constants;
 	private HashMap<NameID, UnresolvedType> unresolved;
+	private Stack<Scope> scopes = new Stack<Scope>();
 	private String filename;
 	private FunDecl currentFunDecl;
 
@@ -540,6 +541,8 @@ public class ModuleBuilder {
 				return resolve((IfElse) stmt, freeReg);
 			} else if (stmt instanceof Switch) {
 				return resolve((Switch) stmt, freeReg);
+			} else if (stmt instanceof Break) {
+				return resolve((Break) stmt, freeReg);
 			} else if (stmt instanceof While) {
 				return resolve((While) stmt, freeReg);
 			} else if (stmt instanceof For) {
@@ -694,13 +697,24 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected Block resolve(Break s, int freeReg) {
+		BreakScope scope = findEnclosingScope(BreakScope.class);
+		if(scope == null) {
+			syntaxError("break outside switch or loop",filename,s);
+		}
+		Block blk = new Block();
+		blk.add(new Code.Goto(scope.label));
+		return blk;
+	}
+	
 	protected Block resolve(Switch s, int freeReg) {
 		String exitLab = Block.freshLabel();		
-		Pair<CExpr,Block> _blk = resolve(freeReg, s.expr);		
-		Block blk = _blk.second();
+		Pair<CExpr,Block> _blk = resolve(freeReg, s.expr);				
+		Block cblk = new Block();
 		String defaultTarget = exitLab;
 		ArrayList<Pair<Value,String>> cases = new ArrayList();
 		HashSet<Value> caseValues = new HashSet<Value>();
+		scopes.push(new BreakScope(exitLab));
 		for(Stmt.Case c : s.cases) {			
 			if(c.value == null) {
 				// indicates the default block
@@ -708,16 +722,17 @@ public class ModuleBuilder {
 					syntaxError("duplicate default label",filename,c);
 				} else {
 					defaultTarget = Block.freshLabel();	
-					blk.add(new Code.Label(defaultTarget), c.attributes());
+					cblk.add(new Code.Label(defaultTarget), c.attributes());
 					for (Stmt st : c.stmts) {
-						blk.addAll(resolve(st, freeReg));
-					}					
+						cblk.addAll(resolve(st, freeReg));
+					}
+					cblk.add(new Code.Goto(exitLab),c.attributes());
 				}
 			} else if(defaultTarget == exitLab) {
 				Pair<CExpr,Block> b = resolve(freeReg, c.value);				
 				if(b.first() instanceof Value) {
 					String target = Block.freshLabel();	
-					blk.add(new Code.Label(target), c.attributes());
+					cblk.add(new Code.Label(target), c.attributes());
 					Value v = (Value) b.first();
 					if(caseValues.contains(v)) {
 						syntaxError("duplicate case label",filename,c);
@@ -725,7 +740,7 @@ public class ModuleBuilder {
 					caseValues.add(v);
 					cases.add(new Pair(v,target));
 					for (Stmt st : c.stmts) {
-						blk.addAll(resolve(st, freeReg));
+						cblk.addAll(resolve(st, freeReg));
 					}				
 				} else {
 					syntaxError("constant expression required",filename,c);
@@ -734,8 +749,11 @@ public class ModuleBuilder {
 				syntaxError("unreachable code",filename,c);
 			}
 		}
-				
+		Block blk = _blk.second();		
 		blk.add(new Code.Switch(_blk.first(),defaultTarget,cases));
+		blk.addAll(cblk);
+		blk.add(new Code.Label(exitLab), s.attributes());
+		scopes.pop();
 		return blk;
 	}
 	
@@ -777,12 +795,13 @@ public class ModuleBuilder {
 				
 		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		binding.put(s.variable,reg);
-				
+		// FIXME: add a continue scope
+		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {
 			Block b = resolve(st, freeReg+1);
 			blk.addAll(Block.substitute(binding, b));
 		}		
-		
+		scopes.pop(); // break
 		blk.add(new Code.ForallEnd(label), s.attribute(Attribute.Source.class));		
 
 		return blk;
@@ -1666,5 +1685,26 @@ public class ModuleBuilder {
 			return null;
 		}
 	}
+	
+	protected <T extends Scope> T findEnclosingScope(Class<T> c) {
+		for(int i=scopes.size()-1;i>=0;--i) {
+			Scope s = scopes.get(i);
+			if(c.isInstance(s)) {
+				return (T) s;
+			}
+		}
+		return null;
+	}	
+	
+	public abstract class Scope {}
+	
+	public class BreakScope extends Scope {
+		public String label;
+		public BreakScope(String l) { label = l; }
+	}
 
+	public class ContinueScope extends Scope {
+		public String label;
+		public ContinueScope(String l) { label = l; }
+	}
 }

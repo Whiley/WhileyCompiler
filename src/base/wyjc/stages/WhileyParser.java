@@ -324,6 +324,8 @@ public class WhileyParser {
 			return parseIf(indent);
 		} else if(token.text.equals("switch")) {			
 			return parseSwitch(indent);
+		} else if(token.text.equals("break")) {			
+			return parseBreak(indent);
 		} else if(token.text.equals("while")) {			
 			return parseWhile(indent);
 		} else if(token.text.equals("for")) {			
@@ -487,6 +489,14 @@ public class WhileyParser {
 		matchEndLine();
 		ArrayList<Stmt.Case> cases = parseCaseBlock(indent+1);		
 		return new Stmt.Switch(c, cases, sourceAttr(start,end-1));
+	}
+	
+	private Stmt parseBreak(int indent) {
+		int start = index;
+		matchKeyword("break");
+		int end = index;
+		matchEndLine();		
+		return new Stmt.Break(sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseWhile(int indent) {

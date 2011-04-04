@@ -156,7 +156,7 @@ public class NameResolution {
 				resolve((Return)s, environment, imports);
 			} else if(s instanceof Debug) {
 				resolve((Debug)s, environment, imports);
-			} else if(s instanceof Skip) {
+			} else if(s instanceof Skip || s instanceof Break) {
 				// do nothing
 			} else if(s instanceof IfElse) {
 				resolve((IfElse)s, environment, imports);
@@ -221,35 +221,29 @@ public class NameResolution {
 	protected void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
 		resolve(s.condition, environment, imports);
-		HashMap<String, Set<Expr>> tenv = new HashMap<String, Set<Expr>>(
-				environment);
 		for (Stmt st : s.trueBranch) {
-			resolve(st, tenv, imports);
+			resolve(st, environment, imports);
 		}
 		if (s.falseBranch != null) {
-			HashMap<String, Set<Expr>> fenv = new HashMap<String, Set<Expr>>(
-					environment);
 			for (Stmt st : s.falseBranch) {
 				resolve(st, environment, imports);
-			}
-			for (Map.Entry<String, Set<Expr>> p : tenv.entrySet()) {
-				if (fenv.containsKey(p.getKey())) {
-					environment.put(p.getKey(), Collections.EMPTY_SET);
-				}
-			}
+			}			
 		}
 	}
 	
 	protected void resolve(Switch s, HashMap<String, Set<Expr>> environment,
-			ArrayList<PkgID> imports) {
+			ArrayList<PkgID> imports) {		
+		
 		resolve(s.expr, environment, imports);
-		for(Stmt.Case c : s.cases){
-			HashMap<String, Set<Expr>> nenv = new HashMap<String, Set<Expr>>(
-					environment);
+		
+		for(Stmt.Case c : s.cases){					
 			if(c.value != null) {
-				resolve(c.value,nenv,imports);
+				resolve(c.value,environment,imports);
 			}
-		}
+			for (Stmt st : c.stmts) {
+				resolve(st, environment, imports);
+			}			
+		}		
 	}
 	
 	protected void resolve(While s, HashMap<String,Set<Expr>> environment,

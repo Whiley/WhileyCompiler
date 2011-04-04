@@ -340,6 +340,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return new Triple<Stmt,Env,Env>(stmt,environment,environment);
 	}
 	
+	protected Pair<Stmt,List<Env>> propagate(Code.Switch code, Stmt stmt, Env environment) {
+		CExpr value = infer(code.value,stmt,environment);
+		ArrayList<Env> envs = new ArrayList<Env>();
+		// TODO: update this code to support type inference of types. That is,
+		// if we switch on a type value then this will update the type of the
+		// value.
+		for(int i=0;i!=code.branches.size();++i) {
+			envs.add(environment);
+		}
+		Code ncode = new Code.Switch(value,code.defaultTarget,code.branches);
+		return new Pair(new Stmt(ncode,stmt.attributes()),envs);
+	}
+	
 	protected void typeInference(CExpr lhs, Type trueType, Type falseType,
 			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
 		

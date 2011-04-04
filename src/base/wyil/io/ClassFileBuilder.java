@@ -243,6 +243,8 @@ public class ClassFileBuilder {
 				translate((Code.Goto) c, slots, bytecodes);
 			} else if (c instanceof Code.IfGoto) {
 				translate((Code.IfGoto) c, stmt, slots, bytecodes);
+			} else if (c instanceof Code.Switch) {
+				translate((Code.Switch) c, stmt, slots, bytecodes);
 			} else if (c instanceof Code.Forall) {
 				translate((Code.Forall) c, slots, bytecodes);
 			} else if (c instanceof Code.Loop) {
@@ -297,6 +299,40 @@ public class ClassFileBuilder {
 		}
 	}
 
+	public void translate(Code.Switch c, Stmt stmt, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {	
+		translate(c.value,slots,bytecodes);
+		
+		ArrayList<Pair<Integer,String>> cases = new ArrayList();
+		boolean canUseSwitchBytecode = true;
+		for(Pair<Value,String> p : c.branches) {
+			// first, check whether the switch value is indeed an integer.
+			Value v = (Value) p.first();
+			if(!(v instanceof Value.Int)) {
+				canUseSwitchBytecode=false;
+				break;
+			}
+			// second, check whether integer value can fit into a Java int
+			Value.Int vi = (Value.Int)v;
+			int iv = vi.value.intValue(); 
+			if(!BigInteger.valueOf(iv).equals(vi.value)) {
+				canUseSwitchBytecode=false;
+				break;
+			}
+			// ok, we're all good so far
+			cases.add(new Pair(iv,p.second()));			
+		}
+		
+		if(canUseSwitchBytecode) {
+			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue", ftype,
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Switch(c.defaultTarget, cases));	
+		} else {
+			// FIXME: need to support non-integer switches
+			throw new RuntimeException("internal failure --- no support for non-integet switch bytecodes");
+		}		
+	}
 	
 	public void translate(Code.IfGoto c, Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	

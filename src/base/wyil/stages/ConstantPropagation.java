@@ -217,11 +217,38 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		} else {
 			ncode = new Code.IfGoto(code.op, lhs, rhs, code.target); 
 		}
-
+		// FIXME: could do more here, when the condition forces a constant. E.g.
+		// "if x == 1:" on the true branch we now have that x is 1.
 		stmt = new Stmt(ncode,stmt.attributes());
 		return new Triple(stmt,environment,environment);
 	}	
 
+	protected Pair<Stmt, List<HashMap<String, Value>>> propagate(
+			Code.Switch code, Stmt stmt, HashMap<String, Value> environment) {
+		CExpr value = infer(code.value, stmt, environment);
+		ArrayList<HashMap<String,Value>> envs = new ArrayList();
+		if(value instanceof Value) {
+			envs.add(environment);
+			for(Pair<Value,String> p : code.branches){
+				if(p.first().equals(value)) {
+					Code ncode = new Code.Goto(p.second());
+					return new Pair(new Stmt(ncode,stmt.attributes()),envs);
+				}
+			}
+			Code ncode = new Code.Goto(code.defaultTarget);
+			return new Pair(new Stmt(ncode,stmt.attributes()),envs);			
+		} else {			
+			for(int i=0;i!=code.branches.size();++i) {
+				// FIXME: could do more here, as we might be able to infer a
+				// variable in the switch value is a constant. e.g. if
+				// "switch x:" then in "case 1:", we can update x -> 1.
+				envs.add(environment);
+			}
+			Code ncode = new Code.Switch(value,code.defaultTarget,code.branches);
+			return new Pair(new Stmt(ncode,stmt.attributes()),envs);
+		}
+	}
+	
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Value> environment) {
 
 		if (e instanceof Value) {
