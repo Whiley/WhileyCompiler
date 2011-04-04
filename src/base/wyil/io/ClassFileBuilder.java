@@ -245,6 +245,8 @@ public class ClassFileBuilder {
 				translate((Code.IfGoto) c, stmt, slots, bytecodes);
 			} else if (c instanceof Code.Switch) {
 				translate((Code.Switch) c, stmt, slots, bytecodes);
+			} else if (c instanceof Code.Throw) {
+				translate((Code.Throw) c, stmt, slots, bytecodes);
 			} else if (c instanceof Code.Forall) {
 				translate((Code.Forall) c, slots, bytecodes);
 			} else if (c instanceof Code.Loop) {
@@ -299,6 +301,17 @@ public class ClassFileBuilder {
 		}
 	}
 
+	public void translate(Code.Throw c, Stmt stmt, HashMap<String, Integer> slots,
+			ArrayList<Bytecode> bytecodes) {			
+		bytecodes.add(new Bytecode.New(WHILEYEXCEPTION));		
+		bytecodes.add(new Bytecode.Dup(WHILEYEXCEPTION));
+		translate(c.expr,slots,bytecodes);
+		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYEXCEPTION, "<init>", ftype,
+				Bytecode.SPECIAL));		
+		bytecodes.add(new Bytecode.Throw());
+	}
+	
 	public void translate(Code.Switch c, Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {	
 		translate(c.value,slots,bytecodes);
@@ -2129,6 +2142,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyil.jvm.rt","WhileyRecord");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
 			"wyil.jvm.rt", "WhileyProcess");	
+	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyil.jvm.rt","Exception");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyil.jvm.rt","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");

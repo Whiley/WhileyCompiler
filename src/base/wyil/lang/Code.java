@@ -80,6 +80,9 @@ public abstract class Code {
 			IfGoto a = (IfGoto) code;			
 			return "if " + CExpr.toString(a.lhs, flags) + " " + a.op.toString()
 					+ " " + CExpr.toString(a.rhs, flags) + " goto " + a.target;
+		} else if(code instanceof Throw) {
+			Throw t = (Throw) code;
+			return "throw " + CExpr.toString(t.expr,flags);
 		} else if(code instanceof Switch) {
 			Switch s = (Switch) code;
 			String table = "";
@@ -144,6 +147,9 @@ public abstract class Code {
 			IfGoto a = (IfGoto) c;			
 			CExpr.match(a.lhs,match,matches);
 			CExpr.match(a.rhs,match,matches);
+		} else if(c instanceof Throw) {
+			Throw a = (Throw) c;			
+			CExpr.match(a.expr,match,matches);			
 		}  else if(c instanceof Switch) {
 			Switch a = (Switch) c;			
 			CExpr.match(a.value,match,matches);
@@ -204,6 +210,9 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.op, CExpr.substitute(binding, u.lhs),
 					CExpr.substitute(binding, u.rhs), u.target);
+		} else if(c instanceof Throw) {
+			Throw u = (Throw) c;
+			return new Throw(CExpr.substitute(binding, u.expr));
 		} else if(c instanceof Switch) {
 			Switch s = (Switch) c;
 			return new Switch(CExpr.substitute(binding, s.value),
@@ -256,6 +265,9 @@ public abstract class Code {
 			IfGoto u = (IfGoto) c;
 			return new IfGoto(u.op, CExpr.registerShift(shift, u.lhs),
 					CExpr.registerShift(shift, u.rhs), u.target);
+		} else if (c instanceof Throw) {
+			Throw u = (Throw) c;
+			return new Throw(CExpr.registerShift(shift, u.expr));
 		} else if (c instanceof Switch) {
 			Switch s = (Switch) c;
 			return new Switch(CExpr.registerShift(shift, s.value),
@@ -435,6 +447,35 @@ public abstract class Code {
 			return "if " + lhs + " " + op + " " + rhs + " goto " + target;
 		}
 	}	
+	
+	/**
+	 * This represents an exceptional branching instruction
+	 * @author djp
+	 *
+	 */
+	public final static class Throw extends Code {		
+		public final CExpr expr;
+		
+		public Throw(CExpr expr) {
+			this.expr = expr;
+		}
+		
+		public int hashCode() {
+			return expr.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Throw) {
+				Throw ig = (Throw) o;
+				return expr.equals(ig.expr);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "throw " + expr;
+		}
+	}
 	
 	/**
 	 * This represents a multi-branch instruction

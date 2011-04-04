@@ -543,6 +543,8 @@ public class ModuleBuilder {
 				return resolve((Switch) stmt, freeReg);
 			} else if (stmt instanceof Break) {
 				return resolve((Break) stmt, freeReg);
+			} else if (stmt instanceof Throw) {
+				return resolve((Throw) stmt, freeReg);
 			} else if (stmt instanceof While) {
 				return resolve((While) stmt, freeReg);
 			} else if (stmt instanceof For) {
@@ -696,7 +698,14 @@ public class ModuleBuilder {
 
 		return blk;
 	}
-
+	
+	protected Block resolve(Throw s, int freeReg) {
+		Pair<CExpr,Block> _blk = resolve(freeReg,s.expr);
+		Block blk = _blk.second();
+		blk.add(new Code.Throw(_blk.first()));
+		return blk;
+	}
+	
 	protected Block resolve(Break s, int freeReg) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if(scope == null) {

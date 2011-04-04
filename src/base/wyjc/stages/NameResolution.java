@@ -158,6 +158,8 @@ public class NameResolution {
 				resolve((Debug)s, environment, imports);
 			} else if(s instanceof Skip || s instanceof Break) {
 				// do nothing
+			} else if(s instanceof Throw) {
+				resolve((Throw)s, environment, imports);
 			} else if(s instanceof IfElse) {
 				resolve((IfElse)s, environment, imports);
 			} else if(s instanceof Switch) {
@@ -218,6 +220,11 @@ public class NameResolution {
 		resolve(s.expr, environment, imports);		
 	}
 
+	protected void resolve(Throw s, HashMap<String, Set<Expr>> environment,
+			ArrayList<PkgID> imports) {
+		resolve(s.expr, environment, imports);
+	}
+	
 	protected void resolve(IfElse s, HashMap<String, Set<Expr>> environment,
 			ArrayList<PkgID> imports) {
 		resolve(s.condition, environment, imports);

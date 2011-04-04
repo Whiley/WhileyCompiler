@@ -181,6 +181,14 @@ public interface Stmt extends SyntacticElement {
 		}
 	}
 	
+	public static final class Throw extends SyntacticElement.Impl implements Stmt {
+		public final Expr expr;
+		public Throw(Expr expr, Attribute... attributes) {
+			super(attributes);
+			this.expr = expr;
+		}
+	}
+	
 	public static final class Switch extends SyntacticElement.Impl implements Stmt {		
 		public final Expr expr;
 		public final ArrayList<Case> cases;		

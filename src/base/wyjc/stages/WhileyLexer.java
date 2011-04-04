@@ -444,6 +444,7 @@ public class WhileyLexer {
 		"case",
 		"default",
 		"throw",
+		"throws",
 		"while",
 		"else",
 		"where",
