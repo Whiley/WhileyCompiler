@@ -950,7 +950,7 @@ public class WhileyParser {
 		} else if (token instanceof AddressOf) {
 		      return parseFunVal();
 	    }
-		syntaxError("unrecognised term.",token);
+		syntaxError("unrecognised term (" + token.text + ")",token);
 		return null;		
 	}
 	

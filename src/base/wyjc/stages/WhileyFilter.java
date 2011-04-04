@@ -52,6 +52,8 @@ public class WhileyFilter {
 			boolean withinBraces = ncurly > 0 || nsquare > 0;			
 			if(t instanceof Tabs && !afterNewLine) {
 				// don't add in this case
+			} else if(t instanceof NewLine && afterNewLine) {
+				// or this case
 			} else if(t instanceof Comment) {						
 				// or this case
 			} else if(isWhiteSpace(t) && afterFlag) {
@@ -60,23 +62,24 @@ public class WhileyFilter {
 				// or this case
 			} else if(isWhiteSpace(t) && withinBraces) {
 				// or this case!
-			} else {
+			} else {				
 				result.add(t);
-				last = t;
-			}
-			if(t instanceof NewLine) {
-				afterNewLine = true;
-			} else if(t instanceof LeftCurly) {
-				ncurly++;
-			} else if(t instanceof RightCurly) {
-				ncurly = Math.max(0, ncurly-1);
-			} else if(t instanceof LeftSquare) {
-				ncurly++;
-			} else if(t instanceof RightSquare) {
-				ncurly = Math.max(0, ncurly-1);
+				last = t;			
+				afterNewLine = false; // reset
+				if(t instanceof NewLine) {
+					afterNewLine = true;
+				} else if(t instanceof LeftCurly) {
+					ncurly++;
+				} else if(t instanceof RightCurly) {
+					ncurly = Math.max(0, ncurly-1);
+				} else if(t instanceof LeftSquare) {
+					ncurly++;
+				} else if(t instanceof RightSquare) {
+					ncurly = Math.max(0, ncurly-1);
+				}
 			}
 		}
-		
+				
 		return result;
 	}
 	
@@ -110,7 +113,7 @@ public class WhileyFilter {
 		LogicalOr.class,
 		LogicalNot.class,
 		AddressOf.class,
-		Arrow.class,		
+		Arrow.class
 	};
 	
 	public boolean leftNonTerminator(Token t) {
@@ -150,7 +153,9 @@ public class WhileyFilter {
 		LogicalOr.class,
 		LogicalNot.class,
 		AddressOf.class,
-		Arrow.class,		
+		Arrow.class,
+		NewLine.class,
+		Comment.class
 	};
 	
 	public boolean rightNonTerminator(Token t) {
