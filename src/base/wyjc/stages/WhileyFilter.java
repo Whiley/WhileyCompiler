@@ -133,7 +133,7 @@ public class WhileyFilter {
 		Plus.class,
 		Minus.class,		
 		LeftSlash.class,
-		Shreak.class,
+		Shreak.class,		
 		Dot.class,
 		Equals.class,
 		EqualsEquals.class,

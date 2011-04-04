@@ -173,6 +173,9 @@ public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
 						merge(gto.target, r.second().get(0), stores);
 						store = null;
 					}
+				} else if (code instanceof Code.Throw) {
+					// FIXME:  should I do something here?
+					store = null;
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					merge(gto.target, store, stores);
