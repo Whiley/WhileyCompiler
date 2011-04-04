@@ -36,3 +36,33 @@ public string str(* item):
         invokestatic wyil/jvm/rt/Util.fromString:(Ljava/lang/String;)Ljava/util/ArrayList;
         areturn
     return "DUMMY" // dead code
+
+// find first index in string which matches character.  If no match,
+// then return null.  TO BE DEPRECATED
+public int|null firstIndexOf(char c, string str):
+    i = 0
+    while i < |str|:
+        if str[i] == c:
+            return i
+        i = i + 1
+    return null
+
+// find last index in string which matches character.  If no match,
+// then return null.  TO BE DEPRECATED
+public int|null lastIndexOf(char c, string str):
+    i = |str|
+    while i > 0:
+        i = i - 1
+        if str[i] == c:
+            return i
+    return null
+
+// replace all occurrences of "old" with "new" in string "str".  TO BE
+// DEPRECATED
+public string replace(char old, char new, string str):
+    i = 0
+    while i < |str|:
+        if str[i] == old:
+            str[i] = new
+        i = i + 1
+    return str    
