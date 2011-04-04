@@ -5,6 +5,6 @@ int f(int x):
 
 void System::main([string] args):
      p = {x:1.0,y:2.23}
-     x = f(p.x)
+     x = f(p.y)
      print str(x)
 
