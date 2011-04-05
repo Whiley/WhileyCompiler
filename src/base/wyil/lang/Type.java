@@ -22,6 +22,7 @@ import java.io.PrintStream;
 import java.util.*;
 
 import wyil.util.Pair;
+import wyjvm.lang.Constant;
 
 /**
  * A structural type. See
@@ -340,6 +341,29 @@ public abstract class Type {
 		}
 		return construct(newnodes);
 	}
+
+	/**
+	 * This is a utility helper for constructing types. In particular, it's
+	 * useful for determine whether or not a type needs to be closed. An open
+	 * type is one which contains a "dangling" reference to some node which
+	 * needs to be connected to back to form a cycle.
+	 * 
+	 * @param label
+	 * @param t
+	 * @return
+	 */
+	public static boolean isOpen(String label, Type t) {
+		if (t instanceof Leaf) {
+			return false;
+		}
+		Compound graph = (Compound) t;
+		for (Node n : graph.nodes) {
+			if (n.kind == K_LABEL && n.data.equals(label)) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	// =============================================================
 	// Serialisation Helpers
@@ -383,6 +407,114 @@ public abstract class Type {
 		void buildUnion(int index, int... bounds);
 	}
 
+	/**
+	 * This class provides an empty implementation of a type builder, which is
+	 * useful for define simple builders.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class AbstractBuilder implements Type.Builder {		
+		public void initialise(int numNodes) {
+		}
+
+		public void buildPrimitive(int index, Type.Leaf type) {
+		}
+
+		public void buildExistential(int index, NameID name) {
+		}
+
+		public void buildSet(int index, int element) {
+		}
+
+		public void buildList(int index, int element) {
+		}
+
+		public void buildProcess(int index, int element) {
+		}
+
+		public void buildDictionary(int index, int key, int value) {
+		}
+
+		public void buildTuple(int index, int... elements) {
+		}
+
+		public void buildRecord(int index, Pair<String, Integer>... fields) {
+		}
+
+		public void buildFunction(int index, int receiver, int ret,
+				int... parameters) {
+		}
+
+		public void buildUnion(int index, int... bounds) {
+		}
+	}
+
+	/**
+	 * The internal builder is essentially the way we deserialise types. That
+	 * is, clients create an instance of internal builder and then call the
+	 * methods (as directed by their own type representation). At the end, we
+	 * have a fully built type --- neat!
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class InternalBuilder implements Type.Builder {	
+		private Node[] nodes;
+		
+		public Type type() {
+			return construct(nodes);
+		}
+		
+		public void initialise(int numNodes) {
+			nodes = new Node[numNodes];
+		}
+
+		public void buildPrimitive(int index, Type.Leaf type) {
+			nodes[index] = new Node(leafKind(type),null);
+		}
+
+		public void buildExistential(int index, NameID name) {
+			nodes[index] = new Node(K_EXISTENTIAL,name);
+		}
+
+		public void buildSet(int index, int element) {
+			nodes[index] = new Node(K_SET,element);
+		}
+
+		public void buildList(int index, int element) {
+			nodes[index] = new Node(K_LIST,element);
+		}
+
+		public void buildProcess(int index, int element) {
+			nodes[index] = new Node(K_PROCESS,element);
+		}
+
+		public void buildDictionary(int index, int key, int value) {
+			nodes[index] = new Node(K_DICTIONARY,new Pair(key,value));
+		}
+
+		public void buildTuple(int index, int... elements) {
+			nodes[index] = new Node(K_TUPLE,elements);
+		}
+
+		public void buildRecord(int index, Pair<String, Integer>... fields) {
+			nodes[index] = new Node(K_RECORD,fields);
+		}
+
+		public void buildFunction(int index, int receiver, int ret,
+				int... parameters) {
+			int[] items = new int[parameters.length+2];
+			items[0] = receiver;
+			items[1] = ret;
+			System.arraycopy(parameters,0,items,2,parameters.length);
+			nodes[index] = new Node(K_FUNCTION,items);
+		}
+
+		public void buildUnion(int index, int... bounds) {
+			nodes[index] = new Node(K_UNION,bounds);
+		}
+	}
 	/**
 	 * The print builder is an example implementation of type builder which
 	 * simply constructs a textual representation of the type in the form of a
@@ -660,7 +792,7 @@ public abstract class Type {
 	 * @param type
 	 * @return
 	 */
-	private static Type minimise(Type type) {
+	public static Type minimise(Type type) {
 		// leaf types never need minmising!
 		if (type instanceof Leaf) {
 			return type;

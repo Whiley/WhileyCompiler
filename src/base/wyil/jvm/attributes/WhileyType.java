@@ -29,6 +29,7 @@ import java.io.*;
 
 import java.util.*;
 import wyil.lang.*;
+import wyil.util.Pair;
 import wyjvm.io.*;
 import wyjvm.lang.*;
 
@@ -60,108 +61,17 @@ public class WhileyType implements BytecodeAttribute {
 		Constant.addPoolItem(new Constant.Utf8(name()), constantPool);						
 		addPoolItems(type, constantPool);
 	}
-	
-
+		
 	public static void addPoolItems(Type type,
 			Set<Constant.Info> constantPool) {
-		// FIXME: this is completely broken and will likely infinite loop.
-		if(type instanceof Type.List) {
-			Type.List lt = (Type.List) type;
-			addPoolItems(lt.element(),constantPool);
-		} else if(type instanceof Type.Set) {
-			Type.Set st = (Type.Set) type;
-			addPoolItems(st.element(),constantPool);
-		} else if(type instanceof Type.Record) {
-			Type.Record tt = (Type.Record) type;
-			for(Map.Entry<String,Type> p : tt.fields().entrySet()) {
-				Constant.Utf8 utf8 = new Constant.Utf8(p.getKey());
-				Constant.addPoolItem(utf8,constantPool);
-				addPoolItems(p.getValue(),constantPool);
-			}
-		} else if(type instanceof Type.Union) {
-			Type.Union ut = (Type.Union) type;			
-			for(Type p : ut.bounds()) {
-				addPoolItems(p,constantPool);	
-			}	
-		} else if(type instanceof Type.Process) {
-			Type.Process st = (Type.Process) type;
-			addPoolItems(st.element(),constantPool);
-		} else if(type instanceof Type.Fun) {
-			Type.Fun ft = (Type.Fun) type;
-			for(Type t : ft.params()) {
-				addPoolItems(t,constantPool);
-			}
-			addPoolItems(ft.ret(),constantPool);
-		}
+		Type.build(new ConstantBuilder(constantPool),type);
 	}
 		
-	public static void write(Type t, BinaryOutputStream writer,
+	public static void write(Type type, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		if(t == Type.T_ANY) {
-			writer.write_u1(ANY_TYPE );
-		} else if(t == Type.T_VOID) {
-			writer.write_u1(VOID_TYPE);
-		} else if(t == Type.T_NULL) {
-			writer.write_u1(NULL_TYPE );
-		} else if(t == Type.T_BOOL) {
-			writer.write_u1(BOOL_TYPE );			
-		} else if(t == Type.T_INT) {			
-			writer.write_u1(INT_TYPE );		
-		} else if(t == Type.T_REAL) {
-			writer.write_u1(REAL_TYPE );			
-		} else if(t instanceof Type.Existential) {
-			Type.Existential et = (Type.Existential) t;
-			writer.write_u1(EXISTENTIAL_TYPE);
-			Constant.Utf8 utf8 = new Constant.Utf8(et.name().module().toString());
-			writer.write_u2(constantPool.get(utf8));
-			utf8 = new Constant.Utf8(et.name().name());
-			writer.write_u2(constantPool.get(utf8));
-		} else if(t instanceof Type.List) {
-			Type.List lt = (Type.List) t;
-			writer.write_u1(LIST_TYPE );
-			write(lt.element(),writer,constantPool);
-		} else if(t instanceof Type.Set) {
-			Type.Set st = (Type.Set) t;
-			writer.write_u1(SET_TYPE );			
-			write(st.element(),writer,constantPool);
-		} else if(t instanceof Type.Record) {
-			Type.Record tt = (Type.Record) t;
-			writer.write_u1(TUPLE_TYPE );
-			// FIXME: bug here if number of entries > 64K
-			writer.write_u2(tt.fields().size());
-			for(Map.Entry<String,Type> p : tt.fields().entrySet()) {
-				Constant.Utf8 utf8 = new Constant.Utf8(p.getKey());
-				writer.write_u2(constantPool.get(utf8));
-				write(p.getValue(),writer,constantPool);	
-			}			
-		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;
-			writer.write_u1(UNION_TYPE );			
-			// FIXME: bug here if number of bounds > 64K
-			writer.write_u2(ut.bounds().size());
-			for(Type p : ut.bounds()) {
-				write(p,writer,constantPool);	
-			}			
-		} else if(t instanceof Type.Process) {
-			Type.Process st = (Type.Process) t;
-			writer.write_u1(PROCESS_TYPE );			
-			write(st.element(),writer,constantPool);
-		} else if(t instanceof Type.Fun) {
-			Type.Fun st = (Type.Fun) t;
-			writer.write_u1(FUN_TYPE );	
-			write(st.receiver(),writer,constantPool);
-			write(st.ret(),writer,constantPool);
-			writer.write_u2(st.params().size());
-			for(Type p : st.params()) {
-				write(p,writer,constantPool);
-			}
-		} else {
-			throw new RuntimeException("unknown type encountered: " + t);
-		}
+		Type.build(new JvmBuilder(writer,constantPool),type);
 	}
-	
-	
-	
+			
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -176,8 +86,8 @@ public class WhileyType implements BytecodeAttribute {
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {
 		output.print(name() + ":");
-	}
-
+	}	
+	
 	public static class Reader implements BytecodeAttribute.Reader {
 		public String name() {
 			return "WhileyType";
@@ -193,87 +103,260 @@ public class WhileyType implements BytecodeAttribute {
 
 		public static Type readType(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
-			int t = input.read_u1();
+			Type.InternalBuilder builder = new Type.InternalBuilder();
+			int numNodes = input.read_u2();
+			builder.initialise(numNodes);
+			
+			for(int i=0;i!=numNodes;++i) {
+				int tag = input.read_u1();
 
-			switch (t) {
-			case ANY_TYPE:
-				return Type.T_ANY;
-			case VOID_TYPE:
-				return Type.T_VOID;
-			case NULL_TYPE:
-				return Type.T_NULL;
-			case BOOL_TYPE:
-				return Type.T_BOOL;
-			case INT_TYPE:
-				return Type.T_INT;
-			case REAL_TYPE:
-				return Type.T_REAL;
-			case LIST_TYPE:
-				Type et = readType(input, constantPool);
-				return Type.T_LIST(et);
-			case SET_TYPE:
-				et = readType(input, constantPool);
-				return Type.T_SET(et);
-			case TUPLE_TYPE:
-				int nents = input.read_u2();
-				HashMap<String, Type> types = new HashMap<String, Type>();
-				for (int i = 0; i != nents; ++i) {
-					String key = ((Constant.Utf8) constantPool.get(input
-							.read_u2())).str;
-					et = readType(input, constantPool);
-					types.put(key, et);
+				switch (tag) {
+				case ANY_TYPE:
+					builder.buildPrimitive(i, Type.T_ANY);
+					break;
+				case VOID_TYPE:
+					builder.buildPrimitive(i, Type.T_VOID);
+					break;
+				case NULL_TYPE:
+					builder.buildPrimitive(i, Type.T_NULL);
+					break;
+				case BOOL_TYPE:
+					builder.buildPrimitive(i, Type.T_BOOL);
+					break;
+				case INT_TYPE:
+					builder.buildPrimitive(i, Type.T_INT);
+					break;
+				case REAL_TYPE:
+					builder.buildPrimitive(i, Type.T_REAL);
+					break;
+				case LIST_TYPE:
+					builder.buildList(i, input.read_u2());
+					break;
+				case SET_TYPE:
+					builder.buildSet(i, input.read_u2());
+					break;
+				case TUPLE_TYPE:
+				{
+					int nents = input.read_u2();
+					int[] elems = new int[nents];
+					for (int j = 0; j != nents; ++j) {
+						elems[j] = input.read_u2();
+					}
+					builder.buildTuple(i, elems);
+					break;
 				}
-				return Type.T_RECORD(types);
-			case UNION_TYPE:
-				nents = input.read_u2();
-				ArrayList<Type> bounds = new ArrayList<Type>();
-				for (int i = 0; i != nents; ++i) {
-					et = readType(input, constantPool);
-					bounds.add((Type) et);
+				case RECORD_TYPE:
+				{
+					int nents = input.read_u2();
+					Pair<String, Integer>[] types = new Pair[nents];
+					for (int j = 0; j != nents; ++j) {
+						String key = ((Constant.Utf8) constantPool.get(input
+								.read_u2())).str;						
+						types[j] = new Pair(key, input.read_u2());
+					}
+					builder.buildRecord(i, types);
+					break;
 				}
-				return Type.T_UNION(bounds);
-			case PROCESS_TYPE:
-				et = readType(input, constantPool);
-				return Type.T_PROCESS(et);			
-			case RECURSIVE_TYPE: {				
-				String name = ((Constant.Utf8) constantPool
-						.get(input.read_u2())).str;
-				et = readType(input, constantPool);
-				return Type.T_RECURSIVE(name, et);
-			}
-			case RECURSIVE_LEAF: {				
-				String name = ((Constant.Utf8) constantPool
-						.get(input.read_u2())).str;
-				return Type.T_RECURSIVE(name, null);
-			}
-			case FUN_TYPE: {
-				Type ret = readType(input, constantPool);
-				int count = input.read_u2();
-				ArrayList<Type> ftypes = new ArrayList<Type>();
-				for (int i = 0; i != count; ++i) {
-					ftypes.add(readType(input, constantPool));
+				case UNION_TYPE:
+				{
+					int nents = input.read_u2();
+					int[] elems = new int[nents];
+					for (int j = 0; j != nents; ++j) {
+						elems[j] = input.read_u2();
+					}
+					builder.buildUnion(i, elems);
+					break;					
 				}
-				return Type.T_FUN(null, ret, ftypes);
-			}
-			case METH_TYPE: {
-				Type.Process rec = (Type.Process) readType(input, constantPool);
-				Type ret = readType(input, constantPool);
-				int count = input.read_u2();
-				ArrayList<Type> ftypes = new ArrayList<Type>();
-				for (int i = 0; i != count; ++i) {
-					ftypes.add(readType(input, constantPool));
+				case PROCESS_TYPE:
+					builder.buildProcess(i, input.read_u2());
+					break;		
+				case METH_TYPE:					
+				case FUN_TYPE: {
+					int rec = -1;
+					if(tag == METH_TYPE) {
+						rec = input.read_u2();
+					}
+					int ret = input.read_u2();
+					int nents = input.read_u2();
+					int[] params = new int[nents];
+					for (int j = 0; j != nents; ++j) {
+						params[j] = input.read_u2();
+					}
+					builder.buildFunction(i, rec, ret, params);
+				}				
 				}
-				return Type.T_FUN(rec, ret, ftypes);
 			}
-			}
-
-			throw new RuntimeException("Unknown type id encountered: " + t);
+			
+			return builder.type();			
 		}
 
 		protected static ModuleID readModule(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			String modstr = ((Constant.Utf8) constantPool.get(input.read_u2())).str;
 			return ModuleID.fromString(modstr);
+		}
+	}
+	
+	private static class ConstantBuilder extends Type.AbstractBuilder {
+		private final Set<Constant.Info> constantPool;
+		
+		public ConstantBuilder(Set<Constant.Info> pool) {
+			constantPool = pool;
+		}		
+
+		public void buildRecord(int index, Pair<String, Integer>... fields) { 
+			for(Pair<String,Integer> f : fields) {
+				Constant.Utf8 utf8 = new Constant.Utf8(f.first());
+				Constant.addPoolItem(utf8,constantPool);
+			}
+		}
+	}
+	
+	public static class JvmBuilder implements Type.Builder {		
+		private final BinaryOutputStream writer;
+		private final Map<Constant.Info,Integer> constantPool;
+		
+		public JvmBuilder(BinaryOutputStream writer, Map<Constant.Info,Integer> pool) {
+			this.writer = writer;
+			this.constantPool = pool;
+		}
+		
+		public void initialise(int numNodes) {
+			try {
+				writer.write_u2(numNodes);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildPrimitive(int index, Type.Leaf t) {
+			try {
+				if(t == Type.T_ANY) {
+					writer.write_u1(ANY_TYPE );
+				} else if(t == Type.T_VOID) {
+					writer.write_u1(VOID_TYPE);
+				} else if(t == Type.T_NULL) {
+					writer.write_u1(NULL_TYPE );
+				} else if(t == Type.T_BOOL) {
+					writer.write_u1(BOOL_TYPE );			
+				} else if(t == Type.T_INT) {			
+					writer.write_u1(INT_TYPE );		
+				} else if(t == Type.T_REAL) {
+					writer.write_u1(REAL_TYPE );			
+				}				
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+			throw new RuntimeException("unknown type encountered: " + t);
+		}
+
+		public void buildExistential(int index, NameID name) {
+			try {
+				writer.write_u1(EXISTENTIAL_TYPE);
+				Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
+				writer.write_u2(constantPool.get(utf8));
+				utf8 = new Constant.Utf8(name.name());
+				writer.write_u2(constantPool.get(utf8));
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildSet(int index, int element) {
+			try {
+				writer.write_u1(SET_TYPE);			
+				writer.write_u2(element);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildList(int index, int element) {
+			try {
+				writer.write_u1(LIST_TYPE);
+				writer.write_u2(element);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildProcess(int index, int element) {
+			try {
+				writer.write_u1(PROCESS_TYPE);	
+				writer.write_u2(element);				
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildDictionary(int index, int key, int value) {
+			try {
+				writer.write_u1(DICTIONARY_TYPE);
+				writer.write_u2(key);
+				writer.write_u2(value);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildTuple(int index, int... elements) {
+			try {
+				writer.write_u1(TUPLE_TYPE);
+				// FIXME: bug here if number of entries > 64K
+				writer.write_u2(elements.length);
+				for(int e : elements) {					
+					writer.write_u2(e);					
+				}	
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildRecord(int index, Pair<String, Integer>... fields) {
+			try {				
+				writer.write_u1(TUPLE_TYPE );
+				// FIXME: bug here if number of entries > 64K
+				writer.write_u2(fields.length);
+				for(Pair<String,Integer> p : fields) {
+					Constant.Utf8 utf8 = new Constant.Utf8(p.first());
+					writer.write_u2(constantPool.get(utf8));
+					writer.write_u2(p.second());					
+				}			
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildFunction(int index, int receiver, int ret,
+				int... parameters) {
+			try {
+				if (receiver != -1) {
+					writer.write_u1(METH_TYPE);
+					writer.write_u2(receiver);
+				} else {
+					writer.write_u1(FUN_TYPE);
+				}
+				writer.write_u2(ret);
+				writer.write_u2(parameters.length);
+				for (int p : parameters) {
+					writer.write_u2(p);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException("internal failure", e);
+			}
+		}
+
+		public void buildUnion(int index, int... bounds) {
+			try {				
+				writer.write_u1(UNION_TYPE );			
+				// FIXME: bug here if number of bounds > 64K
+				writer.write_u2(bounds.length);
+				for(int b : bounds) {
+					writer.write_u2(b);
+				}	
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
 		}
 	}
 	
@@ -286,13 +369,13 @@ public class WhileyType implements BytecodeAttribute {
 	public static final int REAL_TYPE = 7;
 	public static final int LIST_TYPE = 8;
 	public static final int SET_TYPE = 9;
-	public static final int TUPLE_TYPE = 10;
-	public static final int UNION_TYPE = 11;
-	public static final int INTERSECTION_TYPE = 12;
-	public static final int PROCESS_TYPE = 13;	
-	public static final int FUN_TYPE = 14;
-	public static final int METH_TYPE = 15;
-	public static final int RECURSIVE_TYPE = 16;
-	public static final int RECURSIVE_LEAF = 17;
+	public static final int DICTIONARY_TYPE = 10;
+	public static final int TUPLE_TYPE = 11;
+	public static final int RECORD_TYPE = 12;
+	public static final int UNION_TYPE = 13;
+	public static final int INTERSECTION_TYPE = 14;
+	public static final int PROCESS_TYPE = 15;	
+	public static final int FUN_TYPE = 16;
+	public static final int METH_TYPE = 17;
 	public static final int CONSTRAINT_MASK = 32;
 }

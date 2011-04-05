@@ -323,7 +323,7 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Type t = expandType(key, cache);												
-				types.put(key, t);
+				types.put(key, Type.minimise(t));
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
@@ -361,7 +361,7 @@ public class ModuleBuilder {
 		}
 
 		// following is needed to terminate any recursion
-		cache.put(key, Type.T_RECURSIVE(key.toString(), null));
+		cache.put(key, Type.T_LABEL(key.toString()));
 
 		// now, expand the type fully		
 		t = expandType(unresolved.get(key), filemap.get(key).filename,
@@ -370,7 +370,7 @@ public class ModuleBuilder {
 		// Now, we need to test whether the current type is open and recursive
 		// on this name. In such case, we must close it in order to complete the
 		// recursive type.
-		boolean isOpenRecursive = Type.isOpenRecursive(key.toString(), t);
+		boolean isOpenRecursive = Type.isOpen(key.toString(), t);
 		if (isOpenRecursive) {
 			t = Type.T_RECURSIVE(key.toString(), t);
 		}
