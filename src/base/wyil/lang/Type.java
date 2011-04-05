@@ -176,20 +176,28 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(Type ret, Type... params) {
+	public static final Fun T_FUN(Process receiver, Type ret, Type... params) {
+		Node[] reccomps;
+		if(receiver != null) {
+			reccomps = nodes(receiver);
+		} else {
+			reccomps = new Node[0];
+		}
 		Node[] retcomps = nodes(ret); 
-		int len = 1 + retcomps.length;
+		int len = 1 + reccomps.length + retcomps.length;
 		for(Type b : params) {
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
 		Node[] nodes = new Node[len];
 		int[] children = new int[1 + params.length];
-		insertNodes(1,retcomps,nodes);
+		insertNodes(1,reccomps,nodes);
+		insertNodes(1+reccomps.length,retcomps,nodes);
 		children[0] = 1;
-		int start = 1 + retcomps.length;		
+		children[1] = 1 + reccomps.length;
+		int start = 1 + reccomps.length + retcomps.length;		
 		for(int i=0;i!=params.length;++i) {
-			children[i+1] = start;
+			children[i+2] = start;
 			Node[] comps = nodes(params[i]);
 			insertNodes(start,comps,nodes);
 			start += comps.length;
@@ -615,14 +623,21 @@ public abstract class Type {
 				if(elems1.length != elems2.length){
 					return false;
 				}
-				// Check return value first (which is covariant)
+				// Check (optional) receiver value first (which is contravariant)
 				int e1 = elems1[0];
 				int e2 = elems2[0];
+				if ((e1 == -1 || e2 == -1 && e1 != e2)
+						&& !suptypeMatrix.get((e1 * g2Size) + e2)) {
+					return false;
+				}
+				// Check return value first (which is covariant)
+				e1 = elems1[0];
+				e2 = elems2[0];
 				if(!subtypeMatrix.get((e1*g2Size)+e2)) {
 					return false;
 				}
 				// Now, check parameters (which are contra-variant)
-				for(int i=1;i<elems1.length;++i) {
+				for(int i=2;i<elems1.length;++i) {
 					e1 = elems1[i];
 					e2 = elems2[i];
 					if(!suptypeMatrix.get((e1*g2Size)+e2)) {
@@ -1126,7 +1141,8 @@ public abstract class Type {
 			// nary node
 			int[] bounds = (int[]) node.data;
 			for(Integer b : bounds) {
-				subgraph(b,visited,extracted,graph);
+				if(b == -1) { continue; } // possible with K_FUNCTION				
+				subgraph(b,visited,extracted,graph);				
 			}
 			break;
 		case K_RECORD:
@@ -1187,6 +1203,7 @@ public abstract class Type {
 			// nary node
 			int[] bounds = (int[]) node.data;
 			for(Integer b : bounds) {
+				if(b == -1) { continue; } // possible with K_FUNCTION
 				findHeaders(b,visited,onStack,headers,graph);
 			}
 			break;
@@ -1285,14 +1302,19 @@ public abstract class Type {
 		case K_FUNCTION: {
 			middle = "";
 			int[] bounds = (int[]) node.data;
-			String ret = toString(bounds[0], visited, headers, graph);
-			for (int i = 1; i != bounds.length; ++i) {
+			String rec = bounds[0] == -1 ? null : toString(bounds[0],visited,headers,graph);
+			String ret = toString(bounds[1], visited, headers, graph);
+			for (int i = 2; i != bounds.length; ++i) {
 				if (i != 1) {
 					middle += ",";
 				}
 				middle += toString(bounds[i], visited, headers, graph);
 			}
-			middle = ret + "(" + middle + ")";
+			if(rec != null) {
+				middle = rec + "::" + ret + "(" + middle + ")";
+			} else {
+				middle = ret + "(" + middle + ")";
+			}
 			break;
 		}
 		case K_RECORD: {
@@ -1411,8 +1433,9 @@ public abstract class Type {
 			}
 			case K_FUNCTION: {				
 				int[] bounds = (int[]) node.data;
-				r += bounds[0] + "(";
-				for (int j = 1; j != bounds.length; ++j) {
+				r += bounds[0] + "::";
+				r += bounds[1] + "(";
+				for (int j = 2; j != bounds.length; ++j) {
 					if (i != 1) {
 						r += ",";
 					}
@@ -1640,9 +1663,21 @@ public abstract class Type {
 		 */
 		public Type ret() {
 			Integer[] fields = (Integer[]) nodes[0].data;
-			return extract(fields[0]);
+			return extract(fields[1]);
 		}
 
+		/**
+		 * Get the return type of this function type.
+		 * 
+		 * @return
+		 */
+		public Type receiver() {
+			Integer[] fields = (Integer[]) nodes[0].data;
+			int r = fields[0];
+			if(r == -1) { return null; }
+			return extract(r);
+		}
+		
 		/**
 		 * Get the parameter types of this function type.
 		 * 
@@ -1834,6 +1869,7 @@ public abstract class Type {
 			int[] bounds = (int[]) node.data;
 			int[] nbounds = new int[bounds.length];
 			for (int i = 0; i != bounds.length; ++i) {
+				if(bounds[i] == -1) { continue; } // possible with K_FUNCTION
 				nbounds[i] = rmap[bounds[i]];
 			}
 			data = nbounds;
