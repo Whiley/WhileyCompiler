@@ -219,10 +219,10 @@ public abstract class Type {
 			len += nodes(b).length;
 		}		
 		Node[] nodes = new Node[len];
-		int[] children = new int[1 + params.length];
+		int[] children = new int[2 + params.length];
 		insertNodes(1,reccomps,nodes);
 		insertNodes(1+reccomps.length,retcomps,nodes);
-		children[0] = 1;
+		children[0] = receiver == null ? -1 : 1;
 		children[1] = 1 + reccomps.length;
 		int start = 1 + reccomps.length + retcomps.length;		
 		for(int i=0;i!=params.length;++i) {
@@ -1997,7 +1997,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type ret() {
-			Integer[] fields = (Integer[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].data;
 			return extract(fields[1]);
 		}
 
@@ -2007,7 +2007,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type receiver() {
-			Integer[] fields = (Integer[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].data;
 			int r = fields[0];
 			if(r == -1) { return null; }
 			return extract(r);
@@ -2019,10 +2019,10 @@ public abstract class Type {
 		 * @return
 		 */
 		public ArrayList<Type> params() {
-			Integer[] fields = (Integer[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].data;
 			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=1;i<fields.length;++i) {
-				r.add(extract(i));
+			for(int i=2;i<fields.length;++i) {
+				r.add(extract(fields[i]));
 			}
 			return r;
 		}
