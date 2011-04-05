@@ -713,8 +713,11 @@ public abstract class Type {
 		Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(g1,g2);
 		BitSet subtypeMatrix = matrices.first();
 		BitSet suptypeMatrix = matrices.second();
-		
-		/* debug code
+		/*
+		System.out.println("Type 1:");
+		build(new PrintBuilder(System.out),t1);
+		System.out.println("Type 2:");
+		build(new PrintBuilder(System.out),t2);
 		System.out.println("Subtype Matrix:");
 		System.out.println(toString(subtypeMatrix,g2.length,g1.length));
 		System.out.println("Supertype Matrix:");
@@ -1114,28 +1117,26 @@ public abstract class Type {
 			return true;
 		} else if(!sign && (c1.kind == K_ANY || c2.kind == K_VOID)) {
 			return true;
-		} else if (c1.kind == K_UNION){
+		} else if (c1.kind == K_UNION){			
 			int[] bounds1 = (int[]) c1.data;		
 
 			// check every bound in c1 is a subtype of some bound in c2.
 			for(int i : bounds1) {				
-				if(!subtypeMatrix.get((i*g2Size)+n2)) {
-					return false;
+				if(subtypeMatrix.get((i*g2Size)+n2)) {
+					return true;
 				}								
 			}
-
-			return true;
-		} else if (c2.kind == K_UNION) {
+		} else if (c2.kind == K_UNION) {			
 			int[] bounds2 = (int[]) c2.data;		
 
 			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(subtypeMatrix.get((n1*g2Size)+j)) {
-					return true;
+				if(!subtypeMatrix.get((n1*g2Size)+j)) {
+					return false;
 				}								
 			}
 		} 
-		return false;
+		return true;
 	}
 
 	private static int rebuild(int idx, Node[] graph, int[] allocated,
