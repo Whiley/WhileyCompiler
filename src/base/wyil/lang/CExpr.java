@@ -468,7 +468,8 @@ public abstract class CExpr {
 			return "%" + index;			
 		}
 	}
-	
+
+	// TODO: split list access into dictionary access
 	public static class ListAccess extends LVal {		
 		public final CExpr src;
 		public final CExpr index;
@@ -479,12 +480,14 @@ public abstract class CExpr {
 		}
 
 		public Type type() {
-			Type t = src.type();
+			Type.List t = Type.effectiveListType(src.type());
 			if(t instanceof Type.List){ 
 				Type.List l = (Type.List) t;
 				return l.element();
-			} else if(t instanceof Type.Dictionary) {
-				Type.Dictionary l = (Type.Dictionary) t;
+			} 
+			Type.Dictionary dt = Type.effectiveDictionaryType(src.type());
+			if(dt instanceof Type.Dictionary) {
+				Type.Dictionary l = (Type.Dictionary) dt;
 				return l.value();
 			} else {
 				return Type.T_VOID;

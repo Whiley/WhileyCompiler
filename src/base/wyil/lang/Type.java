@@ -807,7 +807,7 @@ public abstract class Type {
 			Union ut = (Type.Union) t;
 			Record r = null;
 			for (Type b : ut.bounds()) {
-				if (!(t instanceof Record)) {
+				if (!(b instanceof Record)) {
 					return null;
 				}
 				Record br = (Record) b;
@@ -828,6 +828,51 @@ public abstract class Type {
 						return null;
 					}
 					r = T_RECORD(nfields);
+				}
+			}
+			return r;
+		}
+		return null;
+	}
+
+	public static List effectiveListType(Type t) {
+		if (t instanceof Type.List) {
+			return (Type.List) t;
+		} else if (t instanceof Type.Union) {			
+			Union ut = (Type.Union) t;
+			List r = null;
+			for (Type b : ut.bounds()) {
+				if (!(b instanceof List)) {
+					return null;
+				}
+				List br = (List) b;
+				if (r == null) {
+					r = br;
+				} else {
+					r = T_LIST(leastUpperBound(r.element(),br.element()));
+				}
+			}			
+			return r;
+		}
+		return null;
+	}
+	
+	public static Dictionary effectiveDictionaryType(Type t) {
+		if (t instanceof Type.Dictionary) {
+			return (Type.Dictionary) t;
+		} else if (t instanceof Type.Union) {
+			Union ut = (Type.Union) t;
+			Dictionary r = null;
+			for (Type b : ut.bounds()) {
+				if (!(b instanceof Dictionary)) {
+					return null;
+				}
+				Dictionary br = (Dictionary) b;
+				if (r == null) {
+					r = br;
+				} else {
+					r = T_DICTIONARY(leastUpperBound(r.key(), br.key()),
+							leastUpperBound(r.value(), br.value()));
 				}
 			}
 			return r;

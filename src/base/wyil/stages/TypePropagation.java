@@ -173,15 +173,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.put("%" + v.index, type);
 			return CExpr.REG(type,v.index);
 		} else if(lhs instanceof ListAccess) {
-			ListAccess la = (ListAccess) lhs;
-			Type la_src_t = la.src.type();
+			ListAccess la = (ListAccess) lhs;			
+			Type.List la_src_t = Type.effectiveListType(la.src.type());
 			if(la_src_t instanceof Type.List) {
-				Type.List tl = (Type.List) la.src.type();
-				Type elem_t = Type.leastUpperBound(tl.element(),type);
+				Type elem_t = Type.leastUpperBound(la_src_t.element(),type);
 				lhs = typeInference(la.src,Type.T_LIST(elem_t),environment);
 				return CExpr.LISTACCESS(lhs, la.index);
 			} else {
-				Type.Dictionary tl = (Type.Dictionary) la.src.type();
+				Type.Dictionary tl = (Type.Dictionary) Type.effectiveDictionaryType(la.src.type());
 				Type key_t = Type.leastUpperBound(tl.key(),la.index.type());
 				Type val_t = Type.leastUpperBound(tl.value(),type);
 				lhs = typeInference(la.src,Type.T_DICTIONARY(key_t,val_t),environment);
@@ -585,7 +584,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
-
 		if(e instanceof Value.FunConst) {
 			e =  infer((Value.FunConst)e,stmt,environment);
 		} else if (e instanceof Value.List) {			
@@ -623,8 +621,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else {
 			syntaxError("unknown expression encountered: " + e, filename, stmt);
 			return null; // unreachable
-		}
-		
+		}		
 		if(e.type() == Type.T_VOID) {
 			// Observe, expressions cannot have void return types. This can
 			// happen, for example, if we have a function pointer which returns
