@@ -783,6 +783,37 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Record effectiveRecordType(Type t) {
+		if (t instanceof Type.Record) {
+			return (Type.Record) t;
+		} else if (t instanceof Type.Union) {
+			Union ut = (Type.Union) t;
+			Record r = null;
+			for (Type b : ut.bounds()) {
+				if (!(t instanceof Record)) {
+					return null;
+				}
+				Record br = (Record) b;
+				if (r == null) {
+					r = br;
+				} else {
+					HashMap<String, Type> rfields = r.fields();
+					HashMap<String, Type> bfields = br.fields();
+					HashMap<String, Type> nfields = new HashMap();
+					for (Map.Entry<String, Type> e : rfields.entrySet()) {
+						Type bt = bfields.get(e.getKey());
+						if (bt != null) {
+							nfields.put(e.getKey(),
+									leastUpperBound(e.getValue(), bt));
+						}
+					}
+					if (nfields.size() == 0) {
+						return null;
+					}
+					r = T_RECORD(nfields);
+				}
+			}
+			return r;
+		}
 		return null;
 	}
 	
