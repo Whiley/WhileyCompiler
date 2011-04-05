@@ -64,50 +64,34 @@ public class WhileyType implements BytecodeAttribute {
 
 	public static void addPoolItems(Type type,
 			Set<Constant.Info> constantPool) {
+		// FIXME: this is completely broken and will likely infinite loop.
 		if(type instanceof Type.List) {
 			Type.List lt = (Type.List) type;
-			addPoolItems(lt.element,constantPool);
+			addPoolItems(lt.element(),constantPool);
 		} else if(type instanceof Type.Set) {
 			Type.Set st = (Type.Set) type;
-			addPoolItems(st.element,constantPool);
+			addPoolItems(st.element(),constantPool);
 		} else if(type instanceof Type.Record) {
 			Type.Record tt = (Type.Record) type;
-			for(Map.Entry<String,Type> p : tt.types.entrySet()) {
+			for(Map.Entry<String,Type> p : tt.fields().entrySet()) {
 				Constant.Utf8 utf8 = new Constant.Utf8(p.getKey());
 				Constant.addPoolItem(utf8,constantPool);
 				addPoolItems(p.getValue(),constantPool);
 			}
 		} else if(type instanceof Type.Union) {
 			Type.Union ut = (Type.Union) type;			
-			for(Type p : ut.bounds) {
+			for(Type p : ut.bounds()) {
 				addPoolItems(p,constantPool);	
 			}	
 		} else if(type instanceof Type.Process) {
 			Type.Process st = (Type.Process) type;
-			addPoolItems(st.element,constantPool);
-		} else if(type instanceof Type.Named) {
-			// Covered Type.Recursive as well
-			Type.Named lt = (Type.Named) type;
-			Constant.Utf8 utf8 = new Constant.Utf8(lt.name.module().toString());
-			Constant.addPoolItem(utf8,constantPool);
-			utf8 = new Constant.Utf8(lt.name.name());	
-			Constant.addPoolItem(utf8,constantPool);
-			if(lt.type != null) {
-				addPoolItems(lt.type,constantPool);
-			}
-		} else if(type instanceof Type.Recursive) {
-			Type.Recursive lt = (Type.Recursive) type;
-			Constant.Utf8 utf8 = new Constant.Utf8(lt.name);	
-			Constant.addPoolItem(utf8,constantPool);
-			if(lt.type != null) {
-				addPoolItems(lt.type,constantPool);
-			}
+			addPoolItems(st.element(),constantPool);
 		} else if(type instanceof Type.Fun) {
 			Type.Fun ft = (Type.Fun) type;
-			for(Type t : ft.params) {
+			for(Type t : ft.params()) {
 				addPoolItems(t,constantPool);
 			}
-			addPoolItems(ft.ret,constantPool);
+			addPoolItems(ft.ret(),constantPool);
 		}
 	}
 		
@@ -115,8 +99,6 @@ public class WhileyType implements BytecodeAttribute {
 			Map<Constant.Info, Integer> constantPool) throws IOException {
 		if(t == Type.T_ANY) {
 			writer.write_u1(ANY_TYPE );
-		} else if(t == Type.T_EXISTENTIAL) {
-			writer.write_u1(EXISTENTIAL_TYPE );
 		} else if(t == Type.T_VOID) {
 			writer.write_u1(VOID_TYPE);
 		} else if(t == Type.T_NULL) {
@@ -127,20 +109,27 @@ public class WhileyType implements BytecodeAttribute {
 			writer.write_u1(INT_TYPE );		
 		} else if(t == Type.T_REAL) {
 			writer.write_u1(REAL_TYPE );			
+		} else if(t instanceof Type.Existential) {
+			Type.Existential et = (Type.Existential) t;
+			writer.write_u1(EXISTENTIAL_TYPE);
+			Constant.Utf8 utf8 = new Constant.Utf8(et.name().module().toString());
+			writer.write_u2(constantPool.get(utf8));
+			utf8 = new Constant.Utf8(et.name().name());
+			writer.write_u2(constantPool.get(utf8));
 		} else if(t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
 			writer.write_u1(LIST_TYPE );
-			write(lt.element,writer,constantPool);
+			write(lt.element(),writer,constantPool);
 		} else if(t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			writer.write_u1(SET_TYPE );			
-			write(st.element,writer,constantPool);
+			write(st.element(),writer,constantPool);
 		} else if(t instanceof Type.Record) {
 			Type.Record tt = (Type.Record) t;
 			writer.write_u1(TUPLE_TYPE );
 			// FIXME: bug here if number of entries > 64K
-			writer.write_u2(tt.types.size());
-			for(Map.Entry<String,Type> p : tt.types.entrySet()) {
+			writer.write_u2(tt.fields().size());
+			for(Map.Entry<String,Type> p : tt.fields().entrySet()) {
 				Constant.Utf8 utf8 = new Constant.Utf8(p.getKey());
 				writer.write_u2(constantPool.get(utf8));
 				write(p.getValue(),writer,constantPool);	
@@ -149,40 +138,21 @@ public class WhileyType implements BytecodeAttribute {
 			Type.Union ut = (Type.Union) t;
 			writer.write_u1(UNION_TYPE );			
 			// FIXME: bug here if number of bounds > 64K
-			writer.write_u2(ut.bounds.size());
-			for(Type p : ut.bounds) {
+			writer.write_u2(ut.bounds().size());
+			for(Type p : ut.bounds()) {
 				write(p,writer,constantPool);	
 			}			
 		} else if(t instanceof Type.Process) {
 			Type.Process st = (Type.Process) t;
 			writer.write_u1(PROCESS_TYPE );			
-			write(st.element,writer,constantPool);
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive st = (Type.Recursive) t;
-			if(st.type != null) {
-				writer.write_u1(RECURSIVE_TYPE );				
-			} else {
-				writer.write_u1(RECURSIVE_LEAF);
-			}			
-			Constant.Utf8 utf8 = new Constant.Utf8(st.name);
-			writer.write_u2(constantPool.get(utf8));					
-			if(st.type != null) {
-				write(st.type,writer,constantPool);
-			}
-		} else if(t instanceof Type.Named) {			
-			Type.Named st = (Type.Named) t;
-			writer.write_u1(NAMED_TYPE );
-			Constant.Utf8 utf8 = new Constant.Utf8(st.name.module().toString());
-			writer.write_u2(constantPool.get(utf8));
-			utf8 = new Constant.Utf8(st.name.name());
-			writer.write_u2(constantPool.get(utf8));
-			write(st.type,writer,constantPool);
+			write(st.element(),writer,constantPool);
 		} else if(t instanceof Type.Fun) {
 			Type.Fun st = (Type.Fun) t;
 			writer.write_u1(FUN_TYPE );	
-			write(st.ret,writer,constantPool);
-			writer.write_u2(st.params.size());
-			for(Type p : st.params) {
+			write(st.receiver(),writer,constantPool);
+			write(st.ret(),writer,constantPool);
+			writer.write_u2(st.params().size());
+			for(Type p : st.params()) {
 				write(p,writer,constantPool);
 			}
 		} else {
@@ -228,8 +198,6 @@ public class WhileyType implements BytecodeAttribute {
 			switch (t) {
 			case ANY_TYPE:
 				return Type.T_ANY;
-			case EXISTENTIAL_TYPE:
-				return Type.T_EXISTENTIAL;
 			case VOID_TYPE:
 				return Type.T_VOID;
 			case NULL_TYPE:
@@ -258,22 +226,15 @@ public class WhileyType implements BytecodeAttribute {
 				return Type.T_RECORD(types);
 			case UNION_TYPE:
 				nents = input.read_u2();
-				ArrayList<Type.NonUnion> bounds = new ArrayList<Type.NonUnion>();
+				ArrayList<Type> bounds = new ArrayList<Type>();
 				for (int i = 0; i != nents; ++i) {
 					et = readType(input, constantPool);
-					bounds.add((Type.NonUnion) et);
+					bounds.add((Type) et);
 				}
-				return Type.leastUpperBound(bounds);
+				return Type.T_UNION(bounds);
 			case PROCESS_TYPE:
 				et = readType(input, constantPool);
-				return Type.T_PROCESS(et);
-			case NAMED_TYPE: {
-				ModuleID module = readModule(input, constantPool);
-				String name = ((Constant.Utf8) constantPool
-						.get(input.read_u2())).str;
-				et = readType(input, constantPool);
-				return Type.T_NAMED(new NameID(module, name), et);
-			}
+				return Type.T_PROCESS(et);			
 			case RECURSIVE_TYPE: {				
 				String name = ((Constant.Utf8) constantPool
 						.get(input.read_u2())).str;
@@ -328,11 +289,10 @@ public class WhileyType implements BytecodeAttribute {
 	public static final int TUPLE_TYPE = 10;
 	public static final int UNION_TYPE = 11;
 	public static final int INTERSECTION_TYPE = 12;
-	public static final int PROCESS_TYPE = 13;
-	public static final int NAMED_TYPE = 14;
-	public static final int FUN_TYPE = 15;
-	public static final int METH_TYPE = 16;
-	public static final int RECURSIVE_TYPE = 17;
-	public static final int RECURSIVE_LEAF = 18;
+	public static final int PROCESS_TYPE = 13;	
+	public static final int FUN_TYPE = 14;
+	public static final int METH_TYPE = 15;
+	public static final int RECURSIVE_TYPE = 16;
+	public static final int RECURSIVE_LEAF = 17;
 	public static final int CONSTRAINT_MASK = 32;
 }

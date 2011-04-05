@@ -85,6 +85,10 @@ public abstract class Type {
 		}
 	}
 	
+	public static final Existential T_EXISTENTIAL(NameID name) {
+		return new Existential(name);
+	}
+	
 	/**
 	 * Construct a set type using the given element type.
 	 * 
@@ -140,6 +144,20 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
+	public static final Union T_UNION(Collection<Type> bounds) {
+		Type[] ts = new Type[bounds.size()];
+		int i = 0;
+		for(Type t : bounds) {
+			ts[i++] = t;
+		}
+		return T_UNION(ts);
+	}
+	
+	/**
+	 * Construct a union type using the given type bounds
+	 * 
+	 * @param element
+	 */
 	public static final Union T_UNION(Type... bounds) {
 		if(bounds.length < 1) {
 			throw new IllegalArgumentException("Union requires more than one bound");
@@ -171,6 +189,15 @@ public abstract class Type {
 		return new Union(nodes);		
 	}
 
+	public static final Fun T_FUN(Process receiver, Type ret,
+			Collection<Type> params) {
+		Type[] ts = new Type[params.size()];
+		int i = 0;
+		for (Type t : params) {
+			ts[i++] = t;
+		}
+		return T_FUN(receiver, ret, ts);
+	}
 	/**
 	 * Construct a function type using the given return and parameter types.
 	 * 
@@ -937,6 +964,34 @@ public abstract class Type {
 		}
 	}
 
+	/**
+	 * The existential type represents the an unknown type, defined at a given
+	 * position.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Existential extends Compound{
+		private Existential(NameID name) {
+			super(new Node[] { new Node(K_EXISTENTIAL,name) });
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Existential) {
+				Existential e = (Existential) o;
+				return nodes[0].data.equals(nodes[0].data);
+			}
+			return false;
+		}
+		public NameID name() {
+			return (NameID) nodes[0].data;
+		}
+		public int hashCode() {
+			return nodes[0].data.hashCode();
+		}
+		public String toString() {
+			return "?" + name();
+		}
+	}
 	
 	/**
 	 * Represents the set of boolean values (i.e. true and false)
@@ -1711,8 +1766,9 @@ public abstract class Type {
 	private static final byte K_RECORD = 12;
 	private static final byte K_UNION = 13;
 	private static final byte K_FUNCTION = 14;
-	private static final byte K_LABEL = 15;
-
+	private static final byte K_EXISTENTIAL = 15;
+	private static final byte K_LABEL = 16;
+	
 	/**
 	 * Represents a node in the type graph. Each node has a kind, along with a
 	 * data value identifying any children. For set, list and reference kinds
