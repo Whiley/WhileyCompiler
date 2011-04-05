@@ -18,6 +18,7 @@
 
 package wyil.lang;
 
+import java.io.PrintStream;
 import java.util.*;
 
 import wyil.util.Pair;
@@ -339,6 +340,230 @@ public abstract class Type {
 		}
 		return construct(newnodes);
 	}
+	
+	// =============================================================
+	// Serialisation Helpers
+	// =============================================================
+
+	/**
+	 * The Type.Builder interface is essentially a way of separating the
+	 * internals of the type implementation from clients which may want to
+	 * serialise a given type graph.
+	 */
+	public interface Builder {
+
+		/**
+		 * Set the number of nodes required for the type being built. This
+		 * method is called once, before all other methods are called. The
+		 * intention is to give builders a chance to statically initialise data
+		 * structures based on the number of nodes required.
+		 * 
+		 * @param numNodes
+		 */
+		void initialise(int numNodes);
+
+		void buildPrimitive(int index, Type.Leaf type);
+
+		void buildExistential(int index, NameID name);
+
+		void buildSet(int index, int element);
+
+		void buildList(int index, int element);
+
+		void buildProcess(int index, int element);
+
+		void buildDictionary(int index, int key, int value);
+
+		void buildTuple(int index, int... elements);
+
+		void buildRecord(int index, Pair<String, Integer>... fields);
+
+		void buildFunction(int index, int receiver, int ret, int... parameters);
+		
+		void buildUnion(int index, int... bounds);
+	}
+
+	/**
+	 * The print builder is an example implementation of type builder which
+	 * simply constructs a textual representation of the type in the form of a
+	 * graph.
+	 */
+	public static class PrintBuilder implements Builder {
+		private final PrintStream out;
+		
+		public PrintBuilder(PrintStream out) {
+			this.out = out;
+		}
+		
+		public void initialise(int numNodes) { }
+		
+		public void buildPrimitive(int index, Type.Leaf type) {
+			out.println("[" + index + "] = " + type);
+		}
+		
+		public void buildExistential(int index, NameID name) {
+			out.println("[" + index + "] = ?" + name);
+		}
+		
+		public void buildSet(int index, int element) {
+			out.println("[" + index + "] = { #" + element + " }");
+		}
+
+		public void buildList(int index, int element) {
+			out.println("[" + index + "] = [ #" + element + " ]");
+		}
+
+		public void buildProcess(int index, int element) {
+			out.println("[" + index + "] = process #" + element);
+		}
+
+		public void buildDictionary(int index, int key, int value) {
+			out.println("[" + index + "] = { #" + key + "->#" + value + " }");
+		}
+
+		public void buildTuple(int index, int... elements) {
+			out.print("[" + index + "] = (");
+			boolean firstTime=true;
+			for(int e : elements) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print("#" + e);
+			}
+			out.println(")");
+		}
+
+		public void buildRecord(int index, Pair<String, Integer>... fields) {
+			out.print("[" + index + "] = { ");
+			boolean firstTime=true;
+			for(Pair<String,Integer> e : fields) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print("#" + e.second() + " " + e.first());
+			}
+			out.println(" }");
+		}
+
+		public void buildFunction(int index, int receiver, int ret, int... parameters) {
+			out.print("[" + index + "] = ");
+			if(receiver != -1) {
+				out.print("#" + receiver + "::");
+			}
+			out.print("#" + ret + "(");
+			boolean firstTime=true;
+			for(int e : parameters) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print("#" + e);
+			}
+			out.println(" )");
+		}
+		
+		public void buildUnion(int index, int... bounds) {
+			out.print("[" + index + "] = ");
+			boolean firstTime=true;
+			for(int e : bounds) {
+				if(!firstTime) {
+					out.print(" | ");
+				}
+				firstTime=false;
+				out.print("#" + e);
+			}
+			out.println();
+		}
+	}
+	
+	/**
+	 * Construct a copy of a given type using a given type builder. The normal
+	 * reason to do this is that the representation of the type being built is
+	 * not the internal one --- e.g. it's a textual or binary representation for
+	 * serialisation.
+	 * 
+	 * @param writer
+	 * @param type
+	 */
+	public static void build(Builder writer, Type type) {
+		if(type instanceof Leaf) {			
+			writer.initialise(1);
+			writer.buildPrimitive(0,(Type.Leaf)type);
+		} else {				
+			Compound graph = (Compound) type;
+			writer.initialise(graph.nodes.length);
+			Node[] nodes = graph.nodes;
+			for(int i=0;i!=nodes.length;++i) {
+				Node node = nodes[i];						
+				switch (node.kind) {
+				case K_VOID:
+					writer.buildPrimitive(i,T_VOID);
+					break;
+				case K_ANY:
+					writer.buildPrimitive(i,T_ANY);
+					break;
+				case K_NULL:
+					writer.buildPrimitive(i,T_NULL);
+					break;
+				case K_BOOL:
+					writer.buildPrimitive(i,T_BOOL);
+					break;
+				case K_INT:
+					writer.buildPrimitive(i,T_INT);
+					break;
+				case K_RATIONAL:
+					writer.buildPrimitive(i,T_REAL);
+					break;
+				case K_SET:
+					writer.buildSet(i,(Integer) node.data);
+					break;
+				case K_LIST:
+					writer.buildList(i,(Integer) node.data);												
+					break;
+				case K_PROCESS:
+					writer.buildList(i,(Integer) node.data);	
+					break;
+				case K_EXISTENTIAL:
+					writer.buildExistential(i,(NameID) node.data);	
+					break;
+				case K_DICTIONARY: {
+					// binary node
+					Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
+					writer.buildDictionary(i,p.first(),p.second());										
+					break;
+				}
+				case K_UNION: {
+					int[] bounds = (int[]) node.data;			
+					writer.buildUnion(i,bounds);
+					break;
+				}
+				case K_TUPLE: {									
+					int[] bounds = (int[]) node.data;								
+					writer.buildTuple(i,bounds);					
+					break;
+				}
+				case K_FUNCTION: {				
+					int[] bounds = (int[]) node.data;
+					int[] params = new int[bounds.length-2];
+					System.arraycopy(bounds, 2, params,0, params.length);
+					writer.buildFunction(i,bounds[0],bounds[1],params);
+					break;
+				}
+				case K_RECORD: {
+					// labeled nary node					
+					Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
+					writer.buildRecord(i,fields);
+					break;
+				}
+				default: 
+					throw new IllegalArgumentException("Invalid type encountered");
+				}
+			}		
+		}
+	}
+	
 	
 	// =============================================================
 	// Type operations
@@ -1411,115 +1636,7 @@ public abstract class Type {
 			return r;
 		}
 	}
-	
-	/**
-	 * This method is used primarily for debugging. Essentially, it provides a
-	 * raw view of the underlying graph for a given type.
-	 * 
-	 * @param type --- type to prring
-	 * @return
-	 */
-	private final static String toGraphString(Type type) {
-		if(type instanceof Leaf) {			
-			return type.toString();
-		}		
-		Compound graph = (Compound) type;
-		String r = "";
-		Node[] nodes = graph.nodes;
-		for(int i=0;i!=nodes.length;++i) {
-			if(i != 0) { r += "\n"; }
-			Node node = nodes[i];		
-			r += i + ": ";		
-			switch (node.kind) {
-			case K_VOID:
-				r += "void";
-				break;
-			case K_ANY:
-				r += "any";
-				break;
-			case K_NULL:
-				r +=  "null";
-				break;
-			case K_BOOL:
-				r +=  "bool";
-				break;
-			case K_INT:
-				r +=  "int";
-				break;
-			case K_RATIONAL:
-				r +=  "rat";
-				break;
-			case K_SET:
-				r += "{" + (Integer) node.data + "}";
-				break;
-			case K_LIST:
-				r += "[" + (Integer) node.data + "]";								
-				break;
-			case K_PROCESS:
-				r += "*" + (Integer) node.data;				
-				break;
-			case K_DICTIONARY: {
-				// binary node
-				Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-				r += "{" + p.first() + "->" + p.second() + "}";
-				break;
-			}
-			case K_UNION: {
-				int[] bounds = (int[]) node.data;			
-				for (int j = 0; j != bounds.length; ++j) {
-					if (j != 0) {
-						r += "|";
-					}
-					r += bounds[j];
-				}
-				break;
-			}
-			case K_TUPLE: {				
-				r += "(";
-				int[] bounds = (int[]) node.data;			
-				for (int j = 0; j != bounds.length; ++j) {
-					if (j != 0) {
-						r += ",";
-					}
-					r += bounds[j];
-				}
-				r += ")";
-				break;
-			}
-			case K_FUNCTION: {				
-				int[] bounds = (int[]) node.data;
-				r += bounds[0] + "::";
-				r += bounds[1] + "(";
-				for (int j = 2; j != bounds.length; ++j) {
-					if (i != 1) {
-						r += ",";
-					}
-					r += bounds[j];
-				}
-				r += ")";
-				break;
-			}
-			case K_RECORD: {
-				// labeled nary node
-				r += "{";
-				Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-				for (int j = 0; j != fields.length; ++j) {
-					if (j != 0) {
-						r += ",";
-					}
-					Pair<String, Integer> f = fields[j];
-					r += f.second() + " " + f.first();
-				}
-				r += "}";
-				break;
-			}
-			default: 
-				throw new IllegalArgumentException("Invalid type encountered");
-			}
-		}
-		return r;
-	}
-	
+		
 	// =============================================================
 	// Compound Faces
 	// =============================================================
@@ -1989,12 +2106,13 @@ public abstract class Type {
 	}
 	
 	public static void main(String[] args) {				
+		PrintBuilder printer = new PrintBuilder(System.out);
 		Type ft2 = minimise(T_RECURSIVE("X",linkedList(2,T_REAL,"X")));
 		Type ft1 = minimise(T_RECURSIVE("X",linkedList(1,T_INT,"X")));				
 		System.out.println("Type: " + ft1 + "\n-----");
-		System.out.println(toGraphString(ft1));
-		System.out.println("Type: " + ft2 + "\n-----");
-		System.out.println(toGraphString(ft2));
+		build(printer,ft1);		
+		System.out.println("\nType: " + ft2 + "\n-----");
+		build(printer,ft2);		
 		System.out.println(ft1 + " :> " + ft2 + " : " + isSubtype(ft1,ft2));		
 	}
 	

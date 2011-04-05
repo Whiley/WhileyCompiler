@@ -356,7 +356,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (lhs instanceof CExpr.Variable) {			
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(v.type, trueType);
-			Type gdiff = Type.greatestDifference(v.type, falseType);	
+			Type gdiff = Type.leastDifference(v.type, falseType);	
 			//System.out.println("\nGLB(1): " + Type.toShortString(trueType)
 			//		+ " & " + Type.toShortString(v.type) + " = "
 			//		+ Type.toShortString(glb));
@@ -369,7 +369,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			CExpr.Register reg = (CExpr.Register) lhs;
 			String name = "%" + reg.index;						
 			Type glb = Type.greatestLowerBound(reg.type,trueType);
-			Type gdiff = Type.greatestDifference(reg.type, falseType);
+			Type gdiff = Type.leastDifference(reg.type, falseType);
 //			System.out.println("\nGLB(2): " + Type.toShortString(trueType)
 //					+ " & " + Type.toShortString(reg.type) + " = "
 //					+ Type.toShortString(glb));

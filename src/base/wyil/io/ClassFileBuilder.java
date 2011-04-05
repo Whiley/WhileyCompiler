@@ -524,7 +524,7 @@ public class ClassFileBuilder {
 			// supported in Whiley. Essentially, it works only for the
 			// case where we are testing against a variable.
 			CExpr.LVar v = (CExpr.LVar) src;			
-			Type gdiff = Type.greatestDifference(src_t,test);			
+			Type gdiff = Type.leastDifference(src_t,test);			
 			translate(src,slots,bytecodes);
 			addReadConversion(gdiff,bytecodes);
 			JvmType rhs_jt = convertType(gdiff);					
