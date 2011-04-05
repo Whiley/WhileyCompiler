@@ -184,7 +184,7 @@ public class ClassFileBuilder {
 		
 		// Build up the binding we'll use for pre and post-conditions
 		List<String> params = mcase.parameterNames();
-		List<Type> paramTypes = method.type().params;
+		List<Type> paramTypes = method.type().params();
 		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
 		
 		for(int i=0;i!=params.size();++i) {
@@ -202,12 +202,12 @@ public class ClassFileBuilder {
 		HashSet<String> uses = Block.usedVariables(mcase.body());
 			
 		int slot = 0;
-		if(method.type().receiver != null) {
+		if(method.type().receiver() != null) {
 			slots.put("this",slot++);
 			uses.remove("this");
 		}
 				
-		List<Type> paramTypes = method.type().params;
+		List<Type> paramTypes = method.type().params();
 		List<String> paramNames = mcase.parameterNames();
 		for(int i=0;i!=paramTypes.size();++i) {
 			String name = paramNames.get(i);			
@@ -293,7 +293,7 @@ public class ClassFileBuilder {
 		
 		if (c.rhs != null) {
 			translate(c.rhs, slots, bytecodes);
-			Type ret_t = method.type().ret;
+			Type ret_t = method.type().ret();
 			convert(ret_t,c.rhs.type(),slots,bytecodes);			
 			bytecodes.add(new Bytecode.Return(convertType(ret_t)));
 		} else {		
@@ -592,10 +592,7 @@ public class ClassFileBuilder {
 		} else if(test instanceof Type.Union){
 			translateTypeTest(trueTarget, src, (Type.Union) test, stmt,
 					bytecodes);			
-		} else if(test instanceof Type.Recursive) {
-			translateTypeTest(trueTarget, src, (Type.Recursive) test, stmt,
-					bytecodes);				
-		}				
+		} 			
 	}
 
 	/**
@@ -734,7 +731,7 @@ public class ClassFileBuilder {
 		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
 		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));			
-		translateTypeTest(trueTarget,nsrc.element,test.element(),stmt,bytecodes);
+		translateTypeTest(trueTarget,nsrc.element(),test.element(),stmt,bytecodes);
 		
 		// Add the false label for the case when the original instanceof test fails
 		bytecodes.add(new Bytecode.Label(falseTarget));
@@ -811,7 +808,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "iterator", fun_t , Bytecode.VIRTUAL));			
 		fun_t = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", fun_t , Bytecode.INTERFACE));			
-		translateTypeTest(trueTarget,nsrc.element,test.element(),stmt,bytecodes);
+		translateTypeTest(trueTarget,nsrc.element(),test.element(),stmt,bytecodes);
 		
 		// Add the false label for the case when the original instanceof test fails
 		bytecodes.add(new Bytecode.Label(falseTarget));
@@ -894,7 +891,7 @@ public class ClassFileBuilder {
 			// Second, determine if correct fields present  
 			// ======================================================================
 			
-			Set<String> fields = identifyDistinguishingFields(src,test.types.keySet()); 			
+			Set<String> fields = identifyDistinguishingFields(src,test.fields().keySet()); 			
 			
 			for(String f : fields) {
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
@@ -903,7 +900,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.If(Bytecode.If.NULL,falseTarget));
 			}
 			
-			src = narrowRecordType(src,test.types.keySet());
+			src = narrowRecordType(src,test.fields().keySet());
 			
 			if(Type.isSubtype(test,src)) {
 				// Getting here indicates that distinguishing fields test was
@@ -926,10 +923,10 @@ public class ClassFileBuilder {
 		
 		Type.Record nsrc = Type.effectiveRecordType(src);
 		
-		for(Map.Entry<String,Type> e : test.types.entrySet()) {
+		for(Map.Entry<String,Type> e : test.fields().entrySet()) {
 			String field = e.getKey();
 			Type testType = e.getValue();
-			Type srcType = nsrc.types.get(field);
+			Type srcType = nsrc.fields().get(field);
 			if(!Type.isSubtype(testType,srcType)) {
 				// this field needs to be checked
 				String nextTarget = freshLabel();
@@ -963,17 +960,13 @@ public class ClassFileBuilder {
 			return Type.T_VOID;
 		} else if(t instanceof Type.Record) {
 				return (Type) t;
-		} else if(t instanceof Type.Named) {
-			return narrowRecordType(((Type.Named)t).type);
-		} else if(t instanceof Type.Recursive) {
-			return narrowRecordType(Type.unfold((Type.Recursive)t));
 		}
 		
 		// Ok, must be union ...
 						
 		Type.Union u = (Type.Union) t;
 		Type lub = Type.T_VOID;
-		for(Type b : u.bounds) {						
+		for(Type b : u.bounds()) {						
 			lub = Type.leastUpperBound(narrowRecordType(b),lub);			
 		}
 		
@@ -1001,11 +994,7 @@ public class ClassFileBuilder {
 	 * @param test
 	 * @return
 	 */
-	protected Set<String> identifyDistinguishingFields(Type src, Set<String> fields) {
-		if(src instanceof Type.Recursive) {
-			src = Type.unfold((Type.Recursive)src);
-		}
-		
+	protected Set<String> identifyDistinguishingFields(Type src, Set<String> fields) {		
 		if(src instanceof Type.Record) {
 			return Collections.EMPTY_SET;
 		}
@@ -1029,10 +1018,10 @@ public class ClassFileBuilder {
 			
 			// Second, count conflicts
 			
-			for(Type t : ut.bounds) {
+			for(Type t : ut.bounds()) {
 				// FIXME: following obviously broken, as unsure if t is record
 				Type.Record rt = (Type.Record) t;
-				Set<String> rt_types_keySet = rt.types.keySet(); 
+				Set<String> rt_types_keySet = rt.fields().keySet(); 
 				if(rt_types_keySet.containsAll(solution)) {
 					// only count conflicts from records not already discounted.
 					for(String f : rt_types_keySet) {
@@ -1088,7 +1077,7 @@ public class ClassFileBuilder {
 		String trampoline = freshLabel();
 		String falseLabel = freshLabel();
 		
-		for(Type t : test.bounds) {
+		for(Type t : test.bounds()) {
 			bytecodes.add(new Bytecode.Dup(convertType(src)));
 			translateTypeTest(trampoline,src,t,stmt, bytecodes);
 		}
@@ -1102,28 +1091,6 @@ public class ClassFileBuilder {
 		
 	}
 
-	public void translateTypeTest(String trueTarget, Type src, Type.Recursive test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) { 
-		
-		// FACT: src is either a Type.Recursive, or a Type.Union. It cannot be
-		// anything else, because otherwise the (original) glb of src and test
-		// would have produced a Type.Recursive.  		
-		
-		if(src instanceof Type.Recursive) {
-			Type.Recursive rsrc = (Type.Recursive) src;
-			System.err.println("NEED TO IMPLEMENT RECURSIVE CASE");
-			System.err.println("TEST: " + Type.toShortString(src) + " ~= " + Type.toShortString(test));
-			System.err.println("LINE: " + filename + ":" + stmt.attribute(Attribute.Source.class));
-		} else {
-			// must be a union						
-			
-			// note, this approach is not efficient!
-			Type.Union usrc = (Type.Union) src;
-			Type ntest = Type.unfold(test);  
-			translateTypeTest(trueTarget,usrc,ntest,stmt,bytecodes);
-		}
-	}
-	
 	public void translate(Code.Loop c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Label(c.label));
@@ -1138,9 +1105,9 @@ public class ClassFileBuilder {
 		Type srcType = c.source.type();
 		Type elementType;
 		if (srcType instanceof Type.Set) {
-			elementType = ((Type.Set) srcType).element;
+			elementType = ((Type.Set) srcType).element();
 		} else {
-			elementType = ((Type.List) srcType).element;
+			elementType = ((Type.List) srcType).element();
 		}		
 		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
@@ -1415,12 +1382,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 					Bytecode.VIRTUAL));
 			// finally, we need to cast the object we got back appropriately.		
-			Type t = (Type.ProcessName) c.rhs.type();			
-			if(t instanceof Type.Named) {
-				t = ((Type.Named) t).type;					
-			} 
-			Type.Process pt = (Type.Process) t; 
-			addReadConversion(pt.element, bytecodes);
+			Type.Process pt = (Type.Process) c.rhs.type();						
+			addReadConversion(pt.element(), bytecodes);
 			break;
 		}
 		}		
@@ -1476,12 +1439,12 @@ public class ClassFileBuilder {
 	public void translate(CExpr.DirectInvoke c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
 		// first, translate receiver (where appropriate)
-		if(c.type.receiver != null) {						
+		if(c.type.receiver() != null) {						
 			translate(c.receiver, slots, bytecodes);						
 		}
 		
 		// next, translate parameters
-		List<Type> params = c.type.params;
+		List<Type> params = c.type.params();
 		for(int i=0;i!=params.size();++i) {
 			Type pt = params.get(i);
 			CExpr r = c.args.get(i);
@@ -1514,10 +1477,10 @@ public class ClassFileBuilder {
 		Type.Fun ft = (Type.Fun) c.target.type();
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 		bytecodes.add(new Bytecode.LoadConst(null));
-		bytecodes.add(new Bytecode.LoadConst(ft.params.size()));
+		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
 		bytecodes.add(new Bytecode.New(arrT));
 		
-		List<Type> params = ft.params;
+		List<Type> params = ft.params();
 		for(int i=0;i!=params.size();++i) {
 			Type pt = params.get(i);
 			CExpr r = c.args.get(i);
@@ -1538,7 +1501,7 @@ public class ClassFileBuilder {
 		
 		bytecodes.add(new Bytecode.Invoke(owner, "invoke", type,
 				Bytecode.VIRTUAL));						
-		addReadConversion(ft.ret,bytecodes);	
+		addReadConversion(ft.ret(),bytecodes);	
 	}
 	
 	public void translate(Value v, HashMap<String, Integer> slots,
@@ -1808,14 +1771,14 @@ public class ClassFileBuilder {
 			Type src_t = v.src.type();
 			if(src_t instanceof Type.List) { 
 				Type.List lt = (Type.List) v.src.type();
-				addWriteConversion(lt.element,bytecodes);											
+				addWriteConversion(lt.element(),bytecodes);											
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT,JAVA_LANG_OBJECT);				
 				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 						Bytecode.VIRTUAL));					
 				bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 			} else {
 				Type.Dictionary lt = (Type.Dictionary) v.src.type();
-				addWriteConversion(lt.value,bytecodes);			
+				addWriteConversion(lt.value(),bytecodes);			
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 						JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
@@ -1824,7 +1787,7 @@ public class ClassFileBuilder {
 		} else if(lhs instanceof CExpr.RecordAccess) {		
 			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
 			Type.Record tt = (Type.Record) Type.effectiveRecordType(la.lhs.type());
-			Type element_t = tt.types.get(la.field);
+			Type element_t = tt.fields().get(la.field);
 			addWriteConversion(element_t, bytecodes);
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 					JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
@@ -1962,7 +1925,7 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots,			
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(fromType.element == Type.T_VOID) {
+		if(fromType.element() == Type.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -1992,8 +1955,8 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));						
-		addReadConversion(fromType.element,bytecodes);
-		convert(toType.element, fromType.element, slots,
+		addReadConversion(fromType.element(),bytecodes);
+		convert(toType.element(), fromType.element(), slots,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add",
@@ -2008,7 +1971,7 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots,			
 			ArrayList<Bytecode> bytecodes) {
 						
-		if(fromType.element == Type.T_VOID) {
+		if(fromType.element() == Type.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -2038,8 +2001,8 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));						
-		addReadConversion(fromType.element,bytecodes);
-		convert(toType.element, fromType.element, slots,
+		addReadConversion(fromType.element(),bytecodes);
+		convert(toType.element(), fromType.element(), slots,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
@@ -2054,7 +2017,7 @@ public class ClassFileBuilder {
 			HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(fromType.element == Type.T_VOID) {
+		if(fromType.element() == Type.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -2084,8 +2047,8 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));
-		addCheckCast(convertType(fromType.element),bytecodes);		
-		convert(toType.element, fromType.element, slots,
+		addCheckCast(convertType(fromType.element()),bytecodes);		
+		convert(toType.element(), fromType.element(), slots,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
@@ -2105,10 +2068,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(slots.get(oldtup),WHILEYRECORD));
 		construct(WHILEYRECORD,slots,bytecodes);
 		bytecodes.add(new Bytecode.Store(slots.get(newtup),WHILEYRECORD));		
-				
-		for(String key : toType.types.keySet()) {
-			Type to = toType.types.get(key);
-			Type from = fromType.types.get(key);					
+		Map<String,Type> toFields = toType.fields();
+		Map<String,Type> fromFields = fromType.fields();
+		for(String key : toFields.keySet()) {
+			Type to = toFields.get(key);
+			Type from = fromFields.get(key);					
 			bytecodes.add(new Bytecode.Load(slots.get(newtup),WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(key));
 			bytecodes.add(new Bytecode.Load(slots.get(oldtup),WHILEYRECORD));
@@ -2154,13 +2118,13 @@ public class ClassFileBuilder {
 	public JvmType.Function convertFunType(Type.Fun t) {		
 		Type.Fun ft = (Type.Fun) t; 
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		if(ft.receiver != null) {
-			paramTypes.add(convertType(ft.receiver));
+		if(ft.receiver() != null) {
+			paramTypes.add(convertType(ft.receiver()));
 		}
-		for(Type pt : ft.params) {
+		for(Type pt : ft.params()) {
 			paramTypes.add(convertType(pt));
 		}
-		JvmType rt = convertType(ft.ret);			
+		JvmType rt = convertType(ft.ret());			
 		return new JvmType.Function(rt,paramTypes);		
 	}
 	
@@ -2187,9 +2151,6 @@ public class ClassFileBuilder {
 			return WHILEYRECORD;
 		} else if(t instanceof Type.Process) {
 			return WHILEYPROCESS;
-		} else if(t instanceof Type.Named) {
-			Type.Named nt = (Type.Named) t;
-			return convertType(nt.type);
 		} else if(t instanceof Type.Union) {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
@@ -2202,13 +2163,6 @@ public class ClassFileBuilder {
 			}
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
-			if(rt.type == null) {
-				return JAVA_LANG_OBJECT;
-			} else {
-				return convertType(rt.type);
-			}
 		} else if(t instanceof Type.Fun) {						
 			return JAVA_LANG_REFLECT_METHOD;
 		}else {
@@ -2235,9 +2189,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected String type2str(Type t) {
-		if(t == Type.T_EXISTENTIAL) {
-			return "?";
-		} else if(t == Type.T_ANY) {
+		if(t == Type.T_ANY) {
 			return "*";
 		} else if(t == Type.T_VOID) {
 			return "V";
@@ -2249,20 +2201,23 @@ public class ClassFileBuilder {
 			return "I";
 		} else if(t instanceof Type.Real) {
 			return "R";
+		} else if(t instanceof Type.Existential) {
+			Type.Existential et = (Type.Existential) t;			
+			return "?" + et.name();
 		} else if(t instanceof Type.List) {
 			Type.List st = (Type.List) t;
-			return "[" + type2str(st.element) + "]";
+			return "[" + type2str(st.element()) + "]";
 		} else if(t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
-			return "{" + type2str(st.element) + "}";
+			return "{" + type2str(st.element()) + "}";
 		} else if(t instanceof Type.Dictionary) {
 			Type.Dictionary st = (Type.Dictionary) t;
-			return "{" + type2str(st.key) + "->" + type2str(st.value) + "}";
+			return "{" + type2str(st.key()) + "->" + type2str(st.value()) + "}";
 		} else if(t instanceof Type.Union) {
 			Type.Union st = (Type.Union) t;
 			String r = "";
 			boolean firstTime=true;
-			for(Type b : st.bounds) {
+			for(Type b : st.bounds()) {
 				if(!firstTime) {
 					r += "|";
 				}
@@ -2272,36 +2227,25 @@ public class ClassFileBuilder {
 			return r;
 		} else if(t instanceof Type.Record) {
 			Type.Record st = (Type.Record) t;
-			ArrayList<String> keys = new ArrayList<String>(st.types.keySet());
+			ArrayList<String> keys = new ArrayList<String>(st.fields().keySet());
 			Collections.sort(keys);
 			String r="(";
 			for(String k : keys) {
-				Type kt = st.types.get(k);
+				Type kt = st.fields().get(k);
 				r += k + ":" + type2str(kt);
 			}			
 			return r + ")";
 		} else if(t instanceof Type.Process) {
 			Type.Process st = (Type.Process) t;
-			return "P" + type2str(st.element);
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
-			if(rt.type == null) {
-				return rt.name;				
-			} else {
-				return "U" + rt.name + ";" + type2str(rt.type);				
-			}
-		} else if(t instanceof Type.Named) {
-			Type.Named st = (Type.Named) t;
-			return "N" + st.name.module() + ";" + st.name.name() + ";"
-					+ type2str(st.type);
+			return "P" + type2str(st.element());
 		} else if(t instanceof Type.Fun) {
 			Type.Fun ft = (Type.Fun) t;
 			String r = "";
-			if(ft.receiver != null) {
-				r += type2str(ft.receiver) + "$";
+			if(ft.receiver() != null) {
+				r += type2str(ft.receiver()) + "$";
 			}				
-			r += type2str(ft.ret);
-			for(Type pt : ft.params) {
+			r += type2str(ft.ret());
+			for(Type pt : ft.params()) {
 				r += type2str(pt);
 			}
 			return r;

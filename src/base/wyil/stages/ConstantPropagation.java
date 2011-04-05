@@ -183,7 +183,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		CExpr rhs = code.rhs;
 		
 		if(rhs != null) {
-			Type ret_t = method.type().ret;
+			Type ret_t = method.type().ret();
 			if(ret_t == Type.T_VOID) {
 				syntaxError(
 						"cannot return value, as method has void return type",

@@ -162,7 +162,7 @@ public class ModuleBuilder {
 				Type t = v.type();
 				if (t instanceof Type.Set) {
 					Type.Set st = (Type.Set) t;					
-					types.put(k, st.element);
+					types.put(k, st.element());
 				}
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filemap.get(k).filename, exprs
@@ -322,10 +322,7 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Type t = expandType(key, cache);								
-				if (Type.isExistential(t)) {
-					t = Type.T_NAMED(key, t);
-				}
+				Type t = expandType(key, cache);												
 				types.put(key, t);
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
@@ -407,23 +404,17 @@ public class ModuleBuilder {
 			return Type.T_RECORD(types);						
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();
+			HashSet<Type> bounds = new HashSet<Type>();
 			for(int i=0;i!=ut.bounds.size();++i) {
-				UnresolvedType b = ut.bounds.get(i);
-				
-				Type bt = expandType(b, filename, cache);				
-				if (bt instanceof Type.NonUnion) {
-					bounds.add((Type.NonUnion) bt);
-				} else {
-					bounds.addAll(((Type.Union) bt).bounds);
-				}				
+				UnresolvedType b = ut.bounds.get(i);				
+				bounds.add(expandType(b, filename, cache));							
 			}
 			
 			Type type;
 			if (bounds.size() == 1) {
 				return bounds.iterator().next();
 			} else {				
-				return Type.leastUpperBound(bounds);
+				return Type.T_UNION(bounds);
 			}			
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
@@ -434,14 +425,8 @@ public class ModuleBuilder {
 			NameID name = new NameID(modInfo.module, dt.name);
 
 			try {
-				Type et = expandType(name, cache);								
-				
-				if (Type.isExistential(et)) {
-					return Type.T_NAMED(new NameID(modInfo.module, dt.name), et);
-				} else {
-					return et;
-				}
-								
+				// need to check for existential case				
+				return expandType(name, cache);															
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), filename, t, rex);
 				return null;
@@ -463,11 +448,11 @@ public class ModuleBuilder {
 		Type ret = resolve(fd.ret);
 
 		// method receiver type (if applicable)
-		Type.ProcessName rec = null;
+		Type.Process rec = null;
 		if (fd.receiver != null) {
 			Type t = resolve(fd.receiver);
 			checkType(t, Type.Process.class, fd.receiver);
-			rec = (Type.ProcessName) t;
+			rec = (Type.Process) t;
 		}
 
 		Type.Fun ft = Type.T_FUN(rec, ret, parameters);
@@ -893,14 +878,11 @@ public class ModuleBuilder {
 				// Ok, must be a local variable
 				lhs = CExpr.VAR(Type.T_ANY, v.var);	
 			}
-		} else if(tf != null && tf.receiver != null) {
-			Type pt = tf.receiver;
-			if(pt instanceof Type.Named) {
-				pt = ((Type.Named)pt).type;
-			}
+		} else if(tf != null && tf.receiver() != null) {
+			Type pt = tf.receiver();			
 			if(pt instanceof Type.Process) {
-				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
-				if(ert != null && ert.types.containsKey(v.var)) {
+				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
+				if(ert != null && ert.fields().containsKey(v.var)) {
 					// Bingo, this is an implicit field dereference
 					CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
 							Type.T_ANY, "this"));					
@@ -1203,14 +1185,11 @@ public class ModuleBuilder {
 			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
 
 			// Second, see if it's a field of the receiver
-			if(tf.receiver != null) {
-				Type pt = tf.receiver;
-				if(pt instanceof Type.Named) {
-					pt = ((Type.Named)pt).type;
-				}
+			if(tf.receiver() != null) {
+				Type pt = tf.receiver();				
 				if(pt instanceof Type.Process) {
-					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element);
-					if(ert != null && ert.types.containsKey(v.var)) {						
+					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
+					if(ert != null && ert.fields().containsKey(v.var)) {						
 						// Bingo, this is an implicit field dereference
 						CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
 								Type.T_ANY, "this"));					
@@ -1500,8 +1479,6 @@ public class ModuleBuilder {
 	protected Type resolve(UnresolvedType t) {
 		if (t instanceof UnresolvedType.Any) {
 			return Type.T_ANY;
-		} else if (t instanceof UnresolvedType.Existential) {
-			return Type.T_EXISTENTIAL;
 		} else if (t instanceof UnresolvedType.Void) {
 			return Type.T_VOID;
 		} else if (t instanceof UnresolvedType.Null) {
@@ -1555,21 +1532,16 @@ public class ModuleBuilder {
 			}
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
-			HashSet<Type.NonUnion> bounds = new HashSet<Type.NonUnion>();			
+			HashSet<Type> bounds = new HashSet<Type>();			
 			for (UnresolvedType b : ut.bounds) {				
-				Type bt = resolve(b);
-				if (bt instanceof Type.NonUnion) {
-					bounds.add((Type.NonUnion) bt);
-				} else {
-					bounds.addAll(((Type.Union) bt).bounds);
-				}			
+				bounds.add(resolve(b));						
 			}
 
 			Type type;
 			if (bounds.size() == 1) {
 				return bounds.iterator().next();
 			} else {
-				return Type.leastUpperBound(bounds);
+				return Type.T_UNION(bounds);
 			}			
 		} else if(t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;			
@@ -1682,10 +1654,7 @@ public class ModuleBuilder {
 	}
 
 	protected <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem) {
-		if (t instanceof Type.Named) {
-			t = ((Type.Named) t).type;
-		}
+			SyntacticElement elem) {		
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {

@@ -67,7 +67,7 @@ public class DefiniteAssignment extends
 			defined.add(p);
 		}
 		
-		if(method.type().receiver != null) {
+		if(method.type().receiver() != null) {
 			defined.add("this");
 		}
 		

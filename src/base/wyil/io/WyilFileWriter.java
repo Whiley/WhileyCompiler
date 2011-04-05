@@ -70,18 +70,9 @@ public class WyilFileWriter {
 			out.println();
 		}
 		for(TypeDef td : module.types()) {
-			Type t = td.type();
-			if(t instanceof Type.Named) {
-				t = ((Type.Named)t).type;
-			} else if(t instanceof Type.Recursive) {
-				t = ((Type.Recursive)t).type;
-			}
-			String t_str;
-			if((codeFlags & Code.SHORT_TYPES) != 0) {
-				t_str = Type.toShortString(t);
-			} else {
-				t_str = t.toString();
-			}
+			Type t = td.type();			
+			String t_str;			
+			t_str = t.toString();
 			out.println("define " + td.name() + " as " + t_str);			
 		}
 		if(!module.types().isEmpty()) {
@@ -102,20 +93,16 @@ public class WyilFileWriter {
 	
 	public void write(Case mcase, Method method, PrintWriter out) {
 		Type.Fun ft = method.type(); 
-		out.print(ft.ret + " " + method.name() + "(");
-		List<Type> pts = ft.params;
+		out.print(ft.ret() + " " + method.name() + "(");
+		List<Type> pts = ft.params();
 		List<String> names = mcase.parameterNames();
 		for(int i=0;i!=names.size();++i) {
 			String n = names.get(i);
 			Type t = pts.get(i);
 			if(i!=0) {
 				out.print(", ");
-			}
-			if((codeFlags & Code.SHORT_TYPES) != 0) {
-				out.print(Type.toShortString(t) + " " + n);
-			} else {
-				out.print(t + " " + n);
-			}
+			}			
+			out.print(t + " " + n);			
 		}
 		out.println("):");				
 		for(Attribute a : mcase.attributes()) {

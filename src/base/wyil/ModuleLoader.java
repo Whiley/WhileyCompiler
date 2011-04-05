@@ -630,7 +630,7 @@ public class ModuleLoader {
 		Pair<String,Type.Fun> info = splitDescriptor(cm.name());							
 		ArrayList<String> parameterNames = new ArrayList<String>();
 		Type.Fun type = info.second();
-		for (int i = 0; i != type.params.size(); ++i) {
+		for (int i = 0; i != type.params().size(); ++i) {
 			parameterNames.add("$" + i);
 		}
 		
@@ -688,8 +688,8 @@ public class ModuleLoader {
 		String name = split[0];
 		Type.Fun ft = new TypeParser(split[split.length - 1]).parseRestFunType();
 		if(split.length > 2) {
-			Type.ProcessName rec = (Type.ProcessName) new TypeParser(split[1]).parseType();
-			ft = Type.T_FUN(rec,ft.ret,ft.params);
+			Type.Process rec = (Type.Process) new TypeParser(split[1]).parseType();
+			ft = Type.T_FUN(rec,ft.ret(),ft.params());
 		} 
 		return new Pair<String,Type.Fun>(name,ft);		
 	}
@@ -704,30 +704,28 @@ public class ModuleLoader {
 		}
 		
 		public Type parseType() {
-			Type.NonUnion type = parseNonUnionType();
+			Type type = parseNonUnionType();
 
 			if (index < desc.length() && desc.charAt(index) == '|') {
-				ArrayList<Type.NonUnion> types = new ArrayList<Type.NonUnion>();
+				ArrayList<Type> types = new ArrayList<Type>();
 				types.add(type);
 				while (index < desc.length() && desc.charAt(index) == '|') {
 					index = index + 1;
 					types.add(parseNonUnionType());
 				}
-				return Type.leastUpperBound(types);
+				return Type.T_UNION(types);
 			}
 
 			return type;
 		}
 		
-		public Type.NonUnion parseNonUnionType() {
+		public Type parseNonUnionType() {
 			char lookahead = desc.charAt(index++);
 			switch (lookahead) {
 			case '*':
 				return Type.T_ANY;
 			case 'O':
-				return Type.T_NULL;
-			case '?':
-				return Type.T_EXISTENTIAL;
+				return Type.T_NULL;			
 			case 'V':
 				return Type.T_VOID;
 			case 'B':
@@ -738,7 +736,7 @@ public class ModuleLoader {
 				return Type.T_REAL;
 			case 'P':
 				return Type.T_PROCESS(parseType());
-			case 'N':				
+			case '?':				
 				int start = index;
 				while(desc.charAt(index) != ';') {
 					index++;
@@ -751,8 +749,8 @@ public class ModuleLoader {
 				}
 				String name = desc.substring(start,index);
 				index++;				
-				return Type.T_NAMED(new NameID(ModuleID.fromString(pkg),
-							name), parseType());			
+				return Type.T_EXISTENTIAL(new NameID(ModuleID.fromString(pkg),
+							name));			
 			case '[': 
 				Type et = parseType();
 				lookahead = desc.charAt(index);

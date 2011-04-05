@@ -50,7 +50,7 @@ public class FunctionCheck implements ModuleTransform {
 	}
 		
 	public void check(Module.Method method) {		
-		if (method.type().receiver == null) {
+		if (method.type().receiver() == null) {
 			for (Module.Case c : method.cases()) {
 				check(c.body(), method);
 			}
