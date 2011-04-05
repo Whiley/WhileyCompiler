@@ -39,4 +39,3 @@ define uint64 as int where $ >= 0 && $ <= 18446744073709551615
 
 define nat as int where $ >= 0
 
-define error as ?

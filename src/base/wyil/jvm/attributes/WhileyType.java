@@ -105,11 +105,9 @@ public class WhileyType implements BytecodeAttribute {
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			Type.InternalBuilder builder = new Type.InternalBuilder();
 			int numNodes = input.read_u2();
-			builder.initialise(numNodes);
-			
+			builder.initialise(numNodes);					
 			for(int i=0;i!=numNodes;++i) {
-				int tag = input.read_u1();
-
+				int tag = input.read_u1();			
 				switch (tag) {
 				case ANY_TYPE:
 					builder.buildPrimitive(i, Type.T_ANY);
@@ -189,7 +187,10 @@ public class WhileyType implements BytecodeAttribute {
 						params[j] = input.read_u2();
 					}
 					builder.buildFunction(i, rec, ret, params);
+					break;
 				}				
+				default:
+					throw new RuntimeException("invalid type");
 				}
 			}
 			
@@ -328,7 +329,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildRecord(int index, Pair<String, Integer>... fields) {
 			try {				
-				writer.write_u1(TUPLE_TYPE );
+				writer.write_u1(RECORD_TYPE );
 				// FIXME: bug here if number of entries > 64K
 				writer.write_u2(fields.length);
 				for(Pair<String,Integer> p : fields) {
