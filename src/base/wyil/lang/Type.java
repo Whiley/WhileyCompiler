@@ -88,6 +88,10 @@ public abstract class Type {
 	}
 	
 	public static final Existential T_EXISTENTIAL(NameID name) {
+		if (name == null) {
+			throw new IllegalArgumentException(
+					"existential name cannot be null");
+		}
 		return new Existential(name);
 	}
 	
@@ -475,6 +479,10 @@ public abstract class Type {
 		}
 
 		public void buildExistential(int index, NameID name) {
+			if (name == null) {
+				throw new IllegalArgumentException(
+						"existential name cannot be null");
+			}
 			nodes[index] = new Node(K_EXISTENTIAL,name);
 		}
 
@@ -657,7 +665,7 @@ public abstract class Type {
 				case K_PROCESS:
 					writer.buildList(i,(Integer) node.data);	
 					break;
-				case K_EXISTENTIAL:
+				case K_EXISTENTIAL:					
 					writer.buildExistential(i,(NameID) node.data);	
 					break;
 				case K_DICTIONARY: {
@@ -751,7 +759,13 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
-		return null;
+		if(isSubtype(t1,t2)) {
+			return t2;
+		} else if(isSubtype(t2,t1)) {
+			return t1;
+		} else {
+			throw new RuntimeException("Need to finish glb");
+		}
 	}
 
 	/**
@@ -768,7 +782,8 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastDifference(Type t1, Type t2) {
-		return null;
+		System.err.println("WARNING: leastDifference needs fixing");
+		return t1;
 	}
 
 	/**
@@ -1002,6 +1017,10 @@ public abstract class Type {
 		
 		if(c1.kind == c2.kind) { 
 			switch(c1.kind) {
+			case K_EXISTENTIAL:
+				NameID nid1 = (NameID) c1.data;
+				NameID nid2 = (NameID) c2.data;				
+				return nid1.equals(nid2);
 			case K_SET:
 			case K_LIST:
 			case K_PROCESS: {
@@ -1135,10 +1154,24 @@ public abstract class Type {
 					return false;
 				}								
 			}
-		} 
-		return true;
+			return true;
+		} 		
+		return false;
 	}
 
+	/**
+	 * This method reconstructs a graph given a set of equivalent nodes. The
+	 * equivalence classes for a node are determined by the given subtype
+	 * matrix, whilst the allocate array identifies when a node has already been
+	 * allocated for a given equivalence class.
+	 * 
+	 * @param idx
+	 * @param graph
+	 * @param allocated
+	 * @param newNodes
+	 * @param matrix
+	 * @return
+	 */
 	private static int rebuild(int idx, Node[] graph, int[] allocated,
 			ArrayList<Node> newNodes, BitSet matrix) {
 		int graph_size = graph.length;
@@ -1161,6 +1194,9 @@ public abstract class Type {
 		
 		Object data = null;
 		switch(node.kind) {
+		case K_EXISTENTIAL:
+			data = node.data;
+			break;
 		case K_SET:
 		case K_LIST:
 		case K_PROCESS: {
@@ -1252,7 +1288,7 @@ public abstract class Type {
 		newNodes.set(cidx, new Node(node.kind,data));
 		return cidx;
 	}
-	
+
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -1714,6 +1750,9 @@ public abstract class Type {
 			middle = "[" + toString((Integer) node.data, visited, headers, graph)
 					+ "]";
 			break;
+		case K_EXISTENTIAL:
+			middle = "?" + node.data.toString();
+			break;
 		case K_PROCESS:
 			middle = "*" + toString((Integer) node.data, visited, headers, graph);
 			break;
@@ -2111,7 +2150,7 @@ public abstract class Type {
 	private static final Node[] nodes(Type t) {
 		if (t instanceof Leaf) {
 			return new Node[]{new Node(leafKind((Leaf) t), null)};
-		} else {
+		} else {			
 			// compound type
 			return ((Compound)t).nodes;
 		}
@@ -2269,6 +2308,13 @@ public abstract class Type {
 			return new Set(nodes);
 		case K_LIST:
 			return new List(nodes);
+		case K_EXISTENTIAL:
+			if(root.data == null) {
+				throw new RuntimeException("Problem");
+			}
+			return new Existential((NameID) root.data);
+		case K_PROCESS:
+			return new Process(nodes);
 		case K_DICTIONARY:
 			return new Dictionary(nodes);
 		case K_RECORD:

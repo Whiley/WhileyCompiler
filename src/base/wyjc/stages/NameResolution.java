@@ -42,6 +42,7 @@ import wyjc.util.*;
 public class NameResolution {
 	private final ModuleLoader loader;	
 	private String filename;
+	private ModuleID module;
 	
 	public NameResolution(ModuleLoader loader) {
 		this.loader = loader;
@@ -50,11 +51,11 @@ public class NameResolution {
 	public void resolve(WhileyFile wf) {
 		ArrayList<PkgID> imports = new ArrayList<PkgID>();
 		
-		ModuleID id = wf.module;
+		module = wf.module;
 		filename = wf.filename;
 		
-		imports.add(id.pkg().append(id.module()));
-		imports.add(id.pkg().append("*"));
+		imports.add(module.pkg().append(module.module()));
+		imports.add(module.pkg().append("*"));
 		imports.add(new PkgID(new String[]{"whiley","lang"}).append("*"));
 						
 		for(Decl d : wf.declarations) {			
@@ -483,6 +484,9 @@ public class NameResolution {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
 			ModuleID mid = loader.resolve(dt.name, imports);			
 			t.attributes().add(new Attributes.Module(mid));
+		} else if(t instanceof UnresolvedType.Existential) {
+			UnresolvedType.Existential dt = (UnresolvedType.Existential) t;						
+			t.attributes().add(new Attributes.Module(module));
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			for(UnresolvedType b : ut.bounds) {

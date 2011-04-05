@@ -167,9 +167,15 @@ public class WhileyType implements BytecodeAttribute {
 					builder.buildUnion(i, elems);
 					break;					
 				}
-				case PROCESS_TYPE:
+				case PROCESS_TYPE:					
 					builder.buildProcess(i, input.read_u2());
 					break;		
+				case EXISTENTIAL_TYPE:
+					ModuleID mid = readModule(input,constantPool);
+					String name = ((Constant.Utf8) constantPool
+							.get(input.read_u2())).str;
+					builder.buildExistential(i, new NameID(mid,name));
+					break;
 				case METH_TYPE:					
 				case FUN_TYPE: {
 					int rec = -1;
@@ -204,6 +210,13 @@ public class WhileyType implements BytecodeAttribute {
 			constantPool = pool;
 		}		
 
+		public void buildExistential(int index, NameID name) { 
+			Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
+			Constant.addPoolItem(utf8,constantPool);			
+			utf8 = new Constant.Utf8(name.name());
+			Constant.addPoolItem(utf8,constantPool);			
+		}
+		
 		public void buildRecord(int index, Pair<String, Integer>... fields) { 
 			for(Pair<String,Integer> f : fields) {
 				Constant.Utf8 utf8 = new Constant.Utf8(f.first());
@@ -253,7 +266,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildExistential(int index, NameID name) {
 			try {
-				writer.write_u1(EXISTENTIAL_TYPE);
+				writer.write_u1(EXISTENTIAL_TYPE);				
 				Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
 				writer.write_u2(constantPool.get(utf8));
 				utf8 = new Constant.Utf8(name.name());
@@ -359,7 +372,7 @@ public class WhileyType implements BytecodeAttribute {
 				throw new RuntimeException("internal failure",e);
 			}
 		}
-	}
+	}	
 	
 	public static final int EXISTENTIAL_TYPE = 1;
 	public static final int ANY_TYPE = 2;

@@ -83,7 +83,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		for (int i = 0; i != paramNames.size(); ++i) {
 			Type t = paramTypes.get(i);
-			environment.put(paramNames.get(i), t);
+			environment.put(paramNames.get(i), t);			
 			if (method.type().receiver() == null
 					&& Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
 				// FIXME: add source information
@@ -444,14 +444,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Now, type the source 
 		CExpr src = infer(start.source, stmt, environment);
 		Type src_t = src.type();				
-		
-		checkIsSubtype(Type.T_SET(Type.T_ANY),src_t,stmt);				
-		
+
 		Type elem_t;
 		if(src_t instanceof Type.List) {
 			elem_t = ((Type.List)src_t).element();
-		} else {
+		} else if(src_t instanceof Type.Set){
 			elem_t = ((Type.Set)src_t).element();
+		} else {
+			syntaxError("expected set or list, found: " + src_t,filename,stmt);
+			return null; // deadcode
 		}
 		
 		Block blk = new Block();

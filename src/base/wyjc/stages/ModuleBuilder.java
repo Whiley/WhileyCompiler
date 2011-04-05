@@ -49,7 +49,7 @@ public class ModuleBuilder {
 	private HashMap<NameID, Value> constants;
 	private HashMap<NameID, UnresolvedType> unresolved;
 	private Stack<Scope> scopes = new Stack<Scope>();
-	private String filename;
+	private String filename;	
 	private FunDecl currentFunDecl;
 
 	// The shadow set is used to (efficiently) aid the correct generation of
@@ -416,6 +416,11 @@ public class ModuleBuilder {
 			} else {				
 				return Type.T_UNION(bounds);
 			}			
+		} else if(t instanceof UnresolvedType.Existential) {
+			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
+			ModuleID mid = ut.attribute(Attributes.Module.class).module;
+			// TODO: need to fix existentials
+			return Type.T_EXISTENTIAL(new NameID(mid,"1"));							
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			return Type.T_PROCESS(expandType(ut.element, filename, cache));							
@@ -1543,6 +1548,11 @@ public class ModuleBuilder {
 			} else {
 				return Type.T_UNION(bounds);
 			}			
+		} else if(t instanceof UnresolvedType.Existential) {
+			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
+			ModuleID mid = ut.attribute(Attributes.Module.class).module;
+			// TODO: need to fix existentials
+			return Type.T_EXISTENTIAL(new NameID(mid,"1"));							
 		} else if(t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;			
 			return Type.T_PROCESS(resolve(ut.element));							
