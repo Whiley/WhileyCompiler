@@ -663,7 +663,7 @@ public abstract class Type {
 					writer.buildList(i,(Integer) node.data);												
 					break;
 				case K_PROCESS:
-					writer.buildList(i,(Integer) node.data);	
+					writer.buildProcess(i,(Integer) node.data);	
 					break;
 				case K_EXISTENTIAL:					
 					writer.buildExistential(i,(NameID) node.data);	

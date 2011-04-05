@@ -686,7 +686,7 @@ public class ModuleLoader {
 	protected Pair<String,Type.Fun> splitDescriptor(String desc) {
 		String[] split = desc.split("\\$");		
 		String name = split[0];
-		Type.Fun ft = new TypeParser(split[split.length - 1]).parseRestFunType();
+		Type.Fun ft = new TypeParser(split[split.length - 1]).parseRestFunType();		
 		if(split.length > 2) {
 			Type.Process rec = (Type.Process) new TypeParser(split[1]).parseType();
 			ft = Type.T_FUN(rec,ft.ret(),ft.params());
@@ -700,7 +700,7 @@ public class ModuleLoader {
 		
 		public TypeParser(String desc) {
 			index = 0;
-			this.desc = desc;
+			this.desc = desc;			
 		}
 		
 		public Type parseType() {

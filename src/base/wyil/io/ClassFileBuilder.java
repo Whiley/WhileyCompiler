@@ -136,7 +136,7 @@ public class ClassFileBuilder {
 		codes
 				.add(new Bytecode.Invoke(
 						owner,
-						"main$Nwhiley.lang.System;System;P(out:Nwhiley.lang.System;SystemOutWriter;P?rest:?)$V[[I]]",
+						"main$P(out:P?whiley.lang.System;1;rest:?whiley.lang.System;1;)$V[[I]]",
 						// "main$Nwhiley.lang.System;System;P?$V[Nwhiley.lang.String;string;[I]]",
 						ft3, Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
@@ -2203,7 +2203,7 @@ public class ClassFileBuilder {
 			return "R";
 		} else if(t instanceof Type.Existential) {
 			Type.Existential et = (Type.Existential) t;			
-			return "?" + et.name();
+			return "?" + et.name().module() + ";" + et.name().name() + ";";
 		} else if(t instanceof Type.List) {
 			Type.List st = (Type.List) t;
 			return "[" + type2str(st.element()) + "]";
