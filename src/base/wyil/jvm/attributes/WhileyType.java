@@ -243,11 +243,12 @@ public class WhileyType implements BytecodeAttribute {
 					writer.write_u1(INT_TYPE );		
 				} else if(t == Type.T_REAL) {
 					writer.write_u1(REAL_TYPE );			
-				}				
+				} else {
+					throw new RuntimeException("unknown type encountered: " + t);		
+				}
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
-			}
-			throw new RuntimeException("unknown type encountered: " + t);
+			}			
 		}
 
 		public void buildExistential(int index, NameID name) {

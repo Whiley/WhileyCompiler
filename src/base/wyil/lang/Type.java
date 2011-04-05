@@ -530,31 +530,31 @@ public abstract class Type {
 		public void initialise(int numNodes) { }
 		
 		public void buildPrimitive(int index, Type.Leaf type) {
-			out.println("[" + index + "] = " + type);
+			out.println("#" + index + " = " + type);
 		}
 		
 		public void buildExistential(int index, NameID name) {
-			out.println("[" + index + "] = ?" + name);
+			out.println("#" + index + " = ?" + name);
 		}
 		
 		public void buildSet(int index, int element) {
-			out.println("[" + index + "] = { #" + element + " }");
+			out.println("#" + index + " = {#" + element + "}");
 		}
 
 		public void buildList(int index, int element) {
-			out.println("[" + index + "] = [ #" + element + " ]");
+			out.println("#" + index + " = [#" + element + "]");
 		}
 
 		public void buildProcess(int index, int element) {
-			out.println("[" + index + "] = process #" + element);
+			out.println("#" + index + " = process #" + element);
 		}
 
 		public void buildDictionary(int index, int key, int value) {
-			out.println("[" + index + "] = { #" + key + "->#" + value + " }");
+			out.println("#" + index + " = {#" + key + "->#" + value + "}");
 		}
 
 		public void buildTuple(int index, int... elements) {
-			out.print("[" + index + "] = (");
+			out.print("#" + index + " = (");
 			boolean firstTime=true;
 			for(int e : elements) {
 				if(!firstTime) {
@@ -567,7 +567,7 @@ public abstract class Type {
 		}
 
 		public void buildRecord(int index, Pair<String, Integer>... fields) {
-			out.print("[" + index + "] = { ");
+			out.print("#" + index + " = {");
 			boolean firstTime=true;
 			for(Pair<String,Integer> e : fields) {
 				if(!firstTime) {
@@ -576,11 +576,11 @@ public abstract class Type {
 				firstTime=false;
 				out.print("#" + e.second() + " " + e.first());
 			}
-			out.println(" }");
+			out.println("}");
 		}
 
 		public void buildFunction(int index, int receiver, int ret, int... parameters) {
-			out.print("[" + index + "] = ");
+			out.print("#" + index + " = ");
 			if(receiver != -1) {
 				out.print("#" + receiver + "::");
 			}
@@ -593,11 +593,11 @@ public abstract class Type {
 				firstTime=false;
 				out.print("#" + e);
 			}
-			out.println(" )");
+			out.println(")");
 		}
 		
 		public void buildUnion(int index, int... bounds) {
-			out.print("[" + index + "] = ");
+			out.print("#" + index + " = ");
 			boolean firstTime=true;
 			for(int e : bounds) {
 				if(!firstTime) {
@@ -1046,8 +1046,8 @@ public abstract class Type {
 					return false;
 				}
 				// Check return value first (which is covariant)
-				e1 = elems1[0];
-				e2 = elems2[0];
+				e1 = elems1[1];
+				e2 = elems2[1];
 				if(!subtypeMatrix.get((e1*g2Size)+e2)) {
 					return false;
 				}
@@ -1178,8 +1178,13 @@ public abstract class Type {
 		case K_FUNCTION: {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
-			for(int i = 0; i!=elems.length;++i) {				
-				nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,newNodes,matrix);
+			for(int i = 0; i!=elems.length;++i) {
+				if(elems[i] == -1) {
+					// possible for K_FUNCTION
+					nelems[i] = -1;
+				} else {
+					nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,newNodes,matrix);
+				}
 			}			
 			data = nelems;
 			break;			
@@ -1506,12 +1511,12 @@ public abstract class Type {
 			BitSet visited = new BitSet(nodes.length);
 			// extracted maps new indices to old indices
 			ArrayList<Integer> extracted = new ArrayList<Integer>();
-			subgraph(root,visited,extracted,nodes);
+			subgraph(root,visited,extracted,nodes);		
 			// rextracted is the reverse of extracted
-			int[] rextracted = new int[extracted.size()];
+			int[] rextracted = new int[nodes.length];
 			int i=0;
 			for(int j : extracted) {
-				rextracted[i++]=j;
+				rextracted[j]=i++;
 			}
 			Node[] newNodes = new Node[extracted.size()];
 			i=0;
@@ -1583,7 +1588,7 @@ public abstract class Type {
 		case K_FUNCTION:
 			// nary node
 			int[] bounds = (int[]) node.data;
-			for(Integer b : bounds) {
+			for(int b : bounds) {
 				if(b == -1) { continue; } // possible with K_FUNCTION				
 				subgraph(b,visited,extracted,graph);				
 			}
@@ -1645,7 +1650,7 @@ public abstract class Type {
 		case K_FUNCTION:
 			// nary node
 			int[] bounds = (int[]) node.data;
-			for(Integer b : bounds) {
+			for(int b : bounds) {
 				if(b == -1) { continue; } // possible with K_FUNCTION
 				findHeaders(b,visited,onStack,headers,graph);
 			}
@@ -1996,8 +2001,8 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public Type ret() {
-			int[] fields = (int[]) nodes[0].data;
+		public Type ret() {						
+			int[] fields = (int[]) nodes[0].data;			
 			return extract(fields[1]);
 		}
 
@@ -2034,15 +2039,16 @@ public abstract class Type {
 
 	private static final byte K_VOID = 0;
 	private static final byte K_ANY = 1;
-	private static final byte K_NULL = 2;
-	private static final byte K_BOOL = 3;
-	private static final byte K_INT = 4;
-	private static final byte K_RATIONAL = 5;
-	private static final byte K_TUPLE = 6;
-	private static final byte K_SET = 7;
-	private static final byte K_LIST = 8;
-	private static final byte K_DICTIONARY = 9;	
-	private static final byte K_PROCESS = 10;
+	private static final byte K_META = 2;
+	private static final byte K_NULL = 3;
+	private static final byte K_BOOL = 4;
+	private static final byte K_INT = 5;
+	private static final byte K_RATIONAL = 6;
+	private static final byte K_TUPLE = 7;
+	private static final byte K_SET = 8;
+	private static final byte K_LIST = 9;
+	private static final byte K_DICTIONARY = 10;	
+	private static final byte K_PROCESS = 11;
 	private static final byte K_RECORD = 12;
 	private static final byte K_UNION = 13;
 	private static final byte K_FUNCTION = 14;
@@ -2123,6 +2129,8 @@ public abstract class Type {
 			return K_INT;
 		} else if(leaf instanceof Real) {
 			return K_RATIONAL;
+		} else if(leaf instanceof Meta) {
+			return K_META;
 		} else {
 			// should be dead code
 			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
@@ -2190,7 +2198,7 @@ public abstract class Type {
 		case K_LIST:
 		case K_PROCESS:
 			// unary nodes
-			Integer element = (Integer) node.data;
+			int element = (Integer) node.data;
 			data = rmap[element];
 			break;
 		case K_DICTIONARY:
@@ -2205,8 +2213,11 @@ public abstract class Type {
 			int[] bounds = (int[]) node.data;
 			int[] nbounds = new int[bounds.length];
 			for (int i = 0; i != bounds.length; ++i) {
-				if(bounds[i] == -1) { continue; } // possible with K_FUNCTION
-				nbounds[i] = rmap[bounds[i]];
+				if(bounds[i] == -1) { 
+					nbounds[i] = -1; // possible with K_FUNCTION
+				} else {
+					nbounds[i] = rmap[bounds[i]];	
+				}
 			}
 			data = nbounds;
 			break;
@@ -2241,6 +2252,8 @@ public abstract class Type {
 			return T_VOID;
 		case K_ANY:
 			return T_ANY;
+		case K_META:
+			return T_META;
 		case K_NULL:
 			return T_NULL;			
 		case K_BOOL:
