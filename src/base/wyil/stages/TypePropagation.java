@@ -267,13 +267,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			break;
 		case ELEMOF:
-		{
-			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
+		{			
 			Type element;
 			if(rhs_t instanceof Type.List){
 				element = ((Type.List)rhs_t).element();
-			} else {
+			} else if(rhs_t instanceof Type.Set){
 				element = ((Type.Set)rhs_t).element();
+			} else {
+				syntaxError("expected set or list, found: " + rhs_t,filename,stmt);
+				return null;
 			}
 			if (!Type.isSubtype(element, lhs_t)) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,

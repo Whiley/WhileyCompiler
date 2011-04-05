@@ -715,7 +715,7 @@ public abstract class Type {
 	 * all possible values described by the type <code>t2</code> is a subset of
 	 * that described by <code>t1</code>.
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {		
+	public static boolean isSubtype(Type t1, Type t2) {				
 		Node[] g1 = nodes(t1);
 		Node[] g2 = nodes(t2);
 		Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(g1,g2);
@@ -1063,7 +1063,9 @@ public abstract class Type {
 				// Check (optional) receiver value first (which is contravariant)
 				int e1 = elems1[0];
 				int e2 = elems2[0];
-				if ((e1 == -1 || e2 == -1 && e1 != e2)
+				if((e1 == -1 || e2 == -1) && e1 != e2) {
+					return false;
+				} else if (e1 != -1 && e2 != -1
 						&& !suptypeMatrix.get((e1 * g2Size) + e2)) {
 					return false;
 				}
@@ -1793,7 +1795,7 @@ public abstract class Type {
 			String rec = bounds[0] == -1 ? null : toString(bounds[0],visited,headers,graph);
 			String ret = toString(bounds[1], visited, headers, graph);
 			for (int i = 2; i != bounds.length; ++i) {
-				if (i != 1) {
+				if (i != 2) {
 					middle += ",";
 				}
 				middle += toString(bounds[i], visited, headers, graph);
