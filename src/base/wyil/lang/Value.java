@@ -314,14 +314,14 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 				List l = (List) val;
 				ArrayList<Value> vs = new ArrayList<Value>();
 				for(Value v : l.values) {
-					vs.add(convert(st.element,v));
+					vs.add(convert(st.element(),v));
 				}
 				return V_SET(vs);
 			} else if(val instanceof Set) {
 				Set s = (Set) val;
 				ArrayList<Value> vs = new ArrayList<Value>();
 				for(Value v : s.values) {
-					vs.add(convert(st.element,v));
+					vs.add(convert(st.element(),v));
 				}
 				return V_SET(vs);
 			}
@@ -330,7 +330,7 @@ public abstract class Value extends CExpr implements Comparable<Value> {
 			List l = (List) val;
 			ArrayList<Value> vs = new ArrayList<Value>();
 			for(Value v : l.values) {
-				vs.add(convert(st.element,v));
+				vs.add(convert(st.element(),v));
 			}
 			return V_LIST(vs);			
 		}

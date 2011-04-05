@@ -30,7 +30,7 @@ import wyil.util.Pair;
  * @author djp
  * 
  */
-public abstract class NewType {
+public abstract class Type {
 
 	// =============================================================
 	// Type Constructors
@@ -41,16 +41,17 @@ public abstract class NewType {
 	public static final Null T_NULL = new Null();	
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
-	public static final Rational T_RATIONAL = new Rational();
+	public static final Real T_REAL = new Real();
+	public static final Meta T_META = new Meta();
 	
 	/**
 	 * Construct a tuple type using the given element types.
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(NewType... elements) {
+	public static final Tuple T_TUPLE(Type... elements) {
 		int len = 1;
-		for(NewType b : elements) {
+		for(Type b : elements) {
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
@@ -68,11 +69,28 @@ public abstract class NewType {
 	}
 	
 	/**
+	 * Construct a process type using the given element type.
+	 * 
+	 * @param element
+	 */
+	public static final Process T_PROCESS(Type element) {
+		if (element instanceof Leaf) {
+			return new Process(new Node[] { new Node(K_PROCESS, 1),
+					new Node(leafKind((Leaf) element), null) });
+		} else {
+			// Compound type
+			Node[] nodes = insertComponent(((Compound) element).nodes);
+			nodes[0] = new Node(K_PROCESS, 1);
+			return new Process(nodes);
+		}
+	}
+	
+	/**
 	 * Construct a set type using the given element type.
 	 * 
 	 * @param element
 	 */
-	public static final Set T_SET(NewType element) {
+	public static final Set T_SET(Type element) {
 		if (element instanceof Leaf) {
 			return new Set(new Node[] { new Node(K_SET, 1),
 					new Node(leafKind((Leaf) element), null) });
@@ -89,7 +107,7 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	public static final List T_LIST(NewType element) {
+	public static final List T_LIST(Type element) {
 		if (element instanceof Leaf) {
 			return new List(new Node[] { new Node(K_LIST, 1),
 					new Node(leafKind((Leaf) element), null) });
@@ -106,7 +124,7 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	public static final Dictionary T_DICTIONARY(NewType key, NewType value) {
+	public static final Dictionary T_DICTIONARY(Type key, Type value) {
 		Node[] keyComps = nodes(key);
 		Node[] valueComps = nodes(value);
 		Node[] nodes = new Node[1 + keyComps.length + valueComps.length];
@@ -122,13 +140,13 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(NewType... bounds) {
+	public static final Union T_UNION(Type... bounds) {
 		if(bounds.length < 1) {
 			throw new IllegalArgumentException("Union requires more than one bound");
 		}
 		// include child unions
-		ArrayList<NewType> nbounds = new ArrayList<NewType>();
-		for(NewType t : bounds) {
+		ArrayList<Type> nbounds = new ArrayList<Type>();
+		for(Type t : bounds) {
 			if(t instanceof Union) {
 				nbounds.addAll(((Union)t).bounds());
 			} else {
@@ -136,7 +154,7 @@ public abstract class NewType {
 			}
 		}
 		int len = 1;
-		for(NewType b : nbounds) {
+		for(Type b : nbounds) {
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
@@ -158,10 +176,10 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(NewType ret, NewType... params) {
+	public static final Fun T_FUN(Type ret, Type... params) {
 		Node[] retcomps = nodes(ret); 
 		int len = 1 + retcomps.length;
-		for(NewType b : params) {
+		for(Type b : params) {
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
@@ -185,13 +203,13 @@ public abstract class NewType {
 	 * 
 	 * @param element
 	 */
-	public static final Record T_RECORD(Map<String,NewType> fields) {		
+	public static final Record T_RECORD(Map<String,Type> fields) {		
 		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
 		Collections.sort(keys);		
 		int len = 1;
 		for(int i=0;i!=keys.size();++i) {
 			String k = keys.get(i);
-			NewType t = fields.get(k);			
+			Type t = fields.get(k);			
 			len += nodes(t).length;
 		}
 		Node[] nodes = new Node[len];
@@ -227,7 +245,7 @@ public abstract class NewType {
 	 * @param label
 	 * @return
 	 */
-	public static final NewType T_LABEL(String label) {
+	public static final Type T_LABEL(String label) {
 		return new Compound(new Node[]{new Node(K_LABEL,label)});
 	}
 
@@ -254,7 +272,7 @@ public abstract class NewType {
 	 *            --- type to be closed.
 	 * @return
 	 */
-	public static final NewType T_RECURSIVE(String label, NewType type) {
+	public static final Type T_RECURSIVE(String label, Type type) {
 		// first stage, identify all matching labels
 		if(type instanceof Leaf) { throw new IllegalArgumentException("cannot close a leaf type"); }
 		Compound compound = (Compound) type;
@@ -297,7 +315,7 @@ public abstract class NewType {
 	 * all possible values described by the type <code>t2</code> is a subset of
 	 * that described by <code>t1</code>.
 	 */
-	public static boolean isSubtype(NewType t1, NewType t2) {		
+	public static boolean isSubtype(Type t1, Type t2) {		
 		Node[] g1 = nodes(t1);
 		Node[] g2 = nodes(t2);
 		Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(g1,g2);
@@ -323,7 +341,7 @@ public abstract class NewType {
 	 * @param t2
 	 * @return
 	 */
-	public static NewType leastUpperBound(NewType t1, NewType t2) {
+	public static Type leastUpperBound(Type t1, Type t2) {
 		return minimise(T_UNION(t1,t2)); // so easy
 	}
 	
@@ -337,7 +355,7 @@ public abstract class NewType {
 	 * @param t2
 	 * @return
 	 */
-	public static NewType greatestLowerBound(NewType t1, NewType t2) {
+	public static Type greatestLowerBound(Type t1, Type t2) {
 		return null;
 	}
 
@@ -354,7 +372,7 @@ public abstract class NewType {
 	 * @param t2
 	 * @return
 	 */
-	public static NewType leastDifference(NewType t1, NewType t2) {
+	public static Type leastDifference(Type t1, Type t2) {
 		return null;
 	}
 
@@ -372,7 +390,7 @@ public abstract class NewType {
 	 * @param t
 	 * @return
 	 */
-	public static Record effectiveRecordType(NewType t) {
+	public static Record effectiveRecordType(Type t) {
 		return null;
 	}
 	
@@ -382,7 +400,7 @@ public abstract class NewType {
 	 * @param type
 	 * @return
 	 */
-	private static NewType minimise(NewType type) {
+	private static Type minimise(Type type) {
 		// leaf types never need minmising!
 		if (type instanceof Leaf) {
 			return type;
@@ -560,7 +578,7 @@ public abstract class NewType {
 			switch(c1.kind) {
 			case K_SET:
 			case K_LIST:
-			case K_REFERENCE: {
+			case K_PROCESS: {
 				// unary node
 				int e1 = (Integer) c1.data;
 				int e2 = (Integer) c2.data;
@@ -714,7 +732,7 @@ public abstract class NewType {
 		switch(node.kind) {
 		case K_SET:
 		case K_LIST:
-		case K_REFERENCE: {
+		case K_PROCESS: {
 			int element = (Integer) node.data;
 			data = (Integer) rebuild(element,graph,allocated,newNodes,matrix);
 			break;
@@ -811,7 +829,7 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static class Leaf extends NewType {}
+	public static class Leaf extends Type {}
 
 	/**
 	 * A void type represents the type whose variables cannot exist! That is,
@@ -882,6 +900,29 @@ public abstract class NewType {
 			return "null";
 		}
 	}
+
+	/**
+	 * The type mets represents the type of types. That is, values of this type
+	 * are themselves types. (think reflection, where we have
+	 * <code>class Class {}</code>).
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Meta extends Leaf {
+		private Meta() {}
+		public boolean equals(Object o) {
+			return o == T_META;
+		}
+		public int hashCode() {
+			return 1;
+		}
+		public String toString() {
+			return "type";
+		}
+	}
+
+	
 	/**
 	 * Represents the set of boolean values (i.e. true and false)
 	 * @author djp
@@ -928,16 +969,16 @@ public abstract class NewType {
 	 * @author djp
 	 * 
 	 */
-	public static final class Rational extends Leaf {
-		private Rational() {}
+	public static final class Real extends Leaf {
+		private Real() {}
 		public boolean equals(Object o) {
-			return o == T_RATIONAL;
+			return o == T_REAL;
 		}
 		public int hashCode() {
 			return 5;
 		}
 		public String toString() {
-			return "rat";
+			return "real";
 		}
 	}
 	// =============================================================
@@ -952,7 +993,7 @@ public abstract class NewType {
 	 * actual Compound class (i.e. if its kind is K_SET, then this is an
 	 * instance of Set).
 	 */
-	private static class Compound extends NewType {
+	private static class Compound extends Type {
 		protected final Node[] nodes;
 		
 		public Compound(Node[] nodes) {
@@ -1002,7 +1043,7 @@ public abstract class NewType {
 		 *            --- the starting node to extract from.
 		 * @return
 		 */
-		protected final NewType extract(int root) {
+		protected final Type extract(int root) {
 			// First, we perform the DFS.
 			BitSet visited = new BitSet(nodes.length);
 			// extracted maps new indices to old indices
@@ -1069,7 +1110,7 @@ public abstract class NewType {
 		switch(node.kind) {
 		case K_SET:
 		case K_LIST:
-		case K_REFERENCE:
+		case K_PROCESS:
 			// unary nodes
 			subgraph((Integer) node.data,visited,extracted,graph);
 			break;
@@ -1130,7 +1171,7 @@ public abstract class NewType {
 		switch(node.kind) {
 		case K_SET:
 		case K_LIST:
-		case K_REFERENCE:
+		case K_PROCESS:
 			// unary nodes
 			findHeaders((Integer) node.data,visited,onStack,headers,graph);
 			break;
@@ -1207,7 +1248,7 @@ public abstract class NewType {
 			middle = "[" + toString((Integer) node.data, visited, headers, graph)
 					+ "]";
 			break;
-		case K_REFERENCE:
+		case K_PROCESS:
 			middle = "*" + toString((Integer) node.data, visited, headers, graph);
 			break;
 		case K_DICTIONARY: {
@@ -1301,7 +1342,7 @@ public abstract class NewType {
 	 * @param type --- type to prring
 	 * @return
 	 */
-	private final static String toGraphString(NewType type) {
+	private final static String toGraphString(Type type) {
 		if(type instanceof Leaf) {			
 			return type.toString();
 		}		
@@ -1337,7 +1378,7 @@ public abstract class NewType {
 			case K_LIST:
 				r += "[" + (Integer) node.data + "]";								
 				break;
-			case K_REFERENCE:
+			case K_PROCESS:
 				r += "*" + (Integer) node.data;				
 				break;
 			case K_DICTIONARY: {
@@ -1423,16 +1464,16 @@ public abstract class NewType {
 		private Tuple(Node[] nodes) {
 			super(nodes);
 		}		
-		public java.util.List<NewType> elements() {
+		public java.util.List<Type> elements() {
 			int[] values = (int[]) nodes[0].data;
-			ArrayList<NewType> elems = new ArrayList<NewType>();
+			ArrayList<Type> elems = new ArrayList<Type>();
 			for(Integer i : values) {
 				elems.add(extract(i));
 			}
 			return elems;
 		}		
-	}
-
+	}	
+	
 	/**
 	 * A set type describes set values whose elements are subtypes of the
 	 * element type. For example, <code>{1,2,3}</code> is an instance of set
@@ -1445,7 +1486,7 @@ public abstract class NewType {
 		private Set(Node[] nodes) {
 			super(nodes);
 		}
-		public NewType element() {
+		public Type element() {
 			return extract(1);
 		}		
 	}
@@ -1462,22 +1503,22 @@ public abstract class NewType {
 		private List(Node[] nodes) {
 			super(nodes);
 		}
-		public NewType element() {
+		public Type element() {
 			return extract(1);
 		}		
 	}
 
 	/**
-	 * A reference (aka pointer) represents a reference to an object on a heap.
+	 * A process represents a reference to an actor in Whiley.
 	 * 
 	 * @author djp
 	 * 
 	 */
-	public static final class Reference extends Compound  {
-		private Reference(Node[] nodes) {
+	public static final class Process extends Compound  {
+		private Process(Node[] nodes) {
 			super(nodes);
 		}
-		public NewType element() {
+		public Type element() {
 			int i = (Integer) nodes[0].data;
 			return extract(i);			
 		}		
@@ -1496,11 +1537,11 @@ public abstract class NewType {
 		private Dictionary(Node[] nodes) {
 			super(nodes);
 		}
-		public NewType key() {
+		public Type key() {
 			Pair<Integer,Integer> p = (Pair) nodes[0].data;
 			return extract(p.first());
 		}
-		public NewType value() {
+		public Type value() {
 			Pair<Integer,Integer> p = (Pair) nodes[0].data;
 			return extract(p.second());			
 		}
@@ -1541,9 +1582,9 @@ public abstract class NewType {
 		 * 
 		 * @return
 		 */
-		public HashMap<String,NewType> fields() {
+		public HashMap<String,Type> fields() {
 			Pair<String,Integer>[] fields = (Pair[]) nodes[0].data;
-			HashMap<String,NewType> r = new HashMap<String,NewType>();
+			HashMap<String,Type> r = new HashMap<String,Type>();
 			for(Pair<String,Integer> f : fields) {
 				r.put(f.first(),extract(f.second()));
 			}
@@ -1570,9 +1611,9 @@ public abstract class NewType {
 		 * 
 		 * @return
 		 */
-		public HashSet<NewType> bounds() {
+		public HashSet<Type> bounds() {
 			int[] fields = (int[]) nodes[0].data;
-			HashSet<NewType> r = new HashSet<NewType>();
+			HashSet<Type> r = new HashSet<Type>();
 			for(int i : fields) {
 				r.add(extract(i));
 			}
@@ -1597,7 +1638,7 @@ public abstract class NewType {
 		 * 
 		 * @return
 		 */
-		public NewType ret() {
+		public Type ret() {
 			Integer[] fields = (Integer[]) nodes[0].data;
 			return extract(fields[0]);
 		}
@@ -1607,9 +1648,9 @@ public abstract class NewType {
 		 * 
 		 * @return
 		 */
-		public ArrayList<NewType> params() {
+		public ArrayList<Type> params() {
 			Integer[] fields = (Integer[]) nodes[0].data;
-			ArrayList<NewType> r = new ArrayList<NewType>();
+			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=1;i<fields.length;++i) {
 				r.add(extract(i));
 			}
@@ -1631,7 +1672,7 @@ public abstract class NewType {
 	private static final byte K_SET = 7;
 	private static final byte K_LIST = 8;
 	private static final byte K_DICTIONARY = 9;	
-	private static final byte K_REFERENCE = 10;
+	private static final byte K_PROCESS = 10;
 	private static final byte K_RECORD = 12;
 	private static final byte K_UNION = 13;
 	private static final byte K_FUNCTION = 14;
@@ -1689,7 +1730,7 @@ public abstract class NewType {
 		}
 	}
 	
-	private static final Node[] nodes(NewType t) {
+	private static final Node[] nodes(Type t) {
 		if (t instanceof Leaf) {
 			return new Node[]{new Node(leafKind((Leaf) t), null)};
 		} else {
@@ -1709,7 +1750,7 @@ public abstract class NewType {
 			return K_BOOL;
 		} else if(leaf instanceof Int) {
 			return K_INT;
-		} else if(leaf instanceof Rational) {
+		} else if(leaf instanceof Real) {
 			return K_RATIONAL;
 		} else {
 			// should be dead code
@@ -1776,7 +1817,7 @@ public abstract class NewType {
 		switch (node.kind) {
 		case K_SET:
 		case K_LIST:
-		case K_REFERENCE:
+		case K_PROCESS:
 			// unary nodes
 			Integer element = (Integer) node.data;
 			data = rmap[element];
@@ -1821,7 +1862,7 @@ public abstract class NewType {
 	 * @param nodes
 	 * @return
 	 */
-	private final static NewType construct(Node[] nodes) {
+	private final static Type construct(Node[] nodes) {
 		Node root = nodes[0];
 		switch(root.kind) {
 		case K_VOID:
@@ -1835,7 +1876,7 @@ public abstract class NewType {
 		case K_INT:
 			return T_INT;
 		case K_RATIONAL:
-			return T_RATIONAL;
+			return T_REAL;
 		case K_TUPLE:
 			return new Tuple(nodes);
 		case K_SET:
@@ -1856,8 +1897,8 @@ public abstract class NewType {
 	}
 	
 	public static void main(String[] args) {				
-		NewType ft2 = minimise(T_RECURSIVE("X",linkedList(2,T_RATIONAL,"X")));
-		NewType ft1 = minimise(T_RECURSIVE("X",linkedList(1,T_INT,"X")));				
+		Type ft2 = minimise(T_RECURSIVE("X",linkedList(2,T_REAL,"X")));
+		Type ft1 = minimise(T_RECURSIVE("X",linkedList(1,T_INT,"X")));				
 		System.out.println("Type: " + ft1 + "\n-----");
 		System.out.println(toGraphString(ft1));
 		System.out.println("Type: " + ft2 + "\n-----");
@@ -1865,14 +1906,14 @@ public abstract class NewType {
 		System.out.println(ft1 + " :> " + ft2 + " : " + isSubtype(ft1,ft2));		
 	}
 	
-	public static NewType linkedList(int nlinks, NewType dataType, String label) {
-		NewType leaf;
+	public static Type linkedList(int nlinks, Type dataType, String label) {
+		Type leaf;
 		if(nlinks == 0) {
 			leaf = T_LABEL(label);
 		} else {
 			leaf = linkedList(nlinks-1,dataType,label);
 		}
-		HashMap<String,NewType> fields = new HashMap<String,NewType>();
+		HashMap<String,Type> fields = new HashMap<String,Type>();
 		fields.put("next",leaf);
 		fields.put("data",dataType);	 
 		return T_UNION(T_NULL,T_RECORD(fields));		

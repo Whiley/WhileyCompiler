@@ -27,10 +27,10 @@ package wyil.lang;
 
 import java.util.*;
 
-public abstract class Type {
+public abstract class OldType {
 	
 	// =============================================================
-	// Type Constructors
+	// OldType Constructors
 	// =============================================================
 		
 	public static final Any T_ANY = new Any();
@@ -42,27 +42,27 @@ public abstract class Type {
 	public static final Real T_REAL = new Real();
 	public static final Meta T_META = new Meta();
 	
-	public static Named T_NAMED(NameID name, Type element) {
+	public static Named T_NAMED(NameID name, OldType element) {
 		return get(new Named(name, element));
 	}
 	
-	public static List T_LIST(Type element) {
+	public static List T_LIST(OldType element) {
 		return get(new List(element));
 	}
 	
-	public static Set T_SET(Type element) {
+	public static Set T_SET(OldType element) {
 		return get(new Set(element));
 	}
 	
-	public static Dictionary T_DICTIONARY(Type key,Type value) {
+	public static Dictionary T_DICTIONARY(OldType key,OldType value) {
 		return get(new Dictionary(key,value));
 	}
 	
-	public static Fun T_FUN(ProcessName receiver, Type ret, Type... parameters) {
+	public static Fun T_FUN(ProcessName receiver, OldType ret, OldType... parameters) {
 		return get(new Fun(receiver, ret,parameters));
 	}
 	
-	public static Fun T_FUN(ProcessName receiver, Type ret, Collection<Type> parameters) {
+	public static Fun T_FUN(ProcessName receiver, OldType ret, Collection<OldType> parameters) {
 		return get(new Fun(receiver, ret, parameters));
 	}
 	
@@ -75,26 +75,26 @@ public abstract class Type {
 	}
 	
 	
-	public static Process T_PROCESS(Type element) {
+	public static Process T_PROCESS(OldType element) {
 		return get(new Process(element));
 	}
 	
-	public static Record T_RECORD(Map<String,Type> types) {
+	public static Record T_RECORD(Map<String,OldType> types) {
 		return get(new Record(types));
 	}
 	
-	public static Recursive T_RECURSIVE(String name, Type element) {
+	public static Recursive T_RECURSIVE(String name, OldType element) {
 		return get(new Recursive(name,element));
 	}
 	
 	// =============================================================
-	// Type Methods
+	// OldType Methods
 	// =============================================================
 	
 	/**
 	 * Return true iff t2 is a subtype of t1
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {					
+	public static boolean isSubtype(OldType t1, OldType t2) {					
 		
 		if (t1 == t2 || (t2 instanceof Void) || (t1 instanceof Any)
 				|| (t1 instanceof Real && t2 instanceof Int)) {
@@ -113,10 +113,10 @@ public abstract class Type {
 			// This rule surely should not be here
 			Set l1 = (Set) t1;
 			List l2 = (List) t2;
-			HashMap<String,Type> types = new HashMap<String,Type>();
-			types.put("key", Type.T_INT);
+			HashMap<String,OldType> types = new HashMap<String,OldType>();
+			types.put("key", OldType.T_INT);
 			types.put("value", l2.element);
-			return isSubtype(l1.element,Type.T_RECORD(types));
+			return isSubtype(l1.element,OldType.T_RECORD(types));
 		} else if(t1 instanceof Dictionary && t2 instanceof Dictionary) {
 			// RULE: S-DICTIONARY
 			Dictionary l1 = (Dictionary) t1;
@@ -130,7 +130,7 @@ public abstract class Type {
 			// RULE: S-UNION2
 			// NOTE: must check S-UNION2 before S-UNION1
 			Union u2 = (Union) t2;
-			for(Type t : u2.bounds) {
+			for(OldType t : u2.bounds) {
 				if(!isSubtype(t1,t)) {
 					return false;
 				}
@@ -139,7 +139,7 @@ public abstract class Type {
 		} else if(t1 instanceof Union) {			
 			// RULE: S-UNION1			
 			Union u1 = (Union) t1;
-			for(Type t : u1.bounds) {
+			for(OldType t : u1.bounds) {
 				if(isSubtype(t,t2)) {
 					return true;
 				}
@@ -155,8 +155,8 @@ public abstract class Type {
 				return false;
 			}						
 			
-			for(Map.Entry<String,Type> e : tt1.types.entrySet()) {
-				Type t = tt2.types.get(e.getKey());
+			for(Map.Entry<String,OldType> e : tt1.types.entrySet()) {
+				OldType t = tt2.types.get(e.getKey());
 				if(!isSubtype(e.getValue(),t)) {
 					return false;
 				}
@@ -169,7 +169,7 @@ public abstract class Type {
 			Recursive r2 = (Recursive) t2;
 			HashMap<String,String> binding = new HashMap<String,String>();
 			binding.put(r2.name, r1.name);
-			r2 = (Recursive) renameRecursiveTypes(r2,binding);
+			r2 = (Recursive) renameRecursiveOldTypes(r2,binding);
 			return isSubtype(r1.type,r2.type);
 		} else if(t1 instanceof Recursive) {
 			// Q-UNFOLD
@@ -188,14 +188,14 @@ public abstract class Type {
 		} else if(t1 instanceof Fun && t2 instanceof Fun) {
 			Fun f1 = (Fun) t1;
 			Fun f2 = (Fun) t2;
-			ArrayList<Type> f1_params = f1.params;
-			ArrayList<Type> f2_params = f2.params;
+			ArrayList<OldType> f1_params = f1.params;
+			ArrayList<OldType> f2_params = f2.params;
 			if(f1.params.size() != f2.params.size()) {
 				return false;
 			}
 			for(int i=0;i!=f1_params.size();++i) {
-				Type tt1 = f1_params.get(i);
-				Type tt2 = f2_params.get(i);
+				OldType tt1 = f1_params.get(i);
+				OldType tt2 = f2_params.get(i);
 				// NOTE: parameter types must be *contravariant*.
 				if(!isSubtype(tt2,tt1)) {
 					return false;
@@ -217,7 +217,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type leastUpperBound(Type t1, Type t2) {
+	public static OldType leastUpperBound(OldType t1, OldType t2) {
 		if(isSubtype(t1, t2)) {
 			return t1;
 		} else if(isSubtype(t2, t1)) {
@@ -231,11 +231,11 @@ public abstract class Type {
 			Record r2 = (Record) t2;
 						
 			if(r1.types.keySet().equals(r2.types.keySet())) {
-				HashMap<String, Type> types = new HashMap<String, Type>();
-				for (Map.Entry<String,Type> e : r2.types.entrySet()) {
+				HashMap<String, OldType> types = new HashMap<String, OldType>();
+				for (Map.Entry<String,OldType> e : r2.types.entrySet()) {
 					String key = e.getKey();
-					Type rt2 = e.getValue();
-					Type rt1 = r1.types.get(key);					
+					OldType rt2 = e.getValue();
+					OldType rt1 = r1.types.get(key);					
 					types.put(key, leastUpperBound(rt1,rt2));					
 				}
 				return T_RECORD(types);
@@ -282,17 +282,17 @@ public abstract class Type {
 		return T_UNION((NonUnion)t1,(NonUnion)t2);					
 	}
 
-	public static Type leastUpperBound(Collection<? extends Type> types) {
-		Type t = T_VOID;
-		for(Type b : types) {
+	public static OldType leastUpperBound(Collection<? extends OldType> types) {
+		OldType t = T_VOID;
+		for(OldType b : types) {
 			t = leastUpperBound(t,b);
 		}
 		return t;
 	}
 	
-	public static Type leastUpperBound(Type... types) {
-		Type t = T_VOID;
-		for(Type b : types) {
+	public static OldType leastUpperBound(OldType... types) {
+		OldType t = T_VOID;
+		for(OldType b : types) {
 			t = leastUpperBound(t,b);
 		}
 		return t;
@@ -308,7 +308,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type greatestLowerBound(Type t1, Type t2) {
+	public static OldType greatestLowerBound(OldType t1, OldType t2) {
 		
 		if(isSubtype(t1, t2)) {			
 			return t2;
@@ -326,12 +326,12 @@ public abstract class Type {
 			Record r1 = (Record) t1;
 			Record r2 = (Record) t2;
 			if(r1.types.keySet().equals(r2.types.keySet())) {
-				HashMap<String,Type> types = new HashMap<String,Type>();
-				for(Map.Entry<String,Type> e : r1.types.entrySet()) {
+				HashMap<String,OldType> types = new HashMap<String,OldType>();
+				for(Map.Entry<String,OldType> e : r1.types.entrySet()) {
 					String key = e.getKey();
-					Type rt1 = e.getValue();
-					Type rt2 = r2.types.get(key);			
-					Type glb = greatestLowerBound(rt1,rt2);
+					OldType rt1 = e.getValue();
+					OldType rt2 = r2.types.get(key);			
+					OldType glb = greatestLowerBound(rt1,rt2);
 					if(glb == T_VOID) { return glb; }
 					types.put(key, glb);
 				}			
@@ -339,14 +339,14 @@ public abstract class Type {
 			}
 		} else if(t1 instanceof Union) {			
 			Union ut1 = (Union) t1;			
-			Type glb = T_VOID;
+			OldType glb = T_VOID;
 			for(NonUnion t : ut1.bounds) {				
 				glb = leastUpperBound(glb,greatestLowerBound(t,t2));											
 			}		
 			return glb;
 		} else if(t2 instanceof Union) {			
 			Union ut2 = (Union) t2;			
-			Type glb = T_VOID;
+			OldType glb = T_VOID;
 			for(NonUnion t : ut2.bounds) {				
 				glb = leastUpperBound(glb,greatestLowerBound(t1,t));											
 			}		
@@ -364,7 +364,7 @@ public abstract class Type {
 			HashMap<String,String> binding = new HashMap();
 			binding.put(r2.name, r1.name);
 			
-			Type glb = greatestLowerBound(r1.type,renameRecursiveTypes(r2.type,binding));
+			OldType glb = greatestLowerBound(r1.type,renameRecursiveOldTypes(r2.type,binding));
 			
 			if(isOpenRecursive(r1.name,glb)) {
 				return T_RECURSIVE(r1.name,glb);
@@ -389,7 +389,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type greatestDifference(Type t1, Type t2) {
+	public static OldType greatestDifference(OldType t1, OldType t2) {
 		if(isSubtype(t2,t1)) {
 			return T_VOID;
 		} else if(t2 == T_VOID) {
@@ -407,12 +407,12 @@ public abstract class Type {
 			Record r2 = (Record) t2;
 						
 			if (r1.types.keySet().equals(r2.types.keySet())) {
-				HashMap<String, Type> types = new HashMap<String, Type>(
+				HashMap<String, OldType> types = new HashMap<String, OldType>(
 						r1.types);
-				for (Map.Entry<String, Type> e : r2.types.entrySet()) {
+				for (Map.Entry<String, OldType> e : r2.types.entrySet()) {
 					String key = e.getKey();
-					Type rt2 = e.getValue();
-					Type rt1 = r1.types.get(key);
+					OldType rt2 = e.getValue();
+					OldType rt1 = r1.types.get(key);
 					types.put(key, greatestDifference(rt1, rt2));
 				}
 				return T_RECORD(types);
@@ -420,31 +420,31 @@ public abstract class Type {
 						
 		} else if(t2 instanceof Union) {
 			Union u = (Union) t2;
-			for(Type t : u.bounds) {
+			for(OldType t : u.bounds) {
 				t1 = greatestDifference(t1,t);
 			}
 		} else if (t1 instanceof Union) {
 			Union u = (Union) t1;
-			Type lub = T_VOID;
+			OldType lub = T_VOID;
 			// Could probably optimise this more
-			for (Type t : u.bounds) {
+			for (OldType t : u.bounds) {
 				lub = leastUpperBound(lub, greatestDifference(t, t2));
 			}
 			return lub;
 		} else if(t1 instanceof Recursive) {
 			Recursive r1 = (Recursive) t1;
-			Type r1_type = r1.type;
+			OldType r1_type = r1.type;
 			
 			if(t2 instanceof Recursive) {
 				Recursive r2 = (Recursive) t2;
-				Type r2_type = r2.type;
+				OldType r2_type = r2.type;
 				
 				if(r1.name.equals(r2.name)) {
 					return T_VOID;
 				} else if(r1.type != null && r2.type != null) {
 					HashMap<String,String> binding = new HashMap();
 					binding.put(r2.name, r1.name);
-					r1_type = greatestDifference(r1_type,renameRecursiveTypes(r2_type,binding));
+					r1_type = greatestDifference(r1_type,renameRecursiveOldTypes(r2_type,binding));
 					if(isOpenRecursive(r1.name,r1_type)) {
 						return T_RECURSIVE(r1.name,r1_type);
 					} else {
@@ -454,7 +454,7 @@ public abstract class Type {
 			}
 			
 			r1_type = unfold(r1);
-			Type tmp = greatestDifference(unfold(r1),t2);
+			OldType tmp = greatestDifference(unfold(r1),t2);
 			if(tmp.equals(r1_type)) {
 				return r1; // no change
 			} else {
@@ -471,7 +471,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isExistential(Type t) {
+	public static boolean isExistential(OldType t) {
 		if (t instanceof Existential) {
 			return true;
 		} else if (t instanceof Void || t instanceof Null || t instanceof Bool
@@ -488,7 +488,7 @@ public abstract class Type {
 			return isExistential(lt.element);
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
-			for(Type b : ut.bounds) {
+			for(OldType b : ut.bounds) {
 				if(isExistential(b)) {
 					return true;
 				}
@@ -496,7 +496,7 @@ public abstract class Type {
 			return false;
 		} else if(t instanceof Record) {			
 			Record tt = (Record) t;
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+			for (Map.Entry<String, OldType> b : tt.types.entrySet()) {
 				if (isExistential(b.getValue())) {
 					return true;
 				}
@@ -512,7 +512,7 @@ public abstract class Type {
 			return false;
 		} else {
 			Fun ft = (Fun) t;
-			for(Type p : ft.params) {
+			for(OldType p : ft.params) {
 				if(isExistential(p)) {
 					return true;
 				}
@@ -532,32 +532,32 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static java.util.Set<String> recursiveTypeNames(Type t) {
+	public static java.util.Set<String> recursiveOldTypeNames(OldType t) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
 				|| t instanceof Any) {			
 			return Collections.EMPTY_SET;
 		} else if(t instanceof List) {
 			List lt = (List) t;
-			return recursiveTypeNames(lt.element);
+			return recursiveOldTypeNames(lt.element);
 		} else if(t instanceof Set) {
 			Set lt = (Set) t;
-			return recursiveTypeNames(lt.element);
+			return recursiveOldTypeNames(lt.element);
 		} else if(t instanceof Process) {
 			Process lt = (Process) t;
-			return recursiveTypeNames(lt.element);
+			return recursiveOldTypeNames(lt.element);
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
 			HashSet<String> names = new HashSet<String>();
-			for(Type b : ut.bounds) {
-				names.addAll(recursiveTypeNames(b));				
+			for(OldType b : ut.bounds) {
+				names.addAll(recursiveOldTypeNames(b));				
 			}
 			return names;
 		} else if(t instanceof Record) {			
 			Record tt = (Record) t;
 			HashSet<String> names = new HashSet<String>();
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
-				names.addAll(recursiveTypeNames(b.getValue()));				
+			for (Map.Entry<String, OldType> b : tt.types.entrySet()) {
+				names.addAll(recursiveOldTypeNames(b.getValue()));				
 			}
 			return names;
 		} else if (t instanceof Recursive) {			
@@ -565,21 +565,21 @@ public abstract class Type {
 			HashSet<String> names = new HashSet<String>();
 			names.add(lt.name);
 			if(lt.type != null) {
-				names.addAll(recursiveTypeNames(lt.type));
+				names.addAll(recursiveOldTypeNames(lt.type));
 			}
 			return names;
 		} else if(t instanceof Named) {
 			Named lt = (Named) t;
-			return recursiveTypeNames(lt.type);
+			return recursiveOldTypeNames(lt.type);
 		} else {
 			Fun ft = (Fun) t;
 			HashSet<String> names = new HashSet<String>();
-			for(Type p : ft.params) {
-				names.addAll(recursiveTypeNames(p));				
+			for(OldType p : ft.params) {
+				names.addAll(recursiveOldTypeNames(p));				
 			}
-			names.addAll(recursiveTypeNames(ft.ret));
+			names.addAll(recursiveOldTypeNames(ft.ret));
 			if(ft.receiver != null) {
-				names.addAll(recursiveTypeNames(ft.receiver));				
+				names.addAll(recursiveOldTypeNames(ft.receiver));				
 			} 
 			return names;
 		}
@@ -592,32 +592,32 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Type renameRecursiveTypes(Type t, Map<String,String> binding) {
+	public static OldType renameRecursiveOldTypes(OldType t, Map<String,String> binding) {
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
 				|| t instanceof Any) {
 			return t;
 		} else if(t instanceof List) {
 			List lt = (List) t;
-			return T_LIST(renameRecursiveTypes(lt.element, binding));
+			return T_LIST(renameRecursiveOldTypes(lt.element, binding));
 		} else if(t instanceof Set) {
 			Set lt = (Set) t;
-			return T_SET(renameRecursiveTypes(lt.element, binding));			
+			return T_SET(renameRecursiveOldTypes(lt.element, binding));			
 		} else if(t instanceof Process) {
 			Process lt = (Process) t;
-			return T_PROCESS(renameRecursiveTypes(lt.element, binding));			
+			return T_PROCESS(renameRecursiveOldTypes(lt.element, binding));			
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
 			HashSet<NonUnion> bounds = new HashSet<NonUnion>();
 			for(NonUnion b : ut.bounds) {
-				bounds.add((NonUnion)renameRecursiveTypes(b, binding));				
+				bounds.add((NonUnion)renameRecursiveOldTypes(b, binding));				
 			}
 			return T_UNION(bounds);			
 		} else if(t instanceof Record) {			
 			Record tt = (Record) t;			
-			HashMap<String,Type> fields = new HashMap<String,Type>();
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
-				fields.put(b.getKey(), renameRecursiveTypes(b.getValue(),
+			HashMap<String,OldType> fields = new HashMap<String,OldType>();
+			for (Map.Entry<String, OldType> b : tt.types.entrySet()) {
+				fields.put(b.getKey(), renameRecursiveOldTypes(b.getValue(),
 						binding));				
 			}
 			return T_RECORD(fields);
@@ -626,7 +626,7 @@ public abstract class Type {
 			String name = binding.get(lt.name);			
 			if(name == null) { name = lt.name; }
 			if (lt.type != null) {
-				return T_RECURSIVE(name, renameRecursiveTypes(lt.type,
+				return T_RECURSIVE(name, renameRecursiveOldTypes(lt.type,
 						binding));
 			} else {
 				return T_RECURSIVE(name, null);
@@ -635,14 +635,14 @@ public abstract class Type {
 			return t;
 		} else {
 			Fun ft = (Fun) t;
-			ArrayList<Type> params = new ArrayList<Type>();
-			for(Type p : ft.params) {
-				params.add(renameRecursiveTypes(p, binding));
+			ArrayList<OldType> params = new ArrayList<OldType>();
+			for(OldType p : ft.params) {
+				params.add(renameRecursiveOldTypes(p, binding));
 			}
-			Type ret = renameRecursiveTypes(ft.ret, binding);
+			OldType ret = renameRecursiveOldTypes(ft.ret, binding);
 			Process receiver = null;
 			if(ft.receiver != null) {
-				receiver = (Process) renameRecursiveTypes(ft.ret, binding);							
+				receiver = (Process) renameRecursiveOldTypes(ft.ret, binding);							
 			} 
 			return T_FUN(receiver,ret,params);
 		}
@@ -657,8 +657,8 @@ public abstract class Type {
 	 * @param binding
 	 * @return
 	 */
-	public static Type substituteRecursiveTypes(Type t, Map<String,Type> binding) {
-		if (t == null) { throw new IllegalArgumentException("substituteRecursiveTypes cannot be called on null"); }
+	public static OldType substituteRecursiveOldTypes(OldType t, Map<String,OldType> binding) {
+		if (t == null) { throw new IllegalArgumentException("substituteRecursiveOldTypes cannot be called on null"); }
 		
 		if (t instanceof Existential || t instanceof Void || t instanceof Null
 				|| t instanceof Bool || t instanceof Int || t instanceof Real
@@ -666,50 +666,50 @@ public abstract class Type {
 			return t;
 		} else if(t instanceof List) {
 			List lt = (List) t;
-			return T_LIST(substituteRecursiveTypes(lt.element, binding));
+			return T_LIST(substituteRecursiveOldTypes(lt.element, binding));
 		} else if(t instanceof Set) {
 			Set lt = (Set) t;
-			return T_SET(substituteRecursiveTypes(lt.element, binding));			
+			return T_SET(substituteRecursiveOldTypes(lt.element, binding));			
 		} else if(t instanceof Process) {
 			Process lt = (Process) t;
-			return T_PROCESS(substituteRecursiveTypes(lt.element, binding));			
+			return T_PROCESS(substituteRecursiveOldTypes(lt.element, binding));			
 		} else if(t instanceof Union) {
 			Union ut = (Union) t;
 			HashSet<NonUnion> bounds = new HashSet<NonUnion>();
 			for(NonUnion b : ut.bounds) {
-				bounds.add((NonUnion)substituteRecursiveTypes(b, binding));				
+				bounds.add((NonUnion)substituteRecursiveOldTypes(b, binding));				
 			}
 			return T_UNION(bounds);			
 		} else if(t instanceof Record) {			
 			Record tt = (Record) t;			
-			HashMap<String,Type> fields = new HashMap<String,Type>();
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
-				fields.put(b.getKey(), substituteRecursiveTypes(b.getValue(),
+			HashMap<String,OldType> fields = new HashMap<String,OldType>();
+			for (Map.Entry<String, OldType> b : tt.types.entrySet()) {
+				fields.put(b.getKey(), substituteRecursiveOldTypes(b.getValue(),
 						binding));				
 			}
 			return T_RECORD(fields);
 		} else if (t instanceof Recursive) {
 			Recursive lt = (Recursive) t;
-			Type type = binding.get(lt.name);
+			OldType type = binding.get(lt.name);
 			if(type != null) {
 				return type;
 			}
 			if (lt.type != null) {
-				return T_RECURSIVE(lt.name, substituteRecursiveTypes(lt.type,
+				return T_RECURSIVE(lt.name, substituteRecursiveOldTypes(lt.type,
 						binding));
 			} else {
 				return T_RECURSIVE(lt.name, null);
 			}
 		} else {		
 			Fun ft = (Fun) t;
-			ArrayList<Type> params = new ArrayList<Type>();
-			for(Type p : ft.params) {
-				params.add(substituteRecursiveTypes(p, binding));
+			ArrayList<OldType> params = new ArrayList<OldType>();
+			for(OldType p : ft.params) {
+				params.add(substituteRecursiveOldTypes(p, binding));
 			}
-			Type ret = substituteRecursiveTypes(ft.ret, binding);
+			OldType ret = substituteRecursiveOldTypes(ft.ret, binding);
 			Process receiver = null;
 			if(ft.receiver != null) {
-				receiver = (Process) substituteRecursiveTypes(ft.ret, binding);							
+				receiver = (Process) substituteRecursiveOldTypes(ft.ret, binding);							
 			} 
 			return T_FUN(receiver,ret,params);
 		}		
@@ -722,39 +722,39 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpenRecursive(String key, Type t) {
-		if (t instanceof Type.Void || t instanceof Type.Null
-				|| t instanceof Type.Bool || t instanceof Type.Int
-				|| t instanceof Type.Real || t instanceof Type.Any
-				|| t instanceof Type.Existential) {
+	public static boolean isOpenRecursive(String key, OldType t) {
+		if (t instanceof OldType.Void || t instanceof OldType.Null
+				|| t instanceof OldType.Bool || t instanceof OldType.Int
+				|| t instanceof OldType.Real || t instanceof OldType.Any
+				|| t instanceof OldType.Existential) {
 			return false;
-		} else if(t instanceof Type.List) {
-			Type.List lt = (Type.List) t;
+		} else if(t instanceof OldType.List) {
+			OldType.List lt = (OldType.List) t;
 			return isOpenRecursive(key,lt.element);
-		} else if(t instanceof Type.Set) {
-			Type.Set lt = (Type.Set) t;
+		} else if(t instanceof OldType.Set) {
+			OldType.Set lt = (OldType.Set) t;
 			return isOpenRecursive(key,lt.element);
-		} else if(t instanceof Type.Process) {
-			Type.Process lt = (Type.Process) t;
+		} else if(t instanceof OldType.Process) {
+			OldType.Process lt = (OldType.Process) t;
 			return isOpenRecursive(key,lt.element);
-		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;
-			for(Type b : ut.bounds) {
+		} else if(t instanceof OldType.Union) {
+			OldType.Union ut = (OldType.Union) t;
+			for(OldType b : ut.bounds) {
 				if(isOpenRecursive(key,b)) {
 					return true;
 				}
 			}
 			return false;
-		} else if(t instanceof Type.Record) {			
-			Type.Record tt = (Record) t;
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+		} else if(t instanceof OldType.Record) {			
+			OldType.Record tt = (Record) t;
+			for (Map.Entry<String, OldType> b : tt.types.entrySet()) {
 				if (isOpenRecursive(key,b.getValue())) {
 					return true;
 				}
 			}
 			return false;
-		} else if(t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
+		} else if(t instanceof OldType.Recursive) {
+			OldType.Recursive rt = (OldType.Recursive) t;
 			if(rt.name.equals(key)) {
 				return rt.type == null;
 			} else if(rt.type != null) {
@@ -762,11 +762,11 @@ public abstract class Type {
 			} else {
 				return false;
 			}
-		} else if(t instanceof Type.Named) {
+		} else if(t instanceof OldType.Named) {
 			return false;
 		} else {		
-			Type.Fun ft = (Type.Fun) t;
-			for(Type p : ft.params) {
+			OldType.Fun ft = (OldType.Fun) t;
+			for(OldType p : ft.params) {
 				if(isOpenRecursive(key,p)) {
 					return true;
 				}
@@ -814,54 +814,54 @@ public abstract class Type {
 	 * X[int|{X next}] ===> int|X[{{int|Y next}]
 	 * </pre>
 	 */
-	public static Type normaliseRecursiveType(Type t) {
-		if (t instanceof Type.Void || t instanceof Type.Null
-				|| t instanceof Type.Bool || t instanceof Type.Int
-				|| t instanceof Type.Real || t instanceof Type.Any
-				|| t instanceof Type.Existential || t instanceof Type.Named) {
+	public static OldType normaliseRecursiveOldType(OldType t) {
+		if (t instanceof OldType.Void || t instanceof OldType.Null
+				|| t instanceof OldType.Bool || t instanceof OldType.Int
+				|| t instanceof OldType.Real || t instanceof OldType.Any
+				|| t instanceof OldType.Existential || t instanceof OldType.Named) {
 			return t;
-		} else if(t instanceof Type.List) {
-			Type.List lt = (Type.List) t;
-			return Type.T_LIST(normaliseRecursiveType(lt.element));
-		} else if(t instanceof Type.Set) {
-			Type.Set lt = (Type.Set) t;
-			return Type.T_SET(normaliseRecursiveType(lt.element));			
-		} else if(t instanceof Type.Process) {
-			Type.Process lt = (Type.Process) t;
-			return Type.T_PROCESS(normaliseRecursiveType(lt.element));			
-		} else if(t instanceof Type.Record) {			
-			Type.Record tt = (Record) t;
-			HashMap<String,Type> types = new HashMap<String,Type>();
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
-				types.put(b.getKey(), normaliseRecursiveType(b.getValue()));				
+		} else if(t instanceof OldType.List) {
+			OldType.List lt = (OldType.List) t;
+			return OldType.T_LIST(normaliseRecursiveOldType(lt.element));
+		} else if(t instanceof OldType.Set) {
+			OldType.Set lt = (OldType.Set) t;
+			return OldType.T_SET(normaliseRecursiveOldType(lt.element));			
+		} else if(t instanceof OldType.Process) {
+			OldType.Process lt = (OldType.Process) t;
+			return OldType.T_PROCESS(normaliseRecursiveOldType(lt.element));			
+		} else if(t instanceof OldType.Record) {			
+			OldType.Record tt = (Record) t;
+			HashMap<String,OldType> types = new HashMap<String,OldType>();
+			for (Map.Entry<String, OldType> b : tt.types.entrySet()) {
+				types.put(b.getKey(), normaliseRecursiveOldType(b.getValue()));				
 			}
 			return T_RECORD(types);
-		} else if (t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
+		} else if (t instanceof OldType.Recursive) {
+			OldType.Recursive rt = (OldType.Recursive) t;
 			if (rt.type == null) {
 				return rt;
 			} else {
-				Type element = normaliseRecursiveType(rt.type);
+				OldType element = normaliseRecursiveOldType(rt.type);
 				return unfactor(T_RECURSIVE(rt.name, element));				
 			}
-		} else if(t instanceof Type.Fun) {		
-			Type.Fun ft = (Type.Fun) t;
-			ArrayList<Type> params = new ArrayList<Type>();
-			for(Type p : ft.params) {
-				params.add(normaliseRecursiveType(p));
+		} else if(t instanceof OldType.Fun) {		
+			OldType.Fun ft = (OldType.Fun) t;
+			ArrayList<OldType> params = new ArrayList<OldType>();
+			for(OldType p : ft.params) {
+				params.add(normaliseRecursiveOldType(p));
 			}
-			Type ret = normaliseRecursiveType(ft.ret);
-			Type.ProcessName receiver = ft.receiver;
+			OldType ret = normaliseRecursiveOldType(ft.ret);
+			OldType.ProcessName receiver = ft.receiver;
 			if(receiver != null) {
-				receiver = (Type.ProcessName) normaliseRecursiveType(receiver);
+				receiver = (OldType.ProcessName) normaliseRecursiveOldType(receiver);
 			}
 			return T_FUN(receiver,ret,params);
-		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;
-			Type lub = Type.T_VOID;
+		} else if(t instanceof OldType.Union) {
+			OldType.Union ut = (OldType.Union) t;
+			OldType lub = OldType.T_VOID;
 			
-			for (Type b : ut.bounds) {
-				lub = leastUpperBound(lub, normaliseRecursiveType(b));
+			for (OldType b : ut.bounds) {
+				lub = leastUpperBound(lub, normaliseRecursiveOldType(b));
 			}
 
 			return lub;
@@ -870,18 +870,18 @@ public abstract class Type {
 		return t;
 	}
 	
-	public static Type unfold(Type.Recursive rt) {
-		HashMap<String,Type> binding = new HashMap<String,Type>();
+	public static OldType unfold(OldType.Recursive rt) {
+		HashMap<String,OldType> binding = new HashMap<String,OldType>();
 		binding.put(rt.name, rt);
-		return substituteRecursiveTypes(rt.type,binding);
+		return substituteRecursiveOldTypes(rt.type,binding);
 	}
 	
-	public static Type unfactor(Type.Recursive type) {		
+	public static OldType unfactor(OldType.Recursive type) {		
 		if(type.type instanceof Union) {			
-			Type.Union ut = (Type.Union) type.type;			
-			Type factors = T_VOID;
-			Type opens = T_VOID;
-			for(Type b : ut.bounds) {
+			OldType.Union ut = (OldType.Union) type.type;			
+			OldType factors = T_VOID;
+			OldType opens = T_VOID;
+			for(OldType b : ut.bounds) {
 				if(!isOpenRecursive(type.name,b)) {
 					factors = leastUpperBound(factors,b);
 				} else {
@@ -894,12 +894,12 @@ public abstract class Type {
 				return type;
 			} 
 			
-			HashMap<String,Type> binding = new HashMap<String,Type>();
+			HashMap<String,OldType> binding = new HashMap<String,OldType>();
 			binding.put(type.name, leastUpperBound(factors, T_RECURSIVE(
 					type.name, null)));
 			// FIXME: there is a bug here for sure as substitute recursive types
 			// doesn't do quite what you'd expect.
-			Type elem = substituteRecursiveTypes(opens,binding);			
+			OldType elem = substituteRecursiveOldTypes(opens,binding);			
 			return leastUpperBound(factors,T_RECURSIVE(type.name,elem));
 		}		
 		
@@ -911,19 +911,19 @@ public abstract class Type {
 	 * The following implements an algorithm for minimising recursive types,
 	 * based on the algorithm for minimising DFAs.
 	 */
-	public static Type minimise(Type t) {
+	public static OldType minimise(OldType t) {
 		// first, extract components
-		HashSet<Type> components = new HashSet<Type>();		
+		HashSet<OldType> components = new HashSet<OldType>();		
 		// The var map is necessary to constructing a mapping between type
 		// variables and their recursive unfoldings.  
 		HashMap<String,Recursive> varmap = new HashMap<String,Recursive>();
 		initialiseEquivs(t,components,varmap);
 		
 		// second, initialise partitions, and reverse partition map		
-		ArrayList<HashSet<Type>> partitions = new ArrayList();						
+		ArrayList<HashSet<OldType>> partitions = new ArrayList();						
 		partitions.add(components);
-		HashMap<Type,Integer> rpartitions = new HashMap<Type,Integer>();
-		for(Type component : components) {
+		HashMap<OldType,Integer> rpartitions = new HashMap<OldType,Integer>();
+		for(OldType component : components) {
 			rpartitions.put(component, 0);
 		}
 		boolean changed = true;
@@ -946,20 +946,20 @@ public abstract class Type {
 	 * @return
 	 */
 	private static boolean splitPartition(int idx,
-			ArrayList<HashSet<Type>> partitions,
-			HashMap<Type, Integer> rpartitions,
+			ArrayList<HashSet<OldType>> partitions,
+			HashMap<OldType, Integer> rpartitions,
 			HashMap<String,Recursive> varmap) {
 		// The pivot is what we'll use to split the partition. Essentially, I'll
 		// find all those equivalent to the pivot, and all those which are not
 		// equivalent => thus, either we make two new sets or there is no change
 		// to the old set.
-		HashSet<Type> partition = partitions.get(idx);
-		Type pivot = partition.iterator().next();
-		HashSet<Type> equivs = new HashSet<Type>();
-		HashSet<Type> nequivs = new HashSet<Type>();
+		HashSet<OldType> partition = partitions.get(idx);
+		OldType pivot = partition.iterator().next();
+		HashSet<OldType> equivs = new HashSet<OldType>();
+		HashSet<OldType> nequivs = new HashSet<OldType>();
 		boolean change = false;
 		
-		for(Type t : partition) {
+		for(OldType t : partition) {
 			if(partitionEquiv(t,pivot,rpartitions,varmap)) {
 				// t is equivalent to pivot --> so no change
 				equivs.add(t);
@@ -974,7 +974,7 @@ public abstract class Type {
 			partitions.set(idx,equivs);
 			int neqidx = partitions.size();
 			partitions.add(nequivs);
-			for(Type t : nequivs) {
+			for(OldType t : nequivs) {
 				rpartitions.put(t,neqidx);
 			}
 		}		
@@ -999,8 +999,8 @@ public abstract class Type {
 	 *            same partition).
 	 * @return
 	 */
-	private static boolean partitionEquiv(Type t1, Type t2,
-			HashMap<Type, Integer> rpartitions,
+	private static boolean partitionEquiv(OldType t1, OldType t2,
+			HashMap<OldType, Integer> rpartitions,
 			HashMap<String,Recursive> varmap) {
 				
 		
@@ -1034,8 +1034,8 @@ public abstract class Type {
 				return false;
 			}
 			for(String key : r1keys) {
-				Type r1t = r1.types.get(key);
-				Type r2t = r2.types.get(key);
+				OldType r1t = r1.types.get(key);
+				OldType r2t = r2.types.get(key);
 				if(!rpartitions.get(r1t).equals(rpartitions.get(r2t))) {
 					return false;
 				}
@@ -1047,9 +1047,9 @@ public abstract class Type {
 			// the union are, in fact, equivalent.  No idea how to fix this.
 			Union u1 = (Union) t1;	
 			Union u2 = (Union) t2;
-			for(Type b1 : u1.bounds) {
+			for(OldType b1 : u1.bounds) {
 				boolean b1matched = false;
-				for(Type b2 : u2.bounds) {
+				for(OldType b2 : u2.bounds) {
 					if(partitionEquiv(b1,b2,rpartitions,varmap)) {
 						b1matched = true;
 						break;
@@ -1057,9 +1057,9 @@ public abstract class Type {
 				}
 				if(!b1matched) { return false; }
 			}				
-			for(Type b2 : u2.bounds) {
+			for(OldType b2 : u2.bounds) {
 				boolean b2matched = false;
-				for(Type b1 : u1.bounds) {
+				for(OldType b1 : u1.bounds) {
 					if(partitionEquiv(b1,b2,rpartitions,varmap)) {
 						b2matched = true;
 						break;
@@ -1069,14 +1069,14 @@ public abstract class Type {
 			}
 			return true;
 		} else if(t1 instanceof Recursive) {			
-			Type.Recursive tr = (Type.Recursive) t1;						
+			OldType.Recursive tr = (OldType.Recursive) t1;						
 			if(tr.type == null) {
 				return partitionEquiv(varmap.get(tr.name).type,t2,rpartitions,varmap);			
 			} else {							
 				return partitionEquiv(tr.type,t2,rpartitions,varmap);
 			}
 		} else if(t2 instanceof Recursive) {
-			Type.Recursive tr = (Type.Recursive) t2;
+			OldType.Recursive tr = (OldType.Recursive) t2;
 			if(tr.type == null) {
 				return partitionEquiv(t1,varmap.get(tr.name).type,rpartitions,varmap);			
 			} else {							
@@ -1091,32 +1091,32 @@ public abstract class Type {
 	 * This method simply walks down the type splitting out every subcomponent.
 	 * @param t
 	 */
-	private static void initialiseEquivs(Type t, HashSet<Type> equivs, HashMap<String,Recursive> varmap) {		
+	private static void initialiseEquivs(OldType t, HashSet<OldType> equivs, HashMap<String,Recursive> varmap) {		
 		equivs.add(t);
 		// now, recurse compound types
-		if(t instanceof Type.List) {			
-			Type.List lt = (Type.List) t;
+		if(t instanceof OldType.List) {			
+			OldType.List lt = (OldType.List) t;
 			initialiseEquivs(lt.element,equivs,varmap);
-		} else if(t instanceof Type.Set) {
-			Type.Set lt = (Type.Set) t;
+		} else if(t instanceof OldType.Set) {
+			OldType.Set lt = (OldType.Set) t;
 			initialiseEquivs(lt.element,equivs,varmap);
-		} else if(t instanceof Type.Process) {
-			Type.Process lt = (Type.Process) t;
+		} else if(t instanceof OldType.Process) {
+			OldType.Process lt = (OldType.Process) t;
 			initialiseEquivs(lt.element,equivs,varmap);
-		} else if(t instanceof Type.Record) {			
-			Type.Record tt = (Record) t;			
-			for (Map.Entry<String, Type> b : tt.types.entrySet()) {
+		} else if(t instanceof OldType.Record) {			
+			OldType.Record tt = (Record) t;			
+			for (Map.Entry<String, OldType> b : tt.types.entrySet()) {
 				initialiseEquivs(b.getValue(),equivs,varmap);	
 			}			
-		} else if (t instanceof Type.Recursive) {
-			Type.Recursive rt = (Type.Recursive) t;
+		} else if (t instanceof OldType.Recursive) {
+			OldType.Recursive rt = (OldType.Recursive) t;
 			if(rt.type != null) {
 				varmap.put(rt.name, rt);
 				initialiseEquivs(rt.type,equivs,varmap);
 			} 
-		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;
-			for(Type b : ut.bounds) {
+		} else if(t instanceof OldType.Union) {
+			OldType.Union ut = (OldType.Union) t;
+			for(OldType b : ut.bounds) {
 				initialiseEquivs(b,equivs,varmap);
 			}
 		} 
@@ -1131,8 +1131,8 @@ public abstract class Type {
 	 * @param rpartitions --- a map from component to partition number
 	 * @return
 	 */
-	private static Type rebuild(Type t, ArrayList<HashSet<Type>> partitions,
-			HashMap<Type, Integer> rpartitions, HashMap<Integer,String> visited) {
+	private static OldType rebuild(OldType t, ArrayList<HashSet<OldType>> partitions,
+			HashMap<OldType, Integer> rpartitions, HashMap<Integer,String> visited) {
 		int pnum = rpartitions.get(t);
 		String var = visited.get(pnum);
 		
@@ -1142,10 +1142,10 @@ public abstract class Type {
 			return T_RECURSIVE(var,null);
 		}
 		
-		HashSet<Type> partition = partitions.get(pnum);
+		HashSet<OldType> partition = partitions.get(pnum);
 		boolean recursive = false;
-		for(Type component : partition) {
-			if(component instanceof Type.Recursive) {
+		for(OldType component : partition) {
+			if(component instanceof OldType.Recursive) {
 				// Q) is it possible for component to have null type here?
 				recursive = true;
 				break;
@@ -1176,16 +1176,16 @@ public abstract class Type {
 					rebuild(d.value,partitions,rpartitions,visited));
 		} else if(t instanceof Record) {
 			Record r = (Record) t;
-			HashMap<String,Type> types = new HashMap<String,Type>();
-			for(Map.Entry<String,Type> e : r.types.entrySet()) {
+			HashMap<String,OldType> types = new HashMap<String,OldType>();
+			for(Map.Entry<String,OldType> e : r.types.entrySet()) {
 				types.put(e.getKey(),rebuild(e.getValue(),partitions,rpartitions,visited));
 			}
 			t = T_RECORD(types);
 		} else if(t instanceof Union) {
 			Union u = (Union) t;
 			t = T_VOID;
-			for(Type bound : u.bounds) {
-				Type tmp = rebuild(bound,partitions,rpartitions,visited);
+			for(OldType bound : u.bounds) {
+				OldType tmp = rebuild(bound,partitions,rpartitions,visited);
 				t = leastUpperBound(tmp,t);
 			}
 		} 
@@ -1211,62 +1211,62 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Type.Record effectiveRecordType(Type t) {
+	public static OldType.Record effectiveRecordOldType(OldType t) {
 
-		if(t instanceof Type.Record) {
-			return (Type.Record) t;
-		} else if(t instanceof Type.Union) {
-			Type.Union ut = (Type.Union) t;
-			return effectiveRecordType(commonType(ut.bounds));
-		} else if(t instanceof Type.Recursive) {
+		if(t instanceof OldType.Record) {
+			return (OldType.Record) t;
+		} else if(t instanceof OldType.Union) {
+			OldType.Union ut = (OldType.Union) t;
+			return effectiveRecordOldType(commonOldType(ut.bounds));
+		} else if(t instanceof OldType.Recursive) {
 			// this is more tricky. We need to unroll the type once to ensure we
 			// don't lose the recursive information.
-			Type.Recursive rt = (Type.Recursive) t;
+			OldType.Recursive rt = (OldType.Recursive) t;
 			if(rt.type != null) {
-				return effectiveRecordType(unfold(rt));
+				return effectiveRecordOldType(unfold(rt));
 			}
-		} else if(t instanceof Type.Named) {
-			Type.Named nt = (Type.Named) t;
-			return effectiveRecordType(nt.type);
+		} else if(t instanceof OldType.Named) {
+			OldType.Named nt = (OldType.Named) t;
+			return effectiveRecordOldType(nt.type);
 		} 		
 		return null;	
 	}
 	
 	
-	private static Type commonType(Collection<? extends Type> types) {		
-		Type type = types.iterator().next();
+	private static OldType commonOldType(Collection<? extends OldType> types) {		
+		OldType type = types.iterator().next();
 		
-		if(type instanceof Type.Record) {
-			return commonTupleType(types);
-		} else if(type instanceof Type.List) {
+		if(type instanceof OldType.Record) {
+			return commonTupleOldType(types);
+		} else if(type instanceof OldType.List) {
 			// FIXME: to do			
-		} else if(type instanceof Type.Set) {
+		} else if(type instanceof OldType.Set) {
 			// FIXME: to do
 		} 
 		
 		return null;		
 	}
 
-	private static Type.Record commonTupleType(Collection<? extends Type> types) {
-		Type.Record rt = null;
-		for (Type pt : types) {
-			if(!(pt instanceof Type.Record)) {
+	private static OldType.Record commonTupleOldType(Collection<? extends OldType> types) {
+		OldType.Record rt = null;
+		for (OldType pt : types) {
+			if(!(pt instanceof OldType.Record)) {
 				return null;
 			}
-			Type.Record tt = (Type.Record) pt;
+			OldType.Record tt = (OldType.Record) pt;
 			if (rt == null) {
 				rt = tt;
 			} else {
-				HashMap<String, Type> it = new HashMap<String, Type>();
-				for (Map.Entry<String, Type> ent : rt.types.entrySet()) {
-					Type ttt = tt.types.get(ent.getKey());
+				HashMap<String, OldType> it = new HashMap<String, OldType>();
+				for (Map.Entry<String, OldType> ent : rt.types.entrySet()) {
+					OldType ttt = tt.types.get(ent.getKey());
 					if (ttt != null) {
-						it.put(ent.getKey(), Type.leastUpperBound(ttt, ent
+						it.put(ent.getKey(), OldType.leastUpperBound(ttt, ent
 								.getValue()));
 					}
 				}				
 				
-				rt = new Type.Record(it);
+				rt = new OldType.Record(it);
 			}
 		}
 		if (rt != null) {				
@@ -1285,7 +1285,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static String toShortString(Type t) {		
+	public static String toShortString(OldType t) {		
 		if (t instanceof Any || t instanceof Void || t instanceof Null
 				|| t instanceof Real || t instanceof Int || t instanceof Bool
 				|| t instanceof Meta || t instanceof Existential) {			
@@ -1303,7 +1303,7 @@ public abstract class Type {
 			Record rt = (Record) t;
 			String r = "{";
 			boolean firstTime = true;
-			for(Map.Entry<String,Type> f : rt.types.entrySet()) {
+			for(Map.Entry<String,OldType> f : rt.types.entrySet()) {
 				if(!firstTime) {
 					r += ", ";
 				}
@@ -1315,7 +1315,7 @@ public abstract class Type {
 			Union ut = (Union) t;
 			String r = "";
 			boolean firstTime = true;
-			for(Type b : ut.bounds) {
+			for(OldType b : ut.bounds) {
 				if(!firstTime) {
 					r += "|";
 				}
@@ -1336,7 +1336,7 @@ public abstract class Type {
 			Fun ft = (Fun) t;
 			String args = "";
 			boolean firstTime=true;
-			for(Type arg : ft.params) {
+			for(OldType arg : ft.params) {
 				if(!firstTime) {
 					args += ",";
 				}
@@ -1354,14 +1354,14 @@ public abstract class Type {
 	}
 	
 	// =============================================================
-	// Type Classes
+	// OldType Classes
 	// =============================================================
 	
-	public static abstract class NonUnion extends Type {}
+	public static abstract class NonUnion extends OldType {}
 	public static abstract class ProcessName extends NonUnion {}
 
 	public static abstract class SetList extends NonUnion {
-		public abstract Type element();
+		public abstract OldType element();
 	}
 	
 	public static final class Any extends NonUnion {
@@ -1462,8 +1462,8 @@ public abstract class Type {
 	}
 	public static class Named extends ProcessName {
 		public final NameID name;		
-		public final Type type;
-		private Named(NameID name, Type element) {			
+		public final OldType type;
+		private Named(NameID name, OldType element) {			
 			this.name = name;
 			this.type = element;
 		}
@@ -1483,11 +1483,11 @@ public abstract class Type {
 		}
 	}
 	public static final class List extends SetList {
-		public final Type element;
-		private List(Type element) {
+		public final OldType element;
+		private List(OldType element) {
 			this.element = element;
 		}
-		public Type element() {
+		public OldType element() {
 			return element;
 		}
 		public boolean equals(Object o) {
@@ -1505,11 +1505,11 @@ public abstract class Type {
 		}
 	}
 	public static final class Set extends SetList {
-		public final Type element;
-		private Set(Type element) {
+		public final OldType element;
+		private Set(OldType element) {
 			this.element = element;
 		}
-		public Type element() {
+		public OldType element() {
 			return element;
 		}
 		public boolean equals(Object o) {
@@ -1527,10 +1527,10 @@ public abstract class Type {
 		}
 	}
 	public static final class Dictionary extends NonUnion {
-		public final Type key;
-		public final Type value;
+		public final OldType key;
+		public final OldType value;
 		
-		private Dictionary(Type key,Type value) {
+		private Dictionary(OldType key,OldType value) {
 			this.key = key;
 			this.value = value;
 		}
@@ -1549,7 +1549,7 @@ public abstract class Type {
 			return "{" + key + "->" + value + "}";
 		}
 	}
-	public static final class Union extends Type {
+	public static final class Union extends OldType {
 		public final HashSet<NonUnion> bounds;
 		public Union(Collection<NonUnion> bounds) {
 			if (bounds.size() < 2) {
@@ -1581,7 +1581,7 @@ public abstract class Type {
 		public String toString() {
 			String r = "";
 			boolean firstTime=true;
-			for(Type t : bounds) {
+			for(OldType t : bounds) {
 				if(!firstTime) {
 					r +="|";
 				}
@@ -1593,21 +1593,21 @@ public abstract class Type {
 	}
 	public static final class Fun extends NonUnion {
 		public final ProcessName receiver;
-		public final Type ret;
-		public final ArrayList<Type> params;
+		public final OldType ret;
+		public final ArrayList<OldType> params;
 		
-		private Fun(ProcessName receiver, Type ret, Type... parameters) {
+		private Fun(ProcessName receiver, OldType ret, OldType... parameters) {
 			this.ret = ret;
 			this.receiver = receiver;
-			this.params = new ArrayList<Type>();
-			for(Type t : parameters) {
+			this.params = new ArrayList<OldType>();
+			for(OldType t : parameters) {
 				this.params.add(t);
 			}
 		}
-		private Fun(ProcessName receiver, Type ret, Collection<Type> parameters) {
+		private Fun(ProcessName receiver, OldType ret, Collection<OldType> parameters) {
 			this.ret = ret;
 			this.receiver = receiver;
-			this.params = new ArrayList<Type>(parameters);			
+			this.params = new ArrayList<OldType>(parameters);			
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Fun) {
@@ -1630,7 +1630,7 @@ public abstract class Type {
 			}
 			r += "(";
 			boolean firstTime=true;
-			for(Type p : params) {
+			for(OldType p : params) {
 				if(!firstTime) {
 					r +=",";
 				}
@@ -1642,8 +1642,8 @@ public abstract class Type {
 	}
 
 	public static final class Process extends ProcessName {
-		public final Type element;
-		private Process(Type element) {
+		public final OldType element;
+		private Process(OldType element) {
 			this.element = element;
 		}
 		public boolean equals(Object o) {
@@ -1661,10 +1661,10 @@ public abstract class Type {
 		}
 	}
 	public static final class Record extends NonUnion {
-		public final HashMap<String,Type> types;
+		public final HashMap<String,OldType> types;
 		
-		private Record(Map<String,Type> types) {			
-			this.types = new HashMap<String,Type>(types);			
+		private Record(Map<String,OldType> types) {			
+			this.types = new HashMap<String,OldType>(types);			
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Record) {
@@ -1693,9 +1693,9 @@ public abstract class Type {
 	}
 	public static final class Recursive extends NonUnion {				
 		public final String name;
-		public final Type type;
+		public final OldType type;
 		
-		private Recursive(String name, Type type) {
+		private Recursive(String name, OldType type) {
 			this.name = name;
 			this.type = type;
 		}
@@ -1727,10 +1727,10 @@ public abstract class Type {
 			}
 		}		
 	}
-	private static final ArrayList<Type> types = new ArrayList<Type>();
-	private static final HashMap<Type,Integer> cache = new HashMap<Type,Integer>();
+	private static final ArrayList<OldType> types = new ArrayList<OldType>();
+	private static final HashMap<OldType,Integer> cache = new HashMap<OldType,Integer>();
 	
-	private static <T extends Type> T get(T type) {
+	private static <T extends OldType> T get(T type) {
 		Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) types.get(idx);
@@ -1743,33 +1743,33 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		
-		Type t1 = unfold(binaryTree("X"));
+		OldType t1 = unfold(binaryTree("X"));
 		System.out.println("BEFORE: " + t1);
 		t1 = minimise(t1);
 		System.out.println("AFTER: " + t1);
 	}
 	
-	public static Type.Recursive outerUnfold(Type.Recursive rt) {
-		HashMap<String, Type> binding = new HashMap<String, Type>();
+	public static OldType.Recursive outerUnfold(OldType.Recursive rt) {
+		HashMap<String, OldType> binding = new HashMap<String, OldType>();
 		binding.put(rt.name, rt.type);
-		return Type.T_RECURSIVE(rt.name,
-				substituteRecursiveTypes(rt.type, binding));
+		return OldType.T_RECURSIVE(rt.name,
+				substituteRecursiveOldTypes(rt.type, binding));
 	}
 	
-	public static Type.Recursive linkedList(String var) {
-		HashMap<String,Type> types = new HashMap<String,Type>();
+	public static OldType.Recursive linkedList(String var) {
+		HashMap<String,OldType> types = new HashMap<String,OldType>();
 		types.put("data",T_INT);
 		types.put("next",T_RECURSIVE(var,null));
-		Type t6 = T_RECORD(types);
+		OldType t6 = T_RECORD(types);
 		return T_RECURSIVE(var,leastUpperBound(T_NULL,t6));		
 	}
 	
-	public static Type.Recursive binaryTree(String var) {
-		HashMap<String,Type> types = new HashMap<String,Type>();
+	public static OldType.Recursive binaryTree(String var) {
+		HashMap<String,OldType> types = new HashMap<String,OldType>();
 		types.put("data",T_INT);
 		types.put("left",T_RECURSIVE(var,null));
 		types.put("right",T_RECURSIVE(var,null));
-		Type t6 = T_RECORD(types);
+		OldType t6 = T_RECORD(types);
 		return T_RECURSIVE(var,leastUpperBound(T_NULL,t6));		
 	}
 }

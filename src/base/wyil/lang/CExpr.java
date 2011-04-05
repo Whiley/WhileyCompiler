@@ -53,14 +53,14 @@ public abstract class CExpr {
 		String str;
 		if(r instanceof Value.TypeConst) {
 			Value.TypeConst tc = (Value.TypeConst) r;
-			str = Type.toShortString(tc.type);
+			str = tc.type.toString();
 		} else {
 			str = r.toString();
 		}
 		if((flags & INTERNAL_TYPES) != 0) {
 			str += "!";
 			if((flags & SHORT_TYPES) != 0) {
-				str += Type.toShortString(r.type());
+				str += r.type();
 			} else {
 				str += r.type();
 			}
@@ -482,10 +482,10 @@ public abstract class CExpr {
 			Type t = src.type();
 			if(t instanceof Type.List){ 
 				Type.List l = (Type.List) t;
-				return l.element;
+				return l.element();
 			} else if(t instanceof Type.Dictionary) {
 				Type.Dictionary l = (Type.Dictionary) t;
-				return l.value;
+				return l.value();
 			} else {
 				return Type.T_VOID;
 			}
@@ -592,12 +592,9 @@ public abstract class CExpr {
 			} else if(op == UOP.PROCESSACCESS) {
 				// FIXME: need to flattern
 				Type pt = (Type) rhs.type();				
-				if(pt instanceof Type.Named) {
-					pt = ((Type.Named) pt).type;					
-				} 
 				
 				if(pt instanceof Type.Process) {
-					return ((Type.Process)pt).element;
+					return ((Type.Process)pt).element();
 				} else {
 					return Type.T_ANY; // unknown
 				}
@@ -838,7 +835,7 @@ public abstract class CExpr {
 			if(tt == null) {
 				return Type.T_VOID;
 			}
-			Type r = tt.types.get(field);
+			Type r = tt.fields().get(field);
 			if(r == null) {
 				return Type.T_VOID;
 			} else {
@@ -904,7 +901,7 @@ public abstract class CExpr {
 		}
 
 		public Type type() {
-			return type.ret;
+			return type.ret();
 		}
 		
 		public boolean equals(Object o) {
@@ -985,7 +982,7 @@ public abstract class CExpr {
 			Type t = target.type();
 			if(t instanceof Type.Fun) {
 				Type.Fun ft = (Type.Fun) t;
-				return ft.ret;
+				return ft.ret();
 			} else {
 				return Type.T_VOID;
 			}
