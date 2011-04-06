@@ -751,6 +751,7 @@ public abstract class Type {
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
 		// BUG FIX: this algorithm still isn't implemented correctly.
+		// -------> it can infinite loop as the recursion isn't terminated.
 		if(isSubtype(t1,t2)) {			
 			return t2;
 		} else if(isSubtype(t2,t1)) {			
@@ -788,8 +789,27 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastDifference(Type t1, Type t2) {
-		System.err.println("WARNING: leastDifference needs fixing");
-		return t1;
+		// BUG FIX: this algorithm still isn't implemented correctly.
+		// -------> it can infinite loop as the recursion isn't terminated.
+		if(isSubtype(t2,t1)) {			
+			return T_VOID;
+		} else {
+			Node[] graph1, graph2;
+			if(t1 instanceof Leaf) {
+				graph1 = new Node[] { new Node(leafKind((Type.Leaf) t1), null) };
+			} else {
+				graph1 = ((Compound)t1).nodes;
+			}
+			if(t2 instanceof Leaf) {
+				graph2 = new Node[] { new Node(leafKind((Type.Leaf) t2), null) };
+			} else {
+				graph2 = ((Compound)t2).nodes;
+			}
+			ArrayList<Node> newNodes = new ArrayList<Node>();
+			difference(0,graph1,0,graph2,newNodes);
+			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));				
+			return minimise(ldiff);
+		}
 	}
 
 	/**
@@ -1425,21 +1445,23 @@ public abstract class Type {
 				if(fields1.length != fields2.length) {
 					node = new Node(K_VOID,null);
 				} else {
-					Pair<String,Integer>[] nfields = new Pair[fields1.length];
-					// FIXME: need to support WIDTH subtyping here.
-					for (int i = 0; i != fields1.length; ++i) {
-						Pair<String, Integer> e1 = fields1[i];
-						Pair<String, Integer> e2 = fields2[i];
-						if(!e1.first().equals(e2.first())) {
-							node = new Node(K_VOID,null);
-							break;
-						} else {
-							nfields[i] = new Pair(e1.first(), intersect(
-									e1.second(), graph1, e2.second(), graph2,
-									newNodes));
+					outer: {
+						Pair<String,Integer>[] nfields = new Pair[fields1.length];
+						// FIXME: need to support WIDTH subtyping here.
+						for (int i = 0; i != fields1.length; ++i) {
+							Pair<String, Integer> e1 = fields1[i];
+							Pair<String, Integer> e2 = fields2[i];
+							if(!e1.first().equals(e2.first())) {
+								node = new Node(K_VOID,null);
+								break outer;
+							} else {
+								nfields[i] = new Pair(e1.first(), intersect(
+										e1.second(), graph1, e2.second(), graph2,
+										newNodes));
+							}
 						}
+						node = new Node(K_RECORD,nfields);
 					}
-					node = new Node(K_RECORD,nfields);
 				}
 				break;
 			case K_UNION: {
@@ -1499,6 +1521,182 @@ public abstract class Type {
 		// finally, create the new node!!!
 		newNodes.set(nid, node);
 		return nid;
+	}
+	
+	private static int difference(int n1, Node[] graph1, int n2, Node[] graph2,
+			ArrayList<Node> newNodes) {		
+		Node c1 = graph1[n1];
+		Node c2 = graph2[n2];				
+		int nid = newNodes.size(); // my node id
+		newNodes.add(null); // reserve space for my node	
+		Node node; // new node being created
+		
+		if(c1.kind == c2.kind) { 
+			switch(c1.kind) {
+			case K_VOID:
+			case K_ANY:
+			case K_META:
+			case K_NULL:
+			case K_BOOL:
+			case K_INT:
+			case K_RATIONAL:
+				node = new Node(K_VOID,null);
+				break;
+			case K_EXISTENTIAL:
+				NameID nid1 = (NameID) c1.data;
+				NameID nid2 = (NameID) c2.data;				
+				if(nid1.name().equals(nid2.name())) {
+					node = new Node(K_VOID,null);					
+				} else {
+					node = c1;
+				}
+				break;
+			case K_SET:
+			case K_LIST:
+			case K_PROCESS: {
+				// unary node
+				int e1 = (Integer) c1.data;
+				int e2 = (Integer) c2.data;
+				int element = difference(e1,graph1,e2,graph2,newNodes);
+				node = new Node(c1.kind,element);
+				break;
+			}
+			case K_DICTIONARY: {
+				// binary node
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
+				int key = difference(p1.first(),graph2,p2.first(),graph2,newNodes);
+				int value = difference(p1.second(),graph2,p2.second(),graph2,newNodes);
+				node = new Node(K_DICTIONARY,new Pair(key,value));
+				break;
+			}		
+			case K_TUPLE:  {
+				// nary nodes
+				int[] elems1 = (int[]) c1.data;
+				int[] elems2 = (int[]) c2.data;
+				if(elems1.length != elems2.length) {
+					node = c1;
+				} else {
+					int[] nelems = new int[elems1.length];
+					for(int i=0;i!=nelems.length;++i) {
+						nelems[i] = difference(elems1[i],graph1,elems2[i],graph2,newNodes);
+					}
+					node = new Node(K_TUPLE,nelems);
+				}
+				break;
+			}
+			case K_FUNCTION:  {
+				// nary nodes
+				int[] elems1 = (int[]) c1.data;
+				int[] elems2 = (int[]) c2.data;
+				int e1 = elems1[0];
+				int e2 = elems2[0];
+				if(elems1.length != elems2.length){
+					node = c1;
+				} else if ((e1 == -1 || e2 == -1) && e1 != e2) {
+					node = c1;
+				} else {
+					int[] nelems = new int[elems1.length];
+					// TODO: need to check here whether or not this is the right
+					// thing to do. My gut is telling me that covariant and
+					// contravariance should be treated differently ...
+					for (int i = 0; i != nelems.length; ++i) {
+						nelems[i] = difference(elems1[i], graph1, elems2[i],
+								graph2, newNodes);
+					}
+					node = new Node(K_FUNCTION, nelems);
+				}
+				break;
+			}
+			case K_RECORD:
+				// labeled nary nodes
+				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
+				if(fields1.length != fields2.length) {
+					node = c1;
+				} else {
+					outer: {
+						Pair<String, Integer>[] nfields = new Pair[fields1.length];
+						// FIXME: need to support WIDTH subtyping here.
+						for (int i = 0; i != fields1.length; ++i) {
+							Pair<String, Integer> e1 = fields1[i];
+							Pair<String, Integer> e2 = fields2[i];
+							if (!e1.first().equals(e2.first())) {
+								node = c1;
+								break outer;
+							} else {
+								nfields[i] = new Pair<String, Integer>(
+										e1.first(), difference(e1.second(),
+												graph1, e2.second(), graph2,
+												newNodes));
+							}
+						}
+						node = new Node(K_RECORD, nfields);					
+					}
+				}
+				break;
+			case K_UNION: {
+				// This is the hardest (i.e. most expensive) case. Essentially, I
+				// just check that for each bound in one node, there is an
+				// equivalent bound in the other.
+				int[] bounds1 = (int[]) c1.data;
+				int[] nbounds = new int[bounds1.length];
+								
+				// check every bound in c1 is a subtype of some bound in c2.
+				for (int i = 0; i != bounds1.length; ++i) {
+					nbounds[i] = difference(bounds1[i], graph1, n2, graph2,
+							newNodes);
+				}
+				node = new Node(K_UNION,nbounds);
+				break;
+			}					
+			default:
+				throw new IllegalArgumentException("attempting to minimise open recurisve type");
+			}		
+		} else if(c1.kind == K_INT && c2.kind == K_RATIONAL) {
+			// this is obviously imprecise
+			node = new Node(K_VOID,null);
+		} else if(c1.kind == K_RATIONAL && c2.kind == K_INT) {
+			// this is obviously imprecise
+			node = new Node(K_RATIONAL,null);
+		} else if(c1.kind == K_ANY) {			
+			// TODO: try to do better
+			node = new Node(K_RATIONAL,null);
+		} else if(c2.kind == K_ANY) {			
+			node = new Node(K_VOID,null);
+		} else if (c1.kind == K_UNION){					
+			int[] obounds = (int[]) c1.data;			
+			int[] nbounds = new int[obounds.length];
+							
+			for (int i = 0; i != obounds.length; ++i) {
+				nbounds[i] = difference(obounds[i], graph1, n2, graph2,
+						newNodes);
+			}
+			node = new Node(K_UNION,nbounds);
+		} else if (c2.kind == K_UNION) {			
+			int[] obounds = (int[]) c2.data;			
+			int[] nbounds = new int[obounds.length];
+							
+			for (int i = 0; i != obounds.length; ++i) {
+				nbounds[i] = difference(n1,graph1,obounds[i], graph2,
+						newNodes);
+			}
+			// FIXME: this is broken. need intersection types.
+			node = new Node(K_UNION,nbounds);
+		} else {
+			// default case --> go to no change
+			node = c1;			
+		}
+		
+		if(node == c1) {			
+			newNodes.remove(newNodes.size()-1);
+			extractOnto(n1,graph1,newNodes);			
+			return nid;
+		} else {
+			// finally, create the new node!!!
+			newNodes.set(nid, node);
+			return nid;
+		}
 	}
 	
 	// =============================================================
