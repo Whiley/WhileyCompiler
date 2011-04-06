@@ -1031,14 +1031,10 @@ public abstract class Type {
 			return type;
 		}
 		// compound types need minimising.
-		Node[] nodes = ((Compound) type).nodes;
-		
-		/* debug code
-		for(int i=0;i!=components.length;++i) {
-			System.out.println(i + ": " + components[i]);
-		}
-		*/
+		Node[] nodes = ((Compound) type).nodes;		
 		BitSet matrix = buildSubtypeMatrix(nodes);	
+		//build(new PrintBuilder(System.out),type);
+		//System.out.println(toString(matrix,nodes.length,nodes.length));		
 		ArrayList<Node> newnodes = new ArrayList<Node>();
 		int[] allocated = new int[nodes.length];
 		rebuild(0, nodes, allocated, newnodes, matrix);
@@ -1421,15 +1417,15 @@ public abstract class Type {
 			
 			HashSet<Integer> nelems = new HashSet<Integer>();			
 			for(int i : elems) { nelems.add(i); }
-			
+						
 			for(int i=0;i!=elems.length;i++) {
 				int n1 = elems[i];
 				for(int j=0;j<elems.length;j++) {
 					if(i==j) { continue; }
 					int n2 = elems[j];				
-					if (matrix.get((n2 * graph_size) + n1)
+					if (matrix.get((n1 * graph_size) + n2)
 							// following prevent all equivalences being removed.
-							&& (!matrix.get((n1 * graph_size) + n2) || i < j)) {						
+							&& (!matrix.get((n2 * graph_size) + n1) || i < j)) {						
 						nelems.remove(n2);												
 					}
 				}	
@@ -2908,8 +2904,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = fromString("{[int] data,[int] name}|{[{int offset,int op}|{int index,int op}|{int op}] bytecodes,int maxLocals,int maxStack}");		
-		Type t2 = fromString("{[{int offset,int op}|{int index,int op}|{int op}] bytecodes,int maxLocals,int maxStack}");
+		Type t1 = fromString("{int data}|{int bytecodes}");		
+		Type t2 = fromString("{int bytecodes}");
 		System.out.println("Type: " + t1 + "\n------------------");
 		build(printer,t1);		
 		System.out.println("\nType: " + t2 + "\n------------------");
