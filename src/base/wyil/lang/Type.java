@@ -759,9 +759,10 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
-		if(isSubtype(t1,t2)) {
+		// BUG FIX: this algorithm still isn't implemented correctly.
+		if(isSubtype(t1,t2)) {			
 			return t2;
-		} else if(isSubtype(t2,t1)) {
+		} else if(isSubtype(t2,t1)) {			
 			return t1;
 		} else {
 			Node[] graph1, graph2;
@@ -777,7 +778,7 @@ public abstract class Type {
 			}
 			ArrayList<Node> newNodes = new ArrayList<Node>();
 			intersect(0,graph1,0,graph2,newNodes);
-			Type glb = construct(newNodes.toArray(new Node[newNodes.size()]));			
+			Type glb = construct(newNodes.toArray(new Node[newNodes.size()]));				
 			return minimise(glb);
 		}
 	}
@@ -1319,7 +1320,7 @@ public abstract class Type {
 					}
 				}	
 			}		
-			
+						
 			// ok, let's see what we've got left			
 			if (nelems.size() == 1) {				
 				// ok, union node should be removed as it's entirely subsumed. I
@@ -1334,7 +1335,7 @@ public abstract class Type {
 				return rebuild(nelems.iterator().next(), graph, allocated, newNodes,
 						matrix);
 			} else {
-				int[] melems = new int[elems.length];
+				int[] melems = new int[nelems.size()];
 				int i=0;
 				for (Integer j : nelems) {
 					melems[i++] = (Integer) rebuild(j, graph,
@@ -1747,7 +1748,7 @@ public abstract class Type {
 		 * <i>isomorphism</i> test. Thus, two distinct types which are
 		 * structurally isomorphic will <b>not</b> be considered equal under
 		 * this method. <b>NOTE:</b> to test whether two types are structurally
-		 * isomorphic, using the <code>isomorphic(t1,t20</code> method.
+		 * isomorphic, using the <code>isomorphic(t1,t2)</code> method.
 		 */
 		public boolean equals(Object o) {
 			if(o instanceof Compound) {
@@ -2365,13 +2366,31 @@ public abstract class Type {
 		}
 		public boolean equals(final Object o) {
 			if(o instanceof Node) {
-				Node c= (Node) o;
-				if(data == null) {
-					return kind == c.kind && c.data == null;
-				} else {
-					// FIXME: this is broken!!!
-					return kind == c.kind && data.equals(c.data);
-				}
+				Node c = (Node) o;
+				if(kind == c.kind) {
+					switch(kind) {
+					case K_VOID:
+					case K_ANY:
+					case K_META:
+					case K_NULL:
+					case K_BOOL:
+					case K_INT:
+					case K_RATIONAL:
+						return true;
+					case K_SET:
+					case K_LIST:
+					case K_PROCESS:
+					case K_EXISTENTIAL:
+					case K_DICTIONARY:
+						return data.equals(c.data);
+					case K_TUPLE:					
+					case K_FUNCTION:
+					case K_UNION:
+						return Arrays.equals((int[])data, (int[])c.data);
+					case K_RECORD:
+						return Arrays.equals((Pair[])data, (Pair[])c.data);
+					}
+				}				
 			}
 			return false;
 		}
@@ -2580,14 +2599,15 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = emptyList();
-		Type t2 = T_LIST(T_ANY);		
+		Type t1 = minimise(linkedList(T_INT));
+		Type t2 = minimise(linkedList(T_INT));	
 		System.out.println("Type: " + t1 + "\n------------------");
 		build(printer,t1);		
 		System.out.println("\nType: " + t2 + "\n------------------");
 		build(printer,t2);		
-		System.out.println("\n" + t1 + " & " + t2 + "\n------------------");
-		Type glb = greatestLowerBound(t1,t2);
+		System.out.println(t1.equals(t2));
+		System.out.println("\n" + t1 + " & " + t2 + "\n------------------");		
+		Type glb = leastUpperBound(t1,t2);
 		System.out.println(glb);
 	}
 	
@@ -2595,6 +2615,14 @@ public abstract class Type {
 		Type leaf = T_LABEL("X");
 		return T_RECURSIVE("X",T_UNION(T_NULL,T_LIST(leaf)));
 	}
+	public static Type linkedList(Type dataType) {
+		Type leaf = T_LABEL("X");
+		HashMap<String,Type> fields = new HashMap<String,Type>();
+		fields.put("next",leaf);
+		fields.put("data",dataType);
+		return T_RECURSIVE("X",T_UNION(T_NULL,T_RECORD(fields)));
+	}
+	
 	public static Type linkedList(int nlinks, Type dataType, String label) {
 		Type leaf;
 		if(nlinks == 0) {

@@ -479,15 +479,15 @@ public class ClassFileBuilder {
 			}			
 			case SUBTYPEEQ:
 			{				
-				Type rhs_t = ((Value.TypeConst)c.rhs).type;
+				Type rhs_t = ((Value.TypeConst)c.rhs).type;				
 				translateTypeTest(c.target,c.lhs, rhs_t, stmt, slots, bytecodes);				
 				return;				
 			}
 			case NSUBTYPEEQ:
 			{	
 				String trueLabel = freshLabel();
-				Type rhs_t = ((Value.TypeConst)c.rhs).type;
-				translateTypeTest(trueLabel, c.lhs, rhs_t, stmt, slots, bytecodes);
+				Type rhs_t = ((Value.TypeConst)c.rhs).type;				
+				translateTypeTest(trueLabel, c.lhs, rhs_t, stmt, slots, bytecodes);				
 				bytecodes.add(new Bytecode.Goto(c.target));
 				bytecodes.add(new Bytecode.Label(trueLabel));				
 				return;
@@ -505,7 +505,7 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, CExpr src, Type test,
 			Stmt stmt, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
-
+		
 		// This method (including the helper) is pretty screwed up. It needs a
 		// serious rethink to catch all cases, and to be efficient.
 		

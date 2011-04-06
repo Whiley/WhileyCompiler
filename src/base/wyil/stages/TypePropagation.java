@@ -1019,8 +1019,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 
-	public Env join(Env env1, Env env2) {
-		if (env2 == null) {
+	public Env join(Env env1, Env env2) {		
+		if (env2 == null) {			
 			return env1;
 		} else if (env1 == null) {
 			return env2;
