@@ -710,6 +710,7 @@ public abstract class Type {
 		Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(g1,g2);
 		BitSet subtypeMatrix = matrices.first();
 		BitSet suptypeMatrix = matrices.second();
+		
 		/*
 		System.out.println("Type 1:");
 		build(new PrintBuilder(System.out),t1);
@@ -720,6 +721,7 @@ public abstract class Type {
 		System.out.println("Supertype Matrix:");
 		System.out.println(toString(suptypeMatrix,g2.length,g1.length));
 		*/
+		
 		return suptypeMatrix.get(0); // compare root of g1 against root of g2 
 	}
 	
@@ -1152,25 +1154,15 @@ public abstract class Type {
 					}
 				}
 				return true;
-			case K_UNION: {
-				// This is the hardest (i.e. most expensive) case. Essentially, I
-				// just check that for each bound in one node, there is an
-				// equivalent bound in the other.
-				int[] bounds1 = (int[]) c1.data;
-				int[] bounds2 = (int[]) c2.data;
+			case K_UNION: {				
+				int[] bounds2 = (int[]) c2.data;		
 
-				// check every bound in c1 is a subtype of some bound in c2.
-				for(int i : bounds1) {
-					boolean matched=false;
-					for(int j : bounds2) {
-						if(subtypeMatrix.get((i*g2Size)+j)) {
-							matched = true;
-							break;
-						}
-					}
-					if(!matched) { return false; }
+				// check some bound in c1 is a subtype of some bound in c2.
+				for(int j : bounds2) {				
+					if(!subtypeMatrix.get((n1*g2Size)+j)) {
+						return false;
+					}								
 				}
-
 				return true;
 			}
 			case K_LABEL:
