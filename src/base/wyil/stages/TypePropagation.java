@@ -1010,10 +1010,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	// Check t1 :> t2
-	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
+	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {		
 		if (!Type.isSubtype(t1, t2)) {
 			syntaxError("expected type " + t1 + ", found " + t2, filename, elem);
-		}
+		}		
 	}
 
 	public Env join(Env env1, Env env2) {		
@@ -1022,14 +1022,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if (env1 == null) {
 			return env2;		
 		}
-		
 		HashSet<String> keys = new HashSet<String>(env1.keySet());
 		keys.addAll(env2.keySet());
 		Env env = new Env();
 		for (String key : keys) {
 			Type mt = env1.get(key);
 			Type ot = env2.get(key);
-			if (ot != null && mt != null) {				
+			if (ot != null && mt != null) {
 				env.put(key, Type.leastUpperBound(mt, ot));
 			}
 		}

@@ -837,6 +837,18 @@ public abstract class Type {
 		
 		return suptypeMatrix.get(0); // compare root of g1 against root of g2 
 	}
+
+	/**
+	 * Check whether two types are <i>isomorphic</i>. This is true if they are
+	 * identical, or encode the same structure.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static boolean isomorphic(Type t1, Type t2) {
+		return isSubtype(t1,t2) && isSubtype(t2,t1);
+	}
 	
 	/**
 	 * Compute the <i>least upper bound</i> of two types t1 and t2. The least upper
@@ -1478,9 +1490,13 @@ public abstract class Type {
 				return rebuild(nelems.iterator().next(), graph, allocated, newNodes,
 						matrix);
 			} else {
+				// first off, we have to normalise this sucker
+				ArrayList<Integer> nnelems = new ArrayList(nelems);
+				Collections.sort(nnelems,new MinimiseComparator(graph,matrix));
+				// ok, now rebuild
 				int[] melems = new int[nelems.size()];
 				int i=0;
-				for (Integer j : nelems) {
+				for (Integer j : nnelems) {
 					melems[i++] = (Integer) rebuild(j, graph,
 							allocated, newNodes, matrix);
 				}
@@ -1494,6 +1510,72 @@ public abstract class Type {
 		return cidx;
 	}
 
+	private static final class MinimiseComparator implements Comparator<Integer> {
+		private Node[] graph;
+		private BitSet subtypeMatrix;
+		
+		public MinimiseComparator(Node[] graph, BitSet matrix) {
+			this.graph = graph;
+			this.subtypeMatrix = matrix;
+		}
+		
+		public int compare(Integer a, Integer b) {
+			Node n1 = graph[a];
+			Node n2 = graph[b];
+			if(n1.kind < n2.kind) {
+				return -1;
+			} else if(n1.kind > n2.kind) {
+				return 1;
+			} else {
+				// First try subtype relation
+				int gSize = graph.length;
+				if (subtypeMatrix.get((a * gSize) + b)) {
+					return -1;
+				} else if (subtypeMatrix.get((b * gSize) + a)) {
+					return 1;
+				}
+				// Second try harder stuff
+				Object data1 = n1.data;
+				Object data2 = n2.data;
+				
+				switch(n1.kind){
+				case K_VOID:
+				case K_ANY:
+				case K_META:
+				case K_NULL:
+				case K_BOOL:
+				case K_INT:
+				case K_RATIONAL:
+					return 0;
+				case K_EXISTENTIAL: {
+					String s1 = (String) data1;
+					String s2 = (String) data2;
+					return s1.compareTo(s2);
+				}
+				case K_RECORD: {
+					Pair[] fields1 = (Pair[]) data1;
+					Pair[] fields2 = (Pair[]) data2;
+					if(fields1.length < fields2.length) {
+						return -1; 
+					} else if(fields1.length > fields2.length) {
+						return 1;
+					}
+					// FIXME: could presumably do more here.
+				}
+				// FIXME: could do more here!!
+				}
+				
+				if(a < b) {
+					return -1;
+				} else if(a > b) {
+					return 1;
+				} else {
+					return 0;
+				}
+			}
+		}
+	}
+	
 	private static int intersect(int n1, Node[] graph1, int n2, Node[] graph2,
 			ArrayList<Node> newNodes, HashMap<Pair<Integer,Integer>,Integer> allocations) {		
 		Integer idx = allocations.get(new Pair(n1,n2));
