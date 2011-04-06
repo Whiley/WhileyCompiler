@@ -624,6 +624,7 @@ public class WhileyParser {
 	
 
 	private Expr parseTupleExpression() {
+		int start = index;
 		Expr e = parseCondition(false);		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a tuple constructor
@@ -634,7 +635,7 @@ public class WhileyParser {
 				exprs.add(parseCondition(false));
 				checkNotEof();
 			}
-			return new Expr.TupleGen(exprs);
+			return new Expr.TupleGen(exprs,sourceAttr(start,index-1));
 		} else {
 			return e;
 		}

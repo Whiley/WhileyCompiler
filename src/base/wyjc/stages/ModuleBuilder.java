@@ -284,7 +284,7 @@ public class ModuleBuilder {
 				return Value.V_FUN(name, Type.T_FUN(null,Type.T_ANY, paramTypes));	
 			}					
 		}
-
+		System.out.println(expr);
 		syntaxError("invalid expression in constant definition", filename, expr);
 		return null;
 	}
