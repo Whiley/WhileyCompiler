@@ -359,11 +359,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type glb = Type.greatestLowerBound(v.type, trueType);
 			Type gdiff = Type.leastDifference(v.type, falseType);	
 
-			 System.out.println("\nGLB(1): " + trueType
-			 + " & " + v.type + " = " + glb);
-			 System.out.println("GDIFF(1): " + v.type + " - "
-			 + falseType + " = " + gdiff);
-			
+//			 System.out.println("\nGLB(1): " + trueType
+//			 + " & " + v.type + " = " + glb);
+//			 System.out.println("GDIFF(1): " + v.type + " - "
+//			 + falseType + " = " + gdiff);
+//			
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {
@@ -733,8 +733,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		} 
 		
-		// FIXME: more cases, including elem of
-		
+		// FIXME: more cases, including elem of		
 		checkIsSubtype(Type.T_REAL,lub,stmt);	
 		return CExpr.BINOP(v.op,lhs,rhs);				
 	}

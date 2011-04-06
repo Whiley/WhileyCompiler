@@ -1125,7 +1125,7 @@ public abstract class Type {
 			for(int i=0;i!=g1Size;i++) {
 				for(int j=0;j!=g2Size;j++) {					
 					boolean isubj = isSubtype(true,i,graph1,j,graph2,subtypeMatrix,suptypeMatrix);					
-					boolean isupj = isSubtype(false,j,graph2,i,graph1,suptypeMatrix,subtypeMatrix);									
+					boolean isupj = isSubtype(false,i,graph1,j,graph2,suptypeMatrix,subtypeMatrix);		
 					if(subtypeMatrix.get((i*g2Size)+j) != isubj) {
 						subtypeMatrix.set((i*g2Size)+j,false);
 						changed = true;
@@ -1284,15 +1284,27 @@ public abstract class Type {
 				}
 				return true;
 			case K_UNION: {				
-				int[] bounds1 = (int[]) c1.data;		
+				if(sign) {
+					int[] bounds1 = (int[]) c1.data;		
 
-				// check every bound in c1 is a subtype of some bound in c2.
-				for(int i : bounds1) {				
-					if(!subtypeMatrix.get((i*g2Size)+n2)) {
-						return false;
-					}								
+					// check every bound in c1 is a subtype of some bound in c2.
+					for(int i : bounds1) {				
+						if(!subtypeMatrix.get((i*g2Size)+n2)) {
+							return false;
+						}								
+					}
+					return true;
+				} else {
+					int[] bounds2 = (int[]) c2.data;		
+
+					// check every bound in c1 is a subtype of some bound in c2.
+					for(int i : bounds2) {				
+						if(!subtypeMatrix.get((n1*g2Size)+i)) {
+							return false;
+						}								
+					}
+					return true;
 				}
-				return true;
 			}
 			case K_LABEL:
 				throw new IllegalArgumentException("attempting to minimise open recurisve type");		
@@ -1300,7 +1312,7 @@ public abstract class Type {
 				// primitive types true immediately
 				return true;
 			}		
-		} else if(sign && c1.kind == K_INT && c2.kind == K_RATIONAL) {
+		} else if(sign && c1.kind == K_INT && c2.kind == K_RATIONAL) {			
 			return true;
 		} else if(!sign && c1.kind == K_RATIONAL && c2.kind == K_INT) {
 			return true;
@@ -1308,7 +1320,7 @@ public abstract class Type {
 			return true;
 		} else if(!sign && (c1.kind == K_ANY || c2.kind == K_VOID)) {
 			return true;
-		} else if (c1.kind == K_UNION){			
+		} else if (sign && c1.kind == K_UNION){			
 			int[] bounds1 = (int[]) c1.data;		
 
 			// check every bound in c1 is a subtype of some bound in c2.
@@ -1318,7 +1330,17 @@ public abstract class Type {
 				}								
 			}
 			return true;
-		} else if (c2.kind == K_UNION) {			
+		} else if (!sign && c1.kind == K_UNION){			
+			int[] bounds1 = (int[]) c1.data;		
+
+			// check every bound in c1 is a subtype of some bound in c2.
+			for(int i : bounds1) {				
+				if(subtypeMatrix.get((i*g2Size)+n2)) {
+					return true;
+				}								
+			}
+			return false;
+		} else if (sign && c2.kind == K_UNION) {			
 			int[] bounds2 = (int[]) c2.data;		
 
 			// check some bound in c1 is a subtype of some bound in c2.
@@ -1328,7 +1350,17 @@ public abstract class Type {
 				}								
 			}
 			return false;
-		} 		
+		} else if (!sign && c2.kind == K_UNION) {			
+			int[] bounds2 = (int[]) c2.data;		
+
+			// check some bound in c1 is a subtype of some bound in c2.
+			for(int j : bounds2) {				
+				if(!subtypeMatrix.get((n1*g2Size)+j)) {
+					return false;
+				}								
+			}
+			return true;
+		} 			
 		return false;
 	}
 
@@ -2907,6 +2939,8 @@ public abstract class Type {
 		PrintBuilder printer = new PrintBuilder(System.out);
 		Type t1 = fromString("{int data}|{int bytecodes}");		
 		Type t2 = fromString("{int bytecodes}");
+		//Type t1 = T_REAL;
+		//Type t2 = T_INT;
 		System.out.println("Type: " + t1 + "\n------------------");
 		build(printer,t1);		
 		System.out.println("\nType: " + t2 + "\n------------------");
@@ -2914,8 +2948,8 @@ public abstract class Type {
 		System.out.println("====================");
 		System.out.println(isSubtype(t1,t2));
 		System.out.println(isSubtype(t2,t1));
-		Type glb = leastUpperBound(t1,t2);
-		System.out.println(glb);
+		//Type glb = leastUpperBound(t1,t2);
+		//System.out.println(glb);
 	}
 	
 }
