@@ -39,8 +39,16 @@ public string str(* item):
 
 // find first index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED
-public int|null firstIndexOf(char c, string str):
+public int|null indexOf(char c, string str):
     i = 0
+    while i < |str|:
+        if str[i] == c:
+            return i
+        i = i + 1
+    return null
+
+public int|null indexOf(char c, int start, string str):
+    i = start
     while i < |str|:
         if str[i] == c:
             return i
