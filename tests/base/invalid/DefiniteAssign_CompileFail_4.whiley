@@ -1,6 +1,6 @@
 void System::f(string a):
-    print a
+    out->println(a)
 
 void System::main([string] args):
-    print "HELLO"
+    out->println("HELLO")
     x->f("WORLD")

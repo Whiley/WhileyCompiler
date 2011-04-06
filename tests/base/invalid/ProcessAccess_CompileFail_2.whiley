@@ -6,6 +6,6 @@ void pState::f():
 
 void System::main([string] args):
     p = spawn {x:1,y:2}
-    print str(*p)
+    out->println(str()*p)
     p->f()
-    print str(*p)
+    out->println(str()*p)

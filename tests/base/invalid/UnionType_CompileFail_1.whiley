@@ -9,6 +9,6 @@ void System::main([string] args):
         x = 1.23
     else:
         x = 1
-    print str(x)
+    out->println(str(x))
     f(x)
 

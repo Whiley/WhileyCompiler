@@ -4,4 +4,4 @@ int f([string] r):
 void System::main([string] args):
     r = args + [1]
     f(r)
-    print str(r)
+    out->println(str(r))

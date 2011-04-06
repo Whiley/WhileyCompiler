@@ -7,8 +7,8 @@ define IntRealList as [int]|[real]
 void System::main([string] args):
     x = [1,2,3] // INT LIST
     ys = x      // OK
-    print str(ys)
+    out->println(str(ys))
     x[0] = 1.23 // NOT OK
     zs = f(x)
-    print str(zs)
+    out->println(str(zs))
 

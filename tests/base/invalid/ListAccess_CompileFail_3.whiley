@@ -8,5 +8,5 @@ void System::main([string] args):
     tups = [{mode:0,data:1},{mode:1,data:[1,2,3]}]
     tups[0].data = 1
     tups = f(tups) // NOT OK
-    print str(tups)
+    out->println(str(tups))
 

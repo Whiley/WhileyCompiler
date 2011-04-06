@@ -6,4 +6,4 @@ int Ptype::get():
     return this->mode
 
 void System::main([string] args):
-    print "OK"
+    out->println("OK")
