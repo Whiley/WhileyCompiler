@@ -1678,7 +1678,7 @@ public abstract class Type {
 			node = new Node(K_RATIONAL,null);
 		} else if(c1.kind == K_ANY) {			
 			// TODO: try to do better
-			node = new Node(K_RATIONAL,null);
+			node = new Node(K_ANY,null);
 		} else if(c2.kind == K_ANY) {			
 			node = new Node(K_VOID,null);
 		} else if (c1.kind == K_UNION){					

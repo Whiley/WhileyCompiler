@@ -963,20 +963,14 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveTypeCondition(String target, BinOp v, int freeReg) {
-
 		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.lhs);
 		Type rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
 		
-		Block blk = new Block();
-		String exitLabel = Block.freshLabel();
+		Block blk = new Block();		
 		blk.addAll(lhs_tb.second());
-		blk.add(new Code.IfGoto(Code.COP.NSUBTYPEEQ, lhs_tb.first(), Value
-				.V_TYPE(rhs_t), exitLabel), v
-				.attribute(Attribute.Source.class));
-		
-		blk.add(new Code.Goto(target));	
-		blk.add(new Code.Label(exitLabel));
-				
+		blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, lhs_tb.first(), Value
+				.V_TYPE(rhs_t), target), v
+				.attribute(Attribute.Source.class));		
 		return blk;
 	}
 

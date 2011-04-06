@@ -478,14 +478,14 @@ public class ClassFileBuilder {
 				break;
 			}			
 			case SUBTYPEEQ:
-			{				
+			{								
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;				
 				translateTypeTest(c.target,c.lhs, rhs_t, stmt, slots, bytecodes);				
 				return;				
 			}
 			case NSUBTYPEEQ:
-			{	
-				String trueLabel = freshLabel();
+			{					
+				String trueLabel = freshLabel();				
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;				
 				translateTypeTest(trueLabel, c.lhs, rhs_t, stmt, slots, bytecodes);				
 				bytecodes.add(new Bytecode.Goto(c.target));
@@ -518,7 +518,7 @@ public class ClassFileBuilder {
 			// This covers the limited form of type inference currently
 			// supported in Whiley. Essentially, it works only for the
 			// case where we are testing against a variable.
-			CExpr.LVar v = (CExpr.LVar) src;			
+			CExpr.LVar v = (CExpr.LVar) src;						
 			Type gdiff = Type.leastDifference(src_t,test);			
 			translate(src,slots,bytecodes);
 			addReadConversion(gdiff,bytecodes);
