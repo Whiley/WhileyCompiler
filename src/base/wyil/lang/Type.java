@@ -166,8 +166,8 @@ public abstract class Type {
 	 */
 	public static final Union T_UNION(Type... bounds) {		
 		// include child unions			
-		int len = 1;
-		for(Type b : bounds) {
+		int len = 1;		
+		for(Type b : bounds) {			
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
@@ -2603,11 +2603,24 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public HashSet<Type> bounds() {
-			int[] fields = (int[]) nodes[0].data;
+		public HashSet<Type> bounds() {			
 			HashSet<Type> r = new HashSet<Type>();
-			for(int i : fields) {
-				r.add(extract(i));
+			// FIXME: this is a bit of a cludge. The essential idea is to
+			// flattern unions, so we never see a union of unions. This is
+			// helpful for simplifying various algorithms which use them
+			Stack<Union> stack = new Stack<Union>();
+			stack.add(this);
+			while(!stack.isEmpty()) {				
+				Union u = stack.pop();
+				int[] fields = (int[]) u.nodes[0].data;
+				for(int i : fields) {
+					Type b = u.extract(i);
+					if(b instanceof Union) {
+						stack.add((Union)b);
+					} else {
+						r.add(b);
+					}
+				}
 			}
 			return r;
 		}

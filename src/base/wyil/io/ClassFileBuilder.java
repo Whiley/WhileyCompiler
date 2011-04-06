@@ -995,8 +995,7 @@ public class ClassFileBuilder {
 		}
 		
 		// The real challenge with all of these methods is understanding what
-		// the possible type forms are at any point.
-		
+		// the possible type forms are at any point.		
 		Type.Union ut = (Type.Union) src; 
 		
 		boolean finished = false;
@@ -1014,6 +1013,7 @@ public class ClassFileBuilder {
 			// Second, count conflicts
 			
 			for(Type t : ut.bounds()) {
+				
 				// FIXME: following obviously broken, as unsure if t is record
 				Type.Record rt = (Type.Record) t;
 				Set<String> rt_types_keySet = rt.fields().keySet(); 
