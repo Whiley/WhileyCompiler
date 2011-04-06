@@ -316,8 +316,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					ncode = new Code.Skip();					
 				}
 			} else {
-				System.out.println("CHECKING(2): " + tc.type + " :> " + lhs_t);
-				System.out.println(environment);
 				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);				
 				trueEnv = new Env(environment);
 				falseEnv = new Env(environment);						
@@ -360,12 +358,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			CExpr.Variable v = (CExpr.Variable) lhs;			
 			Type glb = Type.greatestLowerBound(v.type, trueType);
 			Type gdiff = Type.leastDifference(v.type, falseType);	
-			//System.out.println("\nGLB(1): " + Type.toShortString(trueType)
-			//		+ " & " + Type.toShortString(v.type) + " = "
-			//		+ Type.toShortString(glb));
-			//System.out.println("GDIFF(1): " + Type.toShortString(v.type) + " - "
-			//		+ Type.toShortString(falseType) + " = "
-			//		+ Type.toShortString(gdiff));
+
+			 System.out.println("\nGLB(1): " + trueType
+			 + " & " + v.type + " = " + glb);
+			 System.out.println("GDIFF(1): " + v.type + " - "
+			 + falseType + " = " + gdiff);
+			
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
 		} else if (lhs instanceof CExpr.Register) {

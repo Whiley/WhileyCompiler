@@ -1125,7 +1125,7 @@ public abstract class Type {
 			for(int i=0;i!=g1Size;i++) {
 				for(int j=0;j!=g2Size;j++) {					
 					boolean isubj = isSubtype(true,i,graph1,j,graph2,subtypeMatrix,suptypeMatrix);					
-					boolean isupj = isSubtype(false,i,graph1,j,graph2,suptypeMatrix,subtypeMatrix);									
+					boolean isupj = isSubtype(false,j,graph2,i,graph1,suptypeMatrix,subtypeMatrix);									
 					if(subtypeMatrix.get((i*g2Size)+j) != isubj) {
 						subtypeMatrix.set((i*g2Size)+j,false);
 						changed = true;
@@ -1284,11 +1284,11 @@ public abstract class Type {
 				}
 				return true;
 			case K_UNION: {				
-				int[] bounds2 = (int[]) c2.data;		
+				int[] bounds1 = (int[]) c1.data;		
 
-				// check some bound in c1 is a subtype of some bound in c2.
-				for(int j : bounds2) {				
-					if(!subtypeMatrix.get((n1*g2Size)+j)) {
+				// check every bound in c1 is a subtype of some bound in c2.
+				for(int i : bounds1) {				
+					if(!subtypeMatrix.get((i*g2Size)+n2)) {
 						return false;
 					}								
 				}
@@ -1313,20 +1313,21 @@ public abstract class Type {
 
 			// check every bound in c1 is a subtype of some bound in c2.
 			for(int i : bounds1) {				
-				if(subtypeMatrix.get((i*g2Size)+n2)) {
-					return true;
+				if(!subtypeMatrix.get((i*g2Size)+n2)) {
+					return false;
 				}								
 			}
+			return true;
 		} else if (c2.kind == K_UNION) {			
 			int[] bounds2 = (int[]) c2.data;		
 
 			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(!subtypeMatrix.get((n1*g2Size)+j)) {
-					return false;
+				if(subtypeMatrix.get((n1*g2Size)+j)) {
+					return true;
 				}								
 			}
-			return true;
+			return false;
 		} 		
 		return false;
 	}
@@ -1417,20 +1418,20 @@ public abstract class Type {
 			
 			HashSet<Integer> nelems = new HashSet<Integer>();			
 			for(int i : elems) { nelems.add(i); }
-						
+									
 			for(int i=0;i!=elems.length;i++) {
 				int n1 = elems[i];
 				for(int j=0;j<elems.length;j++) {
 					if(i==j) { continue; }
 					int n2 = elems[j];				
-					if (matrix.get((n1 * graph_size) + n2)
+					if (matrix.get((n2 * graph_size) + n1)
 							// following prevent all equivalences being removed.
-							&& (!matrix.get((n2 * graph_size) + n1) || i < j)) {						
+							&& (!matrix.get((n1 * graph_size) + n2) || i < j)) {						
 						nelems.remove(n2);												
 					}
 				}	
-			}		
-						
+			}					
+			
 			// ok, let's see what we've got left			
 			if (nelems.size() == 1) {				
 				// ok, union node should be removed as it's entirely subsumed. I
@@ -2911,6 +2912,8 @@ public abstract class Type {
 		System.out.println("\nType: " + t2 + "\n------------------");
 		build(printer,t2);		
 		System.out.println("====================");
+		System.out.println(isSubtype(t1,t2));
+		System.out.println(isSubtype(t2,t1));
 		Type glb = leastUpperBound(t1,t2);
 		System.out.println(glb);
 	}
