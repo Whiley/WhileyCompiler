@@ -759,7 +759,6 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
-		System.out.println("GLB OF: " + t1 + " and " + t2);
 		if(isSubtype(t1,t2)) {
 			return t2;
 		} else if(isSubtype(t2,t1)) {
@@ -778,7 +777,7 @@ public abstract class Type {
 			}
 			ArrayList<Node> newNodes = new ArrayList<Node>();
 			intersect(0,graph1,0,graph2,newNodes);
-			Type glb = construct(newNodes.toArray(new Node[newNodes.size()]));
+			Type glb = construct(newNodes.toArray(new Node[newNodes.size()]));			
 			return minimise(glb);
 		}
 	}
@@ -1352,14 +1351,11 @@ public abstract class Type {
 	}
 
 	private static int intersect(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes) {
+			ArrayList<Node> newNodes) {		
 		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];		
-		int g2Size = graph2.length;
-		
+		Node c2 = graph2[n2];				
 		int nid = newNodes.size(); // my node id
-		newNodes.add(null); // reserve space for my node
-		
+		newNodes.add(null); // reserve space for my node	
 		Node node; // new node being created
 		
 		if(c1.kind == c2.kind) { 
@@ -1388,7 +1384,7 @@ public abstract class Type {
 				// unary node
 				int e1 = (Integer) c1.data;
 				int e2 = (Integer) c2.data;
-				int element = intersect(e1,graph2,e2,graph2,newNodes);
+				int element = intersect(e1,graph1,e2,graph2,newNodes);
 				node = new Node(c1.kind,element);
 				break;
 			}
@@ -1486,7 +1482,15 @@ public abstract class Type {
 			node = new Node(K_INT,null);
 		} else if(c1.kind == K_RATIONAL && c2.kind == K_INT) {
 			node = new Node(K_INT,null);
-		} else if (c1.kind == K_UNION){			
+		} else if(c1.kind == K_ANY) {			
+			newNodes.remove(newNodes.size()-1);
+			extractOnto(n2,graph2,newNodes);
+			return nid;
+		} else if(c2.kind == K_ANY) {			
+			newNodes.remove(newNodes.size()-1);
+			extractOnto(n1,graph1,newNodes);
+			return nid;
+		} else if (c1.kind == K_UNION){					
 			int[] obounds = (int[]) c1.data;			
 			int[] nbounds = new int[obounds.length];
 							
@@ -1770,27 +1774,8 @@ public abstract class Type {
 		 * @return
 		 */
 		protected final Type extract(int root) {
-			// First, we perform the DFS.
-			BitSet visited = new BitSet(nodes.length);
-			// extracted maps new indices to old indices
-			ArrayList<Integer> extracted = new ArrayList<Integer>();
-			subgraph(root,visited,extracted,nodes);		
-			// rextracted is the reverse of extracted
-			int[] rextracted = new int[nodes.length];
-			int i=0;
-			for(int j : extracted) {
-				rextracted[j]=i++;
-			}
-			Node[] newNodes = new Node[extracted.size()];
-			i=0;
-			for(int j : extracted) {
-				newNodes[i++] = remap(nodes[j],rextracted);  
-			}
-				
-			return construct(newNodes);
+			return construct(extract(root,nodes));
 		}
-		
-		
 		
 		public String toString() {
 			// First, we need to find the headers of the computation. This is
@@ -1811,6 +1796,45 @@ public abstract class Type {
 		}
 	}
 
+	private static final Node[] extract(int root, Node[] nodes) {
+		// First, we perform the DFS.
+		BitSet visited = new BitSet(nodes.length);
+		// extracted maps new indices to old indices
+		ArrayList<Integer> extracted = new ArrayList<Integer>();
+		subgraph(root,visited,extracted,nodes);		
+		// rextracted is the reverse of extracted
+		int[] rextracted = new int[nodes.length];
+		int i=0;
+		for(int j : extracted) {
+			rextracted[j]=i++;
+		}
+		Node[] newNodes = new Node[extracted.size()];
+		i=0;
+		for(int j : extracted) {
+			newNodes[i++] = remap(nodes[j],rextracted);  
+		}
+			
+		return newNodes;
+	}
+	
+	private static final void extractOnto(int root, Node[] nodes,
+			ArrayList<Node> newNodes) {
+		// First, we perform the DFS.
+		BitSet visited = new BitSet(nodes.length);
+		// extracted maps new indices to old indices
+		ArrayList<Integer> extracted = new ArrayList<Integer>();
+		subgraph(root, visited, extracted, nodes);
+		// rextracted is the reverse of extracted
+		int[] rextracted = new int[nodes.length];
+		int i = newNodes.size();
+		for (int j : extracted) {
+			rextracted[j] = i++;
+		}				
+		for (int j : extracted) {
+			newNodes.add(remap(nodes[j], rextracted));
+		}
+	}
+	
 	/**
 	 * The following method recursively extracts the subgraph rooted at
 	 * <code>index</code> in the given graph using a depth-first search.
