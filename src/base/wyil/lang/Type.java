@@ -164,30 +164,19 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Type... bounds) {
-		if(bounds.length < 1) {
-			throw new IllegalArgumentException("Union requires more than one bound");
-		}
-		// include child unions
-		ArrayList<Type> nbounds = new ArrayList<Type>();
-		for(Type t : bounds) {
-			if(t instanceof Union) {
-				nbounds.addAll(((Union)t).bounds());
-			} else {
-				nbounds.add(t);
-			}
-		}
+	public static final Union T_UNION(Type... bounds) {		
+		// include child unions			
 		int len = 1;
-		for(Type b : nbounds) {
+		for(Type b : bounds) {
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
 		Node[] nodes = new Node[len];
-		int[] children = new int[nbounds.size()];
+		int[] children = new int[bounds.length];
 		int start = 1;
-		for(int i=0;i!=nbounds.size();++i) {
+		for(int i=0;i!=bounds.length;++i) {
 			children[i] = start;
-			Node[] comps = nodes(nbounds.get(i));
+			Node[] comps = nodes(bounds[i]);
 			insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
@@ -2591,7 +2580,7 @@ public abstract class Type {
 		case K_UNION:
 			return new Union(nodes);
 		case K_FUNCTION:
-			return new Fun(nodes);
+			return new Fun(nodes);		
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
