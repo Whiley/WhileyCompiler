@@ -759,12 +759,27 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
+		System.out.println("GLB OF: " + t1 + " and " + t2);
 		if(isSubtype(t1,t2)) {
 			return t2;
 		} else if(isSubtype(t2,t1)) {
 			return t1;
 		} else {
-			throw new RuntimeException("Need to finish glb");
+			Node[] graph1, graph2;
+			if(t1 instanceof Leaf) {
+				graph1 = new Node[] { new Node(leafKind((Type.Leaf) t1), null) };
+			} else {
+				graph1 = ((Compound)t1).nodes;
+			}
+			if(t2 instanceof Leaf) {
+				graph2 = new Node[] { new Node(leafKind((Type.Leaf) t2), null) };
+			} else {
+				graph2 = ((Compound)t2).nodes;
+			}
+			ArrayList<Node> newNodes = new ArrayList<Node>();
+			intersect(0,graph1,0,graph2,newNodes);
+			Type glb = construct(newNodes.toArray(new Node[newNodes.size()]));
+			return minimise(glb);
 		}
 	}
 
@@ -1137,7 +1152,7 @@ public abstract class Type {
 				if(fields1.length != fields2.length) {
 					return false;
 				}
-				// FIXME: need to take into account depth subtyping here.
+				// FIXME: need to support WIDTH subtyping here.
 				for (int i = 0; i != fields1.length; ++i) {
 					Pair<String, Integer> e1 = fields1[i];
 					Pair<String, Integer> e2 = fields2[i];
@@ -1336,6 +1351,170 @@ public abstract class Type {
 		return cidx;
 	}
 
+	private static int intersect(int n1, Node[] graph1, int n2, Node[] graph2,
+			ArrayList<Node> newNodes) {
+		Node c1 = graph1[n1];
+		Node c2 = graph2[n2];		
+		int g2Size = graph2.length;
+		
+		int nid = newNodes.size(); // my node id
+		newNodes.add(null); // reserve space for my node
+		
+		Node node; // new node being created
+		
+		if(c1.kind == c2.kind) { 
+			switch(c1.kind) {
+			case K_VOID:
+			case K_ANY:
+			case K_META:
+			case K_NULL:
+			case K_BOOL:
+			case K_INT:
+			case K_RATIONAL:
+				node = c1;
+				break;
+			case K_EXISTENTIAL:
+				NameID nid1 = (NameID) c1.data;
+				NameID nid2 = (NameID) c2.data;				
+				if(nid1.name().equals(nid2.name())) {
+					node = c1;
+				} else {
+					node = new Node(K_VOID,null);
+				}
+				break;
+			case K_SET:
+			case K_LIST:
+			case K_PROCESS: {
+				// unary node
+				int e1 = (Integer) c1.data;
+				int e2 = (Integer) c2.data;
+				int element = intersect(e1,graph2,e2,graph2,newNodes);
+				node = new Node(c1.kind,element);
+				break;
+			}
+			case K_DICTIONARY: {
+				// binary node
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
+				int key = intersect(p1.first(),graph2,p2.first(),graph2,newNodes);
+				int value = intersect(p1.second(),graph2,p2.second(),graph2,newNodes);
+				node = new Node(K_DICTIONARY,new Pair(key,value));
+				break;
+			}		
+			case K_TUPLE:  {
+				// nary nodes
+				int[] elems1 = (int[]) c1.data;
+				int[] elems2 = (int[]) c2.data;
+				if(elems1.length != elems2.length) {
+					// TODO: can we do better here?
+					node = new Node(K_VOID,null);
+				} else {
+					int[] nelems = new int[elems1.length];
+					for(int i=0;i!=nelems.length;++i) {
+						nelems[i] = intersect(elems1[i],graph1,elems2[i],graph2,newNodes);
+					}
+					node = new Node(K_TUPLE,nelems);
+				}
+				break;
+			}
+			case K_FUNCTION:  {
+				// nary nodes
+				int[] elems1 = (int[]) c1.data;
+				int[] elems2 = (int[]) c2.data;
+				int e1 = elems1[0];
+				int e2 = elems2[0];
+				if(elems1.length != elems2.length){
+					node = new Node(K_VOID,null);
+				} else if ((e1 == -1 || e2 == -1) && e1 != e2) {
+					node = new Node(K_VOID, null);
+				} else {
+					int[] nelems = new int[elems1.length];
+					// TODO: need to check here whether or not this is the right
+					// thing to do. My gut is telling me that covariant and
+					// contravariance should be treated differently ...
+					for (int i = 0; i != nelems.length; ++i) {
+						nelems[i] = intersect(elems1[i], graph1, elems2[i],
+								graph2, newNodes);
+					}
+					node = new Node(K_FUNCTION, nelems);
+				}
+				break;
+			}
+			case K_RECORD:
+				// labeled nary nodes
+				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
+				if(fields1.length != fields2.length) {
+					node = new Node(K_VOID,null);
+				} else {
+					Pair<String,Integer>[] nfields = new Pair[fields1.length];
+					// FIXME: need to support WIDTH subtyping here.
+					for (int i = 0; i != fields1.length; ++i) {
+						Pair<String, Integer> e1 = fields1[i];
+						Pair<String, Integer> e2 = fields2[i];
+						if(!e1.first().equals(e2.first())) {
+							node = new Node(K_VOID,null);
+							break;
+						} else {
+							nfields[i] = new Pair(e1.first(), intersect(
+									e1.second(), graph1, e2.second(), graph2,
+									newNodes));
+						}
+					}
+					node = new Node(K_RECORD,nfields);
+				}
+				break;
+			case K_UNION: {
+				// This is the hardest (i.e. most expensive) case. Essentially, I
+				// just check that for each bound in one node, there is an
+				// equivalent bound in the other.
+				int[] bounds1 = (int[]) c1.data;
+				int[] nbounds = new int[bounds1.length];
+								
+				// check every bound in c1 is a subtype of some bound in c2.
+				for (int i = 0; i != bounds1.length; ++i) {
+					nbounds[i] = intersect(bounds1[i], graph1, n2, graph2,
+							newNodes);
+				}
+				node = new Node(K_UNION,nbounds);
+				break;
+			}					
+			default:
+				throw new IllegalArgumentException("attempting to minimise open recurisve type");
+			}		
+		} else if(c1.kind == K_INT && c2.kind == K_RATIONAL) {
+			node = new Node(K_INT,null);
+		} else if(c1.kind == K_RATIONAL && c2.kind == K_INT) {
+			node = new Node(K_INT,null);
+		} else if (c1.kind == K_UNION){			
+			int[] obounds = (int[]) c1.data;			
+			int[] nbounds = new int[obounds.length];
+							
+			// check every bound in c1 is a subtype of some bound in c2.
+			for (int i = 0; i != obounds.length; ++i) {
+				nbounds[i] = intersect(obounds[i], graph1, n2, graph2,
+						newNodes);
+			}
+			node = new Node(K_UNION,nbounds);
+		} else if (c2.kind == K_UNION) {			
+			int[] obounds = (int[]) c2.data;			
+			int[] nbounds = new int[obounds.length];
+							
+			// check every bound in c1 is a subtype of some bound in c2.
+			for (int i = 0; i != obounds.length; ++i) {
+				nbounds[i] = intersect(n1,graph1,obounds[i], graph2,
+						newNodes);
+			}
+			node = new Node(K_UNION,nbounds);
+		} else {
+			// default case --> go to void
+			node = new Node(K_VOID,null);
+		}
+		// finally, create the new node!!!
+		newNodes.set(nid, node);
+		return nid;
+	}
+	
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -1390,7 +1569,7 @@ public abstract class Type {
 			return 1;
 		}
 		public String toString() {
-			return "*";
+			return "any";
 		}
 	}
 
@@ -2377,15 +2556,21 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type ft2 = minimise(T_RECURSIVE("X",linkedList(2,T_REAL,"X")));
-		Type ft1 = minimise(T_RECURSIVE("X",linkedList(1,T_INT,"X")));				
-		System.out.println("Type: " + ft1 + "\n-----");
-		build(printer,ft1);		
-		System.out.println("\nType: " + ft2 + "\n-----");
-		build(printer,ft2);		
-		System.out.println(ft1 + " :> " + ft2 + " : " + isSubtype(ft1,ft2));		
+		Type t1 = emptyList();
+		Type t2 = T_LIST(T_ANY);		
+		System.out.println("Type: " + t1 + "\n------------------");
+		build(printer,t1);		
+		System.out.println("\nType: " + t2 + "\n------------------");
+		build(printer,t2);		
+		System.out.println("\n" + t1 + " & " + t2 + "\n------------------");
+		Type glb = greatestLowerBound(t1,t2);
+		System.out.println(glb);
 	}
 	
+	public static Type emptyList() {
+		Type leaf = T_LABEL("X");
+		return T_RECURSIVE("X",T_UNION(T_NULL,T_LIST(leaf)));
+	}
 	public static Type linkedList(int nlinks, Type dataType, String label) {
 		Type leaf;
 		if(nlinks == 0) {
