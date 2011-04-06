@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyil.jvm.attributes.WhileyDefine;
+import wyil.jvm.attributes.WhileyType;
 import wyil.jvm.attributes.WhileyVersion;
 import wyil.jvm.rt.BigRational;
 import wyil.*;
@@ -37,8 +38,6 @@ import wyil.util.Pair;
 import wyil.util.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
-import wyil.lang.Type;
-import wyil.lang.Code;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
 import static wyjvm.lang.JvmTypes.*;
@@ -133,12 +132,7 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
 		JvmType.Function ft3 = new JvmType.Function(T_VOID, WHILEYPROCESS, WHILEYLIST);
 		
-		codes
-				.add(new Bytecode.Invoke(
-						owner,
-						"main$P(out:P?whiley.lang.System;1;rest:?whiley.lang.System;1;)$V[[I]]",
-						// "main$Nwhiley.lang.System;System;P?$V[Nwhiley.lang.String;string;[I]]",
-						ft3, Bytecode.STATIC));
+		codes.add(new Bytecode.Invoke(owner, "main", ft3, Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
 		
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,
@@ -166,12 +160,13 @@ public class ClassFileBuilder {
 		}
 		modifiers.add(Modifier.ACC_STATIC);		
 		JvmType.Function ft = convertFunType(method.type());		
-		String name = nameMangle(method.name(),method.type());
+		String name = method.name();
 		if(method.cases().size() > 1) {
 			name = name + "$" + caseNum;
 		}
-		
-		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
+				
+		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);
+		cm.attributes().add(new WhileyType(method.type()));
 		for(Attribute a : mcase.attributes()) {
 			if(a instanceof BytecodeAttribute) {
 				// FIXME: this is a hack
@@ -1459,7 +1454,7 @@ public class ClassFileBuilder {
 		ModuleID mid = c.name.module();
 		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
 		JvmType.Function type = convertFunType(c.type);
-		String mangled = nameMangle(c.name.name(), c.type);		
+		String mangled = c.name.name();		
 		if(c.caseNum > 0) {
 			mangled += "$" + c.caseNum;
 		}
@@ -1733,7 +1728,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		
 		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()));
-		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
+		bytecodes.add(new Bytecode.LoadConst(nid.name()));
 		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
 	}
 	
@@ -2182,75 +2177,5 @@ public class ClassFileBuilder {
 	protected int label = 0;
 	protected String freshLabel() {
 		return "cfblab" + label++;
-	}
-	
-	protected String nameMangle(String name, Type.Fun type) {		
-		return name + "$" + type2str(type);		
-	}
-	
-	protected String type2str(Type t) {
-		if(t == Type.T_ANY) {
-			return "*";
-		} else if(t == Type.T_VOID) {
-			return "V";
-		} else if(t == Type.T_NULL) {
-			return "O";
-		} else if(t instanceof Type.Bool) {
-			return "B";
-		} else if(t instanceof Type.Int) {
-			return "I";
-		} else if(t instanceof Type.Real) {
-			return "R";
-		} else if(t instanceof Type.Existential) {
-			Type.Existential et = (Type.Existential) t;			
-			return "?" + et.name().module() + ";" + et.name().name() + ";";
-		} else if(t instanceof Type.List) {
-			Type.List st = (Type.List) t;
-			return "[" + type2str(st.element()) + "]";
-		} else if(t instanceof Type.Set) {
-			Type.Set st = (Type.Set) t;
-			return "{" + type2str(st.element()) + "}";
-		} else if(t instanceof Type.Dictionary) {
-			Type.Dictionary st = (Type.Dictionary) t;
-			return "{" + type2str(st.key()) + "->" + type2str(st.value()) + "}";
-		} else if(t instanceof Type.Union) {
-			Type.Union st = (Type.Union) t;
-			String r = "";
-			boolean firstTime=true;
-			for(Type b : st.bounds()) {
-				if(!firstTime) {
-					r += "|";
-				}
-				firstTime=false;
-				r += type2str(b);
-			}			
-			return r;
-		} else if(t instanceof Type.Record) {
-			Type.Record st = (Type.Record) t;
-			ArrayList<String> keys = new ArrayList<String>(st.fields().keySet());
-			Collections.sort(keys);
-			String r="(";
-			for(String k : keys) {
-				Type kt = st.fields().get(k);
-				r += k + ":" + type2str(kt);
-			}			
-			return r + ")";
-		} else if(t instanceof Type.Process) {
-			Type.Process st = (Type.Process) t;
-			return "P" + type2str(st.element());
-		} else if(t instanceof Type.Fun) {
-			Type.Fun ft = (Type.Fun) t;
-			String r = "";
-			if(ft.receiver() != null) {
-				r += type2str(ft.receiver()) + "$";
-			}				
-			r += type2str(ft.ret());
-			for(Type pt : ft.params()) {
-				r += type2str(pt);
-			}
-			return r;
-		} else {
-			throw new RuntimeException("unknown type encountered: " + t);
-		}
-	}
+	}	
 }

@@ -45,7 +45,7 @@ import wyjvm.lang.*;
 public class WhileyType implements BytecodeAttribute {	
 	private Type type;
 	
-	private WhileyType(Type type) {		
+	public WhileyType(Type type) {		
 		this.type = type;
 	}
 	

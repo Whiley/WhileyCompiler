@@ -31,6 +31,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import wyil.jvm.attributes.WhileyDefine;
+import wyil.jvm.attributes.WhileyType;
 import wyil.lang.*;
 import wyil.util.*;
 import wyjvm.io.ClassFileReader;
@@ -464,6 +465,7 @@ public class ModuleLoader {
 		
 		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
 				attributeReaders); 		
+		readers.add(new WhileyType.Reader());	
 		readers.add(new WhileyDefine.Reader(attributeReaders));		
 		ClassFileReader r = new ClassFileReader(input,readers);									
 		ClassFile cf = r.readClass();
@@ -616,35 +618,37 @@ public class ModuleLoader {
 		return new Module(mid, cf.name(), methods.values(), types, constants);
 	}
 	
-	public String stripCase(String name) {
-		int idx = name.indexOf('$');
-		if(idx != -1) {
-			return name.substring(0,idx);
-		} else {
-			return name;
-		}
-	}
-	
 	protected Module.Method createMethodInfo(ModuleID mid,
 			ClassFile.Method cm) {
-		Pair<String,Type.Fun> info = splitDescriptor(cm.name());							
+		// string any mangling off.
+		String[] split = cm.name().split("\\$");		
+		String name = split[0];	
+		// then find the type
+		
+		// now build the parameter names
+		Type.Fun type = null;
+		List<Attribute> attrs = new ArrayList<Attribute>();		
+		for(BytecodeAttribute ba : cm.attributes()) {			
+			// Ooh, this is such a hack ...					
+			if(ba instanceof WhileyType) {
+				WhileyType wt = (WhileyType) ba;
+				type = (Type.Fun) wt.type();				
+			} else if(ba instanceof Attribute) {						
+				attrs.add((Attribute)ba);
+			}
+		}
+		
 		ArrayList<String> parameterNames = new ArrayList<String>();
-		Type.Fun type = info.second();
+		
 		for (int i = 0; i != type.params().size(); ++i) {
 			parameterNames.add("$" + i);
 		}
 		
-		List<Attribute> attrs = new ArrayList<Attribute>();		
-		for(BytecodeAttribute ba : cm.attributes()) {			
-			// Ooh, this is such a hack ...					
-			if(ba instanceof Attribute) {						
-				attrs.add((Attribute)ba);
-			}
-		}
+		
 		List<Module.Case> mcases = new ArrayList<Module.Case>();
 		mcases.add(new Module.Case(parameterNames,null,attrs));
 		
-		return new Module.Method(stripCase(info.first()), type, mcases);
+		return new Module.Method(name, type, mcases);
 	}
 	
 	/**
@@ -680,128 +684,6 @@ public class ModuleLoader {
 			return pkg;
 		} else {
 			return pkg.substring(idx+1);
-		}
-	}
-	
-	protected Pair<String,Type.Fun> splitDescriptor(String desc) {
-		String[] split = desc.split("\\$");		
-		String name = split[0];
-		Type.Fun ft = new TypeParser(split[split.length - 1]).parseRestFunType();		
-		if(split.length > 2) {
-			Type.Process rec = (Type.Process) new TypeParser(split[1]).parseType();
-			ft = Type.T_FUN(rec,ft.ret(),ft.params());
-		} 
-		return new Pair<String,Type.Fun>(name,ft);		
-	}
-	
-	protected class TypeParser {
-		private int index;
-		private String desc;
-		
-		public TypeParser(String desc) {
-			index = 0;
-			this.desc = desc;			
-		}
-		
-		public Type parseType() {
-			Type type = parseNonUnionType();
-
-			if (index < desc.length() && desc.charAt(index) == '|') {
-				ArrayList<Type> types = new ArrayList<Type>();
-				types.add(type);
-				while (index < desc.length() && desc.charAt(index) == '|') {
-					index = index + 1;
-					types.add(parseNonUnionType());
-				}
-				return Type.T_UNION(types);
-			}
-
-			return type;
-		}
-		
-		public Type parseNonUnionType() {
-			char lookahead = desc.charAt(index++);
-			switch (lookahead) {
-			case '*':
-				return Type.T_ANY;
-			case 'O':
-				return Type.T_NULL;			
-			case 'V':
-				return Type.T_VOID;
-			case 'B':
-				return Type.T_BOOL;
-			case 'I':
-				return Type.T_INT;
-			case 'R':
-				return Type.T_REAL;
-			case 'P':
-				return Type.T_PROCESS(parseType());
-			case '?':				
-				int start = index;
-				while(desc.charAt(index) != ';') {
-					index++;
-				}
-				String pkg = desc.substring(start,index);
-				index++;
-				start = index;
-				while(desc.charAt(index) != ';') {
-					index++;
-				}
-				String name = desc.substring(start,index);
-				index++;				
-				return Type.T_EXISTENTIAL(new NameID(ModuleID.fromString(pkg),
-							name));			
-			case '[': 
-				Type et = parseType();
-				lookahead = desc.charAt(index);
-				if (lookahead == ']') {
-					index++;
-					return Type.T_LIST(et);
-				}				
-				break;
-			case '{': 
-				et = parseType();
-				lookahead = desc.charAt(index);
-				if (lookahead == '}') {
-					index++;
-					return Type.T_SET(et);	
-				}	
-				break;
-			case '(':
-				lookahead = desc.charAt(index);
-				HashMap<String,Type> types = new HashMap<String,Type>();
-				while(lookahead != ')') {
-					String n = parseIdentifier();
-					index++; // skip colon
-					et = parseType();					
-					types.put(n,et);
-					lookahead = desc.charAt(index);					
-				}
-				index++; // skip right brace
-				return Type.T_RECORD(types);	
-			}
-			throw new RuntimeException("invalid type descriptor: "
-					+ desc);	
-		}
-		
-		public String parseIdentifier() {
-			String r = "";
-			char lookahead = desc.charAt(index);
-			while(Character.isJavaIdentifierPart(lookahead)) {				
-				r += lookahead;				
-				index = index + 1;				
-				lookahead = desc.charAt(index);				
-			}
-			return r;
-		}
-		
-		public Type.Fun parseRestFunType() {			
-			Type rt = parseType();
-			ArrayList<Type> ps = new ArrayList<Type>();
-			while(index < desc.length()) {
-				ps.add(parseType());				
-			}
-			return Type.T_FUN(null,rt,ps);
 		}
 	}
 }
