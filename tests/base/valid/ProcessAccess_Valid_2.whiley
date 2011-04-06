@@ -1,11 +1,11 @@
-define state as {int x, int y}
+define state as {int x, int y, SystemOutWriter out}
 define pState as process state
 
 void pState::send(int z):
-    print str(this->x)
-    print str(this->y)
-    print str(z)
+    out->println(str(this->x))
+    out->println(str(this->y))
+    out->println(str(z))
 
 void System::main([string] args):
-    ps = spawn {x:1,y:2}
+    ps = spawn {x:1,y:2,out:out}
     ps->send(1)

@@ -11,8 +11,8 @@ int sum(LinkedList ls):
 
 void System::main([string] args):
     ls = { val: true, next: null}
-    print str(sum(ls))
+    out->println(str(sum(ls)))
     ls = { val: true, next: ls}
-    print str(sum(ls))
+    out->println(str(sum(ls)))
     ls = { val: false, next: ls}
-    print str(sum(ls))
+    out->println(str(sum(ls)))

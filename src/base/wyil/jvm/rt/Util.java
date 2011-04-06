@@ -208,7 +208,6 @@ public class Util {
 				BigRational bi = (BigRational) o;
 				System.out.print((char)bi.intValue());
 			}
-		}
-		System.out.println("");
+		}		
 	}
 }

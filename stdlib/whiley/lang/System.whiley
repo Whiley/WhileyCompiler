@@ -29,5 +29,8 @@ define SystemOutWriter as process ?
 define System as process { SystemOutWriter out, ? rest}
 
 // Print a given string to stdout
+void SystemOutWriter::print([int] str):
+    debug str
+
 void SystemOutWriter::println([int] str):
-    print str
+    debug str + "\n"

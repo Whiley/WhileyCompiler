@@ -327,8 +327,8 @@ public class WhileyParser {
 			return parseReturn();
 		} else if(token.text.equals("assert")) {
 			return parseAssert();
-		} else if(token.text.equals("print")) {
-			return parsePrint();
+		} else if(token.text.equals("debug")) {
+			return parseDebug();
 		} else if(token.text.equals("if")) {			
 			return parseIf(indent);
 		} else if(token.text.equals("switch")) {			
@@ -417,9 +417,9 @@ public class WhileyParser {
 		return new Stmt.Skip(sourceAttr(start,index-1));
 	}
 	
-	private Stmt parsePrint() {		
+	private Stmt parseDebug() {		
 		int start = index;
-		matchKeyword("print");		
+		matchKeyword("debug");		
 		checkNotEof();
 		Expr e = parseAddSubExpression(false);
 		int end = index;

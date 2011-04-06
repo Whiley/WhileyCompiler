@@ -1,12 +1,15 @@
-void f([int] xs, [real] ys):
-    print str(xs)
-    print str(ys)
+string f([int] xs, [real] ys):
     if xs == ys:
-        print "EQUAL"
+        return "EQUAL"
     else:
-        print "NOT EQUAL"
+        return "NOT EQUAL"
+
+void System::g([int] xs, [real] ys):
+    out->println(str(xs))
+    out->println(str(ys))
+    return f(xs,ys)
 
 void System::main([string] args):
-    f([1,4],[1.0,4.0])
-    f([1,4],[1.0,4.2])
-    f([],[])
+    this->g([1,4],[1.0,4.0])
+    this->g([1,4],[1.0,4.2])
+    this->g([],[])
