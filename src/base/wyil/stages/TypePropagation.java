@@ -299,15 +299,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Env trueEnv = null;
 			Env falseEnv = null;
 			
-			if(Type.isSubtype(tc.type,lhs_t)) {					
-				// DEFINITE TRUE CASE		
+			if(Type.isSubtype(tc.type,lhs_t)) {								
+				// DEFINITE TRUE CASE										
 				trueEnv = environment;
 				if (code.op == Code.COP.SUBTYPEEQ) {					
 					ncode = new Code.Goto(code.target);					
 				} else {					
 					ncode = new Code.Skip();					
 				}
-			} else if (Type.greatestLowerBound(lhs_t, tc.type) == Type.T_VOID) {								
+			} else if (Type.greatestLowerBound(lhs_t, tc.type) == Type.T_VOID) {				
 				// DEFINITE FALSE CASE				
 				falseEnv = environment;
 				if (code.op == Code.COP.NSUBTYPEEQ) {					
@@ -316,6 +316,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					ncode = new Code.Skip();					
 				}
 			} else {
+				System.out.println("CHECKING(2): " + tc.type + " :> " + lhs_t);
+				System.out.println(environment);
 				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);				
 				trueEnv = new Env(environment);
 				falseEnv = new Env(environment);						
@@ -371,12 +373,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String name = "%" + reg.index;						
 			Type glb = Type.greatestLowerBound(reg.type,trueType);
 			Type gdiff = Type.leastDifference(reg.type, falseType);
-//			System.out.println("\nGLB(2): " + Type.toShortString(trueType)
-//					+ " & " + Type.toShortString(reg.type) + " = "
-//					+ Type.toShortString(glb));
-//			System.out.println("GDIFF(2): " + Type.toShortString(reg.type) + " - "
-//					+ Type.toShortString(falseType) + " = "
-//					+ Type.toShortString(gdiff));
+//			System.out.println("\nGLB(2): " + trueType
+//					+ " & " + reg.type + " = " + glb);
+//			System.out.println("GDIFF(2): " + reg.type + " - "
+//					+ falseType + " = " + gdiff);
 			trueEnv.put(name, glb);
 			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {
@@ -427,7 +427,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Pair<Block, Env> propagate(Code.Forall start, Code.ForallEnd end,
 			Block body, Stmt stmt, Env environment) {
-		
+						
 		// First, create modifies set and type the invariant
 		HashSet<String> modifies = new HashSet<String>();
 		Block invariant = start.invariant;
@@ -444,8 +444,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		// Now, type the source 
 		CExpr src = infer(start.source, stmt, environment);
-		Type src_t = src.type();				
-
+		Type src_t = src.type();						
+		
 		Type elem_t;
 		if(src_t instanceof Type.List) {
 			elem_t = ((Type.List)src_t).element();
@@ -1023,18 +1023,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if (env2 == null) {			
 			return env1;
 		} else if (env1 == null) {
-			return env2;
+			return env2;		
 		}
+		
 		HashSet<String> keys = new HashSet<String>(env1.keySet());
 		keys.addAll(env2.keySet());
 		Env env = new Env();
 		for (String key : keys) {
 			Type mt = env1.get(key);
 			Type ot = env2.get(key);
-			if (ot != null && mt != null) {
+			if (ot != null && mt != null) {				
 				env.put(key, Type.leastUpperBound(mt, ot));
 			}
 		}
+		
 		return env;
 	}
 	

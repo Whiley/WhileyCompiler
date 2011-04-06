@@ -336,6 +336,119 @@ public abstract class Type {
 	}
 
 	/**
+	 * The following code converts a "type string" into an actual type. This is
+	 * useful, amongst other things, for debugging.
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static Type fromString(String str) {
+		return new TypeParser(str).parse();
+	}
+
+	private static class TypeParser {
+		private int index;
+		private String str;
+		public TypeParser(String str) { 
+			this.str = str;
+		}
+		public Type parse() {
+			Type term = parseTerm();
+			skipWhiteSpace();
+			while(index < str.length() && str.charAt(index) == '|') {
+				// union type
+				match("|");
+				term = T_UNION(term,parse());
+				skipWhiteSpace();
+			}
+			return term;
+		}
+		public Type parseTerm() {
+			skipWhiteSpace();
+			char lookahead = str.charAt(index);
+
+			switch (lookahead) {
+			case 'a':
+				match("any");
+				return T_ANY;
+			case 'v':
+				match("void");
+				return T_VOID;
+			case 'n':
+				match("null");
+				return T_NULL;
+			case 'b':
+				match("bool");
+				return T_BOOL;
+			case 'i':
+				match("int");
+				return T_INT;
+			case 'r':
+				match("real");
+				return T_REAL;
+			case '[':
+			{
+				match("[");
+				Type elem = parse();
+				match("]");
+				return T_LIST(elem);
+			}
+			case '{':
+			{
+				match("{");
+				Type elem = parse();
+				skipWhiteSpace();
+				if(index < str.length() && str.charAt(index) != '}') {
+					// record
+					HashMap<String,Type> fields = new HashMap<String,Type>();
+					String id = parseIdentifier();
+					fields.put(id, elem);
+					skipWhiteSpace();
+					while(index < str.length() && str.charAt(index) == ',') {
+						match(",");
+						elem = parse();
+						id = parseIdentifier();
+						fields.put(id, elem);
+						skipWhiteSpace();
+					}
+					match("}");
+					return T_RECORD(fields);					
+				}
+				match("}");
+				return T_SET(elem);
+			}
+			default:
+				throw new IllegalArgumentException("invalid type string: "
+						+ str);
+			}
+		}
+		private String parseIdentifier() {
+			skipWhiteSpace();
+			int start = index;
+			while (index < str.length()
+					&& Character.isJavaIdentifierPart(str.charAt(index))) {
+				index++;
+			}
+			return str.substring(start,index);
+		}
+		private void skipWhiteSpace() {
+			while (index < str.length()
+					&& Character.isWhitespace(str.charAt(index))) {
+				index++;
+			}
+		}		
+		private void match(String match) {
+			skipWhiteSpace();
+			if ((str.length() - index) < match.length()
+					|| !str.startsWith(match, index)) {
+				throw new IllegalArgumentException("invalid type string: "
+						+ str);
+			}
+			index += match.length();
+		}
+	}
+	
+	/**
 	 * This is a utility helper for constructing types. In particular, it's
 	 * useful for determine whether or not a type needs to be closed. An open
 	 * type is one which contains a "dangling" reference to some node which
@@ -2795,40 +2908,15 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = minimise(linkedList(T_INT));
-		Type t2 = minimise(linkedList(T_INT));	
+		Type t1 = fromString("{[int] data,[int] name}|{[{int offset,int op}|{int index,int op}|{int op}] bytecodes,int maxLocals,int maxStack}");		
+		Type t2 = fromString("{[{int offset,int op}|{int index,int op}|{int op}] bytecodes,int maxLocals,int maxStack}");
 		System.out.println("Type: " + t1 + "\n------------------");
 		build(printer,t1);		
 		System.out.println("\nType: " + t2 + "\n------------------");
 		build(printer,t2);		
-		System.out.println(t1.equals(t2));
-		System.out.println("\n" + t1 + " & " + t2 + "\n------------------");		
+		System.out.println("====================");
 		Type glb = leastUpperBound(t1,t2);
 		System.out.println(glb);
 	}
 	
-	public static Type emptyList() {
-		Type leaf = T_LABEL("X");
-		return T_RECURSIVE("X",T_UNION(T_NULL,T_LIST(leaf)));
-	}
-	public static Type linkedList(Type dataType) {
-		Type leaf = T_LABEL("X");
-		HashMap<String,Type> fields = new HashMap<String,Type>();
-		fields.put("next",leaf);
-		fields.put("data",dataType);
-		return T_RECURSIVE("X",T_UNION(T_NULL,T_RECORD(fields)));
-	}
-	
-	public static Type linkedList(int nlinks, Type dataType, String label) {
-		Type leaf;
-		if(nlinks == 0) {
-			leaf = T_LABEL(label);
-		} else {
-			leaf = linkedList(nlinks-1,dataType,label);
-		}
-		HashMap<String,Type> fields = new HashMap<String,Type>();
-		fields.put("next",leaf);
-		fields.put("data",dataType);	 
-		return T_UNION(T_NULL,T_RECORD(fields));		
-	}	
 }
