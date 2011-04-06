@@ -272,6 +272,19 @@ public class ModuleBuilder {
 				values.put(e.getKey(), v);
 			}
 			return Value.V_RECORD(values);
+		} else if (expr instanceof TupleGen) {
+			TupleGen rg = (TupleGen) expr;			
+			HashMap<String,Value> values = new HashMap<String,Value>();
+			int i = 0;
+			for(Expr e : rg.fields) {
+				Value v = expandConstantHelper(e,filename,exprs,visited);
+				if(v == null) {
+					return null;
+				}
+				values.put("$" + i,v);
+				i = i + 1;
+			}
+			return Value.V_RECORD(values);
 		} else if(expr instanceof FunConst) {
 			FunConst f = (FunConst) expr;
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
@@ -284,7 +297,6 @@ public class ModuleBuilder {
 				return Value.V_FUN(name, Type.T_FUN(null,Type.T_ANY, paramTypes));	
 			}					
 		}
-		System.out.println(expr);
 		syntaxError("invalid expression in constant definition", filename, expr);
 		return null;
 	}

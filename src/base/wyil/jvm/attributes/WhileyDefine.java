@@ -134,12 +134,10 @@ public class WhileyDefine implements BytecodeAttribute {
 		Constant.addPoolItem(new Constant.Utf8(name()), constantPool);	
 		Constant.addPoolItem(new Constant.Utf8(defName), constantPool);
 		
-		/*
-		 * Following will need to be put back in place to catch field names of record values
 		if(value != null) {
 			addPoolItems(value, constantPool);
 		}
-		*/
+	
 		if(type != null) {
 			WhileyType.addPoolItems(type, constantPool);
 		}		
@@ -147,6 +145,27 @@ public class WhileyDefine implements BytecodeAttribute {
 		for(BytecodeAttribute attr : attributes) {
 			attr.addPoolItems(constantPool, loader);
 		}
+	}
+	
+	public static void addPoolItems(Value val, Set<Constant.Info> constantPool) {
+		if(val instanceof Value.Set) {
+			Value.Set vs = (Value.Set) val;
+			for(Value v : vs.values) { 
+				addPoolItems(v, constantPool);
+			}
+		} else if(val instanceof Value.List) {
+			Value.List vs = (Value.List) val;
+			for(Value v : vs.values) { 
+				addPoolItems(v, constantPool);
+			}
+		} else if(val instanceof Value.Record) {
+			Value.Record vr = (Value.Record) val;
+			for(Map.Entry<String,Value> p : vr.values.entrySet()) {
+				addPoolItems(p.getValue(), constantPool);
+				Constant.addPoolItem(new Constant.Utf8(p.getKey()),
+						constantPool);
+			}
+		} 
 	}
 	
 	public void print(PrintWriter output,
@@ -250,8 +269,7 @@ public class WhileyDefine implements BytecodeAttribute {
 			write(v.getValue(), writer, constantPool);
 		}
 	}
-	
-	
+		
 	public static class Reader implements BytecodeAttribute.Reader {		
 		private HashMap<String,BytecodeAttribute.Reader> attributeReaders;
 		
