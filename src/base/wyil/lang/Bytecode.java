@@ -86,7 +86,10 @@ public abstract class Bytecode {
 	}
 
 	/**
-	 * A convert operation represents a conversion from a value of one type to another.  The purpose of the conversion bytecode is to make it easy for implementations which have different representations of data types to convert between them.
+	 * A convert operation represents a conversion from a value of one type to
+	 * another. The purpose of the conversion bytecode is to make it easy for
+	 * implementations which have different representations of data types to
+	 * convert between them.
 	 */
 	public static final class Convert extends Bytecode {
 		public final Type from;
