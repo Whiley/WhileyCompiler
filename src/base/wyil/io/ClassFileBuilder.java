@@ -38,6 +38,7 @@ import wyil.util.Pair;
 import wyil.util.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
+import wyjvm.lang.Bytecode;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
 import static wyjvm.lang.JvmTypes.*;

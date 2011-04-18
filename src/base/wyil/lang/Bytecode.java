@@ -30,6 +30,9 @@ public abstract class Bytecode {
 		APPEND{
 			public String toString() { return "append"; }
 		},
+		RANGE{
+			public String toString() { return "range"; }
+		},
 		AND{
 			public String toString() { return "and"; }
 		},
@@ -197,9 +200,10 @@ public abstract class Bytecode {
 		
 	}
 	
-	public static final class Load extends Bytecode {
+	public static final class Load extends Bytecode {		
 		public final Type type;
 		public final int slot;
+		public final boolean move;
 	}
 	
 	public static final class Loop extends Bytecode {
@@ -258,7 +262,16 @@ public abstract class Bytecode {
 	public enum UOp { 
 		NEG() {
 			public String toString() { return "neg"; }
-		},		
+		},
+		FLOOR() {
+			public String toString() { return "floor"; }
+		},
+		CEIL() {
+			public String toString() { return "ceil"; }
+		},
+		SPLIT() {
+			public String toString() { return "split"; }
+		},
 		LENGTHOF() {
 			public String toString() { return "lengthof"; }
 		},
