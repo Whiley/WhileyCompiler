@@ -930,8 +930,10 @@ public abstract class Type {
 			} else {
 				graph2 = ((Compound)t2).nodes;
 			}
+			Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(graph1,graph2);
+			BitSet subtypeMatrix = matrices.first();
 			ArrayList<Node> newNodes = new ArrayList<Node>();
-			difference(0,graph1,0,graph2,newNodes, new HashMap());
+			difference(0,graph1,0,graph2,newNodes, new HashMap(),subtypeMatrix);
 			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));				
 			return minimise(ldiff);
 		}
@@ -1577,7 +1579,8 @@ public abstract class Type {
 	}
 	
 	private static int intersect(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes, HashMap<Pair<Integer,Integer>,Integer> allocations) {		
+			ArrayList<Node> newNodes,
+			HashMap<Pair<Integer, Integer>, Integer> allocations) {	
 		Integer idx = allocations.get(new Pair(n1,n2));
 		if(idx != null) {
 			// this indicates an allocation has already been performed for this
@@ -1756,7 +1759,15 @@ public abstract class Type {
 	}
 	
 	private static int difference(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes, HashMap<Pair<Integer,Integer>,Integer> allocations) {
+			ArrayList<Node> newNodes,
+			HashMap<Pair<Integer, Integer>, Integer> allocations, BitSet matrix) {
+		
+		int nid = newNodes.size(); // my node id
+		int gsize = graph2.length;
+		if(matrix.get((n1*gsize)+n2)) {
+			newNodes.add(new Node(K_VOID,null));
+			return nid; 
+		}
 		
 		Integer idx = allocations.get(new Pair(n1,n2));
 		if(idx != null) {
@@ -1767,7 +1778,7 @@ public abstract class Type {
 		
 		Node c1 = graph1[n1];
 		Node c2 = graph2[n2];				
-		int nid = newNodes.size(); // my node id
+		
 		allocations.put(new Pair(n1,n2), nid);
 		newNodes.add(null); // reserve space for my node	
 		Node node; // new node being created
@@ -1798,7 +1809,7 @@ public abstract class Type {
 				// unary node
 				int e1 = (Integer) c1.data;
 				int e2 = (Integer) c2.data;
-				int element = difference(e1,graph1,e2,graph2,newNodes,allocations);
+				int element = difference(e1,graph1,e2,graph2,newNodes,allocations,matrix);
 				node = new Node(c1.kind,element);
 				break;
 			}
@@ -1806,8 +1817,8 @@ public abstract class Type {
 				// binary node
 				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-				int key = difference(p1.first(),graph2,p2.first(),graph2,newNodes,allocations);
-				int value = difference(p1.second(),graph2,p2.second(),graph2,newNodes,allocations);
+				int key = difference(p1.first(),graph2,p2.first(),graph2,newNodes,allocations,matrix);
+				int value = difference(p1.second(),graph2,p2.second(),graph2,newNodes,allocations,matrix);
 				node = new Node(K_DICTIONARY,new Pair(key,value));
 				break;
 			}		
@@ -1820,7 +1831,7 @@ public abstract class Type {
 				} else {
 					int[] nelems = new int[elems1.length];
 					for(int i=0;i!=nelems.length;++i) {
-						nelems[i] = difference(elems1[i],graph1,elems2[i],graph2,newNodes,allocations);
+						nelems[i] = difference(elems1[i],graph1,elems2[i],graph2,newNodes,allocations,matrix);
 					}
 					node = new Node(K_TUPLE,nelems);
 				}
@@ -1843,7 +1854,7 @@ public abstract class Type {
 					// contravariance should be treated differently ...
 					for (int i = 0; i != nelems.length; ++i) {
 						nelems[i] = difference(elems1[i], graph1, elems2[i],
-								graph2, newNodes,allocations);
+								graph2, newNodes,allocations,matrix);
 					}
 					node = new Node(K_FUNCTION, nelems);
 				}
@@ -1869,7 +1880,7 @@ public abstract class Type {
 								nfields[i] = new Pair<String, Integer>(
 										e1.first(), difference(e1.second(),
 												graph1, e2.second(), graph2,
-												newNodes,allocations));
+												newNodes,allocations,matrix));
 							}
 						}
 						node = new Node(K_RECORD, nfields);					
@@ -1886,7 +1897,7 @@ public abstract class Type {
 				// check every bound in c1 is a subtype of some bound in c2.
 				for (int i = 0; i != bounds1.length; ++i) {
 					nbounds[i] = difference(bounds1[i], graph1, n2, graph2,
-							newNodes,allocations);
+							newNodes,allocations,matrix);
 				}
 				node = new Node(K_UNION,nbounds);
 				break;
@@ -1911,7 +1922,7 @@ public abstract class Type {
 							
 			for (int i = 0; i != obounds.length; ++i) {
 				nbounds[i] = difference(obounds[i], graph1, n2, graph2,
-						newNodes,allocations);
+						newNodes,allocations,matrix);
 			}
 			node = new Node(K_UNION,nbounds);
 		} else if (c2.kind == K_UNION) {			
@@ -1920,7 +1931,7 @@ public abstract class Type {
 							
 			for (int i = 0; i != obounds.length; ++i) {
 				nbounds[i] = difference(n1,graph1,obounds[i], graph2,
-						newNodes,allocations);
+						newNodes,allocations,matrix);
 			}
 			// FIXME: this is broken. need intersection types.
 			node = new Node(K_UNION,nbounds);

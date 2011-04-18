@@ -7,7 +7,7 @@ string f([int] xs, [real] ys):
 void System::g([int] xs, [real] ys):
     out->println(str(xs))
     out->println(str(ys))
-    return f(xs,ys)
+    out->println(f(xs,ys))
 
 void System::main([string] args):
     this->g([1,4],[1.0,4.0])

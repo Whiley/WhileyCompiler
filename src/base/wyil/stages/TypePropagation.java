@@ -693,7 +693,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {				
 					return CExpr.UNOP(v.op,rhs);
 				} else {
-					syntaxError("expected list or set",filename,stmt);
+					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
 				}
 			case PROCESSACCESS:
 				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);

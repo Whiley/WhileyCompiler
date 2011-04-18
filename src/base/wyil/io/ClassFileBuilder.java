@@ -1743,7 +1743,7 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 		} else if(lhs instanceof CExpr.RecordAccess) {
 			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
-			translate(la.lhs, slots, bytecodes);
+			translate(la.lhs, slots, bytecodes);			
 			// FIXME: new any type is a hack, but it works
 			convert(Type.T_ANY,la.lhs.type(),slots, bytecodes);
 			bytecodes.add(new Bytecode.LoadConst(la.field));
@@ -1779,7 +1779,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 						Bytecode.VIRTUAL));
 			}
-		} else if(lhs instanceof CExpr.RecordAccess) {		
+		} else if(lhs instanceof CExpr.RecordAccess) {	
 			CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
 			Type.Record tt = (Type.Record) Type.effectiveRecordType(la.lhs.type());
 			Type element_t = tt.fields().get(la.field);

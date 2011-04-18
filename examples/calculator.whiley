@@ -220,9 +220,9 @@ public void System::main([string] args):
     if(|args| > 0):
         e = parse(args[0])
         if e ~= {[int] err}:
-            print "syntax error: " + e.err
+            out->println("syntax error: " + e.err)
         else:
             result = evaluate(e,{"x"->1,"y"->2})
-            print str(result)
+            out->println(str(result))
     else:
-        print "no parameter provided!"
+        out->println("no parameter provided!")
