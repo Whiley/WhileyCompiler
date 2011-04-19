@@ -1,6 +1,37 @@
 package wyil.lang;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 public abstract class Bytecode {
+	
+	public static BinOp BinOp(Type type, BOp op) {
+		return get(new BinOp(type,op));
+	}
+	
+	public static Const Const(Value value) {
+		return get(new Const(value));
+	}
+	
+	public static Convert Convert(Type from, Type to) {
+		return get(new Convert(from,to));
+	}
+	
+	public static Goto Goto(String label) {
+		return get(new Goto(label));
+	}
+
+	public static IfGoto IfGoto(Type type, COp cop, String label) {
+		return get(new IfGoto(type,cop,label));
+	}
+	
+	public static Label Label(String label) {
+		return get(new Label(label));
+	}
+		
+	public static UnOp UnOp(Type type, UOp op) {
+		return get(new UnOp(type,op));
+	}	
 	
 	public enum BOp { 
 		ADD{
@@ -55,7 +86,7 @@ public abstract class Bytecode {
 		public final BOp bop;
 		public final Type type;
 		
-		public BinOp(BOp bop, Type type) {
+		private BinOp(Type type, BOp bop) {
 			this.bop = bop;
 			this.type = type;
 		}
@@ -98,7 +129,7 @@ public abstract class Bytecode {
 		public final Type from;
 		public final Type to;
 		
-		public Convert(Type from, Type to) {
+		private Convert(Type from, Type to) {
 			this.from = from;
 			this.to = to;
 		}
@@ -131,7 +162,7 @@ public abstract class Bytecode {
 	public static final class Const extends Bytecode {		
 		public final Value constant;
 		
-		public Const(Value constant) {
+		private Const(Value constant) {
 			this.constant = constant;
 		}
 		
@@ -155,7 +186,7 @@ public abstract class Bytecode {
 	public static final class Goto extends Bytecode {
 		public final String target;
 		
-		public Goto(String target) {
+		private  Goto(String target) {
 			this.target = target;
 		}
 		
@@ -176,10 +207,12 @@ public abstract class Bytecode {
 	}
 	
 	public static final class IfGoto extends Bytecode {
+		public final Type type;
 		public final COp op;
 		public final String target;
 
-		public IfGoto(COp op, String target) {
+		private  IfGoto(Type type, COp op, String target) {
+			this.type = type;
 			this.op = op;						
 			this.target = target;
 		}
@@ -191,7 +224,8 @@ public abstract class Bytecode {
 		public boolean equals(Object o) {
 			if(o instanceof IfGoto) {
 				IfGoto ig = (IfGoto) o;
-				return op == ig.op 						
+				return op == ig.op
+						&& type.equals(ig.type)
 						&& target.equals(ig.target);
 			}
 			return false;
@@ -237,23 +271,11 @@ public abstract class Bytecode {
 			public String toString() { return "<!"; }
 		}
 	};		
-		
-	public static final class IndirectLoad extends Bytecode {
-		public final Type type;
-		public final boolean list;
-		public final String field;
-	}
-	
-	public static final class IndirectStore extends Bytecode {
-		public final Type type;
-		public final boolean list;
-		public final String field;
-	}
 	
 	public static final class IndirectInvoke extends Bytecode {		
 		public final Type.Fun type;
 		
-		public IndirectInvoke(Type.Fun type) {
+		private IndirectInvoke(Type.Fun type) {
 			this.type = type;
 		}
 		
@@ -274,12 +296,42 @@ public abstract class Bytecode {
 		}		
 	}
 	
+	public static final class IndirectSend extends Bytecode {
+		 public final boolean asynchronous;		 
+		 public final Type.Fun type;
+			
+		 private IndirectSend(Type.Fun type, boolean asynchronous) {
+			 this.type = type;
+			 this.asynchronous = asynchronous;
+		 }
+
+		 public int hashCode() {
+			 return type.hashCode();
+		 }
+
+		 public boolean equals(Object o) {
+			 if(o instanceof IndirectSend) {
+				 IndirectSend i = (IndirectSend) o;
+				 return type.equals(i.type);
+			 }
+			 return false;
+		 }
+
+		 public String toString() {
+			 if(asynchronous) {
+				 return "iasend " + type;
+			 } else {
+				 return "isend " + type;
+			 }
+		 }		
+	}
+	
 	public static final class Invoke extends Bytecode {		
 		public final Type.Fun type;
 		public final NameID name;
 		
 		
-		public Invoke(Type.Fun type, NameID name) {
+		private Invoke(Type.Fun type, NameID name) {
 			this.type = type;
 			this.name = name;
 		}
@@ -305,7 +357,7 @@ public abstract class Bytecode {
 	public static final class Label extends Bytecode {
 		public final String label;
 		
-		public Label(String label) {
+		private Label(String label) {
 			this.label = label;
 		}
 		
@@ -325,46 +377,186 @@ public abstract class Bytecode {
 		}
 	}
 	
+	public static final class ListLoad extends Bytecode {
+		public final Type type;				
+		
+		private ListLoad(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ListLoad) {
+				ListLoad i = (ListLoad) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "listload " + type;
+		}	
+	}
+	
+	public static final class ListStore extends Bytecode {
+		public final Type type;				
+		
+		private ListStore(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ListStore) {
+				ListStore i = (ListStore) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "liststore " + type;
+		}	
+	}	
+	
 	public static final class Load extends Bytecode {		
 		public final Type type;
 		public final int slot;		
+		
+		private Load(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + slot;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Load) {
+				Load i = (Load) o;
+				return type.equals(i.type) && slot == i.slot;
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "load " + type;
+		}	
 	}		
 	
 	public static final class Loop extends Bytecode {
 		
-	}
-	
-	public static final class Move extends Load {
-		
-	}
+	}	
 
-	public enum NOp {
-		SET,
-		LIST,
-		DICTIONARY,
-		RECORD
-	}
-	
 	public static final class New extends Bytecode {
-		public final NOp kind;
+		public final Type type;
+		
+		private New(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof New) {
+				New i = (New) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "new " + type;
+		}	
 	}
 	
 	public static final class Nop extends Bytecode {
-		
+		private Nop() {}
+		public String toString() { return "nop"; }
 	}	
 	
 	public static final class Pop extends Bytecode {
+		private final Type type;
 		
+		private Pop(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Pop) {
+				Pop i = (Pop) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "pop " + type;
+		}
 	}
 
 	public static final class Return extends Bytecode {
+		private final Type type;
 		
+		private Return(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Return) {
+				Return i = (Return) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "return " + type;
+		}
 	}
 
-	public static final class Store extends Bytecode {
+	public static final class Store extends Bytecode {		
 		public final Type type;
 		public final int slot;		
-	}
+		
+		private Store(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + slot;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Store) {
+				Store i = (Store) o;
+				return type.equals(i.type) && slot == i.slot;
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "store " + type;
+		}	
+	}	
 	
 	public static final class SubList extends Bytecode {
 		
@@ -374,8 +566,34 @@ public abstract class Bytecode {
 		
 	}
 
-	public static final class Send extends Bytecode {
-		 public final boolean asynchronous;
+	public static final class Send extends Bytecode {		 
+		 public final boolean asynchronous;		 
+		 public final Type.Fun type;
+			
+		 private Send(Type.Fun type, boolean asynchronous) {
+			 this.type = type;
+			 this.asynchronous = asynchronous;
+		 }
+
+		 public int hashCode() {
+			 return type.hashCode();
+		 }
+
+		 public boolean equals(Object o) {
+			 if(o instanceof Send) {
+				 Send i = (Send) o;
+				 return type.equals(i.type);
+			 }
+			 return false;
+		 }
+
+		 public String toString() {
+			 if(asynchronous) {
+				 return "asend " + type;
+			 } else {
+				 return "send " + type;
+			 }
+		 }	
 	}
 
 	public static final class Throw extends Bytecode {
@@ -385,6 +603,27 @@ public abstract class Bytecode {
 	public static final class UnOp extends Bytecode {
 		public final Type type;
 		public final UOp uop; 
+		
+		private UnOp(Type type, UOp uop) {
+			this.uop = uop;
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + uop.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof UnOp) {
+				UnOp bo = (UnOp) o;
+				return type.equals(bo.type) && uop.equals(bo.uop); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return uop + " " + type;
+		}
 	}
 	
 	public enum UOp { 
@@ -423,6 +662,43 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static class Void extends Bytecode {
+		public final Type type;
 		public final int slot;
+		
+		private Void(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + slot;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Void) {
+				Void i = (Void) o;
+				return type.equals(i.type) && slot == i.slot;
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "void " + slot + " " + type;
+		}
+	}
+	
+
+	private static final ArrayList<Bytecode> values = new ArrayList<Bytecode>();
+	private static final HashMap<Bytecode,Integer> cache = new HashMap<Bytecode,Integer>();
+	
+	private static <T extends Bytecode> T get(T type) {
+		Integer idx = cache.get(type);
+		if(idx != null) {
+			return (T) values.get(idx);
+		} else {					
+			cache.put(type, values.size());
+			values.add(type);
+			return type;
+		}
 	}
 }
