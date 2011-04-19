@@ -151,34 +151,93 @@ public abstract class Bytecode {
 			return "const " + constant;
 		}
 	}
-
-	/**
-	 * A debug bytecode is used to print out debugging information. When
-	 * debugging is disabled, it is a no-op.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Debug extends Bytecode {
-		
-	}		
 	
-	public static final class Fail extends Bytecode {
-		// should this be an assertion?
-	}
-
 	public static final class Goto extends Bytecode {
 		public final String target;
+		
+		public Goto(String target) {
+			this.target = target;
+		}
+		
+		public int hashCode() {
+			return target.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Goto) {
+				return target.equals(((Goto)o).target);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "goto " + target;
+		}		
 	}
 	
 	public static final class IfGoto extends Bytecode {
+		public final COp op;
 		public final String target;
+
+		public IfGoto(COp op, String target) {
+			this.op = op;						
+			this.target = target;
+		}
+		
+		public int hashCode() {
+			return op.hashCode() + target.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IfGoto) {
+				IfGoto ig = (IfGoto) o;
+				return op == ig.op 						
+						&& target.equals(ig.target);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "if" + op + " " + target;
+		}
 	}
 	
-	public static final class IndirectInvoke extends Bytecode {		
-		public final Type.Fun type;
-	}
-	
+	public enum COp { 
+		EQ() {
+			public String toString() { return "=="; }
+		},
+		NEQ{
+			public String toString() { return "!="; }
+		},
+		LT{
+			public String toString() { return "<"; }
+		},
+		LTEQ{
+			public String toString() { return "<="; }
+		},
+		GT{
+			public String toString() { return ">"; }
+		},
+		GTEQ{
+			public String toString() { return ">="; }
+		},
+		ELEMOF{
+			public String toString() { return "in"; }
+		},
+		SUBSET{
+			public String toString() { return "<"; }
+		},
+		SUBSETEQ{
+			public String toString() { return "<="; }
+		},
+		SUBTYPEEQ() {
+			public String toString() { return "<:"; }
+		},
+		NSUBTYPEEQ() {
+			public String toString() { return "<!"; }
+		}
+	};		
+		
 	public static final class IndirectLoad extends Bytecode {
 		public final Type type;
 		public final boolean list;
@@ -191,25 +250,94 @@ public abstract class Bytecode {
 		public final String field;
 	}
 	
+	public static final class IndirectInvoke extends Bytecode {		
+		public final Type.Fun type;
+		
+		public IndirectInvoke(Type.Fun type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IndirectInvoke) {
+				IndirectInvoke i = (IndirectInvoke) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "indirectinvoke " + type;
+		}		
+	}
+	
 	public static final class Invoke extends Bytecode {		
 		public final Type.Fun type;
-		public final NameID name;		
+		public final NameID name;
+		
+		
+		public Invoke(Type.Fun type, NameID name) {
+			this.type = type;
+			this.name = name;
+		}
+		
+		public int hashCode() {
+			return type.hashCode() + name.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Invoke) {
+				Invoke i = (Invoke) o;
+				return type.equals(i.type) && name.equals(i.name);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "invoke " + name + ":" + type;
+		}	
+		
 	}
 	
 	public static final class Label extends Bytecode {
+		public final String label;
 		
+		public Label(String label) {
+			this.label = label;
+		}
+		
+		public int hashCode() {
+			return label.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Label) {
+				return label.equals(((Label) o).label);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "." + label;
+		}
 	}
 	
 	public static final class Load extends Bytecode {		
 		public final Type type;
-		public final int slot;
-		public final boolean move;
-	}
+		public final int slot;		
+	}		
 	
 	public static final class Loop extends Bytecode {
 		
 	}
 	
+	public static final class Move extends Load {
+		
+	}
+
 	public enum NOp {
 		SET,
 		LIST,
@@ -281,6 +409,12 @@ public abstract class Bytecode {
 		PROCESSSPAWN() {
 			public String toString() { return "spawn"; }
 		},		
+		DEBUG() {
+			public String toString() { return "debug"; }
+		},
+		FAIL() {
+			public String toString() { return "fail"; }
+		}
 	}
 	
 	/**
