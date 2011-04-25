@@ -146,16 +146,14 @@ public class BinaryOutputStream extends OutputStream {
 		count = count + 1;
 		if(count == 8) {
 			count = 0;			
-			output.write(value);
-			System.out.println("WRITING: " + value);
+			output.write(value);			
 			value = 0;
 		}
 	}
 		
 	public void close() throws IOException {
 		if(count != 0) {					
-			value = value >> (8-count);		
-			System.out.println("WRITING: " + value);
+			value = value >> (8-count);					
 			output.write(value);
 		}
 		output.close();

@@ -2193,7 +2193,7 @@ public class ClassFileBuilder {
 	}
 		
 	public static String typeMangle(Type.Fun ft) throws IOException {		
-		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
+		IdentifierOutputStream jout = new IdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
 		Types.BinaryBuilder tm = new Types.BinaryBuilder(binout);
 		binout.write_uv(ft.params().size());

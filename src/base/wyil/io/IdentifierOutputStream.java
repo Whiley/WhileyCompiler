@@ -41,13 +41,13 @@ import java.io.*;
  * @author djp
  * 
  */
-public class JavaIdentifierOutputStream extends OutputStream {	
+public class IdentifierOutputStream extends OutputStream {	
 	private int value;
 	private int count;
 
 	private StringBuilder builder;
 
-	public JavaIdentifierOutputStream() {
+	public IdentifierOutputStream() {
 		builder = new StringBuilder();
 	}
 
