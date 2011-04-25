@@ -133,9 +133,11 @@ public class ClassFileBuilder {
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
-		JvmType.Function ft3 = new JvmType.Function(T_VOID, WHILEYPROCESS, WHILEYLIST);
+		Type.Fun wyft = Type.T_FUN(Type.T_PROCESS(WHILEY_SYSTEM_T),
+				Type.T_VOID, Type.T_LIST(Type.T_LIST(Type.T_INT)));
+		JvmType.Function ft3 = convertFunType(wyft);
 		
-		codes.add(new Bytecode.Invoke(owner, "main", ft3, Bytecode.STATIC));
+		codes.add(new Bytecode.Invoke(owner, nameMangle("main",wyft), ft3, Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
 		
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,
@@ -2098,6 +2100,8 @@ public class ClassFileBuilder {
 		// done deal!
 	}
 	
+	public final static Type WHILEY_SYSTEM_T = Type.T_EXISTENTIAL(new NameID(
+			new ModuleID(new PkgID("whiley", "lang"), "System"), "1"));
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyil.jvm.rt","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("java.util","ArrayList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");

@@ -622,8 +622,8 @@ public class ModuleLoader {
 			ClassFile.Method cm) {
 		// string any mangling off.
 		String[] split = cm.name().split("\\$");		
-		String name = split[0];	
-		// then find the type
+		String name = split[0];			
+		// then find the type		
 		
 		// now build the parameter names
 		Type.Fun type = null;

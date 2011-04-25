@@ -29,7 +29,7 @@ import java.util.*;
 
 public class Util {
 
-	private static final boolean debug = true;
+	private static final boolean debug = false;
 	
 	static { 
 		if(debug) {
