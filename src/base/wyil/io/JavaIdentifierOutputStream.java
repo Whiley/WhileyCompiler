@@ -23,78 +23,81 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjvm.io;
+package wyil.io;
 
 import java.io.*;
 
-public class BinaryOutputStream extends OutputStream {
-	protected OutputStream output;
-	protected int value;
-	protected int count;
-	
-	public BinaryOutputStream(OutputStream output) {
-		this.output = output;
-	}
-			
-	public void write(int i) throws IOException {
-		if(count == 0) {
-			output.write(i);
-		} else {
-			write_bits(i,8);
-		}
-	}		
-	
-	public void write(byte[] bytes) throws IOException {
-		for(byte b : bytes) {
-			write(b);
-		}
-	}
-	
-	public void write_u1(int w) throws IOException {
-		if(count == 0) {
-			output.write(w & 0xFF);
-		} else {
-			write_bits(w & 0xFF,8);
-		}		
+/**
+ * <p>
+ * A JavaIdentifierOutputStream provides a mechanism for encoding 8-bit data
+ * into a valid Java identifier. According to JLS3.8 a Java Identifier is a
+ * string matching <code>[A-Za-z_][A-Za-z0-9$_]*</code>
+ * </p>
+ * <p>
+ * Since there are 64 possibilities for each character in a Java identifier,
+ * we're basically encoding 8-bit data into a 6-bit stream (with encoding).
+ * </p>
+ * 
+ * @author djp
+ * 
+ */
+public class JavaIdentifierOutputStream extends OutputStream {	
+	private int value;
+	private int count;
+
+	private StringBuilder builder;
+
+	public JavaIdentifierOutputStream() {
+		builder = new StringBuilder();
 	}
 
-	public void write_u2(int w) throws IOException {
-		write_u1((w >> 8) & 0xFF);
-		write_u1(w & 0xFF);
-	}
-
-	public void write_u4(int w) throws IOException {
-		write_u1((w >> 24) & 0xFF);
-		write_u1((w >> 16) & 0xFF);
-		write_u1((w >> 8) & 0xFF);
-		write_u1(w & 0xFF);
-	}	
-	
-	public void write_bits(int bits, int n) throws IOException {
-		for(int i=0;i<n;++i) {
-			boolean bit = (bits & 1) == 1;
+	public void write(int b) throws IOException {
+		for(int i=0;i!=8;++i) {
+			boolean bit = (b & 1) == 1;
 			writeBit(bit);
-			bits = bits >> 1;
+			b = b >> 1;
 		}
-	}	
-	
-	public void writeBit(boolean bit) throws IOException {
+	}
+
+	public void close() {
+		if(count != 0) {
+			builder.append(encode(value));
+		}			
+	}
+
+	private void writeBit(boolean bit) throws IOException {
 		value = value << 1;
 		if(bit) {
 			value |= 1;
 		}
 		count = count + 1;
-		if(count == 8) {
+		if(count == 6) {
 			count = 0;
-			output.write(value);
+			builder.append(encode(value));
 			value = 0;
 		}
 	}
-	
-	public void close() throws IOException {
-		if(count != 0) {
-			output.write(value);
+
+	public static char encode(int b) {
+		if(b == 0) {
+			return '$';
+		} else if(b <= 26) {
+			b = b - 1;
+			b = b + 'A';
+			return (char) b;
+		} else if(b == 27) {
+			return '_';
+		} else if(b < 64) {
+			b = b - 28;
+			b = b + 'a';
+			return (char) b;
+		} else {
+			throw new IllegalArgumentException("Invalid byte to encode: " + b);
 		}
-		output.close();
+	}
+	
+	public String toString() {
+		return builder.toString();
 	}
 }
+

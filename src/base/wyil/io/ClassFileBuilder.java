@@ -2194,139 +2194,27 @@ public class ClassFileBuilder {
 	}
 		
 	public static String typeMangle(Type.Fun ft) throws IOException {		
-		ByteArrayOutputStream bout = new ByteArrayOutputStream();		
-		TypeOutputStream tout = new TypeOutputStream(bout);
-		tout.writeLength(ft.params().size());
-		TypeMangler tm = new TypeMangler(tout);		
+		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
+		BinaryOutputStream binout = new BinaryOutputStream(jout);		
+		TypeMangler tm = new TypeMangler(binout);
+		tm.writeLength(ft.params().size());
 		for(Type t : ft.params()) {
 			Type.build(tm,t);
 		}
-		tout.close(); // force flush		
-		byte[] array = bout.toByteArray();
-		// now we encode the byte array using the 64 available characters for
-		// function names according to JLS3.8. These are: A-Za-z0-9$_
-		// the encoding is done in a little endian form		
-		StringBuffer buf = new StringBuffer();
-		for(int i=0;i!=array.length;i=i+1) {
-			buf.append(encode(array[i]));							
-		}
-		return buf.toString();
+		binout.close(); // force flush		
+		return jout.toString();
 	}	
-	
-	public static char encode(int b) {
-		if(b == 0) {
-			return '$';
-		} else if(b <= 26) {
-			b = b - 1;
-			b = b + 'A';
-			return (char) b;
-		} else if(b == 27) {
-			return '$';
-		} else if(b < 64) {
-			b = b - 28;
-			b = b + 'a';
-			return (char) b;
-		} else {
-			throw new IllegalArgumentException("Invalid byte to encode: " + b);
-		}
-	}
-	
-	public static class TypeOutputStream {
-		private final OutputStream output;
-		private int value;
-		private int count;
-		
-		public TypeOutputStream(OutputStream out) {
-			this.output = out;
-		}
-		
-		public void writeKind(int kind) throws IOException {
-			writeNibble(kind);
-		}
-		
-		public void writeLength(int len) throws IOException {
-			// FIXME: bug here
-			writeNibble(len);
-		}
-		
-		public void writeNode(int node) throws IOException {
-			// FIXME: bug here
-			writeNibble(node);
-		}
-		
-		/**
-		 * An identifier is a string made up of characters from
-		 * [A-Za-z_][A-Za-z0-9_]*
-		 * 
-		 * @param identifier
-		 * @throws IOException
-		 */
-		public void writeIdentifier(String id) throws IOException {
-			writeLength(id.length());
-			for(int i=0;i!=id.length();++i) {
-				writeQibble(id.charAt(i));
-			}
-		}
-
-		/**
-		 * A qibble is an integer value between 0-64. In otherwords, it requires
-		 * 6 bits.
-		 * 
-		 * @param nibble
-		 */
-		public void writeQibble(int qibble) throws IOException {
-			for(int i=0;i!=6;++i) {
-				boolean bit = (qibble & 1) == 1;
-				writeBit(bit);
-				qibble = qibble >> 1;
-			}
-		}
-		
-		/**
-		 * A nibble is an integer value between 0-31. In otherwords, it requires
-		 * 4 bits.
-		 * 
-		 * @param nibble
-		 */
-		public void writeNibble(int nibble) throws IOException {
-			for(int i=0;i!=4;++i) {
-				boolean bit = (nibble & 1) == 1;
-				writeBit(bit);
-				nibble = nibble >> 1;
-			}
-		}
-		
-		public void writeBit(boolean bit) throws IOException {
-			value = value << 1;
-			if(bit) {
-				value |= 1;
-			}
-			count = count + 1;
-			if(count == 6) {
-				count = 0;
-				output.write(value);
-				value = 0;
-			}
-		}
-		
-		public void close() throws IOException {
-			if(count != 0) {
-				output.write(value);
-			}
-			output.close();
-		}
-	}
-	
+				
 	public static class TypeMangler implements Type.Builder {		
-		private final TypeOutputStream writer;	
+		private final BinaryOutputStream writer;	
 		
-		public TypeMangler(TypeOutputStream writer) {
+		public TypeMangler(BinaryOutputStream writer) {
 			this.writer = writer;			
 		}
 		
 		public void initialise(int numNodes) {
 			try {
-				writer.writeLength(numNodes);
+				writeLength(numNodes);
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
 			}
@@ -2335,17 +2223,17 @@ public class ClassFileBuilder {
 		public void buildPrimitive(int index, Type.Leaf t) {
 			try {
 				if(t == Type.T_ANY) {
-					writer.writeKind(ANY_TYPE );
+					writeKind(ANY_TYPE );
 				} else if(t == Type.T_VOID) {
-					writer.writeKind(VOID_TYPE);
+					writeKind(VOID_TYPE);
 				} else if(t == Type.T_NULL) {
-					writer.writeKind(NULL_TYPE );
+					writeKind(NULL_TYPE );
 				} else if(t == Type.T_BOOL) {
-					writer.writeKind(BOOL_TYPE );			
+					writeKind(BOOL_TYPE );			
 				} else if(t == Type.T_INT) {			
-					writer.writeKind(INT_TYPE );		
+					writeKind(INT_TYPE );		
 				} else if(t == Type.T_REAL) {
-					writer.writeKind(REAL_TYPE );			
+					writeKind(REAL_TYPE );			
 				} else {
 					throw new RuntimeException("unknown type encountered: " + t);		
 				}
@@ -2356,9 +2244,9 @@ public class ClassFileBuilder {
 
 		public void buildExistential(int index, NameID name) {
 			try {
-				writer.writeKind(EXISTENTIAL_TYPE);				
-				writer.writeIdentifier(name.module().toString());
-				writer.writeIdentifier(name.name());				
+				writeKind(EXISTENTIAL_TYPE);				
+				writeIdentifier(name.module().toString());
+				writeIdentifier(name.name());				
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
 			}
@@ -2366,8 +2254,8 @@ public class ClassFileBuilder {
 
 		public void buildSet(int index, int element) {
 			try {
-				writer.writeKind(SET_TYPE);			
-				writer.writeNode(element);
+				writeKind(SET_TYPE);			
+				writeNode(element);
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
 			}
@@ -2375,8 +2263,8 @@ public class ClassFileBuilder {
 
 		public void buildList(int index, int element) {
 			try {
-				writer.writeKind(LIST_TYPE);
-				writer.writeNode(element);
+				writeKind(LIST_TYPE);
+				writeNode(element);
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
 			}
@@ -2384,8 +2272,8 @@ public class ClassFileBuilder {
 
 		public void buildProcess(int index, int element) {
 			try {
-				writer.writeKind(PROCESS_TYPE);	
-				writer.writeNode(element);				
+				writeKind(PROCESS_TYPE);	
+				writeNode(element);				
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
 			}
@@ -2393,9 +2281,9 @@ public class ClassFileBuilder {
 
 		public void buildDictionary(int index, int key, int value) {
 			try {
-				writer.writeKind(DICTIONARY_TYPE);
-				writer.writeNode(key);
-				writer.writeNode(value);
+				writeKind(DICTIONARY_TYPE);
+				writeNode(key);
+				writeNode(value);
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
 			}
@@ -2403,11 +2291,11 @@ public class ClassFileBuilder {
 
 		public void buildTuple(int index, int... elements) {
 			try {
-				writer.writeKind(TUPLE_TYPE);
+				writeKind(TUPLE_TYPE);
 				// FIXME: bug here if number of entries > 64K
-				writer.writeNode(elements.length);
+				writeNode(elements.length);
 				for(int e : elements) {					
-					writer.writeNode(e);					
+					writeNode(e);					
 				}	
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
@@ -2416,12 +2304,12 @@ public class ClassFileBuilder {
 
 		public void buildRecord(int index, Pair<String, Integer>... fields) {
 			try {				
-				writer.writeKind(RECORD_TYPE );
+				writeKind(RECORD_TYPE );
 				// FIXME: bug here if number of entries > 64K
-				writer.writeLength(fields.length);
+				writeLength(fields.length);
 				for(Pair<String,Integer> p : fields) {
-					writer.writeIdentifier(p.first());										
-					writer.writeNode(p.second());					
+					writeIdentifier(p.first());										
+					writeNode(p.second());					
 				}			
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
@@ -2432,15 +2320,15 @@ public class ClassFileBuilder {
 				int... parameters) {
 			try {
 				if (receiver != -1) {
-					writer.writeKind(METH_TYPE);
-					writer.writeNode(receiver);
+					writeKind(METH_TYPE);
+					writeNode(receiver);
 				} else {
-					writer.writeKind(FUN_TYPE);
+					writeKind(FUN_TYPE);
 				}
-				writer.writeKind(ret);
-				writer.writeLength(parameters.length);
+				writeKind(ret);
+				writeLength(parameters.length);
 				for (int p : parameters) {
-					writer.writeNode(p);
+					writeNode(p);
 				}
 			} catch (IOException e) {
 				throw new RuntimeException("internal failure", e);
@@ -2449,15 +2337,43 @@ public class ClassFileBuilder {
 
 		public void buildUnion(int index, int... bounds) {
 			try {				
-				writer.writeKind(UNION_TYPE );			
-				writer.writeLength(bounds.length);
+				writeKind(UNION_TYPE );			
+				writeLength(bounds.length);
 				for(int b : bounds) {
-					writer.writeNode(b);
+					writeNode(b);
 				}	
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
 			}
-		}		
+		}
+		
+		protected void writeKind(int kind) throws IOException {
+			writer.write_bits(kind,4);
+		}
+		
+		protected void writeLength(int len) throws IOException {
+			// FIXME: bug here
+			writer.write_bits(len,4);
+		}
+		
+		protected void writeNode(int node) throws IOException {
+			// FIXME: bug here
+			writer.write_bits(node,4);			
+		}
+		
+		/**
+		 * An identifier is a string made up of characters from
+		 * [A-Za-z_][A-Za-z0-9_]*
+		 * 
+		 * @param identifier
+		 * @throws IOException
+		 */
+		protected void writeIdentifier(String id) throws IOException {
+			writeLength(id.length());
+			for(int i=0;i!=id.length();++i) {
+				writer.write_bits(decode(id.charAt(i)),6);
+			}
+		}
 	}	
 	
 	public static final int EXISTENTIAL_TYPE = 1;
