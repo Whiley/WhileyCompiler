@@ -30,6 +30,8 @@ import java.io.OutputStream;
 
 public class BinaryInputStream extends InputStream {
 	protected InputStream input;
+	protected int value;
+	protected int count;
 
 	public BinaryInputStream(InputStream input) {
 		this.input = input;
@@ -38,20 +40,15 @@ public class BinaryInputStream extends InputStream {
 	public int read() throws IOException {
 		return input.read();		
 	}
-
-	public int read_i1() throws IOException {
-		return read();
-	}
-	
-	public int read_i4() throws IOException {
-		return ((read() & 0xFF) << 24) | ((read() & 0xFF) << 16)
-				| ((read() & 0xFF) << 8) | (read() & 0xFF);
-	}
 	
 	public int read_u1() throws IOException {
-		return read() & 0xFF;
-	}
-
+		if(count == 0) {
+			return read() & 0xFF;
+		} else {
+			return read_un(8);
+		}
+	}	
+	
 	public int read_u2() throws IOException {
 		return (read_u1() << 8) | read_u1();
 	}
@@ -60,5 +57,28 @@ public class BinaryInputStream extends InputStream {
 		// FIXME: this is most definitely broken
 		return (read_u1() << 24) | (read_u1() << 16) | (read_u1() << 8)
 				| read_u1();
+	}
+	
+	public int read_un(int n) throws IOException {		
+		int value = 0;
+		int mask = 1;
+		for(int i=0;i!=n;++i) {
+			if(read_bit()) {
+				value |= mask;
+			}
+			mask = mask << 1;			
+		}
+		return value;		
+	}
+	
+	private boolean read_bit() throws IOException {
+		if(count == 0) {
+			value = input.read();
+			count = 8;
+		}
+		boolean r = (value&1) != 0;
+		value = value >> 1;
+		count = count - 1;
+		return r;
 	}
 }

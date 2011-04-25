@@ -27,20 +27,30 @@ package wyjvm.io;
 
 import java.io.*;
 
-public class BinaryOutputStream extends OutputStream {
+public class BinaryOutputStream extends OutputStream {	
 	protected OutputStream output;
 	protected int value;
 	protected int count;
 	
-	public BinaryOutputStream(OutputStream output) {
+	/**
+	 * Write out data in big-endian format.
+	 * @param output
+	 */
+	public BinaryOutputStream(OutputStream output) {		
 		this.output = output;
 	}
-			
+		
+	/**
+	 * Write an unsigned integer value using 8bits using a big-endian encoding.
+	 * 
+	 * @param w
+	 * @throws IOException
+	 */
 	public void write(int i) throws IOException {
 		if(count == 0) {
 			output.write(i);
 		} else {
-			write_bits(i,8);
+			write_un(i,8);
 		}
 	}		
 	
@@ -50,51 +60,124 @@ public class BinaryOutputStream extends OutputStream {
 		}
 	}
 	
+	/**
+	 * Write an unsigned integer value using 8bits using a big-endian encoding.
+	 * 
+	 * @param w
+	 * @throws IOException
+	 */
 	public void write_u1(int w) throws IOException {
 		if(count == 0) {
 			output.write(w & 0xFF);
 		} else {
-			write_bits(w & 0xFF,8);
+			write_un(w & 0xFF,8);
 		}		
 	}
 
-	public void write_u2(int w) throws IOException {
+	/**
+	 * Write an unsigned integer value using 16bits using a big-endian encoding.
+	 * 
+	 * @param w
+	 * @throws IOException
+	 */
+	public void write_u2(int w) throws IOException {		
 		write_u1((w >> 8) & 0xFF);
-		write_u1(w & 0xFF);
+		write_u1(w & 0xFF);		
 	}
 
-	public void write_u4(int w) throws IOException {
+	/**
+	 * Write an unsigned integer value using 32bits using a big-endian encoding.
+	 * 
+	 * @param w
+	 * @throws IOException
+	 */
+	public void write_u4(int w) throws IOException {		
 		write_u1((w >> 24) & 0xFF);
 		write_u1((w >> 16) & 0xFF);
 		write_u1((w >> 8) & 0xFF);
-		write_u1(w & 0xFF);
-	}	
-	
-	public void write_bits(int bits, int n) throws IOException {
-		for(int i=0;i<n;++i) {
-			boolean bit = (bits & 1) == 1;
-			writeBit(bit);
-			bits = bits >> 1;
+		write_u1(w & 0xFF);		
+	}
+
+	/**
+	 * Write an unsigned integer value using a variable amount of space. The
+	 * value is split into 4 bit (big-endian) chunks, where the msb of each
+	 * chunk is a flag indicating whether there are more chunks. Therefore,
+	 * values between 0 and 7 fit into 4 bits. Similarly, values between 8 and
+	 * 63 fit into 8 bits, etc
+	 * 
+	 * @param w
+	 * @throws IOException
+	 */
+	public void write_uv(int w) throws IOException {
+		if(w >= 0 && w <= 7) {
+			write_un(w,4);
+		} else if(w >= 0 && w <= 63){
+			write_un(8|((w>>3)&7),4);
+			write_un(w&7,4);
+		} else if(w >= 0 && w <= 511){
+			write_un(8|((w>>6)&7),4);
+			write_un(8|((w>>3)&7),4);
+			write_un(w&7,4);
+		} else {
+			throw new RuntimeException("Need to implement general case for write_uv");
 		}
 	}	
 	
+	/**
+	 * Write an unsigned integer value using n bits using a big-endian encoding.
+	 * 
+	 * @param w
+	 * @throws IOException
+	 */
+	public void write_un(int bits, int n) throws IOException {		
+		int mask = 1;
+		for(int i=0;i<n;++i) {
+			boolean bit = (bits & mask) != 0;
+			writeBit(bit);
+			mask = mask << 1;
+		}		
+	}	
+	
 	public void writeBit(boolean bit) throws IOException {
-		value = value << 1;
+		value = value >> 1;
 		if(bit) {
-			value |= 1;
+			value |= 128;
 		}
 		count = count + 1;
 		if(count == 8) {
 			count = 0;
+			System.out.println("WRITING: " + value);
 			output.write(value);
 			value = 0;
 		}
 	}
-	
+		
 	public void close() throws IOException {
-		if(count != 0) {
+		if(count != 0) {					
+			value = value >> (8-count);
+			System.out.println("WRITING: " + value);
 			output.write(value);
 		}
 		output.close();
+	}
+	
+	public static void main(String[] argss) {
+		try {
+			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			BinaryOutputStream binout = new BinaryOutputStream(bout);						
+			
+			binout.write_un(15,4);			
+			binout.write_un(13,4);
+			binout.write_u1(123);
+			
+			binout.close();
+			ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
+			BinaryInputStream binin = new BinaryInputStream(bin);
+			System.out.println("GOT: " + binin.read_un(4));
+			System.out.println("GOT: " + binin.read_un(4));			
+			System.out.println("GOT: " + binin.read_u1());								
+		} catch(IOException e) {
+			
+		}
 	}
 }

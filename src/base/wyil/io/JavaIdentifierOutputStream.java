@@ -81,14 +81,18 @@ public class JavaIdentifierOutputStream extends OutputStream {
 	public static char encode(int b) {
 		if(b == 0) {
 			return '$';
-		} else if(b <= 26) {
+		} else if(b <= 10) {
 			b = b - 1;
+			b = b + '0';
+			return (char) b;
+		} else if(b <= 36) {
+			b = b - 10;
 			b = b + 'A';
 			return (char) b;
-		} else if(b == 27) {
+		} else if(b == 37) {
 			return '_';
 		} else if(b < 64) {
-			b = b - 28;
+			b = b - 38;
 			b = b + 'a';
 			return (char) b;
 		} else {
