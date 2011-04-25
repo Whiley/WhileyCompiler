@@ -145,16 +145,16 @@ public class BinaryOutputStream extends OutputStream {
 		}
 		count = count + 1;
 		if(count == 8) {
-			count = 0;
-			System.out.println("WRITING: " + value);
+			count = 0;			
 			output.write(value);
+			System.out.println("WRITING: " + value);
 			value = 0;
 		}
 	}
 		
 	public void close() throws IOException {
 		if(count != 0) {					
-			value = value >> (8-count);
+			value = value >> (8-count);		
 			System.out.println("WRITING: " + value);
 			output.write(value);
 		}
@@ -166,16 +166,11 @@ public class BinaryOutputStream extends OutputStream {
 			ByteArrayOutputStream bout = new ByteArrayOutputStream();
 			BinaryOutputStream binout = new BinaryOutputStream(bout);						
 			
-			binout.write_un(15,4);			
-			binout.write_un(13,4);
-			binout.write_u1(123);
+			binout.write_uv(128);			
 			
 			binout.close();
 			ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
-			BinaryInputStream binin = new BinaryInputStream(bin);
-			System.out.println("GOT: " + binin.read_un(4));
-			System.out.println("GOT: " + binin.read_un(4));			
-			System.out.println("GOT: " + binin.read_u1());								
+			BinaryInputStream binin = new BinaryInputStream(bin);									
 		} catch(IOException e) {
 			
 		}

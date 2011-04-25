@@ -2196,7 +2196,7 @@ public class ClassFileBuilder {
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
 		Types.BinaryBuilder tm = new Types.BinaryBuilder(binout);
-		tm.writeLength(ft.params().size());
+		binout.write_uv(ft.params().size());
 		for(Type t : ft.params()) {
 			Type.build(tm,t);
 		}

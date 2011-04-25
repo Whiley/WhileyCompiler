@@ -71,6 +71,17 @@ public class BinaryInputStream extends InputStream {
 		return value;		
 	}
 	
+	public int read_uv() throws IOException {
+		int value = 0;
+		boolean flag = true;
+		while(flag) {
+			int w = read_un(4);
+			flag = (w&8) != 0;
+			value = (value << 3) | (w&7);
+		}
+		return value;
+	}
+	
 	private boolean read_bit() throws IOException {
 		if(count == 0) {
 			value = input.read();
