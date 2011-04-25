@@ -621,19 +621,17 @@ public class ModuleLoader {
 	protected Module.Method createMethodInfo(ModuleID mid,
 			ClassFile.Method cm) {
 		// string any mangling off.
-		String[] split = cm.name().split("\\$");		
-		String name = split[0];			
-		// then find the type		
+		int split = cm.name().indexOf('$');		
+		String name = cm.name().substring(0,split);
+		String mangle = cm.name().substring(split+1,cm.name().length());	
+		// then find the type	
 		
-		// now build the parameter names
-		Type.Fun type = null;
+		Type.Fun type = Type.T_FUN(null,Type.T_VOID);		
+		// now build the parameter names		
 		List<Attribute> attrs = new ArrayList<Attribute>();		
 		for(BytecodeAttribute ba : cm.attributes()) {			
 			// Ooh, this is such a hack ...					
-			if(ba instanceof WhileyType) {
-				WhileyType wt = (WhileyType) ba;
-				type = (Type.Fun) wt.type();				
-			} else if(ba instanceof Attribute) {						
+			if(ba instanceof Attribute) {						
 				attrs.add((Attribute)ba);
 			}
 		}

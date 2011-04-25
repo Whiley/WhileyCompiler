@@ -2,22 +2,171 @@ package wyil.util;
 
 import java.io.IOException;
 
+import wyil.lang.ModuleID;
 import wyil.lang.NameID;
 import wyil.lang.Type;
-import wyjvm.io.BinaryOutputStream;
+import wyjvm.io.*;
 
 public class Types {
 
+	public static class BinaryReader {
+		private final BinaryInputStream reader;	
+		
+		public BinaryReader(BinaryInputStream reader) {
+			this.reader = reader;			
+		}
+		
+		public Type read() throws IOException {
+			Type.InternalBuilder builder = new Type.InternalBuilder();
+			int numNodes = readLength();
+			builder.initialise(numNodes);
+			for(int i=0;i!=numNodes;++i) {
+				int kind = readKind();
+				switch(kind) {
+				case ANY_TYPE:
+					builder.buildPrimitive(i, Type.T_ANY);
+					break;
+				case VOID_TYPE:
+					builder.buildPrimitive(i, Type.T_VOID);
+					break;
+				case NULL_TYPE:
+					builder.buildPrimitive(i, Type.T_NULL);
+					break;
+				case BOOL_TYPE:
+					builder.buildPrimitive(i, Type.T_BOOL);
+					break;
+				case INT_TYPE:
+					builder.buildPrimitive(i, Type.T_INT);
+					break;
+				case REAL_TYPE:
+					builder.buildPrimitive(i, Type.T_REAL);
+					break;
+				case EXISTENTIAL_TYPE:
+					String module = readIdentifier();
+					String name = readIdentifier();
+					builder.buildExistential(i, new NameID(ModuleID.fromString(module),name));
+					break;
+				case SET_TYPE:
+					builder.buildSet(i, readNode());
+					break;
+				case LIST_TYPE:
+					builder.buildList(i, readNode());
+					break;
+				case PROCESS_TYPE:
+					builder.buildProcess(i, readNode());
+					break;
+				case DICTIONARY_TYPE:
+					builder.buildDictionary(i, readNode(), readNode());
+					break;
+				case TUPLE_TYPE: {
+					int nelems = readLength();
+					int[] elems = new int[nelems];
+					for(int j=0;j!=nelems;++j) {
+						elems[j] = readNode();
+					}
+					builder.buildTuple(i,elems);
+				}
+				case RECORD_TYPE: {
+					int nelems = readLength();
+					Pair<String,Integer>[] elems = new Pair[nelems];
+					for(int j=0;j!=nelems;++j) {
+						elems[j] = new Pair(readIdentifier(),readNode());
+					}
+					builder.buildRecord(i,elems);
+				}
+				case FUN_TYPE: {
+					int ret = readNode();
+					int nelems = readLength();
+					int[] elems = new int[nelems];
+					for(int j=0;j!=nelems;++j) {
+						elems[j] = readNode();
+					}
+					builder.buildFunction(i,-1,ret,elems);
+				}
+				case METH_TYPE: {
+					int rec = readNode();
+					int ret = readNode();
+					int nelems = readLength();
+					int[] elems = new int[nelems];
+					for(int j=0;j!=nelems;++j) {
+						elems[j] = readNode();
+					}
+					builder.buildFunction(i,rec,ret,elems);
+				}
+				case UNION_TYPE: {
+					int nelems = readLength();
+					int[] elems = new int[nelems];
+					for(int j=0;j!=nelems;++j) {
+						elems[j] = readNode();
+					}
+					builder.buildUnion(i,elems);
+				}
+				}
+			}
+			return builder.type();
+		}
+		
+		private int readLength() throws IOException {
+			return reader.read_uv();
+		}
+		
+		public int readKind() throws IOException {
+			return reader.read_un(4);
+		}
+		
+		private int readNode() throws IOException {
+			return reader.read_uv();
+		}
+	
+		/**
+		 * An identifier is a string made up of characters from
+		 * [A-Za-z_][A-Za-z0-9_]*
+		 * 
+		 * @param identifier
+		 * @throws IOException
+		 */
+		protected String readIdentifier() throws IOException {
+			int num = readLength();
+			StringBuilder buf = new StringBuilder();
+			for(int i=0;i!=num;++i) {
+				buf.append(encode(reader.read_un(6)));
+			}
+			return buf.toString();
+		}
+		
+		public static char encode(int b) {
+			if(b == 0) {
+				return '$';
+			} else if(b <= 10) {
+				b = b - 1;
+				b = b + '0';
+				return (char) b;
+			} else if(b <= 36) {
+				b = b - 10;
+				b = b + 'A';
+				return (char) b;
+			} else if(b == 37) {
+				return '_';
+			} else if(b < 64) {
+				b = b - 38;
+				b = b + 'a';
+				return (char) b;
+			} else {
+				throw new IllegalArgumentException("Invalid byte to encode: " + b);
+			}
+		}
+	}
+	
 	/**
 	 * The BinaryBuilder converts a type into a short binary string.
 	 * 
 	 * @author djp
 	 * 
 	 */
-	public static class BinaryBuilder implements Type.Builder {		
+	public static class BinaryWriter implements Type.Builder {		
 		private final BinaryOutputStream writer;	
 		
-		public BinaryBuilder(BinaryOutputStream writer) {
+		public BinaryWriter(BinaryOutputStream writer) {
 			this.writer = writer;			
 		}
 		
@@ -101,8 +250,7 @@ public class Types {
 		public void buildTuple(int index, int... elements) {
 			try {
 				writeKind(TUPLE_TYPE);
-				// FIXME: bug here if number of entries > 64K
-				writeNode(elements.length);
+				writeLength(elements.length);
 				for(int e : elements) {					
 					writeNode(e);					
 				}	
@@ -134,7 +282,7 @@ public class Types {
 				} else {
 					writeKind(FUN_TYPE);
 				}
-				writeKind(ret);
+				writeNode(ret);
 				writeLength(parameters.length);
 				for (int p : parameters) {
 					writeNode(p);

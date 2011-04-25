@@ -172,8 +172,7 @@ public class ClassFileBuilder {
 		}
 		*/
 				
-		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);
-		cm.attributes().add(new WhileyType(method.type()));
+		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
 		for(Attribute a : mcase.attributes()) {
 			if(a instanceof BytecodeAttribute) {
 				// FIXME: this is a hack
@@ -2199,7 +2198,7 @@ public class ClassFileBuilder {
 	public static String typeMangle(Type.Fun ft) throws IOException {		
 		IdentifierOutputStream jout = new IdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
-		Types.BinaryBuilder tm = new Types.BinaryBuilder(binout);
+		Types.BinaryWriter tm = new Types.BinaryWriter(binout);
 		binout.write_uv(ft.params().size());
 		for(Type t : ft.params()) {
 			Type.build(tm,t);
