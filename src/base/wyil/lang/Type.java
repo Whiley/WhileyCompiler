@@ -570,16 +570,13 @@ public abstract class Type {
 		
 		public Type type() {
 			return construct(nodes);
-		}
-		
+		}	
 		public void initialise(int numNodes) {
 			nodes = new Node[numNodes];
 		}
-
 		public void buildPrimitive(int index, Type.Leaf type) {
 			nodes[index] = new Node(leafKind(type),null);
 		}
-
 		public void buildExistential(int index, NameID name) {
 			if (name == null) {
 				throw new IllegalArgumentException(

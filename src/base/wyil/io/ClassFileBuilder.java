@@ -25,8 +25,10 @@
 
 package wyil.io;
 
+import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.zip.*;
 
 import wyil.jvm.attributes.WhileyDefine;
 import wyil.jvm.attributes.WhileyType;
@@ -38,6 +40,7 @@ import wyil.util.Pair;
 import wyil.util.SyntaxError;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
+import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
@@ -161,10 +164,12 @@ public class ClassFileBuilder {
 		}
 		modifiers.add(Modifier.ACC_STATIC);		
 		JvmType.Function ft = convertFunType(method.type());		
-		String name = method.name();
+		String name = nameMangle(method.name(),method.type());
+		/* need to put this back somehow?
 		if(method.cases().size() > 1) {
 			name = name + "$" + caseNum;
 		}
+		*/
 				
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);
 		cm.attributes().add(new WhileyType(method.type()));
@@ -1455,7 +1460,7 @@ public class ClassFileBuilder {
 		ModuleID mid = c.name.module();
 		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
 		JvmType.Function type = convertFunType(c.type);
-		String mangled = c.name.name();		
+		String mangled = nameMangle(c.name.name(),c.type);		
 		if(c.caseNum > 0) {
 			mangled += "$" + c.caseNum;
 		}
@@ -2179,4 +2184,298 @@ public class ClassFileBuilder {
 	protected String freshLabel() {
 		return "cfblab" + label++;
 	}	
+	
+	public static String nameMangle(String name, Type.Fun ft) {				
+		try {
+		return name + "$" + typeMangle(ft);
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+		
+	public static String typeMangle(Type.Fun ft) throws IOException {		
+		ByteArrayOutputStream bout = new ByteArrayOutputStream();		
+		TypeOutputStream tout = new TypeOutputStream(bout);
+		tout.writeLength(ft.params().size());
+		TypeMangler tm = new TypeMangler(tout);		
+		for(Type t : ft.params()) {
+			Type.build(tm,t);
+		}
+		tout.close(); // force flush		
+		byte[] array = bout.toByteArray();
+		// now we encode the byte array using the 64 available characters for
+		// function names according to JLS3.8. These are: A-Za-z0-9$_
+		// the encoding is done in a little endian form		
+		StringBuffer buf = new StringBuffer();
+		for(int i=0;i!=array.length;i=i+1) {
+			buf.append(encode(array[i]));							
+		}
+		return buf.toString();
+	}	
+	
+	public static char encode(int b) {
+		if(b == 0) {
+			return '$';
+		} else if(b <= 26) {
+			b = b - 1;
+			b = b + 'A';
+			return (char) b;
+		} else if(b == 27) {
+			return '$';
+		} else if(b < 64) {
+			b = b - 28;
+			b = b + 'a';
+			return (char) b;
+		} else {
+			throw new IllegalArgumentException("Invalid byte to encode: " + b);
+		}
+	}
+	
+	public static class TypeOutputStream {
+		private final OutputStream output;
+		private int value;
+		private int count;
+		
+		public TypeOutputStream(OutputStream out) {
+			this.output = out;
+		}
+		
+		public void writeKind(int kind) throws IOException {
+			writeNibble(kind);
+		}
+		
+		public void writeLength(int len) throws IOException {
+			// FIXME: bug here
+			writeNibble(len);
+		}
+		
+		public void writeNode(int node) throws IOException {
+			// FIXME: bug here
+			writeNibble(node);
+		}
+		
+		/**
+		 * An identifier is a string made up of characters from
+		 * [A-Za-z_][A-Za-z0-9_]*
+		 * 
+		 * @param identifier
+		 * @throws IOException
+		 */
+		public void writeIdentifier(String id) throws IOException {
+			writeLength(id.length());
+			for(int i=0;i!=id.length();++i) {
+				writeQibble(id.charAt(i));
+			}
+		}
+
+		/**
+		 * A qibble is an integer value between 0-64. In otherwords, it requires
+		 * 6 bits.
+		 * 
+		 * @param nibble
+		 */
+		public void writeQibble(int qibble) throws IOException {
+			for(int i=0;i!=6;++i) {
+				boolean bit = (qibble & 1) == 1;
+				writeBit(bit);
+				qibble = qibble >> 1;
+			}
+		}
+		
+		/**
+		 * A nibble is an integer value between 0-31. In otherwords, it requires
+		 * 4 bits.
+		 * 
+		 * @param nibble
+		 */
+		public void writeNibble(int nibble) throws IOException {
+			for(int i=0;i!=4;++i) {
+				boolean bit = (nibble & 1) == 1;
+				writeBit(bit);
+				nibble = nibble >> 1;
+			}
+		}
+		
+		public void writeBit(boolean bit) throws IOException {
+			value = value << 1;
+			if(bit) {
+				value |= 1;
+			}
+			count = count + 1;
+			if(count == 6) {
+				count = 0;
+				output.write(value);
+				value = 0;
+			}
+		}
+		
+		public void close() throws IOException {
+			if(count != 0) {
+				output.write(value);
+			}
+			output.close();
+		}
+	}
+	
+	public static class TypeMangler implements Type.Builder {		
+		private final TypeOutputStream writer;	
+		
+		public TypeMangler(TypeOutputStream writer) {
+			this.writer = writer;			
+		}
+		
+		public void initialise(int numNodes) {
+			try {
+				writer.writeLength(numNodes);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildPrimitive(int index, Type.Leaf t) {
+			try {
+				if(t == Type.T_ANY) {
+					writer.writeKind(ANY_TYPE );
+				} else if(t == Type.T_VOID) {
+					writer.writeKind(VOID_TYPE);
+				} else if(t == Type.T_NULL) {
+					writer.writeKind(NULL_TYPE );
+				} else if(t == Type.T_BOOL) {
+					writer.writeKind(BOOL_TYPE );			
+				} else if(t == Type.T_INT) {			
+					writer.writeKind(INT_TYPE );		
+				} else if(t == Type.T_REAL) {
+					writer.writeKind(REAL_TYPE );			
+				} else {
+					throw new RuntimeException("unknown type encountered: " + t);		
+				}
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}			
+		}
+
+		public void buildExistential(int index, NameID name) {
+			try {
+				writer.writeKind(EXISTENTIAL_TYPE);				
+				writer.writeIdentifier(name.module().toString());
+				writer.writeIdentifier(name.name());				
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildSet(int index, int element) {
+			try {
+				writer.writeKind(SET_TYPE);			
+				writer.writeNode(element);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildList(int index, int element) {
+			try {
+				writer.writeKind(LIST_TYPE);
+				writer.writeNode(element);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildProcess(int index, int element) {
+			try {
+				writer.writeKind(PROCESS_TYPE);	
+				writer.writeNode(element);				
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildDictionary(int index, int key, int value) {
+			try {
+				writer.writeKind(DICTIONARY_TYPE);
+				writer.writeNode(key);
+				writer.writeNode(value);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildTuple(int index, int... elements) {
+			try {
+				writer.writeKind(TUPLE_TYPE);
+				// FIXME: bug here if number of entries > 64K
+				writer.writeNode(elements.length);
+				for(int e : elements) {					
+					writer.writeNode(e);					
+				}	
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildRecord(int index, Pair<String, Integer>... fields) {
+			try {				
+				writer.writeKind(RECORD_TYPE );
+				// FIXME: bug here if number of entries > 64K
+				writer.writeLength(fields.length);
+				for(Pair<String,Integer> p : fields) {
+					writer.writeIdentifier(p.first());										
+					writer.writeNode(p.second());					
+				}			
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+
+		public void buildFunction(int index, int receiver, int ret,
+				int... parameters) {
+			try {
+				if (receiver != -1) {
+					writer.writeKind(METH_TYPE);
+					writer.writeNode(receiver);
+				} else {
+					writer.writeKind(FUN_TYPE);
+				}
+				writer.writeKind(ret);
+				writer.writeLength(parameters.length);
+				for (int p : parameters) {
+					writer.writeNode(p);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException("internal failure", e);
+			}
+		}
+
+		public void buildUnion(int index, int... bounds) {
+			try {				
+				writer.writeKind(UNION_TYPE );			
+				writer.writeLength(bounds.length);
+				for(int b : bounds) {
+					writer.writeNode(b);
+				}	
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}		
+	}	
+	
+	public static final int EXISTENTIAL_TYPE = 1;
+	public static final int ANY_TYPE = 2;
+	public static final int VOID_TYPE = 3;
+	public static final int NULL_TYPE = 4;
+	public static final int BOOL_TYPE = 5;
+	public static final int INT_TYPE = 6;
+	public static final int REAL_TYPE = 7;
+	public static final int LIST_TYPE = 8;
+	public static final int SET_TYPE = 9;
+	public static final int DICTIONARY_TYPE = 10;
+	public static final int TUPLE_TYPE = 11;
+	public static final int RECORD_TYPE = 12;
+	public static final int UNION_TYPE = 13;
+	public static final int INTERSECTION_TYPE = 14;
+	public static final int PROCESS_TYPE = 15;	
+	public static final int FUN_TYPE = 16;
+	public static final int METH_TYPE = 17;
+	public static final int CONSTRAINT_MASK = 32;
 }
