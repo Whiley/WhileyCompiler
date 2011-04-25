@@ -29,7 +29,7 @@ import java.io.*;
 
 /**
  * <p>
- * An IdentifierOutputStream provides a mechanism for encoding 8-bit data
+ * An IdentifierInputStream provides a mechanism for encoding 8-bit data
  * into a valid Java identifier. According to JLS3.8 a Java Identifier is a
  * string matching <code>[A-Za-z_][A-Za-z0-9$_]*</code>
  * </p>
@@ -41,84 +41,53 @@ import java.io.*;
  * @author djp
  * 
  */
-public class IdentifierOutputStream extends OutputStream {	
+public class IdentifierInputStream extends InputStream {	
 	private int value;
 	private int count;
 
-	private StringBuilder builder;
+	private int index;
+	private String identifier;
 
-	public IdentifierOutputStream() {
-		builder = new StringBuilder();
+	public IdentifierInputStream(String identifier) {
+		this.identifier = identifier;
 	}
 
-	public void write(int bits) throws IOException {
+	public int read() throws IOException {
+		int value = 0;
 		int mask = 1;
-		for(int i=0;i<8;++i) {
-			boolean bit = (bits & mask) != 0;
-			writeBit(bit);
-			mask = mask << 1;
-		}	
+		for(int i=0;i!=8;++i) {
+			if(read_bit()) {
+				value |= mask;
+			}
+			mask = mask << 1;			
+		}
+		return value;			
 	}
-
-	public void close() {
-		if(count != 0) {
-			value = value >> (6-count);
-			builder.append(encode(value));
-		}			
-	}
-
-	public void writeBit(boolean bit) throws IOException {
+	
+	private boolean read_bit() throws IOException {
+		if(count == 0) {
+			value = decode(identifier.charAt(index++));
+			count = 6;
+		}
+		boolean r = (value&1) != 0;
 		value = value >> 1;
-		if(bit) {
-			value |= 32;
-		}
-		count = count + 1;
-		if(count == 6) {
-			count = 0;		
-			builder.append(encode(value));			
-			value = 0;
-		}
+		count = count - 1;
+		return r;
 	}
-	
-	public static char encode(int b) {
-		if(b == 0) {
-			return '$';
-		} else if(b <= 10) {
-			b = b - 1;
-			b = b + '0';
-			return (char) b;
-		} else if(b <= 36) {
-			b = b - 10;
-			b = b + 'A';
-			return (char) b;
-		} else if(b == 37) {
-			return '_';
-		} else if(b < 64) {
-			b = b - 38;
-			b = b + 'a';
-			return (char) b;
+
+	public static int decode(char c) {
+		if(c == '$') {
+			return 0;
+		} else if(c >= '0' && c <= '9') {
+			return (c - '0') + 1;
+		} else if(c >= 'A' && c <= 'Z') {
+			return (c - 'A') + 11;
+		} else if(c == '_') {
+			return 37;
+		} else if(c >= 'a' && c <= 'z') {
+			return (c - 'a') + 38;
 		} else {
-			throw new IllegalArgumentException("Invalid byte to encode: " + b);
-		}
-	}
-	
-	public String toString() {
-		return builder.toString();
-	}
-	
-	public static void main(String[] args) {
-		try {
-		IdentifierOutputStream iout = new IdentifierOutputStream();
-		iout.write(1);
-		iout.write(123);
-		iout.write(254);
-		iout.close();
-		IdentifierInputStream iin = new IdentifierInputStream(iout.toString());
-		System.out.println("GOT: " + iin.read());
-		System.out.println("GOT: " + iin.read());
-		System.out.println("GOT: " + iin.read());		
-		} catch(IOException e) {
-			
+			throw new IllegalArgumentException("invalid character in identifier: " + c);
 		}
 	}
 }
