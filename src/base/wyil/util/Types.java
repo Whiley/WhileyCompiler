@@ -134,32 +134,10 @@ public class Types {
 			int num = readLength();			
 			StringBuilder buf = new StringBuilder();
 			for(int i=0;i!=num;++i) {
-				buf.append(encode(reader.read_un(6)));
+				buf.append((char) reader.read_un(7));
 			}
 			return buf.toString();
-		}
-		
-		public static char encode(int b) {
-			if(b == 0) {
-				return '.';
-			} else if(b <= 10) {
-				b = b - 1;
-				b = b + '0';
-				return (char) b;
-			} else if(b <= 36) {
-				b = b - 11;
-				b = b + 'A';
-				return (char) b;
-			} else if(b == 37) {
-				return '_';
-			} else if(b < 64) {
-				b = b - 38;
-				b = b + 'a';
-				return (char) b;
-			} else {
-				throw new IllegalArgumentException("Invalid byte to encode: " + b);
-			}
-		}
+		}		
 	}
 	
 	/**
@@ -331,26 +309,9 @@ public class Types {
 		protected void writeIdentifier(String id) throws IOException {			
 			writeLength(id.length());
 			for(int i=0;i!=id.length();++i) {
-				writer.write_un(decode(id.charAt(i)),6);
+				writer.write_un(id.charAt(i),7);
 			}
-		}
-		
-		public static int decode(char c) {
-			if(c == '.') {
-				return 0;
-			} else if(c >= '0' && c <= '9') {
-				return (c - '0') + 1;
-			} else if(c >= 'A' && c <= 'Z') {
-				return (c - 'A') + 11;
-			} else if(c == '_') {
-				return 37;
-			} else if(c >= 'a' && c <= 'z') {
-				return (c - 'a') + 38;
-			} else {
-				throw new IllegalArgumentException("invalid character in identifier: " + c);
-			}
-		}
-		
+		}		
 	}	
 	
 	public static final int EXISTENTIAL_TYPE = 1;
