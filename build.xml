@@ -2,7 +2,7 @@
   <property name="version" value="0.3.4"/>
 
   <target name="compile">
-    <javac debug="true" srcdir="src" includeantruntime="true" includes="wyjc/**,wyil/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
+    <javac debug="true" srcdir="src" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
   </target>
 
   <target name="build-wyjc" depends="compile">
@@ -13,7 +13,7 @@
       <attribute name="Main-Class" value="wyjc.Main"/>
       <attribute name="Implementation-Version" value="${version}-${build.number}"/>
     </manifest>
-    <jar destfile="lib/wyjc.jar" basedir="src" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
+    <jar destfile="lib/wyjc.jar" basedir="src" includes="wyil/**/*.class,wyc/**/*,wyjc/**/*.class,wyone/**/*.class,wyjvm/**/*.class" manifest="tmp/MANIFEST.MF"/>
     <delete dir="tmp"/>
   </target>
 
@@ -22,7 +22,7 @@
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 
     <jar destfile="lib/wyrt.jar">
-      <fileset dir="src" includes="wyil/jvm/rt**/*.class"/>
+      <fileset dir="src" includes="wyjc/runtime/**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
   </target>

@@ -31,7 +31,6 @@ import java.lang.reflect.*;
 
 import wyil.*;
 import wyil.lang.*;
-import wyil.stages.TypePropagation;
 import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;

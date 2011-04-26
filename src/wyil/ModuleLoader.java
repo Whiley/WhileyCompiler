@@ -30,8 +30,8 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import wyil.jvm.attributes.WhileyDefine;
-import wyil.jvm.attributes.WhileyType;
+import wyjc.attributes.WhileyDefine;
+import wyjc.attributes.WhileyType;
 import wyil.lang.*;
 import wyil.util.*;
 import wyjc.io.JavaIdentifierInputStream;

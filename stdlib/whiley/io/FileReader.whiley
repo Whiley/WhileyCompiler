@@ -31,7 +31,7 @@ define FileReader as process { string fileName }
 FileReader System::openReader(string fileName):
     extern jvm:
         aload 1
-        invokestatic wyil/jvm/rt/WhileyIO.openReader:(Ljava/util/ArrayList;)Lwyil/jvm/rt/WhileyProcess;
+        invokestatic wyjc/runtime/WhileyIO.openReader:(Ljava/util/ArrayList;)Lwyjc/runtime/WhileyProcess;
         areturn
     // the following line is dead code
     return spawn {fileName: ""}
@@ -39,13 +39,13 @@ FileReader System::openReader(string fileName):
 void FileReader::close():
     extern jvm:
         aload 0
-        invokestatic wyil/jvm/rt/WhileyIO.closeFile:(Lwyil/jvm/rt/WhileyProcess;)V;
+        invokestatic wyjc/runtime/WhileyIO.closeFile:(Lwyjc/runtime/WhileyProcess;)V;
 
 // read the whole file
 [byte] FileReader::read():
     extern jvm:
         aload 0
-        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;)Ljava/util/ArrayList;
+        invokestatic wyjc/runtime/WhileyIO.readFile:(Lwyjc/runtime/WhileyProcess;)Ljava/util/ArrayList;
         areturn
     return []
     
@@ -54,6 +54,6 @@ void FileReader::close():
     extern jvm:
         aload 0
         aload 1
-        invokestatic wyil/jvm/rt/WhileyIO.readFile:(Lwyil/jvm/rt/WhileyProcess;Lwyil/jvm/rt/BigRational;)Ljava/util/ArrayList;
+        invokestatic wyjc/runtime/WhileyIO.readFile:(Lwyjc/runtime/WhileyProcess;Lwyjc/runtime/BigRational;)Ljava/util/ArrayList;
         areturn
     return []

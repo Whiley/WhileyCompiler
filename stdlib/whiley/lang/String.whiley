@@ -33,7 +33,7 @@ public string str(* item):
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;
-        invokestatic wyil/jvm/rt/Util.fromString:(Ljava/lang/String;)Ljava/util/ArrayList;
+        invokestatic wyjc/runtime/Util.fromString:(Ljava/lang/String;)Ljava/util/ArrayList;
         areturn
     return "DUMMY" // dead code
 
