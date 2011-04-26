@@ -2203,7 +2203,7 @@ public abstract class Type {
 		 * @return
 		 */
 		protected final Type extract(int root) {
-			return construct(extract(root,nodes));
+			return construct(Type.extract(root,nodes));
 		}
 		
 		public String toString() {
@@ -2221,7 +2221,7 @@ public abstract class Type {
 					titles[i] = headerTitle(count++);
 				}
 			}
-			return toString(0,visited,titles,nodes);
+			return Type.toString(0,visited,titles,nodes);
 		}
 	}
 
