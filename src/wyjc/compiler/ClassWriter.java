@@ -23,16 +23,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.compiler;
+package wyjc.compiler;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
+import wyc.compiler.Compiler;
+import wyc.compiler.Compiler.Stage;
 import wyil.ModuleLoader;
 import wyil.lang.Module;
 import wyil.util.Logger;
 import wyil.io.*;
+import wyjc.io.ClassFileBuilder;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
 import wyjvm.util.DeadCodeElimination;

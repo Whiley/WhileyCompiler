@@ -23,78 +23,53 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.jvm.rt;
+package wyjc.attributes;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Map;
+import java.util.Set;
 
-public final class WhileyRecord extends HashMap<String, Object> implements
-		Comparable<WhileyRecord> {
-	public WhileyRecord() {
-		super();
+import wyjvm.io.BinaryOutputStream;
+import wyjvm.lang.BytecodeAttribute;
+import wyjvm.lang.Constant;
+
+/**
+ * The WhileyVersion attribute is simply a marker used to indicate that a class
+ * file was generated from a whiley source file. This is useful in
+ * multi-platform scenarios where we might have multiple source languages.
+ * 
+ * @author djp
+ * 
+ */
+public class WhileyVersion implements BytecodeAttribute {
+	private int minor;
+	private int major;
+	
+	public WhileyVersion(int major, int minor) {
+		this.major = major;
+		this.minor = minor;
 	}
-
-	public WhileyRecord(Map<String,Object> c) {
-		super(c);
-	}
-
-	public WhileyRecord clone() {
-		return Util.record_clone(this);		
+	public String name() {
+		return "WhileyVersion";
 	}
 	
-	public boolean equals(WhileyRecord t) {
-		return super.equals(t);
+	public void write(BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
+			throws IOException {		
+		writer.write_u2(constantPool.get(new Constant.Utf8("WhileyVersion")));
+		writer.write_u4(2);
+		writer.write_u1(major);
+		writer.write_u1(minor);
 	}	
 	
-	public boolean notEquals(WhileyRecord t) {
-		return !super.equals(t);
-	}
-
-	public int compareTo(WhileyRecord t) {
-		ArrayList<String> mKeys = new ArrayList<String>(keySet());
-		ArrayList<String> tKeys = new ArrayList<String>(t.keySet());
-		Collections.sort(mKeys);
-		Collections.sort(tKeys);
-		
-		for(int i=0;i!=Math.min(mKeys.size(),tKeys.size());++i) {
-			String mk = mKeys.get(i);
-			String tk = tKeys.get(i);
-			int c = mk.compareTo(tk);
-			if(c != 0) {
-				return c;
-			}
-			String mv = get(mk).toString();
-			String tv = get(tk).toString();
-			c = mv.compareTo(tv);
-			if(c != 0) {
-				return c;
-			}
-		}
-		
-		if(mKeys.size() < tKeys.size()) {
-			return -1;
-		} else if(mKeys.size() > tKeys.size()) {
-			return 1;
-		} else {
-			return 0;
-		}
+	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {		
+		Constant.addPoolItem(new Constant.Utf8("WhileyVersion"), constantPool);		
 	}
 	
-	public String toString() {
-		String r = "{";
-		boolean firstTime = true;
-
-		ArrayList<String> ss = new ArrayList<String>(keySet());
-		Collections.sort(ss);		
-		for (String s : ss) {	
-			if (!firstTime) {
-				r = r + ",";
-			}
-			firstTime = false;
-			r = r + s + ":" + get(s).toString();
-		}
-		return r + "}";
+	public void print(PrintWriter output,
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
+			throws IOException {
+		output.println("  WhileyVersion: " + major + "." + minor);
 	}
 }

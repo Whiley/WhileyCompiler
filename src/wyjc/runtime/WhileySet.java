@@ -23,53 +23,75 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.jvm.attributes;
+package wyjc.runtime;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import wyjvm.io.BinaryOutputStream;
-import wyjvm.lang.BytecodeAttribute;
-import wyjvm.lang.Constant;
-
-/**
- * The WhileyVersion attribute is simply a marker used to indicate that a class
- * file was generated from a whiley source file. This is useful in
- * multi-platform scenarios where we might have multiple source languages.
- * 
- * @author djp
- * 
- */
-public class WhileyVersion implements BytecodeAttribute {
-	private int minor;
-	private int major;
-	
-	public WhileyVersion(int major, int minor) {
-		this.major = major;
-		this.minor = minor;
-	}
-	public String name() {
-		return "WhileyVersion";
+public final class WhileySet extends HashSet {
+	public WhileySet() {
+		super();
 	}
 	
-	public void write(BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
-			throws IOException {		
-		writer.write_u2(constantPool.get(new Constant.Utf8("WhileyVersion")));
-		writer.write_u4(2);
-		writer.write_u1(major);
-		writer.write_u1(minor);
-	}	
-	
-	public void addPoolItems(Set<Constant.Info> constantPool, ClassLoader loader) {		
-		Constant.addPoolItem(new Constant.Utf8("WhileyVersion"), constantPool);		
+	public WhileySet(Collection c) {
+		super(c);
 	}
 	
-	public void print(PrintWriter output,
-			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
-			throws IOException {
-		output.println("  WhileyVersion: " + major + "." + minor);
+	public WhileySet clone() {
+		return Util.set_clone(this);		
+	}
+	
+	public String toString() {
+		String r = "{";
+		boolean firstTime=true;
+		ArrayList<Comparable> ss = new ArrayList<Comparable>(this);		
+		Collections.sort(ss);
+
+		for(Object o : ss) {
+			if(!firstTime) {
+				r = r + ", ";
+			}
+			firstTime=false;
+			r = r + o.toString();
+		}
+		return r + "}";
+	}		
+	
+	public boolean equals(WhileySet ws) {
+		// FIXME: optimisation opportunity here
+		return super.equals(ws);
+	}
+	
+	public boolean notEquals(WhileySet ws) {
+		return !super.equals(ws);
+	}
+	
+	public boolean subset(WhileySet ws) {
+		return ws.containsAll(this) && ws.size() > size();
+	}
+	
+	public boolean subsetEq(WhileySet ws) {
+		return ws.containsAll(this);
+	}
+	
+	public WhileySet union(WhileySet rset) {
+		WhileySet set = new WhileySet(this);
+		set.addAll(rset);
+		return set;
+	}
+	
+	public WhileySet difference(WhileySet rset) {
+		WhileySet set = new WhileySet(this);
+		set.removeAll(rset);
+		return set;
+	}
+	
+	public WhileySet intersect(WhileySet rset) {
+		WhileySet set = new WhileySet(); 		
+		for(Object o : this) {
+			if(rset.contains(o)) {
+				set.add(o);
+			}
+		}
+		return set;
 	}
 }

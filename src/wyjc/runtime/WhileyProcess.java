@@ -23,75 +23,33 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.jvm.rt;
+package wyjc.runtime;
 
 import java.util.*;
 
-public final class WhileySet extends HashSet {
-	public WhileySet() {
-		super();
+public class WhileyProcess {
+	private Object state;
+	
+	public WhileyProcess(Object c) {
+		state = c;
+	}
+
+	public Object state() {
+		return state;
 	}
 	
-	public WhileySet(Collection c) {
-		super(c);
-	}
-	
-	public WhileySet clone() {
-		return Util.set_clone(this);		
+	public WhileyProcess clone() {
+		return new WhileyProcess(this.state);
 	}
 	
 	public String toString() {
-		String r = "{";
-		boolean firstTime=true;
-		ArrayList<Comparable> ss = new ArrayList<Comparable>(this);		
-		Collections.sort(ss);
-
-		for(Object o : ss) {
-			if(!firstTime) {
-				r = r + ", ";
-			}
-			firstTime=false;
-			r = r + o.toString();
-		}
-		return r + "}";
-	}		
-	
-	public boolean equals(WhileySet ws) {
-		// FIXME: optimisation opportunity here
-		return super.equals(ws);
+		return state + "@" + System.identityHashCode(this);
 	}
 	
-	public boolean notEquals(WhileySet ws) {
-		return !super.equals(ws);
-	}
-	
-	public boolean subset(WhileySet ws) {
-		return ws.containsAll(this) && ws.size() > size();
-	}
-	
-	public boolean subsetEq(WhileySet ws) {
-		return ws.containsAll(this);
-	}
-	
-	public WhileySet union(WhileySet rset) {
-		WhileySet set = new WhileySet(this);
-		set.addAll(rset);
-		return set;
-	}
-	
-	public WhileySet difference(WhileySet rset) {
-		WhileySet set = new WhileySet(this);
-		set.removeAll(rset);
-		return set;
-	}
-	
-	public WhileySet intersect(WhileySet rset) {
-		WhileySet set = new WhileySet(); 		
-		for(Object o : this) {
-			if(rset.contains(o)) {
-				set.add(o);
-			}
-		}
-		return set;
+	public static WhileyProcess systemProcess() {
+		// Not sure what the default value should be yet!!!
+		HashMap<String,Object> fields = new HashMap<String,Object>();
+		fields.put("out",new WhileyProcess(null));
+		return new WhileyProcess(new WhileyRecord(fields));
 	}
 }

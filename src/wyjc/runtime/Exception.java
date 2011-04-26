@@ -1,4 +1,4 @@
-package wyil.jvm.rt;
+package wyjc.runtime;
 
 public class Exception extends RuntimeException {
 	private final Object value;

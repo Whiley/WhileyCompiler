@@ -36,6 +36,8 @@ import wyil.stages.DefiniteAssignment;
 import wyil.stages.FunctionCheck;
 import wyil.stages.TypePropagation;
 import wyil.util.*;
+import wyjc.compiler.ClassWriter;
+import wyjc.compiler.JvmBytecodeWriter;
 import wyc.compiler.*;
 import wyc.compiler.Compiler;
 import wyc.util.*;

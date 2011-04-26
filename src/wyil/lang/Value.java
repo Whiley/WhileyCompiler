@@ -27,8 +27,8 @@ package wyil.lang;
 
 import java.math.BigInteger;
 import java.util.*;
-import wyil.jvm.rt.BigRational;
 import wyil.util.Pair;
+import wyjc.runtime.BigRational;
 
 public abstract class Value extends CExpr implements Comparable<Value> {	
 

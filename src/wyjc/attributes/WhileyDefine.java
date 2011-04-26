@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.jvm.attributes;
+package wyjc.attributes;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,8 +31,8 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.jvm.rt.BigRational;
 import wyil.lang.*;
+import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;

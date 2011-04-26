@@ -30,12 +30,12 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyil.lang.*;
-import wyil.jvm.rt.BigRational;
 import wyil.util.*;
 import wyc.lang.*;
 import wyc.lang.Stmt;
 import wyc.lang.WhileyFile.*;
 import wyc.util.*;
+import wyjc.runtime.BigRational;
 import wyjvm.lang.Bytecode;
 
 import static wyc.stages.WhileyLexer.*;

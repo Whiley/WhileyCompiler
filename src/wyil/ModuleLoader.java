@@ -30,11 +30,11 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import wyil.io.IdentifierInputStream;
 import wyil.jvm.attributes.WhileyDefine;
 import wyil.jvm.attributes.WhileyType;
 import wyil.lang.*;
 import wyil.util.*;
+import wyjc.io.JavaIdentifierInputStream;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.*;
@@ -628,7 +628,7 @@ public class ModuleLoader {
 			String name = cm.name().substring(0,split);
 			String mangle = cm.name().substring(split+1,cm.name().length());	
 			// then find the type				
-			Type.Fun type = (Type.Fun) new Types.BinaryReader(new BinaryInputStream(new IdentifierInputStream(mangle))).read();		
+			Type.Fun type = (Type.Fun) new Types.BinaryReader(new BinaryInputStream(new JavaIdentifierInputStream(mangle))).read();		
 			// now build the parameter names		
 			List<Attribute> attrs = new ArrayList<Attribute>();		
 			for(BytecodeAttribute ba : cm.attributes()) {			
