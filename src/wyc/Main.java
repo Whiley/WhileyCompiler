@@ -447,32 +447,5 @@ public class Main {
 		return r;
 	}
 	
-	/**
-	 * The pipeline modifier captures a requested adjustment to the compilation
-	 * pipeline.
-	 * 
-	 * @author djp
-	 */
-	private static class PipelineModifier {
-		public final POP op;
-		public final String name;
-		public final String arg;
-		public final Map<String,String> options;
-		
-		public PipelineModifier(POP pop, String name, String arg,
-				Map<String, String> options) {
-			this.op = pop;
-			this.name = name;
-			this.arg = arg;
-			this.options = options;
-		}
-	}
 	
-	private enum POP {
-		APPEND,
-		BEFORE,
-		AFTER,
-		REPLACE,
-		REMOVE
-	}
 }
