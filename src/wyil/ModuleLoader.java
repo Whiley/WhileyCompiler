@@ -30,14 +30,9 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import wyjc.attributes.WhileyDefine;
-import wyjc.attributes.WhileyType;
+import wyjc.io.ClassFileLoader; // to be deprecated
 import wyil.lang.*;
 import wyil.util.*;
-import wyjc.io.JavaIdentifierInputStream;
-import wyjvm.io.BinaryInputStream;
-import wyjvm.io.ClassFileReader;
-import wyjvm.lang.*;
 
 /**
  * The module loader is a critical component of the Whiley compiler. It is
@@ -75,10 +70,11 @@ public class ModuleLoader {
 	private HashMap<ModuleID, Skeleton> skeletontable = new HashMap<ModuleID, Skeleton>();
 
 	/**
-	 * A map from attribute names to attribute readers. The readers are used to
-	 * decode unknown attributes, which can then be used by wyil clients. 
+	 * The module reader is responsible for actually reading module files off
+	 * the file system and parsing them. Depending upon what the target platform
+	 * is, the actual loader will vary.
 	 */
-	private ArrayList<BytecodeAttribute.Reader> attributeReaders;
+	private ClassFileLoader moduleReader;
 	
 	/**
 	 * A Package object contains information about a particular package,
@@ -147,22 +143,15 @@ public class ModuleLoader {
 	 */
 	private Logger logger;
 	
-	public ModuleLoader(Collection<String> whileypath, Logger logger, BytecodeAttribute.Reader... readers) {
+	public ModuleLoader(Collection<String> whileypath, Logger logger) {
 		this.logger = logger;
 		this.whileypath = new ArrayList<String>(whileypath);
-		this.attributeReaders = new ArrayList<BytecodeAttribute.Reader>();
-		for(BytecodeAttribute.Reader r : readers) {
-			this.attributeReaders.add(r);
-		}
+		
 	}
 	
-	public ModuleLoader(Collection<String> whileypath, BytecodeAttribute.Reader... readers) {
+	public ModuleLoader(Collection<String> whileypath) {
 		this.logger = Logger.NULL;
-		this.whileypath = new ArrayList<String>(whileypath);		
-		this.attributeReaders = new ArrayList<BytecodeAttribute.Reader>();
-		for(BytecodeAttribute.Reader r : readers) {
-			this.attributeReaders.add(r);
-		}
+		this.whileypath = new ArrayList<String>(whileypath);				
 	}
 	
 	public void setClosedWorldAssumption(boolean flag) {
@@ -176,15 +165,7 @@ public class ModuleLoader {
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
-	
-	/**
-	 * Get the list of attribute readers
-	 * @return
-	 */
-	public List<BytecodeAttribute.Reader> attributeReaders() {
-		return attributeReaders;
-	}
-	
+		
 	/**
 	 * This function checks whether the supplied package exists or not.
 	 * 
@@ -335,7 +316,7 @@ public class ModuleLoader {
 				JarFile jf = new JarFile(location);				
 				JarEntry je = jf.getJarEntry(jarname);
 				if (je == null) { continue; }  								
-				Module mi = readWhileyClass(module, jarname, jf.getInputStream(je));
+				Module mi = readModuleInfo(module, jarname, jf.getInputStream(je));
 				if(mi != null) { return mi; }
 			} else {
 				File classFile = new File(location.getPath(),filename + ".class");					
@@ -345,7 +326,7 @@ public class ModuleLoader {
 					// Here, there is no sourcefile, but there is a
 					// classfile.
 					// So, no need to compile --- just load the class file!
-					Module mi = readWhileyClass(module, classFile.getPath(), new FileInputStream(classFile));
+					Module mi = readModuleInfo(module, classFile.getPath(), new FileInputStream(classFile));
 					if(mi != null) {
 						return mi;
 					}
@@ -377,14 +358,14 @@ public class ModuleLoader {
 				JarFile jf = new JarFile(location);				
 				JarEntry je = jf.getJarEntry(jarname);
 				if (je == null) { continue; }  								
-				return readWhileyClass(module, jarname, jf.getInputStream(je));
+				return readModuleInfo(module, jarname, jf.getInputStream(je));
 			} else {
 				File classFile = new File(location.getPath(),filename + ".class");					
 				
 				if(classFile.exists()) {															
 					// Here, there is no sourcefile, but there is a classfile.
 					// So, no need to compile --- just load the class file!
-					return readWhileyClass(module, jarname, new FileInputStream(classFile));					
+					return readModuleInfo(module, jarname, new FileInputStream(classFile));					
 				}			
 			}
 		}
@@ -461,18 +442,13 @@ public class ModuleLoader {
 		throw new ResolveError("package not found: " + pkg);
 	}
 	
-	private Module readWhileyClass(ModuleID module, String filename,
+	private Module readModuleInfo(ModuleID module, String filename,
 			InputStream input) throws IOException {
 		long time = System.currentTimeMillis();		
 		
-		ArrayList<BytecodeAttribute.Reader> readers = new ArrayList<BytecodeAttribute.Reader>(
-				attributeReaders); 		
-		readers.add(new WhileyType.Reader());	
-		readers.add(new WhileyDefine.Reader(attributeReaders));		
-		ClassFileReader r = new ClassFileReader(input,readers);									
-		ClassFile cf = r.readClass();
+		// TODO: the following line should be removed in the near future.
+		Module mi = moduleReader.read(module,filename,input);
 
-		Module mi = createModule(module,cf);
 		if(mi != null) {
 			logger.logTimedMessage("Loaded " + filename, System
 					.currentTimeMillis()
@@ -555,104 +531,7 @@ public class ModuleLoader {
 		}
 	}
 	
-	protected Module createModule(ModuleID mid, ClassFile cf) {
-		if(cf.attribute("WhileyVersion") == null) {
-			// This indicates the class is not a WhileyFile. This means it was
-			// generate from some other source (e.g. it was a .java file
-			// compiled with javac). Hence, we simply want to ignore this file
-			// since it obviously doesn't contain any information that we can
-			// sensibly use.
-			return null;
-		}
-		
-		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
-		
-		for (ClassFile.Method cm : cf.methods()) {
-			if (!cm.isSynthetic()) {
-				Module.Method mi = createMethodInfo(mid, cm);
-				Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
-				Module.Method method = methods.get(key);
-				if (method != null) {
-					// coalesce cases
-					ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
-							method.cases());
-					ncases.addAll(mi.cases());
-					mi = new Module.Method(mi.name(), mi.type(), ncases);
-				}
-				methods.put(key, mi);
-			}
-		}
-		
-		ArrayList<Module.TypeDef> types = new ArrayList();
-		ArrayList<Module.ConstDef> constants = new ArrayList();
-		
-		for(BytecodeAttribute ba : cf.attributes()) {
-			
-			if(ba instanceof WhileyDefine) {				
-				WhileyDefine wd = (WhileyDefine) ba;								
-				Type type = wd.type();							
-				if(type == null) {
-					// constant definition
-					List<Attribute> attrs = new ArrayList<Attribute>();		
-					for(BytecodeAttribute bba : wd.attributes()) {			
-						// Ooh, this is such a hack ...						
-						if(bba instanceof Attribute) {							
-							attrs.add((Attribute)bba);
-						}
-					}
-					Module.ConstDef ci = new Module.ConstDef(wd.defName(),wd.value(),attrs);
-					constants.add(ci);
-				} else {
-					// type definition
-					List<Attribute> attrs = new ArrayList<Attribute>();		
-					for(BytecodeAttribute bba : wd.attributes()) {			
-						// Ooh, this is such a hack ...						
-						if(bba instanceof Attribute) {								
-							attrs.add((Attribute)bba);
-						}
-					}
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,attrs);					
-					types.add(ti);
-				}
-			}
-		}
-				
-		return new Module(mid, cf.name(), methods.values(), types, constants);
-	}
 	
-	protected Module.Method createMethodInfo(ModuleID mid,
-			ClassFile.Method cm) {
-		// string any mangling off.
-		try {
-			int split = cm.name().indexOf('$');		
-			String name = cm.name().substring(0,split);
-			String mangle = cm.name().substring(split+1,cm.name().length());	
-			// then find the type				
-			Type.Fun type = (Type.Fun) new Types.BinaryReader(new BinaryInputStream(new JavaIdentifierInputStream(mangle))).read();		
-			// now build the parameter names		
-			List<Attribute> attrs = new ArrayList<Attribute>();		
-			for(BytecodeAttribute ba : cm.attributes()) {			
-				// Ooh, this is such a hack ...					
-				if(ba instanceof Attribute) {						
-					attrs.add((Attribute)ba);
-				}
-			}
-
-			ArrayList<String> parameterNames = new ArrayList<String>();
-
-			for (int i = 0; i != type.params().size(); ++i) {
-				parameterNames.add("$" + i);
-			}
-
-
-			List<Module.Case> mcases = new ArrayList<Module.Case>();
-			mcases.add(new Module.Case(parameterNames,null,attrs));
-
-			return new Module.Method(name, type, mcases);
-		} catch(IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
 	
 	/**
 	 * Given a path string of the form "xxx.yyy.zzz" this returns the parent
