@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc;
+package wyc;
 
 import java.io.*;
 import java.net.*;
@@ -36,9 +36,9 @@ import wyil.stages.DefiniteAssignment;
 import wyil.stages.FunctionCheck;
 import wyil.stages.TypePropagation;
 import wyil.util.*;
-import wyjc.compiler.*;
-import wyjc.compiler.Compiler;
-import wyjc.util.*;
+import wyc.compiler.*;
+import wyc.compiler.Compiler;
+import wyc.util.*;
 
 public class Main {
 	public static final int PARSE_ERROR = 1;

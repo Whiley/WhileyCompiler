@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.compiler;
+package wyc.compiler;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,8 +44,8 @@ public class JvmBytecodeWriter implements Compiler.Stage {
 	private final boolean deadCode;
 	
 	public JvmBytecodeWriter(ModuleLoader loader, Map<String, String> options) {
-		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
-				wyjc.Main.MINOR_VERSION);
+		classBuilder = new ClassFileBuilder(loader, wyc.Main.MAJOR_VERSION,
+				wyc.Main.MINOR_VERSION);
 		validate = !options.containsKey("nvalidate");
 		deadCode = !options.containsKey("ndeadcode");
 	}

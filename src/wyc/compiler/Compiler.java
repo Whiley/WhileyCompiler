@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.compiler;
+package wyc.compiler;
 
 import java.io.*;
 import java.util.*;
@@ -33,8 +33,8 @@ import wyil.*;
 import wyil.lang.*;
 import wyil.stages.TypePropagation;
 import wyil.util.*;
-import wyjc.lang.*;
-import wyjc.stages.*;
+import wyc.lang.*;
+import wyc.stages.*;
 
 public class Compiler implements Logger {	
 	protected ModuleLoader loader;

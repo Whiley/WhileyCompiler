@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.stages;
+package wyc.stages;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -32,13 +32,13 @@ import java.util.*;
 import wyil.lang.*;
 import wyil.jvm.rt.BigRational;
 import wyil.util.*;
-import wyjc.lang.*;
-import wyjc.lang.Stmt;
-import wyjc.lang.WhileyFile.*;
-import wyjc.util.*;
+import wyc.lang.*;
+import wyc.lang.Stmt;
+import wyc.lang.WhileyFile.*;
+import wyc.util.*;
 import wyjvm.lang.Bytecode;
 
-import static wyjc.stages.WhileyLexer.*;
+import static wyc.stages.WhileyLexer.*;
 
 public class WhileyParser {
 	private String filename;

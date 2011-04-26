@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.stages;
+package wyc.stages;
 
 import java.util.*;
 
@@ -31,13 +31,13 @@ import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
-import wyjc.lang.*;
-import wyjc.lang.WhileyFile.*;
-import wyjc.lang.Stmt;
-import wyjc.lang.Stmt.*;
-import wyjc.lang.Expr.*;
-import wyjc.stages.WhileyLexer.AddressOf;
-import wyjc.util.*;
+import wyc.lang.*;
+import wyc.lang.WhileyFile.*;
+import wyc.lang.Stmt;
+import wyc.lang.Stmt.*;
+import wyc.lang.Expr.*;
+import wyc.stages.WhileyLexer.AddressOf;
+import wyc.util.*;
 
 public class NameResolution {
 	private final ModuleLoader loader;	

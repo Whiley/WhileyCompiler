@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 
 import java.io.*;
 
-import wyjc.Main;
+import wyc.Main;
 
 public class TestHarness {
 	private String srcPath;    // path to source files	

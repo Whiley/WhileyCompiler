@@ -23,12 +23,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.util;
+package wyc.util;
 
 import java.io.*;
 import java.util.*;
 
-import wyjc.Main;
+import wyc.Main;
 
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MatchingTask;

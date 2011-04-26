@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.stages;
+package wyc.stages;
 
 import java.util.*;
 import java.math.BigInteger;
@@ -34,11 +34,11 @@ import wyil.stages.TypePropagation;
 import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Code.IfGoto;
-import wyjc.lang.*;
-import wyjc.lang.WhileyFile.*;
-import wyjc.lang.Stmt;
-import wyjc.lang.Stmt.*;
-import wyjc.lang.Expr.*;
+import wyc.lang.*;
+import wyc.lang.WhileyFile.*;
+import wyc.lang.Stmt;
+import wyc.lang.Stmt.*;
+import wyc.lang.Expr.*;
 
 public class ModuleBuilder {
 	private final ModuleLoader loader;	
