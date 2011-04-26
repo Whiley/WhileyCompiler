@@ -88,7 +88,7 @@ public class IdentifierOutputStream extends OutputStream {
 			b = b + '0';
 			return (char) b;
 		} else if(b <= 36) {
-			b = b - 10;
+			b = b - 11;
 			b = b + 'A';
 			return (char) b;
 		} else if(b == 37) {

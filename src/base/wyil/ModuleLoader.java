@@ -30,10 +30,12 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import wyil.io.IdentifierInputStream;
 import wyil.jvm.attributes.WhileyDefine;
 import wyil.jvm.attributes.WhileyType;
 import wyil.lang.*;
 import wyil.util.*;
+import wyjvm.io.BinaryInputStream;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.*;
 
@@ -621,32 +623,35 @@ public class ModuleLoader {
 	protected Module.Method createMethodInfo(ModuleID mid,
 			ClassFile.Method cm) {
 		// string any mangling off.
-		int split = cm.name().indexOf('$');		
-		String name = cm.name().substring(0,split);
-		String mangle = cm.name().substring(split+1,cm.name().length());	
-		// then find the type	
-		
-		Type.Fun type = Type.T_FUN(null,Type.T_VOID);		
-		// now build the parameter names		
-		List<Attribute> attrs = new ArrayList<Attribute>();		
-		for(BytecodeAttribute ba : cm.attributes()) {			
-			// Ooh, this is such a hack ...					
-			if(ba instanceof Attribute) {						
-				attrs.add((Attribute)ba);
+		try {
+			int split = cm.name().indexOf('$');		
+			String name = cm.name().substring(0,split);
+			String mangle = cm.name().substring(split+1,cm.name().length());	
+			// then find the type				
+			Type.Fun type = (Type.Fun) new Types.BinaryReader(new BinaryInputStream(new IdentifierInputStream(mangle))).read();		
+			// now build the parameter names		
+			List<Attribute> attrs = new ArrayList<Attribute>();		
+			for(BytecodeAttribute ba : cm.attributes()) {			
+				// Ooh, this is such a hack ...					
+				if(ba instanceof Attribute) {						
+					attrs.add((Attribute)ba);
+				}
 			}
+
+			ArrayList<String> parameterNames = new ArrayList<String>();
+
+			for (int i = 0; i != type.params().size(); ++i) {
+				parameterNames.add("$" + i);
+			}
+
+
+			List<Module.Case> mcases = new ArrayList<Module.Case>();
+			mcases.add(new Module.Case(parameterNames,null,attrs));
+
+			return new Module.Method(name, type, mcases);
+		} catch(IOException e) {
+			throw new RuntimeException(e);
 		}
-		
-		ArrayList<String> parameterNames = new ArrayList<String>();
-		
-		for (int i = 0; i != type.params().size(); ++i) {
-			parameterNames.add("$" + i);
-		}
-		
-		
-		List<Module.Case> mcases = new ArrayList<Module.Case>();
-		mcases.add(new Module.Case(parameterNames,null,attrs));
-		
-		return new Module.Method(name, type, mcases);
 	}
 	
 	/**

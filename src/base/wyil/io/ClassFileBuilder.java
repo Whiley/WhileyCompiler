@@ -39,6 +39,7 @@ import static wyil.util.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.CExpr.LVal;
+import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.*;
@@ -133,7 +134,7 @@ public class ClassFileBuilder {
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
-		Type.Fun wyft = Type.T_FUN(Type.T_PROCESS(WHILEY_SYSTEM_T),
+		Type.Fun wyft = Type.T_FUN(WHILEY_SYSTEM_T,
 				Type.T_VOID, Type.T_LIST(Type.T_LIST(Type.T_INT)));
 		JvmType.Function ft3 = convertFunType(wyft);
 		
@@ -2099,8 +2100,19 @@ public class ClassFileBuilder {
 		// done deal!
 	}
 	
-	public final static Type WHILEY_SYSTEM_T = Type.T_EXISTENTIAL(new NameID(
-			new ModuleID(new PkgID("whiley", "lang"), "System"), "1"));
+	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
+			.minimise(Type.T_PROCESS(Type.T_EXISTENTIAL(new NameID(
+					new ModuleID(new PkgID("whiley", "lang"), "System"), "1"))));
+
+	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
+			.minimise(Type.T_PROCESS(Type.T_RECORD(new HashMap() {
+				{
+					put("out", WHILEY_SYSTEM_OUT_T);
+					put("rest", Type.T_EXISTENTIAL(new NameID(new ModuleID(
+							new PkgID("whiley", "lang"), "System"), "1")));
+				}
+			})));
+	
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyil.jvm.rt","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("java.util","ArrayList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyil.jvm.rt","WhileySet");
@@ -2188,8 +2200,8 @@ public class ClassFileBuilder {
 	}	
 	
 	public static String nameMangle(String name, Type.Fun ft) {				
-		try {
-		return name + "$" + typeMangle(ft);
+		try {			
+			return name + "$" + typeMangle(ft);
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -2199,13 +2211,26 @@ public class ClassFileBuilder {
 		IdentifierOutputStream jout = new IdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
 		Types.BinaryWriter tm = new Types.BinaryWriter(binout);
-		binout.write_uv(ft.params().size());
-		for(Type t : ft.params()) {
-			Type.build(tm,t);
-		}
+		Type.build(tm,ft);		
 		binout.close(); // force flush		
-		return jout.toString();
+		//testMangle1(ft);
+		return jout.toString();		
 	}	
-				
-	
+	/*			
+	public static void testMangle1(Type.Fun ft) throws IOException {
+		IdentifierOutputStream jout = new IdentifierOutputStream();
+		BinaryOutputStream binout = new BinaryOutputStream(jout);
+		Types.BinaryWriter tm = new Types.BinaryWriter(binout);		
+		Type.build(tm,ft);
+		binout.close();		
+		System.out.println("MANGLED: " + ft + " => " + jout.toString());
+		Type.Fun type = (Type.Fun) new Types.BinaryReader(
+				new BinaryInputStream(new IdentifierInputStream(
+						jout.toString()))).read();
+		System.out.println("UNMANGLED TO: " + type);
+		if(!type.equals(ft)) {
+			throw new RuntimeException("INVALID TYPE RECONSTRUCTED");
+		}
+	}	
+	*/
 }

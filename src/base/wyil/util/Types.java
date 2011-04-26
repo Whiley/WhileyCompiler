@@ -18,12 +18,12 @@ public class Types {
 		
 		public Type read() throws IOException {
 			Type.InternalBuilder builder = new Type.InternalBuilder();
-			int numNodes = readLength();
+			int numNodes = readLength();			
 			builder.initialise(numNodes);
 			for(int i=0;i!=numNodes;++i) {
-				int kind = readKind();
+				int kind = readKind();				
 				switch(kind) {
-				case ANY_TYPE:
+				case ANY_TYPE:											
 					builder.buildPrimitive(i, Type.T_ANY);
 					break;
 				case VOID_TYPE:
@@ -65,6 +65,7 @@ public class Types {
 						elems[j] = readNode();
 					}
 					builder.buildTuple(i,elems);
+					break;
 				}
 				case RECORD_TYPE: {
 					int nelems = readLength();
@@ -73,6 +74,7 @@ public class Types {
 						elems[j] = new Pair(readIdentifier(),readNode());
 					}
 					builder.buildRecord(i,elems);
+					break;
 				}
 				case FUN_TYPE: {
 					int ret = readNode();
@@ -82,8 +84,9 @@ public class Types {
 						elems[j] = readNode();
 					}
 					builder.buildFunction(i,-1,ret,elems);
+					break;
 				}
-				case METH_TYPE: {
+				case METH_TYPE: {					
 					int rec = readNode();
 					int ret = readNode();
 					int nelems = readLength();
@@ -92,6 +95,7 @@ public class Types {
 						elems[j] = readNode();
 					}
 					builder.buildFunction(i,rec,ret,elems);
+					break;
 				}
 				case UNION_TYPE: {
 					int nelems = readLength();
@@ -100,10 +104,11 @@ public class Types {
 						elems[j] = readNode();
 					}
 					builder.buildUnion(i,elems);
+					break;
 				}
 				}
 			}
-			return builder.type();
+			return builder.type();						
 		}
 		
 		private int readLength() throws IOException {
@@ -111,7 +116,7 @@ public class Types {
 		}
 		
 		public int readKind() throws IOException {
-			return reader.read_un(4);
+			return reader.read_un(5);
 		}
 		
 		private int readNode() throws IOException {
@@ -126,7 +131,7 @@ public class Types {
 		 * @throws IOException
 		 */
 		protected String readIdentifier() throws IOException {
-			int num = readLength();
+			int num = readLength();			
 			StringBuilder buf = new StringBuilder();
 			for(int i=0;i!=num;++i) {
 				buf.append(encode(reader.read_un(6)));
@@ -136,13 +141,13 @@ public class Types {
 		
 		public static char encode(int b) {
 			if(b == 0) {
-				return '$';
+				return '.';
 			} else if(b <= 10) {
 				b = b - 1;
 				b = b + '0';
 				return (char) b;
 			} else if(b <= 36) {
-				b = b - 10;
+				b = b - 11;
 				b = b + 'A';
 				return (char) b;
 			} else if(b == 37) {
@@ -171,7 +176,7 @@ public class Types {
 		}
 		
 		public void initialise(int numNodes) {
-			try {
+			try {				
 				writeLength(numNodes);
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
@@ -305,7 +310,7 @@ public class Types {
 		}
 		
 		protected void writeKind(int kind) throws IOException {
-			writer.write_un(kind,4);
+			writer.write_un(kind,5);
 		}
 		
 		protected void writeLength(int len) throws IOException {
@@ -323,7 +328,7 @@ public class Types {
 		 * @param identifier
 		 * @throws IOException
 		 */
-		protected void writeIdentifier(String id) throws IOException {
+		protected void writeIdentifier(String id) throws IOException {			
 			writeLength(id.length());
 			for(int i=0;i!=id.length();++i) {
 				writer.write_un(decode(id.charAt(i)),6);
@@ -331,7 +336,7 @@ public class Types {
 		}
 		
 		public static int decode(char c) {
-			if(c == '$') {
+			if(c == '.') {
 				return 0;
 			} else if(c >= '0' && c <= '9') {
 				return (c - '0') + 1;

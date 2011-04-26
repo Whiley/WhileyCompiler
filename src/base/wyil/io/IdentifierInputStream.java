@@ -65,7 +65,7 @@ public class IdentifierInputStream extends InputStream {
 	}
 	
 	private boolean read_bit() throws IOException {
-		if(count == 0) {
+		if(count == 0) {			
 			value = decode(identifier.charAt(index++));
 			count = 6;
 		}
