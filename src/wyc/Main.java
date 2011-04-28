@@ -259,7 +259,45 @@ public class Main {
 		}
 	}	
 	
-
+	/**
+	 * This method simply reads in the input file, and prints out a
+	 * given line of text, with little markers (i.e. '^') placed
+	 * underneath a portion of it.  
+	 *
+	 * @param fileArg - the name of the file whose line to print
+	 * @param start - the start position of the offending region.
+	 * @param end - the end position of the offending region.
+	 * @param message - the message to print about the error
+	 */
+	public void outputSourceError(String fileArg, int start, int end,
+			String message) throws IOException {
+		BufferedReader in = new BufferedReader(new InputStreamReader(
+				new FileInputStream(fileArg), "UTF8"));
+						
+		int line = 0;
+		String lineText = "";
+		while (in.ready() && start >= lineText.length()) {
+			start -= lineText.length() + 1;
+			end -= lineText.length() + 1;
+			lineText = in.readLine();						
+			line = line + 1;			
+		}		
+								
+		errout.println(fileArg + ":" + line + ": " + message);
+		//errout.println();
+		errout.println(lineText);	
+		for (int i = 0; i <= start; ++i) {
+			if (lineText.charAt(i) == '\t') {
+				errout.print("\t");
+			} else {
+				errout.print(" ");
+			}
+		}				
+		for (int i = start; i <= end; ++i) {		
+			errout.print("^");
+		}
+		errout.println("");		
+	}
 
 	protected Compiler createCompiler(ModuleLoader loader,
 			List<Compiler.Stage> stages) {
