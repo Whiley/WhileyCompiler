@@ -50,7 +50,8 @@ public class Main {
 	public static final OptArg[] options = new OptArg[] {
 			new OptArg("version","Print version information"),
 			new OptArg("verbose","Print detailed information on what the compiler is doing"),
-			new OptArg("whileypath","wp",PATHLIST,"Specify where to find whiley files")
+			new OptArg("whileypath","wp",PATHLIST,"Specify where to find whiley files"),
+			new OptArg("bootpath","bp",PATHLIST,"Specify where to find whiley standard library files")
 	};
 	
 	public static void main(String[] _args) {

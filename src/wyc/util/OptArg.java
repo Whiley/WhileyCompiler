@@ -174,7 +174,7 @@ public final class OptArg {
 			options.put(arg, option.split(File.pathSeparator));
 		}
 		public String toString() {
-			return "<path(s)>";
+			return "<path>";
 		}
 	}
 	
