@@ -131,9 +131,25 @@ public class WyCompiler implements Logger {
 		// Register the updated file
 		loader.register(module);
 		
-		for(Stage s : stages) {
-			module = s.process(module,this);
+		for(Stage stage : stages) {
+			module = process(module,stage);
 		}		
+	}
+	
+	protected Module process(Module module, Stage stage) {
+		long start = System.currentTimeMillis();
+
+		try {
+			module = stage.apply(module);
+			logTimedMessage("[" + module.filename() + "] applied "
+					+ stage.name(), System.currentTimeMillis() - start);
+			return module;
+		} catch (RuntimeException ex) {
+			logTimedMessage("[" + module.filename() + "] failed on "
+					+ stage.name() + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start);
+			throw ex;
+		}
 	}
 		
 	protected void resolveNames(WhileyFile m) {

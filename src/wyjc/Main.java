@@ -155,11 +155,8 @@ public class Main {
 		ModuleLoader loader = new ModuleLoader(whileypath);
 		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, loader);
 		List<WyCompiler.Stage> stages = pipeline.instantiate();
-		WyCompiler compiler = new WyCompiler(loader,stages);
-		
-		// set some loader configuration(s)
-		loader.setLogger(compiler);
-		loader.setClosedWorldAssumption(true);
+		WyCompiler compiler = new WyCompiler(loader,stages);		
+		loader.setLogger(compiler);		
 
 		if(verbose) {
 			compiler.setLogOut(System.err);
