@@ -26,11 +26,13 @@ public class Pipeline {
 		this.loader = loader;
 	}
 
-	public static final List<Template> defaultPipeline = new ArrayList<Template>() {
-		{
-			add(new Template("wyil", WyilWriter.class, Collections.EMPTY_MAP));
-		}
-	};
+	public static final List<Template> defaultPipeline = Collections
+			.unmodifiableList(new ArrayList<Template>() {
+				{
+					add(new Template("wyil", WyilWriter.class,
+							Collections.EMPTY_MAP));
+				}
+			});
 	
 	static {
 		register("wyil",WyilTransform.class);

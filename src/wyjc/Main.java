@@ -1,11 +1,22 @@
 package wyjc;
 
 import java.io.PrintStream;
+import java.net.URI;
 import java.util.*;
 
+import wyc.compiler.*;
 import wyc.util.*;
+import wyil.ModuleLoader;
 import static wyc.util.OptArg.*;
 
+/**
+ * The main class provides all of the necessary plumbing to process command-line
+ * options, construct an appropriate pipeline and then instantiate the Whiley
+ * Compiler to generate class files.
+ * 
+ * @author djp
+ * 
+ */
 public class Main {
 	
 	public static PrintStream errout;
@@ -48,12 +59,64 @@ public class Main {
 	 * The command-line options accepted by the main method.
 	 */
 	public static final OptArg[] options = new OptArg[] {
-			new OptArg("version","Print version information"),
-			new OptArg("verbose","Print detailed information on what the compiler is doing"),
-			new OptArg("whileypath","wp",PATHLIST,"Specify where to find whiley files"),
-			new OptArg("bootpath","bp",PATHLIST,"Specify where to find whiley standard library files")
+			new OptArg("version", "Print version information"),
+			new OptArg("verbose",
+					"Print detailed information on what the compiler is doing"),
+			new OptArg("whileypath", "wp", PATHLIST,
+					"Specify where to find whiley files",
+					new ArrayList<String>()),
+			new OptArg("bootpath", "bp", PATHLIST,
+					"Specify where to find whiley standard library files",
+					new ArrayList<String>())
 	};
-	
+
+	/**
+	 * In the case that no explicit bootpath has been specified on the
+	 * command-line, we need to add a default location. The challenge is that we
+	 * want to automatically put the wyrt.jar (Whiley Runtime Library) on the
+	 * bootpath. To do this, we want to try and determine the jarfile that was
+	 * used to get us to this point. Typically,
+	 * <code>"java -jar wyjc.jar file.whiley"</code>. We can use
+	 * <code>wyjc.jar</code> in place of <code>wyrt.jar</code>, as it contains
+	 * the same things.
+	 * 
+	 * @param bootpath
+	 */
+	public static void initialiseBootpath(ArrayList<String> bootpath) {
+		if(bootpath.isEmpty()) {
+		
+			//
+			try {
+				// String jarfile = Main.class.getPackage().getImplementationTitle();
+				// bootpath.add(jarfile);
+				
+				URI location = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
+				if(location != null) {
+					// The following code is a hack to determine the location of
+					// the enclosing jar file.
+					String jarfile = location.toURL().getFile().toString();					
+					if(!jarfile.endsWith(".jar")) {
+						// This seems to happen when calling from the ant task.
+						// For some reason, despite me asking it to use a
+						// particular jar file, it does not. Instead, it loads
+						// using the CLASSPATH environment variable, which means
+						// "."
+						jarfile += "stdlib";
+					}
+					bootpath.add(jarfile);
+				}				
+			} catch(Exception e) {
+				// just ignore.
+			}
+		}
+	}
+
+	/**
+	 * The main method is responsible for processing command-line arguments and
+	 * constructing an appropriate Compiler instance.
+	 * 
+	 * @param _args
+	 */
 	public static void main(String[] _args) {
 		// First, check whether or not we actually provided any thing on the
 		// command-line.
@@ -75,5 +138,24 @@ public class Main {
 			System.exit(0);
 		}
 		
+		// read out option values
+		ArrayList<String> whileypath = (ArrayList) values.get("whileypath");
+		ArrayList<String> bootpath = (ArrayList) values.get("bootpath");
+		boolean verbose = values.containsKey("verbose");
+		
+		// initialise the boot path appropriately
+		initialiseBootpath(bootpath);
+
+		// now initialise the whiley path
+		whileypath.add(0,".");
+		whileypath.addAll(bootpath);
+
+		try {
+			ModuleLoader loader = new ModuleLoader(whileypath);
+			Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, loader);
+			// now what?
+			
+		}
 	}
+	
 }
