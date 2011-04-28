@@ -43,25 +43,36 @@ public class Main {
 			BUILD_NUMBER = 0;
 		}
 	}
-	
-	public static final OptArg[] options = new OptArg[]{
+
+	/**
+	 * The command-line options accepted by the main method.
+	 */
+	public static final OptArg[] options = new OptArg[] {
 			new OptArg("version","Print version information"),
-			new OptArg("verbose","Print detailed information on what the compiler is doing")
+			new OptArg("verbose","Print detailed information on what the compiler is doing"),
+			new OptArg("whileypath","wp",PATHLIST,"Specify where to find whiley files")
 	};
 	
 	public static void main(String[] _args) {
+		// First, check whether or not we actually provided any thing on the
+		// command-line.
 		if(_args.length == 0) {
 			System.out.println("usage: wyjc <options> <source-files>");
 			OptArg.usage(System.out, options);
 			System.exit(1);
 		}
+		
+		// Second, process any command-line options using the OptArg utility.
 		List<String> args = Arrays.asList(_args);
 		Map<String,Object> values = OptArg.parseOptions(args,options);
+		
+		// Third, process any command-line options
 		if(values.containsKey("version")) {
 			System.out.println("Whiley-to-Java Compiler (wyjc) version " + MAJOR_VERSION + "."
 					+ MINOR_VERSION + "." + MINOR_REVISION + " (build "
 					+ BUILD_NUMBER + ")");				
 			System.exit(0);
 		}
+		
 	}
 }

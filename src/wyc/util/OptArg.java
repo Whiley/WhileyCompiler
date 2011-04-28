@@ -13,10 +13,16 @@ import java.util.*;
  */
 public final class OptArg {
 	/**
-	 * The long form of the option. (e.g. for "--version", the long form is
+	 * The long form of the option. (e.g. for "-version", the long form is
 	 * "version")
 	 */
 	public final String option;
+	
+	/**
+	 * The short form of the option. (e.g. for "-version", the short form might
+	 * be "v" as in "-v")
+	 */
+	public final String shortForm;
 	
 	/**
 	 * The kind of argument accepted by this option (if any).
@@ -44,7 +50,25 @@ public final class OptArg {
 	 * @param defaultValue
 	 */
 	public OptArg(String option,String description) {
-		this.option = option;		
+		this.option = option;
+		this.shortForm = null;
+		this.argument = null;
+		this.description = description;
+		this.defaultValue = null;
+	}
+	
+	/**
+	 * Construct an option object with a short form which does not accept an argument.
+	 * 
+	 * @param option
+	 * @param shortForm
+	 * @param argument
+	 * @param description
+	 * @param defaultValue
+	 */
+	public OptArg(String option,String shortForm, String description) {
+		this.option = option;
+		this.shortForm = shortForm;
 		this.argument = null;
 		this.description = description;
 		this.defaultValue = null;
@@ -60,7 +84,26 @@ public final class OptArg {
 	 */
 	public OptArg(String option, Kind argument,
 			String description) {
-		this.option = option;		
+		this.option = option;	
+		this.shortForm = null;
+		this.argument = argument;
+		this.description = description;
+		this.defaultValue = null;
+	}
+	
+	/**
+	 * Construct an option object with a short form which accepts an argument.
+	 * 
+	 * @param option
+	 * @param shortForm
+	 * @param argument
+	 * @param description
+	 * @param defaultValue
+	 */
+	public OptArg(String option, String shortForm, Kind argument,
+			String description) {
+		this.option = option;	
+		this.shortForm = shortForm;
 		this.argument = argument;
 		this.description = description;
 		this.defaultValue = null;
@@ -76,7 +119,25 @@ public final class OptArg {
 	 */
 	public OptArg(String option, Kind argument,
 			String description, Object defaultValue) {
-		this.option = option;		
+		this.option = option;
+		this.shortForm = null;
+		this.argument = argument;
+		this.description = description;
+		this.defaultValue = defaultValue;
+	}
+	
+	/**
+	 * Construct an option object with a short form which accepts an argument and has a default value.
+	 * 
+	 * @param option
+	 * @param argument
+	 * @param description
+	 * @param defaultValue
+	 */
+	public OptArg(String option, String shortForm, Kind argument,
+			String description, Object defaultValue) {
+		this.option = option;
+		this.shortForm = shortForm;
 		this.argument = argument;
 		this.description = description;
 		this.defaultValue = defaultValue;
@@ -160,6 +221,7 @@ public final class OptArg {
 		for(OptArg opt : options) {
 			result.put(opt.option, opt.defaultValue);
 			optmap.put(opt.option, opt);			
+			optmap.put(opt.shortForm, opt);
 		}
 				
 		Iterator<String> iter = args.iterator();
@@ -186,19 +248,24 @@ public final class OptArg {
 	public static void usage(PrintStream output, OptArg...options) {
 		// first, work out gap information
 		int gap = 0;		
-
+		ArrayList<OptArg> opts = new ArrayList();
 		for (OptArg opt : options) {
-			int len = opt.option.length();
+			opts.add(opt);
+			int len = opt.option.length();			
 			if(opt.argument != null) {
 				len = len + opt.argument.toString().length();
 			}
-			gap = Math.max(gap, opt.option.length());			
+			if(opt.shortForm != null) {
+				len = len + opt.shortForm.length();
+				opts.add(new OptArg(opt.shortForm,opt.argument,opt.description + " [short form]"));
+			} 
+			gap = Math.max(gap, len);			
 		}
 		
 		gap = gap + 1;
 		
 		// now, print the information
-		for (OptArg opt : options) {
+		for (OptArg opt : opts) {
 			output.print("  -" + opt.option);
 			int rest = gap - opt.option.length();
 			output.print(" ");
@@ -207,7 +274,7 @@ public final class OptArg {
 				rest -= arg.length();
 				output.print(arg);
 			}			
-			for (int i = 0; i != rest; ++i) {
+			for (int i = 0; i < rest; ++i) {
 				output.print(" ");
 			}			
 			output.println(opt.description);
