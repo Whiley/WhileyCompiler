@@ -29,7 +29,7 @@ import wyil.lang.Module;
 import wyil.stages.ModuleTransform;
 import wyil.util.Logger;
 
-public class WyilTransform implements Compiler.Stage {
+public class WyilTransform implements WyCompiler.Stage {
 	private String name;
 	private ModuleTransform transform;
 	

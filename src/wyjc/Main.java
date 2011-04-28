@@ -1,12 +1,13 @@
 package wyjc;
 
-import java.io.PrintStream;
+import java.io.*;
 import java.net.URI;
 import java.util.*;
 
 import wyc.compiler.*;
 import wyc.util.*;
 import wyil.ModuleLoader;
+import wyil.util.*;
 import static wyc.util.OptArg.*;
 
 /**
@@ -150,11 +151,34 @@ public class Main {
 		whileypath.add(0,".");
 		whileypath.addAll(bootpath);
 
-		try {
-			ModuleLoader loader = new ModuleLoader(whileypath);
-			Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, loader);
-			// now what?
-			
+		// now construct a pipline and initialise the compiler		
+		ModuleLoader loader = new ModuleLoader(whileypath);
+		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, loader);
+		List<WyCompiler.Stage> stages = pipeline.instantiate();
+		WyCompiler compiler = new WyCompiler(loader,stages);
+		
+		// set some loader configuration(s)
+		loader.setLogger(compiler);
+		loader.setClosedWorldAssumption(true);
+
+		if(verbose) {
+			compiler.setLogOut(System.err);
+		}
+
+		// finally, let's compile some files!!!
+		try {			
+			ArrayList<File> files = new ArrayList<File>();
+			for (String file : args) {
+				files.add(new File(file));
+			}
+			compiler.compile(files);
+		} catch (SyntaxError e) {
+			e.outputSourceError(errout);
+			if (verbose) {
+				e.printStackTrace(errout);
+			}
+		} catch (Throwable e) {
+			errout.println("internal failure: " + e.getMessage());
 		}
 	}
 	

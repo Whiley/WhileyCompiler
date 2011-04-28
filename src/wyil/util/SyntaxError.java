@@ -25,6 +25,12 @@
 
 package wyil.util;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+
 import wyil.lang.Attribute;
 
 /**
@@ -109,6 +115,49 @@ public class SyntaxError extends RuntimeException {
 	 * @return
 	 */
 	public int end() { return end; }
+
+	/**
+	 * Output the syntax error to a given output stream.
+	 */
+	public void outputSourceError(PrintStream output) {
+		if(filename == null) {
+			output.println("syntax error: " + getMessage());
+		} else {
+			int line = 0;
+			String lineText = "";
+
+			try {
+				BufferedReader in = new BufferedReader(new InputStreamReader(
+						new FileInputStream(filename), "UTF8"));
+
+				while (in.ready() && start >= lineText.length()) {
+					start -= lineText.length() + 1;
+					end -= lineText.length() + 1;
+					lineText = in.readLine();
+					line = line + 1;
+				}
+			} catch (IOException e) {
+				output.println("syntax error: " + getMessage());
+				return;
+			}
+
+			output.println(filename + ":" + line + ": " + getMessage());
+			// errout.println();
+			output.println(lineText);
+
+			for (int i = 0; i <= start; ++i) {
+				if (lineText.charAt(i) == '\t') {
+					output.print("\t");
+				} else {
+					output.print(" ");
+				}
+			}
+			for (int i = start; i <= end; ++i) {
+				output.print("^");
+			}
+			output.println("");
+		} 
+	}
 	
 	public static final long serialVersionUID = 1l;
 	
@@ -139,4 +188,6 @@ public class SyntaxError extends RuntimeException {
 		
 		throw new SyntaxError(msg, filename, start, end, ex);
 	}
+	
+	
 }

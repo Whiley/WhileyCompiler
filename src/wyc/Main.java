@@ -146,38 +146,7 @@ public class Main {
 			return UNKNOWN_ERROR;
 		}
 		
-		if(bootpath.isEmpty()) {
-			// In this case, no explicit bootpath has been specified on the
-			// command-line. The challenge is that we want to automatically put
-			// the wyrt.jar (Whiley Runtime Library) on the bootpath. To do
-			// this, we want to try and determine the jarfile that was used to
-			// get us to this point. Typically,
-			// "java -jar wyjc.jar file.whiley". We can use wyjc.jar in place of
-			// wyrt.jar, as it contains the same things.
-			//
-			try {
-				// String jarfile = Main.class.getPackage().getImplementationTitle();
-				// bootpath.add(jarfile);
-				
-				URI location = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();								
-				if(location != null) {
-					// The following code is a hack to determine the location of
-					// the enclosing jar file.
-					String jarfile = location.toURL().getFile().toString();					
-					if(!jarfile.endsWith(".jar")) {
-						// This seems to happen when calling from the ant task.
-						// For some reason, despite me asking it to use a
-						// particular jar file, it does not. Instead, it loads
-						// using the CLASSPATH environment variable, which means
-						// "."
-						jarfile += "stdlib";
-					}
-					bootpath.add(jarfile);
-				}				
-			} catch(Exception e) {
-				// just ignore.
-			}
-		}
+		
 		
 		whileypath.add(0,".");
 		whileypath.addAll(bootpath);
@@ -290,45 +259,7 @@ public class Main {
 		}
 	}	
 	
-	/**
-	 * This method simply reads in the input file, and prints out a
-	 * given line of text, with little markers (i.e. '^') placed
-	 * underneath a portion of it.  
-	 *
-	 * @param fileArg - the name of the file whose line to print
-	 * @param start - the start position of the offending region.
-	 * @param end - the end position of the offending region.
-	 * @param message - the message to print about the error
-	 */
-	public void outputSourceError(String fileArg, int start, int end,
-			String message) throws IOException {
-		BufferedReader in = new BufferedReader(new InputStreamReader(
-				new FileInputStream(fileArg), "UTF8"));
-						
-		int line = 0;
-		String lineText = "";
-		while (in.ready() && start >= lineText.length()) {
-			start -= lineText.length() + 1;
-			end -= lineText.length() + 1;
-			lineText = in.readLine();						
-			line = line + 1;			
-		}		
-								
-		errout.println(fileArg + ":" + line + ": " + message);
-		//errout.println();
-		errout.println(lineText);	
-		for (int i = 0; i <= start; ++i) {
-			if (lineText.charAt(i) == '\t') {
-				errout.print("\t");
-			} else {
-				errout.print(" ");
-			}
-		}				
-		for (int i = start; i <= end; ++i) {		
-			errout.print("^");
-		}
-		errout.println("");		
-	}
+
 
 	protected Compiler createCompiler(ModuleLoader loader,
 			List<Compiler.Stage> stages) {

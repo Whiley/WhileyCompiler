@@ -4,7 +4,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-import wyc.compiler.Compiler.Stage;
+import wyc.compiler.WyCompiler.Stage;
 import wyil.ModuleLoader;
 
 /**
@@ -80,8 +80,8 @@ public class Pipeline {
 	 * @param modifiers
 	 * @return
 	 */
-	public List<Compiler.Stage> instantiate(ModuleLoader loader) {
-		ArrayList<Compiler.Stage> pipeline = new ArrayList<Compiler.Stage>();
+	public List<Stage> instantiate() {
+		ArrayList<Stage> pipeline = new ArrayList<Stage>();
 		for (Template s : stages) {
 			pipeline.add(s.instantiate(loader));
 		}
@@ -95,11 +95,11 @@ public class Pipeline {
 	 * @author djp
 	 */
 	private static class Template {		
-		public final Class<? extends Compiler.Stage> clazz;		
+		public final Class<? extends Stage> clazz;		
 		public final String name;
 		public final Map<String,Object> options;
 		
-		public Template(String name, Class<? extends Compiler.Stage> clazz,
+		public Template(String name, Class<? extends Stage> clazz,
 				Map<String, Object> options) {
 			this.name = name;
 			this.clazz = clazz;

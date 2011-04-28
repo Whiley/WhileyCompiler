@@ -36,7 +36,7 @@ import wyil.io.*;
 import wyjvm.io.*;
 import wyjvm.lang.ClassFile;
 
-public class WyilWriter implements Compiler.Stage {	
+public class WyilWriter implements WyCompiler.Stage {	
 	private boolean writeTypes;
 	private boolean writeLabels;
 	private boolean writeAttrs;

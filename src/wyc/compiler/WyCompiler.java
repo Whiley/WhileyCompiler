@@ -35,7 +35,7 @@ import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
 
-public class Compiler implements Logger {	
+public class WyCompiler implements Logger {	
 	protected ModuleLoader loader;
 	protected ArrayList<Stage> stages;
 
@@ -44,7 +44,7 @@ public class Compiler implements Logger {
 		public Module process(Module module, Logger logout);
 	}
 	
-	public Compiler(ModuleLoader loader, List<Stage> stages) {
+	public WyCompiler(ModuleLoader loader, List<Stage> stages) {
 		this.loader = loader;		
 		this.stages = new ArrayList<Stage>(stages);				
 	}
