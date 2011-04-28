@@ -1541,10 +1541,10 @@ public class WhileyParser {
 	
 	private void syntaxError(String msg, Expr e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
-		throw new ParseError(msg, filename, loc.start, loc.end);
+		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
 	
 	private void syntaxError(String msg, Token t) {
-		throw new ParseError(msg, filename, t.start, t.start + t.text.length() - 1);
+		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length() - 1);
 	}		
 }
