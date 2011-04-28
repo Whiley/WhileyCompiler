@@ -95,10 +95,10 @@ public class Pipeline {
 	private static class Template {		
 		public final Class<? extends Compiler.Stage> clazz;		
 		public final String name;
-		public final Map<String,String> options;
+		public final Map<String,Object> options;
 		
 		public Template(String name, Class<? extends Compiler.Stage> clazz,
-				Map<String, String> options) {
+				Map<String, Object> options) {
 			this.name = name;
 			this.clazz = clazz;
 			this.options = options;
@@ -137,9 +137,9 @@ public class Pipeline {
 	public static class Modifier {
 		public final POP op;
 		public final String name;		
-		public final Map<String,String> options;
+		public final Map<String,Object> options;
 		
-		public Modifier(POP pop, String name, Map<String, String> options) {
+		public Modifier(POP pop, String name, Map<String, Object> options) {
 			this.op = pop;
 			this.name = name;			
 			this.options = options;
