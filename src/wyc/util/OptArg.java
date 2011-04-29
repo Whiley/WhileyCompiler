@@ -280,4 +280,26 @@ public final class OptArg {
 			output.println(opt.description);
 		}
 	}
+	
+	/**
+	 * This splits strings of the form "x=y,v=w" into distinct components and
+	 * puts them into a map. In the case of a string like "x,y=z" then x is
+	 * loaded with the empty string.
+	 * 
+	 * @param str
+	 * @return
+	 */
+	protected Map<String, String> splitOptions(String str) {
+		HashMap<String, String> options = new HashMap<String, String>();
+		String[] splits = str.split(",");
+		for (String s : splits) {
+			String[] p = s.split("=");
+			if (p.length == 1) {
+				options.put(p[0], "");
+			} else {
+				options.put(p[0], p[1]);
+			}
+		}
+		return options;
+	}
 }
