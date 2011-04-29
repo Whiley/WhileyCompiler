@@ -132,25 +132,40 @@ public class WyCompiler implements Logger {
 	
 	protected Module process(Module module, Transform stage) throws IOException {
 		long start = System.currentTimeMillis();
-
+		String name = name(stage.getClass().getName());
+		
 		try {
 			module = stage.apply(module);
 			logTimedMessage("[" + module.filename() + "] applied "
-					+ stage.name(), System.currentTimeMillis() - start);
+					+ name, System.currentTimeMillis() - start);
 			return module;
 		} catch (RuntimeException ex) {
 			logTimedMessage("[" + module.filename() + "] failed on "
-					+ stage.name() + " (" + ex.getMessage() + ")",
+					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 			throw ex;
 		} catch (IOException ex) {
 			logTimedMessage("[" + module.filename() + "] failed on "
-					+ stage.name() + " (" + ex.getMessage() + ")",
+					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);
 			throw ex;
 		}
 	}
-		
+	
+	public static String name(String camelCase) {
+		boolean firstTime = true;
+		String r = "";
+		for(int i=0;i!=camelCase.length();++i) {
+			char c = camelCase.charAt(i);
+			if(!firstTime && Character.isUpperCase(c)) {
+				r += " ";
+				c = Character.toLowerCase(c);
+			}
+			r += c;
+		}
+		return r;
+	}
+	
 	protected void resolveNames(WhileyFile m) {
 		long start = System.currentTimeMillis();		
 		new NameResolution(loader).resolve(m);
