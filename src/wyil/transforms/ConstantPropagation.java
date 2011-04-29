@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.stages;
+package wyil.transforms;
 
 import static wyil.util.SyntaxError.syntaxError;
 
@@ -40,6 +40,10 @@ import wyil.util.dfa.ForwardFlowAnalysis;
 public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Value>> {	
 	public ConstantPropagation(ModuleLoader loader) {
 		super(loader);
+	}
+	
+	public String name() {
+		return "constant propagation";
 	}
 	
 	public Module.TypeDef transform(Module.TypeDef type) {		

@@ -34,10 +34,10 @@ import java.util.Map;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.stages.ModuleTransform;
+import wyil.transforms.Transform;
 import wyil.util.*;
 
-public abstract class ForwardFlowAnalysis<T> implements ModuleTransform {
+public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected ModuleLoader loader;
 	protected String filename;
 	protected Module.Method method;

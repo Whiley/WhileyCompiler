@@ -30,19 +30,21 @@ import java.util.*;
 
 import wyil.lang.*;
 import wyil.lang.Module.*;
+import wyil.transforms.Transform;
+import wyil.ModuleLoader;
 
-public class WyilFileWriter {
+public class WyilFileWriter implements Transform {
 	private PrintWriter out;
 	private int codeFlags = Code.SHORT_TYPES;	
 	private boolean writeLabels;
 	private boolean writeAttributes;
-	
-	public WyilFileWriter(Writer os) {
-		out = new PrintWriter(os);
+		
+	public WyilFileWriter(ModuleLoader loader) {
+
 	}
 	
-	public WyilFileWriter(OutputStream os) {
-		out = new PrintWriter(os);
+	public String name() {
+		return "wyil writer";
 	}
 	
 	public void setWriteTypes(boolean flag) {
@@ -59,7 +61,10 @@ public class WyilFileWriter {
 		writeAttributes = flag;
 	}
 	
-	public void write(Module module) {
+	public Module apply(Module module) throws IOException {
+		String filename = module.filename().replace(".whiley", ".wyil");
+		out = new PrintWriter(new FileOutputStream(filename));
+		
 		out.println("module: " + module.id());
 		out.println("source-file: " + module.filename());
 		out.println();
@@ -83,6 +88,8 @@ public class WyilFileWriter {
 			out.println();
 		}
 		out.flush();
+		
+		return module;
 	}
 	
 	public void write(Method method, PrintWriter out) {

@@ -27,26 +27,21 @@ package wyc.compiler;
 
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.transforms.Transform;
 import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
 
 public class WyCompiler implements Logger {	
 	protected ModuleLoader loader;
-	protected ArrayList<Stage> stages;
+	protected ArrayList<Transform> stages;
 
-	public interface Stage {
-		public String name();
-		public Module process(Module module, Logger logout);
-	}
-	
-	public WyCompiler(ModuleLoader loader, List<Stage> stages) {
+	public WyCompiler(ModuleLoader loader, List<Transform> stages) {
 		this.loader = loader;		
-		this.stages = new ArrayList<Stage>(stages);				
+		this.stages = new ArrayList<Transform>(stages);				
 	}
 	
 	/**
@@ -127,16 +122,16 @@ public class WyCompiler implements Logger {
 	 * 
 	 * @param wf
 	 */
-	public void finishCompilation(Module module) {				
+	public void finishCompilation(Module module) throws IOException {				
 		// Register the updated file
 		loader.register(module);
 		
-		for(Stage stage : stages) {
+		for(Transform stage : stages) {
 			module = process(module,stage);
 		}		
 	}
 	
-	protected Module process(Module module, Stage stage) {
+	protected Module process(Module module, Transform stage) throws IOException {
 		long start = System.currentTimeMillis();
 
 		try {
@@ -145,6 +140,11 @@ public class WyCompiler implements Logger {
 					+ stage.name(), System.currentTimeMillis() - start);
 			return module;
 		} catch (RuntimeException ex) {
+			logTimedMessage("[" + module.filename() + "] failed on "
+					+ stage.name() + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start);
+			throw ex;
+		} catch (IOException ex) {
 			logTimedMessage("[" + module.filename() + "] failed on "
 					+ stage.name() + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start);

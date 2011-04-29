@@ -31,15 +31,14 @@ import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.stages.ConstantPropagation;
-import wyil.stages.DefiniteAssignment;
-import wyil.stages.FunctionCheck;
-import wyil.stages.TypePropagation;
+import wyil.transforms.ConstantPropagation;
+import wyil.transforms.DefiniteAssignment;
+import wyil.transforms.FunctionCheck;
+import wyil.transforms.TypePropagation;
 import wyil.util.*;
 import wyjc.compiler.ClassWriter;
 import wyjc.compiler.JvmBytecodeWriter;
 import wyc.compiler.*;
-import wyc.compiler.Compiler;
 import wyc.util.*;
 
 public class Main {

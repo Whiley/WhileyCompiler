@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.stages;
+package wyil.transforms;
 
 import static wyil.util.SyntaxError.syntaxError;
 
@@ -64,6 +64,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		super(loader);
 	}
 		
+	public String name() {
+		return "type propagation";
+	}
+	
 	public Module.TypeDef propagate(Module.TypeDef type) {
 		// TypeDef's do not need to be typed, since they are typed by
 		// ModuleBuilder.

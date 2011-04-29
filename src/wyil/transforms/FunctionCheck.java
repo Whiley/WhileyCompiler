@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.stages;
+package wyil.transforms;
 
 import java.util.*;
 
@@ -32,12 +32,16 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wyil.util.SyntaxError.*;
 
-public class FunctionCheck implements ModuleTransform {
+public class FunctionCheck implements Transform {
 	private final ModuleLoader loader;
 	private String filename;
 
 	public FunctionCheck(ModuleLoader loader) {
 		this.loader = loader;
+	}
+	
+	public String name() {
+		return "function check";
 	}
 	
 	public Module apply(Module module) {

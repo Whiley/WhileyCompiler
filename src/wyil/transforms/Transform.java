@@ -23,38 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.util;
+package wyil.transforms;
 
-public class VerificationError extends SyntaxError {
-	/**
-	 * Identify a syntax error at a particular point in a file.
-	 * 
-	 * @param msg
-	 *            Message detailing the problem.
-	 * @param filename
-	 *            The source file that this error is referring to.
-	 * @param line
-	 *            Line number within file containing problem.
-	 * @param column
-	 *            Column within line of file containing problem.
-	 */
-	public VerificationError(String msg, String filename, int start, int end) {
-		super(msg,filename,start,end);		
-	}	
-	
-	/**
-	 * Identify a syntax error at a particular point in a file.
-	 * 
-	 * @param msg
-	 *            Message detailing the problem.
-	 * @param filename
-	 *            The source file that this error is referring to.
-	 * @param line
-	 *            Line number within file containing problem.
-	 * @param column
-	 *            Column within line of file containing problem.
-	 */
-	public VerificationError(String msg, String filename, int start, int end, Throwable ex) {
-		super(msg,filename,start,end,ex);			
-	}
+import java.io.IOException;
+
+import wyil.lang.Module;
+
+public interface Transform {
+	public String name();
+	public Module apply(Module module) throws IOException;
 }

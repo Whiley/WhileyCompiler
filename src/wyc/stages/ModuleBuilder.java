@@ -30,7 +30,7 @@ import java.math.BigInteger;
 
 import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
-import wyil.stages.TypePropagation;
+import wyil.transforms.TypePropagation;
 import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Code.IfGoto;

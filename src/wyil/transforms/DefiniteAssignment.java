@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.stages;
+package wyil.transforms;
 
 import java.util.*;
 
@@ -54,12 +54,16 @@ import static wyil.util.SyntaxError.*;
  * 
  */
 public class DefiniteAssignment extends
-		ForwardFlowAnalysis<HashSet<String>> implements ModuleTransform {
+		ForwardFlowAnalysis<HashSet<String>> implements Transform {
 	
 	public DefiniteAssignment(ModuleLoader loader) {
 		super(loader);
 	}
-			
+		
+	public String name() {
+		return "definite assignment";
+	}
+	
 	public HashSet<String> initialStore() {
 		HashSet<String> defined = new HashSet<String>();
 		
