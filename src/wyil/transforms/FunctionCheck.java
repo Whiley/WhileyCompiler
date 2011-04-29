@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.util.*;
 
 import wyil.ModuleLoader;
+import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wyil.util.SyntaxError.*;

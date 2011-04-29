@@ -30,7 +30,6 @@ import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
-import wyil.transforms.Transform;
 import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;

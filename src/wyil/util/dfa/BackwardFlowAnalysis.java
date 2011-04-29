@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import wyil.ModuleLoader;
+import wyil.Transform;
 import wyil.lang.*;
-import wyil.transforms.Transform;
 import wyil.util.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
