@@ -25,40 +25,27 @@
 
 package wyjc.compiler;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.*;
+import java.io.*;
 
-import wyc.compiler.Compiler;
-import wyc.compiler.Compiler.Stage;
-import wyil.ModuleLoader;
+import wyil.*;
 import wyil.lang.Module;
-import wyil.util.Logger;
-import wyil.io.*;
 import wyjc.io.ClassFileBuilder;
 import wyjvm.io.*;
 import wyjvm.lang.ClassFile;
 import wyjvm.util.DeadCodeElimination;
 import wyjvm.util.Validation;
 
-public class JvmBytecodeWriter implements Compiler.Stage {
+public class JvmBytecodeWriter implements Transform {
 	private ClassFileBuilder classBuilder;
-	private final boolean validate;
-	private final boolean deadCode;
+	private final boolean validate = true;
+	private final boolean deadCode = true;
 	
-	public JvmBytecodeWriter(ModuleLoader loader, Map<String, String> options) {
-		classBuilder = new ClassFileBuilder(loader, wyc.Main.MAJOR_VERSION,
-				wyc.Main.MINOR_VERSION);
-		validate = !options.containsKey("nvalidate");
-		deadCode = !options.containsKey("ndeadcode");
+	public JvmBytecodeWriter(ModuleLoader loader) {
+		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
+				wyjc.Main.MINOR_VERSION);
 	}
 	
-	public String name() {
-		return "jvm file writer";
-	}
-	
-	public Module process(Module m, Logger logout) {
-		long start = System.currentTimeMillis();		
+	public Module apply(Module m) throws IOException {	
 		ClassFile file = classBuilder.build(m);				
 		
 		if(validate) {
@@ -71,19 +58,12 @@ public class JvmBytecodeWriter implements Compiler.Stage {
 		}
 		
 		// calculate filename
-		String filename = m.filename().replace(".whiley", ".jvm");
-		try {
-			FileOutputStream out = new FileOutputStream(filename);
-			BytecodeFileWriter writer = new BytecodeFileWriter(out,null);
-			writer.write(file);
-			out.flush();
-			logout.logTimedMessage("[" + m.filename() + "] jvm bytecode file written",
-					System.currentTimeMillis() - start);
-		} catch(IOException ex) {
-			logout.logTimedMessage("[" + m.filename()
-					+ "] failed writing jvm bytecode file (" + ex.getMessage() + ")",
-					System.currentTimeMillis() - start);
-		}
+		String filename = m.filename().replace(".whiley", ".jvm");		
+		FileOutputStream out = new FileOutputStream(filename);
+		BytecodeFileWriter writer = new BytecodeFileWriter(out,null);
+		writer.write(file);
+		out.flush();
+
 		return m;
 	}	
 	

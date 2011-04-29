@@ -28,7 +28,7 @@ package wyjc.util;
 import java.io.*;
 import java.util.*;
 
-import wyc.Main;
+import wyjc.Main;
 
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -99,7 +99,7 @@ public class AntTask extends MatchingTask {
         if(nfiles > 0) {
         	log("Compiling " + nfiles + " source file(s)");
         	// Finally, run the whiley compiler        	
-			int exitCode = new Main().run(params.toArray(new String[params.size()]));        
+			int exitCode = Main.main(params.toArray(new String[params.size()]));        
 
         	if(exitCode != 0) {
         		throw new BuildException("compilation errors");

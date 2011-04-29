@@ -42,11 +42,7 @@ public class WyilFileWriter implements Transform {
 	public WyilFileWriter(ModuleLoader loader) {
 
 	}
-	
-	public String name() {
-		return "wyil writer";
-	}
-	
+		
 	public void setWriteTypes(boolean flag) {
 		if(flag) {
 			codeFlags |= Code.INTERNAL_TYPES;

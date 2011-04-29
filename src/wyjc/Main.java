@@ -6,7 +6,7 @@ import java.util.*;
 
 import wyc.compiler.*;
 import wyc.util.*;
-import wyil.ModuleLoader;
+import wyil.*;
 import wyil.util.*;
 import static wyc.util.OptArg.*;
 
@@ -154,7 +154,7 @@ public class Main {
 		// now construct a pipline and initialise the compiler		
 		ModuleLoader loader = new ModuleLoader(whileypath);
 		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, loader);
-		List<WyCompiler.Stage> stages = pipeline.instantiate();
+		List<Transform> stages = pipeline.instantiate();
 		WyCompiler compiler = new WyCompiler(loader,stages);		
 		loader.setLogger(compiler);		
 

@@ -42,10 +42,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		super(loader);
 	}
 	
-	public String name() {
-		return "constant propagation";
-	}
-	
 	public Module.TypeDef transform(Module.TypeDef type) {		
 		return type;		
 	}

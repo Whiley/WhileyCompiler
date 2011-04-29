@@ -29,7 +29,6 @@ import java.io.IOException;
 
 import wyil.lang.Module;
 
-public interface Transform {
-	public String name();
+public interface Transform {	
 	public Module apply(Module module) throws IOException;
 }

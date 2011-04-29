@@ -41,10 +41,6 @@ public class FunctionCheck implements Transform {
 		this.loader = loader;
 	}
 	
-	public String name() {
-		return "function check";
-	}
-	
 	public Module apply(Module module) {
 		filename = module.filename();
 		

@@ -63,10 +63,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	public TypePropagation(ModuleLoader loader) {
 		super(loader);
 	}
-		
-	public String name() {
-		return "type propagation";
-	}
 	
 	public Module.TypeDef propagate(Module.TypeDef type) {
 		// TypeDef's do not need to be typed, since they are typed by

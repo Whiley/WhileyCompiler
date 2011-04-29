@@ -2,10 +2,11 @@ package wyc.compiler;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
-import wyc.compiler.WyCompiler.Stage;
-import wyil.ModuleLoader;
+import wyil.*;
+import wyil.transforms.*;
 
 /**
  * A Pipeline consists of a number of stages which are applied to the
@@ -16,7 +17,7 @@ import wyil.ModuleLoader;
  * 
  */
 public class Pipeline {
-	private static final HashMap<String,Class<? extends Stage>> bindings = new HashMap();
+	private static final HashMap<String,Class<? extends Transform>> bindings = new HashMap();
 	private final ModuleLoader loader;	
 	private final ArrayList<Template> stages;
 	
@@ -29,21 +30,13 @@ public class Pipeline {
 	public static final List<Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Template>() {
 				{
-					add(new Template("wyil", WyilWriter.class,
-							Collections.EMPTY_MAP));
+					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));
+					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));
+					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
+					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
+					add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));					
 				}
 			});
-	
-	static {
-		register("wyil",WyilTransform.class);
-		// new to register more here.
-		// type propagation
-		// definite assignment
-		// constant propagation
-		// function check
-		// wyil file write
-	}
-	
 	/**
 	 * Apply a list of modifiers in the order of appearance. Modifiers may
 	 * remove stages, add new stages or reconfigure existing stages.
@@ -52,20 +45,20 @@ public class Pipeline {
 	 */
 	public void apply(List<Modifier> modifiers) {
 		for (Modifier p : modifiers) {
-			Class<? extends Stage> stage = bindings.get(p.name);
+			Class<? extends Transform> stage = bindings.get(p.name);
 			switch(p.op) {
 			case APPEND:
-				stages.add(new Template(p.name,stage,p.options));
+				stages.add(new Template(stage,p.options));
 				break;
 			case REPLACE:
 			{
-				int index = findStage(p.name);
-				stages.set(index,new Template(p.name,stage,p.options));
+				int index = findTransform(p.name);
+				stages.set(index,new Template(stage,p.options));
 				break;
 			}
 			case REMOVE:
 			{
-				int index = findStage(p.name);
+				int index = findTransform(p.name);
 				stages.remove(index);
 				break;			
 			}
@@ -80,8 +73,8 @@ public class Pipeline {
 	 * @param modifiers
 	 * @return
 	 */
-	public List<Stage> instantiate() {
-		ArrayList<Stage> pipeline = new ArrayList<Stage>();
+	public List<Transform> instantiate() {
+		ArrayList<Transform> pipeline = new ArrayList<Transform>();
 		for (Template s : stages) {
 			pipeline.add(s.instantiate(loader));
 		}
@@ -94,15 +87,13 @@ public class Pipeline {
 	 * 
 	 * @author djp
 	 */
-	private static class Template {		
-		public final Class<? extends Stage> clazz;		
-		public final String name;
+	private static class Template {					
+		Class<? extends Transform> clazz;
 		public final Map<String,Object> options;
 		
-		public Template(String name, Class<? extends Stage> clazz,
+		public Template(Class<? extends Transform> clazz, 
 				Map<String, Object> options) {
-			this.name = name;
-			this.clazz = clazz;
+			this.clazz = clazz;			
 			this.options = options;
 		}
 
@@ -114,11 +105,23 @@ public class Pipeline {
 		 * 
 		 * @return
 		 */
-		public Stage instantiate(ModuleLoader loader) {
-			try {				
-				Constructor<? extends Stage> c = clazz.getConstructor(
-						ModuleLoader.class, Map.class);
-				Stage stage = (Stage) c.newInstance(loader, options);
+		public Transform instantiate(ModuleLoader loader) {			
+			
+			try {
+				
+				// first, create the instance
+				Constructor<? extends Transform> c = clazz.getConstructor(
+						ModuleLoader.class);
+				Transform stage = (Transform) c.newInstance(loader, options);
+				
+				// second, configure the instance
+				for(Map.Entry<String,Object> e : options.entrySet()) {
+					String name = "set" + e.getKey();
+					Object value = e.getValue();
+					Method m = clazz.getDeclaredMethod(name, value.getClass());
+					m.invoke(stage, value);
+				}
+				
 				return stage;				
 			} catch(NoSuchMethodException e) {
 			} catch(InstantiationException e) {
@@ -156,10 +159,10 @@ public class Pipeline {
 		REMOVE
 	}
 	
-	private int findStage(String match) {
+	private int findTransform(String match) {
 		int i=0;
 		for(Template stage : stages) {
-			if(matchStageName(match,stage.name)) {
+			if(matchTransformName(match,stage.clazz.getName())) {
 				return i;
 			}
 			++i;
@@ -167,7 +170,8 @@ public class Pipeline {
 		throw new IllegalArgumentException("invalid stage name \"" + match + "\"");
 	}
 	
-	private static boolean matchStageName(String match, String name) {
+	private static boolean matchTransformName(String match, String name) {
+		name = name.toLowerCase();
 		if(match.equals(name) || name.startsWith(match)) {
 			return true;
 		}
@@ -186,23 +190,4 @@ public class Pipeline {
 		}
 		return r;
 	}
-	
-	/**
-	 * Register a compiler stage with the system. A compiler stage requires a
-	 * constructor which accepts a ModuleLoader, and Map<String,String> arguments
-	 *
-	 * @param name
-	 * @param stage
-	 */
-	public static void register(String name, Class<? extends Stage> stage) {
-		try {
-			Constructor<? extends Stage> c = stage.getConstructor(
-					ModuleLoader.class, Map.class);
-			bindings.put(name, stage);
-			return;
-		} catch(NoSuchMethodException e) {
-		}
-		throw new IllegalArgumentException("cannot register stage \""
-				+ name + "\" - missing required constructor");
-	}	
 }

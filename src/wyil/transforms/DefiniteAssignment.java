@@ -60,10 +60,6 @@ public class DefiniteAssignment extends
 	public DefiniteAssignment(ModuleLoader loader) {
 		super(loader);
 	}
-		
-	public String name() {
-		return "definite assignment";
-	}
 	
 	public HashSet<String> initialStore() {
 		HashSet<String> defined = new HashSet<String>();
