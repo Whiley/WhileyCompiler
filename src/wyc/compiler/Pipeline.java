@@ -112,7 +112,7 @@ public class Pipeline {
 				// first, create the instance
 				Constructor<? extends Transform> c = clazz.getConstructor(
 						ModuleLoader.class);
-				Transform stage = (Transform) c.newInstance(loader, options);
+				Transform stage = (Transform) c.newInstance(loader);
 				
 				// second, configure the instance
 				for(Map.Entry<String,Object> e : options.entrySet()) {

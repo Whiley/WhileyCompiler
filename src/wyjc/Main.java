@@ -113,12 +113,12 @@ public class Main {
 	}
 
 	/**
-	 * The main method is responsible for processing command-line arguments and
+	 * The run method is responsible for processing command-line arguments and
 	 * constructing an appropriate Compiler instance.
 	 * 
 	 * @param _args
 	 */
-	public static void main(String[] _args) {
+	public static int run(String[] _args) {
 		// First, check whether or not we actually provided any thing on the
 		// command-line.
 		if(_args.length == 0) {
@@ -128,7 +128,7 @@ public class Main {
 		}
 		
 		// Second, process any command-line options using the OptArg utility.
-		List<String> args = Arrays.asList(_args);
+		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 		Map<String,Object> values = OptArg.parseOptions(args,options);
 		
 		// Third, process any command-line options
@@ -136,7 +136,7 @@ public class Main {
 			System.out.println("Whiley-to-Java Compiler (wyjc) version " + MAJOR_VERSION + "."
 					+ MINOR_VERSION + "." + MINOR_REVISION + " (build "
 					+ BUILD_NUMBER + ")");				
-			System.exit(0);
+			return 0;
 		}
 		
 		// read out option values
@@ -158,10 +158,10 @@ public class Main {
 		WyCompiler compiler = new WyCompiler(loader,stages);		
 		loader.setLogger(compiler);		
 
-		if(verbose) {
+		if(verbose) {			
 			compiler.setLogOut(System.err);
 		}
-
+		
 		// finally, let's compile some files!!!
 		try {			
 			ArrayList<File> files = new ArrayList<File>();
@@ -174,9 +174,15 @@ public class Main {
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
+			return 1;
 		} catch (Throwable e) {
 			errout.println("internal failure: " + e.getMessage());
+			return 2;
 		}
+		return 0;
 	}
 	
+	public static void main(String[] args) {
+		System.exit(new Main().run(args));
+	}
 }

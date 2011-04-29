@@ -171,7 +171,11 @@ public final class OptArg {
 			
 	private static final class PATHLIST implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
-			options.put(arg, option.split(File.pathSeparator));
+			ArrayList<String> rs = new ArrayList<String>();
+			for(String r : option.split(File.pathSeparator)) {
+				rs.add(r);
+			}
+			options.put(arg, rs);
 		}
 		public String toString() {
 			return "<path>";
@@ -219,7 +223,9 @@ public final class OptArg {
 		HashMap<String,OptArg> optmap = new HashMap<String,OptArg>();		
 		
 		for(OptArg opt : options) {
-			result.put(opt.option, opt.defaultValue);
+			if(opt.defaultValue != null) {
+				result.put(opt.option, opt.defaultValue);
+			}
 			optmap.put(opt.option, opt);			
 			optmap.put(opt.shortForm, opt);
 		}
@@ -228,15 +234,18 @@ public final class OptArg {
 		while(iter.hasNext()) {
 			String arg = iter.next();			
 			if (arg.startsWith("-")) {
-				arg = arg.substring(1,arg.length());							
+				arg = arg.substring(1,arg.length());				
 				OptArg opt = optmap.get(arg);
-				if(opt != null) {
+				if(opt != null) {					
 					// matched
 					iter.remove(); // remove option from args list
 					Kind k = opt.argument;
 					if(k != null) {		
 						String param = iter.next();
+						iter.remove();
 						k.process(opt.option,param,result);
+					} else {
+						result.put(arg,null);
 					}
 				}				
 			} 
