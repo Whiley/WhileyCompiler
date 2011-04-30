@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.compiler;
+package wyc;
 
 import java.io.*;
 import java.util.*;
@@ -34,11 +34,11 @@ import wyil.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
 
-public class WyCompiler implements Logger {	
+public class Compiler implements Logger {	
 	protected ModuleLoader loader;
 	protected ArrayList<Transform> stages;
 
-	public WyCompiler(ModuleLoader loader, List<Transform> stages) {
+	public Compiler(ModuleLoader loader, List<Transform> stages) {
 		this.loader = loader;		
 		this.stages = new ArrayList<Transform>(stages);				
 	}

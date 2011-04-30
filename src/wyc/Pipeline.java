@@ -1,4 +1,4 @@
-package wyc.compiler;
+package wyc;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

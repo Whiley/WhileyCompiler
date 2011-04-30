@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.URI;
 import java.util.*;
 
+import wyc.Pipeline;
+import wyc.Compiler;
 import wyc.compiler.*;
 import wyc.util.*;
 import wyil.*;
@@ -158,9 +160,9 @@ public class Main {
 		ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
 		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, moduleLoader);
+		Pipeline pipeline = new Pipeline(templates, moduleLoader);
 		List<Transform> stages = pipeline.instantiate();
-		WyCompiler compiler = new WyCompiler(moduleLoader,stages);		
+		Compiler compiler = new Compiler(moduleLoader,stages);		
 		moduleLoader.setLogger(compiler);		
 
 		if(verbose) {			
