@@ -10,6 +10,7 @@ import wyil.*;
 import wyil.util.*;
 import static wyc.util.OptArg.*;
 import wyjc.io.*;
+import wyjc.transforms.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line
@@ -155,6 +156,8 @@ public class Main {
 		// now construct a pipline and initialise the compiler		
 		ClassFileLoader classLoader = new ClassFileLoader();
 		ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
+		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
+		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
 		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, moduleLoader);
 		List<Transform> stages = pipeline.instantiate();
 		WyCompiler compiler = new WyCompiler(moduleLoader,stages);		
