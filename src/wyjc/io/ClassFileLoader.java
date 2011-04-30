@@ -64,7 +64,8 @@ public class ClassFileLoader {
 	public ClassFileLoader() {
 		readers = new ArrayList();
 		readers.add(new WhileyType.Reader());	
-		readers.add(new WhileyDefine.Reader(readers));			
+		readers.add(new WhileyDefine.Reader(readers));		
+		// probably want to add more readers here.  E.g. for pre and post-conditions.
 	}
 		
 	public Module read(ModuleID module, String filename, InputStream input)

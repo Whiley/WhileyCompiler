@@ -74,7 +74,7 @@ public class ModuleLoader {
 	 * the file system and parsing them. Depending upon what the target platform
 	 * is, the actual loader will vary.
 	 */
-	private ClassFileLoader moduleReader;
+	private final ClassFileLoader moduleReader;
 	
 	/**
 	 * A Package object contains information about a particular package,
@@ -143,15 +143,17 @@ public class ModuleLoader {
 	 */
 	private Logger logger;
 	
-	public ModuleLoader(Collection<String> whileypath, Logger logger) {
+	public ModuleLoader(Collection<String> whileypath, ClassFileLoader loader,
+			Logger logger) {
 		this.logger = logger;
 		this.whileypath = new ArrayList<String>(whileypath);
-		
+		this.moduleReader = loader;
 	}
 	
-	public ModuleLoader(Collection<String> whileypath) {
+	public ModuleLoader(Collection<String> whileypath, ClassFileLoader loader) {
 		this.logger = Logger.NULL;
-		this.whileypath = new ArrayList<String>(whileypath);				
+		this.whileypath = new ArrayList<String>(whileypath);
+		this.moduleReader = loader;
 	}
 	
 	public void setClosedWorldAssumption(boolean flag) {

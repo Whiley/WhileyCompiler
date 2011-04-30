@@ -9,6 +9,7 @@ import wyc.util.*;
 import wyil.*;
 import wyil.util.*;
 import static wyc.util.OptArg.*;
+import wyjc.io.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line
@@ -152,11 +153,12 @@ public class Main {
 		whileypath.addAll(bootpath);
 
 		// now construct a pipline and initialise the compiler		
-		ModuleLoader loader = new ModuleLoader(whileypath);
-		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, loader);
+		ClassFileLoader classLoader = new ClassFileLoader();
+		ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
+		Pipeline pipeline = new Pipeline(Pipeline.defaultPipeline, moduleLoader);
 		List<Transform> stages = pipeline.instantiate();
-		WyCompiler compiler = new WyCompiler(loader,stages);		
-		loader.setLogger(compiler);		
+		WyCompiler compiler = new WyCompiler(moduleLoader,stages);		
+		moduleLoader.setLogger(compiler);		
 
 		if(verbose) {			
 			compiler.setLogOut(System.err);
@@ -177,6 +179,9 @@ public class Main {
 			return 1;
 		} catch (Throwable e) {
 			errout.println("internal failure: " + e.getMessage());
+			if (verbose) {
+				e.printStackTrace(errout);
+			}
 			return 2;
 		}
 		return 0;
