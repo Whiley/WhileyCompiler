@@ -132,7 +132,7 @@ public class Compiler implements Logger {
 	
 	protected Module process(Module module, Transform stage) throws IOException {
 		long start = System.currentTimeMillis();
-		String name = name(stage.getClass().getName());
+		String name = name(stage.getClass().getSimpleName());		
 		
 		try {
 			module = stage.apply(module);
@@ -159,9 +159,9 @@ public class Compiler implements Logger {
 			char c = camelCase.charAt(i);
 			if(!firstTime && Character.isUpperCase(c)) {
 				r += " ";
-				c = Character.toLowerCase(c);
-			}
-			r += c;
+			} 
+			firstTime=false;
+			r += Character.toLowerCase(c);;
 		}
 		return r;
 	}
