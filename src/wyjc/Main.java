@@ -155,32 +155,33 @@ public class Main {
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 
 		boolean verbose = values.containsKey("verbose");
 		
-		// initialise the boot path appropriately
-		initialiseBootpath(bootpath);
+		try {			
+			// initialise the boot path appropriately
+			initialiseBootpath(bootpath);
 
-		// now initialise the whiley path
-		whileypath.add(0,".");
-		whileypath.addAll(bootpath);
+			// now initialise the whiley path
+			whileypath.add(0,".");
+			whileypath.addAll(bootpath);
 
-		// now construct a pipline and initialise the compiler		
-		ClassFileLoader classLoader = new ClassFileLoader();
-		ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
-		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
-		Pipeline pipeline = new Pipeline(templates, moduleLoader);
-		if(pipelineModifiers != null) {
-			pipeline.apply(pipelineModifiers);
-		}
-		List<Transform> stages = pipeline.instantiate();
-		Compiler compiler = new Compiler(moduleLoader,stages);		
-		moduleLoader.setLogger(compiler);		
+			// now construct a pipline and initialise the compiler		
+			ClassFileLoader classLoader = new ClassFileLoader();
+			ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
+			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
+			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
+			Pipeline pipeline = new Pipeline(templates, moduleLoader);
+			if(pipelineModifiers != null) {
+				pipeline.apply(pipelineModifiers);
+			}
+			List<Transform> stages = pipeline.instantiate();
+			Compiler compiler = new Compiler(moduleLoader,stages);		
+			moduleLoader.setLogger(compiler);		
 
-		if(verbose) {			
-			compiler.setLogOut(System.err);
-		}
+			if(verbose) {			
+				compiler.setLogOut(System.err);
+			}
 		
 		// finally, let's compile some files!!!
-		try {			
+		
 			ArrayList<File> files = new ArrayList<File>();
 			for (String file : args) {
 				files.add(new File(file));

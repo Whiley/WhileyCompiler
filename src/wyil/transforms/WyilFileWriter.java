@@ -43,17 +43,17 @@ public class WyilFileWriter implements Transform {
 
 	}
 		
-	public void setWriteTypes(boolean flag) {
+	public void setTypes(boolean flag) {
 		if(flag) {
 			codeFlags |= Code.INTERNAL_TYPES;
 		}
 	}
 	
-	public void setWriteLabels(boolean flag) {
+	public void setLabels(boolean flag) {
 		writeLabels = flag;
 	}
 	
-	public void setWriteAttributes(boolean flag) {
+	public void setAttributes(boolean flag) {
 		writeAttributes = flag;
 	}
 	

@@ -137,33 +137,80 @@ public class Pipeline {
 		 * @return
 		 */
 		public Transform instantiate(ModuleLoader loader) {			
+			Transform stage;
 			
-			try {
-				
-				// first, create the instance
+			// first, instantiate the transform
+			try {				
 				Constructor<? extends Transform> c = clazz.getConstructor(
 						ModuleLoader.class);
-				Transform stage = (Transform) c.newInstance(loader);
-				
-				// second, configure the instance
-				for(Map.Entry<String,Object> e : options.entrySet()) {
-					String name = "set" + e.getKey();
-					Object value = e.getValue();
-					Method m = clazz.getDeclaredMethod(name, value.getClass());
-					m.invoke(stage, value);
-				}
-				
-				return stage;				
-			} catch(NoSuchMethodException e) {
-			} catch(InstantiationException e) {
-			} catch(InvocationTargetException e) {
-			} catch(IllegalAccessException e) {					
+				stage = (Transform) c.newInstance(loader);
+										
+			} catch (NoSuchMethodException e) {
+				throw new IllegalArgumentException(
+						"failed to instantiate transform \""
+								+ clazz.getSimpleName() + "\"",e);
+			} catch (InstantiationException e) {
+				throw new IllegalArgumentException(
+						"failed to instantiate transform \""
+								+ clazz.getSimpleName() + "\"",e);
+			} catch (InvocationTargetException e) {
+				throw new IllegalArgumentException(
+						"failed to instantiate transform \""
+								+ clazz.getSimpleName() + "\"",e);
+			} catch (IllegalAccessException e) {
+				throw new IllegalArgumentException(
+						"failed to instantiate transform \""
+								+ clazz.getSimpleName() + "\"",e);
 			}
 			
-			throw new IllegalArgumentException("invalid stage: " + clazz.getName());
+
+			// second, configure the instance
+			String attribute = "";
+			try {
+				for (Map.Entry<String, Object> e : options.entrySet()) {
+					attribute = e.getKey();
+					String name = "set" + capitalise(e.getKey());
+					Object value = e.getValue();
+					Method m;
+					if(value instanceof Boolean) {
+						m = clazz.getDeclaredMethod(name, boolean.class);
+					} else if(value instanceof Integer) {
+						m = clazz.getDeclaredMethod(name, int.class);
+					} else {
+						// default
+						m = clazz.getDeclaredMethod(name, value.getClass());
+					}					
+					m.invoke(stage, value);
+				}
+			} catch (NoSuchMethodException e) {
+				throw new IllegalArgumentException("failed to set attribute \""
+						+ attribute + "\" on transform \""
+						+ clazz.getSimpleName() + "\"",e);
+			} catch(InvocationTargetException e) {
+				throw new IllegalArgumentException("failed to set attribute \""
+						+ attribute + "\" on transform \""
+						+ clazz.getSimpleName() + "\"",e);
+			} catch(IllegalAccessException e) {					
+				throw new IllegalArgumentException("failed to set attribute \""
+						+ attribute + "\" on transform \""
+						+ clazz.getSimpleName() + "\"",e);
+			}
+			
+			return stage;
 		}
 	}
 	
+	/**
+	 * Make the first letter of the string a captial.
+	 * @param str
+	 * @return
+	 */
+	private static String capitalise(String str) {
+		String rest = str.substring(1);
+		char c = Character.toUpperCase(str.charAt(0));
+		return c + rest;		
+	}
+
 	/**
 	 * The pipeline modifier captures a requested adjustment to the compilation
 	 * pipeline.
