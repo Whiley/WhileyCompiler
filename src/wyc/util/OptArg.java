@@ -3,6 +3,8 @@ package wyc.util;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
+import wyc.Pipeline;
+import static wyc.Pipeline.*;
 
 /**
  * OptArg is a small utility for parsing command-line options. It helps to take
@@ -150,6 +152,9 @@ public final class OptArg {
 	public final static STRING STRING = new STRING();
 	public final static INT INT = new INT();
 	public final static PATHLIST PATHLIST = new PATHLIST();
+	public final static PIPELINEAPPEND PIPELINEAPPEND = new PIPELINEAPPEND();
+	public final static PIPELINECONFIGURE PIPELINECONFIGURE = new PIPELINECONFIGURE();
+	public final static PIPELINEREMOVE PIPELINEREMOVE = new PIPELINEREMOVE();
 	
 	private static final class STRING implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
@@ -182,31 +187,72 @@ public final class OptArg {
 		}
 	}
 	
-	public static final class MULTIARG implements Kind {
-		private final Kind element;
-
-		public MULTIARG(Kind element) {
-			this.element = element;
-		}
-
-		public void process(String arg, String option, Map<String, Object> options) {
-			Object o = options.get(arg);
-			ArrayList val;
+	private static final class PIPELINEAPPEND implements Kind {
+		public void process(String arg, String option, Map<String,Object> options) {
+			String[] name = option.split(":");
+			Map<String, Object> config = Collections.EMPTY_MAP;
+			if (name.length > 1) {
+				config = splitConfig(name[1]);
+			}
+			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.APPEND, name[0], config); 
+			Object o = options.get("pipeline");
+			ArrayList<Pipeline.Modifier> val;
 			if(o == null) {
 				val = new ArrayList();
 			} else {
 				val = (ArrayList) o;
-			}
-			element.process(arg,option,options);
-			val.add(options.get(arg));
-			options.put(arg,val);			
+			}			
+			val.add(pmod);
+			options.put("pipeline",val);	
 		}
-		
 		public String toString() {
-			return element.toString();
+			return "stage[:options]";
+		}
+	}	
+
+	private static final class PIPELINECONFIGURE implements Kind {
+		public void process(String arg, String option, Map<String,Object> options) {
+			String[] name = option.split(":");
+			Map<String, Object> config = Collections.EMPTY_MAP;
+			if (name.length > 1) {
+				config = splitConfig(name[1]);
+			}
+			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.REPLACE, name[0], config); 
+			Object o = options.get("pipeline");
+			ArrayList<Pipeline.Modifier> val;
+			if(o == null) {
+				val = new ArrayList();
+			} else {
+				val = (ArrayList) o;
+			}			
+			val.add(pmod);
+			options.put("pipeline",val);	
+		}
+		public String toString() {
+			return "stage[:options]";
+		}
+	}	
+	
+	private static final class PIPELINEREMOVE implements Kind {
+		public void process(String arg, String option, Map<String,Object> options) {
+			String[] name = option.split(":");					
+			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.REMOVE, name[0],
+					Collections.EMPTY_MAP);
+			Object o = options.get("pipeline");
+			ArrayList<Pipeline.Modifier> val;
+			if (o == null) {
+				val = new ArrayList();
+			} else {
+				val = (ArrayList) o;
+			}
+			val.add(pmod);
+			options.put("pipeline", val);	
+		}
+		public String toString() {
+			return "stage[:options]";
 		}
 	}
-
+	
 	/**
 	 * Parse options from the list of arguments, removing those which are
 	 * recognised. Anything which is not recognised is left as is.
@@ -298,17 +344,31 @@ public final class OptArg {
 	 * @param str
 	 * @return
 	 */
-	protected Map<String, String> splitOptions(String str) {
-		HashMap<String, String> options = new HashMap<String, String>();
+	private static Map<String, Object> splitConfig(String str) {
+		HashMap<String, Object> options = new HashMap<String, Object>();
 		String[] splits = str.split(",");
 		for (String s : splits) {
 			String[] p = s.split("=");
 			if (p.length == 1) {
-				options.put(p[0], "");
+				options.put(p[0], Boolean.TRUE);
 			} else {
-				options.put(p[0], p[1]);
+				options.put(p[0], parseValue(p[1]));
 			}
 		}
 		return options;
+	}
+	
+	private static Object parseValue(String str) {
+		if(str.equals("true")) {
+			return Boolean.TRUE;
+		} else if(str.equals("false")) {
+			return Boolean.FALSE;
+		} else if(Character.isDigit(str.charAt(0))) {
+			return Integer.parseInt(str);
+		} else if(str.charAt(0) == '\"') {
+			return str.substring(1,str.length()-1);
+		} else {
+			throw new IllegalArgumentException("invalid option argument \"" + str + "\"");
+		}
 	}
 }

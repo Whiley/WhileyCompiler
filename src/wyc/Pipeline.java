@@ -44,7 +44,10 @@ public class Pipeline {
 	 */
 	public void apply(List<Modifier> modifiers) {
 		for (Modifier p : modifiers) {
-			Class<? extends Transform> stage = bindings.get(p.name);
+			Class<? extends Transform> stage = bindings.get(p.name);			
+			if(stage == null) {
+				throw new IllegalArgumentException("invalid pipeline stage \"" + p.name + "\"");
+			}
 			switch(p.op) {
 			case APPEND:
 				stages.add(new Template(stage,p.options));
@@ -150,7 +153,7 @@ public class Pipeline {
 		}
 	}
 	
-	private enum POP {
+	public enum POP {
 		APPEND,
 		BEFORE,
 		AFTER,

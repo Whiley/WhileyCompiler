@@ -72,8 +72,11 @@ public class Main {
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", PATHLIST,
 					"Specify where to find whiley standard library files",
-					new ArrayList<String>())
-	};
+					new ArrayList<String>()),
+			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
+			new OptArg("C", PIPELINECONFIGURE,
+					"configure existing pipeline stage"),
+			new OptArg("R", PIPELINEREMOVE, "remove existing pipeline stage") };
 
 	/**
 	 * In the case that no explicit bootpath has been specified on the
@@ -122,20 +125,12 @@ public class Main {
 	 * 
 	 * @param _args
 	 */
-	public static int run(String[] _args) {
-		// First, check whether or not we actually provided any thing on the
-		// command-line.
-		if(_args.length == 0) {
-			System.out.println("usage: wyjc <options> <source-files>");
-			OptArg.usage(System.out, options);
-			System.exit(1);
-		}
-		
-		// Second, process any command-line options using the OptArg utility.
+	public static int run(String[] _args) {		
+		// First, process any command-line options using the OptArg utility.
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 		Map<String,Object> values = OptArg.parseOptions(args,options);
 		
-		// Third, process any command-line options
+		// Second, check if we're printing version
 		if(values.containsKey("version")) {
 			System.out.println("Whiley-to-Java Compiler (wyjc) version " + MAJOR_VERSION + "."
 					+ MINOR_VERSION + "." + MINOR_REVISION + " (build "
@@ -143,9 +138,17 @@ public class Main {
 			return 0;
 		}
 		
+		// Otherwise, if no files to compile specified, then print usage
+		if(args.isEmpty()) {
+			System.out.println("usage: wyjc <options> <source-files>");
+			OptArg.usage(System.out, options);
+			System.exit(1);
+		}
+				
 		// read out option values
 		ArrayList<String> whileypath = (ArrayList) values.get("whileypath");
 		ArrayList<String> bootpath = (ArrayList) values.get("bootpath");
+		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 
 		boolean verbose = values.containsKey("verbose");
 		
 		// initialise the boot path appropriately
@@ -161,6 +164,9 @@ public class Main {
 		ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
 		templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
 		Pipeline pipeline = new Pipeline(templates, moduleLoader);
+		if(pipelineModifiers != null) {
+			pipeline.apply(pipelineModifiers);
+		}
 		List<Transform> stages = pipeline.instantiate();
 		Compiler compiler = new Compiler(moduleLoader,stages);		
 		moduleLoader.setLogger(compiler);		
