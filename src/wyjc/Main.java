@@ -58,6 +58,10 @@ public class Main {
 			MINOR_REVISION = 0;
 			BUILD_NUMBER = 0;
 		}
+		
+		// register additional pipeline transforms used by this compiler.
+		Pipeline.register(ClassWriter.class);
+		Pipeline.register(JvmBytecodeWriter.class);
 	}
 
 	/**

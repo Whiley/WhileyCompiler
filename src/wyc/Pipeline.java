@@ -17,8 +17,23 @@ import wyil.transforms.*;
  * 
  */
 public class Pipeline {
-	private static final HashMap<String,Class<? extends Transform>> bindings = new HashMap();
-	private final ModuleLoader loader;	
+
+	/**
+	 * Identify transforms which are registered for use with the Whiley
+	 * Compiler.
+	 */
+	private static final ArrayList<Class<? extends Transform>> transforms = new ArrayList();
+
+	/**
+	 * The module loader is passed to a given transform when it is instantiated.
+	 * In some special cases, a transform will want access to the module loader.
+	 */
+	private final ModuleLoader loader;
+
+	/**
+	 * The list of stage templates which make up this pipeline. When the
+	 * pipeline is instantiated, these stages are instantiated.
+	 */
 	private final ArrayList<Template> stages;
 	
 	public Pipeline(List<Template> stages,
@@ -36,6 +51,20 @@ public class Pipeline {
 					add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));					
 				}
 			});
+
+	/**
+	 * Register default transforms. This is necessary so they can be referred to
+	 * from the command-line using abbreviated names, rather than their full
+	 * names.
+	 */
+	static {
+		register(TypePropagation.class);
+		register(DefiniteAssignment.class);
+		register(ConstantPropagation.class);
+		register(FunctionCheck.class);
+		register(WyilFileWriter.class);
+	}
+	
 	/**
 	 * Apply a list of modifiers in the order of appearance. Modifiers may
 	 * remove stages, add new stages or reconfigure existing stages.
@@ -44,7 +73,7 @@ public class Pipeline {
 	 */
 	public void apply(List<Modifier> modifiers) {
 		for (Modifier p : modifiers) {
-			Class<? extends Transform> stage = bindings.get(p.name);			
+			Class<? extends Transform> stage = lookupTransform(p.name);			
 			if(stage == null) {
 				throw new IllegalArgumentException("invalid pipeline stage \"" + p.name + "\"");
 			}
@@ -54,13 +83,13 @@ public class Pipeline {
 				break;
 			case REPLACE:
 			{
-				int index = findTransform(p.name);
+				int index = findTransform(lookupTransform(p.name));
 				stages.set(index,new Template(stage,p.options));
 				break;
 			}
 			case REMOVE:
 			{
-				int index = findTransform(p.name);
+				int index = findTransform(lookupTransform(p.name));
 				stages.remove(index);
 				break;			
 			}
@@ -160,36 +189,53 @@ public class Pipeline {
 		REPLACE,
 		REMOVE
 	}
-	
-	private int findTransform(String match) {
-		int i=0;
-		for(Template stage : stages) {
-			if(matchTransformName(match,stage.clazz.getName())) {
+
+	/**
+	 * Search through the pipeline looking form the first matching stage.
+	 * 
+	 * @param match
+	 * @return
+	 */
+	private int findTransform(Class<? extends Transform> match) {
+		int i = 0;
+		for (Template stage : stages) {
+			if (stage.clazz == match) {
 				return i;
 			}
 			++i;
 		}
-		throw new IllegalArgumentException("invalid stage name \"" + match + "\"");
+		throw new IllegalArgumentException("invalid stage name \"" + match
+				+ "\"");
 	}
-	
-	private static boolean matchTransformName(String match, String name) {
+
+	/**
+	 * Register a transform with the system, in order that it can be used in a
+	 * given Pipeline. This is particularly useful because it allows transforms
+	 * to be referred to by abbreviations in pipeline modifiers.
+	 * 
+	 * @param transform
+	 */
+	public static void register(Class<? extends Transform> transform) {
+		transforms.add(transform);
+	}
+
+	/**
+	 * Lookup a transform in the list of registered transforms. This matches the
+	 * given name again the class names of registered transforms. The matching
+	 * of names is case-insensitive and will also match a substring.  
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public static Class<? extends Transform> lookupTransform(String name) {
 		name = name.toLowerCase();
-		if(match.equals(name) || name.startsWith(match)) {
-			return true;
+		for (Class<? extends Transform> t : transforms) {
+			String tn = t.getSimpleName().toLowerCase();
+			if (tn.startsWith(name)) {				
+				return t;
+			}
 		}
-		String initials = splitInitials(name);
-		if(match.equals(initials)) {
-			return true;
-		}
-		return false;
-	}
-	
-	private static String splitInitials(String name) {
-		String[] words = name.split(" ");
-		String r = "";
-		for(String w : words) {
-			r += w.charAt(0);
-		}
-		return r;
-	}
+		throw new IllegalArgumentException("no transform matching \"" + name
+				+ "\"");
+	}	
 }
