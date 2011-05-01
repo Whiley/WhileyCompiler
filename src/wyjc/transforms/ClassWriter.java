@@ -41,13 +41,21 @@ import wyjvm.util.Validation;
 
 public class ClassWriter implements Transform {
 	private ClassFileBuilder classBuilder;
-	private final boolean validate = true;
-	private final boolean deadCode = true;
+	private boolean validate = true;
+	private boolean deadCode = true;
 	
 	public ClassWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
 				wyjc.Main.MINOR_VERSION);
 	}	
+	
+	public void setValidate(boolean flag) {
+		validate = flag;
+	}
+	
+	public void setDeadcode(boolean flag) {
+		deadCode = flag;
+	}
 	
 	public Module apply(Module m) throws IOException {		
 		ClassFile file = classBuilder.build(m);		
