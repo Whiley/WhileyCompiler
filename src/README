@@ -11,7 +11,11 @@ wyil/  - The Whiley Intermediate Language (wyil).  The Whiley Compiler
          language, and then various transforms are applied.  The wyil
          constitutes a bytecode (similar, in some ways, to Java
          Bytecode) which can be interpreted and executed on its own
-         (if desired).
+         (if desired).  This package includes code for performing type
+         checking, constant propagation, and various other
+         manipulations.  Furthermore, all the necessary code for
+         manipulating structural types in Whiley is included here.  In
+         short, this package constitutes the bulk of the compiler.
 
 wyjc/  - The Whiley-to-Java Compiler.  This extends the Whiley Compiler
          (wyc) with additional transforms for converting wyil code
