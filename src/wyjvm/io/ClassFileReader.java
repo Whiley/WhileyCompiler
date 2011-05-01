@@ -32,6 +32,13 @@ import wyil.util.*;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;
 
+/**
+ * The <code>ClassFileReader</code> is responsible for reading in a class file
+ * and constructing a <code>ClassFile</code> object from it.  
+ * 
+ * @author djp
+ * 
+ */
 public final class ClassFileReader {	
 	private final byte[] bytes;      // byte array of class
 	private final int[] items;       // start indices of constant pool items	
@@ -45,8 +52,7 @@ public final class ClassFileReader {
 	 * @param fileName
 	 *            The filename of the java classfile. Use dot notation for
 	 *            specifying packages.
-	 */
-	
+	 */	
 	public ClassFileReader(String fileName,
 			BytecodeAttribute.Reader... readers) throws IOException {
 		this(readClass(fileName), readers);
@@ -408,6 +414,8 @@ public final class ClassFileReader {
 			return parseInnerClasses(offset,name,type);
 		} else if(name.equals("ConstantValue")) {
 			return parseConstantValue(offset, name);
+		} else if(name.equals("Code")) {
+			//return parseCode(offset, name);
 		} 
 		
 		int len = read_i4(offset+2) + 6;
@@ -706,9 +714,7 @@ public final class ClassFileReader {
 		return rf;
 	}
 	
-	/* ==========================
-	 *  BEGIN CODE	 
-	
+	/*
 	protected Code parseCode(int offset, String name) {
 		int clen = read_i4(offset + 10);
 		int index = offset + 14 + clen;
@@ -765,9 +771,10 @@ public final class ClassFileReader {
 			case NOP:
 				return new Bytecode.Nop();
 			case SWAP:
-				return new Bytecode.Swap();
+				//return new Bytecode.Swap();
+				throw new RuntimeException("Need to implement swap instruction");
 			case POP:
-				return new Bytecode.Pop();
+				return new Bytecode.Pop(new JvmType.Int());
 			case DUP:
 				return new Bytecode.Dup(null);
 			case DUPX1:
@@ -821,7 +828,7 @@ public final class ClassFileReader {
 				
 		throw new RuntimeException("Internal failure parsing bytecode instruction (" + OpcodeMap.get()[opcode]);
 	}
-	
+		
 	protected Instruction parseTypeInsn(int offset, int start, int line) {
 		int opcode = read_u1(offset);
 		int data = opmap[opcode];
@@ -923,9 +930,10 @@ public final class ClassFileReader {
 			default:
 				throw new RuntimeException("Operation not supported for instruction!");
 		}
+		
 		return new Instruction(insn,vardst,line);
 	}
-	
+		
 	protected Instruction parseVarTypeInsn(int offset, int line) {
 		int opcode = read_u1(offset);
 		int insn = opmap[opcode] & INSN_MASK;

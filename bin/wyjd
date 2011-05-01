@@ -1,0 +1,27 @@
+#!/bin/sh
+DIR=`dirname "$0"`/..
+LIBDIR=$DIR/lib
+VERSION="-3.3.1"
+
+# check for running under cywin
+cygwin=false
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+esac
+
+##################
+# RUN APPLICATION
+##################
+
+if $cygwin; then
+    # under cygwin the classpath separator must be ";"
+    LIBDIR=`cygpath -pw "$LIBDIR"`
+    ASM_CLASSPATH="$ASM_HOME/lib/asm$VERSION.jar;$ASM_HOME/lib/asm-tree$VERSION.jar;$ASM_HOME/lib/asm-analysis$VERSION.jar;$ASM_HOME/lib/asm-attrs$VERSION.jar;$ASM_HOME/lib/asm-util$VERSION.jar;$LIBDIR/wyrt.jar;$CLASSPATH"
+else
+    # under UNIX the classpath separator must be ":"
+    ASM_CLASSPATH="$ASM_HOME/lib/asm$VERSION.jar:$ASM_HOME/lib/asm-tree$VERSION.jar:$ASM_HOME/lib/asm-analysis$VERSION.jar:$ASM_HOME/lib/asm-attrs$VERSION.jar:$ASM_HOME/lib/asm-util$VERSION.jar:$LIBDIR/wyrt.jar:$CLASSPATH"
+fi
+
+echo $ASM_CLASSPATH
+
+java -cp $ASM_CLASSPATH org.objectweb.asm.util.CheckClassAdapter "$@"
