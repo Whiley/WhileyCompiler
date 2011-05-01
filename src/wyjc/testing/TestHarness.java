@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 
 import java.io.*;
 
-import wyc.Main;
+import wyjc.Main;
 
 public class TestHarness {
 	private String srcPath;    // path to source files	
@@ -81,48 +81,18 @@ public class TestHarness {
 		}
 	}
 	
-	
-	protected void parserFailTest(String name) {
-		name = srcPath + File.separatorChar + name + ".whiley";
-
-		if (compile("-wp", "lib/wyrt.jar", name) != Main.PARSE_ERROR) {
-			fail("Test parsed when it shouldn't have!");
-		}
-
-	}
-	
 	protected void contextFailTest(String name) {				
 		name = srcPath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wp", "lib/wyrt.jar",name) != Main.CONTEXT_ERROR) {
+		if (compile("-wp", "lib/wyrt.jar",name)) {
 			fail("Test compiled when it shouldn't have!");
-		}
-	}
-	
-	protected void verificationFailTest(String name) {				
-		name = srcPath + File.separatorChar + name + ".whiley";
-
-		if (compile("-wp", "lib/wyrt.jar", "-V", name) != Main.CONTEXT_ERROR) {
-			fail("Test compiled when it shouldn't have!");
-		}
-	}
-
-	protected void verificationRunTest(String name) {				
-		String fullName = srcPath + File.separatorChar + name + ".whiley";
-		
-		if(compile("-wp", "lib/wyrt.jar", "-V", fullName) != 0) { 
-			fail("couldn't compile test!");
-		} else {
-			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				
-			compare(output, outputPath + File.separatorChar + name
-					+ "." + outputExtension);
 		}
 	}
 		
 	protected void runtimeFailTest(String name) {				
 		String fullName = srcPath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-wp", "lib/wyrt.jar",fullName) != 0) { 
+		if(compile("-wp", "lib/wyrt.jar",fullName)) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				
@@ -132,8 +102,8 @@ public class TestHarness {
 		}
 	}
 	
-	private static int compile(String... args) {
-		return new Main().run(args);
+	private static boolean compile(String... args) {
+		return new Main().run(args) == 0;
 	}
 	
 	private static String run(String path, String name, String... args) {
