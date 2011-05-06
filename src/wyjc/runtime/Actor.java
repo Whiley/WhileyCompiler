@@ -28,7 +28,6 @@ package wyjc.runtime;
 import java.util.*;
 import java.lang.reflect.*;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CountDownLatch;
 
 public final class Actor extends Thread {
 	private Object state;
@@ -42,10 +41,6 @@ public final class Actor extends Thread {
 		return state;
 	}		
 	
-	public Actor clone() {
-		return new Actor(this.state);
-	}
-
 	/**
 	 * Send a message asynchronously to this actor. If the mailbox is full, then
 	 * this will in fact block.
@@ -107,9 +102,13 @@ public final class Actor extends Thread {
 	
 	public static Actor systemProcess() {
 		// Not sure what the default value should be yet!!!
-		HashMap<String,Object> fields = new HashMap<String,Object>();
-		fields.put("out",new Actor(null));
-		return new Actor(new WhileyRecord(fields));
+		Actor sysout = new Actor(null);
+		HashMap<String,Object> fields = new HashMap<String,Object>();		
+		fields.put("out",sysout);		
+		Actor system = new Actor(new WhileyRecord(fields));
+		sysout.start();
+		system.start();		
+		return system;
 	}
 	
 	private final static class Message {
