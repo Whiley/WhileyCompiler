@@ -1444,43 +1444,63 @@ public class ClassFileBuilder {
 	
 	public void translate(CExpr.DirectInvoke c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {				
-		// first, translate receiver (where appropriate)
-		if(c.type.receiver() != null) {						
-			translate(c.receiver, slots, bytecodes);						
-		}
-		
-		// next, translate parameters
-		List<Type> params = c.type.params();
-		for(int i=0;i!=params.size();++i) {
-			Type pt = params.get(i);
-			CExpr r = c.args.get(i);
-			Type rt = r.type();
-			translate(r, slots, bytecodes);			
-			if(!pt.equals(rt)) {
-				convert(pt,rt,slots,bytecodes);				
-			} else {
-				cloneRHS(rt,bytecodes);
-			}
-		}
 		ModuleID mid = c.name.module();
-		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
 		String mangled = nameMangle(c.name.name(),c.type);		
 		if(c.caseNum > 0) { mangled += "$" + c.caseNum; }
-		if(c.type.receiver() != null) {
+		List<Type> params = c.type.params();
+		
+		// first, translate receiver (where appropriate)
+		if(c.type.receiver() != null) {						
+			translate(c.receiver, slots, bytecodes);
+
 			// this indicates a message send
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);			
 			bytecodes.add(new Bytecode.LoadConst(mid.toString()));
 			bytecodes.add(new Bytecode.LoadConst(mangled));
 			bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
-			bytecodes.add(new Bytecode.LoadConst(null));
-			ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,new JvmType.Array(JAVA_LANG_OBJECT));
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend", ftype,
-					Bytecode.VIRTUAL));
-		} else {					
-			// this is a function call, or internal message send
+			// tempoarily put 
+			bytecodes.add(new Bytecode.LoadConst(params.size()+1));			
+			bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
+			for(int i=0;i!=params.size();++i) {
+				Type pt = params.get(i);
+				CExpr r = c.args.get(i);
+				Type rt = r.type();
+				bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+				bytecodes.add(new Bytecode.LoadConst(i+1));
+				translate(r, slots, bytecodes);			
+				if(!pt.equals(rt)) {
+					convert(pt,rt,slots,bytecodes);				
+				} else {
+					cloneRHS(rt,bytecodes);
+				}
+				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
+			}			
+			if(c.type.ret() == Type.T_VOID) {
+				// currently, if the return type is void then we have an
+				// asynchronous send.
+				ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
+				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend", ftype,Bytecode.VIRTUAL));	
+			} else {				
+				ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
+				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,Bytecode.VIRTUAL));
+			}							
+		} else {
+			// function call or internal message send			
+			for(int i=0;i!=params.size();++i) {
+				Type pt = params.get(i);
+				CExpr r = c.args.get(i);
+				Type rt = r.type();
+				translate(r, slots, bytecodes);			
+				if(!pt.equals(rt)) {
+					convert(pt,rt,slots,bytecodes);				
+				} else {
+					cloneRHS(rt,bytecodes);
+				}
+			}
+			JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
 			JvmType.Function type = convertFunType(c.type);
 			bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
-				Bytecode.STATIC));
+					Bytecode.STATIC));
 		}
 	}
 	
@@ -2139,6 +2159,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
+	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
 	private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");

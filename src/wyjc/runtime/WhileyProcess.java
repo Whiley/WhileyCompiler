@@ -28,6 +28,7 @@ package wyjc.runtime;
 import java.util.*;
 import java.lang.reflect.*;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 public final class WhileyProcess extends Thread {
 	private Object state;
@@ -49,11 +50,30 @@ public final class WhileyProcess extends Thread {
 	 * Send a message asynchronously to this actor. If the mailbox is full, then
 	 * this will in fact block.
 	 * 
-	 * @param m
-	 * @param arguments
+	 * @param method --- the "message"
+	 * @param arguments --- the message "arguments"
 	 */
-	public void asyncSend(Method method, Object... arguments) {
-		queue.add(new Message(method,arguments));
+	public void asyncSend(Method method, Object[] arguments) {
+		Object[] args = new Object[arguments.length+1];
+		System.arraycopy(arguments,0,args,1,arguments.length);
+		args[0] = this;
+		queue.add(new Message(method,arguments,false));
+	}
+	
+	/**
+	 * Send a message asynchronously to this actor. If the mailbox is full, then
+	 * this will in fact block.
+	 * 
+	 * @param method --- the "message"
+	 * @param arguments --- the message "arguments"
+	 */
+	public Object syncSend(Method method, Object[] arguments) {
+		Object[] args = new Object[arguments.length+1];
+		System.arraycopy(arguments,0,args,1,arguments.length);
+		args[0] = this;
+		Message m = new Message(method,arguments,true);
+		queue.add(m);
+		return m.get();
 	}
 	
 	public void run() {
@@ -61,7 +81,10 @@ public final class WhileyProcess extends Thread {
 		while(1==1) {
 			try {
 				Message m = queue.take();
-				m.method.invoke(null, m.arguments);
+				Object r = m.method.invoke(null, m.arguments);
+				if(m.synchronous){
+					m.set(r);
+				} 
 			} catch(InterruptedException e) {
 				// do nothing I guess
 			} catch(IllegalAccessException e) {
@@ -92,10 +115,30 @@ public final class WhileyProcess extends Thread {
 	private final static class Message {
 		public final Method method;
 		public final Object[] arguments;
+		public final boolean synchronous;
+		public volatile boolean ready = false;
+		public volatile Object result;
 		
-		public Message(Method method, Object[] arguments) {
+		public Message(Method method, Object[] arguments, boolean synchronous) {
 			this.method = method;
 			this.arguments = arguments;
+			this.synchronous = synchronous;			
 		}				
+		
+		public synchronized Object get() {
+			while(!ready) {
+				try {
+					wait();
+				} catch(InterruptedException e) {				
+				}
+			}
+			return result;
+		}
+		
+		public synchronized void set(Object result) {
+			this.result = result; 
+			this.ready = true;
+			notifyAll();
+		}
 	}
 }
