@@ -6,7 +6,6 @@ import java.util.*;
 
 import wyc.Pipeline;
 import wyc.Compiler;
-import wyc.compiler.*;
 import wyc.util.*;
 import wyil.*;
 import wyil.util.*;

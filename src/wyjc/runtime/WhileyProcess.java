@@ -26,9 +26,12 @@
 package wyjc.runtime;
 
 import java.util.*;
+import java.lang.reflect.*;
+import java.util.concurrent.ArrayBlockingQueue;
 
-public class WhileyProcess {
+public final class WhileyProcess extends Thread {
 	private Object state;
+	private ArrayBlockingQueue<Message> queue = new ArrayBlockingQueue<Message>(10); 
 	
 	public WhileyProcess(Object c) {
 		state = c;
@@ -36,10 +39,43 @@ public class WhileyProcess {
 
 	public Object state() {
 		return state;
-	}
+	}		
 	
 	public WhileyProcess clone() {
 		return new WhileyProcess(this.state);
+	}
+
+	/**
+	 * Send a message asynchronously to this actor. If the mailbox is full, then
+	 * this will in fact block.
+	 * 
+	 * @param m
+	 * @param arguments
+	 */
+	public void asyncSend(Method method, Object... arguments) {
+		queue.add(new Message(method,arguments));
+	}
+	
+	public void run() {
+		// this is where the action happens
+		while(1==1) {
+			try {
+				Message m = queue.take();
+				m.method.invoke(null, m.arguments);
+			} catch(InterruptedException e) {
+				// do nothing I guess
+			} catch(IllegalAccessException e) {
+				// do nothing I guess
+			} catch(InvocationTargetException ex) {
+				// not sure what to do!
+				Throwable e = ex.getCause();
+				if(e instanceof RuntimeException) {
+					RuntimeException re = (RuntimeException) e;
+					throw re;
+				}
+				// do nothing I guess
+			}
+		}
 	}
 	
 	public String toString() {
@@ -51,5 +87,15 @@ public class WhileyProcess {
 		HashMap<String,Object> fields = new HashMap<String,Object>();
 		fields.put("out",new WhileyProcess(null));
 		return new WhileyProcess(new WhileyRecord(fields));
+	}
+	
+	private final static class Message {
+		public final Method method;
+		public final Object[] arguments;
+		
+		public Message(Method method, Object[] arguments) {
+			this.method = method;
+			this.arguments = arguments;
+		}				
 	}
 }

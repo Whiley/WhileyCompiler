@@ -1371,10 +1371,14 @@ public class ClassFileBuilder {
 		{
 			bytecodes.add(new Bytecode.New(WHILEYPROCESS));
 			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
+			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 			translate(c.rhs, slots, bytecodes);				
 			JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 					Bytecode.SPECIAL));
+			ftype = new JvmType.Function(T_VOID);
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "start", ftype,
+					Bytecode.VIRTUAL));
 			break;
 		}
 		case PROCESSACCESS:
@@ -1460,13 +1464,24 @@ public class ClassFileBuilder {
 		}
 		ModuleID mid = c.name.module();
 		JvmType.Clazz owner = new JvmType.Clazz(mid.pkg().toString(),mid.module());
-		JvmType.Function type = convertFunType(c.type);
 		String mangled = nameMangle(c.name.name(),c.type);		
-		if(c.caseNum > 0) {
-			mangled += "$" + c.caseNum;
+		if(c.caseNum > 0) { mangled += "$" + c.caseNum; }
+		if(c.type.receiver() != null) {
+			// this indicates a message send
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);			
+			bytecodes.add(new Bytecode.LoadConst(mid.toString()));
+			bytecodes.add(new Bytecode.LoadConst(mangled));
+			bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
+			bytecodes.add(new Bytecode.LoadConst(null));
+			ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,new JvmType.Array(JAVA_LANG_OBJECT));
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend", ftype,
+					Bytecode.VIRTUAL));
+		} else {					
+			// this is a function call, or internal message send
+			JvmType.Function type = convertFunType(c.type);
+			bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
+				Bytecode.STATIC));
 		}
-		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
-				Bytecode.STATIC));				
 	}
 	
 	public void translate(CExpr.IndirectInvoke c, HashMap<String, Integer> slots,
