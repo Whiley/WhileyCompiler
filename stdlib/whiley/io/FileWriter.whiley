@@ -30,7 +30,7 @@ define FileWriter as process { string fileName, int writer }
 FileWriter System::openWriter(string fileName):
     extern jvm:
         aload 1
-        invokestatic wyjc/runtime/WhileyIO.openWriter:(Ljava/util/ArrayList;)Lwyjc/runtime/WhileyProcess;
+        invokestatic wyjc/runtime/WhileyIO.openWriter:(Ljava/util/ArrayList;)Lwyjc/runtime/Actor;
         areturn
     // the following line is dead code
     return spawn {fileName: "", writer: 0}
@@ -38,11 +38,11 @@ FileWriter System::openWriter(string fileName):
 void FileWriter::close():
     extern jvm:
         aload 0
-        invokestatic wyjc/runtime/WhileyIO.closeFile:(Lwyjc/runtime/WhileyProcess;)V;
+        invokestatic wyjc/runtime/WhileyIO.closeFile:(Lwyjc/runtime/Actor;)V;
 
 // read the whole file
 void FileWriter::write([byte] data):
     extern jvm:
         aload 0
         aload 1
-        invokestatic wyjc/runtime/WhileyIO.writeFile:(Lwyjc/runtime/WhileyProcess;Ljava/util/List;)V
+        invokestatic wyjc/runtime/WhileyIO.writeFile:(Lwyjc/runtime/Actor;Ljava/util/List;)V

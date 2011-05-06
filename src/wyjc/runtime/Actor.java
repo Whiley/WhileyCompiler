@@ -30,11 +30,11 @@ import java.lang.reflect.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
-public final class WhileyProcess extends Thread {
+public final class Actor extends Thread {
 	private Object state;
 	private ArrayBlockingQueue<Message> queue = new ArrayBlockingQueue<Message>(10); 
 	
-	public WhileyProcess(Object c) {
+	public Actor(Object c) {
 		state = c;
 	}
 
@@ -42,8 +42,8 @@ public final class WhileyProcess extends Thread {
 		return state;
 	}		
 	
-	public WhileyProcess clone() {
-		return new WhileyProcess(this.state);
+	public Actor clone() {
+		return new Actor(this.state);
 	}
 
 	/**
@@ -105,11 +105,11 @@ public final class WhileyProcess extends Thread {
 		return state + "@" + System.identityHashCode(this);
 	}
 	
-	public static WhileyProcess systemProcess() {
+	public static Actor systemProcess() {
 		// Not sure what the default value should be yet!!!
 		HashMap<String,Object> fields = new HashMap<String,Object>();
-		fields.put("out",new WhileyProcess(null));
-		return new WhileyProcess(new WhileyRecord(fields));
+		fields.put("out",new Actor(null));
+		return new Actor(new WhileyRecord(fields));
 	}
 	
 	private final static class Message {
