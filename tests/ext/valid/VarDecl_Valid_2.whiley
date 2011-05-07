@@ -6,4 +6,4 @@ string f(int x) requires x > 0:
     return g(y)
 
 void System::main([string] args):
-    out->println(f(1))
+    out<->println(f(1))

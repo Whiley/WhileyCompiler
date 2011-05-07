@@ -9,6 +9,6 @@ string f(tup t):
         return "NO MATCH"
 
 void System::main([string] args):
-    out->println(f({lhs:[0],p:0}))
-    out->println(f({lhs:[0,1],p:0}))
-    out->println(f({lhs:[1,1],p:0}))
+    out<->println(f({lhs:[0],p:0}))
+    out<->println(f({lhs:[0,1],p:0}))
+    out<->println(f({lhs:[1,1],p:0}))

@@ -3,4 +3,4 @@ string f([int] x):
 
 void System::main([string] args):
      arr = []
-     out->println(f(arr))
+     out<->println(f(arr))

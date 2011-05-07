@@ -11,4 +11,4 @@ void System::main([string] args):
     if |args| == 0:
         a = f(b)
     x = g(a,b)
-    out->println(str(x))
+    out<->println(str(x))

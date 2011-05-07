@@ -6,5 +6,5 @@ int f(int x):
     return x
 
 void System::main([string] args):
-    out->println(str(f(1)))
-    out->println(str(f(-10)))
+    out<->println(str(f(1)))
+    out<->println(str(f(-10)))

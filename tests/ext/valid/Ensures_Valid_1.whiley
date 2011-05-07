@@ -5,4 +5,4 @@ int add(int x, int y) requires x>=0 && y>=0, ensures $>0:
         return x+y
 
 void System::main([string] args):
-    out->println(str(1))
+    out<->println(str(1))

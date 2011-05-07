@@ -14,9 +14,9 @@ int g(int x, int y) requires x>=0 && y>=0, ensures $>0:
 
 
 void System::main([string] args):
-    out->println(str(f(1,1)))
-    out->println(str(f(0,0)))
-    out->println(str(f(4,345)))
-    out->println(str(g(1,1)))
-    out->println(str(g(0,0)))
-    out->println(str(g(4,345)))
+    out<->println(str(f(1,1)))
+    out<->println(str(f(0,0)))
+    out<->println(str(f(4,345)))
+    out<->println(str(g(1,1)))
+    out<->println(str(g(0,0)))
+    out<->println(str(g(4,345)))

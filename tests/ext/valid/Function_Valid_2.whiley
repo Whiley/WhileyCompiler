@@ -5,4 +5,4 @@ string f(fr2nat x):
 
 void System::main([string] args):
     y = 1
-    out->println(f(y))
+    out<->println(f(y))

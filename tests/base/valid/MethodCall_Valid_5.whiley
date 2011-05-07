@@ -5,4 +5,4 @@ int System::get():
     return 1
 
 void System::main([string] args):
-    out->println(str(this->f(this)))
+    out<->println(str(this->f(this)))

@@ -10,4 +10,4 @@ string g({bignum} zs, int z) requires z in {x | x in zs, x < 5}:
     return f(z)
 
 void System::main([string] args):
-    out->println(g({1,2,3,5},3))
+    out<->println(g({1,2,3,5},3))

@@ -11,4 +11,4 @@ even f(oddeven x):
 void System::main([string] args):
     y = 1
     y = f(1)
-    out->println(str(y))
+    out<->println(str(y))

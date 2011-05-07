@@ -9,5 +9,5 @@ int sum(posintlist ls):
 
 void System::main([string] args):
     c = sum([-12987987234,-1,2,409234,2398729879])
-    out->println(str(c))
+    out<->println(str(c))
     

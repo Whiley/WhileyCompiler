@@ -5,4 +5,4 @@ nat f():
     return 1
 
 void System::main([string] args):
-    out->println(str(f()))
+    out<->println(str(f()))

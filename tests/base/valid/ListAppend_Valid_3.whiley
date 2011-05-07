@@ -3,6 +3,6 @@ void System::main([string] args):
     right = [3,4]
     r = left + right
     left = left + [6]
-    out->println(str(left))
-    out->println(str(right))
-    out->println(str(r))
+    out<->println(str(left))
+    out<->println(str(right))
+    out<->println(str(r))

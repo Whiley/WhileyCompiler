@@ -4,5 +4,5 @@ int f(int x) ensures $ > x:
 
 void System::main([string] args):
     y = f(1)
-    out->println(str(y))
+    out<->println(str(y))
     

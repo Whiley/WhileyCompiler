@@ -10,4 +10,4 @@ string g(int x, nat z) requires (x == 1 || x == 2) && z in {1,2,3,x}:
     return f(z)
 
 void System::main([string] args):
-    out->println(g(1,3))
+    out<->println(g(1,3))

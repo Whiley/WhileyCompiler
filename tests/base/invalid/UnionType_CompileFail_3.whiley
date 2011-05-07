@@ -9,9 +9,9 @@ void System::main([string] args):
         x = 1
         y = x // OK
     else:
-        out->println(str(y))
+        out<->println(str(y))
         x = [1,2,3]
         ys = x // OK
     z = f(x) // should fail
-    out->println(str(z))
+    out<->println(str(z))
 

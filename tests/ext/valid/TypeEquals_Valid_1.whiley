@@ -9,7 +9,7 @@ string f(expr e):
 
 void System::main([string] args):
     e = 1
-    out->println(f(e))
+    out<->println(f(e))
     e = {x:1,y:2}
-    out->println(f(e))
+    out<->println(f(e))
  

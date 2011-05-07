@@ -9,4 +9,4 @@ expr parseIdentifier():
 
 void System::main([string] args):
     e = parseTerm()
-    out->println(str(e))
+    out<->println(str(e))

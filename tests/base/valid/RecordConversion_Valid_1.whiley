@@ -6,4 +6,4 @@ string f(realtup t):
 
 void System::main([string] args):
     t = {op:1}
-    out->println(f(t))
+    out<->println(f(t))

@@ -14,6 +14,6 @@ string g(ilist e):
 
 
 void System::main([string] args):
-    out->println(f(1))
-    out->println(f([1]))
-    out->println(f([]))
+    out<->println(f(1))
+    out<->println(f([1]))
+    out<->println(f([]))

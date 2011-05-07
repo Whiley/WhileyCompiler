@@ -10,4 +10,4 @@ int f(int x, int y):
         return 123
 
 void System::main([string] args):
-    out->println(str(1))
+    out<->println(str(1))

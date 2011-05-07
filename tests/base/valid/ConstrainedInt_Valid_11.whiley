@@ -10,4 +10,4 @@ b_nat f(a_nat x):
 void System::main([string] args):
     x = |args|    
     x = f(x)    
-    out->println(str(x))
+    out<->println(str(x))

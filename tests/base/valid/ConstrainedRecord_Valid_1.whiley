@@ -9,5 +9,5 @@ define UNIT as {unitCode op}
 
 void System::main([string] args):
     bytes = f({op:NOP})
-    out->println(str(bytes))
+    out<->println(str(bytes))
 

@@ -2,11 +2,11 @@ define expr as [int]|int
 
 void System::f(expr e):
     if e ~= [int]:
-        out->println("GOT [INT]")
+        out<->println("GOT [INT]")
     else if e ~= int:
-        out->println("GOT INT")
+        out<->println("GOT INT")
     else:
-        out->println("GOT SOMETHING ELSE?")
+        out<->println("GOT SOMETHING ELSE?")
 
 void System::main([string] args):
     e = 1

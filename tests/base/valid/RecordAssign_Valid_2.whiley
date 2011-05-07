@@ -6,7 +6,7 @@ tac2tb f(tac2ta x):
 
 void System::main([string] args):
     x = {f1:2,f2:3}
-    out->println(str(x))
+    out<->println(str(x))
     x.f1 = 1
     y = f(x)
-    out->println(str(y))
+    out<->println(str(y))

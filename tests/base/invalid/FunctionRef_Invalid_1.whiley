@@ -5,4 +5,4 @@ int g(void(int) func):
     return func(1)
     
 void System::main([string] args):
-    out->println(str(g(&f)))
+    out<->println(str(g(&f)))

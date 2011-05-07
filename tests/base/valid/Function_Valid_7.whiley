@@ -6,4 +6,4 @@ string g(fcode f):
 
 void System::main([string] args):
     x = 1
-    out->println(g(x))
+    out<->println(g(x))

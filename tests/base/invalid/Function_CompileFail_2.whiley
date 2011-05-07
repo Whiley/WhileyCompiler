@@ -1,8 +1,8 @@
 void f(int x):
-    out->println()"FIRST"
+    out<->println()"FIRST"
 
 void f(int x):
-    out->println()"SECOND"
+    out<->println()"SECOND"
 
 void System::main([string] args):
-    out->println()"NOUT"
+    out<->println()"NOUT"

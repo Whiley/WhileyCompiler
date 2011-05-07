@@ -15,5 +15,5 @@ int g(int d):
     return y(123)
     
 void System::main([string] args):    
-    out->println(str(g(0)))    
-    out->println(str(g(1)))
+    out<->println(str(g(0)))    
+    out<->println(str(g(1)))

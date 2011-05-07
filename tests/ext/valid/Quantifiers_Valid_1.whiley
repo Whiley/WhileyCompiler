@@ -5,4 +5,4 @@ string f({int} xs) requires no { w in xs | w < 0}:
 void System::main([string] args):
     ys = {1,2,3}
     zs = ys
-    out->println(f(zs))
+    out<->println(f(zs))
