@@ -34,7 +34,8 @@ public final class Actor extends Thread {
 	private ArrayBlockingQueue<Message> queue = new ArrayBlockingQueue<Message>(10); 
 	
 	public Actor(Object c) {
-		state = c;
+		state = c;			
+		setDaemon(true);
 	}
 
 	public Object state() {
@@ -71,7 +72,7 @@ public final class Actor extends Thread {
 		return m.get();
 	}
 	
-	public void run() {
+	public void run() {		
 		// this is where the action happens
 		while(1==1) {
 			try {

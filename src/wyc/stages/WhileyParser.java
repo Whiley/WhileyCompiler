@@ -384,7 +384,7 @@ public class WhileyParser {
 		matchEndLine();				
 		
 		// no receiver is possible in this case.
-		return new Expr.Invoke(name.text, null, args, sourceAttr(start,end-1));
+		return new Expr.Invoke(name.text, null, args, false, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseReturn() {
@@ -830,7 +830,9 @@ public class WhileyParser {
 		Token lookahead = tokens.get(index);
 		
 		while (lookahead instanceof LeftSquare || lookahead instanceof Dot
-				|| lookahead instanceof LeftBrace || (!dictionaryStart && lookahead instanceof Arrow)) {
+				|| lookahead instanceof LeftBrace
+				|| lookahead instanceof LeftRightArrow
+				|| (!dictionaryStart && lookahead instanceof RightArrow)) {
 			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
@@ -878,8 +880,8 @@ public class WhileyParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 							index - 1));
 				}
-			} else if (lookahead instanceof Arrow) {				
-				match(Arrow.class);					
+			} else if (lookahead instanceof RightArrow || lookahead instanceof LeftRightArrow) {				
+				match(lookahead.getClass());					
 				int tmp = index; 				
 				String name = matchIdentifier().text;
 				if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
@@ -887,7 +889,8 @@ public class WhileyParser {
 					index = tmp; // slight backtrack
 					Expr.Invoke ivk = parseInvokeExpr();							
 					lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
-							sourceAttr(ostart, index - 1));				
+							lookahead instanceof LeftRightArrow, sourceAttr(
+									ostart, index - 1));				
 				} else {					
 					lhs = new Expr.UnOp(Expr.UOp.PROCESSACCESS, lhs,
 							sourceAttr(start, index - 1));
@@ -1112,7 +1115,7 @@ public class WhileyParser {
 			setComp=true;
 			match(Bar.class);
 			firstTime=true;
-		} else if(index < tokens.size() && tokens.get(index) instanceof Arrow) {
+		} else if(index < tokens.size() && tokens.get(index) instanceof RightArrow) {
 			// this is a dictionary constructor					
 			return parseDictionaryVal(start,exprs.get(0));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
@@ -1179,7 +1182,7 @@ public class WhileyParser {
 	
 	private Expr parseDictionaryVal(int start, Expr key) {
 		ArrayList<Pair<Expr,Expr>> pairs = new ArrayList<Pair<Expr,Expr>>();		
-		match(Arrow.class);
+		match(RightArrow.class);
 		Expr value = parseCondition(false);	
 		pairs.add(new Pair<Expr,Expr>(key,value));
 		
@@ -1188,7 +1191,7 @@ public class WhileyParser {
 			match(Comma.class);
 			
 			key = parseCondition(true);
-			match(Arrow.class);
+			match(RightArrow.class);
 			value = parseCondition(false);
 			pairs.add(new Pair<Expr,Expr>(key,value));
 			
@@ -1286,7 +1289,7 @@ public class WhileyParser {
 			args.add(e);		
 		}
 		match(RightBrace.class);		
-		return new Expr.Invoke(name.text, null, args, sourceAttr(start,index-1));
+		return new Expr.Invoke(name.text, null, args, false, sourceAttr(start,index-1));
 	}
 	
 	private Expr parseString() {
@@ -1397,9 +1400,9 @@ public class WhileyParser {
 				// set type
 				match(RightCurly.class);
 				t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
-			} else if(tokens.get(index) instanceof Arrow) {
+			} else if(tokens.get(index) instanceof RightArrow) {
 				// map type
-				match(Arrow.class);
+				match(RightArrow.class);
 				UnresolvedType v = parseType();			
 				match(RightCurly.class);
 				t = new UnresolvedType.Dictionary(t,v,sourceAttr(start,index-1));				

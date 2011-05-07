@@ -258,17 +258,20 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class Invoke extends SyntacticElement.Impl implements Expr,Stmt {
+	public static class Invoke extends SyntacticElement.Impl implements Expr,
+			Stmt {
 		public final String name;
 		public final Expr receiver;
 		public final List<Expr> arguments;
-		
+		public final boolean synchronous;
+
 		public Invoke(String name, Expr receiver, List<Expr> arguments,
-				Attribute... attributes) {
+				boolean synchronous, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.receiver = receiver;
 			this.arguments = arguments;
+			this.synchronous = synchronous;
 		}
 	}
 	

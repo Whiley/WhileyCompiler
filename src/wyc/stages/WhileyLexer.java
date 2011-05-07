@@ -334,7 +334,7 @@ public class WhileyLexer {
 		} else if(c == '-') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
 				pos += 2;
-				return new Arrow("->",pos-2);
+				return new RightArrow("->",pos-2);
 			} else {
 				return new Minus(pos++);				
 			}			
@@ -377,7 +377,13 @@ public class WhileyLexer {
 				return new Equals(pos++);				
 			}
 		} else if(c == '<') {
-			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
+			if((pos+2) < input.length() && input.charAt(pos+1) == '-' && input.charAt(pos+2) == '>') {
+				pos += 3;				
+				return new LeftRightArrow("<->",pos-3);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '-') {
+				pos += 2;
+				return new LeftArrow("<-",pos-2);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new LessEquals("<=",pos-2);
 			} else {
@@ -709,7 +715,13 @@ public class WhileyLexer {
 	public static class BitwiseNot extends Token {
 		public BitwiseNot(String text, int pos) { super(text,pos);	}
 	}
-	public static class Arrow extends Token {
-		public Arrow(String text, int pos) { super(text,pos);	}
+	public static class LeftRightArrow extends Token {
+		public LeftRightArrow(String text, int pos) { super(text,pos);	}
+	}
+	public static class LeftArrow extends Token {
+		public LeftArrow(String text, int pos) { super(text,pos);	}
+	}
+	public static class RightArrow extends Token {
+		public RightArrow(String text, int pos) { super(text,pos);	}
 	}
 }

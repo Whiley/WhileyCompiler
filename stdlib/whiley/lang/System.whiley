@@ -34,3 +34,4 @@ void SystemOutWriter::print([int] str):
 
 void SystemOutWriter::println([int] str):
     debug str + "\n"
+

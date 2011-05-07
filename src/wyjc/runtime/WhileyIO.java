@@ -134,6 +134,10 @@ public class WhileyIO {
 		}		
 	}
 	
+	public static void flush() {
+		System.out.flush();
+	}
+	
 	public static Method functionRef(String clazz, String name) {
 		try {
 			Class cl = Class.forName(clazz);

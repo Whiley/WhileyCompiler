@@ -113,7 +113,7 @@ public class WhileyFilter {
 		LogicalOr.class,
 		LogicalNot.class,
 		AddressOf.class,
-		Arrow.class
+		RightArrow.class
 	};
 	
 	public boolean leftNonTerminator(Token t) {
@@ -153,7 +153,7 @@ public class WhileyFilter {
 		LogicalOr.class,
 		LogicalNot.class,
 		AddressOf.class,
-		Arrow.class,
+		RightArrow.class,
 		NewLine.class,
 		Comment.class
 	};

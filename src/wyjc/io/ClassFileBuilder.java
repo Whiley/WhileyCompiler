@@ -138,7 +138,11 @@ public class ClassFileBuilder {
 				Type.T_VOID, Type.T_LIST(Type.T_LIST(Type.T_INT)));
 		JvmType.Function ft3 = convertFunType(wyft);
 		
+		// The following is a little bit of hack. Basically we flush the stdout
+		// channel on exit
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main",wyft), ft3, Bytecode.STATIC));
+		ft3 = new JvmType.Function(T_VOID);		
+		codes.add(new Bytecode.Invoke(WHILEYIO, "flush", ft3, Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
 		
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,
