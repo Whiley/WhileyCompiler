@@ -210,7 +210,7 @@ public class WhileyParser {
 				// this is a constrained type
 				matchKeyword("where");
 				
-				constraint = parseCondition(false);
+				constraint = parseCondition();
 			}
 			int end = index;			
 			matchEndLine();			
@@ -222,7 +222,7 @@ public class WhileyParser {
 		// Ok, failed parsing type constructor. So, backtrack and try for
 		// expression.
 		index = mid;	
-		Expr e = parseCondition(false);
+		Expr e = parseCondition();
 		int end = index;
 		matchEndLine();		
 		return new ConstDecl(modifiers, e, name.text, sourceAttr(start,end-1));
@@ -299,19 +299,19 @@ public class WhileyParser {
 		if (index < tokens.size() && tokens.get(index).text.equals("requires")) {
 			// this is a constrained type
 			matchKeyword("requires");
-			Expr pre = parseCondition(false);
+			Expr pre = parseCondition();
 			Expr post = null;
 			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
 				matchKeyword("ensures");
-				post = parseCondition(false);
+				post = parseCondition();
 			}
 			return new Pair<Expr, Expr>(pre, post);
 		} else if (index < tokens.size()
 				&& tokens.get(index).text.equals("ensures")) {
 			// this is a constrained type
 			matchKeyword("ensures");
-			return new Pair<Expr, Expr>(null, parseCondition(false));
+			return new Pair<Expr, Expr>(null, parseCondition());
 		} else {
 			return new Pair<Expr, Expr>(null, null);
 		}
@@ -375,7 +375,7 @@ public class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseAddSubExpression(false);
+			Expr e = parseAddSubExpression();
 			args.add(e);
 			
 		}
@@ -404,7 +404,7 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("assert");						
 		checkNotEof();
-		Expr e = parseCondition(false);
+		Expr e = parseCondition();
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Assert(e, sourceAttr(start,end));
@@ -421,7 +421,7 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("debug");		
 		checkNotEof();
-		Expr e = parseAddSubExpression(false);
+		Expr e = parseAddSubExpression();
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Debug(e, sourceAttr(start,end-1));
@@ -430,7 +430,7 @@ public class WhileyParser {
 	private Stmt parseIf(int indent) {
 		int start = index;
 		matchKeyword("if");						
-		Expr c = parseCondition(false);								
+		Expr c = parseCondition();								
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
@@ -467,7 +467,7 @@ public class WhileyParser {
 			condition = null;
 		} else {
 			matchKeyword("case");
-			condition = parseCondition(false);
+			condition = parseCondition();
 		}		
 		match(Colon.class);
 		int end = index;
@@ -494,7 +494,7 @@ public class WhileyParser {
 	private Stmt parseSwitch(int indent) {
 		int start = index;
 		matchKeyword("switch");
-		Expr c = parseAddSubExpression(false);								
+		Expr c = parseAddSubExpression();								
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
@@ -505,7 +505,7 @@ public class WhileyParser {
 	private Stmt parseThrow(int indent) {
 		int start = index;
 		matchKeyword("throw");
-		Expr c = parseAddSubExpression(false);
+		Expr c = parseAddSubExpression();
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Throw(c,sourceAttr(start,end-1));
@@ -522,11 +522,11 @@ public class WhileyParser {
 	private Stmt parseWhile(int indent) {
 		int start = index;
 		matchKeyword("while");						
-		Expr condition = parseCondition(false);
+		Expr condition = parseCondition();
 		Expr invariant = null;
 		if (tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
-			invariant = parseCondition(false);
+			invariant = parseCondition();
 		}
 		match(Colon.class);
 		int end = index;
@@ -541,11 +541,11 @@ public class WhileyParser {
 		matchKeyword("for");						
 		Identifier id = matchIdentifier();
 		match(ElemOf.class);
-		Expr source = parseCondition(false);		
+		Expr source = parseCondition();		
 		Expr invariant = null;
 		if(tokens.get(index).text.equals("where")) {
 		matchKeyword("where");
-		invariant = parseCondition(false);
+		invariant = parseCondition();
 		}
 		match(Colon.class);
 		int end = index;
@@ -615,7 +615,7 @@ public class WhileyParser {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
 		}				
 		match(Equals.class);		
-		Expr rhs = parseCondition(false);
+		Expr rhs = parseCondition();
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start,
@@ -625,14 +625,14 @@ public class WhileyParser {
 
 	private Expr parseTupleExpression() {
 		int start = index;
-		Expr e = parseCondition(false);		
+		Expr e = parseCondition();		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a tuple constructor
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseCondition(false));
+				exprs.add(parseCondition());
 				checkNotEof();
 			}
 			return new Expr.TupleGen(exprs,sourceAttr(start,index-1));
@@ -641,30 +641,30 @@ public class WhileyParser {
 		}
 	}
 	
-	private Expr parseCondition(boolean dictionaryStart) {
+	private Expr parseCondition() {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseConditionExpression(dictionaryStart);		
+		Expr c1 = parseConditionExpression();		
 		
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
 			
 			
-			Expr c2 = parseCondition(dictionaryStart);			
+			Expr c2 = parseCondition();			
 			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			
 			
-			Expr c2 = parseCondition(dictionaryStart);
+			Expr c2 = parseCondition();
 			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		
 	}
 		
-	private Expr parseConditionExpression(boolean dictionaryStart) {		
+	private Expr parseConditionExpression() {		
 		int start = index;
 		
 		if (index < tokens.size()
@@ -685,43 +685,43 @@ public class WhileyParser {
 					sc.condition, sourceAttr(start, index - 1));			
 		} // should do FOR here;  could also do lone and one
 		
-		Expr lhs = parseAddSubExpression(dictionaryStart);
+		Expr lhs = parseAddSubExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			
  			
- 			Expr rhs = parseAddSubExpression(dictionaryStart);
+ 			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);			
+			Expr rhs = parseAddSubExpression();			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.TypeEquals) {
 			return parseTypeEquals(lhs,start);			
@@ -729,19 +729,19 @@ public class WhileyParser {
 			match(WhileyLexer.ElemOf.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
 			match(WhileyLexer.SubsetEquals.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
 			match(WhileyLexer.Subset.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
@@ -760,28 +760,28 @@ public class WhileyParser {
 	}
 	
 
-	private Expr parseAddSubExpression(boolean dictionaryStart) {
+	private Expr parseAddSubExpression() {
 		int start = index;
-		Expr lhs = parseMulDivExpression(dictionaryStart);
+		Expr lhs = parseMulDivExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Union) {
 			match(Union.class);
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.UNION, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -789,7 +789,7 @@ public class WhileyParser {
 			match(Intersection.class);
 			
 			
-			Expr rhs = parseAddSubExpression(dictionaryStart);
+			Expr rhs = parseAddSubExpression();
 			return new Expr.BinOp(Expr.BOp.INTERSECTION, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}	
@@ -797,15 +797,15 @@ public class WhileyParser {
 		return lhs;
 	}
 	
-	private Expr parseMulDivExpression(boolean dictionaryStart) {
+	private Expr parseMulDivExpression() {
 		int start = index;
-		Expr lhs = parseIndexTerm(dictionaryStart);
+		Expr lhs = parseIndexTerm();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
 			
 			
-			Expr rhs = parseMulDivExpression(dictionaryStart);
+			Expr rhs = parseMulDivExpression();
 			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -813,7 +813,7 @@ public class WhileyParser {
 			match(RightSlash.class);
 			
 			
-			Expr rhs = parseMulDivExpression(dictionaryStart);
+			Expr rhs = parseMulDivExpression();
 			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -821,7 +821,7 @@ public class WhileyParser {
 		return lhs;
 	}	
 	
-	private Expr parseIndexTerm(boolean dictionaryStart) {
+	private Expr parseIndexTerm() {
 		checkNotEof();
 		int start = index;
 		int ostart = index;		
@@ -831,8 +831,8 @@ public class WhileyParser {
 		
 		while (lookahead instanceof LeftSquare || lookahead instanceof Dot
 				|| lookahead instanceof LeftBrace
-				|| lookahead instanceof LeftRightArrow
-				|| (!dictionaryStart && lookahead instanceof RightArrow)) {
+				|| lookahead instanceof LeftArrow
+				|| lookahead instanceof LeftRightArrow) {
 			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
@@ -847,7 +847,7 @@ public class WhileyParser {
 					match(DotDot.class);
 					
 					lookahead = tokens.get(index);
-					Expr end = parseAddSubExpression(false);
+					Expr end = parseAddSubExpression();
 					match(RightSquare.class);
 					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
 							index - 1), lhs, new Expr.Constant(Value
@@ -855,7 +855,7 @@ public class WhileyParser {
 							index - 1)), end);
 				}
 				
-				Expr rhs = parseAddSubExpression(false);
+				Expr rhs = parseAddSubExpression();
 				
 				lookahead = tokens.get(index);
 				if(lookahead instanceof DotDot) {					
@@ -870,7 +870,7 @@ public class WhileyParser {
 						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
 								.attribute(Attribute.Source.class));
 					} else {
-						end = parseAddSubExpression(false);						
+						end = parseAddSubExpression();						
 					}
 					match(RightSquare.class);
 					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
@@ -880,7 +880,7 @@ public class WhileyParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 							index - 1));
 				}
-			} else if (lookahead instanceof RightArrow || lookahead instanceof LeftRightArrow) {				
+			} else if (lookahead instanceof LeftArrow || lookahead instanceof LeftRightArrow) {				
 				match(lookahead.getClass());					
 				int tmp = index; 				
 				String name = matchIdentifier().text;
@@ -931,7 +931,7 @@ public class WhileyParser {
 			// this indicates a process dereference
 			match(Star.class);
 			
-			Expr e = parseAddSubExpression(false);
+			Expr e = parseAddSubExpression();
 			return new Expr.UnOp(Expr.UOp.PROCESSACCESS, e, sourceAttr(start,
 					index - 1));
 		} else if ((index + 1) < tokens.size()
@@ -979,7 +979,7 @@ public class WhileyParser {
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Expr.UOp.NOT, parseIndexTerm(false),
+			return new Expr.UnOp(Expr.UOp.NOT, parseIndexTerm(),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof AddressOf) {
 		      return parseFunVal();
@@ -1019,7 +1019,7 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("spawn");
 		
-		Expr state = parseAddSubExpression(false);
+		Expr state = parseAddSubExpression();
 		return new Expr.Spawn(state, sourceAttr(start,index - 1));
 	}
 	
@@ -1037,7 +1037,7 @@ public class WhileyParser {
 				
 			}
 			firstTime=false;
-			exprs.add(parseCondition(false));
+			exprs.add(parseCondition());
 			
 			checkNotEof();
 			token = tokens.get(index);
@@ -1075,14 +1075,14 @@ public class WhileyParser {
 			}
 			match(WhileyLexer.ElemOf.class);
 			
-			Expr src = parseConditionExpression(false);			
+			Expr src = parseConditionExpression();			
 			srcs.add(new Pair(var,src));
 			
 			checkNotEof();
 			token = tokens.get(index);
 		}
 		match(Bar.class);		
-		Expr condition = parseCondition(false);
+		Expr condition = parseCondition();
 		
 		match(RightCurly.class);
 		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
@@ -1103,9 +1103,7 @@ public class WhileyParser {
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
 		}
 		
-		// NOTE: in the following, dictionaryStart must be true as this could be
-		// the start of a dictionary constructor.
-		exprs.add(parseCondition(true)); 
+		exprs.add(parseCondition()); 
 		
 		
 		boolean setComp = false;
@@ -1133,7 +1131,7 @@ public class WhileyParser {
 				
 			}
 			firstTime=false;
-			exprs.add(parseCondition(false));
+			exprs.add(parseCondition());
 			
 			checkNotEof();
 			token = tokens.get(index);
@@ -1183,16 +1181,16 @@ public class WhileyParser {
 	private Expr parseDictionaryVal(int start, Expr key) {
 		ArrayList<Pair<Expr,Expr>> pairs = new ArrayList<Pair<Expr,Expr>>();		
 		match(RightArrow.class);
-		Expr value = parseCondition(false);	
+		Expr value = parseCondition();	
 		pairs.add(new Pair<Expr,Expr>(key,value));
 		
 		Token token = tokens.get(index);		
 		while(!(token instanceof RightCurly)) {									
 			match(Comma.class);
 			
-			key = parseCondition(true);
+			key = parseCondition();
 			match(RightArrow.class);
-			value = parseCondition(false);
+			value = parseCondition();
 			pairs.add(new Pair<Expr,Expr>(key,value));
 			
 			checkNotEof();
@@ -1207,7 +1205,7 @@ public class WhileyParser {
 		// this indicates a record value.				
 		match(Colon.class);
 		
-		Expr e = parseAddSubExpression(false);
+		Expr e = parseAddSubExpression();
 		
 		
 		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
@@ -1227,7 +1225,7 @@ public class WhileyParser {
 
 			match(Colon.class);
 			
-			e = parseAddSubExpression(false);				
+			e = parseAddSubExpression();				
 			exprs.put(n.text,e);
 			checkNotEof();
 			token = tokens.get(index);					
@@ -1241,7 +1239,7 @@ public class WhileyParser {
 		int start = index;
 		match(Bar.class);
 		
-		Expr e = parseIndexTerm(false);
+		Expr e = parseIndexTerm();
 		
 		match(Bar.class);
 		return new Expr.UnOp(Expr.UOp.LENGTHOF, e, sourceAttr(start, index - 1));
@@ -1251,7 +1249,7 @@ public class WhileyParser {
 		int start = index;
 		match(Minus.class);
 		
-		Expr e = parseIndexTerm(false);
+		Expr e = parseIndexTerm();
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
@@ -1284,7 +1282,7 @@ public class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseAddSubExpression(false);
+			Expr e = parseAddSubExpression();
 			
 			args.add(e);		
 		}

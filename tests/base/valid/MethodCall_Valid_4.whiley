@@ -1,8 +1,11 @@
-int System::f(System x):
-    return x->get()
+define Proc as process { int state }
 
-int System::get():
-    return 123
+int Proc::get():
+    return state
+
+int System::f(Proc x):
+    return x<->get()
 
 void System::main([string] args):
-    out<->println(str(this->f(this)))
+    proc = spawn { state: 123 }
+    out<->println(str(this<->f(proc)))

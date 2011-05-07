@@ -1483,6 +1483,7 @@ public class ClassFileBuilder {
 				if(c.type() != Type.T_VOID) {
 					ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
 					bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,Bytecode.VIRTUAL));
+					addReadConversion(c.type(),bytecodes);
 				} else {
 					ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
 					bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "vSyncSend", ftype,Bytecode.VIRTUAL));
