@@ -66,9 +66,7 @@ public final class Actor extends Thread {
 	 *            --- the message "arguments"
 	 */
 	public Object syncSend(Method method, Object[] arguments) {
-		Object[] args = new Object[arguments.length+1];
-		System.arraycopy(arguments,0,args,1,arguments.length);
-		args[0] = this;
+		arguments[0] = this;
 		Message m = new Message(method,arguments,true);
 		queue.add(m);
 		return m.get();
@@ -82,9 +80,7 @@ public final class Actor extends Thread {
 	 * @param arguments --- the message "arguments"
 	 */
 	public void vSyncSend(Method method, Object[] arguments) {
-		Object[] args = new Object[arguments.length+1];
-		System.arraycopy(arguments,0,args,1,arguments.length);
-		args[0] = this;
+		arguments[0] = this;
 		Message m = new Message(method,arguments,true);
 		queue.add(m);
 		m.get(); // discard return value
