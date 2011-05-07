@@ -55,13 +55,15 @@ public final class Actor extends Thread {
 		args[0] = this;
 		queue.add(new Message(method,arguments,false));
 	}
-	
+
 	/**
-	 * Send a message asynchronously to this actor. If the mailbox is full, then
-	 * this will in fact block.
+	 * Send a message synchronously to this actor. This will block the sender
+	 * until the message is received, and a return value generated.
 	 * 
-	 * @param method --- the "message"
-	 * @param arguments --- the message "arguments"
+	 * @param method
+	 *            --- the "message"
+	 * @param arguments
+	 *            --- the message "arguments"
 	 */
 	public Object syncSend(Method method, Object[] arguments) {
 		Object[] args = new Object[arguments.length+1];
@@ -72,6 +74,21 @@ public final class Actor extends Thread {
 		return m.get();
 	}
 	
+	/**
+	 * Send a message synchronously to this actor. This will block the sender
+	 * until the message is received.  Any return value is discarded.
+	 * 
+	 * @param method --- the "message"
+	 * @param arguments --- the message "arguments"
+	 */
+	public void vSyncSend(Method method, Object[] arguments) {
+		Object[] args = new Object[arguments.length+1];
+		System.arraycopy(arguments,0,args,1,arguments.length);
+		args[0] = this;
+		Message m = new Message(method,arguments,true);
+		queue.add(m);
+		m.get(); // discard return value
+	}
 	public void run() {		
 		// this is where the action happens
 		while(1==1) {

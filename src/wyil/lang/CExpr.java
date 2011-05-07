@@ -199,7 +199,7 @@ public abstract class CExpr {
 			for(CExpr arg : a.args){
 				args.add(CExpr.substitute(binding,arg));
 			}			
-			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,args);
+			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,a.synchronous,args);
 		} else if(r instanceof IndirectInvoke) {
 			IndirectInvoke a = (IndirectInvoke) r;									
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
@@ -273,7 +273,7 @@ public abstract class CExpr {
 			for(CExpr arg : a.args){
 				args.add(CExpr.registerShift(shift,arg));
 			}						
-			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,args);
+			return DIRECTINVOKE(a.type,a.name,a.caseNum,receiver,a.synchronous,args);
 		} else if(r instanceof IndirectInvoke) {
 			IndirectInvoke a = (IndirectInvoke) r;						
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
@@ -379,13 +379,13 @@ public abstract class CExpr {
 	}
 	
 	public static DirectInvoke INVOKE(Type.Fun type, NameID name, int casenum,
-			CExpr receiver, CExpr... args) {
-		return get(new DirectInvoke(type,name,casenum,receiver,args));
+			CExpr receiver, boolean synchronous, CExpr... args) {
+		return get(new DirectInvoke(type,name,casenum,receiver,synchronous,args));
 	}
 	
 	public static DirectInvoke DIRECTINVOKE(Type.Fun type, NameID name, int casenum,
-			CExpr receiver, Collection<CExpr> args) {
-		return get(new DirectInvoke(type,name,casenum,receiver,args));
+			CExpr receiver, boolean synchronous, Collection<CExpr> args) {
+		return get(new DirectInvoke(type,name,casenum,receiver,synchronous,args));
 	}
 	
 	public static IndirectInvoke INDIRECTINVOKE(CExpr target,
@@ -879,14 +879,16 @@ public abstract class CExpr {
 		public final Type.Fun type;
 		public final NameID name;
 		public final CExpr receiver;
+		public final boolean synchronous;
 		public final List<CExpr> args;
 		public final int caseNum;
 
-		DirectInvoke(Type.Fun type, NameID name, int caseNum, CExpr receiver, CExpr... args) {
+		DirectInvoke(Type.Fun type, NameID name, int caseNum, CExpr receiver, boolean synchronous, CExpr... args) {
 			this.type = type;
 			this.name = name;
-			this.caseNum = caseNum;
+			this.caseNum = caseNum;			
 			this.receiver = receiver;
+			this.synchronous = synchronous;
 			ArrayList<CExpr> tmp = new ArrayList<CExpr>();
 			for(CExpr r : args) {
 				tmp.add(r);
@@ -894,17 +896,22 @@ public abstract class CExpr {
 			this.args = Collections.unmodifiableList(tmp); 
 		}
 
-		DirectInvoke(Type.Fun type, NameID name, int caseNum,
-				CExpr receiver, Collection<CExpr> args) {
+		DirectInvoke(Type.Fun type, NameID name, int caseNum, CExpr receiver,
+				boolean synchronous, Collection<CExpr> args) {
 			this.type = type;
 			this.name = name;
 			this.caseNum = caseNum;
 			this.receiver = receiver;
+			this.synchronous = synchronous;
 			this.args = Collections.unmodifiableList(new ArrayList<CExpr>(args));
 		}
 
 		public Type type() {
-			return type.ret();
+			if(receiver == null || synchronous) {
+				return type.ret();
+			} else {
+				return Type.T_VOID;
+			}
 		}
 		
 		public boolean equals(Object o) {

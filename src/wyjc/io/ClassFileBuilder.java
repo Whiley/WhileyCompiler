@@ -1479,15 +1479,18 @@ public class ClassFileBuilder {
 				}
 				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 			}			
-			if(c.type.ret() == Type.T_VOID) {
-				// currently, if the return type is void then we have an
-				// asynchronous send.
+			if(c.synchronous) {			
+				if(c.type() != Type.T_VOID) {
+					ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
+					bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,Bytecode.VIRTUAL));
+				} else {
+					ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
+					bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "vSyncSend", ftype,Bytecode.VIRTUAL));
+				}
+			} else {
 				ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
 				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend", ftype,Bytecode.VIRTUAL));	
-			} else {				
-				ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
-				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,Bytecode.VIRTUAL));
-			}							
+			}  					
 		} else {
 			// function call or internal message send			
 			for(int i=0;i!=params.size();++i) {

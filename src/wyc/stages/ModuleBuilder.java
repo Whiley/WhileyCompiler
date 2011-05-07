@@ -1153,7 +1153,8 @@ public class ModuleBuilder {
 			NameID name = new NameID(modInfo.module, s.name);
 
 			return new Pair<CExpr, Block>(CExpr.DIRECTINVOKE(
-					Type.T_FUN(null, Type.T_ANY), name, 0, receiver, nargs), blk);
+					Type.T_FUN(null, Type.T_ANY), name, 0, receiver,
+					s.synchronous, nargs), blk);
 		} else {
 			// FIXME: need some way to support non-variable targets.
 			CExpr target = CExpr.VAR(Type.T_ANY,s.name);

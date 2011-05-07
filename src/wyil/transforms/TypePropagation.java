@@ -872,7 +872,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		try {
 			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
 
-			return CExpr.DIRECTINVOKE(funtype, ivk.name, ivk.caseNum, receiver, args);
+			return CExpr.DIRECTINVOKE(funtype, ivk.name, ivk.caseNum, receiver, ivk.synchronous, args);
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable

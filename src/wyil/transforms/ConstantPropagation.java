@@ -411,7 +411,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 			args.add(arg);
 		}
 		
-		return CExpr.DIRECTINVOKE(ivk.type, ivk.name, ivk.caseNum, receiver, args);		
+		return CExpr.DIRECTINVOKE(ivk.type, ivk.name, ivk.caseNum, receiver, ivk.synchronous, args);		
 	}
 	
 	protected CExpr infer(IndirectInvoke ivk, Stmt stmt,
