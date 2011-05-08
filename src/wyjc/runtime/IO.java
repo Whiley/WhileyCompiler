@@ -39,6 +39,7 @@ public class IO {
 			r.put("fileName", name);
 			r.put("$fin", fin);
 			Actor p = new Actor(r);
+			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());			
@@ -54,6 +55,7 @@ public class IO {
 			r.put("fileName", name);
 			r.put("$fout", fout);
 			Actor p = new Actor(r);
+			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());			
