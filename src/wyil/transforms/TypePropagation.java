@@ -35,6 +35,7 @@ import java.util.HashSet;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
+import wyil.lang.CExpr.UOP;
 import wyil.lang.Code.*;
 import wyil.lang.CExpr.*;
 import wyil.util.*;
@@ -781,6 +782,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {								
 		CExpr lhs = infer(e.lhs,stmt,environment);					
+		// FIXME: would help to have effective process type
+		if(lhs.type() instanceof Type.Process) {
+			// this indicates a process dereference
+			lhs = CExpr.UNOP(UOP.PROCESSACCESS,lhs);
+		}
 		Type.Record ett = Type.effectiveRecordType(lhs.type());		
 		if (ett == null) {
 			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
