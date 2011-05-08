@@ -36,7 +36,7 @@
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
     <jar destfile="wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src" includes="wyjc/**/*.class,wyil/**/*.class,wyone/**/*.class,wyjvm/**/*.class"/>
+      <fileset dir="src" includes="wyjc/**/*.class,wyil/**/*.class,wyc/**/*.class,wyjvm/**/*.class"/>
       <fileset dir="stdlib" includes="whiley/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -45,7 +45,7 @@
   <target name="distsrc" depends="stdlib">
   <mkdir dir="wdk-v${version}"/>
   <copy todir="wdk-v${version}">
-    <fileset dir="." includes="src/wyjc/**/*.java,src/wyjvm/**/*.java,src/wyil/**/*.java"/>
+    <fileset dir="." includes="src/wyc/**/*.java,src/wyjc/**/*.java,src/wyjvm/**/*.java,src/wyil/**/*.java"/>
     <fileset dir="." includes="tests/**/*.whiley,tests/**/*.sysout"/>
     <fileset dir="." includes="examples/**/*.whiley"/>
     <fileset dir="." includes="stdlib/**/*.whiley"/>
