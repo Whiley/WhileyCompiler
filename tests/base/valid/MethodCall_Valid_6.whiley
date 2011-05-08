@@ -1,10 +1,12 @@
 define wmcr6tup as {int x, int y}
+define Proc as process { int state }
 
-wmcr6tup System::f(System x, int y):
-    return {x:y,y:x->get()}
+int Proc::get():
+    return state
 
-int System::get():
-    return 1
+wmcr6tup System::f(Proc x, int y):
+    return {x:y,y:x<->get()}
 
 void System::main([string] args):
-    out<->println(str(this->f(this,1)))
+    proc = spawn { state: 1 }
+    out<->println(str(this<->f(proc,1)))

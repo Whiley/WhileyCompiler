@@ -5,4 +5,5 @@ void System::f([int] x):
 
 void System::main([string] args):
      arr = [1,2,3]
-     this->f(arr)
+     // following line should block
+     this<->f(arr)
