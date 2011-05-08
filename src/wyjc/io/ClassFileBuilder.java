@@ -1861,14 +1861,14 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "list_clone", ftype,
 					Bytecode.STATIC));
-		} else if (t instanceof Type.Set) {
-			JvmType.Function ftype = new JvmType.Function(WHILEYSET);
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "clone", ftype,
-					Bytecode.VIRTUAL));
+		} else if (t instanceof Type.Set) {			
+			JvmType.Function ftype = new JvmType.Function(WHILEYSET,WHILEYSET);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set_clone", ftype,
+					Bytecode.STATIC));			
 		} else if (t instanceof Type.Record) {
-			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "clone", ftype,
-					Bytecode.VIRTUAL));
+			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "record_clone", ftype,
+					Bytecode.STATIC));
 		}
 	}
 
