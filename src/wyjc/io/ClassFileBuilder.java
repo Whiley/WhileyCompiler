@@ -299,7 +299,7 @@ public class ClassFileBuilder {
 		
 		if (c.rhs != null) {
 			translate(c.rhs, slots, bytecodes);
-			Type ret_t = method.type().ret();
+			Type ret_t = method.type().ret();			
 			convert(ret_t,c.rhs.type(),slots,bytecodes);			
 			bytecodes.add(new Bytecode.Return(convertType(ret_t)));
 		} else {		
@@ -1942,7 +1942,7 @@ public class ClassFileBuilder {
 	
 	protected void convert(Type toType, Type fromType,
 			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {				
-		if(toType.equals(fromType)) {		
+		if (Type.isomorphic(toType, fromType)) {		
 			// do nothing!						
 		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
