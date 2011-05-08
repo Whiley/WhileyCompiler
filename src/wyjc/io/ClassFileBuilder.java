@@ -2159,7 +2159,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("java.util","ArrayList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","WhileySet");
-	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyjc.runtime","WhileyIO");
+	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyjc.runtime","IO");
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("java.util","HashMap");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","WhileyRecord");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(

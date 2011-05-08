@@ -30,7 +30,7 @@ import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
 
-public class WhileyIO {
+public class IO {
 	public static Actor openReader(ArrayList name) {
 		WhileyRecord r = new WhileyRecord();
 		try {
