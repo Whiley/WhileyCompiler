@@ -1645,26 +1645,26 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	public Code.COP OP2COP(Expr.BOp bop, SyntacticElement elem) {
+	public Code.COp OP2COP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case EQ:
-			return Code.COP.EQ;
+			return Code.COp.EQ;
 		case NEQ:
-			return Code.COP.NEQ;
+			return Code.COp.NEQ;
 		case LT:
-			return Code.COP.LT;
+			return Code.COp.LT;
 		case LTEQ:
-			return Code.COP.LTEQ;
+			return Code.COp.LTEQ;
 		case GT:
-			return Code.COP.GT;
+			return Code.COp.GT;
 		case GTEQ:
-			return Code.COP.GTEQ;
+			return Code.COp.GTEQ;
 		case SUBSET:
-			return Code.COP.SUBSET;
+			return Code.COp.SUBSET;
 		case SUBSETEQ:
-			return Code.COP.SUBSETEQ;
+			return Code.COp.SUBSETEQ;
 		case ELEMENTOF:
-			return Code.COP.ELEMOF;
+			return Code.COp.ELEMOF;
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;
