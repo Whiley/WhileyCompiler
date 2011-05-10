@@ -6,7 +6,7 @@ wyc/   - The compiler front-end, including all code for the lexer, the
          parser, the raw AST, and various tools for instantiating and
          configuring a Whiley Compiler.
 
-wyil/  -  The Whiley Intermediate Language (wyil).  The Whiley Compiler
+wyil/  - The Whiley Intermediate Language (wyil).  The Whiley Compiler
          (wyc) converts Whiley programs into this intermediate
          language, and then various transforms are applied.  The wyil
          constitutes a bytecode (similar, in some ways, to Java
