@@ -1484,7 +1484,7 @@ public class ModuleBuilder {
 	
 	protected Block resolve(int freeReg, RecordAccess sg) {
 		Block lhs = resolve(freeReg, sg.lhs);		
-		return new Block(CExpr.RECORDACCESS(lhs.first(), sg.name),
+		return new Block(Code..RECORDACCESS(lhs.first(), sg.name),
 				lhs.second());
 	}
 
