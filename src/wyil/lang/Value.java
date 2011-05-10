@@ -30,7 +30,7 @@ import java.util.*;
 import wyil.util.Pair;
 import wyjc.runtime.BigRational;
 
-public abstract class Value extends CExpr implements Comparable<Value> {	
+public abstract class Value implements Comparable<Value> {	
 
 	public static final Null V_NULL = new Null();
 	
