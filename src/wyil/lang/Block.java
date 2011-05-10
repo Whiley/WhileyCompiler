@@ -27,7 +27,6 @@ package wyil.lang;
 
 import java.util.*;
 
-import wyil.lang.Code.Forall;
 import wyil.util.SyntacticElement;
 
 public final class Block implements Iterable<Block.CodeAttr> {
@@ -127,26 +126,6 @@ public final class Block implements Iterable<Block.CodeAttr> {
 		return r + "]";
 	}
 
-	/**
-	 * Determine the set of used variable names, which includes registers and
-	 * variables.
-	 */
-	public static HashSet<String> usedVariables(Block blk) {
-		HashSet<CExpr.LVar> uses = new HashSet<CExpr.LVar>();
-		for(CodeAttr stmt : blk) {
-			Code.match(stmt.code,CExpr.LVar.class,uses);
-		}
-		HashSet<String> r = new HashSet<String>();
-		for(CExpr.LVar v : uses) {
-			if(v instanceof CExpr.Variable) {
-				r.add(((CExpr.Variable)v).name);
-			} else {
-				r.add("%" + ((CExpr.Register)v).index);
-			}
-		}
-		return r;
-	}
-	
 	private static int _idx=0;
 	public static String freshLabel() {
 		return "blklab" + _idx++;
