@@ -58,7 +58,7 @@ public class ModuleBuilder {
 	// parameters are modified during the method, then we must store their
 	// original value on entry for use in the post-condition runtime check.
 	// These stored values are called "shadows".
-	private final HashMap<String, CExpr> shadows = new HashMap<String, CExpr>();
+	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
 	public ModuleBuilder(ModuleLoader loader) {
 		this.loader = loader;		
@@ -522,7 +522,7 @@ public class ModuleBuilder {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		blk.add(new Code.Return(null),fd.attribute(Attribute.Source.class));
+		blk.add(Code.Return(Type.T_VOID),fd.attribute(Attribute.Source.class));
 
 		List<Module.Case> ncases = new ArrayList<Module.Case>();
 		ncases.add(new Module.Case(parameterNames, blk));
@@ -1087,7 +1087,7 @@ public class ModuleBuilder {
 	 * @param environment
 	 * @return
 	 */
-	protected Pair<CExpr, Block> resolve(int freeReg, Expr e) {
+	protected Block resolve(int freeReg, Expr e) {
 		try {
 			if (e instanceof Constant) {
 				return resolve(freeReg, (Constant) e);
@@ -1128,7 +1128,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, Invoke s) throws ResolveError {
+	protected Block resolve(int freeReg, Invoke s) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block();
 
@@ -1137,13 +1137,13 @@ public class ModuleBuilder {
 		CExpr receiver = null;
 		
 		if (s.receiver != null) {
-			Pair<CExpr, Block> tb = resolve(idx++, s.receiver);
+			Block tb = resolve(idx++, s.receiver);
 			receiver = tb.first();
 			blk.addAll(tb.second());
 		}
 
 		for (Expr e : args) {
-			Pair<CExpr, Block> e_tb = resolve(idx++, e);
+			Block e_tb = resolve(idx++, e);
 			nargs.add(e_tb.first());
 			blk.addAll(e_tb.second());
 		}	
@@ -1152,22 +1152,22 @@ public class ModuleBuilder {
 		if(modInfo != null) {
 			NameID name = new NameID(modInfo.module, s.name);
 
-			return new Pair<CExpr, Block>(CExpr.DIRECTINVOKE(
+			return new Block(CExpr.DIRECTINVOKE(
 					Type.T_FUN(null, Type.T_ANY), name, 0, receiver,
 					s.synchronous, nargs), blk);
 		} else {
 			// FIXME: need some way to support non-variable targets.
 			CExpr target = CExpr.VAR(Type.T_ANY,s.name);
-			return new Pair<CExpr, Block>(CExpr.INDIRECTINVOKE(target,
+			return new Block(CExpr.INDIRECTINVOKE(target,
 					receiver, nargs), blk);	
 		}
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, Constant c) {
-		return new Pair<CExpr, Block>(c.value, new Block());
+	protected Block resolve(int freeReg, Constant c) {
+		return new Block(c.value, new Block());
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, FunConst s) {
+	protected Block resolve(int freeReg, FunConst s) {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		NameID name = new NameID(modInfo.module, s.name);		
 		ArrayList<Type> paramTypes = new ArrayList<Type>();
@@ -1176,18 +1176,18 @@ public class ModuleBuilder {
 		}
 		Type.Fun tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
 		
-		return new Pair<CExpr, Block>(Value.V_FUN(
+		return new Block(Value.V_FUN(
 				name, tf), new Block());
 	}
 	
-	protected Pair<CExpr, Block> resolve(int target, Variable v) throws ResolveError {
+	protected Block resolve(int target, Variable v) throws ResolveError {
 		// First, check if this is an alias or not				
 		
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 		if (alias != null) {
 			// Must be a local variable	
 			if(alias.alias == null) {				
-				return new Pair<CExpr, Block>(CExpr.VAR(Type.T_ANY, v.var), new Block());
+				return new Block(CExpr.VAR(Type.T_ANY, v.var), new Block());
 			} else {								
 				return resolve(0, alias.alias);
 			}
@@ -1222,7 +1222,7 @@ public class ModuleBuilder {
 				Module mi = loader.loadModule(mod.module);
 				val = mi.constant(v.var).constant();
 			}
-			return new Pair<CExpr, Block>(val, new Block());
+			return new Block(val, new Block());
 		}
 				
 		// must be an error
@@ -1230,12 +1230,12 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, UnOp v) {
-		Pair<CExpr, Block> mhs = resolve(freeReg, v.mhs);
+	protected Block resolve(int freeReg, UnOp v) {
+		Block mhs = resolve(freeReg, v.mhs);
 		Block blk = mhs.second();
 		switch (v.op) {
 		case NEG:
-			return new Pair<CExpr, Block>(CExpr
+			return new Block(CExpr
 					.UNOP(CExpr.UOP.NEG, mhs.first()), blk);
 		case NOT:
 			String falseLabel = Block.freshLabel();
@@ -1249,15 +1249,15 @@ public class ModuleBuilder {
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(false)), v.attribute(Attribute.Source.class));
 			blk.add(new Code.Label(exitLabel));
-			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, freeReg), blk);
+			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		case LENGTHOF:
-			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
+			return new Block(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
 					.first()), blk);
 		case PROCESSACCESS:			
-			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.PROCESSACCESS,
+			return new Block(CExpr.UNOP(CExpr.UOP.PROCESSACCESS,
 					mhs.first()), blk);
 		case PROCESSSPAWN:
-			return new Pair<CExpr, Block>(CExpr.UNOP(CExpr.UOP.PROCESSSPAWN,
+			return new Block(CExpr.UNOP(CExpr.UOP.PROCESSSPAWN,
 					mhs.first()), blk);
 		default:
 			syntaxError("unexpected unary operator encountered", filename, v);
@@ -1265,17 +1265,17 @@ public class ModuleBuilder {
 		}
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, ListAccess v) {
-		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.src);
-		Pair<CExpr, Block> rhs_tb = resolve(freeReg + 1, v.index);
+	protected Block resolve(int freeReg, ListAccess v) {
+		Block lhs_tb = resolve(freeReg, v.src);
+		Block rhs_tb = resolve(freeReg + 1, v.index);
 		Block blk = new Block();
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
-		return new Pair<CExpr, Block>(CExpr.LISTACCESS(lhs_tb.first(), rhs_tb
+		return new Block(CExpr.LISTACCESS(lhs_tb.first(), rhs_tb
 				.first()), blk);
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, BinOp v) {
+	protected Block resolve(int freeReg, BinOp v) {
 
 		// could probably use a range test for this somehow
 		if (v.op == BOp.EQ || v.op == BOp.NEQ || v.op == BOp.LT
@@ -1292,11 +1292,11 @@ public class ModuleBuilder {
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)), v.attribute(Attribute.Source.class));
 			blk.add(new Code.Label(exitLabel));			
-			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, freeReg), blk);
+			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		}
 
-		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.lhs);
-		Pair<CExpr, Block> rhs_tb = resolve(freeReg + 1, v.rhs);
+		Block lhs_tb = resolve(freeReg, v.lhs);
+		Block rhs_tb = resolve(freeReg + 1, v.rhs);
 		BOp bop = v.op;
 
 		Block blk = new Block();
@@ -1307,52 +1307,52 @@ public class ModuleBuilder {
 				|| bop == BOp.DIV) {
 			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs_tb.first(), rhs_tb
 					.first());
-			return new Pair<CExpr, Block>(r, blk);			
+			return new Block(r, blk);			
 		} else if (bop == BOp.UNION || bop == BOp.INTERSECTION) {
 			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs_tb.first(), rhs_tb
 					.first());
-			return new Pair<CExpr, Block>(r, blk);
+			return new Block(r, blk);
 		}
 
 		syntaxError("unknown binary operation encountered", filename, v);
 		return null;
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, NaryOp v) {
+	protected Block resolve(int freeReg, NaryOp v) {
 		Block blk = new Block();
 		if (v.nop == NOp.SUBLIST) {
 			if (v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments", filename, v);
 			}
-			Pair<CExpr, Block> src = resolve(freeReg, v.arguments.get(0));
-			Pair<CExpr, Block> start = resolve(freeReg + 1, v.arguments.get(1));
-			Pair<CExpr, Block> end = resolve(freeReg + 2, v.arguments.get(2));
+			Block src = resolve(freeReg, v.arguments.get(0));
+			Block start = resolve(freeReg + 1, v.arguments.get(1));
+			Block end = resolve(freeReg + 2, v.arguments.get(2));
 			blk.addAll(src.second());
 			blk.addAll(start.second());
 			blk.addAll(end.second());
 			CExpr r = CExpr.NARYOP(CExpr.NOP.SUBLIST, src.first(), start
 					.first(), end.first());
-			return new Pair<CExpr, Block>(r, blk);
+			return new Block(r, blk);
 		} else {
 			int idx = freeReg;
 			ArrayList<CExpr> args = new ArrayList<CExpr>();
 			for (Expr e : v.arguments) {
-				Pair<CExpr, Block> t = resolve(idx++, e);
+				Block t = resolve(idx++, e);
 				args.add(t.first());
 				blk.addAll(t.second());
 			}
 
 			if (v.nop == NOp.LISTGEN) {
-				return new Pair<CExpr, Block>(CExpr.NARYOP(CExpr.NOP.LISTGEN,
+				return new Block(CExpr.NARYOP(CExpr.NOP.LISTGEN,
 						args), blk);
 			} else {
-				return new Pair<CExpr, Block>(CExpr.NARYOP(CExpr.NOP.SETGEN,
+				return new Block(CExpr.NARYOP(CExpr.NOP.SETGEN,
 						args), blk);
 			}
 		}
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, Comprehension e) {
+	protected Block resolve(int freeReg, Comprehension e) {
 
 		// First, check for boolean cases which are handled mostly by
 		// resolveCondition.
@@ -1367,7 +1367,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)), e.attribute(Attribute.Source.class));
 			blk.add(new Code.Label(exitLabel));
-			return new Pair<CExpr, Block>(CExpr.REG(Type.T_BOOL, freeReg), blk);
+			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		}
 
 		// Ok, non-boolean case.		
@@ -1375,14 +1375,14 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 		for (Pair<String, Expr> src : e.sources) {
-			Pair<CExpr, Block> r = resolve(0, src.second());
+			Block r = resolve(0, src.second());
 			CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg++);
 			sources.add(new Pair<CExpr.Register, CExpr>(reg, r.first()));
 			binding.put(src.first(), reg);
 			blk.addAll(r.second());			
 		}
 
-		Pair<CExpr, Block> value = resolve(freeReg + 1, e.value);
+		Block value = resolve(freeReg + 1, e.value);
 		Type type = value.first().type();
 		
 		CExpr.Register lhs;
@@ -1442,49 +1442,49 @@ public class ModuleBuilder {
 		// the quantified variables to be their actual registers.
 		blk = Block.substitute(binding, blk);
 
-		return new Pair<CExpr, Block>(lhs, blk);
+		return new Block(lhs, blk);
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, RecordGen sg) {
+	protected Block resolve(int freeReg, RecordGen sg) {
 		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
 		Block blk = new Block();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			Pair<CExpr, Block> tb = resolve(freeReg, e.getValue());
+			Block tb = resolve(freeReg, e.getValue());
 			values.put(e.getKey(), tb.first());
 			blk.addAll(tb.second());
 		}
-		return new Pair<CExpr, Block>(CExpr.RECORD(values), blk);
+		return new Block(CExpr.RECORD(values), blk);
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, TupleGen sg) {
+	protected Block resolve(int freeReg, TupleGen sg) {
 		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
 		Block blk = new Block();
 		int idx=0;
 		for (Expr e : sg.fields) {
 			String name = "$" + idx++;
-			Pair<CExpr, Block> tb = resolve(freeReg, e	);
+			Block tb = resolve(freeReg, e	);
 			values.put(name, tb.first());
 			blk.addAll(tb.second());
 		}
-		return new Pair<CExpr, Block>(CExpr.RECORD(values), blk);
+		return new Block(CExpr.RECORD(values), blk);
 	}
 
-	protected Pair<CExpr, Block> resolve(int freeReg, DictionaryGen sg) {
+	protected Block resolve(int freeReg, DictionaryGen sg) {
 		HashSet<Pair<CExpr, CExpr>> values = new HashSet<Pair<CExpr, CExpr>>();
 		Block blk = new Block();		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
-			Pair<CExpr, Block> kb = resolve(freeReg, e.first());
-			Pair<CExpr, Block> vb = resolve(freeReg, e.second());
+			Block kb = resolve(freeReg, e.first());
+			Block vb = resolve(freeReg, e.second());
 			values.add(new Pair<CExpr,CExpr>(kb.first(),vb.first()));
 			blk.addAll(kb.second());
 			blk.addAll(vb.second());
 		}
-		return new Pair<CExpr, Block>(CExpr.DICTIONARY(values), blk);
+		return new Block(CExpr.DICTIONARY(values), blk);
 	}
 	
-	protected Pair<CExpr, Block> resolve(int freeReg, RecordAccess sg) {
-		Pair<CExpr, Block> lhs = resolve(freeReg, sg.lhs);		
-		return new Pair<CExpr, Block>(CExpr.RECORDACCESS(lhs.first(), sg.name),
+	protected Block resolve(int freeReg, RecordAccess sg) {
+		Block lhs = resolve(freeReg, sg.lhs);		
+		return new Block(CExpr.RECORDACCESS(lhs.first(), sg.name),
 				lhs.second());
 	}
 
@@ -1626,20 +1626,20 @@ public class ModuleBuilder {
 		return new Expr.UnOp(Expr.UOp.NOT, e);
 	}
 
-	public CExpr.BOP OP2BOP(Expr.BOp bop, SyntacticElement elem) {
+	public Code.BOp OP2BOP(Expr.BOp bop, SyntacticElement elem) {
 		switch (bop) {
 		case ADD:
-			return CExpr.BOP.ADD;
+			return Code.BOp.ADD;
 		case SUB:
-			return CExpr.BOP.SUB;
+			return Code.BOp.SUB;
 		case DIV:
-			return CExpr.BOP.DIV;
+			return Code.BOp.DIV;
 		case MUL:
-			return CExpr.BOP.MUL;
+			return Code.BOp.MUL;
 		case UNION:
-			return CExpr.BOP.UNION;
+			return Code.BOp.UNION;
 		case INTERSECTION:
-			return CExpr.BOP.INTERSECT;
+			return Code.BOp.INTERSECT;
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;
