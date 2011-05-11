@@ -1164,7 +1164,9 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(int freeReg, Constant c) {
-		return new Block(c.value, new Block());
+		Block blk = new Block();
+		blk.add(Code.Const(c.value), c.attribute(Attribute.Source.class));
+		return blk;
 	}
 
 	protected Block resolve(int freeReg, FunConst s) {
@@ -1175,24 +1177,27 @@ public class ModuleBuilder {
 			paramTypes.add(resolve(p));
 		}
 		Type.Fun tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
-		
-		return new Block(Value.V_FUN(
-				name, tf), new Block());
+		Block blk = new Block();
+		blk.add(Code.Const(Value.V_FUN(name, tf)),
+				s.attribute(Attribute.Source.class));
+		return blk;
 	}
 	
-	protected Block resolve(int target, Variable v) throws ResolveError {
+	protected Block resolve(int freeReg, Variable v) throws ResolveError {
 		// First, check if this is an alias or not				
 		
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 		if (alias != null) {
 			// Must be a local variable	
 			if(alias.alias == null) {				
-				return new Block(CExpr.VAR(Type.T_ANY, v.var), new Block());
+				return new Block(Code.Load(Type.T_ANY, v.var),
+						v.attribute(Attribute.Source.class));
 			} else {								
 				return resolve(0, alias.alias);
 			}
 		}
 		
+		/* TODO:
 		if(currentFunDecl != null) {
 			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
 
@@ -1224,45 +1229,42 @@ public class ModuleBuilder {
 			}
 			return new Block(val, new Block());
 		}
-				
+		*/		
 		// must be an error
 		syntaxError("unknown variable \"" + v.var + "\"",filename,v);
 		return null;
 	}
 
 	protected Block resolve(int freeReg, UnOp v) {
-		Block mhs = resolve(freeReg, v.mhs);
-		Block blk = mhs.second();
+		Block blk = resolve(freeReg, v.mhs);	
 		switch (v.op) {
 		case NEG:
-			return new Block(CExpr
-					.UNOP(CExpr.UOP.NEG, mhs.first()), blk);
+			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.NEG), v.attributes());
+			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			// Ok, so there's a bit of inefficiency here ... so what?
 			blk = resolveCondition(falseLabel, v.mhs, freeReg);
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
-					.V_BOOL(true)), v.attribute(Attribute.Source.class));
+			blk.add(Code.Const(Value.V_BOOL(true)), v.attributes());
 			blk.add(Code.Goto(exitLabel));
 			blk.add(Code.Label(falseLabel));
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
-					.V_BOOL(false)), v.attribute(Attribute.Source.class));
+			blk.add(Code.Const(Value.V_BOOL(false)), v.attributes());
 			blk.add(Code.Label(exitLabel));
-			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
+			break;
 		case LENGTHOF:
-			return new Block(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
-					.first()), blk);
-		case PROCESSACCESS:			
-			return new Block(CExpr.UNOP(CExpr.UOP.PROCESSACCESS,
-					mhs.first()), blk);
+			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.LENGTHOF), v.attributes());
+			break;
+		case PROCESSACCESS:
+			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.PROCESSACCESS), v.attributes());
+			break;			
 		case PROCESSSPAWN:
-			return new Block(CExpr.UNOP(CExpr.UOP.PROCESSSPAWN,
-					mhs.first()), blk);
+			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.PROCESSSPAWN), v.attributes());
+			break;			
 		default:
 			syntaxError("unexpected unary operator encountered", filename, v);
 			return null;
 		}
+		return blk;
 	}
 
 	protected Block resolve(int freeReg, ListAccess v) {
