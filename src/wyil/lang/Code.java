@@ -93,6 +93,43 @@ public abstract class Code {
 	}
 
 	/**
+	 * Construct a <code>load</code> bytecode which reads a given register.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param reg
+	 *            --- reg to load.
+	 * @return
+	 */
+	public static Load Load(Type type, int reg) {
+		return get(new Load(type,reg));
+	}
+	
+	/**
+	 * Construct a <code>listload</code> bytecode which reads a value from a
+	 * given index in a given list.
+	 * 
+	 * @param type
+	 *            --- list type.
+	 * @return
+	 */
+	public static ListLoad ListLoad(Type type) {
+		return get(new ListLoad(type));
+	}
+	
+	/**
+	 * Construct a <code>liststore</code> bytecode which writes a given value to a
+	 * given index in a given list.
+	 * 
+	 * @param type
+	 *            --- list type.
+	 * @return
+	 */
+	public static ListStore ListStore(Type type) {
+		return get(new ListStore(type));
+	}
+	
+	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
 	 * and puts it on the stack.
 	 * 
@@ -110,8 +147,8 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewSet NewSet(Type.Set type) {
-		return get(new NewSet(type));
+	public static NewSet NewSet(Type.Set type, int nargs) {
+		return get(new NewSet(type,nargs));
 	}
 	
 	/**
@@ -121,8 +158,8 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewList NewList(Type.List type) {
-		return get(new NewList(type));
+	public static NewList NewList(Type.List type, int nargs) {
+		return get(new NewList(type,nargs));
 	}
 	
 	/**
@@ -158,7 +195,24 @@ public abstract class Code {
 	public static Label Label(String label) {
 		return get(new Label(label));
 	}
-		
+	
+	/**
+	 * Construct a <code>store</code> bytecode which writes a given register.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param reg
+	 *            --- reg to load.
+	 * @return
+	 */
+	public static Store Store(Type type, int reg) {
+		return get(new Store(type,reg));
+	}
+	
+	public static SubList SubList() {
+		return null;
+	}
+	
 	public static UnOp UnOp(Type type, UOp op) {
 		return get(new UnOp(type,op));
 	}	
@@ -725,9 +779,11 @@ public abstract class Code {
 	
 	public static final class NewSet extends Code {
 		public final Type.Set type;
+		public final int nargs;
 		
-		private NewSet(Type.Set type) {
+		private NewSet(Type.Set type, int nargs) {
 			this.type = type;
+			this.nargs = nargs;
 		}
 		
 		public int hashCode() {
@@ -737,21 +793,23 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof NewSet) {
 				NewSet i = (NewSet) o;
-				return type.equals(i.type);
+				return type.equals(i.type) && nargs == i.nargs;
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return "newset " + type;
+			return "newset " + nargs + " " + type;
 		}	
 	}
 	
 	public static final class NewList extends Code {
 		public final Type.List type;
+		public final int nargs;
 		
-		private NewList(Type.List type) {
+		private NewList(Type.List type, int nargs) {
 			this.type = type;
+			this.nargs = nargs;
 		}
 		
 		public int hashCode() {
@@ -761,13 +819,13 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof NewList) {
 				NewList i = (NewList) o;
-				return type.equals(i.type);
+				return type.equals(i.type) && nargs == i.nargs;
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return "newlist " + type;
+			return "newlist " + nargs + " " + type;
 		}	
 	}
 	

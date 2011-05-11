@@ -1266,13 +1266,11 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(int freeReg, ListAccess v) {
-		Block lhs_tb = resolve(freeReg, v.src);
-		Block rhs_tb = resolve(freeReg + 1, v.index);
 		Block blk = new Block();
-		blk.addAll(lhs_tb.second());
-		blk.addAll(rhs_tb.second());
-		return new Block(CExpr.LISTACCESS(lhs_tb.first(), rhs_tb
-				.first()), blk);
+		blk.addAll(resolve(freeReg, v.src));
+		blk.addAll(resolve(freeReg + 1, v.index));
+		blk.add(Code.ListLoad(Type.T_ANY),v.attributes());
+		return blk;
 	}
 
 	protected Block resolve(int freeReg, BinOp v) {
@@ -1285,35 +1283,25 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, v, freeReg);
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
-					.V_BOOL(false)), v.attribute(Attribute.Source.class));
+			blk.add(Code.Const(Value.V_BOOL(false)), v.attributes());			
 			blk.add(Code.Goto(exitLabel));
 			blk.add(Code.Label(trueLabel));
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
-					.V_BOOL(true)), v.attribute(Attribute.Source.class));
+			blk.add(Code.Const(Value.V_BOOL(true)), v.attributes());				
 			blk.add(Code.Label(exitLabel));			
-			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
+			return blk;
 		}
 
-		Block lhs_tb = resolve(freeReg, v.lhs);
-		Block rhs_tb = resolve(freeReg + 1, v.rhs);
 		BOp bop = v.op;
-
 		Block blk = new Block();
-		blk.addAll(lhs_tb.second());
-		blk.addAll(rhs_tb.second());
+		blk.addAll(resolve(freeReg, v.lhs));
+		blk.addAll(resolve(freeReg + 1, v.rhs));
 
 		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
-				|| bop == BOp.DIV) {
-			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs_tb.first(), rhs_tb
-					.first());
-			return new Block(r, blk);			
-		} else if (bop == BOp.UNION || bop == BOp.INTERSECTION) {
-			CExpr r = CExpr.BINOP(OP2BOP(bop, v), lhs_tb.first(), rhs_tb
-					.first());
-			return new Block(r, blk);
-		}
-
+				|| bop == BOp.DIV || bop == BOp.UNION || bop == BOp.INTERSECTION) {
+			blk.add(Code.BinOp(Type.T_ANY, OP2BOP(bop,v)),v.attributes());			
+			return blk;			
+		} 
+		
 		syntaxError("unknown binary operation encountered", filename, v);
 		return null;
 	}
@@ -1324,34 +1312,29 @@ public class ModuleBuilder {
 			if (v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments", filename, v);
 			}
-			Block src = resolve(freeReg, v.arguments.get(0));
-			Block start = resolve(freeReg + 1, v.arguments.get(1));
-			Block end = resolve(freeReg + 2, v.arguments.get(2));
-			blk.addAll(src.second());
-			blk.addAll(start.second());
-			blk.addAll(end.second());
-			CExpr r = CExpr.NARYOP(CExpr.NOP.SUBLIST, src.first(), start
-					.first(), end.first());
-			return new Block(r, blk);
+			blk.addAll(resolve(freeReg, v.arguments.get(0)));
+			blk.addAll(resolve(freeReg + 1, v.arguments.get(1)));
+			blk.addAll(resolve(freeReg + 2, v.arguments.get(2)));
+			blk.add(Code.SubList(),v.attributes());
+			return blk;
 		} else {
 			int idx = freeReg;
-			ArrayList<CExpr> args = new ArrayList<CExpr>();
-			for (Expr e : v.arguments) {
-				Block t = resolve(idx++, e);
-				args.add(t.first());
-				blk.addAll(t.second());
+			int nargs = 0;
+			for (Expr e : v.arguments) {				
+				nargs++;
+				blk.addAll(resolve(idx++, e));
 			}
 
 			if (v.nop == NOp.LISTGEN) {
-				return new Block(CExpr.NARYOP(CExpr.NOP.LISTGEN,
-						args), blk);
+				blk.add(Code.NewList(Type.T_LIST(Type.T_ANY),nargs),v.attributes());
 			} else {
-				return new Block(CExpr.NARYOP(CExpr.NOP.SETGEN,
-						args), blk);
+				blk.add(Code.NewSet(Type.T_SET(Type.T_ANY),nargs),v.attributes());
 			}
+			return blk;
 		}
 	}
 
+	/*
 	protected Block resolve(int freeReg, Comprehension e) {
 
 		// First, check for boolean cases which are handled mostly by
@@ -1444,7 +1427,7 @@ public class ModuleBuilder {
 
 		return new Block(lhs, blk);
 	}
-
+	 */
 	protected Block resolve(int freeReg, RecordGen sg) {
 		Block blk = new Block();
 		HashMap<String, Type> fields = new HashMap<String, Type>();
