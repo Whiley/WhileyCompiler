@@ -48,13 +48,17 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Real(value));
 	}	
 
+	public static Strung V_STRING(String value) {
+		return get(new Strung(value));
+	}
+	
 	public static Set V_SET(Collection<Value> values) {
 		return get(new Set(values));
 	}
 
 	public static List V_LIST(Collection<Value> values) {
 		return get(new List(values));
-	}
+	}	
 	
 	public static Record V_RECORD(Map<String,Value> values) {
 		return get(new Record(values));
@@ -201,6 +205,39 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	
+	public static final class Strung extends Value {
+		public final String value;
+		private Strung(String value) {
+			this.value = value;
+		}
+		public Type type() {
+			// FIXME: this will need to be fixed
+			return Type.T_LIST(Type.T_INT);
+		}
+		public int hashCode() {
+			return value.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Strung) {
+				Strung i = (Strung) o;
+				return value.equals(i.value);
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Strung) {
+				Strung i = (Strung) v;
+				return value.compareTo(i.value); 
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Int || v instanceof Real) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public String toString() {
+			return value.toString();
+		}
+	}
+	
 	public static class List extends Value {
 		public final ArrayList<Value> values;
 		private List(Collection<Value> value) {
@@ -240,7 +277,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real) {
+					|| v instanceof Int || v instanceof Real || v instanceof Strung) {
 				return 1; 
 			} 
 			return -1;			
@@ -304,7 +341,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real
+					|| v instanceof Int || v instanceof Real || v instanceof Strung
 					|| v instanceof List) {
 				return 1;
 			}
@@ -372,7 +409,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real
+					|| v instanceof Int || v instanceof Real || v instanceof Strung
 					|| v instanceof Set || v instanceof List) {
 				return 1; 
 			} 
@@ -449,7 +486,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real
+					|| v instanceof Int || v instanceof Real || v instanceof Strung
 					|| v instanceof Set || v instanceof List
 					|| v instanceof Record) {
 				return 1;

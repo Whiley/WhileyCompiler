@@ -552,7 +552,7 @@ public class ModuleBuilder {
 			} else if (stmt instanceof For) {
 				return resolve((For) stmt, freeReg);
 			} else if (stmt instanceof Invoke) {
-				Pair<CExpr, Block> p = resolve(freeReg, (Invoke) stmt);
+				Block p = resolve(freeReg, (Invoke) stmt);
 				Block blk = p.second();
 				blk.add(new Code.Assign(null, p.first()), stmt
 						.attribute(Attribute.Source.class));				
@@ -580,7 +580,7 @@ public class ModuleBuilder {
 	protected Block resolve(Assign s, int freeReg) {
 
 		Block blk = new Block();		
-		Pair<CExpr, Block> rhs_tb = resolve(freeReg + 1, s.rhs);
+		Block rhs_tb = resolve(freeReg + 1, s.rhs);
 		
 		if(s.lhs instanceof TupleGen) {
 			// this indicates a tuple assignment which must be treated specially.
@@ -611,7 +611,7 @@ public class ModuleBuilder {
 					.first()), s.attribute(Attribute.Source.class));			
 		} else {
 
-			Pair<CExpr, Block> lhs_tb = resolve(freeReg, s.lhs);
+			Block lhs_tb = resolve(freeReg, s.lhs);
 
 			if(lhs_tb.first() instanceof CExpr.LVal) {
 
@@ -635,7 +635,7 @@ public class ModuleBuilder {
 		blk.addAll(resolveCondition(lab, s.expr, freeReg));		
 		blk.add(new Code.Fail("assertion failed"), s
 				.attribute(Attribute.Source.class));
-		blk.add(new Code.Label(lab));
+		blk.add(Code.Label(lab));
 		blk.add(new Code.CheckEnd(clab),s.attribute(Attribute.Source.class));		
 		return blk;
 	}
@@ -643,7 +643,7 @@ public class ModuleBuilder {
 	protected Block resolve(Return s, int freeReg) {
 
 		if (s.expr != null) {
-			Pair<CExpr, Block> t = resolve(freeReg, s.expr);
+			Block t = resolve(freeReg, s.expr);
 			Block blk = new Block();
 			blk.addAll(t.second());
 
@@ -673,7 +673,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(Debug s, int freeReg) {
-		Pair<CExpr, Block> t = resolve(freeReg, s.expr);
+		Block t = resolve(freeReg, s.expr);
 		Block blk = t.second();
 		blk.add(new Code.Debug(t.first()), s.attribute(Attribute.Source.class));
 		return blk;
@@ -689,14 +689,14 @@ public class ModuleBuilder {
 			blk.addAll(resolve(st, freeReg));
 		}
 		if (!s.falseBranch.isEmpty()) {
-			blk.add(new Code.Goto(exitLab));
-			blk.add(new Code.Label(falseLab));
+			blk.add(Code.Goto(exitLab));
+			blk.add(Code.Label(falseLab));
 			for (Stmt st : s.falseBranch) {
 				blk.addAll(resolve(st, freeReg));
 			}
 		}
 
-		blk.add(new Code.Label(exitLab));
+		blk.add(Code.Label(exitLab));
 
 		return blk;
 	}
@@ -714,7 +714,7 @@ public class ModuleBuilder {
 			syntaxError("break outside switch or loop",filename,s);
 		}
 		Block blk = new Block();
-		blk.add(new Code.Goto(scope.label));
+		blk.add(Code.Goto(scope.label));
 		return blk;
 	}
 	
@@ -733,17 +733,17 @@ public class ModuleBuilder {
 					syntaxError("duplicate default label",filename,c);
 				} else {
 					defaultTarget = Block.freshLabel();	
-					cblk.add(new Code.Label(defaultTarget), c.attributes());
+					cblk.add(Code.Label(defaultTarget), c.attributes());
 					for (Stmt st : c.stmts) {
 						cblk.addAll(resolve(st, freeReg));
 					}
-					cblk.add(new Code.Goto(exitLab),c.attributes());
+					cblk.add(Code.Goto(exitLab),c.attributes());
 				}
 			} else if(defaultTarget == exitLab) {
 				Pair<CExpr,Block> b = resolve(freeReg, c.value);				
 				if(b.first() instanceof Value) {
 					String target = Block.freshLabel();	
-					cblk.add(new Code.Label(target), c.attributes());
+					cblk.add(Code.Label(target), c.attributes());
 					Value v = (Value) b.first();
 					if(caseValues.contains(v)) {
 						syntaxError("duplicate case label",filename,c);
@@ -763,7 +763,7 @@ public class ModuleBuilder {
 		Block blk = _blk.second();		
 		blk.add(new Code.Switch(_blk.first(),defaultTarget,cases));
 		blk.addAll(cblk);
-		blk.add(new Code.Label(exitLab), s.attributes());
+		blk.add(Code.Label(exitLab), s.attributes());
 		scopes.pop();
 		return blk;
 	}
@@ -788,7 +788,7 @@ public class ModuleBuilder {
 		}		
 		
 		blk.add(new Code.LoopEnd(label), s.attribute(Attribute.Source.class));		
-		blk.add(new Code.Label(exitLab));
+		blk.add(Code.Label(exitLab));
 
 		return blk;
 	}
@@ -866,7 +866,7 @@ public class ModuleBuilder {
 		Value.Bool b = (Value.Bool) c.value;
 		Block blk = new Block();
 		if (b.value) {
-			blk.add(new Code.Goto(target));
+			blk.add(Code.Goto(target));
 		} else {
 			// do nout
 		}
@@ -888,7 +888,7 @@ public class ModuleBuilder {
 		// Second, see if it's a field of the receiver
 		if (alias != null) {
 			if(alias.alias != null) {				
-				Pair<CExpr, Block> p = resolve(freeReg, alias.alias);
+				Block p = resolve(freeReg, alias.alias);
 				blk.addAll(p.second());
 				lhs = p.first();
 			} else {				
@@ -940,14 +940,14 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), freeReg));
 			blk.addAll(resolveCondition(target, v.rhs, freeReg));
-			blk.add(new Code.Label(exitLabel));			
+			blk.add(Code.Label(exitLabel));			
 			return blk;
 		} else if (bop == BOp.TYPEEQ || bop == BOp.TYPEIMPLIES) {
 			return resolveTypeCondition(target, v, freeReg);
 		}
 
-		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.lhs);
-		Pair<CExpr, Block> rhs_tb = resolve(freeReg + 1, v.rhs);
+		Block lhs_tb = resolve(freeReg, v.lhs);
+		Block rhs_tb = resolve(freeReg + 1, v.rhs);
 		blk.addAll(lhs_tb.second());
 		blk.addAll(rhs_tb.second());
 
@@ -975,7 +975,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveTypeCondition(String target, BinOp v, int freeReg) {
-		Pair<CExpr, Block> lhs_tb = resolve(freeReg, v.lhs);
+		Block lhs_tb = resolve(freeReg, v.lhs);
 		Type rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
 		
 		Block blk = new Block();		
@@ -992,8 +992,8 @@ public class ModuleBuilder {
 		case NOT:
 			String label = Block.freshLabel();
 			Block blk = resolveCondition(label, v.mhs, freeReg);
-			blk.add(new Code.Goto(target));
-			blk.add(new Code.Label(label));
+			blk.add(Code.Goto(target));
+			blk.add(Code.Label(label));
 			return blk;
 		}
 		syntaxError("expected boolean expression", filename, v);
@@ -1001,7 +1001,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveCondition(String target, ListAccess v, int freeReg) {
-		Pair<CExpr, Block> la = resolve(freeReg, v);
+		Block la = resolve(freeReg, v);
 		CExpr lhs = la.first();
 		Block blk = la.second();
 		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
@@ -1010,7 +1010,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveCondition(String target, RecordAccess v, int freeReg) {
-		Pair<CExpr, Block> la = resolve(freeReg, v);
+		Block la = resolve(freeReg, v);
 		CExpr lhs = la.first();
 		Block blk = la.second();
 		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
@@ -1019,7 +1019,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveCondition(String target, Invoke v, int freeReg) throws ResolveError {
-		Pair<CExpr, Block> la = resolve(freeReg, v);
+		Block la = resolve(freeReg, v);
 		CExpr lhs = la.first();
 		Block blk = la.second();
 		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
@@ -1037,7 +1037,7 @@ public class ModuleBuilder {
 		ArrayList<Pair<CExpr.Register, CExpr>> sources = new ArrayList();
 		HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 		for (Pair<String, Expr> src : e.sources) {
-			Pair<CExpr, Block> r = resolve(freeReg, src.second());
+			Block r = resolve(freeReg, src.second());
 			CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg++);
 			sources.add(new Pair<CExpr.Register, CExpr>(reg, r.first()));
 			binding.put(src.first(), reg);
@@ -1058,8 +1058,8 @@ public class ModuleBuilder {
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				blk.add(new Code.ForallEnd(labels.get(i)));
 			}
-			blk.add(new Code.Goto(target));
-			blk.add(new Code.Label(exitLabel));
+			blk.add(Code.Goto(target));
+			blk.add(Code.Label(exitLabel));
 		} else { // SOME
 			blk.addAll(resolveCondition(target, e.condition, freeReg));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
@@ -1244,11 +1244,11 @@ public class ModuleBuilder {
 			blk = resolveCondition(falseLabel, v.mhs, freeReg);
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)), v.attribute(Attribute.Source.class));
-			blk.add(new Code.Goto(exitLabel));
-			blk.add(new Code.Label(falseLabel));
+			blk.add(Code.Goto(exitLabel));
+			blk.add(Code.Label(falseLabel));
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(false)), v.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(exitLabel));
+			blk.add(Code.Label(exitLabel));
 			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		case LENGTHOF:
 			return new Block(CExpr.UNOP(CExpr.UOP.LENGTHOF, mhs
@@ -1287,11 +1287,11 @@ public class ModuleBuilder {
 			Block blk = resolveCondition(trueLabel, v, freeReg);
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(false)), v.attribute(Attribute.Source.class));
-			blk.add(new Code.Goto(exitLabel));
-			blk.add(new Code.Label(trueLabel));
+			blk.add(Code.Goto(exitLabel));
+			blk.add(Code.Label(trueLabel));
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)), v.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(exitLabel));			
+			blk.add(Code.Label(exitLabel));			
 			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		}
 
@@ -1362,11 +1362,11 @@ public class ModuleBuilder {
 			Block blk = resolveCondition(trueLabel, e, freeReg);
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(false)), e.attribute(Attribute.Source.class));
-			blk.add(new Code.Goto(exitLabel));
-			blk.add(new Code.Label(trueLabel));
+			blk.add(Code.Goto(exitLabel));
+			blk.add(Code.Label(trueLabel));
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, freeReg), Value
 					.V_BOOL(true)), e.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(exitLabel));
+			blk.add(Code.Label(exitLabel));
 			return new Block(CExpr.REG(Type.T_BOOL, freeReg), blk);
 		}
 
@@ -1426,7 +1426,7 @@ public class ModuleBuilder {
 			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
 					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
 					.attribute(Attribute.Source.class));
-			blk.add(new Code.Label(continueLabel));
+			blk.add(Code.Label(continueLabel));
 		} else {
 			blk.addAll(value.second());
 			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
@@ -1446,46 +1446,45 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(int freeReg, RecordGen sg) {
-		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
 		Block blk = new Block();
+		HashMap<String, Type> fields = new HashMap<String, Type>();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			Block tb = resolve(freeReg, e.getValue());
-			values.put(e.getKey(), tb.first());
-			blk.addAll(tb.second());
+			fields.put(e.getKey(), Type.T_ANY);
+			blk.addAll(resolve(freeReg, e.getValue()));
 		}
-		return new Block(CExpr.RECORD(values), blk);
+		blk.add(Code.NewRec(Type.T_RECORD(fields)), sg.attributes());
+		return blk;
 	}
 
-	protected Block resolve(int freeReg, TupleGen sg) {
-		HashMap<String, CExpr> values = new HashMap<String, CExpr>();
+	protected Block resolve(int freeReg, TupleGen sg) {		
 		Block blk = new Block();
 		int idx=0;
-		for (Expr e : sg.fields) {
-			String name = "$" + idx++;
-			Block tb = resolve(freeReg, e	);
-			values.put(name, tb.first());
-			blk.addAll(tb.second());
+		ArrayList<Type> types = new ArrayList<Type>();
+		HashMap<String, Type> fields = new HashMap<String, Type>();
+		int i =0;
+		for (Expr e : sg.fields) {						
+			fields.put("$" + i++, Type.T_ANY);
+			blk.addAll(resolve(freeReg, e));
 		}
-		return new Block(CExpr.RECORD(values), blk);
+		// FIXME: to be updated to proper tuple
+		blk.add(Code.NewTuple(Type.T_RECORD(fields)),sg.attributes());
+		return blk;		
 	}
 
-	protected Block resolve(int freeReg, DictionaryGen sg) {
-		HashSet<Pair<CExpr, CExpr>> values = new HashSet<Pair<CExpr, CExpr>>();
+	protected Block resolve(int freeReg, DictionaryGen sg) {		
 		Block blk = new Block();		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
-			Block kb = resolve(freeReg, e.first());
-			Block vb = resolve(freeReg, e.second());
-			values.add(new Pair<CExpr,CExpr>(kb.first(),vb.first()));
-			blk.addAll(kb.second());
-			blk.addAll(vb.second());
+			blk.addAll(resolve(freeReg, e.first()));
+			blk.addAll(resolve(freeReg, e.second()));
 		}
-		return new Block(CExpr.DICTIONARY(values), blk);
+		blk.add(Code.NewDict(null),sg.attributes());
+		return blk;
 	}
 	
 	protected Block resolve(int freeReg, RecordAccess sg) {
 		Block lhs = resolve(freeReg, sg.lhs);		
-		return new Block(Code..RECORDACCESS(lhs.first(), sg.name),
-				lhs.second());
+		lhs.add(Code.FieldLoad(Type.T_ANY,sg.name), sg.attributes());
+		return lhs;
 	}
 
 	protected Type resolve(UnresolvedType t) {

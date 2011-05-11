@@ -27,59 +27,59 @@ package wyil.lang;
 
 import java.util.*;
 
-import wyil.util.SyntacticElement;
+import wyil.util.*;
 
-public final class Block implements Iterable<Block.CodeAttr> {
-	private final ArrayList<CodeAttr> stmts;	
+public final class Block implements Iterable<Block.Entry> {
+	private final ArrayList<Entry> stmts;	
 	
 	public Block() {
-		this.stmts = new ArrayList<CodeAttr>();
+		this.stmts = new ArrayList<Entry>();
 	}
 	
-	public Block(Collection<CodeAttr> stmts) {
-		this.stmts = new ArrayList<CodeAttr>();
-		for(CodeAttr s : stmts) {
-			add(s.code,s.attributes());
+	public Block(Collection<Entry> stmts) {
+		this.stmts = new ArrayList<Entry>();
+		for(Entry s : stmts) {
+			add(s.code(),s.attributes());
 		}
 	}
 	
 	public void add(Code c, Attribute... attributes) {
-		stmts.add(new CodeAttr(c,attributes));
+		stmts.add(new Entry(c,attributes));
 	}
 	
 	public void add(Code c, Collection<Attribute> attributes) {
-		stmts.add(new CodeAttr(c,attributes));		
+		stmts.add(new Entry(c,attributes));		
 	}
 	
 	public void add(int idx, Code c, Attribute... attributes) {
-		stmts.add(idx,new CodeAttr(c,attributes));
+		stmts.add(idx,new Entry(c,attributes));
 	}
 	
 	public void add(int idx, Code c, Collection<Attribute> attributes) {
-		stmts.add(idx,new CodeAttr(c,attributes));
+		stmts.add(idx,new Entry(c,attributes));
 	}
 	
-	public void addAll(Collection<CodeAttr> stmts) {
-		for(CodeAttr s : stmts) {
-			add(s.code,s.attributes());
+	public void addAll(Collection<Entry> stmts) {
+		for(Entry s : stmts) {
+			add(s.code(),s.attributes());
 		}
 	}
 	
-	public void addAll(int idx, Collection<CodeAttr> stmts) {		
-		for(CodeAttr s : stmts) {
-			add(idx++,s.code,s.attributes());
+	public void addAll(int idx, Collection<Entry> stmts) {		
+		for(Entry s : stmts) {
+			add(idx++,s.code(),s.attributes());
 		}
 	}
 	
 	public void addAll(Block stmts) {
-		for(CodeAttr s : stmts) {
-			add(s.code,s.attributes());
+		for(Entry s : stmts) {
+			add(s.code(),s.attributes());
 		}
 	}
 	
 	public void addAll(int idx, Block stmts) {
-		for(CodeAttr s : stmts) {
-			add(idx++, s.code,s.attributes());
+		for(Entry s : stmts) {
+			add(idx++, s.code(),s.attributes());
 		}
 	}
 	
@@ -87,16 +87,16 @@ public final class Block implements Iterable<Block.CodeAttr> {
 		return stmts.size();
 	}
 	
-	public CodeAttr get(int index) {
+	public Entry get(int index) {
 		return stmts.get(index);
 	}
 	
 	public void set(int index, Code code, Attribute... attributes) {
-		stmts.set(index,new CodeAttr(code,attributes));
+		stmts.set(index,new Entry(code,attributes));
 	}
 	
 	public void set(int index, Code code, Collection<Attribute> attributes) {
-		stmts.set(index, new CodeAttr(code, attributes));
+		stmts.set(index, new Entry(code, attributes));
 	}
 	
 	public void remove(int index) {
@@ -107,7 +107,7 @@ public final class Block implements Iterable<Block.CodeAttr> {
 		return new Block(stmts.subList(start, end));
 	}
 	
-	public Iterator<CodeAttr> iterator() {
+	public Iterator<Entry> iterator() {
 		return stmts.iterator();
 	}
 	
@@ -115,7 +115,7 @@ public final class Block implements Iterable<Block.CodeAttr> {
 		String r = "[";
 		
 		boolean firstTime=true;
-		for(CodeAttr s : stmts) {
+		for(Entry s : stmts) {
 			if(!firstTime) {
 				r += ", ";
 			}
@@ -130,23 +130,37 @@ public final class Block implements Iterable<Block.CodeAttr> {
 	public static String freshLabel() {
 		return "blklab" + _idx++;
 	}
-	
-	
-	public static final class CodeAttr extends SyntacticElement.Impl {
-		public final Code code;
+
+	/**
+	 * An Entry object represents a bytecode and those attributes currently
+	 * associated with it (if any).
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Entry extends Pair<Code,List<Attribute>> {
 		
-		public CodeAttr(Code code, Attribute... attributes) {
-			super(attributes);
-			this.code = code;
+		public Entry(Code code, Attribute... attributes) {
+			super(code,new ArrayList());
+			for(Attribute a : attributes()) {
+				second().add(a);
+			}
 		}
 		
-		public CodeAttr(Code code, Collection<Attribute> attributes) {
-			super(attributes);
-			this.code = code;
+		public Entry(Code code, Collection<Attribute> attributes) {
+			super(code,new ArrayList(attributes));			
+		}
+		
+		public Code code() {
+			return first();
+		}
+		
+		public List<Attribute> attributes() {
+			return second();
 		}
 		
 		public String toString() {
-			String r = code.toString();
+			String r = code().toString();
 			if(attributes().size() > 0) {
 				r += " # ";
 				boolean firstTime=true;

@@ -34,18 +34,119 @@ public abstract class Code {
 		return get(new BinOp(type,op));
 	}
 	
-	public static Const Const(Value value) {
-		return get(new Const(value));
+	/**
+	 * Construct a <code>const</code> bytecode which loads a given constant
+	 * onto the stack.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to write.
+	 * @return
+	 */
+	public static Const Const(Value constant) {
+		return get(new Const(constant));
 	}
 	
 	public static Convert Convert(Type from, Type to) {
 		return get(new Convert(from,to));
 	}
+
+	/**
+	 * Construct a <code>fieldload</code> bytecode which reads a given field
+	 * from a record of a given type.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to load.
+	 * @return
+	 */
+	public static FieldLoad FieldLoad(Type type, String field) {
+		return get(new FieldLoad(type,field));
+	}
+
+	/**
+	 * Construct a <code>fieldstore</code> bytecode which reads a given field
+	 * from a record of a given type.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to write.
+	 * @return
+	 */
+	public static FieldLoad FieldStore(Type type, String field) {
+		return get(new FieldLoad(type,field));
+	}
 	
+	/**
+	 * Construct a <code>goto</code> bytecode which branches unconditionally to
+	 * a given label.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
 	public static Goto Goto(String label) {
 		return get(new Goto(label));
 	}
 
+	/**
+	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewDict NewDict(Type.Dictionary type) {
+		return get(new NewDict(type));
+	}
+	
+	/**
+	 * Construct a <code>newset</code> bytecode which constructs a new set
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewSet NewSet(Type.Set type) {
+		return get(new NewSet(type));
+	}
+	
+	/**
+	 * Construct a <code>newlist</code> bytecode which constructs a new list
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewList NewList(Type.List type) {
+		return get(new NewList(type));
+	}
+	
+	/**
+	 * Construct a <code>newtuple</code> bytecode which constructs a new tuple
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewTuple NewTuple(Type.Record type) {
+		return get(new NewTuple(type));
+	}
+	
+	/**
+	 * Construct a <code>newrec</code> bytecode which constructs a new record
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewRec NewRec(Type.Record type) {
+		return get(new NewRec(type));
+	}
+	
 	public static Return Return(Type t) {
 		return get(new Return(t));
 	}
@@ -550,10 +651,10 @@ public abstract class Code {
 		
 	}	
 
-	public static final class New extends Code {
-		public final Type type;
+	public static final class NewDict extends Code {
+		public final Type.Dictionary type;
 		
-		private New(Type type) {
+		private NewDict(Type.Dictionary type) {
 			this.type = type;
 		}
 		
@@ -562,15 +663,111 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof New) {
-				New i = (New) o;
+			if(o instanceof NewDict) {
+				NewDict i = (NewDict) o;
 				return type.equals(i.type);
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return "new " + type;
+			return "newdict " + type;
+		}	
+	}
+	
+	public static final class NewRec extends Code {
+		public final Type.Record type;
+		
+		private NewRec(Type.Record type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewRec) {
+				NewRec i = (NewRec) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "newrec " + type;
+		}	
+	}
+		
+	public static final class NewTuple extends Code {
+		public final Type.Record type;
+		
+		private NewTuple(Type.Record type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewTuple) {
+				NewTuple i = (NewTuple) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "newtuple " + type;
+		}	
+	}
+	
+	public static final class NewSet extends Code {
+		public final Type.Set type;
+		
+		private NewSet(Type.Set type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewSet) {
+				NewSet i = (NewSet) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "newset " + type;
+		}	
+	}
+	
+	public static final class NewList extends Code {
+		public final Type.List type;
+		
+		private NewList(Type.List type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewList) {
+				NewList i = (NewList) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "newlist " + type;
 		}	
 	}
 	
