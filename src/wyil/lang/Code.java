@@ -54,6 +54,10 @@ public abstract class Code {
 	
 	public static final Debug debug = new Debug();
 
+	public static ExternJvm ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
+		return get(new ExternJvm(bytecodes));
+	}
+	
 	/**
 	 * Construct a <code>fieldload</code> bytecode which reads a given field
 	 * from a record of a given type.
@@ -184,6 +188,10 @@ public abstract class Code {
 	 */
 	public static NewRec NewRec(Type.Record type) {
 		return get(new NewRec(type));
+	}
+	
+	public static Pop Pop(Type t) {
+		return get(new Pop(t));
 	}
 	
 	public static Return Return(Type t) {

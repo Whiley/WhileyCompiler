@@ -552,13 +552,13 @@ public class ModuleBuilder {
 			} else if (stmt instanceof For) {
 				return resolve((For) stmt, freeReg);
 			} else if (stmt instanceof Invoke) {
-				Block p = resolve(freeReg, (Invoke) stmt);
-				Block blk = p.second();
-				blk.add(new Code.Assign(null, p.first()), stmt
-						.attribute(Attribute.Source.class));				
+				Block blk = resolve(freeReg, (Invoke) stmt);				
+				// FIXME: need to avoid this somehow?
+				blk.add(Code.Pop(Type.T_ANY),
+						stmt.attribute(Attribute.Source.class));
 				return blk;
 			} else if (stmt instanceof Spawn) {
-				return resolve(freeReg, (UnOp) stmt).second();
+				return resolve(freeReg, (UnOp) stmt);
 			} else if (stmt instanceof ExternJvm) {
 				return resolve((ExternJvm) stmt, freeReg);
 			} else if (stmt instanceof Skip) {
@@ -577,26 +577,23 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Block resolve(Assign s, int freeReg) {
-
-		Block blk = new Block();		
-		Block rhs_tb = resolve(freeReg + 1, s.rhs);
+	protected Block resolve(Assign s, int freeReg) {			
+		Block blk = resolve(freeReg + 1, s.rhs);
 		
 		if(s.lhs instanceof TupleGen) {
 			// this indicates a tuple assignment which must be treated specially.
 			TupleGen tg = (TupleGen) s.lhs;			
-			CExpr.Register reg = CExpr.REG(Type.T_ANY, freeReg);
-			blk.addAll(rhs_tb.second());
-			blk.add(new Code.Assign(reg, rhs_tb.first()), s
-					.attribute(Attribute.Source.class));
+			blk.add(Code.Store(Type.T_ANY, freeReg),
+					s.attribute(Attribute.Source.class));
 			int idx=0;
 			for(Expr e : tg.fields) {
 				if(!(e instanceof Variable)) {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
-				blk.add(new Code.Assign(CExpr.VAR(Type.T_ANY, v.var), CExpr
-						.RECORDACCESS(reg, "$" + idx++)), e
+				blk.add(Code.FieldLoad(Type.T_ANY, "$" + idx++),e
+						.attribute(Attribute.Source.class));
+				blk.add(Code.Store(Type.T_ANY, v.var, e
 						.attribute(Attribute.Source.class));					
 			}
 			return blk;
@@ -643,26 +640,21 @@ public class ModuleBuilder {
 	protected Block resolve(Return s, int freeReg) {
 
 		if (s.expr != null) {
-			Block t = resolve(freeReg, s.expr);
-			Block blk = new Block();
-			blk.addAll(t.second());
-
+			Block blk = resolve(freeReg, s.expr);
 			Type ret = resolve(currentFunDecl.ret);
-						
-			blk.add(new Code.Return(t.first()), s
-					.attribute(Attribute.Source.class));
+			blk.add(Code.Return(ret), s.attribute(Attribute.Source.class));
 			return blk;			
 		} else {
 			Block blk = new Block();
-			blk.add(new Code.Return(null), s.attribute(Attribute.Source.class));
+			blk.add(Code.Return(Type.T_VOID), s.attribute(Attribute.Source.class));
 			return blk;
 		}
 	}
 
 	protected Block resolve(ExternJvm s, int freeReg) {
 		Block blk = new Block();
-		blk.add(new Code.ExternJvm(s.bytecodes), s
-				.attribute(Attribute.Source.class));
+		blk.add(Code.ExternJvm(s.bytecodes),
+				s.attribute(Attribute.Source.class));
 		return blk;
 	}
 
