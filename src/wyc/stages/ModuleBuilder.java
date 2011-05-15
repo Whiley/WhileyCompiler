@@ -668,14 +668,13 @@ public class ModuleBuilder {
 
 	protected Block resolve(Skip s, int freeReg) {
 		Block blk = new Block();
-		blk.add(new Code.Skip(), s.attribute(Attribute.Source.class));
+		blk.add(Code.skip, s.attribute(Attribute.Source.class));
 		return blk;
 	}
 
 	protected Block resolve(Debug s, int freeReg) {
-		Block t = resolve(freeReg, s.expr);
-		Block blk = t.second();
-		blk.add(new Code.Debug(t.first()), s.attribute(Attribute.Source.class));
+		Block blk = resolve(freeReg, s.expr);		
+		blk.add(Code.debug, s.attribute(Attribute.Source.class));
 		return blk;
 	}
 
@@ -702,9 +701,8 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolve(Throw s, int freeReg) {
-		Pair<CExpr,Block> _blk = resolve(freeReg,s.expr);
-		Block blk = _blk.second();
-		blk.add(new Code.Throw(_blk.first()));
+		Block blk = resolve(freeReg, s.expr);
+		blk.add(Code.Throw(Type.T_ANY));
 		return blk;
 	}
 	
@@ -720,11 +718,10 @@ public class ModuleBuilder {
 	
 	protected Block resolve(Switch s, int freeReg) {
 		String exitLab = Block.freshLabel();		
-		Pair<CExpr,Block> _blk = resolve(freeReg, s.expr);				
+		Block blk = resolve(freeReg, s.expr);				
 		Block cblk = new Block();
 		String defaultTarget = exitLab;
-		ArrayList<Pair<Value,String>> cases = new ArrayList();
-		HashSet<Value> caseValues = new HashSet<Value>();
+		HashMap<Value,String> cases = new HashMap();		
 		scopes.push(new BreakScope(exitLab));
 		for(Stmt.Case c : s.cases) {			
 			if(c.value == null) {
@@ -740,28 +737,21 @@ public class ModuleBuilder {
 					cblk.add(Code.Goto(exitLab),c.attributes());
 				}
 			} else if(defaultTarget == exitLab) {
-				Pair<CExpr,Block> b = resolve(freeReg, c.value);				
-				if(b.first() instanceof Value) {
-					String target = Block.freshLabel();	
-					cblk.add(Code.Label(target), c.attributes());
-					Value v = (Value) b.first();
-					if(caseValues.contains(v)) {
-						syntaxError("duplicate case label",filename,c);
-					}
-					caseValues.add(v);
-					cases.add(new Pair(v,target));
-					for (Stmt st : c.stmts) {
-						cblk.addAll(resolve(st, freeReg));
-					}				
-				} else {
-					syntaxError("constant expression required",filename,c);
-				}
+				Value constant = ?;												
+				String target = Block.freshLabel();	
+				cblk.add(Code.Label(target), c.attributes());				
+				if(cases.containsKey(constant)) {
+					syntaxError("duplicate case label",filename,c);
+				}				
+				cases.put(constant,target);
+				for (Stmt st : c.stmts) {
+					cblk.addAll(resolve(st, freeReg));
+				}								
 			} else {
 				syntaxError("unreachable code",filename,c);
 			}
-		}
-		Block blk = _blk.second();		
-		blk.add(new Code.Switch(_blk.first(),defaultTarget,cases));
+		}		
+		blk.add(Code.Switch(Type.T_ANY,defaultTarget,cases),s.attribute(Attribute.Source.class));
 		blk.addAll(cblk);
 		blk.add(Code.Label(exitLab), s.attributes());
 		scopes.pop();

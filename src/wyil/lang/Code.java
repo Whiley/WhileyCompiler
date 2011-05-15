@@ -25,8 +25,8 @@
 
 package wyil.lang;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
+import wyil.util.*;
 
 public abstract class Code {
 	
@@ -51,6 +51,8 @@ public abstract class Code {
 	public static Convert Convert(Type from, Type to) {
 		return get(new Convert(from,to));
 	}
+	
+	public static final Debug debug = new Debug();
 
 	/**
 	 * Construct a <code>fieldload</code> bytecode which reads a given field
@@ -196,6 +198,8 @@ public abstract class Code {
 		return get(new Label(label));
 	}
 	
+	public static final Skip skip = new Skip();
+	
 	/**
 	 * Construct a <code>store</code> bytecode which writes a given register.
 	 * 
@@ -211,6 +215,34 @@ public abstract class Code {
 	
 	public static SubList SubList() {
 		return null;
+	}
+
+	/**
+	 * Construct a <code>switch</code> bytecode which pops a value off the
+	 * stack, and switches to a given label based on it.
+	 * 
+	 * @param type
+	 *            --- value type to switch on.
+	 * @param defaultLabel
+	 *            --- target for the default case.
+	 * @param cases
+	 *            --- map from values to destination labels.
+	 * @return
+	 */
+	public static Switch Switch(Type type, String defaultLabel, Map<Value,String> cases) {
+		return get(new Switch(type,defaultLabel,cases));
+	}
+
+	/**
+	 * Construct a <code>throw</code> bytecode which pops a value off the
+	 * stack and throws it.
+	 * 
+	 * @param type
+	 *            --- value type to throw 
+	 * @return
+	 */
+	public static Throw Throw(Type t) {
+		return get(new Throw(t));
 	}
 	
 	public static UnOp UnOp(Type type, UOp op) {
@@ -367,6 +399,40 @@ public abstract class Code {
 		}
 	}
 
+	public static final class Debug extends Code {
+		Debug() {}
+		public int hashCode() {
+			return 101;
+		}
+		public boolean equals(Object o) {
+			return o instanceof Debug;
+		}
+		public String toString() {
+			return "debug";
+		}
+	}
+	
+	public static final class ExternJvm extends Code {
+		public final List<wyjvm.lang.Bytecode> bytecodes;
+		
+		ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
+			this.bytecodes = new ArrayList(bytecodes);
+		}
+		public int hashCode() {
+			return bytecodes.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof ExternJvm) {
+				ExternJvm e = (ExternJvm) o;
+				return e.bytecodes.equals(bytecodes);
+			}
+			return false;
+		}
+		public String toString() {
+			return "externjvm";
+		}
+	}
+	
 	/**
 	 * The fieldload bytecode pops a record alias from the stack and reads the
 	 * value from the given field, pusing it back onto the stack.
@@ -881,6 +947,19 @@ public abstract class Code {
 			return "return " + type;
 		}
 	}
+	
+	public static final class Skip extends Code {
+		Skip() {}
+		public int hashCode() {
+			return 101;
+		}
+		public boolean equals(Object o) {
+			return o instanceof Debug;
+		}
+		public String toString() {
+			return "skip";
+		}
+	}
 
 	public static final class Store extends Code {		
 		public final Type type;
@@ -913,7 +992,43 @@ public abstract class Code {
 	}
 
 	public static final class Switch extends Code {
+		public final Type type;
+		public final HashMap<Value,String> branches;
+		public final String defaultTarget;
+
+		public Switch(Type type, String defaultTarget, Map<Value,String> branches) {			
+			this.type = type;
+			this.branches = new HashMap<Value,String>(branches);
+			this.defaultTarget = defaultTarget;
+		}
 		
+		public int hashCode() {
+			return type.hashCode() + defaultTarget.hashCode() + branches.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Switch) {
+				Switch ig = (Switch) o;
+				return type.equals(ig.type)
+						&& defaultTarget.equals(ig.defaultTarget)
+						&& branches.equals(ig.branches);
+			}
+			return false;
+		}
+
+		public String toString() {
+			String table = "";
+			boolean firstTime = true;
+			for (Map.Entry<Value, String> p : branches.entrySet()) {
+				if (!firstTime) {
+					table += ", ";
+				}
+				firstTime = false;
+				table += p.getKey() + "->" + p.getValue();
+			}
+			table += ", *->" + defaultTarget;
+			return "switch " + table;
+		}
 	}
 
 	public static final class Send extends Code {		 
@@ -947,7 +1062,27 @@ public abstract class Code {
 	}
 
 	public static final class Throw extends Code {
+		public final Type type;
+
+		private Throw(Type type) {
+			this.type = type;
+		}
 		
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Throw) {
+				Throw i = (Throw) o;
+				return type.equals(i.type);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return "throw " + type;
+		}
 	}
 	
 	public static final class UnOp extends Code {
