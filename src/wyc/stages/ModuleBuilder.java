@@ -874,9 +874,8 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveCondition(String target, Variable v, int freeReg) throws ResolveError {
-		CExpr lhs = null;
 		Block blk = new Block();
-		// First, check whether this is an alias or a 
+		
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);					
 		Attributes.Module mod = v.attribute(Attributes.Module.class);
 		Type.Fun tf = null;
@@ -885,15 +884,14 @@ public class ModuleBuilder {
 			tf = currentFunDecl.attribute(Attributes.Fun.class).type;
 		}			
 		
-		// Second, see if it's a field of the receiver
+		boolean matched=false;
+		
 		if (alias != null) {
 			if(alias.alias != null) {				
-				Block p = resolve(freeReg, alias.alias);
-				blk.addAll(p.second());
-				lhs = p.first();
+				blk.addAll(resolve(freeReg, alias.alias));				
 			} else {				
 				// Ok, must be a local variable
-				lhs = CExpr.VAR(Type.T_ANY, v.var);	
+				blk.add(Code.Load(Type.T_BOOL, ?));	
 			}
 		} else if(tf != null && tf.receiver() != null) {
 			Type pt = tf.receiver();			
@@ -901,10 +899,11 @@ public class ModuleBuilder {
 				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
 				if(ert != null && ert.fields().containsKey(v.var)) {
 					// Bingo, this is an implicit field dereference
-					CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
-							Type.T_ANY, "this"));					
-					lhs = CExpr.RECORDACCESS(thiz, v.var);					
-				}
+					blk.add(Code.Load(Type.T_BOOL, ?));	
+					blk.add(Code.UnOp(Type.T_ANY, Code.UOp.PROCESSACCESS));
+					blk.add(Code.FieldLoad(Type.T_ANY, v.var));
+					matched = true;
+				} 
 			}
 		} else if (mod != null) {
 			NameID name = new NameID(mod.module, v.var);
@@ -912,17 +911,19 @@ public class ModuleBuilder {
 			if (val == null) {
 				// indicates a non-local constant definition
 				Module mi = loader.loadModule(mod.module);
-				val = mi.constant(v.var).constant();
+				val = mi.constant(v.var).constant();				
 			}
-			lhs = val;
+			blk.add(Code.Const(val));
+			matched = true;
 		} 
 		
-		if(lhs == null) {
+		if(!matched) {
 			syntaxError("unknown variable \"" + v.var + "\"",filename,v);
 			return null;
 		}
 						
-		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
+		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
+		blk.add(Code.IfGoto(Type.T_ANY,Code.COp.EQ, target),
 				v.attribute(Attribute.Source.class));			
 		
 		return blk;
@@ -940,49 +941,26 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			blk.addAll(resolveCondition(exitLabel, invert(v.lhs), freeReg));
 			blk.addAll(resolveCondition(target, v.rhs, freeReg));
-			blk.add(Code.Label(exitLabel));			
+			blk.add(Code.Label(exitLabel));
 			return blk;
 		} else if (bop == BOp.TYPEEQ || bop == BOp.TYPEIMPLIES) {
 			return resolveTypeCondition(target, v, freeReg);
 		}
 
-		Block lhs_tb = resolve(freeReg, v.lhs);
-		Block rhs_tb = resolve(freeReg + 1, v.rhs);
-		blk.addAll(lhs_tb.second());
-		blk.addAll(rhs_tb.second());
-
-		if (bop == BOp.LT || bop == BOp.LTEQ || bop == BOp.GT
-				|| bop == BOp.GTEQ) {
-			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target), v.attribute(Attribute.Source.class));
-			return blk;
-		} else if (bop == BOp.SUBSET || bop == BOp.SUBSETEQ) {
-			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target), v.attribute(Attribute.Source.class));
-			return blk;
-		} else if (bop == BOp.EQ || bop == BOp.NEQ) {
-			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target), v.attribute(Attribute.Source.class));
-			return blk;
-		} else if (bop == BOp.ELEMENTOF) {
-			blk.add(new Code.IfGoto(OP2COP(bop, v), lhs_tb.first(), rhs_tb
-					.first(), target), v.attribute(Attribute.Source.class));
-			return blk;
-		}
-
-		syntaxError("expected boolean expression", filename, v);
-		return null;
+		blk.addAll(resolve(freeReg, v.lhs));
+		blk.addAll(resolve(freeReg + 1, v.rhs));
+		blk.add(Code.IfGoto(Type.T_ANY, OP2COP(bop, v), target),
+				v.attribute(Attribute.Source.class));
+		return blk;
 	}
 
 	protected Block resolveTypeCondition(String target, BinOp v, int freeReg) {
-		Block lhs_tb = resolve(freeReg, v.lhs);
+		Block blk = resolve(freeReg, v.lhs);
 		Type rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
-		
-		Block blk = new Block();		
-		blk.addAll(lhs_tb.second());
-		blk.add(new Code.IfGoto(Code.COP.SUBTYPEEQ, lhs_tb.first(), Value
-				.V_TYPE(rhs_t), target), v
-				.attribute(Attribute.Source.class));		
+		blk.add(Code.Const(Value.V_TYPE(rhs_t)),
+				v.attribute(Attribute.Source.class));
+		blk.add(Code.IfGoto(Type.T_ANY, Code.COp.SUBTYPEEQ, target),
+				v.attribute(Attribute.Source.class));
 		return blk;
 	}
 
@@ -1001,28 +979,25 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveCondition(String target, ListAccess v, int freeReg) {
-		Block la = resolve(freeReg, v);
-		CExpr lhs = la.first();
-		Block blk = la.second();
-		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
+		Block blk = resolve(freeReg, v);
+		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
+		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),
 				v.attribute(Attribute.Source.class));
 		return blk;
 	}
 
 	protected Block resolveCondition(String target, RecordAccess v, int freeReg) {
-		Block la = resolve(freeReg, v);
-		CExpr lhs = la.first();
-		Block blk = la.second();
-		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
-				v.attribute(Attribute.Source.class));
+		Block blk = resolve(freeReg, v);		
+		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
+		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),
+				v.attribute(Attribute.Source.class));		
 		return blk;
 	}
 
 	protected Block resolveCondition(String target, Invoke v, int freeReg) throws ResolveError {
-		Block la = resolve(freeReg, v);
-		CExpr lhs = la.first();
-		Block blk = la.second();
-		blk.add(new Code.IfGoto(Code.COP.EQ, lhs, Value.V_BOOL(true), target),
+		Block blk = resolve(freeReg, v);	
+		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
+		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),
 				v.attribute(Attribute.Source.class));
 		return blk;
 	}
