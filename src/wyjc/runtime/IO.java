@@ -62,13 +62,13 @@ public class IO {
 	}
 	
 	public static void closeFile(Process p) {
-		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
+		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");		
 		try {
 			if(fin != null) {
 				fin.close();
 			} else {
-				FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
+				FileOutputStream fout = (FileOutputStream) ((HashMap) p.getState())
 				.get("$fout");		
 				fout.close();
 			}
@@ -78,7 +78,7 @@ public class IO {
 	}
 	
 	public static ArrayList readFile(Process p, BigRational max) {		
-		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
+		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");
 		
 		ArrayList r = new ArrayList();
@@ -98,7 +98,7 @@ public class IO {
 	
 	private static final int CHUNK_SIZE = 1024;
 	public static ArrayList readFile(Process p) {		
-		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
+		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");
 		
 		ArrayList r = new ArrayList();				
@@ -119,7 +119,7 @@ public class IO {
 	}
 	
 	public static void writeFile(Process p, List bytes) {		
-		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
+		FileOutputStream fout = (FileOutputStream) ((HashMap) p.getState())
 				.get("$fout");
 				
 		try {
