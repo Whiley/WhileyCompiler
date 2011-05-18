@@ -27,15 +27,14 @@ package wyjc.transforms;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
 
 import wyil.ModuleLoader;
+import wyil.Transform;
 import wyil.lang.Module;
-import wyil.util.Logger;
-import wyil.*;
 import wyjc.io.ClassFileBuilder;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
+import wyjvm.util.ActorGeneration;
 import wyjvm.util.DeadCodeElimination;
 import wyjvm.util.Validation;
 
@@ -43,6 +42,7 @@ public class ClassWriter implements Transform {
 	private ClassFileBuilder classBuilder;
 	private boolean validate = true;
 	private boolean deadCode = true;
+	private boolean actors = true;
 	
 	public ClassWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
@@ -57,6 +57,10 @@ public class ClassWriter implements Transform {
 		deadCode = flag;
 	}
 	
+	public void setActors(boolean flag) {
+		actors = flag;
+	}
+	
 	public Module apply(Module m) throws IOException {		
 		ClassFile file = classBuilder.build(m);		
 		
@@ -67,6 +71,9 @@ public class ClassWriter implements Transform {
 		if(deadCode) {
 			// eliminate any dead code that was introduced.		
 			new DeadCodeElimination().apply(file);
+		}
+		if (actors) {
+			new ActorGeneration().apply(file);
 		}
 		
 		// calculate filename

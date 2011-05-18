@@ -8,7 +8,7 @@ import wyjc.testing.TestHarness;
 public class ActorTests extends TestHarness {
 	
 	public ActorTests() {
-		super("tests/actors", "tests/actors", "sysout");
+		super("tests/actors/valid", "tests/actors/valid", "sysout");
 	}
 	
 	@Test

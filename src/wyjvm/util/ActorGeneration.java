@@ -13,7 +13,8 @@ public class ActorGeneration {
 	}
 	
 	public void apply(Method method) {
-		method.parameters().add(0, new Parameter());
+		System.out.println(method.name());
+		System.out.println(method.parameters().size());
 	}
 	
 }
