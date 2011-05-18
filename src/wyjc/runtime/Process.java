@@ -36,8 +36,8 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Stack;
 
-import wyjc.runtime.messages.Actor;
-import wyjc.runtime.messages.Scheduler;
+import wyjc.runtime.concurrency.Actor;
+import wyjc.runtime.concurrency.Scheduler;
 
 /**
  * A Whiley process, which mirrors an actor in the Actor Model of concurrency.
@@ -96,7 +96,6 @@ public final class Process extends Actor {
 			if (result instanceof State) {
 				// TODO Unwind the call stack into the state stack.
 				stack.push((State) result);
-				return;
 			} else {
 				completeCurrentMessage(result);
 			}

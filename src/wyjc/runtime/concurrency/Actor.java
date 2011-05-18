@@ -1,10 +1,10 @@
-package wyjc.runtime.messages;
+package wyjc.runtime.concurrency;
 
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import wyjc.runtime.messages.Scheduler.Resumable;
+import wyjc.runtime.concurrency.Scheduler.Resumable;
 
 /**
  * A glorified queue that deals with the concurrency issues of actors passing
