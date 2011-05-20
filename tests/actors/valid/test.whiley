@@ -1,2 +1,2 @@
 void System::main([string] args):
-    out<->println("5")
+    out<-println("5")

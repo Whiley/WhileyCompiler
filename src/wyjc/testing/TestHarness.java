@@ -159,7 +159,6 @@ public class TestHarness {
 				} else {
 					System.err.println(" > " + a);
 					System.err.println(" < " + b);
-					System.out.println(output);
 					throw new Error("Output doesn't match reference");
 				}
 			}

@@ -18,16 +18,8 @@ public class Scheduler {
 	}
 	
 	public void scheduleResume(Resumable process) {
-		increment();
+		scheduled++;
 		pool.execute(new Resumer(process));
-	}
-	
-	private synchronized void increment() {
-		scheduled += 1;
-	}
-	
-	private synchronized void decrement() {
-		scheduled -= 1;
 	}
 	
 	public static interface Resumable {
@@ -48,8 +40,7 @@ public class Scheduler {
 				process.resume();
 			} catch (Throwable th) {}
 			
-			decrement();
-			if (scheduled == 0) {
+			if (--scheduled == 0) {
 				pool.shutdown();
 			}
 		}
