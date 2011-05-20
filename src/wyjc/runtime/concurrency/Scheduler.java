@@ -16,14 +16,15 @@ public class Scheduler {
 	}
 	
 	public void scheduleResume(Resumable process) {
-		pool.execute(new Resumer(process));
+		//pool.execute(new Resumer(process));
+		new Resumer(process).start();
 	}
 	
 	public static interface Resumable {
 		public void resume();
 	}
 	
-	private static class Resumer implements Runnable {
+	private static class Resumer extends Thread {
 		
 		private final Resumable process;
 		
@@ -33,7 +34,7 @@ public class Scheduler {
 		
 		@Override
 		public void run() {
-			process.resume();
+			 process.resume();
 		}
 		
 	}

@@ -1444,7 +1444,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(CExpr.DirectInvoke c, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {				
+			ArrayList<Bytecode> bytecodes) {	
 		ModuleID mid = c.name.module();
 		String mangled = nameMangle(c.name.name(),c.type);		
 		if(c.caseNum > 0) { mangled += "$" + c.caseNum; }
@@ -1460,6 +1460,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.LoadConst(mid.toString()));
 			bytecodes.add(new Bytecode.LoadConst(mangled));
 			bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
+			
 			// tempoarily put 
 			bytecodes.add(new Bytecode.LoadConst(params.size()+1));			
 			bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
@@ -2125,7 +2126,7 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, 
 					JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype,
-					Bytecode.VIRTUAL));								
+					Bytecode.VIRTUAL));
 			addReadConversion(from,bytecodes);			
 			if(!to.equals(from)) {
 				// now perform recursive conversion
