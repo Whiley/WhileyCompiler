@@ -25,14 +25,14 @@ public abstract class Actor implements Resumable {
 		this.scheduler = scheduler;
 	}
 
-	public MessageFuture sendSync(Actor actor, Method method, Object[] arguments) {
-		Message message = new Message(actor, true, method, arguments);
+	public MessageFuture sendSync(Actor sender, Method method, Object[] arguments) {
+		Message message = new Message(sender, true, method, arguments);
 		addMessage(message);
 		return message.getFuture();
 	}
 
-	public void sendAsync(Actor actor, Method method, Object[] arguments) {
-		addMessage(new Message(actor, false, method, arguments));
+	public void sendAsync(Actor sender, Method method, Object[] arguments) {
+		addMessage(new Message(sender, false, method, arguments));
 	}
 
 	private synchronized void addMessage(Message message) {

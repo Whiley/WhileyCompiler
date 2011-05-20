@@ -1244,7 +1244,7 @@ public class ClassFileBuilder {
 		
 		bytecodes.add(new Bytecode.LoadConst(c.field));
 		JvmType.Function ftype =
-				new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_STRING);
+				new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype,
 				Bytecode.VIRTUAL));				
 		Type et = c.type();		
@@ -1455,6 +1455,7 @@ public class ClassFileBuilder {
 			translate(c.receiver, slots, bytecodes);
 
 			// this indicates a message send
+			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);			
 			bytecodes.add(new Bytecode.LoadConst(mid.toString()));
 			bytecodes.add(new Bytecode.LoadConst(mangled));
@@ -1479,7 +1480,7 @@ public class ClassFileBuilder {
 			if(c.synchronous) {
 				ftype = new JvmType.Function(FUTURE, ACTOR,
 						JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "sendSync", ftype,
+				bytecodes.add(new Bytecode.Invoke(ACTOR, "sendSync", ftype,
 						Bytecode.VIRTUAL));
 				if(c.type() != Type.T_VOID) {
 					// TODO ZIM read value on wind back
@@ -1488,7 +1489,7 @@ public class ClassFileBuilder {
 			} else {
 				ftype = new JvmType.Function(T_VOID, ACTOR,
 						JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "sendAsync", ftype,
+				bytecodes.add(new Bytecode.Invoke(ACTOR, "sendAsync", ftype,
 						Bytecode.VIRTUAL));	
 			}  					
 		} else {
@@ -2122,7 +2123,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(slots.get(oldtup),WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(key));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, 
-					JAVA_LANG_STRING);
+					JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype,
 					Bytecode.VIRTUAL));								
 			addReadConversion(from,bytecodes);			
