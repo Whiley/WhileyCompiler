@@ -5,6 +5,8 @@ import java.util.concurrent.Executors;
 
 public class Scheduler {
 	
+	private volatile int scheduled = 0;
+	
 	private final ExecutorService pool;
 	
 	public Scheduler() {
@@ -16,15 +18,23 @@ public class Scheduler {
 	}
 	
 	public void scheduleResume(Resumable process) {
-		//pool.execute(new Resumer(process));
-		new Resumer(process).start();
+		increment();
+		pool.execute(new Resumer(process));
+	}
+	
+	private synchronized void increment() {
+		scheduled += 1;
+	}
+	
+	private synchronized void decrement() {
+		scheduled -= 1;
 	}
 	
 	public static interface Resumable {
 		public void resume();
 	}
 	
-	private static class Resumer extends Thread {
+	private class Resumer implements Runnable {
 		
 		private final Resumable process;
 		
@@ -34,7 +44,14 @@ public class Scheduler {
 		
 		@Override
 		public void run() {
-			 process.resume();
+			try {
+				process.resume();
+			} catch (Throwable th) {}
+			
+			decrement();
+			if (scheduled == 0) {
+				pool.shutdown();
+			}
 		}
 		
 	}

@@ -30,7 +30,7 @@ public class Continuations {
 		List<Bytecode> bytecodes = code.bytecodes();
 		
 		for (Bytecode bytecode : bytecodes) {
-			System.out.println(bytecode);
+			// System.out.println(bytecode);
 		}
 	}
 	
