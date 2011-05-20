@@ -34,7 +34,7 @@ import wyil.lang.Module;
 import wyjc.io.ClassFileBuilder;
 import wyjvm.io.BytecodeFileWriter;
 import wyjvm.lang.ClassFile;
-import wyjvm.util.ActorGeneration;
+import wyjvm.util.Continuations;
 import wyjvm.util.DeadCodeElimination;
 import wyjvm.util.Validation;
 
@@ -62,7 +62,7 @@ public class JvmBytecodeWriter implements Transform {
 		}
 		if (actors) {
 			// generate the continuations for actors.
-			new ActorGeneration().apply(file);
+			new Continuations().apply(file);
 		}
 		
 		// calculate filename

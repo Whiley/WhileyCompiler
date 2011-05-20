@@ -34,7 +34,7 @@ import wyil.lang.Module;
 import wyjc.io.ClassFileBuilder;
 import wyjvm.io.ClassFileWriter;
 import wyjvm.lang.ClassFile;
-import wyjvm.util.ActorGeneration;
+import wyjvm.util.Continuations;
 import wyjvm.util.DeadCodeElimination;
 import wyjvm.util.Validation;
 
@@ -73,7 +73,7 @@ public class ClassWriter implements Transform {
 			new DeadCodeElimination().apply(file);
 		}
 		if (actors) {
-			new ActorGeneration().apply(file);
+			new Continuations().apply(file);
 		}
 		
 		// calculate filename

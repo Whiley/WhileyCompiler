@@ -129,7 +129,7 @@ public class ClassFileBuilder {
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
 		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
 		ft1 = new JvmType.Function(WHILEYPROCESS);
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS,"systemProcess",ft1,Bytecode.STATIC));
+		codes.add(new Bytecode.Invoke(WHILEYPROCESS,"newSystemProcess",ft1,Bytecode.STATIC));
 		codes.add(new Bytecode.Load(0,strArr));
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
@@ -206,7 +206,7 @@ public class ClassFileBuilder {
 		HashMap<String, Integer> slots = new HashMap<String, Integer>();		
 		
 		HashSet<String> uses = Block.usedVariables(mcase.body());
-			
+		
 		int slot = 0;
 		if(method.type().receiver() != null) {
 			slots.put("this",slot++);
@@ -1243,8 +1243,10 @@ public class ClassFileBuilder {
 		translate(c.lhs, slots, bytecodes);
 		
 		bytecodes.add(new Bytecode.LoadConst(c.field));
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));				
+		JvmType.Function ftype =
+				new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_STRING);
+		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype,
+				Bytecode.VIRTUAL));				
 		Type et = c.type();		
 		addReadConversion(et,bytecodes);
 	}
@@ -1377,23 +1379,18 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 			translate(c.rhs, slots, bytecodes);				
-			JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
+			JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYRECORD);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 					Bytecode.SPECIAL));
 			ftype = new JvmType.Function(T_VOID);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "start", ftype,
-					Bytecode.VIRTUAL));
 			break;
 		}
 		case PROCESSACCESS:
 		{
 			translate(c.rhs, slots, bytecodes);
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
+			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD);		
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "getState", ftype,
 					Bytecode.VIRTUAL));
-			// finally, we need to cast the object we got back appropriately.		
-			Type.Process pt = (Type.Process) c.rhs.type();						
-			addReadConversion(pt.element(), bytecodes);
 			break;
 		}
 		}		
@@ -1479,18 +1476,20 @@ public class ClassFileBuilder {
 				}
 				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 			}			
-			if(c.synchronous) {			
+			if(c.synchronous) {
+				ftype = new JvmType.Function(FUTURE, ACTOR,
+						JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "sendSync", ftype,
+						Bytecode.VIRTUAL));
 				if(c.type() != Type.T_VOID) {
-					ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
-					bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,Bytecode.VIRTUAL));
+					// TODO ZIM read value on wind back
 					addReadConversion(c.type(),bytecodes);
-				} else {
-					ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
-					bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "vSyncSend", ftype,Bytecode.VIRTUAL));
 				}
 			} else {
-				ftype = new JvmType.Function(T_VOID,JAVA_LANG_REFLECT_METHOD,JAVA_LANG_OBJECT_ARRAY);
-				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend", ftype,Bytecode.VIRTUAL));	
+				ftype = new JvmType.Function(T_VOID, ACTOR,
+						JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+				bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "sendAsync", ftype,
+						Bytecode.VIRTUAL));	
 			}  					
 		} else {
 			// function call or internal message send			
@@ -2122,8 +2121,10 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.LoadConst(key));
 			bytecodes.add(new Bytecode.Load(slots.get(oldtup),WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(key));
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, 
+					JAVA_LANG_STRING);
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype,
+					Bytecode.VIRTUAL));								
 			addReadConversion(from,bytecodes);			
 			if(!to.equals(from)) {
 				// now perform recursive conversion
@@ -2156,14 +2157,18 @@ public class ClassFileBuilder {
 				}
 			})));
 	
+	public final static JvmType.Clazz
+			ACTOR = new JvmType.Clazz("wyjc.runtime.concurrency", "Actor"),
+			FUTURE = new JvmType.Clazz("wyjc.runtime.concurrency",
+					"Actor$MessageFuture");
+	
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("java.util","ArrayList");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","WhileySet");
 	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyjc.runtime","IO");
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("java.util","HashMap");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","WhileyRecord");	
-	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
-			"wyjc.runtime", "Actor");	
+	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz("wyjc.runtime", "Process");	
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");

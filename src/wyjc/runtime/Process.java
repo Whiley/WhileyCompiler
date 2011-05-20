@@ -30,10 +30,6 @@
 package wyjc.runtime;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Stack;
 
 import wyjc.runtime.concurrency.Actor;
