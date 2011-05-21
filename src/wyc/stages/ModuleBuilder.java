@@ -768,8 +768,7 @@ public class ModuleBuilder {
 		for (Stmt st : s.body) {
 			blk.addAll(resolve(st, freeReg));
 		}		
-		
-		blk.add(new Code.LoopEnd(label), s.attribute(Attribute.Source.class));		
+					
 		blk.add(Code.Label(exitLab));
 
 		return blk;
@@ -795,7 +794,7 @@ public class ModuleBuilder {
 			blk.addAll(Block.substitute(binding, b));
 		}		
 		scopes.pop(); // break
-		blk.add(new Code.ForallEnd(label), s.attribute(Attribute.Source.class));		
+		blk.add(Code.Label(label), s.attribute(Attribute.Source.class));		
 
 		return blk;
 	}
