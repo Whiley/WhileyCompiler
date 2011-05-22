@@ -161,6 +161,18 @@ public abstract class Code {
 	public static ListStore ListStore(Type type) {
 		return get(new ListStore(type));
 	}
+
+	/**
+	 * Construct a <code>loop</code> bytecode which iterates the sequence of
+	 * bytecodes upto the exit label.
+	 * 
+	 * @param label
+	 *            --- exit label.
+	 * @return
+	 */
+	public static Loop Loop(String label, Collection<Integer> modifies) {
+		return get(new Loop(label,modifies));
+	}
 	
 	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
@@ -853,8 +865,29 @@ public abstract class Code {
 	}		
 	
 	public static final class Loop extends Code {
+		public final String target;
+		public final HashSet<Integer> modified;
 		
-	}	
+		private Loop(String target, Collection<Integer> modified) {
+			this.target = target;
+			this.modified = new HashSet<Integer>(modified);
+		}
+		
+		public int hashCode() {
+			return target.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Goto) {
+				return target.equals(((Goto)o).target);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "loop " + target;
+		}		
+	}		
 
 	public static final class NewDict extends Code {
 		public final Type.Dictionary type;

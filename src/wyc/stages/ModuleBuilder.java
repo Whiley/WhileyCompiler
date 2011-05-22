@@ -748,25 +748,20 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolve(While s, HashMap<String,Integer> environment) {		
-		String chklab = Block.freshLabel();
-		String entry = Block.freshLabel();
-		String label = Block.freshLabel();
-		String loopend = Block.freshLabel();
-		String exitLab = Block.freshLabel();
-		
-		Block invariant = null;
+		String label = Block.freshLabel();				
+				
 		Block blk = new Block();
 		
-		blk.add(Code.Loop(label, invariant, Collections.EMPTY_SET),
+		blk.add(Code.Loop(label, Collections.EMPTY_SET),
 				s.attribute(Attribute.Source.class));
 		
-		blk.addAll(resolveCondition(exitLab, invert(s.condition), environment));
+		blk.addAll(resolveCondition(label, invert(s.condition), environment));
 
 		for (Stmt st : s.body) {
 			blk.addAll(resolve(st, environment));
 		}		
 					
-		blk.add(Code.Label(exitLab));
+		blk.add(Code.Label(label));
 
 		return blk;
 	}
