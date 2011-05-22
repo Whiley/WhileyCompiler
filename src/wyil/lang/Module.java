@@ -215,30 +215,22 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}	
 	
-	public static class Case extends SyntacticElement.Impl {
-		private final ArrayList<String> paramNames;
+	public static class Case extends SyntacticElement.Impl {		
 		private final Block body;
 
-		public Case(Collection<String> paramNames, Block body, Attribute... attributes) {
-			super(attributes);
-			this.paramNames = new ArrayList<String>(paramNames);
+		public Case(Block body, Attribute... attributes) {
+			super(attributes);			
 			this.body = body;
 		}
 
 		public Case(Collection<String> paramNames, Block body,
 				Collection<Attribute> attributes) {
-			super(attributes);
-			this.paramNames = new ArrayList<String>(paramNames);
+			super(attributes);			
 			this.body = body;
 		}
 		
 		public Block body() {
 			return body;
-		}
-				
-		public List<String> parameterNames() {
-			return paramNames;
-		}
-		
+		}		
 	}
 }

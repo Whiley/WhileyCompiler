@@ -29,6 +29,22 @@ import java.util.*;
 import wyil.util.*;
 
 public abstract class Code {
+
+	// ===============================================================
+	// Bytecode Constructors
+	// ===============================================================
+	
+	/**
+	 * Construct an <code>assert</code> bytecode which identifies a sequence of
+	 * bytecodes which represent a runtime assertion.
+	 * 
+	 * @param label
+	 *            --- end of block.
+	 * @return
+	 */
+	public static Assert Assert(String label) {
+		return get(new Assert(label));
+	}
 	
 	public static BinOp BinOp(Type type, BOp op) {
 		return get(new BinOp(type,op));
@@ -56,6 +72,17 @@ public abstract class Code {
 
 	public static ExternJvm ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
 		return get(new ExternJvm(bytecodes));
+	}
+
+	/**
+	 * Construct a <code>fail</code> bytecode which indicates a runtime failure.
+	 * 
+	 * @param label
+	 *            --- end of block.
+	 * @return
+	 */
+	public static Fail Fail(String label) {
+		return get(new Fail(label));
 	}
 	
 	/**
@@ -253,6 +280,33 @@ public abstract class Code {
 		return get(new Throw(t));
 	}
 	
+	// ===============================================================
+	// Bytecode Implementations
+	// ===============================================================
+	
+	public static final class Assert extends Code {
+		public final String target;
+		
+		private  Assert(String target) {
+			this.target = target;
+		}
+		
+		public int hashCode() {
+			return target.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Assert) {
+				return target.equals(((Assert)o).target);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "assert " + target;
+		}		
+	}
+	
 	public static UnOp UnOp(Type type, UOp op) {
 		return get(new UnOp(type,op));
 	}	
@@ -439,6 +493,29 @@ public abstract class Code {
 		public String toString() {
 			return "externjvm";
 		}
+	}
+	
+	public static final class Fail extends Code {
+		public final String msg;
+		
+		private Fail(String msg) {
+			this.msg = msg;
+		}
+		
+		public int hashCode() {
+			return msg.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Fail) {
+				return msg.equals(((Fail)o).msg);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "assert " + msg;
+		}		
 	}
 	
 	/**
