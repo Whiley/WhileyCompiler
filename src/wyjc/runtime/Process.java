@@ -30,9 +30,8 @@
 package wyjc.runtime;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Stack;
 
-import wyjc.runtime.concurrency.Actor;
+import wyjc.runtime.concurrency.Messager;
 import wyjc.runtime.concurrency.Scheduler;
 
 /**
@@ -40,59 +39,30 @@ import wyjc.runtime.concurrency.Scheduler;
  * 
  * @author Timothy Jones
  */
-public final class Process extends Actor {
+public final class Process extends Messager {
 	
 	private static final Scheduler scheduler = new Scheduler();
 	
 	// The spawned state of the process.
-	private final WhileyRecord state;
+	private final Object state;
 
-	// The saved state of the call stack when an actor yields.
-	private final Stack<State> stack = new Stack<State>();
-
-	public Process(WhileyRecord state) {
+	public Process(Object state) {
 		super(scheduler);
+		
 		this.state = state;
 	}
 
-	public WhileyRecord getState() {
+	public Object getState() {
 		return state;
 	}
-
-	/**
-	 * Halts the actor's computation, thereby yielding control of the thread.
-	 * A resumption of the computation is also scheduled when threads become
-	 * available for use.
-	 * 
-	 * @param pc The program counter from the continuation rewriter.
-	 * @param locals The state of the local variables.
-	 */
-	public void yield(int pc, WhileyRecord locals) {
-		halt(pc, locals);
-		scheduleResume();
-	}
 	
-	/**
-	 * Saves the local state of the method, then unwinds the stack and halts
-	 * the actor's computation. Use of resume will synchronously reverse the
-	 * effects of halt, and scheduleResume will asynchronously reverse it.
-	 * 
-	 * @param pc The program counter from the continuation rewriter.
-	 * @param locals The state of the local variables.
-	 */
-	private void halt(int pc, WhileyRecord locals) {
-		// TODO Unwind the stack.
-	}
-
 	@Override
 	public void resume() {
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
 			
-			if (result instanceof State) {
-				// TODO Unwind the call stack into the state stack.
-				stack.push((State) result);
-			} else {
+			if (!isYielded()) {
+				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
 			}
 		} catch (IllegalArgumentException iax) {
@@ -100,9 +70,10 @@ public final class Process extends Actor {
 		} catch (IllegalAccessException iax) {
 			// Not possible - all message invocations are on public methods. 
 		} catch (InvocationTargetException itx) {
+			// Fails the message and moves on to the next one.
 			failCurrentMessage(itx);
 			
-			// TODO Work out how to react to async exceptions on a root method.
+			// TODO Work out how to react to asynchronous exceptions.
 			// Do we send information to the process that sent the message? 
 		}
 	}
@@ -126,18 +97,6 @@ public final class Process extends Actor {
 		fields.put("out", sysout);
 		Process system = new Process(fields);
 		return system;
-	}
-
-	private static final class State {
-
-		public final int pc;
-		public final WhileyRecord locals;
-
-		public State(int pc, WhileyRecord locals) {
-			this.pc = pc;
-			this.locals = locals;
-		}
-
 	}
 
 }

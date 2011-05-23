@@ -4,35 +4,30 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import wyjc.runtime.concurrency.Scheduler.Resumable;
-
 /**
- * A glorified queue that deals with the concurrency issues of actors passing
- * messages to one another while they're distributed across threads. A class
- * intending to become a fulltime actor
+ * A helper class for the actor hierarchy that involves the passing of
+ * messages and scheduling resumptions on idle actors.
  * 
  * @author Timothy Jones
  */
-public abstract class Actor implements Resumable {
-
-	private final Scheduler scheduler;
+public abstract class Messager extends Yielder {
 
 	private final Queue<Message> mail = new LinkedList<Message>();
 
 	private Message currentMessage = null;
 
-	public Actor(Scheduler scheduler) {
-		this.scheduler = scheduler;
+	public Messager(Scheduler scheduler) {
+		super(scheduler);
 	}
 
-	public MessageFuture sendSync(Actor sender, Method method, Object[] arguments) {
-		Message message = new Message(sender, true, method, arguments);
+	public MessageFuture sendSync(Messager sender, Method method, Object[] args) {
+		Message message = new Message(sender, true, method, args);
 		addMessage(message);
 		return message.getFuture();
 	}
 
-	public void sendAsync(Actor sender, Method method, Object[] arguments) {
-		addMessage(new Message(sender, false, method, arguments));
+	public void sendAsync(Messager sender, Method method, Object[] args) {
+		addMessage(new Message(sender, false, method, args));
 	}
 
 	private synchronized void addMessage(Message message) {
@@ -53,10 +48,6 @@ public abstract class Actor implements Resumable {
 		}
 	}
 
-	protected void scheduleResume() {
-		scheduler.scheduleResume(this);
-	}
-
 	protected Method getCurrentMethod() {
 		return currentMessage.method;
 	}
@@ -65,24 +56,42 @@ public abstract class Actor implements Resumable {
 		return currentMessage.arguments;
 	}
 
+	/**
+	 * Completes the current message.
+	 * 
+	 * Note that this method handles both the resumption of the actor that sent
+	 * this message, if synchronous, and the scheduling of the next message, if
+	 * one exists.
+	 * 
+	 * @param result The result of the successful message.
+	 */
 	protected void completeCurrentMessage(Object result) {
 		currentMessage.complete(result);
 	}
 
+	/**
+	 * Fails the current message.
+	 * 
+	 * Note that this method handles both the resumption of the actor that sent
+	 * this message, if synchronous, and the scheduling of the next message, if
+	 * one exists.
+	 * 
+	 * @param cause The case of the message failure.
+	 */
 	protected void failCurrentMessage(Throwable cause) {
 		currentMessage.fail(cause);
 	}
 
 	private final class Message {
 
-		private final Actor sender;
+		private final Messager sender;
 		private final boolean synchronous;
 		private final Method method;
 		private final Object[] arguments;
 
 		private final MessageFuture future;
 
-		public Message(Actor sender, boolean synchronous, Method method,
+		public Message(Messager sender, boolean synchronous, Method method,
 		    Object[] arguments) {
 			this.sender = sender;
 			this.synchronous = synchronous;
@@ -112,13 +121,13 @@ public abstract class Actor implements Resumable {
 			if (synchronous) {
 				sender.scheduleResume();
 			}
-			
-			Actor.this.nextMessage();
+
+			Messager.this.nextMessage();
 		}
 
 	}
 
-	public static final class MessageFuture {
+	public static class MessageFuture {
 
 		private boolean completed = false;
 		private boolean failed = false;

@@ -1388,13 +1388,15 @@ public class ClassFileBuilder {
 		case PROCESSACCESS:
 		{
 			translate(c.rhs, slots, bytecodes);
-			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD);		
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "getState", ftype,
 					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.CheckCast(WHILEYRECORD));
 			break;
 		}
-		}		
+		}
 	}
+	
 	public void translate(CExpr.NaryOp c, HashMap<String, Integer> slots,
 			ArrayList<Bytecode> bytecodes) {
 
@@ -1479,18 +1481,18 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 			}			
 			if(c.synchronous) {
-				ftype = new JvmType.Function(FUTURE, ACTOR,
+				ftype = new JvmType.Function(FUTURE, MESSAGER,
 						JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-				bytecodes.add(new Bytecode.Invoke(ACTOR, "sendSync", ftype,
+				bytecodes.add(new Bytecode.Invoke(MESSAGER, "sendSync", ftype,
 						Bytecode.VIRTUAL));
 				if(c.type() != Type.T_VOID) {
 					// TODO ZIM read value on wind back
 					addReadConversion(c.type(),bytecodes);
 				}
 			} else {
-				ftype = new JvmType.Function(T_VOID, ACTOR,
+				ftype = new JvmType.Function(T_VOID, MESSAGER,
 						JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-				bytecodes.add(new Bytecode.Invoke(ACTOR, "sendAsync", ftype,
+				bytecodes.add(new Bytecode.Invoke(MESSAGER, "sendAsync", ftype,
 						Bytecode.VIRTUAL));	
 			}  					
 		} else {
@@ -2160,7 +2162,7 @@ public class ClassFileBuilder {
 			})));
 	
 	public final static JvmType.Clazz
-			ACTOR = new JvmType.Clazz("wyjc.runtime.concurrency", "Actor"),
+			MESSAGER = new JvmType.Clazz("wyjc.runtime.concurrency", "Messager"),
 			FUTURE = new JvmType.Clazz("wyjc.runtime.concurrency",
 					"Actor$MessageFuture");
 	
