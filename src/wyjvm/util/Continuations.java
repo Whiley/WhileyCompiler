@@ -20,6 +20,7 @@ import wyjvm.lang.Bytecode.LoadConst;
 import wyjvm.lang.Bytecode.Return;
 import wyjvm.lang.Bytecode.Store;
 import wyjvm.lang.Bytecode.Switch;
+import wyjvm.lang.Bytecode.Throw;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyjvm.lang.ClassFile.Method;
@@ -59,32 +60,37 @@ public class Continuations {
 
 		int location = 0;
 
-		int size = bytecodes.size();
-		for (int i = 0; i < size; ++i) {
+		for (int i = 0; i < bytecodes.size(); ++i) {
 			Bytecode bytecode = bytecodes.get(i);
+
 			if (bytecode instanceof Invoke) {
 				Invoke invoke = (Invoke) bytecode;
 
-				// TODO It would be a good idea if this is the last action of the
-				// method to ignore the saving of the state, but still yield control
-				// of the thread.
-				
 				if (invoke.owner.equals(MESSAGER) && invoke.name.startsWith("send")) {
-					List<Bytecode> add = new ArrayList<Bytecode>(5 + types.size() * 3);
+					List<Bytecode> add = new ArrayList<Bytecode>();
+					boolean isVoid = invoke.type.returnType().equals(T_VOID);
+					Bytecode next = bytecodes.get(i + 1);
+					boolean push =
+					    !(next instanceof Return && next instanceof Throw) && !isVoid;
 
 					add.add(new Load(0, PROCESS));
-					add.add(new LoadConst(location));
-					add.add(new Invoke(MESSAGER, "yield", new Function(T_VOID, T_INT),
-					    Bytecode.VIRTUAL));
 
-					addPushLocals(method.type().parameterTypes(), add);
+					Function type = null;
+					if (push) {
+						add.add(new LoadConst(location));
+						type = new Function(T_VOID, T_INT);
+					} else {
+						type = new Function(T_VOID);
+					}
 
-					add.add(new Return(null));
+					add.add(new Invoke(MESSAGER, "yield", type, Bytecode.VIRTUAL));
 
-					add.add(new Label("resume" + location++));
-					
-					if (invoke.name.equals("sendSync")) {
-						
+					if (push) {
+						addPushLocals(method.type().parameterTypes(), add);
+
+						add.add(new Return(null));
+
+						add.add(new Label("resume" + location++));
 					}
 
 					bytecodes.addAll(i + 1, add);

@@ -19,15 +19,44 @@ public abstract class Yielder extends Resumer {
 		super(scheduler);
 	}
 	
+	/**
+	 * @return Whether the object is currently yielding or has yielded.
+	 */
 	public boolean isYielded() {
 		return yielded;
 	}
 	
+	/**
+	 * Yields control of the thread, but does not push a new local state object
+	 * onto the stack. Useful for when a message is the last action of a method,
+	 * where yielding makes sense but saving the local state does not.
+	 */
+	public void yield() {
+		if (yielded) {
+			throw new IllegalStateException(
+					"Attempting to cleanly yield while object is already yielded.");
+		}
+		yielded = true;
+	}
+	
+	/**
+	 * Yields control of the thread and pushes a new local state object onto the
+	 * stack. Calls to <code>push</code> after calling this method will attach to
+	 * the pushed object for retrieval later with <code>unyield</code>.
+	 * 
+	 * @param location The location of the computation in the method.
+	 */
 	public void yield(int location) {
 		state.push(current = new State(location));
 		yielded = true;
 	}
 	
+	/**
+	 * Pops a local state object off of the stack, moving the <code>pop</code>
+	 * methods onto the next locals.
+	 * 
+	 * @return The location marker of the popped locals object.
+	 */
 	public int unyield() {
 		int location = state.pop().location;
 		if (state.isEmpty()) {

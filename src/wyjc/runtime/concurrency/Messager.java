@@ -127,17 +127,13 @@ public abstract class Messager extends Yielder {
 
 	}
 
-	public static class MessageFuture {
+	public static final class MessageFuture {
 
 		private boolean completed = false;
 		private boolean failed = false;
 
 		private Object result;
 		private Throwable cause;
-
-		public boolean isCompleted() {
-			return completed;
-		}
 
 		public boolean isFailed() {
 			return failed;
