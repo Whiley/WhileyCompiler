@@ -705,7 +705,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(Switch s, HashMap<String,Integer> environment) {
+	protected Block resolve(Switch s, HashMap<String,Integer> environment) throws ResolveError {
 		String exitLab = Block.freshLabel();		
 		Block blk = resolve(environment, s.expr);				
 		Block cblk = new Block();
@@ -726,7 +726,8 @@ public class ModuleBuilder {
 					cblk.add(Code.Goto(exitLab),c.attributes());
 				}
 			} else if(defaultTarget == exitLab) {
-				Value constant = ?;												
+				Value constant = expandConstantHelper(c.value, filename,
+						new HashMap(), new HashSet());												
 				String target = Block.freshLabel();	
 				cblk.add(Code.Label(target), c.attributes());				
 				if(cases.containsKey(constant)) {
@@ -768,22 +769,17 @@ public class ModuleBuilder {
 
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
-		Pair<CExpr,Block> source = resolve(environment,s.source);
-		Block blk = new Block();
-		Block invariant = null;
-		
-		blk.addAll(source.second());
-		CExpr.Register reg = CExpr.REG(Type.T_ANY, environment); 
-		blk.add(new Code.Forall(label, invariant, reg, source.first()), s
-				.attribute(Attribute.Source.class));
+		Block blk = resolve(environment,s.source);				
+		int freeReg = environment.size();
+		environment.put("$" + freeReg, freeReg);		
 				
-		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
-		binding.put(s.variable,reg);
+		blk.add(Code.ForAll(freeReg, label, Collections.EMPTY_SET), s
+				.attribute(Attribute.Source.class));				
+		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(label));		
-		for (Stmt st : s.body) {
-			Block b = resolve(st, environment+1);
-			blk.addAll(Block.substitute(binding, b));
+		for (Stmt st : s.body) {			
+			blk.addAll(resolve(st, environment));
 		}		
 		scopes.pop(); // break
 		blk.add(Code.Label(label), s.attribute(Attribute.Source.class));		

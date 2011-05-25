@@ -173,6 +173,21 @@ public abstract class Code {
 	public static Loop Loop(String label, Collection<Integer> modifies) {
 		return get(new Loop(label,modifies));
 	}
+
+	/**
+	 * Construct a <code>forall</code> bytecode which iterates over a given
+	 * source collection stored on top of the stack. The supplied variable
+	 * <code>var</code> is used as the iterator. The exit label denotes the end
+	 * of the loop block.
+	 * 	 
+	 * 
+	 * @param label
+	 *            --- exit label.
+	 * @return
+	 */
+	public static ForAll ForAll(int var, String label, Collection<Integer> modifies) {
+		return get(new ForAll(var, label,modifies));
+	}
 	
 	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
@@ -878,8 +893,10 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Goto) {
-				return target.equals(((Goto)o).target);
+			if(o instanceof Loop) {
+				Loop f = (Loop) o;
+				return target.equals(f.target)
+						&& modified.equals(f.modified);
 			}
 			return false;
 		}
@@ -889,6 +906,35 @@ public abstract class Code {
 		}		
 	}		
 
+	public static final class ForAll extends Code {
+		public final String target;
+		public final int var;
+		public final HashSet<Integer> modified;		
+		
+		private ForAll(int var, String target, Collection<Integer> modified) {
+			this.var = var;
+			this.target = target;
+			this.modified = new HashSet<Integer>(modified);
+		}
+		
+		public int hashCode() {
+			return target.hashCode() + var;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ForAll) {
+				ForAll f = (ForAll) o;
+				return target.equals(f.target) && var == f.var
+						&& modified.equals(f.modified);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "for " + var + " " + target;
+		}		
+	}
+	
 	public static final class NewDict extends Code {
 		public final Type.Dictionary type;
 		
