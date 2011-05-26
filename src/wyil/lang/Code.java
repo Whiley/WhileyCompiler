@@ -126,6 +126,18 @@ public abstract class Code {
 	}
 
 	/**
+	 * Construct an <code>invoke</code> bytecode which invokes a method.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static Invoke Invoke(Type.Fun fun, NameID name) {
+		return get(new Invoke(fun,name));
+	}
+
+	
+	/**
 	 * Construct a <code>load</code> bytecode which reads a given register.
 	 * 
 	 * @param type
@@ -255,12 +267,48 @@ public abstract class Code {
 	public static IfGoto IfGoto(Type type, COp cop, String label) {
 		return get(new IfGoto(type,cop,label));
 	}
+
+	/**
+	 * Construct an <code>indirectsend</code> bytecode which sends an indirect
+	 * message to an actor. This may be either synchronous or asynchronous.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static IndirectSend IndirectSend(Type.Fun fun, boolean synchronous) {
+		return get(new IndirectSend(fun,synchronous));
+	}
+	
+	/**
+	 * Construct an <code>indirectinvoke</code> bytecode which sends an indirect
+	 * message to an actor. This may be either synchronous or asynchronous.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static IndirectInvoke IndirectInvoke(Type.Fun fun) {
+		return get(new IndirectInvoke(fun));
+	}
 	
 	public static Label Label(String label) {
 		return get(new Label(label));
 	}
 	
 	public static final Skip skip = new Skip();
+
+	/**
+	 * Construct an <code>send</code> bytecode which sends a message to an
+	 * actor. This may be either synchronous or asynchronous.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static Send Send(Type.Fun fun, NameID name, boolean synchronous) {
+		return get(new Send(fun,name,synchronous));
+	}
 	
 	/**
 	 * Construct a <code>store</code> bytecode which writes a given register.
@@ -757,8 +805,7 @@ public abstract class Code {
 	public static final class Invoke extends Code {		
 		public final Type.Fun type;
 		public final NameID name;
-		
-		
+				
 		private Invoke(Type.Fun type, NameID name) {
 			this.type = type;
 			this.name = name;
@@ -1197,30 +1244,32 @@ public abstract class Code {
 
 	public static final class Send extends Code {		 
 		 public final boolean asynchronous;		 
+		 public final NameID name;
 		 public final Type.Fun type;
 			
-		 private Send(Type.Fun type, boolean asynchronous) {
+		 private Send(Type.Fun type, NameID name, boolean asynchronous) {
 			 this.type = type;
+			 this.name = name;
 			 this.asynchronous = asynchronous;
 		 }
 
 		 public int hashCode() {
-			 return type.hashCode();
+			 return type.hashCode() + name.hashCode();
 		 }
 
 		 public boolean equals(Object o) {
 			 if(o instanceof Send) {
 				 Send i = (Send) o;
-				 return type.equals(i.type);
+				 return type.equals(i.type) && name.equals(i.name);
 			 }
 			 return false;
 		 }
 
 		 public String toString() {
 			 if(asynchronous) {
-				 return "asend " + type;
+				 return "asend " + name + " " + type;
 			 } else {
-				 return "send " + type;
+				 return "send " + name + " " + type;
 			 }
 		 }	
 	}

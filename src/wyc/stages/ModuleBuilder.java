@@ -974,11 +974,15 @@ public class ModuleBuilder {
 
 	protected Block resolveCondition(String target, Comprehension e,
 			HashMap<String,Integer> environment) {
+		
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
 			syntaxError("expected boolean expression", filename, e);
 		}
 		
 		Block blk = new Block();
+		
+		/*
+				
 		ArrayList<Pair<CExpr.Register, CExpr>> sources = new ArrayList();
 		HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 		for (Pair<String, Expr> src : e.sources) {
@@ -1016,6 +1020,10 @@ public class ModuleBuilder {
 		// the quantified variables to be their actual registers.
 		blk = Block.substitute(binding, blk);
 
+		 */
+		
+		System.err.println("Need to implement comprehensions");
+		
 		return blk;
 	}
 
@@ -1076,36 +1084,33 @@ public class ModuleBuilder {
 	protected Block resolve(HashMap<String,Integer> environment, Invoke s) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block();
-
-		int idx = environment;
-		ArrayList<CExpr> nargs = new ArrayList<CExpr>();
-		CExpr receiver = null;
 		
 		if (s.receiver != null) {
-			Block tb = resolve(idx++, s.receiver);
-			receiver = tb.first();
-			blk.addAll(tb.second());
+			blk.addAll(resolve(environment, s.receiver));
 		}
 
 		for (Expr e : args) {
-			Block e_tb = resolve(idx++, e);
-			nargs.add(e_tb.first());
-			blk.addAll(e_tb.second());
+			blk.addAll(resolve(environment, e));
 		}	
 		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 		if(modInfo != null) {
 			NameID name = new NameID(modInfo.module, s.name);
-
-			return new Block(CExpr.DIRECTINVOKE(
-					Type.T_FUN(null, Type.T_ANY), name, 0, receiver,
-					s.synchronous, nargs), blk);
+			if(s.receiver != null) {
+				blk.add(Code.Send(
+					Type.T_FUN(null, Type.T_ANY), name, s.synchronous));
+			} else {
+				blk.add(Code.Invoke(
+						Type.T_FUN(null, Type.T_ANY), name));
+			}			
 		} else {
-			// FIXME: need some way to support non-variable targets.
-			CExpr target = CExpr.VAR(Type.T_ANY,s.name);
-			return new Block(CExpr.INDIRECTINVOKE(target,
-					receiver, nargs), blk);	
+			if(s.receiver != null) {
+				blk.add(Code.IndirectSend(Type.T_FUN(null, Type.T_ANY),s.synchronous));
+			} else {
+				blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_ANY)));
+			}
 		}
+		return blk;
 	}
 
 	protected Block resolve(HashMap<String,Integer> environment, Constant c) {
