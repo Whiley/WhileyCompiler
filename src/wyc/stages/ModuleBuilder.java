@@ -246,10 +246,7 @@ public class ModuleBuilder {
 			BinOp bop = (BinOp) expr;
 			Value lhs = expandConstantHelper(bop.lhs, filename, exprs, visited);
 			Value rhs = expandConstantHelper(bop.rhs, filename, exprs, visited);
-			Value v = Value.evaluate(OP2BOP(bop.op, expr), lhs, rhs);
-			if (v != null) {
-				return v;
-			}
+			return evaluate(bop, lhs, rhs);			
 		} else if (expr instanceof NaryOp) {
 			Expr.NaryOp nop = (NaryOp) expr;
 			ArrayList<Value> values = new ArrayList<Value>();
@@ -301,6 +298,11 @@ public class ModuleBuilder {
 		return null;
 	}
 
+	protected Value evaluate(Expr.BinOp bop, Value v1, Value v2) {
+		syntaxError("need to implement binary constant evaluation", filename, bop);
+		return null;
+	}
+	
 	/**
 	 * The following method visits every define type statement in every whiley
 	 * file being compiled, and determines its true type.
@@ -869,7 +871,7 @@ public class ModuleBuilder {
 				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
 				if(ert != null && ert.fields().containsKey(v.var)) {
 					// Bingo, this is an implicit field dereference
-					blk.add(Code.Load(Type.T_BOOL, ?));	
+					blk.add(Code.Load(Type.T_BOOL, environment.get(v.var)));	
 					blk.add(Code.UnOp(Type.T_ANY, Code.UOp.PROCESSACCESS));
 					blk.add(Code.FieldLoad(Type.T_ANY, v.var));
 					matched = true;

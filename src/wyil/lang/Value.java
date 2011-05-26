@@ -75,7 +75,7 @@ public abstract class Value implements Comparable<Value> {
 	
 	public static FunConst V_FUN(NameID name, Type.Fun type) {
 		return get(new FunConst(name,type));
-	}
+	}		
 	
 	public static final class Null extends Value {				
 		public Type type() {
