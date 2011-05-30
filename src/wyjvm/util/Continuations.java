@@ -47,7 +47,7 @@ public class Continuations {
 				apply(method, (Code) attribute);
 				if (method.name().startsWith("main$")) {
 					for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
-						System.out.println(bytecode);
+						// System.out.println(bytecode);
 					}
 				}
 			}
@@ -67,34 +67,9 @@ public class Continuations {
 				Invoke invoke = (Invoke) bytecode;
 
 				if (invoke.owner.equals(MESSAGER) && invoke.name.startsWith("send")) {
-					List<Bytecode> add = new ArrayList<Bytecode>();
-					boolean isVoid = invoke.type.returnType().equals(T_VOID);
-					Bytecode next = bytecodes.get(i + 1);
-					boolean push =
-					    !(next instanceof Return && next instanceof Throw) && !isVoid;
-
-					add.add(new Load(0, PROCESS));
-
-					Function type = null;
-					if (push) {
-						add.add(new LoadConst(location));
-						type = new Function(T_VOID, T_INT);
-					} else {
-						type = new Function(T_VOID);
-					}
-
-					add.add(new Invoke(MESSAGER, "yield", type, Bytecode.VIRTUAL));
-
-					if (push) {
-						addPushLocals(method.type().parameterTypes(), add);
-
-						add.add(new Return(null));
-
-						add.add(new Label("resume" + location++));
-					}
-
-					bytecodes.addAll(i + 1, add);
-					i += add.size();
+					addSend(method, bytecodes, invoke, i, location);
+				} else {
+					System.out.println(invoke);
 				}
 			}
 		}
@@ -124,6 +99,38 @@ public class Continuations {
 
 			bytecodes.addAll(0, add);
 		}
+	}
+
+	private void addSend(Method method, List<Bytecode> bytecodes, Invoke invoke,
+	    int i, int location) {
+		List<Bytecode> add = new ArrayList<Bytecode>();
+		boolean isVoid = invoke.type.returnType().equals(T_VOID);
+		Bytecode next = bytecodes.get(i + 1);
+		boolean push =
+		    !(next instanceof Return && next instanceof Throw) && !isVoid;
+
+		add.add(new Load(0, PROCESS));
+
+		Function type = null;
+		if (push) {
+			add.add(new LoadConst(location));
+			type = new Function(T_VOID, T_INT);
+		} else {
+			type = new Function(T_VOID);
+		}
+
+		add.add(new Invoke(MESSAGER, "yield", type, Bytecode.VIRTUAL));
+
+		if (push) {
+			addPushLocals(method.type().parameterTypes(), add);
+
+			add.add(new Return(null));
+
+			add.add(new Label("resume" + location++));
+		}
+
+		bytecodes.addAll(i + 1, add);
+		i += add.size();
 	}
 
 	private void addPushLocals(List<JvmType> types, List<Bytecode> add) {

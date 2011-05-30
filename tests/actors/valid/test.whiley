@@ -1,2 +1,9 @@
 void System::main([string] args):
-    out<-println(str(1))
+    self()
+
+int System::self():
+    return 5
+
+int five():
+    return 5
+  

@@ -1507,7 +1507,7 @@ public class ClassFileBuilder {
 		List<Type> params = c.type.params();
 
 		// first, translate receiver (where appropriate)
-		if (c.type.receiver() != null) {
+		if(c.type.receiver() != null && c.receiver != null) {
 			translate(c.receiver, slots, bytecodes);
 
 			// this indicates a message send
@@ -1570,8 +1570,13 @@ public class ClassFileBuilder {
 				    Bytecode.VIRTUAL));
 			}
 		} else {
-			// function call or internal message send
-			for (int i = 0; i != params.size(); ++i) {
+			if(c.type.receiver() != null) {
+				// this is a hack to hand internal message sends.
+				bytecodes.add(new Bytecode.Load(slots.get("this"),
+						WHILEYPROCESS));				
+			}
+			// function call or internal message send			
+			for(int i=0;i!=params.size();++i) {
 				Type pt = params.get(i);
 				CExpr r = c.args.get(i);
 				Type rt = r.type();
