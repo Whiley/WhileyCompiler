@@ -35,6 +35,7 @@ import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.util.*;
+import static wyil.lang.Block.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected ModuleLoader loader;
@@ -87,14 +88,14 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		this.stores = new HashMap<String,T>();
 		T last = lastStore();						
 		Block body = propagate(mcase.body(), last).first();		
-		return new Module.Case(mcase.parameterNames(), body, mcase.attributes());
+		return new Module.Case(body, mcase.attributes());
 	}		
 	
 	protected Pair<Block, T> propagate(Block block, T store) {
 		
 		Block nblock = new Block();
 		for(int i=(block.size()-1);i>=0;--i) {						
-			Stmt stmt = block.get(i);						
+			Entry stmt = block.get(i);						
 			try {				
 				Code code = stmt.code;
 
@@ -130,7 +131,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					if(trueStore == null) {
 						System.out.println("PROBLEM");
 					}
-					Pair<Stmt, T> r = propagate(ifgoto, stmt, trueStore,store);
+					Pair<Entry, T> r = propagate(ifgoto, stmt, trueStore,store);
 					stmt = r.first();
 					store = r.second();
 				} else if (code instanceof Code.Goto) {
@@ -138,7 +139,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					store = stores.get(gto.target);					
 				} else {
 					// This indicates a sequential statement was encountered.					
-					Pair<Stmt, T> r = propagate(stmt, store);
+					Pair<Entry, T> r = propagate(stmt, store);
 					stmt = r.first();
 					store = r.second();					
 				}
@@ -179,7 +180,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract Pair<Stmt, T> propagate(Code.IfGoto ifgoto, Stmt stmt,
+	protected abstract Pair<Entry, T> propagate(Code.IfGoto ifgoto, Entry stmt,
 			T trueStore, T falseStore);
 
 	/**
@@ -208,7 +209,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 * @return
 	 */
 	protected abstract Pair<Block, T> propagate(Code.Start code, Code.End end,
-			Block body, Stmt stmt, T store);
+			Block body, Entry stmt, T store);
 	
 	/**
 	 * <p>
@@ -223,7 +224,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Stmt,T> propagate(Stmt stmt, T store);
+	protected abstract Pair<Entry,T> propagate(Entry stmt, T store);
 
 	/**
 	 * Generate the store which holds true immediately after the last statement
