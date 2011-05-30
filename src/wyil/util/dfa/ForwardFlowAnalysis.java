@@ -36,6 +36,7 @@ import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.util.*;
+import static wyil.lang.Block.*;
 
 public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected ModuleLoader loader;
@@ -88,16 +89,16 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		this.stores = new HashMap<String,T>();
 		T init = initialStore();
 		Block body = propagate(mcase.body(), init).first();		
-		return new Module.Case(mcase.parameterNames(), body, mcase.attributes());
+		return new Module.Case(body, mcase.attributes());
 	}		
 	
 	protected Pair<Block, T> propagate(Block block, T store) {
 		
 		Block nblock = new Block();
 		for(int i=0;i<block.size();++i) {						
-			Stmt stmt = block.get(i);								
+			Entry entry = block.get(i);								
 			try {				
-				Code code = stmt.code;
+				Code code = entry.code;
 
 				// First, check for a label which may have incoming information.
 				if (code instanceof Code.Label) {
@@ -114,62 +115,62 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
-				} else if (code instanceof Code.Start) {					
-					Code.Start start = (Code.Start) code;
-					Code.End end = null;
+				} else if (code instanceof Code.Loop) {
+					Code.Loop loop = (Code.Loop) code;
+					Code.Label end = null;
 					// Note, I could make this more efficient!
 					Block body = new Block();
 					while (++i < block.size()) {
-						stmt = block.get(i);
-						if (stmt.code instanceof Code.End) {
-							end = (Code.End) stmt.code;
-							if (end.target.equals(start.label)) {
+						entry = block.get(i);
+						if (entry.code instanceof Code.Label) {
+							end = (Code.Label) entry.code;
+							if (end.label.equals(loop.target)) {
 								// end of loop body found
 								break;
 							}
 						}
-						body.add(stmt.code, stmt.attributes());
-					}										
-					Pair<Block, T> r = propagate(start, end, body, stmt, store);
+						body.add(entry.code, entry.attributes());
+					}
+					Pair<Block, T> r = propagate(loop, body, entry, store);
 					nblock.addAll(r.first());
 					store = r.second();
 					continue;
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
-					Triple<Stmt, T, T> r = propagate(ifgoto, stmt, store);
-					stmt = r.first();
+					Triple<Entry, T, T> r = propagate(ifgoto, entry, store);
+					entry = r.first();
 					store = r.third();
 
 					// Now, check to see if the statement has been updated, and
 					// process outgoing information accordingly.
-					if (stmt.code instanceof Code.IfGoto) {
-						Code.IfGoto gto = (Code.IfGoto) stmt.code;
+					if (entry.code instanceof Code.IfGoto) {
+						Code.IfGoto gto = (Code.IfGoto) entry.code;
 						merge(gto.target, r.second(), stores);
-					} else if (stmt.code instanceof Code.Goto) {
-						Code.Goto gto = (Code.Goto) stmt.code;
+					} else if (entry.code instanceof Code.Goto) {
+						Code.Goto gto = (Code.Goto) entry.code;
 						merge(gto.target, r.second(), stores);
 						store = null;
 					}
 				} else if (code instanceof Code.Switch) {
 					Code.Switch sw = (Code.Switch) code;
-					Pair<Stmt, List<T>> r = propagate(sw, stmt, store);
-					stmt = r.first();					
+					Pair<Entry, List<T>> r = propagate(sw, entry, store);
+					entry = r.first();					
 
 					// Now, check to see if the statement has been updated, and
 					// process outgoing information accordingly.
-					if (stmt.code instanceof Code.Switch) {
+					if (entry.code instanceof Code.Switch) {
 						// assert r.second().size() == nsw.branches.size()
-						Code.Switch nsw = (Code.Switch) stmt.code;
+						Code.Switch nsw = (Code.Switch) entry.code;
 						for(int j=0;j!=nsw.branches.size();++j){
-							String target = nsw.branches.get(j).second();
+							String target = nsw.branches.get(j);
 							T nstore = r.second().get(j);
 							merge(target, nstore, stores);
 						}
 						merge(sw.defaultTarget, store, stores);
 						store = null;
-					} else if (stmt.code instanceof Code.Goto) {
+					} else if (entry.code instanceof Code.Goto) {
 						// assert r.second().size() == 1
-						Code.Goto gto = (Code.Goto) stmt.code;
+						Code.Goto gto = (Code.Goto) entry.code;
 						merge(gto.target, r.second().get(0), stores);
 						store = null;
 					}
@@ -177,24 +178,24 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					// FIXME:  should I do something here?
 					store = null;
 				} else if (code instanceof Code.Goto) {
-					Code.Goto gto = (Code.Goto) stmt.code;
+					Code.Goto gto = (Code.Goto) entry.code;
 					merge(gto.target, store, stores);
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
-					Pair<Stmt, T> r = propagate(stmt, store);
-					stmt = r.first();
+					Pair<Entry, T> r = propagate(entry, store);
+					entry = r.first();
 					store = r.second();
-					if (stmt.code instanceof Code.Fail
-							|| stmt.code instanceof Code.Return) {
+					if (entry.code instanceof Code.Fail
+							|| entry.code instanceof Code.Return) {
 						store = null;
 					}
 				}
-				nblock.add(stmt.code, stmt.attributes());
+				nblock.add(entry.code, entry.attributes());
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				syntaxError("internal failure", filename, stmt, ex);
+				syntaxError("internal failure", filename, entry, ex);
 			}
 		}
 		
@@ -226,14 +227,14 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * 
 	 * @param ifgoto
 	 *            --- the code of this statement
-	 * @param stmt
-	 *            --- this statement
+	 * @param entry
+	 *            --- Block entry for this bytecode.
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Triple<Stmt,T,T> propagate(Code.IfGoto ifgoto, Stmt stmt, T store);
+	protected abstract Triple<Entry,T,T> propagate(Code.IfGoto ifgoto, Entry entry, T store);
 
 	/**
 	 * <p>
@@ -246,18 +247,18 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * 
 	 * @param sw
 	 *            --- the code of this statement
-	 * @param stmt
-	 *            --- this statement
+	 * @param entry
+	 *            --- block entry for this bytecode
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Stmt,List<T>> propagate(Code.Switch sw, Stmt stmt, T store);
+	protected abstract Pair<Entry,List<T>> propagate(Code.Switch sw, Entry entry, T store);
 	
 	/**
 	 * <p>
-	 * Propagate through a block statement (e.g. loop, or check), producing a
+	 * Propagate through a loop statement, producing a
 	 * potentially updated block and the store which holds true immediately
 	 * after the statement
 	 * </p>
@@ -269,19 +270,17 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * 
 	 * @param start
 	 *            --- the start code of the block
-	 * @param end
-	 *            --- the end code of the block
 	 * @param body
 	 *            --- the body of the block
-	 * @param stmt
-	 *            --- the statement being propagated through
+	 * @param entry
+	 *            --- the block entry for the loop statement
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Block, T> propagate(Code.Start code, Code.End end,
-			Block body, Stmt stmt, T store);
+	protected abstract Pair<Block, T> propagate(Code.Loop code, 
+			Block body, Entry entry, T store);
 	
 	/**
 	 * <p>
@@ -289,14 +288,14 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * statement and the store which holds true immediately after the statement
 	 * </p>
 	 * 
-	 * @param stmt
-	 *            --- the statement being propagated through
+	 * @param entry
+	 *            --- block entry for this bytecode
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Stmt,T> propagate(Stmt stmt, T store);
+	protected abstract Pair<Entry,T> propagate(Entry entry, T store);
 	
 	/**
 	 * Determine the initial store for the current method case.

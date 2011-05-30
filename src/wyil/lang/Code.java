@@ -926,7 +926,7 @@ public abstract class Code {
 		}	
 	}		
 	
-	public static final class Loop extends Code {
+	public static class Loop extends Code {
 		public final String target;
 		public final HashSet<Integer> modified;
 		
@@ -953,19 +953,16 @@ public abstract class Code {
 		}		
 	}		
 
-	public static final class ForAll extends Code {
-		public final String target;
+	public static final class ForAll extends Loop {
 		public final int var;
-		public final HashSet<Integer> modified;		
-		
+				
 		private ForAll(int var, String target, Collection<Integer> modified) {
-			this.var = var;
-			this.target = target;
-			this.modified = new HashSet<Integer>(modified);
+			super(target,modified);
+			this.var = var;			
 		}
 		
 		public int hashCode() {
-			return target.hashCode() + var;
+			return super.hashCode() + var;
 		}
 		
 		public boolean equals(Object o) {
@@ -978,7 +975,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "for " + var + " " + target;
+			return "forall " + var + " " + target;
 		}		
 	}
 	

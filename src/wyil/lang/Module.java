@@ -223,7 +223,7 @@ public class Module extends ModuleLoader.Skeleton {
 			this.body = body;
 		}
 
-		public Case(Collection<String> paramNames, Block body,
+		public Case(Block body,
 				Collection<Attribute> attributes) {
 			super(attributes);			
 			this.body = body;

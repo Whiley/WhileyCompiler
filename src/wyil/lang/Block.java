@@ -39,7 +39,7 @@ public final class Block implements Iterable<Block.Entry> {
 	public Block(Collection<Entry> stmts) {
 		this.stmts = new ArrayList<Entry>();
 		for(Entry s : stmts) {
-			add(s.code(),s.attributes());
+			add(s.code,s.attributes());
 		}
 	}
 	
@@ -61,25 +61,25 @@ public final class Block implements Iterable<Block.Entry> {
 	
 	public void addAll(Collection<Entry> stmts) {
 		for(Entry s : stmts) {
-			add(s.code(),s.attributes());
+			add(s.code,s.attributes());
 		}
 	}
 	
 	public void addAll(int idx, Collection<Entry> stmts) {		
 		for(Entry s : stmts) {
-			add(idx++,s.code(),s.attributes());
+			add(idx++,s.code,s.attributes());
 		}
 	}
 	
 	public void addAll(Block stmts) {
 		for(Entry s : stmts) {
-			add(s.code(),s.attributes());
+			add(s.code,s.attributes());
 		}
 	}
 	
 	public void addAll(int idx, Block stmts) {
 		for(Entry s : stmts) {
-			add(idx++, s.code(),s.attributes());
+			add(idx++, s.code,s.attributes());
 		}
 	}
 	
@@ -138,29 +138,21 @@ public final class Block implements Iterable<Block.Entry> {
 	 * @author djp
 	 * 
 	 */
-	public static final class Entry extends Pair<Code,List<Attribute>> {
+	public static final class Entry extends SyntacticElement.Impl {
+		public final Code code;
 		
 		public Entry(Code code, Attribute... attributes) {
-			super(code,new ArrayList());
-			for(Attribute a : attributes()) {
-				second().add(a);
-			}
+			super(attributes);
+			this.code = code;
 		}
 		
 		public Entry(Code code, Collection<Attribute> attributes) {
-			super(code,new ArrayList(attributes));			
+			super(attributes);
+			this.code = code;
 		}
-		
-		public Code code() {
-			return first();
-		}
-		
-		public List<Attribute> attributes() {
-			return second();
-		}
-		
+				
 		public String toString() {
-			String r = code().toString();
+			String r = code.toString();
 			if(attributes().size() > 0) {
 				r += " # ";
 				boolean firstTime=true;
