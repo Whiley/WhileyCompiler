@@ -876,7 +876,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		try {
-			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
+			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt, environment);
 
 			return CExpr.DIRECTINVOKE(funtype, ivk.name, ivk.caseNum, receiver, ivk.synchronous, args);
 		} catch (ResolveError ex) {
@@ -922,8 +922,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @throws ResolveError
 	 */
 	protected Type.Fun bindFunction(NameID nid, Type.Process receiver,
-			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
-		
+			List<Type> paramTypes, SyntacticElement elem,
+			HashMap<String, Type> environment) throws ResolveError {
+
 		Type.Fun target = Type.T_FUN(receiver, Type.T_ANY,paramTypes);
 		Type.Fun candidate = null;				
 		
@@ -932,6 +933,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for (Type.Fun ft : targets) {										
 			Type funrec = ft.receiver();			
 			if (receiver == funrec
+					|| (receiver == null && funrec != null && Type.isSubtype(
+							funrec, environment.get("this")))
 					|| (receiver != null && funrec != null && Type.isSubtype(
 							funrec, receiver))) {
 				// receivers match up OK ...				
