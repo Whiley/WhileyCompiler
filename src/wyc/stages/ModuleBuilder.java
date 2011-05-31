@@ -497,17 +497,18 @@ public class ModuleBuilder {
 	protected Module.Method resolve(FunDecl fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
-		// method parameter types
-		for (WhileyFile.Parameter p : fd.parameters) {
-			environment.put(p.name(),environment.size());			
-		}
-
 		// method return type
 		Type ret = resolve(fd.ret);		
 
 		// method receiver type (if applicable)
 		if (fd.receiver != null) {
-			Type rec = resolve(fd.receiver);					
+			Type rec = resolve(fd.receiver);
+			environment.put("this", environment.size());
+		}
+		
+		// method parameter types
+		for (WhileyFile.Parameter p : fd.parameters) {
+			environment.put(p.name(),environment.size());			
 		}
 		
 		currentFunDecl = fd;
