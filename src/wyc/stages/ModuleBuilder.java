@@ -585,8 +585,15 @@ public class ModuleBuilder {
 				
 		if(s.lhs instanceof Variable) {
 			Variable v = (Variable) s.lhs;			
-			blk.add(Code.Store(Type.T_ANY, environment.get(v.var)),
-					s.attribute(Attribute.Source.class));			
+			if(environment.containsKey(v.var)) {
+				blk.add(Code.Store(Type.T_ANY, environment.get(v.var)),
+					s.attribute(Attribute.Source.class));
+			} else {
+				int idx = environment.size();
+				environment.put(v.var, idx);
+				blk.add(Code.Store(Type.T_ANY, idx),
+						s.attribute(Attribute.Source.class));
+			}
 		} else if(s.lhs instanceof TupleGen) {
 			// this indicates a tuple assignment which must be treated specially.
 			TupleGen tg = (TupleGen) s.lhs;			
