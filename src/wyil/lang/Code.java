@@ -359,6 +359,10 @@ public abstract class Code {
 		return get(new Throw(t));
 	}
 	
+	public static UnOp UnOp(Type type, UOp op) {
+		return get(new UnOp(type,op));
+	}		
+	
 	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================
@@ -385,10 +389,6 @@ public abstract class Code {
 			return "assert " + target;
 		}		
 	}
-	
-	public static UnOp UnOp(Type type, UOp op) {
-		return get(new UnOp(type,op));
-	}	
 	
 	public enum BOp { 
 		ADD{
@@ -461,7 +461,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return bop + " " + type;
+			return bop + ":" + type ;
 		}
 	}
 
@@ -614,7 +614,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "assert " + msg;
+			return "fail " + msg;
 		}		
 	}
 	
@@ -647,7 +647,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "fieldload " + field + " " + type;			
+			return "fieldload:" + type + " " + field;			
 		}	
 	}
 
@@ -680,7 +680,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "fieldstore " + field + " " + type;
+			return "fieldstore:" + type + "]" + field;
 		}
 	}
 	
@@ -733,7 +733,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "if" + op + " " + target;
+			return "if:" + type +" " + op + " " + target;
 		}
 	}
 	
@@ -793,7 +793,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "indirectinvoke " + type;
+			return "indirectinvoke:" + type ;
 		}		
 	}
 	
@@ -820,9 +820,9 @@ public abstract class Code {
 
 		 public String toString() {
 			 if(asynchronous) {
-				 return "iasend " + type;
+				 return "iasend:" + type ;
 			 } else {
-				 return "isend " + type;
+				 return "isend:" + type ;
 			 }
 		 }		
 	}
@@ -849,7 +849,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "invoke " + name + ":" + type;
+			return "invoke:" + type + " " + name;
 		}	
 		
 	}
@@ -897,7 +897,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "listload " + type;
+			return "listload:" + type ;
 		}	
 	}
 	
@@ -921,7 +921,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "liststore " + type;
+			return "liststore:" + type ;
 		}	
 	}	
 	
@@ -947,7 +947,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "load " + type;
+			return "load:" + type + " " + slot;
 		}	
 	}		
 	
@@ -1024,7 +1024,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newdict " + type;
+			return "newdict:" + type;
 		}	
 	}
 	
@@ -1048,7 +1048,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newrec " + type;
+			return "newrec:" + type;
 		}	
 	}
 		
@@ -1072,7 +1072,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newtuple " + type;
+			return "newtuple:" + type;
 		}	
 	}
 	
@@ -1098,7 +1098,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newset " + nargs + " " + type;
+			return "newset:" + type + " " + nargs;
 		}	
 	}
 	
@@ -1153,7 +1153,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "pop " + type;
+			return "pop:" + type;
 		}
 	}
 
@@ -1177,7 +1177,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "return " + type;
+			return "return:" + type;
 		}
 	}
 	
@@ -1216,7 +1216,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "store " + type;
+			return "store:" + type + " " + slot;
 		}	
 	}	
 	
@@ -1289,9 +1289,9 @@ public abstract class Code {
 
 		 public String toString() {
 			 if(asynchronous) {
-				 return "asend " + name + " " + type;
+				 return "asend:" + type + " " + name;
 			 } else {
-				 return "send " + name + " " + type;
+				 return "send:" + type + " " + name;
 			 }
 		 }	
 	}
@@ -1316,7 +1316,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "throw " + type;
+			return "throw:" + type;
 		}
 	}
 	
@@ -1342,7 +1342,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return uop + " " + type;
+			return uop + ":" + type;
 		}
 	}
 	

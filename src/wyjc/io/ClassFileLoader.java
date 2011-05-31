@@ -168,7 +168,7 @@ public class ClassFileLoader {
 			}
 
 			List<Module.Case> mcases = new ArrayList<Module.Case>();
-			mcases.add(new Module.Case(parameterNames, null, attrs));
+			mcases.add(new Module.Case(null, attrs));
 
 			return new Module.Method(name, type, mcases);
 		} catch (IOException e) {

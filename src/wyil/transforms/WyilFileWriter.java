@@ -35,18 +35,11 @@ import wyil.Transform;
 
 public class WyilFileWriter implements Transform {
 	private PrintWriter out;
-	private int codeFlags = Code.SHORT_TYPES;	
 	private boolean writeLabels;
 	private boolean writeAttributes;
 		
 	public WyilFileWriter(ModuleLoader loader) {
 
-	}
-		
-	public void setTypes(boolean flag) {
-		if(flag) {
-			codeFlags |= Code.INTERNAL_TYPES;
-		}
 	}
 	
 	public void setLabels(boolean flag) {
@@ -98,14 +91,11 @@ public class WyilFileWriter implements Transform {
 		Type.Fun ft = method.type(); 
 		out.print(ft.ret() + " " + method.name() + "(");
 		List<Type> pts = ft.params();
-		List<String> names = mcase.parameterNames();
-		for(int i=0;i!=names.size();++i) {
-			String n = names.get(i);
-			Type t = pts.get(i);
+		for(int i=0;i!=ft.params().size();++i) {						
 			if(i!=0) {
 				out.print(", ");
 			}			
-			out.print(t + " " + n);			
+			out.print(pts.get(i));			
 		}
 		out.println("):");				
 		for(Attribute a : mcase.attributes()) {
@@ -119,20 +109,15 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	public void write(int indent, Block blk, PrintWriter out) {
-		for(Stmt s : blk) {
+		for(Block.Entry s : blk) {
 			if(s.code instanceof Code.End) {
 				indent--;
 			}
 			write(indent,s.code,s.attributes(),out);
 			if(s.code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) s.code; 
-				indent++;				
-				if(loop.invariant != null) {
-					tabIndent(indent+1,out);
-					out.println("invariant:");
-					write(indent+1,loop.invariant,out);
-				}
-			} else if(s.code instanceof Code.Start) {
+				indent++;								
+			} else if(s.code instanceof Code.Loop) {
 				indent++;
 			}
 		}
@@ -146,20 +131,12 @@ public class WyilFileWriter implements Transform {
 		if(c instanceof Code.End) {
 			Code.End cend = (Code.End)c;
 			if(writeLabels) {
-				line = "end " + cend.target;
+				line = "end " + cend.label;
 			} else {
 				line = "end";
 			}
-		} else if(c instanceof Code.Start) {
-			Code.Start cstart = (Code.Start)c;
-			String c_string = Code.toString(c,codeFlags);
-			if(writeLabels) {
-				line = "." + cstart.label + " " + c_string;
-			} else {
-				line = c_string;					
-			}
 		} else {
-			line = Code.toString(c,codeFlags);			
+			line = c.toString();		
 		}
 		
 		// Second, write attributes				
