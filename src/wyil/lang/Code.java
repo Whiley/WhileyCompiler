@@ -461,7 +461,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return bop + ":" + type ;
+			return toString(bop.toString(),type);
 		}
 	}
 
@@ -536,7 +536,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "const " + constant;
+			return toString("const " + constant,constant.type());
 		}
 	}
 
@@ -647,7 +647,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "fieldload:" + type + " " + field;			
+			return toString("fieldload " + field,type);			
 		}	
 	}
 
@@ -680,7 +680,7 @@ public abstract class Code {
 		}
 
 		public String toString() {
-			return "fieldstore:" + type + "]" + field;
+			return toString("fieldstore " + field,type);
 		}
 	}
 	
@@ -733,7 +733,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "if:" + type +" " + op + " " + target;
+			return toString("if " + op + " " + target,type);
 		}
 	}
 	
@@ -745,7 +745,7 @@ public abstract class Code {
 			public String toString() { return "!="; }
 		},
 		LT{
-			public String toString() { return "<"; }
+			public String toString() { return " <"; }
 		},
 		LTEQ{
 			public String toString() { return "<="; }
@@ -760,13 +760,13 @@ public abstract class Code {
 			public String toString() { return "in"; }
 		},
 		SUBSET{
-			public String toString() { return "<"; }
+			public String toString() { return " <"; }
 		},
 		SUBSETEQ{
 			public String toString() { return "<="; }
 		},
 		SUBTYPEEQ() {
-			public String toString() { return "<:"; }
+			public String toString() { return "< <"; }
 		},
 		NSUBTYPEEQ() {
 			public String toString() { return "<!"; }
@@ -793,7 +793,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "indirectinvoke:" + type ;
+			return toString("indirectinvoke",type);
 		}		
 	}
 	
@@ -820,9 +820,9 @@ public abstract class Code {
 
 		 public String toString() {
 			 if(asynchronous) {
-				 return "iasend:" + type ;
+				 return toString("iasend",type);
 			 } else {
-				 return "isend:" + type ;
+				 return toString("isend",type);
 			 }
 		 }		
 	}
@@ -849,7 +849,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "invoke:" + type + " " + name;
+			return toString("invoke " + name,type);
 		}	
 		
 	}
@@ -897,7 +897,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "listload:" + type ;
+			return toString("listload",type);
 		}	
 	}
 	
@@ -921,7 +921,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "liststore:" + type ;
+			return toString("liststore",type);
 		}	
 	}	
 	
@@ -947,7 +947,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "load:" + type + " " + slot;
+			return toString("load " + slot,type);
 		}	
 	}		
 	
@@ -1024,7 +1024,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newdict:" + type;
+			return toString("newdict",type);
 		}	
 	}
 	
@@ -1048,7 +1048,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newrec:" + type;
+			return toString("newrec",type);
 		}	
 	}
 		
@@ -1072,7 +1072,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newtuple:" + type;
+			return toString("newtuple",type);
 		}	
 	}
 	
@@ -1098,7 +1098,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newset:" + type + " " + nargs;
+			return toString("newset " + nargs,type);
 		}	
 	}
 	
@@ -1124,7 +1124,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "newlist " + nargs + " " + type;
+			return toString("newlist " + nargs,type);
 		}	
 	}
 	
@@ -1153,7 +1153,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "pop:" + type;
+			return toString("pop",type);
 		}
 	}
 
@@ -1177,7 +1177,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "return:" + type;
+			return toString("return",type);
 		}
 	}
 	
@@ -1216,7 +1216,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "store:" + type + " " + slot;
+			return toString("store " + slot,type);
 		}	
 	}	
 	
@@ -1289,9 +1289,9 @@ public abstract class Code {
 
 		 public String toString() {
 			 if(asynchronous) {
-				 return "asend:" + type + " " + name;
+				 return toString("asend " + name,type);				 
 			 } else {
-				 return "send:" + type + " " + name;
+				 return toString("send " + name,type);
 			 }
 		 }	
 	}
@@ -1316,7 +1316,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "throw:" + type;
+			return toString("throw",type);
 		}
 	}
 	
@@ -1342,7 +1342,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return uop + ":" + type;
+			return toString(uop.toString(),type);
 		}
 	}
 	
@@ -1403,8 +1403,17 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return "void " + slot + " " + type;
+			return toString("void " + slot,type);
 		}
+	}
+	
+	public static String toString(String str, Type t) {
+		String r = str;
+		for(int i = str.length();i<10;++i) {
+			r = r + " ";
+		}
+		r = r + " : " + t;
+		return r;
 	}
 	
 
