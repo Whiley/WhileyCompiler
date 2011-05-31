@@ -733,43 +733,43 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("if " + op + " " + target,type);
+			return toString("if" + op + " " + target,type);
 		}
 	}
 	
 	public enum COp { 
 		EQ() {
-			public String toString() { return "=="; }
+			public String toString() { return "eq"; }
 		},
 		NEQ{
-			public String toString() { return "!="; }
+			public String toString() { return "ne"; }
 		},
 		LT{
-			public String toString() { return " <"; }
+			public String toString() { return "lt"; }
 		},
 		LTEQ{
-			public String toString() { return "<="; }
+			public String toString() { return "le"; }
 		},
 		GT{
-			public String toString() { return ">"; }
+			public String toString() { return "gt"; }
 		},
 		GTEQ{
-			public String toString() { return ">="; }
+			public String toString() { return "ge"; }
 		},
 		ELEMOF{
 			public String toString() { return "in"; }
 		},
 		SUBSET{
-			public String toString() { return " <"; }
+			public String toString() { return "sb"; }
 		},
 		SUBSETEQ{
-			public String toString() { return "<="; }
+			public String toString() { return "sbe"; }
 		},
 		SUBTYPEEQ() {
-			public String toString() { return "< <"; }
+			public String toString() { return "te"; }
 		},
 		NSUBTYPEEQ() {
-			public String toString() { return "<!"; }
+			public String toString() { return "nte"; }
 		}
 	};		
 	
@@ -1408,12 +1408,7 @@ public abstract class Code {
 	}
 	
 	public static String toString(String str, Type t) {
-		String r = str;
-		for(int i = str.length();i<10;++i) {
-			r = r + " ";
-		}
-		r = r + " : " + t;
-		return r;
+		return str + " : " + t;
 	}
 	
 

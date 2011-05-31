@@ -110,10 +110,13 @@ public class WyilFileWriter implements Transform {
 	
 	public void write(int indent, Block blk, PrintWriter out) {
 		for(Block.Entry s : blk) {
-			if(s.code instanceof Code.End) {
-				indent--;
+			if(s.code instanceof Code.End) {				
+				--indent;
+			} else if(s.code instanceof Code.Label) { 
+				write(indent-1,s.code,s.attributes(),out);
+			} else {
+				write(indent,s.code,s.attributes(),out);
 			}
-			write(indent,s.code,s.attributes(),out);
 			if(s.code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) s.code; 
 				indent++;								
