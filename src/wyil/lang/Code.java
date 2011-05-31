@@ -256,8 +256,8 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewRec NewRec(Type.Record type) {
-		return get(new NewRec(type));
+	public static NewRecord NewRec(Type.Record type) {
+		return get(new NewRecord(type));
 	}
 	
 	public static Pop Pop(Type t) {
@@ -1028,10 +1028,10 @@ public abstract class Code {
 		}	
 	}
 	
-	public static final class NewRec extends Code {
+	public static final class NewRecord extends Code {
 		public final Type.Record type;
 		
-		private NewRec(Type.Record type) {
+		private NewRecord(Type.Record type) {
 			this.type = type;
 		}
 		
@@ -1040,8 +1040,8 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof NewRec) {
-				NewRec i = (NewRec) o;
+			if(o instanceof NewRecord) {
+				NewRecord i = (NewRecord) o;
 				return type.equals(i.type);
 			}
 			return false;

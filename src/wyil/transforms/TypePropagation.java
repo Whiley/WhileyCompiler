@@ -35,11 +35,11 @@ import java.util.HashSet;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
-import wyil.lang.CExpr.UOP;
 import wyil.lang.Code.*;
-import wyil.lang.CExpr.*;
 import wyil.util.*;
 import wyil.util.dfa.*;
+
+import static wyil.lang.Block.*;
 
 /**
  * <p>
@@ -66,35 +66,31 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	public Module.TypeDef propagate(Module.TypeDef type) {
-		// TypeDef's do not need to be typed, since they are typed by
-		// ModuleBuilder.
 		return type;		
 	}
 	
 	public Module.ConstDef propagate(Module.ConstDef def) {		
-		Value v = (Value) infer(def.constant(),null,new Env());
-		return new Module.ConstDef(def.name(), v, def.attributes());
+		return def;
 	}
 	
 	public Env initialStore() {
-		Env environment = new Env();
-		
-		List<String> paramNames = methodCase.parameterNames();
+				
+		Env environment = new Env();		
+
+		if(method.type().receiver() != null) {					
+			environment.add(method.type().receiver());
+		}
 		List<Type> paramTypes = method.type().params();
 		
-		for (int i = 0; i != paramNames.size(); ++i) {
+		for (int i = 0; i != paramTypes.size(); ++i) {
 			Type t = paramTypes.get(i);
-			environment.put(paramNames.get(i), t);			
+			environment.add(t);
 			if (method.type().receiver() == null
 					&& Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
 				// FIXME: add source information
 				syntaxError("function argument cannot have process type",
 						filename, methodCase);
 			}
-		}
-		
-		if(method.type().receiver() != null) {					
-			environment.put("this", method.type().receiver());
 		}
 		
 		return environment;
@@ -107,26 +103,300 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env environment = initialStore();		
 		Block body = propagate(mcase.body(), environment).first();	
 		
-		return new Module.Case(mcase.parameterNames(),body,mcase.attributes());
+		return new Module.Case(body,mcase.attributes());
 	}
 	
-	protected Pair<Stmt, Env> propagate(Stmt stmt,
+	protected Pair<Entry, Env> propagate(Entry entry,
 			Env environment) {
 		
-		Code code = stmt.code;
-		if(code instanceof Assign) {
-			return infer((Assign)code,stmt,environment);
-		} else if(code instanceof Debug) {
-			code = infer((Debug)code,stmt,environment);
-		} else if(code instanceof Return) {
-			code = infer((Return)code,stmt,environment);
-		}
+		Code code = entry.code;		
 		
-		stmt = new Stmt(code,stmt.attributes());
-		return new Pair<Stmt,Env>(stmt,environment);
+		environment = (Env) environment.clone();
+		
+		if(code instanceof Assert) {
+			code = infer((Assert)code,entry,environment);
+		} else if(code instanceof BinOp) {
+			code = infer((BinOp)code,entry,environment);
+		} else if(code instanceof Convert) {
+			code = infer((Convert)code,entry,environment);
+		} else if(code instanceof Const) {
+			code = infer((Const)code,entry,environment);
+		} else if(code instanceof Debug) {
+			code = infer((Debug)code,entry,environment);
+		} else if(code instanceof ExternJvm) {
+			return new Pair(entry,environment);
+		} else if(code instanceof Fail) {
+			code = infer((Fail)code,entry,environment);
+		} else if(code instanceof FieldLoad) {
+			code = infer((FieldLoad)code,entry,environment);
+		} else if(code instanceof FieldStore) {
+			code = infer((FieldStore)code,entry,environment);
+		} else if(code instanceof IndirectInvoke) {
+			code = infer((IndirectInvoke)code,entry,environment);
+		} else if(code instanceof IndirectSend) {
+			code = infer((IndirectSend)code,entry,environment);
+		} else if(code instanceof Invoke) {
+			code = infer((Invoke)code,entry,environment);
+		} else if(code instanceof Label) {
+			return new Pair(entry,environment);
+		} else if(code instanceof ListLoad) {
+			code = infer((ListLoad)code,entry,environment);
+		} else if(code instanceof ListStore) {
+			code = infer((ListStore)code,entry,environment);
+		} else if(code instanceof Load) {
+			code = infer((Load)code,entry,environment);
+		} else if(code instanceof Return) {
+			code = infer((Return)code,entry,environment);
+		} else if(code instanceof UnOp) {
+			code = infer((UnOp)code,entry,environment);
+		} else {
+			syntaxError("Need to finish type inference",filename,entry);
+			return null;
+		}
 	}
 	
-	protected Pair<Stmt, Env> infer(Code.Assign code, Stmt stmt, Env environment) {		
+	protected Code infer(Code.Assert code, Entry stmt, Env environment) {
+		return null;
+	}
+	
+	protected Code infer(BinOp v, Entry stmt, Env environment) {
+		Type lhs = environment.pop();
+		Type rhs = environment.pop();
+		Type lub = Type.leastUpperBound(lhs,rhs);
+		Code.BOp bop = v.bop;
+
+		if(Type.isSubtype(Type.T_LIST(Type.T_ANY),lub)) {
+			switch(v.bop) {
+				case APPEND:
+				case ADD:															
+					bop = Code.BOp.APPEND;
+					break;
+				default:
+					syntaxError("Invalid operation on lists",filename,stmt);		
+			}	
+		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),lub)) {
+			switch(v.bop) {
+				case ADD:											
+				case UNION:
+					bop = Code.BOp.UNION;
+					break;
+				case DIFFERENCE:
+				case SUB:			
+					bop = Code.BOp.DIFFERENCE;
+					break;
+				case INTERSECT:
+					break;					
+				default:
+					syntaxError("Invalid operation on sets: " + bop,filename,stmt);			
+			}
+		} else {		
+			// FIXME: more cases, including elem of		
+			checkIsSubtype(Type.T_REAL,lub,stmt);
+		}
+		return Code.BinOp(lub,bop);				
+	}
+	
+	protected Code infer(Code.Convert code, Entry stmt, Env environment) {
+		return null;
+	}
+	
+	protected Code infer(Code.Const code, Entry stmt, Env environment) {
+		return null;
+	}
+	
+	protected Code infer(Code.Debug code, Entry stmt, Env environment) {
+		CExpr rhs = infer(code.rhs,stmt, environment);
+		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
+		return new Code.Debug(rhs);
+	}
+	
+	protected Code infer(Code.Fail code, Entry stmt, Env environment) {
+		return null;
+	}
+		
+	protected Code infer(FieldLoad e, Entry stmt, Env environment) {								
+		CExpr lhs = infer(e.lhs,stmt,environment);					
+		// FIXME: would help to have effective process type
+		if(lhs.type() instanceof Type.Process) {
+			// this indicates a process dereference
+			lhs = CExpr.UNOP(UOP.PROCESSACCESS,lhs);
+		}
+		Type.Record ett = Type.effectiveRecordType(lhs.type());		
+		if (ett == null) {
+			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
+		}
+		Type ft = ett.fields().get(e.field);		
+		if (ft == null) {
+			syntaxError("type has no field named " + e.field, filename, stmt);
+		}
+		return CExpr.RECORDACCESS(lhs, e.field);
+	}
+	
+	protected Code infer(FieldStore e, Entry stmt, Env environment) {
+		return null;
+	}
+	
+	protected Code infer(IndirectInvoke e, Entry stmt, Env environment) {
+		return null;
+	}
+	
+	protected Code infer(IndirectSend e, Entry stmt, Env environment) {
+		return null;
+	}
+	
+	protected Code infer(Invoke ivk, Entry stmt, Env environment) {
+		
+		ArrayList<CExpr> args = new ArrayList<CExpr>();
+		ArrayList<Type> types = new ArrayList<Type>();
+		CExpr receiver = ivk.receiver;
+		Type.Process receiverT = null;
+		if(receiver != null) {
+			receiver = infer(receiver, stmt, environment);
+			receiverT = checkType(receiver.type(),Type.Process.class,stmt);
+		}
+		for (CExpr arg : ivk.args) {
+			arg = infer(arg, stmt, environment);
+			args.add(arg);
+			types.add(arg.type());
+		}
+		
+		try {
+			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
+
+			return CExpr.DIRECTINVOKE(funtype, ivk.name, ivk.caseNum, receiver, ivk.synchronous, args);
+		} catch (ResolveError ex) {
+			syntaxError(ex.getMessage(), filename, stmt);
+			return null; // unreachable
+		}
+	}
+	
+	protected Code infer(IndirectInvoke ivk, Entry stmt,
+			HashMap<String,Type> environment) {
+		
+		ArrayList<CExpr> args = new ArrayList<CExpr>();		
+		CExpr receiver = ivk.receiver;
+		CExpr target = ivk.target;
+		
+		Type.Process receiverT = null;
+		if(receiver != null) {
+			receiver = infer(receiver, stmt, environment);
+			receiverT = checkType(receiver.type(),Type.Process.class,stmt);
+		}
+		
+		target = infer(target, stmt, environment);		
+		checkType(target.type(),Type.Fun.class,stmt);
+		
+		for (CExpr arg : ivk.args) {
+			arg = infer(arg, stmt, environment);
+			args.add(arg);			
+		}						
+		
+		return CExpr.INDIRECTINVOKE(target, receiver, args);		
+	}
+	
+	protected Code infer(ListLoad e, Entry stmt, Env environment) {
+		CExpr src = infer(e.src,stmt,environment);
+		CExpr idx = infer(e.index,stmt,environment);
+		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src.type())) {			
+			// this indicates a dictionary access, rather than a list access			
+			// FIXME: need "effective dictionary type" or similar here
+			Type.Dictionary dict = (Type.Dictionary) src.type();			
+			checkIsSubtype(dict.key(),idx.type(),stmt);
+			// OK, it's a hit
+			return CExpr.LISTACCESS(src,idx);
+		} else {
+			checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
+			checkIsSubtype(Type.T_INT,idx.type(),stmt);
+			return CExpr.LISTACCESS(src,idx);
+		}
+	}
+		
+	protected Code infer(ListStore e, Entry stmt, Env environment) {
+		return null;
+	}
+	
+	protected Code infer(Load e, Entry stmt, Env environment) {
+		e = Code.Load(environment.get(e.slot), e.slot);		
+		environment.push(e.type);
+		return e;
+	}	
+	
+
+	protected CExpr infer(NewRecord e, Entry stmt, HashMap<String,Type> environment) {
+		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
+		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
+			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
+		}
+		return CExpr.RECORD(args);
+	}
+	
+	protected CExpr infer(NewDict e, Entry stmt, HashMap<String,Type> environment) {
+		HashSet<Pair<CExpr,CExpr>> args = new HashSet();
+		for (Pair<CExpr,CExpr> v : e.values) {
+			CExpr key = infer(v.first(), stmt, environment);
+			CExpr value = infer(v.second(), stmt, environment);
+			args.add(new Pair<CExpr,CExpr>(key,value));			
+		}
+		return CExpr.DICTIONARY(args);
+	}
+	
+	protected Code infer(Store e, Entry stmt, Env environment) {
+		e = Code.Store(environment.pop(), e.slot);		
+		environment.set(e.slot, e.type);
+		return e;
+	}
+	
+	protected Code infer(Code.Return code, Entry stmt, Env environment) {
+		CExpr rhs = code.rhs;
+		Type ret_t = method.type().ret();
+		
+		if(rhs != null) {
+			if(ret_t == Type.T_VOID) {
+				syntaxError(
+						"cannot return value from method with void return type",
+						filename, stmt);
+			}
+			
+			rhs = infer(rhs,stmt,environment);
+			
+			checkIsSubtype(ret_t,rhs.type(),stmt);
+		} else if(ret_t != Type.T_VOID) {
+			syntaxError(
+					"missing return value",filename, stmt);
+		}
+		
+		return new Code.Return(rhs);
+	}
+	
+
+	protected Code infer(UnOp v, Entry stmt, Env environment) {
+		CExpr rhs = infer(v.rhs, stmt, environment);
+		Type rhs_t = rhs.type();
+		switch(v.op) {
+			case NEG:
+				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
+				return CExpr.UNOP(v.op,rhs);
+			case LENGTHOF:
+				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {				
+					return CExpr.UNOP(v.op,rhs);
+				} else {
+					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
+				}
+			case PROCESSACCESS:
+				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
+				return CExpr.UNOP(v.op,rhs);
+			case PROCESSSPAWN:
+				return CExpr.UNOP(v.op,rhs);
+		}
+		syntaxError("unknown unary operation: " + v.op,filename,stmt);
+		return null;
+	}
+	
+	
+	
+	
+	/*
+	protected Pair<Entry, Env> infer(Code.Assign code, Entry stmt, Env environment) {		
 		environment = new Env(environment);				
 				
 		CExpr.LVal lhs = null;
@@ -160,8 +430,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		stmt = new Stmt(new Code.Assign(lhs, rhs), stmt.attributes());
-		return new Pair<Stmt,Env>(stmt,environment);
+		stmt = new Entry(new Code.Assign(lhs, rhs), stmt.attributes());
+		return new Pair<Entry,Env>(stmt,environment);
 	}
 	
 	protected CExpr typeInference(CExpr lhs, Type type, Env environment) {
@@ -216,36 +486,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// no can do
 		return type;
 	}
+	*/
 	
-	protected Code infer(Code.Return code, Stmt stmt, Env environment) {
-		CExpr rhs = code.rhs;
-		Type ret_t = method.type().ret();
-		
-		if(rhs != null) {
-			if(ret_t == Type.T_VOID) {
-				syntaxError(
-						"cannot return value from method with void return type",
-						filename, stmt);
-			}
-			
-			rhs = infer(rhs,stmt,environment);
-			
-			checkIsSubtype(ret_t,rhs.type(),stmt);
-		} else if(ret_t != Type.T_VOID) {
-			syntaxError(
-					"missing return value",filename, stmt);
-		}
-		
-		return new Code.Return(rhs);
-	}
 	
-	protected Code infer(Code.Debug code, Stmt stmt, Env environment) {
-		CExpr rhs = infer(code.rhs,stmt, environment);
-		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
-		return new Code.Debug(rhs);
-	}
-	
-	protected Triple<Stmt,Env,Env> propagate(Code.IfGoto code, Stmt stmt, Env environment) {
+	protected Triple<Entry,Env,Env> propagate(Code.IfGoto code, Entry stmt, Env environment) {
 		CExpr lhs = infer(code.lhs,stmt,environment);
 		CExpr rhs = infer(code.rhs,stmt,environment);
 		Type lhs_t = lhs.type();
@@ -322,7 +566,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				falseEnv = new Env(environment);						
 				typeInference(lhs,tc.type,tc.type,trueEnv, falseEnv);				
 			}
-			stmt = new Stmt(ncode,stmt.attributes());
+			stmt = new Entry(ncode,stmt.attributes());
 			if(code.op == Code.COP.SUBTYPEEQ) {
 				return new Triple(stmt,trueEnv,falseEnv);
 			} else {
@@ -332,21 +576,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		code = new Code.IfGoto(code.op, lhs, rhs, code.target);
-		stmt = new Stmt(code,stmt.attributes());
-		return new Triple<Stmt,Env,Env>(stmt,environment,environment);
-	}
-	
-	protected Pair<Stmt,List<Env>> propagate(Code.Switch code, Stmt stmt, Env environment) {
-		CExpr value = infer(code.value,stmt,environment);
-		ArrayList<Env> envs = new ArrayList<Env>();
-		// TODO: update this code to support type inference of types. That is,
-		// if we switch on a type value then this will update the type of the
-		// value.
-		for(int i=0;i!=code.branches.size();++i) {
-			envs.add(environment);
-		}
-		Code ncode = new Code.Switch(value,code.defaultTarget,code.branches);
-		return new Pair(new Stmt(ncode,stmt.attributes()),envs);
+		stmt = new Entry(code,stmt.attributes());
+		return new Triple<Entry,Env,Env>(stmt,environment,environment);
 	}
 	
 	protected void typeInference(CExpr lhs, Type trueType, Type falseType,
@@ -402,36 +633,28 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 	
-	protected Pair<Block, Env> propagate(Code.Start start, Code.End end,
-			Block body, Stmt stmt, Env environment) {
-		if (start instanceof Code.Forall) {
-			return propagate((Code.Forall) start, (Code.ForallEnd) end, body,
-					stmt, environment);
-		} else if (start instanceof Code.Loop) {
-			return propagate((Code.Loop) start, (Code.LoopEnd) end, body, stmt,
-					environment);
-		} else if (start instanceof Code.Induct) {
-			return propagate((Code.Induct) start, (Code.InductEnd) end, body,
-					stmt, environment);
-		}
 
-		// Other blocks are not so tricky to handle.
-		Block blk = new Block();
-		blk.add(start);
-		Pair<Block, Env> r = propagate(body, environment);
-		blk.addAll(r.first());
-		blk.add(end);		
-		return new Pair<Block, Env>(blk, r.second());
+	protected Pair<Entry,List<Env>> propagate(Code.Switch code, Entry stmt, Env environment) {
+		CExpr value = infer(code.value,stmt,environment);
+		ArrayList<Env> envs = new ArrayList<Env>();
+		// TODO: update this code to support type inference of types. That is,
+		// if we switch on a type value then this will update the type of the
+		// value.
+		for(int i=0;i!=code.branches.size();++i) {
+			envs.add(environment);
+		}
+		Code ncode = new Code.Switch(value,code.defaultTarget,code.branches);
+		return new Pair(new Entry(ncode,stmt.attributes()),envs);
 	}
-	
-	protected Pair<Block, Env> propagate(Code.Forall start, Code.ForallEnd end,
-			Block body, Stmt stmt, Env environment) {
+		
+	protected Pair<Block, Env> propagate(Code.ForAll start, 
+			Block body, Entry stmt, Env environment) {
 						
 		// First, create modifies set and type the invariant
 		HashSet<String> modifies = new HashSet<String>();
 		Block invariant = start.invariant;
 				
-		for(Stmt s : body) {
+		for(Entry s : body) {
 			if(s.code instanceof Code.Assign) {
 				Code.Assign a = (Code.Assign) s.code;
 				if(a.lhs != null) {
@@ -506,37 +729,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					
 		return new Pair<Block,Env>(blk,join(environment,r.second()));
 	}
-	
-	protected Pair<Block, Env> propagate(Code.Induct start, Code.InductEnd end,
-			Block body, Stmt stmt, Env environment) {
-		CExpr src = infer(start.source, stmt, environment);
-		Type src_t = src.type();			
-		
-		// First, create modifies set and type the invariant
-		// create environment specific for loop body
-		Env loopEnv = new Env(environment);		
-		String lvar = "%" + start.variable.index;
-		loopEnv.put(lvar, src_t);
-	
-		Pair<Block,Env> r = propagate(body,loopEnv);
-		
-		// Finally, update the code
-		Block blk = new Block();
-		blk.add(new Code.Induct(start.label, CExpr.REG(src_t,
-				start.variable.index), src), stmt.attributes());
-		blk.addAll(r.first());
-		blk.add(end);
-					
-		return new Pair<Block,Env>(blk,join(environment,r.second()));
-	}
-	
 	protected Pair<Block, Env> propagate(Code.Loop start, Code.LoopEnd end,
-			Block body, Stmt stmt, Env environment) {
+			Block body, Entry stmt, Env environment) {
 		
 		HashSet<String> modifies = new HashSet<String>();
 		Block invariant = start.invariant;
 		
-		for(Stmt s : body) {
+		for(Entry s : body) {
 			if(s.code instanceof Code.Assign) {
 				Code.Assign a = (Code.Assign) s.code;
 				if(a.lhs != null) {
@@ -580,340 +779,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		blk.add(end);
 		
 		return new Pair<Block,Env>(blk,environment);
-	}
-	
-	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Type> environment) {
-		if(e instanceof Value.FunConst) {
-			e =  infer((Value.FunConst)e,stmt,environment);
-		} else if (e instanceof Value.List) {			
-			e = infer((Value.List)e, stmt, environment);
-		} else if (e instanceof Value.Set) {			
-			e = infer((Value.Set)e, stmt, environment);
-		} else if (e instanceof Value.Dictionary) {			
-			e = infer((Value.Dictionary)e, stmt, environment);
-		} else if (e instanceof Value.Record) {			
-			e = infer((Value.Record)e, stmt, environment);
-		} else if (e instanceof Value) {			
-			// nop on leaves
-		} else if (e instanceof Variable) {
-			e = infer((Variable) e, stmt, environment);
-		} else if (e instanceof Register) {
-			e = infer((Register) e, stmt, environment);
-		} else if (e instanceof BinOp) {
-			e = infer((BinOp) e, stmt, environment);
-		} else if (e instanceof UnOp) {
-			e = infer((UnOp) e, stmt, environment);
-		} else if (e instanceof NaryOp) {
-			e = infer((NaryOp) e, stmt, environment);
-		} else if (e instanceof ListAccess) {
-			e = infer((ListAccess) e, stmt, environment);
-		} else if (e instanceof Dictionary) {
-			e = infer((Dictionary) e, stmt, environment);
-		} else if (e instanceof Record) {
-			e = infer((Record) e, stmt, environment);
-		} else if (e instanceof RecordAccess) {
-			e = infer((RecordAccess) e, stmt, environment);
-		} else if (e instanceof DirectInvoke) {
-			e = infer((DirectInvoke) e, stmt, environment);
-		} else if (e instanceof IndirectInvoke) {
-			e = infer((IndirectInvoke) e, stmt, environment);
-		} else {
-			syntaxError("unknown expression encountered: " + e, filename, stmt);
-			return null; // unreachable
-		}		
-		if(e.type() == Type.T_VOID) {
-			// Observe, expressions cannot have void return types. This can
-			// happen, for example, if we have a function pointer which returns
-			// void. Since void is a subtype of everything, then the system will
-			// think everything is ok ... when it's not.
-			syntaxError("expressions cannot return void!", filename, stmt);
-		}
-		return e;
-	}
-	
-	protected CExpr infer(Value.List v, Stmt stmt, HashMap<String,Type> environment) {
-		ArrayList<Value> values = new ArrayList();
-		for(Value e : v.values) {
-			values.add((Value)infer(e,stmt,environment));
-		}
-		return Value.V_LIST(values);
-	}
-	
-	protected CExpr infer(Value.Set v, Stmt stmt, HashMap<String,Type> environment) {
-		HashSet<Value> values = new HashSet();
-		for(Value e : v.values) {
-			values.add((Value)infer(e,stmt,environment));
-		}
-		return Value.V_SET(values);
-	}
-	
-	protected CExpr infer(Value.Dictionary v, Stmt stmt, HashMap<String,Type> environment) {
-		HashSet<Pair<Value,Value>> values = new HashSet();
-		for(Map.Entry<Value,Value> e : v.values.entrySet()) {
-			Value key = (Value)infer(e.getKey(),stmt,environment); 
-			Value val = (Value)infer(e.getValue(),stmt,environment);
-			values.add(new Pair<Value,Value>(key,val));
-		}
-		return Value.V_DICTIONARY(values);
-	}
-	
-	protected CExpr infer(Value.Record v, Stmt stmt, HashMap<String,Type> environment) {
-		HashMap<String,Value> values = new HashMap();
-		for(Map.Entry<String,Value> e : v.values.entrySet()) {			
-			Value val = (Value)infer(e.getValue(),stmt,environment);
-			values.put(e.getKey(),val);
-		}
-		return Value.V_RECORD(values);
-	}
-	
-	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Type> environment) {
-		Type type = environment.get(v.name);
-		if(type == null) {
-			syntaxError("variable " + v.name()  + " is undefined",filename,stmt);
-		}
-		return CExpr.VAR(type,v.name);
-	}
-	
-	protected CExpr infer(Register v, Stmt stmt, HashMap<String,Type> environment) {
-		String name = "%" + v.index;
-		Type type = environment.get(name);
-		if(type == null) {
-			syntaxError("register " + name + " is undefined",filename,stmt);
-		}
-		return CExpr.REG(type,v.index);
-	}
-	
-	protected CExpr infer(UnOp v, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		Type rhs_t = rhs.type();
-		switch(v.op) {
-			case NEG:
-				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
-				return CExpr.UNOP(v.op,rhs);
-			case LENGTHOF:
-				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {				
-					return CExpr.UNOP(v.op,rhs);
-				} else {
-					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
-				}
-			case PROCESSACCESS:
-				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-				return CExpr.UNOP(v.op,rhs);
-			case PROCESSSPAWN:
-				return CExpr.UNOP(v.op,rhs);
-		}
-		syntaxError("unknown unary operation: " + v.op,filename,stmt);
-		return null;
-	}
-	
-	protected CExpr infer(BinOp v, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr lhs = infer(v.lhs, stmt, environment);
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		Type lub = Type.leastUpperBound(lhs.type(),rhs.type());
-
-		if(Type.isSubtype(Type.T_LIST(Type.T_ANY),lub)) {
-			switch(v.op) {
-				case APPEND:
-				case ADD:															
-					return CExpr.BINOP(CExpr.BOP.APPEND,lhs,rhs);
-				default:
-					syntaxError("Invalid operation on lists",filename,stmt);		
-			}	
-		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),lub)) {
-			switch(v.op) {
-				case ADD:											
-				case UNION:
-					return CExpr.BINOP(CExpr.BOP.UNION,lhs,rhs);
-				case DIFFERENCE:
-				case SUB:															
-					return CExpr.BINOP(CExpr.BOP.DIFFERENCE,lhs,rhs);
-				case INTERSECT:															
-					return CExpr.BINOP(v.op,lhs,rhs);
-				default:
-					syntaxError("Invalid operation on sets: " + v.op,filename,stmt);			
-			}
-		} 
-		
-		// FIXME: more cases, including elem of		
-		checkIsSubtype(Type.T_REAL,lub,stmt);	
-		return CExpr.BINOP(v.op,lhs,rhs);				
-	}
-	
-	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Type> environment) {
-		ArrayList<CExpr> args = new ArrayList<CExpr>();
-		for(CExpr arg : v.args) {
-			args.add(infer(arg,stmt,environment));
-		}
-		
-		switch(v.op) {
-			case SETGEN:				
-			case LISTGEN:
-				return CExpr.NARYOP(v.op, args);
-			case SUBLIST:						
-				if(args.size() != 3) {
-					syntaxError("Invalid arguments for sublist operation",filename,stmt);
-				}
-				checkIsSubtype(Type.T_LIST(Type.T_ANY),args.get(0).type(),stmt);
-				checkIsSubtype(Type.T_INT,args.get(1).type(),stmt);
-				checkIsSubtype(Type.T_INT,args.get(2).type(),stmt);
-				return CExpr.NARYOP(v.op, args);
-		}
-		
-		syntaxError("Unknown nary operation",filename,stmt);
-		return null;
-	}
-	
-	protected CExpr infer(ListAccess e, Stmt stmt, HashMap<String,Type> environment) {
-		CExpr src = infer(e.src,stmt,environment);
-		CExpr idx = infer(e.index,stmt,environment);
-		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src.type())) {			
-			// this indicates a dictionary access, rather than a list access			
-			// FIXME: need "effective dictionary type" or similar here
-			Type.Dictionary dict = (Type.Dictionary) src.type();			
-			checkIsSubtype(dict.key(),idx.type(),stmt);
-			// OK, it's a hit
-			return CExpr.LISTACCESS(src,idx);
-		} else {
-			checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
-			checkIsSubtype(Type.T_INT,idx.type(),stmt);
-			return CExpr.LISTACCESS(src,idx);
-		}
-	}
-		
-	protected CExpr infer(RecordAccess e, Stmt stmt, HashMap<String,Type> environment) {								
-		CExpr lhs = infer(e.lhs,stmt,environment);					
-		// FIXME: would help to have effective process type
-		if(lhs.type() instanceof Type.Process) {
-			// this indicates a process dereference
-			lhs = CExpr.UNOP(UOP.PROCESSACCESS,lhs);
-		}
-		Type.Record ett = Type.effectiveRecordType(lhs.type());		
-		if (ett == null) {
-			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
-		}
-		Type ft = ett.fields().get(e.field);		
-		if (ft == null) {
-			syntaxError("type has no field named " + e.field, filename, stmt);
-		}
-		return CExpr.RECORDACCESS(lhs, e.field);
-	}
-	
-	protected CExpr infer(Record e, Stmt stmt, HashMap<String,Type> environment) {
-		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
-		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
-			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
-		}
-		return CExpr.RECORD(args);
-	}
-	
-	protected CExpr infer(Dictionary e, Stmt stmt, HashMap<String,Type> environment) {
-		HashSet<Pair<CExpr,CExpr>> args = new HashSet();
-		for (Pair<CExpr,CExpr> v : e.values) {
-			CExpr key = infer(v.first(), stmt, environment);
-			CExpr value = infer(v.second(), stmt, environment);
-			args.add(new Pair<CExpr,CExpr>(key,value));			
-		}
-		return CExpr.DICTIONARY(args);
-	}
-	
-	protected CExpr infer(Value.FunConst ivk, Stmt stmt,
-			HashMap<String,Type> environment) {		
-		try {
-			List<Type.Fun> targets = lookupMethod(ivk.name.module(),ivk.name.name());
-			String msg;
-			if(ivk.type.params().size() == 1 && ivk.type.params().get(0) == Type.T_ANY) {
-				if(targets.size() == 1) {
-					return Value.V_FUN(ivk.name, targets.get(0));
-				}
-				msg = "ambiguous function or method reference";
-			} else {
-
-				for(Type.Fun ft : targets) {
-					if(ivk.type.params().equals(ft.params())) {
-						return Value.V_FUN(ivk.name, ft);
-					}
-				}
-				
-				msg = "no match for " + ivk;
-			}
-			// failed to find an identical match
-			
-			boolean firstTime = true;
-			int count = 0;
-			for(Type.Fun ft : targets) {
-				if(firstTime) {
-					msg += "\n\tfound: " + ivk.name.name() +  parameterString(ft.params());
-				} else {
-					msg += "\n\tand: " + ivk.name.name() +  parameterString(ft.params());
-				}				
-				if(++count < targets.size()) {
-					msg += ",";
-				}
-			}
-
-			syntaxError(msg + "\n",filename,stmt);			
-		} catch(ResolveError ex) {
-			syntaxError(ex.getMessage(),filename,stmt);			
-		}
-		return null;
-	}
-	
-	protected CExpr infer(DirectInvoke ivk, Stmt stmt,
-			HashMap<String,Type> environment) {
-		
-		ArrayList<CExpr> args = new ArrayList<CExpr>();
-		ArrayList<Type> types = new ArrayList<Type>();
-		CExpr receiver = ivk.receiver;
-		Type.Process receiverT = null;
-		if(receiver != null) {
-			receiver = infer(receiver, stmt, environment);
-			receiverT = checkType(receiver.type(),Type.Process.class,stmt);
-		}
-		for (CExpr arg : ivk.args) {
-			arg = infer(arg, stmt, environment);
-			args.add(arg);
-			types.add(arg.type());
-		}
-		
-		try {
-			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
-
-			return CExpr.DIRECTINVOKE(funtype, ivk.name, ivk.caseNum, receiver, ivk.synchronous, args);
-		} catch (ResolveError ex) {
-			syntaxError(ex.getMessage(), filename, stmt);
-			return null; // unreachable
-		}
-	}
-	
-	protected CExpr infer(IndirectInvoke ivk, Stmt stmt,
-			HashMap<String,Type> environment) {
-		
-		ArrayList<CExpr> args = new ArrayList<CExpr>();		
-		CExpr receiver = ivk.receiver;
-		CExpr target = ivk.target;
-		
-		Type.Process receiverT = null;
-		if(receiver != null) {
-			receiver = infer(receiver, stmt, environment);
-			receiverT = checkType(receiver.type(),Type.Process.class,stmt);
-		}
-		
-		target = infer(target, stmt, environment);		
-		checkType(target.type(),Type.Fun.class,stmt);
-		
-		for (CExpr arg : ivk.args) {
-			arg = infer(arg, stmt, environment);
-			args.add(arg);			
-		}						
-		
-		return CExpr.INDIRECTINVOKE(target, receiver, args);		
-	}
+	}	
 	
 	/**
 	 * Bind function is responsible for determining the true type of a method or
 	 * function being invoked. To do this, it must find the function/method
 	 * with the most precise type that matches the argument types.
-	 * 	 * 
+	 * 
 	 * @param nid
 	 * @param receiver
 	 * @param paramTypes
@@ -1022,31 +894,34 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}		
 	}
 
-	public Env join(Env env1, Env env2) {		
-		if (env2 == null) {			
+	public Env join(Env env1, Env env2) {
+		if (env2 == null) {
 			return env1;
 		} else if (env1 == null) {
-			return env2;		
+			return env2;
 		}
-		HashSet<String> keys = new HashSet<String>(env1.keySet());
-		keys.addAll(env2.keySet());
 		Env env = new Env();
-		for (String key : keys) {
-			Type mt = env1.get(key);
-			Type ot = env2.get(key);
-			if (ot != null && mt != null) {
-				env.put(key, Type.leastUpperBound(mt, ot));
-			}
+		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
+			env.add(Type.leastUpperBound(env1.get(i), env2.get(i)));
 		}
-		
+
 		return env;
 	}
 	
-	public static class Env extends HashMap<String,Type> {
+	public static class Env extends ArrayList<Type> {
 		public Env() {
 		}
-		public Env(Map<String,Type> v) {
+		public Env(List<Type> v) {
 			super(v);
+		}
+		public void push(Type t) {
+			add(t);
+		}
+		public Type top() {
+			return get(size()-1);
+		}
+		public Type pop() {
+			return remove(size()-1);			
 		}
 	}
 }
