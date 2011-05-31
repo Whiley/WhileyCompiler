@@ -70,6 +70,10 @@ public abstract class Code {
 	
 	public static final Debug debug = new Debug();
 
+	public static End End(String label) {
+		return get(new End(label));
+	}
+	
 	public static ExternJvm ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
 		return get(new ExternJvm(bytecodes));
 	}
@@ -549,6 +553,27 @@ public abstract class Code {
 		}
 	}
 	
+	public static final class End extends Label {
+		End(String label) {
+			super(label);
+		}
+		
+		public int hashCode() {
+			return label.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof End) {
+				End e = (End) o;
+				return e.label.equals(label);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "end " + label;
+		}
+	}
+	
 	public static final class ExternJvm extends Code {
 		public final List<wyjvm.lang.Bytecode> bytecodes;
 		
@@ -829,7 +854,7 @@ public abstract class Code {
 		
 	}
 	
-	public static final class Label extends Code {
+	public static class Label extends Code {
 		public final String label;
 		
 		private Label(String label) {

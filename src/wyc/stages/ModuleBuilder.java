@@ -764,7 +764,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(st, environment));
 		}		
 					
-		blk.add(Code.Label(label));
+		blk.add(Code.End(label));
 
 		return blk;
 	}
@@ -784,7 +784,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(st, environment));
 		}		
 		scopes.pop(); // break
-		blk.add(Code.Label(label), s.attribute(Attribute.Source.class));		
+		blk.add(Code.End(label), s.attribute(Attribute.Source.class));		
 
 		return blk;
 	}

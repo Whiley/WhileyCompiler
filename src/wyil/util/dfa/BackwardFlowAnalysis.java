@@ -104,15 +104,15 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					Code.Label l = (Code.Label) code;
 					stores.put(l.label,store);
 				} else if (code instanceof Code.End) {					
-					Code.Start start = null;
+					Code.Loop loop = null;
 					Code.End end = (Code.End) code;
 					// Note, I could make this more efficient!
 					Block body = new Block();
 					while (--i >= 0) {						
 						stmt = block.get(i);
-						if (stmt.code instanceof Code.Start) {
-							start = (Code.Start) stmt.code;
-							if (end.target.equals(start.label)) {
+						if (stmt.code instanceof Code.Loop) {
+							loop = (Code.Loop) stmt.code;
+							if (end.label.equals(loop.target)) {
 								// start of loop body found
 								break;
 							}
@@ -120,7 +120,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 						body.add(0,stmt.code, stmt.attributes());
 					}			
 					
-					Pair<Block, T> r = propagate(start, end, body, stmt, store);										
+					Pair<Block, T> r = propagate(loop, body, stmt, store);										
 					
 					nblock.addAll(0,r.first());
 					store = r.second();
@@ -185,9 +185,8 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 
 	/**
 	 * <p>
-	 * Propagate back from a block statement (e.g. loop, or check), producing a
-	 * potentially updated block and the store which holds true immediately
-	 * before the statement
+	 * Propagate back from a loop statement, producing a potentially updated
+	 * block and the store which holds true immediately before the statement
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> the block returned must include the start and end code of
@@ -195,10 +194,8 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 * (for example, if a loop is shown to be over an empty collection).
 	 * </p>
 	 * 
-	 * @param start
-	 *            --- the start code of the block
-	 * @param end
-	 *            --- the end code of the block
+	 * @param loop
+	 *            --- the code of the block
 	 * @param body
 	 *            --- the body of the block
 	 * @param stmt
@@ -208,7 +205,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Block, T> propagate(Code.Start code, Code.End end,
+	protected abstract Pair<Block, T> propagate(Code.Loop code,
 			Block body, Entry stmt, T store);
 	
 	/**
