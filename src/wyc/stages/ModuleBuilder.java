@@ -1149,11 +1149,15 @@ public class ModuleBuilder {
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
 		if (alias != null) {
 			// Must be a local variable	
-			if(alias.alias == null) {				
-				Block r = new Block();
-				r.add(Code.Load(Type.T_ANY, environment.get(v.var)),
-						v.attribute(Attribute.Source.class));
-				return r;
+			if(alias.alias == null) {
+				if(environment.containsKey(v.var)) {
+					Block r = new Block();
+					r.add(Code.Load(Type.T_ANY, environment.get(v.var)),
+							v.attribute(Attribute.Source.class));
+					return r;
+				} else {
+					syntaxError("variable might not be initialised",filename,v);
+				}
 			} else {								
 				return resolve(environment, alias.alias);
 			}
