@@ -27,6 +27,7 @@ package wyil.transforms;
 
 import static wyil.util.SyntaxError.syntaxError;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -234,6 +235,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			syntaxError("record has no field named " + e.field, filename, stmt);
 		}
 		
+		environment.push(ft);
+		
 		return Code.FieldLoad(ett, e.field); 
 	}
 	
@@ -268,11 +271,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		try {
 			Type.Fun funtype = bindFunction(ivk.name, null, types, stmt);
-			return Code.Invoke(funtype, ivk.name);
+			if(funtype.ret() != Type.T_VOID) {
+				environment.push(funtype.ret());
+			}
+			return Code.Invoke(funtype, ivk.name);			
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable
 		}
+		
 	}
 	
 	protected Code infer(IndirectInvoke ivk, Entry stmt,
@@ -290,29 +297,60 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type arg = types.get(i);
 			checkIsSubtype(param,arg,stmt);
 		}
-				
+		
+		if(ft.ret() != Type.T_VOID) {
+			environment.push(ft.ret());
+		}
+		
 		return Code.IndirectInvoke(ft);		
 	}
 	
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
-		CExpr src = infer(e.src,stmt,environment);
-		CExpr idx = infer(e.index,stmt,environment);
-		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src.type())) {			
+		Type idx = environment.pop();
+		Type src = environment.pop();
+		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src)) {			
 			// this indicates a dictionary access, rather than a list access			
-			// FIXME: need "effective dictionary type" or similar here
-			Type.Dictionary dict = (Type.Dictionary) src.type();			
-			checkIsSubtype(dict.key(),idx.type(),stmt);
+			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
+			if(dict == null) {
+				syntaxError("expected dictionary",filename,stmt);
+			}
+			checkIsSubtype(dict.key(),idx,stmt);
+			environment.push(dict.value());
 			// OK, it's a hit
-			return CExpr.LISTACCESS(src,idx);
+			return Code.DictLoad(dict);
 		} else {
-			checkIsSubtype(Type.T_LIST(Type.T_ANY),src.type(),stmt);
-			checkIsSubtype(Type.T_INT,idx.type(),stmt);
-			return CExpr.LISTACCESS(src,idx);
+			Type.List list = Type.effectiveListType(src);			
+			if(list == null) {
+				syntaxError("expected list",filename,stmt);
+			}			
+			checkIsSubtype(Type.T_INT,idx,stmt);
+			environment.push(list.element());
+			return Code.ListLoad(list);
 		}
 	}
 		
 	protected Code infer(ListStore e, Entry stmt, Env environment) {
-		return null;
+		Type val = environment.pop();
+		Type idx = environment.pop();
+		Type src = environment.pop();
+		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src)) {			
+			// this indicates a dictionary access, rather than a list access			
+			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
+			if(dict == null) {
+				syntaxError("expected dictionary",filename,stmt);
+			}
+			checkIsSubtype(dict.key(),idx,stmt);
+			Type nval_t = Type.leastUpperBound(dict.value(), val);
+			return Code.DictStore(Type.T_DICTIONARY(dict.key(),nval_t));
+		} else {
+			Type.List list = Type.effectiveListType(src);			
+			if(list == null) {
+				syntaxError("expected list",filename,stmt);
+			}			
+			checkIsSubtype(Type.T_INT,idx,stmt);
+			Type nval_t = Type.leastUpperBound(list.element(), val);
+			return Code.ListStore(Type.T_LIST(nval_t));
+		}
 	}
 	
 	protected Code infer(Load e, Entry stmt, Env environment) {
@@ -321,23 +359,49 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return e;
 	}	
 	
-
-	protected CExpr infer(NewRecord e, Entry stmt, HashMap<String,Type> environment) {
-		HashMap<String, CExpr> args = new HashMap<String, CExpr>();
-		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
-			args.put(v.getKey(), infer(v.getValue(), stmt, environment));
-		}
-		return CExpr.RECORD(args);
+	protected Code infer(NewRecord e, Entry stmt, Env environment) {
+		HashMap<String,Type> fields = new HashMap<String,Type>();
+		ArrayList<String> keys = new ArrayList<String>(e.type.keys());
+		Collections.sort(keys);		
+		for(int i=keys.size()-1;i>=0;--i) {
+			fields.put(keys.get(i),environment.pop());
+		}		
+		
+		return Code.NewRec(Type.T_RECORD(fields));
 	}
 	
-	protected CExpr infer(NewDict e, Entry stmt, HashMap<String,Type> environment) {
-		HashSet<Pair<CExpr,CExpr>> args = new HashSet();
-		for (Pair<CExpr,CExpr> v : e.values) {
-			CExpr key = infer(v.first(), stmt, environment);
-			CExpr value = infer(v.second(), stmt, environment);
-			args.add(new Pair<CExpr,CExpr>(key,value));			
+	protected Code infer(NewDict e, Entry stmt, Env environment) {
+		Type key = Type.T_VOID;
+		Type value = Type.T_VOID;
+		
+		for(int i=0;i!=e.nargs;++i) {
+			value = Type.leastUpperBound(value,environment.pop());
+			key = Type.leastUpperBound(key,environment.pop());
+			
 		}
-		return CExpr.DICTIONARY(args);
+		
+		return Code.NewDict(Type.T_DICTIONARY(key,value),e.nargs);
+	}
+	
+	protected Code infer(NewList e, Entry stmt, Env environment) {
+		Type elem = Type.T_VOID;		
+		
+		for(int i=0;i!=e.nargs;++i) {
+			elem = Type.leastUpperBound(elem,environment.pop());						
+		}
+		
+		return Code.NewList(Type.T_LIST(elem),e.nargs);
+	}
+	
+	
+	protected Code infer(NewSet e, Entry stmt, Env environment) {
+		Type elem = Type.T_VOID;		
+		
+		for(int i=0;i!=e.nargs;++i) {
+			elem = Type.leastUpperBound(elem,environment.pop());						
+		}
+		
+		return Code.NewSet(Type.T_SET(elem),e.nargs);
 	}
 	
 	protected Code infer(Store e, Entry stmt, Env environment) {
@@ -616,7 +680,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				HashMap<String, Type> ttypes = new HashMap<String, Type>();
 				HashMap<String, Type> ftypes = new HashMap<String, Type>();
 				for (Map.Entry<String, Type> e : lhs_t.fields().entrySet()) {
-					String key = e.getKey();
+					String key = e.ge)tKey();
 					ttypes.put(key, e.getValue());
 					ftypes.put(key, Type.T_VOID);
 				}

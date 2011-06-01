@@ -70,6 +70,30 @@ public abstract class Code {
 	
 	public static final Debug debug = new Debug();
 
+	/**
+	 * Construct a <code>dictload</code> bytecode which reads the value
+	 * associated with a given key in a dictionary.
+	 * 
+	 * @param type
+	 *            --- dictionary type.
+	 * @return
+	 */
+	public static DictLoad DictLoad(Type.Dictionary type) {
+		return get(new DictLoad(type));
+	}
+	
+	/**
+	 * Construct a <code>liststore</code> bytecode which writes a given value to a
+	 * given key in a given dictionary.
+	 * 
+	 * @param type
+	 *            --- dictionary type.
+	 * @return
+	 */
+	public static DictStore DictStore(Type.Dictionary type) {
+		return get(new DictStore(type));
+	}
+	
 	public static End End(String label) {
 		return get(new End(label));
 	}
@@ -212,8 +236,8 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewDict NewDict(Type.Dictionary type) {
-		return get(new NewDict(type));
+	public static NewDict NewDict(Type.Dictionary type, int nargs) {
+		return get(new NewDict(type,nargs));
 	}
 	
 	/**
@@ -567,6 +591,62 @@ public abstract class Code {
 		public String toString() {
 			return "debug";
 		}
+	}
+	
+	public static final class DictLoad extends Code {
+		public final Type.Dictionary type;				
+		
+		private DictLoad(Type.Dictionary type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof DictLoad) {
+				DictLoad i = (DictLoad) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("dictload",type);
+		}	
+	}
+	
+	public static final class DictStore extends Code {
+		public final Type.Dictionary type;				
+		
+		private DictStore(Type.Dictionary type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof DictStore) {
+				DictStore i = (DictStore) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("dictstore",type);
+		}	
 	}
 	
 	public static final class End extends Label {
@@ -1079,29 +1159,31 @@ public abstract class Code {
 	
 	public static final class NewDict extends Code {
 		public final Type.Dictionary type;
+		public final int nargs;
 		
-		private NewDict(Type.Dictionary type) {
+		private NewDict(Type.Dictionary type, int nargs) {
 			this.type = type;
+			this.nargs = nargs;
 		}
 		
 		public int hashCode() {
 			if(type == null) {
-				return 897;
+				return nargs;
 			} else {
-				return type.hashCode();
+				return type.hashCode() + nargs;
 			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewDict) {
 				NewDict i = (NewDict) o;
-				return type == i.type || (type != null && type.equals(i.type));
+				return (type == i.type || (type != null && type.equals(i.type))) && nargs == i.nargs;
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return toString("newdict",type);
+			return toString("newdict #" + nargs,type);
 		}	
 	}
 	
@@ -1188,7 +1270,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("newset " + nargs,type);
+			return toString("newset #" + nargs,type);
 		}	
 	}
 	
@@ -1219,7 +1301,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("newlist " + nargs,type);
+			return toString("newlist #" + nargs,type);
 		}	
 	}
 	

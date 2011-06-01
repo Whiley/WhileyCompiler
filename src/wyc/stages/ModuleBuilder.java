@@ -1408,9 +1408,11 @@ public class ModuleBuilder {
 	protected Block resolve(HashMap<String,Integer> environment, RecordGen sg) {
 		Block blk = new Block();
 		HashMap<String, Type> fields = new HashMap<String, Type>();
-		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			fields.put(e.getKey(), null);
-			blk.addAll(resolve(environment, e.getValue()));
+		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
+		Collections.sort(keys);
+		for (String key : keys) {
+			fields.put(key, null);
+			blk.addAll(resolve(environment, sg.fields.get(key)));
 		}
 		blk.add(Code.NewRec(Type.T_RECORD(fields)), sg.attributes());
 		return blk;
@@ -1437,7 +1439,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, e.first()));
 			blk.addAll(resolve(environment, e.second()));
 		}
-		blk.add(Code.NewDict(null),sg.attributes());
+		blk.add(Code.NewDict(null,sg.pairs.size()),sg.attributes());
 		return blk;
 	}
 	
