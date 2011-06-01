@@ -197,6 +197,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.Convert code, Entry stmt, Env environment) {
+		Type t = environment.pop();
+		checkIsSubtype(code.to,t,stmt);
+		environment.push(code.to);
 		return null;
 	}
 	
