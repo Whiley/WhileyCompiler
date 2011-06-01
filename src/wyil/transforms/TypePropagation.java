@@ -197,42 +197,44 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.Convert code, Entry stmt, Env environment) {
-		Type t = environment.pop();
-		checkIsSubtype(code.to,t,stmt);
+		Type from = environment.pop();
+		checkIsSubtype(code.to,from,stmt);
 		environment.push(code.to);
-		return null;
+		return Code.Convert(from, code.to);
 	}
 	
 	protected Code infer(Code.Const code, Entry stmt, Env environment) {
-		return null;
+		environment.push(code.constant.type());
+		return code;
 	}
 	
 	protected Code infer(Code.Debug code, Entry stmt, Env environment) {
-		CExpr rhs = infer(code.rhs,stmt, environment);
-		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs.type(),stmt);
-		return new Code.Debug(rhs);
+		Type rhs_t = environment.pop();		
+		// FIXME: should be updated to string
+		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs_t,stmt);
+		return code;
 	}
 	
 	protected Code infer(Code.Fail code, Entry stmt, Env environment) {
-		return null;
+		// no change to stack
+		return code;
 	}
 		
-	protected Code infer(FieldLoad e, Entry stmt, Env environment) {								
-		CExpr lhs = infer(e.lhs,stmt,environment);					
-		// FIXME: would help to have effective process type
-		if(lhs.type() instanceof Type.Process) {
-			// this indicates a process dereference
-			lhs = CExpr.UNOP(UOP.PROCESSACCESS,lhs);
-		}
-		Type.Record ett = Type.effectiveRecordType(lhs.type());		
+	protected Code infer(FieldLoad e, Entry stmt, Env environment) {	
+		Type lhs_t = environment.pop();
+		
+		// TODO:  what about process accesses here?
+		
+		Type.Record ett = Type.effectiveRecordType(lhs_t);		
 		if (ett == null) {
-			syntaxError("tuple type required, got: " + lhs.type(), filename, stmt);
+			syntaxError("record required, got: " + lhs_t, filename, stmt);
 		}
 		Type ft = ett.fields().get(e.field);		
 		if (ft == null) {
-			syntaxError("type has no field named " + e.field, filename, stmt);
+			syntaxError("record has no field named " + e.field, filename, stmt);
 		}
-		return CExpr.RECORDACCESS(lhs, e.field);
+		
+		return Code.FieldLoad(ett, e.field); 
 	}
 	
 	protected Code infer(FieldStore e, Entry stmt, Env environment) {

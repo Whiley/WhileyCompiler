@@ -556,7 +556,7 @@ public class ModuleBuilder {
 			} else if (stmt instanceof Invoke) {
 				Block blk = resolve(environment, (Invoke) stmt);				
 				// FIXME: need to avoid this somehow?
-				blk.add(Code.Pop(Type.T_ANY),
+				blk.add(Code.Pop(null),
 						stmt.attribute(Attribute.Source.class));
 				return blk;
 			} else if (stmt instanceof Spawn) {
@@ -585,12 +585,12 @@ public class ModuleBuilder {
 		if(s.lhs instanceof Variable) {
 			Variable v = (Variable) s.lhs;			
 			if(environment.containsKey(v.var)) {
-				blk.add(Code.Store(Type.T_ANY, environment.get(v.var)),
+				blk.add(Code.Store(null, environment.get(v.var)),
 					s.attribute(Attribute.Source.class));
 			} else {
 				int idx = environment.size();
 				environment.put(v.var, idx);
-				blk.add(Code.Store(Type.T_ANY, idx),
+				blk.add(Code.Store(null, idx),
 						s.attribute(Attribute.Source.class));
 			}
 		} else if(s.lhs instanceof TupleGen) {
@@ -599,7 +599,7 @@ public class ModuleBuilder {
 			int freeReg = environment.size();
 			environment.put("$" + freeReg, freeReg);
 			// TODO: this could be fixed with a DUP bytecode.
-			blk.add(Code.Store(Type.T_ANY, freeReg),
+			blk.add(Code.Store(null, freeReg),
 					s.attribute(Attribute.Source.class));
 			int idx=0;
 			for(Expr e : tg.fields) {
@@ -607,9 +607,9 @@ public class ModuleBuilder {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
-				blk.add(Code.FieldLoad(Type.T_ANY, "$" + idx++),e
+				blk.add(Code.FieldLoad(null, "$" + idx++),e
 						.attribute(Attribute.Source.class));
-				blk.add(Code.Store(Type.T_ANY, environment.get(v.var)), e
+				blk.add(Code.Store(null, environment.get(v.var)), e
 						.attribute(Attribute.Source.class));					
 			}
 			return blk;
@@ -617,12 +617,12 @@ public class ModuleBuilder {
 			ListAccess la = (ListAccess) s.lhs;
 			blk.addAll(resolve(environment, la.src));
 			blk.addAll(resolve(environment, la.index));
-			blk.add(Code.ListLoad(Type.T_ANY),
+			blk.add(Code.ListLoad(null),
 					s.attribute(Attribute.Source.class));							
 		} else if(s.lhs instanceof RecordAccess){
 			RecordAccess ra = (RecordAccess) s.lhs;
 			blk.addAll(resolve(environment, ra.lhs));			
-			blk.add(Code.FieldLoad(Type.T_ANY, ra.name),
+			blk.add(Code.FieldLoad(null, ra.name),
 					s.attribute(Attribute.Source.class));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -700,7 +700,7 @@ public class ModuleBuilder {
 	
 	protected Block resolve(Throw s, HashMap<String,Integer> environment) {
 		Block blk = resolve(environment, s.expr);
-		blk.add(Code.Throw(Type.T_ANY));
+		blk.add(Code.Throw(null));
 		return blk;
 	}
 	
@@ -750,7 +750,7 @@ public class ModuleBuilder {
 				syntaxError("unreachable code",filename,c);
 			}
 		}		
-		blk.add(Code.Switch(Type.T_ANY,defaultTarget,cases),s.attribute(Attribute.Source.class));
+		blk.add(Code.Switch(null,defaultTarget,cases),s.attribute(Attribute.Source.class));
 		blk.addAll(cblk);
 		blk.add(Code.Label(exitLab), s.attributes());
 		scopes.pop();
@@ -879,8 +879,8 @@ public class ModuleBuilder {
 				if(ert != null && ert.fields().containsKey(v.var)) {
 					// Bingo, this is an implicit field dereference
 					blk.add(Code.Load(Type.T_BOOL, environment.get(v.var)));	
-					blk.add(Code.UnOp(Type.T_ANY, Code.UOp.PROCESSACCESS));
-					blk.add(Code.FieldLoad(Type.T_ANY, v.var));
+					blk.add(Code.UnOp(null, Code.UOp.PROCESSACCESS));
+					blk.add(Code.FieldLoad(null, v.var));
 					matched = true;
 				} 
 			}
@@ -902,7 +902,7 @@ public class ModuleBuilder {
 		}
 						
 		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
-		blk.add(Code.IfGoto(Type.T_ANY,Code.COp.EQ, target),
+		blk.add(Code.IfGoto(null,Code.COp.EQ, target),
 				v.attribute(Attribute.Source.class));			
 		
 		return blk;
@@ -928,7 +928,7 @@ public class ModuleBuilder {
 
 		blk.addAll(resolve(environment, v.lhs));
 		blk.addAll(resolve(environment, v.rhs));
-		blk.add(Code.IfGoto(Type.T_ANY, OP2COP(bop, v), target),
+		blk.add(Code.IfGoto(null, OP2COP(bop, v), target),
 				v.attribute(Attribute.Source.class));
 		return blk;
 	}
@@ -938,7 +938,7 @@ public class ModuleBuilder {
 		Type rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
 		blk.add(Code.Const(Value.V_TYPE(rhs_t)),
 				v.attribute(Attribute.Source.class));
-		blk.add(Code.IfGoto(Type.T_ANY, Code.COp.SUBTYPEEQ, target),
+		blk.add(Code.IfGoto(null, Code.COp.SUBTYPEEQ, target),
 				v.attribute(Attribute.Source.class));
 		return blk;
 	}
@@ -996,7 +996,7 @@ public class ModuleBuilder {
 		HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 		for (Pair<String, Expr> src : e.sources) {
 			Block r = resolve(environment, src.second());
-			CExpr.Register reg = CExpr.REG(Type.T_ANY, environment++);
+			CExpr.Register reg = CExpr.REG(null, environment++);
 			sources.add(new Pair<CExpr.Register, CExpr>(reg, r.first()));
 			binding.put(src.first(), reg);
 			blk.addAll(r.second());			
@@ -1093,6 +1093,7 @@ public class ModuleBuilder {
 	protected Block resolve(HashMap<String,Integer> environment, Invoke s) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block();
+		Type[] paramTypes = new Type[args.size()]; 
 		
 		if (s.receiver != null) {
 			blk.addAll(resolve(environment, s.receiver));
@@ -1107,16 +1108,16 @@ public class ModuleBuilder {
 			NameID name = new NameID(modInfo.module, s.name);
 			if(s.receiver != null) {
 				blk.add(Code.Send(
-					Type.T_FUN(null, Type.T_ANY), name, s.synchronous));
+					Type.T_FUN(null, null, paramTypes), name, s.synchronous));
 			} else {
 				blk.add(Code.Invoke(
-						Type.T_FUN(null, Type.T_ANY), name));
+						Type.T_FUN(null, null, paramTypes), name));
 			}			
 		} else {
 			if(s.receiver != null) {
-				blk.add(Code.IndirectSend(Type.T_FUN(null, Type.T_ANY),s.synchronous));
+				blk.add(Code.IndirectSend(Type.T_FUN(null, null, paramTypes),s.synchronous));
 			} else {
-				blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_ANY)));
+				blk.add(Code.IndirectInvoke(Type.T_FUN(null, null, paramTypes)));
 			}
 		}
 		return blk;
@@ -1135,6 +1136,7 @@ public class ModuleBuilder {
 		for(UnresolvedType p : s.paramTypes) {
 			paramTypes.add(resolve(p));
 		}
+		// FIXME: there's a bug here!
 		Type.Fun tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
 		Block blk = new Block();
 		blk.add(Code.Const(Value.V_FUN(name, tf)),
@@ -1151,7 +1153,7 @@ public class ModuleBuilder {
 			if(alias.alias == null) {
 				if(environment.containsKey(v.var)) {
 					Block r = new Block();
-					r.add(Code.Load(Type.T_ANY, environment.get(v.var)),
+					r.add(Code.Load(null, environment.get(v.var)),
 							v.attribute(Attribute.Source.class));
 					return r;
 				} else {
@@ -1174,7 +1176,7 @@ public class ModuleBuilder {
 					if(ert != null && ert.fields().containsKey(v.var)) {						
 						// Bingo, this is an implicit field dereference
 						CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
-								Type.T_ANY, "this"));					
+								null, "this"));					
 						CExpr.RecordAccess ra = CExpr.RECORDACCESS(thiz, v.var);
 						return new Pair<CExpr,Block>(ra, new Block());
 					}
@@ -1204,7 +1206,7 @@ public class ModuleBuilder {
 		Block blk = resolve(environment, v.mhs);	
 		switch (v.op) {
 		case NEG:
-			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.NEG), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.NEG), v.attributes());
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
@@ -1217,13 +1219,13 @@ public class ModuleBuilder {
 			blk.add(Code.Label(exitLabel));
 			break;
 		case LENGTHOF:
-			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.LENGTHOF), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.LENGTHOF), v.attributes());
 			break;
 		case PROCESSACCESS:
-			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.PROCESSACCESS), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.PROCESSACCESS), v.attributes());
 			break;			
 		case PROCESSSPAWN:
-			blk.add(Code.UnOp(Type.T_ANY,Code.UOp.PROCESSSPAWN), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.PROCESSSPAWN), v.attributes());
 			break;			
 		default:
 			syntaxError("unexpected unary operator encountered", filename, v);
@@ -1236,7 +1238,7 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		blk.addAll(resolve(environment, v.src));
 		blk.addAll(resolve(environment, v.index));
-		blk.add(Code.ListLoad(Type.T_ANY),v.attributes());
+		blk.add(Code.ListLoad(null),v.attributes());
 		return blk;
 	}
 
@@ -1265,7 +1267,7 @@ public class ModuleBuilder {
 
 		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV || bop == BOp.UNION || bop == BOp.INTERSECTION) {
-			blk.add(Code.BinOp(Type.T_ANY, OP2BOP(bop,v)),v.attributes());			
+			blk.add(Code.BinOp(null, OP2BOP(bop,v)),v.attributes());			
 			return blk;			
 		} 
 		
@@ -1292,9 +1294,9 @@ public class ModuleBuilder {
 			}
 
 			if (v.nop == NOp.LISTGEN) {
-				blk.add(Code.NewList(Type.T_LIST(Type.T_ANY),nargs),v.attributes());
+				blk.add(Code.NewList(Type.T_LIST(null),nargs),v.attributes());
 			} else {
-				blk.add(Code.NewSet(Type.T_SET(Type.T_ANY),nargs),v.attributes());
+				blk.add(Code.NewSet(Type.T_SET(null),nargs),v.attributes());
 			}
 			return blk;
 		}
@@ -1325,7 +1327,7 @@ public class ModuleBuilder {
 		HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
 		for (Pair<String, Expr> src : e.sources) {
 			Block r = resolve(0, src.second());
-			CExpr.Register reg = CExpr.REG(Type.T_ANY, environment++);
+			CExpr.Register reg = CExpr.REG(null, environment++);
 			sources.add(new Pair<CExpr.Register, CExpr>(reg, r.first()));
 			binding.put(src.first(), reg);
 			blk.addAll(r.second());			
@@ -1398,7 +1400,7 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		for (Map.Entry<String, Expr> e : sg.fields.entrySet()) {
-			fields.put(e.getKey(), Type.T_ANY);
+			fields.put(e.getKey(), null);
 			blk.addAll(resolve(environment, e.getValue()));
 		}
 		blk.add(Code.NewRec(Type.T_RECORD(fields)), sg.attributes());
@@ -1412,7 +1414,7 @@ public class ModuleBuilder {
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		int i =0;
 		for (Expr e : sg.fields) {						
-			fields.put("$" + i++, Type.T_ANY);
+			fields.put("$" + i++, null);
 			blk.addAll(resolve(environment, e));
 		}
 		// FIXME: to be updated to proper tuple
@@ -1432,7 +1434,7 @@ public class ModuleBuilder {
 	
 	protected Block resolve(HashMap<String,Integer> environment, RecordAccess sg) {
 		Block lhs = resolve(environment, sg.lhs);		
-		lhs.add(Code.FieldLoad(Type.T_ANY,sg.name), sg.attributes());
+		lhs.add(Code.FieldLoad(null,sg.name), sg.attributes());
 		return lhs;
 	}
 

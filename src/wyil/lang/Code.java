@@ -99,7 +99,7 @@ public abstract class Code {
 	 *            --- field to load.
 	 * @return
 	 */
-	public static FieldLoad FieldLoad(Type type, String field) {
+	public static FieldLoad FieldLoad(Type.Record type, String field) {
 		return get(new FieldLoad(type,field));
 	}
 
@@ -113,8 +113,8 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static FieldLoad FieldStore(Type type, String field) {
-		return get(new FieldLoad(type,field));
+	public static FieldStore FieldStore(Type.Record type, String field) {
+		return get(new FieldStore(type,field));
 	}
 	
 	/**
@@ -162,7 +162,7 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static ListLoad ListLoad(Type type) {
+	public static ListLoad ListLoad(Type.List type) {
 		return get(new ListLoad(type));
 	}
 	
@@ -174,7 +174,7 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static ListStore ListStore(Type type) {
+	public static ListStore ListStore(Type.List type) {
 		return get(new ListStore(type));
 	}
 
@@ -444,18 +444,26 @@ public abstract class Code {
 		public final Type type;
 		
 		private BinOp(Type type, BOp bop) {
+			if(bop == null) {
+				throw new IllegalArgumentException("BinOp bop argument cannot be null");
+			}
 			this.bop = bop;
 			this.type = type;
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + bop.hashCode();
+			if(type == null) {
+				return bop.hashCode();
+			} else {
+				return type.hashCode() + bop.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof BinOp) {
 				BinOp bo = (BinOp) o;
-				return type.equals(bo.type) && bop.equals(bo.bop); 
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))) && bop.equals(bo.bop); 
 			}
 			return false;
 		}
@@ -487,18 +495,26 @@ public abstract class Code {
 		public final Type to;
 		
 		private Convert(Type from, Type to) {
+			if(to == null) {
+				throw new IllegalArgumentException("Convert to argument cannot be null");
+			}
 			this.from = from;
 			this.to = to;
 		}
 		
 		public int hashCode() {
-			return from.hashCode() + to.hashCode();
+			if(from == null) {
+				return to.hashCode();
+			} else {
+				return from.hashCode() + to.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Convert) {
 				Convert c = (Convert) o;
-				return from.equals(c.from) && to.equals(c.to);  
+				return (from == c.from || (from != null && from.equals(c.from)))
+						&& to.equals(c.to);  
 			}
 			return false;
 		}
@@ -626,22 +642,31 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class FieldLoad extends Code {
-		public final Type type;		
+		public final Type.Record type;		
 		public final String field;
 				
-		private FieldLoad(Type type, String field) {
+		private FieldLoad(Type.Record type, String field) {
+			if (field == null) {
+				throw new IllegalArgumentException(
+						"FieldLoad field argument cannot be null");
+			}
 			this.type = type;
 			this.field = field;
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + field.hashCode();
+			if(type != null) {
+				return type.hashCode() + field.hashCode();
+			} else {
+				return field.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
-				return type.equals(i.type) && field.equals(i.field);
+				return (i.type == type || (type != null && type.equals(i.type)))
+						&& field.equals(i.field);
 			}
 			return false;
 		}
@@ -659,22 +684,31 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class FieldStore extends Code {
-		public final Type type;
+		public final Type.Record type;
 		public final String field;
 
-		private FieldStore(Type type, String field) {
+		private FieldStore(Type.Record type, String field) {
+			if (field == null) {
+				throw new IllegalArgumentException(
+						"FieldStore field argument cannot be null");
+			}
 			this.type = type;
 			this.field = field;
 		}
 
 		public int hashCode() {
-			return type.hashCode() + field.hashCode();
+			if(type == null) {
+				return field.hashCode();
+			} else {
+				return type.hashCode() + field.hashCode();
+			}
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof FieldStore) {
 				FieldStore i = (FieldStore) o;
-				return type.equals(i.type) && field.equals(i.field);
+				return (i.type == type || (type != null && type.equals(i.type)))
+						&& field.equals(i.field);
 			}
 			return false;
 		}
@@ -713,21 +747,32 @@ public abstract class Code {
 		public final String target;
 
 		private  IfGoto(Type type, COp op, String target) {
+			if(op == null) {
+				throw new IllegalArgumentException("IfGoto op argument cannot be null");
+			}
+			if(target == null) {
+				throw new IllegalArgumentException("IfGoto target argument cannot be null");
+			}
 			this.type = type;
 			this.op = op;						
 			this.target = target;
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + target.hashCode();
+			if(type == null) {
+				return op.hashCode() + target.hashCode();
+			} else {
+				return type.hashCode() + op.hashCode() + target.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof IfGoto) {
 				IfGoto ig = (IfGoto) o;
 				return op == ig.op
-						&& type.equals(ig.type)
-						&& target.equals(ig.target);
+					&& target.equals(ig.target)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));
 			}
 			return false;
 		}
@@ -781,13 +826,17 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type != null) {
+				return type.hashCode();
+			} else {
+				return 123;
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof IndirectInvoke) {
-				IndirectInvoke i = (IndirectInvoke) o;
-				return type.equals(i.type);
+				IndirectInvoke i = (IndirectInvoke) o;				
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -807,13 +856,17 @@ public abstract class Code {
 		 }
 
 		 public int hashCode() {
-			 return type.hashCode();
+			 if(type != null) {
+					return type.hashCode();
+				} else {
+					return 123;
+				}
 		 }
 
 		 public boolean equals(Object o) {
 			 if(o instanceof IndirectSend) {
 				 IndirectSend i = (IndirectSend) o;
-				 return type.equals(i.type);
+				 return type == i.type || (type != null && type.equals(i.type));
 			 }
 			 return false;
 		 }
@@ -837,13 +890,19 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + name.hashCode();
+			if(type == null) {
+				return name.hashCode();
+			} else {
+				return type.hashCode() + name.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
-				return type.equals(i.type) && name.equals(i.name);
+				return name.equals(i.name)
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
 			}
 			return false;
 		}
@@ -878,20 +937,24 @@ public abstract class Code {
 	}
 	
 	public static final class ListLoad extends Code {
-		public final Type type;				
+		public final Type.List type;				
 		
-		private ListLoad(Type type) {
+		private ListLoad(Type.List type) {
 			this.type = type;
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof ListLoad) {
 				ListLoad i = (ListLoad) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -909,13 +972,17 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof ListStore) {
 				ListStore i = (ListStore) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -935,13 +1002,19 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + slot;
+			if(type == null) {
+				return slot; 
+			} else { 
+				return type.hashCode() + slot;
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Load) {
 				Load i = (Load) o;
-				return type.equals(i.type) && slot == i.slot;
+				return slot == i.slot
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
 			}
 			return false;
 		}
@@ -1012,13 +1085,17 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return 897;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewDict) {
 				NewDict i = (NewDict) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -1036,13 +1113,17 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return 952;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewRecord) {
 				NewRecord i = (NewRecord) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -1060,13 +1141,17 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return 952;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewTuple) {
 				NewTuple i = (NewTuple) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -1086,13 +1171,18 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return nargs;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewSet) {
 				NewSet i = (NewSet) o;
-				return type.equals(i.type) && nargs == i.nargs;
+				return type == i.type || (type != null && type.equals(i.type))
+						&& nargs == i.nargs;
 			}
 			return false;
 		}
@@ -1112,13 +1202,18 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return nargs;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewList) {
 				NewList i = (NewList) o;
-				return type.equals(i.type) && nargs == i.nargs;
+				return type == i.type || (type != null && type.equals(i.type))
+						&& nargs == i.nargs;
 			}
 			return false;
 		}
@@ -1140,14 +1235,18 @@ public abstract class Code {
 			this.type = type;
 		}
 		
-		public int hashCode() {
-			return type.hashCode();
+		public int hashCode() {			
+			if(type == null) {
+				return 996;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Pop) {
+			if (o instanceof Pop) {
 				Pop i = (Pop) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -1165,13 +1264,17 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return 996;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Return) {
 				Return i = (Return) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
@@ -1204,13 +1307,18 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + slot;
+			if(type == null) {
+				return slot;
+			} else {
+				return type.hashCode() + slot;
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Store) {
 				Store i = (Store) o;
-				return type.equals(i.type) && slot == i.slot;
+				return (type == i.type || (type != null && type.equals(i.type)))
+						&& slot == i.slot;
 			}
 			return false;
 		}
@@ -1236,15 +1344,20 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + defaultTarget.hashCode() + branches.hashCode();
+			if(type == null) {
+				return defaultTarget.hashCode() + branches.hashCode();
+			} else {
+				return type.hashCode() + defaultTarget.hashCode() + branches.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof Switch) {
 				Switch ig = (Switch) o;
-				return type.equals(ig.type)
-						&& defaultTarget.equals(ig.defaultTarget)
-						&& branches.equals(ig.branches);
+				return defaultTarget.equals(ig.defaultTarget)
+						&& branches.equals(ig.branches)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));						
 			}
 			return false;
 		}
@@ -1408,7 +1521,11 @@ public abstract class Code {
 	}
 	
 	public static String toString(String str, Type t) {
-		return str + " : " + t;
+		if(t == null) {
+			return str + " : ?";
+		} else {
+			return str + " : " + t;
+		}
 	}
 	
 
