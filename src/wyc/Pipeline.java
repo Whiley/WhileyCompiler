@@ -46,7 +46,7 @@ public class Pipeline {
 			.unmodifiableList(new ArrayList<Template>() {
 				{
 					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
-					//add(new Template(TypePropagation.class, Collections.EMPTY_MAP));
+					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));
 					//add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					//add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));					
 					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));					

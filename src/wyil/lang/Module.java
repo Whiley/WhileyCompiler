@@ -215,22 +215,29 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}	
 	
-	public static class Case extends SyntacticElement.Impl {		
+	public static class Case extends SyntacticElement.Impl {				
 		private final Block body;
+		private final int maxLocals;
 
-		public Case(Block body, Attribute... attributes) {
+		public Case(Block body, int maxLocals, Attribute... attributes) {
 			super(attributes);			
 			this.body = body;
+			this.maxLocals = maxLocals;
 		}
 
-		public Case(Block body,
+		public Case(Block body,int maxLocals,
 				Collection<Attribute> attributes) {
 			super(attributes);			
 			this.body = body;
+			this.maxLocals = maxLocals;
 		}
 		
 		public Block body() {
 			return body;
-		}		
+		}
+		
+		public int maxLocals() {
+			return maxLocals;
+		}
 	}
 }

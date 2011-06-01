@@ -84,7 +84,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		List<Type> paramTypes = method.type().params();
 		
-		for (int i = 0; i != paramTypes.size(); ++i) {
+		int i = 0;
+		for (; i != paramTypes.size(); ++i) {
 			Type t = paramTypes.get(i);
 			environment.add(t);
 			if (method.type().receiver() == null
@@ -93,7 +94,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				syntaxError("function argument cannot have process type",
 						filename, methodCase);
 			}
-		}
+		}				
 		
 		return environment;
 	}
@@ -102,10 +103,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,Env>();
 		
-		Env environment = initialStore();		
+		Env environment = initialStore();
+		for (int i = method.type().params().size(); i < mcase.maxLocals(); i++) {
+			environment.add(Type.T_VOID);
+		}	
+		
 		Block body = propagate(mcase.body(), environment).first();	
 		
-		return new Module.Case(body,mcase.attributes());
+		return new Module.Case(body,mcase.maxLocals(),mcase.attributes());
 	}
 	
 	protected Pair<Entry, Env> propagate(Entry entry,
@@ -149,6 +154,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Load)code,entry,environment);
 		} else if(code instanceof Return) {
 			code = infer((Return)code,entry,environment);
+		} else if(code instanceof Store) {
+			code = infer((Store)code,entry,environment);
 		} else if(code instanceof UnOp) {
 			code = infer((UnOp)code,entry,environment);
 		} else {
@@ -442,17 +449,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		switch(v.uop) {
 			case NEG:
 				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
+				environment.add(rhs_t);
 				return Code.UnOp(rhs_t,v.uop);
 			case LENGTHOF:
 				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {
+					environment.add(Type.T_INT);
 					return Code.UnOp(rhs_t,v.uop);
 				} else {
 					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
-				}
+				}				
 			case PROCESSACCESS:
 				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
+				environment.add(Type.greatestLowerBound(Type.T_ANY,rhs_t));
 				return Code.UnOp(rhs_t,v.uop);
 			case PROCESSSPAWN:
+				environment.add(Type.T_PROCESS(rhs_t));
 				return Code.UnOp(rhs_t,v.uop);				
 		}
 		
@@ -603,44 +614,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			checkIsSubtype(Type.T_SET(Type.T_ANY),lhs_t,stmt);
 			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
-			break;
-		case NSUBTYPEEQ:			
-		case SUBTYPEEQ:						
-			Code ncode = code;
-			Env trueEnv = null;
-			Env falseEnv = null;
-			
-			if(Type.isSubtype(rhs_t,lhs_t)) {								
-				// DEFINITE TRUE CASE										
-				trueEnv = environment;
-				if (code.op == Code.COp.SUBTYPEEQ) {					
-					ncode = Code.Goto(code.target);					
-				} else {					
-					ncode = Code.Skip;					
-				}
-			} else if (Type.greatestLowerBound(lhs_t, rhs_t) == Type.T_VOID) {				
-				// DEFINITE FALSE CASE				
-				falseEnv = environment;
-				if (code.op == Code.COp.NSUBTYPEEQ) {					
-					ncode = Code.Goto(code.target);					
-				} else {								
-					ncode = Code.Skip;					
-				}
-			} else {
-				ncode = Code.IfGoto(lub, code.op, code.target);				
-				trueEnv = new Env(environment);
-				falseEnv = new Env(environment);			
-				// way to fix this is to have specific bytecode for type testing.
-				// problem for nested records
-				typeInference(lhs,tc.type,tc.type,trueEnv, falseEnv);				
-			}
-			stmt = new Entry(ncode,stmt.attributes());
-			if(code.op == Code.COp.SUBTYPEEQ) {
-				return new Triple(stmt,trueEnv,falseEnv);
-			} else {
-				// environments are the other way around!
-				return new Triple(stmt,falseEnv,trueEnv);
-			}
+			break;		
 		}
 		
 		code = Code.IfGoto(lub, code.op, code.target);
@@ -648,48 +622,43 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return new Triple<Entry,Env,Env>(stmt,environment,environment);
 	}
 	
-	protected void typeInference(CExpr lhs, Type trueType, Type falseType,
-			HashMap<String, Type> trueEnv, HashMap<String, Type> falseEnv) {
+	protected Triple<Entry,Env,Env> propagate(Code.IfType code, Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
+		Type lhs_t;
 		
-		// System.out.println(lhs + " => " + trueType + " => " + falseType);
-		
-		// Now, perform the actual type inference
-		if (lhs instanceof CExpr.Variable) {			
-			CExpr.Variable v = (CExpr.Variable) lhs;			
-			Type glb = Type.greatestLowerBound(v.type, trueType);
-			Type gdiff = Type.leastDifference(v.type, falseType);	
+		if(code.slot >= 0) {
+			lhs_t = environment.get(code.slot);
+		} else {
+			lhs_t = environment.pop();
+		}
 
-//			 System.out.println("\nGLB(1): " + trueType
-//			 + " & " + v.type + " = " + glb);
-//			 System.out.println("GDIFF(1): " + v.type + " - "
-//			 + falseType + " = " + gdiff);
-//			
-			trueEnv.put(v.name, glb);			
-			falseEnv.put(v.name, gdiff);			
-		} else if (lhs instanceof RecordAccess) {
-			RecordAccess ta = (RecordAccess) lhs;
-			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());
-			if (lhs_t != null) {
-				HashMap<String, Type> ttypes = new HashMap<String, Type>();
-				HashMap<String, Type> ftypes = new HashMap<String, Type>();
-				for (Map.Entry<String, Type> e : lhs_t.fields().entrySet()) {
-					String key = e.ge)tKey();
-					ttypes.put(key, e.getValue());
-					ftypes.put(key, Type.T_VOID);
-				}
-				Type glb = Type.greatestLowerBound(trueType, lhs_t.fields()
-						.get(ta.field));	
-				
-				//System.out.println("\nGLB(3): " + trueType + " & " + lhs_t.types.get(ta.field) + " = " + glb);
-				
-				ttypes.put(ta.field, glb);
-				ftypes.put(ta.field, glb);
-				typeInference(ta.lhs, Type.T_RECORD(ttypes), Type
-						.T_RECORD(ftypes), trueEnv, falseEnv);
+		Code ncode = code;
+		Env trueEnv = null;
+		Env falseEnv = null;
+
+		if(Type.isSubtype(code.test,lhs_t)) {								
+			// DEFINITE TRUE CASE										
+			trueEnv = environment;
+			ncode = Code.Goto(code.target);							
+		} else if (Type.greatestLowerBound(lhs_t, code.test) == Type.T_VOID) {				
+			// DEFINITE FALSE CASE				
+			falseEnv = environment;							
+			ncode = Code.Skip;							
+		} else {
+			ncode = Code.IfType(lhs_t, code.slot, code.test, code.target);				
+			trueEnv = new Env(environment);
+			falseEnv = new Env(environment);		
+			if(code.slot >= 0) {
+				Type glb = Type.greatestLowerBound(lhs_t, code.test);
+				Type gdiff = Type.leastDifference(lhs_t, code.test);	
+				trueEnv.set(code.slot, glb);			
+				falseEnv.set(code.slot, gdiff);								
 			}
 		}
-	}
-	
+		
+		stmt = new Entry(ncode,stmt.attributes());		
+		return new Triple(stmt,trueEnv,falseEnv);		
+	}		
 
 	protected Pair<Entry,List<Env>> propagate(Code.Switch code, Entry stmt, Env environment) {
 		Type val = environment.pop();

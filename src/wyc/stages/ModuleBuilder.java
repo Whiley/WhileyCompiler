@@ -32,6 +32,7 @@ import static wyil.util.SyntaxError.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
+import wyil.lang.Block.Entry;
 import wyil.lang.Code.IfGoto;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
@@ -526,8 +527,22 @@ public class ModuleBuilder {
 		// removed as dead-code or remains and will cause an error.
 		blk.add(Code.Return(Type.T_VOID),fd.attribute(Attribute.Source.class));
 
-		List<Module.Case> ncases = new ArrayList<Module.Case>();
-		ncases.add(new Module.Case(blk));
+		int maxLocals = tf.params().size();
+		if(tf.receiver() != null) { maxLocals++; }
+		
+		for(Entry e : blk) {
+			Code c = e.code;
+			if(c instanceof Code.Load) {
+				Code.Load l = (Code.Load) c;
+				maxLocals = Math.max(l.slot+1, maxLocals);
+			} else if(c instanceof Code.Store) {
+				Code.Store l = (Code.Store) c;
+				maxLocals = Math.max(l.slot+1, maxLocals);
+			} 
+		}				
+		
+		List<Module.Case> ncases = new ArrayList<Module.Case>();				
+		ncases.add(new Module.Case(blk,maxLocals));
 		return new Module.Method(fd.name(), tf, ncases);
 	}
 
@@ -666,7 +681,7 @@ public class ModuleBuilder {
 
 	protected Block resolve(Skip s, HashMap<String,Integer> environment) {
 		Block blk = new Block();
-		blk.add(Code.skip, s.attribute(Attribute.Source.class));
+		blk.add(Code.Skip, s.attribute(Attribute.Source.class));
 		return blk;
 	}
 
@@ -934,11 +949,23 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolveTypeCondition(String target, BinOp v, HashMap<String,Integer> environment) {
-		Block blk = resolve(environment, v.lhs);
+		Block blk;
+		int slot;
+		
+		if (v.lhs instanceof Variable) {
+			Variable lhs = (Variable) v.lhs;
+			if (!environment.containsKey(lhs.var)) {
+				syntaxError("unknown variable", filename, v.lhs);
+			}
+			slot = environment.get(lhs.var);
+			blk = new Block();
+		} else {
+			blk = resolve(environment, v.lhs);
+			slot = -1;
+		}
+
 		Type rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
-		blk.add(Code.Const(Value.V_TYPE(rhs_t)),
-				v.attribute(Attribute.Source.class));
-		blk.add(Code.IfGoto(null, Code.COp.SUBTYPEEQ, target),
+		blk.add(Code.IfType(null, slot, rhs_t, target),
 				v.attribute(Attribute.Source.class));
 		return blk;
 	}

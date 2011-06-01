@@ -88,7 +88,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		this.stores = new HashMap<String,T>();
 		T last = lastStore();						
 		Block body = propagate(mcase.body(), last).first();		
-		return new Module.Case(body, mcase.attributes());
+		return new Module.Case(body, mcase.maxLocals(), mcase.attributes());
 	}		
 	
 	protected Pair<Block, T> propagate(Block block, T store) {

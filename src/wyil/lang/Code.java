@@ -296,6 +296,10 @@ public abstract class Code {
 		return get(new IfGoto(type,cop,label));
 	}
 
+	public static IfType IfType(Type type, int slot, Type test, String label) {
+		return get(new IfType(type,slot,test,label));
+	}
+	
 	/**
 	 * Construct an <code>indirectsend</code> bytecode which sends an indirect
 	 * message to an actor. This may be either synchronous or asynchronous.
@@ -889,14 +893,52 @@ public abstract class Code {
 		},
 		SUBSETEQ{
 			public String toString() { return "sbe"; }
-		},
-		SUBTYPEEQ() {
-			public String toString() { return "te"; }
-		},
-		NSUBTYPEEQ() {
-			public String toString() { return "nte"; }
-		}
+		}		
 	};		
+	
+	public static final class IfType extends Code {
+		public final Type type;
+		public final int slot;
+		public final Type test;		
+		public final String target;
+
+		private  IfType(Type type, int slot, Type test, String target) {
+			if(test == null) {
+				throw new IllegalArgumentException("IfGoto op argument cannot be null");
+			}
+			if(target == null) {
+				throw new IllegalArgumentException("IfGoto target argument cannot be null");
+			}
+			this.type = type;
+			this.slot = slot;
+			this.test = test;						
+			this.target = target;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return test.hashCode() + target.hashCode();
+			} else {
+				return type.hashCode() + test.hashCode() + target.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IfType) {
+				IfType ig = (IfType) o;
+				return test.equals(ig.test)
+					&& slot == ig.slot
+					&& target.equals(ig.target)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("iftype " + slot + " " + test + " " + target,type);
+		}
+	}
 	
 	public static final class IndirectInvoke extends Code {		
 		public final Type.Fun type;
