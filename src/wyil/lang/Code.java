@@ -1443,7 +1443,11 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode() + uop.hashCode();
+			if(type == null) {
+				return uop.hashCode();
+			} else {
+				return type.hashCode() + uop.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
