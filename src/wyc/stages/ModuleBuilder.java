@@ -622,7 +622,7 @@ public class ModuleBuilder {
 		} else if(s.lhs instanceof RecordAccess){
 			RecordAccess ra = (RecordAccess) s.lhs;
 			blk.addAll(resolve(environment, ra.lhs));			
-			blk.add(Code.FieldLoad(null, ra.name),
+			blk.add(Code.FieldStore(null, ra.name),
 					s.attribute(Attribute.Source.class));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -1095,6 +1095,10 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		Type[] paramTypes = new Type[args.size()]; 
 		
+		if(environment.containsKey(s.name)) {
+			blk.add(Code.Load(null, environment.get(s.name)));
+		}
+		
 		if (s.receiver != null) {
 			blk.addAll(resolve(environment, s.receiver));
 		}
@@ -1103,23 +1107,28 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, e));
 		}	
 		
-		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
-		if(modInfo != null) {
-			NameID name = new NameID(modInfo.module, s.name);
-			if(s.receiver != null) {
-				blk.add(Code.Send(
-					Type.T_FUN(null, null, paramTypes), name, s.synchronous));
-			} else {
-				blk.add(Code.Invoke(
-						Type.T_FUN(null, null, paramTypes), name));
-			}			
-		} else {
+		if(environment.containsKey(s.name)) {			
 			if(s.receiver != null) {
 				blk.add(Code.IndirectSend(Type.T_FUN(null, null, paramTypes),s.synchronous));
 			} else {
 				blk.add(Code.IndirectInvoke(Type.T_FUN(null, null, paramTypes)));
 			}
+		} else {
+			Attributes.Module modInfo = s.attribute(Attributes.Module.class);
+			if(modInfo != null) {
+				NameID name = new NameID(modInfo.module, s.name);
+				if(s.receiver != null) {
+					blk.add(Code.Send(
+							Type.T_FUN(null, null, paramTypes), name, s.synchronous));
+				} else {
+					blk.add(Code.Invoke(
+							Type.T_FUN(null, null, paramTypes), name));
+				}			
+			} else {
+				syntaxError("unknown function or method",filename,s);
+			}
 		}
+		
 		return blk;
 	}
 

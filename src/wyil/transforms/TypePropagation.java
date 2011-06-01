@@ -238,37 +238,37 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(FieldStore e, Entry stmt, Env environment) {
-		return null;
+		Type lhs_t = environment.pop();
+		Type rhs_t = environment.pop();
+		
+		Type.Record ett = Type.effectiveRecordType(lhs_t);		
+		if (ett == null) {
+			syntaxError("record required, got: " + lhs_t, filename, stmt);
+		}
+		Type ft = ett.fields().get(e.field);		
+		if (ft == null) {
+			syntaxError("record has no field named " + e.field, filename, stmt);
+		}
+		
+		checkIsSubtype(ft,rhs_t,stmt);
+		
+		return Code.FieldStore(ett,e.field);
 	}
-	
-	protected Code infer(IndirectInvoke e, Entry stmt, Env environment) {
-		return null;
-	}
-	
+		
 	protected Code infer(IndirectSend e, Entry stmt, Env environment) {
 		return null;
 	}
 	
-	protected Code infer(Invoke ivk, Entry stmt, Env environment) {
-		
-		ArrayList<CExpr> args = new ArrayList<CExpr>();
-		ArrayList<Type> types = new ArrayList<Type>();
-		CExpr receiver = ivk.receiver;
-		Type.Process receiverT = null;
-		if(receiver != null) {
-			receiver = infer(receiver, stmt, environment);
-			receiverT = checkType(receiver.type(),Type.Process.class,stmt);
-		}
-		for (CExpr arg : ivk.args) {
-			arg = infer(arg, stmt, environment);
-			args.add(arg);
-			types.add(arg.type());
+	protected Code infer(Invoke ivk, Entry stmt, Env environment) {			
+		ArrayList<Type> types = new ArrayList<Type>();	
+			
+		for(int i=0;i!=ivk.type.params().size();++i) {
+			types.add(environment.pop());
 		}
 		
 		try {
-			Type.Fun funtype = bindFunction(ivk.name, receiverT, types, stmt);
-
-			return CExpr.DIRECTINVOKE(funtype, ivk.name, ivk.caseNum, receiver, ivk.synchronous, args);
+			Type.Fun funtype = bindFunction(ivk.name, null, types, stmt);
+			return Code.Invoke(funtype, ivk.name);
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable
@@ -276,27 +276,22 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(IndirectInvoke ivk, Entry stmt,
-			HashMap<String,Type> environment) {
+			Env environment) {
 		
-		ArrayList<CExpr> args = new ArrayList<CExpr>();		
-		CExpr receiver = ivk.receiver;
-		CExpr target = ivk.target;
-		
-		Type.Process receiverT = null;
-		if(receiver != null) {
-			receiver = infer(receiver, stmt, environment);
-			receiverT = checkType(receiver.type(),Type.Process.class,stmt);
+		ArrayList<Type> types = new ArrayList<Type>();			
+		for(int i=0;i!=ivk.type.params().size();++i) {
+			types.add(0,environment.pop());
 		}
-		
-		target = infer(target, stmt, environment);		
-		checkType(target.type(),Type.Fun.class,stmt);
-		
-		for (CExpr arg : ivk.args) {
-			arg = infer(arg, stmt, environment);
-			args.add(arg);			
-		}						
-		
-		return CExpr.INDIRECTINVOKE(target, receiver, args);		
+		Type target = environment.pop();
+		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
+		List<Type> ft_params = ft.params();
+		for(int i=0;i!=ft_params.size();++i) {
+			Type param = ft_params.get(i);
+			Type arg = types.get(i);
+			checkIsSubtype(param,arg,stmt);
+		}
+				
+		return Code.IndirectInvoke(ft);		
 	}
 	
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
