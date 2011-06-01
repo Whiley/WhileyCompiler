@@ -643,7 +643,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		code = new Code.IfGoto(code.op, lhs, rhs, code.target);
+		code = Code.IfGoto(lub, code.op, code.target);
 		stmt = new Entry(code,stmt.attributes());
 		return new Triple<Entry,Env,Env>(stmt,environment,environment);
 	}
