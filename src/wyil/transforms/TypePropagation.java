@@ -410,49 +410,49 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return e;
 	}
 	
-	protected Code infer(Code.Return code, Entry stmt, Env environment) {
-		CExpr rhs = code.rhs;
-		Type ret_t = method.type().ret();
-		
-		if(rhs != null) {
+	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
+		Type ret_t = method.type().ret();		
+			
+		if(!environment.isEmpty()) {			
 			if(ret_t == Type.T_VOID) {
 				syntaxError(
 						"cannot return value from method with void return type",
 						filename, stmt);
 			}
 			
-			rhs = infer(rhs,stmt,environment);
+			Type rhs_t = environment.pop();
 			
-			checkIsSubtype(ret_t,rhs.type(),stmt);
+			checkIsSubtype(ret_t,rhs_t,stmt);
 		} else if(ret_t != Type.T_VOID) {
 			syntaxError(
 					"missing return value",filename, stmt);
 		}
 		
-		return new Code.Return(rhs);
+		return Code.Return(ret_t);
 	}
 	
 
 	protected Code infer(UnOp v, Entry stmt, Env environment) {
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		Type rhs_t = rhs.type();
-		switch(v.op) {
+		Type rhs_t = environment.pop();
+
+		switch(v.uop) {
 			case NEG:
 				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
-				return CExpr.UNOP(v.op,rhs);
+				return Code.UnOp(rhs_t,v.uop);
 			case LENGTHOF:
-				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {				
-					return CExpr.UNOP(v.op,rhs);
+				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {
+					return Code.UnOp(rhs_t,v.uop);
 				} else {
 					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
 				}
 			case PROCESSACCESS:
 				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-				return CExpr.UNOP(v.op,rhs);
+				return Code.UnOp(rhs_t,v.uop);
 			case PROCESSSPAWN:
-				return CExpr.UNOP(v.op,rhs);
+				return Code.UnOp(rhs_t,v.uop);				
 		}
-		syntaxError("unknown unary operation: " + v.op,filename,stmt);
+		
+		syntaxError("unknown unary operation: " + v.uop,filename,stmt);
 		return null;
 	}
 	
