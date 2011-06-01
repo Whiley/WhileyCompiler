@@ -27,6 +27,7 @@ package wyil.transforms;
 
 import static wyil.util.SyntaxError.syntaxError;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
@@ -125,7 +126,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(code instanceof Debug) {
 			code = infer((Debug)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
-			return new Pair(entry,environment);
+			// skip
 		} else if(code instanceof Fail) {
 			code = infer((Fail)code,entry,environment);
 		} else if(code instanceof FieldLoad) {
@@ -139,7 +140,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(code instanceof Invoke) {
 			code = infer((Invoke)code,entry,environment);
 		} else if(code instanceof Label) {
-			return new Pair(entry,environment);
+			// skip
 		} else if(code instanceof ListLoad) {
 			code = infer((ListLoad)code,entry,environment);
 		} else if(code instanceof ListStore) {
@@ -154,6 +155,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			syntaxError("Need to finish type inference",filename,entry);
 			return null;
 		}
+		
+		return new Pair<Entry, Env>(new Block.Entry(code, entry.attributes()),
+				environment);
 	}
 	
 	protected Code infer(Code.Assert code, Entry stmt, Env environment) {
@@ -554,10 +558,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	
 	protected Triple<Entry,Env,Env> propagate(Code.IfGoto code, Entry stmt, Env environment) {
-		CExpr lhs = infer(code.lhs,stmt,environment);
-		CExpr rhs = infer(code.rhs,stmt,environment);
-		Type lhs_t = lhs.type();
-		Type rhs_t = rhs.type();
+		environment = (Env) environment.clone();
+		
+		Type lhs_t = environment.pop();
+		Type rhs_t = environment.pop();
 		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
 		
 		switch(code.op) {
@@ -601,37 +605,37 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
 			break;
 		case NSUBTYPEEQ:			
-		case SUBTYPEEQ:
-			Value.TypeConst tc = (Value.TypeConst) rhs;
-						
+		case SUBTYPEEQ:						
 			Code ncode = code;
 			Env trueEnv = null;
 			Env falseEnv = null;
 			
-			if(Type.isSubtype(tc.type,lhs_t)) {								
+			if(Type.isSubtype(rhs_t,lhs_t)) {								
 				// DEFINITE TRUE CASE										
 				trueEnv = environment;
-				if (code.op == Code.COP.SUBTYPEEQ) {					
-					ncode = new Code.Goto(code.target);					
+				if (code.op == Code.COp.SUBTYPEEQ) {					
+					ncode = Code.Goto(code.target);					
 				} else {					
-					ncode = new Code.Skip();					
+					ncode = Code.Skip;					
 				}
-			} else if (Type.greatestLowerBound(lhs_t, tc.type) == Type.T_VOID) {				
+			} else if (Type.greatestLowerBound(lhs_t, rhs_t) == Type.T_VOID) {				
 				// DEFINITE FALSE CASE				
 				falseEnv = environment;
-				if (code.op == Code.COP.NSUBTYPEEQ) {					
-					ncode = new Code.Goto(code.target);					
+				if (code.op == Code.COp.NSUBTYPEEQ) {					
+					ncode = Code.Goto(code.target);					
 				} else {								
-					ncode = new Code.Skip();					
+					ncode = Code.Skip;					
 				}
 			} else {
-				ncode = new Code.IfGoto(code.op, lhs, rhs, code.target);				
+				ncode = Code.IfGoto(lub, code.op, code.target);				
 				trueEnv = new Env(environment);
-				falseEnv = new Env(environment);						
+				falseEnv = new Env(environment);			
+				// way to fix this is to have specific bytecode for type testing.
+				// problem for nested records
 				typeInference(lhs,tc.type,tc.type,trueEnv, falseEnv);				
 			}
 			stmt = new Entry(ncode,stmt.attributes());
-			if(code.op == Code.COP.SUBTYPEEQ) {
+			if(code.op == Code.COp.SUBTYPEEQ) {
 				return new Triple(stmt,trueEnv,falseEnv);
 			} else {
 				// environments are the other way around!
@@ -662,17 +666,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 //			
 			trueEnv.put(v.name, glb);			
 			falseEnv.put(v.name, gdiff);			
-		} else if (lhs instanceof CExpr.Register) {
-			CExpr.Register reg = (CExpr.Register) lhs;
-			String name = "%" + reg.index;						
-			Type glb = Type.greatestLowerBound(reg.type,trueType);
-			Type gdiff = Type.leastDifference(reg.type, falseType);
-//			System.out.println("\nGLB(2): " + trueType
-//					+ " & " + reg.type + " = " + glb);
-//			System.out.println("GDIFF(2): " + reg.type + " - "
-//					+ falseType + " = " + gdiff);
-			trueEnv.put(name, glb);
-			falseEnv.put(name, gdiff);
 		} else if (lhs instanceof RecordAccess) {
 			RecordAccess ta = (RecordAccess) lhs;
 			Type.Record lhs_t = Type.effectiveRecordType(ta.lhs.type());
@@ -699,38 +692,25 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 
 	protected Pair<Entry,List<Env>> propagate(Code.Switch code, Entry stmt, Env environment) {
-		CExpr value = infer(code.value,stmt,environment);
+		Type val = environment.pop();
 		ArrayList<Env> envs = new ArrayList<Env>();
 		// TODO: update this code to support type inference of types. That is,
 		// if we switch on a type value then this will update the type of the
 		// value.
-		for(int i=0;i!=code.branches.size();++i) {
+		for(Map.Entry<Value, String> e : code.branches.entrySet()) {
+			Value cv = e.getKey();
+			checkIsSubtype(val,cv.type(),stmt);
 			envs.add(environment);
 		}
-		Code ncode = new Code.Switch(value,code.defaultTarget,code.branches);
+		Code ncode = new Code.Switch(val,code.defaultTarget,code.branches);
 		return new Pair(new Entry(ncode,stmt.attributes()),envs);
 	}
 		
-	protected Pair<Block, Env> propagate(Code.ForAll start, 
+	protected Pair<Block, Env> propagate(Code.ForAll forloop, 
 			Block body, Entry stmt, Env environment) {
 						
-		// First, create modifies set and type the invariant
-		HashSet<String> modifies = new HashSet<String>();
-		Block invariant = start.invariant;
-				
-		for(Entry s : body) {
-			if(s.code instanceof Code.Assign) {
-				Code.Assign a = (Code.Assign) s.code;
-				if(a.lhs != null) {
-					LVar v = CExpr.extractLVar(a.lhs);						
-					modifies.add(v.name());
-				}
-			}
-		}
-		
-		// Now, type the source 
-		CExpr src = infer(start.source, stmt, environment);
-		Type src_t = src.type();						
+		// Now, type the source 		
+		Type src_t = environment.pop();						
 		
 		Type elem_t;
 		if(src_t instanceof Type.List) {
@@ -753,9 +733,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				
 		
 		// create environment specific for loop body
-		Env loopEnv = new Env(environment);
-		String loopVar = "%" + start.variable.index;
-		loopEnv.put(loopVar, elem_t);
+		Env loopEnv = new Env(environment);		
+		loopEnv.set(forloop.var, elem_t);
 	
 		Pair<Block,Env> r = null;
 		Env old = null;
@@ -765,85 +744,40 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			r = propagate(body,old);
 		 } while(!r.second().equals(old));				
 		
-		environment = join(environment,r.second());
-		
-		if(invariant != null) {
-			// we have to propagate the invariant here, since we must wait until
-			// the proper environment is known.
-			invariant = propagate(invariant,environment).first();			
-		}
-				
-		// now construct final modifies set						
-		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
-		for(String v : modifies) {
-			Type t = environment.get(v);
-			if(t == null) { continue; }
-			if(v.charAt(0) == '%') {
-				mods.add(CExpr.REG(t, Integer.parseInt(v.substring(1))));
-			} else {
-				mods.add(CExpr.VAR(t, v));
-			}
-		}
+		environment = join(environment,r.second());		
 		
 		// Finally, update the code
-		blk.add(new Code.Forall(start.label, invariant, CExpr.REG(elem_t,
-				start.variable.index), src, mods), stmt.attributes());
+		blk.add(Code.ForAll(forloop.var, forloop.target, forloop.modified), stmt.attributes());
 		blk.addAll(r.first());
-		blk.add(end);
+		blk.add(Code.End(forloop.target));
 					
 		return new Pair<Block,Env>(blk,join(environment,r.second()));
 	}
-	protected Pair<Block, Env> propagate(Code.Loop start, Code.LoopEnd end,
-			Block body, Entry stmt, Env environment) {
-		
-		HashSet<String> modifies = new HashSet<String>();
-		Block invariant = start.invariant;
-		
-		for(Entry s : body) {
-			if(s.code instanceof Code.Assign) {
-				Code.Assign a = (Code.Assign) s.code;
-				if(a.lhs != null) {
-					LVar v = CExpr.extractLVar(a.lhs);						
-					modifies.add(v.name());
-				}
-			}
+	
+	protected Pair<Block, Env> propagate(Code.Loop loop, Block body,
+			Entry stmt, Env environment) {
+
+		if (loop instanceof Code.ForAll) {
+			return propagate((Code.ForAll) loop, body, stmt, environment);
 		}
 
-		Block blk = new Block();		
-		Pair<Block,Env> r = propagate(body,environment);
+		Block blk = new Block();
+		Pair<Block, Env> r = propagate(body, environment);
 		Env old = null;
 		do {
 			// iterate until a fixed point reached
-			old = r != null ? r.second() : environment;			 			
-			r = propagate(body,old);
-		 } while(!r.second().equals(old));
-		
-		environment = join(environment,r.second());
-		
-		if(invariant != null) {
-			// we have to propagate the invariant here, since we must wait until
-			// the proper environment is known.
-			invariant = propagate(invariant,environment).first();			
-		}
-						
-		// now construct final modifies set		
-		HashSet<CExpr.LVar> mods = new HashSet<CExpr.LVar>();
-		for(String v : modifies) {
-			Type t = environment.get(v);
-			if(t == null) { continue; }
-			if(v.charAt(0) == '%') {
-				mods.add(CExpr.REG(t, Integer.parseInt(v.substring(1))));
-			} else {
-				mods.add(CExpr.VAR(t, v));
-			}
-		}
-		
-		blk.add(new Loop(start.label,invariant,mods),stmt.attributes());
+			old = r != null ? r.second() : environment;
+			r = propagate(body, old);
+		} while (!r.second().equals(old));
+
+		environment = join(environment, r.second());
+
+		blk.add(Code.Loop(loop.target, loop.modified), stmt.attributes());
 		blk.addAll(r.first());
-		blk.add(end);
-		
-		return new Pair<Block,Env>(blk,environment);
-	}	
+		blk.add(Code.End(loop.target));
+
+		return new Pair<Block, Env>(blk, environment);
+	}
 	
 	/**
 	 * Bind function is responsible for determining the true type of a method or
@@ -975,7 +909,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	public static class Env extends ArrayList<Type> {
 		public Env() {
 		}
-		public Env(List<Type> v) {
+		public Env(Collection<Type> v) {
 			super(v);
 		}
 		public void push(Type t) {
@@ -986,6 +920,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		public Type pop() {
 			return remove(size()-1);			
+		}
+		public Env clone() {
+			return new Env(this);
 		}
 	}
 }

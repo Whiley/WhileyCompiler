@@ -324,7 +324,7 @@ public abstract class Code {
 		return get(new Label(label));
 	}
 	
-	public static final Skip skip = new Skip();
+	public static final Skip Skip = new Skip();
 
 	/**
 	 * Construct an <code>send</code> bytecode which sends a message to an
