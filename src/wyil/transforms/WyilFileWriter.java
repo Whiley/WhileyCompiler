@@ -89,13 +89,20 @@ public class WyilFileWriter implements Transform {
 	
 	public void write(Case mcase, Method method, PrintWriter out) {
 		Type.Fun ft = method.type(); 
-		out.print(ft.ret() + " " + method.name() + "(");
+		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
+		List<String> locals = mcase.locals();
+		int li = 0;
+		if(ft.receiver() != null) {
+			out.print(ft.receiver() + "::");
+			li++;
+		}
+		out.print(method.name() + "(");
 		for(int i=0;i!=ft.params().size();++i) {						
 			if(i!=0) {
 				out.print(", ");
 			}			
-			out.print(pts.get(i));			
+			out.print(pts.get(i) + " " + locals.get(li++));			
 		}
 		out.println("):");				
 		for(Attribute a : mcase.attributes()) {
@@ -105,17 +112,29 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		out.println("body: ");
-		write(0,mcase.body(),out);	
+		boolean firstTime=true;
+		if(li < locals.size()) {
+			out.print("    var ");
+			for(;li<locals.size();++li) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(locals.get(li));
+			}
+			out.println();
+		}
+		write(0,mcase.body(),locals,out);	
 	}
 	
-	public void write(int indent, Block blk, PrintWriter out) {
+	public void write(int indent, Block blk, List<String> locals, PrintWriter out) {
 		for(Block.Entry s : blk) {
 			if(s.code instanceof Code.End) {				
 				--indent;
 			} else if(s.code instanceof Code.Label) { 
-				write(indent-1,s.code,s.attributes(),out);
+				write(indent-1,s.code,s.attributes(),locals,out);
 			} else {
-				write(indent,s.code,s.attributes(),out);
+				write(indent,s.code,s.attributes(),locals,out);
 			}
 			if(s.code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) s.code; 
@@ -126,7 +145,7 @@ public class WyilFileWriter implements Transform {
 		}
 	}
 	
-	public void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
+	public void write(int indent, Code c, List<Attribute> attributes, List<String> locals, PrintWriter out) {		
 		String line = "null";		
 		tabIndent(indent+1,out);
 	
@@ -138,6 +157,32 @@ public class WyilFileWriter implements Transform {
 			} else {
 				line = "end";
 			}
+		} else if(c instanceof Code.Store){
+			Code.Store store = (Code.Store) c;
+			line = "store " + locals.get(store.slot) + " : " + store.type;  
+		} else if(c instanceof Code.Load){
+			Code.Load load = (Code.Load) c;
+			line = "load " + locals.get(load.slot) + " : " + load.type;
+		} else if(c instanceof Code.MultiStore){
+			Code.MultiStore store = (Code.MultiStore) c;
+			String fs = store.fields.isEmpty() ? "" : " ";
+			boolean firstTime=true;
+			for(String f : store.fields) {
+				if(!firstTime) {
+					fs += ".";
+				}
+				firstTime=false;
+				fs += f;
+			}
+			line = "multistore " + locals.get(store.slot) + " #" + store.level + fs + " : " + store.type;
+		} else if(c instanceof Code.IfType){
+			Code.IfType iftype = (Code.IfType) c;
+			if(iftype.slot >= 0) {
+				line = "iftype " + locals.get(iftype.slot) + " " + iftype.test
+						+ " " + iftype.target + " : " + iftype.type;
+			} else {
+				line = c.toString();
+			}			
 		} else {
 			line = c.toString();		
 		}

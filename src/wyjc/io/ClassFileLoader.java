@@ -28,6 +28,7 @@ package wyjc.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -168,8 +169,8 @@ public class ClassFileLoader {
 			}
 
 			List<Module.Case> mcases = new ArrayList<Module.Case>();
-			// TODO: fix this problem here related to max locals
-			mcases.add(new Module.Case(null, 0, attrs));
+			// TODO: fix this problem here related to locals
+			mcases.add(new Module.Case(null, Collections.EMPTY_LIST, attrs));
 
 			return new Module.Method(name, type, mcases);
 		} catch (IOException e) {

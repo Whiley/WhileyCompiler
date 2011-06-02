@@ -842,7 +842,11 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("iftype " + slot + " " + test + " " + target,type);
+			if(slot >= 0) {
+				return toString("iftype " + slot + " " + test + " " + target,type);
+			} else {
+				return toString("iftype " + test + " " + target,type);
+			}
 		}
 	}
 	

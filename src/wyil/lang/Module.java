@@ -217,27 +217,27 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public static class Case extends SyntacticElement.Impl {				
 		private final Block body;
-		private final int maxLocals;
+		private final ArrayList<String> locals;
 
-		public Case(Block body, int maxLocals, Attribute... attributes) {
+		public Case(Block body, Collection<String> locals, Attribute... attributes) {
 			super(attributes);			
 			this.body = body;
-			this.maxLocals = maxLocals;
+			this.locals = new ArrayList<String>(locals);
 		}
 
-		public Case(Block body,int maxLocals,
+		public Case(Block body,Collection<String> locals,
 				Collection<Attribute> attributes) {
 			super(attributes);			
 			this.body = body;
-			this.maxLocals = maxLocals;
+			this.locals = new ArrayList<String>(locals);			
 		}
 		
 		public Block body() {
 			return body;
 		}
 		
-		public int maxLocals() {
-			return maxLocals;
+		public List<String> locals() {
+			return Collections.unmodifiableList(locals);
 		}
 	}
 }

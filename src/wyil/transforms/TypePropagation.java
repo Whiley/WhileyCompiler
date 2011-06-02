@@ -106,13 +106,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env environment = initialStore();
 		int start = method.type().params().size();
 		if(method.type().receiver() != null) { start++; }
-		for (int i = start; i < mcase.maxLocals(); i++) {
+		for (int i = start; i < mcase.locals().size(); i++) {
 			environment.add(Type.T_VOID);
 		}	
 		
 		Block body = propagate(mcase.body(), environment).first();	
 		
-		return new Module.Case(body,mcase.maxLocals(),mcase.attributes());
+		return new Module.Case(body,mcase.locals(),mcase.attributes());
 	}
 	
 	protected Pair<Entry, Env> propagate(Entry entry,
@@ -445,7 +445,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
 		Type ret_t = method.type().ret();		
 		
-		if(environment.size() > methodCase.maxLocals()) {			
+		if(environment.size() > methodCase.locals().size()) {			
 			if(ret_t == Type.T_VOID) {
 				syntaxError(
 						"cannot return value from method with void return type",

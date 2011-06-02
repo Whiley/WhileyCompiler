@@ -525,24 +525,18 @@ public class ModuleBuilder {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		blk.add(Code.Return(Type.T_VOID),fd.attribute(Attribute.Source.class));
-
-		int maxLocals = tf.params().size();
-		if(tf.receiver() != null) { maxLocals++; }
-		
-		for(Entry e : blk) {
-			Code c = e.code;
-			if(c instanceof Code.Load) {
-				Code.Load l = (Code.Load) c;
-				maxLocals = Math.max(l.slot+1, maxLocals);
-			} else if(c instanceof Code.Store) {
-				Code.Store l = (Code.Store) c;
-				maxLocals = Math.max(l.slot+1, maxLocals);
-			} 
-		}				
+		blk.add(Code.Return(Type.T_VOID),fd.attribute(Attribute.Source.class));		
 		
 		List<Module.Case> ncases = new ArrayList<Module.Case>();				
-		ncases.add(new Module.Case(blk,maxLocals));
+		ArrayList<String> locals = new ArrayList<String>();		
+		for(int i=0;i!=environment.size();++i) {
+			locals.add(null);
+		}
+		
+		for(Map.Entry<String,Integer> e : environment.entrySet()) {
+			locals.set(e.getValue(),e.getKey());
+		}
+		ncases.add(new Module.Case(blk,locals));
 		return new Module.Method(fd.name(), tf, ncases);
 	}
 
