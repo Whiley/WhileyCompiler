@@ -65,16 +65,16 @@ public class DefiniteAssignment extends
 	public HashSet<Integer> initialStore() {
 		HashSet<Integer> defined = new HashSet<Integer>();
 		
-		int start = 0;
+		int diff = 0;
 		
 		if(method.type().receiver() != null) {
 			defined.add(0);
-			start++;
+			diff++;
 		}
 		
-		for(int i=start;i!=method.type().params().size();++i) {
-			defined.add(i);
-		}				
+		for(int i=0;i!=method.type().params().size();++i) {
+			defined.add(i+diff);
+		}								
 		
 		return defined;
 	}
