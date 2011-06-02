@@ -37,7 +37,9 @@ public class Continuations {
 
 	public void apply(ClassFile classfile) {
 		for (Method method : classfile.methods()) {
-			apply(method);
+			if (!method.name().equals("main")) {
+				apply(method);
+			}
 		}
 	}
 
@@ -45,11 +47,6 @@ public class Continuations {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
-				if (method.name().startsWith("main$")) {
-					for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
-						// System.out.println(bytecode);
-					}
-				}
 			}
 		}
 	}
@@ -66,10 +63,43 @@ public class Continuations {
 			if (bytecode instanceof Invoke) {
 				Invoke invoke = (Invoke) bytecode;
 
-				if (invoke.owner.equals(MESSAGER) && invoke.name.startsWith("send")) {
-					addSend(method, bytecodes, invoke, i, location);
-				} else {
-					System.out.println(invoke);
+				boolean yields = false;
+				if (invoke.mode == Bytecode.STATIC) {
+					List<JvmType> ptypes = invoke.type.parameterTypes();
+					if (ptypes.size() >= 1 && ptypes.get(0).equals(PROCESS)) {
+						yields = true;
+					}
+				}
+
+				if (yields || invoke.owner.equals(MESSAGER)
+				    && invoke.name.startsWith("send")) {
+					List<Bytecode> add = new ArrayList<Bytecode>();
+					Bytecode next =
+					    i == bytecodes.size() - 1 ? null : bytecodes.get(i + 1);
+					boolean isVoid = invoke.type.returnType().equals(T_VOID);
+					boolean push =
+					    !yields && !(next instanceof Return && next instanceof Throw)
+					        && !isVoid;
+
+					add.add(new Load(0, PROCESS));
+
+					Function type = null;
+					if (push) {
+						add.add(new LoadConst(location));
+						type = new Function(T_VOID, T_INT);
+					} else {
+						type = new Function(T_VOID);
+					}
+
+					add.add(new Invoke(MESSAGER, "yield", type, Bytecode.VIRTUAL));
+
+					if (push) {
+						addPushLocals(method.type().parameterTypes(), add);
+
+						add.add(new Return(null));
+
+						add.add(new Label("resume" + location++));
+					}
 				}
 			}
 		}
@@ -99,38 +129,6 @@ public class Continuations {
 
 			bytecodes.addAll(0, add);
 		}
-	}
-
-	private void addSend(Method method, List<Bytecode> bytecodes, Invoke invoke,
-	    int i, int location) {
-		List<Bytecode> add = new ArrayList<Bytecode>();
-		boolean isVoid = invoke.type.returnType().equals(T_VOID);
-		Bytecode next = bytecodes.get(i + 1);
-		boolean push =
-		    !(next instanceof Return && next instanceof Throw) && !isVoid;
-
-		add.add(new Load(0, PROCESS));
-
-		Function type = null;
-		if (push) {
-			add.add(new LoadConst(location));
-			type = new Function(T_VOID, T_INT);
-		} else {
-			type = new Function(T_VOID);
-		}
-
-		add.add(new Invoke(MESSAGER, "yield", type, Bytecode.VIRTUAL));
-
-		if (push) {
-			addPushLocals(method.type().parameterTypes(), add);
-
-			add.add(new Return(null));
-
-			add.add(new Label("resume" + location++));
-		}
-
-		bytecodes.addAll(i + 1, add);
-		i += add.size();
 	}
 
 	private void addPushLocals(List<JvmType> types, List<Bytecode> add) {
