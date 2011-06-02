@@ -1313,7 +1313,7 @@ public abstract class Code {
 	}
 
 	public static final class Return extends Code {
-		private final Type type;
+		public final Type type;
 		
 		private Return(Type type) {
 			this.type = type;

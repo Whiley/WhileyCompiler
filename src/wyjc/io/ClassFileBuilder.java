@@ -37,11 +37,32 @@ import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
-import wyil.lang.CExpr.LVal;
+import wyil.lang.Code.Assert;
+import wyil.lang.Code.BinOp;
+import wyil.lang.Code.Const;
+import wyil.lang.Code.Convert;
+import wyil.lang.Code.Debug;
+import wyil.lang.Code.ExternJvm;
+import wyil.lang.Code.Fail;
+import wyil.lang.Code.FieldLoad;
+import wyil.lang.Code.IndirectInvoke;
+import wyil.lang.Code.IndirectSend;
+import wyil.lang.Code.Invoke;
+import wyil.lang.Code.Label;
+import wyil.lang.Code.ListLoad;
+import wyil.lang.Code.Load;
+import wyil.lang.Code.MultiStore;
+import wyil.lang.Code.NewDict;
+import wyil.lang.Code.NewList;
+import wyil.lang.Code.NewRecord;
+import wyil.lang.Code.NewSet;
+import wyil.lang.Code.Return;
+import wyil.lang.Code.Store;
+import wyil.lang.Code.UnOp;
+import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
-import wyjvm.lang.Bytecode;
 import wyjvm.lang.*;
 import wyjvm.util.DeadCodeElimination;
 import static wyjvm.lang.JvmTypes.*;
@@ -188,86 +209,72 @@ public class ClassFileBuilder {
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);		
 		
-		// Build up the binding we'll use for pre and post-conditions
-		List<String> params = mcase.parameterNames();
-		List<Type> paramTypes = method.type().params();
-		HashMap<String,CExpr> binding = new HashMap<String,CExpr>();
-		
-		for(int i=0;i!=params.size();++i) {
-			String n = params.get(i);
-			binding.put(n,CExpr.VAR(paramTypes.get(i),"p" + i));
-		}
-		
 		return cm;
 	}
 	
 	public ArrayList<Bytecode> translate(Module.Case mcase, Module.Method method) {
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();		
-		HashMap<String, Integer> slots = new HashMap<String, Integer>();		
-		
-		HashSet<String> uses = Block.usedVariables(mcase.body());
-			
-		int slot = 0;
-		if(method.type().receiver() != null) {
-			slots.put("this",slot++);
-			uses.remove("this");
-		}
-				
-		List<Type> paramTypes = method.type().params();
-		List<String> paramNames = mcase.parameterNames();
-		for(int i=0;i!=paramTypes.size();++i) {
-			String name = paramNames.get(i);			
-			slots.put(name,slot++);			
-			uses.remove(name);
-		}
-		
-		for(String v : uses) {
-			slots.put(v,slot++);						
-		}				
-		
-		translate(mcase.body(),slots,bytecodes,method);		
-		
+		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();				
+		translate(mcase.body(),mcase.locals().size(),bytecodes,method);				
 		return bytecodes;
 	}
 	
-	public void translate(Block blk, HashMap<String, Integer> slots,
+	public void translate(Block blk, int slots,
 			ArrayList<Bytecode> bytecodes, Module.Method method) {
-		for (Stmt s : blk) {			
+		for (Entry s : blk) {			
 			translate(s, slots, bytecodes, method);			
 		}
 	}
 	
-	public void translate(Stmt stmt, HashMap<String, Integer> slots,
+	public void translate(Entry stmt, int slots,
 			ArrayList<Bytecode> bytecodes, Module.Method method) {
 		try {
-			Code c = stmt.code;
-			if (c instanceof Code.Assign) {
-				translate((Code.Assign) c, slots, bytecodes);
-			} else if (c instanceof Code.Return) {
-				translate((Code.Return) c, slots, bytecodes, method);
-			} else if (c instanceof Code.Goto) {
-				translate((Code.Goto) c, slots, bytecodes);
-			} else if (c instanceof Code.IfGoto) {
-				translate((Code.IfGoto) c, stmt, slots, bytecodes);
-			} else if (c instanceof Code.Switch) {
-				translate((Code.Switch) c, stmt, slots, bytecodes);
-			} else if (c instanceof Code.Throw) {
-				translate((Code.Throw) c, stmt, slots, bytecodes);
-			} else if (c instanceof Code.Forall) {
-				translate((Code.Forall) c, slots, bytecodes);
-			} else if (c instanceof Code.Loop) {
-				translate((Code.Loop) c, slots, bytecodes);
-			} else if (c instanceof Code.LoopEnd) {
-				translate((Code.LoopEnd) c, slots, bytecodes);
-			} else if (c instanceof Code.Label) {
-				translate((Code.Label) c, slots, bytecodes);
-			} else if (c instanceof Code.Debug) {
-				translate((Code.Debug) c, slots, bytecodes);
-			} else if (c instanceof Code.Fail) {
-				translate((Code.Fail) c, slots, bytecodes);
-			} else if (c instanceof Code.ExternJvm) {
-				translate((Code.ExternJvm) c, slots, bytecodes);
+			Code code = stmt.code;
+			if(code instanceof Assert) {
+				 translate((Assert)code,slots,bytecodes);
+			} else if(code instanceof BinOp) {
+				 translate((BinOp)code,slots,bytecodes);
+			} else if(code instanceof Convert) {
+				 translate((Convert)code,slots,bytecodes);
+			} else if(code instanceof Const) {
+				 translate((Const)code,slots,bytecodes);
+			} else if(code instanceof Debug) {
+				 translate((Debug)code,slots,bytecodes);
+			} else if(code instanceof ExternJvm) {
+				// skip
+			} else if(code instanceof Fail) {
+				 translate((Fail)code,slots,bytecodes);
+			} else if(code instanceof FieldLoad) {
+				 translate((FieldLoad)code,slots,bytecodes);
+			} else if(code instanceof IndirectInvoke) {
+				 translate((IndirectInvoke)code,slots,bytecodes);
+			} else if(code instanceof IndirectSend) {
+				 translate((IndirectSend)code,slots,bytecodes);
+			} else if(code instanceof Invoke) {
+				 translate((Invoke)code,slots,bytecodes);
+			} else if(code instanceof Label) {
+				// skip
+			} else if(code instanceof ListLoad) {
+				 translate((ListLoad)code,slots,bytecodes);
+			} else if(code instanceof Load) {
+				 translate((Load)code,slots,bytecodes);
+			} else if(code instanceof MultiStore) {
+				 translate((MultiStore)code,slots,bytecodes);
+			} else if(code instanceof NewDict) {
+				 translate((NewDict)code,slots,bytecodes);
+			} else if(code instanceof NewList) {
+				 translate((NewList)code,slots,bytecodes);
+			} else if(code instanceof NewRecord) {
+				 translate((NewRecord)code,slots,bytecodes);
+			} else if(code instanceof NewSet) {
+				 translate((NewSet)code,slots,bytecodes);
+			} else if(code instanceof Return) {
+				 translate((Return)code,slots,bytecodes,method);
+			} else if(code instanceof Store) {
+				 translate((Store)code,slots,bytecodes);
+			} else if(code instanceof UnOp) {
+				 translate((UnOp)code,slots,bytecodes);
 			}
+			
 		} catch (SyntaxError ex) {
 			throw ex;
 		} catch (Exception ex) {		
@@ -275,7 +282,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void translate(Code.Assign c, HashMap<String, Integer> slots,
+	public void translate(Code.Assign c, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		
 		if(c.lhs != null) {
@@ -294,20 +301,16 @@ public class ClassFileBuilder {
 		}
 	}
 
-	public void translate(Code.Return c, HashMap<String, Integer> slots,
+	public void translate(Code.Return c, int slots,
 			ArrayList<Bytecode> bytecodes, Module.Method method) {
-		
-		if (c.rhs != null) {
-			translate(c.rhs, slots, bytecodes);
-			Type ret_t = method.type().ret();			
-			convert(ret_t,c.rhs.type(),slots,bytecodes);			
-			bytecodes.add(new Bytecode.Return(convertType(ret_t)));
-		} else {		
+		if (c.type == Type.T_VOID) {
 			bytecodes.add(new Bytecode.Return(null));
+		} else {
+			bytecodes.add(new Bytecode.Return(convertType(c.type)));
 		}
 	}
 
-	public void translate(Code.Throw c, Stmt stmt, HashMap<String, Integer> slots,
+	public void translate(Code.Throw c, Entry stmt, int slots,
 			ArrayList<Bytecode> bytecodes) {			
 		bytecodes.add(new Bytecode.New(WHILEYEXCEPTION));		
 		bytecodes.add(new Bytecode.Dup(WHILEYEXCEPTION));
@@ -318,7 +321,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Throw());
 	}
 	
-	public void translate(Code.Switch c, Stmt stmt, HashMap<String, Integer> slots,
+	public void translate(Code.Switch c, Entry stmt, int slots,
 			ArrayList<Bytecode> bytecodes) {	
 		translate(c.value,slots,bytecodes);
 		
@@ -353,32 +356,16 @@ public class ClassFileBuilder {
 		}		
 	}
 	
-	public void translate(Code.IfGoto c, Stmt stmt, HashMap<String, Integer> slots,
+	public void translate(Code.IfGoto c, Entry stmt, int slots,
 			ArrayList<Bytecode> bytecodes) {	
+				
+		if(c.op == Code.COp.ELEMOF) {
+			// TODO: swap operands
+						
+		} 	
 		
-		Type lub = Type.leastUpperBound(c.lhs.type(),c.rhs.type());
-		
-		
-		if (c.op == Code.COP.SUBTYPEEQ || c.op == Code.COP.NSUBTYPEEQ) {
-			// special case: don't translate rhs
-			translate(c.lhs, slots, bytecodes);
-		} else if(c.op == Code.COP.ELEMOF) {
-			// special case: do things backwards
-			translate(c.rhs,slots,bytecodes);
-			translate(c.lhs,slots,bytecodes);
-			// FIXME: bug here related to conversion of element type
-		} else {
-			translate(c.lhs,slots,bytecodes);
-			
-			convert(lub,c.lhs.type(),slots,bytecodes);
-			
-			translate(c.rhs,slots,bytecodes);
-			
-			convert(lub,c.rhs.type(),slots,bytecodes);
-		}		
-		
-		JvmType type = convertType(lub);
-		if(lub == Type.T_BOOL) {
+		JvmType type = convertType(c.type);
+		if(c.type == Type.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an
 			// object on the JVM stack. Therefore, we need to use the "if_cmp"
 			// bytecode, rather than calling .equals() and using "if" bytecode.
@@ -397,11 +384,11 @@ public class ClassFileBuilder {
 			switch(c.op) {
 			case EQ:
 			{				
-				if(Type.isSubtype(c.lhs.type(), Type.T_NULL)) {
+				if(Type.isSubtype(c.type, Type.T_NULL)) {
 					// this indicates an interesting special case. The left
-						// handside of this equality can be null. Therefore, we
-						// cannot directly call "equals()" on this method, since
-						// this would cause a null pointer exception!
+					// handside of this equality can be null. Therefore, we
+					// cannot directly call "equals()" on this method, since
+					// this would cause a null pointer exception!
 					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
 							Bytecode.STATIC));
@@ -415,18 +402,20 @@ public class ClassFileBuilder {
 			}
 			case NEQ:
 			{
-				if(Type.isSubtype(c.lhs.type(), Type.T_NULL)) {
+				if (Type.isSubtype(c.type, Type.T_NULL)) {
 					// this indicates an interesting special case. The left
-						// handside of this equality can be null. Therefore, we
-						// cannot directly call "equals()" on this method, since
-						// this would cause a null pointer exception!
-					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-					bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
-							Bytecode.STATIC));
+					// handside of this equality can be null. Therefore, we
+					// cannot directly call "equals()" on this method, since
+					// this would cause a null pointer exception!
+					JvmType.Function ftype = new JvmType.Function(T_BOOL,
+							JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals",
+							ftype, Bytecode.STATIC));
 				} else {
-					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
-					bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
-							Bytecode.VIRTUAL));
+					JvmType.Function ftype = new JvmType.Function(T_BOOL,
+							JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+							"equals", ftype, Bytecode.VIRTUAL));
 				}
 				op = Bytecode.If.EQ;
 				break;
@@ -488,7 +477,19 @@ public class ClassFileBuilder {
 				op = Bytecode.If.NE;
 				break;
 			}			
-			case SUBTYPEEQ:
+			
+			default:
+				syntaxError("unknown if condition encountered",filename,stmt);
+				return;
+			}
+			
+			// do the jump
+			bytecodes.add(new Bytecode.If(op, c.target));
+		}
+	}
+	
+	/*
+	 case SUBTYPEEQ:
 			{								
 				Type rhs_t = ((Value.TypeConst)c.rhs).type;				
 				translateTypeTest(c.target,c.lhs, rhs_t, stmt, slots, bytecodes);				
@@ -503,18 +504,9 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Label(trueLabel));				
 				return;
 			}
-			default:
-				syntaxError("unknown if condition encountered",filename,stmt);
-				return;
-			}
-			
-			// do the jump
-			bytecodes.add(new Bytecode.If(op, c.target));
-		}
-	}
-	
+	 
 	protected void translateTypeTest(String trueTarget, CExpr src, Type test,
-			Stmt stmt, HashMap<String, Integer> slots,
+			Entry stmt, int slots,
 			ArrayList<Bytecode> bytecodes) {				
 		
 		// This method (including the helper) is pretty screwed up. It needs a
@@ -565,7 +557,7 @@ public class ClassFileBuilder {
 	// example, testing a static type [int]|[bool] against type [int] is harder,
 	// since both are actually instances of java.util.List. 
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {		
+			Entry stmt, ArrayList<Bytecode> bytecodes) {		
 						
 		// First, determine the intersection of the actual type and the type
 		// we're testing for.  This is really an optimisation.
@@ -612,9 +604,9 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 	 
-	 */
+	 *
 	protected void translateTypeTest(String trueTarget, Type src, Type.Int test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
 		// NOTE: on entry we know that src cannot be a Type.Int, since this case
 		// would have been already caught.
@@ -657,9 +649,9 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 	 
-	 */
+	 *
 	protected void translateTypeTest(String trueTarget, Type src, Type.Real test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
 		// NOTE: on entry we know that src cannot be a Type.Real, since this case
 		// would have been already caught.
@@ -681,9 +673,9 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 
-	 */
+	 *
 	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {								
+			Entry stmt, ArrayList<Bytecode> bytecodes) {								
 		
 		// ======================================================================
 		// First, perform an instanceof test (if necessary) 
@@ -757,9 +749,9 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 
-	 */
+	 *
 	protected void translateTypeTest(String trueTarget, Type src, Type.Set test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {
+			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
 		// ======================================================================
 		// First, perform an instanceof test (if necessary) 
@@ -858,9 +850,9 @@ public class ClassFileBuilder {
 	 *            --- stmt containing test (useful for line number info)
 	 * @param bytecodes
 	 *            --- list of bytecodes (to which test is appended)
-	 */
+	 *
 	protected void translateTypeTest(String trueTarget, Type src,
-			Type.Record test, Stmt stmt, ArrayList<Bytecode> bytecodes) {
+			Type.Record test, Entry stmt, ArrayList<Bytecode> bytecodes) {
 				
 		JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_OBJECT);
 		
@@ -989,6 +981,7 @@ public class ClassFileBuilder {
 		
 		return Type.greatestLowerBound(t, ub);		
 	}
+	*/
 	
 	/**
 	 * <p>The following method accepts a type whose values are guaranteed to be
@@ -1075,8 +1068,10 @@ public class ClassFileBuilder {
 	 * @param bytecodes
 	 *            --- list of bytecodes (to which test is appended)
 	 */
+	
+	/*
 	protected void translateTypeTest(String trueTarget, Type src, Type.Union test,
-			Stmt stmt, ArrayList<Bytecode> bytecodes) {	
+			Entry stmt, ArrayList<Bytecode> bytecodes) {	
 		
 		// FIXME: at the moment, this approach is not very efficient!
 		
@@ -1096,13 +1091,20 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(falseLabel));
 		
 	}
-
-	public void translate(Code.Loop c, HashMap<String, Integer> slots,
+*/
+	
+	public void translate(Code.Loop c, int slots,
 			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Label(c.label));
+		bytecodes.add(new Bytecode.Label(c.target + "$head"));
+	}
+
+	protected void translate(Code.End end,			
+			int slots, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Goto(end.label + "$head"));
+		bytecodes.add(new Bytecode.Label(end.label));
 	}
 	
-	public void translate(Code.Forall c, HashMap<String, Integer> slots,
+	public void translate(Code.ForAll c, int slots,
 			ArrayList<Bytecode> bytecodes) {				
 		translate(c.source, slots, bytecodes);
 		String srcVar = "%" + c.variable.index;		
@@ -1137,28 +1139,24 @@ public class ClassFileBuilder {
 				JAVA_LANG_OBJECT));	
 	}
 
-	protected void translate(Code.LoopEnd end,			
-			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Goto(end.target));
-		bytecodes.add(new Bytecode.Label(end.target + "$exit"));
-	}
 
-	public void translate(Code.Goto c, HashMap<String, Integer> slots,
+	public void translate(Code.Goto c, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Goto(c.target));
 	}
-	public void translate(Code.Label c, HashMap<String, Integer> slots,
+	public void translate(Code.Label c, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Label(c.label));
 	}
-	public void translate(Code.Debug c, HashMap<String, Integer> slots,
+	
+	public void translate(Code.Debug c, int slots,
 			ArrayList<Bytecode> bytecodes) {
-		translate(c.rhs,slots,bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_VOID,WHILEYLIST);
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "debug", ftype,
 				Bytecode.STATIC));
 	}
-	public void translate(Code.Fail c, HashMap<String, Integer> slots,
+	
+	public void translate(Code.Fail c, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
@@ -1168,53 +1166,16 @@ public class ClassFileBuilder {
 				ftype, Bytecode.SPECIAL));
 		bytecodes.add(new Bytecode.Throw());
 	}
-	public void translate(Code.ExternJvm c, HashMap<String, Integer> slots,
+	public void translate(Code.ExternJvm c, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.addAll(c.bytecodes);
 	}
-	
-	public void translate(CExpr r, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-		if (r instanceof Value) {
-			translate((Value) r, slots, bytecodes);
-		} else if(r instanceof CExpr.Variable) {
-			translate((CExpr.Variable) r,slots,bytecodes);			
-		} else if(r instanceof CExpr.Register) {			
-			translate((CExpr.Register) r,slots,bytecodes);
-		} else if(r instanceof CExpr.ListAccess) {
-			translate((CExpr.ListAccess)r,slots,bytecodes);
-		} else if(r instanceof CExpr.BinOp) {
-			translate((CExpr.BinOp)r,slots,bytecodes);
-		} else if(r instanceof CExpr.UnOp) {
-			translate((CExpr.UnOp)r,slots,bytecodes);
-		} else if(r instanceof CExpr.NaryOp) {
-			translate((CExpr.NaryOp)r,slots,bytecodes);
-		} else if(r instanceof CExpr.Dictionary) {
-			translate((CExpr.Dictionary)r,slots,bytecodes);
-		}  else if(r instanceof CExpr.Record) {
-			translate((CExpr.Record)r,slots,bytecodes);
-		} else if(r instanceof CExpr.RecordAccess) {
-			translate((CExpr.RecordAccess)r,slots,bytecodes);
-		} else if(r instanceof CExpr.DirectInvoke) {
-			translate((CExpr.DirectInvoke)r,slots,bytecodes);
-		} else if(r instanceof CExpr.IndirectInvoke) {
-			translate((CExpr.IndirectInvoke)r,slots,bytecodes);
-		} else {
-			throw new RuntimeException("Unknown expression encountered: " + r);
-		}
-	}
 		
-	public void translate(CExpr.Variable v, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {		
-		bytecodes.add(new Bytecode.Load(slots.get(v.name),
-				convertType(v.type)));
+	public void translate(Code.Load c, int slots, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 	}
-	public void translate(CExpr.Register v, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(slots.get("%" + v.index),
-				convertType(v.type)));
-	}
-	public void translate(CExpr.ListAccess v, HashMap<String, Integer> slots,
+	
+	public void translate(CExpr.ListAccess v, int slots,
 			ArrayList<Bytecode> bytecodes) {		
 		translate(v.src,slots,bytecodes);		
 		translate(v.index,slots,bytecodes);				
@@ -1238,7 +1199,7 @@ public class ClassFileBuilder {
 		addReadConversion(v.type(),bytecodes);	
 	}
 	
-	public void translate(CExpr.RecordAccess c, HashMap<String, Integer> slots,
+	public void translate(CExpr.RecordAccess c, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		translate(c.lhs, slots, bytecodes);
 		
@@ -1249,12 +1210,18 @@ public class ClassFileBuilder {
 		addReadConversion(et,bytecodes);
 	}
 
-	public void translate(CExpr.Record expr, HashMap<String, Integer> slots,
+	public void translate(Code.NewRecord expr, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-		construct(WHILEYRECORD, slots, bytecodes);		
-		for(Map.Entry<String,CExpr> e : expr.values.entrySet()) {
-			Type et = e.getValue().type();
+		
+		// FIXME: this isn't going work
+		construct(WHILEYRECORD, slots, bytecodes);	
+		
+		ArrayList<String> fields = new ArrayList<String>(expr.type.fields().keySet());
+		Map<String,Type> types = expr.type.fields();
+		
+		for(String field : fields) {
+			Type et = types.get(field);
 			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
 			translate(e.getValue(), slots, bytecodes);
@@ -1264,7 +1231,7 @@ public class ClassFileBuilder {
 		}
 	}
 
-	protected void translate(CExpr.Dictionary expr, HashMap<String, Integer> slots,
+	protected void translate(CExpr.Dictionary expr, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
@@ -1285,7 +1252,7 @@ public class ClassFileBuilder {
 		}
 	}	
 	
-	public void translate(CExpr.BinOp c, HashMap<String, Integer> slots,
+	public void translate(CExpr.BinOp c, int slots,
 			ArrayList<Bytecode> bytecodes) {				
 		
 		Type lub = Type.leastUpperBound(c.lhs.type(),c.rhs.type());
@@ -1343,7 +1310,7 @@ public class ClassFileBuilder {
 		}		
 	}
 
-	public void translate(CExpr.UnOp c, HashMap<String, Integer> slots,
+	public void translate(CExpr.UnOp c, int slots,
 			ArrayList<Bytecode> bytecodes) {				
 				
 		JvmType type = convertType(c.type());
@@ -1398,7 +1365,7 @@ public class ClassFileBuilder {
 		}
 		}		
 	}
-	public void translate(CExpr.NaryOp c, HashMap<String, Integer> slots,
+	public void translate(CExpr.NaryOp c, int slots,
 			ArrayList<Bytecode> bytecodes) {
 
 		switch (c.op) {
@@ -1446,7 +1413,7 @@ public class ClassFileBuilder {
 		}	
 	}
 	
-	public void translate(CExpr.DirectInvoke c, HashMap<String, Integer> slots,
+	public void translate(CExpr.DirectInvoke c, int slots,
 			ArrayList<Bytecode> bytecodes) {				
 		ModuleID mid = c.name.module();
 		String mangled = nameMangle(c.name.name(),c.type);		
@@ -1512,7 +1479,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void translate(CExpr.IndirectInvoke c, HashMap<String, Integer> slots,
+	public void translate(CExpr.IndirectInvoke c, int slots,
 			ArrayList<Bytecode> bytecodes) {				
 		
 		translate(c.target,slots,bytecodes);		
@@ -1549,7 +1516,7 @@ public class ClassFileBuilder {
 		addReadConversion(ft.ret(),bytecodes);	
 	}
 	
-	public void translate(Value v, HashMap<String, Integer> slots,
+	public void translate(Value v, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		if(v instanceof Value.Null) {
 			translate((Value.Null)v,slots,bytecodes);
@@ -1574,12 +1541,12 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void translate(Value.Null e, HashMap<String, Integer> slots,
+	protected void translate(Value.Null e, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(null));
 	}
 	
-	protected void translate(Value.Bool e, HashMap<String, Integer> slots,
+	protected void translate(Value.Bool e, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		if (e.value) {
 			bytecodes.add(new Bytecode.LoadConst(1));
@@ -1587,7 +1554,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.LoadConst(0));
 		}
 	}
-	protected void translate(Value.Int e, HashMap<String, Integer> slots,
+	protected void translate(Value.Int e, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		BigInteger v = e.value;
 		
@@ -1624,7 +1591,7 @@ public class ClassFileBuilder {
 		}		
 	}
 
-	protected void translate(Value.Real e, HashMap<String, Integer> slots,
+	protected void translate(Value.Real e, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		BigRational rat = e.value;
 		BigInteger den = rat.denominator();
@@ -1707,7 +1674,7 @@ public class ClassFileBuilder {
 		}		
 	}
 
-	protected void translate(Value.Set lv, HashMap<String, Integer> slots,
+	protected void translate(Value.Set lv, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYSET, slots, bytecodes);		
 		JvmType.Function ftype = new JvmType.Function(T_BOOL,
@@ -1721,7 +1688,7 @@ public class ClassFileBuilder {
 		}
 	}
 
-	protected void translate(Value.List lv, HashMap<String, Integer> slots,
+	protected void translate(Value.List lv, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYLIST, slots, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
@@ -1735,7 +1702,7 @@ public class ClassFileBuilder {
 		}		
 	}
 
-	protected void translate(Value.Record expr, HashMap<String, Integer> slots,
+	protected void translate(Value.Record expr, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
@@ -1752,7 +1719,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void translate(Value.Dictionary expr, HashMap<String, Integer> slots,
+	protected void translate(Value.Dictionary expr, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
@@ -1773,7 +1740,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void translate(Value.FunConst e, HashMap<String, Integer> slots,
+	protected void translate(Value.FunConst e, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		NameID nid = e.name;		
@@ -1782,7 +1749,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
 	}
 	
-	public void makePreAssignment(LVal lhs, HashMap<String, Integer> slots,
+	public void makePreAssignment(LVal lhs, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		if(lhs instanceof CExpr.ListAccess) {
 			CExpr.ListAccess v = (CExpr.ListAccess) lhs;
@@ -1800,7 +1767,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void makePostAssignment(LVal lhs, HashMap<String, Integer> slots,
+	public void makePostAssignment(LVal lhs, int slots,
 			ArrayList<Bytecode> bytecodes) {
 		cloneRHS(lhs.type(),bytecodes);
 		if(lhs instanceof CExpr.Variable) {
@@ -1924,24 +1891,18 @@ public class ClassFileBuilder {
 	 * @param bytecodes
 	 * @param params
 	 */
-	public void construct(JvmType.Clazz owner, HashMap<String, Integer> slots,
-			ArrayList<Bytecode> bytecodes, CExpr... params) {
+	public void construct(JvmType.Clazz owner, int slots,
+			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(owner));		
 		bytecodes.add(new Bytecode.Dup(owner));
-		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		for(CExpr e : params) {			
-			translate(e,slots,bytecodes);
-			paramTypes.add(convertType(e.type()));
-		}
+		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();		
 		JvmType.Function ftype = new JvmType.Function(T_VOID,paramTypes);
-		
-		// call the appropriate constructor
 		bytecodes.add(new Bytecode.Invoke(owner, "<init>", ftype,
 				Bytecode.SPECIAL));
 	}		 
 	
 	protected void convert(Type toType, Type fromType,
-			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {				
+			int slots, ArrayList<Bytecode> bytecodes) {				
 		if (Type.isomorphic(toType, fromType)) {		
 			// do nothing!						
 		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
@@ -1967,7 +1928,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void convert(Type.List toType, Type.List fromType,
-			HashMap<String, Integer> slots,			
+			int slots,			
 			ArrayList<Bytecode> bytecodes) {
 		
 		if(fromType.element() == Type.T_VOID) {
@@ -2013,7 +1974,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void convert(Type.Set toType, Type.List fromType,
-			HashMap<String, Integer> slots,			
+			int slots,			
 			ArrayList<Bytecode> bytecodes) {
 						
 		if(fromType.element() == Type.T_VOID) {
@@ -2059,7 +2020,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void convert(Type.Set toType, Type.Set fromType,
-			HashMap<String, Integer> slots,
+			int slots,
 			ArrayList<Bytecode> bytecodes) {
 		
 		if(fromType.element() == Type.T_VOID) {
@@ -2105,7 +2066,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void convert(Type.Record toType, Type.Record fromType,
-			HashMap<String, Integer> slots,
+			int slots,
 			ArrayList<Bytecode> bytecodes) {
 		slots = (HashMap) slots.clone();
 		String oldtup = freshVar(slots);
@@ -2137,7 +2098,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void convert(Type toType, Type.Bool fromType,
-			HashMap<String, Integer> slots, ArrayList<Bytecode> bytecodes) {
+			int slots, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
@@ -2230,7 +2191,7 @@ public class ClassFileBuilder {
 	}	
 		
 	protected int var = 0;
-	protected String freshVar(HashMap<String, Integer> slots) {
+	protected String freshVar(int slots) {
 		// Note, I use "$$" here to avoid name clases with temp variables
         // generated by the front-end.
 		String v = "$$" + var++; 
