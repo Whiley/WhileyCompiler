@@ -336,17 +336,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=e.fields.size();i!=e.level;++i) {
 			path.add(environment.pop());
 		}
-		Type src = environment.pop();
+		Type src = environment.get(e.slot);
 		Type iter = src;
-		
-		System.out.println("SRC: " + iter);
 		
 		int fi = 0;
 		int pi = 0;
-		for(int i=0;i!=e.level;++i) {	
-			
-			System.out.println("ITER: " + iter);
-			
+		for(int i=0;i!=e.level;++i) {				
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
@@ -380,7 +375,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// FIXME: broken as should just update src variable.
 		checkIsSubtype(iter,val,stmt);
 		
-		return Code.MultiStore(src,e.level,e.fields);
+		return Code.MultiStore(src,e.slot,e.level,e.fields);
 	}	
 	
 	protected Code infer(Load e, Entry stmt, Env environment) {

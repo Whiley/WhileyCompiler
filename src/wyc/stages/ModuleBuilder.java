@@ -634,9 +634,13 @@ public class ModuleBuilder {
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block();
-			int level = extractLVal(s.lhs,fields,blk,environment);			
+			Pair<Variable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
+			if(!environment.containsKey(l.first().var)) {
+				syntaxError("unknown variable",filename,l.first());
+			}
+			int slot = environment.get(l.first().var);
 			blk.addAll(resolve(environment, s.rhs));			
-			blk.add(Code.MultiStore(null,level,fields),
+			blk.add(Code.MultiStore(null,slot,l.second(),fields),
 					s.attribute(Attribute.Source.class));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -645,30 +649,24 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected int extractLVal(Expr e, ArrayList<String> fields, Block blk,
+	protected Pair<Variable,Integer> extractLVal(Expr e, ArrayList<String> fields, Block blk,
 			HashMap<String, Integer> environment) {
 		if (e instanceof Variable) {
 			Variable v = (Variable) e;
-			if (environment.containsKey(v.var)) {
-				blk.add(Code.Load(null, environment.get(v.var)),
-						e.attribute(Attribute.Source.class));
-			} else {
-				syntaxError("variable not defined", filename, e);
-			}
-			return 0;
+			return new Pair(v,0);			
 		} else if (e instanceof ListAccess) {
 			ListAccess la = (ListAccess) e;
-			int l = extractLVal(la.src, fields, blk, environment);
+			Pair<Variable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.addAll(resolve(environment, la.index));			
-			return l + 1;
+			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof RecordAccess) {
 			RecordAccess ra = (RecordAccess) e;
-			int l = extractLVal(ra.lhs, fields, blk, environment);
+			Pair<Variable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
 			fields.add(ra.name);
-			return l + 1;			
+			return new Pair(l.first(),l.second() + 1);			
 		} else {
 			syntaxError("invalid assignment component", filename, e);
-			return 0; // dead code
+			return null; // dead code
 		}
 	}
 	
@@ -1464,7 +1462,7 @@ public class ModuleBuilder {
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);
 		for (String key : keys) {
-			fields.put(key, null);
+			fields.put(key, Type.T_VOID);
 			blk.addAll(resolve(environment, sg.fields.get(key)));
 		}
 		blk.add(Code.NewRec(Type.T_RECORD(fields)), sg.attributes());

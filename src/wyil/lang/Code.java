@@ -201,8 +201,8 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static MultiStore MultiStore(Type type, int level, Collection<String> fields) {
-		return get(new MultiStore(type,level,fields));
+	public static MultiStore MultiStore(Type type, int slot, int level, Collection<String> fields) {
+		return get(new MultiStore(type,slot,level,fields));
 	}
 	
 	/**
@@ -1081,14 +1081,16 @@ public abstract class Code {
 	public static final class MultiStore extends Code {
 		public final Type type;
 		public final int level;
+		public final int slot;
 		public final ArrayList<String> fields;
 
-		private MultiStore(Type type, int level, Collection<String> fields) {
+		private MultiStore(Type type, int slot, int level, Collection<String> fields) {
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
 			}
 			this.type = type;
+			this.slot = slot;
 			this.level = level;
 			this.fields = new ArrayList<String>(fields);
 		}
@@ -1097,7 +1099,7 @@ public abstract class Code {
 			if(type == null) {
 				return level + fields.hashCode();
 			} else {
-				return type.hashCode() + level + fields.hashCode();
+				return type.hashCode() + slot + level + fields.hashCode();
 			}
 		}
 
@@ -1105,7 +1107,7 @@ public abstract class Code {
 			if (o instanceof MultiStore) {
 				MultiStore i = (MultiStore) o;
 				return (i.type == type || (type != null && type.equals(i.type)))
-						&& level == i.level && fields.equals(i.fields);
+						&& level == i.level && slot == i.slot && fields.equals(i.fields);
 			}
 			return false;
 		}
@@ -1120,7 +1122,7 @@ public abstract class Code {
 				firstTime=false;
 				fs += f;
 			}
-			return toString("multistore #" + level + fs,type);
+			return toString("multistore " + slot + " #" + level + fs,type);
 		}
 	}
 
