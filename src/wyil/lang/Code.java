@@ -82,18 +82,6 @@ public abstract class Code {
 		return get(new DictLoad(type));
 	}
 	
-	/**
-	 * Construct a <code>liststore</code> bytecode which writes a given value to a
-	 * given key in a given dictionary.
-	 * 
-	 * @param type
-	 *            --- dictionary type.
-	 * @return
-	 */
-	public static DictStore DictStore(Type.Dictionary type) {
-		return get(new DictStore(type));
-	}
-	
 	public static End End(String label) {
 		return get(new End(label));
 	}
@@ -125,21 +113,7 @@ public abstract class Code {
 	 */
 	public static FieldLoad FieldLoad(Type.Record type, String field) {
 		return get(new FieldLoad(type,field));
-	}
-
-	/**
-	 * Construct a <code>fieldstore</code> bytecode which reads a given field
-	 * from a record of a given type.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param field
-	 *            --- field to write.
-	 * @return
-	 */
-	public static FieldStore FieldStore(Type.Record type, String field) {
-		return get(new FieldStore(type,field));
-	}
+	}	
 	
 	/**
 	 * Construct a <code>goto</code> bytecode which branches unconditionally to
@@ -189,18 +163,6 @@ public abstract class Code {
 	public static ListLoad ListLoad(Type.List type) {
 		return get(new ListLoad(type));
 	}
-	
-	/**
-	 * Construct a <code>liststore</code> bytecode which writes a given value to a
-	 * given index in a given list.
-	 * 
-	 * @param type
-	 *            --- list type.
-	 * @return
-	 */
-	public static ListStore ListStore(Type.List type) {
-		return get(new ListStore(type));
-	}
 
 	/**
 	 * Construct a <code>loop</code> bytecode which iterates the sequence of
@@ -227,6 +189,20 @@ public abstract class Code {
 	 */
 	public static ForAll ForAll(int var, String label, Collection<Integer> modifies) {
 		return get(new ForAll(var, label,modifies));
+	}
+
+	/**
+	 * Construct a <code>multistore</code> bytecode which writes a value into a
+	 * compound structure, as determined by a given access path.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to write.
+	 * @return
+	 */
+	public static MultiStore MultiStore(Type type, int level, Collection<String> fields) {
+		return get(new MultiStore(type,level,fields));
 	}
 	
 	/**
@@ -623,35 +599,7 @@ public abstract class Code {
 		public String toString() {
 			return toString("dictload",type);
 		}	
-	}
-	
-	public static final class DictStore extends Code {
-		public final Type.Dictionary type;				
-		
-		private DictStore(Type.Dictionary type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof DictStore) {
-				DictStore i = (DictStore) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("dictstore",type);
-		}	
-	}
+	}	
 	
 	public static final class End extends Label {
 		End(String label) {
@@ -758,48 +706,6 @@ public abstract class Code {
 		public String toString() {
 			return toString("fieldload " + field,type);			
 		}	
-	}
-
-	/**
-	 * The fieldstore bytecode pops a value from the stack, followed by a record
-	 * alias. It then overwrites the given field with that value.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class FieldStore extends Code {
-		public final Type.Record type;
-		public final String field;
-
-		private FieldStore(Type.Record type, String field) {
-			if (field == null) {
-				throw new IllegalArgumentException(
-						"FieldStore field argument cannot be null");
-			}
-			this.type = type;
-			this.field = field;
-		}
-
-		public int hashCode() {
-			if(type == null) {
-				return field.hashCode();
-			} else {
-				return type.hashCode() + field.hashCode();
-			}
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof FieldStore) {
-				FieldStore i = (FieldStore) o;
-				return (i.type == type || (type != null && type.equals(i.type)))
-						&& field.equals(i.field);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return toString("fieldstore " + field,type);
-		}
 	}
 	
 	public static final class Goto extends Code {
@@ -1084,35 +990,7 @@ public abstract class Code {
 		public String toString() {
 			return toString("listload",type);
 		}	
-	}
-	
-	public static final class ListStore extends Code {
-		public final Type type;				
-		
-		private ListStore(Type type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof ListStore) {
-				ListStore i = (ListStore) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("liststore",type);
-		}	
-	}	
+	}		
 	
 	public static final class Load extends Code {		
 		public final Type type;
@@ -1198,6 +1076,54 @@ public abstract class Code {
 			return "forall " + var + " " + target;
 		}		
 	}
+
+	
+	public static final class MultiStore extends Code {
+		public final Type type;
+		public final int level;
+		public final ArrayList<String> fields;
+
+		private MultiStore(Type type, int level, Collection<String> fields) {
+			if (fields == null) {
+				throw new IllegalArgumentException(
+						"FieldStore fields argument cannot be null");
+			}
+			this.type = type;
+			this.level = level;
+			this.fields = new ArrayList<String>(fields);
+		}
+
+		public int hashCode() {
+			if(type == null) {
+				return level + fields.hashCode();
+			} else {
+				return type.hashCode() + level + fields.hashCode();
+			}
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof MultiStore) {
+				MultiStore i = (MultiStore) o;
+				return (i.type == type || (type != null && type.equals(i.type)))
+						&& level == i.level && fields.equals(i.fields);
+			}
+			return false;
+		}
+
+		public String toString() {
+			String fs = fields.isEmpty() ? "" : " ";
+			boolean firstTime=true;
+			for(String f : fields) {
+				if(!firstTime) {
+					fs += ".";
+				}
+				firstTime=false;
+				fs += f;
+			}
+			return toString("multistore #" + level + fs,type);
+		}
+	}
+
 	
 	public static final class NewDict extends Code {
 		public final Type.Dictionary type;

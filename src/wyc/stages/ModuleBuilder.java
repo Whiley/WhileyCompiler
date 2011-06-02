@@ -630,18 +630,13 @@ public class ModuleBuilder {
 						.attribute(Attribute.Source.class));					
 			}
 			return blk;
-		} else if(s.lhs instanceof ListAccess){
-			ListAccess la = (ListAccess) s.lhs;
-			blk = resolve(environment, la.src);
-			blk.addAll(resolve(environment, la.index));
+		} else if(s.lhs instanceof ListAccess || s.lhs instanceof RecordAccess){
+			// this is where we need a multistore operation						
+			ArrayList<String> fields = new ArrayList<String>();
+			blk = new Block();
+			int level = extractLVal(s.lhs,fields,blk,environment);			
 			blk.addAll(resolve(environment, s.rhs));			
-			blk.add(Code.ListStore(null),
-					s.attribute(Attribute.Source.class));							
-		} else if(s.lhs instanceof RecordAccess){
-			RecordAccess ra = (RecordAccess) s.lhs;
-			blk = resolve(environment, ra.lhs);
-			blk.addAll(resolve(environment, s.rhs));
-			blk.add(Code.FieldStore(null, ra.name),
+			blk.add(Code.MultiStore(null,level,fields),
 					s.attribute(Attribute.Source.class));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -650,6 +645,33 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected int extractLVal(Expr e, ArrayList<String> fields, Block blk,
+			HashMap<String, Integer> environment) {
+		if (e instanceof Variable) {
+			Variable v = (Variable) e;
+			if (environment.containsKey(v.var)) {
+				blk.add(Code.Load(null, environment.get(v.var)),
+						e.attribute(Attribute.Source.class));
+			} else {
+				syntaxError("variable not defined", filename, e);
+			}
+			return 0;
+		} else if (e instanceof ListAccess) {
+			ListAccess la = (ListAccess) e;
+			int l = extractLVal(la.src, fields, blk, environment);
+			blk.addAll(resolve(environment, la.index));			
+			return l + 1;
+		} else if (e instanceof RecordAccess) {
+			RecordAccess ra = (RecordAccess) e;
+			int l = extractLVal(ra.lhs, fields, blk, environment);
+			fields.add(ra.name);
+			return l + 1;			
+		} else {
+			syntaxError("invalid assignment component", filename, e);
+			return 0; // dead code
+		}
+	}
+	
 	protected Block resolve(Assert s, HashMap<String,Integer> environment) {
 		String lab = Block.freshLabel();
 		String clab = Block.freshLabel();

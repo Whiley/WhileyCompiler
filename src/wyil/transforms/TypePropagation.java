@@ -138,8 +138,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Fail)code,entry,environment);
 		} else if(code instanceof FieldLoad) {
 			code = infer((FieldLoad)code,entry,environment);
-		} else if(code instanceof FieldStore) {
-			code = infer((FieldStore)code,entry,environment);
 		} else if(code instanceof IndirectInvoke) {
 			code = infer((IndirectInvoke)code,entry,environment);
 		} else if(code instanceof IndirectSend) {
@@ -150,10 +148,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// skip
 		} else if(code instanceof ListLoad) {
 			code = infer((ListLoad)code,entry,environment);
-		} else if(code instanceof ListStore) {
-			code = infer((ListStore)code,entry,environment);
 		} else if(code instanceof Load) {
 			code = infer((Load)code,entry,environment);
+		} else if(code instanceof MultiStore) {
+			code = infer((MultiStore)code,entry,environment);
 		} else if(code instanceof NewDict) {
 			code = infer((NewDict)code,entry,environment);
 		} else if(code instanceof NewList) {
@@ -261,24 +259,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.FieldLoad(ett, e.field); 
 	}
 	
-	protected Code infer(FieldStore e, Entry stmt, Env environment) {
-		Type src = environment.pop();
-		Type val = environment.pop();
-		
-		Type.Record ett = Type.effectiveRecordType(src);		
-		if (ett == null) {
-			syntaxError("record required, got: " + src, filename, stmt);
-		}
-		Type ft = ett.fields().get(e.field);		
-		if (ft == null) {
-			syntaxError("record has no field named " + e.field, filename, stmt);
-		}
-		
-		checkIsSubtype(ft,val,stmt);
-		
-		return Code.FieldStore(ett,e.field);
-	}
-		
 	protected Code infer(IndirectSend e, Entry stmt, Env environment) {
 		return null;
 	}
@@ -350,29 +330,58 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 		
-	protected Code infer(ListStore e, Entry stmt, Env environment) {
+	protected Code infer(MultiStore e, Entry stmt, Env environment) {		
+		ArrayList<Type> path = new ArrayList();
 		Type val = environment.pop();
-		Type idx = environment.pop();
-		Type src = environment.pop();
-		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src)) {			
-			// this indicates a dictionary access, rather than a list access			
-			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
-			if(dict == null) {
-				syntaxError("expected dictionary",filename,stmt);
-			}
-			checkIsSubtype(dict.key(),idx,stmt);
-			Type nval_t = Type.leastUpperBound(dict.value(), val);
-			return Code.DictStore(Type.T_DICTIONARY(dict.key(),nval_t));
-		} else {			
-			Type.List list = Type.effectiveListType(src);			
-			if(list == null) {
-				syntaxError("expected list",filename,stmt);
-			}			
-			checkIsSubtype(Type.T_INT,idx,stmt);
-			Type nval_t = Type.leastUpperBound(list.element(), val);
-			return Code.ListStore(Type.T_LIST(nval_t));
+		for(int i=e.fields.size();i!=e.level;++i) {
+			path.add(environment.pop());
 		}
-	}
+		Type src = environment.pop();
+		Type iter = src;
+		
+		System.out.println("SRC: " + iter);
+		
+		int fi = 0;
+		int pi = 0;
+		for(int i=0;i!=e.level;++i) {	
+			
+			System.out.println("ITER: " + iter);
+			
+			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+				// this indicates a dictionary access, rather than a list access			
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
+				if(dict == null) {
+					syntaxError("expected dictionary",filename,stmt);
+				}
+				Type idx = path.get(pi++);
+				checkIsSubtype(dict.key(),idx,stmt);
+				iter = dict.value();				
+			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+				Type.List list = Type.effectiveListType(iter);			
+				if(list == null) {
+					syntaxError("expected list",filename,stmt);
+				}
+				Type idx = path.get(pi++);
+				checkIsSubtype(Type.T_INT,idx,stmt);
+				iter = list.element();
+			} else {
+				Type.Record rec = Type.effectiveRecordType(iter);
+				if(rec == null) {
+					syntaxError("expected record",filename,stmt);
+				}
+				String field = e.fields.get(fi++);
+				iter = rec.fields().get(field);
+				if(iter == null) {
+					syntaxError("expected field \"" + field + "\"",filename,stmt);
+				}				
+			}
+		}
+		
+		// FIXME: broken as should just update src variable.
+		checkIsSubtype(iter,val,stmt);
+		
+		return Code.MultiStore(src,e.level,e.fields);
+	}	
 	
 	protected Code infer(Load e, Entry stmt, Env environment) {
 		e = Code.Load(environment.get(e.slot), e.slot);		
