@@ -594,10 +594,11 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Block resolve(Assign s, HashMap<String,Integer> environment) {			
-		Block blk = resolve(environment, s.rhs);
-				
+	protected Block resolve(Assign s, HashMap<String,Integer> environment) {
+		Block blk = null;
+		
 		if(s.lhs instanceof Variable) {
+			blk = resolve(environment, s.rhs);			
 			Variable v = (Variable) s.lhs;			
 			if(environment.containsKey(v.var)) {
 				blk.add(Code.Store(null, environment.get(v.var)),
@@ -609,6 +610,7 @@ public class ModuleBuilder {
 						s.attribute(Attribute.Source.class));
 			}
 		} else if(s.lhs instanceof TupleGen) {
+			blk = resolve(environment, s.rhs);			
 			// this indicates a tuple assignment which must be treated specially.
 			TupleGen tg = (TupleGen) s.lhs;			
 			int freeReg = environment.size();
@@ -630,13 +632,15 @@ public class ModuleBuilder {
 			return blk;
 		} else if(s.lhs instanceof ListAccess){
 			ListAccess la = (ListAccess) s.lhs;
-			blk.addAll(resolve(environment, la.src));
+			blk = resolve(environment, la.src);
 			blk.addAll(resolve(environment, la.index));
-			blk.add(Code.ListLoad(null),
+			blk.addAll(resolve(environment, s.rhs));			
+			blk.add(Code.ListStore(null),
 					s.attribute(Attribute.Source.class));							
 		} else if(s.lhs instanceof RecordAccess){
 			RecordAccess ra = (RecordAccess) s.lhs;
-			blk.addAll(resolve(environment, ra.lhs));			
+			blk = resolve(environment, ra.lhs);
+			blk.addAll(resolve(environment, s.rhs));
 			blk.add(Code.FieldStore(null, ra.name),
 					s.attribute(Attribute.Source.class));							
 		} else {
@@ -1330,9 +1334,9 @@ public class ModuleBuilder {
 			}
 
 			if (v.nop == NOp.LISTGEN) {
-				blk.add(Code.NewList(Type.T_LIST(null),nargs),v.attributes());
+				blk.add(Code.NewList(null,nargs),v.attributes());
 			} else {
-				blk.add(Code.NewSet(Type.T_SET(null),nargs),v.attributes());
+				blk.add(Code.NewSet(null,nargs),v.attributes());
 			}
 			return blk;
 		}

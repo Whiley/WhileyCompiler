@@ -104,7 +104,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		this.stores = new HashMap<String,Env>();
 		
 		Env environment = initialStore();
-		for (int i = method.type().params().size(); i < mcase.maxLocals(); i++) {
+		int start = method.type().params().size();
+		if(method.type().receiver() != null) { start++; }
+		for (int i = start; i < mcase.maxLocals(); i++) {
 			environment.add(Type.T_VOID);
 		}	
 		
@@ -152,6 +154,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((ListStore)code,entry,environment);
 		} else if(code instanceof Load) {
 			code = infer((Load)code,entry,environment);
+		} else if(code instanceof NewDict) {
+			code = infer((NewDict)code,entry,environment);
+		} else if(code instanceof NewList) {
+			code = infer((NewList)code,entry,environment);
+		} else if(code instanceof NewRecord) {
+			code = infer((NewRecord)code,entry,environment);
+		} else if(code instanceof NewSet) {
+			code = infer((NewSet)code,entry,environment);
 		} else if(code instanceof Return) {
 			code = infer((Return)code,entry,environment);
 		} else if(code instanceof Store) {
@@ -252,19 +262,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(FieldStore e, Entry stmt, Env environment) {
-		Type lhs_t = environment.pop();
-		Type rhs_t = environment.pop();
+		Type src = environment.pop();
+		Type val = environment.pop();
 		
-		Type.Record ett = Type.effectiveRecordType(lhs_t);		
+		Type.Record ett = Type.effectiveRecordType(src);		
 		if (ett == null) {
-			syntaxError("record required, got: " + lhs_t, filename, stmt);
+			syntaxError("record required, got: " + src, filename, stmt);
 		}
 		Type ft = ett.fields().get(e.field);		
 		if (ft == null) {
 			syntaxError("record has no field named " + e.field, filename, stmt);
 		}
 		
-		checkIsSubtype(ft,rhs_t,stmt);
+		checkIsSubtype(ft,val,stmt);
 		
 		return Code.FieldStore(ett,e.field);
 	}
@@ -353,7 +363,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(dict.key(),idx,stmt);
 			Type nval_t = Type.leastUpperBound(dict.value(), val);
 			return Code.DictStore(Type.T_DICTIONARY(dict.key(),nval_t));
-		} else {
+		} else {			
 			Type.List list = Type.effectiveListType(src);			
 			if(list == null) {
 				syntaxError("expected list",filename,stmt);
@@ -377,8 +387,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=keys.size()-1;i>=0;--i) {
 			fields.put(keys.get(i),environment.pop());
 		}		
-		
-		return Code.NewRec(Type.T_RECORD(fields));
+		Type.Record type = Type.T_RECORD(fields);
+		environment.push(type);
+		return Code.NewRec(type);
 	}
 	
 	protected Code infer(NewDict e, Entry stmt, Env environment) {
@@ -391,7 +402,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 		}
 		
-		return Code.NewDict(Type.T_DICTIONARY(key,value),e.nargs);
+		Type.Dictionary type = Type.T_DICTIONARY(key,value);
+		environment.push(type);
+		return Code.NewDict(type,e.nargs);
 	}
 	
 	protected Code infer(NewList e, Entry stmt, Env environment) {
@@ -401,7 +414,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem = Type.leastUpperBound(elem,environment.pop());						
 		}
 		
-		return Code.NewList(Type.T_LIST(elem),e.nargs);
+		Type.List type = Type.T_LIST(elem);
+		environment.push(type);
+		return Code.NewList(type,e.nargs);
 	}
 	
 	
@@ -412,7 +427,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem = Type.leastUpperBound(elem,environment.pop());						
 		}
 		
-		return Code.NewSet(Type.T_SET(elem),e.nargs);
+		Type.Set type = Type.T_SET(elem);
+		environment.push(type);
+		return Code.NewSet(type,e.nargs);
 	}
 	
 	protected Code infer(Store e, Entry stmt, Env environment) {
@@ -423,8 +440,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
 		Type ret_t = method.type().ret();		
-			
-		if(!environment.isEmpty()) {			
+		
+		if(environment.size() > methodCase.maxLocals()) {			
 			if(ret_t == Type.T_VOID) {
 				syntaxError(
 						"cannot return value from method with void return type",

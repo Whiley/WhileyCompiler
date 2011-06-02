@@ -168,7 +168,8 @@ public class ClassFileLoader {
 			}
 
 			List<Module.Case> mcases = new ArrayList<Module.Case>();
-			mcases.add(new Module.Case(null, attrs));
+			// TODO: fix this problem here related to max locals
+			mcases.add(new Module.Case(null, 0, attrs));
 
 			return new Module.Method(name, type, mcases);
 		} catch (IOException e) {
