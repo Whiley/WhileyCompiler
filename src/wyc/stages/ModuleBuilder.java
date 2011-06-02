@@ -813,7 +813,9 @@ public class ModuleBuilder {
 		String label = Block.freshLabel();
 		Block blk = resolve(environment,s.source);				
 		int freeReg = environment.size();
-		environment.put("$" + freeReg, freeReg);		
+		
+		// Note: NameResolution guarantees that !environment.contains(s.variable);
+		environment.put(s.variable, freeReg);		
 				
 		blk.add(Code.ForAll(freeReg, label, Collections.EMPTY_SET), s
 				.attribute(Attribute.Source.class));				
