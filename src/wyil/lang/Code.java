@@ -187,8 +187,8 @@ public abstract class Code {
 	 *            --- exit label.
 	 * @return
 	 */
-	public static ForAll ForAll(int var, String label, Collection<Integer> modifies) {
-		return get(new ForAll(var, label,modifies));
+	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
+		return get(new ForAll(type, var, label,modifies));
 	}
 
 	/**
@@ -694,6 +694,10 @@ public abstract class Code {
 			}
 		}
 		
+		public Type fieldType() {
+			return type.fields().get(field);
+		}
+		
 		public boolean equals(Object o) {
 			if(o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
@@ -1057,9 +1061,11 @@ public abstract class Code {
 
 	public static final class ForAll extends Loop {
 		public final int var;
+		public final Type type;
 				
-		private ForAll(int var, String target, Collection<Integer> modified) {
+		private ForAll(Type type, int var, String target, Collection<Integer> modified) {
 			super(target,modified);
+			this.type = type;
 			this.var = var;			
 		}
 		
@@ -1070,14 +1076,14 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof ForAll) {
 				ForAll f = (ForAll) o;
-				return target.equals(f.target) && var == f.var
-						&& modified.equals(f.modified);
+				return target.equals(f.target) && type.equals(f.type)
+						&& var == f.var && modified.equals(f.modified);
 			}
 			return false;
 		}
 		
 		public String toString() {
-			return "forall " + var + " " + target;
+			return toString("forall " + var + " " + target,type);
 		}		
 	}
 
