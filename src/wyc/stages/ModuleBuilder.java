@@ -651,7 +651,7 @@ public class ModuleBuilder {
 				return resolve((For) stmt, environment);
 			} else if (stmt instanceof Invoke) {
 				Block blk = resolve(environment, (Invoke) stmt);				
-				// FIXME: need to avoid this somehow?
+				// FIXME: DIFFICULT BUG HERE!!!
 				blk.add(Code.Pop(null),
 						stmt.attribute(Attribute.Source.class));
 				return blk;

@@ -909,9 +909,9 @@ public abstract class Code {
 
 		 public String toString() {
 			 if(asynchronous) {
-				 return toString("iasend",type);
+				 return toString("asend",type);
 			 } else {
-				 return toString("isend",type);
+				 return toString("iasend",type);
 			 }
 		 }		
 	}
@@ -1464,9 +1464,9 @@ public abstract class Code {
 
 		 public String toString() {
 			 if(synchronous) {
-				 return toString("asend " + name,type);				 
+				 return toString("send " + name,type);				 
 			 } else {
-				 return toString("send " + name,type);
+				 return toString("asend " + name,type);
 			 }
 		 }	
 	}

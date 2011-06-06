@@ -273,14 +273,17 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(Invoke ivk, Entry stmt, Env environment) {			
 		ArrayList<Type> types = new ArrayList<Type>();	
-			
+				
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(environment.pop());
 		}
 		
-		Collections.reverse(types);
+		Collections.reverse(types);		
 		
 		try {
+			
+			System.out.println("ENVIRONMENT: " + environment);
+			
 			Type.Fun funtype = bindFunction(ivk.name, null, types, stmt);
 			if(funtype.ret() != Type.T_VOID) {
 				environment.push(funtype.ret());
