@@ -277,6 +277,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			types.add(environment.pop());
 		}
 		
+		Collections.reverse(types);
+		
 		try {
 			Type.Fun funtype = bindFunction(ivk.name, null, types, stmt);
 			if(funtype.ret() != Type.T_VOID) {
@@ -296,6 +298,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(0,environment.pop());
 		}
+		Collections.reverse(types);
 		Type target = environment.pop();
 		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
 		List<Type> ft_params = ft.params();
@@ -453,6 +456,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(environment.pop());
 		}
+		Collections.reverse(types);
 		
 		Type _rec = environment.pop();
 		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),_rec,stmt);
