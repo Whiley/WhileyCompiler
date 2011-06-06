@@ -1676,7 +1676,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
 			bytecodes.add(new Bytecode.Swap());
 			bytecodes.add(new Bytecode.LoadConst(i+1));
-			bytecodes.add(new Bytecode.Swap());
+			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(pt,bytecodes);
 			bytecodes.add(new Bytecode.ArrayStore(arrT));			
 		}
