@@ -1150,10 +1150,12 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, s.receiver));
 		}
 
+		int i = 0;
 		for (Expr e : args) {
 			blk.addAll(resolve(environment, e));
+			paramTypes[i++] = Type.T_VOID;
 		}	
-		
+			
 		if(environment.containsKey(s.name)) {			
 			if(s.receiver != null) {
 				blk.add(Code.IndirectSend(Type.T_FUN(null, null, paramTypes),s.synchronous));
@@ -1166,10 +1168,10 @@ public class ModuleBuilder {
 				NameID name = new NameID(modInfo.module, s.name);
 				if(s.receiver != null) {
 					blk.add(Code.Send(
-							Type.T_FUN(null, null, paramTypes), name, s.synchronous));
+							Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous));
 				} else {
 					blk.add(Code.Invoke(
-							Type.T_FUN(null, null, paramTypes), name));
+							Type.T_FUN(null, Type.T_VOID, paramTypes), name));
 				}			
 			} else {
 				syntaxError("unknown function or method",filename,s);

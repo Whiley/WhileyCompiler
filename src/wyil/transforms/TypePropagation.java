@@ -213,6 +213,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// FIXME: more cases, including elem of		
 			checkIsSubtype(Type.T_REAL,lub,stmt);
 		}
+		
+		environment.push(lub);
+		
 		return Code.BinOp(lub,bop);				
 	}
 	
