@@ -1515,7 +1515,8 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof UnOp) {
 				UnOp bo = (UnOp) o;
-				return type.equals(bo.type) && uop.equals(bo.uop); 
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))) && uop.equals(bo.uop); 
 			}
 			return false;
 		}
