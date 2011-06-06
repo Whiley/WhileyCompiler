@@ -250,13 +250,13 @@ public abstract class Code {
 	}
 	
 	/**
-	 * Construct a <code>newrec</code> bytecode which constructs a new record
+	 * Construct a <code>newrecord</code> bytecode which constructs a new record
 	 * and puts it on the stack.
 	 * 
 	 * @param type
 	 * @return
 	 */
-	public static NewRecord NewRec(Type.Record type) {
+	public static NewRecord NewRecord(Type.Record type) {
 		return get(new NewRecord(type));
 	}
 	

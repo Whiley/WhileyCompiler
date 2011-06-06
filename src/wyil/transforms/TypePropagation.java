@@ -399,7 +399,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}		
 		Type.Record type = Type.T_RECORD(fields);
 		environment.push(type);
-		return Code.NewRec(type);
+		return Code.NewRecord(type);
 	}
 	
 	protected Code infer(NewDict e, Entry stmt, Env environment) {

@@ -1465,7 +1465,7 @@ public class ModuleBuilder {
 			fields.put(key, Type.T_VOID);
 			blk.addAll(resolve(environment, sg.fields.get(key)));
 		}
-		blk.add(Code.NewRec(Type.T_RECORD(fields)), sg.attributes());
+		blk.add(Code.NewRecord(Type.T_RECORD(fields)), sg.attributes());
 		return blk;
 	}
 

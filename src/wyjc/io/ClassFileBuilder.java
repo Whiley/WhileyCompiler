@@ -1584,6 +1584,28 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.NewRecord expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
+		construct(WHILEYRECORD, freeSlot, bytecodes);		
+		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYRECORD));
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+		
+		HashMap<String,Type> fields = expr.type.fields();
+		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
+		Collections.sort(keys);
+		Collections.reverse(keys);
+		for(String key : keys) {
+			Type et = fields.get(key);				
+			bytecodes.add(new Bytecode.Load(freeSlot,WHILEYRECORD));
+			bytecodes.add(new Bytecode.Swap());
+			bytecodes.add(new Bytecode.LoadConst(key));
+			bytecodes.add(new Bytecode.Swap());
+			addWriteConversion(et,bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));						
+			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+		}
+		
+		bytecodes.add(new Bytecode.Load(freeSlot,WHILEYRECORD));
+		
 //		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 //		
 //		// FIXME: this isn't going work
