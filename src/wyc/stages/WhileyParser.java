@@ -851,7 +851,7 @@ public class WhileyParser {
 					match(RightSquare.class);
 					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
 							index - 1), lhs, new Expr.Constant(Value
-							.V_INT(BigInteger.ZERO), sourceAttr(start,
+							.V_NUMBER(BigInteger.ZERO), sourceAttr(start,
 							index - 1)), end);
 				}
 				
@@ -958,10 +958,10 @@ public class WhileyParser {
 					index - 1));			
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
-			return new Expr.Constant(Value.V_INT(val), sourceAttr(start, index - 1));
+			return new Expr.Constant(Value.V_NUMBER(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Real) {
 			BigRational val = match(Real.class).value;
-			return new Expr.Constant(Value.V_REAL(val), sourceAttr(start,
+			return new Expr.Constant(Value.V_NUMBER(val), sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof Strung) {
 			return parseString();
@@ -1253,14 +1253,10 @@ public class WhileyParser {
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if(c.value instanceof Value.Int) { 
-				java.math.BigInteger bi = ((Value.Int)c.value).value;
-				return new Expr.Constant(Value.V_INT(bi.negate()),
+			if (c.value instanceof Value.Number) {
+				BigRational br = ((Value.Number) c.value).value;
+				return new Expr.Constant(Value.V_NUMBER(br.negate()),
 						sourceAttr(start, index));
-			} else if(c.value instanceof Value.Real){
-				BigRational br = ((Value.Real)c.value).value;				
-				return new Expr.Constant(Value.V_REAL(br.negate()), sourceAttr(
-						start, index));	
 			}
 		} 
 		
@@ -1295,7 +1291,7 @@ public class WhileyParser {
 		String s = match(Strung.class).string;
 		ArrayList<Value> vals = new ArrayList<Value>();
 		for (int i = 0; i != s.length(); ++i) {
-			vals.add(Value.V_INT(BigInteger.valueOf(s.charAt(i))));
+			vals.add(Value.V_NUMBER(BigInteger.valueOf(s.charAt(i))));
 		}
 		Value.List list = Value.V_LIST(vals);
 		return new Expr.Constant(list, sourceAttr(start, index - 1));

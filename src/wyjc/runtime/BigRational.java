@@ -325,6 +325,11 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return new BigRational(num);
 	}
 	
+	public BigRational intRemainder(final BigRational r) {
+		BigInteger num = numerator.remainder(r.numerator);		
+		return new BigRational(num);
+	}
+	
 	// =========================================================
 	// ========================= OTHER =========================
 	// =========================================================

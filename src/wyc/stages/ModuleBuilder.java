@@ -299,7 +299,94 @@ public class ModuleBuilder {
 	}
 
 	protected Value evaluate(Expr.BinOp bop, Value v1, Value v2) {
-		syntaxError("need to implement binary constant evaluation", filename, bop);
+		Type lub = Type.leastUpperBound(v1.type(), v2.type());
+		
+		// FIXME: there are bugs here related to coercions.
+		
+		if(Type.isSubtype(Type.T_BOOL, lub)) {
+			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2);
+		} else if(Type.isSubtype(Type.T_REAL, lub)) {
+			return evaluate(bop,(Value.Number) v1, (Value.Number) v2);
+		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY), lub)) {
+			return evaluate(bop,(Value.List)v1,(Value.List)v2);
+		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY), lub)) {
+			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
+		} 
+		syntaxError("invalid expression",filename,bop);
+		return null;
+	}
+	
+	protected Value evaluateBoolean(Expr.BinOp bop, Value.Bool v1, Value.Bool v2) {				
+		switch(bop.op) {
+		case AND:
+			return Value.V_BOOL(v1.value & v2.value);
+		case OR:		
+			return Value.V_BOOL(v1.value | v2.value);
+		case XOR:
+			return Value.V_BOOL(v1.value ^ v2.value);
+		}
+		syntaxError("invalid boolean expression",filename,bop);
+		return null;
+	}
+	
+	protected Value evaluate(Expr.BinOp bop, Value.Number v1, Value.Number v2) {		
+		switch(bop.op) {
+		case ADD:
+			return Value.V_NUMBER(v1.value.add(v2.value));
+		case SUB:
+			return Value.V_NUMBER(v1.value.subtract(v2.value));
+		case MUL:
+			return Value.V_NUMBER(v1.value.multiply(v2.value));
+		case DIV:
+			return Value.V_NUMBER(v1.value.divide(v2.value));
+		case REM:
+			return Value.V_NUMBER(v1.value.intRemainder(v2.value));	
+		}
+		syntaxError("invalid numeric expression",filename,bop);
+		return null;
+	}
+	
+	protected Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2) {
+		switch(bop.op) {
+		case ADD:
+			ArrayList vals = new ArrayList(v1.values);
+			vals.addAll(v2.values);
+			return Value.V_LIST(vals);
+		}
+		syntaxError("invalid list expression",filename,bop);
+		return null;
+	}
+	
+	protected Value evaluate(Expr.BinOp bop, Value.Set v1, Value.Set v2) {		
+		switch(bop.op) {
+		case UNION:
+		{
+			HashSet vals = new HashSet(v1.values);			
+			vals.addAll(v2.values);
+			return Value.V_SET(vals);
+		}
+		case INTERSECTION:
+		{
+			HashSet vals = new HashSet();			
+			for(Value v : v1.values) {
+				if(v2.values.contains(v)) {
+					vals.add(v);
+				}
+			}			
+			return Value.V_SET(vals);
+		}
+		case SUB:
+		{
+			HashSet vals = new HashSet();			
+			for(Value v : v1.values) {
+				if(!v2.values.contains(v)) {
+					vals.add(v);
+				}
+			}			
+			return Value.V_SET(vals);
+		}
+		}
+		syntaxError("invalid set expression",filename,bop);
 		return null;
 	}
 	

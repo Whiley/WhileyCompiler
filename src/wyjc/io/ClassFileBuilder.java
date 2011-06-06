@@ -220,7 +220,7 @@ public class ClassFileBuilder {
 			if(code instanceof Assert) {
 				 // translate((Assert)code,freeSlot,bytecodes);
 			} else if(code instanceof BinOp) {
-				 translate((BinOp)code,freeSlot,bytecodes);
+				 translate((BinOp)code,stmt,freeSlot,bytecodes);
 			} else if(code instanceof Convert) {
 				 translate((Convert)code,freeSlot,bytecodes);
 			} else if(code instanceof Const) {
@@ -233,6 +233,10 @@ public class ClassFileBuilder {
 				 translate((Fail)code,freeSlot,bytecodes);
 			} else if(code instanceof FieldLoad) {
 				 translate((FieldLoad)code,freeSlot,bytecodes);
+			} else if(code instanceof Goto) {
+				 translate((Goto)code,freeSlot,bytecodes);
+			} else if(code instanceof IfGoto) {
+				translate((IfGoto) code, stmt, freeSlot, bytecodes);
 			} else if(code instanceof IndirectInvoke) {
 				 translate((IndirectInvoke)code,freeSlot,bytecodes);
 			} else if(code instanceof IndirectSend) {
@@ -240,7 +244,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof Invoke) {
 				 translate((Invoke)code,freeSlot,bytecodes);
 			} else if(code instanceof Label) {
-				// skip
+				translate((Label)code,freeSlot,bytecodes);
 			} else if(code instanceof ListLoad) {
 				 translate((ListLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Load) {
@@ -557,12 +561,13 @@ public class ClassFileBuilder {
 		for (Map.Entry<Value, String> p : c.branches.entrySet()) {
 			// first, check whether the switch value is indeed an integer.
 			Value v = (Value) p.getKey();
-			if (!(v instanceof Value.Int)) {
+			if (!(v instanceof Value.Number && ((Value.Number) v).value
+					.isInteger())) {
 				canUseSwitchBytecode = false;
 				break;
 			}
 			// second, check whether integer value can fit into a Java int
-			Value.Int vi = (Value.Int) v;
+			Value.Number vi = (Value.Number) v;
 			int iv = vi.value.intValue();
 			if (!BigInteger.valueOf(iv).equals(vi.value)) {
 				canUseSwitchBytecode = false;
@@ -587,11 +592,6 @@ public class ClassFileBuilder {
 	public void translate(Code.IfGoto c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
 				
-		if(c.op == Code.COp.ELEMOF) {
-			// TODO: swap operands
-						
-		} 	
-		
 		JvmType type = convertType(c.type);
 		if(c.type == Type.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an
@@ -700,6 +700,7 @@ public class ClassFileBuilder {
 			{
 				JvmType.Function ftype = new JvmType.Function(T_BOOL,
 						JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Swap());
 				bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "contains",
 						ftype, Bytecode.INTERFACE));
 				op = Bytecode.If.NE;
@@ -1427,7 +1428,7 @@ public class ClassFileBuilder {
 		addReadConversion(c.fieldType(),bytecodes);
 	}
 
-	public void translate(Code.BinOp c, int freeSlot,
+	public void translate(Code.BinOp c, Block.Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 				
 		JvmType type = convertType(c.type);
@@ -1472,6 +1473,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
 					Bytecode.STATIC));
 			break;
+		default:
+			syntaxError("unknown binary expression encountered",filename,stmt);
 		}		
 	}
 
@@ -1745,10 +1748,8 @@ public class ClassFileBuilder {
 			translate((Value.Null)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Bool) {
 			translate((Value.Bool)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Int) {
-			translate((Value.Int)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Real) {
-			translate((Value.Real)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Number) {
+			translate((Value.Number)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Set) {
 			translate((Value.Set)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.List) {
@@ -1777,45 +1778,9 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.LoadConst(0));
 		}
 	}
-	protected void translate(Value.Int e, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		BigInteger v = e.value;
-		
-		if(v.bitLength() < 32) {			
-			bytecodes.add(new Bytecode.LoadConst(v.intValue()));
-			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
-					Bytecode.STATIC));
-		} else if(v.bitLength() < 64) {			
-			bytecodes.add(new Bytecode.LoadConst(v.longValue()));
-			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_LONG);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
-					Bytecode.STATIC));
-		} else {
-			// in this context, we need to use a byte array to construct the
-			// integer object.
-			byte[] bytes = v.toByteArray();
-			JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
-			
-			bytecodes.add(new Bytecode.New(BIG_RATIONAL));		
-			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));			
-			bytecodes.add(new Bytecode.LoadConst(bytes.length));
-			bytecodes.add(new Bytecode.New(bat));
-			for(int i=0;i!=bytes.length;++i) {
-				bytecodes.add(new Bytecode.Dup(bat));
-				bytecodes.add(new Bytecode.LoadConst(i));
-				bytecodes.add(new Bytecode.LoadConst(bytes[i]));
-				bytecodes.add(new Bytecode.ArrayStore(bat));
-			}			
-			
-			JvmType.Function ftype = new JvmType.Function(T_VOID,bat);						
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,
-					Bytecode.SPECIAL));
-		}		
-	}
 
-	protected void translate(Value.Real e, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	protected void translate(Value.Number e, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
 		BigRational rat = e.value;
 		BigInteger den = rat.denominator();
 		BigInteger num = rat.numerator();
@@ -1835,7 +1800,7 @@ public class ClassFileBuilder {
 				// integer object.
 				byte[] bytes = num.toByteArray();
 				JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
-				
+
 				bytecodes.add(new Bytecode.New(BIG_RATIONAL));		
 				bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));			
 				bytecodes.add(new Bytecode.LoadConst(bytes.length));
@@ -1846,7 +1811,7 @@ public class ClassFileBuilder {
 					bytecodes.add(new Bytecode.LoadConst(bytes[i]));
 					bytecodes.add(new Bytecode.ArrayStore(bat));
 				}			
-				
+
 				JvmType.Function ftype = new JvmType.Function(T_VOID,bat);						
 				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,
 						Bytecode.SPECIAL));								
@@ -1867,7 +1832,7 @@ public class ClassFileBuilder {
 			// First, do numerator bytes
 			byte[] bytes = num.toByteArray();
 			JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
-			
+
 			bytecodes.add(new Bytecode.New(BIG_RATIONAL));		
 			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));			
 			bytecodes.add(new Bytecode.LoadConst(bytes.length));
@@ -1878,7 +1843,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.LoadConst(bytes[i]));
 				bytecodes.add(new Bytecode.ArrayStore(bat));
 			}		
-			
+
 			// Second, do denominator bytes
 			bytes = den.toByteArray();			
 			bytecodes.add(new Bytecode.LoadConst(bytes.length));
@@ -1889,7 +1854,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.LoadConst(bytes[i]));
 				bytecodes.add(new Bytecode.ArrayStore(bat));
 			}
-			
+
 			// Finally, construct BigRational object
 			JvmType.Function ftype = new JvmType.Function(T_VOID,bat,bat);						
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,

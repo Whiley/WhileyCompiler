@@ -183,9 +183,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return null;
 	}
 	
-	protected Code infer(BinOp v, Entry stmt, Env environment) {
-		Type lhs = environment.pop();
+	protected Code infer(BinOp v, Entry stmt, Env environment) {		
 		Type rhs = environment.pop();
+		Type lhs = environment.pop();
+				
 		Type lub = Type.leastUpperBound(lhs,rhs);
 		Code.BOp bop = v.bop;
 
@@ -634,8 +635,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Triple<Entry,Env,Env> propagate(Code.IfGoto code, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
 		
-		Type lhs_t = environment.pop();
 		Type rhs_t = environment.pop();
+		Type lhs_t = environment.pop();		
 		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
 		
 		switch(code.op) {

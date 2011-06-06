@@ -40,14 +40,14 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Bool(value));
 	}
 	
-	public static Int V_INT(BigInteger value) {
-		return get(new Int(value));
-	}
-
-	public static Real V_REAL(BigRational value) {
-		return get(new Real(value));
+	public static Number V_NUMBER(BigRational value) {
+		return get(new Number(value));
 	}	
 
+	public static Number V_NUMBER(BigInteger value) {
+		return get(new Number(new BigRational(value)));
+	}
+	
 	public static Strung V_STRING(String value) {
 		return get(new Strung(value));
 	}
@@ -137,41 +137,10 @@ public abstract class Value implements Comparable<Value> {
 			}
 		}		
 	}
-	public static final class Int extends Value {
-		public final BigInteger value;
-		private Int(BigInteger value) {
-			this.value = value;
-		}
-		public Type type() {
-			return Type.T_INT;
-		}
-		public int hashCode() {
-			return value.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Int) {
-				Int i = (Int) o;
-				return value.equals(i.value);
-			}
-			return false;
-		}
-		public int compareTo(Value v) {
-			if(v instanceof Int) {
-				Int i = (Int) v;
-				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool) {
-				return 1; 
-			} 
-			return -1;			
-		}
-		public String toString() {
-			return value.toString();
-		}
-	}
-	
-	public static final class Real extends Value {
+		
+	public static final class Number extends Value {
 		public final BigRational value;
-		private Real(BigRational value) {
+		private Number(BigRational value) {
 			this.value = value;
 		}
 		public Type type() {
@@ -185,17 +154,17 @@ public abstract class Value implements Comparable<Value> {
 			return value.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Real) {
-				Real i = (Real) o;
+			if(o instanceof Number) {
+				Number i = (Number) o;
 				return value.equals(i.value);
 			}
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof Real) {
-				Real i = (Real) v;
+			if(v instanceof Number) {
+				Number i = (Number) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Int) {
+			} else if(v instanceof Null || v instanceof Bool) {
 				return 1; 
 			} 
 			return -1;			
@@ -228,7 +197,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Strung) {
 				Strung i = (Strung) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Int || v instanceof Real) {
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Number) {
 				return 1; 
 			} 
 			return -1;			
@@ -277,7 +246,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real || v instanceof Strung) {
+					|| v instanceof Number || v instanceof Strung) {
 				return 1; 
 			} 
 			return -1;			
@@ -341,7 +310,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real || v instanceof Strung
+					|| v instanceof Number || v instanceof Strung
 					|| v instanceof List) {
 				return 1;
 			}
@@ -409,7 +378,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real || v instanceof Strung
+					|| v instanceof Number || v instanceof Strung
 					|| v instanceof Set || v instanceof List) {
 				return 1; 
 			} 
@@ -486,7 +455,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Int || v instanceof Real || v instanceof Strung
+					|| v instanceof Number || v instanceof Strung
 					|| v instanceof Set || v instanceof List
 					|| v instanceof Record) {
 				return 1;
