@@ -1291,7 +1291,7 @@ public abstract class Code {
 	}	
 	
 	public static final class Pop extends Code {
-		private final Type type;
+		public final Type type;
 		
 		private Pop(Type type) {
 			this.type = type;
@@ -1440,14 +1440,14 @@ public abstract class Code {
 	}
 
 	public static final class Send extends Code {		 
-		 public final boolean asynchronous;		 
+		 public final boolean synchronous;		 
 		 public final NameID name;
 		 public final Type.Fun type;
 			
-		 private Send(Type.Fun type, NameID name, boolean asynchronous) {
+		 private Send(Type.Fun type, NameID name, boolean synchronous) {
 			 this.type = type;
 			 this.name = name;
-			 this.asynchronous = asynchronous;
+			 this.synchronous = synchronous;
 		 }
 
 		 public int hashCode() {
@@ -1463,7 +1463,7 @@ public abstract class Code {
 		 }
 
 		 public String toString() {
-			 if(asynchronous) {
+			 if(synchronous) {
 				 return toString("asend " + name,type);				 
 			 } else {
 				 return toString("send " + name,type);

@@ -1222,7 +1222,6 @@ public class ModuleBuilder {
 			}
 		}
 		
-		/* TODO:
 		if(currentFunDecl != null) {
 			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
 
@@ -1233,10 +1232,11 @@ public class ModuleBuilder {
 					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
 					if(ert != null && ert.fields().containsKey(v.var)) {						
 						// Bingo, this is an implicit field dereference
-						CExpr thiz = CExpr.UNOP(CExpr.UOP.PROCESSACCESS, CExpr.VAR(
-								null, "this"));					
-						CExpr.RecordAccess ra = CExpr.RECORDACCESS(thiz, v.var);
-						return new Pair<CExpr,Block>(ra, new Block());
+						Block blk = new Block();
+						blk.add(Code.Load(null, environment.get("this")),v.attribute(Attribute.Source.class));
+						blk.add(Code.UnOp(null, Code.UOp.PROCESSACCESS),v.attribute(Attribute.Source.class));					
+						blk.add(Code.FieldLoad(null, v.var),v.attribute(Attribute.Source.class));						
+						return blk;
 					}
 				}
 			}
@@ -1252,9 +1252,11 @@ public class ModuleBuilder {
 				Module mi = loader.loadModule(mod.module);
 				val = mi.constant(v.var).constant();
 			}
-			return new Block(val, new Block());
+			Block blk = new Block();
+			blk.add(Code.Const(val),v.attribute(Attribute.Source.class));
+			return blk;
 		}
-		*/		
+		
 		// must be an error
 		syntaxError("unknown variable \"" + v.var + "\"",filename,v);
 		return null;

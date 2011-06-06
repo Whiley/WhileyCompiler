@@ -162,12 +162,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((NewSet)code,entry,environment);
 		} else if(code instanceof Return) {
 			code = infer((Return)code,entry,environment);
+		} else if(code instanceof Pop) {
+			code = infer((Pop)code,entry,environment);
+		} else if(code instanceof Send) {
+			code = infer((Send)code,entry,environment);
 		} else if(code instanceof Store) {
 			code = infer((Store)code,entry,environment);
 		} else if(code instanceof UnOp) {
 			code = infer((UnOp)code,entry,environment);
 		} else {
-			syntaxError("Need to finish type inference",filename,entry);
+			syntaxError("Need to finish type inference " + code,filename,entry);
 			return null;
 		}
 		
@@ -282,8 +286,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable
-		}
-		
+		}		
 	}
 	
 	protected Code infer(IndirectInvoke ivk, Entry stmt,
@@ -439,6 +442,35 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.NewSet(type,e.nargs);
 	}
 	
+	protected Code infer(Pop e, Entry stmt, Env environment) {
+		Type t = environment.pop();
+		return Code.Pop(t);
+	}
+	
+	protected Code infer(Send ivk, Entry stmt, Env environment) {
+		ArrayList<Type> types = new ArrayList<Type>();	
+		
+		for(int i=0;i!=ivk.type.params().size();++i) {
+			types.add(environment.pop());
+		}
+		
+		Type _rec = environment.pop();
+		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),_rec,stmt);
+		// FIXME: bug here as we need an effectiveProcessType
+		Type.Process rec = (Type.Process) _rec; 		
+		
+		try {
+			Type.Fun funtype = bindFunction(ivk.name, rec, types, stmt);
+			if(funtype.ret() != Type.T_VOID) {
+				environment.push(funtype.ret());
+			}
+			return Code.Send(funtype, ivk.name, ivk.synchronous);			
+		} catch (ResolveError ex) {
+			syntaxError(ex.getMessage(), filename, stmt);
+			return null; // unreachable
+		}		
+	}
+	
 	protected Code infer(Store e, Entry stmt, Env environment) {
 		e = Code.Store(environment.pop(), e.slot);		
 		environment.set(e.slot, e.type);
@@ -484,7 +516,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				}				
 			case PROCESSACCESS:
 				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-				environment.add(Type.greatestLowerBound(Type.T_ANY,rhs_t));
+			// FIXME: bug here for e.g. unions of processes; need an
+			// effectiveProcessType method
+				Type.Process tp = (Type.Process)rhs_t; 
+				environment.add(tp.element());
 				return Code.UnOp(rhs_t,v.uop);
 			case PROCESSSPAWN:
 				environment.add(Type.T_PROCESS(rhs_t));
