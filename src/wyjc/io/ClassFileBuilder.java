@@ -1637,6 +1637,12 @@ public class ClassFileBuilder {
 		JvmType.Function type = convertFunType(c.type);
 		bytecodes
 				.add(new Bytecode.Invoke(owner, mangled, type, Bytecode.STATIC));
+
+		// now, handle the case of an invoke which returns a value that should
+		// be discarded. 
+		if(!c.retval && c.type.ret() != Type.T_VOID) {
+			bytecodes.add(new Bytecode.Pop(convertType(c.type.ret())));
+		}
 	}
 	
 	public void translate(Code.IndirectInvoke c, int freeSlot,
@@ -1716,12 +1722,17 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
-		if (c.synchronous) {			
+		if (c.synchronous && c.retval) {			
 			ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,
 					Bytecode.VIRTUAL));
 			addReadConversion(c.type.ret(), bytecodes);
+		} else if (c.synchronous) {			
+			ftype = new JvmType.Function(T_VOID,
+					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "vSyncSend", ftype,
+					Bytecode.VIRTUAL));
 		} else {
 			ftype = new JvmType.Function(T_VOID,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);

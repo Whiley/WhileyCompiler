@@ -56,6 +56,22 @@ public final class Actor extends Thread {
 
 	/**
 	 * Send a message synchronously to this actor. This will block the sender
+	 * until the message is received. Any return value is discarded.
+	 * 
+	 * @param method
+	 *            --- the "message"
+	 * @param arguments
+	 *            --- the message "arguments"
+	 */
+	public void vSyncSend(Method method, Object[] arguments) {
+		arguments[0] = this;
+		Message m = new Message(method, arguments, true);
+		queue.add(m);
+		m.get(); // discard return value
+	}
+	
+	/**
+	 * Send a message synchronously to this actor. This will block the sender
 	 * until the message is received, and a return value generated.
 	 * 
 	 * @param method
