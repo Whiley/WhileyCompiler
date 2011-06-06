@@ -166,7 +166,7 @@ public class Main {
 			ClassFileLoader classLoader = new ClassFileLoader();
 			ModuleLoader moduleLoader = new ModuleLoader(whileypath, classLoader);
 			ArrayList<Pipeline.Template> templates = new ArrayList(Pipeline.defaultPipeline);
-			//templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
+			templates.add(new Pipeline.Template(ClassWriter.class,Collections.EMPTY_MAP));
 			Pipeline pipeline = new Pipeline(templates, moduleLoader);
 			if(pipelineModifiers != null) {
 				pipeline.apply(pipelineModifiers);

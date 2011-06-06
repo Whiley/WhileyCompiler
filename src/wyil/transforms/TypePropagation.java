@@ -737,7 +737,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = join(environment,r.second());		
 		
 		// Finally, update the code
-		blk.add(Code.ForAll(forloop.var, forloop.target, forloop.modified), stmt.attributes());
+		blk.add(Code.ForAll(src_t, forloop.var, forloop.target, forloop.modified), stmt.attributes());
 		blk.addAll(r.first());
 		blk.add(Code.End(forloop.target));
 					

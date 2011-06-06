@@ -817,7 +817,7 @@ public class ModuleBuilder {
 		// Note: NameResolution guarantees that !environment.contains(s.variable);
 		environment.put(s.variable, freeReg);		
 				
-		blk.add(Code.ForAll(freeReg, label, Collections.EMPTY_SET), s
+		blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), s
 				.attribute(Attribute.Source.class));				
 		
 		// FIXME: add a continue scope
