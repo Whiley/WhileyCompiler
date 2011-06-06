@@ -1547,19 +1547,39 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Code.NewList c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-//		construct(WHILEYLIST, freeSlot, bytecodes);		
-//		JvmType.Function ftype = new JvmType.Function(T_BOOL,
-//				JAVA_LANG_OBJECT);  
-//
-//		for(CExpr e : c.args) {
-//			bytecodes.add(new Bytecode.Dup(WHILEYLIST));
-//			translate(e, freeSlot, bytecodes);
-//			addWriteConversion(e.type(),bytecodes);
-//			bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));
-//			// FIXME: there is a bug here for bool lists
-//			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
-//		}
-
+		construct(WHILEYLIST, freeSlot, bytecodes);		
+		JvmType.Function ftype = new JvmType.Function(T_BOOL,
+				JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYLIST));
+		
+		JvmType element = convertType(c.type.element());
+		
+		for(int i=0;i!=c.nargs;++i) {
+			bytecodes.add(new Bytecode.Load(freeSlot,element));
+			bytecodes.add(new Bytecode.Swap());			
+			addWriteConversion(c.type.element(),bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));
+			// FIXME: there is a bug here for bool lists
+			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
+		}
+		
+		// At this stage, we have a problem. We've added the elements into the
+		// list in reverse order. For simplicity, I simply call reverse at this
+		// stage. However, it begs the question how we can do better.
+		//
+		// We could store each value into a register and then reload them in the
+		// reverse order. For very large lists, this might cause a problem I
+		// suspect.
+		//
+		// Another option would be to have a special list initialise function
+		// with a range of different constructors for different sized lists.
+		
+		bytecodes.add(new Bytecode.Load(freeSlot,element));	
+		JvmType.Clazz owner = new JvmType.Clazz("java.util","Collections");
+		ftype = new JvmType.Function(T_VOID, JAVA_UTIL_LIST);		
+		bytecodes.add(new Bytecode.Invoke(owner,"reverse",ftype,Bytecode.STATIC));	
+		
+		bytecodes.add(new Bytecode.Load(freeSlot,element));	
 	}
 	
 	public void translate(Code.NewRecord expr, int freeSlot,
@@ -1584,19 +1604,23 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Code.NewSet c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-//		
-//		construct(WHILEYSET, freeSlot, bytecodes);		
-//		JvmType.Function ftype = new JvmType.Function(T_BOOL,
-//				JAVA_LANG_OBJECT);  
-//		for(CExpr e : c.args) {
-//			bytecodes.add(new Bytecode.Dup(WHILEYSET));
-//			translate(e, freeSlot, bytecodes);
-//			addWriteConversion(e.type(),bytecodes);
-//			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));
-//			// FIXME: there is a bug here for bool lists
-//			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
-//		}
-//		
+		construct(WHILEYSET, freeSlot, bytecodes);		
+		JvmType.Function ftype = new JvmType.Function(T_BOOL,
+				JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYSET));
+		
+		JvmType element = convertType(c.type.element());
+		
+		for(int i=0;i!=c.nargs;++i) {
+			bytecodes.add(new Bytecode.Load(freeSlot,element));
+			bytecodes.add(new Bytecode.Swap());			
+			addWriteConversion(c.type.element(),bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));
+			// FIXME: there is a bug here for bool lists
+			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
+		}
+		
+		bytecodes.add(new Bytecode.Load(freeSlot,element));
 	}
 	
 	public void translate(Code.Invoke c, int freeSlot,
@@ -1628,7 +1652,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(freeSlot,arrT));
 		
 		List<Type> params = ft.params();
-		for(int i=0;i!=params.size();++i) {
+		for(int i=params.size()-1;i>=0;--i) {
 			Type pt = params.get(i);
 			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
 			bytecodes.add(new Bytecode.Swap());
@@ -1671,7 +1695,7 @@ public class ClassFileBuilder {
 		// first, peal parameters off stack in reverse order
 		
 		List<Type> params = ft.params();
-		for(int i=0;i!=params.size();++i) {
+		for(int i=params.size()-1;i>=0;--i) {
 			Type pt = params.get(i);
 			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
 			bytecodes.add(new Bytecode.Swap());
@@ -2061,6 +2085,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
+	private static final JvmType.Clazz JAVA_UTIL_LIST = new JvmType.Clazz("java.util","List");
 	private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");
