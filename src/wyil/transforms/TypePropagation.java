@@ -162,8 +162,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((NewSet)code,entry,environment);
 		} else if(code instanceof Return) {
 			code = infer((Return)code,entry,environment);
-		} else if(code instanceof Pop) {
-			code = infer((Pop)code,entry,environment);
 		} else if(code instanceof Send) {
 			code = infer((Send)code,entry,environment);
 		} else if(code instanceof Store) {
@@ -280,15 +278,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Collections.reverse(types);		
 		
-		try {
-			
-			System.out.println("ENVIRONMENT: " + environment);
-			
+		try {			
 			Type.Fun funtype = bindFunction(ivk.name, null, types, stmt);
-			if(funtype.ret() != Type.T_VOID) {
+			if(funtype.ret() != Type.T_VOID && ivk.retval) {
 				environment.push(funtype.ret());
 			}
-			return Code.Invoke(funtype, ivk.name);			
+			return Code.Invoke(funtype, ivk.name, ivk.retval);			
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable
@@ -312,11 +307,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(param,arg,stmt);
 		}
 		
-		if(ft.ret() != Type.T_VOID) {
+		if(ft.ret() != Type.T_VOID && ivk.retval) {
 			environment.push(ft.ret());
 		}
 		
-		return Code.IndirectInvoke(ft);		
+		return Code.IndirectInvoke(ft,ivk.retval);		
 	}
 	
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
@@ -449,11 +444,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.NewSet(type,e.nargs);
 	}
 	
-	protected Code infer(Pop e, Entry stmt, Env environment) {
-		Type t = environment.pop();
-		return Code.Pop(t);
-	}
-	
 	protected Code infer(Send ivk, Entry stmt, Env environment) {
 		ArrayList<Type> types = new ArrayList<Type>();	
 		
@@ -469,10 +459,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		try {
 			Type.Fun funtype = bindFunction(ivk.name, rec, types, stmt);
-			if(funtype.ret() != Type.T_VOID) {
+			if (funtype.ret() != Type.T_VOID && ivk.synchronous && ivk.retval) {
 				environment.push(funtype.ret());
 			}
-			return Code.Send(funtype, ivk.name, ivk.synchronous);			
+			return Code.Send(funtype, ivk.name, ivk.synchronous, ivk.retval);			
 		} catch (ResolveError ex) {
 			syntaxError(ex.getMessage(), filename, stmt);
 			return null; // unreachable

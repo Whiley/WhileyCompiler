@@ -259,8 +259,6 @@ public class ClassFileBuilder {
 				 translate((NewRecord)code,freeSlot,bytecodes);
 			} else if(code instanceof NewSet) {
 				 translate((NewSet)code,freeSlot,bytecodes);
-			} else if(code instanceof Pop) {
-				 translate((Pop)code,freeSlot,bytecodes);
 			} else if(code instanceof Return) {
 				 translate((Return)code,freeSlot,bytecodes);
 			} else if(code instanceof Send) {
@@ -1678,11 +1676,6 @@ public class ClassFileBuilder {
 		addReadConversion(ft.ret(),bytecodes);	
 	}
 
-	public void translate(Code.Pop c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {				
-		bytecodes.add(new Bytecode.Pop(convertType(c.type)));
-	}
-	
 	public void translate(Code.Send c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		

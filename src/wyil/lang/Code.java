@@ -134,8 +134,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Invoke Invoke(Type.Fun fun, NameID name) {
-		return get(new Invoke(fun,name));
+	public static Invoke Invoke(Type.Fun fun, NameID name, boolean retval) {
+		return get(new Invoke(fun,name,retval));
 	}
 
 	
@@ -260,10 +260,6 @@ public abstract class Code {
 		return get(new NewRecord(type));
 	}
 	
-	public static Pop Pop(Type t) {
-		return get(new Pop(t));
-	}
-	
 	public static Return Return(Type t) {
 		return get(new Return(t));
 	}
@@ -284,8 +280,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Fun fun, boolean synchronous) {
-		return get(new IndirectSend(fun,synchronous));
+	public static IndirectSend IndirectSend(Type.Fun fun, boolean synchronous, boolean retval) {
+		return get(new IndirectSend(fun,synchronous,retval));
 	}
 	
 	/**
@@ -296,8 +292,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectInvoke IndirectInvoke(Type.Fun fun) {
-		return get(new IndirectInvoke(fun));
+	public static IndirectInvoke IndirectInvoke(Type.Fun fun, boolean retval) {
+		return get(new IndirectInvoke(fun,retval));
 	}
 	
 	public static Label Label(String label) {
@@ -314,8 +310,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Fun fun, NameID name, boolean synchronous) {
-		return get(new Send(fun,name,synchronous));
+	public static Send Send(Type.Fun fun, NameID name, boolean synchronous, boolean retval) {
+		return get(new Send(fun,name,synchronous,retval));
 	}
 	
 	/**
@@ -856,9 +852,11 @@ public abstract class Code {
 	
 	public static final class IndirectInvoke extends Code {		
 		public final Type.Fun type;
+		public final boolean retval;
 		
-		private IndirectInvoke(Type.Fun type) {
+		private IndirectInvoke(Type.Fun type, boolean retval) {
 			this.type = type;
+			this.retval = retval;
 		}
 		
 		public int hashCode() {
@@ -872,23 +870,31 @@ public abstract class Code {
 		public boolean equals(Object o) {
 			if(o instanceof IndirectInvoke) {
 				IndirectInvoke i = (IndirectInvoke) o;				
-				return type == i.type || (type != null && type.equals(i.type));
+				return retval == i.retval
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return toString("indirectinvoke",type);
+			if(retval) {
+				return toString("indirectinvoke",type);
+			} else {
+				return toString("vindirectinvoke",type);
+			}
 		}		
 	}
 	
 	public static final class IndirectSend extends Code {
-		 public final boolean asynchronous;		 
+		 public final boolean synchronous;
+		 public final boolean retval;
 		 public final Type.Fun type;
 			
-		 private IndirectSend(Type.Fun type, boolean asynchronous) {
+		 private IndirectSend(Type.Fun type, boolean synchronous, boolean retval) {
 			 this.type = type;
-			 this.asynchronous = asynchronous;
+			 this.synchronous = synchronous;
+			 this.retval = retval;
 		 }
 
 		 public int hashCode() {
@@ -907,11 +913,15 @@ public abstract class Code {
 			 return false;
 		 }
 
-		 public String toString() {
-			 if(asynchronous) {
-				 return toString("asend",type);
-			 } else {
-				 return toString("iasend",type);
+		 public String toString() {			 
+			 if(synchronous) {		
+				 if(retval) {
+					 return toString("isend",type);
+				 } else {
+					 return toString("ivsend",type);
+				 }
+			 } else {				 
+				 return toString("iasend",type);				 
 			 }
 		 }		
 	}
@@ -919,10 +929,12 @@ public abstract class Code {
 	public static final class Invoke extends Code {		
 		public final Type.Fun type;
 		public final NameID name;
+		public final boolean retval;
 				
-		private Invoke(Type.Fun type, NameID name) {
+		private Invoke(Type.Fun type, NameID name, boolean retval) {
 			this.type = type;
 			this.name = name;
+			this.retval = retval;
 		}
 		
 		public int hashCode() {
@@ -937,6 +949,7 @@ public abstract class Code {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
 				return name.equals(i.name)
+						&& retval == i.retval
 						&& (type == i.type || (type != null && type
 								.equals(i.type)));
 			}
@@ -944,7 +957,11 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("invoke " + name,type);
+			if(retval) {
+				return toString("invoke " + name,type);
+			} else {
+				return toString("vinvoke " + name,type);
+			}
 		}	
 		
 	}
@@ -1290,6 +1307,7 @@ public abstract class Code {
 		public String toString() { return "nop"; }
 	}	
 	
+	/* removed as I don't think this bytecode is needed
 	public static final class Pop extends Code {
 		public final Type type;
 		
@@ -1317,7 +1335,7 @@ public abstract class Code {
 			return toString("pop",type);
 		}
 	}
-
+    */
 	public static final class Return extends Code {
 		public final Type type;
 		
@@ -1440,14 +1458,16 @@ public abstract class Code {
 	}
 
 	public static final class Send extends Code {		 
-		 public final boolean synchronous;		 
+		 public final boolean synchronous;
+		 public final boolean retval;
 		 public final NameID name;
 		 public final Type.Fun type;
 			
-		 private Send(Type.Fun type, NameID name, boolean synchronous) {
+		 private Send(Type.Fun type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;
+			 this.retval = retval;
 		 }
 
 		 public int hashCode() {
@@ -1457,14 +1477,19 @@ public abstract class Code {
 		 public boolean equals(Object o) {
 			 if(o instanceof Send) {
 				 Send i = (Send) o;
-				 return type.equals(i.type) && name.equals(i.name);
+				return retval == i.retval && synchronous == i.synchronous
+						&& (type.equals(i.type) && name.equals(i.name));
 			 }
 			 return false;
 		 }
 
 		 public String toString() {
 			 if(synchronous) {
-				 return toString("send " + name,type);				 
+				 if(retval) {
+					 return toString("send " + name,type);
+				 } else {
+					 return toString("vsend " + name,type);
+				 }
 			 } else {
 				 return toString("asend " + name,type);
 			 }

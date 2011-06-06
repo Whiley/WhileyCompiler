@@ -650,11 +650,7 @@ public class ModuleBuilder {
 			} else if (stmt instanceof For) {
 				return resolve((For) stmt, environment);
 			} else if (stmt instanceof Invoke) {
-				Block blk = resolve(environment, (Invoke) stmt);				
-				// FIXME: DIFFICULT BUG HERE!!!
-				blk.add(Code.Pop(null),
-						stmt.attribute(Attribute.Source.class));
-				return blk;
+				return resolve(environment, (Invoke) stmt, false);								
 			} else if (stmt instanceof Spawn) {
 				return resolve(environment, (UnOp) stmt);
 			} else if (stmt instanceof ExternJvm) {
@@ -1198,7 +1194,7 @@ public class ModuleBuilder {
 			} else if (e instanceof UnOp) {
 				return resolve(environment, (UnOp) e);
 			} else if (e instanceof Invoke) {
-				return resolve(environment, (Invoke) e);
+				return resolve(environment, (Invoke) e, true);
 			} else if (e instanceof Comprehension) {
 				return resolve(environment, (Comprehension) e);
 			} else if (e instanceof RecordAccess) {
@@ -1224,7 +1220,7 @@ public class ModuleBuilder {
 		return null;
 	}
 
-	protected Block resolve(HashMap<String,Integer> environment, Invoke s) throws ResolveError {
+	protected Block resolve(HashMap<String,Integer> environment, Invoke s, boolean retval) throws ResolveError {
 		List<Expr> args = s.arguments;
 		Block blk = new Block();
 		Type[] paramTypes = new Type[args.size()]; 
@@ -1245,9 +1241,9 @@ public class ModuleBuilder {
 			
 		if(environment.containsKey(s.name)) {			
 			if(s.receiver != null) {
-				blk.add(Code.IndirectSend(Type.T_FUN(null, null, paramTypes),s.synchronous));
+				blk.add(Code.IndirectSend(Type.T_FUN(null, null, paramTypes),s.synchronous, retval));
 			} else {
-				blk.add(Code.IndirectInvoke(Type.T_FUN(null, null, paramTypes)));
+				blk.add(Code.IndirectInvoke(Type.T_FUN(null, null, paramTypes), retval));
 			}
 		} else {
 			Attributes.Module modInfo = s.attribute(Attributes.Module.class);
@@ -1255,10 +1251,10 @@ public class ModuleBuilder {
 				NameID name = new NameID(modInfo.module, s.name);
 				if(s.receiver != null) {
 					blk.add(Code.Send(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous));
+							Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval));
 				} else {
 					blk.add(Code.Invoke(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name));
+							Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval));
 				}			
 			} else {
 				syntaxError("unknown function or method",filename,s);
