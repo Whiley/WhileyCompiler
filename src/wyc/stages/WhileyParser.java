@@ -992,10 +992,11 @@ public class WhileyParser {
 		int start = index;
 		match(AddressOf.class);
 		String funName = matchIdentifier().text;
-		ArrayList<UnresolvedType> paramTypes = new ArrayList<UnresolvedType>();
+		ArrayList<UnresolvedType> paramTypes = null;
 
 		if (tokens.get(index) instanceof LeftBrace) {
 			// parse parameter types
+			paramTypes = new ArrayList<UnresolvedType>();
 			match(LeftBrace.class);
 			boolean firstTime = true;
 			while (index < tokens.size()
@@ -1008,9 +1009,7 @@ public class WhileyParser {
 				paramTypes.add(ut);
 			}
 			match(RightBrace.class);
-		} else {
-			paramTypes.add(new UnresolvedType.Any(sourceAttr(start, index - 1)));
-		}
+		} 
 
 		return new Expr.FunConst(funName, paramTypes, sourceAttr(start, index - 1));
 	}

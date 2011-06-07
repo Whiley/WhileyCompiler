@@ -444,8 +444,10 @@ public class NameResolution {
 	protected void resolve(FunConst tc, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) throws ResolveError {		
 		
-		for(UnresolvedType t : tc.paramTypes) {
-			resolve(t,imports);
+		if(tc.paramTypes != null) {
+			for(UnresolvedType t : tc.paramTypes) {
+				resolve(t,imports);
+			}
 		}
 		
 		ModuleID mid = loader.resolve(tc.name,imports);		

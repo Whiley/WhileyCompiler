@@ -230,6 +230,50 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.Const code, Entry stmt, Env environment) {
+		
+		if(code.constant instanceof Value.FunConst) {
+			Value.FunConst fc = (Value.FunConst) code.constant;
+			
+			try {
+				List<Type.Fun> targets = lookupMethod(fc.name.module(),fc.name.name());
+				String msg = null;
+				if(fc.type == null) {
+					if(targets.size() == 1) {
+						code = Code.Const(Value.V_FUN(fc.name, targets.get(0)));
+					} else {
+						msg = "ambiguous function or method reference";
+					}
+				} else {
+					msg = "no match for " + fc;
+					for(Type.Fun ft : targets) {
+						if(fc.type.params().equals(ft.params())) {
+							code = Code.Const(Value.V_FUN(fc.name, ft));
+							msg = null;
+						}
+					}					
+				}
+
+				if(msg != null) {
+					// failed to find an appropriate match
+					boolean firstTime = true;
+					int count = 0;
+					for(Type.Fun ft : targets) {
+						if(firstTime) {
+							msg += "\n\tfound: " + fc.name.name() + parameterString(ft.params());
+						} else {
+							msg += "\n\tand: " + fc.name.name() + parameterString(ft.params());
+						}
+						if(++count < targets.size()) {
+							msg += ",";
+						}
+					}
+					syntaxError(msg + "\n",filename,stmt);
+				}
+			} catch(ResolveError ex) {
+				syntaxError(ex.getMessage(),filename,stmt);
+			}			
+		}
+		
 		environment.push(code.constant.type());
 		return code;
 	}

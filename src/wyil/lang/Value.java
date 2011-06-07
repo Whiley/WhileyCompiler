@@ -528,12 +528,18 @@ public abstract class Value implements Comparable<Value> {
 			return type;
 		}
 		public int hashCode() {
-			return type.hashCode();
+			if(type != null) {
+				return type.hashCode() + name.hashCode();
+			} else {
+				return name.hashCode();
+			}
 		}
 		public boolean equals(Object o) {
 			if(o instanceof FunConst) {
 				FunConst i = (FunConst) o;
-				return name.equals(i.name) && type == i.type;
+				return name.equals(i.name)
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
 			}
 			return false;
 		}

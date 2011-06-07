@@ -1261,13 +1261,16 @@ public class ModuleBuilder {
 
 	protected Block resolve(HashMap<String,Integer> environment, FunConst s) {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
-		NameID name = new NameID(modInfo.module, s.name);		
-		ArrayList<Type> paramTypes = new ArrayList<Type>();
-		for(UnresolvedType p : s.paramTypes) {
-			paramTypes.add(resolve(p));
+		NameID name = new NameID(modInfo.module, s.name);	
+		Type.Fun tf = null;
+		if(s.paramTypes != null) {
+			// in this case, the user has provided explicit type information.
+			ArrayList<Type> paramTypes = new ArrayList<Type>();
+			for(UnresolvedType p : s.paramTypes) {
+				paramTypes.add(resolve(p));
+			}
+			tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
 		}
-		// FIXME: there's a bug here!
-		Type.Fun tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
 		Block blk = new Block();
 		blk.add(Code.Const(Value.V_FUN(name, tf)),
 				attributes(s));
