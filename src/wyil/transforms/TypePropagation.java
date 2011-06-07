@@ -249,6 +249,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 						if(fc.type.params().equals(ft.params())) {
 							code = Code.Const(Value.V_FUN(fc.name, ft));
 							msg = null;
+							break;
 						}
 					}					
 				}

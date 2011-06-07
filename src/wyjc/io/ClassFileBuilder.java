@@ -1670,7 +1670,7 @@ public class ClassFileBuilder {
 
 		Type.Fun ft = (Type.Fun) c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
-		bytecodes.add(new Bytecode.LoadConst(null));
+
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
 		bytecodes.add(new Bytecode.New(arrT));
 		bytecodes.add(new Bytecode.Store(freeSlot,arrT));
@@ -1685,7 +1685,8 @@ public class ClassFileBuilder {
 			addWriteConversion(pt,bytecodes);
 			bytecodes.add(new Bytecode.ArrayStore(arrT));			
 		}
-		
+
+		bytecodes.add(new Bytecode.LoadConst(null));
 		bytecodes.add(new Bytecode.Load(freeSlot,arrT));
 		JvmType.Clazz owner = new JvmType.Clazz("java.lang.reflect","Method");		
 		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,arrT);		
