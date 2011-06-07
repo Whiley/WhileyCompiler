@@ -37,6 +37,7 @@ public class WyilFileWriter implements Transform {
 	private PrintWriter out;
 	private boolean writeLabels;
 	private boolean writeAttributes;
+	private boolean writeSlots;
 		
 	public WyilFileWriter(ModuleLoader loader) {
 
@@ -48,6 +49,10 @@ public class WyilFileWriter implements Transform {
 	
 	public void setAttributes(boolean flag) {
 		writeAttributes = flag;
+	}
+	
+	public void setSlots(boolean flag) {
+		writeSlots = flag;
 	}
 	
 	public Module apply(Module module) throws IOException {
@@ -157,13 +162,13 @@ public class WyilFileWriter implements Transform {
 			} else {
 				line = "end";
 			}
-		} else if(c instanceof Code.Store){
+		} else if(c instanceof Code.Store && !writeSlots){
 			Code.Store store = (Code.Store) c;
 			line = "store " + locals.get(store.slot) + " : " + store.type;  
-		} else if(c instanceof Code.Load){
+		} else if(c instanceof Code.Load && !writeSlots){
 			Code.Load load = (Code.Load) c;
 			line = "load " + locals.get(load.slot) + " : " + load.type;
-		} else if(c instanceof Code.MultiStore){
+		} else if(c instanceof Code.MultiStore && !writeSlots){
 			Code.MultiStore store = (Code.MultiStore) c;
 			String fs = store.fields.isEmpty() ? "" : " ";
 			boolean firstTime=true;
@@ -175,7 +180,7 @@ public class WyilFileWriter implements Transform {
 				fs += f;
 			}
 			line = "multistore " + locals.get(store.slot) + " #" + store.level + fs + " : " + store.type;
-		} else if(c instanceof Code.IfType){
+		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
 				line = "iftype " + locals.get(iftype.slot) + " " + iftype.test
@@ -183,7 +188,7 @@ public class WyilFileWriter implements Transform {
 			} else {
 				line = c.toString();
 			}			
-		} else if(c instanceof Code.ForAll){
+		} else if(c instanceof Code.ForAll && !writeSlots){
 			Code.ForAll fall = (Code.ForAll) c;			
 			line = "forall " + locals.get(fall.var) + " " + fall.target + " : " + fall.type;
 		} else {
