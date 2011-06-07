@@ -227,6 +227,8 @@ public class ClassFileBuilder {
 				 translate((Const)code,freeSlot,bytecodes);
 			} else if(code instanceof Debug) {
 				 translate((Debug)code,freeSlot,bytecodes);
+			} else if(code instanceof DictLoad) {
+				 translate((DictLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof End) {
 				 translate((End)code,freeSlot,bytecodes);
 			} else if(code instanceof ExternJvm) {
@@ -274,7 +276,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof UnOp) {
 				 translate((UnOp)code,freeSlot,bytecodes);
 			} else {
-				syntaxError("need to finish class builder (" + code + ")", filename, stmt);
+				syntaxError("unknown wyil code encountered (" + code + ")", filename, stmt);
 			}
 			
 		} catch (SyntaxError ex) {
