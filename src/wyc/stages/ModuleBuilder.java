@@ -1215,7 +1215,7 @@ public class ModuleBuilder {
 		Type[] paramTypes = new Type[args.size()]; 
 		
 		if(environment.containsKey(s.name)) {
-			blk.add(Code.Load(null, environment.get(s.name)));
+			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
 		}
 		
 		if (s.receiver != null) {
@@ -1240,10 +1240,10 @@ public class ModuleBuilder {
 				NameID name = new NameID(modInfo.module, s.name);
 				if(s.receiver != null) {
 					blk.add(Code.Send(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval));
+							Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
 				} else {
 					blk.add(Code.Invoke(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval));
+							Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
 				}			
 			} else {
 				syntaxError("unknown function or method",filename,s);
