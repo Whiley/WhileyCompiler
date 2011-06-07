@@ -612,7 +612,7 @@ public class ModuleBuilder {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		blk.add(Code.Return(Type.T_VOID),fd.attribute(Attribute.Source.class));		
+		blk.add(Code.Return(Type.T_VOID),attributes(fd));		
 		
 		List<Module.Case> ncases = new ArrayList<Module.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();		
@@ -679,12 +679,11 @@ public class ModuleBuilder {
 			Variable v = (Variable) s.lhs;			
 			if(environment.containsKey(v.var)) {
 				blk.add(Code.Store(null, environment.get(v.var)),
-					s.attribute(Attribute.Source.class));
+					attributes(s));
 			} else {
 				int idx = environment.size();
 				environment.put(v.var, idx);
-				blk.add(Code.Store(null, idx),
-						s.attribute(Attribute.Source.class));
+				blk.add(Code.Store(null, idx), attributes(s));
 			}
 		} else if(s.lhs instanceof TupleGen) {
 			blk = resolve(environment, s.rhs);			
@@ -693,18 +692,15 @@ public class ModuleBuilder {
 			int freeReg = environment.size();
 			environment.put("$" + freeReg, freeReg);
 			// TODO: this could be fixed with a DUP bytecode.
-			blk.add(Code.Store(null, freeReg),
-					s.attribute(Attribute.Source.class));
+			blk.add(Code.Store(null, freeReg),attributes(s));
 			int idx=0;
 			for(Expr e : tg.fields) {
 				if(!(e instanceof Variable)) {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
-				blk.add(Code.FieldLoad(null, "$" + idx++),e
-						.attribute(Attribute.Source.class));
-				blk.add(Code.Store(null, environment.get(v.var)), e
-						.attribute(Attribute.Source.class));					
+				blk.add(Code.FieldLoad(null, "$" + idx++), attributes(e));
+				blk.add(Code.Store(null, environment.get(v.var)), attributes(e));					
 			}
 			return blk;
 		} else if(s.lhs instanceof ListAccess || s.lhs instanceof RecordAccess){
@@ -718,7 +714,7 @@ public class ModuleBuilder {
 			int slot = environment.get(l.first().var);
 			blk.addAll(resolve(environment, s.rhs));			
 			blk.add(Code.MultiStore(null,slot,l.second(),fields),
-					s.attribute(Attribute.Source.class));							
+					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
 		}
@@ -749,12 +745,10 @@ public class ModuleBuilder {
 	
 	protected Block resolve(Assert s, HashMap<String,Integer> environment) {
 		String lab = Block.freshLabel();
-		String clab = Block.freshLabel();
 		Block blk = new Block();
-		blk.add(Code.Assert(lab),s.attribute(Attribute.Source.class));
+		blk.add(Code.Assert(lab),attributes(s));
 		blk.addAll(resolveCondition(lab, s.expr, environment));		
-		blk.add(Code.Fail("assertion failed"), s
-				.attribute(Attribute.Source.class));
+		blk.add(Code.Fail("assertion failed"), attributes(s));
 		blk.add(Code.Label(lab));			
 		return blk;
 	}
@@ -764,11 +758,11 @@ public class ModuleBuilder {
 		if (s.expr != null) {
 			Block blk = resolve(environment, s.expr);
 			Type ret = resolve(currentFunDecl.ret);
-			blk.add(Code.Return(ret), s.attribute(Attribute.Source.class));
+			blk.add(Code.Return(ret), attributes(s));
 			return blk;			
 		} else {
 			Block blk = new Block();
-			blk.add(Code.Return(Type.T_VOID), s.attribute(Attribute.Source.class));
+			blk.add(Code.Return(Type.T_VOID), attributes(s));
 			return blk;
 		}
 	}
@@ -776,19 +770,19 @@ public class ModuleBuilder {
 	protected Block resolve(ExternJvm s, HashMap<String,Integer> environment) {
 		Block blk = new Block();
 		blk.add(Code.ExternJvm(s.bytecodes),
-				s.attribute(Attribute.Source.class));
+				attributes(s));
 		return blk;
 	}
 
 	protected Block resolve(Skip s, HashMap<String,Integer> environment) {
 		Block blk = new Block();
-		blk.add(Code.Skip, s.attribute(Attribute.Source.class));
+		blk.add(Code.Skip, attributes(s));
 		return blk;
 	}
 
 	protected Block resolve(Debug s, HashMap<String,Integer> environment) {
 		Block blk = resolve(environment, s.expr);		
-		blk.add(Code.debug, s.attribute(Attribute.Source.class));
+		blk.add(Code.debug, attributes(s));
 		return blk;
 	}
 
@@ -844,17 +838,17 @@ public class ModuleBuilder {
 					syntaxError("duplicate default label",filename,c);
 				} else {
 					defaultTarget = Block.freshLabel();	
-					cblk.add(Code.Label(defaultTarget), c.attributes());
+					cblk.add(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						cblk.addAll(resolve(st, environment));
 					}
-					cblk.add(Code.Goto(exitLab),c.attributes());
+					cblk.add(Code.Goto(exitLab),attributes(c));
 				}
 			} else if(defaultTarget == exitLab) {
 				Value constant = expandConstantHelper(c.value, filename,
 						new HashMap(), new HashSet());												
 				String target = Block.freshLabel();	
-				cblk.add(Code.Label(target), c.attributes());				
+				cblk.add(Code.Label(target), attributes(c));				
 				if(cases.containsKey(constant)) {
 					syntaxError("duplicate case label",filename,c);
 				}				
@@ -866,9 +860,9 @@ public class ModuleBuilder {
 				syntaxError("unreachable code",filename,c);
 			}
 		}		
-		blk.add(Code.Switch(null,defaultTarget,cases),s.attribute(Attribute.Source.class));
+		blk.add(Code.Switch(null,defaultTarget,cases),attributes(s));
 		blk.addAll(cblk);
-		blk.add(Code.Label(exitLab), s.attributes());
+		blk.add(Code.Label(exitLab), attributes(s));
 		scopes.pop();
 		return blk;
 	}
@@ -879,7 +873,7 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		
 		blk.add(Code.Loop(label, Collections.EMPTY_SET),
-				s.attribute(Attribute.Source.class));
+				attributes(s));
 		
 		blk.addAll(resolveCondition(label, invert(s.condition), environment));
 
@@ -900,8 +894,7 @@ public class ModuleBuilder {
 		// Note: NameResolution guarantees that !environment.contains(s.variable);
 		environment.put(s.variable, freeReg);		
 				
-		blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), s
-				.attribute(Attribute.Source.class));				
+		blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));				
 		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(label));		
@@ -909,7 +902,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(st, environment));
 		}		
 		scopes.pop(); // break
-		blk.add(Code.End(label), s.attribute(Attribute.Source.class));		
+		blk.add(Code.End(label), attributes(s));		
 
 		return blk;
 	}
@@ -1019,9 +1012,8 @@ public class ModuleBuilder {
 			return null;
 		}
 						
-		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
-		blk.add(Code.IfGoto(null,Code.COp.EQ, target),
-				v.attribute(Attribute.Source.class));			
+		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.add(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
 		
 		return blk;
 	}
@@ -1047,7 +1039,7 @@ public class ModuleBuilder {
 		blk.addAll(resolve(environment, v.lhs));
 		blk.addAll(resolve(environment, v.rhs));
 		blk.add(Code.IfGoto(null, OP2COP(bop, v), target),
-				v.attribute(Attribute.Source.class));
+				attributes(v));
 		return blk;
 	}
 
@@ -1069,7 +1061,7 @@ public class ModuleBuilder {
 
 		Type rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
 		blk.add(Code.IfType(null, slot, rhs_t, target),
-				v.attribute(Attribute.Source.class));
+				attributes(v));
 		return blk;
 	}
 
@@ -1089,25 +1081,22 @@ public class ModuleBuilder {
 
 	protected Block resolveCondition(String target, ListAccess v, HashMap<String,Integer> environment) {
 		Block blk = resolve(environment, v);
-		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
-		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),
-				v.attribute(Attribute.Source.class));
+		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
 	protected Block resolveCondition(String target, RecordAccess v, HashMap<String,Integer> environment) {
 		Block blk = resolve(environment, v);		
-		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
-		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),
-				v.attribute(Attribute.Source.class));		
+		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));		
 		return blk;
 	}
 
 	protected Block resolveCondition(String target, Invoke v, HashMap<String,Integer> environment) throws ResolveError {
 		Block blk = resolve(environment, v);	
-		blk.add(Code.Const(Value.V_BOOL(true)),v.attribute(Attribute.Source.class));
-		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),
-				v.attribute(Attribute.Source.class));
+		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
@@ -1241,9 +1230,9 @@ public class ModuleBuilder {
 			
 		if(environment.containsKey(s.name)) {			
 			if(s.receiver != null) {
-				blk.add(Code.IndirectSend(Type.T_FUN(null, null, paramTypes),s.synchronous, retval));
+				blk.add(Code.IndirectSend(Type.T_FUN(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
 			} else {
-				blk.add(Code.IndirectInvoke(Type.T_FUN(null, null, paramTypes), retval));
+				blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
 			}
 		} else {
 			Attributes.Module modInfo = s.attribute(Attributes.Module.class);
@@ -1266,7 +1255,7 @@ public class ModuleBuilder {
 
 	protected Block resolve(HashMap<String,Integer> environment, Constant c) {
 		Block blk = new Block();
-		blk.add(Code.Const(c.value), c.attribute(Attribute.Source.class));
+		blk.add(Code.Const(c.value), attributes(c));
 		return blk;
 	}
 
@@ -1281,7 +1270,7 @@ public class ModuleBuilder {
 		Type.Fun tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
 		Block blk = new Block();
 		blk.add(Code.Const(Value.V_FUN(name, tf)),
-				s.attribute(Attribute.Source.class));
+				attributes(s));
 		return blk;
 	}
 	
@@ -1294,8 +1283,7 @@ public class ModuleBuilder {
 			if(alias.alias == null) {
 				if(environment.containsKey(v.var)) {
 					Block r = new Block();
-					r.add(Code.Load(null, environment.get(v.var)),
-							v.attribute(Attribute.Source.class));
+					r.add(Code.Load(null, environment.get(v.var)), attributes(v));
 					return r;
 				} else {
 					syntaxError("variable might not be initialised",filename,v);
@@ -1316,9 +1304,9 @@ public class ModuleBuilder {
 					if(ert != null && ert.fields().containsKey(v.var)) {						
 						// Bingo, this is an implicit field dereference
 						Block blk = new Block();
-						blk.add(Code.Load(null, environment.get("this")),v.attribute(Attribute.Source.class));
-						blk.add(Code.UnOp(null, Code.UOp.PROCESSACCESS),v.attribute(Attribute.Source.class));					
-						blk.add(Code.FieldLoad(null, v.var),v.attribute(Attribute.Source.class));						
+						blk.add(Code.Load(null, environment.get("this")),attributes(v));
+						blk.add(Code.UnOp(null, Code.UOp.PROCESSACCESS),attributes(v));					
+						blk.add(Code.FieldLoad(null, v.var),attributes(v));						
 						return blk;
 					}
 				}
@@ -1336,7 +1324,7 @@ public class ModuleBuilder {
 				val = mi.constant(v.var).constant();
 			}
 			Block blk = new Block();
-			blk.add(Code.Const(val),v.attribute(Attribute.Source.class));
+			blk.add(Code.Const(val),attributes(v));
 			return blk;
 		}
 		
@@ -1349,26 +1337,26 @@ public class ModuleBuilder {
 		Block blk = resolve(environment, v.mhs);	
 		switch (v.op) {
 		case NEG:
-			blk.add(Code.UnOp(null,Code.UOp.NEG), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.NEG), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			blk = resolveCondition(falseLabel, v.mhs, environment);
-			blk.add(Code.Const(Value.V_BOOL(true)), v.attributes());
+			blk.add(Code.Const(Value.V_BOOL(true)), attributes(v));
 			blk.add(Code.Goto(exitLabel));
 			blk.add(Code.Label(falseLabel));
-			blk.add(Code.Const(Value.V_BOOL(false)), v.attributes());
+			blk.add(Code.Const(Value.V_BOOL(false)), attributes(v));
 			blk.add(Code.Label(exitLabel));
 			break;
 		case LENGTHOF:
-			blk.add(Code.UnOp(null,Code.UOp.LENGTHOF), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.LENGTHOF), attributes(v));
 			break;
 		case PROCESSACCESS:
-			blk.add(Code.UnOp(null,Code.UOp.PROCESSACCESS), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.PROCESSACCESS), attributes(v));
 			break;			
 		case PROCESSSPAWN:
-			blk.add(Code.UnOp(null,Code.UOp.PROCESSSPAWN), v.attributes());
+			blk.add(Code.UnOp(null,Code.UOp.PROCESSSPAWN), attributes(v));
 			break;			
 		default:
 			syntaxError("unexpected unary operator encountered", filename, v);
@@ -1381,7 +1369,7 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		blk.addAll(resolve(environment, v.src));
 		blk.addAll(resolve(environment, v.index));
-		blk.add(Code.ListLoad(null),v.attributes());
+		blk.add(Code.ListLoad(null),attributes(v));
 		return blk;
 	}
 
@@ -1395,10 +1383,10 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, v, environment);
-			blk.add(Code.Const(Value.V_BOOL(false)), v.attributes());			
+			blk.add(Code.Const(Value.V_BOOL(false)), attributes(v));			
 			blk.add(Code.Goto(exitLabel));
 			blk.add(Code.Label(trueLabel));
-			blk.add(Code.Const(Value.V_BOOL(true)), v.attributes());				
+			blk.add(Code.Const(Value.V_BOOL(true)), attributes(v));				
 			blk.add(Code.Label(exitLabel));			
 			return blk;
 		}
@@ -1410,7 +1398,7 @@ public class ModuleBuilder {
 
 		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
 				|| bop == BOp.DIV || bop == BOp.UNION || bop == BOp.INTERSECTION) {
-			blk.add(Code.BinOp(null, OP2BOP(bop,v)),v.attributes());			
+			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
 			return blk;			
 		} 
 		
@@ -1427,7 +1415,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, v.arguments.get(0)));
 			blk.addAll(resolve(environment, v.arguments.get(1)));
 			blk.addAll(resolve(environment, v.arguments.get(2)));
-			blk.add(Code.SubList(),v.attributes());
+			blk.add(Code.SubList(),attributes(v));
 			return blk;
 		} else {			
 			int nargs = 0;
@@ -1437,9 +1425,9 @@ public class ModuleBuilder {
 			}
 
 			if (v.nop == NOp.LISTGEN) {
-				blk.add(Code.NewList(null,nargs),v.attributes());
+				blk.add(Code.NewList(null,nargs),attributes(v));
 			} else {
-				blk.add(Code.NewSet(null,nargs),v.attributes());
+				blk.add(Code.NewSet(null,nargs),attributes(v));
 			}
 			return blk;
 		}
@@ -1455,11 +1443,11 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, e, environment);
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, environment), Value
-					.V_BOOL(false)), e.attribute(Attribute.Source.class));
+					.V_BOOL(false)), attributes(e));
 			blk.add(Code.Goto(exitLabel));
 			blk.add(Code.Label(trueLabel));
 			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, environment), Value
-					.V_BOOL(true)), e.attribute(Attribute.Source.class));
+					.V_BOOL(true)), attributes(e));
 			blk.add(Code.Label(exitLabel));
 			return new Block(CExpr.REG(Type.T_BOOL, environment), blk);
 		}
@@ -1483,12 +1471,10 @@ public class ModuleBuilder {
 
 		if (e.cop == Expr.COp.LISTCOMP) {
 			lhs = CExpr.REG(Type.T_LIST(type), environment);
-			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.LISTGEN)), e
-					.attribute(Attribute.Source.class));
+			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.LISTGEN)), attributes(e));
 		} else {
 			lhs = CExpr.REG(Type.T_SET(type), environment);
-			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.SETGEN)), e
-					.attribute(Attribute.Source.class));
+			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.SETGEN)), attributes(e));
 		}
 
 		Block loopInvariant = null;
@@ -1510,7 +1496,7 @@ public class ModuleBuilder {
 
 			blk
 					.add(new Code.Forall(loopLabel, loopInvariant, ent.first(), ent
-							.second()), e.attribute(Attribute.Source.class));
+							.second()), attributes(e));
 		}
 		
 		if (e.condition != null) {
@@ -1518,14 +1504,12 @@ public class ModuleBuilder {
 					environment));
 			blk.addAll(value.second());
 			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
-					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
-					.attribute(Attribute.Source.class));
+					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), attributes(e));
 			blk.add(Code.Label(continueLabel));
 		} else {
 			blk.addAll(value.second());
 			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
-					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), e
-					.attribute(Attribute.Source.class));
+					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), attributes(e));
 		}
 
 		for (int i = (labels.size() - 1); i >= 0; --i) {
@@ -1548,7 +1532,7 @@ public class ModuleBuilder {
 			fields.put(key, Type.T_VOID);
 			blk.addAll(resolve(environment, sg.fields.get(key)));
 		}
-		blk.add(Code.NewRecord(Type.T_RECORD(fields)), sg.attributes());
+		blk.add(Code.NewRecord(Type.T_RECORD(fields)), attributes(sg));
 		return blk;
 	}
 
@@ -1563,7 +1547,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, e));
 		}
 		// FIXME: to be updated to proper tuple
-		blk.add(Code.NewTuple(Type.T_RECORD(fields)),sg.attributes());
+		blk.add(Code.NewTuple(Type.T_RECORD(fields)),attributes(sg));
 		return blk;		
 	}
 
@@ -1573,13 +1557,13 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, e.first()));
 			blk.addAll(resolve(environment, e.second()));
 		}
-		blk.add(Code.NewDict(null,sg.pairs.size()),sg.attributes());
+		blk.add(Code.NewDict(null,sg.pairs.size()),attributes(sg));
 		return blk;
 	}
 	
 	protected Block resolve(HashMap<String,Integer> environment, RecordAccess sg) {
 		Block lhs = resolve(environment, sg.lhs);		
-		lhs.add(Code.FieldLoad(null,sg.name), sg.attributes());
+		lhs.add(Code.FieldLoad(null,sg.name), attributes(sg));
 		return lhs;
 	}
 
@@ -1693,23 +1677,21 @@ public class ModuleBuilder {
 			BinOp bop = (BinOp) e;
 			switch (bop.op) {
 			case AND:
-				return new BinOp(BOp.OR, invert(bop.lhs), invert(bop.rhs), e
-						.attributes());
+				return new BinOp(BOp.OR, invert(bop.lhs), invert(bop.rhs), attributes(e));
 			case OR:
-				return new BinOp(BOp.AND, invert(bop.lhs), invert(bop.rhs), e
-						.attributes());
+				return new BinOp(BOp.AND, invert(bop.lhs), invert(bop.rhs), attributes(e));
 			case EQ:
-				return new BinOp(BOp.NEQ, bop.lhs, bop.rhs, e.attributes());
+				return new BinOp(BOp.NEQ, bop.lhs, bop.rhs, attributes(e));
 			case NEQ:
-				return new BinOp(BOp.EQ, bop.lhs, bop.rhs, e.attributes());
+				return new BinOp(BOp.EQ, bop.lhs, bop.rhs, attributes(e));
 			case LT:
-				return new BinOp(BOp.GTEQ, bop.lhs, bop.rhs, e.attributes());
+				return new BinOp(BOp.GTEQ, bop.lhs, bop.rhs, attributes(e));
 			case LTEQ:
-				return new BinOp(BOp.GT, bop.lhs, bop.rhs, e.attributes());
+				return new BinOp(BOp.GT, bop.lhs, bop.rhs, attributes(e));
 			case GT:
-				return new BinOp(BOp.LTEQ, bop.lhs, bop.rhs, e.attributes());
+				return new BinOp(BOp.LTEQ, bop.lhs, bop.rhs, attributes(e));
 			case GTEQ:
-				return new BinOp(BOp.LT, bop.lhs, bop.rhs, e.attributes());
+				return new BinOp(BOp.LT, bop.lhs, bop.rhs, attributes(e));
 			}
 		} else if (e instanceof Expr.UnOp) {
 			UnOp uop = (UnOp) e;
@@ -1763,6 +1745,19 @@ public class ModuleBuilder {
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;
+	}
+
+	/**
+	 * The attributes method extracts those attributes of relevance to wyil, and
+	 * discards those which are only used for the wyc front end.
+	 * 
+	 * @param elem
+	 * @return
+	 */
+	public static Collection<Attribute> attributes(SyntacticElement elem) {
+		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
+		attrs.add(elem.attribute(Attribute.Source.class));
+		return attrs;
 	}
 
 	protected <T extends Type> T checkType(Type t, Class<T> clazz,
