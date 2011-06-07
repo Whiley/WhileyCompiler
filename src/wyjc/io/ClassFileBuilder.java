@@ -227,12 +227,16 @@ public class ClassFileBuilder {
 				 translate((Const)code,freeSlot,bytecodes);
 			} else if(code instanceof Debug) {
 				 translate((Debug)code,freeSlot,bytecodes);
+			} else if(code instanceof End) {
+				 translate((End)code,freeSlot,bytecodes);
 			} else if(code instanceof ExternJvm) {
 				// skip
 			} else if(code instanceof Fail) {
 				 translate((Fail)code,freeSlot,bytecodes);
 			} else if(code instanceof FieldLoad) {
 				 translate((FieldLoad)code,freeSlot,bytecodes);
+			} else if(code instanceof ForAll) {
+				 translate((ForAll)code,freeSlot,bytecodes);
 			} else if(code instanceof Goto) {
 				 translate((Goto)code,freeSlot,bytecodes);
 			} else if(code instanceof IfGoto) {
@@ -249,6 +253,8 @@ public class ClassFileBuilder {
 				 translate((ListLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Load) {
 				 translate((Load)code,freeSlot,bytecodes);
+			} else if(code instanceof Loop) {
+				 translate((Loop)code,freeSlot,bytecodes);
 			} else if(code instanceof MultiStore) {
 				 translate((MultiStore)code,freeSlot,bytecodes);
 			} else if(code instanceof NewDict) {

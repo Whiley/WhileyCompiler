@@ -183,6 +183,9 @@ public class WyilFileWriter implements Transform {
 			} else {
 				line = c.toString();
 			}			
+		} else if(c instanceof Code.ForAll){
+			Code.ForAll fall = (Code.ForAll) c;			
+			line = "forall " + locals.get(fall.var) + " " + fall.target + " : " + fall.type;
 		} else {
 			line = c.toString();		
 		}
