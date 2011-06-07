@@ -148,7 +148,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(code instanceof Invoke) {
 			code = infer((Invoke)code,entry,environment);
 		} else if(code instanceof Label) {
-			// skip
+			// skip			
 		} else if(code instanceof ListLoad) {
 			code = infer((ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
@@ -181,7 +181,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.Assert code, Entry stmt, Env environment) {
-		return null;
+		return code;
 	}
 	
 	protected Code infer(BinOp v, Entry stmt, Env environment) {		
