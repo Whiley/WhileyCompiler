@@ -209,11 +209,11 @@ public class ClassFileBuilder {
 	 */
 	public void translate(Block blk, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		for (Entry s : blk) {			
-			translate(s, freeSlot, bytecodes);			
+			freeSlot = translate(s, freeSlot, bytecodes);			
 		}
 	}
 	
-	public void translate(Entry stmt, int freeSlot,
+	public int translate(Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = stmt.code;
@@ -236,7 +236,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof FieldLoad) {
 				 translate((FieldLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof ForAll) {
-				 translate((ForAll)code,freeSlot,bytecodes);
+				 freeSlot = translate((ForAll)code,freeSlot,bytecodes);
 			} else if(code instanceof Goto) {
 				 translate((Goto)code,freeSlot,bytecodes);
 			} else if(code instanceof IfGoto) {
@@ -282,6 +282,8 @@ public class ClassFileBuilder {
 		} catch (Exception ex) {		
 			syntaxError("internal failure", filename, stmt, ex);
 		}
+		
+		return freeSlot;
 	}
 	
 	public void translate(Code.Const c, int freeSlot,
@@ -1337,7 +1339,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(end.label));
 	}
 	
-	public void translate(Code.ForAll c, int freeSlot,
+	public int translate(Code.ForAll c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
 		Type elementType;
 		
@@ -1365,6 +1367,11 @@ public class ClassFileBuilder {
 				Bytecode.INTERFACE));
 		addReadConversion(elementType, bytecodes);
 		bytecodes.add(new Bytecode.Store(c.var, JAVA_LANG_OBJECT));
+		
+		// we need to increase the freeSlot, since we've allocated one slot to
+		// hold the register.
+		
+		return freeSlot + 1;
 	}
 
 
