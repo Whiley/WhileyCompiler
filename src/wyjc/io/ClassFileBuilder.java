@@ -506,7 +506,83 @@ public class ClassFileBuilder {
 	}
 
 	public void translate(Code.MultiStore c, int freeSlot,ArrayList<Bytecode> bytecodes) {
-//		
+		Type iter = c.type;
+
+		// first, we'll store the value to be assigned
+		
+		// FIXME: bug here for assigning booleans
+		JvmType val_t = JAVA_LANG_OBJECT;
+		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		
+		// Now, my general feeling is that the multistore bytecode could use
+		// some work. Essentially, to simplify this process of figuring our what
+		// is being updated.
+		
+		List<String> fields = c.fields;
+		int fi = 0;						
+		
+		for(int i=0;i!=c.level;++i) {
+			boolean read = (i != c.level - 1);
+			
+			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
+				bytecodes.add(new Bytecode.Swap());
+				if(read) { 
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+							JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
+						Bytecode.VIRTUAL));
+					addReadConversion(dict.value(),bytecodes);
+				} else {
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+							JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
+					addWriteConversion(dict.value(),bytecodes);
+					bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
+							Bytecode.VIRTUAL));
+					bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+				}
+			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
+				Type.List list = Type.effectiveListType(iter);
+				JvmType.Function ftype = new JvmType.Function(T_INT);
+				bytecodes.add(new Bytecode.Swap());
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue", ftype,
+						Bytecode.VIRTUAL));				
+				if(read) {
+					ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+							T_INT);
+					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
+							Bytecode.VIRTUAL));
+					addReadConversion(list.element(),bytecodes);
+				} else {
+					ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+							T_INT,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
+					addWriteConversion(list.element(),bytecodes);
+					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
+							Bytecode.VIRTUAL));
+					bytecodes.add(new Bytecode.Pop(T_BOOL));
+				}
+			} else {
+				Type.Record rec = Type.effectiveRecordType(iter);
+				String field = fields.get(fi++);
+				bytecodes.add(new Bytecode.LoadConst(field));				
+				if(read) {
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));				
+					addReadConversion(rec.fields().get(field),bytecodes);
+				} else {
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
+					addWriteConversion(rec.fields().get(field),bytecodes);
+					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
+					bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+				}
+			}
+		}
+		
+		//		
 //	} else if(lhs instanceof CExpr.ListAccess) {
 //		CExpr.ListAccess v = (CExpr.ListAccess) lhs;
 //		Type src_t = v.src.type();
