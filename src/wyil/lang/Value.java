@@ -69,6 +69,10 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Dictionary(values));
 	}
 
+	public static Dictionary V_DICTIONARY(Map<Value, Value> values) {
+		return get(new Dictionary(values));
+	}
+	
 	public static TypeConst V_TYPE(Type type) {
 		return get(new TypeConst(type));
 	}
@@ -525,7 +529,11 @@ public abstract class Value implements Comparable<Value> {
 			this.type = type;
 		}
 		public Type type() {
-			return type;
+			if (type == null) {				
+				return Type.T_FUN(null, Type.T_ANY, Type.T_ANY);
+			} else {
+				return type;
+			}
 		}
 		public int hashCode() {
 			if(type != null) {

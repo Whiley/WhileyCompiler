@@ -71,8 +71,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return type;		
 	}
 	
-	public Module.ConstDef propagate(Module.ConstDef def) {		
-		return def;
+	public Module.ConstDef propagate(Module.ConstDef def) {
+		// We need to perform type propagation over values in order to handle
+		// function constants which have not yet been bound.
+		Value v = (Value) infer(def.constant(),def);
+		return new Module.ConstDef(def.name(), v, def.attributes());
 	}
 	
 	public Env initialStore() {
@@ -230,53 +233,102 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.Const code, Entry stmt, Env environment) {
-		
-		if(code.constant instanceof Value.FunConst) {
-			Value.FunConst fc = (Value.FunConst) code.constant;
-			
-			try {
-				List<Type.Fun> targets = lookupMethod(fc.name.module(),fc.name.name());
-				String msg = null;
-				if(fc.type == null) {
-					if(targets.size() == 1) {
-						code = Code.Const(Value.V_FUN(fc.name, targets.get(0)));
-					} else {
-						msg = "ambiguous function or method reference";
-					}
-				} else {
-					msg = "no match for " + fc;
-					for(Type.Fun ft : targets) {
-						if(fc.type.params().equals(ft.params())) {
-							code = Code.Const(Value.V_FUN(fc.name, ft));
-							msg = null;
-							break;
-						}
-					}					
-				}
-
-				if(msg != null) {
-					// failed to find an appropriate match
-					boolean firstTime = true;
-					int count = 0;
-					for(Type.Fun ft : targets) {
-						if(firstTime) {
-							msg += "\n\tfound: " + fc.name.name() + parameterString(ft.params());
-						} else {
-							msg += "\n\tand: " + fc.name.name() + parameterString(ft.params());
-						}
-						if(++count < targets.size()) {
-							msg += ",";
-						}
-					}
-					syntaxError(msg + "\n",filename,stmt);
-				}
-			} catch(ResolveError ex) {
-				syntaxError(ex.getMessage(),filename,stmt);
-			}			
-		}
-		
+		// we must perform type propagation across values here in order to
+		// handle function constants which have not yet been bound.
+		code = Code.Const(infer(code.constant,stmt));		
 		environment.push(code.constant.type());
 		return code;
+	}
+	
+	protected Value infer(Value val, SyntacticElement elem) {
+		if (val instanceof Value.Number || val instanceof Value.Bool
+				|| val instanceof Value.Null) {
+			return val;
+		} else if (val instanceof Value.Set) {
+			return infer((Value.Set)val,elem);
+		} else if (val instanceof Value.List) {
+			return infer((Value.List)val,elem);
+		} else if (val instanceof Value.Dictionary) {
+			return infer((Value.Dictionary)val,elem);
+		} else if (val instanceof Value.Record) {
+			return infer((Value.Record)val,elem);
+		} else {
+			return infer((Value.FunConst)val,elem);
+		}
+	}
+	
+	protected Value infer(Value.Set val, SyntacticElement elem) {
+		ArrayList<Value> nvals =  new ArrayList<Value>();
+		for(Value v : val.values) {
+			nvals.add(infer(v,elem));
+		}
+		return Value.V_SET(nvals);
+	}
+	
+	protected Value infer(Value.List val, SyntacticElement elem) {
+		ArrayList<Value> nvals =  new ArrayList<Value>();
+		for(Value v : val.values) {
+			nvals.add(infer(v,elem));
+		}
+		return Value.V_LIST(nvals);
+	}
+	
+	protected Value infer(Value.Dictionary dict, SyntacticElement elem) {
+		HashMap<Value,Value> nvals =  new HashMap<Value,Value>();
+		for(Map.Entry<Value,Value> v : dict.values.entrySet()) {
+			Value key = infer(v.getKey(),elem);
+			Value val = infer(v.getValue(),elem);
+			nvals.put(key, val);
+		}
+		return Value.V_DICTIONARY(nvals);
+	}	
+	
+	protected Value infer(Value.Record record, SyntacticElement elem) {
+		HashMap<String,Value> nfields =  new HashMap<String,Value>();
+		for(Map.Entry<String,Value> v : record.values.entrySet()) {
+			String key = v.getKey();
+			Value val = infer(v.getValue(),elem);
+			nfields.put(key, val);
+		}
+		return Value.V_RECORD(nfields);
+	}
+	
+	protected Value infer(Value.FunConst fc, SyntacticElement elem) {
+		try {
+			List<Type.Fun> targets = lookupMethod(fc.name.module(),fc.name.name());
+			String msg;
+			if(fc.type == null) {
+				if(targets.size() == 1) {
+					return Value.V_FUN(fc.name, targets.get(0));
+				} 
+				msg = "ambiguous function or method reference";					
+			} else {
+				msg = "no match for " + fc;
+				for(Type.Fun ft : targets) {
+					if(fc.type.params().equals(ft.params())) {
+						return Value.V_FUN(fc.name, ft);
+					}
+				}					
+			}
+
+			// failed to find an appropriate match
+			boolean firstTime = true;
+			int count = 0;
+			for(Type.Fun ft : targets) {
+				if(firstTime) {
+					msg += "\n\tfound: " + fc.name.name() + parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + fc.name.name() + parameterString(ft.params());
+				}
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			syntaxError(msg + "\n",filename,elem);
+		} catch(ResolveError ex) {
+			syntaxError(ex.getMessage(),filename,elem);				
+		}			
+		return null;
 	}
 	
 	protected Code infer(Code.Debug code, Entry stmt, Env environment) {
