@@ -1623,14 +1623,15 @@ public class ClassFileBuilder {
 		}
 		case PROCESSSPAWN:
 		{
-			bytecodes.add(new Bytecode.New(WHILEYPROCESS));
-			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
-			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
+			bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
+			bytecodes.add(new Bytecode.DupX1());
+			bytecodes.add(new Bytecode.DupX1());			
+			bytecodes.add(new Bytecode.Swap());
 			// TODO: problem here ... need to swap or something				
 			JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 					Bytecode.SPECIAL));
-			ftype = new JvmType.Function(T_VOID);
+			ftype = new JvmType.Function(T_VOID);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "start", ftype,
 					Bytecode.VIRTUAL));
 			break;
