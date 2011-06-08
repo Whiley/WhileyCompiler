@@ -1449,8 +1449,7 @@ public class ModuleBuilder {
 			return blk;
 		}
 	}
-
-	/*
+	
 	protected Block resolve(HashMap<String,Integer> environment, Comprehension e) {
 
 		// First, check for boolean cases which are handled mostly by
@@ -1458,43 +1457,42 @@ public class ModuleBuilder {
 		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
+			int freeReg = environment.size();
+			environment.put("$" + freeReg, freeReg);
 			Block blk = resolveCondition(trueLabel, e, environment);
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, environment), Value
-					.V_BOOL(false)), attributes(e));
+			blk.add(Code.Const(Value.V_BOOL(false)), attributes(e));
+			blk.add(Code.Store(null,freeReg),attributes(e));			
 			blk.add(Code.Goto(exitLabel));
 			blk.add(Code.Label(trueLabel));
-			blk.add(new Code.Assign(CExpr.REG(Type.T_BOOL, environment), Value
-					.V_BOOL(true)), attributes(e));
+			blk.add(Code.Const(Value.V_BOOL(true)), attributes(e));
+			blk.add(Code.Store(null,freeReg),attributes(e));
 			blk.add(Code.Label(exitLabel));
-			return new Block(CExpr.REG(Type.T_BOOL, environment), blk);
+			blk.add(Code.Load(null,freeReg),attributes(e));
+			return blk;
 		}
 
-		// Ok, non-boolean case.		
-		ArrayList<Pair<CExpr.Register, CExpr>> sources = new ArrayList();
+		// Ok, non-boolean case.				
 		Block blk = new Block();
-		HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-		for (Pair<String, Expr> src : e.sources) {
-			Block r = resolve(0, src.second());
-			CExpr.Register reg = CExpr.REG(null, environment++);
-			sources.add(new Pair<CExpr.Register, CExpr>(reg, r.first()));
-			binding.put(src.first(), reg);
-			blk.addAll(r.second());			
-		}
-
-		Block value = resolve(environment + 1, e.value);
-		Type type = value.first().type();
+		ArrayList<Integer> srcSlots = new ArrayList();
 		
-		CExpr.Register lhs;
-
-		if (e.cop == Expr.COp.LISTCOMP) {
-			lhs = CExpr.REG(Type.T_LIST(type), environment);
-			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.LISTGEN)), attributes(e));
-		} else {
-			lhs = CExpr.REG(Type.T_SET(type), environment);
-			blk.add(new Code.Assign(lhs, CExpr.NARYOP(CExpr.NOP.SETGEN)), attributes(e));
+		for (Pair<String, Expr> src : e.sources) {
+			Block r = resolve(environment, src.second());
+			int freeReg = environment.size();
+			environment.put("$" + freeReg,freeReg);
+			blk.add(Code.Store(null, freeReg));
+			srcSlots.add(freeReg);					
 		}
-
-		Block loopInvariant = null;
+		
+		int resultSlot = environment.size();
+		environment.put("$" + resultSlot, resultSlot);
+		
+		if (e.cop == Expr.COp.LISTCOMP) {
+			blk.add(Code.NewList(null,0), attributes(e));
+			blk.add(Code.Store(null,resultSlot));
+		} else {
+			blk.add(Code.NewSet(null,0), attributes(e));
+			blk.add(Code.Store(null,resultSlot));			
+		}
 		
 		// At this point, it would be good to determine an appropriate loop
 		// invariant for a set comprehension. This is easy enough in the case of
@@ -1507,39 +1505,35 @@ public class ModuleBuilder {
 		
 		String continueLabel = Block.freshLabel();
 		ArrayList<String> labels = new ArrayList<String>();
-		for (Pair<CExpr.Register, CExpr> ent : sources) {
-			String loopLabel = Block.freshLabel();
-			labels.add(loopLabel);
-
-			blk
-					.add(new Code.Forall(loopLabel, loopInvariant, ent.first(), ent
-							.second()), attributes(e));
+		String loopLabel = Block.freshLabel();
+		
+		for (Integer src : srcSlots) {		
+			String target = loopLabel + "$" + src;
+			blk.add(Code.ForAll(null, src, target, Collections.EMPTY_LIST),
+					attributes(e));
+			labels.add(target);
 		}
 		
 		if (e.condition != null) {
 			blk.addAll(resolveCondition(continueLabel, invert(e.condition),
 					environment));
-			blk.addAll(value.second());
+			blk.addAll(resolve(environment,e.condition));
 			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
 					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), attributes(e));
 			blk.add(Code.Label(continueLabel));
 		} else {
-			blk.addAll(value.second());
+			blk.addAll(resolve(environment,e.condition));			
 			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
 					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), attributes(e));
 		}
 
 		for (int i = (labels.size() - 1); i >= 0; --i) {
-			blk.add(new Code.ForallEnd(labels.get(i)));
+			blk.add(Code.End(labels.get(i)));
 		}
 
-		// Finally, we need to substitute the block to rename all occurrences of
-		// the quantified variables to be their actual registers.
-		blk = Block.substitute(binding, blk);
-
-		return new Block(lhs, blk);
+		return blk;
 	}
-	 */
+
 	protected Block resolve(HashMap<String,Integer> environment, RecordGen sg) {
 		Block blk = new Block();
 		HashMap<String, Type> fields = new HashMap<String, Type>();

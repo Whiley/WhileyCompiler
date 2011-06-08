@@ -8,4 +8,4 @@ void MyProc::run(System sys):
 
 void System::main([string] args):
     mproc = spawn { flag:false }     
-    mproc->run(this)
+    mproc<->run(this)
