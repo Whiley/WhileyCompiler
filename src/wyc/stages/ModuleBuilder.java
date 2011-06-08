@@ -705,8 +705,16 @@ public class ModuleBuilder {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
+				blk.add(Code.Load(null, freeReg),attributes(s));
 				blk.add(Code.FieldLoad(null, "$" + idx++), attributes(e));
-				blk.add(Code.Store(null, environment.get(v.var)), attributes(e));					
+				if(environment.containsKey(v.var)) {
+					blk.add(Code.Store(null, environment.get(v.var)),
+						attributes(s));
+				} else {
+					int free = environment.size();
+					environment.put(v.var, free);
+					blk.add(Code.Store(null, free), attributes(s));
+				}								
 			}
 			return blk;
 		} else if(s.lhs instanceof ListAccess || s.lhs instanceof RecordAccess){
@@ -1547,16 +1555,14 @@ public class ModuleBuilder {
 
 	protected Block resolve(HashMap<String,Integer> environment, TupleGen sg) {		
 		Block blk = new Block();
-		int idx=0;
-		ArrayList<Type> types = new ArrayList<Type>();
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		int i =0;
 		for (Expr e : sg.fields) {						
-			fields.put("$" + i++, null);
+			fields.put("$" + i++, Type.T_VOID);
 			blk.addAll(resolve(environment, e));
 		}
 		// FIXME: to be updated to proper tuple
-		blk.add(Code.NewTuple(Type.T_RECORD(fields)),attributes(sg));
+		blk.add(Code.NewRecord(Type.T_RECORD(fields)),attributes(sg));
 		return blk;		
 	}
 
