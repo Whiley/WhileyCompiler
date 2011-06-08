@@ -271,6 +271,8 @@ public class ClassFileBuilder {
 				 translate((Return)code,freeSlot,bytecodes);
 			} else if(code instanceof Send) {
 				 translate((Send)code,freeSlot,bytecodes);
+			} else if(code instanceof SubList) {
+				 translate((SubList)code,freeSlot,bytecodes);
 			} else if(code instanceof Store) {
 				 translate((Store)code,freeSlot,bytecodes);
 			} else if(code instanceof UnOp) {
@@ -1862,6 +1864,14 @@ public class ClassFileBuilder {
 	public void translate(Code.IndirectSend c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 	
+	}
+	
+	public void translate(Code.SubList c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
+				BIG_RATIONAL, BIG_RATIONAL);
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "sublist", ftype,
+				Bytecode.STATIC));
 	}
 	
 	public void translate(Value v, int freeSlot,

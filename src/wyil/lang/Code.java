@@ -327,8 +327,8 @@ public abstract class Code {
 		return get(new Store(type,reg));
 	}
 	
-	public static SubList SubList() {
-		return null;
+	public static SubList SubList(Type.List type) {
+		return get(new SubList(type));
 	}
 
 	/**
@@ -1407,11 +1407,35 @@ public abstract class Code {
 			return toString("store " + slot,type);
 		}	
 	}	
-	
-	public static final class SubList extends Code {
-		
-	}
 
+	public static final class SubList extends Code {
+		public final Type.List type;				
+		
+		private SubList(Type.List type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof SubList) {
+				SubList i = (SubList) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("sublist",type);
+		}	
+	}
+	
 	public static final class Switch extends Code {
 		public final Type type;
 		public final HashMap<Value,String> branches;

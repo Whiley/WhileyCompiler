@@ -169,6 +169,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Send)code,entry,environment);
 		} else if(code instanceof Store) {
 			code = infer((Store)code,entry,environment);
+		} else if(code instanceof SubList) {
+			code = infer((SubList)code,entry,environment);
 		} else if(code instanceof UnOp) {
 			code = infer((UnOp)code,entry,environment);
 		} else {
@@ -572,62 +574,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return e;
 	}
 	
-	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
-		Type ret_t = method.type().ret();		
-		
-		if(environment.size() > methodCase.locals().size()) {			
-			if(ret_t == Type.T_VOID) {
-				syntaxError(
-						"cannot return value from method with void return type",
-						filename, stmt);
-			}
-			
-			Type rhs_t = environment.pop();
-			
-			checkIsSubtype(ret_t,rhs_t,stmt);
-		} else if(ret_t != Type.T_VOID) {
-			syntaxError(
-					"missing return value",filename, stmt);
-		}
-		
-		return Code.Return(ret_t);
-	}
-	
 
-	protected Code infer(UnOp v, Entry stmt, Env environment) {
-		Type rhs_t = environment.pop();
-
-		switch(v.uop) {
-			case NEG:
-				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
-				environment.add(rhs_t);
-				return Code.UnOp(rhs_t,v.uop);
-			case LENGTHOF:
-				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {
-					environment.add(Type.T_INT);
-					return Code.UnOp(rhs_t,v.uop);
-				} else {
-					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
-				}				
-			case PROCESSACCESS:
-				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-			// FIXME: bug here for e.g. unions of processes; need an
-			// effectiveProcessType method
-				Type.Process tp = (Type.Process)rhs_t; 
-				environment.add(tp.element());
-				return Code.UnOp(rhs_t,v.uop);
-			case PROCESSSPAWN:
-				environment.add(Type.T_PROCESS(rhs_t));
-				return Code.UnOp(rhs_t,v.uop);				
-		}
-		
-		syntaxError("unknown unary operation: " + v.uop,filename,stmt);
-		return null;
-	}
-	
-	
-	
-	
 	/*
 	protected Pair<Entry, Env> infer(Code.Assign code, Entry stmt, Env environment) {		
 		environment = new Env(environment);				
@@ -720,6 +667,75 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return type;
 	}
 	*/
+	
+	protected Code infer(Code.SubList code, Entry stmt, Env environment) {
+		Type end = environment.pop();
+		Type start = environment.pop();
+		Type list = environment.pop();
+		
+		checkIsSubtype(Type.T_INT,start,stmt);
+		checkIsSubtype(Type.T_INT,end,stmt);
+		checkIsSubtype(Type.T_LIST(Type.T_ANY),list,stmt);
+		
+		environment.push(list);
+		
+		return Code.SubList(Type.effectiveListType(list));
+	}
+	
+	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
+		Type ret_t = method.type().ret();		
+		
+		if(environment.size() > methodCase.locals().size()) {			
+			if(ret_t == Type.T_VOID) {
+				syntaxError(
+						"cannot return value from method with void return type",
+						filename, stmt);
+			}
+			
+			Type rhs_t = environment.pop();
+			
+			checkIsSubtype(ret_t,rhs_t,stmt);
+		} else if(ret_t != Type.T_VOID) {
+			syntaxError(
+					"missing return value",filename, stmt);
+		}
+		
+		return Code.Return(ret_t);
+	}
+	
+
+	protected Code infer(UnOp v, Entry stmt, Env environment) {
+		Type rhs_t = environment.pop();
+
+		switch(v.uop) {
+			case NEG:
+				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
+				environment.add(rhs_t);
+				return Code.UnOp(rhs_t,v.uop);
+			case LENGTHOF:
+				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {
+					environment.add(Type.T_INT);
+					return Code.UnOp(rhs_t,v.uop);
+				} else {
+					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
+				}				
+			case PROCESSACCESS:
+				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
+			// FIXME: bug here for e.g. unions of processes; need an
+			// effectiveProcessType method
+				Type.Process tp = (Type.Process)rhs_t; 
+				environment.add(tp.element());
+				return Code.UnOp(rhs_t,v.uop);
+			case PROCESSSPAWN:
+				environment.add(Type.T_PROCESS(rhs_t));
+				return Code.UnOp(rhs_t,v.uop);				
+		}
+		
+		syntaxError("unknown unary operation: " + v.uop,filename,stmt);
+		return null;
+	}
+	
+	
 	
 	
 	protected Triple<Entry,Env,Env> propagate(Code.IfGoto code, Entry stmt, Env environment) {
@@ -827,8 +843,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		Code ncode = new Code.Switch(val,code.defaultTarget,code.branches);
 		return new Pair(new Entry(ncode,stmt.attributes()),envs);
-	}
-		
+	}	
+	
 	protected Pair<Block, Env> propagate(Code.ForAll forloop, 
 			Block body, Entry stmt, Env environment) {
 						
