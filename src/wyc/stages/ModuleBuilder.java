@@ -992,9 +992,9 @@ public class ModuleBuilder {
 		if (alias != null) {
 			if(alias.alias != null) {							
 				blk.addAll(resolve(environment, alias.alias));				
-			} else {				
+			} else {
 				// Ok, must be a local variable
-				blk.add(Code.Load(Type.T_BOOL, environment.get(v.var)));	
+				blk.add(Code.Load(null, environment.get(v.var)));	
 			}
 			matched = true;
 		} else if(tf != null && tf.receiver() != null) {
@@ -1299,9 +1299,9 @@ public class ModuleBuilder {
 			// Must be a local variable	
 			if(alias.alias == null) {
 				if(environment.containsKey(v.var)) {
-					Block r = new Block();
-					r.add(Code.Load(null, environment.get(v.var)), attributes(v));
-					return r;
+					Block blk = new Block();						
+					blk.add(Code.Load(null, environment.get(v.var)), attributes(v));					
+					return blk;
 				} else {
 					syntaxError("variable might not be initialised",filename,v);
 				}

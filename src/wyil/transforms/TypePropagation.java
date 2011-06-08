@@ -446,6 +446,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type src = environment.get(e.slot);
 		Type iter = src;
 		
+		if(e.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
+			Type.Process p = (Type.Process) iter;
+			iter = p.element();
+		}
+		
 		int fi = 0;
 		int pi = 0;
 		for(int i=0;i!=e.level;++i) {				
@@ -721,10 +726,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				}				
 			case PROCESSACCESS:
 				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-			// FIXME: bug here for e.g. unions of processes; need an
-			// effectiveProcessType method
 				Type.Process tp = (Type.Process)rhs_t; 
-				environment.add(tp.element());
+				environment.push(tp.element());
 				return Code.UnOp(rhs_t,v.uop);
 			case PROCESSSPAWN:
 				environment.add(Type.T_PROCESS(rhs_t));

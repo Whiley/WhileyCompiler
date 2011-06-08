@@ -931,7 +931,7 @@ public class WhileyParser {
 			// this indicates a process dereference
 			match(Star.class);
 			
-			Expr e = parseAddSubExpression();
+			Expr e = parseTerm();
 			return new Expr.UnOp(Expr.UOp.PROCESSACCESS, e, sourceAttr(start,
 					index - 1));
 		} else if ((index + 1) < tokens.size()

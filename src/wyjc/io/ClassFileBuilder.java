@@ -515,11 +515,19 @@ public class ClassFileBuilder {
 		// some work. Essentially, to simplify this process of figuring our what
 		// is being updated.
 		
-		// First, determine type of value being assigned
-		Type iter = c.type;
+		// First, check if this is updating the process' state
+		Type type = c.type;
+				
+		if(c.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {
+			Type.Process p = (Type.Process) type;
+			type = p.element();
+		}
+		
+		// Second, determine type of value being assigned
+		
 		List<String> fields = c.fields;
 		int fi = 0;						
-		
+		Type iter = type;
 		for(int i=0;i!=c.level;++i) {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
@@ -534,19 +542,17 @@ public class ClassFileBuilder {
 			}	
 		}
 		
-		// Second, store the value to be assigned		
+		// Third, store the value to be assigned		
 		// FIXME: bug here for assigning booleans
 		JvmType val_t = convertType(iter);
 		cloneValue(iter,bytecodes);
 		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 		
-		// Third, finally process the assignment path and update the object in
-		// question.
-		
-		iter = c.type;
-		fi = 0;						
-		
+		// Fourth, finally process the assignment path and update the object in
+		// question.		
+		iter = type;
+		fi = 0;								
 		for(int i=0;i!=c.level;++i) {
 			boolean read = (i != c.level - 1);
 			
