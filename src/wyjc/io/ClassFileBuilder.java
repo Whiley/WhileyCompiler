@@ -549,6 +549,16 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 		
+		if(type != c.type) {
+			// this case is for assignments to process states
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
+					Bytecode.VIRTUAL));
+			// finally, we need to cast the object we got back appropriately.		
+			Type.Process pt = (Type.Process) c.type;						
+			addReadConversion(pt.element(), bytecodes);
+		}
+		
 		// Fourth, finally process the assignment path and update the object in
 		// question.		
 		iter = type;
