@@ -502,25 +502,48 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Store c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
+		cloneValue(c.type,bytecodes);
 		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));				
 	}
 
 	public void translate(Code.MultiStore c, int freeSlot,ArrayList<Bytecode> bytecodes) {
-		Type iter = c.type;
+		
 
-		// first, we'll store the value to be assigned
-		
-		// FIXME: bug here for assigning booleans
-		JvmType val_t = JAVA_LANG_OBJECT;
-		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		
 		// Now, my general feeling is that the multistore bytecode could use
 		// some work. Essentially, to simplify this process of figuring our what
 		// is being updated.
 		
+		// First, determine type of value being assigned
+		Type iter = c.type;
 		List<String> fields = c.fields;
 		int fi = 0;						
+		
+		for(int i=0;i!=c.level;++i) {
+			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
+				iter = dict.value();
+			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
+				Type.List list = Type.effectiveListType(iter);
+				iter = list.element();
+			} else {
+				Type.Record rec = Type.effectiveRecordType(iter);
+				String field = fields.get(fi++);
+				iter = rec.fields().get(field);
+			}	
+		}
+		
+		// Second, store the value to be assigned		
+		// FIXME: bug here for assigning booleans
+		JvmType val_t = convertType(iter);
+		cloneValue(iter,bytecodes);
+		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		
+		// Third, finally process the assignment path and update the object in
+		// question.
+		
+		iter = c.type;
+		fi = 0;						
 		
 		for(int i=0;i!=c.level;++i) {
 			boolean read = (i != c.level - 1);
@@ -543,6 +566,7 @@ public class ClassFileBuilder {
 							Bytecode.VIRTUAL));
 					bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 				}
+				iter = dict.value();
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
 				Type.List list = Type.effectiveListType(iter);
 				JvmType.Function ftype = new JvmType.Function(T_INT);
@@ -564,6 +588,7 @@ public class ClassFileBuilder {
 							Bytecode.VIRTUAL));
 					bytecodes.add(new Bytecode.Pop(T_BOOL));
 				}
+				iter = list.element();
 			} else {
 				Type.Record rec = Type.effectiveRecordType(iter);
 				String field = fields.get(fi++);
@@ -579,6 +604,7 @@ public class ClassFileBuilder {
 					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
 					bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 				}
+				iter = rec.fields().get(field);
 			}
 		}
 		
@@ -2032,18 +2058,16 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
 	}
-	
-	
+
 	/**
-	 * The cloneRHS method is responsible for cloning the right-hand side of an
-	 * assignment operation. This is necessary to ensure the correct value
-	 * semantics of wyil are preserved. An interesting question is how we might
-	 * avoid such cloning.
+	 * The cloneValue method is responsible for cloning values on the stack.
+	 * This is necessary to ensure the correct value semantics of wyil are
+	 * preserved. An interesting question is how we might avoid such cloning.
 	 * 
 	 * @param t
 	 * @param bytecodes
 	 */
-	private void cloneRHS(Type t, ArrayList<Bytecode> bytecodes) {
+	private void cloneValue(Type t, ArrayList<Bytecode> bytecodes) {
 		// Now, for list, set and record types we need to clone the object in
 		// question. In fact, this could be optimised in some situations
 		// where we know the old variable is not live.
