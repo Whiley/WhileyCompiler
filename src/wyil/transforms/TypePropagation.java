@@ -483,13 +483,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=e.fields.size();i!=e.level;++i) {
 			path.add(environment.pop());
 		}
-		Type src = environment.get(e.slot);
-		Type iter = src;
+		Type src = environment.get(e.slot);		
 		
-		if(e.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
-			Type.Process p = (Type.Process) iter;
-			iter = p.element();
+		if(e.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
+			Type.Process p = (Type.Process) src;
+			src = p.element();
 		}
+		
+		Type iter = src;
 		
 		int fi = 0;
 		int pi = 0;
@@ -524,12 +525,73 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		// FIXME: broken as should just update src variable.
-		checkIsSubtype(iter,val,stmt);
+		// Now, we need to determine the (potentially) updated type of the
+		// variable in question. For example, if we assign a real into a [int]
+		// then we'll end up with a [real].
+		Type ntype = typeInference(src,val,e.level,0,e.fields);
+		environment.set(e.slot,ntype);
 		
-		return Code.MultiStore(src,e.slot,e.level,e.fields);
-	}	
-	
+		return Code.MultiStore(environment.get(e.slot),e.slot,e.level,e.fields);
+	}
+
+	/**
+	 * The purpose of this method is to update a given type after some
+	 * subcomponent has been assigned a new value.  Examples include:
+	 * <pre>
+	 * x : [int] => [real]           // after e.g. x[i] = 1.2
+	 * x : { real op } => { int op}  // after e.g. x.op = 1
+	 * </pre>
+	 * 
+	 * @param oldtype
+	 * @param level
+	 * @param fieldLevel
+	 * @param fields
+	 * @return
+	 */
+	protected Type typeInference(Type oldtype, Type newtype, int level, int fieldLevel, ArrayList<String> fields) {
+		if(level == 0 && fieldLevel == fields.size()) {
+			// this is the base case of the recursion.
+			return newtype;			
+		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
+			// Dictionary case is straightforward. Since only one key-value pair
+			// is being updated, we must assume other key-value pairs are not
+			// --- hence, the original type must be preserved. However, in the
+			// case that we're assigning a more general value for some key then
+			// we need to generalise the value type accordingly. 
+			Type.Dictionary dict = Type.effectiveDictionaryType(oldtype);
+			Type nvalue = typeInference(dict.value(),newtype,level-1,fieldLevel,fields);
+			return Type.leastUpperBound(oldtype,Type.T_DICTIONARY(dict.key(),nvalue));
+			
+		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {
+			// List case is basicaly same as for dictionary above.
+			Type.List list = Type.effectiveListType(oldtype);
+			Type nelement = typeInference(list.element(),newtype,level-1,fieldLevel,fields);
+			return Type.leastUpperBound(oldtype,Type.T_LIST(nelement));
+		
+		} else if(Type.effectiveRecordType(oldtype) != null){			
+			// Record case is more interesting as we may be able to actually
+			// perform a "strong" update of the type. This is because we know
+			// exactly which field is being updated.
+			String field = fields.get(fieldLevel);
+			if(oldtype instanceof Type.Record) {
+				Type.Record rt = (Type.Record) oldtype;
+				Type ntype = typeInference(rt.fields().get(field),newtype,level-1,fieldLevel+1,fields);
+				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
+				types.put(field, ntype);
+				return Type.T_RECORD(types);
+			} else {
+				Type.Union tu = (Type.Union) oldtype;
+				Type t = Type.T_VOID;
+				for(Type b : tu.bounds()) {					
+					t = Type.leastUpperBound(t,typeInference(b,newtype,level,fieldLevel,fields));
+				}
+				return t;
+			} 			
+		} else {
+			throw new IllegalArgumentException("invalid type passed to type inference: " + oldtype);
+		}
+	}
+
 	protected Code infer(Load e, Entry stmt, Env environment) {
 		e = Code.Load(environment.get(e.slot), e.slot);		
 		environment.push(e.type);
@@ -618,101 +680,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment.set(e.slot, e.type);
 		return e;
 	}
-	
-
-	/*
-	protected Pair<Entry, Env> infer(Code.Assign code, Entry stmt, Env environment) {		
-		environment = new Env(environment);				
-				
-		CExpr.LVal lhs = null;
-		CExpr rhs;
 		
-		if(code.lhs != null) {
-			if(code.lhs instanceof CExpr.LVar) {
-				CExpr.LVar lv = (CExpr.LVar) code.lhs; 
-				lhs = lv;
-				
-				// Simple test
-				if(lv.name().equals("this")) {
-					syntaxError("cannot assign to variable this",filename,stmt);
-				}
-			} else {	
-				lhs = (CExpr.LVal) infer(code.lhs,stmt,environment);
-			}	
-			// Update the type of the lhs						
-			rhs = infer(code.rhs,stmt,environment);
-			lhs = (CExpr.LVal) typeInference(lhs,rhs.type(),environment);			
-		} else {
-			// I by pass infer(CExpr) here, since that method requires all
-			// expressions to have a non-void return type.
-			if(code.rhs instanceof DirectInvoke) {				
-				rhs = infer((DirectInvoke)code.rhs,stmt,environment);
-			} else if(code.rhs instanceof IndirectInvoke) {
-				rhs = infer((IndirectInvoke)code.rhs,stmt,environment);
-			} else {
-				syntaxError("invalid expression",filename,stmt);
-				return null; // dead code
-			}
-		}
-		
-		stmt = new Entry(new Code.Assign(lhs, rhs), stmt.attributes());
-		return new Pair<Entry,Env>(stmt,environment);
-	}
-	
-	protected CExpr typeInference(CExpr lhs, Type type, Env environment) {
-		if(lhs instanceof Variable) {
-			Variable v = (Variable) lhs;
-			environment.put(v.name, type);
-			return CExpr.VAR(type,v.name);
-		} else if(lhs instanceof Register) {
-			Register v = (Register) lhs;
-			environment.put("%" + v.index, type);
-			return CExpr.REG(type,v.index);
-		} else if(lhs instanceof ListAccess) {
-			ListAccess la = (ListAccess) lhs;			
-			Type.List la_src_t = Type.effectiveListType(la.src.type());
-			if(la_src_t instanceof Type.List) {
-				Type elem_t = Type.leastUpperBound(la_src_t.element(),type);
-				lhs = typeInference(la.src,Type.T_LIST(elem_t),environment);
-				return CExpr.LISTACCESS(lhs, la.index);
-			} else {
-				Type.Dictionary tl = (Type.Dictionary) Type.effectiveDictionaryType(la.src.type());
-				Type key_t = Type.leastUpperBound(tl.key(),la.index.type());
-				Type val_t = Type.leastUpperBound(tl.value(),type);
-				lhs = typeInference(la.src,Type.T_DICTIONARY(key_t,val_t),environment);
-				return CExpr.LISTACCESS(lhs, la.index);
-			}
-		} else if(lhs instanceof RecordAccess) {		
-			RecordAccess r = (RecordAccess) lhs;		
-			Type lhs_t = updateRecordFieldType(r.lhs.type(),r.field,type);			
-			lhs = typeInference(r.lhs, lhs_t, environment);			
-			return CExpr.RECORDACCESS(lhs, r.field);
-		}	
-		
-		// default, don't do anything
-		return lhs;
-	}
-	
-	protected Type updateRecordFieldType(Type src, String field, Type type) {
-		if(src instanceof Type.Record) {
-			Type.Record rt = (Type.Record) src;
-			HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());
-			types.put(field, type);
-			return Type.T_RECORD(types);
-		} else if(src instanceof Type.Union) {
-			Type.Union tu = (Type.Union) src;
-			Type t = Type.T_VOID;
-			for(Type b : tu.bounds()) {
-				t = Type.leastUpperBound(t,updateRecordFieldType(b,field,type));
-			}
-			return t;
-		} 
-		
-		// no can do
-		return type;
-	}
-	*/
-	
 	protected Code infer(Code.ListOp code, Entry stmt, Env environment) {
 		
 		switch(code.lop) {
@@ -909,7 +877,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else {
 			lhs_t = environment.pop();
 		}
-
+		
 		Code ncode = code;
 		Env trueEnv = null;
 		Env falseEnv = null;
