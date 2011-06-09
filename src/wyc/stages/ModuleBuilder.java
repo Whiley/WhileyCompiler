@@ -628,7 +628,8 @@ public class ModuleBuilder {
 		
 		for(Map.Entry<String,Integer> e : environment.entrySet()) {
 			locals.set(e.getValue(),e.getKey());
-		}
+		}	
+		
 		ncases.add(new Module.Case(blk,locals));
 		return new Module.Method(fd.name(), tf, ncases);
 	}
@@ -1479,14 +1480,33 @@ public class ModuleBuilder {
 
 		// Ok, non-boolean case.				
 		Block blk = new Block();
-		ArrayList<Integer> srcSlots = new ArrayList();
+		ArrayList<Pair<Integer,Integer>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> src : e.sources) {
-			Block r = resolve(environment, src.second());
-			int freeReg = environment.size();
-			environment.put("$" + freeReg,freeReg);
-			blk.add(Code.Store(null, freeReg));
-			srcSlots.add(freeReg);					
+			int srcSlot;
+			int varSlot = environment.size();
+			// Note: NameResolution guarantees that !environment.contains(src.first());
+			environment.put(src.first(), varSlot);
+			if(src.second() instanceof Variable) {
+				// this is a little optimisation to produce slightly better
+				// code.
+				Variable v = (Variable) src.second();
+				if(environment.containsKey(v.var)) {
+					srcSlot = environment.get(v.var);
+				} else {
+					// fall-back plan ...
+					blk.addAll(resolve(environment, src.second()));
+					srcSlot = environment.size();
+					environment.put("$" + srcSlot,srcSlot);
+					blk.add(Code.Store(null, srcSlot),attributes(e));	
+				}
+			} else {
+				blk.addAll(resolve(environment, src.second()));
+				srcSlot = environment.size();
+				environment.put("$" + srcSlot,srcSlot);
+				blk.add(Code.Store(null, srcSlot),attributes(e));	
+			}			
+			slots.add(new Pair(varSlot,srcSlot));											
 		}
 		
 		int resultSlot = environment.size();
@@ -1494,10 +1514,10 @@ public class ModuleBuilder {
 		
 		if (e.cop == Expr.COp.LISTCOMP) {
 			blk.add(Code.NewList(null,0), attributes(e));
-			blk.add(Code.Store(null,resultSlot));
+			blk.add(Code.Store(null,resultSlot),attributes(e));
 		} else {
 			blk.add(Code.NewSet(null,0), attributes(e));
-			blk.add(Code.Store(null,resultSlot));			
+			blk.add(Code.Store(null,resultSlot),attributes(e));			
 		}
 		
 		// At this point, it would be good to determine an appropriate loop
@@ -1513,9 +1533,11 @@ public class ModuleBuilder {
 		ArrayList<String> labels = new ArrayList<String>();
 		String loopLabel = Block.freshLabel();
 		
-		for (Integer src : srcSlots) {		
-			String target = loopLabel + "$" + src;
-			blk.add(Code.ForAll(null, src, target, Collections.EMPTY_LIST),
+		for (Pair<Integer, Integer> p : slots) {
+			String target = loopLabel + "$" + p.first();
+			blk.add(Code.Load(null, p.second()), attributes(e));
+			blk.add(Code
+					.ForAll(null, p.first(), target, Collections.EMPTY_LIST),
 					attributes(e));
 			labels.add(target);
 		}
@@ -1525,10 +1547,10 @@ public class ModuleBuilder {
 					environment));
 		}
 		
-		blk.add(Code.Load(null,resultSlot));
-		blk.addAll(resolve(environment,e.condition));
-		blk.add(Code.SetOp(null, Code.SOp.UNION, Code.OpDir.RIGHT));
-		blk.add(Code.Store(null,resultSlot));
+		blk.add(Code.Load(null,resultSlot),attributes(e));
+		blk.addAll(resolve(environment,e.value));
+		blk.add(Code.SetOp(null, Code.SOp.UNION, Code.OpDir.LEFT),attributes(e));
+		blk.add(Code.Store(null,resultSlot),attributes(e));
 			
 		if(e.condition != null) {
 			blk.add(Code.Label(continueLabel));			
@@ -1538,6 +1560,8 @@ public class ModuleBuilder {
 			blk.add(Code.End(labels.get(i)));
 		}
 
+		blk.add(Code.Load(null,resultSlot),attributes(e));
+		
 		return blk;
 	}
 

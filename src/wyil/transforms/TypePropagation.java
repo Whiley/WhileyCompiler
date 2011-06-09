@@ -613,7 +613,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}		
 	}
 	
-	protected Code infer(Store e, Entry stmt, Env environment) {
+	protected Code infer(Store e, Entry stmt, Env environment) {		
 		e = Code.Store(environment.pop(), e.slot);		
 		environment.set(e.slot, e.type);
 		return e;

@@ -301,8 +301,6 @@ public class NameResolution {
 				resolve((UnOp)e, environment, imports);
 			} else if (e instanceof Invoke) {
 				resolve((Invoke)e, environment, imports);
-			} else if (e instanceof Comprehension) {
-				resolve((Comprehension) e, environment, imports);
 			} else if (e instanceof RecordAccess) {
 				resolve((RecordAccess) e, environment, imports);
 			} else if (e instanceof RecordGen) {
@@ -402,7 +400,11 @@ public class NameResolution {
 	
 	protected void resolve(Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {						
 		HashMap<String,Set<Expr>> nenv = new HashMap<String,Set<Expr>>(environment);
-		for(Pair<String,Expr> me : e.sources) {														
+		for(Pair<String,Expr> me : e.sources) {	
+			if (environment.containsKey(me.first())) {
+				syntaxError("variable " + me.first() + " is alreaded defined",
+						filename, e);
+			}
 			resolve(me.second(),nenv,imports); 			
 			nenv.put(me.first(),Collections.EMPTY_SET);
 		}		

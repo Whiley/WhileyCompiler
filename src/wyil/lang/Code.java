@@ -1046,7 +1046,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString(dir.toString() + lop.toString(),type);
+			return toString(lop.toString() + dir.toString(),type);
 		}
 	}
 	
@@ -1448,10 +1448,10 @@ public abstract class Code {
 			public String toString() { return ""; }
 		},
 		LEFT {
-			public String toString() { return "left_"; }
+			public String toString() { return "_l"; }
 		},
 		RIGHT {
-			public String toString() { return "right_"; }
+			public String toString() { return "_r="; }
 		}
 	}
 	
@@ -1499,7 +1499,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString(dir.toString() + sop.toString(),type);
+			return toString(sop.toString() + dir.toString(),type);
 		}
 	}
 	
