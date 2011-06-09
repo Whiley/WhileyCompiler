@@ -278,7 +278,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof Store) {
 				 translate((Store)code,freeSlot,bytecodes);
 			} else if(code instanceof Switch) {
-				 translate((Switch)code,freeSlot,bytecodes);
+				 translate((Switch)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof UnOp) {
 				 translate((UnOp)code,freeSlot,bytecodes);
 			} else {
@@ -685,7 +685,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Throw());
 	}
 	
-	public void translate(Code.Switch c, int freeSlot,
+	public void translate(Code.Switch c, Block.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 
 		ArrayList<Pair<Integer, String>> cases = new ArrayList();
@@ -715,9 +715,20 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Switch(c.defaultTarget, cases));
 		} else {
-			// FIXME: need to support non-integer switches
-			throw new RuntimeException(
-					"internal failure --- no support for non-integet switch bytecodes");
+			// ok, in this case we have to fall back to series of the if
+			// conditions. Not ideal.  
+			bytecodes.add(new Bytecode.Store(freeSlot, convertType(c.type)));
+			for (Pair<Value, String> p : c.branches) {
+				Value value = p.first();
+				String target = p.second();
+				translate(value,freeSlot+1,bytecodes);
+				bytecodes.add(new Bytecode.Load(freeSlot, convertType(c.type)));				
+				// Now, construct fake bytecode to do the comparison.
+				// FIXME: bug if types require some kind of coercion
+				Code.IfGoto ifgoto = Code.IfGoto(value.type(),Code.COp.EQ,target);			
+				translate(ifgoto,entry,freeSlot+1,bytecodes);
+			}
+			bytecodes.add(new Bytecode.Goto(c.defaultTarget));
 		}
 	}
 	
