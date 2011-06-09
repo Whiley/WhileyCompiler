@@ -837,6 +837,7 @@ public class ClassFileBuilder {
 		
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 		translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes);
 									
 		Type gdiff = Type.leastDifference(c.type,c.test);			

@@ -103,6 +103,12 @@ public class DefiniteAssignment extends
 		return new Triple(stmt,in,in);
 	}
 	
+	public Triple<Entry, HashSet<Integer>, HashSet<Integer>> propagate(
+			Code.IfType iftype, Entry stmt, HashSet<Integer> in) {
+		// nothing to do here
+		return new Triple(stmt,in,in);
+	}
+	
 	public Pair<Entry, List<HashSet<Integer>>> propagate(Code.Switch sw,
 			Entry stmt, HashSet<Integer> in) {
 		ArrayList<HashSet<Integer>> stores = new ArrayList();

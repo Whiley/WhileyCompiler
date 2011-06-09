@@ -151,6 +151,22 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						merge(gto.target, r.second(), stores);
 						store = null;
 					}
+				}  else if (code instanceof Code.IfType) {
+					Code.IfType ifgoto = (Code.IfType) code;
+					Triple<Entry, T, T> r = propagate(ifgoto, entry, store);
+					entry = r.first();
+					store = r.third();
+
+					// Now, check to see if the statement has been updated, and
+					// process outgoing information accordingly.
+					if (entry.code instanceof Code.IfType) {
+						Code.IfType gto = (Code.IfType) entry.code;
+						merge(gto.target, r.second(), stores);
+					} else if (entry.code instanceof Code.Goto) {
+						Code.Goto gto = (Code.Goto) entry.code;
+						merge(gto.target, r.second(), stores);
+						store = null;
+					}
 				} else if (code instanceof Code.Switch) {
 					Code.Switch sw = (Code.Switch) code;
 					
@@ -237,6 +253,31 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 */
 	protected abstract Triple<Entry,T,T> propagate(Code.IfGoto ifgoto, Entry entry, T store);
 
+	/**
+	 * <p>
+	 * Propagate through a type testh. This produces a potentially updated
+	 * statement, and two stores for the true and false branches respectively.
+	 * The code of the statement returned is either that of the original
+	 * statement, a Skip, or a Goto. The latter two indicate that the code was
+	 * proven definitely false, or definitely true (respectively).
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> if the returned statement is a goto, then the third element
+	 * of the return value must be null; likewise, if the new code is a skip
+	 * then the second element must be null.
+	 * </p>
+	 * 
+	 * @param iftype
+	 *            --- the code of this statement
+	 * @param entry
+	 *            --- Block entry for this bytecode.
+	 * @param store
+	 *            --- abstract store which holds true immediately before this
+	 *            statement.
+	 * @return
+	 */
+	protected abstract Triple<Entry,T,T> propagate(Code.IfType iftype, Entry entry, T store);
+	
 	/**
 	 * <p>
 	 * Propagate through a multi-way branch. This produces a potentially updated
