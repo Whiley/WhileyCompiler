@@ -71,27 +71,5 @@ public final class WhileySet extends HashSet {
 	
 	public boolean subsetEq(WhileySet ws) {
 		return ws.containsAll(this);
-	}
-	
-	public WhileySet union(WhileySet rset) {
-		WhileySet set = new WhileySet(this);
-		set.addAll(rset);
-		return set;
-	}
-	
-	public WhileySet difference(WhileySet rset) {
-		WhileySet set = new WhileySet(this);
-		set.removeAll(rset);
-		return set;
-	}
-	
-	public WhileySet intersect(WhileySet rset) {
-		WhileySet set = new WhileySet(); 		
-		for(Object o : this) {
-			if(rset.contains(o)) {
-				set.add(o);
-			}
-		}
-		return set;
-	}
+	}	
 }

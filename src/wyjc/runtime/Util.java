@@ -117,6 +117,78 @@ public class Util {
 		return r;
 	}
 	
+	public static ArrayList append(ArrayList lhs, Object rhs) {
+		ArrayList r = new ArrayList(lhs);
+		r.add(rhs);
+		return r;
+	}
+	
+	public static ArrayList append(Object lhs, ArrayList rhs) {
+		ArrayList r = new ArrayList(rhs);
+		r.add(0,lhs);
+		return r;
+	}
+	
+	public static WhileySet union(WhileySet lhs, WhileySet rhs) {
+		WhileySet set = new WhileySet(lhs);
+		set.addAll(rhs);
+		return set;
+	}
+	
+	public static WhileySet union(WhileySet lhs, Object rhs) {
+		WhileySet set = new WhileySet(lhs);
+		set.add(rhs);
+		return set;
+	}
+	
+	public static WhileySet union(Object lhs, WhileySet rhs) {
+		WhileySet set = new WhileySet(rhs);
+		set.add(lhs);
+		return set;
+	}
+	
+	public WhileySet difference(WhileySet lhs, WhileySet rhs) {
+		WhileySet set = new WhileySet(lhs);
+		set.removeAll(rhs);
+		return set;
+	}
+	
+	public WhileySet difference(WhileySet lhs, Object rhs) {
+		WhileySet set = new WhileySet(lhs);
+		set.remove(rhs);
+		return set;
+	}	
+	
+	public WhileySet intersect(WhileySet lhs, WhileySet rhs) {
+		WhileySet set = new WhileySet(); 		
+		for(Object o : lhs) {
+			if(rhs.contains(o)) {
+				set.add(o);
+			}
+		}
+		return set;
+	}
+	
+	public WhileySet intersect(WhileySet lhs, Object rhs) {
+		WhileySet set = new WhileySet(); 		
+		
+		if(lhs.contains(rhs)) {
+			set.add(rhs);
+		} 
+				
+		return set;
+	}
+	
+	public WhileySet intersect(Object lhs, WhileySet rhs) {
+		WhileySet set = new WhileySet(); 		
+		
+		if(rhs.contains(lhs)) {
+			set.add(lhs);
+		} 		
+		
+		return set;
+	}
+	
 	/**
 	 * Generate an integer range from start and end values.
 	 * @param start

@@ -213,14 +213,14 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public int translate(Entry stmt, int freeSlot,
+	public int translate(Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		try {
-			Code code = stmt.code;
+			Code code = entry.code;
 			if(code instanceof Assert) {
 				 // translate((Assert)code,freeSlot,bytecodes);
 			} else if(code instanceof BinOp) {
-				 translate((BinOp)code,stmt,freeSlot,bytecodes);
+				 translate((BinOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Convert) {
 				 translate((Convert)code,freeSlot,bytecodes);
 			} else if(code instanceof Const) {
@@ -242,7 +242,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof Goto) {
 				 translate((Goto)code,freeSlot,bytecodes);
 			} else if(code instanceof IfGoto) {
-				translate((IfGoto) code, stmt, freeSlot, bytecodes);
+				translate((IfGoto) code, entry, freeSlot, bytecodes);
 			} else if(code instanceof IndirectInvoke) {
 				 translate((IndirectInvoke)code,freeSlot,bytecodes);
 			} else if(code instanceof IndirectSend) {
@@ -251,6 +251,8 @@ public class ClassFileBuilder {
 				 translate((Invoke)code,freeSlot,bytecodes);
 			} else if(code instanceof Label) {
 				translate((Label)code,freeSlot,bytecodes);
+			} else if(code instanceof ListOp) {
+				 translate((ListOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof ListLoad) {
 				 translate((ListLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Load) {
@@ -271,20 +273,20 @@ public class ClassFileBuilder {
 				 translate((Return)code,freeSlot,bytecodes);
 			} else if(code instanceof Send) {
 				 translate((Send)code,freeSlot,bytecodes);
-			} else if(code instanceof SubList) {
-				 translate((SubList)code,freeSlot,bytecodes);
+			} else if(code instanceof SetOp) {
+				 translate((SetOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Store) {
 				 translate((Store)code,freeSlot,bytecodes);
 			} else if(code instanceof UnOp) {
 				 translate((UnOp)code,freeSlot,bytecodes);
 			} else {
-				syntaxError("unknown wyil code encountered (" + code + ")", filename, stmt);
+				syntaxError("unknown wyil code encountered (" + code + ")", filename, entry);
 			}
 			
 		} catch (SyntaxError ex) {
 			throw ex;
 		} catch (Exception ex) {		
-			syntaxError("internal failure", filename, stmt, ex);
+			syntaxError("internal failure", filename, entry, ex);
 		}
 		
 		return freeSlot;
@@ -1541,6 +1543,45 @@ public class ClassFileBuilder {
 		addReadConversion(c.type.value(),bytecodes);	
 	}
 	
+	public void translate(Code.ListOp c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {						
+		
+		switch(c.lop) {
+		case APPEND:	
+		{
+			JvmType.Function ftype;
+			if(c.dir == OpDir.UNIFORM) {
+				ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,WHILEYLIST);
+			} else if(c.dir == OpDir.LEFT) {
+				ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,JAVA_LANG_OBJECT);
+			} else {
+				ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_OBJECT,WHILEYLIST);
+			}													
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
+					Bytecode.STATIC));			
+			break;
+		}
+		case LENGTHOF:
+		{
+			JvmType.Function ftype = new JvmType.Function(T_INT);						
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
+					ftype, Bytecode.VIRTUAL));					
+			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
+					ftype, Bytecode.STATIC));
+		}
+		case SUBLIST:
+		{
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
+					BIG_RATIONAL, BIG_RATIONAL);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "sublist", ftype,
+					Bytecode.STATIC));						
+		}
+		default:
+			syntaxError("unknown list expression encountered",filename,stmt);
+		}
+	}
+	
 	public void translate(Code.ListLoad c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {					
 		JvmType.Function ftype = new JvmType.Function(T_INT);
@@ -1589,28 +1630,46 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 			}
 			break;
-		case UNION:			
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case INTERSECT:
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case DIFFERENCE:
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		case APPEND:			
-			ftype = new JvmType.Function(type,type,type);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
-					Bytecode.STATIC));
-			break;
 		default:
 			syntaxError("unknown binary expression encountered",filename,stmt);
 		}		
 	}
 
+	public void translate(Code.SetOp c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
+		
+		switch(c.sop) {
+		case UNION:		
+		case INTERSECT:
+		case DIFFERENCE:
+		{
+			JvmType.Function ftype;
+			if(c.dir == OpDir.UNIFORM) {
+				ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
+			} else if(c.dir == OpDir.LEFT) {
+				ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
+			} else {
+				ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
+			}													
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, c.sop.toString(), ftype,
+					Bytecode.STATIC));			
+			break;
+		}
+		case LENGTHOF:			
+		{
+			JvmType.Function ftype = new JvmType.Function(T_INT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size",
+					ftype, Bytecode.VIRTUAL));						
+			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
+					ftype, Bytecode.STATIC));
+			break;
+		}			
+		default:
+			syntaxError("unknown set operation encountered",filename,stmt);
+		}
+	}
+	
 	public void translate(Code.UnOp c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 				
@@ -1622,21 +1681,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
 					ftype, Bytecode.VIRTUAL));
 			break;
-		}	
-		case LENGTHOF: {			
-			JvmType.Function ftype = new JvmType.Function(T_INT);			
-			if(Type.isSubtype(Type.T_LIST(Type.T_ANY),c.type)) {
-				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
-						ftype, Bytecode.VIRTUAL));
-			} else {
-				bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size",
-					ftype, Bytecode.VIRTUAL));
-			}			
-			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
-					ftype, Bytecode.STATIC));
-			break;
-		}
+		}			
 		case PROCESSSPAWN:
 		{
 			bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
@@ -1882,15 +1927,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 	
 	}
-	
-	public void translate(Code.SubList c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
-				BIG_RATIONAL, BIG_RATIONAL);
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "sublist", ftype,
-				Bytecode.STATIC));
-	}
-	
+		
 	public void translate(Value v, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		if(v instanceof Value.Null) {
