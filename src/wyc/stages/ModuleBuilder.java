@@ -1417,7 +1417,7 @@ public class ModuleBuilder {
 		blk.addAll(resolve(environment, v.rhs));
 
 		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
-				|| bop == BOp.DIV) {
+				|| bop == BOp.DIV || bop == BOp.REM) {
 			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
 			return blk;			
 		} else if(bop == BOp.UNION) {
@@ -1750,11 +1750,13 @@ public class ModuleBuilder {
 		case ADD:
 			return Code.BOp.ADD;
 		case SUB:
-			return Code.BOp.SUB;
+			return Code.BOp.SUB;		
+		case MUL:
+			return Code.BOp.MUL;
 		case DIV:
 			return Code.BOp.DIV;
-		case MUL:
-			return Code.BOp.MUL;		
+		case REM:
+			return Code.BOp.REM;
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;

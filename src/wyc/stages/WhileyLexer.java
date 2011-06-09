@@ -277,7 +277,7 @@ public class WhileyLexer {
 	static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
-			'*', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '.','~',
+			'*', '/', '%', '!', '?', '=', '<', '>', ':', ';', '&', '|', '.','~',
 			UC_FORALL,
 			UC_EXISTS,
 			UC_EMPTYSET,
@@ -360,6 +360,8 @@ public class WhileyLexer {
 			} else {
 				return new RightSlash(pos++);
 			}
+		} else if(c == '%') {
+			return new Percent(pos++);			
 		} else if(c == '!') {			
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
@@ -627,6 +629,9 @@ public class WhileyLexer {
 	}
 	public static class Star extends Token {
 		public Star(int pos) { super("*",pos);	}
+	}
+	public static class Percent extends Token {
+		public Percent(int pos) { super("%",pos);	}
 	}
 	public static class LeftSlash extends Token {
 		public LeftSlash(int pos) { super("\\",pos);	}
