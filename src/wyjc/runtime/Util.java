@@ -147,19 +147,19 @@ public class Util {
 		return set;
 	}
 	
-	public WhileySet difference(WhileySet lhs, WhileySet rhs) {
+	public static WhileySet difference(WhileySet lhs, WhileySet rhs) {
 		WhileySet set = new WhileySet(lhs);
 		set.removeAll(rhs);
 		return set;
 	}
 	
-	public WhileySet difference(WhileySet lhs, Object rhs) {
+	public static WhileySet difference(WhileySet lhs, Object rhs) {
 		WhileySet set = new WhileySet(lhs);
 		set.remove(rhs);
 		return set;
 	}	
 	
-	public WhileySet intersect(WhileySet lhs, WhileySet rhs) {
+	public static WhileySet intersect(WhileySet lhs, WhileySet rhs) {
 		WhileySet set = new WhileySet(); 		
 		for(Object o : lhs) {
 			if(rhs.contains(o)) {
@@ -169,7 +169,7 @@ public class Util {
 		return set;
 	}
 	
-	public WhileySet intersect(WhileySet lhs, Object rhs) {
+	public static WhileySet intersect(WhileySet lhs, Object rhs) {
 		WhileySet set = new WhileySet(); 		
 		
 		if(lhs.contains(rhs)) {
@@ -179,7 +179,7 @@ public class Util {
 		return set;
 	}
 	
-	public WhileySet intersect(Object lhs, WhileySet rhs) {
+	public static WhileySet intersect(Object lhs, WhileySet rhs) {
 		WhileySet set = new WhileySet(); 		
 		
 		if(rhs.contains(lhs)) {
