@@ -153,16 +153,17 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					}
 				} else if (code instanceof Code.Switch) {
 					Code.Switch sw = (Code.Switch) code;
+					
 					Pair<Entry, List<T>> r = propagate(sw, entry, store);
 					entry = r.first();					
 
 					// Now, check to see if the statement has been updated, and
 					// process outgoing information accordingly.
-					if (entry.code instanceof Code.Switch) {
+					if (entry.code instanceof Code.Switch) {						
 						// assert r.second().size() == nsw.branches.size()
 						Code.Switch nsw = (Code.Switch) entry.code;
 						for(int j=0;j!=nsw.branches.size();++j){
-							String target = nsw.branches.get(j);
+							String target = nsw.branches.get(j).second();
 							T nstore = r.second().get(j);
 							merge(target, nstore, stores);
 						}

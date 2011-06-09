@@ -944,8 +944,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// TODO: update this code to support type inference of types. That is,
 		// if we switch on a type value then this will update the type of the
 		// value.
-		for(Map.Entry<Value, String> e : code.branches.entrySet()) {
-			Value cv = e.getKey();
+		for(Pair<Value, String> e : code.branches) {
+			Value cv = e.first();
 			checkIsSubtype(val,cv.type(),stmt);
 			envs.add(environment);
 		}

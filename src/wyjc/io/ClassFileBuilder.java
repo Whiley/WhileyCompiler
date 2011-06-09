@@ -277,6 +277,8 @@ public class ClassFileBuilder {
 				 translate((SetOp)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Store) {
 				 translate((Store)code,freeSlot,bytecodes);
+			} else if(code instanceof Switch) {
+				 translate((Switch)code,freeSlot,bytecodes);
 			} else if(code instanceof UnOp) {
 				 translate((UnOp)code,freeSlot,bytecodes);
 			} else {
@@ -683,14 +685,14 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Throw());
 	}
 	
-	public void translate(Code.Switch c, Entry stmt, int freeSlot,
+	public void translate(Code.Switch c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 
 		ArrayList<Pair<Integer, String>> cases = new ArrayList();
 		boolean canUseSwitchBytecode = true;
-		for (Map.Entry<Value, String> p : c.branches.entrySet()) {
+		for (Pair<Value, String> p : c.branches) {
 			// first, check whether the switch value is indeed an integer.
-			Value v = (Value) p.getKey();
+			Value v = (Value) p.first();
 			if (!(v instanceof Value.Number && ((Value.Number) v).value
 					.isInteger())) {
 				canUseSwitchBytecode = false;
@@ -699,12 +701,12 @@ public class ClassFileBuilder {
 			// second, check whether integer value can fit into a Java int
 			Value.Number vi = (Value.Number) v;
 			int iv = vi.value.intValue();
-			if (!BigInteger.valueOf(iv).equals(vi.value)) {
+			if (!BigRational.valueOf(iv).equals(vi.value)) {
 				canUseSwitchBytecode = false;
 				break;
 			}
 			// ok, we're all good so far
-			cases.add(new Pair(iv, p.getValue()));
+			cases.add(new Pair(iv, p.second()));
 		}
 
 		if (canUseSwitchBytecode) {

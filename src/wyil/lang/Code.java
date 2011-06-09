@@ -355,7 +355,8 @@ public abstract class Code {
 	 *            --- map from values to destination labels.
 	 * @return
 	 */
-	public static Switch Switch(Type type, String defaultLabel, Map<Value,String> cases) {
+	public static Switch Switch(Type type, String defaultLabel,
+			Collection<Pair<Value, String>> cases) {
 		return get(new Switch(type,defaultLabel,cases));
 	}
 
@@ -1549,12 +1550,12 @@ public abstract class Code {
 
 	public static final class Switch extends Code {
 		public final Type type;
-		public final HashMap<Value,String> branches;
+		public final ArrayList<Pair<Value,String>> branches;
 		public final String defaultTarget;
 
-		public Switch(Type type, String defaultTarget, Map<Value,String> branches) {			
+		public Switch(Type type, String defaultTarget, Collection<Pair<Value,String>> branches) {			
 			this.type = type;
-			this.branches = new HashMap<Value,String>(branches);
+			this.branches = new ArrayList<Pair<Value,String>>(branches);
 			this.defaultTarget = defaultTarget;
 		}
 		
@@ -1580,12 +1581,12 @@ public abstract class Code {
 		public String toString() {
 			String table = "";
 			boolean firstTime = true;
-			for (Map.Entry<Value, String> p : branches.entrySet()) {
+			for (Pair<Value, String> p : branches) {
 				if (!firstTime) {
 					table += ", ";
 				}
 				firstTime = false;
-				table += p.getKey() + "->" + p.getValue();
+				table += p.first() + "->" + p.second();
 			}
 			table += ", *->" + defaultTarget;
 			return "switch " + table;

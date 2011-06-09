@@ -844,7 +844,8 @@ public class ModuleBuilder {
 		Block blk = resolve(environment, s.expr);				
 		Block cblk = new Block();
 		String defaultTarget = exitLab;
-		HashMap<Value,String> cases = new HashMap();		
+		HashSet<Value> values = new HashSet();
+		ArrayList<Pair<Value,String>> cases = new ArrayList();		
 		scopes.push(new BreakScope(exitLab));
 		for(Stmt.Case c : s.cases) {			
 			if(c.value == null) {
@@ -864,10 +865,11 @@ public class ModuleBuilder {
 						new HashMap(), new HashSet());												
 				String target = Block.freshLabel();	
 				cblk.add(Code.Label(target), attributes(c));				
-				if(cases.containsKey(constant)) {
+				if(values.contains(constant)) {
 					syntaxError("duplicate case label",filename,c);
 				}				
-				cases.put(constant,target);
+				cases.add(new Pair(constant,target));
+				values.add(constant);
 				for (Stmt st : c.stmts) {
 					cblk.addAll(resolve(st, environment));
 				}								
