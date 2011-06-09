@@ -483,14 +483,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=e.fields.size();i!=e.level;++i) {
 			path.add(environment.pop());
 		}
+		
 		Type src = environment.get(e.slot);		
+		Type iter = src;
 		
 		if(e.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
 			Type.Process p = (Type.Process) src;
-			src = p.element();
+			iter = p.element();
 		}
-		
-		Type iter = src;
 		
 		int fi = 0;
 		int pi = 0;
@@ -531,7 +531,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type ntype = typeInference(src,val,e.level,0,e.fields);
 		environment.set(e.slot,ntype);
 		
-		return Code.MultiStore(environment.get(e.slot),e.slot,e.level,e.fields);
+		return Code.MultiStore(src,e.slot,e.level,e.fields);
 	}
 
 	/**
@@ -552,6 +552,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
+		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
+			Type.Process tp = (Type.Process) oldtype;
+			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields);
+			return Type.T_PROCESS(nelement);
 		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
