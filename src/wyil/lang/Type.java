@@ -985,6 +985,28 @@ public abstract class Type {
 		return null;
 	}
 
+	public static Set effectiveSetType(Type t) {
+		if (t instanceof Type.Set) {
+			return (Type.Set) t;
+		} else if (t instanceof Type.Union) {			
+			Union ut = (Type.Union) t;
+			Set r = null;
+			for (Type b : ut.bounds()) {
+				if (!(b instanceof Set)) {
+					return null;
+				}
+				Set br = (Set) b;
+				if (r == null) {
+					r = br;
+				} else {
+					r = T_SET(leastUpperBound(r.element(),br.element()));
+				}
+			}			
+			return r;
+		}
+		return null;
+	}
+	
 	public static List effectiveListType(Type t) {
 		if (t instanceof Type.List) {
 			return (Type.List) t;

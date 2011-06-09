@@ -149,6 +149,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Invoke)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
+		} else if(code instanceof ListOp) {
+			code = infer((ListOp)code,entry,environment);
 		} else if(code instanceof ListLoad) {
 			code = infer((ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
@@ -169,8 +171,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Send)code,entry,environment);
 		} else if(code instanceof Store) {
 			code = infer((Store)code,entry,environment);
-		} else if(code instanceof SubList) {
-			code = infer((SubList)code,entry,environment);
+		} else if(code instanceof SetOp) {
+			code = infer((SetOp)code,entry,environment);
 		} else if(code instanceof UnOp) {
 			code = infer((UnOp)code,entry,environment);
 		} else {
@@ -187,44 +189,82 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(BinOp v, Entry stmt, Env environment) {		
+		Code code = v;
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
-				
-		Type lub = Type.leastUpperBound(lhs,rhs);
-		Code.BOp bop = v.bop;
+		Type result;
 
-		if(Type.isSubtype(Type.T_LIST(Type.T_ANY),lub)) {
-			switch(v.bop) {
-				case APPEND:
-				case ADD:															
-					bop = Code.BOp.APPEND;
-					break;
-				default:
-					syntaxError("Invalid operation on lists",filename,stmt);		
-			}	
-		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),lub)) {
-			switch(v.bop) {
-				case ADD:											
-				case UNION:
-					bop = Code.BOp.UNION;
-					break;
-				case DIFFERENCE:
-				case SUB:			
-					bop = Code.BOp.DIFFERENCE;
-					break;
-				case INTERSECT:
-					break;					
-				default:
-					syntaxError("Invalid operation on sets: " + bop,filename,stmt);			
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);
+		boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),lhs);
+		boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),rhs);
+		
+		if(lhs_list || rhs_list) {
+			Type.List type;
+			Code.OpDir dir;
+			
+			if(lhs_list && rhs_list) {
+				type = Type.effectiveListType(Type.leastUpperBound(lhs,rhs));
+				dir = OpDir.UNIFORM;
+			} else if(lhs_list) {
+				type = Type.effectiveListType(lhs);
+				dir = OpDir.LEFT;
+			} else {
+				type = Type.effectiveListType(rhs);
+				dir = OpDir.RIGHT;
 			}
-		} else {		
-			// FIXME: more cases, including elem of		
-			checkIsSubtype(Type.T_REAL,lub,stmt);
-		}
+			
+			switch(v.bop) {				
+				case ADD:																				
+					code = Code.ListOp(type,Code.LOp.APPEND,dir);
+					break;
+				default:
+					syntaxError("Invalid list operation: " + v.bop,filename,stmt);		
+			}
+			
+			result = type;
+			
+		} else if(lhs_set || rhs_set) {
+			Type.Set type;
+			Code.OpDir dir;
+			
+			if(lhs_set && rhs_set) {				
+				type = Type.effectiveSetType(Type.leastUpperBound(lhs,rhs));
+				dir = OpDir.UNIFORM;
+			} else if(lhs_set) {
+				type = Type.effectiveSetType(lhs);
+				dir = OpDir.LEFT;
+			} else {
+				type = Type.effectiveSetType(rhs);
+				dir = OpDir.RIGHT;
+			}
+			
+			switch(v.bop) {
+				case ADD:																				
+					code = Code.SetOp(type,Code.SOp.UNION,dir);
+					break;				
+				case SUB:
+					if(dir == OpDir.RIGHT) {
+						// this case is non-sensical
+						syntaxError("Invalid set operation",filename,stmt);
+					}
+					code = Code.SetOp(type,Code.SOp.DIFFERENCE,dir);					
+					break;								
+				default:
+					syntaxError("Invalid set operation: " + v.bop,filename,stmt);			
+			}
+			
+			result = type;
+			
+		} else {
+			result = Type.leastUpperBound(lhs,rhs);	
+			checkIsSubtype(Type.T_REAL,result,stmt);
+			code = Code.BinOp(result,v.bop);
+		}				
 		
-		environment.push(lub);
+		environment.push(result);
 		
-		return Code.BinOp(lub,bop);				
+		return code;				
 	}
 	
 	protected Code infer(Code.Convert code, Entry stmt, Env environment) {
@@ -673,18 +713,61 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	*/
 	
-	protected Code infer(Code.SubList code, Entry stmt, Env environment) {
-		Type end = environment.pop();
-		Type start = environment.pop();
-		Type list = environment.pop();
+	protected Code infer(Code.ListOp code, Entry stmt, Env environment) {
 		
-		checkIsSubtype(Type.T_INT,start,stmt);
-		checkIsSubtype(Type.T_INT,end,stmt);
-		checkIsSubtype(Type.T_LIST(Type.T_ANY),list,stmt);
+		switch(code.lop) {
+			case SUBLIST:
+			{
+				Type end = environment.pop();
+				Type start = environment.pop();
+				Type list = environment.pop();
+				
+				checkIsSubtype(Type.T_INT,start,stmt);
+				checkIsSubtype(Type.T_INT,end,stmt);
+				checkIsSubtype(Type.T_LIST(Type.T_ANY),list,stmt);				
+				
+				environment.push(list);
+						
+				return Code.ListOp(Type.effectiveListType(list),
+						Code.LOp.SUBLIST);
+			}	
+			case LENGTHOF:
+			{
+				Type src = environment.pop();
+				if(Type.isSubtype(src,Type.T_LIST(Type.T_ANY))) {
+					environment.add(Type.T_INT);
+					return Code.ListOp(Type.effectiveListType(src),Code.LOp.LENGTHOF);
+				} else if(Type.isSubtype(src,Type.T_SET(Type.T_ANY))) {
+					environment.add(Type.T_INT);
+					return Code.SetOp(Type.effectiveSetType(src),Code.SOp.LENGTHOF);
+				} else {
+					syntaxError("expected list or set, found " + src,filename,stmt);
+				}
+			}
+			case APPEND:
+			{
+				Type rhs = environment.pop();
+				Type lhs = environment.pop();
+				boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY), lhs);
+				boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY), rhs);
+				if(lhs_list && rhs_list) {
+					 Type lub = Type.leastUpperBound(lhs,rhs);
+					 environment.push(lub);
+					 return Code.ListOp(Type.effectiveListType(lub), code.lop, OpDir.UNIFORM);
+				} else if(lhs_list) {					
+					 environment.push(lhs);
+					 return Code.ListOp(Type.effectiveListType(lhs), code.lop, OpDir.LEFT);
+				} else if(rhs_list) {					
+					environment.push(rhs);
+					return Code.ListOp(Type.effectiveListType(rhs), code.lop, OpDir.RIGHT);
+				} else {
+					syntaxError("expecting list type",filename,stmt);
+				}
+			}
+		}
 		
-		environment.push(list);
-		
-		return Code.SubList(Type.effectiveListType(list));
+		syntaxError("invalid list operation: " + code.lop,filename,stmt);	
+		return null; // dead-code
 	}
 	
 	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
@@ -708,6 +791,35 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.Return(ret_t);
 	}
 	
+	protected Code infer(Code.SetOp code, Entry stmt, Env environment) {
+		switch(code.sop) {
+			case UNION:
+			case DIFFERENCE:
+			case INTERSECT:
+			{
+				Type rhs = environment.pop();
+				Type lhs = environment.pop();
+				boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
+				boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+				if(lhs_set && rhs_set) {
+					 Type lub = Type.leastUpperBound(lhs,rhs);
+					 environment.push(lub);
+					 return Code.SetOp(Type.effectiveSetType(lub), code.sop, OpDir.UNIFORM);
+				} else if(lhs_set) {					
+					 environment.push(lhs);
+					 return Code.SetOp(Type.effectiveSetType(lhs), code.sop, OpDir.LEFT);
+				} else if(rhs_set) {					
+					environment.push(rhs);
+					return Code.SetOp(Type.effectiveSetType(rhs), code.sop, OpDir.RIGHT);
+				} else {
+					syntaxError("expecting set type",filename,stmt);
+				}
+			}
+		}
+		
+		syntaxError("invalid set operation",filename,stmt);
+		return null;
+	}
 
 	protected Code infer(UnOp v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
@@ -716,14 +828,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			case NEG:
 				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
 				environment.add(rhs_t);
-				return Code.UnOp(rhs_t,v.uop);
-			case LENGTHOF:
-				if(rhs_t instanceof Type.List || rhs_t instanceof Type.Set) {
-					environment.add(Type.T_INT);
-					return Code.UnOp(rhs_t,v.uop);
-				} else {
-					syntaxError("expected list or set, found " + rhs_t,filename,stmt);
-				}				
+				return Code.UnOp(rhs_t,v.uop);						
 			case PROCESSACCESS:
 				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
 				Type.Process tp = (Type.Process)rhs_t; 

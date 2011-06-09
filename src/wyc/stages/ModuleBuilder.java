@@ -1367,7 +1367,7 @@ public class ModuleBuilder {
 			blk.add(Code.Label(exitLabel));
 			break;
 		case LENGTHOF:
-			blk.add(Code.UnOp(null,Code.UOp.LENGTHOF), attributes(v));
+			blk.add(Code.ListOp(null,Code.LOp.LENGTHOF), attributes(v));
 			break;
 		case PROCESSACCESS:
 			blk.add(Code.UnOp(null,Code.UOp.PROCESSACCESS), attributes(v));
@@ -1432,7 +1432,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, v.arguments.get(0)));
 			blk.addAll(resolve(environment, v.arguments.get(1)));
 			blk.addAll(resolve(environment, v.arguments.get(2)));
-			blk.add(Code.SubList(null),attributes(v));
+			blk.add(Code.ListOp(null,Code.LOp.SUBLIST),attributes(v));
 			return blk;
 		} else {			
 			int nargs = 0;
@@ -1517,15 +1517,16 @@ public class ModuleBuilder {
 		if (e.condition != null) {
 			blk.addAll(resolveCondition(continueLabel, invert(e.condition),
 					environment));
-			blk.addAll(resolve(environment,e.condition));
-			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
-					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), attributes(e));
-			blk.add(Code.Label(continueLabel));
-		} else {
-			blk.addAll(resolve(environment,e.condition));			
-			blk.add(new Code.Assign(lhs, CExpr.BINOP(CExpr.BOP.UNION, lhs,
-					CExpr.NARYOP(CExpr.NOP.SETGEN, value.first()))), attributes(e));
 		}
+		
+		blk.add(Code.Load(null,resultSlot));
+		blk.addAll(resolve(environment,e.condition));
+		blk.add(Code.SetOp(null, Code.SOp.UNION, Code.OpDir.RIGHT));
+		blk.add(Code.Store(null,resultSlot));
+			
+		if(e.condition != null) {
+			blk.add(Code.Label(continueLabel));			
+		} 
 
 		for (int i = (labels.size() - 1); i >= 0; --i) {
 			blk.add(Code.End(labels.get(i)));
@@ -1721,11 +1722,7 @@ public class ModuleBuilder {
 		case DIV:
 			return Code.BOp.DIV;
 		case MUL:
-			return Code.BOp.MUL;
-		case UNION:
-			return Code.BOp.UNION;
-		case INTERSECTION:
-			return Code.BOp.INTERSECT;
+			return Code.BOp.MUL;		
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;

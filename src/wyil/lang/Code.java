@@ -152,6 +152,14 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
+	public static ListOp ListOp(Type.List type, LOp op) {
+		return get(new ListOp(type,op,OpDir.UNIFORM));
+	}
+	
+	public static ListOp ListOp(Type.List type, LOp op, OpDir dir) {
+		return get(new ListOp(type,op,dir));
+	}
+	
 	/**
 	 * Construct a <code>listload</code> bytecode which reads a value from a
 	 * given index in a given list.
@@ -190,7 +198,7 @@ public abstract class Code {
 	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
 		return get(new ForAll(type, var, label,modifies));
 	}
-
+	
 	/**
 	 * Construct a <code>multistore</code> bytecode which writes a value into a
 	 * compound structure, as determined by a given access path.
@@ -301,7 +309,15 @@ public abstract class Code {
 	}
 	
 	public static final Skip Skip = new Skip();
-
+	
+	public static SetOp SetOp(Type.Set type, SOp op) {
+		return get(new SetOp(type,op,OpDir.UNIFORM));
+	}
+	
+	public static SetOp SetOp(Type.Set type, SOp op, OpDir dir) {
+		return get(new SetOp(type,op,dir));
+	}
+	
 	/**
 	 * Construct an <code>send</code> bytecode which sends a message to an
 	 * actor. This may be either synchronous or asynchronous.
@@ -312,7 +328,7 @@ public abstract class Code {
 	 */
 	public static Send Send(Type.Fun fun, NameID name, boolean synchronous, boolean retval) {
 		return get(new Send(fun,name,synchronous,retval));
-	}
+	}	
 	
 	/**
 	 * Construct a <code>store</code> bytecode which writes a given register.
@@ -327,10 +343,6 @@ public abstract class Code {
 		return get(new Store(type,reg));
 	}
 	
-	public static SubList SubList(Type.List type) {
-		return get(new SubList(type));
-	}
-
 	/**
 	 * Construct a <code>switch</code> bytecode which pops a value off the
 	 * stack, and switches to a given label based on it.
@@ -405,21 +417,6 @@ public abstract class Code {
 		},
 		REM{
 			public String toString() { return "rem"; }
-		},
-		UNION{
-			public String toString() { return "union"; }
-		},
-		INTERSECT{
-			public String toString() { return "intersect"; }
-		},
-		DIFFERENCE{
-			public String toString() { return "difference"; }
-		},
-		APPEND{
-			public String toString() { return "append"; }
-		},
-		RANGE{
-			public String toString() { return "range"; }
 		},
 		AND{
 			public String toString() { return "and"; }
@@ -989,6 +986,70 @@ public abstract class Code {
 		}
 	}
 	
+	public enum LOp { 				
+		APPEND{
+			public String toString() { return "append"; }
+		},
+		SUBLIST{
+			public String toString() { return "sublist"; }
+		},
+		LENGTHOF{
+			public String toString() { return "listlength"; }
+		},
+		RANGE {
+			public String toString() { return "listrange"; }
+		}
+	};
+	
+	
+	/**
+	 * A set operation (e.g. union, intersection, etc) takes one or two items
+	 * off the stack and pushes a single result.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class ListOp extends Code {		
+		public final LOp lop;
+		public final OpDir dir;
+		public final Type.List type;
+		
+		private ListOp(Type.List type, LOp op, OpDir dir) {
+			if(op == null) {
+				throw new IllegalArgumentException("SetOp op argument cannot be null");
+			}
+			if(dir == null) {
+				throw new IllegalArgumentException("SetOp op argument cannot be null");
+			}
+			this.lop = op;
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return lop.hashCode() + dir.hashCode(); 
+			} else {
+				return type.hashCode() + lop.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetOp) {
+				ListOp setop = (ListOp) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))
+						&& lop.equals(setop.lop)
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString(dir.toString() + lop.toString(),type);
+		}
+	}
+	
 	public static final class ListLoad extends Code {
 		public final Type.List type;				
 		
@@ -1364,6 +1425,84 @@ public abstract class Code {
 		}
 	}
 	
+	public enum SOp { 				
+		UNION{
+			public String toString() { return "union"; }
+		},
+		INTERSECT{
+			public String toString() { return "intersect"; }
+		},
+		DIFFERENCE{
+			public String toString() { return "difference"; }
+		},					
+		LENGTHOF{
+			public String toString() { return "setlength"; }
+		},
+		RANGE {
+			public String toString() { return "setrange"; }
+		}
+	};
+	
+	public enum OpDir {
+		UNIFORM {
+			public String toString() { return ""; }
+		},
+		LEFT {
+			public String toString() { return "left_"; }
+		},
+		RIGHT {
+			public String toString() { return "right_"; }
+		}
+	}
+	
+	/**
+	 * A set operation (e.g. union, intersection, etc) takes one or two items
+	 * off the stack and pushes a single result.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class SetOp extends Code {		
+		public final SOp sop;
+		public final OpDir dir;
+		public final Type.Set type;
+		
+		private SetOp(Type.Set type, SOp op, OpDir dir) {
+			if(op == null) {
+				throw new IllegalArgumentException("SetOp op argument cannot be null");
+			}
+			if(dir == null) {
+				throw new IllegalArgumentException("SetOp op argument cannot be null");
+			}
+			this.sop = op;
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return sop.hashCode() + dir.hashCode(); 
+			} else {
+				return type.hashCode() + sop.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetOp) {
+				SetOp setop = (SetOp) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))
+						&& sop.equals(setop.sop)
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString(dir.toString() + sop.toString(),type);
+		}
+	}
+	
 	public static final class Skip extends Code {
 		Skip() {}
 		public int hashCode() {
@@ -1408,34 +1547,6 @@ public abstract class Code {
 		}	
 	}	
 
-	public static final class SubList extends Code {
-		public final Type.List type;				
-		
-		private SubList(Type.List type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {
-			if(type == null) {
-				return 235;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof SubList) {
-				SubList i = (SubList) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("sublist",type);
-		}	
-	}
-	
 	public static final class Switch extends Code {
 		public final Type type;
 		public final HashMap<Value,String> branches;
@@ -1587,10 +1698,7 @@ public abstract class Code {
 		},
 		SPLIT() {
 			public String toString() { return "split"; }
-		},
-		LENGTHOF() {
-			public String toString() { return "lengthof"; }
-		},
+		},		
 		PROCESSACCESS() {
 			public String toString() { return "procload"; }
 		},
