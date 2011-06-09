@@ -1414,10 +1414,16 @@ public class ModuleBuilder {
 		blk.addAll(resolve(environment, v.rhs));
 
 		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
-				|| bop == BOp.DIV || bop == BOp.UNION || bop == BOp.INTERSECTION) {
+				|| bop == BOp.DIV) {
 			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
 			return blk;			
-		} 
+		} else if(bop == BOp.UNION) {
+			blk.add(Code.SetOp(null, Code.SOp.UNION),attributes(v));			
+			return blk;			
+		} else if(bop == BOp.INTERSECTION) {
+			blk.add(Code.SetOp(null, Code.SOp.INTERSECT),attributes(v));
+			return blk;			
+		}
 		
 		syntaxError("unknown binary operation encountered", filename, v);
 		return null;

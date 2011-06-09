@@ -734,10 +734,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			case LENGTHOF:
 			{
 				Type src = environment.pop();
-				if(Type.isSubtype(src,Type.T_LIST(Type.T_ANY))) {
+				if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
 					environment.add(Type.T_INT);
 					return Code.ListOp(Type.effectiveListType(src),Code.LOp.LENGTHOF);
-				} else if(Type.isSubtype(src,Type.T_SET(Type.T_ANY))) {
+				} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),src)) {
 					environment.add(Type.T_INT);
 					return Code.SetOp(Type.effectiveSetType(src),Code.SOp.LENGTHOF);
 				} else {

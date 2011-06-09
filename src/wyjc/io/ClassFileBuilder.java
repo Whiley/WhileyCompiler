@@ -1569,13 +1569,15 @@ public class ClassFileBuilder {
 			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
 					ftype, Bytecode.STATIC));
+			break;
 		}
 		case SUBLIST:
 		{
 			JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
 					BIG_RATIONAL, BIG_RATIONAL);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "sublist", ftype,
-					Bytecode.STATIC));						
+					Bytecode.STATIC));
+			break;
 		}
 		default:
 			syntaxError("unknown list expression encountered",filename,stmt);
