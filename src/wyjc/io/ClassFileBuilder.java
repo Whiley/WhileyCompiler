@@ -243,6 +243,8 @@ public class ClassFileBuilder {
 				 translate((Goto)code,freeSlot,bytecodes);
 			} else if(code instanceof IfGoto) {
 				translate((IfGoto) code, entry, freeSlot, bytecodes);
+			} else if(code instanceof IfType) {
+				translate((IfType) code, entry, freeSlot, bytecodes);
 			} else if(code instanceof IndirectInvoke) {
 				 translate((IndirectInvoke)code,freeSlot,bytecodes);
 			} else if(code instanceof IndirectSend) {
@@ -514,7 +516,6 @@ public class ClassFileBuilder {
 
 	public void translate(Code.MultiStore c, int freeSlot,ArrayList<Bytecode> bytecodes) {
 		
-
 		// Now, my general feeling is that the multistore bytecode could use
 		// some work. Essentially, to simplify this process of figuring our what
 		// is being updated.
@@ -628,39 +629,7 @@ public class ClassFileBuilder {
 				}
 				iter = rec.fields().get(field);
 			}
-		}
-		
-		//		
-//	} else if(lhs instanceof CExpr.ListAccess) {
-//		CExpr.ListAccess v = (CExpr.ListAccess) lhs;
-//		Type src_t = v.src.type();
-//		if(src_t instanceof Type.List) { 
-//			Type.List lt = (Type.List) v.src.type();
-//			addWriteConversion(lt.element(),bytecodes);											
-//			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT,JAVA_LANG_OBJECT);				
-//			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
-//					Bytecode.VIRTUAL));					
-//			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-//		} else {
-//			Type.Dictionary lt = (Type.Dictionary) v.src.type();
-//			addWriteConversion(lt.value(),bytecodes);			
-//			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-//					JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-//			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
-//					Bytecode.VIRTUAL));
-//		}
-//	} else if(lhs instanceof CExpr.RecordAccess) {	
-//		CExpr.RecordAccess la = (CExpr.RecordAccess) lhs;
-//		Type.Record tt = (Type.Record) Type.effectiveRecordType(la.lhs.type());
-//		Type element_t = tt.fields().get(la.field);
-//		addWriteConversion(element_t, bytecodes);
-//		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-//				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-//		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype,
-//				Bytecode.VIRTUAL));
-//		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-//	} 
-		
+		}		
 	}
 
 	public void translate(Code.Return c, int freeSlot,
@@ -860,63 +829,28 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	/*
-	 case SUBTYPEEQ:
-			{								
-				Type rhs_t = ((Value.TypeConst)c.rhs).type;				
-				translateTypeTest(c.target,c.lhs, rhs_t, stmt, freeSlot, bytecodes);				
-				return;				
-			}
-			case NSUBTYPEEQ:
-			{					
-				String trueLabel = freshLabel();				
-				Type rhs_t = ((Value.TypeConst)c.rhs).type;				
-				translateTypeTest(trueLabel, c.lhs, rhs_t, stmt, freeSlot, bytecodes);				
-				bytecodes.add(new Bytecode.Goto(c.target));
-				bytecodes.add(new Bytecode.Label(trueLabel));				
-				return;
-			}
-	 
-	protected void translateTypeTest(String trueTarget, CExpr src, Type test,
-			Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {				
+	public void translate(Code.IfType c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {						
 		
 		// This method (including the helper) is pretty screwed up. It needs a
 		// serious rethink to catch all cases, and to be efficient.
 		
-		Type src_t = src.type();		
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
-		translateTypeTest(trueLabel, src.type(), test, stmt, bytecodes);
-		
-		if(src instanceof CExpr.LVar) {					
-			// This covers the limited form of type inference currently
-			// supported in Whiley. Essentially, it works only for the
-			// case where we are testing against a variable.
-			CExpr.LVar v = (CExpr.LVar) src;						
-			Type gdiff = Type.leastDifference(src_t,test);			
-			translate(src,freeSlot,bytecodes);
-			addReadConversion(gdiff,bytecodes);
-			JvmType rhs_jt = convertType(gdiff);					
-			bytecodes.add(new Bytecode.Store(freeSlot.get(v.name()),rhs_jt));					
-		}
-		
+		translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes);
+									
+		Type gdiff = Type.leastDifference(c.type,c.test);			
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		addReadConversion(gdiff,bytecodes);
+		bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
-		
-		if(src instanceof CExpr.LVar) {					
-			// This covers the limited form of type inference currently
-			// supported in Whiley. Essentially, it works only for the
-			// case where we are testing against a variable.
-			CExpr.LVar v = (CExpr.LVar) src;
-			Type glb = Type.greatestLowerBound(src_t,test);			
-			translate(src,freeSlot,bytecodes);
-			addReadConversion(glb,bytecodes);
-			JvmType rhs_jt = convertType(glb);					
-			bytecodes.add(new Bytecode.Store(freeSlot.get(v.name()),rhs_jt));					
-		}
-		
-		bytecodes.add(new Bytecode.Goto(trueTarget));
+				
+		Type glb = Type.greatestLowerBound(c.type, c.test);
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		addReadConversion(glb, bytecodes);
+		bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
+		bytecodes.add(new Bytecode.Goto(c.target));
 		bytecodes.add(new Bytecode.Label(exitLabel));						
 	}
 	
@@ -976,7 +910,7 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 	 
-	 *
+	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.Int test,
 			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
@@ -1021,7 +955,7 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 	 
-	 *
+	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.Real test,
 			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
@@ -1045,7 +979,7 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 
-	 *
+	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
 			Entry stmt, ArrayList<Bytecode> bytecodes) {								
 		
@@ -1121,7 +1055,7 @@ public class ClassFileBuilder {
 	 * @param test --- type of test
 	 * @param stmt --- stmt containing test (useful for line number info)
 	 * @param bytecodes --- list of bytecodes (to which test is appended) 
-	 *
+	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.Set test,
 			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
@@ -1222,7 +1156,7 @@ public class ClassFileBuilder {
 	 *            --- stmt containing test (useful for line number info)
 	 * @param bytecodes
 	 *            --- list of bytecodes (to which test is appended)
-	 *
+	 */
 	protected void translateTypeTest(String trueTarget, Type src,
 			Type.Record test, Entry stmt, ArrayList<Bytecode> bytecodes) {
 				
@@ -1353,7 +1287,6 @@ public class ClassFileBuilder {
 		
 		return Type.greatestLowerBound(t, ub);		
 	}
-	*/
 	
 	/**
 	 * <p>The following method accepts a type whose values are guaranteed to be
