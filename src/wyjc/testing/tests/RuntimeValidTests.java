@@ -192,7 +192,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_16_RuntimeTest() { runTest("RecursiveType_Valid_16"); } 
  @Test public void RecursiveType_Valid_17_RuntimeTest() { runTest("RecursiveType_Valid_17"); }
  @Test public void RecursiveType_Valid_18_RuntimeTest() { runTest("RecursiveType_Valid_18"); }
- @Test public void Remainder_Valid_1_RuntimeTest() { runTest("Remainder_Valid_11"); }
+ @Test public void Remainder_Valid_1_RuntimeTest() { runTest("Remainder_Valid_1"); }
  @Test public void Resolution_Valid_1_RuntimeTest() { runTest("Resolution_Valid_1"); }
  @Test public void SetAssign_Valid_1_RuntimeTest() { runTest("SetAssign_Valid_1"); }
  @Test public void SetComprehension_Valid_1_RuntimeTest() { runTest("SetComprehension_Valid_1"); }

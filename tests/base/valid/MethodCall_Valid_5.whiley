@@ -8,4 +8,4 @@ int Proc::get():
 
 void System::main([string] args):
     proc = spawn { state: 1 }
-    out.println(str(this..>f(proc)))
+    out.println(str(this.f(proc)))
