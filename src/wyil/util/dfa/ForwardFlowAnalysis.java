@@ -88,18 +88,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
 		T init = initialStore();
-		propagate(mcase.body(), init);		
+		propagate(0, mcase.body().size(), init);		
 		return new Module.Case(mcase.body(), mcase.locals(), mcase.attributes());
 	}		
 	
-	protected T propagate(Block block, T store) {
-		return propagate(0,block,store);
-	}
-	
-	protected T propagate(int offset, Block block, T store) {				
-		for(int i=0;i<block.size();++i) {						
-			Entry entry = block.get(i);
-			int index = i + offset;
+	protected T propagate(int start, int end, T store) {
+		Block block = methodCase.body();
+		
+		for(int i=start;i<end;++i) {						
+			Entry entry = block.get(i);			
 			try {				
 				Code code = entry.code;
 
@@ -120,36 +117,34 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					continue;
 				} else if (code instanceof Code.Loop) {
 					Code.Loop loop = (Code.Loop) code;
-					Code.Label end = null;
-					// Note, I could make this more efficient!
-					Block body = new Block();
+					int s = i;
+					// Note, I could make this more efficient!					
 					while (++i < block.size()) {
 						entry = block.get(i);
 						if (entry.code instanceof Code.Label) {
-							end = (Code.Label) entry.code;
-							if (end.label.equals(loop.target)) {
+							Code.Label l = (Code.Label) entry.code;
+							if (l.label.equals(loop.target)) {
 								// end of loop body found
 								break;
 							}
-						}
-						body.add(entry.code, entry.attributes());
+						}						
 					}
-					store = propagate(index, loop, body, entry, store);										
+					store = propagate(s, i, loop, entry, store);										
 					continue;
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
-					Pair<T, T> r = propagate(index, ifgoto, entry, store);					
+					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
 				}  else if (code instanceof Code.IfType) {
 					Code.IfType ifgoto = (Code.IfType) code;
-					Pair<T, T> r = propagate(index, ifgoto, entry, store);					
+					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
 				} else if (code instanceof Code.Switch) {
 					Code.Switch sw = (Code.Switch) code;
 					
-					List<T> r = propagate(index, sw, entry, store);										
+					List<T> r = propagate(i, sw, entry, store);										
 
 					// assert r.second().size() == nsw.branches.size()
 					Code.Switch nsw = (Code.Switch) entry.code;
@@ -169,7 +164,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
-					store = propagate(index, entry, store);					
+					store = propagate(i, entry, store);					
 					if (entry.code instanceof Code.Fail
 							|| entry.code instanceof Code.Return) {
 						store = null;
@@ -261,22 +256,23 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * @return
 	 */
 	protected abstract List<T> propagate(int index, Code.Switch sw, Entry entry, T store);
-	
+
 	/**
 	 * <p>
-	 * Propagate through a loop statement, producing a
-	 * potentially updated block and the store which holds true immediately
-	 * after the statement
+	 * Propagate through a loop statement, producing a potentially updated block
+	 * and the store which holds true immediately after the statement
 	 * </p>
 	 * <p>
+	 * <b>NOTE: the <code>start</code> index holds the loop code, whilst the
+	 * <code>end</code> index holds the end code.
+	 * </p>
 	 * 
-	 * 
- 	 * @param index
-	 *            --- the index of this bytecode in the method's block	 
+	 * @param start
+	 *            --- the start index of loop block
+	 * @param end
+	 *            --- last index of loop block
 	 * @param code
 	 *            --- the start code of the block
-	 * @param body
-	 *            --- the body of the block
 	 * @param entry
 	 *            --- the block entry for the loop statement
 	 * @param store
@@ -284,7 +280,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.Loop code, Block body,
+	protected abstract T propagate(int start, int end, Code.Loop code,
 			Entry entry, T store);
 	
 	/**

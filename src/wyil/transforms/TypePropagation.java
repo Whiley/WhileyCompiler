@@ -120,7 +120,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.add(Type.T_VOID);
 		}	
 		
-		propagate(mcase.body(), environment);	
+		propagate(0,mcase.body().size(), environment);	
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
@@ -966,8 +966,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return envs;
 	}	
 	
-	protected Env propagate(int index, Code.ForAll forloop, 
-			Block body, Entry stmt, Env environment) {
+	protected Env propagate(int start, int end, Code.ForAll forloop,
+			Entry stmt, Env environment) {
 						
 		// Now, type the source 		
 		Type src_t = environment.pop();						
@@ -986,8 +986,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// This indicates a loop over an empty list. This legitimately can
 			// happen as a result of substitution for contraints or pre/post
 			// conditions.
-			for (int i = 0; i != body.size() + 2; ++i) {
-				rewrites.put(index + i, new Block());
+			for (int i = start; i <= end; ++i) {
+				rewrites.put(i, new Block());
 			}			
 			
 			return environment;
@@ -1003,38 +1003,38 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : loopEnv;			 			
-			newEnv = propagate(index+1,body,oldEnv);
+			newEnv = propagate(start+1,end,oldEnv);
 		 } while(!newEnv.equals(oldEnv));				
 		
 		environment = join(environment,newEnv);		
 				
 		Block blk = new Block();
 		blk.add(Code.ForAll(src_t, forloop.var, forloop.target, forloop.modified),stmt.attributes());		
-		rewrites.put(index, blk);
+		rewrites.put(start, blk);
 		
 		return join(environment,newEnv);
 	}
 	
-	protected Env propagate(int index, Code.Loop loop, Block body,
+	protected Env propagate(int start, int end, Code.Loop loop, 
 			Entry stmt, Env environment) {
 
 		if (loop instanceof Code.ForAll) {
-			return propagate(index, (Code.ForAll) loop, body, stmt, environment);
+			return propagate(start, end, (Code.ForAll) loop, stmt, environment);
 		}
 		
-		Env newEnv = propagate(index+1,body, environment);
+		Env newEnv = propagate(start+1,end, environment);
 		Env oldEnv = null;
 		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(index+1,body, oldEnv);
+			newEnv = propagate(start+1,end, oldEnv);
 		} while (!newEnv.equals(oldEnv));
 
 		environment = join(environment, newEnv);
 				
 		Block blk = new Block();
 		blk.add(Code.Loop(loop.target, loop.modified),stmt.attributes());		
-		rewrites.put(index, blk);
+		rewrites.put(start, blk);
 		
 		return environment;
 	}

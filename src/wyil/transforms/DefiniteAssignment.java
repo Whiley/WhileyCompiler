@@ -118,7 +118,7 @@ public class DefiniteAssignment extends
 		return stores;
 	}
 		
-	public HashSet<Integer> propagate(int index, Code.Loop loop, Block body,
+	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
 			Entry stmt, HashSet<Integer> in) {
 		
 		if(loop instanceof Code.ForAll) {
@@ -127,7 +127,7 @@ public class DefiniteAssignment extends
 			in.add(fall.var);
 		} 
 		
-		HashSet<Integer> r = propagate(body,in);
+		HashSet<Integer> r = propagate(start+1,end,in);
 		return join(in,r);		
 	}
 	
