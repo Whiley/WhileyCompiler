@@ -836,15 +836,16 @@ public class WhileyParser {
 		
 		Token lookahead = tokens.get(index);
 		
-		while (lookahead instanceof LeftSquare || lookahead instanceof Dot
+		while (lookahead instanceof LeftSquare 
+				|| lookahead instanceof Dot
+				|| lookahead instanceof DotDot
 				|| lookahead instanceof LeftBrace
 				|| lookahead instanceof LeftArrow
 				|| lookahead instanceof LeftRightArrow) {
 			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
-				match(LeftSquare.class);
-				
+				match(LeftSquare.class);				
 				
 				lookahead = tokens.get(index);
 				
@@ -887,7 +888,7 @@ public class WhileyParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 							index - 1));
 				}
-			} else {				
+			} else if(lookahead instanceof Dot) {				
 				match(Dot.class);
 				int tmp = index;
 				String name = matchIdentifier().text; 	
@@ -901,6 +902,13 @@ public class WhileyParser {
 				} else {
 					lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
 				}
+			} else {
+				// FIXME: need to deal with ranges here as well ??
+				match(DotDot.class);								 						
+				Expr.Invoke ivk = parseInvokeExpr();							
+				lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
+						false, sourceAttr(
+								ostart, index - 1));								
 			}
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
