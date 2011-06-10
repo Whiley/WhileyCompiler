@@ -1006,7 +1006,7 @@ public class ModuleBuilder {
 				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
 				if(ert != null && ert.fields().containsKey(v.var)) {
 					// Bingo, this is an implicit field dereference
-					blk.add(Code.Load(Type.T_BOOL, environment.get(v.var)));	
+					blk.add(Code.Load(Type.T_BOOL, environment.get("this")));	
 					blk.add(Code.UnOp(null, Code.UOp.PROCESSACCESS));
 					blk.add(Code.FieldLoad(null, v.var));
 					matched = true;
