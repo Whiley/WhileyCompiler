@@ -159,7 +159,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(code instanceof Fail) {
 			code = infer((Fail)code,entry,environment);
 		} else if(code instanceof FieldLoad) {
-			code = infer((FieldLoad)code,entry,environment);
+			Block block = infer((FieldLoad)code,entry,environment);
+			rewrites.put(index, block);
+			return environment;
 		} else if(code instanceof IndirectInvoke) {
 			code = infer((IndirectInvoke)code,entry,environment);
 		} else if(code instanceof IndirectSend) {
@@ -200,8 +202,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		Block block = new Block();
-		block.add(code);
-		
+		block.add(code);		
 		rewrites.put(index, block);
 		
 		return environment;
@@ -414,10 +415,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return code;
 	}
 		
-	protected Code infer(FieldLoad e, Entry stmt, Env environment) {	
-		Type lhs_t = environment.pop();
+	protected Block infer(FieldLoad e, Entry stmt, Env environment) {	
+		Block blk = new Block();
+		Type lhs_t = environment.pop();		
 		
-		// TODO:  what about process accesses here?
+		if (Type.isSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
+			Type.Process tp = (Type.Process) lhs_t;
+			blk.add(Code.UnOp(tp, Code.UOp.PROCESSACCESS),stmt.attributes());
+			lhs_t = tp.element();
+		}
 		
 		Type.Record ett = Type.effectiveRecordType(lhs_t);		
 		if (ett == null) {
@@ -430,7 +436,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		environment.push(ft);
 		
-		return Code.FieldLoad(ett, e.field); 
+		blk.add(Code.FieldLoad(ett, e.field),stmt.attributes());
+		return blk;
 	}
 	
 	protected Code infer(IndirectSend e, Entry stmt, Env environment) {
@@ -991,8 +998,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}			
 			
 			return environment;
-		}
-				
+		}				
 		
 		// create environment specific for loop body
 		Env loopEnv = new Env(environment);		
