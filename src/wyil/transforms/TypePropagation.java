@@ -1027,7 +1027,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(body, oldEnv);
+			newEnv = propagate(index+1,body, oldEnv);
 		} while (!newEnv.equals(oldEnv));
 
 		environment = join(environment, newEnv);
