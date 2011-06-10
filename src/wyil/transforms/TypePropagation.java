@@ -63,6 +63,12 @@ import static wyil.lang.Block.*;
  */
 public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
+	/**
+	 * The rewrites map maps bytecode indices to blocks of code which they are
+	 * rewriten into.
+	 */
+	private final HashMap<Integer,Block> rewrites = new HashMap<Integer,Block>();
+	
 	public TypePropagation(ModuleLoader loader) {
 		super(loader);
 	}
@@ -98,13 +104,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 						filename, methodCase);
 			}
 		}				
-		
+				
 		return environment;
-	}
+	}		
 	
 	public Module.Case propagate(Module.Case mcase) {		
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,Env>();
+		this.rewrites.clear();
 		
 		Env environment = initialStore();
 		int start = method.type().params().size();
@@ -113,15 +120,27 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.add(Type.T_VOID);
 		}	
 		
-		Block body = propagate(mcase.body(), environment).first();	
+		propagate(mcase.body(), environment);	
 		
-		return new Module.Case(body,mcase.locals(),mcase.attributes());
+		// At this point, we apply the inserts
+		Block body = mcase.body();
+		Block nbody = new Block();		
+		for(int i=0;i!=body.size();++i) {
+			Block rewrite = rewrites.get(i);
+			if(rewrite != null) {
+				nbody.addAll(rewrite);
+			} else {				
+				nbody.add(body.get(i));
+			}
+		}
+		
+		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
 	}
 	
-	protected Pair<Entry, Env> propagate(Entry entry,
+	protected Env propagate(int index, Entry entry,
 			Env environment) {
 		
-		Code code = entry.code;		
+		Code code = entry.code;				
 		
 		environment = (Env) environment.clone();
 		
@@ -180,8 +199,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return null;
 		}
 		
-		return new Pair<Entry, Env>(new Block.Entry(code, entry.attributes()),
-				environment);
+		Block block = new Block();
+		block.add(code);
+		
+		rewrites.put(index, block);
+		
+		return environment;
 	}
 	
 	protected Code infer(Code.Assert code, Entry stmt, Env environment) {
@@ -824,7 +847,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	
 	
-	protected Triple<Entry,Env,Env> propagate(Code.IfGoto code, Entry stmt, Env environment) {
+	protected Pair<Env, Env> propagate(int index, Code.IfGoto code, Entry stmt,
+			Env environment) {
 		environment = (Env) environment.clone();
 		
 		Type rhs_t = environment.pop();
@@ -873,12 +897,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			break;		
 		}
 		
-		code = Code.IfGoto(lub, code.op, code.target);
-		stmt = new Entry(code,stmt.attributes());
-		return new Triple<Entry,Env,Env>(stmt,environment,environment);
+		Block blk = new Block();
+		blk.add(Code.IfGoto(lub, code.op, code.target),stmt.attributes());		
+		rewrites.put(index, blk);
+		
+		return new Pair<Env,Env>(environment,environment);
 	}
 	
-	protected Triple<Entry,Env,Env> propagate(Code.IfType code, Entry stmt, Env environment) {
+	protected Pair<Env, Env> propagate(int index, Code.IfType code, Entry stmt,
+			Env environment) {
 		environment = (Env) environment.clone();
 		Type lhs_t;
 		
@@ -912,11 +939,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		stmt = new Entry(ncode,stmt.attributes());		
-		return new Triple(stmt,trueEnv,falseEnv);		
+		Block blk = new Block();
+		blk.add(ncode,stmt.attributes());		
+		rewrites.put(index, blk);
+		
+		return new Pair(trueEnv,falseEnv);		
 	}		
 
-	protected Pair<Entry,List<Env>> propagate(Code.Switch code, Entry stmt, Env environment) {
+	protected List<Env> propagate(int index, Code.Switch code, Entry stmt,
+			Env environment) {
 		Type val = environment.pop();
 		ArrayList<Env> envs = new ArrayList<Env>();
 		// TODO: update this code to support type inference of types. That is,
@@ -927,11 +958,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(val,cv.type(),stmt);
 			envs.add(environment);
 		}
-		Code ncode = new Code.Switch(val,code.defaultTarget,code.branches);
-		return new Pair(new Entry(ncode,stmt.attributes()),envs);
+
+		Block blk = new Block();
+		blk.add(Code.Switch(val,code.defaultTarget,code.branches),stmt.attributes());		
+		rewrites.put(index, blk);
+		
+		return envs;
 	}	
 	
-	protected Pair<Block, Env> propagate(Code.ForAll forloop, 
+	protected Env propagate(int index, Code.ForAll forloop, 
 			Block body, Entry stmt, Env environment) {
 						
 		// Now, type the source 		
@@ -947,13 +982,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return null; // deadcode
 		}
 		
-		Block blk = new Block();
-		
 		if (elem_t == Type.T_VOID) {
 			// This indicates a loop over an empty list. This legitimately can
 			// happen as a result of substitution for contraints or pre/post
 			// conditions.
-			return new Pair<Block,Env>(blk,environment);
+			for (int i = 0; i != body.size() + 2; ++i) {
+				rewrites.put(index + i, new Block());
+			}			
+			
+			return environment;
 		}
 				
 		
@@ -961,47 +998,45 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env loopEnv = new Env(environment);		
 		loopEnv.set(forloop.var, elem_t);
 	
-		Pair<Block,Env> r = null;
-		Env old = null;
+		Env newEnv = null;
+		Env oldEnv = null;
 		do {
 			// iterate until a fixed point reached
-			old = r != null ? r.second() : loopEnv;			 			
-			r = propagate(body,old);
-		 } while(!r.second().equals(old));				
+			oldEnv = newEnv != null ? newEnv : loopEnv;			 			
+			newEnv = propagate(index+1,body,oldEnv);
+		 } while(!newEnv.equals(oldEnv));				
 		
-		environment = join(environment,r.second());		
+		environment = join(environment,newEnv);		
+				
+		Block blk = new Block();
+		blk.add(Code.ForAll(src_t, forloop.var, forloop.target, forloop.modified),stmt.attributes());		
+		rewrites.put(index, blk);
 		
-		// Finally, update the code
-		blk.add(Code.ForAll(src_t, forloop.var, forloop.target, forloop.modified), stmt.attributes());
-		blk.addAll(r.first());
-		blk.add(Code.End(forloop.target));
-					
-		return new Pair<Block,Env>(blk,join(environment,r.second()));
+		return join(environment,newEnv);
 	}
 	
-	protected Pair<Block, Env> propagate(Code.Loop loop, Block body,
+	protected Env propagate(int index, Code.Loop loop, Block body,
 			Entry stmt, Env environment) {
 
 		if (loop instanceof Code.ForAll) {
-			return propagate((Code.ForAll) loop, body, stmt, environment);
+			return propagate(index, (Code.ForAll) loop, body, stmt, environment);
 		}
-
-		Block blk = new Block();
-		Pair<Block, Env> r = propagate(body, environment);
-		Env old = null;
+		
+		Env newEnv = propagate(index+1,body, environment);
+		Env oldEnv = null;
 		do {
 			// iterate until a fixed point reached
-			old = r != null ? r.second() : environment;
-			r = propagate(body, old);
-		} while (!r.second().equals(old));
+			oldEnv = newEnv != null ? newEnv : environment;
+			newEnv = propagate(body, oldEnv);
+		} while (!newEnv.equals(oldEnv));
 
-		environment = join(environment, r.second());
-
-		blk.add(Code.Loop(loop.target, loop.modified), stmt.attributes());
-		blk.addAll(r.first());
-		blk.add(Code.End(loop.target));
-
-		return new Pair<Block, Env>(blk, environment);
+		environment = join(environment, newEnv);
+				
+		Block blk = new Block();
+		blk.add(Code.Loop(loop.target, loop.modified),stmt.attributes());		
+		rewrites.put(index, blk);
+		
+		return environment;
 	}
 	
 	/**

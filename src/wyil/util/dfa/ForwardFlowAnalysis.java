@@ -88,15 +88,18 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
 		T init = initialStore();
-		Block body = propagate(mcase.body(), init).first();		
-		return new Module.Case(body, mcase.locals(), mcase.attributes());
+		propagate(mcase.body(), init);		
+		return new Module.Case(mcase.body(), mcase.locals(), mcase.attributes());
 	}		
 	
-	protected Pair<Block, T> propagate(Block block, T store) {
-		
-		Block nblock = new Block();
+	protected T propagate(Block block, T store) {
+		return propagate(0,block,store);
+	}
+	
+	protected T propagate(int offset, Block block, T store) {				
 		for(int i=0;i<block.size();++i) {						
-			Entry entry = block.get(i);								
+			Entry entry = block.get(i);
+			int index = i + offset;
 			try {				
 				Code code = entry.code;
 
@@ -131,66 +134,32 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						}
 						body.add(entry.code, entry.attributes());
 					}
-					Pair<Block, T> r = propagate(loop, body, entry, store);
-					nblock.addAll(r.first());
-					store = r.second();
+					store = propagate(index, loop, body, entry, store);										
 					continue;
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
-					Triple<Entry, T, T> r = propagate(ifgoto, entry, store);
-					entry = r.first();
-					store = r.third();
-
-					// Now, check to see if the statement has been updated, and
-					// process outgoing information accordingly.
-					if (entry.code instanceof Code.IfGoto) {
-						Code.IfGoto gto = (Code.IfGoto) entry.code;
-						merge(gto.target, r.second(), stores);
-					} else if (entry.code instanceof Code.Goto) {
-						Code.Goto gto = (Code.Goto) entry.code;
-						merge(gto.target, r.second(), stores);
-						store = null;
-					}
+					Pair<T, T> r = propagate(index, ifgoto, entry, store);					
+					store = r.second();
+					merge(ifgoto.target, r.first(), stores);
 				}  else if (code instanceof Code.IfType) {
 					Code.IfType ifgoto = (Code.IfType) code;
-					Triple<Entry, T, T> r = propagate(ifgoto, entry, store);
-					entry = r.first();
-					store = r.third();
-
-					// Now, check to see if the statement has been updated, and
-					// process outgoing information accordingly.
-					if (entry.code instanceof Code.IfType) {
-						Code.IfType gto = (Code.IfType) entry.code;
-						merge(gto.target, r.second(), stores);
-					} else if (entry.code instanceof Code.Goto) {
-						Code.Goto gto = (Code.Goto) entry.code;
-						merge(gto.target, r.second(), stores);
-						store = null;
-					}
+					Pair<T, T> r = propagate(index, ifgoto, entry, store);					
+					store = r.second();
+					merge(ifgoto.target, r.first(), stores);
 				} else if (code instanceof Code.Switch) {
 					Code.Switch sw = (Code.Switch) code;
 					
-					Pair<Entry, List<T>> r = propagate(sw, entry, store);
-					entry = r.first();					
+					List<T> r = propagate(index, sw, entry, store);										
 
-					// Now, check to see if the statement has been updated, and
-					// process outgoing information accordingly.
-					if (entry.code instanceof Code.Switch) {						
-						// assert r.second().size() == nsw.branches.size()
-						Code.Switch nsw = (Code.Switch) entry.code;
-						for(int j=0;j!=nsw.branches.size();++j){
-							String target = nsw.branches.get(j).second();
-							T nstore = r.second().get(j);
-							merge(target, nstore, stores);
-						}
-						merge(sw.defaultTarget, store, stores);
-						store = null;
-					} else if (entry.code instanceof Code.Goto) {
-						// assert r.second().size() == 1
-						Code.Goto gto = (Code.Goto) entry.code;
-						merge(gto.target, r.second().get(0), stores);
-						store = null;
+					// assert r.second().size() == nsw.branches.size()
+					Code.Switch nsw = (Code.Switch) entry.code;
+					for(int j=0;j!=nsw.branches.size();++j){
+						String target = nsw.branches.get(j).second();
+						T nstore = r.get(j);
+						merge(target, nstore, stores);
 					}
+					merge(sw.defaultTarget, store, stores);
+					store = null;
 				} else if (code instanceof Code.Throw) {
 					// FIXME:  should I do something here?
 					store = null;
@@ -200,15 +169,12 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
-					Pair<Entry, T> r = propagate(entry, store);
-					entry = r.first();
-					store = r.second();
+					store = propagate(index, entry, store);					
 					if (entry.code instanceof Code.Fail
 							|| entry.code instanceof Code.Return) {
 						store = null;
 					}
-				}
-				nblock.add(entry.code, entry.attributes());
+				}				
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
@@ -216,7 +182,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 			}
 		}
 		
-		return new Pair<Block,T>(nblock,store);
+		return store;
 	}
 	
 	protected void merge(String target, T store, Map<String, T> stores) {		
@@ -237,10 +203,9 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * code was proven definitely false, or definitely true (respectively).
 	 * </p>
 	 * <p>
-	 * <b>NOTE:</b> if the returned statement is a goto, then the third element
-	 * of the return value must be null; likewise, if the new code is a skip
-	 * then the second element must be null.
-	 * </p>
+	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
 	 * 
 	 * @param ifgoto
 	 *            --- the code of this statement
@@ -251,7 +216,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Triple<Entry,T,T> propagate(Code.IfGoto ifgoto, Entry entry, T store);
+	protected abstract Pair<T,T> propagate(int index, Code.IfGoto ifgoto, Entry entry, T store);
 
 	/**
 	 * <p>
@@ -261,12 +226,9 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * statement, a Skip, or a Goto. The latter two indicate that the code was
 	 * proven definitely false, or definitely true (respectively).
 	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> if the returned statement is a goto, then the third element
-	 * of the return value must be null; likewise, if the new code is a skip
-	 * then the second element must be null.
-	 * </p>
-	 * 
+	 * <p>	 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block	 
 	 * @param iftype
 	 *            --- the code of this statement
 	 * @param entry
@@ -276,7 +238,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Triple<Entry,T,T> propagate(Code.IfType iftype, Entry entry, T store);
+	protected abstract Pair<T, T> propagate(int index, Code.IfType iftype,
+			Entry entry, T store);
 	
 	/**
 	 * <p>
@@ -286,7 +249,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * Goto, or a switch statement with a reduced number of branches. 
 	 * </p>
 	 * <p>	
-	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block	 
 	 * @param sw
 	 *            --- the code of this statement
 	 * @param entry
@@ -296,7 +260,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Entry,List<T>> propagate(Code.Switch sw, Entry entry, T store);
+	protected abstract List<T> propagate(int index, Code.Switch sw, Entry entry, T store);
 	
 	/**
 	 * <p>
@@ -305,12 +269,11 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * after the statement
 	 * </p>
 	 * <p>
-	 * <b>NOTE:</b> the block returned must include the start and end code of
-	 * the block. This allows blocks to be completely bypassed where appropriate
-	 * (for example, if a loop is shown to be over an empty collection).
-	 * </p>
 	 * 
-	 * @param start
+	 * 
+ 	 * @param index
+	 *            --- the index of this bytecode in the method's block	 
+	 * @param code
 	 *            --- the start code of the block
 	 * @param body
 	 *            --- the body of the block
@@ -321,8 +284,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Block, T> propagate(Code.Loop code, 
-			Block body, Entry entry, T store);
+	protected abstract T propagate(int index, Code.Loop code, Block body,
+			Entry entry, T store);
 	
 	/**
 	 * <p>
@@ -330,6 +293,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * statement and the store which holds true immediately after the statement
 	 * </p>
 	 * 
+ 	 * @param index
+	 *            --- the index of this bytecode in the method's block	 
 	 * @param entry
 	 *            --- block entry for this bytecode
 	 * @param store
@@ -337,7 +302,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Entry,T> propagate(Entry entry, T store);
+	protected abstract T propagate(int index, Entry entry, T store);
 	
 	/**
 	 * Determine the initial store for the current method case.

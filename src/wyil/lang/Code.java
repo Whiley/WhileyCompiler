@@ -1553,7 +1553,7 @@ public abstract class Code {
 		public final ArrayList<Pair<Value,String>> branches;
 		public final String defaultTarget;
 
-		public Switch(Type type, String defaultTarget, Collection<Pair<Value,String>> branches) {			
+		Switch(Type type, String defaultTarget, Collection<Pair<Value,String>> branches) {			
 			this.type = type;
 			this.branches = new ArrayList<Pair<Value,String>>(branches);
 			this.defaultTarget = defaultTarget;

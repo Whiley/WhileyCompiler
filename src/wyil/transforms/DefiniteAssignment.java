@@ -79,7 +79,7 @@ public class DefiniteAssignment extends
 		return defined;
 	}
 	
-	public Pair<Entry,HashSet<Integer>> propagate(Entry entry, HashSet<Integer> in) {						
+	public HashSet<Integer> propagate(int idx, Entry entry, HashSet<Integer> in) {						
 		Code code = entry.code;			
 		
 		if(code instanceof Code.Store) {
@@ -94,32 +94,32 @@ public class DefiniteAssignment extends
 			}
 		}		
 		
-		return new Pair<Entry,HashSet<Integer>>(entry,in);
+		return in;
 	}
 		
-	public Triple<Entry, HashSet<Integer>, HashSet<Integer>> propagate(
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, HashSet<Integer> in) {
 		// nothing to do here
-		return new Triple(stmt,in,in);
+		return new Pair(in, in);
 	}
 	
-	public Triple<Entry, HashSet<Integer>, HashSet<Integer>> propagate(
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfType iftype, Entry stmt, HashSet<Integer> in) {
 		// nothing to do here
-		return new Triple(stmt,in,in);
+		return new Pair(in,in);
 	}
 	
-	public Pair<Entry, List<HashSet<Integer>>> propagate(Code.Switch sw,
+	public List<HashSet<Integer>> propagate(int index, Code.Switch sw,
 			Entry stmt, HashSet<Integer> in) {
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
 		for (int i = 0; i != sw.branches.size(); ++i) {
 			stores.add(in);
 		}
-		return new Pair(stmt, stores);
+		return stores;
 	}
 		
-	public Pair<Block, HashSet<Integer>> propagate(Code.Loop loop,
-			Block body, Entry stmt, HashSet<Integer> in) {
+	public HashSet<Integer> propagate(int index, Code.Loop loop, Block body,
+			Entry stmt, HashSet<Integer> in) {
 		
 		if(loop instanceof Code.ForAll) {
 			in = new HashSet<Integer>(in);
@@ -127,13 +127,8 @@ public class DefiniteAssignment extends
 			in.add(fall.var);
 		} 
 		
-		Pair<Block,HashSet<Integer>> r = propagate(body,in);
-		Block blk = new Block();
-		blk.add(loop);
-		blk.addAll(r.first());
-		blk.add(Code.End(loop.target));
-				
-		return new Pair<Block,HashSet<Integer>>(blk,join(in,r.second()));		
+		HashSet<Integer> r = propagate(body,in);
+		return join(in,r);		
 	}
 	
 	protected HashSet<Integer> join(HashSet<Integer> s1, HashSet<Integer> s2) {		

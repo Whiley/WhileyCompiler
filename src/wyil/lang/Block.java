@@ -43,6 +43,10 @@ public final class Block implements Iterable<Block.Entry> {
 		}
 	}
 	
+	public void add(Block.Entry entry) {
+		stmts.add(new Entry(entry.code,entry.attributes()));
+	}
+	
 	public void add(Code c, Attribute... attributes) {
 		stmts.add(new Entry(c,attributes));
 	}
