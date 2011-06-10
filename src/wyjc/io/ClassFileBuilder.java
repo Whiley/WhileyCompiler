@@ -1578,6 +1578,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
 					Bytecode.VIRTUAL));
 			}
+			break;
 		case REM:									
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
 						"intRemainder", ftype, Bytecode.VIRTUAL));			
