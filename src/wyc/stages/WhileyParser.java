@@ -838,7 +838,7 @@ public class WhileyParser {
 		
 		while (lookahead instanceof LeftSquare 
 				|| lookahead instanceof Dot
-				|| lookahead instanceof DotDot
+				|| lookahead instanceof Shreak
 				|| lookahead instanceof LeftBrace
 				|| lookahead instanceof LeftArrow
 				|| lookahead instanceof LeftRightArrow) {
@@ -903,8 +903,7 @@ public class WhileyParser {
 					lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
 				}
 			} else {
-				// FIXME: need to deal with ranges here as well ??
-				match(DotDot.class);								 						
+				match(Shreak.class);								 						
 				Expr.Invoke ivk = parseInvokeExpr();							
 				lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
 						false, sourceAttr(
