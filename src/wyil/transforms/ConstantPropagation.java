@@ -32,12 +32,14 @@ import java.util.*;
 
 import wyil.ModuleLoader;
 import wyil.lang.*;
+import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
-import wyil.lang.CExpr.*;
+import wyil.transforms.TypePropagation.Env;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
+import wyjc.runtime.BigRational;
 
-public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Value>> {	
+public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	public ConstantPropagation(ModuleLoader loader) {
 		super(loader);
 	}
@@ -46,73 +48,24 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		return type;		
 	}
 	
-	public HashMap<String,Value> initialStore() {		
-		return new HashMap<String,Value>();
+	public Env initialStore() {		
+		Env environment = new Env();		
+
+		if(method.type().receiver() != null) {					
+			environment.add(null);
+		}
+		List<Type> paramTypes = method.type().params();
+		
+		for (int i=0; i != paramTypes.size(); ++i) {			
+			environment.add(null);			
+		}				
 				
+		return environment;				
 	}
 	
-	protected Pair<Block, HashMap<String, Value>> propagate(Code.Start start,
-			Code.End end, Block body, Stmt stmt, HashMap<String, Value> environment) {
-					
-		if(start instanceof Forall) {
-			Code.Forall fall = (Code.Forall) start;
-			CExpr source = infer(fall.source,stmt,environment);
-			// Determine and eliminate loop-carried dependencies
-			environment = new HashMap<String,Value>(environment);
-			for(LVar v : fall.modifies) {
-				environment.remove(v.name());
-			}
-			// Propagate constants into invariant
-			Block invariant = fall.invariant;
-			if(invariant != null) {
-				invariant = propagate(invariant,environment).first();
-			}
-			
-			// Update code
-			fall = new Code.Forall(fall.label, invariant, fall.variable, source, fall.modifies);
-			start = fall;
-			
-			// Unroll loop if possible
-			if(source instanceof Value) {
-				// ok, we can unroll the loop body --- yay!
-				body = unrollFor(fall,body);
-				return propagate(body,environment);
-			}						
-		} else if(start instanceof Loop) {
-			Loop loop = (Loop) start;
-			
-			// Determine and eliminate loop-carried dependencies
-			environment = new HashMap<String,Value>(environment);
-			for(LVar v : loop.modifies) {
-				environment.remove(v.name());
-			}
-			
-			// Propagate constants into invariant
-			Block invariant = loop.invariant;
-			if(invariant != null) {
-				invariant = propagate(invariant,environment).first();
-			}
-			
-			// Update code
-			start = new Code.Loop(start.label, invariant, loop.modifies);
-			
-			// Can we unroll the loop here I wonder?
-		}
-		
-		Pair<Block,HashMap<String,Value>> r = propagate(body,environment);
-		Block blk = new Block();
-		blk.add(start);
-		blk.addAll(r.first());
-		blk.add(end);
-		
-		if(start instanceof Loop) { 
-			return new Pair(blk,join(environment,r.second()));
-		} else {
-			return new Pair(blk,r.second());
-		}
-	}
+	/*
 	
-	protected Block unrollFor(Code.Forall fall, Block body) {		
+	protected Block unrollFor(Code.ForAll fall, Block body) {		
 		Block blk = new Block();
 		Collection<Value> values;
 		if(fall.source instanceof Value.List) {
@@ -136,317 +89,374 @@ public class ConstantPropagation extends ForwardFlowAnalysis<HashMap<String,Valu
 		return blk;
 	}		
 	
-	protected Pair<Stmt,HashMap<String,Value>> propagate(Stmt stmt, HashMap<String,Value> environment) {
-		
-		
-		Code code = stmt.code;
-		if(stmt.code instanceof Code.Assign) {
-			return propagate((Code.Assign)stmt.code,stmt,environment);
-		} else if(stmt.code instanceof Code.Debug) {
-			code = propagate((Code.Debug)stmt.code,stmt,environment);
-		} else if(stmt.code instanceof Code.Return) {
-			code = propagate((Code.Return)stmt.code,stmt,environment);
-		}
-		
-		return new Pair(new Stmt(code,stmt.attributes()),environment);
-	}
-	
-	protected Pair<Stmt,HashMap<String,Value>> propagate(Code.Assign code, Stmt stmt, HashMap<String,Value> environment) {
-		CExpr.LVal lhs = code.lhs;
-		CExpr rhs = infer(code.rhs,stmt,environment);
-
-		if(lhs instanceof Variable && rhs instanceof Value) {
-			Variable v = (Variable) lhs;
-			environment = new HashMap<String,Value>(environment);
-			environment.put(v.name, (Value) rhs);			
-		} else if(lhs instanceof Register && rhs instanceof Value) {
-			Register v = (Register) lhs;
-			environment = new HashMap<String,Value>(environment);
-			environment.put("%" + v.index, (Value) rhs);
-		} else if(lhs != null) {
-			// FIXME: we could do better here, actually. Particularly in the
-			// case of tuple accesses. Lists are harder, unless the index is
-			// itself a constant.			
-			LVar lv = CExpr.extractLVar(lhs);
-			environment = new HashMap<String,Value>(environment);
-			// Now, remove the constant we have stored for this variable, since
-			// the variables value has changed in some manner that we haven't
-			// or can't fully track.
-			environment.remove(lv.name());
-		}
-		
-		stmt = new Stmt(new Code.Assign(lhs,rhs),stmt.attributes());
-		return new Pair(stmt,environment);
-	}
-	
-	protected Code propagate(Code.Return code, Stmt stmt, HashMap<String,Value> environment) {
-		CExpr rhs = code.rhs;
-		
-		if(rhs != null) {
-			Type ret_t = method.type().ret();
-			if(ret_t == Type.T_VOID) {
-				syntaxError(
-						"cannot return value, as method has void return type",
-						filename, stmt);
-			}
-			rhs = infer(rhs,stmt,environment);			
-		}
-		
-		return new Code.Return(rhs);
-	}
-	
-	protected Code propagate(Code.Debug code, Stmt stmt, HashMap<String,Value> environment) {
-		CExpr rhs = infer(code.rhs,stmt, environment);		
-		return new Code.Debug(rhs);
-	}
+	*/
 	
 
-	protected Triple<Stmt, HashMap<String, Value>, HashMap<String, Value>> propagate(
-			Code.IfGoto code, Stmt stmt, HashMap<String, Value> environment) {
-		CExpr lhs = infer(code.lhs, stmt, environment);
-		CExpr rhs = infer(code.rhs, stmt, environment);
-		Code ncode;
+	public Env propagate(int idx, Entry entry, Env environment) {						
+		Code code = entry.code;			
 		
-		if (lhs instanceof Value && rhs instanceof Value) {
-			boolean v = Value.evaluate(code.op, (Value) lhs, (Value) rhs);
-			if (v) {
-				ncode = new Code.Goto(code.target);
-			} else {
-				ncode = new Code.Skip();
-			}
+		environment = (Env) environment.clone();
+		
+		if(code instanceof Assert) {
+			infer((Assert)code,entry,environment);
+		} else if(code instanceof BinOp) {
+			infer((BinOp)code,entry,environment);
+		} else if(code instanceof Convert) {
+			infer((Convert)code,entry,environment);
+		} else if(code instanceof Const) {
+			infer((Const)code,entry,environment);
+		} else if(code instanceof Debug) {
+			infer((Debug)code,entry,environment);
+		} else if(code instanceof ExternJvm) {
+			// skip
+		} else if(code instanceof Fail) {
+			// skip
+		} else if(code instanceof FieldLoad) {
+			infer((FieldLoad)code,entry,environment);			
+		} else if(code instanceof IndirectInvoke) {
+			infer((IndirectInvoke)code,entry,environment);
+		} else if(code instanceof IndirectSend) {
+			infer((IndirectSend)code,entry,environment);
+		} else if(code instanceof Invoke) {
+			infer((Invoke)code,entry,environment);
+		} else if(code instanceof Label) {
+			// skip			
+		} else if(code instanceof ListOp) {
+			infer((ListOp)code,entry,environment);
+		} else if(code instanceof ListLoad) {
+			infer((ListLoad)code,entry,environment);
+		} else if(code instanceof Load) {
+			infer((Load)code,entry,environment);
+		} else if(code instanceof MultiStore) {
+			infer((MultiStore)code,entry,environment);
+		} else if(code instanceof NewDict) {
+			infer((NewDict)code,entry,environment);
+		} else if(code instanceof NewList) {
+			infer((NewList)code,entry,environment);
+		} else if(code instanceof NewRecord) {
+			infer((NewRecord)code,entry,environment);
+		} else if(code instanceof NewSet) {
+			infer((NewSet)code,entry,environment);
+		} else if(code instanceof Return) {
+			infer((Return)code,entry,environment);
+		} else if(code instanceof Send) {
+			infer((Send)code,entry,environment);
+		} else if(code instanceof Store) {
+			infer((Store)code,entry,environment);
+		} else if(code instanceof SetOp) {
+			infer((SetOp)code,entry,environment);
+		} else if(code instanceof UnOp) {
+			infer((UnOp)code,entry,environment);
 		} else {
-			ncode = new Code.IfGoto(code.op, lhs, rhs, code.target); 
+			syntaxError("Need to finish type inference " + code,filename,entry);
+			return null;
+		}	
+		
+		return environment;
+	}
+	
+	public void infer(Code.Assert code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.BinOp code, Block.Entry entry,
+			Env environment) {
+		Value rhs = environment.pop();
+		Value lhs = environment.pop();
+		
+		// should evaluate here
+		Value result = null;
+		
+		environment.push(result);
+	}
+	
+	public void infer(Code.Convert code, Block.Entry entry,
+			Env environment) {
+		Value val = environment.pop();
+		
+		// need to apply conversion here
+		
+		environment.push(null);
+	}
+	
+	public void infer(Code.Const code, Block.Entry entry,
+			Env environment) {
+		environment.push(code.constant);
+	}
+	
+	public void infer(Code.Debug code, Block.Entry entry,
+			Env environment) {
+		environment.pop();
+	}
+	
+	public void infer(Code.FieldLoad code, Block.Entry entry,
+			Env environment) {
+		Value src = environment.pop();
+		if(src instanceof Value.Record) {
+			Value.Record rec = (Value.Record) src;
+			environment.push(rec.values.get(code.field));
+		} else {
+			environment.push(null);
 		}
-		// FIXME: could do more here, when the condition forces a constant. E.g.
-		// "if x == 1:" on the true branch we now have that x is 1.
-		stmt = new Stmt(ncode,stmt.attributes());
-		return new Triple(stmt,environment,environment);
-	}	
-
-	protected Pair<Stmt, List<HashMap<String, Value>>> propagate(
-			Code.Switch code, Stmt stmt, HashMap<String, Value> environment) {
-		CExpr value = infer(code.value, stmt, environment);
-		ArrayList<HashMap<String,Value>> envs = new ArrayList();
-		if(value instanceof Value) {
-			envs.add(environment);
-			for(Pair<Value,String> p : code.branches){
-				if(p.first().equals(value)) {
-					Code ncode = new Code.Goto(p.second());
-					return new Pair(new Stmt(ncode,stmt.attributes()),envs);
+	}
+	
+	public void infer(Code.IndirectInvoke code, Block.Entry entry,
+			Env environment) {
+		
+		// TODO: in principle we can do better here in the case that the target
+		// is a constant. This seems pretty unlikely though ...
+		
+		for(int i=0;i!=code.type.params().size();++i) {
+			environment.pop();
+		}
+		
+		environment.pop(); // target
+		
+		if(code.type.ret() != Type.T_VOID && code.retval) {
+			environment.push(null);
+		}
+	}
+	
+	public void infer(Code.IndirectSend code, Block.Entry entry,
+			Env environment) {
+		// FIXME: need to do something here
+	}
+	
+	public void infer(Code.Invoke code, Block.Entry entry,
+			Env environment) {
+		
+		// TODO: in the case of a function call (rather than an internal message
+		// send), we could potentially evaluate the function in question to give
+		// a constant value.
+		
+		for(int i=0;i!=code.type.params().size();++i) {
+			environment.pop();
+		}
+		
+		if(code.type.ret() != Type.T_VOID && code.retval) {
+			environment.push(null);
+		}
+	}
+	
+	public void infer(Code.ListOp code, Block.Entry entry,
+			Env environment) {
+		
+		switch(code.lop) {
+			case SUBLIST: {
+				Value end = environment.pop();
+				Value start = environment.pop();
+				Value list = environment.pop();
+				if (list instanceof Value.List && start instanceof Value.Number
+						&& end instanceof Value.Number) {
+					Value.Number en = (Value.Number) end;
+					Value.Number st = (Value.Number) start;
+					if (en.value.isInteger() && st.value.isInteger()) {
+						Value.List li = (Value.List) list;
+						int eni = en.value.intValue();
+						int sti = st.value.intValue();
+						if (BigRational.valueOf(eni).equals(en.value)
+								&& eni >= 0 && eni <= li.values.size()
+								&& BigRational.valueOf(sti).equals(st.value)
+								&& sti >= 0 && sti <= li.values.size()) {
+							ArrayList<Value> nvals = new ArrayList<Value>();
+							for (int i = sti; i < eni; ++i) {
+								nvals.add(li.values.get(i));
+							}
+							environment.push(Value.V_LIST(nvals));
+						}
+					}
 				}
+				environment.push(null);
+				break;
 			}
-			Code ncode = new Code.Goto(code.defaultTarget);
-			return new Pair(new Stmt(ncode,stmt.attributes()),envs);			
-		} else {			
-			for(int i=0;i!=code.branches.size();++i) {
-				// FIXME: could do more here, as we might be able to infer a
-				// variable in the switch value is a constant. e.g. if
-				// "switch x:" then in "case 1:", we can update x -> 1.
-				envs.add(environment);
+			case APPEND:
+			{
+				Value lhs = environment.pop();
+				Value rhs = environment.pop();
+				if(code.dir == OpDir.UNIFORM && lhs instanceof Value.List && rhs instanceof Value.List) {
+					Value.List left = (Value.List) lhs;
+					Value.List right = (Value.List) rhs;
+					ArrayList<Value> values = new ArrayList<Value>(left.values);
+					values.addAll(right.values);
+					environment.push(Value.V_LIST(values));
+				} else if(code.dir == OpDir.LEFT && lhs instanceof Value.List && rhs instanceof Value) {
+					Value.List left = (Value.List) lhs;
+					Value right = (Value) rhs;
+					ArrayList<Value> values = new ArrayList<Value>(left.values);
+					values.add(right);
+					environment.push(Value.V_LIST(values));
+				} else if(code.dir == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.List) {
+					Value left = (Value) lhs;
+					Value.List right = (Value.List) rhs;
+					ArrayList<Value> values = new ArrayList<Value>();
+					values.add(left);
+					values.addAll(right.values);
+					environment.push(Value.V_LIST(values));
+				} else {
+					environment.push(null);
+				}
+				break;
 			}
-			Code ncode = new Code.Switch(value,code.defaultTarget,code.branches);
-			return new Pair(new Stmt(ncode,stmt.attributes()),envs);
-		}
-	}
-	
-	protected CExpr infer(CExpr e, Stmt stmt, HashMap<String,Value> environment) {
-
-		if (e instanceof Value) {
-			return e;
-		} else if (e instanceof Variable) {
-			return infer((Variable) e, stmt, environment);
-		} else if (e instanceof Register) {
-			return infer((Register) e, stmt, environment);
-		} else if (e instanceof BinOp) {
-			return infer((BinOp) e, stmt, environment);
-		} else if (e instanceof UnOp) {
-			return infer((UnOp) e, stmt, environment);
-		} else if (e instanceof NaryOp) {
-			return infer((NaryOp) e, stmt, environment);
-		} else if (e instanceof ListAccess) {
-			return infer((ListAccess) e, stmt, environment);
-		} else if (e instanceof Record) {
-			return infer((Record) e, stmt, environment);
-		} else if (e instanceof CExpr.Dictionary) {
-			return infer((CExpr.Dictionary) e, stmt, environment);
-		} else if (e instanceof RecordAccess) {
-			return infer((RecordAccess) e, stmt, environment);
-		} else if (e instanceof DirectInvoke) {
-			return infer((DirectInvoke) e, stmt, environment);
-		} else if (e instanceof IndirectInvoke) {
-			return infer((IndirectInvoke) e, stmt, environment);
-		}
-
-		syntaxError("unknown expression encountered: " + e, filename, stmt);
-		return null; // unreachable
-	}
-	
-	protected CExpr infer(Variable v, Stmt stmt, HashMap<String,Value> environment) {
-		Value val = environment.get(v.name);
-		if(val != null) {
-			return val;
-		} else {
-			return v;
-		}		
-	}
-	
-	protected CExpr infer(Register v, Stmt stmt, HashMap<String,Value> environment) {
-		String name = "%" + v.index;
-		Value val = environment.get(name);
-		if(val != null) {
-			return val;
-		} else {
-			return v;
-		}
-	}
-	
-	protected CExpr infer(UnOp v, Stmt stmt, HashMap<String,Value> environment) {
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		if(rhs instanceof Value) {
-			return Value.evaluate(v.op, (Value) rhs);
-		}
-		return CExpr.UNOP(v.op, rhs);
-	}
-	
-	protected CExpr infer(BinOp v, Stmt stmt, HashMap<String,Value> environment) {
-		CExpr lhs = infer(v.lhs, stmt, environment);
-		CExpr rhs = infer(v.rhs, stmt, environment);
-		
-		if(lhs instanceof Value && rhs instanceof Value) {
-			return Value.evaluate(v.op, (Value) lhs, (Value) rhs);
-		}
-		
-		return CExpr.BINOP(v.op,lhs,rhs);				
-	}
-	
-	protected CExpr infer(NaryOp v, Stmt stmt, HashMap<String,Value> environment) {
-		ArrayList args = new ArrayList<CExpr>();
-		boolean allValues = true;
-		for(CExpr arg : v.args) {
-			arg = infer(arg,stmt,environment);
-			args.add(arg);
-			allValues &= arg instanceof Value;
-		}
-		
-		if(allValues) {			
-			return Value.evaluate(v.op, args);
-		}
-		
-		return CExpr.NARYOP(v.op, args);		
-	}
-	
-	protected CExpr infer(ListAccess e, Stmt stmt, HashMap<String,Value> environment) {
-		CExpr src = infer(e.src,stmt,environment);
-		CExpr idx = infer(e.index,stmt,environment);
-
-		if(src instanceof Value.List && idx instanceof Value.Int) {
-			Value.List s = (Value.List) src;
-			Value.Int i = (Value.Int) idx;
-			int v = i.value.intValue();
-			if(v < 0 || v >= s.values.size()) {
-				syntaxError("list access out-of-bounds",filename,stmt);
+			case LENGTHOF:
+			{
+				Value val = environment.pop();
+				if(val instanceof Value.List) {
+					Value.List list = (Value.List) val;
+					environment.push(Value.V_NUMBER(BigRational
+							.valueOf(list.values.size())));
+				} else {
+					environment.push(null);
+				}
+				break;
 			}
-			return s.values.get(v);
 		}
+	}
+	
+	public void infer(Code.ListLoad code, Block.Entry entry,
+			Env environment) {
+		Value idx = environment.pop();
+		Value src = environment.pop();
+		if (idx instanceof Value.Number && src instanceof Value.List) {
+			Value.Number num = (Value.Number) idx;
+			Value.List list = (Value.List) src;
+			if(num.value.isInteger()) {
+				int i = num.value.intValue();
+				if (BigRational.valueOf(i).equals(num.value) && i >= 0
+						&& i < list.values.size()) {
+					environment.push(list.values.get(i));
+					return;
+				}
+			}			
+		} 
 		
-		return CExpr.LISTACCESS(src,idx);
+		environment.push(null);		
+	}
+	
+	public void infer(Code.Load code, Block.Entry entry,
+			Env environment) {
+		environment.push(environment.get(code.slot));
+	}
+	
+	public void infer(Code.MultiStore code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.NewDict code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.NewRecord code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.NewList code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.NewSet code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.Return code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.Send code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.Store code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.SetOp code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public void infer(Code.UnOp code, Block.Entry entry,
+			Env environment) {
+		
+	}
+	
+	public Pair<Env, Env> propagate(int index,
+			Code.IfGoto igoto, Entry stmt, Env in) {
+		
+		return new Pair(in, in);
+	}
+	
+	public Pair<Env, Env> propagate(int index,
+			Code.IfType iftype, Entry stmt, Env in) {
+		
+		return new Pair(in,in);
+	}
+	
+	public List<Env> propagate(int index, Code.Switch sw,
+			Entry stmt, Env in) {
+		ArrayList<Env> stores = new ArrayList();
+		for (int i = 0; i != sw.branches.size(); ++i) {
+			stores.add(in);
+		}
+		return stores;
 	}
 		
-	protected CExpr infer(RecordAccess e, Stmt stmt,
-			HashMap<String, Value> environment) {
-		CExpr lhs = infer(e.lhs, stmt, environment);
-		if (lhs instanceof Value.Record) {
-			Value.Record t = (Value.Record) lhs;
-			Value v = t.values.get(e.field);
-			if (v == null) {
-				syntaxError("tuple does not have field " + e.field, filename,
-						stmt);
-			}
-			return v;
-		}
-		return CExpr.RECORDACCESS(lhs, e.field);
-	}
-	
-	protected CExpr infer(Record e, Stmt stmt, HashMap<String,Value> environment) {
-		HashMap args = new HashMap();
-		boolean allValues = true;
-		for (Map.Entry<String, CExpr> v : e.values.entrySet()) {
-			CExpr arg = infer(v.getValue(), stmt, environment);
-			args.put(v.getKey(), arg);
-			allValues &= arg instanceof Value;
-		}
-		if(allValues) {
-			return Value.V_RECORD(args);
-		} else {
-			return CExpr.RECORD(args);
-		}
-	}
-	
-	protected CExpr infer(CExpr.Dictionary e, Stmt stmt, HashMap<String,Value> environment) {
-		HashSet args = new HashSet();
-		boolean allValues = true;
-		for (Pair<CExpr, CExpr> v : e.values) {
-			CExpr key = infer(v.first(), stmt, environment);
-			CExpr value = infer(v.second(), stmt, environment);
-			args.add(new Pair(key,value));
-			allValues &= key instanceof Value;
-			allValues &= value instanceof Value;
-		}
-		if(allValues) {
-			return Value.V_DICTIONARY(args);
-		} else {
-			return CExpr.DICTIONARY(args);
-		}
-	}
-	
-	protected CExpr infer(DirectInvoke ivk, Stmt stmt,
-			HashMap<String,Value> environment) {		
-		ArrayList<CExpr> args = new ArrayList<CExpr>();		
-		CExpr receiver = ivk.receiver;		
-		if(receiver != null) {
-			receiver = infer(receiver, stmt, environment);			
-		}
-		for (CExpr arg : ivk.args) {
-			arg = infer(arg, stmt, environment);
-			args.add(arg);
-		}
+	public Env propagate(int start, int end, Code.Loop loop,
+			Entry stmt, Env in) {
 		
-		return CExpr.DIRECTINVOKE(ivk.type, ivk.name, ivk.caseNum, receiver, ivk.synchronous, args);		
-	}
-	
-	protected CExpr infer(IndirectInvoke ivk, Stmt stmt,
-			HashMap<String,Value> environment) {		
-		ArrayList<CExpr> args = new ArrayList<CExpr>();		
-		CExpr receiver = ivk.receiver;		
-		if(receiver != null) {
-			receiver = infer(receiver, stmt, environment);			
-		}
-		CExpr target = infer(ivk.target,stmt,environment);
-		for (CExpr arg : ivk.args) {
-			arg = infer(arg, stmt, environment);
-			args.add(arg);
-		}
+		if(loop instanceof Code.ForAll) {
+			
+		} 
 		
-		return CExpr.INDIRECTINVOKE(target, receiver, args);		
+		Env r = propagate(start+1,end,in);
+		return join(in,r);		
 	}
 	
-	public HashMap<String, Value> join(HashMap<String, Value> env1,
-			HashMap<String, Value> env2) {
-		if(env1 == null) {
-			return env2;
-		} else if(env2 == null) {
+	public Env join(Env env1, Env env2) {
+		if (env2 == null) {
 			return env1;
+		} else if (env1 == null) {
+			return env2;
 		}
-		HashMap<String, Value> r = new HashMap<String, Value>();
-		HashSet<String> keys = new HashSet<String>(env1.keySet());
-		keys.addAll(env2.keySet());
-		for (String key : keys) {
-			Value mt = env1.get(key);
-			Value ot = env2.get(key);
+		Env env = new Env();
+		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
+			Value mt = env1.get(i);
+			Value ot = env2.get(i);
 			if (ot instanceof Value && mt instanceof Value && ot.equals(mt)) {
-				r.put(key, ot);
-			}
+				env.add(mt);
+			} else {
+				env.add(null);
+			}			
 		}
-		return r;
+
+		return env;
+	}	
+	
+	public static class Env extends ArrayList<Value> {
+		public Env() {
+		}
+		public Env(Collection<Value> v) {
+			super(v);
+		}
+		public void push(Value t) {
+			add(t);
+		}
+		public Value top() {
+			return get(size()-1);
+		}
+		public Value pop() {
+			return remove(size()-1);			
+		}
+		public Env clone() {
+			return new Env(this);
+		}
 	}
 }
