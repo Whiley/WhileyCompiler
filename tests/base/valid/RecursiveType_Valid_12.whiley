@@ -17,7 +17,7 @@ void System::main([string] args):
     l3 = [l2]
     l4 = [l3]
     
-    out<->println(str(maxDepth(l1)))
-    out<->println(str(maxDepth(l2)))
-    out<->println(str(maxDepth(l3)))
-    out<->println(str(maxDepth(l4)))
+    out.println(str(maxDepth(l1)))
+    out.println(str(maxDepth(l2)))
+    out.println(str(maxDepth(l3)))
+    out.println(str(maxDepth(l4)))

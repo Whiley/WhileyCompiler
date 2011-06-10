@@ -25,7 +25,7 @@ public void System::main([string] args):
     while i < 10:
         e = sbuild(i)
         if e ~= SyntaxError:
-            out<->println("syntax error: " + e.err)
+            out.println("syntax error: " + e.err)
         else:
-            out<->println(str(e))
+            out.println(str(e))
         i = i + 1

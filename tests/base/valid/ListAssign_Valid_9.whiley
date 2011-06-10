@@ -22,4 +22,4 @@ Board f(Board board):
 
 void System::main([string] args):
     r1 = {rows: [WHITE_PAWN], flag: false }
-    out<->println(str(f(r1)))
+    out.println(str(f(r1)))

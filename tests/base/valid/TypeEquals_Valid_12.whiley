@@ -9,6 +9,6 @@ string getMessage(imsg m):
         return str(m)
 
 void System::main([string] args):
-    out<->println(getMessage({msg:"HELLO WORLD"}))
-    out<->println(getMessage(1))
-    out<->println(getMessage({op:123}))
+    out.println(getMessage({msg:"HELLO WORLD"}))
+    out.println(getMessage(1))
+    out.println(getMessage({op:123}))

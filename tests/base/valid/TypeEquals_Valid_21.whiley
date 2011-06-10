@@ -7,6 +7,6 @@ string f(Rtypes e):
         return "NOPE"
 
 void System::main([string] args):
-    out<->println(f({x: 1.2, y: 1.2}))
-    out<->println(f({x: 1, y: 1}))
-    out<->println(f({x: 1, z: 1}))
+    out.println(f({x: 1.2, y: 1.2}))
+    out.println(f({x: 1, y: 1}))
+    out.println(f({x: 1, z: 1}))

@@ -23,6 +23,6 @@ void System::main([string] args):
     ls = { val: 1, next: null}
     ls = { val: 2, next: ls}
     ls = { val: 3, next: ls}
-    out<->println(str(sum_1(ls)))
-    out<->println(str(sum_2(ls)))
-    out<->println(str(sum_3(ls)))
+    out.println(str(sum_1(ls)))
+    out.println(str(sum_2(ls)))
+    out.println(str(sum_3(ls)))

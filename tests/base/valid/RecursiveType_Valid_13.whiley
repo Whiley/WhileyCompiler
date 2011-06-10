@@ -7,6 +7,6 @@ Value init():
 void System::main([string] args):
     v = init()
     if v ~= [Expr]:
-        out<->println("GOT LIST")
+        out.println("GOT LIST")
     else:
-        out<->println(str(v))
+        out.println(str(v))

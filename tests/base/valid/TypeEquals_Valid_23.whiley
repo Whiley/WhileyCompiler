@@ -8,6 +8,6 @@ string f(src e):
         return "int"
 
 void System::main([string] args):
-    out<->println(f({x: 1}))
-    out<->println(f({y: 2}))
-    out<->println(f(1))
+    out.println(f({x: 1}))
+    out.println(f({y: 2}))
+    out.println(f(1))

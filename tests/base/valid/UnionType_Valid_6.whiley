@@ -9,4 +9,4 @@ string f(msgType m):
 
 void System::main([string] args):
     x = {op:11,data:[]}
-    out<->println(f(x))
+    out.println(f(x))

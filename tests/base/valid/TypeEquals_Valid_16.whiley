@@ -6,5 +6,5 @@ string f(int|null x):
 
 void System::main([string] args):
     x = null
-    out<->println(f(x))
-    out<->println(f(1))
+    out.println(f(x))
+    out.println(f(1))

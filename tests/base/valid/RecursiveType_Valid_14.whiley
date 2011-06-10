@@ -16,8 +16,8 @@ void System::main([string] args):
     se3 = {lhs: se2, data: 45}
     e1 = [se1]
     e2 = [e1,se1,se2]
-    out<->println(toString(se1))
-    out<->println(toString(se2))
-    out<->println(toString(se3))
-    out<->println(toString(e1))
-    out<->println(toString(e2))
+    out.println(toString(se1))
+    out.println(toString(se2))
+    out.println(toString(se3))
+    out.println(toString(e1))
+    out.println(toString(e2))

@@ -2,4 +2,4 @@
     return x
 
 void System::main([string] args):
-    out<->println(str(f("Hello World")))
+    out.println(str(f("Hello World")))

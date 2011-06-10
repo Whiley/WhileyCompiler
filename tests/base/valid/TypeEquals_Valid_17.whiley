@@ -16,5 +16,5 @@ SyntaxError syntaxError(string errorMessage):
     return {msg: errorMessage}
 
 void System::main([string] args):
-    out<->println(f(0))
-    out<->println(f(1))
+    out.println(f(0))
+    out.println(f(1))

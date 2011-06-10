@@ -9,4 +9,4 @@
 
 void System::main([string] args):
     rs = reverse([1,2,3,4,5])
-    out<->println(str(rs))
+    out.println(str(rs))
