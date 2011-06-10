@@ -1578,6 +1578,9 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
 					Bytecode.VIRTUAL));
 			}
+		case REM:									
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
+						"intRemainder", ftype, Bytecode.VIRTUAL));			
 			break;
 		default:
 			syntaxError("unknown binary expression encountered",filename,stmt);

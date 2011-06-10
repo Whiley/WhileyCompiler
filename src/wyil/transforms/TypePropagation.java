@@ -258,7 +258,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 		} else {
 			result = Type.leastUpperBound(lhs,rhs);	
-			checkIsSubtype(Type.T_REAL,result,stmt);
+			if(v.bop == BOp.REM) {
+				// remainder is a special case which requires both operands to
+				// be integers.
+				checkIsSubtype(Type.T_INT,result,stmt);
+			} else {
+				checkIsSubtype(Type.T_REAL,result,stmt);
+			}
 			code = Code.BinOp(result,v.bop);
 		}				
 		
