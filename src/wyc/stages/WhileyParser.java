@@ -887,26 +887,20 @@ public class WhileyParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 							index - 1));
 				}
-			} else if (lookahead instanceof LeftArrow || lookahead instanceof LeftRightArrow) {				
-				match(lookahead.getClass());					
-				int tmp = index; 				
-				String name = matchIdentifier().text;
+			} else {				
+				match(Dot.class);
+				int tmp = index;
+				String name = matchIdentifier().text; 	
 				if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 					// this indicates a method invocation.
 					index = tmp; // slight backtrack
 					Expr.Invoke ivk = parseInvokeExpr();							
 					lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
-							lookahead instanceof LeftRightArrow, sourceAttr(
+							true, sourceAttr(
 									ostart, index - 1));				
-				} else {					
-					lhs = new Expr.UnOp(Expr.UOp.PROCESSACCESS, lhs,
-							sourceAttr(start, index - 1));
-					lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));			
+				} else {
+					lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
 				}
-			} else {				
-				match(Dot.class);
-				String name = matchIdentifier().text;				
-				lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
 			}
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
