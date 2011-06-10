@@ -4,4 +4,4 @@ int f():
 
 void System::main([string] args):
     x = f()
-    out<->println(str(x))
+    out.println(str(x))

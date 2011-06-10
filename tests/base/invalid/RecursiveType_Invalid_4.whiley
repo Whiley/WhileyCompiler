@@ -5,4 +5,4 @@ expr f(expr e):
 
 void System::main([string] args):
     e = {op:1,left:"HELLO",right:2}
-    out<->println(str(f(e)))
+    out.println(str(f(e)))
