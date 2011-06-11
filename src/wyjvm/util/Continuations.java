@@ -31,7 +31,7 @@ import wyjvm.lang.JvmType.Int;
 
 public class Continuations {
 
-	private static final Clazz PROCESS = new Clazz("wyjc.runtime", "Process"),
+	private static final Clazz PROCESS = new Clazz("wyjc.runtime", "Actor"),
 	    MESSAGER = new Clazz("wyjc.runtime.concurrency", "Messager"),
 	    YIELDER = new Clazz("wyjc.runtime.concurrency", "Yielder");
 
@@ -39,14 +39,30 @@ public class Continuations {
 		for (Method method : classfile.methods()) {
 			if (!method.name().equals("main")) {
 				apply(method);
+			} else {
+				for (BytecodeAttribute attribute : method.attributes()) {
+					if (attribute instanceof Code) {
+						System.out.println("main");
+						for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
+							System.out.println(bytecode);
+						}
+						System.out.println();
+					}
+				}
 			}
 		}
 	}
 
 	public void apply(Method method) {
+//		System.out.println(method.name());
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
+				
+//				for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
+//					System.out.println(bytecode);
+//				}
+//				System.out.println();
 			}
 		}
 	}

@@ -31,14 +31,14 @@ import java.io.*;
 import java.lang.reflect.*;
 
 public class IO {
-	public static Process openReader(ArrayList name) {
+	public static Actor openReader(ArrayList name) {
 		WhileyRecord r = new WhileyRecord();
 		try {
 			String filename = Util.toString(name);
 			FileInputStream fin = new FileInputStream(filename);
 			r.put("fileName", name);
 			r.put("$fin", fin);
-			Process p = new Process(r);
+			Actor p = new Actor(r);
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());			
@@ -46,14 +46,14 @@ public class IO {
 		return null;
 	}
 	
-	public static Process openWriter(ArrayList name) {
+	public static Actor openWriter(ArrayList name) {
 		WhileyRecord r = new WhileyRecord();
 		try {
 			String filename = Util.toString(name);
 			FileOutputStream fout = new FileOutputStream(filename);
 			r.put("fileName", name);
 			r.put("$fout", fout);
-			Process p = new Process(r);
+			Actor p = new Actor(r);
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());			
@@ -61,7 +61,7 @@ public class IO {
 		return null;
 	}
 	
-	public static void closeFile(Process p) {
+	public static void closeFile(Actor p) {
 		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");		
 		try {
@@ -77,7 +77,7 @@ public class IO {
 		}
 	}
 	
-	public static ArrayList readFile(Process p, BigRational max) {		
+	public static ArrayList readFile(Actor p, BigRational max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");
 		
@@ -97,7 +97,7 @@ public class IO {
 	}
 	
 	private static final int CHUNK_SIZE = 1024;
-	public static ArrayList readFile(Process p) {		
+	public static ArrayList readFile(Actor p) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.getState())
 				.get("$fin");
 		
@@ -118,7 +118,7 @@ public class IO {
 		return r;		
 	}
 	
-	public static void writeFile(Process p, List bytes) {		
+	public static void writeFile(Actor p, List bytes) {		
 		FileOutputStream fout = (FileOutputStream) ((HashMap) p.getState())
 				.get("$fout");
 				

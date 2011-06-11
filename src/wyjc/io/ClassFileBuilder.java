@@ -69,6 +69,7 @@ import wyil.util.Types;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyVersion;
 import wyjc.runtime.BigRational;
+import wyjvm.attributes.Code.Handler;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.Bytecode.Dup;
@@ -166,6 +167,8 @@ public class ClassFileBuilder {
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_STATIC);
 		modifiers.add(Modifier.ACC_SYNTHETIC);
+		
+		// Make the initial system process.
 		JvmType.Function ft1 =
 		    new JvmType.Function(T_VOID, new JvmType.Array(JAVA_LANG_STRING));
 		ClassFile.Method cm = new ClassFile.Method("main", ft1, modifiers);
@@ -174,26 +177,49 @@ public class ClassFileBuilder {
 		ft1 = new JvmType.Function(WHILEYPROCESS);
 		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess", ft1,
 		    Bytecode.STATIC));
+		
+		// Load the sender on - null.
+		codes.add(new Bytecode.LoadConst(null));
+		
+		// Get the System::main method out.
+		Type.Fun wyft =
+		    Type.T_FUN(WHILEY_SYSTEM_T, Type.T_VOID,
+		        Type.T_LIST(Type.T_LIST(Type.T_INT)));
+		JvmType.Function ftype =
+		    new JvmType.Function(JAVA_LANG_REFLECT_METHOD, JAVA_LANG_STRING,
+		        JAVA_LANG_STRING);
+		codes.add(new Bytecode.LoadConst("test"));
+	  codes.add(new Bytecode.LoadConst(nameMangle("main", wyft)));
+		codes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,
+		    Bytecode.STATIC));
+		
+		// Create the System::main arguments list.
+		codes.add(new Bytecode.LoadConst(1));
+		codes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
+		codes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+		codes.add(new Bytecode.LoadConst(0));
+		
+		// Save the command line arguments into an ArrayList.
 		codes.add(new Bytecode.Load(0, strArr));
 		JvmType.Function ft2 =
 		    new JvmType.Function(WHILEYLIST, new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL, "fromStringList", ft2,
 		    Bytecode.STATIC));
-		Type.Fun wyft =
-		    Type.T_FUN(WHILEY_SYSTEM_T, Type.T_VOID,
-		        Type.T_LIST(Type.T_LIST(Type.T_INT)));
-		JvmType.Function ft3 = convertFunType(wyft);
-
-		// The following is a little bit of hack. Basically we flush the stdout
-		// channel on exit
-		codes.add(new Bytecode.Invoke(owner, nameMangle("main", wyft), ft3,
-		    Bytecode.STATIC));
-		ft3 = new JvmType.Function(T_VOID);
-		codes.add(new Bytecode.Invoke(WHILEYIO, "flush", ft3, Bytecode.STATIC));
+		
+		// Save the ArrayList into the arguments list.
+		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
+		
+		// Call the send method.
+		ftype = new JvmType.Function(T_VOID, MESSAGER, JAVA_LANG_REFLECT_METHOD,
+		    JAVA_LANG_OBJECT_ARRAY);
+		codes.add(new Bytecode.Invoke(MESSAGER, "sendAsync", ftype,
+		    Bytecode.VIRTUAL));
+		
+		// Add return.
 		codes.add(new Bytecode.Return(null));
 
 		wyjvm.attributes.Code code =
-		    new wyjvm.attributes.Code(codes, new ArrayList(), cm);
+		    new wyjvm.attributes.Code(codes, new ArrayList<Handler>(), cm);
 		cm.attributes().add(code);
 
 		return cm;
@@ -2260,7 +2286,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz(
 	    "wyjc.runtime", "WhileyRecord");
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
-	    "wyjc.runtime", "Process");
+	    "wyjc.runtime", "Actor");
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz(
 	    "wyjc.runtime", "Exception");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz(

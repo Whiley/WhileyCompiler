@@ -39,21 +39,16 @@ public abstract class Messager extends Yielder {
 		}
 	}
 
-	private synchronized void nextMessage() {
-		if (mail.isEmpty()) {
-			currentMessage = null;
-		} else {
-			currentMessage = mail.poll();
-			scheduleResume();
-		}
-	}
-
 	protected Method getCurrentMethod() {
 		return currentMessage.method;
 	}
 
 	protected Object[] getCurrentArguments() {
 		return currentMessage.arguments;
+	}
+	
+	protected boolean isCurrentSynchronous() {
+		return currentMessage.synchronous;
 	}
 
 	/**
@@ -66,7 +61,8 @@ public abstract class Messager extends Yielder {
 	 * @param result The result of the successful message.
 	 */
 	protected void completeCurrentMessage(Object result) {
-		currentMessage.complete(result);
+		currentMessage.future.complete(result);
+		nextMessage();
 	}
 
 	/**
@@ -79,7 +75,22 @@ public abstract class Messager extends Yielder {
 	 * @param cause The case of the message failure.
 	 */
 	protected void failCurrentMessage(Throwable cause) {
-		currentMessage.fail(cause);
+		currentMessage.future.fail(cause);
+		nextMessage();
+	}
+	
+	private synchronized void nextMessage() {
+		if (currentMessage.synchronous) {
+			currentMessage.sender.scheduleResume();
+		}
+		
+		if (mail.isEmpty()) {
+			currentMessage = null;
+		} else {
+			currentMessage = mail.poll();
+		}
+		
+		scheduleResume();
 	}
 
 	private final class Message {
@@ -103,26 +114,6 @@ public abstract class Messager extends Yielder {
 
 		public MessageFuture getFuture() {
 			return future;
-		}
-
-		public void complete(Object result) {
-			future.complete(result);
-
-			nextMessage();
-		}
-
-		public void fail(Throwable cause) {
-			future.fail(cause);
-
-			nextMessage();
-		}
-
-		private void nextMessage() {
-			if (synchronous) {
-				sender.scheduleResume();
-			}
-
-			Messager.this.nextMessage();
 		}
 
 	}
