@@ -58,6 +58,7 @@ public class ClassFileBuilder {
 	protected int WHILEY_MAJOR_VERSION;
 	protected ModuleLoader loader;	
 	protected String filename;
+	protected JvmType.Clazz owner;
 	
 	public ClassFileBuilder(ModuleLoader loader, int whileyMajorVersion, int whileyMinorVersion) {
 		this.loader = loader;
@@ -66,12 +67,12 @@ public class ClassFileBuilder {
 	}
 
 	public ClassFile build(Module module) {
-		JvmType.Clazz type = new JvmType.Clazz(module.id().pkg().toString(),
+		owner = new JvmType.Clazz(module.id().pkg().toString(),
 				module.id().module().toString());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
-		ClassFile cf = new ClassFile(49, type, JAVA_LANG_OBJECT,
+		ClassFile cf = new ClassFile(49, owner, JAVA_LANG_OBJECT,
 				new ArrayList<JvmType.Clazz>(), modifiers);
 	
 		this.filename = module.filename();
@@ -102,15 +103,21 @@ public class ClassFileBuilder {
 			WhileyDefine wd = new WhileyDefine(td.name(),t,attrs);
 			cf.attributes().add(wd);
 		}
+		
+		HashMap<Value,Integer> constants = new HashMap<Value,Integer>();
 		for(Module.Method method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			
-			cf.methods().addAll(build(method));			
+			cf.methods().addAll(build(method, constants));			
 		}		
 		
+		if(constants.size() > 0) {
+			buildConstants(constants,cf);
+		}
+				
 		if(addMainLauncher) {
-			cf.methods().add(buildMainLauncher(type));
+			cf.methods().add(buildMainLauncher(owner));
 		}
 		
 		cf.attributes().add(
@@ -118,6 +125,43 @@ public class ClassFileBuilder {
 		
 		return cf;
 	}	
+	
+	public void buildConstants(HashMap<Value,Integer> constants, ClassFile cf) {		
+		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
+		
+		for(Map.Entry<Value,Integer> entry : constants.entrySet()) {			
+			Value constant = entry.getKey();
+			int index = entry.getValue();
+			
+			// First, create the static final field that will hold this constant 
+			String name = "constant$" + index;
+			ArrayList<Modifier> fmods = new ArrayList<Modifier>();
+			fmods.add(Modifier.ACC_PRIVATE);
+			fmods.add(Modifier.ACC_STATIC);
+			fmods.add(Modifier.ACC_FINAL);
+			JvmType type = convertType(constant.type());
+			ClassFile.Field field = new ClassFile.Field(name, type, fmods);
+			cf.fields().add(field);
+			
+			// Now, create code to intialise this field
+			translate(constant,0,bytecodes);
+			bytecodes.add(new Bytecode.PutField(owner, name, type, Bytecode.STATIC));
+		}
+		
+		bytecodes.add(new Bytecode.Return(null));
+		
+		// now, create static initialiser method
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.ACC_PUBLIC);
+		modifiers.add(Modifier.ACC_STATIC);
+		JvmType.Function ftype = new JvmType.Function(new JvmType.Void());
+		ClassFile.Method clinit = new ClassFile.Method("<clinit>", ftype, modifiers);
+		cf.methods().add(clinit);
+		
+		// finally add code for staticinitialiser method
+		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),clinit);
+		clinit.attributes().add(code);				
+	}
 		
 	public ClassFile.Method buildMainLauncher(JvmType.Clazz owner) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
@@ -152,17 +196,18 @@ public class ClassFileBuilder {
 		return cm;	
 	}
 	
-	public List<ClassFile.Method> build(Module.Method method) {
+	public List<ClassFile.Method> build(Module.Method method,
+			HashMap<Value, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
 		for(Module.Case c : method.cases()) {
-			methods.add(build(num++,c,method));
+			methods.add(build(num++,c,method,constants));
 		}
 		return methods;
 	}
 	
 	public ClassFile.Method build(int caseNum, Module.Case mcase,
-			Module.Method method) {		
+			Module.Method method, HashMap<Value,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -184,16 +229,17 @@ public class ClassFileBuilder {
 				cm.attributes().add((BytecodeAttribute)a);
 			}
 		}
-		ArrayList<Bytecode> codes = translate(mcase);
+				
+		ArrayList<Bytecode> codes = translate(mcase,constants);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
 		cm.attributes().add(code);		
 		
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translate(Module.Case mcase) {
+	public ArrayList<Bytecode> translate(Module.Case mcase, HashMap<Value,Integer> constants) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();				
-		translate(mcase.body(),mcase.locals().size(),bytecodes);				
+		translate(mcase.body(),mcase.locals().size(),constants,bytecodes);				
 		return bytecodes;
 	}
 
@@ -207,14 +253,15 @@ public class ClassFileBuilder {
 	 * @param bytecodes
 	 *            --- list to insert bytecodes into *
 	 */
-	public void translate(Block blk, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		for (Entry s : blk) {			
-			freeSlot = translate(s, freeSlot, bytecodes);			
+	public void translate(Block blk, int freeSlot, HashMap<Value,Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		for (Entry s : blk) {
+			freeSlot = translate(s, freeSlot, constants, bytecodes);
 		}
 	}
 	
 	public int translate(Entry entry, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+			HashMap<Value,Integer> constants, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
 			if(code instanceof Assert) {
@@ -224,7 +271,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof Convert) {
 				 translate((Convert)code,freeSlot,bytecodes);
 			} else if(code instanceof Const) {
-				 translate((Const)code,freeSlot,bytecodes);
+				translate((Const) code, freeSlot, constants, bytecodes);
 			} else if(code instanceof Debug) {
 				 translate((Debug)code,freeSlot,bytecodes);
 			} else if(code instanceof DictLoad) {
@@ -299,8 +346,25 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.Const c, int freeSlot,
+			HashMap<Value,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
-		translate(c.constant,freeSlot,bytecodes);				
+		
+		Value constant = c.constant;
+		if (constant instanceof Value.Number || constant instanceof Value.Bool
+				|| constant instanceof Value.Null) {
+			translate(constant,freeSlot,bytecodes);					
+		} else {
+			int id;
+			if(constants.containsKey(constant)) {
+				id = constants.get(constant);
+			} else {
+				id = constants.size();
+				constants.put(constant, id);				
+			}
+			String name = "constant$" + id;
+			JvmType type = convertType(constant.type());
+			bytecodes.add(new Bytecode.GetField(owner, name, type, Bytecode.STATIC));
+		}		
 	}
 	
 	public void translate(Code.Convert c, int freeSlot,

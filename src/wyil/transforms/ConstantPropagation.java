@@ -672,6 +672,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
 		
+		// TODO: could do more here to eliminate conditionals which must either
+		// be taken or untaken.
+		
 		return new Pair(environment, environment);
 	}
 	
