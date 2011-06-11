@@ -40,6 +40,8 @@ import wyil.util.dfa.ForwardFlowAnalysis;
 import wyjc.runtime.BigRational;
 
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
+	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
+	
 	public ConstantPropagation(ModuleLoader loader) {
 		super(loader);
 	}
@@ -48,20 +50,40 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return type;		
 	}
 	
-	public Env initialStore() {		
+	public Env initialStore() {				
 		Env environment = new Env();		
-
-		if(method.type().receiver() != null) {					
-			environment.add(null);
-		}
-		List<Type> paramTypes = method.type().params();
+		int nvars = methodCase.locals().size();
 		
-		for (int i=0; i != paramTypes.size(); ++i) {			
+		for (int i=0; i != nvars; ++i) {			
 			environment.add(null);			
 		}				
-				
+					
 		return environment;				
 	}
+	
+	public Module.Case propagate(Module.Case mcase) {		
+		methodCase = mcase;
+		stores = new HashMap<String,Env>();
+		rewrites.clear();
+		
+		Env environment = initialStore();		
+		propagate(0,mcase.body().size(), environment);	
+		
+		// At this point, we apply the inserts
+		Block body = mcase.body();
+		Block nbody = new Block();		
+		for(int i=0;i!=body.size();++i) {
+			Block.Entry rewrite = rewrites.get(i);
+			if(rewrite != null) {
+				nbody.add(rewrite);
+			} else {				
+				nbody.add(body.get(i));
+			}
+		}
+		
+		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
+	}
+
 	
 	/*
 	
@@ -92,7 +114,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	*/
 	
 
-	public Env propagate(int idx, Entry entry, Env environment) {						
+	public Env propagate(int index, Entry entry, Env environment) {						
 		Code code = entry.code;			
 		
 		environment = (Env) environment.clone();
@@ -126,7 +148,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		} else if(code instanceof ListLoad) {
 			infer((ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
-			infer((Load)code,entry,environment);
+			infer(index,(Load)code,entry,environment);
 		} else if(code instanceof MultiStore) {
 			infer((MultiStore)code,entry,environment);
 		} else if(code instanceof NewDict) {
@@ -333,12 +355,19 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(null);		
 	}
 	
-	public void infer(Code.Load code, Block.Entry entry,
+	public void infer(int index, Code.Load code, Block.Entry entry,
 			Env environment) {
 		
-		// TODO: rewrite as const if variable is constant at this point.
+		Value val = environment.get(code.slot);
+		if(val instanceof Value) {
+			// register rewrite
+			entry = new Block.Entry(Code.Const(val), entry.attributes());
+			rewrites.put(index, entry);
+		} else {
+			rewrites.remove(index);
+		}
 		
-		environment.push(environment.get(code.slot));
+		environment.push(val);
 	}
 	
 	public void infer(Code.MultiStore code, Block.Entry entry,
