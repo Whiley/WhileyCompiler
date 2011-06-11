@@ -636,8 +636,16 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			environment.set(fall.slot,null);
 		} 
 		
-		Env r = propagate(start+1,end,environment);
-		return join(environment,r);		
+		Env oldEnv = null;
+		Env newEnv = null;
+		
+		do {
+			// iterate until a fixed point reached
+			oldEnv = newEnv != null ? newEnv : environment;
+			newEnv = propagate(start+1,end, oldEnv);
+		} while (!newEnv.equals(oldEnv));
+
+		return join(environment,newEnv);		
 	}
 	
 	public Env join(Env env1, Env env2) {
