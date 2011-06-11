@@ -117,12 +117,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public Env propagate(int index, Entry entry, Env environment) {						
 		Code code = entry.code;			
 		
+		// reset the rewrites for this code, in case it changes
+		rewrites.remove(index);
+		
 		environment = (Env) environment.clone();
 		
 		if(code instanceof Assert) {
 			infer((Assert)code,entry,environment);
 		} else if(code instanceof BinOp) {
-			infer((BinOp)code,entry,environment);
+			infer(index,(BinOp)code,entry,environment);
 		} else if(code instanceof Convert) {
 			infer((Convert)code,entry,environment);
 		} else if(code instanceof Const) {
@@ -182,44 +185,49 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 	}
 	
-	public void infer(Code.BinOp code, Block.Entry entry,
+	public void infer(int index, Code.BinOp code, Block.Entry entry,
 			Env environment) {
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
-	
+		Value.Number result = null;
+		
 		if(lhs instanceof Value.Number && rhs instanceof Value.Number) {
 			Value.Number lnum = (Value.Number) lhs;
 			Value.Number rnum = (Value.Number) rhs;
+			
 			switch (code.bop) {
 			case ADD: {
-				environment.push(lnum.add(rnum));
+				result = lnum.add(rnum);
 				break;
 			}
 			case SUB: {
-				environment.push(lnum.subtract(rnum));
+				result = lnum.subtract(rnum);
 				break;
 			}
 			case MUL: {
-				environment.push(lnum.multiply(rnum));
+				result = lnum.multiply(rnum);
 				break;
 			}
 			case DIV: {
 				// FIXME: I think there's a bug her related to integer division.
 				if(code.type == Type.T_INT) {
-					environment.push(lnum.intDivide(rnum));	
+					result = lnum.intDivide(rnum);	
 				} else {
-					environment.push(lnum.divide(rnum));
+					result = lnum.divide(rnum);
 				}
 				break;
 			}			
 			case REM: {
-				environment.push(lnum.intRemainder(rnum));
+				result = lnum.intRemainder(rnum);
 				break;
 			}
-			}
-		} else {
-			environment.push(null);
-		}
+			}		
+			rewrites.put(index-2, new Block.Entry(Code.Skip,entry.attributes()));
+			rewrites.put(index-1, new Block.Entry(Code.Skip,entry.attributes()));
+			rewrites.put(index, new Block.Entry(Code.Const(result),entry.attributes()));
+		} 
+		
+		environment.push(result);
 	}
 	
 	public void infer(Code.Convert code, Block.Entry entry,
@@ -233,7 +241,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(Code.Const code, Block.Entry entry,
 			Env environment) {
-		environment.push(code.constant);
+		environment.push(code.constant);		
 	}
 	
 	public void infer(Code.Debug code, Block.Entry entry,

@@ -178,22 +178,22 @@ public abstract class Value implements Comparable<Value> {
 			return value.toString();
 		}
 		
-		public Value add(Value.Number val) {
+		public Value.Number add(Value.Number val) {
 			return Value.V_NUMBER(value.add(val.value));
 		}
-		public Value subtract(Value.Number val) {
+		public Value.Number subtract(Value.Number val) {
 			return Value.V_NUMBER(value.subtract(val.value));
 		}
-		public Value multiply(Value.Number val) {
+		public Value.Number multiply(Value.Number val) {
 			return Value.V_NUMBER(value.multiply(val.value));
 		}
-		public Value divide(Value.Number val) {
+		public Value.Number divide(Value.Number val) {
 			return Value.V_NUMBER(value.divide(val.value));
 		}
-		public Value intDivide(Value.Number val) {
+		public Value.Number intDivide(Value.Number val) {
 			return Value.V_NUMBER(value.intDivide(val.value));
 		}
-		public Value intRemainder(Value.Number val) {
+		public Value.Number intRemainder(Value.Number val) {
 			return Value.V_NUMBER(value.intRemainder(val.value));
 		}
 	}

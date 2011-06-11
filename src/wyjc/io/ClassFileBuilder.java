@@ -273,6 +273,8 @@ public class ClassFileBuilder {
 				 translate((NewSet)code,freeSlot,bytecodes);
 			} else if(code instanceof Return) {
 				 translate((Return)code,freeSlot,bytecodes);
+			} else if(code instanceof Skip) {
+				// do nothing
 			} else if(code instanceof Send) {
 				 translate((Send)code,freeSlot,bytecodes);
 			} else if(code instanceof SetOp) {
