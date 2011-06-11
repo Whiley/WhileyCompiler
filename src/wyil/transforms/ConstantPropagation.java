@@ -408,7 +408,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		HashMap<String, Value> values = new HashMap<String, Value>();
 		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
 		Collections.sort(keys);
-
+		Collections.reverse(keys);
 		boolean isValue = true;
 		for (String key : keys) {
 			Value val = environment.pop();
