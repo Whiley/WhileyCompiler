@@ -63,7 +63,11 @@ public class FunctionCheck implements Transform {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
 			if (code instanceof Code.Send || code instanceof Code.IndirectSend) {
+				// external message send
 				syntaxError("cannot send message from function", filename, stmt);
+			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type.receiver() != null) {
+				// internal message send
+				syntaxError("cannot call method message from function", filename, stmt);
 			} else if(code instanceof Code.UnOp) {
 				Code.UnOp uop = (Code.UnOp) code;
 				if(uop.uop == Code.UOp.PROCESSSPAWN) {
