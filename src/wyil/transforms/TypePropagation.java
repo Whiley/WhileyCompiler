@@ -807,21 +807,24 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			{
 				Type rhs = environment.pop();
 				Type lhs = environment.pop();
+				OpDir dir;
 				boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
 				boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
 				if(lhs_set && rhs_set) {
-					 Type lub = Type.leastUpperBound(lhs,rhs);
-					 environment.push(lub);
-					 return Code.SetOp(Type.effectiveSetType(lub), code.sop, OpDir.UNIFORM);
-				} else if(lhs_set) {					
-					 environment.push(lhs);
-					 return Code.SetOp(Type.effectiveSetType(lhs), code.sop, OpDir.LEFT);
-				} else if(rhs_set) {					
-					environment.push(rhs);
-					return Code.SetOp(Type.effectiveSetType(rhs), code.sop, OpDir.RIGHT);
+					dir = OpDir.UNIFORM;
+				} else if(lhs_set) {
+					rhs = Type.T_SET(rhs);
+					dir = OpDir.LEFT;
+				} else if(rhs_set) {
+					lhs = Type.T_SET(lhs);
+					dir = OpDir.RIGHT;					
 				} else {
 					syntaxError("expecting set type",filename,stmt);
+					return null; // dead-code
 				}
+				Type lub = Type.leastUpperBound(lhs, rhs);
+				environment.push(lub);
+				return Code.SetOp(Type.effectiveSetType(lub), code.sop,dir);
 			}
 		}
 		
