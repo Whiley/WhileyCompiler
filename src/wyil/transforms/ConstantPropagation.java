@@ -645,6 +645,14 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			environment.set(fall.slot,null);
 		} 
 		
+		// Now, kill every variable which is modified in the loop. This is a
+		// safety precaution, and it's possible we could do better here in some
+		// circumstances (e.g. by unrolling the loop).
+		
+		for(int slot : loop.modifies) {
+			environment.set(slot,null);
+		}
+		
 		Env oldEnv = null;
 		Env newEnv = null;
 		

@@ -977,7 +977,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}	
 	
 	protected Env propagate(int start, int end, Code.ForAll forloop,
-			Entry stmt, Env environment) {
+			Entry stmt, ArrayList<Integer> modifies, Env environment) {
 						
 		// Now, type the source 		
 		Type src_t = environment.pop();						
@@ -1018,7 +1018,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = join(environment,newEnv);		
 				
 		Block blk = new Block();
-		blk.add(Code.ForAll(src_t, forloop.slot, forloop.target, forloop.modified),stmt.attributes());		
+		blk.add(Code.ForAll(src_t, forloop.slot, forloop.target, modifies),stmt.attributes());		
 		rewrites.put(start, blk);
 		
 		return join(environment,newEnv);
@@ -1027,8 +1027,23 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Env propagate(int start, int end, Code.Loop loop, 
 			Entry stmt, Env environment) {
 
+		// First, calculate the modifies set
+		ArrayList<Integer> modifies = new ArrayList<Integer>();
+		for(int i=start;i<end;++i) {
+			Code code = methodCase.body().get(i).code;
+			if(code instanceof Store) {
+				Store s = (Store) code;
+				modifies.add(s.slot);
+			} else if(code instanceof MultiStore) {
+				MultiStore s = (MultiStore) code;
+				modifies.add(s.slot);
+			}
+		}
+		
+		// Now, type the loop body
+		
 		if (loop instanceof Code.ForAll) {
-			return propagate(start, end, (Code.ForAll) loop, stmt, environment);
+			return propagate(start, end, (Code.ForAll) loop, stmt, modifies, environment);
 		}
 		
 		Env newEnv = null;
@@ -1042,7 +1057,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = join(environment, newEnv);
 				
 		Block blk = new Block();
-		blk.add(Code.Loop(loop.target, loop.modified),stmt.attributes());		
+		blk.add(Code.Loop(loop.target, modifies),stmt.attributes());		
 		rewrites.put(start, blk);
 		
 		return environment;

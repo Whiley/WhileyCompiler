@@ -1113,11 +1113,11 @@ public abstract class Code {
 	
 	public static class Loop extends Code {
 		public final String target;
-		public final HashSet<Integer> modified;
+		public final HashSet<Integer> modifies;
 		
-		private Loop(String target, Collection<Integer> modified) {
+		private Loop(String target, Collection<Integer> modifies) {
 			this.target = target;
-			this.modified = new HashSet<Integer>(modified);
+			this.modifies = new HashSet<Integer>(modifies);
 		}
 		
 		public int hashCode() {
@@ -1128,13 +1128,13 @@ public abstract class Code {
 			if(o instanceof Loop) {
 				Loop f = (Loop) o;
 				return target.equals(f.target)
-						&& modified.equals(f.modified);
+						&& modifies.equals(f.modifies);
 			}
 			return false;
 		}
 		
 		public String toString() {
-			return "loop " + target;
+			return "loop " + modifies;
 		}		
 	}		
 
@@ -1142,8 +1142,8 @@ public abstract class Code {
 		public final int slot;
 		public final Type type;
 				
-		private ForAll(Type type, int slot, String target, Collection<Integer> modified) {
-			super(target,modified);
+		private ForAll(Type type, int slot, String target, Collection<Integer> modifies) {
+			super(target,modifies);
 			this.type = type;
 			this.slot = slot;			
 		}
@@ -1156,13 +1156,13 @@ public abstract class Code {
 			if(o instanceof ForAll) {
 				ForAll f = (ForAll) o;
 				return target.equals(f.target) && type.equals(f.type)
-						&& slot == f.slot && modified.equals(f.modified);
+						&& slot == f.slot && modifies.equals(f.modifies);
 			}
 			return false;
 		}
 		
 		public String toString() {
-			return toString("forall " + slot + " " + target,type);
+			return toString("forall " + slot + " " + modifies,type);
 		}		
 	}
 
