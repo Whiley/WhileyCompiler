@@ -1,5 +1,5 @@
 int f(System x, int x):
-    return x->get()
+    return x.get()
 
 int System::get():
     return 1

@@ -10,7 +10,7 @@ void System::f(expr e):
 
 void System::main([string] args):
     e = 1
-    this->f(e)
+    this.f(e)
     e = {x:1,y:2}
-    this->f(e)
+    this.f(e)
  

@@ -9,6 +9,6 @@ void System::g([int] z):
 
 void System::main([string] args):
     x = 123
-    this->f(x)
+    this.f(x)
     x = [1,2,3]
-    this->g(x)
+    this,g(x)

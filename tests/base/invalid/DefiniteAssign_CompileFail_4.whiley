@@ -3,4 +3,4 @@ void System::f(string a):
 
 void System::main([string] args):
     out.println("HELLO")
-    x->f("WORLD")
+    x.f("WORLD")

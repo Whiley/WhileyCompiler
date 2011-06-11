@@ -7,5 +7,5 @@ void pState::f():
 void System::main([string] args):
     p = spawn {x:1,y:2}
     out.println(str()*p)
-    p->f()
+    p.f()
     out.println(str()*p)
