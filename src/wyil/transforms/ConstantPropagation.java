@@ -593,9 +593,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 					environment.push(null);
 				}
 			}
+			break;
 			case PROCESSACCESS:
 			case PROCESSSPAWN:
 				environment.push(null);
+			break;
 		}
 	}
 	
