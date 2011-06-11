@@ -293,9 +293,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				break;
 			}
 			case APPEND:
-			{
-				Value lhs = environment.pop();
+			{				
 				Value rhs = environment.pop();
+				Value lhs = environment.pop();
 				if(code.dir == OpDir.UNIFORM && lhs instanceof Value.List && rhs instanceof Value.List) {
 					Value.List left = (Value.List) lhs;
 					Value.List right = (Value.List) rhs;
