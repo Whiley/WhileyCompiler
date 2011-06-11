@@ -1002,7 +1002,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		// create environment specific for loop body
 		Env loopEnv = new Env(environment);		
-		loopEnv.set(forloop.var, elem_t);
+		loopEnv.set(forloop.slot, elem_t);
 	
 		Env newEnv = null;
 		Env oldEnv = null;
@@ -1015,7 +1015,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = join(environment,newEnv);		
 				
 		Block blk = new Block();
-		blk.add(Code.ForAll(src_t, forloop.var, forloop.target, forloop.modified),stmt.attributes());		
+		blk.add(Code.ForAll(src_t, forloop.slot, forloop.target, forloop.modified),stmt.attributes());		
 		rewrites.put(start, blk);
 		
 		return join(environment,newEnv);
@@ -1028,7 +1028,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return propagate(start, end, (Code.ForAll) loop, stmt, environment);
 		}
 		
-		Env newEnv = propagate(start+1,end, environment);
+		Env newEnv = null;
 		Env oldEnv = null;
 		do {
 			// iterate until a fixed point reached

@@ -568,35 +568,47 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 	
 	public Pair<Env, Env> propagate(int index,
-			Code.IfGoto igoto, Entry stmt, Env in) {
+			Code.IfGoto igoto, Entry stmt, Env environment) {
 		
-		return new Pair(in, in);
+		Value rhs = environment.pop();
+		Value lhs = environment.pop();
+		
+		return new Pair(environment, environment);
 	}
 	
 	public Pair<Env, Env> propagate(int index,
-			Code.IfType iftype, Entry stmt, Env in) {
+			Code.IfType code, Entry stmt, Env environment) {
 		
-		return new Pair(in,in);
+		if(code.slot < 0) {			
+			Value lhs = environment.pop();			
+		} 
+		
+		return new Pair(environment, environment);
 	}
 	
 	public List<Env> propagate(int index, Code.Switch sw,
-			Entry stmt, Env in) {
+			Entry stmt, Env environment) {
+		
+		Value val = environment.pop();
+		
 		ArrayList<Env> stores = new ArrayList();
 		for (int i = 0; i != sw.branches.size(); ++i) {
-			stores.add(in);
+			stores.add(environment);
 		}
 		return stores;
 	}
 		
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env in) {
+			Entry stmt, Env environment) {
 		
 		if(loop instanceof Code.ForAll) {
-			
+			Code.ForAll fall = (Code.ForAll) loop; 
+			environment.pop();
+			environment.set(fall.slot,null);
 		} 
 		
-		Env r = propagate(start+1,end,in);
-		return join(in,r);		
+		Env r = propagate(start+1,end,environment);
+		return join(environment,r);		
 	}
 	
 	public Env join(Env env1, Env env2) {

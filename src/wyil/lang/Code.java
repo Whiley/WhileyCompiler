@@ -1139,30 +1139,30 @@ public abstract class Code {
 	}		
 
 	public static final class ForAll extends Loop {
-		public final int var;
+		public final int slot;
 		public final Type type;
 				
-		private ForAll(Type type, int var, String target, Collection<Integer> modified) {
+		private ForAll(Type type, int slot, String target, Collection<Integer> modified) {
 			super(target,modified);
 			this.type = type;
-			this.var = var;			
+			this.slot = slot;			
 		}
 		
 		public int hashCode() {
-			return super.hashCode() + var;
+			return super.hashCode() + slot;
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof ForAll) {
 				ForAll f = (ForAll) o;
 				return target.equals(f.target) && type.equals(f.type)
-						&& var == f.var && modified.equals(f.modified);
+						&& slot == f.slot && modified.equals(f.modified);
 			}
 			return false;
 		}
 		
 		public String toString() {
-			return toString("forall " + var + " " + target,type);
+			return toString("forall " + slot + " " + target,type);
 		}		
 	}
 

@@ -190,7 +190,7 @@ public class WyilFileWriter implements Transform {
 			}			
 		} else if(c instanceof Code.ForAll && !writeSlots){
 			Code.ForAll fall = (Code.ForAll) c;			
-			line = "forall " + locals.get(fall.var) + " " + fall.target + " : " + fall.type;
+			line = "forall " + locals.get(fall.slot) + " " + fall.target + " : " + fall.type;
 		} else {
 			line = c.toString();		
 		}

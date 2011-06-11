@@ -1437,7 +1437,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
 				Bytecode.INTERFACE));
 		addReadConversion(elementType, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.var, JAVA_LANG_OBJECT));
+		bytecodes.add(new Bytecode.Store(c.slot, JAVA_LANG_OBJECT));
 		
 		// we need to increase the freeSlot, since we've allocated one slot to
 		// hold the register.

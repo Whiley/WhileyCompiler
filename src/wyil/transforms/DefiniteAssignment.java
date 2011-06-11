@@ -124,7 +124,7 @@ public class DefiniteAssignment extends
 		if(loop instanceof Code.ForAll) {
 			in = new HashSet<Integer>(in);
 			Code.ForAll fall = (Code.ForAll) loop;
-			in.add(fall.var);
+			in.add(fall.slot);
 		} 
 		
 		HashSet<Integer> r = propagate(start+1,end,in);
