@@ -335,57 +335,236 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(Code.Load code, Block.Entry entry,
 			Env environment) {
+		
+		// TODO: rewrite as const if variable is constant at this point.
+		
 		environment.push(environment.get(code.slot));
 	}
 	
 	public void infer(Code.MultiStore code, Block.Entry entry,
 			Env environment) {
 		
+		// TO DO: I could definite do more here
+		
+		int npop = code.level - code.fields.size();
+		for(int i=0;i!=npop;++i) {
+			environment.pop();
+		}
+		
+		environment.set(code.slot,null);
 	}
 	
 	public void infer(Code.NewDict code, Block.Entry entry,
 			Env environment) {
+		HashMap<Value,Value> values = new HashMap<Value,Value>();
+		boolean isValue = true;
+		for(int i=0;i!=code.nargs;++i) {
+			Value val = environment.pop();
+			Value key = environment.pop();
+			if(key instanceof Value && val instanceof Value) {
+				values.put(key, val);
+			} else {
+				isValue=false;
+			}
+		}
 		
+		if(isValue) {
+			environment.push(Value.V_DICTIONARY(values));
+		} else {
+			environment.push(null);
+		}
 	}
 	
-	public void infer(Code.NewRecord code, Block.Entry entry,
-			Env environment) {
-		
+	public void infer(Code.NewRecord code, Block.Entry entry, Env environment) {
+		HashMap<String, Value> values = new HashMap<String, Value>();
+		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
+		Collections.sort(keys);
+
+		boolean isValue = true;
+		for (String key : keys) {
+			Value val = environment.pop();
+			if (val instanceof Value) {
+				values.put(key, val);
+			} else {
+				isValue = false;
+			}
+		}
+
+		if (isValue) {
+			environment.push(Value.V_RECORD(values));
+		} else {
+			environment.push(null);
+		}
 	}
 	
 	public void infer(Code.NewList code, Block.Entry entry,
 			Env environment) {
+		ArrayList<Value> values = new ArrayList<Value>();		
+
+		boolean isValue = true;
+		for (int i=0;i!=code.nargs;++i) {
+			Value val = environment.pop();
+			if (val instanceof Value) {
+				values.add(val);
+			} else {
+				isValue = false;
+			}
+		}		
 		
+		if (isValue) {
+			Collections.reverse(values);
+			environment.push(Value.V_LIST(values));
+		} else {
+			environment.push(null);
+		}
 	}
 	
 	public void infer(Code.NewSet code, Block.Entry entry,
 			Env environment) {
+		HashSet<Value> values = new HashSet<Value>();		
+
+		boolean isValue = true;
+		for (int i=0;i!=code.nargs;++i) {
+			Value val = environment.pop();
+			if (val instanceof Value) {
+				values.add(val);
+			} else {
+				isValue = false;
+			}
+		}		
 		
+		if (isValue) {			
+			environment.push(Value.V_SET(values));
+		} else {
+			environment.push(null);
+		}
 	}
 	
 	public void infer(Code.Return code, Block.Entry entry,
 			Env environment) {
-		
+		if(code.type != Type.T_VOID) {
+			environment.pop();
+		}
 	}
 	
 	public void infer(Code.Send code, Block.Entry entry,
 			Env environment) {
+
+		for(int i=0;i!=code.type.params().size();++i) {
+			environment.pop();
+		}
 		
+		environment.pop(); // receiver
+		
+		if (code.type.ret() != Type.T_VOID && code.synchronous && code.retval) {
+			environment.push(null);
+		}
 	}
 	
 	public void infer(Code.Store code, Block.Entry entry,
 			Env environment) {
-		
+		environment.set(code.slot, environment.pop());
 	}
 	
 	public void infer(Code.SetOp code, Block.Entry entry,
 			Env environment) {
+		Value rhs = environment.pop();
+		Value lhs = environment.pop();				
 		
+		switch (code.sop) {
+		case UNION: {
+			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+					&& rhs instanceof Value.Set) {
+				Value.Set lv = (Value.Set) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				environment.push(lv.union(rv));
+			} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
+					&& rhs instanceof Value) {
+				Value.Set lv = (Value.Set) lhs;
+				Value rv = (Value) rhs;
+				environment.push(lv.add(rv));
+			} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
+					&& rhs instanceof Value.Set) {
+				Value lv = (Value) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				environment.push(rv.add(lv));
+			} else {
+				environment.push(null);
+			}
+		}
+		case DIFFERENCE: {
+			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+					&& rhs instanceof Value.Set) {
+				Value.Set lv = (Value.Set) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				environment.push(lv.difference(rv));
+			} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
+					&& rhs instanceof Value) {
+				Value.Set lv = (Value.Set) lhs;
+				Value rv = (Value) rhs;
+				environment.push(lv.remove(rv));
+			} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
+					&& rhs instanceof Value.Set) {
+				Value lv = (Value) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				environment.push(rv.remove(lv));
+			} else {
+				environment.push(null);
+			}
+		}
+		case INTERSECT: {
+			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+					&& rhs instanceof Value.Set) {
+				Value.Set lv = (Value.Set) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				environment.push(lv.intersect(rv));
+			} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
+					&& rhs instanceof Value) {
+				Value.Set lv = (Value.Set) lhs;
+				Value rv = (Value) rhs;
+				if(lv.values.contains(rv)) {
+					HashSet<Value> nset = new HashSet<Value>();
+					nset.add(rv);
+					environment.push(Value.V_SET(nset));
+				} else {
+					environment.push(Value.V_SET(Collections.EMPTY_SET));
+				}
+			} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
+					&& rhs instanceof Value.Set) {
+				Value lv = (Value) lhs;
+				Value.Set rv = (Value.Set) rhs;
+				if(rv.values.contains(lv)) {
+					HashSet<Value> nset = new HashSet<Value>();
+					nset.add(lv);
+					environment.push(Value.V_SET(nset));
+				} else {
+					environment.push(Value.V_SET(Collections.EMPTY_SET));
+				}
+			} else {
+				environment.push(null);
+			}
+		}
+		}
 	}
 	
 	public void infer(Code.UnOp code, Block.Entry entry,
 			Env environment) {
-		
+		Value val = environment.pop();
+
+		switch(code.uop) {
+			case NEG:
+			{
+				if(val instanceof Value.Number) {
+					Value.Number num = (Value.Number) val;
+					environment.push(Value.V_NUMBER(num.value.negate()));
+				} else {					
+					environment.push(null);
+				}
+			}
+			case PROCESSACCESS:
+			case PROCESSSPAWN:
+				environment.push(null);
+		}
 	}
 	
 	public Pair<Env, Env> propagate(int index,

@@ -27,6 +27,7 @@ package wyil.lang;
 
 import java.math.BigInteger;
 import java.util.*;
+
 import wyil.util.Pair;
 import wyjc.runtime.BigRational;
 
@@ -271,6 +272,9 @@ public abstract class Value implements Comparable<Value> {
 	
 	public static class Set extends Value {
 		public final HashSet<Value> values;
+		private Set() {
+			this.values = new HashSet<Value>();
+		}
 		private Set(Collection<Value> value) {
 			this.values = new HashSet<Value>(value);
 		}
@@ -332,6 +336,43 @@ public abstract class Value implements Comparable<Value> {
 			}
 			return r + "}";
 		}
+		
+		public Set union(Set rhs) {
+			Value.Set nset = new Value.Set(values);
+			nset.values.addAll(rhs.values);
+			return nset;
+			
+		}
+		
+		public Set add(Value val) {
+			Value.Set nset = new Value.Set(values);
+			nset.values.add(val);
+			return nset;
+			
+		}
+		
+		public Set difference(Set rhs) {
+			Value.Set nset = new Value.Set(values);
+			nset.values.removeAll(rhs.values);
+			return nset;
+		}
+		
+		public Set remove(Value val) {
+			Value.Set nset = new Value.Set(values);
+			nset.values.remove(val);
+			return nset;
+			
+		}
+		
+		public Set intersect(Set rhs) {
+			Value.Set nset = new Value.Set();
+			for(Value v : values) {
+				if(rhs.values.contains(v)) {
+					nset.values.add(v);
+				}
+			}			
+			return nset;
+		}		
 	}
 	
 	public static class Record extends Value {
