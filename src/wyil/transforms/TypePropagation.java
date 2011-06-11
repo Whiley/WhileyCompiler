@@ -281,7 +281,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			result = type;
 			
 		} else {
-			result = Type.leastUpperBound(lhs,rhs);	
+			result = Type.leastUpperBound(lhs,rhs);
+			BOp op = v.bop;
 			if(v.bop == BOp.REM) {
 				// remainder is a special case which requires both operands to
 				// be integers.
@@ -289,7 +290,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else {
 				checkIsSubtype(Type.T_REAL,result,stmt);
 			}
-			code = Code.BinOp(result,v.bop);
+			code = Code.BinOp(result,op);
 		}				
 		
 		environment.push(result);

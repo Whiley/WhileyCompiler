@@ -1570,7 +1570,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
 					Bytecode.VIRTUAL));
 			break;
-		case DIV:						
+		case DIV:
 			if(c.type == Type.T_INT) {
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "intDivide", ftype,
 						Bytecode.VIRTUAL));

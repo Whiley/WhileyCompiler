@@ -177,6 +177,25 @@ public abstract class Value implements Comparable<Value> {
 		public String toString() {
 			return value.toString();
 		}
+		
+		public Value add(Value.Number val) {
+			return Value.V_NUMBER(value.add(val.value));
+		}
+		public Value subtract(Value.Number val) {
+			return Value.V_NUMBER(value.subtract(val.value));
+		}
+		public Value multiply(Value.Number val) {
+			return Value.V_NUMBER(value.multiply(val.value));
+		}
+		public Value divide(Value.Number val) {
+			return Value.V_NUMBER(value.divide(val.value));
+		}
+		public Value intDivide(Value.Number val) {
+			return Value.V_NUMBER(value.intDivide(val.value));
+		}
+		public Value intRemainder(Value.Number val) {
+			return Value.V_NUMBER(value.intRemainder(val.value));
+		}
 	}
 	
 	public static final class Strung extends Value {

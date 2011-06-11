@@ -186,11 +186,40 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
-		
-		// should evaluate here
-		Value result = null;
-		
-		environment.push(result);
+	
+		if(lhs instanceof Value.Number && rhs instanceof Value.Number) {
+			Value.Number lnum = (Value.Number) lhs;
+			Value.Number rnum = (Value.Number) rhs;
+			switch (code.bop) {
+			case ADD: {
+				environment.push(lnum.add(rnum));
+				break;
+			}
+			case SUB: {
+				environment.push(lnum.subtract(rnum));
+				break;
+			}
+			case MUL: {
+				environment.push(lnum.multiply(rnum));
+				break;
+			}
+			case DIV: {
+				// FIXME: I think there's a bug her related to integer division.
+				if(code.type == Type.T_INT) {
+					environment.push(lnum.intDivide(rnum));	
+				} else {
+					environment.push(lnum.divide(rnum));
+				}
+				break;
+			}			
+			case REM: {
+				environment.push(lnum.intRemainder(rnum));
+				break;
+			}
+			}
+		} else {
+			environment.push(null);
+		}
 	}
 	
 	public void infer(Code.Convert code, Block.Entry entry,

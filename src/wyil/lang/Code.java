@@ -415,18 +415,9 @@ public abstract class Code {
 		},
 		DIV{
 			public String toString() { return "div"; }
-		},
+		},		
 		REM{
 			public String toString() { return "rem"; }
-		},
-		AND{
-			public String toString() { return "and"; }
-		},
-		OR{
-			public String toString() { return "or"; }
-		},
-		XOR{
-			public String toString() { return "xor"; }
 		}		
 	};
 
