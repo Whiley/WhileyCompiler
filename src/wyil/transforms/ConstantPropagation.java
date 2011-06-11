@@ -40,7 +40,7 @@ import wyil.util.dfa.ForwardFlowAnalysis;
 import wyjc.runtime.BigRational;
 
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
-	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
+	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
 	public ConstantPropagation(ModuleLoader loader) {
 		super(loader);
@@ -73,11 +73,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Block body = mcase.body();
 		Block nbody = new Block();		
 		for(int i=0;i!=body.size();++i) {
-			Block.Entry rewrite = rewrites.get(i);			
+			Rewrite rewrite = rewrites.get(i);			
 			if(rewrite != null) {				
-				if(rewrite.code != Code.Skip){ 
-					nbody.add(rewrite);
-				}
+				for(int j=0;j!=rewrite.stackArgs;++j) {
+					 nbody.remove(nbody.size()-1);
+				}				
+				nbody.add(rewrite.rewrite);				
 			} else {				
 				nbody.add(body.get(i));
 			}
@@ -85,7 +86,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
 	}
-
 	
 	/*
 	
@@ -224,9 +224,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				break;
 			}
 			}		
-			rewrites.put(index-2, new Block.Entry(Code.Skip,entry.attributes()));
-			rewrites.put(index-1, new Block.Entry(Code.Skip,entry.attributes()));
-			rewrites.put(index, new Block.Entry(Code.Const(result),entry.attributes()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,2));
 		} 
 		
 		environment.push(result);
@@ -257,9 +256,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value result = null;
 		if(src instanceof Value.Record) {
 			Value.Record rec = (Value.Record) src;			
-			result = rec.values.get(code.field);
-			rewrites.put(index-1, new Block.Entry(Code.Skip,entry.attributes()));
-			rewrites.put(index, new Block.Entry(Code.Const(result),entry.attributes()));
+			result = rec.values.get(code.field);			
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
 		} 
 		
 		environment.push(result);		
@@ -329,10 +328,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 								nvals.add(li.values.get(i));
 							}
 							result = Value.V_LIST(nvals);
-							rewrites.put(index-3, new Block.Entry(Code.Skip,entry.attributes()));
-							rewrites.put(index-2, new Block.Entry(Code.Skip,entry.attributes()));
-							rewrites.put(index-1, new Block.Entry(Code.Skip,entry.attributes()));
-							rewrites.put(index, new Block.Entry(Code.Const(result),entry.attributes()));
+							entry = new Block.Entry(Code.Const(result),entry.attributes());
+							rewrites.put(index, new Rewrite(entry,3));
 						}
 					}
 				} 
@@ -366,9 +363,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				} 
 				
 				if(result != null) {
-					rewrites.put(index-2, new Block.Entry(Code.Skip,entry.attributes()));
-					rewrites.put(index-1, new Block.Entry(Code.Skip,entry.attributes()));
-					rewrites.put(index, new Block.Entry(Code.Const(result),entry.attributes()));
+					entry = new Block.Entry(Code.Const(result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry,2));
 				}
 				environment.push(result);
 				
@@ -382,10 +378,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				if(val instanceof Value.List) {
 					Value.List list = (Value.List) val;
 					result = Value.V_NUMBER(BigRational.valueOf(list.values.size()));
-					rewrites.put(index - 1,
-							new Block.Entry(Code.Skip, entry.attributes()));
-					rewrites.put(index,
-							new Block.Entry(Code.Const(result), entry.attributes()));					
+					entry = new Block.Entry(Code.Const(result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry,1));
 				} 
 				
 				environment.push(result);
@@ -408,12 +402,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				if (BigRational.valueOf(i).equals(num.value) && i >= 0
 						&& i < list.values.size()) {
 					result = list.values.get(i);
-					rewrites.put(index - 2,
-							new Block.Entry(Code.Skip, entry.attributes()));
-					rewrites.put(index - 1,
-							new Block.Entry(Code.Skip, entry.attributes()));
-					rewrites.put(index,
-							new Block.Entry(Code.Const(result), entry.attributes()));
+					entry = new Block.Entry(Code.Const(result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry,2));
 				}
 			}			
 		} 
@@ -427,8 +417,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value val = environment.get(code.slot);
 		if(val instanceof Value) {
 			// register rewrite
-			entry = new Block.Entry(Code.Const(val), entry.attributes());
-			rewrites.put(index, entry);
+			entry = new Block.Entry(Code.Const(val), entry.attributes());					
+			rewrites.put(index, new Rewrite(entry,0));
 		} 
 		
 		environment.push(val);
@@ -462,13 +452,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		Value result = null;
 		if(isValue) {
-			result = Value.V_DICTIONARY(values);
-			for(int i=1;i<=code.nargs;++i) {
-				rewrites.put(index-i,
-						new Block.Entry(Code.Skip, entry.attributes()));	
-			}
-			rewrites.put(index,
-					new Block.Entry(Code.Const(result), entry.attributes()));
+			result = Value.V_DICTIONARY(values);			
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,code.nargs));			
 		}
 		environment.push(result);		
 	}
@@ -492,12 +478,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value result = null;
 		if (isValue) {
 			result = Value.V_RECORD(values);
-			for (int i = 1; i <= keys.size(); ++i) {
-				rewrites.put(index-i,
-						new Block.Entry(Code.Skip, entry.attributes()));
-			}
-			rewrites.put(index,
-					new Block.Entry(Code.Const(result), entry.attributes()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,keys.size()));
 		}
 		environment.push(result);
 	}
@@ -520,12 +502,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		if (isValue) {
 			Collections.reverse(values);
 			result = Value.V_LIST(values);
-			for (int i = 1; i <= code.nargs; ++i) {
-				rewrites.put(index-i,
-						new Block.Entry(Code.Skip, entry.attributes()));
-			}
-			rewrites.put(index,
-					new Block.Entry(Code.Const(result), entry.attributes()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,code.nargs));
 		}
 		environment.push(result);
 	}
@@ -547,12 +525,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value result = null;
 		if (isValue) {			
 			result = Value.V_SET(values);
-			for (int i = 1; i <= code.nargs; ++i) {
-				rewrites.put(index-i,
-						new Block.Entry(Code.Skip, entry.attributes()));
-			}
-			rewrites.put(index,
-					new Block.Entry(Code.Const(result), entry.attributes()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,code.nargs));
 		}
 		environment.push(result);
 	}
@@ -662,12 +636,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		
 		if(result != null) {
-			rewrites.put(index - 2,
-					new Block.Entry(Code.Skip, entry.attributes()));
-			rewrites.put(index - 1,
-					new Block.Entry(Code.Skip, entry.attributes()));
-			rewrites.put(index,
-					new Block.Entry(Code.Const(result), entry.attributes()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,2));
 		}
 		
 		environment.push(result);
@@ -689,10 +659,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		
 		if(result != null) {
-			rewrites.put(index - 1,
-					new Block.Entry(Code.Skip, entry.attributes()));
-			rewrites.put(index,
-					new Block.Entry(Code.Const(result), entry.attributes()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
 		}
 		
 		environment.push(result);
@@ -800,6 +768,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		public Env clone() {
 			return new Env(this);
+		}
+	}
+	
+
+	private static class Rewrite {		
+		public final Block.Entry rewrite;
+		public final int stackArgs;		
+		
+		public Rewrite(Block.Entry rewrite, int stackArgs) {
+			this.rewrite = rewrite;
+			this.stackArgs = stackArgs;
 		}
 	}
 }
