@@ -520,6 +520,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			} else {
 				environment.push(null);
 			}
+			break;
 		}
 		case DIFFERENCE: {
 			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
@@ -540,6 +541,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			} else {
 				environment.push(null);
 			}
+			break;
 		}
 		case INTERSECT: {
 			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
@@ -572,6 +574,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			} else {
 				environment.push(null);
 			}
+			break;
 		}
 		}
 	}
@@ -624,6 +627,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		for (int i = 0; i != sw.branches.size(); ++i) {
 			stores.add(environment);
 		}
+		
 		return stores;
 	}
 		
@@ -632,17 +636,21 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 
-			environment.pop();
+			environment.pop();		
+			
+			// TO DO: could unroll loop if src collection is a value.
+			
 			environment.set(fall.slot,null);
 		} 
 		
 		Env oldEnv = null;
 		Env newEnv = null;
 		
-		do {
+		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv);
+			
 		} while (!newEnv.equals(oldEnv));
 
 		return join(environment,newEnv);		
