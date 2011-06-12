@@ -475,13 +475,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public Env propagate(int index, Code.Switch sw,
-			Entry stmt, List<Env> environments) {
+			Entry stmt, List<Env> environments, Env defEnv) {
 		
-		// FIXME: what about default branch?
+		Env environment = defEnv;
 		
-		Env environment = environments.get(0);
-		
-		for(int i=1;i!=sw.branches.size();++i) {
+		for(int i=0;i!=sw.branches.size();++i) {
 			environment = join(environment,environments.get(i));
 		}
 		

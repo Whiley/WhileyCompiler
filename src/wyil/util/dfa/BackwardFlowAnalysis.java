@@ -130,6 +130,22 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					Code.IfType iftype = (Code.IfType) code;
 					T trueStore = stores.get(iftype.target);					
 					store = propagate(i, iftype, stmt, trueStore,store);										
+				} else if (code instanceof Code.Switch) {
+					Code.Switch sw = (Code.Switch) code;
+					
+					// assert r.second().size() == nsw.branches.size()
+					Code.Switch nsw = (Code.Switch) stmt.code;
+					ArrayList<T> swStores = new ArrayList<T>();
+					for(int j=0;j!=nsw.branches.size();++j){
+						String target = nsw.branches.get(j).second();
+						swStores.add(stores.get(target));
+					}
+					T defStore = stores.get(sw.defaultTarget);
+					
+					store = propagate(i, sw, stmt, swStores, defStore);																				
+				} else if (code instanceof Code.Throw) {
+					// FIXME:  should I do something here?
+					store = null;
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					store = stores.get(gto.target);					
@@ -199,7 +215,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	/**
 	 * <p>
 	 * Propagate back from a multi-way branch. This accepts multiple stores ---
-	 * one for each of the various branches. 
+	 * one for each of the various branches.
 	 * </p>
 	 * 
 	 * @param index
@@ -211,9 +227,12 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 * @param stores
 	 *            --- abstract stores coming from the various branches.
 	 *            statement.
+	 * @param defStore
+	 *            --- abstract store coming from default branch
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.Switch sw, Entry entry, List<T> stores);
+	protected abstract T propagate(int index, Code.Switch sw, Entry entry,
+			List<T> stores, T defStore);
 
 
 	/**
