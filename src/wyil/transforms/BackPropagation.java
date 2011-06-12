@@ -206,7 +206,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			coerce(req,code.type.ret(),index,entry);			
 		}
 		
-		environment.push(code.type.receiver());
+		environment.push(code.type);
+		
+		if(code.type.receiver() != null) {		
+			environment.push(code.type.receiver());
+		}
 		
 		for(Type t : code.type.params()) {
 			environment.push(t);

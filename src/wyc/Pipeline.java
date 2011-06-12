@@ -61,6 +61,7 @@ public class Pipeline {
 	 */
 	static {
 		register(TypePropagation.class);
+		register(BackPropagation.class);
 		register(DefiniteAssignment.class);
 		register(ConstantPropagation.class);
 		register(FunctionCheck.class);
