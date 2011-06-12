@@ -279,6 +279,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			iter = code.type;
 		}
 		
+		if(code.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
+			Type.Process p = (Type.Process) iter;
+			iter = p.element();
+		}		
+		
 		int fi = 0;
 		for(int i=0;i!=code.level;++i) {				
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
