@@ -585,7 +585,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @param fields
 	 * @return
 	 */
-	protected Type typeInference(Type oldtype, Type newtype, int level, int fieldLevel, ArrayList<String> fields) {
+	public static Type typeInference(Type oldtype, Type newtype, int level, int fieldLevel, ArrayList<String> fields) {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
