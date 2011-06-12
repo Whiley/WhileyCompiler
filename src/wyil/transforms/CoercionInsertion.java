@@ -396,7 +396,7 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 		environment.push(igoto.type);
 		environment.push(igoto.type);
 		
-		return trueEnv;
+		return environment;
 	}
 	
 	public Env propagate(int index,
@@ -408,7 +408,7 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 			environment.push(code.type);			
 		} 
 		
-		return trueEnv;
+		return environment;
 	}
 	
 	public Env propagate(int index, Code.Switch sw,
