@@ -6,4 +6,4 @@ int f(int|bool x):
 
 void System::main([string] args):
     out.println(str(f(true)))
-    out.println(str(f(1)))
+    out.println(str(f(123)))

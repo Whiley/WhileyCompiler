@@ -72,11 +72,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Block body = mcase.body();
 		Block nbody = new Block();		
 		for(int i=0;i!=body.size();++i) {
+			nbody.add(body.get(i));		
 			Block.Entry insertion = insertions.get(i);			
 			if(insertion != null) {								
 				nbody.add(insertion);				
-			} 				
-			nbody.add(body.get(i));			
+			} 							
 		}
 		
 		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
@@ -91,15 +91,15 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment = (Env) environment.clone();
 		
 		if(code instanceof Assert) {
-			infer((Assert)code,entry,environment);
+			infer(index,(Assert)code,entry,environment);
 		} else if(code instanceof BinOp) {
 			infer(index,(BinOp)code,entry,environment);
 		} else if(code instanceof Convert) {
-			infer((Convert)code,entry,environment);
+			infer(index,(Convert)code,entry,environment);
 		} else if(code instanceof Const) {
-			infer((Const)code,entry,environment);
+			infer(index,(Const)code,entry,environment);
 		} else if(code instanceof Debug) {
-			infer((Debug)code,entry,environment);
+			infer(index,(Debug)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
 			// skip
 		} else if(code instanceof Fail) {
@@ -107,11 +107,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if(code instanceof FieldLoad) {
 			infer(index,(FieldLoad)code,entry,environment);			
 		} else if(code instanceof IndirectInvoke) {
-			infer((IndirectInvoke)code,entry,environment);
+			infer(index,(IndirectInvoke)code,entry,environment);
 		} else if(code instanceof IndirectSend) {
-			infer((IndirectSend)code,entry,environment);
+			infer(index,(IndirectSend)code,entry,environment);
 		} else if(code instanceof Invoke) {
-			infer((Invoke)code,entry,environment);
+			infer(index,(Invoke)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
 		} else if(code instanceof ListOp) {
@@ -121,7 +121,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if(code instanceof Load) {
 			infer(index,(Load)code,entry,environment);
 		} else if(code instanceof MultiStore) {
-			infer((MultiStore)code,entry,environment);
+			infer(index,(MultiStore)code,entry,environment);
 		} else if(code instanceof NewDict) {
 			infer(index,(NewDict)code,entry,environment);
 		} else if(code instanceof NewList) {
@@ -131,11 +131,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if(code instanceof NewSet) {
 			infer(index,(NewSet)code,entry,environment);
 		} else if(code instanceof Return) {
-			infer((Return)code,entry,environment);
+			infer(index,(Return)code,entry,environment);
 		} else if(code instanceof Send) {
-			infer((Send)code,entry,environment);
+			infer(index,(Send)code,entry,environment);
 		} else if(code instanceof Store) {
-			infer((Store)code,entry,environment);
+			infer(index,(Store)code,entry,environment);
 		} else if(code instanceof SetOp) {
 			infer(index,(SetOp)code,entry,environment);
 		} else if(code instanceof UnOp) {
@@ -148,7 +148,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;
 	}
 	
-	public void infer(Code.Assert code, Block.Entry entry,
+	public void infer(int index, Code.Assert code, Block.Entry entry,
 			Env environment) {
 		
 	}
@@ -161,20 +161,25 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.push(code.type);		
 	}
 	
-	public void infer(Code.Convert code, Block.Entry entry,
+	public void infer(int index, Code.Convert code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		// TODO: add insertion
+		// TODO: add insertion?
 		environment.push(code.from);
 	}
 	
-	public void infer(Code.Const code, Block.Entry entry,
+	public void infer(int index, Code.Const code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-		// TODO: add insertion
+
+		if (!Type.isomorphic(req, code.constant.type())) {
+			insertions.put(index,
+					new Block.Entry(Code.Convert(code.constant.type(), req),
+							entry.attributes()));
+		}
 	}
 	
-	public void infer(Code.Debug code, Block.Entry entry,
+	public void infer(int index, Code.Debug code, Block.Entry entry,
 			Env environment) {
 		// FIXME: update to string
 		environment.push(Type.T_LIST(Type.T_INT));
@@ -187,7 +192,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.push(code.type);				
 	}
 	
-	public void infer(Code.IndirectInvoke code, Block.Entry entry,
+	public void infer(int index, Code.IndirectInvoke code, Block.Entry entry,
 			Env environment) {
 
 		if(code.type.ret() != Type.T_VOID && code.retval) {
@@ -203,12 +208,12 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}		
 	}
 	
-	public void infer(Code.IndirectSend code, Block.Entry entry,
+	public void infer(int index, Code.IndirectSend code, Block.Entry entry,
 			Env environment) {
 		// FIXME: need to do something here
 	}
 	
-	public void infer(Code.Invoke code, Block.Entry entry,
+	public void infer(int index, Code.Invoke code, Block.Entry entry,
 			Env environment) {
 
 		if(code.type.ret() != Type.T_VOID && code.retval) {
@@ -263,10 +268,17 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.Load code, Block.Entry entry,
 			Env environment) {
-		environment.set(code.slot,environment.pop());		
+		Type req = environment.pop();
+		
+		if(!Type.isomorphic(req,code.type)) {
+			insertions.put(index, new Block.Entry(Code.Convert(code.type, req),
+					entry.attributes()));
+		}
+		
+		environment.set(code.slot,code.type);		
 	}
 	
-	public void infer(Code.MultiStore code, Block.Entry stmt,
+	public void infer(int index, Code.MultiStore code, Block.Entry stmt,
 			Env environment) {
 		
 		Type src = environment.get(code.slot);
@@ -387,14 +399,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 	}
 	
-	public void infer(Code.Return code, Block.Entry entry,
+	public void infer(int index, Code.Return code, Block.Entry entry,
 			Env environment) {
 		if(code.type != Type.T_VOID) {
 			environment.push(code.type);
 		}
 	}
 	
-	public void infer(Code.Send code, Block.Entry entry,
+	public void infer(int index, Code.Send code, Block.Entry entry,
 			Env environment) {
 
 		if(code.type.ret() != Type.T_VOID && code.retval) {
@@ -410,7 +422,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}		
 	}
 	
-	public void infer(Code.Store code, Block.Entry entry,
+	public void infer(int index, Code.Store code, Block.Entry entry,
 			Env environment) {
 		environment.push(environment.get(code.slot));
 		environment.set(code.slot,Type.T_VOID);

@@ -368,7 +368,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.Convert c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+			ArrayList<Bytecode> bytecodes) {		
 		convert(c.to,c.from,freeSlot,bytecodes);				
 	}
 	
