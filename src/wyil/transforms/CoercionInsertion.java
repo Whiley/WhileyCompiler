@@ -368,7 +368,7 @@ public class CoercionInsertion extends ForwardFlowAnalysis<CoercionInsertion.Env
 		environment.pop(); // receiver
 		
 		if (code.type.ret() != Type.T_VOID && code.synchronous && code.retval) {
-			environment.push(null);
+			environment.push(code.type.ret());
 		}
 	}
 	
@@ -462,20 +462,16 @@ public class CoercionInsertion extends ForwardFlowAnalysis<CoercionInsertion.Env
 		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 
-			environment.pop();		
+			Type src = environment.pop();		
 			
-			// TO DO: could unroll loop if src collection is a value.
-			
-			environment.set(fall.slot,null);
+			Type elem_t;
+			if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
+				elem_t = Type.effectiveListType(src).element();
+			} else {
+				elem_t = Type.effectiveSetType(src).element();
+			}
+			environment.set(fall.slot,elem_t);
 		} 
-		
-		// Now, kill every variable which is modified in the loop. This is a
-		// safety precaution, and it's possible we could do better here in some
-		// circumstances (e.g. by unrolling the loop).
-		
-		for(int slot : loop.modifies) {
-			environment.set(slot,null);
-		}
 		
 		Env oldEnv = null;
 		Env newEnv = null;
