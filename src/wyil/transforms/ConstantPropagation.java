@@ -134,6 +134,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			infer((Debug)code,entry,environment);
+		} else if(code instanceof DictLoad) {
+			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
 			// skip
 		} else if(code instanceof Fail) {
@@ -175,7 +177,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		} else if(code instanceof UnOp) {
 			infer(index,(UnOp)code,entry,environment);
 		} else {
-			syntaxError("Need to finish type inference " + code,filename,entry);
+			syntaxError("unknown wyil code encountered: " + code,filename,entry);
 			return null;
 		}	
 		
@@ -248,6 +250,24 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(Code.Debug code, Block.Entry entry,
 			Env environment) {
 		environment.pop();
+	}
+	
+	public void infer(int index, Code.DictLoad code, Block.Entry entry,
+			Env environment) {
+		Value key = environment.pop();
+		Value src = environment.pop();
+		Value result = null;
+		
+		if (key instanceof Value && src instanceof Value.Dictionary) {			
+			Value.Dictionary dict = (Value.Dictionary) src;			
+			if(dict.values.containsKey(key)) {				
+				result = dict.values.get(key);
+				entry = new Block.Entry(Code.Const(result),entry.attributes());
+				rewrites.put(index, new Rewrite(entry,2));				
+			}			
+		} 
+		
+		environment.push(result);		
 	}
 	
 	public void infer(int index, Code.FieldLoad code, Block.Entry entry,

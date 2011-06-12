@@ -100,6 +100,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			infer(index,(Debug)code,entry,environment);
+		} else if(code instanceof DictLoad) {
+			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
 			// skip
 		} else if(code instanceof Fail) {
@@ -141,7 +143,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if(code instanceof UnOp) {
 			infer(index,(UnOp)code,entry,environment);
 		} else {
-			syntaxError("Need to finish type inference " + code,filename,entry);
+			syntaxError("unknown wyil code encountered: " + code,filename,entry);
 			return null;
 		}	
 		
@@ -179,6 +181,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// FIXME: update to string
 		environment.push(Type.T_LIST(Type.T_INT));
 	}
+	
+	public void infer(int index, Code.DictLoad code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		coerce(req,code.type.value(),index,entry);		
+		environment.push(code.type);
+		environment.push(code.type.key());				
+	}		
 	
 	public void infer(int index, Code.FieldLoad code, Block.Entry entry,
 			Env environment) {		
