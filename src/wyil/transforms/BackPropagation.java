@@ -270,6 +270,15 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Env environment) {
 		
 		Type iter = environment.get(code.slot);
+		
+		if(iter == Type.T_VOID) {
+			// this is a very special, strange case. It indicates that this
+			// variable is, in fact, not used after this point. Effectively,
+			// this makes the multi-store bytecode entirely redundant (i.e. dead
+			// code).  
+			iter = code.type;
+		}
+		
 		int fi = 0;
 		for(int i=0;i!=code.level;++i) {				
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			

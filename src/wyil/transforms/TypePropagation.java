@@ -202,7 +202,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		Block block = new Block();
-		block.add(code);		
+		block.add(code,entry.attributes());		
 		rewrites.put(index, block);
 		
 		return environment;
