@@ -704,6 +704,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment) {
 		
+		environment = new Env(environment);
+		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 
 			environment.pop();		

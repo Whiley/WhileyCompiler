@@ -102,10 +102,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 				Code code = stmt.code;
 
 				// First, check for a label which may have incoming information.
-				if (code instanceof Code.Label) {
-					Code.Label l = (Code.Label) code;
-					stores.put(l.label,store);
-				} else if (code instanceof Code.End) {					
+				if (code instanceof Code.End) {					
 					Code.Loop loop = null;
 					String label = ((Code.End) code).label;
 					int loopEnd = i;
@@ -122,6 +119,9 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					
 					store = propagate(i, loopEnd, loop, stmt, store);															
 					continue;
+				} else if (code instanceof Code.Label) {
+					Code.Label l = (Code.Label) code;
+					stores.put(l.label,store);
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
 					T trueStore = stores.get(ifgoto.target);					

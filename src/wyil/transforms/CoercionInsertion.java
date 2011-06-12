@@ -351,6 +351,7 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 	public void infer(Code.Store code, Block.Entry entry,
 			Env environment) {
 		environment.push(environment.get(code.slot));
+		environment.set(code.slot,Type.T_VOID);
 	}
 	
 	public void infer(int index, Code.SetOp code, Block.Entry entry,
@@ -429,20 +430,9 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 		
 	public Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment) {
-		
-		if(loop instanceof Code.ForAll) {
-			Code.ForAll fall = (Code.ForAll) loop; 
-			Type src = environment.pop();		
-			
-			Type elem_t;
-			if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
-				elem_t = Type.effectiveListType(src).element();
-			} else {
-				elem_t = Type.effectiveSetType(src).element();
-			}
-			environment.set(fall.slot,elem_t);
-		} 
-		
+
+		environment = new Env(environment); 
+
 		Env oldEnv = null;
 		Env newEnv = null;
 		
@@ -452,8 +442,14 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 			newEnv = propagate(start+1,end, oldEnv);
 			
 		} while (!newEnv.equals(oldEnv));
-
-		return join(environment,newEnv);		
+				
+		if(loop instanceof Code.ForAll) {
+			Code.ForAll fall = (Code.ForAll) loop; 								
+			environment.push(fall.type);			
+			environment.set(fall.slot,Type.T_VOID);
+		} 		
+		
+		return environment;		
 	}
 	
 	public Env join(Env env1, Env env2) {
