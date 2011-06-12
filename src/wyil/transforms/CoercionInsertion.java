@@ -167,50 +167,52 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 	
 	public void infer(int index, Code.BinOp code, Block.Entry entry,
 			Env environment) {
-		Type rhs = environment.pop();
-		Type lhs = environment.pop();
+		Type req = environment.pop();
+		// TODO: add insertion
 		environment.push(code.type);
+		environment.push(code.type);		
 	}
 	
 	public void infer(Code.Convert code, Block.Entry entry,
-			Env environment) {
-		
-		Type type = environment.pop();
-		
-		// need to apply conversion here
-		
-		environment.push(code.to);
+			Env environment) {		
+		Type req = environment.pop();
+		// TODO: add insertion
+		environment.push(code.from);
 	}
 	
 	public void infer(Code.Const code, Block.Entry entry,
 			Env environment) {
-		environment.push(code.constant.type());		
+		Type req = environment.pop();
+		// TODO: add insertion
 	}
 	
 	public void infer(Code.Debug code, Block.Entry entry,
 			Env environment) {
-		environment.pop();
+		// FIXME: update to string
+		environment.push(Type.T_LIST(Type.T_INT));
 	}
 	
 	public void infer(int index, Code.FieldLoad code, Block.Entry entry,
-			Env environment) {
-		
-		environment.pop();
-		environment.push(code.type.fields().get(code.field));				
+			Env environment) {		
+		Type req = environment.pop();
+		// TODO: add insertion
+		environment.push(code.type);				
 	}
 	
 	public void infer(Code.IndirectInvoke code, Block.Entry entry,
 			Env environment) {
-				
-		for(int i=0;i!=code.type.params().size();++i) {
-			environment.pop();
-		}
-		
-		environment.pop(); // target
-		
+
 		if(code.type.ret() != Type.T_VOID && code.retval) {
-			environment.push(code.type.ret());
+			Type req = environment.pop();
+			
+			// TODO: add insertion
 		}
+		
+		environment.push(code.type.receiver());
+		
+		for(Type t : code.type.params()) {
+			environment.push(t);
+		}		
 	}
 	
 	public void infer(Code.IndirectSend code, Block.Entry entry,
@@ -220,39 +222,42 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 	
 	public void infer(Code.Invoke code, Block.Entry entry,
 			Env environment) {
-		
-		for(int i=0;i!=code.type.params().size();++i) {
-			environment.pop();
-		}
-				
+
 		if(code.type.ret() != Type.T_VOID && code.retval) {
-			environment.push(code.type.ret());
+			Type req = environment.pop();
+			
+			// TODO: add insertion
 		}
+		
+		for(Type t : code.type.params()) {
+			environment.push(t);
+		}	
 	}
 	
 	public void infer(int index, Code.ListOp code, Block.Entry entry,
 			Env environment) {
 		
+		Type req = environment.pop();
+		
 		switch(code.lop) {
 			case SUBLIST: {
-				Type end = environment.pop();
-				Type start = environment.pop();
-				Type list = environment.pop();				
-				environment.push(list);				
+				// TODO: add insertion
+				environment.push(code.type);
+				environment.push(Type.T_INT);
+				environment.push(Type.T_INT);
 				break;
 			}
 			case APPEND:
 			{				
-				Type rhs = environment.pop();
-				Type lhs = environment.pop();
-				environment.push(code.type);				
+				// TODO: add insertion
+				environment.push(code.type);
+				environment.push(code.type);
 				break;
 			}
 			case LENGTHOF:
 			{
-				environment.pop();
-				environment.push(code.type.element());
-				
+				// TODO: add insertion
+				environment.push(code.type);
 				break;
 			}
 		}
@@ -260,212 +265,178 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 	
 	public void infer(int index, Code.ListLoad code, Block.Entry entry,
 			Env environment) {
-		Type idx = environment.pop();
-		Type src = environment.pop();					
-		environment.push(code.type.element());		
+		Type req = environment.pop();
+		
+		// TODO: add insertion
+		
+		environment.push(code.type);
+		environment.push(Type.T_INT);				
 	}
 	
 	public void infer(int index, Code.Load code, Block.Entry entry,
 			Env environment) {
-		environment.push(environment.get(code.slot));
+		environment.set(code.slot,environment.pop());		
 	}
 	
 	public void infer(Code.MultiStore code, Block.Entry stmt,
 			Env environment) {
 		
-		ArrayList<Type> path = new ArrayList();
-		Type val = environment.pop();
-		for(int i=code.fields.size();i!=code.level;++i) {
-			path.add(environment.pop());
-		}
+		// FIXME: tricky
 		
-		Type src = environment.get(code.slot);		
-		Type iter = src;
-		
-		if(code.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
-			Type.Process p = (Type.Process) src;
-			iter = p.element();
-		}
-		
-		int fi = 0;
-		int pi = 0;
-		for(int i=0;i!=code.level;++i) {				
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
-				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
-				Type idx = path.get(pi++);				
-				iter = dict.value();				
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
-				Type.List list = Type.effectiveListType(iter);							
-				Type idx = path.get(pi++);
-				iter = list.element();
-			} else {
-				Type.Record rec = Type.effectiveRecordType(iter);				
-				String field = code.fields.get(fi++);
-				iter = rec.fields().get(field);				
-			}
-		}
-		
-		// Now, we need to determine the (potentially) updated type of the
-		// variable in question. For example, if we assign a real into a [int]
-		// then we'll end up with a [real].
-		Type ntype = TypePropagation.typeInference(src,val,code.level,0,code.fields);
-		environment.set(code.slot,ntype);
 	}
 	
 	public void infer(int index, Code.NewDict code, Block.Entry entry,
 			Env environment) {
+		Type req = environment.pop();
+		
+		// TODO: add insertion
+		
+		Type key = code.type.key();
+		Type value = code.type.value();
 		for(int i=0;i!=code.nargs;++i) {
-			Type val = environment.pop();
-			Type key = environment.pop();			
-		}		
-		environment.push(code.type);		
+			environment.push(key);
+			environment.push(value);					
+		}					
 	}
 	
 	public void infer(int index, Code.NewRecord code, Block.Entry entry,
 			Env environment) {
+		Type req = environment.pop();
 		
-		for (String key : code.type.keys()) {
-			Type val = environment.pop();			
-		}
+		// TODO: add insertion
 		
-		environment.push(code.type);
+		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
+		Collections.sort(keys);
+		Map<String,Type> fields = code.type.fields();
+		for (String key : keys) {
+			environment.push(fields.get(key));			
+		}		
 	}
 	
 	public void infer(int index, Code.NewList code, Block.Entry entry,
-			Env environment) {
+			Env environment) {		
+		Type req = environment.pop();
 		
-		for (int i=0;i!=code.nargs;++i) {
-			Type val = environment.pop();			
-		}		
+		// TODO: add insertion
 		
-		environment.push(code.type);
+		Type value = code.type.element();
+		for(int i=0;i!=code.nargs;++i) {
+			environment.push(value);					
+		}	
 	}
 	
 	public void infer(int index, Code.NewSet code, Block.Entry entry,
 			Env environment) {
+		Type req = environment.pop();
 		
-		for (int i=0;i!=code.nargs;++i) {
-			Type val = environment.pop();			
-		}		
+		// TODO: add insertion
 		
-		environment.push(code.type);
+		Type value = code.type.element();
+		for(int i=0;i!=code.nargs;++i) {
+			environment.push(value);					
+		}
 	}
 	
 	public void infer(Code.Return code, Block.Entry entry,
 			Env environment) {
 		if(code.type != Type.T_VOID) {
-			environment.pop();
+			environment.push(code.type);
 		}
 	}
 	
 	public void infer(Code.Send code, Block.Entry entry,
 			Env environment) {
 
-		for(int i=0;i!=code.type.params().size();++i) {
-			environment.pop();
+		if(code.type.ret() != Type.T_VOID && code.retval) {
+			Type req = environment.pop();
+			
+			// TODO: add insertion
 		}
 		
-		environment.pop(); // receiver
+		environment.push(code.type.receiver());
 		
-		if (code.type.ret() != Type.T_VOID && code.synchronous && code.retval) {
-			environment.push(code.type.ret());
-		}
+		for(Type t : code.type.params()) {
+			environment.push(t);
+		}		
 	}
 	
 	public void infer(Code.Store code, Block.Entry entry,
 			Env environment) {
-		environment.set(code.slot, environment.pop());
+		environment.push(environment.get(code.slot));
 	}
 	
 	public void infer(int index, Code.SetOp code, Block.Entry entry,
 			Env environment) {
-		Type rhs = environment.pop();
-		Type lhs = environment.pop();
-		Type result = null;
-
-		switch (code.sop) {
-		case UNION:
-		case DIFFERENCE:
-		case INTERSECT: {
-			if (code.dir == OpDir.UNIFORM) {
-				// nout
-			} else if (code.dir == OpDir.LEFT) {
-				rhs = Type.T_SET(rhs);
-			} else {
-				lhs = Type.T_SET(lhs);
-			}
-			result = Type.leastUpperBound(lhs, rhs);
-		}
-		}
-
-		environment.push(result);
+		
+		Type req = environment.pop();
+		
+		// TODO: add insertion
+		
+		environment.push(code.type);
+		environment.push(code.type);
 	}
 	
 	public void infer(int index, Code.UnOp code, Block.Entry entry,
 			Env environment) {
-		Type val = environment.pop();
+		Type req = environment.pop();
 		
 		switch(code.uop) {
 			case NEG:
 			{
-				environment.push(val); 
+				// TODO: add insertion
+				environment.push(req); 
 			}
 			break;
 			case PROCESSACCESS:
 			{
-				Type.Process tp = (Type.Process)val; 
-				environment.push(tp.element());
+				environment.push(Type.T_PROCESS(req));
 				break;
 			}
 			case PROCESSSPAWN:
 			{
-				environment.push(Type.T_PROCESS(val));
+				Type.Process tp = (Type.Process)req; 
+				environment.push(tp.element());				
 				break;
 			}					
 		}		
 	}
 	
-	public Pair<Env, Env> propagate(int index,
-			Code.IfGoto igoto, Entry stmt, Env environment) {
+	public Env propagate(int index,
+			Code.IfGoto igoto, Entry stmt, Env trueEnv, Env falseEnv) {
 		
-		Type rhs = environment.pop();
-		Type lhs = environment.pop();
+		Env environment = join(trueEnv,falseEnv);
+		environment.push(igoto.type);
+		environment.push(igoto.type);
 		
-		return new Pair(environment, environment);
+		return trueEnv;
 	}
 	
-	public Pair<Env, Env> propagate(int index,
-			Code.IfType code, Entry stmt, Env environment) {
+	public Env propagate(int index,
+			Code.IfType code, Entry stmt, Env trueEnv, Env falseEnv) {
 		
-		Env falseEnv = environment;
-		Env trueEnv = environment;
+		Env environment = join(trueEnv,falseEnv);
 		
 		if(code.slot < 0) {			
-			Type lhs = environment.pop();			
-		} else {
-			trueEnv = new Env(environment);		
-			falseEnv = new Env(environment);
-			Type glb = Type.greatestLowerBound(code.type, code.test);
-			Type gdiff = Type.leastDifference(code.type, code.test);	
-			trueEnv.set(code.slot, glb);			
-			environment.set(code.slot, gdiff);
-		}
+			environment.push(code.type);			
+		} 
 		
-		return new Pair(trueEnv,falseEnv);
+		return trueEnv;
 	}
 	
-	public List<Env> propagate(int index, Code.Switch sw,
-			Entry stmt, Env environment) {
+	public Env propagate(int index, Code.Switch sw,
+			Entry stmt, List<Env> environments) {
 		
-		Type val = environment.pop();
+		// FIXME: what about default branch?
 		
-		ArrayList<Env> stores = new ArrayList();
-		for (int i = 0; i != sw.branches.size(); ++i) {
-			stores.add(environment);
+		Env environment = environments.get(0);
+		
+		for(int i=1;i!=sw.branches.size();++i) {
+			environment = join(environment,environments.get(i));
 		}
 		
-		return stores;
+		environment.push(sw.type);
+		
+		return environment;
 	}
 		
 	public Env propagate(int start, int end, Code.Loop loop,
