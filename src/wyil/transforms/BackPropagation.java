@@ -39,10 +39,10 @@ import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
 
-public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.Env> {	
+public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
 	private static final HashMap<Integer,Block.Entry> insertions = new HashMap<Integer,Block.Entry>();
 	
-	public CoercionInsertion(ModuleLoader loader) {
+	public BackPropagation(ModuleLoader loader) {
 		super(loader);
 	}
 	
@@ -269,8 +269,27 @@ public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.En
 	public void infer(Code.MultiStore code, Block.Entry stmt,
 			Env environment) {
 		
-		// FIXME: tricky
-		
+		Type iter = environment.get(code.slot);
+		int fi = 0;
+		for(int i=0;i!=code.level;++i) {				
+			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+				// this indicates a dictionary access, rather than a list access			
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
+				environment.push(dict.key());
+				iter = dict.value();				
+			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+				Type.List list = Type.effectiveListType(iter);							
+				environment.push(Type.T_INT);
+				iter = list.element();
+			} else {
+				Type.Record rec = Type.effectiveRecordType(iter);				
+				String field = code.fields.get(fi++);
+				iter = rec.fields().get(field);							
+			}
+		}
+				
+		environment.push(iter);
+		environment.set(code.slot, code.type);
 	}
 	
 	public void infer(int index, Code.NewDict code, Block.Entry entry,
