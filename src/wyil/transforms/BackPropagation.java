@@ -155,8 +155,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.BinOp code, Block.Entry entry,
 			Env environment) {
-		Type req = environment.pop();
-		// TODO: add insertion
+		Type req = environment.pop();		
+		coerce(req,code.type,index,entry);		
 		environment.push(code.type);
 		environment.push(code.type);		
 	}
@@ -171,12 +171,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.Const code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-
-		if (!Type.isomorphic(req, code.constant.type())) {
-			insertions.put(index,
-					new Block.Entry(Code.Convert(code.constant.type(), req),
-							entry.attributes()));
-		}
+		coerce(req,code.constant.type(),index,entry);		
 	}
 	
 	public void infer(int index, Code.Debug code, Block.Entry entry,
@@ -188,7 +183,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.FieldLoad code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		// TODO: add insertion
+		Type field = code.type.fields().get(code.field);
+		coerce(req,field,index,entry);		
 		environment.push(code.type);				
 	}
 	
@@ -197,8 +193,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
-			
-			// TODO: add insertion
+			coerce(req,code.type.ret(),index,entry);			
 		}
 		
 		environment.push(code.type.receiver());
@@ -218,8 +213,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
-			
-			// TODO: add insertion
+			coerce(req,code.type.ret(),index,entry);			
 		}
 		
 		for(Type t : code.type.params()) {
@@ -234,7 +228,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		switch(code.lop) {
 			case SUBLIST: {
-				// TODO: add insertion
+				coerce(req,code.type,index,entry);
 				environment.push(code.type);
 				environment.push(Type.T_INT);
 				environment.push(Type.T_INT);
@@ -242,14 +236,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			}
 			case APPEND:
 			{				
-				// TODO: add insertion
+				coerce(req,code.type,index,entry);
 				environment.push(code.type);
 				environment.push(code.type);
 				break;
 			}
 			case LENGTHOF:
 			{
-				// TODO: add insertion
+				coerce(req,Type.T_INT,index,entry);
 				environment.push(code.type);
 				break;
 			}
@@ -259,9 +253,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.ListLoad code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-		
-		// TODO: add insertion
-		
+		coerce(req,code.type.element(),index,entry);		
 		environment.push(code.type);
 		environment.push(Type.T_INT);				
 	}
@@ -269,12 +261,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.Load code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-		
-		if(!Type.isomorphic(req,code.type)) {
-			insertions.put(index, new Block.Entry(Code.Convert(code.type, req),
-					entry.attributes()));
-		}
-		
+		coerce(req,code.type,index,entry);
 		environment.set(code.slot,code.type);		
 	}
 	
@@ -351,8 +338,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Env environment) {
 		Type req = environment.pop();
 		
-		// TODO: add insertion
-		
+		// TODO: could do better here by rewriting bytecode. For example, if we
+		// require a set then changing bytecode to newset makes sense!
+	 	
+		coerce(req,code.type,index,entry);		
 		Type key = code.type.key();
 		Type value = code.type.value();
 		for(int i=0;i!=code.nargs;++i) {
@@ -364,9 +353,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.NewRecord code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-		
-		// TODO: add insertion
-		
+		coerce(req,code.type,index,entry);
 		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
 		Collections.sort(keys);
 		Map<String,Type> fields = code.type.fields();
@@ -378,9 +365,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.NewList code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
-		
-		// TODO: add insertion
-		
+		// TODO: could do better here by rewriting bytecode. For example, if we
+		// require a set then changing bytecode to newset makes sense!
+	 	
+		coerce(req,code.type,index,entry);		
 		Type value = code.type.element();
 		for(int i=0;i!=code.nargs;++i) {
 			environment.push(value);					
@@ -390,9 +378,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.NewSet code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-		
-		// TODO: add insertion
-		
+		coerce(req,code.type,index,entry);		
 		Type value = code.type.element();
 		for(int i=0;i!=code.nargs;++i) {
 			environment.push(value);					
@@ -411,8 +397,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
-			
-			// TODO: add insertion
+			coerce(req,code.type.ret(),index,entry);					
 		}
 		
 		environment.push(code.type.receiver());
@@ -432,9 +417,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Env environment) {
 		
 		Type req = environment.pop();
-		
-		// TODO: add insertion
-		
+		coerce(req,code.type,index,entry);
 		environment.push(code.type);
 		environment.push(code.type);
 	}
@@ -446,19 +429,23 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		switch(code.uop) {
 			case NEG:
 			{
-				// TODO: add insertion
+				coerce(req,code.type,index,entry);
 				environment.push(req); 
 			}
 			break;
 			case PROCESSACCESS:
 			{
-				environment.push(Type.T_PROCESS(req));
+				req = Type.T_PROCESS(req);
+				coerce(req,code.type,index,entry);
+				environment.push(req);
 				break;
 			}
-			case PROCESSSPAWN:
-			{
-				Type.Process tp = (Type.Process)req; 
-				environment.push(tp.element());				
+			case PROCESSSPAWN: {
+				Type.Process tp = (Type.Process) req;
+				// I'm not sure where we should be really applying conversions
+				// here??
+				// coerce(tp.element(),code.type,index,entry);
+				environment.push(tp.element());
 				break;
 			}					
 		}		
@@ -518,10 +505,20 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 								
 			environment.push(fall.type);			
+			// FIXME: a conversion here might be necessary?			
 			environment.set(fall.slot,Type.T_VOID);
 		} 		
 		
 		return environment;		
+	}
+	
+	public void coerce(Type to, Type from, int index, SyntacticElement elem) {
+		if (!Type.isomorphic(to, from)) {
+			insertions.put(index,
+					new Block.Entry(Code.Convert(from, to), elem.attributes()));
+		} else {
+			insertions.remove(index);
+		}
 	}
 	
 	public Env join(Env env1, Env env2) {
