@@ -96,7 +96,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected T propagate(int start, int end, T store) {
 		Block block = methodCase.body();
 		
-		for(int i=end;i>=start;--i) {						
+		for(int i=end-1;i>=start;--i) {						
 			Entry stmt = block.get(i);						
 			try {				
 				Code code = stmt.code;
@@ -260,16 +260,5 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 */
 	protected T lastStore() {
 		return null;
-	}
-	
-	/**
-	 * Join two abstract stores together producing a new abstract store. Observe
-	 * that this operation must not side-effect the two input stores. This is
-	 * because they may currently be stored in the stores map.
-	 * 
-	 * @param store1
-	 * @param store2
-	 * @return
-	 */
-	protected abstract T join(T store1, T store2);
+	}	
 }
