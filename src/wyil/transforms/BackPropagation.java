@@ -269,23 +269,20 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(Code.MultiStore code, Block.Entry stmt,
 			Env environment) {
 		
-		Type iter = environment.get(code.slot);
+		Type src = environment.get(code.slot);
 		
-		if(iter == Type.T_VOID) {
-			// this is a very special, strange case. It indicates that this
-			// variable is, in fact, not used after this point. Effectively,
-			// this makes the multi-store bytecode entirely redundant (i.e. dead
-			// code).  
-			iter = code.type;
-		}
+		// The first job is to make sure we've got the right types for indices
+		// and key values loaded onto the stack.
+		
+		Type iter = code.type;
 		
 		if(code.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
 			Type.Process p = (Type.Process) iter;
 			iter = p.element();
-		}		
+		}						
 		
 		int fi = 0;
-		for(int i=0;i!=code.level;++i) {				
+		for(int i=0;i!=code.level;++i) {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
@@ -301,7 +298,39 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 				iter = rec.fields().get(field);							
 			}
 		}
-				
+		
+		// The second job is to try and determine whether there is any general
+		// requirement on the value being assigned.
+		
+		iter = Type.leastUpperBound(code.type,src);
+		
+		if(code.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
+			Type.Process p = (Type.Process) iter;
+			iter = p.element();
+		}						
+		
+		fi = 0;
+		for(int i=0;i!=code.level;++i) {
+			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+				// this indicates a dictionary access, rather than a list access			
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
+				environment.push(dict.key());
+				iter = dict.value();				
+			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+				Type.List list = Type.effectiveListType(iter);							
+				environment.push(Type.T_INT);
+				iter = list.element();
+			} else if(Type.effectiveRecordType(iter) != null) {
+				Type.Record rec = Type.effectiveRecordType(iter);				
+				String field = code.fields.get(fi++);
+				iter = rec.fields().get(field);							
+			} else {
+				// no requirement at all
+				iter = Type.T_ANY;
+				break;
+			}
+		}
+		
 		environment.push(iter);
 		environment.set(code.slot, code.type);
 	}
