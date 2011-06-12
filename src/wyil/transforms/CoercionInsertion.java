@@ -437,11 +437,21 @@ public class CoercionInsertion extends ForwardFlowAnalysis<CoercionInsertion.Env
 	public Pair<Env, Env> propagate(int index,
 			Code.IfType code, Entry stmt, Env environment) {
 		
+		Env falseEnv = environment;
+		Env trueEnv = environment;
+		
 		if(code.slot < 0) {			
 			Type lhs = environment.pop();			
-		} 
+		} else {
+			trueEnv = new Env(environment);		
+			falseEnv = new Env(environment);
+			Type glb = Type.greatestLowerBound(code.type, code.test);
+			Type gdiff = Type.leastDifference(code.type, code.test);	
+			trueEnv.set(code.slot, glb);			
+			environment.set(code.slot, gdiff);
+		}
 		
-		return new Pair(environment, environment);
+		return new Pair(trueEnv,falseEnv);
 	}
 	
 	public List<Env> propagate(int index, Code.Switch sw,
