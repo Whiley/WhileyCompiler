@@ -52,12 +52,23 @@ public class CoercionInsertion extends ForwardFlowAnalysis<CoercionInsertion.Env
 	
 	public Env initialStore() {				
 		Env environment = new Env();		
-		int nvars = methodCase.locals().size();
+
+		if(method.type().receiver() != null) {					
+			environment.add(method.type().receiver());
+		}
+		List<Type> paramTypes = method.type().params();
 		
-		for (int i=0; i != nvars; ++i) {			
-			environment.add(null);			
+		for (int i = 0; i != paramTypes.size(); ++i) {
+			Type t = paramTypes.get(i);
+			environment.add(t);			
 		}				
-					
+		
+		int start = method.type().params().size();
+		if(method.type().receiver() != null) { start++; }
+		for (int i = start; i < methodCase.locals().size(); i++) {
+			environment.add(Type.T_VOID);
+		}		
+		
 		return environment;				
 	}
 	
