@@ -89,7 +89,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		this.stores = new HashMap<String,T>();
 		T init = initialStore();
 		propagate(0, mcase.body().size(), init);		
-		return new Module.Case(mcase.body(), mcase.locals(), mcase.attributes());
+		return mcase;
 	}		
 	
 	protected T propagate(int start, int end, T store) {
@@ -110,8 +110,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						store = tmp;
 					}					
 				}
-				
-				
+								
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
@@ -191,17 +190,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 
 	/**
 	 * <p>
-	 * Propagate through a conditional branch. This produces a potentially
-	 * updated statement, and two stores for the true and false branches
-	 * respectively. The code of the statement returned is either that of the
-	 * original statement, a Skip, or a Goto. The latter two indicate that the
-	 * code was proven definitely false, or definitely true (respectively).
+	 * Propagate through a conditional branch. This produces two stores for the
+	 * true and false branches respectively. The code of the statement returned
+	 * is either that of the original statement, a Skip, or a Goto. The latter
+	 * two indicate that the code was proven definitely false, or definitely
+	 * true (respectively).
 	 * </p>
-	 * <p>
 	 * 
 	 * @param index
 	 *            --- the index of this bytecode in the method's block
-	 * 
 	 * @param ifgoto
 	 *            --- the code of this statement
 	 * @param entry
@@ -215,15 +212,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 
 	/**
 	 * <p>
-	 * Propagate through a type testh. This produces a potentially updated
-	 * statement, and two stores for the true and false branches respectively.
-	 * The code of the statement returned is either that of the original
-	 * statement, a Skip, or a Goto. The latter two indicate that the code was
-	 * proven definitely false, or definitely true (respectively).
+	 * Propagate through a type test. This produces two stores for the true and
+	 * false branches respectively. The code of the statement returned is either
+	 * that of the original statement, a Skip, or a Goto. The latter two
+	 * indicate that the code was proven definitely false, or definitely true
+	 * (respectively).
 	 * </p>
-	 * <p>	 
+	 * 
 	 * @param index
-	 *            --- the index of this bytecode in the method's block	 
+	 *            --- the index of this bytecode in the method's block
 	 * @param iftype
 	 *            --- the code of this statement
 	 * @param entry
@@ -235,17 +232,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 */
 	protected abstract Pair<T, T> propagate(int index, Code.IfType iftype,
 			Entry entry, T store);
-	
+
 	/**
 	 * <p>
-	 * Propagate through a multi-way branch. This produces a potentially updated
-	 * statement, and multiple stores for the various branches. The code of the
-	 * statement returned is either that of the original statement, a Skip, a
-	 * Goto, or a switch statement with a reduced number of branches. 
+	 * Propagate through a multi-way branch. This produces multiple stores ---
+	 * one for each of the various branches. 
 	 * </p>
-	 * <p>	
+	 * 
 	 * @param index
-	 *            --- the index of this bytecode in the method's block	 
+	 *            --- the index of this bytecode in the method's block
 	 * @param sw
 	 *            --- the code of this statement
 	 * @param entry
@@ -259,8 +254,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 
 	/**
 	 * <p>
-	 * Propagate through a loop statement, producing a potentially updated block
-	 * and the store which holds true immediately after the statement
+	 * Propagate through a loop statement, producing a store which holds true
+	 * immediately after the statement
 	 * </p>
 	 * <p>
 	 * <b>NOTE: the <code>start</code> index holds the loop code, whilst the
@@ -282,15 +277,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 */
 	protected abstract T propagate(int start, int end, Code.Loop code,
 			Entry entry, T store);
-	
+
 	/**
 	 * <p>
-	 * Propagate through a sequential statement, producing a potentially updated
-	 * statement and the store which holds true immediately after the statement
+	 * Propagate through a sequential statement, producing a store which holds
+	 * true immediately after the statement
 	 * </p>
 	 * 
- 	 * @param index
-	 *            --- the index of this bytecode in the method's block	 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
 	 * @param entry
 	 *            --- block entry for this bytecode
 	 * @param store

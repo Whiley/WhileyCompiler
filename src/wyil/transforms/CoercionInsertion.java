@@ -36,10 +36,10 @@ import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
 import wyil.transforms.TypePropagation.Env;
 import wyil.util.*;
-import wyil.util.dfa.ForwardFlowAnalysis;
+import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
 
-public class CoercionInsertion extends ForwardFlowAnalysis<CoercionInsertion.Env> {	
+public class CoercionInsertion extends BackwardFlowAnalysis<CoercionInsertion.Env> {	
 	private static final HashMap<Integer,Block.Entry> insertions = new HashMap<Integer,Block.Entry>();
 	
 	public CoercionInsertion(ModuleLoader loader) {
@@ -201,7 +201,7 @@ public class CoercionInsertion extends ForwardFlowAnalysis<CoercionInsertion.Env
 	
 	public void infer(Code.IndirectInvoke code, Block.Entry entry,
 			Env environment) {
-		
+				
 		for(int i=0;i!=code.type.params().size();++i) {
 			environment.pop();
 		}
@@ -220,10 +220,11 @@ public class CoercionInsertion extends ForwardFlowAnalysis<CoercionInsertion.Env
 	
 	public void infer(Code.Invoke code, Block.Entry entry,
 			Env environment) {
+		
 		for(int i=0;i!=code.type.params().size();++i) {
 			environment.pop();
 		}
-		
+				
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			environment.push(code.type.ret());
 		}
