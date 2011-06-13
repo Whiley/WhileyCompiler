@@ -931,7 +931,7 @@ public abstract class Type {
 			BitSet subtypeMatrix = matrices.first();
 			ArrayList<Node> newNodes = new ArrayList<Node>();
 			difference(0,graph1,0,graph2,newNodes, new HashMap(),subtypeMatrix);
-			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));				
+			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));							
 			return minimise(ldiff);
 		}
 	}
@@ -1965,10 +1965,13 @@ public abstract class Type {
 		} else {
 			// default case --> go to no change
 			node = c1;			
-		}
+		}								
 		
-		if(node == c1) {			
-			newNodes.remove(newNodes.size()-1);
+		if(node == c1) {
+			while(newNodes.size() > nid) {
+				newNodes.remove(newNodes.size()-1);
+			}
+						
 			extractOnto(n1,graph1,newNodes);			
 			return nid;
 		} else {
@@ -2873,8 +2876,8 @@ public abstract class Type {
 			}
 		}
 		
-		public final static String[] kinds = { "void", "any", "null", "bool",
-				"int", "rat", "dict", "set", "list", "ref", "record", "union",
+		public final static String[] kinds = { "void", "any", "meta", "null", "bool",
+				"int", "rat", "tuple", "dict", "set", "list", "ref", "record", "union",
 				"fun", "label" };
 		public String toString() {
 			if(data instanceof Pair[]) {

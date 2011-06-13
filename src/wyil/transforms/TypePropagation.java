@@ -944,7 +944,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {
-				Type glb = Type.greatestLowerBound(lhs_t, code.test);
+				Type glb = Type.greatestLowerBound(lhs_t, code.test);				
 				Type gdiff = Type.leastDifference(lhs_t, code.test);	
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
