@@ -1439,9 +1439,7 @@ public class ClassFileBuilder {
 	 *            --- stmt containing test (useful for line number info)
 	 * @param bytecodes
 	 *            --- list of bytecodes (to which test is appended)
-	 */
-	
-	/*
+	 */		
 	protected void translateTypeTest(String trueTarget, Type src, Type.Union test,
 			Entry stmt, ArrayList<Bytecode> bytecodes) {	
 		
@@ -1463,7 +1461,6 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(falseLabel));
 		
 	}
-*/
 	
 	public void translate(Code.Loop c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
