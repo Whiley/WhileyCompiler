@@ -467,11 +467,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(iter,T_INT));
 				
 		construct(WHILEYMAP,freeSlot,bytecodes);
-		bytecodes.add(new Bytecode.Store(target, WHILEYSET));
+		bytecodes.add(new Bytecode.Store(target, WHILEYMAP));
 		bytecodes.add(new Bytecode.Label(loopLabel));
 		JvmType.Function ftype = new JvmType.Function(T_INT);		
 		bytecodes.add(new Bytecode.Load(iter,JvmTypes.T_INT));
-		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
+		bytecodes.add(new Bytecode.Load(source,JAVA_UTIL_LIST));
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_LIST, "size",
 				ftype, Bytecode.INTERFACE));
 		bytecodes.add(new Bytecode.If(Bytecode.If.GE, exitLabel));
@@ -488,10 +488,10 @@ public class ClassFileBuilder {
 		addReadConversion(fromType.element(),bytecodes);		
 		convert(toType.value(), fromType.element(), freeSlot,
 				bytecodes);			
-		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put",
 				ftype, Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.Pop(T_BOOL));
+		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		bytecodes.add(new Bytecode.Iinc(iter,1));
 		bytecodes.add(new Bytecode.Goto(loopLabel));
 		bytecodes.add(new Bytecode.Label(exitLabel));
