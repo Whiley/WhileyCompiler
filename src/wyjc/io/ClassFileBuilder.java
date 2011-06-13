@@ -1443,50 +1443,72 @@ public class ClassFileBuilder {
 		
 		// FIXME: at the moment, this approach is not very efficient!
 		
-		System.out.println("GOT HERE");
+		// following line is a bit of a hack to work around lack of depth subtyping.
+		Type.Dictionary dict = null;
+		Type.List list = null;
+		Type.Set set = null;
+		Type.Process proc = null;
 		
 		String trampoline = freshLabel();
-		String falseLabel = freshLabel();
+		String falseLabel = freshLabel();	
 		
-		if(Type.isSubtype(Type.T_BOOL, test)) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));						
-			translateTypeTest(trampoline,src,Type.T_BOOL,stmt, bytecodes);
-		} 
-		if(Type.isSubtype(Type.T_INT, test)) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));
-			translateTypeTest(trampoline,src,Type.T_INT,stmt, bytecodes);
-		} 
-		if(Type.isSubtype(Type.T_REAL, test)) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));
-			translateTypeTest(trampoline,src,Type.T_REAL,stmt, bytecodes);
-		} 
-		if(Type.isSubtype(Type.T_LIST(Type.T_ANY), test)) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));
-			Type.List t = Type.effectiveListType(Type.greatestLowerBound(test,Type.T_LIST(Type.T_ANY)));
-			translateTypeTest(trampoline,src,t,stmt, bytecodes);
-		} 
-		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY,Type.T_ANY), test)) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));			
-			Type.Dictionary t = Type.effectiveDictionaryType(Type.greatestLowerBound(test,Type.T_DICTIONARY(Type.T_ANY,Type.T_ANY)));
-			translateTypeTest(trampoline,src,t,stmt, bytecodes);
-		}
-		if(Type.isSubtype(Type.T_SET(Type.T_ANY), test)) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));
-			Type.Set t = Type.effectiveSetType(Type.greatestLowerBound(test,Type.T_SET(Type.T_ANY)));
-			translateTypeTest(trampoline,src,t,stmt, bytecodes);
-		} 
-		if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY), test)) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));
-			translateTypeTest(trampoline,src,Type.greatestLowerBound(test,Type.T_PROCESS(Type.T_ANY)),stmt, bytecodes);
-		} 
-		// following line is a bit of a hack to work around lack of depth subtyping.
 		for(Type t : test.bounds()) {
-			if(t instanceof Type.Record || t instanceof Type.Fun) {
+			
+			// the point of these tests is to avoid duplication. For example,
+			// with a type [int]|[[int]] we only want to perform one instanceof
+			// ArrayList.
+			
+			if(t instanceof Type.List) {
+				Type.List l = (Type.List)t;				
+				if(list == null) {
+					list = l;
+				} else {
+					list = Type.T_LIST(Type.leastUpperBound(l.element(),list.element()));
+				}
+			} else if(t instanceof Type.Set) {
+				Type.Set l = (Type.Set)t;				
+				if(set == null) {
+					set = l;
+				} else {
+					set = Type.T_SET(Type.leastUpperBound(l.element(),set.element()));
+				}
+			} else if(t instanceof Type.Dictionary) {
+				Type.Dictionary l = (Type.Dictionary) t;				
+				if(dict == null) {
+					dict = l;
+				} else {
+					dict = Type.T_DICTIONARY(Type.leastUpperBound(l.key(),dict.key()),
+							Type.leastUpperBound(l.value(),dict.value()));
+				}
+			} else {
 				bytecodes.add(new Bytecode.Dup(convertType(src)));
-				translateTypeTest(trampoline,src,t,stmt, bytecodes);				
+				translateTypeTest(trampoline,src,t,stmt, bytecodes);
+				src = Type.leastDifference(src,t);
 			}
 		}
+			
 		
+		if(list != null) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));		
+			translateTypeTest(trampoline,src,list,stmt, bytecodes);
+			src = Type.leastDifference(src, list);
+		} 
+		if(dict != null) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));						
+			translateTypeTest(trampoline,src,dict,stmt, bytecodes);
+			src = Type.leastDifference(src, dict);
+		}
+		if(set != null) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));			
+			translateTypeTest(trampoline,src,set,stmt, bytecodes);
+			src = Type.leastDifference(src, set);
+		} 
+		if(proc != null) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			translateTypeTest(trampoline,src,proc,stmt, bytecodes);
+			src = Type.leastDifference(src, proc);
+		} 
+				
 		bytecodes.add(new Bytecode.Pop(convertType(src)));
 		bytecodes.add(new Bytecode.Goto(falseLabel));
 		bytecodes.add(new Bytecode.Label(trampoline));
