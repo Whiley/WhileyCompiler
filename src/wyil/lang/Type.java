@@ -1361,6 +1361,14 @@ public abstract class Type {
 			int e1 = (Integer) c1.data;
 			int e2 = (Integer) c2.data;
 			return subtypeMatrix.get((e1*g2Size)+e2);
+		} else if(sign && c1.kind == K_LIST && c2.kind == K_DICTIONARY) { 					
+			int e1 = (Integer) c1.data;
+			Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;						
+			return graph2[p2.first()].kind == K_INT && subtypeMatrix.get((p2.second()*g2Size)+e1);
+		} else if(!sign && c1.kind == K_DICTIONARY && c2.kind == K_LIST) {			
+			Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;			
+			int e2 = (Integer) c2.data;
+			return graph1[p1.first()].kind == K_INT && subtypeMatrix.get((p1.second()*g2Size)+e2);
 		} else if (sign && c1.kind == K_UNION){			
 			int[] bounds1 = (int[]) c1.data;		
 
