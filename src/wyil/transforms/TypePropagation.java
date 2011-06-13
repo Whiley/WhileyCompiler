@@ -811,6 +811,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				OpDir dir;
 				boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
 				boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+				
 				if(lhs_set && rhs_set) {
 					dir = OpDir.UNIFORM;
 				} else if(lhs_set) {

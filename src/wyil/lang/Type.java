@@ -1353,6 +1353,14 @@ public abstract class Type {
 			return true;
 		} else if(!sign && (c1.kind == K_ANY || c2.kind == K_VOID)) {
 			return true;
+		} else if(sign && c1.kind == K_LIST && c2.kind == K_SET) {			
+			int e1 = (Integer) c1.data;
+			int e2 = (Integer) c2.data;
+			return subtypeMatrix.get((e1*g2Size)+e2);
+		} else if(!sign && c1.kind == K_SET && c2.kind == K_LIST) {			
+			int e1 = (Integer) c1.data;
+			int e2 = (Integer) c2.data;
+			return subtypeMatrix.get((e1*g2Size)+e2);
 		} else if (sign && c1.kind == K_UNION){			
 			int[] bounds1 = (int[]) c1.data;		
 
@@ -3062,8 +3070,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = fromString("{int data}|{int bytecodes}");		
-		Type t2 = fromString("{int bytecodes}");
+		Type t1 = fromString("any");		
+		Type t2 = fromString("int");
 		//Type t1 = T_REAL;
 		//Type t2 = T_INT;
 		System.out.println("Type: " + t1 + "\n------------------");

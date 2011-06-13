@@ -578,13 +578,14 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 	
 	public void infer(int index, Code.SetOp code, Block.Entry entry,
-			Env environment) {
-		Value rhs = environment.pop();
-		Value lhs = environment.pop();				
+			Env environment) {						
 		Value result = null;
+		int nops = 2;
 		
 		switch (code.sop) {
 		case UNION: {
+			Value rhs = environment.pop();
+			Value lhs = environment.pop();
 			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
 					&& rhs instanceof Value.Set) {
 				Value.Set lv = (Value.Set) lhs;
@@ -604,6 +605,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			break;
 		}
 		case DIFFERENCE: {
+			Value rhs = environment.pop();
+			Value lhs = environment.pop();
 			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
 					&& rhs instanceof Value.Set) {
 				Value.Set lv = (Value.Set) lhs;
@@ -623,6 +626,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			break;
 		}
 		case INTERSECT: {
+			Value rhs = environment.pop();
+			Value lhs = environment.pop();
 			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
 					&& rhs instanceof Value.Set) {
 				Value.Set lv = (Value.Set) lhs;
@@ -653,11 +658,21 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			} 
 			break;
 		}
+		case LENGTHOF:
+		{
+			Value val = environment.pop();
+			
+			if(val instanceof Value.Set) {
+				Value.Set set = (Value.Set) val;
+				result = Value.V_NUMBER(BigRational.valueOf(set.values.size()));
+				nops = 1;
+			} 
+		}
 		}
 		
 		if(result != null) {
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,2));
+			rewrites.put(index, new Rewrite(entry,nops));
 		}
 		
 		environment.push(result);

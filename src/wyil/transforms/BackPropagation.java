@@ -431,9 +431,23 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Env environment) {
 		
 		Type req = environment.pop();
-		coerce(req,code.type,index,entry);
-		environment.push(code.type);
-		environment.push(code.type);
+		
+		switch(code.sop) {
+			case UNION:
+			case DIFFERENCE:
+			case INTERSECT: {
+				coerce(req,code.type,index,entry);
+				environment.push(code.type);
+				environment.push(code.type);
+				break;
+			}
+			case LENGTHOF:
+			{
+				coerce(req,Type.T_INT,index,entry);
+				environment.push(code.type);
+				break;
+			}
+		}								
 	}
 	
 	public void infer(int index, Code.UnOp code, Block.Entry entry,
