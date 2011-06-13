@@ -423,7 +423,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.Store code, Block.Entry entry,
 			Env environment) {
-		environment.push(environment.get(code.slot));
+		environment.push(code.type);
 		environment.set(code.slot,Type.T_VOID);
 	}
 	
