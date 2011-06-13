@@ -385,6 +385,8 @@ public class ClassFileBuilder {
 			
 		} else if(toType instanceof Type.List && fromType instanceof Type.List) {
 			convert((Type.List) toType, (Type.List) fromType, freeSlot, bytecodes);			
+		} else if(toType instanceof Type.Dictionary && fromType instanceof Type.List) {
+			convert((Type.Dictionary) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Set && fromType instanceof Type.List) {
 			convert((Type.Set) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Set && fromType instanceof Type.Set) {
@@ -442,6 +444,19 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Goto(loopLabel));
 		bytecodes.add(new Bytecode.Label(exitLabel));
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYLIST));
+	}
+	
+	protected void convert(Type.Dictionary toType, Type.List fromType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+						
+		if(fromType.element() == Type.T_VOID) {
+			// nothing to do, in this particular case
+			return;
+		}
+		
+		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYLIST);
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "list2dict",
+				ftype, Bytecode.INVOKESTATIC));		
 	}
 	
 	protected void convert(Type.Set toType, Type.List fromType,
