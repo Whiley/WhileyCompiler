@@ -454,9 +454,48 @@ public class ClassFileBuilder {
 			return;
 		}
 		
-		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYLIST);
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "list2dict",
-				ftype, Bytecode.INVOKESTATIC));		
+		// The following piece of code implements a java for-each loop which
+		// iterates every element of the input collection, and recursively
+		// converts it before loading it back onto a new WhileyList. 
+		String loopLabel = freshLabel();
+		String exitLabel = freshLabel();
+		int iter = freeSlot++;
+		int source = freeSlot++;
+		int target = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(source,JAVA_UTIL_LIST));
+		bytecodes.add(new Bytecode.LoadConst(0));		
+		bytecodes.add(new Bytecode.Store(iter,T_INT));
+				
+		construct(WHILEYMAP,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(target, WHILEYSET));
+		bytecodes.add(new Bytecode.Label(loopLabel));
+		JvmType.Function ftype = new JvmType.Function(T_INT);		
+		bytecodes.add(new Bytecode.Load(iter,JvmTypes.T_INT));
+		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_LIST, "size",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.If(Bytecode.If.GE, exitLabel));
+		bytecodes.add(new Bytecode.Load(target,WHILEYSET));
+		bytecodes.add(new Bytecode.Load(iter,T_INT));
+		ftype = new JvmType.Function(BIG_INTEGER,T_INT);
+		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
+				ftype, Bytecode.STATIC));				
+		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
+		bytecodes.add(new Bytecode.Load(iter,T_INT));
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_LIST, "get",
+				ftype, Bytecode.INTERFACE));						
+		addReadConversion(fromType.element(),bytecodes);		
+		convert(toType.value(), fromType.element(), freeSlot,
+				bytecodes);			
+		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put",
+				ftype, Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Pop(T_BOOL));
+		bytecodes.add(new Bytecode.Iinc(iter,1));
+		bytecodes.add(new Bytecode.Goto(loopLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Load(target,WHILEYSET));		
 	}
 	
 	protected void convert(Type.Set toType, Type.List fromType,
@@ -466,7 +505,7 @@ public class ClassFileBuilder {
 		if(fromType.element() == Type.T_VOID) {
 			// nothing to do, in this particular case
 			return;
-		}
+		}				
 		
 		// The following piece of code implements a java for-each loop which
 		// iterates every element of the input collection, and recursively
@@ -2322,6 +2361,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
 			"wyjc.runtime", "Actor");	
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");
+	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
