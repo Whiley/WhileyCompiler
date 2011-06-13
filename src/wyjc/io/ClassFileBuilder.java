@@ -1067,9 +1067,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
 			addCheckCast(WHILEYLIST,bytecodes);				
 			
-			// FIXME: this is a bug as we're guaranteed to have a list type
-			// here. For example, int|[int]|[real] & [*] ==> [int]|[real] (by S-UNION2)
-			nsrc = (Type.List) Type.greatestLowerBound(src, Type.T_LIST(Type.T_ANY));						
+			nsrc = Type.effectiveListType(Type.greatestLowerBound(src, Type.T_LIST(Type.T_ANY)));						
 			
 			if(Type.isSubtype(test,nsrc)) {				
 				// Getting here indicates that the instanceof test was
@@ -1445,12 +1443,48 @@ public class ClassFileBuilder {
 		
 		// FIXME: at the moment, this approach is not very efficient!
 		
+		System.out.println("GOT HERE");
+		
 		String trampoline = freshLabel();
 		String falseLabel = freshLabel();
 		
-		for(Type t : test.bounds()) {
+		if(Type.isSubtype(Type.T_BOOL, test)) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));						
+			translateTypeTest(trampoline,src,Type.T_BOOL,stmt, bytecodes);
+		} 
+		if(Type.isSubtype(Type.T_INT, test)) {
 			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			translateTypeTest(trampoline,src,Type.T_INT,stmt, bytecodes);
+		} 
+		if(Type.isSubtype(Type.T_REAL, test)) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			translateTypeTest(trampoline,src,Type.T_REAL,stmt, bytecodes);
+		} 
+		if(Type.isSubtype(Type.T_LIST(Type.T_ANY), test)) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			Type.List t = Type.effectiveListType(Type.greatestLowerBound(test,Type.T_LIST(Type.T_ANY)));
 			translateTypeTest(trampoline,src,t,stmt, bytecodes);
+		} 
+		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY,Type.T_ANY), test)) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));			
+			Type.Dictionary t = Type.effectiveDictionaryType(Type.greatestLowerBound(test,Type.T_DICTIONARY(Type.T_ANY,Type.T_ANY)));
+			translateTypeTest(trampoline,src,t,stmt, bytecodes);
+		}
+		if(Type.isSubtype(Type.T_SET(Type.T_ANY), test)) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			Type.Set t = Type.effectiveSetType(Type.greatestLowerBound(test,Type.T_SET(Type.T_ANY)));
+			translateTypeTest(trampoline,src,t,stmt, bytecodes);
+		} 
+		if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY), test)) {
+			bytecodes.add(new Bytecode.Dup(convertType(src)));
+			translateTypeTest(trampoline,src,Type.greatestLowerBound(test,Type.T_PROCESS(Type.T_ANY)),stmt, bytecodes);
+		} 
+		// following line is a bit of a hack to work around lack of depth subtyping.
+		for(Type t : test.bounds()) {
+			if(t instanceof Type.Record || t instanceof Type.Fun) {
+				bytecodes.add(new Bytecode.Dup(convertType(src)));
+				translateTypeTest(trampoline,src,t,stmt, bytecodes);				
+			}
 		}
 		
 		bytecodes.add(new Bytecode.Pop(convertType(src)));
