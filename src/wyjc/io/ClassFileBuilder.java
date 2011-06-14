@@ -655,7 +655,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void downConvesion(Type.Bool toType, Type fromType, int freeSlot,
+	public void downConversion(Type.Bool toType, Type fromType, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BOOLEAN));
 		JvmType.Function ftype = new JvmType.Function(T_BOOL);
@@ -663,7 +663,7 @@ public class ClassFileBuilder {
 				ftype, Bytecode.VIRTUAL));
 	}
 	
-	public void downConvesion(Type.Int toType, Type fromType,
+	public void downConversion(Type.Int toType, Type fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		
 		Type glb = Type.greatestLowerBound(fromType, Type.T_REAL);
@@ -679,7 +679,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void downConvesion(Type.Real toType, Type fromType, int freeSlot,
+	public void downConversion(Type.Real toType, Type fromType, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
 	}
