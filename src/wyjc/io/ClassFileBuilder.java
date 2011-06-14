@@ -1051,22 +1051,20 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE, bigintTarget));
 		bytecodes.add(new Bytecode.Dup(convertType(src)));
 		bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, bigratTarget));		
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, bigratTarget));
+		bytecodes.add(new Bytecode.Pop(convertType(src)));
 		bytecodes.add(new Bytecode.Goto(falseTarget));
-		bytecodes.add(new Bytecode.Label(bigintTarget));
-		bytecodes.add(new Bytecode.CheckCast(BIG_INTEGER));
+		bytecodes.add(new Bytecode.Label(bigintTarget));		
+		bytecodes.add(new Bytecode.Pop(convertType(src)));
 		bytecodes.add(new Bytecode.Goto(trueTarget));
 		bytecodes.add(new Bytecode.Label(bigratTarget));
 		bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
-		bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
 		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_BOOL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
-		fun_t = new JvmType.Function(BIG_INTEGER);
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "numerator", fun_t , Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));		
 		bytecodes.add(new Bytecode.Goto(trueTarget));
 		bytecodes.add(new Bytecode.Label(falseTarget));				
-		bytecodes.add(new Bytecode.Pop(convertType(src)));
+		
 	}
 	
 	/**
