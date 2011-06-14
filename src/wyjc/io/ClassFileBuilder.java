@@ -1043,34 +1043,30 @@ public class ClassFileBuilder {
 		// NOTE: on entry we know that src cannot be a Type.Int, since this case
 		// would have been already caught.
 		
-		// ======================================================================
-		// Perform the instanceof BigRational (if necessary)  
-		// ======================================================================
-				
 		String falseTarget = freshLabel();
-
-		if (!Type.isSubtype(Type.T_REAL, src)) {			
-			String nextTarget = freshLabel();			
-			bytecodes.add(new Bytecode.Dup(convertType(src)));
-			bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
-			bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
-			bytecodes.add(new Bytecode.Pop(convertType(src)));
-			bytecodes.add(new Bytecode.Goto(falseTarget));
-			bytecodes.add(new Bytecode.Label(nextTarget));
-			bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
-		}
-
-		// =================================================================
-		// Check whether our BigRational is an integer	
-		// =================================================================
-
-		// FIXME: there's a bug here, since once we know isInteger then we
-		// obviously have to extract a BigInteger object at some point.
-
+		String bigintTarget = freshLabel();
+		String bigratTarget = freshLabel();			
+		bytecodes.add(new Bytecode.Dup(convertType(src)));
+		bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, bigintTarget));
+		bytecodes.add(new Bytecode.Dup(convertType(src)));
+		bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, bigratTarget));		
+		bytecodes.add(new Bytecode.Goto(falseTarget));
+		bytecodes.add(new Bytecode.Label(bigintTarget));
+		bytecodes.add(new Bytecode.CheckCast(BIG_INTEGER));
+		bytecodes.add(new Bytecode.Goto(trueTarget));
+		bytecodes.add(new Bytecode.Label(bigratTarget));
+		bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
+		bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
 		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_BOOL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
+		fun_t = new JvmType.Function(BIG_INTEGER);
+		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "numerator", fun_t , Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Goto(trueTarget));
 		bytecodes.add(new Bytecode.Label(falseTarget));				
+		bytecodes.add(new Bytecode.Pop(convertType(src)));
 	}
 	
 	/**
