@@ -251,8 +251,16 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			case APPEND:
 			{				
 				coerce(req,code.type,index,entry);
-				environment.push(code.type);
-				environment.push(code.type);
+				if(code.dir == OpDir.UNIFORM) { 
+					environment.push(code.type);
+					environment.push(code.type);
+				} else if(code.dir == OpDir.LEFT) {
+					environment.push(code.type);
+					environment.push(code.type.element());					
+				} else {					
+					environment.push(code.type.element());
+					environment.push(code.type);
+				}
 				break;
 			}
 			case LENGTHOF:
@@ -440,8 +448,16 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			case DIFFERENCE:
 			case INTERSECT: {
 				coerce(req,code.type,index,entry);
-				environment.push(code.type);
-				environment.push(code.type);
+				if(code.dir == OpDir.UNIFORM) { 
+					environment.push(code.type);
+					environment.push(code.type);
+				} else if(code.dir == OpDir.LEFT) {
+					environment.push(code.type);
+					environment.push(code.type.element());					
+				} else {					
+					environment.push(code.type.element());
+					environment.push(code.type);
+				}
 				break;
 			}
 			case LENGTHOF:
@@ -459,7 +475,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		switch(code.uop) {
 			case NEG:
-			{
+			{				
 				coerce(req,code.type,index,entry);
 				environment.push(req); 
 			}
