@@ -190,7 +190,16 @@ public class WyilFileWriter implements Transform {
 			}			
 		} else if(c instanceof Code.ForAll && !writeSlots){
 			Code.ForAll fall = (Code.ForAll) c;			
-			line = "forall " + locals.get(fall.slot) + " " + fall.modifies + " : " + fall.type;
+			String modifies = "";
+			boolean firstTime=true;
+			for(int slot : fall.modifies) {
+				if(!firstTime) {
+					modifies +=", ";
+				}
+				firstTime=false;
+				modifies += locals.get(slot);
+			}
+			line = "forall " + locals.get(fall.slot) + " [" + modifies + "] : " + fall.type;
 		} else {
 			line = c.toString();		
 		}
