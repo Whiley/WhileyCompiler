@@ -424,6 +424,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.Store code, Block.Entry entry,
 			Env environment) {
 		environment.push(code.type);
+		
+		System.out.println("GOT: " + environment.get(code.slot));
+		
 		coerce(environment.get(code.slot),code.type,index,entry);
 		environment.set(code.slot,Type.T_VOID);
 	}
@@ -497,7 +500,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		if(code.slot < 0) {			
 			environment.push(code.type);			
-		} 
+		} else {
+			environment.set(code.slot,code.type);
+		}
 		
 		return environment;
 	}
@@ -509,7 +514,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		for(int i=0;i!=sw.branches.size();++i) {
 			environment = join(environment,environments.get(i));
-		}
+		} 
 		
 		environment.push(sw.type);
 		
