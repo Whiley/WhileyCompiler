@@ -178,7 +178,7 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess", ft1,
 		    Bytecode.STATIC));
 		
-		// Load the sender on - null.
+		// Load the sender as null.
 		codes.add(new Bytecode.LoadConst(null));
 		
 		// Get the System::main method out.

@@ -39,30 +39,20 @@ public class Continuations {
 		for (Method method : classfile.methods()) {
 			if (!method.name().equals("main")) {
 				apply(method);
-			} else {
-				for (BytecodeAttribute attribute : method.attributes()) {
-					if (attribute instanceof Code) {
-						System.out.println("main");
-						for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
-							System.out.println(bytecode);
-						}
-						System.out.println();
-					}
-				}
 			}
 		}
 	}
 
 	public void apply(Method method) {
-//		System.out.println(method.name());
+		System.out.println(method.name());
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
 				
-//				for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
-//					System.out.println(bytecode);
-//				}
-//				System.out.println();
+				for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
+					System.out.println(bytecode);
+				}
+				System.out.println();
 			}
 		}
 	}
@@ -94,7 +84,7 @@ public class Continuations {
 					    i == bytecodes.size() - 1 ? null : bytecodes.get(i + 1);
 					boolean isVoid = invoke.type.returnType().equals(T_VOID);
 					boolean push =
-					    !yields && !(next instanceof Return && next instanceof Throw)
+					    !yields && !(next instanceof Return || next instanceof Throw)
 					        && !isVoid;
 
 					add.add(new Load(0, PROCESS));
