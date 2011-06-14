@@ -145,7 +145,7 @@ public class ClassFileLoader {
 	
 	protected Module.Method createMethodInfo(ModuleID mid, ClassFile.Method cm) {
 		// string any mangling off.
-		try {
+		try {			
 			int split = cm.name().indexOf('$');
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());

@@ -26,6 +26,7 @@
 package wyjc.runtime;
 
 import java.util.*;
+import java.math.*;
 
 public class Util {
 
@@ -51,7 +52,8 @@ public class Util {
 	private static int nrecord_clones = 0;
 	
 	public static Object clone(Object o) {
-		if(o instanceof BigRational || o instanceof Boolean || o == null) {
+		if (o instanceof BigRational || o instanceof BigInteger
+				|| o instanceof Boolean || o == null) {
 			return o;
 		} else if(o instanceof ArrayList) {
 			return list_clone((ArrayList)o);
@@ -95,7 +97,7 @@ public class Util {
 	 * @param end
 	 * @return
 	 */
-	public static ArrayList sublist(ArrayList list, BigRational start, BigRational end) {
+	public static ArrayList sublist(ArrayList list, BigInteger start, BigInteger end) {
 		int st = start.intValue();
 		int en = end.intValue();
 		ArrayList r = new ArrayList();
@@ -194,11 +196,11 @@ public class Util {
 	 * @param end
 	 * @return
 	 */
-	public static ArrayList range(BigRational start, BigRational end) {
+	public static ArrayList range(BigInteger start, BigInteger end) {
 		ArrayList ret = new ArrayList();
 		
 		// FIXME: seems ludicrously inefficient!
-		BigRational dir = BigRational.valueOf(end.compareTo(start));
+		BigInteger dir = BigInteger.valueOf(end.compareTo(start));
 		
 		while(!start.equals(end)) {
 			ret.add(start);
@@ -232,7 +234,7 @@ public class Util {
 		ArrayList r = new ArrayList();
 		for(int i=0;i!=s.length();++i) {
 			int c = s.charAt(i);
-			r.add(BigRational.valueOf(c));
+			r.add(BigInteger.valueOf(c));
 		}
 		return r;
 	}
@@ -245,8 +247,8 @@ public class Util {
 	public static String toString(ArrayList list) {
 		String r = "";
 		for(Object o : list) {
-			if(o instanceof BigRational) {
-				int v = ((BigRational)o).intValue();
+			if(o instanceof BigInteger) {
+				int v = ((BigInteger)o).intValue();
 				r += (char) v;
 			} else {
 				throw new RuntimeException("Invalid Whiley List");
@@ -275,8 +277,8 @@ public class Util {
 	 */
 	public static void debug(ArrayList list) {
 		for(Object o : list) {
-			if(o instanceof BigRational) {
-				BigRational bi = (BigRational) o;
+			if(o instanceof BigInteger) {
+				BigInteger bi = (BigInteger) o;
 				System.out.print((char)bi.intValue());
 			}
 		}		
