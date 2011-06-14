@@ -379,8 +379,10 @@ public class ClassFileBuilder {
 		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
 			convert(toType, (Type.Bool) fromType, freeSlot, bytecodes);
-		} else if(toType == Type.T_REAL && fromType == Type.T_INT) {									
-			convert((Type.Real)toType, (Type.Int)fromType,freeSlot,bytecodes);  
+		} else if(fromType == Type.T_INT) {									
+			convert(toType, (Type.Int)fromType,freeSlot,bytecodes);  
+		} else if(toType == Type.T_INT) {									
+			convert((Type.Int) toType, fromType,freeSlot,bytecodes);  
 		} else if(toType instanceof Type.List && fromType instanceof Type.List) {
 			convert((Type.List) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Dictionary && fromType instanceof Type.List) {
@@ -627,11 +629,33 @@ public class ClassFileBuilder {
 		// done deal!
 	}
 	
-	public void convert(Type.Real toType, Type.Int fromType,
+	public void convert(Type toType, Type.Int fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));			
+		
+		Type glb = Type.greatestLowerBound(toType, Type.T_REAL);
+		
+		if(glb != Type.T_INT) {					
+			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+		}
 	}
+	
+	public void convert(Type.Int toType, Type fromType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		
+		Type glb = Type.greatestLowerBound(fromType, Type.T_REAL);
+		
+		if(glb != Type.T_INT) {
+			if(fromType != Type.T_REAL) {
+				bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
+			}						
+			JvmType.Function ftype = new JvmType.Function(BIG_INTEGER);			
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"numerator",ftype,Bytecode.VIRTUAL));
+		} else {
+			bytecodes.add(new Bytecode.CheckCast(BIG_INTEGER));
+		}
+	}
+	
 	
 	public void translate(Code.Store c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
@@ -967,17 +991,19 @@ public class ClassFileBuilder {
 									
 		Type gdiff = Type.leastDifference(c.type,c.test);			
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		addReadConversion(gdiff,bytecodes);
+		//addReadConversion(gdiff,bytecodes);
+		convert(gdiff,c.type,freeSlot,bytecodes);
 		bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 				
 		Type glb = Type.greatestLowerBound(c.type, c.test);
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		addReadConversion(glb, bytecodes);
+		//addReadConversion(glb, bytecodes);
+		convert(glb,c.type,freeSlot,bytecodes);
 		bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
 		bytecodes.add(new Bytecode.Goto(c.target));
-		bytecodes.add(new Bytecode.Label(exitLabel));						
+		bytecodes.add(new Bytecode.Label(exitLabel));		
 	}
 	
 	// The purpose of this method is to translate a type test. We're testing to
