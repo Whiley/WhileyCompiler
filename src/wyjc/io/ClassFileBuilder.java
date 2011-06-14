@@ -369,30 +369,28 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Convert c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
-		convert(c.to,c.from,freeSlot,bytecodes);				
+		upConversion(c.to,c.from,freeSlot,bytecodes);				
 	}
 	
-	protected void convert(Type toType, Type fromType,
+	protected void upConversion(Type toType, Type fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {				
 		if (Type.isomorphic(toType, fromType)) {		
 			// do nothing!						
 		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
-			convert(toType, (Type.Bool) fromType, freeSlot, bytecodes);
+			upConversion(toType, (Type.Bool) fromType, freeSlot, bytecodes);
 		} else if(fromType == Type.T_INT) {									
-			convert(toType, (Type.Int)fromType,freeSlot,bytecodes);  
-		} else if(toType == Type.T_INT) {									
-			convert((Type.Int) toType, fromType,freeSlot,bytecodes);  
+			upConversion(toType, (Type.Int)fromType,freeSlot,bytecodes);  
 		} else if(toType instanceof Type.List && fromType instanceof Type.List) {
-			convert((Type.List) toType, (Type.List) fromType, freeSlot, bytecodes);			
+			upConversion((Type.List) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Dictionary && fromType instanceof Type.List) {
-			convert((Type.Dictionary) toType, (Type.List) fromType, freeSlot, bytecodes);			
+			upConversion((Type.Dictionary) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Set && fromType instanceof Type.List) {
-			convert((Type.Set) toType, (Type.List) fromType, freeSlot, bytecodes);			
+			upConversion((Type.Set) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Set && fromType instanceof Type.Set) {
-			convert((Type.Set) toType, (Type.Set) fromType, freeSlot, bytecodes);			
+			upConversion((Type.Set) toType, (Type.Set) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Record && fromType instanceof Type.Record) {
-			convert((Type.Record) toType, (Type.Record) fromType, freeSlot, bytecodes);
+			upConversion((Type.Record) toType, (Type.Record) fromType, freeSlot, bytecodes);
 		} else {
 			// every other kind of conversion is either a syntax error (which
 			// should have been caught by TypeChecker); or, a nop (since no
@@ -400,7 +398,7 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	protected void convert(Type.List toType, Type.List fromType,
+	protected void upConversion(Type.List toType, Type.List fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		
 		if(fromType.element() == Type.T_VOID) {
@@ -435,7 +433,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));						
 		addReadConversion(fromType.element(),bytecodes);
-		convert(toType.element(), fromType.element(), freeSlot,
+		upConversion(toType.element(), fromType.element(), freeSlot,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add",
@@ -446,7 +444,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYLIST));
 	}
 	
-	protected void convert(Type.Dictionary toType, Type.List fromType,
+	protected void upConversion(Type.Dictionary toType, Type.List fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 						
 		if(fromType.element() == Type.T_VOID) {
@@ -487,7 +485,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_LIST, "get",
 				ftype, Bytecode.INTERFACE));						
 		addReadConversion(fromType.element(),bytecodes);		
-		convert(toType.value(), fromType.element(), freeSlot,
+		upConversion(toType.value(), fromType.element(), freeSlot,
 				bytecodes);			
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put",
@@ -499,7 +497,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));		
 	}
 	
-	protected void convert(Type.Set toType, Type.List fromType,
+	protected void upConversion(Type.Set toType, Type.List fromType,
 			int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {
 						
@@ -534,7 +532,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));						
 		addReadConversion(fromType.element(),bytecodes);
-		convert(toType.element(), fromType.element(), freeSlot,
+		upConversion(toType.element(), fromType.element(), freeSlot,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
@@ -545,7 +543,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
 	}
 	
-	protected void convert(Type.Set toType, Type.Set fromType,
+	protected void upConversion(Type.Set toType, Type.Set fromType,
 			int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
@@ -580,7 +578,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
 				ftype, Bytecode.INTERFACE));
 		addCheckCast(convertType(fromType.element()),bytecodes);		
-		convert(toType.element(), fromType.element(), freeSlot,
+		upConversion(toType.element(), fromType.element(), freeSlot,
 				bytecodes);			
 		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
@@ -591,7 +589,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
 	}
 	
-	public void convert(Type.Record toType, Type.Record fromType,
+	public void upConversion(Type.Record toType, Type.Record fromType,
 			int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		int oldtup = freeSlot++;
@@ -613,7 +611,7 @@ public class ClassFileBuilder {
 			addReadConversion(from,bytecodes);			
 			if(!to.equals(from)) {
 				// now perform recursive conversion
-				convert(to,from,freeSlot,bytecodes);
+				upConversion(to,from,freeSlot,bytecodes);
 			}			
 			ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
@@ -622,14 +620,14 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(newtup,WHILEYRECORD));		
 	}
 	
-	public void convert(Type toType, Type.Bool fromType,
+	public void upConversion(Type toType, Type.Bool fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
 	}
 	
-	public void convert(Type toType, Type.Int fromType,
+	public void upConversion(Type toType, Type.Int fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		
 		Type glb = Type.greatestLowerBound(toType, Type.T_REAL);
@@ -638,9 +636,34 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
 		}
+	}	
+	
+	public void downConversion(Type toType, Type fromType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		if (Type.isomorphic(toType, fromType)) {		
+			// do nothing!						
+		} else if(toType == Type.T_BOOL) {									
+			downConversion((Type.Bool) toType, fromType,freeSlot,bytecodes);  
+		} else if(toType == Type.T_INT) {									
+			downConversion((Type.Int) toType, fromType,freeSlot,bytecodes);  
+		} else if(toType == Type.T_REAL) {
+			downConversion((Type.Real) toType, fromType,freeSlot,bytecodes);
+		} else {
+			// FIXME: the following is a temporary hack. The main problem is
+			// that it doesn't recursively convert element types as required.
+			addCheckCast(convertType(toType),bytecodes);
+		}
 	}
 	
-	public void convert(Type.Int toType, Type fromType,
+	public void downConvesion(Type.Bool toType, Type fromType, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BOOLEAN));
+		JvmType.Function ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN, "booleanValue",
+				ftype, Bytecode.VIRTUAL));
+	}
+	
+	public void downConvesion(Type.Int toType, Type fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		
 		Type glb = Type.greatestLowerBound(fromType, Type.T_REAL);
@@ -656,6 +679,10 @@ public class ClassFileBuilder {
 		}
 	}
 	
+	public void downConvesion(Type.Real toType, Type fromType, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
+	}
 	
 	public void translate(Code.Store c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
@@ -991,16 +1018,14 @@ public class ClassFileBuilder {
 									
 		Type gdiff = Type.leastDifference(c.type,c.test);			
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		//addReadConversion(gdiff,bytecodes);
-		convert(gdiff,c.type,freeSlot,bytecodes);
+		downConversion(gdiff,c.type,freeSlot,bytecodes);
 		bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 				
 		Type glb = Type.greatestLowerBound(c.type, c.test);
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		//addReadConversion(glb, bytecodes);
-		convert(glb,c.type,freeSlot,bytecodes);
+		downConversion(glb,c.type,freeSlot,bytecodes);
 		bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
 		bytecodes.add(new Bytecode.Goto(c.target));
 		bytecodes.add(new Bytecode.Label(exitLabel));		
