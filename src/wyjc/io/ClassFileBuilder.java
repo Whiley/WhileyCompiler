@@ -474,10 +474,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(source,JAVA_UTIL_LIST));
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_LIST, "size",
 				ftype, Bytecode.INTERFACE));
-		bytecodes.add(new Bytecode.If(Bytecode.If.GE, exitLabel));
+		bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GE, T_INT, exitLabel));
 		bytecodes.add(new Bytecode.Load(target,WHILEYSET));
 		bytecodes.add(new Bytecode.Load(iter,T_INT));
-		ftype = new JvmType.Function(BIG_INTEGER,T_INT);
+		bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
+		ftype = new JvmType.Function(BIG_INTEGER,T_LONG);
 		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
 				ftype, Bytecode.STATIC));				
 		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
@@ -495,7 +496,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Iinc(iter,1));
 		bytecodes.add(new Bytecode.Goto(loopLabel));
 		bytecodes.add(new Bytecode.Label(exitLabel));
-		bytecodes.add(new Bytecode.Load(target,WHILEYSET));		
+		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));		
 	}
 	
 	protected void convert(Type.Set toType, Type.List fromType,
