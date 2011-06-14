@@ -379,10 +379,8 @@ public class ClassFileBuilder {
 		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
 			convert(toType, (Type.Bool) fromType, freeSlot, bytecodes);
-		} else if(toType == Type.T_REAL && fromType == Type.T_INT) {			
-			
-			// no longer need to convert between them!
-			
+		} else if(toType == Type.T_REAL && fromType == Type.T_INT) {									
+			convert((Type.Real)toType, (Type.Int)fromType,freeSlot,bytecodes);  
 		} else if(toType instanceof Type.List && fromType instanceof Type.List) {
 			convert((Type.List) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Dictionary && fromType instanceof Type.List) {
@@ -627,6 +625,12 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
+	}
+	
+	public void convert(Type.Real toType, Type.Int fromType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
+		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));			
 	}
 	
 	public void translate(Code.Store c, int freeSlot,
@@ -1745,18 +1749,13 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
 					Bytecode.VIRTUAL));
 			break;
-		case DIV:
-			if(c.type == Type.T_INT) {
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "intDivide", ftype,
-						Bytecode.VIRTUAL));
-			} else {
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
-					Bytecode.VIRTUAL));
-			}
+		case DIV:			
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
+					Bytecode.VIRTUAL));			
 			break;
 		case REM:									
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"intRemainder", ftype, Bytecode.VIRTUAL));			
+						"remainder", ftype, Bytecode.VIRTUAL));			
 			break;
 		default:
 			syntaxError("unknown binary expression encountered",filename,stmt);
