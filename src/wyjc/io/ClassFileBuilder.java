@@ -1687,7 +1687,8 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_INT);						
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
 					ftype, Bytecode.VIRTUAL));					
-			ftype = new JvmType.Function(BIG_INTEGER, T_INT);
+			bytecodes.add(new Bytecode.Conversion(T_INT,T_LONG));
+			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
 			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
 					ftype, Bytecode.STATIC));
 			break;
@@ -1786,8 +1787,9 @@ public class ClassFileBuilder {
 		{
 			JvmType.Function ftype = new JvmType.Function(T_INT);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size",
-					ftype, Bytecode.VIRTUAL));						
-			ftype = new JvmType.Function(BIG_INTEGER, T_INT);
+					ftype, Bytecode.VIRTUAL));				
+			bytecodes.add(new Bytecode.Conversion(T_INT,T_LONG));
+			ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
 			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
 					ftype, Bytecode.STATIC));
 			break;
