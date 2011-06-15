@@ -718,7 +718,9 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.CheckCast(WHILEYRECORD));						
 		}
 		
-		type = (Type.Record) Type.greatestLowerBound(fromType,Type.T_RECORD(Collections.EMPTY_MAP));
+		Type glb = Type.greatestLowerBound(fromType,Type.T_RECORD(Collections.EMPTY_MAP));		
+		type = (Type.Record) Type.effectiveRecordType(glb);
+		
 		JvmType.Function getType = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_STRING);
 		JvmType.Function putType = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_STRING,JAVA_LANG_OBJECT);
 		
@@ -734,8 +736,9 @@ public class ClassFileBuilder {
 			} else {
 				// ok, need to down convert the field
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-				bytecodes.add(new Bytecode.LoadConst(field));
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(field));
+				bytecodes.add(new Bytecode.Swap());
 				bytecodes.add(new Bytecode.LoadConst(field));				
 				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",getType,Bytecode.VIRTUAL));
 				addReadConversion(from,bytecodes);

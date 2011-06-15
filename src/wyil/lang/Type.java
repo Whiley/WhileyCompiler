@@ -973,10 +973,7 @@ public abstract class Type {
 							nfields.put(e.getKey(),
 									leastUpperBound(e.getValue(), bt));
 						}
-					}
-					if (nfields.size() == 0) {
-						return null;
-					}
+					}					
 					r = T_RECORD(nfields);
 				}
 			}
