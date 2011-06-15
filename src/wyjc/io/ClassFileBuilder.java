@@ -728,7 +728,7 @@ public class ClassFileBuilder {
 			// we can assume the following line will not return null. This is
 			// because we've generated type using glb above.
 			Type from = type.fields().get(field);
-			
+			if(from == null) { from = Type.T_ANY; }
 			if(Type.isomorphic(to,from)) {
 				// ok, don't need to do anything in this case
 			} else {
@@ -1468,7 +1468,8 @@ public class ClassFileBuilder {
 		for(Map.Entry<String,Type> e : test.fields().entrySet()) {
 			String field = e.getKey();
 			Type testType = e.getValue();
-			Type srcType = nsrc.fields().get(field);
+			Type srcType = nsrc.fields().get(field);			
+			if(srcType == null) { srcType = Type.T_ANY; }
 			if(!Type.isSubtype(testType,srcType)) {
 				// this field needs to be checked
 				String nextTarget = freshLabel();

@@ -1497,15 +1497,16 @@ public abstract class Type {
 			data = nelems;
 			break;			
 		}
-		case K_RECORD: {
-			Pair<String,Integer>[] elems = (Pair[]) node.data;
-			Pair<String,Integer>[] nelems = new Pair[elems.length];
-			for(int i=0;i!=elems.length;++i) {
-				Pair<String,Integer> p = elems[i];
-				int j = (Integer) rebuild(p.second(),graph,allocated,newNodes,matrix);
-				nelems[i] = new Pair<String,Integer>(p.first(),j);
-			}
-			data = nelems;			
+		case K_RECORD: {			
+				Pair<String, Integer>[] elems = (Pair[]) node.data;
+				Pair<String, Integer>[] nelems = new Pair[elems.length];
+				for (int i = 0; i != elems.length; ++i) {
+					Pair<String, Integer> p = elems[i];					
+					int j = (Integer) rebuild(p.second(), graph, allocated,
+							newNodes, matrix);					
+					nelems[i] = new Pair<String, Integer>(p.first(), j);
+				}
+				data = nelems;			
 			break;
 		}	
 		case K_UNION: {
@@ -1725,32 +1726,55 @@ public abstract class Type {
 				}
 				break;
 			}
-			case K_RECORD:
+			case K_RECORD: 
 				// labeled nary nodes
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
-				if(fields1.length != fields2.length) {
-					node = new Node(K_VOID,null);
-				} else {
-					outer: {
-						Pair<String,Integer>[] nfields = new Pair[fields1.length];
-						// FIXME: need to support WIDTH subtyping here.
-						for (int i = 0; i != fields1.length; ++i) {
-							Pair<String, Integer> e1 = fields1[i];
-							Pair<String, Integer> e2 = fields2[i];
-							if(!e1.first().equals(e2.first())) {
-								node = new Node(K_VOID,null);
-								break outer;
-							} else {
-								nfields[i] = new Pair(e1.first(), intersect(
-										e1.second(), graph1, e2.second(), graph2,
-										newNodes,allocations));
-							}
-						}
-						node = new Node(K_RECORD,nfields);
-					}
+				outer: {
+				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
+				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) c2.data;
+				HashMap<String, Integer> fields1 = new HashMap<String, Integer>();
+				HashMap<String, Integer> fields2 = new HashMap<String, Integer>();
+				for (Pair<String, Integer> p : _fields1) {
+					fields1.put(p.first(), p.second());
 				}
-				break;
+				for (Pair<String, Integer> p : _fields2) {
+					fields2.put(p.first(), p.second());
+				}
+				HashSet<String> _fields = new HashSet<String>(
+						fields1.keySet());
+				_fields.addAll(fields2.keySet());
+				ArrayList<String> fields = new ArrayList<String>(_fields);
+				Collections.sort(fields);
+				Pair<String, Integer>[] nfields = new Pair[fields.size()];
+				int old = newNodes.size();
+				for (int i = 0; i != nfields.length; ++i) {
+					String f = fields.get(i);
+					Integer e1 = fields1.get(f);
+					Integer e2 = fields2.get(f);
+					int nidx = newNodes.size();
+					if (e1 == null) {
+						extractOnto(e2, graph2, newNodes);
+					} else if (e2 == null) {
+						extractOnto(e1, graph1, newNodes);
+					} else {						
+
+						nidx = intersect(e1, graph1, e2, graph2, newNodes,
+								allocations);
+
+						if (newNodes.get(nidx).kind == K_VOID) {
+							// A record with a field of void type cannot
+							// exist --- it's just equivalent to void.
+							while (newNodes.size() != old) {
+								newNodes.remove(newNodes.size() - 1);
+							}
+							node = new Node(K_VOID, null);
+							break outer;
+						}
+					}
+					nfields[i] = new Pair<String, Integer>(f, nidx);
+				}
+				node = new Node(K_RECORD, nfields);
+			}
+			break;			
 			case K_UNION: {
 				// This is the hardest (i.e. most expensive) case. Essentially, I
 				// just check that for each bound in one node, there is an
@@ -3098,7 +3122,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = T_RECORD(Collections.EMPTY_MAP);		
+		Type t1 = fromString("{[int] x,int z}");		
 		Type t2 = fromString("{int x,int y}");
 		//Type t1 = T_REAL;
 		//Type t2 = T_INT;
@@ -3112,7 +3136,7 @@ public abstract class Type {
 		Type glb = greatestLowerBound(t1,t2);
 		System.out.println(glb);
 		Type lub = leastUpperBound(t1,t2);
-		System.out.println(lub);
+		System.out.println(lub);	
 	}
 	
 }
