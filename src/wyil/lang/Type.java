@@ -1298,22 +1298,40 @@ public abstract class Type {
 				}
 				return true;
 			}
-			case K_RECORD:
-				// labeled nary nodes
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) c2.data;				
-				HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
-				for(Pair<String,Integer> f : _fields2) {
-					fields2.put(f.first(), f.second());
-				}
-				for (int i = 0; i != fields1.length; ++i) {
-					Pair<String, Integer> e1 = fields1[i];
-					Integer e2 = fields2.get(e1.first());
-					if (e2 == null
-							|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
-						return false;
+			case K_RECORD:				
+				if(sign) {
+					// labeled nary nodes
+					Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
+					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;				
+					HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
+					for(Pair<String,Integer> f : _fields1) {
+						fields1.put(f.first(), f.second());
 					}
-				}
+					for (int i = 0; i != fields2.length; ++i) {
+						Pair<String, Integer> e2 = fields2[i];
+						Integer e1 = fields1.get(e2.first());
+						if (e1 == null
+								|| !subtypeMatrix.get((e1 * g2Size) + e1)) {
+							return false;
+						}
+					}
+				} else {
+					// labeled nary nodes
+					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+					Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) c2.data;				
+					HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
+					for(Pair<String,Integer> f : _fields2) {
+						fields2.put(f.first(), f.second());
+					}
+					for (int i = 0; i != fields1.length; ++i) {
+						Pair<String, Integer> e1 = fields1[i];
+						Integer e2 = fields2.get(e1.first());
+						if (e2 == null
+								|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
+							return false;
+						}
+					}
+				} 
 				return true;
 			case K_UNION: {				
 				if(sign) {
@@ -3080,7 +3098,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = fromString("{int x}");		
+		Type t1 = T_RECORD(Collections.EMPTY_MAP);		
 		Type t2 = fromString("{int x,int y}");
 		//Type t1 = T_REAL;
 		//Type t2 = T_INT;
@@ -3093,6 +3111,8 @@ public abstract class Type {
 		System.out.println(isSubtype(t2,t1));
 		Type glb = greatestLowerBound(t1,t2);
 		System.out.println(glb);
+		Type lub = leastUpperBound(t1,t2);
+		System.out.println(lub);
 	}
 	
 }
