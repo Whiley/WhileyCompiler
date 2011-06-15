@@ -1301,17 +1301,16 @@ public abstract class Type {
 			case K_RECORD:
 				// labeled nary nodes
 				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
-				if(fields1.length != fields2.length) {
-					return false;
+				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) c2.data;				
+				HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
+				for(Pair<String,Integer> f : _fields2) {
+					fields2.put(f.first(), f.second());
 				}
-				// FIXME: need to support WIDTH subtyping here.
 				for (int i = 0; i != fields1.length; ++i) {
 					Pair<String, Integer> e1 = fields1[i];
-					Pair<String, Integer> e2 = fields2[i];
-					if (!e1.first().equals(e2.first())
-							|| !subtypeMatrix
-							.get((e1.second() * g2Size) + e2.second())) {
+					Integer e2 = fields2.get(e1.first());
+					if (e2 == null
+							|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
 						return false;
 					}
 				}
@@ -3081,8 +3080,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = fromString("any");		
-		Type t2 = fromString("int");
+		Type t1 = fromString("{int x}");		
+		Type t2 = fromString("{int x,int y}");
 		//Type t1 = T_REAL;
 		//Type t2 = T_INT;
 		System.out.println("Type: " + t1 + "\n------------------");
@@ -3092,8 +3091,8 @@ public abstract class Type {
 		System.out.println("====================");
 		System.out.println(isSubtype(t1,t2));
 		System.out.println(isSubtype(t2,t1));
-		//Type glb = leastUpperBound(t1,t2);
-		//System.out.println(glb);
+		Type glb = greatestLowerBound(t1,t2);
+		System.out.println(glb);
 	}
 	
 }

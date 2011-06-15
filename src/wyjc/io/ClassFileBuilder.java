@@ -636,8 +636,27 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
 		}
-	}	
-	
+	}
+
+	/**
+	 * A down conversion is used to take a supertype and convert into a subtype.
+	 * This can only arise as a result of a type tests. For example:
+	 * 
+	 * <pre>
+	 * void f([real] rs):
+	 *     if rs is [int]:
+	 *         ...
+	 *     else:
+	 *         ...
+	 * </pre>
+	 * 
+	 * A down conversion from [real] to [int] is required on the true branch.
+	 * 
+	 * @param toType
+	 * @param fromType
+	 * @param freeSlot
+	 * @param bytecodes
+	 */
 	public void downConversion(Type toType, Type fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		if (Type.isomorphic(toType, fromType)) {		
@@ -648,6 +667,16 @@ public class ClassFileBuilder {
 			downConversion((Type.Int) toType, fromType,freeSlot,bytecodes);  
 		} else if(toType == Type.T_REAL) {
 			downConversion((Type.Real) toType, fromType,freeSlot,bytecodes);
+		} else if(toType == Type.T_REAL) {
+			downConversion((Type.Real) toType, fromType,freeSlot,bytecodes);
+		} else if(toType instanceof Type.Set) {
+			
+		} else if(toType instanceof Type.List) {
+			
+		} else if(toType instanceof Type.Dictionary) {
+			
+		} else if(toType instanceof Type.Record) {
+			downConversion((Type.Record) toType, fromType,freeSlot,bytecodes);
 		} else {
 			// FIXME: the following is a temporary hack. The main problem is
 			// that it doesn't recursively convert element types as required.
@@ -677,6 +706,46 @@ public class ClassFileBuilder {
 		} else {
 			bytecodes.add(new Bytecode.CheckCast(BIG_INTEGER));
 		}
+	}
+	
+	public void downConversion(Type.Record toType, Type fromType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		
+		Type.Record type = Type.effectiveRecordType(fromType);
+		
+		if(type == null) {
+			// indicates from may not have record type.
+			bytecodes.add(new Bytecode.CheckCast(WHILEYRECORD));						
+		}
+		
+		type = (Type.Record) Type.greatestLowerBound(fromType,Type.T_RECORD(Collections.EMPTY_MAP));
+		JvmType.Function getType = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_STRING);
+		JvmType.Function putType = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_STRING,JAVA_LANG_OBJECT);
+		
+		for(Map.Entry<String,Type> e : toType.fields().entrySet()) {
+			String field = e.getKey();
+			Type to = e.getValue();
+			// we can assume the following line will not return null. This is
+			// because we've generated type using glb above.
+			Type from = type.fields().get(field);
+			
+			if(Type.isomorphic(to,from)) {
+				// ok, don't need to do anything in this case
+			} else {
+				// ok, need to down convert the field
+				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(field));
+				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(field));				
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",getType,Bytecode.VIRTUAL));
+				addReadConversion(from,bytecodes);
+				downConversion(to,from,freeSlot,bytecodes);
+				addWriteConversion(from,bytecodes);
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",putType,Bytecode.VIRTUAL));
+				bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+			}
+		}
+		
 	}
 	
 	public void downConversion(Type.Real toType, Type fromType, int freeSlot,

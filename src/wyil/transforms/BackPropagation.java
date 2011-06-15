@@ -134,6 +134,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(NewSet)code,entry,environment);
 		} else if(code instanceof Return) {
 			infer(index,(Return)code,entry,environment);
+		} else if(code instanceof Skip) {
+			// skip			
 		} else if(code instanceof Send) {
 			infer(index,(Send)code,entry,environment);
 		} else if(code instanceof Store) {

@@ -174,6 +174,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Store)code,entry,environment);
 		} else if(code instanceof SetOp) {
 			infer(index,(SetOp)code,entry,environment);
+		} else if(code instanceof Skip) {
+			// skip			
 		} else if(code instanceof UnOp) {
 			infer(index,(UnOp)code,entry,environment);
 		} else {
