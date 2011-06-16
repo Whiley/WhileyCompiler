@@ -350,7 +350,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		
 		Value constant = c.constant;
-		if (constant instanceof Value.Number || constant instanceof Value.Bool
+		if (constant instanceof Value.Rational || constant instanceof Value.Bool
 				|| constant instanceof Value.Null) {
 			translate(constant,freeSlot,bytecodes);					
 		} else {
@@ -791,13 +791,13 @@ public class ClassFileBuilder {
 		for (Pair<Value, String> p : c.branches) {
 			// first, check whether the switch value is indeed an integer.
 			Value v = (Value) p.first();
-			if (!(v instanceof Value.Number && ((Value.Number) v).value
+			if (!(v instanceof Value.Rational && ((Value.Rational) v).value
 					.isInteger())) {
 				canUseSwitchBytecode = false;
 				break;
 			}
 			// second, check whether integer value can fit into a Java int
-			Value.Number vi = (Value.Number) v;
+			Value.Rational vi = (Value.Rational) v;
 			int iv = vi.value.intValue();
 			if (!BigRational.valueOf(iv).equals(vi.value)) {
 				canUseSwitchBytecode = false;
@@ -2038,8 +2038,10 @@ public class ClassFileBuilder {
 			translate((Value.Null)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Bool) {
 			translate((Value.Bool)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Number) {
-			translate((Value.Number)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Integer) {
+			translate((Value.Integer)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Rational) {
+			translate((Value.Rational)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Set) {
 			translate((Value.Set)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.List) {
@@ -2069,17 +2071,53 @@ public class ClassFileBuilder {
 		}
 	}
 
-	protected void translate(Value.Number e, int freeSlot,
+	protected void translate(Value.Integer e, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
+		BigInteger num = e.value;
+		if (num.bitLength() < 64) {
+			bytecodes.add(new Bytecode.LoadConst(num.longValue()));
+			JvmType.Function ftype = new JvmType.Function(BIG_INTEGER, T_LONG);
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf", ftype,
+					Bytecode.STATIC));
+		} else {
+			// in this context, we need to use a byte array to construct the
+			// integer object.
+			byte[] bytes = num.toByteArray();
+			JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
+
+			bytecodes.add(new Bytecode.New(BIG_INTEGER));
+			bytecodes.add(new Bytecode.Dup(BIG_INTEGER));
+			bytecodes.add(new Bytecode.LoadConst(bytes.length));
+			bytecodes.add(new Bytecode.New(bat));
+			for (int i = 0; i != bytes.length; ++i) {
+				bytecodes.add(new Bytecode.Dup(bat));
+				bytecodes.add(new Bytecode.LoadConst(i));
+				bytecodes.add(new Bytecode.LoadConst(bytes[i]));
+				bytecodes.add(new Bytecode.ArrayStore(bat));
+			}
+
+			JvmType.Function ftype = new JvmType.Function(T_VOID, bat);
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "<init>", ftype,
+					Bytecode.SPECIAL));
+		}
+	}
+
+	protected void translate(Value.Rational e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		BigRational rat = e.value;
 		BigInteger den = rat.denominator();
 		BigInteger num = rat.numerator();
 		if(rat.isInteger()) {
 			// this 
-			if(num.bitLength() < 64) {			
+			if(num.bitLength() < 32) {			
+				bytecodes.add(new Bytecode.LoadConst(num.intValue()));				
+				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
+						Bytecode.STATIC));
+			} else if(num.bitLength() < 64) {			
 				bytecodes.add(new Bytecode.LoadConst(num.longValue()));				
-				JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,T_LONG);
-				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf", ftype,
+				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_LONG);
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf", ftype,
 						Bytecode.STATIC));
 			} else {
 				// in this context, we need to use a byte array to construct the
@@ -2087,8 +2125,8 @@ public class ClassFileBuilder {
 				byte[] bytes = num.toByteArray();
 				JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
 
-				bytecodes.add(new Bytecode.New(BIG_INTEGER));		
-				bytecodes.add(new Bytecode.Dup(BIG_INTEGER));			
+				bytecodes.add(new Bytecode.New(BIG_RATIONAL));		
+				bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));			
 				bytecodes.add(new Bytecode.LoadConst(bytes.length));
 				bytecodes.add(new Bytecode.New(bat));
 				for(int i=0;i!=bytes.length;++i) {
@@ -2099,7 +2137,7 @@ public class ClassFileBuilder {
 				}			
 
 				JvmType.Function ftype = new JvmType.Function(T_VOID,bat);						
-				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "<init>", ftype,
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,
 						Bytecode.SPECIAL));								
 			}	
 		} else if(num.bitLength() < 32 && den.bitLength() < 32) {			
@@ -2147,7 +2185,7 @@ public class ClassFileBuilder {
 					Bytecode.SPECIAL));			
 		}		
 	}
-
+	
 	protected void translate(Value.Set lv, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYSET, freeSlot, bytecodes);		

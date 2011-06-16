@@ -195,11 +195,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
-		Value.Number result = null;
+		Value result = null;
 		
-		if(lhs instanceof Value.Number && rhs instanceof Value.Number) {
-			Value.Number lnum = (Value.Number) lhs;
-			Value.Number rnum = (Value.Number) rhs;
+		if(lhs instanceof Value.Rational && rhs instanceof Value.Rational) {
+			Value.Rational lnum = (Value.Rational) lhs;
+			Value.Rational rnum = (Value.Rational) rhs;
 			
 			switch (code.bop) {
 			case ADD: {
@@ -214,19 +214,34 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				result = lnum.multiply(rnum);
 				break;
 			}
-			case DIV: {
-				// FIXME: I think there's a bug her related to integer division.
-				if(code.type == Type.T_INT) {
-					result = lnum.intDivide(rnum);	
-				} else {
-					result = lnum.divide(rnum);
-				}
+			case DIV: {				
+				result = lnum.divide(rnum);				
 				break;
-			}			
-			case REM: {
-				result = lnum.intRemainder(rnum);
+			}						
+			}		
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,2));
+		} else if(lhs instanceof Value.Integer && rhs instanceof Value.Integer) {
+			Value.Integer lnum = (Value.Integer) lhs;
+			Value.Integer rnum = (Value.Integer) rhs;
+			
+			switch (code.bop) {
+			case ADD: {
+				result = lnum.add(rnum);
 				break;
 			}
+			case SUB: {
+				result = lnum.subtract(rnum);
+				break;
+			}
+			case MUL: {
+				result = lnum.multiply(rnum);
+				break;
+			}
+			case DIV: {				
+				result = lnum.divide(rnum);				
+				break;
+			}						
 			}		
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,2));
@@ -239,9 +254,16 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		Value val = environment.pop();
 		
-		// need to apply conversion here
+		if (val instanceof Value.Integer && code.from == Type.T_INT
+				&& code.to == Type.T_REAL) {
+			Value.Integer vi = (Value.Integer)val;
+			val = Value.V_RATIONAL(BigRational.valueOf(vi.value));
+		} else {			
+			// need to apply other conversion here
+			val = null;
+		}
 		
-		environment.push(null);
+		environment.push(val);
 	}
 	
 	public void infer(Code.Const code, Block.Entry entry,
@@ -333,10 +355,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				Value start = environment.pop();
 				Value list = environment.pop();
 				Value result = null;
-				if (list instanceof Value.List && start instanceof Value.Number
-						&& end instanceof Value.Number) {
-					Value.Number en = (Value.Number) end;
-					Value.Number st = (Value.Number) start;
+				if (list instanceof Value.List && start instanceof Value.Rational
+						&& end instanceof Value.Rational) {
+					Value.Rational en = (Value.Rational) end;
+					Value.Rational st = (Value.Rational) start;
 					if (en.value.isInteger() && st.value.isInteger()) {
 						Value.List li = (Value.List) list;
 						int eni = en.value.intValue();
@@ -399,7 +421,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				
 				if(val instanceof Value.List) {
 					Value.List list = (Value.List) val;
-					result = Value.V_NUMBER(BigRational.valueOf(list.values.size()));
+					result = Value.V_RATIONAL(BigRational.valueOf(list.values.size()));
 					entry = new Block.Entry(Code.Const(result),entry.attributes());
 					rewrites.put(index, new Rewrite(entry,1));
 				} 
@@ -416,8 +438,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value idx = environment.pop();
 		Value src = environment.pop();
 		Value result = null;
-		if (idx instanceof Value.Number && src instanceof Value.List) {
-			Value.Number num = (Value.Number) idx;
+		if (idx instanceof Value.Rational && src instanceof Value.List) {
+			Value.Rational num = (Value.Rational) idx;
 			Value.List list = (Value.List) src;
 			if(num.value.isInteger()) {
 				int i = num.value.intValue();
@@ -666,7 +688,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			
 			if(val instanceof Value.Set) {
 				Value.Set set = (Value.Set) val;
-				result = Value.V_NUMBER(BigRational.valueOf(set.values.size()));
+				result = Value.V_RATIONAL(BigRational.valueOf(set.values.size()));
 				nops = 1;
 			} 
 		}
@@ -687,9 +709,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		switch(code.uop) {
 			case NEG:
 			{
-				if(val instanceof Value.Number) {
-					Value.Number num = (Value.Number) val;
-					result = Value.V_NUMBER(num.value.negate());
+				if(val instanceof Value.Rational) {
+					Value.Rational num = (Value.Rational) val;
+					result = Value.V_RATIONAL(num.value.negate());
 				} 
 			}
 			break;			

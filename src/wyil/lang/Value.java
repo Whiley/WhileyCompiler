@@ -41,12 +41,12 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Bool(value));
 	}
 	
-	public static Number V_NUMBER(BigRational value) {
-		return get(new Number(value));
+	public static Rational V_RATIONAL(BigRational value) {
+		return get(new Rational(value));
 	}	
 
-	public static Number V_NUMBER(BigInteger value) {
-		return get(new Number(new BigRational(value)));
+	public static Integer V_INTEGER(BigInteger value) {
+		return get(new Integer(value));
 	}
 	
 	public static Strung V_STRING(String value) {
@@ -143,31 +143,72 @@ public abstract class Value implements Comparable<Value> {
 		}		
 	}
 		
-	public static final class Number extends Value {
+	public static final class Rational extends Value {
 		public final BigRational value;
-		private Number(BigRational value) {
+		private Rational(BigRational value) {
 			this.value = value;
 		}
-		public Type type() {
-			if(value.isInteger()) {
-				return Type.T_INT;
-			} else {
-				return Type.T_REAL;
-			}
+		public Type type() {			
+			return Type.T_REAL;			
 		}
 		public int hashCode() {
 			return value.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Number) {
-				Number i = (Number) o;
+			if(o instanceof Rational) {
+				Rational i = (Rational) o;
 				return value.equals(i.value);
 			}
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof Number) {
-				Number i = (Number) v;
+			if(v instanceof Rational) {
+				Rational i = (Rational) v;
+				return value.compareTo(i.value); 
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Integer) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public String toString() {
+			return value.toString();
+		}
+		
+		public Value.Rational add(Value.Rational val) {
+			return Value.V_RATIONAL(value.add(val.value));
+		}
+		public Value.Rational subtract(Value.Rational val) {
+			return Value.V_RATIONAL(value.subtract(val.value));
+		}
+		public Value.Rational multiply(Value.Rational val) {
+			return Value.V_RATIONAL(value.multiply(val.value));
+		}
+		public Value.Rational divide(Value.Rational val) {
+			return Value.V_RATIONAL(value.divide(val.value));
+		}		
+	}
+	
+	public static final class Integer extends Value {
+		public final BigInteger value;
+		private Integer(BigInteger value) {
+			this.value = value;
+		}
+		public Type type() {			
+			return Type.T_INT;			
+		}
+		public int hashCode() {
+			return value.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Integer) {
+				Integer i = (Integer) o;
+				return value.equals(i.value);
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Integer) {
+				Integer i = (Integer) v;
 				return value.compareTo(i.value); 
 			} else if(v instanceof Null || v instanceof Bool) {
 				return 1; 
@@ -178,23 +219,20 @@ public abstract class Value implements Comparable<Value> {
 			return value.toString();
 		}
 		
-		public Value.Number add(Value.Number val) {
-			return Value.V_NUMBER(value.add(val.value));
+		public Value.Integer add(Value.Integer val) {
+			return Value.V_INTEGER(value.add(val.value));
 		}
-		public Value.Number subtract(Value.Number val) {
-			return Value.V_NUMBER(value.subtract(val.value));
+		public Value.Integer subtract(Value.Integer val) {
+			return Value.V_INTEGER(value.subtract(val.value));
 		}
-		public Value.Number multiply(Value.Number val) {
-			return Value.V_NUMBER(value.multiply(val.value));
+		public Value.Integer multiply(Value.Integer val) {
+			return Value.V_INTEGER(value.multiply(val.value));
 		}
-		public Value.Number divide(Value.Number val) {
-			return Value.V_NUMBER(value.divide(val.value));
-		}
-		public Value.Number intDivide(Value.Number val) {
-			return Value.V_NUMBER(value.intDivide(val.value));
-		}
-		public Value.Number intRemainder(Value.Number val) {
-			return Value.V_NUMBER(value.intRemainder(val.value));
+		public Value.Integer divide(Value.Integer val) {
+			return Value.V_INTEGER(value.divide(val.value));
+		}		
+		public Value.Integer intRemainder(Value.Integer val) {
+			return Value.V_INTEGER(value.remainder(val.value));
 		}
 	}
 	
@@ -221,7 +259,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Strung) {
 				Strung i = (Strung) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Number) {
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Integer || v instanceof Rational) {
 				return 1; 
 			} 
 			return -1;			
@@ -270,7 +308,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Number || v instanceof Strung) {
+					|| v instanceof Integer || v instanceof Rational || v instanceof Strung) {
 				return 1; 
 			} 
 			return -1;			
@@ -337,7 +375,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Number || v instanceof Strung
+					|| v instanceof Integer || v instanceof Rational || v instanceof Strung
 					|| v instanceof List) {
 				return 1;
 			}
@@ -442,7 +480,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Number || v instanceof Strung
+					|| v instanceof Integer || v instanceof Rational || v instanceof Strung
 					|| v instanceof Set || v instanceof List) {
 				return 1; 
 			} 
@@ -519,7 +557,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Number || v instanceof Strung
+					|| v instanceof Integer || v instanceof Rational || v instanceof Strung
 					|| v instanceof Set || v instanceof List
 					|| v instanceof Record) {
 				return 1;
@@ -625,10 +663,10 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 	private static final ArrayList<Value> values = new ArrayList<Value>();
-	private static final HashMap<Value,Integer> cache = new HashMap<Value,Integer>();
+	private static final HashMap<Value,java.lang.Integer> cache = new HashMap<Value,java.lang.Integer>();
 	
 	private static <T extends Value> T get(T type) {
-		Integer idx = cache.get(type);
+		java.lang.Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) values.get(idx);
 		} else {					

@@ -314,8 +314,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Value infer(Value val, SyntacticElement elem) {
-		if (val instanceof Value.Number || val instanceof Value.Bool
-				|| val instanceof Value.Null) {
+		if (val instanceof Value.Rational || val instanceof Value.Integer
+				|| val instanceof Value.Bool || val instanceof Value.Null) {
 			return val;
 		} else if (val instanceof Value.Set) {
 			return infer((Value.Set)val,elem);
