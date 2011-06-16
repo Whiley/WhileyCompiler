@@ -1,10 +1,12 @@
-define ilist as real | [int]
+define intreal as real | int
 
-string f(real e):
+string f(intreal e):
     if e ~= int:
         return "int"
     else:
-        return "realreal"
+        return "real"
 
 void System::main([string] args):
     out.println(f(1))
+    out.println(f(1.134))
+    out.println(f(1.0))
