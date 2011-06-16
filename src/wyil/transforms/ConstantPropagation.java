@@ -421,7 +421,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				
 				if(val instanceof Value.List) {
 					Value.List list = (Value.List) val;
-					result = Value.V_RATIONAL(BigRational.valueOf(list.values.size()));
+					result = Value.V_INTEGER(BigInteger.valueOf(list.values.size()));
 					entry = new Block.Entry(Code.Const(result),entry.attributes());
 					rewrites.put(index, new Rewrite(entry,1));
 				} 
@@ -688,7 +688,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			
 			if(val instanceof Value.Set) {
 				Value.Set set = (Value.Set) val;
-				result = Value.V_RATIONAL(BigRational.valueOf(set.values.size()));
+				result = Value.V_INTEGER(BigInteger.valueOf(set.values.size()));
 				nops = 1;
 			} 
 		}
@@ -712,7 +712,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				if(val instanceof Value.Rational) {
 					Value.Rational num = (Value.Rational) val;
 					result = Value.V_RATIONAL(num.value.negate());
-				} 
+				} else if(val instanceof Value.Integer) {
+					Value.Integer num = (Value.Integer) val;
+					result = Value.V_INTEGER(num.value.negate());
+				}  
 			}
 			break;			
 		}
