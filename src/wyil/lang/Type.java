@@ -1295,7 +1295,23 @@ public abstract class Type {
 				}
 				return true;
 			}
-			case K_RECORD:				
+			case K_RECORD:		
+			{
+				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;								
+				if(fields1.length != fields2.length) {
+					return false;
+				}
+				for (int i = 0; i != fields1.length; ++i) {
+					Pair<String, Integer> e1 = fields1[i];
+					Pair<String, Integer> e2 = fields2[i];
+					if (!e1.first().equals(e2.first())
+							|| !subtypeMatrix.get((e1.second() * g2Size) + e2.second())) {
+						return false;
+					}
+				}
+				/*
+				 * follwing implements width subtyping and is disabled.				 
 				if(sign) {
 					// labeled nary nodes
 					Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
@@ -1308,7 +1324,7 @@ public abstract class Type {
 						Pair<String, Integer> e2 = fields2[i];
 						Integer e1 = fields1.get(e2.first());
 						if (e1 == null
-								|| !subtypeMatrix.get((e1 * g2Size) + e1)) {
+								|| !subtypeMatrix.get((e1 * g2Size) + e2)) {
 							return false;
 						}
 					}
@@ -1328,8 +1344,9 @@ public abstract class Type {
 							return false;
 						}
 					}
-				} 
+				 */
 				return true;
+			} 		
 			case K_UNION: {				
 				if(sign) {
 					int[] bounds1 = (int[]) c1.data;		
@@ -1726,50 +1743,38 @@ public abstract class Type {
 			case K_RECORD: 
 				// labeled nary nodes
 				outer: {
-				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
-				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) c2.data;
-				HashMap<String, Integer> fields1 = new HashMap<String, Integer>();
-				HashMap<String, Integer> fields2 = new HashMap<String, Integer>();
-				for (Pair<String, Integer> p : _fields1) {
-					fields1.put(p.first(), p.second());
-				}
-				for (Pair<String, Integer> p : _fields2) {
-					fields2.put(p.first(), p.second());
-				}
-				HashSet<String> _fields = new HashSet<String>(
-						fields1.keySet());
-				_fields.addAll(fields2.keySet());
-				ArrayList<String> fields = new ArrayList<String>(_fields);
-				Collections.sort(fields);
-				Pair<String, Integer>[] nfields = new Pair[fields.size()];
+				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;								
 				int old = newNodes.size();
-				for (int i = 0; i != nfields.length; ++i) {
-					String f = fields.get(i);
-					Integer e1 = fields1.get(f);
-					Integer e2 = fields2.get(f);
-					int nidx = newNodes.size();
-					if (e1 == null) {
-						extractOnto(e2, graph2, newNodes);
-					} else if (e2 == null) {
-						extractOnto(e1, graph1, newNodes);
-					} else {						
-
-						nidx = intersect(e1, graph1, e2, graph2, newNodes,
-								allocations);
-
-						if (newNodes.get(nidx).kind == K_VOID) {
-							// A record with a field of void type cannot
-							// exist --- it's just equivalent to void.
-							while (newNodes.size() != old) {
-								newNodes.remove(newNodes.size() - 1);
-							}
+				if(fields1.length != fields2.length) {
+					node = new Node(K_VOID,null);
+				} else {
+					Pair<String, Integer>[] nfields = new Pair[fields1.length];
+					for (int i = 0; i != nfields.length; ++i) {
+						Pair<String,Integer> e1 = fields1[i];
+						Pair<String,Integer> e2 = fields2[i];						
+						if (!e1.first().equals(e2.first())) {
 							node = new Node(K_VOID, null);
 							break outer;
-						}
+						} else {												
+							int nidx = intersect(e1.second(), graph1, e2.second(), graph2, newNodes,
+									allocations);
+
+							if (newNodes.get(nidx).kind == K_VOID) {
+								// A record with a field of void type cannot
+								// exist --- it's just equivalent to void.
+								while (newNodes.size() != old) {
+									newNodes.remove(newNodes.size() - 1);
+								}
+								node = new Node(K_VOID, null);
+								break outer;
+							}
+							
+							nfields[i] = new Pair<String, Integer>(e1.first(), nidx);
+						}					
 					}
-					nfields[i] = new Pair<String, Integer>(f, nidx);
-				}
-				node = new Node(K_RECORD, nfields);
+					node = new Node(K_RECORD, nfields);
+				}				
 			}
 			break;			
 			case K_UNION: {
@@ -3119,8 +3124,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = fromString("{[int] x,int z}");		
-		Type t2 = fromString("{int x,int y}");
+		Type t1 = fromString("{int x,int y}");		
+		Type t2 = fromString("{int x,any y}");
 		//Type t1 = T_REAL;
 		//Type t2 = T_INT;
 		System.out.println("Type: " + t1 + "\n------------------");

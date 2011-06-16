@@ -592,32 +592,31 @@ public class ClassFileBuilder {
 	public void upConversion(Type.Record toType, Type.Record fromType,
 			int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
-		int oldtup = freeSlot++;
-		int newtup = freeSlot++;
-		bytecodes.add(new Bytecode.Store(oldtup,WHILEYRECORD));
-		construct(WHILEYRECORD,freeSlot,bytecodes);
-		bytecodes.add(new Bytecode.Store(newtup,WHILEYRECORD));		
+		int slot = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(slot,WHILEYRECORD));
 		Map<String,Type> toFields = toType.fields();
 		Map<String,Type> fromFields = fromType.fields();
 		for(String key : toFields.keySet()) {
 			Type to = toFields.get(key);
-			Type from = fromFields.get(key);					
-			bytecodes.add(new Bytecode.Load(newtup,WHILEYRECORD));
-			bytecodes.add(new Bytecode.LoadConst(key));
-			bytecodes.add(new Bytecode.Load(oldtup,WHILEYRECORD));
-			bytecodes.add(new Bytecode.LoadConst(key));
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
-			addReadConversion(from,bytecodes);			
-			if(!to.equals(from)) {
+			Type from = fromFields.get(key);	
+			if(Type.isomorphic(to,from)) {
+				// can skip
+			} else {
+				bytecodes.add(new Bytecode.Load(slot,WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(key));
+				bytecodes.add(new Bytecode.Load(slot,WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(key));
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
+				addReadConversion(from,bytecodes);							
 				// now perform recursive conversion
-				upConversion(to,from,freeSlot,bytecodes);
-			}			
-			ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+				upConversion(to,from,freeSlot,bytecodes);							
+				ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
+				bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+			}
 		}
-		bytecodes.add(new Bytecode.Load(newtup,WHILEYRECORD));		
+		bytecodes.add(new Bytecode.Load(slot,WHILEYRECORD));		
 	}
 	
 	public void upConversion(Type toType, Type.Bool fromType,
@@ -638,124 +637,6 @@ public class ClassFileBuilder {
 		}
 	}
 
-	/**
-	 * A down conversion is used to take a supertype and convert into a subtype.
-	 * This can only arise as a result of a type tests. For example:
-	 * 
-	 * <pre>
-	 * void f([real] rs):
-	 *     if rs is [int]:
-	 *         ...
-	 *     else:
-	 *         ...
-	 * </pre>
-	 * 
-	 * A down conversion from [real] to [int] is required on the true branch.
-	 * 
-	 * @param toType
-	 * @param fromType
-	 * @param freeSlot
-	 * @param bytecodes
-	 */
-	public void downConversion(Type toType, Type fromType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if (Type.isomorphic(toType, fromType)) {		
-			// do nothing!						
-		} else if(toType == Type.T_BOOL) {									
-			downConversion((Type.Bool) toType, fromType,freeSlot,bytecodes);  
-		} else if(toType == Type.T_INT) {									
-			downConversion((Type.Int) toType, fromType,freeSlot,bytecodes);  
-		} else if(toType == Type.T_REAL) {
-			downConversion((Type.Real) toType, fromType,freeSlot,bytecodes);
-		} else if(toType == Type.T_REAL) {
-			downConversion((Type.Real) toType, fromType,freeSlot,bytecodes);
-		} else if(toType instanceof Type.Set) {
-			
-		} else if(toType instanceof Type.List) {
-			
-		} else if(toType instanceof Type.Dictionary) {
-			
-		} else if(toType instanceof Type.Record) {
-			downConversion((Type.Record) toType, fromType,freeSlot,bytecodes);
-		} else {
-			// FIXME: the following is a temporary hack. The main problem is
-			// that it doesn't recursively convert element types as required.
-			addCheckCast(convertType(toType),bytecodes);
-		}
-	}
-	
-	public void downConversion(Type.Bool toType, Type fromType, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BOOLEAN));
-		JvmType.Function ftype = new JvmType.Function(T_BOOL);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN, "booleanValue",
-				ftype, Bytecode.VIRTUAL));
-	}
-	
-	public void downConversion(Type.Int toType, Type fromType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		
-		Type glb = Type.greatestLowerBound(fromType, Type.T_REAL);
-		
-		if(glb != Type.T_INT) {
-			if(fromType != Type.T_REAL) {
-				bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
-			}						
-			JvmType.Function ftype = new JvmType.Function(BIG_INTEGER);			
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"numerator",ftype,Bytecode.VIRTUAL));
-		} else {
-			bytecodes.add(new Bytecode.CheckCast(BIG_INTEGER));
-		}
-	}
-	
-	public void downConversion(Type.Record toType, Type fromType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		
-		Type.Record type = Type.effectiveRecordType(fromType);
-		
-		if(type == null) {
-			// indicates from may not have record type.
-			bytecodes.add(new Bytecode.CheckCast(WHILEYRECORD));						
-		}
-		
-		Type glb = Type.greatestLowerBound(fromType,Type.T_RECORD(Collections.EMPTY_MAP));		
-		type = (Type.Record) Type.effectiveRecordType(glb);
-		
-		JvmType.Function getType = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_STRING);
-		JvmType.Function putType = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_STRING,JAVA_LANG_OBJECT);
-		
-		for(Map.Entry<String,Type> e : toType.fields().entrySet()) {
-			String field = e.getKey();
-			Type to = e.getValue();
-			// we can assume the following line will not return null. This is
-			// because we've generated type using glb above.
-			Type from = type.fields().get(field);
-			if(from == null) { from = Type.T_ANY; }
-			if(Type.isomorphic(to,from)) {
-				// ok, don't need to do anything in this case
-			} else {
-				// ok, need to down convert the field
-				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-				bytecodes.add(new Bytecode.LoadConst(field));
-				bytecodes.add(new Bytecode.Swap());
-				bytecodes.add(new Bytecode.LoadConst(field));				
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",getType,Bytecode.VIRTUAL));
-				addReadConversion(from,bytecodes);
-				downConversion(to,from,freeSlot,bytecodes);
-				addWriteConversion(from,bytecodes);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",putType,Bytecode.VIRTUAL));
-				bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-			}
-		}
-		
-	}
-	
-	public void downConversion(Type.Real toType, Type fromType, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
-	}
-	
 	public void translate(Code.Store c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		cloneValue(c.type,bytecodes);
@@ -1090,14 +971,14 @@ public class ClassFileBuilder {
 									
 		Type gdiff = Type.leastDifference(c.type,c.test);			
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		downConversion(gdiff,c.type,freeSlot,bytecodes);
+		addCheckCast(convertType(gdiff),bytecodes);		
 		bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 		bytecodes.add(new Bytecode.Goto(exitLabel));
 		bytecodes.add(new Bytecode.Label(trueLabel));
 				
 		Type glb = Type.greatestLowerBound(c.type, c.test);
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		downConversion(glb,c.type,freeSlot,bytecodes);
+		addCheckCast(convertType(glb),bytecodes);		
 		bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
 		bytecodes.add(new Bytecode.Goto(c.target));
 		bytecodes.add(new Bytecode.Label(exitLabel));		
@@ -1163,31 +1044,8 @@ public class ClassFileBuilder {
 	protected void translateTypeTest(String trueTarget, Type src, Type.Int test,
 			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
-		// NOTE: on entry we know that src cannot be a Type.Int, since this case
-		// would have been already caught.
-		
-		String falseTarget = freshLabel();
-		String bigintTarget = freshLabel();
-		String bigratTarget = freshLabel();			
-		bytecodes.add(new Bytecode.Dup(convertType(src)));
 		bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, bigintTarget));
-		bytecodes.add(new Bytecode.Dup(convertType(src)));
-		bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, bigratTarget));
-		bytecodes.add(new Bytecode.Pop(convertType(src)));
-		bytecodes.add(new Bytecode.Goto(falseTarget));
-		bytecodes.add(new Bytecode.Label(bigintTarget));		
-		bytecodes.add(new Bytecode.Pop(convertType(src)));
-		bytecodes.add(new Bytecode.Goto(trueTarget));
-		bytecodes.add(new Bytecode.Label(bigratTarget));
-		bytecodes.add(new Bytecode.CheckCast(BIG_RATIONAL));
-		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_BOOL);
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "isInteger", fun_t , Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));		
-		bytecodes.add(new Bytecode.Goto(trueTarget));
-		bytecodes.add(new Bytecode.Label(falseTarget));				
-		
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));							
 	}
 	
 	/**
