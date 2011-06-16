@@ -183,8 +183,8 @@ public class WyilFileWriter implements Transform {
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
-				line = "iftype " + locals.get(iftype.slot) + " " + iftype.test
-						+ " " + iftype.target + " : " + iftype.type;
+				line = "if" + iftype.test + " " + locals.get(iftype.slot)
+						+ " goto " + iftype.target + " : " + iftype.type;
 			} else {
 				line = c.toString();
 			}			

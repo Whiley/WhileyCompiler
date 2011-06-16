@@ -509,7 +509,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return "convert " + from + " => " + to;
+			return "convert " + from + " to " + to;
 		}
 	}
 	
@@ -716,7 +716,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "goto " + target;
+			return "goto " + target;		
 		}		
 	}
 	
@@ -757,7 +757,7 @@ public abstract class Code {
 		}
 	
 		public String toString() {
-			return toString("if" + op + " " + target,type);
+			return toString("if" + op + " goto " + target,type);
 		}
 	}
 	
@@ -832,9 +832,9 @@ public abstract class Code {
 	
 		public String toString() {
 			if(slot >= 0) {
-				return toString("iftype " + slot + " " + test + " " + target,type);
+				return toString("if" + test + " " + slot + " goto " + target,type);
 			} else {
-				return toString("iftype " + test + " " + target,type);
+				return toString("if" + test + " goto " + target,type);
 			}
 		}
 	}
