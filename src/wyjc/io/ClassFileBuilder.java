@@ -379,8 +379,8 @@ public class ClassFileBuilder {
 		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
 			upConversion(toType, (Type.Bool) fromType, freeSlot, bytecodes);
-		} else if(toType == Type.T_REAL && fromType == Type.T_INT) {									
-			upConversion((Type.Real) toType, (Type.Int)fromType,freeSlot,bytecodes);  
+		} else if(fromType == Type.T_INT) {									
+			upConversion(toType, (Type.Int)fromType,freeSlot,bytecodes);  
 		} else if(toType instanceof Type.List && fromType instanceof Type.List) {
 			upConversion((Type.List) toType, (Type.List) fromType, freeSlot, bytecodes);			
 		} else if(toType instanceof Type.Dictionary && fromType instanceof Type.List) {
@@ -626,7 +626,7 @@ public class ClassFileBuilder {
 		// done deal!
 	}
 	
-	public void upConversion(Type.Real toType, Type.Int fromType,
+	public void upConversion(Type toType, Type.Int fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));		

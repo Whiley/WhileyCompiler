@@ -289,6 +289,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_INT,result,stmt);
 			} else {
 				checkIsSubtype(Type.T_REAL,result,stmt);
+				if(Type.isomorphic(result,Type.T_NUMBER)) {
+					// implicit coercion
+					result = Type.T_REAL;
+				}
 			}
 			code = Code.BinOp(result,op);
 		}				
@@ -865,18 +869,25 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Type rhs_t = environment.pop();
 		Type lhs_t = environment.pop();		
-		Type lub = Type.leastUpperBound(lhs_t,rhs_t);
+		Type lub = Type.leastUpperBound(lhs_t,rhs_t);		
+		Type glb = Type.greatestLowerBound(lhs_t,rhs_t);
+		
+		if(Type.isomorphic(lub,Type.T_NUMBER)) {
+			// implicit coercion
+			lub = Type.T_REAL;
+			glb = Type.T_REAL;
+		}
 		
 		switch(code.op) {
 		case LT:
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(Type.T_REAL, lub, stmt);
+			checkIsSubtype(Type.T_REAL, lub, stmt);			
 			break;
 		case EQ:
-		case NEQ:
-			if (!Type.isCoerciveSubtype(lhs_t, rhs_t) && !Type.isCoerciveSubtype(rhs_t, lhs_t)) {
+		case NEQ:						
+			if (glb == Type.T_VOID) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
 			}

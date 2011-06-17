@@ -43,8 +43,9 @@ public abstract class Type {
 	public static final Null T_NULL = new Null();	
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
-	public static final Real T_REAL = new Real();
-	public static final Meta T_META = new Meta();	
+	public static final Real T_REAL = new Real();	
+	public static final Meta T_META = new Meta();
+	public static final Type T_NUMBER = T_UNION(T_INT,T_REAL);
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -1567,7 +1568,7 @@ public abstract class Type {
 	 * 
 	 * @param type
 	 * @return
-	 */
+	 */	
 	public static Type minimise(Type type) {
 		// leaf types never need minmising!
 		if (type instanceof Leaf) {
@@ -1576,7 +1577,8 @@ public abstract class Type {
 		
 		// compound types need minimising.
 		Node[] nodes = ((Compound) type).nodes;		
-		SubtypeRelation relation = new DefaultSubtypeOperator(nodes,nodes).doInference();							
+		SubtypeRelation relation;;
+		relation = new DefaultSubtypeOperator(nodes,nodes).doInference();		
 		ArrayList<Node> newnodes = new ArrayList<Node>();
 		int[] allocated = new int[nodes.length];
 		//System.out.println("REBUILDING: " + type);
@@ -1933,10 +1935,6 @@ public abstract class Type {
 			default:
 				throw new IllegalArgumentException("attempting to minimise open recurisve type");
 			}		
-		} else if(c1.kind == K_INT && c2.kind == K_RATIONAL) {
-			node = new Node(K_INT,null);
-		} else if(c1.kind == K_RATIONAL && c2.kind == K_INT) {
-			node = new Node(K_INT,null);
 		} else if(c1.kind == K_ANY) {			
 			newNodes.remove(newNodes.size()-1);
 			extractOnto(n2,graph2,newNodes);
