@@ -44,8 +44,7 @@ public abstract class Type {
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
-	public static final Meta T_META = new Meta();
-	public static final Type T_NUMBER = T_UNION(T_INT,T_REAL);
+	public static final Meta T_META = new Meta();	
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -974,7 +973,7 @@ public abstract class Type {
 		public abstract boolean isSuperType(int from, int to);
 	}
 	
-	public static final class DefaultSubtypeOperator extends SubtypeInference {
+	public static class DefaultSubtypeOperator extends SubtypeInference {
 		public DefaultSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
 			super(fromGraph,toGraph);
 		}
@@ -1258,7 +1257,36 @@ public abstract class Type {
 			return false;
 		}
 	}
+	
+	public static final class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
+		public CoerciveSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
+			super(fromGraph,toGraph);
+		}
 		
+		public boolean isSubType(int from, int to) {
+			Node fromNode = fromGraph[from];
+			Node toNode = toGraph[to];	
+			
+			if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
+				return true;
+			} else {
+				return super.isSubType(from,to);
+			}
+		}
+		
+		public boolean isSuperType(int from, int to) {
+			Node fromNode = fromGraph[from];
+			Node toNode = toGraph[to];	
+			
+			if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
+				return true;
+			} else {
+				return super.isSuperType(from,to);
+			}
+		}
+		
+	}
+	
 	/**
 	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
 	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
@@ -1273,6 +1301,26 @@ public abstract class Type {
 		return rel.isSubtype(0, 0); 
 	}
 
+	/**
+	 * Determine whether type <code>t2</code> is a <i>coercive subtype</i> of
+	 * type <code>t1</code> (written t1 :> t2). Note that it can happen where
+	 * the following holds:
+	 * 
+	 * <pre>
+	 * !isSubtype(t1, t2) &amp;&amp; isCoerciveSubtype(t1, t2)
+	 * </pre>
+	 * 
+	 * This case indicates that a <i>coercion</i> is needed to flow from
+	 * <code>t2</code> to <code>t1</code>.
+	 */
+	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
+		Node[] g1 = nodes(t1);
+		Node[] g2 = nodes(t2);
+		SubtypeInference inference = new CoerciveSubtypeOperator(g1,g2);		
+		SubtypeRelation rel = inference.doInference();		
+		return rel.isSubtype(0, 0); 
+	}
+	
 	/**
 	 * Check whether two types are <i>isomorphic</i>. This is true if they are
 	 * identical, or encode the same structure.
