@@ -882,7 +882,7 @@ public abstract class Type {
 		 * @param flag
 		 */
 		public void setSubtype(int from, int to, boolean flag) {
-			subTypes.set((toDomain*from) + to,false);			
+			subTypes.set((toDomain*from) + to,flag);			
 		}
 		
 		/**
@@ -893,8 +893,37 @@ public abstract class Type {
 		 * @param flag
 		 */
 		public void setSupertype(int from, int to, boolean flag) {
-			superTypes.set((toDomain*from) + to,false);			
+			superTypes.set((toDomain*from) + to,flag);			
 		}
+		
+		public String toString() {			
+			return toString(subTypes) + "\n" + toString(superTypes);
+		}
+		
+		public String toString(BitSet matrix) {
+			String r = " |";
+			for(int i=0;i!=toDomain;++i) {
+				r = r + " " + (i%10);
+			}
+			r = r + "\n-+";
+			for(int i=0;i!=toDomain;++i) {
+				r = r + "--";
+			}
+			r = r + "\n";
+			for(int i=0;i!=fromDomain;++i) {	
+				r = r + (i%10) + "|";;
+				for(int j=0;j!=toDomain;++j) {
+					if(matrix.get((i*toDomain)+j)) {
+						r += " 1";
+					} else {
+						r += " 0";
+					}
+				}	
+				r = r + "\n";
+			}
+			return r;
+		}
+
 	}
 
 	/**
@@ -1055,49 +1084,13 @@ public abstract class Type {
 								|| !assumptions.isSubtype(e1.second(),e2.second())) {
 							return false;
 						}
-					}
-					/*
-					 * follwing implements width subtyping and is disabled.				 
-					if(sign) {
-						// labeled nary nodes
-						Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
-						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-						HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
-						for(Pair<String,Integer> f : _fields1) {
-							fields1.put(f.first(), f.second());
-						}
-						for (int i = 0; i != fields2.length; ++i) {
-							Pair<String, Integer> e2 = fields2[i];
-							Integer e1 = fields1.get(e2.first());
-							if (e1 == null
-									|| !subtypeMatrix.get((e1 * g2Size) + e2)) {
-								return false;
-							}
-						}
-					} else {
-						// labeled nary nodes
-						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-						Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
-						HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
-						for(Pair<String,Integer> f : _fields2) {
-							fields2.put(f.first(), f.second());
-						}
-						for (int i = 0; i != fields1.length; ++i) {
-							Pair<String, Integer> e1 = fields1[i];
-							Integer e2 = fields2.get(e1.first());
-							if (e2 == null
-									|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
-								return false;
-							}
-						}
-					 */
+					}					
 					return true;
 				} 		
 				case K_UNION: {									
-					int[] bounds1 = (int[]) fromNode.data;		
-					// check every bound in c1 is a subtype of some bound in toNode.
-					for(int i : bounds1) {				
-						if(!assumptions.isSubtype(i,to)) { return false; }								
+					int[] bounds2 = (int[]) toNode.data;		
+					for(int j : bounds2) {				
+						if(!assumptions.isSubtype(from,j)) { return false; }								
 					}
 					return true;					
 				}
@@ -1215,11 +1208,11 @@ public abstract class Type {
 					return true;
 				} 		
 				case K_UNION: {														
-					int[] bounds2 = (int[]) toNode.data;		
+					int[] bounds1 = (int[]) toNode.data;		
 
 					// check every bound in c1 is a subtype of some bound in toNode.
-					for(int i : bounds2) {				
-						if(!assumptions.isSupertype(from,i)) {
+					for(int i : bounds1) {				
+						if(!assumptions.isSupertype(i,to)) {
 							return false;
 						}								
 					}
@@ -1285,6 +1278,41 @@ public abstract class Type {
 			}
 		}
 		
+		/*
+		 * follwing implements width subtyping and is disabled.				 
+		if(sign) {
+			// labeled nary nodes
+			Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
+			Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
+			HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
+			for(Pair<String,Integer> f : _fields1) {
+				fields1.put(f.first(), f.second());
+			}
+			for (int i = 0; i != fields2.length; ++i) {
+				Pair<String, Integer> e2 = fields2[i];
+				Integer e1 = fields1.get(e2.first());
+				if (e1 == null
+						|| !subtypeMatrix.get((e1 * g2Size) + e2)) {
+					return false;
+				}
+			}
+		} else {
+			// labeled nary nodes
+			Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+			Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
+			HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
+			for(Pair<String,Integer> f : _fields2) {
+				fields2.put(f.first(), f.second());
+			}
+			for (int i = 0; i != fields1.length; ++i) {
+				Pair<String, Integer> e1 = fields1[i];
+				Integer e2 = fields2.get(e1.first());
+				if (e2 == null
+						|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
+					return false;
+				}
+			}
+		 */
 	}
 	
 	/**
@@ -1544,43 +1572,21 @@ public abstract class Type {
 		// leaf types never need minmising!
 		if (type instanceof Leaf) {
 			return type;
-		}
+		}				
+		
 		// compound types need minimising.
 		Node[] nodes = ((Compound) type).nodes;		
-		SubtypeRelation relation = new DefaultSubtypeOperator(nodes,nodes).doInference();		
-		//build(new PrintBuilder(System.out),type);
-		//System.out.println(toString(matrix,nodes.length,nodes.length));		
+		SubtypeRelation relation = new DefaultSubtypeOperator(nodes,nodes).doInference();							
 		ArrayList<Node> newnodes = new ArrayList<Node>();
 		int[] allocated = new int[nodes.length];
+		//System.out.println("REBUILDING: " + type);
+		//build(new PrintBuilder(System.out),type);
+		//System.out.println(relation.toString());
 		rebuild(0, nodes, allocated, newnodes, relation);
 		return construct(newnodes.toArray(new Node[newnodes.size()]));		
 	}
 
-	private static String toString(BitSet matrix, int width, int height) {
-		String r = " |";
-		for(int i=0;i!=width;++i) {
-			r = r + " " + (i%10);
-		}
-		r = r + "\n-+";
-		for(int i=0;i!=width;++i) {
-			r = r + "--";
-		}
-		r = r + "\n";
-		for(int i=0;i!=height;++i) {	
-			r = r + (i%10) + "|";;
-			for(int j=0;j!=width;++j) {
-				if(matrix.get((i*width)+j)) {
-					r += " 1";
-				} else {
-					r += " 0";
-				}
-			}	
-			r = r + "\n";
-		}
-		return r;
-	}
-
-		/**
+	/**
 	 * This method reconstructs a graph given a set of equivalent nodes. The
 	 * equivalence classes for a node are determined by the given subtype
 	 * matrix, whilst the allocate array identifies when a node has already been
@@ -1594,7 +1600,7 @@ public abstract class Type {
 	 * @return
 	 */
 	private static int rebuild(int idx, Node[] graph, int[] allocated,
-			ArrayList<Node> newNodes, SubtypeRelation assumptions) {
+			ArrayList<Node> newNodes, SubtypeRelation assumptions) {	
 		int graph_size = graph.length;
 		Node node = graph[idx]; 		
 		int cidx = allocated[idx];		
@@ -1673,7 +1679,7 @@ public abstract class Type {
 				for(int j=0;j<elems.length;j++) {
 					if(i==j) { continue; }
 					int n2 = elems[j];	
-					if(assumptions.isSubtype(n2,n1) && (!assumptions.isSubtype(n1,n2) || i < j)) {				
+					if(assumptions.isSubtype(n1,n2) && (!assumptions.isSubtype(n2,n1) || i < j)) {				
 						nelems.remove(n2);												
 					}
 				}	
@@ -1730,10 +1736,9 @@ public abstract class Type {
 				return 1;
 			} else {
 				// First try subtype relation
-				int gSize = graph.length;
-				if (subtypeMatrix.isSubtype(a,b)) {
+				if (subtypeMatrix.isSubtype(b,a)) {
 					return -1;
-				} else if (subtypeMatrix.isSubtype(b,a)) {
+				} else if (subtypeMatrix.isSubtype(a,b)) {
 					return 1;
 				}
 				// Second try harder stuff
@@ -3256,7 +3261,10 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = fromString("{int x,int y}");		
+		Type t1 = linkedList();
+		System.out.println("GOT: " + t1);
+		System.out.println("MIN: " + minimise(t1));
+		/*
 		Type t2 = fromString("{int x,any y}");
 		//Type t1 = T_REAL;
 		//Type t2 = T_INT;
@@ -3270,7 +3278,16 @@ public abstract class Type {
 		Type glb = greatestLowerBound(t1,t2);
 		System.out.println(glb);
 		Type lub = leastUpperBound(t1,t2);
-		System.out.println(lub);	
+		System.out.println(lub);
+		*/	
 	}
 	
+	public static Type linkedList() {
+		Type leaf = T_LABEL("X");
+		HashMap<String,Type> fields = new HashMap<String,Type>();
+		fields.put("next", T_UNION(T_NULL,leaf));
+		fields.put("data", T_BOOL);
+		Type.Record rec = T_RECORD(fields);
+		return T_RECURSIVE("X",rec);
+	}
 }
