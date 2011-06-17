@@ -1114,21 +1114,21 @@ public abstract class Type {
 
 				// check every bound in c1 is a subtype of some bound in c2.
 				for(int i : bounds1) {				
-					if(!assumptions.isSubtype(i,to)) {
-						return false;
+					if(assumptions.isSubtype(i,to)) {
+						return true;
 					}								
 				}
-				return true;	
+				return false;	
 			} else if(toNode.kind == K_UNION) {
 				int[] bounds2 = (int[]) toNode.data;		
 
 				// check some bound in c1 is a subtype of some bound in c2.
 				for(int j : bounds2) {				
-					if(assumptions.isSubtype(from,j)) {
-						return true;
+					if(!assumptions.isSubtype(from,j)) {
+						return false;
 					}								
 				}
-				return false;	
+				return true;	
 			}
 			
 			return false;
@@ -1238,21 +1238,20 @@ public abstract class Type {
 
 				// check every bound in c1 is a subtype of some bound in c2.
 				for(int i : bounds1) {				
-					if(assumptions.isSupertype(i,to)) {
-						return true;
+					if(!assumptions.isSupertype(i,to)) {
+						return false;
 					}								
 				}
-				return false;	
+				return true;	
 			} else if(toNode.kind == K_UNION) {
 				int[] bounds2 = (int[]) toNode.data;		
 
 				// check some bound in c1 is a subtype of some bound in c2.
 				for(int j : bounds2) {				
-					if(!assumptions.isSupertype(from,j)) {
-						return false;
+					if(assumptions.isSupertype(from,j)) {
+						return true;
 					}								
-				}
-				return true;	
+				}				
 			}						
 			
 			return false;
@@ -1365,10 +1364,9 @@ public abstract class Type {
 			} else {
 				graph2 = ((Compound)t2).nodes;
 			}
-			Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(graph1,graph2);
-			BitSet subtypeMatrix = matrices.first();
+			SubtypeRelation assumptions = new DefaultSubtypeOperator(graph1,graph2).doInference();			
 			ArrayList<Node> newNodes = new ArrayList<Node>();
-			difference(0,graph1,0,graph2,newNodes, new HashMap(),subtypeMatrix);
+			difference(0,graph1,0,graph2,newNodes, new HashMap(),assumptions);
 			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));							
 			return minimise(ldiff);
 		}
@@ -1667,9 +1665,9 @@ public abstract class Type {
 
 	private static final class MinimiseComparator implements Comparator<Integer> {
 		private Node[] graph;
-		private BitSet subtypeMatrix;
+		private SubtypeRelation subtypeMatrix;
 		
-		public MinimiseComparator(Node[] graph, BitSet matrix) {
+		public MinimiseComparator(Node[] graph, SubtypeRelation matrix) {
 			this.graph = graph;
 			this.subtypeMatrix = matrix;
 		}
@@ -1684,9 +1682,9 @@ public abstract class Type {
 			} else {
 				// First try subtype relation
 				int gSize = graph.length;
-				if (subtypeMatrix.get((a * gSize) + b)) {
+				if (subtypeMatrix.isSubtype(a,b)) {
 					return -1;
-				} else if (subtypeMatrix.get((b * gSize) + a)) {
+				} else if (subtypeMatrix.isSubtype(b,a)) {
 					return 1;
 				}
 				// Second try harder stuff
@@ -1924,11 +1922,10 @@ public abstract class Type {
 	
 	private static int difference(int n1, Node[] graph1, int n2, Node[] graph2,
 			ArrayList<Node> newNodes,
-			HashMap<Pair<Integer, Integer>, Integer> allocations, BitSet matrix) {
+			HashMap<Pair<Integer, Integer>, Integer> allocations, SubtypeRelation matrix) {
 		
-		int nid = newNodes.size(); // my node id
-		int gsize = graph2.length;
-		if(matrix.get((n1*gsize)+n2)) {
+		int nid = newNodes.size(); // my node id		
+		if(matrix.isSupertype(n1,n2)) {
 			newNodes.add(new Node(K_VOID,null));
 			return nid; 
 		}
