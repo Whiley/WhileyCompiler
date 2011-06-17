@@ -809,6 +809,457 @@ public abstract class Type {
 	// =============================================================
 
 	/**
+	 * A subtype relation encodes both a subtype and a supertype relation
+	 * between two separate domains (called <code>from</code> and
+	 * <code>to</code>).
+	 */
+	public final static class SubtypeRelation {
+
+		/** 
+		 * Indicates the size of the "source" domain.
+		 */
+		private final int fromDomain;
+		
+		/**
+		 * Indicates the size of the "target" domain.
+		 */
+		private final int toDomain;
+		
+		/**
+		 * Stores subtype relation as a binary matrix for dimenaion
+		 * <code>fromDomain</code> x <code>toDomain</code>. This matrix
+		 * <code>r</code> is organised into row-major order, where
+		 * <code>r[i][j]</code> implies <code>i :> j</code>.
+		 */
+		private final BitSet subTypes;
+		
+		/**
+		 * Stores subtype relation as a binary matrix for dimenaion
+		 * <code>fromDomain</code> x <code>toDomain</code>. This matrix
+		 * <code>r</code> is organised into row-major order, where
+		 * <code>r[i][j]</code> implies <code>i <: j</code>.
+		 */
+		private final BitSet superTypes;
+
+		public SubtypeRelation(int fromDomain, int toDomain) {
+			this.fromDomain = fromDomain;
+			this.toDomain = toDomain;
+			this.subTypes = new BitSet(fromDomain*toDomain);
+			this.superTypes = new BitSet(fromDomain*toDomain);
+			
+			// Initially, set all sub- and super-types as true			
+			subTypes.set(0,subTypes.size(),true);
+			superTypes.set(0,superTypes.size(),true);
+		}
+		
+		/**
+		 * Check whether a a given node is a subtype of another.
+		 * 
+		 * @param from
+		 * @param to
+		 * @return
+		 */
+		public boolean isSubtype(int from, int to) {
+			return subTypes.get((fromDomain*from) + to);
+		}
+		
+		/**
+		 * Check whether a a given node is a supertype of another.
+		 * 
+		 * @param from
+		 * @param to
+		 * @return
+		 */
+		public boolean isSupertype(int from, int to) {
+			return superTypes.get((fromDomain*from) + to);
+		}
+
+		/**
+		 * Set the subtype flag for a given pair in the relation.
+		 * 
+		 * @param from
+		 * @param to
+		 * @param flag
+		 */
+		public void setSubtype(int from, int to, boolean flag) {
+			subTypes.set((fromDomain*from) + to,false);			
+		}
+		
+		/**
+		 * Set the supertype flag for a given pair in the relation.
+		 * 
+		 * @param from
+		 * @param to
+		 * @param flag
+		 */
+		public void setSupertype(int from, int to, boolean flag) {
+			superTypes.set((fromDomain*from) + to,false);			
+		}
+	}
+
+	/**
+	 * A subtype inference is responsible for computing a complete subtype
+	 * relation between two given graphs. The class is abstract because there
+	 * are different possible implementations of this. In particular, the case
+	 * when coercions are being considered, versus the case when they are not.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static abstract class SubtypeInference {
+		protected final Node[] fromGraph;
+		protected final Node[] toGraph;
+		protected final SubtypeRelation assumptions;
+		
+		public SubtypeInference(Node[] fromGraph, Node[] toGraph) {
+			this.fromGraph = fromGraph;
+			this.toGraph = toGraph;
+			this.assumptions = new SubtypeRelation(fromGraph.length,toGraph.length);
+		}
+		
+		public SubtypeRelation doInference() {
+			int fromDomain = fromGraph.length;
+			int toDomain = toGraph.length;
+			
+			boolean changed = true;
+			while(changed) {
+				changed=false;
+				for(int i=0;i!=fromDomain;i++) {
+					for(int j=0;j!=toDomain;j++) {					
+						boolean isubj = isSubType(i,j);					
+						boolean isupj = isSuperType(i,j);		
+						
+						if(assumptions.isSubtype(i,j) != isubj) {
+							assumptions.setSubtype(i,j,false);
+							changed = true;
+						}
+						if(assumptions.isSupertype(i,j) != isupj) {
+							assumptions.setSupertype(i,j,false);
+							changed = true;
+						}						
+					}	
+				}
+			}
+			
+			return assumptions;
+		}
+		
+		/**
+		 * <p>
+		 * Determine whether type <code>to</code> is a <i>subtype</i> of type
+		 * <code>from</code> (written from :> to). In other words, whether the set
+		 * of all possible values described by the type <code>to</code> is a
+		 * subset of that described by <code>from</code>.
+		 * </p>
+		 * 
+		 * @param from --- An index into <code>fromGraph</code>.
+		 * @param to --- An index into <code>toGraph</code>.
+		 * @return
+		 */
+		public abstract boolean isSubType(int from, int to);
+		
+		/**
+		 * <p>
+		 * Determine whether type <code>to</code> is a <i>super type</i> of type
+		 * <code>from</code> (written from <: to). In other words, whether the set
+		 * of all possible values described by the type <code>to</code> is a
+		 * super set of that described by <code>from</code>.
+		 * </p>
+		 * 
+		 * @param from --- An index into <code>fromGraph</code>.
+		 * @param to --- An index into <code>toGraph</code>.
+		 * @return
+		 */
+		public abstract boolean isSuperType(int from, int to);
+	}
+	
+	public static final class DefaultSubtypeOperator extends SubtypeInference {
+		public DefaultSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
+			super(fromGraph,toGraph);
+		}
+		
+		public boolean isSubType(int from, int to) {
+			Node fromNode = fromGraph[from];
+			Node toNode = toGraph[to];	
+			
+			if(fromNode.kind == toNode.kind) { 
+				switch(fromNode.kind) {
+				case K_EXISTENTIAL:
+					NameID nid1 = (NameID) fromNode.data;
+					NameID nid2 = (NameID) toNode.data;				
+					return nid1.equals(nid2);
+				case K_SET:
+				case K_LIST:
+				case K_PROCESS: {
+					return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
+				}
+				case K_DICTIONARY: {
+					// binary node
+					Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
+					Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
+					return assumptions.isSubtype(p1.first(),p2.first()) && assumptions.isSubtype(p1.second(),p2.second());  					
+				}		
+				case K_TUPLE:  {
+					// nary nodes
+					int[] elems1 = (int[]) fromNode.data;
+					int[] elems2 = (int[]) toNode.data;
+					if(elems1.length != elems2.length){ return false; }
+					for(int i=0;i<elems1.length;++i) {
+						if(!assumptions.isSubtype(elems1[i],elems2[i])) { return false; }
+					}
+					return true;
+				}
+				case K_FUNCTION:  {
+					// nary nodes
+					int[] elems1 = (int[]) fromNode.data;
+					int[] elems2 = (int[]) toNode.data;
+					if(elems1.length != elems2.length){
+						return false;
+					}
+					// Check (optional) receiver value first (which is contravariant)
+					int e1 = elems1[0];
+					int e2 = elems2[0];
+					if((e1 == -1 || e2 == -1) && e1 != e2) {
+						return false;
+					} else if (e1 != -1 && e2 != -1
+							&& !assumptions.isSupertype(e1,e2)) {
+						return false;
+					}
+					// Check return value first (which is covariant)
+					e1 = elems1[1];
+					e2 = elems2[1];
+					if(!assumptions.isSubtype(e1,e2)) {
+						return false;
+					}
+					// Now, check parameters (which are contra-variant)
+					for(int i=2;i<elems1.length;++i) {
+						e1 = elems1[i];
+						e2 = elems2[i];
+						if(!assumptions.isSupertype(e1,e2)) {
+							return false;
+						}
+					}
+					return true;
+				}
+				case K_RECORD:		
+				{
+					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
+					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;								
+					if(fields1.length != fields2.length) {
+						return false;
+					}
+					for (int i = 0; i != fields1.length; ++i) {
+						Pair<String, Integer> e1 = fields1[i];
+						Pair<String, Integer> e2 = fields2[i];
+						if (!e1.first().equals(e2.first())
+								|| !assumptions.isSubtype(e1.second(),e2.second())) {
+							return false;
+						}
+					}
+					/*
+					 * follwing implements width subtyping and is disabled.				 
+					if(sign) {
+						// labeled nary nodes
+						Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
+						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
+						HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
+						for(Pair<String,Integer> f : _fields1) {
+							fields1.put(f.first(), f.second());
+						}
+						for (int i = 0; i != fields2.length; ++i) {
+							Pair<String, Integer> e2 = fields2[i];
+							Integer e1 = fields1.get(e2.first());
+							if (e1 == null
+									|| !subtypeMatrix.get((e1 * g2Size) + e2)) {
+								return false;
+							}
+						}
+					} else {
+						// labeled nary nodes
+						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+						Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
+						HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
+						for(Pair<String,Integer> f : _fields2) {
+							fields2.put(f.first(), f.second());
+						}
+						for (int i = 0; i != fields1.length; ++i) {
+							Pair<String, Integer> e1 = fields1[i];
+							Integer e2 = fields2.get(e1.first());
+							if (e2 == null
+									|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
+								return false;
+							}
+						}
+					 */
+					return true;
+				} 		
+				case K_UNION: {									
+					int[] bounds1 = (int[]) fromNode.data;		
+					// check every bound in c1 is a subtype of some bound in toNode.
+					for(int i : bounds1) {				
+						if(!assumptions.isSubtype(i,to)) { return false; }								
+					}
+					return true;					
+				}
+				case K_LABEL:
+					throw new IllegalArgumentException("attempting to minimise open recurisve type");		
+				default:
+					// primitive types true immediately
+					return true;
+				}		
+			} else if(fromNode.kind == K_ANY || toNode.kind == K_VOID) {
+				return true;
+			} else if(fromNode.kind == K_UNION) {
+				int[] bounds1 = (int[]) fromNode.data;		
+
+				// check every bound in c1 is a subtype of some bound in c2.
+				for(int i : bounds1) {				
+					if(!assumptions.isSubtype(i,to)) {
+						return false;
+					}								
+				}
+				return true;	
+			} else if(toNode.kind == K_UNION) {
+				int[] bounds2 = (int[]) toNode.data;		
+
+				// check some bound in c1 is a subtype of some bound in c2.
+				for(int j : bounds2) {				
+					if(assumptions.isSubtype(from,j)) {
+						return true;
+					}								
+				}
+				return false;	
+			}
+			
+			return false;
+		}
+		
+		public boolean isSuperType(int from, int to) {
+			Node fromNode = fromGraph[from];
+			Node toNode = toGraph[to];	
+			
+			if(fromNode.kind == toNode.kind) { 
+				switch(fromNode.kind) {
+				case K_EXISTENTIAL:
+					NameID nid1 = (NameID) fromNode.data;
+					NameID nid2 = (NameID) toNode.data;				
+					return nid1.equals(nid2);
+				case K_SET:
+				case K_LIST:
+				case K_PROCESS: {
+					return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
+				}
+				case K_DICTIONARY: {
+					// binary node
+					Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
+					Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
+					return assumptions.isSupertype(p1.first(),p2.first()) && assumptions.isSupertype(p1.second(),p2.second());  					
+				}		
+				case K_TUPLE:  {
+					// nary nodes
+					int[] elems1 = (int[]) fromNode.data;
+					int[] elems2 = (int[]) toNode.data;
+					if(elems1.length != elems2.length){ return false; }
+					for(int i=0;i<elems1.length;++i) {
+						if(!assumptions.isSupertype(elems1[i],elems2[i])) { return false; }
+					}
+					return true;
+				}
+				case K_FUNCTION:  {
+					// nary nodes
+					int[] elems1 = (int[]) fromNode.data;
+					int[] elems2 = (int[]) toNode.data;
+					if(elems1.length != elems2.length){
+						return false;
+					}
+					// Check (optional) receiver value first (which is contravariant)
+					int e1 = elems1[0];
+					int e2 = elems2[0];
+					if((e1 == -1 || e2 == -1) && e1 != e2) {
+						return false;
+					} else if (e1 != -1 && e2 != -1
+							&& !assumptions.isSubtype(e1,e2)) {
+						return false;
+					}
+					// Check return value first (which is covariant)
+					e1 = elems1[1];
+					e2 = elems2[1];
+					if(!assumptions.isSupertype(e1,e2)) {
+						return false;
+					}
+					// Now, check parameters (which are contra-variant)
+					for(int i=2;i<elems1.length;++i) {
+						e1 = elems1[i];
+						e2 = elems2[i];
+						if(!assumptions.isSubtype(e1,e2)) {
+							return false;
+						}
+					}
+					return true;
+				}
+				case K_RECORD:		
+				{
+					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
+					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;								
+					if(fields1.length != fields2.length) {
+						return false;
+					}
+					for (int i = 0; i != fields1.length; ++i) {
+						Pair<String, Integer> e1 = fields1[i];
+						Pair<String, Integer> e2 = fields2[i];
+						if (!e1.first().equals(e2.first())
+								|| !assumptions.isSupertype(e1.second(),e2.second())) {
+							return false;
+						}
+					}					
+					return true;
+				} 		
+				case K_UNION: {														
+					int[] bounds2 = (int[]) toNode.data;		
+
+					// check every bound in c1 is a subtype of some bound in toNode.
+					for(int i : bounds2) {				
+						if(!assumptions.isSupertype(from,i)) {
+							return false;
+						}								
+					}
+					return true;
+				}									
+				case K_LABEL:
+					throw new IllegalArgumentException("attempting to minimise open recurisve type");		
+				default:
+					// primitive types true immediately
+					return true;
+				}		
+			} else if(fromNode.kind == K_VOID || toNode.kind == K_ANY) {
+				return true;
+			} else if(fromNode.kind == K_UNION) {
+				int[] bounds1 = (int[]) fromNode.data;		
+
+				// check every bound in c1 is a subtype of some bound in c2.
+				for(int i : bounds1) {				
+					if(assumptions.isSupertype(i,to)) {
+						return true;
+					}								
+				}
+				return false;	
+			} else if(toNode.kind == K_UNION) {
+				int[] bounds2 = (int[]) toNode.data;		
+
+				// check some bound in c1 is a subtype of some bound in c2.
+				for(int j : bounds2) {				
+					if(!assumptions.isSupertype(from,j)) {
+						return false;
+					}								
+				}
+				return true;	
+			}						
+			
+			return false;
+		}
+	}
+		
+	/**
 	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
 	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
 	 * all possible values described by the type <code>t2</code> is a subset of
@@ -817,22 +1268,9 @@ public abstract class Type {
 	public static boolean isSubtype(Type t1, Type t2) {				
 		Node[] g1 = nodes(t1);
 		Node[] g2 = nodes(t2);
-		Pair<BitSet,BitSet> matrices = buildSubtypeMatrices(g1,g2);
-		BitSet subtypeMatrix = matrices.first();
-		BitSet suptypeMatrix = matrices.second();
-		
-		/*
-		System.out.println("Type 1:");
-		build(new PrintBuilder(System.out),t1);
-		System.out.println("Type 2:");
-		build(new PrintBuilder(System.out),t2);
-		System.out.println("Subtype Matrix:");
-		System.out.println(toString(subtypeMatrix,g2.length,g1.length));
-		System.out.println("Supertype Matrix:");
-		System.out.println(toString(suptypeMatrix,g2.length,g1.length));
-		*/
-		
-		return suptypeMatrix.get(0); // compare root of g1 against root of g2 
+		SubtypeInference inference = new DefaultSubtypeOperator(g1,g2);		
+		SubtypeRelation rel = inference.doInference();		
+		return rel.isSubtype(0, 0); 
 	}
 
 	/**
@@ -1062,113 +1500,13 @@ public abstract class Type {
 		}
 		// compound types need minimising.
 		Node[] nodes = ((Compound) type).nodes;		
-		BitSet matrix = buildSubtypeMatrix(nodes);	
+		SubtypeRelation relation = new DefaultSubtypeOperator(nodes,nodes).doInference();		
 		//build(new PrintBuilder(System.out),type);
 		//System.out.println(toString(matrix,nodes.length,nodes.length));		
 		ArrayList<Node> newnodes = new ArrayList<Node>();
 		int[] allocated = new int[nodes.length];
-		rebuild(0, nodes, allocated, newnodes, matrix);
+		rebuild(0, nodes, allocated, newnodes, relation);
 		return construct(newnodes.toArray(new Node[newnodes.size()]));		
-	}
-
-	/**
-	 * <p>
-	 * This method determines both the subtype and supertype relationship
-	 * between each node in the type graph. The resulting matrix <code>r</code>
-	 * is organised into row-major order, where <code>r[i][j]</code> implies
-	 * <code>i <: j</code>. The algorithm works by initially assuming that all
-	 * subtypes hold. Then, it iteratively considers every relationship cross
-	 * off those that no longer hold, until there is no change in the matrix.
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>NOTE:</b>The only reason we can compute both subtype and supertype
-	 * relations in one matrix is because its for one matrix and, hence, they
-	 * are symmetrical
-	 * </p>
-	 * 
-	 * @param graph
-	 *            --- graph to compute the matrix for
-	 * @return
-	 */
-	private static BitSet buildSubtypeMatrix(Node[] graph) {
-		int g1Size = graph.length;		
-		BitSet matrix = new BitSet(g1Size * g1Size);
-		// intially assume all subtype relationships hold 
-		matrix.set(0,matrix.size(),true);
-		
-		boolean changed = true;
-		while(changed) {
-			changed=false;
-			for(int i=0;i!=g1Size;i++) {
-				for(int j=0;j!=g1Size;j++) {					
-					boolean isj = isSubtype(true,i,graph,j,graph,matrix,matrix);
-					boolean jsi = isSubtype(true,j,graph,i,graph,matrix,matrix);					
-					if(matrix.get((i*g1Size)+j) != isj || matrix.get((j*g1Size)+i) != jsi) {
-						matrix.set((i*g1Size)+j,isj);
-						matrix.set((j*g1Size)+i,jsi);
-						changed = true;
-					}
-				}	
-			}
-		}
-		
-		return matrix;
-	}
-
-	/**
-	 * <p>
-	 * This method determines the complete subtype and supertype relationship
-	 * between each node in the type graphs <code>g1</code> and <code>g2</code>.
-	 * The resulting matrix <code>r</code> is organised into row-major order,
-	 * where <code>r[i][j]</code> implies <code>i <: j</code> if <code>i</code>
-	 * is a node in <code>g1</code>, and <code>j</code> a node in
-	 * <code>g2</code>. The algorithm works by initially assuming that all
-	 * subtypes hold. Then, it iteratively considers every relationship cross
-	 * off those that no longer hold, until there is no change in the matrix.
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b>we must generate two matrices, because we have comparing two
-	 * different graphs.
-	 * </p>
-	 * 
-	 * @param graph1
-	 *            --- graph whose nodes form the rows of the matrices
-	 * @param graph2
-	 *            --- graph whose nodes form the columns of the matrics
-	 * @return --- A pair <code><m1,m2></code> of matrices, where
-	 *         <code>m1</code> is the subtype matrix and <code>m2</code> is the
-	 *         supertype matrix.
-	 */
-	private static Pair<BitSet,BitSet> buildSubtypeMatrices(Node[] graph1,Node[] graph2) {
-		int g1Size = graph1.length;
-		int g2Size = graph2.length;		
-		BitSet subtypeMatrix = new BitSet(g1Size * g2Size);
-		BitSet suptypeMatrix = new BitSet(g1Size * g2Size);
-		// intially assume all subtype relationships hold 
-		subtypeMatrix.set(0,subtypeMatrix.size(),true);
-		suptypeMatrix.set(0,suptypeMatrix.size(),true);
-		
-		boolean changed = true;
-		while(changed) {
-			changed=false;
-			for(int i=0;i!=g1Size;i++) {
-				for(int j=0;j!=g2Size;j++) {					
-					boolean isubj = isSubtype(true,i,graph1,j,graph2,subtypeMatrix,suptypeMatrix);					
-					boolean isupj = isSubtype(false,i,graph1,j,graph2,suptypeMatrix,subtypeMatrix);		
-					if(subtypeMatrix.get((i*g2Size)+j) != isubj) {
-						subtypeMatrix.set((i*g2Size)+j,false);
-						changed = true;
-					}
-					if(suptypeMatrix.get((i*g2Size)+j) != isupj) {
-						suptypeMatrix.set((i*g2Size)+j,false);
-						changed = true;
-					}
-				}	
-			}
-		}
-		
-		return new Pair<BitSet,BitSet>(subtypeMatrix,suptypeMatrix);
 	}
 
 	private static String toString(BitSet matrix, int width, int height) {
@@ -1195,256 +1533,7 @@ public abstract class Type {
 		return r;
 	}
 
-	/**
-	 * Check that node <code>n1</code> is a subtype of node <code>n2</code> in
-	 * the given subtype matrix. This matrix is represented in row-major form,
-	 * with <code>r[i][j]</code> indicating that <code>i <: j</code>.
-	 * 
-	 * @param sign
-	 *            --- if true, test subtype; otherwise, test supertype
-	 * @param n1
-	 *            --- node in graph1
-	 * @param graph1
-	 *            --- rows of matrices correspond to nodes of this graph
-	 * @param n2
-	 *            --- node in graph2
-	 * @param graph2
-	 *            --- columns of matrices correspond to nodes of this graph
-	 * @param subtypeMatrix
-	 *            --- matrix of subtype relations between nodes in graph1 and
-	 *            nodes in graph2.
-	 * @param suptypeMatrix
-	 *            --- matrix of supertype relations between nodes in graph1 and
-	 *            nodes in graph2.	 
-	 * @return
-	 * 
-	 */
-	private static boolean isSubtype(boolean sign, int n1, Node[] graph1,
-			int n2, Node[] graph2, BitSet subtypeMatrix, BitSet suptypeMatrix) {
-		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];		
-		int g2Size = graph2.length;
-		
-		if(c1.kind == c2.kind) { 
-			switch(c1.kind) {
-			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) c1.data;
-				NameID nid2 = (NameID) c2.data;				
-				return nid1.equals(nid2);
-			case K_SET:
-			case K_LIST:
-			case K_PROCESS: {
-				// unary node
-				int e1 = (Integer) c1.data;
-				int e2 = (Integer) c2.data;
-				return subtypeMatrix.get((e1*g2Size)+e2);
-			}
-			case K_DICTIONARY: {
-				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
-				return subtypeMatrix.get((p1.first() * g2Size) + p2.first())
-						&& subtypeMatrix.get((p1.second() * g2Size)
-								+ p2.second());
-			}		
-			case K_TUPLE:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
-				if(elems1.length != elems2.length){
-					return false;
-				}
-				for(int i=0;i<elems1.length;++i) {
-					int e1 = elems1[i];
-					int e2 = elems2[i];					
-					if(!subtypeMatrix.get((e1*g2Size)+e2)) {						
-						return false;
-					}
-				}
-				return true;
-			}
-			case K_FUNCTION:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
-				if(elems1.length != elems2.length){
-					return false;
-				}
-				// Check (optional) receiver value first (which is contravariant)
-				int e1 = elems1[0];
-				int e2 = elems2[0];
-				if((e1 == -1 || e2 == -1) && e1 != e2) {
-					return false;
-				} else if (e1 != -1 && e2 != -1
-						&& !suptypeMatrix.get((e1 * g2Size) + e2)) {
-					return false;
-				}
-				// Check return value first (which is covariant)
-				e1 = elems1[1];
-				e2 = elems2[1];
-				if(!subtypeMatrix.get((e1*g2Size)+e2)) {
-					return false;
-				}
-				// Now, check parameters (which are contra-variant)
-				for(int i=2;i<elems1.length;++i) {
-					e1 = elems1[i];
-					e2 = elems2[i];
-					if(!suptypeMatrix.get((e1*g2Size)+e2)) {
-						return false;
-					}
-				}
-				return true;
-			}
-			case K_RECORD:		
-			{
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;								
-				if(fields1.length != fields2.length) {
-					return false;
-				}
-				for (int i = 0; i != fields1.length; ++i) {
-					Pair<String, Integer> e1 = fields1[i];
-					Pair<String, Integer> e2 = fields2[i];
-					if (!e1.first().equals(e2.first())
-							|| !subtypeMatrix.get((e1.second() * g2Size) + e2.second())) {
-						return false;
-					}
-				}
-				/*
-				 * follwing implements width subtyping and is disabled.				 
-				if(sign) {
-					// labeled nary nodes
-					Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
-					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;				
-					HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
-					for(Pair<String,Integer> f : _fields1) {
-						fields1.put(f.first(), f.second());
-					}
-					for (int i = 0; i != fields2.length; ++i) {
-						Pair<String, Integer> e2 = fields2[i];
-						Integer e1 = fields1.get(e2.first());
-						if (e1 == null
-								|| !subtypeMatrix.get((e1 * g2Size) + e2)) {
-							return false;
-						}
-					}
-				} else {
-					// labeled nary nodes
-					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-					Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) c2.data;				
-					HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
-					for(Pair<String,Integer> f : _fields2) {
-						fields2.put(f.first(), f.second());
-					}
-					for (int i = 0; i != fields1.length; ++i) {
-						Pair<String, Integer> e1 = fields1[i];
-						Integer e2 = fields2.get(e1.first());
-						if (e2 == null
-								|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
-							return false;
-						}
-					}
-				 */
-				return true;
-			} 		
-			case K_UNION: {				
-				if(sign) {
-					int[] bounds1 = (int[]) c1.data;		
-
-					// check every bound in c1 is a subtype of some bound in c2.
-					for(int i : bounds1) {				
-						if(!subtypeMatrix.get((i*g2Size)+n2)) {
-							return false;
-						}								
-					}
-					return true;
-				} else {
-					int[] bounds2 = (int[]) c2.data;		
-
-					// check every bound in c1 is a subtype of some bound in c2.
-					for(int i : bounds2) {				
-						if(!subtypeMatrix.get((n1*g2Size)+i)) {
-							return false;
-						}								
-					}
-					return true;
-				}
-			}
-			case K_LABEL:
-				throw new IllegalArgumentException("attempting to minimise open recurisve type");		
-			default:
-				// primitive types true immediately
-				return true;
-			}		
-		} else if(sign && c1.kind == K_INT && c2.kind == K_RATIONAL) {			
-			return true;
-		} else if(!sign && c1.kind == K_RATIONAL && c2.kind == K_INT) {
-			return true;
-		} else if(sign && (c1.kind == K_VOID || c2.kind == K_ANY)) {
-			return true;
-		} else if(!sign && (c1.kind == K_ANY || c2.kind == K_VOID)) {
-			return true;
-		} else if(sign && c1.kind == K_LIST && c2.kind == K_SET) {			
-			int e1 = (Integer) c1.data;
-			int e2 = (Integer) c2.data;
-			return subtypeMatrix.get((e1*g2Size)+e2);
-		} else if(!sign && c1.kind == K_SET && c2.kind == K_LIST) {			
-			int e1 = (Integer) c1.data;
-			int e2 = (Integer) c2.data;
-			return subtypeMatrix.get((e1*g2Size)+e2);
-		} else if(sign && c1.kind == K_LIST && c2.kind == K_DICTIONARY) { 					
-			int e1 = (Integer) c1.data;
-			Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;						
-			return graph2[p2.first()].kind == K_INT && subtypeMatrix.get((p2.second()*g2Size)+e1);
-		} else if(!sign && c1.kind == K_DICTIONARY && c2.kind == K_LIST) {			
-			Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;			
-			int e2 = (Integer) c2.data;
-			return graph1[p1.first()].kind == K_INT && subtypeMatrix.get((p1.second()*g2Size)+e2);
-		} else if (sign && c1.kind == K_UNION){			
-			int[] bounds1 = (int[]) c1.data;		
-
-			// check every bound in c1 is a subtype of some bound in c2.
-			for(int i : bounds1) {				
-				if(!subtypeMatrix.get((i*g2Size)+n2)) {
-					return false;
-				}								
-			}
-			return true;
-		} else if (!sign && c1.kind == K_UNION){			
-			int[] bounds1 = (int[]) c1.data;		
-
-			// check every bound in c1 is a subtype of some bound in c2.
-			for(int i : bounds1) {				
-				if(subtypeMatrix.get((i*g2Size)+n2)) {
-					return true;
-				}								
-			}
-			return false;
-		} else if (sign && c2.kind == K_UNION) {			
-			int[] bounds2 = (int[]) c2.data;		
-
-			// check some bound in c1 is a subtype of some bound in c2.
-			for(int j : bounds2) {				
-				if(subtypeMatrix.get((n1*g2Size)+j)) {
-					return true;
-				}								
-			}
-			return false;
-		} else if (!sign && c2.kind == K_UNION) {			
-			int[] bounds2 = (int[]) c2.data;		
-
-			// check some bound in c1 is a subtype of some bound in c2.
-			for(int j : bounds2) {				
-				if(!subtypeMatrix.get((n1*g2Size)+j)) {
-					return false;
-				}								
-			}
-			return true;
-		} 			
-		return false;
-	}
-
-	/**
+		/**
 	 * This method reconstructs a graph given a set of equivalent nodes. The
 	 * equivalence classes for a node are determined by the given subtype
 	 * matrix, whilst the allocate array identifies when a node has already been
@@ -1458,7 +1547,7 @@ public abstract class Type {
 	 * @return
 	 */
 	private static int rebuild(int idx, Node[] graph, int[] allocated,
-			ArrayList<Node> newNodes, BitSet matrix) {
+			ArrayList<Node> newNodes, SubtypeRelation assumptions) {
 		int graph_size = graph.length;
 		Node node = graph[idx]; 		
 		int cidx = allocated[idx];		
@@ -1470,7 +1559,7 @@ public abstract class Type {
 		cidx = newNodes.size(); // my new index
 		// now, allocate all nodes in equivalence class
 		for(int i=0;i!=graph_size;++i) {
-			if(matrix.get((i*graph_size)+idx) && matrix.get((idx*graph_size)+i)) {
+			if(assumptions.isSubtype(i,idx) && assumptions.isSubtype(idx, i)) {
 				allocated[i] = cidx + 1; 
 			}
 		}
@@ -1486,13 +1575,13 @@ public abstract class Type {
 		case K_LIST:
 		case K_PROCESS: {
 			int element = (Integer) node.data;
-			data = (Integer) rebuild(element,graph,allocated,newNodes,matrix);
+			data = (Integer) rebuild(element,graph,allocated,newNodes,assumptions);
 			break;
 		}
 		case K_DICTIONARY: {
 			Pair<Integer,Integer> p = (Pair) node.data;
-			int from = (Integer) rebuild(p.first(),graph,allocated,newNodes,matrix);
-			int to = (Integer) rebuild(p.second(),graph,allocated,newNodes,matrix);
+			int from = (Integer) rebuild(p.first(),graph,allocated,newNodes,assumptions);
+			int to = (Integer) rebuild(p.second(),graph,allocated,newNodes,assumptions);
 			data = new Pair(from,to);
 			break;
 		}		
@@ -1505,7 +1594,7 @@ public abstract class Type {
 					// possible for K_FUNCTION
 					nelems[i] = -1;
 				} else {
-					nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,newNodes,matrix);
+					nelems[i]  = (Integer) rebuild(elems[i],graph,allocated,newNodes,assumptions);
 				}
 			}			
 			data = nelems;
@@ -1517,7 +1606,7 @@ public abstract class Type {
 				for (int i = 0; i != elems.length; ++i) {
 					Pair<String, Integer> p = elems[i];					
 					int j = (Integer) rebuild(p.second(), graph, allocated,
-							newNodes, matrix);					
+							newNodes, assumptions);					
 					nelems[i] = new Pair<String, Integer>(p.first(), j);
 				}
 				data = nelems;			
@@ -1536,10 +1625,8 @@ public abstract class Type {
 				int n1 = elems[i];
 				for(int j=0;j<elems.length;j++) {
 					if(i==j) { continue; }
-					int n2 = elems[j];				
-					if (matrix.get((n2 * graph_size) + n1)
-							// following prevent all equivalences being removed.
-							&& (!matrix.get((n1 * graph_size) + n2) || i < j)) {						
+					int n2 = elems[j];	
+					if(assumptions.isSubtype(n2,n1) && (!assumptions.isSubtype(n1,n2) || i < j)) {				
 						nelems.remove(n2);												
 					}
 				}	
@@ -1551,23 +1638,22 @@ public abstract class Type {
 				// need to undo what I've already done in allocating a new node.
 				newNodes.remove(cidx);		
 				for (int i = 0; i != graph_size; ++i) {
-					if (matrix.get((i * graph_size) + idx)
-							&& matrix.get((idx * graph_size) + i)) {
+					if(assumptions.isSubtype(i,idx) && assumptions.isSubtype(idx,i)) {					
 						allocated[i] = 0;
 					}
 				}
 				return rebuild(nelems.iterator().next(), graph, allocated, newNodes,
-						matrix);
+						assumptions);
 			} else {
 				// first off, we have to normalise this sucker
 				ArrayList<Integer> nnelems = new ArrayList(nelems);
-				Collections.sort(nnelems,new MinimiseComparator(graph,matrix));
+				Collections.sort(nnelems,new MinimiseComparator(graph,assumptions));
 				// ok, now rebuild
 				int[] melems = new int[nelems.size()];
 				int i=0;
 				for (Integer j : nnelems) {
 					melems[i++] = (Integer) rebuild(j, graph,
-							allocated, newNodes, matrix);
+							allocated, newNodes, assumptions);
 				}
 				data = melems;
 			}
