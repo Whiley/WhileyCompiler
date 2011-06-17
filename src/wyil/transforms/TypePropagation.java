@@ -288,7 +288,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				// be integers.
 				checkIsSubtype(Type.T_INT,result,stmt);
 			} else {
-				checkIsSubtype(Type.T_REAL,result,stmt);
+				checkIsSubtype(Type.T_NUMBER,result,stmt);
 			}
 			code = Code.BinOp(result,op);
 		}				
@@ -839,7 +839,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 		switch(v.uop) {
 			case NEG:
-				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
+				checkIsSubtype(Type.T_NUMBER,rhs_t,stmt);
 				environment.add(rhs_t);
 				return Code.UnOp(rhs_t,v.uop);						
 			case PROCESSACCESS:
@@ -872,7 +872,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(Type.T_REAL, lub, stmt);
+			checkIsSubtype(Type.T_NUMBER, lub, stmt);
 			break;
 		case EQ:
 		case NEQ:

@@ -45,6 +45,7 @@ public abstract class Type {
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
 	public static final Meta T_META = new Meta();
+	public static final Type T_NUMBER = T_UNION(T_INT,T_REAL);
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -860,7 +861,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public boolean isSubtype(int from, int to) {
-			return subTypes.get((fromDomain*from) + to);
+			return subTypes.get((toDomain*from) + to);
 		}
 		
 		/**
@@ -871,7 +872,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public boolean isSupertype(int from, int to) {
-			return superTypes.get((fromDomain*from) + to);
+			return superTypes.get((toDomain*from) + to);
 		}
 
 		/**
@@ -882,7 +883,7 @@ public abstract class Type {
 		 * @param flag
 		 */
 		public void setSubtype(int from, int to, boolean flag) {
-			subTypes.set((fromDomain*from) + to,false);			
+			subTypes.set((toDomain*from) + to,false);			
 		}
 		
 		/**
@@ -893,7 +894,7 @@ public abstract class Type {
 		 * @param flag
 		 */
 		public void setSupertype(int from, int to, boolean flag) {
-			superTypes.set((fromDomain*from) + to,false);			
+			superTypes.set((toDomain*from) + to,false);			
 		}
 	}
 
@@ -929,11 +930,11 @@ public abstract class Type {
 						boolean isubj = isSubType(i,j);					
 						boolean isupj = isSuperType(i,j);		
 						
-						if(assumptions.isSubtype(i,j) != isubj) {
+						if(assumptions.isSubtype(i,j) && !isubj) {
 							assumptions.setSubtype(i,j,false);
 							changed = true;
 						}
-						if(assumptions.isSupertype(i,j) != isupj) {
+						if(assumptions.isSupertype(i,j) && !isupj) {
 							assumptions.setSupertype(i,j,false);
 							changed = true;
 						}						
