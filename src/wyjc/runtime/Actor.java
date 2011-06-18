@@ -67,14 +67,13 @@ public final class Actor extends Messager {
 			}
 		} catch (IllegalArgumentException iax) {
 			// Not possible - caught by the language compiler.
+			System.err.println("Warning - illegal arguments in actor resumption.");
 		} catch (IllegalAccessException iax) {
-			// Not possible - all message invocations are on public methods. 
+			// Not possible - all message invocations are on public methods.
+			System.err.println("Warning - illegal access in actor resumption.");
 		} catch (InvocationTargetException itx) {
 			// Fails the message and moves on to the next one.
-			failCurrentMessage(itx);
-			
-			// TODO Work out how to react to asynchronous exceptions.
-			// Do we send information to the process that sent the message? 
+			failCurrentMessage(itx); 
 		}
 	}
 	

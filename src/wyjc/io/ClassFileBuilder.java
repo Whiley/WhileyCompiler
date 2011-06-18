@@ -177,6 +177,8 @@ public class ClassFileBuilder {
 		ft1 = new JvmType.Function(WHILEYPROCESS);
 		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess", ft1,
 		    Bytecode.STATIC));
+		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		codes.add(new Bytecode.Store(1, WHILEYPROCESS));
 		
 		// Load the sender as null.
 		codes.add(new Bytecode.LoadConst(null));
@@ -188,18 +190,24 @@ public class ClassFileBuilder {
 		JvmType.Function ftype =
 		    new JvmType.Function(JAVA_LANG_REFLECT_METHOD, JAVA_LANG_STRING,
 		        JAVA_LANG_STRING);
-		codes.add(new Bytecode.LoadConst("test"));
+		codes.add(new Bytecode.LoadConst(owner.toString()));
 	  codes.add(new Bytecode.LoadConst(nameMangle("main", wyft)));
 		codes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,
 		    Bytecode.STATIC));
 		
 		// Create the System::main arguments list.
-		codes.add(new Bytecode.LoadConst(1));
+		codes.add(new Bytecode.LoadConst(2));
 		codes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 		codes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+		codes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+		
+		// Load the system process into the list.
 		codes.add(new Bytecode.LoadConst(0));
+		codes.add(new Bytecode.Load(1, WHILEYPROCESS));
+		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		
 		// Save the command line arguments into an ArrayList.
+		codes.add(new Bytecode.LoadConst(1));
 		codes.add(new Bytecode.Load(0, strArr));
 		JvmType.Function ft2 =
 		    new JvmType.Function(WHILEYLIST, new JvmType.Array(JAVA_LANG_STRING));

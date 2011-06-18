@@ -10,16 +10,12 @@ import java.util.Stack;
  * 
  * @author Timothy Jones
  */
-public abstract class Yielder extends Resumer {
+public abstract class Yielder {
 
 	private final Stack<State> state = new Stack<State>();
 	private State current = null;
 
 	private boolean yielded = false;
-
-	public Yielder(Scheduler scheduler) {
-		super(scheduler);
-	}
 
 	/**
 	 * @return Whether the object is currently yielding or has yielded.

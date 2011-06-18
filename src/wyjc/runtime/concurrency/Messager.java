@@ -4,20 +4,24 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import wyjc.runtime.concurrency.Scheduler.Resumable;
+
 /**
  * A helper class for the actor hierarchy that involves the passing of
  * messages and scheduling resumptions on idle actors.
  * 
  * @author Timothy Jones
  */
-public abstract class Messager extends Yielder {
+public abstract class Messager extends Yielder implements Resumable {
 
+	private final Scheduler scheduler;
+	
 	private final Queue<Message> mail = new LinkedList<Message>();
 
 	private Message currentMessage = null;
 
 	public Messager(Scheduler scheduler) {
-		super(scheduler);
+		this.scheduler = scheduler;
 	}
 
 	public MessageFuture sendSync(Messager sender, Method method, Object[] args) {
@@ -37,6 +41,10 @@ public abstract class Messager extends Yielder {
 		} else {
 			mail.add(message);
 		}
+	}
+	
+	private void scheduleResume() {
+		scheduler.scheduleResume(this);
 	}
 
 	protected Method getCurrentMethod() {
@@ -88,9 +96,8 @@ public abstract class Messager extends Yielder {
 			currentMessage = null;
 		} else {
 			currentMessage = mail.poll();
+			scheduleResume();
 		}
-		
-		scheduleResume();
 	}
 
 	private final class Message {

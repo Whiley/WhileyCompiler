@@ -14,7 +14,7 @@ public final class Scheduler {
 
 	// Count of the number of scheduled tasks. When it returns to 0, the thread
 	// pool will shut down.
-	private int scheduled = 0;
+	private int scheduledCount = 0;
 
 	// The thread pool that tasks will be distributed across.
 	private ExecutorService pool;
@@ -66,14 +66,14 @@ public final class Scheduler {
 	 * Synchronises the increasing of the scheduled counter.
 	 */
 	private synchronized void increaseCount() {
-		scheduled += 1;
+		scheduledCount += 1;
 	}
 
 	/**
 	 * Synchronises the decreasing of the scheduled counter.
 	 */
 	private synchronized void decreaseCount() {
-		scheduled -= 1;
+		scheduledCount -= 1;
 	}
 
 	/**
@@ -98,11 +98,13 @@ public final class Scheduler {
 		public void run() {
 			try {
 				resumable.resume();
-			} catch (Throwable th) {}
+			} catch (Throwable th) {
+				System.err.println("Warning - actor resumption threw an exception.");
+			}
 
 			decreaseCount();
 
-			if (scheduled == 0) {
+			if (scheduledCount == 0) {
 				pool.shutdown();
 			}
 		}
