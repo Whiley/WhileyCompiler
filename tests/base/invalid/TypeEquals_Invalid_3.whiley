@@ -1,10 +1,11 @@
-define ilist as real | [int]
+define Rtypes as {int x, int y}|{int x, int y, int z}
 
-string f(ilist e):
-    if e ~= int:
-        return "int"
+string f(Rtypes e):
+    if e ~= {int z}:
+        return "GOT IT"
     else:
-        return "real | [int]"
+        return "NOPE"
 
 void System::main([string] args):
-    out.println(f(1))
+    out.println(f({x: 1, y: 1}))
+    out.println(f({x: 1, y:1, z: 1}))

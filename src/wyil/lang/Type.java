@@ -2118,12 +2118,6 @@ public abstract class Type {
 			default:
 				throw new IllegalArgumentException("attempting to minimise open recurisve type");
 			}		
-		} else if(c1.kind == K_INT && c2.kind == K_RATIONAL) {
-			// this is obviously imprecise
-			node = new Node(K_VOID,null);
-		} else if(c1.kind == K_RATIONAL && c2.kind == K_INT) {
-			// this is obviously imprecise
-			node = new Node(K_RATIONAL,null);
 		} else if(c1.kind == K_ANY) {			
 			// TODO: try to do better
 			node = new Node(K_ANY,null);

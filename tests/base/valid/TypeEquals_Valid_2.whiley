@@ -3,10 +3,8 @@ define expr as [int]|int
 string f(expr e):
     if e ~= [int]:
         return "GOT [INT]"
-    else if e ~= int:
-        return "GOT INT"
     else:
-        return "GOT SOMETHING ELSE?"
+        return "GOT INT"
 
 void System::main([string] args):
     e = 1
