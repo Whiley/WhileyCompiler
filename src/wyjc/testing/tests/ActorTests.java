@@ -16,17 +16,27 @@ public class ActorTests extends TestHarness {
 	}
 
 	@Test
-	public void Print_Async() {
-		runTest("Print_Async");
+	public void Print_Async1() {
+		runTest("Print_Async1");
+	}
+	
+	@Test
+	public void Print_Async2() {
+		runTest("Print_Async2");
 	}
 
 	@Test
-	public void Print_Sync() {
-		runTest("Print_Sync");
+	public void Print_Sync1() {
+		runTest("Print_Sync1");
+	}
+	
+	@Test
+	public void Print_Sync2() {
+		runTest("Print_Sync2");
 	}
 
 	@Test
-	public void Self_Method() {
+	public void Self_Method1() {
 		runTest("Self_Method1");
 	}
 
@@ -36,7 +46,7 @@ public class ActorTests extends TestHarness {
 	}
 
 	@Test
-	public void Variable() {
+	public void Variable1() {
 		runTest("Variable1");
 	}
 

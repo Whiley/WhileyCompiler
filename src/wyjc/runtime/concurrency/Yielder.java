@@ -23,6 +23,10 @@ public abstract class Yielder {
 	public boolean isYielded() {
 		return yielded;
 	}
+	
+	public boolean isEmpty() {
+		return state.isEmpty();
+	}
 
 	/**
 	 * Yields control of the thread, but does not push a new local state object

@@ -61,7 +61,7 @@ public final class Actor extends Messager {
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
 			
-			if (!isYielded()) {
+			if (!isYielded() || isEmpty()) {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
 			}

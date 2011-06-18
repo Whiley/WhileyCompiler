@@ -44,15 +44,15 @@ public class Continuations {
 	}
 
 	public void apply(Method method) {
-//		System.out.println(method.name());
+		System.out.println(method.name());
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
 				
-//				for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
-//					System.out.println(bytecode);
-//				}
-//				System.out.println();
+				for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
+					System.out.println(bytecode);
+				}
+				System.out.println();
 			}
 		}
 	}
@@ -70,12 +70,13 @@ public class Continuations {
 				Invoke invoke = (Invoke) bytecode;
 
 				boolean yields = false;
-				if (invoke.mode == Bytecode.STATIC) {
-					List<JvmType> ptypes = invoke.type.parameterTypes();
-					if (ptypes.size() >= 1 && ptypes.get(0).equals(PROCESS)) {
-						yields = true;
-					}
-				}
+				// TODO Remember what this was for.
+//				if (invoke.mode == Bytecode.STATIC) {
+//					List<JvmType> ptypes = invoke.type.parameterTypes();
+//					if (ptypes.size() >= 1 && ptypes.get(0).equals(PROCESS)) {
+//						yields = true;
+//					}
+//				}
 
 				if (yields || invoke.owner.equals(MESSAGER)
 				    && invoke.name.startsWith("send")) {
@@ -83,9 +84,8 @@ public class Continuations {
 					Bytecode next =
 					    i == bytecodes.size() - 1 ? null : bytecodes.get(i + 1);
 					boolean isVoid = invoke.type.returnType().equals(T_VOID);
-					boolean push =
-					    !yields && !(next instanceof Return || next instanceof Throw)
-					        && !isVoid;
+					boolean push = // !yields &&
+							!(next instanceof Return || next instanceof Throw);// && !isVoid;
 
 					add.add(new Load(0, PROCESS));
 
@@ -106,6 +106,8 @@ public class Continuations {
 
 						add.add(new Label("resume" + location++));
 					}
+					
+					bytecodes.addAll(i + 1, add);
 				}
 			}
 		}
