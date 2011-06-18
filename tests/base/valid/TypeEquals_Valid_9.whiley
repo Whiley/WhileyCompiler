@@ -4,10 +4,8 @@ define expr as int|bop
 int f(expr e):
     if e ~= bop:
         return e.x + e.y
-    else if e ~= int:
-        return e // type difference
     else:
-        return -1 // unreachable
+        return e // type difference
 
 void System::main([string] args):
     x = f(1)

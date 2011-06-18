@@ -2,9 +2,7 @@ define ilist as int | [int]
 define rlist as real | [int]
 
 string f(rlist e):
-    if e ~= int:
-        return "int"
-    else if e ~= [int]:
+    if e ~= [int]:
         return "[int]"
     else:
         return "real"
