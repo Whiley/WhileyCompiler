@@ -829,6 +829,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					return null; // dead-code
 				}
 				Type lub = Type.leastUpperBound(lhs, rhs);
+				System.out.println("GOT: " + lub);
+				BUG HERE BECAUSE WE HAVE [int]|{int}
 				environment.push(lub);
 				return Code.SetOp(Type.effectiveSetType(lub), code.sop,dir);
 			}

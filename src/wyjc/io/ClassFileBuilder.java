@@ -628,8 +628,10 @@ public class ClassFileBuilder {
 	
 	public void upConversion(Type toType, Type.Int fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));		
+		if(!Type.isSubtype(toType, fromType)) {
+			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));		
+		}
 	}
 
 	public void translate(Code.Store c, int freeSlot,

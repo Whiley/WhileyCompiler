@@ -1263,6 +1263,13 @@ public abstract class Type {
 			
 			if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
 				return true;
+			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
+				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
+			} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
+				return fromGraph[p1.first()].kind == K_INT
+						&& assumptions.isSubtype(p1.second(),
+								(Integer) toNode.data);
 			} else {
 				return super.isSubType(from,to);
 			}
@@ -1274,6 +1281,12 @@ public abstract class Type {
 			
 			if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
 				return true;
+			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
+				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
+			} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
+				return toGraph[p2.first()].kind == K_INT
+						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
 			} else {
 				return super.isSuperType(from,to);
 			}
