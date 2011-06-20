@@ -1346,6 +1346,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.LoadConst(field));				
 				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", fun_t , Bytecode.VIRTUAL));
 				addReadConversion(srcType,bytecodes);
+				// TODO: I don't think we always need to do this.
 				translateTypeTest(nextTarget,srcType,testType,stmt,bytecodes);
 				bytecodes.add(new Bytecode.Goto(falseTarget));
 				bytecodes.add(new Bytecode.Label(nextTarget));
