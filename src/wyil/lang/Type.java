@@ -45,7 +45,6 @@ public abstract class Type {
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();	
 	public static final Meta T_META = new Meta();
-	public static final Type T_NUMBER = T_UNION(T_INT,T_REAL);
 	
 	/**
 	 * Construct a tuple type using the given element types.

@@ -312,7 +312,7 @@ public class ModuleBuilder {
 		if(Type.isSubtype(Type.T_BOOL, lub)) {
 			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
-			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2);
+			return evaluate(bop,(Value.Number) v1, (Value.Number) v2);
 		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY), lub)) {
 			return evaluate(bop,(Value.List)v1,(Value.List)v2);
 		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY), lub)) {
@@ -335,18 +335,18 @@ public class ModuleBuilder {
 		return null;
 	}
 	
-	protected Value evaluate(Expr.BinOp bop, Value.Rational v1, Value.Rational v2) {		
+	protected Value evaluate(Expr.BinOp bop, Value.Number v1, Value.Number v2) {		
 		switch(bop.op) {
 		case ADD:
-			return Value.V_RATIONAL(v1.value.add(v2.value));
+			return Value.V_NUMBER(v1.value.add(v2.value));
 		case SUB:
-			return Value.V_RATIONAL(v1.value.subtract(v2.value));
+			return Value.V_NUMBER(v1.value.subtract(v2.value));
 		case MUL:
-			return Value.V_RATIONAL(v1.value.multiply(v2.value));
+			return Value.V_NUMBER(v1.value.multiply(v2.value));
 		case DIV:
-			return Value.V_RATIONAL(v1.value.divide(v2.value));
+			return Value.V_NUMBER(v1.value.divide(v2.value));
 		case REM:
-			return Value.V_RATIONAL(v1.value.intRemainder(v2.value));	
+			return Value.V_NUMBER(v1.value.intRemainder(v2.value));	
 		}
 		syntaxError("invalid numeric expression",filename,bop);
 		return null;
