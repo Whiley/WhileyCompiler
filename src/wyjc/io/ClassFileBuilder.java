@@ -1038,18 +1038,22 @@ public class ClassFileBuilder {
 			Entry stmt, ArrayList<Bytecode> bytecodes) {
 		
 		String falseTarget = freshLabel();
-		
+				
 		if(!Type.isSubtype(Type.T_REAL,src)) {
+			String nextTarget = freshLabel();
 			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
 			bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));			
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
+			bytecodes.add(new Bytecode.Pop(BIG_RATIONAL));
+			bytecodes.add(new Bytecode.Goto(falseTarget));
+			bytecodes.add(new Bytecode.Label(nextTarget));
 			addCheckCast(BIG_RATIONAL,bytecodes);
 		}		
 		JvmType.Function ftype = new JvmType.Function(JvmTypes.T_BOOL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"isInteger", ftype, Bytecode.VIRTUAL));
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		bytecodes.add(new Bytecode.Label(falseTarget));
-		bytecodes.add(new Bytecode.Pop(BIG_RATIONAL));
+		
 	}
 	
 	/**
@@ -1729,8 +1733,13 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 			break;
 		case DIV:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
-					Bytecode.VIRTUAL));			
+			if(c.type == Type.T_INT) {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "intDivide", ftype,
+					Bytecode.VIRTUAL));
+			} else {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
+						Bytecode.VIRTUAL));
+			}
 			break;
 		case REM:									
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
