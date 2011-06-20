@@ -1,10 +1,12 @@
 define ilist as real | [int]
 
 string f(real e):
-    if e ~= int:
+    if e ~= real:
+        return "real"
+    else if e ~= int:
         return "int"
     else:
-        return "realreal"
+        return "[int]"
 
 void System::main([string] args):
     out.println(f(1))
