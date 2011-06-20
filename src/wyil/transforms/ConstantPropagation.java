@@ -129,7 +129,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		} else if(code instanceof BinOp) {
 			infer(index,(BinOp)code,entry,environment);
 		} else if(code instanceof Convert) {
-			infer((Convert)code,entry,environment);
+			infer(index,(Convert)code,entry,environment);
 		} else if(code instanceof Const) {
 			infer((Const)code,entry,environment);
 		} else if(code instanceof Debug) {
@@ -219,7 +219,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				break;
 			}	
 			case REM: {				
-				result = lnum.intDivide(rnum);				
+				result = lnum.intRemainder(rnum);				
 				break;
 			}	
 			}		
@@ -230,13 +230,14 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(result);
 	}
 	
-	public void infer(Code.Convert code, Block.Entry entry,
+	public void infer(int index, Code.Convert code, Block.Entry entry,
 			Env environment) {
 		Value val = environment.pop();
 		
 		if (val instanceof Value.Number && code.from == Type.T_INT
-				&& code.to == Type.T_REAL) {
-			environment.push(val);			
+				&& code.to == Type.T_REAL) {			
+			entry = new Block.Entry(Code.Const(val),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));					
 		} else {			
 			// need to apply other conversions here
 			val = null;
