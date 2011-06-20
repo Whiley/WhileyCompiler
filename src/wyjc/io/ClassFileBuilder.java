@@ -1052,8 +1052,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(JvmTypes.T_BOOL);
 		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"isInteger", ftype, Bytecode.VIRTUAL));
 		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
-		bytecodes.add(new Bytecode.Label(falseTarget));
-		
+		bytecodes.add(new Bytecode.Label(falseTarget));		
 	}
 	
 	/**
@@ -1126,7 +1125,7 @@ public class ClassFileBuilder {
 		// Second, check empty list case (as this always passes) 
 		// ======================================================================		
 		
-		String nextTarget = freshLabel();
+		String nextTarget = freshLabel();		
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", fun_t , Bytecode.VIRTUAL));
@@ -1143,10 +1142,13 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));			
 		translateTypeTest(trueTarget,nsrc.element(),test.element(),stmt,bytecodes);
+		String finalTarget = freshLabel();
+		bytecodes.add(new Bytecode.Goto(finalTarget));
 		
 		// Add the false label for the case when the original instanceof test fails
 		bytecodes.add(new Bytecode.Label(falseTarget));
 		bytecodes.add(new Bytecode.Pop(WHILEYLIST));
+		bytecodes.add(new Bytecode.Label(finalTarget));		
 	}
 
 	/**
@@ -1273,12 +1275,10 @@ public class ClassFileBuilder {
 		// First, perform an instanceof test (if necessary) 
 		// ======================================================================
 				
-		String falseTarget = freshLabel();
-		
-		if(!(src instanceof Type.Record)) {
-			
+		String falseTarget = freshLabel();		
+		if(!(src instanceof Type.Record)) {			
 			if(Type.effectiveRecordType(src) == null) {					
-				// not guaranteed to have a record here, so ensure we do.
+				// not guaranteed to have a record here, so ensure we do.				
 				bytecodes.add(new Bytecode.Dup(convertType(src)));		
 				bytecodes.add(new Bytecode.InstanceOf(WHILEYRECORD));
 				bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));			
@@ -1302,7 +1302,7 @@ public class ClassFileBuilder {
 			// Second, determine if correct fields present  
 			// ======================================================================
 			
-			Set<String> fields = identifyDistinguishingFields(src,test.fields().keySet()); 			
+			Set<String> fields = identifyDistinguishingFields(src,test.fields().keySet()); 									
 			
 			for(String f : fields) {
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
@@ -1313,7 +1313,7 @@ public class ClassFileBuilder {
 			
 			src = narrowRecordType(src,test.fields().keySet());
 			
-			if(Type.isSubtype(test,src)) {
+			if(Type.isSubtype(test,src)) {				
 				// Getting here indicates that distinguishing fields test was
 				// sufficient to be certain that the type test succeeds.			
 				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
