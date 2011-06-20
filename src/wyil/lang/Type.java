@@ -1073,16 +1073,17 @@ public abstract class Type {
 				}
 				case K_RECORD:		
 				{
+					// labeled nary nodes
 					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;								
-					if(fields1.length != fields2.length) {
-						return false;
+					Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
+					HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
+					for(Pair<String,Integer> f : _fields2) {
+						fields2.put(f.first(), f.second());
 					}
 					for (int i = 0; i != fields1.length; ++i) {
 						Pair<String, Integer> e1 = fields1[i];
-						Pair<String, Integer> e2 = fields2[i];
-						if (!e1.first().equals(e2.first())
-								|| !assumptions.isSubtype(e1.second(),e2.second())) {
+						Integer e2 = fields2.get(e1.first());
+						if (e1 == null || !assumptions.isSubtype(e1.second(),e2)) {
 							return false;
 						}
 					}					
@@ -1101,6 +1102,15 @@ public abstract class Type {
 					// primitive types true immediately
 					return true;
 				}		
+			} else if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
+				return true;
+			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
+				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
+			} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
+				return fromGraph[p1.first()].kind == K_INT
+						&& assumptions.isSubtype(p1.second(),
+								(Integer) toNode.data);
 			} else if(fromNode.kind == K_ANY || toNode.kind == K_VOID) {
 				return true;
 			} else if(fromNode.kind == K_UNION) {
@@ -1193,20 +1203,21 @@ public abstract class Type {
 				}
 				case K_RECORD:		
 				{
-					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;								
-					if(fields1.length != fields2.length) {
-						return false;
+					// labeled nary nodes
+					Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) fromNode.data;
+					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
+					HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
+					for(Pair<String,Integer> f : _fields1) {
+						fields1.put(f.first(), f.second());
 					}
-					for (int i = 0; i != fields1.length; ++i) {
-						Pair<String, Integer> e1 = fields1[i];
+					for (int i = 0; i != fields2.length; ++i) {
 						Pair<String, Integer> e2 = fields2[i];
-						if (!e1.first().equals(e2.first())
-								|| !assumptions.isSupertype(e1.second(),e2.second())) {
+						Integer e1 = fields1.get(e2.first());
+						if (e1 == null || !assumptions.isSupertype(e1,e2.second())) {
 							return false;
 						}
 					}					
-					return true;
+					return true;					
 				} 		
 				case K_UNION: {														
 					int[] bounds1 = (int[]) toNode.data;		
@@ -1225,7 +1236,15 @@ public abstract class Type {
 					// primitive types true immediately
 					return true;
 				}		
-			} else if(fromNode.kind == K_VOID || toNode.kind == K_ANY) {
+			} else if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
+				return true;
+			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
+				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
+			} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
+				return toGraph[p2.first()].kind == K_INT
+						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
+			}  else if(fromNode.kind == K_VOID || toNode.kind == K_ANY) {
 				return true;
 			} else if(fromNode.kind == K_UNION) {
 				int[] bounds1 = (int[]) fromNode.data;		
@@ -1252,83 +1271,6 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
-		public CoerciveSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
-			super(fromGraph,toGraph);
-		}
-		
-		public boolean isSubType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
-				return true;
-			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
-				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-				return fromGraph[p1.first()].kind == K_INT
-						&& assumptions.isSubtype(p1.second(),
-								(Integer) toNode.data);
-			} else {
-				return super.isSubType(from,to);
-			}
-		}
-		
-		public boolean isSuperType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
-				return true;
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
-				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-				return toGraph[p2.first()].kind == K_INT
-						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
-			} else {
-				return super.isSuperType(from,to);
-			}
-		}
-		
-		/*
-		 * follwing implements width subtyping and is disabled.				 
-		if(sign) {
-			// labeled nary nodes
-			Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
-			Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-			HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
-			for(Pair<String,Integer> f : _fields1) {
-				fields1.put(f.first(), f.second());
-			}
-			for (int i = 0; i != fields2.length; ++i) {
-				Pair<String, Integer> e2 = fields2[i];
-				Integer e1 = fields1.get(e2.first());
-				if (e1 == null
-						|| !subtypeMatrix.get((e1 * g2Size) + e2)) {
-					return false;
-				}
-			}
-		} else {
-			// labeled nary nodes
-			Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-			Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
-			HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
-			for(Pair<String,Integer> f : _fields2) {
-				fields2.put(f.first(), f.second());
-			}
-			for (int i = 0; i != fields1.length; ++i) {
-				Pair<String, Integer> e1 = fields1[i];
-				Integer e2 = fields2.get(e1.first());
-				if (e2 == null
-						|| !subtypeMatrix.get((e1.second() * g2Size) + e2)) {
-					return false;
-				}
-			}
-		 */
-	}
-	
 	/**
 	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
 	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
@@ -1343,26 +1285,6 @@ public abstract class Type {
 		return rel.isSubtype(0, 0); 
 	}
 
-	/**
-	 * Determine whether type <code>t2</code> is a <i>coercive subtype</i> of
-	 * type <code>t1</code> (written t1 :> t2). Note that it can happen where
-	 * the following holds:
-	 * 
-	 * <pre>
-	 * !isSubtype(t1, t2) &amp;&amp; isCoerciveSubtype(t1, t2)
-	 * </pre>
-	 * 
-	 * This case indicates that a <i>coercion</i> is needed to flow from
-	 * <code>t2</code> to <code>t1</code>.
-	 */
-	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
-		Node[] g1 = nodes(t1);
-		Node[] g2 = nodes(t2);
-		SubtypeInference inference = new CoerciveSubtypeOperator(g1,g2);		
-		SubtypeRelation rel = inference.doInference();		
-		return rel.isSubtype(0, 0); 
-	}
-	
 	/**
 	 * Check whether two types are <i>isomorphic</i>. This is true if they are
 	 * identical, or encode the same structure.
@@ -1896,39 +1818,51 @@ public abstract class Type {
 			case K_RECORD: 
 				// labeled nary nodes
 				outer: {
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;								
+				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) c1.data;
+				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) c2.data;
+				HashMap<String, Integer> fields1 = new HashMap<String, Integer>();
+				HashMap<String, Integer> fields2 = new HashMap<String, Integer>();
+				for (Pair<String, Integer> p : _fields1) {
+					fields1.put(p.first(), p.second());
+				}
+				for (Pair<String, Integer> p : _fields2) {
+					fields2.put(p.first(), p.second());
+				}
+				HashSet<String> _fields = new HashSet<String>(
+						fields1.keySet());
+				_fields.addAll(fields2.keySet());
+				ArrayList<String> fields = new ArrayList<String>(_fields);
+				Collections.sort(fields);
+				Pair<String, Integer>[] nfields = new Pair[fields.size()];
 				int old = newNodes.size();
-				if(fields1.length != fields2.length) {
-					node = new Node(K_VOID,null);
-				} else {
-					Pair<String, Integer>[] nfields = new Pair[fields1.length];
-					for (int i = 0; i != nfields.length; ++i) {
-						Pair<String,Integer> e1 = fields1[i];
-						Pair<String,Integer> e2 = fields2[i];						
-						if (!e1.first().equals(e2.first())) {
+				for (int i = 0; i != nfields.length; ++i) {
+					String f = fields.get(i);
+					Integer e1 = fields1.get(f);
+					Integer e2 = fields2.get(f);
+					int nidx = newNodes.size();
+					if (e1 == null) {
+						extractOnto(e2, graph2, newNodes);
+					} else if (e2 == null) {
+						extractOnto(e1, graph1, newNodes);
+					} else {
+
+						nidx = intersect(e1, graph1, e2, graph2, newNodes,
+								allocations);
+
+						if (newNodes.get(nidx).kind == K_VOID) {
+							// A record with a field of void type cannot
+							// exist --- it's just equivalent to void.
+							while (newNodes.size() != old) {
+								newNodes.remove(newNodes.size() - 1);
+							}
 							node = new Node(K_VOID, null);
 							break outer;
-						} else {												
-							int nidx = intersect(e1.second(), graph1, e2.second(), graph2, newNodes,
-									allocations);
-
-							if (newNodes.get(nidx).kind == K_VOID) {
-								// A record with a field of void type cannot
-								// exist --- it's just equivalent to void.
-								while (newNodes.size() != old) {
-									newNodes.remove(newNodes.size() - 1);
-								}
-								node = new Node(K_VOID, null);
-								break outer;
-							}
-							
-							nfields[i] = new Pair<String, Integer>(e1.first(), nidx);
-						}					
+						}
 					}
-					node = new Node(K_RECORD, nfields);
-				}				
-			}
+					nfields[i] = new Pair<String, Integer>(f, nidx);
+				}
+				node = new Node(K_RECORD, nfields);
+			} 
 			break;			
 			case K_UNION: {
 				// This is the hardest (i.e. most expensive) case. Essentially, I
@@ -1948,6 +1882,10 @@ public abstract class Type {
 			default:
 				throw new IllegalArgumentException("attempting to minimise open recurisve type");
 			}		
+		} else if (c1.kind == K_INT && c2.kind == K_RATIONAL) {
+			node = new Node(K_INT, null);
+		} else if (c1.kind == K_RATIONAL && c2.kind == K_INT) {
+			node = new Node(K_INT, null);
 		} else if(c1.kind == K_ANY) {			
 			newNodes.remove(newNodes.size()-1);
 			extractOnto(n2,graph2,newNodes);
@@ -2131,6 +2069,12 @@ public abstract class Type {
 			default:
 				throw new IllegalArgumentException("attempting to minimise open recurisve type");
 			}		
+		} else if(c1.kind == K_INT && c2.kind == K_RATIONAL) {
+			// this is obviously imprecise
+			node = new Node(K_VOID,null);
+		} else if(c1.kind == K_RATIONAL && c2.kind == K_INT) {
+			// this is obviously imprecise
+			node = new Node(K_RATIONAL,null);
 		} else if(c1.kind == K_ANY) {			
 			// TODO: try to do better
 			node = new Node(K_ANY,null);
