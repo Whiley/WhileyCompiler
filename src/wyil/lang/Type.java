@@ -1082,7 +1082,7 @@ public abstract class Type {
 					for (int i = 0; i != fields1.length; ++i) {
 						Pair<String, Integer> e1 = fields1[i];
 						Integer e2 = fields2.get(e1.first());
-						if (e1 == null || !assumptions.isSubtype(e1.second(),e2)) {
+						if (e2 == null || !assumptions.isSubtype(e1.second(),e2)) {
 							return false;
 						}
 					}					
