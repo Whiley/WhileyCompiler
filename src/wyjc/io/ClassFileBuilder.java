@@ -631,8 +631,7 @@ public class ClassFileBuilder {
 	}
 
 	public void translate(Code.Store c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		cloneValue(c.type,bytecodes);
+			ArrayList<Bytecode> bytecodes) {		
 		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));				
 	}
 
@@ -669,10 +668,8 @@ public class ClassFileBuilder {
 			}	
 		}
 		
-		// Third, store the value to be assigned		
-		// FIXME: bug here for assigning booleans
-		JvmType val_t = convertType(iter);
-		cloneValue(iter,bytecodes);
+		// Third, store the value to be assigned				
+		JvmType val_t = convertType(iter);		
 		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 		
@@ -1667,7 +1664,7 @@ public class ClassFileBuilder {
 			} else {
 				ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_OBJECT,WHILEYLIST);
 			}													
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
 					Bytecode.STATIC));			
 			break;
 		}
@@ -1685,7 +1682,7 @@ public class ClassFileBuilder {
 		{
 			JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
 					BIG_RATIONAL, BIG_RATIONAL);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "sublist", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
 					Bytecode.STATIC));
 			break;
 		}
@@ -1767,7 +1764,7 @@ public class ClassFileBuilder {
 			} else {
 				ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
 			}													
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, c.sop.toString(), ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, c.sop.toString(), ftype,
 					Bytecode.STATIC));			
 			break;
 		}
@@ -2180,16 +2177,20 @@ public class ClassFileBuilder {
 	}
 
 	protected void translate(Value.List lv, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		construct(WHILEYLIST, freeSlot, bytecodes);
-		JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
-		for (Value e : lv.values) {
-			bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+			ArrayList<Bytecode> bytecodes) {		
+		bytecodes.add(new Bytecode.New(WHILEYLIST));		
+		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+		bytecodes.add(new Bytecode.LoadConst(lv.values.size()));
+		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
+				Bytecode.SPECIAL));
+		
+		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, WHILEYANY);		
+		for (Value e : lv.values) {			
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add", ftype,
-					Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append_l", ftype,
+					Bytecode.STATIC));			
 		}		
 	}
 
@@ -2239,34 +2240,6 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
 	}
-
-	/**
-	 * The cloneValue method is responsible for cloning values on the stack.
-	 * This is necessary to ensure the correct value semantics of wyil are
-	 * preserved. An interesting question is how we might avoid such cloning.
-	 * 
-	 * @param t
-	 * @param bytecodes
-	 */
-	private void cloneValue(Type t, ArrayList<Bytecode> bytecodes) {
-		// Now, for list, set and record types we need to clone the object in
-		// question. In fact, this could be optimised in some situations
-		// where we know the old variable is not live.
-		if (t instanceof Type.List) {
-			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "list_clone", ftype,
-					Bytecode.STATIC));
-		} else if (t instanceof Type.Set) {			
-			JvmType.Function ftype = new JvmType.Function(WHILEYSET,WHILEYSET);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set_clone", ftype,
-					Bytecode.STATIC));			
-		} else if (t instanceof Type.Record) {
-			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "record_clone", ftype,
-					Bytecode.STATIC));
-		}
-	}
-
 	
 	/**
 	 * The read conversion is necessary in situations where we're reading a
@@ -2343,12 +2316,13 @@ public class ClassFileBuilder {
 				}
 			})));
 	
+	public final static JvmType.Clazz WHILEYANY = new JvmType.Clazz("wyjc.runtime","Any");
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
-	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("java.util","ArrayList");
-	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","WhileySet");
+	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
+	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");
 	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyjc.runtime","IO");
-	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("java.util","HashMap");
-	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","WhileyRecord");	
+	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("wyjc.runtime","Dictionary");
+	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","Record");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
 			"wyjc.runtime", "Actor");	
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");	

@@ -31,12 +31,12 @@ import java.io.*;
 import java.lang.reflect.*;
 
 public class IO {
-	public static Actor openReader(ArrayList name) {
-		WhileyRecord r = new WhileyRecord();
+	public static Actor openReader(Strung name) {
+		Record r = new Record();
 		try {
-			String filename = Util.toString(name);
+			String filename = name.string;
 			FileInputStream fin = new FileInputStream(filename);
-			r.put("fileName", name);
+			Record.put(r,"fileName", name);
 			r.put("$fin", fin);
 			Actor p = new Actor(r);
 			p.start();
@@ -48,7 +48,7 @@ public class IO {
 	}
 	
 	public static Actor openWriter(ArrayList name) {
-		WhileyRecord r = new WhileyRecord();
+		Record r = new Record();
 		try {
 			String filename = Util.toString(name);
 			FileOutputStream fout = new FileOutputStream(filename);

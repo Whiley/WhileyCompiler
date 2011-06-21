@@ -1,14 +1,14 @@
 package wyjc.runtime;
 
 /**
- * <code>Any</code> is the root of the data heirarchy used in Whiley. All data
+ * <code>Any</code> is the root of the data hierarchy used in Whiley. All data
  * values used in Whiley are instances of <code>Any</code>. This includes sets,
  * lists, dictionaries, records, tuples and numbers.
  * 
  * @author djp
  * 
  */
-public abstract class Any {
+public interface Any {
 
 	/**
 	 * Increment the reference count for this object. In some cases, this may
@@ -16,7 +16,7 @@ public abstract class Any {
 	 * maintained an in-place updates can only occur when the reference count is
 	 * one.
 	 */
-	public abstract void incCount();
+	public Any inc();
 
 	/**
 	 * Decrement the reference count for this object. In some cases, this may
@@ -24,10 +24,16 @@ public abstract class Any {
 	 * maintained an in-place updates can only occur when the reference count is
 	 * one.
 	 */
-	public abstract void decCount();
+	public void dec();
 	
 	/**
 	 * The <code>instanceOf</code> method implements a runtime type test. 
 	 */
-	public abstract boolean instanceOf(Type t);
+	public boolean instanceOf(Type t);
+
+	/**
+	 * The <code>coerce</code> method forces this object to conform to a given
+	 * type.
+	 */
+	public Any coerce(Type t);	
 }
