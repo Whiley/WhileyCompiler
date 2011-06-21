@@ -56,7 +56,7 @@ public final class Actor extends Thread {
 
 	/**
 	 * Send a message synchronously to this actor. This will block the sender
-	 * until the message is received. Any return value is discarded.
+	 * until the message is received. Object return value is discarded.
 	 * 
 	 * @param method
 	 *            --- the "message"

@@ -1,8 +1,8 @@
 package wyjc.runtime;
 
 public class Exception extends RuntimeException {
-	private final Object value;
-	public Exception(Object v) {		
+	private final Any value;
+	public Exception(Any v) {		
 		this.value = v;
 	}
 	
