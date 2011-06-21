@@ -32,8 +32,17 @@ public final class List extends java.util.ArrayList {
 		return list.get(index);
 	}
 	
+	public static Object get(List list, BigRational index) {		
+		return list.get(index.intValue());
+	}
+		
 	public static List set(final List list, final int index, final Object value) {
 		list.set(index,value);
+		return list;
+	}
+	
+	public static List set(final List list, final BigRational index, final Object value) {
+		list.set(index.intValue(),value);
 		return list;
 	}
 	

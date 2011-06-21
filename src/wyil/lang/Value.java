@@ -226,7 +226,7 @@ public abstract class Value implements Comparable<Value> {
 			return -1;			
 		}
 		public String toString() {
-			return value.toString();
+			return "\"" + value.toString() + "\"";
 		}
 	}
 	

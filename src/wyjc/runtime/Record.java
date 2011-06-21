@@ -18,7 +18,8 @@ public final class Record {
 	// ================================================================================	 	
 	
 	public Record() {		
-		this.refCount = 1;		
+		this.refCount = 1;
+		this.data = new HashMap<String,Object>();
 	}
 	
 	// ================================================================================

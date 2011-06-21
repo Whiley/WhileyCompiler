@@ -84,13 +84,8 @@ public class Util {
 	 * 
 	 * @param list
 	 */
-	public static void debug(ArrayList list) {
-		for(Object o : list) {
-			if(o instanceof BigRational) {
-				BigRational bi = (BigRational) o;
-				System.out.print((char)bi.intValue());
-			}
-		}		
+	public static void debug(String str) {
+		System.out.print(str);			
 	}
 	
 	/**

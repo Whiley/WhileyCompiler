@@ -179,7 +179,7 @@ public class ClassFileBuilder {
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
 		Type.Fun wyft = Type.T_FUN(WHILEY_SYSTEM_T,
-				Type.T_VOID, Type.T_LIST(Type.T_LIST(Type.T_INT)));
+				Type.T_VOID, Type.T_LIST(Type.T_STRING));
 		JvmType.Function ft3 = convertFunType(wyft);
 		
 		// The following is a little bit of hack. Basically we flush the stdout
@@ -694,41 +694,38 @@ public class ClassFileBuilder {
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
 				bytecodes.add(new Bytecode.Swap());
 				if(read) { 
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-							JAVA_LANG_OBJECT);
+					JvmType.Function ftype = new JvmType.Function(
+							JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
-						Bytecode.VIRTUAL));
+						Bytecode.STATIC));
 					addReadConversion(dict.value(),bytecodes);
 				} else {
 					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-							JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+							WHILEYMAP,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
 					addWriteConversion(dict.value(),bytecodes);
 					bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
-							Bytecode.VIRTUAL));
-					bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+							Bytecode.STATIC));
+					bytecodes.add(new Bytecode.Pop(WHILEYMAP));
 				}
 				iter = dict.value();
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
-				Type.List list = Type.effectiveListType(iter);
-				JvmType.Function ftype = new JvmType.Function(T_INT);
-				bytecodes.add(new Bytecode.Swap());
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue", ftype,
-						Bytecode.VIRTUAL));				
+				Type.List list = Type.effectiveListType(iter);				
+				bytecodes.add(new Bytecode.Swap());								
 				if(read) {
-					ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-							T_INT);
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+							WHILEYLIST,BIG_RATIONAL);
 					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-							Bytecode.VIRTUAL));
+							Bytecode.STATIC));
 					addReadConversion(list.element(),bytecodes);
 				} else {
-					ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-							T_INT,JAVA_LANG_OBJECT);
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+							WHILEYLIST,BIG_RATIONAL,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
 					addWriteConversion(list.element(),bytecodes);
 					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
-							Bytecode.VIRTUAL));
-					bytecodes.add(new Bytecode.Pop(T_BOOL));
+							Bytecode.STATIC));
+					bytecodes.add(new Bytecode.Pop(WHILEYLIST));
 				}
 				iter = list.element();
 			} else {
@@ -736,14 +733,14 @@ public class ClassFileBuilder {
 				String field = fields.get(fi++);
 				bytecodes.add(new Bytecode.LoadConst(field));				
 				if(read) {
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));				
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
+					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));				
 					addReadConversion(rec.fields().get(field),bytecodes);
 				} else {
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
 					addWriteConversion(rec.fields().get(field),bytecodes);
-					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
+					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.STATIC));
 					bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 				}
 				iter = rec.fields().get(field);
@@ -1617,7 +1614,7 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Debug c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(T_VOID,WHILEYLIST);
+		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "debug", ftype,
 				Bytecode.STATIC));
 	}
@@ -1643,10 +1640,10 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.DictLoad c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {					
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYMAP,
 				JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
-				Bytecode.VIRTUAL));
+				Bytecode.STATIC));
 		addReadConversion(c.type.value(),bytecodes);	
 	}
 	
@@ -1692,22 +1689,19 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.ListLoad c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {					
-		JvmType.Function ftype = new JvmType.Function(T_INT);
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue", ftype,
-				Bytecode.VIRTUAL));
-		ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-				T_INT);
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+				WHILEYLIST, BIG_RATIONAL);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-				Bytecode.VIRTUAL));
-		addReadConversion(c.type.element(),bytecodes);	
+				Bytecode.STATIC));
+		addReadConversion(c.type.element(), bytecodes);
 	}
 	
 	public void translate(Code.FieldLoad c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(c.field));
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));				
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
+		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));				
 		addReadConversion(c.fieldType(),bytecodes);
 	}
 
