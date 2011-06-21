@@ -204,8 +204,7 @@ public abstract class Value implements Comparable<Value> {
 			this.value = value;
 		}
 		public Type type() {
-			// FIXME: this will need to be fixed
-			return Type.T_LIST(Type.T_INT);
+			return Type.T_STRING;
 		}
 		public int hashCode() {
 			return value.hashCode();

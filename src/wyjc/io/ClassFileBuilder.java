@@ -2163,17 +2163,18 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Value.Set lv, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		construct(WHILEYSET, freeSlot, bytecodes);		
-		JvmType.Function ftype = new JvmType.Function(T_BOOL,
-				JAVA_LANG_OBJECT);  
-		for(Value e : lv.values) {
-			// FIXME: there is a bug here for bool sets
-			bytecodes.add(new Bytecode.Dup(WHILEYSET));
+			ArrayList<Bytecode> bytecodes) {	
+		JvmType.Function ftype = new JvmType.Function(T_VOID);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
+				Bytecode.SPECIAL));
+		
+		ftype = new JvmType.Function(WHILEYSET, WHILEYSET, JAVA_LANG_OBJECT);		
+		for (Value e : lv.values) {			
 			translate(e, freeSlot, bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET,"add",ftype,Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
-		}
+			addWriteConversion(e.type(), bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
+					Bytecode.STATIC));			
+		}	
 	}
 
 	protected void translate(Value.List lv, int freeSlot,
@@ -2185,11 +2186,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
 				Bytecode.SPECIAL));
 		
-		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, WHILEYANY);		
+		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, JAVA_LANG_OBJECT);		
 		for (Value e : lv.values) {			
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append_l", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
 					Bytecode.STATIC));			
 		}		
 	}
@@ -2315,8 +2316,7 @@ public class ClassFileBuilder {
 							new PkgID("whiley", "lang"), "System"), "1")));
 				}
 			})));
-	
-	public final static JvmType.Clazz WHILEYANY = new JvmType.Clazz("wyjc.runtime","Any");
+		
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");

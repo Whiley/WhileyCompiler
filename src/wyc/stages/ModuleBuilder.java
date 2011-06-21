@@ -1622,6 +1622,8 @@ public class ModuleBuilder {
 			return Type.T_INT;
 		} else if (t instanceof UnresolvedType.Real) {
 			return Type.T_REAL;
+		} else if (t instanceof UnresolvedType.Strung) {
+			return Type.T_STRING;
 		} else if (t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;			
 			return Type.T_LIST(resolve(lt.element));			

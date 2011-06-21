@@ -443,6 +443,7 @@ public class WhileyLexer {
 		"null",
 		"int",
 		"real",
+		"string",
 		"bool",
 		"process",
 		"void",			

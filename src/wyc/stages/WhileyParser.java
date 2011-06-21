@@ -1296,12 +1296,8 @@ public class WhileyParser {
 	private Expr parseString() {
 		int start = index;
 		String s = match(Strung.class).string;
-		ArrayList<Value> vals = new ArrayList<Value>();
-		for (int i = 0; i != s.length(); ++i) {
-			vals.add(Value.V_NUMBER(BigInteger.valueOf(s.charAt(i))));
-		}
-		Value.List list = Value.V_LIST(vals);
-		return new Expr.Constant(list, sourceAttr(start, index - 1));
+		Value.Strung str = Value.V_STRING(s);
+		return new Expr.Constant(str, sourceAttr(start, index - 1));
 	}
 	
 	private UnresolvedType parseType() {
@@ -1363,6 +1359,9 @@ public class WhileyParser {
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
 			t = new UnresolvedType.Real(sourceAttr(start,index-1));
+		} else if(token.text.equals("string")) {
+			matchKeyword("string");
+			t = new UnresolvedType.Strung(sourceAttr(start,index-1));
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
 			t = new UnresolvedType.Void(sourceAttr(start,index-1));

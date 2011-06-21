@@ -25,8 +25,6 @@
 
 package whiley.lang
 
-define string as [char]
-
 public string str(* item):
     if item ~= null:
         return "null"

@@ -29,7 +29,7 @@ import java.util.*;
 import java.lang.reflect.*;
 import java.util.concurrent.ArrayBlockingQueue;
 
-public final class Actor extends Thread implements Any {
+public final class Actor extends Thread {
 	private Object state;
 	private ArrayBlockingQueue<Message> queue = new ArrayBlockingQueue<Message>(10); 
 	
@@ -40,21 +40,7 @@ public final class Actor extends Thread implements Any {
 
 	public Object state() {
 		return state;
-	}		
-	
-	public Actor inc() {
-		return this;
-	}
-	
-	public void dec() { }
-	
-	public boolean instanceOf(Type t) {
-		return false;
-	}		
-	
-	public Any coerce(Type t) {
-		return this;
-	}
+	}			
 	
 	/**
 	 * Send a message asynchronously to this actor. If the mailbox is full, then

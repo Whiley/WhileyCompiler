@@ -1,7 +1,7 @@
 package wyjc.runtime;
 
 
-public final class List implements Any {		
+public final class List extends java.util.ArrayList {		
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -10,92 +10,66 @@ public final class List implements Any {
 	 */
 	private int refCount;
 	
-	/**
-	 * The size indicates the current size of the list.
-	 */
-	private int size;
-	
-	/**
-	 * The data field contains the actual data making up this compound structure.
-	 */
-	private Any[] data;
-
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
 	
-	public List(int size) {		
-		this.refCount = 1;
-		this.data = new Any[size];
+	public List(int size) {
+		super(size);
+		this.refCount = 1;		
 	}
 	
-	private List(int size, Any[] data) {		
-		this.refCount = 1;
-		this.data = data;
-	}
-	
-	public List inc() {
-		if (++refCount < 0) {
-			throw new RuntimeException("Reference Count Overflow");
-		}
-		return this;
-	}
-	
-	public void dec() { refCount--; }
-	
-	public boolean instanceOf(Type t) {
-		return false;
-	}		
-	
-	public Any coerce(Type t) {
-		return null;
+	List(java.util.Collection items) {
+		super(items);
+		this.refCount = 1;		
 	}
 	
 	// ================================================================================
 	// List Operations
 	// ================================================================================	 
 	
-	public static Any get(List list, int index) {		
-		return list.data[index];
+	public static Object get(List list, int index) {		
+		return list.get(index);
 	}
 	
-	public static List set(final List list, final int index, final Any value) {
-		Any[] data = list.data;		
-		int size = list.size;
-		if(list.refCount == 1) {
-			data[index] = value;
-			return list;
-		} else {			
-			Any[] ndata = new Any[size * 2];
-			for(int i=0;i!=size;++i) {
-				Any v = (i == index) ? value : data[i];				
-				ndata[i] = v.inc();
-			}			
-			return new List(size,ndata);
+	public static List set(final List list, final int index, final Object value) {
+		list.set(index,value);
+		return list;
+	}
+	
+	public static List sublist(final List list, final BigRational start, final BigRational end) {
+		int st = start.intValue();
+		int en = end.intValue();
+		List r = new List(en-st);
+		for (int i = st; i != en; ++i) {
+			r.add(list.get(i));
 		}
-	}
-	
-	public static List sublist(final List list, final int start, final int end) {
-		return null;
+		return r;		
 	}
 	
 	public static List append(final List lhs, final List rhs) {
-		return null;
+		List r = new List(lhs);
+		r.addAll(rhs);
+		return r;
 	}
 	
-	public static List append_l(final List list, final Any item) {
-		return null;
+	public static List append(final List list, final Object item) {
+		List r = new List(list);
+		r.add(item);
+		return r;
 	}
 	
-	public static List append_r(final Any item, final List list) {
-		return null;
+	public static List append(final Object item, final List list) {
+		List r = new List(list);
+		r.add(0,item);
+		return r;
 	}
 	
 	public static int size(final List list) {
-		return list.size;
+		return list.size();
 	}
 	
-	public static java.util.Iterator<Any> iterator(List c) {
-		return null;
+	public static java.util.Iterator iterator(List list) {
+		return list.iterator();
 	}		
 }

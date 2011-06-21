@@ -61,7 +61,7 @@ public class Util {
 	public static List fromStringList(String[] args) {
 		List r = new List(args.length);
 		for(int i=0;i!=args.length;++i) {
-			List.set(r,i,new Strung(args[i]));
+			List.set(r,i,args[i]);
 		}
 		return r;
 	}
@@ -91,5 +91,40 @@ public class Util {
 				System.out.print((char)bi.intValue());
 			}
 		}		
+	}
+	
+	/**
+	 * Increment the reference count for this object. In some cases, this may
+	 * have no effect. In other cases, the current reference count will be
+	 * maintained and in-place updates can only occur when the reference count is
+	 * one.
+	 */
+	public static Object incRefs(Object obj) {
+		return obj;
+	}
+
+	/**
+	 * Decrement the reference count for this object. In some cases, this may
+	 * have no effect. In other cases, the current reference count will be
+	 * maintained and in-place updates can only occur when the reference count is
+	 * one.
+	 */
+	public static void decRefs(Object obj) {
+		
+	}
+	
+	/**
+	 * The <code>instanceOf</code> method implements a runtime type test. 
+	 */
+	public static boolean instanceOf(Object obj, Type t) {
+		return false;
+	}
+
+	/**
+	 * The <code>coerce</code> method forces this object to conform to a given
+	 * type.
+	 */
+	public Object coerce(Object obj, Type t) {
+		return obj;
 	}
 }

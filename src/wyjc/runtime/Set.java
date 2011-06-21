@@ -1,7 +1,7 @@
 package wyjc.runtime;
 
 
-public final class Set extends java.util.HashSet implements Any {	
+public final class Set extends java.util.HashSet {	
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -20,24 +20,7 @@ public final class Set extends java.util.HashSet implements Any {
 	
 	private Set(java.util.Collection c) {
 		super(c);
-	}
-	
-	public Set inc() {
-		if (++refCount < 0) {
-			throw new RuntimeException("Reference Count Overflow");
-		}
-		return this;
-	}
-	
-	public void dec() { refCount--; }
-	
-	public boolean instanceOf(Type t) {
-		return false;
-	}
-	
-	public Any coerce(Type t) {
-		return null;
-	}
+	}	
 	
 	// ================================================================================
 	// Set Operations

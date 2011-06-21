@@ -31,34 +31,32 @@ import java.io.*;
 import java.lang.reflect.*;
 
 public class IO {
-	public static Actor openReader(Strung name) {
+	public static Actor openReader(String filename) {
 		Record r = new Record();
-		try {
-			String filename = name.string;
+		try {			
 			FileInputStream fin = new FileInputStream(filename);
-			Record.put(r,"fileName", name);
-			r.put("$fin", fin);
+			Record.put(r,"fileName", filename);
+			Record.put(r,"$fin", fin);
 			Actor p = new Actor(r);
 			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
-			r.put("msg", e.getMessage());			
+			Record.put(r,"msg", e.getMessage());			
 		}
 		return null;
 	}
 	
-	public static Actor openWriter(ArrayList name) {
+	public static Actor openWriter(String filename) {
 		Record r = new Record();
-		try {
-			String filename = Util.toString(name);
+		try {			
 			FileOutputStream fout = new FileOutputStream(filename);
-			r.put("fileName", name);
-			r.put("$fout", fout);
+			Record.put(r,"fileName", filename);
+			Record.put(r,"$fout", fout);			
 			Actor p = new Actor(r);
 			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
-			r.put("msg", e.getMessage());			
+			Record.put(r,"msg", e.getMessage());	
 		}
 		return null;
 	}

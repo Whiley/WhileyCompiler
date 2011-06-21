@@ -43,7 +43,8 @@ public abstract class Type {
 	public static final Null T_NULL = new Null();	
 	public static final Bool T_BOOL = new Bool();
 	public static final Int T_INT = new Int();
-	public static final Real T_REAL = new Real();	
+	public static final Real T_REAL = new Real();
+	public static final Strung T_STRING = new Strung();	
 	public static final Meta T_META = new Meta();
 	
 	/**
@@ -754,6 +755,9 @@ public abstract class Type {
 					break;
 				case K_RATIONAL:
 					writer.buildPrimitive(i,T_REAL);
+					break;
+				case K_STRING:
+					writer.buildPrimitive(i,T_STRING);
 					break;
 				case K_SET:
 					writer.buildSet(i,(Integer) node.data);
@@ -1689,6 +1693,7 @@ public abstract class Type {
 				case K_BOOL:
 				case K_INT:
 				case K_RATIONAL:
+				case K_STRING:
 					return 0;
 				case K_EXISTENTIAL: {
 					String s1 = (String) data1;
@@ -1745,6 +1750,7 @@ public abstract class Type {
 			case K_BOOL:
 			case K_INT:
 			case K_RATIONAL:
+			case K_STRING:
 				node = c1;
 				break;
 			case K_EXISTENTIAL:
@@ -1955,6 +1961,7 @@ public abstract class Type {
 			case K_BOOL:
 			case K_INT:
 			case K_RATIONAL:
+			case K_STRING:
 				node = new Node(K_VOID,null);
 				break;
 			case K_EXISTENTIAL:
@@ -2309,6 +2316,26 @@ public abstract class Type {
 			return "real";
 		}
 	}
+	
+	/**
+	 * Represents a string of characters 
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Strung extends Leaf {
+		private Strung() {}
+		public boolean equals(Object o) {
+			return o == T_STRING;
+		}
+		public int hashCode() {
+			return 6;
+		}
+		public String toString() {
+			return "string";
+		}
+	}
+	
 	// =============================================================
 	// Compound Type
 	// =============================================================
@@ -2590,6 +2617,8 @@ public abstract class Type {
 			return "int";
 		case K_RATIONAL:
 			return "rat";
+		case K_STRING:
+			return "string";
 		case K_SET:
 			middle = "{" + toString((Integer) node.data, visited, headers, graph)
 					+ "}";
@@ -2945,16 +2974,17 @@ public abstract class Type {
 	private static final byte K_BOOL = 4;
 	private static final byte K_INT = 5;
 	private static final byte K_RATIONAL = 6;
-	private static final byte K_TUPLE = 7;
-	private static final byte K_SET = 8;
-	private static final byte K_LIST = 9;
-	private static final byte K_DICTIONARY = 10;	
-	private static final byte K_PROCESS = 11;
-	private static final byte K_RECORD = 12;
-	private static final byte K_UNION = 13;
-	private static final byte K_FUNCTION = 14;
-	private static final byte K_EXISTENTIAL = 15;
-	private static final byte K_LABEL = 16;
+	private static final byte K_STRING = 7;
+	private static final byte K_TUPLE = 8;
+	private static final byte K_SET = 9;
+	private static final byte K_LIST = 10;
+	private static final byte K_DICTIONARY = 11;	
+	private static final byte K_PROCESS = 12;
+	private static final byte K_RECORD = 13;
+	private static final byte K_UNION = 14;
+	private static final byte K_FUNCTION = 15;
+	private static final byte K_EXISTENTIAL = 16;
+	private static final byte K_LABEL = 17;
 	
 	/**
 	 * Represents a node in the type graph. Each node has a kind, along with a
@@ -2986,6 +3016,7 @@ public abstract class Type {
 					case K_BOOL:
 					case K_INT:
 					case K_RATIONAL:
+					case K_STRING:
 						return true;
 					case K_SET:
 					case K_LIST:
@@ -3013,7 +3044,7 @@ public abstract class Type {
 		}
 		
 		public final static String[] kinds = { "void", "any", "meta", "null", "bool",
-				"int", "rat", "tuple", "dict", "set", "list", "ref", "record", "union",
+				"int", "rat", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
 				"fun", "label" };
 		public String toString() {
 			if(data instanceof Pair[]) {
@@ -3048,6 +3079,8 @@ public abstract class Type {
 			return K_INT;
 		} else if(leaf instanceof Real) {
 			return K_RATIONAL;
+		} else if(leaf instanceof Strung) {
+			return K_STRING;
 		} else if(leaf instanceof Meta) {
 			return K_META;
 		} else {
@@ -3181,6 +3214,8 @@ public abstract class Type {
 			return T_INT;
 		case K_RATIONAL:
 			return T_REAL;
+		case K_STRING:
+			return T_STRING;
 		case K_TUPLE:
 			return new Tuple(nodes);
 		case K_SET:
