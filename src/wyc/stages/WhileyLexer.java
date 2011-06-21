@@ -90,12 +90,22 @@ public class WhileyLexer {
 		return tokens;
 	}
 	
-	public Token scanComment() {
+	public Token scanLineComment() {
 		int start = pos;
 		while(pos < input.length() && input.charAt(pos) != '\n') {
 			pos++;
 		}
-		return new Comment(input.substring(start,pos),start);
+		return new LineComment(input.substring(start,pos),start);
+	}
+	
+	public Token scanBlockComment() {
+		int start = pos;
+		while((pos+1) < input.length() && (input.charAt(pos) != '*' || input.charAt(pos+1) != '/')) {
+			pos++;
+		}
+		pos++;
+		pos++;
+		return new BlockComment(input.substring(start,pos),start);
 	}
 	
 	public Token scanDigits() {		
@@ -356,8 +366,10 @@ public class WhileyLexer {
 			}
 		} else if(c == '/') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '/') {
-				return scanComment();
-			} else {
+				return scanLineComment();
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '*') {
+				return scanBlockComment();
+			} {
 				return new RightSlash(pos++);
 			}
 		} else if(c == '%') {
@@ -586,8 +598,11 @@ public class WhileyLexer {
 			this.ntabs = ntabs; 
 		}		
 	}
-	public static class Comment extends Token {
-		public Comment(String text, int pos) { super(text,pos);	}
+	public static class LineComment extends Token {
+		public LineComment(String text, int pos) { super(text,pos);	}
+	}
+	public static class BlockComment extends Token {
+		public BlockComment(String text, int pos) { super(text,pos);	}
 	}
 	public static class Comma extends Token {
 		public Comma(int pos) { super(",",pos);	}

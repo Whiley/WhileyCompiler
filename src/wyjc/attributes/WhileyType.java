@@ -127,6 +127,9 @@ public class WhileyType implements BytecodeAttribute {
 				case REAL_TYPE:
 					builder.buildPrimitive(i, Type.T_REAL);
 					break;
+				case STRING_TYPE:
+					builder.buildPrimitive(i, Type.T_STRING);
+					break;
 				case LIST_TYPE:
 					builder.buildList(i, input.read_u2());
 					break;
@@ -257,6 +260,8 @@ public class WhileyType implements BytecodeAttribute {
 					writer.write_u1(INT_TYPE );		
 				} else if(t == Type.T_REAL) {
 					writer.write_u1(REAL_TYPE );			
+				} else if(t == Type.T_STRING) {
+					writer.write_u1(STRING_TYPE );			
 				} else {
 					throw new RuntimeException("unknown type encountered: " + t);		
 				}
@@ -382,15 +387,16 @@ public class WhileyType implements BytecodeAttribute {
 	public static final int BOOL_TYPE = 5;
 	public static final int INT_TYPE = 6;
 	public static final int REAL_TYPE = 7;
-	public static final int LIST_TYPE = 8;
-	public static final int SET_TYPE = 9;
-	public static final int DICTIONARY_TYPE = 10;
-	public static final int TUPLE_TYPE = 11;
-	public static final int RECORD_TYPE = 12;
-	public static final int UNION_TYPE = 13;
-	public static final int INTERSECTION_TYPE = 14;
-	public static final int PROCESS_TYPE = 15;	
-	public static final int FUN_TYPE = 16;
-	public static final int METH_TYPE = 17;
+	public static final int STRING_TYPE = 8;
+	public static final int LIST_TYPE = 9;
+	public static final int SET_TYPE = 10;
+	public static final int DICTIONARY_TYPE = 11;
+	public static final int TUPLE_TYPE = 12;
+	public static final int RECORD_TYPE = 13;
+	public static final int UNION_TYPE = 14;
+	public static final int INTERSECTION_TYPE = 15;
+	public static final int PROCESS_TYPE = 16;	
+	public static final int FUN_TYPE = 17;
+	public static final int METH_TYPE = 18;
 	public static final int CONSTRAINT_MASK = 32;
 }

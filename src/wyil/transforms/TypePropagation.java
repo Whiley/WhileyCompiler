@@ -407,7 +407,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(Code.Debug code, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();		
 		// FIXME: should be updated to string
-		checkIsSubtype(Type.T_LIST(Type.T_INT),rhs_t,stmt);
+		checkIsSubtype(Type.T_STRING,rhs_t,stmt);
 		return code;
 	}
 	

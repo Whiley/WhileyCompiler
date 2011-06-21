@@ -37,7 +37,8 @@ public string hexStr(int item):
             w = w - 10
             r = ['a' + w] + r
         item = v
-    return r
+    //    return r
+    return "FIX HEX STR"
 
 // Convert a byte array in little endian form into an unsigned int
 int le2uint([byte] bytes):

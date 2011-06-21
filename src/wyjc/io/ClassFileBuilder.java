@@ -2049,6 +2049,8 @@ public class ClassFileBuilder {
 			translate((Value.Bool)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Number) {
 			translate((Value.Number)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Strung) {
+			translate((Value.Strung)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Set) {
 			translate((Value.Set)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.List) {
@@ -2160,6 +2162,11 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "<init>", ftype,
 					Bytecode.SPECIAL));			
 		}		
+	}
+	
+	protected void translate(Value.Strung e, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
+		bytecodes.add(new Bytecode.LoadConst(e.value));
 	}
 	
 	protected void translate(Value.Set lv, int freeSlot,
@@ -2362,6 +2369,8 @@ public class ClassFileBuilder {
 			return BIG_RATIONAL;
 		} else if(t instanceof Type.Real) {
 			return BIG_RATIONAL;
+		} else if(t instanceof Type.Strung) {
+			return JAVA_LANG_STRING;
 		} else if(t instanceof Type.List) {
 			return WHILEYLIST;
 		} else if(t instanceof Type.Set) {

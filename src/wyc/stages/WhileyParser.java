@@ -56,7 +56,7 @@ public class WhileyParser {
 				
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
-			if (t instanceof NewLine || t instanceof Comment) {
+			if (t instanceof NewLine || t instanceof LineComment|| t instanceof BlockComment) {
 				matchEndLine();
 			} else if(t instanceof Keyword) {
 				Keyword k = (Keyword) t;
@@ -94,7 +94,7 @@ public class WhileyParser {
 	private ArrayList<String> parsePackage() {
 		
 		while (index < tokens.size()
-				&& (tokens.get(index) instanceof Comment || tokens.get(index) instanceof NewLine)) {			
+				&& (tokens.get(index) instanceof LineComment || tokens.get(index) instanceof NewLine)) {			
 			parseSkip();
 		}
 		
@@ -275,7 +275,7 @@ public class WhileyParser {
 		if (index < tokens.size() && tokens.get(index) instanceof Tabs) {
 			return (Tabs) tokens.get(index);
 		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof Comment) {
+				&& tokens.get(index) instanceof LineComment) {
 			// This indicates a completely empty line. In which case, we just
 			// ignore it.
 			matchEndLine();
@@ -392,7 +392,7 @@ public class WhileyParser {
 		matchKeyword("return");
 		Expr e = null;
 		if (index < tokens.size()
-				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof Comment)) {
+				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof LineComment)) {
 			e = parseTupleExpression();
 		}
 		int end = index;
@@ -1478,7 +1478,8 @@ public class WhileyParser {
 
 	private boolean isWhiteSpace(Token t) {
 		return t instanceof WhileyLexer.NewLine
-				|| t instanceof WhileyLexer.Comment
+				|| t instanceof WhileyLexer.LineComment
+				|| t instanceof WhileyLexer.BlockComment
 				|| t instanceof WhileyLexer.Tabs;
 	}
 	
@@ -1530,7 +1531,7 @@ public class WhileyParser {
 			Token t = tokens.get(index++);			
 			if(t instanceof NewLine) {
 				break;
-			} else if(!(t instanceof Comment) && !(t instanceof Tabs)) {
+			} else if(!(t instanceof LineComment) && !(t instanceof BlockComment) &&!(t instanceof Tabs)) {
 				syntaxError("syntax error",t);
 			}			
 		}

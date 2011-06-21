@@ -19,7 +19,7 @@
 
   <target name="stdlib" depends="build-wyjc">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
-    <wyjc verbose="true" srcdir="stdlib" includes="whiley/**/*.whiley"/>
+    <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 
     <jar destfile="lib/wyrt.jar">
       <fileset dir="src" includes="wyjc/runtime/**/*.class"/>

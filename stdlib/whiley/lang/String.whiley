@@ -31,9 +31,10 @@ public string str(* item):
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;
-        invokestatic wyjc/runtime/Util.fromString:(Ljava/lang/String;)Ljava/util/ArrayList;
         areturn
     return "DUMMY" // dead code
+
+/*
 
 // find first index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED
@@ -72,3 +73,5 @@ public string replace(char old, char new, string str):
             str[i] = new
         i = i + 1
     return str    
+
+*/

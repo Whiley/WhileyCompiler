@@ -54,7 +54,7 @@ public class WhileyFilter {
 				// don't add in this case
 			} else if(t instanceof NewLine && afterNewLine) {
 				// or this case
-			} else if(t instanceof Comment) {						
+			} else if(t instanceof LineComment) {						
 				// or this case
 			} else if(isWhiteSpace(t) && afterFlag) {
 				// or this case				
@@ -155,7 +155,7 @@ public class WhileyFilter {
 		AddressOf.class,
 		RightArrow.class,
 		NewLine.class,
-		Comment.class
+		LineComment.class
 	};
 	
 	public boolean rightNonTerminator(Token t) {
