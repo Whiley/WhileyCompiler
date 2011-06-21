@@ -1,17 +1,9 @@
 package wyjc.runtime;
 
-/**
- * A Compound is a general data-structure for representing sets, lists,
- * dictionaries and records in Whiley. Using one data-structure avoids many
- * issues related to coercing between different types in Whiley; however, at the
- * same time, it's difficult to make it efficient!
- * 
- * @author djp
- * 
- */
+
 public final class Compound extends Any {
-	private static final int K_UNKNOWN = 0;
-	private static final int K_TUPLE = 1;	
+	private static final int K_UNKNOWN = 0; 
+	private static final int K_TUPLE = 1;
 	private static final int K_SET = 2;
 	private static final int K_LIST = 3;
 	private static final int K_DICT = 4;
@@ -26,8 +18,7 @@ public final class Compound extends Any {
 	private int refCount;
 
 	/**
-	 * The kind tells us something about the current shape of this compound
-	 * structure.
+	 * The kind is used to signal the current layout of this compound structure.
 	 */
 	private byte kind;
 	
@@ -35,37 +26,63 @@ public final class Compound extends Any {
 	 * The data field contains the actual data making up this compound structure.
 	 */
 	private Object[] data;
-	
-	public void incCount() { if(++refCount < 0) { throw new RuntimeException("Reference Count Overflow"); } }
-	
-	public void decCount() { refCount--; }
+
+	/**
+	 * The size field indicates how may slots from <code>data</code> are used.
+	 */
+	private int size;
 
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
 	
-	public Compound() {
-		this.kind = K_UNKNOWN;
+	public Compound() {		
 		this.refCount = 1;
+		this.data = new Object[16];
 	}
 	
-	public int size() {
-		switch(kind) {
-			case K_UNKNOWN:
-				return 0;
-			case K_SET:
-				return setSize();
-			case K_LIST:
-				return listSize();
-			case K_DICT:
-				return dictSize();
-			case K_RECORD:
-				return recSize();
+	public void incCount() {
+		if (++refCount < 0) {
+			throw new RuntimeException("Reference Count Overflow");
 		}
-		// this is dead-code
-		throw new RuntimeException("Illegal Compound Kind");
 	}
-		
+	
+	public void decCount() { refCount--; }
+	
+	public boolean instanceofOf(Type t) {
+		return false;
+	}
+	
+	// ================================================================================
+	// List Operations
+	// ================================================================================	 
+	
+	public static Any get(Compound list, int index) {
+		return null;
+	}
+	
+	public static Compound set(Compound list, int index, Any value) {
+		return null;
+	}
+	
+	public static Compound append(Compound lhs, Compound rhs) {
+		return null;
+	}
+	
+	public static Compound append_l(Compound list, Any item) {
+		return null;
+	}
+	
+	public static Compound append_r(Any item, Compound list) {
+		return null;
+	}
+	
+	public static int size(Compound list) {
+		return list.size;
+	}
+	
+
+	
 	// ================================================================================
 	// Set Operations
 	// ================================================================================	 	
@@ -92,34 +109,6 @@ public final class Compound extends Any {
 	
 	public Compound difference(Compound set) {
 		return null;
-	}
-	
-	// ================================================================================
-	// List Operations
-	// ================================================================================	 
-	
-	public Any listGet(int index) {
-		return null;
-	}
-	
-	public Compound listSet(int index, Any value) {
-		return null;
-	}
-	
-	public Compound append(Compound list) {
-		return null;
-	}
-	
-	public Compound append_l(Any item) {
-		return null;
-	}
-	
-	public Compound append_r(Any item) {
-		return null;
-	}
-	
-	public int listSize() {
-		return 0;
 	}
 	
 	// ================================================================================

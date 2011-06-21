@@ -120,7 +120,7 @@ public class IO {
 		return r;		
 	}
 	
-	public static void writeFile(Actor p, List bytes) {		
+	public static void writeFile(Actor p, ArrayList bytes) {		
 		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
 				.get("$fout");
 				
