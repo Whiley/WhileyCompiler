@@ -2295,8 +2295,8 @@ public class ClassFileBuilder {
 
 	protected void translate(Value.Record expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,
+				JAVA_LANG_STRING, JAVA_LANG_OBJECT);
 		construct(WHILEYRECORD, freeSlot, bytecodes);
 		for (Map.Entry<String, Value> e : expr.values.entrySet()) {
 			Type et = e.getValue().type();
@@ -2305,14 +2305,14 @@ public class ClassFileBuilder {
 			translate(e.getValue(), freeSlot, bytecodes);
 			addWriteConversion(et, bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype,
-					Bytecode.VIRTUAL));
+					Bytecode.STATIC));
 			bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 		}
 	}
 	
 	protected void translate(Value.Dictionary expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		
 		construct(WHILEYMAP, freeSlot, bytecodes);
@@ -2326,7 +2326,7 @@ public class ClassFileBuilder {
 			translate(e.getValue(), freeSlot, bytecodes);
 			addWriteConversion(vt, bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
-					Bytecode.VIRTUAL));
+					Bytecode.STATIC));
 			bytecodes.add(new Bytecode.Pop(WHILEYMAP));
 		}
 	}
