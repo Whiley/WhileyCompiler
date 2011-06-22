@@ -1,6 +1,7 @@
 package wyjc.runtime;
 
 import java.math.BigInteger;
+import java.util.*;
 
 
 public final class Set extends java.util.HashSet {	
@@ -24,6 +25,22 @@ public final class Set extends java.util.HashSet {
 		super(c);
 	}	
 	
+	public String toString() {
+		String r = "{";
+		boolean firstTime=true;
+		ArrayList<Comparable> ss = new ArrayList<Comparable>(this);
+		Collections.sort(ss);
+
+		for(Object o : ss) {
+			if(!firstTime) {
+				r = r + ", ";
+			}
+			firstTime=false;
+			r = r + o.toString();
+		}
+		return r + "}";
+	} 
+
 	// ================================================================================
 	// Set Operations
 	// ================================================================================	 	
