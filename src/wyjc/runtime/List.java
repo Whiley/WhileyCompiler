@@ -31,8 +31,9 @@ public final class List extends java.util.ArrayList {
 		boolean firstTime=true;
 		for(Object o : this) {
 			if(!firstTime) {
-				r += ",";
+				r += ", ";
 			}
+			firstTime=false;
 			r += Util.str(o);
 		}
 		return r + "]";
