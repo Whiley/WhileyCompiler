@@ -1730,17 +1730,12 @@ public class ClassFileBuilder {
 					Bytecode.VIRTUAL));
 			break;
 		case DIV:			
-			if(c.type == Type.T_INT) {
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "intDivide", ftype,
-					Bytecode.VIRTUAL));
-			} else {
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
-						Bytecode.VIRTUAL));
-			}
+			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
+					Bytecode.VIRTUAL));			
 			break;
 		case REM:									
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"intRemainder", ftype, Bytecode.VIRTUAL));			
+						"remainder", ftype, Bytecode.VIRTUAL));			
 			break;
 		default:
 			syntaxError("unknown binary expression encountered",filename,stmt);
