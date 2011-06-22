@@ -186,8 +186,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Null) val, writer, constantPool);
 		} else if(val instanceof Value.Bool) {
 			write((Value.Bool) val, writer, constantPool);
-		} else if(val instanceof Value.Number) {
-			write((Value.Number) val, writer, constantPool);
+		} else if(val instanceof Value.Rational) {
+			write((Value.Rational) val, writer, constantPool);
 		} else if(val instanceof Value.Set) {
 			write((Value.Set) val, writer, constantPool);
 		} else if(val instanceof Value.List) {
@@ -212,7 +212,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 	
-	public static void write(Value.Number expr, BinaryOutputStream writer,
+	public static void write(Value.Rational expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
 		
 		if(expr.value.isInteger()) {
@@ -326,7 +326,7 @@ public class WhileyDefine implements BytecodeAttribute {
 				byte[] bytes = new byte[len];
 				reader.read(bytes);
 				BigInteger bi = new BigInteger(bytes);
-				return Value.V_NUMBER(bi);
+				return Value.V_INTEGER(bi);
 			}
 			case REALVAL:			
 			{
@@ -339,7 +339,7 @@ public class WhileyDefine implements BytecodeAttribute {
 				reader.read(bytes);
 				BigInteger den = new BigInteger(bytes);
 				BigRational br = new BigRational(num,den);
-				return Value.V_NUMBER(br);
+				return Value.V_RATIONAL(br);
 			}
 			case LISTVAL:
 			{

@@ -1106,15 +1106,6 @@ public abstract class Type {
 					// primitive types true immediately
 					return true;
 				}		
-			} else if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
-				return true;
-			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
-				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-				return fromGraph[p1.first()].kind == K_INT
-						&& assumptions.isSubtype(p1.second(),
-								(Integer) toNode.data);
 			} else if(fromNode.kind == K_ANY || toNode.kind == K_VOID) {
 				return true;
 			} else if(fromNode.kind == K_UNION) {
@@ -1240,15 +1231,7 @@ public abstract class Type {
 					// primitive types true immediately
 					return true;
 				}		
-			} else if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
-				return true;
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
-				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-				return toGraph[p2.first()].kind == K_INT
-						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
-			}  else if(fromNode.kind == K_VOID || toNode.kind == K_ANY) {
+			} else if(fromNode.kind == K_VOID || toNode.kind == K_ANY) {
 				return true;
 			} else if(fromNode.kind == K_UNION) {
 				int[] bounds1 = (int[]) fromNode.data;		
@@ -1272,6 +1255,48 @@ public abstract class Type {
 			}						
 			
 			return false;
+		}
+	}
+	
+	public static class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
+		
+		public CoerciveSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
+			super(fromGraph,toGraph);
+		}
+		
+		public boolean isSubType(int from, int to) {
+			Node fromNode = fromGraph[from];
+			Node toNode = toGraph[to];	
+			
+			if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
+				return true;
+			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
+				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
+			} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
+				return fromGraph[p1.first()].kind == K_INT
+						&& assumptions.isSubtype(p1.second(),
+								(Integer) toNode.data);
+			} else {
+				return super.isSubType(from,to);
+			}
+		}
+		
+		public boolean isSuperType(int from, int to) {
+			Node fromNode = fromGraph[from];
+			Node toNode = toGraph[to];	
+			
+			if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
+				return true;
+			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
+				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
+			} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
+				return toGraph[p2.first()].kind == K_INT
+						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
+			} else {
+				return super.isSuperType(from, to);
+			}
 		}
 	}
 	
@@ -1888,10 +1913,6 @@ public abstract class Type {
 			default:
 				throw new IllegalArgumentException("attempting to minimise open recurisve type");
 			}		
-		} else if (c1.kind == K_INT && c2.kind == K_RATIONAL) {
-			node = new Node(K_INT, null);
-		} else if (c1.kind == K_RATIONAL && c2.kind == K_INT) {
-			node = new Node(K_INT, null);
 		} else if(c1.kind == K_ANY) {			
 			newNodes.remove(newNodes.size()-1);
 			extractOnto(n2,graph2,newNodes);
@@ -2076,12 +2097,6 @@ public abstract class Type {
 			default:
 				throw new IllegalArgumentException("attempting to minimise open recurisve type");
 			}		
-		} else if(c1.kind == K_INT && c2.kind == K_RATIONAL) {
-			// this is obviously imprecise
-			node = new Node(K_VOID,null);
-		} else if(c1.kind == K_RATIONAL && c2.kind == K_INT) {
-			// this is obviously imprecise
-			node = new Node(K_RATIONAL,null);
 		} else if(c1.kind == K_ANY) {			
 			// TODO: try to do better
 			node = new Node(K_ANY,null);

@@ -368,7 +368,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {
 		
 		Value constant = c.constant;
-		if (constant instanceof Value.Number || constant instanceof Value.Bool
+		if (constant instanceof Value.Rational || constant instanceof Value.Bool
 				|| constant instanceof Value.Null) {
 			translate(constant,freeSlot,bytecodes);					
 		} else {
@@ -796,13 +796,13 @@ public class ClassFileBuilder {
 		for (Pair<Value, String> p : c.branches) {
 			// first, check whether the switch value is indeed an integer.
 			Value v = (Value) p.first();
-			if (!(v instanceof Value.Number && ((Value.Number) v).value
+			if (!(v instanceof Value.Rational && ((Value.Rational) v).value
 					.isInteger())) {
 				canUseSwitchBytecode = false;
 				break;
 			}
 			// second, check whether integer value can fit into a Java int
-			Value.Number vi = (Value.Number) v;
+			Value.Rational vi = (Value.Rational) v;
 			int iv = vi.value.intValue();
 			if (!BigRational.valueOf(iv).equals(vi.value)) {
 				canUseSwitchBytecode = false;
@@ -2108,8 +2108,8 @@ public class ClassFileBuilder {
 			translate((Value.Null)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Bool) {
 			translate((Value.Bool)v,freeSlot,bytecodes);
-		} else if(v instanceof Value.Number) {
-			translate((Value.Number)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Rational) {
+			translate((Value.Rational)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Strung) {
 			translate((Value.Strung)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Set) {
@@ -2141,7 +2141,7 @@ public class ClassFileBuilder {
 		}
 	}
 
-	protected void translate(Value.Number e, int freeSlot,
+	protected void translate(Value.Rational e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
 		BigRational rat = e.value;
 		BigInteger den = rat.denominator();
