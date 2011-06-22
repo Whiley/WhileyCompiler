@@ -318,12 +318,20 @@ public abstract class Code {
 		return get(new SetOp(type,op,dir));
 	}
 	
-	public static StringOp StringOp(StOp op) {
-		return get(new StringOp(op,OpDir.UNIFORM));
+	public static StringAppend StringAppend(OpDir dir) {
+		return get(new StringAppend(dir));
 	}
 	
-	public static StringOp StringOp(StOp op, OpDir dir) {
-		return get(new StringOp(op,dir));
+	public static SubString SubString() {
+		return get(new SubString());
+	}
+	
+	public static StringLength StringLength() {
+		return get(new StringLength());
+	}
+	
+	public static StringLoad StringLoad() {
+		return get(new StringLoad());
 	}
 	
 	/**
@@ -1503,60 +1511,83 @@ public abstract class Code {
 		}
 	}
 	
-	public enum StOp { 				
-		APPEND{
-			public String toString() { return "stringappend"; }
-		},
-		LENGTHOF{
-			public String toString() { return "stringlength"; }
-		},
-		LOAD {
-			public String toString() { return "stringload"; }
-		},
-		SUBSTRING {
-			public String toString() { return "substring"; }
-		}
-	};
-	
-	/**
-	 * A string operation (e.g. append, lengthof, etc) takes one or two items
-	 * off the stack and pushes a single result.
-	 * 
-	 * @author djp
-	 */
-	public static final class StringOp extends Code {		
-		public final StOp sop;
+	public static final class StringAppend extends Code {			
 		public final OpDir dir;		
 		
-		private StringOp(StOp op, OpDir dir) {
-			if(op == null) {
-				throw new IllegalArgumentException("StringOp op argument cannot be null");
-			}
+		private StringAppend(OpDir dir) {			
 			if(dir == null) {
-				throw new IllegalArgumentException("StringOp op argument cannot be null");
-			}
-			this.sop = op;			
+				throw new IllegalArgumentException("StringAppend direction cannot be null");
+			}			
 			this.dir = dir;
 		}
 		
 		public int hashCode() {			
-			return sop.hashCode() + dir.hashCode();			
+			return dir.hashCode();			
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof StringOp) {
-				StringOp setop = (StringOp) o;
-				return sop.equals(setop.sop)
-						&& dir.equals(setop.dir);
+			if (o instanceof StringAppend) {
+				StringAppend setop = (StringAppend) o;
+				return dir.equals(setop.dir);
 			}
 			return false;
 		}
 				
 		public String toString() {
-			return toString(sop.toString() + dir.toString(),Type.T_STRING);
+			return toString("stringappend" + dir.toString(),Type.T_STRING);
 		}
 	}
 	
+	public static final class SubString extends Code {		
+		private SubString() {
+		}
+		
+		public int hashCode() {			
+			return 983745;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof SubString;
+		}
+				
+		public String toString() {
+			return toString("substring",Type.T_STRING);
+		}
+	}
+	
+	public static final class StringLength extends Code {		
+		private StringLength() {
+		}
+		
+		public int hashCode() {			
+			return 982345;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof StringLength;
+		}
+				
+		public String toString() {
+			return toString("stringlen",Type.T_STRING);
+		}
+	}
+	
+	public static final class StringLoad extends Code {		
+		private StringLoad() {
+		}
+		
+		public int hashCode() {			
+			return 12387;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof StringLoad;
+		}
+				
+		public String toString() {
+			return toString("stringload",Type.T_STRING);
+		}
+	}
 	
 	public static final class Skip extends Code {
 		Skip() {}

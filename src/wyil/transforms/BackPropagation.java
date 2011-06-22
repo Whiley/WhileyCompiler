@@ -142,8 +142,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Store)code,entry,environment);
 		} else if(code instanceof SetOp) {
 			infer(index,(SetOp)code,entry,environment);
-		} else if(code instanceof StringOp) {
-			infer(index,(StringOp)code,entry,environment);
+		} else if(code instanceof StringAppend) {
+			infer(index,(StringAppend)code,entry,environment);
+		} else if(code instanceof StringLength) {
+			infer(index,(StringLength)code,entry,environment);
+		} else if(code instanceof StringLoad) {
+			infer(index,(StringLoad)code,entry,environment);
+		} else if(code instanceof SubString) {
+			infer(index,(SubString)code,entry,environment);
 		} else if(code instanceof UnOp) {
 			infer(index,(UnOp)code,entry,environment);
 		} else {
@@ -473,48 +479,44 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}								
 	}
 	
-	public void infer(int index, Code.StringOp code, Block.Entry entry,
-			Env environment) {
-		
+	public void infer(int index, Code.StringAppend code, Block.Entry entry,
+			Env environment) {				
 		Type req = environment.pop();
-		
-		switch(code.sop) {
-			case SUBSTRING: {
-				coerce(req,Type.T_STRING,index,entry);
-				environment.push(Type.T_STRING);
-				environment.push(Type.T_INT);
-				environment.push(Type.T_INT);
-				break;
-			}
-			case APPEND:
-			{				
-				coerce(req,Type.T_STRING,index,entry);
-				if(code.dir == OpDir.UNIFORM) { 
-					environment.push(Type.T_STRING);
-					environment.push(Type.T_STRING);
-				} else if(code.dir == OpDir.LEFT) {
-					environment.push(Type.T_STRING);
-					environment.push(Type.T_CHAR);					
-				} else {					
-					environment.push(Type.T_CHAR);
-					environment.push(Type.T_STRING);
-				}
-				break;
-			}
-			case LENGTHOF:
-			{
-				coerce(req,Type.T_INT,index,entry);
-				environment.push(Type.T_STRING);
-				break;
-			}
-			case LOAD:
-			{				
-				coerce(req,Type.T_CHAR,index,entry);		
-				environment.push(Type.T_STRING);
-				environment.push(Type.T_INT);
-				break;
-			}
+		coerce(req,Type.T_STRING,index,entry);
+		if(code.dir == OpDir.UNIFORM) { 
+			environment.push(Type.T_STRING);
+			environment.push(Type.T_STRING);
+		} else if(code.dir == OpDir.LEFT) {
+			environment.push(Type.T_STRING);
+			environment.push(Type.T_CHAR);					
+		} else {					
+			environment.push(Type.T_CHAR);
+			environment.push(Type.T_STRING);
 		}
+	}
+	
+	public void infer(int index, Code.StringLoad code, Block.Entry entry,
+			Env environment) {				
+		Type req = environment.pop();
+		coerce(req,Type.T_CHAR,index,entry);		
+		environment.push(Type.T_STRING);
+		environment.push(Type.T_INT);
+	}
+	
+	public void infer(int index, Code.StringLength code, Block.Entry entry,
+			Env environment) {				
+		Type req = environment.pop();
+		coerce(req,Type.T_INT,index,entry);
+		environment.push(Type.T_STRING);
+	}
+	
+	public void infer(int index, Code.SubString code, Block.Entry entry,
+			Env environment) {				
+		Type req = environment.pop();
+		coerce(req,Type.T_STRING,index,entry);
+		environment.push(Type.T_STRING);
+		environment.push(Type.T_INT);
+		environment.push(Type.T_INT);		
 	}
 	
 	public void infer(int index, Code.UnOp code, Block.Entry entry,

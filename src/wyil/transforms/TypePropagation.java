@@ -238,7 +238,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 			switch(v.bop) {				
 				case ADD:																				
-					code = Code.StringOp(Code.StOp.APPEND,dir);
+					code = Code.StringAppend(dir);
 					break;
 				default:
 					syntaxError("Invalid string operation: " + v.bop,filename,stmt);		
@@ -528,7 +528,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(Type.isSubtype(Type.T_STRING,src)) {
 			checkIsSubtype(Type.T_INT,idx,stmt);
 			environment.push(Type.T_CHAR);
-			return Code.StringOp(Code.StOp.LOAD);
+			return Code.StringLoad();
 		} else {		
 			Type.List list = Type.effectiveListType(src);			
 			if(list == null) {
@@ -762,7 +762,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Code r;
 				
 				if(Type.isSubtype(Type.T_STRING, src)) {
-					r = Code.StringOp(Code.StOp.SUBSTRING);
+					r = Code.SubString();
 				} else {
 					checkIsSubtype(Type.T_LIST(Type.T_ANY),src,stmt);
 					r = Code.ListOp(Type.effectiveListType(src),
@@ -778,7 +778,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type src = environment.pop();
 				if(Type.isSubtype(Type.T_STRING,src)) {
 					environment.add(Type.T_INT);
-					return Code.StringOp(Code.StOp.LENGTHOF);
+					return Code.StringLength();
 				} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
 					environment.add(Type.T_INT);
 					return Code.ListOp(Type.effectiveListType(src),Code.LOp.LENGTHOF);

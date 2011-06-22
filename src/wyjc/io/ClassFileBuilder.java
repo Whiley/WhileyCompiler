@@ -326,8 +326,14 @@ public class ClassFileBuilder {
 				 translate((Send)code,freeSlot,bytecodes);
 			} else if(code instanceof SetOp) {
 				 translate((SetOp)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof StringOp) {
-				 translate((StringOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof StringAppend) {
+				 translate((StringAppend)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof StringLoad) {
+				 translate((StringLoad)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof StringLength) {
+				 translate((StringLength)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof SubString) {
+				 translate((SubString)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Store) {
 				 translate((Store)code,freeSlot,bytecodes);
 			} else if(code instanceof Switch) {
@@ -1779,56 +1785,47 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void translate(Code.StringOp c, Entry stmt, int freeSlot,
+	public void translate(Code.StringAppend c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
-		
-		switch(c.sop) {
-		case APPEND:	
-		{
-			JvmType.Function ftype;
-			if(c.dir == OpDir.UNIFORM) {
-				ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_STRING);
-			} else if(c.dir == OpDir.LEFT) {
-				ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_OBJECT);				
-			} else {
-				ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_OBJECT,JAVA_LANG_STRING);				
-			}													
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
-					Bytecode.STATIC));			
-			break;
-		}
-		case LENGTHOF:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_INT);						
-			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "length",
-					ftype, Bytecode.VIRTUAL));								
-			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
-					ftype, Bytecode.STATIC));
-			break;
-		}
-		case SUBSTRING:
-		{
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,
-					BIG_RATIONAL, BIG_RATIONAL);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "substring", ftype,
-					Bytecode.STATIC));
-			break;
-		}
-		case LOAD:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_INT, BIG_RATIONAL);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue",
-					ftype, Bytecode.VIRTUAL));
-			ftype = new JvmType.Function(T_CHAR,JAVA_LANG_STRING,T_INT);
-			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		}
-		default:
-			syntaxError("unknown string expression encountered",filename,stmt);
-		}
+		JvmType.Function ftype;
+		if(c.dir == OpDir.UNIFORM) {
+			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_STRING);
+		} else if(c.dir == OpDir.LEFT) {
+			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_OBJECT);				
+		} else {
+			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_OBJECT,JAVA_LANG_STRING);				
+		}													
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
+				Bytecode.STATIC));
 	}
+	
+	public void translate(Code.StringLoad c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {						
+		JvmType.Function ftype = new JvmType.Function(T_INT, BIG_RATIONAL);
+		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue",
+				ftype, Bytecode.VIRTUAL));
+		ftype = new JvmType.Function(T_CHAR,JAVA_LANG_STRING,T_INT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
+				Bytecode.VIRTUAL));
+	}
+	
+	public void translate(Code.StringLength c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {						
+		JvmType.Function ftype = new JvmType.Function(T_INT);						
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "length",
+				ftype, Bytecode.VIRTUAL));								
+		ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
+		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
+				ftype, Bytecode.STATIC));
+	}
+	
+	public void translate(Code.SubString c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {						
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,
+				BIG_RATIONAL, BIG_RATIONAL);
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "substring", ftype,
+				Bytecode.STATIC));
+	}	
 	
 	public void translate(Code.UnOp c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
