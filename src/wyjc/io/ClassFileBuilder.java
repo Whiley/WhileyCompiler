@@ -2262,8 +2262,10 @@ public class ClassFileBuilder {
 	
 	protected void translate(Value.Set lv, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
+		bytecodes.add(new Bytecode.New(WHILEYSET));		
+		bytecodes.add(new Bytecode.Dup(WHILEYSET));
 		JvmType.Function ftype = new JvmType.Function(T_VOID);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "<init>", ftype,
 				Bytecode.SPECIAL));
 		
 		ftype = new JvmType.Function(WHILEYSET, WHILEYSET, JAVA_LANG_OBJECT);		
@@ -2272,7 +2274,7 @@ public class ClassFileBuilder {
 			addWriteConversion(e.type(), bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
 					Bytecode.STATIC));			
-		}	
+		}		
 	}
 
 	protected void translate(Value.List lv, int freeSlot,
@@ -2290,7 +2292,7 @@ public class ClassFileBuilder {
 			addWriteConversion(e.type(), bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
 					Bytecode.STATIC));			
-		}		
+		}				
 	}
 
 	protected void translate(Value.Record expr, int freeSlot,
