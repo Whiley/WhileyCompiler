@@ -737,7 +737,7 @@ public class ClassFileBuilder {
 							Bytecode.STATIC));
 					addReadConversion(list.element(),bytecodes);
 				} else {
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+					JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
 							WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
 					addWriteConversion(list.element(),bytecodes);
