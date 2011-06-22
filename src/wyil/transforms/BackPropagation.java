@@ -144,8 +144,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Send)code,entry,environment);
 		} else if(code instanceof Store) {
 			infer(index,(Store)code,entry,environment);
-		} else if(code instanceof SetOp) {
-			infer(index,(SetOp)code,entry,environment);
+		} else if(code instanceof SetUnion) {
+			infer(index,(SetUnion)code,entry,environment);
+		} else if(code instanceof SetDifference) {
+			infer(index,(SetDifference)code,entry,environment);
+		} else if(code instanceof SetIntersect) {
+			infer(index,(SetIntersect)code,entry,environment);
+		} else if(code instanceof SetLength) {
+			infer(index,(SetLength)code,entry,environment);
 		} else if(code instanceof StringAppend) {
 			infer(index,(StringAppend)code,entry,environment);
 		} else if(code instanceof StringLength) {
@@ -447,35 +453,59 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.set(code.slot,Type.T_VOID);
 	}
 	
-	public void infer(int index, Code.SetOp code, Block.Entry entry,
-			Env environment) {
-		
+	public void infer(int index, Code.SetUnion code, Block.Entry entry,
+			Env environment) {		
 		Type req = environment.pop();
 		
-		switch(code.sop) {
-			case UNION:
-			case DIFFERENCE:
-			case INTERSECT: {
-				coerce(req,code.type,index,entry);
-				if(code.dir == OpDir.UNIFORM) { 
-					environment.push(code.type);
-					environment.push(code.type);
-				} else if(code.dir == OpDir.LEFT) {
-					environment.push(code.type);
-					environment.push(code.type.element());					
-				} else {					
-					environment.push(code.type.element());
-					environment.push(code.type);
-				}
-				break;
-			}
-			case LENGTHOF:
-			{
-				coerce(req,Type.T_INT,index,entry);
-				environment.push(code.type);
-				break;
-			}
-		}								
+		coerce(req,code.type,index,entry);
+		if(code.dir == OpDir.UNIFORM) { 
+			environment.push(code.type);
+			environment.push(code.type);
+		} else if(code.dir == OpDir.LEFT) {
+			environment.push(code.type);
+			environment.push(code.type.element());					
+		} else {					
+			environment.push(code.type.element());
+			environment.push(code.type);
+		}
+	}
+
+	public void infer(int index, Code.SetIntersect code, Block.Entry entry,
+			Env environment) {		
+		Type req = environment.pop();
+		
+		coerce(req,code.type,index,entry);
+		if(code.dir == OpDir.UNIFORM) { 
+			environment.push(code.type);
+			environment.push(code.type);
+		} else if(code.dir == OpDir.LEFT) {
+			environment.push(code.type);
+			environment.push(code.type.element());					
+		} else {					
+			environment.push(code.type.element());
+			environment.push(code.type);
+		}
+	}
+	
+	public void infer(int index, Code.SetDifference code, Block.Entry entry,
+			Env environment) {		
+		Type req = environment.pop();
+		
+		coerce(req,code.type,index,entry);
+		if(code.dir == OpDir.UNIFORM) { 
+			environment.push(code.type);
+			environment.push(code.type);
+		} else {
+			environment.push(code.type);
+			environment.push(code.type.element());					
+		} 
+	}
+	
+	public void infer(int index, Code.SetLength code, Block.Entry entry,
+			Env environment) {		
+		Type req = environment.pop();
+		coerce(req,Type.T_INT,index,entry);
+		environment.push(code.type);						
 	}
 	
 	public void infer(int index, Code.StringAppend code, Block.Entry entry,

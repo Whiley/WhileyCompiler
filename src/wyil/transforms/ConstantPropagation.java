@@ -177,8 +177,14 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Send)code,entry,environment);
 		} else if(code instanceof Store) {
 			infer((Store)code,entry,environment);
-		} else if(code instanceof SetOp) {
-			infer(index,(SetOp)code,entry,environment);
+		} else if(code instanceof SetUnion) {
+			infer(index,(SetUnion)code,entry,environment);
+		} else if(code instanceof SetDifference) {
+			infer(index,(SetDifference)code,entry,environment);
+		} else if(code instanceof SetIntersect) {
+			infer(index,(SetIntersect)code,entry,environment);
+		} else if(code instanceof SetLength) {
+			infer(index,(SetLength)code,entry,environment);
 		} else if(code instanceof StringAppend) {
 			infer(index,(StringAppend)code,entry,environment);
 		} else if(code instanceof StringLength) {
@@ -586,106 +592,123 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.set(code.slot, environment.pop());
 	}
 	
-	public void infer(int index, Code.SetOp code, Block.Entry entry,
+	public void infer(int index, Code.SetUnion code, Block.Entry entry,
 			Env environment) {						
 		Value result = null;
-		int nops = 2;
-		
-		switch (code.sop) {
-		case UNION: {
-			Value rhs = environment.pop();
-			Value lhs = environment.pop();
-			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
-					&& rhs instanceof Value.Set) {
-				Value.Set lv = (Value.Set) lhs;
-				Value.Set rv = (Value.Set) rhs;
-				result = lv.union(rv);
-			} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
-					&& rhs instanceof Value) {
-				Value.Set lv = (Value.Set) lhs;
-				Value rv = (Value) rhs;
-				result = lv.add(rv);
-			} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
-					&& rhs instanceof Value.Set) {
-				Value lv = (Value) lhs;
-				Value.Set rv = (Value.Set) rhs;
-				result = rv.add(lv);
-			} 
-			break;
-		}
-		case DIFFERENCE: {
-			Value rhs = environment.pop();
-			Value lhs = environment.pop();
-			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
-					&& rhs instanceof Value.Set) {
-				Value.Set lv = (Value.Set) lhs;
-				Value.Set rv = (Value.Set) rhs;
-				result = lv.difference(rv);
-			} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
-					&& rhs instanceof Value) {
-				Value.Set lv = (Value.Set) lhs;
-				Value rv = (Value) rhs;
-				result = lv.remove(rv);
-			} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
-					&& rhs instanceof Value.Set) {
-				Value lv = (Value) lhs;
-				Value.Set rv = (Value.Set) rhs;
-				result = rv.remove(lv);
-			} 
-			break;
-		}
-		case INTERSECT: {
-			Value rhs = environment.pop();
-			Value lhs = environment.pop();
-			if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
-					&& rhs instanceof Value.Set) {
-				Value.Set lv = (Value.Set) lhs;
-				Value.Set rv = (Value.Set) rhs;
-				result = lv.intersect(rv);
-			} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
-					&& rhs instanceof Value) {
-				Value.Set lv = (Value.Set) lhs;
-				Value rv = (Value) rhs;
-				if(lv.values.contains(rv)) {
-					HashSet<Value> nset = new HashSet<Value>();
-					nset.add(rv);
-					result = Value.V_SET(nset);
-				} else {
-					result = Value.V_SET(Collections.EMPTY_SET);
-				}
-			} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
-					&& rhs instanceof Value.Set) {
-				Value lv = (Value) lhs;
-				Value.Set rv = (Value.Set) rhs;
-				if(rv.values.contains(lv)) {
-					HashSet<Value> nset = new HashSet<Value>();
-					nset.add(lv);
-					result = Value.V_SET(nset);
-				} else {
-					result = Value.V_SET(Collections.EMPTY_SET);
-				}
-			} 
-			break;
-		}
-		case LENGTHOF:
-		{
-			Value val = environment.pop();
-			
-			if(val instanceof Value.Set) {
-				Value.Set set = (Value.Set) val;
-				result = Value.V_NUMBER(BigInteger.valueOf(set.values.size()));
-				nops = 1;
-			} 
-		}
+		Value rhs = environment.pop();
+		Value lhs = environment.pop();
+		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+				&& rhs instanceof Value.Set) {
+			Value.Set lv = (Value.Set) lhs;
+			Value.Set rv = (Value.Set) rhs;
+			result = lv.union(rv);
+		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
+				&& rhs instanceof Value) {
+			Value.Set lv = (Value.Set) lhs;
+			Value rv = (Value) rhs;
+			result = lv.add(rv);
+		} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
+				&& rhs instanceof Value.Set) {
+			Value lv = (Value) lhs;
+			Value.Set rv = (Value.Set) rhs;
+			result = rv.add(lv);
 		}
 		
 		if(result != null) {
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
-			rewrites.put(index, new Rewrite(entry,nops));
+			rewrites.put(index, new Rewrite(entry,2));
 		}
 		
 		environment.push(result);
 	}
+	
+	public void infer(int index, Code.SetIntersect code, Block.Entry entry,
+			Env environment) {						
+		Value result = null;
+		
+		Value rhs = environment.pop();
+		Value lhs = environment.pop();
+		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+				&& rhs instanceof Value.Set) {
+			Value.Set lv = (Value.Set) lhs;
+			Value.Set rv = (Value.Set) rhs;
+			result = lv.intersect(rv);
+		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
+				&& rhs instanceof Value) {
+			Value.Set lv = (Value.Set) lhs;
+			Value rv = (Value) rhs;
+			if(lv.values.contains(rv)) {
+				HashSet<Value> nset = new HashSet<Value>();
+				nset.add(rv);
+				result = Value.V_SET(nset);
+			} else {
+				result = Value.V_SET(Collections.EMPTY_SET);
+			}
+		} else if(code.dir == OpDir.RIGHT && lhs instanceof Value
+				&& rhs instanceof Value.Set) {
+			Value lv = (Value) lhs;
+			Value.Set rv = (Value.Set) rhs;
+			if(rv.values.contains(lv)) {
+				HashSet<Value> nset = new HashSet<Value>();
+				nset.add(lv);
+				result = Value.V_SET(nset);
+			} else {
+				result = Value.V_SET(Collections.EMPTY_SET);
+			}
+		}
+		
+		if(result != null) {
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,2));
+		}
+		
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.SetDifference code, Block.Entry entry,
+			Env environment) {						
+		Value result = null;
+		Value rhs = environment.pop();
+		Value lhs = environment.pop();
+		
+		if (code.dir == OpDir.UNIFORM && lhs instanceof Value.Set
+				&& rhs instanceof Value.Set) {
+			Value.Set lv = (Value.Set) lhs;
+			Value.Set rv = (Value.Set) rhs;
+			result = lv.difference(rv);
+		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Set
+				&& rhs instanceof Value) {
+			Value.Set lv = (Value.Set) lhs;
+			Value rv = (Value) rhs;
+			result = lv.remove(rv);
+		} 
+		
+		if(result != null) {
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,2));
+		}
+		
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.SetLength code, Block.Entry entry,
+			Env environment) {						
+		Value result = null;
+		
+		Value val = environment.pop();
+		
+		if(val instanceof Value.Set) {
+			Value.Set set = (Value.Set) val;
+			result = Value.V_NUMBER(BigInteger.valueOf(set.values.size()));			
+		}
+		
+		if(result != null) {
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
+		}
+		
+		environment.push(result);
+	}	
 	
 	public void infer(int index, Code.StringAppend code, Block.Entry entry,
 			Env environment) {

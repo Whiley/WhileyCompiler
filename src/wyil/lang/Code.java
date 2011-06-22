@@ -314,12 +314,20 @@ public abstract class Code {
 	
 	public static final Skip Skip = new Skip();
 	
-	public static SetOp SetOp(Type.Set type, SOp op) {
-		return get(new SetOp(type,op,OpDir.UNIFORM));
+	public static SetLength SetLength(Type.Set type) {
+		return get(new SetLength(type));
 	}
 	
-	public static SetOp SetOp(Type.Set type, SOp op, OpDir dir) {
-		return get(new SetOp(type,op,dir));
+	public static SetUnion SetUnion(Type.Set type, OpDir dir) {
+		return get(new SetUnion(type,dir));
+	}
+	
+	public static SetIntersect SetIntersect(Type.Set type, OpDir dir) {
+		return get(new SetIntersect(type,dir));
+	}
+	
+	public static SetDifference SetDifference(Type.Set type, OpDir dir) {
+		return get(new SetDifference(type,dir));
 	}
 	
 	public static StringAppend StringAppend(OpDir dir) {

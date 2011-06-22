@@ -1421,10 +1421,10 @@ public class ModuleBuilder {
 			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
 			return blk;			
 		} else if(bop == BOp.UNION) {
-			blk.add(Code.SetOp(null, Code.SOp.UNION),attributes(v));			
+			blk.add(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
 			return blk;			
 		} else if(bop == BOp.INTERSECTION) {
-			blk.add(Code.SetOp(null, Code.SOp.INTERSECT),attributes(v));
+			blk.add(Code.SetIntersect(null,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
 		}
 		
@@ -1551,7 +1551,7 @@ public class ModuleBuilder {
 		
 		blk.add(Code.Load(null,resultSlot),attributes(e));
 		blk.addAll(resolve(environment,e.value));
-		blk.add(Code.SetOp(null, Code.SOp.UNION, Code.OpDir.LEFT),attributes(e));
+		blk.add(Code.SetUnion(null, Code.OpDir.LEFT),attributes(e));
 		blk.add(Code.Store(null,resultSlot),attributes(e));
 			
 		if(e.condition != null) {

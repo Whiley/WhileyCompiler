@@ -194,8 +194,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Send)code,entry,environment);
 		} else if(code instanceof Store) {
 			code = infer((Store)code,entry,environment);
-		} else if(code instanceof SetOp) {
-			code = infer((SetOp)code,entry,environment);
+		} else if(code instanceof SetUnion) {
+			code = infer((SetUnion)code,entry,environment);
+		} else if(code instanceof SetDifference) {
+			code = infer((SetDifference)code,entry,environment);
+		} else if(code instanceof SetIntersect) {
+			code = infer((SetIntersect)code,entry,environment);
 		} else if(code instanceof UnOp) {
 			code = infer((UnOp)code,entry,environment);
 		} else {
@@ -289,14 +293,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 			switch(v.bop) {
 				case ADD:																				
-					code = Code.SetOp(type,Code.SOp.UNION,dir);
+					code = Code.SetUnion(type,dir);
 					break;				
 				case SUB:
 					if(dir == OpDir.RIGHT) {
 						// this case is non-sensical
 						syntaxError("Invalid set operation",filename,stmt);
 					}
-					code = Code.SetOp(type,Code.SOp.DIFFERENCE,dir);					
+					code = Code.SetDifference(type,dir);					
 					break;								
 				default:
 					syntaxError("Invalid set operation: " + v.bop,filename,stmt);			
@@ -760,7 +764,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return Code.ListLength(Type.effectiveListType(src));
 		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
-			return Code.SetOp(Type.effectiveSetType(src),Code.SOp.LENGTHOF);
+			return Code.SetLength(Type.effectiveSetType(src));
 		} else {
 			syntaxError("expected list or set, found " + src,filename,stmt);
 			return null;
@@ -809,40 +813,77 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.Return(ret_t);
 	}
 	
-	protected Code infer(Code.SetOp code, Entry stmt, Env environment) {
-		switch(code.sop) {
-			case UNION:
-			case DIFFERENCE:
-			case INTERSECT:
-			{
-				Type rhs = environment.pop();
-				Type lhs = environment.pop();
-				OpDir dir;
-				boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
-				boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
-				
-				if(lhs_set && rhs_set) {
-					dir = OpDir.UNIFORM;
-				} else if(lhs_set) {
-					rhs = Type.T_SET(rhs);
-					dir = OpDir.LEFT;
-				} else if(rhs_set) {
-					lhs = Type.T_SET(lhs);
-					dir = OpDir.RIGHT;					
-				} else {
-					syntaxError("expecting set type",filename,stmt);
-					return null; // dead-code
-				}
-				Type lub = Type.leastUpperBound(lhs, rhs);
-				environment.push(lub);
-				return Code.SetOp(Type.effectiveSetType(lub), code.sop,dir);
-			}
+	protected Code infer(Code.SetUnion code, Entry stmt, Env environment) {
+		Type rhs = environment.pop();
+		Type lhs = environment.pop();
+		OpDir dir;
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
+		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+
+		if(lhs_set && rhs_set) {
+			dir = OpDir.UNIFORM;
+		} else if(lhs_set) {
+			rhs = Type.T_SET(rhs);
+			dir = OpDir.LEFT;
+		} else if(rhs_set) {
+			lhs = Type.T_SET(lhs);
+			dir = OpDir.RIGHT;					
+		} else {
+			syntaxError("expecting set type",filename,stmt);
+			return null; // dead-code
 		}
-		
-		syntaxError("invalid set operation",filename,stmt);
-		return null;
+		Type lub = Type.leastUpperBound(lhs, rhs);
+		environment.push(lub);
+		return Code.SetUnion(Type.effectiveSetType(lub), dir);	
 	}
 
+	protected Code infer(Code.SetIntersect code, Entry stmt, Env environment) {
+		Type rhs = environment.pop();
+		Type lhs = environment.pop();
+		OpDir dir;
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
+		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+
+		if(lhs_set && rhs_set) {
+			dir = OpDir.UNIFORM;
+		} else if(lhs_set) {
+			rhs = Type.T_SET(rhs);
+			dir = OpDir.LEFT;
+		} else if(rhs_set) {
+			lhs = Type.T_SET(lhs);
+			dir = OpDir.RIGHT;					
+		} else {
+			syntaxError("expecting set type",filename,stmt);
+			return null; // dead-code
+		}
+		Type glb = Type.greatestLowerBound(lhs, rhs);
+		environment.push(glb);
+		return Code.SetIntersect(Type.effectiveSetType(glb), dir);	
+	}
+	
+	protected Code infer(Code.SetDifference code, Entry stmt, Env environment) {
+		Type rhs = environment.pop();
+		Type lhs = environment.pop();
+		OpDir dir;
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
+		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+
+		if(lhs_set && rhs_set) {
+			dir = OpDir.UNIFORM;
+		} else if(lhs_set) {
+			rhs = Type.T_SET(rhs);
+			dir = OpDir.LEFT;
+		} else if(rhs_set) {
+			lhs = Type.T_SET(lhs);
+			dir = OpDir.RIGHT;					
+		} else {
+			syntaxError("expecting set type",filename,stmt);
+			return null; // dead-code
+		}
+		environment.push(lhs);
+		return Code.SetDifference(Type.effectiveSetType(lhs), dir);	
+	}
+	
 	protected Code infer(UnOp v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
 

@@ -328,8 +328,14 @@ public class ClassFileBuilder {
 				// do nothing
 			} else if(code instanceof Send) {
 				 translate((Send)code,freeSlot,bytecodes);
-			} else if(code instanceof SetOp) {
-				 translate((SetOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof SetLength) {
+				 translate((SetLength)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof SetUnion) {
+				 translate((SetUnion)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof SetIntersect) {
+				 translate((SetIntersect)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof SetDifference) {
+				 translate((SetDifference)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof StringAppend) {
 				 translate((StringAppend)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof StringLoad) {
@@ -1745,41 +1751,57 @@ public class ClassFileBuilder {
 		}		
 	}
 
-	public void translate(Code.SetOp c, Entry stmt, int freeSlot,
+	public void translate(Code.SetUnion c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
-		
-		switch(c.sop) {
-		case UNION:		
-		case INTERSECT:
-		case DIFFERENCE:
-		{
-			JvmType.Function ftype;
-			if(c.dir == OpDir.UNIFORM) {
-				ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
-			} else if(c.dir == OpDir.LEFT) {
-				ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
-			} else {
-				ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
-			}													
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, c.sop.toString(), ftype,
-					Bytecode.STATIC));			
-			break;
-		}
-		case LENGTHOF:			
-		{
-			JvmType.Function ftype = new JvmType.Function(T_INT);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size",
-					ftype, Bytecode.VIRTUAL));							
-			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
-					ftype, Bytecode.STATIC));
-			break;
-		}			
-		default:
-			syntaxError("unknown set operation encountered",filename,stmt);
-		}
+		JvmType.Function ftype;
+		if(c.dir == OpDir.UNIFORM) {
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
+		} else if(c.dir == OpDir.LEFT) {
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
+		} else {
+			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
+		}													
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union" + c.dir, ftype,
+				Bytecode.STATIC));				
+	}	
+	
+	public void translate(Code.SetIntersect c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
+		JvmType.Function ftype;
+		if(c.dir == OpDir.UNIFORM) {
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
+		} else if(c.dir == OpDir.LEFT) {
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
+		} else {
+			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
+		}													
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect" + c.dir, ftype,
+				Bytecode.STATIC));
 	}
 	
+	public void translate(Code.SetDifference c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
+		JvmType.Function ftype;
+		if(c.dir == OpDir.UNIFORM) {
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
+		} else {
+			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
+		} 												
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference" + c.dir, ftype,
+				Bytecode.STATIC));
+	}
+	
+	public void translate(Code.SetLength c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
+		JvmType.Function ftype = new JvmType.Function(T_INT);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size",
+				ftype, Bytecode.VIRTUAL));							
+		ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
+		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
+				ftype, Bytecode.STATIC));
+		
+	}
+		
 	public void translate(Code.StringAppend c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType.Function ftype;
