@@ -55,7 +55,11 @@ public class Util {
 		return lhs + rhs;
 	}
 	
-	public static String substring(final String lhs, final BigRational _start, final BigRational _end) {
+	public static BigInteger stringlength(final String lhs) {
+		return BigInteger.valueOf(lhs.length());
+	}
+	
+	public static String substring(final String lhs, final BigInteger _start, final BigInteger _end) {
 		int start = _start.intValue();
 		int end = _end.intValue();
 		return lhs.substring(start,end);

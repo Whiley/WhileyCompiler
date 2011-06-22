@@ -42,11 +42,12 @@ public abstract class Type {
 	public static final Void T_VOID = new Void();
 	public static final Null T_NULL = new Null();	
 	public static final Bool T_BOOL = new Bool();	
-	public static final Int T_INT = new Int();
+	public static final Int T_INT = new Int();	
 	public static final Int T_CHAR = T_INT; // to be fixed
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();	
 	public static final Meta T_META = new Meta();
+	public static final Type T_NUMBER = T_UNION(T_INT,T_REAL);
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -1079,19 +1080,20 @@ public abstract class Type {
 				{
 					// labeled nary nodes
 					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-					Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
-					HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
-					for(Pair<String,Integer> f : _fields2) {
-						fields2.put(f.first(), f.second());
+					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
+					if(fields1.length != fields2.length) {
+						return false;
 					}
-					for (int i = 0; i != fields1.length; ++i) {
+					for (int i = 0; i != fields2.length; ++i) {
 						Pair<String, Integer> e1 = fields1[i];
-						Integer e2 = fields2.get(e1.first());
-						if (e2 == null || !assumptions.isSubtype(e1.second(),e2)) {
-							return false;
-						}
+						Pair<String, Integer> e2 = fields2[i];						
+							if (!e1.first().equals(e2.first())
+									|| !assumptions.isSubtype(e1.second(),
+											e2.second())) {
+								return false;
+							}
 					}					
-					return true;
+					return true;					
 				} 		
 				case K_UNION: {									
 					int[] bounds2 = (int[]) toNode.data;		
@@ -1199,18 +1201,19 @@ public abstract class Type {
 				case K_RECORD:		
 				{
 					// labeled nary nodes
-					Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) fromNode.data;
+					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
 					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-					HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
-					for(Pair<String,Integer> f : _fields1) {
-						fields1.put(f.first(), f.second());
+					if(fields1.length != fields2.length) {
+						return false;
 					}
 					for (int i = 0; i != fields2.length; ++i) {
-						Pair<String, Integer> e2 = fields2[i];
-						Integer e1 = fields1.get(e2.first());
-						if (e1 == null || !assumptions.isSupertype(e1,e2.second())) {
-							return false;
-						}
+						Pair<String, Integer> e1 = fields1[i];
+						Pair<String, Integer> e2 = fields2[i];						
+							if (!e1.first().equals(e2.first())
+									|| !assumptions.isSupertype(e1.second(),
+											e2.second())) {
+								return false;
+							}
 					}					
 					return true;					
 				} 		
@@ -1268,7 +1271,23 @@ public abstract class Type {
 			Node fromNode = fromGraph[from];
 			Node toNode = toGraph[to];	
 			
-			if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
+			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
+				// labeled nary nodes
+				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
+				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
+				HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
+				for(Pair<String,Integer> f : _fields2) {
+					fields2.put(f.first(), f.second());
+				}
+				for (int i = 0; i != fields1.length; ++i) {
+					Pair<String, Integer> e1 = fields1[i];
+					Integer e2 = fields2.get(e1.first());
+					if (e2 == null || !assumptions.isSubtype(e1.second(),e2)) {
+						return false;
+					}
+				}					
+				return true;
+			} else if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
 				return true;
 			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
 				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
@@ -1286,7 +1305,24 @@ public abstract class Type {
 			Node fromNode = fromGraph[from];
 			Node toNode = toGraph[to];	
 			
-			if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
+			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
+				// labeled nary nodes
+				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) fromNode.data;
+				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
+				HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
+				for(Pair<String,Integer> f : _fields1) {
+					fields1.put(f.first(), f.second());
+				}
+				for (int i = 0; i != fields2.length; ++i) {
+					Pair<String, Integer> e2 = fields2[i];
+					Integer e1 = fields1.get(e2.first());
+					if (e1 == null || !assumptions.isSupertype(e1,e2.second())) {
+						return false;
+					}
+				}					
+				return true;					
+
+			} else if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
 				return true;
 			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
 				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);

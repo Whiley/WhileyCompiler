@@ -1,5 +1,7 @@
 package wyjc.runtime;
 
+import java.math.BigInteger;
+
 
 public final class List extends java.util.ArrayList {		
 	/**
@@ -32,7 +34,7 @@ public final class List extends java.util.ArrayList {
 		return list.get(index);
 	}
 	
-	public static Object get(List list, BigRational index) {		
+	public static Object get(List list, BigInteger index) {		
 		return list.get(index.intValue());
 	}
 		
@@ -41,12 +43,12 @@ public final class List extends java.util.ArrayList {
 		return list;
 	}
 	
-	public static List set(final List list, final BigRational index, final Object value) {
+	public static List set(final List list, final BigInteger index, final Object value) {
 		list.set(index.intValue(),value);
 		return list;
 	}
 	
-	public static List sublist(final List list, final BigRational start, final BigRational end) {
+	public static List sublist(final List list, final BigInteger start, final BigInteger end) {
 		int st = start.intValue();
 		int en = end.intValue();
 		List r = new List(en-st);
@@ -54,6 +56,10 @@ public final class List extends java.util.ArrayList {
 			r.add(list.get(i));
 		}
 		return r;		
+	}
+	
+	public static BigInteger length(List list) {
+		return BigInteger.valueOf(list.size());
 	}
 	
 	public static List append(final List lhs, final List rhs) {

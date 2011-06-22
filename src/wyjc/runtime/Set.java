@@ -1,5 +1,7 @@
 package wyjc.runtime;
 
+import java.math.BigInteger;
+
 
 public final class Set extends java.util.HashSet {	
 	/**
@@ -85,4 +87,8 @@ public final class Set extends java.util.HashSet {
 		
 		return set;
 	}	
+	
+	public static BigInteger length(List list) {
+		return BigInteger.valueOf(list.size());
+	}
 }

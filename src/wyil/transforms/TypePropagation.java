@@ -316,7 +316,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				// be integers.
 				checkIsSubtype(Type.T_INT,result,stmt);
 			} else {
-				checkIsSubtype(Type.T_REAL,result,stmt);				
+				checkIsSubtype(Type.T_NUMBER,result,stmt);
+				if(result != Type.T_INT) {
+					result = Type.T_REAL;
+				}
 			}
 			code = Code.BinOp(result,op);
 		}				
@@ -343,6 +346,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Value infer(Value val, SyntacticElement elem) {
 		if (val instanceof Value.Rational || val instanceof Value.Bool
+				|| val instanceof Value.Integer
 				|| val instanceof Value.Null || val instanceof Value.Strung) {
 			return val;
 		} else if (val instanceof Value.Set) {
@@ -920,11 +924,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(Type.T_REAL, lub, stmt);			
+			checkIsSubtype(Type.T_NUMBER, lub, stmt);
+			// effect an implicit coercion
+			if(lub != Type.T_INT) { lub = Type.T_REAL; }
 			break;
 		case EQ:
-		case NEQ:						
-			if (glb == Type.T_VOID) {
+		case NEQ:	
+			if(Type.isSubtype(Type.T_NUMBER, lub)) {
+				// effect an implicit coercion
+				if(lub != Type.T_INT) { lub = Type.T_REAL; }
+			} else if (glb == Type.T_VOID) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
 			}

@@ -186,6 +186,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Null) val, writer, constantPool);
 		} else if(val instanceof Value.Bool) {
 			write((Value.Bool) val, writer, constantPool);
+		} else if(val instanceof Value.Integer) {
+			write((Value.Integer) val, writer, constantPool);
 		} else if(val instanceof Value.Rational) {
 			write((Value.Rational) val, writer, constantPool);
 		} else if(val instanceof Value.Set) {
@@ -212,32 +214,33 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 	
+	public static void write(Value.Integer expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {		
+		writer.write_u1(INTVAL);		
+		BigInteger num = expr.value;
+		byte[] numbytes = num.toByteArray();
+		// FIXME: bug here for constants that require more than 65535 bytes
+		writer.write_u2(numbytes.length);
+		writer.write(numbytes);
+	}
+
 	public static void write(Value.Rational expr, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {		
 		
-		if(expr.value.isInteger()) {
-			writer.write_u1(INTVAL);		
-			BigInteger num = expr.value.numerator();
-			byte[] numbytes = num.toByteArray();
-			// FIXME: bug here for constants that require more than 65535 bytes
-			writer.write_u2(numbytes.length);
-			writer.write(numbytes);
-		} else {
-			writer.write_u1(REALVAL);
-			BigRational br = expr.value;
-			BigInteger num = br.numerator();
-			BigInteger den = br.denominator();
+		writer.write_u1(REALVAL);
+		BigRational br = expr.value;
+		BigInteger num = br.numerator();
+		BigInteger den = br.denominator();
 
-			byte[] numbytes = num.toByteArray();
-			// FIXME: bug here for constants that require more than 65535 bytes
-			writer.write_u2(numbytes.length);
-			writer.write(numbytes);
+		byte[] numbytes = num.toByteArray();
+		// FIXME: bug here for constants that require more than 65535 bytes
+		writer.write_u2(numbytes.length);
+		writer.write(numbytes);
 
-			byte[] denbytes = den.toByteArray();
-			// FIXME: bug here for constants that require more than 65535 bytes
-			writer.write_u2(denbytes.length);
-			writer.write(denbytes);
-		}
+		byte[] denbytes = den.toByteArray();
+		// FIXME: bug here for constants that require more than 65535 bytes
+		writer.write_u2(denbytes.length);
+		writer.write(denbytes);
 	}
 	
 	public static void write(Value.Set expr, BinaryOutputStream writer,
