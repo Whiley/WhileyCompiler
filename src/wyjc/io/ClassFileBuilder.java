@@ -1896,18 +1896,19 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Code.NewList c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		construct(WHILEYLIST, freeSlot, bytecodes);		
-		JvmType.Function ftype = new JvmType.Function(T_BOOL,
-				JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYLIST));
-				
-		for(int i=0;i!=c.nargs;++i) {
-			bytecodes.add(new Bytecode.Load(freeSlot,WHILEYLIST));
+		bytecodes.add(new Bytecode.New(WHILEYLIST));		
+		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+		bytecodes.add(new Bytecode.LoadConst(c.nargs));
+		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
+				Bytecode.SPECIAL));
+		
+		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, JAVA_LANG_OBJECT);		
+		for(int i=0;i!=c.nargs;++i) {			
 			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(c.type.element(),bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST,"add",ftype,Bytecode.VIRTUAL));
-			// FIXME: there is a bug here for bool lists
-			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
+					Bytecode.STATIC));			
 		}
 		
 		// At this stage, we have a problem. We've added the elements into the
@@ -1920,13 +1921,11 @@ public class ClassFileBuilder {
 		//
 		// Another option would be to have a special list initialise function
 		// with a range of different constructors for different sized lists.
-		
-		bytecodes.add(new Bytecode.Load(freeSlot,WHILEYLIST));	
+				
 		JvmType.Clazz owner = new JvmType.Clazz("java.util","Collections");
 		ftype = new JvmType.Function(T_VOID, JAVA_UTIL_LIST);		
-		bytecodes.add(new Bytecode.Invoke(owner,"reverse",ftype,Bytecode.STATIC));	
-		
-		bytecodes.add(new Bytecode.Load(freeSlot,WHILEYLIST));	
+		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
+		bytecodes.add(new Bytecode.Invoke(owner,"reverse",ftype,Bytecode.STATIC));			
 	}
 	
 	public void translate(Code.NewRecord expr, int freeSlot,
