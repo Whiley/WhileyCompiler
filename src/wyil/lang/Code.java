@@ -1466,24 +1466,6 @@ public abstract class Code {
 		}
 	}
 	
-	public enum SOp { 				
-		UNION{
-			public String toString() { return "union"; }
-		},
-		INTERSECT{
-			public String toString() { return "intersect"; }
-		},
-		DIFFERENCE{
-			public String toString() { return "difference"; }
-		},					
-		LENGTHOF{
-			public String toString() { return "setlength"; }
-		},
-		RANGE {
-			public String toString() { return "setrange"; }
-		}
-	};
-	
 	public enum OpDir {
 		UNIFORM {
 			public String toString() { return ""; }
@@ -1496,51 +1478,138 @@ public abstract class Code {
 		}
 	}
 	
-	/**
-	 * A set operation (e.g. union, intersection, etc) takes one or two items
-	 * off the stack and pushes a single result.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class SetOp extends Code {		
-		public final SOp sop;
+	
+	public static final class SetUnion extends Code {		
 		public final OpDir dir;
 		public final Type.Set type;
 		
-		private SetOp(Type.Set type, SOp op, OpDir dir) {
-			if(op == null) {
-				throw new IllegalArgumentException("SetOp op argument cannot be null");
-			}
+		private SetUnion(Type.Set type, OpDir dir) {
 			if(dir == null) {
-				throw new IllegalArgumentException("SetOp op argument cannot be null");
-			}
-			this.sop = op;
+				throw new IllegalArgumentException("SetAppend direction cannot be null");
+			}			
 			this.type = type;
 			this.dir = dir;
 		}
 		
 		public int hashCode() {
 			if(type == null) {
-				return sop.hashCode() + dir.hashCode(); 
+				return dir.hashCode(); 
 			} else {
-				return type.hashCode() + sop.hashCode() + dir.hashCode();
+				return type.hashCode() + dir.hashCode();
 			}
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof SetOp) {
-				SetOp setop = (SetOp) o;
+			if (o instanceof SetUnion) {
+				SetUnion setop = (SetUnion) o;
 				return (type == setop.type || (type != null && type
-						.equals(setop.type)))
-						&& sop.equals(setop.sop)
+						.equals(setop.type)))						
 						&& dir.equals(setop.dir);
 			}
 			return false;
 		}
 				
 		public String toString() {
-			return toString(sop.toString() + dir.toString(),type);
+			return toString("union" + dir.toString(),type);
+		}
+	}
+	
+	public static final class SetIntersect extends Code {		
+		public final OpDir dir;
+		public final Type.Set type;
+		
+		private SetIntersect(Type.Set type, OpDir dir) {
+			if(dir == null) {
+				throw new IllegalArgumentException("SetAppend direction cannot be null");
+			}			
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return dir.hashCode(); 
+			} else {
+				return type.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetIntersect) {
+				SetIntersect setop = (SetIntersect) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))						
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("intersect" + dir.toString(),type);
+		}
+	}
+	
+	public static final class SetDifference extends Code {		
+		public final OpDir dir;
+		public final Type.Set type;
+		
+		private SetDifference(Type.Set type, OpDir dir) {
+			if(dir == null) {
+				throw new IllegalArgumentException("SetAppend direction cannot be null");
+			}			
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return dir.hashCode(); 
+			} else {
+				return type.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetDifference) {
+				SetDifference setop = (SetDifference) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))						
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("difference" + dir.toString(),type);
+		}
+	}
+	
+	public static final class SetLength extends Code {				
+		public final Type.Set type;
+		
+		private SetLength(Type.Set type) {
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 558723; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetLength) {
+				SetLength setop = (SetLength) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("setlength",type);
 		}
 	}
 	
