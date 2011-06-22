@@ -41,8 +41,9 @@ public abstract class Type {
 	public static final Any T_ANY = new Any();
 	public static final Void T_VOID = new Void();
 	public static final Null T_NULL = new Null();	
-	public static final Bool T_BOOL = new Bool();
+	public static final Bool T_BOOL = new Bool();	
 	public static final Int T_INT = new Int();
+	public static final Int T_CHAR = T_INT; // to be fixed
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();	
 	public static final Meta T_META = new Meta();

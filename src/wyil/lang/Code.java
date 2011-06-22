@@ -318,6 +318,14 @@ public abstract class Code {
 		return get(new SetOp(type,op,dir));
 	}
 	
+	public static StringOp StringOp(StOp op) {
+		return get(new StringOp(op,OpDir.UNIFORM));
+	}
+	
+	public static StringOp StringOp(StOp op, OpDir dir) {
+		return get(new StringOp(op,dir));
+	}
+	
 	/**
 	 * Construct an <code>send</code> bytecode which sends a message to an
 	 * actor. This may be either synchronous or asynchronous.
@@ -1008,10 +1016,10 @@ public abstract class Code {
 		
 		private ListOp(Type.List type, LOp op, OpDir dir) {
 			if(op == null) {
-				throw new IllegalArgumentException("SetOp op argument cannot be null");
+				throw new IllegalArgumentException("ListOp op argument cannot be null");
 			}
 			if(dir == null) {
-				throw new IllegalArgumentException("SetOp op argument cannot be null");
+				throw new IllegalArgumentException("ListOp op argument cannot be null");
 			}
 			this.lop = op;
 			this.type = type;
@@ -1027,7 +1035,7 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof SetOp) {
+			if (o instanceof ListOp) {
 				ListOp setop = (ListOp) o;
 				return (type == setop.type || (type != null && type
 						.equals(setop.type)))
@@ -1443,7 +1451,7 @@ public abstract class Code {
 			public String toString() { return "_l"; }
 		},
 		RIGHT {
-			public String toString() { return "_r="; }
+			public String toString() { return "_r"; }
 		}
 	}
 	
@@ -1494,6 +1502,61 @@ public abstract class Code {
 			return toString(sop.toString() + dir.toString(),type);
 		}
 	}
+	
+	public enum StOp { 				
+		APPEND{
+			public String toString() { return "stringappend"; }
+		},
+		LENGTHOF{
+			public String toString() { return "stringlength"; }
+		},
+		LOAD {
+			public String toString() { return "stringload"; }
+		},
+		SUBSTRING {
+			public String toString() { return "substring"; }
+		}
+	};
+	
+	/**
+	 * A string operation (e.g. append, lengthof, etc) takes one or two items
+	 * off the stack and pushes a single result.
+	 * 
+	 * @author djp
+	 */
+	public static final class StringOp extends Code {		
+		public final StOp sop;
+		public final OpDir dir;		
+		
+		private StringOp(StOp op, OpDir dir) {
+			if(op == null) {
+				throw new IllegalArgumentException("StringOp op argument cannot be null");
+			}
+			if(dir == null) {
+				throw new IllegalArgumentException("StringOp op argument cannot be null");
+			}
+			this.sop = op;			
+			this.dir = dir;
+		}
+		
+		public int hashCode() {			
+			return sop.hashCode() + dir.hashCode();			
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof StringOp) {
+				StringOp setop = (StringOp) o;
+				return sop.equals(setop.sop)
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString(sop.toString() + dir.toString(),Type.T_STRING);
+		}
+	}
+	
 	
 	public static final class Skip extends Code {
 		Skip() {}

@@ -222,8 +222,30 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);
 		boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),lhs);
 		boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),rhs);
+		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
+		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
 		
-		if(lhs_list || rhs_list) {
+		if(lhs_str || rhs_str) {			
+			Code.OpDir dir;
+			
+			if(lhs_str && rhs_str) {				
+				dir = OpDir.UNIFORM;
+			} else if(lhs_str) {				
+				dir = OpDir.LEFT;
+			} else {				
+				dir = OpDir.RIGHT;
+			}
+			
+			switch(v.bop) {				
+				case ADD:																				
+					code = Code.StringOp(Code.StOp.APPEND,dir);
+					break;
+				default:
+					syntaxError("Invalid string operation: " + v.bop,filename,stmt);		
+			}
+			
+			result = Type.T_STRING;
+		} else if(lhs_list || rhs_list) {
 			Type.List type;
 			Code.OpDir dir;
 			
@@ -503,7 +525,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.push(dict.value());
 			// OK, it's a hit
 			return Code.DictLoad(dict);
-		} else {
+		} else if(Type.isSubtype(Type.T_STRING,src)) {
+			checkIsSubtype(Type.T_INT,idx,stmt);
+			environment.push(Type.T_CHAR);
+			return Code.StringOp(Code.StOp.LOAD);
+		} else {		
 			Type.List list = Type.effectiveListType(src);			
 			if(list == null) {
 				syntaxError("expected list",filename,stmt);
@@ -729,21 +755,31 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			{
 				Type end = environment.pop();
 				Type start = environment.pop();
-				Type list = environment.pop();
+				Type src = environment.pop();
 				
 				checkIsSubtype(Type.T_INT,start,stmt);
 				checkIsSubtype(Type.T_INT,end,stmt);
-				checkIsSubtype(Type.T_LIST(Type.T_ANY),list,stmt);				
+				Code r;
 				
-				environment.push(list);
+				if(Type.isSubtype(Type.T_STRING, src)) {
+					r = Code.StringOp(Code.StOp.SUBSTRING);
+				} else {
+					checkIsSubtype(Type.T_LIST(Type.T_ANY),src,stmt);
+					r = Code.ListOp(Type.effectiveListType(src),
+							Code.LOp.SUBLIST);
+				}
+				
+				environment.push(src);
 						
-				return Code.ListOp(Type.effectiveListType(list),
-						Code.LOp.SUBLIST);
+				return r;
 			}	
 			case LENGTHOF:
 			{
 				Type src = environment.pop();
-				if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
+				if(Type.isSubtype(Type.T_STRING,src)) {
+					environment.add(Type.T_INT);
+					return Code.StringOp(Code.StOp.LENGTHOF);
+				} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
 					environment.add(Type.T_INT);
 					return Code.ListOp(Type.effectiveListType(src),Code.LOp.LENGTHOF);
 				} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),src)) {
