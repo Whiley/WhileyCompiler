@@ -787,6 +787,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,1));
 		} 				
+		
+		environment.push(result);
 	}
 	
 	public void infer(int index, Code.SubString code, Block.Entry entry,

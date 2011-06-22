@@ -1805,19 +1805,23 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.StringLoad c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
-		JvmType.Function ftype = new JvmType.Function(T_INT, BIG_RATIONAL);
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "intValue",
+		JvmType.Function ftype = new JvmType.Function(T_INT);
+		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "intValue",
 				ftype, Bytecode.VIRTUAL));
-		ftype = new JvmType.Function(T_CHAR,JAVA_LANG_STRING,T_INT);
+		ftype = new JvmType.Function(T_CHAR,T_INT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
 				Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Conversion(T_CHAR, T_LONG));
+		ftype = new JvmType.Function(BIG_INTEGER,T_LONG);
+		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
+				ftype, Bytecode.STATIC));
 	}
 	
 	public void translate(Code.StringLength c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
 		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,JAVA_LANG_STRING);						
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "stringlength",
-				ftype, Bytecode.VIRTUAL));								
+				ftype, Bytecode.STATIC));								
 	}
 	
 	public void translate(Code.SubString c, Entry stmt, int freeSlot,
