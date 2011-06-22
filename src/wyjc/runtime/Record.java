@@ -2,7 +2,7 @@ package wyjc.runtime;
 
 import java.util.*;
 
-public final class Record {	
+public final class Record extends HashMap<String,Object> {	
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -11,15 +11,28 @@ public final class Record {
 	 */
 	private int refCount;
 	
-	private HashMap<String,Object> data;
-
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
 	
 	public Record() {		
-		this.refCount = 1;
-		this.data = new HashMap<String,Object>();
+		this.refCount = 1;		
+	}
+	
+	public String toString() {
+		String r = "{";
+		boolean firstTime = true;
+
+		ArrayList<String> ss = new ArrayList<String>(keySet());
+		Collections.sort(ss);
+		for (String s : ss) {
+			if (!firstTime) {
+				r = r + ",";
+			}
+			firstTime = false;
+			r = r + s + ":" + get(s).toString();
+		}
+		return r + "}";
 	}
 	
 	// ================================================================================
@@ -27,26 +40,21 @@ public final class Record {
 	// ================================================================================	 	
 
 	public static Object get(final Record record, final String field) {
-		return record.data.get(field);
+		return record.get(field);
 	}
 	
-	public static Record put(final Record record, final String field, final Object value) {
-		HashMap<String,Object> data = record.data;
+	public static Record put(final Record record, final String field, final Object value) {		
 		if(record.refCount == 1) {
-			data.put(field, value);
+			record.put(field, value);
 		} else {
 			// TODO: this is broken --- must recursively update reference
 			// counts.
-			data = (HashMap) data.clone();
+			//record = (HashMap) record.clone();
 		}
 		return record;
 	}
 	
-	public static int size(Record c) {
-		return 0;
-	}	
-
-	public static java.util.Iterator<Object> iterator(Record c) {
-		return null;
+	public static int size(Record record) {
+		return record.size();
 	}	
 }

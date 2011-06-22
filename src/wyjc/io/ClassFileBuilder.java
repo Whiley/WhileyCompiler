@@ -718,7 +718,7 @@ public class ClassFileBuilder {
 						Bytecode.STATIC));
 					addReadConversion(dict.value(),bytecodes);
 				} else {
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+					JvmType.Function ftype = new JvmType.Function(WHILEYMAP,
 							WHILEYMAP,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
 					addWriteConversion(dict.value(),bytecodes);
@@ -755,11 +755,11 @@ public class ClassFileBuilder {
 					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));				
 					addReadConversion(rec.fields().get(field),bytecodes);
 				} else {
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);
+					JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
 					addWriteConversion(rec.fields().get(field),bytecodes);
 					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.STATIC));
-					bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
 				}
 				iter = rec.fields().get(field);
 			}
