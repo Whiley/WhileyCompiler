@@ -1370,7 +1370,7 @@ public class ModuleBuilder {
 			blk.add(Code.Label(exitLabel));
 			break;
 		case LENGTHOF:
-			blk.add(Code.ListOp(null,Code.LOp.LENGTHOF), attributes(v));
+			blk.add(Code.ListLength(null), attributes(v));
 			break;
 		case PROCESSACCESS:
 			blk.add(Code.UnOp(null,Code.UOp.PROCESSACCESS), attributes(v));
@@ -1441,7 +1441,7 @@ public class ModuleBuilder {
 			blk.addAll(resolve(environment, v.arguments.get(0)));
 			blk.addAll(resolve(environment, v.arguments.get(1)));
 			blk.addAll(resolve(environment, v.arguments.get(2)));
-			blk.add(Code.ListOp(null,Code.LOp.SUBLIST),attributes(v));
+			blk.add(Code.SubList(null),attributes(v));
 			return blk;
 		} else {			
 			int nargs = 0;

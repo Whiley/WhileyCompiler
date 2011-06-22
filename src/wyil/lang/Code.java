@@ -152,12 +152,16 @@ public abstract class Code {
 		return get(new Load(type,reg));
 	}
 	
-	public static ListOp ListOp(Type.List type, LOp op) {
-		return get(new ListOp(type,op,OpDir.UNIFORM));
+	public static ListLength ListLength(Type.List type) {
+		return get(new ListLength(type));
 	}
 	
-	public static ListOp ListOp(Type.List type, LOp op, OpDir dir) {
-		return get(new ListOp(type,op,dir));
+	public static SubList SubList(Type.List type) {
+		return get(new SubList(type));
+	}
+	
+	public static ListAppend ListAppend(Type.List type, OpDir dir) {
+		return get(new ListAppend(type,dir));
 	}
 	
 	/**
@@ -993,68 +997,97 @@ public abstract class Code {
 			return "." + label;
 		}
 	}
-	
-	public enum LOp { 				
-		APPEND{
-			public String toString() { return "append"; }
-		},
-		SUBLIST{
-			public String toString() { return "sublist"; }
-		},
-		LENGTHOF{
-			public String toString() { return "listlength"; }
-		},
-		RANGE {
-			public String toString() { return "listrange"; }
-		}
-	};
-	
-	
-	/**
-	 * A set operation (e.g. union, intersection, etc) takes one or two items
-	 * off the stack and pushes a single result.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class ListOp extends Code {		
-		public final LOp lop;
+		
+	public static final class ListAppend extends Code {				
 		public final OpDir dir;
 		public final Type.List type;
 		
-		private ListOp(Type.List type, LOp op, OpDir dir) {
-			if(op == null) {
-				throw new IllegalArgumentException("ListOp op argument cannot be null");
-			}
+		private ListAppend(Type.List type, OpDir dir) {			
 			if(dir == null) {
-				throw new IllegalArgumentException("ListOp op argument cannot be null");
-			}
-			this.lop = op;
+				throw new IllegalArgumentException("ListAppend direction cannot be null");
+			}			
 			this.type = type;
 			this.dir = dir;
 		}
 		
 		public int hashCode() {
 			if(type == null) {
-				return lop.hashCode() + dir.hashCode(); 
+				return dir.hashCode(); 
 			} else {
-				return type.hashCode() + lop.hashCode() + dir.hashCode();
+				return type.hashCode() + dir.hashCode();
 			}
 		}
 		
 		public boolean equals(Object o) {
-			if (o instanceof ListOp) {
-				ListOp setop = (ListOp) o;
+			if (o instanceof ListAppend) {
+				ListAppend setop = (ListAppend) o;
 				return (type == setop.type || (type != null && type
-						.equals(setop.type)))
-						&& lop.equals(setop.lop)
+						.equals(setop.type)))						
 						&& dir.equals(setop.dir);
 			}
 			return false;
 		}
 				
 		public String toString() {
-			return toString(lop.toString() + dir.toString(),type);
+			return toString("listappend" + dir.toString(),type);
+		}
+	}
+	
+	public static final class ListLength extends Code {						
+		public final Type.List type;
+		
+		private ListLength(Type.List type) {									
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 124987; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof ListLength) {
+				ListLength setop = (ListLength) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("listlength",type);
+		}
+	}
+	
+	public static final class SubList extends Code {						
+		public final Type.List type;
+		
+		private SubList(Type.List type) {									
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 124987; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SubList) {
+				SubList setop = (SubList) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("sublist",type);
 		}
 	}
 	

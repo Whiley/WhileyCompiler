@@ -116,8 +116,12 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Invoke)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
-		} else if(code instanceof ListOp) {
-			infer(index,(ListOp)code,entry,environment);
+		} else if(code instanceof ListAppend) {
+			infer(index,(ListAppend)code,entry,environment);
+		} else if(code instanceof ListLength) {
+			infer(index,(ListLength)code,entry,environment);
+		} else if(code instanceof SubList) {
+			infer(index,(SubList)code,entry,environment);
 		} else if(code instanceof ListLoad) {
 			infer(index,(ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
@@ -245,41 +249,36 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}	
 	}
 	
-	public void infer(int index, Code.ListOp code, Block.Entry entry,
-			Env environment) {
-		
+	public void infer(int index, Code.ListAppend code, Block.Entry entry,
+			Env environment) {		
 		Type req = environment.pop();
-		
-		switch(code.lop) {
-			case SUBLIST: {
-				coerce(req,code.type,index,entry);
-				environment.push(code.type);
-				environment.push(Type.T_INT);
-				environment.push(Type.T_INT);
-				break;
-			}
-			case APPEND:
-			{				
-				coerce(req,code.type,index,entry);
-				if(code.dir == OpDir.UNIFORM) { 
-					environment.push(code.type);
-					environment.push(code.type);
-				} else if(code.dir == OpDir.LEFT) {
-					environment.push(code.type);
-					environment.push(code.type.element());					
-				} else {					
-					environment.push(code.type.element());
-					environment.push(code.type);
-				}
-				break;
-			}
-			case LENGTHOF:
-			{
-				coerce(req,Type.T_INT,index,entry);
-				environment.push(code.type);
-				break;
-			}
+		coerce(req,code.type,index,entry);
+		if(code.dir == OpDir.UNIFORM) { 
+			environment.push(code.type);
+			environment.push(code.type);
+		} else if(code.dir == OpDir.LEFT) {
+			environment.push(code.type);
+			environment.push(code.type.element());					
+		} else {					
+			environment.push(code.type.element());
+			environment.push(code.type);
 		}
+	}
+	
+	public void infer(int index, Code.ListLength code, Block.Entry entry,
+			Env environment) {		
+		Type req = environment.pop();
+		coerce(req,Type.T_INT,index,entry);
+		environment.push(code.type);
+	}
+	
+	public void infer(int index, Code.SubList code, Block.Entry entry,
+			Env environment) {		
+		Type req = environment.pop();
+		coerce(req,code.type,index,entry);
+		environment.push(code.type);
+		environment.push(Type.T_INT);
+		environment.push(Type.T_INT);
 	}
 	
 	public void infer(int index, Code.ListLoad code, Block.Entry entry,

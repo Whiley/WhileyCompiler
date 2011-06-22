@@ -300,8 +300,12 @@ public class ClassFileBuilder {
 				 translate((Invoke)code,freeSlot,bytecodes);
 			} else if(code instanceof Label) {
 				translate((Label)code,freeSlot,bytecodes);
-			} else if(code instanceof ListOp) {
-				 translate((ListOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof ListAppend) {
+				 translate((ListAppend)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof ListLength) {
+				 translate((ListLength)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof SubList) {
+				 translate((SubList)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof ListLoad) {
 				 translate((ListLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Load) {
@@ -1655,46 +1659,37 @@ public class ClassFileBuilder {
 		addReadConversion(c.type.value(),bytecodes);	
 	}
 	
-	public void translate(Code.ListOp c, Entry stmt, int freeSlot,
+	public void translate(Code.ListAppend c, Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {						
-		
-		switch(c.lop) {
-		case APPEND:	
-		{
-			JvmType.Function ftype;
-			if(c.dir == OpDir.UNIFORM) {
-				ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,WHILEYLIST);
-			} else if(c.dir == OpDir.LEFT) {
-				ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,JAVA_LANG_OBJECT);
-			} else {
-				ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_OBJECT,WHILEYLIST);
-			}													
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
-					Bytecode.STATIC));			
-			break;
-		}
-		case LENGTHOF:
-		{
-			JvmType.Function ftype = new JvmType.Function(T_INT);						
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
-					ftype, Bytecode.VIRTUAL));								
-			ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
-					ftype, Bytecode.STATIC));
-			break;
-		}
-		case SUBLIST:
-		{
-			JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
-					BIG_RATIONAL, BIG_RATIONAL);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
-					Bytecode.STATIC));
-			break;
-		}
-		default:
-			syntaxError("unknown list expression encountered",filename,stmt);
-		}
+		JvmType.Function ftype;
+		if(c.dir == OpDir.UNIFORM) {
+			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,WHILEYLIST);
+		} else if(c.dir == OpDir.LEFT) {
+			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,JAVA_LANG_OBJECT);
+		} else {
+			ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_OBJECT,WHILEYLIST);
+		}													
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
+				Bytecode.STATIC));			
 	}
+	
+	public void translate(Code.ListLength c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(T_INT);						
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size",
+				ftype, Bytecode.VIRTUAL));								
+		ftype = new JvmType.Function(BIG_RATIONAL, T_INT);
+		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
+				ftype, Bytecode.STATIC));
+	}
+	
+	public void translate(Code.SubList c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {						
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
+				BIG_RATIONAL, BIG_RATIONAL);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
+				Bytecode.STATIC));
+	}	
 	
 	public void translate(Code.ListLoad c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {

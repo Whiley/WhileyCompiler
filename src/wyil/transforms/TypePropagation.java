@@ -170,8 +170,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Invoke)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
-		} else if(code instanceof ListOp) {
-			code = infer((ListOp)code,entry,environment);
+		} else if(code instanceof ListLength) {
+			code = infer((ListLength)code,entry,environment);
+		} else if(code instanceof SubList) {
+			code = infer((SubList)code,entry,environment);
 		} else if(code instanceof ListLoad) {
 			code = infer((ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
@@ -262,7 +264,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 			switch(v.bop) {				
 				case ADD:																				
-					code = Code.ListOp(type,Code.LOp.APPEND,dir);
+					code = Code.ListAppend(type,dir);
 					break;
 				default:
 					syntaxError("Invalid list operation: " + v.bop,filename,stmt);		
@@ -747,73 +749,44 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment.set(e.slot, e.type);
 		return e;
 	}
+	
+	protected Code infer(Code.ListLength code, Entry stmt, Env environment) {
+		Type src = environment.pop();
+		if(Type.isSubtype(Type.T_STRING,src)) {
+			environment.add(Type.T_INT);
+			return Code.StringLength();
+		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
+			environment.add(Type.T_INT);
+			return Code.ListLength(Type.effectiveListType(src));
+		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),src)) {
+			environment.add(Type.T_INT);
+			return Code.SetOp(Type.effectiveSetType(src),Code.SOp.LENGTHOF);
+		} else {
+			syntaxError("expected list or set, found " + src,filename,stmt);
+			return null;
+		}
+	}
+	
+	protected Code infer(Code.SubList code, Entry stmt, Env environment) {
+		Type end = environment.pop();
+		Type start = environment.pop();
+		Type src = environment.pop();
 		
-	protected Code infer(Code.ListOp code, Entry stmt, Env environment) {
+		checkIsSubtype(Type.T_INT,start,stmt);
+		checkIsSubtype(Type.T_INT,end,stmt);
+		Code r;
 		
-		switch(code.lop) {
-			case SUBLIST:
-			{
-				Type end = environment.pop();
-				Type start = environment.pop();
-				Type src = environment.pop();
-				
-				checkIsSubtype(Type.T_INT,start,stmt);
-				checkIsSubtype(Type.T_INT,end,stmt);
-				Code r;
-				
-				if(Type.isSubtype(Type.T_STRING, src)) {
-					r = Code.SubString();
-				} else {
-					checkIsSubtype(Type.T_LIST(Type.T_ANY),src,stmt);
-					r = Code.ListOp(Type.effectiveListType(src),
-							Code.LOp.SUBLIST);
-				}
-				
-				environment.push(src);
-						
-				return r;
-			}	
-			case LENGTHOF:
-			{
-				Type src = environment.pop();
-				if(Type.isSubtype(Type.T_STRING,src)) {
-					environment.add(Type.T_INT);
-					return Code.StringLength();
-				} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
-					environment.add(Type.T_INT);
-					return Code.ListOp(Type.effectiveListType(src),Code.LOp.LENGTHOF);
-				} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),src)) {
-					environment.add(Type.T_INT);
-					return Code.SetOp(Type.effectiveSetType(src),Code.SOp.LENGTHOF);
-				} else {
-					syntaxError("expected list or set, found " + src,filename,stmt);
-				}
-			}
-			case APPEND:
-			{
-				Type rhs = environment.pop();
-				Type lhs = environment.pop();
-				boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY), lhs);
-				boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY), rhs);
-				if(lhs_list && rhs_list) {
-					 Type lub = Type.leastUpperBound(lhs,rhs);
-					 environment.push(lub);
-					 return Code.ListOp(Type.effectiveListType(lub), code.lop, OpDir.UNIFORM);
-				} else if(lhs_list) {					
-					 environment.push(lhs);
-					 return Code.ListOp(Type.effectiveListType(lhs), code.lop, OpDir.LEFT);
-				} else if(rhs_list) {					
-					environment.push(rhs);
-					return Code.ListOp(Type.effectiveListType(rhs), code.lop, OpDir.RIGHT);
-				} else {
-					syntaxError("expecting list type",filename,stmt);
-				}
-			}
+		if(Type.isSubtype(Type.T_STRING, src)) {
+			r = Code.SubString();
+		} else {
+			checkIsSubtype(Type.T_LIST(Type.T_ANY),src,stmt);
+			r = Code.SubList(Type.effectiveListType(src));
 		}
 		
-		syntaxError("invalid list operation: " + code.lop,filename,stmt);	
-		return null; // dead-code
-	}
+		environment.push(src);
+				
+		return r;
+	}			
 	
 	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
 		Type ret_t = method.type().ret();		

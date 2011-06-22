@@ -34,6 +34,7 @@ import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
+import wyil.lang.Code.SubList;
 import wyil.transforms.TypePropagation.Env;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
@@ -150,8 +151,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Invoke)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
-		} else if(code instanceof ListOp) {
-			infer(index,(ListOp)code,entry,environment);
+		} else if(code instanceof ListAppend) {
+			infer(index,(ListAppend)code,entry,environment);
+		} else if(code instanceof ListLength) {
+			infer(index,(ListLength)code,entry,environment);
+		} else if(code instanceof SubList) {
+			infer(index,(SubList)code,entry,environment);
 		} else if(code instanceof ListLoad) {
 			infer(index,(ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
@@ -334,91 +339,83 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 	}
 	
-	public void infer(int index, Code.ListOp code, Block.Entry entry,
+	public void infer(int index, Code.ListAppend code, Block.Entry entry,
 			Env environment) {
+		Value rhs = environment.pop();
+		Value lhs = environment.pop();
+		Value result = null;
+		if(code.dir == OpDir.UNIFORM && lhs instanceof Value.List && rhs instanceof Value.List) {
+			Value.List left = (Value.List) lhs;
+			Value.List right = (Value.List) rhs;
+			ArrayList<Value> values = new ArrayList<Value>(left.values);
+			values.addAll(right.values);
+			result = Value.V_LIST(values);
+		} else if(code.dir == OpDir.LEFT && lhs instanceof Value.List && rhs instanceof Value) {
+			Value.List left = (Value.List) lhs;
+			Value right = (Value) rhs;
+			ArrayList<Value> values = new ArrayList<Value>(left.values);
+			values.add(right);
+			result = Value.V_LIST(values);
+		} else if(code.dir == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.List) {
+			Value left = (Value) lhs;
+			Value.List right = (Value.List) rhs;
+			ArrayList<Value> values = new ArrayList<Value>();
+			values.add(left);
+			values.addAll(right.values);
+			result = Value.V_LIST(values);
+		} 
 		
-		switch(code.lop) {
-			case SUBLIST: {
-				Value end = environment.pop();
-				Value start = environment.pop();
-				Value list = environment.pop();
-				Value result = null;
-				if (list instanceof Value.List && start instanceof Value.Number
-						&& end instanceof Value.Number) {
-					Value.Number en = (Value.Number) end;
-					Value.Number st = (Value.Number) start;
-					if (en.value.isInteger() && st.value.isInteger()) {
-						Value.List li = (Value.List) list;
-						int eni = en.value.intValue();
-						int sti = st.value.intValue();
-						if (BigRational.valueOf(eni).equals(en.value)
-								&& eni >= 0 && eni <= li.values.size()
-								&& BigRational.valueOf(sti).equals(st.value)
-								&& sti >= 0 && sti <= li.values.size()) {
-							ArrayList<Value> nvals = new ArrayList<Value>();
-							for (int i = sti; i < eni; ++i) {
-								nvals.add(li.values.get(i));
-							}
-							result = Value.V_LIST(nvals);
-							entry = new Block.Entry(Code.Const(result),entry.attributes());
-							rewrites.put(index, new Rewrite(entry,3));
-						}
-					}
-				} 
-				environment.push(result);				
-				break;
-			}
-			case APPEND:
-			{				
-				Value rhs = environment.pop();
-				Value lhs = environment.pop();
-				Value result = null;
-				if(code.dir == OpDir.UNIFORM && lhs instanceof Value.List && rhs instanceof Value.List) {
-					Value.List left = (Value.List) lhs;
-					Value.List right = (Value.List) rhs;
-					ArrayList<Value> values = new ArrayList<Value>(left.values);
-					values.addAll(right.values);
-					result = Value.V_LIST(values);
-				} else if(code.dir == OpDir.LEFT && lhs instanceof Value.List && rhs instanceof Value) {
-					Value.List left = (Value.List) lhs;
-					Value right = (Value) rhs;
-					ArrayList<Value> values = new ArrayList<Value>(left.values);
-					values.add(right);
-					result = Value.V_LIST(values);
-				} else if(code.dir == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.List) {
-					Value left = (Value) lhs;
-					Value.List right = (Value.List) rhs;
-					ArrayList<Value> values = new ArrayList<Value>();
-					values.add(left);
-					values.addAll(right.values);
-					result = Value.V_LIST(values);
-				} 
-				
-				if(result != null) {
-					entry = new Block.Entry(Code.Const(result),entry.attributes());
-					rewrites.put(index, new Rewrite(entry,2));
-				}
-				environment.push(result);
-				
-				break;
-			}
-			case LENGTHOF:
-			{
-				Value val = environment.pop();
-				Value result = null;
-				
-				if(val instanceof Value.List) {
-					Value.List list = (Value.List) val;
-					result = Value.V_NUMBER(BigInteger.valueOf(list.values.size()));
-					entry = new Block.Entry(Code.Const(result),entry.attributes());
-					rewrites.put(index, new Rewrite(entry,1));
-				} 
-				
-				environment.push(result);
-				
-				break;
-			}
+		if(result != null) {
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,2));
 		}
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.ListLength code, Block.Entry entry,
+			Env environment) {
+		Value val = environment.pop();
+		Value result = null;
+		
+		if(val instanceof Value.List) {
+			Value.List list = (Value.List) val;
+			result = Value.V_NUMBER(BigInteger.valueOf(list.values.size()));
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
+		} 
+		
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.SubList code, Block.Entry entry,
+			Env environment) {
+		Value end = environment.pop();
+		Value start = environment.pop();
+		Value list = environment.pop();
+		Value result = null;
+		if (list instanceof Value.List && start instanceof Value.Number
+				&& end instanceof Value.Number) {
+			Value.Number en = (Value.Number) end;
+			Value.Number st = (Value.Number) start;
+			if (en.value.isInteger() && st.value.isInteger()) {
+				Value.List li = (Value.List) list;
+				int eni = en.value.intValue();
+				int sti = st.value.intValue();
+				if (BigRational.valueOf(eni).equals(en.value)
+						&& eni >= 0 && eni <= li.values.size()
+						&& BigRational.valueOf(sti).equals(st.value)
+						&& sti >= 0 && sti <= li.values.size()) {
+					ArrayList<Value> nvals = new ArrayList<Value>();
+					for (int i = sti; i < eni; ++i) {
+						nvals.add(li.values.get(i));
+					}
+					result = Value.V_LIST(nvals);
+					entry = new Block.Entry(Code.Const(result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry,3));
+				}
+			}
+		} 
+		environment.push(result);
 	}
 	
 	public void infer(int index, Code.ListLoad code, Block.Entry entry,
