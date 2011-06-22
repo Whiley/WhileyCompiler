@@ -174,6 +174,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Store)code,entry,environment);
 		} else if(code instanceof SetOp) {
 			infer(index,(SetOp)code,entry,environment);
+		} else if(code instanceof StringOp) {
+			infer(index,(StringOp)code,entry,environment);
 		} else if(code instanceof Skip) {
 			// skip			
 		} else if(code instanceof UnOp) {
@@ -680,6 +682,82 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		
 		environment.push(result);
+	}
+	
+	public void infer(int index, Code.StringOp code, Block.Entry entry,
+			Env environment) {
+		
+		switch(code.sop) {
+			case SUBSTRING: {
+				Value end = environment.pop();
+				Value start = environment.pop();
+				Value src = environment.pop();
+				Value result = null;
+				if (src instanceof Value.Strung && start instanceof Value.Number
+						&& end instanceof Value.Number) {
+					Value.Number en = (Value.Number) end;
+					Value.Number st = (Value.Number) start;
+					if (en.value.isInteger() && st.value.isInteger()) {
+						Value.Strung str = (Value.Strung) src;
+						int eni = en.value.intValue();
+						int sti = st.value.intValue();
+						if (BigRational.valueOf(eni).equals(en.value)
+								&& eni >= 0 && eni <= str.value.length()
+								&& BigRational.valueOf(sti).equals(st.value)
+								&& sti >= 0 && sti <= str.value.length()) {
+							String nval = "";							
+							for (int i = sti; i < eni; ++i) {
+								nval += str.value.charAt(i);
+							}
+							result = Value.V_STRING(nval);
+							entry = new Block.Entry(Code.Const(result),entry.attributes());
+							rewrites.put(index, new Rewrite(entry,3));
+						}
+					}
+				} 
+				environment.push(result);				
+				break;
+			}
+			case APPEND:
+			{				
+				Value rhs = environment.pop();
+				Value lhs = environment.pop();
+				Value result = null;
+				if(code.dir == OpDir.UNIFORM && lhs instanceof Value.Strung && rhs instanceof Value.Strung) {
+					Value.Strung left = (Value.Strung) lhs;
+					Value.Strung right = (Value.Strung) rhs;
+					result = Value.V_STRING(left.value + right.value);
+				} else if(code.dir == OpDir.LEFT && lhs instanceof Value.Strung && rhs instanceof Value) {
+					// TODO: need to add Value.Char
+				} else if(code.dir == OpDir.RIGHT && lhs instanceof Value && rhs instanceof Value.Strung) {
+					// TODO: need to add Value.Char					
+				} 
+				
+				if(result != null) {
+					entry = new Block.Entry(Code.Const(result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry,2));
+				}
+				environment.push(result);
+				
+				break;
+			}
+			case LENGTHOF:
+			{
+				Value val = environment.pop();
+				Value result = null;
+				
+				if(val instanceof Value.Strung) {
+					Value.Strung str = (Value.Strung) val;
+					result = Value.V_NUMBER(BigInteger.valueOf(str.value.length()));
+					entry = new Block.Entry(Code.Const(result),entry.attributes());
+					rewrites.put(index, new Rewrite(entry,1));
+				} 
+				
+				environment.push(result);
+				
+				break;
+			}
+		}
 	}
 	
 	public void infer(int index, Code.UnOp code, Block.Entry entry,

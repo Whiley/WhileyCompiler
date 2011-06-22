@@ -33,5 +33,5 @@ void SystemOutWriter::print(string str):
     debug str
 
 void SystemOutWriter::println(string str):
-    debug str // + "\n"
+    debug str + "\n"
 

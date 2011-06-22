@@ -51,6 +51,16 @@ public class Util {
 	private static int nset_clones = 0;
 	private static int nrecord_clones = 0;
 
+	public static String append(final String lhs, final String rhs) {
+		return lhs + rhs;
+	}
+	
+	public static String substring(final String lhs, final BigRational _start, final BigRational _end) {
+		int start = _start.intValue();
+		int end = _end.intValue();
+		return lhs.substring(start,end);
+	}
+	
 	/**
 	 * This method is used to convert the arguments supplied to main (which have
 	 * type <code>String[]</code>) into an appropriate Whiley List.
@@ -87,7 +97,7 @@ public class Util {
 	public static void debug(String str) {
 		System.out.print(str);			
 	}
-	
+		
 	/**
 	 * Increment the reference count for this object. In some cases, this may
 	 * have no effect. In other cases, the current reference count will be
