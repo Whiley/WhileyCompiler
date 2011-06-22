@@ -30,7 +30,7 @@ public final class Record extends HashMap<String,Object> implements Comparable<R
 				r = r + ",";
 			}
 			firstTime = false;
-			r = r + s + ":" + get(s).toString();
+			r = r + s + ":" + Util.str(get(s));
 		}
 		return r + "}";
 	}

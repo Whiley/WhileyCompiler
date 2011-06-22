@@ -93,6 +93,22 @@ public class Util {
 	}
 	
 	/**
+	 * Convert a given Whiley object into a string
+	 * @param o
+	 * @return
+	 */
+	public static String str(Object o) {
+		if(o == null) {
+			return "null";
+		} else if(o instanceof String) {
+			String s = (String) o;
+			return "\"" + s + "\"";
+		} else {
+			return o.toString();
+		}
+	}
+	
+	/**
 	 * The following method is used for printing debug output arising from debug
 	 * statements.
 	 * 

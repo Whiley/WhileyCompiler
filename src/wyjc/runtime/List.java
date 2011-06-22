@@ -26,6 +26,18 @@ public final class List extends java.util.ArrayList {
 		this.refCount = 1;		
 	}
 	
+	public String toString() {
+		String r = "[";
+		boolean firstTime=true;
+		for(Object o : this) {
+			if(!firstTime) {
+				r += ",";
+			}
+			r += Util.str(o);
+		}
+		return r + "]";
+	}
+	
 	// ================================================================================
 	// List Operations
 	// ================================================================================	 

@@ -28,6 +28,8 @@ package whiley.lang
 public string str(* item):
     if item ~= null:
         return "null"
+    else if item ~= string:
+        return "\"" + item + "\""
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;

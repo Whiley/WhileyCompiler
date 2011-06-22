@@ -203,73 +203,58 @@ public class WhileyLexer {
 	public Token scanString() {
 		int start = pos;
 		pos ++;
+		StringBuffer buf = new StringBuffer();
+		
 		while(pos < input.length()) {
-			char c = input.charAt(pos);			
-			if (c == '"') {				
+			char c = input.charAt(pos);
+			if(c == '\\') {				
+				if(++pos == input.length()) {
+					syntaxError("unexpected end-of-file",pos);
+				}
+				switch (input.charAt(pos)) {
+					case 'b' :
+						buf.append('\b');
+						break;
+					case 't' :
+						buf.append('\t');
+						break;
+					case 'n' :
+						buf.append('\n');
+						break;
+					case 'f' :
+						buf.append('\f');
+						break;
+					case 'r' :
+						buf.append('\r');
+						break;
+					case '"' :
+						buf.append('\"');
+						break;
+					case '\'' :
+						buf.append('\'');
+						break;
+					case '\\' :
+						buf.append('\\');
+						break;
+					case 'u' :
+						// unicode escapes are six digits long, including "slash u"
+						String unicode = input.substring(pos+1,pos+5);
+						buf.append((char) Integer.parseInt(unicode, 16)); // unicode
+						break;
+					default :
+						syntaxError("unknown escape character",pos);							
+				}
+			} else if (c == '"') {				
 				String v = input.substring(start,++pos);
-				return new Strung(parseString(v),v, start);
+				return new Strung(buf.toString(),v, start);
+			} else {			
+				buf.append(c);
 			}
 			pos = pos + 1;
 		}
 		syntaxError("unexpected end-of-string",pos-1);
 		return null;
-	}
-	
-	protected String parseString(String v) {				
-		/*
-         * Parsing a string requires several steps to be taken. First, we need
-         * to strip quotes from the ends of the string.
-         */
-		v = v.substring(1, v.length() - 1);
-		int start = pos - v.length();
-		// Second, step through the string and replace escaped characters
-		for (int i = 0; i < v.length(); i++) {
-			if (v.charAt(i) == '\\') {
-				if (v.length() <= i + 1) {
-					syntaxError("unexpected end-of-string",start+i);
-				} else {
-					char replace = 0;
-					int len = 2;
-					switch (v.charAt(i + 1)) {
-						case 'b' :
-							replace = '\b';
-							break;
-						case 't' :
-							replace = '\t';
-							break;
-						case 'n' :
-							replace = '\n';
-							break;
-						case 'f' :
-							replace = '\f';
-							break;
-						case 'r' :
-							replace = '\r';
-							break;
-						case '"' :
-							replace = '\"';
-							break;
-						case '\'' :
-							replace = '\'';
-							break;
-						case '\\' :
-							replace = '\\';
-							break;
-						case 'u' :
-							len = 6; // unicode escapes are six digits long,
-							// including "slash u"
-							String unicode = v.substring(i + 2, i + 6);
-							replace = (char) Integer.parseInt(unicode, 16); // unicode
-							break;
-						default :
-							syntaxError("unknown escape character",start+i);							
-					}
-					v = v.substring(0, i) + replace + v.substring(i + len);
-				}
-			}
-		}
-		return v;
-	}
+	}	
 
 	static final char UC_FORALL = '\u2200';
 	static final char UC_EXISTS = '\u2203';

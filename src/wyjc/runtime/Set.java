@@ -36,7 +36,7 @@ public final class Set extends java.util.HashSet {
 				r = r + ", ";
 			}
 			firstTime=false;
-			r = r + o.toString();
+			r = r + Util.str(o.toString());
 		}
 		return r + "}";
 	} 
