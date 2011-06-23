@@ -935,17 +935,17 @@ public class ClassFileBuilder {
 			}
 			case SUBSETEQ:
 			{
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
+				JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET,WHILEYSET);
 				bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subsetEq", ftype,
-						Bytecode.VIRTUAL));
+						Bytecode.STATIC));
 				op = Bytecode.If.NE;
 				break;
 			}
 			case SUBSET:
 			{
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET);
+				JvmType.Function ftype = new JvmType.Function(T_BOOL,WHILEYSET,WHILEYSET);
 				bytecodes.add(new Bytecode.Invoke(WHILEYSET, "subset", ftype,
-						Bytecode.VIRTUAL));
+						Bytecode.STATIC));
 				op = Bytecode.If.NE;
 				break;
 			}

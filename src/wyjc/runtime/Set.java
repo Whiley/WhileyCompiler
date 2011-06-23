@@ -45,6 +45,14 @@ public final class Set extends java.util.HashSet {
 	// Set Operations
 	// ================================================================================	 	
 	
+	public static boolean subset(Set lhs, Set rhs) {
+		return rhs.containsAll(lhs) && rhs.size() > lhs.size();
+	}
+	
+	public static boolean subsetEq(Set lhs, Set rhs) {
+		return rhs.containsAll(lhs);
+	}
+	
 	public static Set union(Set lhs, Set rhs) {
 		Set set = new Set(lhs);
 		set.addAll(rhs);
