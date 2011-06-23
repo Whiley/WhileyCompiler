@@ -10,25 +10,22 @@ public final class List extends java.util.ArrayList {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	private int refCount;
+	int refCount;
 	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
 	
 	public List() {
-		super();
-		this.refCount = 1;		
+		super();				
 	}
 	
 	public List(int size) {
-		super(size);
-		this.refCount = 1;		
+		super(size);			
 	}
 	
 	List(java.util.Collection items) {
-		super(items);
-		this.refCount = 1;		
+		super(items);			
 	}
 	
 	public String toString() {
@@ -47,22 +44,24 @@ public final class List extends java.util.ArrayList {
 	// ================================================================================
 	// List Operations
 	// ================================================================================	 
-	
-	public static Object get(List list, int index) {		
-		return list.get(index);
-	}
-	
+		
 	public static Object get(List list, BigInteger index) {		
 		return list.get(index.intValue());
 	}
-		
-	public static List set(final List list, final int index, final Object value) {
-		list.set(index,value);
-		return list;
-	}
-	
-	public static List set(final List list, final BigInteger index, final Object value) {
-		list.set(index.intValue(),value);
+			
+	public static List set(List list, final BigInteger index, final Object value) {
+		if(list.refCount > 1) {			
+			// in this case, we need to clone the list in question
+			list.refCount--;
+			List nlist = new List(list);
+			for(Object item : nlist) {
+				Util.incRefs(item);
+			}
+			list = nlist;
+		}
+		Object v = list.set(index.intValue(),value);
+		Util.decRefs(v);
+		Util.incRefs(value);
 		return list;
 	}
 	
@@ -80,7 +79,7 @@ public final class List extends java.util.ArrayList {
 		return BigInteger.valueOf(list.size());
 	}
 	
-	public static List append(final List lhs, final List rhs) {
+	public static List append(final List lhs, final List rhs) {		
 		List r = new List(lhs);
 		r.addAll(rhs);
 		return r;

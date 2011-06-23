@@ -657,9 +657,14 @@ public class ClassFileBuilder {
 		}
 	}
 
-	public void translate(Code.Store c, int freeSlot,
+	public void translate(Code.Store c, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
-		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));				
+		JvmType type = convertType(c.type);
+		if(isRefCounted(c.type)){			
+			JvmType.Function ftype = new JvmType.Function(type,type);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
+		}
+		bytecodes.add(new Bytecode.Store(c.slot, type));				
 	}
 
 	public void translate(Code.MultiStore c, int freeSlot,ArrayList<Bytecode> bytecodes) {
@@ -678,7 +683,7 @@ public class ClassFileBuilder {
 		
 		// Second, determine type of value being assigned
 		
-		List<String> fields = c.fields;
+		ArrayList<String> fields = c.fields;
 		int fi = 0;						
 		Type iter = type;
 		for(int i=0;i!=c.level;++i) {
@@ -712,69 +717,77 @@ public class ClassFileBuilder {
 		
 		// Fourth, finally process the assignment path and update the object in
 		// question.		
-		iter = type;
-		fi = 0;								
-		for(int i=0;i!=c.level;++i) {
-			boolean read = (i != c.level - 1);
-			
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
-				bytecodes.add(new Bytecode.Swap());
-				if(read) { 
-					JvmType.Function ftype = new JvmType.Function(
-							JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
-					bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
-						Bytecode.STATIC));
-					addReadConversion(dict.value(),bytecodes);
-				} else {
-					JvmType.Function ftype = new JvmType.Function(WHILEYMAP,
-							WHILEYMAP,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
-					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
-					addWriteConversion(dict.value(),bytecodes);
-					bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
-							Bytecode.STATIC));
-					bytecodes.add(new Bytecode.Pop(WHILEYMAP));
-				}
-				iter = dict.value();
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
-				Type.List list = Type.effectiveListType(iter);				
-				bytecodes.add(new Bytecode.Swap());								
-				if(read) {
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-							WHILEYLIST,BIG_INTEGER);
-					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-							Bytecode.STATIC));
-					addReadConversion(list.element(),bytecodes);
-				} else {
-					JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
-							WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);
-					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
-					addWriteConversion(list.element(),bytecodes);
-					bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
-							Bytecode.STATIC));
-					bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-				}
-				iter = list.element();
-			} else {
-				Type.Record rec = Type.effectiveRecordType(iter);
-				String field = fields.get(fi++);
-				bytecodes.add(new Bytecode.LoadConst(field));				
-				if(read) {
-					JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
-					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));				
-					addReadConversion(rec.fields().get(field),bytecodes);
-				} else {
-					JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);
-					bytecodes.add(new Bytecode.Load(freeSlot, val_t));
-					addWriteConversion(rec.fields().get(field),bytecodes);
-					bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.STATIC));
-					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-				}
-				iter = rec.fields().get(field);
-			}
-		}		
+		multiStoreHelper(type,c.level-1,fields.iterator(),freeSlot,val_t, bytecodes);		
+		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));
 	}
 
+	public void multiStoreHelper(Type type, int level,
+			Iterator<String> fields, int freeSlot, JvmType val_t,
+			ArrayList<Bytecode> bytecodes) {
+		
+		// This method is major ugly. I'm sure there must be a better way of
+		// doing this. Probably, if I change the multistore bytecode, that would
+		// help.
+		
+		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),type)) {
+			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
+			bytecodes.add(new Bytecode.Swap());
+			
+			if(level != 0) { 
+				JvmType.Function ftype = new JvmType.Function(
+						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
+					Bytecode.STATIC));
+				addReadConversion(dict.value(),bytecodes);
+				multiStoreHelper(dict.value(),level-1,fields,freeSlot,val_t,bytecodes);
+			} else {
+				bytecodes.add(new Bytecode.Load(freeSlot, val_t));	
+			}
+						
+			JvmType.Function ftype = new JvmType.Function(WHILEYMAP,
+					WHILEYMAP,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
+			addWriteConversion(dict.value(),bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
+					Bytecode.STATIC));			
+						
+		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),type)) {
+			Type.List list = Type.effectiveListType(type);				
+			bytecodes.add(new Bytecode.Swap());								
+			if(level != 0) {
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+						WHILEYLIST,BIG_INTEGER);
+				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
+						Bytecode.STATIC));
+				addReadConversion(list.element(),bytecodes);
+				multiStoreHelper(list.element(),level-1,fields,freeSlot,val_t,bytecodes);
+			} else {
+				bytecodes.add(new Bytecode.Load(freeSlot, val_t));
+			}
+			
+			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
+					WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);
+			addWriteConversion(list.element(),bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
+					Bytecode.STATIC));							
+		} else {
+			Type.Record rec = Type.effectiveRecordType(type);
+			String field = fields.next();
+			bytecodes.add(new Bytecode.LoadConst(field));				
+			if(level != 0) {
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));				
+				addReadConversion(rec.fields().get(field),bytecodes);
+				multiStoreHelper(rec.fields().get(field),level-1,fields,freeSlot,val_t,bytecodes);
+			} else {
+				bytecodes.add(new Bytecode.Load(freeSlot, val_t));
+			}
+			
+			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);			
+			addWriteConversion(rec.fields().get(field),bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.STATIC));					
+		}
+	}
+	
 	public void translate(Code.Return c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		if (c.type == Type.T_VOID) {
@@ -2369,6 +2382,16 @@ public class ClassFileBuilder {
 			// pointless to add a cast for object
 			bytecodes.add(new Bytecode.CheckCast(type));
 		}
+	}
+
+	/**
+	 * Return true if this type is, or maybe reference counted.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static boolean isRefCounted(Type t) {
+		return t != Type.T_BOOL &&t != Type.T_INT && t != Type.T_REAL && t != Type.T_STRING; 
 	}
 	
 	/**

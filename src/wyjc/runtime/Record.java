@@ -9,14 +9,14 @@ public final class Record extends HashMap<String,Object> implements Comparable<R
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	private int refCount;
+	int refCount;
 	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
 	
 	public Record() {		
-		this.refCount = 1;		
+		
 	}
 	
 	public String toString() {
@@ -74,13 +74,13 @@ public final class Record extends HashMap<String,Object> implements Comparable<R
 	}
 	
 	public static Record put(final Record record, final String field, final Object value) {		
-		if(record.refCount == 1) {
+		//if(record.refCount == 1) {
 			record.put(field, value);
-		} else {
+		//} else {
 			// TODO: this is broken --- must recursively update reference
 			// counts.
 			//record = (HashMap) record.clone();
-		}
+		//}
 		return record;
 	}
 	

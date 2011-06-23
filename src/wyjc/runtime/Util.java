@@ -75,7 +75,7 @@ public class Util {
 	public static List fromStringList(String[] args) {
 		List r = new List(args.length);
 		for(int i=0;i!=args.length;++i) {
-			List.set(r,i,args[i]);
+			r.set(i,args[i]);
 		}
 		return r;
 	}
@@ -125,18 +125,85 @@ public class Util {
 	 * one.
 	 */
 	public static Object incRefs(Object obj) {
+		if(obj instanceof List) {
+			List list = (List) obj;
+			list.refCount++;
+		} else if(obj instanceof Record) {
+			Record rec = (Record) obj;			
+			rec.refCount++;
+		} else if(obj instanceof Set) {
+			Set set = (Set) obj;
+			set.refCount++;			
+		} else if(obj instanceof Dictionary) {
+			Dictionary dict = (Dictionary) obj;
+			dict.refCount++;			
+		} 
 		return obj;
 	}
 
+	public static List incRefs(List obj) {		
+		obj.refCount++;
+		return obj;
+	}
+	
+	public static Set incRefs(Set obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
+	public static Record incRefs(Record obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
+	public static Dictionary incRefs(Dictionary obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
 	/**
 	 * Decrement the reference count for this object. In some cases, this may
 	 * have no effect. In other cases, the current reference count will be
 	 * maintained and in-place updates can only occur when the reference count is
 	 * one.
 	 */
-	public static void decRefs(Object obj) {
-		
+	public static Object decRefs(Object obj) {
+		if(obj instanceof List) {
+			List list = (List) obj;
+			list.refCount--;
+		} else if(obj instanceof Record) {
+			Record rec = (Record) obj;			
+			rec.refCount--;
+		} else if(obj instanceof Set) {
+			Set set = (Set) obj;
+			set.refCount--;			
+		} else if(obj instanceof Dictionary) {
+			Dictionary dict = (Dictionary) obj;
+			dict.refCount--;			
+		} 
+		return obj;
 	}
+
+	public static List decRefs(List obj) {		
+		obj.refCount--;
+		return obj;
+	}
+	
+	public static Set decRefs(Set obj) {
+		obj.refCount--;
+		return obj;
+	}
+	
+	public static Record decRefs(Record obj) {
+		obj.refCount--;
+		return obj;
+	}
+	
+	public static Dictionary decRefs(Dictionary obj) {
+		obj.refCount--;
+		return obj;
+	}
+		
 	
 	/**
 	 * The <code>instanceOf</code> method implements a runtime type test. 

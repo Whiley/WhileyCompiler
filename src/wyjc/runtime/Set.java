@@ -11,14 +11,14 @@ public final class Set extends java.util.HashSet {
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	private int refCount;
+	int refCount;
 
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
 		
 	public Set() {		
-		this.refCount = 1;		
+			
 	}
 	
 	private Set(java.util.Collection c) {
