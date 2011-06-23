@@ -16,6 +16,11 @@ public final class List extends java.util.ArrayList {
 	// Generic Operations
 	// ================================================================================	 	
 	
+	public List() {
+		super();
+		this.refCount = 1;		
+	}
+	
 	public List(int size) {
 		super(size);
 		this.refCount = 1;		
