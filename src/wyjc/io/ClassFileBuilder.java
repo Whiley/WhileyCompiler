@@ -660,10 +660,7 @@ public class ClassFileBuilder {
 	public void translate(Code.Store c, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType type = convertType(c.type);
-		if(isRefCounted(c.type)){			
-			JvmType.Function ftype = new JvmType.Function(type,type);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
-		}
+		//addIncRefs(c.type,bytecodes);		
 		bytecodes.add(new Bytecode.Store(c.slot, type));				
 	}
 
@@ -2406,6 +2403,20 @@ public class ClassFileBuilder {
 				&& t != Type.T_STRING
 				&& !Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t); 
 	}
+
+	/**
+	 * Add bytecodes for incrementing the reference count.
+	 * 
+	 * @param type
+	 * @param bytecodes
+	 */
+	public static void addIncRefs(Type type, ArrayList<Bytecode> bytecodes) {
+		if(isRefCounted(type)){
+			JvmType jtype = convertType(type);
+			JvmType.Function ftype = new JvmType.Function(jtype,jtype);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.STATIC));
+		}
+	}
 	
 	/**
 	 * The construct method provides a generic way to construct a Java object.
@@ -2472,7 +2483,7 @@ public class ClassFileBuilder {
 		return new JvmType.Function(rt,paramTypes);		
 	}
 	
-	public JvmType convertType(Type t) {
+	public static JvmType convertType(Type t) {
 		if(t == Type.T_VOID) {
 			return T_VOID;
 		} else if(t == Type.T_ANY) {

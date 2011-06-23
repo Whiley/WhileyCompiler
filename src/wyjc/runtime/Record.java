@@ -9,16 +9,12 @@ public final class Record extends HashMap<String,Object> implements Comparable<R
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount;
+	int refCount = 100; // TODO: implement proper reference counting
 	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
-	
-	public Record() {		
 		
-	}
-	
 	public String toString() {
 		String r = "{";
 		boolean firstTime = true;
