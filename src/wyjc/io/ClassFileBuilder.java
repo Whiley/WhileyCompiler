@@ -322,6 +322,10 @@ public class ClassFileBuilder {
 				 translate((NewRecord)code,freeSlot,bytecodes);
 			} else if(code instanceof NewSet) {
 				 translate((NewSet)code,freeSlot,bytecodes);
+			} else if(code instanceof Negate) {
+				 translate((Negate)code,freeSlot,bytecodes);
+			} else if(code instanceof ProcLoad) {
+				 translate((ProcLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Return) {
 				 translate((Return)code,freeSlot,bytecodes);
 			} else if(code instanceof Skip) {
@@ -348,8 +352,8 @@ public class ClassFileBuilder {
 				 translate((Store)code,freeSlot,bytecodes);
 			} else if(code instanceof Switch) {
 				 translate((Switch)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof UnOp) {
-				 translate((UnOp)code,freeSlot,bytecodes);
+			} else if(code instanceof Spawn) {
+				 translate((Spawn)code,freeSlot,bytecodes);
 			} else {
 				syntaxError("unknown wyil code encountered (" + code + ")", filename, entry);
 			}
@@ -1832,44 +1836,37 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 	}	
 	
-	public void translate(Code.UnOp c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {				
-				
+	public void translate(Code.Negate c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {								
 		JvmType type = convertType(c.type);
-
-		switch (c.uop) {
-		case NEG: {			
-			JvmType.Function ftype = new JvmType.Function(type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
-					ftype, Bytecode.VIRTUAL));
-			break;
-		}			
-		case PROCESSSPAWN:
-		{
-			bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
-			bytecodes.add(new Bytecode.DupX1());
-			bytecodes.add(new Bytecode.DupX1());			
-			bytecodes.add(new Bytecode.Swap());
-			// TODO: problem here ... need to swap or something				
-			JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
-					Bytecode.SPECIAL));
-			ftype = new JvmType.Function(T_VOID);			
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "start", ftype,
-					Bytecode.VIRTUAL));
-			break;
-		}
-		case PROCESSACCESS:
-		{			
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
-					Bytecode.VIRTUAL));
-			// finally, we need to cast the object we got back appropriately.		
-			Type.Process pt = (Type.Process) c.type;						
-			addReadConversion(pt.element(), bytecodes);
-			break;
-		}
-		}		
+		JvmType.Function ftype = new JvmType.Function(type);
+		bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate",
+				ftype, Bytecode.VIRTUAL));		
+	}
+	
+	public void translate(Code.Spawn c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {							
+		bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
+		bytecodes.add(new Bytecode.DupX1());
+		bytecodes.add(new Bytecode.DupX1());			
+		bytecodes.add(new Bytecode.Swap());
+		// TODO: problem here ... need to swap or something				
+		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
+				Bytecode.SPECIAL));
+		ftype = new JvmType.Function(T_VOID);			
+		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "start", ftype,
+				Bytecode.VIRTUAL));
+	}
+	
+	public void translate(Code.ProcLoad c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {				
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
+				Bytecode.VIRTUAL));
+		// finally, we need to cast the object we got back appropriately.		
+		Type.Process pt = (Type.Process) c.type;						
+		addReadConversion(pt.element(), bytecodes);
 	}
 	
 	protected void translate(Code.NewDict c, int freeSlot,

@@ -400,9 +400,17 @@ public abstract class Code {
 		return get(new Throw(t));
 	}
 	
-	public static UnOp UnOp(Type type, UOp op) {
-		return get(new UnOp(type,op));
+	public static Negate Negate(Type type) {
+		return get(new Negate(type));
 	}		
+	
+	public static Spawn Spawn(Type.Process type) {
+		return get(new Spawn(type));
+	}
+	
+	public static ProcLoad ProcLoad(Type.Process type) {
+		return get(new ProcLoad(type));
+	}
 	
 	// ===============================================================
 	// Bytecode Implementations
@@ -1851,61 +1859,90 @@ public abstract class Code {
 		}
 	}
 	
-	public static final class UnOp extends Code {
-		public final Type type;
-		public final UOp uop; 
+	public static final class Negate extends Code {
+		public final Type type;		
 		
-		private UnOp(Type type, UOp uop) {
-			this.uop = uop;
+		private Negate(Type type) {			
 			this.type = type;
 		}
 		
 		public int hashCode() {
 			if(type == null) {
-				return uop.hashCode();
+				return 239487;
 			} else {
-				return type.hashCode() + uop.hashCode();
+				return type.hashCode();
 			}
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof UnOp) {
-				UnOp bo = (UnOp) o;
+			if(o instanceof Negate) {
+				Negate bo = (Negate) o;
 				return (type == bo.type || (type != null && type
-						.equals(bo.type))) && uop.equals(bo.uop); 
+						.equals(bo.type))); 
 			}
 			return false;
 		}
 				
 		public String toString() {
-			return toString(uop.toString(),type);
+			return toString("neg",type);
 		}
 	}
 	
-	public enum UOp { 
-		NEG() {
-			public String toString() { return "neg"; }
-		},
-		FLOOR() {
-			public String toString() { return "floor"; }
-		},
-		CEIL() {
-			public String toString() { return "ceil"; }
-		},
-		SPLIT() {
-			public String toString() { return "split"; }
-		},		
-		PROCESSACCESS() {
-			public String toString() { return "procload"; }
-		},
-		PROCESSSPAWN() {
-			public String toString() { return "spawn"; }
-		},		
-		DEBUG() {
-			public String toString() { return "debug"; }
-		},
-		FAIL() {
-			public String toString() { return "fail"; }
+	public static final class Spawn extends Code {
+		public final Type.Process type;		
+		
+		private Spawn(Type.Process type) {			
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 239487;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Spawn) {
+				Spawn bo = (Spawn) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("spawn",type);
+		}
+	}
+	
+	public static final class ProcLoad extends Code {
+		public final Type.Process type;		
+		
+		private ProcLoad(Type.Process type) {			
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 239487;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ProcLoad) {
+				ProcLoad bo = (ProcLoad) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("procload",type);
 		}
 	}
 	

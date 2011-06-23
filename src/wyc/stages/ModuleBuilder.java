@@ -1007,7 +1007,7 @@ public class ModuleBuilder {
 				if(ert != null && ert.fields().containsKey(v.var)) {
 					// Bingo, this is an implicit field dereference
 					blk.add(Code.Load(Type.T_BOOL, environment.get("this")));	
-					blk.add(Code.UnOp(null, Code.UOp.PROCESSACCESS));
+					blk.add(Code.ProcLoad(null));
 					blk.add(Code.FieldLoad(null, v.var));
 					matched = true;
 				} 
@@ -1325,7 +1325,7 @@ public class ModuleBuilder {
 						// Bingo, this is an implicit field dereference
 						Block blk = new Block();
 						blk.add(Code.Load(null, environment.get("this")),attributes(v));
-						blk.add(Code.UnOp(null, Code.UOp.PROCESSACCESS),attributes(v));					
+						blk.add(Code.ProcLoad(null),attributes(v));					
 						blk.add(Code.FieldLoad(null, v.var),attributes(v));						
 						return blk;
 					}
@@ -1357,7 +1357,7 @@ public class ModuleBuilder {
 		Block blk = resolve(environment, v.mhs);	
 		switch (v.op) {
 		case NEG:
-			blk.add(Code.UnOp(null,Code.UOp.NEG), attributes(v));
+			blk.add(Code.Negate(null), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
@@ -1373,10 +1373,10 @@ public class ModuleBuilder {
 			blk.add(Code.ListLength(null), attributes(v));
 			break;
 		case PROCESSACCESS:
-			blk.add(Code.UnOp(null,Code.UOp.PROCESSACCESS), attributes(v));
+			blk.add(Code.ProcLoad(null), attributes(v));
 			break;			
 		case PROCESSSPAWN:
-			blk.add(Code.UnOp(null,Code.UOp.PROCESSSPAWN), attributes(v));
+			blk.add(Code.Spawn(null), attributes(v));
 			break;			
 		default:
 			syntaxError("unexpected unary operator encountered", filename, v);

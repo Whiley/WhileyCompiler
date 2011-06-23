@@ -136,6 +136,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			infer(index,(NewSet)code,entry,environment);
+		} else if(code instanceof Negate) {
+			infer(index,(Negate)code,entry,environment);
+		} else if(code instanceof ProcLoad) {
+			infer(index,(ProcLoad)code,entry,environment);
 		} else if(code instanceof Return) {
 			infer(index,(Return)code,entry,environment);
 		} else if(code instanceof Skip) {
@@ -160,8 +164,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(StringLoad)code,entry,environment);
 		} else if(code instanceof SubString) {
 			infer(index,(SubString)code,entry,environment);
-		} else if(code instanceof UnOp) {
-			infer(index,(UnOp)code,entry,environment);
+		} else if(code instanceof Spawn) {
+			infer(index,(Spawn)code,entry,environment);
 		} else {
 			syntaxError("unknown wyil code encountered: " + code,filename,entry);
 			return null;
@@ -548,34 +552,30 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.push(Type.T_INT);		
 	}
 	
-	public void infer(int index, Code.UnOp code, Block.Entry entry,
+	public void infer(int index, Code.Negate code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
-		
-		switch(code.uop) {
-			case NEG:
-			{				
-				coerce(req,code.type,index,entry);
-				environment.push(req); 
-			}
-			break;
-			case PROCESSACCESS:
-			{
-				req = Type.T_PROCESS(req);
-				coerce(req,code.type,index,entry);
-				environment.push(req);
-				break;
-			}
-			case PROCESSSPAWN: {
-				Type.Process tp = (Type.Process) req;
-				// I'm not sure where we should be really applying conversions
-				// here??
-				// coerce(tp.element(),code.type,index,entry);
-				environment.push(tp.element());
-				break;
-			}					
-		}		
+		coerce(req,code.type,index,entry);
+		environment.push(req);
 	}
+	
+	public void infer(int index, Code.Spawn code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		Type.Process tp = (Type.Process) req;
+		// I'm not sure where we should be really applying conversions
+		// here??
+		// coerce(tp.element(),code.type,index,entry);
+		environment.push(tp.element());
+	}
+	
+	public void infer(int index, Code.ProcLoad code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		req = Type.T_PROCESS(req);
+		coerce(req,code.type,index,entry);
+		environment.push(req);
+	}	
 	
 	public Env propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env trueEnv, Env falseEnv) {

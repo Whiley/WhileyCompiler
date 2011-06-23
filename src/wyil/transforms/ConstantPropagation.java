@@ -171,6 +171,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			infer(index,(NewSet)code,entry,environment);
+		} else if(code instanceof Negate) {
+			infer(index,(Negate)code,entry,environment);
+		} else if(code instanceof ProcLoad) {
+			infer(index,(ProcLoad)code,entry,environment);
 		} else if(code instanceof Return) {
 			infer((Return)code,entry,environment);
 		} else if(code instanceof Send) {
@@ -195,8 +199,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(SubString)code,entry,environment);
 		} else if(code instanceof Skip) {
 			// skip			
-		} else if(code instanceof UnOp) {
-			infer(index,(UnOp)code,entry,environment);
+		} else if(code instanceof Spawn) {
+			infer(index,(Spawn)code,entry,environment);
 		} else {
 			syntaxError("unknown wyil code encountered: " + code,filename,entry);
 			return null;
@@ -822,19 +826,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(result);
 	}
 	
-	public void infer(int index, Code.UnOp code, Block.Entry entry,
+	public void infer(int index, Code.Negate code, Block.Entry entry,
 			Env environment) {
 		Value val = environment.pop();
 		Value result = null;
-		switch(code.uop) {
-			case NEG:
-			{
-				if(val instanceof Value.Rational) {
-					Value.Rational num = (Value.Rational) val;
-					result = Value.V_RATIONAL(num.value.negate());
-				} 
-			}
-			break;			
+		
+		if(val instanceof Value.Rational) {
+			Value.Rational num = (Value.Rational) val;
+			result = Value.V_RATIONAL(num.value.negate());
+		} else if (val instanceof Value.Integer) {
+			Value.Integer num = (Value.Integer) val;
+			result = Value.V_INTEGER(num.value.negate());
 		}
 		
 		if(result != null) {
@@ -844,6 +846,32 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment.push(result);
 	}
+	
+	public void infer(int index, Code.Spawn code, Block.Entry entry,
+			Env environment) {
+		Value val = environment.pop();
+		Value result = null;
+		
+		if(result != null) {
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
+		}
+		
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.ProcLoad code, Block.Entry entry,
+			Env environment) {
+		Value val = environment.pop();
+		Value result = null;
+		
+		if(result != null) {
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
+		}
+		
+		environment.push(result);
+	}	
 	
 	public Pair<Env, Env> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env environment) {

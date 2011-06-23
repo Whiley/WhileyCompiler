@@ -68,14 +68,10 @@ public class FunctionCheck implements Transform {
 			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type.receiver() != null) {
 				// internal message send
 				syntaxError("cannot call method message from function", filename, stmt);
-			} else if(code instanceof Code.UnOp) {
-				Code.UnOp uop = (Code.UnOp) code;
-				if(uop.uop == Code.UOp.PROCESSSPAWN) {
-					syntaxError("cannot spawn process from function",filename,stmt);
-				}
-				if(uop.uop == Code.UOp.PROCESSACCESS) {
-					syntaxError("cannot access process from function",filename,stmt);
-				}
+			} else if(code instanceof Code.Spawn) {
+				syntaxError("cannot spawn process from function",filename,stmt);
+			} else if(code instanceof Code.ProcLoad){ 
+				syntaxError("cannot access process from function",filename,stmt);				
 			}
 		}	
 	}

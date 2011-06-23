@@ -180,6 +180,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Load)code,entry,environment);
 		} else if(code instanceof MultiStore) {
 			code = infer((MultiStore)code,entry,environment);
+		} else if(code instanceof Negate) {
+			code = infer((Negate)code,entry,environment);
 		} else if(code instanceof NewDict) {
 			code = infer((NewDict)code,entry,environment);
 		} else if(code instanceof NewList) {
@@ -188,6 +190,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			code = infer((NewSet)code,entry,environment);
+		} else if(code instanceof ProcLoad) {
+			code = infer((ProcLoad)code,entry,environment);
 		} else if(code instanceof Return) {
 			code = infer((Return)code,entry,environment);
 		} else if(code instanceof Send) {
@@ -200,8 +204,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((SetDifference)code,entry,environment);
 		} else if(code instanceof SetIntersect) {
 			code = infer((SetIntersect)code,entry,environment);
-		} else if(code instanceof UnOp) {
-			code = infer((UnOp)code,entry,environment);
+		} else if(code instanceof Spawn) {
+			code = infer((Spawn)code,entry,environment);
 		} else {
 			syntaxError("Need to finish type inference " + code,filename,entry);
 			return null;
@@ -454,7 +458,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if (Type.isSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
 			Type.Process tp = (Type.Process) lhs_t;
-			blk.add(Code.UnOp(tp, Code.UOp.PROCESSACCESS),stmt.attributes());
+			blk.add(Code.ProcLoad(tp),stmt.attributes());
 			lhs_t = tp.element();
 		}
 		
@@ -887,27 +891,31 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment.push(lhs);
 		return Code.SetDifference(Type.effectiveSetType(lhs), dir);	
 	}
-	
-	protected Code infer(UnOp v, Entry stmt, Env environment) {
+
+	protected Code infer(Negate v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
 
-		switch(v.uop) {
-			case NEG:
-				checkIsSubtype(Type.T_REAL,rhs_t,stmt);
-				environment.add(rhs_t);
-				return Code.UnOp(rhs_t,v.uop);						
-			case PROCESSACCESS:
-				checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-				Type.Process tp = (Type.Process)rhs_t; 
-				environment.push(tp.element());
-				return Code.UnOp(rhs_t,v.uop);
-			case PROCESSSPAWN:
-				environment.add(Type.T_PROCESS(rhs_t));
-				return Code.UnOp(rhs_t,v.uop);				
+		checkIsSubtype(Type.T_NUMBER,rhs_t,stmt);
+		if(rhs_t != Type.T_INT) {
+			// this is an implicit coercion
+			rhs_t = Type.T_REAL;
 		}
-		
-		syntaxError("unknown unary operation: " + v.uop,filename,stmt);
-		return null;
+		environment.add(rhs_t);
+		return Code.Negate(rhs_t);						
+	}
+	
+	protected Code infer(ProcLoad v, Entry stmt, Env environment) {
+		Type rhs_t = environment.pop();
+		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
+		Type.Process tp = (Type.Process)rhs_t; 
+		environment.push(tp.element());
+		return Code.ProcLoad(tp);
+	}
+	
+	protected Code infer(Spawn v, Entry stmt, Env environment) {
+		Type rhs_t = environment.pop();
+		environment.add(Type.T_PROCESS(rhs_t));
+		return Code.Spawn(Type.T_PROCESS(rhs_t));						
 	}			
 	
 	protected Pair<Env, Env> propagate(int index, Code.IfGoto code, Entry stmt,
