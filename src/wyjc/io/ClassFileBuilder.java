@@ -291,7 +291,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof IfGoto) {
 				translate((IfGoto) code, entry, freeSlot, bytecodes);
 			} else if(code instanceof IfType) {
-				translate((IfType) code, entry, freeSlot, bytecodes);
+				translate((IfType) code, entry, freeSlot, bytecodes, constants);
 			} else if(code instanceof IndirectInvoke) {
 				 translate((IndirectInvoke)code,freeSlot,bytecodes);
 			} else if(code instanceof IndirectSend) {
@@ -993,7 +993,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.IfType c, Entry stmt, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {						
+			ArrayList<Bytecode> bytecodes, HashMap<Value,Integer> constants) {						
 		
 		// This method (including the helper) is pretty screwed up. It needs a
 		// serious rethink to catch all cases, and to be efficient.
@@ -1001,7 +1001,7 @@ public class ClassFileBuilder {
 		String exitLabel = freshLabel();
 		String trueLabel = freshLabel();
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes);
+		translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes, constants);
 									
 		Type gdiff = Type.leastDifference(c.type,c.test);			
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
@@ -1020,580 +1020,54 @@ public class ClassFileBuilder {
 	
 	// The purpose of this method is to translate a type test. We're testing to
 	// see whether what's on the top of the stack (the value) is a subtype of
-	// the type being tested. The difference between value's static type and
-	// test type help to reduce the scope of the test. For example, if the
-	// static type is int|[int] and the test type is int, then all we need is to
-	// perform an instanceof BigInteger. Other situations are trickier. For
-	// example, testing a static type [int]|[bool] against type [int] is harder,
-	// since both are actually instances of java.util.List. 
+	// the type being tested.  
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
-			Entry stmt, ArrayList<Bytecode> bytecodes) {		
-						
-		// First, determine the intersection of the actual type and the type
-		// we're testing for.  This is really an optimisation.
-		test = Type.greatestLowerBound(src,test);					
-				
-		if(test == Type.T_VOID) {
-			// in this case, we must fail.
-			bytecodes.add(new Bytecode.Pop(convertType(src)));			
-		} else if(Type.isSubtype(test, src)) {			
-			// in this case, we must succeed.
-			bytecodes.add(new Bytecode.Pop(convertType(src)));
-			bytecodes.add(new Bytecode.Goto(trueTarget));
-		} else if (test instanceof Type.Null) {
+			Entry stmt, ArrayList<Bytecode> bytecodes, HashMap<Value,Integer> constants) {		
+		
+		// First, try for the easy cases
+		
+		if (test instanceof Type.Null) {
 			// Easy case		
 			bytecodes.add(new Bytecode.If(Bytecode.If.NULL, trueTarget));
+		} else if(test instanceof Type.Bool) {
+			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_BOOLEAN));			
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		} else if(test instanceof Type.Int) {
-			translateTypeTest(trueTarget, src, (Type.Int) test,
-					stmt, bytecodes);
+			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));			
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		} else if(test instanceof Type.Real) {
-			translateTypeTest(trueTarget, src, (Type.Real) test,
-					stmt, bytecodes);			
-		} else if(test instanceof Type.List) {
-			translateTypeTest(trueTarget, src, (Type.List) test,
-					stmt, bytecodes);			
-		} else if(test instanceof Type.Set) {
-			translateTypeTest(trueTarget, src, (Type.Set) test, stmt, bytecodes);			
-		} else if(test instanceof Type.Record) {				
-			translateTypeTest(trueTarget, src, (Type.Record) test, stmt,
-					bytecodes);			
-		} else if(test instanceof Type.Union){
-			translateTypeTest(trueTarget, src, (Type.Union) test, stmt,
-					bytecodes);			
-		} 			
-	}
-
-	/**
-	 * Check that a value of the given src type is an integer. The main
-	 * difficulty here, is that it may not be enough to just test whether the
-	 * value is a BigInteger. For example, if src has type real then we have a
-	 * BigRational, and we must call the isInteger() method instead.
-	 * 
-	 * @param trueTarget --- target branch if test succeeds
-	 * @param src --- type of expression being tested
-	 * @param test --- type of test
-	 * @param stmt --- stmt containing test (useful for line number info)
-	 * @param bytecodes --- list of bytecodes (to which test is appended) 	 
-	 */
-	protected void translateTypeTest(String trueTarget, Type src, Type.Int test,
-			Entry stmt, ArrayList<Bytecode> bytecodes) {
-							
-		bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));			
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));					
-	}
-	
-	/**
-	 * Check that a value of the given src type is a real. 
-	 * 
-	 * @param trueTarget --- target branch if test succeeds
-	 * @param src --- type of expression being tested
-	 * @param test --- type of test
-	 * @param stmt --- stmt containing test (useful for line number info)
-	 * @param bytecodes --- list of bytecodes (to which test is appended) 	 
-	 */
-	protected void translateTypeTest(String trueTarget, Type src, Type.Real test,
-			Entry stmt, ArrayList<Bytecode> bytecodes) {
-		
-		// NOTE: on entry we know that src cannot be a Type.Real, since this case
-		// would have been already caught.
-									
-		bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));				
-	}
-	
-	/**
-	 * Check that a value of the given src type matches the list type given by
-	 * test. If src is not a list, then we must begin by performing an
-	 * instanceof WHILEYLIST. If this is true, then we may need to further
-	 * distinguish the elements of the list. For example, testing [real] ~=
-	 * [int] requires iterating the elements of the list to check that they are
-	 * all indeed ints.
-	 * 
-	 * @param trueTarget --- target branch if test succeeds
-	 * @param src --- type of expression being tested
-	 * @param test --- type of test
-	 * @param stmt --- stmt containing test (useful for line number info)
-	 * @param bytecodes --- list of bytecodes (to which test is appended) 
-	 */
-	protected void translateTypeTest(String trueTarget, Type src, Type.List test,
-			Entry stmt, ArrayList<Bytecode> bytecodes) {								
-		
-		// ======================================================================
-		// First, perform an instanceof test (if necessary) 
-		// ======================================================================
-		
-		Type.List nsrc;
-		String falseTarget = freshLabel();
-		
-		if(src instanceof Type.List) {
-			// We already know the value is a list, so we don't need to perform
-			// an instanceof test.		
-			nsrc = (Type.List) src;
-		} else {			
-			bytecodes.add(new Bytecode.Dup(convertType(src)));		
-			bytecodes.add(new Bytecode.InstanceOf(WHILEYLIST));
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
-			addCheckCast(WHILEYLIST,bytecodes);				
+			bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));			
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
+		} else if(test instanceof Type.Strung) {
+			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_STRING));			
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 			
-			nsrc = Type.effectiveListType(Type.greatestLowerBound(src, Type.T_LIST(Type.T_ANY)));						
-			
-			if(Type.isSubtype(test,nsrc)) {				
-				// Getting here indicates that the instanceof test was
-				// sufficient to be certain that the type test succeeds.			
-				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-				bytecodes.add(new Bytecode.Goto(trueTarget));				
-				bytecodes.add(new Bytecode.Label(falseTarget));
-				bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-				return;
-			}
-		}
-						
-		// ======================================================================
-		// Second, check empty list case (as this always passes) 
-		// ======================================================================		
-		
-		String nextTarget = freshLabel();		
-		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
-		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "size", fun_t , Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
-		bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-		bytecodes.add(new Bytecode.Goto(trueTarget));
-		bytecodes.add(new Bytecode.Label(nextTarget));
-		
-		// ======================================================================
-		// Third, check elements of list (tricky)
-		// ======================================================================		
-						
-		fun_t = new JvmType.Function(JAVA_LANG_OBJECT,JvmTypes.T_INT);
-		bytecodes.add(new Bytecode.LoadConst(new Integer(0)));
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", fun_t , Bytecode.VIRTUAL));			
-		translateTypeTest(trueTarget,nsrc.element(),test.element(),stmt,bytecodes);
-		String finalTarget = freshLabel();
-		bytecodes.add(new Bytecode.Goto(finalTarget));
-		
-		// Add the false label for the case when the original instanceof test fails
-		bytecodes.add(new Bytecode.Label(falseTarget));
-		bytecodes.add(new Bytecode.Pop(WHILEYLIST));
-		bytecodes.add(new Bytecode.Label(finalTarget));		
-	}
-
-	/**
-	 * Check that a value of the given src type matches the set type given by
-	 * test. If src is not a set, then we must begin by performing an
-	 * instanceof WHILEYSET. If this is true, then we may need to further
-	 * distinguish the elements of the list. For example, testing {real} ~=
-	 * {int} requires iterating the elements of the list to check that they are
-	 * all indeed ints.
-	 * 
-	 * @param trueTarget --- target branch if test succeeds
-	 * @param src --- type of expression being tested
-	 * @param test --- type of test
-	 * @param stmt --- stmt containing test (useful for line number info)
-	 * @param bytecodes --- list of bytecodes (to which test is appended) 
-	 */
-	protected void translateTypeTest(String trueTarget, Type src, Type.Set test,
-			Entry stmt, ArrayList<Bytecode> bytecodes) {
-		
-		// ======================================================================
-		// First, perform an instanceof test (if necessary) 
-		// ======================================================================
-		
-		Type.Set nsrc;
-		String falseTarget = freshLabel();
-		
-		if(src instanceof Type.List) {
-			// We already know the value is a list, so we don't need to perform
-			// an instanceof test.		
-			nsrc = (Type.Set) src;
-		} else {			
-			bytecodes.add(new Bytecode.Dup(convertType(src)));		
-			bytecodes.add(new Bytecode.InstanceOf(WHILEYSET));
-			bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));
-			addCheckCast(WHILEYSET,bytecodes);				
-			
-			// FIXME: this is a bug as we're guaranteed to have a set type
-			// here. For example, int|{int}|{real} & [*] ==> {int}|{real} (by S-UNION2)
-			nsrc = (Type.Set) Type.greatestLowerBound(src, Type.T_SET(Type.T_ANY));
-			
-			if(Type.isSubtype(test,nsrc)) {
-				// Getting here indicates that the instanceof test was
-				// sufficient to be certain that the type test succeeds.			
-				bytecodes.add(new Bytecode.Pop(WHILEYSET));
-				bytecodes.add(new Bytecode.Goto(trueTarget));				
-				bytecodes.add(new Bytecode.Label(falseTarget));
-				bytecodes.add(new Bytecode.Pop(WHILEYSET));
-				return;
-			}
-		}
-						
-		// ======================================================================
-		// Second, check empty set case (as this always passes) 
-		// ======================================================================		
-		
-		String nextTarget = freshLabel();
-		bytecodes.add(new Bytecode.Dup(WHILEYSET));
-		JvmType.Function fun_t = new JvmType.Function(JvmTypes.T_INT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "size", fun_t , Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
-		bytecodes.add(new Bytecode.Pop(WHILEYSET));
-		bytecodes.add(new Bytecode.Goto(trueTarget));
-		bytecodes.add(new Bytecode.Label(nextTarget));
-		
-		// ======================================================================
-		// Third, check elements of list (tricky)
-		// ======================================================================		
-						
-		fun_t = new JvmType.Function(JAVA_UTIL_ITERATOR);
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "iterator", fun_t , Bytecode.VIRTUAL));			
-		fun_t = new JvmType.Function(JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", fun_t , Bytecode.INTERFACE));			
-		translateTypeTest(trueTarget,nsrc.element(),test.element(),stmt,bytecodes);
-		
-		// Add the false label for the case when the original instanceof test fails
-		bytecodes.add(new Bytecode.Label(falseTarget));
-		bytecodes.add(new Bytecode.Pop(WHILEYSET));
-	}
-
-	/**
-	 * <p>
-	 * Check that a value of the given src type matches the record type given by
-	 * test. If src is not a record, then we must begin by performing an
-	 * instanceof WHILEYRECORD. If this is true, then we may need to further and
-	 * to distinguish which fields it actually has. We optimise this by making
-	 * the least number of field checks possible. For example, consider this
-	 * type:
-	 * </p>
-	 * 
-	 * <pre>
-	 * define RType as {int x,int y}|{int x, int z}|int
-	 * 
-	 * int f(RType r):
-	 *     if e &tilde;= {int x, int y}
-	 *         return 1
-	 *     else:
-	 *         return 2
-	 * </pre>
-	 * <p>
-	 * In this case, <code>r</code> will have type <code>Object</code> on entry.
-	 * Thus, we must perform an <code>instanceof</code>
-	 * <code>WhileyRecord</code> check. Furthermore, in the true case, we must
-	 * establish whether or not we have a field <code>y</code> (but we don't
-	 * need to test for field <code>x</code>).
-	 * </p>
-	 * 
-	 * @param trueTarget
-	 *            --- target branch if test succeeds
-	 * @param src
-	 *            --- type of expression being tested
-	 * @param test
-	 *            --- type of test
-	 * @param stmt
-	 *            --- stmt containing test (useful for line number info)
-	 * @param bytecodes
-	 *            --- list of bytecodes (to which test is appended)
-	 */
-	protected void translateTypeTest(String trueTarget, Type src,
-			Type.Record test, Entry stmt, ArrayList<Bytecode> bytecodes) {
-				
-		JvmType.Function fun_t = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JvmTypes.JAVA_LANG_OBJECT);
-		
-		// ======================================================================
-		// First, perform an instanceof test (if necessary) 
-		// ======================================================================
-				
-		String falseTarget = freshLabel();		
-		if(!(src instanceof Type.Record)) {			
-			if(Type.effectiveRecordType(src) == null) {					
-				// not guaranteed to have a record here, so ensure we do.				
-				bytecodes.add(new Bytecode.Dup(convertType(src)));		
-				bytecodes.add(new Bytecode.InstanceOf(WHILEYRECORD));
-				bytecodes.add(new Bytecode.If(Bytecode.If.EQ, falseTarget));			
-				addCheckCast(WHILEYRECORD,bytecodes);	
-
-				// Narrow the type down to a record (which we now know is true)			
-				src = narrowRecordType(src);							
-				
-				if(Type.isSubtype(test,src)) {				
-					// Getting here indicates that the instanceof test was
-					// sufficient to be certain that the type test succeeds.			
-					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-					bytecodes.add(new Bytecode.Goto(trueTarget));
-					bytecodes.add(new Bytecode.Label(falseTarget));
-					bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-					return;
-				}								
-			}
-			
-			// ======================================================================
-			// Second, determine if correct fields present  
-			// ======================================================================
-			
-			Set<String> fields = identifyDistinguishingFields(src,test.fields().keySet()); 									
-			
-			for(String f : fields) {
-				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-				bytecodes.add(new Bytecode.LoadConst(f));				
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", fun_t , Bytecode.VIRTUAL));
-				bytecodes.add(new Bytecode.If(Bytecode.If.NULL,falseTarget));
-			}
-			
-			src = narrowRecordType(src,test.fields().keySet());
-			
-			if(Type.isSubtype(test,src)) {				
-				// Getting here indicates that distinguishing fields test was
-				// sufficient to be certain that the type test succeeds.			
-				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-				bytecodes.add(new Bytecode.Goto(trueTarget));				
-				bytecodes.add(new Bytecode.Label(falseTarget));
-				bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-				return;
-			}
-		}
-		
-		// ======================================================================
-		// Third, perform (minimal) number of type tests for fields (i.e. S-DEPTH) 
-		// ======================================================================
-		
-		// Note, we could potentially do better here by avoid multiple look ups
-		// of the same field. This can happen if the field in question is used
-		// for distinguishing different records (see above). 
-		
-		Type.Record nsrc = Type.effectiveRecordType(src);
-		
-		for(Map.Entry<String,Type> e : test.fields().entrySet()) {
-			String field = e.getKey();
-			Type testType = e.getValue();
-			Type srcType = nsrc.fields().get(field);			
-			if(srcType == null) { srcType = Type.T_ANY; }
-			if(!Type.isSubtype(testType,srcType)) {
-				// this field needs to be checked
-				String nextTarget = freshLabel();
-				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-				bytecodes.add(new Bytecode.LoadConst(field));				
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", fun_t , Bytecode.VIRTUAL));
-				addReadConversion(srcType,bytecodes);
-				// TODO: I don't think we always need to do this.
-				translateTypeTest(nextTarget,srcType,testType,stmt,bytecodes);
-				bytecodes.add(new Bytecode.Goto(falseTarget));
-				bytecodes.add(new Bytecode.Label(nextTarget));
-			}
-		}
-		
-		// Ok, we have a match!
-		bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-		bytecodes.add(new Bytecode.Goto(trueTarget));
-		
-		bytecodes.add(new Bytecode.Label(falseTarget));
-		bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
-	}
-	
-	// The following method should be replaced in future by a GLB test, using an
-	// "open" record type (which currently doesn't exist).
-	protected Type narrowRecordType(Type t) {
-
-		if (t instanceof Type.Any || t instanceof Type.Void || t instanceof Type.Null
-				|| t instanceof Type.Real || t instanceof Type.Int || t instanceof Type.Bool
-				|| t instanceof Type.Meta || t instanceof Type.Existential
-				|| t instanceof Type.Process || t instanceof Type.List
-				|| t instanceof Type.Set) {
-			return Type.T_VOID;
-		} else if(t instanceof Type.Record) {
-				return (Type) t;
-		}
-		
-		// Ok, must be union ...
-						
-		Type.Union u = (Type.Union) t;
-		Type lub = Type.T_VOID;
-		for(Type b : u.bounds()) {						
-			lub = Type.leastUpperBound(narrowRecordType(b),lub);			
-		}
-		
-		return lub;
-	}
-
-	// identify the greatest type which has *exactly* those fields given.
-	protected Type narrowRecordType(Type t, Set<String> fields) {
-		HashMap<String,Type> types = new HashMap<String,Type>();
-		for(String f : fields) {
-			types.put(f, Type.T_ANY);
-		}
-		Type ub = Type.T_RECORD(types);				
-		
-		return Type.greatestLowerBound(t, ub);		
-	}
-	
-	/**
-	 * <p>The following method accepts a type whose values are guaranteed to be
-	 * records, and a string of required fields. It then attempts to determine
-	 * the minimal number of field checks required to be sure a value of the
-	 * given type has exactly the given fields.</p>
-	 * 
-	 * @param src
-	 * @param test
-	 * @return
-	 */
-	protected Set<String> identifyDistinguishingFields(Type src, Set<String> fields) {		
-		if(src instanceof Type.Record) {
-			return Collections.EMPTY_SET;
-		}
-		
-		// The real challenge with all of these methods is understanding what
-		// the possible type forms are at any point.		
-		Type.Union ut = (Type.Union) src; 
-		
-		boolean finished = false;
-		HashSet<String> solution = new HashSet<String>();
-		
-		while(!finished) {			
-			HashMap<String,Integer> conflicts = new HashMap<String,Integer>();
-			
-			// First, initialise conflicts
-			
-			for(String f : fields) {
-				conflicts.put(f, 0);
-			}
-			
-			// Second, count conflicts
-			
-			for(Type t : ut.bounds()) {
-				
-				// FIXME: following obviously broken, as unsure if t is record
-				Type.Record rt = (Type.Record) t;
-				Set<String> rt_types_keySet = rt.fields().keySet(); 
-				if(rt_types_keySet.containsAll(solution)) {
-					// only count conflicts from records not already discounted.
-					for(String f : rt_types_keySet) {
-						Integer conflict = conflicts.get(f);
-						if(conflict != null) { conflicts.put(f, conflict+1); }
-					}
-				}
-			}						
-			
-			// Third, select least conflict
-			
-			String chosen = null;
-			int min = Integer.MAX_VALUE;
-			
-			// Now, identifiy least conflict
-			for(Map.Entry<String,Integer> c : conflicts.entrySet()) {
-				int val = c.getValue();
-				String key = c.getKey();
-				if(!solution.contains(key) && val < min) {
-					min = val;
-					chosen = key;					
-				}
-			}
-			
-			solution.add(chosen);				
-			if(min == 1 || solution.size() == fields.size()) { finished = true; }
-		}
-		
-		return solution;
-	}
-
-	/**
-	 * Check that a value of the given src type matches the union type given by
-	 * test. The challenge here is to implement this efficiently, by avoiding
-	 * unnecessarily repeating instanceof tests.
-	 * 
-	 * @param trueTarget
-	 *            --- target branch if test succeeds
-	 * @param src
-	 *            --- type of expression being tested
-	 * @param test
-	 *            --- type of test
-	 * @param stmt
-	 *            --- stmt containing test (useful for line number info)
-	 * @param bytecodes
-	 *            --- list of bytecodes (to which test is appended)
-	 */		
-	protected void translateTypeTest(String trueTarget, Type src, Type.Union test,
-			Entry stmt, ArrayList<Bytecode> bytecodes) {	
-		
-		// FIXME: at the moment, this approach is not very efficient!
-		
-		// following line is a bit of a hack to work around lack of depth subtyping.
-		Type.Dictionary dict = null;
-		Type.List list = null;
-		Type.Set set = null;
-		Type.Process proc = null;
-		
-		String trampoline = freshLabel();
-		String falseLabel = freshLabel();	
-		
-		for(Type t : test.bounds()) {
-			
-			// the point of these tests is to avoid duplication. For example,
-			// with a type [int]|[[int]] we only want to perform one instanceof
-			// ArrayList.
-			
-			if(t instanceof Type.List) {
-				Type.List l = (Type.List)t;				
-				if(list == null) {
-					list = l;
-				} else {
-					list = Type.T_LIST(Type.leastUpperBound(l.element(),list.element()));
-				}
-			} else if(t instanceof Type.Set) {
-				Type.Set l = (Type.Set)t;				
-				if(set == null) {
-					set = l;
-				} else {
-					set = Type.T_SET(Type.leastUpperBound(l.element(),set.element()));
-				}
-			} else if(t instanceof Type.Dictionary) {
-				Type.Dictionary l = (Type.Dictionary) t;				
-				if(dict == null) {
-					dict = l;
-				} else {
-					dict = Type.T_DICTIONARY(Type.leastUpperBound(l.key(),dict.key()),
-							Type.leastUpperBound(l.value(),dict.value()));
-				}
+		} else {
+			// Fall-back to an external (recursive) check
+			int id;
+			Value constant = Value.V_TYPE(test);
+			if(constants.containsKey(constant)) {
+				id = constants.get(constant);
 			} else {
-				bytecodes.add(new Bytecode.Dup(convertType(src)));
-				translateTypeTest(trampoline,src,t,stmt, bytecodes);
-				src = Type.leastDifference(src,t);
+				id = constants.size();
+				constants.put(constant, id);				
 			}
+			String name = "constant$" + id;
+
+			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.STATIC));
+
+			JvmType.Function ftype = new JvmType.Function(T_BOOL,convertType(src),WHILEYTYPE);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "instanceOf",
+					ftype, Bytecode.STATIC));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		}
-			
-		
-		if(list != null) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));		
-			translateTypeTest(trampoline,src,list,stmt, bytecodes);
-			src = Type.leastDifference(src, list);
-		} 
-		if(dict != null) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));						
-			translateTypeTest(trampoline,src,dict,stmt, bytecodes);
-			src = Type.leastDifference(src, dict);
-		}
-		if(set != null) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));			
-			translateTypeTest(trampoline,src,set,stmt, bytecodes);
-			src = Type.leastDifference(src, set);
-		} 
-		if(proc != null) {
-			bytecodes.add(new Bytecode.Dup(convertType(src)));
-			translateTypeTest(trampoline,src,proc,stmt, bytecodes);
-			src = Type.leastDifference(src, proc);
-		} 
-				
-		bytecodes.add(new Bytecode.Pop(convertType(src)));
-		bytecodes.add(new Bytecode.Goto(falseLabel));
-		bytecodes.add(new Bytecode.Label(trampoline));
-		bytecodes.add(new Bytecode.Pop(convertType(src)));
-		bytecodes.add(new Bytecode.Goto(trueTarget));
-		bytecodes.add(new Bytecode.Label(falseLabel));
-		
-	}
-	
+	}	
+
 	public void translate(Code.Loop c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Label(c.target + "$head"));
 	}
-
+	
 	protected void translate(Code.End end,			
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Goto(end.label + "$head"));
@@ -2106,6 +1580,8 @@ public class ClassFileBuilder {
 			translate((Value.Bool)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Integer) {
 			translate((Value.Integer)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.TypeConst) {
+			translate((Value.TypeConst)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Rational) {
 			translate((Value.Rational)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Strung) {
@@ -2139,6 +1615,15 @@ public class ClassFileBuilder {
 		}
 	}
 
+	protected void translate(Value.TypeConst e, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.LoadConst(e.toString()));
+		JvmType.Function ftype = new JvmType.Function(WHILEYTYPE,
+				JAVA_LANG_STRING);
+		bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "valueOf", ftype,
+				Bytecode.STATIC));
+	}
+	
 	protected void translate(Value.Integer e, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
 		BigInteger num = e.value;
@@ -2453,6 +1938,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");
+	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz("wyjc.runtime","Type");
 	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyjc.runtime","IO");
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("wyjc.runtime","Dictionary");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","Record");	
@@ -2496,6 +1982,8 @@ public class ClassFileBuilder {
 			return BIG_INTEGER;
 		} else if(t instanceof Type.Real) {
 			return BIG_RATIONAL;
+		} else if(t instanceof Type.Meta) {
+			return WHILEYTYPE;
 		} else if(t instanceof Type.Strung) {
 			return JAVA_LANG_STRING;
 		} else if(t instanceof Type.List) {

@@ -124,7 +124,7 @@ public final class Actor extends Thread {
 		// Not sure what the default value should be yet!!!
 		Actor sysout = new Actor(null);
 		Record data = new Record();
-		Record.put(data, "out", sysout);		
+		data.put("out", sysout);		
 		Actor system = new Actor(data);
 		sysout.start();
 		system.start();		

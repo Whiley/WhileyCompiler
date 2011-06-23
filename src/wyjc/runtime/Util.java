@@ -25,7 +25,6 @@
 
 package wyjc.runtime;
 
-import java.util.*;
 import java.math.*;
 
 public class Util {
@@ -203,15 +202,188 @@ public class Util {
 		obj.refCount--;
 		return obj;
 	}
-		
 	
 	/**
 	 * The <code>instanceOf</code> method implements a runtime type test. 
 	 */
 	public static boolean instanceOf(Object obj, Type t) {
+		switch(t.kind) {
+			case Type.K_ANY:
+				return true;
+			case Type.K_VOID:
+				return false;
+			case Type.K_NULL:
+				return obj == null;
+			case Type.K_INT:
+				return obj instanceof BigInteger;
+			case Type.K_RATIONAL:
+				return obj instanceof BigRational;
+			case Type.K_STRING:
+				return obj instanceof String;
+			case Type.K_LIST:
+			{
+				if(obj instanceof List) {
+					List ol = (List) obj;
+					Type.List tl = (Type.List) t;
+					Type el = tl.element;
+					if(el.kind == Type.K_ANY) {
+						return true;
+					} else if(el.kind == Type.K_VOID) {
+						return ol.isEmpty();
+					} else {
+						for(Object elem : ol) { 
+							if(!instanceOf(elem,el)) {
+								return false;
+							}
+						}
+						return true;
+					}
+				}
+				break;
+			}
+			case Type.K_SET:
+			{
+				if(obj instanceof Set) {
+					Set ol = (Set) obj;
+					Type.Set tl = (Type.Set) t;
+					Type el = tl.element;
+					if(el.kind == Type.K_ANY) {
+						return true;
+					} else if(el.kind == Type.K_VOID) {
+						return ol.isEmpty();
+					} else {
+						for(Object elem : ol) { 
+							if(!instanceOf(elem,el)) {
+								return false;
+							}
+						}
+						return true;
+					}
+				}
+			}
+			case Type.K_DICTIONARY:
+			{
+				if(obj instanceof Dictionary) {
+					Dictionary ol = (Dictionary) obj;
+					Type.Dictionary tl = (Type.Dictionary) t;
+					Type key = tl.key;
+					Type value = tl.value;
+					
+					if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
+						return true;						
+					} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
+						return ol.isEmpty();
+					} else {
+						for (java.util.Map.Entry<Object, Object> elem : ol
+								.entrySet()) {
+							if (!instanceOf(elem.getKey(), key)
+									|| !instanceOf(elem.getValue(), value)) {
+								return false;
+							}
+						}
+						return true;
+					}
+				}
+				break;
+			}
+			case Type.K_RECORD:
+			{
+				if(obj instanceof Record) {
+					Record ol = (Record) obj;
+					Type.Record tl = (Type.Record) t;
+					String[] names = tl.names;
+					Type[] types = tl.types;
+					for(int i=0;i!=names.length;++i) {
+						String name = names[i];
+						if(ol.containsKey(name)) {
+							Type type = types[i];
+							Object val = ol.get(name);						
+							if(!instanceOf(val,type)) {
+								return false;
+							}
+						}
+					}
+					return true;
+				}
+				break;
+			}
+			case Type.K_UNION:
+			{
+				Type.Union un = (Type.Union) t;
+				for(Type bound : un.bounds) {
+					if(instanceOf(obj,bound)) {
+						return true;
+					}
+				}		
+				break;
+			}
+		}		
 		return false;
 	}
 
+	public static boolean instanceOf(List ol, Type t) {
+		Type.List tl = (Type.List) t;
+		Type el = tl.element;
+		if(el.kind == Type.K_ANY) {
+			return true;
+		} else if(el.kind == Type.K_VOID) {
+			return ol.isEmpty();
+		} else {
+			for(Object elem : ol) { 
+				if(!instanceOf(elem,el)) {
+					return false;
+				}
+			}
+			return true;
+		}		
+	}
+	
+	public static boolean instanceOf(Set ol, Type t) {
+		Type.Set tl = (Type.Set) t;
+		Type el = tl.element;
+		if(el.kind == Type.K_ANY) {
+			return true;
+		} else if(el.kind == Type.K_VOID) {
+			return ol.isEmpty();
+		} else {
+			for(Object elem : ol) { 
+				if(!instanceOf(elem,el)) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+	
+	public static boolean instanceOf(Dictionary ol, Type t) {		
+		Type.Dictionary tl = (Type.Dictionary) t;
+		Type key = tl.key;
+		Type value = tl.value;
+		
+		if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
+			return true;						
+		} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
+			return ol.isEmpty();
+		} else {
+			for (java.util.Map.Entry<Object, Object> elem : ol
+					.entrySet()) {
+				if (!instanceOf(elem.getKey(), key)
+						|| !instanceOf(elem.getValue(), value)) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+	
+	public static boolean instanceOf(Record obj, Type t) {
+		return false;
+	}
+	
+	public static boolean instanceOf(String obj, Type t) {
+		return false;
+	}
+	
 	/**
 	 * The <code>coerce</code> method forces this object to conform to a given
 	 * type.
@@ -219,4 +391,5 @@ public class Util {
 	public Object coerce(Object obj, Type t) {
 		return obj;
 	}
+	
 }

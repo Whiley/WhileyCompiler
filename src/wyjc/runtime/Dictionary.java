@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public final class Dictionary extends java.util.HashMap {	
+public final class Dictionary extends java.util.HashMap<Object,Object> {	
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -30,7 +30,7 @@ public final class Dictionary extends java.util.HashMap {
 	public String toString() {
 		String r = "{";
 		boolean firstTime=true;
-		ArrayList<Comparable> ss = new ArrayList<Comparable>(this.keySet());
+		ArrayList<Comparable> ss = new ArrayList(this.keySet());
 		Collections.sort(ss);
 
 		for(Object key : ss) {
