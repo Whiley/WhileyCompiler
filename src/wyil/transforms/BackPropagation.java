@@ -460,6 +460,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.SetUnion code, Block.Entry entry,
 			Env environment) {		
 		Type req = environment.pop();
+
+		System.out.println("GOT: " + code.type);
+		System.out.println("REQ: " + req);
 		
 		coerce(req,code.type,index,entry);
 		if(code.dir == OpDir.UNIFORM) { 
