@@ -98,7 +98,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type t = paramTypes.get(i);
 			environment.add(t);
 			if (method.type().receiver() == null
-					&& Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
+					&& Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
 				// FIXME: add source information
 				syntaxError("function argument cannot have process type",
 						filename, methodCase);
@@ -228,12 +228,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);
-		boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),lhs);
-		boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),rhs);
-		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
-		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
+		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY),rhs);
+		boolean lhs_list = Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),lhs);
+		boolean rhs_list = Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),rhs);
+		boolean lhs_str = Type.isCoerciveSubtype(Type.T_STRING,lhs);
+		boolean rhs_str = Type.isCoerciveSubtype(Type.T_STRING,rhs);
 		
 		if(lhs_str || rhs_str) {			
 			Code.OpDir dir;
@@ -456,7 +456,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Block blk = new Block();
 		Type lhs_t = environment.pop();		
 		
-		if (Type.isSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
+		if (Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
 			Type.Process tp = (Type.Process) lhs_t;
 			blk.add(Code.ProcLoad(tp),stmt.attributes());
 			lhs_t = tp.element();
@@ -529,7 +529,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
 		Type idx = environment.pop();
 		Type src = environment.pop();
-		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src)) {			
+		if(Type.isCoerciveSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src)) {			
 			// this indicates a dictionary access, rather than a list access			
 			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
 			if(dict == null) {
@@ -539,7 +539,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.push(dict.value());
 			// OK, it's a hit
 			return Code.DictLoad(dict);
-		} else if(Type.isSubtype(Type.T_STRING,src)) {
+		} else if(Type.isCoerciveSubtype(Type.T_STRING,src)) {
 			checkIsSubtype(Type.T_INT,idx,stmt);
 			environment.push(Type.T_CHAR);
 			return Code.StringLoad();
@@ -564,7 +564,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type src = environment.get(e.slot);		
 		Type iter = src;
 		
-		if(e.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
+		if(e.slot == 0 && Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
 			Type.Process p = (Type.Process) src;
 			iter = p.element();
 		}
@@ -572,7 +572,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		int fi = 0;
 		int pi = 0;
 		for(int i=0;i!=e.level;++i) {				
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+			if(Type.isCoerciveSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
 				if(dict == null) {
@@ -581,7 +581,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type idx = path.get(pi++);
 				checkIsSubtype(dict.key(),idx,stmt);
 				iter = dict.value();				
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+			} else if(Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
 					syntaxError("expected list",filename,stmt);
@@ -629,11 +629,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
-		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
+		} else if(Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
 			Type.Process tp = (Type.Process) oldtype;
 			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields);
 			return Type.T_PROCESS(nelement);
-		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
+		} else if(Type.isCoerciveSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
 			// --- hence, the original type must be preserved. However, in the
@@ -643,7 +643,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nvalue = typeInference(dict.value(),newtype,level-1,fieldLevel,fields);
 			return Type.leastUpperBound(oldtype,Type.T_DICTIONARY(dict.key(),nvalue));
 			
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {
+		} else if(Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = typeInference(list.element(),newtype,level-1,fieldLevel,fields);
@@ -764,13 +764,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(Code.ListLength code, Entry stmt, Env environment) {
 		Type src = environment.pop();
-		if(Type.isSubtype(Type.T_STRING,src)) {
+		if(Type.isCoerciveSubtype(Type.T_STRING,src)) {
 			environment.add(Type.T_INT);
 			return Code.StringLength();
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),src)) {
+		} else if(Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
 			return Code.ListLength(Type.effectiveListType(src));
-		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY),src)) {
+		} else if(Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
 			return Code.SetLength(Type.effectiveSetType(src));
 		} else {
@@ -788,7 +788,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		checkIsSubtype(Type.T_INT,end,stmt);
 		Code r;
 		
-		if(Type.isSubtype(Type.T_STRING, src)) {
+		if(Type.isCoerciveSubtype(Type.T_STRING, src)) {
 			r = Code.SubString();
 		} else {
 			checkIsSubtype(Type.T_LIST(Type.T_ANY),src,stmt);
@@ -825,8 +825,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
 		OpDir dir;
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), lhs);
+		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), rhs);
 
 		if(lhs_set && rhs_set) {
 			dir = OpDir.UNIFORM;
@@ -849,8 +849,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
 		OpDir dir;
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), lhs);
+		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), rhs);
 
 		if(lhs_set && rhs_set) {
 			dir = OpDir.UNIFORM;
@@ -873,8 +873,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
 		OpDir dir;
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY), rhs);
+		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), lhs);
+		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), rhs);
 
 		if(lhs_set && rhs_set) {
 			dir = OpDir.UNIFORM;
@@ -938,7 +938,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			break;
 		case EQ:
 		case NEQ:	
-			if(Type.isSubtype(Type.T_NUMBER, lub)) {
+			if(Type.isCoerciveSubtype(Type.T_NUMBER, lub)) {
 				// effect an implicit coercion
 				if(lub != Type.T_INT) { lub = Type.T_REAL; }
 			} else if (glb == Type.T_VOID) {
@@ -957,7 +957,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				syntaxError("expected set or list, found: " + rhs_t,filename,stmt);
 				return null;
 			}
-			if (!Type.isSubtype(element, lhs_t)) {
+			if (!Type.isCoerciveSubtype(element, lhs_t)) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
 			}			
@@ -965,7 +965,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}	
 		case SUBSET:
 		case SUBSETEQ:			
-			if (!Type.isSubtype(lhs_t, rhs_t) && !Type.isSubtype(rhs_t, lhs_t)) {
+			if (!Type.isCoerciveSubtype(lhs_t, rhs_t) && !Type.isCoerciveSubtype(rhs_t, lhs_t)) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
 			}
@@ -996,7 +996,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env trueEnv = null;
 		Env falseEnv = null;
 
-		if(Type.isSubtype(code.test,lhs_t)) {								
+		if(Type.isCoerciveSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
 			//trueEnv = environment;
 			//ncode = Code.Goto(code.target);										
@@ -1155,7 +1155,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for (Type.Fun ft : targets) {										
 			Type funrec = ft.receiver();			
 			if (receiver == funrec
-					|| (receiver != null && funrec != null && Type.isSubtype(
+					|| (receiver != null && funrec != null && Type.isCoerciveSubtype(
 							funrec, receiver))) {
 				// receivers match up OK ...				
 				if (ft.params().size() == paramTypes.size()						
@@ -1194,7 +1194,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		List<Type> f2_params = f2.params();
 		if(f1_params.size() == f2_params.size()) {
 			for(int i=0;i!=f1_params.size();++i) {
-				if(!Type.isSubtype(f1_params.get(i),f2_params.get(i))) {
+				if(!Type.isCoerciveSubtype(f1_params.get(i),f2_params.get(i))) {
 					return false;
 				}
 			}
@@ -1240,7 +1240,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	// Check t1 :> t2
 	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {		
-		if (!Type.isSubtype(t1, t2)) {
+		if (!Type.isCoerciveSubtype(t1, t2)) {
 			syntaxError("expected type " + t1 + ", found " + t2, filename, elem);
 		}		
 	}

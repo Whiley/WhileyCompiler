@@ -1335,6 +1335,20 @@ public abstract class Type {
 			}
 		}
 	}
+
+	/**
+	 * Determine whether type <code>t2</code> is a <i>coercive subtype</i> of
+	 * type <code>t1</code> (written t1 :> t2). In other words, whether the set
+	 * of all possible values described by the type <code>t2</code> is a subset
+	 * of that described by <code>t1</code>.
+	 */
+	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
+		Node[] g1 = nodes(t1);
+		Node[] g2 = nodes(t2);
+		SubtypeInference inference = new CoerciveSubtypeOperator(g1,g2);		
+		SubtypeRelation rel = inference.doInference();		
+		return rel.isSubtype(0, 0); 
+	}
 	
 	/**
 	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
