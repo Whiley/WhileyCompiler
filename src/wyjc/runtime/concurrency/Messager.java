@@ -18,7 +18,7 @@ public abstract class Messager extends Yielder implements Resumable {
 
 	private final Queue<Message> mail = new LinkedList<Message>();
 
-	private Message currentMessage = null;
+	private Message currentMessage = null, lastSentMessage = null;
 
 	public Messager(Scheduler scheduler) {
 		this.scheduler = scheduler;
@@ -33,17 +33,32 @@ public abstract class Messager extends Yielder implements Resumable {
 	public void sendAsync(Messager sender, Method method, Object[] args) {
 		addMessage(new Message(sender, false, method, args));
 	}
-
-	private synchronized void addMessage(Message message) {
-		if (currentMessage == null) {
-			currentMessage = message;
+	
+	private void addMessage(Message message) {
+		if (addMessageSynchronized(message)) {
 			scheduleResume();
-		} else {
-			mail.add(message);
+		}
+		
+		// The initial main method has null as a sender.
+		// It might be better to change that so we don't have to do this here.
+		if (message.sender != null) {
+			// We don't have to synchronise this, as an actor can only be doing one
+			// thing at a time, and at the moment we know the sender is here too.
+			message.sender.lastSentMessage = message;
 		}
 	}
 
-	private void scheduleResume() {
+	private synchronized boolean addMessageSynchronized(Message message) {
+		if (currentMessage == null) {
+			currentMessage = message;
+			return true;
+		} else {
+			mail.add(message);
+			return false;
+		}
+	}
+
+	protected void scheduleResume() {
 		scheduler.scheduleResume(this);
 	}
 
@@ -55,8 +70,8 @@ public abstract class Messager extends Yielder implements Resumable {
 		return currentMessage.arguments;
 	}
 
-	protected boolean isCurrentSynchronous() {
-		return currentMessage.synchronous;
+	protected boolean isLastSentSynchronous() {
+		return lastSentMessage.synchronous;
 	}
 
 	/**

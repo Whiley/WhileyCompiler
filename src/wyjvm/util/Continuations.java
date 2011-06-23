@@ -108,6 +108,7 @@ public class Continuations {
 			add.add(new Load(0, PROCESS));
 			add.add(new Invoke(PROCESS, "isYielded", new Function(T_BOOL),
 			    Bytecode.VIRTUAL));
+
 			add.add(new If(If.EQ, "begin"));
 			add.add(new Load(0, PROCESS));
 

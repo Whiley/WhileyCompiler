@@ -1,6 +1,10 @@
 void System::main([string] args):
-    self(5)
+    i = var()
+    out<-println(self())
+    out<-println(i)
 
-void System::self(int i):
-    out<-println(str(6))
-    out<-println(str(i))
+string System::self():
+    return str(6)
+
+string System::var():
+    return str(5)

@@ -59,8 +59,9 @@ public final class Actor extends Messager {
 	@Override
 	public void resume() {
 		try {
+			// TODO Optimise this by setting the current arguments on yield.
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
-
+			
 			if (isYielded() && isEmpty()) {
 				// The message yielded right at the end, so we can just ignore the
 				// yield and move on.
@@ -70,6 +71,9 @@ public final class Actor extends Messager {
 			if (!isYielded()) {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
+			} else if (!isLastSentSynchronous()) {
+				// Readies the actor for another resumption.
+				scheduleResume();
 			}
 		} catch (IllegalArgumentException iax) {
 			// Not possible - caught by the language compiler.
