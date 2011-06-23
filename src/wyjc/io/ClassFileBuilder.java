@@ -496,9 +496,10 @@ public class ClassFileBuilder {
 				ftype, Bytecode.INTERFACE));
 		bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GE, T_INT, exitLabel));
 		bytecodes.add(new Bytecode.Load(target,WHILEYSET));
-		bytecodes.add(new Bytecode.Load(iter,T_INT));		
-		ftype = new JvmType.Function(BIG_RATIONAL,T_INT);
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "valueOf",
+		bytecodes.add(new Bytecode.Load(iter,T_INT));
+		bytecodes.add(new Bytecode.Conversion(T_INT,T_LONG));	
+		ftype = new JvmType.Function(BIG_INTEGER,T_LONG);
+		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
 				ftype, Bytecode.STATIC));				
 		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
 		bytecodes.add(new Bytecode.Load(iter,T_INT));
