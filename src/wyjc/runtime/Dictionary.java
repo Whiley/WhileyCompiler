@@ -2,6 +2,8 @@ package wyjc.runtime;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public final class Dictionary extends java.util.HashMap {	
@@ -16,6 +18,14 @@ public final class Dictionary extends java.util.HashMap {
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
+	
+	public Dictionary() {
+		
+	}
+	
+	Dictionary(Dictionary dict) {
+		super(dict);
+	}
 	
 	public String toString() {
 		String r = "{";
@@ -43,7 +53,22 @@ public final class Dictionary extends java.util.HashMap {
 	}
 	
 	public static Dictionary put(Dictionary dict, Object key, Object value) {
-		dict.put(key,value);
+		if(dict.refCount > 1) {
+			Dictionary ndict = new Dictionary(dict);
+			HashMap<Object,Object> tmp = ndict;
+			for(Map.Entry e : tmp.entrySet()) {
+				Util.incRefs(e.getKey());
+				Util.incRefs(e.getValue());
+			}
+			dict = ndict;
+		}
+		Object val = dict.put(key, value);
+		if(val != null) {
+			Util.decRefs(val);			
+		} else {
+			Util.incRefs(key);
+		}
+		Util.incRefs(value);		
 		return dict;
 	}
 	

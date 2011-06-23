@@ -11,6 +11,12 @@ public final class Record extends HashMap<String,Object> implements Comparable<R
 	 */
 	int refCount = 100; // TODO: implement proper reference counting
 	
+	public Record() {}
+	
+	Record(HashMap<String,Object> r) {
+		super(r);
+	}
+	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================	 	
@@ -69,14 +75,17 @@ public final class Record extends HashMap<String,Object> implements Comparable<R
 		return record.get(field);
 	}
 	
-	public static Record put(final Record record, final String field, final Object value) {		
-		//if(record.refCount == 1) {
-			record.put(field, value);
-		//} else {
-			// TODO: this is broken --- must recursively update reference
-			// counts.
-			//record = (HashMap) record.clone();
-		//}
+	public static Record put(Record record, final String field, final Object value) {		
+		if(record.refCount > 1) {
+			Record nrecord = new Record(record);
+			for(Object e : nrecord.values()) {
+				Util.incRefs(e);
+			}
+			record = nrecord;
+		}
+		Object val = record.put(field, value);
+		Util.decRefs(val);
+		Util.incRefs(value);		
 		return record;
 	}
 	
