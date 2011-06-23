@@ -1,5 +1,8 @@
 package wyjc.runtime;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 
 public final class Dictionary extends java.util.HashMap {	
 	/**
@@ -14,10 +17,27 @@ public final class Dictionary extends java.util.HashMap {
 	// Generic Operations
 	// ================================================================================	 	
 	
-	Dictionary() {		
+	public Dictionary() {		
 		super();
 		this.refCount = 1;		
 	}
+	
+	public String toString() {
+		String r = "{";
+		boolean firstTime=true;
+		ArrayList<Comparable> ss = new ArrayList<Comparable>(this.keySet());
+		Collections.sort(ss);
+
+		for(Object key : ss) {
+			if(!firstTime) {
+				r = r + ", ";
+			}
+			firstTime=false;
+			Object val = get(key);			
+			r = r + Util.str(key) + "->" + val;
+		}
+		return r + "}";
+	} 
 	
 	// ================================================================================
 	// Dictionary Operations
