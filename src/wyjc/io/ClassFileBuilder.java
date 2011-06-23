@@ -705,19 +705,9 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 		
-		if(type != c.type) {
-			// this case is for assignments to process states
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
-			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
-					Bytecode.VIRTUAL));
-			// finally, we need to cast the object we got back appropriately.		
-			Type.Process pt = (Type.Process) c.type;						
-			addReadConversion(pt.element(), bytecodes);
-		}
-		
 		// Fourth, finally process the assignment path and update the object in
 		// question.		
-		multiStoreHelper(type,c.level-1,fields.iterator(),freeSlot,val_t, bytecodes);		
+		multiStoreHelper(c.type,c.level-1,fields.iterator(),freeSlot,val_t, bytecodes);		
 		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));
 	}
 
@@ -729,61 +719,82 @@ public class ClassFileBuilder {
 		// doing this. Probably, if I change the multistore bytecode, that would
 		// help.
 		
-		if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),type)) {
-			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
-			bytecodes.add(new Bytecode.Swap());
+		if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {			
+			Type.Process pt = (Type.Process) type;
+			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
+					Bytecode.VIRTUAL));							
+			addReadConversion(pt.element(),bytecodes);
+			multiStoreHelper(pt.element(),level,fields,freeSlot,val_t,bytecodes);						
+			ftype = new JvmType.Function(WHILEYPROCESS,JAVA_LANG_OBJECT);		
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "setState", ftype,
+					Bytecode.VIRTUAL));
 			
-			if(level != 0) { 
+		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),type)) {
+			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
+			
+			if(level != 0) {
+				bytecodes.add(new Bytecode.DupX1());
+				bytecodes.add(new Bytecode.Swap());
+				bytecodes.add(new Bytecode.DupX1());
+				
 				JvmType.Function ftype = new JvmType.Function(
 						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
 				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
-					Bytecode.STATIC));
+					Bytecode.STATIC));				
 				addReadConversion(dict.value(),bytecodes);
 				multiStoreHelper(dict.value(),level-1,fields,freeSlot,val_t,bytecodes);
 			} else {
+				bytecodes.add(new Bytecode.Swap());
 				bytecodes.add(new Bytecode.Load(freeSlot, val_t));	
+				addWriteConversion(dict.value(),bytecodes);
 			}
 						
 			JvmType.Function ftype = new JvmType.Function(WHILEYMAP,
-					WHILEYMAP,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-			addWriteConversion(dict.value(),bytecodes);
+					WHILEYMAP,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);						
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 					Bytecode.STATIC));			
 						
 		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),type)) {
 			Type.List list = Type.effectiveListType(type);				
-			bytecodes.add(new Bytecode.Swap());								
+										
 			if(level != 0) {
+				bytecodes.add(new Bytecode.DupX1());
+				bytecodes.add(new Bytecode.Swap());	
+				bytecodes.add(new Bytecode.DupX1());
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 						WHILEYLIST,BIG_INTEGER);
 				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
-						Bytecode.STATIC));
+						Bytecode.STATIC));				
 				addReadConversion(list.element(),bytecodes);
 				multiStoreHelper(list.element(),level-1,fields,freeSlot,val_t,bytecodes);
 			} else {
+				bytecodes.add(new Bytecode.Swap());	
 				bytecodes.add(new Bytecode.Load(freeSlot, val_t));
+				addWriteConversion(list.element(),bytecodes);
 			}
 			
 			JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
-					WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);
-			addWriteConversion(list.element(),bytecodes);
+					WHILEYLIST,BIG_INTEGER,JAVA_LANG_OBJECT);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.STATIC));							
 		} else {
-			Type.Record rec = Type.effectiveRecordType(type);
+			Type.Record rec = Type.effectiveRecordType(type);			
 			String field = fields.next();
 			bytecodes.add(new Bytecode.LoadConst(field));				
 			if(level != 0) {
+				bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));				
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));
 				addReadConversion(rec.fields().get(field),bytecodes);
 				multiStoreHelper(rec.fields().get(field),level-1,fields,freeSlot,val_t,bytecodes);
 			} else {
 				bytecodes.add(new Bytecode.Load(freeSlot, val_t));
+				addWriteConversion(rec.fields().get(field),bytecodes);
 			}
 			
-			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);			
-			addWriteConversion(rec.fields().get(field),bytecodes);
+			JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,JAVA_LANG_STRING,JAVA_LANG_OBJECT);						
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.STATIC));					
 		}
 	}
@@ -2391,7 +2402,9 @@ public class ClassFileBuilder {
 	 * @return
 	 */
 	public static boolean isRefCounted(Type t) {
-		return t != Type.T_BOOL &&t != Type.T_INT && t != Type.T_REAL && t != Type.T_STRING; 
+		return t != Type.T_BOOL && t != Type.T_INT && t != Type.T_REAL
+				&& t != Type.T_STRING
+				&& !Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t); 
 	}
 	
 	/**

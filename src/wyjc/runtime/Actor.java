@@ -42,6 +42,11 @@ public final class Actor extends Thread {
 		return state;
 	}			
 	
+	public Actor setState(Object nstate) {
+		this.state = nstate;
+		return this;
+	}
+	
 	/**
 	 * Send a message asynchronously to this actor. If the mailbox is full, then
 	 * this will in fact block.
