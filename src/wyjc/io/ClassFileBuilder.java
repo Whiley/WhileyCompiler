@@ -1055,23 +1055,9 @@ public class ClassFileBuilder {
 	 */
 	protected void translateTypeTest(String trueTarget, Type src, Type.Int test,
 			Entry stmt, ArrayList<Bytecode> bytecodes) {
-		
-		String falseTarget = freshLabel();
-				
-		if(!Type.isSubtype(Type.T_REAL,src)) {
-			String nextTarget = freshLabel();
-			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
-			bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));			
-			bytecodes.add(new Bytecode.If(Bytecode.If.NE, nextTarget));
-			bytecodes.add(new Bytecode.Pop(BIG_RATIONAL));
-			bytecodes.add(new Bytecode.Goto(falseTarget));
-			bytecodes.add(new Bytecode.Label(nextTarget));
-			addCheckCast(BIG_RATIONAL,bytecodes);
-		}		
-		JvmType.Function ftype = new JvmType.Function(JvmTypes.T_BOOL);
-		bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"isInteger", ftype, Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
-		bytecodes.add(new Bytecode.Label(falseTarget));		
+							
+		bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));			
+		bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));					
 	}
 	
 	/**
