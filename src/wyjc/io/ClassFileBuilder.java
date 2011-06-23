@@ -1760,7 +1760,7 @@ public class ClassFileBuilder {
 		} else {
 			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
 		}													
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union" + c.dir, ftype,
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
 				Bytecode.STATIC));				
 	}	
 	
@@ -1774,7 +1774,7 @@ public class ClassFileBuilder {
 		} else {
 			ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_OBJECT,WHILEYSET);
 		}													
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect" + c.dir, ftype,
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "intersect", ftype,
 				Bytecode.STATIC));
 	}
 	
@@ -1786,7 +1786,7 @@ public class ClassFileBuilder {
 		} else {
 			ftype = new JvmType.Function(WHILEYSET,WHILEYSET,JAVA_LANG_OBJECT);
 		} 												
-		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference" + c.dir, ftype,
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "difference", ftype,
 				Bytecode.STATIC));
 	}
 	
