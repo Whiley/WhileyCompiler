@@ -23,7 +23,7 @@ public abstract class Yielder {
 	public boolean isYielded() {
 		return yielded;
 	}
-	
+
 	public boolean isEmpty() {
 		return state.isEmpty();
 	}
@@ -32,13 +32,30 @@ public abstract class Yielder {
 	 * Yields control of the thread, but does not push a new local state object
 	 * onto the stack. Useful for when a message is the last action of a method,
 	 * where yielding makes sense but saving the local state does not.
+	 * 
+	 * @throws IllegalStateException The object is already yielded.
 	 */
-	public void yield() {
+	public void cleanYield() {
 		if (yielded) {
 			throw new IllegalStateException(
 			    "Attempting to cleanly yield while object is already yielded.");
 		}
 		yielded = true;
+	}
+
+	/**
+	 * Reverts the yield state introduced by the <code>yield()</code> method, if
+	 * there wasn't any stack state pushed. If there was, <code>unyield</code>
+	 * will perform the same thing once it reaches the bottom of the stack.
+	 * 
+	 * @throws IllegalStateException The clean yield is no longer valid.
+	 */
+	public void revertCleanYield() {
+		if (!state.isEmpty()) {
+			throw new IllegalStateException(
+			    "Attempting to revert a clean yield that is no longer invalid.");
+		}
+		yielded = false;
 	}
 
 	/**
@@ -67,27 +84,27 @@ public abstract class Yielder {
 		}
 		return location;
 	}
-	
+
 	public void set(int index, Object value) {
 		current.localMap.set(index - 1, value);
 	}
-	
+
 	public void set(int index, boolean value) {
 		current.localMap.set(index - 1, new Boolean(value));
 	}
-	
+
 	public void set(int index, int value) {
 		current.localMap.set(index - 1, new Int(value));
 	}
-	
+
 	public Object getObject(int index) {
 		return current.localMap.get(index - 1);
 	}
-	
+
 	public boolean getBoolean(int index) {
 		return ((Boolean) current.localMap.get(index - 1)).value;
 	}
-	
+
 	public int getInt(int index) {
 		return ((Int) current.localMap.get(index - 1)).value;
 	}

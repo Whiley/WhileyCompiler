@@ -40,28 +40,34 @@ import wyjc.runtime.concurrency.Scheduler;
  * @author Timothy Jones
  */
 public final class Actor extends Messager {
-	
+
 	private static final Scheduler scheduler = new Scheduler();
-	
+
 	// The spawned state of the process.
 	private final Object state;
 
 	public Actor(Object state) {
 		super(scheduler);
-		
+
 		this.state = state;
 	}
 
 	public Object getState() {
 		return state;
 	}
-	
+
 	@Override
 	public void resume() {
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
+
+			if (isYielded() && isEmpty()) {
+				// The message yielded right at the end, so we can just ignore the
+				// yield and move on.
+				revertCleanYield();
+			}
 			
-			if (!isYielded() || isEmpty()) {
+			if (!isYielded()) {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
 			}
@@ -73,15 +79,15 @@ public final class Actor extends Messager {
 			System.err.println("Warning - illegal access in actor resumption.");
 		} catch (InvocationTargetException itx) {
 			// Fails the message and moves on to the next one.
-			failCurrentMessage(itx); 
+			failCurrentMessage(itx);
 		}
 	}
-	
+
 	@Override
 	public String toString() {
 		return state + "@" + System.identityHashCode(this);
 	}
-	
+
 	/**
 	 * Creates and returns a new <code>System</code> process from the standard
 	 * library, for entry into the actor system. Asynchronously passing the

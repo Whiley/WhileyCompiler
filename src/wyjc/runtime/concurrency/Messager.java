@@ -15,7 +15,7 @@ import wyjc.runtime.concurrency.Scheduler.Resumable;
 public abstract class Messager extends Yielder implements Resumable {
 
 	private final Scheduler scheduler;
-	
+
 	private final Queue<Message> mail = new LinkedList<Message>();
 
 	private Message currentMessage = null;
@@ -42,7 +42,7 @@ public abstract class Messager extends Yielder implements Resumable {
 			mail.add(message);
 		}
 	}
-	
+
 	private void scheduleResume() {
 		scheduler.scheduleResume(this);
 	}
@@ -54,7 +54,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	protected Object[] getCurrentArguments() {
 		return currentMessage.arguments;
 	}
-	
+
 	protected boolean isCurrentSynchronous() {
 		return currentMessage.synchronous;
 	}
@@ -86,12 +86,12 @@ public abstract class Messager extends Yielder implements Resumable {
 		currentMessage.future.fail(cause);
 		nextMessage();
 	}
-	
+
 	private synchronized void nextMessage() {
 		if (currentMessage.synchronous) {
 			currentMessage.sender.scheduleResume();
 		}
-		
+
 		if (mail.isEmpty()) {
 			currentMessage = null;
 		} else {

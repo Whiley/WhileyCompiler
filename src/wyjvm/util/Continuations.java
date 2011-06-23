@@ -48,7 +48,7 @@ public class Continuations {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
-				
+
 				for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
 					System.out.println(bytecode);
 				}
@@ -69,35 +69,25 @@ public class Continuations {
 			if (bytecode instanceof Invoke) {
 				Invoke invoke = (Invoke) bytecode;
 
-				boolean yields = false;
-				// TODO Remember what this was for.
-//				if (invoke.mode == Bytecode.STATIC) {
-//					List<JvmType> ptypes = invoke.type.parameterTypes();
-//					if (ptypes.size() >= 1 && ptypes.get(0).equals(PROCESS)) {
-//						yields = true;
-//					}
-//				}
-
-				if (yields || invoke.owner.equals(MESSAGER)
-				    && invoke.name.startsWith("send")) {
+				if (invoke.owner.equals(MESSAGER) && invoke.name.startsWith("send")) {
 					List<Bytecode> add = new ArrayList<Bytecode>();
 					Bytecode next =
 					    i == bytecodes.size() - 1 ? null : bytecodes.get(i + 1);
-					boolean isVoid = invoke.type.returnType().equals(T_VOID);
-					boolean push = // !yields &&
-							!(next instanceof Return || next instanceof Throw);// && !isVoid;
+
+					boolean push =
+					    invoke.name.equals("sendSync")
+					        || !(next instanceof Return || next instanceof Throw);
 
 					add.add(new Load(0, PROCESS));
 
-					Function type = null;
 					if (push) {
 						add.add(new LoadConst(location));
-						type = new Function(T_VOID, T_INT);
+						add.add(new Invoke(MESSAGER, "yield", new Function(T_VOID, T_INT),
+						    Bytecode.VIRTUAL));
 					} else {
-						type = new Function(T_VOID);
+						add.add(new Invoke(MESSAGER, "cleanYield", new Function(T_VOID),
+						    Bytecode.VIRTUAL));
 					}
-
-					add.add(new Invoke(MESSAGER, "yield", type, Bytecode.VIRTUAL));
 
 					if (push) {
 						addPushLocals(method.type().parameterTypes(), add);
@@ -106,7 +96,7 @@ public class Continuations {
 
 						add.add(new Label("resume" + location++));
 					}
-					
+
 					bytecodes.addAll(i + 1, add);
 				}
 			}
