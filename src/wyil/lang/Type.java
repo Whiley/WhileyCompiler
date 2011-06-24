@@ -1296,6 +1296,10 @@ public abstract class Type {
 				return fromGraph[p1.first()].kind == K_INT
 						&& assumptions.isSubtype(p1.second(),
 								(Integer) toNode.data);
+			} else if(fromNode.kind == K_LIST && toNode.kind == K_STRING) {
+				Integer p1 = (Integer) fromNode.data;
+				// TO DO: this is a bug here for cases when the element type is e.g. int|real
+				return fromGraph[p1].kind == K_INT || fromGraph[p1].kind == K_RATIONAL;
 			} else {
 				return super.isSubType(from,to);
 			}
@@ -1330,6 +1334,10 @@ public abstract class Type {
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
 				return toGraph[p2.first()].kind == K_INT
 						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
+			} else if(fromNode.kind == K_STRING && toNode.kind == K_LIST) {
+				Integer p2 = (Integer) toNode.data;
+				// TO DO: this is a bug here for cases when the element type is e.g. int|real
+				return toGraph[p2].kind == K_INT || fromGraph[p2].kind == K_RATIONAL;
 			} else {
 				return super.isSuperType(from, to);
 			}

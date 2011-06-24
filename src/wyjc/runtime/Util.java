@@ -414,6 +414,8 @@ public class Util {
 			return coerce((Dictionary)obj,t);
 		} else if(obj instanceof Record) {
 			return coerce((Record)obj,t);
+		} else if(obj instanceof String) {
+			return coerce((String)obj,t);
 		} 
 				
 		return obj;
@@ -457,6 +459,19 @@ public class Util {
 			return r;
 		}
 		throw new RuntimeException("invalid list coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(String obj, Type t) {
+		if(t.kind == Type.K_LIST) {
+			Type.List tl = (Type.List) t;
+			List r = new List(obj.length());
+			for(int i=0;i!=obj.length();++i) {
+				Object index = BigInteger.valueOf(obj.charAt(i));				
+				r.add(coerce(index,tl.element));
+			}
+			return r;
+		} 
+		throw new RuntimeException("invalid string coercion (" + obj + " => " + t + ")");
 	}
 	
 	public static Object coerce(Set obj, Type t) {
