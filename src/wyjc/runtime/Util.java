@@ -26,6 +26,7 @@
 package wyjc.runtime;
 
 import java.math.*;
+import java.util.Map;
 
 public class Util {
 
@@ -402,8 +403,91 @@ public class Util {
 	 * The <code>coerce</code> method forces this object to conform to a given
 	 * type.
 	 */
-	public Object coerce(Object obj, Type t) {
+	public static Object coerce(Object obj, Type t) {		
+		if(obj instanceof BigInteger) {
+			return coerce((BigInteger)obj,t);
+		} else if(obj instanceof List) {
+			return coerce((List)obj,t);
+		} else if(obj instanceof Set) {
+			return coerce((Set)obj,t);
+		} else if(obj instanceof Dictionary) {
+			return coerce((Dictionary)obj,t);
+		} else if(obj instanceof Record) {
+			return coerce((Record)obj,t);
+		} 
+				
 		return obj;
 	}
 	
+	public static Object coerce(BigInteger obj, Type t) {
+		if(t.kind == Type.K_INT) {
+			return obj;
+		} else if(t.kind == Type.K_RATIONAL) {
+			return BigRational.valueOf(obj);
+		} 
+		throw new RuntimeException("invalid coercion");
+	}
+	
+	public static Object coerce(List obj, Type t) {		
+		if(t.kind == Type.K_LIST) {
+			Type.List tl = (Type.List) t;
+			List r = new List(obj.size());
+			for(Object o : obj) {
+				r.add(coerce(o,tl.element));
+			}
+			return r;
+		} else if(t.kind == Type.K_DICTIONARY) {
+			Type.Dictionary tl = (Type.Dictionary) t;
+			Dictionary r = new Dictionary();			
+				for (int i = 0; i != obj.size(); ++i) {
+					Object key = coerce(BigInteger.valueOf(i),tl.key);
+					Object value = coerce(obj.get(i), tl.value);					
+					r.put(key, value);
+				}			
+			return r;
+		}
+		throw new RuntimeException("invalid coercion");
+	}
+	
+	public static Object coerce(Set obj, Type t) {
+		if(t.kind == Type.K_SET) {
+			Type.Set tl = (Type.Set) t;
+			Set r = new Set();
+			for(Object o : obj) {
+				r.add(coerce(o,tl.element));
+			}
+			return r;
+		} 
+		throw new RuntimeException("invalid coercion");
+	}
+	
+	public static Object coerce(Dictionary obj, Type t) {
+		if(t.kind == Type.K_DICTIONARY) {
+			Type.Dictionary tl = (Type.Dictionary) t;
+			Dictionary r = new Dictionary();
+			for(Map.Entry<Object,Object> o : obj.entrySet()) {
+				Object key = coerce(o.getKey(),tl.key);
+				Object value = coerce(o.getValue(),tl.value); 
+				r.put(key,value);
+			}
+			return r;
+		}
+		throw new RuntimeException("invalid coercion");
+	}
+	
+	public static Object coerce(Record obj, Type t) {
+		if(t.kind == Type.K_RECORD) {			
+			Type.Record tr = (Type.Record) t;
+			Record r = new Record();
+			String[] names = tr.names;
+			Type[] types = tr.types;
+			for(int i=0;i!=names.length;++i) {
+				String name = names[i];
+				Type type = types[i];
+				r.put(name,coerce(obj.get(name),type));
+			}
+			return r;
+		}
+		throw new RuntimeException("invalid coercion");
+	}
 }
