@@ -451,11 +451,18 @@ public class Util {
 		} else if(t.kind == Type.K_DICTIONARY) {
 			Type.Dictionary tl = (Type.Dictionary) t;
 			Dictionary r = new Dictionary();			
-				for (int i = 0; i != obj.size(); ++i) {
-					Object key = coerce(BigInteger.valueOf(i),tl.key);
-					Object value = coerce(obj.get(i), tl.value);					
-					r.put(key, value);
-				}			
+			for (int i = 0; i != obj.size(); ++i) {
+				Object key = coerce(BigInteger.valueOf(i),tl.key);
+				Object value = coerce(obj.get(i), tl.value);					
+				r.put(key, value);
+			}			
+			return r;
+		} else if(t.kind == Type.K_SET) {
+			Type.Set tl = (Type.Set) t;
+			Set r = new Set();			
+			for (Object value : obj) {						
+				r.add(coerce(value, tl.element));
+			}			
 			return r;
 		}
 		throw new RuntimeException("invalid list coercion (" + obj + " => " + t + ")");
