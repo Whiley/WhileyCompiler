@@ -1337,7 +1337,7 @@ public abstract class Type {
 			} else if(fromNode.kind == K_STRING && toNode.kind == K_LIST) {
 				Integer p2 = (Integer) toNode.data;
 				// TO DO: this is a bug here for cases when the element type is e.g. int|real
-				return toGraph[p2].kind == K_INT || fromGraph[p2].kind == K_RATIONAL;
+				return toGraph[p2].kind == K_INT || toGraph[p2].kind == K_RATIONAL;
 			} else {
 				return super.isSuperType(from, to);
 			}
