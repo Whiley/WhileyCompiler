@@ -260,6 +260,7 @@ public class Util {
 						return true;
 					}
 				}
+				break;
 			}
 			case Type.K_DICTIONARY:
 			{

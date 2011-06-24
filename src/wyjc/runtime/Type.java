@@ -21,6 +21,7 @@ public class Type {
 	public static final byte K_UNION = 14;
 	public static final byte K_FUNCTION = 15;
 	public static final byte K_EXISTENTIAL = 16;
+	public static final byte K_LEAF = 17;
 	
 	public final int kind;
 	
@@ -45,7 +46,7 @@ public class Type {
 	private static final class Strung extends Type { Strung() {super(K_STRING);}}
 	
 	public static final class List extends Type {
-		public final Type element;
+		public Type element;
 		
 		public List(Type element) {
 			super(K_LIST);
@@ -54,7 +55,7 @@ public class Type {
 	}
 	
 	public static final class Set extends Type {
-		public final Type element;
+		public Type element;
 		
 		public Set(Type element) {
 			super(K_SET);
@@ -63,8 +64,8 @@ public class Type {
 	}
 	
 	public static final class Dictionary extends Type {
-		public final Type key;
-		public final Type value;
+		public Type key;
+		public Type value;
 		
 		public Dictionary(Type key, Type value) {
 			super(K_DICTIONARY);
@@ -91,11 +92,76 @@ public class Type {
 		}
 	}
 	
-	public static Type valueOf(String str) {
-		return new TypeParser(str).parse();
+	private static final class Leaf extends Type {
+		public final String name;
+		public Leaf(String name) {
+			super(K_LEAF);
+			this.name = name;
+		}
 	}
 	
-
+	public static Type valueOf(String str) {
+		return new TypeParser(str).parse(new HashSet<String>());
+	}
+	
+	private static Type substitute(Type type, String var, Type root) {
+		switch(type.kind) {
+			case Type.K_ANY:				
+			case Type.K_VOID:				
+			case Type.K_NULL:				
+			case Type.K_INT:				
+			case Type.K_RATIONAL:				
+			case Type.K_STRING:
+				break;
+			case Type.K_LEAF:
+			{
+				Type.Leaf leaf = (Type.Leaf)type;
+				if(leaf.name.equals(var)) {
+					return root;
+				} else {
+					return leaf;
+				}
+			}
+			case Type.K_LIST:
+			{
+				Type.List list = (Type.List) type;
+				list.element = substitute(list.element,var,root); 
+				break;
+			}
+			case Type.K_SET:
+			{
+				Type.Set set = (Type.Set) type;
+				set.element = substitute(set.element,var,root); 
+				break;
+			}
+			case Type.K_DICTIONARY:
+			{
+				Type.Dictionary dict = (Type.Dictionary) type;
+				dict.key = substitute(dict.key,var,root); 
+				dict.value = substitute(dict.value,var,root);
+				break;
+			}
+			case Type.K_RECORD:
+			{
+				Type.Record rec = (Type.Record) type;
+				Type[] types = rec.types;
+				for(int i=0;i!=types.length;++i) {
+					types[i] = substitute(types[i],var,root);
+				}
+				break;
+			}
+			case Type.K_UNION:
+			{
+				Type.Union un = (Type.Union) type;
+				Type[] types = un.bounds;
+				for(int i=0;i!=types.length;++i) {
+					types[i] = substitute(types[i],var,root);
+				}
+				break;
+			}
+		}			
+		return type;
+	}
 	
 	private static final class TypeParser {
 		private int index;
@@ -103,18 +169,18 @@ public class Type {
 		public TypeParser(String str) { 
 			this.str = str;
 		}
-		public Type parse() {
-			Type term = parseTerm();
+		public Type parse(HashSet<String> typeVars) {
+			Type term = parseTerm(typeVars);
 			skipWhiteSpace();
 			while(index < str.length() && str.charAt(index) == '|') {
 				// union type
 				match("|");
-				term = new Union(term,parse());
+				term = new Union(term,parse(typeVars));
 				skipWhiteSpace();
 			}
 			return term;
 		}
-		public Type parseTerm() {
+		public Type parseTerm(HashSet<String> typeVars) {
 			skipWhiteSpace();
 			char lookahead = str.charAt(index);
 
@@ -143,19 +209,19 @@ public class Type {
 			case '[':
 			{
 				match("[");
-				Type elem = parse();
+				Type elem = parse(typeVars);
 				match("]");
 				return new List(elem);
 			}
 			case '{':
 			{
 				match("{");
-				Type elem = parse();
+				Type elem = parse(typeVars);
 				skipWhiteSpace();
 				if(index < str.length() && str.charAt(index) == '-') {
 					// dictionary
 					match("->");
-					Type value = parse();
+					Type value = parse(typeVars);
 					match("}");
 					return new Dictionary(elem,value);
 				} else if(index < str.length() && str.charAt(index) != '}') {
@@ -166,7 +232,7 @@ public class Type {
 					skipWhiteSpace();
 					while(index < str.length() && str.charAt(index) == ',') {
 						match(",");
-						elem = parse();
+						elem = parse(typeVars);
 						id = parseIdentifier();
 						fields.put(id, elem);
 						skipWhiteSpace();
@@ -189,8 +255,21 @@ public class Type {
 				return new Set(elem);
 			}
 			default:
-				throw new IllegalArgumentException("invalid type string: "
-						+ str);
+			{
+				// this case is either a syntax error, or it's a recursive type.
+				String var = parseIdentifier();
+				
+				if(typeVars.contains(var)) {
+					return new Leaf(var);
+				} else {
+					typeVars = new HashSet<String>(typeVars);
+					typeVars.add(var);
+					match("<");
+					Type t = parse(typeVars);
+					match(">");
+					return substitute(t,var,t);
+				}				
+			}
 			}
 		}
 		private String parseIdentifier() {
@@ -216,7 +295,7 @@ public class Type {
 						+ str);
 			}
 			index += match.length();
-		}
+		}		
 	}
 	
 }
