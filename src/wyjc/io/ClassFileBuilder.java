@@ -513,9 +513,12 @@ public class ClassFileBuilder {
 			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
 			
 			if(level != 0) {
-				bytecodes.add(new Bytecode.DupX1());
-				bytecodes.add(new Bytecode.Swap());
-				bytecodes.add(new Bytecode.DupX1());
+				int keySlot = freeSlot++;
+				int mapSlot = freeSlot++;
+				bytecodes.add(new Bytecode.Store(mapSlot,WHILEYMAP));
+				bytecodes.add(new Bytecode.Store(keySlot,JAVA_LANG_OBJECT));				
+				bytecodes.add(new Bytecode.Load(mapSlot,WHILEYMAP));
+				bytecodes.add(new Bytecode.Load(keySlot,JAVA_LANG_OBJECT));
 				
 				JvmType.Function ftype = new JvmType.Function(
 						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
@@ -523,6 +526,10 @@ public class ClassFileBuilder {
 					Bytecode.STATIC));				
 				addReadConversion(dict.value(),bytecodes);
 				multiStoreHelper(dict.value(),level-1,fields,valSlot,val_t,freeSlot,bytecodes);
+				bytecodes.add(new Bytecode.Load(mapSlot,WHILEYMAP));
+				bytecodes.add(new Bytecode.Swap());
+				bytecodes.add(new Bytecode.Load(keySlot,JAVA_LANG_OBJECT));
+				bytecodes.add(new Bytecode.Swap());
 			} else {
 				bytecodes.add(new Bytecode.Swap());
 				bytecodes.add(new Bytecode.Load(valSlot, val_t));	
