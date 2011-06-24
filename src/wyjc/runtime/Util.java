@@ -206,7 +206,7 @@ public class Util {
 	/**
 	 * The <code>instanceOf</code> method implements a runtime type test. 
 	 */
-	public static boolean instanceOf(Object obj, Type t) {		
+	public static boolean instanceOf(Object obj, Type t) {			
 		switch(t.kind) {
 			case Type.K_ANY:
 				return true;
@@ -378,7 +378,7 @@ public class Util {
 		}
 	}
 	
-	public static boolean instanceOf(Record ol, Type t) {				
+	public static boolean instanceOf(Record ol, Type t) {						
 		Type.Record tl = (Type.Record) t;
 		String[] names = tl.names;
 		Type[] types = tl.types;
@@ -389,9 +389,9 @@ public class Util {
 				Object val = ol.get(name);						
 				if(!instanceOf(val,type)) {
 					return false;
-				} else {
-					return false;
-				}
+				} 
+			}else {
+				return false;
 			}
 		}
 		return true;
