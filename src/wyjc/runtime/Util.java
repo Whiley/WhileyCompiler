@@ -403,7 +403,7 @@ public class Util {
 	 * The <code>coerce</code> method forces this object to conform to a given
 	 * type.
 	 */
-	public static Object coerce(Object obj, Type t) {		
+	public static Object coerce(Object obj, Type t) {			
 		if(obj instanceof BigInteger) {
 			return coerce((BigInteger)obj,t);
 		} else if(obj instanceof List) {
@@ -461,8 +461,10 @@ public class Util {
 		throw new RuntimeException("invalid list coercion (" + obj + " => " + t + ")");
 	}
 	
-	public static Object coerce(String obj, Type t) {
-		if(t.kind == Type.K_LIST) {
+	public static Object coerce(String obj, Type t) {		
+		if(t.kind == Type.K_STRING) {
+			return obj;
+		} else if(t.kind == Type.K_LIST) {
 			Type.List tl = (Type.List) t;
 			List r = new List(obj.length());
 			for(int i=0;i!=obj.length();++i) {
