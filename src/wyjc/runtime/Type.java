@@ -24,9 +24,15 @@ public class Type {
 	public static final byte K_LEAF = 17;
 	
 	public final int kind;
+	public String str;
 	
-	private Type(int kind) {
+	private Type(int kind, String str) {
 		this.kind = kind;
+		this.str = str;
+	}
+	
+	public String toString() {
+		return str;
 	}
 	
 	public static final Void VOID = new Void();
@@ -37,19 +43,19 @@ public class Type {
 	public static final Rational REAL = new Rational();
 	public static final Strung STRING = new Strung();
 	
-	private static final class Void extends Type { Void() {super(K_VOID);}}
-	private static final class Any extends Type { Any() {super(K_ANY);}}
-	private static final class Null extends Type { Null() {super(K_NULL);}}
-	private static final class Bool extends Type { Bool() {super(K_BOOL);}}
-	private static final class Integer extends Type { Integer() {super(K_INT);}}
-	private static final class Rational extends Type { Rational() {super(K_RATIONAL);}}
-	private static final class Strung extends Type { Strung() {super(K_STRING);}}
+	private static final class Void extends Type { Void() {super(K_VOID, "void");}}
+	private static final class Any extends Type { Any() {super(K_ANY, "any");}}
+	private static final class Null extends Type { Null() {super(K_NULL, "null");}}
+	private static final class Bool extends Type { Bool() {super(K_BOOL, "bool");}}
+	private static final class Integer extends Type { Integer() {super(K_INT, "int");}}
+	private static final class Rational extends Type { Rational() {super(K_RATIONAL, "real");}}
+	private static final class Strung extends Type { Strung() {super(K_STRING, "string");}}
 	
 	public static final class List extends Type {
 		public Type element;
 		
-		public List(Type element) {
-			super(K_LIST);
+		public List(Type element, String str) {
+			super(K_LIST,str);
 			this.element = element;
 		}
 	}
@@ -57,8 +63,8 @@ public class Type {
 	public static final class Set extends Type {
 		public Type element;
 		
-		public Set(Type element) {
-			super(K_SET);
+		public Set(Type element, String str) {
+			super(K_SET, str);
 			this.element = element;
 		}
 	}
@@ -67,8 +73,8 @@ public class Type {
 		public Type key;
 		public Type value;
 		
-		public Dictionary(Type key, Type value) {
-			super(K_DICTIONARY);
+		public Dictionary(Type key, Type value, String str) {
+			super(K_DICTIONARY, str);
 			this.key = key;
 			this.value = value;
 		}
@@ -77,8 +83,8 @@ public class Type {
 	public static final class Record extends Type {
 		public final String[] names;
 		public final Type[] types;
-		public Record(String[] names, Type[] types) {
-			super(K_RECORD);
+		public Record(String[] names, Type[] types, String str) {
+			super(K_RECORD, str);
 			this.names = names;
 			this.types = types;
 		}
@@ -86,8 +92,8 @@ public class Type {
 	
 	public static final class Union extends Type {
 		public final Type[] bounds;		
-		public Union(Type... bounds) {
-			super(K_UNION);
+		public Union(String str, Type... bounds) {
+			super(K_UNION,str);
 			this.bounds = bounds;
 		}
 	}
@@ -95,7 +101,7 @@ public class Type {
 	private static final class Leaf extends Type {
 		public final String name;
 		public Leaf(String name) {
-			super(K_LEAF);
+			super(K_LEAF,name);
 			this.name = name;
 		}
 	}
@@ -170,20 +176,28 @@ public class Type {
 			this.str = str;
 		}
 		public Type parse(HashSet<String> typeVars) {
-			Type term = parseTerm(typeVars);
+			int start = index;
+			
 			skipWhiteSpace();
+			ArrayList<Type> terms = new ArrayList();
+			terms.add(parseTerm(typeVars));
 			while(index < str.length() && str.charAt(index) == '|') {
 				// union type
 				match("|");
-				term = new Union(term,parse(typeVars));
+				terms.add(parse(typeVars));				
 				skipWhiteSpace();
 			}
-			return term;
+			if(terms.size() == 1) {
+				return terms.get(0);
+			} else {				
+				return new Union(str.substring(start,index),terms.toArray(new Type[terms.size()]));				
+			}
 		}
 		public Type parseTerm(HashSet<String> typeVars) {
 			skipWhiteSpace();
 			char lookahead = str.charAt(index);
-
+			int start = index;
+			
 			switch (lookahead) {
 			case 'a':
 				match("any");
@@ -207,11 +221,11 @@ public class Type {
 				match("string");
 				return STRING;
 			case '[':
-			{
+			{				
 				match("[");
 				Type elem = parse(typeVars);
 				match("]");
-				return new List(elem);
+				return new List(elem, str.substring(start,index));
 			}
 			case '{':
 			{
@@ -223,7 +237,7 @@ public class Type {
 					match("->");
 					Type value = parse(typeVars);
 					match("}");
-					return new Dictionary(elem,value);
+					return new Dictionary(elem,value, str.substring(start,index));
 				} else if(index < str.length() && str.charAt(index) != '}') {
 					// record
 					HashMap<String,Type> fields = new HashMap<String,Type>();					
@@ -249,10 +263,10 @@ public class Type {
 						types[i] = fields.get(name);
 					}
 										
-					return new Record(names,types);					
+					return new Record(names,types, str.substring(start,index));					
 				}
 				match("}");
-				return new Set(elem);
+				return new Set(elem, str.substring(start,index));
 			}
 			default:
 			{
@@ -267,6 +281,7 @@ public class Type {
 					match("<");
 					Type t = parse(typeVars);
 					match(">");
+					t.str = str.substring(start,index);
 					return substitute(t,var,t);
 				}				
 			}

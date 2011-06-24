@@ -420,12 +420,22 @@ public class Util {
 	}
 	
 	public static Object coerce(BigInteger obj, Type t) {
+		if(t.kind == Type.K_UNION) {
+			Type.Union un = (Type.Union) t;
+			for(Type b : un.bounds) {
+				if(b.kind == Type.K_INT || b.kind == Type.K_ANY) {
+					return obj;					
+				} else if(b.kind == Type.K_RATIONAL) {
+					t = b;
+				}
+			}
+		}
 		if(t.kind == Type.K_INT) {
 			return obj;
 		} else if(t.kind == Type.K_RATIONAL) {
 			return BigRational.valueOf(obj);
 		} 
-		throw new RuntimeException("invalid coercion");
+		throw new RuntimeException("invalid integer coercion (" + obj + " => " + t + ")");
 	}
 	
 	public static Object coerce(List obj, Type t) {		
@@ -446,7 +456,7 @@ public class Util {
 				}			
 			return r;
 		}
-		throw new RuntimeException("invalid coercion");
+		throw new RuntimeException("invalid list coercion (" + obj + " => " + t + ")");
 	}
 	
 	public static Object coerce(Set obj, Type t) {
@@ -458,7 +468,7 @@ public class Util {
 			}
 			return r;
 		} 
-		throw new RuntimeException("invalid coercion");
+		throw new RuntimeException("invalid set coercion (" + obj + " => " + t + ")");
 	}
 	
 	public static Object coerce(Dictionary obj, Type t) {
@@ -472,7 +482,7 @@ public class Util {
 			}
 			return r;
 		}
-		throw new RuntimeException("invalid coercion");
+		throw new RuntimeException("invalid dictionary coercion (" + obj + " => " + t + ")");
 	}
 	
 	public static Object coerce(Record obj, Type t) {
@@ -488,6 +498,6 @@ public class Util {
 			}
 			return r;
 		}
-		throw new RuntimeException("invalid coercion");
+		throw new RuntimeException("invalid record coercion (" + obj + " => " + t + ")");
 	}
 }
