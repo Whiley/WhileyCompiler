@@ -573,15 +573,22 @@ public class ClassFileBuilder {
 					Bytecode.STATIC));							
 		} else {
 			Type.Record rec = Type.effectiveRecordType(type);			
-			String field = fields.next();
-			bytecodes.add(new Bytecode.LoadConst(field));				
+			String field = fields.next();			
 			if(level != 0) {
-				bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
+				int recordSlot = freeSlot++;
+				bytecodes.add(new Bytecode.Store(recordSlot,WHILEYRECORD));
+				bytecodes.add(new Bytecode.Load(recordSlot,WHILEYRECORD));
+				bytecodes.add(new Bytecode.LoadConst(field));				
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
 				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));
 				addReadConversion(rec.fields().get(field),bytecodes);
 				multiStoreHelper(rec.fields().get(field),level-1,fields,valSlot,val_t,freeSlot,bytecodes);
+				bytecodes.add(new Bytecode.Load(recordSlot,WHILEYRECORD));
+				bytecodes.add(new Bytecode.Swap());
+				bytecodes.add(new Bytecode.LoadConst(field));
+				bytecodes.add(new Bytecode.Swap());
 			} else {
+				bytecodes.add(new Bytecode.LoadConst(field));				
 				bytecodes.add(new Bytecode.Load(valSlot, val_t));
 				addWriteConversion(rec.fields().get(field),bytecodes);
 			}
