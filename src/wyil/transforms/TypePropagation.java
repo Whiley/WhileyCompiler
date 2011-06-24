@@ -994,9 +994,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Code ncode = code;
 		Env trueEnv = null;
-		Env falseEnv = null;
-
-		if(Type.isCoerciveSubtype(code.test,lhs_t)) {								
+		Env falseEnv = null;		
+		
+		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
 			//trueEnv = environment;
 			//ncode = Code.Goto(code.target);										

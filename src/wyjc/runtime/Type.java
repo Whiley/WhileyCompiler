@@ -152,7 +152,13 @@ public class Type {
 				match("{");
 				Type elem = parse();
 				skipWhiteSpace();
-				if(index < str.length() && str.charAt(index) != '}') {
+				if(index < str.length() && str.charAt(index) == '-') {
+					// dictionary
+					match("->");
+					Type value = parse();
+					match("}");
+					return new Dictionary(elem,value);
+				} else if(index < str.length() && str.charAt(index) != '}') {
 					// record
 					HashMap<String,Type> fields = new HashMap<String,Type>();					
 					String id = parseIdentifier();

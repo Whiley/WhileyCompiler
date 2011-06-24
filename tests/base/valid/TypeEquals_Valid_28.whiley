@@ -1,4 +1,4 @@
-[int] f([[real]] e):
+[int] f([[real|int]] e):
     if e ~= [[int]]:
         return e[0]
     else:

@@ -1,5 +1,5 @@
-int f({int->string} xs):
-    if xs ~= [string]:
+int f({int->*} xs):
+    if xs ~= {int->string}:
         return 1
     else:
         return -1
@@ -13,4 +13,6 @@ void System::main([string] args):
     out.println(str(f(s2)))
     out.println(str(f(s3)))
     out.println(str(f(s4)))
+    t1 = {0->0,1->1}
+    out.println(str(f(t1)))
 
