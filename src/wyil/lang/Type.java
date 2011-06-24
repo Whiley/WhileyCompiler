@@ -2682,7 +2682,7 @@ public abstract class Type {
 		case K_INT:
 			return "int";
 		case K_RATIONAL:
-			return "rat";
+			return "real";
 		case K_STRING:
 			return "string";
 		case K_SET:
@@ -3110,7 +3110,7 @@ public abstract class Type {
 		}
 		
 		public final static String[] kinds = { "void", "any", "meta", "null", "bool",
-				"int", "rat", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
+				"int", "real", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
 				"fun", "label" };
 		public String toString() {
 			if(data instanceof Pair[]) {

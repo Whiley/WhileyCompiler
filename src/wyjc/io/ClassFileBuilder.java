@@ -1760,12 +1760,13 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "<init>", ftype,
 				Bytecode.SPECIAL));
 		
-		ftype = new JvmType.Function(WHILEYSET, WHILEYSET, JAVA_LANG_OBJECT);		
+		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
 		for (Value e : lv.values) {			
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "union", ftype,
-					Bytecode.STATIC));			
+			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add", ftype,
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(T_BOOL));
 		}		
 	}
 
@@ -1774,23 +1775,24 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.New(WHILEYLIST));		
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 		bytecodes.add(new Bytecode.LoadConst(lv.values.size()));
-		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
+		JvmType.Function ftype = new JvmType.Function(T_BOOL,T_INT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
 				Bytecode.SPECIAL));
 		
-		ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST, JAVA_LANG_OBJECT);		
+		ftype = new JvmType.Function(WHILEYLIST, JAVA_LANG_OBJECT);		
 		for (Value e : lv.values) {			
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
-					Bytecode.STATIC));			
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add", ftype,
+					Bytecode.VIRTUAL));			
+			bytecodes.add(new Bytecode.Pop(T_BOOL));
 		}				
 	}
 
 	protected void translate(Value.Record expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD,
-				JAVA_LANG_STRING, JAVA_LANG_OBJECT);
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		construct(WHILEYRECORD, freeSlot, bytecodes);
 		for (Map.Entry<String, Value> e : expr.values.entrySet()) {
 			Type et = e.getValue().type();
@@ -1799,14 +1801,14 @@ public class ClassFileBuilder {
 			translate(e.getValue(), freeSlot, bytecodes);
 			addWriteConversion(et, bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype,
-					Bytecode.STATIC));
-			bytecodes.add(new Bytecode.Pop(WHILEYRECORD));
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
 	}
 	
 	protected void translate(Value.Dictionary expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP,
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		
 		construct(WHILEYMAP, freeSlot, bytecodes);
@@ -1820,8 +1822,8 @@ public class ClassFileBuilder {
 			translate(e.getValue(), freeSlot, bytecodes);
 			addWriteConversion(vt, bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
-					Bytecode.STATIC));
-			bytecodes.add(new Bytecode.Pop(WHILEYMAP));
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
 	}
 	
