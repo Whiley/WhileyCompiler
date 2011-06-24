@@ -1761,7 +1761,8 @@ public class ClassFileBuilder {
 				Bytecode.SPECIAL));
 		
 		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
-		for (Value e : lv.values) {			
+		for (Value e : lv.values) {
+			bytecodes.add(new Bytecode.Dup(WHILEYSET));
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add", ftype,
@@ -1775,12 +1776,13 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.New(WHILEYLIST));		
 		bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 		bytecodes.add(new Bytecode.LoadConst(lv.values.size()));
-		JvmType.Function ftype = new JvmType.Function(T_BOOL,T_INT);
+		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "<init>", ftype,
 				Bytecode.SPECIAL));
 		
-		ftype = new JvmType.Function(WHILEYLIST, JAVA_LANG_OBJECT);		
-		for (Value e : lv.values) {			
+		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
+		for (Value e : lv.values) {	
+			bytecodes.add(new Bytecode.Dup(WHILEYLIST));
 			translate(e, freeSlot, bytecodes);
 			addWriteConversion(e.type(), bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add", ftype,
