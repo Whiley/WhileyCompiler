@@ -8,7 +8,7 @@ int f(Expr e):
         return 0
 
 void System::main([string] args):
-    v = f([1,2,3])
+    v = f([1.0,2.0,3.0])
     out.println(str(v))
     v = f(1.234)
     out.println(str(v))
