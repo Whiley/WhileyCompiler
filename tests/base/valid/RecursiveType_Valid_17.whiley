@@ -1,5 +1,5 @@
 // expression tree
-define Expr as real |  // constant
+define Expr as int | real |  // constant
     [Expr] |           // list constructor
     ListAccess         // list access
 
@@ -9,17 +9,17 @@ define ListAccess as {
     Expr index
 } 
 
-define Value as real | [Value] | null
+define Value as int | real | [Value] | null
 
 Value evaluate(Expr e):
-    if e ~= int:
+    if e ~= real || e ~= int:
         return e
     else if e ~= [Expr]:
         r = []
         for i in e:
             r = r + [evaluate(i)]
         return r
-    else if e ~= ListAccess:
+    else:
         src = evaluate(e.src)
         index = evaluate(e.index)
         // santity checks
@@ -27,9 +27,6 @@ Value evaluate(Expr e):
             return src[index]
         else:
             return null // stuck
-    else:
-        // e must be a list expression
-        return 0
 
 public void System::main([string] args):
     out.println(str(evaluate(1)))
