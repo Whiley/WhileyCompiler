@@ -995,13 +995,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Code ncode = code;
 		Env trueEnv = null;
 		Env falseEnv = null;		
-		
+		Type glb = Type.greatestLowerBound(lhs_t, code.test);
+			
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
 			//trueEnv = environment;
 			//ncode = Code.Goto(code.target);										
 			syntaxError("unreachable statement",filename,methodCase.body().get(index+1));
-		} else if (Type.greatestLowerBound(lhs_t, code.test) == Type.T_VOID) {				
+		} else if (glb == Type.T_VOID) {				
 			// DEFINITE FALSE CASE				
 			//falseEnv = environment;							
 			//ncode = Code.Skip;							
@@ -1010,9 +1011,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			ncode = Code.IfType(lhs_t, code.slot, code.test, code.target);				
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
-			if(code.slot >= 0) {
-				Type glb = Type.greatestLowerBound(lhs_t, code.test);				
-				Type gdiff = Type.leastDifference(lhs_t, code.test);	
+			if(code.slot >= 0) {						
+				Type gdiff = Type.leastDifference(lhs_t, code.test);				
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
