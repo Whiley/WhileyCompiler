@@ -113,7 +113,7 @@ public final class Set extends java.util.HashSet {
 		return set;
 	}	
 	
-	public static BigInteger length(List list) {
-		return BigInteger.valueOf(list.size());
+	public static BigInteger length(Set set) {
+		return BigInteger.valueOf(set.size());
 	}
 }
