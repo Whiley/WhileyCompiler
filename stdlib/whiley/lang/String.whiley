@@ -25,10 +25,10 @@
 
 package whiley.lang
 
-public string str(* item):
-    if item ~= null:
+public string str(any item):
+    if item is null:
         return "null"
-    else if item ~= string:
+    else if item is string:
         return "\"" + item + "\""
     extern jvm:
         aload 0

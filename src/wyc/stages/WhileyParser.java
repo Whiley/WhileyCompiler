@@ -1347,8 +1347,8 @@ public class WhileyParser {
 		if(token instanceof Question) {
 			match(Question.class);
 			t = new UnresolvedType.Existential(sourceAttr(start,index-1));
-		} else if(token instanceof Star) {
-			match(Star.class);
+		} else if(token.text.equals("any")) {
+			matchKeyword("any");
 			t = new UnresolvedType.Any(sourceAttr(start,index-1));
 		} else if(token.text.equals("null")) {
 			matchKeyword("null");

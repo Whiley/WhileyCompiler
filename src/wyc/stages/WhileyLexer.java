@@ -434,6 +434,7 @@ public class WhileyLexer {
 		"true",
 		"false",
 		"null",
+		"any",
 		"int",
 		"real",
 		"string",
