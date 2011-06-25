@@ -202,8 +202,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.Debug code, Block.Entry entry,
 			Env environment) {
-		// FIXME: update to string
-		environment.push(Type.T_LIST(Type.T_INT));
+		environment.push(Type.T_STRING);
 	}
 	
 	public void infer(int index, Code.DictLoad code, Block.Entry entry,
