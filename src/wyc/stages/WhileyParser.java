@@ -839,9 +839,7 @@ public class WhileyParser {
 		while (lookahead instanceof LeftSquare 
 				|| lookahead instanceof Dot
 				|| lookahead instanceof Shreak
-				|| lookahead instanceof LeftBrace
-				|| lookahead instanceof LeftArrow
-				|| lookahead instanceof LeftRightArrow) {
+				|| lookahead instanceof LeftBrace) {
 			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
