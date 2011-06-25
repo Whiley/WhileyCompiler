@@ -1,7 +1,7 @@
 define Expr as real | [Expr]
 
 real f(Expr x):
-    if x ~= [Expr]:
+    if x is [Expr]:
         return |x|
     else:
         return x

@@ -1,5 +1,5 @@
 int f(int|bool x):
-    if x ~= int:
+    if x is int:
         return x
     else:
         return 1 

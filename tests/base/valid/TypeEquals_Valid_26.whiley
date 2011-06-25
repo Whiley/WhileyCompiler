@@ -1,7 +1,7 @@
 define rlist as real | [int]
 
 int f(rlist l):
-    if l ~= real:
+    if l is real:
         return 0
     else:
         return |l|

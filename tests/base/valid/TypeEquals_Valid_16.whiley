@@ -1,5 +1,5 @@
 string f(int|null x):
-    if x ~= null:
+    if x is null:
         return "GOT NULL"
     else:
         return "GOT INT"

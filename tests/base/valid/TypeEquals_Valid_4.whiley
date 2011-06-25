@@ -4,7 +4,7 @@ define expr as {int}|bool
     return input + {-1}
 
 string f(expr e):
-    if e ~= {int}:
+    if e is {int}:
         t = g(e)
         return "GOT: " + str(t)
     else:

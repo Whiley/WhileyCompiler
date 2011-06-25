@@ -4,7 +4,7 @@ define neg as int
 define intlist as pos|neg|[int]
 
 int f(intlist x):
-    if x ~= int:
+    if x is int:
         return x
     return 1 
 

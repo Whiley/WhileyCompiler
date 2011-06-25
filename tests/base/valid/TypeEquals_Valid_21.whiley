@@ -1,7 +1,7 @@
 define Rtypes as {real x, real y} | {int x, int z}
 
 string f(Rtypes e):
-    if e ~= {int x, int z}:
+    if e is {int x, int z}:
         return "GOT IT"
     else:
         return "NOPE"

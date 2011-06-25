@@ -2,7 +2,7 @@ define BinOp as {Expr lhs, Expr rhs}
 define Expr as BinOp | real | [Expr]
 
 int f(Expr e):
-    if e ~= [Expr]:
+    if e is [Expr]:
         return |e|
     else:
         return 0

@@ -1,5 +1,5 @@
 int f({int->*} xs):
-    if xs ~= {int->string}:
+    if xs is {int->string}:
         return 1
     else:
         return -1

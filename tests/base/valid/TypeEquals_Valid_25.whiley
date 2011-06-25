@@ -1,7 +1,7 @@
 define src as int|[src]
 
 string f(src e):
-    if e ~= [*]:
+    if e is [*]:
         return "[*]"
     else:
         return "int"

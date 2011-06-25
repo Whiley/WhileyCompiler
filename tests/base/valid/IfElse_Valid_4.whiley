@@ -2,7 +2,7 @@ define Link as { int data, LinkedList next }
 define LinkedList as null | Link
 
 int sum_1(LinkedList ls):
-    if ls ~= null:
+    if ls is null:
         return 0
     else:
         return ls.data + sum_1(ls.next)

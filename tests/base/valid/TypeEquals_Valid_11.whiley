@@ -1,7 +1,7 @@
 define imsg as int|{string msg}
 
 string getMessage(imsg m):
-    if m ~= {string msg}:
+    if m is {string msg}:
         return m.msg
     else:
         return str(m)

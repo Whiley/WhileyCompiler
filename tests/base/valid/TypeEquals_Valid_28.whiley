@@ -1,5 +1,5 @@
 [int] f([[real|int]] e):
-    if e ~= [[int]]:
+    if e is [[int]]:
         return e[0]
     else:
         return [1,2,3]

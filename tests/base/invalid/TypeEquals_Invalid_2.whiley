@@ -1,9 +1,9 @@
 define ilist as real | [int]
 
 string f(real e):
-    if e ~= real:
+    if e is real:
         return "real"
-    else if e ~= int:
+    else if e is int:
         return "int"
     else:
         return "[int]"

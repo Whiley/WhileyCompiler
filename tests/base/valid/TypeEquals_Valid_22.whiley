@@ -1,7 +1,7 @@
 define iset as {int} | int
 
 string f(iset e):
-    if e ~= {int}:
+    if e is {int}:
         return "{int}"
     else:
         return "int"

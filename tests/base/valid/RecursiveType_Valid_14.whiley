@@ -2,8 +2,8 @@ define Expr as real | { Expr lhs, int data } | [Expr]
 define SubExpr as real | { SubExpr lhs, int data }
 
 string toString(Expr e):
-    if e ~= SubExpr:
-        if e ~= real:
+    if e is SubExpr:
+        if e is real:
             return str(e)
         else:
             return str(e.data) + "->" + toString(e.lhs)

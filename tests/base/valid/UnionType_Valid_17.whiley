@@ -21,7 +21,7 @@ void System::main([string] args):
     e,s = parseTerm({input: "123", pos: 0})
     out.println(str(e))
     e,s = parseTerm({input: "abc", pos: 0})
-    if e ~= SyntaxError: 
+    if e is SyntaxError: 
         out.println(e.err)
     else:
         out.println(str(e))

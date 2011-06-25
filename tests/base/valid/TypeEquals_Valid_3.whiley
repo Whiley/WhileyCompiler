@@ -1,7 +1,7 @@
 define expr as {int}|bool
 
 string f(expr e):
-    if e ~= {int}:
+    if e is {int}:
         return "GOT {INT}"
     else:
         return "GOT BOOL"

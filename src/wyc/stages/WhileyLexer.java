@@ -395,10 +395,6 @@ public class WhileyLexer {
 			} else {
 				return new RightAngle(pos++);
 			}
-		} else if (c == '~' && (pos + 1) < input.length()
-				&& input.charAt(pos + 1) == '=') {
-			pos += 2;
-			return new TypeEquals(pos - 2);
 		} else if(c == UC_LESSEQUALS) {
 			return new LessEquals(""+UC_LESSEQUALS,pos++);
 		} else if(c == UC_GREATEREQUALS) {
@@ -444,7 +440,7 @@ public class WhileyLexer {
 		"bool",
 		"process",
 		"void",			
-		"if",
+		"if",		
 		"switch",
 		"break",
 		"case",
@@ -492,7 +488,9 @@ public class WhileyLexer {
 			return new None(text,start);
 		} else if(text.equals("some")) {
 			return new Some(text,start);
-		} 		
+		} else if(text.equals("is")) {			
+			return new TypeEquals(start);			 
+		}
 	
 		// otherwise, must be identifier
 		return new Identifier(text,start);
@@ -671,7 +669,7 @@ public class WhileyLexer {
 		public GreaterEquals(String text, int pos) { super(text,pos);	}
 	}
 	public static class TypeEquals extends Token {
-		public TypeEquals(int pos) { super("~=",pos);	}
+		public TypeEquals(int pos) { super("is",pos);	}
 	}
 	public static class None extends Token {
 		public None(String text, int pos) { super(text,pos);	}

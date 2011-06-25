@@ -1,9 +1,9 @@
 define expr as [int]|int
 
 void System::f(expr e):
-    if e ~= [int]:
+    if e is [int]:
         out.println("GOT [INT]")
-    else if e ~= int:
+    else if e is int:
         out.println("GOT INT")
     else:
         out.println("GOT SOMETHING ELSE?")

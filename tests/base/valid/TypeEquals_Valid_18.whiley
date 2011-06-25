@@ -1,7 +1,7 @@
 define intreal as real | int
 
 string f(intreal e):
-    if e ~= int:
+    if e is int:
         return "int"
     else:
         return "real"

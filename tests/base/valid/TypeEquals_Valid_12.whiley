@@ -1,9 +1,9 @@
 define imsg as int|{int op}|{string msg}
 
 string getMessage(imsg m):
-    if m ~= {string msg}:
+    if m is {string msg}:
         return m.msg
-    else if m ~= {int op}:
+    else if m is {int op}:
         return str(m.op)
     else:
         return str(m)

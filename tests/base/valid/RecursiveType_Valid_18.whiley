@@ -12,13 +12,13 @@ define ListAccess as {
 define Value as int | real | [Value]
 
 null|Value evaluate(Expr e):
-    if e ~= real || e ~= int:
+    if e is real || e is int:
         return e
-    else if e ~= [Expr]:
+    else if e is [Expr]:
         r = []
         for i in e:
             v = evaluate(i)
-            if v ~= null:
+            if v is null:
                 return v // stuck
             else:
                 r = r + [v]
@@ -27,7 +27,7 @@ null|Value evaluate(Expr e):
         src = evaluate(e.src)
         index = evaluate(e.index)
         // santity checks
-        if src ~= [Expr] && index ~= int && index >= 0 && index < |src|:
+        if src is [Expr] && index is int && index >= 0 && index < |src|:
             return src[index]
         else:
             return null // stuck
