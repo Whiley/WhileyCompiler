@@ -1194,7 +1194,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		List<Type> f2_params = f2.params();
 		if(f1_params.size() == f2_params.size()) {
 			for(int i=0;i!=f1_params.size();++i) {
-				if(!Type.isCoerciveSubtype(f1_params.get(i),f2_params.get(i))) {
+				Type f1_param = f1_params.get(i);
+				Type f2_param = f2_params.get(i);
+				if(!Type.isCoerciveSubtype(f1_param,f2_param)) {					
 					return false;
 				}
 			}

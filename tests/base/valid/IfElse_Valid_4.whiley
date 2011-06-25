@@ -5,24 +5,24 @@ int sum_1(LinkedList ls):
     if ls ~= null:
         return 0
     else:
-        return 1 + sum_1(ls.next)
+        return ls.data + sum_1(ls.next)
 
 int sum_2(LinkedList ls):
     if ls == null:
         return 0
     else:
-        return 1 + sum_2(ls.next)
+        return ls.data + sum_2(ls.next)
 
 int sum_3(LinkedList ls):
     if ls != null:
-        return 1 + sum_3(ls.next)
+        return ls.data + sum_3(ls.next)
     else:
-        return null
+        return 0
 
 void System::main([string] args):
-    ls = { val: 1, next: null}
-    ls = { val: 2, next: ls}
-    ls = { val: 3, next: ls}
+    ls = { data: 1, next: null}
+    ls = { data: 2, next: ls}
+    ls = { data: 3, next: ls}
     out.println(str(sum_1(ls)))
     out.println(str(sum_2(ls)))
     out.println(str(sum_3(ls)))
