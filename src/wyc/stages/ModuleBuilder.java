@@ -1259,6 +1259,13 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		Type[] paramTypes = new Type[args.size()]; 
 		
+		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
+		
+		boolean indirectInvoke = environment.containsKey(s.name);
+		boolean fieldIndirectSend = s.receiver != null && modInfo == null;
+		boolean directInvoke = s.receiver == null && modInfo != null;		
+		boolean directSend = s.receiver != null && modInfo != null;
+		
 		if(environment.containsKey(s.name)) {
 			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
 		}
@@ -1279,8 +1286,7 @@ public class ModuleBuilder {
 			} else {
 				blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
 			}
-		} else {
-			Attributes.Module modInfo = s.attribute(Attributes.Module.class);
+		} else {			
 			if(modInfo != null) {
 				NameID name = new NameID(modInfo.module, s.name);
 				if(s.receiver != null) {

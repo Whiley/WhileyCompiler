@@ -336,15 +336,23 @@ public class NameResolution {
 		if(!environment.containsKey(ivk.name)) {
 			// only look for non-local function binding if there is not a local
 			// variable with the same name.
-			ModuleID mid = loader.resolve(ivk.name,imports);
 			Expr target = ivk.receiver;
 
 			if(target != null) {
 				resolve(target,environment,imports);
+				try {
+					ModuleID mid = loader.resolve(ivk.name,imports);
+				} catch(ResolveError e) {
+					// in this case, we've been unable to resolve the method
+					// being called. However, this does not necessarily indicate
+					// an error --- this could be a field dereferences, followed
+					// by an indirect function call.
+				}
+			} else {
+				ModuleID mid = loader.resolve(ivk.name,imports);
+				// Ok, resolve the module for this invoke
+				ivk.attributes().add(new Attributes.Module(mid));		
 			}
-
-			// Ok, resolve the module for this invoke
-			ivk.attributes().add(new Attributes.Module(mid));		
 		}
 	}
 	
