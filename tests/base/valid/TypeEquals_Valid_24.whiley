@@ -1,7 +1,7 @@
 define src as int|[int]|[[int]]
 
 string f(src e):
-    if e is [*]:
+    if e is [any]:
         return "[*]"
     else:
         return "int"

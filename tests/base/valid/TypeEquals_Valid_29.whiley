@@ -1,4 +1,4 @@
-int f({(int,*)} xs):
+int f({(int,any)} xs):
     if xs is {(int,string)}:
         return 1
     else:
