@@ -1053,10 +1053,38 @@ public class ModuleBuilder {
 			return resolveTypeCondition(target, v, environment);
 		}
 
-		blk.addAll(resolve(environment, v.lhs));
-		blk.addAll(resolve(environment, v.rhs));
-		blk.add(Code.IfGoto(null, OP2COP(bop, v), target),
-				attributes(v));
+		Code.COp cop = OP2COP(bop,v);
+		
+		if (cop == Code.COp.EQ && v.lhs instanceof Expr.Variable
+				&& v.rhs instanceof Expr.Constant
+				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {
+			// this is a simple rewrite to enable type inference.
+			Variable lhs = (Variable) v.lhs;
+			if (!environment.containsKey(lhs.var)) {
+				syntaxError("unknown variable", filename, v.lhs);
+			}
+			int slot = environment.get(lhs.var);
+			blk.addAll(resolve(environment, v.rhs));			
+			blk.add(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
+		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.Variable
+				&& v.rhs instanceof Expr.Constant
+				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
+			// this is a simple rewrite to enable type inference.
+			String exitLabel = Block.freshLabel();
+			Variable lhs = (Variable) v.lhs;
+			if (!environment.containsKey(lhs.var)) {
+				syntaxError("unknown variable", filename, v.lhs);
+			}
+			int slot = environment.get(lhs.var);
+			blk.addAll(resolve(environment, v.rhs));			
+			blk.add(Code.IfType(null, slot, Type.T_NULL, exitLabel), attributes(v));
+			blk.add(Code.Goto(target));
+			blk.add(Code.Label(exitLabel));
+		} else {
+			blk.addAll(resolve(environment, v.lhs));			
+			blk.addAll(resolve(environment, v.rhs));
+			blk.add(Code.IfGoto(null, cop, target), attributes(v));
+		}
 		return blk;
 	}
 
