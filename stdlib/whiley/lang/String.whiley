@@ -36,8 +36,6 @@ public string str(any item):
         areturn
     return "DUMMY" // dead code
 
-/*
-
 // find first index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED
 public int|null indexOf(char c, string str):
@@ -75,4 +73,4 @@ public string replace(char old, char new, string str):
             str[i] = new
         i = i + 1
     return str    
-*/
+
