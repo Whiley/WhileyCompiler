@@ -65,6 +65,15 @@ public class Util {
 		return lhs.substring(start,end);
 	}
 	
+	public static String set(final String lhs, BigInteger index, BigInteger value) {
+		int idx = index.intValue();
+		char c = (char) value.intValue();
+		// hmmm, not exactly efficient!
+		StringBuilder sb = new StringBuilder(lhs);
+		sb.setCharAt(idx, c);
+		return sb.toString();
+	}
+	
 	/**
 	 * This method is used to convert the arguments supplied to main (which have
 	 * type <code>String[]</code>) into an appropriate Whiley List.

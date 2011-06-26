@@ -468,6 +468,8 @@ public class ClassFileBuilder {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
 				iter = dict.value();
+			} else if(Type.isSubtype(Type.T_STRING,iter)) {
+				iter = Type.T_INT;
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
 				Type.List list = Type.effectiveListType(iter);
 				iter = list.element();
@@ -541,6 +543,18 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 					Bytecode.STATIC));			
 						
+		} else if(Type.isSubtype(Type.T_STRING,type)) {
+			
+			// assert: level must be zero here
+			bytecodes.add(new Bytecode.Swap());	
+			bytecodes.add(new Bytecode.Load(valSlot, val_t));
+			addWriteConversion(Type.T_INT,bytecodes);			
+
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
+					JAVA_LANG_STRING,BIG_INTEGER,BIG_INTEGER);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
+					Bytecode.STATIC));						
+			
 		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),type)) {
 			Type.List list = Type.effectiveListType(type);				
 										

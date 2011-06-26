@@ -572,7 +572,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		int fi = 0;
 		int pi = 0;
 		for(int i=0;i!=e.level;++i) {				
-			if(Type.isCoerciveSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
 				if(dict == null) {
@@ -581,13 +581,18 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type idx = path.get(pi++);
 				checkIsSubtype(dict.key(),idx,stmt);
 				iter = dict.value();				
-			} else if(Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.T_STRING,iter)) {							
+				Type idx = path.get(pi++);
+				checkIsSubtype(Type.T_INT,idx,stmt);
+				checkIsSubtype(Type.T_INT,val,stmt);	
+				iter = Type.T_INT;				
+			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
 					syntaxError("expected list",filename,stmt);
 				}
 				Type idx = path.get(pi++);
-				checkIsSubtype(Type.T_INT,idx,stmt);
+				checkIsSubtype(Type.T_INT,idx,stmt);				
 				iter = list.element();
 			} else {
 				Type.Record rec = Type.effectiveRecordType(iter);
@@ -629,11 +634,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
-		} else if(Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
+		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
 			Type.Process tp = (Type.Process) oldtype;
 			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields);
 			return Type.T_PROCESS(nelement);
-		} else if(Type.isCoerciveSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
+		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
 			// --- hence, the original type must be preserved. However, in the
@@ -643,7 +648,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nvalue = typeInference(dict.value(),newtype,level-1,fieldLevel,fields);
 			return Type.leastUpperBound(oldtype,Type.T_DICTIONARY(dict.key(),nvalue));
 			
-		} else if(Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {
+		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
+			Type nelement = typeInference(Type.T_INT,newtype,level-1,fieldLevel,fields);
+			
+			return oldtype;
+		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = typeInference(list.element(),newtype,level-1,fieldLevel,fields);

@@ -117,6 +117,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void SetIntersect_CompileFail_2_StaticTest() { contextFailTest("SetIntersect_CompileFail_2"); }
  @Test public void SetUnion_CompileFail_1_StaticTest() { contextFailTest("SetUnion_CompileFail_1"); }
  @Test public void SetUnion_CompileFail_2_StaticTest() { contextFailTest("SetUnion_CompileFail_2"); }
+ @Test public void String_CompileFail_1_StaticTest() { contextFailTest("String_Invalid_1"); }
  @Test public void Switch_CompileFail_1_StaticTest() { contextFailTest("Switch_CompileFail_1"); } 
  @Test public void Switch_CompileFail_2_StaticTest() { contextFailTest("Switch_CompileFail_2"); } 
  @Test public void Switch_CompileFail_3_StaticTest() { contextFailTest("Switch_CompileFail_3"); }

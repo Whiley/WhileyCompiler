@@ -327,6 +327,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
 				environment.push(dict.key());
 				iter = dict.value();				
+			} else if(Type.isSubtype(Type.T_STRING,iter)) {
+				environment.push(Type.T_INT);
+				iter = Type.T_INT;
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
 				environment.push(Type.T_INT);
