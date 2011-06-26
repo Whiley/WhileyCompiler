@@ -74,3 +74,10 @@ public string replace(char old, char new, string str):
         i = i + 1
     return str    
 
+// Convert a byte stream into a string using the standard ASCII
+// encoding.
+public string ascii2str([byte] data):
+    r = ""
+    for b in data:
+        r = r + b
+    return r    

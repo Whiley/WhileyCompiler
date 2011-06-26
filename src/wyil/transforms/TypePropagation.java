@@ -1020,7 +1020,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// DEFINITE TRUE CASE										
 			//trueEnv = environment;
 			//ncode = Code.Goto(code.target);										
-			syntaxError("unreachable statement",filename,methodCase.body().get(index+1));
+			syntaxError("branch always taken",filename,methodCase.body().get(index));
 		} else if (glb == Type.T_VOID) {				
 			// DEFINITE FALSE CASE				
 			//falseEnv = environment;							
