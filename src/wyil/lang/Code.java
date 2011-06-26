@@ -1843,13 +1843,17 @@ public abstract class Code {
 		}
 		
 		public int hashCode() {
-			return type.hashCode();
+			if(type == null) {
+				return 98923;
+			} else {
+				return type.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof Throw) {
 				Throw i = (Throw) o;
-				return type.equals(i.type);
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
