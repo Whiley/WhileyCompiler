@@ -342,6 +342,7 @@ public class NameResolution {
 				resolve(target,environment,imports);
 				try {
 					ModuleID mid = loader.resolve(ivk.name,imports);
+					ivk.attributes().add(new Attributes.Module(mid));	
 				} catch(ResolveError e) {
 					// in this case, we've been unable to resolve the method
 					// being called. However, this does not necessarily indicate
