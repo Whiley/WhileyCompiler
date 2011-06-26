@@ -288,6 +288,9 @@ public interface Expr extends SyntacticElement {
 		OR{
 			public String toString() { return "||"; }
 		},
+		XOR {
+			public String toString() { return "^^"; }
+		},
 		ADD{
 			public String toString() { return "+"; }
 		},
@@ -299,7 +302,10 @@ public interface Expr extends SyntacticElement {
 		},
 		DIV{
 			public String toString() { return "/"; }
-		},		
+		},
+		REM{
+			public String toString() { return "%"; }
+		},
 		UNION{
 			public String toString() { return "+"; }
 		},

@@ -301,8 +301,6 @@ public class NameResolution {
 				resolve((UnOp)e, environment, imports);
 			} else if (e instanceof Invoke) {
 				resolve((Invoke)e, environment, imports);
-			} else if (e instanceof Comprehension) {
-				resolve((Comprehension) e, environment, imports);
 			} else if (e instanceof RecordAccess) {
 				resolve((RecordAccess) e, environment, imports);
 			} else if (e instanceof RecordGen) {
@@ -338,15 +336,24 @@ public class NameResolution {
 		if(!environment.containsKey(ivk.name)) {
 			// only look for non-local function binding if there is not a local
 			// variable with the same name.
-			ModuleID mid = loader.resolve(ivk.name,imports);
 			Expr target = ivk.receiver;
 
 			if(target != null) {
 				resolve(target,environment,imports);
+				try {
+					ModuleID mid = loader.resolve(ivk.name,imports);
+					ivk.attributes().add(new Attributes.Module(mid));	
+				} catch(ResolveError e) {
+					// in this case, we've been unable to resolve the method
+					// being called. However, this does not necessarily indicate
+					// an error --- this could be a field dereferences, followed
+					// by an indirect function call.
+				}
+			} else {
+				ModuleID mid = loader.resolve(ivk.name,imports);
+				// Ok, resolve the module for this invoke
+				ivk.attributes().add(new Attributes.Module(mid));		
 			}
-
-			// Ok, resolve the module for this invoke
-			ivk.attributes().add(new Attributes.Module(mid));		
 		}
 	}
 	
@@ -402,7 +409,11 @@ public class NameResolution {
 	
 	protected void resolve(Comprehension e, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {						
 		HashMap<String,Set<Expr>> nenv = new HashMap<String,Set<Expr>>(environment);
-		for(Pair<String,Expr> me : e.sources) {														
+		for(Pair<String,Expr> me : e.sources) {	
+			if (environment.containsKey(me.first())) {
+				syntaxError("variable " + me.first() + " is alreaded defined",
+						filename, e);
+			}
 			resolve(me.second(),nenv,imports); 			
 			nenv.put(me.first(),Collections.EMPTY_SET);
 		}		
@@ -444,8 +455,10 @@ public class NameResolution {
 	protected void resolve(FunConst tc, HashMap<String,Set<Expr>> environment,
 			ArrayList<PkgID> imports) throws ResolveError {		
 		
-		for(UnresolvedType t : tc.paramTypes) {
-			resolve(t,imports);
+		if(tc.paramTypes != null) {
+			for(UnresolvedType t : tc.paramTypes) {
+				resolve(t,imports);
+			}
 		}
 		
 		ModuleID mid = loader.resolve(tc.name,imports);		

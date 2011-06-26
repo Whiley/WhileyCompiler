@@ -201,9 +201,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
      */ 
 	public String toString() {		
 		if(isInteger()) {
-			return numerator.toString();
+			return numerator.toString() + ".0";
 		} else {
-
 			BigDecimal bd = round(10);
 			BigRational br = new BigRational(bd);
 			if (this.equals(br)) {
@@ -322,6 +321,11 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	
 	public BigRational intDivide(final BigRational r) {
 		BigInteger num = numerator.divide(r.numerator);		
+		return new BigRational(num);
+	}
+	
+	public BigRational intRemainder(final BigRational r) {
+		BigInteger num = numerator.remainder(r.numerator);		
 		return new BigRational(num);
 	}
 	

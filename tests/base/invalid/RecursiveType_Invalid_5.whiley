@@ -20,9 +20,9 @@ SExpr sbuild(int i):
         return build(i)
 
 real evaluate(Expr e):
-    if e ~= real:
+    if e is real:
         return e
-    if e ~= {[int] id}:
+    if e is {[int] id}:
         return |e.id|
     else:
         return evaluate(e.lhs) + evaluate(e.rhs)
@@ -32,9 +32,9 @@ public void System::main([string] args):
     i = -5
     while i < 10:
         e = sbuild(i)
-        if e ~= {[int] err}:
-            out<->println("syntax error: " + e.err)
+        if e is {[int] err}:
+            out.println("syntax error: " + e.err)
         else:
             e = evaluate(e)
-            out<->println(str(e))
+            out.println(str(e))
         i = i + 1

@@ -6,7 +6,7 @@ string f(IntReal y):
 
 void System::main([string] args):
     x = 123
-    out<->println(f(x))
+    out.println(f(x))
     x = 1.234
-    out<->println(f(x))
+    out.println(f(x))
 

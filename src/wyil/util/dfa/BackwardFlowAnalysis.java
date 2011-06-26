@@ -29,12 +29,15 @@ import static wyil.util.SyntaxError.syntaxError;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
+import wyil.lang.Block.Entry;
 import wyil.util.*;
+import static wyil.lang.Block.*;
 
 public abstract class BackwardFlowAnalysis<T> implements Transform {
 	protected ModuleLoader loader;
@@ -86,64 +89,67 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
 		T last = lastStore();						
-		Block body = propagate(mcase.body(), last).first();		
-		return new Module.Case(mcase.parameterNames(), body, mcase.attributes());
+		propagate(0, mcase.body().size(), last);		
+		return mcase;
 	}		
 	
-	protected Pair<Block, T> propagate(Block block, T store) {
+	protected T propagate(int start, int end, T store) {
+		Block block = methodCase.body();
 		
-		Block nblock = new Block();
-		for(int i=(block.size()-1);i>=0;--i) {						
-			Stmt stmt = block.get(i);						
+		for(int i=end-1;i>=start;--i) {						
+			Entry stmt = block.get(i);						
 			try {				
 				Code code = stmt.code;
 
 				// First, check for a label which may have incoming information.
-				if (code instanceof Code.Label) {
-					Code.Label l = (Code.Label) code;
-					stores.put(l.label,store);
-				} else if (code instanceof Code.End) {					
-					Code.Start start = null;
-					Code.End end = (Code.End) code;
-					// Note, I could make this more efficient!
-					Block body = new Block();
+				if (code instanceof Code.End) {					
+					Code.Loop loop = null;
+					String label = ((Code.End) code).label;
+					int loopEnd = i;
 					while (--i >= 0) {						
 						stmt = block.get(i);
-						if (stmt.code instanceof Code.Start) {
-							start = (Code.Start) stmt.code;
-							if (end.target.equals(start.label)) {
+						if (stmt.code instanceof Code.Loop) {
+							loop = (Code.Loop) stmt.code;
+							if (label.equals(loop.target)) {
 								// start of loop body found
 								break;
 							}
-						}
-						body.add(0,stmt.code, stmt.attributes());
+						}						
 					}			
 					
-					Pair<Block, T> r = propagate(start, end, body, stmt, store);										
-					
-					nblock.addAll(0,r.first());
-					store = r.second();
+					store = propagate(i, loopEnd, loop, stmt, store);															
 					continue;
+				} else if (code instanceof Code.Label) {
+					Code.Label l = (Code.Label) code;
+					stores.put(l.label,store);
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
-					T trueStore = stores.get(ifgoto.target);
-					if(trueStore == null) {
-						System.out.println("PROBLEM");
+					T trueStore = stores.get(ifgoto.target);					
+					store = propagate(i, ifgoto, stmt, trueStore,store);										
+				} else if (code instanceof Code.IfType) {
+					Code.IfType iftype = (Code.IfType) code;
+					T trueStore = stores.get(iftype.target);					
+					store = propagate(i, iftype, stmt, trueStore,store);										
+				} else if (code instanceof Code.Switch) {
+					Code.Switch sw = (Code.Switch) code;
+					
+					// assert r.second().size() == nsw.branches.size()
+					Code.Switch nsw = (Code.Switch) stmt.code;
+					ArrayList<T> swStores = new ArrayList<T>();
+					for(int j=0;j!=nsw.branches.size();++j){
+						String target = nsw.branches.get(j).second();
+						swStores.add(stores.get(target));
 					}
-					Pair<Stmt, T> r = propagate(ifgoto, stmt, trueStore,store);
-					stmt = r.first();
-					store = r.second();
+					T defStore = stores.get(sw.defaultTarget);
+					
+					store = propagate(i, sw, stmt, swStores, defStore);																				
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					store = stores.get(gto.target);					
 				} else {
 					// This indicates a sequential statement was encountered.					
-					Pair<Stmt, T> r = propagate(stmt, store);
-					stmt = r.first();
-					store = r.second();					
+					store = propagate(i, stmt, store);									
 				}
-				// Must always add to front in backward analysis
-				nblock.add(0, stmt.code, stmt.attributes());
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
@@ -151,22 +157,19 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 			}
 		}
 		
-		return new Pair<Block,T>(nblock,store);
+		return store;
 	}
 
 	/**
 	 * <p>
 	 * Propagate back from a conditional branch. This produces a potentially
-	 * updated statement, and one store representing the state before the
-	 * branch. The method accepts two stores --- one originating from the true
-	 * branch, and the other from the false branch.
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> if the returned statement is a goto, then the third element
-	 * of the return value must be null; likewise, if the new code is a skip
-	 * then the second element must be null.
+	 * updated store representing the state before the branch. The method
+	 * accepts two stores --- one originating from the true branch, and the
+	 * other from the false branch.
 	 * </p>
 	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
 	 * @param ifgoto
 	 *            --- the code of this statement
 	 * @param stmt
@@ -179,25 +182,66 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract Pair<Stmt, T> propagate(Code.IfGoto ifgoto, Stmt stmt,
+	protected abstract T propagate(int index, Code.IfGoto ifgoto, Entry stmt,
 			T trueStore, T falseStore);
 
 	/**
 	 * <p>
-	 * Propagate back from a block statement (e.g. loop, or check), producing a
-	 * potentially updated block and the store which holds true immediately
-	 * before the statement
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> the block returned must include the start and end code of
-	 * the block. This allows blocks to be completely bypassed where appropriate
-	 * (for example, if a loop is shown to be over an empty collection).
+	 * Propagate back from a type test. This produces a store representing the
+	 * state before the branch. The method accepts two stores --- one
+	 * originating from the true branch, and the other from the false branch.
 	 * </p>
 	 * 
-	 * @param start
-	 *            --- the start code of the block
-	 * @param end
-	 *            --- the end code of the block
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
+	 * @param iftype
+	 *            --- the code of this statement
+	 * @param stmt
+	 *            --- this statement
+	 * @param trueStore
+	 *            --- abstract store which holds true immediately after this
+	 *            statement on the true branch.
+	 * @param falseStore
+	 *            --- abstract store which holds true immediately after this
+	 *            statement on the false branch.
+	 * @return
+	 */
+	protected abstract T propagate(int index, Code.IfType iftype, Entry stmt,
+			T trueStore, T falseStore);
+
+	/**
+	 * <p>
+	 * Propagate back from a multi-way branch. This accepts multiple stores ---
+	 * one for each of the various branches.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
+	 * @param sw
+	 *            --- the code of this statement
+	 * @param entry
+	 *            --- block entry for this bytecode
+	 * @param stores
+	 *            --- abstract stores coming from the various branches.
+	 *            statement.
+	 * @param defStore
+	 *            --- abstract store coming from default branch
+	 * @return
+	 */
+	protected abstract T propagate(int index, Code.Switch sw, Entry entry,
+			List<T> stores, T defStore);
+
+
+	/**
+	 * <p>
+	 * Propagate back from a loop statement, producing a store which holds true
+	 * immediately before the statement
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
+	 * @param loop
+	 *            --- the code of the block
 	 * @param body
 	 *            --- the body of the block
 	 * @param stmt
@@ -207,15 +251,17 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Block, T> propagate(Code.Start code, Code.End end,
-			Block body, Stmt stmt, T store);
-	
+	protected abstract T propagate(int start, int end, Code.Loop code, Entry stmt,
+			T store);
+
 	/**
 	 * <p>
-	 * Propagate back from a sequential statement, producing a potentially updated
-	 * statement and the store which holds true immediately after the statement
+	 * Propagate back from a sequential statement, producing a store which holds
+	 * true immediately after the statement
 	 * </p>
 	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
 	 * @param stmt
 	 *            --- the statement being propagated through
 	 * @param store
@@ -223,7 +269,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<Stmt,T> propagate(Stmt stmt, T store);
+	protected abstract T propagate(int index, Entry stmt, T store);
 
 	/**
 	 * Generate the store which holds true immediately after the last statement
@@ -234,16 +280,5 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 	 */
 	protected T lastStore() {
 		return null;
-	}
-	
-	/**
-	 * Join two abstract stores together producing a new abstract store. Observe
-	 * that this operation must not side-effect the two input stores. This is
-	 * because they may currently be stored in the stores map.
-	 * 
-	 * @param store1
-	 * @param store2
-	 * @return
-	 */
-	protected abstract T join(T store1, T store2);
+	}	
 }

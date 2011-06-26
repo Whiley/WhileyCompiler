@@ -28,6 +28,7 @@ package wyjc.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -144,7 +145,7 @@ public class ClassFileLoader {
 	
 	protected Module.Method createMethodInfo(ModuleID mid, ClassFile.Method cm) {
 		// string any mangling off.
-		try {
+		try {			
 			int split = cm.name().indexOf('$');
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());
@@ -168,7 +169,8 @@ public class ClassFileLoader {
 			}
 
 			List<Module.Case> mcases = new ArrayList<Module.Case>();
-			mcases.add(new Module.Case(parameterNames, null, attrs));
+			// TODO: fix this problem here related to locals
+			mcases.add(new Module.Case(null, Collections.EMPTY_LIST, attrs));
 
 			return new Module.Method(name, type, mcases);
 		} catch (IOException e) {

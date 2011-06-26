@@ -6,7 +6,7 @@ string f(int x):
     else:
         nst = syntaxError("problem")
     // check for error
-    if nst ~= {[int] msg}:
+    if nst is {string msg}:
         return "error"
     else:
         return nst.input
@@ -16,5 +16,5 @@ SyntaxError syntaxError(string errorMessage):
     return {msg: errorMessage}
 
 void System::main([string] args):
-    out<->println(f(0))
-    out<->println(f(1))
+    out.println(f(0))
+    out.println(f(1))

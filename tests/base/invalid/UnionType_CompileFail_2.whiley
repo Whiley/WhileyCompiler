@@ -2,7 +2,7 @@
 define IntReal as int | real
 
 void f(int y):
-    out<->println(str(y))
+    out.println(str(y))
 
 void System::main([string] args):
     x = 123

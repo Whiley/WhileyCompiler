@@ -5,6 +5,6 @@ define nnint as [[int]]
 
 void System::main([string] args):
     iis = [[1,2,3],[3,4,5]]
-    is = flattern(iis)
-    out<->println(str(is))
+    iis = flattern(iis)
+    out.println(str(iis))
 

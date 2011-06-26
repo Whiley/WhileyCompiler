@@ -1778,6 +1778,34 @@ public abstract class Bytecode {
 	}
 	
 	/**
+	 * Represents the swap bytecode
+	 */
+	public static final class Swap extends Bytecode {
+		public int stackDiff() {
+			return 0;
+		}
+		
+		public byte[] toBytes(int offset, Map<String,Integer> labelOffsets,  
+				Map<Constant.Info,Integer> constantPool) {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			write_u1(out,SWAP);	
+			return out.toByteArray();
+		}
+		
+		public String toString() {			
+			return "swap";			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof Swap;
+		}
+		
+		public int hashCode() {
+			return 389282;			
+		}
+	}
+	
+	/**
 	 * Represents the new, newarray and anewarray, multinewarray bytecodes.
 	 */
 	public static final class New extends Bytecode {

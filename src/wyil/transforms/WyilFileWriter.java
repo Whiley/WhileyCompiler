@@ -35,18 +35,12 @@ import wyil.Transform;
 
 public class WyilFileWriter implements Transform {
 	private PrintWriter out;
-	private int codeFlags = Code.SHORT_TYPES;	
 	private boolean writeLabels;
 	private boolean writeAttributes;
+	private boolean writeSlots;
 		
 	public WyilFileWriter(ModuleLoader loader) {
 
-	}
-		
-	public void setTypes(boolean flag) {
-		if(flag) {
-			codeFlags |= Code.INTERNAL_TYPES;
-		}
 	}
 	
 	public void setLabels(boolean flag) {
@@ -55,6 +49,10 @@ public class WyilFileWriter implements Transform {
 	
 	public void setAttributes(boolean flag) {
 		writeAttributes = flag;
+	}
+	
+	public void setSlots(boolean flag) {
+		writeSlots = flag;
 	}
 	
 	public Module apply(Module module) throws IOException {
@@ -96,16 +94,20 @@ public class WyilFileWriter implements Transform {
 	
 	public void write(Case mcase, Method method, PrintWriter out) {
 		Type.Fun ft = method.type(); 
-		out.print(ft.ret() + " " + method.name() + "(");
+		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
-		List<String> names = mcase.parameterNames();
-		for(int i=0;i!=names.size();++i) {
-			String n = names.get(i);
-			Type t = pts.get(i);
+		List<String> locals = mcase.locals();
+		int li = 0;
+		if(ft.receiver() != null) {
+			out.print(ft.receiver() + "::");
+			li++;
+		}
+		out.print(method.name() + "(");
+		for(int i=0;i!=ft.params().size();++i) {						
 			if(i!=0) {
 				out.print(", ");
 			}			
-			out.print(t + " " + n);			
+			out.print(pts.get(i) + " " + locals.get(li++));			
 		}
 		out.println("):");				
 		for(Attribute a : mcase.attributes()) {
@@ -115,30 +117,40 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		out.println("body: ");
-		write(0,mcase.body(),out);	
+		boolean firstTime=true;
+		if(li < locals.size()) {
+			out.print("    var ");
+			for(;li<locals.size();++li) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(locals.get(li));
+			}
+			out.println();
+		}
+		write(0,mcase.body(),locals,out);	
 	}
 	
-	public void write(int indent, Block blk, PrintWriter out) {
-		for(Stmt s : blk) {
-			if(s.code instanceof Code.End) {
-				indent--;
+	public void write(int indent, Block blk, List<String> locals, PrintWriter out) {
+		for(Block.Entry s : blk) {
+			if(s.code instanceof Code.End) {				
+				--indent;
+			} else if(s.code instanceof Code.Label) { 
+				write(indent-1,s.code,s.attributes(),locals,out);
+			} else {
+				write(indent,s.code,s.attributes(),locals,out);
 			}
-			write(indent,s.code,s.attributes(),out);
 			if(s.code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) s.code; 
-				indent++;				
-				if(loop.invariant != null) {
-					tabIndent(indent+1,out);
-					out.println("invariant:");
-					write(indent+1,loop.invariant,out);
-				}
-			} else if(s.code instanceof Code.Start) {
+				indent++;								
+			} else if(s.code instanceof Code.Loop) {
 				indent++;
 			}
 		}
 	}
 	
-	public void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {		
+	public void write(int indent, Code c, List<Attribute> attributes, List<String> locals, PrintWriter out) {		
 		String line = "null";		
 		tabIndent(indent+1,out);
 	
@@ -146,20 +158,50 @@ public class WyilFileWriter implements Transform {
 		if(c instanceof Code.End) {
 			Code.End cend = (Code.End)c;
 			if(writeLabels) {
-				line = "end " + cend.target;
+				line = "end " + cend.label;
 			} else {
 				line = "end";
 			}
-		} else if(c instanceof Code.Start) {
-			Code.Start cstart = (Code.Start)c;
-			String c_string = Code.toString(c,codeFlags);
-			if(writeLabels) {
-				line = "." + cstart.label + " " + c_string;
-			} else {
-				line = c_string;					
+		} else if(c instanceof Code.Store && !writeSlots){
+			Code.Store store = (Code.Store) c;
+			line = "store " + locals.get(store.slot) + " : " + store.type;  
+		} else if(c instanceof Code.Load && !writeSlots){
+			Code.Load load = (Code.Load) c;
+			line = "load " + locals.get(load.slot) + " : " + load.type;
+		} else if(c instanceof Code.MultiStore && !writeSlots){
+			Code.MultiStore store = (Code.MultiStore) c;
+			String fs = store.fields.isEmpty() ? "" : " ";
+			boolean firstTime=true;
+			for(String f : store.fields) {
+				if(!firstTime) {
+					fs += ".";
+				}
+				firstTime=false;
+				fs += f;
 			}
+			line = "multistore " + locals.get(store.slot) + " #" + store.level + fs + " : " + store.type;
+		} else if(c instanceof Code.IfType && !writeSlots){
+			Code.IfType iftype = (Code.IfType) c;
+			if(iftype.slot >= 0) {
+				line = "if" + iftype.test + " " + locals.get(iftype.slot)
+						+ " goto " + iftype.target + " : " + iftype.type;
+			} else {
+				line = c.toString();
+			}			
+		} else if(c instanceof Code.ForAll && !writeSlots){
+			Code.ForAll fall = (Code.ForAll) c;			
+			String modifies = "";
+			boolean firstTime=true;
+			for(int slot : fall.modifies) {
+				if(!firstTime) {
+					modifies +=", ";
+				}
+				firstTime=false;
+				modifies += locals.get(slot);
+			}
+			line = "forall " + locals.get(fall.slot) + " [" + modifies + "] : " + fall.type;
 		} else {
-			line = Code.toString(c,codeFlags);			
+			line = c.toString();		
 		}
 		
 		// Second, write attributes				

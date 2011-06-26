@@ -71,6 +71,11 @@ public interface UnresolvedType extends SyntacticElement {
 			super(attributes);
 		}		
 	}
+	public static final class Strung extends SyntacticElement.Impl implements NonUnion {
+		public Strung(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
 	public static final class Named extends SyntacticElement.Impl implements NonUnion {		
 		public final String name;		
 		public Named(String name, Attribute... attributes) {

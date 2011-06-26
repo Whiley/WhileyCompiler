@@ -3,4 +3,4 @@ define expr as int | binop
 
 void System::main([string] args):
     e = 123
-    out<->println(str(e))
+    out.println(str(e))

@@ -8,8 +8,8 @@ define Ptype as process etype
 
 void System::main([string] args):
     p = spawn {mode:1,rest:2}
-    out<->println(str(*p))
-    x,s = p<->get()
-    out<->println(s)
-    out<->println(str(*p))
-    out<->println(str(x))
+    out.println(str(*p))
+    x,s = p.get()
+    out.println(s)
+    out.println(str(*p))
+    out.println(str(x))

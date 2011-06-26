@@ -40,7 +40,12 @@ public final class Actor extends Thread {
 
 	public Object state() {
 		return state;
-	}		
+	}			
+	
+	public Actor setState(Object nstate) {
+		this.state = nstate;
+		return this;
+	}
 	
 	/**
 	 * Send a message asynchronously to this actor. If the mailbox is full, then
@@ -56,6 +61,22 @@ public final class Actor extends Thread {
 
 	/**
 	 * Send a message synchronously to this actor. This will block the sender
+	 * until the message is received. Object return value is discarded.
+	 * 
+	 * @param method
+	 *            --- the "message"
+	 * @param arguments
+	 *            --- the message "arguments"
+	 */
+	public void vSyncSend(Method method, Object[] arguments) {
+		arguments[0] = this;
+		Message m = new Message(method, arguments, true);
+		queue.add(m);
+		m.get(); // discard return value
+	}
+	
+	/**
+	 * Send a message synchronously to this actor. This will block the sender
 	 * until the message is received, and a return value generated.
 	 * 
 	 * @param method
@@ -69,20 +90,7 @@ public final class Actor extends Thread {
 		queue.add(m);
 		return m.get();
 	}
-	
-	/**
-	 * Send a message synchronously to this actor. This will block the sender
-	 * until the message is received.  Any return value is discarded.
-	 * 
-	 * @param method --- the "message"
-	 * @param arguments --- the message "arguments"
-	 */
-	public void vSyncSend(Method method, Object[] arguments) {
-		arguments[0] = this;
-		Message m = new Message(method,arguments,true);
-		queue.add(m);
-		m.get(); // discard return value
-	}
+		
 	public void run() {		
 		// this is where the action happens
 		while(1==1) {
@@ -115,9 +123,9 @@ public final class Actor extends Thread {
 	public static Actor systemProcess() {
 		// Not sure what the default value should be yet!!!
 		Actor sysout = new Actor(null);
-		HashMap<String,Object> fields = new HashMap<String,Object>();		
-		fields.put("out",sysout);		
-		Actor system = new Actor(new WhileyRecord(fields));
+		Record data = new Record();
+		data.put("out", sysout);		
+		Actor system = new Actor(data);
 		sysout.start();
 		system.start();		
 		return system;

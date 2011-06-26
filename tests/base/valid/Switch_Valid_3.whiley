@@ -7,7 +7,7 @@ int f(real x):
     return 10
 
 void System::main([string] args):
-    out<->println(str(f(1.23)))
-    out<->println(str(f(2.01)))
-    out<->println(str(f(3)))
-    out<->println(str(f(-1)))
+    out.println(str(f(1.23)))
+    out.println(str(f(2.01)))
+    out.println(str(f(3)))
+    out.println(str(f(-1)))

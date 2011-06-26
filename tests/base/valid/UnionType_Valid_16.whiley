@@ -8,5 +8,5 @@ void System::main([string] args):
     if |args| == 10:
         x = {op:1.23, mode: 0}
     x.op = 123 // SHOULD BE OK
-    out<->println(f(x))
+    out.println(f(x))
     

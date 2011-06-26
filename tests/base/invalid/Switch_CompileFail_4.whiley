@@ -9,7 +9,7 @@ int f(int x):
     return 10
 
 void System::main([string] args):
-    out<->println(str(f(1)))
-    out<->println(str(f(2)))
-    out<->println(str(f(3)))
-    out<->println(str(f(-1)))
+    out.println(str(f(1)))
+    out.println(str(f(2)))
+    out.println(str(f(3)))
+    out.println(str(f(-1)))
