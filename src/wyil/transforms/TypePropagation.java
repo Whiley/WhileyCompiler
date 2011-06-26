@@ -206,8 +206,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((SetIntersect)code,entry,environment);
 		} else if(code instanceof Spawn) {
 			code = infer((Spawn)code,entry,environment);
+		} else if(code instanceof Throw) {
+			code = infer((Throw)code,entry,environment);
 		} else {
-			syntaxError("Need to finish type inference " + code,filename,entry);
+			syntaxError("Unknown wyil code encountered: " + code,filename,entry);
 			return null;
 		}
 		
@@ -926,6 +928,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment.add(Type.T_PROCESS(rhs_t));
 		return Code.Spawn(Type.T_PROCESS(rhs_t));						
 	}			
+	
+	protected Code infer(Code.Throw code, Entry stmt, Env environment) {
+		Type val = environment.pop();
+		// TODO: check throws clause
+		// Type ret_t = method.type().throws						
+		// checkIsSubtype(ret_t,val,stmt);
+		return Code.Throw(val);
+	}
 	
 	protected Pair<Env, Env> propagate(int index, Code.IfGoto code, Entry stmt,
 			Env environment) {

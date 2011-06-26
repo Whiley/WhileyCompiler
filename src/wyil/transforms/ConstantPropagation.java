@@ -201,6 +201,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			// skip			
 		} else if(code instanceof Spawn) {
 			infer(index,(Spawn)code,entry,environment);
+		} else if(code instanceof Throw) {
+			infer(index,(Throw)code,entry,environment);
 		} else {
 			syntaxError("unknown wyil code encountered: " + code,filename,entry);
 			return null;
@@ -858,6 +860,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		
 		environment.push(result);
+	}
+	
+	public void infer(int index, Code.Throw code, Block.Entry entry,
+			Env environment) {
+		Value val = environment.pop();
 	}
 	
 	public void infer(int index, Code.ProcLoad code, Block.Entry entry,

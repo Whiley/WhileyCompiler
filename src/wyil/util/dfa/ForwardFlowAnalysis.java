@@ -154,9 +154,6 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					}
 					merge(sw.defaultTarget, store, stores);
 					store = null;
-				} else if (code instanceof Code.Throw) {
-					// FIXME:  should I do something here?
-					store = null;
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) entry.code;
 					merge(gto.target, store, stores);
@@ -165,7 +162,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					// This indicates a sequential statement was encountered.
 					store = propagate(i, entry, store);					
 					if (entry.code instanceof Code.Fail
-							|| entry.code instanceof Code.Return) {
+							|| entry.code instanceof Code.Return
+							|| entry.code instanceof Code.Throw) {
 						store = null;
 					}
 				}				

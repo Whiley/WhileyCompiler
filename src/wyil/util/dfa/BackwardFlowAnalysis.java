@@ -143,9 +143,6 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					T defStore = stores.get(sw.defaultTarget);
 					
 					store = propagate(i, sw, stmt, swStores, defStore);																				
-				} else if (code instanceof Code.Throw) {
-					// FIXME:  should I do something here?
-					store = null;
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) stmt.code;
 					store = stores.get(gto.target);					

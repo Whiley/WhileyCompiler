@@ -354,6 +354,8 @@ public class ClassFileBuilder {
 				 translate((Switch)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Spawn) {
 				 translate((Spawn)code,freeSlot,bytecodes);
+			} else if(code instanceof Throw) {
+				 translate((Throw)code,freeSlot,bytecodes);
 			} else {
 				syntaxError("unknown wyil code encountered (" + code + ")", filename, entry);
 			}
@@ -621,13 +623,11 @@ public class ClassFileBuilder {
 		}
 	}
 
-	public void translate(Code.Throw c, Entry stmt, int freeSlot,
+	public void translate(Code.Throw c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {			
 		bytecodes.add(new Bytecode.New(WHILEYEXCEPTION));
 		bytecodes.add(new Bytecode.DupX1());
-		bytecodes.add(new Bytecode.Swap());
-		
-		bytecodes.add(new Bytecode.Swap());		
+		bytecodes.add(new Bytecode.Swap());				
 		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYEXCEPTION, "<init>", ftype,
 				Bytecode.SPECIAL));		

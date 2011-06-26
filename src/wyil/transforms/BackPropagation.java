@@ -166,6 +166,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(SubString)code,entry,environment);
 		} else if(code instanceof Spawn) {
 			infer(index,(Spawn)code,entry,environment);
+		} else if(code instanceof Throw) {
+			infer(index,(Throw)code,entry,environment);
 		} else {
 			syntaxError("unknown wyil code encountered: " + code,filename,entry);
 			return null;
@@ -571,6 +573,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.push(tp.element());
 	}
 	
+	public void infer(int index, Code.Throw code, Block.Entry entry,
+			Env environment) {
+		environment.push(code.type);
+	}
+				
 	public void infer(int index, Code.ProcLoad code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();
