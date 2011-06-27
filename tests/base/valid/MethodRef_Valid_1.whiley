@@ -1,5 +1,3 @@
-// this implements what is effectively a "raw" interface
-
 define MyProc as process {
     int position
 }

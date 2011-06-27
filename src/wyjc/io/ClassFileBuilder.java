@@ -1385,7 +1385,52 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.IndirectSend c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-	
+		// The main issue here, is that we have all of the parameters + receiver
+		// on the stack. What we need to do is to put them into an array, so
+		// they can then be passed into Method.invoke()
+		//
+		// To make this work, what we'll do is use a temporary register to hold
+		// the array as we build it up.
+
+		Type.Fun ft = (Type.Fun) c.type;		
+		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
+		bytecodes.add(new Bytecode.New(arrT));
+		bytecodes.add(new Bytecode.Store(freeSlot,arrT));
+		
+		// first, peal parameters off stack in reverse order
+		
+		List<Type> params = ft.params();
+		for(int i=params.size()-1;i>=0;--i) {
+			Type pt = params.get(i);
+			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
+			bytecodes.add(new Bytecode.Swap());
+			bytecodes.add(new Bytecode.LoadConst(i+1));
+			bytecodes.add(new Bytecode.Swap());			
+			addWriteConversion(pt,bytecodes);
+			bytecodes.add(new Bytecode.ArrayStore(arrT));			
+		}
+		bytecodes.add(new Bytecode.Swap());
+		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
+							
+		if (c.synchronous && c.retval) {			
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
+					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "syncSend", ftype,
+					Bytecode.VIRTUAL));
+			addReadConversion(c.type.ret(), bytecodes);
+		} else if (c.synchronous) {			
+			JvmType.Function ftype = new JvmType.Function(T_VOID,
+					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "vSyncSend", ftype,
+					Bytecode.VIRTUAL));
+		} else {
+			JvmType.Function ftype = new JvmType.Function(T_VOID,
+					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "asyncSend",
+					ftype, Bytecode.VIRTUAL));
+		} 
+
 	}
 		
 	public void translate(Value v, int freeSlot,
