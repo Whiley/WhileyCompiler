@@ -1,8 +1,7 @@
 // this implements what is effectively a "raw" interface
 
 define FileReader as process {
-    int position,
-    [byte] data
+    int position
 }
 
 define Reader as { 
@@ -10,18 +9,16 @@ define Reader as {
     int(FileReader)::(int) read
 }
 
-[byte] FileReader::read(int amount):
-    end = position + amount
-    r = this.data[position..end]
-    this.position = this.position + amount
+int FileReader::read(int amount):
+    r = amount + this.position
     return r
     
-Reader openReader(FileReader fr):
-    return { thus: fr, read: &read } 
+Reader System::openReader():
+    proc = spawn { position: 123 }
+    return { thus: proc, read: &read } 
 
 void System::main([string] args):
-    fr = spawn { position: 0, data: [1,2,3,4,5] }
-    reader = openReader(fr)
+    reader = this.openReader()
     target = reader.thus
     method = reader.read
     data = target.method(5)

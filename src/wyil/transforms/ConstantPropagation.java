@@ -356,7 +356,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(Code.IndirectSend code, Block.Entry entry,
 			Env environment) {
-		// FIXME: need to do something here
+
+		for(int i=0;i!=code.type.params().size();++i) {
+			environment.pop();
+		}
+		
+		environment.pop(); // receiver
+		environment.pop(); // target
+		
+		if(code.type.ret() != Type.T_VOID && code.retval) {
+			environment.push(null);
+		}
 	}
 	
 	public void infer(Code.Invoke code, Block.Entry entry,
