@@ -771,40 +771,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Type _rec = environment.pop();
 		
-		// FIXME: problem here as process check doesn't cover all cases.
-		if(_rec instanceof Type.Process) {		
-			checkIsSubtype(Type.T_PROCESS(Type.T_ANY),_rec,stmt);
-			// FIXME: bug here as we need an effectiveProcessType
-			Type.Process rec = (Type.Process) _rec; 		
+		// FIXME: problem here as process check doesn't cover all cases.		
+		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),_rec,stmt);
+		// FIXME: bug here as we need an effectiveProcessType
+		Type.Process rec = (Type.Process) _rec; 		
 
-			try {
-				Type.Fun funtype = bindFunction(ivk.name, rec, types, stmt);
-				if (funtype.ret() != Type.T_VOID && ivk.synchronous && ivk.retval) {
-					environment.push(funtype.ret());
-				}
-				return Code.Send(funtype, ivk.name, ivk.synchronous, ivk.retval);			
-			} catch (ResolveError ex) {
-				syntaxError(ex.getMessage(), filename, stmt);
-				return null; // unreachable
-			}		
-		} else {
-			System.out.println("GOT RECORD: " + _rec);
-			Type.Record r = Type.effectiveRecordType(_rec);					
-			if(r != null && r.keys().contains(ivk.name.name())) {
-				// this indicates we've actually got an indirect invoke coming
-				// out of a field load, rather than a message send.
-				Type ft = r.fields().get(ivk.name.name());
-				checkType(ft,Type.Fun.class,stmt);
-				Type.Fun funtype = (Type.Fun) ft;
-				if(funtype.ret() != Type.T_VOID) {
-					environment.push(funtype.ret());
-				}
-				return Code.IndirectInvoke(funtype, ivk.retval);
-			} 
-		}
-		
-		syntaxError("invalid receiver for message send",filename,stmt);
-		return null;
+		try {
+			Type.Fun funtype = bindFunction(ivk.name, rec, types, stmt);
+			if (funtype.ret() != Type.T_VOID && ivk.synchronous && ivk.retval) {
+				environment.push(funtype.ret());
+			}
+			return Code.Send(funtype, ivk.name, ivk.synchronous, ivk.retval);			
+		} catch (ResolveError ex) {
+			syntaxError(ex.getMessage(), filename, stmt);
+			return null; // unreachable
+		}		
 	}
 	
 	protected Code infer(Store e, Entry stmt, Env environment) {		
