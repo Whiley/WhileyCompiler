@@ -1262,34 +1262,28 @@ public class ModuleBuilder {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 
 		/**
-		 * A direct invoke indicates no receiver was provided, and there was a
-		 * matching external symbol.
-		 */
-		boolean directInvoke = s.receiver == null && modInfo != null;
-		
-		/**
 		 * An indirect variable invoke represents an invoke statement on a local
 		 * variable.
 		 */
 		boolean variableIndirectInvoke = environment.containsKey(s.name);
 
 		/**
+		 * A direct invoke indicates no receiver was provided, and there was a
+		 * matching external symbol.
+		 */
+		boolean directInvoke = !variableIndirectInvoke && s.receiver == null && modInfo != null;		
+		
+		/**
 		 * An field indirect invoke indicates an invoke statement on a value
 		 * coming out of a field.
 		 */
-		boolean fieldIndirectInvoke = !environment.containsKey(s.name) && s.receiver != null && modInfo == null;
-		
+		boolean fieldIndirectInvoke = !variableIndirectInvoke && s.receiver != null && modInfo == null;
+
 		/**
-		 * A direct deref invoke indicates some kind of receiver or field
-		 * dereference was present, and this did match an external symbol.
+		 * A direct send indicates a message send to a matching external symbol.
 		 */
-		boolean derefDirectInvoke = s.receiver != null && modInfo != null;
-		
-		/**
-		 * A deref indirect Invoke indicates some kind of receiver or field
-		 * dereference was present, but this did not match any external symbol.
-		 */
-		boolean derefIndirectInvoke = s.receiver != null && modInfo == null;
+		boolean directSend = !variableIndirectInvoke && s.receiver != null && modInfo != null;
+				
 							
 		if(variableIndirectInvoke) {
 			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
@@ -1321,13 +1315,10 @@ public class ModuleBuilder {
 			NameID name = new NameID(modInfo.module, s.name);
 			blk.add(Code.Invoke(
 					Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
-		}  else if(derefDirectInvoke) {
+		} else if(directSend) {						
 			NameID name = new NameID(modInfo.module, s.name);
 			blk.add(Code.Send(
 					Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
-		} else if(derefIndirectInvoke) {
-			blk.add(Code.IndirectSend(
-					Type.T_FUN(null, Type.T_VOID, paramTypes), s.synchronous, retval),attributes(s));
 		} else {
 			syntaxError("unknown function or method", filename, s);
 		}
