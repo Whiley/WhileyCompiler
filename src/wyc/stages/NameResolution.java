@@ -511,6 +511,9 @@ public class NameResolution {
 		} else if(t instanceof UnresolvedType.Fun) {	
 			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;
 			resolve(ut.ret,imports);
+			if(ut.receiver != null) {
+				resolve(ut.receiver,imports);
+			}
 			for(UnresolvedType p : ut.paramTypes) {
 				resolve(p,imports);
 			}

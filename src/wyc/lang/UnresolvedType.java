@@ -149,12 +149,14 @@ public interface UnresolvedType extends SyntacticElement {
 	public static final class Fun extends SyntacticElement.Impl
 	implements NonUnion {
 		public final UnresolvedType ret;
+		public final UnresolvedType receiver;
 		public final ArrayList<UnresolvedType> paramTypes;
 
-		public Fun(UnresolvedType ret, Collection<UnresolvedType> paramTypes,
+		public Fun(UnresolvedType ret, UnresolvedType receiver, Collection<UnresolvedType> paramTypes,
 				Attribute... attributes) {
 			super(attributes);
 			this.ret = ret;
+			this.receiver = receiver;
 			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
 		}
 	}

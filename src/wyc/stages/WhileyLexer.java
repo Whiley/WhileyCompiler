@@ -309,7 +309,12 @@ public class WhileyLexer {
 		} else if(c == ',') {
 			return new Comma(pos++);
 		} else if(c == ':') {
-			return new Colon(pos++);
+			if((pos+1) < input.length() && input.charAt(pos+1) == ':') {
+				pos += 2;
+				return new ColonColon(pos-2);
+			} else {
+				return new Colon(pos++);				
+			}			
 		} else if(c == ';') {
 			return new SemiColon(pos++);
 		} else if(c == '(') {
@@ -593,6 +598,9 @@ public class WhileyLexer {
 	}
 	public static class Colon extends Token {
 		public Colon(int pos) { super(":",pos);	}
+	}
+	public static class ColonColon extends Token {
+		public ColonColon(int pos) { super("::",pos);	}
 	}
 	public static class SemiColon extends Token {
 		public SemiColon(int pos) { super(";",pos);	}

@@ -681,13 +681,13 @@ public class ModuleBuilder {
 	protected Block resolve(Assign s, HashMap<String,Integer> environment) {
 		Block blk = null;
 		
-		if(s.lhs instanceof Variable) {
+		if(s.lhs instanceof Variable) {			
 			blk = resolve(environment, s.rhs);			
 			Variable v = (Variable) s.lhs;			
 			if(environment.containsKey(v.var)) {
 				blk.add(Code.Store(null, environment.get(v.var)),
 					attributes(s));
-			} else {
+			} else {				
 				int idx = environment.size();
 				environment.put(v.var, idx);
 				blk.add(Code.Store(null, idx), attributes(s));
@@ -1290,6 +1290,7 @@ public class ModuleBuilder {
 		} 
 		
 		if (s.receiver != null) {
+			System.out.println("GOT: " + s.receiver.getClass().getName() + " : " + environment);
 			blk.addAll(resolve(environment, s.receiver));
 		}
 
@@ -1353,10 +1354,10 @@ public class ModuleBuilder {
 	protected Block resolve(HashMap<String,Integer> environment, Variable v) throws ResolveError {
 		// First, check if this is an alias or not				
 		
-		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
+		Attributes.Alias alias = v.attribute(Attributes.Alias.class);		
 		if (alias != null) {
 			// Must be a local variable	
-			if(alias.alias == null) {
+			if(alias.alias == null) {				
 				if(environment.containsKey(v.var)) {
 					Block blk = new Block();						
 					blk.add(Code.Load(null, environment.get(v.var)), attributes(v));					
@@ -1367,7 +1368,7 @@ public class ModuleBuilder {
 			} else {								
 				return resolve(environment, alias.alias);
 			}
-		}
+		} 
 		
 		if(currentFunDecl != null) {
 			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
@@ -1728,7 +1729,6 @@ public class ModuleBuilder {
 				bounds.add(resolve(b));						
 			}
 
-			Type type;
 			if (bounds.size() == 1) {
 				return bounds.iterator().next();
 			} else {
@@ -1745,11 +1745,20 @@ public class ModuleBuilder {
 		} else {
 			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
 			ArrayList<Type> paramTypes = new ArrayList<Type>();
+			Type.Process receiver = null;
+			if(ut.receiver != null) {
+				Type tmp = resolve(ut.receiver);
+				if(tmp instanceof Type.Process) { 
+					receiver = (Type.Process) tmp;
+				} else {
+					syntaxError("method receiver must have process type",filename,ut.receiver);
+				}
+			}
 			for(UnresolvedType p : ut.paramTypes) {
 				paramTypes.add(resolve(p));
 			}
 			// FIXME: need to add support for receiver types
-			return Type.T_FUN(null,resolve(ut.ret),paramTypes);							
+			return Type.T_FUN(receiver,resolve(ut.ret),paramTypes);							
 		}
 	}
 	

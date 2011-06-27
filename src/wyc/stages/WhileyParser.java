@@ -149,10 +149,9 @@ public class WhileyParser {
 		Token token = tokens.get(index+1);
 		UnresolvedType receiver = null;
 							
-		if(token instanceof Colon) {
+		if(token instanceof ColonColon) {
 			receiver = parseType();			
-			match(Colon.class);
-			match(Colon.class);					
+			match(ColonColon.class);							
 		}
 		
 		Identifier name = matchIdentifier();						
@@ -1330,7 +1329,29 @@ public class WhileyParser {
 				types.add(parseType());
 			}
 			match(RightBrace.class);
-			return new UnresolvedType.Fun(t, types);
+			UnresolvedType receiver = null;
+			if (index < tokens.size() && (tokens.get(index) instanceof ColonColon)) {				
+				// this indicates a method type								
+				if(types.size() != 1) {
+					syntaxError("receiver type required for method type",tokens.get(index));
+				} else {
+					receiver = types.get(0);
+					types.clear();
+				}
+				match(ColonColon.class);
+				match(LeftBrace.class);
+				firstTime = true;
+				while (index < tokens.size()
+						&& !(tokens.get(index) instanceof RightBrace)) {
+					if (!firstTime) {
+						match(Comma.class);
+					}
+					firstTime = false;
+					types.add(parseType());
+				}
+				match(RightBrace.class);
+			}
+			return new UnresolvedType.Fun(t, receiver, types);
 		} else {
 			return t;
 		}
