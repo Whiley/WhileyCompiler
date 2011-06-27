@@ -1262,47 +1262,74 @@ public class ModuleBuilder {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 
 		/**
+		 * A direct invoke indicates no receiver was provided, and there was a
+		 * matching external symbol.
+		 */
+		boolean directInvoke = s.receiver == null && modInfo != null;
+		
+		/**
 		 * An indirect variable invoke represents an invoke statement on a local
 		 * variable.
 		 */
-		boolean indirectVariableInvoke = environment.containsKey(s.name);
-		boolean fieldIndirectSend = s.receiver != null && modInfo == null;
-		boolean directInvoke = s.receiver == null && modInfo != null;		
-		boolean directSend = s.receiver != null && modInfo != null;
+		boolean variableIndirectInvoke = environment.containsKey(s.name);
+
+		/**
+		 * An field indirect invoke indicates an invoke statement on a value
+		 * coming out of a field.
+		 */
+		boolean fieldIndirectInvoke = !environment.containsKey(s.name) && s.receiver != null && modInfo == null;
 		
-		if(environment.containsKey(s.name)) {
+		/**
+		 * A direct deref invoke indicates some kind of receiver or field
+		 * dereference was present, and this did match an external symbol.
+		 */
+		boolean derefDirectInvoke = s.receiver != null && modInfo != null;
+		
+		/**
+		 * A deref indirect Invoke indicates some kind of receiver or field
+		 * dereference was present, but this did not match any external symbol.
+		 */
+		boolean derefIndirectInvoke = s.receiver != null && modInfo == null;
+							
+		if(variableIndirectInvoke) {
 			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
-		}
+		} 
 		
 		if (s.receiver != null) {
 			blk.addAll(resolve(environment, s.receiver));
 		}
 
+		if(fieldIndirectInvoke) {
+			blk.add(Code.FieldLoad(null, s.name),attributes(s));
+		}
+		
 		int i = 0;
 		for (Expr e : args) {
 			blk.addAll(resolve(environment, e));
 			paramTypes[i++] = Type.T_VOID;
 		}	
-			
-		if(environment.containsKey(s.name)) {			
+					
+		if(variableIndirectInvoke) {			
 			if(s.receiver != null) {
 				blk.add(Code.IndirectSend(Type.T_FUN(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
 			} else {
 				blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
 			}
-		} else {			
-			if(modInfo != null) {
-				NameID name = new NameID(modInfo.module, s.name);
-				if(s.receiver != null) {
-					blk.add(Code.Send(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
-				} else {
-					blk.add(Code.Invoke(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
-				}			
-			} else {
-				syntaxError("unknown function or method",filename,s);
-			}
+		} else if(fieldIndirectInvoke) {
+			blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
+		} else if(directInvoke) {
+			NameID name = new NameID(modInfo.module, s.name);
+			blk.add(Code.Invoke(
+					Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
+		}  else if(derefDirectInvoke) {
+			NameID name = new NameID(modInfo.module, s.name);
+			blk.add(Code.Send(
+					Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
+		} else if(derefIndirectInvoke) {
+			blk.add(Code.IndirectSend(
+					Type.T_FUN(null, Type.T_VOID, paramTypes), s.synchronous, retval),attributes(s));
+		} else {
+			syntaxError("unknown function or method", filename, s);
 		}
 		
 		return blk;

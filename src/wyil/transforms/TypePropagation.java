@@ -479,8 +479,26 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return blk;
 	}
 	
-	protected Code infer(IndirectSend e, Entry stmt, Env environment) {
-		return null;
+	protected Code infer(IndirectSend ivk, Entry stmt, Env environment) {
+		ArrayList<Type> types = new ArrayList<Type>();			
+		for(int i=0;i!=ivk.type.params().size();++i) {
+			types.add(0,environment.pop());
+		}
+		Collections.reverse(types);
+		Type target = environment.pop();
+		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
+		List<Type> ft_params = ft.params();
+		for(int i=0;i!=ft_params.size();++i) {
+			Type param = ft_params.get(i);
+			Type arg = types.get(i);
+			checkIsSubtype(param,arg,stmt);
+		}
+		
+		if(ft.ret() != Type.T_VOID && ivk.retval) {
+			environment.push(ft.ret());
+		}
+		
+		return Code.IndirectSend(ft,ivk.synchronous,ivk.retval);		
 	}
 	
 	protected Code infer(Invoke ivk, Entry stmt, Env environment) {			
