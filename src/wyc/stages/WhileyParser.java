@@ -1351,7 +1351,7 @@ public class WhileyParser {
 				}
 				match(RightBrace.class);
 			}
-			return new UnresolvedType.Fun(t, receiver, types);
+			return new UnresolvedType.Fun(t, receiver, types, sourceAttr(start, index - 1));
 		} else {
 			return t;
 		}
