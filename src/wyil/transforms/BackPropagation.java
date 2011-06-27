@@ -244,7 +244,22 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.IndirectSend code, Block.Entry entry,
 			Env environment) {
-		// FIXME: need to do something here
+		
+		if(code.type.ret() != Type.T_VOID && code.retval) {
+			Type req = environment.pop();
+			coerce(req,code.type.ret(),index,entry);			
+		}
+				
+		environment.push(code.type);
+		environment.push(code.type.receiver());
+		
+		if(code.type.receiver() != null) {		
+			environment.push(code.type.receiver());
+		}
+		
+		for(Type t : code.type.params()) {
+			environment.push(t);
+		}		
 	}
 	
 	public void infer(int index, Code.Invoke code, Block.Entry entry,

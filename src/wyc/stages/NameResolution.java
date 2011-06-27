@@ -336,8 +336,7 @@ public class NameResolution {
 		if(!environment.containsKey(ivk.name)) {
 			// only look for non-local function binding if there is not a local
 			// variable with the same name.
-			Expr target = ivk.receiver;
-
+			Expr target = ivk.receiver;			
 			if(target != null) {
 				resolve(target,environment,imports);
 				try {
@@ -354,6 +353,8 @@ public class NameResolution {
 				// Ok, resolve the module for this invoke
 				ivk.attributes().add(new Attributes.Module(mid));		
 			}
+		} else if(ivk.receiver != null) {
+			resolve(ivk.receiver,environment,imports);
 		}
 	}
 	

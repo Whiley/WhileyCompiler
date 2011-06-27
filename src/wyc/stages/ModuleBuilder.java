@@ -1289,8 +1289,7 @@ public class ModuleBuilder {
 			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
 		} 
 		
-		if (s.receiver != null) {
-			System.out.println("GOT: " + s.receiver.getClass().getName() + " : " + environment);
+		if (s.receiver != null) {			
 			blk.addAll(resolve(environment, s.receiver));
 		}
 

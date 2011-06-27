@@ -485,8 +485,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			types.add(0,environment.pop());
 		}
 		Collections.reverse(types);
-		Type target = environment.pop();
-
+		Type receiver = environment.pop();
+		Type target = environment.pop();		
+		
 		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
 		List<Type> ft_params = ft.params();
 		for(int i=0;i!=ft_params.size();++i) {
