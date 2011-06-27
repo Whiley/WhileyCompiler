@@ -1260,8 +1260,12 @@ public class ModuleBuilder {
 		Type[] paramTypes = new Type[args.size()]; 
 		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
-		
-		boolean indirectInvoke = environment.containsKey(s.name);
+
+		/**
+		 * An indirect variable invoke represents an invoke statement on a local
+		 * variable.
+		 */
+		boolean indirectVariableInvoke = environment.containsKey(s.name);
 		boolean fieldIndirectSend = s.receiver != null && modInfo == null;
 		boolean directInvoke = s.receiver == null && modInfo != null;		
 		boolean directSend = s.receiver != null && modInfo != null;
