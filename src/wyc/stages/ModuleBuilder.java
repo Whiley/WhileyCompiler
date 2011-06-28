@@ -694,8 +694,10 @@ public class ModuleBuilder {
 			TupleGen tg = (TupleGen) s.lhs;
 			blk = resolve(environment, s.rhs);			
 			blk.add(Code.Destructure(null),attributes(s));
-
-			for(Expr e : tg.fields) {
+			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
+			Collections.reverse(fields);
+			
+			for(Expr e : fields) {
 				if(!(e instanceof Variable)) {
 					syntaxError("variable expected",filename,e);
 				}

@@ -135,6 +135,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			infer((Debug)code,entry,environment);
+		}  else if(code instanceof Destructure) {
+			infer((Destructure)code,entry,environment);
 		} else if(code instanceof DictLoad) {
 			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
@@ -171,6 +173,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			infer(index,(NewSet)code,entry,environment);
+		} else if(code instanceof NewTuple) {
+			infer(index,(NewTuple)code,entry,environment);
 		} else if(code instanceof Negate) {
 			infer(index,(Negate)code,entry,environment);
 		} else if(code instanceof ProcLoad) {
@@ -303,6 +307,30 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(Code.Debug code, Block.Entry entry,
 			Env environment) {
 		environment.pop();
+	}
+	
+	public void infer(Code.Destructure code, Block.Entry entry,
+			Env environment) {
+		Value v = environment.pop();
+		
+		if(v instanceof Value.Tuple) {
+			Value.Tuple tup = (Value.Tuple) v;
+			for(Value tv : tup.values) {
+				environment.push(tv);
+			}
+		} else if(v instanceof Value.Rational) {
+			Value.Rational rat = (Value.Rational) v;
+			environment.push(Value.V_INTEGER(rat.value.numerator()));
+			environment.push(Value.V_INTEGER(rat.value.denominator()));
+		} else if(code.type instanceof Type.Tuple) {			
+			Type.Tuple tup = (Type.Tuple) code.type;
+			for(Type t : tup.elements()) {
+				environment.push(null);
+			}
+		} else {
+			environment.push(null);
+			environment.push(null);
+		}
 	}
 	
 	public void infer(int index, Code.DictLoad code, Block.Entry entry,
@@ -600,6 +628,29 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value result = null;
 		if (isValue) {			
 			result = Value.V_SET(values);
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,code.nargs));
+		}
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.NewTuple code, Block.Entry entry,
+			Env environment) {
+		ArrayList<Value> values = new ArrayList<Value>();		
+
+		boolean isValue = true;
+		for (int i=0;i!=code.nargs;++i) {
+			Value val = environment.pop();
+			if (val instanceof Value) {
+				values.add(val);
+			} else {
+				isValue = false;
+			}
+		}		
+		
+		Value result = null;
+		if (isValue) {			
+			result = Value.V_TUPLE(values);
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,code.nargs));
 		}

@@ -100,6 +100,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			infer(index,(Debug)code,entry,environment);
+		} else if(code instanceof Destructure) {
+			infer(index,(Destructure)code,entry,environment);
 		} else if(code instanceof DictLoad) {
 			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
@@ -207,6 +209,24 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.Debug code, Block.Entry entry,
 			Env environment) {
 		environment.push(Type.T_STRING);
+	}
+	
+	public void infer(int index, Code.Destructure code, Block.Entry entry,
+			Env environment) {
+		
+		if(code.type instanceof Type.Tuple) {
+			Type.Tuple tup = (Type.Tuple) code.type;
+			for(Type t : tup.elements()) {
+				// FIXME: no coercion?
+				environment.pop();
+			}			
+		} else {
+			// FIXME: no coercion?
+			environment.pop();
+			environment.pop();
+		} 
+		
+		environment.push(code.type);
 	}
 	
 	public void infer(int index, Code.DictLoad code, Block.Entry entry,

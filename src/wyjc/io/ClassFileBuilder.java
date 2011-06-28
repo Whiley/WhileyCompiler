@@ -274,6 +274,8 @@ public class ClassFileBuilder {
 				translate((Const) code, freeSlot, constants, bytecodes);
 			} else if(code instanceof Debug) {
 				 translate((Debug)code,freeSlot,bytecodes);
+			} else if(code instanceof Destructure) {
+				 translate((Destructure)code,freeSlot,bytecodes);
 			} else if(code instanceof DictLoad) {
 				 translate((DictLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof End) {
@@ -322,6 +324,8 @@ public class ClassFileBuilder {
 				 translate((NewRecord)code,freeSlot,bytecodes);
 			} else if(code instanceof NewSet) {
 				 translate((NewSet)code,freeSlot,bytecodes);
+			} else if(code instanceof NewTuple) {
+				 translate((NewTuple)code,freeSlot,bytecodes);
 			} else if(code instanceof Negate) {
 				 translate((Negate)code,freeSlot,bytecodes);
 			} else if(code instanceof ProcLoad) {
@@ -942,6 +946,37 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 	}
 	
+	public void translate(Code.Destructure code, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		
+		if(code.type instanceof Type.Tuple) {
+			Type.Tuple t = (Type.Tuple) code.type;
+			List<Type> elements = t.elements();
+			for(int i=0;i!=elements.size();++i) {
+				Type elem = elements.get(i);
+				if((i+1) != elements.size()) {
+					bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
+				}
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);
+				bytecodes.add(new Bytecode.LoadConst(i));
+				bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "get", ftype,
+						Bytecode.VIRTUAL));
+				addReadConversion(elem,bytecodes);
+				if((i+1) != elements.size()) {
+					bytecodes.add(new Bytecode.Swap());
+				}
+			}
+		} else {
+			bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
+			JvmType.Function ftype = new JvmType.Function(BIG_INTEGER);
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "numerator", ftype,
+					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Swap());
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL, "denominator", ftype,
+					Bytecode.VIRTUAL));
+		}		
+	}
+	
 	public void translate(Code.Fail c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
@@ -1267,6 +1302,43 @@ public class ClassFileBuilder {
 		}
 		
 		bytecodes.add(new Bytecode.Load(freeSlot,WHILEYSET));
+	}
+	
+	protected void translate(Code.NewTuple c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		construct(WHILEYTUPLE, freeSlot, bytecodes);
+		JvmType.Function ftype = new JvmType.Function(T_BOOL,
+				JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYTUPLE));		
+		
+		ArrayList<Type> types = new ArrayList<Type>(c.type.elements());
+		Collections.reverse(types);
+		
+		for(Type type : types) {
+			bytecodes.add(new Bytecode.Load(freeSlot,WHILEYTUPLE));
+			bytecodes.add(new Bytecode.Swap());			
+			addWriteConversion(type,bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"add",ftype,Bytecode.VIRTUAL));
+			// FIXME: there is a bug here for bool lists
+			bytecodes.add(new Bytecode.Pop(JvmTypes.T_BOOL));
+		}
+		
+		bytecodes.add(new Bytecode.Load(freeSlot,WHILEYTUPLE));
+		
+		// At this stage, we have a problem. We've added the elements into the
+		// tuple in reverse order. For simplicity, I simply call reverse at this
+		// stage. However, it begs the question how we can do better.
+		//
+		// We could store each value into a register and then reload them in the
+		// reverse order. For very large lists, this might cause a problem I
+		// suspect.
+		//
+		// Another option would be to have a special list initialise function
+		// with a range of different constructors for different sized lists.
+				
+		JvmType.Clazz owner = new JvmType.Clazz("java.util","Collections");
+		ftype = new JvmType.Function(T_VOID, JAVA_UTIL_LIST);		
+		bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
+		bytecodes.add(new Bytecode.Invoke(owner,"reverse",ftype,Bytecode.STATIC));
 	}
 	
 	public void translate(Code.Invoke c, int freeSlot,
@@ -1803,6 +1875,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");
+	public final static JvmType.Clazz WHILEYTUPLE = new JvmType.Clazz("wyjc.runtime","Tuple");
 	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz("wyjc.runtime","Type");
 	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyjc.runtime","IO");
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("wyjc.runtime","Dictionary");
@@ -1861,6 +1934,8 @@ public class ClassFileBuilder {
 			return WHILEYRECORD;
 		} else if(t instanceof Type.Process) {
 			return WHILEYPROCESS;
+		} else if(t instanceof Type.Tuple) {
+			return WHILEYTUPLE;
 		} else if(t instanceof Type.Union) {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
