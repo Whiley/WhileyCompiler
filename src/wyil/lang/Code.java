@@ -70,6 +70,10 @@ public abstract class Code {
 	
 	public static final Debug debug = new Debug();
 
+	public static Destructure Destructure(Type from) {
+		return get(new Destructure(from));
+	}
+	
 	/**
 	 * Construct a <code>dictload</code> bytecode which reads the value
 	 * associated with a given key in a dictionary.
@@ -201,20 +205,7 @@ public abstract class Code {
 	 */
 	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
 		return get(new ForAll(type, var, label,modifies));
-	}		
-	
-	/**
-	 * Construct a <code>store</code> bytecode which writes a given register.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param reg
-	 *            --- reg to load.
-	 * @return
-	 */
-	public static MultiStore MultiStore(Type type, Collection<Integer> regs) {
-		return get(new MultiStore(type,regs));
-	}
+	}				
 	
 	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
@@ -604,6 +595,39 @@ public abstract class Code {
 		}
 		public String toString() {
 			return "debug";
+		}
+	}
+
+	/**
+	 * A destructure operation takes a compound value and "destructures" it into
+	 * multiple values. For example, a rational can be destructured into two
+	 * integers. Or, an n-tuple can be structured into n values.
+	 */
+	public static final class Destructure extends Code {
+		public final Type type;
+		
+		private Destructure(Type from) {			
+			this.type = from;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 12345;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Destructure) {
+				Destructure c = (Destructure) o;
+				return (type == c.type || (type != null && type.equals(c.type)));  
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return "destructure " + type;
 		}
 	}
 	

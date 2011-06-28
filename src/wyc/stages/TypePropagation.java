@@ -154,6 +154,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			code = infer((Debug)code,entry,environment);
+		} else if(code instanceof Destructure) {
+			code = infer((Destructure)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
 			// skip
 		} else if(code instanceof Fail) {
@@ -190,6 +192,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			code = infer((NewSet)code,entry,environment);
+		} else if(code instanceof NewTuple) {
+			code = infer((NewTuple)code,entry,environment);
 		} else if(code instanceof ProcLoad) {
 			code = infer((ProcLoad)code,entry,environment);
 		} else if(code instanceof Return) {
@@ -428,6 +432,24 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// FIXME: should be updated to string
 		checkIsSubtype(Type.T_STRING,rhs_t,stmt);
 		return code;
+	}
+	
+	protected Code infer(Code.Destructure code, Entry stmt, Env environment) {
+		Type type = environment.pop();	
+		
+		if(type instanceof Type.Tuple) {
+			Type.Tuple tup = (Type.Tuple) type;
+			for(Type t : tup.elements()) {
+				environment.push(t);
+			}
+		} else if(Type.isSubtype(Type.T_REAL, type)){
+			environment.push(Type.T_INT);
+			environment.push(Type.T_INT);
+		} else {
+			syntaxError("invalid destructuring operation",filename,stmt);
+		}
+
+		return Code.Destructure(type);
 	}
 	
 	protected Code infer(Code.Fail code, Entry stmt, Env environment) {
@@ -741,6 +763,18 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type.Set type = Type.T_SET(elem);
 		environment.push(type);
 		return Code.NewSet(type,e.nargs);
+	}
+	
+	protected Code infer(NewTuple e, Entry stmt, Env environment) {
+		ArrayList<Type> types = new ArrayList<Type>();		
+		
+		for(int i=0;i!=e.nargs;++i) {
+			types.add(environment.pop());						
+		}
+		Collections.reverse(types);
+		Type.Tuple type = Type.T_TUPLE(types);
+		environment.push(type);
+		return Code.NewTuple(type,e.nargs);
 	}
 	
 	protected Code infer(Send ivk, Entry stmt, Env environment) {

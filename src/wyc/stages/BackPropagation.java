@@ -136,6 +136,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			infer(index,(NewSet)code,entry,environment);
+		} else if(code instanceof NewTuple) {
+			infer(index,(NewTuple)code,entry,environment);
 		} else if(code instanceof Negate) {
 			infer(index,(Negate)code,entry,environment);
 		} else if(code instanceof ProcLoad) {
@@ -441,6 +443,15 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Type value = code.type.element();
 		for(int i=0;i!=code.nargs;++i) {
 			environment.push(value);					
+		}
+	}
+	
+	public void infer(int index, Code.NewTuple code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		coerce(req,code.type,index,entry);				
+		for(Type t : code.type.elements()) {
+			environment.push(t);					
 		}
 	}
 	

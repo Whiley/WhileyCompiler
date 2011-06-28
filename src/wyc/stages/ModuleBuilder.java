@@ -690,23 +690,16 @@ public class ModuleBuilder {
 				environment.put(v.var, idx);
 				blk.add(Code.Store(null, idx), attributes(s));
 			}
-		} else if(s.lhs instanceof TupleGen) {
-						
+		} else if(s.lhs instanceof TupleGen) {					
+			TupleGen tg = (TupleGen) s.lhs;
 			blk = resolve(environment, s.rhs);			
-			// this indicates a tuple assignment which must be treated specially.
-			TupleGen tg = (TupleGen) s.lhs;			
-			int freeReg = environment.size();
-			environment.put("$" + freeReg, freeReg);
-			// TODO: this could be fixed with a DUP bytecode.
-			blk.add(Code.Store(null, freeReg),attributes(s));
-			int idx=0;
+			blk.add(Code.Destructure(null),attributes(s));
+
 			for(Expr e : tg.fields) {
 				if(!(e instanceof Variable)) {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
-				blk.add(Code.Load(null, freeReg),attributes(s));
-				blk.add(Code.FieldLoad(null, "$" + idx++), attributes(e));
 				if(environment.containsKey(v.var)) {
 					blk.add(Code.Store(null, environment.get(v.var)),
 						attributes(s));
