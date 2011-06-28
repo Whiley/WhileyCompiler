@@ -201,20 +201,19 @@ public abstract class Code {
 	 */
 	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
 		return get(new ForAll(type, var, label,modifies));
-	}
+	}		
 	
 	/**
-	 * Construct a <code>update</code> bytecode which writes a value into a
-	 * compound structure, as determined by a given access path.
+	 * Construct a <code>store</code> bytecode which writes a given register.
 	 * 
 	 * @param type
 	 *            --- record type.
-	 * @param field
-	 *            --- field to write.
+	 * @param reg
+	 *            --- reg to load.
 	 * @return
 	 */
-	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
-		return get(new Update(type,slot,level,fields));
+	public static MultiStore MultiStore(Type type, Collection<Integer> regs) {
+		return get(new MultiStore(type,regs));
 	}
 	
 	/**
@@ -410,6 +409,20 @@ public abstract class Code {
 	
 	public static ProcLoad ProcLoad(Type.Process type) {
 		return get(new ProcLoad(type));
+	}
+	
+	/**
+	 * Construct a <code>update</code> bytecode which writes a value into a
+	 * compound structure, as determined by a given access path.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to write.
+	 * @return
+	 */
+	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
+		return get(new Update(type,slot,level,fields));
 	}
 	
 	// ===============================================================
