@@ -90,6 +90,14 @@ public class Type {
 		}
 	}
 	
+	public static final class Tuple extends Type {		
+		public final Type[] types;
+		public Tuple(Type[] types, String str) {
+			super(K_TUPLE, str);			
+			this.types = types;
+		}
+	}
+	
 	public static final class Union extends Type {
 		public final Type[] bounds;		
 		public Union(String str, Type... bounds) {
@@ -226,6 +234,19 @@ public class Type {
 				Type elem = parse(typeVars);
 				match("]");
 				return new List(elem, str.substring(start,index));
+			}
+			case '(':
+			{				
+				match("(");
+				ArrayList<Type> elems = new ArrayList<Type>();
+				elems.add(parse(typeVars));
+				while(index < str.length() && str.charAt(index) == ',') {
+					match(",");
+					elems.add(parse(typeVars));
+				}
+				match(")");
+				return new Tuple(elems.toArray(new Type[elems.size()]),
+						str.substring(start, index));
 			}
 			case '{':
 			{

@@ -37,7 +37,7 @@ public final class Tuple extends java.util.ArrayList {
 		boolean firstTime=true;
 		for(Object o : this) {
 			if(!firstTime) {
-				r += ", ";
+				r += ",";
 			}
 			firstTime=false;
 			r += Util.str(o);

@@ -425,6 +425,8 @@ public class Util {
 			return coerce((Record)obj,t);
 		} else if(obj instanceof String) {
 			return coerce((String)obj,t);
+		} else if(obj instanceof Tuple) {
+			return coerce((Tuple)obj,t);
 		} 
 				
 		return obj;
@@ -447,6 +449,22 @@ public class Util {
 			return BigRational.valueOf(obj);
 		} 
 		throw new RuntimeException("invalid integer coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(Tuple obj, Type t) {	
+		if(t.kind == Type.K_TUPLE) {
+			Type.Tuple tup = (Type.Tuple) t;			
+			Type[] types = tup.types;
+			if(tup.types.length == obj.size()) {			
+				Tuple r = new Tuple();
+				int i = 0;
+				for(Object o : obj) {
+					r.add(coerce(o,types[i++]));
+				}
+				return r;
+			}
+		}
+		throw new RuntimeException("invalid list coercion (" + obj + " => " + t + ")");
 	}
 	
 	public static Object coerce(List obj, Type t) {		
