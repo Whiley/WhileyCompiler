@@ -23,18 +23,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.transforms;
+package wyc.stages;
 
 import static wyil.util.SyntaxError.syntaxError;
 
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.stages.TypePropagation.Env;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
-import wyil.transforms.TypePropagation.Env;
 import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
