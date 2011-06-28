@@ -204,7 +204,7 @@ public abstract class Code {
 	}
 	
 	/**
-	 * Construct a <code>multistore</code> bytecode which writes a value into a
+	 * Construct a <code>update</code> bytecode which writes a value into a
 	 * compound structure, as determined by a given access path.
 	 * 
 	 * @param type
@@ -213,8 +213,8 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static MultiStore MultiStore(Type type, int slot, int level, Collection<String> fields) {
-		return get(new MultiStore(type,slot,level,fields));
+	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
+		return get(new Update(type,slot,level,fields));
 	}
 	
 	/**
@@ -1223,13 +1223,13 @@ public abstract class Code {
 	}
 
 	
-	public static final class MultiStore extends Code {
+	public static final class Update extends Code {
 		public final Type type;
 		public final int level;
 		public final int slot;
 		public final ArrayList<String> fields;
 
-		private MultiStore(Type type, int slot, int level, Collection<String> fields) {
+		private Update(Type type, int slot, int level, Collection<String> fields) {
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
@@ -1249,8 +1249,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof MultiStore) {
-				MultiStore i = (MultiStore) o;
+			if (o instanceof Update) {
+				Update i = (Update) o;
 				return (i.type == type || (type != null && type.equals(i.type)))
 						&& level == i.level && slot == i.slot && fields.equals(i.fields);
 			}

@@ -178,8 +178,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
 			code = infer((Load)code,entry,environment);
-		} else if(code instanceof MultiStore) {
-			code = infer((MultiStore)code,entry,environment);
+		} else if(code instanceof Update) {
+			code = infer((Update)code,entry,environment);
 		} else if(code instanceof Negate) {
 			code = infer((Negate)code,entry,environment);
 		} else if(code instanceof NewDict) {
@@ -557,7 +557,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 		
-	protected Code infer(MultiStore e, Entry stmt, Env environment) {		
+	protected Code infer(Update e, Entry stmt, Env environment) {		
 		ArrayList<Type> path = new ArrayList();
 		Type val = environment.pop();
 		for(int i=e.fields.size();i!=e.level;++i) {
@@ -616,7 +616,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type ntype = typeInference(src,val,e.level,0,e.fields);
 		environment.set(e.slot,ntype);
 		
-		return Code.MultiStore(src,e.slot,e.level,e.fields);
+		return Code.Update(src,e.slot,e.level,e.fields);
 	}
 
 	/**
@@ -1142,8 +1142,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			if(code instanceof Store) {
 				Store s = (Store) code;
 				modifies.add(s.slot);
-			} else if(code instanceof MultiStore) {
-				MultiStore s = (MultiStore) code;
+			} else if(code instanceof Update) {
+				Update s = (Update) code;
 				modifies.add(s.slot);
 			}
 		}

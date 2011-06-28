@@ -126,8 +126,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
 			infer(index,(Load)code,entry,environment);
-		} else if(code instanceof MultiStore) {
-			infer(index,(MultiStore)code,entry,environment);
+		} else if(code instanceof Update) {
+			infer(index,(Update)code,entry,environment);
 		} else if(code instanceof NewDict) {
 			infer(index,(NewDict)code,entry,environment);
 		} else if(code instanceof NewList) {
@@ -321,7 +321,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.set(code.slot,code.type);		
 	}
 	
-	public void infer(int index, Code.MultiStore code, Block.Entry stmt,
+	public void infer(int index, Code.Update code, Block.Entry stmt,
 			Env environment) {
 		
 		Type src = environment.get(code.slot);

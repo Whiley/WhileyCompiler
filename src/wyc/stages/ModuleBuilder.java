@@ -727,7 +727,7 @@ public class ModuleBuilder {
 			}
 			int slot = environment.get(l.first().var);
 			blk.addAll(resolve(environment, s.rhs));			
-			blk.add(Code.MultiStore(null,slot,l.second(),fields),
+			blk.add(Code.Update(null,slot,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);

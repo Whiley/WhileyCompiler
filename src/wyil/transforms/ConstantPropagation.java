@@ -161,8 +161,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
 			infer(index,(Load)code,entry,environment);
-		} else if(code instanceof MultiStore) {
-			infer((MultiStore)code,entry,environment);
+		} else if(code instanceof Update) {
+			infer((Update)code,entry,environment);
 		} else if(code instanceof NewDict) {
 			infer(index,(NewDict)code,entry,environment);
 		} else if(code instanceof NewList) {
@@ -499,7 +499,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(val);
 	}
 	
-	public void infer(Code.MultiStore code, Block.Entry entry,
+	public void infer(Code.Update code, Block.Entry entry,
 			Env environment) {
 		
 		// TO DO: I could definite do more here

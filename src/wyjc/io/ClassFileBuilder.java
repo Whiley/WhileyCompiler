@@ -312,8 +312,8 @@ public class ClassFileBuilder {
 				 translate((Load)code,freeSlot,bytecodes);
 			} else if(code instanceof Loop) {
 				 translate((Loop)code,freeSlot,bytecodes);
-			} else if(code instanceof MultiStore) {
-				 translate((MultiStore)code,freeSlot,bytecodes);
+			} else if(code instanceof Update) {
+				 translate((Update)code,freeSlot,bytecodes);
 			} else if(code instanceof NewDict) {
 				 translate((NewDict)code,freeSlot,bytecodes);
 			} else if(code instanceof NewList) {
@@ -447,7 +447,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.slot, type));				
 	}
 
-	public void translate(Code.MultiStore c, int freeSlot,ArrayList<Bytecode> bytecodes) {
+	public void translate(Code.Update c, int freeSlot,ArrayList<Bytecode> bytecodes) {
 		
 		// Now, my general feeling is that the multistore bytecode could use
 		// some work. Essentially, to simplify this process of figuring our what
