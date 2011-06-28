@@ -257,8 +257,8 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewTuple NewTuple(Type.Record type) {
-		return get(new NewTuple(type));
+	public static NewTuple NewTuple(Type.Tuple type, int nargs) {
+		return get(new NewTuple(type, nargs));
 	}
 	
 	/**
@@ -1331,30 +1331,32 @@ public abstract class Code {
 	}
 		
 	public static final class NewTuple extends Code {
-		public final Type.Record type;
+		public final Type.Tuple type;
+		public final int nargs;
 		
-		private NewTuple(Type.Record type) {
+		private NewTuple(Type.Tuple type, int nargs) {
 			this.type = type;
+			this.nargs = nargs;
 		}
 		
 		public int hashCode() {
 			if(type == null) {
-				return 952;
+				return nargs;
 			} else {
-				return type.hashCode();
+				return type.hashCode() + nargs;
 			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewTuple) {
 				NewTuple i = (NewTuple) o;
-				return type == i.type || (type != null && type.equals(i.type));
+				return nargs == i.nargs && (type == i.type || (type != null && type.equals(i.type)));
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return toString("newtuple",type);
+			return toString("newtuple #" + nargs,type);
 		}	
 	}
 	

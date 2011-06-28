@@ -78,6 +78,10 @@ public abstract class Value implements Comparable<Value> {
 		return get(new TypeConst(type));
 	}
 	
+	public static Tuple V_TUPLE(Collection<Value> values) {
+		return get(new Tuple(values));
+	}
+	
 	public static FunConst V_FUN(NameID name, Type.Fun type) {
 		return get(new FunConst(name,type));
 	}		
@@ -375,7 +379,7 @@ public abstract class Value implements Comparable<Value> {
 				}
 			} else if (v instanceof Null || v instanceof Bool
 					|| v instanceof Rational || v instanceof Integer || v instanceof Strung
-					|| v instanceof List) {
+					|| v instanceof List || v instanceof Tuple) {
 				return 1;
 			}
 			return -1;			
@@ -480,7 +484,7 @@ public abstract class Value implements Comparable<Value> {
 				}
 			} else if (v instanceof Null || v instanceof Bool
 					|| v instanceof Rational || v instanceof Integer || v instanceof Strung
-					|| v instanceof Set || v instanceof List) {
+					|| v instanceof Set || v instanceof List || v instanceof Tuple) {
 				return 1; 
 			} 
 			return -1;			
@@ -557,7 +561,7 @@ public abstract class Value implements Comparable<Value> {
 				}
 			} else if (v instanceof Null || v instanceof Bool
 					|| v instanceof Rational || v instanceof Integer || v instanceof Strung
-					|| v instanceof Set || v instanceof List
+					|| v instanceof Set || v instanceof List || v instanceof Tuple
 					|| v instanceof Record) {
 				return 1;
 			}
@@ -661,6 +665,69 @@ public abstract class Value implements Comparable<Value> {
 			return "&" + name.toString() + ":" + type.toString();
 		}
 	}
+	
+	public static class Tuple extends Value {
+		public final ArrayList<Value> values;
+		private Tuple(Collection<Value> values) {
+			this.values = new ArrayList<Value>(values);
+		}
+
+		public Type type() {
+			ArrayList<Type> types = new ArrayList<Type>();			
+			for (Value e : values) {
+				types.add(e.type());				
+			}
+			return Type.T_TUPLE(types);
+		}
+		public int hashCode() {
+			return values.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Tuple) {
+				Tuple i = (Tuple) o;
+				return values.equals(i.values);
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Tuple) {
+				Tuple l = (Tuple) v;
+				if(values.size() < l.values.size()) {
+					return -1;
+				} else if(values.size() > l.values.size()) {
+					return 1;
+				} else {
+					ArrayList<Value> vs1 = values;
+					ArrayList<Value> vs2 = l.values;
+					for(int i=0;i!=values.size();++i) {
+						Value s1 = vs1.get(i);
+						Value s2 = vs2.get(i);
+						int c = s1.compareTo(s2);
+						if(c != 0) { return c; }						
+					}
+					return 0;
+				}
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Rational || v instanceof Integer || v instanceof Strung
+					|| v instanceof Set || v instanceof List) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public String toString() {
+			String r = "(";
+			boolean firstTime=true;			
+			for(Value v : values) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				r += v;
+			}
+			return r + ")";
+		}
+	}
+	
 	private static final ArrayList<Value> values = new ArrayList<Value>();
 	private static final HashMap<Value,java.lang.Integer> cache = new HashMap<Value,java.lang.Integer>();
 	

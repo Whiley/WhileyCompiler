@@ -74,6 +74,30 @@ public abstract class Type {
 	}
 	
 	/**
+	 * Construct a tuple type using the given element types.
+	 * 
+	 * @param element
+	 */
+	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
+		int len = 1;
+		for(Type b : elements) {
+			// could be optimised slightly
+			len += nodes(b).length;
+		}		
+		Node[] nodes = new Node[len];
+		int[] children = new int[elements.size()];
+		int start = 1;
+		for(int i=0;i!=elements.size();++i) {
+			children[i] = start;
+			Node[] comps = nodes(elements.get(i));
+			insertNodes(start,comps,nodes);
+			start += comps.length;
+		}
+		nodes[0] = new Node(K_TUPLE, children);		
+		return new Tuple(nodes);
+	}
+	
+	/**
 	 * Construct a process type using the given element type.
 	 * 
 	 * @param element

@@ -271,17 +271,15 @@ public class ModuleBuilder {
 			return Value.V_RECORD(values);
 		} else if (expr instanceof TupleGen) {
 			TupleGen rg = (TupleGen) expr;			
-			HashMap<String,Value> values = new HashMap<String,Value>();
-			int i = 0;
+			ArrayList<Value> values = new ArrayList<Value>();			
 			for(Expr e : rg.fields) {
 				Value v = expandConstantHelper(e,filename,exprs,visited);
 				if(v == null) {
 					return null;
 				}
-				values.put("$" + i,v);
-				i = i + 1;
+				values.add(v);				
 			}
-			return Value.V_RECORD(values);
+			return Value.V_TUPLE(values);
 		} else if(expr instanceof FunConst) {
 			FunConst f = (FunConst) expr;
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
@@ -693,6 +691,7 @@ public class ModuleBuilder {
 				blk.add(Code.Store(null, idx), attributes(s));
 			}
 		} else if(s.lhs instanceof TupleGen) {
+						
 			blk = resolve(environment, s.rhs);			
 			// this indicates a tuple assignment which must be treated specially.
 			TupleGen tg = (TupleGen) s.lhs;			
@@ -1637,15 +1636,12 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(HashMap<String,Integer> environment, TupleGen sg) {		
-		Block blk = new Block();
-		HashMap<String, Type> fields = new HashMap<String, Type>();
-		int i =0;
-		for (Expr e : sg.fields) {						
-			fields.put("$" + i++, Type.T_VOID);
+		Block blk = new Block();		
+		for (Expr e : sg.fields) {									
 			blk.addAll(resolve(environment, e));
 		}
 		// FIXME: to be updated to proper tuple
-		blk.add(Code.NewRecord(Type.T_RECORD(fields)),attributes(sg));
+		blk.add(Code.NewTuple(null,sg.fields.size()),attributes(sg));
 		return blk;		
 	}
 
@@ -1692,13 +1688,11 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			HashMap<String,Type> types = new HashMap<String,Type>();			
-			int idx=0;
-			for (UnresolvedType e : tt.types) {
-				String name = "$" + idx++;
-				types.put(name, resolve(e));				
+			ArrayList<Type> types = new ArrayList<Type>();						
+			for (UnresolvedType e : tt.types) {				
+				types.add(resolve(e));				
 			}
-			return Type.T_RECORD(types);			
+			return Type.T_TUPLE(types);			
 		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();			
