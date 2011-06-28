@@ -649,7 +649,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}		
 		
 		Value result = null;
-		if (isValue) {			
+		if (isValue) {	
+			Collections.reverse(values);
 			result = Value.V_TUPLE(values);
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,code.nargs));

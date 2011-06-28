@@ -272,6 +272,24 @@ public class Util {
 				}
 				break;
 			}
+			case Type.K_TUPLE:
+			{				
+				if(obj instanceof Tuple) {
+					Tuple ol = (Tuple) obj;
+					Type.Tuple tl = (Type.Tuple) t;
+					Type[] types = tl.types;
+					if(types.length == ol.size()) {						
+						int i=0;
+						for(Object o : ol) { 
+							if(!instanceOf(o,types[i++])) {
+								return false;
+							}
+						}						
+						return true;					
+					}
+				}
+				break;
+			}
 			case Type.K_DICTIONARY:
 			{
 				if(obj instanceof Dictionary) {
@@ -401,12 +419,27 @@ public class Util {
 				if(!instanceOf(val,type)) {
 					return false;
 				} 
-			}else {
+			} else {
 				return false;
 			}
 		}
 		return true;
 	}	
+	
+	public static boolean instanceOf(Tuple ol, Type t) {				
+		Type.Tuple tl = (Type.Tuple) t;
+		Type[] types = tl.types;
+		if(types.length == ol.size()) {	
+			int i=0;
+			for(Object o : ol) { 
+				if(!instanceOf(o,types[i++])) {
+					return false;
+				}
+			}
+			return true;					
+		}
+		return false;
+	}
 	
 	/**
 	 * The <code>coerce</code> method forces this object to conform to a given

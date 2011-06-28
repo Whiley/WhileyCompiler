@@ -1527,6 +1527,8 @@ public class ClassFileBuilder {
 			translate((Value.Record)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Dictionary) {
 			translate((Value.Dictionary)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Tuple) {
+			translate((Value.Tuple)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.FunConst) {
 			translate((Value.FunConst)v,freeSlot,bytecodes);
 		} else {
@@ -1724,6 +1726,26 @@ public class ClassFileBuilder {
 		}				
 	}
 
+	protected void translate(Value.Tuple lv, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {		
+		bytecodes.add(new Bytecode.New(WHILEYTUPLE));		
+		bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
+		bytecodes.add(new Bytecode.LoadConst(lv.values.size()));
+		JvmType.Function ftype = new JvmType.Function(T_VOID,T_INT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "<init>", ftype,
+				Bytecode.SPECIAL));
+		
+		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);		
+		for (Value e : lv.values) {	
+			bytecodes.add(new Bytecode.Dup(WHILEYTUPLE));
+			translate(e, freeSlot, bytecodes);
+			addWriteConversion(e.type(), bytecodes);
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE, "add", ftype,
+					Bytecode.VIRTUAL));			
+			bytecodes.add(new Bytecode.Pop(T_BOOL));
+		}				
+	}
+	
 	protected void translate(Value.Record expr, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
