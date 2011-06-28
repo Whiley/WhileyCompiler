@@ -199,9 +199,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(code instanceof Store) {
 			code = infer((Store)code,entry,environment);
 		} else if(code instanceof SetUnion) {
-			code = inferSetUnion(entry,environment);
+			code = infer((Code.SetUnion)code,entry,environment);
 		} else if(code instanceof SetDifference) {
-			code = inferSetDifference(entry,environment);
+			code = infer((Code.SetDifference)code,entry,environment);
 		} else if(code instanceof SetIntersect) {
 			code = infer((Code.SetIntersect)code, entry,environment);
 		} else if(code instanceof Spawn) {
@@ -242,9 +242,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.push(rhs);
 			switch(v.bop) {
 				case ADD:			
-					return inferSetUnion(stmt,environment);
+					return inferSetUnion(OpDir.UNIFORM,stmt,environment);
 				case SUB:
-					return inferSetDifference(stmt,environment);
+					return inferSetDifference(OpDir.UNIFORM,stmt,environment);
 				default:
 					syntaxError("invalid set operation: " + v.bop,filename,stmt);
 					result = null;
@@ -835,7 +835,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.Return(ret_t);
 	}
 	
-	protected Code inferSetUnion(Entry stmt, Env environment) {
+	protected Code infer(Code.SetUnion code, Entry stmt, Env environment) {
+		return inferSetUnion(code.dir,stmt,environment);
+	}
+	
+	protected Code inferSetUnion(OpDir dir, Entry stmt, Env environment) {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
 		Type result;
@@ -843,7 +847,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
 		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
 		
-		if(lhs_set || rhs_set) {					
+		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
 			if(lhs_set && rhs_set) {
 				result = Type.leastUpperBound(lhs,rhs);		
 			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
@@ -854,13 +858,17 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				syntaxError("invalid set operation on types",filename,stmt);
 				result = null;
 			}						
+		} else if(dir == OpDir.LEFT && lhs_set) {
+			result = Type.leastUpperBound(lhs,Type.T_SET(rhs));
+		} else if(dir == OpDir.RIGHT && rhs_set) {
+			result = Type.leastUpperBound(Type.T_SET(lhs),rhs);			
 		} else {
 			syntaxError("expecting set type",filename,stmt);
 			return null; // dead-code
 		}
 				
 		environment.push(result);
-		return Code.SetUnion(Type.effectiveSetType(result), OpDir.UNIFORM);	
+		return Code.SetUnion(Type.effectiveSetType(result), dir);	
 	}
 
 	protected Code infer(Code.SetIntersect code, Entry stmt, Env environment) {
@@ -891,7 +899,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.SetIntersect(Type.effectiveSetType(result), OpDir.UNIFORM);	
 	}
 	
-	protected Code inferSetDifference(Entry stmt, Env environment) {
+	protected Code infer(Code.SetDifference code, Entry stmt, Env environment) {
+		return inferSetDifference(code.dir,stmt,environment);
+	}
+		
+	protected Code inferSetDifference(OpDir dir, Entry stmt, Env environment) {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
 		Type result;
@@ -908,7 +920,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 				
 		environment.push(result);
-		return Code.SetDifference(Type.effectiveSetType(result), OpDir.UNIFORM);	
+		return Code.SetDifference(Type.effectiveSetType(result), dir);	
 	}
 
 	protected Code infer(Negate v, Entry stmt, Env environment) {
