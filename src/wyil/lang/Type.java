@@ -1271,6 +1271,7 @@ public abstract class Type {
 			Node fromNode = fromGraph[from];
 			Node toNode = toGraph[to];	
 			
+			/*
 			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
 				// labeled nary nodes
 				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
@@ -1287,7 +1288,9 @@ public abstract class Type {
 					}
 				}					
 				return true;
-			} else if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
+			} else 
+			*/
+			if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
 				return true;
 			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
 				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
