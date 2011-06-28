@@ -604,8 +604,27 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Code.IfGoto igoto, Entry stmt, Env trueEnv, Env falseEnv) {
 		
 		Env environment = join(trueEnv,falseEnv);
-		environment.push(igoto.type);
-		environment.push(igoto.type);
+		
+		if(igoto.op == Code.COp.ELEMOF) {
+			Type src = igoto.type;
+			Type element;
+			
+			// FIXME: this is soooo broken
+			
+			if(src instanceof Type.Set) {
+				Type.Set s = (Type.Set) src;
+				element = s.element();
+			} else {
+				Type.List s = (Type.List) src;
+				element = s.element();
+			}
+						
+			environment.push(element);
+			environment.push(igoto.type);
+		} else {		
+			environment.push(igoto.type);
+			environment.push(igoto.type);
+		}
 		
 		return environment;
 	}

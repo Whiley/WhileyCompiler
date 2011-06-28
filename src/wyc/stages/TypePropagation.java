@@ -964,31 +964,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = (Env) environment.clone();
 		
 		Type rhs_t = environment.pop();
-		Type lhs_t = environment.pop();		
-		Type lub = Type.leastUpperBound(lhs_t,rhs_t);		
-		Type glb = Type.greatestLowerBound(lhs_t,rhs_t);
+		Type lhs_t = environment.pop();
+		Type lub;
 		
-		switch(code.op) {
-		case LT:
-		case LTEQ:
-		case GT:
-		case GTEQ:
-			checkIsSubtype(Type.T_NUMBER, lub, stmt);
-			// effect an implicit coercion
-			if(lub != Type.T_INT) { lub = Type.T_REAL; }
-			break;
-		case EQ:
-		case NEQ:	
-			if(Type.isCoerciveSubtype(Type.T_NUMBER, lub)) {
-				// effect an implicit coercion
-				if(lub != Type.T_INT) { lub = Type.T_REAL; }
-			} else if (glb == Type.T_VOID) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
-			}
-			break;
-		case ELEMOF:
-		{			
+		if(code.op == Code.COp.ELEMOF) {
+			// this is the only asymmetric binary operation. So, it's handled
+			// with a special case.
 			Type element;
 			if(rhs_t instanceof Type.List){
 				element = ((Type.List)rhs_t).element();
@@ -1002,16 +983,35 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
 			}			
+			lub = rhs_t;
+		} else if(Type.isCoerciveSubtype(lhs_t, rhs_t)) {
+			lub = lhs_t;
+		} else if(Type.isCoerciveSubtype(rhs_t, lhs_t)) {
+			lub = rhs_t;
+		} else {
+			syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
+					filename, stmt);
+			lub = null; // unreachable
+		}
+		
+		switch(code.op) {
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+			checkIsSubtype(Type.T_NUMBER, lub, stmt);
 			break;
+		case EQ:
+		case NEQ:
+			// no specific requirements here			
+			break;
+		case ELEMOF:
+		{			
+			break; // handled with special case
 		}	
 		case SUBSET:
-		case SUBSETEQ:			
-			if (!Type.isCoerciveSubtype(lhs_t, rhs_t) && !Type.isCoerciveSubtype(rhs_t, lhs_t)) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
-			}
-			checkIsSubtype(Type.T_SET(Type.T_ANY),lhs_t,stmt);
-			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
+		case SUBSETEQ:						
+			checkIsSubtype(Type.T_SET(Type.T_ANY),lub,stmt);			
 			break;		
 		}
 		
