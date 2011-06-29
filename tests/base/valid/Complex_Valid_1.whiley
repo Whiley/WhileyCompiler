@@ -87,6 +87,12 @@ bool clearRowExcept(Pos from, Pos to, Board board):
 define A1 as { col: 1, row: 1 }
 define H1 as { col: 8, row: 1 }
 
+define A3 as { col: 1, row: 3 }
+define D3 as { col: 4, row: 3 }
+
+
 void System::main([string] args):
     r = clearRowExcept(A1,H1,startingChessBoard)
+    out.println("GOT: " + r)
+    r = clearRowExcept(A3,D3,startingChessBoard)
     out.println("GOT: " + r)
