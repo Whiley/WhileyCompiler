@@ -440,14 +440,17 @@ public class ClassFileBuilder {
 	public void upConversion(Type toType, Type.Int fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		if(!Type.isSubtype(toType,fromType)) {
-			if(toType == Type.T_REAL) { 
+			Type glb = Type.greatestLowerBound(Type.T_REAL, toType);
+			if(glb == Type.T_REAL) { 
 				// coercion required!
 				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
 				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
 			} else {
-				JvmType.Function ftype = new JvmType.Function(T_INT,BIG_INTEGER);			
-				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.STATIC));
-				ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_INT);			
+				System.out.println("CONVERTING INT TO: " + toType);
+				// must be => char
+				JvmType.Function ftype = new JvmType.Function(T_INT);			
+				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));
+				ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);			
 				bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"valueOf",ftype,Bytecode.STATIC));
 			}
 		}
