@@ -815,27 +815,36 @@ public class ClassFileBuilder {
 	public void translate(Code.IfType c, Entry stmt, int freeSlot,
 			HashMap<Value,Integer> constants, ArrayList<Bytecode> bytecodes) {						
 		
-		// This method (including the helper) is pretty screwed up. It needs a
-		// serious rethink to catch all cases, and to be efficient.
-		
-		String exitLabel = freshLabel();
-		String trueLabel = freshLabel();
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes, constants);
-									
-		Type gdiff = Type.leastDifference(c.type,c.test);			
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		addReadConversion(gdiff,bytecodes);		
-		bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
-		bytecodes.add(new Bytecode.Goto(exitLabel));
-		bytecodes.add(new Bytecode.Label(trueLabel));
-				
-		Type glb = Type.greatestLowerBound(c.type, c.test);
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		addReadConversion(glb,bytecodes);		
-		bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
-		bytecodes.add(new Bytecode.Goto(c.target));
-		bytecodes.add(new Bytecode.Label(exitLabel));		
+		if(c.slot >= 0) {
+			// In this case, we're updating the type of a local variable. To
+			// make this work, we must update the JVM type of that slot as well
+			// using a checkcast. 
+			String exitLabel = freshLabel();
+			String trueLabel = freshLabel();
+					
+			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes, constants);
+
+			Type gdiff = Type.leastDifference(c.type,c.test);			
+			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			// now, add checkcase
+			addReadConversion(gdiff,bytecodes);		
+			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
+			bytecodes.add(new Bytecode.Goto(exitLabel));
+			bytecodes.add(new Bytecode.Label(trueLabel));
+
+			Type glb = Type.greatestLowerBound(c.type, c.test);
+			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			// now, add checkcase
+			addReadConversion(glb,bytecodes);		
+			bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
+			bytecodes.add(new Bytecode.Goto(c.target));
+			bytecodes.add(new Bytecode.Label(exitLabel));
+		} else {
+			// This is the easy case. We're not updating the type of a local
+			// variable; rather we're just type testing a value on the stack.
+			translateTypeTest(c.target, c.type, c.test, stmt, bytecodes, constants);
+		}
 	}
 	
 	// The purpose of this method is to translate a type test. We're testing to
