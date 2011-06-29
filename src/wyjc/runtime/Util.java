@@ -73,9 +73,9 @@ public class Util {
 		return lhs.substring(start,end);
 	}
 	
-	public static String set(final String lhs, BigInteger index, BigInteger value) {
+	public static String set(final String lhs, BigInteger index, Character value) {
 		int idx = index.intValue();
-		char c = (char) value.intValue();
+		char c = value.charValue();
 		// hmmm, not exactly efficient!
 		StringBuilder sb = new StringBuilder(lhs);
 		sb.setCharAt(idx, c);

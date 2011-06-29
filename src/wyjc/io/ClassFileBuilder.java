@@ -438,9 +438,16 @@ public class ClassFileBuilder {
 	public void upConversion(Type toType, Type.Int fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		if(!Type.isSubtype(toType,fromType)) {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
-			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+			if(toType == Type.T_REAL) { 
+				// coercion required!
+				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+			} else {
+				JvmType.Function ftype = new JvmType.Function(T_INT,BIG_INTEGER);			
+				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.STATIC));
+				ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_INT);			
+				bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"valueOf",ftype,Bytecode.STATIC));
+			}
 		}
 	}
 
@@ -557,7 +564,7 @@ public class ClassFileBuilder {
 			addWriteConversion(Type.T_INT,bytecodes);			
 
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
-					JAVA_LANG_STRING,BIG_INTEGER,BIG_INTEGER);			
+					JAVA_LANG_STRING,BIG_INTEGER,JAVA_LANG_CHARACTER);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));						
 			
@@ -1160,10 +1167,9 @@ public class ClassFileBuilder {
 				ftype, Bytecode.VIRTUAL));
 		ftype = new JvmType.Function(T_CHAR,T_INT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
-				Bytecode.VIRTUAL));
-		bytecodes.add(new Bytecode.Conversion(T_CHAR, T_LONG));
-		ftype = new JvmType.Function(BIG_INTEGER,T_LONG);
-		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
+				Bytecode.VIRTUAL));		
+		ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER, "valueOf",
 				ftype, Bytecode.STATIC));
 	}
 	
