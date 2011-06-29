@@ -498,35 +498,48 @@ public class ClassFileBuilder {
 		ArrayList<String> fields = c.fields;
 		int fi = 0;						
 		Type iter = type;
+		// ok, this is such an ugly hack...
+		ArrayList<Type> indices = new ArrayList<Type>();
 		for(int i=0;i!=c.level;++i) {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
+				indices.add(dict.key());
 				iter = dict.value();
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
-				iter = Type.T_INT;
+				iter = Type.T_CHAR;
+				indices.add(Type.T_INT);
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
 				Type.List list = Type.effectiveListType(iter);
 				iter = list.element();
+				indices.add(Type.T_INT);
 			} else {
 				Type.Record rec = Type.effectiveRecordType(iter);
 				String field = fields.get(fi++);
 				iter = rec.fields().get(field);
 			}	
 		}
-		
+						
+		int indexSlot = freeSlot;
+		freeSlot += indices.size();
 		// Third, store the value to be assigned				
 		JvmType val_t = convertType(iter);		
-		bytecodes.add(new Bytecode.Store(freeSlot,val_t));
+		bytecodes.add(new Bytecode.Store(freeSlot++,val_t));
+		
+		for(int i=indices.size()-1;i>=0;--i) {
+			JvmType t = convertType(indices.get(i));
+			bytecodes.add(new Bytecode.Store(indexSlot+i,t));
+		}
+		
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 		
 		// Fourth, finally process the assignment path and update the object in
 		// question.		
-		multiStoreHelper(c.type,c.level-1,fields.iterator(),freeSlot,val_t,freeSlot+1, bytecodes);		
+		multiStoreHelper(c.type,c.level-1,fields.iterator(),indexSlot,val_t,freeSlot, bytecodes);		
 		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));
 	}
 
 	public void multiStoreHelper(Type type, int level,
-			Iterator<String> fields, int valSlot, JvmType val_t, int freeSlot, 
+			Iterator<String> fields, int indexSlot, JvmType val_t, int freeSlot, 
 			ArrayList<Bytecode> bytecodes) {
 		
 		// This method is major ugly. I'm sure there must be a better way of
@@ -540,7 +553,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 					Bytecode.VIRTUAL));							
 			addReadConversion(pt.element(),bytecodes);
-			multiStoreHelper(pt.element(),level,fields,valSlot,val_t,freeSlot,bytecodes);						
+			multiStoreHelper(pt.element(),level,fields,indexSlot,val_t,freeSlot,bytecodes);						
 			ftype = new JvmType.Function(WHILEYPROCESS,JAVA_LANG_OBJECT);		
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "setState", ftype,
 					Bytecode.VIRTUAL));
@@ -548,27 +561,21 @@ public class ClassFileBuilder {
 		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),type)) {
 			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
 			
-			if(level != 0) {
-				int keySlot = freeSlot++;
-				int mapSlot = freeSlot++;
-				bytecodes.add(new Bytecode.Store(mapSlot,WHILEYMAP));
-				bytecodes.add(new Bytecode.Store(keySlot,JAVA_LANG_OBJECT));				
-				bytecodes.add(new Bytecode.Load(mapSlot,WHILEYMAP));
-				bytecodes.add(new Bytecode.Load(keySlot,JAVA_LANG_OBJECT));
+			if(level != 0) {				
+				bytecodes.add(new Bytecode.Dup(WHILEYMAP));				
+				bytecodes.add(new Bytecode.Load(indexSlot,convertType(dict.key())));
 				
 				JvmType.Function ftype = new JvmType.Function(
 						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
 				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
 					Bytecode.STATIC));				
 				addReadConversion(dict.value(),bytecodes);
-				multiStoreHelper(dict.value(),level-1,fields,valSlot,val_t,freeSlot,bytecodes);
-				bytecodes.add(new Bytecode.Load(mapSlot,WHILEYMAP));
-				bytecodes.add(new Bytecode.Swap());
-				bytecodes.add(new Bytecode.Load(keySlot,JAVA_LANG_OBJECT));
+				multiStoreHelper(dict.value(),level-1,fields,indexSlot+1,val_t,freeSlot,bytecodes);
+				bytecodes.add(new Bytecode.Load(indexSlot,convertType(dict.key())));
 				bytecodes.add(new Bytecode.Swap());
 			} else {
-				bytecodes.add(new Bytecode.Swap());
-				bytecodes.add(new Bytecode.Load(valSlot, val_t));	
+				bytecodes.add(new Bytecode.Load(indexSlot,convertType(dict.key())));
+				bytecodes.add(new Bytecode.Load(indexSlot+1, val_t));	
 				addWriteConversion(dict.value(),bytecodes);
 			}
 						
@@ -580,8 +587,8 @@ public class ClassFileBuilder {
 		} else if(Type.isSubtype(Type.T_STRING,type)) {
 			
 			// assert: level must be zero here
-			bytecodes.add(new Bytecode.Swap());	
-			bytecodes.add(new Bytecode.Load(valSlot, val_t));
+			bytecodes.add(new Bytecode.Load(indexSlot, BIG_INTEGER));
+			bytecodes.add(new Bytecode.Load(indexSlot+1, val_t));
 			addWriteConversion(Type.T_INT,bytecodes);			
 
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
@@ -593,25 +600,19 @@ public class ClassFileBuilder {
 			Type.List list = Type.effectiveListType(type);				
 										
 			if(level != 0) {
-				int indexSlot = freeSlot++;
-				int listSlot = freeSlot++;
-				bytecodes.add(new Bytecode.Store(listSlot,WHILEYLIST));
-				bytecodes.add(new Bytecode.Store(indexSlot,BIG_INTEGER));				
-				bytecodes.add(new Bytecode.Load(listSlot,WHILEYLIST));
-				bytecodes.add(new Bytecode.Load(indexSlot,BIG_INTEGER));							
+				bytecodes.add(new Bytecode.Dup(WHILEYLIST));											
+				bytecodes.add(new Bytecode.Load(indexSlot,BIG_INTEGER));				
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 						WHILEYLIST,BIG_INTEGER);
 				bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "get", ftype,
 						Bytecode.STATIC));				
 				addReadConversion(list.element(),bytecodes);
-				multiStoreHelper(list.element(),level-1,fields,valSlot,val_t,freeSlot,bytecodes);
-				bytecodes.add(new Bytecode.Load(listSlot,WHILEYLIST));
-				bytecodes.add(new Bytecode.Swap());
+				multiStoreHelper(list.element(),level-1,fields,indexSlot+1,val_t,freeSlot,bytecodes);				
 				bytecodes.add(new Bytecode.Load(indexSlot,BIG_INTEGER));
 				bytecodes.add(new Bytecode.Swap());
-			} else {
-				bytecodes.add(new Bytecode.Swap());	
-				bytecodes.add(new Bytecode.Load(valSlot, val_t));
+			} else {				
+				bytecodes.add(new Bytecode.Load(indexSlot,BIG_INTEGER));
+				bytecodes.add(new Bytecode.Load(indexSlot+1, val_t));
 				addWriteConversion(list.element(),bytecodes);
 			}
 			
@@ -622,22 +623,18 @@ public class ClassFileBuilder {
 		} else {
 			Type.Record rec = Type.effectiveRecordType(type);			
 			String field = fields.next();			
-			if(level != 0) {
-				int recordSlot = freeSlot++;
-				bytecodes.add(new Bytecode.Store(recordSlot,WHILEYRECORD));
-				bytecodes.add(new Bytecode.Load(recordSlot,WHILEYRECORD));
+			if(level != 0) {				
+				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));				
 				bytecodes.add(new Bytecode.LoadConst(field));				
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,WHILEYRECORD,JAVA_LANG_STRING);
 				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.STATIC));
 				addReadConversion(rec.fields().get(field),bytecodes);
-				multiStoreHelper(rec.fields().get(field),level-1,fields,valSlot,val_t,freeSlot,bytecodes);
-				bytecodes.add(new Bytecode.Load(recordSlot,WHILEYRECORD));
-				bytecodes.add(new Bytecode.Swap());
+				multiStoreHelper(rec.fields().get(field),level-1,fields,indexSlot,val_t,freeSlot,bytecodes);				
 				bytecodes.add(new Bytecode.LoadConst(field));
 				bytecodes.add(new Bytecode.Swap());
 			} else {
 				bytecodes.add(new Bytecode.LoadConst(field));				
-				bytecodes.add(new Bytecode.Load(valSlot, val_t));
+				bytecodes.add(new Bytecode.Load(indexSlot, val_t));
 				addWriteConversion(rec.fields().get(field),bytecodes);
 			}
 			
