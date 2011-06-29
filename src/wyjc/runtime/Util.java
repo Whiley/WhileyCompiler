@@ -55,6 +55,14 @@ public class Util {
 		return lhs + rhs;
 	}
 	
+	public static String append(final String lhs, final Object rhs) {
+		return lhs + str(rhs);
+	}
+	
+	public static String append(final Object lhs, final String rhs) {
+		return str(lhs) + rhs;
+	}
+	
 	public static BigInteger stringlength(final String lhs) {
 		return BigInteger.valueOf(lhs.length());
 	}

@@ -35,13 +35,13 @@ public class IO {
 		Record r = new Record();
 		try {			
 			FileInputStream fin = new FileInputStream(filename);
-			Record.put(r,"fileName", filename);
-			Record.put(r,"$fin", fin);
+			r.put("fileName", filename);
+			r.put("$fin", fin);
 			Actor p = new Actor(r);
 			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
-			Record.put(r,"msg", e.getMessage());			
+			r.put("msg", e.getMessage());			
 		}
 		return null;
 	}
@@ -50,13 +50,13 @@ public class IO {
 		Record r = new Record();
 		try {			
 			FileOutputStream fout = new FileOutputStream(filename);
-			Record.put(r,"fileName", filename);
-			Record.put(r,"$fout", fout);			
+			r.put("fileName", filename);
+			r.put("$fout", fout);			
 			Actor p = new Actor(r);
 			p.start();
 			return p;
 		} catch(FileNotFoundException e) {
-			Record.put(r,"msg", e.getMessage());	
+			r.put("msg", e.getMessage());	
 		}
 		return null;
 	}
