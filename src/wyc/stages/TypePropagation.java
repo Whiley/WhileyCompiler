@@ -260,8 +260,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				dir = OpDir.UNIFORM;
 			} else if(lhs_str) {				
 				dir = OpDir.LEFT;
+				checkIsSubtype(Type.T_CHAR,rhs,stmt);
 			} else {				
 				dir = OpDir.RIGHT;
+				checkIsSubtype(Type.T_CHAR,lhs,stmt);
 			} 
 			
 			switch(v.bop) {				

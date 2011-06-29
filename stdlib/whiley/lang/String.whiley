@@ -30,6 +30,8 @@ public string str(any item):
         return "null"
     else if item is string:
         return "\"" + item + "\""
+    else if item is char:
+        return "\'" + item + "\'"
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;

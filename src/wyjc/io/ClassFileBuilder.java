@@ -868,6 +868,9 @@ public class ClassFileBuilder {
 		} else if(test instanceof Type.Bool) {
 			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_BOOLEAN));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
+		} else if(test instanceof Type.Char) {
+			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_CHARACTER));			
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		} else if(test instanceof Type.Int) {
 			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
@@ -1152,9 +1155,9 @@ public class ClassFileBuilder {
 		if(c.dir == OpDir.UNIFORM) {
 			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		} else if(c.dir == OpDir.LEFT) {
-			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_OBJECT);				
+			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_CHARACTER);				
 		} else {
-			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_OBJECT,JAVA_LANG_STRING);				
+			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_CHARACTER,JAVA_LANG_STRING);				
 		}													
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
 				Bytecode.STATIC));

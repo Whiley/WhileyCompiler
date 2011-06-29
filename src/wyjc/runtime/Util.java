@@ -55,12 +55,12 @@ public class Util {
 		return lhs + rhs;
 	}
 	
-	public static String append(final String lhs, final Object rhs) {
-		return lhs + str(rhs);
+	public static String append(final String lhs, final Character rhs) {
+		return lhs + rhs;
 	}
 	
-	public static String append(final Object lhs, final String rhs) {
-		return str(lhs) + rhs;
+	public static String append(final Character lhs, final String rhs) {
+		return lhs + rhs;
 	}
 	
 	public static BigInteger stringlength(final String lhs) {
@@ -120,6 +120,9 @@ public class Util {
 		} else if(o instanceof String) {
 			String s = (String) o;
 			return "\"" + s + "\"";
+		} else if(o instanceof Character) {
+			Character s = (Character) o;
+			return "\'" + s + "\'";
 		} else {
 			return o.toString();
 		}
@@ -234,6 +237,8 @@ public class Util {
 				return obj == null;
 			case Type.K_BOOL:
 				return obj instanceof Boolean;
+			case Type.K_CHAR:
+				return obj instanceof Character;
 			case Type.K_INT:
 				return obj instanceof BigInteger;
 			case Type.K_RATIONAL:
