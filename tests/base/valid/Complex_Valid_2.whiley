@@ -35,11 +35,11 @@ define CheckMove as { Move check }
 define Move as CheckMove | CastleMove | SimpleMove
 
 
-define A1 as { col: 1, row: 1 }
-define A2 as { col: 1, row: 1 }
-define A3 as { col: 1, row: 3 }
+define A1 as { col: 0, row: 0 }
+define A2 as { col: 0, row: 1 }
+define A3 as { col: 0, row: 2 }
 
-define D3 as { col: 4, row: 3 }
+define D3 as { col: 3, row: 2 }
 
 define H1 as { col: 8, row: 1 }
 
