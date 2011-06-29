@@ -407,6 +407,8 @@ public class ClassFileBuilder {
 			upConversion(toType, (Type.Bool) fromType, freeSlot, bytecodes);
 		} else if(fromType == Type.T_INT) {									
 			upConversion(toType, (Type.Int)fromType,freeSlot,bytecodes);  
+		} else if(fromType == Type.T_CHAR) {									
+			upConversion(toType, (Type.Char)fromType,freeSlot,bytecodes);  
 		} else if(!Type.isSubtype(toType, fromType)) {
 			// Fall-back to an external (recursive) check
 			int id;
@@ -451,6 +453,23 @@ public class ClassFileBuilder {
 		}
 	}
 
+	public void upConversion(Type toType, Type.Char fromType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		if(!Type.isSubtype(toType,fromType)) {
+			JvmType.Function ftype = new JvmType.Function(T_CHAR);			
+			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"charValue",ftype,Bytecode.VIRTUAL));			
+			if(toType == Type.T_REAL) { 
+				// coercion required!
+				ftype = new JvmType.Function(BIG_RATIONAL,T_INT);			
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+			} else {
+				bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
+				ftype = new JvmType.Function(BIG_INTEGER,T_LONG);			
+				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"valueOf",ftype,Bytecode.STATIC));				
+			}
+		}
+	}
+	
 	public void translate(Code.Store c, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType type = convertType(c.type);
