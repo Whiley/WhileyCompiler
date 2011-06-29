@@ -323,12 +323,15 @@ public class Type {
 				index++;
 			}
 		}		
+
 		private void match(String match) {
 			skipWhiteSpace();
 			if ((str.length() - index) < match.length()
 					|| !str.startsWith(match, index)) {
-				throw new IllegalArgumentException("invalid type string: "
-						+ str);
+				String failed = str.substring(index, index + match.length());
+				throw new IllegalArgumentException(
+						"invalid type string (expected " + match + ", found "
+								+ failed + "): " + str);
 			}
 			index += match.length();
 		}		

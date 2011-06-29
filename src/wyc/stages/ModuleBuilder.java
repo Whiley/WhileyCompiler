@@ -427,8 +427,8 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Type t = expandType(key, cache);												
-				types.put(key, Type.minimise(t));
+				Type t = expandType(key, cache);				
+				types.put(key, Type.minimise(t));				
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
@@ -605,6 +605,10 @@ public class ModuleBuilder {
 		currentFunDecl = fd;
 		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 
+		if(Type.isOpen(ret)) {
+			System.out.println("VERSUS: " + ret);
+		}
+		
 		Block blk = new Block();
 		
 		for (Stmt s : fd.statements) {
@@ -1657,6 +1661,11 @@ public class ModuleBuilder {
 	}
 
 	protected Type resolve(UnresolvedType t) {
+		Type tr = resolveHelper(t);		
+		return tr;
+	}
+	
+	protected Type resolveHelper(UnresolvedType t) {
 		if (t instanceof UnresolvedType.Any) {
 			return Type.T_ANY;
 		} else if (t instanceof UnresolvedType.Void) {

@@ -348,6 +348,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return infer((Value.Dictionary)val,elem);
 		} else if (val instanceof Value.Record) {
 			return infer((Value.Record)val,elem);
+		} else if (val instanceof Value.Tuple) {
+			return infer((Value.Tuple)val,elem);
 		} else {
 			return infer((Value.FunConst)val,elem);
 		}
@@ -359,6 +361,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			nvals.add(infer(v,elem));
 		}
 		return Value.V_SET(nvals);
+	}
+	
+	protected Value infer(Value.Tuple val, SyntacticElement elem) {
+		ArrayList<Value> nvals =  new ArrayList<Value>();
+		for(Value v : val.values) {
+			nvals.add(infer(v,elem));
+		}
+		return Value.V_TUPLE(nvals);
 	}
 	
 	protected Value infer(Value.List val, SyntacticElement elem) {

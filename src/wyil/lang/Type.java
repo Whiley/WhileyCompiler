@@ -498,6 +498,27 @@ public abstract class Type {
 		return false;
 	}
 	
+	/**
+	 * This is a utility helper for constructing types. In particular, it's
+	 * useful to check that a type has been built sanely.
+	 * 
+	 * @param label
+	 * @param t
+	 * @return
+	 */
+	public static boolean isOpen(Type t) {
+		if (t instanceof Leaf) {
+			return false;
+		}
+		Compound graph = (Compound) t;
+		for (Node n : graph.nodes) {			
+			if (n.kind == K_LABEL) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	// =============================================================
 	// Serialisation Helpers
 	// =============================================================
@@ -2508,7 +2529,7 @@ public abstract class Type {
 				if(headers.get(i)) {
 					titles[i] = headerTitle(count++);
 				}
-			}
+			}			
 			return Type.toString(0,visited,titles,nodes);
 		}
 	}
@@ -2796,7 +2817,13 @@ public abstract class Type {
 		// header then we need to insert the recursive type.
 		String header = headers[index];
 		if(header != null) {
-			return header + "<" + middle + ">";
+			// The following case is interesting. Basically, we'll never revisit
+			// a header. Therefore, if we have multiple edges landing on a
+			// header we must update the header string to represent the full
+			// type reachable from the header.
+			String r = header + "<" + middle + ">"; 
+			headers[index] = r;
+			return r;
 		} else {
 			return middle;
 		}
