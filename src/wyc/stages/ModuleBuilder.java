@@ -1061,8 +1061,7 @@ public class ModuleBuilder {
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
-			int slot = environment.get(lhs.var);
-			blk.addAll(resolve(environment, v.rhs));			
+			int slot = environment.get(lhs.var);					
 			blk.add(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.Variable
 				&& v.rhs instanceof Expr.Constant
@@ -1073,8 +1072,7 @@ public class ModuleBuilder {
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
-			int slot = environment.get(lhs.var);
-			blk.addAll(resolve(environment, v.rhs));			
+			int slot = environment.get(lhs.var);						
 			blk.add(Code.IfType(null, slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.add(Code.Goto(target));
 			blk.add(Code.Label(exitLabel));
