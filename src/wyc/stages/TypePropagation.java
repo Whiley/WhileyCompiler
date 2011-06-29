@@ -314,6 +314,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_REAL,rhs,stmt);				
 				result = rhs;
 			} 
+			if(result == Type.T_CHAR) {
+				result = Type.T_INT;
+			}
 			code = Code.BinOp(result,v.bop);
 		}				
 		
