@@ -81,11 +81,11 @@ public class Util {
 	 * @param args
 	 * @return
 	 */
-	public static List fromStringList(String[] args) {
+	public static List fromStringList(String[] args) {		
 		List r = new List(args.length);
 		for(int i=0;i!=args.length;++i) {
-			r.set(i,args[i]);
-		}
+			r.add(args[i]);
+		}		
 		return r;
 	}
 	
