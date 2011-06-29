@@ -232,6 +232,8 @@ public class Util {
 				return false;
 			case Type.K_NULL:
 				return obj == null;
+			case Type.K_BOOL:
+				return obj instanceof Boolean;
 			case Type.K_INT:
 				return obj instanceof BigInteger;
 			case Type.K_RATIONAL:
@@ -415,7 +417,7 @@ public class Util {
 		}
 	}
 	
-	public static boolean instanceOf(Record ol, Type t) {						
+	public static boolean instanceOf(Record ol, Type t) {			
 		Type.Record tl = (Type.Record) t;
 		String[] names = tl.names;
 		Type[] types = tl.types;
@@ -427,7 +429,7 @@ public class Util {
 				if(!instanceOf(val,type)) {
 					return false;
 				} 
-			} else {
+			} else {				
 				return false;
 			}
 		}

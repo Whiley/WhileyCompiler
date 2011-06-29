@@ -53,6 +53,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Coercion_Valid_7_RuntimeTest() { runTest("Coercion_Valid_7"); }
  @Test public void Coercion_Valid_8_RuntimeTest() { runTest("Coercion_Valid_8"); }
  @Test public void Complex_Valid_1_RuntimeTest() { runTest("Complex_Valid_1"); }
+ @Test public void Complex_Valid_2_RuntimeTest() { runTest("Complex_Valid_2"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_2_RuntimeTest() { runTest("ConstrainedInt_Valid_2"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { runTest("ConstrainedInt_Valid_3"); }
