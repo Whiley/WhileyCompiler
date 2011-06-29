@@ -35,6 +35,9 @@ public class Types {
 				case BOOL_TYPE:
 					builder.buildPrimitive(i, Type.T_BOOL);
 					break;
+				case CHAR_TYPE:
+					builder.buildPrimitive(i, Type.T_CHAR);
+					break;
 				case INT_TYPE:
 					builder.buildPrimitive(i, Type.T_INT);
 					break;
@@ -174,6 +177,8 @@ public class Types {
 					writeKind(NULL_TYPE );
 				} else if(t == Type.T_BOOL) {
 					writeKind(BOOL_TYPE );			
+				} else if(t == Type.T_CHAR) {			
+					writeKind(CHAR_TYPE );		
 				} else if(t == Type.T_INT) {			
 					writeKind(INT_TYPE );		
 				} else if(t == Type.T_REAL) {
@@ -324,18 +329,19 @@ public class Types {
 	public static final int VOID_TYPE = 3;
 	public static final int NULL_TYPE = 4;
 	public static final int BOOL_TYPE = 5;
-	public static final int INT_TYPE = 6;
-	public static final int REAL_TYPE = 7;
-	public static final int STRING_TYPE = 8;
-	public static final int LIST_TYPE = 9;
-	public static final int SET_TYPE = 10;
-	public static final int DICTIONARY_TYPE = 11;
-	public static final int TUPLE_TYPE = 12;
-	public static final int RECORD_TYPE = 13;
-	public static final int UNION_TYPE = 14;
-	public static final int INTERSECTION_TYPE = 15;
-	public static final int PROCESS_TYPE = 16;	
-	public static final int FUN_TYPE = 17;
-	public static final int METH_TYPE = 18;
+	public static final int CHAR_TYPE = 6;
+	public static final int INT_TYPE = 7;
+	public static final int REAL_TYPE = 8;
+	public static final int STRING_TYPE = 9;
+	public static final int LIST_TYPE = 10;
+	public static final int SET_TYPE = 11;
+	public static final int DICTIONARY_TYPE = 12;
+	public static final int TUPLE_TYPE = 13;
+	public static final int RECORD_TYPE = 14;
+	public static final int UNION_TYPE = 15;
+	public static final int INTERSECTION_TYPE = 16;
+	public static final int PROCESS_TYPE = 17;	
+	public static final int FUN_TYPE = 18;
+	public static final int METH_TYPE = 19;
 	public static final int CONSTRAINT_MASK = 32;
 }

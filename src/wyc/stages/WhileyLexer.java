@@ -197,7 +197,7 @@ public class WhileyLexer {
 			syntaxError("unexpected end-of-character",pos);
 		}
 		pos = pos + 1;
-		return new Int(BigInteger.valueOf(c),input.substring(start,pos),start);
+		return new Char(c,input.substring(start,pos),start);
 	}
 	
 	public Token scanString() {
@@ -440,6 +440,7 @@ public class WhileyLexer {
 		"false",
 		"null",
 		"any",
+		"char",
 		"int",
 		"real",
 		"string",
@@ -553,6 +554,13 @@ public class WhileyLexer {
 	public static class Real extends Token {
 		public final BigRational value;
 		public Real(BigRational r, String text, int pos) { 
+			super(text,pos);
+			value = r;
+		}
+	}
+	public static class Char extends Token {
+		public final char value;
+		public Char(char r, String text, int pos) { 
 			super(text,pos);
 			value = r;
 		}

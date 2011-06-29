@@ -5,7 +5,7 @@
     <javac debug="true" srcdir="src" includeantruntime="true" includes="wyil/**,wyc/**,wyjc/**,wyjvm/**" excludes="wyjc/testing/**,wyil/testing/**,wyone/testing/**"/> 
   </target>
 
-  <target name="build-wyjc" depends="compile">
+  <target name="wyjc" depends="compile">
     <buildnumber file="build.num"/>
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
@@ -17,7 +17,7 @@
     <delete dir="tmp"/>
   </target>
 
-  <target name="stdlib" depends="build-wyjc">
+  <target name="stdlib" depends="wyjc">
     <taskdef name="wyjc" classname="wyjc.util.AntTask" classpath="lib/wyjc.jar"/>
     <wyjc verbose="false" srcdir="stdlib" includes="whiley/**/*.whiley"/>
 

@@ -961,6 +961,9 @@ public class WhileyParser {
 		} else if (token instanceof Identifier) {
 			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
+		} else if (token instanceof Char) {			
+			char val = match(Char.class).value;
+			return new Expr.Constant(Value.V_CHAR(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
 			return new Expr.Constant(Value.V_INTEGER(val), sourceAttr(start, index - 1));
@@ -1372,6 +1375,9 @@ public class WhileyParser {
 		} else if(token.text.equals("null")) {
 			matchKeyword("null");
 			t = new UnresolvedType.Null(sourceAttr(start,index-1));
+		} else if(token.text.equals("char")) {
+			matchKeyword("char");			
+			t = new UnresolvedType.Char(sourceAttr(start,index-1));
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
 			t = new UnresolvedType.Int(sourceAttr(start,index-1));

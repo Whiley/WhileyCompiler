@@ -61,6 +61,11 @@ public interface UnresolvedType extends SyntacticElement {
 			super(attributes);
 		}		
 	}
+	public static final class Char extends SyntacticElement.Impl implements NonUnion {
+		public Char(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
 	public static final class Int extends SyntacticElement.Impl implements NonUnion {
 		public Int(Attribute... attributes) {
 			super(attributes);

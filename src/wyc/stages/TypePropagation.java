@@ -337,8 +337,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Value infer(Value val, SyntacticElement elem) {
 		if (val instanceof Value.Rational || val instanceof Value.Bool
-				|| val instanceof Value.Integer
-				|| val instanceof Value.Null || val instanceof Value.Strung) {
+				|| val instanceof Value.Integer || val instanceof Value.Null
+				|| val instanceof Value.Strung || val instanceof Value.Char) {
 			return val;
 		} else if (val instanceof Value.Set) {
 			return infer((Value.Set)val,elem);
@@ -619,8 +619,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {							
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);
-				checkIsSubtype(Type.T_INT,val,stmt);	
-				iter = Type.T_INT;				
+				checkIsSubtype(Type.T_CHAR,val,stmt);	
+				iter = Type.T_CHAR;				
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
@@ -684,8 +684,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return Type.leastUpperBound(oldtype,Type.T_DICTIONARY(dict.key(),nvalue));
 			
 		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
-			Type nelement = typeInference(Type.T_INT,newtype,level-1,fieldLevel,fields);
-			
+			Type nelement = typeInference(Type.T_CHAR,newtype,level-1,fieldLevel,fields);			
 			return oldtype;
 		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
@@ -970,7 +969,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(Negate v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
 
-		checkIsSubtype(Type.T_NUMBER,rhs_t,stmt);
+		checkIsSubtype(Type.T_REAL,rhs_t,stmt);
 		if(rhs_t != Type.T_INT) {
 			// this is an implicit coercion
 			rhs_t = Type.T_REAL;
@@ -1041,7 +1040,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(Type.T_NUMBER, lub, stmt);
+			checkIsSubtype(Type.T_REAL, lub, stmt);
 			break;
 		case EQ:
 		case NEQ:

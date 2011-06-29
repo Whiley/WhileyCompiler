@@ -43,11 +43,10 @@ public abstract class Type {
 	public static final Null T_NULL = new Null();	
 	public static final Bool T_BOOL = new Bool();	
 	public static final Int T_INT = new Int();	
-	public static final Int T_CHAR = T_INT; // to be fixed
+	public static final Char T_CHAR = new Char();
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();	
 	public static final Meta T_META = new Meta();
-	public static final Type T_NUMBER = T_UNION(T_INT,T_REAL);
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -407,6 +406,9 @@ public abstract class Type {
 			case 'b':
 				match("bool");
 				return T_BOOL;
+			case 'c':
+				match("char");
+				return T_CHAR;
 			case 'i':
 				match("int");
 				return T_INT;
@@ -796,6 +798,9 @@ public abstract class Type {
 					break;
 				case K_BOOL:
 					writer.buildPrimitive(i,T_BOOL);
+					break;
+				case K_CHAR:
+					writer.buildPrimitive(i,T_CHAR);
 					break;
 				case K_INT:
 					writer.buildPrimitive(i,T_INT);
@@ -1335,7 +1340,11 @@ public abstract class Type {
 				return true;
 			} else 
 			*/
-			if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
+			if(fromNode.kind == K_CHAR && toNode.kind == K_INT) {
+				// ints can flow into chars
+				return true;
+			} else if(fromNode.kind == K_RATIONAL && (toNode.kind == K_INT || toNode.kind == K_CHAR)) {
+				// ints or chars can flow into rationals
 				return true;
 			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
 				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
@@ -1357,6 +1366,7 @@ public abstract class Type {
 			Node fromNode = fromGraph[from];
 			Node toNode = toGraph[to];	
 			
+			/*
 			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
 				// labeled nary nodes
 				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) fromNode.data;
@@ -1374,7 +1384,13 @@ public abstract class Type {
 				}					
 				return true;					
 
-			} else if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
+			} else 
+			*/	
+			if(fromNode.kind == K_CHAR && (toNode.kind == K_RATIONAL || toNode.kind == K_INT)) {
+				// char can flow into int or rational
+				return true;
+			} else if(fromNode.kind == K_INT && (toNode.kind == K_RATIONAL || toNode.kind == K_CHAR)) {
+				// int can flow into rational or char
 				return true;
 			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
 				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
@@ -1823,6 +1839,7 @@ public abstract class Type {
 				case K_META:
 				case K_NULL:
 				case K_BOOL:
+				case K_CHAR:
 				case K_INT:
 				case K_RATIONAL:
 				case K_STRING:
@@ -1880,6 +1897,7 @@ public abstract class Type {
 			case K_META:
 			case K_NULL:
 			case K_BOOL:
+			case K_CHAR:
 			case K_INT:
 			case K_RATIONAL:
 			case K_STRING:
@@ -2079,6 +2097,7 @@ public abstract class Type {
 			case K_META:
 			case K_NULL:
 			case K_BOOL:
+			case K_CHAR:
 			case K_INT:
 			case K_RATIONAL:
 			case K_STRING:
@@ -2389,6 +2408,25 @@ public abstract class Type {
 		}
 	}
 
+	/**
+	 * Represents a unicode character.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Char extends Leaf {
+		private Char() {}
+		public boolean equals(Object o) {
+			return o == T_CHAR;
+		}
+		public int hashCode() {
+			return 4;
+		}
+		public String toString() {
+			return "char";
+		}	
+	}
+	
 	/**
 	 * Represents the set of (unbound) integer values. Since integer types in
 	 * Whiley are unbounded, there is no equivalent to Java's
@@ -2726,6 +2764,8 @@ public abstract class Type {
 			return "null";
 		case K_BOOL:
 			return "bool";
+		case K_CHAR:
+			return "char";
 		case K_INT:
 			return "int";
 		case K_RATIONAL:
@@ -3091,19 +3131,20 @@ public abstract class Type {
 	private static final byte K_META = 2;
 	private static final byte K_NULL = 3;
 	private static final byte K_BOOL = 4;
-	private static final byte K_INT = 5;
-	private static final byte K_RATIONAL = 6;
-	private static final byte K_STRING = 7;
-	private static final byte K_TUPLE = 8;
-	private static final byte K_SET = 9;
-	private static final byte K_LIST = 10;
-	private static final byte K_DICTIONARY = 11;	
-	private static final byte K_PROCESS = 12;
-	private static final byte K_RECORD = 13;
-	private static final byte K_UNION = 14;
-	private static final byte K_FUNCTION = 15;
-	private static final byte K_EXISTENTIAL = 16;
-	private static final byte K_LABEL = 17;
+	private static final byte K_CHAR = 5;
+	private static final byte K_INT = 6;
+	private static final byte K_RATIONAL = 7;
+	private static final byte K_STRING = 8;
+	private static final byte K_TUPLE = 9;
+	private static final byte K_SET = 10;
+	private static final byte K_LIST = 11;
+	private static final byte K_DICTIONARY = 12;	
+	private static final byte K_PROCESS = 13;
+	private static final byte K_RECORD = 14;
+	private static final byte K_UNION = 15;
+	private static final byte K_FUNCTION = 16;
+	private static final byte K_EXISTENTIAL = 17;
+	private static final byte K_LABEL = 18;
 	
 	/**
 	 * Represents a node in the type graph. Each node has a kind, along with a
@@ -3133,6 +3174,7 @@ public abstract class Type {
 					case K_META:
 					case K_NULL:
 					case K_BOOL:
+					case K_CHAR:
 					case K_INT:
 					case K_RATIONAL:
 					case K_STRING:
@@ -3163,7 +3205,7 @@ public abstract class Type {
 		}
 		
 		public final static String[] kinds = { "void", "any", "meta", "null", "bool",
-				"int", "real", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
+				"char","int", "real", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
 				"fun", "label" };
 		public String toString() {
 			if(data instanceof Pair[]) {
@@ -3194,6 +3236,8 @@ public abstract class Type {
 			return K_NULL;
 		} else if(leaf instanceof Bool) {
 			return K_BOOL;
+		} else if(leaf instanceof Char) {
+			return K_CHAR;
 		} else if(leaf instanceof Int) {
 			return K_INT;
 		} else if(leaf instanceof Real) {
@@ -3329,6 +3373,8 @@ public abstract class Type {
 			return T_NULL;			
 		case K_BOOL:
 			return T_BOOL;
+		case K_CHAR:
+			return T_CHAR;
 		case K_INT:
 			return T_INT;
 		case K_RATIONAL:

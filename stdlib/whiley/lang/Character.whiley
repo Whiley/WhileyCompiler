@@ -25,8 +25,6 @@
 
 package whiley.lang
 
-define char as int where $>=0 && $ <= 1114111
-
 public bool isUpperCase(char c):
     return 'A' <= c && c <= 'Z'
 

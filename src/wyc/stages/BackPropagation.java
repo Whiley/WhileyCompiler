@@ -367,7 +367,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 				iter = dict.value();				
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
 				environment.push(Type.T_INT);
-				iter = Type.T_INT;
+				iter = Type.T_CHAR;
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
 				environment.push(Type.T_INT);
@@ -393,12 +393,12 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		for(int i=0;i!=code.level;++i) {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
-				environment.push(dict.key());
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
 				iter = dict.value();				
+			} else if(Type.isSubtype(Type.T_STRING,iter)) {
+				iter = Type.T_CHAR;
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
-				environment.push(Type.T_INT);
 				iter = list.element();
 			} else if(Type.effectiveRecordType(iter) != null) {
 				Type.Record rec = Type.effectiveRecordType(iter);				

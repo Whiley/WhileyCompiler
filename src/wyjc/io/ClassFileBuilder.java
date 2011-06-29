@@ -1520,6 +1520,8 @@ public class ClassFileBuilder {
 			translate((Value.Null)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Bool) {
 			translate((Value.Bool)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Char) {
+			translate((Value.Char)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Integer) {
 			translate((Value.Integer)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.TypeConst) {
@@ -1568,6 +1570,13 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 	}
 	
+	protected void translate(Value.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.LoadConst(e.value));
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER, "valueOf", ftype,
+				Bytecode.STATIC));
+	}
+			
 	protected void translate(Value.Integer e, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
 		BigInteger num = e.value;
@@ -1916,6 +1925,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");	
 	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");
+	private static final JvmType.Clazz JAVA_LANG_CHARACTER = new JvmType.Clazz("java.lang","Character");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
 	private static final JvmType.Clazz JAVA_UTIL_LIST = new JvmType.Clazz("java.util","List");
@@ -1947,6 +1957,8 @@ public class ClassFileBuilder {
 			return JAVA_LANG_OBJECT;
 		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
+		} else if(t instanceof Type.Char) {
+			return JAVA_LANG_CHARACTER;
 		} else if(t instanceof Type.Int) {
 			return BIG_INTEGER;
 		} else if(t instanceof Type.Real) {

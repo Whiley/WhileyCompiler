@@ -9,19 +9,20 @@ public class Type {
 	public static final byte K_META = 2;
 	public static final byte K_NULL = 3;
 	public static final byte K_BOOL = 4;
-	public static final byte K_INT = 5;
-	public static final byte K_RATIONAL = 6;
-	public static final byte K_STRING = 7;
-	public static final byte K_TUPLE = 8;
-	public static final byte K_SET = 9;
-	public static final byte K_LIST = 10;
-	public static final byte K_DICTIONARY = 11;	
-	public static final byte K_PROCESS = 12;
-	public static final byte K_RECORD = 13;
-	public static final byte K_UNION = 14;
-	public static final byte K_FUNCTION = 15;
-	public static final byte K_EXISTENTIAL = 16;
-	public static final byte K_LEAF = 17;
+	public static final byte K_CHAR = 5;
+	public static final byte K_INT = 6;
+	public static final byte K_RATIONAL = 7;
+	public static final byte K_STRING = 8;
+	public static final byte K_TUPLE = 9;
+	public static final byte K_SET = 10;
+	public static final byte K_LIST = 11;
+	public static final byte K_DICTIONARY = 12;	
+	public static final byte K_PROCESS = 13;
+	public static final byte K_RECORD = 14;
+	public static final byte K_UNION = 15;
+	public static final byte K_FUNCTION = 16;
+	public static final byte K_EXISTENTIAL = 17;
+	public static final byte K_LEAF = 18;
 	
 	public final int kind;
 	public String str;
@@ -39,6 +40,7 @@ public class Type {
 	public static final Any ANY = new Any();
 	public static final Null NULL = new Null();
 	public static final Bool BOOL = new Bool();
+	public static final Char CHAR = new Char();
 	public static final Integer INT = new Integer();
 	public static final Rational REAL = new Rational();
 	public static final Strung STRING = new Strung();
@@ -47,6 +49,7 @@ public class Type {
 	private static final class Any extends Type { Any() {super(K_ANY, "any");}}
 	private static final class Null extends Type { Null() {super(K_NULL, "null");}}
 	private static final class Bool extends Type { Bool() {super(K_BOOL, "bool");}}
+	private static final class Char extends Type { Char() {super(K_CHAR, "char");}}
 	private static final class Integer extends Type { Integer() {super(K_INT, "int");}}
 	private static final class Rational extends Type { Rational() {super(K_RATIONAL, "real");}}
 	private static final class Strung extends Type { Strung() {super(K_STRING, "string");}}
@@ -219,6 +222,9 @@ public class Type {
 			case 'b':
 				match("bool");
 				return BOOL;
+			case 'c':
+				match("char");
+				return CHAR;
 			case 'i':
 				match("int");
 				return INT;
