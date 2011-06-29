@@ -445,8 +445,7 @@ public class ClassFileBuilder {
 				// coercion required!
 				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
 				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
-			} else {
-				System.out.println("CONVERTING INT TO: " + toType);
+			} else {				
 				// must be => char
 				JvmType.Function ftype = new JvmType.Function(T_INT);			
 				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));
