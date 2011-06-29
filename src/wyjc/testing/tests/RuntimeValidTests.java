@@ -49,6 +49,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Char_Valid_3_RuntimeTest() { runTest("Char_Valid_3"); }
  @Test public void Char_Valid_4_RuntimeTest() { runTest("Char_Valid_4"); }
  @Test public void Char_Valid_5_RuntimeTest() { runTest("Char_Valid_5"); }
+ @Test public void Char_Valid_6_RuntimeTest() { runTest("Char_Valid_6"); }
  @Test public void Coercion_Valid_1_RuntimeTest() { runTest("Coercion_Valid_1"); }
  @Test public void Coercion_Valid_2_RuntimeTest() { runTest("Coercion_Valid_2"); }
  @Test public void Coercion_Valid_3_RuntimeTest() { runTest("Coercion_Valid_3"); }
@@ -180,9 +181,11 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { runTest("RealDiv_Valid_2"); }
  @Test public void RealDiv_Valid_3_RuntimeTest() { runTest("RealDiv_Valid_3"); }
+ @Test public void RealDiv_Valid_4_RuntimeTest() { runTest("RealDiv_Valid_4"); }
  @Test public void RealNeg_Valid_1_RuntimeTest() { runTest("RealNeg_Valid_1"); }
  @Test public void RealSplit_Valid_1_RuntimeTest() { runTest("RealSplit_Valid_1"); }
  @Test public void RealSub_Valid_1_RuntimeTest() { runTest("RealSub_Valid_1"); }
+ @Test public void RealSub_Valid_2_RuntimeTest() { runTest("RealSub_Valid_2"); }
  @Test public void RecordAccess_Valid_1_RuntimeTest() { runTest("RecordAccess_Valid_1"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { runTest("RecordAssign_Valid_1"); }
  @Test public void RecordAssign_Valid_2_RuntimeTest() { runTest("RecordAssign_Valid_2"); }

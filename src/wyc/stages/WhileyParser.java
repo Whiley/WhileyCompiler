@@ -758,73 +758,88 @@ public class WhileyParser {
 				index - 1));
 	}
 	
-
+	private static boolean isAddSubTok(Token tok) {
+		return tok instanceof Plus || tok instanceof Minus || tok instanceof Union || tok instanceof Intersection;
+	}
+	
+	private static Expr.BOp addSubOp(Token tok) {
+		if(tok instanceof Plus) {
+			return Expr.BOp.ADD;
+		} else if(tok instanceof Minus) {
+			return Expr.BOp.SUB;
+		} else if(tok instanceof Union) {
+			return Expr.BOp.UNION;
+		} else {
+			return Expr.BOp.INTERSECTION;
+		}
+	}
+	
 	private Expr parseAddSubExpression() {
 		int start = index;
-		Expr lhs = parseMulDivExpression();
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
+		ArrayList<Integer> ends = new ArrayList<Integer>();
+		exprs.add(parseMulDivExpression());
 		
-		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
-			match(Plus.class);
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.ADD, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
-			match(Minus.class);
-			
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.SUB, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof Union) {
-			match(Union.class);
-			
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.UNION, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof Intersection) {
-			match(Intersection.class);
-			
-			
-			Expr rhs = parseAddSubExpression();
-			return new Expr.BinOp(Expr.BOp.INTERSECTION, lhs, rhs, sourceAttr(
-					start, index - 1));
-		}	
+		while(index < tokens.size() && isAddSubTok(tokens.get(index))) {
+			Token token = tokens.get(index);
+			match(token.getClass());
+			ops.add(addSubOp(token));
+			exprs.add(parseMulDivExpression());	
+			ends.add(index);
+		}
 		
-		return lhs;
+		Expr result = exprs.get(0);
+		
+		for(int i=1;i<exprs.size();++i) {
+			Expr rhs = exprs.get(i);
+			Expr.BOp bop = ops.get(i-1);			
+			result = new Expr.BinOp(bop, result, rhs,  sourceAttr(start,
+					ends.get(i-1)));
+		}
+		
+		return result;
+	}
+	
+	private static boolean isMulDivTok(Token t) {
+		return t instanceof Star || t instanceof RightSlash || t instanceof Percent;
+	}
+	
+	public Expr.BOp mulDivOp(Token t) {
+		if(t instanceof Star) {
+			return Expr.BOp.MUL;
+		} else if(t instanceof RightSlash) {
+			return Expr.BOp.DIV;
+		} else {
+			return Expr.BOp.REM;
+		}
 	}
 	
 	private Expr parseMulDivExpression() {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
+		ArrayList<Integer> ends = new ArrayList<Integer>();
+		exprs.add(parseIndexTerm());
 		
-		if (index < tokens.size() && tokens.get(index) instanceof Star) {
-			match(Star.class);
-			
-			
-			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Expr.BOp.MUL, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof RightSlash) {
-			match(RightSlash.class);
-			
-			
-			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof Percent) {
-			match(Percent.class);
-						
-			Expr rhs = parseMulDivExpression();
-			return new Expr.BinOp(Expr.BOp.REM, lhs, rhs, sourceAttr(start,
-					index - 1));
+		while(index < tokens.size() && isMulDivTok(tokens.get(index))) {
+			Token token = tokens.get(index);
+			match(token.getClass());
+			ops.add(mulDivOp(token));
+			exprs.add(parseIndexTerm());	
+			ends.add(index);
 		}
-
-		return lhs;
+		
+		Expr result = exprs.get(0);
+		
+		for(int i=1;i<exprs.size();++i) {
+			Expr rhs = exprs.get(i);
+			Expr.BOp bop = ops.get(i-1);			
+			result = new Expr.BinOp(bop, result, rhs,  sourceAttr(start,
+					ends.get(i-1)));
+		}
+		
+		return result;		
 	}	
 	
 	private Expr parseIndexTerm() {

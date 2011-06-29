@@ -93,6 +93,6 @@ define D3 as { col: 4, row: 3 }
 
 void System::main([string] args):
     r = clearRowExcept(A1,H1,startingChessBoard)
-    out.println("GOT: " + r)
+    out.println("GOT: " + str(r))
     r = clearRowExcept(A3,D3,startingChessBoard)
-    out.println("GOT: " + r)
+    out.println("GOT: " + str(r))
