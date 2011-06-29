@@ -1343,6 +1343,9 @@ public abstract class Type {
 			if(fromNode.kind == K_CHAR && toNode.kind == K_INT) {
 				// ints can flow into chars
 				return true;
+			} else if(fromNode.kind == K_INT && toNode.kind == K_CHAR) {
+				// chars can flow into ints
+				return true;
 			} else if(fromNode.kind == K_RATIONAL && (toNode.kind == K_INT || toNode.kind == K_CHAR)) {
 				// ints or chars can flow into rationals
 				return true;
