@@ -77,18 +77,17 @@ public class IO {
 		}
 	}
 	
-	public static ArrayList readFile(Actor p, BigRational max) {		
+	public static List readFile(Actor p, BigInteger max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
-		ArrayList r = new ArrayList();
+		List r = new List();
 		byte[] bytes = new byte[max.intValue()];		
 		try {
 			int nbytes = fin.read(bytes);
 			for(int i=0;i!=nbytes;++i) {				
-				r.add(BigRational.valueOf(bytes[i] & 0xFF));
+				r.add(BigInteger.valueOf(bytes[i] & 0xFF));
 			}
-			System.out.println("READ: " + nbytes);
 		} catch (IOException ioe) {
 			// what to do here??
 		}
@@ -97,18 +96,18 @@ public class IO {
 	}
 	
 	private static final int CHUNK_SIZE = 1024;
-	public static ArrayList readFile(Actor p) {		
+	public static List readFile(Actor p) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
-		ArrayList r = new ArrayList();				
+		List r = new List();				
 		try {
 			int nbytes = 0;
 			do {
 				byte[] bytes = new byte[CHUNK_SIZE];
 				nbytes = fin.read(bytes);
 				for(int i=0;i!=nbytes;++i) {
-					r.add(BigRational.valueOf(bytes[i] & 0xFF));
+					r.add(BigInteger.valueOf(bytes[i] & 0xFF));
 				}
 			} while(nbytes == CHUNK_SIZE);			
 		} catch (IOException ioe) {
@@ -118,14 +117,14 @@ public class IO {
 		return r;		
 	}
 	
-	public static void writeFile(Actor p, ArrayList bytes) {		
+	public static void writeFile(Actor p, List bytes) {		
 		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
 				.get("$fout");
 				
 		try {
 			byte[] bs = new byte[bytes.size()];
 			for(int i=0;i!=bs.length;++i) {
-				BigRational r = (BigRational) bytes.get(i); 
+				BigInteger r = (BigInteger) bytes.get(i); 
 				bs[i] = r.byteValue();
 			}
 			fout.write(bs);			
