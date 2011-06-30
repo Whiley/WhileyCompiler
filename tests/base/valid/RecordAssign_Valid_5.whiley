@@ -1,5 +1,4 @@
-define byte as int
-define bytes as { byte b1, byte b2 }
+define bytes as { int b1, int b2 }
 
 bytes f(int a):
     bs = {b1:a,b2:a+1}
