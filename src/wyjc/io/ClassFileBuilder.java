@@ -1130,6 +1130,16 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
 					"bitxor", ftype, Bytecode.STATIC));
 			break;
+		case LEFTSHIFT:
+			ftype = new JvmType.Function(type,type,BIG_INTEGER);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
+					"leftshift", ftype, Bytecode.STATIC));
+			break;
+		case RIGHTSHIFT:
+			ftype = new JvmType.Function(type,type,BIG_INTEGER);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
+					"rightshift", ftype, Bytecode.STATIC));
+			break;
 		default:
 			syntaxError("unknown binary expression encountered",filename,stmt);
 		}		

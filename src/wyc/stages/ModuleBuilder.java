@@ -1820,6 +1820,10 @@ public class ModuleBuilder {
 			return Code.BOp.BITWISEOR;
 		case BITWISEXOR:
 			return Code.BOp.BITWISEXOR;
+		case LEFTSHIFT:
+			return Code.BOp.LEFTSHIFT;
+		case RIGHTSHIFT:
+			return Code.BOp.RIGHTSHIFT;
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;

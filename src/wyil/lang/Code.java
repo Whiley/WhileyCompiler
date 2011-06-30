@@ -471,6 +471,12 @@ public abstract class Code {
 		BITWISEAND{
 			public String toString() { return "and"; }
 		},
+		LEFTSHIFT{
+			public String toString() { return "shiftleft"; }
+		},
+		RIGHTSHIFT{
+			public String toString() { return "shiftright"; }
+		},
 	};
 
 	/**

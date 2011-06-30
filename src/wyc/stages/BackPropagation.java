@@ -188,9 +188,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.BinOp code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();		
-		coerce(req,code.type,index,entry);		
-		environment.push(code.type);
-		environment.push(code.type);		
+		coerce(req,code.type,index,entry);	
+		if(code.bop == BOp.LEFTSHIFT || code.bop == BOp.RIGHTSHIFT) {
+			environment.push(code.type);
+			environment.push(Type.T_INT);
+		} else {
+			environment.push(code.type);
+			environment.push(code.type);
+		}
 	}
 	
 	public void infer(int index, Code.Convert code, Block.Entry entry,

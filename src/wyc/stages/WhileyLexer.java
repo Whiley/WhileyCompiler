@@ -291,7 +291,7 @@ public class WhileyLexer {
 	static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
-			'*', '/', '%', '!', '?', '=', '<', '>', ':', ';', '&', '|', '.','~',
+			'*', '/', '%', '!', '?', '=', '<', '>', ':', ';', '&', '|', '^', '.','~',
 			UC_FORALL,
 			UC_EXISTS,
 			UC_EMPTYSET,
@@ -383,6 +383,8 @@ public class WhileyLexer {
 			}
 		} else if(c == '%') {
 			return new Percent(pos++);			
+		} else if(c == '^') {
+			return new Caret(pos++);			
 		} else if(c == '!') {			
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
@@ -409,6 +411,9 @@ public class WhileyLexer {
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new LessEquals("<=",pos-2);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '<') {
+				pos += 2;
+				return new LeftLeftAngle(pos-2);
 			} else {
 				return new LeftAngle(pos++);
 			}
@@ -416,6 +421,9 @@ public class WhileyLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new GreaterEquals(">=",pos - 2);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
+				pos += 2;
+				return new RightRightAngle(pos - 2);
 			} else {
 				return new RightAngle(pos++);
 			}
@@ -628,6 +636,9 @@ public class WhileyLexer {
 	public static class BlockComment extends Token {
 		public BlockComment(String text, int pos) { super(text,pos);	}
 	}
+	public static class Caret extends Token {
+		public Caret(int pos) { super("^",pos);	}
+	}
 	public static class Comma extends Token {
 		public Comma(int pos) { super(",",pos);	}
 	}
@@ -655,8 +666,14 @@ public class WhileyLexer {
 	public static class LeftAngle extends Token {
 		public LeftAngle(int pos) { super("<",pos);	}
 	}
+	public static class LeftLeftAngle extends Token {
+		public LeftLeftAngle(int pos) { super("<<",pos);	}
+	}
 	public static class RightAngle extends Token {
 		public RightAngle(int pos) { super(">",pos);	}
+	}
+	public static class RightRightAngle extends Token {
+		public RightRightAngle(int pos) { super(">>",pos);	}
 	}
 	public static class LeftCurly extends Token {
 		public LeftCurly(int pos) { super("{",pos);	}

@@ -357,5 +357,11 @@ public interface Expr extends SyntacticElement {
 		BITWISEXOR {
 			public String toString() { return "^"; }
 		},
+		LEFTSHIFT {
+			public String toString() { return "<<"; }
+		},
+		RIGHTSHIFT {
+			public String toString() { return ">>"; }
+		},
 	};
 }

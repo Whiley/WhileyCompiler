@@ -103,6 +103,18 @@ public class Util {
 		return Byte.valueOf((byte)c);
 	}
 	
+	public static Byte leftshift(Byte b1, BigInteger b2) {
+		byte a = b1;		
+		int c = a << b2.intValue();
+		return Byte.valueOf((byte)c);
+	}
+	
+	public static Byte rightshift(Byte b1, BigInteger b2) {
+		byte a = b1;		
+		int c = a >>> b2.intValue();
+		return Byte.valueOf((byte)c);
+	}
+	
 	/**
 	 * This method is used to convert the arguments supplied to main (which have
 	 * type <code>String[]</code>) into an appropriate Whiley List.
