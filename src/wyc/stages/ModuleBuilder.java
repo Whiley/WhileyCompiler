@@ -685,15 +685,9 @@ public class ModuleBuilder {
 		
 		if(s.lhs instanceof Variable) {			
 			blk = resolve(environment, s.rhs);			
-			Variable v = (Variable) s.lhs;			
-			if(environment.containsKey(v.var)) {
-				blk.add(Code.Store(null, environment.get(v.var)),
-					attributes(s));
-			} else {				
-				int idx = environment.size();
-				environment.put(v.var, idx);
-				blk.add(Code.Store(null, idx), attributes(s));
-			}
+			Variable v = (Variable) s.lhs;
+			blk.add(Code.Store(null, allocate(v.var, environment)),
+					attributes(s));			
 		} else if(s.lhs instanceof TupleGen) {					
 			TupleGen tg = (TupleGen) s.lhs;
 			blk = resolve(environment, s.rhs);			
@@ -706,14 +700,8 @@ public class ModuleBuilder {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
-				if(environment.containsKey(v.var)) {
-					blk.add(Code.Store(null, environment.get(v.var)),
-						attributes(s));
-				} else {
-					int free = environment.size();
-					environment.put(v.var, free);
-					blk.add(Code.Store(null, free), attributes(s));
-				}								
+				blk.add(Code.Store(null, allocate(v.var, environment)),
+						attributes(s));				
 			}
 			return blk;
 		} else if(s.lhs instanceof ListAccess || s.lhs instanceof RecordAccess){
@@ -904,10 +892,13 @@ public class ModuleBuilder {
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
 		Block blk = resolve(environment,s.source);				
-		int freeReg = environment.size();
+		int freeReg;
 		
-		// Note: NameResolution guarantees that !environment.contains(s.variable);
-		environment.put(s.variable, freeReg);		
+		if(environment.containsKey(s.variable)) { 
+			freeReg = environment.get(s.variable);
+		} else {
+			freeReg = environment.size();
+		}
 				
 		blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));				
 		
@@ -1538,9 +1529,8 @@ public class ModuleBuilder {
 		
 		for (Pair<String, Expr> src : e.sources) {
 			int srcSlot;
-			int varSlot = environment.size();
-			// Note: NameResolution guarantees that !environment.contains(src.first());
-			environment.put(src.first(), varSlot);
+			int varSlot = allocate(src.first(),environment); 
+			
 			if(src.second() instanceof Variable) {
 				// this is a little optimisation to produce slightly better
 				// code.
@@ -1661,6 +1651,17 @@ public class ModuleBuilder {
 	protected Type resolve(UnresolvedType t) {
 		Type tr = resolveHelper(t);		
 		return tr;
+	}
+	
+	protected int allocate(String var, HashMap<String,Integer> environment) {
+		Integer r = environment.get(var);
+		if(r == null) {
+			int slot = environment.size();
+			environment.put(var, slot);
+			return slot;
+		} else {
+			return r;
+		}
 	}
 	
 	protected Type resolveHelper(UnresolvedType t) {
