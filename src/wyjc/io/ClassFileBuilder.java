@@ -1547,6 +1547,8 @@ public class ClassFileBuilder {
 			translate((Value.Null)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Bool) {
 			translate((Value.Bool)v,freeSlot,bytecodes);
+		} else if(v instanceof Value.Byte) {
+			translate((Value.Byte)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Char) {
 			translate((Value.Char)v,freeSlot,bytecodes);
 		} else if(v instanceof Value.Integer) {
@@ -1594,6 +1596,13 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(WHILEYTYPE,
 				JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "valueOf", ftype,
+				Bytecode.STATIC));
+	}
+	
+	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.LoadConst(e.value));
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE, "valueOf", ftype,
 				Bytecode.STATIC));
 	}
 	
@@ -1984,6 +1993,8 @@ public class ClassFileBuilder {
 			return JAVA_LANG_OBJECT;
 		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
+		} else if(t instanceof Type.Byte) {
+			return JAVA_LANG_BYTE;
 		} else if(t instanceof Type.Char) {
 			return JAVA_LANG_CHARACTER;
 		} else if(t instanceof Type.Int) {

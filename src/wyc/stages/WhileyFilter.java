@@ -112,7 +112,7 @@ public class WhileyFilter {
 		LogicalAnd.class,
 		LogicalOr.class,
 		LogicalNot.class,
-		AddressOf.class,
+		Ampersand.class,
 		RightArrow.class
 	};
 	
@@ -152,7 +152,7 @@ public class WhileyFilter {
 		LogicalAnd.class,
 		LogicalOr.class,
 		LogicalNot.class,
-		AddressOf.class,
+		Ampersand.class,
 		RightArrow.class,
 		NewLine.class,
 		LineComment.class

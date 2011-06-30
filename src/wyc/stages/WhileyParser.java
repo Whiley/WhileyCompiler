@@ -976,6 +976,9 @@ public class WhileyParser {
 		} else if (token instanceof Identifier) {
 			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
+		} else if (token instanceof WhileyLexer.Byte) {			
+			byte val = match(WhileyLexer.Byte.class).value;
+			return new Expr.Constant(Value.V_BYTE(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Char) {			
 			char val = match(Char.class).value;
 			return new Expr.Constant(Value.V_CHAR(val), sourceAttr(start, index - 1));
@@ -1004,7 +1007,7 @@ public class WhileyParser {
 			match(Shreak.class);
 			return new Expr.UnOp(Expr.UOp.NOT, parseIndexTerm(),
 					sourceAttr(start, index - 1));
-		} else if (token instanceof AddressOf) {
+		} else if (token instanceof Ampersand) {
 		      return parseFunVal();
 	    }
 		syntaxError("unrecognised term (" + token.text + ")",token);
@@ -1013,7 +1016,7 @@ public class WhileyParser {
 	
 	private Expr parseFunVal() {
 		int start = index;
-		match(AddressOf.class);
+		match(Ampersand.class);
 		String funName = matchIdentifier().text;
 		ArrayList<UnresolvedType> paramTypes = null;
 
@@ -1390,6 +1393,9 @@ public class WhileyParser {
 		} else if(token.text.equals("null")) {
 			matchKeyword("null");
 			t = new UnresolvedType.Null(sourceAttr(start,index-1));
+		} else if(token.text.equals("byte")) {
+			matchKeyword("byte");			
+			t = new UnresolvedType.Byte(sourceAttr(start,index-1));
 		} else if(token.text.equals("char")) {
 			matchKeyword("char");			
 			t = new UnresolvedType.Char(sourceAttr(start,index-1));

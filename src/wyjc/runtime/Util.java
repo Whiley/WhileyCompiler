@@ -123,6 +123,19 @@ public class Util {
 		} else if(o instanceof Character) {
 			Character s = (Character) o;
 			return "\'" + s + "\'";
+		} else if(o instanceof Byte) {
+			Byte b = (Byte) o;
+			String r = "b";
+			byte v = b.byteValue();
+			for(int i=0;i!=8;++i) {
+				if((v&0x1) == 1) {
+					r = "1" + r;
+				} else {
+					r = "0" + r;
+				}
+				v = (byte) (v >>> 1);
+			}
+			return r;
 		} else {
 			return o.toString();
 		}
@@ -237,6 +250,8 @@ public class Util {
 				return obj == null;
 			case Type.K_BOOL:
 				return obj instanceof Boolean;
+			case Type.K_BYTE:
+				return obj instanceof Byte;
 			case Type.K_CHAR:
 				return obj instanceof Character;
 			case Type.K_INT:

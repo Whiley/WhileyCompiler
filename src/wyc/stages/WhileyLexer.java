@@ -131,6 +131,25 @@ public class WhileyLexer {
 			}			
 			BigRational r = new BigRational(input.substring(start, pos));
 			return new Real(r,input.substring(start,pos),start);
+		} else if(pos < input.length() && input.charAt(pos) == 'b') {
+			// indicates a binary literal
+			if((pos - start) > 8) {
+				syntaxError("invalid binary literal (too long)");
+			}
+			int val = 0;
+			for(int i=start;i!=pos;++i) {
+				val = val << 1;
+				char c = input.charAt(i);
+				if(c == '1') {
+					val = val | 1;
+				} else if(c == '0') {
+					
+				} else {
+					syntaxError("invalid binary literal (invalid characters)");
+				}				
+			}
+			pos = pos + 1;
+			return new Byte((byte)val,input.substring(start,pos),start);
 		} else {
 			BigInteger r = new BigInteger(input.substring(start, pos));
 			return new Int(r,input.substring(start,pos),start);			
@@ -345,7 +364,7 @@ public class WhileyLexer {
 				pos += 2;
 				return new LogicalAnd("&&",pos-2);
 			} else {
-				return new AddressOf("&",pos++);
+				return new Ampersand("&",pos++);
 			}
 		} else if(c == '|') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '|') {
@@ -440,6 +459,7 @@ public class WhileyLexer {
 		"false",
 		"null",
 		"any",
+		"byte",
 		"char",
 		"int",
 		"real",
@@ -554,6 +574,13 @@ public class WhileyLexer {
 	public static class Real extends Token {
 		public final BigRational value;
 		public Real(BigRational r, String text, int pos) { 
+			super(text,pos);
+			value = r;
+		}
+	}
+	public static class Byte extends Token {
+		public final byte value;
+		public Byte(byte r, String text, int pos) { 
 			super(text,pos);
 			value = r;
 		}
@@ -727,8 +754,8 @@ public class WhileyLexer {
 	public static class LogicalNot extends Token {
 		public LogicalNot(String text, int pos) { super(text,pos);	}
 	}
-	public static class AddressOf extends Token {
-		public AddressOf(String text, int pos) { super(text,pos);	}
+	public static class Ampersand extends Token {
+		public Ampersand(String text, int pos) { super(text,pos);	}
 	}
 	public static class BitwiseOr extends Token {
 		public BitwiseOr(String text, int pos) { super(text,pos);	}

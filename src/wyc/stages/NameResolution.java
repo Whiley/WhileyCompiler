@@ -36,7 +36,7 @@ import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
 import wyc.lang.Stmt.*;
 import wyc.lang.Expr.*;
-import wyc.stages.WhileyLexer.AddressOf;
+import wyc.stages.WhileyLexer.Ampersand;
 import wyc.util.*;
 
 public class NameResolution {

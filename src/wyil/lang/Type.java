@@ -41,9 +41,10 @@ public abstract class Type {
 	public static final Any T_ANY = new Any();
 	public static final Void T_VOID = new Void();
 	public static final Null T_NULL = new Null();	
-	public static final Bool T_BOOL = new Bool();	
-	public static final Int T_INT = new Int();	
+	public static final Bool T_BOOL = new Bool();
+	public static final Byte T_BYTE = new Byte();
 	public static final Char T_CHAR = new Char();
+	public static final Int T_INT = new Int();		
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();	
 	public static final Meta T_META = new Meta();
@@ -798,6 +799,9 @@ public abstract class Type {
 					break;
 				case K_BOOL:
 					writer.buildPrimitive(i,T_BOOL);
+					break;
+				case K_BYTE:
+					writer.buildPrimitive(i,T_BYTE);
 					break;
 				case K_CHAR:
 					writer.buildPrimitive(i,T_CHAR);
@@ -1842,6 +1846,7 @@ public abstract class Type {
 				case K_META:
 				case K_NULL:
 				case K_BOOL:
+				case K_BYTE:
 				case K_CHAR:
 				case K_INT:
 				case K_RATIONAL:
@@ -1900,6 +1905,7 @@ public abstract class Type {
 			case K_META:
 			case K_NULL:
 			case K_BOOL:
+			case K_BYTE:
 			case K_CHAR:
 			case K_INT:
 			case K_RATIONAL:
@@ -2100,6 +2106,7 @@ public abstract class Type {
 			case K_META:
 			case K_NULL:
 			case K_BOOL:
+			case K_BYTE:
 			case K_CHAR:
 			case K_INT:
 			case K_RATIONAL:
@@ -2429,6 +2436,26 @@ public abstract class Type {
 			return "char";
 		}	
 	}
+	
+	/**
+	 * Represents a unicode character.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Byte extends Leaf {
+		private Byte() {}
+		public boolean equals(Object o) {
+			return o == T_BYTE;
+		}
+		public int hashCode() {
+			return 4;
+		}
+		public String toString() {
+			return "byte";
+		}	
+	}
+	
 	
 	/**
 	 * Represents the set of (unbound) integer values. Since integer types in
@@ -2767,6 +2794,8 @@ public abstract class Type {
 			return "null";
 		case K_BOOL:
 			return "bool";
+		case K_BYTE:
+			return "byte";
 		case K_CHAR:
 			return "char";
 		case K_INT:
@@ -3134,20 +3163,21 @@ public abstract class Type {
 	private static final byte K_META = 2;
 	private static final byte K_NULL = 3;
 	private static final byte K_BOOL = 4;
-	private static final byte K_CHAR = 5;
-	private static final byte K_INT = 6;
-	private static final byte K_RATIONAL = 7;
-	private static final byte K_STRING = 8;
-	private static final byte K_TUPLE = 9;
-	private static final byte K_SET = 10;
-	private static final byte K_LIST = 11;
-	private static final byte K_DICTIONARY = 12;	
-	private static final byte K_PROCESS = 13;
-	private static final byte K_RECORD = 14;
-	private static final byte K_UNION = 15;
-	private static final byte K_FUNCTION = 16;
-	private static final byte K_EXISTENTIAL = 17;
-	private static final byte K_LABEL = 18;
+	private static final byte K_BYTE = 5;
+	private static final byte K_CHAR = 6;
+	private static final byte K_INT = 7;
+	private static final byte K_RATIONAL = 8;
+	private static final byte K_STRING = 9;
+	private static final byte K_TUPLE = 10;
+	private static final byte K_SET = 11;
+	private static final byte K_LIST = 12;
+	private static final byte K_DICTIONARY = 13;	
+	private static final byte K_PROCESS = 14;
+	private static final byte K_RECORD = 15;
+	private static final byte K_UNION = 16;
+	private static final byte K_FUNCTION = 17;
+	private static final byte K_EXISTENTIAL = 18;
+	private static final byte K_LABEL = 19;
 	
 	/**
 	 * Represents a node in the type graph. Each node has a kind, along with a
@@ -3177,6 +3207,7 @@ public abstract class Type {
 					case K_META:
 					case K_NULL:
 					case K_BOOL:
+					case K_BYTE:
 					case K_CHAR:
 					case K_INT:
 					case K_RATIONAL:
@@ -3239,6 +3270,8 @@ public abstract class Type {
 			return K_NULL;
 		} else if(leaf instanceof Bool) {
 			return K_BOOL;
+		} else if(leaf instanceof Byte) {
+			return K_BYTE;
 		} else if(leaf instanceof Char) {
 			return K_CHAR;
 		} else if(leaf instanceof Int) {
@@ -3376,6 +3409,8 @@ public abstract class Type {
 			return T_NULL;			
 		case K_BOOL:
 			return T_BOOL;
+		case K_BYTE:
+			return T_BYTE;
 		case K_CHAR:
 			return T_CHAR;
 		case K_INT:

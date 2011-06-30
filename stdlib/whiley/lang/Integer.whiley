@@ -40,6 +40,10 @@ public string hexStr(int item):
     //    return r
     return "FIX HEX STR"
 
+int byte2uint(byte b):
+    return 0 // TEMPORARY
+
+/*
 // Convert a byte array in little endian form into an unsigned int
 int le2uint([byte] bytes):
     idx = 0
@@ -98,3 +102,4 @@ int be2uint([byte] bytes):
     b1 = b == 1    
     return [b1,b2,b3,b4,b5,b6,b7,b8]
 
+*/

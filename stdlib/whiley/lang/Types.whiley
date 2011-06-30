@@ -31,7 +31,6 @@ define int16 as int where $ >=-32768 && $ <= 32768
 define int32 as int where $ >=-2147483648 && $ <= 2147483647
 define int64 as int where $ >= -9223372036854775808 && $ <= 9223372036854775807
 
-define byte as int where $ >=0 && $ <= 255
 define uint8 as int where $ >=0 && $ <= 255
 define uint16 as int where $ >= 0 && $ <= 65535
 define uint32 as int where $ >= 0 && $ <= 4294967295

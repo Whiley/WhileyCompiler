@@ -1667,6 +1667,8 @@ public class ModuleBuilder {
 			return Type.T_NULL;
 		} else if (t instanceof UnresolvedType.Bool) {
 			return Type.T_BOOL;
+		} else if (t instanceof UnresolvedType.Byte) {
+			return Type.T_BYTE;
 		} else if (t instanceof UnresolvedType.Char) {
 			return Type.T_CHAR;
 		} else if (t instanceof UnresolvedType.Int) {

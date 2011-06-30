@@ -41,6 +41,10 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Bool(value));
 	}
 	
+	public static Byte V_BYTE(byte value) {
+		return get(new Byte(value));
+	}
+	
 	public static Char V_CHAR(char value) {
 		return get(new Char(value));
 	}
@@ -173,7 +177,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Rational) {
 				Rational i = (Rational) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Char || v instanceof Integer) {
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Byte || v instanceof Char || v instanceof Integer) {
 				return 1; 
 			} 
 			return -1;			
@@ -195,6 +199,54 @@ public abstract class Value implements Comparable<Value> {
 			return Value.V_RATIONAL(value.divide(val.value));
 		}		
 	}		
+	
+	public static final class Byte extends Value {
+		public final byte value;
+		private Byte(byte value) {
+			this.value = value;
+		}
+		public Type type() {				
+			return Type.T_BYTE;			
+		}
+		public int hashCode() {
+			return value;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Byte) {
+				Byte i = (Byte) o;
+				return value == i.value;
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Byte) {
+				Byte i = (Byte) v;
+				if(value < i.value) {
+					return -1;
+				} else if(value > i.value) {
+					return 1;
+				} else {
+					return 0;
+				}
+			} else if(v instanceof Null || v instanceof Bool) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public String toString() {
+			String r = "b";
+			byte v = value;
+			for(int i=0;i!=8;++i) {
+				if((v&0x1) == 1) {
+					r = "1" + r;
+				} else {
+					r = "0" + r;
+				}
+				v = (byte) (v >>> 1);
+			}
+			return r;			
+		}
+	}
 	
 	public static final class Char extends Value {
 		public final char value;
@@ -224,13 +276,14 @@ public abstract class Value implements Comparable<Value> {
 				} else {
 					return 0;
 				}
-			} else if(v instanceof Null || v instanceof Bool) {
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Byte) {
 				return 1; 
 			} 
 			return -1;			
 		}
 		public String toString() {
-			return "'" + value + "'";
+			return "'" + value + "'";			
 		}
 	}
 	
@@ -256,7 +309,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Char || v instanceof Bool) {
+			} else if(v instanceof Null || v instanceof Byte || v instanceof Char || v instanceof Bool) {
 				return 1; 
 			} 
 			return -1;			
@@ -304,7 +357,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Strung) {
 				Strung i = (Strung) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Rational || v instanceof Char || v instanceof Integer) {
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer) {
 				return 1; 
 			} 
 			return -1;			
@@ -353,7 +406,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Char || v instanceof Integer || v instanceof Strung) {
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung) {
 				return 1; 
 			} 
 			return -1;			
@@ -420,7 +473,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
 					|| v instanceof List || v instanceof Tuple) {
 				return 1;
 			}
@@ -525,7 +578,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
 					|| v instanceof Set || v instanceof List || v instanceof Tuple) {
 				return 1; 
 			} 
@@ -602,7 +655,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
 					|| v instanceof Set || v instanceof List || v instanceof Tuple
 					|| v instanceof Record) {
 				return 1;
@@ -750,7 +803,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
 					|| v instanceof Set || v instanceof List) {
 				return 1; 
 			} 
