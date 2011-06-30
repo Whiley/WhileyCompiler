@@ -4,7 +4,7 @@ int g(int x):
     else:
         return x
 
-[byte] f(int x):
+[int] f(int x):
     return [g(x)]
 
 void System::main([string] args):
