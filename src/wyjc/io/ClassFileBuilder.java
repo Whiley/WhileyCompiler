@@ -1121,10 +1121,12 @@ public class ClassFileBuilder {
 					"bitand", ftype, Bytecode.STATIC));
 			break;
 		case BITWISEOR:
+			ftype = new JvmType.Function(type,type,type);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
 					"bitor", ftype, Bytecode.STATIC));
 			break;
 		case BITWISEXOR:
+			ftype = new JvmType.Function(type,type,type);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
 					"bitxor", ftype, Bytecode.STATIC));
 			break;
