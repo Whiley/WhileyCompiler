@@ -892,14 +892,8 @@ public class ModuleBuilder {
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
 		Block blk = resolve(environment,s.source);				
-		int freeReg;
+		int freeReg = allocate(s.variable,environment);
 		
-		if(environment.containsKey(s.variable)) { 
-			freeReg = environment.get(s.variable);
-		} else {
-			freeReg = environment.size();
-		}
-				
 		blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));				
 		
 		// FIXME: add a continue scope
