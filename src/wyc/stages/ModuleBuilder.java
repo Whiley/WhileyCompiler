@@ -1453,20 +1453,16 @@ public class ModuleBuilder {
 		blk.addAll(resolve(environment, v.lhs));
 		blk.addAll(resolve(environment, v.rhs));
 
-		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
-				|| bop == BOp.DIV || bop == BOp.REM) {
-			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
-			return blk;			
-		} else if(bop == BOp.UNION) {
+		if(bop == BOp.UNION) {
 			blk.add(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
 			return blk;			
 		} else if(bop == BOp.INTERSECTION) {
 			blk.add(Code.SetIntersect(null,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
-		}
-		
-		syntaxError("unknown binary operation encountered", filename, v);
-		return null;
+		} else {
+			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
+			return blk;
+		}		
 	}
 
 	protected Block resolve(HashMap<String,Integer> environment, NaryOp v) {
@@ -1818,6 +1814,12 @@ public class ModuleBuilder {
 			return Code.BOp.DIV;
 		case REM:
 			return Code.BOp.REM;
+		case BITWISEAND:
+			return Code.BOp.BITWISEAND;
+		case BITWISEOR:
+			return Code.BOp.BITWISEOR;
+		case BITWISEXOR:
+			return Code.BOp.BITWISEXOR;
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;

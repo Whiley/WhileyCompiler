@@ -347,6 +347,15 @@ public interface Expr extends SyntacticElement {
 		},
 		TYPEIMPLIES {
 			public String toString() { return "~=>"; }
-		}
+		},
+		BITWISEAND {
+			public String toString() { return "&"; }
+		},
+		BITWISEOR{
+			public String toString() { return "|"; }
+		},
+		BITWISEXOR {
+			public String toString() { return "^"; }
+		},
 	};
 }

@@ -82,6 +82,27 @@ public class Util {
 		return sb.toString();
 	}
 	
+	public static Byte bitand(Byte b1, Byte b2) {
+		byte a = b1;
+		byte b = b2;
+		int c = a & b;
+		return Byte.valueOf((byte)c);
+	}
+	
+	public static Byte bitor(Byte b1, Byte b2) {
+		byte a = b1;
+		byte b = b2;
+		int c = a | b;
+		return Byte.valueOf((byte)c);
+	}
+	
+	public static Byte bitxor(Byte b1, Byte b2) {
+		byte a = b1;
+		byte b = b2;
+		int c = a ^ b;
+		return Byte.valueOf((byte)c);
+	}
+	
 	/**
 	 * This method is used to convert the arguments supplied to main (which have
 	 * type <code>String[]</code>) into an appropriate Whiley List.

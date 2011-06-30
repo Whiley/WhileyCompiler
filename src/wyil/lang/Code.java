@@ -142,6 +142,9 @@ public abstract class Code {
 		return get(new Invoke(fun,name,retval));
 	}
 
+	public static Not Not() {
+		return get(new Not());
+	}
 	
 	/**
 	 * Construct a <code>load</code> bytecode which reads a given register.
@@ -458,7 +461,16 @@ public abstract class Code {
 		},		
 		REM{
 			public String toString() { return "rem"; }
-		}		
+		},
+		BITWISEOR{
+			public String toString() { return "or"; }
+		},
+		BITWISEXOR{
+			public String toString() { return "xor"; }
+		},
+		BITWISEAND{
+			public String toString() { return "and"; }
+		},
 	};
 
 	/**
@@ -986,6 +998,23 @@ public abstract class Code {
 				 return toString("iasend",type);				 
 			 }
 		 }		
+	}
+	
+	public static final class Not extends Code {		
+		private Not() {						
+		}
+		
+		public int hashCode() {			
+			return 12875;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof Not;
+		}
+				
+		public String toString() {
+			return toString("not",Type.T_BYTE);
+		}
 	}
 	
 	public static final class Invoke extends Code {		

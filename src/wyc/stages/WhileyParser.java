@@ -759,7 +759,9 @@ public class WhileyParser {
 	}
 	
 	private static boolean isAddSubTok(Token tok) {
-		return tok instanceof Plus || tok instanceof Minus || tok instanceof Union || tok instanceof Intersection;
+		return tok instanceof Plus || tok instanceof Minus
+				|| tok instanceof Union || tok instanceof Intersection
+				|| tok instanceof Ampersand || tok instanceof Bar;
 	}
 	
 	private static Expr.BOp addSubOp(Token tok) {
@@ -767,11 +769,15 @@ public class WhileyParser {
 			return Expr.BOp.ADD;
 		} else if(tok instanceof Minus) {
 			return Expr.BOp.SUB;
+		} else if(tok instanceof Ampersand) {
+			return Expr.BOp.BITWISEAND;
+		} else if(tok instanceof Bar) {
+			return Expr.BOp.BITWISEOR;
 		} else if(tok instanceof Union) {
 			return Expr.BOp.UNION;
 		} else {
 			return Expr.BOp.INTERSECTION;
-		}
+		} 
 	}
 	
 	private Expr parseAddSubExpression() {

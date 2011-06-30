@@ -1115,6 +1115,19 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
 						"remainder", ftype, Bytecode.VIRTUAL));			
 			break;
+		case BITWISEAND:
+			ftype = new JvmType.Function(type,type,type);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
+					"bitand", ftype, Bytecode.STATIC));
+			break;
+		case BITWISEOR:
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
+					"bitor", ftype, Bytecode.STATIC));
+			break;
+		case BITWISEXOR:
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
+					"bitxor", ftype, Bytecode.STATIC));
+			break;
 		default:
 			syntaxError("unknown binary expression encountered",filename,stmt);
 		}		

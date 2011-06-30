@@ -301,7 +301,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			result = type;
 			
 		} else {						
-			if(v.bop == BOp.REM) {
+			if (v.bop == BOp.BITWISEAND || v.bop == BOp.BITWISEOR
+					|| v.bop == BOp.BITWISEXOR) {
+				checkIsSubtype(Type.T_BYTE,lhs,stmt);
+				checkIsSubtype(Type.T_BYTE,rhs,stmt);
+				result = Type.T_BYTE;
+			} else if(v.bop == BOp.REM) {
 				// remainder is a special case which requires both operands to
 				// be integers.
 				checkIsSubtype(Type.T_INT,lhs,stmt);
