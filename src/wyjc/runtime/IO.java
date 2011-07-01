@@ -86,7 +86,7 @@ public class IO {
 		try {
 			int nbytes = fin.read(bytes);
 			for(int i=0;i!=nbytes;++i) {				
-				r.add(BigInteger.valueOf(bytes[i] & 0xFF));
+				r.add(bytes[i]);
 			}
 		} catch (IOException ioe) {
 			// what to do here??
@@ -107,7 +107,7 @@ public class IO {
 				byte[] bytes = new byte[CHUNK_SIZE];
 				nbytes = fin.read(bytes);
 				for(int i=0;i!=nbytes;++i) {
-					r.add(BigInteger.valueOf(bytes[i] & 0xFF));
+					r.add(bytes[i]);
 				}
 			} while(nbytes == CHUNK_SIZE);			
 		} catch (IOException ioe) {
@@ -124,7 +124,7 @@ public class IO {
 		try {
 			byte[] bs = new byte[bytes.size()];
 			for(int i=0;i!=bs.length;++i) {
-				BigInteger r = (BigInteger) bytes.get(i); 
+				Byte r = (Byte) bytes.get(i); 
 				bs[i] = r.byteValue();
 			}
 			fout.write(bs);			
