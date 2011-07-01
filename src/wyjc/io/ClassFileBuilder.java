@@ -459,9 +459,7 @@ public class ClassFileBuilder {
 			} else {				
 				// must be => char
 				JvmType.Function ftype = new JvmType.Function(T_INT);			
-				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));
-				ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);			
-				bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"valueOf",ftype,Bytecode.STATIC));
+				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));				
 			}
 		}
 	}
@@ -604,7 +602,7 @@ public class ClassFileBuilder {
 			addWriteConversion(Type.T_INT,bytecodes);			
 
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
-					JAVA_LANG_STRING,BIG_INTEGER,JAVA_LANG_CHARACTER);			
+					JAVA_LANG_STRING,BIG_INTEGER,T_CHAR);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));						
 			
@@ -737,6 +735,32 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, c.target));				
 				break;			
 			}
+		} else if(c.type == Type.T_CHAR) {
+			int op;
+			switch(c.op) {
+			case EQ:				
+				op = Bytecode.IfCmp.EQ;
+				break;
+			case NEQ:				
+				op = Bytecode.IfCmp.NE;
+				break;
+			case LT:				
+				op = Bytecode.IfCmp.LT;
+				break;
+			case LTEQ:				
+				op = Bytecode.IfCmp.LT;
+				break;
+			case GT:				
+				op = Bytecode.IfCmp.GT;
+				break;
+			case GTEQ:				
+				op = Bytecode.IfCmp.GE;
+				break;
+			default:
+				syntaxError("unknown if condition encountered",filename,stmt);
+				return;
+			}
+			bytecodes.add(new Bytecode.IfCmp(op, T_CHAR,c.target));
 		} else {
 			// Non-boolean case. Just use the Object.equals() method, followed
 			// by "if" bytecode.			
@@ -752,7 +776,7 @@ public class ClassFileBuilder {
 					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
 							Bytecode.STATIC));
-				} else {					
+				} else {
 					JvmType.Function ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
 					bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "equals", ftype,
 							Bytecode.VIRTUAL));								
@@ -781,10 +805,10 @@ public class ClassFileBuilder {
 				break;
 			}
 			case LT:
-			{			
+			{							
 				JvmType.Function ftype = new JvmType.Function(T_INT,type);
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "compareTo", ftype,
-						Bytecode.VIRTUAL));
+						Bytecode.VIRTUAL));				
 				op = Bytecode.If.LT;			
 				break;
 			}
@@ -792,23 +816,23 @@ public class ClassFileBuilder {
 			{			
 				JvmType.Function ftype = new JvmType.Function(T_INT,type);
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"compareTo", ftype, Bytecode.VIRTUAL));
+						"compareTo", ftype, Bytecode.VIRTUAL));			
 				op = Bytecode.If.LE;
 				break;
 			}
 			case GT:
-			{		
+			{						
 				JvmType.Function ftype = new JvmType.Function(T_INT, type);
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"compareTo", ftype, Bytecode.VIRTUAL));
+						"compareTo", ftype, Bytecode.VIRTUAL));				
 				op = Bytecode.If.GT;
 				break;
 			}
 			case GTEQ:
-			{		
+			{						
 				JvmType.Function ftype = new JvmType.Function(T_INT,type);
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"compareTo", ftype, Bytecode.VIRTUAL));			
+						"compareTo", ftype, Bytecode.VIRTUAL));				
 				op = Bytecode.If.GE;
 				break;
 			}
@@ -1224,10 +1248,7 @@ public class ClassFileBuilder {
 				ftype, Bytecode.VIRTUAL));
 		ftype = new JvmType.Function(T_CHAR,T_INT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
-				Bytecode.VIRTUAL));		
-		ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER, "valueOf",
-				ftype, Bytecode.STATIC));
+				Bytecode.VIRTUAL));				
 	}
 	
 	public void translate(Code.StringLength c, Entry stmt, int freeSlot,

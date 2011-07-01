@@ -76,12 +76,11 @@ public class Util {
 		return lhs.substring(start,end);
 	}
 	
-	public static String set(final String lhs, BigInteger index, Character value) {
-		int idx = index.intValue();
-		char c = value.charValue();
+	public static String set(final String lhs, BigInteger index, char value) {
+		int idx = index.intValue();		
 		// hmmm, not exactly efficient!
 		StringBuilder sb = new StringBuilder(lhs);
-		sb.setCharAt(idx, c);
+		sb.setCharAt(idx, value);
 		return sb.toString();
 	}
 	
