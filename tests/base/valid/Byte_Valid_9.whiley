@@ -258,8 +258,8 @@ define constants as [
 
 public void System::main([string] args):
     for i in constants:
-        for j in 0..7:
-            out.print(str(i) + " & 10101010 << ")
+        for j in 0..8:
+            out.print(str(i) + " & 10101010b << ")
             out.print(str(j) + " = ")
             // test precedence
-            out.println(str(i & 10101010 << j))
+            out.println(str(i & 10101010b << j))
