@@ -1124,6 +1124,10 @@ public class WhileyParser {
 			match(Shreak.class);
 			return new Expr.UnOp(Expr.UOp.NOT, parseIndexTerm(),
 					sourceAttr(start, index - 1));
+		} else if (token instanceof Tilde) {
+			match(Tilde.class);
+			return new Expr.UnOp(Expr.UOp.INVERT, parseIndexTerm(),
+					sourceAttr(start, index - 1));
 		} else if (token instanceof Ampersand) {
 		      return parseFunVal();
 	    }

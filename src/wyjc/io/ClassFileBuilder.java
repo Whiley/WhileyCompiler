@@ -300,6 +300,8 @@ public class ClassFileBuilder {
 				 translate((IndirectSend)code,freeSlot,bytecodes);
 			} else if(code instanceof Invoke) {
 				 translate((Invoke)code,freeSlot,bytecodes);
+			} else if(code instanceof Invert) {
+				 translate((Invert)code,freeSlot,bytecodes);
 			} else if(code instanceof Label) {
 				translate((Label)code,freeSlot,bytecodes);
 			} else if(code instanceof ListAppend) {
@@ -1240,6 +1242,14 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "substring", ftype,
 				Bytecode.STATIC));
 	}	
+	
+	public void translate(Code.Invert c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {								
+		JvmType type = convertType(c.type);
+		JvmType.Function ftype = new JvmType.Function(type,type);
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "invert",
+				ftype, Bytecode.STATIC));		
+	}
 	
 	public void translate(Code.Negate c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {								

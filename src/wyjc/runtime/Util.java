@@ -118,6 +118,12 @@ public class Util {
 		return Byte.valueOf((byte)c);
 	}
 	
+	public static Byte invert(Byte b1) {
+		byte a = b1;		
+		int c = ~a;
+		return Byte.valueOf((byte)c);
+	}
+	
 	public static List range(BigInteger start, BigInteger end) {
 		List l = new List();
 		

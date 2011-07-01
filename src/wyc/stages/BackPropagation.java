@@ -116,6 +116,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(IndirectSend)code,entry,environment);
 		} else if(code instanceof Invoke) {
 			infer(index,(Invoke)code,entry,environment);
+		} else if(code instanceof Invert) {
+			infer(index,(Invert)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
 		} else if(code instanceof ListAppend) {
@@ -302,6 +304,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		for(Type t : code.type.params()) {
 			environment.push(t);
 		}	
+	}
+	
+	public void infer(int index, Code.Invert code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		// FIXME: add support for dictionaries
+		coerce(req,code.type,index,entry);
+		environment.push(code.type);
 	}
 	
 	public void infer(int index, Code.ListAppend code, Block.Entry entry,

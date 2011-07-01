@@ -151,6 +151,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((IndirectSend)code,entry,environment);
 		} else if(code instanceof Invoke) {
 			infer((Invoke)code,entry,environment);
+		} else if(code instanceof Invert) {
+			infer(index,(Invert)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
 		} else if(code instanceof ListAppend) {
@@ -908,6 +910,21 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				}
 			}
 		} 
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.Invert code, Block.Entry entry,
+			Env environment) {
+		Value val = environment.pop();
+		Value result = null;
+		
+		if(val instanceof Value.Byte) {
+			Value.Byte num = (Value.Byte) val;
+			result = Value.V_BYTE((byte)~num.value);
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
+		} 		
+		
 		environment.push(result);
 	}
 	

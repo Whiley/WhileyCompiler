@@ -1396,6 +1396,9 @@ public class ModuleBuilder {
 		case NEG:
 			blk.add(Code.Negate(null), attributes(v));
 			break;
+		case INVERT:
+			blk.add(Code.Invert(null), attributes(v));
+			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();

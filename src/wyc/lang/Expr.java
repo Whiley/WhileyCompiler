@@ -147,7 +147,8 @@ public interface Expr extends SyntacticElement {
 	public enum UOp {
 		NOT,
 		NEG,
-		LENGTHOF,
+		INVERT,
+		LENGTHOF,		
 		PROCESSACCESS,
 		PROCESSSPAWN
 	}

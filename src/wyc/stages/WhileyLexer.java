@@ -385,6 +385,8 @@ public class WhileyLexer {
 			return new Percent(pos++);			
 		} else if(c == '^') {
 			return new Caret(pos++);			
+		} else if(c == '~') {
+			return new Tilde(pos++);			
 		} else if(c == '!') {			
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
@@ -698,6 +700,9 @@ public class WhileyLexer {
 	}
 	public static class RightSlash extends Token {
 		public RightSlash(int pos) { super("/",pos);	}
+	}
+	public static class Tilde extends Token {
+		public Tilde(int pos) { super("~",pos);	}
 	}
 	public static class Shreak extends Token {
 		public Shreak(int pos) { super("!",pos);	}

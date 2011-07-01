@@ -170,6 +170,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((IndirectSend)code,entry,environment);
 		} else if(code instanceof Invoke) {
 			code = infer((Invoke)code,entry,environment);
+		} else if(code instanceof Invert) {
+			code = infer((Invert)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
 		} else if(code instanceof ListLength) {
@@ -578,6 +580,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		return Code.IndirectInvoke(ft,ivk.retval);		
+	}
+	
+	protected Code infer(Invert v, Entry stmt, Env environment) {
+		Type rhs_t = environment.pop();
+
+		// FIXME: add support for dictionaries
+		checkIsSubtype(Type.T_BYTE,rhs_t,stmt);		
+		environment.add(rhs_t);
+		return Code.Invert(rhs_t);						
 	}
 	
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {

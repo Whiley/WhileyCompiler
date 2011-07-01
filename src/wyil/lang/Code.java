@@ -301,6 +301,10 @@ public abstract class Code {
 		return get(new IndirectInvoke(fun,retval));
 	}
 	
+	public static Invert Invert(Type type) {
+		return get(new Invert(type));
+	}	
+	
 	public static Label Label(String label) {
 		return get(new Label(label));
 	}
@@ -1966,6 +1970,35 @@ public abstract class Code {
 				
 		public String toString() {
 			return toString("neg",type);
+		}
+	}
+	
+	public static final class Invert extends Code {
+		public final Type type;		
+		
+		private Invert(Type type) {			
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 239487;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Invert) {
+				Invert bo = (Invert) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("invert",type);
 		}
 	}
 	
