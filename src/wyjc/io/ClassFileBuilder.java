@@ -1209,9 +1209,9 @@ public class ClassFileBuilder {
 		if(c.dir == OpDir.UNIFORM) {
 			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_STRING);
 		} else if(c.dir == OpDir.LEFT) {
-			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,JAVA_LANG_CHARACTER);				
+			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_STRING,T_CHAR);				
 		} else {
-			ftype = new JvmType.Function(JAVA_LANG_STRING,JAVA_LANG_CHARACTER,JAVA_LANG_STRING);				
+			ftype = new JvmType.Function(JAVA_LANG_STRING,T_CHAR,JAVA_LANG_STRING);				
 		}													
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
 				Bytecode.STATIC));
@@ -1646,10 +1646,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Value.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst(e.value));
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER, "valueOf", ftype,
-				Bytecode.STATIC));
+		bytecodes.add(new Bytecode.LoadConst(e.value));		
 	}
 			
 	protected void translate(Value.Integer e, int freeSlot,			

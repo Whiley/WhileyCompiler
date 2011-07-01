@@ -58,11 +58,11 @@ public class Util {
 		return lhs + rhs;
 	}
 	
-	public static String append(final String lhs, final Character rhs) {
+	public static String append(final String lhs, final char rhs) {
 		return lhs + rhs;
 	}
 	
-	public static String append(final Character lhs, final String rhs) {
+	public static String append(final char lhs, final String rhs) {
 		return lhs + rhs;
 	}
 	
