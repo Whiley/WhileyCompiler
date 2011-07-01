@@ -381,7 +381,7 @@ public class ClassFileBuilder {
 		
 		Value constant = c.constant;
 		if (constant instanceof Value.Rational || constant instanceof Value.Bool
-				|| constant instanceof Value.Null) {
+				|| constant instanceof Value.Null || constant instanceof Value.Byte) {
 			translate(constant,freeSlot,bytecodes);					
 		} else {
 			int id;
@@ -412,7 +412,7 @@ public class ClassFileBuilder {
 		} else if(fromType == Type.T_CHAR) {									
 			upConversion(toType, (Type.Char)fromType,freeSlot,bytecodes);  
 		} else if(fromType == Type.T_BYTE) {									
-			// do nothing --- no coercions possible  
+			upConversion(toType, (Type.Byte)fromType,freeSlot,bytecodes); 
 		} else if(!Type.isSubtype(toType, fromType)) {
 			// Fall-back to an external (recursive) check
 			int id;
@@ -438,6 +438,13 @@ public class ClassFileBuilder {
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
+		// done deal!
+	}
+	
+	public void upConversion(Type toType, Type.Byte fromType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);			
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
 	}
 	
@@ -1244,11 +1251,9 @@ public class ClassFileBuilder {
 	}	
 	
 	public void translate(Code.Invert c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {								
-		JvmType type = convertType(c.type);
-		JvmType.Function ftype = new JvmType.Function(type,type);
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "invert",
-				ftype, Bytecode.STATIC));		
+			ArrayList<Bytecode> bytecodes) {	
+		bytecodes.add(new Bytecode.LoadConst(-1));
+		bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.XOR,T_INT));			
 	}
 	
 	public void translate(Code.Negate c, int freeSlot,
@@ -1642,10 +1647,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst(e.value));
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE, "valueOf", ftype,
-				Bytecode.STATIC));
+		bytecodes.add(new Bytecode.LoadConst(e.value));		
 	}
 	
 	protected void translate(Value.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
@@ -1901,6 +1903,11 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"booleanValue", ftype, Bytecode.VIRTUAL));
+		} else if(et instanceof Type.Byte) {
+			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BYTE));
+			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,
+					"intValue", ftype, Bytecode.VIRTUAL));
 		} else {	
 			addCheckCast(convertType(et),bytecodes);			
 		}
@@ -1917,7 +1924,12 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"valueOf", ftype, Bytecode.STATIC));
-		} 
+		} else if(et instanceof Type.Byte) {
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,
+					T_BYTE);
+			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE, "valueOf", ftype,
+					Bytecode.STATIC));
+		}
 	}
 
 	public void addCheckCast(JvmType type, ArrayList<Bytecode> bytecodes) {
@@ -2036,7 +2048,7 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
 		} else if(t instanceof Type.Byte) {
-			return JAVA_LANG_BYTE;
+			return T_INT;
 		} else if(t instanceof Type.Char) {
 			return JAVA_LANG_CHARACTER;
 		} else if(t instanceof Type.Int) {
