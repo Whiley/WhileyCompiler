@@ -735,7 +735,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, c.target));				
 				break;			
 			}
-		} else if(c.type == Type.T_CHAR) {
+		} else if(c.type == Type.T_CHAR || c.type == Type.T_BYTE) {
 			int op;
 			switch(c.op) {
 			case EQ:				
@@ -760,9 +760,9 @@ public class ClassFileBuilder {
 				syntaxError("unknown if condition encountered",filename,stmt);
 				return;
 			}
-			bytecodes.add(new Bytecode.IfCmp(op, T_CHAR,c.target));
+			bytecodes.add(new Bytecode.IfCmp(op, T_BYTE,c.target));
 		} else {
-			// Non-boolean case. Just use the Object.equals() method, followed
+			// Non-primitive case. Just use the Object.equals() method, followed
 			// by "if" bytecode.			
 			int op;
 			switch(c.op) {

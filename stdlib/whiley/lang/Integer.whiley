@@ -40,8 +40,17 @@ public string hexStr(int item):
     //    return r
     return "FIX HEX STR"
 
-int byte2uint(byte b):
-    return 0 // TEMPORARY
+// Convert a byte into an unsigned int assuming a little endian
+// orientation.
+int byte2uile(byte b):
+    r = 0
+    base = 1
+    while b != 0b:
+        if (b & 00000001b) == 00000001b:
+            r = r + base
+        b = b >> 1
+        base = base * 2
+    return r
 
 /*
 // Convert a byte array in little endian form into an unsigned int
