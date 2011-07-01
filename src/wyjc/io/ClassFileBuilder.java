@@ -1132,19 +1132,13 @@ public class ClassFileBuilder {
 					"range", ftype, Bytecode.STATIC));
 			break;
 		case BITWISEAND:
-			ftype = new JvmType.Function(type,type,type);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
-					"bitand", ftype, Bytecode.STATIC));
+			bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.AND,T_INT));
 			break;
 		case BITWISEOR:
-			ftype = new JvmType.Function(type,type,type);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
-					"bitor", ftype, Bytecode.STATIC));
+			bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.OR,T_INT));
 			break;
 		case BITWISEXOR:
-			ftype = new JvmType.Function(type,type,type);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
-					"bitxor", ftype, Bytecode.STATIC));
+			bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.XOR,T_INT));
 			break;
 		case LEFTSHIFT:
 			ftype = new JvmType.Function(type,type,BIG_INTEGER);

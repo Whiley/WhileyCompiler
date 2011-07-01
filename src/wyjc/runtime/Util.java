@@ -85,27 +85,6 @@ public class Util {
 		return sb.toString();
 	}
 	
-	public static Byte bitand(Byte b1, Byte b2) {
-		byte a = b1;
-		byte b = b2;
-		int c = a & b;
-		return Byte.valueOf((byte)c);
-	}
-	
-	public static Byte bitor(Byte b1, Byte b2) {
-		byte a = b1;
-		byte b = b2;
-		int c = a | b;
-		return Byte.valueOf((byte)c);
-	}
-	
-	public static Byte bitxor(Byte b1, Byte b2) {
-		byte a = b1;
-		byte b = b2;
-		int c = a ^ b;
-		return Byte.valueOf((byte)c);
-	}
-	
 	public static Byte leftshift(Byte b1, BigInteger b2) {
 		byte a = b1;		
 		int c = a << b2.intValue();
@@ -115,12 +94,6 @@ public class Util {
 	public static Byte rightshift(Byte b1, BigInteger b2) {
 		byte a = b1;		
 		int c = a >>> b2.intValue();
-		return Byte.valueOf((byte)c);
-	}
-	
-	public static Byte invert(Byte b1) {
-		byte a = b1;		
-		int c = ~a;
 		return Byte.valueOf((byte)c);
 	}
 	
