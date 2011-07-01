@@ -798,13 +798,13 @@ public class WhileyParser {
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
-		exprs.add(parseAddSubExpression(startSet));
+		exprs.add(parseRangeExpression(startSet));
 		
 		while(index < tokens.size() && isShiftTok(tokens.get(index))) {
 			Token token = tokens.get(index);
 			match(token.getClass());
 			ops.add(shiftOp(token));
-			exprs.add(parseAddSubExpression(startSet));	
+			exprs.add(parseRangeExpression(startSet));	
 			ends.add(index);
 		}
 		
@@ -818,6 +818,20 @@ public class WhileyParser {
 		}
 		
 		return result;
+	}
+	
+	private Expr parseRangeExpression(boolean startSet) {
+		int start = index;			
+		Expr lhs = parseAddSubExpression(startSet);		
+		
+		if(index < tokens.size() && tokens.get(index) instanceof DotDot) {			
+			match(DotDot.class);
+			Expr rhs = parseAddSubExpression(startSet);
+			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else {		
+			return lhs;
+		}
 	}
 	
 	private static boolean isAddSubTok(Token tok, boolean startSet) {

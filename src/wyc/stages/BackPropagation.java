@@ -192,7 +192,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		if(code.bop == BOp.LEFTSHIFT || code.bop == BOp.RIGHTSHIFT) {
 			environment.push(code.type);
 			environment.push(Type.T_INT);
-		} else {
+		} else if(code.bop == BOp.RANGE){
+			environment.push(Type.T_INT);
+			environment.push(Type.T_INT);
+		} else {		
 			environment.push(code.type);
 			environment.push(code.type);
 		}

@@ -462,6 +462,9 @@ public abstract class Code {
 		REM{
 			public String toString() { return "rem"; }
 		},
+		RANGE{
+			public String toString() { return "range"; }
+		},
 		BITWISEOR{
 			public String toString() { return "or"; }
 		},
@@ -472,10 +475,10 @@ public abstract class Code {
 			public String toString() { return "and"; }
 		},
 		LEFTSHIFT{
-			public String toString() { return "shiftleft"; }
+			public String toString() { return "shl"; }
 		},
 		RIGHTSHIFT{
-			public String toString() { return "shiftright"; }
+			public String toString() { return "shr"; }
 		},
 	};
 

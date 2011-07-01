@@ -1115,6 +1115,11 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
 						"remainder", ftype, Bytecode.VIRTUAL));			
 			break;
+		case RANGE:
+			ftype = new JvmType.Function(WHILEYLIST,BIG_INTEGER,BIG_INTEGER);
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
+					"range", ftype, Bytecode.STATIC));
+			break;
 		case BITWISEAND:
 			ftype = new JvmType.Function(type,type,type);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,

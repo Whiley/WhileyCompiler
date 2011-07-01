@@ -339,7 +339,7 @@ public interface Expr extends SyntacticElement {
 		ELEMENTOF{
 			public String toString() { return "in"; }
 		},		
-		LISTRANGE{
+		RANGE{
 			public String toString() { return ".."; }
 		},
 		TYPEEQ{

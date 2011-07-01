@@ -310,6 +310,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_BYTE,lhs,stmt);
 				checkIsSubtype(Type.T_INT,rhs,stmt);
 				result = Type.T_BYTE;
+			} else if(v.bop == BOp.RANGE) {
+				checkIsSubtype(Type.T_INT,lhs,stmt);
+				checkIsSubtype(Type.T_INT,rhs,stmt);
+				result = Type.T_LIST(Type.T_INT);
 			} else if(v.bop == BOp.REM) {
 				// remainder is a special case which requires both operands to
 				// be integers.

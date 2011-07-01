@@ -26,7 +26,10 @@
 package wyjc.runtime;
 
 import java.math.*;
+import java.util.ArrayList;
 import java.util.Map;
+
+import wyil.lang.Value;
 
 public class Util {
 
@@ -113,6 +116,34 @@ public class Util {
 		byte a = b1;		
 		int c = a >>> b2.intValue();
 		return Byte.valueOf((byte)c);
+	}
+	
+	public static List range(BigInteger start, BigInteger end) {
+		List l = new List();
+		
+		long st = start.longValue();
+		long en = start.longValue();
+		if (BigInteger.valueOf(st).equals(start)
+				&& BigInteger.valueOf(en).equals(end)) {
+			int dir = st < en ? 1 : -1;
+			while(st != en) {
+				l.add(BigInteger.valueOf(st));
+				st = st + dir;
+			}					
+		} else {
+			BigInteger dir;
+			if(start.compareTo(end) < 0) {
+				dir = BigInteger.ONE;
+			} else {
+				dir = BigInteger.valueOf(-1);
+			}
+			while(!start.equals(end)) {
+				l.add(start);
+				start = start.add(dir);
+			}	
+		}
+		
+		return l;
 	}
 	
 	/**

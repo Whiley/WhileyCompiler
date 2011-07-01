@@ -1814,6 +1814,8 @@ public class ModuleBuilder {
 			return Code.BOp.DIV;
 		case REM:
 			return Code.BOp.REM;
+		case RANGE:
+			return Code.BOp.RANGE;
 		case BITWISEAND:
 			return Code.BOp.BITWISEAND;
 		case BITWISEOR:
