@@ -163,20 +163,24 @@ public class Util {
 			return "\'" + s + "\'";
 		} else if(o instanceof Byte) {
 			Byte b = (Byte) o;
-			String r = "b";
-			byte v = b.byteValue();
-			for(int i=0;i!=8;++i) {
-				if((v&0x1) == 1) {
-					r = "1" + r;
-				} else {
-					r = "0" + r;
-				}
-				v = (byte) (v >>> 1);
-			}
-			return r;
+			return str(b.byteValue());
 		} else {
 			return o.toString();
 		}
+	}
+	
+	public static String str(byte b) {
+		String r = "b";
+		byte v = b;
+		for(int i=0;i!=8;++i) {
+			if((v&0x1) == 1) {
+				r = "1" + r;
+			} else {
+				r = "0" + r;
+			}
+			v = (byte) (v >>> 1);
+		}
+		return r;
 	}
 	
 	/**

@@ -34,8 +34,8 @@ public string str(any item):
         return "\'" + item + "\'"
     else if item is byte:
         extern jvm:
-            aload 0
-            invokestatic wyjc/runtime/Util.str:(Ljava/lang/Object;)Ljava/lang/String;
+            iload 0
+            invokestatic wyjc/runtime/Util.str:(B)Ljava/lang/String;
             areturn
     extern jvm:
         aload 0
