@@ -468,18 +468,19 @@ public class ClassFileBuilder {
 
 	public void upConversion(Type toType, Type.Char fromType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if(!Type.isSubtype(toType,fromType)) {
-			JvmType.Function ftype = new JvmType.Function(T_CHAR);			
-			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"charValue",ftype,Bytecode.VIRTUAL));			
+		if(!Type.isSubtype(toType,fromType)) {					
 			if(toType == Type.T_REAL) { 
 				// coercion required!
-				ftype = new JvmType.Function(BIG_RATIONAL,T_INT);			
+				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);			
 				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
 			} else {
 				bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
-				ftype = new JvmType.Function(BIG_INTEGER,T_LONG);			
+				JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,T_LONG);			
 				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"valueOf",ftype,Bytecode.STATIC));				
 			}
+		} else {
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);			
+			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"valueOf",ftype,Bytecode.STATIC));	
 		}
 	}
 	
@@ -1902,6 +1903,11 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(T_BYTE);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,
 					"byteValue", ftype, Bytecode.VIRTUAL));
+		} else if(et instanceof Type.Char) {
+			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_CHARACTER));
+			JvmType.Function ftype = new JvmType.Function(T_CHAR);
+			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,
+					"charValue", ftype, Bytecode.VIRTUAL));
 		} else {	
 			addCheckCast(convertType(et),bytecodes);			
 		}
@@ -1922,6 +1928,11 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,
 					T_BYTE);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE, "valueOf", ftype,
+					Bytecode.STATIC));
+		} else if(et instanceof Type.Char) {
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,
+					T_CHAR);
+			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER, "valueOf", ftype,
 					Bytecode.STATIC));
 		}
 	}
@@ -2044,7 +2055,7 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Byte) {
 			return T_INT;
 		} else if(t instanceof Type.Char) {
-			return JAVA_LANG_CHARACTER;
+			return T_CHAR;
 		} else if(t instanceof Type.Int) {
 			return BIG_INTEGER;
 		} else if(t instanceof Type.Real) {
