@@ -924,7 +924,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 		} else if(test instanceof Type.Char) {
 			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_CHARACTER));			
-			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
+			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
 		} else if(test instanceof Type.Int) {
 			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
