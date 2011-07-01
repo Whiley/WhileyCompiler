@@ -1641,7 +1641,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst(e.value));		
+		bytecodes.add(new Bytecode.LoadConst((int)e.value));		
 	}
 	
 	protected void translate(Value.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
@@ -1899,9 +1899,9 @@ public class ClassFileBuilder {
 					"booleanValue", ftype, Bytecode.VIRTUAL));
 		} else if(et instanceof Type.Byte) {
 			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BYTE));
-			JvmType.Function ftype = new JvmType.Function(T_INT);
+			JvmType.Function ftype = new JvmType.Function(T_BYTE);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,
-					"intValue", ftype, Bytecode.VIRTUAL));
+					"byteValue", ftype, Bytecode.VIRTUAL));
 		} else {	
 			addCheckCast(convertType(et),bytecodes);			
 		}
