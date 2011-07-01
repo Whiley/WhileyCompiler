@@ -952,7 +952,7 @@ public class WhileyParser {
 					match(DotDot.class);
 					
 					lookahead = tokens.get(index);
-					Expr end = parseShiftExpression(false);
+					Expr end = parseAddSubExpression(false);
 					match(RightSquare.class);
 					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
 							index - 1), lhs, new Expr.Constant(Value
@@ -960,7 +960,7 @@ public class WhileyParser {
 							index - 1)), end);
 				}
 				
-				Expr rhs = parseShiftExpression(false);
+				Expr rhs = parseAddSubExpression(false);
 				
 				lookahead = tokens.get(index);
 				if(lookahead instanceof DotDot) {					
