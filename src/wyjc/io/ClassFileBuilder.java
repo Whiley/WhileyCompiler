@@ -409,6 +409,8 @@ public class ClassFileBuilder {
 			upConversion(toType, (Type.Int)fromType,freeSlot,bytecodes);  
 		} else if(fromType == Type.T_CHAR) {									
 			upConversion(toType, (Type.Char)fromType,freeSlot,bytecodes);  
+		} else if(fromType == Type.T_BYTE) {									
+			// do nothing --- no coercions possible  
 		} else if(!Type.isSubtype(toType, fromType)) {
 			// Fall-back to an external (recursive) check
 			int id;

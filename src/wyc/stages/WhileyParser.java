@@ -374,7 +374,7 @@ public class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseRangeExpression(false);
+			Expr e = parseBitwiseExpression(false);
 			args.add(e);
 			
 		}
@@ -420,7 +420,7 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("debug");		
 		checkNotEof();
-		Expr e = parseRangeExpression(false);
+		Expr e = parseBitwiseExpression(false);
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Debug(e, sourceAttr(start,end-1));
@@ -493,7 +493,7 @@ public class WhileyParser {
 	private Stmt parseSwitch(int indent) {
 		int start = index;
 		matchKeyword("switch");
-		Expr c = parseRangeExpression(false);								
+		Expr c = parseBitwiseExpression(false);								
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
@@ -504,7 +504,7 @@ public class WhileyParser {
 	private Stmt parseThrow(int indent) {
 		int start = index;
 		matchKeyword("throw");
-		Expr c = parseRangeExpression(false);
+		Expr c = parseBitwiseExpression(false);
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Throw(c,sourceAttr(start,end-1));
@@ -707,43 +707,43 @@ public class WhileyParser {
 					sc.condition, sourceAttr(start, index - 1));			
 		} // should do FOR here;  could also do lone and one
 		
-		Expr lhs = parseRangeExpression(startSet);
+		Expr lhs = parseBitwiseExpression(startSet);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			
 			
-			Expr rhs = parseRangeExpression(startSet);
+			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			
  			
- 			Expr rhs = parseRangeExpression(startSet);
+ 			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 			
 			
-			Expr rhs = parseRangeExpression(startSet);
+			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			
 			
-			Expr rhs = parseRangeExpression(startSet);
+			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			
 			
-			Expr rhs = parseRangeExpression(startSet);
+			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			
 			
-			Expr rhs = parseRangeExpression(startSet);			
+			Expr rhs = parseBitwiseExpression(startSet);			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.TypeEquals) {
 			return parseTypeEquals(lhs,start);			
@@ -751,19 +751,19 @@ public class WhileyParser {
 			match(WhileyLexer.ElemOf.class);			
 			
 			
-			Expr rhs = parseRangeExpression(startSet);
+			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
 			match(WhileyLexer.SubsetEquals.class);			
 			
 			
-			Expr rhs = parseRangeExpression(startSet);
+			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
 			match(WhileyLexer.Subset.class);			
 			
 			
-			Expr rhs = parseRangeExpression(startSet);
+			Expr rhs = parseBitwiseExpression(startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
@@ -772,8 +772,7 @@ public class WhileyParser {
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
 		match(WhileyLexer.TypeEquals.class);			
-		
-		
+				
 		UnresolvedType type = parseType();
 		Expr.TypeConst tc = new Expr.TypeConst(type, sourceAttr(start, index - 1));				
 		
@@ -781,56 +780,31 @@ public class WhileyParser {
 				index - 1));
 	}
 	
-	private Expr parseRangeExpression(boolean startSet) {
-		int start = index;			
-		Expr lhs = parseAddSubExpression(startSet);		
-		
-		if(index < tokens.size() && tokens.get(index) instanceof DotDot) {			
-			match(DotDot.class);
-			Expr rhs = parseAddSubExpression(startSet);
-			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
-					index - 1));
-		} else {		
-			return lhs;
-		}
+	private static boolean isBitwiseTok(Token tok, boolean startSet) {
+		return tok instanceof Ampersand || tok instanceof Caret || (!startSet && tok instanceof Bar);
 	}
 	
-	private static boolean isAddSubTok(Token tok, boolean startSet) {
-		return tok instanceof Plus || tok instanceof Minus
-				|| tok instanceof Union || tok instanceof Intersection
-				|| tok instanceof Ampersand || tok instanceof Caret				
-				|| (tok instanceof Bar && !startSet);
-	}
-	
-	private static Expr.BOp addSubOp(Token tok) {
-		if(tok instanceof Plus) {
-			return Expr.BOp.ADD;
-		} else if(tok instanceof Minus) {
-			return Expr.BOp.SUB;
-		} else if(tok instanceof Ampersand) {
+	private static Expr.BOp bitwiseOp(Token tok) {
+		if(tok instanceof Ampersand) {
 			return Expr.BOp.BITWISEAND;
 		} else if(tok instanceof Bar) {
 			return Expr.BOp.BITWISEOR;
-		} else if(tok instanceof Caret) {
-			return Expr.BOp.BITWISEXOR;
-		} else if(tok instanceof Union) {
-			return Expr.BOp.UNION;
 		} else {
-			return Expr.BOp.INTERSECTION;
-		} 
+			return Expr.BOp.BITWISEXOR;
+		} 		
 	}
 	
-	private Expr parseAddSubExpression(boolean startSet) {
+	private Expr parseBitwiseExpression(boolean startSet) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
 		exprs.add(parseShiftExpression());
 		
-		while(index < tokens.size() && isAddSubTok(tokens.get(index),startSet)) {
+		while(index < tokens.size() && isBitwiseTok(tokens.get(index),startSet)) {
 			Token token = tokens.get(index);
 			match(token.getClass());
-			ops.add(addSubOp(token));
+			ops.add(bitwiseOp(token));
 			exprs.add(parseShiftExpression());	
 			ends.add(index);
 		}
@@ -864,13 +838,13 @@ public class WhileyParser {
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
-		exprs.add(parseMulDivExpression());
+		exprs.add(parseRangeExpression());
 		
 		while(index < tokens.size() && isShiftTok(tokens.get(index))) {
 			Token token = tokens.get(index);
 			match(token.getClass());
 			ops.add(shiftOp(token));
-			exprs.add(parseMulDivExpression());	
+			exprs.add(parseRangeExpression());	
 			ends.add(index);
 		}
 		
@@ -885,6 +859,64 @@ public class WhileyParser {
 		
 		return result;
 	}
+	
+	private Expr parseRangeExpression() {
+		int start = index;			
+		Expr lhs = parseAddSubExpression();		
+		
+		if(index < tokens.size() && tokens.get(index) instanceof DotDot) {			
+			match(DotDot.class);
+			Expr rhs = parseAddSubExpression();
+			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else {		
+			return lhs;
+		}
+	}
+	
+	private static boolean isAddSubTok(Token tok) {
+		return tok instanceof Plus || tok instanceof Minus
+				|| tok instanceof Union || tok instanceof Intersection;
+	}
+	
+	private static Expr.BOp addSubOp(Token tok) {
+		if(tok instanceof Plus) {
+			return Expr.BOp.ADD;
+		} else if(tok instanceof Minus) {
+			return Expr.BOp.SUB;
+		} else if(tok instanceof Union) {
+			return Expr.BOp.UNION;
+		} else {
+			return Expr.BOp.INTERSECTION;
+		} 
+	}
+	
+	private Expr parseAddSubExpression() {
+		int start = index;
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
+		ArrayList<Integer> ends = new ArrayList<Integer>();
+		exprs.add(parseMulDivExpression());
+		
+		while(index < tokens.size() && isAddSubTok(tokens.get(index))) {
+			Token token = tokens.get(index);
+			match(token.getClass());
+			ops.add(addSubOp(token));
+			exprs.add(parseMulDivExpression());	
+			ends.add(index);
+		}
+		
+		Expr result = exprs.get(0);
+		
+		for(int i=1;i<exprs.size();++i) {
+			Expr rhs = exprs.get(i);
+			Expr.BOp bop = ops.get(i-1);			
+			result = new Expr.BinOp(bop, result, rhs,  sourceAttr(start,
+					ends.get(i-1)));
+		}
+		
+		return result;
+	}		
 		
 	private static boolean isMulDivTok(Token t) {
 		return t instanceof Star || t instanceof RightSlash || t instanceof Percent;
@@ -952,7 +984,7 @@ public class WhileyParser {
 					match(DotDot.class);
 					
 					lookahead = tokens.get(index);
-					Expr end = parseAddSubExpression(false);
+					Expr end = parseAddSubExpression();
 					match(RightSquare.class);
 					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
 							index - 1), lhs, new Expr.Constant(Value
@@ -960,7 +992,7 @@ public class WhileyParser {
 							index - 1)), end);
 				}
 				
-				Expr rhs = parseAddSubExpression(false);
+				Expr rhs = parseAddSubExpression();
 				
 				lookahead = tokens.get(index);
 				if(lookahead instanceof DotDot) {					
@@ -975,7 +1007,7 @@ public class WhileyParser {
 						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
 								.attribute(Attribute.Source.class));
 					} else {
-						end = parseRangeExpression(false);						
+						end = parseBitwiseExpression(false);						
 					}
 					match(RightSquare.class);
 					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
@@ -1129,7 +1161,7 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("spawn");
 		
-		Expr state = parseRangeExpression(false);
+		Expr state = parseBitwiseExpression(false);
 		return new Expr.Spawn(state, sourceAttr(start,index - 1));
 	}
 	
@@ -1318,7 +1350,7 @@ public class WhileyParser {
 		// this indicates a record value.				
 		match(Colon.class);
 		
-		Expr e = parseRangeExpression(false);
+		Expr e = parseBitwiseExpression(false);
 		
 		
 		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
@@ -1338,7 +1370,7 @@ public class WhileyParser {
 
 			match(Colon.class);
 			
-			e = parseRangeExpression(false);				
+			e = parseBitwiseExpression(false);				
 			exprs.put(n.text,e);
 			checkNotEof();
 			token = tokens.get(index);					
@@ -1391,7 +1423,7 @@ public class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseRangeExpression(false);
+			Expr e = parseBitwiseExpression(false);
 			
 			args.add(e);		
 		}
