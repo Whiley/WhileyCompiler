@@ -281,16 +281,17 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.List type;
 			Code.OpDir dir;
 			
-			if(lhs_list && rhs_list) {
-				type = Type.effectiveListType(Type.leastUpperBound(lhs,rhs));
+			if(lhs_list && rhs_list) {				
 				dir = OpDir.UNIFORM;
 			} else if(lhs_list) {
-				type = Type.effectiveListType(lhs);
+				rhs = Type.T_LIST(rhs);
 				dir = OpDir.LEFT;
 			} else {
-				type = Type.effectiveListType(rhs);
+				lhs = Type.T_LIST(lhs);				
 				dir = OpDir.RIGHT;
 			}
+			
+			type = Type.effectiveListType(Type.leastUpperBound(lhs,rhs));
 			
 			switch(v.bop) {				
 				case ADD:																				

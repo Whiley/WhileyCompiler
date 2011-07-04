@@ -748,7 +748,7 @@ public class ClassFileBuilder {
 				op = Bytecode.IfCmp.LT;
 				break;
 			case LTEQ:				
-				op = Bytecode.IfCmp.LT;
+				op = Bytecode.IfCmp.LE;
 				break;
 			case GT:				
 				op = Bytecode.IfCmp.GT;
@@ -1083,7 +1083,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype;
 		if(c.dir == OpDir.UNIFORM) {
 			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,WHILEYLIST);
-		} else if(c.dir == OpDir.LEFT) {
+		} else if(c.dir == OpDir.LEFT) {			
 			ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST,JAVA_LANG_OBJECT);
 		} else {
 			ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_OBJECT,WHILEYLIST);
