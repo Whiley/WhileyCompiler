@@ -104,6 +104,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_3_RuntimeTest() { runTest("Dictionary_Valid_3"); }
  @Test public void Dictionary_Valid_4_RuntimeTest() { runTest("Dictionary_Valid_4"); }
  @Test public void Dictionary_Valid_5_RuntimeTest() { runTest("Dictionary_Valid_5"); }
+ @Test public void Dictionary_Valid_6_RuntimeTest() { runTest("Dictionary_Valid_6"); }
  @Test public void For_Valid_1_RuntimeTest() { runTest("For_Valid_1"); }
  @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
@@ -149,6 +150,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAppend_Valid_4_RuntimeTest() { runTest("ListAppend_Valid_4"); }
  @Test public void ListAppend_Valid_5_RuntimeTest() { runTest("ListAppend_Valid_5"); }
  @Test public void ListAppend_Valid_6_RuntimeTest() { runTest("ListAppend_Valid_6"); }
+ @Test public void ListAppend_Valid_7_RuntimeTest() { runTest("ListAppend_Valid_7"); }
+ @Test public void ListAppend_Valid_8_RuntimeTest() { runTest("ListAppend_Valid_8"); }
  @Test public void ListAssign_Valid_1_RuntimeTest() { runTest("ListAssign_Valid_1"); }
  @Test public void ListAssign_Valid_2_RuntimeTest() { runTest("ListAssign_Valid_2"); }
  @Test public void ListAssign_Valid_3_RuntimeTest() { runTest("ListAssign_Valid_3"); }
@@ -255,6 +258,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetUnion_Valid_4_RuntimeTest() { runTest("SetUnion_Valid_4"); }
  @Test public void SetUnion_Valid_5_RuntimeTest() { runTest("SetUnion_Valid_5"); }
  @Test public void SetUnion_Valid_6_RuntimeTest() { runTest("SetUnion_Valid_6"); }
+ @Test public void SetUnion_Valid_7_RuntimeTest() { runTest("SetUnion_Valid_7"); }
+ @Test public void SetUnion_Valid_8_RuntimeTest() { runTest("SetUnion_Valid_8"); }
  @Test public void Subtype_Valid_3_RuntimeTest() { runTest("Subtype_Valid_3"); }
  @Test public void Subtype_Valid_4_RuntimeTest() { runTest("Subtype_Valid_4"); }
  @Test public void Subtype_Valid_5_RuntimeTest() { runTest("Subtype_Valid_5"); }
