@@ -55,10 +55,11 @@ int le2uint(byte b):
 // Convert a string into an integer
 int str2int(string input) throws Error:
     r = 0
-    for c in input:
+    for i in 0..|input|:
+        c = input[i]
         r = r * 10
         if !isDigit(c):
-            throw { msg: "invalid number string (" + str(input) + ")"
+            throw { msg: "invalid number string (" + str(input) + ")" }
         r = r + (c - '0')
     return r
 
