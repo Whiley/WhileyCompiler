@@ -1,3 +1,5 @@
+package whiley.lang
+
 // return absolute value
 int abs(int x):
     if x < 0:
