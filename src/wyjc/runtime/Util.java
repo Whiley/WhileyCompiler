@@ -54,15 +54,15 @@ public class Util {
 	private static int nset_clones = 0;
 	private static int nrecord_clones = 0;
 
-	public static String append(final String lhs, final String rhs) {
+	public static String append(final String lhs, final String rhs) {		
 		return lhs + rhs;
 	}
 	
-	public static String append(final String lhs, final char rhs) {
+	public static String append(final String lhs, final char rhs) {		
 		return lhs + rhs;
 	}
 	
-	public static String append(final char lhs, final String rhs) {
+	public static String append(final char lhs, final String rhs) {		
 		return lhs + rhs;
 	}
 	
