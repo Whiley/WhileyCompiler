@@ -8,7 +8,7 @@ define MUL as 2
 define DIV as 3
 
 // expression tree
-define Expr as real |  // constant
+define Expr as int |  // constant
     Var |              // variable
     BinOp |            // binary operator
     [Expr] |           // list constructor
@@ -28,22 +28,22 @@ define ListAccess as {
 } 
 
 // values
-define Value as real | [Value]
+define Value as int | [Value]
 
 // ====================================================
 // Expression Evaluator
 // ====================================================
 
 null|Value evaluate(Expr e, {string->Value} env):
-    if e ~= int:
+    if e is int:
         return e
-    else if e ~= Var:
+    else if e is Var:
         return env[e.id]
-    else if e ~= BinOp:
+    else if e is BinOp:
         lhs = evaluate(e.lhs, env)
         rhs = evaluate(e.rhs, env)
         // check if stuck
-        if !(lhs ~= int && rhs ~= int):
+        if !(lhs is int && rhs is int):
             return null 
         // switch statement would be good
         if e.op == ADD:
@@ -55,27 +55,24 @@ null|Value evaluate(Expr e, {string->Value} env):
         else if rhs != 0:
             return lhs / rhs
         return null // divide by zero
-    else if e ~= [Expr]:
+    else if e is [Expr]:
         r = []
         for i in e:
             v = evaluate(i, env)
-            if v ~= null:
+            if v is null:
                 return v // stuck
             else:
                 r = r + [v]
         return r
-    else if e ~= ListAccess:
+    else:
         src = evaluate(e.src, env)
         index = evaluate(e.index, env)
         // santity checks
-        if src ~= [Value] && index ~= int &&
+        if src is [Value] && index is int &&
             index >= 0 && index < |src|:
             return src[index]
         else:
             return null // stuck
-    else:
-        // e must be a list expression
-        return 0
 
 // ====================================================
 // Expression Parser
@@ -97,7 +94,7 @@ SExpr parse(string input):
     // First, pass left-hand side
     (lhs,st) = parseMulDivExpr(st)
     
-    if lhs ~= SyntaxError:
+    if lhs is SyntaxError:
         return lhs,st    
     
     st = parseWhiteSpace(st)
@@ -107,7 +104,7 @@ SExpr parse(string input):
         st.pos = st.pos + 1
         (rhs,st) = parseAddSubExpr(st)
         
-        if rhs ~= SyntaxError:
+        if rhs is SyntaxError:
             return rhs,st    
         
         return {op: ADD, lhs: lhs, rhs: rhs},st
@@ -116,7 +113,7 @@ SExpr parse(string input):
         st.pos = st.pos + 1
         (rhs,st) = parseAddSubExpr(st)
         
-        if rhs ~= SyntaxError:
+        if rhs is SyntaxError:
             return rhs,st    
         
         return {op: SUB, lhs: lhs, rhs: rhs},st
@@ -128,7 +125,7 @@ SExpr parse(string input):
     // First, pass left-hand side
     (lhs,st) = parseTerm(st)
     
-    if lhs ~= SyntaxError:
+    if lhs is SyntaxError:
         return lhs,st    
     
     st = parseWhiteSpace(st)
@@ -138,7 +135,7 @@ SExpr parse(string input):
         st.pos = st.pos + 1
         (rhs,st) = parseMulDivExpr(st)        
         
-        if rhs ~= SyntaxError:
+        if rhs is SyntaxError:
             return rhs,st           
         
         return {op: MUL, lhs: lhs, rhs: rhs}, st
@@ -147,7 +144,7 @@ SExpr parse(string input):
         st.pos = st.pos + 1
         (rhs,st) = parseMulDivExpr(st)
         
-        if rhs ~= SyntaxError:
+        if rhs is SyntaxError:
             return rhs,st           
         
         return {op: DIV, lhs: lhs, rhs: rhs}, st
@@ -160,7 +157,7 @@ SExpr parse(string input):
     if st.pos < |st.input|:
         if isLetter(st.input[st.pos]):
             return parseIdentifier(st)
-        else if isNumeric(st.input[st.pos]):
+        else if isDigit(st.input[st.pos]):
             return parseNumber(st)
         else if st.input[st.pos] == '[':
             return parseList(st)
@@ -170,14 +167,14 @@ SExpr parse(string input):
     txt = ""
     // inch forward until end of identifier reached
     while st.pos < |st.input| && isLetter(st.input[st.pos]):
-        txt = txt + [st.input[st.pos]]
+        txt = txt + st.input[st.pos]
         st.pos = st.pos + 1
     return ({id:txt}, st)
 
 (Expr, State) parseNumber(State st):    
     n = 0
     // inch forward until end of identifier reached
-    while st.pos < |st.input| && isNumeric(st.input[st.pos]):
+    while st.pos < |st.input| && isDigit(st.input[st.pos]):
         n = n + st.input[st.pos] - '0'
         st.pos = st.pos + 1    
     return n, st
@@ -195,7 +192,7 @@ SExpr parse(string input):
         firstTime = false
         e,st = parseAddSubExpr(st)
         // perform annoying error check    
-        if e ~= SyntaxError:
+        if e is SyntaxError:
             return e,st        
         l = l + [e]
         st = parseWhiteSpace(st)
@@ -219,10 +216,10 @@ bool isWhiteSpace(char c):
 public void System::main([string] args):
     if(|args| > 0):
         e = parse(args[0])
-        if e ~= {[int] err}:
-            out<->println("syntax error: " + e.err)
+        if e is SyntaxError:
+            out.println("syntax error: " + e.err)
         else:
             result = evaluate(e,{"x"->1,"y"->2})
-            out<->println(str(result))
+            out.println(str(result))
     else:
-        out<->println("no parameter provided!")
+        out.println("no parameter provided!")
