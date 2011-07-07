@@ -56,7 +56,7 @@ public class WhileyParser {
 				
 		while(index < tokens.size()) {			
 			Token t = tokens.get(index);
-			if (t instanceof NewLine || t instanceof Comment) {
+			if (t instanceof NewLine || t instanceof LineComment|| t instanceof BlockComment) {
 				matchEndLine();
 			} else if(t instanceof Keyword) {
 				Keyword k = (Keyword) t;
@@ -94,7 +94,7 @@ public class WhileyParser {
 	private ArrayList<String> parsePackage() {
 		
 		while (index < tokens.size()
-				&& (tokens.get(index) instanceof Comment || tokens.get(index) instanceof NewLine)) {			
+				&& (tokens.get(index) instanceof LineComment || tokens.get(index) instanceof NewLine)) {			
 			parseSkip();
 		}
 		
@@ -275,7 +275,7 @@ public class WhileyParser {
 		if (index < tokens.size() && tokens.get(index) instanceof Tabs) {
 			return (Tabs) tokens.get(index);
 		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof Comment) {
+				&& tokens.get(index) instanceof LineComment) {
 			// This indicates a completely empty line. In which case, we just
 			// ignore it.
 			matchEndLine();
@@ -392,7 +392,7 @@ public class WhileyParser {
 		matchKeyword("return");
 		Expr e = null;
 		if (index < tokens.size()
-				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof Comment)) {
+				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof LineComment)) {
 			e = parseTupleExpression();
 		}
 		int end = index;
@@ -816,6 +816,13 @@ public class WhileyParser {
 			Expr rhs = parseMulDivExpression();
 			return new Expr.BinOp(Expr.BOp.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof Percent) {
+			match(Percent.class);
+						
+			Expr rhs = parseMulDivExpression();
+			return new Expr.BinOp(Expr.BOp.REM, lhs, rhs, sourceAttr(start,
+					index - 1));
 		}
 
 		return lhs;
@@ -829,15 +836,14 @@ public class WhileyParser {
 		
 		Token lookahead = tokens.get(index);
 		
-		while (lookahead instanceof LeftSquare || lookahead instanceof Dot
-				|| lookahead instanceof LeftBrace
-				|| lookahead instanceof LeftArrow
-				|| lookahead instanceof LeftRightArrow) {
+		while (lookahead instanceof LeftSquare 
+				|| lookahead instanceof Dot
+				|| lookahead instanceof Shreak
+				|| lookahead instanceof LeftBrace) {
 			ostart = start;
 			start = index;
 			if(lookahead instanceof LeftSquare) {
-				match(LeftSquare.class);
-				
+				match(LeftSquare.class);				
 				
 				lookahead = tokens.get(index);
 				
@@ -851,7 +857,7 @@ public class WhileyParser {
 					match(RightSquare.class);
 					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
 							index - 1), lhs, new Expr.Constant(Value
-							.V_INT(BigInteger.ZERO), sourceAttr(start,
+							.V_INTEGER(BigInteger.ZERO), sourceAttr(start,
 							index - 1)), end);
 				}
 				
@@ -880,26 +886,26 @@ public class WhileyParser {
 					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
 							index - 1));
 				}
-			} else if (lookahead instanceof LeftArrow || lookahead instanceof LeftRightArrow) {				
-				match(lookahead.getClass());					
-				int tmp = index; 				
-				String name = matchIdentifier().text;
+			} else if(lookahead instanceof Dot) {				
+				match(Dot.class);
+				int tmp = index;
+				String name = matchIdentifier().text; 	
 				if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 					// this indicates a method invocation.
 					index = tmp; // slight backtrack
 					Expr.Invoke ivk = parseInvokeExpr();							
 					lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
-							lookahead instanceof LeftRightArrow, sourceAttr(
+							true, sourceAttr(
 									ostart, index - 1));				
-				} else {					
-					lhs = new Expr.UnOp(Expr.UOp.PROCESSACCESS, lhs,
-							sourceAttr(start, index - 1));
-					lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));			
+				} else {
+					lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
 				}
-			} else {				
-				match(Dot.class);
-				String name = matchIdentifier().text;				
-				lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
+			} else {
+				match(Shreak.class);								 						
+				Expr.Invoke ivk = parseInvokeExpr();							
+				lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
+						false, sourceAttr(
+								ostart, index - 1));								
 			}
 			if(index < tokens.size()) {
 				lookahead = tokens.get(index);	
@@ -931,7 +937,7 @@ public class WhileyParser {
 			// this indicates a process dereference
 			match(Star.class);
 			
-			Expr e = parseAddSubExpression();
+			Expr e = parseTerm();
 			return new Expr.UnOp(Expr.UOp.PROCESSACCESS, e, sourceAttr(start,
 					index - 1));
 		} else if ((index + 1) < tokens.size()
@@ -958,10 +964,10 @@ public class WhileyParser {
 					index - 1));			
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
-			return new Expr.Constant(Value.V_INT(val), sourceAttr(start, index - 1));
+			return new Expr.Constant(Value.V_INTEGER(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Real) {
 			BigRational val = match(Real.class).value;
-			return new Expr.Constant(Value.V_REAL(val), sourceAttr(start,
+			return new Expr.Constant(Value.V_RATIONAL(val), sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof Strung) {
 			return parseString();
@@ -992,10 +998,11 @@ public class WhileyParser {
 		int start = index;
 		match(AddressOf.class);
 		String funName = matchIdentifier().text;
-		ArrayList<UnresolvedType> paramTypes = new ArrayList<UnresolvedType>();
+		ArrayList<UnresolvedType> paramTypes = null;
 
 		if (tokens.get(index) instanceof LeftBrace) {
 			// parse parameter types
+			paramTypes = new ArrayList<UnresolvedType>();
 			match(LeftBrace.class);
 			boolean firstTime = true;
 			while (index < tokens.size()
@@ -1008,9 +1015,7 @@ public class WhileyParser {
 				paramTypes.add(ut);
 			}
 			match(RightBrace.class);
-		} else {
-			paramTypes.add(new UnresolvedType.Any(sourceAttr(start, index - 1)));
-		}
+		} 
 
 		return new Expr.FunConst(funName, paramTypes, sourceAttr(start, index - 1));
 	}
@@ -1253,14 +1258,10 @@ public class WhileyParser {
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if(c.value instanceof Value.Int) { 
-				java.math.BigInteger bi = ((Value.Int)c.value).value;
-				return new Expr.Constant(Value.V_INT(bi.negate()),
+			if (c.value instanceof Value.Rational) {
+				BigRational br = ((Value.Rational) c.value).value;
+				return new Expr.Constant(Value.V_RATIONAL(br.negate()),
 						sourceAttr(start, index));
-			} else if(c.value instanceof Value.Real){
-				BigRational br = ((Value.Real)c.value).value;				
-				return new Expr.Constant(Value.V_REAL(br.negate()), sourceAttr(
-						start, index));	
 			}
 		} 
 		
@@ -1293,12 +1294,8 @@ public class WhileyParser {
 	private Expr parseString() {
 		int start = index;
 		String s = match(Strung.class).string;
-		ArrayList<Value> vals = new ArrayList<Value>();
-		for (int i = 0; i != s.length(); ++i) {
-			vals.add(Value.V_INT(BigInteger.valueOf(s.charAt(i))));
-		}
-		Value.List list = Value.V_LIST(vals);
-		return new Expr.Constant(list, sourceAttr(start, index - 1));
+		Value.Strung str = Value.V_STRING(s);
+		return new Expr.Constant(str, sourceAttr(start, index - 1));
 	}
 	
 	private UnresolvedType parseType() {
@@ -1348,8 +1345,8 @@ public class WhileyParser {
 		if(token instanceof Question) {
 			match(Question.class);
 			t = new UnresolvedType.Existential(sourceAttr(start,index-1));
-		} else if(token instanceof Star) {
-			match(Star.class);
+		} else if(token.text.equals("any")) {
+			matchKeyword("any");
 			t = new UnresolvedType.Any(sourceAttr(start,index-1));
 		} else if(token.text.equals("null")) {
 			matchKeyword("null");
@@ -1360,6 +1357,9 @@ public class WhileyParser {
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
 			t = new UnresolvedType.Real(sourceAttr(start,index-1));
+		} else if(token.text.equals("string")) {
+			matchKeyword("string");
+			t = new UnresolvedType.Strung(sourceAttr(start,index-1));
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
 			t = new UnresolvedType.Void(sourceAttr(start,index-1));
@@ -1476,7 +1476,8 @@ public class WhileyParser {
 
 	private boolean isWhiteSpace(Token t) {
 		return t instanceof WhileyLexer.NewLine
-				|| t instanceof WhileyLexer.Comment
+				|| t instanceof WhileyLexer.LineComment
+				|| t instanceof WhileyLexer.BlockComment
 				|| t instanceof WhileyLexer.Tabs;
 	}
 	
@@ -1528,7 +1529,7 @@ public class WhileyParser {
 			Token t = tokens.get(index++);			
 			if(t instanceof NewLine) {
 				break;
-			} else if(!(t instanceof Comment) && !(t instanceof Tabs)) {
+			} else if(!(t instanceof LineComment) && !(t instanceof BlockComment) &&!(t instanceof Tabs)) {
 				syntaxError("syntax error",t);
 			}			
 		}

@@ -26,510 +26,717 @@
 package wyil.lang;
 
 import java.util.*;
-
-import wyil.lang.CExpr.LVal;
-import wyil.util.Pair;
-import wyjvm.lang.Bytecode;
+import wyil.util.*;
 
 public abstract class Code {
 
-	// ==========================================
-	// =============== Methods ==================
-	// ==========================================
+	// ===============================================================
+	// Bytecode Constructors
+	// ===============================================================
 	
-	public static final int INTERNAL_TYPES = 1;
-	public static final int SHORT_TYPES = 2;
-
 	/**
-	 * The following method turns a Code into a string. There are several flags
-	 * that can be provided:
-	 * <ul>
-	 * <li><b>INTERNAL_TYPES</b>: include internal type information. That is,
-	 * the determined type of each expression is reported as well.</li>
-	 * <li><b>SHORT_TYPES</b>: display only the short form of a type. In the
-	 * case of recursive or named types, only the name is returned</li>
-	 * </ul>
+	 * Construct an <code>assert</code> bytecode which identifies a sequence of
+	 * bytecodes which represent a runtime assertion.
 	 * 
-	 * @param code
-	 * @param flags
+	 * @param label
+	 *            --- end of block.
 	 * @return
 	 */
-	public static String toString(Code code, int flags) {
-		if(code instanceof Assign) {
-			Assign a = (Assign) code;
-			if(a.lhs != null) {
-				return CExpr.toString(a.lhs,flags) + " = " + CExpr.toString(a.rhs,flags);
-			} else {
-				return CExpr.toString(a.rhs,flags);
-			}			
-		} else if(code instanceof Debug) {
-			Debug a = (Debug) code;						
-			return "debug " + CExpr.toString(a.rhs,flags);
-		} else if(code instanceof Fail) {
-			Fail a = (Fail) code;						
-			return "fail \"" + a.msg + "\"";
-		} else if(code instanceof Label) {
-			Label a = (Label) code;						
-			return a.label + ":";
-		} else if(code instanceof Goto) {
-			Goto a = (Goto) code;						
-			return "goto " + a.target;
-		} else if(code instanceof Skip) {
-			return "skip";
-		} else if(code instanceof IfGoto) {
-			IfGoto a = (IfGoto) code;			
-			return "if " + CExpr.toString(a.lhs, flags) + " " + a.op.toString()
-					+ " " + CExpr.toString(a.rhs, flags) + " goto " + a.target;
-		} else if(code instanceof Throw) {
-			Throw t = (Throw) code;
-			return "throw " + CExpr.toString(t.expr,flags);
-		} else if(code instanceof Switch) {
-			Switch s = (Switch) code;
-			String table = "";
-			boolean firstTime=true;
-			for(Pair<Value,String> p : s.branches) {
-				if(!firstTime) { table += ", "; }
-				firstTime=false;
-				table += CExpr.toString(p.first(),flags) + "->" + p.second();
-			}
-			table += ", *->" + s.defaultTarget;
-			return "switch " + CExpr.toString(s.value,flags) + " " + table;
-		} else if(code instanceof Return) {
-			Return a = (Return) code;			
-			if(a.rhs != null) {
-				return "return " + CExpr.toString(a.rhs, flags);
-			}
-			return "return";
-		} else if(code instanceof Recurse) {
-			Recurse a = (Recurse) code;						
-			return "recurse " + CExpr.toString(a.rhs, flags);		
-		} else if(code instanceof Check) {
-			Check a = (Check) code;						
-			return "check:";
-		} else if(code instanceof Induct) {
-			Induct a = (Induct) code;	
-			return "induct " + CExpr.toString(a.variable, flags) + " over "
-					+ CExpr.toString(a.source, flags) + ":";
-		} else if(code instanceof Forall) {
-			Forall a = (Forall) code;	
-			return "for " + CExpr.toString(a.variable, flags) + " in "
-					+ CExpr.toString(a.source, flags) + ":";	
-		} else if(code instanceof Loop) {
-			Loop a = (Loop) code;
-			String r = "loop ";
-			for(CExpr.LVar lv : a.modifies) {
-				r += lv;
-			}
-			return r + ":";	
-		} else {
-			throw new IllegalArgumentException("Unknown code encountered: " + code);
-		}
+	public static Assert Assert(String label) {
+		return get(new Assert(label));
+	}
+	
+	public static BinOp BinOp(Type type, BOp op) {
+		return get(new BinOp(type,op));
 	}
 	
 	/**
-	 * Determine which variables are used by this code.
+	 * Construct a <code>const</code> bytecode which loads a given constant
+	 * onto the stack.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to write.
+	 * @return
 	 */
-	public static <T> void match(Code c, Class<T> match, Collection<T> matches) {
-		if(match.isInstance(c)) {
-			matches.add((T)c);
-		}
-		
-		if(c instanceof Assign) {
-			Assign a = (Assign) c;
-			if(a.lhs != null) {
-				CExpr.match(a.lhs,match,matches);
-			}			
-			CExpr.match(a.rhs,match,matches);
-		} else if(c instanceof Debug) {
-			Debug a = (Debug) c;						
-			CExpr.match(a.rhs,match,matches);
-		} else if(c instanceof IfGoto) {
-			IfGoto a = (IfGoto) c;			
-			CExpr.match(a.lhs,match,matches);
-			CExpr.match(a.rhs,match,matches);
-		} else if(c instanceof Throw) {
-			Throw a = (Throw) c;			
-			CExpr.match(a.expr,match,matches);			
-		}  else if(c instanceof Switch) {
-			Switch a = (Switch) c;			
-			CExpr.match(a.value,match,matches);
-			for(Pair<Value,String> p : a.branches) {
-				CExpr.match(p.first(),match,matches);
-			}
-		} else if(c instanceof Return) {
-			Return a = (Return) c;			
-			if(a.rhs != null) {
-				CExpr.match(a.rhs,match,matches);
-			}
-		} else if(c instanceof Recurse) {
-			Recurse a = (Recurse) c;						
-			CExpr.match(a.rhs,match,matches);			
-		} else if(c instanceof Induct) {
-			Induct a = (Induct) c;	
-			CExpr.match(a.variable, match,matches);
-			CExpr.match(a.source, match,matches);						
-		} else if(c instanceof Forall) {
-			Forall a = (Forall) c;	
-			CExpr.match(a.variable, match,matches);
-			CExpr.match(a.source, match,matches);						
-		} 
+	public static Const Const(Value constant) {
+		return get(new Const(constant));
+	}
+	
+	public static Convert Convert(Type from, Type to) {
+		return get(new Convert(from,to));
+	}
+	
+	public static final Debug debug = new Debug();
+
+	/**
+	 * Construct a <code>dictload</code> bytecode which reads the value
+	 * associated with a given key in a dictionary.
+	 * 
+	 * @param type
+	 *            --- dictionary type.
+	 * @return
+	 */
+	public static DictLoad DictLoad(Type.Dictionary type) {
+		return get(new DictLoad(type));
+	}
+	
+	public static End End(String label) {
+		return get(new End(label));
+	}
+	
+	public static ExternJvm ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
+		return get(new ExternJvm(bytecodes));
 	}
 
-	public static HashSet<String> usedVariables(Code code) {
-		HashSet<CExpr.LVar> uses = new HashSet<CExpr.LVar>();		
-		Code.match(code,CExpr.LVar.class,uses);		
-		HashSet<String> r = new HashSet<String>();
-		for(CExpr.LVar v : uses) {
-			if(v instanceof CExpr.Variable) {
-				r.add(((CExpr.Variable)v).name);
-			} else {
-				r.add("%" + ((CExpr.Register)v).index);
-			}
-		}
-		return r;
+	/**
+	 * Construct a <code>fail</code> bytecode which indicates a runtime failure.
+	 * 
+	 * @param label
+	 *            --- end of block.
+	 * @return
+	 */
+	public static Fail Fail(String label) {
+		return get(new Fail(label));
 	}
 	
 	/**
-	 * Substitute all occurrences of variable from with variable to.
+	 * Construct a <code>fieldload</code> bytecode which reads a given field
+	 * from a record of a given type.
 	 * 
-	 * @param c
-	 * @param uses
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to load.
+	 * @return
 	 */
-	public static Code substitute(HashMap<String,CExpr> binding, Code c) {
-		if(c instanceof Assign) {
-			Assign a = (Assign) c;
-			LVal lhs = null;
-			if(a.lhs != null) {
-				lhs = (LVal) CExpr.substitute(binding, a.lhs);
-			}
-			return new Assign(lhs, CExpr.substitute(binding, a.rhs));
-		} else if(c instanceof Debug) {
-			Debug a = (Debug) c;
-			return new Debug(CExpr.substitute(binding, a.rhs));
-		} else if(c instanceof IfGoto) {
-			IfGoto u = (IfGoto) c;
-			return new IfGoto(u.op, CExpr.substitute(binding, u.lhs),
-					CExpr.substitute(binding, u.rhs), u.target);
-		} else if(c instanceof Throw) {
-			Throw u = (Throw) c;
-			return new Throw(CExpr.substitute(binding, u.expr));
-		} else if(c instanceof Switch) {
-			Switch s = (Switch) c;
-			return new Switch(CExpr.substitute(binding, s.value),
-					s.defaultTarget, s.branches);
-		} else if(c instanceof Return) {
-			Return a = (Return) c;
-			if (a.rhs != null) {
-				return new Return(CExpr.substitute(binding, a.rhs));
-			}
-			return a;
-		} else if(c instanceof Recurse) {
-			Recurse a = (Recurse) c;			
-			return new Recurse(CExpr.substitute(binding, a.rhs));			
-		} else if(c instanceof Induct) {			
-			Induct a = (Induct) c;				
-			return new Induct(a.label, (CExpr.Register) CExpr
-					.substitute(binding, a.variable), CExpr.substitute(binding,
-					a.source));
-		} else if(c instanceof Forall) {			
-			Forall a = (Forall) c;				
-			return new Forall(a.label, a.invariant, (CExpr.Register) CExpr
-					.substitute(binding, a.variable), CExpr.substitute(binding,
-					a.source), a.modifies);
-		} else {
-			return c;
-		}
+	public static FieldLoad FieldLoad(Type.Record type, String field) {
+		return get(new FieldLoad(type,field));
 	}	
 	
 	/**
-	 * The register shift method is responsible for mapping every register with
-	 * index i, to be a register with index i + shift. This is used to guarantee
-	 * that the registers of blocks inserted into other blocks do not collide.
+	 * Construct a <code>goto</code> bytecode which branches unconditionally to
+	 * a given label.
 	 * 
-	 * @param shift
-	 * @param body
+	 * @param label
+	 *            --- destination label.
 	 * @return
 	 */
-	public static Code registerShift(int shift, Code c) {
-		if (c instanceof Assign) {
-			Assign a = (Assign) c;			
-			LVal lhs = null;
-			if(a.lhs != null) {
-				lhs = (LVal) CExpr.registerShift(shift, a.lhs);
-			}
-			return new Assign(lhs, CExpr.registerShift(shift, a.rhs));
-		} else if (c instanceof Debug) {
-			Debug a = (Debug) c;
-			return new Debug((LVal) CExpr.registerShift(shift, a.rhs));
-		} else if (c instanceof IfGoto) {
-			IfGoto u = (IfGoto) c;
-			return new IfGoto(u.op, CExpr.registerShift(shift, u.lhs),
-					CExpr.registerShift(shift, u.rhs), u.target);
-		} else if (c instanceof Throw) {
-			Throw u = (Throw) c;
-			return new Throw(CExpr.registerShift(shift, u.expr));
-		} else if (c instanceof Switch) {
-			Switch s = (Switch) c;
-			return new Switch(CExpr.registerShift(shift, s.value),
-					s.defaultTarget, s.branches);
-		} else if(c instanceof Return) {
-			Return a = (Return) c;
-			if (a.rhs != null) {
-				return new Return(CExpr.registerShift(shift, a.rhs));
-			}
-			return a;
-		} else if(c instanceof Recurse) {
-			Recurse a = (Recurse) c;			
-			return new Recurse(CExpr.registerShift(shift, a.rhs));			
-		} else if(c instanceof Induct) {
-			Induct i = (Induct) c;			
-			return new Induct(i.label, (CExpr.Register) CExpr.registerShift(shift,
-					i.variable), CExpr.registerShift(shift, i.source));			
-		} else if(c instanceof Forall) {
-			Forall a = (Forall) c;	
-			return new Forall(a.label, a.invariant, (CExpr.Register) CExpr
-					.registerShift(shift, a.variable), CExpr.registerShift(
-					shift, a.source), a.modifies);
-		} else {
-			return c;
-		}
-	}
-	
-	/**
-	 * This represents a simple assignment between two variables.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public final static class Assign extends Code {		
-		public final LVal lhs;
-		public final CExpr rhs;
-		
-		public Assign(LVal lhs, CExpr rhs) {			
-			this.lhs = lhs;
-			this.rhs = rhs;
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Assign) {
-				Assign a = (Assign) o;
-				return lhs.equals(a.lhs) && rhs.equals(a.rhs);
-				
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return lhs.hashCode() + rhs.hashCode();			
-		}
-		
-		public String toString() {
-			if(lhs == null) {
-				return rhs.toString();
-			}
-			return lhs + " := " + rhs;
-		}		
+	public static Goto Goto(String label) {
+		return get(new Goto(label));
 	}
 
-	public final static class Return extends Code {
-		public final CExpr rhs;
-		
-		public Return(CExpr rhs) {					
-			this.rhs = rhs;
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Return) {
-				Return a = (Return) o;
-				return rhs.equals(a.rhs);
-				
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return rhs.hashCode();			
-		}
-		
-		public String toString() {
-			if(rhs == null) {
-				return "return";
-			} else {
-				return "return " + rhs;
-			}
-		}		
+	/**
+	 * Construct an <code>invoke</code> bytecode which invokes a method.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static Invoke Invoke(Type.Fun fun, NameID name, boolean retval) {
+		return get(new Invoke(fun,name,retval));
 	}
-		
-	public final static class Debug extends Code {				
-		public final CExpr rhs;
-		
-		public Debug(CExpr rhs) {			
-			this.rhs = rhs;
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Debug) {
-				Debug a = (Debug) o;
-				return rhs.equals(a.rhs);
-				
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return rhs.hashCode();			
-		}
-		
-		public String toString() {
-			return "debug " + rhs;
-		}		
+
+	
+	/**
+	 * Construct a <code>load</code> bytecode which reads a given register.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param reg
+	 *            --- reg to load.
+	 * @return
+	 */
+	public static Load Load(Type type, int reg) {
+		return get(new Load(type,reg));
 	}
 	
-	public final static class Fail extends Code {				
-		public final String msg;
-		
-		public Fail(String msg) {			
-			this.msg = msg;
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Fail) {
-				Fail a = (Fail) o;
-				return msg.equals(a.msg);
-				
-			}
-			return false;
-		}
-		
-		public int hashCode() {
-			return msg.hashCode();			
-		}
-		
-		public String toString() {
-			return "fail \"" + msg + "\"";
-		}		
+	public static ListLength ListLength(Type.List type) {
+		return get(new ListLength(type));
+	}
+	
+	public static SubList SubList(Type.List type) {
+		return get(new SubList(type));
+	}
+	
+	public static ListAppend ListAppend(Type.List type, OpDir dir) {
+		return get(new ListAppend(type,dir));
 	}
 	
 	/**
-	 * This represents a conditional branching instruction
-	 * @author djp
-	 *
+	 * Construct a <code>listload</code> bytecode which reads a value from a
+	 * given index in a given list.
+	 * 
+	 * @param type
+	 *            --- list type.
+	 * @return
 	 */
-	public final static class IfGoto extends Code {
-		public final COP op;
-		public final CExpr lhs;
-		public final CExpr rhs;
+	public static ListLoad ListLoad(Type.List type) {
+		return get(new ListLoad(type));
+	}
+
+	/**
+	 * Construct a <code>loop</code> bytecode which iterates the sequence of
+	 * bytecodes upto the exit label.
+	 * 
+	 * @param label
+	 *            --- exit label.
+	 * @return
+	 */
+	public static Loop Loop(String label, Collection<Integer> modifies) {
+		return get(new Loop(label,modifies));
+	}
+
+	/**
+	 * Construct a <code>forall</code> bytecode which iterates over a given
+	 * source collection stored on top of the stack. The supplied variable
+	 * <code>var</code> is used as the iterator. The exit label denotes the end
+	 * of the loop block.
+	 * 	 
+	 * 
+	 * @param label
+	 *            --- exit label.
+	 * @return
+	 */
+	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
+		return get(new ForAll(type, var, label,modifies));
+	}
+	
+	/**
+	 * Construct a <code>multistore</code> bytecode which writes a value into a
+	 * compound structure, as determined by a given access path.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to write.
+	 * @return
+	 */
+	public static MultiStore MultiStore(Type type, int slot, int level, Collection<String> fields) {
+		return get(new MultiStore(type,slot,level,fields));
+	}
+	
+	/**
+	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewDict NewDict(Type.Dictionary type, int nargs) {
+		return get(new NewDict(type,nargs));
+	}
+	
+	/**
+	 * Construct a <code>newset</code> bytecode which constructs a new set
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewSet NewSet(Type.Set type, int nargs) {
+		return get(new NewSet(type,nargs));
+	}
+	
+	/**
+	 * Construct a <code>newlist</code> bytecode which constructs a new list
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewList NewList(Type.List type, int nargs) {
+		return get(new NewList(type,nargs));
+	}
+	
+	/**
+	 * Construct a <code>newtuple</code> bytecode which constructs a new tuple
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewTuple NewTuple(Type.Record type) {
+		return get(new NewTuple(type));
+	}
+	
+	/**
+	 * Construct a <code>newrecord</code> bytecode which constructs a new record
+	 * and puts it on the stack.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static NewRecord NewRecord(Type.Record type) {
+		return get(new NewRecord(type));
+	}
+	
+	public static Return Return(Type t) {
+		return get(new Return(t));
+	}
+	
+	public static IfGoto IfGoto(Type type, COp cop, String label) {
+		return get(new IfGoto(type,cop,label));
+	}
+
+	public static IfType IfType(Type type, int slot, Type test, String label) {
+		return get(new IfType(type,slot,test,label));
+	}
+	
+	/**
+	 * Construct an <code>indirectsend</code> bytecode which sends an indirect
+	 * message to an actor. This may be either synchronous or asynchronous.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static IndirectSend IndirectSend(Type.Fun fun, boolean synchronous, boolean retval) {
+		return get(new IndirectSend(fun,synchronous,retval));
+	}
+	
+	/**
+	 * Construct an <code>indirectinvoke</code> bytecode which sends an indirect
+	 * message to an actor. This may be either synchronous or asynchronous.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static IndirectInvoke IndirectInvoke(Type.Fun fun, boolean retval) {
+		return get(new IndirectInvoke(fun,retval));
+	}
+	
+	public static Label Label(String label) {
+		return get(new Label(label));
+	}
+	
+	public static final Skip Skip = new Skip();
+	
+	public static SetLength SetLength(Type.Set type) {
+		return get(new SetLength(type));
+	}
+	
+	public static SetUnion SetUnion(Type.Set type, OpDir dir) {
+		return get(new SetUnion(type,dir));
+	}
+	
+	public static SetIntersect SetIntersect(Type.Set type, OpDir dir) {
+		return get(new SetIntersect(type,dir));
+	}
+	
+	public static SetDifference SetDifference(Type.Set type, OpDir dir) {
+		return get(new SetDifference(type,dir));
+	}
+	
+	public static StringAppend StringAppend(OpDir dir) {
+		return get(new StringAppend(dir));
+	}
+	
+	public static SubString SubString() {
+		return get(new SubString());
+	}
+	
+	public static StringLength StringLength() {
+		return get(new StringLength());
+	}
+	
+	public static StringLoad StringLoad() {
+		return get(new StringLoad());
+	}
+	
+	/**
+	 * Construct an <code>send</code> bytecode which sends a message to an
+	 * actor. This may be either synchronous or asynchronous.
+	 * 
+	 * @param label
+	 *            --- destination label.
+	 * @return
+	 */
+	public static Send Send(Type.Fun fun, NameID name, boolean synchronous, boolean retval) {
+		return get(new Send(fun,name,synchronous,retval));
+	}	
+	
+	/**
+	 * Construct a <code>store</code> bytecode which writes a given register.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param reg
+	 *            --- reg to load.
+	 * @return
+	 */
+	public static Store Store(Type type, int reg) {
+		return get(new Store(type,reg));
+	}
+	
+	/**
+	 * Construct a <code>switch</code> bytecode which pops a value off the
+	 * stack, and switches to a given label based on it.
+	 * 
+	 * @param type
+	 *            --- value type to switch on.
+	 * @param defaultLabel
+	 *            --- target for the default case.
+	 * @param cases
+	 *            --- map from values to destination labels.
+	 * @return
+	 */
+	public static Switch Switch(Type type, String defaultLabel,
+			Collection<Pair<Value, String>> cases) {
+		return get(new Switch(type,defaultLabel,cases));
+	}
+
+	/**
+	 * Construct a <code>throw</code> bytecode which pops a value off the
+	 * stack and throws it.
+	 * 
+	 * @param type
+	 *            --- value type to throw 
+	 * @return
+	 */
+	public static Throw Throw(Type t) {
+		return get(new Throw(t));
+	}
+	
+	public static Negate Negate(Type type) {
+		return get(new Negate(type));
+	}		
+	
+	public static Spawn Spawn(Type.Process type) {
+		return get(new Spawn(type));
+	}
+	
+	public static ProcLoad ProcLoad(Type.Process type) {
+		return get(new ProcLoad(type));
+	}
+	
+	// ===============================================================
+	// Bytecode Implementations
+	// ===============================================================
+	
+	public static final class Assert extends Code {
 		public final String target;
-
-		public IfGoto(COP op, CExpr lhs, CExpr rhs, String target) {
-			this.op = op;			
-			this.lhs = lhs;
-			this.rhs = rhs;
+		
+		private  Assert(String target) {
 			this.target = target;
 		}
 		
 		public int hashCode() {
-			return op.hashCode() + lhs.hashCode()
-					+ rhs.hashCode() + target.hashCode();
+			return target.hashCode();
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof IfGoto) {
-				IfGoto ig = (IfGoto) o;
-				return op == ig.op 
-						&& lhs.equals(ig.lhs) && rhs.equals(ig.rhs)
-						&& target.equals(ig.target);
+			if(o instanceof Assert) {
+				return target.equals(((Assert)o).target);
 			}
 			return false;
 		}
-	
-		public String toString() {
-			return "if " + lhs + " " + op + " " + rhs + " goto " + target;
-		}
-	}	
-	
-	/**
-	 * This represents an exceptional branching instruction
-	 * @author djp
-	 *
-	 */
-	public final static class Throw extends Code {		
-		public final CExpr expr;
 		
-		public Throw(CExpr expr) {
-			this.expr = expr;
+		public String toString() {
+			return "assert " + target;
+		}		
+	}
+	
+	public enum BOp { 
+		ADD{
+			public String toString() { return "add"; }
+		},
+		SUB{
+			public String toString() { return "sub"; }
+		},
+		MUL{
+			public String toString() { return "mul"; }
+		},
+		DIV{
+			public String toString() { return "div"; }
+		},		
+		REM{
+			public String toString() { return "rem"; }
+		}		
+	};
+
+	/**
+	 * A binary operation (e.g. +,-,*,/) takes two items off the stack and
+	 * pushes a single result.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class BinOp extends Code {		
+		public final BOp bop;
+		public final Type type;
+		
+		private BinOp(Type type, BOp bop) {
+			if(bop == null) {
+				throw new IllegalArgumentException("BinOp bop argument cannot be null");
+			}
+			this.bop = bop;
+			this.type = type;
 		}
 		
 		public int hashCode() {
-			return expr.hashCode();
+			if(type == null) {
+				return bop.hashCode();
+			} else {
+				return type.hashCode() + bop.hashCode();
+			}
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Throw) {
-				Throw ig = (Throw) o;
-				return expr.equals(ig.expr);
+			if(o instanceof BinOp) {
+				BinOp bo = (BinOp) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))) && bop.equals(bo.bop); 
 			}
 			return false;
 		}
-	
+				
 		public String toString() {
-			return "throw " + expr;
+			return toString(bop.toString(),type);
+		}
+	}
+
+	/**
+	 * A catch bytecode is similar to a switch. It identifies a block within
+	 * which exception handlers are active.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Catch extends Code {
+		
+	}
+
+	/**
+	 * A convert operation represents a conversion from a value of one type to
+	 * another. The purpose of the conversion bytecode is to make it easy for
+	 * implementations which have different representations of data types to
+	 * convert between them.
+	 */
+	public static final class Convert extends Code {
+		public final Type from;
+		public final Type to;
+		
+		private Convert(Type from, Type to) {
+			if(to == null) {
+				throw new IllegalArgumentException("Convert to argument cannot be null");
+			}
+			this.from = from;
+			this.to = to;
+		}
+		
+		public int hashCode() {
+			if(from == null) {
+				return to.hashCode();
+			} else {
+				return from.hashCode() + to.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Convert) {
+				Convert c = (Convert) o;
+				return (from == c.from || (from != null && from.equals(c.from)))
+						&& to.equals(c.to);  
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return "convert " + from + " to " + to;
 		}
 	}
 	
 	/**
-	 * This represents a multi-branch instruction
+	 * A const bytecode pushes a constant value onto the stack. This includes
+	 * integer constants, rational constants, list constants, set constants,
+	 * dictionary constants, function constants, etc.
+	 * 
 	 * @author djp
-	 *
+	 * 
 	 */
-	public final static class Switch extends Code {		
-		public final CExpr value;
-		public final ArrayList<Pair<Value,String>> branches;
-		public final String defaultTarget;
-
-		public Switch(CExpr value, String defaultTarget, List<Pair<Value,String>> branches) {
-			this.value = value;
-			this.branches = new ArrayList<Pair<Value,String>>(branches);
-			this.defaultTarget = defaultTarget;
+	public static final class Const extends Code {		
+		public final Value constant;
+		
+		private Const(Value constant) {
+			this.constant = constant;
 		}
 		
 		public int hashCode() {
-			return value.hashCode() + defaultTarget.hashCode()
-					+ branches.hashCode();
+			return constant.hashCode();
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Switch) {
-				Switch ig = (Switch) o;
-				return value.equals(ig.value)&&  
-						defaultTarget.equals(ig.defaultTarget)&& 
-						branches.equals(ig.branches);
+			if(o instanceof Const) {
+				Const c = (Const) o;
+				return constant.equals(c.constant);  
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return toString("const " + constant,constant.type());
+		}
+	}
+
+	public static final class Debug extends Code {
+		Debug() {}
+		public int hashCode() {
+			return 101;
+		}
+		public boolean equals(Object o) {
+			return o instanceof Debug;
+		}
+		public String toString() {
+			return "debug";
+		}
+	}
+	
+	public static final class DictLoad extends Code {
+		public final Type.Dictionary type;				
+		
+		private DictLoad(Type.Dictionary type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof DictLoad) {
+				DictLoad i = (DictLoad) o;
+				return type == i.type || (type != null && type.equals(i.type));
 			}
 			return false;
 		}
 	
 		public String toString() {
-			String table = "";
-			boolean firstTime=true;
-			for(Pair<Value,String> p : branches) {
-				if(!firstTime) { table += ", "; }
-				firstTime=false;
-				table += p.first() + "->" + p.second();
-			}
-			table += ", *->" + defaultTarget;
-			return "switch " + value + " " + table;
-		}
+			return toString("dictload",type);
+		}	
 	}	
 	
+	public static final class End extends Label {
+		End(String label) {
+			super(label);
+		}
+		
+		public int hashCode() {
+			return label.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof End) {
+				End e = (End) o;
+				return e.label.equals(label);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "end " + label;
+		}
+	}
+	
+	public static final class ExternJvm extends Code {
+		public final List<wyjvm.lang.Bytecode> bytecodes;
+		
+		ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
+			this.bytecodes = new ArrayList(bytecodes);
+		}
+		public int hashCode() {
+			return bytecodes.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof ExternJvm) {
+				ExternJvm e = (ExternJvm) o;
+				return e.bytecodes.equals(bytecodes);
+			}
+			return false;
+		}
+		public String toString() {
+			return "externjvm";
+		}
+	}
+	
+	public static final class Fail extends Code {
+		public final String msg;
+		
+		private Fail(String msg) {
+			this.msg = msg;
+		}
+		
+		public int hashCode() {
+			return msg.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Fail) {
+				return msg.equals(((Fail)o).msg);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "fail " + msg;
+		}		
+	}
+	
 	/**
-	 * This represents an unconditional branching instruction
+	 * The fieldload bytecode pops a record alias from the stack and reads the
+	 * value from the given field, pusing it back onto the stack.
+	 * 
 	 * @author djp
-	 *
+	 * 
 	 */
-	public final static class Goto extends Code  {
+	public static final class FieldLoad extends Code {
+		public final Type.Record type;		
+		public final String field;
+				
+		private FieldLoad(Type.Record type, String field) {
+			if (field == null) {
+				throw new IllegalArgumentException(
+						"FieldLoad field argument cannot be null");
+			}
+			this.type = type;
+			this.field = field;
+		}
+		
+		public int hashCode() {
+			if(type != null) {
+				return type.hashCode() + field.hashCode();
+			} else {
+				return field.hashCode();
+			}
+		}
+		
+		public Type fieldType() {
+			return type.fields().get(field);
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof FieldLoad) {
+				FieldLoad i = (FieldLoad) o;
+				return (i.type == type || (type != null && type.equals(i.type)))
+						&& field.equals(i.field);
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("fieldload " + field,type);			
+		}	
+	}
+	
+	public static final class Goto extends Code {
 		public final String target;
 		
-		public Goto(String target) {
+		private  Goto(String target) {
 			this.target = target;
 		}
 		
@@ -545,32 +752,428 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "goto " + target;
-		}
-	}	
+			return "goto " + target;		
+		}		
+	}
 	
-	/**
-	 * A start code indicates the start of a special block.  
-	 * @author djp
-	 *
-	 */
-	public abstract static class Start extends Code  {
+	public static final class IfGoto extends Code {
+		public final Type type;
+		public final COp op;
+		public final String target;
+
+		private  IfGoto(Type type, COp op, String target) {
+			if(op == null) {
+				throw new IllegalArgumentException("IfGoto op argument cannot be null");
+			}
+			if(target == null) {
+				throw new IllegalArgumentException("IfGoto target argument cannot be null");
+			}
+			this.type = type;
+			this.op = op;						
+			this.target = target;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return op.hashCode() + target.hashCode();
+			} else {
+				return type.hashCode() + op.hashCode() + target.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IfGoto) {
+				IfGoto ig = (IfGoto) o;
+				return op == ig.op
+					&& target.equals(ig.target)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("if" + op + " goto " + target,type);
+		}
+	}
+	
+	public enum COp { 
+		EQ() {
+			public String toString() { return "eq"; }
+		},
+		NEQ{
+			public String toString() { return "ne"; }
+		},
+		LT{
+			public String toString() { return "lt"; }
+		},
+		LTEQ{
+			public String toString() { return "le"; }
+		},
+		GT{
+			public String toString() { return "gt"; }
+		},
+		GTEQ{
+			public String toString() { return "ge"; }
+		},
+		ELEMOF{
+			public String toString() { return "in"; }
+		},
+		SUBSET{
+			public String toString() { return "sb"; }
+		},
+		SUBSETEQ{
+			public String toString() { return "sbe"; }
+		}		
+	};		
+	
+	public static final class IfType extends Code {
+		public final Type type;
+		public final int slot;
+		public final Type test;		
+		public final String target;
+
+		private  IfType(Type type, int slot, Type test, String target) {
+			if(test == null) {
+				throw new IllegalArgumentException("IfGoto op argument cannot be null");
+			}
+			if(target == null) {
+				throw new IllegalArgumentException("IfGoto target argument cannot be null");
+			}
+			this.type = type;
+			this.slot = slot;
+			this.test = test;						
+			this.target = target;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return test.hashCode() + target.hashCode();
+			} else {
+				return type.hashCode() + test.hashCode() + target.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IfType) {
+				IfType ig = (IfType) o;
+				return test.equals(ig.test)
+					&& slot == ig.slot
+					&& target.equals(ig.target)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			if(slot >= 0) {
+				return toString("if" + test + " " + slot + " goto " + target,type);
+			} else {
+				return toString("if" + test + " goto " + target,type);
+			}
+		}
+	}
+	
+	public static final class IndirectInvoke extends Code {		
+		public final Type.Fun type;
+		public final boolean retval;
+		
+		private IndirectInvoke(Type.Fun type, boolean retval) {
+			this.type = type;
+			this.retval = retval;
+		}
+		
+		public int hashCode() {
+			if(type != null) {
+				return type.hashCode();
+			} else {
+				return 123;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IndirectInvoke) {
+				IndirectInvoke i = (IndirectInvoke) o;				
+				return retval == i.retval
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			if(retval) {
+				return toString("indirectinvoke",type);
+			} else {
+				return toString("vindirectinvoke",type);
+			}
+		}		
+	}
+	
+	public static final class IndirectSend extends Code {
+		 public final boolean synchronous;
+		 public final boolean retval;
+		 public final Type.Fun type;
+			
+		 private IndirectSend(Type.Fun type, boolean synchronous, boolean retval) {
+			 this.type = type;
+			 this.synchronous = synchronous;
+			 this.retval = retval;
+		 }
+
+		 public int hashCode() {
+			 if(type != null) {
+					return type.hashCode();
+				} else {
+					return 123;
+				}
+		 }
+
+		 public boolean equals(Object o) {
+			 if(o instanceof IndirectSend) {
+				 IndirectSend i = (IndirectSend) o;
+				 return type == i.type || (type != null && type.equals(i.type));
+			 }
+			 return false;
+		 }
+
+		 public String toString() {			 
+			 if(synchronous) {		
+				 if(retval) {
+					 return toString("isend",type);
+				 } else {
+					 return toString("ivsend",type);
+				 }
+			 } else {				 
+				 return toString("iasend",type);				 
+			 }
+		 }		
+	}
+	
+	public static final class Invoke extends Code {		
+		public final Type.Fun type;
+		public final NameID name;
+		public final boolean retval;
+				
+		private Invoke(Type.Fun type, NameID name, boolean retval) {
+			this.type = type;
+			this.name = name;
+			this.retval = retval;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return name.hashCode();
+			} else {
+				return type.hashCode() + name.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Invoke) {
+				Invoke i = (Invoke) o;
+				return name.equals(i.name)
+						&& retval == i.retval
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			if(retval) {
+				return toString("invoke " + name,type);
+			} else {
+				return toString("vinvoke " + name,type);
+			}
+		}	
+		
+	}
+	
+	public static class Label extends Code {
 		public final String label;
 		
-		public Start(String label) {
+		private Label(String label) {
 			this.label = label;
 		}
 		
 		public int hashCode() {
 			return label.hashCode();
-		}		
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Label) {
+				return label.equals(((Label) o).label);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "." + label;
+		}
+	}
+		
+	public static final class ListAppend extends Code {				
+		public final OpDir dir;
+		public final Type.List type;
+		
+		private ListAppend(Type.List type, OpDir dir) {			
+			if(dir == null) {
+				throw new IllegalArgumentException("ListAppend direction cannot be null");
+			}			
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return dir.hashCode(); 
+			} else {
+				return type.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof ListAppend) {
+				ListAppend setop = (ListAppend) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))						
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("listappend" + dir.toString(),type);
+		}
 	}
 	
-	public abstract static class End extends Code  {
-		public final String target;
+	public static final class ListLength extends Code {						
+		public final Type.List type;
 		
-		public End(String target) {
+		private ListLength(Type.List type) {									
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 124987; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof ListLength) {
+				ListLength setop = (ListLength) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("listlength",type);
+		}
+	}
+	
+	public static final class SubList extends Code {						
+		public final Type.List type;
+		
+		private SubList(Type.List type) {									
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 124987; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SubList) {
+				SubList setop = (SubList) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("sublist",type);
+		}
+	}
+	
+	public static final class ListLoad extends Code {
+		public final Type.List type;				
+		
+		private ListLoad(Type.List type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 235;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ListLoad) {
+				ListLoad i = (ListLoad) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("listload",type);
+		}	
+	}		
+	
+	public static final class Load extends Code {		
+		public final Type type;
+		public final int slot;		
+		
+		private Load(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return slot; 
+			} else { 
+				return type.hashCode() + slot;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Load) {
+				Load i = (Load) o;
+				return slot == i.slot
+						&& (type == i.type || (type != null && type
+								.equals(i.type)));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("load " + slot,type);
+		}	
+	}		
+	
+	public static class Loop extends Code {
+		public final String target;
+		public final HashSet<Integer> modifies;
+		
+		private Loop(String target, Collection<Integer> modifies) {
 			this.target = target;
+			this.modifies = new HashSet<Integer>(modifies);
 		}
 		
 		public int hashCode() {
@@ -578,354 +1181,826 @@ public abstract class Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof End) {
-				return target.equals(((End)o).target);
+			if(o instanceof Loop) {
+				Loop f = (Loop) o;
+				return target.equals(f.target)
+						&& modifies.equals(f.modifies);
 			}
 			return false;
 		}
 		
 		public String toString() {
-			return "end " + target;
+			return "loop " + modifies;
+		}		
+	}		
+
+	public static final class ForAll extends Loop {
+		public final int slot;
+		public final Type type;
+				
+		private ForAll(Type type, int slot, String target, Collection<Integer> modifies) {
+			super(target,modifies);
+			this.type = type;
+			this.slot = slot;			
+		}
+		
+		public int hashCode() {
+			return super.hashCode() + slot;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ForAll) {
+				ForAll f = (ForAll) o;
+				return target.equals(f.target) && type.equals(f.type)
+						&& slot == f.slot && modifies.equals(f.modifies);
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return toString("forall " + slot + " " + modifies,type);
+		}		
+	}
+
+	
+	public static final class MultiStore extends Code {
+		public final Type type;
+		public final int level;
+		public final int slot;
+		public final ArrayList<String> fields;
+
+		private MultiStore(Type type, int slot, int level, Collection<String> fields) {
+			if (fields == null) {
+				throw new IllegalArgumentException(
+						"FieldStore fields argument cannot be null");
+			}
+			this.type = type;
+			this.slot = slot;
+			this.level = level;
+			this.fields = new ArrayList<String>(fields);
+		}
+
+		public int hashCode() {
+			if(type == null) {
+				return level + fields.hashCode();
+			} else {
+				return type.hashCode() + slot + level + fields.hashCode();
+			}
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof MultiStore) {
+				MultiStore i = (MultiStore) o;
+				return (i.type == type || (type != null && type.equals(i.type)))
+						&& level == i.level && slot == i.slot && fields.equals(i.fields);
+			}
+			return false;
+		}
+
+		public String toString() {
+			String fs = fields.isEmpty() ? "" : " ";
+			boolean firstTime=true;
+			for(String f : fields) {
+				if(!firstTime) {
+					fs += ".";
+				}
+				firstTime=false;
+				fs += f;
+			}
+			return toString("multistore " + slot + " #" + level + fs,type);
+		}
+	}
+
+	
+	public static final class NewDict extends Code {
+		public final Type.Dictionary type;
+		public final int nargs;
+		
+		private NewDict(Type.Dictionary type, int nargs) {
+			this.type = type;
+			this.nargs = nargs;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return nargs;
+			} else {
+				return type.hashCode() + nargs;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewDict) {
+				NewDict i = (NewDict) o;
+				return (type == i.type || (type != null && type.equals(i.type))) && nargs == i.nargs;
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("newdict #" + nargs,type);
+		}	
+	}
+	
+	public static final class NewRecord extends Code {
+		public final Type.Record type;
+		
+		private NewRecord(Type.Record type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 952;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewRecord) {
+				NewRecord i = (NewRecord) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("newrec",type);
+		}	
+	}
+		
+	public static final class NewTuple extends Code {
+		public final Type.Record type;
+		
+		private NewTuple(Type.Record type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 952;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewTuple) {
+				NewTuple i = (NewTuple) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("newtuple",type);
+		}	
+	}
+	
+	public static final class NewSet extends Code {
+		public final Type.Set type;
+		public final int nargs;
+		
+		private NewSet(Type.Set type, int nargs) {
+			this.type = type;
+			this.nargs = nargs;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return nargs;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewSet) {
+				NewSet i = (NewSet) o;
+				return type == i.type || (type != null && type.equals(i.type))
+						&& nargs == i.nargs;
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("newset #" + nargs,type);
+		}	
+	}
+	
+	public static final class NewList extends Code {
+		public final Type.List type;
+		public final int nargs;
+		
+		private NewList(Type.List type, int nargs) {
+			this.type = type;
+			this.nargs = nargs;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return nargs;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof NewList) {
+				NewList i = (NewList) o;
+				return type == i.type || (type != null && type.equals(i.type))
+						&& nargs == i.nargs;
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("newlist #" + nargs,type);
+		}	
+	}
+	
+	public static final class Nop extends Code {
+		private Nop() {}
+		public String toString() { return "nop"; }
+	}	
+	
+	/* removed as I don't think this bytecode is needed
+	public static final class Pop extends Code {
+		public final Type type;
+		
+		private Pop(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {			
+			if(type == null) {
+				return 996;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Pop) {
+				Pop i = (Pop) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("pop",type);
+		}
+	}
+    */
+	public static final class Return extends Code {
+		public final Type type;
+		
+		private Return(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 996;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Return) {
+				Return i = (Return) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("return",type);
+		}
+	}
+	
+	public enum OpDir {
+		UNIFORM {
+			public String toString() { return ""; }
+		},
+		LEFT {
+			public String toString() { return "_l"; }
+		},
+		RIGHT {
+			public String toString() { return "_r"; }
+		}
+	}
+	
+	
+	public static final class SetUnion extends Code {		
+		public final OpDir dir;
+		public final Type.Set type;
+		
+		private SetUnion(Type.Set type, OpDir dir) {
+			if(dir == null) {
+				throw new IllegalArgumentException("SetAppend direction cannot be null");
+			}			
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return dir.hashCode(); 
+			} else {
+				return type.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetUnion) {
+				SetUnion setop = (SetUnion) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))						
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("union" + dir.toString(),type);
+		}
+	}
+	
+	public static final class SetIntersect extends Code {		
+		public final OpDir dir;
+		public final Type.Set type;
+		
+		private SetIntersect(Type.Set type, OpDir dir) {
+			if(dir == null) {
+				throw new IllegalArgumentException("SetAppend direction cannot be null");
+			}			
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return dir.hashCode(); 
+			} else {
+				return type.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetIntersect) {
+				SetIntersect setop = (SetIntersect) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))						
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("intersect" + dir.toString(),type);
+		}
+	}
+	
+	public static final class SetDifference extends Code {		
+		public final OpDir dir;
+		public final Type.Set type;
+		
+		private SetDifference(Type.Set type, OpDir dir) {
+			if(dir == null) {
+				throw new IllegalArgumentException("SetAppend direction cannot be null");
+			}			
+			this.type = type;
+			this.dir = dir;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return dir.hashCode(); 
+			} else {
+				return type.hashCode() + dir.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetDifference) {
+				SetDifference setop = (SetDifference) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)))						
+						&& dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("difference" + dir.toString(),type);
+		}
+	}
+	
+	public static final class SetLength extends Code {				
+		public final Type.Set type;
+		
+		private SetLength(Type.Set type) {
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 558723; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetLength) {
+				SetLength setop = (SetLength) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("setlength",type);
+		}
+	}
+	
+	public static final class StringAppend extends Code {			
+		public final OpDir dir;		
+		
+		private StringAppend(OpDir dir) {			
+			if(dir == null) {
+				throw new IllegalArgumentException("StringAppend direction cannot be null");
+			}			
+			this.dir = dir;
+		}
+		
+		public int hashCode() {			
+			return dir.hashCode();			
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof StringAppend) {
+				StringAppend setop = (StringAppend) o;
+				return dir.equals(setop.dir);
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("stringappend" + dir.toString(),Type.T_STRING);
+		}
+	}
+	
+	public static final class SubString extends Code {		
+		private SubString() {
+		}
+		
+		public int hashCode() {			
+			return 983745;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof SubString;
+		}
+				
+		public String toString() {
+			return toString("substring",Type.T_STRING);
+		}
+	}
+	
+	public static final class StringLength extends Code {		
+		private StringLength() {
+		}
+		
+		public int hashCode() {			
+			return 982345;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof StringLength;
+		}
+				
+		public String toString() {
+			return toString("stringlen",Type.T_STRING);
+		}
+	}
+	
+	public static final class StringLoad extends Code {		
+		private StringLoad() {
+		}
+		
+		public int hashCode() {			
+			return 12387;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof StringLoad;
+		}
+				
+		public String toString() {
+			return toString("stringload",Type.T_STRING);
+		}
+	}
+	
+	public static final class Skip extends Code {
+		Skip() {}
+		public int hashCode() {
+			return 101;
+		}
+		public boolean equals(Object o) {
+			return o instanceof Debug;
+		}
+		public String toString() {
+			return "skip";
+		}
+	}
+
+	public static final class Store extends Code {		
+		public final Type type;
+		public final int slot;		
+		
+		private Store(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return slot;
+			} else {
+				return type.hashCode() + slot;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Store) {
+				Store i = (Store) o;
+				return (type == i.type || (type != null && type.equals(i.type)))
+						&& slot == i.slot;
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("store " + slot,type);
+		}	
+	}	
+
+	public static final class Switch extends Code {
+		public final Type type;
+		public final ArrayList<Pair<Value,String>> branches;
+		public final String defaultTarget;
+
+		Switch(Type type, String defaultTarget, Collection<Pair<Value,String>> branches) {			
+			this.type = type;
+			this.branches = new ArrayList<Pair<Value,String>>(branches);
+			this.defaultTarget = defaultTarget;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return defaultTarget.hashCode() + branches.hashCode();
+			} else {
+				return type.hashCode() + defaultTarget.hashCode() + branches.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Switch) {
+				Switch ig = (Switch) o;
+				return defaultTarget.equals(ig.defaultTarget)
+						&& branches.equals(ig.branches)
+						&& (type == ig.type || (type != null && type
+								.equals(ig.type)));						
+			}
+			return false;
+		}
+
+		public String toString() {
+			String table = "";
+			boolean firstTime = true;
+			for (Pair<Value, String> p : branches) {
+				if (!firstTime) {
+					table += ", ";
+				}
+				firstTime = false;
+				table += p.first() + "->" + p.second();
+			}
+			table += ", *->" + defaultTarget;
+			return "switch " + table;
+		}
+	}
+
+	public static final class Send extends Code {		 
+		 public final boolean synchronous;
+		 public final boolean retval;
+		 public final NameID name;
+		 public final Type.Fun type;
+			
+		 private Send(Type.Fun type, NameID name, boolean synchronous, boolean retval) {
+			 this.type = type;
+			 this.name = name;
+			 this.synchronous = synchronous;
+			 this.retval = retval;
+		 }
+
+		 public int hashCode() {
+			 return type.hashCode() + name.hashCode();
+		 }
+
+		 public boolean equals(Object o) {
+			 if(o instanceof Send) {
+				 Send i = (Send) o;
+				return retval == i.retval && synchronous == i.synchronous
+						&& (type.equals(i.type) && name.equals(i.name));
+			 }
+			 return false;
+		 }
+
+		 public String toString() {
+			 if(synchronous) {
+				 if(retval) {
+					 return toString("send " + name,type);
+				 } else {
+					 return toString("vsend " + name,type);
+				 }
+			 } else {
+				 return toString("asend " + name,type);
+			 }
+		 }	
+	}
+
+	public static final class Throw extends Code {
+		public final Type type;
+
+		private Throw(Type type) {
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 98923;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Throw) {
+				Throw i = (Throw) o;
+				return type == i.type || (type != null && type.equals(i.type));
+			}
+			return false;
+		}
+	
+		public String toString() {
+			return toString("throw",type);
+		}
+	}
+	
+	public static final class Negate extends Code {
+		public final Type type;		
+		
+		private Negate(Type type) {			
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 239487;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Negate) {
+				Negate bo = (Negate) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("neg",type);
+		}
+	}
+	
+	public static final class Spawn extends Code {
+		public final Type.Process type;		
+		
+		private Spawn(Type.Process type) {			
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 239487;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Spawn) {
+				Spawn bo = (Spawn) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("spawn",type);
+		}
+	}
+	
+	public static final class ProcLoad extends Code {
+		public final Type.Process type;		
+		
+		private ProcLoad(Type.Process type) {			
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 239487;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof ProcLoad) {
+				ProcLoad bo = (ProcLoad) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("procload",type);
 		}
 	}
 	
 	/**
-	 * This represents the target of a branching instruction
+	 * The void bytecode is used to indicate that a given register is no longer live.
 	 * @author djp
 	 *
 	 */
-	public final static class Label extends Code  {
-		public final String label;
+	public static class Void extends Code {
+		public final Type type;
+		public final int slot;
 		
-		public Label(String label) {
-			this.label = label;
-		}
-		
-		public int hashCode() {
-			return label.hashCode();
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Label) {
-				return label.equals(((Label)o).label);
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return label + ":";
-		}
-	}	
-	
-	public static class Skip extends Code  {
-		public int hashCode() {
-			return 1;
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof Skip;
-		}
-		
-		public String toString() {
-			return "skip";
-		}
-	}
-	public static class ExternJvm extends Skip  {
-		public final List<Bytecode> bytecodes;
-
-		public ExternJvm(Collection<Bytecode> bytecodes) {
-			this.bytecodes = Collections
-					.unmodifiableList(new ArrayList<Bytecode>(bytecodes));
+		private Void(Type type, int slot) {
+			this.type = type;
+			this.slot = slot;
 		}
 		
 		public int hashCode() {
-			return 1;
+			return type.hashCode() + slot;
 		}
 		
 		public boolean equals(Object o) {
-			return o instanceof Skip;
-		}
-		
-		public String toString() {
-			return "skip";
-		}
-	}
-
-	public static class Loop extends Start {
-		public final HashSet<CExpr.LVar> modifies;
-		public final Block invariant;
-
-		public Loop(String label, Block invariant,
-				Collection<CExpr.LVar> modifies) {
-			super(label);
-			this.invariant = invariant;
-			this.modifies = new HashSet<CExpr.LVar>(modifies);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Loop) {
-				Loop a = (Loop) o;
-				if (invariant != null) {
-					return label.equals(a.label)
-							&& invariant.equals(a.invariant)
-							&& a.modifies.equals(modifies);
-				} else {
-					return label.equals(a.label) && a.invariant == null
-							&& a.modifies.equals(modifies);
-				}
+			if(o instanceof Void) {
+				Void i = (Void) o;
+				return type.equals(i.type) && slot == i.slot;
 			}
 			return false;
 		}
-
-		public int hashCode() {
-			return label.hashCode() + modifies.hashCode();
-		}
-
+	
 		public String toString() {
-			String r = "";
-			if (modifies.size() > 0) {
-				r += " ";
-				boolean firstTime = true;
-				for (CExpr.LVar v : modifies) {
-					if (!firstTime) {
-						r += ", ";
-					}
-					firstTime = false;
-					r += v;
-				}
-			}
-			return "loop" + r + ":";
-		}
-	}
-
-	public static class Recurse extends Code {
-		public final CExpr rhs;
-		
-		public Recurse(CExpr rhs) {
-			this.rhs = rhs;
-		}
-		
-		public int hashCode() {
-			return rhs.hashCode();
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Recurse) {
-				Recurse r = (Recurse) o;
-				return rhs.equals(r.rhs);
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return "recurse " + rhs;
+			return toString("void " + slot,type);
 		}
 	}
 	
-	public static class Induct extends Start {
-		public final CExpr.Register variable;
-		public final CExpr source;
-
-		public Induct(String label, CExpr.Register variable, CExpr source) {
-			super(label);
-			this.variable = variable;
-			this.source = source;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Induct) {
-				Induct a = (Induct) o;
-				return label.equals(a.label) && a.variable.equals(variable)
-						&& a.source.equals(source);
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return label.hashCode() + variable.hashCode() + source.hashCode();
-		}
-
-		public String toString() {
-			return "induct %" + variable.index + " over " + source + ":";
-		}
-	}
-
-
-	public final static class InductEnd extends End {
-		public InductEnd(String label) {
-			super(label);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof InductEnd) {
-				return target.equals(((InductEnd) o).target);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "end ";
-		}
-	}
-
-	public static class LoopEnd extends End {
-		public LoopEnd(String label) {
-			super(label);
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof LoopEnd) {
-				return target.equals(((LoopEnd)o).target);
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return "end";
-		}	
-	}
-	
-	public final static class Forall extends Loop {
-		public final CExpr.Register variable;
-		public final CExpr source;
-
-		public Forall(String label, Block invariant, CExpr.Register variable,
-				CExpr source) {
-			super(label, invariant, Collections.EMPTY_SET);
-			this.variable = variable;
-			this.source = source;
-		}
-
-		public Forall(String label, Block invariant, CExpr.Register variable,
-				CExpr source, Collection<CExpr.LVar> modifies) {
-			super(label, invariant, modifies);
-			this.variable = variable;
-			this.source = source;
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Forall) {
-				Forall a = (Forall) o;
-				return label.equals(a.label) && variable.equals(a.variable)
-						&& source.equals(a.source);
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return source.hashCode() + label.hashCode() + variable.hashCode();
-		}
-
-		public String toString() {			
-			if(modifies.isEmpty()) {
-				return "for " + variable + " in " + source + ":";
-			} else {
-				String r = "modifies ";
-				boolean firstTime=true;
-				for(CExpr.LVar m : modifies) {
-					if(!firstTime) {
-						r += ", ";
-					}
-					firstTime=false;
-					r += m.name();
-				}
-				return "for " + variable + " in " + source + " " + r + ":";
-			}
+	public static String toString(String str, Type t) {
+		if(t == null) {
+			return str + " : ?";
+		} else {
+			return str + " : " + t;
 		}
 	}
 	
-	public final static class ForallEnd extends LoopEnd {
-		public ForallEnd(String label) {
-			super(label);
-		}
 
-		public boolean equals(Object o) {
-			if (o instanceof ForallEnd) {
-				return target.equals(((ForallEnd) o).target);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "end";
+	private static final ArrayList<Code> values = new ArrayList<Code>();
+	private static final HashMap<Code,Integer> cache = new HashMap<Code,Integer>();
+	
+	private static <T extends Code> T get(T type) {
+		Integer idx = cache.get(type);
+		if(idx != null) {
+			return (T) values.get(idx);
+		} else {					
+			cache.put(type, values.size());
+			values.add(type);
+			return type;
 		}
 	}
-	
-	/**
-	 * A Check code indicates the start of static check block, which is where
-	 * variables and constraints are tested to ensure they meet the various
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public final static class Check extends Start {									
-		public Check(String label) {								
-			super(label);			
-		}
-				
-		public boolean equals(Object o) {
-			if (o instanceof Check) {
-				Check a = (Check) o;
-				return label.equals(a.label); 
-			}
-			return false;
-		}
-				
-		public String toString() {
-			return "check:";												
-		}
-	}
-	
-	public final static class CheckEnd extends End {
-		public CheckEnd(String label) {
-			super(label);
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof CheckEnd) {
-				return target.equals(((CheckEnd)o).target);
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return "end ";
-		}	
-	}
-	
-	public enum COP { 
-		EQ() {
-			public String toString() { return "=="; }
-		},
-		NEQ{
-			public String toString() { return "!="; }
-		},
-		LT{
-			public String toString() { return "<"; }
-		},
-		LTEQ{
-			public String toString() { return "<="; }
-		},
-		GT{
-			public String toString() { return ">"; }
-		},
-		GTEQ{
-			public String toString() { return ">="; }
-		},
-		ELEMOF{
-			public String toString() { return "in"; }
-		},
-		SUBSET{
-			public String toString() { return "<"; }
-		},
-		SUBSETEQ{
-			public String toString() { return "<="; }
-		},
-		SUBTYPEEQ() {
-			public String toString() { return "<:"; }
-		},
-		NSUBTYPEEQ() {
-			public String toString() { return "<!"; }
-		}
-	};		
 }

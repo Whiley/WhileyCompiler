@@ -2,7 +2,7 @@ define Link as { bool val, LinkedList next }
 define LinkedList as null | Link
 
 int sum(LinkedList ls):
-    if ls ~= null:
+    if ls is null:
         return 0
     else if !ls.val:
         return sum(ls.next)
@@ -11,8 +11,8 @@ int sum(LinkedList ls):
 
 void System::main([string] args):
     ls = { val: true, next: null}
-    out<->println(str(sum(ls)))
+    out.println(str(sum(ls)))
     ls = { val: true, next: ls}
-    out<->println(str(sum(ls)))
+    out.println(str(sum(ls)))
     ls = { val: false, next: ls}
-    out<->println(str(sum(ls)))
+    out.println(str(sum(ls)))

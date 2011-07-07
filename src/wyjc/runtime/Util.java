@@ -25,7 +25,8 @@
 
 package wyjc.runtime;
 
-import java.util.*;
+import java.math.*;
+import java.util.Map;
 
 public class Util {
 
@@ -49,141 +50,45 @@ public class Util {
 	private static int nlist_clones = 0;
 	private static int nset_clones = 0;
 	private static int nrecord_clones = 0;
-	
-	public static Object clone(Object o) {
-		if(o instanceof BigRational || o instanceof Boolean || o == null) {
-			return o;
-		} else if(o instanceof ArrayList) {
-			return list_clone((ArrayList)o);
-		} else if(o instanceof WhileySet) {
-			return set_clone((WhileySet)o);
-		} else {
-			return record_clone((WhileyRecord)o);
-		} 
-	}
-	
-	public static ArrayList list_clone(ArrayList in) {
-		nlist_clones++;
-		ArrayList l = new ArrayList();
-		for(Object o : in) {
-			l.add(clone(o));
-		}		
-		return l;
-	}
-	
-	public static WhileySet set_clone(WhileySet in) {
-		nset_clones++;
-		WhileySet l = new WhileySet();
-		for(Object o : in) {
-			l.add(clone(o));
-		}
-		return l;
-	}
-	
-	public static WhileyRecord record_clone(WhileyRecord in) {
-		nrecord_clones++;
-		WhileyRecord l = new WhileyRecord();
-		for(Map.Entry<String,Object> o : in.entrySet()) {
-			l.put(o.getKey(),clone(o.getValue()));
-		}
-		return l;
-	}
-	
 
-	/**
-	 * Compute a sublist of a list.
-	 * @param start
-	 * @param end
-	 * @return
-	 */
-	public static ArrayList sublist(ArrayList list, BigRational start, BigRational end) {
-		int st = start.intValue();
-		int en = end.intValue();
-		ArrayList r = new ArrayList();
-		for(int i=st;i!=en;++i) {
-			r.add(list.get(i));
-		}
-		return r;
+	public static String append(final String lhs, final String rhs) {
+		return lhs + rhs;
+	}
+	
+	public static BigInteger stringlength(final String lhs) {
+		return BigInteger.valueOf(lhs.length());
+	}
+	
+	public static String substring(final String lhs, final BigInteger _start, final BigInteger _end) {
+		int start = _start.intValue();
+		int end = _end.intValue();
+		return lhs.substring(start,end);
+	}
+	
+	public static String set(final String lhs, BigInteger index, BigInteger value) {
+		int idx = index.intValue();
+		char c = (char) value.intValue();
+		// hmmm, not exactly efficient!
+		StringBuilder sb = new StringBuilder(lhs);
+		sb.setCharAt(idx, c);
+		return sb.toString();
 	}
 	
 	/**
-	 * Append two lists together
-	 * @param rhs
-	 * @return
-	 */
-	public static ArrayList append(ArrayList lhs, ArrayList rhs) {
-		ArrayList r = new ArrayList(lhs);
-		r.addAll(rhs);
-		return r;
-	}
-	
-	/**
-	 * Generate an integer range from start and end values.
-	 * @param start
-	 * @param end
-	 * @return
-	 */
-	public static ArrayList range(BigRational start, BigRational end) {
-		ArrayList ret = new ArrayList();
-		
-		// FIXME: seems ludicrously inefficient!
-		BigRational dir = BigRational.valueOf(end.compareTo(start));
-		
-		while(!start.equals(end)) {
-			ret.add(start);
-			start = start.add(dir);
-		}
-		
-		return ret;
-	}	
-	
-	/**
-	 * The following method is used by the main launcher to convert from Java's
-	 * main(String[] args) into whiley's main([string] args) format.
+	 * This method is used to convert the arguments supplied to main (which have
+	 * type <code>String[]</code>) into an appropriate Whiley List.
 	 * 
 	 * @param args
 	 * @return
 	 */
-	public static ArrayList fromStringList(String[] args) {
-		ArrayList r = new ArrayList();
-		for(String s : args) {
-			r.add(fromString(s));
+	public static List fromStringList(String[] args) {
+		List r = new List(args.length);
+		for(int i=0;i!=args.length;++i) {
+			r.set(i,args[i]);
 		}
 		return r;
 	}
 	
-	/**
-	 * Generate a Whiley list from a Java String. 
-	 * @param s
-	 * @return
-	 */
-	public static ArrayList fromString(String s) {
-		ArrayList r = new ArrayList();
-		for(int i=0;i!=s.length();++i) {
-			int c = s.charAt(i);
-			r.add(BigRational.valueOf(c));
-		}
-		return r;
-	}
-
-	/**
-	 * Convert a Whiley list into a Java String
-	 * @param list
-	 * @return
-	 */
-	public static String toString(ArrayList list) {
-		String r = "";
-		for(Object o : list) {
-			if(o instanceof BigRational) {
-				int v = ((BigRational)o).intValue();
-				r += (char) v;
-			} else {
-				throw new RuntimeException("Invalid Whiley List");
-			}
-		}
-		return r;
-	}
-
 	/**
 	 * This method is used for the special case when the left-hand side of an
 	 * equality operation may be null.
@@ -197,17 +102,435 @@ public class Util {
 	}
 	
 	/**
+	 * Convert a given Whiley object into a string
+	 * @param o
+	 * @return
+	 */
+	public static String str(Object o) {
+		if(o == null) {
+			return "null";
+		} else if(o instanceof String) {
+			String s = (String) o;
+			return "\"" + s + "\"";
+		} else {
+			return o.toString();
+		}
+	}
+	
+	/**
 	 * The following method is used for printing debug output arising from debug
 	 * statements.
 	 * 
 	 * @param list
 	 */
-	public static void debug(ArrayList list) {
-		for(Object o : list) {
-			if(o instanceof BigRational) {
-				BigRational bi = (BigRational) o;
-				System.out.print((char)bi.intValue());
+	public static void debug(String str) {
+		System.out.print(str);			
+	}
+		
+	/**
+	 * Increment the reference count for this object. In some cases, this may
+	 * have no effect. In other cases, the current reference count will be
+	 * maintained and in-place updates can only occur when the reference count is
+	 * one.
+	 */
+	public static Object incRefs(Object obj) {
+		if(obj instanceof List) {
+			List list = (List) obj;
+			list.refCount++;
+		} else if(obj instanceof Record) {
+			Record rec = (Record) obj;			
+			rec.refCount++;
+		} else if(obj instanceof Set) {
+			Set set = (Set) obj;
+			set.refCount++;			
+		} else if(obj instanceof Dictionary) {
+			Dictionary dict = (Dictionary) obj;
+			dict.refCount++;			
+		} 
+		return obj;
+	}
+
+	public static List incRefs(List obj) {		
+		obj.refCount++;
+		return obj;
+	}
+	
+	public static Set incRefs(Set obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
+	public static Record incRefs(Record obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
+	public static Dictionary incRefs(Dictionary obj) {
+		obj.refCount++;
+		return obj;
+	}
+	
+	/**
+	 * Decrement the reference count for this object. In some cases, this may
+	 * have no effect. In other cases, the current reference count will be
+	 * maintained and in-place updates can only occur when the reference count is
+	 * one.
+	 */
+	public static Object decRefs(Object obj) {
+		if(obj instanceof List) {
+			List list = (List) obj;
+			list.refCount--;
+		} else if(obj instanceof Record) {
+			Record rec = (Record) obj;			
+			rec.refCount--;
+		} else if(obj instanceof Set) {
+			Set set = (Set) obj;
+			set.refCount--;			
+		} else if(obj instanceof Dictionary) {
+			Dictionary dict = (Dictionary) obj;
+			dict.refCount--;			
+		} 
+		return obj;
+	}
+
+	public static List decRefs(List obj) {		
+		obj.refCount--;
+		return obj;
+	}
+	
+	public static Set decRefs(Set obj) {
+		obj.refCount--;
+		return obj;
+	}
+	
+	public static Record decRefs(Record obj) {
+		obj.refCount--;
+		return obj;
+	}
+	
+	public static Dictionary decRefs(Dictionary obj) {
+		obj.refCount--;
+		return obj;
+	}
+	
+	/**
+	 * The <code>instanceOf</code> method implements a runtime type test. 
+	 */
+	public static boolean instanceOf(Object obj, Type t) {			
+		switch(t.kind) {
+			case Type.K_ANY:
+				return true;
+			case Type.K_VOID:
+				return false;
+			case Type.K_NULL:
+				return obj == null;
+			case Type.K_INT:
+				return obj instanceof BigInteger;
+			case Type.K_RATIONAL:
+				return obj instanceof BigRational;
+			case Type.K_STRING:
+				return obj instanceof String;
+			case Type.K_LIST:
+			{
+				if(obj instanceof List) {
+					List ol = (List) obj;
+					Type.List tl = (Type.List) t;
+					Type el = tl.element;
+					if(el.kind == Type.K_ANY) {
+						return true;
+					} else if(el.kind == Type.K_VOID) {
+						return ol.isEmpty();
+					} else {
+						for(Object elem : ol) { 
+							if(!instanceOf(elem,el)) {
+								return false;
+							}
+						}
+						return true;
+					}
+				}
+				break;
+			}
+			case Type.K_SET:
+			{
+				if(obj instanceof Set) {
+					Set ol = (Set) obj;
+					Type.Set tl = (Type.Set) t;
+					Type el = tl.element;
+					if(el.kind == Type.K_ANY) {
+						return true;
+					} else if(el.kind == Type.K_VOID) {
+						return ol.isEmpty();
+					} else {
+						for(Object elem : ol) { 
+							if(!instanceOf(elem,el)) {
+								return false;
+							}
+						}
+						return true;
+					}
+				}
+				break;
+			}
+			case Type.K_DICTIONARY:
+			{
+				if(obj instanceof Dictionary) {
+					Dictionary ol = (Dictionary) obj;
+					Type.Dictionary tl = (Type.Dictionary) t;
+					Type key = tl.key;
+					Type value = tl.value;
+					
+					if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
+						return true;						
+					} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
+						return ol.isEmpty();
+					} else {
+						for (java.util.Map.Entry<Object, Object> elem : ol
+								.entrySet()) {
+							if (!instanceOf(elem.getKey(), key)
+									|| !instanceOf(elem.getValue(), value)) {
+								return false;
+							}
+						}
+						return true;
+					}
+				}
+				break;
+			}
+			case Type.K_RECORD:
+			{
+				if(obj instanceof Record) {
+					Record ol = (Record) obj;
+					Type.Record tl = (Type.Record) t;
+					String[] names = tl.names;
+					Type[] types = tl.types;
+					for(int i=0;i!=names.length;++i) {
+						String name = names[i];
+						if(ol.containsKey(name)) {
+							Type type = types[i];
+							Object val = ol.get(name);						
+							if(!instanceOf(val,type)) {
+								return false;
+							}
+						} else {
+							return false;
+						}
+					}
+					return true;
+				}
+				break;
+			}
+			case Type.K_UNION:
+			{
+				Type.Union un = (Type.Union) t;
+				for(Type bound : un.bounds) {
+					if(instanceOf(obj,bound)) {
+						return true;
+					}
+				}		
+				break;
 			}
 		}		
+		return false;
+	}
+
+	public static boolean instanceOf(List ol, Type t) {
+		Type.List tl = (Type.List) t;
+		Type el = tl.element;
+		if(el.kind == Type.K_ANY) {
+			return true;
+		} else if(el.kind == Type.K_VOID) {
+			return ol.isEmpty();
+		} else {
+			for(Object elem : ol) { 
+				if(!instanceOf(elem,el)) {
+					return false;
+				}
+			}
+			return true;
+		}		
+	}
+	
+	public static boolean instanceOf(Set ol, Type t) {
+		Type.Set tl = (Type.Set) t;
+		Type el = tl.element;
+		if(el.kind == Type.K_ANY) {
+			return true;
+		} else if(el.kind == Type.K_VOID) {
+			return ol.isEmpty();
+		} else {
+			for(Object elem : ol) { 
+				if(!instanceOf(elem,el)) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+	
+	public static boolean instanceOf(Dictionary ol, Type t) {		
+		Type.Dictionary tl = (Type.Dictionary) t;
+		Type key = tl.key;
+		Type value = tl.value;
+		
+		if (key.kind == Type.K_ANY && value.kind == Type.K_ANY) {
+			return true;						
+		} else if(key.kind == Type.K_VOID || value.kind == Type.K_VOID) {
+			return ol.isEmpty();
+		} else {
+			for (java.util.Map.Entry<Object, Object> elem : ol
+					.entrySet()) {
+				if (!instanceOf(elem.getKey(), key)
+						|| !instanceOf(elem.getValue(), value)) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+	
+	public static boolean instanceOf(Record ol, Type t) {						
+		Type.Record tl = (Type.Record) t;
+		String[] names = tl.names;
+		Type[] types = tl.types;
+		for(int i=0;i!=names.length;++i) {
+			String name = names[i];
+			if(ol.containsKey(name)) {
+				Type type = types[i];
+				Object val = ol.get(name);						
+				if(!instanceOf(val,type)) {
+					return false;
+				} 
+			}else {
+				return false;
+			}
+		}
+		return true;
+	}	
+	
+	/**
+	 * The <code>coerce</code> method forces this object to conform to a given
+	 * type.
+	 */
+	public static Object coerce(Object obj, Type t) {			
+		if(obj instanceof BigInteger) {
+			return coerce((BigInteger)obj,t);
+		} else if(obj instanceof List) {
+			return coerce((List)obj,t);
+		} else if(obj instanceof Set) {
+			return coerce((Set)obj,t);
+		} else if(obj instanceof Dictionary) {
+			return coerce((Dictionary)obj,t);
+		} else if(obj instanceof Record) {
+			return coerce((Record)obj,t);
+		} else if(obj instanceof String) {
+			return coerce((String)obj,t);
+		} 
+				
+		return obj;
+	}
+	
+	public static Object coerce(BigInteger obj, Type t) {
+		if(t.kind == Type.K_UNION) {
+			Type.Union un = (Type.Union) t;
+			for(Type b : un.bounds) {
+				if(b.kind == Type.K_INT || b.kind == Type.K_ANY) {
+					return obj;					
+				} else if(b.kind == Type.K_RATIONAL) {
+					t = b;
+				}
+			}
+		}
+		if(t.kind == Type.K_INT) {
+			return obj;
+		} else if(t.kind == Type.K_RATIONAL) {
+			return BigRational.valueOf(obj);
+		} 
+		throw new RuntimeException("invalid integer coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(List obj, Type t) {		
+		if(t.kind == Type.K_LIST) {
+			Type.List tl = (Type.List) t;
+			List r = new List(obj.size());
+			for(Object o : obj) {
+				r.add(coerce(o,tl.element));
+			}
+			return r;
+		} else if(t.kind == Type.K_DICTIONARY) {
+			Type.Dictionary tl = (Type.Dictionary) t;
+			Dictionary r = new Dictionary();			
+			for (int i = 0; i != obj.size(); ++i) {
+				Object key = coerce(BigInteger.valueOf(i),tl.key);
+				Object value = coerce(obj.get(i), tl.value);					
+				r.put(key, value);
+			}			
+			return r;
+		} else if(t.kind == Type.K_SET) {
+			Type.Set tl = (Type.Set) t;
+			Set r = new Set();			
+			for (Object value : obj) {						
+				r.add(coerce(value, tl.element));
+			}			
+			return r;
+		}
+		throw new RuntimeException("invalid list coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(String obj, Type t) {		
+		if(t.kind == Type.K_STRING) {
+			return obj;
+		} else if(t.kind == Type.K_LIST) {
+			Type.List tl = (Type.List) t;
+			List r = new List(obj.length());
+			for(int i=0;i!=obj.length();++i) {
+				Object index = BigInteger.valueOf(obj.charAt(i));				
+				r.add(coerce(index,tl.element));
+			}
+			return r;
+		} 
+		throw new RuntimeException("invalid string coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(Set obj, Type t) {
+		if(t.kind == Type.K_SET) {
+			Type.Set tl = (Type.Set) t;
+			Set r = new Set();
+			for(Object o : obj) {
+				r.add(coerce(o,tl.element));
+			}
+			return r;
+		} 
+		throw new RuntimeException("invalid set coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(Dictionary obj, Type t) {
+		if(t.kind == Type.K_DICTIONARY) {
+			Type.Dictionary tl = (Type.Dictionary) t;
+			Dictionary r = new Dictionary();
+			for(Map.Entry<Object,Object> o : obj.entrySet()) {
+				Object key = coerce(o.getKey(),tl.key);
+				Object value = coerce(o.getValue(),tl.value); 
+				r.put(key,value);
+			}
+			return r;
+		}
+		throw new RuntimeException("invalid dictionary coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(Record obj, Type t) {
+		if(t.kind == Type.K_RECORD) {			
+			Type.Record tr = (Type.Record) t;
+			Record r = new Record();
+			String[] names = tr.names;
+			Type[] types = tr.types;
+			for(int i=0;i!=names.length;++i) {
+				String name = names[i];
+				Type type = types[i];
+				r.put(name,coerce(obj.get(name),type));
+			}
+			return r;
+		}
+		throw new RuntimeException("invalid record coercion (" + obj + " => " + t + ")");
 	}
 }

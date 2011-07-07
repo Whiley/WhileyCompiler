@@ -60,28 +60,18 @@ public class FunctionCheck implements Transform {
 	
 	protected void check(Block block,  Module.Method method) {		
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.get(i);
+			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
-			
-			// Check for message sends
-			ArrayList<CExpr.DirectInvoke> ivks = new ArrayList<CExpr.DirectInvoke>();
-			Code.match(code,CExpr.DirectInvoke.class,ivks);
-			for(CExpr.DirectInvoke ivk : ivks) {
-				if(ivk.receiver != null) {
-					syntaxError("cannot send message from function",filename,stmt);
-				}
-			}
-			
-			// Check for spawns and process accesses
-			ArrayList<CExpr.UnOp> uops = new ArrayList<CExpr.UnOp>();
-			Code.match(code,CExpr.UnOp.class,uops);
-			for(CExpr.UnOp uop : uops) {
-				if(uop.op == CExpr.UOP.PROCESSSPAWN) {
-					syntaxError("cannot spawn process from function",filename,stmt);
-				}
-				if(uop.op == CExpr.UOP.PROCESSACCESS) {
-					syntaxError("cannot access process from function",filename,stmt);
-				}
+			if (code instanceof Code.Send || code instanceof Code.IndirectSend) {
+				// external message send
+				syntaxError("cannot send message from function", filename, stmt);
+			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type.receiver() != null) {
+				// internal message send
+				syntaxError("cannot call method message from function", filename, stmt);
+			} else if(code instanceof Code.Spawn) {
+				syntaxError("cannot spawn process from function",filename,stmt);
+			} else if(code instanceof Code.ProcLoad){ 
+				syntaxError("cannot access process from function",filename,stmt);				
 			}
 		}	
 	}

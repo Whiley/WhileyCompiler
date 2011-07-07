@@ -102,9 +102,9 @@ public final class Actor extends Messager {
 	 */
 	public static Actor newSystemProcess() {
 		Actor sysout = new Actor(null);
-		WhileyRecord fields = new WhileyRecord();
-		fields.put("out", sysout);
-		Actor system = new Actor(fields);
+		Record data = new Record();
+		data.put("out", sysout);		
+		Actor system = new Actor(data);
 		return system;
 	}
 

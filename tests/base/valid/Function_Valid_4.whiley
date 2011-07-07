@@ -8,4 +8,4 @@ string f(fr4nat x):
 
 void System::main([string] args):
     y = 1
-    out<->println(f(g(y)))
+    out.println(f(g(y)))

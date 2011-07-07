@@ -1,2 +1,2 @@
 void System::main([string] this):
-    this->f(1)
+    this.f(1)

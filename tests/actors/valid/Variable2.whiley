@@ -1,7 +1,7 @@
 void System::main([string] args):
     i = var()
-    out<-println(self())
-    out<-println(i)
+    out!println(self())
+    out!println(i)
 
 string System::self():
     return str(6)

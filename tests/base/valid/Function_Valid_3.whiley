@@ -5,4 +5,4 @@ string f(int x):
 
 void System::main([string] args):
     y = 234987234987234982304980130982398723
-    out<->println(f(y))
+    out.println(f(y))

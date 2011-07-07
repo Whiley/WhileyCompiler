@@ -5,5 +5,5 @@ string f(bool b):
         return "FALSE"
 
 void System::main([string] args):
-    out<->println(f(true))
-    out<->println(f(false))
+    out.println(f(true))
+    out.println(f(false))

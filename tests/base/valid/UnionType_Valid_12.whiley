@@ -7,5 +7,5 @@ int f(tupper y):
 
 void System::main([string] args):
     x = {op:1,il:1}
-    out<->println(str(x))
+    out.println(str(x))
     f(x)

@@ -215,30 +215,29 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 	}	
 	
-	public static class Case extends SyntacticElement.Impl {
-		private final ArrayList<String> paramNames;
+	public static class Case extends SyntacticElement.Impl {				
 		private final Block body;
+		private final ArrayList<String> locals;
 
-		public Case(Collection<String> paramNames, Block body, Attribute... attributes) {
-			super(attributes);
-			this.paramNames = new ArrayList<String>(paramNames);
+		public Case(Block body, Collection<String> locals, Attribute... attributes) {
+			super(attributes);			
 			this.body = body;
+			this.locals = new ArrayList<String>(locals);
 		}
 
-		public Case(Collection<String> paramNames, Block body,
+		public Case(Block body,Collection<String> locals,
 				Collection<Attribute> attributes) {
-			super(attributes);
-			this.paramNames = new ArrayList<String>(paramNames);
+			super(attributes);			
 			this.body = body;
+			this.locals = new ArrayList<String>(locals);			
 		}
 		
 		public Block body() {
 			return body;
 		}
-				
-		public List<String> parameterNames() {
-			return paramNames;
-		}
 		
+		public List<String> locals() {
+			return Collections.unmodifiableList(locals);
+		}
 	}
 }

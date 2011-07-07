@@ -1,5 +1,5 @@
 // expression tree
-define Expr as real |  // constant
+define Expr as int | real |  // constant
     [Expr] |           // list constructor
     ListAccess         // list access
 
@@ -9,34 +9,31 @@ define ListAccess as {
     Expr index
 } 
 
-define Value as real | [Value]
+define Value as int | real | [Value]
 
 null|Value evaluate(Expr e):
-    if e ~= int:
+    if e is real || e is int:
         return e
-    else if e ~= [Expr]:
+    else if e is [Expr]:
         r = []
         for i in e:
             v = evaluate(i)
-            if v ~= null:
+            if v is null:
                 return v // stuck
             else:
                 r = r + [v]
         return r
-    else if e ~= ListAccess:
+    else:
         src = evaluate(e.src)
         index = evaluate(e.index)
         // santity checks
-        if src ~= [Expr] && index ~= int && index >= 0 && index < |src|:
+        if src is [Expr] && index is int && index >= 0 && index < |src|:
             return src[index]
         else:
             return null // stuck
-    else:
-        // e must be a list expression
-        return 0
 
 public void System::main([string] args):
-    out<->println(str(evaluate(123)))
-    out<->println(str(evaluate({src: [112,212332,342], index:0})))
-    out<->println(str(evaluate({src: [112312,-289712,312242], index:2})))
-    out<->println(str(evaluate([123,223,323])))
+    out.println(str(evaluate(123)))
+    out.println(str(evaluate({src: [112,212332,342], index:0})))
+    out.println(str(evaluate({src: [112312,-289712,312242], index:2})))
+    out.println(str(evaluate([123,223,323])))

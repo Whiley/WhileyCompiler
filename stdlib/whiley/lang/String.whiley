@@ -25,15 +25,14 @@
 
 package whiley.lang
 
-define string as [char]
-
-public string str(* item):
-    if item ~= null:
+public string str(any item):
+    if item is null:
         return "null"
+    else if item is string:
+        return "\"" + item + "\""
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;
-        invokestatic wyjc/runtime/Util.fromString:(Ljava/lang/String;)Ljava/util/ArrayList;
         areturn
     return "DUMMY" // dead code
 
@@ -74,3 +73,11 @@ public string replace(char old, char new, string str):
             str[i] = new
         i = i + 1
     return str    
+
+// Convert a byte stream into a string using the standard ASCII
+// encoding.
+public string ascii2str([byte] data):
+    r = ""
+    for b in data:
+        r = r + b
+    return r    

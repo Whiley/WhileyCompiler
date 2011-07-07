@@ -6,4 +6,4 @@ cr3nat f(cr3nat x):
 
 void System::main([string] args):
     y = f(9)
-    out<->println(str(y))
+    out.println(str(y))

@@ -31,32 +31,30 @@ import java.io.*;
 import java.lang.reflect.*;
 
 public class IO {
-	public static Actor openReader(ArrayList name) {
-		WhileyRecord r = new WhileyRecord();
-		try {
-			String filename = Util.toString(name);
+	public static Actor openReader(String filename) {
+		Record r = new Record();
+		try {			
 			FileInputStream fin = new FileInputStream(filename);
-			r.put("fileName", name);
-			r.put("$fin", fin);
+			Record.put(r,"fileName", filename);
+			Record.put(r,"$fin", fin);
 			Actor p = new Actor(r);
 			return p;
 		} catch(FileNotFoundException e) {
-			r.put("msg", e.getMessage());			
+			Record.put(r,"msg", e.getMessage());			
 		}
 		return null;
 	}
 	
-	public static Actor openWriter(ArrayList name) {
-		WhileyRecord r = new WhileyRecord();
-		try {
-			String filename = Util.toString(name);
+	public static Actor openWriter(String filename) {
+		Record r = new Record();
+		try {			
 			FileOutputStream fout = new FileOutputStream(filename);
-			r.put("fileName", name);
-			r.put("$fout", fout);
+			Record.put(r,"fileName", filename);
+			Record.put(r,"$fout", fout);			
 			Actor p = new Actor(r);
 			return p;
 		} catch(FileNotFoundException e) {
-			r.put("msg", e.getMessage());			
+			Record.put(r,"msg", e.getMessage());	
 		}
 		return null;
 	}
@@ -118,7 +116,7 @@ public class IO {
 		return r;		
 	}
 	
-	public static void writeFile(Actor p, List bytes) {		
+	public static void writeFile(Actor p, ArrayList bytes) {		
 		FileOutputStream fout = (FileOutputStream) ((HashMap) p.getState())
 				.get("$fout");
 				
