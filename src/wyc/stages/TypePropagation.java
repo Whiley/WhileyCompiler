@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.transforms;
+package wyc.stages;
 
 import static wyil.util.SyntaxError.syntaxError;
 
@@ -154,6 +154,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			code = infer((Debug)code,entry,environment);
+		} else if(code instanceof Destructure) {
+			code = infer((Destructure)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
 			// skip
 		} else if(code instanceof Fail) {
@@ -168,6 +170,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((IndirectSend)code,entry,environment);
 		} else if(code instanceof Invoke) {
 			code = infer((Invoke)code,entry,environment);
+		} else if(code instanceof Invert) {
+			code = infer((Invert)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
 		} else if(code instanceof ListLength) {
@@ -178,8 +182,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
 			code = infer((Load)code,entry,environment);
-		} else if(code instanceof MultiStore) {
-			code = infer((MultiStore)code,entry,environment);
+		} else if(code instanceof Update) {
+			code = infer((Update)code,entry,environment);
 		} else if(code instanceof Negate) {
 			code = infer((Negate)code,entry,environment);
 		} else if(code instanceof NewDict) {
@@ -190,6 +194,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			code = infer((NewSet)code,entry,environment);
+		} else if(code instanceof NewTuple) {
+			code = infer((NewTuple)code,entry,environment);
 		} else if(code instanceof ProcLoad) {
 			code = infer((ProcLoad)code,entry,environment);
 		} else if(code instanceof Return) {
@@ -199,11 +205,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(code instanceof Store) {
 			code = infer((Store)code,entry,environment);
 		} else if(code instanceof SetUnion) {
-			code = infer((SetUnion)code,entry,environment);
+			code = infer((Code.SetUnion)code,entry,environment);
 		} else if(code instanceof SetDifference) {
-			code = infer((SetDifference)code,entry,environment);
+			code = infer((Code.SetDifference)code,entry,environment);
 		} else if(code instanceof SetIntersect) {
-			code = infer((SetIntersect)code,entry,environment);
+			code = infer((Code.SetIntersect)code, entry,environment);
 		} else if(code instanceof Spawn) {
 			code = infer((Spawn)code,entry,environment);
 		} else if(code instanceof Throw) {
@@ -230,30 +236,44 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 
-		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY),rhs);
-		boolean lhs_list = Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),lhs);
-		boolean rhs_list = Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),rhs);
-		boolean lhs_str = Type.isCoerciveSubtype(Type.T_STRING,lhs);
-		boolean rhs_str = Type.isCoerciveSubtype(Type.T_STRING,rhs);
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);		
+		boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),lhs);
+		boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),rhs);
+		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
+		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
 		
-		if(lhs_str || rhs_str) {			
+		if(lhs_set || rhs_set) {
+			environment.push(lhs);
+			environment.push(rhs);
+			switch(v.bop) {
+				case ADD:			
+					return inferSetUnion(OpDir.UNIFORM,stmt,environment);
+				case SUB:
+					return inferSetDifference(OpDir.UNIFORM,stmt,environment);
+				default:
+					syntaxError("invalid set operation: " + v.bop,filename,stmt);
+					result = null;
+			}						
+		} else if(lhs_str || rhs_str) {			
 			Code.OpDir dir;
 			
 			if(lhs_str && rhs_str) {				
 				dir = OpDir.UNIFORM;
 			} else if(lhs_str) {				
 				dir = OpDir.LEFT;
+				checkIsSubtype(Type.T_CHAR,rhs,stmt);
 			} else {				
 				dir = OpDir.RIGHT;
-			}
+				checkIsSubtype(Type.T_CHAR,lhs,stmt);
+			} 
 			
 			switch(v.bop) {				
 				case ADD:																				
 					code = Code.StringAppend(dir);
 					break;
 				default:
-					syntaxError("Invalid string operation: " + v.bop,filename,stmt);		
+					syntaxError("Invalid string operation: " + v.bop,filename,stmt);					
 			}
 			
 			result = Type.T_STRING;
@@ -261,16 +281,17 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.List type;
 			Code.OpDir dir;
 			
-			if(lhs_list && rhs_list) {
-				type = Type.effectiveListType(Type.leastUpperBound(lhs,rhs));
+			if(lhs_list && rhs_list) {				
 				dir = OpDir.UNIFORM;
 			} else if(lhs_list) {
-				type = Type.effectiveListType(lhs);
+				rhs = Type.T_LIST(rhs);
 				dir = OpDir.LEFT;
 			} else {
-				type = Type.effectiveListType(rhs);
+				lhs = Type.T_LIST(lhs);				
 				dir = OpDir.RIGHT;
 			}
+			
+			type = Type.effectiveListType(Type.leastUpperBound(lhs,rhs));
 			
 			switch(v.bop) {				
 				case ADD:																				
@@ -282,52 +303,37 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 			result = type;
 			
-		} else if(lhs_set || rhs_set) {
-			Type.Set type;
-			Code.OpDir dir;
-			
-			if(lhs_set && rhs_set) {				
-				type = Type.effectiveSetType(Type.leastUpperBound(lhs,rhs));
-				dir = OpDir.UNIFORM;
-			} else if(lhs_set) {
-				type = Type.effectiveSetType(lhs);
-				dir = OpDir.LEFT;
-			} else {
-				type = Type.effectiveSetType(rhs);
-				dir = OpDir.RIGHT;
-			}
-			
-			switch(v.bop) {
-				case ADD:																				
-					code = Code.SetUnion(type,dir);
-					break;				
-				case SUB:
-					if(dir == OpDir.RIGHT) {
-						// this case is non-sensical
-						syntaxError("Invalid set operation",filename,stmt);
-					}
-					code = Code.SetDifference(type,dir);					
-					break;								
-				default:
-					syntaxError("Invalid set operation: " + v.bop,filename,stmt);			
-			}
-			
-			result = type;
-			
-		} else {
-			result = Type.leastUpperBound(lhs,rhs);
-			BOp op = v.bop;
-			if(v.bop == BOp.REM) {
+		} else {						
+			if (v.bop == BOp.BITWISEAND || v.bop == BOp.BITWISEOR
+					|| v.bop == BOp.BITWISEXOR) {
+				checkIsSubtype(Type.T_BYTE,lhs,stmt);
+				checkIsSubtype(Type.T_BYTE,rhs,stmt);
+				result = Type.T_BYTE;
+			} else if (v.bop == BOp.LEFTSHIFT || v.bop == BOp.RIGHTSHIFT) {
+				checkIsSubtype(Type.T_BYTE,lhs,stmt);
+				checkIsSubtype(Type.T_INT,rhs,stmt);
+				result = Type.T_BYTE;
+			} else if(v.bop == BOp.RANGE) {
+				checkIsSubtype(Type.T_INT,lhs,stmt);
+				checkIsSubtype(Type.T_INT,rhs,stmt);
+				result = Type.T_LIST(Type.T_INT);
+			} else if(v.bop == BOp.REM) {
 				// remainder is a special case which requires both operands to
 				// be integers.
-				checkIsSubtype(Type.T_INT,result,stmt);
+				checkIsSubtype(Type.T_INT,lhs,stmt);
+				checkIsSubtype(Type.T_INT,rhs,stmt);
+				result = Type.T_INT;
+			} else if(Type.isCoerciveSubtype(lhs,rhs)) {
+				checkIsSubtype(Type.T_REAL,lhs,stmt);
+				result = lhs;
 			} else {
-				checkIsSubtype(Type.T_NUMBER,result,stmt);
-				if(result != Type.T_INT) {
-					result = Type.T_REAL;
-				}
+				checkIsSubtype(Type.T_REAL,rhs,stmt);				
+				result = rhs;
+			} 
+			if(result == Type.T_CHAR) {
+				result = Type.T_INT;
 			}
-			code = Code.BinOp(result,op);
+			code = Code.BinOp(result,v.bop);
 		}				
 		
 		environment.push(result);
@@ -352,8 +358,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Value infer(Value val, SyntacticElement elem) {
 		if (val instanceof Value.Rational || val instanceof Value.Bool
-				|| val instanceof Value.Integer
-				|| val instanceof Value.Null || val instanceof Value.Strung) {
+				|| val instanceof Value.Integer || val instanceof Value.Null
+				|| val instanceof Value.Strung || val instanceof Value.Char
+				|| val instanceof Value.Byte) {
 			return val;
 		} else if (val instanceof Value.Set) {
 			return infer((Value.Set)val,elem);
@@ -363,6 +370,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return infer((Value.Dictionary)val,elem);
 		} else if (val instanceof Value.Record) {
 			return infer((Value.Record)val,elem);
+		} else if (val instanceof Value.Tuple) {
+			return infer((Value.Tuple)val,elem);
 		} else {
 			return infer((Value.FunConst)val,elem);
 		}
@@ -374,6 +383,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			nvals.add(infer(v,elem));
 		}
 		return Value.V_SET(nvals);
+	}
+	
+	protected Value infer(Value.Tuple val, SyntacticElement elem) {
+		ArrayList<Value> nvals =  new ArrayList<Value>();
+		for(Value v : val.values) {
+			nvals.add(infer(v,elem));
+		}
+		return Value.V_TUPLE(nvals);
 	}
 	
 	protected Value infer(Value.List val, SyntacticElement elem) {
@@ -449,6 +466,24 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return code;
 	}
 	
+	protected Code infer(Code.Destructure code, Entry stmt, Env environment) {
+		Type type = environment.pop();	
+		
+		if(type instanceof Type.Tuple) {
+			Type.Tuple tup = (Type.Tuple) type;
+			for(Type t : tup.elements()) {
+				environment.push(t);
+			}
+		} else if(Type.isSubtype(Type.T_REAL, type)){
+			environment.push(Type.T_INT);
+			environment.push(Type.T_INT);
+		} else {
+			syntaxError("invalid destructuring operation",filename,stmt);
+		}
+
+		return Code.Destructure(type);
+	}
+	
 	protected Code infer(Code.Fail code, Entry stmt, Env environment) {
 		// no change to stack
 		return code;
@@ -479,8 +514,28 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return blk;
 	}
 	
-	protected Code infer(IndirectSend e, Entry stmt, Env environment) {
-		return null;
+	protected Code infer(IndirectSend ivk, Entry stmt, Env environment) {
+		ArrayList<Type> types = new ArrayList<Type>();			
+		for(int i=0;i!=ivk.type.params().size();++i) {
+			types.add(0,environment.pop());
+		}
+		Collections.reverse(types);
+		Type receiver = environment.pop();
+		Type target = environment.pop();		
+		
+		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
+		List<Type> ft_params = ft.params();
+		for(int i=0;i!=ft_params.size();++i) {
+			Type param = ft_params.get(i);
+			Type arg = types.get(i);
+			checkIsSubtype(param,arg,stmt);
+		}
+		
+		if(ft.ret() != Type.T_VOID && ivk.retval) {
+			environment.push(ft.ret());
+		}
+		
+		return Code.IndirectSend(ft,ivk.synchronous,ivk.retval);		
 	}
 	
 	protected Code infer(Invoke ivk, Entry stmt, Env environment) {			
@@ -528,6 +583,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.IndirectInvoke(ft,ivk.retval);		
 	}
 	
+	protected Code infer(Invert v, Entry stmt, Env environment) {
+		Type rhs_t = environment.pop();
+
+		// FIXME: add support for dictionaries
+		checkIsSubtype(Type.T_BYTE,rhs_t,stmt);		
+		environment.add(rhs_t);
+		return Code.Invert(rhs_t);						
+	}
+	
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
 		Type idx = environment.pop();
 		Type src = environment.pop();
@@ -556,7 +620,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 		
-	protected Code infer(MultiStore e, Entry stmt, Env environment) {		
+	protected Code infer(Update e, Entry stmt, Env environment) {		
 		ArrayList<Type> path = new ArrayList();
 		Type val = environment.pop();
 		for(int i=e.fields.size();i!=e.level;++i) {
@@ -586,8 +650,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {							
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);
-				checkIsSubtype(Type.T_INT,val,stmt);	
-				iter = Type.T_INT;				
+				checkIsSubtype(Type.T_CHAR,val,stmt);	
+				iter = Type.T_CHAR;				
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
@@ -615,7 +679,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type ntype = typeInference(src,val,e.level,0,e.fields);
 		environment.set(e.slot,ntype);
 		
-		return Code.MultiStore(src,e.slot,e.level,e.fields);
+		return Code.Update(src,e.slot,e.level,e.fields);
 	}
 
 	/**
@@ -651,8 +715,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return Type.leastUpperBound(oldtype,Type.T_DICTIONARY(dict.key(),nvalue));
 			
 		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
-			Type nelement = typeInference(Type.T_INT,newtype,level-1,fieldLevel,fields);
-			
+			Type nelement = typeInference(Type.T_CHAR,newtype,level-1,fieldLevel,fields);			
 			return oldtype;
 		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
@@ -742,6 +805,18 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return Code.NewSet(type,e.nargs);
 	}
 	
+	protected Code infer(NewTuple e, Entry stmt, Env environment) {
+		ArrayList<Type> types = new ArrayList<Type>();		
+		
+		for(int i=0;i!=e.nargs;++i) {
+			types.add(environment.pop());						
+		}
+		Collections.reverse(types);
+		Type.Tuple type = Type.T_TUPLE(types);
+		environment.push(type);
+		return Code.NewTuple(type,e.nargs);
+	}
+	
 	protected Code infer(Send ivk, Entry stmt, Env environment) {
 		ArrayList<Type> types = new ArrayList<Type>();	
 		
@@ -751,10 +826,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Collections.reverse(types);
 		
 		Type _rec = environment.pop();
+		
+		// FIXME: problem here as process check doesn't cover all cases.		
 		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),_rec,stmt);
 		// FIXME: bug here as we need an effectiveProcessType
 		Type.Process rec = (Type.Process) _rec; 		
-		
+
 		try {
 			Type.Fun funtype = bindFunction(ivk.name, rec, types, stmt);
 			if (funtype.ret() != Type.T_VOID && ivk.synchronous && ivk.retval) {
@@ -833,80 +910,97 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.SetUnion code, Entry stmt, Env environment) {
+		return inferSetUnion(code.dir,stmt,environment);
+	}
+	
+	protected Code inferSetUnion(OpDir dir, Entry stmt, Env environment) {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
-		OpDir dir;
-		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), lhs);
-		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), rhs);
-
-		if(lhs_set && rhs_set) {
-			dir = OpDir.UNIFORM;
-		} else if(lhs_set) {
-			rhs = Type.T_SET(rhs);
-			dir = OpDir.LEFT;
-		} else if(rhs_set) {
-			lhs = Type.T_SET(lhs);
-			dir = OpDir.RIGHT;					
+		Type result;
+		
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		
+		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
+			if(lhs_set && rhs_set) {
+				result = Type.leastUpperBound(lhs,rhs);		
+			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
+				result = lhs;
+			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
+				result = rhs;				
+			} else {
+				syntaxError("invalid set operation on types",filename,stmt);
+				result = null;
+			}						
+		} else if(dir == OpDir.LEFT && lhs_set) {
+			result = Type.leastUpperBound(lhs,Type.T_SET(rhs));
+		} else if(dir == OpDir.RIGHT && rhs_set) {
+			result = Type.leastUpperBound(Type.T_SET(lhs),rhs);			
 		} else {
 			syntaxError("expecting set type",filename,stmt);
 			return null; // dead-code
 		}
-		Type lub = Type.leastUpperBound(lhs, rhs);
-		environment.push(lub);
-		return Code.SetUnion(Type.effectiveSetType(lub), dir);	
+				
+		environment.push(result);
+		return Code.SetUnion(Type.effectiveSetType(result), dir);	
 	}
 
 	protected Code infer(Code.SetIntersect code, Entry stmt, Env environment) {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
-		OpDir dir;
-		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), lhs);
-		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), rhs);
-
-		if(lhs_set && rhs_set) {
-			dir = OpDir.UNIFORM;
-		} else if(lhs_set) {
-			rhs = Type.T_SET(rhs);
-			dir = OpDir.LEFT;
-		} else if(rhs_set) {
-			lhs = Type.T_SET(lhs);
-			dir = OpDir.RIGHT;					
+		Type result;
+		
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		
+		if(lhs_set || rhs_set) {				
+			if(lhs_set && rhs_set) {
+				result = Type.greatestLowerBound(lhs,rhs);		
+			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
+				result = lhs;
+			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
+				result = rhs;				
+			} else {
+				syntaxError("invalid set operation on types",filename,stmt);
+				result = null;
+			}						
 		} else {
 			syntaxError("expecting set type",filename,stmt);
 			return null; // dead-code
 		}
-		Type glb = Type.greatestLowerBound(lhs, rhs);
-		environment.push(glb);
-		return Code.SetIntersect(Type.effectiveSetType(glb), dir);	
+				
+		environment.push(result);
+		return Code.SetIntersect(Type.effectiveSetType(result), OpDir.UNIFORM);	
 	}
 	
 	protected Code infer(Code.SetDifference code, Entry stmt, Env environment) {
+		return inferSetDifference(code.dir,stmt,environment);
+	}
+		
+	protected Code inferSetDifference(OpDir dir, Entry stmt, Env environment) {
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
-		OpDir dir;
-		boolean lhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), lhs);
-		boolean rhs_set = Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY), rhs);
-
-		if(lhs_set && rhs_set) {
-			dir = OpDir.UNIFORM;
-		} else if(lhs_set) {
-			rhs = Type.T_SET(rhs);
-			dir = OpDir.LEFT;
-		} else if(rhs_set) {
-			lhs = Type.T_SET(lhs);
-			dir = OpDir.RIGHT;					
+		Type result;
+		
+		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+					
+		
+		if(lhs_set) {	
+			checkIsSubtype(lhs,rhs,stmt);
+			result = lhs;			
 		} else {
 			syntaxError("expecting set type",filename,stmt);
 			return null; // dead-code
 		}
-		environment.push(lhs);
-		return Code.SetDifference(Type.effectiveSetType(lhs), dir);	
+				
+		environment.push(result);
+		return Code.SetDifference(Type.effectiveSetType(result), dir);	
 	}
 
 	protected Code infer(Negate v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
 
-		checkIsSubtype(Type.T_NUMBER,rhs_t,stmt);
+		checkIsSubtype(Type.T_REAL,rhs_t,stmt);
 		if(rhs_t != Type.T_INT) {
 			// this is an implicit coercion
 			rhs_t = Type.T_REAL;
@@ -942,31 +1036,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = (Env) environment.clone();
 		
 		Type rhs_t = environment.pop();
-		Type lhs_t = environment.pop();		
-		Type lub = Type.leastUpperBound(lhs_t,rhs_t);		
-		Type glb = Type.greatestLowerBound(lhs_t,rhs_t);
+		Type lhs_t = environment.pop();
+		Type lub;
 		
-		switch(code.op) {
-		case LT:
-		case LTEQ:
-		case GT:
-		case GTEQ:
-			checkIsSubtype(Type.T_NUMBER, lub, stmt);
-			// effect an implicit coercion
-			if(lub != Type.T_INT) { lub = Type.T_REAL; }
-			break;
-		case EQ:
-		case NEQ:	
-			if(Type.isCoerciveSubtype(Type.T_NUMBER, lub)) {
-				// effect an implicit coercion
-				if(lub != Type.T_INT) { lub = Type.T_REAL; }
-			} else if (glb == Type.T_VOID) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
-			}
-			break;
-		case ELEMOF:
-		{			
+		if(code.op == Code.COp.ELEMOF) {
+			// this is the only asymmetric binary operation. So, it's handled
+			// with a special case.
 			Type element;
 			if(rhs_t instanceof Type.List){
 				element = ((Type.List)rhs_t).element();
@@ -980,16 +1055,35 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
 			}			
+			lub = rhs_t;
+		} else if(Type.isCoerciveSubtype(lhs_t, rhs_t)) {
+			lub = lhs_t;
+		} else if(Type.isCoerciveSubtype(rhs_t, lhs_t)) {
+			lub = rhs_t;
+		} else {
+			syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
+					filename, stmt);
+			lub = null; // unreachable
+		}
+		
+		switch(code.op) {
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+			checkIsSubtype(Type.T_REAL, lub, stmt);
 			break;
+		case EQ:
+		case NEQ:
+			// no specific requirements here			
+			break;
+		case ELEMOF:
+		{			
+			break; // handled with special case
 		}	
 		case SUBSET:
-		case SUBSETEQ:			
-			if (!Type.isCoerciveSubtype(lhs_t, rhs_t) && !Type.isCoerciveSubtype(rhs_t, lhs_t)) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-						filename, stmt);
-			}
-			checkIsSubtype(Type.T_SET(Type.T_ANY),lhs_t,stmt);
-			checkIsSubtype(Type.T_SET(Type.T_ANY),rhs_t,stmt);
+		case SUBSETEQ:						
+			checkIsSubtype(Type.T_SET(Type.T_ANY),lub,stmt);			
 			break;		
 		}
 		
@@ -1122,8 +1216,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			if(code instanceof Store) {
 				Store s = (Store) code;
 				modifies.add(s.slot);
-			} else if(code instanceof MultiStore) {
-				MultiStore s = (MultiStore) code;
+			} else if(code instanceof Update) {
+				Update s = (Update) code;
 				modifies.add(s.slot);
 			}
 		}

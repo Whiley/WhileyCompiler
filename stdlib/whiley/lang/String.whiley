@@ -30,6 +30,13 @@ public string str(any item):
         return "null"
     else if item is string:
         return "\"" + item + "\""
+    else if item is char:
+        return "\'" + item + "\'"
+    else if item is byte:
+        extern jvm:
+            iload 0
+            invokestatic wyjc/runtime/Util.str:(B)Ljava/lang/String;
+            areturn
     extern jvm:
         aload 0
         invokevirtual java/lang/Object.toString:()Ljava/lang/String;
@@ -79,5 +86,5 @@ public string replace(char old, char new, string str):
 public string ascii2str([byte] data):
     r = ""
     for b in data:
-        r = r + b
+        r = r + le2uint(b)
     return r    

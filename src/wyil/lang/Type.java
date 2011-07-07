@@ -41,13 +41,13 @@ public abstract class Type {
 	public static final Any T_ANY = new Any();
 	public static final Void T_VOID = new Void();
 	public static final Null T_NULL = new Null();	
-	public static final Bool T_BOOL = new Bool();	
-	public static final Int T_INT = new Int();	
-	public static final Int T_CHAR = T_INT; // to be fixed
+	public static final Bool T_BOOL = new Bool();
+	public static final Byte T_BYTE = new Byte();
+	public static final Char T_CHAR = new Char();
+	public static final Int T_INT = new Int();		
 	public static final Real T_REAL = new Real();
 	public static final Strung T_STRING = new Strung();	
 	public static final Meta T_META = new Meta();
-	public static final Type T_NUMBER = T_UNION(T_INT,T_REAL);
 	
 	/**
 	 * Construct a tuple type using the given element types.
@@ -66,6 +66,30 @@ public abstract class Type {
 		for(int i=0;i!=elements.length;++i) {
 			children[i] = start;
 			Node[] comps = nodes(elements[i]);
+			insertNodes(start,comps,nodes);
+			start += comps.length;
+		}
+		nodes[0] = new Node(K_TUPLE, children);		
+		return new Tuple(nodes);
+	}
+	
+	/**
+	 * Construct a tuple type using the given element types.
+	 * 
+	 * @param element
+	 */
+	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
+		int len = 1;
+		for(Type b : elements) {
+			// could be optimised slightly
+			len += nodes(b).length;
+		}		
+		Node[] nodes = new Node[len];
+		int[] children = new int[elements.size()];
+		int start = 1;
+		for(int i=0;i!=elements.size();++i) {
+			children[i] = start;
+			Node[] comps = nodes(elements.get(i));
 			insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
@@ -383,6 +407,9 @@ public abstract class Type {
 			case 'b':
 				match("bool");
 				return T_BOOL;
+			case 'c':
+				match("char");
+				return T_CHAR;
 			case 'i':
 				match("int");
 				return T_INT;
@@ -468,6 +495,27 @@ public abstract class Type {
 		Compound graph = (Compound) t;
 		for (Node n : graph.nodes) {
 			if (n.kind == K_LABEL && n.data.equals(label)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * This is a utility helper for constructing types. In particular, it's
+	 * useful to check that a type has been built sanely.
+	 * 
+	 * @param label
+	 * @param t
+	 * @return
+	 */
+	public static boolean isOpen(Type t) {
+		if (t instanceof Leaf) {
+			return false;
+		}
+		Compound graph = (Compound) t;
+		for (Node n : graph.nodes) {			
+			if (n.kind == K_LABEL) {
 				return true;
 			}
 		}
@@ -751,6 +799,12 @@ public abstract class Type {
 					break;
 				case K_BOOL:
 					writer.buildPrimitive(i,T_BOOL);
+					break;
+				case K_BYTE:
+					writer.buildPrimitive(i,T_BYTE);
+					break;
+				case K_CHAR:
+					writer.buildPrimitive(i,T_CHAR);
 					break;
 				case K_INT:
 					writer.buildPrimitive(i,T_INT);
@@ -1271,6 +1325,7 @@ public abstract class Type {
 			Node fromNode = fromGraph[from];
 			Node toNode = toGraph[to];	
 			
+			/*
 			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
 				// labeled nary nodes
 				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
@@ -1287,7 +1342,16 @@ public abstract class Type {
 					}
 				}					
 				return true;
-			} else if(fromNode.kind == K_RATIONAL && toNode.kind == K_INT) {
+			} else 
+			*/
+			if(fromNode.kind == K_CHAR && toNode.kind == K_INT) {
+				// ints can flow into chars
+				return true;
+			} else if(fromNode.kind == K_INT && toNode.kind == K_CHAR) {
+				// chars can flow into ints
+				return true;
+			} else if(fromNode.kind == K_RATIONAL && (toNode.kind == K_INT || toNode.kind == K_CHAR)) {
+				// ints or chars can flow into rationals
 				return true;
 			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
 				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
@@ -1309,6 +1373,7 @@ public abstract class Type {
 			Node fromNode = fromGraph[from];
 			Node toNode = toGraph[to];	
 			
+			/*
 			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
 				// labeled nary nodes
 				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) fromNode.data;
@@ -1326,7 +1391,13 @@ public abstract class Type {
 				}					
 				return true;					
 
-			} else if(fromNode.kind == K_INT && toNode.kind == K_RATIONAL) {
+			} else 
+			*/	
+			if(fromNode.kind == K_CHAR && (toNode.kind == K_RATIONAL || toNode.kind == K_INT)) {
+				// char can flow into int or rational
+				return true;
+			} else if(fromNode.kind == K_INT && (toNode.kind == K_RATIONAL || toNode.kind == K_CHAR)) {
+				// int can flow into rational or char
 				return true;
 			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
 				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
@@ -1775,6 +1846,8 @@ public abstract class Type {
 				case K_META:
 				case K_NULL:
 				case K_BOOL:
+				case K_BYTE:
+				case K_CHAR:
 				case K_INT:
 				case K_RATIONAL:
 				case K_STRING:
@@ -1832,6 +1905,8 @@ public abstract class Type {
 			case K_META:
 			case K_NULL:
 			case K_BOOL:
+			case K_BYTE:
+			case K_CHAR:
 			case K_INT:
 			case K_RATIONAL:
 			case K_STRING:
@@ -2031,6 +2106,8 @@ public abstract class Type {
 			case K_META:
 			case K_NULL:
 			case K_BOOL:
+			case K_BYTE:
+			case K_CHAR:
 			case K_INT:
 			case K_RATIONAL:
 			case K_STRING:
@@ -2342,6 +2419,45 @@ public abstract class Type {
 	}
 
 	/**
+	 * Represents a unicode character.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Char extends Leaf {
+		private Char() {}
+		public boolean equals(Object o) {
+			return o == T_CHAR;
+		}
+		public int hashCode() {
+			return 4;
+		}
+		public String toString() {
+			return "char";
+		}	
+	}
+	
+	/**
+	 * Represents a unicode character.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Byte extends Leaf {
+		private Byte() {}
+		public boolean equals(Object o) {
+			return o == T_BYTE;
+		}
+		public int hashCode() {
+			return 4;
+		}
+		public String toString() {
+			return "byte";
+		}	
+	}
+	
+	
+	/**
 	 * Represents the set of (unbound) integer values. Since integer types in
 	 * Whiley are unbounded, there is no equivalent to Java's
 	 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for <code>int</code>
@@ -2481,7 +2597,7 @@ public abstract class Type {
 				if(headers.get(i)) {
 					titles[i] = headerTitle(count++);
 				}
-			}
+			}			
 			return Type.toString(0,visited,titles,nodes);
 		}
 	}
@@ -2678,6 +2794,10 @@ public abstract class Type {
 			return "null";
 		case K_BOOL:
 			return "bool";
+		case K_BYTE:
+			return "byte";
+		case K_CHAR:
+			return "char";
 		case K_INT:
 			return "int";
 		case K_RATIONAL:
@@ -2769,7 +2889,13 @@ public abstract class Type {
 		// header then we need to insert the recursive type.
 		String header = headers[index];
 		if(header != null) {
-			return header + "<" + middle + ">";
+			// The following case is interesting. Basically, we'll never revisit
+			// a header. Therefore, if we have multiple edges landing on a
+			// header we must update the header string to represent the full
+			// type reachable from the header.
+			String r = header + "<" + middle + ">"; 
+			headers[index] = r;
+			return r;
 		} else {
 			return middle;
 		}
@@ -3037,19 +3163,21 @@ public abstract class Type {
 	private static final byte K_META = 2;
 	private static final byte K_NULL = 3;
 	private static final byte K_BOOL = 4;
-	private static final byte K_INT = 5;
-	private static final byte K_RATIONAL = 6;
-	private static final byte K_STRING = 7;
-	private static final byte K_TUPLE = 8;
-	private static final byte K_SET = 9;
-	private static final byte K_LIST = 10;
-	private static final byte K_DICTIONARY = 11;	
-	private static final byte K_PROCESS = 12;
-	private static final byte K_RECORD = 13;
-	private static final byte K_UNION = 14;
-	private static final byte K_FUNCTION = 15;
-	private static final byte K_EXISTENTIAL = 16;
-	private static final byte K_LABEL = 17;
+	private static final byte K_BYTE = 5;
+	private static final byte K_CHAR = 6;
+	private static final byte K_INT = 7;
+	private static final byte K_RATIONAL = 8;
+	private static final byte K_STRING = 9;
+	private static final byte K_TUPLE = 10;
+	private static final byte K_SET = 11;
+	private static final byte K_LIST = 12;
+	private static final byte K_DICTIONARY = 13;	
+	private static final byte K_PROCESS = 14;
+	private static final byte K_RECORD = 15;
+	private static final byte K_UNION = 16;
+	private static final byte K_FUNCTION = 17;
+	private static final byte K_EXISTENTIAL = 18;
+	private static final byte K_LABEL = 19;
 	
 	/**
 	 * Represents a node in the type graph. Each node has a kind, along with a
@@ -3079,6 +3207,8 @@ public abstract class Type {
 					case K_META:
 					case K_NULL:
 					case K_BOOL:
+					case K_BYTE:
+					case K_CHAR:
 					case K_INT:
 					case K_RATIONAL:
 					case K_STRING:
@@ -3109,7 +3239,7 @@ public abstract class Type {
 		}
 		
 		public final static String[] kinds = { "void", "any", "meta", "null", "bool",
-				"int", "real", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
+				"char","int", "real", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
 				"fun", "label" };
 		public String toString() {
 			if(data instanceof Pair[]) {
@@ -3140,6 +3270,10 @@ public abstract class Type {
 			return K_NULL;
 		} else if(leaf instanceof Bool) {
 			return K_BOOL;
+		} else if(leaf instanceof Byte) {
+			return K_BYTE;
+		} else if(leaf instanceof Char) {
+			return K_CHAR;
 		} else if(leaf instanceof Int) {
 			return K_INT;
 		} else if(leaf instanceof Real) {
@@ -3275,6 +3409,10 @@ public abstract class Type {
 			return T_NULL;			
 		case K_BOOL:
 			return T_BOOL;
+		case K_BYTE:
+			return T_BYTE;
+		case K_CHAR:
+			return T_CHAR;
 		case K_INT:
 			return T_INT;
 		case K_RATIONAL:

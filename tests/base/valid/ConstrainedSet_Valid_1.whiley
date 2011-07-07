@@ -1,4 +1,4 @@
-{byte} f(int x):
+{int} f(int x):
     return {x}
 
 void System::main([string] args):

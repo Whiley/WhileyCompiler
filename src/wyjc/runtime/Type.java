@@ -9,19 +9,21 @@ public class Type {
 	public static final byte K_META = 2;
 	public static final byte K_NULL = 3;
 	public static final byte K_BOOL = 4;
-	public static final byte K_INT = 5;
-	public static final byte K_RATIONAL = 6;
-	public static final byte K_STRING = 7;
-	public static final byte K_TUPLE = 8;
-	public static final byte K_SET = 9;
-	public static final byte K_LIST = 10;
-	public static final byte K_DICTIONARY = 11;	
-	public static final byte K_PROCESS = 12;
-	public static final byte K_RECORD = 13;
-	public static final byte K_UNION = 14;
-	public static final byte K_FUNCTION = 15;
-	public static final byte K_EXISTENTIAL = 16;
-	public static final byte K_LEAF = 17;
+	public static final byte K_BYTE = 5;
+	public static final byte K_CHAR = 6;
+	public static final byte K_INT = 7;
+	public static final byte K_RATIONAL = 8;
+	public static final byte K_STRING = 9;
+	public static final byte K_TUPLE = 10;
+	public static final byte K_SET = 11;
+	public static final byte K_LIST = 12;
+	public static final byte K_DICTIONARY = 13;	
+	public static final byte K_PROCESS = 14;
+	public static final byte K_RECORD = 15;
+	public static final byte K_UNION = 16;
+	public static final byte K_FUNCTION = 17;
+	public static final byte K_EXISTENTIAL = 18;
+	public static final byte K_LEAF = 19;
 	
 	public final int kind;
 	public String str;
@@ -39,6 +41,8 @@ public class Type {
 	public static final Any ANY = new Any();
 	public static final Null NULL = new Null();
 	public static final Bool BOOL = new Bool();
+	public static final Byte BYTE = new Byte();
+	public static final Char CHAR = new Char();
 	public static final Integer INT = new Integer();
 	public static final Rational REAL = new Rational();
 	public static final Strung STRING = new Strung();
@@ -47,6 +51,8 @@ public class Type {
 	private static final class Any extends Type { Any() {super(K_ANY, "any");}}
 	private static final class Null extends Type { Null() {super(K_NULL, "null");}}
 	private static final class Bool extends Type { Bool() {super(K_BOOL, "bool");}}
+	private static final class Byte extends Type { Byte() {super(K_BYTE, "byte");}}
+	private static final class Char extends Type { Char() {super(K_CHAR, "char");}}
 	private static final class Integer extends Type { Integer() {super(K_INT, "int");}}
 	private static final class Rational extends Type { Rational() {super(K_RATIONAL, "real");}}
 	private static final class Strung extends Type { Strung() {super(K_STRING, "string");}}
@@ -86,6 +92,14 @@ public class Type {
 		public Record(String[] names, Type[] types, String str) {
 			super(K_RECORD, str);
 			this.names = names;
+			this.types = types;
+		}
+	}
+	
+	public static final class Tuple extends Type {		
+		public final Type[] types;
+		public Tuple(Type[] types, String str) {
+			super(K_TUPLE, str);			
 			this.types = types;
 		}
 	}
@@ -209,8 +223,16 @@ public class Type {
 				match("null");
 				return NULL;
 			case 'b':
-				match("bool");
-				return BOOL;
+				if(str.charAt(index+1) == 'o') {
+					match("bool");
+					return BOOL;
+				} else {
+					match("byte");
+					return BYTE;
+				}				
+			case 'c':
+				match("char");
+				return CHAR;
 			case 'i':
 				match("int");
 				return INT;
@@ -226,6 +248,19 @@ public class Type {
 				Type elem = parse(typeVars);
 				match("]");
 				return new List(elem, str.substring(start,index));
+			}
+			case '(':
+			{				
+				match("(");
+				ArrayList<Type> elems = new ArrayList<Type>();
+				elems.add(parse(typeVars));
+				while(index < str.length() && str.charAt(index) == ',') {
+					match(",");
+					elems.add(parse(typeVars));
+				}
+				match(")");
+				return new Tuple(elems.toArray(new Type[elems.size()]),
+						str.substring(start, index));
 			}
 			case '{':
 			{
@@ -302,12 +337,15 @@ public class Type {
 				index++;
 			}
 		}		
+
 		private void match(String match) {
 			skipWhiteSpace();
 			if ((str.length() - index) < match.length()
 					|| !str.startsWith(match, index)) {
-				throw new IllegalArgumentException("invalid type string: "
-						+ str);
+				String failed = str.substring(index, index + match.length());
+				throw new IllegalArgumentException(
+						"invalid type string (expected " + match + ", found "
+								+ failed + "): " + str);
 			}
 			index += match.length();
 		}		

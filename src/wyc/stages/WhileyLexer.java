@@ -131,6 +131,25 @@ public class WhileyLexer {
 			}			
 			BigRational r = new BigRational(input.substring(start, pos));
 			return new Real(r,input.substring(start,pos),start);
+		} else if(pos < input.length() && input.charAt(pos) == 'b') {
+			// indicates a binary literal
+			if((pos - start) > 8) {
+				syntaxError("invalid binary literal (too long)");
+			}
+			int val = 0;
+			for(int i=start;i!=pos;++i) {
+				val = val << 1;
+				char c = input.charAt(i);
+				if(c == '1') {
+					val = val | 1;
+				} else if(c == '0') {
+					
+				} else {
+					syntaxError("invalid binary literal (invalid characters)");
+				}				
+			}
+			pos = pos + 1;
+			return new Byte((byte)val,input.substring(start,pos),start);
 		} else {
 			BigInteger r = new BigInteger(input.substring(start, pos));
 			return new Int(r,input.substring(start,pos),start);			
@@ -197,7 +216,7 @@ public class WhileyLexer {
 			syntaxError("unexpected end-of-character",pos);
 		}
 		pos = pos + 1;
-		return new Int(BigInteger.valueOf(c),input.substring(start,pos),start);
+		return new Char(c,input.substring(start,pos),start);
 	}
 	
 	public Token scanString() {
@@ -272,7 +291,7 @@ public class WhileyLexer {
 	static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
-			'*', '/', '%', '!', '?', '=', '<', '>', ':', ';', '&', '|', '.','~',
+			'*', '/', '%', '!', '?', '=', '<', '>', ':', ';', '&', '|', '^', '.','~',
 			UC_FORALL,
 			UC_EXISTS,
 			UC_EMPTYSET,
@@ -309,7 +328,12 @@ public class WhileyLexer {
 		} else if(c == ',') {
 			return new Comma(pos++);
 		} else if(c == ':') {
-			return new Colon(pos++);
+			if((pos+1) < input.length() && input.charAt(pos+1) == ':') {
+				pos += 2;
+				return new ColonColon(pos-2);
+			} else {
+				return new Colon(pos++);				
+			}			
 		} else if(c == ';') {
 			return new SemiColon(pos++);
 		} else if(c == '(') {
@@ -340,7 +364,7 @@ public class WhileyLexer {
 				pos += 2;
 				return new LogicalAnd("&&",pos-2);
 			} else {
-				return new AddressOf("&",pos++);
+				return new Ampersand("&",pos++);
 			}
 		} else if(c == '|') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '|') {
@@ -359,6 +383,10 @@ public class WhileyLexer {
 			}
 		} else if(c == '%') {
 			return new Percent(pos++);			
+		} else if(c == '^') {
+			return new Caret(pos++);			
+		} else if(c == '~') {
+			return new Tilde(pos++);			
 		} else if(c == '!') {			
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
@@ -385,6 +413,9 @@ public class WhileyLexer {
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new LessEquals("<=",pos-2);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '<') {
+				pos += 2;
+				return new LeftLeftAngle(pos-2);
 			} else {
 				return new LeftAngle(pos++);
 			}
@@ -392,6 +423,9 @@ public class WhileyLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new GreaterEquals(">=",pos - 2);
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
+				pos += 2;
+				return new RightRightAngle(pos - 2);
 			} else {
 				return new RightAngle(pos++);
 			}
@@ -435,6 +469,8 @@ public class WhileyLexer {
 		"false",
 		"null",
 		"any",
+		"byte",
+		"char",
 		"int",
 		"real",
 		"string",
@@ -552,6 +588,20 @@ public class WhileyLexer {
 			value = r;
 		}
 	}
+	public static class Byte extends Token {
+		public final byte value;
+		public Byte(byte r, String text, int pos) { 
+			super(text,pos);
+			value = r;
+		}
+	}
+	public static class Char extends Token {
+		public final char value;
+		public Char(char r, String text, int pos) { 
+			super(text,pos);
+			value = r;
+		}
+	}
 	public static class Int extends Token {
 		public final BigInteger value;
 		public Int(BigInteger r, String text, int pos) { 
@@ -588,11 +638,17 @@ public class WhileyLexer {
 	public static class BlockComment extends Token {
 		public BlockComment(String text, int pos) { super(text,pos);	}
 	}
+	public static class Caret extends Token {
+		public Caret(int pos) { super("^",pos);	}
+	}
 	public static class Comma extends Token {
 		public Comma(int pos) { super(",",pos);	}
 	}
 	public static class Colon extends Token {
 		public Colon(int pos) { super(":",pos);	}
+	}
+	public static class ColonColon extends Token {
+		public ColonColon(int pos) { super("::",pos);	}
 	}
 	public static class SemiColon extends Token {
 		public SemiColon(int pos) { super(";",pos);	}
@@ -612,8 +668,14 @@ public class WhileyLexer {
 	public static class LeftAngle extends Token {
 		public LeftAngle(int pos) { super("<",pos);	}
 	}
+	public static class LeftLeftAngle extends Token {
+		public LeftLeftAngle(int pos) { super("<<",pos);	}
+	}
 	public static class RightAngle extends Token {
 		public RightAngle(int pos) { super(">",pos);	}
+	}
+	public static class RightRightAngle extends Token {
+		public RightRightAngle(int pos) { super(">>",pos);	}
 	}
 	public static class LeftCurly extends Token {
 		public LeftCurly(int pos) { super("{",pos);	}
@@ -638,6 +700,9 @@ public class WhileyLexer {
 	}
 	public static class RightSlash extends Token {
 		public RightSlash(int pos) { super("/",pos);	}
+	}
+	public static class Tilde extends Token {
+		public Tilde(int pos) { super("~",pos);	}
 	}
 	public static class Shreak extends Token {
 		public Shreak(int pos) { super("!",pos);	}
@@ -711,8 +776,8 @@ public class WhileyLexer {
 	public static class LogicalNot extends Token {
 		public LogicalNot(String text, int pos) { super(text,pos);	}
 	}
-	public static class AddressOf extends Token {
-		public AddressOf(String text, int pos) { super(text,pos);	}
+	public static class Ampersand extends Token {
+		public Ampersand(String text, int pos) { super(text,pos);	}
 	}
 	public static class BitwiseOr extends Token {
 		public BitwiseOr(String text, int pos) { super(text,pos);	}

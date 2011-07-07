@@ -186,6 +186,8 @@ public class WhileyDefine implements BytecodeAttribute {
 			write((Value.Null) val, writer, constantPool);
 		} else if(val instanceof Value.Bool) {
 			write((Value.Bool) val, writer, constantPool);
+		} else if(val instanceof Value.Char) {
+			write((Value.Char) val, writer, constantPool);
 		} else if(val instanceof Value.Integer) {
 			write((Value.Integer) val, writer, constantPool);
 		} else if(val instanceof Value.Rational) {
@@ -212,6 +214,12 @@ public class WhileyDefine implements BytecodeAttribute {
 		} else {
 			writer.write_u1(FALSE);
 		}
+	}
+	
+	public static void write(Value.Char expr, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool) throws IOException {		
+		writer.write_u1(CHARVAL);		
+		writer.write_u2(expr.value);		
 	}
 	
 	public static void write(Value.Integer expr, BinaryOutputStream writer,
@@ -323,6 +331,17 @@ public class WhileyDefine implements BytecodeAttribute {
 				Map<Integer, Constant.Info> constantPool) throws IOException {		
 			int code = reader.read_u1();				
 			switch (code) {			
+			case NULL:
+				return Value.V_NULL;
+			case FALSE:
+				return Value.V_BOOL(false);
+			case TRUE:
+				return Value.V_BOOL(true);				
+			case CHARVAL:			
+			{
+				char val = (char) reader.read_u2();				
+				return Value.V_CHAR(val);
+			}
 			case INTVAL:			
 			{
 				int len = reader.read_u2();				
@@ -386,9 +405,10 @@ public class WhileyDefine implements BytecodeAttribute {
 	public final static int NULL = 0;
 	public final static int TRUE = 1;
 	public final static int FALSE = 2;	
-	public final static int INTVAL = 3;
-	public final static int REALVAL = 4;
-	public final static int SETVAL = 5;
-	public final static int LISTVAL = 6;
-	public final static int RECORDVAL = 7;		
+	public final static int CHARVAL = 3;
+	public final static int INTVAL = 4;
+	public final static int REALVAL = 5;
+	public final static int SETVAL = 6;
+	public final static int LISTVAL = 7;
+	public final static int RECORDVAL = 8;		
 }

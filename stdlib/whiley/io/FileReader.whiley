@@ -31,7 +31,7 @@ define FileReader as process { string fileName }
 FileReader System::openReader(string fileName):
     extern jvm:
         aload 1
-        invokestatic wyjc/runtime/IO.openReader:(Ljava/util/ArrayList;)Lwyjc/runtime/Actor;
+        invokestatic wyjc/runtime/IO.openReader:(Ljava/lang/String;)Lwyjc/runtime/Actor;
         areturn
     // the following line is dead code
     return spawn {fileName: ""}
@@ -45,7 +45,7 @@ void FileReader::close():
 [byte] FileReader::read():
     extern jvm:
         aload 0
-        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;)Ljava/util/ArrayList;
+        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;)Lwyjc/runtime/List;
         areturn
     return []
     
@@ -54,6 +54,6 @@ void FileReader::close():
     extern jvm:
         aload 0
         aload 1
-        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;Lwyjc/runtime/BigRational;)Ljava/util/ArrayList;
+        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;Ljava/math/BigInteger;)Lwyjc/runtime/List;
         areturn
     return []

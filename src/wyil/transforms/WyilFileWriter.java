@@ -168,8 +168,8 @@ public class WyilFileWriter implements Transform {
 		} else if(c instanceof Code.Load && !writeSlots){
 			Code.Load load = (Code.Load) c;
 			line = "load " + locals.get(load.slot) + " : " + load.type;
-		} else if(c instanceof Code.MultiStore && !writeSlots){
-			Code.MultiStore store = (Code.MultiStore) c;
+		} else if(c instanceof Code.Update && !writeSlots){
+			Code.Update store = (Code.Update) c;
 			String fs = store.fields.isEmpty() ? "" : " ";
 			boolean firstTime=true;
 			for(String f : store.fields) {

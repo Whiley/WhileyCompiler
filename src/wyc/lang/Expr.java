@@ -147,7 +147,8 @@ public interface Expr extends SyntacticElement {
 	public enum UOp {
 		NOT,
 		NEG,
-		LENGTHOF,
+		INVERT,
+		LENGTHOF,		
 		PROCESSACCESS,
 		PROCESSSPAWN
 	}
@@ -339,7 +340,7 @@ public interface Expr extends SyntacticElement {
 		ELEMENTOF{
 			public String toString() { return "in"; }
 		},		
-		LISTRANGE{
+		RANGE{
 			public String toString() { return ".."; }
 		},
 		TYPEEQ{
@@ -347,6 +348,21 @@ public interface Expr extends SyntacticElement {
 		},
 		TYPEIMPLIES {
 			public String toString() { return "~=>"; }
-		}
+		},
+		BITWISEAND {
+			public String toString() { return "&"; }
+		},
+		BITWISEOR{
+			public String toString() { return "|"; }
+		},
+		BITWISEXOR {
+			public String toString() { return "^"; }
+		},
+		LEFTSHIFT {
+			public String toString() { return "<<"; }
+		},
+		RIGHTSHIFT {
+			public String toString() { return ">>"; }
+		},
 	};
 }

@@ -1,4 +1,4 @@
-int f(byte b):
+int f(int b):
     return b + 1
 
 void System::main([string] args):

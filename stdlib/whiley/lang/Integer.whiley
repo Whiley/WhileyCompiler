@@ -40,6 +40,30 @@ public string hexStr(int item):
     //    return r
     return "FIX HEX STR"
 
+// Convert a byte into an unsigned int assuming a little endian
+// orientation.
+int le2uint(byte b):
+    r = 0
+    base = 1
+    while b != 0b:
+        if (b & 00000001b) == 00000001b:
+            r = r + base
+        b = b >> 1
+        base = base * 2
+    return r
+
+// Convert a string into an integer
+int str2int(string input) throws Error:
+    r = 0
+    for i in 0..|input|:
+        c = input[i]
+        r = r * 10
+        if !isDigit(c):
+            throw { msg: "invalid number string (" + str(input) + ")" }
+        r = r + (c - '0')
+    return r
+
+/*
 // Convert a byte array in little endian form into an unsigned int
 int le2uint([byte] bytes):
     idx = 0
@@ -98,3 +122,4 @@ int be2uint([byte] bytes):
     b1 = b == 1    
     return [b1,b2,b3,b4,b5,b6,b7,b8]
 
+*/

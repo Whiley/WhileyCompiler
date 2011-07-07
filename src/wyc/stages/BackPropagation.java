@@ -23,18 +23,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.transforms;
+package wyc.stages;
 
 import static wyil.util.SyntaxError.syntaxError;
 
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.stages.TypePropagation.Env;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
-import wyil.transforms.TypePropagation.Env;
 import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
@@ -100,6 +100,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			infer(index,(Debug)code,entry,environment);
+		} else if(code instanceof Destructure) {
+			infer(index,(Destructure)code,entry,environment);
 		} else if(code instanceof DictLoad) {
 			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
@@ -114,6 +116,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(IndirectSend)code,entry,environment);
 		} else if(code instanceof Invoke) {
 			infer(index,(Invoke)code,entry,environment);
+		} else if(code instanceof Invert) {
+			infer(index,(Invert)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
 		} else if(code instanceof ListAppend) {
@@ -126,8 +130,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
 			infer(index,(Load)code,entry,environment);
-		} else if(code instanceof MultiStore) {
-			infer(index,(MultiStore)code,entry,environment);
+		} else if(code instanceof Update) {
+			infer(index,(Update)code,entry,environment);
 		} else if(code instanceof NewDict) {
 			infer(index,(NewDict)code,entry,environment);
 		} else if(code instanceof NewList) {
@@ -136,6 +140,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			infer(index,(NewSet)code,entry,environment);
+		} else if(code instanceof NewTuple) {
+			infer(index,(NewTuple)code,entry,environment);
 		} else if(code instanceof Negate) {
 			infer(index,(Negate)code,entry,environment);
 		} else if(code instanceof ProcLoad) {
@@ -184,9 +190,17 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.BinOp code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.pop();		
-		coerce(req,code.type,index,entry);		
-		environment.push(code.type);
-		environment.push(code.type);		
+		coerce(req,code.type,index,entry);	
+		if(code.bop == BOp.LEFTSHIFT || code.bop == BOp.RIGHTSHIFT) {
+			environment.push(code.type);
+			environment.push(Type.T_INT);
+		} else if(code.bop == BOp.RANGE){
+			environment.push(Type.T_INT);
+			environment.push(Type.T_INT);
+		} else {		
+			environment.push(code.type);
+			environment.push(code.type);
+		}
 	}
 	
 	public void infer(int index, Code.Convert code, Block.Entry entry,
@@ -205,6 +219,24 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.Debug code, Block.Entry entry,
 			Env environment) {
 		environment.push(Type.T_STRING);
+	}
+	
+	public void infer(int index, Code.Destructure code, Block.Entry entry,
+			Env environment) {
+		
+		if(code.type instanceof Type.Tuple) {
+			Type.Tuple tup = (Type.Tuple) code.type;
+			for(Type t : tup.elements()) {
+				// FIXME: no coercion?
+				environment.pop();
+			}			
+		} else {
+			// FIXME: no coercion?
+			environment.pop();
+			environment.pop();
+		} 
+		
+		environment.push(code.type);
 	}
 	
 	public void infer(int index, Code.DictLoad code, Block.Entry entry,
@@ -244,7 +276,21 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.IndirectSend code, Block.Entry entry,
 			Env environment) {
-		// FIXME: need to do something here
+		
+		if(code.type.ret() != Type.T_VOID && code.retval) {
+			Type req = environment.pop();
+			coerce(req,code.type.ret(),index,entry);			
+		}
+				
+		environment.push(code.type);		
+		
+		if(code.type.receiver() != null) {		
+			environment.push(code.type.receiver());
+		}
+		
+		for(Type t : code.type.params()) {
+			environment.push(t);
+		}		
 	}
 	
 	public void infer(int index, Code.Invoke code, Block.Entry entry,
@@ -258,6 +304,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		for(Type t : code.type.params()) {
 			environment.push(t);
 		}	
+	}
+	
+	public void infer(int index, Code.Invert code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		// FIXME: add support for dictionaries
+		coerce(req,code.type,index,entry);
+		environment.push(code.type);
 	}
 	
 	public void infer(int index, Code.ListAppend code, Block.Entry entry,
@@ -307,7 +361,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		environment.set(code.slot,code.type);		
 	}
 	
-	public void infer(int index, Code.MultiStore code, Block.Entry stmt,
+	public void infer(int index, Code.Update code, Block.Entry stmt,
 			Env environment) {
 		
 		Type src = environment.get(code.slot);
@@ -331,7 +385,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 				iter = dict.value();				
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
 				environment.push(Type.T_INT);
-				iter = Type.T_INT;
+				iter = Type.T_CHAR;
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
 				environment.push(Type.T_INT);
@@ -357,12 +411,12 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		for(int i=0;i!=code.level;++i) {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
-				environment.push(dict.key());
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
 				iter = dict.value();				
+			} else if(Type.isSubtype(Type.T_STRING,iter)) {
+				iter = Type.T_CHAR;
 			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
-				environment.push(Type.T_INT);
 				iter = list.element();
 			} else if(Type.effectiveRecordType(iter) != null) {
 				Type.Record rec = Type.effectiveRecordType(iter);				
@@ -427,6 +481,15 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Type value = code.type.element();
 		for(int i=0;i!=code.nargs;++i) {
 			environment.push(value);					
+		}
+	}
+	
+	public void infer(int index, Code.NewTuple code, Block.Entry entry,
+			Env environment) {
+		Type req = environment.pop();
+		coerce(req,code.type,index,entry);				
+		for(Type t : code.type.elements()) {
+			environment.push(t);					
 		}
 	}
 	
@@ -590,8 +653,27 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Code.IfGoto igoto, Entry stmt, Env trueEnv, Env falseEnv) {
 		
 		Env environment = join(trueEnv,falseEnv);
-		environment.push(igoto.type);
-		environment.push(igoto.type);
+		
+		if(igoto.op == Code.COp.ELEMOF) {
+			Type src = igoto.type;
+			Type element;
+			
+			// FIXME: this is soooo broken
+			
+			if(src instanceof Type.Set) {
+				Type.Set s = (Type.Set) src;
+				element = s.element();
+			} else {
+				Type.List s = (Type.List) src;
+				element = s.element();
+			}
+						
+			environment.push(element);
+			environment.push(igoto.type);
+		} else {		
+			environment.push(igoto.type);
+			environment.push(igoto.type);
+		}
 		
 		return environment;
 	}

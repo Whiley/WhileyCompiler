@@ -36,7 +36,7 @@ import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
 import wyc.lang.Stmt.*;
 import wyc.lang.Expr.*;
-import wyc.stages.WhileyLexer.AddressOf;
+import wyc.stages.WhileyLexer.Ampersand;
 import wyc.util.*;
 
 public class NameResolution {
@@ -336,8 +336,7 @@ public class NameResolution {
 		if(!environment.containsKey(ivk.name)) {
 			// only look for non-local function binding if there is not a local
 			// variable with the same name.
-			Expr target = ivk.receiver;
-
+			Expr target = ivk.receiver;			
 			if(target != null) {
 				resolve(target,environment,imports);
 				try {
@@ -354,6 +353,8 @@ public class NameResolution {
 				// Ok, resolve the module for this invoke
 				ivk.attributes().add(new Attributes.Module(mid));		
 			}
+		} else if(ivk.receiver != null) {
+			resolve(ivk.receiver,environment,imports);
 		}
 	}
 	
@@ -511,6 +512,9 @@ public class NameResolution {
 		} else if(t instanceof UnresolvedType.Fun) {	
 			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;
 			resolve(ut.ret,imports);
+			if(ut.receiver != null) {
+				resolve(ut.receiver,imports);
+			}
 			for(UnresolvedType p : ut.paramTypes) {
 				resolve(p,imports);
 			}

@@ -44,6 +44,22 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void BoolRecord_Valid_1_RuntimeTest() { runTest("BoolRecord_Valid_1"); }
  @Test public void BoolRecord_Valid_2_RuntimeTest() { runTest("BoolRecord_Valid_2"); } 
  @Test public void BoolReturn_Valid_1_RuntimeTest() { runTest("BoolReturn_Valid_1"); }
+ @Test public void Byte_Valid_1_RuntimeTest() { runTest("Byte_Valid_1"); }
+ @Test public void Byte_Valid_2_RuntimeTest() { runTest("Byte_Valid_2"); }
+ @Test public void Byte_Valid_3_RuntimeTest() { runTest("Byte_Valid_3"); }
+ @Test public void Byte_Valid_4_RuntimeTest() { runTest("Byte_Valid_4"); }
+ @Test public void Byte_Valid_5_RuntimeTest() { runTest("Byte_Valid_5"); }
+ @Test public void Byte_Valid_6_RuntimeTest() { runTest("Byte_Valid_6"); }
+ @Test public void Byte_Valid_7_RuntimeTest() { runTest("Byte_Valid_7"); }
+ @Test public void Byte_Valid_8_RuntimeTest() { runTest("Byte_Valid_8"); }
+ @Test public void Byte_Valid_9_RuntimeTest() { runTest("Byte_Valid_9"); }
+ @Test public void Char_Valid_1_RuntimeTest() { runTest("Char_Valid_1"); }
+ @Test public void Char_Valid_2_RuntimeTest() { runTest("Char_Valid_2"); }
+ @Test public void Char_Valid_3_RuntimeTest() { runTest("Char_Valid_3"); }
+ @Test public void Char_Valid_4_RuntimeTest() { runTest("Char_Valid_4"); }
+ @Test public void Char_Valid_5_RuntimeTest() { runTest("Char_Valid_5"); }
+ @Test public void Char_Valid_6_RuntimeTest() { runTest("Char_Valid_6"); }
+ @Test public void Char_Valid_7_RuntimeTest() { runTest("Char_Valid_7"); }
  @Test public void Coercion_Valid_1_RuntimeTest() { runTest("Coercion_Valid_1"); }
  @Test public void Coercion_Valid_2_RuntimeTest() { runTest("Coercion_Valid_2"); }
  @Test public void Coercion_Valid_3_RuntimeTest() { runTest("Coercion_Valid_3"); }
@@ -52,7 +68,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Coercion_Valid_6_RuntimeTest() { runTest("Coercion_Valid_6"); }
  @Test public void Coercion_Valid_7_RuntimeTest() { runTest("Coercion_Valid_7"); }
  @Test public void Coercion_Valid_8_RuntimeTest() { runTest("Coercion_Valid_8"); }
- 
+ @Test public void Complex_Valid_1_RuntimeTest() { runTest("Complex_Valid_1"); }
+ @Test public void Complex_Valid_2_RuntimeTest() { runTest("Complex_Valid_2"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_2_RuntimeTest() { runTest("ConstrainedInt_Valid_2"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { runTest("ConstrainedInt_Valid_3"); }
@@ -87,6 +104,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_3_RuntimeTest() { runTest("Dictionary_Valid_3"); }
  @Test public void Dictionary_Valid_4_RuntimeTest() { runTest("Dictionary_Valid_4"); }
  @Test public void Dictionary_Valid_5_RuntimeTest() { runTest("Dictionary_Valid_5"); }
+ @Test public void Dictionary_Valid_6_RuntimeTest() { runTest("Dictionary_Valid_6"); }
  @Test public void For_Valid_1_RuntimeTest() { runTest("For_Valid_1"); }
  @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
@@ -109,6 +127,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void FunctionRef_Valid_5_RuntimeTest() { runTest("FunctionRef_Valid_5"); }
  @Test public void FunctionRef_Valid_6_RuntimeTest() { runTest("FunctionRef_Valid_6"); } 
  @Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
+ @Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
+ //@Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
  @Test public void IfElse_Valid_1_RuntimeTest() { runTest("IfElse_Valid_1"); }
  @Test public void IfElse_Valid_2_RuntimeTest() { runTest("IfElse_Valid_2"); }
  @Test public void IfElse_Valid_3_RuntimeTest() { runTest("IfElse_Valid_3"); }
@@ -130,6 +150,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAppend_Valid_4_RuntimeTest() { runTest("ListAppend_Valid_4"); }
  @Test public void ListAppend_Valid_5_RuntimeTest() { runTest("ListAppend_Valid_5"); }
  @Test public void ListAppend_Valid_6_RuntimeTest() { runTest("ListAppend_Valid_6"); }
+ @Test public void ListAppend_Valid_7_RuntimeTest() { runTest("ListAppend_Valid_7"); }
+ @Test public void ListAppend_Valid_8_RuntimeTest() { runTest("ListAppend_Valid_8"); }
+ @Test public void ListAppend_Valid_9_RuntimeTest() { runTest("ListAppend_Valid_9"); }
  @Test public void ListAssign_Valid_1_RuntimeTest() { runTest("ListAssign_Valid_1"); }
  @Test public void ListAssign_Valid_2_RuntimeTest() { runTest("ListAssign_Valid_2"); }
  @Test public void ListAssign_Valid_3_RuntimeTest() { runTest("ListAssign_Valid_3"); }
@@ -139,6 +162,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListAssign_Valid_7_RuntimeTest() { runTest("ListAssign_Valid_7"); }
  @Test public void ListAssign_Valid_8_RuntimeTest() { runTest("ListAssign_Valid_8"); }
  @Test public void ListAssign_Valid_9_RuntimeTest() { runTest("ListAssign_Valid_9"); }
+ @Test public void ListAssign_Valid_10_RuntimeTest() { runTest("ListAssign_Valid_10"); }
  @Test public void ListConversion_Valid_1_RuntimeTest() { runTest("ListConversion_Valid_1"); }
  @Test public void ListElemOf_Valid_1_RuntimeTest() { runTest("ListElemOf_Valid_1"); }
  @Test public void ListEmpty_Valid_1_RuntimeTest() { runTest("ListEmpty_Valid_1"); }
@@ -156,6 +180,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void MethodCall_Valid_5_RuntimeTest() { runTest("MethodCall_Valid_5"); }
  @Test public void MethodCall_Valid_6_RuntimeTest() { runTest("MethodCall_Valid_6"); }
  @Test public void MethodRef_Valid_1_RuntimeTest() { runTest("MethodRef_Valid_1"); }
+ @Test public void MethodRef_Valid_2_RuntimeTest() { runTest("MethodRef_Valid_2"); }
  @Test public void Print_Valid_1_RuntimeTest() { runTest("Print_Valid_1"); }
  @Test public void ProcessAccess_Valid_1_RuntimeTest() { runTest("ProcessAccess_Valid_1"); }
  @Test public void ProcessAccess_Valid_2_RuntimeTest() { runTest("ProcessAccess_Valid_2"); }
@@ -171,9 +196,11 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { runTest("RealDiv_Valid_2"); }
  @Test public void RealDiv_Valid_3_RuntimeTest() { runTest("RealDiv_Valid_3"); }
+ @Test public void RealDiv_Valid_4_RuntimeTest() { runTest("RealDiv_Valid_4"); }
  @Test public void RealNeg_Valid_1_RuntimeTest() { runTest("RealNeg_Valid_1"); }
  @Test public void RealSplit_Valid_1_RuntimeTest() { runTest("RealSplit_Valid_1"); }
  @Test public void RealSub_Valid_1_RuntimeTest() { runTest("RealSub_Valid_1"); }
+ @Test public void RealSub_Valid_2_RuntimeTest() { runTest("RealSub_Valid_2"); }
  @Test public void RecordAccess_Valid_1_RuntimeTest() { runTest("RecordAccess_Valid_1"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { runTest("RecordAssign_Valid_1"); }
  @Test public void RecordAssign_Valid_2_RuntimeTest() { runTest("RecordAssign_Valid_2"); }
@@ -232,6 +259,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void SetUnion_Valid_4_RuntimeTest() { runTest("SetUnion_Valid_4"); }
  @Test public void SetUnion_Valid_5_RuntimeTest() { runTest("SetUnion_Valid_5"); }
  @Test public void SetUnion_Valid_6_RuntimeTest() { runTest("SetUnion_Valid_6"); }
+ @Test public void SetUnion_Valid_7_RuntimeTest() { runTest("SetUnion_Valid_7"); }
+ @Test public void SetUnion_Valid_8_RuntimeTest() { runTest("SetUnion_Valid_8"); }
+ @Test public void SetUnion_Valid_9_RuntimeTest() { runTest("SetUnion_Valid_9"); }
  @Test public void Subtype_Valid_3_RuntimeTest() { runTest("Subtype_Valid_3"); }
  @Test public void Subtype_Valid_4_RuntimeTest() { runTest("Subtype_Valid_4"); }
  @Test public void Subtype_Valid_5_RuntimeTest() { runTest("Subtype_Valid_5"); }
@@ -248,6 +278,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Switch_Valid_4_RuntimeTest() { runTest("Switch_Valid_4"); }
  @Test public void Switch_Valid_5_RuntimeTest() { runTest("Switch_Valid_5"); }
  @Test public void Switch_Valid_6_RuntimeTest() { runTest("Switch_Valid_6"); }
+ @Test public void Switch_Valid_7_RuntimeTest() { runTest("Switch_Valid_7"); }
  @Test public void TryCatch_Valid_1_RuntimeTest() { runTest("TryCatch_Valid_1"); }
  @Test public void TupleType_Valid_1_RuntimeTest() { runTest("TupleType_Valid_1"); }
  @Test public void TupleType_Valid_2_RuntimeTest() { runTest("TupleType_Valid_2"); }

@@ -70,6 +70,10 @@ public abstract class Code {
 	
 	public static final Debug debug = new Debug();
 
+	public static Destructure Destructure(Type from) {
+		return get(new Destructure(from));
+	}
+	
 	/**
 	 * Construct a <code>dictload</code> bytecode which reads the value
 	 * associated with a given key in a dictionary.
@@ -138,6 +142,9 @@ public abstract class Code {
 		return get(new Invoke(fun,name,retval));
 	}
 
+	public static Not Not() {
+		return get(new Not());
+	}
 	
 	/**
 	 * Construct a <code>load</code> bytecode which reads a given register.
@@ -201,21 +208,7 @@ public abstract class Code {
 	 */
 	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
 		return get(new ForAll(type, var, label,modifies));
-	}
-	
-	/**
-	 * Construct a <code>multistore</code> bytecode which writes a value into a
-	 * compound structure, as determined by a given access path.
-	 * 
-	 * @param type
-	 *            --- record type.
-	 * @param field
-	 *            --- field to write.
-	 * @return
-	 */
-	public static MultiStore MultiStore(Type type, int slot, int level, Collection<String> fields) {
-		return get(new MultiStore(type,slot,level,fields));
-	}
+	}				
 	
 	/**
 	 * Construct a <code>newdict</code> bytecode which constructs a new dictionary
@@ -257,8 +250,8 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewTuple NewTuple(Type.Record type) {
-		return get(new NewTuple(type));
+	public static NewTuple NewTuple(Type.Tuple type, int nargs) {
+		return get(new NewTuple(type, nargs));
 	}
 	
 	/**
@@ -307,6 +300,10 @@ public abstract class Code {
 	public static IndirectInvoke IndirectInvoke(Type.Fun fun, boolean retval) {
 		return get(new IndirectInvoke(fun,retval));
 	}
+	
+	public static Invert Invert(Type type) {
+		return get(new Invert(type));
+	}	
 	
 	public static Label Label(String label) {
 		return get(new Label(label));
@@ -412,6 +409,20 @@ public abstract class Code {
 		return get(new ProcLoad(type));
 	}
 	
+	/**
+	 * Construct a <code>update</code> bytecode which writes a value into a
+	 * compound structure, as determined by a given access path.
+	 * 
+	 * @param type
+	 *            --- record type.
+	 * @param field
+	 *            --- field to write.
+	 * @return
+	 */
+	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
+		return get(new Update(type,slot,level,fields));
+	}
+	
 	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================
@@ -454,7 +465,25 @@ public abstract class Code {
 		},		
 		REM{
 			public String toString() { return "rem"; }
-		}		
+		},
+		RANGE{
+			public String toString() { return "range"; }
+		},
+		BITWISEOR{
+			public String toString() { return "or"; }
+		},
+		BITWISEXOR{
+			public String toString() { return "xor"; }
+		},
+		BITWISEAND{
+			public String toString() { return "and"; }
+		},
+		LEFTSHIFT{
+			public String toString() { return "shl"; }
+		},
+		RIGHTSHIFT{
+			public String toString() { return "shr"; }
+		},
 	};
 
 	/**
@@ -591,6 +620,39 @@ public abstract class Code {
 		}
 		public String toString() {
 			return "debug";
+		}
+	}
+
+	/**
+	 * A destructure operation takes a compound value and "destructures" it into
+	 * multiple values. For example, a rational can be destructured into two
+	 * integers. Or, an n-tuple can be structured into n values.
+	 */
+	public static final class Destructure extends Code {
+		public final Type type;
+		
+		private Destructure(Type from) {			
+			this.type = from;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 12345;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Destructure) {
+				Destructure c = (Destructure) o;
+				return (type == c.type || (type != null && type.equals(c.type)));  
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return "destructure " + type;
 		}
 	}
 	
@@ -951,6 +1013,23 @@ public abstract class Code {
 		 }		
 	}
 	
+	public static final class Not extends Code {		
+		private Not() {						
+		}
+		
+		public int hashCode() {			
+			return 12875;			
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof Not;
+		}
+				
+		public String toString() {
+			return toString("not",Type.T_BYTE);
+		}
+	}
+	
 	public static final class Invoke extends Code {		
 		public final Type.Fun type;
 		public final NameID name;
@@ -1223,13 +1302,13 @@ public abstract class Code {
 	}
 
 	
-	public static final class MultiStore extends Code {
+	public static final class Update extends Code {
 		public final Type type;
 		public final int level;
 		public final int slot;
 		public final ArrayList<String> fields;
 
-		private MultiStore(Type type, int slot, int level, Collection<String> fields) {
+		private Update(Type type, int slot, int level, Collection<String> fields) {
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
@@ -1249,8 +1328,8 @@ public abstract class Code {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof MultiStore) {
-				MultiStore i = (MultiStore) o;
+			if (o instanceof Update) {
+				Update i = (Update) o;
 				return (i.type == type || (type != null && type.equals(i.type)))
 						&& level == i.level && slot == i.slot && fields.equals(i.fields);
 			}
@@ -1331,30 +1410,32 @@ public abstract class Code {
 	}
 		
 	public static final class NewTuple extends Code {
-		public final Type.Record type;
+		public final Type.Tuple type;
+		public final int nargs;
 		
-		private NewTuple(Type.Record type) {
+		private NewTuple(Type.Tuple type, int nargs) {
 			this.type = type;
+			this.nargs = nargs;
 		}
 		
 		public int hashCode() {
 			if(type == null) {
-				return 952;
+				return nargs;
 			} else {
-				return type.hashCode();
+				return type.hashCode() + nargs;
 			}
 		}
 		
 		public boolean equals(Object o) {
 			if(o instanceof NewTuple) {
 				NewTuple i = (NewTuple) o;
-				return type == i.type || (type != null && type.equals(i.type));
+				return nargs == i.nargs && (type == i.type || (type != null && type.equals(i.type)));
 			}
 			return false;
 		}
 	
 		public String toString() {
-			return toString("newtuple",type);
+			return toString("newtuple #" + nargs,type);
 		}	
 	}
 	
@@ -1889,6 +1970,35 @@ public abstract class Code {
 				
 		public String toString() {
 			return toString("neg",type);
+		}
+	}
+	
+	public static final class Invert extends Code {
+		public final Type type;		
+		
+		private Invert(Type type) {			
+			this.type = type;
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 239487;
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Invert) {
+				Invert bo = (Invert) o;
+				return (type == bo.type || (type != null && type
+						.equals(bo.type))); 
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("invert",type);
 		}
 	}
 	

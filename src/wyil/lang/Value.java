@@ -41,6 +41,14 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Bool(value));
 	}
 	
+	public static Byte V_BYTE(byte value) {
+		return get(new Byte(value));
+	}
+	
+	public static Char V_CHAR(char value) {
+		return get(new Char(value));
+	}
+	
 	public static Rational V_RATIONAL(BigRational value) {
 		return get(new Rational(value));
 	}	
@@ -76,6 +84,10 @@ public abstract class Value implements Comparable<Value> {
 	
 	public static TypeConst V_TYPE(Type type) {
 		return get(new TypeConst(type));
+	}
+	
+	public static Tuple V_TUPLE(Collection<Value> values) {
+		return get(new Tuple(values));
 	}
 	
 	public static FunConst V_FUN(NameID name, Type.Fun type) {
@@ -165,7 +177,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Rational) {
 				Rational i = (Rational) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Integer) {
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Byte || v instanceof Char || v instanceof Integer) {
 				return 1; 
 			} 
 			return -1;			
@@ -187,6 +199,93 @@ public abstract class Value implements Comparable<Value> {
 			return Value.V_RATIONAL(value.divide(val.value));
 		}		
 	}		
+	
+	public static final class Byte extends Value {
+		public final byte value;
+		private Byte(byte value) {
+			this.value = value;
+		}
+		public Type type() {				
+			return Type.T_BYTE;			
+		}
+		public int hashCode() {
+			return value;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Byte) {
+				Byte i = (Byte) o;
+				return value == i.value;
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Byte) {
+				Byte i = (Byte) v;
+				if(value < i.value) {
+					return -1;
+				} else if(value > i.value) {
+					return 1;
+				} else {
+					return 0;
+				}
+			} else if(v instanceof Null || v instanceof Bool) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public String toString() {
+			String r = "b";
+			byte v = value;
+			for(int i=0;i!=8;++i) {
+				if((v&0x1) == 1) {
+					r = "1" + r;
+				} else {
+					r = "0" + r;
+				}
+				v = (byte) (v >>> 1);
+			}
+			return r;			
+		}
+	}
+	
+	public static final class Char extends Value {
+		public final char value;
+		private Char(char value) {
+			this.value = value;
+		}
+		public Type type() {				
+			return Type.T_CHAR;			
+		}
+		public int hashCode() {
+			return value;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Char) {
+				Char i = (Char) o;
+				return value == i.value;
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Char) {
+				Char i = (Char) v;
+				if(value < i.value) {
+					return -1;
+				} else if(value > i.value) {
+					return 1;
+				} else {
+					return 0;
+				}
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Byte) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public String toString() {
+			return "'" + value + "'";			
+		}
+	}
 	
 	public static final class Integer extends Value {
 		public final BigInteger value;
@@ -210,7 +309,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool) {
+			} else if(v instanceof Null || v instanceof Byte || v instanceof Char || v instanceof Bool) {
 				return 1; 
 			} 
 			return -1;			
@@ -258,7 +357,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Strung) {
 				Strung i = (Strung) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Rational || v instanceof Integer) {
+			} else if(v instanceof Null || v instanceof Bool || v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer) {
 				return 1; 
 			} 
 			return -1;			
@@ -307,7 +406,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Integer || v instanceof Strung) {
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung) {
 				return 1; 
 			} 
 			return -1;			
@@ -374,8 +473,8 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Integer || v instanceof Strung
-					|| v instanceof List) {
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof List || v instanceof Tuple) {
 				return 1;
 			}
 			return -1;			
@@ -479,8 +578,8 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Integer || v instanceof Strung
-					|| v instanceof Set || v instanceof List) {
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof Set || v instanceof List || v instanceof Tuple) {
 				return 1; 
 			} 
 			return -1;			
@@ -556,8 +655,8 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Rational || v instanceof Integer || v instanceof Strung
-					|| v instanceof Set || v instanceof List
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof Set || v instanceof List || v instanceof Tuple
 					|| v instanceof Record) {
 				return 1;
 			}
@@ -661,6 +760,69 @@ public abstract class Value implements Comparable<Value> {
 			return "&" + name.toString() + ":" + type.toString();
 		}
 	}
+	
+	public static class Tuple extends Value {
+		public final ArrayList<Value> values;
+		private Tuple(Collection<Value> values) {
+			this.values = new ArrayList<Value>(values);
+		}
+
+		public Type type() {
+			ArrayList<Type> types = new ArrayList<Type>();			
+			for (Value e : values) {
+				types.add(e.type());				
+			}
+			return Type.T_TUPLE(types);
+		}
+		public int hashCode() {
+			return values.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Tuple) {
+				Tuple i = (Tuple) o;
+				return values.equals(i.values);
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof Tuple) {
+				Tuple l = (Tuple) v;
+				if(values.size() < l.values.size()) {
+					return -1;
+				} else if(values.size() > l.values.size()) {
+					return 1;
+				} else {
+					ArrayList<Value> vs1 = values;
+					ArrayList<Value> vs2 = l.values;
+					for(int i=0;i!=values.size();++i) {
+						Value s1 = vs1.get(i);
+						Value s2 = vs2.get(i);
+						int c = s1.compareTo(s2);
+						if(c != 0) { return c; }						
+					}
+					return 0;
+				}
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Rational || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
+					|| v instanceof Set || v instanceof List) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public String toString() {
+			String r = "(";
+			boolean firstTime=true;			
+			for(Value v : values) {
+				if(!firstTime) {
+					r += ",";
+				}
+				firstTime=false;
+				r += v;
+			}
+			return r + ")";
+		}
+	}
+	
 	private static final ArrayList<Value> values = new ArrayList<Value>();
 	private static final HashMap<Value,java.lang.Integer> cache = new HashMap<Value,java.lang.Integer>();
 	

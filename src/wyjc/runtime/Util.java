@@ -26,7 +26,10 @@
 package wyjc.runtime;
 
 import java.math.*;
+import java.util.ArrayList;
 import java.util.Map;
+
+import wyil.lang.Value;
 
 public class Util {
 
@@ -51,7 +54,15 @@ public class Util {
 	private static int nset_clones = 0;
 	private static int nrecord_clones = 0;
 
-	public static String append(final String lhs, final String rhs) {
+	public static String append(final String lhs, final String rhs) {		
+		return lhs + rhs;
+	}
+	
+	public static String append(final String lhs, final char rhs) {		
+		return lhs + rhs;
+	}
+	
+	public static String append(final char lhs, final String rhs) {		
 		return lhs + rhs;
 	}
 	
@@ -65,13 +76,48 @@ public class Util {
 		return lhs.substring(start,end);
 	}
 	
-	public static String set(final String lhs, BigInteger index, BigInteger value) {
-		int idx = index.intValue();
-		char c = (char) value.intValue();
+	public static String set(final String lhs, BigInteger index, char value) {
+		int idx = index.intValue();		
 		// hmmm, not exactly efficient!
 		StringBuilder sb = new StringBuilder(lhs);
-		sb.setCharAt(idx, c);
+		sb.setCharAt(idx, value);
 		return sb.toString();
+	}
+	
+	public static int leftshift(int b1, BigInteger b2) {		
+		return (byte) (b1 << b2.intValue());		
+	}
+	
+	public static int rightshift(int b1, BigInteger b2) {		
+		return (byte) (b1 >>> b2.intValue());		
+	}
+	
+	public static List range(BigInteger start, BigInteger end) {
+		List l = new List();
+		
+		long st = start.longValue();
+		long en = start.longValue();
+		if (BigInteger.valueOf(st).equals(start)
+				&& BigInteger.valueOf(en).equals(end)) {
+			int dir = st < en ? 1 : -1;
+			while(st != en) {
+				l.add(BigInteger.valueOf(st));
+				st = st + dir;
+			}					
+		} else {
+			BigInteger dir;
+			if(start.compareTo(end) < 0) {
+				dir = BigInteger.ONE;
+			} else {
+				dir = BigInteger.valueOf(-1);
+			}
+			while(!start.equals(end)) {
+				l.add(start);
+				start = start.add(dir);
+			}	
+		}
+		
+		return l;
 	}
 	
 	/**
@@ -81,11 +127,11 @@ public class Util {
 	 * @param args
 	 * @return
 	 */
-	public static List fromStringList(String[] args) {
+	public static List fromStringList(String[] args) {		
 		List r = new List(args.length);
 		for(int i=0;i!=args.length;++i) {
-			r.set(i,args[i]);
-		}
+			r.add(args[i]);
+		}		
 		return r;
 	}
 	
@@ -112,9 +158,29 @@ public class Util {
 		} else if(o instanceof String) {
 			String s = (String) o;
 			return "\"" + s + "\"";
+		} else if(o instanceof Character) {
+			Character s = (Character) o;
+			return "\'" + s + "\'";
+		} else if(o instanceof Byte) {
+			Byte b = (Byte) o;
+			return str(b.byteValue());
 		} else {
 			return o.toString();
 		}
+	}
+	
+	public static String str(byte b) {
+		String r = "b";
+		byte v = b;
+		for(int i=0;i!=8;++i) {
+			if((v&0x1) == 1) {
+				r = "1" + r;
+			} else {
+				r = "0" + r;
+			}
+			v = (byte) (v >>> 1);
+		}
+		return r;
 	}
 	
 	/**
@@ -224,6 +290,12 @@ public class Util {
 				return false;
 			case Type.K_NULL:
 				return obj == null;
+			case Type.K_BOOL:
+				return obj instanceof Boolean;
+			case Type.K_BYTE:
+				return obj instanceof Byte;
+			case Type.K_CHAR:
+				return obj instanceof Character;
 			case Type.K_INT:
 				return obj instanceof BigInteger;
 			case Type.K_RATIONAL:
@@ -268,6 +340,24 @@ public class Util {
 							}
 						}
 						return true;
+					}
+				}
+				break;
+			}
+			case Type.K_TUPLE:
+			{				
+				if(obj instanceof Tuple) {
+					Tuple ol = (Tuple) obj;
+					Type.Tuple tl = (Type.Tuple) t;
+					Type[] types = tl.types;
+					if(types.length == ol.size()) {						
+						int i=0;
+						for(Object o : ol) { 
+							if(!instanceOf(o,types[i++])) {
+								return false;
+							}
+						}						
+						return true;					
 					}
 				}
 				break;
@@ -389,7 +479,7 @@ public class Util {
 		}
 	}
 	
-	public static boolean instanceOf(Record ol, Type t) {						
+	public static boolean instanceOf(Record ol, Type t) {			
 		Type.Record tl = (Type.Record) t;
 		String[] names = tl.names;
 		Type[] types = tl.types;
@@ -401,12 +491,27 @@ public class Util {
 				if(!instanceOf(val,type)) {
 					return false;
 				} 
-			}else {
+			} else {				
 				return false;
 			}
 		}
 		return true;
 	}	
+	
+	public static boolean instanceOf(Tuple ol, Type t) {				
+		Type.Tuple tl = (Type.Tuple) t;
+		Type[] types = tl.types;
+		if(types.length == ol.size()) {	
+			int i=0;
+			for(Object o : ol) { 
+				if(!instanceOf(o,types[i++])) {
+					return false;
+				}
+			}
+			return true;					
+		}
+		return false;
+	}
 	
 	/**
 	 * The <code>coerce</code> method forces this object to conform to a given
@@ -425,6 +530,8 @@ public class Util {
 			return coerce((Record)obj,t);
 		} else if(obj instanceof String) {
 			return coerce((String)obj,t);
+		} else if(obj instanceof Tuple) {
+			return coerce((Tuple)obj,t);
 		} 
 				
 		return obj;
@@ -447,6 +554,22 @@ public class Util {
 			return BigRational.valueOf(obj);
 		} 
 		throw new RuntimeException("invalid integer coercion (" + obj + " => " + t + ")");
+	}
+	
+	public static Object coerce(Tuple obj, Type t) {	
+		if(t.kind == Type.K_TUPLE) {
+			Type.Tuple tup = (Type.Tuple) t;			
+			Type[] types = tup.types;
+			if(tup.types.length == obj.size()) {			
+				Tuple r = new Tuple();
+				int i = 0;
+				for(Object o : obj) {
+					r.add(coerce(o,types[i++]));
+				}
+				return r;
+			}
+		}
+		throw new RuntimeException("invalid list coercion (" + obj + " => " + t + ")");
 	}
 	
 	public static Object coerce(List obj, Type t) {		

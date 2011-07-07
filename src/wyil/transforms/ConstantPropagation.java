@@ -30,12 +30,12 @@ import static wyil.util.SyntaxError.syntaxError;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyc.stages.TypePropagation.Env;
 import wyil.ModuleLoader;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.*;
 import wyil.lang.Code.SubList;
-import wyil.transforms.TypePropagation.Env;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
 import wyjc.runtime.BigRational;
@@ -135,6 +135,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((Const)code,entry,environment);
 		} else if(code instanceof Debug) {
 			infer((Debug)code,entry,environment);
+		}  else if(code instanceof Destructure) {
+			infer((Destructure)code,entry,environment);
 		} else if(code instanceof DictLoad) {
 			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof ExternJvm) {
@@ -149,6 +151,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer((IndirectSend)code,entry,environment);
 		} else if(code instanceof Invoke) {
 			infer((Invoke)code,entry,environment);
+		} else if(code instanceof Invert) {
+			infer(index,(Invert)code,entry,environment);
 		} else if(code instanceof Label) {
 			// skip			
 		} else if(code instanceof ListAppend) {
@@ -161,8 +165,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(ListLoad)code,entry,environment);
 		} else if(code instanceof Load) {
 			infer(index,(Load)code,entry,environment);
-		} else if(code instanceof MultiStore) {
-			infer((MultiStore)code,entry,environment);
+		} else if(code instanceof Update) {
+			infer((Update)code,entry,environment);
 		} else if(code instanceof NewDict) {
 			infer(index,(NewDict)code,entry,environment);
 		} else if(code instanceof NewList) {
@@ -171,6 +175,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(NewRecord)code,entry,environment);
 		} else if(code instanceof NewSet) {
 			infer(index,(NewSet)code,entry,environment);
+		} else if(code instanceof NewTuple) {
+			infer(index,(NewTuple)code,entry,environment);
 		} else if(code instanceof Negate) {
 			infer(index,(Negate)code,entry,environment);
 		} else if(code instanceof ProcLoad) {
@@ -270,6 +276,27 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			case REM: {				
 				result = lnum.remainder(rnum);				
 				break;
+			}
+			case RANGE:
+			{				
+				int start = lnum.value.intValue();
+				int end = rnum.value.intValue();
+				if (BigInteger.valueOf(start).equals(lnum.value)
+						&& BigInteger.valueOf(end).equals(rnum.value)) {
+					if(start > -100 && start < 100 && end > -100 && end < 100) {
+						int dir = start < end ? 1 : -1;
+						ArrayList<Value> values = new ArrayList<Value>();
+						while(start != end) {
+							values.add(Value.V_INTEGER(BigInteger
+									.valueOf(start)));
+							start = start + dir;
+						}
+						result = Value.V_LIST(values);
+						break;
+					}
+				} 
+				environment.push(null);
+				return;
 			}	
 			}		
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
@@ -303,6 +330,30 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(Code.Debug code, Block.Entry entry,
 			Env environment) {
 		environment.pop();
+	}
+	
+	public void infer(Code.Destructure code, Block.Entry entry,
+			Env environment) {
+		Value v = environment.pop();
+		
+		if(v instanceof Value.Tuple) {
+			Value.Tuple tup = (Value.Tuple) v;
+			for(Value tv : tup.values) {
+				environment.push(tv);
+			}
+		} else if(v instanceof Value.Rational) {
+			Value.Rational rat = (Value.Rational) v;
+			environment.push(Value.V_INTEGER(rat.value.numerator()));
+			environment.push(Value.V_INTEGER(rat.value.denominator()));
+		} else if(code.type instanceof Type.Tuple) {			
+			Type.Tuple tup = (Type.Tuple) code.type;
+			for(Type t : tup.elements()) {
+				environment.push(null);
+			}
+		} else {
+			environment.push(null);
+			environment.push(null);
+		}
 	}
 	
 	public void infer(int index, Code.DictLoad code, Block.Entry entry,
@@ -356,7 +407,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(Code.IndirectSend code, Block.Entry entry,
 			Env environment) {
-		// FIXME: need to do something here
+
+		for(int i=0;i!=code.type.params().size();++i) {
+			environment.pop();
+		}
+		
+		environment.pop(); // receiver
+		environment.pop(); // target
+		
+		if(code.type.ret() != Type.T_VOID && code.retval) {
+			environment.push(null);
+		}
 	}
 	
 	public void infer(Code.Invoke code, Block.Entry entry,
@@ -489,7 +550,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(val);
 	}
 	
-	public void infer(Code.MultiStore code, Block.Entry entry,
+	public void infer(Code.Update code, Block.Entry entry,
 			Env environment) {
 		
 		// TO DO: I could definite do more here
@@ -590,6 +651,30 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value result = null;
 		if (isValue) {			
 			result = Value.V_SET(values);
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,code.nargs));
+		}
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.NewTuple code, Block.Entry entry,
+			Env environment) {
+		ArrayList<Value> values = new ArrayList<Value>();		
+
+		boolean isValue = true;
+		for (int i=0;i!=code.nargs;++i) {
+			Value val = environment.pop();
+			if (val instanceof Value) {
+				values.add(val);
+			} else {
+				isValue = false;
+			}
+		}		
+		
+		Value result = null;
+		if (isValue) {	
+			Collections.reverse(values);
+			result = Value.V_TUPLE(values);
 			entry = new Block.Entry(Code.Const(result),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,code.nargs));
 		}
@@ -825,6 +910,21 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				}
 			}
 		} 
+		environment.push(result);
+	}
+	
+	public void infer(int index, Code.Invert code, Block.Entry entry,
+			Env environment) {
+		Value val = environment.pop();
+		Value result = null;
+		
+		if(val instanceof Value.Byte) {
+			Value.Byte num = (Value.Byte) val;
+			result = Value.V_BYTE((byte)~num.value);
+			entry = new Block.Entry(Code.Const(result),entry.attributes());
+			rewrites.put(index, new Rewrite(entry,1));
+		} 		
+		
 		environment.push(result);
 	}
 	

@@ -271,17 +271,15 @@ public class ModuleBuilder {
 			return Value.V_RECORD(values);
 		} else if (expr instanceof TupleGen) {
 			TupleGen rg = (TupleGen) expr;			
-			HashMap<String,Value> values = new HashMap<String,Value>();
-			int i = 0;
+			ArrayList<Value> values = new ArrayList<Value>();			
 			for(Expr e : rg.fields) {
 				Value v = expandConstantHelper(e,filename,exprs,visited);
 				if(v == null) {
 					return null;
 				}
-				values.put("$" + i,v);
-				i = i + 1;
+				values.add(v);				
 			}
-			return Value.V_RECORD(values);
+			return Value.V_TUPLE(values);
 		} else if(expr instanceof FunConst) {
 			FunConst f = (FunConst) expr;
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
@@ -429,8 +427,8 @@ public class ModuleBuilder {
 		for (NameID key : declOrder) {			
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
-				Type t = expandType(key, cache);												
-				types.put(key, Type.minimise(t));
+				Type t = expandType(key, cache);				
+				types.put(key, Type.minimise(t));				
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
@@ -607,6 +605,10 @@ public class ModuleBuilder {
 		currentFunDecl = fd;
 		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 
+		if(Type.isOpen(ret)) {
+			System.out.println("VERSUS: " + ret);
+		}
+		
 		Block blk = new Block();
 		
 		for (Stmt s : fd.statements) {
@@ -681,41 +683,25 @@ public class ModuleBuilder {
 	protected Block resolve(Assign s, HashMap<String,Integer> environment) {
 		Block blk = null;
 		
-		if(s.lhs instanceof Variable) {
+		if(s.lhs instanceof Variable) {			
 			blk = resolve(environment, s.rhs);			
-			Variable v = (Variable) s.lhs;			
-			if(environment.containsKey(v.var)) {
-				blk.add(Code.Store(null, environment.get(v.var)),
-					attributes(s));
-			} else {
-				int idx = environment.size();
-				environment.put(v.var, idx);
-				blk.add(Code.Store(null, idx), attributes(s));
-			}
-		} else if(s.lhs instanceof TupleGen) {
+			Variable v = (Variable) s.lhs;
+			blk.add(Code.Store(null, allocate(v.var, environment)),
+					attributes(s));			
+		} else if(s.lhs instanceof TupleGen) {					
+			TupleGen tg = (TupleGen) s.lhs;
 			blk = resolve(environment, s.rhs);			
-			// this indicates a tuple assignment which must be treated specially.
-			TupleGen tg = (TupleGen) s.lhs;			
-			int freeReg = environment.size();
-			environment.put("$" + freeReg, freeReg);
-			// TODO: this could be fixed with a DUP bytecode.
-			blk.add(Code.Store(null, freeReg),attributes(s));
-			int idx=0;
-			for(Expr e : tg.fields) {
+			blk.add(Code.Destructure(null),attributes(s));
+			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
+			Collections.reverse(fields);
+			
+			for(Expr e : fields) {
 				if(!(e instanceof Variable)) {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
-				blk.add(Code.Load(null, freeReg),attributes(s));
-				blk.add(Code.FieldLoad(null, "$" + idx++), attributes(e));
-				if(environment.containsKey(v.var)) {
-					blk.add(Code.Store(null, environment.get(v.var)),
-						attributes(s));
-				} else {
-					int free = environment.size();
-					environment.put(v.var, free);
-					blk.add(Code.Store(null, free), attributes(s));
-				}								
+				blk.add(Code.Store(null, allocate(v.var, environment)),
+						attributes(s));				
 			}
 			return blk;
 		} else if(s.lhs instanceof ListAccess || s.lhs instanceof RecordAccess){
@@ -728,7 +714,7 @@ public class ModuleBuilder {
 			}
 			int slot = environment.get(l.first().var);
 			blk.addAll(resolve(environment, s.rhs));			
-			blk.add(Code.MultiStore(null,slot,l.second(),fields),
+			blk.add(Code.Update(null,slot,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -906,11 +892,8 @@ public class ModuleBuilder {
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
 		Block blk = resolve(environment,s.source);				
-		int freeReg = environment.size();
+		int freeReg = allocate(s.variable,environment);
 		
-		// Note: NameResolution guarantees that !environment.contains(s.variable);
-		environment.put(s.variable, freeReg);		
-				
 		blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));				
 		
 		// FIXME: add a continue scope
@@ -1063,8 +1046,7 @@ public class ModuleBuilder {
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
-			int slot = environment.get(lhs.var);
-			blk.addAll(resolve(environment, v.rhs));			
+			int slot = environment.get(lhs.var);					
 			blk.add(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.Variable
 				&& v.rhs instanceof Expr.Constant
@@ -1075,8 +1057,7 @@ public class ModuleBuilder {
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
-			int slot = environment.get(lhs.var);
-			blk.addAll(resolve(environment, v.rhs));			
+			int slot = environment.get(lhs.var);						
 			blk.add(Code.IfType(null, slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.add(Code.Goto(target));
 			blk.add(Code.Label(exitLabel));
@@ -1260,45 +1241,67 @@ public class ModuleBuilder {
 		Type[] paramTypes = new Type[args.size()]; 
 		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
+
+		/**
+		 * An indirect variable invoke represents an invoke statement on a local
+		 * variable.
+		 */
+		boolean variableIndirectInvoke = environment.containsKey(s.name);
+
+		/**
+		 * A direct invoke indicates no receiver was provided, and there was a
+		 * matching external symbol.
+		 */
+		boolean directInvoke = !variableIndirectInvoke && s.receiver == null && modInfo != null;		
 		
-		boolean indirectInvoke = environment.containsKey(s.name);
-		boolean fieldIndirectSend = s.receiver != null && modInfo == null;
-		boolean directInvoke = s.receiver == null && modInfo != null;		
-		boolean directSend = s.receiver != null && modInfo != null;
-		
-		if(environment.containsKey(s.name)) {
+		/**
+		 * An field indirect invoke indicates an invoke statement on a value
+		 * coming out of a field.
+		 */
+		boolean fieldIndirectInvoke = !variableIndirectInvoke && s.receiver != null && modInfo == null;
+
+		/**
+		 * A direct send indicates a message send to a matching external symbol.
+		 */
+		boolean directSend = !variableIndirectInvoke && s.receiver != null && modInfo != null;
+				
+							
+		if(variableIndirectInvoke) {
 			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
-		}
+		} 
 		
-		if (s.receiver != null) {
+		if (s.receiver != null) {			
 			blk.addAll(resolve(environment, s.receiver));
 		}
 
+		if(fieldIndirectInvoke) {
+			blk.add(Code.FieldLoad(null, s.name),attributes(s));
+		}
+		
 		int i = 0;
 		for (Expr e : args) {
 			blk.addAll(resolve(environment, e));
 			paramTypes[i++] = Type.T_VOID;
 		}	
-			
-		if(environment.containsKey(s.name)) {			
+					
+		if(variableIndirectInvoke) {			
 			if(s.receiver != null) {
 				blk.add(Code.IndirectSend(Type.T_FUN(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
 			} else {
 				blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
 			}
-		} else {			
-			if(modInfo != null) {
-				NameID name = new NameID(modInfo.module, s.name);
-				if(s.receiver != null) {
-					blk.add(Code.Send(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
-				} else {
-					blk.add(Code.Invoke(
-							Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
-				}			
-			} else {
-				syntaxError("unknown function or method",filename,s);
-			}
+		} else if(fieldIndirectInvoke) {
+			blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
+		} else if(directInvoke) {
+			NameID name = new NameID(modInfo.module, s.name);
+			blk.add(Code.Invoke(
+					Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
+		} else if(directSend) {						
+			NameID name = new NameID(modInfo.module, s.name);
+			blk.add(Code.Send(
+					Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
+		} else {
+			syntaxError("unknown function or method", filename, s);
 		}
 		
 		return blk;
@@ -1331,10 +1334,10 @@ public class ModuleBuilder {
 	protected Block resolve(HashMap<String,Integer> environment, Variable v) throws ResolveError {
 		// First, check if this is an alias or not				
 		
-		Attributes.Alias alias = v.attribute(Attributes.Alias.class);
+		Attributes.Alias alias = v.attribute(Attributes.Alias.class);		
 		if (alias != null) {
 			// Must be a local variable	
-			if(alias.alias == null) {
+			if(alias.alias == null) {				
 				if(environment.containsKey(v.var)) {
 					Block blk = new Block();						
 					blk.add(Code.Load(null, environment.get(v.var)), attributes(v));					
@@ -1345,7 +1348,7 @@ public class ModuleBuilder {
 			} else {								
 				return resolve(environment, alias.alias);
 			}
-		}
+		} 
 		
 		if(currentFunDecl != null) {
 			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
@@ -1392,6 +1395,9 @@ public class ModuleBuilder {
 		switch (v.op) {
 		case NEG:
 			blk.add(Code.Negate(null), attributes(v));
+			break;
+		case INVERT:
+			blk.add(Code.Invert(null), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
@@ -1450,20 +1456,16 @@ public class ModuleBuilder {
 		blk.addAll(resolve(environment, v.lhs));
 		blk.addAll(resolve(environment, v.rhs));
 
-		if (bop == BOp.ADD || bop == BOp.SUB || bop == BOp.MUL
-				|| bop == BOp.DIV || bop == BOp.REM) {
-			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
-			return blk;			
-		} else if(bop == BOp.UNION) {
+		if(bop == BOp.UNION) {
 			blk.add(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
 			return blk;			
 		} else if(bop == BOp.INTERSECTION) {
 			blk.add(Code.SetIntersect(null,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
-		}
-		
-		syntaxError("unknown binary operation encountered", filename, v);
-		return null;
+		} else {
+			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
+			return blk;
+		}		
 	}
 
 	protected Block resolve(HashMap<String,Integer> environment, NaryOp v) {
@@ -1520,9 +1522,8 @@ public class ModuleBuilder {
 		
 		for (Pair<String, Expr> src : e.sources) {
 			int srcSlot;
-			int varSlot = environment.size();
-			// Note: NameResolution guarantees that !environment.contains(src.first());
-			environment.put(src.first(), varSlot);
+			int varSlot = allocate(src.first(),environment); 
+			
 			if(src.second() instanceof Variable) {
 				// this is a little optimisation to produce slightly better
 				// code.
@@ -1615,15 +1616,12 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(HashMap<String,Integer> environment, TupleGen sg) {		
-		Block blk = new Block();
-		HashMap<String, Type> fields = new HashMap<String, Type>();
-		int i =0;
-		for (Expr e : sg.fields) {						
-			fields.put("$" + i++, Type.T_VOID);
+		Block blk = new Block();		
+		for (Expr e : sg.fields) {									
 			blk.addAll(resolve(environment, e));
 		}
 		// FIXME: to be updated to proper tuple
-		blk.add(Code.NewRecord(Type.T_RECORD(fields)),attributes(sg));
+		blk.add(Code.NewTuple(null,sg.fields.size()),attributes(sg));
 		return blk;		
 	}
 
@@ -1644,6 +1642,22 @@ public class ModuleBuilder {
 	}
 
 	protected Type resolve(UnresolvedType t) {
+		Type tr = resolveHelper(t);		
+		return tr;
+	}
+	
+	protected int allocate(String var, HashMap<String,Integer> environment) {
+		Integer r = environment.get(var);
+		if(r == null) {
+			int slot = environment.size();
+			environment.put(var, slot);
+			return slot;
+		} else {
+			return r;
+		}
+	}
+	
+	protected Type resolveHelper(UnresolvedType t) {
 		if (t instanceof UnresolvedType.Any) {
 			return Type.T_ANY;
 		} else if (t instanceof UnresolvedType.Void) {
@@ -1652,6 +1666,10 @@ public class ModuleBuilder {
 			return Type.T_NULL;
 		} else if (t instanceof UnresolvedType.Bool) {
 			return Type.T_BOOL;
+		} else if (t instanceof UnresolvedType.Byte) {
+			return Type.T_BYTE;
+		} else if (t instanceof UnresolvedType.Char) {
+			return Type.T_CHAR;
 		} else if (t instanceof UnresolvedType.Int) {
 			return Type.T_INT;
 		} else if (t instanceof UnresolvedType.Real) {
@@ -1670,13 +1688,11 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
-			HashMap<String,Type> types = new HashMap<String,Type>();			
-			int idx=0;
-			for (UnresolvedType e : tt.types) {
-				String name = "$" + idx++;
-				types.put(name, resolve(e));				
+			ArrayList<Type> types = new ArrayList<Type>();						
+			for (UnresolvedType e : tt.types) {				
+				types.add(resolve(e));				
 			}
-			return Type.T_RECORD(types);			
+			return Type.T_TUPLE(types);			
 		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();			
@@ -1706,7 +1722,6 @@ public class ModuleBuilder {
 				bounds.add(resolve(b));						
 			}
 
-			Type type;
 			if (bounds.size() == 1) {
 				return bounds.iterator().next();
 			} else {
@@ -1723,11 +1738,20 @@ public class ModuleBuilder {
 		} else {
 			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
 			ArrayList<Type> paramTypes = new ArrayList<Type>();
+			Type.Process receiver = null;
+			if(ut.receiver != null) {
+				Type tmp = resolve(ut.receiver);
+				if(tmp instanceof Type.Process) { 
+					receiver = (Type.Process) tmp;
+				} else {
+					syntaxError("method receiver must have process type",filename,ut.receiver);
+				}
+			}
 			for(UnresolvedType p : ut.paramTypes) {
 				paramTypes.add(resolve(p));
 			}
 			// FIXME: need to add support for receiver types
-			return Type.T_FUN(null,resolve(ut.ret),paramTypes);							
+			return Type.T_FUN(receiver,resolve(ut.ret),paramTypes);							
 		}
 	}
 	
@@ -1793,6 +1817,18 @@ public class ModuleBuilder {
 			return Code.BOp.DIV;
 		case REM:
 			return Code.BOp.REM;
+		case RANGE:
+			return Code.BOp.RANGE;
+		case BITWISEAND:
+			return Code.BOp.BITWISEAND;
+		case BITWISEOR:
+			return Code.BOp.BITWISEOR;
+		case BITWISEXOR:
+			return Code.BOp.BITWISEXOR;
+		case LEFTSHIFT:
+			return Code.BOp.LEFTSHIFT;
+		case RIGHTSHIFT:
+			return Code.BOp.RIGHTSHIFT;
 		}
 		syntaxError("unrecognised binary operation", filename, elem);
 		return null;
