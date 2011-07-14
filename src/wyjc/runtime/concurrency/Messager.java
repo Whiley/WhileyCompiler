@@ -148,6 +148,8 @@ public abstract class Messager extends Yielder implements Resumable {
 		private Object result;
 		private Throwable cause;
 
+		private MessageFuture() {}
+		
 		public boolean isFailed() {
 			return failed;
 		}
