@@ -42,7 +42,7 @@ public class JvmBytecodeWriter implements Transform {
 	private ClassFileBuilder classBuilder;
 	private final boolean validate = true;
 	private final boolean deadCode = true;
-	private final boolean actors = true;
+	private final boolean continuations = true;
 	
 	public JvmBytecodeWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
@@ -60,8 +60,7 @@ public class JvmBytecodeWriter implements Transform {
 			// eliminate any dead code that was introduced.		
 			new DeadCodeElimination().apply(file);
 		}
-		if (actors) {
-			// generate the continuations for actors.
+		if (continuations) {
 			new Continuations().apply(file);
 		}
 		

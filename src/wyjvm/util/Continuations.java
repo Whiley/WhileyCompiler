@@ -44,15 +44,9 @@ public class Continuations {
 	}
 
 	public void apply(Method method) {
-		System.out.println(method.name());
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
-
-				for (Bytecode bytecode : ((Code) attribute).bytecodes()) {
-					System.out.println(bytecode);
-				}
-				System.out.println();
 			}
 		}
 	}

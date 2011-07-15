@@ -145,7 +145,7 @@ public class TestHarness {
 	 *            appropriate separator char for the host operating system.
 	 */
 	private static void compare(String output, String referenceFile) {
-		try {
+		try {			
 			BufferedReader outReader = new BufferedReader(new StringReader(output));
 			BufferedReader refReader = new BufferedReader(new FileReader(
 					new File(referenceFile)));

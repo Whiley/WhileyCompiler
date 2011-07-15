@@ -42,7 +42,7 @@ public class ClassWriter implements Transform {
 	private ClassFileBuilder classBuilder;
 	private boolean validate = true;
 	private boolean deadCode = true;
-	private boolean actors = true;
+	private boolean continuations = true;
 	
 	public ClassWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
@@ -57,10 +57,6 @@ public class ClassWriter implements Transform {
 		deadCode = flag;
 	}
 	
-	public void setActors(boolean flag) {
-		actors = flag;
-	}
-	
 	public Module apply(Module m) throws IOException {		
 		ClassFile file = classBuilder.build(m);		
 		
@@ -72,7 +68,7 @@ public class ClassWriter implements Transform {
 			// eliminate any dead code that was introduced.		
 			new DeadCodeElimination().apply(file);
 		}
-		if (actors) {
+		if (continuations) {
 			new Continuations().apply(file);
 		}
 		

@@ -59,7 +59,6 @@ public final class Actor extends Messager {
 	@Override
 	public void resume() {
 		try {
-			// TODO Optimise this by setting the current arguments on yield.
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
 			
 			if (isYielded() && isEmpty()) {

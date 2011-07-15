@@ -499,21 +499,12 @@ public abstract class Bytecode {
 	 * Represents return bytecodes, including ireturn, areturn, etc.
 	 */
 	public static final class Return extends Bytecode {
-		
 		public final JvmType type;
-		
-		public Return() {
-			this.type = null;
-		}
-		
-		public Return(JvmType type) {
-			this.type = type;
-		}		
+		public Return(JvmType type) { this.type = type; }		
 		
 		public int stackDiff() {
-			if(type == null) {
-				return 0;
-			} else {
+			if(type == null) { return 0; }
+			else {
 				return ClassFile.slotSize(type);
 			}
 		}
@@ -1691,23 +1682,9 @@ public abstract class Bytecode {
 	 * Represents the dup and dup2 bytecodes
 	 */
 	public static final class Dup extends Bytecode {
-		
 		public final JvmType type;
-		public final int x;
 		
-		public Dup(JvmType type) {
-			this.type = type;
-			this.x = 0;
-		}
-		
-		public Dup(JvmType type, int x) {
-			if (x < 0 || x > 2) {
-				throw new IllegalArgumentException("Invalid dup size.");
-			}
-			
-			this.type = type;
-			this.x = x;
-		}
+		public Dup(JvmType type) { this.type = type; }
 		
 		public int stackDiff() {
 			return ClassFile.slotSize(type);
@@ -1717,28 +1694,18 @@ public abstract class Bytecode {
 				Map<Constant.Info,Integer> constantPool) {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			if(ClassFile.slotSize(type) > 1) {
-				if (x == 0) {
-					write_u1(out, DUP2);
-				} else if (x == 1) {
-					write_u1(out, DUP2_X1);
-				} else if (x == 2) {
-					write_u1(out, DUP2_X2);
-				}
+				write_u1(out,DUP2);
 			} else {
-				if (x == 0) {
-					write_u1(out, DUP);
-				} else if (x == 1) {
-					write_u1(out, DUP_X1);
-				} else if (x == 2) {
-					write_u1(out, DUP_X2);
-				}
+				write_u1(out,DUP);
 			}
 			return out.toByteArray();
 		}
 		
-		public String toString() {
-			return "dup" + (ClassFile.slotSize(type) > 1 ? "2" : "") +
-					(x == 0 ? "" : "_x" + x);
+		public String toString() {			
+			if(ClassFile.slotSize(type) > 1) { return "dup2"; } 
+			else {
+				return "dup";
+			}			
 		}
 		
 		public boolean equals(Object o) {
@@ -2201,7 +2168,6 @@ public abstract class Bytecode {
 			return 12354;			
 		}
 	}
-	
 	// ==============================
 	// ======= HELPER METHODS =======
 	// ==============================
