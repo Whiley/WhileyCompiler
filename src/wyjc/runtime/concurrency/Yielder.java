@@ -72,17 +72,29 @@ public abstract class Yielder {
 	}
 
 	/**
-	 * Pops a local state object off of the stack, moving the <code>pop</code>
-	 * and <code>get</code> methods onto the next locals.
-	 * 
-	 * @return The location marker of the popped locals object.
+	 * Pops a local state object off of the stack, moving the <code>get</code>
+	 * methods onto the next locals.
 	 */
-	public int unyield() {
-		int location = state.pop().location;
+	public void unyield() {
+		state.pop();
+		
 		if (state.isEmpty()) {
 			yielded = false;
 		}
-		return location;
+	}
+	
+	/**
+	 * Gets the location of the state on the top of the stack. If the stack is
+	 * empty, it returns -1.
+	 * 
+	 * @return The location of the current state, or -1 if no such state exists.
+	 */
+	public int getCurrentStateLocation() {
+		if (isEmpty()) {
+			return -1;
+		}
+		
+		return state.peek().location;
 	}
 
 	public void set(int index, Object value) {
@@ -109,36 +121,11 @@ public abstract class Yielder {
 		return ((Int) current.localMap.get(index - 1)).value;
 	}
 
-	public void push(Object value) {
-		current.localStack.push(value);
-	}
-
-	public void push(boolean value) {
-		current.localStack.push(new Boolean(value));
-	}
-
-	public void push(int value) {
-		current.localStack.push(new Int(value));
-	}
-
-	public Object popObject() {
-		return current.localStack.pop();
-	}
-
-	public boolean popBoolean() {
-		return ((Boolean) current.localStack.pop()).value;
-	}
-
-	public int popInt() {
-		return ((Int) current.localStack.pop()).value;
-	}
-
 	private static final class State {
 
 		public final int location;
 
 		public final List<Object> localMap = new ArrayList<Object>();
-		public final Stack<Object> localStack = new Stack<Object>();
 
 		public State(int location) {
 			this.location = location;

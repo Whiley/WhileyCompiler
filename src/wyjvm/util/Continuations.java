@@ -1,7 +1,5 @@
 package wyjvm.util;
 
-import static wyjvm.lang.JvmTypes.JAVA_LANG_OBJECT;
-import static wyjvm.lang.JvmTypes.T_BOOL;
 import static wyjvm.lang.JvmTypes.T_INT;
 import static wyjvm.lang.JvmTypes.T_VOID;
 
@@ -12,22 +10,18 @@ import wyil.util.Pair;
 import wyjvm.attributes.Code;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.Bytecode.Dup;
-import wyjvm.lang.Bytecode.If;
 import wyjvm.lang.Bytecode.Invoke;
 import wyjvm.lang.Bytecode.Label;
 import wyjvm.lang.Bytecode.Load;
 import wyjvm.lang.Bytecode.LoadConst;
 import wyjvm.lang.Bytecode.Return;
-import wyjvm.lang.Bytecode.Store;
 import wyjvm.lang.Bytecode.Switch;
 import wyjvm.lang.Bytecode.Throw;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyjvm.lang.ClassFile.Method;
-import wyjvm.lang.JvmType;
 import wyjvm.lang.JvmType.Clazz;
 import wyjvm.lang.JvmType.Function;
-import wyjvm.lang.JvmType.Int;
 
 public class Continuations {
 
@@ -47,13 +41,14 @@ public class Continuations {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
+				break;
 			}
 		}
 	}
 
 	public void apply(Method method, Code code) {
 		List<Bytecode> bytecodes = code.bytecodes();
-		List<JvmType> types = method.type().parameterTypes();
+//		List<JvmType> types = method.type().parameterTypes();
 
 		int location = 0;
 
@@ -72,7 +67,7 @@ public class Continuations {
 					    invoke.name.equals("sendSync")
 					        || !(next instanceof Return || next instanceof Throw);
 
-					add.add(new Load(0, PROCESS));
+					add.add(new Dup(PROCESS));
 
 					if (push) {
 						add.add(new LoadConst(location));
@@ -82,31 +77,27 @@ public class Continuations {
 						add.add(new Invoke(MESSAGER, "cleanYield", new Function(T_VOID),
 						    Bytecode.VIRTUAL));
 					}
+					
+					// This is a bit of a hack. If the number of bytecode operations
+					// needed to set up the parameters changes, this will break.
+					bytecodes.addAll(i - 4, add);
+					
+					i += add.size();
 
 					if (push) {
-						addPushLocals(method.type().parameterTypes(), add);
-
-						add.add(new Return(null));
-
-						add.add(new Label("resume" + location++));
+						bytecodes.add(++i, new Return(null));
+						bytecodes.add(++i, new Label("resume" + location++));
 					}
-
-					bytecodes.addAll(i + 1, add);
 				}
 			}
 		}
 
 		// If we yielded at some point, we need to add the unpacking at the start.
-		if (location-- > 0) {
+		if (location > 0) {
 			List<Bytecode> add = new ArrayList<Bytecode>();
 			add.add(new Load(0, PROCESS));
-			add.add(new Invoke(PROCESS, "isYielded", new Function(T_BOOL),
-			    Bytecode.VIRTUAL));
-
-			add.add(new If(If.EQ, "begin"));
-			add.add(new Load(0, PROCESS));
-
-			addPopLocals(types, add);
+			add.add(new Invoke(YIELDER, "getCurrentStateLocation", new Function(T_INT),
+					Bytecode.VIRTUAL));
 
 			List<Pair<Integer, String>> cases =
 			    new ArrayList<Pair<Integer, String>>(location);
@@ -114,63 +105,60 @@ public class Continuations {
 				cases.add(new Pair<Integer, String>(i, "resume" + i));
 			}
 
-			add.add(new Invoke(YIELDER, "unyield", new Function(T_INT),
-			    Bytecode.VIRTUAL));
-			add.add(new Switch("resume" + location, cases));
-
+			add.add(new Switch("begin", cases));
 			add.add(new Label("begin"));
 
 			bytecodes.addAll(0, add);
 		}
 	}
-
-	private void addPushLocals(List<JvmType> types, List<Bytecode> add) {
-		int size = types.size();
-		for (int i = 1; i < size; ++i) {
-			JvmType type = types.get(i);
-			add.add(new Load(0, PROCESS));
-			add.add(new Load(i, type));
-
-			JvmType fnType = null;
-			if (type instanceof Clazz) {
-				fnType = JAVA_LANG_OBJECT;
-			} else if (type instanceof Int) {
-				fnType = T_INT;
-			}
-
-			if (fnType == null) {
-				throw new IllegalStateException("Unknown primitive in locals.");
-			}
-
-			add.add(new Invoke(YIELDER, "push", new Function(T_VOID, fnType),
-			    Bytecode.VIRTUAL));
-		}
-	}
-
-	private void addPopLocals(List<JvmType> types, List<Bytecode> add) {
-		int size = types.size();
-		for (int i = 1; i < size; ++i) {
-			JvmType type = types.get(i);
-			add.add(new Dup(PROCESS));
-
-			String name = null;
-			JvmType fnType = null;
-			if (type instanceof Clazz) {
-				name = "Object";
-				fnType = JAVA_LANG_OBJECT;
-			} else if (type instanceof Int) {
-				name = "Int";
-				fnType = T_INT;
-			}
-
-			if (name == null || fnType == null) {
-				throw new IllegalStateException("Unknown primitive in locals.");
-			}
-
-			add.add(new Invoke(YIELDER, "pop" + name, new Function(fnType),
-			    Bytecode.VIRTUAL));
-			add.add(new Store(i, fnType));
-		}
-	}
+//
+//	private void addPushLocals(List<JvmType> types, List<Bytecode> add) {
+//		int size = types.size();
+//		for (int i = 1; i < size; ++i) {
+//			JvmType type = types.get(i);
+//			add.add(new Load(0, PROCESS));
+//			add.add(new Load(i, type));
+//
+//			JvmType fnType = null;
+//			if (type instanceof Clazz) {
+//				fnType = JAVA_LANG_OBJECT;
+//			} else if (type instanceof Int) {
+//				fnType = T_INT;
+//			}
+//
+//			if (fnType == null) {
+//				throw new IllegalStateException("Unknown primitive in locals.");
+//			}
+//
+//			add.add(new Invoke(YIELDER, "push", new Function(T_VOID, fnType),
+//			    Bytecode.VIRTUAL));
+//		}
+//	}
+//
+//	private void addPopLocals(List<JvmType> types, List<Bytecode> add) {
+//		int size = types.size();
+//		for (int i = 1; i < size; ++i) {
+//			JvmType type = types.get(i);
+//			add.add(new Dup(PROCESS));
+//
+//			String name = null;
+//			JvmType fnType = null;
+//			if (type instanceof Clazz) {
+//				name = "Object";
+//				fnType = JAVA_LANG_OBJECT;
+//			} else if (type instanceof Int) {
+//				name = "Int";
+//				fnType = T_INT;
+//			}
+//
+//			if (name == null || fnType == null) {
+//				throw new IllegalStateException("Unknown primitive in locals.");
+//			}
+//
+//			add.add(new Invoke(YIELDER, "pop" + name, new Function(fnType),
+//			    Bytecode.VIRTUAL));
+//			add.add(new Store(i, fnType));
+//		}
+//	}
 
 }
