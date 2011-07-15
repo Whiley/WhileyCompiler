@@ -31,6 +31,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	public void sendAsync(Messager sender, Method method, Object[] args) {
+		System.err.println(this + " receiving async from " + sender);
 		addMessage(new Message(sender, false, method, args));
 	}
 	

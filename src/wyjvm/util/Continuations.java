@@ -41,6 +41,13 @@ public class Continuations {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
+				
+				System.out.println(method.name());
+				for (Bytecode code : ((Code) attribute).bytecodes()) {
+					System.out.println(code);
+				}
+				System.out.println();
+				
 				break;
 			}
 		}
@@ -71,10 +78,10 @@ public class Continuations {
 
 					if (push) {
 						add.add(new LoadConst(location));
-						add.add(new Invoke(MESSAGER, "yield", new Function(T_VOID, T_INT),
+						add.add(new Invoke(YIELDER, "yield", new Function(T_VOID, T_INT),
 						    Bytecode.VIRTUAL));
 					} else {
-						add.add(new Invoke(MESSAGER, "cleanYield", new Function(T_VOID),
+						add.add(new Invoke(YIELDER, "cleanYield", new Function(T_VOID),
 						    Bytecode.VIRTUAL));
 					}
 					
@@ -87,6 +94,9 @@ public class Continuations {
 					if (push) {
 						bytecodes.add(++i, new Return(null));
 						bytecodes.add(++i, new Label("resume" + location++));
+						bytecodes.add(++i, new Load(0, PROCESS));
+						bytecodes.add(++i, new Invoke(YIELDER, "unyield",
+								new Function(T_VOID), Bytecode.VIRTUAL));
 					}
 				}
 			}
