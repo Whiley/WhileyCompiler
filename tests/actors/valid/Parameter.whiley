@@ -1,5 +1,5 @@
 void System::main([string] args):
-    self(5)
+    this.self(5)
 
 void System::self(int i):
     out!println(str(6))

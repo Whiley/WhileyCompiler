@@ -1,6 +1,6 @@
 void System::main([string] args):
     i = 5
-    out!println(self())
+    out!println(this.self())
     out!println(str(i))
 
 string System::self():

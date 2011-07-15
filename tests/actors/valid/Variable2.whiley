@@ -1,6 +1,6 @@
 void System::main([string] args):
-    i = var()
-    out!println(self())
+    i = this.var()
+    out!println(this.self())
     out!println(i)
 
 string System::self():
