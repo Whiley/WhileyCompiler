@@ -553,12 +553,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(Code.Update code, Block.Entry entry,
 			Env environment) {
 		
-		// TO DO: I could definite do more here
+		// TO DO: I could definitely do more here
 		
 		int npop = code.level - code.fields.size();
+		
 		for(int i=0;i!=npop;++i) {
 			environment.pop();
 		}
+		
+		environment.pop(); // rhs
 		
 		environment.set(code.slot,null);
 	}
@@ -1043,10 +1046,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv);
-			
+			newEnv = propagate(start+1,end, oldEnv);									
 		} while (!newEnv.equals(oldEnv));
-
+		
 		return join(environment,newEnv);		
 	}
 	
