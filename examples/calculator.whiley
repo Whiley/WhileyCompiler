@@ -80,32 +80,25 @@ null|Value evaluate(Expr e, {string->Value} env):
 
 define SyntaxError as { string err }
 define State as { string input, int pos }
-define SExpr as SyntaxError | Expr
 
 // Top-level parse method
-SExpr parse(string input):
+Expr parse(string input) throws SyntaxError:
     init = {input: input, pos: 0}
     (e,st) = parseAddSubExpr(init)
     if st.pos != |input|:
-        return {err:"junk at end of input: " + st.input[st.pos..]}
+        throw {err:"junk at end of input: " + st.input[st.pos..]}
     return e
 
-(SExpr, State) parseAddSubExpr(State st):    
+(Expr, State) parseAddSubExpr(State st) throws SyntaxError:    
     // First, pass left-hand side
-    (lhs,st) = parseMulDivExpr(st)
-    
-    if lhs is SyntaxError:
-        return lhs,st    
+    lhs,st = parseMulDivExpr(st)
     
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
     if st.pos < |st.input| && st.input[st.pos] == '+':
         // add expression
         st.pos = st.pos + 1
-        (rhs,st) = parseAddSubExpr(st)
-        
-        if rhs is SyntaxError:
-            return rhs,st    
+        rhs,st = parseAddSubExpr(st)
         
         return {op: ADD, lhs: lhs, rhs: rhs},st
     else if st.pos < |st.input| && st.input[st.pos] == '-':
@@ -113,20 +106,14 @@ SExpr parse(string input):
         st.pos = st.pos + 1
         (rhs,st) = parseAddSubExpr(st)
         
-        if rhs is SyntaxError:
-            return rhs,st    
-        
         return {op: SUB, lhs: lhs, rhs: rhs},st
     
     // No right-hand side
     return (lhs,st)
 
-(SExpr, State) parseMulDivExpr(State st):    
+(Expr, State) parseMulDivExpr(State st) throws SyntaxError:    
     // First, pass left-hand side
     (lhs,st) = parseTerm(st)
-    
-    if lhs is SyntaxError:
-        return lhs,st    
     
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
@@ -135,24 +122,18 @@ SExpr parse(string input):
         st.pos = st.pos + 1
         (rhs,st) = parseMulDivExpr(st)        
         
-        if rhs is SyntaxError:
-            return rhs,st           
-        
         return {op: MUL, lhs: lhs, rhs: rhs}, st
     else if st.pos < |st.input| && st.input[st.pos] == '/':
         // subtract expression
         st.pos = st.pos + 1
         (rhs,st) = parseMulDivExpr(st)
         
-        if rhs is SyntaxError:
-            return rhs,st           
-        
         return {op: DIV, lhs: lhs, rhs: rhs}, st
     
     // No right-hand side
     return (lhs,st)
 
-(SExpr, State) parseTerm(State st):
+(Expr, State) parseTerm(State st) throws SyntaxError:
     st = parseWhiteSpace(st)    
     if st.pos < |st.input|:
         if isLetter(st.input[st.pos]):
@@ -161,7 +142,7 @@ SExpr parse(string input):
             return parseNumber(st)
         else if st.input[st.pos] == '[':
             return parseList(st)
-    return ({err:"expecting number or variable"},st)
+    throw ({err:"expecting number or variable"},st)
 
 (Var, State) parseIdentifier(State st):    
     txt = ""
@@ -179,21 +160,19 @@ SExpr parse(string input):
         st.pos = st.pos + 1    
     return n, st
 
-(SExpr, State) parseList(State st):    
+(Expr, State) parseList(State st) throws SyntaxError:    
     st.pos = st.pos + 1 // skip '['
     st = parseWhiteSpace(st)
     l = [] // initial list
     firstTime = true
     while st.pos < |st.input| && st.input[st.pos] != ']':
         if !firstTime && st.input[st.pos] != ',':
-            return {err: "expecting comma"},st
+            throw {err: "expecting comma"}
         else if !firstTime:
             st.pos = st.pos + 1 // skip ','
         firstTime = false
         e,st = parseAddSubExpr(st)
         // perform annoying error check    
-        if e is SyntaxError:
-            return e,st        
         l = l + [e]
         st = parseWhiteSpace(st)
     st.pos = st.pos + 1
@@ -217,10 +196,7 @@ public void System::main([string] args):
     env = {"x"->1,"y"->2}
     if(|args| > 0):
         e = parse(args[0])
-        if e is SyntaxError:
-            out.println("syntax error: " + e.err)
-        else:
-            result = evaluate(e,env)
-            out.println(str(result))
+        result = evaluate(e,env)
+        out.println(str(result))
     else:
         out.println("no parameter provided!")
