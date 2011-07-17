@@ -1,3 +1,5 @@
+import whiley.io.*
+
 // ====================================================
 // A simple calculator for expressions
 // ====================================================
@@ -7,13 +9,6 @@ define SUB as 1
 define MUL as 2
 define DIV as 3
 
-// expression tree
-define Expr as int |  // constant
-    Var |              // variable
-    BinOp |            // binary operator
-    [Expr] |           // list constructor
-    ListAccess         // list access
- 
 // binary operation
 define BOp as { ADD, SUB, MUL, DIV }
 define BinOp as { BOp op, Expr lhs, Expr rhs } 
@@ -27,14 +22,26 @@ define ListAccess as {
     Expr index
 } 
 
+// expression tree
+define Expr as int |  // constant
+    Var |              // variable
+    BinOp |            // binary operator
+    [Expr] |           // list constructor
+    ListAccess         // list access
+
 // values
 define Value as int | [Value]
+
+// stmts
+define Print as { Expr rhs }
+define Set as { string lhs, Expr rhs }
+define Stmt as Print | Set
 
 // ====================================================
 // Expression Evaluator
 // ====================================================
 
-null|Value evaluate(Expr e, {string->Value} env):
+Value evaluate(Expr e, {string->Value} env) throws Error:
     if e is int:
         return e
     else if e is Var:
@@ -44,7 +51,7 @@ null|Value evaluate(Expr e, {string->Value} env):
         rhs = evaluate(e.rhs, env)
         // check if stuck
         if !(lhs is int && rhs is int):
-            return null 
+            throw {msg: "arithmetic attempted on non-numeric value"}
         // switch statement would be good
         if e.op == ADD:
             return lhs + rhs
@@ -54,25 +61,21 @@ null|Value evaluate(Expr e, {string->Value} env):
             return lhs * rhs
         else if rhs != 0:
             return lhs / rhs
-        return null // divide by zero
+        throw {msg: "divide-by-zero"}
     else if e is [Expr]:
         r = []
         for i in e:
             v = evaluate(i, env)
-            if v is null:
-                return v // stuck
-            else:
-                r = r + [v]
+            r = r + [v]
         return r
     else:
         src = evaluate(e.src, env)
         index = evaluate(e.index, env)
         // santity checks
-        if src is [Value] && index is int &&
-            index >= 0 && index < |src|:
+        if src is [Value] && index is int && index >= 0 && index < |src|:
             return src[index]
         else:
-            return null // stuck
+            throw {msg: "invalid list access"}
 
 // ====================================================
 // Expression Parser
@@ -82,15 +85,22 @@ define SyntaxError as { string err }
 define State as { string input, int pos }
 
 // Top-level parse method
-Expr parse(string input) throws SyntaxError:
-    init = {input: input, pos: 0}
-    (e,st) = parseAddSubExpr(init)
-    if st.pos != |input|:
-        throw {err:"junk at end of input: " + st.input[st.pos..]}
-    return e
+(Stmt,State) parse(State st) throws SyntaxError:
+    keyword,st = parseIdentifier(st)
+    switch keyword.id:
+        case "print":
+            e,st = parseAddSubExpr(st)
+            return {rhs: e},st
+        case "set":
+            st = parseWhiteSpace(st)
+            v,st = parseIdentifier(st)
+            e,st = parseAddSubExpr(st)
+            return {lhs: v.id, rhs: e},st
+        default:
+            throw {err:"unknown statement: " + keyword.id}
 
 (Expr, State) parseAddSubExpr(State st) throws SyntaxError:    
-    // First, pass left-hand side
+    // First, pass left-hand side    
     lhs,st = parseMulDivExpr(st)
     
     st = parseWhiteSpace(st)
@@ -193,10 +203,18 @@ bool isWhiteSpace(char c):
 // ====================================================
 
 public void System::main([string] args):
-    env = {"x"->1,"y"->2}
+    file = this.openReader(args[0])
+    input = ascii2str(file.read())
+
     if(|args| > 0):
-        e = parse(args[0])
-        result = evaluate(e,env)
-        out.println(str(result))
+        env = {"x"->1} 
+        st = {pos: 0, input: input}
+        while st.pos < |st.input|:
+            s,st = parse(st)
+            r = evaluate(s.rhs,env)
+            if s is Set:
+                env[s.lhs] = r
+            else:
+                out.println(str(r))
     else:
         out.println("no parameter provided!")
