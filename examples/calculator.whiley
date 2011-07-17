@@ -214,12 +214,13 @@ bool isWhiteSpace(char c):
 // ====================================================
 
 public void System::main([string] args):
+    env = {"x"->1,"y"->2}
     if(|args| > 0):
         e = parse(args[0])
         if e is SyntaxError:
             out.println("syntax error: " + e.err)
         else:
-            result = evaluate(e,{"x"->1,"y"->2})
+            result = evaluate(e,env)
             out.println(str(result))
     else:
         out.println("no parameter provided!")
