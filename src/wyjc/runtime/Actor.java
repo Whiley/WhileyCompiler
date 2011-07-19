@@ -58,8 +58,6 @@ public final class Actor extends Messager {
 
 	@Override
 	public void resume() {
-		System.err.println(this + " resuming: " + getCurrentStateLocation());
-		
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
 			

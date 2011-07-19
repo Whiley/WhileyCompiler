@@ -3,24 +3,28 @@
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the <organization> nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package wyjvm.util;
@@ -30,6 +34,7 @@ import static wyjvm.lang.JvmTypes.T_VOID;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import wyil.util.Pair;
 import wyjvm.attributes.Code;
@@ -40,15 +45,21 @@ import wyjvm.lang.Bytecode.Label;
 import wyjvm.lang.Bytecode.Load;
 import wyjvm.lang.Bytecode.LoadConst;
 import wyjvm.lang.Bytecode.Return;
+import wyjvm.lang.Bytecode.Store;
 import wyjvm.lang.Bytecode.Switch;
 import wyjvm.lang.Bytecode.Throw;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyjvm.lang.ClassFile.Method;
+import wyjvm.lang.JvmType;
 import wyjvm.lang.JvmType.Clazz;
 import wyjvm.lang.JvmType.Function;
+import wyjvm.lang.JvmType.Reference;
+import wyjvm.util.dfa.TypeFlowAnalysis;
 
 public class Continuations {
+
+	private TypeFlowAnalysis typeAnalysis = new TypeFlowAnalysis();
 
 	private static final Clazz PROCESS = new Clazz("wyjc.runtime", "Actor"),
 	    MESSAGER = new Clazz("wyjc.runtime.concurrency", "Messager"),
@@ -66,13 +77,13 @@ public class Continuations {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
-				
+
 				System.out.println(method.name());
 				for (Bytecode code : ((Code) attribute).bytecodes()) {
 					System.out.println(code);
 				}
 				System.out.println();
-				
+
 				break;
 			}
 		}
@@ -80,7 +91,6 @@ public class Continuations {
 
 	public void apply(Method method, Code code) {
 		List<Bytecode> bytecodes = code.bytecodes();
-//		List<JvmType> types = method.type().parameterTypes();
 
 		int location = 0;
 
@@ -109,19 +119,50 @@ public class Continuations {
 						add.add(new Invoke(YIELDER, "cleanYield", new Function(T_VOID),
 						    Bytecode.VIRTUAL));
 					}
-					
+
 					// This is a bit of a hack. If the number of bytecode operations
 					// needed to set up the parameters changes, this will break.
 					bytecodes.addAll(i - 4, add);
-					
+
 					i += add.size();
 
 					if (push) {
+						Map<Integer, JvmType> types = typeAnalysis.apply(bytecodes, i);
+
+						for (int var : types.keySet()) {
+							if (var != 0) {
+								JvmType type = types.get(var);
+								add.add(new Dup(PROCESS));
+								bytecodes.add(i + 1, new Load(var, type));
+								bytecodes.add(i += 2, new Invoke(PROCESS, "set", new Function(
+								    T_VOID, T_INT, type), Bytecode.VIRTUAL));
+							}
+						}
+
 						bytecodes.add(++i, new Return(null));
 						bytecodes.add(++i, new Label("resume" + location++));
 						bytecodes.add(++i, new Load(0, PROCESS));
-						bytecodes.add(++i, new Invoke(YIELDER, "unyield",
-								new Function(T_VOID), Bytecode.VIRTUAL));
+
+						for (int var : types.keySet()) {
+							if (var != 0) {
+								JvmType type = types.get(var);
+								add.add(new Dup(PROCESS));
+
+								String name;
+								if (type instanceof Reference) {
+									name = "getObject";
+								} else {
+									name = "get" + type.getClass().getSimpleName();
+								}
+
+								bytecodes.add(i + 1, new Invoke(PROCESS, name, new Function(
+								    type, T_INT), Bytecode.VIRTUAL));
+								bytecodes.add(i += 2, new Store(var, type));
+							}
+						}
+
+						bytecodes.add(++i, new Invoke(YIELDER, "unyield", new Function(
+						    T_VOID), Bytecode.VIRTUAL));
 					}
 				}
 			}
@@ -131,8 +172,8 @@ public class Continuations {
 		if (location > 0) {
 			List<Bytecode> add = new ArrayList<Bytecode>();
 			add.add(new Load(0, PROCESS));
-			add.add(new Invoke(YIELDER, "getCurrentStateLocation", new Function(T_INT),
-					Bytecode.VIRTUAL));
+			add.add(new Invoke(YIELDER, "getCurrentStateLocation",
+			    new Function(T_INT), Bytecode.VIRTUAL));
 
 			List<Pair<Integer, String>> cases =
 			    new ArrayList<Pair<Integer, String>>(location);
@@ -146,54 +187,4 @@ public class Continuations {
 			bytecodes.addAll(0, add);
 		}
 	}
-//
-//	private void addPushLocals(List<JvmType> types, List<Bytecode> add) {
-//		int size = types.size();
-//		for (int i = 1; i < size; ++i) {
-//			JvmType type = types.get(i);
-//			add.add(new Load(0, PROCESS));
-//			add.add(new Load(i, type));
-//
-//			JvmType fnType = null;
-//			if (type instanceof Clazz) {
-//				fnType = JAVA_LANG_OBJECT;
-//			} else if (type instanceof Int) {
-//				fnType = T_INT;
-//			}
-//
-//			if (fnType == null) {
-//				throw new IllegalStateException("Unknown primitive in locals.");
-//			}
-//
-//			add.add(new Invoke(YIELDER, "push", new Function(T_VOID, fnType),
-//			    Bytecode.VIRTUAL));
-//		}
-//	}
-//
-//	private void addPopLocals(List<JvmType> types, List<Bytecode> add) {
-//		int size = types.size();
-//		for (int i = 1; i < size; ++i) {
-//			JvmType type = types.get(i);
-//			add.add(new Dup(PROCESS));
-//
-//			String name = null;
-//			JvmType fnType = null;
-//			if (type instanceof Clazz) {
-//				name = "Object";
-//				fnType = JAVA_LANG_OBJECT;
-//			} else if (type instanceof Int) {
-//				name = "Int";
-//				fnType = T_INT;
-//			}
-//
-//			if (name == null || fnType == null) {
-//				throw new IllegalStateException("Unknown primitive in locals.");
-//			}
-//
-//			add.add(new Invoke(YIELDER, "pop" + name, new Function(fnType),
-//			    Bytecode.VIRTUAL));
-//			add.add(new Store(i, fnType));
-//		}
-//	}
-
 }
