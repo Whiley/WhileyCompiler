@@ -127,7 +127,7 @@ public abstract class Yielder {
 	}
 
 	public void set(int index, boolean value) {
-		current.localMap.set(index - 1, new Boolean(value));
+		current.localMap.set(index - 1, new Bool(value));
 	}
 
 	public void set(int index, int value) {
@@ -138,8 +138,8 @@ public abstract class Yielder {
 		return current.localMap.get(index - 1);
 	}
 
-	public boolean getBoolean(int index) {
-		return ((Boolean) current.localMap.get(index - 1)).value;
+	public boolean getBool(int index) {
+		return ((Bool) current.localMap.get(index - 1)).value;
 	}
 
 	public int getInt(int index) {
@@ -158,11 +158,11 @@ public abstract class Yielder {
 
 	}
 
-	private static final class Boolean {
+	private static final class Bool {
 
 		public final boolean value;
 
-		public Boolean(boolean value) {
+		public Bool(boolean value) {
 			this.value = value;
 		}
 
