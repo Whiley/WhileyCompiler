@@ -50,6 +50,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	public MessageFuture sendSync(Messager sender, Method method, Object[] args) {
+		System.err.println(this + " receiving sync from " + sender);
 		Message message = new Message(sender, true, method, args);
 		addMessage(message);
 		return message.getFuture();
