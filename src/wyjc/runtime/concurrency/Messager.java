@@ -3,16 +3,17 @@
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the <organization> nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
@@ -25,6 +26,7 @@
 
 package wyjc.runtime.concurrency;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -32,8 +34,8 @@ import java.util.Queue;
 import wyjc.runtime.concurrency.Scheduler.Resumable;
 
 /**
- * A helper class for the actor hierarchy that involves the passing of
- * messages and scheduling resumptions on idle actors.
+ * A helper class for the actor hierarchy that involves the passing of messages
+ * and scheduling resumptions on idle actors.
  * 
  * @author Timothy Jones
  */
@@ -43,35 +45,61 @@ public abstract class Messager extends Yielder implements Resumable {
 
 	private final Queue<Message> mail = new LinkedList<Message>();
 
-	private Message currentMessage = null, lastSentMessage = null;
+	private Message currentMessage = null;
+	
+	// Note that one the WYIL is fixed, this can be disposed of for
+	// currentMessage.future.
+	private MessageFuture currentFuture = null;
+
+	private boolean ready = true;
+	private boolean shouldResume = true;
 
 	public Messager(Scheduler scheduler) {
 		this.scheduler = scheduler;
 	}
 
-	public MessageFuture sendSync(Messager sender, Method method, Object[] args) {
+	public void sendSync(Messager sender, Method method, Object[] args) {
+		if (sender == this) {
+			sender.shouldYield = false;
+			currentFuture = new MessageFuture();
+			
+			try {
+				currentFuture.complete(method.invoke(null, args));
+			} catch (IllegalArgumentException iax) {
+				System.err.println("Warning - illegal arguments in actor resumption.");
+			} catch (IllegalAccessException iax) {
+				System.err.println("Warning - illegal access in actor resumption.");
+			} catch (InvocationTargetException itx) {
+				currentFuture.fail(itx.getCause());
+			}
+			
+			return;
+		}
+
 		System.err.println(this + " receiving sync from " + sender);
-		Message message = new Message(sender, true, method, args);
+		
+		// This needs to happen before the message is sent, otherwise this actor
+		// might resume the sender before they've finished yielding.
+		sender.ready = false;
+		sender.shouldYield = true;
+		sender.shouldResume = false;
+		
+		Message message = new SyncMessage(method, args, sender);
+		currentFuture = message.future;
 		addMessage(message);
-		return message.getFuture();
 	}
 
 	public void sendAsync(Messager sender, Method method, Object[] args) {
 		System.err.println(this + " receiving async from " + sender);
-		addMessage(new Message(sender, false, method, args));
+		addMessage(new Message(method, args));
+
+		sender.shouldYield = false;
+		sender.shouldResume = true;
 	}
-	
+
 	private void addMessage(Message message) {
 		if (addMessageSynchronized(message)) {
 			scheduleResume();
-		}
-		
-		// The initial main method has null as a sender.
-		// It might be better to change that so we don't have to do this here.
-		if (message.sender != null) {
-			// We don't have to synchronise this, as an actor can only be doing one
-			// thing at a time, and at the moment we know the sender is here too.
-			message.sender.lastSentMessage = message;
 		}
 	}
 
@@ -86,7 +114,33 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	protected void scheduleResume() {
+		if (ensureReady()) {
+			return;
+		}
+		
+		shouldResume = false;
 		scheduler.scheduleResume(this);
+	}
+	
+	private synchronized boolean ensureReady() {
+		if (!ready) {
+			shouldResume = true;
+			return true;
+		}
+		
+		return false;
+	}
+	
+	protected synchronized boolean shouldResume() {
+		return shouldResume;
+	}
+	
+	protected synchronized boolean isReady() {
+		return ready;
+	}
+	
+	protected synchronized void beReady() {
+		ready = true;
 	}
 
 	protected Method getCurrentMethod() {
@@ -96,9 +150,9 @@ public abstract class Messager extends Yielder implements Resumable {
 	protected Object[] getCurrentArguments() {
 		return currentMessage.arguments;
 	}
-
-	protected boolean isLastSentSynchronous() {
-		return lastSentMessage.synchronous;
+	
+	public MessageFuture getCurrentFuture() {
+		return currentFuture;
 	}
 
 	/**
@@ -108,7 +162,8 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * this message, if synchronous, and the scheduling of the next message, if
 	 * one exists.
 	 * 
-	 * @param result The result of the successful message.
+	 * @param result
+	 *          The result of the successful message.
 	 */
 	protected void completeCurrentMessage(Object result) {
 		currentMessage.future.complete(result);
@@ -122,7 +177,8 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * this message, if synchronous, and the scheduling of the next message, if
 	 * one exists.
 	 * 
-	 * @param cause The case of the message failure.
+	 * @param cause
+	 *          The case of the message failure.
 	 */
 	protected void failCurrentMessage(Throwable cause) {
 		currentMessage.future.fail(cause);
@@ -130,8 +186,8 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	private synchronized void nextMessage() {
-		if (currentMessage.synchronous) {
-			currentMessage.sender.scheduleResume();
+		if (currentMessage instanceof SyncMessage) {
+			((SyncMessage) currentMessage).sender.scheduleResume();
 		}
 
 		if (mail.isEmpty()) {
@@ -142,27 +198,29 @@ public abstract class Messager extends Yielder implements Resumable {
 		}
 	}
 
-	private final class Message {
+	private class Message {
 
-		private final Messager sender;
-		private final boolean synchronous;
 		private final Method method;
 		private final Object[] arguments;
 
 		private final MessageFuture future;
 
-		public Message(Messager sender, boolean synchronous, Method method,
-		    Object[] arguments) {
-			this.sender = sender;
-			this.synchronous = synchronous;
+		public Message(Method method, Object[] arguments) {
 			this.method = method;
 			this.arguments = arguments;
 
 			future = new MessageFuture();
 		}
 
-		public MessageFuture getFuture() {
-			return future;
+	}
+
+	private class SyncMessage extends Message {
+
+		private final Messager sender;
+
+		public SyncMessage(Method method, Object[] arguments, Messager sender) {
+			super(method, arguments);
+			this.sender = sender;
 		}
 
 	}
@@ -176,7 +234,7 @@ public abstract class Messager extends Yielder implements Resumable {
 		private Throwable cause;
 
 		private MessageFuture() {}
-		
+
 		public boolean isFailed() {
 			return failed;
 		}

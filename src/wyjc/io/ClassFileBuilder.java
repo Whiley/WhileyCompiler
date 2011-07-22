@@ -181,10 +181,8 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess", ft1,
 		    Bytecode.STATIC));
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		codes.add(new Bytecode.Dup(WHILEYPROCESS));
 		codes.add(new Bytecode.Store(1, WHILEYPROCESS));
-		
-		// Load the sender as null.
-		codes.add(new Bytecode.LoadConst(null));
 		
 		// Get the System::main method out.
 		Type.Fun wyft = Type.T_FUN(WHILEY_SYSTEM_T,
@@ -1577,7 +1575,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
 		if (c.synchronous) {			
-			ftype = new JvmType.Function(MESSAGEFUTURE,
+			ftype = new JvmType.Function(T_VOID,
 					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
 			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
 					Bytecode.VIRTUAL));
@@ -1620,7 +1618,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
 		if (c.synchronous && c.retval) {			
-			JvmType.Function ftype = new JvmType.Function(MESSAGEFUTURE,
+			JvmType.Function ftype = new JvmType.Function(T_VOID,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
 			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
 					Bytecode.VIRTUAL));
@@ -2066,8 +2064,6 @@ public class ClassFileBuilder {
 			"wyjc.runtime", "Actor");	
 	public final static JvmType.Clazz WHILEYMESSAGER = new JvmType.Clazz(
 			"wyjc.runtime.concurrency", "Messager");
-	public final static JvmType.Clazz MESSAGEFUTURE = new JvmType.Clazz(
-			"wyjc.runtime.concurrency", "Messager$MessageFuture");
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");	
 	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");

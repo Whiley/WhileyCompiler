@@ -29,6 +29,7 @@
 
 package wyjvm.util;
 
+import static wyjvm.lang.JvmTypes.T_BOOL;
 import static wyjvm.lang.JvmTypes.T_INT;
 import static wyjvm.lang.JvmTypes.T_VOID;
 
@@ -41,6 +42,7 @@ import wyil.util.Pair;
 import wyjvm.attributes.Code;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.Bytecode.Dup;
+import wyjvm.lang.Bytecode.If;
 import wyjvm.lang.Bytecode.Invoke;
 import wyjvm.lang.Bytecode.Label;
 import wyjvm.lang.Bytecode.Load;
@@ -48,7 +50,6 @@ import wyjvm.lang.Bytecode.LoadConst;
 import wyjvm.lang.Bytecode.Return;
 import wyjvm.lang.Bytecode.Store;
 import wyjvm.lang.Bytecode.Switch;
-import wyjvm.lang.Bytecode.Throw;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyjvm.lang.ClassFile.Method;
@@ -62,7 +63,8 @@ public class Continuations {
 
 	private static final Clazz PROCESS = new Clazz("wyjc.runtime", "Actor"),
 	    MESSAGER = new Clazz("wyjc.runtime.concurrency", "Messager"),
-	    YIELDER = new Clazz("wyjc.runtime.concurrency", "Yielder");
+	    YIELDER = new Clazz("wyjc.runtime.concurrency", "Yielder"),
+	    FUTURE = new Clazz("wyjc.runtime.concurrency", "Messager$MessageFuture");
 
 	public void apply(ClassFile classfile) {
 		for (Method method : classfile.methods()) {
@@ -93,38 +95,30 @@ public class Continuations {
 				Invoke invoke = (Invoke) bytecode;
 
 				if (invoke.owner.equals(MESSAGER) && invoke.name.startsWith("send")) {
-					Bytecode next =
-					    i == bytecodes.size() - 1 ? null : bytecodes.get(i + 1);
+					bytecodes.add(++i, new Load(0, PROCESS));
+					bytecodes.add(++i, new LoadConst(location));
+					bytecodes.add(++i, new Invoke(YIELDER, "yield", new Function(T_VOID,
+					    T_INT), Bytecode.VIRTUAL));
 
-					boolean push =
-					    invoke.name.equals("sendSync")
-					        || !(next instanceof Return || next instanceof Throw);
+					bytecodes.add(++i, new Load(0, PROCESS));
+					bytecodes.add(++i, new Invoke(PROCESS, "shouldYield", new Function(
+					    T_BOOL), Bytecode.VIRTUAL));
+					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
-					// This is a bit of a hack. If the number of bytecode operations
-					// needed to set up the parameters changes, this will break.
-					int position = -5;
-					i += position;
+					bytecodes.add(++i, new Return(null));
+					bytecodes.add(++i, new Label("resume" + location));
+					bytecodes.add(++i, new Load(0, PROCESS));
+					bytecodes.add(++i, new Invoke(YIELDER, "unyield",
+					    new Function(T_VOID), Bytecode.VIRTUAL));
 
-					bytecodes.add(++i, new Dup(PROCESS));
+					bytecodes.add(++i, new Label("skip" + location));
+					bytecodes.add(++i, new Load(0, PROCESS));
+					bytecodes.add(++i, new Invoke(MESSAGER, "getCurrentFuture",
+					    new Function(FUTURE), Bytecode.VIRTUAL));
 
-					if (push) {
-						bytecodes.add(++i, new LoadConst(location));
-						bytecodes.add(++i, new Invoke(YIELDER, "yield",
-						    new Function(T_VOID, T_INT), Bytecode.VIRTUAL));
-					} else {
-						bytecodes.add(++i, new Invoke(YIELDER, "cleanYield",
-						    new Function(T_VOID), Bytecode.VIRTUAL));
-					}
-					
-					i -= position;
+					// TODO Retrieve the value (or exception) from the future.
 
-					if (push) {
-						bytecodes.add(++i, new Return(null));
-						bytecodes.add(++i, new Label("resume" + location++));
-						bytecodes.add(++i, new Load(0, PROCESS));
-						bytecodes.add(++i, new Invoke(YIELDER, "unyield", new Function(
-						    T_VOID), Bytecode.VIRTUAL));
-					}
+					location += 1;
 				}
 			}
 		}
@@ -144,7 +138,7 @@ public class Continuations {
 						rex.printStackTrace();
 						throw rex;
 					}
-					
+
 					Set<Integer> vars = types.keySet();
 					vars.remove(0);
 
@@ -153,8 +147,8 @@ public class Continuations {
 						i += setPosition;
 						bytecodes.add(++i, new Dup(PROCESS));
 						bytecodes.add(++i, new Load(var, type));
-						bytecodes.add(++i, new Invoke(PROCESS, "set",
-						    new Function(T_VOID, T_INT, type), Bytecode.VIRTUAL));
+						bytecodes.add(++i, new Invoke(PROCESS, "set", new Function(T_VOID,
+						    T_INT, type), Bytecode.VIRTUAL));
 						i -= setPosition;
 					}
 
@@ -172,8 +166,8 @@ public class Continuations {
 							name = "get" + type.getClass().getSimpleName();
 						}
 
-						bytecodes.add(++i, new Invoke(PROCESS, name,
-						    new Function(type, T_INT), Bytecode.VIRTUAL));
+						bytecodes.add(++i, new Invoke(PROCESS, name, new Function(type,
+						    T_INT), Bytecode.VIRTUAL));
 						bytecodes.add(++i, new Store(var, type));
 						i -= getPosition;
 					}
@@ -182,18 +176,18 @@ public class Continuations {
 		}
 
 		if (location > 0) {
-			int i = 0;
-			
+			int i = -1;
+
 			bytecodes.add(++i, new Load(0, PROCESS));
 			bytecodes.add(++i, new Invoke(YIELDER, "getCurrentStateLocation",
 			    new Function(T_INT), Bytecode.VIRTUAL));
-			
-			List<Pair<Integer, String>> cases =
-			    new ArrayList<Pair<Integer, String>>(location);
+
+			List<Pair<Integer, String>> cases = new ArrayList<Pair<Integer, String>>(
+			    location);
 			for (int j = 0; j < location; ++j) {
 				cases.add(new Pair<Integer, String>(j, "resume" + j));
 			}
-			
+
 			bytecodes.add(++i, new Switch("begin", cases));
 			bytecodes.add(++i, new Label("begin"));
 		}

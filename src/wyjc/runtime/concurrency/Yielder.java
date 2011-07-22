@@ -41,6 +41,7 @@ public abstract class Yielder {
 	private State current = null;
 
 	private boolean yielded = false;
+	protected boolean shouldYield = false;
 
 	/**
 	 * @return Whether the object is currently yielding or has yielded.
@@ -48,41 +49,11 @@ public abstract class Yielder {
 	public boolean isYielded() {
 		return yielded;
 	}
-
-	public boolean isEmpty() {
-		return state.isEmpty();
+	
+	public boolean shouldYield() {
+		return shouldYield;
 	}
-
-	/**
-	 * Yields control of the thread, but does not push a new local state object
-	 * onto the stack. Useful for when a message is the last action of a method,
-	 * where yielding makes sense but saving the local state does not.
-	 * 
-	 * @throws IllegalStateException The object is already yielded.
-	 */
-	public void cleanYield() {
-		if (yielded) {
-			throw new IllegalStateException(
-			    "Attempting to cleanly yield while object is already yielded.");
-		}
-		yielded = true;
-	}
-
-	/**
-	 * Reverts the yield state introduced by the <code>yield()</code> method, if
-	 * there wasn't any stack state pushed. If there was, <code>unyield</code>
-	 * will perform the same thing once it reaches the bottom of the stack.
-	 * 
-	 * @throws IllegalStateException The clean yield is no longer valid.
-	 */
-	public void revertCleanYield() {
-		if (!state.isEmpty()) {
-			throw new IllegalStateException(
-			    "Attempting to revert a clean yield that is no longer invalid.");
-		}
-		yielded = false;
-	}
-
+	
 	/**
 	 * Yields control of the thread and pushes a new local state object onto the
 	 * stack. Calls to <code>push</code> and <code>set</code> after calling this
@@ -115,7 +86,7 @@ public abstract class Yielder {
 	 * @return The location of the current state, or -1 if no such state exists.
 	 */
 	public int getCurrentStateLocation() {
-		if (isEmpty()) {
+		if (state.isEmpty()) {
 			return -1;
 		}
 		

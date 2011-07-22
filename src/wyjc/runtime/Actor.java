@@ -60,19 +60,18 @@ public final class Actor extends Messager {
 	public void resume() {
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
-			
-			if (isYielded() && isEmpty()) {
-				// The message yielded right at the end, so we can just ignore the
-				// yield and move on.
-				revertCleanYield();
-			}
-			
+
 			if (!isYielded()) {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
-			} else if (!isLastSentSynchronous()) {
-				// Readies the actor for another resumption.
-				scheduleResume();
+			} else {
+				// The order of access matters here to avoid a race condition.
+				boolean shouldResume = shouldResume();
+				beReady();
+				if (shouldResume) {
+					// Readies the actor for another resumption.
+					scheduleResume();
+				}
 			}
 		} catch (IllegalArgumentException iax) {
 			// Not possible - caught by the language compiler.
@@ -82,7 +81,7 @@ public final class Actor extends Messager {
 			System.err.println("Warning - illegal access in actor resumption.");
 		} catch (InvocationTargetException itx) {
 			// Fails the message and moves on to the next one.
-			failCurrentMessage(itx);
+			failCurrentMessage(itx.getCause());
 		}
 	}
 
@@ -102,7 +101,7 @@ public final class Actor extends Messager {
 	public static Actor newSystemProcess() {
 		Actor sysout = new Actor(null);
 		Record data = new Record();
-		data.put("out", sysout);		
+		data.put("out", sysout);
 		Actor system = new Actor(data);
 		return system;
 	}
