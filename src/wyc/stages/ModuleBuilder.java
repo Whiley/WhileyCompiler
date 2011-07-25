@@ -1204,6 +1204,8 @@ public class ModuleBuilder {
 				return resolve(environment, (NaryOp) e);
 			} else if (e instanceof BinOp) {
 				return resolve(environment, (BinOp) e);
+			} else if (e instanceof Convert) {
+				return resolve(environment, (Convert) e);
 			} else if (e instanceof ListAccess) {
 				return resolve(environment, (ListAccess) e);
 			} else if (e instanceof UnOp) {
@@ -1433,6 +1435,13 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected Block resolve(HashMap<String,Integer> environment, Convert v) {
+		Block blk = new Block();
+		blk.addAll(resolve(environment, v.expr));		
+		blk.add(Code.Convert(null,resolve(v.type)),attributes(v));
+		return blk;
+	}
+	
 	protected Block resolve(HashMap<String,Integer> environment, BinOp v) {
 
 		// could probably use a range test for this somehow

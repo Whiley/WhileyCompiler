@@ -42,7 +42,11 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void Assign_CompileFail_5_StaticTest() { contextFailTest("Assign_CompileFail_5"); }
  @Test public void Assign_CompileFail_6_StaticTest() { contextFailTest("Assign_CompileFail_6"); }
  @Test public void Assign_CompileFail_7_StaticTest() { contextFailTest("Assign_CompileFail_7"); }
- @Test public void Coercion_CompileFail_1_StaticTest() { runTest("Coercion_Invalid_1"); }
+ @Test public void Cast_CompileFail_1_StaticTest() { contextFailTest("Cast_Invalid_1"); }
+ @Test public void Cast_CompileFail_2_StaticTest() { contextFailTest("Cast_Invalid_2"); }
+ @Test public void Cast_CompileFail_3_StaticTest() { contextFailTest("Cast_Invalid_3"); }
+ @Test public void Cast_CompileFail_4_StaticTest() { contextFailTest("Cast_Invalid_4"); }
+ @Test public void Coercion_CompileFail_1_StaticTest() { contextFailTest("Coercion_Invalid_1"); }
  @Test public void Char_CompileFail_1_StaticTest() { contextFailTest("Char_Invalid_1"); }
  @Test public void DefiniteAssign_CompileFail_4_StaticTest() { contextFailTest("DefiniteAssign_CompileFail_4"); }
  @Test public void For_CompileFail_1_StaticTest() { contextFailTest("For_CompileFail_1"); }
