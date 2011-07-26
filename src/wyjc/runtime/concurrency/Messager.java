@@ -46,7 +46,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	private final Queue<Message> mail = new LinkedList<Message>();
 
 	private Message currentMessage = null;
-	
+
 	// Note that one the WYIL is fixed, this can be disposed of for
 	// currentMessage.future.
 	private MessageFuture currentFuture = null;
@@ -59,38 +59,52 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	public void sendSync(Messager sender, Method method, Object[] args) {
+		// TODO This section prevents a synchronous message from the same object.
+		// This should be fixed further back up the pipeline, but this is the
+		// current temporary solution.
 		if (sender == this) {
 			sender.shouldYield = false;
 			currentFuture = new MessageFuture();
-			
+
 			try {
 				currentFuture.complete(method.invoke(null, args));
 			} catch (IllegalArgumentException iax) {
 				System.err.println("Warning - illegal arguments in actor resumption.");
 			} catch (IllegalAccessException iax) {
 				System.err.println("Warning - illegal access in actor resumption.");
-			} catch (InvocationTargetException itx) {
-				currentFuture.fail(itx.getCause());
-			}
-			
+			} catch (InvocationTargetException itx) {}
+
 			return;
 		}
 
 		System.err.println(this + " receiving sync from " + sender);
-		
+		Message message = new SyncMessage(method, args, sender);
+
 		// This needs to happen before the message is sent, otherwise this actor
 		// might resume the sender before they've finished yielding.
 		sender.ready = false;
 		sender.shouldYield = true;
 		sender.shouldResume = false;
-		
-		Message message = new SyncMessage(method, args, sender);
-		currentFuture = message.future;
+		sender.currentFuture = message.future;
+
 		addMessage(message);
+	}
+
+	/**
+	 * Performs exactly the same operation as <code>sendSync</code>. Included
+	 * purely to help the bytecode understand when a value isn't needed.
+	 * 
+	 * @param sender
+	 * @param method
+	 * @param args
+	 */
+	public void sendSyncVoid(Messager sender, Method method, Object[] args) {
+		sendSync(sender, method, args);
 	}
 
 	public void sendAsync(Messager sender, Method method, Object[] args) {
 		System.err.println(this + " receiving async from " + sender);
+
 		addMessage(new Message(method, args));
 
 		sender.shouldYield = false;
@@ -117,28 +131,28 @@ public abstract class Messager extends Yielder implements Resumable {
 		if (ensureReady()) {
 			return;
 		}
-		
+
 		shouldResume = false;
 		scheduler.scheduleResume(this);
 	}
-	
+
 	private synchronized boolean ensureReady() {
 		if (!ready) {
 			shouldResume = true;
 			return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	protected synchronized boolean shouldResume() {
 		return shouldResume;
 	}
-	
+
 	protected synchronized boolean isReady() {
 		return ready;
 	}
-	
+
 	protected synchronized void beReady() {
 		ready = true;
 	}
@@ -150,7 +164,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	protected Object[] getCurrentArguments() {
 		return currentMessage.arguments;
 	}
-	
+
 	public MessageFuture getCurrentFuture() {
 		return currentFuture;
 	}
@@ -162,8 +176,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * this message, if synchronous, and the scheduling of the next message, if
 	 * one exists.
 	 * 
-	 * @param result
-	 *          The result of the successful message.
+	 * @param result The result of the successful message.
 	 */
 	protected void completeCurrentMessage(Object result) {
 		currentMessage.future.complete(result);
@@ -177,8 +190,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * this message, if synchronous, and the scheduling of the next message, if
 	 * one exists.
 	 * 
-	 * @param cause
-	 *          The case of the message failure.
+	 * @param cause The case of the message failure.
 	 */
 	protected void failCurrentMessage(Throwable cause) {
 		currentMessage.future.fail(cause);

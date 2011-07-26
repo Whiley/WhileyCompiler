@@ -1575,9 +1575,10 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
 		if (c.synchronous) {			
+			String name = c.retval ? "sendSync" : "sendSyncVoid";
 			ftype = new JvmType.Function(T_VOID,
 					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, name, ftype,
 					Bytecode.VIRTUAL));
 		} else {
 			ftype = new JvmType.Function(T_VOID,
@@ -1617,10 +1618,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Swap());
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
-		if (c.synchronous && c.retval) {			
+		if (c.synchronous) {			
+			String name = c.retval ? "sendSync" : "sendSyncVoid";
 			JvmType.Function ftype = new JvmType.Function(T_VOID,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, name, ftype,
 					Bytecode.VIRTUAL));
 		} else {
 			JvmType.Function ftype = new JvmType.Function(T_VOID,
