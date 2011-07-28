@@ -50,7 +50,7 @@ int le2uint(byte b):
             r = r + base
         b = b >> 1
         base = base * 2
-    return r
+    return r    
 
 // Convert a string into an integer
 int str2int(string input) throws Error:

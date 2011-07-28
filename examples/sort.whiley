@@ -23,10 +23,10 @@
     return items
 
 void System::main([string] args):
-    out<->println(str(sort([])))
-    out<->println(str(sort([4,3,5,2,1])))
-    out<->println(str(sort([3,4,7,1,2])))
-    out<->println(str(sort([3,4,7,2])))
-    out<->println(str(sort([2,3,4,2])))
-    out<->println(str(sort([1,2,3,4])))
-    out<->println(str(sort([1,2,3,4,5])))
+    out.println(str(sort([])))
+    out.println(str(sort([4,3,5,2,1])))
+    out.println(str(sort([3,4,7,1,2])))
+    out.println(str(sort([3,4,7,2])))
+    out.println(str(sort([2,3,4,2])))
+    out.println(str(sort([1,2,3,4])))
+    out.println(str(sort([1,2,3,4,5])))

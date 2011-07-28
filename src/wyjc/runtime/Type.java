@@ -123,8 +123,36 @@ public class Type {
 	public static Type valueOf(String str) {
 		return new TypeParser(str).parse(new HashSet<String>());
 	}
-	
-	private static Type substitute(Type type, String var, Type root) {
+
+	/**
+	 * <p>
+	 * This method connects up recursive links in a given type. In particular,
+	 * it replaces all occurrences of variable <code>var</code> with
+	 * <code>root</code>.
+	 * </p>
+	 * 
+	 * <b>NOTE:</b> the resulting type may contain a cycle. For this reason, the
+	 * visited relation is required to ensure termination in the presence of
+	 * such cycles.
+	 * 
+	 * @param type
+	 *            - The type currently be explored
+	 * @param var
+	 *            - The variable to substitute for
+	 * @param root
+	 *            - The root of the recursive type. Variable <code>var</code>
+	 *            will be replaced with this.
+	 * @param visited
+	 *            - contains all of the visited nodes. This is needed to ensure
+	 *            termination in the presence of cycles.
+	 * @return
+	 */
+	private static Type substitute(Type type, String var, Type root, HashSet<Type> visited) {
+		if(visited.contains(type)) {
+			return type;
+		} else {
+			visited.add(type);
+		}
 		switch(type.kind) {
 			case Type.K_ANY:				
 			case Type.K_VOID:				
@@ -140,25 +168,25 @@ public class Type {
 					return root;
 				} else {
 					return leaf;
-				}
+				}				
 			}
 			case Type.K_LIST:
 			{
 				Type.List list = (Type.List) type;
-				list.element = substitute(list.element,var,root); 
+				list.element = substitute(list.element,var,root,visited); 
 				break;
 			}
 			case Type.K_SET:
 			{
 				Type.Set set = (Type.Set) type;
-				set.element = substitute(set.element,var,root); 
+				set.element = substitute(set.element,var,root,visited); 
 				break;
 			}
 			case Type.K_DICTIONARY:
 			{
 				Type.Dictionary dict = (Type.Dictionary) type;
-				dict.key = substitute(dict.key,var,root); 
-				dict.value = substitute(dict.value,var,root);
+				dict.key = substitute(dict.key,var,root,visited); 
+				dict.value = substitute(dict.value,var,root,visited);
 				break;
 			}
 			case Type.K_RECORD:
@@ -166,7 +194,7 @@ public class Type {
 				Type.Record rec = (Type.Record) type;
 				Type[] types = rec.types;
 				for(int i=0;i!=types.length;++i) {
-					types[i] = substitute(types[i],var,root);
+					types[i] = substitute(types[i],var,root,visited);
 				}
 				break;
 			}
@@ -175,7 +203,7 @@ public class Type {
 				Type.Union un = (Type.Union) type;
 				Type[] types = un.bounds;
 				for(int i=0;i!=types.length;++i) {
-					types[i] = substitute(types[i],var,root);
+					types[i] = substitute(types[i],var,root,visited);
 				}
 				break;
 			}
@@ -317,7 +345,7 @@ public class Type {
 					Type t = parse(typeVars);
 					match(">");
 					t.str = str.substring(start,index);
-					return substitute(t,var,t);
+					return substitute(t,var,t, new HashSet<Type>());
 				}				
 			}
 			}

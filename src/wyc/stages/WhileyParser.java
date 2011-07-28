@@ -937,13 +937,13 @@ public class WhileyParser {
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
-		exprs.add(parseIndexTerm());
+		exprs.add(parseCastExpression());
 		
 		while(index < tokens.size() && isMulDivTok(tokens.get(index))) {
 			Token token = tokens.get(index);
 			match(token.getClass());
 			ops.add(mulDivOp(token));
-			exprs.add(parseIndexTerm());	
+			exprs.add(parseCastExpression());	
 			ends.add(index);
 		}
 		
@@ -958,6 +958,26 @@ public class WhileyParser {
 		
 		return result;		
 	}	
+	
+	private Expr parseCastExpression() {
+		Token lookahead = tokens.get(index);
+		if(lookahead instanceof LeftBrace) {
+			int start = index;
+			try {
+				match(LeftBrace.class);
+				UnresolvedType type = parseType();
+				match(RightBrace.class);
+				Expr expr = parseIndexTerm();
+				return new Expr.Convert(type, expr, sourceAttr(start,
+						index - 1));
+			} catch(SyntaxError e) {
+				// ok, failed parsing the cast expression ... cannot be a cast
+				// then!  restart assuming just an index term...
+				index = start;
+			}
+		} 
+		return parseIndexTerm();		
+	}
 	
 	private Expr parseIndexTerm() {
 		checkNotEof();

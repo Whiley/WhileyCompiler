@@ -6,4 +6,4 @@ void Wacky::doSomething():
 
 void System::main([string] args):
     wp = spawn {d:1}
-    wp<->doSomething()
+    wp.doSomething()

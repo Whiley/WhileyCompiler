@@ -53,6 +53,10 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Byte_Valid_7_RuntimeTest() { runTest("Byte_Valid_7"); }
  @Test public void Byte_Valid_8_RuntimeTest() { runTest("Byte_Valid_8"); }
  @Test public void Byte_Valid_9_RuntimeTest() { runTest("Byte_Valid_9"); }
+ @Test public void Cast_Valid_1_RuntimeTest() { runTest("Cast_Valid_1"); }
+ @Test public void Cast_Valid_2_RuntimeTest() { runTest("Cast_Valid_2"); }
+ @Test public void Cast_Valid_3_RuntimeTest() { runTest("Cast_Valid_3"); }
+ @Test public void Cast_Valid_4_RuntimeTest() { runTest("Cast_Valid_4"); }
  @Test public void Char_Valid_1_RuntimeTest() { runTest("Char_Valid_1"); }
  @Test public void Char_Valid_2_RuntimeTest() { runTest("Char_Valid_2"); }
  @Test public void Char_Valid_3_RuntimeTest() { runTest("Char_Valid_3"); }
@@ -105,11 +109,14 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Dictionary_Valid_4_RuntimeTest() { runTest("Dictionary_Valid_4"); }
  @Test public void Dictionary_Valid_5_RuntimeTest() { runTest("Dictionary_Valid_5"); }
  @Test public void Dictionary_Valid_6_RuntimeTest() { runTest("Dictionary_Valid_6"); }
+ @Test public void Dictionary_Valid_7_RuntimeTest() { runTest("Dictionary_Valid_7"); }
  @Test public void For_Valid_1_RuntimeTest() { runTest("For_Valid_1"); }
  @Test public void For_Valid_2_RuntimeTest() { runTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { runTest("For_Valid_3"); }
  @Test public void For_Valid_4_RuntimeTest() { runTest("For_Valid_4"); }
  @Test public void For_Valid_5_RuntimeTest() { runTest("For_Valid_5"); }
+ @Test public void For_Valid_6_RuntimeTest() { runTest("For_Valid_6"); }
+ @Test public void For_Valid_7_RuntimeTest() { runTest("For_Valid_7"); }
  @Test public void Function_Valid_1_RuntimeTest() { runTest("Function_Valid_1"); }
  @Test public void Function_Valid_2_RuntimeTest() { runTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RuntimeTest() { runTest("Function_Valid_3"); }
@@ -209,6 +216,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecordAssign_Valid_5_RuntimeTest() { runTest("RecordAssign_Valid_5"); }
  @Test public void RecordConversion_Valid_1_RuntimeTest() { runTest("RecordConversion_Valid_1"); }
  @Test public void RecordDefine_Valid_1_RuntimeTest() { runTest("RecordDefine_Valid_1"); }
+ @Test public void RecordSubtype_Valid_1_RuntimeTest() { runTest("RecordSubtype_Valid_1"); }
+ @Test public void RecordSubtype_Valid_2_RuntimeTest() { runTest("RecordSubtype_Valid_2"); }
  @Test public void RecursiveType_Valid_1_RuntimeTest() { runTest("RecursiveType_Valid_1"); }
  @Test public void RecursiveType_Valid_2_RuntimeTest() { runTest("RecursiveType_Valid_2"); }
  @Test public void RecursiveType_Valid_3_RuntimeTest() { runTest("RecursiveType_Valid_3"); }

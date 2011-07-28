@@ -3128,15 +3128,15 @@ public abstract class Type {
 		}
 
 		/**
-		 * Get the return type of this function type.
+		 * Get the receiver type of this function type.
 		 * 
 		 * @return
 		 */
-		public Type receiver() {
+		public Type.Process receiver() {
 			int[] fields = (int[]) nodes[0].data;
 			int r = fields[0];
 			if(r == -1) { return null; }
-			return extract(r);
+			return (Type.Process) extract(r);
 		}
 		
 		/**
