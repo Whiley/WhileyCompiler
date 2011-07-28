@@ -1204,6 +1204,8 @@ public class ModuleBuilder {
 				return resolve(environment, (NaryOp) e);
 			} else if (e instanceof BinOp) {
 				return resolve(environment, (BinOp) e);
+			} else if (e instanceof Convert) {
+				return resolve(environment, (Convert) e);
 			} else if (e instanceof ListAccess) {
 				return resolve(environment, (ListAccess) e);
 			} else if (e instanceof UnOp) {
@@ -1240,6 +1242,8 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		Type[] paramTypes = new Type[args.size()]; 
 		
+		boolean receiverIsThis = s.receiver != null && s.receiver instanceof Expr.Variable && ((Expr.Variable)s.receiver).var.equals("this");
+		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 
 		/**
@@ -1255,6 +1259,12 @@ public class ModuleBuilder {
 		boolean directInvoke = !variableIndirectInvoke && s.receiver == null && modInfo != null;		
 		
 		/**
+		 * A method invoke indicates the receiver was this, and there was a
+		 * matching external symbol.
+		 */
+		boolean methodInvoke = !variableIndirectInvoke && receiverIsThis && modInfo != null;
+		
+		/**
 		 * An field indirect invoke indicates an invoke statement on a value
 		 * coming out of a field.
 		 */
@@ -1263,9 +1273,9 @@ public class ModuleBuilder {
 		/**
 		 * A direct send indicates a message send to a matching external symbol.
 		 */
-		boolean directSend = !variableIndirectInvoke && s.receiver != null && modInfo != null;
-				
-							
+		boolean directSend = !variableIndirectInvoke && s.receiver != null
+				&& !receiverIsThis && modInfo != null;
+											
 		if(variableIndirectInvoke) {
 			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
 		} 
@@ -1292,10 +1302,17 @@ public class ModuleBuilder {
 			}
 		} else if(fieldIndirectInvoke) {
 			blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
-		} else if(directInvoke) {
+		} else if(directInvoke || methodInvoke) {
 			NameID name = new NameID(modInfo.module, s.name);
-			blk.add(Code.Invoke(
-					Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
+			if(receiverIsThis) {
+				// ok, this is a hack
+				blk.add(Code.Invoke(
+						Type.T_FUN(Type.T_PROCESS(Type.T_VOID), Type.T_VOID,
+								paramTypes), name, retval), attributes(s));
+			} else {
+				blk.add(Code.Invoke(
+						Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
+			}
 		} else if(directSend) {						
 			NameID name = new NameID(modInfo.module, s.name);
 			blk.add(Code.Send(
@@ -1433,6 +1450,13 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected Block resolve(HashMap<String,Integer> environment, Convert v) {
+		Block blk = new Block();
+		blk.addAll(resolve(environment, v.expr));		
+		blk.add(Code.Convert(null,resolve(v.type)),attributes(v));
+		return blk;
+	}
+	
 	protected Block resolve(HashMap<String,Integer> environment, BinOp v) {
 
 		// could probably use a range test for this somehow

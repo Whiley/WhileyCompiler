@@ -74,6 +74,21 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	public static class Convert extends SyntacticElement.Impl implements Expr {
+		public final UnresolvedType type;
+		public final Expr expr;
+
+		public Convert(UnresolvedType type, Expr expr, Attribute... attributes) {
+			super(attributes);
+			this.type = type;
+			this.expr = expr;
+		}
+		
+		public String toString() {
+			return "(" + type.toString() + ") " + expr;
+		}
+	}
+	
 	public static class TypeConst extends SyntacticElement.Impl implements Expr {
 		public final UnresolvedType type;
 

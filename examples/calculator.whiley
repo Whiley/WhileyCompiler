@@ -1,3 +1,5 @@
+import whiley.io.*
+
 // ====================================================
 // A simple calculator for expressions
 // ====================================================
@@ -7,13 +9,6 @@ define SUB as 1
 define MUL as 2
 define DIV as 3
 
-// expression tree
-define Expr as real |  // constant
-    Var |              // variable
-    BinOp |            // binary operator
-    [Expr] |           // list constructor
-    ListAccess         // list access
- 
 // binary operation
 define BOp as { ADD, SUB, MUL, DIV }
 define BinOp as { BOp op, Expr lhs, Expr rhs } 
@@ -27,24 +22,36 @@ define ListAccess as {
     Expr index
 } 
 
+// expression tree
+define Expr as int |  // constant
+    Var |              // variable
+    BinOp |            // binary operator
+    [Expr] |           // list constructor
+    ListAccess         // list access
+
 // values
-define Value as real | [Value]
+define Value as int | [Value]
+
+// stmts
+define Print as { Expr rhs }
+define Set as { string lhs, Expr rhs }
+define Stmt as Print | Set
 
 // ====================================================
 // Expression Evaluator
 // ====================================================
 
-null|Value evaluate(Expr e, {string->Value} env):
-    if e ~= int:
+Value evaluate(Expr e, {string->Value} env) throws Error:
+    if e is int:
         return e
-    else if e ~= Var:
+    else if e is Var:
         return env[e.id]
-    else if e ~= BinOp:
+    else if e is BinOp:
         lhs = evaluate(e.lhs, env)
         rhs = evaluate(e.rhs, env)
         // check if stuck
-        if !(lhs ~= int && rhs ~= int):
-            return null 
+        if !(lhs is int && rhs is int):
+            throw {msg: "arithmetic attempted on non-numeric value"}
         // switch statement would be good
         if e.op == ADD:
             return lhs + rhs
@@ -54,28 +61,21 @@ null|Value evaluate(Expr e, {string->Value} env):
             return lhs * rhs
         else if rhs != 0:
             return lhs / rhs
-        return null // divide by zero
-    else if e ~= [Expr]:
+        throw {msg: "divide-by-zero"}
+    else if e is [Expr]:
         r = []
         for i in e:
             v = evaluate(i, env)
-            if v ~= null:
-                return v // stuck
-            else:
-                r = r + [v]
+            r = r + [v]
         return r
-    else if e ~= ListAccess:
+    else:
         src = evaluate(e.src, env)
         index = evaluate(e.index, env)
         // santity checks
-        if src ~= [Value] && index ~= int &&
-            index >= 0 && index < |src|:
+        if src is [Value] && index is int && index >= 0 && index < |src|:
             return src[index]
         else:
-            return null // stuck
-    else:
-        // e must be a list expression
-        return 0
+            throw {msg: "invalid list access"}
 
 // ====================================================
 // Expression Parser
@@ -83,120 +83,102 @@ null|Value evaluate(Expr e, {string->Value} env):
 
 define SyntaxError as { string err }
 define State as { string input, int pos }
-define SExpr as SyntaxError | Expr
 
 // Top-level parse method
-SExpr parse(string input):
-    init = {input: input, pos: 0}
-    (e,st) = parseAddSubExpr(init)
-    if st.pos != |input|:
-        return {err:"junk at end of input: " + st.input[st.pos..]}
-    return e
+(Stmt,State) parse(State st) throws SyntaxError:
+    keyword,st = parseIdentifier(st)
+    switch keyword.id:
+        case "print":
+            e,st = parseAddSubExpr(st)
+            return {rhs: e},st
+        case "set":
+            st = parseWhiteSpace(st)
+            v,st = parseIdentifier(st)
+            e,st = parseAddSubExpr(st)
+            return {lhs: v.id, rhs: e},st
+        default:
+            throw {err:"unknown statement: " + keyword.id}
 
-(SExpr, State) parseAddSubExpr(State st):    
-    // First, pass left-hand side
-    (lhs,st) = parseMulDivExpr(st)
-    
-    if lhs ~= SyntaxError:
-        return lhs,st    
+(Expr, State) parseAddSubExpr(State st) throws SyntaxError:    
+    // First, pass left-hand side    
+    lhs,st = parseMulDivExpr(st)
     
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
     if st.pos < |st.input| && st.input[st.pos] == '+':
         // add expression
         st.pos = st.pos + 1
-        (rhs,st) = parseAddSubExpr(st)
-        
-        if rhs ~= SyntaxError:
-            return rhs,st    
-        
+        rhs,st = parseAddSubExpr(st)        
         return {op: ADD, lhs: lhs, rhs: rhs},st
     else if st.pos < |st.input| && st.input[st.pos] == '-':
         // subtract expression
         st.pos = st.pos + 1
-        (rhs,st) = parseAddSubExpr(st)
-        
-        if rhs ~= SyntaxError:
-            return rhs,st    
-        
+        (rhs,st) = parseAddSubExpr(st)        
         return {op: SUB, lhs: lhs, rhs: rhs},st
     
     // No right-hand side
     return (lhs,st)
 
-(SExpr, State) parseMulDivExpr(State st):    
+(Expr, State) parseMulDivExpr(State st) throws SyntaxError:    
     // First, pass left-hand side
     (lhs,st) = parseTerm(st)
-    
-    if lhs ~= SyntaxError:
-        return lhs,st    
     
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
     if st.pos < |st.input| && st.input[st.pos] == '*':
         // add expression
         st.pos = st.pos + 1
-        (rhs,st) = parseMulDivExpr(st)        
-        
-        if rhs ~= SyntaxError:
-            return rhs,st           
-        
+        (rhs,st) = parseMulDivExpr(st)                
         return {op: MUL, lhs: lhs, rhs: rhs}, st
     else if st.pos < |st.input| && st.input[st.pos] == '/':
         // subtract expression
         st.pos = st.pos + 1
-        (rhs,st) = parseMulDivExpr(st)
-        
-        if rhs ~= SyntaxError:
-            return rhs,st           
-        
+        (rhs,st) = parseMulDivExpr(st)        
         return {op: DIV, lhs: lhs, rhs: rhs}, st
     
     // No right-hand side
     return (lhs,st)
 
-(SExpr, State) parseTerm(State st):
+(Expr, State) parseTerm(State st) throws SyntaxError:
     st = parseWhiteSpace(st)    
     if st.pos < |st.input|:
         if isLetter(st.input[st.pos]):
             return parseIdentifier(st)
-        else if isNumeric(st.input[st.pos]):
+        else if isDigit(st.input[st.pos]):
             return parseNumber(st)
         else if st.input[st.pos] == '[':
             return parseList(st)
-    return ({err:"expecting number or variable"},st)
+    throw ({err:"expecting number or variable"},st)
 
 (Var, State) parseIdentifier(State st):    
     txt = ""
     // inch forward until end of identifier reached
     while st.pos < |st.input| && isLetter(st.input[st.pos]):
-        txt = txt + [st.input[st.pos]]
+        txt = txt + st.input[st.pos]
         st.pos = st.pos + 1
     return ({id:txt}, st)
 
 (Expr, State) parseNumber(State st):    
     n = 0
     // inch forward until end of identifier reached
-    while st.pos < |st.input| && isNumeric(st.input[st.pos]):
+    while st.pos < |st.input| && isDigit(st.input[st.pos]):
         n = n + st.input[st.pos] - '0'
         st.pos = st.pos + 1    
     return n, st
 
-(SExpr, State) parseList(State st):    
+(Expr, State) parseList(State st) throws SyntaxError:    
     st.pos = st.pos + 1 // skip '['
     st = parseWhiteSpace(st)
     l = [] // initial list
     firstTime = true
     while st.pos < |st.input| && st.input[st.pos] != ']':
         if !firstTime && st.input[st.pos] != ',':
-            return {err: "expecting comma"},st
+            throw {err: "expecting comma"}
         else if !firstTime:
             st.pos = st.pos + 1 // skip ','
         firstTime = false
         e,st = parseAddSubExpr(st)
         // perform annoying error check    
-        if e ~= SyntaxError:
-            return e,st        
         l = l + [e]
         st = parseWhiteSpace(st)
     st.pos = st.pos + 1
@@ -217,12 +199,18 @@ bool isWhiteSpace(char c):
 // ====================================================
 
 public void System::main([string] args):
+    file = this.openReader(args[0])
+    input = ascii2str(file.read())
+
     if(|args| > 0):
-        e = parse(args[0])
-        if e ~= {[int] err}:
-            out<->println("syntax error: " + e.err)
-        else:
-            result = evaluate(e,{"x"->1,"y"->2})
-            out<->println(str(result))
+        env = {"x"->1} 
+        st = {pos: 0, input: input}
+        while st.pos < |st.input|:
+            s,st = parse(st)
+            r = evaluate(s.rhs,env)
+            if s is Set:
+                env[s.lhs] = r
+            else:
+                out.println(str(r))
     else:
-        out<->println("no parameter provided!")
+        out.println("no parameter provided!")

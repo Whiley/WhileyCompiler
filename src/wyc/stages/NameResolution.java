@@ -295,6 +295,8 @@ public class NameResolution {
 				resolve((Comprehension) e, environment, imports);
 			} else if (e instanceof BinOp) {
 				resolve((BinOp)e, environment, imports);
+			} else if (e instanceof Convert) {
+				resolve((Convert)e, environment, imports);
 			} else if (e instanceof ListAccess) {
 				resolve((ListAccess)e, environment, imports);
 			} else if (e instanceof UnOp) {
@@ -393,6 +395,11 @@ public class NameResolution {
 	protected void resolve(BinOp v, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) {
 		resolve(v.lhs, environment, imports);
 		resolve(v.rhs, environment, imports);		
+	}
+	
+	protected void resolve(Convert c, HashMap<String,Set<Expr>> environment, ArrayList<PkgID> imports) throws ResolveError {
+		resolve(c.type, imports);
+		resolve(c.expr, environment, imports);		
 	}
 	
 	protected void resolve(ListAccess v, HashMap<String,Set<Expr>> environment,
