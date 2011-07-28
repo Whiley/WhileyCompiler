@@ -108,14 +108,12 @@ define State as { string input, int pos }
     if st.pos < |st.input| && st.input[st.pos] == '+':
         // add expression
         st.pos = st.pos + 1
-        rhs,st = parseAddSubExpr(st)
-        
+        rhs,st = parseAddSubExpr(st)        
         return {op: ADD, lhs: lhs, rhs: rhs},st
     else if st.pos < |st.input| && st.input[st.pos] == '-':
         // subtract expression
         st.pos = st.pos + 1
-        (rhs,st) = parseAddSubExpr(st)
-        
+        (rhs,st) = parseAddSubExpr(st)        
         return {op: SUB, lhs: lhs, rhs: rhs},st
     
     // No right-hand side
@@ -130,14 +128,12 @@ define State as { string input, int pos }
     if st.pos < |st.input| && st.input[st.pos] == '*':
         // add expression
         st.pos = st.pos + 1
-        (rhs,st) = parseMulDivExpr(st)        
-        
+        (rhs,st) = parseMulDivExpr(st)                
         return {op: MUL, lhs: lhs, rhs: rhs}, st
     else if st.pos < |st.input| && st.input[st.pos] == '/':
         // subtract expression
         st.pos = st.pos + 1
-        (rhs,st) = parseMulDivExpr(st)
-        
+        (rhs,st) = parseMulDivExpr(st)        
         return {op: DIV, lhs: lhs, rhs: rhs}, st
     
     // No right-hand side
