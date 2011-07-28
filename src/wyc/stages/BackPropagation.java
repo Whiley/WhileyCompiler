@@ -304,6 +304,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		for(Type t : code.type.params()) {
 			environment.push(t);
 		}	
+		
+		if(code.type.receiver() != null) {
+			environment.push(code.type.receiver());
+		}
 	}
 	
 	public void infer(int index, Code.Invert code, Block.Entry entry,
