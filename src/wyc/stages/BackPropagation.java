@@ -301,13 +301,15 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			coerce(req,code.type.ret(),index,entry);			
 		}
 		
+
+		if(code.type.receiver() != null) {
+			environment.push(code.type.receiver());
+		}
+		
 		for(Type t : code.type.params()) {
 			environment.push(t);
 		}	
 		
-		if(code.type.receiver() != null) {
-			environment.push(code.type.receiver());
-		}
 	}
 	
 	public void infer(int index, Code.Invert code, Block.Entry entry,

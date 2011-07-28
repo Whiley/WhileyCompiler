@@ -541,12 +541,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(Invoke ivk, Entry stmt, Env environment) {			
 		ArrayList<Type> types = new ArrayList<Type>();	
 		Type.Process receiver = null;
-		if(ivk.type.receiver() != null) {			
-			receiver = (Type.Process) environment.pop(); // ignore, must be this
-		}
 		
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(environment.pop());
+		}
+
+		if(ivk.type.receiver() != null) {			
+			receiver = (Type.Process) environment.pop(); // ignore, must be this
 		}
 		
 		Collections.reverse(types);		
