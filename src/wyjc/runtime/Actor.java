@@ -40,7 +40,7 @@ public final class Actor extends Messager {
 	private static final Scheduler scheduler = new Scheduler();
 
 	// The spawned state of the process.
-	private final Object state;
+	private Object state;
 
 	public Actor(Object state) {
 		super(scheduler);
@@ -51,9 +51,18 @@ public final class Actor extends Messager {
 	public Object getState() {
 		return state;
 	}
+	
+	public Actor setState(Object state) {
+		this.state = state;
+		return this;
+	}
 
 	@Override
 	public void resume() {
+		if (getCurrentStateLocation() >= 0) {
+			System.err.println(this + " resuming");
+		}
+		
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
 
@@ -61,10 +70,7 @@ public final class Actor extends Messager {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
 			} else {
-				// The order of access matters here to avoid a race condition.
-				boolean shouldResume = shouldResume();
-				beReady();
-				if (shouldResume) {
+				if (beReadyToResume()) {
 					// Readies the actor for another resumption.
 					scheduleResume();
 				}
@@ -76,6 +82,8 @@ public final class Actor extends Messager {
 			// Not possible - all message invocations are on public methods.
 			System.err.println("Warning - illegal access in actor resumption.");
 		} catch (InvocationTargetException itx) {
+			// TODO Remove this once an entry method crashes correctly.
+			itx.getCause().printStackTrace();
 			// Fails the message and moves on to the next one.
 			failCurrentMessage(itx.getCause());
 		}

@@ -3,17 +3,16 @@
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the <organization> nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
@@ -35,7 +34,6 @@ import static wyjvm.lang.JvmTypes.T_VOID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import wyil.util.Pair;
 import wyjvm.attributes.Code;
@@ -98,6 +96,8 @@ public class Continuations {
 		boolean mayFail = false;
 		int location = 0;
 
+		TypeFlowAnalysis typeFlowAnalysis = new TypeFlowAnalysis(method);
+
 		for (int i = 0; i < bytecodes.size(); ++i) {
 			Bytecode bytecode = bytecodes.get(i);
 
@@ -106,52 +106,21 @@ public class Continuations {
 				String name = invoke.name;
 
 				if (invoke.owner.equals(MESSAGER) && name.startsWith("send")) {
-					boolean sync = name.startsWith("sendSync");
-
-					// TODO Once internal method calls are rectified in the bytecode, this
-					// block will need to be moved to a more appropriate location.
-					if (sync) {
-						// First, we need to react to a previous invocation. Note the
-						// postfix increment on i, which will place it before the invoke.
-						bytecodes.add(i++, new Goto("invoke" + location));
-						bytecodes.add(i++, new Label("resume" + location));
-						
-						// TODO Insert trampoline code for winding back the stack here.
-						
-						bytecodes.add(i++, new Label("invoke" + location));
-						location += 1;
-						
-						// Now, we need to react to the method yielding. Note the prefix
-						// increment now, to place it after the invoke.
-						bytecodes.add(++i, new Load(0, PROCESS));
-						bytecodes.add(++i, new Invoke(PROCESS, "isYielded", new Function(
-						    T_BOOL), Bytecode.VIRTUAL));
-						bytecodes.add(++i, new If(If.EQ, "next" + location));
-						
-						// TODO Insert trampoline code for unwinding the stack here.
-						
-						bytecodes.add(++i, new Label("next" + location));
-					}
-					
 					bytecodes.add(++i, new Load(0, PROCESS));
-					bytecodes.add(++i, new Invoke(PROCESS, "shouldYield", new Function(
+					bytecodes.add(++i, new Invoke(YIELDER, "shouldYield", new Function(
 					    T_BOOL), Bytecode.VIRTUAL));
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
-					
-					bytecodes.add(++i, new Load(0, PROCESS));
-					bytecodes.add(++i, new LoadConst(location));
-					bytecodes.add(++i, new Invoke(YIELDER, "yield", new Function(T_VOID,
-					    T_INT), Bytecode.VIRTUAL));
 
-					bytecodes.add(++i, new Return(null));
-					bytecodes.add(++i, new Label("resume" + location));
-					bytecodes.add(++i, new Load(0, PROCESS));
-					bytecodes.add(++i, new Invoke(YIELDER, "unyield",
-					    new Function(T_VOID), Bytecode.VIRTUAL));
+					Map<Integer, JvmType> types = typeFlowAnalysis.typesAt(i);
+
+					i = addResume(
+					    bytecodes,
+					    addYield(method, bytecodes, i, location,
+					        typeFlowAnalysis.typesAt(i)), location, types);
 
 					bytecodes.add(++i, new Label("skip" + location));
 
-					if (sync) {
+					if (name.startsWith("sendSync")) {
 						bytecodes.add(++i, new Load(0, PROCESS));
 						bytecodes.add(++i, new Invoke(MESSAGER, "getCurrentFuture",
 						    new Function(FUTURE), Bytecode.VIRTUAL));
@@ -159,7 +128,7 @@ public class Continuations {
 						bytecodes.add(++i, new Dup(FUTURE));
 						bytecodes.add(++i, new Invoke(FUTURE, "isFailed", new Function(
 						    T_BOOL), Bytecode.VIRTUAL));
-						bytecodes.add(++i, new If(If.EQ, "fail"));
+						bytecodes.add(++i, new If(If.NE, "fail"));
 						mayFail = true;
 
 						if (name.equals("sendSyncVoid")) {
@@ -172,10 +141,47 @@ public class Continuations {
 					}
 
 					location += 1;
+				} else {
+					List<JvmType> pTypes = invoke.type.parameterTypes();
+					if (pTypes.size() > 0 && pTypes.get(0).equals(PROCESS)) {
+						Map<Integer, JvmType> types = typeFlowAnalysis.typesAt(i);
+
+						// If the method isn't resuming, it needs to skip over the resume.
+						bytecodes.add(i++, new Goto("invoke" + location));
+
+						i = addResume(bytecodes, i - 1, location, types) + 1;
+
+						bytecodes.add(i++, new Load(0, PROCESS));
+						
+						// Load in null values. The unyielding will put the real values in.
+						pTypes = invoke.type.parameterTypes();
+						int size = pTypes.size();
+						for (int j = 1; j < size; ++j) {
+							bytecodes.add(i++, addNullValue(pTypes.get(j)));
+						}
+
+						bytecodes.add(i++, new Label("invoke" + location));
+
+						// Now the method has been invoked, this method needs to check if
+						// it caused the actor to yield.
+						bytecodes.add(++i, new Load(0, PROCESS));
+						bytecodes.add(++i, new Invoke(YIELDER, "isYielded", new Function(
+						    T_BOOL), Bytecode.VIRTUAL));
+						bytecodes.add(++i, new If(If.EQ, "skip" + location));
+
+						i = addYield(method, bytecodes, i, location, types);
+
+						bytecodes.add(++i, new Label("skip" + location));
+
+						location += 1;
+					}
 				}
 			}
 		}
 
+		// If the method sends any synchronous messages, then it will check for
+		// failure and respond by moving to the fail label. This is where the fail
+		// label is inserted.
 		if (mayFail) {
 			bytecodes.add(new Label("fail"));
 			bytecodes.add(new Invoke(FUTURE, "getCause", new Function(
@@ -183,58 +189,9 @@ public class Continuations {
 			bytecodes.add(new Throw());
 		}
 
-		TypeFlowAnalysis typeAnalysis = new TypeFlowAnalysis(method);
-		final int setPosition = -2;
-		final int getPosition = 2;
-		for (int i = 0; i < bytecodes.size(); ++i) {
-			Bytecode bytecode = bytecodes.get(i);
-			if (bytecode instanceof Label) {
-				Label label = (Label) bytecode;
-				if (label.name.startsWith("resume")) {
-					Map<Integer, JvmType> types;
-					try {
-						types = typeAnalysis.typesAt(i);
-					} catch (RuntimeException rex) {
-						rex.printStackTrace();
-						throw rex;
-					}
-
-					Set<Integer> vars = types.keySet();
-					vars.remove(0);
-
-					for (int var : vars) {
-						JvmType type = types.get(var);
-						i += setPosition;
-						bytecodes.add(++i, new Dup(PROCESS));
-						bytecodes.add(++i, new Load(var, type));
-						bytecodes.add(++i, new Invoke(PROCESS, "set", new Function(T_VOID,
-						    T_INT, type), Bytecode.VIRTUAL));
-						i -= setPosition;
-					}
-
-					for (int var : vars) {
-						JvmType type = types.get(var);
-						i += getPosition;
-						bytecodes.add(++i, new Dup(PROCESS));
-
-						String name;
-						if (type instanceof Reference) {
-							name = "getObject";
-						} else {
-							// This adds a terrible dependency between JvmType and Yielder,
-							// but it's good enough for now.
-							name = "get" + type.getClass().getSimpleName();
-						}
-
-						bytecodes.add(++i, new Invoke(PROCESS, name, new Function(type,
-						    T_INT), Bytecode.VIRTUAL));
-						bytecodes.add(++i, new Store(var, type));
-						i -= getPosition;
-					}
-				}
-			}
-		}
-
+		// If the method may resume at some point, then the start needs to be
+		// updated in order to cause the next invocation to jump to the right
+		// point in the code.
 		if (location > 0) {
 			int i = -1;
 
@@ -252,5 +209,73 @@ public class Continuations {
 			bytecodes.add(++i, new Label("begin"));
 		}
 	}
-	
+
+	private int addYield(Method method, List<Bytecode> bytecodes, int i,
+	    int location, Map<Integer, JvmType> types) {
+		bytecodes.add(++i, new Load(0, PROCESS));
+		bytecodes.add(++i, new LoadConst(location));
+		bytecodes.add(++i, new Invoke(YIELDER, "yield",
+		    new Function(T_VOID, T_INT), Bytecode.VIRTUAL));
+
+		for (int var : types.keySet()) {
+			if (var != 0) {
+				JvmType type = types.get(var);
+				bytecodes.add(++i, new Dup(PROCESS));
+				bytecodes.add(++i, new Load(var, type));
+				bytecodes.add(++i, new Invoke(PROCESS, "set", new Function(T_VOID,
+				    T_INT, type), Bytecode.VIRTUAL));
+			}
+		}
+
+		JvmType returnType = method.type().returnType();
+		if (returnType.equals(T_VOID)) {
+			bytecodes.add(++i, new Return(null));
+		} else {
+			bytecodes.add(++i, addNullValue(returnType));
+			bytecodes.add(++i, new Return(returnType));
+		}
+
+		return i;
+	}
+
+	private int addResume(List<Bytecode> bytecodes, int i, int location,
+	    Map<Integer, JvmType> types) {
+		bytecodes.add(++i, new Label("resume" + location));
+
+		for (int var : types.keySet()) {
+			if (var != 0) {
+				JvmType type = types.get(var);
+				bytecodes.add(++i, new Dup(PROCESS));
+
+				String name;
+				if (type instanceof Reference) {
+					name = "getObject";
+				} else {
+					// This is a bit of a hack. Method names in Yielder MUST match the
+					// class names in JvmType.
+					name = "get" + type.getClass().getSimpleName();
+				}
+
+				bytecodes.add(++i, new Invoke(PROCESS, name, new Function(type, T_INT),
+				    Bytecode.VIRTUAL));
+				bytecodes.add(++i, new Store(var, type));
+			}
+		}
+
+		bytecodes.add(++i, new Load(0, PROCESS));
+		bytecodes.add(++i, new Invoke(YIELDER, "unyield", new Function(T_VOID),
+		    Bytecode.VIRTUAL));
+
+		return i;
+	}
+
+	private Bytecode addNullValue(JvmType type) {
+		if (type instanceof Reference) {
+			return new LoadConst(null);
+		}
+
+		throw new UnsupportedOperationException(
+		    "Non-reference types not yet supported.");
+	}
+
 }
