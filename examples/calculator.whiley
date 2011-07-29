@@ -159,12 +159,11 @@ define State as { string input, int pos }
     return ({id:txt}, st)
 
 (Expr, State) parseNumber(State st):    
-    n = 0
     // inch forward until end of identifier reached
+    start = st.pos
     while st.pos < |st.input| && isDigit(st.input[st.pos]):
-        n = n + st.input[st.pos] - '0'
         st.pos = st.pos + 1    
-    return n, st
+    return str2int(st.input[start..st.pos]), st
 
 (Expr, State) parseList(State st) throws SyntaxError:    
     st.pos = st.pos + 1 // skip '['
@@ -192,7 +191,7 @@ State parseWhiteSpace(State st):
 
 // Determine what is whitespace
 bool isWhiteSpace(char c):
-    return c == ' ' || c == '\t' || c == '\n'    
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r'
 
 // ====================================================
 // Main Method
@@ -203,7 +202,7 @@ public void System::main([string] args):
     input = ascii2str(file.read())
 
     if(|args| > 0):
-        env = {"x"->1} 
+        env = {"$"->0} 
         st = {pos: 0, input: input}
         while st.pos < |st.input|:
             s,st = parse(st)
@@ -212,5 +211,6 @@ public void System::main([string] args):
                 env[s.lhs] = r
             else:
                 out.println(str(r))
+            st = parseWhiteSpace(st)
     else:
         out.println("no parameter provided!")

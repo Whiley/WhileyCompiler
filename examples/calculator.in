@@ -1,1 +1,2 @@
-print 1+2
+set x 2
+print x*43
