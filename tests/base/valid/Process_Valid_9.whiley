@@ -9,7 +9,7 @@ Actor System::createActor(int n):
 [Actor] System::createActors(int n):
     row = []
     for j in 0..n:
-        m = this.createActor(n)
+        m = this.createActor(j)
         row = row + m
     return row
 
