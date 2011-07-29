@@ -57,7 +57,7 @@ import wyjvm.lang.JvmType;
 import wyjvm.lang.JvmType.Clazz;
 import wyjvm.lang.JvmType.Function;
 import wyjvm.lang.JvmType.Reference;
-import wyjvm.util.dfa.TypeFlowAnalysis;
+import wyjvm.util.dfa.VariableAnalysis;
 
 public class Continuations {
 
@@ -96,7 +96,7 @@ public class Continuations {
 		boolean mayFail = false;
 		int location = 0;
 
-		TypeFlowAnalysis typeFlowAnalysis = new TypeFlowAnalysis(method);
+		VariableAnalysis variableAnalysis = new VariableAnalysis(method);
 
 		for (int i = 0; i < bytecodes.size(); ++i) {
 			Bytecode bytecode = bytecodes.get(i);
@@ -111,12 +111,12 @@ public class Continuations {
 					    T_BOOL), Bytecode.VIRTUAL));
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
-					Map<Integer, JvmType> types = typeFlowAnalysis.typesAt(i);
+					Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
 
 					i = addResume(
 					    bytecodes,
 					    addYield(method, bytecodes, i, location,
-					        typeFlowAnalysis.typesAt(i)), location, types);
+					        variableAnalysis.typesAt(i)), location, types);
 
 					bytecodes.add(++i, new Label("skip" + location));
 
@@ -144,7 +144,7 @@ public class Continuations {
 				} else {
 					List<JvmType> pTypes = invoke.type.parameterTypes();
 					if (pTypes.size() > 0 && pTypes.get(0).equals(PROCESS)) {
-						Map<Integer, JvmType> types = typeFlowAnalysis.typesAt(i);
+						Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
 
 						// If the method isn't resuming, it needs to skip over the resume.
 						bytecodes.add(i++, new Goto("invoke" + location));
