@@ -2186,7 +2186,6 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(slot,WHILEYRECORD));		
 	}
 	
-	
 	/**
 	 * The read conversion is necessary in situations where we're reading a
 	 * value from a collection (e.g. WhileyList, WhileySet, etc) and then
