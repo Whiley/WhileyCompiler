@@ -199,12 +199,6 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.LoadConst(2));
 		codes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 		codes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
-		codes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
-		
-		// Load the system process into the list.
-		codes.add(new Bytecode.LoadConst(0));
-		codes.add(new Bytecode.Load(1, WHILEYPROCESS));
-		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		
 		// Save the command line arguments into an ArrayList.
 		codes.add(new Bytecode.LoadConst(1));
@@ -1321,15 +1315,11 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {							
 		bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
 		bytecodes.add(new Bytecode.DupX1());
-		bytecodes.add(new Bytecode.DupX1());			
 		bytecodes.add(new Bytecode.Swap());
 		// TODO: problem here ... need to swap or something				
 		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
-		ftype = new JvmType.Function(T_VOID);			
-		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "start", ftype,
-				Bytecode.VIRTUAL));
 	}
 	
 	public void translate(Code.ProcLoad c, int freeSlot,

@@ -261,6 +261,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	 */
 	protected void failCurrentMessage(Throwable cause) {
 		currentMessage.future.fail(cause);
+		// TODO There's no crash if the entry method fails.
 		nextMessage();
 	}
 
@@ -285,6 +286,8 @@ public abstract class Messager extends Yielder implements Resumable {
 		private final MessageFuture future;
 
 		public Message(Method method, Object[] arguments) {
+			arguments[0] = Messager.this;
+			
 			this.method = method;
 			this.arguments = arguments;
 

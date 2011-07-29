@@ -54,6 +54,8 @@ public final class Actor extends Messager {
 
 	@Override
 	public void resume() {
+		System.err.println(getCurrentArguments()[0]);
+		
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
 
@@ -73,6 +75,8 @@ public final class Actor extends Messager {
 			// Not possible - all message invocations are on public methods.
 			System.err.println("Warning - illegal access in actor resumption.");
 		} catch (InvocationTargetException itx) {
+			// TODO Remove this once an entry method crashes correctly.
+			itx.getCause().printStackTrace();
 			// Fails the message and moves on to the next one.
 			failCurrentMessage(itx.getCause());
 		}

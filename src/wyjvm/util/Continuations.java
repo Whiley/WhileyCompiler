@@ -106,35 +106,8 @@ public class Continuations {
 				String name = invoke.name;
 
 				if (invoke.owner.equals(MESSAGER) && name.startsWith("send")) {
-					boolean sync = name.startsWith("sendSync");
-
-					// TODO Once internal method calls are rectified in the bytecode, this
-					// block will need to be moved to a more appropriate location.
-					if (sync) {
-						// First, we need to react to a previous invocation. Note the
-						// postfix increment on i, which will place it before the invoke.
-						bytecodes.add(i++, new Goto("invoke" + location));
-						bytecodes.add(i++, new Label("resume" + location));
-						
-						// TODO Insert trampoline code for winding back the stack here.
-						
-						bytecodes.add(i++, new Label("invoke" + location));
-						location += 1;
-						
-						// Now, we need to react to the method yielding. Note the prefix
-						// increment now, to place it after the invoke.
-						bytecodes.add(++i, new Load(0, PROCESS));
-						bytecodes.add(++i, new Invoke(PROCESS, "isYielded", new Function(
-						    T_BOOL), Bytecode.VIRTUAL));
-						bytecodes.add(++i, new If(If.EQ, "next" + location));
-						
-						// TODO Insert trampoline code for unwinding the stack here.
-						
-						bytecodes.add(++i, new Label("next" + location));
-					}
-					
 					bytecodes.add(++i, new Load(0, PROCESS));
-					bytecodes.add(++i, new Invoke(PROCESS, "shouldYield", new Function(
+					bytecodes.add(++i, new Invoke(YIELDER, "shouldYield", new Function(
 					    T_BOOL), Bytecode.VIRTUAL));
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 					
@@ -151,7 +124,7 @@ public class Continuations {
 
 					bytecodes.add(++i, new Label("skip" + location));
 
-					if (sync) {
+					if (name.startsWith("sendSync")) {
 						bytecodes.add(++i, new Load(0, PROCESS));
 						bytecodes.add(++i, new Invoke(MESSAGER, "getCurrentFuture",
 						    new Function(FUTURE), Bytecode.VIRTUAL));
@@ -159,7 +132,7 @@ public class Continuations {
 						bytecodes.add(++i, new Dup(FUTURE));
 						bytecodes.add(++i, new Invoke(FUTURE, "isFailed", new Function(
 						    T_BOOL), Bytecode.VIRTUAL));
-						bytecodes.add(++i, new If(If.EQ, "fail"));
+						bytecodes.add(++i, new If(If.NE, "fail"));
 						mayFail = true;
 
 						if (name.equals("sendSyncVoid")) {
