@@ -61,10 +61,7 @@ public final class Actor extends Messager {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
 			} else {
-				// The order of access matters here to avoid a race condition.
-				boolean shouldResume = shouldResume();
-				beReady();
-				if (shouldResume) {
+				if (beReadyToResume()) {
 					// Readies the actor for another resumption.
 					scheduleResume();
 				}
