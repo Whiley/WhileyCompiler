@@ -40,7 +40,7 @@ public final class Actor extends Messager {
 	private static final Scheduler scheduler = new Scheduler();
 
 	// The spawned state of the process.
-	private final Object state;
+	private Object state;
 
 	public Actor(Object state) {
 		super(scheduler);
@@ -51,10 +51,17 @@ public final class Actor extends Messager {
 	public Object getState() {
 		return state;
 	}
+	
+	public Actor setState(Object state) {
+		this.state = state;
+		return this;
+	}
 
 	@Override
 	public void resume() {
-		System.err.println(getCurrentArguments()[0]);
+		if (getCurrentStateLocation() >= 0) {
+			System.err.println(this + " resuming");
+		}
 		
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
