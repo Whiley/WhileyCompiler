@@ -44,12 +44,15 @@ public abstract class Yielder {
 	protected boolean shouldYield = false;
 
 	/**
-	 * @return Whether the object is currently yielding or has yielded.
+	 * @return Whether the object is currently yielding or has yielded
 	 */
 	public boolean isYielded() {
 		return yielded;
 	}
 	
+	/**
+	 * @return Whether the object should yield when it next decides whether to
+	 */
 	public boolean shouldYield() {
 		return shouldYield;
 	}
@@ -60,7 +63,7 @@ public abstract class Yielder {
 	 * method will attach to the pushed object for retrieval later with
 	 * <code>unyield</code>.
 	 * 
-	 * @param location The location of the computation in the method.
+	 * @param location The location of the computation in the method
 	 */
 	public void yield(int location) {
 		state.push(current = new State(location));
@@ -83,7 +86,7 @@ public abstract class Yielder {
 	 * Gets the location of the state on the top of the stack. If the stack is
 	 * empty, it returns -1.
 	 * 
-	 * @return The location of the current state, or -1 if no such state exists.
+	 * @return The location of the current state, or -1 if no such state exists
 	 */
 	public int getCurrentStateLocation() {
 		if (state.isEmpty()) {
@@ -116,12 +119,37 @@ public abstract class Yielder {
 	public int getInt(int index) {
 		return ((Int) current.localMap.get(index - 1)).value;
 	}
+	
+	public void push(Object value) {
+		current.localStack.push(value);
+	}
+	
+	public void push(boolean value) {
+		current.localStack.push(new Bool(value));
+	}
+	
+	public void push(int value) {
+		current.localStack.push(new Int(value));
+	}
+	
+	public Object popObject() {
+		return current.localStack.pop();
+	}
+	
+	public boolean popBool() {
+		return ((Bool) current.localStack.pop()).value;
+	}
+	
+	public int popInt() {
+		return ((Int) current.localStack.pop()).value;
+	}
 
 	private static final class State {
 
-		public final int location;
+		private final int location;
 
-		public final List<Object> localMap = new ArrayList<Object>();
+		private final List<Object> localMap = new ArrayList<Object>();
+		private final Stack<Object> localStack = new Stack<Object>();
 
 		public State(int location) {
 			this.location = location;
