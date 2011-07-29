@@ -431,6 +431,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			environment.pop();
 		}
 		
+		if(code.type.receiver() != null) {
+			environment.pop();
+		}
+		
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			environment.push(null);
 		}
@@ -1041,9 +1045,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		
 		Env oldEnv = null;
-		Env newEnv = null;
+		Env newEnv = null;				
 		
-		do {			
+		do {						
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv);									
