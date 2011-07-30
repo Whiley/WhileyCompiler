@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import wyil.util.Pair;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.Bytecode.Branch;
 import wyjvm.lang.Bytecode.Goto;
@@ -58,56 +59,66 @@ public class VariableAnalysis extends TypeFlowAnalysis {
 	 * @return A map from variable number to type.
 	 */
 	public Map<Integer, JvmType> typesAt(int at) {
-		Map<String, VariableTypes> labelTypes = new HashMap<String, VariableTypes>();
+		// TODO Optimise this algorithm to ignore variables that won't be used
+		// again.
 
-		VariableTypes currentTypes = new VariableTypes(parameterTypes(), false);
+		Map<String, VariableTypes> labelTypes = new HashMap<String, VariableTypes>();
 
 		int size = codes.size();
 		while (true) {
+			Map<String, VariableTypes> comparison = new HashMap<String, VariableTypes>(
+			    labelTypes);
+
+			VariableTypes currentTypes = new VariableTypes(parameterTypes(), true);
+
 			for (int i = 0; i < size; ++i) {
-				if (i == at && !currentTypes.isPartial()) {
+				Bytecode code = codes.get(i);
+
+				if (i == at && currentTypes.isComplete()) {
 					return currentTypes.getTypeInformation();
 				}
-
-				Bytecode code = codes.get(i);
 
 				if (code instanceof Store) {
 					Store store = (Store) code;
 					// Generate new type information, and store it as the current one.
 					currentTypes = currentTypes.newType(store.slot, store.type);
 				} else if (code instanceof Label) {
-					String name = ((Label) code).name;
-					if (labelTypes.containsKey(name)) {
-						VariableTypes labelType = labelTypes.get(name);
-						if (labelType.isPartial()) {
-							if (currentTypes.isPartial()) {
-								// TODO Combine the information.
-							} else {
-								// This information is better - replace the old information.
-								labelTypes.put(name, currentTypes);
-							}
-						} else if (i == at) {
-							// This is the complete information of the label, and the label
-							// is at the point asked for.
-							return labelType.getTypeInformation();
-						}
-					} else {
-						// There's no existing information. Use the current one.
-						labelTypes.put(name, currentTypes);
-					}
+					addLabelInformation(labelTypes, ((Label) code).name, currentTypes);
 				} else if (code instanceof Branch) {
-					Branch branch = (Branch) code;
+					addLabelInformation(labelTypes, ((Branch) code).label, currentTypes);
 				} else if (code instanceof Switch) {
 					Switch branch = (Switch) code;
+					addLabelInformation(labelTypes, branch.defaultLabel, currentTypes);
+					for (Pair<Integer, String> label : branch.cases) {
+						addLabelInformation(labelTypes, label.second(), currentTypes);
+					}
 				}
 
-				if (code instanceof Goto || code instanceof Return
-				    || code instanceof Throw) {
-					// The current type information is now useless.
-					// Note that this must be partial, because we really don't have any
-					// information at all at this point.
-					currentTypes = new VariableTypes(new HashMap<Integer, JvmType>(),
-					    true);
+				if ((code instanceof Goto || code instanceof Return || code instanceof Throw)
+				    && i < size - 1) {
+					if (!(codes.get(i + 1) instanceof Label)) {
+						throw new IllegalStateException("Deadcode found.");
+					}
+
+					String labelName = ((Label) codes.get(i + 1)).name;
+
+					if (labelTypes.containsKey(labelName)) {
+						currentTypes = labelTypes.get(labelName);
+					} else {
+						// The current type information is now useless.
+						// Note that this must be partial, because we really don't have any
+						// information at all at this point.
+						currentTypes = new VariableTypes(new HashMap<Integer, JvmType>(),
+						    false);
+					}
+				}
+			}
+
+			// If there's no change after running through, there's no more information
+			// to collect.
+			if (comparison.equals(labelTypes)) {
+				for (VariableTypes types : labelTypes.values()) {
+					types.setComplete(true);
 				}
 			}
 		}
@@ -124,16 +135,48 @@ public class VariableAnalysis extends TypeFlowAnalysis {
 		return types;
 	}
 
+	private void addLabelInformation(Map<String, VariableTypes> labelTypes,
+	    String labelName, VariableTypes currentTypes) {
+		if (labelTypes.containsKey(labelName)) {
+			VariableTypes labelType = labelTypes.get(labelName);
+			if (!labelType.isComplete()) {
+				if (currentTypes.isComplete()) {
+					// This information is better - replace the old information.
+					labelTypes.put(labelName, currentTypes);
+				} else {
+					// Both the information is partial, so we need to combine it.
+					labelTypes.put(labelName, labelType.combineWith(currentTypes));
+				}
+			}
+		} else {
+			// There's no existing information. Use the current one.
+			labelTypes.put(labelName, currentTypes);
+		}
+	}
+
 	private class VariableTypes extends TypeInformation<Map<Integer, JvmType>> {
 
-		public VariableTypes(Map<Integer, JvmType> types, boolean partial) {
-			super(types, partial);
+		public VariableTypes(Map<Integer, JvmType> types, boolean complete) {
+			super(types, complete);
 		}
 
 		public VariableTypes newType(int location, JvmType type) {
 			Map<Integer, JvmType> types = getTypeInformation();
 			types.put(location, type);
-			return new VariableTypes(types, isPartial());
+			return new VariableTypes(types, isComplete());
+		}
+
+		public VariableTypes combineWith(VariableTypes types) {
+			Map<Integer, JvmType> types1 = getTypeInformation();
+			Map<Integer, JvmType> types2 = types.getTypeInformation();
+
+			for (Integer i : types2.keySet()) {
+				if (!types1.containsKey(i)) {
+					types1.put(i, types2.get(i));
+				}
+			}
+
+			return new VariableTypes(types1, isComplete() || types.isComplete());
 		}
 
 	}

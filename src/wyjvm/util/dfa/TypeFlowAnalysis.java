@@ -11,10 +11,10 @@ public abstract class TypeFlowAnalysis {
 
 	protected final Method method;
 	protected final List<Bytecode> codes;
-	
+
 	public TypeFlowAnalysis(Method method) {
 		this.method = method;
-		
+
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				codes = ((Code) attribute).bytecodes();
@@ -24,25 +24,40 @@ public abstract class TypeFlowAnalysis {
 
 		throw new IllegalArgumentException("Method has no Code attribute.");
 	}
-	
+
 	protected abstract class TypeInformation<C> {
-		
+
 		private final C typeInformation;
-		private final boolean partial;
-		
-		public TypeInformation(C typeInformation, boolean partial) {
+		private boolean complete;
+
+		public TypeInformation(C typeInformation, boolean complete) {
 			this.typeInformation = typeInformation;
-			this.partial = partial;
+			this.complete = complete;
 		}
-		
+
 		public C getTypeInformation() {
 			return typeInformation;
 		}
-		
-		public boolean isPartial() {
-			return partial;
+
+		public boolean isComplete() {
+			return complete;
 		}
-		
+
+		public void setComplete(boolean complete) {
+			this.complete = complete;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof TypeInformation<?>) {
+				TypeInformation<?> type = (TypeInformation<?>) o;
+				return typeInformation.equals(type.typeInformation)
+				    && complete == type.complete;
+			}
+
+			return false;
+		}
+
 	}
-	
+
 }
