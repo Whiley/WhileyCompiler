@@ -2243,9 +2243,11 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.LoadConst(key));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
+			// TODO: in cases when the read conversion is a no-op, we can do
+			// better here.
 			addReadConversion(from,bytecodes);							
-			// now perform recursive conversion
-			addCoercion(from,to,freeSlot,constants,bytecodes);							
+			addCoercion(from,to,freeSlot,constants,bytecodes);
+			addWriteConversion(from,bytecodes);
 			ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));			
