@@ -1242,6 +1242,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			newEnv = join(environment,propagate(start+1,end, oldEnv));
 		} while (!newEnv.equals(oldEnv));		
 				
+		environment = join(environment,newEnv);		
+				
 		Block blk = new Block();
 		blk.add(Code.Loop(loop.target, modifies),stmt.attributes());		
 		rewrites.put(start, blk);
