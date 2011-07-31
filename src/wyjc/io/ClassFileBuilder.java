@@ -1945,7 +1945,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(0,convertType(from)));
 		
 		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
-			// TODO
+			buildCoercion((Type.Tuple) from, (Type.Tuple) to, freeSlot, constants, bytecodes);
 		} else if(from instanceof Type.Process && to instanceof Type.Process) {
 			// TODO			
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
@@ -1982,7 +1982,13 @@ public class ClassFileBuilder {
 		method.attributes().add(code);				
 
 	}
-
+	
+	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
+			int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+	
+	}
+	
 	protected void buildCoercion(Type.List fromType, Type.List toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
@@ -2179,8 +2185,11 @@ public class ClassFileBuilder {
 	public void buildCoercion(Type.Record fromType, Type.Record toType, 
 			int freeSlot, HashMap<Constant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {		
-		int slot = freeSlot++;		
-		bytecodes.add(new Bytecode.Store(slot,WHILEYRECORD));
+		int oldSlot = freeSlot++;
+		int newSlot = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(oldSlot,WHILEYRECORD));
+		construct(WHILEYRECORD,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(newSlot,WHILEYRECORD));
 		Map<String,Type> toFields = toType.fields();
 		Map<String,Type> fromFields = fromType.fields();
 		for(String key : toFields.keySet()) {
@@ -2189,9 +2198,9 @@ public class ClassFileBuilder {
 			if(Type.isomorphic(to,from)) {
 				// can skip
 			} else {
-				bytecodes.add(new Bytecode.Load(slot,WHILEYRECORD));
+				bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));
 				bytecodes.add(new Bytecode.LoadConst(key));
-				bytecodes.add(new Bytecode.Load(slot,WHILEYRECORD));
+				bytecodes.add(new Bytecode.Load(oldSlot,WHILEYRECORD));
 				bytecodes.add(new Bytecode.LoadConst(key));
 				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
 				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
@@ -2203,7 +2212,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 			}
 		}
-		bytecodes.add(new Bytecode.Load(slot,WHILEYRECORD));		
+		bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));		
 	}
 	
 	/**
