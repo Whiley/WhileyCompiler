@@ -1862,6 +1862,8 @@ public class ClassFileBuilder {
 			buildCoercion((Type.Byte)from, to, freeSlot,bytecodes); 
 		} else if(from == Type.T_STRING && to instanceof Type.List) {									
 			buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
+		} else if(to == Type.T_ANY) {
+			// nothing to do here
 		} else {
 			// ok, it's a harder case so we use an explicit coercion function
 			int id = Coercion.get(from,to,constants);
@@ -1986,9 +1988,32 @@ public class ClassFileBuilder {
 	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
-	
+		int oldSlot = freeSlot++;
+		int newSlot = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(oldSlot,WHILEYTUPLE));
+		construct(WHILEYTUPLE,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(newSlot,WHILEYTUPLE));
+		List<Type> from_elements = fromType.elements();
+		List<Type> to_elements = toType.elements();
+		for(int i=0;i!=to_elements.size();++i) {
+			Type from = from_elements.get(i);
+			Type to = to_elements.get(i);
+			bytecodes.add(new Bytecode.Load(newSlot,WHILEYTUPLE));			
+			bytecodes.add(new Bytecode.Load(oldSlot,WHILEYTUPLE));
+			bytecodes.add(new Bytecode.LoadConst(i));
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));								
+			addReadConversion(from,bytecodes);							
+			// now perform recursive conversion
+			addCoercion(from,to,freeSlot,constants,bytecodes);							
+			ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"add",ftype,Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(T_BOOL));
+		}
+		bytecodes.add(new Bytecode.Load(newSlot,WHILEYTUPLE));
 	}
 	
+		
 	protected void buildCoercion(Type.List fromType, Type.List toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
@@ -2194,23 +2219,19 @@ public class ClassFileBuilder {
 		Map<String,Type> fromFields = fromType.fields();
 		for(String key : toFields.keySet()) {
 			Type to = toFields.get(key);
-			Type from = fromFields.get(key);	
-			if(Type.isomorphic(to,from)) {
-				// can skip
-			} else {
-				bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));
-				bytecodes.add(new Bytecode.LoadConst(key));
-				bytecodes.add(new Bytecode.Load(oldSlot,WHILEYRECORD));
-				bytecodes.add(new Bytecode.LoadConst(key));
-				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
-				addReadConversion(from,bytecodes);							
-				// now perform recursive conversion
-				addCoercion(from,to,freeSlot,constants,bytecodes);							
-				ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
-				bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-			}
+			Type from = fromFields.get(key);				
+			bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));
+			bytecodes.add(new Bytecode.LoadConst(key));
+			bytecodes.add(new Bytecode.Load(oldSlot,WHILEYRECORD));
+			bytecodes.add(new Bytecode.LoadConst(key));
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
+			addReadConversion(from,bytecodes);							
+			// now perform recursive conversion
+			addCoercion(from,to,freeSlot,constants,bytecodes);							
+			ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));			
 		}
 		bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));		
 	}
