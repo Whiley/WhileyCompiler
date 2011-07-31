@@ -95,7 +95,9 @@ public class CoercionCheck implements Transform {
 		} else {
 			visited.add(p);
 		}
-		if(from instanceof Type.Leaf && to instanceof Type.Leaf) {
+		if(from == Type.T_VOID) {
+			// also no problem
+		} else if(from instanceof Type.Leaf && to instanceof Type.Leaf) {
 			// no problem
 		} else if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
 			Type.Tuple t1 = (Type.Tuple) from;

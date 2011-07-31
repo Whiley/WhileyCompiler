@@ -2255,8 +2255,8 @@ public class ClassFileBuilder {
 	
 	public void buildCoercion(Type.Union from, Type to, 
 			int freeSlot, HashMap<Constant,Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-										
+			ArrayList<Bytecode> bytecodes) {	
+		
 		String exitLabel = freshLabel();
 		List<Type> bounds = new ArrayList<Type>(from.bounds());
 		ArrayList<String> labels = new ArrayList<String>();				
