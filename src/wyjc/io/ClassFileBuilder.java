@@ -123,14 +123,14 @@ public class ClassFileBuilder {
 		return cf;
 	}	
 	
-	public void buildConstants(HashMap<Constant,Integer> constants, ClassFile cf) {				
-		buildValues(constants,cf);
+	public void buildConstants(HashMap<Constant,Integer> constants, ClassFile cf) {						
 		buildCoercions(constants,cf);
+		buildValues(constants,cf);
 	}
 	
 	public void buildCoercions(HashMap<Constant,Integer> constants, ClassFile cf) {
 		HashSet<Constant> done = new HashSet<Constant>();
-		
+		HashMap<Constant,Integer> original = constants;
 		// this could be a little more efficient I think!!		
 		while(done.size() != constants.size()) {
 			// We have to clone the constants map, since it may be expanded as a
@@ -148,6 +148,7 @@ public class ClassFileBuilder {
 			}
 			constants = nconstants;
 		}
+		original.putAll(constants);
 	}
 	
 	public void buildValues(HashMap<Constant,Integer> constants, ClassFile cf) {
@@ -831,7 +832,7 @@ public class ClassFileBuilder {
 			String trueLabel = freshLabel();
 					
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-			translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes, constants);
+			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
 
 			Type gdiff = Type.leastDifference(c.type,c.test);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
@@ -851,7 +852,7 @@ public class ClassFileBuilder {
 		} else {
 			// This is the easy case. We're not updating the type of a local
 			// variable; rather we're just type testing a value on the stack.
-			translateTypeTest(c.target, c.type, c.test, stmt, bytecodes, constants);
+			translateTypeTest(c.target, c.type, c.test, bytecodes, constants);
 		}
 	}
 	
@@ -859,7 +860,7 @@ public class ClassFileBuilder {
 	// see whether what's on the top of the stack (the value) is a subtype of
 	// the type being tested.  
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
-			Entry stmt, ArrayList<Bytecode> bytecodes, HashMap<Constant,Integer> constants) {		
+			ArrayList<Bytecode> bytecodes, HashMap<Constant,Integer> constants) {		
 		
 		// First, try for the easy cases
 		
@@ -1979,9 +1980,11 @@ public class ClassFileBuilder {
 			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot, constants, bytecodes);
 		} else if(to instanceof Type.Fun && from instanceof Type.Fun) {
 			// TODO
-		} else if(from instanceof Type.Union) {
-			// TODO
-		} 
+		} else if(from instanceof Type.Union) {			
+			buildCoercion((Type.Union) from, to, freeSlot, constants, bytecodes);
+		} else {
+			throw new RuntimeException("internal failure");
+		}
 	
 		bytecodes.add(new Bytecode.Return(convertType(to)));
 		
@@ -1996,12 +1999,7 @@ public class ClassFileBuilder {
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),method);
 		method.attributes().add(code);				
 	}
-	
-	protected void buildCoercion(Type from, Type to, int freeSlot, HashMap<Constant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
 		
-	}
-	
 	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
@@ -2253,6 +2251,42 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));			
 		}
 		bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));		
+	}
+	
+	public void buildCoercion(Type.Union from, Type to, 
+			int freeSlot, HashMap<Constant,Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+										
+		String exitLabel = freshLabel();
+		List<Type> bounds = new ArrayList<Type>(from.bounds());
+		ArrayList<String> labels = new ArrayList<String>();				
+		
+		// basically, we're building a big dispatch table. I think there's no
+		// question that this could be more efficient in some cases.
+		for(int i=0;i!=bounds.size();++i) {
+			Type bound = bounds.get(i);
+			if((i+1) == bounds.size()) {
+				addReadConversion(bound,bytecodes);
+				addCoercion(bound,to,freeSlot,constants,bytecodes);
+				bytecodes.add(new Bytecode.Goto(exitLabel));
+			} else {
+				String label = freshLabel();
+				labels.add(label);
+				bytecodes.add(new Bytecode.Dup(convertType(from)));				
+				translateTypeTest(label,from,bound,bytecodes,constants);				
+			}
+		}
+		
+		for(int i=0;i<labels.size();++i) {
+			String label = labels.get(i);
+			Type bound = bounds.get(i);
+			bytecodes.add(new Bytecode.Label(label));
+			addReadConversion(bound,bytecodes);
+			addCoercion(bound,to,freeSlot,constants,bytecodes);
+			bytecodes.add(new Bytecode.Goto(exitLabel));
+		}
+		
+		bytecodes.add(new Bytecode.Label(exitLabel));
 	}
 	
 	protected Type simplifyCoercion(Type from, Type to) {
