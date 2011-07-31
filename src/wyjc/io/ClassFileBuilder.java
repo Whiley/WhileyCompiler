@@ -1972,6 +1972,8 @@ public class ClassFileBuilder {
 			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
 		} else if(from instanceof Type.List && to instanceof Type.Set) {
 			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.Dictionary && to instanceof Type.Dictionary) {
+			buildCoercion((Type.Dictionary) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
 		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
 			buildCoercion((Type.List) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
 		} else if(from instanceof Type.List && to instanceof Type.List) {
@@ -1983,7 +1985,7 @@ public class ClassFileBuilder {
 		} else if(from instanceof Type.Union) {			
 			buildCoercion((Type.Union) from, to, freeSlot, constants, bytecodes);
 		} else {
-			throw new RuntimeException("internal failure");
+			throw new RuntimeException("invalid coercion encountered: " + from + " => " + to);
 		}
 	
 		bytecodes.add(new Bytecode.Return(convertType(to)));
@@ -2128,6 +2130,70 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Goto(loopLabel));
 		bytecodes.add(new Bytecode.Label(exitLabel));
 		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));		
+	}
+	
+	protected void buildCoercion(Type.Dictionary fromType, Type.Dictionary toType, 
+			int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		
+		// The following piece of code implements a java for-each loop which
+		// iterates every element of the input collection, and recursively
+		// converts it before loading it back onto a new WhileyList. 
+		String loopLabel = freshLabel();
+		String exitLabel = freshLabel();		
+		
+		int iter = freeSlot++;	
+		int source = freeSlot++;
+		int target = freeSlot++;		
+		
+		bytecodes.add(new Bytecode.Dup(WHILEYMAP));
+		bytecodes.add(new Bytecode.Store(source, WHILEYMAP));
+		construct(WHILEYMAP,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(target, WHILEYMAP));
+										
+		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_SET);
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "keySet",
+				ftype, Bytecode.VIRTUAL));
+		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_SET, "iterator",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.Store(iter,
+				JAVA_UTIL_ITERATOR));
+					
+		bytecodes.add(new Bytecode.Label(loopLabel));
+		ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+		
+		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
+				ftype, Bytecode.INTERFACE));							
+		addReadConversion(fromType.key(),bytecodes);
+		bytecodes.add(new Bytecode.Dup(convertType(fromType.key())));		
+		addCoercion(fromType.key(), toType.key(), freeSlot,
+				constants, bytecodes);		
+		addWriteConversion(toType.key(),bytecodes);
+		bytecodes.add(new Bytecode.Swap());		
+		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
+		bytecodes.add(new Bytecode.Swap());
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get",
+				ftype, Bytecode.VIRTUAL));
+		addReadConversion(fromType.value(),bytecodes);
+		addCoercion(fromType.value(), toType.value(), freeSlot,
+				constants, bytecodes);
+		addWriteConversion(toType.value(),bytecodes);		
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put",
+				ftype, Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+		bytecodes.add(new Bytecode.Goto(loopLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));
 	}
 	
 	protected void buildCoercion(Type.List fromType, Type.Set toType,
@@ -2458,6 +2524,7 @@ public class ClassFileBuilder {
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
 	private static final JvmType.Clazz JAVA_UTIL_LIST = new JvmType.Clazz("java.util","List");
+	private static final JvmType.Clazz JAVA_UTIL_SET = new JvmType.Clazz("java.util","Set");
 	private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");
@@ -2633,3 +2700,4 @@ public class ClassFileBuilder {
 	}	
 	*/
 }
+
