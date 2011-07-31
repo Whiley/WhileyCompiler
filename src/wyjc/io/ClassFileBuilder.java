@@ -142,7 +142,7 @@ public class ClassFileBuilder {
 				Constant e = entry.getKey();
 				if(!done.contains(e) && e instanceof Coercion) {
 					Coercion c = (Coercion) e;
-					buildCoercion(c.from,c.to,entry.getValue(),constants,cf);
+					buildCoercion(c.from,c.to,entry.getValue(),nconstants,cf);
 				} 
 				done.add(e);
 			}
@@ -1848,7 +1848,8 @@ public class ClassFileBuilder {
 	protected void addCoercion(Type from, Type to, int freeSlot,
 			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		
-		// first, check for easy cases that we do inline
+		// First, deal with coercions which require a change of representation
+		// when going into a union.  For example, bool must => Boolean.
 		if (Type.isomorphic(to, from)) {		
 			// do nothing!						
 		} else if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
@@ -1860,16 +1861,25 @@ public class ClassFileBuilder {
 			buildCoercion((Type.Char)from, to, freeSlot,bytecodes);  
 		} else if(from == Type.T_BYTE) {									
 			buildCoercion((Type.Byte)from, to, freeSlot,bytecodes); 
-		} else if(from == Type.T_STRING && to instanceof Type.List) {									
-			buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
-		} else if(to == Type.T_ANY) {
-			// nothing to do here
 		} else {
-			// ok, it's a harder case so we use an explicit coercion function
-			int id = Coercion.get(from,to,constants);
-			String name = "coercion$" + id;
-			JvmType.Function ft = new JvmType.Function(convertType(to), convertType(from));
-			bytecodes.add(new Bytecode.Invoke(owner, name, ft, Bytecode.STATIC));
+			// Second, check for other easy cases that we can do inline. We first
+			// simplify the target in order to remove any unions on the right-hand
+			// side. 
+			to = simplifyCoercion(from,to);
+
+			if (Type.isomorphic(to, from)) {		
+				// do nothing!						
+			} else if(from == Type.T_STRING && to instanceof Type.List) {									
+				buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
+			} else if(to == Type.T_ANY) {
+				// nothing to do here
+			} else {
+				// ok, it's a harder case so we use an explicit coercion function
+				int id = Coercion.get(from,to,constants);
+				String name = "coercion$" + id;
+				JvmType.Function ft = new JvmType.Function(convertType(to), convertType(from));
+				bytecodes.add(new Bytecode.Invoke(owner, name, ft, Bytecode.STATIC));
+			}
 		}
 	}
 
@@ -1942,10 +1952,15 @@ public class ClassFileBuilder {
 	protected void buildCoercion(Type from, Type to, int id,
 			HashMap<Constant, Integer> constants, ClassFile cf) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		int freeSlot = 0;
-				
-		bytecodes.add(new Bytecode.Load(0,convertType(from)));
 		
+		int freeSlot = 1;
+		bytecodes.add(new Bytecode.Load(0,convertType(from)));		
+		
+		// First, call simplify the coercion if possible. This will remove any
+		// union types from the right-hand side.
+		to = simplifyCoercion(from,to);
+		
+		// Second, case analysis on the various kinds of coercion
 		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
 			buildCoercion((Type.Tuple) from, (Type.Tuple) to, freeSlot, constants, bytecodes);
 		} else if(from instanceof Type.Process && to instanceof Type.Process) {
@@ -1966,10 +1981,8 @@ public class ClassFileBuilder {
 			// TODO
 		} else if(from instanceof Type.Union) {
 			// TODO
-		} else if(to instanceof Type.Union) {
-			// TODO
-		}
-				
+		} 
+	
 		bytecodes.add(new Bytecode.Return(convertType(to)));
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
@@ -1982,7 +1995,11 @@ public class ClassFileBuilder {
 		cf.methods().add(method);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),method);
 		method.attributes().add(code);				
-
+	}
+	
+	protected void buildCoercion(Type from, Type to, int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		
 	}
 	
 	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
@@ -2234,6 +2251,37 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));			
 		}
 		bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));		
+	}
+	
+	protected Type simplifyCoercion(Type from, Type to) {
+
+		if (to instanceof Type.Union) {
+			Type.Union t2 = (Type.Union) to;
+
+			// First, check for identical type (i.e. no coercion necessary)
+			for (Type b : t2.bounds()) {
+				if (Type.isomorphic(from, b)) {
+					// nothing to do
+					return b;
+				}
+			}
+
+			// Second, check for single non-coercive match
+			for (Type b : t2.bounds()) {
+				if (Type.isSubtype(b, from)) {					
+					return b;
+				}
+			}
+
+			// Third, test for single coercive match
+			for (Type b : t2.bounds()) {
+				if (Type.isCoerciveSubtype(b, from)) {
+					return b;
+				}
+			}
+		}
+
+		return to;
 	}
 	
 	/**
