@@ -136,6 +136,32 @@ public class Util {
 	}
 	
 	/**
+	 * Coerce a string into a Whiley char list.
+	 * @param str
+	 * @return
+	 */
+	public static List str2cl(String str) {
+		List r = new List(str.length());
+		for(int i=0;i!=str.length();++i) {
+			r.add(str.charAt(i));
+		}
+		return r;
+	}
+	
+	/**
+	 * Coerce a string into a Whiley int list.
+	 * @param str
+	 * @return
+	 */
+	public static List str2il(String str) {
+		List r = new List(str.length());
+		for(int i=0;i!=str.length();++i) {
+			r.add(BigInteger.valueOf(str.charAt(i)));
+		}
+		return r;
+	}
+	
+	/**
 	 * This method is used for the special case when the left-hand side of an
 	 * equality operation may be null.
 	 * 

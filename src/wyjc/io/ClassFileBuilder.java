@@ -1860,6 +1860,8 @@ public class ClassFileBuilder {
 			buildCoercion((Type.Char)from, to, freeSlot,bytecodes);  
 		} else if(from == Type.T_BYTE) {									
 			buildCoercion((Type.Byte)from, to, freeSlot,bytecodes); 
+		} else if(from == Type.T_STRING && to instanceof Type.List) {									
+			buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
 		} else {
 			// ok, it's a harder case so we use an explicit coercion function
 			int id = Coercion.get(from,to,constants);
@@ -1869,52 +1871,6 @@ public class ClassFileBuilder {
 		}
 	}
 
-	/**
-	 * The build coercion method constructs a static final private method which
-	 * accepts a value of type "from", and coerces it into a value of type "to".  
-	 * 
-	 * @param toType
-	 * @param fromType
-	 * 
-	 */
-	protected void buildCoercion(Type fromType, Type toType, int id,
-			HashMap<Constant, Integer> constants, ClassFile cf) {
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		int freeSlot = 0;
-				
-		bytecodes.add(new Bytecode.Load(0,convertType(fromType)));
-		
-		if(toType instanceof Type.List && fromType instanceof Type.List) {
-			buildCoercion((Type.List) fromType, (Type.List) toType, freeSlot, constants, bytecodes);			
-		} else if(toType instanceof Type.Dictionary && fromType instanceof Type.List) {
-			buildCoercion((Type.List) fromType, (Type.Dictionary) toType, freeSlot, constants, bytecodes);			
-		} else if(toType instanceof Type.Set && fromType instanceof Type.List) {
-			buildCoercion((Type.List) fromType, (Type.Set) toType, freeSlot, constants, bytecodes);			
-		} else if(toType instanceof Type.Set && fromType instanceof Type.Set) {
-			buildCoercion((Type.Set) fromType, (Type.Set) toType, freeSlot, constants, bytecodes);			
-		} else if(toType instanceof Type.Record && fromType instanceof Type.Record) {
-			buildCoercion((Type.Record) fromType, (Type.Record) toType, freeSlot, constants, bytecodes);
-		} else {
-			// every other kind of conversion is either a syntax error (which
-			// should have been caught by TypeChecker); or, a nop (since no
-			// conversion is required on this particular platform).
-		}
-		
-		bytecodes.add(new Bytecode.Return(convertType(toType)));
-		
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PRIVATE);
-		modifiers.add(Modifier.ACC_STATIC);
-		modifiers.add(Modifier.ACC_SYNTHETIC);
-		JvmType.Function ftype = new JvmType.Function(convertType(toType),convertType(fromType));
-		String name = "coercion$" + id;
-		ClassFile.Method method = new ClassFile.Method(name, ftype, modifiers);
-		cf.methods().add(method);
-		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),method);
-		method.attributes().add(code);				
-
-	}
-	
 	public void buildCoercion(Type.Bool fromType, Type toType, 
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
@@ -1961,6 +1917,70 @@ public class ClassFileBuilder {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);			
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"valueOf",ftype,Bytecode.STATIC));	
 		}
+	}
+	
+	public void buildCoercion(Type.Strung fromType, Type.List toType, 
+			int freeSlot, ArrayList<Bytecode> bytecodes) {		
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_STRING);
+		
+		if(toType.element() == Type.T_CHAR) {
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2cl",ftype,Bytecode.STATIC));	
+		} else {
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2il",ftype,Bytecode.STATIC));
+		}		
+	}
+	/**
+	 * The build coercion method constructs a static final private method which
+	 * accepts a value of type "from", and coerces it into a value of type "to".  
+	 * 
+	 * @param to
+	 * @param from
+	 * 
+	 */
+	protected void buildCoercion(Type from, Type to, int id,
+			HashMap<Constant, Integer> constants, ClassFile cf) {
+		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
+		int freeSlot = 0;
+				
+		bytecodes.add(new Bytecode.Load(0,convertType(from)));
+		
+		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
+			// TODO
+		} else if(from instanceof Type.Process && to instanceof Type.Process) {
+			// TODO			
+		} else if(from instanceof Type.Set && to instanceof Type.Set) {
+			buildCoercion((Type.Set) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
+			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.List && to instanceof Type.Set) {
+			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
+			buildCoercion((Type.List) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.List && to instanceof Type.List) {
+			buildCoercion((Type.List) from, (Type.List) to, freeSlot, constants, bytecodes);			
+		} else if(to instanceof Type.Record && from instanceof Type.Record) {
+			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot, constants, bytecodes);
+		} else if(to instanceof Type.Fun && from instanceof Type.Fun) {
+			// TODO
+		} else if(from instanceof Type.Union) {
+			// TODO
+		} else if(to instanceof Type.Union) {
+			// TODO
+		}
+				
+		bytecodes.add(new Bytecode.Return(convertType(to)));
+		
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.ACC_PRIVATE);
+		modifiers.add(Modifier.ACC_STATIC);
+		modifiers.add(Modifier.ACC_SYNTHETIC);
+		JvmType.Function ftype = new JvmType.Function(convertType(to),convertType(from));
+		String name = "coercion$" + id;
+		ClassFile.Method method = new ClassFile.Method(name, ftype, modifiers);
+		cf.methods().add(method);
+		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),method);
+		method.attributes().add(code);				
+
 	}
 
 	protected void buildCoercion(Type.List fromType, Type.List toType, 
