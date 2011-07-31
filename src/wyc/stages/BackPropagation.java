@@ -654,7 +654,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		System.out.println("TARGET: " + code.type);
 		req = Type.T_PROCESS(req);
 		coerce(req,code.type,index,entry);
-		environment.push(req);
+		environment.push(code.type);
 	}	
 	
 	public Env propagate(int index,
