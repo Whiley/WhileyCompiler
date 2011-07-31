@@ -119,7 +119,7 @@ public class Continuations {
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
 					Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
-					Stack<JvmType> stack = stackAnalysis.stackAt(i);
+					Stack<JvmType> stack = stackAnalysis.typesAt(i);
 
 					i = addResume(bytecodes,
 					    addYield(method, bytecodes, i, location, types, stack), location,
@@ -154,7 +154,7 @@ public class Continuations {
 						// Internal method call.
 
 						Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
-						Stack<JvmType> stack = stackAnalysis.stackAt(i);
+						Stack<JvmType> stack = stackAnalysis.typesAt(i);
 
 						// If the method isn't resuming, it needs to skip over the resume.
 						bytecodes.add(i++, new Goto("invoke" + location));

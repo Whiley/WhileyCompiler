@@ -31,17 +31,87 @@ package wyjvm.util.dfa;
 
 import java.util.Stack;
 
+import wyjvm.lang.Bytecode;
+import wyjvm.lang.Bytecode.Load;
+import wyjvm.lang.Bytecode.LoadConst;
+import wyjvm.lang.Bytecode.Pop;
+import wyjvm.lang.Bytecode.Swap;
 import wyjvm.lang.ClassFile.Method;
 import wyjvm.lang.JvmType;
 
-public class StackAnalysis extends TypeFlowAnalysis {
-	
+public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
+
 	public StackAnalysis(Method method) {
 		super(method);
 	}
-	
-	public Stack<JvmType> stackAt(int i) {
-		return new Stack<JvmType>();
+
+	@Override
+	public TypeInformation initTypes() {
+		return new StackTypes(new Stack<JvmType>(), true);
+	}
+
+	@Override
+	public TypeInformation emptyTypes() {
+		return new StackTypes(new Stack<JvmType>(), false);
+	}
+
+	@Override
+	public TypeInformation respondTo(TypeInformation types, Bytecode code) {
+		// TODO Respond to the rest of the bytecodes.
+		
+		if (code instanceof Load) {
+			return addType(types, ((Load) code).type);
+		} else if (code instanceof LoadConst) {
+			// TODO Work out how to get type information out of LoadConst.
+		} else if (code instanceof Pop) {
+			Stack<JvmType> newTypes = copy(types.getTypeInformation());
+			newTypes.pop();
+			return new StackTypes(newTypes, types.isComplete());
+		} else if (code instanceof Swap) {
+			Stack<JvmType> newTypes = copy(types.getTypeInformation());
+			JvmType top = newTypes.pop();
+			newTypes.add(newTypes.size() - 2, top);
+			return new StackTypes(newTypes, types.isComplete());
+		}
+
+		return types;
 	}
 	
+	private Stack<JvmType> copy(Stack<JvmType> stack) {
+		Stack<JvmType> newStack = new Stack<JvmType>();
+		newStack.addAll(stack);
+		return newStack;
+	}
+
+	private TypeInformation addType(TypeInformation types, JvmType type) {
+		Stack<JvmType> newTypes = copy(types.getTypeInformation());
+		newTypes.push(type);
+		return new StackTypes(newTypes, types.isComplete());
+	}
+
+	private class StackTypes extends TypeInformation {
+
+		public StackTypes(Stack<JvmType> types, boolean complete) {
+			super(types, complete);
+		}
+
+		public StackTypes combineWith(TypeInformation types) {
+			if (isComplete() || equals(types)) {
+				return this;
+			}
+
+			if (types.isComplete()) {
+				if (types instanceof StackTypes) {
+					return (StackTypes) types;
+				}
+
+				return new StackTypes(types.getTypeInformation(), types.isComplete());
+			}
+
+			throw new IllegalStateException(
+			    "Two different incomplete stacks cannot be combined.");
+		}
+
+	}
+
 }
