@@ -160,13 +160,12 @@ public class CoercionCheck implements Transform {
 			Type.Union t2 = (Type.Union) to;			
 			Type match = null;
 			for(Type b : t2.bounds()) {
-				if(Type.isCoerciveSubtype(from,b)) {
+				if(Type.isCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						syntaxError("ambiguous coercion (" + from + " => "
-								+ match + "|" + to, filename, elem);
+								+ to, filename, elem);
 					} else {
-						System.out.println("MATCHED: " + b);
 						check(from,b,visited,elem);
 						match = b;						
 					}
