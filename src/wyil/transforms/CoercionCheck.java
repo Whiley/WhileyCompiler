@@ -107,6 +107,10 @@ public class CoercionCheck implements Transform {
 				Type e2 = t2_elements.get(i);
 				check(e1,e2,visited,elem);
 			}
+		} else if(from instanceof Type.Process && to instanceof Type.Process) {
+			Type.Process t1 = (Type.Process) from;
+			Type.Process t2 = (Type.Process) to;
+			check(t1.element(),t2.element(),visited,elem);
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
 			Type.Set t1 = (Type.Set) from;
 			Type.Set t2 = (Type.Set) to;
@@ -155,10 +159,41 @@ public class CoercionCheck implements Transform {
 			for(Type b : t1.bounds()) {
 				check(b,to,visited,elem);
 			}
-		} else if(to instanceof Type.Union) {
-			System.out.println("CHECKING: " + from + " => " + to);
+		} else if(to instanceof Type.Union) {			
 			Type.Union t2 = (Type.Union) to;			
-			Type match = null;
+			
+			// First, check for identical type (i.e. no coercion necessary)
+			
+			for(Type b : t2.bounds()) {
+				if(Type.isomorphic(from, b)) {
+					// no problem
+					return;
+				}
+			}
+			
+			// Second, check for single non-coercive match
+			Type match = null;			
+			
+			for(Type b : t2.bounds()) {
+				if(Type.isSubtype(b,from)) {
+					if(match != null) {
+						// found ambiguity
+						syntaxError("ambiguous coercion (" + from + " => "
+								+ to, filename, elem);
+					} else {
+						check(from,b,visited,elem);
+						match = b;						
+					}
+				}
+			}
+			
+			if(match != null) {
+				// ok, we have a hit on a non-coercive subtype.
+				return;
+			}
+			
+			// Third, test for single coercive match
+			
 			for(Type b : t2.bounds()) {
 				if(Type.isCoerciveSubtype(b,from)) {
 					if(match != null) {
