@@ -220,6 +220,7 @@ public abstract class Type {
 		}
 		return T_FUN(receiver, ret, ts);
 	}
+	
 	/**
 	 * Construct a function type using the given return and parameter types.
 	 * 
@@ -3176,8 +3177,9 @@ public abstract class Type {
 	private static final byte K_RECORD = 15;
 	private static final byte K_UNION = 16;
 	private static final byte K_FUNCTION = 17;
-	private static final byte K_EXISTENTIAL = 18;
-	private static final byte K_LABEL = 19;
+	private static final byte K_METHOD = 18;
+	private static final byte K_EXISTENTIAL = 19;
+	private static final byte K_LABEL = 20;
 	
 	/**
 	 * Represents a node in the type graph. Each node has a kind, along with a
