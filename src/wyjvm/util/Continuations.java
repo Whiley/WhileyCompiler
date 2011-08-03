@@ -119,7 +119,8 @@ public class Continuations {
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
 					Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
-					Stack<JvmType> stack = stackAnalysis.typesAt(i);
+//					Stack<JvmType> stack = stackAnalysis.typesAt(i);
+					Stack<JvmType> stack = new Stack<JvmType>();
 
 					i = addResume(bytecodes,
 					    addYield(method, bytecodes, i, location, types, stack), location,

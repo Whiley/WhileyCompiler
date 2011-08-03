@@ -29,15 +29,48 @@
 
 package wyjvm.util.dfa;
 
+import static wyjvm.lang.JvmTypes.JAVA_LANG_STRING;
+import static wyjvm.lang.JvmTypes.T_BOOL;
+import static wyjvm.lang.JvmTypes.T_BYTE;
+import static wyjvm.lang.JvmTypes.T_CHAR;
+import static wyjvm.lang.JvmTypes.T_DOUBLE;
+import static wyjvm.lang.JvmTypes.T_FLOAT;
+import static wyjvm.lang.JvmTypes.T_INT;
+import static wyjvm.lang.JvmTypes.T_LONG;
+import static wyjvm.lang.JvmTypes.T_SHORT;
+
 import java.util.Stack;
 
 import wyjvm.lang.Bytecode;
+import wyjvm.lang.Bytecode.ArrayLength;
+import wyjvm.lang.Bytecode.ArrayLoad;
+import wyjvm.lang.Bytecode.ArrayStore;
+import wyjvm.lang.Bytecode.BinOp;
+import wyjvm.lang.Bytecode.CheckCast;
+import wyjvm.lang.Bytecode.Cmp;
+import wyjvm.lang.Bytecode.Conversion;
+import wyjvm.lang.Bytecode.Dup;
+import wyjvm.lang.Bytecode.DupX1;
+import wyjvm.lang.Bytecode.DupX2;
+import wyjvm.lang.Bytecode.GetField;
+import wyjvm.lang.Bytecode.If;
+import wyjvm.lang.Bytecode.IfCmp;
+import wyjvm.lang.Bytecode.InstanceOf;
+import wyjvm.lang.Bytecode.Invoke;
 import wyjvm.lang.Bytecode.Load;
 import wyjvm.lang.Bytecode.LoadConst;
+import wyjvm.lang.Bytecode.MonitorEnter;
+import wyjvm.lang.Bytecode.MonitorExit;
+import wyjvm.lang.Bytecode.New;
 import wyjvm.lang.Bytecode.Pop;
+import wyjvm.lang.Bytecode.PutField;
+import wyjvm.lang.Bytecode.Store;
 import wyjvm.lang.Bytecode.Swap;
+import wyjvm.lang.Bytecode.Switch;
 import wyjvm.lang.ClassFile.Method;
 import wyjvm.lang.JvmType;
+import wyjvm.lang.JvmType.Array;
+import wyjvm.lang.JvmType.Void;
 
 public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 
@@ -57,36 +90,109 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 
 	@Override
 	public TypeInformation respondTo(TypeInformation types, Bytecode code) {
-		// TODO Respond to the rest of the bytecodes.
-		
-		if (code instanceof Load) {
-			return addType(types, ((Load) code).type);
+		if (code instanceof ArrayLoad) {
+			return newTypes(types, 2, ((ArrayLoad) code).type);
+		} else if (code instanceof ArrayLength) {
+			return newTypes(types, 1, T_INT);
+		} else if (code instanceof ArrayStore) {
+			return newTypes(types, 3);
+		} else if (code instanceof BinOp) {
+			return newTypes(types, 1);
+		} else if (code instanceof CheckCast) {
+			return newTypes(types, 1, ((CheckCast) code).type);
+		} else if (code instanceof Conversion) {
+			return newTypes(types, 1, ((Conversion) code).to);
+		} else if (code instanceof Cmp) {
+			return newTypes(types, 2, T_BOOL);
+		} else if (code instanceof Dup) {
+			return newTypes(types, 0, types.getTypeInformation().peek());
+		} else if (code instanceof DupX1 || code instanceof DupX2) {
+			// TODO Handle this.
+			throw new UnsupportedOperationException("Cannot yet handle dup_x");
+		} else if (code instanceof GetField) {
+			return newTypes(types, 1, ((GetField) code).type);
+		} else if (code instanceof If) {
+			return newTypes(types, 1);
+		} else if (code instanceof IfCmp) {
+			return newTypes(types, 2);
+		} else if (code instanceof InstanceOf) {
+			return newTypes(types, 1, T_BOOL);
+		} else if (code instanceof Invoke) {
+			Invoke invoke = (Invoke) code;
+			JvmType returnType = invoke.type.returnType();
+			return newTypes(types, invoke.type.parameterTypes().size()
+			    + (invoke.mode == Bytecode.STATIC ? 0 : 1),
+			    returnType instanceof Void ? null : returnType);
+		} else if (code instanceof Load) {
+			return newTypes(types, 0, ((Load) code).type);
 		} else if (code instanceof LoadConst) {
-			// TODO Work out how to get type information out of LoadConst.
+			Object constant = ((LoadConst) code).constant;
+			JvmType type;
+			if (constant instanceof Boolean) {
+				type = T_BOOL;
+			} else if (constant instanceof Character) {
+				type = T_CHAR;
+			} else if (constant instanceof Byte) {
+				type = T_BYTE;
+			} else if (constant instanceof Short) {
+				type = T_SHORT;
+			} else if (constant instanceof Long) {
+				type = T_LONG;
+			} else if (constant instanceof Double) {
+				type = T_DOUBLE;
+			} else if (constant instanceof Integer) {
+				type = T_INT;
+			} else if (constant instanceof Float) {
+				type = T_FLOAT;
+			} else if (constant instanceof String) {
+				type = JAVA_LANG_STRING;
+			} else {
+				throw new UnsupportedOperationException("Unknown constant type.");
+			}
+
+			return newTypes(types, 0, type);
+		} else if (code instanceof MonitorEnter || code instanceof MonitorExit) {
+			return newTypes(types, 1);
+		} else if (code instanceof New) {
+			New n = (New) code;
+			if (n.type instanceof Array) {
+				return newTypes(types, n.dims > 1 ? n.dims : 1, n.type);
+			} else {
+				return newTypes(types, 0, n.type);
+			}
 		} else if (code instanceof Pop) {
-			Stack<JvmType> newTypes = copy(types.getTypeInformation());
-			newTypes.pop();
-			return new StackTypes(newTypes, types.isComplete());
+			return newTypes(types, 1);
+		} else if (code instanceof PutField) {
+			return newTypes(types, 2);
+		} else if (code instanceof Store) {
+			return newTypes(types, 1);
 		} else if (code instanceof Swap) {
-			Stack<JvmType> newTypes = copy(types.getTypeInformation());
-			JvmType top = newTypes.pop();
-			newTypes.add(newTypes.size() - 2, top);
-			return new StackTypes(newTypes, types.isComplete());
+			Stack<JvmType> stack = new Stack<JvmType>();
+			stack.addAll(types.getTypeInformation());
+			stack.add(stack.size() - 2, stack.pop());
+			return new StackTypes(stack, types.isComplete());
+		} else if (code instanceof Switch) {
+			return newTypes(types, 1);
 		}
 
 		return types;
 	}
-	
-	private Stack<JvmType> copy(Stack<JvmType> stack) {
-		Stack<JvmType> newStack = new Stack<JvmType>();
-		newStack.addAll(stack);
-		return newStack;
+
+	private StackTypes newTypes(TypeInformation types, int popCount) {
+		return newTypes(types, popCount, null);
 	}
 
-	private TypeInformation addType(TypeInformation types, JvmType type) {
-		Stack<JvmType> newTypes = copy(types.getTypeInformation());
-		newTypes.push(type);
-		return new StackTypes(newTypes, types.isComplete());
+	private StackTypes newTypes(TypeInformation types, int popCount,
+	    JvmType newType) {
+		Stack<JvmType> newStack = new Stack<JvmType>();
+		newStack.addAll(types.getTypeInformation());
+		for (int i = 0; i < popCount; ++i) {
+			newStack.pop();
+		}
+		if (newType != null) {
+			newStack.push(newType);
+		}
+		return new StackTypes(newStack, types.isComplete());
 	}
 
 	private class StackTypes extends TypeInformation {
