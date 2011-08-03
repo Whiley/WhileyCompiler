@@ -207,7 +207,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 
 		public boolean isFunction() {
-			return type.receiver() == null;
+			return !(type instanceof Type.Meth);
 		}
 		
 		public boolean isPublic() {

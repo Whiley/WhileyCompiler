@@ -183,19 +183,25 @@ public class WhileyType implements BytecodeAttribute {
 							.get(input.read_u2())).str;
 					builder.buildExistential(i, new NameID(mid,name));
 					break;
-				case METH_TYPE:					
-				case FUN_TYPE: {
-					int rec = -1;
-					if(tag == METH_TYPE) {
-						rec = input.read_u2();
-					}
+				case METH_TYPE:{
+					int rec = input.read_u2();					
 					int ret = input.read_u2();
 					int nents = input.read_u2();
 					int[] params = new int[nents];
 					for (int j = 0; j != nents; ++j) {
 						params[j] = input.read_u2();
 					}
-					builder.buildFunction(i, rec, ret, params);
+					builder.buildMethod(i, rec, ret, params);
+					break;
+				}
+				case FUN_TYPE: {					
+					int ret = input.read_u2();
+					int nents = input.read_u2();
+					int[] params = new int[nents];
+					for (int j = 0; j != nents; ++j) {
+						params[j] = input.read_u2();
+					}
+					builder.buildFunction(i, ret, params);
 					break;
 				}				
 				default:
@@ -357,15 +363,10 @@ public class WhileyType implements BytecodeAttribute {
 			}
 		}
 
-		public void buildFunction(int index, int receiver, int ret,
+		public void buildFunction(int index, int ret,
 				int... parameters) {
-			try {
-				if (receiver != -1) {
-					writer.write_u1(METH_TYPE);
-					writer.write_u2(receiver);
-				} else {
-					writer.write_u1(FUN_TYPE);
-				}
+			try {				
+				writer.write_u1(FUN_TYPE);				
 				writer.write_u2(ret);
 				writer.write_u2(parameters.length);
 				for (int p : parameters) {
@@ -376,6 +377,21 @@ public class WhileyType implements BytecodeAttribute {
 			}
 		}
 
+		public void buildMethod(int index, int receiver, int ret,
+				int... parameters) {
+			try {				
+				writer.write_u1(METH_TYPE);
+				writer.write_u2(receiver);				
+				writer.write_u2(ret);
+				writer.write_u2(parameters.length);
+				for (int p : parameters) {
+					writer.write_u2(p);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException("internal failure", e);
+			}
+		}
+		
 		public void buildUnion(int index, int... bounds) {
 			try {				
 				writer.write_u1(UNION_TYPE );			

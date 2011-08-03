@@ -2534,8 +2534,9 @@ public class ClassFileBuilder {
 	public JvmType.Function convertFunType(Type.Fun t) {		
 		Type.Fun ft = (Type.Fun) t; 
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		if(ft.receiver() != null) {
-			paramTypes.add(convertType(ft.receiver()));
+		if(ft instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth)ft; 
+			paramTypes.add(convertType(mt.receiver()));
 		}
 		for(Type pt : ft.params()) {
 			paramTypes.add(convertType(pt));

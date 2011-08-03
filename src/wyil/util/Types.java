@@ -93,7 +93,7 @@ public class Types {
 					for(int j=0;j!=nelems;++j) {
 						elems[j] = readNode();
 					}
-					builder.buildFunction(i,-1,ret,elems);
+					builder.buildFunction(i,ret,elems);
 					break;
 				}
 				case METH_TYPE: {					
@@ -104,7 +104,7 @@ public class Types {
 					for(int j=0;j!=nelems;++j) {
 						elems[j] = readNode();
 					}
-					builder.buildFunction(i,rec,ret,elems);
+					builder.buildMethod(i,rec,ret,elems);
 					break;
 				}
 				case UNION_TYPE: {
@@ -272,15 +272,10 @@ public class Types {
 			}
 		}
 
-		public void buildFunction(int index, int receiver, int ret,
+		public void buildFunction(int index, int ret,
 				int... parameters) {
-			try {
-				if (receiver != -1) {
-					writeKind(METH_TYPE);
-					writeNode(receiver);
-				} else {
-					writeKind(FUN_TYPE);
-				}
+			try {				
+				writeKind(FUN_TYPE);				
 				writeNode(ret);
 				writeLength(parameters.length);
 				for (int p : parameters) {
@@ -291,6 +286,21 @@ public class Types {
 			}
 		}
 
+		public void buildMethod(int index, int receiver, int ret,
+				int... parameters) {
+			try {				
+				writeKind(METH_TYPE);
+				writeNode(receiver);				
+				writeNode(ret);
+				writeLength(parameters.length);
+				for (int p : parameters) {
+					writeNode(p);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException("internal failure", e);
+			}
+		}
+		
 		public void buildUnion(int index, int... bounds) {
 			try {				
 				writeKind(UNION_TYPE );			
