@@ -211,14 +211,14 @@ public abstract class Type {
 		return new Union(nodes);		
 	}
 
-	public static final Fun T_FUN(Process receiver, Type ret,
+	public static final Fun T_FUN(Type ret,
 			Collection<Type> params) {
 		Type[] ts = new Type[params.size()];
 		int i = 0;
 		for (Type t : params) {
 			ts[i++] = t;
 		}
-		return T_FUN(receiver, ret, ts);
+		return T_FUN(ret, ts);
 	}
 	
 	/**
@@ -226,7 +226,48 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(Process receiver, Type ret, Type... params) {
+	public static final Fun T_FUN(Type ret, Type... params) {
+		Node[] reccomps;		
+		reccomps = new Node[0];		
+		Node[] retcomps = nodes(ret); 
+		int len = 1 + reccomps.length + retcomps.length;
+		for(Type b : params) {
+			// could be optimised slightly
+			len += nodes(b).length;
+		}		
+		Node[] nodes = new Node[len];
+		int[] children = new int[2 + params.length];
+		insertNodes(1,reccomps,nodes);
+		insertNodes(1+reccomps.length,retcomps,nodes);
+		children[0] = -1;
+		children[1] = 1 + reccomps.length;
+		int start = 1 + reccomps.length + retcomps.length;		
+		for(int i=0;i!=params.length;++i) {
+			children[i+2] = start;
+			Node[] comps = nodes(params[i]);
+			insertNodes(start,comps,nodes);
+			start += comps.length;
+		}
+		nodes[0] = new Node(K_FUNCTION, children);
+		return new Fun(nodes);		
+	}
+	
+	public static final Meth T_METH(Process receiver, Type ret,
+			Collection<Type> params) {
+		Type[] ts = new Type[params.size()];
+		int i = 0;
+		for (Type t : params) {
+			ts[i++] = t;
+		}
+		return T_METH(receiver, ret, ts);
+	}
+	
+	/**
+	 * Construct a function type using the given return and parameter types.
+	 * 
+	 * @param element
+	 */
+	public static final Meth T_METH(Process receiver, Type ret, Type... params) {
 		Node[] reccomps;
 		if(receiver != null) {
 			reccomps = nodes(receiver);
@@ -252,8 +293,8 @@ public abstract class Type {
 			insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
-		nodes[0] = new Node(K_FUNCTION, children);
-		return new Fun(nodes);		
+		nodes[0] = new Node(K_METHOD, children);
+		return new Meth(nodes);		
 	}
 	
 	/**
@@ -560,7 +601,9 @@ public abstract class Type {
 
 		void buildRecord(int index, Pair<String, Integer>... fields);
 
-		void buildFunction(int index, int receiver, int ret, int... parameters);
+		void buildFunction(int index, int ret, int... parameters);
+		
+		void buildMethod(int index, int receiver, int ret, int... parameters);
 		
 		void buildUnion(int index, int... bounds);
 	}
@@ -600,7 +643,11 @@ public abstract class Type {
 		public void buildRecord(int index, Pair<String, Integer>... fields) {
 		}
 
-		public void buildFunction(int index, int receiver, int ret,
+		public void buildFunction(int index, int ret,
+				int... parameters) {
+		}
+		
+		public void buildMethod(int index, int receiver, int ret,
 				int... parameters) {
 		}
 
@@ -661,15 +708,23 @@ public abstract class Type {
 			nodes[index] = new Node(K_RECORD,fields);
 		}
 
-		public void buildFunction(int index, int receiver, int ret,
-				int... parameters) {
+		public void buildFunction(int index, int ret, int... parameters) {
 			int[] items = new int[parameters.length+2];
-			items[0] = receiver;
+			items[0] = -1;
 			items[1] = ret;
 			System.arraycopy(parameters,0,items,2,parameters.length);
 			nodes[index] = new Node(K_FUNCTION,items);
 		}
 
+		public void buildMethod(int index, int receiver, int ret,
+				int... parameters) {
+			int[] items = new int[parameters.length+2];
+			items[0] = receiver;
+			items[1] = ret;
+			System.arraycopy(parameters,0,items,2,parameters.length);
+			nodes[index] = new Node(K_METHOD,items);
+		}
+		
 		public void buildUnion(int index, int... bounds) {
 			nodes[index] = new Node(K_UNION,bounds);
 		}
@@ -738,12 +793,26 @@ public abstract class Type {
 			out.println("}");
 		}
 
-		public void buildFunction(int index, int receiver, int ret, int... parameters) {
+		public void buildFunction(int index, int ret, int... parameters) {
+			out.print("#" + index + " = ");			
+			out.print("#" + ret + "(");
+			boolean firstTime=true;
+			for(int e : parameters) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print("#" + e);
+			}
+			out.println(")");
+		}
+		
+		public void buildMethod(int index, int receiver, int ret, int... parameters) {
 			out.print("#" + index + " = ");
 			if(receiver != -1) {
-				out.print("#" + receiver + "::");
+				out.print("#" + receiver);
 			}
-			out.print("#" + ret + "(");
+			out.print("::#" + ret + "(");
 			boolean firstTime=true;
 			for(int e : parameters) {
 				if(!firstTime) {
@@ -843,12 +912,19 @@ public abstract class Type {
 					int[] bounds = (int[]) node.data;								
 					writer.buildTuple(i,bounds);					
 					break;
-				}
+				}				
 				case K_FUNCTION: {				
 					int[] bounds = (int[]) node.data;
 					int[] params = new int[bounds.length-2];
 					System.arraycopy(bounds, 2, params,0, params.length);
-					writer.buildFunction(i,bounds[0],bounds[1],params);
+					writer.buildFunction(i,bounds[1],params);
+					break;
+				}
+				case K_METHOD: {				
+					int[] bounds = (int[]) node.data;
+					int[] params = new int[bounds.length-2];
+					System.arraycopy(bounds, 2, params,0, params.length);
+					writer.buildMethod(i,bounds[0],bounds[1],params);
 					break;
 				}
 				case K_RECORD: {
@@ -1099,6 +1175,7 @@ public abstract class Type {
 					}
 					return true;
 				}
+				case K_METHOD:
 				case K_FUNCTION:  {
 					// nary nodes
 					int[] elems1 = (int[]) fromNode.data;
@@ -1221,6 +1298,7 @@ public abstract class Type {
 					}
 					return true;
 				}
+				case K_METHOD:
 				case K_FUNCTION:  {
 					// nary nodes
 					int[] elems1 = (int[]) fromNode.data;
@@ -1735,6 +1813,7 @@ public abstract class Type {
 			break;
 		}		
 		case K_TUPLE:
+		case K_METHOD:
 		case K_FUNCTION: {
 			int[] elems = (int[]) node.data;
 			int[] nelems = new int[elems.length];
@@ -1957,6 +2036,7 @@ public abstract class Type {
 				}
 				break;
 			}
+			case K_METHOD:
 			case K_FUNCTION:  {
 				// nary nodes
 				int[] elems1 = (int[]) c1.data;
@@ -1976,7 +2056,7 @@ public abstract class Type {
 						nelems[i] = intersect(elems1[i], graph1, elems2[i],
 								graph2, newNodes,allocations);
 					}
-					node = new Node(K_FUNCTION, nelems);
+					node = new Node(c1.kind, nelems);
 				}
 				break;
 			}
@@ -2157,6 +2237,7 @@ public abstract class Type {
 				}
 				break;
 			}
+			case K_METHOD:
 			case K_FUNCTION:  {
 				// nary nodes
 				int[] elems1 = (int[]) c1.data;
@@ -2176,7 +2257,7 @@ public abstract class Type {
 						nelems[i] = difference(elems1[i], graph1, elems2[i],
 								graph2, newNodes,allocations,matrix);
 					}
-					node = new Node(K_FUNCTION, nelems);
+					node = new Node(c1.kind, nelems);
 				}
 				break;
 			}
@@ -2679,6 +2760,7 @@ public abstract class Type {
 			break;
 		case K_TUPLE:
 		case K_UNION:
+		case K_METHOD:
 		case K_FUNCTION:
 			// nary node
 			int[] bounds = (int[]) node.data;
@@ -2741,6 +2823,7 @@ public abstract class Type {
 			break;
 		case K_TUPLE:
 		case K_UNION:
+		case K_METHOD:
 		case K_FUNCTION:
 			// nary node
 			int[] bounds = (int[]) node.data;
@@ -2850,6 +2933,7 @@ public abstract class Type {
 			middle = "(" + middle + ")";
 			break;
 		}
+		case K_METHOD:
 		case K_FUNCTION: {
 			middle = "";
 			int[] bounds = (int[]) node.data;
@@ -2861,10 +2945,12 @@ public abstract class Type {
 				}
 				middle += toString(bounds[i], visited, headers, graph);
 			}
-			if(rec != null) {
+			if(node.kind == K_FUNCTION) {
+				middle = ret + "(" + middle + ")";
+			} else if(rec != null) {
 				middle = rec + "::" + ret + "(" + middle + ")";
 			} else {
-				middle = ret + "(" + middle + ")";
+				middle = "::" + ret + "(" + middle + ")";
 			}
 			break;
 		}
@@ -3113,7 +3199,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Fun extends Compound  {
+	public static class Fun extends Compound  {
 		Fun(Node[] nodes) {
 			super(nodes);
 		}
@@ -3126,19 +3212,7 @@ public abstract class Type {
 		public Type ret() {						
 			int[] fields = (int[]) nodes[0].data;			
 			return extract(fields[1]);
-		}
-
-		/**
-		 * Get the receiver type of this function type.
-		 * 
-		 * @return
-		 */
-		public Type.Process receiver() {
-			int[] fields = (int[]) nodes[0].data;
-			int r = fields[0];
-			if(r == -1) { return null; }
-			return (Type.Process) extract(r);
-		}
+		}		
 		
 		/**
 		 * Get the parameter types of this function type.
@@ -3152,6 +3226,23 @@ public abstract class Type {
 				r.add(extract(fields[i]));
 			}
 			return r;
+		}
+	}
+	
+	public static final class Meth extends Fun {
+		Meth(Node[] nodes) {
+			super(nodes);
+		}
+		/**
+		 * Get the receiver type of this function type.
+		 * 
+		 * @return
+		 */
+		public Type.Process receiver() {
+			int[] fields = (int[]) nodes[0].data;
+			int r = fields[0];
+			if(r == -1) { return null; }
+			return (Type.Process) extract(r);
 		}
 	}
 	
@@ -3221,7 +3312,8 @@ public abstract class Type {
 					case K_EXISTENTIAL:
 					case K_DICTIONARY:
 						return data.equals(c.data);
-					case K_TUPLE:					
+					case K_TUPLE:	
+					case K_METHOD:
 					case K_FUNCTION:
 					case K_UNION:
 						return Arrays.equals((int[])data, (int[])c.data);
@@ -3361,6 +3453,7 @@ public abstract class Type {
 			break;
 		case K_TUPLE:
 		case K_UNION:
+		case K_METHOD:
 		case K_FUNCTION:
 			// nary node
 			int[] bounds = (int[]) node.data;
@@ -3440,6 +3533,8 @@ public abstract class Type {
 			return new Record(nodes);
 		case K_UNION:
 			return new Union(nodes);
+		case K_METHOD:
+			return new Meth(nodes);
 		case K_FUNCTION:
 			return new Fun(nodes);		
 		default:
