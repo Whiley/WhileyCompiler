@@ -611,15 +611,35 @@ public class ModuleBuilder {
 		for (WhileyFile.Parameter p : fd.parameters) {
 			environment.put(p.name(),environment.size());			
 		}
-		
-		currentFunDecl = fd;
-		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 
+		// Resolve pre- and post-condition		
+		Block precondition = null;
+		Block postcondition = null;
 		
-		Block blk = new Block();
+		if(fd.precondition != null) {
+			String lab = Block.freshLabel();
+			precondition = new Block();			
+			precondition.addAll(resolveCondition(lab, fd.precondition, environment));		
+			precondition.add(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
+			precondition.add(Code.Label(lab));			
+		}
 		
+		if(fd.postcondition != null) {
+			environment.put("$", -1);
+			String lab = Block.freshLabel();
+			postcondition = new Block();			
+			postcondition.addAll(resolveCondition(lab, fd.postcondition, environment));		
+			postcondition.add(Code.Fail("postcondition not satisfied"), attributes(fd.precondition));
+			postcondition.add(Code.Label(lab));
+			environment.remove("$");
+		}
+		
+		// Resolve body		
+		currentFunDecl = fd;
+			
+		Block body = new Block();		
 		for (Stmt s : fd.statements) {
-			blk.addAll(resolve(s, environment));
+			body.addAll(resolve(s, environment));
 		}
 
 		currentFunDecl = null;
@@ -627,7 +647,7 @@ public class ModuleBuilder {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		blk.add(Code.Return(Type.T_VOID),attributes(fd));		
+		body.add(Code.Return(Type.T_VOID),attributes(fd));		
 		
 		List<Module.Case> ncases = new ArrayList<Module.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();		
@@ -640,7 +660,9 @@ public class ModuleBuilder {
 		}	
 		
 		// TODO: fix constraints here
-		ncases.add(new Module.Case(blk,null,null,locals));
+		ncases.add(new Module.Case(body,null,null,locals));
+		
+		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 		return new Module.Method(fd.name(), tf, ncases);
 	}
 
