@@ -87,7 +87,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	public Env initialStore() {
 				
 		Env environment = new Env();		
-
+		environment.add(Type.T_VOID);
+		
 		if(method.type() instanceof Type.Meth) {
 			Type.Meth mt = (Type.Meth) method.type();
 			if(mt.receiver() != null) {
@@ -95,8 +96,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		List<Type> paramTypes = method.type().params();
-		
-		int i = 0;
+				
+		int i = 0;		
 		for (; i != paramTypes.size(); ++i) {
 			Type t = paramTypes.get(i);
 			environment.add(t);
@@ -115,7 +116,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		this.methodCase = mcase;
 		
 		Env environment = initialStore();
-		int start = method.type().params().size();
+		int start = method.type().params().size()+1;
 		if(method.type() instanceof Type.Meth) {
 			Type.Meth mt = (Type.Meth) method.type();
 			if(mt.receiver() != null) {
@@ -668,7 +669,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			path.add(environment.pop());
 		}
 		
-		Type src = getSlot(e.slot,environment);		
+		Type src = environment.get(e.slot);		
 		Type iter = src;
 		
 		if(e.slot == 0 && Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
@@ -789,7 +790,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 
 	protected Code infer(Load e, Entry stmt, Env environment) {
-		e = Code.Load(getSlot(e.slot,environment), e.slot);		
+		e = Code.Load(environment.get(e.slot), e.slot);		
 		environment.push(e.type);
 		return e;
 	}	
@@ -1141,7 +1142,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs_t;
 		
 		if(code.slot >= 0) {
-			lhs_t = getSlot(code.slot,environment);
+			lhs_t = environment.get(code.slot);
 		} else {
 			lhs_t = environment.pop();
 		}
@@ -1478,15 +1479,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 
 		return env;
-	}
-	
-	public Type getSlot(int slot, Env environment) {
-		if(slot == -1) {
-			return method.type().ret();
-		} else {
-			return environment.get(slot);
-		}
-	}
+	}	
 	
 	public static class Env extends ArrayList<Type> {
 		public Env() {

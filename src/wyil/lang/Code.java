@@ -29,7 +29,8 @@ import java.util.*;
 import wyil.util.*;
 
 public abstract class Code {
-
+	public final static int THIS_SLOT = 1;
+	
 	// ===============================================================
 	// Bytecode Constructors
 	// ===============================================================

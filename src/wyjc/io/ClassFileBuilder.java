@@ -434,7 +434,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType type = convertType(c.type);
 		//addIncRefs(c.type,bytecodes);		
-		bytecodes.add(new Bytecode.Store(c.slot, type));				
+		bytecodes.add(new Bytecode.Store(c.slot-1, type));				
 	}
 
 	public void translate(Code.Update c, int freeSlot,ArrayList<Bytecode> bytecodes) {
@@ -446,7 +446,7 @@ public class ClassFileBuilder {
 		// First, check if this is updating the process' state
 		Type type = c.type;
 				
-		if(c.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {
+		if(c.slot == Code.THIS_SLOT && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {
 			Type.Process p = (Type.Process) type;
 			type = p.element();
 		}
@@ -488,12 +488,12 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Store(indexSlot+i,t));
 		}
 		
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
 		
 		// Fourth, finally process the assignment path and update the object in
 		// question.		
 		multiStoreHelper(c.type,c.level-1,fields.iterator(),indexSlot,val_t,freeSlot, bytecodes);		
-		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));
+		bytecodes.add(new Bytecode.Store(c.slot-1, convertType(c.type)));
 	}
 
 	public void multiStoreHelper(Type type, int level,
@@ -831,11 +831,11 @@ public class ClassFileBuilder {
 			String exitLabel = freshLabel();
 			String trueLabel = freshLabel();
 					
-			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
 			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
 
 			Type gdiff = Type.leastDifference(c.type,c.test);			
-			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(gdiff,bytecodes);		
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
@@ -843,7 +843,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Label(trueLabel));
 
 			Type glb = Type.greatestLowerBound(c.type, c.test);
-			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(glb,bytecodes);		
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
@@ -936,7 +936,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
 				Bytecode.INTERFACE));
 		addReadConversion(elementType, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.slot, convertType(elementType)));
+		bytecodes.add(new Bytecode.Store(c.slot-1, convertType(elementType)));
 		
 		// we need to increase the freeSlot, since we've allocated one slot to
 		// hold the register.
@@ -1008,7 +1008,7 @@ public class ClassFileBuilder {
 	}
 		
 	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
 	}
 	
 	public void translate(Code.DictLoad c, int freeSlot,

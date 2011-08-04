@@ -618,6 +618,10 @@ public class ModuleBuilder {
 	protected Module.Method resolve(FunDecl fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
+		// We always include "$" as the variable at index 0. This simplifies the
+		// problem of dealing with this "virtual" variable.
+		environment.put("$", 0);
+		
 		// method return type
 		Pair<Type,Block> ret = resolve(fd.ret);
 		// TODO: first post-condition
@@ -649,14 +653,12 @@ public class ModuleBuilder {
 			precondition.add(Code.Label(lab));			
 		}
 		
-		if(fd.postcondition != null) {
-			environment.put("$", -1);
+		if(fd.postcondition != null) {			
 			String lab = Block.freshLabel();
 			postcondition = new Block();			
 			postcondition.addAll(resolveCondition(lab, fd.postcondition, environment));		
 			postcondition.add(Code.Fail("postcondition not satisfied"), attributes(fd.precondition));
 			postcondition.add(Code.Label(lab));
-			environment.remove("$");
 		}
 		
 		// Resolve body		
@@ -675,7 +677,8 @@ public class ModuleBuilder {
 		body.add(Code.Return(Type.T_VOID),attributes(fd));		
 		
 		List<Module.Case> ncases = new ArrayList<Module.Case>();				
-		ArrayList<String> locals = new ArrayList<String>();		
+		ArrayList<String> locals = new ArrayList<String>();
+		locals.add("$");
 		for(int i=0;i!=environment.size();++i) {
 			locals.add(null);
 		}
