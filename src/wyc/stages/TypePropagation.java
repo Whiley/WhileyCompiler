@@ -113,8 +113,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	public Module.Case propagate(Module.Case mcase) {		
 		this.methodCase = mcase;
-		this.stores = new HashMap<String,Env>();
-		this.rewrites.clear();
 		
 		Env environment = initialStore();
 		int start = method.type().params().size();
@@ -125,28 +123,48 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
+		Block precondition = mcase.precondition();		
+		if(precondition != null) {
+			precondition = doPropagation(precondition,environment);
+		}
+		
+		Block postcondition = mcase.postcondition();		
+		if(postcondition != null) {
+			
+		}
+		
+		// Now, propagate through the body
 		for (int i = start; i < mcase.locals().size(); i++) {
 			environment.add(Type.T_VOID);
 		}	
-		
-		propagate(0,mcase.body().size(), environment);	
-		
-		// At this point, we apply the inserts
-		Block body = mcase.body();
-		Block nbody = new Block();		
-		for(int i=0;i!=body.size();++i) {
-			Block rewrite = rewrites.get(i);
-			if(rewrite != null) {
-				nbody.addAll(rewrite);
-			} else {				
-				nbody.add(body.get(i));
-			}
-		}
-		
+						
+		Block nbody = doPropagation(mcase.body(),environment);		
+				
 		// TODO: propagate over pre and post conditions
 		
-		return new Module.Case(nbody, mcase.precondition(),
-				mcase.postcondition(), mcase.locals(), mcase.attributes());
+		return new Module.Case(nbody, precondition,
+				postcondition, mcase.locals(), mcase.attributes());
+	}
+	
+	protected Block doPropagation(Block blk, Env environment) {
+		// reset some of the global state
+		this.rewrites.clear();
+		this.stores = new HashMap<String,Env>();
+				
+		// now, perform the propagation
+		propagate(0,blk.size(), blk, environment);	
+				
+		// finally, apply any and all rewrites
+		Block nblk = new Block();				
+		for(int i=0;i!=blk.size();++i) {
+			Block rewrite = rewrites.get(i);
+			if(rewrite != null) {
+				nblk.addAll(rewrite);
+			} else {				
+				nblk.add(blk.get(i));
+			}
+		}
+		return nblk;
 	}
 	
 	protected Env propagate(int index, Entry entry,

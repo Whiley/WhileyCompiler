@@ -745,7 +745,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "fail " + msg;
+			return "fail \"" + msg + "\"";
 		}		
 	}
 	
