@@ -130,7 +130,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Block postcondition = mcase.postcondition();		
 		if(postcondition != null) {
-			
+			postcondition = doPropagation(postcondition,environment);
 		}
 		
 		// Now, propagate through the body
@@ -668,7 +668,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			path.add(environment.pop());
 		}
 		
-		Type src = environment.get(e.slot);		
+		Type src = getSlot(e.slot,environment);		
 		Type iter = src;
 		
 		if(e.slot == 0 && Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
@@ -789,7 +789,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 
 	protected Code infer(Load e, Entry stmt, Env environment) {
-		e = Code.Load(environment.get(e.slot), e.slot);		
+		e = Code.Load(getSlot(e.slot,environment), e.slot);		
 		environment.push(e.type);
 		return e;
 	}	
@@ -1141,7 +1141,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs_t;
 		
 		if(code.slot >= 0) {
-			lhs_t = environment.get(code.slot);
+			lhs_t = getSlot(code.slot,environment);
 		} else {
 			lhs_t = environment.pop();
 		}
@@ -1478,6 +1478,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 
 		return env;
+	}
+	
+	public Type getSlot(int slot, Env environment) {
+		if(slot == -1) {
+			return method.type().ret();
+		} else {
+			return environment.get(slot);
+		}
 	}
 	
 	public static class Env extends ArrayList<Type> {
