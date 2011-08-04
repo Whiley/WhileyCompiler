@@ -29,6 +29,7 @@ import java.util.*;
 import wyil.util.*;
 
 public abstract class Code {
+	public final static int RETURN_SLOT = 0;
 	public final static int THIS_SLOT = 1;
 	
 	// ===============================================================

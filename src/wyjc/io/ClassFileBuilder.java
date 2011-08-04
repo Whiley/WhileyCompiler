@@ -838,7 +838,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(gdiff,bytecodes);		
-			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
+			bytecodes.add(new Bytecode.Store(c.slot-1,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));
 
@@ -846,7 +846,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(glb,bytecodes);		
-			bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
+			bytecodes.add(new Bytecode.Store(c.slot-1,convertType(glb)));			
 			bytecodes.add(new Bytecode.Goto(c.target));
 			bytecodes.add(new Bytecode.Label(exitLabel));
 		} else {
