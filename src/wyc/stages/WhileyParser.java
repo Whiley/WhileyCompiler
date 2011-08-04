@@ -145,11 +145,16 @@ public class WhileyParser {
 	private FunDecl parseFunction(List<Modifier> modifiers) {			
 		int start = index;		
 		UnresolvedType ret = parseType();				
-		// FIXME: potential bug here at end of file
-		Token token = tokens.get(index+1);
+		// FIXME: potential bug here at end of file		
 		UnresolvedType receiver = null;
-							
-		if(token instanceof ColonColon) {
+		boolean method = false;	
+		
+		if(tokens.get(index) instanceof ColonColon) {
+			// headless method
+			method = true;
+			match(ColonColon.class);
+		} else if(tokens.get(index+1) instanceof ColonColon) {
+			method = true;
 			receiver = parseType();			
 			match(ColonColon.class);							
 		}
@@ -183,9 +188,15 @@ public class WhileyParser {
 		
 		List<Stmt> stmts = parseBlock(1);
 		
-		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes,
-				conditions.first(), conditions.second(), throwType, stmts,
-				sourceAttr(start, end - 1));
+		if(method) {
+			return new MethDecl(modifiers, name.text, receiver, ret, paramTypes,
+					conditions.first(), conditions.second(), throwType, stmts,
+					sourceAttr(start, end - 1));
+		} else {
+			return new FunDecl(modifiers, name.text, ret, paramTypes,
+					conditions.first(), conditions.second(), throwType, stmts,
+					sourceAttr(start, end - 1));
+		}
 	}
 	
 	private Decl parseDefType(List<Modifier> modifiers) {		

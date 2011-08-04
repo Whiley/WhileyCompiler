@@ -111,8 +111,11 @@ public class NameResolution {
 			}
 		}
 		
-		if(fd.receiver != null) {
-			environment.put("this",Collections.EMPTY_SET);
+		if (fd instanceof MethDecl) {
+			MethDecl md = (MethDecl) fd;
+			if(md.receiver != null) {		
+				environment.put("this",Collections.EMPTY_SET);
+			}
 		}
 		
 		// method return and throw types
@@ -125,11 +128,14 @@ public class NameResolution {
 		}
 		
 		// method receiver type (if applicable)
-		try {			
-			resolve(fd.receiver, imports);			
-		} catch (ResolveError e) {
-			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(),filename,fd.receiver);
+		if(fd instanceof MethDecl) {			
+			MethDecl md = (MethDecl) fd;			
+			try {			
+				resolve(md.receiver, imports);			
+			} catch (ResolveError e) {
+				// Ok, we've hit a resolution error.
+				syntaxError(e.getMessage(),filename,md.receiver);
+			}
 		}
 		
 		if (fd.precondition != null) {

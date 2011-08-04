@@ -2536,7 +2536,9 @@ public class ClassFileBuilder {
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
 		if(ft instanceof Type.Meth) {
 			Type.Meth mt = (Type.Meth)ft; 
-			paramTypes.add(convertType(mt.receiver()));
+			if(mt.receiver() != null) {
+				paramTypes.add(convertType(mt.receiver()));
+			}
 		}
 		for(Type pt : ft.params()) {
 			paramTypes.add(convertType(pt));

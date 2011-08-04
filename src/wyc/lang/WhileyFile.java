@@ -142,11 +142,10 @@ public class WhileyFile {
 		}
 	}
 
-	public final static class FunDecl extends SyntacticElement.Impl implements
+	public static class FunDecl extends SyntacticElement.Impl implements
 			Decl {
 		public final ArrayList<Modifier> modifiers;
-		public final String name;
-		public final UnresolvedType receiver;
+		public final String name;		
 		public final UnresolvedType ret;
 		public final UnresolvedType throwType;
 		public final ArrayList<Parameter> parameters;
@@ -171,15 +170,13 @@ public class WhileyFile {
 		 *            - The Statements making up the function body.
 		 */
 		public FunDecl(List<Modifier> modifiers, String name,
-				UnresolvedType receiver, UnresolvedType ret,
-				List<Parameter> parameters, Expr precondition,
-				Expr postcondition, UnresolvedType throwType, 
-				List<Stmt> statements,
+				UnresolvedType ret, List<Parameter> parameters,
+				Expr precondition, Expr postcondition,
+				UnresolvedType throwType, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
-			this.receiver = receiver;
+			this.name = name;			
 			this.ret = ret;
 			this.parameters = new ArrayList<Parameter>(parameters);
 			this.precondition = precondition;
@@ -199,6 +196,20 @@ public class WhileyFile {
 
 		public String name() {
 			return name;
+		}
+	}
+	
+	public final static class MethDecl extends FunDecl implements Decl {
+		public final UnresolvedType receiver;
+		
+		public MethDecl(List<Modifier> modifiers, String name,
+				UnresolvedType receiver, UnresolvedType ret,
+				List<Parameter> parameters, Expr precondition,
+				Expr postcondition, UnresolvedType throwType, 
+				List<Stmt> statements,
+				Attribute... attributes) {
+			super(modifiers,name,ret,parameters,precondition,postcondition,throwType,statements,attributes);
+			this.receiver = receiver;
 		}
 	}
 	

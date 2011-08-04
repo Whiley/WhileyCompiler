@@ -560,15 +560,17 @@ public class ModuleBuilder {
 		// method receiver type (if applicable)
 		Type.Process rec = null;
 		Type.Fun ft;
-		if (fd.receiver != null) {
-			Type t = resolve(fd.receiver);
-			checkType(t, Type.Process.class, fd.receiver);
-			rec = (Type.Process) t;
+		if (fd instanceof MethDecl) {
+			MethDecl md = (MethDecl) fd;
+			if(md.receiver != null) {
+				Type t = resolve(md.receiver);
+				checkType(t, Type.Process.class, md.receiver);
+				rec = (Type.Process) t;				
+			}
 			ft = Type.T_METH(rec, ret, parameters);
 		} else {
 			ft = Type.T_FUN(ret, parameters);
 		}
-
 		 
 		NameID name = new NameID(module, fd.name);
 		List<Type.Fun> types = functions.get(name);
@@ -596,9 +598,12 @@ public class ModuleBuilder {
 		Type ret = resolve(fd.ret);		
 
 		// method receiver type (if applicable)
-		if (fd.receiver != null) {
-			Type rec = resolve(fd.receiver);
-			environment.put("this", environment.size());
+		if (fd instanceof MethDecl) {
+			MethDecl md = (MethDecl) fd;
+			if(md.receiver != null) {
+				Type rec = resolve(md.receiver);
+				environment.put("this", environment.size());
+			}
 		}
 		
 		// method parameter types
@@ -609,9 +614,6 @@ public class ModuleBuilder {
 		currentFunDecl = fd;
 		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 
-		if(Type.isOpen(ret)) {
-			System.out.println("VERSUS: " + ret);
-		}
 		
 		Block blk = new Block();
 		

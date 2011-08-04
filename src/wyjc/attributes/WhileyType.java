@@ -183,8 +183,12 @@ public class WhileyType implements BytecodeAttribute {
 							.get(input.read_u2())).str;
 					builder.buildExistential(i, new NameID(mid,name));
 					break;
+				case HEADLESS_METH_TYPE:
 				case METH_TYPE:{
-					int rec = input.read_u2();					
+					int rec = -1;
+					if(tag == METH_TYPE) {
+						rec = input.read_u2();					
+					}
 					int ret = input.read_u2();
 					int nents = input.read_u2();
 					int[] params = new int[nents];
@@ -193,7 +197,7 @@ public class WhileyType implements BytecodeAttribute {
 					}
 					builder.buildMethod(i, rec, ret, params);
 					break;
-				}
+				}				
 				case FUN_TYPE: {					
 					int ret = input.read_u2();
 					int nents = input.read_u2();
@@ -379,9 +383,13 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildMethod(int index, int receiver, int ret,
 				int... parameters) {
-			try {				
-				writer.write_u1(METH_TYPE);
-				writer.write_u2(receiver);				
+			try {			
+				if(receiver == -1) {
+					writer.write_u1(HEADLESS_METH_TYPE);					
+				} else {
+					writer.write_u1(METH_TYPE);
+					writer.write_u2(receiver);
+				}
 				writer.write_u2(ret);
 				writer.write_u2(parameters.length);
 				for (int p : parameters) {
@@ -426,5 +434,6 @@ public class WhileyType implements BytecodeAttribute {
 	public static final int PROCESS_TYPE = 18;	
 	public static final int FUN_TYPE = 19;
 	public static final int METH_TYPE = 20;
+	public static final int HEADLESS_METH_TYPE = 21;
 	public static final int CONSTRAINT_MASK = 32;
 }

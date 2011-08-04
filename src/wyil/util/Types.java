@@ -96,6 +96,16 @@ public class Types {
 					builder.buildFunction(i,ret,elems);
 					break;
 				}
+				case HEADLESS_METH_TYPE: {
+					int ret = readNode();
+					int nelems = readLength();
+					int[] elems = new int[nelems];
+					for(int j=0;j!=nelems;++j) {
+						elems[j] = readNode();
+					}
+					builder.buildMethod(i,-1,ret,elems);
+					break;
+				}
 				case METH_TYPE: {					
 					int rec = readNode();
 					int ret = readNode();
@@ -289,8 +299,13 @@ public class Types {
 		public void buildMethod(int index, int receiver, int ret,
 				int... parameters) {
 			try {				
-				writeKind(METH_TYPE);
-				writeNode(receiver);				
+				if(receiver == -1) {
+					// headless method
+					writeKind(HEADLESS_METH_TYPE);					
+				} else {
+					writeKind(METH_TYPE);
+					writeNode(receiver);
+				}
 				writeNode(ret);
 				writeLength(parameters.length);
 				for (int p : parameters) {
@@ -360,5 +375,6 @@ public class Types {
 	public static final int PROCESS_TYPE = 18;	
 	public static final int FUN_TYPE = 19;
 	public static final int METH_TYPE = 20;
+	public static final int HEADLESS_METH_TYPE = 21;
 	public static final int CONSTRAINT_MASK = 32;	
 }
