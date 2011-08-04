@@ -59,6 +59,7 @@ import wyjvm.lang.ClassFile.Method;
 import wyjvm.lang.JvmType;
 import wyjvm.lang.JvmType.Clazz;
 import wyjvm.lang.JvmType.Function;
+import wyjvm.lang.JvmType.Int;
 import wyjvm.lang.JvmType.Reference;
 import wyjvm.util.dfa.StackAnalysis;
 import wyjvm.util.dfa.VariableAnalysis;
@@ -82,12 +83,6 @@ public class Continuations {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
-
-				System.out.println(method.name());
-				for (Bytecode code : ((Code) attribute).bytecodes()) {
-					System.out.println(code);
-				}
-				System.out.println();
 
 				break;
 			}
@@ -118,9 +113,8 @@ public class Continuations {
 					    T_BOOL), Bytecode.VIRTUAL));
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
-					Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
-//					Stack<JvmType> stack = stackAnalysis.typesAt(i);
-					Stack<JvmType> stack = new Stack<JvmType>();
+					Map<Integer, JvmType> types = variableAnalysis.typesAt(i + 1);
+					Stack<JvmType> stack = stackAnalysis.typesAt(i + 1);
 
 					i = addResume(bytecodes,
 					    addYield(method, bytecodes, i, location, types, stack), location,
@@ -156,17 +150,24 @@ public class Continuations {
 
 						Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
 						Stack<JvmType> stack = stackAnalysis.typesAt(i);
+						
+						pTypes = invoke.type.parameterTypes();
+						int size = pTypes.size();
+						
+						// Remove the values that invoking the method will remove for us.
+						for (int j = 0; j < size; ++j) {
+							stack.pop();
+						}
 
 						// If the method isn't resuming, it needs to skip over the resume.
 						bytecodes.add(i++, new Goto("invoke" + location));
 
 						i = addResume(bytecodes, i - 1, location, types, stack) + 1;
 
+						// The first argument of any internal method is the actor.
 						bytecodes.add(i++, new Load(0, PROCESS));
 
 						// Load in null values. The unyielding will put the real values in.
-						pTypes = invoke.type.parameterTypes();
-						int size = pTypes.size();
 						for (int j = 1; j < size; ++j) {
 							bytecodes.add(i++, addNullValue(pTypes.get(j)));
 						}
@@ -279,7 +280,7 @@ public class Continuations {
 
 			String name;
 			if (type instanceof Reference) {
-				name = "getObject";
+				name = "popObject";
 				methodType = JAVA_LANG_OBJECT;
 			} else {
 				// This is a bit of a hack. Method names in Yielder MUST match the
@@ -327,12 +328,18 @@ public class Continuations {
 	}
 
 	private Bytecode addNullValue(JvmType type) {
+		Object value;
+		
 		if (type instanceof Reference) {
-			return new LoadConst(null);
+			value = null;
+		} else if (type instanceof Int) {
+			value = 0;
+		} else {
+			throw new UnsupportedOperationException(
+			    "Non-reference types not yet supported.");
 		}
-
-		throw new UnsupportedOperationException(
-		    "Non-reference types not yet supported.");
+		
+		return new LoadConst(value);
 	}
 
 }

@@ -89,7 +89,7 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 	}
 
 	@Override
-	public TypeInformation respondTo(TypeInformation types, Bytecode code) {
+	protected TypeInformation respondTo(TypeInformation types, Bytecode code) {
 		if (code instanceof ArrayLoad) {
 			return newTypes(types, 2, ((ArrayLoad) code).type);
 		} else if (code instanceof ArrayLength) {
@@ -110,7 +110,8 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 			// TODO Handle this.
 			throw new UnsupportedOperationException("Cannot yet handle dup_x");
 		} else if (code instanceof GetField) {
-			return newTypes(types, 1, ((GetField) code).type);
+			return newTypes(types, ((GetField) code).mode == Bytecode.STATIC ? 0 : 1,
+			    ((GetField) code).type);
 		} else if (code instanceof If) {
 			return newTypes(types, 1);
 		} else if (code instanceof IfCmp) {
@@ -147,6 +148,7 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 			} else if (constant instanceof String) {
 				type = JAVA_LANG_STRING;
 			} else {
+				System.out.println(constant.getClass());
 				throw new UnsupportedOperationException("Unknown constant type.");
 			}
 
