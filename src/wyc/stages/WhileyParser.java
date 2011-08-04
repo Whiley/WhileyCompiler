@@ -1491,8 +1491,27 @@ public class WhileyParser {
 				types.add((UnresolvedType.NonUnion) t);
 			}
 			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
+		} else if ((index + 1) < tokens.size()
+				&& tokens.get(index) instanceof ColonColon
+				&& tokens.get(index + 1) instanceof LeftBrace) {
+			// this is a headless method type
+					
+			match(ColonColon.class);			
+			match(LeftBrace.class);
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			boolean firstTime = true;
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (!firstTime) {
+					match(Comma.class);
+				}
+				firstTime = false;
+				types.add(parseType());
+			}
+			match(RightBrace.class);
+			return new UnresolvedType.Fun(t, null, types, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			// this is a function type
+			// this is a function or method type type
 			match(LeftBrace.class);
 			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
 			boolean firstTime = true;

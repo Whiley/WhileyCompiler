@@ -20,7 +20,7 @@ Sum ::create([int] items):
 
 void System::main([string] args):
     data = [1,3,5,7,3,198,1,4,6]
-    sum = create(items)
+    sum = create(data)
     // start the process asynchronously
     sum!start()
     // get the result synchronously
