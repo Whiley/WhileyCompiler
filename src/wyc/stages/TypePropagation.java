@@ -1192,16 +1192,17 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		// create environment specific for loop body
 		Env loopEnv = new Env(environment);		
-		loopEnv.set(forloop.slot, elem_t);
-	
+		loopEnv.set(forloop.slot, elem_t);			
+		
 		Env newEnv = null;
-		Env oldEnv = null;
-		do {
+		Env oldEnv = loopEnv;
+		do {					
 			// iterate until a fixed point reached
-			oldEnv = newEnv != null ? newEnv : loopEnv;			 			
-			newEnv = propagate(start+1,end,oldEnv);
+			oldEnv = newEnv;			 			
+			newEnv = join(loopEnv,propagate(start+1,end,oldEnv));
 		 } while(!newEnv.equals(oldEnv));				
 		
+		// following line is necessary to get rid of the loop variable
 		environment = join(environment,newEnv);		
 				
 		Block blk = new Block();
@@ -1233,15 +1234,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return propagate(start, end, (Code.ForAll) loop, stmt, modifies, environment);
 		}
 		
-		Env newEnv = null;
+		Env newEnv = environment;
 		Env oldEnv = null;
 		do {
 			// iterate until a fixed point reached
-			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv);
-		} while (!newEnv.equals(oldEnv));
-
-		environment = join(environment, newEnv);
+			oldEnv = newEnv;
+			newEnv = join(environment,propagate(start+1,end, oldEnv));
+		} while (!newEnv.equals(oldEnv));		
+				
+		environment = join(environment,newEnv);		
 				
 		Block blk = new Block();
 		blk.add(Code.Loop(loop.target, modifies),stmt.attributes());		

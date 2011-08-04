@@ -1,6 +1,7 @@
 package wyil.util;
 
 import java.io.IOException;
+import java.util.*;
 
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
@@ -349,5 +350,5 @@ public class Types {
 	public static final int PROCESS_TYPE = 18;	
 	public static final int FUN_TYPE = 19;
 	public static final int METH_TYPE = 20;
-	public static final int CONSTRAINT_MASK = 32;
+	public static final int CONSTRAINT_MASK = 32;	
 }
