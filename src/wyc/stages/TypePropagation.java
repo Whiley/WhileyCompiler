@@ -554,19 +554,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(environment.pop());
 		}
-
-		if(ivk.type instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) ivk.type;
-			if(mt.receiver() != null) {
-				Type.Process receiver = (Type.Process) environment.pop(); 
-				// ignore receiver type, must be this.
-			}
+				
+		Type.Process receiver = null;
+		if(ivk.type instanceof Type.Meth) {			
+			receiver = (Type.Process) environment.pop(); 							
 		}
 		
 		Collections.reverse(types);		
 		
 		try {						
-			Type.Fun funtype = bindFunction(ivk.name,  types, stmt);			
+			Type.Fun funtype;
+			if(ivk.type instanceof Type.Meth) {
+				funtype = bindMethod(ivk.name,  receiver, types, stmt);
+			} else {
+				funtype = bindFunction(ivk.name,  types, stmt);				
+			}			
 			if(funtype.ret() != Type.T_VOID && ivk.retval) {
 				environment.push(funtype.ret());
 			}

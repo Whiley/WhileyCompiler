@@ -1310,7 +1310,6 @@ public class ModuleBuilder {
 		} else if(directInvoke || methodInvoke) {
 			NameID name = new NameID(modInfo.module, s.name);
 			if(receiverIsThis) {
-				// ok, this is a hack
 				blk.add(Code.Invoke(
 						Type.T_METH(null, Type.T_VOID,
 								paramTypes), name, retval), attributes(s));
