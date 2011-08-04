@@ -31,7 +31,7 @@ int ::parSum([int] items):
     // get the result synchronously
     return sum.get()
 
-int ::sum(void::([int]) m, [int] data):
+int ::sum(int::([int]) m, [int] data):
     return m(data)
 
 void System::main([string] args):
