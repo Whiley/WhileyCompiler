@@ -79,7 +79,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			} 							
 		}
 		
-		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
+		return new Module.Case(nbody, mcase.precondition(),
+				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 
 	public Env propagate(int index, Entry entry, Env environment) {						

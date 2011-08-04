@@ -127,14 +127,14 @@ public class ClassFileLoader {
 					constants.add(ci);
 				} else {
 					// type definition
-					List<Attribute> attrs = new ArrayList<Attribute>();		
+					List<Attribute> attrs = new ArrayList<Attribute>();						
 					for(BytecodeAttribute bba : wd.attributes()) {			
 						// Ooh, this is such a hack ...						
 						if(bba instanceof Attribute) {								
 							attrs.add((Attribute)bba);
 						}
 					}
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,attrs);					
+					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,null,attrs);					
 					types.add(ti);
 				}
 			}
@@ -170,7 +170,7 @@ public class ClassFileLoader {
 
 			List<Module.Case> mcases = new ArrayList<Module.Case>();
 			// TODO: fix this problem here related to locals
-			mcases.add(new Module.Case(null, Collections.EMPTY_LIST, attrs));
+			mcases.add(new Module.Case(null, null, null, Collections.EMPTY_LIST, attrs));
 
 			return new Module.Method(name, type, mcases);
 		} catch (IOException e) {

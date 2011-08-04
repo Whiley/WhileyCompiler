@@ -143,7 +143,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
+		// TODO: propagate over pre and post conditions
+		
+		return new Module.Case(nbody, mcase.precondition(),
+				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 	
 	protected Env propagate(int index, Entry entry,

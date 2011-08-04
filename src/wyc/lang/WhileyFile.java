@@ -119,9 +119,9 @@ public class WhileyFile {
 			this.modifiers = modifiers;
 			this.type = type;
 			this.name = name;			
-			this.constraint = constraint;
-		}
-
+			this.constraint = constraint;			
+		}		
+		
 		public boolean isPublic() {
 			for(Modifier m : modifiers) {
 				if(m instanceof Modifier.Public) {

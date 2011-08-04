@@ -85,7 +85,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			}
 		}
 		
-		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
+		return new Module.Case(nbody, mcase.precondition(),
+				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 	
 	/*

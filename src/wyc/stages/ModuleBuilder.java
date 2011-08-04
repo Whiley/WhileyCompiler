@@ -588,7 +588,8 @@ public class ModuleBuilder {
 	}
 
 	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
-		return new Module.TypeDef(td.name(), types.get(new NameID(module, td.name())));
+		// TODO: fix constraints here
+		return new Module.TypeDef(td.name(), types.get(new NameID(module, td.name())), null);
 	}
 
 	protected Module.Method resolve(FunDecl fd) {		
@@ -638,7 +639,8 @@ public class ModuleBuilder {
 			locals.set(e.getValue(),e.getKey());
 		}	
 		
-		ncases.add(new Module.Case(blk,locals));
+		// TODO: fix constraints here
+		ncases.add(new Module.Case(blk,null,null,locals));
 		return new Module.Method(fd.name(), tf, ncases);
 	}
 
