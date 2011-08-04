@@ -1341,7 +1341,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type funrec = mt.receiver();			
 				if (receiver == funrec
 						|| (receiver != null && funrec != null && Type
-								.isCoerciveSubtype(funrec, receiver))) {
+								.isCoerciveSubtype(receiver, funrec))) {
 					// receivers match up OK ...				
 					if (ft.params().size() == paramTypes.size()						
 							&& paramSubtypes(ft, target)
@@ -1355,14 +1355,26 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Check whether we actually found something. If not, print a useful
 		// error message.
 		if(candidate == null) {
-			String msg = "no match for " + nid.name() + parameterString(paramTypes);
+			String rec = "::";
+			if(receiver != null) {				
+				rec = receiver.toString() + "::";
+			}
+			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
 			boolean firstTime = true;
 			int count = 0;
 			for(Type.Fun ft : targets) {
+				rec = "";
+				if(ft instanceof Type.Meth) {
+					Type.Meth mt = (Type.Meth) ft;
+					if(mt.receiver() != null) {
+						rec = mt.receiver().toString();
+					}
+					rec = rec + "::";
+				}
 				if(firstTime) {
-					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
+					msg += "\n\tfound: " + rec + nid.name() +  parameterString(ft.params());
 				} else {
-					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
+					msg += "\n\tand: " + rec + nid.name() +  parameterString(ft.params());
 				}				
 				if(++count < targets.size()) {
 					msg += ",";
