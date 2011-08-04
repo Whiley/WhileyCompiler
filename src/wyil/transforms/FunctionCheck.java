@@ -51,7 +51,7 @@ public class FunctionCheck implements Transform {
 	}
 		
 	public void check(Module.Method method) {		
-		if (method.type().receiver() == null) {
+		if (!(method.type() instanceof Type.Fun)) {
 			for (Module.Case c : method.cases()) {
 				check(c.body(), method);
 			}
@@ -65,7 +65,7 @@ public class FunctionCheck implements Transform {
 			if (code instanceof Code.Send || code instanceof Code.IndirectSend) {
 				// external message send
 				syntaxError("cannot send message from function", filename, stmt);
-			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type.receiver() != null) {
+			} else if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Meth) {
 				// internal message send
 				syntaxError("cannot call method message from function", filename, stmt);
 			} else if(code instanceof Code.Spawn) {

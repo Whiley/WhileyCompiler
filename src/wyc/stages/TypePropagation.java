@@ -88,8 +88,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				
 		Env environment = new Env();		
 
-		if(method.type().receiver() != null) {					
-			environment.add(method.type().receiver());
+		if(method.type() instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) method.type();
+			if(mt.receiver() != null) {
+				environment.add(mt.receiver());
+			}
 		}
 		List<Type> paramTypes = method.type().params();
 		
@@ -97,7 +100,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for (; i != paramTypes.size(); ++i) {
 			Type t = paramTypes.get(i);
 			environment.add(t);
-			if (method.type().receiver() == null
+			if (!(method.type() instanceof Type.Meth)
 					&& Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
 				// FIXME: add source information
 				syntaxError("function argument cannot have process type",
@@ -115,7 +118,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Env environment = initialStore();
 		int start = method.type().params().size();
-		if(method.type().receiver() != null) { start++; }
+		if(method.type() instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) method.type();
+			if(mt.receiver() != null) {
+				start++;
+			}
+		}
+		
 		for (int i = start; i < mcase.locals().size(); i++) {
 			environment.add(Type.T_VOID);
 		}	
@@ -523,7 +532,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type receiver = environment.pop();
 		Type target = environment.pop();		
 		
-		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
+		Type.Meth ft = checkType(target,Type.Meth.class,stmt);	
+		
 		List<Type> ft_params = ft.params();
 		for(int i=0;i!=ft_params.size();++i) {
 			Type param = ft_params.get(i);
@@ -539,21 +549,24 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Invoke ivk, Entry stmt, Env environment) {			
-		ArrayList<Type> types = new ArrayList<Type>();	
-		Type.Process receiver = null;
+		ArrayList<Type> types = new ArrayList<Type>();			
 		
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(environment.pop());
 		}
 
-		if(ivk.type.receiver() != null) {			
-			receiver = (Type.Process) environment.pop(); // ignore, must be this
+		if(ivk.type instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) ivk.type;
+			if(mt.receiver() != null) {
+				Type.Process receiver = (Type.Process) environment.pop(); 
+				// ignore receiver type, must be this.
+			}
 		}
 		
 		Collections.reverse(types);		
 		
 		try {						
-			Type.Fun funtype = bindFunction(ivk.name,  receiver, types, stmt);			
+			Type.Fun funtype = bindFunction(ivk.name,  types, stmt);			
 			if(funtype.ret() != Type.T_VOID && ivk.retval) {
 				environment.push(funtype.ret());
 			}
@@ -838,7 +851,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type.Process rec = (Type.Process) _rec; 		
 
 		try {
-			Type.Fun funtype = bindFunction(ivk.name, rec, types, stmt);
+			Type.Meth funtype = bindMethod(ivk.name, rec, types, stmt);
 			if (funtype.ret() != Type.T_VOID && ivk.synchronous && ivk.retval) {
 				environment.push(funtype.ret());
 			}
@@ -1263,24 +1276,76 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @return
 	 * @throws ResolveError
 	 */
-	protected Type.Fun bindFunction(NameID nid, Type.Process receiver,
+	protected Type.Fun bindFunction(NameID nid, 
 			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Fun target = Type.T_FUN(receiver, Type.T_ANY,paramTypes);
+		Type.Fun target = Type.T_FUN(Type.T_ANY,paramTypes);
 		Type.Fun candidate = null;				
 		
 		List<Type.Fun> targets = lookupMethod(nid.module(),nid.name()); 
 		
 		for (Type.Fun ft : targets) {										
-			Type funrec = ft.receiver();			
-			if (receiver == funrec
-					|| (receiver != null && funrec != null && Type
-							.isCoerciveSubtype(funrec, receiver))) {
-				// receivers match up OK ...				
-				if (ft.params().size() == paramTypes.size()						
-						&& paramSubtypes(ft, target)
-						&& (candidate == null || paramSubtypes(candidate,ft))) {					
-					candidate = ft;					
+			if(ft instanceof Type.Meth) {
+				// in this case, we want to check if this is a definite method
+				// call with a receiver. If so, then we don't consider it. We do
+				// consider "headless" method calls, since these cannot be
+				// distinguished from function calls in module builder.  
+				Type.Meth mt = (Type.Meth) ft;
+				if(mt.receiver() != null) {
+					continue;
+				}
+			}
+			if (ft.params().size() == paramTypes.size()						
+					&& paramSubtypes(ft, target)
+					&& (candidate == null || paramSubtypes(candidate,ft))) {					
+				candidate = ft;								
+			}
+		}				
+		
+		// Check whether we actually found something. If not, print a useful
+		// error message.
+		if(candidate == null) {
+			String msg = "no match for " + nid.name() + parameterString(paramTypes);
+			boolean firstTime = true;
+			int count = 0;
+			for(Type.Fun ft : targets) {
+				if(firstTime) {
+					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
+				} else {
+					msg += "\n\tand: " + nid.name() +  parameterString(ft.params());
+				}				
+				if(++count < targets.size()) {
+					msg += ",";
+				}
+			}
+			
+			syntaxError(msg + "\n",filename,elem);
+		}
+		
+		return candidate;
+	}
+	
+	protected Type.Meth bindMethod(NameID nid, Type.Process receiver,
+			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
+
+		Type.Meth target = Type.T_METH(receiver, Type.T_ANY,paramTypes);
+		Type.Meth candidate = null;				
+		
+		List<Type.Fun> targets = lookupMethod(nid.module(),nid.name()); 
+		
+		for (Type.Fun ft : targets) {
+			if(ft instanceof Type.Meth) {
+				Type.Meth mt = (Type.Meth) ft; 
+				Type funrec = mt.receiver();			
+				if (receiver == funrec
+						|| (receiver != null && funrec != null && Type
+								.isCoerciveSubtype(funrec, receiver))) {
+					// receivers match up OK ...				
+					if (ft.params().size() == paramTypes.size()						
+							&& paramSubtypes(ft, target)
+							&& (candidate == null || paramSubtypes(candidate,ft))) {					
+						candidate = mt;					
+					}
 				}
 			}
 		}				

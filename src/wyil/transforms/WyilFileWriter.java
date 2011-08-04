@@ -98,8 +98,12 @@ public class WyilFileWriter implements Transform {
 		List<Type> pts = ft.params();
 		List<String> locals = mcase.locals();
 		int li = 0;
-		if(ft.receiver() != null) {
-			out.print(ft.receiver() + "::");
+		if(ft instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) ft;
+			if(mt.receiver() != null) {
+				out.print(mt.receiver());
+			}
+			out.print("::");
 			li++;
 		}
 		out.print(method.name() + "(");

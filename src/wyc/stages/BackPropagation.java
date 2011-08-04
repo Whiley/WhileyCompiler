@@ -265,8 +265,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		environment.push(code.type);
 		
-		if(code.type.receiver() != null) {		
-			environment.push(code.type.receiver());
+		if(code.type instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) code.type;
+			if(mt.receiver() != null) {
+				environment.push(mt.receiver());
+			}
 		}
 		
 		for(Type t : code.type.params()) {
@@ -275,18 +278,15 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public void infer(int index, Code.IndirectSend code, Block.Entry entry,
-			Env environment) {
+			Env environment) {				
 		
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
 			coerce(req,code.type.ret(),index,entry);			
 		}
 				
-		environment.push(code.type);		
-		
-		if(code.type.receiver() != null) {		
-			environment.push(code.type.receiver());
-		}
+		environment.push(code.type);							
+		environment.push(code.type.receiver());		
 		
 		for(Type t : code.type.params()) {
 			environment.push(t);
@@ -302,8 +302,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		
 
-		if(code.type.receiver() != null) {
-			environment.push(code.type.receiver());
+		if(code.type instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) code.type;
+			if(mt.receiver() != null) {
+				environment.push(mt.receiver());
+			}						
 		}
 		
 		for(Type t : code.type.params()) {
@@ -507,8 +510,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public void infer(int index, Code.Send code, Block.Entry entry,
-			Env environment) {
-
+			Env environment) {		
+		
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
 			coerce(req,code.type.ret(),index,entry);					

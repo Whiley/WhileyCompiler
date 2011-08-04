@@ -726,7 +726,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 		public Type type() {
 			if (type == null) {				
-				return Type.T_FUN(null, Type.T_ANY, Type.T_ANY);
+				return Type.T_FUN(Type.T_ANY, Type.T_ANY);
 			} else {
 				return type;
 			}

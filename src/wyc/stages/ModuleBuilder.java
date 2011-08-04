@@ -292,7 +292,7 @@ public class ModuleBuilder {
 					for(UnresolvedType p : f.paramTypes) {
 						paramTypes.add(resolve(p));
 					}				
-					tf = Type.T_FUN(null,Type.T_ANY, paramTypes);
+					tf = Type.T_FUN(Type.T_ANY, paramTypes);
 				}
 				
 				return Value.V_FUN(name, tf);	
@@ -559,13 +559,17 @@ public class ModuleBuilder {
 
 		// method receiver type (if applicable)
 		Type.Process rec = null;
+		Type.Fun ft;
 		if (fd.receiver != null) {
 			Type t = resolve(fd.receiver);
 			checkType(t, Type.Process.class, fd.receiver);
 			rec = (Type.Process) t;
+			ft = Type.T_METH(rec, ret, parameters);
+		} else {
+			ft = Type.T_FUN(ret, parameters);
 		}
 
-		Type.Fun ft = Type.T_FUN(rec, ret, parameters);
+		 
 		NameID name = new NameID(module, fd.name);
 		List<Type.Fun> types = functions.get(name);
 		if (types == null) {
@@ -983,8 +987,9 @@ public class ModuleBuilder {
 				blk.add(Code.Load(null, environment.get(v.var)));	
 			}
 			matched = true;
-		} else if(tf != null && tf.receiver() != null) {
-			Type pt = tf.receiver();			
+		} else if(tf != null && tf instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) tf;
+			Type pt = mt.receiver();			
 			if(pt instanceof Type.Process) {
 				Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
 				if(ert != null && ert.fields().containsKey(v.var)) {
@@ -1296,27 +1301,27 @@ public class ModuleBuilder {
 					
 		if(variableIndirectInvoke) {			
 			if(s.receiver != null) {
-				blk.add(Code.IndirectSend(Type.T_FUN(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
+				blk.add(Code.IndirectSend(Type.T_METH(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
 			} else {
-				blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
+				blk.add(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
 			}
 		} else if(fieldIndirectInvoke) {
-			blk.add(Code.IndirectInvoke(Type.T_FUN(null, Type.T_VOID, paramTypes), retval),attributes(s));
+			blk.add(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
 		} else if(directInvoke || methodInvoke) {
 			NameID name = new NameID(modInfo.module, s.name);
 			if(receiverIsThis) {
 				// ok, this is a hack
 				blk.add(Code.Invoke(
-						Type.T_FUN(Type.T_PROCESS(Type.T_VOID), Type.T_VOID,
+						Type.T_METH(null, Type.T_VOID,
 								paramTypes), name, retval), attributes(s));
 			} else {
 				blk.add(Code.Invoke(
-						Type.T_FUN(null, Type.T_VOID, paramTypes), name, retval),attributes(s));
+						Type.T_FUN(Type.T_VOID, paramTypes), name, retval),attributes(s));
 			}
 		} else if(directSend) {						
 			NameID name = new NameID(modInfo.module, s.name);
 			blk.add(Code.Send(
-					Type.T_FUN(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
+					Type.T_METH(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
 		} else {
 			syntaxError("unknown function or method", filename, s);
 		}
@@ -1340,7 +1345,7 @@ public class ModuleBuilder {
 			for(UnresolvedType p : s.paramTypes) {
 				paramTypes.add(resolve(p));
 			}
-			tf = Type.T_FUN(null, Type.T_ANY, paramTypes);
+			tf = Type.T_FUN(Type.T_ANY, paramTypes);
 		}
 		Block blk = new Block();
 		blk.add(Code.Const(Value.V_FUN(name, tf)),
@@ -1371,8 +1376,9 @@ public class ModuleBuilder {
 			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
 
 			// Second, see if it's a field of the receiver
-			if(tf.receiver() != null) {
-				Type pt = tf.receiver();				
+			if(tf instanceof Type.Meth) {
+				Type.Meth mt = (Type.Meth) tf; 
+				Type pt = mt.receiver();				
 				if(pt instanceof Type.Process) {
 					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
 					if(ert != null && ert.fields().containsKey(v.var)) {						
@@ -1775,7 +1781,11 @@ public class ModuleBuilder {
 				paramTypes.add(resolve(p));
 			}
 			// FIXME: need to add support for receiver types
-			return Type.T_FUN(receiver,resolve(ut.ret),paramTypes);							
+			if(receiver != null) {
+				return Type.T_METH(receiver,resolve(ut.ret),paramTypes);
+			} else {
+				return Type.T_FUN(resolve(ut.ret),paramTypes);
+			}
 		}
 	}
 	

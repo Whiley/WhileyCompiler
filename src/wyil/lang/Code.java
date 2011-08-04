@@ -285,8 +285,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Fun fun, boolean synchronous, boolean retval) {
-		return get(new IndirectSend(fun,synchronous,retval));
+	public static IndirectSend IndirectSend(Type.Meth meth, boolean synchronous, boolean retval) {
+		return get(new IndirectSend(meth,synchronous,retval));
 	}
 	
 	/**
@@ -351,8 +351,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Fun fun, NameID name, boolean synchronous, boolean retval) {
-		return get(new Send(fun,name,synchronous,retval));
+	public static Send Send(Type.Meth meth, NameID name, boolean synchronous, boolean retval) {
+		return get(new Send(meth,name,synchronous,retval));
 	}	
 	
 	/**
@@ -976,9 +976,9 @@ public abstract class Code {
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
-		 public final Type.Fun type;
+		 public final Type.Meth type;
 			
-		 private IndirectSend(Type.Fun type, boolean synchronous, boolean retval) {
+		 private IndirectSend(Type.Meth type, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.synchronous = synchronous;
 			 this.retval = retval;
@@ -1881,9 +1881,9 @@ public abstract class Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
 		 public final NameID name;
-		 public final Type.Fun type;
+		 public final Type.Meth type;
 			
-		 private Send(Type.Fun type, NameID name, boolean synchronous, boolean retval) {
+		 private Send(Type.Meth type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;
