@@ -660,7 +660,7 @@ public class ModuleBuilder {
 		}	
 		
 		// TODO: fix constraints here
-		ncases.add(new Module.Case(body,null,null,locals));
+		ncases.add(new Module.Case(body,precondition,postcondition,locals));
 		
 		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
 		return new Module.Method(fd.name(), tf, ncases);

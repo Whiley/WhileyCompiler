@@ -96,7 +96,7 @@ public class WyilFileWriter implements Transform {
 		Type.Fun ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
-		List<String> locals = mcase.locals();
+		ArrayList<String> locals = new ArrayList<String>(mcase.locals());
 		int li = 0;
 		if(ft instanceof Type.Meth) {			
 			Type.Meth mt = (Type.Meth) ft;
@@ -120,9 +120,19 @@ public class WyilFileWriter implements Transform {
 				out.println("attribute: " + ba.name());
 			}
 		}
+		// following is a sneaky way of handling the return value $
+		locals.add(0,"$");
+		if(mcase.precondition() != null) {
+			out.println("precondition: ");
+			write(0,mcase.precondition(),locals,out);
+		}
+		if(mcase.postcondition() != null) {
+			out.println("postcondition: ");
+			write(0,mcase.postcondition(),locals,out);
+		}
 		out.println("body: ");
 		boolean firstTime=true;
-		if(li < locals.size()) {
+		if(++li < locals.size()) {			
 			out.print("    var ");
 			for(;li<locals.size();++li) {
 				if(!firstTime) {
@@ -132,7 +142,7 @@ public class WyilFileWriter implements Transform {
 				out.print(locals.get(li));
 			}
 			out.println();
-		}
+		}		
 		write(0,mcase.body(),locals,out);	
 	}
 	
@@ -168,10 +178,10 @@ public class WyilFileWriter implements Transform {
 			}
 		} else if(c instanceof Code.Store && !writeSlots){
 			Code.Store store = (Code.Store) c;
-			line = "store " + locals.get(store.slot) + " : " + store.type;  
+			line = "store " + locals.get(store.slot+1) + " : " + store.type;  
 		} else if(c instanceof Code.Load && !writeSlots){
 			Code.Load load = (Code.Load) c;
-			line = "load " + locals.get(load.slot) + " : " + load.type;
+			line = "load " + locals.get(load.slot+1) + " : " + load.type;
 		} else if(c instanceof Code.Update && !writeSlots){
 			Code.Update store = (Code.Update) c;
 			String fs = store.fields.isEmpty() ? "" : " ";
@@ -183,11 +193,11 @@ public class WyilFileWriter implements Transform {
 				firstTime=false;
 				fs += f;
 			}
-			line = "multistore " + locals.get(store.slot) + " #" + store.level + fs + " : " + store.type;
+			line = "multistore " + locals.get(store.slot+1) + " #" + store.level + fs + " : " + store.type;
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
-				line = "if" + iftype.test + " " + locals.get(iftype.slot)
+				line = "if" + iftype.test + " " + locals.get(iftype.slot+1)
 						+ " goto " + iftype.target + " : " + iftype.type;
 			} else {
 				line = c.toString();
@@ -201,9 +211,9 @@ public class WyilFileWriter implements Transform {
 					modifies +=", ";
 				}
 				firstTime=false;
-				modifies += locals.get(slot);
+				modifies += locals.get(slot+1);
 			}
-			line = "forall " + locals.get(fall.slot) + " [" + modifies + "] : " + fall.type;
+			line = "forall " + locals.get(fall.slot+1) + " [" + modifies + "] : " + fall.type;
 		} else {
 			line = c.toString();		
 		}
