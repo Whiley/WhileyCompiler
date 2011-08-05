@@ -136,7 +136,7 @@ public class WyilFileWriter implements Transform {
 			write(0,mcase.postcondition(),locals,out);
 		}
 		out.println("body: ");
-		boolean firstTime=true;
+		boolean firstTime=true;		
 		if(li < locals.size()) {			
 			out.print("    var ");
 			for(;li<locals.size();++li) {

@@ -697,7 +697,7 @@ public class ModuleBuilder {
 		
 		List<Module.Case> ncases = new ArrayList<Module.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
-		locals.add("$");
+		
 		for(int i=0;i!=environment.size();++i) {
 			locals.add(null);
 		}
@@ -1224,19 +1224,17 @@ public class ModuleBuilder {
 				// this is a little optimisation to produce slightly better
 				// code.
 				Variable v = (Variable) src.second();
-				if(environment.containsKey(v.var)) {
+				if(environment.containsKey(v.var)) {					
 					srcSlot = environment.get(v.var);
-				} else {
+				} else {					
 					// fall-back plan ...
 					blk.addAll(resolve(environment, src.second()));
-					srcSlot = environment.size();
-					environment.put("$" + srcSlot,srcSlot);
+					srcSlot = allocate("$" + environment.size(),environment);
 					blk.add(Code.Store(null, srcSlot),attributes(e));	
 				}
 			} else {
 				blk.addAll(resolve(environment, src.second()));
-				srcSlot = environment.size();
-				environment.put("$" + srcSlot,srcSlot);
+				srcSlot = allocate("$" + environment.size(),environment);
 				blk.add(Code.Store(null, srcSlot),attributes(e));	
 			}			
 			slots.add(new Pair(varSlot,srcSlot));											
@@ -1247,9 +1245,9 @@ public class ModuleBuilder {
 		
 		for (Pair<Integer, Integer> p : slots) {
 			String lab = loopLabel + "$" + p.first();
-			blk.add(Code.Load(null, p.second()), attributes(e));
+			blk.add(Code.Load(null, p.second()), attributes(e));			
 			blk.add(Code
-					.ForAll(null, p.first(), target, Collections.EMPTY_LIST),
+					.ForAll(null, p.first(), lab, Collections.EMPTY_LIST),
 					attributes(e));
 			labels.add(lab);
 		}
@@ -1258,7 +1256,7 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			blk.addAll(resolveCondition(exitLabel, e.condition,
 					environment));
-			for (int i = (labels.size() - 1); i >= 0; --i) {
+			for (int i = (labels.size() - 1); i >= 0; --i) {				
 				blk.add(Code.End(labels.get(i)));
 			}
 			blk.add(Code.Goto(target));
@@ -1623,9 +1621,8 @@ public class ModuleBuilder {
 		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
-			int freeReg = environment.size();
-			environment.put("$" + freeReg, freeReg);
 			Block blk = resolveCondition(trueLabel, e, environment);
+			int freeReg = allocate("$" + environment.size(),environment);			
 			blk.add(Code.Const(Value.V_BOOL(false)), attributes(e));
 			blk.add(Code.Store(null,freeReg),attributes(e));			
 			blk.add(Code.Goto(exitLabel));
