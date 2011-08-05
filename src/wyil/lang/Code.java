@@ -425,6 +425,10 @@ public abstract class Code {
 		return get(new Update(type,slot,level,fields));
 	}
 
+	public static Void Void(Type type, int slot) {
+		return get(new Void(type,slot));
+	}
+	
 	// ===============================================================
 	// Abstract Methods
 	// ===============================================================
@@ -432,6 +436,10 @@ public abstract class Code {
 	// The following method adds any slots used by a given bytecode 
 	public void slots(Set<Integer> slots) {
 		// default implementation does nothing
+	}
+	
+	public Code shift(int amount) {
+		return this;
 	}
 	
 	// ===============================================================
@@ -925,6 +933,13 @@ public abstract class Code {
 			}
 		}
 		
+		public Code shift(int amount) {
+			if(slot >= 0) {
+				return Code.IfType(type, slot+amount, test, target);
+			}
+			return this;
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return test.hashCode() + target.hashCode();
@@ -1244,6 +1259,10 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
+		public Code shift(int amount) {			
+			return Code.Load(type, slot+amount);			
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return slot; 
@@ -1308,6 +1327,10 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
+		public Code shift(int amount) {			
+			return Code.ForAll(type, slot+amount, target, modifies);			
+		}
+		
 		public int hashCode() {
 			return super.hashCode() + slot;
 		}
@@ -1346,6 +1369,10 @@ public abstract class Code {
 
 		public void slots(Set<Integer> slots) {
 			slots.add(slot);
+		}
+		
+		public Code shift(int amount) {			
+			return Code.Update(type, slot+amount, level, fields);			
 		}
 		
 		public int hashCode() {
@@ -1843,6 +1870,10 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
+		public Code shift(int amount) {			
+			return Code.Store(type, slot+amount);			
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return slot;
@@ -2109,6 +2140,10 @@ public abstract class Code {
 		
 		public void slots(Set<Integer> slots) {
 			slots.add(slot);
+		}
+		
+		public Code shift(int amount) {			
+			return Code.Void(type, slot+amount);			
 		}
 		
 		public int hashCode() {

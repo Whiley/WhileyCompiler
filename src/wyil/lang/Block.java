@@ -107,6 +107,21 @@ public final class Block implements Iterable<Block.Entry> {
 		}		
 		return r;
 	}
+
+	/**
+	 * Shift every slot in this block by amount.
+	 * 
+	 * @param amount
+	 * @return
+	 */
+	public Block shift(int amount) {
+		Block nblock = new Block();
+		for(Entry s : stmts) {
+			Code ncode = s.code.shift(amount);
+			nblock.add(ncode,s.attributes());
+		}
+		return nblock;
+	}
 	
 	public Entry get(int index) {
 		return stmts.get(index);

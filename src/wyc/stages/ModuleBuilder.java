@@ -485,7 +485,6 @@ public class ModuleBuilder {
 					t.first()), t.second());
 		}
 		
-		// FIXME: need to put in constraint block here
 		Block blk = null;
 		blk = t.second();
 		if (ut.second() != null) {
@@ -516,9 +515,17 @@ public class ModuleBuilder {
 			HashMap<NameID, Type> cache) {
 		if (t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;
+			Pair<Type,Block> p = expandType(lt.element, filename, cache);			
 			Block blk = null;
-			// FIXME: put in list constraints
-			Pair<Type,Block> p = expandType(lt.element, filename, cache);
+			if (p.second() != null) {
+				blk = new Block(); 
+				String label = Block.freshLabel();
+				blk.add(Code.Load(null, Code.RETURN_SLOT));
+				blk.add(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+						Collections.EMPTY_LIST));
+				blk.addAll(p.second().shift(1));				
+				blk.add(Code.End(label));
+			}		
 			return new Pair<Type,Block>(Type.T_LIST(p.first()),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;			
