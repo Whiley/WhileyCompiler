@@ -74,7 +74,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	public Module.TypeDef propagate(Module.TypeDef type) {
-		return type;		
+		Block constraint = type.constraint();		
+		if(constraint != null) {
+			Env environment = new Env();		
+			environment.add(type.type());			
+			constraint = doPropagation(constraint,environment);	
+			return new Module.TypeDef(type.name(), type.type(), constraint, type.attributes());
+		} else {
+			return type;
+		}
 	}
 	
 	public Module.ConstDef propagate(Module.ConstDef def) {
