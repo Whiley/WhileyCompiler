@@ -2,9 +2,9 @@ define bop as {int x, int y} where x > 0
 define expr as int|bop
 
 int f(expr e):
-    if e ~= bop:
+    if e is bop:
         return e.x + e.y
-    else if e ~= int:
+    else if e is int:
         return e // requires type difference
     else:
         return -1 // unreachable

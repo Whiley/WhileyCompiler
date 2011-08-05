@@ -3,7 +3,7 @@ define neg as int where $ < 0
 define expr as pos|neg
 
 string f(expr e):
-    if e ~= pos:
+    if e is pos:
         return "POSITIVE: " + str(e)
     else:
         return "NEGATIVE: " + str(e)

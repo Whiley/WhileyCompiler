@@ -4,7 +4,7 @@ define posLink as {posList next, nat data}
 define posList as int | posLink
 
 nat sum(LinkedList list):
-    if list ~= int:
+    if list is int:
         return 0
     else:
         return list.data + sum(list.next)

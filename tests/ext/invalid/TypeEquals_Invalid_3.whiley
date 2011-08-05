@@ -6,7 +6,7 @@ void g(neg x):
     print "NEGATIVE: " + str(x)
 
 void f(expr e):
-    if e ~= pos:
+    if e is pos:
         g(e)
 
 void System::main([string] args):
