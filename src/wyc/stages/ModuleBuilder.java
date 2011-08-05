@@ -983,11 +983,23 @@ public class ModuleBuilder {
 
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
-		Block blk = resolve(environment,s.source);				
-		int freeReg = allocate(s.variable,environment);
-		
-		blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));				
-		
+		Block blk = resolve(environment,s.source);		
+		if(s.variables.size() > 1) {
+			// this is the destructuring case
+			int freeReg = allocate(environment);
+			blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));
+			blk.add(Code.Load(null, freeReg));
+			blk.add(Code.Destructure(null));
+			for(int i=s.variables.size();i>0;--i) {
+				String var = s.variables.get(i-1);
+				int varReg = allocate(var,environment);
+				blk.add(Code.Store(null, varReg));
+			}										
+		} else {
+			// easy case.
+			int freeReg = allocate(s.variables.get(0),environment);
+			blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));
+		}		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(label));		
 		for (Stmt st : s.body) {			
@@ -1244,12 +1256,12 @@ public class ModuleBuilder {
 				} else {					
 					// fall-back plan ...
 					blk.addAll(resolve(environment, src.second()));
-					srcSlot = allocate("$" + environment.size(),environment);
+					srcSlot = allocate(environment);
 					blk.add(Code.Store(null, srcSlot),attributes(e));	
 				}
 			} else {
 				blk.addAll(resolve(environment, src.second()));
-				srcSlot = allocate("$" + environment.size(),environment);
+				srcSlot = allocate(environment);
 				blk.add(Code.Store(null, srcSlot),attributes(e));	
 			}			
 			slots.add(new Pair(varSlot,srcSlot));											
@@ -1637,7 +1649,7 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, e, environment);
-			int freeReg = allocate("$" + environment.size(),environment);			
+			int freeReg = allocate(environment);			
 			blk.add(Code.Const(Value.V_BOOL(false)), attributes(e));
 			blk.add(Code.Store(null,freeReg),attributes(e));			
 			blk.add(Code.Goto(exitLabel));
@@ -1666,21 +1678,18 @@ public class ModuleBuilder {
 				} else {
 					// fall-back plan ...
 					blk.addAll(resolve(environment, src.second()));
-					srcSlot = environment.size();
-					environment.put("$" + srcSlot,srcSlot);
+					srcSlot = allocate(environment);					
 					blk.add(Code.Store(null, srcSlot),attributes(e));	
 				}
 			} else {
 				blk.addAll(resolve(environment, src.second()));
-				srcSlot = environment.size();
-				environment.put("$" + srcSlot,srcSlot);
+				srcSlot = allocate(environment);
 				blk.add(Code.Store(null, srcSlot),attributes(e));	
 			}			
 			slots.add(new Pair(varSlot,srcSlot));											
 		}
 		
-		int resultSlot = environment.size();
-		environment.put("$" + resultSlot, resultSlot);
+		int resultSlot = allocate(environment);
 		
 		if (e.cop == Expr.COp.LISTCOMP) {
 			blk.add(Code.NewList(null,0), attributes(e));
@@ -1772,6 +1781,11 @@ public class ModuleBuilder {
 		Block lhs = resolve(environment, sg.lhs);		
 		lhs.add(Code.FieldLoad(null,sg.name), attributes(sg));
 		return lhs;
+	}
+	
+	// allocate a fresh variable
+	protected int allocate(HashMap<String,Integer> environment) {
+		return allocate("$" + environment.size(),environment);
 	}
 	
 	protected int allocate(String var, HashMap<String,Integer> environment) {

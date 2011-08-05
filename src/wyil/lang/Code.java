@@ -202,14 +202,15 @@ public abstract class Code {
 	 * source collection stored on top of the stack. The supplied variable
 	 * <code>var</code> is used as the iterator. The exit label denotes the end
 	 * of the loop block.
-	 * 	 
+	 * 
 	 * 
 	 * @param label
 	 *            --- exit label.
 	 * @return
 	 */
-	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
-		return get(new ForAll(type, var, label,modifies));
+	public static ForAll ForAll(Type type, int var,
+			String label, Collection<Integer> modifies) {
+		return get(new ForAll(type, var, label, modifies));
 	}				
 	
 	/**
@@ -1327,8 +1328,8 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
-		public Code shift(int amount) {			
-			return Code.ForAll(type, slot+amount, target, modifies);			
+		public Code shift(int amount) {				
+			return Code.ForAll(type, slot + amount, target, modifies);			
 		}
 		
 		public int hashCode() {
@@ -1344,7 +1345,7 @@ public abstract class Code {
 			return false;
 		}
 		
-		public String toString() {
+		public String toString() {			
 			return toString("forall " + slot + " " + modifies,type);
 		}		
 	}
