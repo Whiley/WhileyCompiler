@@ -6,4 +6,4 @@ string f(cr1nat x):
     return str(y)
 
 void System::main([string] args):
-    out<->println(f(9))
+    out.println(f(9))

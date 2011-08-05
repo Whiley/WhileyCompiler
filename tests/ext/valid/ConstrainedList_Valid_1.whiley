@@ -3,5 +3,5 @@
 
 void System::main([string] args):
     bytes = f(0)
-    out<->println(str(bytes))
+    out.println(str(bytes))
 

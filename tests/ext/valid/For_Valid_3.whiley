@@ -6,5 +6,5 @@ int sum({nat} xs) ensures $ >= 0:
 
 void System::main([string] args):
     z = sum({1,2,3,4,5})
-    out<->println(str(z))
+    out.println(str(z))
     

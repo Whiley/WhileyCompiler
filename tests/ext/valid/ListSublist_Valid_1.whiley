@@ -9,5 +9,5 @@ int sum(posintlist ls) ensures $ >= 0:
 
 void System::main([string] args):
     c = sum([1,2,3,4,5,6,7])
-    out<->println(str(c))
+    out.println(str(c))
     
