@@ -676,7 +676,7 @@ public class ModuleBuilder {
 			String lab = Block.freshLabel();
 			postcondition = new Block();			
 			postcondition.addAll(resolveCondition(lab, fd.postcondition, environment));		
-			postcondition.add(Code.Fail("postcondition not satisfied"), attributes(fd.precondition));
+			postcondition.add(Code.Fail("postcondition not satisfied"), attributes(fd.postcondition));
 			postcondition.add(Code.Label(lab));
 		}
 		
