@@ -1242,7 +1242,6 @@ public class ModuleBuilder {
 			slots.add(new Pair(varSlot,srcSlot));											
 		}
 				
-		String continueLabel = Block.freshLabel();
 		ArrayList<String> labels = new ArrayList<String>();
 		String loopLabel = Block.freshLabel();
 		
@@ -1254,12 +1253,10 @@ public class ModuleBuilder {
 					attributes(e));
 			labels.add(lab);
 		}
-				
-		
-		
+								
 		if (e.cop == Expr.COp.NONE) {
 			String exitLabel = Block.freshLabel();
-			blk.addAll(resolveCondition(exitLabel, invert(e.condition),
+			blk.addAll(resolveCondition(exitLabel, e.condition,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				blk.add(Code.End(labels.get(i)));
@@ -1267,53 +1264,12 @@ public class ModuleBuilder {
 			blk.add(Code.Goto(target));
 			blk.add(Code.Label(exitLabel));
 		} else { // SOME			
-			blk.addAll(resolveCondition(target, invert(e.condition),
+			blk.addAll(resolveCondition(target, e.condition,
 					environment));
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				blk.add(Code.End(labels.get(i)));
 			}
-		} // ALL, LONE and ONE will be harder
-				
-		/*
-				
-		ArrayList<Pair<CExpr.Register, CExpr>> sources = new ArrayList();
-		HashMap<String, CExpr> binding = new HashMap<String, CExpr>();
-		for (Pair<String, Expr> src : e.sources) {
-			Block r = resolve(environment, src.second());
-			CExpr.Register reg = CExpr.REG(null, environment++);
-			sources.add(new Pair<CExpr.Register, CExpr>(reg, r.first()));
-			binding.put(src.first(), reg);
-			blk.addAll(r.second());			
-		}
-
-		ArrayList<String> labels = new ArrayList<String>();
-		for (Pair<CExpr.Register, CExpr> ent : sources) {
-			String loopLabel = Block.freshLabel();
-			labels.add(loopLabel);
-			blk
-					.add(new Code.Forall(loopLabel, null, ent.first(), ent
-							.second()), e.attribute(Attribute.Source.class));
-		}
-		if (e.cop == Expr.COp.NONE) {
-			String exitLabel = Block.freshLabel();
-			blk.addAll(resolveCondition(exitLabel, e.condition, environment));
-			for (int i = (labels.size() - 1); i >= 0; --i) {
-				blk.add(new Code.ForallEnd(labels.get(i)));
-			}
-			blk.add(Code.Goto(target));
-			blk.add(Code.Label(exitLabel));
-		} else { // SOME
-			blk.addAll(resolveCondition(target, e.condition, environment));
-			for (int i = (labels.size() - 1); i >= 0; --i) {
-				blk.add(new Code.ForallEnd(labels.get(i)));
-			}
-		} // ALL, LONE and ONE will be harder
-
-		// Finally, we need to substitute the block to rename all occurrences of
-		// the quantified variables to be their actual registers.
-		blk = Block.substitute(binding, blk);
-
-		 */				
+		} // ALL, LONE and ONE will be harder					
 		
 		return blk;
 	}
