@@ -72,7 +72,13 @@ public class WyilFileWriter implements Transform {
 			Type t = td.type();			
 			String t_str;			
 			t_str = t.toString();
-			out.println("define " + td.name() + " as " + t_str);			
+			out.println("define " + td.name() + " as " + t_str);	
+			if(td.constraint() != null) {
+				out.println("where:");
+				ArrayList<String> locals = new ArrayList<String>();
+				locals.add("$");
+				write(0,td.constraint(),locals,out);
+			}
 		}
 		if(!module.types().isEmpty()) {
 			out.println();

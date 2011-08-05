@@ -47,7 +47,7 @@ public class ModuleBuilder {
 	private HashMap<NameID, List<Type.Fun>> functions;
 	private HashMap<NameID, Pair<Type,Block>> types;
 	private HashMap<NameID, Value> constants;
-	private HashMap<NameID, UnresolvedType> unresolved;
+	private HashMap<NameID, Pair<UnresolvedType, Expr>> unresolved;
 	private Stack<Scope> scopes = new Stack<Scope>();
 	private String filename;	
 	private FunDecl currentFunDecl;
@@ -70,7 +70,7 @@ public class ModuleBuilder {
 		functions = new HashMap<NameID, List<Type.Fun>>();
 		types = new HashMap<NameID, Pair<Type,Block>>();
 		constants = new HashMap<NameID, Value>();
-		unresolved = new HashMap<NameID, UnresolvedType>();
+		unresolved = new HashMap<NameID, Pair<UnresolvedType,Expr>>();
 
 		// now, init data
 		for (WhileyFile f : files) {
@@ -419,7 +419,7 @@ public class ModuleBuilder {
 					TypeDecl td = (TypeDecl) d;					
 					NameID key = new NameID(f.module, td.name());
 					declOrder.add(key);
-					unresolved.put(key, td.type);
+					unresolved.put(key, new Pair<UnresolvedType,Expr>(td.type,td.constraint));
 					srcs.put(key, d);
 					filemap.put(key, f);
 				}
@@ -461,7 +461,7 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(cached, new Block());
 		} else if(t != null) {
 			return t;
-		} else if (!modules.contains(key.module())) {
+		} else if (!modules.contains(key.module())) {			
 			// indicates a non-local key which we can resolve immediately
 			Module mi = loader.loadModule(key.module());
 			Module.TypeDef td = mi.type(key.name());
@@ -472,7 +472,8 @@ public class ModuleBuilder {
 		cache.put(key, Type.T_LABEL(key.toString()));
 
 		// now, expand the type fully		
-		t = expandType(unresolved.get(key), filemap.get(key).filename,
+		Pair<UnresolvedType,Expr> ut = unresolved.get(key); 
+		t = expandType(ut.first(), filemap.get(key).filename,
 				cache);
 
 		// Now, we need to test whether the current type is open and recursive
@@ -485,6 +486,24 @@ public class ModuleBuilder {
 		}
 		
 		// FIXME: need to put in constraint block here
+		Block blk = null;
+		blk = t.second();
+		if (ut.second() != null) {
+			String trueLabel = Block.freshLabel();
+			HashMap<String,Integer> environment = new HashMap<String,Integer>();
+			environment.put("$", Code.RETURN_SLOT);			
+			Block constraint = resolveCondition(trueLabel, ut.second(), environment);
+			constraint.add(Code.Fail("type constraint not satisfied"), attributes(ut
+					.second()));
+			constraint.add(Code.Label(trueLabel));
+
+			if (blk == null) { 
+				t = new Triple<Type, Block, Boolean>(t.first(), constraint, true);
+			} else {
+				blk.addAll(constraint); 
+				t = new Triple<Type, Block, Boolean>(t.first(), blk, true);
+			}
+		}
 		
 		// finally, store it in the cache
 		cache.put(key, t.first());
@@ -620,7 +639,7 @@ public class ModuleBuilder {
 		
 		// We always include "$" as the variable at index 0. This simplifies the
 		// problem of dealing with this "virtual" variable.
-		environment.put("$", 0);
+		environment.put("$", Code.RETURN_SLOT);
 		
 		// method return type
 		Pair<Type,Block> ret = resolve(fd.ret);
