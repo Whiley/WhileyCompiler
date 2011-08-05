@@ -1,7 +1,7 @@
 void System::main([string] args):
-    i = 2
-    out!println(this.self())
-    out!println(str(i))
+    i = this.var()
+    out!println(i)
+    out!println(i)
 
-string System::self():
+string System::var():
     return str(1)

@@ -29,6 +29,7 @@
 
 package wyjvm.util.dfa;
 
+import static wyjvm.lang.JvmTypes.JAVA_LANG_OBJECT;
 import static wyjvm.lang.JvmTypes.JAVA_LANG_STRING;
 import static wyjvm.lang.JvmTypes.T_BOOL;
 import static wyjvm.lang.JvmTypes.T_BYTE;
@@ -107,8 +108,10 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 		} else if (code instanceof Dup) {
 			return newTypes(types, 0, types.getTypeInformation().peek());
 		} else if (code instanceof DupX1 || code instanceof DupX2) {
-			// TODO Handle this.
-			throw new UnsupportedOperationException("Cannot yet handle dup_x");
+			int by = code instanceof DupX1 ? 2 : 3;
+			Stack<JvmType> newStack = copy(types);
+			newStack.add(newStack.size() - by, newStack.peek());
+			return new StackTypes(newStack, types.isComplete());
 		} else if (code instanceof GetField) {
 			return newTypes(types, ((GetField) code).mode == Bytecode.STATIC ? 0 : 1,
 			    ((GetField) code).type);
@@ -147,8 +150,9 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 				type = T_FLOAT;
 			} else if (constant instanceof String) {
 				type = JAVA_LANG_STRING;
+			} else if (constant == null) {
+				type = JAVA_LANG_OBJECT;
 			} else {
-				System.out.println(constant.getClass());
 				throw new UnsupportedOperationException("Unknown constant type.");
 			}
 
@@ -169,8 +173,7 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 		} else if (code instanceof Store) {
 			return newTypes(types, 1);
 		} else if (code instanceof Swap) {
-			Stack<JvmType> stack = new Stack<JvmType>();
-			stack.addAll(types.getTypeInformation());
+			Stack<JvmType> stack = copy(types);
 			stack.add(stack.size() - 2, stack.pop());
 			return new StackTypes(stack, types.isComplete());
 		} else if (code instanceof Switch) {
@@ -186,8 +189,7 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 
 	private StackTypes newTypes(TypeInformation types, int popCount,
 	    JvmType newType) {
-		Stack<JvmType> newStack = new Stack<JvmType>();
-		newStack.addAll(types.getTypeInformation());
+		Stack<JvmType> newStack = copy(types);
 		for (int i = 0; i < popCount; ++i) {
 			newStack.pop();
 		}
@@ -195,6 +197,12 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 			newStack.push(newType);
 		}
 		return new StackTypes(newStack, types.isComplete());
+	}
+	
+	private Stack<JvmType> copy(TypeInformation types) {
+		Stack<JvmType> copy = new Stack<JvmType>();
+		copy.addAll(types.getTypeInformation());
+		return copy;
 	}
 
 	private class StackTypes extends TypeInformation {
