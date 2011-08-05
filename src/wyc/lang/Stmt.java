@@ -116,23 +116,23 @@ public interface Stmt extends SyntacticElement {
 	}
 
 	public static final class For extends SyntacticElement.Impl implements Stmt {
-		public final String variable;		
+		public final ArrayList<String> variables;		
 		public final Expr source;
 		public final Expr invariant;
 		public final ArrayList<Stmt> body;
 
-		public For(String variable, Expr source, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
+		public For(Collection<String> variables, Expr source, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
-			this.variable = variable;
+			this.variables = new ArrayList<String>(variables);
 			this.source = source;		
 			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);
 		}
 
-		public For(String variable, Expr source, Expr invariant,
+		public For(Collection<String> variables, Expr source, Expr invariant,
 				Collection<Stmt> body, Collection<Attribute> attributes) {
 			super(attributes);
-			this.variable = variable;
+			this.variables = new ArrayList<String>(variables);
 			this.source = source;	
 			this.invariant = invariant;
 			this.body = new ArrayList<Stmt>(body);

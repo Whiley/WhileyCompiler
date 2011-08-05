@@ -528,15 +528,23 @@ public class ModuleBuilder {
 			}		
 			return new Pair<Type,Block>(Type.T_LIST(p.first()),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;			
+			UnresolvedType.Set st = (UnresolvedType.Set) t;
+			Pair<Type,Block> p = expandType(st.element, filename, cache);
 			Block blk = null;
-			// FIXME: put in set constraints
-			Pair<Type,Block> p = expandType(st.element, filename, cache);			
+			if (p.second() != null) {
+				blk = new Block(); 
+				String label = Block.freshLabel();
+				blk.add(Code.Load(null, Code.RETURN_SLOT));
+				blk.add(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+						Collections.EMPTY_LIST));
+				blk.addAll(p.second().shift(1));				
+				blk.add(Code.End(label));
+			}						
 			return new Pair<Type,Block>(Type.T_SET(p.first()),blk);					
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;	
 			Block blk = null;
-			// FIXME: put in constraints
+			// FIXME: put in constraints.  REQUIRES ITERATION OVER DICTIONARIES
 			Pair<Type,Block> key = expandType(st.key, filename, cache);
 			Pair<Type,Block> value = expandType(st.value, filename, cache);
 			return new Pair<Type,Block>(Type.T_DICTIONARY(key.first(),value.first()),blk);					
@@ -1799,13 +1807,31 @@ public class ModuleBuilder {
 		} else if (t instanceof UnresolvedType.List) {
 			UnresolvedType.List lt = (UnresolvedType.List) t;			
 			Pair<Type,Block> p = resolve(lt.element); 
-			// TODO: fix list constraints
-			return new Pair<Type,Block>(Type.T_LIST(p.first()),null);			
+			Block blk = null;
+			if (p.second() != null) {
+				blk = new Block(); 
+				String label = Block.freshLabel();
+				blk.add(Code.Load(null, Code.RETURN_SLOT));
+				blk.add(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+						Collections.EMPTY_LIST));
+				blk.addAll(p.second().shift(1));				
+				blk.add(Code.End(label));
+			}	
+			return new Pair<Type,Block>(Type.T_LIST(p.first()),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;	
 			Pair<Type,Block> p = resolve(st.element);
-			// TODO: fix set constraints
-			return new Pair<Type,Block>(Type.T_SET(p.first()),null);			
+			Block blk = null;
+			if (p.second() != null) {
+				blk = new Block(); 
+				String label = Block.freshLabel();
+				blk.add(Code.Load(null, Code.RETURN_SLOT));
+				blk.add(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+						Collections.EMPTY_LIST));
+				blk.addAll(p.second().shift(1));				
+				blk.add(Code.End(label));
+			}	
+			return new Pair<Type,Block>(Type.T_SET(p.first()),blk);			
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;			
 			Pair<Type,Block> key = resolve(st.key);

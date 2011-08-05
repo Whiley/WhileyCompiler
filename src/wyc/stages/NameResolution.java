@@ -279,12 +279,14 @@ public class NameResolution {
 		if (s.invariant != null) {
 			resolve(s.invariant, environment, imports);
 		}
-		if (environment.containsKey(s.variable)) {
-			syntaxError("variable " + s.variable + " is alreaded defined",
-					filename, s);
-		}
 		environment = new HashMap<String,Set<Expr>>(environment);
-		environment.put(s.variable, Collections.EMPTY_SET);
+		for(String var : s.variables) {
+			if (environment.containsKey(var)) {
+				syntaxError("variable " + var + " is alreaded defined",
+						filename, s);
+			}
+			environment.put(var, Collections.EMPTY_SET);
+		}				
 		for (Stmt st : s.body) {
 			resolve(st, environment, imports);
 		}

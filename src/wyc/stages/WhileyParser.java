@@ -548,21 +548,26 @@ public class WhileyParser {
 	
 	private Stmt parseFor(int indent) {
 		int start = index;
-		matchKeyword("for");						
-		Identifier id = matchIdentifier();
+		matchKeyword("for");				
+		ArrayList<String> variables = new ArrayList<String>();
+		variables.add(matchIdentifier().text);				
+		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
+			match(Comma.class);
+			variables.add(matchIdentifier().text);
+		}
 		match(ElemOf.class);
 		Expr source = parseCondition(false);		
 		Expr invariant = null;
 		if(tokens.get(index).text.equals("where")) {
-		matchKeyword("where");
-		invariant = parseCondition(false);
+			matchKeyword("where");
+			invariant = parseCondition(false);
 		}
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
-		
-		return new Stmt.For(id.text,source,invariant,blk, sourceAttr(start,end-1));
+
+		return new Stmt.For(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseExtern(int indent) {
