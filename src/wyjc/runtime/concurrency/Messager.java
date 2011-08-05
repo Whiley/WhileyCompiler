@@ -90,7 +90,6 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * @param args The entry arguments of the message
 	 */
 	public void sendSync(Messager sender, Method method, Object[] args) {
-		System.err.println(this + " receiving sync from " + sender);
 		Message message = new SyncMessage(method, args, sender);
 
 		// This needs to happen before the message is sent, otherwise this actor
@@ -128,8 +127,6 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * @param args The entry arguments of the message
 	 */
 	public void sendAsync(Messager sender, Method method, Object[] args) {
-		System.err.println(this + " receiving async from " + sender);
-
 		addMessage(new Message(method, args));
 
 		sender.shouldYield = false;
