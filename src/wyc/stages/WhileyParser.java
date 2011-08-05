@@ -1232,10 +1232,9 @@ public class WhileyParser {
 		boolean firstTime = true;						
 		List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
 		HashSet<String> vars = new HashSet<String>();
-		while(!(token instanceof Bar)) {						
+		while(!(token instanceof Bar)) {			
 			if(!firstTime) {
-				match(Comma.class);
-				
+				match(Comma.class);			
 			}
 			firstTime=false;
 			Identifier id = matchIdentifier();
@@ -1252,7 +1251,7 @@ public class WhileyParser {
 			}
 			match(WhileyLexer.ElemOf.class);
 			
-			Expr src = parseConditionExpression(false);			
+			Expr src = parseConditionExpression(true);			
 			srcs.add(new Pair(var,src));
 			
 			checkNotEof();
