@@ -3447,7 +3447,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = linkedList();
+		Type t1 = linkedList(2);
 		System.out.println("GOT: " + t1);
 		System.out.println("MIN: " + minimise(t1));
 		/*
@@ -3468,12 +3468,20 @@ public abstract class Type {
 		*/	
 	}
 	
-	public static Type linkedList() {
-		Type leaf = T_LABEL("X");
-		HashMap<String,Type> fields = new HashMap<String,Type>();
-		fields.put("next", T_UNION(T_NULL,leaf));
-		fields.put("data", T_BOOL);
-		Type.Record rec = T_RECORD(fields);
-		return T_RECURSIVE("X",rec);
+	public static Type linkedList(int n) {
+		return T_RECURSIVE("X",innerLinkedList(n));
+	}
+	
+	public static Type innerLinkedList(int n) {
+		if(n == 0) {
+			return T_LABEL("X");
+		} else {
+			Type leaf = T_PROCESS(innerLinkedList(n-1)); 
+			HashMap<String,Type> fields = new HashMap<String,Type>();
+			fields.put("next", T_UNION(T_NULL,leaf));
+			fields.put("data", T_BOOL);
+			Type.Record rec = T_RECORD(fields);
+			return rec;
+		}
 	}
 }

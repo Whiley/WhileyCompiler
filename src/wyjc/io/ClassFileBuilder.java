@@ -104,17 +104,15 @@ public class ClassFileBuilder {
 			cf.attributes().add(wd);
 		}
 		
-		HashMap<Value,Integer> constants = new HashMap<Value,Integer>();
+		HashMap<Constant,Integer> constants = new HashMap<Constant,Integer>();
 		for(Module.Method method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			
 			cf.methods().addAll(build(method, constants));			
 		}		
-		
-		if(constants.size() > 0) {
-			buildConstants(constants,cf);
-		}
+			
+		buildConstants(constants,cf);		
 				
 		if(addMainLauncher) {
 			cf.methods().add(buildMainLauncher(owner));
@@ -126,42 +124,77 @@ public class ClassFileBuilder {
 		return cf;
 	}	
 	
-	public void buildConstants(HashMap<Value,Integer> constants, ClassFile cf) {		
+	public void buildConstants(HashMap<Constant,Integer> constants, ClassFile cf) {						
+		buildCoercions(constants,cf);
+		buildValues(constants,cf);
+	}
+	
+	public void buildCoercions(HashMap<Constant,Integer> constants, ClassFile cf) {
+		HashSet<Constant> done = new HashSet<Constant>();
+		HashMap<Constant,Integer> original = constants;
+		// this could be a little more efficient I think!!		
+		while(done.size() != constants.size()) {
+			// We have to clone the constants map, since it may be expanded as a
+			// result of buildCoercion(). This will occur if the coercion
+			// constructed requires a helper coercion that was not in the
+			// original constants map.  
+			HashMap<Constant,Integer> nconstants = new HashMap<Constant,Integer>(constants);		
+			for(Map.Entry<Constant,Integer> entry : constants.entrySet()) {
+				Constant e = entry.getKey();
+				if(!done.contains(e) && e instanceof Coercion) {
+					Coercion c = (Coercion) e;
+					buildCoercion(c.from,c.to,entry.getValue(),nconstants,cf);
+				} 
+				done.add(e);
+			}
+			constants = nconstants;
+		}
+		original.putAll(constants);
+	}
+	
+	public void buildValues(HashMap<Constant,Integer> constants, ClassFile cf) {
+		int nvalues = 0;
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		
-		for(Map.Entry<Value,Integer> entry : constants.entrySet()) {			
-			Value constant = entry.getKey();
-			int index = entry.getValue();
-			
-			// First, create the static final field that will hold this constant 
-			String name = "constant$" + index;
-			ArrayList<Modifier> fmods = new ArrayList<Modifier>();
-			fmods.add(Modifier.ACC_PRIVATE);
-			fmods.add(Modifier.ACC_STATIC);
-			fmods.add(Modifier.ACC_FINAL);
-			JvmType type = convertType(constant.type());
-			ClassFile.Field field = new ClassFile.Field(name, type, fmods);
-			cf.fields().add(field);
-			
-			// Now, create code to intialise this field
-			translate(constant,0,bytecodes);
-			bytecodes.add(new Bytecode.PutField(owner, name, type, Bytecode.STATIC));
+		for(Map.Entry<Constant,Integer> entry : constants.entrySet()) {			
+			Constant c = entry.getKey();
+			if(c instanceof ValueConst) {
+				nvalues++;
+				Value constant = ((ValueConst)c).value;
+				int index = entry.getValue();
+
+				// First, create the static final field that will hold this constant 
+				String name = "constant$" + index;
+				ArrayList<Modifier> fmods = new ArrayList<Modifier>();
+				fmods.add(Modifier.ACC_PRIVATE);
+				fmods.add(Modifier.ACC_STATIC);
+				fmods.add(Modifier.ACC_FINAL);
+				JvmType type = convertType(constant.type());
+				ClassFile.Field field = new ClassFile.Field(name, type, fmods);
+				cf.fields().add(field);
+
+				// Now, create code to intialise this field
+				translate(constant,0,bytecodes);
+				bytecodes.add(new Bytecode.PutField(owner, name, type, Bytecode.STATIC));
+			} 
 		}
 		
-		bytecodes.add(new Bytecode.Return(null));
-		
-		// now, create static initialiser method
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PUBLIC);
-		modifiers.add(Modifier.ACC_STATIC);
-		modifiers.add(Modifier.ACC_SYNTHETIC);
-		JvmType.Function ftype = new JvmType.Function(new JvmType.Void());
-		ClassFile.Method clinit = new ClassFile.Method("<clinit>", ftype, modifiers);
-		cf.methods().add(clinit);
-		
-		// finally add code for staticinitialiser method
-		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),clinit);
-		clinit.attributes().add(code);				
+		if(nvalues > 0) {
+			// create static initialiser method, but only if we really need to.
+			bytecodes.add(new Bytecode.Return(null));
+
+			ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+			modifiers.add(Modifier.ACC_PUBLIC);
+			modifiers.add(Modifier.ACC_STATIC);
+			modifiers.add(Modifier.ACC_SYNTHETIC);
+			JvmType.Function ftype = new JvmType.Function(new JvmType.Void());
+			ClassFile.Method clinit = new ClassFile.Method("<clinit>", ftype, modifiers);
+			cf.methods().add(clinit);
+
+			// finally add code for staticinitialiser method
+			wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),clinit);
+			clinit.attributes().add(code);				
+		}
 	}
 		
 	public ClassFile.Method buildMainLauncher(JvmType.Clazz owner) {
@@ -228,7 +261,7 @@ public class ClassFileBuilder {
 	}
 	
 	public List<ClassFile.Method> build(Module.Method method,
-			HashMap<Value, Integer> constants) {
+			HashMap<Constant, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
 		for(Module.Case c : method.cases()) {
@@ -238,7 +271,7 @@ public class ClassFileBuilder {
 	}
 	
 	public ClassFile.Method build(int caseNum, Module.Case mcase,
-			Module.Method method, HashMap<Value,Integer> constants) {		
+			Module.Method method, HashMap<Constant,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -268,7 +301,7 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translate(Module.Case mcase, HashMap<Value,Integer> constants) {
+	public ArrayList<Bytecode> translate(Module.Case mcase, HashMap<Constant,Integer> constants) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();				
 		translate(mcase.body(),mcase.locals().size(),constants,bytecodes);				
 		return bytecodes;
@@ -284,7 +317,7 @@ public class ClassFileBuilder {
 	 * @param bytecodes
 	 *            --- list to insert bytecodes into *
 	 */
-	public void translate(Block blk, int freeSlot, HashMap<Value,Integer> constants,
+	public void translate(Block blk, int freeSlot, HashMap<Constant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		for (Entry s : blk) {
 			freeSlot = translate(s, freeSlot, constants, bytecodes);
@@ -292,7 +325,7 @@ public class ClassFileBuilder {
 	}
 	
 	public int translate(Entry entry, int freeSlot,
-			HashMap<Value,Integer> constants, ArrayList<Bytecode> bytecodes) {
+			HashMap<Constant,Integer> constants, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
 			if(code instanceof Assert) {
@@ -407,7 +440,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.Const c, int freeSlot,
-			HashMap<Value,Integer> constants,
+			HashMap<Constant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
 		Value constant = c.constant;
@@ -415,13 +448,7 @@ public class ClassFileBuilder {
 				|| constant instanceof Value.Null || constant instanceof Value.Byte) {
 			translate(constant,freeSlot,bytecodes);					
 		} else {
-			int id;
-			if(constants.containsKey(constant)) {
-				id = constants.get(constant);
-			} else {
-				id = constants.size();
-				constants.put(constant, id);				
-			}
+			int id = ValueConst.get(constant,constants);			
 			String name = "constant$" + id;
 			JvmType type = convertType(constant.type());
 			bytecodes.add(new Bytecode.GetField(owner, name, type, Bytecode.STATIC));
@@ -429,89 +456,10 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.Convert c, int freeSlot,
-			HashMap<Value,Integer> constants, ArrayList<Bytecode> bytecodes) {		
-		Type toType = c.to;
-		Type fromType = c.from;
-
-		if (Type.isomorphic(toType, fromType)) {		
-			// do nothing!						
-		} else if (!(toType instanceof Type.Bool) && fromType instanceof Type.Bool) {
-			// this is either going into a union type, or the any type
-			upConversion(toType, (Type.Bool) fromType, freeSlot, bytecodes);
-		} else if(fromType == Type.T_INT) {									
-			upConversion(toType, (Type.Int)fromType,freeSlot,bytecodes);  
-		} else if(fromType == Type.T_CHAR) {									
-			upConversion(toType, (Type.Char)fromType,freeSlot,bytecodes);  
-		} else if(fromType == Type.T_BYTE) {									
-			upConversion(toType, (Type.Byte)fromType,freeSlot,bytecodes); 
-		} else if(!Type.isSubtype(toType, fromType)) {
-			// Fall-back to an external (recursive) check
-			int id;
-			Value constant = Value.V_TYPE(toType);
-			if(constants.containsKey(constant)) {
-				id = constants.get(constant);
-			} else {
-				id = constants.size();
-				constants.put(constant, id);				
-			}
-			String name = "constant$" + id;
-
-			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.STATIC));
-
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,convertType(fromType),WHILEYTYPE);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "coerce",
-					ftype, Bytecode.STATIC));			
-			addReadConversion(toType,bytecodes);
-		}
+			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {		
+		addCoercion(c.from,c.to,freeSlot,constants,bytecodes);		
 	}
 	
-	public void upConversion(Type toType, Type.Bool fromType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
-		// done deal!
-	}
-	
-	public void upConversion(Type toType, Type.Byte fromType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);			
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,"valueOf",ftype,Bytecode.STATIC));			
-		// done deal!
-	}
-	
-	public void upConversion(Type toType, Type.Int fromType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if(!Type.isSubtype(toType,fromType)) {
-			Type glb = Type.greatestLowerBound(Type.T_REAL, toType);
-			if(glb == Type.T_REAL) { 
-				// coercion required!
-				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
-			} else {				
-				// must be => char
-				JvmType.Function ftype = new JvmType.Function(T_INT);			
-				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));				
-			}
-		}
-	}
-
-	public void upConversion(Type toType, Type.Char fromType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if(!Type.isSubtype(toType,fromType)) {					
-			if(toType == Type.T_REAL) { 
-				// coercion required!
-				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);			
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
-			} else {
-				bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
-				JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,T_LONG);			
-				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"valueOf",ftype,Bytecode.STATIC));				
-			}
-		} else {
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);			
-			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"valueOf",ftype,Bytecode.STATIC));	
-		}
-	}
 	
 	public void translate(Code.Store c, int freeSlot,			
 			ArrayList<Bytecode> bytecodes) {		
@@ -905,7 +853,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void translate(Code.IfType c, Entry stmt, int freeSlot,
-			HashMap<Value,Integer> constants, ArrayList<Bytecode> bytecodes) {						
+			HashMap<Constant,Integer> constants, ArrayList<Bytecode> bytecodes) {						
 		
 		if(c.slot >= 0) {
 			// In this case, we're updating the type of a local variable. To
@@ -915,7 +863,7 @@ public class ClassFileBuilder {
 			String trueLabel = freshLabel();
 					
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-			translateTypeTest(trueLabel, c.type, c.test, stmt, bytecodes, constants);
+			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
 
 			Type gdiff = Type.leastDifference(c.type,c.test);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
@@ -935,7 +883,7 @@ public class ClassFileBuilder {
 		} else {
 			// This is the easy case. We're not updating the type of a local
 			// variable; rather we're just type testing a value on the stack.
-			translateTypeTest(c.target, c.type, c.test, stmt, bytecodes, constants);
+			translateTypeTest(c.target, c.type, c.test, bytecodes, constants);
 		}
 	}
 	
@@ -943,7 +891,7 @@ public class ClassFileBuilder {
 	// see whether what's on the top of the stack (the value) is a subtype of
 	// the type being tested.  
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
-			Entry stmt, ArrayList<Bytecode> bytecodes, HashMap<Value,Integer> constants) {		
+			ArrayList<Bytecode> bytecodes, HashMap<Constant,Integer> constants) {		
 		
 		// First, try for the easy cases
 		
@@ -967,15 +915,9 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 			
 		} else {
-			// Fall-back to an external (recursive) check
-			int id;
+			// Fall-back to an external (recursive) check			
 			Value constant = Value.V_TYPE(test);
-			if(constants.containsKey(constant)) {
-				id = constants.get(constant);
-			} else {
-				id = constants.size();
-				constants.put(constant, id);				
-			}
+			int id = ValueConst.get(constant,constants);			
 			String name = "constant$" + id;
 
 			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.STATIC));
@@ -1922,6 +1864,546 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
 		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
 	}
+
+	protected void addCoercion(Type from, Type to, int freeSlot,
+			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+		
+		// First, deal with coercions which require a change of representation
+		// when going into a union.  For example, bool must => Boolean.
+		if (Type.isomorphic(to, from)) {		
+			// do nothing!						
+		} else if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
+			// this is either going into a union type, or the any type
+			buildCoercion((Type.Bool) from, to, freeSlot, bytecodes);
+		} else if(from == Type.T_INT) {									
+			buildCoercion((Type.Int)from, to, freeSlot,bytecodes);  
+		} else if(from == Type.T_CHAR) {									
+			buildCoercion((Type.Char)from, to, freeSlot,bytecodes);  
+		} else if(from == Type.T_BYTE) {									
+			buildCoercion((Type.Byte)from, to, freeSlot,bytecodes); 
+		} else {
+			// Second, check for other easy cases that we can do inline. We first
+			// simplify the target in order to remove any unions on the right-hand
+			// side. 
+			to = simplifyCoercion(from,to);
+
+			if (Type.isomorphic(to, from)) {		
+				// do nothing!						
+			} else if(from == Type.T_STRING && to instanceof Type.List) {									
+				buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
+			} else if(to == Type.T_ANY) {
+				// nothing to do here
+			} else {
+				// ok, it's a harder case so we use an explicit coercion function
+				int id = Coercion.get(from,to,constants);
+				String name = "coercion$" + id;
+				JvmType.Function ft = new JvmType.Function(convertType(to), convertType(from));
+				bytecodes.add(new Bytecode.Invoke(owner, name, ft, Bytecode.STATIC));
+			}
+		}
+	}
+
+	public void buildCoercion(Type.Bool fromType, Type toType, 
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
+		// done deal!
+	}
+	
+	public void buildCoercion(Type.Byte fromType, Type toType,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);			
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,"valueOf",ftype,Bytecode.STATIC));			
+		// done deal!
+	}
+	
+	public void buildCoercion(Type.Int fromType, Type toType, 
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		if(!Type.isSubtype(toType,fromType)) {
+			Type glb = Type.greatestLowerBound(Type.T_REAL, toType);
+			if(glb == Type.T_REAL) { 
+				// coercion required!
+				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+			} else {				
+				// must be => char
+				JvmType.Function ftype = new JvmType.Function(T_INT);			
+				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));				
+			}
+		}
+	}
+
+	public void buildCoercion(Type.Char fromType, Type toType, 
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		if(!Type.isSubtype(toType,fromType)) {					
+			if(toType == Type.T_REAL) { 
+				// coercion required!
+				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);			
+				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+			} else {
+				bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
+				JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,T_LONG);			
+				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"valueOf",ftype,Bytecode.STATIC));				
+			}
+		} else {
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,T_CHAR);			
+			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,"valueOf",ftype,Bytecode.STATIC));	
+		}
+	}
+	
+	public void buildCoercion(Type.Strung fromType, Type.List toType, 
+			int freeSlot, ArrayList<Bytecode> bytecodes) {		
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_STRING);
+		
+		if(toType.element() == Type.T_CHAR) {
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2cl",ftype,Bytecode.STATIC));	
+		} else {
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2il",ftype,Bytecode.STATIC));
+		}		
+	}
+	/**
+	 * The build coercion method constructs a static final private method which
+	 * accepts a value of type "from", and coerces it into a value of type "to".  
+	 * 
+	 * @param to
+	 * @param from
+	 * 
+	 */
+	protected void buildCoercion(Type from, Type to, int id,
+			HashMap<Constant, Integer> constants, ClassFile cf) {
+		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
+		
+		int freeSlot = 1;
+		bytecodes.add(new Bytecode.Load(0,convertType(from)));		
+		
+		// First, call simplify the coercion if possible. This will remove any
+		// union types from the right-hand side.
+		to = simplifyCoercion(from,to);
+		
+		// Second, case analysis on the various kinds of coercion
+		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
+			buildCoercion((Type.Tuple) from, (Type.Tuple) to, freeSlot, constants, bytecodes);
+		} else if(from instanceof Type.Process && to instanceof Type.Process) {
+			// TODO			
+		} else if(from instanceof Type.Set && to instanceof Type.Set) {
+			buildCoercion((Type.Set) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
+			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.List && to instanceof Type.Set) {
+			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.Dictionary && to instanceof Type.Dictionary) {
+			buildCoercion((Type.Dictionary) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
+			buildCoercion((Type.List) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.List && to instanceof Type.List) {
+			buildCoercion((Type.List) from, (Type.List) to, freeSlot, constants, bytecodes);			
+		} else if(to instanceof Type.Record && from instanceof Type.Record) {
+			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot, constants, bytecodes);
+		} else if(to instanceof Type.Fun && from instanceof Type.Fun) {
+			// TODO
+		} else if(from instanceof Type.Union) {			
+			buildCoercion((Type.Union) from, to, freeSlot, constants, bytecodes);
+		} else {
+			throw new RuntimeException("invalid coercion encountered: " + from + " => " + to);
+		}
+	
+		bytecodes.add(new Bytecode.Return(convertType(to)));
+		
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.ACC_PRIVATE);
+		modifiers.add(Modifier.ACC_STATIC);
+		modifiers.add(Modifier.ACC_SYNTHETIC);
+		JvmType.Function ftype = new JvmType.Function(convertType(to),convertType(from));
+		String name = "coercion$" + id;
+		ClassFile.Method method = new ClassFile.Method(name, ftype, modifiers);
+		cf.methods().add(method);
+		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),method);
+		method.attributes().add(code);				
+	}
+		
+	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
+			int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		int oldSlot = freeSlot++;
+		int newSlot = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(oldSlot,WHILEYTUPLE));
+		construct(WHILEYTUPLE,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(newSlot,WHILEYTUPLE));
+		List<Type> from_elements = fromType.elements();
+		List<Type> to_elements = toType.elements();
+		for(int i=0;i!=to_elements.size();++i) {
+			Type from = from_elements.get(i);
+			Type to = to_elements.get(i);
+			bytecodes.add(new Bytecode.Load(newSlot,WHILEYTUPLE));			
+			bytecodes.add(new Bytecode.Load(oldSlot,WHILEYTUPLE));
+			bytecodes.add(new Bytecode.LoadConst(i));
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"get",ftype,Bytecode.VIRTUAL));								
+			addReadConversion(from,bytecodes);							
+			// now perform recursive conversion
+			addCoercion(from,to,freeSlot,constants,bytecodes);							
+			ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYTUPLE,"add",ftype,Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(T_BOOL));
+		}
+		bytecodes.add(new Bytecode.Load(newSlot,WHILEYTUPLE));
+	}
+	
+		
+	protected void buildCoercion(Type.List fromType, Type.List toType, 
+			int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		
+		if(fromType.element() == Type.T_VOID) {
+			// nothing to do, in this particular case
+			return;
+		}
+		
+		// The following piece of code implements a java for-each loop which
+		// iterates every element of the input collection, and recursively
+		// converts it before loading it back onto a new WhileyList.
+		
+		String loopLabel = freshLabel();
+		String exitLabel = freshLabel();
+		int iter = freeSlot++;
+		int tmp = freeSlot++;
+		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.Store(iter,
+				JAVA_UTIL_ITERATOR));
+		construct(WHILEYLIST,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(tmp, WHILEYLIST));
+		bytecodes.add(new Bytecode.Label(loopLabel));
+		ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+		bytecodes.add(new Bytecode.Load(tmp,WHILEYLIST));
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
+				ftype, Bytecode.INTERFACE));						
+		addReadConversion(fromType.element(),bytecodes);
+		addCoercion(fromType.element(), toType.element(), freeSlot,
+				constants, bytecodes);			
+		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "add",
+				ftype, Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Pop(T_BOOL));
+		bytecodes.add(new Bytecode.Goto(loopLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Load(tmp,WHILEYLIST));
+	}
+	
+	protected void buildCoercion(Type.List fromType, Type.Dictionary toType, 
+			int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+
+		if(fromType.element() == Type.T_VOID) {
+			// nothing to do, in this particular case
+			return;
+		}
+		
+		// The following piece of code implements a java for-each loop which
+		// iterates every element of the input collection, and recursively
+		// converts it before loading it back onto a new WhileyList. 
+		String loopLabel = freshLabel();
+		String exitLabel = freshLabel();
+		int iter = freeSlot++;
+		int source = freeSlot++;
+		int target = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(source,JAVA_UTIL_LIST));
+		bytecodes.add(new Bytecode.LoadConst(0));		
+		bytecodes.add(new Bytecode.Store(iter,T_INT));
+				
+		construct(WHILEYMAP,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(target, WHILEYMAP));
+		bytecodes.add(new Bytecode.Label(loopLabel));
+		JvmType.Function ftype = new JvmType.Function(T_INT);		
+		bytecodes.add(new Bytecode.Load(iter,JvmTypes.T_INT));
+		bytecodes.add(new Bytecode.Load(source,JAVA_UTIL_LIST));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_LIST, "size",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GE, T_INT, exitLabel));
+		bytecodes.add(new Bytecode.Load(target,WHILEYSET));
+		bytecodes.add(new Bytecode.Load(iter,T_INT));
+		bytecodes.add(new Bytecode.Conversion(T_INT,T_LONG));	
+		ftype = new JvmType.Function(BIG_INTEGER,T_LONG);
+		bytecodes.add(new Bytecode.Invoke(BIG_INTEGER, "valueOf",
+				ftype, Bytecode.STATIC));				
+		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
+		bytecodes.add(new Bytecode.Load(iter,T_INT));
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,T_INT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_LIST, "get",
+				ftype, Bytecode.INTERFACE));						
+		addReadConversion(fromType.element(),bytecodes);		
+		addCoercion(fromType.element(), toType.value(), freeSlot,
+				constants, bytecodes);			
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put",
+				ftype, Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+		bytecodes.add(new Bytecode.Iinc(iter,1));
+		bytecodes.add(new Bytecode.Goto(loopLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));		
+	}
+	
+	protected void buildCoercion(Type.Dictionary fromType, Type.Dictionary toType, 
+			int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		
+		// The following piece of code implements a java for-each loop which
+		// iterates every element of the input collection, and recursively
+		// converts it before loading it back onto a new WhileyList. 
+		String loopLabel = freshLabel();
+		String exitLabel = freshLabel();		
+		
+		int iter = freeSlot++;	
+		int source = freeSlot++;
+		int target = freeSlot++;		
+		
+		bytecodes.add(new Bytecode.Dup(WHILEYMAP));
+		bytecodes.add(new Bytecode.Store(source, WHILEYMAP));
+		construct(WHILEYMAP,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(target, WHILEYMAP));
+										
+		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_SET);
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "keySet",
+				ftype, Bytecode.VIRTUAL));
+		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_SET, "iterator",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.Store(iter,
+				JAVA_UTIL_ITERATOR));
+					
+		bytecodes.add(new Bytecode.Label(loopLabel));
+		ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+		
+		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
+				ftype, Bytecode.INTERFACE));							
+		addReadConversion(fromType.key(),bytecodes);
+		bytecodes.add(new Bytecode.Dup(convertType(fromType.key())));		
+		addCoercion(fromType.key(), toType.key(), freeSlot,
+				constants, bytecodes);		
+		addWriteConversion(toType.key(),bytecodes);
+		bytecodes.add(new Bytecode.Swap());		
+		bytecodes.add(new Bytecode.Load(source,WHILEYMAP));
+		bytecodes.add(new Bytecode.Swap());
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get",
+				ftype, Bytecode.VIRTUAL));
+		addReadConversion(fromType.value(),bytecodes);
+		addCoercion(fromType.value(), toType.value(), freeSlot,
+				constants, bytecodes);
+		addWriteConversion(toType.value(),bytecodes);		
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);		
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put",
+				ftype, Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+		bytecodes.add(new Bytecode.Goto(loopLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));
+	}
+	
+	protected void buildCoercion(Type.List fromType, Type.Set toType,
+			int freeSlot, HashMap<Constant,Integer> constants,			
+			ArrayList<Bytecode> bytecodes) {
+						
+		if(fromType.element() == Type.T_VOID) {
+			// nothing to do, in this particular case
+			return;
+		}				
+		
+		// The following piece of code implements a java for-each loop which
+		// iterates every element of the input collection, and recursively
+		// converts it before loading it back onto a new WhileyList. 
+		String loopLabel = freshLabel();
+		String exitLabel = freshLabel();
+		int iter = freeSlot++;
+		int tmp = freeSlot++;
+		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.Store(iter,
+				JAVA_UTIL_ITERATOR));
+		construct(WHILEYSET,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(tmp, WHILEYSET));
+		bytecodes.add(new Bytecode.Label(loopLabel));
+		ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
+				ftype, Bytecode.INTERFACE));						
+		addReadConversion(fromType.element(),bytecodes);
+		addCoercion(fromType.element(), toType.element(), freeSlot,
+				constants, bytecodes);			
+		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
+				ftype, Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Pop(T_BOOL));
+		bytecodes.add(new Bytecode.Goto(loopLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
+	}
+	
+	protected void buildCoercion(Type.Set fromType, Type.Set toType,
+			int freeSlot, HashMap<Constant,Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		
+		if(fromType.element() == Type.T_VOID) {
+			// nothing to do, in this particular case
+			return;
+		}
+		
+		// The following piece of code implements a java for-each loop which
+		// iterates every element of the input collection, and recursively
+		// converts it before loading it back onto a new WhileyList. 
+		String loopLabel = freshLabel();
+		String exitLabel = freshLabel();
+		int iter = freeSlot++;
+		int tmp = freeSlot++;		
+		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.Store(iter,
+				JAVA_UTIL_ITERATOR));
+		construct(WHILEYSET,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(tmp, WHILEYSET));
+		bytecodes.add(new Bytecode.Label(loopLabel));
+		ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
+				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.If(Bytecode.If.EQ, exitLabel));
+		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
+		bytecodes.add(new Bytecode.Load(iter,JAVA_UTIL_ITERATOR));
+		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
+				ftype, Bytecode.INTERFACE));
+		addCheckCast(convertType(fromType.element()),bytecodes);		
+		addCoercion(fromType.element(), toType.element(), freeSlot,
+				constants, bytecodes);			
+		ftype = new JvmType.Function(T_BOOL,JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYSET, "add",
+				ftype, Bytecode.VIRTUAL));
+		bytecodes.add(new Bytecode.Pop(T_BOOL));
+		bytecodes.add(new Bytecode.Goto(loopLabel));
+		bytecodes.add(new Bytecode.Label(exitLabel));
+		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
+	}
+	
+	public void buildCoercion(Type.Record fromType, Type.Record toType, 
+			int freeSlot, HashMap<Constant,Integer> constants,
+			ArrayList<Bytecode> bytecodes) {		
+		int oldSlot = freeSlot++;
+		int newSlot = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(oldSlot,WHILEYRECORD));
+		construct(WHILEYRECORD,freeSlot,bytecodes);
+		bytecodes.add(new Bytecode.Store(newSlot,WHILEYRECORD));
+		Map<String,Type> toFields = toType.fields();
+		Map<String,Type> fromFields = fromType.fields();
+		for(String key : toFields.keySet()) {
+			Type to = toFields.get(key);
+			Type from = fromFields.get(key);				
+			bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));
+			bytecodes.add(new Bytecode.LoadConst(key));
+			bytecodes.add(new Bytecode.Load(oldSlot,WHILEYRECORD));
+			bytecodes.add(new Bytecode.LoadConst(key));
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"get",ftype,Bytecode.VIRTUAL));								
+			// TODO: in cases when the read conversion is a no-op, we can do
+			// better here.
+			addReadConversion(from,bytecodes);							
+			addCoercion(from,to,freeSlot,constants,bytecodes);
+			addWriteConversion(from,bytecodes);
+			ftype = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,JAVA_LANG_OBJECT);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD,"put",ftype,Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));			
+		}
+		bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));		
+	}
+	
+	public void buildCoercion(Type.Union from, Type to, 
+			int freeSlot, HashMap<Constant,Integer> constants,
+			ArrayList<Bytecode> bytecodes) {	
+		
+		String exitLabel = freshLabel();
+		List<Type> bounds = new ArrayList<Type>(from.bounds());
+		ArrayList<String> labels = new ArrayList<String>();				
+		
+		// basically, we're building a big dispatch table. I think there's no
+		// question that this could be more efficient in some cases.
+		for(int i=0;i!=bounds.size();++i) {
+			Type bound = bounds.get(i);
+			if((i+1) == bounds.size()) {
+				addReadConversion(bound,bytecodes);
+				addCoercion(bound,to,freeSlot,constants,bytecodes);
+				bytecodes.add(new Bytecode.Goto(exitLabel));
+			} else {
+				String label = freshLabel();
+				labels.add(label);
+				bytecodes.add(new Bytecode.Dup(convertType(from)));				
+				translateTypeTest(label,from,bound,bytecodes,constants);				
+			}
+		}
+		
+		for(int i=0;i<labels.size();++i) {
+			String label = labels.get(i);
+			Type bound = bounds.get(i);
+			bytecodes.add(new Bytecode.Label(label));
+			addReadConversion(bound,bytecodes);
+			addCoercion(bound,to,freeSlot,constants,bytecodes);
+			bytecodes.add(new Bytecode.Goto(exitLabel));
+		}
+		
+		bytecodes.add(new Bytecode.Label(exitLabel));
+	}
+	
+	protected Type simplifyCoercion(Type from, Type to) {
+
+		if (to instanceof Type.Union) {
+			Type.Union t2 = (Type.Union) to;
+
+			// First, check for identical type (i.e. no coercion necessary)
+			for (Type b : t2.bounds()) {
+				if (Type.isomorphic(from, b)) {
+					// nothing to do
+					return b;
+				}
+			}
+
+			// Second, check for single non-coercive match
+			for (Type b : t2.bounds()) {
+				if (Type.isSubtype(b, from)) {					
+					return b;
+				}
+			}
+
+			// Third, test for single coercive match
+			for (Type b : t2.bounds()) {
+				if (Type.isCoerciveSubtype(b, from)) {
+					return b;
+				}
+			}
+		}
+
+		return to;
+	}
 	
 	/**
 	 * The read conversion is necessary in situations where we're reading a
@@ -2063,6 +2545,7 @@ public class ClassFileBuilder {
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
 	private static final JvmType.Clazz JAVA_UTIL_LIST = new JvmType.Clazz("java.util","List");
+	private static final JvmType.Clazz JAVA_UTIL_SET = new JvmType.Clazz("java.util","Set");
 	private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");
@@ -2156,6 +2639,70 @@ public class ClassFileBuilder {
 		//testMangle1(ft);
 		return jout.toString();		
 	}	
+	
+	/**
+	 * A constant is some kind of auxillary functionality used in generated code, which can be reused at multiple sites.  This includes value constants, and coercion functions. 
+	 * @author djp
+	 *
+	 */
+	public abstract static class Constant {}
+	public static final class ValueConst extends Constant {
+		public final Value value;
+		public ValueConst(Value v) {
+			value = v;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof ValueConst) {
+				ValueConst vc = (ValueConst) o;
+				return value.equals(vc.value);
+			}
+			return false;
+		}
+		public int hashCode() {
+			return value.hashCode();
+		}
+		public static int get(Value value, HashMap<Constant,Integer> constants) {
+			ValueConst vc = new ValueConst(value);
+			Integer r = constants.get(vc);
+			if(r != null) {
+				return r;
+			} else {
+				int x = constants.size();
+				constants.put(vc, x);
+				return x;
+			}			
+		}
+	}
+	public static final class Coercion extends Constant {
+		public final Type from;
+		public final Type to;
+		public Coercion(Type from, Type to) {
+			this.from = from;
+			this.to = to;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Coercion) {
+				Coercion c = (Coercion) o;
+				return from.equals(c.from) && to.equals(c.to);
+			}
+			return false;
+		}
+		public int hashCode() {
+			return from.hashCode() + to.hashCode();
+		}
+		public static int get(Type from, Type to, HashMap<Constant,Integer> constants) {
+			Coercion vc = new Coercion(from,to);
+			Integer r = constants.get(vc);
+			if(r != null) {
+				return r;
+			} else {
+				int x = constants.size();
+				constants.put(vc, x);
+				return x;
+			}			
+		}
+	}
+	
 	/*			
 	public static void testMangle1(Type.Fun ft) throws IOException {
 		IdentifierOutputStream jout = new IdentifierOutputStream();
@@ -2174,3 +2721,4 @@ public class ClassFileBuilder {
 	}	
 	*/
 }
+

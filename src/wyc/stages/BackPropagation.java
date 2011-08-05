@@ -648,11 +648,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 				
 	public void infer(int index, Code.ProcLoad code, Block.Entry entry,
-			Env environment) {
-		Type req = environment.pop();
-		req = Type.T_PROCESS(req);
-		coerce(req,code.type,index,entry);
-		environment.push(req);
+			Env environment) {		
+		Type req = environment.pop();	
+		coerce(req,code.type.element(),index,entry);		
+		environment.push(code.type);
 	}	
 	
 	public Env propagate(int index,

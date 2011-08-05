@@ -34,10 +34,12 @@ import static wyjvm.lang.JvmTypes.T_VOID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import wyil.util.Pair;
 import wyjvm.attributes.Code;
 import wyjvm.lang.Bytecode;
+import wyjvm.lang.Bytecode.CheckCast;
 import wyjvm.lang.Bytecode.Dup;
 import wyjvm.lang.Bytecode.Goto;
 import wyjvm.lang.Bytecode.If;
@@ -48,6 +50,7 @@ import wyjvm.lang.Bytecode.LoadConst;
 import wyjvm.lang.Bytecode.Pop;
 import wyjvm.lang.Bytecode.Return;
 import wyjvm.lang.Bytecode.Store;
+import wyjvm.lang.Bytecode.Swap;
 import wyjvm.lang.Bytecode.Switch;
 import wyjvm.lang.Bytecode.Throw;
 import wyjvm.lang.BytecodeAttribute;
@@ -56,7 +59,9 @@ import wyjvm.lang.ClassFile.Method;
 import wyjvm.lang.JvmType;
 import wyjvm.lang.JvmType.Clazz;
 import wyjvm.lang.JvmType.Function;
+import wyjvm.lang.JvmType.Int;
 import wyjvm.lang.JvmType.Reference;
+import wyjvm.util.dfa.StackAnalysis;
 import wyjvm.util.dfa.VariableAnalysis;
 
 public class Continuations {
@@ -79,12 +84,6 @@ public class Continuations {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
 
-				System.out.println(method.name());
-				for (Bytecode code : ((Code) attribute).bytecodes()) {
-					System.out.println(code);
-				}
-				System.out.println();
-
 				break;
 			}
 		}
@@ -97,6 +96,7 @@ public class Continuations {
 		int location = 0;
 
 		VariableAnalysis variableAnalysis = new VariableAnalysis(method);
+		StackAnalysis stackAnalysis = new StackAnalysis(method);
 
 		for (int i = 0; i < bytecodes.size(); ++i) {
 			Bytecode bytecode = bytecodes.get(i);
@@ -106,17 +106,19 @@ public class Continuations {
 				String name = invoke.name;
 
 				if (invoke.owner.equals(MESSAGER) && name.startsWith("send")) {
+					// Message send.
+
 					bytecodes.add(++i, new Load(0, PROCESS));
 					bytecodes.add(++i, new Invoke(YIELDER, "shouldYield", new Function(
 					    T_BOOL), Bytecode.VIRTUAL));
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
-					Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
+					Map<Integer, JvmType> types = variableAnalysis.typesAt(i + 1);
+					Stack<JvmType> stack = stackAnalysis.typesAt(i + 1);
 
-					i = addResume(
-					    bytecodes,
-					    addYield(method, bytecodes, i, location,
-					        variableAnalysis.typesAt(i)), location, types);
+					i = addResume(bytecodes,
+					    addYield(method, bytecodes, i, location, types, stack), location,
+					    types, stack);
 
 					bytecodes.add(++i, new Label("skip" + location));
 
@@ -144,18 +146,28 @@ public class Continuations {
 				} else {
 					List<JvmType> pTypes = invoke.type.parameterTypes();
 					if (pTypes.size() > 0 && pTypes.get(0).equals(PROCESS)) {
+						// Internal method call.
+
 						Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
+						Stack<JvmType> stack = stackAnalysis.typesAt(i);
+						
+						pTypes = invoke.type.parameterTypes();
+						int size = pTypes.size();
+						
+						// Remove the values that invoking the method will remove for us.
+						for (int j = 0; j < size; ++j) {
+							stack.pop();
+						}
 
 						// If the method isn't resuming, it needs to skip over the resume.
 						bytecodes.add(i++, new Goto("invoke" + location));
 
-						i = addResume(bytecodes, i - 1, location, types) + 1;
+						i = addResume(bytecodes, i - 1, location, types, stack) + 1;
 
+						// The first argument of any internal method is the actor.
 						bytecodes.add(i++, new Load(0, PROCESS));
-						
+
 						// Load in null values. The unyielding will put the real values in.
-						pTypes = invoke.type.parameterTypes();
-						int size = pTypes.size();
 						for (int j = 1; j < size; ++j) {
 							bytecodes.add(i++, addNullValue(pTypes.get(j)));
 						}
@@ -169,7 +181,7 @@ public class Continuations {
 						    T_BOOL), Bytecode.VIRTUAL));
 						bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
-						i = addYield(method, bytecodes, i, location, types);
+						i = addYield(method, bytecodes, i, location, types, stack);
 
 						bytecodes.add(++i, new Label("skip" + location));
 
@@ -211,8 +223,9 @@ public class Continuations {
 	}
 
 	private int addYield(Method method, List<Bytecode> bytecodes, int i,
-	    int location, Map<Integer, JvmType> types) {
+	    int location, Map<Integer, JvmType> types, Stack<JvmType> stack) {
 		bytecodes.add(++i, new Load(0, PROCESS));
+
 		bytecodes.add(++i, new LoadConst(location));
 		bytecodes.add(++i, new Invoke(YIELDER, "yield",
 		    new Function(T_VOID, T_INT), Bytecode.VIRTUAL));
@@ -220,11 +233,30 @@ public class Continuations {
 		for (int var : types.keySet()) {
 			if (var != 0) {
 				JvmType type = types.get(var);
-				bytecodes.add(++i, new Dup(PROCESS));
+				bytecodes.add(++i, new Load(0, PROCESS));
+				bytecodes.add(++i, new LoadConst(var));
 				bytecodes.add(++i, new Load(var, type));
-				bytecodes.add(++i, new Invoke(PROCESS, "set", new Function(T_VOID,
+
+				if (type instanceof Reference) {
+					type = JAVA_LANG_OBJECT;
+				}
+
+				bytecodes.add(++i, new Invoke(YIELDER, "set", new Function(T_VOID,
 				    T_INT, type), Bytecode.VIRTUAL));
 			}
+		}
+
+		while (!stack.isEmpty()) {
+			JvmType type = stack.pop();
+			bytecodes.add(++i, new Load(0, PROCESS));
+			bytecodes.add(++i, new Swap());
+
+			if (type instanceof Reference) {
+				type = JAVA_LANG_OBJECT;
+			}
+
+			bytecodes.add(++i, new Invoke(YIELDER, "push",
+			    new Function(T_VOID, type), Bytecode.VIRTUAL));
 		}
 
 		JvmType returnType = method.type().returnType();
@@ -239,25 +271,51 @@ public class Continuations {
 	}
 
 	private int addResume(List<Bytecode> bytecodes, int i, int location,
-	    Map<Integer, JvmType> types) {
+	    Map<Integer, JvmType> types, Stack<JvmType> stack) {
 		bytecodes.add(++i, new Label("resume" + location));
+
+		for (JvmType type : stack) {
+			JvmType methodType = type;
+			bytecodes.add(++i, new Load(0, PROCESS));
+
+			String name;
+			if (type instanceof Reference) {
+				name = "popObject";
+				methodType = JAVA_LANG_OBJECT;
+			} else {
+				// This is a bit of a hack. Method names in Yielder MUST match the
+				// class names in JvmType.
+				name = "pop" + type.getClass().getSimpleName();
+			}
+
+			bytecodes.add(++i, new Invoke(YIELDER, name, new Function(methodType),
+			    Bytecode.VIRTUAL));
+			if (type instanceof Reference) {
+				bytecodes.add(++i, new CheckCast(type));
+			}
+		}
 
 		for (int var : types.keySet()) {
 			if (var != 0) {
-				JvmType type = types.get(var);
-				bytecodes.add(++i, new Dup(PROCESS));
+				JvmType type = types.get(var), methodType = type;
+				bytecodes.add(++i, new Load(0, PROCESS));
+				bytecodes.add(++i, new LoadConst(var));
 
 				String name;
 				if (type instanceof Reference) {
 					name = "getObject";
+					methodType = JAVA_LANG_OBJECT;
 				} else {
 					// This is a bit of a hack. Method names in Yielder MUST match the
 					// class names in JvmType.
 					name = "get" + type.getClass().getSimpleName();
 				}
 
-				bytecodes.add(++i, new Invoke(PROCESS, name, new Function(type, T_INT),
-				    Bytecode.VIRTUAL));
+				bytecodes.add(++i, new Invoke(YIELDER, name, new Function(methodType,
+				    T_INT), Bytecode.VIRTUAL));
+				if (type instanceof Reference) {
+					bytecodes.add(++i, new CheckCast(type));
+				}
 				bytecodes.add(++i, new Store(var, type));
 			}
 		}
@@ -270,12 +328,18 @@ public class Continuations {
 	}
 
 	private Bytecode addNullValue(JvmType type) {
+		Object value;
+		
 		if (type instanceof Reference) {
-			return new LoadConst(null);
+			value = null;
+		} else if (type instanceof Int) {
+			value = 0;
+		} else {
+			throw new UnsupportedOperationException(
+			    "Non-reference types not yet supported.");
 		}
-
-		throw new UnsupportedOperationException(
-		    "Non-reference types not yet supported.");
+		
+		return new LoadConst(value);
 	}
 
 }

@@ -198,7 +198,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Process_Valid_5_RuntimeTest() { runTest("Process_Valid_5"); }
  @Test public void Process_Valid_6_RuntimeTest() { runTest("Process_Valid_6"); }
  @Test public void Process_Valid_7_RuntimeTest() { runTest("Process_Valid_7"); }
- @Test public void Process_Valid_8_RuntimeTest() { runTest("Process_Valid_8"); } 
+ @Test public void Process_Valid_8_RuntimeTest() { runTest("Process_Valid_8"); }
+ @Test public void Process_Valid_9_RuntimeTest() { runTest("Process_Valid_9"); }
+ @Ignore("Known Bug") @Test public void Process_Valid_10_RuntimeTest() { runTest("Process_Valid_10"); }
  @Test public void RealConst_Valid_1_RuntimeTest() { runTest("RealConst_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { runTest("RealDiv_Valid_2"); }
@@ -215,6 +217,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecordAssign_Valid_4_RuntimeTest() { runTest("RecordAssign_Valid_4"); }
  @Test public void RecordAssign_Valid_5_RuntimeTest() { runTest("RecordAssign_Valid_5"); }
  @Test public void RecordConversion_Valid_1_RuntimeTest() { runTest("RecordConversion_Valid_1"); }
+ @Test public void RecordCoercion_Valid_1_RuntimeTest() { runTest("RecordCoercion_Valid_1"); }
  @Test public void RecordDefine_Valid_1_RuntimeTest() { runTest("RecordDefine_Valid_1"); }
  @Test public void RecordSubtype_Valid_1_RuntimeTest() { runTest("RecordSubtype_Valid_1"); }
  @Test public void RecordSubtype_Valid_2_RuntimeTest() { runTest("RecordSubtype_Valid_2"); }
@@ -236,6 +239,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_16_RuntimeTest() { runTest("RecursiveType_Valid_16"); } 
  @Test public void RecursiveType_Valid_17_RuntimeTest() { runTest("RecursiveType_Valid_17"); }
  @Test public void RecursiveType_Valid_18_RuntimeTest() { runTest("RecursiveType_Valid_18"); }
+ @Ignore("Known Issue") @Test public void RecursiveType_Valid_19_RuntimeTest() { runTest("RecursiveType_Valid_19"); }
  @Test public void Remainder_Valid_1_RuntimeTest() { runTest("Remainder_Valid_1"); }
  @Test public void Resolution_Valid_1_RuntimeTest() { runTest("Resolution_Valid_1"); }
  @Test public void SetAssign_Valid_1_RuntimeTest() { runTest("SetAssign_Valid_1"); }
@@ -292,6 +296,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void TupleType_Valid_1_RuntimeTest() { runTest("TupleType_Valid_1"); }
  @Test public void TupleType_Valid_2_RuntimeTest() { runTest("TupleType_Valid_2"); }
  @Test public void TupleType_Valid_3_RuntimeTest() { runTest("TupleType_Valid_3"); }
+ @Test public void TupleType_Valid_4_RuntimeTest() { runTest("TupleType_Valid_4"); }
  @Test public void TypeEquals_Valid_1_RuntimeTest() { runTest("TypeEquals_Valid_1"); }
  @Test public void TypeEquals_Valid_2_RuntimeTest() { runTest("TypeEquals_Valid_2"); }
  @Test public void TypeEquals_Valid_3_RuntimeTest() { runTest("TypeEquals_Valid_3"); }

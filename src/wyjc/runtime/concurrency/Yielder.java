@@ -25,8 +25,8 @@
 
 package wyjc.runtime.concurrency;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
 /**
@@ -49,14 +49,14 @@ public abstract class Yielder {
 	public boolean isYielded() {
 		return yielded;
 	}
-	
+
 	/**
 	 * @return Whether the object should yield when it next decides whether to
 	 */
 	public boolean shouldYield() {
 		return shouldYield;
 	}
-	
+
 	/**
 	 * Yields control of the thread and pushes a new local state object onto the
 	 * stack. Calls to <code>push</code> and <code>set</code> after calling this
@@ -76,12 +76,12 @@ public abstract class Yielder {
 	 */
 	public void unyield() {
 		state.pop();
-		
+
 		if (state.isEmpty()) {
 			yielded = false;
 		}
 	}
-	
+
 	/**
 	 * Gets the location of the state on the top of the stack. If the stack is
 	 * empty, it returns -1.
@@ -92,54 +92,54 @@ public abstract class Yielder {
 		if (state.isEmpty()) {
 			return -1;
 		}
-		
+
 		return state.peek().location;
 	}
 
 	public void set(int index, Object value) {
-		current.localMap.set(index - 1, value);
+		current.localMap.put(index, value);
 	}
 
 	public void set(int index, boolean value) {
-		current.localMap.set(index - 1, new Bool(value));
+		current.localMap.put(index, new Bool(value));
 	}
 
 	public void set(int index, int value) {
-		current.localMap.set(index - 1, new Int(value));
+		current.localMap.put(index, new Int(value));
 	}
 
 	public Object getObject(int index) {
-		return current.localMap.get(index - 1);
+		return current.localMap.get(index);
 	}
 
 	public boolean getBool(int index) {
-		return ((Bool) current.localMap.get(index - 1)).value;
+		return ((Bool) current.localMap.get(index)).value;
 	}
 
 	public int getInt(int index) {
-		return ((Int) current.localMap.get(index - 1)).value;
+		return ((Int) current.localMap.get(index)).value;
 	}
-	
+
 	public void push(Object value) {
 		current.localStack.push(value);
 	}
-	
+
 	public void push(boolean value) {
 		current.localStack.push(new Bool(value));
 	}
-	
+
 	public void push(int value) {
 		current.localStack.push(new Int(value));
 	}
-	
+
 	public Object popObject() {
 		return current.localStack.pop();
 	}
-	
+
 	public boolean popBool() {
 		return ((Bool) current.localStack.pop()).value;
 	}
-	
+
 	public int popInt() {
 		return ((Int) current.localStack.pop()).value;
 	}
@@ -148,7 +148,7 @@ public abstract class Yielder {
 
 		private final int location;
 
-		private final List<Object> localMap = new ArrayList<Object>();
+		private final Map<Integer, Object> localMap = new HashMap<Integer, Object>();
 		private final Stack<Object> localStack = new Stack<Object>();
 
 		public State(int location) {
