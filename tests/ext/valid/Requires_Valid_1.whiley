@@ -6,5 +6,5 @@ int f(int x):
 
 void System::main([string] args):
     (x,y) = g(1,f(1))
-    print x
-    print y
+    debug x + "\n"
+    debug y + "\n"
