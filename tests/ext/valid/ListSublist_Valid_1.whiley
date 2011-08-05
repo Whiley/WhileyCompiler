@@ -4,7 +4,7 @@ int sum(posintlist ls) ensures $ >= 0:
     if(|ls| == 0):
         return 0
     else:
-        rest = ls[1:|ls|]
+        rest = ls[1..]
         return ls[0] + sum(rest)
 
 void System::main([string] args):

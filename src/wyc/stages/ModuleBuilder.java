@@ -1211,9 +1211,69 @@ public class ModuleBuilder {
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
 			syntaxError("expected boolean expression", filename, e);
 		}
-		
+					
+		// Ok, non-boolean case.				
 		Block blk = new Block();
+		ArrayList<Pair<Integer,Integer>> slots = new ArrayList();		
 		
+		for (Pair<String, Expr> src : e.sources) {
+			int srcSlot;
+			int varSlot = allocate(src.first(),environment); 
+			
+			if(src.second() instanceof Variable) {
+				// this is a little optimisation to produce slightly better
+				// code.
+				Variable v = (Variable) src.second();
+				if(environment.containsKey(v.var)) {
+					srcSlot = environment.get(v.var);
+				} else {
+					// fall-back plan ...
+					blk.addAll(resolve(environment, src.second()));
+					srcSlot = environment.size();
+					environment.put("$" + srcSlot,srcSlot);
+					blk.add(Code.Store(null, srcSlot),attributes(e));	
+				}
+			} else {
+				blk.addAll(resolve(environment, src.second()));
+				srcSlot = environment.size();
+				environment.put("$" + srcSlot,srcSlot);
+				blk.add(Code.Store(null, srcSlot),attributes(e));	
+			}			
+			slots.add(new Pair(varSlot,srcSlot));											
+		}
+				
+		String continueLabel = Block.freshLabel();
+		ArrayList<String> labels = new ArrayList<String>();
+		String loopLabel = Block.freshLabel();
+		
+		for (Pair<Integer, Integer> p : slots) {
+			String lab = loopLabel + "$" + p.first();
+			blk.add(Code.Load(null, p.second()), attributes(e));
+			blk.add(Code
+					.ForAll(null, p.first(), target, Collections.EMPTY_LIST),
+					attributes(e));
+			labels.add(lab);
+		}
+				
+		
+		
+		if (e.cop == Expr.COp.NONE) {
+			String exitLabel = Block.freshLabel();
+			blk.addAll(resolveCondition(exitLabel, invert(e.condition),
+					environment));
+			for (int i = (labels.size() - 1); i >= 0; --i) {
+				blk.add(Code.End(labels.get(i)));
+			}
+			blk.add(Code.Goto(target));
+			blk.add(Code.Label(exitLabel));
+		} else { // SOME			
+			blk.addAll(resolveCondition(target, invert(e.condition),
+					environment));
+			for (int i = (labels.size() - 1); i >= 0; --i) {
+				blk.add(Code.End(labels.get(i)));
+			}
+		} // ALL, LONE and ONE will be harder
+				
 		/*
 				
 		ArrayList<Pair<CExpr.Register, CExpr>> sources = new ArrayList();
@@ -1253,9 +1313,7 @@ public class ModuleBuilder {
 		// the quantified variables to be their actual registers.
 		blk = Block.substitute(binding, blk);
 
-		 */
-		
-		System.err.println("Need to implement comprehensions");
+		 */				
 		
 		return blk;
 	}
