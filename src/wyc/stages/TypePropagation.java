@@ -1240,6 +1240,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem_t = ((Type.List)src_t).element();
 		} else if(src_t instanceof Type.Set){
 			elem_t = ((Type.Set)src_t).element();
+		} else if(src_t == Type.T_STRING){
+			elem_t = Type.T_CHAR;
+		} else if(src_t instanceof Type.Dictionary){
+			Type.Dictionary d = (Type.Dictionary) src_t;			
+			elem_t = Type.T_TUPLE(d.key(),d.value());
 		} else {
 			syntaxError("expected set or list, found: " + src_t,filename,stmt);
 			return null; // deadcode
