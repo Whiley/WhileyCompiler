@@ -64,7 +64,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public Module.Case propagate(Module.Case mcase) {		
 		methodCase = mcase;
-		stores = new HashMap<String,Env>();
+		block = mcase.body();
+		stores = new HashMap<String,Env>();		
 		rewrites.clear();
 		
 		Env environment = initialStore();		

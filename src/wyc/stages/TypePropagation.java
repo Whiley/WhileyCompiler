@@ -77,7 +77,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Block constraint = type.constraint();		
 		if(constraint != null) {
 			Env environment = new Env();		
-			environment.add(type.type());			
+			environment.add(type.type());		
+			
 			constraint = doPropagation(constraint,environment);	
 			return new Module.TypeDef(type.name(), type.type(), constraint, type.attributes());
 		} else {
@@ -159,9 +160,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// reset some of the global state
 		this.rewrites.clear();
 		this.stores = new HashMap<String,Env>();
-				
+		this.block = blk;
+		
 		// now, perform the propagation
-		propagate(0,blk.size(), blk, environment);	
+		propagate(0,blk.size(), environment);	
 				
 		// finally, apply any and all rewrites
 		Block nblk = new Block();				
@@ -1257,13 +1259,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return join(environment,newEnv);
 	}
 	
-	protected Env propagate(int start, int end, Code.Loop loop, 
+	protected Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment) {
 
 		// First, calculate the modifies set
 		ArrayList<Integer> modifies = new ArrayList<Integer>();
 		for(int i=start;i<end;++i) {
-			Code code = methodCase.body().get(i).code;
+			Code code = block.get(i).code;
 			if(code instanceof Store) {
 				Store s = (Store) code;
 				modifies.add(s.slot);

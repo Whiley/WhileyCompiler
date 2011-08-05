@@ -43,6 +43,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected String filename;
 	protected Module.Method method;
 	protected Module.Case methodCase;
+	protected Block block;
 	protected HashMap<String,T> stores;
 	
 	public ForwardFlowAnalysis(ModuleLoader loader) {
@@ -85,18 +86,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	}
 	
 	public Module.Case propagate(Module.Case mcase) {
-		this.methodCase = mcase;
+		this.methodCase = mcase;		
 		this.stores = new HashMap<String,T>();
+		this.block = mcase.body();
 		T init = initialStore();
-		propagate(0, mcase.body().size(), mcase.body(), init);		
+		propagate(0, mcase.body().size(), init);		
 		return mcase;
 	}		
 	
 	protected T propagate(int start, int end, T store) {
-		return propagate(start,end,methodCase.body(),store);
-	}
-	
-	protected T propagate(int start, int end, Block block, T store) {
 		for(int i=start;i<end;++i) {						
 			Entry entry = block.get(i);			
 			try {				
@@ -266,6 +264,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            --- the start index of loop block
 	 * @param end
 	 *            --- last index of loop block
+	 * @param end
+	 *            --- instruction block
 	 * @param code
 	 *            --- the start code of the block
 	 * @param entry
@@ -275,8 +275,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end, Code.Loop code,
-			Entry entry, T store);
+	protected abstract T propagate(int start, int end, 
+			Code.Loop code, Entry entry, T store);
 
 	/**
 	 * <p>
