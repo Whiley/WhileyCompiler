@@ -78,7 +78,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(constraint != null) {
 			Env environment = new Env();		
 			environment.add(type.type());		
-			
+			// Now, add space for any other slots needed in the block. This can
+			// arise as a result of temporary loop variables, etc.
+			int maxSlots = constraint.numSlots();
+			for(int i=1;i!=maxSlots;++i) {
+				environment.add(Type.T_VOID);
+			}
 			constraint = doPropagation(constraint,environment);	
 			return new Module.TypeDef(type.name(), type.type(), constraint, type.attributes());
 		} else {
@@ -135,12 +140,26 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Block precondition = mcase.precondition();		
 		if(precondition != null) {
-			precondition = doPropagation(precondition,environment);
+			Env tmp = environment.clone();
+			// Now, add space for any other slots needed in the block. This can
+			// arise as a result of temporary loop variables, etc.
+			int maxSlots = precondition.numSlots();
+			for(int i=1;i!=maxSlots;++i) {
+				tmp.add(Type.T_VOID);
+			}
+			precondition = doPropagation(precondition,tmp);
 		}
 		
 		Block postcondition = mcase.postcondition();		
 		if(postcondition != null) {
-			postcondition = doPropagation(postcondition,environment);
+			Env tmp = environment.clone();
+			// Now, add space for any other slots needed in the block. This can
+			// arise as a result of temporary loop variables, etc.
+			int maxSlots = postcondition.numSlots();
+			for(int i=1;i!=maxSlots;++i) {
+				tmp.add(Type.T_VOID);
+			}
+			postcondition = doPropagation(postcondition,tmp);
 		}
 		
 		// Now, propagate through the body

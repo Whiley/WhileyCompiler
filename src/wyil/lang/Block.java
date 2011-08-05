@@ -90,6 +90,23 @@ public final class Block implements Iterable<Block.Entry> {
 	public int size() {
 		return stmts.size();
 	}
+
+	/**
+	 * Determine the number of slots used in this block.
+	 * 
+	 * @return
+	 */
+	public int numSlots() {		
+		HashSet<Integer> slots = new HashSet<Integer>();
+		for(Entry s : stmts) {
+			s.code.slots(slots);
+		}
+		int r = 0;
+		for(int i : slots) {
+			r = Math.max(r,i+1);
+		}		
+		return r;
+	}
 	
 	public Entry get(int index) {
 		return stmts.get(index);

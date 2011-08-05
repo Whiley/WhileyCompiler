@@ -424,6 +424,15 @@ public abstract class Code {
 	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
 		return get(new Update(type,slot,level,fields));
 	}
+
+	// ===============================================================
+	// Abstract Methods
+	// ===============================================================
+	
+	// The following method adds any slots used by a given bytecode 
+	public void slots(Set<Integer> slots) {
+		// default implementation does nothing
+	}
 	
 	// ===============================================================
 	// Bytecode Implementations
@@ -910,6 +919,12 @@ public abstract class Code {
 			this.target = target;
 		}
 		
+		public void slots(Set<Integer> slots) {
+			if(slot >= 0) {
+				slots.add(slot);
+			}
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return test.hashCode() + target.hashCode();
@@ -1225,6 +1240,10 @@ public abstract class Code {
 			this.slot = slot;
 		}
 		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return slot; 
@@ -1285,6 +1304,10 @@ public abstract class Code {
 			this.slot = slot;			
 		}
 		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
 		public int hashCode() {
 			return super.hashCode() + slot;
 		}
@@ -1321,6 +1344,10 @@ public abstract class Code {
 			this.fields = new ArrayList<String>(fields);
 		}
 
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return level + fields.hashCode();
@@ -1812,6 +1839,10 @@ public abstract class Code {
 			this.slot = slot;
 		}
 		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return slot;
@@ -2074,6 +2105,10 @@ public abstract class Code {
 		private Void(Type type, int slot) {
 			this.type = type;
 			this.slot = slot;
+		}
+		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
 		}
 		
 		public int hashCode() {

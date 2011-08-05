@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.io.*;
 import java.util.*;
 
+import wyc.stages.TypePropagation.Env;
 import wyil.lang.*;
 import wyil.lang.Module.*;
 import wyil.ModuleLoader;
@@ -72,12 +73,19 @@ public class WyilFileWriter implements Transform {
 			Type t = td.type();			
 			String t_str;			
 			t_str = t.toString();
-			out.println("define " + td.name() + " as " + t_str);	
-			if(td.constraint() != null) {
+			out.println("define " + td.name() + " as " + t_str);
+			Block constraint = td.constraint();
+			if(constraint != null) {
 				out.println("where:");
-				ArrayList<String> locals = new ArrayList<String>();
-				locals.add("$");
-				write(0,td.constraint(),locals,out);
+				ArrayList<String> env = new ArrayList<String>();
+				env.add("$");			
+				// Now, add space for any other slots needed in the block. This can
+				// arise as a result of temporary loop variables, etc.
+				int maxSlots = constraint.numSlots();
+				for(int i=1;i!=maxSlots;++i) {
+					env.add(Integer.toString(i));
+				}
+				write(0,td.constraint(),env,out);
 			}
 		}
 		if(!module.types().isEmpty()) {
@@ -125,15 +133,34 @@ public class WyilFileWriter implements Transform {
 				wyjvm.lang.BytecodeAttribute ba = (wyjvm.lang.BytecodeAttribute) a;
 				out.println("attribute: " + ba.name());
 			}
-		}
-		// following is a sneaky way of handling the return value $		
-		if(mcase.precondition() != null) {
+		}		
+
+		Block precondition = mcase.precondition();
+		if(precondition != null) {			
 			out.println("precondition: ");
-			write(0,mcase.precondition(),locals,out);
+			ArrayList<String> env = new ArrayList<String>();
+			env.add("$");			
+			// Now, add space for any other slots needed in the block. This can
+			// arise as a result of temporary loop variables, etc.
+			int maxSlots = precondition.numSlots();
+			for(int i=1;i!=maxSlots;++i) {
+				env.add(Integer.toString(i));
+			}
+			write(0,precondition,env,out);
 		}
-		if(mcase.postcondition() != null) {
+		
+		Block postcondition = mcase.postcondition();
+		if(postcondition != null) {
 			out.println("postcondition: ");
-			write(0,mcase.postcondition(),locals,out);
+			ArrayList<String> env = new ArrayList<String>();
+			env.add("$");			
+			// Now, add space for any other slots needed in the block. This can
+			// arise as a result of temporary loop variables, etc.
+			int maxSlots = postcondition.numSlots();
+			for(int i=1;i!=maxSlots;++i) {
+				env.add(Integer.toString(i));
+			}
+			write(0,postcondition,env,out);
 		}
 		out.println("body: ");
 		boolean firstTime=true;		
