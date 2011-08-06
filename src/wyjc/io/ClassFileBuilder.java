@@ -917,8 +917,10 @@ public class ClassFileBuilder {
 
 		if (c.type instanceof Type.Set) {
 			elementType = ((Type.Set) c.type).element();
-		} else {
+		} else if(c.type instanceof Type.List) {
 			elementType = ((Type.List) c.type).element();
+		} else {
+			return translateForAllString(c,freeSlot,bytecodes);
 		}
 
 		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
@@ -939,11 +941,38 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.slot-1, convertType(elementType)));
 		
 		// we need to increase the freeSlot, since we've allocated one slot to
-		// hold the register.
+		// hold the iterator.
 		
 		return freeSlot + 1;
 	}
 
+	public int translateForAllString(Code.ForAll c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {			
+		int srcSlot = freeSlot++;		
+		int indexSlot = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(srcSlot, JAVA_LANG_STRING));
+		bytecodes.add(new Bytecode.LoadConst(0));
+		bytecodes.add(new Bytecode.Store(indexSlot, T_INT));
+		bytecodes.add(new Bytecode.Label(c.target + "$head"));
+		bytecodes.add(new Bytecode.Load(indexSlot, T_INT));		
+		bytecodes.add(new Bytecode.Load(srcSlot, JAVA_LANG_STRING));
+		JvmType.Function ftype = new JvmType.Function(T_INT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "length", ftype,
+				Bytecode.VIRTUAL));		
+		bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GE, T_INT, c.target));
+		bytecodes.add(new Bytecode.Load(srcSlot, JAVA_LANG_STRING));
+		bytecodes.add(new Bytecode.Load(indexSlot, T_INT));
+		ftype = new JvmType.Function(T_CHAR,T_INT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
+				Bytecode.VIRTUAL));		
+		bytecodes.add(new Bytecode.Store(c.slot-1, T_CHAR));
+		bytecodes.add(new Bytecode.Iinc(indexSlot,1));
+		
+		// we need to increase the freeSlot, since we've allocated one slot to
+		// hold the register.
+		
+		return freeSlot;
+	}
 
 	public void translate(Code.Goto c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {

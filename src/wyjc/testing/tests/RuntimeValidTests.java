@@ -288,6 +288,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void String_Valid_1_RuntimeTest() { runTest("String_Valid_1"); }
  @Test public void String_Valid_2_RuntimeTest() { runTest("String_Valid_2"); }
  @Test public void String_Valid_3_RuntimeTest() { runTest("String_Valid_3"); }
+ @Test public void String_Valid_4_RuntimeTest() { runTest("String_Valid_4"); }
  @Test public void Switch_Valid_1_RuntimeTest() { runTest("Switch_Valid_1"); }
  @Test public void Switch_Valid_2_RuntimeTest() { runTest("Switch_Valid_2"); }
  @Test public void Switch_Valid_3_RuntimeTest() { runTest("Switch_Valid_3"); }
