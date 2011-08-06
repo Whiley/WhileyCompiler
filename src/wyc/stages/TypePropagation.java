@@ -708,6 +708,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		int fi = 0;
 		int pi = 0;
+		ArrayList<Type> indices = new ArrayList<Type>();
 		for(int i=0;i!=e.level;++i) {				
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
@@ -715,8 +716,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				if(dict == null) {
 					syntaxError("expected dictionary",filename,stmt);
 				}
-				Type idx = path.get(pi++);
-				checkIsSubtype(dict.key(),idx,stmt);
+				indices.add(path.get(pi++));
+				// We don't  
+				// checkIsSubtype(dict.key(),idx,stmt);
 				iter = dict.value();				
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {							
 				Type idx = path.get(pi++);
@@ -734,20 +736,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else {
 				Type.Record rec = Type.effectiveRecordType(iter);
 				if(rec == null) {
-					syntaxError("expected record",filename,stmt);
+					syntaxError("expected record, found " + iter,filename,stmt);
 				}
 				String field = e.fields.get(fi++);
 				iter = rec.fields().get(field);
 				if(iter == null) {
 					syntaxError("expected field \"" + field + "\"",filename,stmt);
 				}				
-			}
+			}			
 		}
 		
 		// Now, we need to determine the (potentially) updated type of the
 		// variable in question. For example, if we assign a real into a [int]
 		// then we'll end up with a [real].
-		Type ntype = typeInference(src,val,e.level,0,e.fields);
+		Type ntype = typeInference(src,val,e.level,0,e.fields,0,indices);
 		environment.set(e.slot,ntype);
 		
 		return Code.Update(src,e.slot,e.level,e.fields);
@@ -767,14 +769,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @param fields
 	 * @return
 	 */
-	public static Type typeInference(Type oldtype, Type newtype, int level, int fieldLevel, ArrayList<String> fields) {
+	public static Type typeInference(Type oldtype, Type newtype, int level,
+			int fieldLevel, ArrayList<String> fields, int indexLevel,
+			ArrayList<Type> indices) {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
-		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
-			Type.Process tp = (Type.Process) oldtype;
-			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields);
-			return Type.T_PROCESS(nelement);
 		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
@@ -782,16 +782,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// case that we're assigning a more general value for some key then
 			// we need to generalise the value type accordingly. 
 			Type.Dictionary dict = Type.effectiveDictionaryType(oldtype);
-			Type nvalue = typeInference(dict.value(),newtype,level-1,fieldLevel,fields);
-			return Type.leastUpperBound(oldtype,Type.T_DICTIONARY(dict.key(),nvalue));
-			
+			Type nkey = indices.get(indexLevel);			
+			Type nvalue = typeInference(dict.value(), newtype, level - 1,
+					fieldLevel, fields, indexLevel + 1, indices);
+			return Type.T_DICTIONARY(Type.leastUpperBound(dict.key(), nkey),
+					Type.leastUpperBound(dict.value(), nvalue));			
 		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
-			Type nelement = typeInference(Type.T_CHAR,newtype,level-1,fieldLevel,fields);			
+			Type nelement = typeInference(Type.T_CHAR, newtype, level - 1,
+					fieldLevel, fields, indexLevel, indices);			
 			return oldtype;
 		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
-			Type nelement = typeInference(list.element(),newtype,level-1,fieldLevel,fields);
+			Type nelement = typeInference(list.element(), newtype, level - 1,
+					fieldLevel, fields, indexLevel, indices);
 			return Type.leastUpperBound(oldtype,Type.T_LIST(nelement));
 		
 		} else if(Type.effectiveRecordType(oldtype) != null){			
@@ -801,7 +805,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String field = fields.get(fieldLevel);
 			if(oldtype instanceof Type.Record) {
 				Type.Record rt = (Type.Record) oldtype;
-				Type ntype = typeInference(rt.fields().get(field),newtype,level-1,fieldLevel+1,fields);
+				Type ntype = typeInference(rt.fields().get(field), newtype,
+						level - 1, fieldLevel + 1, fields, indexLevel, indices);
 				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
 				types.put(field, ntype);
 				return Type.T_RECORD(types);
@@ -809,7 +814,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type.Union tu = (Type.Union) oldtype;
 				Type t = Type.T_VOID;
 				for(Type b : tu.bounds()) {					
-					t = Type.leastUpperBound(t,typeInference(b,newtype,level,fieldLevel,fields));
+					t = Type.leastUpperBound(
+							t,
+							typeInference(b, newtype, level, fieldLevel,
+									fields, indexLevel, indices));
 				}
 				return t;
 			} 			

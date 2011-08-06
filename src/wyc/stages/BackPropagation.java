@@ -391,7 +391,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
-				environment.push(dict.key());
+				environment.push(Type.T_ANY);
 				iter = dict.value();				
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
 				environment.push(Type.T_INT);
