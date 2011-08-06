@@ -911,6 +911,7 @@ public class ClassFileBuilder {
 	
 	public int translate(Code.ForAll c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
+		JvmType.Clazz srcType = (JvmType.Clazz) convertType(c.type);
 		Type elementType;
 		
 		// FIXME: following is broken because we need to use the effective type.
@@ -919,13 +920,15 @@ public class ClassFileBuilder {
 			elementType = ((Type.Set) c.type).element();
 		} else if(c.type instanceof Type.List) {
 			elementType = ((Type.List) c.type).element();
+		} else if(c.type instanceof Type.Dictionary) {
+			Type.Dictionary dict = (Type.Dictionary) c.type;
+			elementType = Type.T_TUPLE(dict.key(),dict.value());
 		} else {
 			return translateForAllString(c,freeSlot,bytecodes);
 		}
 
 		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
-				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.Invoke(srcType, "iterator", ftype, Bytecode.VIRTUAL));
 		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
 		bytecodes.add(new Bytecode.Label(c.target + "$head"));
 		ftype = new JvmType.Function(T_BOOL);

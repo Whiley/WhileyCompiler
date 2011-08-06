@@ -1,9 +1,6 @@
 package wyjc.runtime;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 public final class Dictionary extends java.util.HashMap<Object,Object> {	
@@ -43,6 +40,20 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 		}
 		return r + "}";
 	} 
+	
+	public Iterator iterator() {
+		return new Iterator() {
+			public boolean hasNext() {
+				return false;
+			}
+			public Object next() {
+				return null;
+			}
+			public void remove() {
+				
+			}
+		};
+	}
 	
 	// ================================================================================
 	// Dictionary Operations
