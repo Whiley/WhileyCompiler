@@ -41,18 +41,8 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 		return r + "}";
 	} 
 	
-	public Iterator iterator() {
-		return new Iterator() {
-			public boolean hasNext() {
-				return false;
-			}
-			public Object next() {
-				return null;
-			}
-			public void remove() {
-				
-			}
-		};
+	public java.util.Iterator iterator() {
+		return new Iterator(entrySet().iterator());		
 	}
 	
 	// ================================================================================
@@ -85,5 +75,26 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	
 	public static int size(Dictionary dict) {
 		return dict.size();
+	}
+	
+	public static final class Iterator implements java.util.Iterator {
+		public java.util.Iterator<Map.Entry> iter;
+		
+		public Iterator(java.util.Iterator iter) {
+			this.iter = iter;
+		}
+		
+		public boolean hasNext() {
+			return iter.hasNext();
+		}
+		
+		public void remove(){
+			iter.remove();
+		}
+		
+		public Object next() {
+			Map.Entry e = iter.next();
+			return new Tuple(e.getKey(),e.getValue());
+		}
 	}
 }
