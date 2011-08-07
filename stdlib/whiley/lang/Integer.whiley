@@ -40,17 +40,6 @@ public string hexStr(int item):
     //    return r
     return "FIX HEX STR"
 
-// Convert a byte into an unsigned int assuming a little endian
-// orientation.
-int le2uint(byte b):
-    r = 0
-    base = 1
-    while b != 0b:
-        if (b & 00000001b) == 00000001b:
-            r = r + base
-        b = b >> 1
-        base = base * 2
-    return r    
 
 // Convert a string into an integer
 int str2int(string input) throws Error:
@@ -63,7 +52,18 @@ int str2int(string input) throws Error:
         r = r + (c - '0')
     return r
 
-/*
+// Convert a byte into an unsigned int assuming a little endian
+// orientation.
+int le2uint(byte b):
+    r = 0
+    base = 1
+    while b != 0b:
+        if (b & 00000001b) == 00000001b:
+            r = r + base
+        b = b >> 1
+        base = base * 2
+    return r    
+
 // Convert a byte array in little endian form into an unsigned int
 int le2uint([byte] bytes):
     idx = 0
@@ -74,6 +74,8 @@ int le2uint([byte] bytes):
         base = base * 256
         idx = idx + 1
     return val
+
+/*
 
 // Convert a byte array in big endian form into an unsigned int
 int be2uint([byte] bytes):
