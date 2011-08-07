@@ -6,5 +6,5 @@ int pState::send(int x):
     return -1
 
 void System::main([string] args):
-    int x = (spawn {x:2,y:2})->send(1)
+    x = (spawn {x:2,y:2}).send(1)
     debug str(x)
