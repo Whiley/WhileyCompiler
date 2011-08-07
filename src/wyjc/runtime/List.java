@@ -67,11 +67,19 @@ public final class List extends java.util.ArrayList {
 	
 	public static List sublist(final List list, final BigInteger start, final BigInteger end) {
 		int st = start.intValue();
-		int en = end.intValue();
-		List r = new List(en-st);
-		for (int i = st; i != en; ++i) {
-			r.add(list.get(i));
-		}
+		int en = end.intValue();	
+		List r;		
+		if(st <= en) {
+			r = new List(en-st);
+			for (int i = st; i != en; ++i) {
+				r.add(list.get(i));
+			}	
+		} else {
+			r = new List(st-en);
+			for (int i = st; i != en; --i) {
+				r.add(list.get(i-1));
+			}
+		}		
 		return r;		
 	}
 	

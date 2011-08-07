@@ -52,9 +52,9 @@ int str2int(string input) throws Error:
         r = r + (c - '0')
     return r
 
-// Convert a byte into an unsigned int assuming a little endian
-// orientation.
-int le2uint(byte b):
+// Convert a byte into an unsigned int.  This assumes a little endian
+// encoding.
+int uint(byte b):
     r = 0
     base = 1
     while b != 0b:
@@ -62,15 +62,17 @@ int le2uint(byte b):
             r = r + base
         b = b >> 1
         base = base * 2
+    debug "CONVERTED: " + str(r)
     return r    
 
 // Convert a byte array into an unsigned int assuming a little endian
 // form for both individual bytes, and the array as a whole
-int le2uint([byte] bytes):
+int uint([byte] bytes):
     val = 0
     base = 1
     for b in bytes:
-        v = le2uint(b) * base
+        debug "READ: " + str(b)
+        v = uint(b) * base
         val = val + v
         base = base * 256
     return val
