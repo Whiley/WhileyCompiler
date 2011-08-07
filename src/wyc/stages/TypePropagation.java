@@ -775,6 +775,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
+		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
+			Type.Process tp = (Type.Process) oldtype;
+			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
+			return Type.T_PROCESS(nelement);
 		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
