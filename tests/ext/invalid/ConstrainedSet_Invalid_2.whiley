@@ -4,7 +4,7 @@ int g(int x) ensures $ > 0 && $ <= 256:
     else:
         return x
 
-{byte} f(int x):
+{int8} f(int x):
     return {g(x)}
 
 void System::main([string] args):
