@@ -1637,7 +1637,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst((int)e.value));		
+		bytecodes.add(new Bytecode.LoadConst(e.value));		
 	}
 	
 	protected void translate(Value.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
@@ -1924,7 +1924,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void buildCoercion(Type.Byte fromType, Type toType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+			int freeSlot, ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
@@ -2589,7 +2589,7 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
 		} else if(t instanceof Type.Byte) {
-			return T_INT;
+			return T_BYTE;
 		} else if(t instanceof Type.Char) {
 			return T_CHAR;
 		} else if(t instanceof Type.Int) {

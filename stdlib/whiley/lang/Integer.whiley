@@ -26,20 +26,18 @@
 package whiley.lang
 
 // Convert an integer into a hex string
-public string hexStr(int item):    
-    r = []
+public string hex(int item):    
+    r = ""
     while item > 0:
         v = item / 16
         w = item - (v*16)
         if w <= 9:                
-            r = ['0' + w] + r
+            r = ('0' + w) + r
         else:
             w = w - 10
-            r = ['a' + w] + r
+            r = ('a' + w) + r
         item = v
-    //    return r
-    return "FIX HEX STR"
-
+    return r
 
 // Convert a string into an integer
 int str2int(string input) throws Error:
@@ -62,7 +60,6 @@ int uint(byte b):
             r = r + base
         b = b >> 1
         base = base * 2
-    debug "CONVERTED: " + str(r)
     return r    
 
 // Convert a byte array into an unsigned int assuming a little endian
@@ -71,7 +68,6 @@ int uint([byte] bytes):
     val = 0
     base = 1
     for b in bytes:
-        debug "READ: " + str(b)
         v = uint(b) * base
         val = val + v
         base = base * 256

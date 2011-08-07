@@ -85,12 +85,12 @@ public class Util {
 		return sb.toString();
 	}
 	
-	public static int leftshift(int b1, BigInteger b2) {		
-		return (byte) (b1 << b2.intValue());		
+	public static byte leftshift(byte b1, BigInteger b2) {		
+		return (byte) ((b1&0xFF) << b2.intValue());		
 	}
 	
-	public static int rightshift(int b1, BigInteger b2) {		
-		return (byte) (b1 >>> b2.intValue());		
+	public static byte rightshift(byte b1, BigInteger b2) {		
+		return (byte) ((b1&0xFF) >>> b2.intValue());		
 	}
 	
 	public static List range(BigInteger start, BigInteger end) {
