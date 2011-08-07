@@ -387,6 +387,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_REAL,lhs,stmt);
 				result = lhs;
 			} else {
+				checkIsSubtype(Type.T_REAL,lhs,stmt);
 				checkIsSubtype(Type.T_REAL,rhs,stmt);				
 				result = rhs;
 			} 
