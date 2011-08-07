@@ -6,4 +6,4 @@ pirf3nat f(int x):
     return x
 
 void System::main([string] args):
-    print str(f(11))
+    debug str(f(11))

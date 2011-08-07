@@ -8,4 +8,4 @@ nat f():
     return h()
 
 void System::main([string] args):
-    print str(f())
+    debug str(f())

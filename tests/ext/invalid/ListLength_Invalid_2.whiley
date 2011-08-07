@@ -6,4 +6,4 @@ void System::main([string] args):
     assert arr[0] < |arr|
     assert arr[1] < |arr|
     assert arr[2] != |arr|
-    print str(arr[0])
+    debug str(arr[0])

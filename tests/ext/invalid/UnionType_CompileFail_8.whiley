@@ -10,4 +10,4 @@ bop f(bop b):
 
 void System::main([string] args):
     b = {op:0, lhs:1, rhs:2}
-    print str(f(b))
+    debug str(f(b))

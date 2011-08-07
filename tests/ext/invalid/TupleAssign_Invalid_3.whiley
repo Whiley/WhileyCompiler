@@ -4,6 +4,6 @@ void System::main([string] args):
     x = {f1:2, f2:3}
     y = {f1:1, f2:3}
     x.f1 = 1
-    print str(x)
-    print str(y)  
+    debug str(x)
+    debug str(y)  
     assert x != y

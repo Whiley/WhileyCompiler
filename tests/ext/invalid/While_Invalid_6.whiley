@@ -9,4 +9,4 @@ int sumOver([int] ls):
 
 void System::main([string] args):
     rs = sumOver([-2,-3,1,2,-23,3,2345,4,5])
-    print str(rs)
+    debug str(rs)

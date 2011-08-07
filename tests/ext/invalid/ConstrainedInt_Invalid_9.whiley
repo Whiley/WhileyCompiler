@@ -2,7 +2,7 @@
 define irf2nat as int where $ > 0
 
 void f(irf2nat x):
-    print str(x)
+    debug str(x)
 
 void g(int x):
     f(x)

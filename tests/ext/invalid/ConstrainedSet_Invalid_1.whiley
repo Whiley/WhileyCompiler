@@ -5,5 +5,5 @@ int f(pintset x):
 
 void System::main([string] args):
     p = {1}
-    print str(p)
+    debug str(p)
     f(p)

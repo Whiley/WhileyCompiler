@@ -13,4 +13,4 @@ plt f(int x) requires x >= 0:
     return g(x)
 
 void System::main([string] args):
-    print str(f(0))
+    debug str(f(0))

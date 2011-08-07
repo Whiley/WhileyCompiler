@@ -1,5 +1,5 @@
 void f({int} xs) requires |xs| > 0:
-    print str(xs)
+    debug str(xs)
 
 void g({int} ys, {int} zs):
     f(ys ∪ zs)

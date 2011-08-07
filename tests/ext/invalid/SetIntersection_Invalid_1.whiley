@@ -1,5 +1,5 @@
 void f({int} xs) requires xs ⊆ {1,2,3}:
-    print str(xs)
+    debug str(xs)
 
 void g({int} ys):
     f(ys ∩ {1,2,3,4})

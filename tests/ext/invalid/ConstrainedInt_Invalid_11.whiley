@@ -7,4 +7,4 @@ int f(odd x):
 void System::main([string] args):
     y = 2
     f(y)
-    print str(y)
+    debug str(y)

@@ -11,6 +11,6 @@ nat sum(LinkedList list):
 
 void System::main([string] args):
     l = { next:1, data:1 }
-    print str(sum(l))
+    debug str(sum(l))
     l = { next:l, data:-2 }
-    print str(sum(l))    
+    debug str(sum(l))    

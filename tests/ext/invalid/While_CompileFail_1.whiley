@@ -3,4 +3,4 @@ void System::main([string] args):
     while(j < |args|):
         i = 1
         j = j + 1
-    print str(i)
+    debug str(i)

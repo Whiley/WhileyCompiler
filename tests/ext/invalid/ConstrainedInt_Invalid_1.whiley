@@ -6,4 +6,4 @@ c1pnat f(int x):
     return x
 
 void System::main([string] args):
-    print str(f(-1))
+    debug str(f(-1))

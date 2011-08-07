@@ -2,7 +2,7 @@ public [int] update(string str):
     return [-1]
 
 public void f(char c):
-    print [c]
+    debug [c]
 
 public void System::main([string] args):
     s1 = "Hello World"

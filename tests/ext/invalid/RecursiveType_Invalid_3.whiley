@@ -6,4 +6,4 @@ expr f(expr e):
 
 void System::main([string] args):
     e = -1
-    print str(f(e))
+    debug str(f(e))

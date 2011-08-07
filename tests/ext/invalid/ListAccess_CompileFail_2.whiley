@@ -6,4 +6,4 @@ void f([int] x) requires |x| > 0:
 void System::main([string] args):
      arr = [1,2,3]
      f(arr)
-     print str(arr[0])
+     debug str(arr[0])

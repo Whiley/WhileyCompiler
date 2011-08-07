@@ -8,4 +8,4 @@ int g(plistv6 left, [int] right):
 
 void System::main([string] args):
     r = g([1,2,3],[-1,7,8])
-    print str(r)
+    debug str(r)

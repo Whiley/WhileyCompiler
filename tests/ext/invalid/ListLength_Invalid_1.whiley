@@ -4,4 +4,4 @@ void System::main([string] args):
     else:
         arr = [1,2,3]
     assert |arr| == 4 
-    print str(arr[0])
+    debug str(arr[0])

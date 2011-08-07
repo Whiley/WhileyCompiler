@@ -8,4 +8,4 @@ posList f(LinkedList list):
 
 void System::main([string] args):
     l = { next:{ next:1, data:-1 }, data:1 }
-    print str(f(l))
+    debug str(f(l))

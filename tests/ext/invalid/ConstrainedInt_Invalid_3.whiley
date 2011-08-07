@@ -3,7 +3,7 @@ define c3num as {1,2,3,4}
 
 void f(c3num x):
     y = x
-    print str(y)
+    debug str(y)
 
 void g(int z):
     f(z)

@@ -9,5 +9,5 @@ int g(int x) ensures $ > 0 && $ <= 256:
 
 void System::main([string] args):
     bytes = f(256)
-    print str(bytes)
+    debug str(bytes)
 

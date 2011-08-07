@@ -1,6 +1,6 @@
 // this is a comment!
 void f({int} xs) requires |xs| > 4:
-    print str(xs)
+    debug str(xs)
 
 void System::main([string] args):
     if |args| > 1:
