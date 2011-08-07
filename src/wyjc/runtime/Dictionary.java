@@ -27,8 +27,8 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	public String toString() {
 		String r = "{";
 		boolean firstTime=true;
-		ArrayList<Comparable> ss = new ArrayList(this.keySet());
-		Collections.sort(ss);
+		ArrayList ss = new ArrayList(this.keySet());
+		Collections.sort(ss,Util.COMPARATOR);
 
 		for(Object key : ss) {
 			if(!firstTime) {

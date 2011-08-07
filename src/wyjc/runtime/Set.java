@@ -28,8 +28,8 @@ public final class Set extends java.util.HashSet {
 	public String toString() {
 		String r = "{";
 		boolean firstTime=true;
-		ArrayList<Comparable> ss = new ArrayList<Comparable>(this);
-		Collections.sort(ss);
+		ArrayList ss = new ArrayList(this);
+		Collections.sort(ss,Util.COMPARATOR);
 
 		for(Object o : ss) {
 			if(!firstTime) {
