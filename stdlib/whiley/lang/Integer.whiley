@@ -64,29 +64,43 @@ int le2uint(byte b):
         base = base * 2
     return r    
 
-// Convert a byte array in little endian form into an unsigned int
+// Convert a byte array into an unsigned int assuming a little endian
+// form for both individual bytes, and the array as a whole
 int le2uint([byte] bytes):
-    idx = 0
     val = 0
     base = 1
-    while idx < |bytes|:
-        val = val + (bytes[idx] * base)
+    for b in bytes:
+        v = le2uint(b) * base
+        val = val + v
+        base = base * 256
+    return val
+
+// Convert a byte into an unsigned int assuming a big endian
+// orientation.
+int be2uint(byte b):
+    r = 0
+    base = 1
+    while b != 0b:
+        if (b & 10000000b) == 10000000b:
+            r = r + base
+        b = b << 1
+        base = base * 2
+    return r    
+
+// Convert a byte array into an unsigned int assuming a big endian
+// form for both individual bytes, and the array as a whole
+int be2uint([byte] bytes):
+    val = 0
+    base = 1
+    idx = |bytes| - 1
+    while idx >= 0:        
+        v = be2uint(bytes[idx]) * base
+        val = val + v
         base = base * 256
         idx = idx + 1
     return val
 
 /*
-
-// Convert a byte array in big endian form into an unsigned int
-int be2uint([byte] bytes):
-    idx = |bytes|
-    val = 0
-    base = 1
-    while idx > 0:
-        idx = idx - 1
-        val = val + (bytes[idx] * base)
-        base = base * 256
-    return val
 
 // Convert a byte array into an array of bits where, for each byte,
 // the least significant bit comes first.
