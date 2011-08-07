@@ -97,7 +97,7 @@ int be2uint([byte] bytes):
         v = be2uint(bytes[idx]) * base
         val = val + v
         base = base * 256
-        idx = idx + 1
+        idx = idx - 1
     return val
 
 /*
