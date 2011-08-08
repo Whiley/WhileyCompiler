@@ -46,8 +46,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public ConstantPropagation(ModuleLoader loader) {
 		super(loader);
 	}
-	
-	public Module.TypeDef transform(Module.TypeDef type) {		
+		
+	public Module.TypeDef transform(Module.TypeDef type) {
+		// TODO: propagate constants through type constraints
 		return type;		
 	}
 	
@@ -67,6 +68,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		block = mcase.body();
 		stores = new HashMap<String,Env>();		
 		rewrites.clear();
+
+		// TODO: propagate constants through pre- and post-conditions.
 		
 		Env environment = initialStore();		
 		propagate(0,mcase.body().size(), environment);	

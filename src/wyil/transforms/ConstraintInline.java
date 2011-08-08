@@ -1,29 +1,32 @@
 package wyil.transforms;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import wyil.*;
-import wyil.lang.Module;
+import wyil.lang.*;
 
 /**
  * The purpose of this transform is two-fold:
  * <ol>
+ * <li>To inline preconditions for method invocations.</li>
+ * <li>To inline preconditions for division and list access expressions</li>
  * <li>To inline dispatch choices into call-sites. This offers a useful optimisation in situations when we can
  * statically determine that a subset of cases is the dispatch target.</li>
- * <li>To inline preconditions for division and list access expressions</li>
  * </ol>
  * 
  * @author djp
  * 
  */
-public class PreconditionInline implements Transform {
+public class ConstraintInline implements Transform {
 	private final ModuleLoader loader;
 	private int regTarget;
 	private String filename;
 	
-	public PreconditionInline(ModuleLoader loader) {
+	public ConstraintInline(ModuleLoader loader) {
 		this.loader = loader;
 	}
+	
 	public Module apply(Module module) {
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
 		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
@@ -41,6 +44,20 @@ public class PreconditionInline implements Transform {
 	}
 	
 	public Module.TypeDef transform(Module.TypeDef type) {
+		Block constraint = type.constraint();
+		if (constraint != null) {
+			Block nbody = new Block();
+			for (int i = 0; i != constraint.size(); ++i) {
+				Block.Entry entry = constraint.get(i);
+				Block nblk = transform(entry);
+				if (nblk != null) {
+					nbody.addAll(nblk);
+				}
+				nbody.add(entry);
+			}
+		}
+		return new Module.TypeDef(type.name(), type.type(), constraint,
+				type.attributes());
 	}
 	
 	public Module.Method transform(Module.Method method) {
@@ -51,6 +68,23 @@ public class PreconditionInline implements Transform {
 		return new Module.Method(method.name(), method.type(), cases);
 	}
 	
-	public Module.Case transform(Module.Case mcase) {
+	public Module.Case transform(Module.Case mcase) {	
+		Block body = mcase.body();
+		Block nbody = new Block();		
+		for(int i=0;i!=body.size();++i) {
+			Block.Entry entry = body.get(i);
+			Block nblk = transform(entry);			
+			if(nblk != null) {								
+				nbody.addAll(nblk);				
+			} 					
+			nbody.add(entry);
+		}
+		
+		return new Module.Case(nbody, mcase.precondition(),
+				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
+	
+	public Block transform(Block.Entry code) {
+		return null;
+	}
 }

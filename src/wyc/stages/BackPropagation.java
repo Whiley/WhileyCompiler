@@ -47,6 +47,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public Module.TypeDef transform(Module.TypeDef type) {		
+		// TODO: back propagate through type constraints
 		return type;		
 	}
 	
@@ -61,6 +62,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public Module.Case propagate(Module.Case mcase) {		
+
+		// TODO: back propagate through pre- and post-conditions
+		
 		methodCase = mcase;
 		stores = new HashMap<String,Env>();
 		insertions.clear();
