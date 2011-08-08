@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.util.SyntacticElement;
 
 /**
  * The purpose of this transform is two-fold:
@@ -90,7 +91,97 @@ public class ConstraintInline implements Transform {
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
 	
-	public Block transform(Block.Entry code) {
+	public Block transform(Block.Entry entry) {
+		Code code = entry.code;
+		
+		// TODO: add support for indirect invokes and sends
+		if(code instanceof Code.Invoke) {
+			return transform((Code.Invoke)code, entry);
+		} else if(code instanceof Code.Send) {
+			
+		} else if(code instanceof Code.ListLoad) {
+			
+		} else if(code instanceof Code.Update) {
+			
+		} else if(code instanceof Code.BinOp) {
+			
+		} else if(code instanceof Code.Return) {
+			
+		}
+		
 		return null;
 	}
+
+	/**
+	 * For the invoke bytecode, we need to inline any preconditions associated
+	 * with the target.
+	 * 
+	 * @param code
+	 * @param elem
+	 * @return
+	 */
+	public Block transform(Code.Invoke code, SyntacticElement elem) {
+		return null;
+	}
+	
+	/**
+	 * For the send bytecode, we need to inline any preconditions associated
+	 * with the target.
+	 * 
+	 * @param code
+	 * @param elem
+	 * @return
+	 */
+	public Block transform(Code.Send code, SyntacticElement elem) {
+		return null;
+	}
+
+	/**
+	 * For the return bytecode, we need to inline any postcondition associated
+	 * with this function/method.
+	 * 
+	 * @param code
+	 * @param elem
+	 * @return
+	 */
+	public Block transform(Code.Return code, SyntacticElement elem) {
+		return null;
+	}
+
+	/**
+	 * For the listload bytecode, we need to add a check that the index is
+	 * within the bounds of the list. 
+	 * 
+	 * @param code
+	 * @param elem
+	 * @return
+	 */
+	public Block transform(Code.ListLoad code, SyntacticElement elem) {
+		return null;
+	}
+
+	/**
+	 * For the update bytecode, we need to add a check the indices of any lists
+	 * used in the update are within bounds.
+	 * 
+	 * @param code
+	 * @param elem
+	 * @return
+	 */
+	public Block transform(Code.Update code, SyntacticElement elem) {
+		return null;
+	}
+
+	/**
+	 * For the case of a division operation, we need to check that the divisor
+	 * is not zero.
+	 * 
+	 * @param code
+	 * @param elem
+	 * @return
+	 */
+	public Block transform(Code.BinOp code, SyntacticElement elem) {
+		return null;
+	}
+	
 }
