@@ -11,8 +11,11 @@ import wyil.lang.*;
  * <ol>
  * <li>To inline preconditions for method invocations.</li>
  * <li>To inline preconditions for division and list access expressions</li>
- * <li>To inline dispatch choices into call-sites. This offers a useful optimisation in situations when we can
- * statically determine that a subset of cases is the dispatch target.</li>
+ * <li>To inline postcondition checks. This involves generating the appropriate
+ * shadows for local variables referenced in post-conditions</li>
+ * <li>To inline dispatch choices into call-sites. This offers a useful
+ * optimisation in situations when we can statically determine that a subset of
+ * cases is the dispatch target.</li>
  * </ol>
  * 
  * @author djp
@@ -45,17 +48,20 @@ public class ConstraintInline implements Transform {
 	
 	public Module.TypeDef transform(Module.TypeDef type) {
 		Block constraint = type.constraint();
+		
 		if (constraint != null) {
-			Block nbody = new Block();
+			Block nconstraint = new Block();
 			for (int i = 0; i != constraint.size(); ++i) {
 				Block.Entry entry = constraint.get(i);
 				Block nblk = transform(entry);
 				if (nblk != null) {
-					nbody.addAll(nblk);
+					nconstraint.addAll(nblk);
 				}
-				nbody.add(entry);
+				nconstraint.add(entry);
 			}
+			constraint = nconstraint;
 		}
+		
 		return new Module.TypeDef(type.name(), type.type(), constraint,
 				type.attributes());
 	}

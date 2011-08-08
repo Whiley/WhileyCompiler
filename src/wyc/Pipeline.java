@@ -68,6 +68,7 @@ public class Pipeline {
 		register(DefiniteAssignment.class);
 		register(ConstantPropagation.class);
 		register(FunctionCheck.class);
+		register(ConstraintInline.class);
 		register(CoercionCheck.class);
 		register(WyilFileWriter.class);
 	}
