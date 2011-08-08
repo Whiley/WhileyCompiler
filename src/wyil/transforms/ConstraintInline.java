@@ -1,7 +1,6 @@
 package wyil.transforms;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import wyil.*;
 import wyil.lang.*;
@@ -11,7 +10,7 @@ import wyil.util.SyntacticElement;
  * The purpose of this transform is two-fold:
  * <ol>
  * <li>To inline preconditions for method invocations.</li>
- * <li>To inline preconditions for division and list access expressions</li>
+ * <li>To inline preconditions for division and list/dictionary access expressions</li>
  * <li>To inline postcondition checks. This involves generating the appropriate
  * shadows for local variables referenced in post-conditions</li>
  * <li>To inline dispatch choices into call-sites. This offers a useful
@@ -23,8 +22,7 @@ import wyil.util.SyntacticElement;
  * 
  */
 public class ConstraintInline implements Transform {
-	private final ModuleLoader loader;
-	private int regTarget;
+	private final ModuleLoader loader;	
 	private String filename;
 	
 	public ConstraintInline(ModuleLoader loader) {
@@ -101,6 +99,8 @@ public class ConstraintInline implements Transform {
 			
 		} else if(code instanceof Code.ListLoad) {
 			
+		} else if(code instanceof Code.DictLoad) {
+			
 		} else if(code instanceof Code.Update) {
 			
 		} else if(code instanceof Code.BinOp) {
@@ -161,7 +161,19 @@ public class ConstraintInline implements Transform {
 	}
 
 	/**
-	 * For the update bytecode, we need to add a check the indices of any lists
+	 * For the dictload bytecode, we need to add a check that the key is
+	 * contained in the list.
+	 * 
+	 * @param code
+	 * @param elem
+	 * @return
+	 */
+	public Block transform(Code.DictLoad code, SyntacticElement elem) {
+		return null;
+	}
+	
+	/**
+	 * For the update bytecode, we need to add a check the indices of any lists 
 	 * used in the update are within bounds.
 	 * 
 	 * @param code
