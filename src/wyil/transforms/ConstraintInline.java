@@ -181,7 +181,13 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.BinOp code, SyntacticElement elem) {
-		return null;
+		if(code.bop == Code.BOp.DIV) {
+			// what do I do now?
+			
+		} 
+		
+		// not a division bytecode, so ignore
+		return null;					
 	}
 	
 }
