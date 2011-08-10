@@ -45,7 +45,7 @@ public class JvmBytecodeWriter implements Transform {
 				wyjc.Main.MINOR_VERSION);
 	}
 	
-	public Module apply(Module m) throws IOException {	
+	public void apply(Module m) throws IOException {	
 		ClassFile file = classBuilder.build(m);				
 		
 		if(validate) {
@@ -63,8 +63,6 @@ public class JvmBytecodeWriter implements Transform {
 		BytecodeFileWriter writer = new BytecodeFileWriter(out,null);
 		writer.write(file);
 		out.flush();
-
-		return m;
 	}	
 	
 }

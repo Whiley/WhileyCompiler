@@ -116,6 +116,19 @@ public class Module extends ModuleLoader.Skeleton {
 		return methods.values();
 	}
 	
+	public void add(Module.Method m) {
+		Pair<String,Type.Fun> p = new Pair<String,Type.Fun>(m.name(),m.type());
+		this.methods.put(p,m);
+	}
+	
+	public void add(Module.TypeDef t) {
+		this.types.put(t.name(), t);
+	}
+	
+	public void add(Module.ConstDef c) {
+		this.constants.put(c.name(), c);
+	}
+	
 	public boolean hasName(String name) {		
 		return types.get(name) != null || constants.get(name) != null
 				|| method(name).size() > 0;

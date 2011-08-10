@@ -135,7 +135,7 @@ public class Compiler implements Logger {
 		String name = name(stage.getClass().getSimpleName());		
 		
 		try {
-			module = stage.apply(module);
+			stage.apply(module);
 			logTimedMessage("[" + module.filename() + "] applied "
 					+ name, System.currentTimeMillis() - start);
 			return module;

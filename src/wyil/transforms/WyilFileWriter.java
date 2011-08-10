@@ -56,7 +56,7 @@ public class WyilFileWriter implements Transform {
 		writeSlots = flag;
 	}
 	
-	public Module apply(Module module) throws IOException {
+	public void apply(Module module) throws IOException {
 		String filename = module.filename().replace(".whiley", ".wyil");
 		out = new PrintWriter(new FileOutputStream(filename));
 		
@@ -95,9 +95,7 @@ public class WyilFileWriter implements Transform {
 			write(md,out);
 			out.println();
 		}
-		out.flush();
-		
-		return module;
+		out.flush();		
 	}
 	
 	public void write(Method method, PrintWriter out) {

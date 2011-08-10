@@ -50,23 +50,19 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		this.loader = loader;
 	}
 	
-	public Module apply(Module module) {	
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
-		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
-		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
-		
+	public void apply(Module module) {			
 		filename = module.filename();
 		
 		for(Module.ConstDef type : module.constants()) {
-			constants.add(propagate(type));
+			module.add(propagate(type));
 		}
 		for(Module.TypeDef type : module.types()) {
-			types.add(propagate(type));
+			module.add(propagate(type));
+		}	
+		
+		for(Module.Method method : module.methods()) {					
+			module.add(method);
 		}		
-		for(Module.Method method : module.methods()) {
-			methods.add(propagate(method));
-		}
-		return new Module(module.id(), module.filename(), methods, types, constants);
 	}
 	
 	public Module.ConstDef propagate(Module.ConstDef constant) {

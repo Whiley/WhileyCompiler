@@ -57,7 +57,7 @@ public class ClassWriter implements Transform {
 		deadCode = flag;
 	}
 	
-	public Module apply(Module m) throws IOException {		
+	public void apply(Module m) throws IOException {		
 		ClassFile file = classBuilder.build(m);		
 		
 		if(validate) {			
@@ -74,7 +74,6 @@ public class ClassWriter implements Transform {
 		FileOutputStream out = new FileOutputStream(filename);		
 		ClassFileWriter writer = new ClassFileWriter(out,null);			
 		writer.write(file);					
-		return m;
 	}	
 	
 }

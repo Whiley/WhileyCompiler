@@ -41,13 +41,12 @@ public class FunctionCheck implements Transform {
 		this.loader = loader;
 	}
 	
-	public Module apply(Module module) {
+	public void apply(Module module) {
 		filename = module.filename();
 		
 		for(Module.Method method : module.methods()) {
 			check(method);
 		}
-		return module;
 	}
 		
 	public void check(Module.Method method) {		

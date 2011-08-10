@@ -33,20 +33,15 @@ public class ConstraintInline implements Transform {
 		this.loader = loader;
 	}
 	
-	public Module apply(Module module) {
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
-		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
-		
+	public void apply(Module module) {
 		this.filename = module.filename();
 		
 		for(Module.TypeDef type : module.types()) {
-			types.add(transform(type));
+			module.add(transform(type));
 		}		
 		for(Module.Method method : module.methods()) {
-			methods.add(transform(method));
+			module.add(transform(method));
 		}
-		return new Module(module.id(), module.filename(), methods, types,
-				module.constants());
 	}
 	
 	public Module.TypeDef transform(Module.TypeDef type) {
@@ -139,9 +134,10 @@ public class ConstraintInline implements Transform {
 			// TODO: mark as check block
 			
 			for(int i=paramTypes.size()-1;i>=0;--i) {
+				System.out.println("PARAM TYPE: " + paramTypes.get(i));
 				blk.add(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
-			blk.addAll(precondition.shift(freeSlot));
+			blk.addAll(precondition.shift(freeSlot-1));
 			for(int i=0;i<paramTypes.size();++i) {
 				blk.add(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
