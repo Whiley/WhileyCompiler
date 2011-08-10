@@ -133,8 +133,7 @@ public class ConstraintInline implements Transform {
 			
 			// TODO: mark as check block
 			
-			for(int i=paramTypes.size()-1;i>=0;--i) {
-				System.out.println("PARAM TYPE: " + paramTypes.get(i));
+			for(int i=paramTypes.size()-1;i>=0;--i) {				
 				blk.add(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
 			blk.addAll(precondition.shift(freeSlot-1));
