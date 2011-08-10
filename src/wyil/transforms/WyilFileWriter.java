@@ -110,7 +110,8 @@ public class WyilFileWriter implements Transform {
 		Type.Fun ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
-		ArrayList<String> locals = new ArrayList<String>(mcase.locals());
+		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
+		
 		int li = 1;
 		if(ft instanceof Type.Meth) {			
 			Type.Meth mt = (Type.Meth) ft;
@@ -210,10 +211,10 @@ public class WyilFileWriter implements Transform {
 			}
 		} else if(c instanceof Code.Store && !writeSlots){
 			Code.Store store = (Code.Store) c;
-			line = "store " + locals.get(store.slot) + " : " + store.type;  
+			line = "store " + getLocal(store.slot,locals) + " : " + store.type;  
 		} else if(c instanceof Code.Load && !writeSlots){
 			Code.Load load = (Code.Load) c;
-			line = "load " + locals.get(load.slot) + " : " + load.type;
+			line = "load " + getLocal(load.slot,locals) + " : " + load.type;
 		} else if(c instanceof Code.Update && !writeSlots){
 			Code.Update store = (Code.Update) c;
 			String fs = store.fields.isEmpty() ? "" : " ";
@@ -225,11 +226,11 @@ public class WyilFileWriter implements Transform {
 				firstTime=false;
 				fs += f;
 			}
-			line = "multistore " + locals.get(store.slot) + " #" + store.level + fs + " : " + store.type;
+			line = "multistore " + getLocal(store.slot,locals) + " #" + store.level + fs + " : " + store.type;
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
-				line = "if" + iftype.test + " " + locals.get(iftype.slot)
+				line = "if" + iftype.test + " " + getLocal(iftype.slot,locals)
 						+ " goto " + iftype.target + " : " + iftype.type;
 			} else {
 				line = c.toString();
@@ -243,9 +244,9 @@ public class WyilFileWriter implements Transform {
 					modifies +=", ";
 				}
 				firstTime=false;
-				modifies += locals.get(slot);
+				modifies += getLocal(slot,locals);
 			}
-			line = "forall " + locals.get(fall.slot) + " [" + modifies + "] : " + fall.type;
+			line = "forall " + getLocal(fall.slot,locals) + " [" + modifies + "] : " + fall.type;
 		} else {
 			line = c.toString();		
 		}
@@ -267,6 +268,15 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		out.println();
+	}
+	
+	public static String getLocal(int index, List<String> locals) {
+		if(index < locals.size()) {
+			// is a named local
+			return locals.get(index);
+		} else {
+			return "%" + (index - locals.size());
+		}
 	}
 	
 	public static void tabIndent(int indent, PrintWriter out) {

@@ -1,10 +1,12 @@
 package wyil.transforms;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.SyntacticElement;
+import wyjc.runtime.BigRational;
 
 /**
  * The purpose of this transform is two-fold:
@@ -49,10 +51,11 @@ public class ConstraintInline implements Transform {
 		Block constraint = type.constraint();
 		
 		if (constraint != null) {
+			int freeSlot = constraint.numSlots();
 			Block nconstraint = new Block();
 			for (int i = 0; i != constraint.size(); ++i) {
 				Block.Entry entry = constraint.get(i);
-				Block nblk = transform(entry);
+				Block nblk = transform(entry, freeSlot);
 				if (nblk != null) {
 					nconstraint.addAll(nblk);
 				}
@@ -75,10 +78,11 @@ public class ConstraintInline implements Transform {
 	
 	public Module.Case transform(Module.Case mcase) {	
 		Block body = mcase.body();
+		int freeSlot = body.numSlots();
 		Block nbody = new Block();		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
-			Block nblk = transform(entry);			
+			Block nblk = transform(entry,freeSlot);			
 			if(nblk != null) {								
 				nbody.addAll(nblk);				
 			} 					
@@ -89,7 +93,7 @@ public class ConstraintInline implements Transform {
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
 	
-	public Block transform(Block.Entry entry) {
+	public Block transform(Block.Entry entry, int freeSlot) {
 		Code code = entry.code;
 		
 		// TODO: add support for indirect invokes and sends
@@ -98,13 +102,13 @@ public class ConstraintInline implements Transform {
 		} else if(code instanceof Code.Send) {
 			
 		} else if(code instanceof Code.ListLoad) {
-			
+			return transform((Code.ListLoad)code,freeSlot,entry);
 		} else if(code instanceof Code.DictLoad) {
 			
 		} else if(code instanceof Code.Update) {
 			
 		} else if(code instanceof Code.BinOp) {
-			
+			return transform((Code.BinOp)code,freeSlot,entry);
 		} else if(code instanceof Code.Return) {
 			
 		}
@@ -156,8 +160,26 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.ListLoad code, SyntacticElement elem) {
-		return null;
+	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {
+		Block blk = new Block();
+		// TODO: mark as check block
+		blk.add(Code.Store(Type.T_INT, freeSlot),attributes(elem));
+		blk.add(Code.Store(code.type, freeSlot+1),attributes(elem));
+		String falseLabel = Block.freshLabel();
+		String exitLabel = Block.freshLabel();
+		blk.add(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+		blk.add(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+		blk.add(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
+		blk.add(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+		blk.add(Code.Load(code.type, freeSlot+1),attributes(elem));
+		blk.add(Code.ListLength(code.type),attributes(elem));
+		blk.add(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
+		blk.add(Code.Label(falseLabel),attributes(elem));
+		blk.add(Code.Fail("index out of bounds"),attributes(elem));
+		blk.add(Code.Label(exitLabel),attributes(elem));
+		blk.add(Code.Load(code.type, freeSlot+1),attributes(elem));
+		blk.add(Code.Load(Type.T_INT, freeSlot),attributes(elem));
+		return blk;		
 	}
 
 	/**
@@ -192,14 +214,32 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.BinOp code, SyntacticElement elem) {
+	public Block transform(Code.BinOp code, int freeSlot, SyntacticElement elem) {
+		
 		if(code.bop == Code.BOp.DIV) {
-			// what do I do now?
-			
+			Block blk = new Block();
+			// TODO: mark as check block
+			blk.add(Code.Store(code.type, freeSlot),attributes(elem));
+			String label = Block.freshLabel();
+			blk.add(Code.Load(code.type, freeSlot),attributes(elem));
+			if(code.type instanceof Type.Int) { 
+				blk.add(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+			} else {
+				blk.add(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),attributes(elem));
+			}
+			blk.add(Code.IfGoto(code.type, Code.COp.NEQ, label),attributes(elem));
+			blk.add(Code.Fail("division by zero"),attributes(elem));
+			blk.add(Code.Label(label),attributes(elem));
+			blk.add(Code.Load(code.type, freeSlot),attributes(elem));
+			return blk;
 		} 
 		
 		// not a division bytecode, so ignore
 		return null;					
 	}
 	
+	
+	private java.util.List<Attribute> attributes(SyntacticElement elem) {
+		return elem.attributes();
+	}
 }

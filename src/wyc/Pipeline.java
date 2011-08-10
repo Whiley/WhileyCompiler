@@ -53,6 +53,7 @@ public class Pipeline {
 					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));					
+					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));
 					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));					
 				}
 			});
