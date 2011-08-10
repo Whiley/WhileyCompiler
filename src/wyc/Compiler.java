@@ -126,19 +126,18 @@ public class Compiler implements Logger {
 		loader.register(module);
 		
 		for(Transform stage : stages) {
-			module = process(module,stage);
+			process(module,stage);
 		}		
 	}
 	
-	protected Module process(Module module, Transform stage) throws IOException {
+	protected void process(Module module, Transform stage) throws IOException {
 		long start = System.currentTimeMillis();
 		String name = name(stage.getClass().getSimpleName());		
 		
 		try {
 			stage.apply(module);
 			logTimedMessage("[" + module.filename() + "] applied "
-					+ name, System.currentTimeMillis() - start);
-			return module;
+					+ name, System.currentTimeMillis() - start);			
 		} catch (RuntimeException ex) {
 			logTimedMessage("[" + module.filename() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
