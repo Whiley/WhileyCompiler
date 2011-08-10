@@ -1,11 +1,13 @@
 package wyil.transforms;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
+import static wyil.util.SyntaxError.*;
 import wyjc.runtime.BigRational;
 
 /**
@@ -96,21 +98,25 @@ public class ConstraintInline implements Transform {
 	public Block transform(Block.Entry entry, int freeSlot) {
 		Code code = entry.code;
 		
-		// TODO: add support for indirect invokes and sends
-		if(code instanceof Code.Invoke) {
-			return transform((Code.Invoke)code, entry);
-		} else if(code instanceof Code.Send) {
-			
-		} else if(code instanceof Code.ListLoad) {
-			return transform((Code.ListLoad)code,freeSlot,entry);
-		} else if(code instanceof Code.DictLoad) {
-			
-		} else if(code instanceof Code.Update) {
-			
-		} else if(code instanceof Code.BinOp) {
-			return transform((Code.BinOp)code,freeSlot,entry);
-		} else if(code instanceof Code.Return) {
-			
+		try {
+			// TODO: add support for indirect invokes and sends
+			if(code instanceof Code.Invoke) {
+				return transform((Code.Invoke)code, freeSlot, entry);
+			} else if(code instanceof Code.Send) {
+
+			} else if(code instanceof Code.ListLoad) {
+				return transform((Code.ListLoad)code,freeSlot,entry);
+			} else if(code instanceof Code.DictLoad) {
+
+			} else if(code instanceof Code.Update) {
+
+			} else if(code instanceof Code.BinOp) {
+				return transform((Code.BinOp)code,freeSlot,entry);
+			} else if(code instanceof Code.Return) {
+
+			}
+		} catch(ResolveError e) {
+			syntaxError("internal failure",filename,entry,e);
 		}
 		
 		return null;
@@ -124,9 +130,25 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.Invoke code, SyntacticElement elem) {
+	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {
+		Block precondition = findPrecondition(code.name,code.type);
+		if(precondition != null) {
+			Block blk = new Block();
+			List<Type> paramTypes = code.type.params();
+			
+			// TODO: mark as check block
+			
+			for(int i=paramTypes.size()-1;i>=0;--i) {
+				blk.add(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
+			}
+			blk.addAll(precondition.shift(freeSlot));
+			for(int i=0;i<paramTypes.size();++i) {
+				blk.add(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
+			}
+			return blk;
+		}
 		return null;
-	}
+	}		
 	
 	/**
 	 * For the send bytecode, we need to inline any preconditions associated
@@ -238,6 +260,16 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
+	protected Block findPrecondition(NameID name, Type.Fun fun) throws ResolveError {
+		Module m = loader.loadModule(name.module());				
+		Module.Method method = m.method(name.name(),fun);
+		
+		for(Module.Case c : method.cases()) {
+			// FIXME: this is a hack for now
+			return c.precondition();
+		}
+		return null;
+	}
 	
 	private java.util.List<Attribute> attributes(SyntacticElement elem) {
 		return elem.attributes();
