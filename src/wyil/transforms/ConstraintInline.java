@@ -74,8 +74,8 @@ public class ConstraintInline implements Transform {
 	}
 	
 	public Module.Case transform(Module.Case mcase) {	
-		Block body = mcase.body();
-		int freeSlot = body.numSlots();
+		Block body = mcase.body();		
+		int freeSlot = Math.max(mcase.locals().size(),body.numSlots());
 		Block nbody = new Block();		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
@@ -125,7 +125,7 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {
+	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {		
 		Block precondition = findPrecondition(code.name,code.type);
 		if(precondition != null) {
 			Block blk = new Block();
@@ -136,7 +136,9 @@ public class ConstraintInline implements Transform {
 			for(int i=paramTypes.size()-1;i>=0;--i) {				
 				blk.add(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
-			blk.addAll(precondition.shift(freeSlot-1));
+			
+			blk.addAll(precondition.shift(freeSlot-1).relabel());
+			
 			for(int i=0;i<paramTypes.size();++i) {
 				blk.add(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}

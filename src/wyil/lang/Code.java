@@ -442,6 +442,16 @@ public abstract class Code {
 	public Code shift(int amount) {
 		return this;
 	}
+
+	/**
+	 * Relabel all labels according to the given map.
+	 * 
+	 * @param labels
+	 * @return
+	 */
+	public Code relabel(Map<String,String> labels) {
+		return this;
+	}
 	
 	// ===============================================================
 	// Bytecode Implementations
@@ -452,6 +462,15 @@ public abstract class Code {
 		
 		private  Assert(String target) {
 			this.target = target;
+		}
+	
+		public Assert relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Assert(nlabel);
+			}
 		}
 		
 		public int hashCode() {
@@ -709,6 +728,15 @@ public abstract class Code {
 			super(label);
 		}
 		
+		public End relabel(Map<String,String> labels) {
+			String nlabel = labels.get(label);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return End(nlabel);
+			}
+		}
+		
 		public int hashCode() {
 			return label.hashCode();
 		}
@@ -822,6 +850,15 @@ public abstract class Code {
 			this.target = target;
 		}
 		
+		public Goto relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Goto(nlabel);
+			}
+		}
+		
 		public int hashCode() {
 			return target.hashCode();
 		}
@@ -853,6 +890,15 @@ public abstract class Code {
 			this.type = type;
 			this.op = op;						
 			this.target = target;
+		}
+		
+		public IfGoto relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return IfGoto(type,op,nlabel);
+			}
 		}
 		
 		public int hashCode() {
@@ -926,6 +972,15 @@ public abstract class Code {
 			this.slot = slot;
 			this.test = test;						
 			this.target = target;
+		}
+		
+		public IfType relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return IfType(type,slot,test,nlabel);
+			}
 		}
 		
 		public void slots(Set<Integer> slots) {
@@ -1108,6 +1163,15 @@ public abstract class Code {
 		
 		private Label(String label) {
 			this.label = label;
+		}
+		
+		public Label relabel(Map<String,String> labels) {
+			String nlabel = labels.get(label);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Label(nlabel);
+			}
 		}
 		
 		public int hashCode() {
@@ -1296,6 +1360,15 @@ public abstract class Code {
 			this.modifies = new HashSet<Integer>(modifies);
 		}
 		
+		public Loop relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Loop(nlabel,modifies);
+			}
+		}
+		
 		public int hashCode() {
 			return target.hashCode();
 		}
@@ -1322,6 +1395,15 @@ public abstract class Code {
 			super(target,modifies);
 			this.type = type;
 			this.slot = slot;			
+		}
+		
+		public ForAll relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return ForAll(type,slot,nlabel,modifies);
+			}
 		}
 		
 		public void slots(Set<Integer> slots) {
@@ -1562,36 +1644,7 @@ public abstract class Code {
 		private Nop() {}
 		public String toString() { return "nop"; }
 	}	
-	
-	/* removed as I don't think this bytecode is needed
-	public static final class Pop extends Code {
-		public final Type type;
 		
-		private Pop(Type type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {			
-			if(type == null) {
-				return 996;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Pop) {
-				Pop i = (Pop) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("pop",type);
-		}
-	}
-    */
 	public static final class Return extends Code {
 		public final Type type;
 		
@@ -1906,6 +1959,25 @@ public abstract class Code {
 			this.type = type;
 			this.branches = new ArrayList<Pair<Value,String>>(branches);
 			this.defaultTarget = defaultTarget;
+		}
+	
+		public Switch relabel(Map<String,String> labels) {
+			ArrayList<Pair<Value,String>> nbranches = new ArrayList();
+			for(Pair<Value,String> p : branches) {
+				String nlabel = labels.get(p.second());
+				if(nlabel == null) {
+					nbranches.add(p);
+				} else {
+					nbranches.add(new Pair(p.first(),nlabel));
+				}
+			}
+			
+			String nlabel = labels.get(defaultTarget);
+			if(nlabel == null) {
+				return Switch(type,defaultTarget,nbranches);
+			} else {
+				return Switch(type,nlabel,nbranches);
+			}
 		}
 		
 		public int hashCode() {

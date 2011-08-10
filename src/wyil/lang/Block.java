@@ -123,6 +123,28 @@ public final class Block implements Iterable<Block.Entry> {
 		return nblock;
 	}
 	
+	/**
+	 * Shift every slot in this block by amount.
+	 * 
+	 * @param amount
+	 * @return
+	 */
+	public Block relabel() {		
+		HashMap<String,String> labels = new HashMap<String,String>();
+		for(Entry s : stmts) {
+			if(s.code instanceof Code.Label) {
+				Code.Label l = (Code.Label) s.code;
+				labels.put(l.label, freshLabel());
+			}
+		}
+		Block nblock = new Block();
+		for(Entry s : stmts) {
+			Code ncode = s.code.relabel(labels);
+			nblock.add(ncode,s.attributes());
+		}
+		return nblock;
+	}
+	
 	public Entry get(int index) {
 		return stmts.get(index);
 	}
