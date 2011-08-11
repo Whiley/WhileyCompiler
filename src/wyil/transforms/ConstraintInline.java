@@ -134,13 +134,13 @@ public class ConstraintInline implements Transform {
 			// TODO: mark as check block
 			
 			for(int i=paramTypes.size()-1;i>=0;--i) {				
-				blk.add(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
+				blk.append(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
 			
 			blk.append(precondition.shift(freeSlot-1).relabel());
 			
 			for(int i=0;i<paramTypes.size();++i) {
-				blk.add(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
+				blk.append(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
 			return blk;
 		}
@@ -175,9 +175,9 @@ public class ConstraintInline implements Transform {
 			if(postcondition != null) {
 				Block blk = new Block();
 				// FIXME: need to support shadows here!!
-				blk.add(Code.Store(code.type, freeSlot),attributes(elem));
+				blk.append(Code.Store(code.type, freeSlot),attributes(elem));
 				blk.append(postcondition.shift(freeSlot).relabel());
-				blk.add(Code.Load(code.type, freeSlot),attributes(elem));
+				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 				return blk;
 			}
 		}
@@ -196,22 +196,22 @@ public class ConstraintInline implements Transform {
 	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {
 		Block blk = new Block();
 		// TODO: mark as check block
-		blk.add(Code.Store(Type.T_INT, freeSlot),attributes(elem));
-		blk.add(Code.Store(code.type, freeSlot+1),attributes(elem));
+		blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
+		blk.append(Code.Store(code.type, freeSlot+1),attributes(elem));
 		String falseLabel = Block.freshLabel();
 		String exitLabel = Block.freshLabel();
-		blk.add(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-		blk.add(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-		blk.add(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
-		blk.add(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
-		blk.add(Code.Load(code.type, freeSlot+1),attributes(elem));
-		blk.add(Code.ListLength(code.type),attributes(elem));
-		blk.add(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
-		blk.add(Code.Label(falseLabel),attributes(elem));
-		blk.add(Code.Fail("index out of bounds"),attributes(elem));
-		blk.add(Code.Label(exitLabel),attributes(elem));
-		blk.add(Code.Load(code.type, freeSlot+1),attributes(elem));
-		blk.add(Code.Load(Type.T_INT, freeSlot),attributes(elem));
+		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+		blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
+		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
+		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
+		blk.append(Code.ListLength(code.type),attributes(elem));
+		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
+		blk.append(Code.Label(falseLabel),attributes(elem));
+		blk.append(Code.Fail("index out of bounds"),attributes(elem));
+		blk.append(Code.Label(exitLabel),attributes(elem));
+		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
+		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
 		return blk;		
 	}
 
@@ -252,18 +252,18 @@ public class ConstraintInline implements Transform {
 		if(code.bop == Code.BOp.DIV) {
 			Block blk = new Block();
 			// TODO: mark as check block
-			blk.add(Code.Store(code.type, freeSlot),attributes(elem));
+			blk.append(Code.Store(code.type, freeSlot),attributes(elem));
 			String label = Block.freshLabel();
-			blk.add(Code.Load(code.type, freeSlot),attributes(elem));
+			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 			if(code.type instanceof Type.Int) { 
-				blk.add(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
+				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
 			} else {
-				blk.add(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),attributes(elem));
+				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),attributes(elem));
 			}
-			blk.add(Code.IfGoto(code.type, Code.COp.NEQ, label),attributes(elem));
-			blk.add(Code.Fail("division by zero"),attributes(elem));
-			blk.add(Code.Label(label),attributes(elem));
-			blk.add(Code.Load(code.type, freeSlot),attributes(elem));
+			blk.append(Code.IfGoto(code.type, Code.COp.NEQ, label),attributes(elem));
+			blk.append(Code.Fail("division by zero"),attributes(elem));
+			blk.append(Code.Label(label),attributes(elem));
+			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 			return blk;
 		} 
 		

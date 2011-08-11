@@ -40,13 +40,13 @@ import wyil.util.*;
  * </p>
  * 
  * <p>
- * Every Block has a number of dedicate input variables which may or may not be
- * named. In addition, a Block may used an arbitrary number of additional
- * temporary variables. Each variable is allocated to a slot number, starting
- * from zero. Slot zero is reserved for the special variable "$". Likewise, slot
- * one is reserved for the special variable this for blocks which require it.
- * For example, the body of a normal method requires a receiver, whilst
- * functions or headless methods don't.
+ * Every Block has a number of dedicated set input variables, and an arbitrary
+ * number of additional temporary variables. Each variable is allocated to a
+ * slot number, starting from zero and with all inputs coming first. Slot zero
+ * is reserved for the special variable "$". Likewise, slot one is reserved for
+ * the special variable this for blocks which require it. For example, the body
+ * of a normal method requires a receiver, whilst functions or headless methods
+ * don't.
  * </p>
  * 
  * <p>
@@ -86,7 +86,7 @@ public final class Block implements Iterable<Block.Entry> {
 	public Block(Collection<Entry> stmts) {
 		this.stmts = new ArrayList<Entry>();
 		for(Entry s : stmts) {
-			add(s.code,s.attributes());
+			append(s.code,s.attributes());
 		}
 	}
 
@@ -114,7 +114,13 @@ public final class Block implements Iterable<Block.Entry> {
 		}		
 		return r;
 	}
-		
+
+	/**
+	 * Return block entry at the given position.
+	 * 
+	 * @param index --- position to return entry of.
+	 * @return
+	 */
 	public Entry get(int index) {
 		return stmts.get(index);
 	}
@@ -137,7 +143,7 @@ public final class Block implements Iterable<Block.Entry> {
 		Block nblock = new Block();
 		for(Entry s : stmts) {
 			Code ncode = s.code.shift(amount);
-			nblock.add(ncode,s.attributes());
+			nblock.append(ncode,s.attributes());
 		}
 		return nblock;
 	}
@@ -145,7 +151,6 @@ public final class Block implements Iterable<Block.Entry> {
 	/**
 	 * Shift every slot in this block by amount.
 	 * 
-	 * @param amount
 	 * @return
 	 */
 	public Block relabel() {		
@@ -159,7 +164,7 @@ public final class Block implements Iterable<Block.Entry> {
 		Block nblock = new Block();
 		for(Entry s : stmts) {
 			Code ncode = s.code.relabel(labels);
-			nblock.add(ncode,s.attributes());
+			nblock.append(ncode,s.attributes());
 		}
 		return nblock;
 	}
@@ -176,65 +181,124 @@ public final class Block implements Iterable<Block.Entry> {
 	 * Append a bytecode onto the end of this block. It is assumed that the
 	 * bytecode employs the same environment as this block.
 	 * 
-	 * @param c
+	 * @param code
+	 *            --- bytecode to append
 	 * @param attributes
+	 *            --- attributes associated with bytecode.
 	 */
-	public void append(Code c, Attribute... attributes) {
-		stmts.add(new Entry(c,attributes));
+	public void append(Code code, Attribute... attributes) {
+		stmts.add(new Entry(code,attributes));
 	}
-	
+
 	/**
 	 * Append a bytecode onto the end of this block. It is assumed that the
 	 * bytecode employs the same environment as this block.
 	 * 
-	 * @param c
+	 * @param code
+	 *            --- bytecode to append
 	 * @param attributes
+	 *            --- attributes associated with bytecode.
 	 */
-	public void add(Code c, Collection<Attribute> attributes) {
-		stmts.add(new Entry(c,attributes));		
+	public void append(Code code, Collection<Attribute> attributes) {
+		stmts.add(new Entry(code,attributes));		
 	}
 
 	/**
+	 * <p>
 	 * Append another block onto the end of this block. It is assumed that the
-	 * block in question employs the same environment. This operation will
-	 * attempt to merge any named variables. However, this will fail with an
-	 * exception if one variables has a different name in each block.
+	 * block in question employs the same environment.
+	 * </p>
 	 * 
-	 * @param c
-	 * @param attributes
-	 */		
-	public void append(Block stmts) {
-		for(Entry s : stmts) {
-			add(s.code,s.attributes());
+	 * <p>
+	 * <b>NOTE</b>In the case of the block being appended having more input
+	 * variables, it is assumed those additional ones correspond to temporaries
+	 * in this block.
+	 * </p>
+	 * 
+	 * @param block --- block to append
+	 */	
+	public void append(Block block) {
+		for(Entry s : block) {
+			append(s.code,s.attributes());
 		}
 	}
 	
 	// ===================================================================
 	// Insert Methods
-	// ===================================================================	
+	// ===================================================================
 
-	public void add(int idx, Code c, Collection<Attribute> attributes) {
-		stmts.add(idx,new Entry(c,attributes));
+	/**
+	 * <p>Insert a bytecode at a given position in this block. It is assumed that
+	 * the bytecode employs the same environment as this block. The bytecode at
+	 * the given position (and any after it) are shifted one position down.</p>
+	 * 
+	 * @param index --- position to insert at.
+	 * @param code --- bytecode to insert at the given position.
+	 * @param attributes
+	 */
+	public void insert(int index, Code code, Collection<Attribute> attributes) {
+		stmts.add(index,new Entry(code,attributes));
 	}
-		
-	public void addAll(int idx, Block stmts) {
-		for(Entry s : stmts) {
-			add(idx++, s.code,s.attributes());
+
+	/**
+	 * <p>
+	 * Insert a block at a given position in this block. It is assumed that the
+	 * bytecode employs the same environment as this block. The bytecode at the
+	 * given position (and any after it) are shifted one or more positions down.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- position to insert block at.
+	 * @param block
+	 *            --- block to insert.
+	 */
+	public void insert(int index, Block block) {
+		for(Entry s : block) {
+			insert(index++, s.code,s.attributes());
 		}
 	}
 
 	// ===================================================================
 	// Replace and Remove Methods
 	// ===================================================================
-	
-	public void set(int index, Code code, Attribute... attributes) {
+
+	/**
+	 * <p>
+	 * Replace the bytecode at a given position in this block with another. It
+	 * is assumed that the bytecode employs the same environment as this block.
+	 * </p>
+	 *
+	 * @param index --- position of bytecode to replace.
+	 * @param code --- bytecode to replace with.
+	 * @param attributes
+	 */
+	public void replace(int index, Code code, Attribute... attributes) {
 		stmts.set(index,new Entry(code,attributes));
 	}
 	
-	public void set(int index, Code code, Collection<Attribute> attributes) {
+	/**
+	 * <p>
+	 * Replace the bytecode at a given position in this block with another. It
+	 * is assumed that the bytecode employs the same environment as this block.
+	 * </p>
+	 * 
+	 * @param index --- position of bytecode to replace.
+	 * @param code --- bytecode to replace with.
+	 * @param attributes
+	 */
+	public void replace(int index, Code code, Collection<Attribute> attributes) {
 		stmts.set(index, new Entry(code, attributes));
 	}
-	
+
+	/**
+	 * <p>
+	 * Remove the bytecode at a given position in this block. Those bytecodes
+	 * after this position will then be shifted up one position in the block.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- index of bytecode to remove.
+	 */
 	public void remove(int index) {
 		stmts.remove(index);
 	}

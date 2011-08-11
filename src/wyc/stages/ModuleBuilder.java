@@ -492,7 +492,7 @@ public class ModuleBuilder {
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
 			environment.put("$", Code.RETURN_SLOT);			
 			Block constraint = resolveCondition(trueLabel, ut.second(), environment);
-			constraint.add(Code.Fail("type constraint not satisfied"), attributes(ut
+			constraint.append(Code.Fail("type constraint not satisfied"), attributes(ut
 					.second()));
 			constraint.append(Code.Label(trueLabel));
 
@@ -688,7 +688,7 @@ public class ModuleBuilder {
 			String lab = Block.freshLabel();
 			precondition = new Block();			
 			precondition.append(resolveCondition(lab, fd.precondition, environment));		
-			precondition.add(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
+			precondition.append(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
 			precondition.append(Code.Label(lab));			
 		}
 		
@@ -696,7 +696,7 @@ public class ModuleBuilder {
 			String lab = Block.freshLabel();
 			postcondition = new Block();			
 			postcondition.append(resolveCondition(lab, fd.postcondition, environment));		
-			postcondition.add(Code.Fail("postcondition not satisfied"), attributes(fd.postcondition));
+			postcondition.append(Code.Fail("postcondition not satisfied"), attributes(fd.postcondition));
 			postcondition.append(Code.Label(lab));
 		}
 		
@@ -713,7 +713,7 @@ public class ModuleBuilder {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.add(Code.Return(Type.T_VOID),attributes(fd));		
+		body.append(Code.Return(Type.T_VOID),attributes(fd));		
 		
 		List<Module.Case> ncases = new ArrayList<Module.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
@@ -783,12 +783,12 @@ public class ModuleBuilder {
 		if(s.lhs instanceof Variable) {			
 			blk = resolve(environment, s.rhs);			
 			Variable v = (Variable) s.lhs;
-			blk.add(Code.Store(null, allocate(v.var, environment)),
+			blk.append(Code.Store(null, allocate(v.var, environment)),
 					attributes(s));			
 		} else if(s.lhs instanceof TupleGen) {					
 			TupleGen tg = (TupleGen) s.lhs;
 			blk = resolve(environment, s.rhs);			
-			blk.add(Code.Destructure(null),attributes(s));
+			blk.append(Code.Destructure(null),attributes(s));
 			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
 			Collections.reverse(fields);
 			
@@ -797,7 +797,7 @@ public class ModuleBuilder {
 					syntaxError("variable expected",filename,e);
 				}
 				Variable v = (Variable) e;
-				blk.add(Code.Store(null, allocate(v.var, environment)),
+				blk.append(Code.Store(null, allocate(v.var, environment)),
 						attributes(s));				
 			}
 			return blk;
@@ -811,7 +811,7 @@ public class ModuleBuilder {
 			}
 			int slot = environment.get(l.first().var);
 			blk.append(resolve(environment, s.rhs));			
-			blk.add(Code.Update(null,slot,l.second(),fields),
+			blk.append(Code.Update(null,slot,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);
@@ -844,9 +844,9 @@ public class ModuleBuilder {
 	protected Block resolve(Assert s, HashMap<String,Integer> environment) {
 		String lab = Block.freshLabel();
 		Block blk = new Block();
-		blk.add(Code.Assert(lab),attributes(s));
+		blk.append(Code.Assert(lab),attributes(s));
 		blk.append(resolveCondition(lab, s.expr, environment));		
-		blk.add(Code.Fail("assertion failed"), attributes(s));
+		blk.append(Code.Fail("assertion failed"), attributes(s));
 		blk.append(Code.Label(lab));			
 		return blk;
 	}
@@ -856,31 +856,31 @@ public class ModuleBuilder {
 		if (s.expr != null) {
 			Block blk = resolve(environment, s.expr);
 			Pair<Type,Block> ret = resolve(currentFunDecl.ret);
-			blk.add(Code.Return(ret.first()), attributes(s));
+			blk.append(Code.Return(ret.first()), attributes(s));
 			return blk;			
 		} else {
 			Block blk = new Block();
-			blk.add(Code.Return(Type.T_VOID), attributes(s));
+			blk.append(Code.Return(Type.T_VOID), attributes(s));
 			return blk;
 		}
 	}
 
 	protected Block resolve(ExternJvm s, HashMap<String,Integer> environment) {
 		Block blk = new Block();
-		blk.add(Code.ExternJvm(s.bytecodes),
+		blk.append(Code.ExternJvm(s.bytecodes),
 				attributes(s));
 		return blk;
 	}
 
 	protected Block resolve(Skip s, HashMap<String,Integer> environment) {
 		Block blk = new Block();
-		blk.add(Code.Skip, attributes(s));
+		blk.append(Code.Skip, attributes(s));
 		return blk;
 	}
 
 	protected Block resolve(Debug s, HashMap<String,Integer> environment) {
 		Block blk = resolve(environment, s.expr);		
-		blk.add(Code.debug, attributes(s));
+		blk.append(Code.debug, attributes(s));
 		return blk;
 	}
 
@@ -937,17 +937,17 @@ public class ModuleBuilder {
 					syntaxError("duplicate default label",filename,c);
 				} else {
 					defaultTarget = Block.freshLabel();	
-					cblk.add(Code.Label(defaultTarget), attributes(c));
+					cblk.append(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						cblk.append(resolve(st, environment));
 					}
-					cblk.add(Code.Goto(exitLab),attributes(c));
+					cblk.append(Code.Goto(exitLab),attributes(c));
 				}
 			} else if(defaultTarget == exitLab) {
 				Value constant = expandConstantHelper(c.value, filename,
 						new HashMap(), new HashSet());												
 				String target = Block.freshLabel();	
-				cblk.add(Code.Label(target), attributes(c));				
+				cblk.append(Code.Label(target), attributes(c));				
 				if(values.contains(constant)) {
 					syntaxError("duplicate case label",filename,c);
 				}				
@@ -960,9 +960,9 @@ public class ModuleBuilder {
 				syntaxError("unreachable code",filename,c);
 			}
 		}		
-		blk.add(Code.Switch(null,defaultTarget,cases),attributes(s));
+		blk.append(Code.Switch(null,defaultTarget,cases),attributes(s));
 		blk.append(cblk);
-		blk.add(Code.Label(exitLab), attributes(s));
+		blk.append(Code.Label(exitLab), attributes(s));
 		scopes.pop();
 		return blk;
 	}
@@ -972,7 +972,7 @@ public class ModuleBuilder {
 				
 		Block blk = new Block();
 		
-		blk.add(Code.Loop(label, Collections.EMPTY_SET),
+		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
 		blk.append(resolveCondition(label, invert(s.condition), environment));
@@ -992,7 +992,7 @@ public class ModuleBuilder {
 		if(s.variables.size() > 1) {
 			// this is the destructuring case
 			int freeReg = allocate(environment);
-			blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));
 			blk.append(Code.Load(null, freeReg));
 			blk.append(Code.Destructure(null));
 			for(int i=s.variables.size();i>0;--i) {
@@ -1003,7 +1003,7 @@ public class ModuleBuilder {
 		} else {
 			// easy case.
 			int freeReg = allocate(s.variables.get(0),environment);
-			blk.add(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));
+			blk.append(Code.ForAll(null, freeReg, label, Collections.EMPTY_SET), attributes(s));
 		}		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(label));		
@@ -1011,7 +1011,7 @@ public class ModuleBuilder {
 			blk.append(resolve(st, environment));
 		}		
 		scopes.pop(); // break
-		blk.add(Code.End(label), attributes(s));		
+		blk.append(Code.End(label), attributes(s));		
 
 		return blk;
 	}
@@ -1122,8 +1122,8 @@ public class ModuleBuilder {
 			return null;
 		}
 						
-		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.add(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
 		
 		return blk;
 	}
@@ -1157,7 +1157,7 @@ public class ModuleBuilder {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);					
-			blk.add(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
+			blk.append(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
 		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.Variable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
@@ -1168,13 +1168,13 @@ public class ModuleBuilder {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);						
-			blk.add(Code.IfType(null, slot, Type.T_NULL, exitLabel), attributes(v));
+			blk.append(Code.IfType(null, slot, Type.T_NULL, exitLabel), attributes(v));
 			blk.append(Code.Goto(target));
 			blk.append(Code.Label(exitLabel));
 		} else {
 			blk.append(resolve(environment, v.lhs));			
 			blk.append(resolve(environment, v.rhs));
-			blk.add(Code.IfGoto(null, cop, target), attributes(v));
+			blk.append(Code.IfGoto(null, cop, target), attributes(v));
 		}
 		return blk;
 	}
@@ -1197,7 +1197,7 @@ public class ModuleBuilder {
 
 		Pair<Type,Block> rhs_t = resolve(((Expr.TypeConst) v.rhs).type);
 		// TODO: fix type constraints
-		blk.add(Code.IfType(null, slot, rhs_t.first(), target),
+		blk.append(Code.IfType(null, slot, rhs_t.first(), target),
 				attributes(v));
 		return blk;
 	}
@@ -1218,22 +1218,22 @@ public class ModuleBuilder {
 
 	protected Block resolveCondition(String target, ListAccess v, HashMap<String,Integer> environment) {
 		Block blk = resolve(environment, v);
-		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
 	protected Block resolveCondition(String target, RecordAccess v, HashMap<String,Integer> environment) {
 		Block blk = resolve(environment, v);		
-		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));		
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));		
 		return blk;
 	}
 
 	protected Block resolveCondition(String target, Invoke v, HashMap<String,Integer> environment) throws ResolveError {
 		Block blk = resolve(environment, v);	
-		blk.add(Code.Const(Value.V_BOOL(true)),attributes(v));
-		blk.add(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(Type.T_BOOL, Code.COp.EQ, target),attributes(v));
 		return blk;
 	}
 
@@ -1262,12 +1262,12 @@ public class ModuleBuilder {
 					// fall-back plan ...
 					blk.append(resolve(environment, src.second()));
 					srcSlot = allocate(environment);
-					blk.add(Code.Store(null, srcSlot),attributes(e));	
+					blk.append(Code.Store(null, srcSlot),attributes(e));	
 				}
 			} else {
 				blk.append(resolve(environment, src.second()));
 				srcSlot = allocate(environment);
-				blk.add(Code.Store(null, srcSlot),attributes(e));	
+				blk.append(Code.Store(null, srcSlot),attributes(e));	
 			}			
 			slots.add(new Pair(varSlot,srcSlot));											
 		}
@@ -1277,8 +1277,8 @@ public class ModuleBuilder {
 		
 		for (Pair<Integer, Integer> p : slots) {
 			String lab = loopLabel + "$" + p.first();
-			blk.add(Code.Load(null, p.second()), attributes(e));			
-			blk.add(Code
+			blk.append(Code.Load(null, p.second()), attributes(e));			
+			blk.append(Code
 					.ForAll(null, p.first(), lab, Collections.EMPTY_LIST),
 					attributes(e));
 			labels.add(lab);
@@ -1400,7 +1400,7 @@ public class ModuleBuilder {
 				&& !receiverIsThis && modInfo != null;
 											
 		if(variableIndirectInvoke) {
-			blk.add(Code.Load(null, environment.get(s.name)),attributes(s));
+			blk.append(Code.Load(null, environment.get(s.name)),attributes(s));
 		} 
 		
 		if (s.receiver != null) {			
@@ -1408,7 +1408,7 @@ public class ModuleBuilder {
 		}
 
 		if(fieldIndirectInvoke) {
-			blk.add(Code.FieldLoad(null, s.name),attributes(s));
+			blk.append(Code.FieldLoad(null, s.name),attributes(s));
 		}
 		
 		int i = 0;
@@ -1419,25 +1419,25 @@ public class ModuleBuilder {
 					
 		if(variableIndirectInvoke) {			
 			if(s.receiver != null) {
-				blk.add(Code.IndirectSend(Type.T_METH(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
+				blk.append(Code.IndirectSend(Type.T_METH(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
 			} else {
-				blk.add(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
+				blk.append(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
 			}
 		} else if(fieldIndirectInvoke) {
-			blk.add(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
+			blk.append(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
 		} else if(directInvoke || methodInvoke) {
 			NameID name = new NameID(modInfo.module, s.name);
 			if(receiverIsThis) {
-				blk.add(Code.Invoke(
+				blk.append(Code.Invoke(
 						Type.T_METH(null, Type.T_VOID,
 								paramTypes), name, retval), attributes(s));
 			} else {
-				blk.add(Code.Invoke(
+				blk.append(Code.Invoke(
 						Type.T_FUN(Type.T_VOID, paramTypes), name, retval),attributes(s));
 			}
 		} else if(directSend) {						
 			NameID name = new NameID(modInfo.module, s.name);
-			blk.add(Code.Send(
+			blk.append(Code.Send(
 					Type.T_METH(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
 		} else {
 			syntaxError("unknown function or method", filename, s);
@@ -1448,7 +1448,7 @@ public class ModuleBuilder {
 
 	protected Block resolve(HashMap<String,Integer> environment, Constant c) {
 		Block blk = new Block();
-		blk.add(Code.Const(c.value), attributes(c));
+		blk.append(Code.Const(c.value), attributes(c));
 		return blk;
 	}
 
@@ -1467,7 +1467,7 @@ public class ModuleBuilder {
 			tf = Type.T_FUN(Type.T_ANY, paramTypes);
 		}
 		Block blk = new Block();
-		blk.add(Code.Const(Value.V_FUN(name, tf)),
+		blk.append(Code.Const(Value.V_FUN(name, tf)),
 				attributes(s));
 		return blk;
 	}
@@ -1481,7 +1481,7 @@ public class ModuleBuilder {
 			if(alias.alias == null) {				
 				if(environment.containsKey(v.var)) {
 					Block blk = new Block();						
-					blk.add(Code.Load(null, environment.get(v.var)), attributes(v));					
+					blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
 					return blk;
 				} else {
 					syntaxError("variable might not be initialised",filename,v);
@@ -1503,9 +1503,9 @@ public class ModuleBuilder {
 					if(ert != null && ert.fields().containsKey(v.var)) {						
 						// Bingo, this is an implicit field dereference
 						Block blk = new Block();
-						blk.add(Code.Load(null, environment.get("this")),attributes(v));
-						blk.add(Code.ProcLoad(null),attributes(v));					
-						blk.add(Code.FieldLoad(null, v.var),attributes(v));						
+						blk.append(Code.Load(null, environment.get("this")),attributes(v));
+						blk.append(Code.ProcLoad(null),attributes(v));					
+						blk.append(Code.FieldLoad(null, v.var),attributes(v));						
 						return blk;
 					}
 				}
@@ -1523,7 +1523,7 @@ public class ModuleBuilder {
 				val = mi.constant(v.var).constant();
 			}
 			Block blk = new Block();
-			blk.add(Code.Const(val),attributes(v));
+			blk.append(Code.Const(val),attributes(v));
 			return blk;
 		}
 		
@@ -1536,29 +1536,29 @@ public class ModuleBuilder {
 		Block blk = resolve(environment, v.mhs);	
 		switch (v.op) {
 		case NEG:
-			blk.add(Code.Negate(null), attributes(v));
+			blk.append(Code.Negate(null), attributes(v));
 			break;
 		case INVERT:
-			blk.add(Code.Invert(null), attributes(v));
+			blk.append(Code.Invert(null), attributes(v));
 			break;
 		case NOT:
 			String falseLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			blk = resolveCondition(falseLabel, v.mhs, environment);
-			blk.add(Code.Const(Value.V_BOOL(true)), attributes(v));
+			blk.append(Code.Const(Value.V_BOOL(true)), attributes(v));
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(falseLabel));
-			blk.add(Code.Const(Value.V_BOOL(false)), attributes(v));
+			blk.append(Code.Const(Value.V_BOOL(false)), attributes(v));
 			blk.append(Code.Label(exitLabel));
 			break;
 		case LENGTHOF:
-			blk.add(Code.ListLength(null), attributes(v));
+			blk.append(Code.ListLength(null), attributes(v));
 			break;
 		case PROCESSACCESS:
-			blk.add(Code.ProcLoad(null), attributes(v));
+			blk.append(Code.ProcLoad(null), attributes(v));
 			break;			
 		case PROCESSSPAWN:
-			blk.add(Code.Spawn(null), attributes(v));
+			blk.append(Code.Spawn(null), attributes(v));
 			break;			
 		default:
 			syntaxError("unexpected unary operator encountered", filename, v);
@@ -1571,7 +1571,7 @@ public class ModuleBuilder {
 		Block blk = new Block();
 		blk.append(resolve(environment, v.src));
 		blk.append(resolve(environment, v.index));
-		blk.add(Code.ListLoad(null),attributes(v));
+		blk.append(Code.ListLoad(null),attributes(v));
 		return blk;
 	}
 
@@ -1580,7 +1580,7 @@ public class ModuleBuilder {
 		blk.append(resolve(environment, v.expr));		
 		Pair<Type,Block> p = resolve(v.type);
 		// TODO: include constraints
-		blk.add(Code.Convert(null,p.first()),attributes(v));
+		blk.append(Code.Convert(null,p.first()),attributes(v));
 		return blk;
 	}
 	
@@ -1594,10 +1594,10 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, v, environment);
-			blk.add(Code.Const(Value.V_BOOL(false)), attributes(v));			
+			blk.append(Code.Const(Value.V_BOOL(false)), attributes(v));			
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
-			blk.add(Code.Const(Value.V_BOOL(true)), attributes(v));				
+			blk.append(Code.Const(Value.V_BOOL(true)), attributes(v));				
 			blk.append(Code.Label(exitLabel));			
 			return blk;
 		}
@@ -1608,13 +1608,13 @@ public class ModuleBuilder {
 		blk.append(resolve(environment, v.rhs));
 
 		if(bop == BOp.UNION) {
-			blk.add(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
+			blk.append(Code.SetUnion(null,Code.OpDir.UNIFORM),attributes(v));			
 			return blk;			
 		} else if(bop == BOp.INTERSECTION) {
-			blk.add(Code.SetIntersect(null,Code.OpDir.UNIFORM),attributes(v));
+			blk.append(Code.SetIntersect(null,Code.OpDir.UNIFORM),attributes(v));
 			return blk;			
 		} else {
-			blk.add(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
+			blk.append(Code.BinOp(null, OP2BOP(bop,v)),attributes(v));			
 			return blk;
 		}		
 	}
@@ -1628,7 +1628,7 @@ public class ModuleBuilder {
 			blk.append(resolve(environment, v.arguments.get(0)));
 			blk.append(resolve(environment, v.arguments.get(1)));
 			blk.append(resolve(environment, v.arguments.get(2)));
-			blk.add(Code.SubList(null),attributes(v));
+			blk.append(Code.SubList(null),attributes(v));
 			return blk;
 		} else {			
 			int nargs = 0;
@@ -1638,9 +1638,9 @@ public class ModuleBuilder {
 			}
 
 			if (v.nop == NOp.LISTGEN) {
-				blk.add(Code.NewList(null,nargs),attributes(v));
+				blk.append(Code.NewList(null,nargs),attributes(v));
 			} else {
-				blk.add(Code.NewSet(null,nargs),attributes(v));
+				blk.append(Code.NewSet(null,nargs),attributes(v));
 			}
 			return blk;
 		}
@@ -1655,14 +1655,14 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			Block blk = resolveCondition(trueLabel, e, environment);
 			int freeReg = allocate(environment);			
-			blk.add(Code.Const(Value.V_BOOL(false)), attributes(e));
-			blk.add(Code.Store(null,freeReg),attributes(e));			
+			blk.append(Code.Const(Value.V_BOOL(false)), attributes(e));
+			blk.append(Code.Store(null,freeReg),attributes(e));			
 			blk.append(Code.Goto(exitLabel));
 			blk.append(Code.Label(trueLabel));
-			blk.add(Code.Const(Value.V_BOOL(true)), attributes(e));
-			blk.add(Code.Store(null,freeReg),attributes(e));
+			blk.append(Code.Const(Value.V_BOOL(true)), attributes(e));
+			blk.append(Code.Store(null,freeReg),attributes(e));
 			blk.append(Code.Label(exitLabel));
-			blk.add(Code.Load(null,freeReg),attributes(e));
+			blk.append(Code.Load(null,freeReg),attributes(e));
 			return blk;
 		}
 
@@ -1684,12 +1684,12 @@ public class ModuleBuilder {
 					// fall-back plan ...
 					blk.append(resolve(environment, src.second()));
 					srcSlot = allocate(environment);					
-					blk.add(Code.Store(null, srcSlot),attributes(e));	
+					blk.append(Code.Store(null, srcSlot),attributes(e));	
 				}
 			} else {
 				blk.append(resolve(environment, src.second()));
 				srcSlot = allocate(environment);
-				blk.add(Code.Store(null, srcSlot),attributes(e));	
+				blk.append(Code.Store(null, srcSlot),attributes(e));	
 			}			
 			slots.add(new Pair(varSlot,srcSlot));											
 		}
@@ -1697,11 +1697,11 @@ public class ModuleBuilder {
 		int resultSlot = allocate(environment);
 		
 		if (e.cop == Expr.COp.LISTCOMP) {
-			blk.add(Code.NewList(null,0), attributes(e));
-			blk.add(Code.Store(null,resultSlot),attributes(e));
+			blk.append(Code.NewList(null,0), attributes(e));
+			blk.append(Code.Store(null,resultSlot),attributes(e));
 		} else {
-			blk.add(Code.NewSet(null,0), attributes(e));
-			blk.add(Code.Store(null,resultSlot),attributes(e));			
+			blk.append(Code.NewSet(null,0), attributes(e));
+			blk.append(Code.Store(null,resultSlot),attributes(e));			
 		}
 		
 		// At this point, it would be good to determine an appropriate loop
@@ -1719,8 +1719,8 @@ public class ModuleBuilder {
 		
 		for (Pair<Integer, Integer> p : slots) {
 			String target = loopLabel + "$" + p.first();
-			blk.add(Code.Load(null, p.second()), attributes(e));
-			blk.add(Code
+			blk.append(Code.Load(null, p.second()), attributes(e));
+			blk.append(Code
 					.ForAll(null, p.first(), target, Collections.EMPTY_LIST),
 					attributes(e));
 			labels.add(target);
@@ -1731,10 +1731,10 @@ public class ModuleBuilder {
 					environment));
 		}
 		
-		blk.add(Code.Load(null,resultSlot),attributes(e));
+		blk.append(Code.Load(null,resultSlot),attributes(e));
 		blk.append(resolve(environment,e.value));
-		blk.add(Code.SetUnion(null, Code.OpDir.LEFT),attributes(e));
-		blk.add(Code.Store(null,resultSlot),attributes(e));
+		blk.append(Code.SetUnion(null, Code.OpDir.LEFT),attributes(e));
+		blk.append(Code.Store(null,resultSlot),attributes(e));
 			
 		if(e.condition != null) {
 			blk.append(Code.Label(continueLabel));			
@@ -1744,7 +1744,7 @@ public class ModuleBuilder {
 			blk.append(Code.End(labels.get(i)));
 		}
 
-		blk.add(Code.Load(null,resultSlot),attributes(e));
+		blk.append(Code.Load(null,resultSlot),attributes(e));
 		
 		return blk;
 	}
@@ -1758,7 +1758,7 @@ public class ModuleBuilder {
 			fields.put(key, Type.T_VOID);
 			blk.append(resolve(environment, sg.fields.get(key)));
 		}
-		blk.add(Code.NewRecord(Type.T_RECORD(fields)), attributes(sg));
+		blk.append(Code.NewRecord(Type.T_RECORD(fields)), attributes(sg));
 		return blk;
 	}
 
@@ -1768,7 +1768,7 @@ public class ModuleBuilder {
 			blk.append(resolve(environment, e));
 		}
 		// FIXME: to be updated to proper tuple
-		blk.add(Code.NewTuple(null,sg.fields.size()),attributes(sg));
+		blk.append(Code.NewTuple(null,sg.fields.size()),attributes(sg));
 		return blk;		
 	}
 
@@ -1778,13 +1778,13 @@ public class ModuleBuilder {
 			blk.append(resolve(environment, e.first()));
 			blk.append(resolve(environment, e.second()));
 		}
-		blk.add(Code.NewDict(null,sg.pairs.size()),attributes(sg));
+		blk.append(Code.NewDict(null,sg.pairs.size()),attributes(sg));
 		return blk;
 	}
 	
 	protected Block resolve(HashMap<String,Integer> environment, RecordAccess sg) {
 		Block lhs = resolve(environment, sg.lhs);		
-		lhs.add(Code.FieldLoad(null,sg.name), attributes(sg));
+		lhs.append(Code.FieldLoad(null,sg.name), attributes(sg));
 		return lhs;
 	}
 	

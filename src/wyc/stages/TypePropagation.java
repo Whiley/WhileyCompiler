@@ -282,7 +282,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		Block block = new Block();
-		block.add(code,entry.attributes());		
+		block.append(code,entry.attributes());		
 		rewrites.put(index, block);
 		
 		return environment;
@@ -558,7 +558,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if (Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
 			Type.Process tp = (Type.Process) lhs_t;
-			blk.add(Code.ProcLoad(tp),stmt.attributes());
+			blk.append(Code.ProcLoad(tp),stmt.attributes());
 			lhs_t = tp.element();
 		}
 		
@@ -573,7 +573,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		environment.push(ft);
 		
-		blk.add(Code.FieldLoad(ett, e.field),stmt.attributes());
+		blk.append(Code.FieldLoad(ett, e.field),stmt.attributes());
 		return blk;
 	}
 	
@@ -1174,7 +1174,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		Block blk = new Block();
-		blk.add(Code.IfGoto(lub, code.op, code.target),stmt.attributes());		
+		blk.append(Code.IfGoto(lub, code.op, code.target),stmt.attributes());		
 		rewrites.put(index, blk);
 		
 		return new Pair<Env,Env>(environment,environment);
@@ -1218,7 +1218,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		Block blk = new Block();
-		blk.add(ncode,stmt.attributes());		
+		blk.append(ncode,stmt.attributes());		
 		rewrites.put(index, blk);
 		
 		return new Pair(trueEnv,falseEnv);		
@@ -1238,7 +1238,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 
 		Block blk = new Block();
-		blk.add(Code.Switch(val,code.defaultTarget,code.branches),stmt.attributes());		
+		blk.append(Code.Switch(val,code.defaultTarget,code.branches),stmt.attributes());		
 		rewrites.put(index, blk);
 		
 		return envs;
@@ -1292,7 +1292,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = join(environment,newEnv);		
 				
 		Block blk = new Block();
-		blk.add(Code.ForAll(src_t, forloop.slot, forloop.target, modifies),stmt.attributes());		
+		blk.append(Code.ForAll(src_t, forloop.slot, forloop.target, modifies),stmt.attributes());		
 		rewrites.put(start, blk);
 		
 		return join(environment,newEnv);
@@ -1331,7 +1331,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		environment = join(environment,newEnv);		
 				
 		Block blk = new Block();
-		blk.add(Code.Loop(loop.target, modifies),stmt.attributes());		
+		blk.append(Code.Loop(loop.target, modifies),stmt.attributes());		
 		rewrites.put(start, blk);
 		
 		return environment;
