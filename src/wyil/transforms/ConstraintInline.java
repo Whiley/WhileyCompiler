@@ -54,9 +54,9 @@ public class ConstraintInline implements Transform {
 				Block.Entry entry = constraint.get(i);
 				Block nblk = transform(entry, freeSlot, null);
 				if (nblk != null) {
-					nconstraint.addAll(nblk);
+					nconstraint.append(nblk);
 				}
-				nconstraint.add(entry);
+				nconstraint.append(entry);
 			}
 			constraint = nconstraint;
 		}
@@ -81,9 +81,9 @@ public class ConstraintInline implements Transform {
 			Block.Entry entry = body.get(i);
 			Block nblk = transform(entry,freeSlot,mcase);			
 			if(nblk != null) {								
-				nbody.addAll(nblk);				
+				nbody.append(nblk);				
 			} 					
-			nbody.add(entry);
+			nbody.append(entry);
 		}
 		
 		return new Module.Case(nbody, mcase.precondition(),
@@ -137,7 +137,7 @@ public class ConstraintInline implements Transform {
 				blk.add(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
 			
-			blk.addAll(precondition.shift(freeSlot-1).relabel());
+			blk.append(precondition.shift(freeSlot-1).relabel());
 			
 			for(int i=0;i<paramTypes.size();++i) {
 				blk.add(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
@@ -176,7 +176,7 @@ public class ConstraintInline implements Transform {
 				Block blk = new Block();
 				// FIXME: need to support shadows here!!
 				blk.add(Code.Store(code.type, freeSlot),attributes(elem));
-				blk.addAll(postcondition.shift(freeSlot).relabel());
+				blk.append(postcondition.shift(freeSlot).relabel());
 				blk.add(Code.Load(code.type, freeSlot),attributes(elem));
 				return blk;
 			}

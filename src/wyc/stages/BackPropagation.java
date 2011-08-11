@@ -76,10 +76,10 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Block body = mcase.body();
 		Block nbody = new Block();		
 		for(int i=0;i!=body.size();++i) {
-			nbody.add(body.get(i));		
+			nbody.append(body.get(i));		
 			Block.Entry insertion = insertions.get(i);			
 			if(insertion != null) {								
-				nbody.add(insertion);				
+				nbody.append(insertion);				
 			} 							
 		}
 		

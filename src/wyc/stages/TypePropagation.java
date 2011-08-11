@@ -191,9 +191,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=0;i!=blk.size();++i) {
 			Block rewrite = rewrites.get(i);
 			if(rewrite != null) {
-				nblk.addAll(rewrite);
+				nblk.append(rewrite);
 			} else {				
-				nblk.add(blk.get(i));
+				nblk.append(blk.get(i));
 			}
 		}
 		return nblk;

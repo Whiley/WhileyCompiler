@@ -52,15 +52,16 @@ import wyil.util.*;
  * <p>
  * The main operations on a block are <i>append</i> and <i>import</i>. The
  * former is used in the process of constructing a block. In such case,
- * bytecodes are appended on to the block assuming an identical slot allocation.
- * However, when importing one block into another we cannot assume that the slot
- * allocations are the same. For example, the block representing a constraint on
- * some type might have a single input mapped to slot zero, and a temporary
- * mapped to slot one. When this block is imported into the pre-condition of
- * some function, a collision would occur if e.g. that function has multiple
- * parameters. This is because the second parameter would be mapped to the same
- * register as the temporary in the constraint. We have to <i>shift</i> the slot
- * number of that temporary variable up in order to avoid this collision.
+ * bytecodes are appended on to the block assuming an identical slot allocation
+ * (called the <i>environment</i>). However, when importing one block into
+ * another we cannot assume that the slot allocations are the same. For example,
+ * the block representing a constraint on some type might have a single input
+ * mapped to slot zero, and a temporary mapped to slot one. When this block is
+ * imported into the pre-condition of some function, a collision would occur if
+ * e.g. that function has multiple parameters. This is because the second
+ * parameter would be mapped to the same register as the temporary in the
+ * constraint. We have to <i>shift</i> the slot number of that temporary
+ * variable up in order to avoid this collision.
  * </p>
  * 
  * @author djp
@@ -158,34 +159,55 @@ public final class Block implements Iterable<Block.Entry> {
 	// Append Methods
 	// ===================================================================
 	
-	public void add(Block.Entry entry) {
+	public void append(Block.Entry entry) {
 		stmts.add(new Entry(entry.code,entry.attributes()));
 	}
-	
-	public void add(Code c, Attribute... attributes) {
+
+	/**
+	 * Append a bytecode onto the end of this block. It is assumed that the
+	 * bytecode employs the same environment as this block.
+	 * 
+	 * @param c
+	 * @param attributes
+	 */
+	public void append(Code c, Attribute... attributes) {
 		stmts.add(new Entry(c,attributes));
 	}
 	
+	/**
+	 * Append a bytecode onto the end of this block. It is assumed that the
+	 * bytecode employs the same environment as this block.
+	 * 
+	 * @param c
+	 * @param attributes
+	 */
 	public void add(Code c, Collection<Attribute> attributes) {
 		stmts.add(new Entry(c,attributes));		
 	}
+
+	/**
+	 * Append another block onto the end of this block. It is assumed that the
+	 * block in question employs the same environment. This operation will
+	 * attempt to merge any named variables. However, this will fail with an
+	 * exception if one variables has a different name in each block.
+	 * 
+	 * @param c
+	 * @param attributes
+	 */		
+	public void append(Block stmts) {
+		for(Entry s : stmts) {
+			add(s.code,s.attributes());
+		}
+	}
 	
+	// ===================================================================
+	// Insert Methods
+	// ===================================================================	
+
 	public void add(int idx, Code c, Collection<Attribute> attributes) {
 		stmts.add(idx,new Entry(c,attributes));
 	}
-	
-	public void addAll(Collection<Entry> stmts) {
-		for(Entry s : stmts) {
-			add(s.code,s.attributes());
-		}
-	}
-	
-	public void addAll(Block stmts) {
-		for(Entry s : stmts) {
-			add(s.code,s.attributes());
-		}
-	}
-	
+		
 	public void addAll(int idx, Block stmts) {
 		for(Entry s : stmts) {
 			add(idx++, s.code,s.attributes());

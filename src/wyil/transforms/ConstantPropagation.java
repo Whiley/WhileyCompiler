@@ -83,9 +83,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				for(int j=0;j!=rewrite.stackArgs;++j) {
 					 nbody.remove(nbody.size()-1);
 				}				
-				nbody.add(rewrite.rewrite);				
+				nbody.append(rewrite.rewrite);				
 			} else {				
-				nbody.add(body.get(i));
+				nbody.append(body.get(i));
 			}
 		}
 		
