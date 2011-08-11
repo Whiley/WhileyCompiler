@@ -137,7 +137,7 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
 			}
 			
-			blk.append(precondition.shift(freeSlot-1).relabel());
+			blk.append(precondition.shift(freeSlot).relabel());
 			
 			for(int i=0;i<paramTypes.size();++i) {
 				blk.append(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));

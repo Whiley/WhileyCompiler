@@ -490,7 +490,7 @@ public class ModuleBuilder {
 		if (ut.second() != null) {
 			String trueLabel = Block.freshLabel();
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
-			environment.put("$", Code.RETURN_SLOT);			
+			environment.put("$", Code.THIS_SLOT);			
 			Block constraint = resolveCondition(trueLabel, ut.second(), environment);
 			constraint.append(Code.Fail("type constraint not satisfied"), attributes(ut
 					.second()));
@@ -520,8 +520,8 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.RETURN_SLOT));
-				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
 				blk.append(p.second().shift(1));				
 				blk.append(Code.End(label));
@@ -534,8 +534,8 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(1); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.RETURN_SLOT));
-				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
 				blk.append(p.second().shift(1));				
 				blk.append(Code.End(label));
@@ -1849,8 +1849,8 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(0); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.RETURN_SLOT));
-				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
 				blk.append(p.second().shift(1));				
 				blk.append(Code.End(label));
@@ -1863,8 +1863,8 @@ public class ModuleBuilder {
 			if (p.second() != null) {
 				blk = new Block(0); 
 				String label = Block.freshLabel();
-				blk.append(Code.Load(null, Code.RETURN_SLOT));
-				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
+				blk.append(Code.Load(null, Code.THIS_SLOT));
+				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
 				blk.append(p.second().shift(1));				
 				blk.append(Code.End(label));
