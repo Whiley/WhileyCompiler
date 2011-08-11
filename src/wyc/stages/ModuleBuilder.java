@@ -491,7 +491,7 @@ public class ModuleBuilder {
 			String trueLabel = Block.freshLabel();
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
 			environment.put("$", Code.RETURN_SLOT);			
-			Block constraint = resolveCondition(trueLabel, ut.second(), environment);
+			Block constraint = resolveCondition(trueLabel, ut.second(), 1, environment);
 			constraint.append(Code.Fail("type constraint not satisfied"), attributes(ut
 					.second()));
 			constraint.append(Code.Label(trueLabel));
@@ -687,7 +687,7 @@ public class ModuleBuilder {
 		if(fd.precondition != null) {
 			String lab = Block.freshLabel();
 			precondition = new Block();			
-			precondition.append(resolveCondition(lab, fd.precondition, 0, environment));		
+			precondition.append(resolveCondition(lab, fd.precondition, environment.size(), environment));		
 			precondition.append(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
 			precondition.append(Code.Label(lab));			
 		}
@@ -695,7 +695,7 @@ public class ModuleBuilder {
 		if(fd.postcondition != null) {			
 			String lab = Block.freshLabel();
 			postcondition = new Block();			
-			postcondition.append(resolveCondition(lab, fd.postcondition, 0, environment));		
+			postcondition.append(resolveCondition(lab, fd.postcondition, environment.size(), environment));		
 			postcondition.append(Code.Fail("postcondition not satisfied"), attributes(fd.postcondition));
 			postcondition.append(Code.Label(lab));
 		}
@@ -705,7 +705,7 @@ public class ModuleBuilder {
 			
 		Block body = new Block();		
 		for (Stmt s : fd.statements) {
-			body.append(resolve(s, 0, environment));
+			body.append(resolve(s, environment.size(), environment));
 		}
 
 		currentFunDecl = null;
@@ -733,6 +733,19 @@ public class ModuleBuilder {
 		return new Module.Method(fd.name(), tf, ncases);
 	}
 
+	/**
+	 * Translate a source-level statement into a wyil block, using a given
+	 * environment mapping named variables to slots.
+	 * 
+	 * @param stmt
+	 *            --- statement to be translated.
+	 * @param freeSlot
+	 *            --- index of first free slot available for use as a temporary
+	 *            variable.
+	 * @param environment
+	 *            --- mapping from variable names to to slot numbers.
+	 * @return
+	 */
 	public Block resolve(Stmt stmt, int freeSlot, HashMap<String,Integer> environment) {
 		try {
 			if (stmt instanceof Assign) {
@@ -805,7 +818,7 @@ public class ModuleBuilder {
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block();
-			Pair<Variable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
+			Pair<Variable,Integer> l = extractLVal(s.lhs,fields,blk,freeSlot,environment);
 			if(!environment.containsKey(l.first().var)) {
 				syntaxError("unknown variable",filename,l.first());
 			}
@@ -820,19 +833,20 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Pair<Variable,Integer> extractLVal(Expr e, ArrayList<String> fields, Block blk,
+	protected Pair<Variable, Integer> extractLVal(Expr e,
+			ArrayList<String> fields, Block blk, int freeSlot,
 			HashMap<String, Integer> environment) {
 		if (e instanceof Variable) {
 			Variable v = (Variable) e;
 			return new Pair(v,0);			
 		} else if (e instanceof ListAccess) {
 			ListAccess la = (ListAccess) e;
-			Pair<Variable,Integer> l = extractLVal(la.src, fields, blk, environment);
+			Pair<Variable,Integer> l = extractLVal(la.src, fields, blk, freeSlot, environment);
 			blk.append(resolve(la.index, freeSlot, environment));			
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof RecordAccess) {
 			RecordAccess ra = (RecordAccess) e;
-			Pair<Variable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
+			Pair<Variable,Integer> l = extractLVal(ra.lhs, fields, blk, freeSlot, environment);
 			fields.add(ra.name);
 			return new Pair(l.first(),l.second() + 1);			
 		} else {
@@ -1015,46 +1029,55 @@ public class ModuleBuilder {
 
 		return blk;
 	}
-	
+
 	/**
-	 * Target gives the name of the register to use to store the result of this
-	 * expression in.
+	 * Translate a source-level condition into a wyil block, using a given
+	 * environment mapping named variables to slots. If the condition evaluates
+	 * to true, then control is transferred to the given target. Otherwise,
+	 * control will fall through to the following bytecode.
 	 * 
 	 * @param target
-	 * @param e
+	 *            --- target label to goto if condition is true.
+	 * @param condition
+	 *            --- source-level condition to be translated
+	 * @param freeSlot
+	 *            --- index of first free slot available for use as a temporary
+	 *            variable.
 	 * @param environment
+	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	protected Block resolveCondition(String target, Expr e, int freeSlot, HashMap<String,Integer> environment) {
+	protected Block resolveCondition(String target, Expr condition,
+			int freeSlot, HashMap<String, Integer> environment) {
 		try {
-			if (e instanceof Constant) {
-				return resolveCondition(target, (Constant) e, freeSlot, environment);
-			} else if (e instanceof Variable) {
-				return resolveCondition(target, (Variable) e, freeSlot, environment);
-			} else if (e instanceof BinOp) {
-				return resolveCondition(target, (BinOp) e, freeSlot, environment);
-			} else if (e instanceof UnOp) {
-				return resolveCondition(target, (UnOp) e, freeSlot, environment);
-			} else if (e instanceof Invoke) {
-				return resolveCondition(target, (Invoke) e, freeSlot, environment);
-			} else if (e instanceof RecordAccess) {
-				return resolveCondition(target, (RecordAccess) e, freeSlot, environment);
-			} else if (e instanceof RecordGen) {
-				return resolveCondition(target, (RecordGen) e, freeSlot, environment);
-			} else if (e instanceof TupleGen) {
-				return resolveCondition(target, (TupleGen) e, freeSlot, environment);
-			} else if (e instanceof ListAccess) {
-				return resolveCondition(target, (ListAccess) e, freeSlot, environment);
-			} else if (e instanceof Comprehension) {
-				return resolveCondition(target, (Comprehension) e, freeSlot, environment);
+			if (condition instanceof Constant) {
+				return resolveCondition(target, (Constant) condition, freeSlot, environment);
+			} else if (condition instanceof Variable) {
+				return resolveCondition(target, (Variable) condition, freeSlot, environment);
+			} else if (condition instanceof BinOp) {
+				return resolveCondition(target, (BinOp) condition, freeSlot, environment);
+			} else if (condition instanceof UnOp) {
+				return resolveCondition(target, (UnOp) condition, freeSlot, environment);
+			} else if (condition instanceof Invoke) {
+				return resolveCondition(target, (Invoke) condition, freeSlot, environment);
+			} else if (condition instanceof RecordAccess) {
+				return resolveCondition(target, (RecordAccess) condition, freeSlot, environment);
+			} else if (condition instanceof RecordGen) {
+				return resolveCondition(target, (RecordGen) condition, freeSlot, environment);
+			} else if (condition instanceof TupleGen) {
+				return resolveCondition(target, (TupleGen) condition, freeSlot, environment);
+			} else if (condition instanceof ListAccess) {
+				return resolveCondition(target, (ListAccess) condition, freeSlot, environment);
+			} else if (condition instanceof Comprehension) {
+				return resolveCondition(target, (Comprehension) condition, freeSlot, environment);
 			} else {
 				syntaxError("expected boolean expression, got: "
-						+ e.getClass().getName(), filename, e);
+						+ condition.getClass().getName(), filename, condition);
 			}
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			syntaxError("internal failure", filename, e, ex);
+			syntaxError("internal failure", filename, condition, ex);
 		}
 
 		return null;
@@ -1306,56 +1329,57 @@ public class ModuleBuilder {
 	}
 
 	/**
-	 * Translate an expression in the context of a given type environment. The
-	 * "environment" --- free register --- identifies the first free register for
-	 * use as temporary storage. An expression differs from a statement in that
-	 * it may consume a register as part of the translation. Thus, compound
-	 * expressions, such as binop, will save the environment of one expression from
-	 * being used when translating a subsequent expression.
+	 * Translate a source-level expression into a wyil block, using a given
+	 * environment mapping named variables to slots. The result of the
+	 * expression remains on the wyil stack.
 	 * 
+	 * @param expression
+	 *            --- source-level expression to be translated
+	 * @param freeSlot
+	 *            --- index of first free slot available for use as a temporary
+	 *            variable.
 	 * @param environment
-	 * @param e
-	 * @param environment
+	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	protected Block resolve(Expr e, int freeSlot, HashMap<String,Integer> environment) {
+	protected Block resolve(Expr expression, int freeSlot, HashMap<String,Integer> environment) {
 		try {
-			if (e instanceof Constant) {
-				return resolve((Constant) e, freeSlot, environment);
-			} else if (e instanceof Variable) {
-				return resolve((Variable) e, freeSlot, environment);
-			} else if (e instanceof NaryOp) {
-				return resolve((NaryOp) e, freeSlot, environment);
-			} else if (e instanceof BinOp) {
-				return resolve((BinOp) e, freeSlot, environment);
-			} else if (e instanceof Convert) {
-				return resolve((Convert) e, freeSlot, environment);
-			} else if (e instanceof ListAccess) {
-				return resolve((ListAccess) e, freeSlot, environment);
-			} else if (e instanceof UnOp) {
-				return resolve((UnOp) e, freeSlot, environment);
-			} else if (e instanceof Invoke) {
-				return resolve((Invoke) e, true, freeSlot, environment);
-			} else if (e instanceof Comprehension) {
-				return resolve((Comprehension) e, freeSlot, environment);
-			} else if (e instanceof RecordAccess) {
-				return resolve((RecordAccess) e, freeSlot, environment);
-			} else if (e instanceof RecordGen) {
-				return resolve((RecordGen) e, freeSlot, environment);
-			} else if (e instanceof TupleGen) {
-				return resolve((TupleGen) e, freeSlot, environment);
-			} else if (e instanceof DictionaryGen) {
-				return resolve((DictionaryGen) e, freeSlot, environment);
-			} else if (e instanceof FunConst) {
-				return resolve((FunConst) e, freeSlot, environment);
+			if (expression instanceof Constant) {
+				return resolve((Constant) expression, freeSlot, environment);
+			} else if (expression instanceof Variable) {
+				return resolve((Variable) expression, freeSlot, environment);
+			} else if (expression instanceof NaryOp) {
+				return resolve((NaryOp) expression, freeSlot, environment);
+			} else if (expression instanceof BinOp) {
+				return resolve((BinOp) expression, freeSlot, environment);
+			} else if (expression instanceof Convert) {
+				return resolve((Convert) expression, freeSlot, environment);
+			} else if (expression instanceof ListAccess) {
+				return resolve((ListAccess) expression, freeSlot, environment);
+			} else if (expression instanceof UnOp) {
+				return resolve((UnOp) expression, freeSlot, environment);
+			} else if (expression instanceof Invoke) {
+				return resolve((Invoke) expression, true, freeSlot, environment);
+			} else if (expression instanceof Comprehension) {
+				return resolve((Comprehension) expression, freeSlot, environment);
+			} else if (expression instanceof RecordAccess) {
+				return resolve((RecordAccess) expression, freeSlot, environment);
+			} else if (expression instanceof RecordGen) {
+				return resolve((RecordGen) expression, freeSlot, environment);
+			} else if (expression instanceof TupleGen) {
+				return resolve((TupleGen) expression, freeSlot, environment);
+			} else if (expression instanceof DictionaryGen) {
+				return resolve((DictionaryGen) expression, freeSlot, environment);
+			} else if (expression instanceof FunConst) {
+				return resolve((FunConst) expression, freeSlot, environment);
 			} else {
 				syntaxError("unknown expression encountered: "
-						+ e.getClass().getName(), filename, e);
+						+ expression.getClass().getName(), filename, expression);
 			}
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			syntaxError("internal failure", filename, e, ex);
+			syntaxError("internal failure", filename, expression, ex);
 		}
 
 		return null;
@@ -1729,11 +1753,11 @@ public class ModuleBuilder {
 		
 		if (e.condition != null) {
 			blk.append(resolveCondition(continueLabel, invert(e.condition),
-					environment));
+					freeSlot, environment));
 		}
 		
 		blk.append(Code.Load(null,resultSlot),attributes(e));
-		blk.append(resolve(environment,e.value));
+		blk.append(resolve(e.value, freeSlot, environment));
 		blk.append(Code.SetUnion(null, Code.OpDir.LEFT),attributes(e));
 		blk.append(Code.Store(null,resultSlot),attributes(e));
 			
@@ -1795,8 +1819,7 @@ public class ModuleBuilder {
 		return allocate("$" + environment.size(),environment);
 	}
 	*/
-	
-	/*
+		
 	protected int allocate(String var, HashMap<String,Integer> environment) {
 		Integer r = environment.get(var);
 		if(r == null) {
@@ -1806,8 +1829,7 @@ public class ModuleBuilder {
 		} else {
 			return r;
 		}
-	}
-	*/
+	}	
 	
 	protected Pair<Type,Block> resolve(UnresolvedType t) {
 		if (t instanceof UnresolvedType.Any) {
