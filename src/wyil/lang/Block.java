@@ -29,6 +29,41 @@ import java.util.*;
 
 import wyil.util.*;
 
+/**
+ * <p>
+ * A Block is the foundation of the Whiley Intermediate Language. A Block
+ * represents a complete sequence of bytecode instructions. For example, every
+ * method body is a single Block. Likewise, the constraint for a give type is a
+ * Block.
+ * </p>
+ * 
+ * <p>
+ * Every Block has a number of dedicate input variables which may or may not be
+ * named. In addition, a Block may used an arbitrary number of additional
+ * temporary variables. Each variable is allocated to a slot number, starting
+ * from zero. Slot zero is reserved for the special variable "$". Likewise, slot
+ * one is reserved for the special variable this for blocks which require it.
+ * For example, the body of a normal method requires a receiver, whilst
+ * functions or headless methods don't.
+ * </p>
+ * 
+ * <p>
+ * The main operations on a block are <i>append</i> and <i>import</i>. The
+ * former is used in the process of constructing a block. In such case,
+ * bytecodes are appended on to the block assuming an identical slot allocation.
+ * However, when importing one block into another we cannot assume that the slot
+ * allocations are the same. For example, the block representing a constraint on
+ * some type might have a single input mapped to slot zero, and a temporary
+ * mapped to slot one. When this block is imported into the pre-condition of
+ * some function, a collision would occur if e.g. that function has multiple
+ * parameters. This is because the second parameter would be mapped to the same
+ * register as the temporary in the constraint. We have to <i>shift</i> the slot
+ * number of that temporary variable up in order to avoid this collision.
+ * </p>
+ * 
+ * @author djp
+ * 
+ */
 public final class Block implements Iterable<Block.Entry> {
 	private final ArrayList<Entry> stmts;	
 	
