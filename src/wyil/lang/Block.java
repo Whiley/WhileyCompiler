@@ -50,7 +50,7 @@ import wyil.util.*;
  * </p>
  * 
  * <p>
- * The main operations on a block are <i>append</i> and <i>import</i>. The
+ * The main operations on a block are <i>append</i> and <i>append</i>. The
  * former is used in the process of constructing a block. In such case,
  * bytecodes are appended on to the block assuming an identical slot allocation
  * (called the <i>environment</i>). There are two considerations when importing
@@ -94,6 +94,9 @@ public final class Block implements Iterable<Block.Entry> {
 	// Accessor Methods
 	// ===================================================================
 
+	/**
+	 * Return the number of bytecodes in this block.
+	 */
 	public int size() {
 		return stmts.size();
 	}
@@ -133,6 +136,23 @@ public final class Block implements Iterable<Block.Entry> {
 	// Import Methods
 	// ===================================================================
 
+	/**
+	 * <p>
+	 * Import an external block into this one, using a given <i>binding</i>. The
+	 * binding indicates how the input variables for the external block should
+	 * be mapped into the variables of this block.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> temporary variables used in the external block will be
+	 * mapped automatically to unused slots in this environment to prevent
+	 * collisions. Therefore, temporary variables should not be specified in the
+	 * binding.
+	 * </p>
+	 */
+	public void importExternal(Block block, Map<Integer,Integer> binding) {
+		
+	}
+	
 	/**
 	 * Shift every slot in this block by amount.
 	 * 
@@ -226,7 +246,8 @@ public final class Block implements Iterable<Block.Entry> {
 	// ===================================================================
 	// Insert Methods
 	// ===================================================================
-
+	
+	
 	/**
 	 * <p>Insert a bytecode at a given position in this block. It is assumed that
 	 * the bytecode employs the same environment as this block. The bytecode at
@@ -329,7 +350,7 @@ public final class Block implements Iterable<Block.Entry> {
 
 	/**
 	 * An Entry object represents a bytecode and those attributes currently
-	 * associated with it (if any).
+	 * associated with it (if any) in the block.
 	 * 
 	 * @author djp
 	 * 
