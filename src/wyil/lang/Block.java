@@ -42,51 +42,11 @@ public final class Block implements Iterable<Block.Entry> {
 			add(s.code,s.attributes());
 		}
 	}
-	
-	public void add(Block.Entry entry) {
-		stmts.add(new Entry(entry.code,entry.attributes()));
-	}
-	
-	public void add(Code c, Attribute... attributes) {
-		stmts.add(new Entry(c,attributes));
-	}
-	
-	public void add(Code c, Collection<Attribute> attributes) {
-		stmts.add(new Entry(c,attributes));		
-	}
-	
-	public void add(int idx, Code c, Attribute... attributes) {
-		stmts.add(idx,new Entry(c,attributes));
-	}
-	
-	public void add(int idx, Code c, Collection<Attribute> attributes) {
-		stmts.add(idx,new Entry(c,attributes));
-	}
-	
-	public void addAll(Collection<Entry> stmts) {
-		for(Entry s : stmts) {
-			add(s.code,s.attributes());
-		}
-	}
-	
-	public void addAll(int idx, Collection<Entry> stmts) {		
-		for(Entry s : stmts) {
-			add(idx++,s.code,s.attributes());
-		}
-	}
-	
-	public void addAll(Block stmts) {
-		for(Entry s : stmts) {
-			add(s.code,s.attributes());
-		}
-	}
-	
-	public void addAll(int idx, Block stmts) {
-		for(Entry s : stmts) {
-			add(idx++, s.code,s.attributes());
-		}
-	}
-	
+
+	// ===================================================================
+	// Accessor Methods
+	// ===================================================================
+
 	public int size() {
 		return stmts.size();
 	}
@@ -107,6 +67,18 @@ public final class Block implements Iterable<Block.Entry> {
 		}		
 		return r;
 	}
+		
+	public Entry get(int index) {
+		return stmts.get(index);
+	}
+
+	public Iterator<Entry> iterator() {
+		return stmts.iterator();
+	}		
+	
+	// ===================================================================
+	// Import Methods
+	// ===================================================================
 
 	/**
 	 * Shift every slot in this block by amount.
@@ -145,9 +117,47 @@ public final class Block implements Iterable<Block.Entry> {
 		return nblock;
 	}
 	
-	public Entry get(int index) {
-		return stmts.get(index);
+	// ===================================================================
+	// Append Methods
+	// ===================================================================
+	
+	public void add(Block.Entry entry) {
+		stmts.add(new Entry(entry.code,entry.attributes()));
 	}
+	
+	public void add(Code c, Attribute... attributes) {
+		stmts.add(new Entry(c,attributes));
+	}
+	
+	public void add(Code c, Collection<Attribute> attributes) {
+		stmts.add(new Entry(c,attributes));		
+	}
+	
+	public void add(int idx, Code c, Collection<Attribute> attributes) {
+		stmts.add(idx,new Entry(c,attributes));
+	}
+	
+	public void addAll(Collection<Entry> stmts) {
+		for(Entry s : stmts) {
+			add(s.code,s.attributes());
+		}
+	}
+	
+	public void addAll(Block stmts) {
+		for(Entry s : stmts) {
+			add(s.code,s.attributes());
+		}
+	}
+	
+	public void addAll(int idx, Block stmts) {
+		for(Entry s : stmts) {
+			add(idx++, s.code,s.attributes());
+		}
+	}
+
+	// ===================================================================
+	// Replace and Remove Methods
+	// ===================================================================
 	
 	public void set(int index, Code code, Attribute... attributes) {
 		stmts.set(index,new Entry(code,attributes));
@@ -160,14 +170,10 @@ public final class Block implements Iterable<Block.Entry> {
 	public void remove(int index) {
 		stmts.remove(index);
 	}
-	
-	public Block subblock(int start, int end) {
-		return new Block(stmts.subList(start, end));
-	}
-	
-	public Iterator<Entry> iterator() {
-		return stmts.iterator();
-	}
+
+	// ===================================================================
+	// Miscellaneous
+	// ===================================================================
 	
 	public String toString() {
 		String r = "[";

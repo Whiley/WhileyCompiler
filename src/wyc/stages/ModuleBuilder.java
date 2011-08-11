@@ -658,8 +658,7 @@ public class ModuleBuilder {
 		
 		// method return type
 		Pair<Type,Block> ret = resolve(fd.ret);
-		// TODO: first post-condition
-
+		
 		// method receiver type (if applicable)
 		if (fd instanceof MethDecl) {
 			MethDecl md = (MethDecl) fd;
@@ -670,15 +669,21 @@ public class ModuleBuilder {
 			}
 		}
 		
-		// method parameter types
-		for (WhileyFile.Parameter p : fd.parameters) {
-			environment.put(p.name(),environment.size());			
-		}
-
-		// Resolve pre- and post-condition		
 		Block precondition = null;
 		Block postcondition = null;
 		
+		// method parameter types
+		for (WhileyFile.Parameter p : fd.parameters) {			
+			environment.put(p.name(),environment.size());
+			// now, resolve and inline any constraints associated with the type.
+			Pair<Type, Block> t = resolve(p.type);
+			Block constraint = t.second();
+			if(t != null) {
+				// TODO: inline pre-condition
+			}
+		}
+
+		// Resolve pre- and post-condition								
 		if(fd.precondition != null) {
 			String lab = Block.freshLabel();
 			precondition = new Block();			
@@ -1871,21 +1876,6 @@ public class ModuleBuilder {
 				types.put(e.getKey(), p.first());				
 			}
 			return new Pair<Type,Block>(Type.T_RECORD(types),null);
-		} else if (t instanceof UnresolvedType.Named) {
-			UnresolvedType.Named dt = (UnresolvedType.Named) t;			
-			ModuleID mid = dt.attribute(Attributes.Module.class).module;
-			if (modules.contains(mid)) {
-				return types.get(new NameID(mid, dt.name));								
-			} else {
-				try {
-					Module mi = loader.loadModule(mid);
-					Module.TypeDef td = mi.type(dt.name);
-					return new Pair<Type,Block>(td.type(),td.constraint());
-				} catch (ResolveError rex) {
-					syntaxError(rex.getMessage(), filename, t, rex);
-					return null;
-				}
-			}
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type> bounds = new HashSet<Type>();			
@@ -1911,6 +1901,21 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = resolve(ut.element);
 			// TODO: fix process constraints
 			return new Pair<Type,Block>(Type.T_PROCESS(p.first()),blk);							
+		} else if (t instanceof UnresolvedType.Named) {
+			UnresolvedType.Named dt = (UnresolvedType.Named) t;			
+			ModuleID mid = dt.attribute(Attributes.Module.class).module;
+			if (modules.contains(mid)) {
+				return types.get(new NameID(mid, dt.name));								
+			} else {
+				try {
+					Module mi = loader.loadModule(mid);
+					Module.TypeDef td = mi.type(dt.name);
+					return new Pair<Type,Block>(td.type(),td.constraint());
+				} catch (ResolveError rex) {
+					syntaxError(rex.getMessage(), filename, t, rex);
+					return null;
+				}
+			}
 		} else {
 			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
 			ArrayList<Type> paramTypes = new ArrayList<Type>();
