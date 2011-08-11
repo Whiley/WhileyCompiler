@@ -33,12 +33,14 @@ import wyjc.Main;
 public abstract class BenchHarness {
 
   private final String srcPath; // path to source files
+  private final int times;
 
-  public BenchHarness(String srcPath) {
+  public BenchHarness(String srcPath, int times) {
     this.srcPath = srcPath.replace('/', File.separatorChar);
+    this.times = times;
   }
 
-  protected long runBench(String name, int times, String... params)
+  protected long runBench(String name, String... params)
       throws InterruptedException, IOException {
     final String[] args = new String[3];
     args[0] = "-wp";

@@ -29,25 +29,26 @@ import java.io.IOException;
 
 import wyjc.testing.BenchHarness;
 
-public class ExampleBench extends BenchHarness {
+public class ConcurrentBench extends BenchHarness {
 
-  public ExampleBench() {
-    super("examples");
+  public ConcurrentBench() {
+    super("../wybench/concurrent/micro", 10);
   }
 
-  public void runSort() throws InterruptedException, IOException {
-    System.out.println(runBench("sort", 10));
+  public void runSum() throws InterruptedException, IOException {
+    System.out.println(runBench("sum/Main"));
   }
   
-  public void runCalculator() throws InterruptedException, IOException {
-  	System.out.println(runBench("calculator", 10, "calculator.input"));
+  public void runMatrix() throws InterruptedException, IOException {
+  	System.out.println(runBench("matrix/Main", "small.in"));
+  	System.out.println(runBench("matrix/Main", "medium.in"));
+  	System.out.println(runBench("matrix/Main", "large.in"));
   }
 
   public static void main(String[] args) throws InterruptedException,
       IOException {
-    ExampleBench bench = new ExampleBench();
-    bench.runSort();
-    bench.runCalculator();
+    ConcurrentBench bench = new ConcurrentBench();
+    bench.runSum();
   }
 
 }
