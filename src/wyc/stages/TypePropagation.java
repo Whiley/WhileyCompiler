@@ -153,6 +153,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Block postcondition = mcase.postcondition();		
 		if(postcondition != null) {
 			Env tmp = environment.clone();
+			// Set the return type for special variable "$"
+			tmp.set(0,method.type().ret());
 			// Now, add space for any other slots needed in the block. This can
 			// arise as a result of temporary loop variables, etc.
 			int maxSlots = postcondition.numSlots();

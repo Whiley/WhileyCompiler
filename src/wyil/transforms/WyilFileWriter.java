@@ -136,7 +136,7 @@ public class WyilFileWriter implements Transform {
 
 		Block precondition = mcase.precondition();
 		if(precondition != null) {			
-			out.println("precondition: ");
+			out.println("requires: ");
 			ArrayList<String> env = new ArrayList<String>();
 			env.add("$");			
 			// Now, add space for any other slots needed in the block. This can
@@ -150,7 +150,7 @@ public class WyilFileWriter implements Transform {
 		
 		Block postcondition = mcase.postcondition();
 		if(postcondition != null) {
-			out.println("postcondition: ");
+			out.println("ensures: ");
 			ArrayList<String> env = new ArrayList<String>();
 			env.add("$");			
 			// Now, add space for any other slots needed in the block. This can

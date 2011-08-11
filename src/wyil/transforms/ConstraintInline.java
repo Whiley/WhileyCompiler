@@ -52,7 +52,7 @@ public class ConstraintInline implements Transform {
 			Block nconstraint = new Block();
 			for (int i = 0; i != constraint.size(); ++i) {
 				Block.Entry entry = constraint.get(i);
-				Block nblk = transform(entry, freeSlot);
+				Block nblk = transform(entry, freeSlot, null);
 				if (nblk != null) {
 					nconstraint.addAll(nblk);
 				}
@@ -79,7 +79,7 @@ public class ConstraintInline implements Transform {
 		Block nbody = new Block();		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
-			Block nblk = transform(entry,freeSlot);			
+			Block nblk = transform(entry,freeSlot,mcase);			
 			if(nblk != null) {								
 				nbody.addAll(nblk);				
 			} 					
@@ -90,7 +90,7 @@ public class ConstraintInline implements Transform {
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
 	
-	public Block transform(Block.Entry entry, int freeSlot) {
+	public Block transform(Block.Entry entry, int freeSlot, Module.Case methodCase) {
 		Code code = entry.code;
 		
 		try {
@@ -108,7 +108,7 @@ public class ConstraintInline implements Transform {
 			} else if(code instanceof Code.BinOp) {
 				return transform((Code.BinOp)code,freeSlot,entry);
 			} else if(code instanceof Code.Return) {
-
+				return transform((Code.Return)code,freeSlot,entry,methodCase);
 			}
 		} catch(ResolveError e) {
 			syntaxError("internal failure",filename,entry,e);
@@ -167,7 +167,21 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.Return code, SyntacticElement elem) {
+	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
+			Module.Case methodCase) {
+		
+		if(code.type != Type.T_VOID) {
+			Block postcondition = methodCase.postcondition();
+			if(postcondition != null) {
+				Block blk = new Block();
+				// FIXME: need to support shadows here!!
+				blk.add(Code.Store(code.type, freeSlot),attributes(elem));
+				blk.addAll(postcondition.shift(freeSlot).relabel());
+				blk.add(Code.Load(code.type, freeSlot),attributes(elem));
+				return blk;
+			}
+		}
+		
 		return null;
 	}
 
