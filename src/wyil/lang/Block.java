@@ -34,7 +34,9 @@ import wyil.util.*;
  * A Block is the foundation of the Whiley Intermediate Language. A Block
  * represents a complete sequence of bytecode instructions. For example, every
  * method body is a single Block. Likewise, the constraint for a give type is a
- * Block.
+ * Block. Finally, a Block permits attributes to be attached to every bytecode
+ * in the block. An example attribute is one for holding the location of the
+ * source code which generated the bytecode.
  * </p>
  * 
  * <p>
