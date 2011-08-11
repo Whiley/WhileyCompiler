@@ -53,15 +53,24 @@ import wyil.util.*;
  * The main operations on a block are <i>append</i> and <i>import</i>. The
  * former is used in the process of constructing a block. In such case,
  * bytecodes are appended on to the block assuming an identical slot allocation
- * (called the <i>environment</i>). However, when importing one block into
- * another we cannot assume that the slot allocations are the same. For example,
- * the block representing a constraint on some type might have a single input
- * mapped to slot zero, and a temporary mapped to slot one. When this block is
- * imported into the pre-condition of some function, a collision would occur if
- * e.g. that function has multiple parameters. This is because the second
- * parameter would be mapped to the same register as the temporary in the
- * constraint. We have to <i>shift</i> the slot number of that temporary
- * variable up in order to avoid this collision.
+ * (called the <i>environment</i>). There are two considerations when importing
+ * one block into another:
+ * </p>
+ * 
+ * <ul>
+ * <li>Firstly, we cannot assume identical slot allocations. For example, the
+ * block representing a constraint on some type might have a single input mapped
+ * to slot zero, and a temporary mapped to slot one. When this block is imported
+ * into the pre-condition of some function, a collision would occur if e.g. that
+ * function has multiple parameters. This is because the second parameter would
+ * be mapped to the same register as the temporary in the constraint. We have to
+ * <i>shift</i> the slot number of that temporary variable up in order to avoid
+ * this collision.</li>
+ * <li>
+ * Secondly, we cannot all labels are distinct across both blocks. In otherwise,
+ * both blocks may contain two identical labels. In such case, we need to
+ * relabel one of the blocks in order to avoid this collision.</li>
+ * </ul>
  * </p>
  * 
  * @author djp
