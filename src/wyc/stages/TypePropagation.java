@@ -101,7 +101,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	public Env initialStore() {
 				
 		Env environment = new Env();		
-		environment.add(Type.T_VOID);
 		
 		if(method.type() instanceof Type.Meth) {
 			Type.Meth mt = (Type.Meth) method.type();
@@ -130,7 +129,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		this.methodCase = mcase;
 		
 		Env environment = initialStore();
-		int start = method.type().params().size()+1;
+		int start = method.type().params().size();
 		if(method.type() instanceof Type.Meth) {
 			Type.Meth mt = (Type.Meth) method.type();
 			if(mt.receiver() != null) {
@@ -165,7 +164,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		
 		// Now, propagate through the body
-		for (int i = start; i < mcase.locals().size(); i++) {
+		for (int i = start; i < mcase.body().numSlots(); i++) {
 			environment.add(Type.T_VOID);
 		}	
 						
@@ -187,7 +186,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		propagate(0,blk.size(), environment);	
 				
 		// finally, apply any and all rewrites
-		Block nblk = new Block();				
+		Block nblk = new Block(blk.numInputs());				
 		for(int i=0;i!=blk.size();++i) {
 			Block rewrite = rewrites.get(i);
 			if(rewrite != null) {
@@ -281,7 +280,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return null;
 		}
 		
-		Block block = new Block();
+		Block block = new Block(0);
 		block.append(code,entry.attributes());		
 		rewrites.put(index, block);
 		
@@ -553,7 +552,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 		
 	protected Block infer(FieldLoad e, Entry stmt, Env environment) {	
-		Block blk = new Block();
+		Block blk = new Block(0);
 		Type lhs_t = environment.pop();		
 		
 		if (Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
@@ -1173,7 +1172,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			break;		
 		}
 		
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.IfGoto(lub, code.op, code.target),stmt.attributes());		
 		rewrites.put(index, blk);
 		
@@ -1217,7 +1216,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 		}
 		
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(ncode,stmt.attributes());		
 		rewrites.put(index, blk);
 		
@@ -1237,7 +1236,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			envs.add(environment);
 		}
 
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.Switch(val,code.defaultTarget,code.branches),stmt.attributes());		
 		rewrites.put(index, blk);
 		
@@ -1270,7 +1269,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// happen as a result of substitution for contraints or pre/post
 			// conditions.
 			for (int i = start; i <= end; ++i) {
-				rewrites.put(i, new Block());
+				rewrites.put(i, new Block(0));
 			}			
 			
 			return environment;
@@ -1291,7 +1290,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// following line is necessary to get rid of the loop variable
 		environment = join(environment,newEnv);		
 				
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.ForAll(src_t, forloop.slot, forloop.target, modifies),stmt.attributes());		
 		rewrites.put(start, blk);
 		
@@ -1330,7 +1329,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				
 		environment = join(environment,newEnv);		
 				
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.Loop(loop.target, modifies),stmt.attributes());		
 		rewrites.put(start, blk);
 		

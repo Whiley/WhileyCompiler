@@ -76,7 +76,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
-		Block nbody = new Block();		
+		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Rewrite rewrite = rewrites.get(i);			
 			if(rewrite != null) {				

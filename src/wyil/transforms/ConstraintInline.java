@@ -49,7 +49,7 @@ public class ConstraintInline implements Transform {
 		
 		if (constraint != null) {
 			int freeSlot = constraint.numSlots();
-			Block nconstraint = new Block();
+			Block nconstraint = new Block(1);
 			for (int i = 0; i != constraint.size(); ++i) {
 				Block.Entry entry = constraint.get(i);
 				Block nblk = transform(entry, freeSlot, null);
@@ -76,7 +76,7 @@ public class ConstraintInline implements Transform {
 	public Module.Case transform(Module.Case mcase) {	
 		Block body = mcase.body();		
 		int freeSlot = Math.max(mcase.locals().size(),body.numSlots());
-		Block nbody = new Block();		
+		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
 			Block nblk = transform(entry,freeSlot,mcase);			
@@ -128,7 +128,7 @@ public class ConstraintInline implements Transform {
 	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws ResolveError {		
 		Block precondition = findPrecondition(code.name,code.type);
 		if(precondition != null) {
-			Block blk = new Block();
+			Block blk = new Block(0);
 			List<Type> paramTypes = code.type.params();
 			
 			// TODO: mark as check block
@@ -173,7 +173,7 @@ public class ConstraintInline implements Transform {
 		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
 			if(postcondition != null) {
-				Block blk = new Block();
+				Block blk = new Block(0);
 				// FIXME: need to support shadows here!!
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));
 				blk.append(postcondition.shift(freeSlot).relabel());
@@ -194,7 +194,7 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		// TODO: mark as check block
 		blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
 		blk.append(Code.Store(code.type, freeSlot+1),attributes(elem));
@@ -250,7 +250,7 @@ public class ConstraintInline implements Transform {
 	public Block transform(Code.BinOp code, int freeSlot, SyntacticElement elem) {
 		
 		if(code.bop == Code.BOp.DIV) {
-			Block blk = new Block();
+			Block blk = new Block(0);
 			// TODO: mark as check block
 			blk.append(Code.Store(code.type, freeSlot),attributes(elem));
 			String label = Block.freshLabel();

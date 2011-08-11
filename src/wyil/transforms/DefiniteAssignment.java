@@ -65,12 +65,12 @@ public class DefiniteAssignment extends
 	public HashSet<Integer> initialStore() {
 		HashSet<Integer> defined = new HashSet<Integer>();
 		
-		int diff = 1;
+		int diff = 0;
 		
 		if(method.type() instanceof Type.Meth) {
 			Type.Meth mt = (Type.Meth) method.type();
 			if(mt.receiver() != null) {
-				defined.add(1);
+				defined.add(diff);
 				diff++;
 			}
 		}

@@ -77,17 +77,20 @@ import wyil.util.*;
  * 
  */
 public final class Block implements Iterable<Block.Entry> {
-	private final ArrayList<Entry> stmts;	
+	private final ArrayList<Entry> stmts;
+	private final int numInputs;
 	
-	public Block() {
+	public Block(int numInputs) {
 		this.stmts = new ArrayList<Entry>();
+		this.numInputs = numInputs;
 	}
 	
-	public Block(Collection<Entry> stmts) {
+	public Block(int numInputs, Collection<Entry> stmts) {
 		this.stmts = new ArrayList<Entry>();
 		for(Entry s : stmts) {
 			append(s.code,s.attributes());
 		}
+		this.numInputs = numInputs;
 	}
 
 	// ===================================================================
@@ -101,6 +104,15 @@ public final class Block implements Iterable<Block.Entry> {
 		return stmts.size();
 	}
 
+	/**
+	 * Return the number of input variables for this block.
+	 * 
+	 * @return
+	 */
+	public int numInputs() {
+		return numInputs;
+	}
+	
 	/**
 	 * Determine the number of slots used in this block.
 	 * 
@@ -160,7 +172,7 @@ public final class Block implements Iterable<Block.Entry> {
 	 * @return
 	 */
 	public Block shift(int amount) {
-		Block nblock = new Block();
+		Block nblock = new Block(numInputs);
 		for(Entry s : stmts) {
 			Code ncode = s.code.shift(amount);
 			nblock.append(ncode,s.attributes());
@@ -181,7 +193,7 @@ public final class Block implements Iterable<Block.Entry> {
 				labels.put(l.label, freshLabel());
 			}
 		}
-		Block nblock = new Block();
+		Block nblock = new Block(numInputs);
 		for(Entry s : stmts) {
 			Code ncode = s.code.relabel(labels);
 			nblock.append(ncode,s.attributes());

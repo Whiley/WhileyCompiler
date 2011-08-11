@@ -434,7 +434,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {		
 		JvmType type = convertType(c.type);
 		//addIncRefs(c.type,bytecodes);		
-		bytecodes.add(new Bytecode.Store(c.slot-1, type));				
+		bytecodes.add(new Bytecode.Store(c.slot, type));				
 	}
 
 	public void translate(Code.Update c, int freeSlot,ArrayList<Bytecode> bytecodes) {
@@ -488,12 +488,12 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Store(indexSlot+i,t));
 		}
 		
-		bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 		
 		// Fourth, finally process the assignment path and update the object in
 		// question.		
 		multiStoreHelper(c.type,c.level-1,fields.iterator(),indexSlot,val_t,freeSlot, bytecodes);		
-		bytecodes.add(new Bytecode.Store(c.slot-1, convertType(c.type)));
+		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));
 	}
 
 	public void multiStoreHelper(Type type, int level,
@@ -831,22 +831,22 @@ public class ClassFileBuilder {
 			String exitLabel = freshLabel();
 			String trueLabel = freshLabel();
 					
-			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
 
 			Type gdiff = Type.leastDifference(c.type,c.test);			
-			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(gdiff,bytecodes);		
-			bytecodes.add(new Bytecode.Store(c.slot-1,convertType(gdiff)));							
+			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));
 
 			Type glb = Type.greatestLowerBound(c.type, c.test);
-			bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
+			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(glb,bytecodes);		
-			bytecodes.add(new Bytecode.Store(c.slot-1,convertType(glb)));			
+			bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
 			bytecodes.add(new Bytecode.Goto(c.target));
 			bytecodes.add(new Bytecode.Label(exitLabel));
 		} else {
@@ -941,7 +941,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
 				Bytecode.INTERFACE));
 		addReadConversion(elementType, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.slot-1, convertType(elementType)));
+		bytecodes.add(new Bytecode.Store(c.slot, convertType(elementType)));
 		
 		// we need to increase the freeSlot, since we've allocated one slot to
 		// hold the iterator.
@@ -968,7 +968,7 @@ public class ClassFileBuilder {
 		ftype = new JvmType.Function(T_CHAR,T_INT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
 				Bytecode.VIRTUAL));		
-		bytecodes.add(new Bytecode.Store(c.slot-1, T_CHAR));
+		bytecodes.add(new Bytecode.Store(c.slot, T_CHAR));
 		bytecodes.add(new Bytecode.Iinc(indexSlot,1));
 		
 		// we need to increase the freeSlot, since we've allocated one slot to
@@ -1040,7 +1040,7 @@ public class ClassFileBuilder {
 	}
 		
 	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.slot-1, convertType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 	}
 	
 	public void translate(Code.DictLoad c, int freeSlot,

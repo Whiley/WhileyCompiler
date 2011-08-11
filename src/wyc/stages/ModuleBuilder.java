@@ -162,7 +162,7 @@ public class ModuleBuilder {
 				Type t = v.type();
 				if (t instanceof Type.Set) {
 					Type.Set st = (Type.Set) t;		
-					Block blk = new Block();
+					Block blk = new Block(1);
 					// TODO: put in necessary constraint
 					types.put(k, new Pair<Type,Block>(st.element(),blk));
 				}
@@ -458,7 +458,7 @@ public class ModuleBuilder {
 		Pair<Type,Block> t = types.get(key);
 		
 		if (cached != null) {			
-			return new Pair<Type,Block>(cached, new Block());
+			return new Pair<Type,Block>(cached, new Block(1));
 		} else if(t != null) {
 			return t;
 		} else if (!modules.contains(key.module())) {			
@@ -518,7 +518,7 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = expandType(lt.element, filename, cache);			
 			Block blk = null;
 			if (p.second() != null) {
-				blk = new Block(); 
+				blk = new Block(1); 
 				String label = Block.freshLabel();
 				blk.append(Code.Load(null, Code.RETURN_SLOT));
 				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
@@ -532,7 +532,7 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
 			Block blk = null;
 			if (p.second() != null) {
-				blk = new Block(); 
+				blk = new Block(1); 
 				String label = Block.freshLabel();
 				blk.append(Code.Load(null, Code.RETURN_SLOT));
 				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
@@ -652,10 +652,6 @@ public class ModuleBuilder {
 	protected Module.Method resolve(FunDecl fd) {		
 		HashMap<String,Integer> environment = new HashMap<String,Integer>();
 		
-		// We always include "$" as the variable at index 0. This simplifies the
-		// problem of dealing with this "virtual" variable.
-		environment.put("$", Code.RETURN_SLOT);
-		
 		// method return type
 		Pair<Type,Block> ret = resolve(fd.ret);
 		
@@ -686,16 +682,23 @@ public class ModuleBuilder {
 		// Resolve pre- and post-condition								
 		if(fd.precondition != null) {
 			String lab = Block.freshLabel();
-			precondition = new Block();			
-			precondition.append(resolveCondition(lab, fd.precondition, environment));		
+			HashMap<String,Integer> preEnv = new HashMap<String,Integer>(environment);
+			precondition = new Block(environment.size());			
+			precondition.append(resolveCondition(lab, fd.precondition, preEnv));		
 			precondition.append(Code.Fail("precondition not satisfied"), attributes(fd.precondition));
 			precondition.append(Code.Label(lab));			
 		}
 		
-		if(fd.postcondition != null) {			
+		if(fd.postcondition != null) {
+			// Generate post-condition environment
+			HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
+			postEnv.put("$", 0);
+			for(String var : environment.keySet()) {
+				postEnv.put(var, environment.get(var)+1);
+			}
 			String lab = Block.freshLabel();
-			postcondition = new Block();			
-			postcondition.append(resolveCondition(lab, fd.postcondition, environment));		
+			postcondition = new Block(postEnv.size()); 		
+			postcondition.append(resolveCondition(lab, fd.postcondition, postEnv));		
 			postcondition.append(Code.Fail("postcondition not satisfied"), attributes(fd.postcondition));
 			postcondition.append(Code.Label(lab));
 		}
@@ -703,7 +706,7 @@ public class ModuleBuilder {
 		// Resolve body		
 		currentFunDecl = fd;
 			
-		Block body = new Block();		
+		Block body = new Block(environment.size());		
 		for (Stmt s : fd.statements) {
 			body.append(resolve(s, environment));
 		}
@@ -814,7 +817,7 @@ public class ModuleBuilder {
 		} else if(s.lhs instanceof ListAccess || s.lhs instanceof RecordAccess){
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
-			blk = new Block();
+			blk = new Block(0);
 			Pair<Variable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
 			if(!environment.containsKey(l.first().var)) {
 				syntaxError("unknown variable",filename,l.first());
@@ -854,7 +857,7 @@ public class ModuleBuilder {
 	
 	protected Block resolve(Assert s, HashMap<String,Integer> environment) {
 		String lab = Block.freshLabel();
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.Assert(lab),attributes(s));
 		blk.append(resolveCondition(lab, s.expr, environment));		
 		blk.append(Code.Fail("assertion failed"), attributes(s));
@@ -870,21 +873,21 @@ public class ModuleBuilder {
 			blk.append(Code.Return(ret.first()), attributes(s));
 			return blk;			
 		} else {
-			Block blk = new Block();
+			Block blk = new Block(0);
 			blk.append(Code.Return(Type.T_VOID), attributes(s));
 			return blk;
 		}
 	}
 
 	protected Block resolve(ExternJvm s, HashMap<String,Integer> environment) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.ExternJvm(s.bytecodes),
 				attributes(s));
 		return blk;
 	}
 
 	protected Block resolve(Skip s, HashMap<String,Integer> environment) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.Skip, attributes(s));
 		return blk;
 	}
@@ -928,7 +931,7 @@ public class ModuleBuilder {
 		if(scope == null) {
 			syntaxError("break outside switch or loop",filename,s);
 		}
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.Goto(scope.label));
 		return blk;
 	}
@@ -936,7 +939,7 @@ public class ModuleBuilder {
 	protected Block resolve(Switch s, HashMap<String,Integer> environment) throws ResolveError {
 		String exitLab = Block.freshLabel();		
 		Block blk = resolve(s.expr, environment);				
-		Block cblk = new Block();
+		Block cblk = new Block(0);
 		String defaultTarget = exitLab;
 		HashSet<Value> values = new HashSet();
 		ArrayList<Pair<Value,String>> cases = new ArrayList();		
@@ -981,7 +984,7 @@ public class ModuleBuilder {
 	protected Block resolve(While s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();				
 				
-		Block blk = new Block();
+		Block blk = new Block(0);
 		
 		blk.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
@@ -1079,7 +1082,7 @@ public class ModuleBuilder {
 
 	protected Block resolveCondition(String target, Constant c, HashMap<String,Integer> environment) {
 		Value.Bool b = (Value.Bool) c.value;
-		Block blk = new Block();
+		Block blk = new Block(0);
 		if (b.value) {
 			blk.append(Code.Goto(target));
 		} else {
@@ -1090,7 +1093,7 @@ public class ModuleBuilder {
 
 	protected Block resolveCondition(String target, Variable v, 
 			HashMap<String, Integer> environment) throws ResolveError {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);					
 		Attributes.Module mod = v.attribute(Attributes.Module.class);
@@ -1148,7 +1151,7 @@ public class ModuleBuilder {
 
 	protected Block resolveCondition(String target, BinOp v, HashMap<String,Integer> environment) {
 		BOp bop = v.op;
-		Block blk = new Block();
+		Block blk = new Block(0);
 
 		if (bop == BOp.OR) {
 			blk.append(resolveCondition(target, v.lhs, environment));
@@ -1207,7 +1210,7 @@ public class ModuleBuilder {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
 			slot = environment.get(lhs.var);
-			blk = new Block();
+			blk = new Block(0);
 		} else {
 			blk = resolve(v.lhs, environment);
 			slot = -1;
@@ -1263,7 +1266,7 @@ public class ModuleBuilder {
 		}
 					
 		// Ok, non-boolean case.				
-		Block blk = new Block();
+		Block blk = new Block(0);
 		ArrayList<Pair<Integer,Integer>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> src : e.sources) {
@@ -1378,7 +1381,7 @@ public class ModuleBuilder {
 
 	protected Block resolve(Invoke s, boolean retval, HashMap<String,Integer> environment) throws ResolveError {
 		List<Expr> args = s.arguments;
-		Block blk = new Block();
+		Block blk = new Block(0);
 		Type[] paramTypes = new Type[args.size()]; 
 		
 		boolean receiverIsThis = s.receiver != null && s.receiver instanceof Expr.Variable && ((Expr.Variable)s.receiver).var.equals("this");
@@ -1463,7 +1466,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(Constant c, HashMap<String,Integer> environment) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.Const(c.value), attributes(c));
 		return blk;
 	}
@@ -1482,7 +1485,7 @@ public class ModuleBuilder {
 			}
 			tf = Type.T_FUN(Type.T_ANY, paramTypes);
 		}
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(Code.Const(Value.V_FUN(name, tf)),
 				attributes(s));
 		return blk;
@@ -1496,7 +1499,7 @@ public class ModuleBuilder {
 			// Must be a local variable	
 			if(alias.alias == null) {				
 				if(environment.containsKey(v.var)) {
-					Block blk = new Block();						
+					Block blk = new Block(0);						
 					blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
 					return blk;
 				} else {
@@ -1518,7 +1521,7 @@ public class ModuleBuilder {
 					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
 					if(ert != null && ert.fields().containsKey(v.var)) {						
 						// Bingo, this is an implicit field dereference
-						Block blk = new Block();
+						Block blk = new Block(0);
 						blk.append(Code.Load(null, environment.get("this")),attributes(v));
 						blk.append(Code.ProcLoad(null),attributes(v));					
 						blk.append(Code.FieldLoad(null, v.var),attributes(v));						
@@ -1538,7 +1541,7 @@ public class ModuleBuilder {
 				Module mi = loader.loadModule(mod.module);
 				val = mi.constant(v.var).constant();
 			}
-			Block blk = new Block();
+			Block blk = new Block(0);
 			blk.append(Code.Const(val),attributes(v));
 			return blk;
 		}
@@ -1584,7 +1587,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(ListAccess v, HashMap<String,Integer> environment) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(resolve(v.src, environment));
 		blk.append(resolve(v.index, environment));
 		blk.append(Code.ListLoad(null),attributes(v));
@@ -1592,7 +1595,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(Convert v, HashMap<String,Integer> environment) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(resolve(v.expr, environment));		
 		Pair<Type,Block> p = resolve(v.type);
 		// TODO: include constraints
@@ -1619,7 +1622,7 @@ public class ModuleBuilder {
 		}
 
 		BOp bop = v.op;
-		Block blk = new Block();
+		Block blk = new Block(0);
 		blk.append(resolve(v.lhs, environment));
 		blk.append(resolve(v.rhs, environment));
 
@@ -1636,7 +1639,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(NaryOp v, HashMap<String,Integer> environment) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		if (v.nop == NOp.SUBLIST) {
 			if (v.arguments.size() != 3) {
 				syntaxError("incorrect number of arguments", filename, v);
@@ -1683,7 +1686,7 @@ public class ModuleBuilder {
 		}
 
 		// Ok, non-boolean case.				
-		Block blk = new Block();
+		Block blk = new Block(0);
 		ArrayList<Pair<Integer,Integer>> slots = new ArrayList();		
 		
 		for (Pair<String, Expr> src : e.sources) {
@@ -1766,7 +1769,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(RecordGen sg, HashMap<String,Integer> environment) {
-		Block blk = new Block();
+		Block blk = new Block(0);
 		HashMap<String, Type> fields = new HashMap<String, Type>();
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);
@@ -1779,7 +1782,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(TupleGen sg, HashMap<String,Integer> environment) {		
-		Block blk = new Block();		
+		Block blk = new Block(0);		
 		for (Expr e : sg.fields) {									
 			blk.append(resolve(e, environment));
 		}
@@ -1789,7 +1792,7 @@ public class ModuleBuilder {
 	}
 
 	protected Block resolve(DictionaryGen sg, HashMap<String,Integer> environment) {		
-		Block blk = new Block();		
+		Block blk = new Block(0);		
 		for (Pair<Expr,Expr> e : sg.pairs) {			
 			blk.append(resolve(e.first(), environment));
 			blk.append(resolve(e.second(), environment));
@@ -1844,7 +1847,7 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = resolve(lt.element); 
 			Block blk = null;
 			if (p.second() != null) {
-				blk = new Block(); 
+				blk = new Block(0); 
 				String label = Block.freshLabel();
 				blk.append(Code.Load(null, Code.RETURN_SLOT));
 				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,
@@ -1858,7 +1861,7 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = resolve(st.element);
 			Block blk = null;
 			if (p.second() != null) {
-				blk = new Block(); 
+				blk = new Block(0); 
 				String label = Block.freshLabel();
 				blk.append(Code.Load(null, Code.RETURN_SLOT));
 				blk.append(Code.ForAll(null, Code.RETURN_SLOT + 1, label,

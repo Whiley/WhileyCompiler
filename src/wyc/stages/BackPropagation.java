@@ -54,7 +54,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public Env initialStore() {				
 		Env environment = new Env();		
 
-		for (int i = 0; i < methodCase.locals().size(); i++) {
+		for (int i = 0; i < methodCase.body().numSlots(); i++) {
 			environment.add(Type.T_VOID);
 		}		
 		
@@ -74,7 +74,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
-		Block nbody = new Block();		
+		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			nbody.append(body.get(i));		
 			Block.Entry insertion = insertions.get(i);			

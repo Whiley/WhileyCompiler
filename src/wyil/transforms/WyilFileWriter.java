@@ -110,7 +110,7 @@ public class WyilFileWriter implements Transform {
 		List<Type> pts = ft.params();
 		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
 		
-		int li = 1;
+		int li = 0;
 		if(ft instanceof Type.Meth) {			
 			Type.Meth mt = (Type.Meth) ft;
 			if(mt.receiver() != null) {
@@ -137,12 +137,11 @@ public class WyilFileWriter implements Transform {
 		Block precondition = mcase.precondition();
 		if(precondition != null) {			
 			out.println("requires: ");
-			ArrayList<String> env = new ArrayList<String>();
-			env.add("$");			
+			ArrayList<String> env = new ArrayList<String>();			
 			// Now, add space for any other slots needed in the block. This can
 			// arise as a result of temporary loop variables, etc.
 			int maxSlots = precondition.numSlots();
-			for(int i=1;i!=maxSlots;++i) {
+			for(int i=0;i!=maxSlots;++i) {
 				env.add(Integer.toString(i));
 			}
 			write(0,precondition,env,out);
