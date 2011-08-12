@@ -2281,8 +2281,8 @@ public abstract class Type {
 									int nidx = difference(e1.second(), graph1,
 											e2.second(), graph2, newNodes,
 											allocations, matrix);
-
-									if (newNodes.get(nidx).kind == K_VOID) {
+									Node nnode = newNodes.get(nidx);
+									if (nnode != null && nnode.kind == K_VOID) {
 										voidField = true;
 									}
 
