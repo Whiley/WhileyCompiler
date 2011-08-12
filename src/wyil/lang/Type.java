@@ -1834,7 +1834,7 @@ public abstract class Type {
 				for (int i = 0; i != elems.length; ++i) {
 					Pair<String, Integer> p = elems[i];					
 					int j = (Integer) rebuild(p.second(), graph, allocated,
-							newNodes, assumptions);					
+							newNodes, assumptions);							
 					nelems[i] = new Pair<String, Integer>(p.first(), j);
 				}
 				data = nelems;			
@@ -2083,9 +2083,8 @@ public abstract class Type {
 
 									if (newNodes.get(nidx).kind == K_VOID) {
 										// A record with a field of void type
-										// cannot
-										// exist --- it's just equivalent to
-										// void.
+										// cannot exist --- it's just equivalent
+										// to void.
 										while (newNodes.size() != old) {
 											newNodes.remove(newNodes.size() - 1);
 										}
@@ -2263,29 +2262,43 @@ public abstract class Type {
 			}
 			case K_RECORD:
 				// labeled nary nodes
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
-				if(fields1.length != fields2.length) {
-					node = c1;
-				} else {
-					outer: {
-						Pair<String, Integer>[] nfields = new Pair[fields1.length];
-						for (int i = 0; i != fields1.length; ++i) {
-							Pair<String, Integer> e1 = fields1[i];
-							Pair<String, Integer> e2 = fields2[i];
-							if (!e1.first().equals(e2.first())) {
-								node = c1;
-								break outer;
-							} else {
-								nfields[i] = new Pair<String, Integer>(
-										e1.first(), difference(e1.second(),
-												graph1, e2.second(), graph2,
-												newNodes,allocations,matrix));
+					outer : {
+						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
+						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
+						int old = newNodes.size();
+						if (fields1.length != fields2.length) {
+							node = c1;
+						} else {
+							Pair<String, Integer>[] nfields = new Pair[fields1.length];
+							for (int i = 0; i != fields1.length; ++i) {
+								Pair<String, Integer> e1 = fields1[i];
+								Pair<String, Integer> e2 = fields2[i];
+								if (!e1.first().equals(e2.first())) {
+									node = c1;
+									break outer;
+								} else {
+									int nidx = difference(e1.second(), graph1,
+											e2.second(), graph2, newNodes,
+											allocations, matrix);
+
+									if (newNodes.get(nidx).kind == K_VOID) {
+										// A record with a field of void type
+										// cannot exist --- it's just equivalent
+										// to void.
+										while (newNodes.size() != old) {
+											newNodes.remove(newNodes.size() - 1);
+										}
+										node = new Node(K_VOID, null);
+										break outer;
+									}
+
+									nfields[i] = new Pair<String, Integer>(
+											e1.first(), nidx);
+								}
 							}
+							node = new Node(K_RECORD, nfields);
 						}
-						node = new Node(K_RECORD, nfields);					
 					}
-				}
 				break;
 			case K_UNION: {
 				// This is the hardest (i.e. most expensive) case. Essentially, I

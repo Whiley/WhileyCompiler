@@ -1192,9 +1192,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Code ncode = code;
 		Env trueEnv = null;
-		Env falseEnv = null;		
+		Env falseEnv = null;								
 		Type glb = Type.greatestLowerBound(lhs_t, code.test);
-			
+						
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
 			//trueEnv = environment;
@@ -1210,7 +1210,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {						
-				Type gdiff = Type.leastDifference(lhs_t, code.test);				
+				Type gdiff = Type.leastDifference(lhs_t, code.test);
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
