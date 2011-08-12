@@ -1989,6 +1989,8 @@ public class ClassFileBuilder {
 		int freeSlot = 1;
 		bytecodes.add(new Bytecode.Load(0,convertType(from)));		
 		
+		System.out.println("COERCING: " + from + " : " + to);
+		
 		// First, call simplify the coercion if possible. This will remove any
 		// union types from the right-hand side.
 		to = simplifyCoercion(from,to);
