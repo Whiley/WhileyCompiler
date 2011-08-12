@@ -272,7 +272,7 @@ public class ClassFileBuilder {
 	
 	public ArrayList<Bytecode> translate(Module.Case mcase, HashMap<Constant,Integer> constants) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();				
-		translate(mcase.body(),mcase.locals().size(),constants,bytecodes);				
+		translate(mcase.body(),mcase.body().numSlots(),constants,bytecodes);				
 		return bytecodes;
 	}
 

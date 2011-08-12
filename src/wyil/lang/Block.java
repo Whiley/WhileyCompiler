@@ -127,7 +127,7 @@ public final class Block implements Iterable<Block.Entry> {
 		for(int i : slots) {
 			r = Math.max(r,i+1);
 		}		
-		return r;
+		return Math.max(numInputs,r);
 	}
 
 	/**

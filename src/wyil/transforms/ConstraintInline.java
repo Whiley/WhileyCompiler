@@ -75,7 +75,7 @@ public class ConstraintInline implements Transform {
 	
 	public Module.Case transform(Module.Case mcase) {	
 		Block body = mcase.body();		
-		int freeSlot = Math.max(mcase.locals().size(),body.numSlots());
+		int freeSlot = body.numSlots();
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
