@@ -1617,7 +1617,7 @@ public abstract class Type {
 			SubtypeRelation assumptions = new DefaultSubtypeOperator(graph1,graph2).doInference();			
 			ArrayList<Node> newNodes = new ArrayList<Node>();
 			difference(0,graph1,0,graph2,newNodes, new HashMap(),assumptions);
-			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));							
+			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));
 			return minimise(ldiff);
 		}
 	}
@@ -2270,6 +2270,7 @@ public abstract class Type {
 							node = c1;
 						} else {
 							Pair<String, Integer>[] nfields = new Pair[fields1.length];
+							boolean voidField = false;
 							for (int i = 0; i != fields1.length; ++i) {
 								Pair<String, Integer> e1 = fields1[i];
 								Pair<String, Integer> e2 = fields2[i];
@@ -2282,19 +2283,22 @@ public abstract class Type {
 											allocations, matrix);
 
 									if (newNodes.get(nidx).kind == K_VOID) {
-										// A record with a field of void type
-										// cannot exist --- it's just equivalent
-										// to void.
-										while (newNodes.size() != old) {
-											newNodes.remove(newNodes.size() - 1);
-										}
-										node = new Node(K_VOID, null);
-										break outer;
+										voidField = true;
 									}
 
 									nfields[i] = new Pair<String, Integer>(
 											e1.first(), nidx);
 								}
+							}
+							if(voidField) {
+								// A record with a field of void type
+								// cannot exist --- it's just equivalent
+								// to void.
+								while (newNodes.size() != old) {
+									newNodes.remove(newNodes.size() - 1);
+								}
+								node = new Node(K_VOID, null);
+								break outer;
 							}
 							node = new Node(K_RECORD, nfields);
 						}
