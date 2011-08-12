@@ -976,7 +976,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
 		Type ret_t = method.type().ret();		
 		
-		if(environment.size() > methodCase.locals().size()) {			
+		if(environment.size() > methodCase.body().numSlots()) {			
 			if(ret_t == Type.T_VOID) {
 				syntaxError(
 						"cannot return value from method with void return type",
