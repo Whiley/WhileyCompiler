@@ -631,7 +631,7 @@ public class WhileyLexer {
 			super(text,pos);
 			this.ntabs = ntabs; 
 		}		
-	}
+	}	
 	public static class LineComment extends Token {
 		public LineComment(String text, int pos) { super(text,pos);	}
 	}
