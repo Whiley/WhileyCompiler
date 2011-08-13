@@ -438,7 +438,14 @@ public abstract class Code {
 		// default implementation does nothing
 	}
 	
-	public Code shift(int amount) {
+	/**
+	 * The remap method remaps all slots according to a given binding. Slots not
+	 * mentioned in the binding retain their original value.
+	 * 
+	 * @param binding
+	 * @return
+	 */
+	public Code remap(Map<Integer,Integer> binding) {
 		return this;
 	}
 
@@ -988,9 +995,12 @@ public abstract class Code {
 			}
 		}
 		
-		public Code shift(int amount) {
-			if(slot >= 0) {
-				return Code.IfType(type, slot+amount, test, target);
+		public Code remap(Map<Integer, Integer> binding) {
+			if (slot >= 0) {
+				Integer nslot = binding.get(slot);
+				if (nslot != null) {
+					return Code.IfType(type, nslot, test, target);
+				}
 			}
 			return this;
 		}
@@ -1323,8 +1333,13 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
-		public Code shift(int amount) {			
-			return Code.Load(type, slot+amount);			
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Load(type, nslot);
+			} else {
+				return this;
+			}
 		}
 		
 		public int hashCode() {
@@ -1409,8 +1424,13 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
-		public Code shift(int amount) {				
-			return Code.ForAll(type, slot + amount, target, modifies);			
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.ForAll(type, nslot, target, modifies);
+			} else {
+				return this;
+			}
 		}
 		
 		public int hashCode() {
@@ -1453,10 +1473,15 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
-		public Code shift(int amount) {			
-			return Code.Update(type, slot+amount, level, fields);			
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Update(type, nslot, level, fields);
+			} else {
+				return this;
+			}
 		}
-		
+				
 		public int hashCode() {
 			if(type == null) {
 				return level + fields.hashCode();
@@ -1923,8 +1948,13 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
-		public Code shift(int amount) {			
-			return Code.Store(type, slot+amount);			
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Store(type, nslot);	
+			} else {
+				return this;
+			}
 		}
 		
 		public int hashCode() {
@@ -2214,8 +2244,13 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
-		public Code shift(int amount) {			
-			return Code.Void(type, slot+amount);			
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Void(type, nslot);	
+			} else {
+				return this;
+			}
 		}
 		
 		public int hashCode() {

@@ -133,11 +133,13 @@ public class ConstraintInline implements Transform {
 			
 			// TODO: mark as check block
 			
+			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 			for(int i=paramTypes.size()-1;i>=0;--i) {				
 				blk.append(Code.Store(paramTypes.get(i), freeSlot+i),attributes(elem));
+				binding.put(i,freeSlot+i);
 			}
 			
-			blk.append(precondition.shift(freeSlot).relabel());
+			blk.importExternal(precondition,binding);
 			
 			for(int i=0;i<paramTypes.size();++i) {
 				blk.append(Code.Load(paramTypes.get(i), freeSlot+i),attributes(elem));
@@ -176,7 +178,9 @@ public class ConstraintInline implements Transform {
 				Block blk = new Block(0);
 				// FIXME: need to support shadows here!!
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));
-				blk.append(postcondition.shift(freeSlot).relabel());
+				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
+				binding.put(0,freeSlot);
+				blk.importExternal(postcondition,binding);
 				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 				return blk;
 			}

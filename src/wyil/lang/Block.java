@@ -155,52 +155,51 @@ public final class Block implements Iterable<Block.Entry> {
 	 * be mapped into the variables of this block.
 	 * </p>
 	 * <p>
+	 * <p>
+	 * Every input variable in the block must be bound to something in the
+	 * binding. Otherwise, an IllegalArgumentException is raised. In the case of
+	 * an input bound to a slot >= numSlots(), then the number of slots is
+	 * increased automatically.
+	 * </p>
 	 * <b>NOTE:</b> temporary variables used in the external block will be
 	 * mapped automatically to unused slots in this environment to prevent
 	 * collisions. Therefore, temporary variables should not be specified in the
-	 * binding.
-	 * </p>
+	 * binding. </p>
 	 */
 	public void importExternal(Block block, Map<Integer,Integer> binding) {
+		int freeSlot = numSlots();
 		
-	}
-	
-	/**
-	 * Shift every slot in this block by amount.
-	 * 
-	 * @param amount
-	 * @return
-	 */
-	public Block shift(int amount) {
-		Block nblock = new Block(numInputs);
-		for(Entry s : stmts) {
-			Code ncode = s.code.shift(amount);
-			nblock.append(ncode,s.attributes());
+		// First, sanity check that all input variables are bound
+		HashMap<Integer,Integer> nbinding = new HashMap<Integer,Integer>();
+		for(int i=0;i!=block.numInputs;++i) {
+			Integer target = binding.get(i);
+			if(target == null) {
+				throw new IllegalArgumentException("Input not mapped by input");
+			}
+			binding.put(i,target);
+			freeSlot = Math.max(target+1,freeSlot);
 		}
-		return nblock;
-	}
-	
-	/**
-	 * Shift every slot in this block by amount.
-	 * 
-	 * @return
-	 */
-	public Block relabel() {		
+		// Second, determine binding for temporary variables		
+		for(int i=block.numInputs;i!=block.numSlots();++i) {
+			nbinding.put(i,i+freeSlot);			
+		}
+		// Third, determine relabelling
 		HashMap<String,String> labels = new HashMap<String,String>();
-		for(Entry s : stmts) {
-			if(s.code instanceof Code.Label) {
+		
+		for (Entry s : block) {
+			if (s.code instanceof Code.Label) {
 				Code.Label l = (Code.Label) s.code;
 				labels.put(l.label, freshLabel());
 			}
 		}
-		Block nblock = new Block(numInputs);
-		for(Entry s : stmts) {
-			Code ncode = s.code.relabel(labels);
-			nblock.append(ncode,s.attributes());
+		
+		// Finally, apply the binding and relabel any labels as well.
+		for(Entry s : block) {
+			Code ncode = s.code.remap(nbinding).relabel(labels);
+			append(ncode,s.attributes());
 		}
-		return nblock;
 	}
-	
+
 	// ===================================================================
 	// Append Methods
 	// ===================================================================
@@ -395,5 +394,5 @@ public final class Block implements Iterable<Block.Entry> {
 			}
 			return r;
 		}
-	}		
+	}			
 }

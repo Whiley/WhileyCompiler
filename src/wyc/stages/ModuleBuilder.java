@@ -523,7 +523,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(p.second().shift(1));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}		
 			return new Pair<Type,Block>(Type.T_LIST(p.first()),blk);			
@@ -537,7 +537,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(p.second().shift(1));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}						
 			return new Pair<Type,Block>(Type.T_SET(p.first()),blk);					
@@ -1852,7 +1852,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(p.second().shift(1));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
 			return new Pair<Type,Block>(Type.T_LIST(p.first()),blk);			
@@ -1866,7 +1866,7 @@ public class ModuleBuilder {
 				blk.append(Code.Load(null, Code.THIS_SLOT));
 				blk.append(Code.ForAll(null, Code.THIS_SLOT + 1, label,
 						Collections.EMPTY_LIST));
-				blk.append(p.second().shift(1));				
+				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
 			return new Pair<Type,Block>(Type.T_SET(p.first()),blk);			
@@ -2068,6 +2068,28 @@ public class ModuleBuilder {
 		return null;
 	}
 
+
+	/**
+	 * The shiftBlock method takes a block and shifts every slot a given amount
+	 * to the right. The number of inputs remains the same. This method is used 
+	 * 
+	 * @param amount
+	 * @param blk
+	 * @return
+	 */
+	public static Block shiftBlock(int amount, Block blk) {
+		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
+		for(int i=0;i!=blk.numSlots();++i) {
+			binding.put(i,i+amount);
+		}
+		Block nblock = new Block(blk.numInputs());
+		for(Block.Entry e : blk) {
+			Code code = e.code.remap(binding);
+			nblock.append(code,e.attributes());
+		}
+		return nblock;
+	}
+	
 	/**
 	 * The attributes method extracts those attributes of relevance to wyil, and
 	 * discards those which are only used for the wyc front end.
