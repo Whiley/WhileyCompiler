@@ -176,13 +176,15 @@ public final class Block implements Iterable<Block.Entry> {
 			if(target == null) {
 				throw new IllegalArgumentException("Input not mapped by input");
 			}
-			binding.put(i,target);
+			nbinding.put(i,target);
 			freeSlot = Math.max(target+1,freeSlot);
 		}
+		
 		// Second, determine binding for temporary variables		
 		for(int i=block.numInputs;i!=block.numSlots();++i) {
 			nbinding.put(i,i+freeSlot);			
 		}
+		
 		// Third, determine relabelling
 		HashMap<String,String> labels = new HashMap<String,String>();
 		
