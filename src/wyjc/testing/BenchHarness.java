@@ -28,7 +28,10 @@ package wyjc.testing;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.tools.ant.types.Environment.Variable;
+
 import wyjc.Main;
+import wyjc.testing.TestHarness.StreamGrabber;
 
 public abstract class BenchHarness {
 
@@ -52,7 +55,11 @@ public abstract class BenchHarness {
     } else {
       long time = 0;
       for (int i = 0; i < times; ++i) {
-        time += run(srcPath, name, params);
+      	long next = run(srcPath, name, params);
+      	if (next < 0) {
+      		return next;
+      	}
+      	time += next;
       }
       return time / times;
     }
@@ -64,24 +71,33 @@ public abstract class BenchHarness {
 
   private static long run(String path, String name, String... params)
       throws InterruptedException, IOException {
-    String classpath = "lib/wyrt.jar" + File.pathSeparator + path;
+  	int index = name.lastIndexOf('/') + 1;
+  	path = ensureSeparator(path) + name.substring(0, index);
+  	String home = ensureSeparator(System.getenv("WHILEY_HOME"));
+    String classpath = home + "lib/wyrt.jar" + File.pathSeparator + ".";
     classpath = classpath.replace('/', File.separatorChar);
-    String tmp = "java -cp " + classpath + " " + name;
+    String tmp = "java -cp " + classpath + " " + name.substring(index);
     
     for (String param : params) {
       tmp += " " + param;
     }
 
     long time = System.currentTimeMillis();
-    Process p = Runtime.getRuntime().exec(tmp, null, new File("."));
-    time = System.currentTimeMillis() - time;
+    Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
     
     if (p.waitFor() != 0) {
       System.err.println("Run returned with bad exit code.");
       return -1;
     }
-
-    return time;
+    
+    return System.currentTimeMillis() - time;
+  }
+  
+  private static String ensureSeparator(String input) {
+  	if (!input.endsWith(File.separator)) {
+  		input += File.separator;
+  	}
+  	return input;
   }
 
 }

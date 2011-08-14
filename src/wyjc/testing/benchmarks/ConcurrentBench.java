@@ -32,17 +32,21 @@ import wyjc.testing.BenchHarness;
 public class ConcurrentBench extends BenchHarness {
 
   public ConcurrentBench() {
+  	// There's a lot of variance. 10 might not be enough to reduce it to an
+  	// acceptable level.
     super("../wybench/concurrent/micro", 10);
   }
 
   public void runSum() throws InterruptedException, IOException {
-    System.out.println(runBench("sum/Main"));
+    System.out.println(runBench("sum/Main", "small.in"));
+    System.out.println(runBench("sum/Main", "medium.in"));
+//    System.out.println(runBench("sum/Main", "large.in"));
   }
   
   public void runMatrix() throws InterruptedException, IOException {
   	System.out.println(runBench("matrix/Main", "small.in"));
   	System.out.println(runBench("matrix/Main", "medium.in"));
-  	System.out.println(runBench("matrix/Main", "large.in"));
+//  	System.out.println(runBench("matrix/Main", "large.in"));
   }
 
   public static void main(String[] args) throws InterruptedException,
