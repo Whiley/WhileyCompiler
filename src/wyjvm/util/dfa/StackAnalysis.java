@@ -125,11 +125,12 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 			Invoke invoke = (Invoke) code;
 			JvmType returnType = invoke.type.returnType();
 			try {
+				boolean isStatic = invoke.mode == Bytecode.STATIC;
 				return newTypes(types, invoke.type.parameterTypes().size()
-						+ (invoke.mode == Bytecode.STATIC ? 0 : 1),
+						+ (isStatic ? 0 : 1),
 						returnType instanceof Void ? null : returnType);
 			} catch (RuntimeException rex) {
-//				System.out.println(invoke);
+				// System.out.println(invoke);
 				throw rex;
 			}
 		} else if (code instanceof Load) {
@@ -195,10 +196,6 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 	private StackTypes newTypes(TypeInformation types, int popCount,
 			JvmType newType) {
 		Stack<JvmType> newStack = copy(types);
-
-		if (newStack.size() < popCount) {
-//			System.out.println(newStack);
-		}
 
 		for (int i = 0; i < popCount; ++i) {
 			newStack.pop();

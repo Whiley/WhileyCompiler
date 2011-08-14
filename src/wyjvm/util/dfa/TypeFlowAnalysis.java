@@ -144,9 +144,8 @@ public abstract class TypeFlowAnalysis<Types> {
 						String labelName = ((Label) codes.get(i + 1)).name;
 
 						if (labelTypes.containsKey(labelName)) {
-							if (dead || !currentTypes.isComplete()) {
-								currentTypes = labelTypes.get(labelName);
-							}
+							TypeInformation types = labelTypes.get(labelName);
+							currentTypes = dead ? types : currentTypes.combineWith(types);
 						} else if (dead) {
 							// The current type information is now useless.
 							// Note that this must be partial, because we really don't

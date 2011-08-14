@@ -125,6 +125,7 @@ public final class Scheduler {
 				resumable.resume();
 			} catch (Throwable th) {
 				System.err.println("Warning - actor resumption threw an exception.");
+				th.printStackTrace();
 			}
 
 			decreaseCount();

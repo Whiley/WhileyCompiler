@@ -1506,12 +1506,24 @@ public class ClassFileBuilder {
 				Bytecode.STATIC));
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
-		if (c.synchronous) {			
-			String name = c.retval ? "sendSync" : "sendSyncVoid";
-			ftype = new JvmType.Function(T_VOID,
-					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, name, ftype,
-					Bytecode.VIRTUAL));
+		if (c.synchronous) {
+			ftype = new JvmType.Function(T_VOID, WHILEYMESSAGER,
+					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER,
+					c.retval ? "sendSync" : "sendSyncVoid", ftype, Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getCurrentFuture",
+					new JvmType.Function(WHILEYFUTURE), Bytecode.VIRTUAL));
+			
+			// Response to failure will be added later on.
+			
+			if (c.retval) {
+				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
+						new JvmType.Function(JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
+				addReadConversion(c.type.ret(), bytecodes);
+			} else {
+				bytecodes.add(new Bytecode.Pop(WHILEYFUTURE));
+			}
 		} else {
 			ftype = new JvmType.Function(T_VOID,
 					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
@@ -1551,11 +1563,23 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
 		if (c.synchronous) {			
-			String name = c.retval ? "sendSync" : "sendSyncVoid";
-			JvmType.Function ftype = new JvmType.Function(T_VOID,
+			JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYMESSAGER,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, name, ftype,
-					Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER,
+					c.retval ? "sendSync" : "sendSyncVoid", ftype, Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getCurrentFuture",
+					new JvmType.Function(WHILEYFUTURE), Bytecode.VIRTUAL));
+			
+			// Response to failure will be added later on. 
+			
+			if (c.retval) {
+				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
+						new JvmType.Function(JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
+				addReadConversion(c.type.ret(), bytecodes);
+			} else {
+				bytecodes.add(new Bytecode.Pop(WHILEYFUTURE));
+			}
 		} else {
 			JvmType.Function ftype = new JvmType.Function(T_VOID,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
@@ -2538,6 +2562,8 @@ public class ClassFileBuilder {
 			"wyjc.runtime", "Actor");	
 	public final static JvmType.Clazz WHILEYMESSAGER = new JvmType.Clazz(
 			"wyjc.runtime.concurrency", "Messager");
+	public final static JvmType.Clazz WHILEYFUTURE = new JvmType.Clazz(
+			"wyjc.runtime.concurrency", "Messager$MessageFuture");
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");	
 	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");

@@ -47,7 +47,6 @@ import wyjvm.lang.Bytecode.Invoke;
 import wyjvm.lang.Bytecode.Label;
 import wyjvm.lang.Bytecode.Load;
 import wyjvm.lang.Bytecode.LoadConst;
-import wyjvm.lang.Bytecode.Pop;
 import wyjvm.lang.Bytecode.Return;
 import wyjvm.lang.Bytecode.Store;
 import wyjvm.lang.Bytecode.Swap;
@@ -82,27 +81,7 @@ public class Continuations {
 	public void apply(Method method) {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
-//				try {
-					apply(method, (Code) attribute);
-//				} catch (RuntimeException rex) {
-//					StackAnalysis sa = new StackAnalysis(method);
-//					System.out.println(method.name());
-//					List<Bytecode> bytecodes = ((Code) attribute).bytecodes(); 
-//					for (int i = 0; i < bytecodes.size(); ++i) {
-//						Bytecode code = bytecodes.get(i);
-//						System.out.print(code);
-//						try {
-//							System.out.print(" ");
-//							System.out.println(sa.typesAt(i + 1));
-//						} catch (Throwable th) {
-//							System.out.println();
-////							th.printStackTrace();
-////							break;
-//						}
-//					}
-//					
-//					throw rex;
-//				}
+				apply(method, (Code) attribute);
 
 				break;
 			}
@@ -144,23 +123,14 @@ public class Continuations {
 					bytecodes.add(++i, new Label("skip" + location));
 
 					if (name.startsWith("sendSync")) {
-						bytecodes.add(++i, new Load(0, PROCESS));
-						bytecodes.add(++i, new Invoke(MESSAGER, "getCurrentFuture",
-								new Function(FUTURE), Bytecode.VIRTUAL));
+						// The code to retrieve the future is already in place.
+						i += 2;
 
 						bytecodes.add(++i, new Dup(FUTURE));
 						bytecodes.add(++i, new Invoke(FUTURE, "isFailed", new Function(
 								T_BOOL), Bytecode.VIRTUAL));
 						bytecodes.add(++i, new If(If.NE, "fail"));
 						mayFail = true;
-
-						if (name.equals("sendSyncVoid")) {
-							bytecodes.add(++i, new Pop(FUTURE));
-						} else {
-							bytecodes.add(++i, new Invoke(FUTURE, "getResult", new Function(
-									JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
-							// TODO This probably has to be cast.
-						}
 					}
 
 					location += 1;
@@ -267,9 +237,9 @@ public class Continuations {
 						T_INT, type), Bytecode.VIRTUAL));
 			}
 		}
-
-		while (!stack.isEmpty()) {
-			JvmType type = stack.pop();
+ 
+		for (int j = stack.size() - 1; j >= 0; --j) {
+			JvmType type = stack.get(j);
 			bytecodes.add(++i, new Load(0, PROCESS));
 			bytecodes.add(++i, new Swap());
 
@@ -295,7 +265,7 @@ public class Continuations {
 	private int addResume(List<Bytecode> bytecodes, int i, int location,
 			Map<Integer, JvmType> types, Stack<JvmType> stack) {
 		bytecodes.add(++i, new Label("resume" + location));
-
+		
 		for (JvmType type : stack) {
 			JvmType methodType = type;
 			bytecodes.add(++i, new Load(0, PROCESS));
