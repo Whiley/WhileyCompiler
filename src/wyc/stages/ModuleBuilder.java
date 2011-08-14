@@ -161,9 +161,15 @@ public class ModuleBuilder {
 				constants.put(k, v);
 				Type t = v.type();
 				if (t instanceof Type.Set) {
-					Type.Set st = (Type.Set) t;		
+					Type.Set st = (Type.Set) t;
+					String label = Block.freshLabel();
+					Collection<Attribute> attributes = attributes(exprs.get(k));
 					Block blk = new Block(1);
-					// TODO: put in necessary constraint
+					blk.append(Code.Load(st.element(), 0),attributes);
+					blk.append(Code.Const(v),attributes);					
+					blk.append(Code.IfGoto(st, Code.COp.ELEMOF, label));
+					blk.append(Code.Fail("constraint on type not satisfied (" + k + ")"),attributes);
+					blk.append(Code.Label(label),attributes);
 					types.put(k, new Pair<Type,Block>(st.element(),blk));
 				}
 			} catch (ResolveError rex) {
@@ -492,7 +498,7 @@ public class ModuleBuilder {
 			HashMap<String,Integer> environment = new HashMap<String,Integer>();
 			environment.put("$", Code.THIS_SLOT);			
 			Block constraint = resolveCondition(trueLabel, ut.second(), environment);
-			constraint.append(Code.Fail("type constraint not satisfied"), attributes(ut
+			constraint.append(Code.Fail("constraint on type not satisfied (" + key + ")"), attributes(ut
 					.second()));
 			constraint.append(Code.Label(trueLabel));
 
