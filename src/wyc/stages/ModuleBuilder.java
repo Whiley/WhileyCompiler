@@ -667,10 +667,11 @@ public class ModuleBuilder {
 			}
 		}
 		
+		// ==================================================================
+		// Generate pre-condition
+		// ==================================================================
 		Block precondition = null;
-		Block postcondition = null;
 		
-		// method parameter types
 		for (WhileyFile.Parameter p : fd.parameters) {			
 			// First, resolve and inline any constraints associated with the type.
 			Pair<Type, Block> t = resolve(p.type);
@@ -686,7 +687,6 @@ public class ModuleBuilder {
 			// Now, map the parameter to its index
 			environment.put(p.name(),paramIndex++);
 		}		
-		
 		// Resolve pre- and post-condition								
 		if(fd.precondition != null) {
 			if(precondition == null) {
@@ -699,21 +699,38 @@ public class ModuleBuilder {
 			precondition.append(Code.Label(lab));			
 		}
 		
-		if(fd.postcondition != null) {
-			// Generate post-condition environment
-			HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
-			postEnv.put("$", 0);
-			for(String var : environment.keySet()) {
-				postEnv.put(var, environment.get(var)+1);
-			}
+		// ==================================================================
+		// Generate post-condition
+		// ==================================================================
+		Block postcondition = null;
+		HashMap<String,Integer> postEnv = new HashMap<String,Integer>();
+		postEnv.put("$", 0);
+		for(String var : environment.keySet()) {
+			postEnv.put(var, environment.get(var)+1);
+		}
+		Pair<Type,Block> rt = resolve(fd.ret);		
+		
+		if(rt.second() != null) {			
+			postcondition = new Block(postEnv.size());
+			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
+			binding.put(0,0);			
+			postcondition.importExternal(rt.second(), binding);
+		}
+					
+		if (fd.postcondition != null) {
 			String lab = Block.freshLabel();
-			postcondition = new Block(postEnv.size()); 		
-			postcondition.append(resolveCondition(lab, fd.postcondition, postEnv));		
-			postcondition.append(Code.Fail("postcondition not satisfied"), attributes(fd.postcondition));
+			postcondition = postcondition != null ? postcondition : new Block(
+					postEnv.size());
+			postcondition.append(resolveCondition(lab, fd.postcondition,
+					postEnv));
+			postcondition.append(Code.Fail("postcondition not satisfied"),
+					attributes(fd.postcondition));
 			postcondition.append(Code.Label(lab));
 		}
 		
-		// Resolve body		
+		// ==================================================================
+		// Generate body
+		// ==================================================================
 		currentFunDecl = fd;
 			
 		Block body = new Block(environment.size());		

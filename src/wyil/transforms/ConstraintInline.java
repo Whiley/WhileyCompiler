@@ -52,7 +52,7 @@ public class ConstraintInline implements Transform {
 			Block nconstraint = new Block(1);
 			for (int i = 0; i != constraint.size(); ++i) {
 				Block.Entry entry = constraint.get(i);
-				Block nblk = transform(entry, freeSlot, null);
+				Block nblk = transform(entry, freeSlot, null, null);
 				if (nblk != null) {
 					nconstraint.append(nblk);
 				}
@@ -68,18 +68,18 @@ public class ConstraintInline implements Transform {
 	public Module.Method transform(Module.Method method) {
 		ArrayList<Module.Case> cases = new ArrayList<Module.Case>();
 		for(Module.Case c : method.cases()) {
-			cases.add(transform(c));
+			cases.add(transform(c,method));
 		}
 		return new Module.Method(method.name(), method.type(), cases);
 	}
 	
-	public Module.Case transform(Module.Case mcase) {	
+	public Module.Case transform(Module.Case mcase, Module.Method method) {	
 		Block body = mcase.body();		
 		int freeSlot = body.numSlots();
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
-			Block nblk = transform(entry,freeSlot,mcase);			
+			Block nblk = transform(entry,freeSlot,mcase,method);			
 			if(nblk != null) {								
 				nbody.append(nblk);				
 			} 					
@@ -90,7 +90,8 @@ public class ConstraintInline implements Transform {
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
 	
-	public Block transform(Block.Entry entry, int freeSlot, Module.Case methodCase) {
+	public Block transform(Block.Entry entry, int freeSlot,
+			Module.Case methodCase, Module.Method method) {
 		Code code = entry.code;
 		
 		try {
@@ -108,7 +109,7 @@ public class ConstraintInline implements Transform {
 			} else if(code instanceof Code.BinOp) {
 				return transform((Code.BinOp)code,freeSlot,entry);
 			} else if(code instanceof Code.Return) {
-				return transform((Code.Return)code,freeSlot,entry,methodCase);
+				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
 		} catch(ResolveError e) {
 			syntaxError("internal failure",filename,entry,e);
@@ -170,16 +171,25 @@ public class ConstraintInline implements Transform {
 	 * @return
 	 */
 	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
-			Module.Case methodCase) {
+			Module.Case methodCase, Module.Method method) {
 		
 		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
 			if(postcondition != null) {
-				Block blk = new Block(0);
-				// FIXME: need to support shadows here!!
-				blk.append(Code.Store(code.type, freeSlot),attributes(elem));
+				Block blk = new Block(0);				
+				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
+				Type.Fun mtype = method.type();
+				int pIndex = 0;
+				if (mtype instanceof Type.Meth
+						&& ((Type.Meth) mtype).receiver() != null) {
+					binding.put(pIndex+1, pIndex++);
+				}
+				for(Type p : mtype.params()) {
+					// FIXME: need to support shadows here!!
+					binding.put(pIndex+1, pIndex++);
+				}
 				blk.importExternal(postcondition,binding);
 				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
 				return blk;
