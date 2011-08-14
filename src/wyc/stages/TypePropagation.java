@@ -142,8 +142,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Env tmp = environment.clone();
 			// Now, add space for any other slots needed in the block. This can
 			// arise as a result of temporary loop variables, etc.
-			int maxSlots = precondition.numSlots();
-			for(int i=1;i!=maxSlots;++i) {
+			int maxSlots = precondition.numSlots() - precondition.numInputs();
+			for(int i=0;i<maxSlots;++i) {
 				tmp.add(Type.T_VOID);
 			}
 			precondition = doPropagation(precondition,tmp);
@@ -153,11 +153,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(postcondition != null) {
 			Env tmp = environment.clone();
 			// Set the return type for special variable "$"
-			tmp.set(0,method.type().ret());
+			tmp.add(0,method.type().ret());
 			// Now, add space for any other slots needed in the block. This can
 			// arise as a result of temporary loop variables, etc.
-			int maxSlots = postcondition.numSlots();
-			for(int i=1;i!=maxSlots;++i) {
+			int maxSlots = postcondition.numSlots() - postcondition.numInputs();
+			for(int i=0;i<maxSlots;++i) {
 				tmp.add(Type.T_VOID);
 			}
 			postcondition = doPropagation(postcondition,tmp);
