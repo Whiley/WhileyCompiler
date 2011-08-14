@@ -44,9 +44,6 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void ConstrainedSet_Invalid_2_RuntimeFailTest() { runtimeFailTest("ConstrainedSet_Invalid_2"); }
  @Test public void ConstrainedSet_Invalid_3_RuntimeFailTest() { runtimeFailTest("ConstrainedSet_Invalid_3"); }
  @Test public void ConstrainedTuple_Invalid_1_RuntimeFailTest() { runtimeFailTest("ConstrainedTuple_Invalid_1"); }
- @Test public void DefiniteAssign_CompileFail_1_RuntimeFailTest() { runtimeFailTest("DefiniteAssign_CompileFail_1"); }
- @Test public void DefiniteAssign_CompileFail_2_RuntimeFailTest() { runtimeFailTest("DefiniteAssign_CompileFail_2"); }
- @Test public void DefiniteAssign_CompileFail_3_RuntimeFailTest() { runtimeFailTest("DefiniteAssign_CompileFail_3"); }
  @Test public void Ensures_CompileFail_1_RuntimeFailTest() { runtimeFailTest("Ensures_CompileFail_1"); }
  @Test public void Ensures_CompileFail_3_RuntimeFailTest() { runtimeFailTest("Ensures_CompileFail_3"); }
  @Test public void Ensures_Invalid_1_RuntimeFailTest() { runtimeFailTest("Ensures_Invalid_1"); }
