@@ -82,17 +82,26 @@ public abstract class TypeFlowAnalysis<Types> {
 	 */
 	public Types typesAt(int at) {
 		Map<String, TypeInformation> labelTypes =
-		    new HashMap<String, TypeInformation>();
+				new HashMap<String, TypeInformation>();
 
 		int size = codes.size();
 		while (true) {
 			Map<String, TypeInformation> comparison =
-			    new HashMap<String, TypeInformation>(labelTypes);
+					new HashMap<String, TypeInformation>(labelTypes);
 
 			TypeInformation currentTypes = initTypes();
 
 			for (int i = 0; i < size; ++i) {
 				Bytecode code = codes.get(i);
+
+				if (i > 0) {
+					Bytecode code2 = codes.get(i - 1);
+					if (code2 instanceof Label) {
+						if (((Label) code2).name.equals("resume0")) {
+
+						}
+					}
+				}
 
 				if (i == at && currentTypes.isComplete()) {
 					return currentTypes.getTypeInformation();
@@ -112,26 +121,45 @@ public abstract class TypeFlowAnalysis<Types> {
 					}
 				}
 
-				if ((code instanceof Goto || code instanceof Return || code instanceof Throw)
-				    && i < size - 1) {
-					if (!(codes.get(i + 1) instanceof Label)) {
-						throw new IllegalStateException("Deadcode found.");
+				if (i < size - 1) {
+					Bytecode next = codes.get(i + 1);
+					boolean dead =
+							code instanceof Goto || code instanceof Return
+									|| code instanceof Throw;
+
+					if (dead) {
+						if (!(next instanceof Label)) {
+							throw new IllegalStateException("Deadcode found.");
+						}
+
+						if (i == at - 1) {
+							// Really there's no type information, because it's impossible
+							// for the flow to actually reach this point, but this makes
+							// debugging much easier. No one should care about this point.
+							return emptyTypes().getTypeInformation();
+						}
 					}
 
-					String labelName = ((Label) codes.get(i + 1)).name;
+					if (next instanceof Label) {
+						String labelName = ((Label) codes.get(i + 1)).name;
 
-					if (labelTypes.containsKey(labelName)) {
-						currentTypes = labelTypes.get(labelName);
-					} else {
-						// The current type information is now useless.
-						// Note that this must be partial, because we really don't have any
-						// information at all at this point.
-						currentTypes = emptyTypes();
+						if (labelTypes.containsKey(labelName)) {
+							if (dead || !currentTypes.isComplete()) {
+								currentTypes = labelTypes.get(labelName);
+							}
+						} else if (dead) {
+							// The current type information is now useless.
+							// Note that this must be partial, because we really don't
+							// have
+							// any information at all at this point.
+							currentTypes = emptyTypes();
+						}
 					}
 				}
 			}
 
-			// If there's no change after running through, there's no more information
+			// If there's no change after running through, there's no more
+			// information
 			// to collect.
 			if (comparison.equals(labelTypes)) {
 				for (TypeInformation types : labelTypes.values()) {
@@ -152,18 +180,26 @@ public abstract class TypeFlowAnalysis<Types> {
 	protected abstract TypeInformation emptyTypes();
 
 	/**
-	 * A template method on how the analysis should respond to the given bytecode
-	 * with the current types by producing a new current types value.
+	 * A template method on how the analysis should respond to the given
+	 * bytecode with the current types by producing a new current types value.
 	 * 
 	 * @param types The current types in the flow analysis.
 	 * @param code The code to respond to.
 	 * @return The new current types once the code is executed.
 	 */
 	protected abstract TypeInformation respondTo(TypeInformation types,
-	    Bytecode code);
+			Bytecode code);
 
 	private void addLabelInformation(Map<String, TypeInformation> labelTypes,
-	    String labelName, TypeInformation currentTypes) {
+			String labelName, TypeInformation currentTypes) {
+		// The analysis tends to be run before the switch for resumes is added,
+		// so this allows the types inside the resume code to complete.
+		if (labelName.matches("resume\\d+")) {
+			TypeInformation types = emptyTypes();
+			types.setComplete(true);
+			labelTypes.put(labelName, types);
+		}
+
 		if (labelTypes.containsKey(labelName)) {
 			TypeInformation labelType = labelTypes.get(labelName);
 			if (!labelType.isComplete()) {
@@ -183,7 +219,8 @@ public abstract class TypeFlowAnalysis<Types> {
 
 	/**
 	 * Stores both the type information and whether the information given is
-	 * complete. Extend this class in a subclass of <code>TypeFlowAnalysis</code>.
+	 * complete. Extend this class in a subclass of
+	 * <code>TypeFlowAnalysis</code>.
 	 * 
 	 * @author Timothy Jones
 	 */
@@ -222,8 +259,8 @@ public abstract class TypeFlowAnalysis<Types> {
 		 * Given another type information, combine it with this one to produce an
 		 * entirely new type information.
 		 * 
-		 * Remember that because <code>TypeInformation</code> is an inner class, the
-		 * parameter must have type information of type <code>Types</code>.
+		 * Remember that because <code>TypeInformation</code> is an inner class,
+		 * the parameter must have type information of type <code>Types</code>.
 		 * 
 		 * @param types The type information to combine with.
 		 * @return The combined type information as a new object.
@@ -234,11 +271,10 @@ public abstract class TypeFlowAnalysis<Types> {
 		public boolean equals(Object o) {
 			if (o instanceof TypeFlowAnalysis.TypeInformation) {
 				// Ant can't handle wild cards here, it seems.
-				@SuppressWarnings("rawtypes")
-				TypeFlowAnalysis.TypeInformation type =
-				    (TypeFlowAnalysis.TypeInformation) o;
+				@SuppressWarnings("rawtypes") TypeFlowAnalysis.TypeInformation type =
+						(TypeFlowAnalysis.TypeInformation) o;
 				return typeInformation.equals(type.typeInformation)
-				    && complete == type.complete;
+						&& complete == type.complete;
 			}
 
 			return false;

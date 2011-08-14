@@ -67,9 +67,9 @@ import wyjvm.util.dfa.VariableAnalysis;
 public class Continuations {
 
 	private static final Clazz PROCESS = new Clazz("wyjc.runtime", "Actor"),
-	    MESSAGER = new Clazz("wyjc.runtime.concurrency", "Messager"),
-	    YIELDER = new Clazz("wyjc.runtime.concurrency", "Yielder"),
-	    FUTURE = new Clazz("wyjc.runtime.concurrency", "Messager$MessageFuture");
+			MESSAGER = new Clazz("wyjc.runtime.concurrency", "Messager"),
+			YIELDER = new Clazz("wyjc.runtime.concurrency", "Yielder"),
+			FUTURE = new Clazz("wyjc.runtime.concurrency", "Messager$MessageFuture");
 
 	public void apply(ClassFile classfile) {
 		for (Method method : classfile.methods()) {
@@ -82,7 +82,27 @@ public class Continuations {
 	public void apply(Method method) {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
-				apply(method, (Code) attribute);
+//				try {
+					apply(method, (Code) attribute);
+//				} catch (RuntimeException rex) {
+//					StackAnalysis sa = new StackAnalysis(method);
+//					System.out.println(method.name());
+//					List<Bytecode> bytecodes = ((Code) attribute).bytecodes(); 
+//					for (int i = 0; i < bytecodes.size(); ++i) {
+//						Bytecode code = bytecodes.get(i);
+//						System.out.print(code);
+//						try {
+//							System.out.print(" ");
+//							System.out.println(sa.typesAt(i + 1));
+//						} catch (Throwable th) {
+//							System.out.println();
+////							th.printStackTrace();
+////							break;
+//						}
+//					}
+//					
+//					throw rex;
+//				}
 
 				break;
 			}
@@ -110,26 +130,27 @@ public class Continuations {
 
 					bytecodes.add(++i, new Load(0, PROCESS));
 					bytecodes.add(++i, new Invoke(YIELDER, "shouldYield", new Function(
-					    T_BOOL), Bytecode.VIRTUAL));
+							T_BOOL), Bytecode.VIRTUAL));
 					bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
 					Map<Integer, JvmType> types = variableAnalysis.typesAt(i + 1);
 					Stack<JvmType> stack = stackAnalysis.typesAt(i + 1);
 
-					i = addResume(bytecodes,
-					    addYield(method, bytecodes, i, location, types, stack), location,
-					    types, stack);
+					i =
+							addResume(bytecodes,
+									addYield(method, bytecodes, i, location, types, stack),
+									location, types, stack);
 
 					bytecodes.add(++i, new Label("skip" + location));
 
 					if (name.startsWith("sendSync")) {
 						bytecodes.add(++i, new Load(0, PROCESS));
 						bytecodes.add(++i, new Invoke(MESSAGER, "getCurrentFuture",
-						    new Function(FUTURE), Bytecode.VIRTUAL));
+								new Function(FUTURE), Bytecode.VIRTUAL));
 
 						bytecodes.add(++i, new Dup(FUTURE));
 						bytecodes.add(++i, new Invoke(FUTURE, "isFailed", new Function(
-						    T_BOOL), Bytecode.VIRTUAL));
+								T_BOOL), Bytecode.VIRTUAL));
 						bytecodes.add(++i, new If(If.NE, "fail"));
 						mayFail = true;
 
@@ -137,7 +158,7 @@ public class Continuations {
 							bytecodes.add(++i, new Pop(FUTURE));
 						} else {
 							bytecodes.add(++i, new Invoke(FUTURE, "getResult", new Function(
-							    JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
+									JAVA_LANG_OBJECT), Bytecode.VIRTUAL));
 							// TODO This probably has to be cast.
 						}
 					}
@@ -150,10 +171,10 @@ public class Continuations {
 
 						Map<Integer, JvmType> types = variableAnalysis.typesAt(i);
 						Stack<JvmType> stack = stackAnalysis.typesAt(i);
-						
+
 						pTypes = invoke.type.parameterTypes();
 						int size = pTypes.size();
-						
+
 						// Remove the values that invoking the method will remove for us.
 						for (int j = 0; j < size; ++j) {
 							stack.pop();
@@ -167,7 +188,8 @@ public class Continuations {
 						// The first argument of any internal method is the actor.
 						bytecodes.add(i++, new Load(0, PROCESS));
 
-						// Load in null values. The unyielding will put the real values in.
+						// Load in null values. The unyielding will put the real values
+						// in.
 						for (int j = 1; j < size; ++j) {
 							bytecodes.add(i++, addNullValue(pTypes.get(j)));
 						}
@@ -178,7 +200,7 @@ public class Continuations {
 						// it caused the actor to yield.
 						bytecodes.add(++i, new Load(0, PROCESS));
 						bytecodes.add(++i, new Invoke(YIELDER, "isYielded", new Function(
-						    T_BOOL), Bytecode.VIRTUAL));
+								T_BOOL), Bytecode.VIRTUAL));
 						bytecodes.add(++i, new If(If.EQ, "skip" + location));
 
 						i = addYield(method, bytecodes, i, location, types, stack);
@@ -197,7 +219,7 @@ public class Continuations {
 		if (mayFail) {
 			bytecodes.add(new Label("fail"));
 			bytecodes.add(new Invoke(FUTURE, "getCause", new Function(
-			    JAVA_LANG_THROWABLE), Bytecode.VIRTUAL));
+					JAVA_LANG_THROWABLE), Bytecode.VIRTUAL));
 			bytecodes.add(new Throw());
 		}
 
@@ -209,10 +231,10 @@ public class Continuations {
 
 			bytecodes.add(++i, new Load(0, PROCESS));
 			bytecodes.add(++i, new Invoke(YIELDER, "getCurrentStateLocation",
-			    new Function(T_INT), Bytecode.VIRTUAL));
+					new Function(T_INT), Bytecode.VIRTUAL));
 
-			List<Pair<Integer, String>> cases = new ArrayList<Pair<Integer, String>>(
-			    location);
+			List<Pair<Integer, String>> cases =
+					new ArrayList<Pair<Integer, String>>(location);
 			for (int j = 0; j < location; ++j) {
 				cases.add(new Pair<Integer, String>(j, "resume" + j));
 			}
@@ -223,12 +245,12 @@ public class Continuations {
 	}
 
 	private int addYield(Method method, List<Bytecode> bytecodes, int i,
-	    int location, Map<Integer, JvmType> types, Stack<JvmType> stack) {
+			int location, Map<Integer, JvmType> types, Stack<JvmType> stack) {
 		bytecodes.add(++i, new Load(0, PROCESS));
 
 		bytecodes.add(++i, new LoadConst(location));
 		bytecodes.add(++i, new Invoke(YIELDER, "yield",
-		    new Function(T_VOID, T_INT), Bytecode.VIRTUAL));
+				new Function(T_VOID, T_INT), Bytecode.VIRTUAL));
 
 		for (int var : types.keySet()) {
 			if (var != 0) {
@@ -242,7 +264,7 @@ public class Continuations {
 				}
 
 				bytecodes.add(++i, new Invoke(YIELDER, "set", new Function(T_VOID,
-				    T_INT, type), Bytecode.VIRTUAL));
+						T_INT, type), Bytecode.VIRTUAL));
 			}
 		}
 
@@ -256,7 +278,7 @@ public class Continuations {
 			}
 
 			bytecodes.add(++i, new Invoke(YIELDER, "push",
-			    new Function(T_VOID, type), Bytecode.VIRTUAL));
+					new Function(T_VOID, type), Bytecode.VIRTUAL));
 		}
 
 		JvmType returnType = method.type().returnType();
@@ -271,7 +293,7 @@ public class Continuations {
 	}
 
 	private int addResume(List<Bytecode> bytecodes, int i, int location,
-	    Map<Integer, JvmType> types, Stack<JvmType> stack) {
+			Map<Integer, JvmType> types, Stack<JvmType> stack) {
 		bytecodes.add(++i, new Label("resume" + location));
 
 		for (JvmType type : stack) {
@@ -289,7 +311,7 @@ public class Continuations {
 			}
 
 			bytecodes.add(++i, new Invoke(YIELDER, name, new Function(methodType),
-			    Bytecode.VIRTUAL));
+					Bytecode.VIRTUAL));
 			if (type instanceof Reference) {
 				bytecodes.add(++i, new CheckCast(type));
 			}
@@ -312,7 +334,7 @@ public class Continuations {
 				}
 
 				bytecodes.add(++i, new Invoke(YIELDER, name, new Function(methodType,
-				    T_INT), Bytecode.VIRTUAL));
+						T_INT), Bytecode.VIRTUAL));
 				if (type instanceof Reference) {
 					bytecodes.add(++i, new CheckCast(type));
 				}
@@ -322,23 +344,23 @@ public class Continuations {
 
 		bytecodes.add(++i, new Load(0, PROCESS));
 		bytecodes.add(++i, new Invoke(YIELDER, "unyield", new Function(T_VOID),
-		    Bytecode.VIRTUAL));
+				Bytecode.VIRTUAL));
 
 		return i;
 	}
 
 	private Bytecode addNullValue(JvmType type) {
 		Object value;
-		
+
 		if (type instanceof Reference) {
 			value = null;
 		} else if (type instanceof Int) {
 			value = 0;
 		} else {
 			throw new UnsupportedOperationException(
-			    "Non-reference types not yet supported.");
+					"Non-reference types not yet supported.");
 		}
-		
+
 		return new LoadConst(value);
 	}
 

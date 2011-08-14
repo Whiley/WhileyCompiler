@@ -39,7 +39,7 @@ public class ConcurrentBench extends BenchHarness {
 
   public void runSum() throws InterruptedException, IOException {
     System.out.println(runBench("sum/Main", "small.in"));
-    System.out.println(runBench("sum/Main", "medium.in"));
+//    System.out.println(runBench("sum/Main", "medium.in"));
 //    System.out.println(runBench("sum/Main", "large.in"));
   }
   

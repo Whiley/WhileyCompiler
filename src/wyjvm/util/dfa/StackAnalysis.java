@@ -114,7 +114,7 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 			return new StackTypes(newStack, types.isComplete());
 		} else if (code instanceof GetField) {
 			return newTypes(types, ((GetField) code).mode == Bytecode.STATIC ? 0 : 1,
-			    ((GetField) code).type);
+					((GetField) code).type);
 		} else if (code instanceof If) {
 			return newTypes(types, 1);
 		} else if (code instanceof IfCmp) {
@@ -124,9 +124,14 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 		} else if (code instanceof Invoke) {
 			Invoke invoke = (Invoke) code;
 			JvmType returnType = invoke.type.returnType();
-			return newTypes(types, invoke.type.parameterTypes().size()
-			    + (invoke.mode == Bytecode.STATIC ? 0 : 1),
-			    returnType instanceof Void ? null : returnType);
+			try {
+				return newTypes(types, invoke.type.parameterTypes().size()
+						+ (invoke.mode == Bytecode.STATIC ? 0 : 1),
+						returnType instanceof Void ? null : returnType);
+			} catch (RuntimeException rex) {
+//				System.out.println(invoke);
+				throw rex;
+			}
 		} else if (code instanceof Load) {
 			return newTypes(types, 0, ((Load) code).type);
 		} else if (code instanceof LoadConst) {
@@ -188,17 +193,24 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 	}
 
 	private StackTypes newTypes(TypeInformation types, int popCount,
-	    JvmType newType) {
+			JvmType newType) {
 		Stack<JvmType> newStack = copy(types);
+
+		if (newStack.size() < popCount) {
+//			System.out.println(newStack);
+		}
+
 		for (int i = 0; i < popCount; ++i) {
 			newStack.pop();
 		}
+
 		if (newType != null) {
 			newStack.push(newType);
 		}
+
 		return new StackTypes(newStack, types.isComplete());
 	}
-	
+
 	private Stack<JvmType> copy(TypeInformation types) {
 		Stack<JvmType> copy = new Stack<JvmType>();
 		copy.addAll(types.getTypeInformation());
@@ -225,7 +237,7 @@ public class StackAnalysis extends TypeFlowAnalysis<Stack<JvmType>> {
 			}
 
 			throw new IllegalStateException(
-			    "Two different incomplete stacks cannot be combined.");
+					"Two different incomplete stacks cannot be combined.");
 		}
 
 	}

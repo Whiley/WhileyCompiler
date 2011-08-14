@@ -51,7 +51,7 @@ public final class Actor extends Messager {
 	public Object getState() {
 		return state;
 	}
-	
+
 	public Actor setState(Object state) {
 		this.state = state;
 		return this;
