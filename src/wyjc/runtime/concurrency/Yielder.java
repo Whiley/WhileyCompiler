@@ -80,6 +80,8 @@ public abstract class Yielder {
 		if (state.isEmpty()) {
 			yielded = false;
 		}
+		
+		current = yielded ? state.peek() : null;
 	}
 
 	/**

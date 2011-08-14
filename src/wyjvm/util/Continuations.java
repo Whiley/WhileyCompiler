@@ -83,6 +83,22 @@ public class Continuations {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
 
+//				if (method.name().startsWith("main")) {
+//					StackAnalysis sa = new StackAnalysis(method);
+//					List<Bytecode> bytecodes = ((Code) attribute).bytecodes();
+//					for (int i = 0; i < bytecodes.size(); ++i) {
+//						System.out.print(bytecodes.get(i));
+//						if (i < bytecodes.size() - 1) {
+//							try {
+//								System.out.print(" ");
+//								System.out.println(sa.typesAt(i + 1));
+//							} catch (RuntimeException rex) {
+//								System.out.println();
+//							}
+//						}
+//					}
+//				}
+
 				break;
 			}
 		}
@@ -237,7 +253,7 @@ public class Continuations {
 						T_INT, type), Bytecode.VIRTUAL));
 			}
 		}
- 
+
 		for (int j = stack.size() - 1; j >= 0; --j) {
 			JvmType type = stack.get(j);
 			bytecodes.add(++i, new Load(0, PROCESS));
@@ -265,7 +281,7 @@ public class Continuations {
 	private int addResume(List<Bytecode> bytecodes, int i, int location,
 			Map<Integer, JvmType> types, Stack<JvmType> stack) {
 		bytecodes.add(++i, new Label("resume" + location));
-		
+
 		for (JvmType type : stack) {
 			JvmType methodType = type;
 			bytecodes.add(++i, new Load(0, PROCESS));

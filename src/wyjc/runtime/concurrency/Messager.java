@@ -32,8 +32,8 @@ import java.util.Queue;
 import wyjc.runtime.concurrency.Scheduler.Resumable;
 
 /**
- * A helper class for the actor hierarchy that involves the passing of messages
- * and scheduling resumptions on idle actors.
+ * A helper class for the actor hierarchy that involves the passing of
+ * messages and scheduling resumptions on idle actors.
  * 
  * @author Timothy Jones
  */
@@ -44,12 +44,14 @@ public abstract class Messager extends Yielder implements Resumable {
 	private final Queue<Message> mail = new LinkedList<Message>();
 
 	private Message currentMessage = null;
+	
+	private MessageFuture future = null;
 
 	/**
-	 * Whether the messager is ready to resume. This is important if a message is
-	 * sent synchronously and the receiver attempts to resume this messager before
-	 * it has completed yielding, in which case the messager will enter an
-	 * inconsistent state. Obviously, all messagers are ready to begin with.
+	 * Whether the messager is ready to resume. This is important if a message
+	 * is sent synchronously and the receiver attempts to resume this messager
+	 * before it has completed yielding, in which case the messager will enter
+	 * an inconsistent state. Obviously, all messagers are ready to begin with.
 	 * 
 	 * See the <code>scheduleResume</code> and <code>beReadyToResume</code>
 	 * methods for information on how its use is carried out.
@@ -57,12 +59,12 @@ public abstract class Messager extends Yielder implements Resumable {
 	private boolean ready = true;
 
 	/**
-	 * Whether the messager should resume immediately upon completing its yielding
-	 * process. This is used mainly to react to a premature resumption, when the
-	 * messager is asked to resume before being ready. In this case, shouldResume
-	 * will cause to immediately place itself back in the scheduler. Appropriate
-	 * values are assigned in <code>sendSync</code> and <code>sendAsync</code>, so
-	 * a default value is not necessary.
+	 * Whether the messager should resume immediately upon completing its
+	 * yielding process. This is used mainly to react to a premature resumption,
+	 * when the messager is asked to resume before being ready. In this case,
+	 * shouldResume will cause to immediately place itself back in the
+	 * scheduler. Appropriate values are assigned in <code>sendSync</code> and
+	 * <code>sendAsync</code>, so a default value is not necessary.
 	 * 
 	 * See the <code>scheduleResume</code> and <code>beReadyToResume</code>
 	 * methods for information on how its use is carried out.
@@ -77,13 +79,13 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	/**
-	 * Sends a synchronous message to this messager, to be executed at some point
-	 * in the future, once all other messages in the queue are processed.
+	 * Sends a synchronous message to this messager, to be executed at some
+	 * point in the future, once all other messages in the queue are processed.
 	 * 
 	 * The primary difference between this method and <code>sendAsync</code> is
-	 * how it manages the sender. Here, the sender will be informed that it should
-	 * yield without resuming, and should not be resumed until this new message is
-	 * complete, where this messager will resume it personally.
+	 * how it manages the sender. Here, the sender will be informed that it
+	 * should yield without resuming, and should not be resumed until this new
+	 * message is complete, where this messager will resume it personally.
 	 * 
 	 * @param sender The sender of the message
 	 * @param method The entry method of the message
@@ -97,6 +99,8 @@ public abstract class Messager extends Yielder implements Resumable {
 		sender.ready = false;
 		sender.shouldYield = true;
 		sender.shouldResume = false;
+		
+		sender.shouldYield();
 
 		addMessage(message);
 	}
@@ -117,20 +121,22 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * Sends an asynchronous message to this messager, to be executed at some
 	 * point in the future, once all other messages in the queue are processed.
 	 * 
-	 * The primary difference between this method and <code>sendSync</code> is how
-	 * it manages the sender. Here, the sender will be informed that it should
-	 * yield with an immediate resumption, but this can easily be modified in the
-	 * future to better react to the sending context.
+	 * The primary difference between this method and <code>sendSync</code> is
+	 * how it manages the sender. Here, the sender will be informed that it
+	 * should yield with an immediate resumption, but this can easily be
+	 * modified in the future to better react to the sending context.
 	 * 
 	 * @param sender The sender of the message
 	 * @param method The entry method of the message
 	 * @param args The entry arguments of the message
 	 */
 	public void sendAsync(Messager sender, Method method, Object[] args) {
-		addMessage(new Message(method, args));
-
+	  // This needs to happen before the message is sent, otherwise the actor
+		// could start before these are set to the correct values.
 		sender.shouldYield = false;
 		sender.shouldResume = true;
+		
+		addMessage(new Message(method, args));
 	}
 
 	/**
@@ -146,9 +152,9 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	/**
-	 * Adds a message to the queue in a thread-safe manner. If the messager isn't
-	 * currently working on a message, this method will instead immediately place
-	 * it into <code>currentMessage</code>.
+	 * Adds a message to the queue in a thread-safe manner. If the messager
+	 * isn't currently working on a message, this method will instead
+	 * immediately place it into <code>currentMessage</code>.
 	 * 
 	 * @param message The message to add
 	 * @return Whether the added message is now the current message
@@ -164,8 +170,8 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	/**
-	 * Schedules the messager to resume at an undetermined point in the future. If
-	 * the messager is not ready to resume, this will cause it to immediately
+	 * Schedules the messager to resume at an undetermined point in the future.
+	 * If the messager is not ready to resume, this will cause it to immediately
 	 * resume once it reaches a ready state.
 	 */
 	protected void scheduleResume() {
@@ -179,8 +185,8 @@ public abstract class Messager extends Yielder implements Resumable {
 
 	/**
 	 * A synchronised method that checks if the messager is ready to resume. If
-	 * not, it remembers that a resumption was attempted, and informs the messager
-	 * that it should resume immediately on becoming ready.
+	 * not, it remembers that a resumption was attempted, and informs the
+	 * messager that it should resume immediately on becoming ready.
 	 * 
 	 * @return Whether the messager is currently ready
 	 */
@@ -197,9 +203,9 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * Sets the messager as ready to resume, and returns whether the messager
 	 * should resume immediately.
 	 * 
-	 * The reason this dual functionality is composed into a single method is that
-	 * a race condition can occur in trying to separate them out into two, as a
-	 * resumption can arrive during the setting of the ready state.
+	 * The reason this dual functionality is composed into a single method is
+	 * that a race condition can occur in trying to separate them out into two,
+	 * as a resumption can arrive during the setting of the ready state.
 	 * 
 	 * @return Whether the messager should resume as a result of being ready
 	 */
@@ -225,11 +231,11 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	/**
-	 * @return The future of this messager's current message
+	 * @return The future of this messager's last sent message
 	 * @throws NullPointerException There is no current message
 	 */
-	public MessageFuture getCurrentFuture() throws NullPointerException {
-		return currentMessage.future;
+	public MessageFuture getLastSentFuture() throws NullPointerException {
+		return future;
 	}
 
 	/**
@@ -242,7 +248,10 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * @param result The result of the successful message
 	 */
 	protected void completeCurrentMessage(Object result) {
-		currentMessage.future.complete(result);
+		if (currentMessage instanceof SyncMessage) {
+			((SyncMessage) currentMessage).future.complete(result);
+		}
+		
 		nextMessage();
 	}
 
@@ -256,7 +265,10 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * @param cause The case of the message failure
 	 */
 	protected void failCurrentMessage(Throwable cause) {
-		currentMessage.future.fail(cause);
+		if (currentMessage instanceof SyncMessage) {
+			((SyncMessage) currentMessage).future.fail(cause);
+		}
+		
 		// TODO There's no crash if the entry method fails.
 		nextMessage();
 	}
@@ -279,15 +291,11 @@ public abstract class Messager extends Yielder implements Resumable {
 		private final Method method;
 		private final Object[] arguments;
 
-		private final MessageFuture future;
-
 		public Message(Method method, Object[] arguments) {
 			arguments[0] = Messager.this;
-			
+
 			this.method = method;
 			this.arguments = arguments;
-
-			future = new MessageFuture();
 		}
 
 	}
@@ -295,10 +303,15 @@ public abstract class Messager extends Yielder implements Resumable {
 	private class SyncMessage extends Message {
 
 		private final Messager sender;
+		
+		private final MessageFuture future;
 
 		public SyncMessage(Method method, Object[] arguments, Messager sender) {
 			super(method, arguments);
 			this.sender = sender;
+			this.future = new MessageFuture();
+			
+			sender.future = future;
 		}
 
 	}
@@ -320,7 +333,7 @@ public abstract class Messager extends Yielder implements Resumable {
 		public Object getResult() {
 			if (!completed) {
 				throw new IllegalStateException(
-				    "Requested result from incomplete message.");
+						"Requested result from incomplete message.");
 			}
 
 			return result;
@@ -329,7 +342,7 @@ public abstract class Messager extends Yielder implements Resumable {
 		public Throwable getCause() {
 			if (!failed) {
 				throw new IllegalStateException(
-				    "Requested failure cause from message which has not failed.");
+						"Requested failure cause from message which has not failed.");
 			}
 
 			return cause;
@@ -338,11 +351,11 @@ public abstract class Messager extends Yielder implements Resumable {
 		private void complete(Object result) {
 			if (completed) {
 				throw new IllegalStateException(
-				    "Attempted to complete an already completed message.");
+						"Attempted to complete an already completed message.");
 			}
 			if (failed) {
 				throw new IllegalStateException(
-				    "Attempted to complete a failed message.");
+						"Attempted to complete a failed message.");
 			}
 
 			completed = true;
@@ -352,11 +365,11 @@ public abstract class Messager extends Yielder implements Resumable {
 		private void fail(Throwable cause) {
 			if (completed) {
 				throw new IllegalStateException(
-				    "Attempted to fail a completed message.");
+						"Attempted to fail a completed message.");
 			}
 			if (failed) {
 				throw new IllegalStateException(
-				    "Attempted to fail an already failed message.");
+						"Attempted to fail an already failed message.");
 			}
 
 			failed = true;

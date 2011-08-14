@@ -45,7 +45,7 @@ public class ConcurrentBench extends BenchHarness {
   
   public void runMatrix() throws InterruptedException, IOException {
   	System.out.println(runBench("matrix/Main", "small.in"));
-  	System.out.println(runBench("matrix/Main", "medium.in"));
+//  	System.out.println(runBench("matrix/Main", "medium.in"));
 //  	System.out.println(runBench("matrix/Main", "large.in"));
   }
 
@@ -53,6 +53,7 @@ public class ConcurrentBench extends BenchHarness {
       IOException {
     ConcurrentBench bench = new ConcurrentBench();
     bench.runSum();
+    bench.runMatrix();
   }
 
 }

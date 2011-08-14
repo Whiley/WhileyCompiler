@@ -1512,7 +1512,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER,
 					c.retval ? "sendSync" : "sendSyncVoid", ftype, Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getCurrentFuture",
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getLastSentFuture",
 					new JvmType.Function(WHILEYFUTURE), Bytecode.VIRTUAL));
 			
 			// Response to failure will be added later on.
@@ -1568,7 +1568,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER,
 					c.retval ? "sendSync" : "sendSyncVoid", ftype, Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getCurrentFuture",
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getLastSentFuture",
 					new JvmType.Function(WHILEYFUTURE), Bytecode.VIRTUAL));
 			
 			// Response to failure will be added later on. 
