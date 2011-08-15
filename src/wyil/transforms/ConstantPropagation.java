@@ -54,7 +54,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public Env initialStore() {				
 		Env environment = new Env();		
-		int nvars = methodCase.locals().size();
+		int nvars = methodCase.body().numSlots();
 		
 		for (int i=0; i != nvars; ++i) {			
 			environment.add(null);			
@@ -315,6 +315,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		Value val = environment.pop();
 		
+		// FIXME: I think there's a bug here
 		if (val instanceof Value.Rational && code.from == Type.T_INT
 				&& code.to == Type.T_REAL) {			
 			entry = new Block.Entry(Code.Const(val),entry.attributes());
@@ -997,6 +998,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public Pair<Env, Env> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
 		
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
@@ -1009,6 +1011,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public Pair<Env, Env> propagate(int index,
 			Code.IfType code, Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
 		
 		if(code.slot < 0) {			
 			Value lhs = environment.pop();			
@@ -1019,6 +1022,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public List<Env> propagate(int index, Code.Switch sw,
 			Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
 		
 		Value val = environment.pop();
 		
