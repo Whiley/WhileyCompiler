@@ -49,11 +49,11 @@ public class Pipeline {
 				{
 					add(new Template(DefiniteAssignment.class, Collections.EMPTY_MAP));
 					add(new Template(TypePropagation.class, Collections.EMPTY_MAP));
+					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
-					add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));					
-					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));
+					add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));										
 					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));					
 				}
 			});

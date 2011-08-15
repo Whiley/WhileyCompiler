@@ -74,9 +74,10 @@ public class ConstraintInline implements Transform {
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {	
-		Block body = mcase.body();		
-		int freeSlot = body.numSlots();
+		Block body = mcase.body();				
 		Block nbody = new Block(body.numInputs());		
+		int freeSlot = buildShadows(nbody,mcase,method);
+				
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
 			Block nblk = transform(entry,freeSlot,mcase,method);			
@@ -89,6 +90,45 @@ public class ConstraintInline implements Transform {
 		return new Module.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}	
+	
+	/**
+	 * <p>
+	 * The build shadows method is used to create "shadow" copies of a
+	 * function/method's parameters on entry to the method. This is necessary
+	 * when a postcondition exists, as the postcondition may refer to the
+	 * parameter values. In such case, however, the semantics of the language
+	 * dictate that the postcondition refers to the parameter values <i>as they
+	 * were on entry to the method</i>.
+	 * </p>
+	 * 
+	 * <p>
+	 * Thus, we must copy the parameter values into their shadows in the case
+	 * that they are modified later on. This is potentially inefficient if none,
+	 * or only some of the parameters are mentioned in the postcondition.
+	 * However, a later pass could optimise this away as the copying assignmens
+	 * would be dead-code.
+	 * </p>
+	 * 
+	 * @param body
+	 * @param mcase
+	 * @param method
+	 * @return
+	 */
+	public int buildShadows(Block body, Module.Case mcase,
+			Module.Method method) {
+		int freeSlot = body.numSlots();
+		if (mcase.postcondition() != null) {
+			//
+			List<Type> params = method.type().params();
+			for (int i = 0; i != params.size(); ++i) {
+				Type t = params.get(i);
+				body.append(Code.Load(t, i));
+				body.append(Code.Store(t, i + freeSlot));
+			}
+			freeSlot += params.size();
+		}
+		return freeSlot;
+	}
 	
 	public Block transform(Block.Entry entry, int freeSlot,
 			Module.Case methodCase, Module.Method method) {
@@ -180,15 +220,15 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
-				Type.Fun mtype = method.type();
-				int pIndex = 0;
+				Type.Fun mtype = method.type();	
+				int pIndex = 1;
 				if (mtype instanceof Type.Meth
 						&& ((Type.Meth) mtype).receiver() != null) {
-					binding.put(pIndex+1, pIndex++);
+					binding.put(pIndex++, Code.THIS_SLOT);
 				}
+				int shadowIndex = methodCase.body().numSlots();
 				for(Type p : mtype.params()) {
-					// FIXME: need to support shadows here!!
-					binding.put(pIndex+1, pIndex++);
+					binding.put(pIndex++, shadowIndex++);
 				}
 				blk.importExternal(postcondition,binding);
 				blk.append(Code.Load(code.type, freeSlot),attributes(elem));
