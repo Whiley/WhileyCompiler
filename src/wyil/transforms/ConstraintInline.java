@@ -76,8 +76,8 @@ public class ConstraintInline implements Transform {
 	public Module.Case transform(Module.Case mcase, Module.Method method) {	
 		Block body = mcase.body();				
 		Block nbody = new Block(body.numInputs());		
-		int freeSlot = buildShadows(nbody,mcase,method);
-				
+		int freeSlot = buildShadows(nbody,mcase,method);		
+		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry entry = body.get(i);
 			Block nblk = transform(entry,freeSlot,mcase,method);			
@@ -116,7 +116,7 @@ public class ConstraintInline implements Transform {
 	 */
 	public int buildShadows(Block body, Module.Case mcase,
 			Module.Method method) {
-		int freeSlot = body.numSlots();
+		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
 			List<Type> params = method.type().params();
@@ -247,7 +247,7 @@ public class ConstraintInline implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {
+	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {		
 		Block blk = new Block(0);
 		// TODO: mark as check block
 		blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
