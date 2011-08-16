@@ -242,14 +242,9 @@ public class ModuleBuilder {
 		if (expr instanceof Constant) {
 			Constant c = (Constant) expr;
 			return c.value;
-		} else if (expr instanceof LocalVariable) {
-			// Note, this must be a constant definition of some sort
-			LocalVariable v = (LocalVariable) expr;
-			Attributes.Module mid = expr.attribute(Attributes.Module.class);
-			if (mid != null) {
-				NameID name = new NameID(mid.module, v.var);
-				return expandConstant(name, exprs, visited);
-			}
+		} else if (expr instanceof ExternalAccess) {
+			ExternalAccess v = (ExternalAccess) expr;			
+			return expandConstant(v.nid, exprs, visited);
 		} else if (expr instanceof BinOp) {
 			BinOp bop = (BinOp) expr;
 			Value lhs = expandConstantHelper(bop.lhs, filename, exprs, visited);
