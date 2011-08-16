@@ -1084,6 +1084,8 @@ public class ModuleBuilder {
 				return resolveCondition(target, (Constant) condition, environment);
 			} else if (condition instanceof LocalVariable) {
 				return resolveCondition(target, (LocalVariable) condition, environment);
+			} else if (condition instanceof ExternalAccess) {
+				return resolveCondition(target, (ExternalAccess) condition, environment);
 			} else if (condition instanceof BinOp) {
 				return resolveCondition(target, (BinOp) condition, environment);
 			} else if (condition instanceof UnOp) {
@@ -1134,6 +1136,24 @@ public class ModuleBuilder {
 
 		return blk;
 	}
+	
+	protected Block resolveCondition(String target, ExternalAccess v, 
+			HashMap<String, Integer> environment) throws ResolveError {
+		
+		Block blk = new Block(environment.size());		
+		Value val = constants.get(v.nid);
+		if(val == null) {
+			// indicates an external access
+			Module mi = loader.loadModule(v.nid.module());
+			val = mi.constant(v.nid.name()).constant();
+		}								
+		// Obviously, this will be evaluated one way or another.
+		blk.append(Code.Const(val));
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
+		return blk;
+	}
+	
 	/*
 	protected Block oldResolveCondition(String target, LocalVariable v, 
 			HashMap<String, Integer> environment) throws ResolveError {
@@ -1385,6 +1405,8 @@ public class ModuleBuilder {
 				return resolve((Constant) expression, environment);
 			} else if (expression instanceof LocalVariable) {
 				return resolve((LocalVariable) expression, environment);
+			} else if (expression instanceof ExternalAccess) {
+				return resolve((ExternalAccess) expression, environment);
 			} else if (expression instanceof NaryOp) {
 				return resolve((NaryOp) expression, environment);
 			} else if (expression instanceof BinOp) {
@@ -1531,6 +1553,18 @@ public class ModuleBuilder {
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(Value.V_FUN(name, tf)),
 				attributes(s));
+		return blk;
+	}
+	
+	protected Block resolve(ExternalAccess v, HashMap<String,Integer> environment) throws ResolveError {						
+		Value val = constants.get(v.nid);		
+		if(val == null) {
+			// indicates an external access
+			Module mi = loader.loadModule(v.nid.module());
+			val = mi.constant(v.nid.name()).constant();
+		}
+		Block blk = new Block(environment.size());
+		blk.append(Code.Const(val),attributes(v));
 		return blk;
 	}
 	
