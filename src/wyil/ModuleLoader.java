@@ -254,7 +254,31 @@ public class ModuleLoader {
 	
 	public ModuleID resolveAsModule(String name, List<PkgID> imports)
 			throws ResolveError {
-
+		
+		for (PkgID pkg : imports) {				
+			if(pkg.size() > 0 && pkg.last().equals("*")) {				
+				pkg = pkg.subpkg(0, pkg.size()-1);
+				if(!isPackage(pkg)) {					
+					continue; // sanity check
+				}								
+				Package p = resolvePackage(pkg);
+				
+				for (String n : p.modules) {										
+					if(n.equals(name)) {					
+						return new ModuleID(pkg,n);
+					}					
+				}
+			} else if(pkg.size() > 0) {				
+				String pkgname = pkg.last();
+				if(pkgname.equals(name)) {
+					pkg = pkg.subpkg(0, pkg.size()-1);
+					ModuleID mid = new ModuleID(pkg,pkgname);												
+					return mid;					
+				}
+			}
+		}
+		
+		throw new ResolveError("module not found: " + name);
 	}
 	
 	public Module loadModule(ModuleID module) throws ResolveError {		
@@ -431,7 +455,7 @@ public class ModuleLoader {
 							addPackageItem(new PkgID(pkgName.split("\\.")),
 									moduleName, new File(dir));
 						}
-					}
+					}					
 					
 					pkgInfo = packages.get(pkg);
 					if(pkgInfo != null) {						
@@ -529,9 +553,9 @@ public class ModuleLoader {
 
 		// Finally, add all enclosing packages of this package as
 		// well. Otherwise, isPackage("whiley") can fails even when we know about
-		// a particular package.
-		for(int i=0;i<pkg.size()-1;++i) {
-			PkgID p = pkg.subpkg(0,i);
+		// a particular package.		
+		for(int i=0;i<=pkg.size()-1;++i) {
+			PkgID p = pkg.subpkg(0,i);			
 			if (packages.get(p) == null) {
 				packages.put(p, new Package());
 			}

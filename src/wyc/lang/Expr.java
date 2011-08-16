@@ -103,6 +103,24 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public static class PackageAccess extends SyntacticElement.Impl implements Expr {
+		public final PkgID mid;
+
+		public PackageAccess(PkgID mid, Attribute... attributes) {
+			super(attributes);
+			this.mid = mid;
+		}
+		
+		public PackageAccess(PkgID mid, Collection<Attribute> attributes) {
+			super(attributes);
+			this.mid = mid;
+		}
+		
+		public String toString() {
+			return mid.toString();
+		}
+	}
+	
 	public static class Constant extends SyntacticElement.Impl implements Expr {
 		public final Value value;
 
