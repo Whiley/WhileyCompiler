@@ -1,7 +1,7 @@
 define Actor as process { int data }
 
 int Actor::get():
-    return data
+    return this.data
 
 Actor System::createActor(int n):
     return spawn { data: n }

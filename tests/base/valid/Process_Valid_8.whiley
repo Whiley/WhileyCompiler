@@ -1,7 +1,7 @@
 define MyProc as process { bool flag }
 
 void MyProc::run(System sys):
-    if flag:
+    if this.flag:
         sys.out.println("TRUE")
     else:
         sys.out.println("FALSE")

@@ -5,12 +5,12 @@ define Sum as process {
 
 void Sum::start():
     sum = 0
-    for i in items:
+    for i in this.items:
         sum = sum + i
     this.result = sum    
 
 int Sum::get():
-    return result
+    return this.result
 
 Sum ::create([int] items):
     return spawn { 
