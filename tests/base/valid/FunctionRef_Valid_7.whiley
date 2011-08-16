@@ -9,8 +9,8 @@ int System::test(Proc p, int arg):
 void System::main([string] args):
     p = spawn {data: 1}
     x = this.test(p,123)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))
     x = this.test(p,12545)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))
     x = this.test(p,-11)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))

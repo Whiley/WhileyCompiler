@@ -24,11 +24,11 @@ string f(string input):
     return r
 
 void System::main([string] args):
-    out.println(f("N"))
-    out.println(f("K"))
-    out.println(f("Q"))
-    out.println(f("B"))
-    out.println(f("R"))
-    out.println(f("Q"))
-    out.println(f("e"))
-    out.println(f("1"))
+    this.out.println(f("N"))
+    this.out.println(f("K"))
+    this.out.println(f("Q"))
+    this.out.println(f("B"))
+    this.out.println(f("R"))
+    this.out.println(f("Q"))
+    this.out.println(f("e"))
+    this.out.println(f("1"))

@@ -7,13 +7,13 @@ int|null indexOf(char c1, string str):
     return null
 
 void System::main([string] args):
-    out.println(str(indexOf('H',"Hello World")))
-    out.println(str(indexOf('e',"Hello World")))
-    out.println(str(indexOf('l',"Hello World")))
-    out.println(str(indexOf('o',"Hello World")))
-    out.println(str(indexOf(' ',"Hello World")))
-    out.println(str(indexOf('W',"Hello World")))
-    out.println(str(indexOf('r',"Hello World")))
-    out.println(str(indexOf('d',"Hello World")))
-    out.println(str(indexOf('z',"Hello World")))
-    out.println(str(indexOf('1',"Hello World")))
+    this.out.println(str(indexOf('H',"Hello World")))
+    this.out.println(str(indexOf('e',"Hello World")))
+    this.out.println(str(indexOf('l',"Hello World")))
+    this.out.println(str(indexOf('o',"Hello World")))
+    this.out.println(str(indexOf(' ',"Hello World")))
+    this.out.println(str(indexOf('W',"Hello World")))
+    this.out.println(str(indexOf('r',"Hello World")))
+    this.out.println(str(indexOf('d',"Hello World")))
+    this.out.println(str(indexOf('z',"Hello World")))
+    this.out.println(str(indexOf('1',"Hello World")))

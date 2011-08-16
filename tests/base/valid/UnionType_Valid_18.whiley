@@ -9,5 +9,5 @@ int f([TYPE] xs, TYPE p):
     return -1
 
 void System::main([string] args):
-    out.println(str(f([null,1,2],null)))
-    out.println(str(f([1,2,null,10],10)))
+    this.out.println(str(f([null,1,2],null)))
+    this.out.println(str(f([1,2,null,10],10)))

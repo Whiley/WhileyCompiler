@@ -14,5 +14,5 @@ int f(bool flag, [int] list):
 void System::main([string] args):
     r1 = f(true,[1,2,3,4,5,6,7,8,9,10])
     r2 = f(false,[1,2,3,4,5,6,7,8,9,10])
-    out.println(str(r1))
-    out.println(str(r2))
+    this.out.println(str(r1))
+    this.out.println(str(r2))

@@ -18,4 +18,4 @@ void System::main([string] args):
     r = 0
     for i in 0..|actors|:
         r = r + actors[i].get()
-    out.println(str(r))
+    this.out.println(str(r))

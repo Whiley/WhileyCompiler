@@ -7,4 +7,4 @@
 
 void System::main([string] args):
     xs = reverse("abcdefghijklmnopqrstuvwxyz")
-    out.println(str(xs))
+    this.out.println(str(xs))

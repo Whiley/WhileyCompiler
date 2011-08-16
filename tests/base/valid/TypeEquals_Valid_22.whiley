@@ -7,5 +7,5 @@ string f(iset e):
         return "int"
 
 void System::main([string] args):
-    out.println(f({1,2,3}))
-    out.println(f(1))
+    this.out.println(f({1,2,3}))
+    this.out.println(f(1))

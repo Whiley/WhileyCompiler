@@ -8,8 +8,8 @@ public bool has(char c1, string str):
 
 void System::main([string] args):
     s = "Hello World"
-    out.println(str(has('l',s)))
-    out.println(str(has('e',s)))
-    out.println(str(has('h',s)))
-    out.println(str(has('z',s)))
-    out.println(str(has('H',s)))
+    this.out.println(str(has('l',s)))
+    this.out.println(str(has('e',s)))
+    this.out.println(str(has('h',s)))
+    this.out.println(str(has('z',s)))
+    this.out.println(str(has('H',s)))

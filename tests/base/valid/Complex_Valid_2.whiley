@@ -69,8 +69,8 @@ string pos2str(Pos p):
 
 void System::main([string] args):
     m = {piece: WHITE_PAWN, from: A2, to: A1 }
-    out.println(move2str(m))
+    this.out.println(move2str(m))
     m = {piece: WHITE_KNIGHT, from: A2, to: A1 }
-    out.println(move2str(m))
+    this.out.println(move2str(m))
     m = {piece: WHITE_QUEEN, from: A2, to: A1, taken: BLACK_KING }
-    out.println(move2str(m))
+    this.out.println(move2str(m))

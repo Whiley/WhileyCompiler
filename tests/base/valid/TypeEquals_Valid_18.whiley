@@ -7,6 +7,6 @@ string f(intreal e):
         return "real"
 
 void System::main([string] args):
-    out.println(f(1))
-    out.println(f(1.134))
-    out.println(f(1.0))
+    this.out.println(f(1))
+    this.out.println(f(1.134))
+    this.out.println(f(1.0))

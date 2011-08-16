@@ -5,5 +5,5 @@ int f(int|bool x):
         return 1 
 
 void System::main([string] args):
-    out.println(str(f(true)))
-    out.println(str(f(123)))
+    this.out.println(str(f(true)))
+    this.out.println(str(f(123)))

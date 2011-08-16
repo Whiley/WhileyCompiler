@@ -1126,8 +1126,18 @@ public class ModuleBuilder {
 
 	protected Block resolveCondition(String target, LocalVariable v, 
 			HashMap<String, Integer> environment) throws ResolveError {
-		Block blk = new Block(environment.size());
 		
+		Block blk = new Block(environment.size());				
+		blk.append(Code.Load(null, environment.get(v.var)));
+		blk.append(Code.Const(Value.V_BOOL(true)),attributes(v));
+		blk.append(Code.IfGoto(null,Code.COp.EQ, target),attributes(v));			
+
+		return blk;
+	}
+	/*
+	protected Block oldResolveCondition(String target, LocalVariable v, 
+			HashMap<String, Integer> environment) throws ResolveError {
+	
 		Attributes.Alias alias = v.attribute(Attributes.Alias.class);					
 		Attributes.Module mod = v.attribute(Attributes.Module.class);
 		Type.Fun tf = null;
@@ -1181,7 +1191,7 @@ public class ModuleBuilder {
 		
 		return blk;
 	}
-
+*/
 	protected Block resolveCondition(String target, BinOp v, HashMap<String,Integer> environment) {
 		BOp bop = v.op;
 		Block blk = new Block(environment.size());
@@ -1549,7 +1559,6 @@ public class ModuleBuilder {
 		}
 		
 		// must be an error
-		System.out.println("ENVIRONMENT: " + environment);
 		syntaxError("unknown variable \"" + v.var + "\"",filename,v);
 		return null;
 	}

@@ -10,9 +10,9 @@ void System::main([string] args):
     s3 = {(1,"Hello"),(2,"Hello")}
     s4 = {(1,1),(2,2)}
     s5 = {(1,1),(2,"Hello")}
-    out.println(str(f(s1)))
-    out.println(str(f(s2)))
-    out.println(str(f(s3)))
-    out.println(str(f(s4)))
-    out.println(str(f(s5)))
+    this.out.println(str(f(s1)))
+    this.out.println(str(f(s2)))
+    this.out.println(str(f(s3)))
+    this.out.println(str(f(s4)))
+    this.out.println(str(f(s5)))
 

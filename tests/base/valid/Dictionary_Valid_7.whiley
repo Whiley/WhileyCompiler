@@ -3,7 +3,7 @@ int get({string->int} env):
 
 void System::main([string] args):
     if |args| == 10:
-        out.println("GOT HERE")
+        this.out.println("GOT HERE")
     else:
         env = get({"x"->1,"y"->2})
-        out.println(str(env))
+        this.out.println(str(env))

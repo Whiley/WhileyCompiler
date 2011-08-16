@@ -8,7 +8,7 @@ string g({int op, int mode} z):
 
 void System::main([string] args):
     x = {op:1, rest:[1.23]}
-    out.println(f(x))
+    this.out.println(f(x))
     x = {op:1.23, mode: 0}
     x.op = 123 // OK
-    out.println(g(x))
+    this.out.println(g(x))

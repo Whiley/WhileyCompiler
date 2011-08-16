@@ -9,4 +9,4 @@ string g(int x, int z):
     return f(z)
 
 void System::main([string] args):
-    out.println(g(1,2))
+    this.out.println(g(1,2))

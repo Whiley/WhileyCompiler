@@ -11,4 +11,4 @@ public string repl(char old, char new, string str):
 void System::main([string] args):
     s = "Hello World"
     s = repl('l','1',s)
-    out.println(s)
+    this.out.println(s)

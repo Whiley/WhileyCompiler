@@ -12,8 +12,8 @@ void System::main([string] args):
     m1[2] = 4
     m2[1] = 23498
     
-    out.println(str(get(1,m1)))
-    out.println(str(get(2,m1)))
-    out.println(str(get(1,m2)))
-    out.println(str(get(1,m3)))
-    out.println(str(get(3,m3)))
+    this.out.println(str(get(1,m1)))
+    this.out.println(str(get(2,m1)))
+    this.out.println(str(get(1,m2)))
+    this.out.println(str(get(1,m3)))
+    this.out.println(str(get(3,m3)))

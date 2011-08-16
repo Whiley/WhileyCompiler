@@ -3,4 +3,4 @@ int f(int x, int y):
 
 void System::main([string] args):
      x = f(10,2)
-     out.println(str(x)  )
+     this.out.println(str(x)  )

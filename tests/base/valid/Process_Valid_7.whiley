@@ -6,4 +6,4 @@ void MyProc::inc(int i):
 void System::main([string] args):
     mproc = spawn { x:1 }
     mproc.inc(10)
-    out.println(str(*mproc.x))
+    this.out.println(str(*mproc.x))

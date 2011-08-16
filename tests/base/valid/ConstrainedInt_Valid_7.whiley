@@ -10,4 +10,4 @@ string g(int x, nat z):
     return f(z)
 
 void System::main([string] args):
-    out.println(g(1,3))
+    this.out.println(g(1,3))

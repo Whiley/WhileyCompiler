@@ -9,5 +9,5 @@ int sum(posintlist ls):
 
 void System::main([string] args):
     c = sum([1,2,3,4,5,6,7])
-    out.println(str(c))
+    this.out.println(str(c))
     

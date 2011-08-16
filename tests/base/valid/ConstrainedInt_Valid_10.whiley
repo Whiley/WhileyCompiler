@@ -11,7 +11,7 @@ anat btoa(bnat x):
 
 void System::main([string] args):
     x = 1
-    out.println(str(atob(x)))
-    out.println(str(btoa(x)))
+    this.out.println(str(atob(x)))
+    this.out.println(str(btoa(x)))
     
     

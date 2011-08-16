@@ -10,4 +10,4 @@ void System::main([string] args):
     list = { data: 1, next: null}
     list = { data: null, next: list}
     ans = f(list)
-    out.println(str(ans))
+    this.out.println(str(ans))

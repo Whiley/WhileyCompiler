@@ -7,4 +7,4 @@ DL update(DL ls):
 void System::main([string] args):
     x = {0->[1.0,2.0,3.0], 1->[3.4]}
     x = update(x)
-    out.println(str(x))
+    this.out.println(str(x))

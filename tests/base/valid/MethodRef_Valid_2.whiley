@@ -22,6 +22,6 @@ void System::main([string] args):
     target = reader.thus
     method = reader.read
     data = target.method(5)
-    out.println(str(data))
+    this.out.println(str(data))
 
 

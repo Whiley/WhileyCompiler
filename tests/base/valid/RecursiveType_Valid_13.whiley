@@ -7,6 +7,6 @@ Value init():
 void System::main([string] args):
     v = init()
     if v is [Expr]:
-        out.println("GOT LIST")
+        this.out.println("GOT LIST")
     else:
-        out.println(str(v))
+        this.out.println(str(v))

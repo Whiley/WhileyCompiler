@@ -261,4 +261,4 @@ public void System::main([string] args):
         for j in 0..9:
             out.print(str(i) + " >> ")
             out.print(str(j) + " = ")
-            out.println(str(i >> j))
+            this.out.println(str(i >> j))

@@ -4,5 +4,5 @@ real f(int i):
     return (real) i
 
 void System::main([string] args):
-    out.println(str(f(1)))
+    this.out.println(str(f(1)))
     

@@ -9,5 +9,5 @@
 void System::main([string] args):
     dict = {1->2,3->4,4->5}
     k,v = f(dict)
-    out.println(str(k))
-    out.println(str(v))        
+    this.out.println(str(k))
+    this.out.println(str(v))        

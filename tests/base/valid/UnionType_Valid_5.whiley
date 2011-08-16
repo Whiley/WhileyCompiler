@@ -6,5 +6,5 @@ string f(msgType msg):
     return str(msg.op)
 
 void System::main([string] args):
-    out.println(f({op:1,payload:[1,2,3]}))
+    this.out.println(f({op:1,payload:[1,2,3]}))
 

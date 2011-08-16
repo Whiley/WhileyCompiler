@@ -6,5 +6,5 @@ string f(wur4nat x):
     return str(x)
 
 void System::main([string] args):
-    out.println(f(1))  
+    this.out.println(f(1))  
 

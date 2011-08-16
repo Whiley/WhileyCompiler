@@ -8,7 +8,7 @@ string f(msgType m):
 
 void System::main([string] args):
     x = {op:1,data:[1,2,3]}
-    out.println(f(x))
+    this.out.println(f(x))
     list = x.data
-    out.println(str(list))
+    this.out.println(str(list))
     

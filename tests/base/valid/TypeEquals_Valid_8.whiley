@@ -11,8 +11,8 @@ string f(expr e):
         return "OTHER"
 
 void System::main([string] args):
-    out.println(f(-1))
-    out.println(f(1.0))
-    out.println(f(1.234))
-    out.println(f([1,2,3]))
+    this.out.println(f(-1))
+    this.out.println(f(1.0))
+    this.out.println(f(1.234))
+    this.out.println(f([1,2,3]))
  

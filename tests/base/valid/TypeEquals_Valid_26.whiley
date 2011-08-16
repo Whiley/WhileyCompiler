@@ -7,7 +7,7 @@ int f(rlist l):
         return |l|
 
 void System::main([string] args):
-    out.println(str(f(123)))
-    out.println(str(f(1.23)))
-    out.println(str(f([1,2,3]))) 
+    this.out.println(str(f(123)))
+    this.out.println(str(f(1.23)))
+    this.out.println(str(f([1,2,3]))) 
 

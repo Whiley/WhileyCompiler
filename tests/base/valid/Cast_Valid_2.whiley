@@ -4,5 +4,5 @@ define R1 as { real x }
     return ([real]) xs
 
 void System::main([string] args):
-    out.println(str(f([1,2,3])))
+    this.out.println(str(f([1,2,3])))
     

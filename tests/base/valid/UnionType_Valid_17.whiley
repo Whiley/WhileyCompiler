@@ -19,10 +19,10 @@ define SExpr as SyntaxError | Expr
 
 void System::main([string] args):
     e,s = parseTerm({input: "123", pos: 0})
-    out.println(str(e))
+    this.out.println(str(e))
     e,s = parseTerm({input: "abc", pos: 0})
     if e is SyntaxError: 
-        out.println(e.err)
+        this.out.println(e.err)
     else:
-        out.println(str(e))
+        this.out.println(str(e))
 

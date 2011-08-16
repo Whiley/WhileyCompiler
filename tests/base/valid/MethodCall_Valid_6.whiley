@@ -9,4 +9,4 @@ wmcr6tup System::f(Proc x, int y):
 
 void System::main([string] args):
     proc = spawn { state: 1 }
-    out.println(str(this.f(proc,1)))
+    this.out.println(str(this.f(proc,1)))

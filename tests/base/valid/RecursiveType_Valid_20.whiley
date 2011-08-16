@@ -268,6 +268,6 @@ define bytecodeStrings as [
 
 void System::main([string] args):
     s1 = code2str(Unit(0,1))
-    out.println(s1)
+    this.out.println(s1)
     s2 = code2str(FieldIndex(0,180,{ pkg: "java.lang", classes: ["Object"]},"field",T_INT))
-    out.println(s2)
+    this.out.println(s2)

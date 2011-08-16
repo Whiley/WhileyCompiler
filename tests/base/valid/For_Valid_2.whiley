@@ -4,4 +4,4 @@ void System::main([string] args):
     r = 0
     for x in xs:
         r = r + x    
-    out.println(str(r))
+    this.out.println(str(r))

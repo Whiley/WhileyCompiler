@@ -6,4 +6,4 @@ void f([int] x):
 void System::main([string] args):
     arr = [1,2,3]
     f(arr)
-    out.println(str(arr[0]))
+    this.out.println(str(arr[0]))

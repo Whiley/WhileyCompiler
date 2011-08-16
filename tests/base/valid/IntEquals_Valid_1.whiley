@@ -5,6 +5,6 @@ string f(int x, real y):
         return "NOT EQUAL"
 
 void System::main([string] args):
-    out.println(f(1,4.0))
-    out.println(f(1,4.2))
-    out.println(f(0,0))
+    this.out.println(f(1,4.0))
+    this.out.println(f(1,4.2))
+    this.out.println(f(0,0))

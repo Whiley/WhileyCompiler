@@ -6,4 +6,4 @@ string f(cr2num x):
     return str(y)
 
 void System::main([string] args):
-    out.println(f(3))
+    this.out.println(f(3))

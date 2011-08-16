@@ -9,5 +9,5 @@ int f(UNIT x):
 
 void System::main([string] args):
     bytes = f({op:NOP})
-    out.println(str(bytes))
+    this.out.println(str(bytes))
 

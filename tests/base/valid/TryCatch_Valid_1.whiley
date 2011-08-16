@@ -7,9 +7,9 @@ int f(real x) throws string:
 
 void System::main([string] args):
     try:
-        out.println(str(f(1)))
-        out.println(str(f(0)))
-        out.println(str(f(-1)))
+        this.out.println(str(f(1)))
+        this.out.println(str(f(0)))
+        this.out.println(str(f(-1)))
     catch(string e):
-        out.println("CAUGHT EXCEPTION: " + e)
-    out.println("DONE")        
+        this.out.println("CAUGHT EXCEPTION: " + e)
+    this.out.println("DONE")        

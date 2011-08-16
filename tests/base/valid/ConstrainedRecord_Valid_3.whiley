@@ -4,4 +4,4 @@ define btup as {int op, int index}
     return [b.op,b.index]
 
 void System::main([string] args):
-    out.println(str(f({op:1,index:2})))
+    this.out.println(str(f({op:1,index:2})))

@@ -3,4 +3,4 @@ string f([int] x):
 
 void System::main([string] args):
      arr = [[1,2,3]]
-     out.println(f(arr[0]))
+     this.out.println(f(arr[0]))

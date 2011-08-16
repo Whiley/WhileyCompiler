@@ -37,8 +37,8 @@ int ::sum(int::([int]) m, [int] data):
 void System::main([string] args):
     data = [1,3,5,7,3,198,1,4,6]
     s1 = sum(&parSum,data)
-    out.println("SUM: " + str(s1))
+    this.out.println("SUM: " + str(s1))
     s2 = sum(&seqSum,data)
-    out.println("SUM: " + str(s2))
+    this.out.println("SUM: " + str(s2))
         
 

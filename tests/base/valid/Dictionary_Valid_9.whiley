@@ -8,4 +8,4 @@ DL2 update(DL1 ls):
 void System::main([string] args):
     x = {0->1, 1->2}
     x = update(x)
-    out.println(str(x))
+    this.out.println(str(x))

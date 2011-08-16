@@ -9,6 +9,6 @@ int f(Expr e):
 
 void System::main([string] args):
     v = f([1.0,2.0,3.0])
-    out.println(str(v))
+    this.out.println(str(v))
     v = f(1.234)
-    out.println(str(v))
+    this.out.println(str(v))

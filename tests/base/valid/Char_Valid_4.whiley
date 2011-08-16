@@ -5,6 +5,6 @@ bool isChar(any x):
         return false
 
 void System::main([string] args):
-    out.println(str(isChar('c')))
-    out.println(str(isChar(1)))
-    out.println(str(isChar([1,2,3])))
+    this.out.println(str(isChar('c')))
+    this.out.println(str(isChar(1)))
+    this.out.println(str(isChar([1,2,3])))

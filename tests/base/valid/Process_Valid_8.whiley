@@ -2,9 +2,9 @@ define MyProc as process { bool flag }
 
 void MyProc::run(System sys):
     if flag:
-        sys.out.println("TRUE")
+        sys.this.out.println("TRUE")
     else:
-        sys.out.println("FALSE")
+        sys.this.out.println("FALSE")
 
 void System::main([string] args):
     mproc = spawn { flag:false }     

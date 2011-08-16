@@ -7,7 +7,7 @@ int f(Rec2 rec):
 
 void System::main([string] args):
     rec = {x: 1}
-    out.println(str(rec))
+    this.out.println(str(rec))
     num = f(rec)
-    out.println(str(rec))
-    out.println(str(num))
+    this.out.println(str(rec))
+    this.out.println(str(num))

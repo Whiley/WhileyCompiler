@@ -7,8 +7,8 @@ string f(int x):
         return "EQUALS"
 
 void System::main([string] args):
-    out.println(f(1))
-    out.println(f(10))
-    out.println(f(11))
-    out.println(f(1212))
-    out.println(f(-1212))
+    this.out.println(f(1))
+    this.out.println(f(10))
+    this.out.println(f(11))
+    this.out.println(f(1212))
+    this.out.println(f(-1212))

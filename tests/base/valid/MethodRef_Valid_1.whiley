@@ -13,6 +13,6 @@ int System::test(MyMeth m, MyProc proc):
 void System::main([string] args):
     p = spawn { position: 0 }
     r = this.test(&read,p)
-    out.println(str(r))
+    this.out.println(str(r))
 
 

@@ -9,8 +9,8 @@ int test(int(int) read, int arg):
     
 void System::main([string] args):
     x = test(&id,1)
-    out.println(str(x))
+    this.out.println(str(x))
     x = test(&id,123)
-    out.println(str(x))
+    this.out.println(str(x))
     x = test(&id,223)
-    out.println(str(x))
+    this.out.println(str(x))

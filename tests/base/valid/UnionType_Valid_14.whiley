@@ -8,4 +8,4 @@ nlist f(int x):
 
 void System::main([string] args):
     x = f(2)    
-    out.println(str(x))
+    this.out.println(str(x))

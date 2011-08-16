@@ -10,4 +10,4 @@ string g({bignum} zs, int z):
     return f(z)
 
 void System::main([string] args):
-    out.println(g({1,2,3,5},3))
+    this.out.println(g({1,2,3,5},3))

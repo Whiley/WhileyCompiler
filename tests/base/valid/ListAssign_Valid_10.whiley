@@ -9,4 +9,4 @@ define nint as null|int
 void System::main([string] args):
     ls = [[1,2,3],[4,5,6],[7,8,9]]
     ls = move(0,1,ls)
-    out.println(str(ls))
+    this.out.println(str(ls))

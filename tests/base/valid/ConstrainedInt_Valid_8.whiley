@@ -6,4 +6,4 @@ string f(code x):
     return str(y)
 
 void System::main([string] args):
-    out.println(f({op:1,payload:[1]}))
+    this.out.println(f({op:1,payload:[1]}))

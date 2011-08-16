@@ -10,8 +10,8 @@ int test(Func f, int arg):
     
 void System::main([string] args):
     x = test({read: &id},123)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))
     x = test({read: &id},12545)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))
     x = test({read: &id},-11)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))

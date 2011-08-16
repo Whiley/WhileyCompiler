@@ -10,7 +10,7 @@ int f(intlist x):
 
 void System::main([string] args):
     x = f([1,2,3])
-    out.println(str(x))
+    this.out.println(str(x))
     x = f(123)
-    out.println(str(x))
+    this.out.println(str(x))
 

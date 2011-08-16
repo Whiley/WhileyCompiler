@@ -262,4 +262,4 @@ public void System::main([string] args):
             out.print(str(i) + " & 10101010b << ")
             out.print(str(j) + " = ")
             // test precedence
-            out.println(str(i & 10101010b << j))
+            this.out.println(str(i & 10101010b << j))

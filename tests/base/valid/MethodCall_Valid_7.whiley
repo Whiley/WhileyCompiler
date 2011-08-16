@@ -25,6 +25,6 @@ void System::main([string] args):
     sum!start()
     // get the result synchronously
     r = sum.get()
-    out.println("SUM: " + str(r))
+    this.out.println("SUM: " + str(r))
         
 

@@ -13,5 +13,5 @@ MyProc2 System::create(any data):
 void System::main([string] args):
     p2 = this.create(1.23)
     p2.set(1)
-    out.println(str(p2.get()))
+    this.out.println(str(p2.get()))
 

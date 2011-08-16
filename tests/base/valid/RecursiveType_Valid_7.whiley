@@ -9,4 +9,4 @@ expr parseIdentifier():
 
 void System::main([string] args):
     e = parseTerm()
-    out.println(str(e))
+    this.out.println(str(e))

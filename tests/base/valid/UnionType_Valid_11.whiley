@@ -2,10 +2,10 @@
 define IntList as int|[int]
 
 void System::f(int y):
-    out.println(str(y))
+    this.out.println(str(y))
 
 void System::g([int] z):
-    out.println(str(z))
+    this.out.println(str(z))
 
 void System::main([string] args):
     x = 123

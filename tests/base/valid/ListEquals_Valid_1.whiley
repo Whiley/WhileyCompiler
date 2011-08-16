@@ -5,9 +5,9 @@ string f([int] xs, [real] ys):
         return "NOT EQUAL"
 
 void System::g([int] xs, [real] ys):
-    out.println(str(xs))
-    out.println(str(ys))
-    out.println(f(xs,ys))
+    this.out.println(str(xs))
+    this.out.println(str(ys))
+    this.out.println(f(xs,ys))
 
 void System::main([string] args):
     // following lines should block

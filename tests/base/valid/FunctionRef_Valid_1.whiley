@@ -8,5 +8,5 @@ int g(int(int) func):
     return func(1234)
     
 void System::main([string] args):
-    out.println(str(g(&f1)))
-    out.println(str(g(&f2)))
+    this.out.println(str(g(&f1)))
+    this.out.println(str(g(&f2)))

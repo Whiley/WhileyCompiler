@@ -8,6 +8,6 @@ string rep(char old, char new, string str):
 
 
 void System::main([string] args):
-    out.println(rep('e','w',"Hello"))
-    out.println(rep('H','z',"Hello"))
-    out.println(rep('o','1',"Hello"))
+    this.out.println(rep('e','w',"Hello"))
+    this.out.println(rep('H','z',"Hello"))
+    this.out.println(rep('o','1',"Hello"))

@@ -20,5 +20,5 @@ void System::main([string] args):
     fr = spawn { position: 0, data: [1,2,3,4,5] }
     reader = openReader(fr)
     data = reader.read(5)
-    out.println(str(data))
+    this.out.println(str(data))
 

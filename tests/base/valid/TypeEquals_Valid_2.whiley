@@ -8,7 +8,7 @@ string f(expr e):
 
 void System::main([string] args):
     e = 1
-    out.println(f(e))
+    this.out.println(f(e))
     e = [1,2,3,4]
-    out.println(f(e))
+    this.out.println(f(e))
  

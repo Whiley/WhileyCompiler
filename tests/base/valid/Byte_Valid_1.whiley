@@ -258,4 +258,4 @@ define constants as [
 
 public void System::main([string] args):
     for b in constants:
-        out.println(str(b))
+        this.out.println(str(b))

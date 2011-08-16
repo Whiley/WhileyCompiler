@@ -262,4 +262,4 @@ public void System::main([string] args):
             out.print(str(i) + " << ")
             out.print("1+" + str(j) + " = ")
             // test precedence
-            out.println(str(i << 1 + j))
+            this.out.println(str(i << 1 + j))

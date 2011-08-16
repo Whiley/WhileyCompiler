@@ -260,4 +260,4 @@ public void System::main([string] args):
     for i in constants:
         out.print("~" + str(i))
         out.print(" = ")
-        out.println(str(~i))
+        this.out.println(str(~i))

@@ -8,4 +8,4 @@ int System::f(Proc x):
 
 void System::main([string] args):
     proc = spawn { state: 123 }
-    out.println(str(this.f(proc)))
+    this.out.println(str(this.f(proc)))

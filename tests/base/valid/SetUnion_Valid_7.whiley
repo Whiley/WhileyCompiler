@@ -6,4 +6,4 @@
 
 void System::main([string] args):
     xs = append("abcdefghijklmnopqrstuvwxyz")
-    out.println(str(xs))
+    this.out.println(str(xs))
