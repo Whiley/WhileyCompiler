@@ -1127,7 +1127,7 @@ public class WhileyParser {
 		} else if(token.text.equals("spawn")) {
 			return parseSpawn();			
 		} else if (token instanceof Identifier) {
-			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
+			return new Expr.UnknownVariable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof WhileyLexer.Byte) {			
 			byte val = match(WhileyLexer.Byte.class).value;
@@ -1301,9 +1301,9 @@ public class WhileyParser {
 			// this is a dictionary constructor					
 			return parseDictionaryVal(start,exprs.get(0));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
-				&& exprs.get(0) instanceof Expr.Variable) {
+				&& exprs.get(0) instanceof Expr.UnknownVariable) {
 			// this is a record constructor
-			Expr.Variable v = (Expr.Variable)exprs.get(0); 
+			Expr.UnknownVariable v = (Expr.UnknownVariable)exprs.get(0); 
 			return parseRecordVal(start,v.var);
 		}
 		
@@ -1333,8 +1333,8 @@ public class WhileyParser {
 				if(v instanceof Expr.BinOp) {
 					Expr.BinOp eof = (Expr.BinOp) v;					
 					if (eof.op == Expr.BOp.ELEMENTOF
-							&& eof.lhs instanceof Expr.Variable) {
-						String var = ((Expr.Variable) eof.lhs).var;
+							&& eof.lhs instanceof Expr.UnknownVariable) {
+						String var = ((Expr.UnknownVariable) eof.lhs).var;
 						if (vars.contains(var)) {
 							syntaxError(
 									"variable "

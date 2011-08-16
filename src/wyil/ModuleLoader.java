@@ -209,7 +209,7 @@ public class ModuleLoader {
 	 * @throws ModuleNotFoundException
 	 *             if it couldn't resolve the module
 	 */
-	public ModuleID resolve(String name, List<PkgID> imports)
+	public NameID resolve(String name, List<PkgID> imports)
 			throws ResolveError {									
 		for (PkgID pkg : imports) {				
 			if(pkg.size() > 0 && pkg.last().equals("*")) {				
@@ -224,7 +224,7 @@ public class ModuleLoader {
 						ModuleID mid = new ModuleID(pkg,n);									
 						Skeleton mi = loadSkeleton(mid);					
 						if (mi.hasName(name)) {
-							return mid;
+							return new NameID(mid,name);
 						} 					
 					} catch(ResolveError rex) {
 						// ignore. This indicates we simply couldn't resolve
@@ -239,7 +239,7 @@ public class ModuleLoader {
 					ModuleID mid = new ModuleID(pkg,pkgname);												
 					Skeleton mi = loadSkeleton(mid);					
 					if (mi.hasName(name)) {
-						return mid;
+						return new NameID(mid,name);
 					} 	
 				} catch(ResolveError rex) {
 					// ignore. This indicates we simply couldn't resolve

@@ -34,8 +34,8 @@ import wyjvm.lang.Bytecode;
 public interface Stmt extends SyntacticElement {
 	
 	public static final class Assign extends SyntacticElement.Impl implements Stmt {
-		public final Expr.LVal lhs;
-		public final Expr rhs;
+		public Expr.LVal lhs;
+		public Expr rhs;
 
 		public Assign(Expr.LVal lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -55,7 +55,7 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Assert extends SyntacticElement.Impl implements Stmt {
-		public final Expr expr;		
+		public Expr expr;		
 
 		public Assert(Expr expr, Attribute... attributes) {
 			super(attributes);
@@ -73,7 +73,7 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
-		public final Expr expr;		
+		public Expr expr;		
 
 		public Return(Expr expr, Attribute... attributes) {
 			super(attributes);
@@ -95,8 +95,8 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class While extends SyntacticElement.Impl implements Stmt {
-		public final Expr condition;
-		public final Expr invariant;	
+		public Expr condition;
+		public Expr invariant;	
 		public final ArrayList<Stmt> body;
 
 		public While(Expr condition, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
@@ -117,8 +117,8 @@ public interface Stmt extends SyntacticElement {
 
 	public static final class For extends SyntacticElement.Impl implements Stmt {
 		public final ArrayList<String> variables;		
-		public final Expr source;
-		public final Expr invariant;
+		public Expr source;
+		public Expr invariant;
 		public final ArrayList<Stmt> body;
 
 		public For(Collection<String> variables, Expr source, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
@@ -141,7 +141,7 @@ public interface Stmt extends SyntacticElement {
 
 	
 	public static final class IfElse extends SyntacticElement.Impl implements Stmt {
-		public final Expr condition;
+		public Expr condition;
 		public final ArrayList<Stmt> trueBranch;
 		public final ArrayList<Stmt> falseBranch;
 		
@@ -163,7 +163,7 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {
-		public final Expr value; // needs to proved a constant
+		public Expr value; // needs to proved a constant
 		public final ArrayList<Stmt> stmts;
 		
 		public Case(Expr condition, List<Stmt> statements,
@@ -182,7 +182,7 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Throw extends SyntacticElement.Impl implements Stmt {
-		public final Expr expr;
+		public Expr expr;
 		public Throw(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;
@@ -190,7 +190,7 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Switch extends SyntacticElement.Impl implements Stmt {		
-		public final Expr expr;
+		public Expr expr;
 		public final ArrayList<Case> cases;		
 		
 		public Switch(Expr condition, List<Case> cases, Attribute... attributes) {
@@ -217,7 +217,7 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Debug extends Skip {
-		public final Expr expr;		
+		public Expr expr;		
 
 		public Debug(Expr expr, Attribute... attributes) {
 			super(attributes);

@@ -242,9 +242,9 @@ public class ModuleBuilder {
 		if (expr instanceof Constant) {
 			Constant c = (Constant) expr;
 			return c.value;
-		} else if (expr instanceof Variable) {
+		} else if (expr instanceof LocalVariable) {
 			// Note, this must be a constant definition of some sort
-			Variable v = (Variable) expr;
+			LocalVariable v = (LocalVariable) expr;
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
 			if (mid != null) {
 				NameID name = new NameID(mid.module, v.var);
@@ -826,9 +826,9 @@ public class ModuleBuilder {
 	protected Block resolve(Assign s, HashMap<String,Integer> environment) {
 		Block blk = null;
 		
-		if(s.lhs instanceof Variable) {			
+		if(s.lhs instanceof LocalVariable) {			
 			blk = resolve(s.rhs, environment);			
-			Variable v = (Variable) s.lhs;
+			LocalVariable v = (LocalVariable) s.lhs;
 			blk.append(Code.Store(null, allocate(v.var, environment)),
 					attributes(s));			
 		} else if(s.lhs instanceof TupleGen) {					
@@ -839,10 +839,10 @@ public class ModuleBuilder {
 			Collections.reverse(fields);
 			
 			for(Expr e : fields) {
-				if(!(e instanceof Variable)) {
+				if(!(e instanceof LocalVariable)) {
 					syntaxError("variable expected",filename,e);
 				}
-				Variable v = (Variable) e;
+				LocalVariable v = (LocalVariable) e;
 				blk.append(Code.Store(null, allocate(v.var, environment)),
 						attributes(s));				
 			}
@@ -851,7 +851,7 @@ public class ModuleBuilder {
 			// this is where we need a multistore operation						
 			ArrayList<String> fields = new ArrayList<String>();
 			blk = new Block(environment.size());
-			Pair<Variable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
+			Pair<LocalVariable,Integer> l = extractLVal(s.lhs,fields,blk,environment);
 			if(!environment.containsKey(l.first().var)) {
 				syntaxError("unknown variable",filename,l.first());
 			}
@@ -866,20 +866,20 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Pair<Variable, Integer> extractLVal(Expr e,
+	protected Pair<LocalVariable, Integer> extractLVal(Expr e,
 			ArrayList<String> fields, Block blk, 
 			HashMap<String, Integer> environment) {
-		if (e instanceof Variable) {
-			Variable v = (Variable) e;
+		if (e instanceof LocalVariable) {
+			LocalVariable v = (LocalVariable) e;
 			return new Pair(v,0);			
 		} else if (e instanceof ListAccess) {
 			ListAccess la = (ListAccess) e;
-			Pair<Variable,Integer> l = extractLVal(la.src, fields, blk, environment);
+			Pair<LocalVariable,Integer> l = extractLVal(la.src, fields, blk, environment);
 			blk.append(resolve(la.index, environment));			
 			return new Pair(l.first(),l.second() + 1);
 		} else if (e instanceof RecordAccess) {
 			RecordAccess ra = (RecordAccess) e;
-			Pair<Variable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
+			Pair<LocalVariable,Integer> l = extractLVal(ra.lhs, fields, blk, environment);
 			fields.add(ra.name);
 			return new Pair(l.first(),l.second() + 1);			
 		} else {
@@ -1082,8 +1082,8 @@ public class ModuleBuilder {
 		try {
 			if (condition instanceof Constant) {
 				return resolveCondition(target, (Constant) condition, environment);
-			} else if (condition instanceof Variable) {
-				return resolveCondition(target, (Variable) condition, environment);
+			} else if (condition instanceof LocalVariable) {
+				return resolveCondition(target, (LocalVariable) condition, environment);
 			} else if (condition instanceof BinOp) {
 				return resolveCondition(target, (BinOp) condition, environment);
 			} else if (condition instanceof UnOp) {
@@ -1124,7 +1124,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolveCondition(String target, Variable v, 
+	protected Block resolveCondition(String target, LocalVariable v, 
 			HashMap<String, Integer> environment) throws ResolveError {
 		Block blk = new Block(environment.size());
 		
@@ -1202,22 +1202,22 @@ public class ModuleBuilder {
 
 		Code.COp cop = OP2COP(bop,v);
 		
-		if (cop == Code.COp.EQ && v.lhs instanceof Expr.Variable
+		if (cop == Code.COp.EQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {
 			// this is a simple rewrite to enable type inference.
-			Variable lhs = (Variable) v.lhs;
+			LocalVariable lhs = (LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);					
 			blk.append(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
-		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.Variable
+		} else if (cop == Code.COp.NEQ && v.lhs instanceof Expr.LocalVariable
 				&& v.rhs instanceof Expr.Constant
 				&& ((Expr.Constant) v.rhs).value == Value.V_NULL) {			
 			// this is a simple rewrite to enable type inference.
 			String exitLabel = Block.freshLabel();
-			Variable lhs = (Variable) v.lhs;
+			LocalVariable lhs = (LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
@@ -1237,8 +1237,8 @@ public class ModuleBuilder {
 		Block blk;
 		int slot;
 		
-		if (v.lhs instanceof Variable) {
-			Variable lhs = (Variable) v.lhs;
+		if (v.lhs instanceof LocalVariable) {
+			LocalVariable lhs = (LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
 				syntaxError("unknown variable", filename, v.lhs);
 			}
@@ -1306,10 +1306,10 @@ public class ModuleBuilder {
 			int srcSlot;
 			int varSlot = allocate(src.first(),environment); 
 			
-			if(src.second() instanceof Variable) {
+			if(src.second() instanceof LocalVariable) {
 				// this is a little optimisation to produce slightly better
 				// code.
-				Variable v = (Variable) src.second();
+				LocalVariable v = (LocalVariable) src.second();
 				if(environment.containsKey(v.var)) {					
 					srcSlot = environment.get(v.var);
 				} else {					
@@ -1373,8 +1373,8 @@ public class ModuleBuilder {
 		try {
 			if (expression instanceof Constant) {
 				return resolve((Constant) expression, environment);
-			} else if (expression instanceof Variable) {
-				return resolve((Variable) expression, environment);
+			} else if (expression instanceof LocalVariable) {
+				return resolve((LocalVariable) expression, environment);
 			} else if (expression instanceof NaryOp) {
 				return resolve((NaryOp) expression, environment);
 			} else if (expression instanceof BinOp) {
@@ -1417,7 +1417,7 @@ public class ModuleBuilder {
 		Block blk = new Block(environment.size());
 		Type[] paramTypes = new Type[args.size()]; 
 		
-		boolean receiverIsThis = s.receiver != null && s.receiver instanceof Expr.Variable && ((Expr.Variable)s.receiver).var.equals("this");
+		boolean receiverIsThis = s.receiver != null && s.receiver instanceof Expr.LocalVariable && ((Expr.LocalVariable)s.receiver).var.equals("this");
 		
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);
 
@@ -1524,44 +1524,13 @@ public class ModuleBuilder {
 		return blk;
 	}
 	
-	protected Block resolve(Variable v, HashMap<String,Integer> environment) throws ResolveError {
-		// First, check if this is an alias or not				
-		
-		Attributes.Alias alias = v.attribute(Attributes.Alias.class);		
-		if (alias != null) {
-			// Must be a local variable	
-			if(alias.alias == null) {				
-				if(environment.containsKey(v.var)) {
-					Block blk = new Block(environment.size());						
-					blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
-					return blk;
-				} else {
-					syntaxError("variable might not be initialised",filename,v);
-				}
-			} else {								
-				return resolve(alias.alias, environment);
-			}
-		} 
-		
-		if(currentFunDecl != null) {
-			Type.Fun tf = currentFunDecl.attribute(Attributes.Fun.class).type;
-
-			// Second, see if it's a field of the receiver
-			if(tf instanceof Type.Meth) {
-				Type.Meth mt = (Type.Meth) tf; 
-				Type pt = mt.receiver();				
-				if(pt instanceof Type.Process) {
-					Type.Record ert = Type.effectiveRecordType(((Type.Process)pt).element());
-					if(ert != null && ert.fields().containsKey(v.var)) {						
-						// Bingo, this is an implicit field dereference
-						Block blk = new Block(environment.size());
-						blk.append(Code.Load(null, environment.get("this")),attributes(v));
-						blk.append(Code.ProcLoad(null),attributes(v));					
-						blk.append(Code.FieldLoad(null, v.var),attributes(v));						
-						return blk;
-					}
-				}
-			}
+	protected Block resolve(LocalVariable v, HashMap<String,Integer> environment) throws ResolveError {
+		if(environment.containsKey(v.var)) {
+			Block blk = new Block(environment.size());						
+			blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
+			return blk;
+		} else {
+			syntaxError("variable might not be initialised",filename,v);
 		}
 		
 		// Third, see if it's a constant
@@ -1580,6 +1549,7 @@ public class ModuleBuilder {
 		}
 		
 		// must be an error
+		System.out.println("ENVIRONMENT: " + environment);
 		syntaxError("unknown variable \"" + v.var + "\"",filename,v);
 		return null;
 	}
@@ -1726,10 +1696,10 @@ public class ModuleBuilder {
 			int srcSlot;
 			int varSlot = allocate(src.first(),environment); 
 			
-			if(src.second() instanceof Variable) {
+			if(src.second() instanceof LocalVariable) {
 				// this is a little optimisation to produce slightly better
 				// code.
-				Variable v = (Variable) src.second();
+				LocalVariable v = (LocalVariable) src.second();
 				if(environment.containsKey(v.var)) {
 					srcSlot = environment.get(v.var);
 				} else {
@@ -1997,9 +1967,9 @@ public class ModuleBuilder {
 		}
 	}
 	
-	public Variable flattern(Expr e) {
-		if (e instanceof Variable) {
-			return (Variable) e;
+	public LocalVariable flattern(Expr e) {
+		if (e instanceof LocalVariable) {
+			return (LocalVariable) e;
 		} else if (e instanceof ListAccess) {
 			ListAccess la = (ListAccess) e;
 			return flattern(la.src);
