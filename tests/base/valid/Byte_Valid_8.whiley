@@ -259,7 +259,7 @@ define constants as [
 public void System::main([string] args):
     for i in constants:
         for j in 0..8:
-            out.print(str(i) + " << ")
-            out.print("1+" + str(j) + " = ")
+            this.out.print(str(i) + " << ")
+            this.out.print("1+" + str(j) + " = ")
             // test precedence
             this.out.println(str(i << 1 + j))

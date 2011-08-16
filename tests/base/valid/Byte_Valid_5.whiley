@@ -259,6 +259,6 @@ define constants as [
 public void System::main([string] args):
     for i in constants:
         for j in 0..9:
-            out.print(str(i) + " << ")
-            out.print(str(j) + " = ")
+            this.out.print(str(i) + " << ")
+            this.out.print(str(j) + " = ")
             this.out.println(str(i << j))
