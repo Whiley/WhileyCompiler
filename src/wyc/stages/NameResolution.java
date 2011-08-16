@@ -198,9 +198,11 @@ public class NameResolution {
 			s.lhs = new LocalVariable(v.var,v.attributes());
 		} else if(s.lhs instanceof TupleGen) {
 			TupleGen tg = (TupleGen) s.lhs;
-			for(Expr e : tg.fields) {
+			for(int i=0;i!=tg.fields.size();++i) {
+				Expr e = tg.fields.get(i);
 				if(e instanceof UnknownVariable) {
 					UnknownVariable v = (UnknownVariable) e;
+					tg.fields.set(i,new LocalVariable(v.var,e.attributes()));
 					environment.put(v.var, Collections.EMPTY_SET);
 				} else {
 					syntaxError("variable expected",filename,e);
