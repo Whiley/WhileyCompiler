@@ -536,7 +536,23 @@ public class NameResolution {
 			HashMap<String, Set<Expr>> environment, ArrayList<PkgID> imports)
 			throws ResolveError {
 		sg.lhs = resolve(sg.lhs, environment, imports);
-		return sg;
+		if(sg.lhs instanceof PackageAccess) {
+			// this indicates we're constructing a more complex package access.
+			PackageAccess pa = (PackageAccess) sg.lhs;			
+			try {				
+				ModuleID mid = new ModuleID(pa.pid,sg.name);
+				Module m = loader.loadModule(mid);
+				return new ModuleAccess(mid);
+			} catch(ResolveError err) {}
+			PkgID pid = pa.pid.append(sg.name);			
+			if(loader.isPackage(pid)) {
+				pa.pid = pid;
+				return pa;
+			} else {
+				syntaxError("invalid package access",filename,pa);				
+			}
+		} 
+		return sg;		
 	}
 	
 	protected void resolve(UnresolvedType t, ArrayList<PkgID> imports) throws ResolveError {
