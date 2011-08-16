@@ -209,7 +209,7 @@ public class ModuleLoader {
 	 * @throws ModuleNotFoundException
 	 *             if it couldn't resolve the module
 	 */
-	public NameID resolve(String name, List<PkgID> imports)
+	public NameID resolveAsName(String name, List<PkgID> imports)
 			throws ResolveError {									
 		for (PkgID pkg : imports) {				
 			if(pkg.size() > 0 && pkg.last().equals("*")) {				
@@ -251,7 +251,12 @@ public class ModuleLoader {
 		
 		throw new ResolveError("name not found: " + name);
 	}
-		
+	
+	public ModuleID resolveAsModule(String name, List<PkgID> imports)
+			throws ResolveError {
+
+	}
+	
 	public Module loadModule(ModuleID module) throws ResolveError {		
 		Module m = moduletable.get(module);
 		if(m != null) {

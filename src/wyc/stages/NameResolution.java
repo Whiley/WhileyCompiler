@@ -357,7 +357,7 @@ public class NameResolution {
 			if(target != null) {
 				ivk.receiver = resolve(target,environment,imports);
 				try {
-					NameID nid = loader.resolve(ivk.name,imports);
+					NameID nid = loader.resolveAsName(ivk.name,imports);
 					ivk.attributes().add(new Attributes.Module(nid.module()));	
 				} catch(ResolveError e) {
 					// in this case, we've been unable to resolve the method
@@ -366,7 +366,7 @@ public class NameResolution {
 					// by an indirect function call.
 				}
 			} else {
-				NameID nid = loader.resolve(ivk.name,imports);
+				NameID nid = loader.resolveAsName(ivk.name,imports);
 				// Ok, resolve the module for this invoke
 				ivk.attributes().add(new Attributes.Module(nid.module()));		
 			}
@@ -386,14 +386,19 @@ public class NameResolution {
 			// Therefore, we must determine which module this
 			// is, and update the tree accordingly.
 			try {
-				NameID nid = loader.resolve(v.var, imports);				
+				NameID nid = loader.resolveAsName(v.var, imports);				
 				return new ExternalAccess(nid,v.attributes());				
 			} catch(ResolveError err) {
-				// In this case, we may still be OK as this name could be part
-				// of a dereference expression which will actually form a proper
-				// name.				
-				return v;
-			}
+				// In this case, we may still be OK if this corresponds to a
+				// explicit module access.
+				try {
+					ModuleID mid = loader.resolveAsModule(v.var, imports);				
+					return new ModuleAccess(mid,v.attributes());
+				} catch(ResolveError er) {
+					// ok, failed.
+					syntaxError("unknown variable encountered", filename, v);
+				}
+			}			
 		} else if (aliases.size() == 1) {			
 			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
 			System.out.println("GOT HERE");
@@ -510,7 +515,7 @@ public class NameResolution {
 			}
 		}
 
-		NameID nid = loader.resolve(tc.name, imports);
+		NameID nid = loader.resolveAsName(tc.name, imports);
 		tc.attributes().add(new Attributes.Module(nid.module()));
 
 		return tc;
@@ -549,7 +554,7 @@ public class NameResolution {
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			NameID nid = loader.resolve(dt.name, imports);			
+			NameID nid = loader.resolveAsName(dt.name, imports);			
 			t.attributes().add(new Attributes.Module(nid.module()));
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential dt = (UnresolvedType.Existential) t;						

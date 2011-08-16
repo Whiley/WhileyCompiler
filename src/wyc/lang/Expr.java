@@ -85,6 +85,24 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public static class ModuleAccess extends SyntacticElement.Impl implements Expr {
+		public final ModuleID mid;
+
+		public ModuleAccess(ModuleID mid, Attribute... attributes) {
+			super(attributes);
+			this.mid = mid;
+		}
+		
+		public ModuleAccess(ModuleID mid, Collection<Attribute> attributes) {
+			super(attributes);
+			this.mid = mid;
+		}
+		
+		public String toString() {
+			return mid.toString();
+		}
+	}
+	
 	public static class Constant extends SyntacticElement.Impl implements Expr {
 		public final Value value;
 

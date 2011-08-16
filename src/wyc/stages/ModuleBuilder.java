@@ -1081,8 +1081,6 @@ public class ModuleBuilder {
 				return resolveCondition(target, (LocalVariable) condition, environment);
 			} else if (condition instanceof ExternalAccess) {
 				return resolveCondition(target, (ExternalAccess) condition, environment);
-			} else if (condition instanceof UnknownVariable) {
-				syntaxError("unknown variable encountered",filename,condition);
 			} else if (condition instanceof BinOp) {
 				return resolveCondition(target, (BinOp) condition, environment);
 			} else if (condition instanceof UnOp) {
@@ -1404,8 +1402,6 @@ public class ModuleBuilder {
 				return resolve((LocalVariable) expression, environment);
 			} else if (expression instanceof ExternalAccess) {
 				return resolve((ExternalAccess) expression, environment);
-			} else if (expression instanceof UnknownVariable) {
-				syntaxError("unknown variable encountered",filename,expression);
 			} else if (expression instanceof NaryOp) {
 				return resolve((NaryOp) expression, environment);
 			} else if (expression instanceof BinOp) {
