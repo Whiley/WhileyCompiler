@@ -9,4 +9,4 @@ void System::main([string] args):
     else:
         left = [1,2,3]
     r = f(left + right)
-    print str(r)
+    debug str(r)

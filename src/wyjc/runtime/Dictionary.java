@@ -1,9 +1,6 @@
 package wyjc.runtime;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 public final class Dictionary extends java.util.HashMap<Object,Object> {	
@@ -30,8 +27,8 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	public String toString() {
 		String r = "{";
 		boolean firstTime=true;
-		ArrayList<Comparable> ss = new ArrayList(this.keySet());
-		Collections.sort(ss);
+		ArrayList ss = new ArrayList(this.keySet());
+		Collections.sort(ss,Util.COMPARATOR);
 
 		for(Object key : ss) {
 			if(!firstTime) {
@@ -43,6 +40,10 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 		}
 		return r + "}";
 	} 
+	
+	public java.util.Iterator iterator() {
+		return new Iterator(entrySet().iterator());		
+	}
 	
 	// ================================================================================
 	// Dictionary Operations
@@ -74,5 +75,26 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 	
 	public static int size(Dictionary dict) {
 		return dict.size();
+	}
+	
+	public static final class Iterator implements java.util.Iterator {
+		public java.util.Iterator<Map.Entry> iter;
+		
+		public Iterator(java.util.Iterator iter) {
+			this.iter = iter;
+		}
+		
+		public boolean hasNext() {
+			return iter.hasNext();
+		}
+		
+		public void remove(){
+			iter.remove();
+		}
+		
+		public Object next() {
+			Map.Entry e = iter.next();
+			return new Tuple(e.getKey(),e.getValue());
+		}
 	}
 }

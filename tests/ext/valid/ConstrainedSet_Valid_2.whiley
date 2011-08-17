@@ -4,10 +4,10 @@ int g(int x) ensures $ > 0 && $ < 125:
     else:
         return x
 
-{byte} f(int x):
+{int8} f(int x):
     return {g(x)}
 
 void System::main([string] args):
     bytes = f(0)
-    out<->println(str(bytes))
+    out.println(str(bytes))
 

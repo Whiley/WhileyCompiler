@@ -6,6 +6,6 @@ tac2tb f(tac2tb y):
 
 void System::main([string] args):
     x = {f1:1, f2:3}
-    print str(x)
+    debug str(x)
     x.f1 = 2
-    print str(f(x))
+    debug str(f(x))

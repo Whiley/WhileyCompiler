@@ -8,5 +8,5 @@ char f(state st):
 
 void System::main([string] args):
     c = f({input:"hello",pos:0})
-    out<->println(str(c))
+    out.println(str(c))
  

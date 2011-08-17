@@ -1,5 +1,5 @@
 void f({int} ls) requires some { i in ls | i < 0}:
-    print str(ls)
+    debug str(ls)
 
 void g({int} ls):
     f(ls)

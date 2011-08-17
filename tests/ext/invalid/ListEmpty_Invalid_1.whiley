@@ -1,5 +1,5 @@
 void f([int] xs) requires xs != []:
-    print str(xs)
+    debug str(xs)
 
 void System::main([string] args):
     f([1,4])

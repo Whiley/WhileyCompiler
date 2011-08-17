@@ -8,4 +8,4 @@ c4nat f():
     return h() * 2
 
 void System::main([string] args):
-    print str(f())
+    debug str(f())

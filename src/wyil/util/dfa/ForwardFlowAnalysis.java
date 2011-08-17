@@ -43,29 +43,26 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected String filename;
 	protected Module.Method method;
 	protected Module.Case methodCase;
+	protected Block block;
 	protected HashMap<String,T> stores;
 	
 	public ForwardFlowAnalysis(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
-	public Module apply(Module module) {	
-		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();		
-		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
-		ArrayList<Module.Method> methods = new ArrayList<Module.Method>();
-		
+	public void apply(Module module) {			
 		filename = module.filename();
 		
 		for(Module.ConstDef type : module.constants()) {
-			constants.add(propagate(type));
+			module.add(propagate(type));
 		}
 		for(Module.TypeDef type : module.types()) {
-			types.add(propagate(type));
+			module.add(propagate(type));
+		}	
+		
+		for(Module.Method method : module.methods()) {					
+			module.add(propagate(method));
 		}		
-		for(Module.Method method : module.methods()) {
-			methods.add(propagate(method));
-		}
-		return new Module(module.id(), module.filename(), methods, types, constants);
 	}
 	
 	public Module.ConstDef propagate(Module.ConstDef constant) {
@@ -85,16 +82,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	}
 	
 	public Module.Case propagate(Module.Case mcase) {
-		this.methodCase = mcase;
+		this.methodCase = mcase;		
 		this.stores = new HashMap<String,T>();
+		this.block = mcase.body();
 		T init = initialStore();
 		propagate(0, mcase.body().size(), init);		
 		return mcase;
 	}		
 	
 	protected T propagate(int start, int end, T store) {
-		Block block = methodCase.body();
-		
 		for(int i=start;i<end;++i) {						
 			Entry entry = block.get(i);			
 			try {				
@@ -264,6 +260,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            --- the start index of loop block
 	 * @param end
 	 *            --- last index of loop block
+	 * @param end
+	 *            --- instruction block
 	 * @param code
 	 *            --- the start code of the block
 	 * @param entry
@@ -273,8 +271,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end, Code.Loop code,
-			Entry entry, T store);
+	protected abstract T propagate(int start, int end, 
+			Code.Loop code, Entry entry, T store);
 
 	/**
 	 * <p>

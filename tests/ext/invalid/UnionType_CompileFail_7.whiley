@@ -7,7 +7,7 @@ IntList f(IntList il):
 
 void System::main([string] args):
     x = {op:[1], mode:1}
-    print str(x)
+    debug str(x)
     x = f(x)
-    print str(x)  
+    debug str(x)  
 

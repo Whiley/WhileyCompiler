@@ -8,5 +8,5 @@ string f(fr8neg x):
     return "F(NEG)"
 
 void System::main([string] args):
-    out<->println(f(-1))
-    out<->println(f(1))
+    out.println(f(-1))
+    out.println(f(1))

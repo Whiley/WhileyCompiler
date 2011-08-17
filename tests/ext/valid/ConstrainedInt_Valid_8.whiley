@@ -1,4 +1,3 @@
-define byte as int where $ >=0 && $ <= 255
 define codeOp as { 1, 2, 3, 4 }
 define code as {codeOp op, [int] payload}
 
@@ -7,4 +6,4 @@ string f(code x):
     return str(y)
 
 void System::main([string] args):
-    out<->println(f({op:1,payload:[1]}))
+    out.println(f({op:1,payload:[1]}))

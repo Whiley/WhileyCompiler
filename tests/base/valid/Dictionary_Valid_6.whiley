@@ -1,4 +1,4 @@
-{int} reverse(string input):
+{int->char} reverse(string input):
     rs = {}
     for i in 0..|input|:
         c = input[i]

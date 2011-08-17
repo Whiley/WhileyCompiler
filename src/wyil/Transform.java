@@ -30,5 +30,5 @@ import java.io.IOException;
 import wyil.lang.Module;
 
 public interface Transform {	
-	public Module apply(Module module) throws IOException;
+	public void apply(Module module) throws IOException;
 }

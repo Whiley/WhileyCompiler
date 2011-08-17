@@ -116,6 +116,19 @@ public class Module extends ModuleLoader.Skeleton {
 		return methods.values();
 	}
 	
+	public void add(Module.Method m) {
+		Pair<String,Type.Fun> p = new Pair<String,Type.Fun>(m.name(),m.type());
+		this.methods.put(p,m);
+	}
+	
+	public void add(Module.TypeDef t) {
+		this.types.put(t.name(), t);
+	}
+	
+	public void add(Module.ConstDef c) {
+		this.constants.put(c.name(), c);
+	}
+	
 	public boolean hasName(String name) {		
 		return types.get(name) != null || constants.get(name) != null
 				|| method(name).size() > 0;
@@ -124,17 +137,20 @@ public class Module extends ModuleLoader.Skeleton {
 	public static class TypeDef extends SyntacticElement.Impl {
 		private String name;
 		private Type type;		
+		private Block constraint;
 
-		public TypeDef(String name, Type type, Attribute... attributes) {
+		public TypeDef(String name, Type type, Block constraint, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
-			this.type = type;						
+			this.type = type;
+			this.constraint = constraint;
 		}
 
-		public TypeDef(String name, Type type, Collection<Attribute> attributes) {
+		public TypeDef(String name, Type type, Block constraint, Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.type = type;						
+			this.constraint = constraint;
 		}
 		
 		public String name() {
@@ -143,6 +159,10 @@ public class Module extends ModuleLoader.Skeleton {
 
 		public Type type() {
 			return type;
+		}
+		
+		public Block constraint() {
+			return constraint;
 		}
 	}
 	
@@ -174,7 +194,7 @@ public class Module extends ModuleLoader.Skeleton {
 	public static class Method extends SyntacticElement.Impl {
 		private String name;		
 		private Type.Fun type;
-		private List<Case> cases;
+		private List<Case> cases;		
 				
 		public Method(String name, Type.Fun type,
 				Collection<Case> cases, Attribute... attributes) {
@@ -207,7 +227,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 
 		public boolean isFunction() {
-			return type.receiver() == null;
+			return !(type instanceof Type.Meth);
 		}
 		
 		public boolean isPublic() {
@@ -216,24 +236,39 @@ public class Module extends ModuleLoader.Skeleton {
 	}	
 	
 	public static class Case extends SyntacticElement.Impl {				
+		private final Block precondition;
+		private final Block postcondition;
 		private final Block body;
-		private final ArrayList<String> locals;
-
-		public Case(Block body, Collection<String> locals, Attribute... attributes) {
+		private final ArrayList<String> locals;		
+		
+		public Case(Block body, Block precondition, Block postcondition,
+				Collection<String> locals, Attribute... attributes) {
 			super(attributes);			
 			this.body = body;
+			this.precondition = precondition;
+			this.postcondition = postcondition;
 			this.locals = new ArrayList<String>(locals);
 		}
 
-		public Case(Block body,Collection<String> locals,
-				Collection<Attribute> attributes) {
+		public Case(Block body, Block precondition, Block postcondition,
+				Collection<String> locals, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.body = body;
+			this.precondition = precondition;
+			this.postcondition = postcondition;
 			this.locals = new ArrayList<String>(locals);			
 		}
 		
 		public Block body() {
 			return body;
+		}
+		
+		public Block precondition() {
+			return precondition;
+		}
+		
+		public Block postcondition() {
+			return postcondition;
 		}
 		
 		public List<String> locals() {

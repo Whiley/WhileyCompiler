@@ -214,11 +214,9 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess", ft1,
 		    Bytecode.STATIC));
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		codes.add(new Bytecode.Store(1, WHILEYPROCESS));
 		
 		// Get the System::main method out.
-		Type.Fun wyft = Type.T_FUN(WHILEY_SYSTEM_T,
+		Type.Fun wyft = Type.T_METH(WHILEY_SYSTEM_T,
 				Type.T_VOID, Type.T_LIST(Type.T_STRING));
 		JvmType.Function ftype =
 		    new JvmType.Function(JAVA_LANG_REFLECT_METHOD, JAVA_LANG_STRING,
@@ -303,7 +301,7 @@ public class ClassFileBuilder {
 	
 	public ArrayList<Bytecode> translate(Module.Case mcase, HashMap<Constant,Integer> constants) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();				
-		translate(mcase.body(),mcase.locals().size(),constants,bytecodes);				
+		translate(mcase.body(),mcase.body().numSlots(),constants,bytecodes);				
 		return bytecodes;
 	}
 
@@ -477,7 +475,7 @@ public class ClassFileBuilder {
 		// First, check if this is updating the process' state
 		Type type = c.type;
 				
-		if(c.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {
+		if(c.slot == Code.THIS_SLOT && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {
 			Type.Process p = (Type.Process) type;
 			type = p.element();
 		}
@@ -942,19 +940,24 @@ public class ClassFileBuilder {
 	
 	public int translate(Code.ForAll c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
+		JvmType.Clazz srcType = (JvmType.Clazz) convertType(c.type);
 		Type elementType;
 		
 		// FIXME: following is broken because we need to use the effective type.
 
 		if (c.type instanceof Type.Set) {
 			elementType = ((Type.Set) c.type).element();
-		} else {
+		} else if(c.type instanceof Type.List) {
 			elementType = ((Type.List) c.type).element();
+		} else if(c.type instanceof Type.Dictionary) {
+			Type.Dictionary dict = (Type.Dictionary) c.type;
+			elementType = Type.T_TUPLE(dict.key(),dict.value());
+		} else {
+			return translateForAllString(c,freeSlot,bytecodes);
 		}
 
 		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
-				ftype, Bytecode.INTERFACE));
+		bytecodes.add(new Bytecode.Invoke(srcType, "iterator", ftype, Bytecode.VIRTUAL));
 		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
 		bytecodes.add(new Bytecode.Label(c.target + "$head"));
 		ftype = new JvmType.Function(T_BOOL);
@@ -970,11 +973,38 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.slot, convertType(elementType)));
 		
 		// we need to increase the freeSlot, since we've allocated one slot to
-		// hold the register.
+		// hold the iterator.
 		
 		return freeSlot + 1;
 	}
 
+	public int translateForAllString(Code.ForAll c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {			
+		int srcSlot = freeSlot++;		
+		int indexSlot = freeSlot++;		
+		bytecodes.add(new Bytecode.Store(srcSlot, JAVA_LANG_STRING));
+		bytecodes.add(new Bytecode.LoadConst(0));
+		bytecodes.add(new Bytecode.Store(indexSlot, T_INT));
+		bytecodes.add(new Bytecode.Label(c.target + "$head"));
+		bytecodes.add(new Bytecode.Load(indexSlot, T_INT));		
+		bytecodes.add(new Bytecode.Load(srcSlot, JAVA_LANG_STRING));
+		JvmType.Function ftype = new JvmType.Function(T_INT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "length", ftype,
+				Bytecode.VIRTUAL));		
+		bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.GE, T_INT, c.target));
+		bytecodes.add(new Bytecode.Load(srcSlot, JAVA_LANG_STRING));
+		bytecodes.add(new Bytecode.Load(indexSlot, T_INT));
+		ftype = new JvmType.Function(T_CHAR,T_INT);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_STRING, "charAt", ftype,
+				Bytecode.VIRTUAL));		
+		bytecodes.add(new Bytecode.Store(c.slot, T_CHAR));
+		bytecodes.add(new Bytecode.Iinc(indexSlot,1));
+		
+		// we need to increase the freeSlot, since we've allocated one slot to
+		// hold the register.
+		
+		return freeSlot;
+	}
 
 	public void translate(Code.Goto c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
@@ -1648,7 +1678,7 @@ public class ClassFileBuilder {
 	}
 	
 	protected void translate(Value.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst((int)e.value));		
+		bytecodes.add(new Bytecode.LoadConst(e.value));		
 	}
 	
 	protected void translate(Value.Char e, int freeSlot, ArrayList<Bytecode> bytecodes) {
@@ -1935,7 +1965,7 @@ public class ClassFileBuilder {
 	}
 	
 	public void buildCoercion(Type.Byte fromType, Type toType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+			int freeSlot, ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
@@ -2581,8 +2611,11 @@ public class ClassFileBuilder {
 	public JvmType.Function convertFunType(Type.Fun t) {		
 		Type.Fun ft = (Type.Fun) t; 
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		if(ft.receiver() != null) {
-			paramTypes.add(convertType(ft.receiver()));
+		if(ft instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth)ft; 
+			if(mt.receiver() != null) {
+				paramTypes.add(convertType(mt.receiver()));
+			}
 		}
 		for(Type pt : ft.params()) {
 			paramTypes.add(convertType(pt));
@@ -2601,7 +2634,7 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Bool) {
 			return T_BOOL;
 		} else if(t instanceof Type.Byte) {
-			return T_INT;
+			return T_BYTE;
 		} else if(t instanceof Type.Char) {
 			return T_CHAR;
 		} else if(t instanceof Type.Int) {

@@ -42,6 +42,7 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void Assign_CompileFail_5_StaticTest() { contextFailTest("Assign_CompileFail_5"); }
  @Test public void Assign_CompileFail_6_StaticTest() { contextFailTest("Assign_CompileFail_6"); }
  @Test public void Assign_CompileFail_7_StaticTest() { contextFailTest("Assign_CompileFail_7"); }
+ @Test public void Byte_CompileFail_1_StaticTest() { contextFailTest("Byte_Invalid_1"); }
  @Test public void Cast_CompileFail_1_StaticTest() { contextFailTest("Cast_Invalid_1"); }
  @Test public void Cast_CompileFail_2_StaticTest() { contextFailTest("Cast_Invalid_2"); }
  @Test public void Cast_CompileFail_3_StaticTest() { contextFailTest("Cast_Invalid_3"); }
@@ -49,13 +50,20 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void Coercion_CompileFail_1_StaticTest() { contextFailTest("Coercion_Invalid_1"); }
  @Test public void Coercion_CompileFail_2_StaticTest() { contextFailTest("Coercion_Invalid_2"); }
  @Test public void Char_CompileFail_1_StaticTest() { contextFailTest("Char_Invalid_1"); }
+ @Test public void DefiniteAssign_CompileFail_1_RuntimeFailTest() { contextFailTest("DefiniteAssign_CompileFail_1"); }
+ @Test public void DefiniteAssign_CompileFail_2_RuntimeFailTest() { contextFailTest("DefiniteAssign_CompileFail_2"); }
+ @Test public void DefiniteAssign_CompileFail_3_RuntimeFailTest() { contextFailTest("DefiniteAssign_CompileFail_3"); }
  @Test public void DefiniteAssign_CompileFail_4_StaticTest() { contextFailTest("DefiniteAssign_CompileFail_4"); }
  @Test public void For_CompileFail_1_StaticTest() { contextFailTest("For_CompileFail_1"); }
+ @Test public void For_CompileFail_2_StaticTest() { contextFailTest("For_Invalid_2"); }
+ @Test public void For_CompileFail_3_StaticTest() { contextFailTest("For_Invalid_3"); }
  @Test public void Function_CompileFail_1_StaticTest() { contextFailTest("Function_CompileFail_1"); }
  @Ignore("Known Bug")
  @Test public void Function_CompileFail_2_StaticTest() { contextFailTest("Function_CompileFail_2"); }
  @Test public void Function_CompileFail_3_StaticTest() { contextFailTest("Function_CompileFail_3"); }
  @Test public void Function_CompileFail_4_StaticTest() { contextFailTest("Function_CompileFail_4"); }
+ @Test public void Function_Invalid_5_StaticTest() { contextFailTest("Function_Invalid_5"); }
+ @Test public void Function_Invalid_6_StaticTest() { contextFailTest("Function_Invalid_6"); }
  @Test public void FunctionRef_CompileFail_1_StaticTest() { contextFailTest("FunctionRef_Invalid_1"); }
  @Test public void FunctionRef_CompileFail_2_StaticTest() { contextFailTest("FunctionRef_Invalid_2"); }
  @Test public void FunctionRef_CompileFail_3_StaticTest() { contextFailTest("FunctionRef_Invalid_3"); }
@@ -93,8 +101,10 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void MethodCall_CompileFail_7_StaticTest() { contextFailTest("MethodCall_CompileFail_7"); }
  @Test public void MethodCall_CompileFail_8_StaticTest() { contextFailTest("MethodCall_CompileFail_8"); }
  @Test public void MethodRef_Invalid_1_StaticTest() { contextFailTest("MethodRef_Invalid_1"); }
- @Test public void ProcessAccess_CompileFail_1_StaticTest() { contextFailTest("ProcessAccess_CompileFail_1"); }
- @Test public void ProcessAccess_CompileFail_2_StaticTest() { contextFailTest("ProcessAccess_CompileFail_2"); }
+ @Test public void Process_Invalid_1_StaticTest() { contextFailTest("Process_Invalid_1"); }
+ @Test public void ProcessAccess_Invalid_1_StaticTest() { contextFailTest("ProcessAccess_CompileFail_1"); }
+ @Test public void ProcessAccess_Invalid_2_StaticTest() { contextFailTest("ProcessAccess_CompileFail_2"); }
+ @Test public void ProcessAccess_Invalid_3_StaticTest() { contextFailTest("ProcessAccess_Invalid_3"); }
  @Test public void RealAdd_CompileFail_1_StaticTest() { contextFailTest("RealAdd_CompileFail_1"); }
  @Test public void RealDiv_CompileFail_1_StaticTest() { contextFailTest("RealDiv_CompileFail_1"); }
  @Test public void Record_CompileFail_1_StaticTest() { contextFailTest("Record_Invalid_1"); }

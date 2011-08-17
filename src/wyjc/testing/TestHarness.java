@@ -92,7 +92,7 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = srcPath + File.separatorChar + name + ".whiley";
 		
-		if(compile("-wp", "lib/wyrt.jar",fullName)) { 
+		if(!compile("-wp", "lib/wyrt.jar",fullName)) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				

@@ -6,4 +6,4 @@ c2nat f(c2nat x):
     return x
 
 void System::main([string] args):
-    print str(f(9))
+    debug str(f(9))

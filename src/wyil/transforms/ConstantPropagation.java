@@ -46,14 +46,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public ConstantPropagation(ModuleLoader loader) {
 		super(loader);
 	}
-	
-	public Module.TypeDef transform(Module.TypeDef type) {		
+		
+	public Module.TypeDef transform(Module.TypeDef type) {
+		// TODO: propagate constants through type constraints
 		return type;		
 	}
 	
 	public Env initialStore() {				
 		Env environment = new Env();		
-		int nvars = methodCase.locals().size();
+		int nvars = methodCase.body().numSlots();
 		
 		for (int i=0; i != nvars; ++i) {			
 			environment.add(null);			
@@ -64,28 +65,32 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public Module.Case propagate(Module.Case mcase) {		
 		methodCase = mcase;
-		stores = new HashMap<String,Env>();
+		block = mcase.body();
+		stores = new HashMap<String,Env>();		
 		rewrites.clear();
+
+		// TODO: propagate constants through pre- and post-conditions.
 		
 		Env environment = initialStore();		
 		propagate(0,mcase.body().size(), environment);	
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
-		Block nbody = new Block();		
+		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Rewrite rewrite = rewrites.get(i);			
 			if(rewrite != null) {				
 				for(int j=0;j!=rewrite.stackArgs;++j) {
 					 nbody.remove(nbody.size()-1);
 				}				
-				nbody.add(rewrite.rewrite);				
+				nbody.append(rewrite.rewrite);				
 			} else {				
-				nbody.add(body.get(i));
+				nbody.append(body.get(i));
 			}
 		}
 		
-		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
+		return new Module.Case(nbody, mcase.precondition(),
+				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 	
 	/*
@@ -310,6 +315,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Env environment) {
 		Value val = environment.pop();
 		
+		// FIXME: I think there's a bug here
 		if (val instanceof Value.Rational && code.from == Type.T_INT
 				&& code.to == Type.T_REAL) {			
 			entry = new Block.Entry(Code.Const(val),entry.attributes());
@@ -431,8 +437,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			environment.pop();
 		}
 		
-		if(code.type.receiver() != null) {
-			environment.pop();
+		if(code.type instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) code.type;
+			if(mt.receiver() != null) {
+				environment.pop();
+			}
 		}
 		
 		if(code.type.ret() != Type.T_VOID && code.retval) {
@@ -989,6 +998,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public Pair<Env, Env> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
 		
 		Value rhs = environment.pop();
 		Value lhs = environment.pop();
@@ -1001,6 +1011,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public Pair<Env, Env> propagate(int index,
 			Code.IfType code, Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
 		
 		if(code.slot < 0) {			
 			Value lhs = environment.pop();			
@@ -1011,6 +1022,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public List<Env> propagate(int index, Code.Switch sw,
 			Entry stmt, Env environment) {
+		environment = (Env) environment.clone();
 		
 		Value val = environment.pop();
 		

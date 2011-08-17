@@ -4,6 +4,6 @@ string f([int] a) requires |a| > 0:
 
 void System::main([string] args):
      b = [1,2,3]
-     out<->println(str(b))
-     out<->println(f(b))
-     out<->println(str(b))
+     out.println(str(b))
+     out.println(f(b))
+     out.println(str(b))

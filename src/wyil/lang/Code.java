@@ -29,7 +29,8 @@ import java.util.*;
 import wyil.util.*;
 
 public abstract class Code {
-
+	public final static int THIS_SLOT = 0;
+	
 	// ===============================================================
 	// Bytecode Constructors
 	// ===============================================================
@@ -200,14 +201,15 @@ public abstract class Code {
 	 * source collection stored on top of the stack. The supplied variable
 	 * <code>var</code> is used as the iterator. The exit label denotes the end
 	 * of the loop block.
-	 * 	 
+	 * 
 	 * 
 	 * @param label
 	 *            --- exit label.
 	 * @return
 	 */
-	public static ForAll ForAll(Type type, int var, String label, Collection<Integer> modifies) {
-		return get(new ForAll(type, var, label,modifies));
+	public static ForAll ForAll(Type type, int var,
+			String label, Collection<Integer> modifies) {
+		return get(new ForAll(type, var, label, modifies));
 	}				
 	
 	/**
@@ -285,8 +287,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Fun fun, boolean synchronous, boolean retval) {
-		return get(new IndirectSend(fun,synchronous,retval));
+	public static IndirectSend IndirectSend(Type.Meth meth, boolean synchronous, boolean retval) {
+		return get(new IndirectSend(meth,synchronous,retval));
 	}
 	
 	/**
@@ -351,8 +353,8 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Fun fun, NameID name, boolean synchronous, boolean retval) {
-		return get(new Send(fun,name,synchronous,retval));
+	public static Send Send(Type.Meth meth, NameID name, boolean synchronous, boolean retval) {
+		return get(new Send(meth,name,synchronous,retval));
 	}	
 	
 	/**
@@ -422,6 +424,40 @@ public abstract class Code {
 	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
 		return get(new Update(type,slot,level,fields));
 	}
+
+	public static Void Void(Type type, int slot) {
+		return get(new Void(type,slot));
+	}
+	
+	// ===============================================================
+	// Abstract Methods
+	// ===============================================================
+	
+	// The following method adds any slots used by a given bytecode 
+	public void slots(Set<Integer> slots) {
+		// default implementation does nothing
+	}
+	
+	/**
+	 * The remap method remaps all slots according to a given binding. Slots not
+	 * mentioned in the binding retain their original value.
+	 * 
+	 * @param binding
+	 * @return
+	 */
+	public Code remap(Map<Integer,Integer> binding) {
+		return this;
+	}
+
+	/**
+	 * Relabel all labels according to the given map.
+	 * 
+	 * @param labels
+	 * @return
+	 */
+	public Code relabel(Map<String,String> labels) {
+		return this;
+	}
 	
 	// ===============================================================
 	// Bytecode Implementations
@@ -432,6 +468,15 @@ public abstract class Code {
 		
 		private  Assert(String target) {
 			this.target = target;
+		}
+	
+		public Assert relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Assert(nlabel);
+			}
 		}
 		
 		public int hashCode() {
@@ -689,6 +734,15 @@ public abstract class Code {
 			super(label);
 		}
 		
+		public End relabel(Map<String,String> labels) {
+			String nlabel = labels.get(label);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return End(nlabel);
+			}
+		}
+		
 		public int hashCode() {
 			return label.hashCode();
 		}
@@ -745,7 +799,7 @@ public abstract class Code {
 		}
 		
 		public String toString() {
-			return "fail " + msg;
+			return "fail \"" + msg + "\"";
 		}		
 	}
 	
@@ -802,6 +856,15 @@ public abstract class Code {
 			this.target = target;
 		}
 		
+		public Goto relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Goto(nlabel);
+			}
+		}
+		
 		public int hashCode() {
 			return target.hashCode();
 		}
@@ -833,6 +896,15 @@ public abstract class Code {
 			this.type = type;
 			this.op = op;						
 			this.target = target;
+		}
+		
+		public IfGoto relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return IfGoto(type,op,nlabel);
+			}
 		}
 		
 		public int hashCode() {
@@ -908,6 +980,31 @@ public abstract class Code {
 			this.target = target;
 		}
 		
+		public IfType relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return IfType(type,slot,test,nlabel);
+			}
+		}
+		
+		public void slots(Set<Integer> slots) {
+			if(slot >= 0) {
+				slots.add(slot);
+			}
+		}
+		
+		public Code remap(Map<Integer, Integer> binding) {
+			if (slot >= 0) {
+				Integer nslot = binding.get(slot);
+				if (nslot != null) {
+					return Code.IfType(type, nslot, test, target);
+				}
+			}
+			return this;
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return test.hashCode() + target.hashCode();
@@ -976,9 +1073,9 @@ public abstract class Code {
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
-		 public final Type.Fun type;
+		 public final Type.Meth type;
 			
-		 private IndirectSend(Type.Fun type, boolean synchronous, boolean retval) {
+		 private IndirectSend(Type.Meth type, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.synchronous = synchronous;
 			 this.retval = retval;
@@ -1075,6 +1172,15 @@ public abstract class Code {
 		
 		private Label(String label) {
 			this.label = label;
+		}
+		
+		public Label relabel(Map<String,String> labels) {
+			String nlabel = labels.get(label);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Label(nlabel);
+			}
 		}
 		
 		public int hashCode() {
@@ -1223,6 +1329,19 @@ public abstract class Code {
 			this.slot = slot;
 		}
 		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Load(type, nslot);
+			} else {
+				return this;
+			}
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return slot; 
@@ -1255,6 +1374,15 @@ public abstract class Code {
 			this.modifies = new HashSet<Integer>(modifies);
 		}
 		
+		public Loop relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return Loop(nlabel,modifies);
+			}
+		}
+		
 		public int hashCode() {
 			return target.hashCode();
 		}
@@ -1283,6 +1411,28 @@ public abstract class Code {
 			this.slot = slot;			
 		}
 		
+		public ForAll relabel(Map<String,String> labels) {
+			String nlabel = labels.get(target);
+			if(nlabel == null) {
+				return this;
+			} else {
+				return ForAll(type,slot,nlabel,modifies);
+			}
+		}
+		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.ForAll(type, nslot, target, modifies);
+			} else {
+				return this;
+			}
+		}
+		
 		public int hashCode() {
 			return super.hashCode() + slot;
 		}
@@ -1296,7 +1446,7 @@ public abstract class Code {
 			return false;
 		}
 		
-		public String toString() {
+		public String toString() {			
 			return toString("forall " + slot + " " + modifies,type);
 		}		
 	}
@@ -1319,6 +1469,19 @@ public abstract class Code {
 			this.fields = new ArrayList<String>(fields);
 		}
 
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Update(type, nslot, level, fields);
+			} else {
+				return this;
+			}
+		}
+				
 		public int hashCode() {
 			if(type == null) {
 				return level + fields.hashCode();
@@ -1505,36 +1668,7 @@ public abstract class Code {
 		private Nop() {}
 		public String toString() { return "nop"; }
 	}	
-	
-	/* removed as I don't think this bytecode is needed
-	public static final class Pop extends Code {
-		public final Type type;
 		
-		private Pop(Type type) {
-			this.type = type;
-		}
-		
-		public int hashCode() {			
-			if(type == null) {
-				return 996;
-			} else {
-				return type.hashCode();
-			}
-		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Pop) {
-				Pop i = (Pop) o;
-				return type == i.type || (type != null && type.equals(i.type));
-			}
-			return false;
-		}
-	
-		public String toString() {
-			return toString("pop",type);
-		}
-	}
-    */
 	public static final class Return extends Code {
 		public final Type type;
 		
@@ -1810,6 +1944,19 @@ public abstract class Code {
 			this.slot = slot;
 		}
 		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Store(type, nslot);	
+			} else {
+				return this;
+			}
+		}
+		
 		public int hashCode() {
 			if(type == null) {
 				return slot;
@@ -1841,6 +1988,25 @@ public abstract class Code {
 			this.type = type;
 			this.branches = new ArrayList<Pair<Value,String>>(branches);
 			this.defaultTarget = defaultTarget;
+		}
+	
+		public Switch relabel(Map<String,String> labels) {
+			ArrayList<Pair<Value,String>> nbranches = new ArrayList();
+			for(Pair<Value,String> p : branches) {
+				String nlabel = labels.get(p.second());
+				if(nlabel == null) {
+					nbranches.add(p);
+				} else {
+					nbranches.add(new Pair(p.first(),nlabel));
+				}
+			}
+			
+			String nlabel = labels.get(defaultTarget);
+			if(nlabel == null) {
+				return Switch(type,defaultTarget,nbranches);
+			} else {
+				return Switch(type,nlabel,nbranches);
+			}
 		}
 		
 		public int hashCode() {
@@ -1881,9 +2047,9 @@ public abstract class Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
 		 public final NameID name;
-		 public final Type.Fun type;
+		 public final Type.Meth type;
 			
-		 private Send(Type.Fun type, NameID name, boolean synchronous, boolean retval) {
+		 private Send(Type.Meth type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;
@@ -2072,6 +2238,19 @@ public abstract class Code {
 		private Void(Type type, int slot) {
 			this.type = type;
 			this.slot = slot;
+		}
+		
+		public void slots(Set<Integer> slots) {
+			slots.add(slot);
+		}
+		
+		public Code remap(Map<Integer,Integer> binding) {
+			Integer nslot = binding.get(slot);
+			if(nslot != null) {
+				return Code.Void(type, nslot);	
+			} else {
+				return this;
+			}
 		}
 		
 		public int hashCode() {

@@ -28,6 +28,13 @@ public final class Tuple extends java.util.ArrayList {
 		super(items);			
 	}
 	
+	Tuple(Object... items) {
+		super();
+		for(Object o : items) {
+			add(o);
+		}
+	}
+	
 	public boolean add(Object o) {		
 		return super.add(o);
 	}

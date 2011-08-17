@@ -10,4 +10,4 @@ expr f(expr e):
 
 void System::main([string] args):
     e1 = {op:ADD, left:{op:0,left:2,right:2}, right:2}
-    print str(f(e1))
+    debug str(f(e1))

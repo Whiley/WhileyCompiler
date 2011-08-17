@@ -10,4 +10,4 @@ exp2 f(exp1 e1):
 
 void System::main([string] args):
     x = f(-1)
-    print str(x)
+    debug str(x)

@@ -7,4 +7,4 @@ point f(point p):
 void System::main([string] args):
     z = {x:1,y:-2}
     p = f(z)
-    print str(p)
+    debug str(p)

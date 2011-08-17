@@ -1,7 +1,7 @@
 void f([int] x) requires |x| > 0:
     z = |x|
-    print str(z)
-    print str(x[z-1])
+    debug str(z) + "\n"
+    debug str(x[z-1]) + "\n"
 
 void System::main([string] args):
      arr = [1,2,3]

@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.io.*;
 import java.util.*;
 
+import wyc.stages.TypePropagation.Env;
 import wyil.lang.*;
 import wyil.lang.Module.*;
 import wyil.ModuleLoader;
@@ -55,7 +56,7 @@ public class WyilFileWriter implements Transform {
 		writeSlots = flag;
 	}
 	
-	public Module apply(Module module) throws IOException {
+	public void apply(Module module) throws IOException {
 		String filename = module.filename().replace(".whiley", ".wyil");
 		out = new PrintWriter(new FileOutputStream(filename));
 		
@@ -72,7 +73,20 @@ public class WyilFileWriter implements Transform {
 			Type t = td.type();			
 			String t_str;			
 			t_str = t.toString();
-			out.println("define " + td.name() + " as " + t_str);			
+			out.println("define " + td.name() + " as " + t_str);
+			Block constraint = td.constraint();
+			if(constraint != null) {
+				out.println("where:");
+				ArrayList<String> env = new ArrayList<String>();
+				env.add("$");			
+				// Now, add space for any other slots needed in the block. This can
+				// arise as a result of temporary loop variables, etc.
+				int maxSlots = constraint.numSlots();
+				for(int i=1;i!=maxSlots;++i) {
+					env.add(Integer.toString(i));
+				}
+				write(0,td.constraint(),env,out);
+			}
 		}
 		if(!module.types().isEmpty()) {
 			out.println();
@@ -81,9 +95,7 @@ public class WyilFileWriter implements Transform {
 			write(md,out);
 			out.println();
 		}
-		out.flush();
-		
-		return module;
+		out.flush();		
 	}
 	
 	public void write(Method method, PrintWriter out) {
@@ -96,11 +108,16 @@ public class WyilFileWriter implements Transform {
 		Type.Fun ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
-		List<String> locals = mcase.locals();
+		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
+		
 		int li = 0;
-		if(ft.receiver() != null) {
-			out.print(ft.receiver() + "::");
-			li++;
+		if(ft instanceof Type.Meth) {			
+			Type.Meth mt = (Type.Meth) ft;
+			if(mt.receiver() != null) {
+				out.print(mt.receiver());
+				li++;
+			}
+			out.print("::");		
 		}
 		out.print(method.name() + "(");
 		for(int i=0;i!=ft.params().size();++i) {						
@@ -115,10 +132,37 @@ public class WyilFileWriter implements Transform {
 				wyjvm.lang.BytecodeAttribute ba = (wyjvm.lang.BytecodeAttribute) a;
 				out.println("attribute: " + ba.name());
 			}
+		}		
+
+		Block precondition = mcase.precondition();
+		if(precondition != null) {			
+			out.println("requires: ");
+			ArrayList<String> env = new ArrayList<String>();			
+			// Now, add space for any other slots needed in the block. This can
+			// arise as a result of temporary loop variables, etc.
+			int maxSlots = precondition.numSlots();
+			for(int i=0;i!=maxSlots;++i) {
+				env.add(Integer.toString(i));
+			}
+			write(0,precondition,env,out);
+		}
+		
+		Block postcondition = mcase.postcondition();
+		if(postcondition != null) {
+			out.println("ensures: ");
+			ArrayList<String> env = new ArrayList<String>();
+			env.add("$");			
+			// Now, add space for any other slots needed in the block. This can
+			// arise as a result of temporary loop variables, etc.
+			int maxSlots = postcondition.numSlots();
+			for(int i=1;i!=maxSlots;++i) {
+				env.add(Integer.toString(i));
+			}
+			write(0,postcondition,env,out);
 		}
 		out.println("body: ");
-		boolean firstTime=true;
-		if(li < locals.size()) {
+		boolean firstTime=true;		
+		if(li < locals.size()) {			
 			out.print("    var ");
 			for(;li<locals.size();++li) {
 				if(!firstTime) {
@@ -128,7 +172,7 @@ public class WyilFileWriter implements Transform {
 				out.print(locals.get(li));
 			}
 			out.println();
-		}
+		}		
 		write(0,mcase.body(),locals,out);	
 	}
 	
@@ -164,10 +208,10 @@ public class WyilFileWriter implements Transform {
 			}
 		} else if(c instanceof Code.Store && !writeSlots){
 			Code.Store store = (Code.Store) c;
-			line = "store " + locals.get(store.slot) + " : " + store.type;  
+			line = "store " + getLocal(store.slot,locals) + " : " + store.type;  
 		} else if(c instanceof Code.Load && !writeSlots){
 			Code.Load load = (Code.Load) c;
-			line = "load " + locals.get(load.slot) + " : " + load.type;
+			line = "load " + getLocal(load.slot,locals) + " : " + load.type;
 		} else if(c instanceof Code.Update && !writeSlots){
 			Code.Update store = (Code.Update) c;
 			String fs = store.fields.isEmpty() ? "" : " ";
@@ -179,11 +223,11 @@ public class WyilFileWriter implements Transform {
 				firstTime=false;
 				fs += f;
 			}
-			line = "multistore " + locals.get(store.slot) + " #" + store.level + fs + " : " + store.type;
+			line = "multistore " + getLocal(store.slot,locals) + " #" + store.level + fs + " : " + store.type;
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
-				line = "if" + iftype.test + " " + locals.get(iftype.slot)
+				line = "if" + iftype.test + " " + getLocal(iftype.slot,locals)
 						+ " goto " + iftype.target + " : " + iftype.type;
 			} else {
 				line = c.toString();
@@ -197,9 +241,9 @@ public class WyilFileWriter implements Transform {
 					modifies +=", ";
 				}
 				firstTime=false;
-				modifies += locals.get(slot);
+				modifies += getLocal(slot,locals);
 			}
-			line = "forall " + locals.get(fall.slot) + " [" + modifies + "] : " + fall.type;
+			line = "forall " + getLocal(fall.slot,locals) + " [" + modifies + "] : " + fall.type;
 		} else {
 			line = c.toString();		
 		}
@@ -221,6 +265,15 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		out.println();
+	}
+	
+	public static String getLocal(int index, List<String> locals) {
+		if(index < locals.size()) {
+			// is a named local
+			return locals.get(index);
+		} else {
+			return "%" + (index - locals.size());
+		}
 	}
 	
 	public static void tabIndent(int indent, PrintWriter out) {

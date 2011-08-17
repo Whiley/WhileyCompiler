@@ -47,13 +47,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public Module.TypeDef transform(Module.TypeDef type) {		
+		// TODO: back propagate through type constraints
 		return type;		
 	}
 	
 	public Env initialStore() {				
 		Env environment = new Env();		
 
-		for (int i = 0; i < methodCase.locals().size(); i++) {
+		for (int i = 0; i < methodCase.body().numSlots(); i++) {
 			environment.add(Type.T_VOID);
 		}		
 		
@@ -61,6 +62,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public Module.Case propagate(Module.Case mcase) {		
+
+		// TODO: back propagate through pre- and post-conditions
+		
 		methodCase = mcase;
 		stores = new HashMap<String,Env>();
 		insertions.clear();
@@ -70,16 +74,17 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
-		Block nbody = new Block();		
+		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
-			nbody.add(body.get(i));		
+			nbody.append(body.get(i));		
 			Block.Entry insertion = insertions.get(i);			
 			if(insertion != null) {								
-				nbody.add(insertion);				
+				nbody.append(insertion);				
 			} 							
 		}
 		
-		return new Module.Case(nbody,mcase.locals(),mcase.attributes());
+		return new Module.Case(nbody, mcase.precondition(),
+				mcase.postcondition(), mcase.locals(), mcase.attributes());
 	}
 
 	public Env propagate(int index, Entry entry, Env environment) {						
@@ -265,8 +270,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		environment.push(code.type);
 		
-		if(code.type.receiver() != null) {		
-			environment.push(code.type.receiver());
+		if(code.type instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) code.type;
+			if(mt.receiver() != null) {
+				environment.push(mt.receiver());
+			}
 		}
 		
 		for(Type t : code.type.params()) {
@@ -275,18 +283,15 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public void infer(int index, Code.IndirectSend code, Block.Entry entry,
-			Env environment) {
+			Env environment) {				
 		
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
 			coerce(req,code.type.ret(),index,entry);			
 		}
 				
-		environment.push(code.type);		
-		
-		if(code.type.receiver() != null) {		
-			environment.push(code.type.receiver());
-		}
+		environment.push(code.type);							
+		environment.push(code.type.receiver());		
 		
 		for(Type t : code.type.params()) {
 			environment.push(t);
@@ -302,8 +307,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		
 
-		if(code.type.receiver() != null) {
-			environment.push(code.type.receiver());
+		if(code.type instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) code.type;
+			if(mt.receiver() != null) {
+				environment.push(mt.receiver());
+			}						
 		}
 		
 		for(Type t : code.type.params()) {
@@ -377,7 +385,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		Type iter = code.type;
 		
-		if(code.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
+		if(code.slot == Code.THIS_SLOT && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
 			Type.Process p = (Type.Process) iter;
 			iter = p.element();
 		}						
@@ -387,7 +395,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
-				environment.push(dict.key());
+				environment.push(Type.T_ANY);
 				iter = dict.value();				
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
 				environment.push(Type.T_INT);
@@ -507,8 +515,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	}
 	
 	public void infer(int index, Code.Send code, Block.Entry entry,
-			Env environment) {
-
+			Env environment) {		
+		
 		if(code.type.ret() != Type.T_VOID && code.retval) {
 			Type req = environment.pop();
 			coerce(req,code.type.ret(),index,entry);					

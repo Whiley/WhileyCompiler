@@ -27,6 +27,7 @@ package wyjc.runtime;
 
 import java.math.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 import wyil.lang.Value;
@@ -84,12 +85,12 @@ public class Util {
 		return sb.toString();
 	}
 	
-	public static int leftshift(int b1, BigInteger b2) {		
-		return (byte) (b1 << b2.intValue());		
+	public static byte leftshift(byte b1, BigInteger b2) {		
+		return (byte) ((b1&0xFF) << b2.intValue());		
 	}
 	
-	public static int rightshift(int b1, BigInteger b2) {		
-		return (byte) (b1 >>> b2.intValue());		
+	public static byte rightshift(byte b1, BigInteger b2) {		
+		return (byte) ((b1&0xFF) >>> b2.intValue());		
 	}
 	
 	public static List range(BigInteger start, BigInteger end) {
@@ -538,4 +539,212 @@ public class Util {
 		}
 		return false;
 	}		
+	
+	public static final Comparator COMPARATOR = new Comparator();
+	
+	public static final class Comparator implements java.util.Comparator {
+		private Comparator() {}
+		
+		public final int compare(Object o1, Object o2) {
+			return Util.compare(o1,o2);
+		}
+	}
+
+	public static int compare(Object o1, Object o2) {
+		if(o1 == null) {
+			return o2 == null ? 0 : -1;				
+		} else if(o1 instanceof Boolean) {
+			return compare((Boolean)o1,o2);
+		} else if(o1 instanceof BigInteger) {			
+			return compare((BigInteger)o1,o2);
+		} else if(o1 instanceof BigRational) {
+			return compare((BigRational)o1,o2);
+		} else if(o1 instanceof Set) {
+			return compare((Set)o1,o2);
+		} else if(o1 instanceof List) {
+			return compare((List)o1,o2);
+		} else if(o1 instanceof Dictionary) {
+			return compare((Dictionary)o1,o2);
+		} else if(o1 instanceof Tuple) {
+			return compare((Tuple)o1,o2);
+		} else if(o1 instanceof Record) {
+			return compare((Record)o1,o2);
+		} else {
+			throw new IllegalArgumentException("Invalid object passed to comparator: " + o1);
+		}
+	}
+
+	public static int compare(Boolean o1, Object o2) {
+		if(o2 == null) {
+			return 1;
+		} else if(o2 instanceof Boolean) {
+			Boolean b2 = (Boolean) o2;
+			return o1.compareTo(b2);
+		} else {
+			return -1;
+		}
+	}
+
+	public static int compare(BigInteger o1, Object o2) {
+		if(o2 == null || o2 instanceof Boolean) {
+			return 1;
+		} else if(o2 instanceof BigInteger) {
+			BigInteger b2 = (BigInteger) o2;
+			return o1.compareTo(b2);
+		} else {
+			return -1;
+		}
+	}
+
+	public static int compare(BigRational o1, Object o2) {
+		if(o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger) {
+			return 1;
+		} else if(o2 instanceof BigRational) {
+			BigRational b2 = (BigRational) o2;
+			return o1.compareTo(b2);
+		} else {
+			return -1;
+		}
+	}
+
+	public static int compare(Set o1, Object o2) {
+		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
+				|| o2 instanceof BigRational) {
+			return 1;
+		} else if (o2 instanceof Set) {
+			return compare(o1, (Set) o2);
+		} else {
+			return -1;
+		}
+	}
+
+	public static int compare(Set o1, Set o2) {
+		int s1_size = o1.size();
+		int s2_size = o2.size();
+		if(s1_size < s2_size) {
+			return -1;
+		} else if(s1_size > s2_size) {
+			return 1;
+		} else {
+			// this is ugly
+			ArrayList a1 = new ArrayList(o1);
+			ArrayList a2 = new ArrayList(o2);
+			Collections.sort(a1,COMPARATOR);
+			Collections.sort(a2,COMPARATOR);
+			for(int i=0;i!=s1_size;++i) {
+				Object e1 = a1.get(i);
+				Object e2 = a2.get(i);
+				int c = compare(e1,e2);
+				if(c != 0) {
+					return c;
+				}
+			}
+			return 0;
+		}
+	}
+
+	public static int compare(List o1, Object o2) {
+		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
+				|| o2 instanceof BigRational || o2 instanceof Set) {
+			return 1;
+		} else if (o2 instanceof List) {
+			return compare(o1, (List) o2);
+		} else {
+			return -1;
+		}
+	}
+
+	public static int compare(List o1, List o2) {
+		int s1_size = o1.size();
+		int s2_size = o2.size();
+		if(s1_size < s2_size) {
+			return -1;
+		} else if(s1_size > s2_size) {
+			return 1;
+		} else {
+			for(int i=0;i!=s1_size;++i) {
+				Object e1 = o1.get(i);
+				Object e2 = o2.get(i);
+				int c = compare(e1,e2);
+				if(c != 0) {
+					return c;
+				}
+			}
+			return 0;
+		}
+	}
+
+	public static int compare(Tuple o1, Object o2) {
+		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
+				|| o2 instanceof BigRational || o2 instanceof Set
+				|| o2 instanceof List) {
+			return 1;
+		} else if (o2 instanceof Tuple) {
+			return compare(o1, (Tuple) o2);
+		} else {
+			return -1;
+		}
+	}
+
+	public static int compare(Tuple o1, Tuple o2) {
+		int s1_size = o1.size();
+		int s2_size = o2.size();
+		if(s1_size < s2_size) {
+			return -1;
+		} else if(s1_size > s2_size) {
+			return 1;
+		} else {
+			for(int i=0;i!=s1_size;++i) {
+				Object e1 = o1.get(i);
+				Object e2 = o2.get(i);
+				int c = compare(e1,e2);
+				if(c != 0) {
+					return c;
+				}
+			}
+			return 0;
+		}
+	}
+
+	public static int compare(Record o1, Object o2) {
+		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
+				|| o2 instanceof BigRational || o2 instanceof Set
+				|| o2 instanceof Tuple) {
+			return 1;
+		} else if (o2 instanceof Record) {
+			return compare(o1, (Record) o2);
+		} else {
+			return -1;
+		}
+	}
+
+	public static int compare(Record o1, Record o2) {
+		ArrayList<String> mKeys = new ArrayList<String>(o1.keySet());
+		ArrayList<String> tKeys = new ArrayList<String>(o2.keySet());
+		Collections.sort(mKeys);
+		Collections.sort(tKeys);
+
+		for(int i=0;i!=Math.min(mKeys.size(),tKeys.size());++i) {
+			String mk = mKeys.get(i);
+			String tk = tKeys.get(i);
+			int c = mk.compareTo(tk);
+			if(c != 0) {
+				return c;
+			}
+			String mv = o1.get(mk).toString();
+			String tv = o2.get(tk).toString();
+			c = mv.compareTo(tv);
+			if(c != 0) {
+				return c;
+			}
+		}
+
+		if(mKeys.size() < tKeys.size()) {
+			return -1;
+		} else if(mKeys.size() > tKeys.size()) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 }

@@ -111,8 +111,11 @@ public class NameResolution {
 			}
 		}
 		
-		if(fd.receiver != null) {
-			environment.put("this",Collections.EMPTY_SET);
+		if (fd instanceof MethDecl) {
+			MethDecl md = (MethDecl) fd;
+			if(md.receiver != null) {		
+				environment.put("this",Collections.EMPTY_SET);
+			}
 		}
 		
 		// method return and throw types
@@ -125,11 +128,14 @@ public class NameResolution {
 		}
 		
 		// method receiver type (if applicable)
-		try {			
-			resolve(fd.receiver, imports);			
-		} catch (ResolveError e) {
-			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(),filename,fd.receiver);
+		if(fd instanceof MethDecl) {			
+			MethDecl md = (MethDecl) fd;			
+			try {			
+				resolve(md.receiver, imports);			
+			} catch (ResolveError e) {
+				// Ok, we've hit a resolution error.
+				syntaxError(e.getMessage(),filename,md.receiver);
+			}
 		}
 		
 		if (fd.precondition != null) {
@@ -273,12 +279,14 @@ public class NameResolution {
 		if (s.invariant != null) {
 			resolve(s.invariant, environment, imports);
 		}
-		if (environment.containsKey(s.variable)) {
-			syntaxError("variable " + s.variable + " is alreaded defined",
-					filename, s);
-		}
 		environment = new HashMap<String,Set<Expr>>(environment);
-		environment.put(s.variable, Collections.EMPTY_SET);
+		for(String var : s.variables) {
+			if (environment.containsKey(var)) {
+				syntaxError("variable " + var + " is alreaded defined",
+						filename, s);
+			}
+			environment.put(var, Collections.EMPTY_SET);
+		}				
 		for (Stmt st : s.body) {
 			resolve(st, environment, imports);
 		}

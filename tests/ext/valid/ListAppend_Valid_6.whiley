@@ -8,4 +8,4 @@ int g(plistv6 left, plistv6 right):
 
 void System::main([string] args):
     r = g([1,2,3],[6,7,8])
-    out<->println(str(r))
+    out.println(str(r))

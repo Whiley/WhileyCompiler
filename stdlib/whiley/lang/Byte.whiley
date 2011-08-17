@@ -1,0 +1,55 @@
+package whiley.lang
+
+// Convert a byte into an unsigned int.  This assumes a little endian
+// encoding.
+int toUnsignedInt(byte b):
+    r = 0
+    base = 1
+    while b != 0b:
+        if (b & 00000001b) == 00000001b:
+            r = r + base
+        b = b >> 1
+        base = base * 2
+    return r    
+
+// Convert a byte array into an unsigned int assuming a little endian
+// form for both individual bytes, and the array as a whole
+int toUnsignedInt([byte] bytes):
+    val = 0
+    base = 1
+    for b in bytes:
+        v = toUnsignedInt(b) * base
+        val = val + v
+        base = base * 256
+    return val
+
+// Convert a byte into an unsigned int.  This assumes a little endian
+// encoding.
+int toInt(byte b):
+    r = 0
+    base = 1
+    while b != 0b:
+        if (b & 00000001b) == 00000001b:
+            r = r + base
+        b = b >> 1
+        base = base * 2
+    // finally, add the sign
+    if r >= 128:
+        return -(256-r)
+    else:
+        return r    
+
+// Convert a byte array into a signed int assuming a little endian
+// form for both individual bytes, and the array as a whole
+int toInt([byte] bytes):
+    val = 0
+    base = 1
+    for b in bytes:
+        v = toUnsignedInt(b) * base
+        val = val + v
+        base = base * 256
+    // finally, add the sign
+    if val >= (base/2):
+        return -(base-val)
+    else:
+        return val

@@ -1,5 +1,6 @@
-int f(int x) requires x>=0 && y>0:
+real f(real x, int y) requires x>=y:
     return 0.0
 
 void System::main([string] args):
-    f(1)
+    x = f(1.0,1)
+    f(x,1)

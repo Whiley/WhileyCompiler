@@ -1,5 +1,5 @@
 void f({int} xs, {int} ys, {int} zs) requires zs == xs ∩ {1,2,3}:
-    print str(xs)
+    debug str(xs)
 
 void h({int} ys, {int} zs):
     f(ys,zs,ys ∩ zs)

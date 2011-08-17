@@ -14,4 +14,4 @@ expr parse(string input):
 
 void System::main([string] args):
     e = parse("Hello")
-    out<->println(str(e))
+    out.println(str(e))

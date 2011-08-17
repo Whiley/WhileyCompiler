@@ -34,7 +34,7 @@ import wyjc.runtime.BigRational;
 
 public class WhileyLexer {	
 	private String filename;
-	private StringBuffer input;
+	private String input;
 	private int pos;
 	
 	public WhileyLexer(String filename) throws IOException {
@@ -49,14 +49,14 @@ public class WhileyLexer {
 	public WhileyLexer(Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
 		
-		StringBuffer text = new StringBuffer();
-		String tmp;
-		while ((tmp = in.readLine()) != null) {
-			text.append(tmp);
-			text.append("\n");
-		}
+		StringBuilder tmp = new StringBuilder();	    
+	    int len = 0;
+	    char[] buf = new char[1024]; 
+	    while((len = reader.read(buf)) != -1) {
+	    	tmp.append(buf,0,len);	    	
+	    }
 		
-		input = text;	
+		input = tmp.toString();	
 	}
 	
 	public List<Token> scan() {
@@ -76,11 +76,15 @@ public class WhileyLexer {
 				tokens.add(scanOperator());
 			} else if(isIdentifierStart(c)) {
 				tokens.add(scanIdentifier());
-			} else if(c == '\n') {
-				tokens.add(new NewLine(pos++));
+			} else if (c == '\r' && (pos + 1) < input.length()
+					&& input.charAt(pos + 1) == '\n') {
+				tokens.add(new NewLine("\r\n",pos));
+				pos+=2;
+			} else if(c == '\n') {				
+				tokens.add(new NewLine("\n",pos++));				
 			} else if(c == '\t') {
 				tokens.add(scanTabs());
-			} else if(Character.isWhitespace(c)) {
+			} else if(Character.isWhitespace(c)) {				
 				skipWhitespace(tokens);
 			} else {
 				syntaxError("syntax error");
@@ -545,8 +549,7 @@ public class WhileyLexer {
 	
 	public void skipWhitespace(List<Token> tokens) {		
 		int start = pos;		
-		while (pos < input.length() && input.charAt(pos) != '\n'
-			&& input.charAt(pos) == ' ') {			
+		while (pos < input.length() && input.charAt(pos) == ' ') {			
 			pos++;		
 		}
 		int ts = (pos - start) / 4;
@@ -554,7 +557,8 @@ public class WhileyLexer {
 			tokens.add(new Tabs(input.substring(start,pos),ts,start));
 		}
 		while (pos < input.length() && input.charAt(pos) != '\n'
-				&& Character.isWhitespace(input.charAt(pos))) {			
+				&& input.charAt(pos) != '\r'
+				&& Character.isWhitespace(input.charAt(pos))) {
 			pos++;
 		}		
 	}
@@ -623,7 +627,7 @@ public class WhileyLexer {
 		public Keyword(String text, int pos) { super(text,pos); }
 	}
 	public static class NewLine extends Token {
-		public NewLine(int pos) { super("\n",pos); }
+		public NewLine(String text, int pos) { super(text,pos); }
 	}	
 	public static class Tabs extends Token {
 		public int ntabs;
@@ -631,7 +635,7 @@ public class WhileyLexer {
 			super(text,pos);
 			this.ntabs = ntabs; 
 		}		
-	}
+	}	
 	public static class LineComment extends Token {
 		public LineComment(String text, int pos) { super(text,pos);	}
 	}

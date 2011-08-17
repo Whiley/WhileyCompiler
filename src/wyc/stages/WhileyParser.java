@@ -145,11 +145,16 @@ public class WhileyParser {
 	private FunDecl parseFunction(List<Modifier> modifiers) {			
 		int start = index;		
 		UnresolvedType ret = parseType();				
-		// FIXME: potential bug here at end of file
-		Token token = tokens.get(index+1);
+		// FIXME: potential bug here at end of file		
 		UnresolvedType receiver = null;
-							
-		if(token instanceof ColonColon) {
+		boolean method = false;	
+		
+		if(tokens.get(index) instanceof ColonColon) {
+			// headless method
+			method = true;
+			match(ColonColon.class);
+		} else if(tokens.get(index+1) instanceof ColonColon) {
+			method = true;
 			receiver = parseType();			
 			match(ColonColon.class);							
 		}
@@ -183,9 +188,15 @@ public class WhileyParser {
 		
 		List<Stmt> stmts = parseBlock(1);
 		
-		return new FunDecl(modifiers, name.text, receiver, ret, paramTypes,
-				conditions.first(), conditions.second(), throwType, stmts,
-				sourceAttr(start, end - 1));
+		if(method) {
+			return new MethDecl(modifiers, name.text, receiver, ret, paramTypes,
+					conditions.first(), conditions.second(), throwType, stmts,
+					sourceAttr(start, end - 1));
+		} else {
+			return new FunDecl(modifiers, name.text, ret, paramTypes,
+					conditions.first(), conditions.second(), throwType, stmts,
+					sourceAttr(start, end - 1));
+		}
 	}
 	
 	private Decl parseDefType(List<Modifier> modifiers) {		
@@ -537,21 +548,26 @@ public class WhileyParser {
 	
 	private Stmt parseFor(int indent) {
 		int start = index;
-		matchKeyword("for");						
-		Identifier id = matchIdentifier();
+		matchKeyword("for");				
+		ArrayList<String> variables = new ArrayList<String>();
+		variables.add(matchIdentifier().text);				
+		if(index < tokens.size() && tokens.get(index) instanceof Comma) {
+			match(Comma.class);
+			variables.add(matchIdentifier().text);
+		}
 		match(ElemOf.class);
 		Expr source = parseCondition(false);		
 		Expr invariant = null;
 		if(tokens.get(index).text.equals("where")) {
-		matchKeyword("where");
-		invariant = parseCondition(false);
+			matchKeyword("where");
+			invariant = parseCondition(false);
 		}
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
-		
-		return new Stmt.For(id.text,source,invariant,blk, sourceAttr(start,end-1));
+
+		return new Stmt.For(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseExtern(int indent) {
@@ -1221,10 +1237,9 @@ public class WhileyParser {
 		boolean firstTime = true;						
 		List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
 		HashSet<String> vars = new HashSet<String>();
-		while(!(token instanceof Bar)) {						
+		while(!(token instanceof Bar)) {			
 			if(!firstTime) {
-				match(Comma.class);
-				
+				match(Comma.class);			
 			}
 			firstTime=false;
 			Identifier id = matchIdentifier();
@@ -1241,7 +1256,7 @@ public class WhileyParser {
 			}
 			match(WhileyLexer.ElemOf.class);
 			
-			Expr src = parseConditionExpression(false);			
+			Expr src = parseConditionExpression(true);			
 			srcs.add(new Pair(var,src));
 			
 			checkNotEof();
@@ -1480,8 +1495,27 @@ public class WhileyParser {
 				types.add((UnresolvedType.NonUnion) t);
 			}
 			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
+		} else if ((index + 1) < tokens.size()
+				&& tokens.get(index) instanceof ColonColon
+				&& tokens.get(index + 1) instanceof LeftBrace) {
+			// this is a headless method type
+					
+			match(ColonColon.class);			
+			match(LeftBrace.class);
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			boolean firstTime = true;
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (!firstTime) {
+					match(Comma.class);
+				}
+				firstTime = false;
+				types.add(parseType());
+			}
+			match(RightBrace.class);
+			return new UnresolvedType.Fun(t, null, types, sourceAttr(start, index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			// this is a function type
+			// this is a function or method type type
 			match(LeftBrace.class);
 			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
 			boolean firstTime = true;

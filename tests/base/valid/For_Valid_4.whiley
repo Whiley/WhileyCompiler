@@ -1,11 +1,13 @@
-real f({int->real} xs, int m):
-    for i->r in xs:
-        if i == m:
-            return r
-    return -1
+(int,int) f({int->int} dict):
+    k = 0
+    v = 0
+    for x,y in dict:
+        k = k + x
+        v = v + y
+    return k,v
 
 void System::main([string] args):
-    x = f({1->2.2,5->3.3},5)
-    out.println(str(x))
-    x = f({1->2.2,5->3.3},2)
-    out.println(str(x))
+    dict = {1->2,3->4,4->5}
+    k,v = f(dict)
+    out.println(str(k))
+    out.println(str(v))        

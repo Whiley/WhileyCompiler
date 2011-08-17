@@ -8,4 +8,4 @@ int g([int] left, plistv6 right):
 
 void System::main([string] args):
     r = g([1,2,-1],[6,7,8])
-    print str(r)
+    debug str(r)

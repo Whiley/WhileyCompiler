@@ -67,9 +67,12 @@ public class DefiniteAssignment extends
 		
 		int diff = 0;
 		
-		if(method.type().receiver() != null) {
-			defined.add(0);
-			diff++;
+		if(method.type() instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) method.type();
+			if(mt.receiver() != null) {
+				defined.add(diff);
+				diff++;
+			}
 		}
 		
 		for(int i=0;i!=method.type().params().size();++i) {
