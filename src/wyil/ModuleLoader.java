@@ -213,7 +213,20 @@ public class ModuleLoader {
 			throws ResolveError {	
 		
 		for (Import imp : imports) {
-			
+			if(imp.matchName(name)) {
+				for(ModuleID mid : matchImport(imp)) {
+					try {														
+						Skeleton mi = loadSkeleton(mid);					
+						if (mi.hasName(name)) {
+							return new NameID(mid,name);
+						} 					
+					} catch(ResolveError rex) {
+						// ignore. This indicates we simply couldn't resolve
+                        // this module. For example, if it wasn't a whiley class
+                        // file.						
+					}
+				}
+			}
 		}
 		
 		throw new ResolveError("name not found: " + name);
@@ -409,6 +422,35 @@ public class ModuleLoader {
 		}
 		
 		throw new ResolveError("unable to find module: " + module);
+	}
+	
+	/**
+	 * This method takes a given import declaration, and expands it to find all
+	 * matching modules.
+	 * 
+	 * @param imp
+	 * @return
+	 */
+	private List<ModuleID> matchImport(Import imp) {
+		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
+		for(PkgID pid : matchPackage(imp.pkg)) {
+			try {
+				Package pkgInfo = resolvePackage(pid);
+				for(String n : pkgInfo.modules) {
+					if(imp.matchModule(n)) {
+						matches.add(new ModuleID(pid,n));
+					}
+				}
+			} catch(ResolveError ex) {
+				// dead code
+			}
+		}
+		return matches;
+	}
+	
+	
+	private List<PkgID> matchPackage(PkgID pkg) {
+		
 	}
 	
 	/**

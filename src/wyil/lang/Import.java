@@ -7,11 +7,9 @@ package wyil.lang;
  * 
  */
 public class Import {	
-	private PkgID pkg;
-		
-	private String module;
-	
-	private String name;
+	public final PkgID pkg;		
+	public final String module;	
+	public final String name;
 	
 	public Import(PkgID pkg, String module) {
 		this(pkg,module,null);
@@ -37,4 +35,12 @@ public class Import {
 	public boolean match(PkgID pkg) {
 		return this.pkg.equals(pkg);
 	}	
+	
+	public boolean matchName(String name) {
+		return this.name != null && (this.name.equals(name) || this.name.equals("*"));
+	}
+	
+	public boolean matchModule(String module) {
+		return this.module != null && (this.module.equals(module) || this.module.equals("*"));
+	}
 }
