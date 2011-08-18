@@ -7,5 +7,5 @@ string f(Rtypes e):
         return "NOPE"
 
 void System::main([string] args):
-    out.println(f({x: 1, y: 1}))
-    out.println(f({x: 1, y:1, z: 1}))
+    this.out.println(f({x: 1, y: 1}))
+    this.out.println(f({x: 1, y:1, z: 1}))

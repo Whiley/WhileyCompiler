@@ -12,8 +12,8 @@ real id(real x):
 void System::main([string] args):
     p = spawn { func: &id }
     x = p.test(123)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))
     x = p.test(12545)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))
     x = p.test(-11)
-    out.println("GOT: " + str(x))
+    this.out.println("GOT: " + str(x))

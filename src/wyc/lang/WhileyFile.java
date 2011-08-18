@@ -63,10 +63,14 @@ public class WhileyFile {
 	
 	public static class ImportDecl extends SyntacticElement.Impl implements Decl {
 		public ArrayList<String> pkg;
+		public String module;
+		public String name;
 		
-		public ImportDecl(List<String> pkg, Attribute... attributes) {
+		public ImportDecl(List<String> pkg, String module, String name, Attribute... attributes) {
 			super(attributes);
 			this.pkg = new ArrayList<String>(pkg);
+			this.module = module;
+			this.name = name;
 		}
 	
 		public String name() {

@@ -9,7 +9,7 @@ string f(expr e):
         return "NEGATIVE: " + str(e)
 
 void System::main([string] args):
-    out.println(f(-1))
-    out.println(f(1))
-    out.println(f(1234))
+    this.out.println(f(-1))
+    this.out.println(f(1))
+    this.out.println(f(1234))
  

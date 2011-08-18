@@ -9,6 +9,6 @@ string f(int x):
     return ""
 
 void System::main([string] args):
-    out.println(f(1))
-    out.println(f(2))
-    out.println(f(3))
+    this.out.println(f(1))
+    this.out.println(f(2))
+    this.out.println(f(3))

@@ -203,15 +203,22 @@ public class ModuleLoader {
 	 * @param module
 	 *            A module name without package specifier.
 	 * @param imports
-	 *            A list of packages to search through. Packages are searched in
+	 *            A list of import regex's to search through. Packages are searched in
 	 *            order of appearance.
 	 * @return The resolved package.
 	 * @throws ModuleNotFoundException
 	 *             if it couldn't resolve the module
 	 */
-	public NameID resolveAsName(String name, List<PkgID> imports)
-			throws ResolveError {									
-		for (PkgID pkg : imports) {				
+	public NameID resolveAsName(String name, List<Import> imports)
+			throws ResolveError {	
+		
+		for (Import imp : imports) {
+			
+		}
+		
+		throw new ResolveError("name not found: " + name);
+	}
+	/*
 			if(pkg.size() > 0 && pkg.last().equals("*")) {				
 				pkg = pkg.subpkg(0, pkg.size()-1);
 				if(!isPackage(pkg)) {					
@@ -251,8 +258,8 @@ public class ModuleLoader {
 		
 		throw new ResolveError("name not found: " + name);
 	}
-	
-	public ModuleID resolveAsModule(String name, List<PkgID> imports)
+	*/
+	public ModuleID resolveAsModule(String name, List<Import> imports)
 			throws ResolveError {
 		
 		for (PkgID pkg : imports) {				

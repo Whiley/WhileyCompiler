@@ -11,4 +11,4 @@ int f(uRec1Rec2 r):
 void System::main([string] args):
     rec = { x: 1, y: 1}
     ans = f(rec)
-    out.println(str(ans))
+    this.out.println(str(ans))

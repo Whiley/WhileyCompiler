@@ -6,6 +6,6 @@ void pState::f():
 
 void System::main([string] args):
     p = spawn {x:1,y:2}
-    out.println(str()*p)
+    this.out.println(str()*p)
     p.f()
-    out.println(str()*p)
+    this.out.println(str()*p)

@@ -10,5 +10,5 @@ string f(msgType m):
 void System::main([string] args):
     m1 = {op:11,data:[]}
     m2 = {index:1}
-    out.println(f(m1))
-    out.println(f(m2))
+    this.out.println(f(m1))
+    this.out.println(f(m2))

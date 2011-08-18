@@ -8,4 +8,4 @@ string f({int} x):
 
 void System::main([string] args):
     ys = {1,2,3}
-    out.println(f(g(ys)))
+    this.out.println(f(g(ys)))

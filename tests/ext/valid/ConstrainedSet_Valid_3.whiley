@@ -5,4 +5,4 @@ string f(posints x):
 
 void System::main([string] args):
     xs = {1,2,3}
-    out.println(f(xs))
+    this.out.println(f(xs))

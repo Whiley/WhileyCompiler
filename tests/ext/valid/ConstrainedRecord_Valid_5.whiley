@@ -13,4 +13,4 @@ state parseTerm(state st):
 void System::main([string] args):
     st = {input:"  Hello",pos:0}
     st = parseTerm(st)
-    out.println(str(st))
+    this.out.println(str(st))

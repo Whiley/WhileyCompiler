@@ -6,5 +6,5 @@ R3 f(R1|R2 i):
     return (R3) i
 
 void System::main([string] args):
-    out.println(str(f({x:123542.0, y:123})))
+    this.out.println(str(f({x:123542.0, y:123})))
     

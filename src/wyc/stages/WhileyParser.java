@@ -136,10 +136,19 @@ public class WhileyParser {
 			}
 		}
 		
+		String module = pkg.get(pkg.size()-1);
+		pkg.remove(pkg.size()-1);
+		String name = null;
+		
+		if(index < tokens.size() && tokens.get(index) instanceof Colon) {
+			match(Colon.class);
+			name = matchIdentifier().text;
+		}
+		
 		int end = index;
 		matchEndLine();
 		
-		return new ImportDecl(pkg, sourceAttr(start, end - 1));
+		return new ImportDecl(pkg, module, name, sourceAttr(start, end - 1));
 	}
 	
 	private FunDecl parseFunction(List<Modifier> modifiers) {			

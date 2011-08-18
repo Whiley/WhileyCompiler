@@ -6,7 +6,7 @@ void System::main([string] args):
      a2 = f()
      a2[0] = 0
      
-     out.println(str(a1[0]))
-     out.println(str(a1[1]))
-     out.println(str(a2[0]))
-     out.println(str(a2[1]))
+     this.out.println(str(a1[0]))
+     this.out.println(str(a1[1]))
+     this.out.println(str(a2[0]))
+     this.out.println(str(a2[1]))

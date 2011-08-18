@@ -8,5 +8,5 @@ int f(tupper y) ensures $ >= 0:
 
 void System::main([string] args):
     x = {op:1,il:1}
-    out.println(str(x))
+    this.out.println(str(x))
     f(x)

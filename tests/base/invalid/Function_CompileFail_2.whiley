@@ -1,8 +1,8 @@
 void f(int x):
-    out.println()"FIRST"
+    this.out.println()"FIRST"
 
 void f(int x):
-    out.println()"SECOND"
+    this.out.println()"SECOND"
 
 void System::main([string] args):
-    out.println()"NOUT"
+    this.out.println()"NOUT"

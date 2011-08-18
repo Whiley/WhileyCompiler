@@ -15,4 +15,4 @@ int g(int d):
     return y(123)
     
 void System::main([string] args):    
-    out.println(str(g(3)))    
+    this.out.println(str(g(3)))    

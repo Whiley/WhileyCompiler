@@ -2,11 +2,11 @@ define expr as [int]|int
 
 void System::f(expr e):
     if e is [int]:
-        out.println("GOT [INT]")
+        this.out.println("GOT [INT]")
     else if e is int:
-        out.println("GOT INT")
+        this.out.println("GOT INT")
     else:
-        out.println("GOT SOMETHING ELSE?")
+        this.out.println("GOT SOMETHING ELSE?")
 
 void System::main([string] args):
     e = 1
