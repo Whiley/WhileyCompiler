@@ -2523,8 +2523,7 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(T_VOID,paramTypes);
 		bytecodes.add(new Bytecode.Invoke(owner, "<init>", ftype,
 				Bytecode.SPECIAL));
-	}		 
-	
+	}		 	
 		
 	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
 			.minimise(Type.T_PROCESS(Type.T_EXISTENTIAL(new NameID(

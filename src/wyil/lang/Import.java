@@ -20,23 +20,7 @@ public class Import {
 		this.module = module;		
 		this.name = name;
 	}	
-	
-	public boolean match(NameID nid) {		
-		if(match(nid.module())) {
-			return name != null && (name.equals("*") || name.equals(nid.name()));			
-		}
-		return false;
-	}
-	
-	public boolean match(ModuleID mid) {
-		return match(mid.pkg()) && (module.equals(mid.module()) || module.equals("*"));		
-	}
-	
-	public boolean match(PkgID pkg) {
-		return this.pkg.equals(pkg);
-	}	
-	
-	public boolean matchName(String name) {
+		public boolean matchName(String name) {
 		return this.name != null && (this.name.equals(name) || this.name.equals("*"));
 	}
 	

@@ -203,11 +203,11 @@ public class ModuleLoader {
 	 * @param module
 	 *            A module name without package specifier.
 	 * @param imports
-	 *            A list of import regex's to search through. Packages are searched in
-	 *            order of appearance.
+	 *            A list of import declarations to search through. Imports are
+	 *            searched in order of appearance.
 	 * @return The resolved package.
 	 * @throws ModuleNotFoundException
-	 *             if it couldn't resolve the module
+	 *             if it couldn't resolve the name
 	 */
 	public NameID resolveAsName(String name, List<Import> imports)
 			throws ResolveError {	
@@ -231,76 +231,40 @@ public class ModuleLoader {
 		
 		throw new ResolveError("name not found: " + name);
 	}
-	/*
-			if(pkg.size() > 0 && pkg.last().equals("*")) {				
-				pkg = pkg.subpkg(0, pkg.size()-1);
-				if(!isPackage(pkg)) {					
-					continue; // sanity check
-				}								
-				Package p = resolvePackage(pkg);
-				
-				for (String n : p.modules) {					
-					try {
-						ModuleID mid = new ModuleID(pkg,n);									
-						Skeleton mi = loadSkeleton(mid);					
-						if (mi.hasName(name)) {
-							return new NameID(mid,name);
-						} 					
-					} catch(ResolveError rex) {
-						// ignore. This indicates we simply couldn't resolve
-                        // this module. For example, if it wasn't a whiley class
-                        // file.						
-					}
-				}
-			} else if(pkg.size() > 0) {
-				try {
-					String pkgname = pkg.last();
-					pkg = pkg.subpkg(0, pkg.size()-1);
-					ModuleID mid = new ModuleID(pkg,pkgname);												
-					Skeleton mi = loadSkeleton(mid);					
-					if (mi.hasName(name)) {
-						return new NameID(mid,name);
-					} 	
-				} catch(ResolveError rex) {
-					// ignore. This indicates we simply couldn't resolve
-					// this module. For example, if it wasn't a whiley class
-					// file.
-				}
-			}
-		}
-		
-		throw new ResolveError("name not found: " + name);
-	}
-	*/
+	
+	/**
+	 * This method attempts to resolve the given name as a module name, given a
+	 * list of imports.
+	 * 
+	 * @param name
+	 * @param imports
+	 * @return
+	 * @throws ResolveError
+	 */
 	public ModuleID resolveAsModule(String name, List<Import> imports)
 			throws ResolveError {
 		
-		for (PkgID pkg : imports) {				
-			if(pkg.size() > 0 && pkg.last().equals("*")) {				
-				pkg = pkg.subpkg(0, pkg.size()-1);
-				if(!isPackage(pkg)) {					
-					continue; // sanity check
-				}								
-				Package p = resolvePackage(pkg);
-				
-				for (String n : p.modules) {										
-					if(n.equals(name)) {					
-						return new ModuleID(pkg,n);
-					}					
-				}
-			} else if(pkg.size() > 0) {				
-				String pkgname = pkg.last();
-				if(pkgname.equals(name)) {
-					pkg = pkg.subpkg(0, pkg.size()-1);
-					ModuleID mid = new ModuleID(pkg,pkgname);												
-					return mid;					
+		for (Import imp : imports) {
+			for(ModuleID mid : matchImport(imp)) {				
+				if(mid.module().equals(name)) {
+					return mid;
 				}
 			}
 		}
+		
 		
 		throw new ResolveError("module not found: " + name);
 	}
 	
+	/**
+	 * This method attempts to load a whiley module. The module is searched for
+	 * on the WHILEYPATH. A resolve error is thrown if the module cannot be
+	 * found or otherwise loaded.
+	 * 
+	 * @param module
+	 *            The module to load
+	 * @return the loaded module
+	 */
 	public Module loadModule(ModuleID module) throws ResolveError {		
 		Module m = moduletable.get(module);
 		if(m != null) {
@@ -327,6 +291,18 @@ public class ModuleLoader {
 		return m;		
 	}
 	
+	/**
+	 * This method attempts to load a whiley module skeleton. A skeleton
+	 * provides signature information about a module. For example, the signature
+	 * of all methods. However, a skeleton does not provide access to a methods
+	 * body. The skeleton is looked up in the internal skeleton table. If not
+	 * found there, then the WHILEYPATH is searched. A resolve error is thrown
+	 * if the module cannot be found or otherwise loaded.
+	 * 
+	 * @param module
+	 *            The module skeleton to load
+	 * @return the loaded module
+	 */
 	public Skeleton loadSkeleton(ModuleID module) throws ResolveError {
 		Skeleton skeleton = skeletontable.get(module);
 		if(skeleton != null) {
@@ -389,13 +365,15 @@ public class ModuleLoader {
 	}
 
 	/**
-	 * This method attempts to read a whiley module from a given package.
+	 * This method attempts to read a whiley module from a given package. A
+	 * resolve error is thrown if the module cannot be found or otherwise
+	 * loaded.
 	 * 
 	 * @param module
 	 *            The module to load
 	 * @param pkgIngo
-	 *            Information about the including package, in particular
-	 *            where it can be located on the file system.
+	 *            Information about the including package, in particular where
+	 *            it can be located on the file system.
 	 * @return
 	 */
 	private Module loadModule(ModuleID module, Package pkg)
@@ -433,24 +411,37 @@ public class ModuleLoader {
 	 */
 	private List<ModuleID> matchImport(Import imp) {
 		ArrayList<ModuleID> matches = new ArrayList<ModuleID>();
-		for(PkgID pid : matchPackage(imp.pkg)) {
+		for (PkgID pid : matchPackage(imp.pkg)) {
 			try {
 				Package pkgInfo = resolvePackage(pid);
-				for(String n : pkgInfo.modules) {
-					if(imp.matchModule(n)) {
-						matches.add(new ModuleID(pid,n));
+				for (String n : pkgInfo.modules) {					
+					if (imp.matchModule(n)) {
+						matches.add(new ModuleID(pid, n));
 					}
 				}
-			} catch(ResolveError ex) {
+			} catch (ResolveError ex) {
 				// dead code
 			}
 		}
 		return matches;
 	}
 	
-	
+	/**
+	 * This method takes a given package id from an import declaration, and
+	 * expands it to find all matching packages. Note, the package id may
+	 * contain various wildcard characters to match multiple actual packages.
+	 * 
+	 * @param imp
+	 * @return
+	 */
 	private List<PkgID> matchPackage(PkgID pkg) {
-		
+		ArrayList<PkgID> matches = new ArrayList<PkgID>();
+		try {
+			// TODO: this needs to be correct to support more interesting regexes.
+			Package p = resolvePackage(pkg);
+			matches.add(pkg);
+		} catch(ResolveError er) {}
+		return matches;
 	}
 	
 	/**
