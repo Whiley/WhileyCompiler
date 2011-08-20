@@ -142,7 +142,13 @@ public class WhileyParser {
 		
 		if(index < tokens.size() && tokens.get(index) instanceof Colon) {
 			match(Colon.class);
-			name = matchIdentifier().text;
+			Token t = tokens.get(index);
+			if(t.text.equals("*")) {
+				match(Star.class);
+				name = "*";	
+			} else {
+				name = matchIdentifier().text;
+			}
 		}
 		
 		int end = index;
