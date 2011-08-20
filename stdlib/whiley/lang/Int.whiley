@@ -47,7 +47,7 @@ int str2int(string input) throws Error:
     for i in 0..|input|:
         c = input[i]
         r = r * 10
-        if !Character.isDigit(c):
+        if !Char.isDigit(c):
             throw { msg: "invalid number string (" + String.str(input) + ")" }
         r = r + (c - '0')
     return r
