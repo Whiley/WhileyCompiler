@@ -25,23 +25,55 @@
 
 package whiley.io
 
-define FileWriter as process { string fileName, int writer }
+define Reader as process { string fileName }
+define Writer as process { string fileName, int writer }
 
-FileWriter ::openWriter(string fileName):
+// not sure if this makes sense per se
+Reader ::Reader(string fileName):
     extern jvm:
-        aload 1
-        invokestatic wyjc/runtime/IO.openWriter:(Ljava/util/ArrayList;)Lwyjc/runtime/Actor;
+        aload 0
+        invokestatic wyjc/runtime/IO.openReader:(Ljava/lang/String;)Lwyjc/runtime/Actor;
         areturn
     // the following line is dead code
-    return spawn {fileName: "", writer: 0}
+    return spawn {fileName: ""}
 
-void FileWriter::close():
+void Reader::close():
     extern jvm:
         aload 0
         invokestatic wyjc/runtime/IO.closeFile:(Lwyjc/runtime/Actor;)V;
 
 // read the whole file
-void FileWriter::write([byte] data):
+[byte] Reader::read():
+    extern jvm:
+        aload 0
+        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;)Lwyjc/runtime/List;
+        areturn
+    return []
+    
+// read at most max bytes 
+[byte] Reader::read(int max):
+    extern jvm:
+        aload 0
+        aload 1
+        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;Ljava/math/BigInteger;)Lwyjc/runtime/List;
+        areturn
+    return []
+
+Writer ::Writer(string fileName):
+    extern jvm:
+        aload 0
+        invokestatic wyjc/runtime/IO.openWriter:(Ljava/util/ArrayList;)Lwyjc/runtime/Actor;
+        areturn
+    // the following line is dead code
+    return spawn {fileName: "", writer: 0}
+
+void Writer::close():
+    extern jvm:
+        aload 0
+        invokestatic wyjc/runtime/IO.closeFile:(Lwyjc/runtime/Actor;)V;
+
+// read the whole file
+void Writer::write([byte] data):
     extern jvm:
         aload 0
         aload 1
