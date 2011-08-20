@@ -28,9 +28,9 @@ package whiley.io
 define FileReader as process { string fileName }
 
 // not sure if this makes sense per se
-FileReader System::openReader(string fileName):
+FileReader ::openReader(string fileName):
     extern jvm:
-        aload 1
+        aload 0
         invokestatic wyjc/runtime/IO.openReader:(Ljava/lang/String;)Lwyjc/runtime/Actor;
         areturn
     // the following line is dead code

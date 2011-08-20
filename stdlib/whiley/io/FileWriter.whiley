@@ -27,7 +27,7 @@ package whiley.io
 
 define FileWriter as process { string fileName, int writer }
 
-FileWriter System::openWriter(string fileName):
+FileWriter ::openWriter(string fileName):
     extern jvm:
         aload 1
         invokestatic wyjc/runtime/IO.openWriter:(Ljava/util/ArrayList;)Lwyjc/runtime/Actor;

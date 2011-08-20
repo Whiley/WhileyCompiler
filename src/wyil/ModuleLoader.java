@@ -602,8 +602,6 @@ public class ModuleLoader {
 		}
 	}
 	
-	
-	
 	/**
 	 * Given a path string of the form "xxx.yyy.zzz" this returns the parent
 	 * component (i.e. "xxx.yyy"). If you supply "xxx", then the path parent is

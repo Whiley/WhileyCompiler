@@ -920,7 +920,7 @@ public class ModuleBuilder {
 		return blk;
 	}
 
-	protected Block resolve(Debug s, HashMap<String,Integer> environment) {
+	protected Block resolve(Debug s, HashMap<String,Integer> environment) {		
 		Block blk = resolve(s.expr, environment);		
 		blk.append(Code.debug, attributes(s));
 		return blk;
@@ -1428,7 +1428,7 @@ public class ModuleBuilder {
 				return resolve((FunConst) expression, environment);
 			} else {
 				syntaxError("unknown expression encountered: "
-						+ expression.getClass().getName(), filename, expression);
+						+ expression.getClass().getName() + " (" + expression + ")", filename, expression);
 			}
 		} catch (SyntaxError se) {
 			throw se;

@@ -55,7 +55,8 @@ public class NameResolution {
 		filename = wf.filename;
 		
 		imports.add(new Import(module.pkg(), module.module(), "*")); 
-				
+		imports.add(new Import(module.pkg(), "*")); 
+
 		for(Decl d : wf.declarations) {			
 			try {
 				if(d instanceof ImportDecl) {
@@ -226,7 +227,7 @@ public class NameResolution {
 	
 	protected void resolve(Debug s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
-		resolve(s.expr, environment, imports);		
+		s.expr = resolve(s.expr, environment, imports);		
 	}
 
 	protected void resolve(Throw s, HashMap<String, Set<Expr>> environment,

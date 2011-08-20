@@ -86,5 +86,5 @@ public string replace(char old, char new, string str):
 public string ascii2str([byte] data):
     r = ""
     for b in data:
-        r = r + toUnsignedInt(b)
+        r = r + Byte.toUnsignedInt(b)
     return r    
