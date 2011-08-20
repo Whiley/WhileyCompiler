@@ -55,11 +55,7 @@ public class NameResolution {
 		filename = wf.filename;
 		
 		imports.add(new Import(module.pkg(), module.module(), "*")); 
-
-		// should be deprecated ... ?		
-		PkgID whiley_lang = new PkgID(new String[]{"whiley","lang"});				
-		imports.add(new Import(whiley_lang,"*"));
-						
+				
 		for(Decl d : wf.declarations) {			
 			try {
 				if(d instanceof ImportDecl) {
