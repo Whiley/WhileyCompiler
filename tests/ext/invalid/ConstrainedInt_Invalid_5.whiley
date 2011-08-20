@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 define nat as {1,2,3,4,5}
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 {int} append(string input):
     rs = {}
     for i in 0..|input|:

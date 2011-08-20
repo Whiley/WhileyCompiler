@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define DL1 as {int->int}
 define DL2 as {real->int}
 

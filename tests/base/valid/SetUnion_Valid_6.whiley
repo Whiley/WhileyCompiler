@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f({int} xs, {int} ys, {int} zs):
     if zs == xs ∪ ys:
         return str(xs)

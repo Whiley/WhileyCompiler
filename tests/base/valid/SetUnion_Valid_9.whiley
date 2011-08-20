@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 bool test({real} xs, [int] ys):
     for x in (xs+ys):
         if x is int:

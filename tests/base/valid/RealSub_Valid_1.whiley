@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 real f(real x):
     return (0.0 - x)
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define fr5nat as int where $ >= 0
 
 {fr5nat} g({fr5nat} xs):

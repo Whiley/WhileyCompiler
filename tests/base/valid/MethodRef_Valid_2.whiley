@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this implements what is effectively a "raw" interface
 
 define FileReader as process {

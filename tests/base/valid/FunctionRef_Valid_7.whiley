@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Proc as process { int data }
 
 int Proc::read(int x):

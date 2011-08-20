@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define rlist as real | [int]
 
 int f(rlist l):

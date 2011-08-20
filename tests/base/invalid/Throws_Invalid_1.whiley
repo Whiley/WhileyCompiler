@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Error as {string msg}
 
 int f(int x):

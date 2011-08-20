@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 
 int f(real x) throws string:
     if x >= 0:

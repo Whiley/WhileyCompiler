@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define posints as {int}
 
 string f(posints x):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string g(int z) requires z > 1:
     return str(z)
 

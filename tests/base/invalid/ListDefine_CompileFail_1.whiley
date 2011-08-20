@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define intset as [int]
 
 void System::main([string] args):

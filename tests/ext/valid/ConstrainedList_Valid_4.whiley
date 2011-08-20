@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define state as {string input, int pos} where pos >= 0 && pos <= |input|
 
 char f(state st):

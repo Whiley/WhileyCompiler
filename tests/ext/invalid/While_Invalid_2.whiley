@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define nat as int where $ >= 0
 
 [nat] extract([int] ls):

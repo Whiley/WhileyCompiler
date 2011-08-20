@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] reverse([int] ls):
     i = |ls|
     r = []

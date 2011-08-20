@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define fr3nat as int
 
 string f(int x):

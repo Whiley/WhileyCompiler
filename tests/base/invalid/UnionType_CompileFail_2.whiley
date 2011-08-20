@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 define IntReal as int | real
 

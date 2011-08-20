@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define constants as [
 	10000000b,
 	10000001b,

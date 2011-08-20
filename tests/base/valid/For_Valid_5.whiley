@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 real f({(int,real)} xs, int m):
     for i,r in xs:
         if i == m:

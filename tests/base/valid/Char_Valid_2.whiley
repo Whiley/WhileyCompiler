@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 char iof(string s, int i):
     return s[i]
 

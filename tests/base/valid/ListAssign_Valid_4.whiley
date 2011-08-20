@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
      a1 = [[1,2,3],[0]]
      a2 = a1

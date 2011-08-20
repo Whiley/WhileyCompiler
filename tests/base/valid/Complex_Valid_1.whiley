@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define PAWN as 0
 define KNIGHT as 1 
 define BISHOP as 2

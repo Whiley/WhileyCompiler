@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f(int x, {int} ys) requires x ⊆ ys:
     debug "X IS A SUBSET"
 

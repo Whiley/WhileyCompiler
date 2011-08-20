@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Tup1 as (int, int)
 define Tup2 as (real, real)
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f(int x) requires x >= 0:
     y = 10 / x
     debug str(x)

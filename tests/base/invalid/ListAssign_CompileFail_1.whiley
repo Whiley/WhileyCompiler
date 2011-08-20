@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] f([int] ls):
     return ls
 

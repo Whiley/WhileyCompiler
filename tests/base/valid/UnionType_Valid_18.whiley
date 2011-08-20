@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define TYPE as null|int
 
 int f([TYPE] xs, TYPE p):

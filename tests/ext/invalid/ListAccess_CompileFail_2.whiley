@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f([int] x) requires |x| > 0:
     y = x[0]
     z = x[-1]

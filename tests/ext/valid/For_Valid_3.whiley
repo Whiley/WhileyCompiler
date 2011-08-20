@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int sum({nat} xs) ensures $ >= 0:
     r = 0
     for x in xs where r >= 0:

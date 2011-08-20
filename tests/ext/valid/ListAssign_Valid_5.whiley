@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] f() ensures |$| > 1:
     return [1,2]
 

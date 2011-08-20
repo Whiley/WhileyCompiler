@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define plist as [int] where |$| > 0 && $[0] == 0
 define expr as [int]|int
 define tup as {expr lhs, int p}

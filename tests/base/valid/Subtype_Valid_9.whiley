@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define sr9nat as int
 define sr9tup as {sr9nat f, int g}
 define sr9arr as [{sr9nat f, int g}]

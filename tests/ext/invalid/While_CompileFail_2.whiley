@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
     i=0
     r=0

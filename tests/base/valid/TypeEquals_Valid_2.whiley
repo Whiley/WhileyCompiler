@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define expr as [int]|int
 
 string f(expr e):

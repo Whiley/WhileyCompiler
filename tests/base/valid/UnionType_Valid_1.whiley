@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):    
     if |args| == 1:
         x = 1

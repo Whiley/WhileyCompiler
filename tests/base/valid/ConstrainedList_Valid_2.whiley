@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int g(int x):
     if(x <= 0 || x >= 125):
         return 1

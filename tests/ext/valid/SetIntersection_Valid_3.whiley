@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f({int} xs) requires |xs| < 3:
     return str(xs)
 

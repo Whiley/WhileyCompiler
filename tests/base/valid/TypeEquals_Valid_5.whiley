@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define pos as int
 define neg as int
 define expr as pos|neg|[int]

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define sr9nat as int where $ > 0
 define sr9tup as {sr9nat f, int g} where g > f 
 define sr9arr as [{sr9nat f, int g}] where some { z in $ | z.f == 1}

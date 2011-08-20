@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED
 public string repl(char old, char new, string str):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define point as {int x, int y}
 
 point f(point x):

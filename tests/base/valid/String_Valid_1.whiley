@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED
 public bool has(char c, string str):

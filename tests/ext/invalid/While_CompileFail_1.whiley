@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
     j=0
     while(j < |args|):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 (int,int) f({int->int} dict):
     k = 0
     v = 0

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 {int} f({int} xs) requires no { x ∈ xs | x < 0 }, ensures no { y ∈ $ | y > 0 }:
     return { -x | x ∈ xs } 
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define expr as {int}|bool
 
 {int} g({int} input):

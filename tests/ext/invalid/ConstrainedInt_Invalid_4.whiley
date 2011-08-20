@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 define c4nat as int where $ < 10
 

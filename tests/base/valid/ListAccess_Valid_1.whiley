@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f([int] x):
     y = x[0]
     z = x[0]

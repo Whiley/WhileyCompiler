@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define dummy as process {int x}
 
 void dummy::f(int x):

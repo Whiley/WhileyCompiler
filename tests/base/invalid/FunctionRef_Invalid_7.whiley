@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Proc as process { real(real) func }
 
 int Proc::func(int x):

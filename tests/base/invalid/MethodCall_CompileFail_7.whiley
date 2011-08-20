@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define wmccf7tup as {int x, int y}
 
 wmccf7tup f(System x, int x):

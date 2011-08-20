@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define scf2nat as int where $ >= 0
 
 void f(scf2nat x):

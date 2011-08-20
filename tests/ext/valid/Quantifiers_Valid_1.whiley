@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 string f({int} xs) requires no { w in xs | w < 0}:
     return str(xs)

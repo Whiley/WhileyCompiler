@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define expr as {int op, expr lhs} | {string err}
 
 int f(expr e):

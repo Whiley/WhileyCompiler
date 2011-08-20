@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define fr4nat as int
 
 fr4nat g(fr4nat x):

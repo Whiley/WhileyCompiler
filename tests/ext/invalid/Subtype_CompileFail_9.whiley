@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define scf9nat as int where $ > 0
 define scf9tup as {scf9nat f, int g} where g > f 
 define scf9arr as [{scf9nat f, int g}] where some {z in $ | z.f == 1}

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define DL as {int->[real]}
 
 DL update(DL ls):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f(int x):
     this.out.println()"FIRST"
 

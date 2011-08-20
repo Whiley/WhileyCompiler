@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define posintlist as [int]
 
 int sum(posintlist ls, int i):

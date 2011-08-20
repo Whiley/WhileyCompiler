@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define ADD as 1
 define SUB as 2
 define MUL as 3

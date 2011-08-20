@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f({int} xs, {int} ys, {int} zs) requires zs == xs ∩ ys:
     return str(xs)
 

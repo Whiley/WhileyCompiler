@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 import whiley.io.*
 
 define table as [

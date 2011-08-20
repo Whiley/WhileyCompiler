@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f(real x, real y):
     return x % y    
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define fr2nat as int where $ >= 0
 
 string f(fr2nat x):

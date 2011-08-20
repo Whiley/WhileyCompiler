@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
     x = {flag:true,code:0}
     this.out.println(str(x))

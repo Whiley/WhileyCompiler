@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // This example was inspired by comments from Stuart Marshall.
 
 define anat as int

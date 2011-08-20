@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define point as {int x, int y}
 
 void System::main([string] args):

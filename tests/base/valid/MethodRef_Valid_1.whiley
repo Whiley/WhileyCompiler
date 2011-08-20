@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define MyProc as process {
     int position
 }

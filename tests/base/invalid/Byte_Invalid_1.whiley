@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
     b = 01b
     i = b * 2

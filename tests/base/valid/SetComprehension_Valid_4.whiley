@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 {int} f([int] xs):
     return { x | x in xs, x > 1 }
 

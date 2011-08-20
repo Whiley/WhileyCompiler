@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define i8 as int where $ >=-128 && $ <= 127
 
 int g(int x) ensures $ > 0 && $ <= 256:

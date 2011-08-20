@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f([real] ls):
     this.out.println(str(ls))
 

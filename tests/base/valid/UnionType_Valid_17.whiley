@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define State as { string input, int pos }
 define Expr as real | { string id }
 define SyntaxError as { string err }

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 define ir1nat as int
 define pir1nat as ir1nat

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define sr7nat as int where $ > 0
 
 void System::main([string] args):

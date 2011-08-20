@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define SyntaxError as {string msg}
 
 string f(int x):

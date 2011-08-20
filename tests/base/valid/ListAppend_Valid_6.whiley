@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define plistv6 as [int]
 
 int f(plistv6 xs):

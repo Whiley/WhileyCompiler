@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define point as {int x, int y} where $.x > 0 && $.y > 0
 
 point f(point x):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Reader as interface {
     [byte] read(int)
 }

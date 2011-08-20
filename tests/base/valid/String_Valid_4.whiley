@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int|null indexOf(char c1, string str):
     i = 0
     for c2 in str:

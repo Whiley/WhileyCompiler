@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Rec1 as { real x, int y }
 define Rec2 as { int x, real y }
 define uRec1Rec2 as Rec1 | Rec2

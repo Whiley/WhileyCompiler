@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define MyProc as process { bool flag }
 
 void MyProc::run(System sys):

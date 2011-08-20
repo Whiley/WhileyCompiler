@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define wmccf6tup as {int x, int y}
 
 wmccf6tup f(System x, int y):

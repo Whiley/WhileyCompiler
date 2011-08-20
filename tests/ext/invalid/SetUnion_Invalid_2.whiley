@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f({int} xs, {int} ys, {int} zs) requires zs == xs ∪ ys:
     debug str(xs)
 

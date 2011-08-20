@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define etype as {int mode, int rest}
 define Ptype as process etype
 

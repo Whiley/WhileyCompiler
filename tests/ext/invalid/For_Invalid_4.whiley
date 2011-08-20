@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define fr6nat as int where $ >= 0
 
 int g({fr6nat} xs) ensures $ > 1:

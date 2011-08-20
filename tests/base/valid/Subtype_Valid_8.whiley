@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define sr8nat as int
 define sr8tup as {sr8nat f, int g}
 

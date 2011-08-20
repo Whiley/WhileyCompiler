@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define nint as null|int
 
 [[nint]] move(int from, int to, [[nint]] list):

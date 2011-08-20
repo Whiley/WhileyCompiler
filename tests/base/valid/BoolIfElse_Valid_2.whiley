@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Link as { bool val, LinkedList next }
 define LinkedList as null | Link
 

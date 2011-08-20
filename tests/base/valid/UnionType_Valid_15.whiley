@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define nlist as int|[nat]
 
 nlist f(int i, [nlist] xs):

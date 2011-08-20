@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define R1 as { real x, int y }
 define R2 as { int x, real y }
 define R3 as { int x, int y }

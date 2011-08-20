@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define tac2ta as {int f1, int f2}
 define tac2tb as {int f1, int f2}
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define frf1nat as int where $ >= 0
 
 void f(frf1nat y):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 real f(real x) requires x > 0, ensures $ < 0:
     return -x
 

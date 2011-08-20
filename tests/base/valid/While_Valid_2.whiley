@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define nat as int
 
 nat sum([nat] ls):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define a_nat as int where $ >= 0
 define b_nat as int where 2*$ >= $
 

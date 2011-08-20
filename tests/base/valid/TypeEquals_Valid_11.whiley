@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define imsg as int|{string msg}
 
 string getMessage(imsg m):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f(int|bool x):
     if x is int:
         return x

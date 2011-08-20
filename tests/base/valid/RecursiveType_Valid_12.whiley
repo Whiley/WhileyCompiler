@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Link as null | [Link]
 
 int maxDepth(Link l):

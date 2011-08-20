@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define ilist as real | [int]
 
 string f(real e):

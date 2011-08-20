@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define msg as {int op, int s}
 
 string f(msg m):

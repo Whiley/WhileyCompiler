@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Func as {
     int(int) read
 }

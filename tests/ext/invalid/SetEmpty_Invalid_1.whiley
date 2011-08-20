@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f({int} xs) requires xs != ∅:
     debug str(xs)
 

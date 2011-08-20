@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 {int} sum({int} xs):
     rs = {}
     for x in xs where |rs| <= 2:

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define expr as int | {int op, expr left, expr right}
 
 expr f(expr e):

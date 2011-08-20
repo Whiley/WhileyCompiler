@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define btup as {int op, int index}
 
 [int] f(btup b):        

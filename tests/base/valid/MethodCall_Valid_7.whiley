@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Sum as process { 
     [int] items, 
     int result 

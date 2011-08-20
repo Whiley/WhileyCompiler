@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define nnint as [[int]]
 
 {int} flattern([[int]] nnint):

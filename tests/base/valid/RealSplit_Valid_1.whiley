@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 (int,int) f(real z):
     x,y = z
     return (x,y)

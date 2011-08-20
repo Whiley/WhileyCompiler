@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define realtup as {real op}
 
 string f(realtup t):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f(bool b):
     if(b):
         return "TRUE"

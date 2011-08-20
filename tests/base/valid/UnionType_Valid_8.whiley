@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define msg1 as {int op, [int] data}
 define msg2 as {int op, [{int dum}] data}
 

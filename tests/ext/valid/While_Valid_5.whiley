@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] extract([int] ls) ensures |$| > 0:
     i = 0
     r = [1]

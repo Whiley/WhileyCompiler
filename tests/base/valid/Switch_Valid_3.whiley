@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f(real x):
     switch x:
         case 1.23:

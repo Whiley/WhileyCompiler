@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::f(int x):
     this.out.println(str(x))
 

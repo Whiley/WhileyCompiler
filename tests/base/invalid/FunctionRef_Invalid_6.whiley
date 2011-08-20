@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 real read(real a):
     return -a
 

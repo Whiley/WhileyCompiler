@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define intList as int|[int]
 define tup as {int mode, intList data}
 

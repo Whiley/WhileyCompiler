@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // the following line should simply not compile.
 define junk as junk | int
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string iof(int i):
     return "" + ('a' + i) + ('1' + i)
 

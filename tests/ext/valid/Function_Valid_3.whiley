@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define fr3nat as int where $ >= 0
 
 string f(int x):

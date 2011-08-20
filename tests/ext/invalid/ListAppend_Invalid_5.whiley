@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define plistv6 as [int] where no { x in $ | x < 0 } 
 
 int f(plistv6 xs):

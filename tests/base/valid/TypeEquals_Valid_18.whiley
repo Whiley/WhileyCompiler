@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define intreal as real | int
 
 string f(intreal e):

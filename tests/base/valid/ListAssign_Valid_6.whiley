@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f([int] a):
      a[0] = 5
      return str(a)

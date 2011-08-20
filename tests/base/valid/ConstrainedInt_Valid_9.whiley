@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 define odd as { 1,3,5 }
 define even as { 2,4,6 }

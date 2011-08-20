@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 bool f(bool z):
      if(z):
          return true

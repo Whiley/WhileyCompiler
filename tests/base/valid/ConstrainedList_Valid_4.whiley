@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define state as {string input, int pos}
 
 char f(state st):

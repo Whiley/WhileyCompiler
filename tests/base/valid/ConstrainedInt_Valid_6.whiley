@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 define num as {1,2,3,4}
 define bignum as {1,2,3,4,5,6,7}

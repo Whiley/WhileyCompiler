@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 bool run(int n, int x):
     solution = true
     for i in 0..n:

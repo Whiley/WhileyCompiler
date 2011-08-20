@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f([bool] x) requires |x| > 0 && x[0]:
     return str(x)
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
     xs = 1
     zs = { x | y ∈ xs }

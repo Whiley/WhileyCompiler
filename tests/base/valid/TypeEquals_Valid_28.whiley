@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] f([[real|int]] e):
     if e is [[int]]:
         return e[0]

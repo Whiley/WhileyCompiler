@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 
 void System::main([string] args):
     // the should override the implicit field 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 bool isChar(any x):
     if x is char:
         return true

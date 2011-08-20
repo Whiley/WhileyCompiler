@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define nat as int
 void System::main([string] args):
     xs = [1,2,3]

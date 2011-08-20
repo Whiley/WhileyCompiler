@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define posints as {int} where no { x in $ | x < 0 }
 
 string f(posints x):

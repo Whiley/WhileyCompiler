@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define expr as [int]|int
 
 void System::f(expr e):

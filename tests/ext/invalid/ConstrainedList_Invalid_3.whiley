@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 public [int] update(string str):
     return [-1]
 

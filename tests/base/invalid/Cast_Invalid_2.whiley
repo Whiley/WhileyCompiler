@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define R1 as { real x }
 
 [int] f([real] xs):

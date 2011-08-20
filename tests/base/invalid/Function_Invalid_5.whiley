@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int ::m():
     return 20
  

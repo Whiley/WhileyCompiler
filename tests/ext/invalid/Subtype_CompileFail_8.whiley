@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define scf8nat as int where $ > 0
 define scf8tup as {scf8nat f, int g} where g > f 
 

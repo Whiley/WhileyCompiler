@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define IntList as {int op, [real] rest}|{int op, int mode}
 
 string f(IntList y):

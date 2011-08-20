@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define msg1 as {int op, int s} where op == 1
 define msg2 as {int op, int s} where op == 2
 

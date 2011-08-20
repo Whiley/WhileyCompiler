@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define tenup as int where $ > 10
 define msg1 as {tenup op, [int] data}
 define msg2 as {int index}

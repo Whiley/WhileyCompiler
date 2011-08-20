@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this is a comment!
 string f({int} xs):
     return str(xs)

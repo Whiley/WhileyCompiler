@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 bool f(char c):
     return c <= '9'
 

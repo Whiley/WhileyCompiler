@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Rtypes as {real x, real y} | {int x, int z}
 
 string f(Rtypes e):

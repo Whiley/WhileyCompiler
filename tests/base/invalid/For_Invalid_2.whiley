@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f({int->int} dict):
     x = 0
     for x,y in dict:

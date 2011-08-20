@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
      x = 112233445566778899
      this.out.println(str(x))

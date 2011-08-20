@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define posintlist as [int] where no { x in $ | x < 0 }
 
 int sum(posintlist ls) ensures $ >= 0:

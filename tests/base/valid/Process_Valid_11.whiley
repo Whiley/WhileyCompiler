@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define MyProc1 as process { int data }
 define MyProc2 as process { any data }
 

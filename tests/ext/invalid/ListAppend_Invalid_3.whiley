@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f([int] xs) requires no { x in xs | x < 0}:
     return |xs|
 

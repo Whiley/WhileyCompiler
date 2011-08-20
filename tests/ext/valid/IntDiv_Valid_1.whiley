@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f(int x, int y) requires y != 0:
     return x / y
 

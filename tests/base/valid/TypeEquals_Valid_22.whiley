@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define iset as {int} | int
 
 string f(iset e):

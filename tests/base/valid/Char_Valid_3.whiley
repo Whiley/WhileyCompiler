@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string rep(char old, char new, string str):
     i = 0
     while i < |str|:

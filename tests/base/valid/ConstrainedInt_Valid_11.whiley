@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define a_nat as int
 define b_nat as int
 

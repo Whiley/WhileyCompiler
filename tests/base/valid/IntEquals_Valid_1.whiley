@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f(int x, real y):
     if x == y:
         return "EQUAL"

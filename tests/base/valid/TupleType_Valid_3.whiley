@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 (int,int) f(int x):
     return (x,x+2)
 

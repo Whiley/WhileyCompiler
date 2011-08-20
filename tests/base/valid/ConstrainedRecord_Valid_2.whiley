@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define RET as 169
 define NOP as 0
 

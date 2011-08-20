@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int sum({nat} xs):
     r = 0
     for x in xs:

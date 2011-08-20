@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 {int->char} reverse(string input):
     rs = {}
     for i in 0..|input|:

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define fr6nat as int
 
 {fr6nat} g({fr6nat} xs):

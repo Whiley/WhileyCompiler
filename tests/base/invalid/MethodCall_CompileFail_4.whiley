@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f(System x, int x):
     return x.get()
 

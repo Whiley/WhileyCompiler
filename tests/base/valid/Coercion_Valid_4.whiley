@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 {int->real} f([real] x):
     return x
 

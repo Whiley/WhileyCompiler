@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define anat as int where $ >= 0
 define bnat as int where 2*$ >= $
 

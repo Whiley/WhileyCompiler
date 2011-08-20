@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define bytes as { int b1, int b2 }
 
 bytes f(int a):

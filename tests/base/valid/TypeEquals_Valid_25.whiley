@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define src as int|[src]
 
 string f(src e):

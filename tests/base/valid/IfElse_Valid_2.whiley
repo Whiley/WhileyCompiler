@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f(int x):
     if(x < 10):
         return 1

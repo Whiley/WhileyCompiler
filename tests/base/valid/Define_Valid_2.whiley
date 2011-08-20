@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define dr2point as {real x, real y}
 
 void System::main([string] args):

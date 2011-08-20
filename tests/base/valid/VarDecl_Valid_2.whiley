@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string g(int z):
     return str(z)
 

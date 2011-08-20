@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define point as {int x,int y}
 define listint as [int]
 define setint as {int}

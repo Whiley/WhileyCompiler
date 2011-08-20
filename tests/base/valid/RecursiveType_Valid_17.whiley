@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // expression tree
 define Expr as int | real |  // constant
     [Expr] |           // list constructor

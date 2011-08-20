@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int sumOver([int] ls):
     i = 0
     sum = 0

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define scf3nat as int where $ > 0
 
 int f([scf3nat] xs):

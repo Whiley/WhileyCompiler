@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f([int] a) requires |a| > 0:
      a[0] = 5
      return str(a)

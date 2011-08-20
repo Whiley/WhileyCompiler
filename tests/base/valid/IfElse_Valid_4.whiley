@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Link as { int data, LinkedList next }
 define LinkedList as null | Link
 

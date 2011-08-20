@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define sr5nat as int
 
 void System::main([string] args):

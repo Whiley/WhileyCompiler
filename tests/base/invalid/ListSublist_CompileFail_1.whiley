@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
     end = 1.2344
     list = [1,2,3]

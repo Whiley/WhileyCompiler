@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define intlist as int|[int]
 
 string f([intlist] l):    

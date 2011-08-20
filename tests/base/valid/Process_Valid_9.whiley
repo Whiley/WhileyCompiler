@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Actor as process { int data }
 
 int Actor::get():

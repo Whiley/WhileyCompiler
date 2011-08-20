@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define nat as int
 define expr as nat | {int op, expr left, expr right}
 

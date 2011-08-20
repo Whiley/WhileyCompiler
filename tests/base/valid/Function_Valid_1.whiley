@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f(real x):
     return "GOT REAL"
 

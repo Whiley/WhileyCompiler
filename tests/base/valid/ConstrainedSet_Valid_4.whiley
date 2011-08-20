@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define pintset as {int}
 
 void System::main([string] args):

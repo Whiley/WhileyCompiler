@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void g(int x):
      return
 

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void System::main([string] args):
     ls = [true,false,true]
     this.out.println(str(ls))

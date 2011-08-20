@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 void f({int} xs) requires |xs| > 0:
     debug str(xs)
 

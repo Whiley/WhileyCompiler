@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define Expr as real | [Expr]
 define Value as real | [Value]
 

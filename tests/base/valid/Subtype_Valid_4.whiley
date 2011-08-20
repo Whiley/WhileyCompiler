@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define sr4set as {int}
 
 void System::main([string] args):

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 define urf1nat as int where $ > 0
 define turf1nat as int where $ > 10
 define wurf1nat as urf1nat|turf1nat

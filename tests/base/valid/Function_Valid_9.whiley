@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f(int x):
     return "F(INT)"
 

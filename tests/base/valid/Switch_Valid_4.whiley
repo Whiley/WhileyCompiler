@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 int f([int] x):
     switch x:
         case []:

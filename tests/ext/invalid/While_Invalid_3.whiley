@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] extract([int] ls,[int] r):
     i = 0
     // now do the reverse!

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] extract([int] ls):
     i = 0
     r = []

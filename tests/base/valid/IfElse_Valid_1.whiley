@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 string f(int x):
     if(x < 10):
         return "LESS THAN"

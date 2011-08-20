@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 // this test tests distributivity of subtyping
 define R1 as { null|int x }
 define R2 as { int x }
