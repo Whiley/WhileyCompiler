@@ -237,6 +237,13 @@ public abstract class Messager extends Yielder implements Resumable {
 	public MessageFuture getLastSentFuture() throws NullPointerException {
 		return future;
 	}
+	
+	/**
+	 * @return Whether the messager is not processing any messages.
+	 */
+	public boolean isIdle() {
+		return mail.isEmpty() && currentMessage == null;
+	}
 
 	/**
 	 * Completes the current message.

@@ -209,10 +209,14 @@ public class ClassFileBuilder {
 		ClassFile.Method cm = new ClassFile.Method("main", ft1, modifiers);
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
 		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
+		
+		// Create the System actor and the appropriate number of copies.
 		ft1 = new JvmType.Function(WHILEYPROCESS);
-
 		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess", ft1,
 		    Bytecode.STATIC));
+		// For the sender of the sendAsync method.
+		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		// For the idling check.
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
 		
 		// Get the System::main method out.
@@ -242,11 +246,19 @@ public class ClassFileBuilder {
 		// Save the ArrayList into the arguments list.
 		codes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		
-		// Call the send method.
+	// Call the send method.
 		ftype = new JvmType.Function(T_VOID, WHILEYMESSAGER,
 				JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
 		codes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync", ftype,
 		    Bytecode.VIRTUAL));
+		
+		// Wait for the message to complete.
+		codes.add(new Bytecode.Label("active"));
+		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		ftype = new JvmType.Function(T_BOOL);
+		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "isIdle", ftype,
+				Bytecode.VIRTUAL));
+		codes.add(new Bytecode.If(Bytecode.If.EQ, "active"));
 		
 		// Add return.
 		codes.add(new Bytecode.Return(null));

@@ -25,64 +25,48 @@
 
 package wyjc.runtime;
 
-import java.lang.reflect.InvocationTargetException;
-
-import wyjc.runtime.concurrency.Messager;
 import wyjc.runtime.concurrency.Scheduler;
+import wyjc.runtime.concurrency.Strand;
 
 /**
  * A Whiley process, which mirrors an actor in the Actor Model of concurrency.
  * 
  * @author Timothy Jones
  */
-public final class Actor extends Messager {
+public final class Actor extends Strand {
 
-	private static final Scheduler scheduler = new Scheduler();
-
-	// The spawned state of the process.
 	private Object state;
 
+	/**
+	 * @param state The internal state of the actor.
+	 */
 	public Actor(Object state) {
+		this.state = state;
+	}
+	
+	/**
+	 * @param state The internal state of the actor.
+	 * @param scheduler The scheduler to use for threading.
+	 */
+	public Actor(Object state, Scheduler scheduler) {
 		super(scheduler);
-
 		this.state = state;
 	}
 
+	/**
+	 * @return The internal state of the actor.
+	 */
 	public Object getState() {
 		return state;
 	}
 
+	/**
+	 * @param state The internal state of the actor. 
+	 * @return This actor (Useful for chaining).
+	 */
 	public Actor setState(Object state) {
 		this.state = state;
 		return this;
-	}
-
-	@Override
-	public void resume() {
-		try {
-			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
-
-			if (!isYielded()) {
-				// Completes the message and moves on to the next one.
-				completeCurrentMessage(result);
-			} else {
-				if (beReadyToResume()) {
-					// Readies the actor for another resumption.
-					scheduleResume();
-				}
-			}
-		} catch (IllegalArgumentException iax) {
-			// Not possible - caught by the language compiler.
-			System.err.println("Warning - illegal arguments in actor resumption.");
-		} catch (IllegalAccessException iax) {
-			// Not possible - all message invocations are on public methods.
-			System.err.println("Warning - illegal access in actor resumption.");
-		} catch (InvocationTargetException itx) {
-			// TODO Remove this once an entry method crashes correctly.
-			itx.getCause().printStackTrace();
-			// Fails the message and moves on to the next one.
-			failCurrentMessage(itx.getCause());
-		}
 	}
 
 	@Override
