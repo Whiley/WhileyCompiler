@@ -138,7 +138,7 @@ public final class SemanticModel {
 	 * @author djp
 	 * 
 	 */
-	public static final class Config {
+	public static class Config {
 		/**
 		 * The MAX_DEPTH parameter determines the maximum depth of any value.
 		 */
@@ -294,6 +294,19 @@ public final class SemanticModel {
 			values.remove(key);
 		}
 	}
+	
+	/**
+	 * The most basic model that I consider to be useful
+	 */
+	public static final Config DEFAULT_CONFIG = new Config() {{
+		this.MAX_DEPTH = 2;
+		this.MIN_INT = 0;
+		this.MAX_INT = 1;
+		this.MAX_LIST = 2;
+		this.MAX_SET = 2;
+		this.MAX_ELEMS = 2;
+		this.MAX_FIELDS = 2;		
+	}};
 	
 	public static void main(String[] args) {
 		Config config = new Config();
