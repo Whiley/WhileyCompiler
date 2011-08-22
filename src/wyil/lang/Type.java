@@ -2917,7 +2917,7 @@ public abstract class Type {
 			middle = "?" + node.data.toString();
 			break;
 		case K_PROCESS:
-			middle = "*" + toString((Integer) node.data, visited, headers, graph);
+			middle = "process " + toString((Integer) node.data, visited, headers, graph);
 			break;
 		case K_DICTIONARY: {
 			// binary node
