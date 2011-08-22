@@ -3299,7 +3299,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	private static final class Node {
+	public static final class Node {
 		final byte kind;
 		final Object data;
 		

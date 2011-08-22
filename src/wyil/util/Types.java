@@ -376,5 +376,5 @@ public class Types {
 	public static final int FUN_TYPE = 19;
 	public static final int METH_TYPE = 20;
 	public static final int HEADLESS_METH_TYPE = 21;
-	public static final int CONSTRAINT_MASK = 32;	
+	public static final int CONSTRAINT_MASK = 32;			
 }
