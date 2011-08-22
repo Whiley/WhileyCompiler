@@ -53,6 +53,14 @@ public interface Attributes {
 		}
 	}
 	
+	public static final class Name implements Attribute {
+		public final NameID name;
+		
+		public Name(NameID name) {
+			this.name = name;
+		}
+	}
+	
 	public static final class Alias implements Attribute {
 		public final Expr alias;
 		

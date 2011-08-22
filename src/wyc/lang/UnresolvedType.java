@@ -87,10 +87,10 @@ public interface UnresolvedType extends SyntacticElement {
 		}		
 	}
 	public static final class Named extends SyntacticElement.Impl implements NonUnion {		
-		public final String name;		
-		public Named(String name, Attribute... attributes) {
+		public final ArrayList<String> names;		
+		public Named(Collection<String> names, Attribute... attributes) {
 			super(attributes);
-			this.name = name;
+			this.names = new ArrayList<String>(names);
 		}		
 	}
 	public static final class List extends SyntacticElement.Impl implements NonUnion {

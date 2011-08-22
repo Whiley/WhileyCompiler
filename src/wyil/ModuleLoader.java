@@ -192,7 +192,7 @@ public class ModuleLoader {
 	
 	public void register(Module module) {			
 		moduletable.put(module.id(), module);	
-	}
+	}		
 	
 	/**
 	 * This methods attempts to resolve the correct package for a named item,
@@ -200,7 +200,7 @@ public class ModuleLoader {
 	 * loading modules as necessary from the whileypath and/or compiling modules
 	 * for which only source code is currently available.
 	 * 
-	 * @param module
+	 * @param name
 	 *            A module name without package specifier.
 	 * @param imports
 	 *            A list of import declarations to search through. Imports are
@@ -229,6 +229,38 @@ public class ModuleLoader {
 			}
 		}
 		
+		throw new ResolveError("name not found: " + name);
+	}
+	
+	public NameID resolveAsName(List<String> names, List<Import> imports) throws ResolveError {
+		if(names.size() == 1) {
+			return resolveAsName(names.get(0),imports);
+		} else if(names.size() == 2) {
+			String name = names.get(1);
+			ModuleID mid = resolveAsModule(names.get(0),imports);
+			Skeleton mi = loadSkeleton(mid);					
+			if (mi.hasName(name)) {
+				return new NameID(mid,name);
+			} 
+		} else {
+			String name = names.get(names.size()-1);
+			String module = names.get(names.size()-2);
+			PkgID pkg = new PkgID(names.subList(0,names.size()-2));
+			ModuleID mid = new ModuleID(pkg,module);
+			Skeleton mi = loadSkeleton(mid);					
+			if (mi.hasName(name)) {
+				return new NameID(mid,name);
+			}
+		}
+		
+		String name = null;
+		for(String n : names) {
+			if(name != null) {
+				name = name + "." + n;
+			} else {
+				name = n;
+			}			
+		}
 		throw new ResolveError("name not found: " + name);
 	}
 	

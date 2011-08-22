@@ -1681,8 +1681,13 @@ public class WhileyParser {
 			match(RightSquare.class);
 			t = new UnresolvedType.List(t,sourceAttr(start,index-1));
 		} else {		
-			Identifier id = matchIdentifier();			
-			t = new UnresolvedType.Named(id.text,sourceAttr(start,index-1));			
+			ArrayList<String> names = new ArrayList<String>();
+			names.add(matchIdentifier().text);			
+			while(index < tokens.size() && tokens.get(index) instanceof Dot) {
+				match(Dot.class);
+				names.add(matchIdentifier().text);
+			}
+			t = new UnresolvedType.Named(names,sourceAttr(start,index-1));			
 		}		
 		
 		return t;

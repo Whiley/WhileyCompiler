@@ -580,8 +580,8 @@ public class NameResolution {
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;						
-			NameID nid = loader.resolveAsName(dt.name, imports);			
-			t.attributes().add(new Attributes.Module(nid.module()));
+			NameID nid = loader.resolveAsName(dt.names, imports);			
+			t.attributes().add(new Attributes.Name(nid));
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential dt = (UnresolvedType.Existential) t;						
 			t.attributes().add(new Attributes.Module(module));

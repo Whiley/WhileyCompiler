@@ -589,8 +589,8 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.T_PROCESS(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
-			Attributes.Module modInfo = dt.attribute(Attributes.Module.class);
-			NameID name = new NameID(modInfo.module, dt.name);
+			Attributes.Name nameInfo = dt.attribute(Attributes.Name.class);
+			NameID name = nameInfo.name;
 
 			try {
 				// need to check for existential case				
@@ -1962,14 +1962,15 @@ public class ModuleBuilder {
 			// TODO: fix process constraints
 			return new Pair<Type,Block>(Type.T_PROCESS(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Named) {
-			UnresolvedType.Named dt = (UnresolvedType.Named) t;			
-			ModuleID mid = dt.attribute(Attributes.Module.class).module;
-			if (modules.contains(mid)) {
-				return types.get(new NameID(mid, dt.name));								
+			UnresolvedType.Named dt = (UnresolvedType.Named) t;
+			Attributes.Name nameInfo = dt.attribute(Attributes.Name.class);
+			NameID name = nameInfo.name;			
+			if (modules.contains(name.module())) {
+				return types.get(name);								
 			} else {
 				try {
-					Module mi = loader.loadModule(mid);
-					Module.TypeDef td = mi.type(dt.name);
+					Module mi = loader.loadModule(name.module());
+					Module.TypeDef td = mi.type(name.name());
 					return new Pair<Type,Block>(td.type(),td.constraint());
 				} catch (ResolveError rex) {
 					syntaxError(rex.getMessage(), filename, t, rex);
