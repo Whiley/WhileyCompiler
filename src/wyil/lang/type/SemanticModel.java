@@ -6,6 +6,7 @@ import java.util.*;
 import org.apache.tools.ant.taskdefs.ManifestTask.Mode;
 
 import wyil.lang.*;
+import wyjc.runtime.BigRational;
 
 /**
  * <p>
@@ -184,21 +185,79 @@ public final class SemanticModel {
 		model.add(Value.V_BOOL(true));
 		model.add(Value.V_BOOL(false));
 		addIntValues(config.MIN_INT,config.MAX_INT,model);
+		addRealValues(config.MIN_INT,config.MAX_INT,model);
+		
+		for(int i=0;i!=config.MAX_DEPTH;++i) {
+			int end = model.size();
+			addSetValues(config.MAX_SET,end,model);
+			addListValues(config.MAX_LIST,end,model);
+		}
 		
 		return new SemanticModel(model);
 	}
 	
-	public static void addIntValues(int min, int max, ArrayList<Value> model) {
-		for(int i=min;i<max;++i) {
+	public static void addIntValues(int MIN_INT, int MAX_INT, ArrayList<Value> model) {
+		for(int i=MIN_INT;i<MAX_INT;++i) {
 			model.add(Value.V_INTEGER(BigInteger.valueOf(i)));
+		}
+	}
+	
+	public static void addRealValues(int MIN_INT, int MAX_INT, ArrayList<Value> model) {
+		for(int i=MIN_INT;i<MAX_INT;++i) {
+			for(int j=MIN_INT;j<MAX_INT;++j) {
+				if(j != 0) {
+					BigRational r = BigRational.valueOf(i,j);
+					model.add(Value.V_RATIONAL(r));
+				}
+			}
+		}
+	}
+	
+	public static void addSetValues(int MAX_SET, int end, ArrayList<Value> model) {
+		ArrayList<Value> values = new ArrayList<Value>();
+		addSetValues(0,MAX_SET,end,values,model);
+	}
+	
+	public static void addSetValues(int dim, int MAX_SET, int end, ArrayList<Value> values,
+			ArrayList<Value> model) {
+		if(dim == MAX_SET) {
+			return;
+		} else {			
+			values.add(null);
+			for(int j=0;j!=end;++j) {
+				values.set(dim,model.get(j));
+				model.add(Value.V_SET(values));
+				addSetValues(dim+1,MAX_SET,end,values,model);
+			}
+			values.remove(values.size()-1);
+		}		
+	}
+	
+	public static void addListValues(int MAX_LIST, int end, ArrayList<Value> model) {
+		ArrayList<Value> values = new ArrayList<Value>();
+		addListValues(0,MAX_LIST,end,values,model);
+	}
+	
+	public static void addListValues(int dim, int MAX_LIST, int end, ArrayList<Value> values,
+			ArrayList<Value> model) {
+		if(dim == MAX_LIST) {
+			return;
+		} else {			
+			values.add(null);
+			for(int j=0;j!=end;++j) {
+				values.set(dim,model.get(j));
+				model.add(Value.V_LIST(values));
+				addListValues(dim+1,MAX_LIST,end,values,model);
+			}						
+			values.remove(values.size()-1);
 		}
 	}
 	
 	public static void main(String[] args) {
 		Config config = new Config();
 		config.MAX_DEPTH = 2;
-		config.MIN_INT = -7;
-		config.MAX_INT = 7;
+		config.MIN_INT = -1;
+		config.MAX_INT = 1;
 		config.MAX_LIST = 2;
 		config.MAX_SET = 2;
 		config.MAX_ELEMS = 2;
@@ -209,6 +268,7 @@ public final class SemanticModel {
 		for(int i=0;i!=model.size();++i) {
 			System.out.println(model.get(i));
 		}
+		
 		System.out.println("Generated " + model.size() + " values.");
 	}
 }
