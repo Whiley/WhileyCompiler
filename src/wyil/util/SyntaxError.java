@@ -124,16 +124,23 @@ public class SyntaxError extends RuntimeException {
 			output.println("syntax error: " + getMessage());
 		} else {
 			int line = 0;
-			String lineText = "";
-
+			int lineStart = 0;
+			int lineEnd = 0;
+			StringBuilder text = new StringBuilder();
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(
 						new FileInputStream(filename), "UTF8"));
-
-				while (in.ready() && start >= lineText.length()) {
-					start -= lineText.length() + 1;
-					end -= lineText.length() + 1;
-					lineText = in.readLine();
+				
+				// first, read whole file					   
+			    int len = 0;
+			    char[] buf = new char[1024]; 
+			    while((len = in.read(buf)) != -1) {
+			    	text.append(buf,0,len);	    	
+			    }
+							    			    
+				while (lineEnd < text.length() && lineEnd < start) {
+					lineStart = lineEnd;
+					lineEnd = parseLine(text,lineEnd);					
 					line = line + 1;
 				}
 			} catch (IOException e) {
@@ -143,10 +150,12 @@ public class SyntaxError extends RuntimeException {
 
 			output.println(filename + ":" + line + ": " + getMessage());
 			// errout.println();
-			output.println(lineText);
+			for(int i=lineStart;i<lineEnd;++i) {
+				output.print(text.charAt(i));
+			}
 
-			for (int i = 0; i <= start; ++i) {
-				if (lineText.charAt(i) == '\t') {
+			for (int i = lineStart; i < start; ++i) {
+				if (text.charAt(i) == '\t') {
 					output.print("\t");
 				} else {
 					output.print(" ");
@@ -157,6 +166,13 @@ public class SyntaxError extends RuntimeException {
 			}
 			output.println("");
 		} 
+	}
+	
+	private static int parseLine(StringBuilder text, int index) {
+		while(index < text.length() && text.charAt(index) != '\n') {
+			index++;
+		}		
+		return index+1;
 	}
 	
 	public static final long serialVersionUID = 1l;

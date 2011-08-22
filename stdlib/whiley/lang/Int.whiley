@@ -40,14 +40,3 @@ public string hex(int item):
             r = ('a' + w) + r
         item = v
     return r
-
-// Convert a string into an integer
-int str2int(string input) throws Error:
-    r = 0
-    for i in 0..|input|:
-        c = input[i]
-        r = r * 10
-        if !Char.isDigit(c):
-            throw { msg: "invalid number string (" + String.str(input) + ")" }
-        r = r + (c - '0')
-    return r

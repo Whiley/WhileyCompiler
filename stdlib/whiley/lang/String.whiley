@@ -25,6 +25,8 @@
 
 package whiley.lang
 
+define Error as { string msg }
+
 public string str(any item):
     if item is null:
         return "null"
@@ -83,8 +85,20 @@ public string replace(char old, char new, string str):
 
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
-public string ascii2str([byte] data):
+public string fromASCII([byte] data):
     r = ""
     for b in data:
         r = r + Byte.toUnsignedInt(b)
     return r    
+
+
+// Convert a string into an integer
+public int toInt(string input) throws Error:
+    r = 0
+    for i in 0..|input|:
+        c = input[i]
+        r = r * 10
+        if !Char.isDigit(c):
+            throw { msg: "invalid number string (" + String.str(input) + ")" }
+        r = r + (c - '0')
+    return r
