@@ -2,6 +2,9 @@ package wyil.lang.type;
 
 import java.math.*;
 import java.util.*;
+
+import org.apache.tools.ant.taskdefs.ManifestTask.Mode;
+
 import wyil.lang.*;
 
 /**
@@ -27,6 +30,14 @@ public final class SemanticModel {
 	
 	private SemanticModel(ArrayList<Value> values) {
 		this.model = values;
+	}
+	
+	public int size() {
+		return model.size();
+	}
+	
+	public Value get(int i) {
+		return model.get(i);
 	}
 	
 	public BitSet match(Type t) {
@@ -126,7 +137,7 @@ public final class SemanticModel {
 	 * @author djp
 	 * 
 	 */
-	public class Config {
+	public static final class Config {
 		/**
 		 * The MAX_DEPTH parameter determines the maximum depth of any value.
 		 */
@@ -181,5 +192,23 @@ public final class SemanticModel {
 		for(int i=min;i<max;++i) {
 			model.add(Value.V_INTEGER(BigInteger.valueOf(i)));
 		}
+	}
+	
+	public static void main(String[] args) {
+		Config config = new Config();
+		config.MAX_DEPTH = 2;
+		config.MIN_INT = -7;
+		config.MAX_INT = 7;
+		config.MAX_LIST = 2;
+		config.MAX_SET = 2;
+		config.MAX_ELEMS = 2;
+		config.MAX_FIELDS = 2;
+		
+		SemanticModel model = generate(config);
+		
+		for(int i=0;i!=model.size();++i) {
+			System.out.println(model.get(i));
+		}
+		System.out.println("Generated " + model.size() + " values.");
 	}
 }
