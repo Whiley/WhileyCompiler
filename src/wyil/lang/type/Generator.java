@@ -50,10 +50,11 @@ public class Generator {
 		
 		for(int i=0;i!=config.MAX_DEPTH;++i) {
 			int end = types.size();
-			addListTypes(types,end);
-			addSetTypes(types,end);
-			addProcessTypes(types,end);
-			addTupleTypes(types,config.MAX_TUPLES,end);
+			//addListTypes(types,end);
+			//addSetTypes(types,end);
+			//addProcessTypes(types,end);
+			//addTupleTypes(types,config.MAX_TUPLES,end);
+			addRecordTypes(types,config.MAX_FIELDS,end);
 		}
 		return types;
 	}
@@ -93,6 +94,28 @@ public class Generator {
 			for(int i=0;i!=end;++i) {
 				elems[dim] = types.get(i);
 				addTupleTypes(elems,types,dim+1,end);
+			}
+		}
+	}
+	
+	private static void addRecordTypes(ArrayList<Type> types, int MAX_FIELDS, int end) {
+		for(int i=1;i<=MAX_FIELDS;++i) {
+			Type[] elems = new Type[i];
+			addRecordTypes(elems,types,0,end);			
+		}
+	}
+	
+	private static void addRecordTypes(Type[] elems, ArrayList<Type> types, int dim, int end) {
+		if(dim == elems.length) {
+			HashMap<String,Type> fields = new HashMap<String,Type>();
+			for(int i=0;i!=elems.length;++i) {
+				fields.put("field" + i,elems[i]);
+			}
+			types.add(Type.T_RECORD(fields));
+		} else {
+			for(int i=0;i!=end;++i) {
+				elems[dim] = types.get(i);
+				addRecordTypes(elems,types,dim+1,end);
 			}
 		}
 	}
