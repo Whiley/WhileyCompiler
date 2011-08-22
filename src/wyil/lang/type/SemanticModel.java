@@ -189,22 +189,24 @@ public final class SemanticModel {
 		
 		for(int i=0;i!=config.MAX_DEPTH;++i) {
 			int end = model.size();
+			addTupleValues(config.MAX_ELEMS,end,model);
 			addSetValues(config.MAX_SET,end,model);
 			addListValues(config.MAX_LIST,end,model);
+			addRecordValues(config.MAX_FIELDS,end,model);
 		}
 		
 		return new SemanticModel(model);
 	}
 	
 	public static void addIntValues(int MIN_INT, int MAX_INT, ArrayList<Value> model) {
-		for(int i=MIN_INT;i<MAX_INT;++i) {
+		for(int i=MIN_INT;i<=MAX_INT;++i) {
 			model.add(Value.V_INTEGER(BigInteger.valueOf(i)));
 		}
 	}
 	
 	public static void addRealValues(int MIN_INT, int MAX_INT, ArrayList<Value> model) {
-		for(int i=MIN_INT;i<MAX_INT;++i) {
-			for(int j=MIN_INT;j<MAX_INT;++j) {
+		for(int i=MIN_INT;i<=MAX_INT;++i) {
+			for(int j=MIN_INT;j<=MAX_INT;++j) {
 				if(j != 0) {
 					BigRational r = BigRational.valueOf(i,j);
 					model.add(Value.V_RATIONAL(r));
@@ -253,10 +255,50 @@ public final class SemanticModel {
 		}
 	}
 	
+	public static void addTupleValues(int MAX_ELEMS, int end, ArrayList<Value> model) {
+		ArrayList<Value> values = new ArrayList<Value>();
+		addTupleValues(0,MAX_ELEMS,end,values,model);
+	}
+	
+	public static void addTupleValues(int dim, int MAX_ELEMS, int end, ArrayList<Value> values,
+			ArrayList<Value> model) {
+		if(dim == MAX_ELEMS) {
+			return;
+		} else {			
+			values.add(null);
+			for(int j=0;j!=end;++j) {
+				values.set(dim,model.get(j));
+				model.add(Value.V_TUPLE(values));
+				addTupleValues(dim+1,MAX_ELEMS,end,values,model);
+			}						
+			values.remove(values.size()-1);
+		}
+	}
+	
+	public static void addRecordValues(int MAX_FIELDS, int end, ArrayList<Value> model) {
+		HashMap<String,Value> values = new HashMap<String,Value>();
+		addRecordValues(0,MAX_FIELDS,end,values,model);
+	}
+	
+	public static void addRecordValues(int dim, int MAX_FIELDS, int end, HashMap<String,Value> values,
+			ArrayList<Value> model) {
+		if(dim == MAX_FIELDS) {
+			return;
+		} else {		
+			String key = "field" + dim;
+			for(int j=0;j!=end;++j) {
+				values.put(key,model.get(j));
+				model.add(Value.V_RECORD(values));
+				addRecordValues(dim+1,MAX_FIELDS,end,values,model);
+			}						
+			values.remove(key);
+		}
+	}
+	
 	public static void main(String[] args) {
 		Config config = new Config();
 		config.MAX_DEPTH = 2;
-		config.MIN_INT = -1;
+		config.MIN_INT = 0;
 		config.MAX_INT = 1;
 		config.MAX_LIST = 2;
 		config.MAX_SET = 2;
