@@ -9,7 +9,7 @@ b_nat f(a_nat x):
     else:
         return f(x-1)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = |args|    
     x = f(x)    
-    this.out.println(str(x))
+    sys.out.println(str(x))

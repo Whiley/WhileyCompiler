@@ -7,5 +7,5 @@ c2nat f(c2nat x):
     x = x + 1
     return x
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     debug str(f(9))

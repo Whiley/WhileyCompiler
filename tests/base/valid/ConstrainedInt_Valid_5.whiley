@@ -10,5 +10,5 @@ string f(num x):
 string g(int x, int z):
     return f(z)
 
-void System::main([string] args):
-    this.out.println(g(1,2))
+void ::main(System sys,[string] args):
+    sys.out.println(g(1,2))

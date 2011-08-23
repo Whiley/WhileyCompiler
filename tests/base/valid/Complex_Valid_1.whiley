@@ -93,8 +93,8 @@ define A3 as { col: 1, row: 3 }
 define D3 as { col: 4, row: 3 }
 
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     r = clearRowExcept(A1,H1,startingChessBoard)
-    this.out.println("GOT: " + str(r))
+    sys.out.println("GOT: " + str(r))
     r = clearRowExcept(A3,D3,startingChessBoard)
-    this.out.println("GOT: " + str(r))
+    sys.out.println("GOT: " + str(r))

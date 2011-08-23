@@ -7,6 +7,6 @@ define wur4nat as ur4nat|tur4nat
 string f(wur4nat x):
     return str(x)
 
-void System::main([string] args):
-    this.out.println(f(1))  
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))  
 

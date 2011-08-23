@@ -8,6 +8,6 @@ string getMessage(imsg m):
     else:
         return str(m)
 
-void System::main([string] args):
-    this.out.println(getMessage({msg:"HELLO WORLD"}))
-    this.out.println(getMessage(1))
+void ::main(System sys,[string] args):
+    sys.out.println(getMessage({msg:"HELLO WORLD"}))
+    sys.out.println(getMessage(1))

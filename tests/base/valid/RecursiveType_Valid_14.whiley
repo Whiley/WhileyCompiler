@@ -12,14 +12,14 @@ string toString(Expr e):
     else:
         return str(-1)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     se1 = 0.1234
     se2 = {lhs: se1, data: 1}
     se3 = {lhs: se2, data: 45}
     e1 = [se1]
     e2 = [e1,se1,se2]
-    this.out.println(toString(se1))
-    this.out.println(toString(se2))
-    this.out.println(toString(se3))
-    this.out.println(toString(e1))
-    this.out.println(toString(e2))
+    sys.out.println(toString(se1))
+    sys.out.println(toString(se2))
+    sys.out.println(toString(se3))
+    sys.out.println(toString(e1))
+    sys.out.println(toString(e2))

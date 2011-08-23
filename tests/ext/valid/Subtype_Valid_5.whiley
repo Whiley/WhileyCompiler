@@ -2,8 +2,8 @@ import whiley.lang.*:*
 
 define sr5nat as int where $ > 0
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {f:1}
     x.f = 2
-    this.out.println(str(x))
+    sys.out.println(str(x))
     

@@ -6,9 +6,9 @@ define Value as real | [Value]
 Value init():
     return 0.0123
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     v = init()
     if v is [Expr]:
-        this.out.println("GOT LIST")
+        sys.out.println("GOT LIST")
     else:
-        this.out.println(str(v))
+        sys.out.println(str(v))

@@ -6,5 +6,5 @@ int System::g(int x):
 void System::f(int x) requires x > this.g(x):
     debug str(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     this.f(1)

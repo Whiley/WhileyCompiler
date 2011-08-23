@@ -19,11 +19,11 @@ Reader System::openReader():
     proc = spawn { position: 123 }
     return { thus: proc, read: &read } 
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     reader = this.openReader()
     target = reader.thus
     method = reader.read
     data = target.method(5)
-    this.out.println(str(data))
+    sys.out.println(str(data))
 
 

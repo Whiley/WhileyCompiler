@@ -13,7 +13,7 @@ define byteCode as STORE | BRANCH
 string f(byteCode b):
     return str(b)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     b = {op:0,index:1}
-    this.out.println(f(b))
+    sys.out.println(f(b))
 

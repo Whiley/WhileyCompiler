@@ -7,6 +7,6 @@ int pState::send2(int x, System sys):
     sys.out.println(str(x))
     return -1
 
-void System::main([string] args):
-    x = (spawn {x:1,y:2}).send2(1,this)
-    this.out.println(str(x))
+void ::main(System sys,[string] args):
+    x = (spawn {x:1,y:2}).send2(1,sys)
+    sys.out.println(str(x))

@@ -11,11 +11,11 @@ real Proc::test(real arg):
 real id(real x):
     return x
     
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = spawn { func: &id }
     x = p.test(123)
-    this.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + str(x))
     x = p.test(12545)
-    this.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + str(x))
     x = p.test(-11)
-    this.out.println("GOT: " + str(x))
+    sys.out.println("GOT: " + str(x))

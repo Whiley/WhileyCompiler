@@ -258,8 +258,8 @@ define constants as [
 	01111110b
 ]
 
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     for i in constants:
-        this.out.print("~" + str(i))
-        this.out.print(" = ")
-        this.out.println(str(~i))
+        sys.out.print("~" + str(i))
+        sys.out.print(" = ")
+        sys.out.println(str(~i))

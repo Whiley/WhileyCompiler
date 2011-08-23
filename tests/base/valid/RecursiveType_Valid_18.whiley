@@ -34,8 +34,8 @@ null|Value evaluate(Expr e):
         else:
             return null // stuck
 
-public void System::main([string] args):
-    this.out.println(str(evaluate(123)))
-    this.out.println(str(evaluate({src: [112,212332,342], index:0})))
-    this.out.println(str(evaluate({src: [112312,-289712,312242], index:2})))
-    this.out.println(str(evaluate([123,223,323])))
+public void ::main(System sys,[string] args):
+    sys.out.println(str(evaluate(123)))
+    sys.out.println(str(evaluate({src: [112,212332,342], index:0})))
+    sys.out.println(str(evaluate({src: [112312,-289712,312242], index:2})))
+    sys.out.println(str(evaluate([123,223,323])))

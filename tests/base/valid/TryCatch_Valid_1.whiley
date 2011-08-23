@@ -7,11 +7,11 @@ int f(real x) throws string:
     else:
         throw "error"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     try:
-        this.out.println(str(f(1)))
-        this.out.println(str(f(0)))
-        this.out.println(str(f(-1)))
+        sys.out.println(str(f(1)))
+        sys.out.println(str(f(0)))
+        sys.out.println(str(f(-1)))
     catch(string e):
-        this.out.println("CAUGHT EXCEPTION: " + e)
-    this.out.println("DONE")        
+        sys.out.println("CAUGHT EXCEPTION: " + e)
+    sys.out.println("DONE")        

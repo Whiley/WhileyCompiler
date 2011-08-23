@@ -30,13 +30,13 @@ real evaluate(Expr e):
         return evaluate(e.lhs) + evaluate(e.rhs)
 
 // Main method
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     i = -5
     while i < 10:
         e = sbuild(i)
         if e is { string err}:
-            this.out.println("syntax error: " + e.err)
+            sys.out.println("syntax error: " + e.err)
         else:
             e = evaluate(e)
-            this.out.println(str(e))
+            sys.out.println(str(e))
         i = i + 1

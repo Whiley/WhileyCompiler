@@ -3,6 +3,6 @@ import whiley.lang.*:*
 string f([int] x):
      return str(|x|)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      arr = []
-     this.out.println(f(arr))
+     sys.out.println(f(arr))

@@ -8,8 +8,8 @@ int f(int x):
             return 1
     return 10
 
-void System::main([string] args):
-    this.out.println(str(f(1)))
-    this.out.println(str(f(2)))
-    this.out.println(str(f(3)))
-    this.out.println(str(f(-1)))
+void ::main(System sys,[string] args):
+    sys.out.println(str(f(1)))
+    sys.out.println(str(f(2)))
+    sys.out.println(str(f(3)))
+    sys.out.println(str(f(-1)))

@@ -7,6 +7,6 @@ define msgType as msgType1 | msgType2
 string f(msgType msg):
     return str(msg.op)
 
-void System::main([string] args):
-    this.out.println(f({op:1,payload:[1,2,3]}))
+void ::main(System sys,[string] args):
+    sys.out.println(f({op:1,payload:[1,2,3]}))
 

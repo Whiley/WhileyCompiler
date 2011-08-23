@@ -9,5 +9,5 @@ int h() ensures $ <= 3:
 nat f():
     return h()
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     debug str(f())

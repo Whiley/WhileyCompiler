@@ -9,8 +9,8 @@ int f(Expr e):
     else:
         return 0
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     v = f([1.0,2.0,3.0])
-    this.out.println(str(v))
+    sys.out.println(str(v))
     v = f(1.234)
-    this.out.println(str(v))
+    sys.out.println(str(v))

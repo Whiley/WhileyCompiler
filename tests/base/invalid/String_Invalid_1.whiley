@@ -1,6 +1,6 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     s = "Hello World"
     s[0] = 1.234
-    this.out.println(s)
+    sys.out.println(s)

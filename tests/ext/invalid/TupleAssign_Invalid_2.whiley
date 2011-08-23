@@ -6,7 +6,7 @@ define tac2tb as {int f1, int f2} where (f1+1) < f2
 tac2tb f(tac2tb y):
     return y
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {f1:1, f2:3}
     debug str(x)
     x.f1 = 2

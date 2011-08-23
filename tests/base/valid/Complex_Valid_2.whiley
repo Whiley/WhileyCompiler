@@ -69,10 +69,10 @@ string pos2str(Pos p):
     return "" + ('a' + p.col) + ('1' + p.row)
 
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     m = {piece: WHITE_PAWN, from: A2, to: A1 }
-    this.out.println(move2str(m))
+    sys.out.println(move2str(m))
     m = {piece: WHITE_KNIGHT, from: A2, to: A1 }
-    this.out.println(move2str(m))
+    sys.out.println(move2str(m))
     m = {piece: WHITE_QUEEN, from: A2, to: A1, taken: BLACK_KING }
-    this.out.println(move2str(m))
+    sys.out.println(move2str(m))

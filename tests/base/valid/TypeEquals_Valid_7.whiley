@@ -9,7 +9,7 @@ string f(tup t):
     else:
         return "NO MATCH"
 
-void System::main([string] args):
-    this.out.println(f({lhs:[0],p:0}))
-    this.out.println(f({lhs:[1],p:0}))
-    this.out.println(f({lhs:[],p:0}))
+void ::main(System sys,[string] args):
+    sys.out.println(f({lhs:[0],p:0}))
+    sys.out.println(f({lhs:[1],p:0}))
+    sys.out.println(f({lhs:[],p:0}))

@@ -1,6 +1,6 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = {1,2,3}
     if 1.23 ∈ xs:
-        this.out.println(str(1))
+        sys.out.println(str(1))

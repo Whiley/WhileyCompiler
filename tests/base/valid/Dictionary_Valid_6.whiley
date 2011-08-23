@@ -7,6 +7,6 @@ import whiley.lang.*:*
         rs[c] = i
     return rs
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = reverse("abcdefghijklmnopqrstuvwxyz")
-    this.out.println(str(xs))
+    sys.out.println(str(xs))

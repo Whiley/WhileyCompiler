@@ -1,5 +1,5 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
-    x = this.out
-    this.out.println("GOT HERE")
+void ::main(System sys,[string] args):
+    x = sys.out
+    x.println("GOT HERE")

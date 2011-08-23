@@ -10,7 +10,7 @@ void f(wurf1nat x):
 void g(int x):
     f(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     g(1)
     g(-1)
 

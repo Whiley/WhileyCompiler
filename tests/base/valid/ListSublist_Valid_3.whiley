@@ -9,7 +9,7 @@ int sum(posintlist ls):
         rest = ls[1..]
         return ls[0] + sum(rest)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     c = sum([-12987987234,-1,2,409234,2398729879])
-    this.out.println(str(c))
+    sys.out.println(str(c))
     

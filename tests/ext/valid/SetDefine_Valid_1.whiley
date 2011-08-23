@@ -2,6 +2,6 @@ import whiley.lang.*:*
 
 define pintset as {int} where |$| > 1
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = {1,2}
-    this.out.println(str(p))
+    sys.out.println(str(p))

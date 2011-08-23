@@ -8,8 +8,8 @@ int f(rlist l):
     else:
         return |l|
 
-void System::main([string] args):
-    this.out.println(str(f(123)))
-    this.out.println(str(f(1.23)))
-    this.out.println(str(f([1,2,3]))) 
+void ::main(System sys,[string] args):
+    sys.out.println(str(f(123)))
+    sys.out.println(str(f(1.23)))
+    sys.out.println(str(f([1,2,3]))) 
 

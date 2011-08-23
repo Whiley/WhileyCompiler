@@ -9,8 +9,8 @@ import whiley.lang.*:*
         i = i + 1
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rs = extract([1,2,3,4,5,6,7])
-    this.out.println(str(rs))
+    sys.out.println(str(rs))
     rs = extract([])
-    this.out.println(str(rs))
+    sys.out.println(str(rs))

@@ -11,5 +11,5 @@ string f(num x):
 string g(int x, nat z):
     return f(z)
 
-void System::main([string] args):
-    this.out.println(g(1,3))
+void ::main(System sys,[string] args):
+    sys.out.println(g(1,3))

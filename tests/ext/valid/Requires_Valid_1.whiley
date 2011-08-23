@@ -6,7 +6,7 @@ int f(int x):
 (string,string) g(int x, int y) requires y == f(x):
     return (str(x),str(y))
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     (x,y) = g(1,f(1))
     debug x + "\n"
     debug y + "\n"

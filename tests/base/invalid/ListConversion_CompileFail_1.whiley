@@ -1,7 +1,7 @@
 import whiley.lang.*:*
 
 void f([real] ls):
-    this.out.println(str(ls))
+    sys.out.println(str(ls))
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f([1,2,3,[]])

@@ -8,10 +8,10 @@ define Ptype as process etype
     this.rest = 123
     return this.mode,str(*this)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = spawn {mode:1,rest:2}
-    this.out.println(str(*p))
+    sys.out.println(str(*p))
     x,s = p.get()
-    this.out.println(s)
-    this.out.println(str(*p))
-    this.out.println(str(x))
+    sys.out.println(s)
+    sys.out.println(str(*p))
+    sys.out.println(str(x))

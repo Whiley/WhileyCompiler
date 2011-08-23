@@ -6,7 +6,7 @@ string f({int} xs, {int} ys):
     else:
         return "FAILED"
 
-void System::main([string] args):
-    this.out.println(f({1,2,3},{1,2,3}))
-    this.out.println(f({1,2},{1,2,3}))
-    this.out.println(f({1},{1,2,3}))
+void ::main(System sys,[string] args):
+    sys.out.println(f({1,2,3},{1,2,3}))
+    sys.out.println(f({1,2},{1,2,3}))
+    sys.out.println(f({1},{1,2,3}))

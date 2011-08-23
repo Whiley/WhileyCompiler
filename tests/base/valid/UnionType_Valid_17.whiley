@@ -19,12 +19,12 @@ define SExpr as SyntaxError | Expr
         st.pos = st.pos + 1    
     return n, st
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e,s = parseTerm({input: "123", pos: 0})
-    this.out.println(str(e))
+    sys.out.println(str(e))
     e,s = parseTerm({input: "abc", pos: 0})
     if e is SyntaxError: 
-        this.out.println(e.err)
+        sys.out.println(e.err)
     else:
-        this.out.println(str(e))
+        sys.out.println(str(e))
 

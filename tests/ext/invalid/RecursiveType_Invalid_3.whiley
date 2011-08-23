@@ -6,6 +6,6 @@ define expr as nat | {int op, expr left, expr right}
 expr f(expr e):
     return e
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = -1
     debug str(f(e))

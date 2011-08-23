@@ -14,6 +14,6 @@ expr parse(string input):
 {expr e, state st} parseAddSubExpr(state st):    
     return {e:{num:1},st:st}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = parse("Hello")
-    this.out.println(str(e))
+    sys.out.println(str(e))

@@ -22,6 +22,6 @@ Board f(Board board):
     board.rows[0] = BLACK_PAWN
     return board
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     r1 = {rows: [WHITE_PAWN], flag: false }
-    this.out.println(str(f(r1)))
+    sys.out.println(str(f(r1)))

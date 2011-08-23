@@ -1,8 +1,8 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     end = 1.2344
     list = [1,2,3]
     sublist = list[-1..end]
-    this.out.println(str(list))
-    this.out.println(str(sublist))
+    sys.out.println(str(list))
+    sys.out.println(str(sublist))

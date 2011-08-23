@@ -8,6 +8,6 @@ fr4nat g(fr4nat x):
 string f(fr4nat x):
     return str(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     y = 1
-    this.out.println(f(g(y)))
+    sys.out.println(f(g(y)))

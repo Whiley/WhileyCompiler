@@ -3,6 +3,6 @@ import whiley.lang.*:*
 void f({int} xs) requires xs != ∅:
     debug str(xs)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f({1,4})
     f({})

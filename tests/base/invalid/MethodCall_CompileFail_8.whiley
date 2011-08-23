@@ -4,6 +4,6 @@ int f():
     x = spawn 1
     return 1
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f()
-    this.out.println(str(x))
+    sys.out.println(str(x))

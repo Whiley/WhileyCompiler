@@ -6,7 +6,7 @@ string f(int|null x):
     else:
         return "GOT INT"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = null
-    this.out.println(f(x))
-    this.out.println(f(1))
+    sys.out.println(f(x))
+    sys.out.println(f(1))

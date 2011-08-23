@@ -8,8 +8,8 @@ int f(expr e):
     else:
         return -1
     
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f({err:"Hello World"})
-    this.out.println(str(x))
+    sys.out.println(str(x))
     x = f({op:1,lhs:{err:"Gotcha"}})
-    this.out.println(str(x))
+    sys.out.println(str(x))

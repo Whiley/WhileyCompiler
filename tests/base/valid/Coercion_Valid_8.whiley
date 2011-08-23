@@ -8,8 +8,8 @@ real f(Expr x):
     else:
         return x
 
-void System::main([string] args):
-    this.out.println(str(f([1,2,3])))
-    this.out.println(str(f([1.0,2.0,3.0])))
-    this.out.println(str(f(1)))
-    this.out.println(str(f(1.234)))
+void ::main(System sys,[string] args):
+    sys.out.println(str(f([1,2,3])))
+    sys.out.println(str(f([1.0,2.0,3.0])))
+    sys.out.println(str(f(1)))
+    sys.out.println(str(f(1.234)))

@@ -8,6 +8,6 @@ define fr6nat as int where $ >= 0
 string f({int} x):
     return str(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ys = {1,2,3}
-    this.out.println(f(g(ys)))
+    sys.out.println(f(g(ys)))

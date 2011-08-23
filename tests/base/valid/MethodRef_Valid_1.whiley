@@ -12,9 +12,9 @@ int MyProc::read(int x):
 int System::test(MyMeth m, MyProc proc):
     return proc.m(1)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     p = spawn { position: 0 }
     r = this.test(&read,p)
-    this.out.println(str(r))
+    sys.out.println(str(r))
 
 

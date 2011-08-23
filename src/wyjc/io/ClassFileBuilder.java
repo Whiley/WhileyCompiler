@@ -211,8 +211,8 @@ public class ClassFileBuilder {
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
-		Type.Fun wyft = Type.T_METH(WHILEY_SYSTEM_T,
-				Type.T_VOID, Type.T_LIST(Type.T_STRING));
+		Type.Fun wyft = Type.T_METH(null,Type.T_VOID, WHILEY_SYSTEM_T,
+						Type.T_LIST(Type.T_STRING));
 		JvmType.Function ft3 = convertFunType(wyft);
 		
 		// The following is a little bit of hack. Basically we flush the stdout

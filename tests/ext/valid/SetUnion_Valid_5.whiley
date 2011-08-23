@@ -6,6 +6,6 @@ string f({int} xs) requires |xs| > 0:
 string g({int} ys):
     return f(ys ∪ {1})
 
-void System::main([string] args):
-    this.out.println(g({}))
-    this.out.println(g({2}))
+void ::main(System sys,[string] args):
+    sys.out.println(g({}))
+    sys.out.println(g({2}))

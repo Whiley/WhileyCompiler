@@ -9,7 +9,7 @@ string rep(char old, char new, string str):
     return str    
 
 
-void System::main([string] args):
-    this.out.println(rep('e','w',"Hello"))
-    this.out.println(rep('H','z',"Hello"))
-    this.out.println(rep('o','1',"Hello"))
+void ::main(System sys,[string] args):
+    sys.out.println(rep('e','w',"Hello"))
+    sys.out.println(rep('H','z',"Hello"))
+    sys.out.println(rep('o','1',"Hello"))

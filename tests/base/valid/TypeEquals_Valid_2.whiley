@@ -8,9 +8,9 @@ string f(expr e):
     else:
         return "GOT INT"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = 1
-    this.out.println(f(e))
+    sys.out.println(f(e))
     e = [1,2,3,4]
-    this.out.println(f(e))
+    sys.out.println(f(e))
  

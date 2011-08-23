@@ -9,11 +9,11 @@ int sum(LinkedList l):
     else:
         return l.data + sum(l.next)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     l1 = { next: null, data: 1}
     l2 = { next: l1, data: 2}
     l3 = { next: l2, data: 3}
-    this.out.println(str(sum(l1))) // 1
-    this.out.println(str(sum(l2))) // 1 + 2 = 3
-    this.out.println(str(sum(l3))) // 1 + 2 + 3 = 6
+    sys.out.println(str(sum(l1))) // 1
+    sys.out.println(str(sum(l2))) // 1 + 2 = 3
+    sys.out.println(str(sum(l3))) // 1 + 2 + 3 = 6
 

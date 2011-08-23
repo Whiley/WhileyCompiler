@@ -6,5 +6,5 @@ int add(int x, int y) requires x>=0 && y>=0, ensures $>0:
     else:
         return x+y
 
-void System::main([string] args):
-    this.out.println(str(1))
+void ::main(System sys,[string] args):
+    sys.out.println(str(1))

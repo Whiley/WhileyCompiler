@@ -9,6 +9,6 @@ import whiley.lang.*:*
         r = r + [ls[i]]
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rs = reverse([1,2,3,4,5])
-    this.out.println(str(rs))
+    sys.out.println(str(rs))

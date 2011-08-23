@@ -15,10 +15,10 @@ int g(int x, int y) requires x>=0 && y>=0, ensures $>0:
         return 1
 
 
-void System::main([string] args):
-    this.out.println(str(f(1,1)))
-    this.out.println(str(f(0,0)))
-    this.out.println(str(f(4,345)))
-    this.out.println(str(g(1,1)))
-    this.out.println(str(g(0,0)))
-    this.out.println(str(g(4,345)))
+void ::main(System sys,[string] args):
+    sys.out.println(str(f(1,1)))
+    sys.out.println(str(f(0,0)))
+    sys.out.println(str(f(4,345)))
+    sys.out.println(str(g(1,1)))
+    sys.out.println(str(g(0,0)))
+    sys.out.println(str(g(4,345)))

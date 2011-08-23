@@ -13,7 +13,7 @@ string g(ilist e):
     return f(e)
 
 
-void System::main([string] args):
-    this.out.println(f(1))
-    this.out.println(f([1]))
-    this.out.println(f([]))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))
+    sys.out.println(f([1]))
+    sys.out.println(f([]))

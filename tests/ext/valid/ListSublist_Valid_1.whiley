@@ -9,7 +9,7 @@ int sum(posintlist ls) ensures $ >= 0:
         rest = ls[1..]
         return ls[0] + sum(rest)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     c = sum([1,2,3,4,5,6,7])
-    this.out.println(str(c))
+    sys.out.println(str(c))
     

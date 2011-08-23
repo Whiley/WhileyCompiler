@@ -268,8 +268,8 @@ define bytecodeStrings as [
     "impdep2"
 ]
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     s1 = code2str(Unit(0,1))
-    this.out.println(s1)
+    sys.out.println(s1)
     s2 = code2str(FieldIndex(0,180,{ pkg: "java.lang", classes: ["Object"]},"field",T_INT))
-    this.out.println(s2)
+    sys.out.println(s2)

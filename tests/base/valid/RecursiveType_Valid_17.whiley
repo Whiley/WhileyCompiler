@@ -30,8 +30,8 @@ Value evaluate(Expr e):
         else:
             return null // stuck
 
-public void System::main([string] args):
-    this.out.println(str(evaluate(1)))
-    this.out.println(str(evaluate({src: [112,212,342], index:0})))
-    this.out.println(str(evaluate({src: [112312,289712,31231242], index:2})))
-    this.out.println(str(evaluate([1,2,3])))
+public void ::main(System sys,[string] args):
+    sys.out.println(str(evaluate(1)))
+    sys.out.println(str(evaluate({src: [112,212,342], index:0})))
+    sys.out.println(str(evaluate({src: [112312,289712,31231242], index:2})))
+    sys.out.println(str(evaluate([1,2,3])))

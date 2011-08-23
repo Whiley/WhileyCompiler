@@ -9,7 +9,7 @@ string f(src e):
     else:
         return "int"
 
-void System::main([string] args):
-    this.out.println(f({x: 1}))
-    this.out.println(f({y: 2}))
-    this.out.println(f(1))
+void ::main(System sys,[string] args):
+    sys.out.println(f({x: 1}))
+    sys.out.println(f({y: 2}))
+    sys.out.println(f(1))

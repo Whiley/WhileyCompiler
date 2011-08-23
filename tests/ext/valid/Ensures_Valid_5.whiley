@@ -4,7 +4,7 @@ int f(int x) ensures $ > x:
     x = x + 1
     return x
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     y = f(1)
-    this.out.println(str(y))
+    sys.out.println(str(y))
     

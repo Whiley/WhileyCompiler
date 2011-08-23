@@ -8,6 +8,6 @@ define fr5nat as int
 string f({fr5nat} x):
     return str(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ys = {1,2,3}
-    this.out.println(f(g(ys)))
+    sys.out.println(f(g(ys)))

@@ -11,10 +11,10 @@ int sum(LinkedList ls):
     else:
         return 1 + sum(ls.next)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ls = { val: true, next: null}
-    this.out.println(str(sum(ls)))
+    sys.out.println(str(sum(ls)))
     ls = { val: true, next: ls}
-    this.out.println(str(sum(ls)))
+    sys.out.println(str(sum(ls)))
     ls = { val: false, next: ls}
-    this.out.println(str(sum(ls)))
+    sys.out.println(str(sum(ls)))

@@ -8,6 +8,6 @@ nlist f(int i, [nlist] xs):
     else:
         return xs[i]
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f(2, [2,3,4])    
-    this.out.println(str(x))
+    sys.out.println(str(x))

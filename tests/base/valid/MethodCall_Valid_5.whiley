@@ -8,6 +8,6 @@ int Proc::get():
 [int] System::f(Proc x):
     return [1,2,3,x.get()]
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     proc = spawn { state: 1 }
-    this.out.println(str(this.f(proc)))
+    sys.out.println(str(sys.f(proc)))
