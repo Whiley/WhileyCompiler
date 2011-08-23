@@ -15,12 +15,12 @@ int FileReader::read(int amount):
     r = amount + this.position
     return r
     
-Reader System::openReader():
+Reader ::openReader():
     proc = spawn { position: 123 }
     return { thus: proc, read: &read } 
 
 void ::main(System sys,[string] args):
-    reader = this.openReader()
+    reader = openReader()
     target = reader.thus
     method = reader.read
     data = target.method(5)
