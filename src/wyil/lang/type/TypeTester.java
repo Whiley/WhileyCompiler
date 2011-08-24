@@ -6,7 +6,8 @@ import wyil.lang.Type;
 public class TypeTester {
 	public static final SemanticModel.Config MODEL_CONFIG = new SemanticModel.Config() {
 		{
-			this.MAX_DEPTH = 3;
+			this.MAX_DEPTH = 2;
+			
 			this.MIN_INT = 0;
 			this.MAX_INT = 1;
 			this.MAX_LIST = 2;
@@ -18,19 +19,25 @@ public class TypeTester {
 			this.CHARS = false;
 			this.REALS = false;
 			this.TUPLES = false;
+			this.SETS = false;
+			this.DICTIONARIES = false;
 		}
 	};
 	
 	public static final Generator.Config TYPE_CONFIG = new Generator.Config() {
 		{
-			this.MAX_DEPTH = 3;
+			this.MAX_DEPTH = 2;
+			
 			this.MAX_FIELDS = 2;
 			this.MAX_UNIONS = 2;
-			this.MAX_TUPLES = 2;			
+			this.MAX_TUPLES = 2;	
+			
 			this.BYTE = false;
 			this.CHAR = false;
 			this.REAL = false;
 			this.TUPLES = false;
+			this.SETS = false;
+			this.DICTIONARIES = false;
 		}
 	};
 	
@@ -61,9 +68,9 @@ public class TypeTester {
 				boolean isSubset = model.isSubset(t1,t2);
 				
 				if(isSubtype && !isSubset) {
-					System.out.println("Unsound: " + t1 + " :> " + t2);
+					System.out.println("Unsound: " + t1 + " :> " + t2  + " does NOT hold.");
 				} else if(!isSubtype && isSubtype) {
-					System.out.println("Incomplete: " + t1 + " :> " + t2);
+					System.out.println("Incomplete: " + t1 + " :> " + t2 + " does NOT hold.");
 				}								
 			}
 		}

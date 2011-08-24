@@ -131,6 +131,7 @@ public class Generator {
 			//addProcessTypes(types,end);
 			if(config.TUPLES) { addTupleTypes(types,config.MAX_TUPLES,end); }
 			if(config.RECORDS) { addRecordTypes(types,config.MAX_FIELDS,end); }
+			if(config.UNIONS) { addUnionTypes(types,config.MAX_UNIONS,end); } 
 		}
 		return types;
 	}
@@ -192,6 +193,24 @@ public class Generator {
 			for(int i=0;i!=end;++i) {
 				elems[dim] = types.get(i);
 				addRecordTypes(elems,types,dim+1,end);
+			}
+		}
+	}
+	
+	private static void addUnionTypes(ArrayList<Type> types, int MAX_TUPLES, int end) {
+		for(int i=2;i<=MAX_TUPLES;++i) {
+			Type[] elems = new Type[i];
+			addUnionTypes(elems,types,0,end);			
+		}
+	}
+	
+	private static void addUnionTypes(Type[] elems, ArrayList<Type> types, int dim, int end) {
+		if(dim == elems.length) {
+			types.add(Type.T_UNION(elems));
+		} else {
+			for(int i=0;i!=end;++i) {
+				elems[dim] = types.get(i);
+				addUnionTypes(elems,types,dim+1,end);
 			}
 		}
 	}
