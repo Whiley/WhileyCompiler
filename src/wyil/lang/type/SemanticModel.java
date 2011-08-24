@@ -156,6 +156,62 @@ public final class SemanticModel {
 	 */
 	public static class Config {
 		/**
+		 * Flag to include NULL in the values generated.
+		 */
+		public boolean NULL = true;
+		
+		/**
+		 * Flag to include bools in the values generated.
+		 */
+		public boolean BOOLS = true;
+		
+		/**
+		 * Flag to include ints in the values generated.
+		 */
+		public boolean INTS = true;
+		
+		/**
+		 * Flag to include reals in the values generated.
+		 */
+		public boolean REALS = true;
+		
+		/**
+		 * Flag to include chars in the values generated.
+		 */
+		public boolean CHARS = true;
+		
+		/**
+		 * Flag to include bytes in the values generated.
+		 */
+		public boolean BYTES = true;
+		
+		/**
+		 * Flag to include tuples in the values generated.
+		 */
+		public boolean TUPLES = true;
+		
+		/**
+		 * Flag to include lists in the values generated.
+		 */
+		public boolean LISTS = true;
+		
+		/**
+		 * Flag to include sets in the values generated.
+		 */
+		public boolean SETS = true;
+		
+		/**
+		 * Flag to include dictionaries in the values generated.
+		 */
+		public boolean DICTIONARIES = true;
+		
+		/**
+		 * Flag to include records in the values generated.
+		 */
+		public boolean RECORDS = true;
+		
+		
+		/**
 		 * The MAX_DEPTH parameter determines the maximum depth of any value.
 		 */
 		public int MAX_DEPTH;
@@ -197,18 +253,34 @@ public final class SemanticModel {
 	public static SemanticModel generate(Config config) {
 		ArrayList<Value> model = new ArrayList<Value>();
 		
-		model.add(Value.V_NULL);
-		model.add(Value.V_BOOL(true));
-		model.add(Value.V_BOOL(false));
-		addIntValues(config.MIN_INT,config.MAX_INT,model);
-		addRealValues(config.MIN_INT,config.MAX_INT,model);
+		if(config.NULL) { 
+			model.add(Value.V_NULL);
+		}
+		if(config.BOOLS) {
+			model.add(Value.V_BOOL(true));
+			model.add(Value.V_BOOL(false));
+		}
+		if(config.INTS) { 		
+			addIntValues(config.MIN_INT,config.MAX_INT,model);
+		}
+		if(config.REALS) { 
+			addRealValues(config.MIN_INT,config.MAX_INT,model);
+		}
 		
 		for(int i=0;i!=config.MAX_DEPTH;++i) {
 			int end = model.size();
-			addTupleValues(config.MAX_ELEMS,end,model);
-			addSetValues(config.MAX_SET,end,model);
-			addListValues(config.MAX_LIST,end,model);
-			addRecordValues(config.MAX_FIELDS,end,model);
+			if(config.TUPLES) { 
+				addTupleValues(config.MAX_ELEMS,end,model);
+			}
+			if(config.SETS) {
+				addSetValues(config.MAX_SET,end,model);
+			}
+			if(config.LISTS) { 
+				addListValues(config.MAX_LIST,end,model);
+			}
+			if(config.RECORDS) { 
+				addRecordValues(config.MAX_FIELDS,end,model);
+			}				
 		}
 		
 		return new SemanticModel(model);

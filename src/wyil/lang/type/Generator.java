@@ -13,48 +13,124 @@ import wyil.lang.*;
 public class Generator {
 
 	public static class Config {
+		
+		/**
+		 * Flag to include NULL in the types generated.
+		 */
+		public boolean NULL = true;
+		
+		/**
+		 * Flag to include bool in the types generated.
+		 */
+		public boolean BOOL = true;
+		
+		/**
+		 * Flag to include int in the types generated.
+		 */
+		public boolean INT = true;
+		
+		/**
+		 * Flag to include real in the types generated.
+		 */
+		public boolean REAL = true;
+		
+		/**
+		 * Flag to include char in the types generated.
+		 */
+		public boolean CHAR = true;
+		
+		/**
+		 * Flag to include byte in the types generated.
+		 */
+		public boolean BYTE = true;
+		
+		/**
+		 * Flag to include tuples in the types generated.
+		 */
+		public boolean TUPLES = true;
+		
+		/**
+		 * Flag to include lists in the types generated.
+		 */
+		public boolean LISTS = true;
+		
+		/**
+		 * Flag to include sets in the types generated.
+		 */
+		public boolean SETS = true;
+		
+		/**
+		 * Flag to include dictionaries in the types generated.
+		 */
+		public boolean DICTIONARIES = true;
+		
+		/**
+		 * Flag to include records in the types generated.
+		 */
+		public boolean RECORDS = true;
+		
+		/**
+		 * Flag to include unions in the types generated.
+		 */
+		public boolean UNIONS = true;
+		
+		/**
+		 * Flag to include recursives in the types generated.
+		 */
+		public boolean RECURSIVES = true;
+		
 		/**
 		 * MAX_FIELDS defines the maximum number of fields to explore per
 		 * record.
 		 */
-		public int MAX_FIELDS;
+		public int MAX_FIELDS = 2;
 
 		/**
 		 * MAX_UNIONS defines the maximum number of disjuncts in a union that
 		 * can be explored.
 		 */
-		public int MAX_UNIONS;
+		public int MAX_UNIONS = 2;
 		
 		/**
 		 * MAX_TUPLES defines the maximum number of elements in a tuple that
 		 * can be explored.
 		 */
-		public int MAX_TUPLES;
+		public int MAX_TUPLES = 2;
 		
 		/**
 		 * MAX_DEPTH defines the maximum depth of a type.
 		 */
-		public int MAX_DEPTH;			
+		public int MAX_DEPTH = 2;			
 	}
 	
 	public static List<Type> generate(Config config) {
 		ArrayList<Type> types = new ArrayList<Type>();
 		// types.add(Type.T_VOID);
 		types.add(Type.T_ANY);
-		types.add(Type.T_NULL);
-		types.add(Type.T_BYTE);
-		types.add(Type.T_CHAR);
-		types.add(Type.T_INT);
-		types.add(Type.T_REAL);
-		types.add(Type.T_STRING);
+		if(config.NULL) {		
+			types.add(Type.T_NULL);
+		}
+		if(config.BYTE) {
+			types.add(Type.T_BYTE);
+		}
+		if(config.CHAR){ 
+			types.add(Type.T_CHAR);
+		}
+		if(config.INT) { 
+			types.add(Type.T_INT);
+		}
+		if(config.REAL) { 
+			types.add(Type.T_REAL);
+		}
+		//types.add(Type.T_STRING);
 		
 		for(int i=0;i!=config.MAX_DEPTH;++i) {
 			int end = types.size();
-			addListTypes(types,end);
-			addSetTypes(types,end);
-			addProcessTypes(types,end);
-			addTupleTypes(types,config.MAX_TUPLES,end);
-			addRecordTypes(types,config.MAX_FIELDS,end);
+			if(config.LISTS) { addListTypes(types,end); }
+			if(config.SETS) { addSetTypes(types,end); }
+			//addProcessTypes(types,end);
+			if(config.TUPLES) { addTupleTypes(types,config.MAX_TUPLES,end); }
+			if(config.RECORDS) { addRecordTypes(types,config.MAX_FIELDS,end); }
 		}
 		return types;
 	}
