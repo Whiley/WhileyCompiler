@@ -58,7 +58,9 @@ public class TypeTester {
 			if((i%increment) == 0) {
 				System.out.print(" ");
 			}
-			types.set(i, Type.minimise(types.get(i)));
+			Type t = types.get(i);
+			System.out.println("minimising: " + t);
+			types.set(i, Type.minimise(t));
 		}
 		System.out.print("]\r[");
 		

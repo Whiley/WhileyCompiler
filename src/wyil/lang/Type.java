@@ -2985,6 +2985,10 @@ public abstract class Type {
 			middle = middle + "}";
 			break;
 		}
+		case K_LABEL: {
+			middle = (String) node.data;
+			break;
+		}
 		default: 
 			throw new IllegalArgumentException("Invalid type encountered");
 		}
@@ -3560,8 +3564,8 @@ public abstract class Type {
 	}
 	
 	public static void main(String[] args) {				
-		PrintBuilder printer = new PrintBuilder(System.out);
-		Type t1 = linkedList(2);
+		PrintBuilder printer = new PrintBuilder(System.out);	
+		Type t1 = contractive(); //linkedList(2);
 		System.out.println("GOT: " + t1);
 		System.out.println("MIN: " + minimise(t1));
 		/*
@@ -3580,6 +3584,12 @@ public abstract class Type {
 		Type lub = leastUpperBound(t1,t2);
 		System.out.println(lub);
 		*/	
+	}
+	
+	public static Type contractive() {
+		Type lab = T_LABEL("X");
+		Type union = T_UNION(T_NULL,lab);
+		return T_RECURSIVE("X", union);
 	}
 	
 	public static Type linkedList(int n) {

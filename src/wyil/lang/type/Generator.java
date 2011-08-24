@@ -105,6 +105,7 @@ public class Generator {
 	
 	public static List<Type> generate(Config config) {
 		ArrayList<Type> types = new ArrayList<Type>();
+		int RECURSIVE_ROOT = -1;
 		// types.add(Type.T_VOID);
 		types.add(Type.T_ANY);
 		if(config.NULL) {		
@@ -122,6 +123,10 @@ public class Generator {
 		if(config.REAL) { 
 			types.add(Type.T_REAL);
 		}
+		if(config.RECURSIVES) {
+			RECURSIVE_ROOT = types.size();
+			types.add(Type.T_LABEL("X"));
+		}
 		//types.add(Type.T_STRING);
 		
 		for(int i=0;i!=config.MAX_DEPTH;++i) {
@@ -132,8 +137,25 @@ public class Generator {
 			if(config.TUPLES) { addTupleTypes(types,config.MAX_TUPLES,end); }
 			if(config.RECORDS) { addRecordTypes(types,config.MAX_FIELDS,end); }
 			if(config.UNIONS) { addUnionTypes(types,config.MAX_UNIONS,end); } 
+			if(config.RECURSIVES) { addRecursiveTypes(RECURSIVE_ROOT,types,end); } 
+		}
+		
+		for(int i=0;i!=types.size();++i) {
+			Type t = types.get(i);
+			if(Type.isOpen(t)) {
+				types.remove(i--);				
+			}
 		}
 		return types;
+	}
+	
+	private static void addRecursiveTypes(int root, ArrayList<Type> types, int end) {
+		for(int i=0;i!=end;++i) {
+			Type t = types.get(i);
+			if(i != root && Type.isOpen("X",t)) {				
+				types.add(Type.T_RECURSIVE("X", t));
+			}
+		}
 	}
 	
 	private static void addListTypes(ArrayList<Type> types, int end) {
