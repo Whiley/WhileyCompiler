@@ -1741,7 +1741,7 @@ public abstract class Type {
 	 * @param type
 	 * @return
 	 */	
-	public static Type minimise(Type type) {
+	public static Type minimise(Type type) {		
 		// leaf types never need minmising!
 		if (type instanceof Leaf) {
 			return type;
@@ -3587,9 +3587,9 @@ public abstract class Type {
 	}
 	
 	public static Type contractive() {
-		Type lab = T_LABEL("X");
-		Type union = T_UNION(T_NULL,lab);
-		return T_RECURSIVE("X", union);
+		Type lab = T_LABEL("Contractive");
+		Type union = T_UNION(lab,T_NULL);
+		return T_RECURSIVE("Contractive", union);
 	}
 	
 	public static Type linkedList(int n) {
