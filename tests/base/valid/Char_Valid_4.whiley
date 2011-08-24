@@ -6,7 +6,7 @@ bool isChar(any x):
     else:
         return false
 
-void System::main([string] args):
-    this.out.println(str(isChar('c')))
-    this.out.println(str(isChar(1)))
-    this.out.println(str(isChar([1,2,3])))
+void ::main(System sys,[string] args):
+    sys.out.println(str(isChar('c')))
+    sys.out.println(str(isChar(1)))
+    sys.out.println(str(isChar([1,2,3])))

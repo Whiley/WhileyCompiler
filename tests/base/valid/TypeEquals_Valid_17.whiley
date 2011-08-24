@@ -17,6 +17,6 @@ string f(int x):
 SyntaxError syntaxError(string errorMessage):
     return {msg: errorMessage}
 
-void System::main([string] args):
-    this.out.println(f(0))
-    this.out.println(f(1))
+void ::main(System sys,[string] args):
+    sys.out.println(f(0))
+    sys.out.println(f(1))

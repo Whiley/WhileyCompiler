@@ -7,6 +7,6 @@ define R3 as { int x, int y }
 R1|R2 f(R3 i):
     return (R1) i
 
-void System::main([string] args):
-    this.out.println(str(f({x:123542, y:123})))
+void ::main(System sys,[string] args):
+    sys.out.println(str(f({x:123542, y:123})))
     

@@ -9,7 +9,7 @@ int g(int x):
 {int} f(int x):
     return {g(x)}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     bytes = f(0)
-    this.out.println(str(bytes))
+    sys.out.println(str(bytes))
 

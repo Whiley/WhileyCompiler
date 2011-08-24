@@ -1,4 +1,4 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
-    this.out.println("Hello World")
+void ::main(System sys,[string] args):
+    sys.out.println("Hello World")

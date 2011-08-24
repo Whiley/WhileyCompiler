@@ -6,7 +6,7 @@ import whiley.lang.*:*
         rs = rs + {x}
     return rs
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     z = sum({1,2,3,4,5})
     debug str(z)
     

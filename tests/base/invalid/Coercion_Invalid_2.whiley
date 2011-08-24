@@ -8,8 +8,8 @@ define List4 as List3|List2
 List4 f(List1 r):
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     list = { data: 1, next: null}
     list = { data: null, next: list}
     ans = f(list)
-    this.out.println(str(ans))
+    sys.out.println(str(ans))

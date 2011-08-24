@@ -8,10 +8,10 @@ public bool has(char c1, string str):
             return true
     return false
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     s = "Hello World"
-    this.out.println(str(has('l',s)))
-    this.out.println(str(has('e',s)))
-    this.out.println(str(has('h',s)))
-    this.out.println(str(has('z',s)))
-    this.out.println(str(has('H',s)))
+    sys.out.println(str(has('l',s)))
+    sys.out.println(str(has('e',s)))
+    sys.out.println(str(has('h',s)))
+    sys.out.println(str(has('z',s)))
+    sys.out.println(str(has('H',s)))

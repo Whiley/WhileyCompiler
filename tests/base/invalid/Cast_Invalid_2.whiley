@@ -5,6 +5,6 @@ define R1 as { real x }
 [int] f([real] xs):
     return ([real]) xs
 
-void System::main([string] args):
-    this.out.println(str(f([1.0,2.0,3.0])))
+void ::main(System sys,[string] args):
+    sys.out.println(str(f([1.0,2.0,3.0])))
     

@@ -11,7 +11,7 @@ int g(int x) ensures $ > 0 && $ <= 256:
 {i8} f(int x):
     return {g(x)}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     bytes = f(256)
     debug str(bytes)
 

@@ -10,7 +10,7 @@ int f(uRec1Rec2 r):
     else:
         return r.x
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     rec = { x: 1, y: 1}
     ans = f(rec)
-    this.out.println(str(ans))
+    sys.out.println(str(ans))

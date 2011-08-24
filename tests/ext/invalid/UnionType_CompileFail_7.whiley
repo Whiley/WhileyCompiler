@@ -7,7 +7,7 @@ IntList f(IntList il):
     il.op = 1 
     return il // NOT OK, (int op, but mode may not be defined)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {op:[1], mode:1}
     debug str(x)
     x = f(x)

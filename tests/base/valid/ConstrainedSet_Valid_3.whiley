@@ -5,6 +5,6 @@ define posints as {int}
 string f(posints x):
     return str(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = {1,2,3}
-    this.out.println(f(xs))
+    sys.out.println(f(xs))

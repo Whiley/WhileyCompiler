@@ -9,5 +9,5 @@ void f(irf2nat x):
 void g(int x):
     f(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     g(-1)

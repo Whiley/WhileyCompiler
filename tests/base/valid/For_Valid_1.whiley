@@ -1,6 +1,6 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = [1,2,3]
     for st in xs:
-        this.out.println(str(st))
+        sys.out.println(str(st))

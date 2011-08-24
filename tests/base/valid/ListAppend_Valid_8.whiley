@@ -6,6 +6,6 @@ import whiley.lang.*:*
         rs = input[i] + rs
     return rs
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = append("abcdefghijklmnopqrstuvwxyz")
-    this.out.println(str(xs))
+    sys.out.println(str(xs))

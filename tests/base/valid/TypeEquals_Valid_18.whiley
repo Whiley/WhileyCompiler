@@ -8,7 +8,7 @@ string f(intreal e):
     else:
         return "real"
 
-void System::main([string] args):
-    this.out.println(f(1))
-    this.out.println(f(1.134))
-    this.out.println(f(1.0))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))
+    sys.out.println(f(1.134))
+    sys.out.println(f(1.0))

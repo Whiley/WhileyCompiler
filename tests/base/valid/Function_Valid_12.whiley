@@ -7,10 +7,10 @@ int f(int x):
 int g(int x, int y):
     return x+y
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     a = 2
     b = 1
     if |args| == 0:
         a = f(b)
     x = g(a,b)
-    this.out.println(str(x))
+    sys.out.println(str(x))

@@ -6,6 +6,6 @@ string f(bool b):
     else:
         return "FALSE"
 
-void System::main([string] args):
-    this.out.println(f(true))
-    this.out.println(f(false))
+void ::main(System sys,[string] args):
+    sys.out.println(f(true))
+    sys.out.println(f(false))

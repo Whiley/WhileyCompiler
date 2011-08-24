@@ -7,5 +7,5 @@ string f(code x):
     y = x.op
     return str(y)
 
-void System::main([string] args):
-    this.out.println(f({op:1,payload:[1]}))
+void ::main(System sys,[string] args):
+    sys.out.println(f({op:1,payload:[1]}))

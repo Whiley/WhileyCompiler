@@ -7,5 +7,5 @@ int Ptype::get():
     this.op = 1
     return this.mode
 
-void System::main([string] args):
-    this.out.println("OK")
+void ::main(System sys,[string] args):
+    sys.out.println("OK")

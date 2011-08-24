@@ -8,8 +8,8 @@ import whiley.lang.*:*
     nls = update(ls)
     return ls,nls
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ls = [[1,2,3,4]]
     ls,nls = f(ls)
-    this.out.println(str(ls))
-    this.out.println(str(nls))
+    sys.out.println(str(ls))
+    sys.out.println(str(nls))

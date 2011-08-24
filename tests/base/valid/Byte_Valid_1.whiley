@@ -258,6 +258,6 @@ define constants as [
 	01111110b
 ]
 
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     for b in constants:
-        this.out.println(str(b))
+        sys.out.println(str(b))

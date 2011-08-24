@@ -8,6 +8,6 @@ void f(frf1nat y):
 void f(int x):
     debug "F(INT)"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f(-1)
     f(1)

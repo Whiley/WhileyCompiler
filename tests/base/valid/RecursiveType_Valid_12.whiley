@@ -13,13 +13,13 @@ int maxDepth(Link l):
     else:
         return 0    
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     l1 = null
     l2 = [l1]
     l3 = [l2]
     l4 = [l3]
     
-    this.out.println(str(maxDepth(l1)))
-    this.out.println(str(maxDepth(l2)))
-    this.out.println(str(maxDepth(l3)))
-    this.out.println(str(maxDepth(l4)))
+    sys.out.println(str(maxDepth(l1)))
+    sys.out.println(str(maxDepth(l2)))
+    sys.out.println(str(maxDepth(l3)))
+    sys.out.println(str(maxDepth(l4)))

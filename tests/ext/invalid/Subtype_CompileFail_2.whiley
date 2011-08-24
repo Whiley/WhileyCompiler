@@ -8,6 +8,6 @@ void f(scf2nat x):
     debug str(x)
     f(x) // recursive
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f(1)
     

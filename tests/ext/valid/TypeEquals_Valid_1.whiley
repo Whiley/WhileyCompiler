@@ -9,9 +9,9 @@ string f(expr e):
     else:
         return "GOT BOB"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = 1
-    this.out.println(f(e))
+    sys.out.println(f(e))
     e = {x:1,y:2}
-    this.out.println(f(e))
+    sys.out.println(f(e))
  

@@ -21,10 +21,10 @@ int sum_3(LinkedList ls):
     else:
         return 0
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ls = { data: 1, next: null}
     ls = { data: 2, next: ls}
     ls = { data: 3, next: ls}
-    this.out.println(str(sum_1(ls)))
-    this.out.println(str(sum_2(ls)))
-    this.out.println(str(sum_3(ls)))
+    sys.out.println(str(sum_1(ls)))
+    sys.out.println(str(sum_2(ls)))
+    sys.out.println(str(sum_3(ls)))

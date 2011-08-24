@@ -6,5 +6,5 @@ define nat as int where $ < 10
 nat f():
     return 1
 
-void System::main([string] args):
-    this.out.println(str(f()))
+void ::main(System sys,[string] args):
+    sys.out.println(str(f()))

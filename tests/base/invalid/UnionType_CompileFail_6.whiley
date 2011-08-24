@@ -6,7 +6,7 @@ define IntList as {int|[int] op}
 int f({int op} x):
     return x.op
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {op:1}
     x.op = 2
     x.op = [1,2,3] // OK

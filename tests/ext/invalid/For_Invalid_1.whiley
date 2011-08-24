@@ -1,7 +1,7 @@
 import whiley.lang.*:*
 
 define nat as int where $ >= 0
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = [1,2,3]
     r = |args|-1
     for x in xs where r >= 0:

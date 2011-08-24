@@ -8,7 +8,7 @@ string f(src e):
     else:
         return "int"
 
-void System::main([string] args):
-    this.out.println(f([1,2,3]))
-    this.out.println(f([[1],[2]]))
-    this.out.println(f(1))
+void ::main(System sys,[string] args):
+    sys.out.println(f([1,2,3]))
+    sys.out.println(f([[1],[2]]))
+    sys.out.println(f(1))

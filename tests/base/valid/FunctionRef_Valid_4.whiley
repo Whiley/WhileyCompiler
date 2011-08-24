@@ -16,6 +16,6 @@ int g(int d):
     y = table[d]
     return y(123)
     
-void System::main([string] args):    
-    this.out.println(str(g(0)))    
-    this.out.println(str(g(1)))
+void ::main(System sys,[string] args):    
+    sys.out.println(str(g(0)))    
+    sys.out.println(str(g(1)))

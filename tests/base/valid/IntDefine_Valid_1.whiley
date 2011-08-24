@@ -10,7 +10,7 @@ string f(int x):
         return str(y)
     return ""
 
-void System::main([string] args):
-    this.out.println(f(1))
-    this.out.println(f(2))
-    this.out.println(f(3))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))
+    sys.out.println(f(2))
+    sys.out.println(f(3))

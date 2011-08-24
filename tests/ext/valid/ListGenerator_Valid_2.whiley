@@ -7,6 +7,6 @@ string f([[int]] x) requires |x| > 0:
         return ""
 
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      arr = [[1,2,3],[1]]
-     this.out.println(f(arr))
+     sys.out.println(f(arr))

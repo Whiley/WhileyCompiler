@@ -4,7 +4,7 @@ import whiley.lang.*:*
 string f({int} xs):
     return str(xs)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ys = {1,2,3}
     zs = {z | z in ys, z > 1}
-    this.out.println(f(zs))
+    sys.out.println(f(zs))

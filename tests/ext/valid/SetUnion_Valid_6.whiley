@@ -9,10 +9,10 @@ string g({int} ys):
 string h({int} ys, {int} zs):
     return f(ys,zs,ys ∪ zs)
 
-void System::main([string] args):
-    this.out.println(g({}))
-    this.out.println(g({2}))
-    this.out.println(g({1,2,3}))
-    this.out.println(h({},{}))
-    this.out.println(h({1},{2}))
-    this.out.println(h({1,2,3},{3,4,5}))
+void ::main(System sys,[string] args):
+    sys.out.println(g({}))
+    sys.out.println(g({2}))
+    sys.out.println(g({1,2,3}))
+    sys.out.println(h({},{}))
+    sys.out.println(h({1},{2}))
+    sys.out.println(h({1,2,3},{3,4,5}))

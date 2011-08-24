@@ -8,9 +8,9 @@ string f(int x):
     else:
         return "EQUALS"
 
-void System::main([string] args):
-    this.out.println(f(1))
-    this.out.println(f(10))
-    this.out.println(f(11))
-    this.out.println(f(1212))
-    this.out.println(f(-1212))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))
+    sys.out.println(f(10))
+    sys.out.println(f(11))
+    sys.out.println(f(1212))
+    sys.out.println(f(-1212))

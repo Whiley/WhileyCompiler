@@ -11,7 +11,7 @@ void f(expr e):
     if e is pos:
         g(e)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f(-1)
     f(1)
  

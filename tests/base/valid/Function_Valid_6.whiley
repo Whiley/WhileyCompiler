@@ -8,6 +8,6 @@ define fr6nat as int
 string f({int} x):
     return str(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ys = {-12309812,1,2,2987,2349872,234987234987,234987234987234}
-    this.out.println(f(g(ys)))
+    sys.out.println(f(g(ys)))

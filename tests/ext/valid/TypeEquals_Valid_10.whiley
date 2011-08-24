@@ -11,8 +11,8 @@ int f(expr e):
     else:
         return -1 // unreachable
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f(1)
-    this.out.println(str(x))
+    sys.out.println(str(x))
     x = f({x:4,y:10})   
-    this.out.println(str(x))
+    sys.out.println(str(x))

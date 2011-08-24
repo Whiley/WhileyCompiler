@@ -1,4 +1,4 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      x = a2[0]

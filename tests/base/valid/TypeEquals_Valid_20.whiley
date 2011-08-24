@@ -8,6 +8,6 @@ string f(Rtypes e):
     else:
         return "NOPE"
 
-void System::main([string] args):
-    this.out.println(f({x: 1, y: 1}))
-    this.out.println(f({x: 1, z: 1}))
+void ::main(System sys,[string] args):
+    sys.out.println(f({x: 1, y: 1}))
+    sys.out.println(f({x: 1, z: 1}))

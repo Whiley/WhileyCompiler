@@ -6,7 +6,7 @@ public [int] update(string str):
 public void f(char c):
     debug "" + c
 
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     s1 = "Hello World"
     s1 = update(s1)
     if |s1| > 0:

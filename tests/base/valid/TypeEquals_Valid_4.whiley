@@ -12,7 +12,7 @@ string f(expr e):
     else:
         return "GOT SOMETHING ELSE?"
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = {1,2,3,4}
-    this.out.println(f(e))
+    sys.out.println(f(e))
  

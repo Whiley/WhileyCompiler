@@ -8,5 +8,5 @@ Type.nat f(int x):
     else:
         return x
 
-public void System::main([string] args):
-    this.out.println(String.str(f(1)))
+public void ::main(System sys,[string] args):
+    sys.out.println(String.str(f(1)))

@@ -12,6 +12,6 @@ define asexpr as int | asbinop
 asexpr f(asexpr e):
     return e
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e1 = {op:MUL,left:1,right:2}
     f(e1)    

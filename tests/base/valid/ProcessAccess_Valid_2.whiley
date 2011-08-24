@@ -8,6 +8,6 @@ void pState::send(int z):
     this.out.println(str(this.y))
     this.out.println(str(z))
 
-void System::main([string] args):
-    ps = spawn {x:1,y:2,out:out}
+void ::main(System sys,[string] args):
+    ps = spawn {x:1,y:2,out:sys.out}
     ps.send(1)

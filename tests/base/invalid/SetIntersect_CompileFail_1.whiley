@@ -1,7 +1,7 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = {1,2,3}
     b = 1.0 ∩ xs
     if b:
-        this.out.println(str(1))
+        sys.out.println(str(1))

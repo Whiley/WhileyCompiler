@@ -13,8 +13,8 @@ string f({int} xs):
     return "F({int})"
 
 
-void System::main([string] args):
-    this.out.println(f(1.234))
-    this.out.println(f(1))
-    this.out.println(f([1,2,3]))
-    this.out.println(f({1,2,3}))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1.234))
+    sys.out.println(f(1))
+    sys.out.println(f([1,2,3]))
+    sys.out.println(f({1,2,3}))

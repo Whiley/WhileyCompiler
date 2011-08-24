@@ -6,6 +6,6 @@ string f(real x):
 string f(int x):
     return "GOT INT"
 
-void System::main([string] args):
-    this.out.println(f(1))
-    this.out.println(f(1.23))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))
+    sys.out.println(f(1.23))

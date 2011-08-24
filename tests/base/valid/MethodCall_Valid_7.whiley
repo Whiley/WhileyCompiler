@@ -20,13 +20,13 @@ Sum ::create([int] items):
         result: 0 
     }
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     data = [1,3,5,7,3,198,1,4,6]
     sum = create(data)
     // start the process asynchronously
     sum!start()
     // get the result synchronously
     r = sum.get()
-    this.out.println("SUM: " + str(r))
+    sys.out.println("SUM: " + str(r))
         
 

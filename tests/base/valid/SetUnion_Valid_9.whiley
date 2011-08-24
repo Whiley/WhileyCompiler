@@ -6,8 +6,8 @@ bool test({real} xs, [int] ys):
             return true
     return false
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     s = test({1.2,2.3,3.4},[1,2,3,4,5,6,7,8])
-    this.out.println(str(s))
+    sys.out.println(str(s))
     s = test({1.2,2.3,3.4},[])
-    this.out.println(str(s))
+    sys.out.println(str(s))

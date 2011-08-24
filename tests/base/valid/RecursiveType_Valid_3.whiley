@@ -3,6 +3,6 @@ import whiley.lang.*:*
 define nat as int
 define expr as nat | {int op, expr left, expr right}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = 14897
-    this.out.println(str(e))
+    sys.out.println(str(e))

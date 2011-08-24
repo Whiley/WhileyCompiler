@@ -10,5 +10,5 @@ string f(real e):
     else:
         return "[int]"
 
-void System::main([string] args):
-    this.out.println(f(1))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1))

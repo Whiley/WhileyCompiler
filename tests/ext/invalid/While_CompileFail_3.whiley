@@ -1,6 +1,6 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     i=0
     while i < |args|:
         r = r + |args[i]|

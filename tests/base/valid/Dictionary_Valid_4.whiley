@@ -6,7 +6,7 @@ import whiley.lang.*:*
 int get(int i, {int->int} map):
     return map[i]
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     m1 = f(1)
     m2 = f(2)
     m3 = f(3)
@@ -14,8 +14,8 @@ void System::main([string] args):
     m1[2] = 4
     m2[1] = 23498
     
-    this.out.println(str(get(1,m1)))
-    this.out.println(str(get(2,m1)))
-    this.out.println(str(get(1,m2)))
-    this.out.println(str(get(1,m3)))
-    this.out.println(str(get(3,m3)))
+    sys.out.println(str(get(1,m1)))
+    sys.out.println(str(get(2,m1)))
+    sys.out.println(str(get(1,m2)))
+    sys.out.println(str(get(1,m3)))
+    sys.out.println(str(get(3,m3)))

@@ -9,5 +9,5 @@ int h() ensures $ <= 5:
 c4nat f():
     return h() * 2
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     debug str(f())

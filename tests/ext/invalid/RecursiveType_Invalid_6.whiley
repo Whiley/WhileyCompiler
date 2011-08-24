@@ -10,6 +10,6 @@ define expr as int | binop
 expr f(expr e):
     return e
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e1 = {op:ADD, left:{op:0,left:2,right:2}, right:2}
     debug str(f(e1))

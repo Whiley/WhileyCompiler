@@ -10,7 +10,7 @@ public string repl(char old, char new, string str):
         i = i + 1
     return str    
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     s = "Hello World"
     s = repl('l','1',s)
-    this.out.println(s)
+    sys.out.println(s)

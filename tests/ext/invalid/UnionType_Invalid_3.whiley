@@ -7,5 +7,5 @@ define nlt as nat | natlist
 nlt g(int y):
     return y
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     g(-1)

@@ -8,8 +8,8 @@ import whiley.lang.*:*
         v = v + y
     return k,v
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     dict = {1->2,3->4,4->5}
     k,v = f(dict)
-    this.out.println(str(k))
-    this.out.println(str(v))        
+    sys.out.println(str(k))
+    sys.out.println(str(v))        

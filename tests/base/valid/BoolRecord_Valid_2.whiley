@@ -1,6 +1,6 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {flag:true,code:0}
     if(x.flag):
-        this.out.println("GOT HERE")
+        sys.out.println("GOT HERE")

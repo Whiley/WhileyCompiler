@@ -6,7 +6,7 @@ int f(int x) requires x >= 0:
 int f(int x) requires x >= 0:
     return x
 
-void System::main([string] args):    
+void ::main(System sys,[string] args):    
     debug str(f(1))
     
     

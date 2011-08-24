@@ -10,6 +10,6 @@ string f(int i):
     assert arr2[2] == |arr1|
     return str(arr1) + str(arr2)
 
-void System::main([string] args):
-    this.out.println(f(2))
-    this.out.println(f(3))
+void ::main(System sys,[string] args):
+    sys.out.println(f(2))
+    sys.out.println(f(3))

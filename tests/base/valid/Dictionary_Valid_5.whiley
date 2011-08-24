@@ -6,7 +6,7 @@ DL update(DL ls):
     ls[0][0] = 1.234
     return ls
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = {0->[1.0,2.0,3.0], 1->[3.4]}
     x = update(x)
-    this.out.println(str(x))
+    sys.out.println(str(x))

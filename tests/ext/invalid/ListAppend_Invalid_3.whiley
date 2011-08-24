@@ -3,7 +3,7 @@ import whiley.lang.*:*
 int f([int] xs) requires no { x in xs | x < 0}:
     return |xs|
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     right = [-1,0,1]
     // now, fool constant propagation
     if(|args| > 1):

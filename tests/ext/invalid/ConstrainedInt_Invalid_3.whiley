@@ -10,5 +10,5 @@ void f(c3num x):
 void g(int z):
     f(z)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     g(5)

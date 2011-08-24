@@ -10,5 +10,5 @@ void f(num x):
 void g(int x, int z) requires (x == 0 || x == 1) && z in {1,2,3,x}:
     f(z)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     g(0,0)

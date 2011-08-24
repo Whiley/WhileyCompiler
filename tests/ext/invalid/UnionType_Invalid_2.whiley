@@ -14,5 +14,5 @@ nlt g(int y) requires y >= 0:
 plt f(int x) requires x >= 0:
     return g(x)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     debug str(f(0))

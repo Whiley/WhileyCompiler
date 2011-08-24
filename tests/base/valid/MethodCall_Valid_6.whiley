@@ -9,6 +9,6 @@ int Proc::get():
 wmcr6tup System::f(Proc x, int y):
     return {x:y,y:x.get()}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     proc = spawn { state: 1 }
-    this.out.println(str(this.f(proc,1)))
+    sys.out.println(str(sys.f(proc,1)))

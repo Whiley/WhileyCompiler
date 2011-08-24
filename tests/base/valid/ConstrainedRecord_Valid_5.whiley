@@ -12,7 +12,7 @@ state parseTerm(state st):
     st = parseWhiteSpace(st)
     return st
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     st = {input:"  Hello",pos:0}
     st = parseTerm(st)
-    this.out.println(str(st))
+    sys.out.println(str(st))

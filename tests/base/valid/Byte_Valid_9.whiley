@@ -258,10 +258,10 @@ define constants as [
 	01111110b
 ]
 
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     for i in constants:
         for j in 0..8:
-            this.out.print(str(i) + " & 10101010b << ")
-            this.out.print(str(j) + " = ")
+            sys.out.print(str(i) + " & 10101010b << ")
+            sys.out.print(str(j) + " = ")
             // test precedence
-            this.out.println(str(i & 10101010b << j))
+            sys.out.println(str(i & 10101010b << j))

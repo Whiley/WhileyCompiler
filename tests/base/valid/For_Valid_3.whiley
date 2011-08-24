@@ -6,7 +6,7 @@ int sum({nat} xs):
         r = r + x
     return r
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     z = sum({1,2,3,4,5})
-    this.out.println(str(z))
+    sys.out.println(str(z))
     

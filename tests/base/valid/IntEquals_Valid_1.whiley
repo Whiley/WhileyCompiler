@@ -6,7 +6,7 @@ string f(int x, real y):
     else:
         return "NOT EQUAL"
 
-void System::main([string] args):
-    this.out.println(f(1,4.0))
-    this.out.println(f(1,4.2))
-    this.out.println(f(0,0))
+void ::main(System sys,[string] args):
+    sys.out.println(f(1,4.0))
+    sys.out.println(f(1,4.2))
+    sys.out.println(f(0,0))

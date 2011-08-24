@@ -9,6 +9,6 @@ expr parseTerm():
 expr parseIdentifier():
     return {err:"err"}
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     e = parseTerm()
-    this.out.println(str(e))
+    sys.out.println(str(e))

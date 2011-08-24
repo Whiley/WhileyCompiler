@@ -6,7 +6,7 @@ string f({int} xs):
 string g({int} ys):
     return f(ys ∩ {1,2})
 
-void System::main([string] args):
-    this.out.println(g({}))
-    this.out.println(g({2,3,4,5,6}))
-    this.out.println(g({2,6}))
+void ::main(System sys,[string] args):
+    sys.out.println(g({}))
+    sys.out.println(g({2,3,4,5,6}))
+    sys.out.println(g({2,6}))

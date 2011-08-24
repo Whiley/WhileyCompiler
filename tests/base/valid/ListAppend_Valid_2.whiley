@@ -1,7 +1,7 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     left = [1,2]
     right = [3,4]
     r = left + right
-    this.out.println(str(r))
+    sys.out.println(str(r))

@@ -9,6 +9,6 @@ int f2(int x):
 int g(int(int) func):
     return func(1234)
     
-void System::main([string] args):
-    this.out.println(str(g(&f1)))
-    this.out.println(str(g(&f2)))
+void ::main(System sys,[string] args):
+    sys.out.println(str(g(&f1)))
+    sys.out.println(str(g(&f2)))

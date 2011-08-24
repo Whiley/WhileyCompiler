@@ -1,4 +1,4 @@
 import whiley.lang.*:*
 
-void System::main([string] this):
+void ::main(System sys,[string] this):
     this.f(1)

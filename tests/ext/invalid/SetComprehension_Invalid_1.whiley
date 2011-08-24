@@ -4,5 +4,5 @@ import whiley.lang.*:*
     zs = { z | z in xs, z < 0 }
     return zs
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     pred({-1,0,1})

@@ -1,7 +1,7 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     xs = 1
     zs = { x | y ∈ xs }
-    this.out.println(str(xs))
-    this.out.println(str(zs))
+    sys.out.println(str(xs))
+    sys.out.println(str(zs))

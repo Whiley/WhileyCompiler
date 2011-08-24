@@ -7,5 +7,5 @@ string f(cr1nat x):
     y = x
     return str(y)
 
-void System::main([string] args):
-    this.out.println(f(9))
+void ::main(System sys,[string] args):
+    sys.out.println(f(9))

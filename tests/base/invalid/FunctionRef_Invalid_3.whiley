@@ -6,5 +6,5 @@ int f(int x):
 int g(int(real) func):
     return func(1.2345)
     
-void System::main([string] args):
-    this.out.println(str(g(&f)))
+void ::main(System sys,[string] args):
+    sys.out.println(str(g(&f)))

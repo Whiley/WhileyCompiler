@@ -18,9 +18,9 @@ define FileReader as process {
 Reader openReader(FileReader fr):
     return fr // coerce to interface
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     fr = spawn { position: 0, data: [1,2,3,4,5] }
     reader = openReader(fr)
     data = reader.read(5)
-    this.out.println(str(data))
+    sys.out.println(str(data))
 

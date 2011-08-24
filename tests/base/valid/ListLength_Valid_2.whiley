@@ -1,8 +1,8 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
      arr = [1,2,3]
      assert arr[0] < |arr|
      assert arr[1] < |arr|
      assert arr[2] == |arr|
-     this.out.println(str(arr[0]))
+     sys.out.println(str(arr[0]))

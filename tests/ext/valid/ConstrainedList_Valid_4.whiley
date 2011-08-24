@@ -8,7 +8,7 @@ char f(state st):
             return st.input[st.pos]
     return ' '
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     c = f({input:"hello",pos:0})
-    this.out.println(str(c))
+    sys.out.println(str(c))
  

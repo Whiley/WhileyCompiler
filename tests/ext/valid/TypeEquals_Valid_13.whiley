@@ -10,9 +10,9 @@ int f(intlist x):
         return x
     return 1 
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f([1,2,3])
-    this.out.println(str(x))
+    sys.out.println(str(x))
     x = f(123)
-    this.out.println(str(x))
+    sys.out.println(str(x))
 

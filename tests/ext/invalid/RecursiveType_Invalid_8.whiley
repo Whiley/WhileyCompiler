@@ -10,6 +10,6 @@ define exp2 as pos | {exp2 rest}
 exp2 f(exp1 e1):
     return e1
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     x = f(-1)
     debug str(x)

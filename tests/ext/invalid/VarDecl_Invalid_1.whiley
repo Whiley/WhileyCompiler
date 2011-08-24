@@ -5,6 +5,6 @@ void f(int x) requires x >= 0:
     debug str(x)
     debug str(y)
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     f(10)
     f(0)

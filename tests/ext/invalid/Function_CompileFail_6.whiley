@@ -9,7 +9,7 @@ int f(anat x):
 int f(bnat x):
     return x
 
-void System::main([string] args):    
+void ::main(System sys,[string] args):    
     debug str(f(1))
     
     

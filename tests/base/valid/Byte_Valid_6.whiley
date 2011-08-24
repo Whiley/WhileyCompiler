@@ -258,9 +258,9 @@ define constants as [
 	01111110b
 ]
 
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     for i in constants:
         for j in 0..9:
-            this.out.print(str(i) + " >> ")
-            this.out.print(str(j) + " = ")
-            this.out.println(str(i >> j))
+            sys.out.print(str(i) + " >> ")
+            sys.out.print(str(j) + " = ")
+            sys.out.println(str(i >> j))

@@ -1,6 +1,6 @@
 import whiley.lang.*:*
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     ls = [1,2,3]
     x = 2.0 / 1
-    this.out.println(str(ls)[x])
+    sys.out.println(str(ls)[x])

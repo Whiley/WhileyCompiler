@@ -6,11 +6,11 @@ define IntReal as int | real
 int f(int x):
     return x
 
-void System::main([string] args):
+void ::main(System sys,[string] args):
     if |args| > 0:
         x = 1.23
     else:
         x = 1
-    this.out.println(str(x))
+    sys.out.println(str(x))
     f(x)
 

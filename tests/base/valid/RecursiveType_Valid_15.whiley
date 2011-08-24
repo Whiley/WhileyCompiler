@@ -22,12 +22,12 @@ SExpr sbuild(int i):
         return build(i)
 
 // Main method
-public void System::main([string] args):
+public void ::main(System sys,[string] args):
     i = -5
     while i < 10:
         e = sbuild(i)
         if e is SyntaxError:
-            this.out.println("syntax error: " + e.err)
+            sys.out.println("syntax error: " + e.err)
         else:
-            this.out.println(str(e))
+            sys.out.println(str(e))
         i = i + 1

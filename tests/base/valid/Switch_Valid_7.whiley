@@ -25,12 +25,12 @@ string f(string input):
             r = "GOT NOTHING"
     return r
 
-void System::main([string] args):
-    this.out.println(f("N"))
-    this.out.println(f("K"))
-    this.out.println(f("Q"))
-    this.out.println(f("B"))
-    this.out.println(f("R"))
-    this.out.println(f("Q"))
-    this.out.println(f("e"))
-    this.out.println(f("1"))
+void ::main(System sys,[string] args):
+    sys.out.println(f("N"))
+    sys.out.println(f("K"))
+    sys.out.println(f("Q"))
+    sys.out.println(f("B"))
+    sys.out.println(f("R"))
+    sys.out.println(f("Q"))
+    sys.out.println(f("e"))
+    sys.out.println(f("1"))

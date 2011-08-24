@@ -11,5 +11,5 @@ string f(num x):
 string g({bignum} zs, int z):
     return f(z)
 
-void System::main([string] args):
-    this.out.println(g({1,2,3,5},3))
+void ::main(System sys,[string] args):
+    sys.out.println(g({1,2,3,5},3))
