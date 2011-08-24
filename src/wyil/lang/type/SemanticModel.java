@@ -141,6 +141,23 @@ public final class SemanticModel {
 			}
 			
 			return true;
+		} else if(t instanceof Type.Record && v instanceof Value.Record) {
+			Type.Record tl = (Type.Record) t;			
+			Value.Record vl = (Value.Record) v;
+			Set<String> t1keys = tl.fields().keySet();
+			Set<String> v1keys = vl.values.keySet();
+			if(t1keys.size() != v1keys.size()) {
+				return false;
+			}
+			for(String k : t1keys) {
+				Type tt = tl.fields().get(k);
+				Value vt = vl.values.get(k);
+				if(vt == null || !match(tt,vt)) {
+					return false;
+				}				
+			}
+			
+			return true;
 		} else if(t instanceof Type.Union) {
 			Type.Union tu = (Type.Union) t;
 			for(Type e : tu.bounds()) {

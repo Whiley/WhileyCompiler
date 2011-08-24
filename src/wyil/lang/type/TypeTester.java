@@ -15,6 +15,7 @@ public class TypeTester {
 			this.MAX_ELEMS = 2;
 			this.MAX_FIELDS = 2;
 			
+			this.BOOLS = false;
 			this.BYTES = false;
 			this.CHARS = false;
 			this.REALS = false;
@@ -32,11 +33,14 @@ public class TypeTester {
 			this.MAX_UNIONS = 2;
 			this.MAX_TUPLES = 2;	
 			
+			this.BOOL = false;
 			this.BYTE = false;
 			this.CHAR = false;
+			this.INT = false;
 			this.REAL = false;
 			this.TUPLES = false;
 			this.SETS = false;
+			this.LISTS = false;
 			this.DICTIONARIES = false;
 		}
 	};
