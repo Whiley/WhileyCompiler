@@ -54,6 +54,7 @@ public class TypeTester {
 			if((i%increment) == 0) {
 				System.out.print(" ");
 			}
+			types.set(i, Type.minimise(types.get(i)));
 		}
 		System.out.print("]\r[");
 		
@@ -68,9 +69,9 @@ public class TypeTester {
 				boolean isSubset = model.isSubset(t1,t2);
 				
 				if(isSubtype && !isSubset) {
-					System.out.println("Unsound: " + t1 + " :> " + t2  + " does NOT hold.");
+					System.out.println("Unsound: " + t2 + " <: " + t1  + ", but not " + t2 + " {= " + t1);
 				} else if(!isSubtype && isSubtype) {
-					System.out.println("Incomplete: " + t1 + " :> " + t2 + " does NOT hold.");
+					System.out.println("Incomplete: " + t2 + " {= " + t1 + ", but not " + t2 + " <: " + t1);
 				}								
 			}
 		}

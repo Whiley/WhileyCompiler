@@ -126,7 +126,7 @@ public final class SemanticModel {
 			}
 			
 			return true;
-		}  else if(t instanceof Type.Dictionary && v instanceof Value.Dictionary) {
+		} else if(t instanceof Type.Dictionary && v instanceof Value.Dictionary) {
 			Type.Dictionary td = (Type.Dictionary) t;
 			Type td_key = td.key();
 			Type td_value = td.value();
@@ -141,7 +141,15 @@ public final class SemanticModel {
 			}
 			
 			return true;
-		} 
+		} else if(t instanceof Type.Union) {
+			Type.Union tu = (Type.Union) t;
+			for(Type e : tu.bounds()) {
+				if(match(e,v)) {
+					return true;
+				}
+			}
+			return false;
+		}
 		
 		return false;
 		
