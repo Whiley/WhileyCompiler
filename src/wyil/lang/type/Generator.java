@@ -12,7 +12,7 @@ import wyil.lang.*;
  */
 public class Generator {
 
-	public static final class Config {
+	public static class Config {
 		/**
 		 * MAX_FIELDS defines the maximum number of fields to explore per
 		 * record.
@@ -50,10 +50,10 @@ public class Generator {
 		
 		for(int i=0;i!=config.MAX_DEPTH;++i) {
 			int end = types.size();
-			//addListTypes(types,end);
-			//addSetTypes(types,end);
-			//addProcessTypes(types,end);
-			//addTupleTypes(types,config.MAX_TUPLES,end);
+			addListTypes(types,end);
+			addSetTypes(types,end);
+			addProcessTypes(types,end);
+			addTupleTypes(types,config.MAX_TUPLES,end);
 			addRecordTypes(types,config.MAX_FIELDS,end);
 		}
 		return types;

@@ -41,6 +41,22 @@ public final class SemanticModel {
 		return model.get(i);
 	}
 	
+	/**
+	 * Check whether t2 is a subset of t1.
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public boolean isSubset(Type t1, Type t2) {
+		for(int i=0;i!=model.size();++i) {
+			Value v = model.get(i);
+			if(match(t2,v) && !match(t1,v)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	public BitSet match(Type t) {
 		BitSet r = new BitSet(model.size());
 		for(int i=0;i!=model.size();++i) {
@@ -309,21 +325,13 @@ public final class SemanticModel {
 	}};
 	
 	public static void main(String[] args) {
-		Config config = new Config();
-		config.MAX_DEPTH = 2;
-		config.MIN_INT = 0;
-		config.MAX_INT = 1;
-		config.MAX_LIST = 2;
-		config.MAX_SET = 2;
-		config.MAX_ELEMS = 2;
-		config.MAX_FIELDS = 2;
 		
-		SemanticModel model = generate(config);
+		SemanticModel model = generate(DEFAULT_CONFIG);
 		
 		for(int i=0;i!=model.size();++i) {
 			System.out.println(model.get(i));
 		}
 		
-		System.out.println("Generated " + model.size() + " values.");
+		System.out.println("Generated " + model.size() + " values.");		
 	}
 }
