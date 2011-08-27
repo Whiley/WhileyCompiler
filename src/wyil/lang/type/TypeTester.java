@@ -30,7 +30,7 @@ public class TypeTester {
 		{
 			this.MAX_DEPTH = 2;
 			
-			this.MAX_FIELDS = 1;
+			this.MAX_FIELDS = 2;
 			this.MAX_UNIONS = 2;
 			this.MAX_TUPLES = 2;	
 			
@@ -38,7 +38,7 @@ public class TypeTester {
 			this.BOOL = false;
 			this.BYTE = false;
 			this.CHAR = false;
-			this.INT = false;
+			this.INT = true;
 			this.REAL = false;
 			this.TUPLES = false;
 			this.SETS = false;
@@ -62,10 +62,11 @@ public class TypeTester {
 	
 	public static void main(String[] args) {
 		SemanticModel model = SemanticModel.generate(MODEL_CONFIG);
-		System.out.println("Generated " + model.size() + " values.");
+		System.out.println("Generated " + model.size() + " values.");		
 		List<Type> types = Generator.generate(TYPE_CONFIG);
-		types = minimise(types);
 		System.out.println("Generated " + types.size() + " types.");
+		types = minimise(types);
+		System.out.println("Reduced to " + types.size() + " types.");
 		
 		int increment = Math.max(1, types.size() / 50);
 		
@@ -90,7 +91,8 @@ public class TypeTester {
 				Type t1 = types.get(i);
 				Type t2 = types.get(j);
 				boolean isSubtype = Type.isSubtype(t1,t2);
-				boolean isSubset = model.isSubset(t1,t2);				
+				boolean isSubset = model.isSubset(t1,t2);
+				
 				if(isSubtype && !isSubset) {
 					System.out.println("Unsound: " + t2 + " <: " + t1  + ", but not " + t2 + " {= " + t1);
 				} else if(!isSubtype && isSubtype) {

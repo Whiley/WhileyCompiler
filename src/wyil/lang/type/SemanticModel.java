@@ -56,23 +56,25 @@ public final class SemanticModel {
 		}
 		return true;
 	}
-	
-	public BitSet match(Type t) {
-		BitSet r = new BitSet(model.size());
+		
+	public Set<Value> match(Type t) {
+		HashSet<Value> r = new HashSet<Value>();
 		for(int i=0;i!=model.size();++i) {
 			Value v = model.get(i);
 			if(match(t,v)) {
-				r.set(i);
+				r.add(v);
 			}
 		}
 		return r;
-	}
+	}	
 	
 	private static boolean match(Type t, Value v) {
 		if(t instanceof Type.Any) {
 			return true;
 		} else if(t instanceof Type.Void) {
 			return false;
+		} else if(t instanceof Type.Null && v instanceof Value.Null) {
+			return true;
 		} else if(t instanceof Type.Byte && v instanceof Value.Byte) {
 			return true;
 		} else if(t instanceof Type.Char && v instanceof Value.Char) {
