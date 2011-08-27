@@ -18,11 +18,11 @@
 
 package wyil.lang;
 
-import java.io.PrintStream;
 import java.util.*;
 
+import wyil.lang.type.*;
+import static wyil.lang.type.Node.*;
 import wyil.util.Pair;
-import wyjvm.lang.Constant;
 
 /**
  * A structural type. See
@@ -66,7 +66,7 @@ public abstract class Type {
 		for(int i=0;i!=elements.length;++i) {
 			children[i] = start;
 			Node[] comps = nodes(elements[i]);
-			insertNodes(start,comps,nodes);
+			Node.insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
 		nodes[0] = new Node(K_TUPLE, children);		
@@ -90,7 +90,7 @@ public abstract class Type {
 		for(int i=0;i!=elements.size();++i) {
 			children[i] = start;
 			Node[] comps = nodes(elements.get(i));
-			insertNodes(start,comps,nodes);
+			Node.insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
 		nodes[0] = new Node(K_TUPLE, children);		
@@ -105,10 +105,10 @@ public abstract class Type {
 	public static final Process T_PROCESS(Type element) {
 		if (element instanceof Leaf) {
 			return new Process(new Node[] { new Node(K_PROCESS, 1),
-					new Node(leafKind((Leaf) element), null) });
+					new Node(Node.leafKind((Leaf) element), null) });
 		} else {
 			// Compound type
-			Node[] nodes = insertComponent(((Compound) element).nodes);
+			Node[] nodes = Node.insertComponent(((Compound) element).nodes);
 			nodes[0] = new Node(K_PROCESS, 1);
 			return new Process(nodes);
 		}
@@ -130,10 +130,10 @@ public abstract class Type {
 	public static final Set T_SET(Type element) {
 		if (element instanceof Leaf) {
 			return new Set(new Node[] { new Node(K_SET, 1),
-					new Node(leafKind((Leaf) element), null) });
+					new Node(Node.leafKind((Leaf) element), null) });
 		} else {
 			// Compound type
-			Node[] nodes = insertComponent(((Compound) element).nodes);
+			Node[] nodes = Node.insertComponent(((Compound) element).nodes);
 			nodes[0] = new Node(K_SET, 1);
 			return new Set(nodes);
 		}
@@ -147,10 +147,10 @@ public abstract class Type {
 	public static final List T_LIST(Type element) {
 		if (element instanceof Leaf) {
 			return new List(new Node[] { new Node(K_LIST, 1),
-					new Node(leafKind((Leaf) element), null) });
+					new Node(Node.leafKind((Leaf) element), null) });
 		} else {
 			// Compound type
-			Node[] nodes = insertComponent(((Compound) element).nodes);
+			Node[] nodes = Node.insertComponent(((Compound) element).nodes);
 			nodes[0] = new Node(K_LIST, 1);
 			return new List(nodes);
 		}
@@ -166,8 +166,8 @@ public abstract class Type {
 		Node[] valueComps = nodes(value);
 		Node[] nodes = new Node[1 + keyComps.length + valueComps.length];
 			
-		insertNodes(1,keyComps,nodes);
-		insertNodes(1+keyComps.length,valueComps,nodes);
+		Node.insertNodes(1,keyComps,nodes);
+		Node.insertNodes(1+keyComps.length,valueComps,nodes);
 		nodes[0] = new Node(K_DICTIONARY, new Pair(1,1+keyComps.length));
 		return new Dictionary(nodes);		
 	}
@@ -204,7 +204,7 @@ public abstract class Type {
 		for(int i=0;i!=bounds.length;++i) {
 			children[i] = start;
 			Node[] comps = nodes(bounds[i]);
-			insertNodes(start,comps,nodes);
+			Node.insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
 		nodes[0] = new Node(K_UNION, children);
@@ -237,15 +237,15 @@ public abstract class Type {
 		}		
 		Node[] nodes = new Node[len];
 		int[] children = new int[2 + params.length];
-		insertNodes(1,reccomps,nodes);
-		insertNodes(1+reccomps.length,retcomps,nodes);
+		Node.insertNodes(1,reccomps,nodes);
+		Node.insertNodes(1+reccomps.length,retcomps,nodes);
 		children[0] = -1;
 		children[1] = 1 + reccomps.length;
 		int start = 1 + reccomps.length + retcomps.length;		
 		for(int i=0;i!=params.length;++i) {
 			children[i+2] = start;
 			Node[] comps = nodes(params[i]);
-			insertNodes(start,comps,nodes);
+			Node.insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
 		nodes[0] = new Node(K_FUNCTION, children);
@@ -282,15 +282,15 @@ public abstract class Type {
 		}		
 		Node[] nodes = new Node[len];
 		int[] children = new int[2 + params.length];
-		insertNodes(1,reccomps,nodes);
-		insertNodes(1+reccomps.length,retcomps,nodes);
+		Node.insertNodes(1,reccomps,nodes);
+		Node.insertNodes(1+reccomps.length,retcomps,nodes);
 		children[0] = receiver == null ? -1 : 1;
 		children[1] = 1 + reccomps.length;
 		int start = 1 + reccomps.length + retcomps.length;		
 		for(int i=0;i!=params.length;++i) {
 			children[i+2] = start;
 			Node[] comps = nodes(params[i]);
-			insertNodes(start,comps,nodes);
+			Node.insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
 		nodes[0] = new Node(K_METHOD, children);
@@ -318,7 +318,7 @@ public abstract class Type {
 			String k = keys.get(i);
 			children[i] = new Pair<String,Integer>(k,start);
 			Node[] comps = nodes(fields.get(k));
-			insertNodes(start,comps,nodes);
+			Node.insertNodes(start,comps,nodes);
 			start += comps.length;
 		}
 		nodes[0] = new Node(K_RECORD,children);
@@ -398,7 +398,7 @@ public abstract class Type {
 			if(c.kind == K_LABEL && c.data.equals(label)) {				
 				nmatches++;
 			} else {
-				newnodes[i-nmatches] = remap(nodes[i],rmap);
+				newnodes[i-nmatches] = Node.remap(nodes[i],rmap);
 			}
 		}
 		return construct(newnodes);
@@ -412,114 +412,10 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type fromString(String str) {
-		return new TypeParser(str).parse();
+		return new Parser(str).parse();
 	}
 
-	private static class TypeParser {
-		private int index;
-		private String str;
-		public TypeParser(String str) { 
-			this.str = str;
-		}
-		public Type parse() {
-			Type term = parseTerm();
-			skipWhiteSpace();
-			while(index < str.length() && str.charAt(index) == '|') {
-				// union type
-				match("|");
-				term = T_UNION(term,parse());
-				skipWhiteSpace();
-			}
-			return term;
-		}
-		public Type parseTerm() {
-			skipWhiteSpace();
-			char lookahead = str.charAt(index);
-
-			switch (lookahead) {
-			case 'a':
-				match("any");
-				return T_ANY;
-			case 'v':
-				match("void");
-				return T_VOID;
-			case 'n':
-				match("null");
-				return T_NULL;
-			case 'b':
-				match("bool");
-				return T_BOOL;
-			case 'c':
-				match("char");
-				return T_CHAR;
-			case 'i':
-				match("int");
-				return T_INT;
-			case 'r':
-				match("real");
-				return T_REAL;
-			case '[':
-			{
-				match("[");
-				Type elem = parse();
-				match("]");
-				return T_LIST(elem);
-			}
-			case '{':
-			{
-				match("{");
-				Type elem = parse();
-				skipWhiteSpace();
-				if(index < str.length() && str.charAt(index) != '}') {
-					// record
-					HashMap<String,Type> fields = new HashMap<String,Type>();
-					String id = parseIdentifier();
-					fields.put(id, elem);
-					skipWhiteSpace();
-					while(index < str.length() && str.charAt(index) == ',') {
-						match(",");
-						elem = parse();
-						id = parseIdentifier();
-						fields.put(id, elem);
-						skipWhiteSpace();
-					}
-					match("}");
-					return T_RECORD(fields);					
-				}
-				match("}");
-				return T_SET(elem);
-			}
-			default:
-				throw new IllegalArgumentException("invalid type string: "
-						+ str);
-			}
-		}
-		private String parseIdentifier() {
-			skipWhiteSpace();
-			int start = index;
-			while (index < str.length()
-					&& Character.isJavaIdentifierPart(str.charAt(index))) {
-				index++;
-			}
-			return str.substring(start,index);
-		}
-		private void skipWhiteSpace() {
-			while (index < str.length()
-					&& Character.isWhitespace(str.charAt(index))) {
-				index++;
-			}
-		}		
-		private void match(String match) {
-			skipWhiteSpace();
-			if ((str.length() - index) < match.length()
-					|| !str.startsWith(match, index)) {
-				throw new IllegalArgumentException("invalid type string: "
-						+ str);
-			}
-			index += match.length();
-		}
-	}
-	
+		
 	/**
 	 * This is a utility helper for constructing types. In particular, it's
 	 * useful for determine whether or not a type needs to be closed. An open
@@ -569,93 +465,6 @@ public abstract class Type {
 	// =============================================================
 
 	/**
-	 * The Type.Builder interface is essentially a way of separating the
-	 * internals of the type implementation from clients which may want to
-	 * serialise a given type graph.
-	 */
-	public interface Builder {
-
-		/**
-		 * Set the number of nodes required for the type being built. This
-		 * method is called once, before all other methods are called. The
-		 * intention is to give builders a chance to statically initialise data
-		 * structures based on the number of nodes required.
-		 * 
-		 * @param numNodes
-		 */
-		void initialise(int numNodes);
-
-		void buildPrimitive(int index, Type.Leaf type);
-
-		void buildExistential(int index, NameID name);
-
-		void buildSet(int index, int element);
-
-		void buildList(int index, int element);
-
-		void buildProcess(int index, int element);
-
-		void buildDictionary(int index, int key, int value);
-
-		void buildTuple(int index, int... elements);
-
-		void buildRecord(int index, Pair<String, Integer>... fields);
-
-		void buildFunction(int index, int ret, int... parameters);
-		
-		void buildMethod(int index, int receiver, int ret, int... parameters);
-		
-		void buildUnion(int index, int... bounds);
-	}
-
-	/**
-	 * This class provides an empty implementation of a type builder, which is
-	 * useful for define simple builders.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static class AbstractBuilder implements Type.Builder {		
-		public void initialise(int numNodes) {
-		}
-
-		public void buildPrimitive(int index, Type.Leaf type) {
-		}
-
-		public void buildExistential(int index, NameID name) {
-		}
-
-		public void buildSet(int index, int element) {
-		}
-
-		public void buildList(int index, int element) {
-		}
-
-		public void buildProcess(int index, int element) {
-		}
-
-		public void buildDictionary(int index, int key, int value) {
-		}
-
-		public void buildTuple(int index, int... elements) {
-		}
-
-		public void buildRecord(int index, Pair<String, Integer>... fields) {
-		}
-
-		public void buildFunction(int index, int ret,
-				int... parameters) {
-		}
-		
-		public void buildMethod(int index, int receiver, int ret,
-				int... parameters) {
-		}
-
-		public void buildUnion(int index, int... bounds) {
-		}
-	}
-
-	/**
 	 * The internal builder is essentially the way we deserialise types. That
 	 * is, clients create an instance of internal builder and then call the
 	 * methods (as directed by their own type representation). At the end, we
@@ -664,7 +473,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static class InternalBuilder implements Type.Builder {	
+	public static class InternalBuilder implements Builder {	
 		private Node[] nodes;
 		
 		public Type type() {
@@ -674,7 +483,7 @@ public abstract class Type {
 			nodes = new Node[numNodes];
 		}
 		public void buildPrimitive(int index, Type.Leaf type) {
-			nodes[index] = new Node(leafKind(type),null);
+			nodes[index] = new Node(Node.leafKind(type),null);
 		}
 		public void buildExistential(int index, NameID name) {
 			if (name == null) {
@@ -729,114 +538,7 @@ public abstract class Type {
 			nodes[index] = new Node(K_UNION,bounds);
 		}
 	}
-	/**
-	 * The print builder is an example implementation of type builder which
-	 * simply constructs a textual representation of the type in the form of a
-	 * graph.
-	 */
-	public static class PrintBuilder implements Builder {
-		private final PrintStream out;
-		
-		public PrintBuilder(PrintStream out) {
-			this.out = out;
-		}
-		
-		public void initialise(int numNodes) { }
-		
-		public void buildPrimitive(int index, Type.Leaf type) {
-			out.println("#" + index + " = " + type);
-		}
-		
-		public void buildExistential(int index, NameID name) {
-			out.println("#" + index + " = ?" + name);
-		}
-		
-		public void buildSet(int index, int element) {
-			out.println("#" + index + " = {#" + element + "}");
-		}
-
-		public void buildList(int index, int element) {
-			out.println("#" + index + " = [#" + element + "]");
-		}
-
-		public void buildProcess(int index, int element) {
-			out.println("#" + index + " = process #" + element);
-		}
-
-		public void buildDictionary(int index, int key, int value) {
-			out.println("#" + index + " = {#" + key + "->#" + value + "}");
-		}
-
-		public void buildTuple(int index, int... elements) {
-			out.print("#" + index + " = (");
-			boolean firstTime=true;
-			for(int e : elements) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print("#" + e);
-			}
-			out.println(")");
-		}
-
-		public void buildRecord(int index, Pair<String, Integer>... fields) {
-			out.print("#" + index + " = {");
-			boolean firstTime=true;
-			for(Pair<String,Integer> e : fields) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print("#" + e.second() + " " + e.first());
-			}
-			out.println("}");
-		}
-
-		public void buildFunction(int index, int ret, int... parameters) {
-			out.print("#" + index + " = ");			
-			out.print("#" + ret + "(");
-			boolean firstTime=true;
-			for(int e : parameters) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print("#" + e);
-			}
-			out.println(")");
-		}
-		
-		public void buildMethod(int index, int receiver, int ret, int... parameters) {
-			out.print("#" + index + " = ");
-			if(receiver != -1) {
-				out.print("#" + receiver);
-			}
-			out.print("::#" + ret + "(");
-			boolean firstTime=true;
-			for(int e : parameters) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print("#" + e);
-			}
-			out.println(")");
-		}
-		
-		public void buildUnion(int index, int... bounds) {
-			out.print("#" + index + " = ");
-			boolean firstTime=true;
-			for(int e : bounds) {
-				if(!firstTime) {
-					out.print(" | ");
-				}
-				firstTime=false;
-				out.print("#" + e);
-			}
-			out.println();
-		}
-	}
+	
 	
 	/**
 	 * Construct a copy of a given type using a given type builder. The normal
@@ -945,454 +647,6 @@ public abstract class Type {
 	// Type operations
 	// =============================================================
 
-	/**
-	 * A subtype relation encodes both a subtype and a supertype relation
-	 * between two separate domains (called <code>from</code> and
-	 * <code>to</code>).
-	 */
-	public final static class SubtypeRelation {
-
-		/** 
-		 * Indicates the size of the "source" domain.
-		 */
-		private final int fromDomain;
-		
-		/**
-		 * Indicates the size of the "target" domain.
-		 */
-		private final int toDomain;
-		
-		/**
-		 * Stores subtype relation as a binary matrix for dimenaion
-		 * <code>fromDomain</code> x <code>toDomain</code>. This matrix
-		 * <code>r</code> is organised into row-major order, where
-		 * <code>r[i][j]</code> implies <code>i :> j</code>.
-		 */
-		private final BitSet subTypes;
-		
-		/**
-		 * Stores subtype relation as a binary matrix for dimenaion
-		 * <code>fromDomain</code> x <code>toDomain</code>. This matrix
-		 * <code>r</code> is organised into row-major order, where
-		 * <code>r[i][j]</code> implies <code>i <: j</code>.
-		 */
-		private final BitSet superTypes;
-
-		public SubtypeRelation(int fromDomain, int toDomain) {
-			this.fromDomain = fromDomain;
-			this.toDomain = toDomain;
-			this.subTypes = new BitSet(fromDomain*toDomain);
-			this.superTypes = new BitSet(fromDomain*toDomain);
-			
-			// Initially, set all sub- and super-types as true			
-			subTypes.set(0,subTypes.size(),true);
-			superTypes.set(0,superTypes.size(),true);
-		}
-		
-		/**
-		 * Check whether a a given node is a subtype of another.
-		 * 
-		 * @param from
-		 * @param to
-		 * @return
-		 */
-		public boolean isSubtype(int from, int to) {
-			return subTypes.get((toDomain*from) + to);
-		}
-		
-		/**
-		 * Check whether a a given node is a supertype of another.
-		 * 
-		 * @param from
-		 * @param to
-		 * @return
-		 */
-		public boolean isSupertype(int from, int to) {
-			return superTypes.get((toDomain*from) + to);
-		}
-
-		/**
-		 * Set the subtype flag for a given pair in the relation.
-		 * 
-		 * @param from
-		 * @param to
-		 * @param flag
-		 */
-		public void setSubtype(int from, int to, boolean flag) {
-			subTypes.set((toDomain*from) + to,flag);			
-		}
-		
-		/**
-		 * Set the supertype flag for a given pair in the relation.
-		 * 
-		 * @param from
-		 * @param to
-		 * @param flag
-		 */
-		public void setSupertype(int from, int to, boolean flag) {
-			superTypes.set((toDomain*from) + to,flag);			
-		}
-		
-		public String toString() {			
-			return toString(subTypes) + "\n" + toString(superTypes);
-		}
-		
-		public String toString(BitSet matrix) {
-			String r = " |";
-			for(int i=0;i!=toDomain;++i) {
-				r = r + " " + (i%10);
-			}
-			r = r + "\n-+";
-			for(int i=0;i!=toDomain;++i) {
-				r = r + "--";
-			}
-			r = r + "\n";
-			for(int i=0;i!=fromDomain;++i) {	
-				r = r + (i%10) + "|";;
-				for(int j=0;j!=toDomain;++j) {
-					if(matrix.get((i*toDomain)+j)) {
-						r += " 1";
-					} else {
-						r += " 0";
-					}
-				}	
-				r = r + "\n";
-			}
-			return r;
-		}
-
-	}
-
-	/**
-	 * A subtype inference is responsible for computing a complete subtype
-	 * relation between two given graphs. The class is abstract because there
-	 * are different possible implementations of this. In particular, the case
-	 * when coercions are being considered, versus the case when they are not.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static abstract class SubtypeInference {
-		protected final Node[] fromGraph;
-		protected final Node[] toGraph;
-		protected final SubtypeRelation assumptions;
-		
-		public SubtypeInference(Node[] fromGraph, Node[] toGraph) {
-			this.fromGraph = fromGraph;
-			this.toGraph = toGraph;
-			this.assumptions = new SubtypeRelation(fromGraph.length,toGraph.length);
-		}
-		
-		public SubtypeRelation doInference() {
-			int fromDomain = fromGraph.length;
-			int toDomain = toGraph.length;
-			
-			boolean changed = true;
-			while(changed) {
-				changed=false;
-				for(int i=0;i!=fromDomain;i++) {
-					for(int j=0;j!=toDomain;j++) {					
-						boolean isubj = isSubType(i,j);					
-						boolean isupj = isSuperType(i,j);		
-						
-						if(assumptions.isSubtype(i,j) && !isubj) {
-							assumptions.setSubtype(i,j,false);
-							changed = true;
-						}
-						if(assumptions.isSupertype(i,j) && !isupj) {
-							assumptions.setSupertype(i,j,false);
-							changed = true;
-						}						
-					}	
-				}
-			}
-			
-			return assumptions;
-		}
-		
-		/**
-		 * <p>
-		 * Determine whether type <code>to</code> is a <i>subtype</i> of type
-		 * <code>from</code> (written from :> to). In other words, whether the set
-		 * of all possible values described by the type <code>to</code> is a
-		 * subset of that described by <code>from</code>.
-		 * </p>
-		 * 
-		 * @param from --- An index into <code>fromGraph</code>.
-		 * @param to --- An index into <code>toGraph</code>.
-		 * @return
-		 */
-		public abstract boolean isSubType(int from, int to);
-		
-		/**
-		 * <p>
-		 * Determine whether type <code>to</code> is a <i>super type</i> of type
-		 * <code>from</code> (written from <: to). In other words, whether the set
-		 * of all possible values described by the type <code>to</code> is a
-		 * super set of that described by <code>from</code>.
-		 * </p>
-		 * 
-		 * @param from --- An index into <code>fromGraph</code>.
-		 * @param to --- An index into <code>toGraph</code>.
-		 * @return
-		 */
-		public abstract boolean isSuperType(int from, int to);
-	}
-	
-	public static class DefaultSubtypeOperator extends SubtypeInference {
-		public DefaultSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
-			super(fromGraph,toGraph);
-		}
-		
-		public boolean isSubType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			if(fromNode.kind == toNode.kind) { 
-				switch(fromNode.kind) {
-				case K_EXISTENTIAL:
-					NameID nid1 = (NameID) fromNode.data;
-					NameID nid2 = (NameID) toNode.data;				
-					return nid1.equals(nid2);
-				case K_SET:
-				case K_LIST:
-				case K_PROCESS: {
-					return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
-				}
-				case K_DICTIONARY: {
-					// binary node
-					Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-					Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-					return assumptions.isSubtype(p1.first(),p2.first()) && assumptions.isSubtype(p1.second(),p2.second());  					
-				}		
-				case K_TUPLE:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){ return false; }
-					for(int i=0;i<elems1.length;++i) {
-						if(!assumptions.isSubtype(elems1[i],elems2[i])) { return false; }
-					}
-					return true;
-				}
-				case K_METHOD:
-				case K_FUNCTION:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){
-						return false;
-					}
-					// Check (optional) receiver value first (which is contravariant)
-					int e1 = elems1[0];
-					int e2 = elems2[0];
-					if((e1 == -1 || e2 == -1) && e1 != e2) {
-						return false;
-					} else if (e1 != -1 && e2 != -1
-							&& !assumptions.isSupertype(e1,e2)) {
-						return false;
-					}
-					// Check return value first (which is covariant)
-					e1 = elems1[1];
-					e2 = elems2[1];
-					if(!assumptions.isSubtype(e1,e2)) {
-						return false;
-					}
-					// Now, check parameters (which are contra-variant)
-					for(int i=2;i<elems1.length;++i) {
-						e1 = elems1[i];
-						e2 = elems2[i];
-						if(!assumptions.isSupertype(e1,e2)) {
-							return false;
-						}
-					}
-					return true;
-				}
-				case K_RECORD:		
-				{
-					// labeled nary nodes
-					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-					if(fields1.length != fields2.length) {
-						return false;
-					}
-					for (int i = 0; i != fields2.length; ++i) {
-						Pair<String, Integer> e1 = fields1[i];
-						Pair<String, Integer> e2 = fields2[i];						
-							if (!e1.first().equals(e2.first())
-									|| !assumptions.isSubtype(e1.second(),
-											e2.second())) {
-								return false;
-							}
-					}					
-					return true;					
-				} 		
-				case K_UNION: {									
-					int[] bounds2 = (int[]) toNode.data;		
-					for(int j : bounds2) {				
-						if(!assumptions.isSubtype(from,j)) { return false; }								
-					}
-					return true;					
-				}
-				case K_LABEL:
-					throw new IllegalArgumentException("attempting to minimise open recurisve type");		
-				default:
-					// primitive types true immediately
-					return true;
-				}		
-			} else if(fromNode.kind == K_ANY || toNode.kind == K_VOID) {
-				return true;
-			} else if(fromNode.kind == K_UNION) {
-				int[] bounds1 = (int[]) fromNode.data;		
-
-				// check every bound in c1 is a subtype of some bound in c2.
-				for(int i : bounds1) {				
-					if(assumptions.isSubtype(i,to)) {
-						return true;
-					}								
-				}
-				return false;	
-			} else if(toNode.kind == K_UNION) {
-				int[] bounds2 = (int[]) toNode.data;		
-
-				// check some bound in c1 is a subtype of some bound in c2.
-				for(int j : bounds2) {				
-					if(!assumptions.isSubtype(from,j)) {
-						return false;
-					}								
-				}
-				return true;	
-			}
-			
-			return false;
-		}
-		
-		public boolean isSuperType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			if(fromNode.kind == toNode.kind) { 
-				switch(fromNode.kind) {
-				case K_EXISTENTIAL:
-					NameID nid1 = (NameID) fromNode.data;
-					NameID nid2 = (NameID) toNode.data;				
-					return nid1.equals(nid2);
-				case K_SET:
-				case K_LIST:
-				case K_PROCESS: {
-					return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
-				}
-				case K_DICTIONARY: {
-					// binary node
-					Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-					Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-					return assumptions.isSupertype(p1.first(),p2.first()) && assumptions.isSupertype(p1.second(),p2.second());  					
-				}		
-				case K_TUPLE:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){ return false; }
-					for(int i=0;i<elems1.length;++i) {
-						if(!assumptions.isSupertype(elems1[i],elems2[i])) { return false; }
-					}
-					return true;
-				}
-				case K_METHOD:
-				case K_FUNCTION:  {
-					// nary nodes
-					int[] elems1 = (int[]) fromNode.data;
-					int[] elems2 = (int[]) toNode.data;
-					if(elems1.length != elems2.length){
-						return false;
-					}
-					// Check (optional) receiver value first (which is contravariant)
-					int e1 = elems1[0];
-					int e2 = elems2[0];
-					if((e1 == -1 || e2 == -1) && e1 != e2) {
-						return false;
-					} else if (e1 != -1 && e2 != -1
-							&& !assumptions.isSubtype(e1,e2)) {
-						return false;
-					}
-					// Check return value first (which is covariant)
-					e1 = elems1[1];
-					e2 = elems2[1];
-					if(!assumptions.isSupertype(e1,e2)) {
-						return false;
-					}
-					// Now, check parameters (which are contra-variant)
-					for(int i=2;i<elems1.length;++i) {
-						e1 = elems1[i];
-						e2 = elems2[i];
-						if(!assumptions.isSubtype(e1,e2)) {
-							return false;
-						}
-					}
-					return true;
-				}
-				case K_RECORD:		
-				{
-					// labeled nary nodes
-					Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-					Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-					if(fields1.length != fields2.length) {
-						return false;
-					}
-					for (int i = 0; i != fields2.length; ++i) {
-						Pair<String, Integer> e1 = fields1[i];
-						Pair<String, Integer> e2 = fields2[i];						
-							if (!e1.first().equals(e2.first())
-									|| !assumptions.isSupertype(e1.second(),
-											e2.second())) {
-								return false;
-							}
-					}					
-					return true;					
-				} 		
-				case K_UNION: {														
-					int[] bounds1 = (int[]) toNode.data;		
-
-					// check every bound in c1 is a subtype of some bound in toNode.
-					for(int i : bounds1) {				
-						if(!assumptions.isSupertype(i,to)) {
-							return false;
-						}								
-					}
-					return true;
-				}									
-				case K_LABEL:
-					throw new IllegalArgumentException("attempting to minimise open recurisve type");		
-				default:
-					// primitive types true immediately
-					return true;
-				}		
-			} else if(fromNode.kind == K_VOID || toNode.kind == K_ANY) {
-				return true;
-			} else if(fromNode.kind == K_UNION) {
-				int[] bounds1 = (int[]) fromNode.data;		
-
-				// check every bound in c1 is a subtype of some bound in c2.
-				for(int i : bounds1) {				
-					if(!assumptions.isSupertype(i,to)) {
-						return false;
-					}								
-				}
-				return true;	
-			} else if(toNode.kind == K_UNION) {
-				int[] bounds2 = (int[]) toNode.data;		
-
-				// check some bound in c1 is a subtype of some bound in c2.
-				for(int j : bounds2) {				
-					if(assumptions.isSupertype(from,j)) {
-						return true;
-					}								
-				}				
-			}						
-			
-			return false;
-		}
-	}
 	
 	public static class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
 		
@@ -1568,12 +822,12 @@ public abstract class Type {
 		} else {
 			Node[] graph1, graph2;
 			if(t1 instanceof Leaf) {
-				graph1 = new Node[] { new Node(leafKind((Type.Leaf) t1), null) };
+				graph1 = new Node[] { new Node(Node.leafKind((Type.Leaf) t1), null) };
 			} else {
 				graph1 = ((Compound)t1).nodes;
 			}
 			if(t2 instanceof Leaf) {
-				graph2 = new Node[] { new Node(leafKind((Type.Leaf) t2), null) };
+				graph2 = new Node[] { new Node(Node.leafKind((Type.Leaf) t2), null) };
 			} else {
 				graph2 = ((Compound)t2).nodes;
 			}
@@ -1605,12 +859,12 @@ public abstract class Type {
 		} else {
 			Node[] graph1, graph2;
 			if(t1 instanceof Leaf) {
-				graph1 = new Node[] { new Node(leafKind((Type.Leaf) t1), null) };
+				graph1 = new Node[] { new Node(Node.leafKind((Type.Leaf) t1), null) };
 			} else {
 				graph1 = ((Compound)t1).nodes;
 			}
 			if(t2 instanceof Leaf) {
-				graph2 = new Node[] { new Node(leafKind((Type.Leaf) t2), null) };
+				graph2 = new Node[] { new Node(Node.leafKind((Type.Leaf) t2), null) };
 			} else {
 				graph2 = ((Compound)t2).nodes;
 			}
@@ -2716,7 +1970,7 @@ public abstract class Type {
 		Node[] newNodes = new Node[extracted.size()];
 		i=0;
 		for(int j : extracted) {
-			newNodes[i++] = remap(nodes[j],rextracted);  
+			newNodes[i++] = Node.remap(nodes[j],rextracted);  
 		}
 			
 		return newNodes;
@@ -2736,7 +1990,7 @@ public abstract class Type {
 			rextracted[j] = i++;
 		}				
 		for (int j : extracted) {
-			newNodes.add(remap(nodes[j], rextracted));
+			newNodes.add(Node.remap(nodes[j], rextracted));
 		}
 	}
 	
@@ -3271,239 +2525,16 @@ public abstract class Type {
 	// Components
 	// =============================================================
 
-	private static final byte K_VOID = 0;
-	private static final byte K_ANY = 1;
-	private static final byte K_META = 2;
-	private static final byte K_NULL = 3;
-	private static final byte K_BOOL = 4;
-	private static final byte K_BYTE = 5;
-	private static final byte K_CHAR = 6;
-	private static final byte K_INT = 7;
-	private static final byte K_RATIONAL = 8;
-	private static final byte K_STRING = 9;
-	private static final byte K_TUPLE = 10;
-	private static final byte K_SET = 11;
-	private static final byte K_LIST = 12;
-	private static final byte K_DICTIONARY = 13;	
-	private static final byte K_PROCESS = 14;
-	private static final byte K_RECORD = 15;
-	private static final byte K_UNION = 16;
-	private static final byte K_FUNCTION = 17;
-	private static final byte K_METHOD = 18;
-	private static final byte K_EXISTENTIAL = 19;
-	private static final byte K_LABEL = 20;
-	
-	/**
-	 * Represents a node in the type graph. Each node has a kind, along with a
-	 * data value identifying any children. For set, list and reference kinds
-	 * the data value is an Integer; for records, it's a Pair<String,Integer>[]
-	 * (sorted by key). For dictionaries, it's a Pair<Integer,Integer> and, for
-	 * unions and functions it's int[] (for functions first element is return).
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Node {
-		final byte kind;
-		final Object data;
-		
-		public Node(byte kind, Object data) {
-			this.kind = kind;
-			this.data = data;
-		}
-		public boolean equals(final Object o) {
-			if(o instanceof Node) {
-				Node c = (Node) o;
-				if(kind == c.kind) {
-					switch(kind) {
-					case K_VOID:
-					case K_ANY:
-					case K_META:
-					case K_NULL:
-					case K_BOOL:
-					case K_BYTE:
-					case K_CHAR:
-					case K_INT:
-					case K_RATIONAL:
-					case K_STRING:
-						return true;
-					case K_SET:
-					case K_LIST:
-					case K_PROCESS:
-					case K_EXISTENTIAL:
-					case K_DICTIONARY:
-						return data.equals(c.data);
-					case K_TUPLE:	
-					case K_METHOD:
-					case K_FUNCTION:
-					case K_UNION:
-						return Arrays.equals((int[])data, (int[])c.data);
-					case K_RECORD:
-						return Arrays.equals((Pair[])data, (Pair[])c.data);
-					}
-				}				
-			}
-			return false;
-		}
-		public int hashCode() {
-			if(data == null) {
-				return kind;
-			} else {
-				return kind + data.hashCode();
-			}
-		}
-		
-		public final static String[] kinds = { "void", "any", "meta", "null", "bool",
-				"char","int", "real", "string", "tuple", "dict", "set", "list", "ref", "record", "union",
-				"fun", "label" };
-		public String toString() {
-			if(data instanceof Pair[]) {
-				return kinds[kind] + " : " + Arrays.toString((Pair[])data);
-			} else if(data instanceof int[]) {
-				return kinds[kind] + " : " + Arrays.toString((int[])data);				
-			} else {
-				return kinds[kind] + " : " + data;
-			}
-		}
-	}
-	
+
 	private static final Node[] nodes(Type t) {
 		if (t instanceof Leaf) {
-			return new Node[]{new Node(leafKind((Leaf) t), null)};
+			return new Node[]{new Node(Node.leafKind((Leaf) t), null)};
 		} else {			
 			// compound type
 			return ((Compound)t).nodes;
 		}
 	}
 	
-	private static final byte leafKind(Leaf leaf) {
-		if(leaf instanceof Void) {
-			return K_VOID;
-		} else if(leaf instanceof Any) {
-			return K_ANY;
-		} else if(leaf instanceof Null) {
-			return K_NULL;
-		} else if(leaf instanceof Bool) {
-			return K_BOOL;
-		} else if(leaf instanceof Byte) {
-			return K_BYTE;
-		} else if(leaf instanceof Char) {
-			return K_CHAR;
-		} else if(leaf instanceof Int) {
-			return K_INT;
-		} else if(leaf instanceof Real) {
-			return K_RATIONAL;
-		} else if(leaf instanceof Strung) {
-			return K_STRING;
-		} else if(leaf instanceof Meta) {
-			return K_META;
-		} else {
-			// should be dead code
-			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
-		}
-	}
-
-	/**
-	 * This method inserts a blank node at the head of the nodes
-	 * array, whilst remapping all existing nodes appropriately.
-	 * 
-	 * @param nodes
-	 * @return
-	 */
-	private static Node[] insertComponent(Node[] nodes) {
-		Node[] newnodes = new Node[nodes.length+1];		
-		int[] rmap = new int[nodes.length];
-		for(int i=0;i!=nodes.length;++i) {
-			rmap[i] = i+1;			
-		}
-		for(int i=0;i!=nodes.length;++i) {
-			newnodes[i+1] = remap(nodes[i],rmap);			
-		}
-		return newnodes;
-	}
-
-	/**
-	 * The method inserts the nodes in
-	 * <code>from</from> into those in <code>into</code> at the given index.
-	 * This method remaps nodes in <code>from</code>, but does not remap
-	 * any in <code>into</code>
-	 * 
-	 * @param start
-	 * @param from
-	 * @param into
-	 * @return
-	 */
-	private static Node[] insertNodes(int start, Node[] from, Node[] into) {
-		int[] rmap = new int[from.length];
-		for(int i=0;i!=from.length;++i) {
-			rmap[i] = i+start;			
-		}
-		for(int i=0;i!=from.length;++i) {
-			into[i+start] = remap(from[i],rmap);			
-		}
-		return into;
-	}
-	/**
-	 * The remap method takes a node, and mapping from vertices in the old
-	 * space to the those in the new space. It then applies this mapping, so
-	 * that the node produced refers to vertices in the new space. Or, in
-	 * other words, it transposes the node into the new space.
-	 * 
-	 * @param node
-	 *            --- node to be transposed.
-	 * @param rmap
-	 *            --- mapping from integers in old space to those in new
-	 *            space.
-	 * @return
-	 */
-	private static Node remap(Node node, int[] rmap) {
-		Object data;
-
-		switch (node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			int element = (Integer) node.data;
-			data = rmap[element];
-			break;
-		case K_DICTIONARY:
-			// binary node
-			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-			data = new Pair(rmap[p.first()], rmap[p.second()]);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			int[] nbounds = new int[bounds.length];
-			for (int i = 0; i != bounds.length; ++i) {
-				if(bounds[i] == -1) { 
-					nbounds[i] = -1; // possible with K_FUNCTION
-				} else {
-					nbounds[i] = rmap[bounds[i]];	
-				}
-			}
-			data = nbounds;
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-			Pair<String, Integer>[] nfields = new Pair[fields.length];
-			for (int i = 0; i != fields.length; ++i) {
-				Pair<String, Integer> field = fields[i];
-				nfields[i] = new Pair(field.first(), rmap[field.second()]);
-			}
-			data = nfields;
-			break;
-		default:
-			return node;
-		}
-		return new Node(node.kind, data);
-	}
-
 	/**
 	 * The construct methods constructs a Type from an array of Components.
 	 * It carefully ensures the kind of the root node matches the class
