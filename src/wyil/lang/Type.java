@@ -192,14 +192,15 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Type T_UNION(Type... obounds) {		
-		// include child unions			
+		// Include child unions. This is necessary to ensure the minimisation
+		// algorithm works correctly, as it removes some awkward cases.			
 		ArrayList<Type> bounds = flatternUnions(obounds);
 		int len = 1;		
 		for(Type b : bounds) {				
-			// could be optimised slightly
 			if(b instanceof Any) {
 				return b;
 			}
+			// could be optimised slightly
 			len += nodes(b).length;
 		}		
 		Node[] nodes = new Node[len];

@@ -61,7 +61,7 @@ public class TypeTester {
 			}
 			Type t = types.get(i);			
 			Type nt = Type.minimise(t);
-			System.out.println("Minimised: " + t + " => " + nt);
+			//System.out.println("Minimised: " + t + " => " + nt);
 			types.set(i, nt);
 		}
 		System.out.print("]\r[");
