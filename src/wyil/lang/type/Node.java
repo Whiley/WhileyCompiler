@@ -1,9 +1,41 @@
 package wyil.lang.type;
 
+import static wyil.lang.type.Node.K_ANY;
+import static wyil.lang.type.Node.K_BOOL;
+import static wyil.lang.type.Node.K_BYTE;
+import static wyil.lang.type.Node.K_CHAR;
+import static wyil.lang.type.Node.K_DICTIONARY;
+import static wyil.lang.type.Node.K_EXISTENTIAL;
+import static wyil.lang.type.Node.K_FUNCTION;
+import static wyil.lang.type.Node.K_INT;
+import static wyil.lang.type.Node.K_LIST;
+import static wyil.lang.type.Node.K_META;
+import static wyil.lang.type.Node.K_METHOD;
+import static wyil.lang.type.Node.K_NULL;
+import static wyil.lang.type.Node.K_PROCESS;
+import static wyil.lang.type.Node.K_RATIONAL;
+import static wyil.lang.type.Node.K_RECORD;
+import static wyil.lang.type.Node.K_SET;
+import static wyil.lang.type.Node.K_STRING;
+import static wyil.lang.type.Node.K_TUPLE;
+import static wyil.lang.type.Node.K_UNION;
+import static wyil.lang.type.Node.K_VOID;
+
 import java.util.Arrays;
 
 import wyil.util.Pair;
+import wyil.lang.NameID;
 import wyil.lang.Type;
+import wyil.lang.Type.Dictionary;
+import wyil.lang.Type.Existential;
+import wyil.lang.Type.Fun;
+import wyil.lang.Type.List;
+import wyil.lang.Type.Meth;
+import wyil.lang.Type.Process;
+import wyil.lang.Type.Record;
+import wyil.lang.Type.Set;
+import wyil.lang.Type.Tuple;
+import wyil.lang.Type.Union;
 
 /**
  * Represents a node in the type graph. Each node has a kind, along with a
@@ -79,8 +111,7 @@ public final class Node {
 		}
 	}
 	
-
-	/**
+		/**
 	 * Determine the node kind of a Type.Leaf
 	 * @param leaf
 	 * @return
