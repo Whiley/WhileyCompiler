@@ -88,7 +88,7 @@ public final class SubtypeRelation {
 	 */
 	public void setSupertype(int from, int to, boolean flag) {
 		superTypes.set((toDomain*from) + to,flag);			
-	}
+	}		
 	
 	public String toString() {			
 		return toString(subTypes) + "\n" + toString(superTypes);

@@ -818,11 +818,40 @@ public abstract class Type {
 	}
 	
 	/**
-	 * Minimise the given type to produce a fully minimised version.
+	 * <p>
+	 * The following algorithm minimises a type. For example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * define InnerList as null|{int data, OuterList next}
+	 * define OuterList as null|{int data, InnerList next}
+	 * </pre>
+	 * <p>
+	 * This type is minimised into the following (equivalent) form:
+	 * </p>
+	 * 
+	 * <pre>
+	 * define LinkedList as null|{int data, LinkedList next}
+	 * </pre>
+	 * <p>
+	 * The minisation algorithm is based on the well-known algorithm for
+	 * minimising a DFA (see e.g. <a
+	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>).
+	 * </p>
+	 * <p>
+	 * The algorithm operates by performing a subtype test of each node against
+	 * all others. From this, we can identify nodes which are equivalent under
+	 * the subtype operator. Using this information, the type is reconstructed
+	 * such that for each equivalence class only a single node is created.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> this algorithm does not put the type into a canonical form.
+	 * Additional work is necessary to do this.
+	 * </p>
 	 * 
 	 * @param type
 	 * @return
-	 */	
+	 */
 	public static Type minimise(Type type) {		
 		return TypeMinimise.minimise(type);
 	}
