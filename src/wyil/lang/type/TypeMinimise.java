@@ -93,11 +93,9 @@ public class TypeMinimise {
 		ArrayList<Node> newnodes = new ArrayList<Node>();
 		int[] allocated = new int[nodes.length];
 		//System.out.println("REBUILDING: " + type);
-		Type.build(new PrintBuilder(System.out),type);
-		System.out.println(relation.toString());
-		rebuild(0, nodes, allocated, newnodes, relation);
-		
-		System.out.println(newnodes);
+		//Type.build(new PrintBuilder(System.out),type);
+		//System.out.println(relation.toString());
+		rebuild(0, nodes, allocated, newnodes, relation);				
 		
 		return Type.construct(newnodes.toArray(new Node[newnodes.size()]));
 	}
@@ -222,9 +220,7 @@ public class TypeMinimise {
 						nelems.remove(n2);												
 					}
 				}	
-			}					
-			
-			System.out.println("GOT HERE: " + nelems);
+			}											
 			
 			// ok, let's see what we've got left			
 			if (nelems.size() == 1) {				
