@@ -853,7 +853,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type minimise(Type type) {		
-		return TypeMinimise.minimise(type);
+		return Algorithms.minimise(type);
 	}
 
 	
@@ -1999,7 +1999,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);	
-		Type t1 = contractive(); //linkedList(2);
+		//Type t1 = contractive(); //linkedList(2);
+		Type t1 = T_UNION(T_UNION(T_NULL,T_ANY),T_UNION(T_NULL,T_ANY));
 		System.out.println("GOT: " + t1);
 		System.out.println("MIN: " + minimise(t1));
 		/*
@@ -2022,7 +2023,7 @@ public abstract class Type {
 	
 	public static Type contractive() {
 		Type lab = T_LABEL("Contractive");
-		Type union = T_UNION(lab,T_NULL);
+		Type union = T_UNION(lab,lab);
 		return T_RECURSIVE("Contractive", union);
 	}
 	

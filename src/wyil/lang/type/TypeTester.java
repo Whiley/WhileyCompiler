@@ -21,6 +21,7 @@ public class TypeTester {
 			this.REALS = false;
 			this.TUPLES = false;
 			this.SETS = false;
+			this.LISTS = false;
 			this.DICTIONARIES = false;
 		}
 	};
@@ -59,7 +60,9 @@ public class TypeTester {
 				System.out.print(" ");
 			}
 			Type t = types.get(i);			
-			types.set(i, Type.minimise(t));
+			Type nt = Type.minimise(t);
+			System.out.println("Minimised: " + t + " => " + nt);
+			types.set(i, nt);
 		}
 		System.out.print("]\r[");
 		
@@ -67,12 +70,14 @@ public class TypeTester {
 			if((i%increment) == 0) {
 				System.out.print(".");
 			}
-			for(int j=0;j!=types.size();++j) {
+			for(int j=0;j!=types.size();++j) {			
 				Type t1 = types.get(i);
 				Type t2 = types.get(j);
+				System.out.println(t1 + " :> " + t2);
 				boolean isSubtype = Type.isSubtype(t1,t2);
+				System.out.println("Stage 2");
 				boolean isSubset = model.isSubset(t1,t2);
-				
+				System.out.println("DONE");
 				if(isSubtype && !isSubset) {
 					System.out.println("Unsound: " + t2 + " <: " + t1  + ", but not " + t2 + " {= " + t1);
 				} else if(!isSubtype && isSubtype) {

@@ -36,7 +36,7 @@ import wyil.util.Pair;
  * @author djp
  * 
  */
-public class TypeMinimise {
+public class Algorithms {
 
 	/**
 	 * <p>
