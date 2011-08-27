@@ -1,7 +1,5 @@
 package wyil.lang.type;
 
-import wyil.lang.Type.Node;
-
 /**
  * A subtype inference is responsible for computing a complete subtype
  * relation between two given graphs. The class is abstract because there
