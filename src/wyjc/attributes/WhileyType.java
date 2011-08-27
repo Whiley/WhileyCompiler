@@ -104,7 +104,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public static Type readType(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
-			Type.InternalBuilder builder = new Type.InternalBuilder();
+			InternalTypeBuilder builder = new InternalTypeBuilder();
 			int numNodes = input.read_u2();
 			builder.initialise(numNodes);					
 			for(int i=0;i!=numNodes;++i) {

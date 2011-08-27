@@ -467,81 +467,7 @@ public abstract class Type {
 	// Serialisation Helpers
 	// =============================================================
 
-	/**
-	 * The internal builder is essentially the way we deserialise types. That
-	 * is, clients create an instance of internal builder and then call the
-	 * methods (as directed by their own type representation). At the end, we
-	 * have a fully built type --- neat!
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static class InternalBuilder implements TypeBuilder {	
-		private Node[] nodes;
 		
-		public Type type() {
-			return construct(nodes);
-		}	
-		public void initialise(int numNodes) {
-			nodes = new Node[numNodes];
-		}
-		public void buildPrimitive(int index, Type.Leaf type) {
-			nodes[index] = new Node(Node.leafKind(type),null);
-		}
-		public void buildExistential(int index, NameID name) {
-			if (name == null) {
-				throw new IllegalArgumentException(
-						"existential name cannot be null");
-			}
-			nodes[index] = new Node(K_EXISTENTIAL,name);
-		}
-
-		public void buildSet(int index, int element) {
-			nodes[index] = new Node(K_SET,element);
-		}
-
-		public void buildList(int index, int element) {
-			nodes[index] = new Node(K_LIST,element);
-		}
-
-		public void buildProcess(int index, int element) {
-			nodes[index] = new Node(K_PROCESS,element);
-		}
-
-		public void buildDictionary(int index, int key, int value) {
-			nodes[index] = new Node(K_DICTIONARY,new Pair(key,value));
-		}
-
-		public void buildTuple(int index, int... elements) {
-			nodes[index] = new Node(K_TUPLE,elements);
-		}
-
-		public void buildRecord(int index, Pair<String, Integer>... fields) {
-			nodes[index] = new Node(K_RECORD,fields);
-		}
-
-		public void buildFunction(int index, int ret, int... parameters) {
-			int[] items = new int[parameters.length+2];
-			items[0] = -1;
-			items[1] = ret;
-			System.arraycopy(parameters,0,items,2,parameters.length);
-			nodes[index] = new Node(K_FUNCTION,items);
-		}
-
-		public void buildMethod(int index, int receiver, int ret,
-				int... parameters) {
-			int[] items = new int[parameters.length+2];
-			items[0] = receiver;
-			items[1] = ret;
-			System.arraycopy(parameters,0,items,2,parameters.length);
-			nodes[index] = new Node(K_METHOD,items);
-		}
-		
-		public void buildUnion(int index, int... bounds) {
-			nodes[index] = new Node(K_UNION,bounds);
-		}
-	}
-	
 	
 	/**
 	 * Construct a copy of a given type using a given type builder. The normal
@@ -650,108 +576,7 @@ public abstract class Type {
 	// Type operations
 	// =============================================================
 
-	
-	public static class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
-		
-		public CoerciveSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
-			super(fromGraph,toGraph);
-		}
-		
-		public boolean isSubType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			/*
-			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
-				// labeled nary nodes
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-				Pair<String, Integer>[] _fields2 = (Pair<String, Integer>[]) toNode.data;				
-				HashMap<String,Integer> fields2 = new HashMap<String,Integer>();
-				for(Pair<String,Integer> f : _fields2) {
-					fields2.put(f.first(), f.second());
-				}
-				for (int i = 0; i != fields1.length; ++i) {
-					Pair<String, Integer> e1 = fields1[i];
-					Integer e2 = fields2.get(e1.first());
-					if (e2 == null || !assumptions.isSubtype(e1.second(),e2)) {
-						return false;
-					}
-				}					
-				return true;
-			} else 
-			*/
-			if(fromNode.kind == K_CHAR && toNode.kind == K_INT) {
-				// ints can flow into chars
-				return true;
-			} else if(fromNode.kind == K_INT && toNode.kind == K_CHAR) {
-				// chars can flow into ints
-				return true;
-			} else if(fromNode.kind == K_RATIONAL && (toNode.kind == K_INT || toNode.kind == K_CHAR)) {
-				// ints or chars can flow into rationals
-				return true;
-			} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
-				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-				return fromGraph[p1.first()].kind == K_INT
-						&& assumptions.isSubtype(p1.second(),
-								(Integer) toNode.data);
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_STRING) {
-				Integer p1 = (Integer) fromNode.data;
-				// TO DO: this is a bug here for cases when the element type is e.g. int|real
-				return fromGraph[p1].kind == K_ANY || fromGraph[p1].kind == K_INT || fromGraph[p1].kind == K_RATIONAL;
-			} else {
-				return super.isSubType(from,to);
-			}
-		}
-		
-		public boolean isSuperType(int from, int to) {
-			Node fromNode = fromGraph[from];
-			Node toNode = toGraph[to];	
-			
-			/*
-			if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
-				// labeled nary nodes
-				Pair<String, Integer>[] _fields1 = (Pair<String, Integer>[]) fromNode.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-				HashMap<String,Integer> fields1 = new HashMap<String,Integer>();
-				for(Pair<String,Integer> f : _fields1) {
-					fields1.put(f.first(), f.second());
-				}
-				for (int i = 0; i != fields2.length; ++i) {
-					Pair<String, Integer> e2 = fields2[i];
-					Integer e1 = fields1.get(e2.first());
-					if (e1 == null || !assumptions.isSupertype(e1,e2.second())) {
-						return false;
-					}
-				}					
-				return true;					
-
-			} else 
-			*/	
-			if(fromNode.kind == K_CHAR && (toNode.kind == K_RATIONAL || toNode.kind == K_INT)) {
-				// char can flow into int or rational
-				return true;
-			} else if(fromNode.kind == K_INT && (toNode.kind == K_RATIONAL || toNode.kind == K_CHAR)) {
-				// int can flow into rational or char
-				return true;
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
-				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
-			} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-				return toGraph[p2.first()].kind == K_INT
-						&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
-			} else if(fromNode.kind == K_STRING && toNode.kind == K_LIST) {
-				Integer p2 = (Integer) toNode.data;
-				// TO DO: this is a bug here for cases when the element type is e.g. int|real
-				return toGraph[p2].kind == K_ANY || toGraph[p2].kind == K_INT || toGraph[p2].kind == K_RATIONAL;
-			} else {
-				return super.isSuperType(from, to);
-			}
-		}
-	}
-
-	/**
+		/**
 	 * Determine whether type <code>t2</code> is a <i>coercive subtype</i> of
 	 * type <code>t1</code> (written t1 :> t2). In other words, whether the set
 	 * of all possible values described by the type <code>t2</code> is a subset
@@ -2546,7 +2371,7 @@ public abstract class Type {
 	 * @param nodes
 	 * @return
 	 */
-	private final static Type construct(Node[] nodes) {
+	public final static Type construct(Node[] nodes) {
 		Node root = nodes[0];
 		switch(root.kind) {
 		case K_VOID:
