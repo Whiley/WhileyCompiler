@@ -145,14 +145,9 @@ public class BinaryWriter implements Builder {
 
 	public void buildMethod(int index, int receiver, int ret,
 			int... parameters) {
-		try {				
-			if(receiver == -1) {
-				// headless method
-				writeKind(HEADLESS_METH_TYPE);					
-			} else {
-				writeKind(Node.K_METHOD);
-				writeNode(receiver);
-			}
+		try {							
+			writeKind(Node.K_METHOD);
+			writeNode(receiver);			
 			writeNode(ret);
 			writeLength(parameters.length);
 			for (int p : parameters) {
