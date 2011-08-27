@@ -17,6 +17,11 @@ public class Generator {
 		/**
 		 * Flag to include NULL in the types generated.
 		 */
+		public boolean ANY = true;
+		
+		/**
+		 * Flag to include NULL in the types generated.
+		 */
 		public boolean NULL = true;
 		
 		/**
@@ -107,7 +112,9 @@ public class Generator {
 		ArrayList<Type> types = new ArrayList<Type>();
 		int RECURSIVE_ROOT = -1;
 		// types.add(Type.T_VOID);
-		types.add(Type.T_ANY);
+		if(config.ANY) {
+			types.add(Type.T_ANY);
+		}
 		if(config.NULL) {		
 			types.add(Type.T_NULL);
 		}

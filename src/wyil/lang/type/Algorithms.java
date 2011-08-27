@@ -236,6 +236,8 @@ public class Algorithms {
 						assumptions);
 			} else {
 				ArrayList<Integer> nnelems = new ArrayList(nelems);
+				// TODO: this is a terrible hack
+				Collections.sort(nnelems,new MinimiseComparator(graph,assumptions));			
 				// ok, now rebuild
 				int[] melems = new int[nelems.size()];
 				int i=0;
@@ -253,7 +255,7 @@ public class Algorithms {
 		newNodes.set(cidx, new Node(node.kind,data));
 		return cidx;
 	}
-
+		
 	private static final class MinimiseComparator implements Comparator<Integer> {
 		private Node[] graph;
 		private SubtypeRelation subtypeMatrix;

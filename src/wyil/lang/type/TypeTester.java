@@ -30,10 +30,11 @@ public class TypeTester {
 		{
 			this.MAX_DEPTH = 2;
 			
-			this.MAX_FIELDS = 2;
+			this.MAX_FIELDS = 1;
 			this.MAX_UNIONS = 2;
 			this.MAX_TUPLES = 2;	
 			
+			this.ANY = false;
 			this.BOOL = false;
 			this.BYTE = false;
 			this.CHAR = false;
@@ -46,23 +47,38 @@ public class TypeTester {
 		}
 	};
 	
+	public static List<Type> minimise(List<Type> types) {
+		HashSet<Type> visited = new HashSet<Type>();
+		ArrayList<Type> ntypes = new ArrayList<Type>();
+		for(Type t : types) {
+			t = Type.minimise(t);
+			if(!visited.contains(t)) {
+				ntypes.add(t);
+				visited.add(t);
+			}
+		}
+		return ntypes;
+	}
+	
 	public static void main(String[] args) {
 		SemanticModel model = SemanticModel.generate(MODEL_CONFIG);
 		System.out.println("Generated " + model.size() + " values.");
 		List<Type> types = Generator.generate(TYPE_CONFIG);
+		types = minimise(types);
 		System.out.println("Generated " + types.size() + " types.");
 		
-		int increment = types.size() / 50;
+		int increment = Math.max(1, types.size() / 50);
 		
 		System.out.print("[");
 		for(int i=0;i!=types.size();++i) {
 			if((i%increment) == 0) {
 				System.out.print(" ");
-			}
-			Type t = types.get(i);			
-			Type nt = Type.minimise(t);
-			//System.out.println("Minimised: " + t + " => " + nt);
-			types.set(i, nt);
+			}			
+			Type t = types.get(i);
+			System.out.println("TYPE: " + t);
+			//PrintBuilder tp = new PrintBuilder(System.out);
+			//Type.build(tp, t);
+			
 		}
 		System.out.print("]\r[");
 		

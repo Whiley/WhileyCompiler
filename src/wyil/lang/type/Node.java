@@ -92,8 +92,25 @@ public final class Node {
 	public int hashCode() {
 		if(data == null) {
 			return kind;
-		} else {
-			return kind + data.hashCode();
+		} else {					
+			switch(kind) {
+			case K_SET:
+			case K_LIST:
+			case K_PROCESS:
+			case K_EXISTENTIAL:
+			case K_DICTIONARY:
+				return (Integer) data;
+			case K_TUPLE:	
+			case K_METHOD:
+			case K_FUNCTION:
+			case K_UNION:
+				return Arrays.hashCode((int[])data);
+			case K_RECORD:
+				return Arrays.hashCode((Pair[])data);
+			case K_LABEL:
+				return data.hashCode();
+			}						
+			throw new RuntimeException("Unreachable code reached (" + kind + ")");
 		}
 	}
 	
