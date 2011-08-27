@@ -267,13 +267,15 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Meth T_METH(Process receiver, Type ret, Type... params) {
-		Node[] reccomps;
-		if(receiver != null) {
-			reccomps = nodes(receiver);
-		} else {
-			reccomps = new Node[0];
+	public static final Meth T_METH(Process receiver, Type ret, Type... params) {		
+		if(receiver == null) {
+			throw new IllegalArgumentException("T_METH received cannot be null");			
 		}
+		if(ret == null) {
+			throw new IllegalArgumentException("T_METH ret cannot be null");			
+		} 
+		Node[] reccomps;
+		reccomps = nodes(receiver);
 		Node[] retcomps = nodes(ret); 
 		int len = 1 + reccomps.length + retcomps.length;
 		for(Type b : params) {
