@@ -30,8 +30,7 @@ import wyil.lang.Type;
 import wyil.util.Pair;
 
 /**
- * This class houses the algorithm for minimising a type. Essentially, it takes
- * in a type and produces a minimised version of that type.  
+ * This class houses various algorithms for manipulating types.
  * 
  * @author djp
  * 
@@ -210,12 +209,13 @@ public class Algorithms {
 			HashSet<Integer> nelems = new HashSet<Integer>();			
 			for(int i : elems) { nelems.add(i); }
 			nelems.remove(idx); // necessary to spot contractive case						
-			for(int i=0;i!=elems.length;i++) {
-				if(i == idx) { continue; } // necessary to spot contractive case
+			for(int i=0;i!=elems.length;i++) {				
 				int n1 = elems[i];
+				if(n1 == idx) { continue; } // necessary to spot contractive case
 				for(int j=0;j<elems.length;j++) {
 					if(i==j) { continue; }
 					int n2 = elems[j];	
+					
 					if(assumptions.isSubtype(n1,n2) && (!assumptions.isSubtype(n2,n1) || i < j)) {				
 						nelems.remove(n2);												
 					}

@@ -73,11 +73,8 @@ public class TypeTester {
 			for(int j=0;j!=types.size();++j) {			
 				Type t1 = types.get(i);
 				Type t2 = types.get(j);
-				System.out.println(t1 + " :> " + t2);
 				boolean isSubtype = Type.isSubtype(t1,t2);
-				System.out.println("Stage 2");
-				boolean isSubset = model.isSubset(t1,t2);
-				System.out.println("DONE");
+				boolean isSubset = model.isSubset(t1,t2);				
 				if(isSubtype && !isSubset) {
 					System.out.println("Unsound: " + t2 + " <: " + t1  + ", but not " + t2 + " {= " + t1);
 				} else if(!isSubtype && isSubtype) {

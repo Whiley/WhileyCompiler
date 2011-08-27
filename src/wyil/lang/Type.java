@@ -177,7 +177,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Collection<Type> bounds) {
+	public static final Type T_UNION(Collection<Type> bounds) {		
 		Type[] ts = new Type[bounds.size()];
 		int i = 0;
 		for(Type t : bounds) {
@@ -191,26 +191,30 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Type... bounds) {		
+	public static final Type T_UNION(Type... obounds) {		
 		// include child unions			
+		ArrayList<Type> bounds = flatternUnions(obounds);
 		int len = 1;		
-		for(Type b : bounds) {			
+		for(Type b : bounds) {				
 			// could be optimised slightly
+			if(b instanceof Any) {
+				return b;
+			}
 			len += nodes(b).length;
 		}		
 		Node[] nodes = new Node[len];
-		int[] children = new int[bounds.length];
+		int[] children = new int[bounds.size()];
 		int start = 1;
-		for(int i=0;i!=bounds.length;++i) {
+		for(int i=0;i!=bounds.size();++i) {
 			children[i] = start;
-			Node[] comps = nodes(bounds[i]);
+			Node[] comps = nodes(bounds.get(i));
 			Node.insertNodes(start,comps,nodes);
-			start += comps.length;
+			start += comps.length;			
 		}
 		nodes[0] = new Node(K_UNION, children);
 		return new Union(nodes);		
-	}
-
+	}	
+	
 	public static final Fun T_FUN(Type ret,
 			Collection<Type> params) {
 		Type[] ts = new Type[params.size()];
@@ -1983,6 +1987,8 @@ public abstract class Type {
 			return new Meth(nodes);
 		case K_FUNCTION:
 			return new Fun(nodes);		
+		case K_LABEL:
+			return T_LABEL((String)root.data);
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
@@ -1997,10 +2003,30 @@ public abstract class Type {
 		}
 	}
 	
+	/**
+	 * The flattern unions function flatterns any union types found in the
+	 * bounds array.
+	 * 
+	 * @param bounds
+	 * @return
+	 */
+	private static final ArrayList<Type> flatternUnions(Type[] bounds) {
+		ArrayList<Type> types = new ArrayList<Type>();
+		for(Type t : bounds) {
+			if(t instanceof Union) {
+				Union u = (Union) t;
+				types.addAll(u.bounds());
+			} else {
+				types.add(t);
+			}
+		}
+		return types;
+	}
+	
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);	
 		//Type t1 = contractive(); //linkedList(2);
-		Type t1 = T_UNION(T_UNION(T_NULL,T_ANY),T_UNION(T_NULL,T_ANY));
+		Type t1 = T_UNION(T_NULL,T_NULL);
 		System.out.println("GOT: " + t1);
 		System.out.println("MIN: " + minimise(t1));
 		/*
