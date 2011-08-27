@@ -37,7 +37,7 @@ import wyil.lang.Module;
 import wyil.lang.ModuleID;
 import wyil.lang.Type;
 import wyil.util.Pair;
-import wyil.util.Types;
+import wyil.lang.type.BinaryTypeReader;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
 import wyjvm.io.BinaryInputStream;
@@ -150,7 +150,7 @@ public class ClassFileLoader {
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());
 			// then find the type
-			Type.Fun type = (Type.Fun) new Types.BinaryReader(
+			Type.Fun type = (Type.Fun) new BinaryTypeReader(
 					new BinaryInputStream(new JavaIdentifierInputStream(mangle)))
 					.read();
 			// now build the parameter names

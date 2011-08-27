@@ -29,6 +29,7 @@ import java.io.*;
 
 import java.util.*;
 import wyil.lang.*;
+import wyil.lang.type.*;
 import wyil.util.Pair;
 import wyjvm.io.*;
 import wyjvm.lang.*;
@@ -223,7 +224,7 @@ public class WhileyType implements BytecodeAttribute {
 		}
 	}
 	
-	private static class ConstantBuilder extends Type.AbstractBuilder {
+	private static class ConstantBuilder extends AbstractTypeBuilder {
 		private final Set<Constant.Info> constantPool;
 		
 		public ConstantBuilder(Set<Constant.Info> pool) {
@@ -245,7 +246,7 @@ public class WhileyType implements BytecodeAttribute {
 		}
 	}
 	
-	public static class JvmBuilder implements Type.Builder {		
+	public static class JvmBuilder implements TypeBuilder {		
 		private final BinaryOutputStream writer;
 		private final Map<Constant.Info,Integer> constantPool;
 		

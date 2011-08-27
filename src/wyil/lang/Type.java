@@ -473,7 +473,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static class InternalBuilder implements Builder {	
+	public static class InternalBuilder implements TypeBuilder {	
 		private Node[] nodes;
 		
 		public Type type() {
@@ -549,7 +549,7 @@ public abstract class Type {
 	 * @param writer
 	 * @param type
 	 */
-	public static void build(Builder writer, Type type) {
+	public static void build(TypeBuilder writer, Type type) {
 		if(type instanceof Leaf) {			
 			writer.initialise(1);
 			writer.buildPrimitive(0,(Type.Leaf)type);

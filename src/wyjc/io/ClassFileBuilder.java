@@ -37,6 +37,7 @@ import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
+import wyil.lang.type.BinaryTypeWriter;
 import wyil.lang.Code.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
@@ -2646,7 +2647,7 @@ public class ClassFileBuilder {
 	public static String typeMangle(Type.Fun ft) throws IOException {		
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
-		Types.BinaryWriter tm = new Types.BinaryWriter(binout);
+		BinaryTypeWriter tm = new BinaryTypeWriter(binout);
 		Type.build(tm,ft);		
 		binout.close(); // force flush		
 		//testMangle1(ft);

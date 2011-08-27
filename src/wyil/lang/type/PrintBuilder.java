@@ -11,7 +11,7 @@ import wyil.util.Pair;
  * simply constructs a textual representation of the type in the form of a
  * graph.
  */
-public class PrintBuilder implements Builder {
+public class PrintBuilder implements TypeBuilder {
 	private final PrintStream out;
 	
 	public PrintBuilder(PrintStream out) {
