@@ -44,6 +44,7 @@ public class TypeTester {
 			this.SETS = false;
 			this.LISTS = false;
 			this.DICTIONARIES = false;
+			this.RECURSIVES = false;
 		}
 	};
 	

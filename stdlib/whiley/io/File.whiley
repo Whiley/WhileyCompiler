@@ -62,7 +62,7 @@ void Reader::close():
 Writer ::Writer(string fileName):
     extern jvm:
         aload 0
-        invokestatic wyjc/runtime/IO.openWriter:(Ljava/util/ArrayList;)Lwyjc/runtime/Actor;
+        invokestatic wyjc/runtime/IO.openWriter:(Ljava/lang/String;)Lwyjc/runtime/Actor;
         areturn
     // the following line is dead code
     return spawn {fileName: "", writer: 0}

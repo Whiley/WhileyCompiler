@@ -97,9 +97,9 @@ public final class Node {
 			case K_SET:
 			case K_LIST:
 			case K_PROCESS:
-			case K_EXISTENTIAL:
 			case K_DICTIONARY:
-				return (Integer) data;
+			case K_EXISTENTIAL:
+				return data.hashCode();			
 			case K_TUPLE:	
 			case K_METHOD:
 			case K_FUNCTION:
