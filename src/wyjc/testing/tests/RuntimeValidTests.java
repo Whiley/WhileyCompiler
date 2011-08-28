@@ -212,6 +212,7 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Bug") @Test public void Process_Valid_10_RuntimeTest() { runTest("Process_Valid_10"); }
  @Test public void Process_Valid_11_RuntimeTest() { runTest("Process_Valid_11"); }
  @Test public void Process_Valid_12_RuntimeTest() { runTest("Process_Valid_12"); }
+ @Test public void Process_Valid_13_RuntimeTest() { runTest("Process_Valid_13"); }
  @Test public void RealConst_Valid_1_RuntimeTest() { runTest("RealConst_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { runTest("RealDiv_Valid_2"); }
