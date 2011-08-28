@@ -14,12 +14,6 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class Strand extends Messager {
 
-	private static final Scheduler defaultScheduler = new Scheduler();
-
-	public Strand() {
-		super(defaultScheduler);
-	}
-
 	/**
 	 * @param scheduler The scheduler to use for threading.
 	 */

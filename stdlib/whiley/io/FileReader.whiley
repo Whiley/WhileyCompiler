@@ -30,8 +30,9 @@ define FileReader as process { string fileName }
 // not sure if this makes sense per se
 FileReader System::openReader(string fileName):
     extern jvm:
+        aload 0
         aload 1
-        invokestatic wyjc/runtime/IO.openReader:(Ljava/lang/String;)Lwyjc/runtime/Actor;
+        invokestatic wyjc/runtime/IO.openReader:(Lwyjc/runtime/concurrency/Strand;Ljava/lang/String;)Lwyjc/runtime/Actor;
         areturn
     // the following line is dead code
     return spawn {fileName: ""}

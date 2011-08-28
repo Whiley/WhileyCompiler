@@ -77,6 +77,13 @@ public abstract class Messager extends Yielder implements Resumable {
 	public Messager(Scheduler scheduler) {
 		this.scheduler = scheduler;
 	}
+	
+	/**
+	 * @return This messager's scheduler.
+	 */
+	public Scheduler getScheduler() {
+		return scheduler;
+	}
 
 	/**
 	 * Sends a synchronous message to this messager, to be executed at some

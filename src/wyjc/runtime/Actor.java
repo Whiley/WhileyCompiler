@@ -36,13 +36,6 @@ import wyjc.runtime.concurrency.Strand;
 public final class Actor extends Strand {
 
 	private Object state;
-
-	/**
-	 * @param state The internal state of the actor.
-	 */
-	public Actor(Object state) {
-		this.state = state;
-	}
 	
 	/**
 	 * @param state The internal state of the actor.
@@ -82,11 +75,11 @@ public final class Actor extends Strand {
 	 * 
 	 * @return A new Whiley <code>System</code> process.
 	 */
-	public static Actor newSystemProcess() {
-		Actor sysout = new Actor(null);
+	public static Actor newSystemProcess(Scheduler scheduler) {
+		Actor sysout = new Actor(null, scheduler);
 		Record data = new Record();
 		data.put("out", sysout);
-		Actor system = new Actor(data);
+		Actor system = new Actor(data, scheduler);
 		return system;
 	}
 

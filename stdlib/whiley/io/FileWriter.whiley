@@ -29,8 +29,9 @@ define FileWriter as process { string fileName, int writer }
 
 FileWriter System::openWriter(string fileName):
     extern jvm:
+        aload 0
         aload 1
-        invokestatic wyjc/runtime/IO.openWriter:(Ljava/util/ArrayList;)Lwyjc/runtime/Actor;
+        invokestatic wyjc/runtime/IO.openWriter:(Lwyjc/runtime/concurrency/Strand;Ljava/lang/String;)Lwyjc/runtime/Actor;
         areturn
     // the following line is dead code
     return spawn {fileName: "", writer: 0}

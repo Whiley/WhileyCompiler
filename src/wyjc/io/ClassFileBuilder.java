@@ -210,13 +210,19 @@ public class ClassFileBuilder {
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
 		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
 		
+		// Create the scheduler that will handle concurrency.
+		codes.add(new Bytecode.New(WHILEYSCHEDULER));
+		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
+		codes.add(new Bytecode.Invoke(WHILEYSCHEDULER, "<init>",
+				new JvmType.Function(T_VOID), Bytecode.SPECIAL));
+		
 		// Create the System actor and the appropriate number of copies.
-		ft1 = new JvmType.Function(WHILEYPROCESS);
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess", ft1,
-		    Bytecode.STATIC));
+		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess",
+				new JvmType.Function(WHILEYPROCESS, WHILEYSCHEDULER),
+				Bytecode.STATIC));
 		// For the sender of the sendAsync method.
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		// For the idling check.
+		// For the call to wait.
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
 		// For the monitor enter and exit.
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
@@ -1305,8 +1311,12 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.New(WHILEYPROCESS));			
 		bytecodes.add(new Bytecode.DupX1());
 		bytecodes.add(new Bytecode.Swap());
-		// TODO: problem here ... need to swap or something				
-		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
+		// TODO: problem here ... need to swap or something		
+		bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
+		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "getScheduler",
+				new JvmType.Function(WHILEYSCHEDULER), Bytecode.VIRTUAL));
+		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT,
+				WHILEYSCHEDULER);
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
 	}
@@ -2606,11 +2616,15 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("wyjc.runtime","Dictionary");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","Record");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(
-			"wyjc.runtime", "Actor");	
+			"wyjc.runtime", "Actor");
+	public final static JvmType.Clazz WHILEYSTRAND = new JvmType.Clazz(
+			"wyjc.runtime.concurrency", "Strand");	
 	public final static JvmType.Clazz WHILEYMESSAGER = new JvmType.Clazz(
 			"wyjc.runtime.concurrency", "Messager");
 	public final static JvmType.Clazz WHILEYFUTURE = new JvmType.Clazz(
 			"wyjc.runtime.concurrency", "Messager$MessageFuture");
+	public final static JvmType.Clazz WHILEYSCHEDULER = new JvmType.Clazz(
+			"wyjc.runtime.concurrency", "Scheduler");
 	public final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","Exception");	
 	public final static JvmType.Clazz BIG_INTEGER = new JvmType.Clazz("java.math","BigInteger");
 	public final static JvmType.Clazz BIG_RATIONAL = new JvmType.Clazz("wyjc.runtime","BigRational");
