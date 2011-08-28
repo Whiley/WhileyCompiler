@@ -137,10 +137,10 @@ public class SyntaxError extends RuntimeException {
 			    while((len = in.read(buf)) != -1) {
 			    	text.append(buf,0,len);	    	
 			    }
-							    			    
-				while (lineEnd < text.length() && lineEnd < start) {
+				
+				while (lineEnd < text.length() && lineEnd <= start) {
 					lineStart = lineEnd;
-					lineEnd = parseLine(text,lineEnd);					
+					lineEnd = parseLine(text,lineEnd);
 					line = line + 1;
 				}
 			} catch (IOException e) {
