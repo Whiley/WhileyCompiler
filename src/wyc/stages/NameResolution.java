@@ -297,6 +297,9 @@ public class NameResolution {
 		try {
 			if (e instanceof Constant) {
 				
+			} else if (e instanceof LocalVariable) {
+				// this case is possible because of the way WhileyParser handles
+				// sublist expressions.
 			} else if (e instanceof UnknownVariable) {
 				e = resolve((UnknownVariable)e, environment, imports);
 			} else if (e instanceof NaryOp) {
@@ -450,7 +453,7 @@ public class NameResolution {
 	protected Expr resolve(NaryOp v, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) throws ResolveError {				
 		for(int i=0;i!=v.arguments.size();++i) {
-			Expr e = v.arguments.get(i);			
+			Expr e = v.arguments.get(i);						
 			e = resolve(e, environment, imports);
 			v.arguments.set(i,e);
 		}		
@@ -533,7 +536,7 @@ public class NameResolution {
 	
 	protected Expr resolve(RecordAccess sg,
 			HashMap<String, Set<Expr>> environment, ArrayList<Import> imports)
-			throws ResolveError {
+			throws ResolveError {		
 		sg.lhs = resolve(sg.lhs, environment, imports);
 		if(sg.lhs instanceof PackageAccess) {
 			// this indicates we're constructing a more complex package access.
