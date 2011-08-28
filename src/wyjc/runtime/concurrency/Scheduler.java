@@ -84,6 +84,13 @@ public final class Scheduler {
 	 */
 	public void scheduleResume(Resumable resumable) {
 		increaseCount();
+		
+		// TODO This is a temporary solution. New entry methods should create new
+		// schedulers for their strands.
+		if (pool.isShutdown()) {
+			pool = Executors.newCachedThreadPool();
+		}
+		
 		pool.execute(new Resumer(resumable));
 	}
 

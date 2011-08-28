@@ -209,7 +209,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * 
 	 * @return Whether the messager should resume as a result of being ready
 	 */
-	protected synchronized boolean beReadyToResume() {
+	protected synchronized boolean readyToResume() {
 		ready = true;
 		return shouldResume;
 	}
@@ -236,13 +236,6 @@ public abstract class Messager extends Yielder implements Resumable {
 	 */
 	public MessageFuture getLastSentFuture() throws NullPointerException {
 		return future;
-	}
-	
-	/**
-	 * @return Whether the messager is not processing any messages.
-	 */
-	public boolean isIdle() {
-		return mail.isEmpty() && currentMessage == null;
 	}
 
 	/**
@@ -287,6 +280,8 @@ public abstract class Messager extends Yielder implements Resumable {
 
 		if (mail.isEmpty()) {
 			currentMessage = null;
+			// Threads can block while this messager is busy with the wait method.
+			notifyAll();
 		} else {
 			currentMessage = mail.poll();
 			scheduleResume();

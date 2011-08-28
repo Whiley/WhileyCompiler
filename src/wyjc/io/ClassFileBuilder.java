@@ -218,6 +218,12 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
 		// For the idling check.
 		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		// For the monitor enter and exit.
+		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		codes.add(new Bytecode.Dup(WHILEYPROCESS));
+		
+		// Synchronise on the new system process.
+		codes.add(new Bytecode.MonitorEnter());
 		
 		// Get the System::main method out.
 		Type.Fun wyft = Type.T_METH(WHILEY_SYSTEM_T,
@@ -252,13 +258,12 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendAsync", ftype,
 		    Bytecode.VIRTUAL));
 		
-		// Wait for the message to complete.
-		codes.add(new Bytecode.Label("active"));
-		codes.add(new Bytecode.Dup(WHILEYPROCESS));
-		ftype = new JvmType.Function(T_BOOL);
-		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "isIdle", ftype,
+		// Wait for the system to idle.
+		ftype = new JvmType.Function(T_VOID);
+		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "wait", ftype,
 				Bytecode.VIRTUAL));
-		codes.add(new Bytecode.If(Bytecode.If.EQ, "active"));
+		
+		codes.add(new Bytecode.MonitorExit());
 		
 		// Add return.
 		codes.add(new Bytecode.Return(null));

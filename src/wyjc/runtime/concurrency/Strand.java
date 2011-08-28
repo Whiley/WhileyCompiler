@@ -4,8 +4,8 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * A lightweight thread. Uses a <code>Scheduler</code> and yielding to
- * simulate threaded behaviour without the overhead associated with creating
- * a real thread, allowing large amounts to be created and used.
+ * simulate threaded behaviour without the overhead associated with creating a
+ * real thread, allowing large amounts to be created and used.
  * 
  * If <code>Strand</code> is instantiated, it will perform exactly like an
  * actor, except it has not internal state.
@@ -13,20 +13,20 @@ import java.lang.reflect.InvocationTargetException;
  * @author Timothy Jones
  */
 public class Strand extends Messager {
-	
+
 	private static final Scheduler defaultScheduler = new Scheduler();
-	
+
 	public Strand() {
 		super(defaultScheduler);
 	}
-	
+
 	/**
 	 * @param scheduler The scheduler to use for threading.
 	 */
 	public Strand(Scheduler scheduler) {
 		super(scheduler);
 	}
-	
+
 	@Override
 	public void resume() {
 		try {
@@ -36,7 +36,7 @@ public class Strand extends Messager {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
 			} else {
-				if (beReadyToResume()) {
+				if (readyToResume()) {
 					// Readies the actor for another resumption.
 					scheduleResume();
 				}
@@ -54,5 +54,5 @@ public class Strand extends Messager {
 			failCurrentMessage(itx.getCause());
 		}
 	}
-	
+
 }
