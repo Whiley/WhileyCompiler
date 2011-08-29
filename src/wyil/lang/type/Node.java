@@ -279,9 +279,11 @@ public final class Node {
 	public static final byte K_PROCESS = 14;
 	public static final byte K_RECORD = 15;
 	public static final byte K_UNION = 16;
-	public static final byte K_FUNCTION = 17;
-	public static final byte K_METHOD = 18;
-	public static final byte K_EXISTENTIAL = 19;
-	public static final byte K_LABEL = 20;	
-	public static final byte K_HEADLESS_METHOD = 21; // used for readers/writers
+	public static final byte K_INTERSECTION = 17;
+	public static final byte K_DIFFERENCE = 18;
+	public static final byte K_FUNCTION = 19;
+	public static final byte K_METHOD = 20;
+	public static final byte K_EXISTENTIAL = 21;
+	public static final byte K_LABEL = 22;	
+	public static final byte K_HEADLESS_METHOD = 23; // used for readers/writers
 }

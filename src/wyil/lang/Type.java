@@ -182,7 +182,7 @@ public abstract class Type {
 		int i = 0;
 		for(Type t : bounds) {
 			ts[i++] = t;
-		}
+		}		
 		return T_UNION(ts);
 	}
 	
@@ -191,30 +191,78 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_UNION(Type... obounds) {		
-		// Include child unions. This is necessary to ensure the minimisation
-		// algorithm works correctly, as it removes some awkward cases.			
-		ArrayList<Type> bounds = flatternUnions(obounds);
+	public static final Type T_UNION(Type... bounds) {		
 		int len = 1;		
-		for(Type b : bounds) {				
-			if(b instanceof Any) {
-				return b;
-			}
+		for(Type b : bounds) {							
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
 		Node[] nodes = new Node[len];
-		int[] children = new int[bounds.size()];
+		int[] children = new int[bounds.length];
 		int start = 1;
-		for(int i=0;i!=bounds.size();++i) {
+		for(int i=0;i!=bounds.length;++i) {
 			children[i] = start;
-			Node[] comps = nodes(bounds.get(i));
+			Node[] comps = nodes(bounds[i]);
 			Node.insertNodes(start,comps,nodes);
 			start += comps.length;			
 		}
 		nodes[0] = new Node(K_UNION, children);
 		return new Union(nodes);		
 	}	
+	
+	/**
+	 * Construct an intersection type using the given type bounds
+	 * 
+	 * @param element
+	 */
+	public static final Type T_INTERSECTION(Collection<Type> bounds) {		
+		Type[] ts = new Type[bounds.size()];
+		int i = 0;
+		for(Type t : bounds) {
+			ts[i++] = t;
+		}		
+		return T_INTERSECT(ts);
+	}
+	
+	/**
+	 * Construct an intersection type using the given type bounds
+	 * 
+	 * @param element
+	 */
+	public static final Type T_INTERSECT(Type... bounds) {		
+		int len = 1;		
+		for(Type b : bounds) {							
+			// could be optimised slightly
+			len += nodes(b).length;
+		}		
+		Node[] nodes = new Node[len];
+		int[] children = new int[bounds.length];
+		int start = 1;
+		for(int i=0;i!=bounds.length;++i) {
+			children[i] = start;
+			Node[] comps = nodes(bounds[i]);
+			Node.insertNodes(start,comps,nodes);
+			start += comps.length;			
+		}
+		nodes[0] = new Node(K_INTERSECTION, children);
+		return new Intersection(nodes);		
+	}	
+	
+	/**
+	 * Construct a difference of two types.
+	 * 
+	 * @param element
+	 */
+	public static final Type T_DIFFERENCE(Type left, Type right) {		
+		Node[] leftComps = nodes(left);
+		Node[] rightComps = nodes(right);
+		Node[] nodes = new Node[1 + leftComps.length + rightComps.length];
+			
+		Node.insertNodes(1,leftComps,nodes);
+		Node.insertNodes(1+leftComps.length,rightComps,nodes);
+		nodes[0] = new Node(K_DIFFERENCE, new int[]{1,1+leftComps.length});
+		return new Difference(nodes);			
+	}
 	
 	public static final Fun T_FUN(Type ret,
 			Collection<Type> params) {
@@ -1857,27 +1905,67 @@ public abstract class Type {
 		 */
 		public HashSet<Type> bounds() {			
 			HashSet<Type> r = new HashSet<Type>();
-			// FIXME: this is a bit of a cludge. The essential idea is to
-			// flattern unions, so we never see a union of unions. This is
-			// helpful for simplifying various algorithms which use them
-			Stack<Union> stack = new Stack<Union>();
-			stack.add(this);
-			while(!stack.isEmpty()) {				
-				Union u = stack.pop();
-				int[] fields = (int[]) u.nodes[0].data;
-				for(int i : fields) {
-					Type b = u.extract(i);
-					if(b instanceof Union) {
-						stack.add((Union)b);
-					} else {
-						r.add(b);
-					}
-				}
-			}
+			int[] fields = (int[]) nodes[0].data;
+			for(int i : fields) {
+				Type b = extract(i);					
+				r.add(b);					
+			}			
 			return r;
 		}
 	}
 
+	/**
+	 * An intersection type represents a type which accepts values in the
+	 * intersection of its bounds. <b>NOTE:</b>There must be at least two bounds
+	 * for an intersection type to make sense.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Intersection extends Compound {
+		private Intersection(Node[] nodes) {
+			super(nodes);
+		}
+
+		/**
+		 * Return the bounds of this union type.
+		 * 
+		 * @return
+		 */
+		public HashSet<Type> bounds() {			
+			HashSet<Type> r = new HashSet<Type>();
+			int[] fields = (int[]) nodes[0].data;
+			for(int i : fields) {
+				Type b = extract(i);					
+				r.add(b);					
+			}			
+			return r;
+		}
+	}
+	
+	/**
+	 * A difference type represents a type which accepts values in the
+	 * difference between its bounds. 
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Difference extends Compound {
+		private Difference(Node[] nodes) {
+			super(nodes);
+		}
+		
+		public Type left() {						
+			int[] fields = (int[]) nodes[0].data;
+			return extract(fields[0]);			
+		}
+		
+		public Type right() {						
+			int[] fields = (int[]) nodes[0].data;
+			return extract(fields[1]);			
+		}
+	}
+	
 	/**
 	 * A function type, consisting of a list of zero or more parameters and a
 	 * return type.
@@ -2004,26 +2092,6 @@ public abstract class Type {
 			// compound type
 			return ((Compound)t).nodes;
 		}
-	}
-	
-	/**
-	 * The flattern unions function flatterns any union types found in the
-	 * bounds array.
-	 * 
-	 * @param bounds
-	 * @return
-	 */
-	private static final ArrayList<Type> flatternUnions(Type[] bounds) {
-		ArrayList<Type> types = new ArrayList<Type>();
-		for(Type t : bounds) {
-			if(t instanceof Union) {
-				Union u = (Union) t;
-				types.addAll(u.bounds());
-			} else {
-				types.add(t);
-			}
-		}
-		return types;
 	}
 	
 	public static void main(String[] args) {				

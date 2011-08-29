@@ -38,6 +38,18 @@ import wyil.util.Pair;
 public class Algorithms {
 
 	/**
+	 * The following algorithm simplifies a type. This includes, for example,
+	 * removing unions involving any, unions of unions and unions with a single
+	 * element.
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static Type simplify(Type t) {
+		return t;
+	}
+	
+	/**
 	 * <p>
 	 * The following algorithm minimises a type. For example:
 	 * </p>

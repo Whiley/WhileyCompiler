@@ -28,17 +28,17 @@ public class TypeTester {
 	
 	public static final Generator.Config TYPE_CONFIG = new Generator.Config() {
 		{
-			this.MAX_DEPTH = 2;
+			this.MAX_DEPTH = 3;
 			
 			this.MAX_FIELDS = 2;
 			this.MAX_UNIONS = 2;
 			this.MAX_TUPLES = 2;	
 			
-			this.ANY = false;
+			this.ANY = true;
 			this.BOOL = false;
 			this.BYTE = false;
 			this.CHAR = false;
-			this.INT = false;
+			this.INT = true;
 			this.REAL = false;
 			this.TUPLES = false;
 			this.SETS = false;
@@ -77,7 +77,7 @@ public class TypeTester {
 				System.out.print(" ");
 			}			
 			Type t = types.get(i);
-			System.out.println("TYPE: " + t);
+			//System.out.println("TYPE: " + t);
 			//PrintBuilder tp = new PrintBuilder(System.out);
 			//Type.build(tp, t);
 			

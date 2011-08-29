@@ -1,25 +1,6 @@
 package wyil.lang.type;
 
-import static wyil.lang.type.Node.K_ANY;
-import static wyil.lang.type.Node.K_BOOL;
-import static wyil.lang.type.Node.K_BYTE;
-import static wyil.lang.type.Node.K_CHAR;
-import static wyil.lang.type.Node.K_DICTIONARY;
-import static wyil.lang.type.Node.K_EXISTENTIAL;
-import static wyil.lang.type.Node.K_FUNCTION;
-import static wyil.lang.type.Node.K_INT;
-import static wyil.lang.type.Node.K_LABEL;
-import static wyil.lang.type.Node.K_LIST;
-import static wyil.lang.type.Node.K_METHOD;
-import static wyil.lang.type.Node.K_NULL;
-import static wyil.lang.type.Node.K_PROCESS;
-import static wyil.lang.type.Node.K_RATIONAL;
-import static wyil.lang.type.Node.K_RECORD;
-import static wyil.lang.type.Node.K_SET;
-import static wyil.lang.type.Node.K_STRING;
-import static wyil.lang.type.Node.K_TUPLE;
-import static wyil.lang.type.Node.K_UNION;
-import static wyil.lang.type.Node.K_VOID;
+import static wyil.lang.type.Node.*;
 
 import java.util.BitSet;
 
@@ -105,7 +86,7 @@ public class TypeToString {
 			// unary nodes
 			findHeaders((Integer) node.data,visited,onStack,headers,graph);
 			break;
-		case K_DICTIONARY:
+		case K_DICTIONARY:		
 			// binary node
 			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
 			findHeaders(p.first(),visited,onStack,headers,graph);
@@ -113,6 +94,8 @@ public class TypeToString {
 			break;
 		case K_TUPLE:
 		case K_UNION:
+		case K_INTERSECTION:
+		case K_DIFFERENCE:
 		case K_METHOD:
 		case K_FUNCTION:
 			// nary node
@@ -200,12 +183,31 @@ public class TypeToString {
 			middle = "{" + k + "->" + v + "}";
 			break;
 		}
+		case K_DIFFERENCE: {
+			// binary node
+			int[] p = (int[]) node.data;
+			String k = toString(p[0], visited, headers, graph);
+			String v = toString(p[1], visited, headers, graph);
+			middle = "(" + k + "-" + v + ")";
+			break;
+		}
 		case K_UNION: {
 			int[] bounds = (int[]) node.data;
 			middle = "";
 			for (int i = 0; i != bounds.length; ++i) {
 				if (i != 0) {
 					middle += "|";
+				}
+				middle += toString(bounds[i], visited, headers, graph);
+			}
+			break;
+		}
+		case K_INTERSECTION: {
+			int[] bounds = (int[]) node.data;
+			middle = "";
+			for (int i = 0; i != bounds.length; ++i) {
+				if (i != 0) {
+					middle += "&";
 				}
 				middle += toString(bounds[i], visited, headers, graph);
 			}
