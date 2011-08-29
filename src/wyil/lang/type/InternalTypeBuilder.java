@@ -1,15 +1,6 @@
 package wyil.lang.type;
 
-import static wyil.lang.type.Node.K_DICTIONARY;
-import static wyil.lang.type.Node.K_EXISTENTIAL;
-import static wyil.lang.type.Node.K_FUNCTION;
-import static wyil.lang.type.Node.K_LIST;
-import static wyil.lang.type.Node.K_METHOD;
-import static wyil.lang.type.Node.K_PROCESS;
-import static wyil.lang.type.Node.K_RECORD;
-import static wyil.lang.type.Node.K_SET;
-import static wyil.lang.type.Node.K_TUPLE;
-import static wyil.lang.type.Node.K_UNION;
+import static wyil.lang.type.Node.*;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.util.Pair;
@@ -85,6 +76,15 @@ public class InternalTypeBuilder implements TypeBuilder {
 	}
 	
 	public void buildUnion(int index, int... bounds) {
+		nodes[index] = new Node(K_UNION,bounds);
+	}
+	
+	public void buildIntersection(int index, int... bounds) {
+		nodes[index] = new Node(K_INTERSECTION,bounds);
+	}
+	
+	public void buildDifference(int index, int left, int right) {
+		int[] bounds = new int[]{left,right};
 		nodes[index] = new Node(K_UNION,bounds);
 	}
 }
