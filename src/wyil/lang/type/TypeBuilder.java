@@ -42,4 +42,8 @@ public interface TypeBuilder {
 	void buildMethod(int index, int receiver, int ret, int... parameters);
 	
 	void buildUnion(int index, int... bounds);
+	
+	void buildIntersection(int index, int... bounds);
+	
+	void buildDifference(int index, int left, int right);
 }

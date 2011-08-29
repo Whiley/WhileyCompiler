@@ -113,4 +113,21 @@ public class PrintBuilder implements TypeBuilder {
 		}
 		out.println();
 	}
+	
+	public void buildIntersection(int index, int... bounds) {
+		out.print("#" + index + " = ");
+		boolean firstTime=true;
+		for(int e : bounds) {
+			if(!firstTime) {
+				out.print(" & ");
+			}
+			firstTime=false;
+			out.print("#" + e);
+		}
+		out.println();
+	}
+	
+	public void buildDifference(int index, int left, int right) {
+		out.println("#" + index + " = #" + left + " - #" + right);		
+	}
 }

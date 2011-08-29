@@ -51,4 +51,10 @@ public class AbstractTypeBuilder implements TypeBuilder {
 
 	public void buildUnion(int index, int... bounds) {
 	}
+	
+	public void buildIntersection(int index, int... bounds) {
+	}
+	
+	public void buildDifference(int index, int left, int right) {
+	}
 }
