@@ -175,6 +175,28 @@ public class BinaryTypeWriter implements TypeBuilder {
 		}
 	}
 	
+	public void buildIntersection(int index, int... bounds) {
+		try {				
+			writeKind(Node.K_INTERSECTION);			
+			writeLength(bounds.length);
+			for(int b : bounds) {
+				writeNode(b);
+			}	
+		} catch(IOException e) {
+			throw new RuntimeException("internal failure",e);
+		}
+	}
+	
+	public void buildDifference(int index, int left, int right) {
+		try {
+			writeKind(Node.K_DIFFERENCE);
+			writeNode(left);
+			writeNode(right);
+		} catch(IOException e) {
+			throw new RuntimeException("internal failure",e);
+		}
+	}
+	
 	protected void writeKind(int kind) throws IOException {
 		writer.write_un(kind,5);
 	}
