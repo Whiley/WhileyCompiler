@@ -543,7 +543,7 @@ public class NameResolution {
 			PackageAccess pa = (PackageAccess) sg.lhs;			
 			try {				
 				ModuleID mid = new ModuleID(pa.pid,sg.name);
-				Module m = loader.loadModule(mid);
+				ModuleLoader.Skeleton m = loader.loadSkeleton(mid);
 				return new ModuleAccess(mid);
 			} catch(ResolveError err) {}
 			PkgID pid = pa.pid.append(sg.name);			
@@ -553,7 +553,17 @@ public class NameResolution {
 			} else {
 				syntaxError("invalid package access",filename,pa);				
 			}
-		} 
+		} else if(sg.lhs instanceof ModuleAccess) {
+			// this indicates we're constructing a constant access
+			ModuleAccess ma = (ModuleAccess) sg.lhs;			
+			try {				
+				ModuleLoader.Skeleton m = loader.loadSkeleton(ma.mid);				
+				if(m.hasName(sg.name)) {
+					return new ExternalAccess(new NameID(ma.mid,sg.name));
+				}				
+			} catch(ResolveError err) {}			
+			syntaxError("invalid module access",filename,ma);							
+		}
 		return sg;		
 	}
 	

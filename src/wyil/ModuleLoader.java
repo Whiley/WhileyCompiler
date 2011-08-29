@@ -187,7 +187,12 @@ public class ModuleLoader {
 	public void preregister(Skeleton skeleton, String filename) {		
 		skeletontable.put(skeleton.id(), skeleton);
 		File parent = new File(filename).getParentFile();
-		addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);								 
+		if(parent == null) {
+			// this is necessary, since parent might be null if this is the
+			// default package.
+			parent = new File(".");
+		} 
+		addPackageItem(skeleton.id().pkg(),skeleton.id().module(),parent);		
 	}
 	
 	public void register(Module module) {			
@@ -304,19 +309,19 @@ public class ModuleLoader {
 		}
 			
 		// module has not been previously loaded.
-		Package pkg = resolvePackage(module.pkg());
+		Package pkg = resolvePackage(module.pkg());		
 		// check for error
-		if(pkg == null) {
+		if(pkg == null) {			
 			throw new ResolveError("Unable to find package: " + module.pkg());
 		} else {
 			try {
 				// ok, now look for module inside package.
 				m = loadModule(module,pkg);
-				if(m == null) {
+				if(m == null) {					
 					throw new ResolveError("Unable to find module: " + module);
 				}
-			} catch(IOException io) {
-				throw new ResolveError("Unagle to find module: " + module,io);
+			} catch(IOException io) {				
+				throw new ResolveError("Unable to find module: " + module,io);
 			}
 		}
 		
@@ -413,7 +418,7 @@ public class ModuleLoader {
 		String filename = module.fileName();	
 		String jarname = filename.replace(File.separatorChar,'/') + ".class";
 		
-		for(File location : pkg.locations) {
+		for(File location : pkg.locations) {			
 			if (location.getName().endsWith(".jar")) {
 				// location is a jar file				
 				JarFile jf = new JarFile(location);				
@@ -421,8 +426,7 @@ public class ModuleLoader {
 				if (je == null) { continue; }  								
 				return readModuleInfo(module, jarname, jf.getInputStream(je));
 			} else {
-				File classFile = new File(location.getPath(),filename + ".class");					
-				
+				File classFile = new File(location.getPath(),filename + ".class");									
 				if(classFile.exists()) {															
 					// Here, there is no sourcefile, but there is a classfile.
 					// So, no need to compile --- just load the class file!
@@ -430,7 +434,7 @@ public class ModuleLoader {
 				}			
 			}
 		}
-		
+				
 		throw new ResolveError("unable to find module: " + module);
 	}
 	
@@ -523,7 +527,7 @@ public class ModuleLoader {
 							String pkgName = pathParent(entryName);
 							String moduleName = pathChild(entryName);
 
-							// now add to package map
+							// now add to package map							
 							addPackageItem(new PkgID(pkgName.split("\\.")),
 									moduleName, new File(dir));
 						}
@@ -588,7 +592,7 @@ public class ModuleLoader {
 					addPackageItem(pkg, name, new File(root));					
 				} else if (file.endsWith(".class")) {					
 					// strip  off ".class" to get module name
-					String name = file.substring(0,file.length()-6);
+					String name = file.substring(0,file.length()-6);					
 					addPackageItem(pkg, name, new File(root));					
 				}
 			}
