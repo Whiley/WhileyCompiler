@@ -1510,6 +1510,19 @@ public class WhileyParser {
 				types.add((UnresolvedType.NonUnion) t);
 			}
 			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
+		} else if (index < tokens.size() && tokens.get(index) instanceof Ampersand) {
+			// this is an intersection type
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			types.add(t);
+			while (index < tokens.size() && tokens.get(index) instanceof Ampersand) {
+				match(Ampersand.class);
+				// the following is needed because the lexer filter cannot
+				// distinguish between a lengthof operator, and union type.
+				skipWhiteSpace();
+				t = parseBaseType();
+				types.add(t);
+			}
+			return new UnresolvedType.Intersection(types, sourceAttr(start, index - 1));
 		} else if ((index + 1) < tokens.size()
 				&& tokens.get(index) instanceof ColonColon
 				&& tokens.get(index + 1) instanceof LeftBrace) {

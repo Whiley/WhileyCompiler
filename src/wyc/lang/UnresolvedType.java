@@ -127,6 +127,17 @@ public interface UnresolvedType extends SyntacticElement {
 			this.bounds = new ArrayList<NonUnion>(bounds);
 		}	
 	}
+	public static final class Intersection extends SyntacticElement.Impl implements UnresolvedType {
+		public final ArrayList<UnresolvedType> bounds;
+
+		public Intersection(Collection<UnresolvedType> bounds, Attribute... attributes) {
+			if (bounds.size() < 2) {
+				new IllegalArgumentException(
+						"Cannot construct a type intersection with fewer than two bounds");
+			}
+			this.bounds = new ArrayList<UnresolvedType>(bounds);
+		}	
+	}
 	
 	public static final class Process extends SyntacticElement.Impl implements NonUnion {
 		public final UnresolvedType element;
