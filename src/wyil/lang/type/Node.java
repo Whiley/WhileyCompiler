@@ -285,5 +285,5 @@ public final class Node {
 	public static final byte K_METHOD = 20;
 	public static final byte K_EXISTENTIAL = 21;
 	public static final byte K_LABEL = 22;	
-	public static final byte K_HEADLESS_METHOD = 23; // used for readers/writers
+	public static final byte K_HEADLESS = 23; // used for readers/writers
 }

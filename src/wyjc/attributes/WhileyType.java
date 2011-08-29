@@ -30,6 +30,7 @@ import java.io.*;
 import java.util.*;
 import wyil.lang.*;
 import wyil.lang.type.*;
+import static wyil.lang.type.Node.*;
 import wyil.util.Pair;
 import wyjvm.io.*;
 import wyjvm.lang.*;
@@ -110,40 +111,40 @@ public class WhileyType implements BytecodeAttribute {
 			for(int i=0;i!=numNodes;++i) {
 				int tag = input.read_u1();			
 				switch (tag) {
-				case ANY_TYPE:
+				case K_ANY:
 					builder.buildPrimitive(i, Type.T_ANY);
 					break;
-				case VOID_TYPE:
+				case K_VOID:
 					builder.buildPrimitive(i, Type.T_VOID);
 					break;
-				case NULL_TYPE:
+				case K_NULL:
 					builder.buildPrimitive(i, Type.T_NULL);
 					break;
-				case BOOL_TYPE:
+				case K_BOOL:
 					builder.buildPrimitive(i, Type.T_BOOL);
 					break;
-				case BYTE_TYPE:
+				case K_BYTE:
 					builder.buildPrimitive(i, Type.T_BYTE);
 					break;
-				case CHAR_TYPE:
+				case K_CHAR:
 					builder.buildPrimitive(i, Type.T_CHAR);
 					break;
-				case INT_TYPE:
+				case K_INT:
 					builder.buildPrimitive(i, Type.T_INT);
 					break;
-				case REAL_TYPE:
+				case K_RATIONAL:
 					builder.buildPrimitive(i, Type.T_REAL);
 					break;
-				case STRING_TYPE:
+				case K_STRING:
 					builder.buildPrimitive(i, Type.T_STRING);
 					break;
-				case LIST_TYPE:
+				case K_LIST:
 					builder.buildList(i, input.read_u2());
 					break;
-				case SET_TYPE:
+				case K_SET:
 					builder.buildSet(i, input.read_u2());
 					break;
-				case TUPLE_TYPE:
+				case K_TUPLE:
 				{
 					int nents = input.read_u2();
 					int[] elems = new int[nents];
@@ -153,7 +154,7 @@ public class WhileyType implements BytecodeAttribute {
 					builder.buildTuple(i, elems);
 					break;
 				}
-				case RECORD_TYPE:
+				case K_RECORD:
 				{
 					int nents = input.read_u2();
 					Pair<String, Integer>[] types = new Pair[nents];
@@ -165,7 +166,7 @@ public class WhileyType implements BytecodeAttribute {
 					builder.buildRecord(i, types);
 					break;
 				}
-				case UNION_TYPE:
+				case K_UNION:
 				{
 					int nents = input.read_u2();
 					int[] elems = new int[nents];
@@ -175,19 +176,19 @@ public class WhileyType implements BytecodeAttribute {
 					builder.buildUnion(i, elems);
 					break;					
 				}
-				case PROCESS_TYPE:					
+				case K_PROCESS:					
 					builder.buildProcess(i, input.read_u2());
 					break;		
-				case EXISTENTIAL_TYPE:
+				case K_EXISTENTIAL:
 					ModuleID mid = readModule(input,constantPool);
 					String name = ((Constant.Utf8) constantPool
 							.get(input.read_u2())).str;
 					builder.buildExistential(i, new NameID(mid,name));
 					break;
-				case HEADLESS_METH_TYPE:
-				case METH_TYPE:{
+				case K_HEADLESS:
+				case K_METHOD:{
 					int rec = -1;
-					if(tag == METH_TYPE) {
+					if(tag == K_METHOD) {
 						rec = input.read_u2();					
 					}
 					int ret = input.read_u2();
@@ -199,7 +200,7 @@ public class WhileyType implements BytecodeAttribute {
 					builder.buildMethod(i, rec, ret, params);
 					break;
 				}				
-				case FUN_TYPE: {					
+				case K_FUNCTION: {					
 					int ret = input.read_u2();
 					int nents = input.read_u2();
 					int[] params = new int[nents];
@@ -266,23 +267,23 @@ public class WhileyType implements BytecodeAttribute {
 		public void buildPrimitive(int index, Type.Leaf t) {
 			try {
 				if(t == Type.T_ANY) {
-					writer.write_u1(ANY_TYPE );
+					writer.write_u1(K_ANY );
 				} else if(t == Type.T_VOID) {
-					writer.write_u1(VOID_TYPE);
+					writer.write_u1(K_VOID);
 				} else if(t == Type.T_NULL) {
-					writer.write_u1(NULL_TYPE );
+					writer.write_u1(K_NULL );
 				} else if(t == Type.T_BOOL) {
-					writer.write_u1(BOOL_TYPE );			
+					writer.write_u1(K_BOOL );			
 				} else if(t == Type.T_BYTE) {			
-					writer.write_u1(BYTE_TYPE );		
+					writer.write_u1(K_BYTE );		
 				} else if(t == Type.T_CHAR) {			
-					writer.write_u1(CHAR_TYPE );		
+					writer.write_u1(K_CHAR );		
 				} else if(t == Type.T_INT) {			
-					writer.write_u1(INT_TYPE );		
+					writer.write_u1(K_INT );		
 				} else if(t == Type.T_REAL) {
-					writer.write_u1(REAL_TYPE );			
+					writer.write_u1(K_RATIONAL );			
 				} else if(t == Type.T_STRING) {
-					writer.write_u1(STRING_TYPE );			
+					writer.write_u1(K_STRING );			
 				} else {
 					throw new RuntimeException("unknown type encountered: " + t);		
 				}
@@ -293,7 +294,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildExistential(int index, NameID name) {
 			try {
-				writer.write_u1(EXISTENTIAL_TYPE);				
+				writer.write_u1(K_EXISTENTIAL);				
 				Constant.Utf8 utf8 = new Constant.Utf8(name.module().toString());
 				writer.write_u2(constantPool.get(utf8));
 				utf8 = new Constant.Utf8(name.name());
@@ -305,7 +306,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildSet(int index, int element) {
 			try {
-				writer.write_u1(SET_TYPE);			
+				writer.write_u1(K_SET);			
 				writer.write_u2(element);
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
@@ -314,7 +315,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildList(int index, int element) {
 			try {
-				writer.write_u1(LIST_TYPE);
+				writer.write_u1(K_LIST);
 				writer.write_u2(element);
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
@@ -323,7 +324,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildProcess(int index, int element) {
 			try {
-				writer.write_u1(PROCESS_TYPE);	
+				writer.write_u1(K_PROCESS);	
 				writer.write_u2(element);				
 			} catch(IOException e) {
 				throw new RuntimeException("internal failure",e);
@@ -332,7 +333,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildDictionary(int index, int key, int value) {
 			try {
-				writer.write_u1(DICTIONARY_TYPE);
+				writer.write_u1(K_DICTIONARY);
 				writer.write_u2(key);
 				writer.write_u2(value);
 			} catch(IOException e) {
@@ -342,7 +343,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildTuple(int index, int... elements) {
 			try {
-				writer.write_u1(TUPLE_TYPE);
+				writer.write_u1(K_TUPLE);
 				// FIXME: bug here if number of entries > 64K
 				writer.write_u2(elements.length);
 				for(int e : elements) {					
@@ -355,7 +356,7 @@ public class WhileyType implements BytecodeAttribute {
 
 		public void buildRecord(int index, Pair<String, Integer>... fields) {
 			try {				
-				writer.write_u1(RECORD_TYPE );
+				writer.write_u1(K_RECORD );
 				// FIXME: bug here if number of entries > 64K
 				writer.write_u2(fields.length);
 				for(Pair<String,Integer> p : fields) {
@@ -371,7 +372,7 @@ public class WhileyType implements BytecodeAttribute {
 		public void buildFunction(int index, int ret,
 				int... parameters) {
 			try {				
-				writer.write_u1(FUN_TYPE);				
+				writer.write_u1(K_FUNCTION);				
 				writer.write_u2(ret);
 				writer.write_u2(parameters.length);
 				for (int p : parameters) {
@@ -386,9 +387,9 @@ public class WhileyType implements BytecodeAttribute {
 				int... parameters) {
 			try {			
 				if(receiver == -1) {
-					writer.write_u1(HEADLESS_METH_TYPE);					
+					writer.write_u1(K_HEADLESS);					
 				} else {
-					writer.write_u1(METH_TYPE);
+					writer.write_u1(K_METHOD);
 					writer.write_u2(receiver);
 				}
 				writer.write_u2(ret);
@@ -403,7 +404,7 @@ public class WhileyType implements BytecodeAttribute {
 		
 		public void buildUnion(int index, int... bounds) {
 			try {				
-				writer.write_u1(UNION_TYPE );			
+				writer.write_u1(K_UNION );			
 				// FIXME: bug here if number of bounds > 64K
 				writer.write_u2(bounds.length);
 				for(int b : bounds) {
@@ -413,28 +414,28 @@ public class WhileyType implements BytecodeAttribute {
 				throw new RuntimeException("internal failure",e);
 			}
 		}
-	}	
-	
-	public static final int EXISTENTIAL_TYPE = 1;
-	public static final int ANY_TYPE = 2;
-	public static final int VOID_TYPE = 3;
-	public static final int NULL_TYPE = 4;
-	public static final int BOOL_TYPE = 5;
-	public static final int BYTE_TYPE = 6;
-	public static final int CHAR_TYPE = 7;
-	public static final int INT_TYPE = 8;
-	public static final int REAL_TYPE = 9;
-	public static final int STRING_TYPE = 10;
-	public static final int LIST_TYPE = 11;
-	public static final int SET_TYPE = 12;
-	public static final int DICTIONARY_TYPE = 13;
-	public static final int TUPLE_TYPE = 14;
-	public static final int RECORD_TYPE = 15;
-	public static final int UNION_TYPE = 16;
-	public static final int INTERSECTION_TYPE = 17;
-	public static final int PROCESS_TYPE = 18;	
-	public static final int FUN_TYPE = 19;
-	public static final int METH_TYPE = 20;
-	public static final int HEADLESS_METH_TYPE = 21;
-	public static final int CONSTRAINT_MASK = 32;
+		
+		public void buildIntersection(int index, int... bounds) {
+			try {				
+				writer.write_u1(K_INTERSECTION);			
+				// FIXME: bug here if number of bounds > 64K
+				writer.write_u2(bounds.length);
+				for(int b : bounds) {
+					writer.write_u2(b);
+				}	
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+		
+		public void buildDifference(int index, int left, int right) {
+			try {
+				writer.write_u1(K_DIFFERENCE);
+				writer.write_u2(left);
+				writer.write_u2(right);
+			} catch(IOException e) {
+				throw new RuntimeException("internal failure",e);
+			}
+		}
+	}		
 }

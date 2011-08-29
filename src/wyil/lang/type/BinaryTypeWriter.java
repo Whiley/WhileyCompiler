@@ -148,7 +148,7 @@ public class BinaryTypeWriter implements TypeBuilder {
 		try {										
 			if(receiver == -1) {
 				// indicates headless method
-				writeKind(Node.K_HEADLESS_METHOD);
+				writeKind(Node.K_HEADLESS);
 			} else {
 				writeKind(Node.K_METHOD);
 				writeNode(receiver);

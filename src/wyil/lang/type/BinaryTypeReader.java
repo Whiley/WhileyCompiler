@@ -94,7 +94,7 @@ public class BinaryTypeReader {
 				builder.buildFunction(i,ret,elems);
 				break;
 			}			
-			case Node.K_HEADLESS_METHOD: {									
+			case Node.K_HEADLESS: {									
 				int ret = readNode();
 				int nelems = readLength();
 				int[] elems = new int[nelems];
