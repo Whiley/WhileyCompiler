@@ -1729,7 +1729,8 @@ public abstract class Type {
 			super(nodes);
 		}
 		public Type element() {
-			return extract(1);
+			int elemIdx = (Integer) nodes[0].data;
+			return extract(elemIdx);			
 		}		
 	}
 
@@ -1745,8 +1746,9 @@ public abstract class Type {
 		private List(Node[] nodes) {
 			super(nodes);
 		}
-		public Type element() {
-			return extract(1);
+		public Type element() {			
+			int elemIdx = (Integer) nodes[0].data;
+			return extract(elemIdx);
 		}		
 	}
 
@@ -1761,8 +1763,8 @@ public abstract class Type {
 			super(nodes);
 		}
 		public Type element() {
-			int i = (Integer) nodes[0].data;
-			return extract(i);			
+			int elemIdx = (Integer) nodes[0].data;
+			return extract(elemIdx);	
 		}		
 	}
 

@@ -21,7 +21,7 @@ public class TypeTester {
 			this.REALS = false;
 			this.TUPLES = false;
 			this.SETS = false;
-			this.LISTS = false;
+			this.LISTS = true;
 			this.DICTIONARIES = false;
 		}
 	};
@@ -38,13 +38,13 @@ public class TypeTester {
 			this.BOOL = false;
 			this.BYTE = false;
 			this.CHAR = false;
-			this.INT = true;
+			this.INT = false;
 			this.REAL = false;
 			this.TUPLES = false;
 			this.SETS = false;
-			this.LISTS = false;
+			this.LISTS = true;
 			this.DICTIONARIES = false;
-			this.RECURSIVES = false;
+			this.RECURSIVES = true;
 		}
 	};
 	
