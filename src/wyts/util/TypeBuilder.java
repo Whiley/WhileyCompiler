@@ -1,4 +1,4 @@
-package wyts.lang;
+package wyts.util;
 
 import wyil.lang.NameID;
 import wyil.lang.Type;

@@ -4,6 +4,7 @@ import static wyts.lang.Node.*;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.util.Pair;
+import wyts.util.TypeBuilder;
 
 /**
  * The internal builder is essentially the way we deserialise types. That

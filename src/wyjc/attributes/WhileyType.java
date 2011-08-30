@@ -35,6 +35,7 @@ import wyjvm.io.*;
 import wyjvm.lang.*;
 import wyts.lang.*;
 import wyts.util.AbstractTypeBuilder;
+import wyts.util.TypeBuilder;
 
 /**
  * A WhileyCondition attribute corresponds to a whiley.ast.exprs.Condition

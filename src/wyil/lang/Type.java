@@ -25,6 +25,7 @@ import wyil.util.Pair;
 import wyts.lang.*;
 import wyts.util.Parser;
 import wyts.util.PrintBuilder;
+import wyts.util.TypeBuilder;
 
 /**
  * A structural type. See
