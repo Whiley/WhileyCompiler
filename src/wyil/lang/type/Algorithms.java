@@ -48,6 +48,18 @@ public class Algorithms {
 	public static Type simplify(Type t) {
 		return t;
 	}
+
+	/**
+	 * The compact method accepts a type and simply removes unreachable
+	 * vertices. This can happen during minimisation for various reasons.
+	 * Essentially, this is garbage collection of the type graph!
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public static Type compact(Type t) {
+		return t;
+	}
 	
 	/**
 	 * <p>
