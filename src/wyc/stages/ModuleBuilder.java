@@ -568,13 +568,26 @@ public class ModuleBuilder {
 				Pair<Type,Block> p = expandType(b, filename, cache);
 				// TODO: add union constraints
 				bounds.add(p.first());							
-			}
-			
-			Type type;
+			}			
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {				
 				return new Pair<Type,Block>(Type.T_UNION(bounds),blk);
+			}			
+		} else if (t instanceof UnresolvedType.Intersection) {
+			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
+			Block blk = null;
+			HashSet<Type> bounds = new HashSet<Type>();
+			for(int i=0;i!=ut.bounds.size();++i) {
+				UnresolvedType b = ut.bounds.get(i);
+				Pair<Type,Block> p = expandType(b, filename, cache);
+				// TODO: add intersection constraints
+				bounds.add(p.first());							
+			}			
+			if (bounds.size() == 1) {
+				return new Pair<Type,Block>(bounds.iterator().next(),blk);
+			} else {				
+				return new Pair<Type,Block>(Type.T_INTERSECTION(bounds),blk);
 			}			
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
