@@ -2,8 +2,8 @@ package wyts.util;
 
 import java.util.HashMap;
 
-import wyil.lang.Type;
-import static wyil.lang.Type.*;
+import wyts.lang.Type;
+import static wyts.lang.Type.*;
 
 /**
  * The Type Parser is used to convert a given string into a type (or a syntax

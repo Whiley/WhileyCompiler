@@ -37,6 +37,7 @@ import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
+import wyts.lang.Type;
 
 /**
  * The WhileyVersion attribute is simply a marker used to indicate that a class

@@ -39,6 +39,7 @@ import wyil.lang.Code.SubList;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
 import wyjc.runtime.BigRational;
+import wyts.lang.Type;
 
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();

@@ -25,17 +25,16 @@ import java.util.Arrays;
 
 import wyil.util.Pair;
 import wyil.lang.NameID;
-import wyil.lang.Type;
-import wyil.lang.Type.Dictionary;
-import wyil.lang.Type.Existential;
-import wyil.lang.Type.Fun;
-import wyil.lang.Type.List;
-import wyil.lang.Type.Meth;
-import wyil.lang.Type.Process;
-import wyil.lang.Type.Record;
-import wyil.lang.Type.Set;
-import wyil.lang.Type.Tuple;
-import wyil.lang.Type.Union;
+import wyts.lang.Type.Dictionary;
+import wyts.lang.Type.Existential;
+import wyts.lang.Type.Fun;
+import wyts.lang.Type.List;
+import wyts.lang.Type.Meth;
+import wyts.lang.Type.Process;
+import wyts.lang.Type.Record;
+import wyts.lang.Type.Set;
+import wyts.lang.Type.Tuple;
+import wyts.lang.Type.Union;
 
 /**
  * Represents a node in the type graph. Each node has a kind, along with a

@@ -5,6 +5,7 @@ import static wyil.util.SyntaxError.syntaxError;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
+import wyts.lang.Type;
 
 /**
  * <p>

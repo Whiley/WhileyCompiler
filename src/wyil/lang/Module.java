@@ -28,6 +28,7 @@ package wyil.lang;
 import java.util.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
+import wyts.lang.Type;
 
 public class Module extends ModuleLoader.Skeleton {	
 	private final String filename;

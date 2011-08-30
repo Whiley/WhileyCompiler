@@ -1,8 +1,8 @@
 package wyts.util;
 
 import wyil.lang.NameID;
-import wyil.lang.Type;
 import wyil.util.Pair;
+import wyts.lang.Type;
 
 /**
  * The Type.Builder interface is essentially a way of separating the

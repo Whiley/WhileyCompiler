@@ -3,10 +3,10 @@ package wyts.io;
 import java.io.IOException;
 
 import wyil.lang.NameID;
-import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjvm.io.BinaryOutputStream;
 import wyts.lang.Node;
+import wyts.lang.Type;
 import wyts.util.TypeBuilder;
 
 /**

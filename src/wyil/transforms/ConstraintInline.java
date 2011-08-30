@@ -9,6 +9,7 @@ import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import static wyil.util.SyntaxError.*;
 import wyjc.runtime.BigRational;
+import wyts.lang.Type;
 
 /**
  * The purpose of this transform is two-fold:

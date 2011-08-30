@@ -27,6 +27,7 @@ package wyil.lang;
 
 import java.util.*;
 import wyil.util.*;
+import wyts.lang.Type;
 
 public abstract class Code {
 	public final static int THIS_SLOT = 0;

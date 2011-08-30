@@ -44,6 +44,7 @@ import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
 import wyts.io.BinaryTypeWriter;
+import wyts.lang.Type;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 
-import wyil.lang.Type;
 import wyil.util.Pair;
 
 /**

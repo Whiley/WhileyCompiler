@@ -4,7 +4,6 @@ import static wyts.lang.Node.*;
 
 import java.util.BitSet;
 
-import wyil.lang.Type;
 import wyil.util.Pair;
 
 /**

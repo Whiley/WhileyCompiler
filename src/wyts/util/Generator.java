@@ -3,6 +3,7 @@ package wyts.util;
 import java.util.*;
 import wyil.lang.*;
 import wyts.lang.Node;
+import wyts.lang.Type;
 
 /**
  * The generator class is used generate lists of types, primarily for testing

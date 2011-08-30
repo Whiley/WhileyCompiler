@@ -34,6 +34,7 @@ import wyil.util.*;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code.IfGoto;
+import wyts.lang.Type;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;

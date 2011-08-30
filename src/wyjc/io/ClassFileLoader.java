@@ -35,7 +35,6 @@ import java.util.List;
 import wyil.lang.Attribute;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
-import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
@@ -44,6 +43,7 @@ import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyts.io.BinaryTypeReader;
+import wyts.lang.Type;
 
 /**
  * The ClassFileLoader is responsible for reading class files and converting

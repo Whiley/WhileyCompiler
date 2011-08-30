@@ -16,11 +16,12 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyil.lang;
+package wyts.lang;
 
 import java.util.*;
 
 import static wyts.lang.Node.*;
+import wyil.lang.NameID;
 import wyil.util.Pair;
 import wyts.lang.*;
 import wyts.util.Parser;

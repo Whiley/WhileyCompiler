@@ -32,6 +32,7 @@ import wyil.Transform;
 import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
+import wyts.lang.Type;
 import static wyil.lang.Block.*;
 import static wyil.util.SyntaxError.*;
 

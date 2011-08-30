@@ -40,6 +40,7 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.util.*;
 import wyil.util.dfa.*;
+import wyts.lang.Type;
 
 import static wyil.lang.Block.*;
 

@@ -2,7 +2,6 @@ package wyts.lang;
 
 import static wyts.lang.Node.*;
 import wyil.lang.NameID;
-import wyil.lang.Type;
 import wyil.util.Pair;
 import wyts.util.TypeBuilder;
 

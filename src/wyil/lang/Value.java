@@ -30,6 +30,7 @@ import java.util.*;
 
 import wyil.util.Pair;
 import wyjc.runtime.BigRational;
+import wyts.lang.Type;
 
 public abstract class Value implements Comparable<Value> {	
 

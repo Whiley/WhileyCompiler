@@ -31,6 +31,7 @@ import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
+import wyts.lang.Type;
 import static wyil.util.SyntaxError.*;
 
 public class FunctionCheck implements Transform {

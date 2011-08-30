@@ -38,6 +38,7 @@ import wyil.lang.Code.*;
 import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
 import wyjc.runtime.BigRational;
+import wyts.lang.Type;
 
 public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
 	private static final HashMap<Integer,Block.Entry> insertions = new HashMap<Integer,Block.Entry>();

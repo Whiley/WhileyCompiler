@@ -4,11 +4,11 @@ import java.io.IOException;
 
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
-import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjvm.io.BinaryInputStream;
 import wyts.lang.InternalTypeBuilder;
 import wyts.lang.Node;
+import wyts.lang.Type;
 
 public class BinaryTypeReader {
 	private final BinaryInputStream reader;	

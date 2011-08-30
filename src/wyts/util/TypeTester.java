@@ -1,7 +1,8 @@
 package wyts.util;
 
 import java.util.*;
-import wyil.lang.Type;
+
+import wyts.lang.Type;
 
 public class TypeTester {
 	public static final SemanticModel.Config MODEL_CONFIG = new SemanticModel.Config() {

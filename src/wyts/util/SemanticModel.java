@@ -7,6 +7,7 @@ import org.apache.tools.ant.taskdefs.ManifestTask.Mode;
 
 import wyil.lang.*;
 import wyjc.runtime.BigRational;
+import wyts.lang.Type;
 
 /**
  * <p>

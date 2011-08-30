@@ -33,6 +33,7 @@ import wyil.lang.*;
 import wyil.lang.Module.*;
 import wyil.ModuleLoader;
 import wyil.Transform;
+import wyts.lang.Type;
 
 public class WyilFileWriter implements Transform {
 	private PrintWriter out;
