@@ -1,12 +1,8 @@
 package wyts.lang;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
+import java.util.*;
 
-import wyil.util.Pair;
-
-public final class Graph {	
+public class Graph extends Type {	
 	public final Node[] nodes;
 
 	public Graph(Node[] nodes) {
@@ -100,72 +96,47 @@ public final class Graph {
 	 */
 	public static final class Node {
 		public final byte kind;
-		public final Object data;
+		public final int[] children;
+		public final Object data;		
 		
-		public Node(byte kind, Object data) {
+		public Node(byte kind) {
+			this(kind,NOCHILDREN,null);
+		}
+		
+		public Node(byte kind, int[] children) {
+			this(kind,children,null);
+		}
+		
+		public Node(byte kind, int[] children, Object data) {
 			this.kind = kind;
+			this.children = children;
 			this.data = data;
 		}
+		
 		public boolean equals(final Object o) {
-			if(o instanceof Node) {
+			if (o instanceof Node) {
 				Node c = (Node) o;
-				if(kind == c.kind) {
-					switch(kind) {
-					case K_VOID:
-					case K_ANY:
-					case K_META:
-					case K_NULL:
-					case K_BOOL:
-					case K_BYTE:
-					case K_CHAR:
-					case K_INT:
-					case K_RATIONAL:
-					case K_STRING:
-						return true;
-					case K_SET:
-					case K_LIST:
-					case K_PROCESS:
-					case K_EXISTENTIAL:
-					case K_DICTIONARY:
-						return data.equals(c.data);
-					case K_TUPLE:	
-					case K_METHOD:
-					case K_FUNCTION:
-					case K_UNION:
-						return Arrays.equals((int[])data, (int[])c.data);
-					case K_RECORD:
-						return Arrays.equals((Pair[])data, (Pair[])c.data);
-					}
-				}				
+				// in the following, we only need to check data != null for this
+				// node as both nodes have the same kind and, hence, this.data
+				// != null implies c.data != null.
+				return kind == c.kind && Arrays.equals(children, c.children)
+						&& (data == null || data.equals(c.data));
 			}
 			return false;
 		}
+
 		public int hashCode() {
-			if(data == null) {
-				return kind;
-			} else {					
-				switch(kind) {
-				case K_SET:
-				case K_LIST:
-				case K_PROCESS:
-				case K_DICTIONARY:
-				case K_EXISTENTIAL:
-					return data.hashCode();			
-				case K_TUPLE:	
-				case K_METHOD:
-				case K_FUNCTION:
-				case K_UNION:
-					return Arrays.hashCode((int[])data);
-				case K_RECORD:
-					return Arrays.hashCode((Pair[])data);
-				case K_LABEL:
-					return data.hashCode();
-				}						
-				throw new RuntimeException("Unreachable code reached (" + kind + ")");
+			int r = Arrays.hashCode(children) + kind;
+			if (data == null) {
+				return r + data.hashCode();
+			} else {
+				return r;
 			}
-		}		
+		}
 	}
 
+	private static final int[] NOCHILDREN = new int[0];
+	
 	/**
 	 * Traverse the subgraph rooted at the given node an extract all nodes.
 	 * 
@@ -173,7 +144,7 @@ public final class Graph {
 	 * @param nodes
 	 * @return
 	 */
-	private static final Node[] extract(int root, Node[] nodes) {
+	static final Node[] extract(int root, Node[] nodes) {
 		// First, we perform the DFS.
 		BitSet visited = new BitSet(nodes.length);
 		// extracted maps new indices to old indices
@@ -194,7 +165,7 @@ public final class Graph {
 		return newNodes;
 	}
 	
-	private static final void extractOnto(int root, Node[] nodes,
+	static final void extractOnto(int root, Node[] nodes,
 			ArrayList<Node> newNodes) {
 		// First, we perform the DFS.
 		BitSet visited = new BitSet(nodes.length);
@@ -228,44 +199,15 @@ public final class Graph {
 	 * @param graph
 	 *            --- the graph.
 	 */
-	private final static void subgraph(int index, BitSet visited,
+	final static void subgraph(int index, BitSet visited,
 			ArrayList<Integer> extracted, Node[] graph) {
 		if(visited.get(index)) { return; } // node already visited}
 		extracted.add(index);
 		visited.set(index);
 		Node node = graph[index];
-		switch(node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			subgraph((Integer) node.data,visited,extracted,graph);
-			break;
-		case K_DICTIONARY:
-			// binary node
-			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
-			subgraph(p.first(),visited,extracted,graph);
-			subgraph(p.second(),visited,extracted,graph);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			for(int b : bounds) {
-				if(b == -1) { continue; } // possible with K_FUNCTION				
-				subgraph(b,visited,extracted,graph);				
-			}
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
-			for(Pair<String,Integer> f : fields) {
-				subgraph(f.second(),visited,extracted,graph);
-			}
-			break;			
-		}
+		for(int child : node.children) {
+			subgraph(child,visited,extracted,graph);
+		}		
 	}
 
 	/**
@@ -281,70 +223,19 @@ public final class Graph {
 	 *            space.
 	 * @return
 	 */
-	private static Node remap(Node node, int[] rmap) {
-		Object data;
-
-		switch (node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			int element = (Integer) node.data;
-			data = rmap[element];
-			break;
-		case K_DICTIONARY:
-			// binary node
-			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-			data = new Pair(rmap[p.first()], rmap[p.second()]);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			int[] nbounds = new int[bounds.length];
-			for (int i = 0; i != bounds.length; ++i) {
-				if(bounds[i] == -1) { 
-					nbounds[i] = -1; // possible with K_FUNCTION
-				} else {
-					nbounds[i] = rmap[bounds[i]];	
-				}
-			}
-			data = nbounds;
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-			Pair<String, Integer>[] nfields = new Pair[fields.length];
-			for (int i = 0; i != fields.length; ++i) {
-				Pair<String, Integer> field = fields[i];
-				nfields[i] = new Pair(field.first(), rmap[field.second()]);
-			}
-			data = nfields;
-			break;
-		default:
-			return node;
-		}
-		return new Node(node.kind, data);
+	static Node remap(Node node, int[] rmap) {
+		int[] ochildren = node.children;
+		int[] nchildren = new int[ochildren.length];
+		for(int i=0;i!=nchildren.length;++i) {
+			nchildren[i] = rmap[ochildren[i]];
+		}		
+		return new Node(node.kind, nchildren, node.data);
 	}
-	
-	private static final char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
-	private static String headerTitle(int count) {
-		String r = Character.toString(headers[count%headers.length]);
-		int n = count / headers.length;
-		if(n > 0) {
-			return r + n;
-		} else {
-			return r;
-		}
-	}
-			
 	
 	/**
 	 * The following method traverses the graph using a depth-first
 	 * search to identify nodes which are "loop headers". That is, they are the
-	 * target of one or more recursive edgesin the graph.
+	 * target of one or more recursive edges in the graph.
 	 * 
 	 * @param index
 	 *            --- the index to search from.
@@ -370,43 +261,23 @@ public final class Graph {
 		onStack.set(index);
 		visited.set(index);
 		Node node = graph[index];
-		switch(node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			findHeaders((Integer) node.data,visited,onStack,headers,graph);
-			break;
-		case K_DICTIONARY:		
-			// binary node
-			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
-			findHeaders(p.first(),visited,onStack,headers,graph);
-			findHeaders(p.second(),visited,onStack,headers,graph);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_INTERSECTION:
-		case K_DIFFERENCE:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			for(int b : bounds) {
-				if(b == -1) { continue; } // possible with K_FUNCTION
-				findHeaders(b,visited,onStack,headers,graph);
-			}
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
-			for(Pair<String,Integer> f : fields) {
-				findHeaders(f.second(),visited,onStack,headers,graph);
-			}
-			break;			
-		}
+		for(int child : node.children) {
+			findHeaders(child,visited,onStack,headers,graph);
+		}	
 		onStack.set(index,false);
 	}
 
+	private static final char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
+	private static String headerTitle(int count) {
+		String r = Character.toString(headers[count%headers.length]);
+		int n = count / headers.length;
+		if(n > 0) {
+			return r + n;
+		} else {
+			return r;
+		}
+	}
+	
 	/**
 	 * The following method constructs a string representation of the underlying
 	 * graph. This representation may be an expanded version of the underling
@@ -431,7 +302,10 @@ public final class Graph {
 		} else if(headers[index] != null) {
 			visited.set(index);
 		}
+		
 		Node node = graph[index];
+		int[] children = node.children;
+		
 		String middle;
 		switch (node.kind) {
 		case K_VOID:
@@ -453,84 +327,87 @@ public final class Graph {
 		case K_STRING:
 			return "string";
 		case K_SET:
-			middle = "{" + toString((Integer) node.data, visited, headers, graph)
+			middle = "{" + toString(children[0], visited, headers, graph)
 					+ "}";
 			break;
 		case K_LIST:
-			middle = "[" + toString((Integer) node.data, visited, headers, graph)
+			middle = "[" + toString(children[0], visited, headers, graph)
 					+ "]";
 			break;
 		case K_EXISTENTIAL:
-			middle = "?" + node.data.toString();
+			middle = "?" + node.data;
 			break;
 		case K_PROCESS:
-			middle = "process " + toString((Integer) node.data, visited, headers, graph);
+			middle = "process " + toString(children[0], visited, headers, graph);
 			break;
 		case K_DICTIONARY: {
-			// binary node
-			Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-			String k = toString(p.first(), visited, headers, graph);
-			String v = toString(p.second(), visited, headers, graph);
+			// binary node			
+			String k = toString(children[0], visited, headers, graph);
+			String v = toString(children[1], visited, headers, graph);
 			middle = "{" + k + "->" + v + "}";
 			break;
 		}
 		case K_DIFFERENCE: {
 			// binary node
-			int[] p = (int[]) node.data;
-			String k = toString(p[0], visited, headers, graph);
-			String v = toString(p[1], visited, headers, graph);
+			String k = toString(children[0], visited, headers, graph);
+			String v = toString(children[1], visited, headers, graph);
 			middle = "(" + k + "-" + v + ")";
 			break;
 		}
-		case K_UNION: {
-			int[] bounds = (int[]) node.data;
+		case K_UNION: {			
 			middle = "";
-			for (int i = 0; i != bounds.length; ++i) {
+			for (int i = 0; i != children.length; ++i) {
 				if (i != 0) {
 					middle += "|";
 				}
-				middle += toString(bounds[i], visited, headers, graph);
+				middle += toString(children[i], visited, headers, graph);
 			}
 			break;
 		}
-		case K_INTERSECTION: {
-			int[] bounds = (int[]) node.data;
+		case K_INTERSECTION: {			
 			middle = "";
-			for (int i = 0; i != bounds.length; ++i) {
+			for (int i = 0; i != children.length; ++i) {
 				if (i != 0) {
 					middle += "&";
 				}
-				middle += toString(bounds[i], visited, headers, graph);
+				middle += toString(children[i], visited, headers, graph);
 			}
 			break;
 		}
 		case K_TUPLE: {
-			middle = "";
-			int[] bounds = (int[]) node.data;			
-			for (int i = 0; i != bounds.length; ++i) {
+			middle = "";					
+			for (int i = 0; i != children.length; ++i) {
 				if (i != 0) {
 					middle += ",";
 				}
-				middle += toString(bounds[i], visited, headers, graph);
+				middle += toString(children[i], visited, headers, graph);
 			}
 			middle = "(" + middle + ")";
 			break;
-		}
-		case K_METHOD:
+		}		
 		case K_FUNCTION: {
-			middle = "";
-			int[] bounds = (int[]) node.data;
-			String rec = bounds[0] == -1 ? null : toString(bounds[0],visited,headers,graph);
-			String ret = toString(bounds[1], visited, headers, graph);
-			for (int i = 2; i != bounds.length; ++i) {
+			middle = "";						
+			String ret = toString(children[0], visited, headers, graph);
+			for (int i = 1; i != children.length; ++i) {
+				if (i != 1) {
+					middle += ",";
+				}
+				middle += toString(children[i], visited, headers, graph);
+			}			
+			middle = ret + "(" + middle + ")";			
+			break;
+		}
+		case K_METHOD: {
+			middle = "";			
+			String rec = children[0] == -1 ? null : toString(children[0],visited,headers,graph);
+			String ret = toString(children[1], visited, headers, graph);
+			for (int i = 2; i != children.length; ++i) {
 				if (i != 2) {
 					middle += ",";
 				}
-				middle += toString(bounds[i], visited, headers, graph);
+				middle += toString(children[i], visited, headers, graph);
 			}
-			if(node.kind == K_FUNCTION) {
-				middle = ret + "(" + middle + ")";
-			} else if(rec != null) {
+			if(rec != null) {
 				middle = rec + "::" + ret + "(" + middle + ")";
 			} else {
 				middle = "::" + ret + "(" + middle + ")";
@@ -540,13 +417,12 @@ public final class Graph {
 		case K_RECORD: {
 			// labeled nary node
 			middle = "{";
-			Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
+			String[] fields = (String[]) node.data;			
 			for (int i = 0; i != fields.length; ++i) {
 				if (i != 0) {
 					middle += ",";
-				}
-				Pair<String, Integer> f = fields[i];
-				middle += toString(f.second(), visited, headers, graph) + " " + f.first();
+				}				
+				middle += toString(children[i], visited, headers, graph) + " " + fields[i];
 			}
 			middle = middle + "}";
 			break;
@@ -574,39 +450,7 @@ public final class Graph {
 			return middle;
 		}
 	}
-
-	/**
-	 * Determine the node kind of a Type.Leafs
-	 * @param leaf
-	 * @return
-	 */
-	public static final byte leafKind(Type.Leaf leaf) {
-		if(leaf instanceof Type.Void) {
-			return K_VOID;
-		} else if(leaf instanceof Type.Any) {
-			return K_ANY;
-		} else if(leaf instanceof Type.Null) {
-			return K_NULL;
-		} else if(leaf instanceof Type.Bool) {
-			return K_BOOL;
-		} else if(leaf instanceof Type.Byte) {
-			return K_BYTE;
-		} else if(leaf instanceof Type.Char) {
-			return K_CHAR;
-		} else if(leaf instanceof Type.Int) {
-			return K_INT;
-		} else if(leaf instanceof Type.Real) {
-			return K_RATIONAL;
-		} else if(leaf instanceof Type.Strung) {
-			return K_STRING;
-		} else if(leaf instanceof Type.Meta) {
-			return K_META;
-		} else {
-			// should be dead code
-			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
-		}
-	}
-
+	
 	/**
 	 * This method inserts a blank node at the head of the nodes
 	 * array, whilst remapping all existing nodes appropriately.
@@ -626,28 +470,6 @@ public final class Graph {
 		return newnodes;
 	}
 
-	/**
-	 * The method inserts the nodes in
-	 * <code>from</from> into those in <code>into</code> at the given index.
-	 * This method remaps nodes in <code>from</code>, but does not remap
-	 * any in <code>into</code>
-	 * 
-	 * @param start
-	 * @param from
-	 * @param into
-	 * @return
-	 */
-	public static Node[] insertNodes(int start, Node[] from, Node[] into) {
-		int[] rmap = new int[from.length];
-		for(int i=0;i!=from.length;++i) {
-			rmap[i] = i+start;			
-		}
-		for(int i=0;i!=from.length;++i) {
-			into[i+start] = remap(from[i],rmap);			
-		}
-		return into;
-	}
-	
 	public static final byte K_VOID = 0;
 	public static final byte K_ANY = 1;
 	public static final byte K_META = 2;

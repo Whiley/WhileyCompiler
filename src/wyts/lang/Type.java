@@ -20,7 +20,6 @@ package wyts.lang;
 
 import java.util.*;
 
-import static wyts.lang.Node.*;
 import wyil.lang.NameID;
 import wyil.util.Pair;
 import wyts.lang.*;
@@ -59,23 +58,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(Type... elements) {
-		int len = 1;
-		for(Type b : elements) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[elements.length];
-		int start = 1;
-		for(int i=0;i!=elements.length;++i) {
-			children[i] = start;
-			Node[] comps = nodes(elements[i]);
-			Node.insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_TUPLE, children);		
-		return new Tuple(nodes);
+	public static final Tuple T_TUPLE(Type... elements) {		
+		return new Tuple(construct(Graph.K_TUPLE,null,elements));
 	}
 	
 	/**
@@ -84,22 +68,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
-		int len = 1;
-		for(Type b : elements) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[elements.size()];
-		int start = 1;
-		for(int i=0;i!=elements.size();++i) {
-			children[i] = start;
-			Node[] comps = nodes(elements.get(i));
-			Node.insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_TUPLE, children);		
-		return new Tuple(nodes);
+		return new Tuple(construct(Graph.K_TUPLE,null,elements));
 	}
 	
 	/**
@@ -108,15 +77,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Process T_PROCESS(Type element) {
-		if (element instanceof Leaf) {
-			return new Process(new Node[] { new Node(K_PROCESS, 1),
-					new Node(Node.leafKind((Leaf) element), null) });
-		} else {
-			// Compound type
-			Node[] nodes = Node.insertComponent(((Compound) element).nodes);
-			nodes[0] = new Node(K_PROCESS, 1);
-			return new Process(nodes);
-		}
+		return new Process(construct(Graph.K_PROCESS,null,element));		
 	}
 	
 	public static final Existential T_EXISTENTIAL(NameID name) {
@@ -133,15 +94,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Set T_SET(Type element) {
-		if (element instanceof Leaf) {
-			return new Set(new Node[] { new Node(K_SET, 1),
-					new Node(Node.leafKind((Leaf) element), null) });
-		} else {
-			// Compound type
-			Node[] nodes = Node.insertComponent(((Compound) element).nodes);
-			nodes[0] = new Node(K_SET, 1);
-			return new Set(nodes);
-		}
+		return new Set(construct(Graph.K_SET,null,element));		
 	}
 	
 	/**
@@ -150,15 +103,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final List T_LIST(Type element) {
-		if (element instanceof Leaf) {
-			return new List(new Node[] { new Node(K_LIST, 1),
-					new Node(Node.leafKind((Leaf) element), null) });
-		} else {
-			// Compound type
-			Node[] nodes = Node.insertComponent(((Compound) element).nodes);
-			nodes[0] = new Node(K_LIST, 1);
-			return new List(nodes);
-		}
+		return new List(construct(Graph.K_LIST,null,element));		
 	}
 	
 	/**
@@ -167,14 +112,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Dictionary T_DICTIONARY(Type key, Type value) {
-		Node[] keyComps = nodes(key);
-		Node[] valueComps = nodes(value);
-		Node[] nodes = new Node[1 + keyComps.length + valueComps.length];
-			
-		Node.insertNodes(1,keyComps,nodes);
-		Node.insertNodes(1+keyComps.length,valueComps,nodes);
-		nodes[0] = new Node(K_DICTIONARY, new Pair(1,1+keyComps.length));
-		return new Dictionary(nodes);		
+		return new Dictionary(construct(Graph.K_DICTIONARY,null,key,value));			
 	}
 	
 	/**
@@ -182,13 +120,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_UNION(Collection<Type> bounds) {		
-		Type[] ts = new Type[bounds.size()];
-		int i = 0;
-		for(Type t : bounds) {
-			ts[i++] = t;
-		}		
-		return T_UNION(ts);
+	public static final Union T_UNION(Collection<Type> bounds) {
+		return new Union(construct(Graph.K_UNION,null,bounds));		
 	}
 	
 	/**
@@ -196,23 +129,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_UNION(Type... bounds) {		
-		int len = 1;		
-		for(Type b : bounds) {							
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[bounds.length];
-		int start = 1;
-		for(int i=0;i!=bounds.length;++i) {
-			children[i] = start;
-			Node[] comps = nodes(bounds[i]);
-			Node.insertNodes(start,comps,nodes);
-			start += comps.length;			
-		}
-		nodes[0] = new Node(K_UNION, children);
-		return new Union(nodes);		
+	public static final Union T_UNION(Type... bounds) {
+		return new Union(construct(Graph.K_UNION,null,bounds));			
 	}	
 	
 	/**
@@ -220,13 +138,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_INTERSECTION(Collection<Type> bounds) {		
-		Type[] ts = new Type[bounds.size()];
-		int i = 0;
-		for(Type t : bounds) {
-			ts[i++] = t;
-		}		
-		return T_INTERSECT(ts);
+	public static final Type T_INTERSECTION(Collection<Type> bounds) {
+		return new Intersection(construct(Graph.K_INTERSECTION,null,bounds));
 	}
 	
 	/**
@@ -234,23 +147,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_INTERSECT(Type... bounds) {		
-		int len = 1;		
-		for(Type b : bounds) {							
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[bounds.length];
-		int start = 1;
-		for(int i=0;i!=bounds.length;++i) {
-			children[i] = start;
-			Node[] comps = nodes(bounds[i]);
-			Node.insertNodes(start,comps,nodes);
-			start += comps.length;			
-		}
-		nodes[0] = new Node(K_INTERSECTION, children);
-		return new Intersection(nodes);		
+	public static final Type T_INTERSECTION(Type... bounds) {
+		return new Intersection(construct(Graph.K_INTERSECTION,null,bounds));			
 	}	
 	
 	/**
@@ -258,25 +156,22 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_DIFFERENCE(Type left, Type right) {		
-		Node[] leftComps = nodes(left);
-		Node[] rightComps = nodes(right);
-		Node[] nodes = new Node[1 + leftComps.length + rightComps.length];
-			
-		Node.insertNodes(1,leftComps,nodes);
-		Node.insertNodes(1+leftComps.length,rightComps,nodes);
-		nodes[0] = new Node(K_DIFFERENCE, new int[]{1,1+leftComps.length});
-		return new Difference(nodes);			
+	public static final Type T_DIFFERENCE(Type left, Type right) {
+		return new Difference(construct(Graph.K_DIFFERENCE,null,left,right));				
 	}
 	
+	/**
+	 * Construct a function type using the given return and parameter types.
+	 * 
+	 * @param element
+	 */
 	public static final Fun T_FUN(Type ret,
 			Collection<Type> params) {
-		Type[] ts = new Type[params.size()];
+		Type[] rparams = new Type[params.size()+1];		
 		int i = 0;
-		for (Type t : params) {
-			ts[i++] = t;
-		}
-		return T_FUN(ret, ts);
+		for (Type t : params) { rparams[++i] = t; }		
+		rparams[0] = ret;
+		return new Fun(construct(Graph.K_FUNCTION,null,rparams));		
 	}
 	
 	/**
@@ -285,39 +180,25 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Fun T_FUN(Type ret, Type... params) {
-		Node[] reccomps;		
-		reccomps = new Node[0];		
-		Node[] retcomps = nodes(ret); 
-		int len = 1 + reccomps.length + retcomps.length;
-		for(Type b : params) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[2 + params.length];
-		Node.insertNodes(1,reccomps,nodes);
-		Node.insertNodes(1+reccomps.length,retcomps,nodes);
-		children[0] = -1;
-		children[1] = 1 + reccomps.length;
-		int start = 1 + reccomps.length + retcomps.length;		
-		for(int i=0;i!=params.length;++i) {
-			children[i+2] = start;
-			Node[] comps = nodes(params[i]);
-			Node.insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_FUNCTION, children);
-		return new Fun(nodes);		
+		Type[] rparams = new Type[params.length+1];		
+		System.arraycopy(params, 0, rparams, 1, params.length);
+		rparams[0] = ret;
+		return new Fun(construct(Graph.K_FUNCTION,null,rparams));				
 	}
 	
+	/**
+	 * Construct a method type using the given receiver, return and parameter types.
+	 * 
+	 * @param element
+	 */
 	public static final Meth T_METH(Process receiver, Type ret,
 			Collection<Type> params) {
-		Type[] ts = new Type[params.size()];
-		int i = 0;
-		for (Type t : params) {
-			ts[i++] = t;
-		}
-		return T_METH(receiver, ret, ts);
+		Type[] rparams = new Type[params.size()+1];		
+		int i = 1;
+		for (Type t : params) { rparams[++i] = t; }		
+		rparams[0] = receiver;
+		rparams[1] = ret;
+		return new Meth(construct(Graph.K_METHOD,null,rparams));		
 	}
 	
 	/**
@@ -326,36 +207,11 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Meth T_METH(Process receiver, Type ret, Type... params) {				
-		if(ret == null) {
-			throw new IllegalArgumentException("T_METH ret cannot be null");			
-		} 
-		Node[] reccomps;
-		if(receiver != null) {
-			reccomps = nodes(receiver);				
-		} else {
-			reccomps = new Node[0];
-		}		
-		Node[] retcomps = nodes(ret); 
-		int len = 1 + reccomps.length + retcomps.length;
-		for(Type b : params) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		Node[] nodes = new Node[len];
-		int[] children = new int[2 + params.length];
-		Node.insertNodes(1,reccomps,nodes);
-		Node.insertNodes(1+reccomps.length,retcomps,nodes);
-		children[0] = receiver == null ? -1 : 1;
-		children[1] = 1 + reccomps.length;
-		int start = 1 + reccomps.length + retcomps.length;		
-		for(int i=0;i!=params.length;++i) {
-			children[i+2] = start;
-			Node[] comps = nodes(params[i]);
-			Node.insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_METHOD, children);
-		return new Meth(nodes);		
+		Type[] rparams = new Type[params.length+2];		
+		System.arraycopy(params, 0, rparams, 2, params.length);
+		rparams[0] = receiver;
+		rparams[1] = ret;
+		return new Meth(construct(Graph.K_METHOD,null,rparams));		
 	}
 	
 	/**
@@ -363,27 +219,15 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Record T_RECORD(Map<String,Type> fields) {		
-		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
-		Collections.sort(keys);		
-		int len = 1;
-		for(int i=0;i!=keys.size();++i) {
-			String k = keys.get(i);
-			Type t = fields.get(k);			
-			len += nodes(t).length;
+	public static final Record T_RECORD(Map<String,Type> fields) {				
+		java.util.Set<String> keySet = fields.keySet();
+		String[] keys = keySet.toArray(new String[keySet.size()]);
+		Arrays.sort(keys);
+		Type[] types = new Type[keys.length];
+		for(int i=0;i!=types.length;++i) {
+			types[i] = fields.get(keys[i]);
 		}
-		Node[] nodes = new Node[len];
-		Pair<String,Integer>[] children = new Pair[fields.size()];
-		int start = 1;
-		for(int i=0;i!=children.length;++i) {			
-			String k = keys.get(i);
-			children[i] = new Pair<String,Integer>(k,start);
-			Node[] comps = nodes(fields.get(k));
-			Node.insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new Node(K_RECORD,children);
-		return new Record(nodes);
+		return new Record(construct(Graph.K_RECORD,keys,types));				
 	}
 
 	/**
@@ -406,7 +250,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static final Type T_LABEL(String label) {
-		return new Compound(new Node[]{new Node(K_LABEL,label)});
+		return new Graph(construct(Graph.K_LABEL,label));
 	}
 
 	/**
@@ -435,13 +279,13 @@ public abstract class Type {
 	public static final Type T_RECURSIVE(String label, Type type) {
 		// first stage, identify all matching labels
 		if(type instanceof Leaf) { throw new IllegalArgumentException("cannot close a leaf type"); }
-		Compound compound = (Compound) type;
+		Graph compound = (Graph) type;
 		Node[] nodes = compound.nodes;
 		int[] rmap = new int[nodes.length];		
 		int nmatches = 0;
 		for(int i=0;i!=nodes.length;++i) {
 			Node c = nodes[i];
-			if(c.kind == K_LABEL && c.data.equals(label)) {
+			if(c.kind == Graph.K_LABEL && c.data.equals(label)) {
 				rmap[i] = 0;
 				nmatches++;
 			} else {
@@ -456,10 +300,10 @@ public abstract class Type {
 		nmatches = 0;
 		for(int i=0;i!=nodes.length;++i) {
 			Node c = nodes[i];
-			if(c.kind == K_LABEL && c.data.equals(label)) {				
+			if(c.kind == Graph.K_LABEL && c.data.equals(label)) {				
 				nmatches++;
 			} else {
-				newnodes[i-nmatches] = Node.remap(nodes[i],rmap);
+				newnodes[i-nmatches] = Graph.remap(nodes[i],rmap);
 			}
 		}
 		return construct(newnodes);
@@ -475,7 +319,6 @@ public abstract class Type {
 	public static Type fromString(String str) {
 		return new Parser(str).parse();
 	}
-
 		
 	/**
 	 * This is a utility helper for constructing types. In particular, it's
@@ -491,9 +334,9 @@ public abstract class Type {
 		if (t instanceof Leaf) {
 			return false;
 		}
-		Compound graph = (Compound) t;
+		Graph graph = (Graph) t;
 		for (Node n : graph.nodes) {
-			if (n.kind == K_LABEL && n.data.equals(label)) {
+			if (n.kind == Graph.K_LABEL && n.data.equals(label)) {
 				return true;
 			}
 		}
@@ -512,124 +355,15 @@ public abstract class Type {
 		if (t instanceof Leaf) {
 			return false;
 		}
-		Compound graph = (Compound) t;
+		Graph graph = (Graph) t;
 		for (Node n : graph.nodes) {			
-			if (n.kind == K_LABEL) {
+			if (n.kind == Graph.K_LABEL) {
 				return true;
 			}
 		}
 		return false;
-	}
-	
-	// =============================================================
-	// Serialisation Helpers
-	// =============================================================
-
+	}	
 		
-	
-	/**
-	 * Construct a copy of a given type using a given type builder. The normal
-	 * reason to do this is that the representation of the type being built is
-	 * not the internal one --- e.g. it's a textual or binary representation for
-	 * serialisation.
-	 * 
-	 * @param writer
-	 * @param type
-	 */
-	public static void build(TypeBuilder writer, Type type) {
-		if(type instanceof Leaf) {			
-			writer.initialise(1);
-			writer.buildPrimitive(0,(Type.Leaf)type);
-		} else {				
-			Compound graph = (Compound) type;
-			writer.initialise(graph.nodes.length);
-			Node[] nodes = graph.nodes;
-			for(int i=0;i!=nodes.length;++i) {
-				Node node = nodes[i];						
-				switch (node.kind) {
-				case K_VOID:
-					writer.buildPrimitive(i,T_VOID);
-					break;
-				case K_ANY:
-					writer.buildPrimitive(i,T_ANY);
-					break;
-				case K_NULL:
-					writer.buildPrimitive(i,T_NULL);
-					break;
-				case K_BOOL:
-					writer.buildPrimitive(i,T_BOOL);
-					break;
-				case K_BYTE:
-					writer.buildPrimitive(i,T_BYTE);
-					break;
-				case K_CHAR:
-					writer.buildPrimitive(i,T_CHAR);
-					break;
-				case K_INT:
-					writer.buildPrimitive(i,T_INT);
-					break;
-				case K_RATIONAL:
-					writer.buildPrimitive(i,T_REAL);
-					break;
-				case K_STRING:
-					writer.buildPrimitive(i,T_STRING);
-					break;
-				case K_SET:
-					writer.buildSet(i,(Integer) node.data);
-					break;
-				case K_LIST:
-					writer.buildList(i,(Integer) node.data);												
-					break;
-				case K_PROCESS:
-					writer.buildProcess(i,(Integer) node.data);	
-					break;
-				case K_EXISTENTIAL:					
-					writer.buildExistential(i,(NameID) node.data);	
-					break;
-				case K_DICTIONARY: {
-					// binary node
-					Pair<Integer, Integer> p = (Pair<Integer, Integer>) node.data;
-					writer.buildDictionary(i,p.first(),p.second());										
-					break;
-				}
-				case K_UNION: {
-					int[] bounds = (int[]) node.data;			
-					writer.buildUnion(i,bounds);
-					break;
-				}
-				case K_TUPLE: {									
-					int[] bounds = (int[]) node.data;								
-					writer.buildTuple(i,bounds);					
-					break;
-				}				
-				case K_FUNCTION: {				
-					int[] bounds = (int[]) node.data;
-					int[] params = new int[bounds.length-2];
-					System.arraycopy(bounds, 2, params,0, params.length);
-					writer.buildFunction(i,bounds[1],params);
-					break;
-				}
-				case K_METHOD: {				
-					int[] bounds = (int[]) node.data;
-					int[] params = new int[bounds.length-2];
-					System.arraycopy(bounds, 2, params,0, params.length);
-					writer.buildMethod(i,bounds[0],bounds[1],params);
-					break;
-				}
-				case K_RECORD: {
-					// labeled nary node					
-					Pair<String, Integer>[] fields = (Pair<String, Integer>[]) node.data;
-					writer.buildRecord(i,fields);
-					break;
-				}
-				default: 
-					throw new IllegalArgumentException("Invalid type encountered");
-				}
-			}		
-		}
-	}
-	
-	
 	// =============================================================
 	// Type operations
 	// =============================================================
@@ -699,29 +433,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
-		// BUG FIX: this algorithm still isn't implemented correctly.
-		// -------> it can infinite loop as the recursion isn't terminated.
-		if(isSubtype(t1,t2)) {			
-			return t2;
-		} else if(isSubtype(t2,t1)) {			
-			return t1;
-		} else {
-			Node[] graph1, graph2;
-			if(t1 instanceof Leaf) {
-				graph1 = new Node[] { new Node(Node.leafKind((Type.Leaf) t1), null) };
-			} else {
-				graph1 = ((Compound)t1).nodes;
-			}
-			if(t2 instanceof Leaf) {
-				graph2 = new Node[] { new Node(Node.leafKind((Type.Leaf) t2), null) };
-			} else {
-				graph2 = ((Compound)t2).nodes;
-			}
-			ArrayList<Node> newNodes = new ArrayList<Node>();
-			intersect(0,graph1,0,graph2,newNodes, new HashMap());
-			Type glb = construct(newNodes.toArray(new Node[newNodes.size()]));				
-			return minimise(glb);
-		}
+		return minimise(T_INTERSECTION(t1,t2)); // so easy
 	}
 
 	/**
@@ -738,28 +450,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastDifference(Type t1, Type t2) {
-		// BUG FIX: this algorithm still isn't implemented correctly.
-		// -------> it can infinite loop as the recursion isn't terminated.
-		if(isSubtype(t2,t1)) {			
-			return T_VOID;
-		} else {
-			Node[] graph1, graph2;
-			if(t1 instanceof Leaf) {
-				graph1 = new Node[] { new Node(Node.leafKind((Type.Leaf) t1), null) };
-			} else {
-				graph1 = ((Compound)t1).nodes;
-			}
-			if(t2 instanceof Leaf) {
-				graph2 = new Node[] { new Node(Node.leafKind((Type.Leaf) t2), null) };
-			} else {
-				graph2 = ((Compound)t2).nodes;
-			}
-			SubtypeRelation assumptions = new DefaultSubtypeOperator(graph1,graph2).doInference();			
-			ArrayList<Node> newNodes = new ArrayList<Node>();
-			difference(0,graph1,0,graph2,newNodes, new HashMap(),assumptions);
-			Type ldiff = construct(newNodes.toArray(new Node[newNodes.size()]));
-			return minimise(ldiff);
-		}
+		return minimise(T_DIFFERENCE(t1,t2)); // so easy
 	}
 
 	/**
@@ -947,8 +638,8 @@ public abstract class Type {
 				node = c1;
 				break;
 			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) c1.data;
-				NameID nid2 = (NameID) c2.data;				
+				NameID nid1 = (NameID) c1.children;
+				NameID nid2 = (NameID) c2.children;				
 				if(nid1.name().equals(nid2.name())) {
 					node = c1;
 				} else {
@@ -959,16 +650,16 @@ public abstract class Type {
 			case K_LIST:
 			case K_PROCESS: {
 				// unary node
-				int e1 = (Integer) c1.data;
-				int e2 = (Integer) c2.data;
+				int e1 = (Integer) c1.children;
+				int e2 = (Integer) c2.children;
 				int element = intersect(e1,graph1,e2,graph2,newNodes,allocations);
 				node = new Node(c1.kind,element);
 				break;
 			}
 			case K_DICTIONARY: {
 				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.children;
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.children;
 				int key = intersect(p1.first(),graph2,p2.first(),graph2,newNodes,allocations);
 				int value = intersect(p1.second(),graph2,p2.second(),graph2,newNodes,allocations);
 				node = new Node(K_DICTIONARY,new Pair(key,value));
@@ -976,8 +667,8 @@ public abstract class Type {
 			}		
 			case K_TUPLE:  {
 				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
+				int[] elems1 = (int[]) c1.children;
+				int[] elems2 = (int[]) c2.children;
 				if(elems1.length != elems2.length) {
 					// TODO: can we do better here?
 					node = new Node(K_VOID,null);
@@ -993,8 +684,8 @@ public abstract class Type {
 			case K_METHOD:
 			case K_FUNCTION:  {
 				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
+				int[] elems1 = (int[]) c1.children;
+				int[] elems2 = (int[]) c2.children;
 				int e1 = elems1[0];
 				int e2 = elems2[0];
 				if(elems1.length != elems2.length){
@@ -1017,8 +708,8 @@ public abstract class Type {
 			case K_RECORD: 
 					// labeled nary nodes
 					outer : {
-						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
+						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.children;
+						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.children;
 						int old = newNodes.size();
 						if (fields1.length != fields2.length) {
 							node = new Node(K_VOID, null);
@@ -1058,7 +749,7 @@ public abstract class Type {
 				// This is the hardest (i.e. most expensive) case. Essentially, I
 				// just check that for each bound in one node, there is an
 				// equivalent bound in the other.
-				int[] bounds1 = (int[]) c1.data;
+				int[] bounds1 = (int[]) c1.children;
 				int[] nbounds = new int[bounds1.length];
 								
 				// check every bound in c1 is a subtype of some bound in c2.
@@ -1081,7 +772,7 @@ public abstract class Type {
 			extractOnto(n1,graph1,newNodes);
 			return nid;
 		} else if (c1.kind == K_UNION){					
-			int[] obounds = (int[]) c1.data;			
+			int[] obounds = (int[]) c1.children;			
 			int[] nbounds = new int[obounds.length];
 							
 			// check every bound in c1 is a subtype of some bound in c2.
@@ -1091,7 +782,7 @@ public abstract class Type {
 			}
 			node = new Node(K_UNION,nbounds);
 		} else if (c2.kind == K_UNION) {			
-			int[] obounds = (int[]) c2.data;			
+			int[] obounds = (int[]) c2.children;			
 			int[] nbounds = new int[obounds.length];
 							
 			// check every bound in c1 is a subtype of some bound in c2.
@@ -1148,8 +839,8 @@ public abstract class Type {
 				node = new Node(K_VOID,null);
 				break;
 			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) c1.data;
-				NameID nid2 = (NameID) c2.data;				
+				NameID nid1 = (NameID) c1.children;
+				NameID nid2 = (NameID) c2.children;				
 				if(nid1.name().equals(nid2.name())) {
 					node = new Node(K_VOID,null);					
 				} else {
@@ -1160,16 +851,16 @@ public abstract class Type {
 			case K_LIST:
 			case K_PROCESS: {
 				// unary node
-				int e1 = (Integer) c1.data;
-				int e2 = (Integer) c2.data;
+				int e1 = (Integer) c1.children;
+				int e2 = (Integer) c2.children;
 				int element = difference(e1,graph1,e2,graph2,newNodes,allocations,matrix);
 				node = new Node(c1.kind,element);
 				break;
 			}
 			case K_DICTIONARY: {
 				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.data;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.data;
+				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.children;
+				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.children;
 				int key = difference(p1.first(),graph2,p2.first(),graph2,newNodes,allocations,matrix);
 				int value = difference(p1.second(),graph2,p2.second(),graph2,newNodes,allocations,matrix);
 				node = new Node(K_DICTIONARY,new Pair(key,value));
@@ -1177,8 +868,8 @@ public abstract class Type {
 			}		
 			case K_TUPLE:  {
 				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
+				int[] elems1 = (int[]) c1.children;
+				int[] elems2 = (int[]) c2.children;
 				if(elems1.length != elems2.length) {
 					node = c1;
 				} else {
@@ -1193,8 +884,8 @@ public abstract class Type {
 			case K_METHOD:
 			case K_FUNCTION:  {
 				// nary nodes
-				int[] elems1 = (int[]) c1.data;
-				int[] elems2 = (int[]) c2.data;
+				int[] elems1 = (int[]) c1.children;
+				int[] elems2 = (int[]) c2.children;
 				int e1 = elems1[0];
 				int e2 = elems2[0];
 				if(elems1.length != elems2.length){
@@ -1217,8 +908,8 @@ public abstract class Type {
 			case K_RECORD:
 				// labeled nary nodes
 					outer : {
-						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.data;
-						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.data;
+						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.children;
+						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.children;
 						int old = newNodes.size();
 						if (fields1.length != fields2.length) {
 							node = c1;
@@ -1262,7 +953,7 @@ public abstract class Type {
 				// This is the hardest (i.e. most expensive) case. Essentially, I
 				// just check that for each bound in one node, there is an
 				// equivalent bound in the other.
-				int[] bounds1 = (int[]) c1.data;
+				int[] bounds1 = (int[]) c1.children;
 				int[] nbounds = new int[bounds1.length];
 								
 				// check every bound in c1 is a subtype of some bound in c2.
@@ -1282,7 +973,7 @@ public abstract class Type {
 		} else if(c2.kind == K_ANY) {			
 			node = new Node(K_VOID,null);
 		} else if (c1.kind == K_UNION){					
-			int[] obounds = (int[]) c1.data;			
+			int[] obounds = (int[]) c1.children;			
 			int[] nbounds = new int[obounds.length];
 							
 			for (int i = 0; i != obounds.length; ++i) {
@@ -1291,7 +982,7 @@ public abstract class Type {
 			}
 			node = new Node(K_UNION,nbounds);
 		} else if (c2.kind == K_UNION) {			
-			int[] obounds = (int[]) c2.data;			
+			int[] obounds = (int[]) c2.children;			
 			int[] nbounds = new int[obounds.length];
 							
 			for (int i = 0; i != obounds.length; ++i) {
@@ -1431,22 +1122,22 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Existential extends Compound{
+	public static final class Existential extends Graph{
 		private Existential(NameID name) {
 			super(new Node[] { new Node(K_EXISTENTIAL,name) });
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Existential) {
 				Existential e = (Existential) o;
-				return nodes[0].data.equals(nodes[0].data);
+				return nodes[0].children.equals(nodes[0].children);
 			}
 			return false;
 		}
 		public NameID name() {
-			return (NameID) nodes[0].data;
+			return (NameID) nodes[0].children;
 		}
 		public int hashCode() {
-			return nodes[0].data.hashCode();
+			return nodes[0].children.hashCode();
 		}
 		public String toString() {
 			return "?" + name();
@@ -1569,79 +1260,6 @@ public abstract class Type {
 			return "string";
 		}
 	}
-	
-	// =============================================================
-	// Compound Type
-	// =============================================================
-
-	/**
-	 * A Compound data structure is essentially a graph encoding of a type. Each
-	 * node in the graph corresponds to a component of the type. Recursive
-	 * cycles in the graph are permitted. <b>NOTE:</b> care must be take to
-	 * ensure that the root of the graph (namely node at index 0) matches the
-	 * actual Compound class (i.e. if its kind is K_SET, then this is an
-	 * instance of Set).
-	 */
-	public static class Compound extends Type {
-		public final Node[] nodes;
-		
-		public Compound(Node[] nodes) {
-			this.nodes = nodes;
-		}
-
-		/**
-		 * Determine the hashCode of a type.
-		 */
-		public int hashCode() {
-			int r = 0;
-			for(Node c : nodes) {
-				r = r + c.hashCode();
-			}
-			return r;
-		}
-
-		/**
-		 * This method compares two compound types to test whether they are
-		 * <i>identical</i>. Observe that it does not perform an
-		 * <i>isomorphism</i> test. Thus, two distinct types which are
-		 * structurally isomorphic will <b>not</b> be considered equal under
-		 * this method. <b>NOTE:</b> to test whether two types are structurally
-		 * isomorphic, using the <code>isomorphic(t1,t2)</code> method.
-		 */
-		public boolean equals(Object o) {
-			if(o instanceof Compound) {
-				Node[] cs = ((Compound) o).nodes;
-				if(cs.length != nodes.length) {
-					return false;
-				}
-				for(int i=0;i!=cs.length;++i) {
-					if(!nodes[i].equals(cs[i])) {
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
-		}
-		
-		/**
-		 * The extract method basically performs a DFS from the root, extracts
-		 * what it finds and minimises it.
-		 * 
-		 * @param root
-		 *            --- the starting node to extract from.
-		 * @return
-		 */
-		protected final Type extract(int root) {
-			return construct(Type.extract(root,nodes));
-		}
-		
-		public String toString() {
-			return TypeToString.toString(nodes);
-		}
-	}
-
-	
 			
 	// =============================================================
 	// Compound Faces
@@ -1661,12 +1279,12 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Tuple extends Compound  {
+	public static final class Tuple extends Graph  {
 		private Tuple(Node[] nodes) {
 			super(nodes);
 		}		
 		public java.util.List<Type> elements() {
-			int[] values = (int[]) nodes[0].data;
+			int[] values = (int[]) nodes[0].children;
 			ArrayList<Type> elems = new ArrayList<Type>();
 			for(Integer i : values) {
 				elems.add(extract(i));
@@ -1683,12 +1301,12 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Set extends Compound  {
+	public static final class Set extends Graph  {
 		private Set(Node[] nodes) {
 			super(nodes);
 		}
 		public Type element() {
-			int elemIdx = (Integer) nodes[0].data;
+			int elemIdx = (Integer) nodes[0].children;
 			return extract(elemIdx);			
 		}		
 	}
@@ -1701,12 +1319,12 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class List extends Compound  {
+	public static final class List extends Graph  {
 		private List(Node[] nodes) {
 			super(nodes);
 		}
 		public Type element() {			
-			int elemIdx = (Integer) nodes[0].data;
+			int elemIdx = (Integer) nodes[0].children;
 			return extract(elemIdx);
 		}		
 	}
@@ -1717,12 +1335,12 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Process extends Compound  {
+	public static final class Process extends Graph  {
 		private Process(Node[] nodes) {
 			super(nodes);
 		}
 		public Type element() {
-			int elemIdx = (Integer) nodes[0].data;
+			int elemIdx = (Integer) nodes[0].children;
 			return extract(elemIdx);	
 		}		
 	}
@@ -1736,16 +1354,16 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Dictionary extends Compound  {
+	public static final class Dictionary extends Graph  {
 		private Dictionary(Node[] nodes) {
 			super(nodes);
 		}
 		public Type key() {
-			Pair<Integer,Integer> p = (Pair) nodes[0].data;
+			Pair<Integer,Integer> p = (Pair) nodes[0].children;
 			return extract(p.first());
 		}
 		public Type value() {
-			Pair<Integer,Integer> p = (Pair) nodes[0].data;
+			Pair<Integer,Integer> p = (Pair) nodes[0].children;
 			return extract(p.second());			
 		}
 	}
@@ -1759,7 +1377,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Record extends Compound  {
+	public static final class Record extends Graph  {
 		private Record(Node[] nodes) {
 			super(nodes);
 		}
@@ -1772,7 +1390,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public HashSet<String> keys() {
-			Pair<String,Integer>[] fields = (Pair[]) nodes[0].data;
+			Pair<String,Integer>[] fields = (Pair[]) nodes[0].children;
 			HashSet<String> r = new HashSet<String>();
 			for(Pair<String,Integer> f : fields) {
 				r.add(f.first());
@@ -1786,7 +1404,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public HashMap<String,Type> fields() {
-			Pair<String,Integer>[] fields = (Pair[]) nodes[0].data;
+			Pair<String,Integer>[] fields = (Pair[]) nodes[0].children;
 			HashMap<String,Type> r = new HashMap<String,Type>();
 			for(Pair<String,Integer> f : fields) {
 				r.put(f.first(),extract(f.second()));
@@ -1804,7 +1422,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Union extends Compound {
+	public static final class Union extends Graph {
 		private Union(Node[] nodes) {
 			super(nodes);
 		}
@@ -1816,7 +1434,7 @@ public abstract class Type {
 		 */
 		public HashSet<Type> bounds() {			
 			HashSet<Type> r = new HashSet<Type>();
-			int[] fields = (int[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].children;
 			for(int i : fields) {
 				Type b = extract(i);					
 				r.add(b);					
@@ -1833,7 +1451,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Intersection extends Compound {
+	public static final class Intersection extends Graph {
 		private Intersection(Node[] nodes) {
 			super(nodes);
 		}
@@ -1845,7 +1463,7 @@ public abstract class Type {
 		 */
 		public HashSet<Type> bounds() {			
 			HashSet<Type> r = new HashSet<Type>();
-			int[] fields = (int[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].children;
 			for(int i : fields) {
 				Type b = extract(i);					
 				r.add(b);					
@@ -1861,18 +1479,18 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Difference extends Compound {
+	public static final class Difference extends Graph {
 		private Difference(Node[] nodes) {
 			super(nodes);
 		}
 		
 		public Type left() {						
-			int[] fields = (int[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].children;
 			return extract(fields[0]);			
 		}
 		
 		public Type right() {						
-			int[] fields = (int[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].children;
 			return extract(fields[1]);			
 		}
 	}
@@ -1884,7 +1502,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static class Fun extends Compound  {
+	public static class Fun extends Graph  {
 		Fun(Node[] nodes) {
 			super(nodes);
 		}
@@ -1895,7 +1513,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type ret() {						
-			int[] fields = (int[]) nodes[0].data;			
+			int[] fields = (int[]) nodes[0].children;			
 			return extract(fields[1]);
 		}		
 		
@@ -1905,7 +1523,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public ArrayList<Type> params() {
-			int[] fields = (int[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].children;
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=2;i<fields.length;++i) {
 				r.add(extract(fields[i]));
@@ -1924,17 +1542,46 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type.Process receiver() {
-			int[] fields = (int[]) nodes[0].data;
+			int[] fields = (int[]) nodes[0].children;
 			int r = fields[0];
 			if(r == -1) { return null; }
 			return (Type.Process) extract(r);
 		}
 	}
 	
-	// =============================================================
-	// Components
-	// =============================================================
+	/**
+	 * Determine the node kind of a Type.Leafs
+	 * @param leaf
+	 * @return
+	 */
+	public static final byte leafKind(Type.Leaf leaf) {
+		if(leaf instanceof Type.Void) {
+			return Graph.K_VOID;
+		} else if(leaf instanceof Type.Any) {
+			return Graph.K_ANY;
+		} else if(leaf instanceof Type.Null) {
+			return Graph.K_NULL;
+		} else if(leaf instanceof Type.Bool) {
+			return Graph.K_BOOL;
+		} else if(leaf instanceof Type.Byte) {
+			return Graph.K_BYTE;
+		} else if(leaf instanceof Type.Char) {
+			return Graph.K_CHAR;
+		} else if(leaf instanceof Type.Int) {
+			return Graph.K_INT;
+		} else if(leaf instanceof Type.Real) {
+			return Graph.K_RATIONAL;
+		} else if(leaf instanceof Type.Strung) {
+			return Graph.K_STRING;
+		} else if(leaf instanceof Type.Meta) {
+			return Graph.K_META;
+		} else {
+			// should be dead code
+			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
+		}
+	}
 
+	
 	/**
 	 * The construct methods constructs a Type from an array of Components.
 	 * It carefully ensures the kind of the root node matches the class
@@ -1973,10 +1620,10 @@ public abstract class Type {
 		case Graph.K_LIST:
 			return new List(nodes);
 		case Graph.K_EXISTENTIAL:
-			if(root.data == null) {
+			if(root.children == null) {
 				throw new RuntimeException("Problem");
 			}
-			return new Existential((NameID) root.data);
+			return new Existential((NameID) root.children);
 		case Graph.K_PROCESS:
 			return new Process(nodes);
 		case Graph.K_DICTIONARY:
@@ -1990,18 +1637,94 @@ public abstract class Type {
 		case Graph.K_FUNCTION:
 			return new Fun(nodes);		
 		case Graph.K_LABEL:
-			return T_LABEL((String)root.data);
+			return T_LABEL((String)root.children);
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
 	}
 
+	/**
+	 * This method constructs a Node array from an array of types which will
+	 * form children.
+	 * 
+	 * @param kind
+	 * @param elements
+	 * @return
+	 */
+	private static Node[] construct(byte kind, Object data, Type... elements) {
+		int len = 1;
+		for(Type b : elements) {
+			// could be optimised slightly
+			len += nodes(b).length;
+		}		
+		Node[] nodes = new Node[len];
+		int[] children = new int[elements.length];
+		int start = 1;
+		for(int i=0;i!=elements.length;++i) {
+			children[i] = start;
+			Node[] comps = nodes(elements[i]);
+			insertNodes(start,comps,nodes);
+			start += comps.length;
+		}
+		nodes[0] = new Node(kind, children);		
+		return nodes;
+	}
 	
-
+	/**
+	 * This method constructs a Node array from a collection of types which will
+	 * form children.
+	 * 
+	 * @param kind
+	 * @param elements
+	 * @return
+	 */
+	private static Node[] construct(byte kind, Object data, Collection<Type> elements) {		
+		int len = 1;
+		for(Type b : elements) {
+			// could be optimised slightly
+			len += nodes(b).length;
+		}		
+		Node[] nodes = new Node[len];
+		int[] children = new int[elements.size()];
+		int start = 1;
+		int i=0;
+		for(Type element : elements) {
+			children[i] = start;
+			Node[] comps = nodes(element);
+			insertNodes(start,comps,nodes);
+			start += comps.length;
+			i = i + 1;
+		}
+		
+		nodes[0] = new Node(kind, children, data);		
+		return nodes;	
+	}
+	
+	/**
+	 * The method inserts the nodes in
+	 * <code>from</from> into those in <code>into</code> at the given index.
+	 * This method remaps nodes in <code>from</code>, but does not remap
+	 * any in <code>into</code>
+	 * 
+	 * @param start
+	 * @param from
+	 * @param into
+	 * @return
+	 */
+	public static Node[] insertNodes(int start, Node[] from, Node[] into) {
+		int[] rmap = new int[from.length];
+		for(int i=0;i!=from.length;++i) {
+			rmap[i] = i+start;			
+		}
+		for(int i=0;i!=from.length;++i) {
+			into[i+start] = remap(from[i],rmap);			
+		}
+		return into;
+	}
 	
 	private static final Node[] nodes(Type t) {
 		if (t instanceof Leaf) {
-			return new Node[]{new Node(Node.leafKind((Leaf) t), null)};
+			return new Node[]{new Node(leafKind((Leaf) t), null)};
 		} else {			
 			// compound type
 			return ((Compound)t).nodes;
