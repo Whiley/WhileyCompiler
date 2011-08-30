@@ -24,6 +24,7 @@ import static wyts.lang.Node.*;
 import wyil.lang.NameID;
 import wyil.util.Pair;
 import wyts.lang.*;
+import wyts.lang.Graph.Node;
 import wyts.util.Parser;
 import wyts.util.PrintBuilder;
 import wyts.util.TypeBuilder;
@@ -1640,102 +1641,8 @@ public abstract class Type {
 		}
 	}
 
-	private static final Node[] extract(int root, Node[] nodes) {
-		// First, we perform the DFS.
-		BitSet visited = new BitSet(nodes.length);
-		// extracted maps new indices to old indices
-		ArrayList<Integer> extracted = new ArrayList<Integer>();
-		subgraph(root,visited,extracted,nodes);		
-		// rextracted is the reverse of extracted
-		int[] rextracted = new int[nodes.length];
-		int i=0;
-		for(int j : extracted) {
-			rextracted[j]=i++;
-		}
-		Node[] newNodes = new Node[extracted.size()];
-		i=0;
-		for(int j : extracted) {
-			newNodes[i++] = Node.remap(nodes[j],rextracted);  
-		}
+	
 			
-		return newNodes;
-	}
-	
-	private static final void extractOnto(int root, Node[] nodes,
-			ArrayList<Node> newNodes) {
-		// First, we perform the DFS.
-		BitSet visited = new BitSet(nodes.length);
-		// extracted maps new indices to old indices
-		ArrayList<Integer> extracted = new ArrayList<Integer>();
-		subgraph(root, visited, extracted, nodes);
-		// rextracted is the reverse of extracted
-		int[] rextracted = new int[nodes.length];
-		int i = newNodes.size();
-		for (int j : extracted) {
-			rextracted[j] = i++;
-		}				
-		for (int j : extracted) {
-			newNodes.add(Node.remap(nodes[j], rextracted));
-		}
-	}
-	
-	/**
-	 * The following method recursively extracts the subgraph rooted at
-	 * <code>index</code> in the given graph using a depth-first search.
-	 * Vertices in the subgraph are added to <code>extracted</code> in the order
-	 * they are visited.
-	 * 
-	 * @param index
-	 *            --- the node to extract the subgraph from.
-	 * @param visited
-	 *            --- the set of vertices already visited
-	 * @param extracted
-	 *            --- the list of vertices that make up the subgraph which is
-	 *            built by this method.
-	 * @param graph
-	 *            --- the graph.
-	 */
-	private final static void subgraph(int index, BitSet visited,
-			ArrayList<Integer> extracted, Node[] graph) {
-		if(visited.get(index)) { return; } // node already visited}
-		extracted.add(index);
-		visited.set(index);
-		Node node = graph[index];
-		switch(node.kind) {
-		case K_SET:
-		case K_LIST:
-		case K_PROCESS:
-			// unary nodes
-			subgraph((Integer) node.data,visited,extracted,graph);
-			break;
-		case K_DICTIONARY:
-			// binary node
-			Pair<Integer,Integer> p = (Pair<Integer,Integer>) node.data;
-			subgraph(p.first(),visited,extracted,graph);
-			subgraph(p.second(),visited,extracted,graph);
-			break;
-		case K_TUPLE:
-		case K_UNION:
-		case K_METHOD:
-		case K_FUNCTION:
-			// nary node
-			int[] bounds = (int[]) node.data;
-			for(int b : bounds) {
-				if(b == -1) { continue; } // possible with K_FUNCTION				
-				subgraph(b,visited,extracted,graph);				
-			}
-			break;
-		case K_RECORD:
-			// labeled nary node
-			Pair<String,Integer>[] fields = (Pair<String,Integer>[]) node.data;
-			for(Pair<String,Integer> f : fields) {
-				subgraph(f.second(),visited,extracted,graph);
-			}
-			break;			
-		}
-	}
-
-		
 	// =============================================================
 	// Compound Faces
 	// =============================================================
@@ -2039,55 +1946,58 @@ public abstract class Type {
 	public final static Type construct(Node[] nodes) {
 		Node root = nodes[0];
 		switch(root.kind) {
-		case K_VOID:
+		case Graph.K_VOID:
 			return T_VOID;
-		case K_ANY:
+		case Graph.K_ANY:
 			return T_ANY;
-		case K_META:
+		case Graph.K_META:
 			return T_META;
-		case K_NULL:
+		case Graph.K_NULL:
 			return T_NULL;			
-		case K_BOOL:
+		case Graph.K_BOOL:
 			return T_BOOL;
-		case K_BYTE:
+		case Graph.K_BYTE:
 			return T_BYTE;
-		case K_CHAR:
+		case Graph.K_CHAR:
 			return T_CHAR;
-		case K_INT:
+		case Graph.K_INT:
 			return T_INT;
-		case K_RATIONAL:
+		case Graph.K_RATIONAL:
 			return T_REAL;
-		case K_STRING:
+		case Graph.K_STRING:
 			return T_STRING;
-		case K_TUPLE:
+		case Graph.K_TUPLE:
 			return new Tuple(nodes);
-		case K_SET:
+		case Graph.K_SET:
 			return new Set(nodes);
-		case K_LIST:
+		case Graph.K_LIST:
 			return new List(nodes);
-		case K_EXISTENTIAL:
+		case Graph.K_EXISTENTIAL:
 			if(root.data == null) {
 				throw new RuntimeException("Problem");
 			}
 			return new Existential((NameID) root.data);
-		case K_PROCESS:
+		case Graph.K_PROCESS:
 			return new Process(nodes);
-		case K_DICTIONARY:
+		case Graph.K_DICTIONARY:
 			return new Dictionary(nodes);
-		case K_RECORD:
+		case Graph.K_RECORD:
 			return new Record(nodes);
-		case K_UNION:
+		case Graph.K_UNION:
 			return new Union(nodes);
-		case K_METHOD:
+		case Graph.K_METHOD:
 			return new Meth(nodes);
-		case K_FUNCTION:
+		case Graph.K_FUNCTION:
 			return new Fun(nodes);		
-		case K_LABEL:
+		case Graph.K_LABEL:
 			return T_LABEL((String)root.data);
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
 	}
+
+	
+
 	
 	private static final Node[] nodes(Type t) {
 		if (t instanceof Leaf) {
