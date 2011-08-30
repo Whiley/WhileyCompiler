@@ -575,6 +575,79 @@ public final class Graph {
 		}
 	}
 
+	/**
+	 * Determine the node kind of a Type.Leafs
+	 * @param leaf
+	 * @return
+	 */
+	public static final byte leafKind(Type.Leaf leaf) {
+		if(leaf instanceof Type.Void) {
+			return K_VOID;
+		} else if(leaf instanceof Type.Any) {
+			return K_ANY;
+		} else if(leaf instanceof Type.Null) {
+			return K_NULL;
+		} else if(leaf instanceof Type.Bool) {
+			return K_BOOL;
+		} else if(leaf instanceof Type.Byte) {
+			return K_BYTE;
+		} else if(leaf instanceof Type.Char) {
+			return K_CHAR;
+		} else if(leaf instanceof Type.Int) {
+			return K_INT;
+		} else if(leaf instanceof Type.Real) {
+			return K_RATIONAL;
+		} else if(leaf instanceof Type.Strung) {
+			return K_STRING;
+		} else if(leaf instanceof Type.Meta) {
+			return K_META;
+		} else {
+			// should be dead code
+			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
+		}
+	}
+
+	/**
+	 * This method inserts a blank node at the head of the nodes
+	 * array, whilst remapping all existing nodes appropriately.
+	 * 
+	 * @param nodes
+	 * @return
+	 */
+	public static Node[] insertComponent(Node[] nodes) {
+		Node[] newnodes = new Node[nodes.length+1];		
+		int[] rmap = new int[nodes.length];
+		for(int i=0;i!=nodes.length;++i) {
+			rmap[i] = i+1;			
+		}
+		for(int i=0;i!=nodes.length;++i) {
+			newnodes[i+1] = remap(nodes[i],rmap);			
+		}
+		return newnodes;
+	}
+
+	/**
+	 * The method inserts the nodes in
+	 * <code>from</from> into those in <code>into</code> at the given index.
+	 * This method remaps nodes in <code>from</code>, but does not remap
+	 * any in <code>into</code>
+	 * 
+	 * @param start
+	 * @param from
+	 * @param into
+	 * @return
+	 */
+	public static Node[] insertNodes(int start, Node[] from, Node[] into) {
+		int[] rmap = new int[from.length];
+		for(int i=0;i!=from.length;++i) {
+			rmap[i] = i+start;			
+		}
+		for(int i=0;i!=from.length;++i) {
+			into[i+start] = remap(from[i],rmap);			
+		}
+		return into;
+	}
+	
 	public static final byte K_VOID = 0;
 	public static final byte K_ANY = 1;
 	public static final byte K_META = 2;
