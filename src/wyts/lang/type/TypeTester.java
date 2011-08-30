@@ -1,4 +1,4 @@
-package wyil.lang.type;
+package wyts.lang.type;
 
 import java.util.*;
 import wyil.lang.Type;

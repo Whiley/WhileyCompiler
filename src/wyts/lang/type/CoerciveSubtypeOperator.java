@@ -1,13 +1,13 @@
-package wyil.lang.type;
+package wyts.lang.type;
 
-import static wyil.lang.type.Node.K_ANY;
-import static wyil.lang.type.Node.K_CHAR;
-import static wyil.lang.type.Node.K_DICTIONARY;
-import static wyil.lang.type.Node.K_INT;
-import static wyil.lang.type.Node.K_LIST;
-import static wyil.lang.type.Node.K_RATIONAL;
-import static wyil.lang.type.Node.K_SET;
-import static wyil.lang.type.Node.K_STRING;
+import static wyts.lang.type.Node.K_ANY;
+import static wyts.lang.type.Node.K_CHAR;
+import static wyts.lang.type.Node.K_DICTIONARY;
+import static wyts.lang.type.Node.K_INT;
+import static wyts.lang.type.Node.K_LIST;
+import static wyts.lang.type.Node.K_RATIONAL;
+import static wyts.lang.type.Node.K_SET;
+import static wyts.lang.type.Node.K_STRING;
 import wyil.util.Pair;
 
 

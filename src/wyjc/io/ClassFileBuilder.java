@@ -37,13 +37,13 @@ import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;
-import wyil.lang.type.BinaryTypeWriter;
 import wyil.lang.Code.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
+import wyts.lang.type.BinaryTypeWriter;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

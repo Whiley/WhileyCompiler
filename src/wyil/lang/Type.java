@@ -20,9 +20,9 @@ package wyil.lang;
 
 import java.util.*;
 
-import wyil.lang.type.*;
-import static wyil.lang.type.Node.*;
+import static wyts.lang.type.Node.*;
 import wyil.util.Pair;
+import wyts.lang.type.*;
 
 /**
  * A structural type. See

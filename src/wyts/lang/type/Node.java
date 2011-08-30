@@ -1,25 +1,25 @@
-package wyil.lang.type;
+package wyts.lang.type;
 
-import static wyil.lang.type.Node.K_ANY;
-import static wyil.lang.type.Node.K_BOOL;
-import static wyil.lang.type.Node.K_BYTE;
-import static wyil.lang.type.Node.K_CHAR;
-import static wyil.lang.type.Node.K_DICTIONARY;
-import static wyil.lang.type.Node.K_EXISTENTIAL;
-import static wyil.lang.type.Node.K_FUNCTION;
-import static wyil.lang.type.Node.K_INT;
-import static wyil.lang.type.Node.K_LIST;
-import static wyil.lang.type.Node.K_META;
-import static wyil.lang.type.Node.K_METHOD;
-import static wyil.lang.type.Node.K_NULL;
-import static wyil.lang.type.Node.K_PROCESS;
-import static wyil.lang.type.Node.K_RATIONAL;
-import static wyil.lang.type.Node.K_RECORD;
-import static wyil.lang.type.Node.K_SET;
-import static wyil.lang.type.Node.K_STRING;
-import static wyil.lang.type.Node.K_TUPLE;
-import static wyil.lang.type.Node.K_UNION;
-import static wyil.lang.type.Node.K_VOID;
+import static wyts.lang.type.Node.K_ANY;
+import static wyts.lang.type.Node.K_BOOL;
+import static wyts.lang.type.Node.K_BYTE;
+import static wyts.lang.type.Node.K_CHAR;
+import static wyts.lang.type.Node.K_DICTIONARY;
+import static wyts.lang.type.Node.K_EXISTENTIAL;
+import static wyts.lang.type.Node.K_FUNCTION;
+import static wyts.lang.type.Node.K_INT;
+import static wyts.lang.type.Node.K_LIST;
+import static wyts.lang.type.Node.K_META;
+import static wyts.lang.type.Node.K_METHOD;
+import static wyts.lang.type.Node.K_NULL;
+import static wyts.lang.type.Node.K_PROCESS;
+import static wyts.lang.type.Node.K_RATIONAL;
+import static wyts.lang.type.Node.K_RECORD;
+import static wyts.lang.type.Node.K_SET;
+import static wyts.lang.type.Node.K_STRING;
+import static wyts.lang.type.Node.K_TUPLE;
+import static wyts.lang.type.Node.K_UNION;
+import static wyts.lang.type.Node.K_VOID;
 
 import java.util.Arrays;
 

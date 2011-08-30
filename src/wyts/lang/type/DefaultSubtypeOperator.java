@@ -1,7 +1,7 @@
-package wyil.lang.type;
+package wyts.lang.type;
 
 import wyil.lang.NameID;
-import static wyil.lang.type.Node.*; 
+import static wyts.lang.type.Node.*;
 import wyil.util.Pair;
 
 

@@ -37,13 +37,13 @@ import wyil.lang.Module;
 import wyil.lang.ModuleID;
 import wyil.lang.Type;
 import wyil.util.Pair;
-import wyil.lang.type.BinaryTypeReader;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
+import wyts.lang.type.BinaryTypeReader;
 
 /**
  * The ClassFileLoader is responsible for reading class files and converting
