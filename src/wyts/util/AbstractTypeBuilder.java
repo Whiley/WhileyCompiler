@@ -1,8 +1,9 @@
-package wyts.lang.type;
+package wyts.util;
 
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.util.Pair;
+import wyts.lang.TypeBuilder;
 
 
 /**

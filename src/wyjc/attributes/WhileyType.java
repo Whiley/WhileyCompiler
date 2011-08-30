@@ -29,11 +29,12 @@ import java.io.*;
 
 import java.util.*;
 import wyil.lang.*;
-import static wyts.lang.type.Node.*;
+import static wyts.lang.Node.*;
 import wyil.util.Pair;
 import wyjvm.io.*;
 import wyjvm.lang.*;
-import wyts.lang.type.*;
+import wyts.lang.*;
+import wyts.util.AbstractTypeBuilder;
 
 /**
  * A WhileyCondition attribute corresponds to a whiley.ast.exprs.Condition

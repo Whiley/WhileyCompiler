@@ -20,9 +20,11 @@ package wyil.lang;
 
 import java.util.*;
 
-import static wyts.lang.type.Node.*;
+import static wyts.lang.Node.*;
 import wyil.util.Pair;
-import wyts.lang.type.*;
+import wyts.lang.*;
+import wyts.util.Parser;
+import wyts.util.PrintBuilder;
 
 /**
  * A structural type. See

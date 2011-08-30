@@ -43,7 +43,7 @@ import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
-import wyts.lang.type.BinaryTypeWriter;
+import wyts.io.BinaryTypeWriter;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

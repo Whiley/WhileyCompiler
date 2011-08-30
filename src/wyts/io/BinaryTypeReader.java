@@ -1,4 +1,4 @@
-package wyts.lang.type;
+package wyts.io;
 
 import java.io.IOException;
 
@@ -7,6 +7,8 @@ import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjvm.io.BinaryInputStream;
+import wyts.lang.InternalTypeBuilder;
+import wyts.lang.Node;
 
 public class BinaryTypeReader {
 	private final BinaryInputStream reader;	

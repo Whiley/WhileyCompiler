@@ -1,4 +1,4 @@
-package wyts.lang.type;
+package wyts.util;
 
 import java.util.HashMap;
 

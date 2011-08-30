@@ -1,6 +1,6 @@
-package wyts.lang.type;
+package wyts.lang;
 
-import static wyts.lang.type.Node.*;
+import static wyts.lang.Node.*;
 
 import java.util.BitSet;
 

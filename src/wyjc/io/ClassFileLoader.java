@@ -43,7 +43,7 @@ import wyjvm.io.BinaryInputStream;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
-import wyts.lang.type.BinaryTypeReader;
+import wyts.io.BinaryTypeReader;
 
 /**
  * The ClassFileLoader is responsible for reading class files and converting

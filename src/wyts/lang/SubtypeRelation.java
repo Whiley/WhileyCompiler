@@ -1,4 +1,4 @@
-package wyts.lang.type;
+package wyts.lang;
 
 import java.util.BitSet;
 

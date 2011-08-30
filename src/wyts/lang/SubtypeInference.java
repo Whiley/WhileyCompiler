@@ -1,4 +1,4 @@
-package wyts.lang.type;
+package wyts.lang;
 
 /**
  * A subtype inference is responsible for computing a complete subtype
