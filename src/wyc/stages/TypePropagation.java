@@ -40,7 +40,7 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.util.*;
 import wyil.util.dfa.*;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 import static wyil.lang.Block.*;
 
@@ -83,7 +83,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// arise as a result of temporary loop variables, etc.
 			int maxSlots = constraint.numSlots();
 			for(int i=1;i!=maxSlots;++i) {
-				environment.add(Type.T_VOID);
+				environment.add(Automata.T_VOID);
 			}
 			constraint = doPropagation(constraint,environment);	
 			return new Module.TypeDef(type.name(), type.type(), constraint, type.attributes());
@@ -103,20 +103,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				
 		Env environment = new Env();		
 		
-		if(method.type() instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) method.type();
+		if(method.type() instanceof Automata.Meth) {
+			Automata.Meth mt = (Automata.Meth) method.type();
 			if(mt.receiver() != null) {
 				environment.add(mt.receiver());
 			}
 		}
-		List<Type> paramTypes = method.type().params();
+		List<Automata> paramTypes = method.type().params();
 				
 		int i = 0;		
 		for (; i != paramTypes.size(); ++i) {
-			Type t = paramTypes.get(i);
+			Automata t = paramTypes.get(i);
 			environment.add(t);
-			if (!(method.type() instanceof Type.Meth)
-					&& Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
+			if (!(method.type() instanceof Automata.Meth)
+					&& Automata.isCoerciveSubtype(Automata.T_PROCESS(Automata.T_ANY), t)) {
 				// FIXME: add source information
 				syntaxError("function argument cannot have process type",
 						filename, methodCase);
@@ -131,8 +131,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Env environment = initialStore();
 		int start = method.type().params().size();
-		if(method.type() instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) method.type();
+		if(method.type() instanceof Automata.Meth) {
+			Automata.Meth mt = (Automata.Meth) method.type();
 			if(mt.receiver() != null) {
 				start++;
 			}
@@ -145,7 +145,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// arise as a result of temporary loop variables, etc.
 			int maxSlots = precondition.numSlots() - precondition.numInputs();
 			for(int i=0;i<maxSlots;++i) {
-				tmp.add(Type.T_VOID);
+				tmp.add(Automata.T_VOID);
 			}
 			precondition = doPropagation(precondition,tmp);
 		}
@@ -159,14 +159,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// arise as a result of temporary loop variables, etc.
 			int maxSlots = postcondition.numSlots() - postcondition.numInputs();
 			for(int i=0;i<maxSlots;++i) {
-				tmp.add(Type.T_VOID);
+				tmp.add(Automata.T_VOID);
 			}
 			postcondition = doPropagation(postcondition,tmp);
 		}
 		
 		// Now, propagate through the body
 		for (int i = start; i < mcase.body().numSlots(); i++) {
-			environment.add(Type.T_VOID);
+			environment.add(Automata.T_VOID);
 		}	
 						
 		Block nbody = doPropagation(mcase.body(),environment);		
@@ -294,16 +294,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(BinOp v, Entry stmt, Env environment) {		
 		Code code = v;
-		Type rhs = environment.pop();
-		Type lhs = environment.pop();
-		Type result;
+		Automata rhs = environment.pop();
+		Automata lhs = environment.pop();
+		Automata result;
 
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);		
-		boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),lhs);
-		boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),rhs);
-		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
-		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
+		boolean lhs_set = Automata.isSubtype(Automata.T_SET(Automata.T_ANY),lhs);
+		boolean rhs_set = Automata.isSubtype(Automata.T_SET(Automata.T_ANY),rhs);		
+		boolean lhs_list = Automata.isSubtype(Automata.T_LIST(Automata.T_ANY),lhs);
+		boolean rhs_list = Automata.isSubtype(Automata.T_LIST(Automata.T_ANY),rhs);
+		boolean lhs_str = Automata.isSubtype(Automata.T_STRING,lhs);
+		boolean rhs_str = Automata.isSubtype(Automata.T_STRING,rhs);
 		
 		if(lhs_set || rhs_set) {
 			environment.push(lhs);
@@ -324,10 +324,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				dir = OpDir.UNIFORM;
 			} else if(lhs_str) {				
 				dir = OpDir.LEFT;
-				checkIsSubtype(Type.T_CHAR,rhs,stmt);
+				checkIsSubtype(Automata.T_CHAR,rhs,stmt);
 			} else {				
 				dir = OpDir.RIGHT;
-				checkIsSubtype(Type.T_CHAR,lhs,stmt);
+				checkIsSubtype(Automata.T_CHAR,lhs,stmt);
 			} 
 			
 			switch(v.bop) {				
@@ -338,22 +338,22 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					syntaxError("Invalid string operation: " + v.bop,filename,stmt);					
 			}
 			
-			result = Type.T_STRING;
+			result = Automata.T_STRING;
 		} else if(lhs_list || rhs_list) {
-			Type.List type;
+			Automata.List type;
 			Code.OpDir dir;
 			
 			if(lhs_list && rhs_list) {				
 				dir = OpDir.UNIFORM;
 			} else if(lhs_list) {
-				rhs = Type.T_LIST(rhs);
+				rhs = Automata.T_LIST(rhs);
 				dir = OpDir.LEFT;
 			} else {
-				lhs = Type.T_LIST(lhs);				
+				lhs = Automata.T_LIST(lhs);				
 				dir = OpDir.RIGHT;
 			}
 			
-			type = Type.effectiveListType(Type.leastUpperBound(lhs,rhs));
+			type = Automata.effectiveListType(Automata.leastUpperBound(lhs,rhs));
 			
 			switch(v.bop) {				
 				case ADD:																				
@@ -368,33 +368,33 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else {						
 			if (v.bop == BOp.BITWISEAND || v.bop == BOp.BITWISEOR
 					|| v.bop == BOp.BITWISEXOR) {
-				checkIsSubtype(Type.T_BYTE,lhs,stmt);
-				checkIsSubtype(Type.T_BYTE,rhs,stmt);
-				result = Type.T_BYTE;
+				checkIsSubtype(Automata.T_BYTE,lhs,stmt);
+				checkIsSubtype(Automata.T_BYTE,rhs,stmt);
+				result = Automata.T_BYTE;
 			} else if (v.bop == BOp.LEFTSHIFT || v.bop == BOp.RIGHTSHIFT) {
-				checkIsSubtype(Type.T_BYTE,lhs,stmt);
-				checkIsSubtype(Type.T_INT,rhs,stmt);
-				result = Type.T_BYTE;
+				checkIsSubtype(Automata.T_BYTE,lhs,stmt);
+				checkIsSubtype(Automata.T_INT,rhs,stmt);
+				result = Automata.T_BYTE;
 			} else if(v.bop == BOp.RANGE) {
-				checkIsSubtype(Type.T_INT,lhs,stmt);
-				checkIsSubtype(Type.T_INT,rhs,stmt);
-				result = Type.T_LIST(Type.T_INT);
+				checkIsSubtype(Automata.T_INT,lhs,stmt);
+				checkIsSubtype(Automata.T_INT,rhs,stmt);
+				result = Automata.T_LIST(Automata.T_INT);
 			} else if(v.bop == BOp.REM) {
 				// remainder is a special case which requires both operands to
 				// be integers.
-				checkIsSubtype(Type.T_INT,lhs,stmt);
-				checkIsSubtype(Type.T_INT,rhs,stmt);
-				result = Type.T_INT;
-			} else if(Type.isCoerciveSubtype(lhs,rhs)) {
-				checkIsSubtype(Type.T_REAL,lhs,stmt);
+				checkIsSubtype(Automata.T_INT,lhs,stmt);
+				checkIsSubtype(Automata.T_INT,rhs,stmt);
+				result = Automata.T_INT;
+			} else if(Automata.isCoerciveSubtype(lhs,rhs)) {
+				checkIsSubtype(Automata.T_REAL,lhs,stmt);
 				result = lhs;
 			} else {
-				checkIsSubtype(Type.T_REAL,lhs,stmt);
-				checkIsSubtype(Type.T_REAL,rhs,stmt);				
+				checkIsSubtype(Automata.T_REAL,lhs,stmt);
+				checkIsSubtype(Automata.T_REAL,rhs,stmt);				
 				result = rhs;
 			} 
-			if(result == Type.T_CHAR) {
-				result = Type.T_INT;
+			if(result == Automata.T_CHAR) {
+				result = Automata.T_INT;
 			}
 			code = Code.BinOp(result,v.bop);
 		}				
@@ -405,7 +405,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.Convert code, Entry stmt, Env environment) {
-		Type from = environment.pop();
+		Automata from = environment.pop();
 		checkIsSubtype(code.to,from,stmt);
 		environment.push(code.to);
 		return Code.Convert(from, code.to);
@@ -486,7 +486,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Value infer(Value.FunConst fc, SyntacticElement elem) {
 		try {
-			List<Type.Fun> targets = lookupMethod(fc.name.module(),fc.name.name());
+			List<Automata.Fun> targets = lookupMethod(fc.name.module(),fc.name.name());
 			String msg;
 			if(fc.type == null) {
 				if(targets.size() == 1) {
@@ -495,7 +495,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				msg = "ambiguous function or method reference";					
 			} else {
 				msg = "no match for " + fc;
-				for(Type.Fun ft : targets) {
+				for(Automata.Fun ft : targets) {
 					if(fc.type.params().equals(ft.params())) {
 						return Value.V_FUN(fc.name, ft);
 					}
@@ -505,7 +505,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// failed to find an appropriate match
 			boolean firstTime = true;
 			int count = 0;
-			for(Type.Fun ft : targets) {
+			for(Automata.Fun ft : targets) {
 				if(firstTime) {
 					msg += "\n\tfound: " + fc.name.name() + parameterString(ft.params());
 				} else {
@@ -523,23 +523,23 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.Debug code, Entry stmt, Env environment) {
-		Type rhs_t = environment.pop();		
+		Automata rhs_t = environment.pop();		
 		// FIXME: should be updated to string
-		checkIsSubtype(Type.T_STRING,rhs_t,stmt);
+		checkIsSubtype(Automata.T_STRING,rhs_t,stmt);
 		return code;
 	}
 	
 	protected Code infer(Code.Destructure code, Entry stmt, Env environment) {
-		Type type = environment.pop();	
+		Automata type = environment.pop();	
 		
-		if(type instanceof Type.Tuple) {
-			Type.Tuple tup = (Type.Tuple) type;
-			for(Type t : tup.elements()) {
+		if(type instanceof Automata.Tuple) {
+			Automata.Tuple tup = (Automata.Tuple) type;
+			for(Automata t : tup.elements()) {
 				environment.push(t);
 			}
-		} else if(Type.isSubtype(Type.T_REAL, type)){
-			environment.push(Type.T_INT);
-			environment.push(Type.T_INT);
+		} else if(Automata.isSubtype(Automata.T_REAL, type)){
+			environment.push(Automata.T_INT);
+			environment.push(Automata.T_INT);
 		} else {
 			syntaxError("invalid destructuring operation",filename,stmt);
 		}
@@ -554,19 +554,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 	protected Block infer(FieldLoad e, Entry stmt, Env environment) {	
 		Block blk = new Block(0);
-		Type lhs_t = environment.pop();		
+		Automata lhs_t = environment.pop();		
 		
-		if (Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
-			Type.Process tp = (Type.Process) lhs_t;
+		if (Automata.isCoerciveSubtype(Automata.T_PROCESS(Automata.T_ANY), lhs_t)) {
+			Automata.Process tp = (Automata.Process) lhs_t;
 			blk.append(Code.ProcLoad(tp),stmt.attributes());
 			lhs_t = tp.element();
 		}
 		
-		Type.Record ett = Type.effectiveRecordType(lhs_t);		
+		Automata.Record ett = Automata.effectiveRecordType(lhs_t);		
 		if (ett == null) {
 			syntaxError("record required, got: " + lhs_t, filename, stmt);
 		}
-		Type ft = ett.fields().get(e.field);		
+		Automata ft = ett.fields().get(e.field);		
 		if (ft == null) {
 			syntaxError("record has no field named " + e.field, filename, stmt);
 		}
@@ -578,24 +578,24 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(IndirectSend ivk, Entry stmt, Env environment) {
-		ArrayList<Type> types = new ArrayList<Type>();			
+		ArrayList<Automata> types = new ArrayList<Automata>();			
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(0,environment.pop());
 		}
 		Collections.reverse(types);
-		Type receiver = environment.pop();
-		Type target = environment.pop();		
+		Automata receiver = environment.pop();
+		Automata target = environment.pop();		
 		
-		Type.Meth ft = checkType(target,Type.Meth.class,stmt);	
+		Automata.Meth ft = checkType(target,Automata.Meth.class,stmt);	
 		
-		List<Type> ft_params = ft.params();
+		List<Automata> ft_params = ft.params();
 		for(int i=0;i!=ft_params.size();++i) {
-			Type param = ft_params.get(i);
-			Type arg = types.get(i);
+			Automata param = ft_params.get(i);
+			Automata arg = types.get(i);
 			checkIsSubtype(param,arg,stmt);
 		}
 		
-		if(ft.ret() != Type.T_VOID && ivk.retval) {
+		if(ft.ret() != Automata.T_VOID && ivk.retval) {
 			environment.push(ft.ret());
 		}
 		
@@ -603,27 +603,27 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Invoke ivk, Entry stmt, Env environment) {			
-		ArrayList<Type> types = new ArrayList<Type>();			
+		ArrayList<Automata> types = new ArrayList<Automata>();			
 		
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(environment.pop());
 		}
 				
-		Type.Process receiver = null;
-		if(ivk.type instanceof Type.Meth) {			
-			receiver = (Type.Process) environment.pop(); 							
+		Automata.Process receiver = null;
+		if(ivk.type instanceof Automata.Meth) {			
+			receiver = (Automata.Process) environment.pop(); 							
 		}
 		
 		Collections.reverse(types);		
 		
 		try {						
-			Type.Fun funtype;
-			if(ivk.type instanceof Type.Meth) {
+			Automata.Fun funtype;
+			if(ivk.type instanceof Automata.Meth) {
 				funtype = bindMethod(ivk.name,  receiver, types, stmt);
 			} else {
 				funtype = bindFunction(ivk.name,  types, stmt);				
 			}			
-			if(funtype.ret() != Type.T_VOID && ivk.retval) {
+			if(funtype.ret() != Automata.T_VOID && ivk.retval) {
 				environment.push(funtype.ret());
 			}
 			return Code.Invoke(funtype, ivk.name, ivk.retval);			
@@ -636,21 +636,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(IndirectInvoke ivk, Entry stmt,
 			Env environment) {
 		
-		ArrayList<Type> types = new ArrayList<Type>();			
+		ArrayList<Automata> types = new ArrayList<Automata>();			
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(0,environment.pop());
 		}
 		Collections.reverse(types);
-		Type target = environment.pop();
-		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
-		List<Type> ft_params = ft.params();
+		Automata target = environment.pop();
+		Automata.Fun ft = checkType(target,Automata.Fun.class,stmt);			
+		List<Automata> ft_params = ft.params();
 		for(int i=0;i!=ft_params.size();++i) {
-			Type param = ft_params.get(i);
-			Type arg = types.get(i);
+			Automata param = ft_params.get(i);
+			Automata arg = types.get(i);
 			checkIsSubtype(param,arg,stmt);
 		}
 		
-		if(ft.ret() != Type.T_VOID && ivk.retval) {
+		if(ft.ret() != Automata.T_VOID && ivk.retval) {
 			environment.push(ft.ret());
 		}
 		
@@ -658,20 +658,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Invert v, Entry stmt, Env environment) {
-		Type rhs_t = environment.pop();
+		Automata rhs_t = environment.pop();
 
 		// FIXME: add support for dictionaries
-		checkIsSubtype(Type.T_BYTE,rhs_t,stmt);		
+		checkIsSubtype(Automata.T_BYTE,rhs_t,stmt);		
 		environment.add(rhs_t);
 		return Code.Invert(rhs_t);						
 	}
 	
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
-		Type idx = environment.pop();
-		Type src = environment.pop();
-		if(Type.isCoerciveSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src)) {			
+		Automata idx = environment.pop();
+		Automata src = environment.pop();
+		if(Automata.isCoerciveSubtype(Automata.T_DICTIONARY(Automata.T_ANY, Automata.T_ANY),src)) {			
 			// this indicates a dictionary access, rather than a list access			
-			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
+			Automata.Dictionary dict = Automata.effectiveDictionaryType(src);			
 			if(dict == null) {
 				syntaxError("expected dictionary",filename,stmt);
 			}
@@ -679,43 +679,43 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.push(dict.value());
 			// OK, it's a hit
 			return Code.DictLoad(dict);
-		} else if(Type.isCoerciveSubtype(Type.T_STRING,src)) {
-			checkIsSubtype(Type.T_INT,idx,stmt);
-			environment.push(Type.T_CHAR);
+		} else if(Automata.isCoerciveSubtype(Automata.T_STRING,src)) {
+			checkIsSubtype(Automata.T_INT,idx,stmt);
+			environment.push(Automata.T_CHAR);
 			return Code.StringLoad();
 		} else {		
-			Type.List list = Type.effectiveListType(src);			
+			Automata.List list = Automata.effectiveListType(src);			
 			if(list == null) {
 				syntaxError("expected list",filename,stmt);
 			}			
-			checkIsSubtype(Type.T_INT,idx,stmt);
+			checkIsSubtype(Automata.T_INT,idx,stmt);
 			environment.push(list.element());
 			return Code.ListLoad(list);
 		}
 	}
 		
 	protected Code infer(Update e, Entry stmt, Env environment) {		
-		ArrayList<Type> path = new ArrayList();
-		Type val = environment.pop();
+		ArrayList<Automata> path = new ArrayList();
+		Automata val = environment.pop();
 		for(int i=e.fields.size();i!=e.level;++i) {
 			path.add(environment.pop());
 		}
 		
-		Type src = environment.get(e.slot);		
-		Type iter = src;
+		Automata src = environment.get(e.slot);		
+		Automata iter = src;
 		
-		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
-			Type.Process p = (Type.Process) src;
+		if(e.slot == Code.THIS_SLOT && Automata.isCoerciveSubtype(Automata.T_PROCESS(Automata.T_ANY), src)) {
+			Automata.Process p = (Automata.Process) src;
 			iter = p.element();
 		}
 		
 		int fi = 0;
 		int pi = 0;
-		ArrayList<Type> indices = new ArrayList<Type>();
+		ArrayList<Automata> indices = new ArrayList<Automata>();
 		for(int i=0;i!=e.level;++i) {				
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+			if(Automata.isSubtype(Automata.T_DICTIONARY(Automata.T_ANY, Automata.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
+				Automata.Dictionary dict = Automata.effectiveDictionaryType(iter);			
 				if(dict == null) {
 					syntaxError("expected dictionary",filename,stmt);
 				}
@@ -723,21 +723,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				// We don't  
 				// checkIsSubtype(dict.key(),idx,stmt);
 				iter = dict.value();				
-			} else if(Type.isSubtype(Type.T_STRING,iter)) {							
-				Type idx = path.get(pi++);
-				checkIsSubtype(Type.T_INT,idx,stmt);
-				checkIsSubtype(Type.T_CHAR,val,stmt);	
-				iter = Type.T_CHAR;				
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
-				Type.List list = Type.effectiveListType(iter);			
+			} else if(Automata.isSubtype(Automata.T_STRING,iter)) {							
+				Automata idx = path.get(pi++);
+				checkIsSubtype(Automata.T_INT,idx,stmt);
+				checkIsSubtype(Automata.T_CHAR,val,stmt);	
+				iter = Automata.T_CHAR;				
+			} else if(Automata.isSubtype(Automata.T_LIST(Automata.T_ANY),iter)) {			
+				Automata.List list = Automata.effectiveListType(iter);			
 				if(list == null) {
 					syntaxError("expected list",filename,stmt);
 				}
-				Type idx = path.get(pi++);
-				checkIsSubtype(Type.T_INT,idx,stmt);				
+				Automata idx = path.get(pi++);
+				checkIsSubtype(Automata.T_INT,idx,stmt);				
 				iter = list.element();
 			} else {
-				Type.Record rec = Type.effectiveRecordType(iter);
+				Automata.Record rec = Automata.effectiveRecordType(iter);
 				if(rec == null) {
 					syntaxError("expected record, found " + iter,filename,stmt);
 				}
@@ -752,7 +752,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Now, we need to determine the (potentially) updated type of the
 		// variable in question. For example, if we assign a real into a [int]
 		// then we'll end up with a [real].
-		Type ntype = typeInference(src,val,e.level,0,e.fields,0,indices);
+		Automata ntype = typeInference(src,val,e.level,0,e.fields,0,indices);
 		environment.set(e.slot,ntype);
 		
 		return Code.Update(src,e.slot,e.level,e.fields);
@@ -772,56 +772,56 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @param fields
 	 * @return
 	 */
-	public static Type typeInference(Type oldtype, Type newtype, int level,
+	public static Automata typeInference(Automata oldtype, Automata newtype, int level,
 			int fieldLevel, ArrayList<String> fields, int indexLevel,
-			ArrayList<Type> indices) {
+			ArrayList<Automata> indices) {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
-		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
-			Type.Process tp = (Type.Process) oldtype;
-			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
-			return Type.T_PROCESS(nelement);
-		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
+		} else if(Automata.isSubtype(Automata.T_PROCESS(Automata.T_ANY),oldtype)) {
+			Automata.Process tp = (Automata.Process) oldtype;
+			Automata nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
+			return Automata.T_PROCESS(nelement);
+		} else if(Automata.isSubtype(Automata.T_DICTIONARY(Automata.T_ANY, Automata.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
 			// --- hence, the original type must be preserved. However, in the
 			// case that we're assigning a more general value for some key then
 			// we need to generalise the value type accordingly. 
-			Type.Dictionary dict = Type.effectiveDictionaryType(oldtype);
-			Type nkey = indices.get(indexLevel);			
-			Type nvalue = typeInference(dict.value(), newtype, level - 1,
+			Automata.Dictionary dict = Automata.effectiveDictionaryType(oldtype);
+			Automata nkey = indices.get(indexLevel);			
+			Automata nvalue = typeInference(dict.value(), newtype, level - 1,
 					fieldLevel, fields, indexLevel + 1, indices);
-			return Type.T_DICTIONARY(Type.leastUpperBound(dict.key(), nkey),
-					Type.leastUpperBound(dict.value(), nvalue));			
-		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
-			Type nelement = typeInference(Type.T_CHAR, newtype, level - 1,
+			return Automata.T_DICTIONARY(Automata.leastUpperBound(dict.key(), nkey),
+					Automata.leastUpperBound(dict.value(), nvalue));			
+		} else if(Automata.isSubtype(Automata.T_STRING,oldtype)) {
+			Automata nelement = typeInference(Automata.T_CHAR, newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
 			return oldtype;
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {		
+		} else if(Automata.isSubtype(Automata.T_LIST(Automata.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
-			Type.List list = Type.effectiveListType(oldtype);
-			Type nelement = typeInference(list.element(), newtype, level - 1,
+			Automata.List list = Automata.effectiveListType(oldtype);
+			Automata nelement = typeInference(list.element(), newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);
-			return Type.leastUpperBound(oldtype,Type.T_LIST(nelement));
+			return Automata.leastUpperBound(oldtype,Automata.T_LIST(nelement));
 		
-		} else if(Type.effectiveRecordType(oldtype) != null){			
+		} else if(Automata.effectiveRecordType(oldtype) != null){			
 			// Record case is more interesting as we may be able to actually
 			// perform a "strong" update of the type. This is because we know
 			// exactly which field is being updated.
 			String field = fields.get(fieldLevel);
-			if(oldtype instanceof Type.Record) {
-				Type.Record rt = (Type.Record) oldtype;
-				Type ntype = typeInference(rt.fields().get(field), newtype,
+			if(oldtype instanceof Automata.Record) {
+				Automata.Record rt = (Automata.Record) oldtype;
+				Automata ntype = typeInference(rt.fields().get(field), newtype,
 						level - 1, fieldLevel + 1, fields, indexLevel, indices);
-				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
+				HashMap<String,Automata> types = new HashMap<String,Automata>(rt.fields());				
 				types.put(field, ntype);
-				return Type.T_RECORD(types);
+				return Automata.T_RECORD(types);
 			} else {
-				Type.Union tu = (Type.Union) oldtype;
-				Type t = Type.T_VOID;
-				for(Type b : tu.bounds()) {					
-					t = Type.leastUpperBound(
+				Automata.Union tu = (Automata.Union) oldtype;
+				Automata t = Automata.T_VOID;
+				for(Automata b : tu.bounds()) {					
+					t = Automata.leastUpperBound(
 							t,
 							typeInference(b, newtype, level, fieldLevel,
 									fields, indexLevel, indices));
@@ -840,87 +840,87 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}	
 	
 	protected Code infer(NewRecord e, Entry stmt, Env environment) {
-		HashMap<String,Type> fields = new HashMap<String,Type>();
+		HashMap<String,Automata> fields = new HashMap<String,Automata>();
 		ArrayList<String> keys = new ArrayList<String>(e.type.keys());
 		Collections.sort(keys);		
 		for(int i=keys.size()-1;i>=0;--i) {
 			fields.put(keys.get(i),environment.pop());
 		}		
-		Type.Record type = Type.T_RECORD(fields);
+		Automata.Record type = Automata.T_RECORD(fields);
 		environment.push(type);
 		return Code.NewRecord(type);
 	}
 	
 	protected Code infer(NewDict e, Entry stmt, Env environment) {
-		Type key = Type.T_VOID;
-		Type value = Type.T_VOID;
+		Automata key = Automata.T_VOID;
+		Automata value = Automata.T_VOID;
 		
 		for(int i=0;i!=e.nargs;++i) {
-			value = Type.leastUpperBound(value,environment.pop());
-			key = Type.leastUpperBound(key,environment.pop());
+			value = Automata.leastUpperBound(value,environment.pop());
+			key = Automata.leastUpperBound(key,environment.pop());
 			
 		}
 		
-		Type.Dictionary type = Type.T_DICTIONARY(key,value);
+		Automata.Dictionary type = Automata.T_DICTIONARY(key,value);
 		environment.push(type);
 		return Code.NewDict(type,e.nargs);
 	}
 	
 	protected Code infer(NewList e, Entry stmt, Env environment) {
-		Type elem = Type.T_VOID;		
+		Automata elem = Automata.T_VOID;		
 		
 		for(int i=0;i!=e.nargs;++i) {
-			elem = Type.leastUpperBound(elem,environment.pop());						
+			elem = Automata.leastUpperBound(elem,environment.pop());						
 		}
 		
-		Type.List type = Type.T_LIST(elem);
+		Automata.List type = Automata.T_LIST(elem);
 		environment.push(type);
 		return Code.NewList(type,e.nargs);
 	}
 	
 	
 	protected Code infer(NewSet e, Entry stmt, Env environment) {
-		Type elem = Type.T_VOID;		
+		Automata elem = Automata.T_VOID;		
 		
 		for(int i=0;i!=e.nargs;++i) {
-			elem = Type.leastUpperBound(elem,environment.pop());						
+			elem = Automata.leastUpperBound(elem,environment.pop());						
 		}
 		
-		Type.Set type = Type.T_SET(elem);
+		Automata.Set type = Automata.T_SET(elem);
 		environment.push(type);
 		return Code.NewSet(type,e.nargs);
 	}
 	
 	protected Code infer(NewTuple e, Entry stmt, Env environment) {
-		ArrayList<Type> types = new ArrayList<Type>();		
+		ArrayList<Automata> types = new ArrayList<Automata>();		
 		
 		for(int i=0;i!=e.nargs;++i) {
 			types.add(environment.pop());						
 		}
 		Collections.reverse(types);
-		Type.Tuple type = Type.T_TUPLE(types);
+		Automata.Tuple type = Automata.T_TUPLE(types);
 		environment.push(type);
 		return Code.NewTuple(type,e.nargs);
 	}
 	
 	protected Code infer(Send ivk, Entry stmt, Env environment) {
-		ArrayList<Type> types = new ArrayList<Type>();	
+		ArrayList<Automata> types = new ArrayList<Automata>();	
 		
 		for(int i=0;i!=ivk.type.params().size();++i) {
 			types.add(environment.pop());
 		}
 		Collections.reverse(types);
 		
-		Type _rec = environment.pop();
+		Automata _rec = environment.pop();
 		
 		// FIXME: problem here as process check doesn't cover all cases.		
-		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),_rec,stmt);
+		checkIsSubtype(Automata.T_PROCESS(Automata.T_ANY),_rec,stmt);
 		// FIXME: bug here as we need an effectiveProcessType
-		Type.Process rec = (Type.Process) _rec; 		
+		Automata.Process rec = (Automata.Process) _rec; 		
 
 		try {
-			Type.Meth funtype = bindMethod(ivk.name, rec, types, stmt);
-			if (funtype.ret() != Type.T_VOID && ivk.synchronous && ivk.retval) {
+			Automata.Meth funtype = bindMethod(ivk.name, rec, types, stmt);
+			if (funtype.ret() != Automata.T_VOID && ivk.synchronous && ivk.retval) {
 				environment.push(funtype.ret());
 			}
 			return Code.Send(funtype, ivk.name, ivk.synchronous, ivk.retval);			
@@ -937,16 +937,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.ListLength code, Entry stmt, Env environment) {
-		Type src = environment.pop();
-		if(Type.isCoerciveSubtype(Type.T_STRING,src)) {
-			environment.add(Type.T_INT);
+		Automata src = environment.pop();
+		if(Automata.isCoerciveSubtype(Automata.T_STRING,src)) {
+			environment.add(Automata.T_INT);
 			return Code.StringLength();
-		} else if(Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),src)) {
-			environment.add(Type.T_INT);
-			return Code.ListLength(Type.effectiveListType(src));
-		} else if(Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY),src)) {
-			environment.add(Type.T_INT);
-			return Code.SetLength(Type.effectiveSetType(src));
+		} else if(Automata.isCoerciveSubtype(Automata.T_LIST(Automata.T_ANY),src)) {
+			environment.add(Automata.T_INT);
+			return Code.ListLength(Automata.effectiveListType(src));
+		} else if(Automata.isCoerciveSubtype(Automata.T_SET(Automata.T_ANY),src)) {
+			environment.add(Automata.T_INT);
+			return Code.SetLength(Automata.effectiveSetType(src));
 		} else {
 			syntaxError("expected list or set, found " + src,filename,stmt);
 			return null;
@@ -954,19 +954,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(Code.SubList code, Entry stmt, Env environment) {
-		Type end = environment.pop();
-		Type start = environment.pop();
-		Type src = environment.pop();
+		Automata end = environment.pop();
+		Automata start = environment.pop();
+		Automata src = environment.pop();
 		
-		checkIsSubtype(Type.T_INT,start,stmt);
-		checkIsSubtype(Type.T_INT,end,stmt);
+		checkIsSubtype(Automata.T_INT,start,stmt);
+		checkIsSubtype(Automata.T_INT,end,stmt);
 		Code r;
 		
-		if(Type.isCoerciveSubtype(Type.T_STRING, src)) {
+		if(Automata.isCoerciveSubtype(Automata.T_STRING, src)) {
 			r = Code.SubString();
 		} else {
-			checkIsSubtype(Type.T_LIST(Type.T_ANY),src,stmt);
-			r = Code.SubList(Type.effectiveListType(src));
+			checkIsSubtype(Automata.T_LIST(Automata.T_ANY),src,stmt);
+			r = Code.SubList(Automata.effectiveListType(src));
 		}
 		
 		environment.push(src);
@@ -975,19 +975,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}			
 	
 	protected Code infer(Code.Return code, Entry stmt, Env environment) {		
-		Type ret_t = method.type().ret();		
+		Automata ret_t = method.type().ret();		
 		
 		if(environment.size() > methodCase.body().numSlots()) {			
-			if(ret_t == Type.T_VOID) {
+			if(ret_t == Automata.T_VOID) {
 				syntaxError(
 						"cannot return value from method with void return type",
 						filename, stmt);
 			}
 			
-			Type rhs_t = environment.pop();
+			Automata rhs_t = environment.pop();
 			
 			checkIsSubtype(ret_t,rhs_t,stmt);
-		} else if(ret_t != Type.T_VOID) {
+		} else if(ret_t != Automata.T_VOID) {
 			syntaxError(
 					"missing return value",filename, stmt);
 		}
@@ -1000,51 +1000,51 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code inferSetUnion(OpDir dir, Entry stmt, Env environment) {
-		Type rhs = environment.pop();
-		Type lhs = environment.pop();
-		Type result;
+		Automata rhs = environment.pop();
+		Automata lhs = environment.pop();
+		Automata result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		boolean lhs_set = Automata.isSubtype(Automata.T_SET(Automata.T_ANY),lhs);
+		boolean rhs_set = Automata.isSubtype(Automata.T_SET(Automata.T_ANY),rhs);			
 		
 		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
 			if(lhs_set && rhs_set) {
-				result = Type.leastUpperBound(lhs,rhs);		
-			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
+				result = Automata.leastUpperBound(lhs,rhs);		
+			} else if(lhs_set && Automata.isCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
-			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
+			} else  if(rhs_set && Automata.isCoerciveSubtype(rhs, lhs)) {
 				result = rhs;				
 			} else {
 				syntaxError("invalid set operation on types",filename,stmt);
 				result = null;
 			}						
 		} else if(dir == OpDir.LEFT && lhs_set) {
-			result = Type.leastUpperBound(lhs,Type.T_SET(rhs));
+			result = Automata.leastUpperBound(lhs,Automata.T_SET(rhs));
 		} else if(dir == OpDir.RIGHT && rhs_set) {
-			result = Type.leastUpperBound(Type.T_SET(lhs),rhs);			
+			result = Automata.leastUpperBound(Automata.T_SET(lhs),rhs);			
 		} else {
 			syntaxError("expecting set type",filename,stmt);
 			return null; // dead-code
 		}
 				
 		environment.push(result);
-		return Code.SetUnion(Type.effectiveSetType(result), dir);	
+		return Code.SetUnion(Automata.effectiveSetType(result), dir);	
 	}
 
 	protected Code infer(Code.SetIntersect code, Entry stmt, Env environment) {
-		Type rhs = environment.pop();
-		Type lhs = environment.pop();
-		Type result;
+		Automata rhs = environment.pop();
+		Automata lhs = environment.pop();
+		Automata result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		boolean lhs_set = Automata.isSubtype(Automata.T_SET(Automata.T_ANY),lhs);
+		boolean rhs_set = Automata.isSubtype(Automata.T_SET(Automata.T_ANY),rhs);			
 		
 		if(lhs_set || rhs_set) {				
 			if(lhs_set && rhs_set) {
-				result = Type.greatestLowerBound(lhs,rhs);		
-			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
+				result = Automata.greatestLowerBound(lhs,rhs);		
+			} else if(lhs_set && Automata.isCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
-			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
+			} else  if(rhs_set && Automata.isCoerciveSubtype(rhs, lhs)) {
 				result = rhs;				
 			} else {
 				syntaxError("invalid set operation on types",filename,stmt);
@@ -1056,7 +1056,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 				
 		environment.push(result);
-		return Code.SetIntersect(Type.effectiveSetType(result), OpDir.UNIFORM);	
+		return Code.SetIntersect(Automata.effectiveSetType(result), OpDir.UNIFORM);	
 	}
 	
 	protected Code infer(Code.SetDifference code, Entry stmt, Env environment) {
@@ -1064,11 +1064,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 		
 	protected Code inferSetDifference(OpDir dir, Entry stmt, Env environment) {
-		Type rhs = environment.pop();
-		Type lhs = environment.pop();
-		Type result;
+		Automata rhs = environment.pop();
+		Automata lhs = environment.pop();
+		Automata result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean lhs_set = Automata.isSubtype(Automata.T_SET(Automata.T_ANY),lhs);
 					
 		
 		if(lhs_set) {	
@@ -1080,37 +1080,37 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 				
 		environment.push(result);
-		return Code.SetDifference(Type.effectiveSetType(result), dir);	
+		return Code.SetDifference(Automata.effectiveSetType(result), dir);	
 	}
 
 	protected Code infer(Negate v, Entry stmt, Env environment) {
-		Type rhs_t = environment.pop();
+		Automata rhs_t = environment.pop();
 
-		checkIsSubtype(Type.T_REAL,rhs_t,stmt);
-		if(rhs_t != Type.T_INT) {
+		checkIsSubtype(Automata.T_REAL,rhs_t,stmt);
+		if(rhs_t != Automata.T_INT) {
 			// this is an implicit coercion
-			rhs_t = Type.T_REAL;
+			rhs_t = Automata.T_REAL;
 		}
 		environment.add(rhs_t);
 		return Code.Negate(rhs_t);						
 	}
 	
 	protected Code infer(ProcLoad v, Entry stmt, Env environment) {
-		Type rhs_t = environment.pop();
-		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
-		Type.Process tp = (Type.Process)rhs_t; 
+		Automata rhs_t = environment.pop();
+		checkIsSubtype(Automata.T_PROCESS(Automata.T_ANY),rhs_t,stmt);
+		Automata.Process tp = (Automata.Process)rhs_t; 
 		environment.push(tp.element());
 		return Code.ProcLoad(tp);
 	}
 	
 	protected Code infer(Spawn v, Entry stmt, Env environment) {
-		Type rhs_t = environment.pop();
-		environment.add(Type.T_PROCESS(rhs_t));
-		return Code.Spawn(Type.T_PROCESS(rhs_t));						
+		Automata rhs_t = environment.pop();
+		environment.add(Automata.T_PROCESS(rhs_t));
+		return Code.Spawn(Automata.T_PROCESS(rhs_t));						
 	}			
 	
 	protected Code infer(Code.Throw code, Entry stmt, Env environment) {
-		Type val = environment.pop();
+		Automata val = environment.pop();
 		// TODO: check throws clause
 		// Type ret_t = method.type().throws						
 		// checkIsSubtype(ret_t,val,stmt);
@@ -1121,30 +1121,30 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Env environment) {
 		environment = (Env) environment.clone();
 		
-		Type rhs_t = environment.pop();
-		Type lhs_t = environment.pop();
-		Type lub;
+		Automata rhs_t = environment.pop();
+		Automata lhs_t = environment.pop();
+		Automata lub;
 		
 		if(code.op == Code.COp.ELEMOF) {
 			// this is the only asymmetric binary operation. So, it's handled
 			// with a special case.
-			Type element;
-			if(rhs_t instanceof Type.List){
-				element = ((Type.List)rhs_t).element();
-			} else if(rhs_t instanceof Type.Set){
-				element = ((Type.Set)rhs_t).element();
+			Automata element;
+			if(rhs_t instanceof Automata.List){
+				element = ((Automata.List)rhs_t).element();
+			} else if(rhs_t instanceof Automata.Set){
+				element = ((Automata.Set)rhs_t).element();
 			} else {
 				syntaxError("expected set or list, found: " + rhs_t,filename,stmt);
 				return null;
 			}
-			if (!Type.isCoerciveSubtype(element, lhs_t)) {
+			if (!Automata.isCoerciveSubtype(element, lhs_t)) {
 				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
 						filename, stmt);
 			}			
 			lub = rhs_t;
-		} else if(Type.isCoerciveSubtype(lhs_t, rhs_t)) {
+		} else if(Automata.isCoerciveSubtype(lhs_t, rhs_t)) {
 			lub = lhs_t;
-		} else if(Type.isCoerciveSubtype(rhs_t, lhs_t)) {
+		} else if(Automata.isCoerciveSubtype(rhs_t, lhs_t)) {
 			lub = rhs_t;
 		} else {
 			syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
@@ -1157,7 +1157,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(Type.T_REAL, lub, stmt);
+			checkIsSubtype(Automata.T_REAL, lub, stmt);
 			break;
 		case EQ:
 		case NEQ:
@@ -1169,7 +1169,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}	
 		case SUBSET:
 		case SUBSETEQ:						
-			checkIsSubtype(Type.T_SET(Type.T_ANY),lub,stmt);			
+			checkIsSubtype(Automata.T_SET(Automata.T_ANY),lub,stmt);			
 			break;		
 		}
 		
@@ -1183,7 +1183,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Pair<Env, Env> propagate(int index, Code.IfType code, Entry stmt,
 			Env environment) {
 		environment = (Env) environment.clone();
-		Type lhs_t;
+		Automata lhs_t;
 		
 		if(code.slot >= 0) {
 			lhs_t = environment.get(code.slot);
@@ -1194,14 +1194,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Code ncode = code;
 		Env trueEnv = null;
 		Env falseEnv = null;								
-		Type glb = Type.greatestLowerBound(lhs_t, code.test);
+		Automata glb = Automata.greatestLowerBound(lhs_t, code.test);
 						
-		if(Type.isSubtype(code.test,lhs_t)) {								
+		if(Automata.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
 			//trueEnv = environment;
 			//ncode = Code.Goto(code.target);										
 			syntaxError("branch always taken",filename,methodCase.body().get(index));
-		} else if (glb == Type.T_VOID) {				
+		} else if (glb == Automata.T_VOID) {				
 			// DEFINITE FALSE CASE				
 			//falseEnv = environment;							
 			//ncode = Code.Skip;							
@@ -1211,7 +1211,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {						
-				Type gdiff = Type.leastDifference(lhs_t, code.test);				
+				Automata gdiff = Automata.leastDifference(lhs_t, code.test);				
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
@@ -1226,7 +1226,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 	protected List<Env> propagate(int index, Code.Switch code, Entry stmt,
 			Env environment) {
-		Type val = environment.pop();
+		Automata val = environment.pop();
 		ArrayList<Env> envs = new ArrayList<Env>();
 		// TODO: update this code to support type inference of types. That is,
 		// if we switch on a type value then this will update the type of the
@@ -1248,24 +1248,24 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Entry stmt, ArrayList<Integer> modifies, Env environment) {
 						
 		// Now, type the source 		
-		Type src_t = environment.pop();						
+		Automata src_t = environment.pop();						
 		
-		Type elem_t;
-		if(src_t instanceof Type.List) {
-			elem_t = ((Type.List)src_t).element();
-		} else if(src_t instanceof Type.Set){
-			elem_t = ((Type.Set)src_t).element();
-		} else if(src_t == Type.T_STRING){
-			elem_t = Type.T_CHAR;
-		} else if(src_t instanceof Type.Dictionary){
-			Type.Dictionary d = (Type.Dictionary) src_t;			
-			elem_t = Type.T_TUPLE(d.key(),d.value());
+		Automata elem_t;
+		if(src_t instanceof Automata.List) {
+			elem_t = ((Automata.List)src_t).element();
+		} else if(src_t instanceof Automata.Set){
+			elem_t = ((Automata.Set)src_t).element();
+		} else if(src_t == Automata.T_STRING){
+			elem_t = Automata.T_CHAR;
+		} else if(src_t instanceof Automata.Dictionary){
+			Automata.Dictionary d = (Automata.Dictionary) src_t;			
+			elem_t = Automata.T_TUPLE(d.key(),d.value());
 		} else {
 			syntaxError("expected set or list, found: " + src_t,filename,stmt);
 			return null; // deadcode
 		}
 		
-		if (elem_t == Type.T_VOID) {
+		if (elem_t == Automata.T_VOID) {
 			// This indicates a loop over an empty list. This legitimately can
 			// happen as a result of substitution for contraints or pre/post
 			// conditions.
@@ -1349,21 +1349,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @return
 	 * @throws ResolveError
 	 */
-	protected Type.Fun bindFunction(NameID nid, 
-			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
+	protected Automata.Fun bindFunction(NameID nid, 
+			List<Automata> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Fun target = Type.T_FUN(Type.T_ANY,paramTypes);
-		Type.Fun candidate = null;				
+		Automata.Fun target = Automata.T_FUN(Automata.T_ANY,paramTypes);
+		Automata.Fun candidate = null;				
 		
-		List<Type.Fun> targets = lookupMethod(nid.module(),nid.name()); 
+		List<Automata.Fun> targets = lookupMethod(nid.module(),nid.name()); 
 		
-		for (Type.Fun ft : targets) {										
-			if(ft instanceof Type.Meth) {
+		for (Automata.Fun ft : targets) {										
+			if(ft instanceof Automata.Meth) {
 				// in this case, we want to check if this is a definite method
 				// call with a receiver. If so, then we don't consider it. We do
 				// consider "headless" method calls, since these cannot be
 				// distinguished from function calls in module builder.  
-				Type.Meth mt = (Type.Meth) ft;
+				Automata.Meth mt = (Automata.Meth) ft;
 				if(mt.receiver() != null) {
 					continue;
 				}
@@ -1381,7 +1381,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String msg = "no match for " + nid.name() + parameterString(paramTypes);
 			boolean firstTime = true;
 			int count = 0;
-			for(Type.Fun ft : targets) {
+			for(Automata.Fun ft : targets) {
 				if(firstTime) {
 					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
 				} else {
@@ -1398,20 +1398,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return candidate;
 	}
 	
-	protected Type.Meth bindMethod(NameID nid, Type.Process receiver,
-			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
+	protected Automata.Meth bindMethod(NameID nid, Automata.Process receiver,
+			List<Automata> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Meth target = Type.T_METH(receiver, Type.T_ANY,paramTypes);
-		Type.Meth candidate = null;				
+		Automata.Meth target = Automata.T_METH(receiver, Automata.T_ANY,paramTypes);
+		Automata.Meth candidate = null;				
 		
-		List<Type.Fun> targets = lookupMethod(nid.module(),nid.name()); 
+		List<Automata.Fun> targets = lookupMethod(nid.module(),nid.name()); 
 		
-		for (Type.Fun ft : targets) {
-			if(ft instanceof Type.Meth) {
-				Type.Meth mt = (Type.Meth) ft; 
-				Type funrec = mt.receiver();			
+		for (Automata.Fun ft : targets) {
+			if(ft instanceof Automata.Meth) {
+				Automata.Meth mt = (Automata.Meth) ft; 
+				Automata funrec = mt.receiver();			
 				if (receiver == funrec
-						|| (receiver != null && funrec != null && Type
+						|| (receiver != null && funrec != null && Automata
 								.isCoerciveSubtype(receiver, funrec))) {
 					// receivers match up OK ...				
 					if (ft.params().size() == paramTypes.size()						
@@ -1433,10 +1433,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
 			boolean firstTime = true;
 			int count = 0;
-			for(Type.Fun ft : targets) {
+			for(Automata.Fun ft : targets) {
 				rec = "";
-				if(ft instanceof Type.Meth) {
-					Type.Meth mt = (Type.Meth) ft;
+				if(ft instanceof Automata.Meth) {
+					Automata.Meth mt = (Automata.Meth) ft;
 					if(mt.receiver() != null) {
 						rec = mt.receiver().toString();
 					}
@@ -1458,14 +1458,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return candidate;
 	}
 	
-	private boolean paramSubtypes(Type.Fun f1, Type.Fun f2) {
-		List<Type> f1_params = f1.params();
-		List<Type> f2_params = f2.params();
+	private boolean paramSubtypes(Automata.Fun f1, Automata.Fun f2) {
+		List<Automata> f1_params = f1.params();
+		List<Automata> f2_params = f2.params();
 		if(f1_params.size() == f2_params.size()) {
 			for(int i=0;i!=f1_params.size();++i) {
-				Type f1_param = f1_params.get(i);
-				Type f2_param = f2_params.get(i);
-				if(!Type.isCoerciveSubtype(f1_param,f2_param)) {					
+				Automata f1_param = f1_params.get(i);
+				Automata f2_param = f2_params.get(i);
+				if(!Automata.isCoerciveSubtype(f1_param,f2_param)) {					
 					return false;
 				}
 			}
@@ -1474,10 +1474,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return false;
 	}
 	
-	private String parameterString(List<Type> paramTypes) {
+	private String parameterString(List<Automata> paramTypes) {
 		String paramStr = "(";
 		boolean firstTime = true;
-		for(Type t : paramTypes) {
+		for(Automata t : paramTypes) {
 			if(!firstTime) {
 				paramStr += ",";
 			}
@@ -1487,18 +1487,18 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return paramStr + ")";
 	}
 	
-	protected List<Type.Fun> lookupMethod(ModuleID mid, String name)
+	protected List<Automata.Fun> lookupMethod(ModuleID mid, String name)
 			throws ResolveError {
 		
 		Module module = loader.loadModule(mid);
-		ArrayList<Type.Fun> rs = new ArrayList<Type.Fun>();
+		ArrayList<Automata.Fun> rs = new ArrayList<Automata.Fun>();
 		for (Module.Method m : module.method(name)) {
 			rs.add(m.type());
 		}
 		return rs;		
 	}
 	
-	protected <T extends Type> T checkType(Type t, Class<T> clazz,
+	protected <T extends Automata> T checkType(Automata t, Class<T> clazz,
 			SyntacticElement elem) {		
 		if (clazz.isInstance(t)) {
 			return (T) t;
@@ -1510,8 +1510,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	// Check t1 :> t2
-	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {		
-		if (!Type.isCoerciveSubtype(t1, t2)) {
+	protected void checkIsSubtype(Automata t1, Automata t2, SyntacticElement elem) {		
+		if (!Automata.isCoerciveSubtype(t1, t2)) {
 			syntaxError("expected type " + t1 + ", found " + t2, filename, elem);
 		}		
 	}
@@ -1524,25 +1524,25 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		Env env = new Env();
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
-			env.add(Type.leastUpperBound(env1.get(i), env2.get(i)));
+			env.add(Automata.leastUpperBound(env1.get(i), env2.get(i)));
 		}
 
 		return env;
 	}	
 	
-	public static class Env extends ArrayList<Type> {
+	public static class Env extends ArrayList<Automata> {
 		public Env() {
 		}
-		public Env(Collection<Type> v) {
+		public Env(Collection<Automata> v) {
 			super(v);
 		}
-		public void push(Type t) {
+		public void push(Automata t) {
 			add(t);
 		}
-		public Type top() {
+		public Automata top() {
 			return get(size()-1);
 		}
-		public Type pop() {
+		public Automata pop() {
 			return remove(size()-1);			
 		}
 		public Env clone() {

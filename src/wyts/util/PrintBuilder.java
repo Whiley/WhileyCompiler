@@ -4,7 +4,7 @@ import java.io.PrintStream;
 
 import wyil.lang.NameID;
 import wyil.util.Pair;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 /**
  * The print builder is an example implementation of type builder which
@@ -20,7 +20,7 @@ public class PrintBuilder implements TypeBuilder {
 	
 	public void initialise(int numNodes) { }
 	
-	public void buildPrimitive(int index, Type.Leaf type) {
+	public void buildPrimitive(int index, Automata.Leaf type) {
 		out.println("#" + index + " = " + type);
 	}
 	

@@ -5,7 +5,7 @@ import static wyil.util.SyntaxError.syntaxError;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 /**
  * <p>
@@ -72,7 +72,7 @@ public class CoercionCheck implements Transform {
 			Code code = stmt.code;
 			if (code instanceof Code.Convert) {				
 				Code.Convert conv = (Code.Convert) code; 				
-				check(conv.from,conv.to,new HashSet<Pair<Type,Type>>(),stmt);
+				check(conv.from,conv.to,new HashSet<Pair<Automata,Automata>>(),stmt);
 			} 
 		}	
 	}
@@ -87,100 +87,100 @@ public class CoercionCheck implements Transform {
 	 * @param visited - the set of pairs already checked.
 	 * @param elem - enclosing syntactic element.
 	 */
-	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited,
+	protected void check(Automata from, Automata to, HashSet<Pair<Automata, Automata>> visited,
 			SyntacticElement elem) {
-		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
+		Pair<Automata,Automata> p = new Pair<Automata,Automata>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair
 		} else {
 			visited.add(p);
 		}
-		if(from == Type.T_VOID) {
+		if(from == Automata.T_VOID) {
 			// also no problem
-		} else if(from instanceof Type.Leaf && to instanceof Type.Leaf) {
+		} else if(from instanceof Automata.Leaf && to instanceof Automata.Leaf) {
 			// no problem
-		} else if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
-			Type.Tuple t1 = (Type.Tuple) from;
-			Type.Tuple t2 = (Type.Tuple) to;
-			List<Type> t1_elements = t1.elements(); 
-			List<Type> t2_elements = t2.elements();
+		} else if(from instanceof Automata.Tuple && to instanceof Automata.Tuple) {
+			Automata.Tuple t1 = (Automata.Tuple) from;
+			Automata.Tuple t2 = (Automata.Tuple) to;
+			List<Automata> t1_elements = t1.elements(); 
+			List<Automata> t2_elements = t2.elements();
 			for(int i=0;i!=t2.elements().size();++i) {
-				Type e1 = t1_elements.get(i);
-				Type e2 = t2_elements.get(i);
+				Automata e1 = t1_elements.get(i);
+				Automata e2 = t2_elements.get(i);
 				check(e1,e2,visited,elem);
 			}
-		} else if(from instanceof Type.Process && to instanceof Type.Process) {
-			Type.Process t1 = (Type.Process) from;
-			Type.Process t2 = (Type.Process) to;
+		} else if(from instanceof Automata.Process && to instanceof Automata.Process) {
+			Automata.Process t1 = (Automata.Process) from;
+			Automata.Process t2 = (Automata.Process) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.Set && to instanceof Type.Set) {
-			Type.Set t1 = (Type.Set) from;
-			Type.Set t2 = (Type.Set) to;
+		} else if(from instanceof Automata.Set && to instanceof Automata.Set) {
+			Automata.Set t1 = (Automata.Set) from;
+			Automata.Set t2 = (Automata.Set) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
-			Type.Dictionary t1 = (Type.Dictionary) from;
-			Type.Set t2 = (Type.Set) to;
-			Type.Tuple tup = Type.T_TUPLE(t1.key(),t1.value());
+		} else if(from instanceof Automata.Dictionary && to instanceof Automata.Set) {
+			Automata.Dictionary t1 = (Automata.Dictionary) from;
+			Automata.Set t2 = (Automata.Set) to;
+			Automata.Tuple tup = Automata.T_TUPLE(t1.key(),t1.value());
 			check(tup,t2.element(),visited,elem);
-		} else if(from instanceof Type.List && to instanceof Type.Set) {
-			Type.List t1 = (Type.List) from;
-			Type.Set t2 = (Type.Set) to;
+		} else if(from instanceof Automata.List && to instanceof Automata.Set) {
+			Automata.List t1 = (Automata.List) from;
+			Automata.Set t2 = (Automata.Set) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
-			Type.List t1 = (Type.List) from;
-			Type.Dictionary t2 = (Type.Dictionary) to;
+		} else if(from instanceof Automata.List && to instanceof Automata.Dictionary) {
+			Automata.List t1 = (Automata.List) from;
+			Automata.Dictionary t2 = (Automata.Dictionary) to;
 			check(t1.element(),t2.value(),visited,elem);
-		} else if(from instanceof Type.List && to instanceof Type.List) {
-			Type.List t1 = (Type.List) from;
-			Type.List t2 = (Type.List) to;
+		} else if(from instanceof Automata.List && to instanceof Automata.List) {
+			Automata.List t1 = (Automata.List) from;
+			Automata.List t2 = (Automata.List) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.Strung && to instanceof Type.List) {			
-			Type.List t2 = (Type.List) to;
-			check(Type.T_CHAR,t2.element(),visited,elem);
-		} else if(from instanceof Type.Record && to instanceof Type.Record) {
-			Type.Record t1 = (Type.Record) from;
-			Type.Record t2 = (Type.Record) to;
-			HashMap<String,Type> t1_elements = t1.fields(); 
-			HashMap<String,Type> t2_elements = t2.fields();
+		} else if(from instanceof Automata.Strung && to instanceof Automata.List) {			
+			Automata.List t2 = (Automata.List) to;
+			check(Automata.T_CHAR,t2.element(),visited,elem);
+		} else if(from instanceof Automata.Record && to instanceof Automata.Record) {
+			Automata.Record t1 = (Automata.Record) from;
+			Automata.Record t2 = (Automata.Record) to;
+			HashMap<String,Automata> t1_elements = t1.fields(); 
+			HashMap<String,Automata> t2_elements = t2.fields();
 			ArrayList<String> fields = new ArrayList<String>(t2.keys());
 			for(String s : fields) {
-				Type e1 = t1_elements.get(s);
-				Type e2 = t2_elements.get(s);
+				Automata e1 = t1_elements.get(s);
+				Automata e2 = t2_elements.get(s);
 				check(e1,e2,visited,elem);
 			}			
-		} else if(from instanceof Type.Fun && to instanceof Type.Fun) {
-			Type.Fun t1 = (Type.Fun) from;
-			Type.Fun t2 = (Type.Fun) to;
-			List<Type> t1_elements = t1.params(); 
-			List<Type> t2_elements = t2.params();			
+		} else if(from instanceof Automata.Fun && to instanceof Automata.Fun) {
+			Automata.Fun t1 = (Automata.Fun) from;
+			Automata.Fun t2 = (Automata.Fun) to;
+			List<Automata> t1_elements = t1.params(); 
+			List<Automata> t2_elements = t2.params();			
 			for(int i=0;i!=t1_elements.size();++i) {
-				Type e1 = t1_elements.get(i);
-				Type e2 = t2_elements.get(i);
+				Automata e1 = t1_elements.get(i);
+				Automata e2 = t2_elements.get(i);
 				check(e1,e2,visited,elem);
 			}			
 			check(t1.ret(),t2.ret(),visited,elem);
-		} else if(from instanceof Type.Union) {
-			Type.Union t1 = (Type.Union) from; 
-			for(Type b : t1.bounds()) {
+		} else if(from instanceof Automata.Union) {
+			Automata.Union t1 = (Automata.Union) from; 
+			for(Automata b : t1.bounds()) {
 				check(b,to,visited,elem);
 			}
-		} else if(to instanceof Type.Union) {			
-			Type.Union t2 = (Type.Union) to;			
+		} else if(to instanceof Automata.Union) {			
+			Automata.Union t2 = (Automata.Union) to;			
 			
 			// First, check for identical type (i.e. no coercion necessary)
 			
-			for(Type b : t2.bounds()) {
-				if(Type.isomorphic(from, b)) {
+			for(Automata b : t2.bounds()) {
+				if(Automata.isomorphic(from, b)) {
 					// no problem
 					return;
 				}
 			}
 			
 			// Second, check for single non-coercive match
-			Type match = null;			
+			Automata match = null;			
 			
-			for(Type b : t2.bounds()) {
-				if(Type.isSubtype(b,from)) {
+			for(Automata b : t2.bounds()) {
+				if(Automata.isSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						syntaxError("ambiguous coercion (" + from + " => "
@@ -199,8 +199,8 @@ public class CoercionCheck implements Transform {
 			
 			// Third, test for single coercive match
 			
-			for(Type b : t2.bounds()) {
-				if(Type.isCoerciveSubtype(b,from)) {
+			for(Automata b : t2.bounds()) {
+				if(Automata.isCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						syntaxError("ambiguous coercion (" + from + " => "

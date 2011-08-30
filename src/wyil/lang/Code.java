@@ -27,7 +27,7 @@ package wyil.lang;
 
 import java.util.*;
 import wyil.util.*;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 public abstract class Code {
 	public final static int THIS_SLOT = 0;
@@ -48,7 +48,7 @@ public abstract class Code {
 		return get(new Assert(label));
 	}
 	
-	public static BinOp BinOp(Type type, BOp op) {
+	public static BinOp BinOp(Automata type, BOp op) {
 		return get(new BinOp(type,op));
 	}
 	
@@ -66,13 +66,13 @@ public abstract class Code {
 		return get(new Const(constant));
 	}
 	
-	public static Convert Convert(Type from, Type to) {
+	public static Convert Convert(Automata from, Automata to) {
 		return get(new Convert(from,to));
 	}
 	
 	public static final Debug debug = new Debug();
 
-	public static Destructure Destructure(Type from) {
+	public static Destructure Destructure(Automata from) {
 		return get(new Destructure(from));
 	}
 	
@@ -84,7 +84,7 @@ public abstract class Code {
 	 *            --- dictionary type.
 	 * @return
 	 */
-	public static DictLoad DictLoad(Type.Dictionary type) {
+	public static DictLoad DictLoad(Automata.Dictionary type) {
 		return get(new DictLoad(type));
 	}
 	
@@ -117,7 +117,7 @@ public abstract class Code {
 	 *            --- field to load.
 	 * @return
 	 */
-	public static FieldLoad FieldLoad(Type.Record type, String field) {
+	public static FieldLoad FieldLoad(Automata.Record type, String field) {
 		return get(new FieldLoad(type,field));
 	}	
 	
@@ -140,7 +140,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Invoke Invoke(Type.Fun fun, NameID name, boolean retval) {
+	public static Invoke Invoke(Automata.Fun fun, NameID name, boolean retval) {
 		return get(new Invoke(fun,name,retval));
 	}
 
@@ -157,19 +157,19 @@ public abstract class Code {
 	 *            --- reg to load.
 	 * @return
 	 */
-	public static Load Load(Type type, int reg) {
+	public static Load Load(Automata type, int reg) {
 		return get(new Load(type,reg));
 	}
 	
-	public static ListLength ListLength(Type.List type) {
+	public static ListLength ListLength(Automata.List type) {
 		return get(new ListLength(type));
 	}
 	
-	public static SubList SubList(Type.List type) {
+	public static SubList SubList(Automata.List type) {
 		return get(new SubList(type));
 	}
 	
-	public static ListAppend ListAppend(Type.List type, OpDir dir) {
+	public static ListAppend ListAppend(Automata.List type, OpDir dir) {
 		return get(new ListAppend(type,dir));
 	}
 	
@@ -181,7 +181,7 @@ public abstract class Code {
 	 *            --- list type.
 	 * @return
 	 */
-	public static ListLoad ListLoad(Type.List type) {
+	public static ListLoad ListLoad(Automata.List type) {
 		return get(new ListLoad(type));
 	}
 
@@ -208,7 +208,7 @@ public abstract class Code {
 	 *            --- exit label.
 	 * @return
 	 */
-	public static ForAll ForAll(Type type, int var,
+	public static ForAll ForAll(Automata type, int var,
 			String label, Collection<Integer> modifies) {
 		return get(new ForAll(type, var, label, modifies));
 	}				
@@ -220,7 +220,7 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewDict NewDict(Type.Dictionary type, int nargs) {
+	public static NewDict NewDict(Automata.Dictionary type, int nargs) {
 		return get(new NewDict(type,nargs));
 	}
 	
@@ -231,7 +231,7 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewSet NewSet(Type.Set type, int nargs) {
+	public static NewSet NewSet(Automata.Set type, int nargs) {
 		return get(new NewSet(type,nargs));
 	}
 	
@@ -242,7 +242,7 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewList NewList(Type.List type, int nargs) {
+	public static NewList NewList(Automata.List type, int nargs) {
 		return get(new NewList(type,nargs));
 	}
 	
@@ -253,7 +253,7 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewTuple NewTuple(Type.Tuple type, int nargs) {
+	public static NewTuple NewTuple(Automata.Tuple type, int nargs) {
 		return get(new NewTuple(type, nargs));
 	}
 	
@@ -264,19 +264,19 @@ public abstract class Code {
 	 * @param type
 	 * @return
 	 */
-	public static NewRecord NewRecord(Type.Record type) {
+	public static NewRecord NewRecord(Automata.Record type) {
 		return get(new NewRecord(type));
 	}
 	
-	public static Return Return(Type t) {
+	public static Return Return(Automata t) {
 		return get(new Return(t));
 	}
 	
-	public static IfGoto IfGoto(Type type, COp cop, String label) {
+	public static IfGoto IfGoto(Automata type, COp cop, String label) {
 		return get(new IfGoto(type,cop,label));
 	}
 
-	public static IfType IfType(Type type, int slot, Type test, String label) {
+	public static IfType IfType(Automata type, int slot, Automata test, String label) {
 		return get(new IfType(type,slot,test,label));
 	}
 	
@@ -288,7 +288,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Meth meth, boolean synchronous, boolean retval) {
+	public static IndirectSend IndirectSend(Automata.Meth meth, boolean synchronous, boolean retval) {
 		return get(new IndirectSend(meth,synchronous,retval));
 	}
 	
@@ -300,11 +300,11 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectInvoke IndirectInvoke(Type.Fun fun, boolean retval) {
+	public static IndirectInvoke IndirectInvoke(Automata.Fun fun, boolean retval) {
 		return get(new IndirectInvoke(fun,retval));
 	}
 	
-	public static Invert Invert(Type type) {
+	public static Invert Invert(Automata type) {
 		return get(new Invert(type));
 	}	
 	
@@ -314,19 +314,19 @@ public abstract class Code {
 	
 	public static final Skip Skip = new Skip();
 	
-	public static SetLength SetLength(Type.Set type) {
+	public static SetLength SetLength(Automata.Set type) {
 		return get(new SetLength(type));
 	}
 	
-	public static SetUnion SetUnion(Type.Set type, OpDir dir) {
+	public static SetUnion SetUnion(Automata.Set type, OpDir dir) {
 		return get(new SetUnion(type,dir));
 	}
 	
-	public static SetIntersect SetIntersect(Type.Set type, OpDir dir) {
+	public static SetIntersect SetIntersect(Automata.Set type, OpDir dir) {
 		return get(new SetIntersect(type,dir));
 	}
 	
-	public static SetDifference SetDifference(Type.Set type, OpDir dir) {
+	public static SetDifference SetDifference(Automata.Set type, OpDir dir) {
 		return get(new SetDifference(type,dir));
 	}
 	
@@ -354,7 +354,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Meth meth, NameID name, boolean synchronous, boolean retval) {
+	public static Send Send(Automata.Meth meth, NameID name, boolean synchronous, boolean retval) {
 		return get(new Send(meth,name,synchronous,retval));
 	}	
 	
@@ -367,7 +367,7 @@ public abstract class Code {
 	 *            --- reg to load.
 	 * @return
 	 */
-	public static Store Store(Type type, int reg) {
+	public static Store Store(Automata type, int reg) {
 		return get(new Store(type,reg));
 	}
 	
@@ -383,7 +383,7 @@ public abstract class Code {
 	 *            --- map from values to destination labels.
 	 * @return
 	 */
-	public static Switch Switch(Type type, String defaultLabel,
+	public static Switch Switch(Automata type, String defaultLabel,
 			Collection<Pair<Value, String>> cases) {
 		return get(new Switch(type,defaultLabel,cases));
 	}
@@ -396,19 +396,19 @@ public abstract class Code {
 	 *            --- value type to throw 
 	 * @return
 	 */
-	public static Throw Throw(Type t) {
+	public static Throw Throw(Automata t) {
 		return get(new Throw(t));
 	}
 	
-	public static Negate Negate(Type type) {
+	public static Negate Negate(Automata type) {
 		return get(new Negate(type));
 	}		
 	
-	public static Spawn Spawn(Type.Process type) {
+	public static Spawn Spawn(Automata.Process type) {
 		return get(new Spawn(type));
 	}
 	
-	public static ProcLoad ProcLoad(Type.Process type) {
+	public static ProcLoad ProcLoad(Automata.Process type) {
 		return get(new ProcLoad(type));
 	}
 	
@@ -422,11 +422,11 @@ public abstract class Code {
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
+	public static Update Update(Automata type, int slot, int level, Collection<String> fields) {
 		return get(new Update(type,slot,level,fields));
 	}
 
-	public static Void Void(Type type, int slot) {
+	public static Void Void(Automata type, int slot) {
 		return get(new Void(type,slot));
 	}
 	
@@ -541,9 +541,9 @@ public abstract class Code {
 	 */
 	public static final class BinOp extends Code {		
 		public final BOp bop;
-		public final Type type;
+		public final Automata type;
 		
-		private BinOp(Type type, BOp bop) {
+		private BinOp(Automata type, BOp bop) {
 			if(bop == null) {
 				throw new IllegalArgumentException("BinOp bop argument cannot be null");
 			}
@@ -591,10 +591,10 @@ public abstract class Code {
 	 * convert between them.
 	 */
 	public static final class Convert extends Code {
-		public final Type from;
-		public final Type to;
+		public final Automata from;
+		public final Automata to;
 		
-		private Convert(Type from, Type to) {
+		private Convert(Automata from, Automata to) {
 			if(to == null) {
 				throw new IllegalArgumentException("Convert to argument cannot be null");
 			}
@@ -675,9 +675,9 @@ public abstract class Code {
 	 * integers. Or, an n-tuple can be structured into n values.
 	 */
 	public static final class Destructure extends Code {
-		public final Type type;
+		public final Automata type;
 		
-		private Destructure(Type from) {			
+		private Destructure(Automata from) {			
 			this.type = from;			
 		}
 		
@@ -703,9 +703,9 @@ public abstract class Code {
 	}
 	
 	public static final class DictLoad extends Code {
-		public final Type.Dictionary type;				
+		public final Automata.Dictionary type;				
 		
-		private DictLoad(Type.Dictionary type) {
+		private DictLoad(Automata.Dictionary type) {
 			this.type = type;
 		}
 		
@@ -812,10 +812,10 @@ public abstract class Code {
 	 * 
 	 */
 	public static final class FieldLoad extends Code {
-		public final Type.Record type;		
+		public final Automata.Record type;		
 		public final String field;
 				
-		private FieldLoad(Type.Record type, String field) {
+		private FieldLoad(Automata.Record type, String field) {
 			if (field == null) {
 				throw new IllegalArgumentException(
 						"FieldLoad field argument cannot be null");
@@ -832,7 +832,7 @@ public abstract class Code {
 			}
 		}
 		
-		public Type fieldType() {
+		public Automata fieldType() {
 			return type.fields().get(field);
 		}
 		
@@ -883,11 +883,11 @@ public abstract class Code {
 	}
 	
 	public static final class IfGoto extends Code {
-		public final Type type;
+		public final Automata type;
 		public final COp op;
 		public final String target;
 
-		private  IfGoto(Type type, COp op, String target) {
+		private  IfGoto(Automata type, COp op, String target) {
 			if(op == null) {
 				throw new IllegalArgumentException("IfGoto op argument cannot be null");
 			}
@@ -963,12 +963,12 @@ public abstract class Code {
 	};		
 	
 	public static final class IfType extends Code {
-		public final Type type;
+		public final Automata type;
 		public final int slot;
-		public final Type test;		
+		public final Automata test;		
 		public final String target;
 
-		private  IfType(Type type, int slot, Type test, String target) {
+		private  IfType(Automata type, int slot, Automata test, String target) {
 			if(test == null) {
 				throw new IllegalArgumentException("IfGoto op argument cannot be null");
 			}
@@ -1036,10 +1036,10 @@ public abstract class Code {
 	}
 	
 	public static final class IndirectInvoke extends Code {		
-		public final Type.Fun type;
+		public final Automata.Fun type;
 		public final boolean retval;
 		
-		private IndirectInvoke(Type.Fun type, boolean retval) {
+		private IndirectInvoke(Automata.Fun type, boolean retval) {
 			this.type = type;
 			this.retval = retval;
 		}
@@ -1074,9 +1074,9 @@ public abstract class Code {
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
-		 public final Type.Meth type;
+		 public final Automata.Meth type;
 			
-		 private IndirectSend(Type.Meth type, boolean synchronous, boolean retval) {
+		 private IndirectSend(Automata.Meth type, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.synchronous = synchronous;
 			 this.retval = retval;
@@ -1124,16 +1124,16 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("not",Type.T_BYTE);
+			return toString("not",Automata.T_BYTE);
 		}
 	}
 	
 	public static final class Invoke extends Code {		
-		public final Type.Fun type;
+		public final Automata.Fun type;
 		public final NameID name;
 		public final boolean retval;
 				
-		private Invoke(Type.Fun type, NameID name, boolean retval) {
+		private Invoke(Automata.Fun type, NameID name, boolean retval) {
 			this.type = type;
 			this.name = name;
 			this.retval = retval;
@@ -1202,9 +1202,9 @@ public abstract class Code {
 		
 	public static final class ListAppend extends Code {				
 		public final OpDir dir;
-		public final Type.List type;
+		public final Automata.List type;
 		
-		private ListAppend(Type.List type, OpDir dir) {			
+		private ListAppend(Automata.List type, OpDir dir) {			
 			if(dir == null) {
 				throw new IllegalArgumentException("ListAppend direction cannot be null");
 			}			
@@ -1236,9 +1236,9 @@ public abstract class Code {
 	}
 	
 	public static final class ListLength extends Code {						
-		public final Type.List type;
+		public final Automata.List type;
 		
-		private ListLength(Type.List type) {									
+		private ListLength(Automata.List type) {									
 			this.type = type;			
 		}
 		
@@ -1265,9 +1265,9 @@ public abstract class Code {
 	}
 	
 	public static final class SubList extends Code {						
-		public final Type.List type;
+		public final Automata.List type;
 		
-		private SubList(Type.List type) {									
+		private SubList(Automata.List type) {									
 			this.type = type;			
 		}
 		
@@ -1294,9 +1294,9 @@ public abstract class Code {
 	}
 	
 	public static final class ListLoad extends Code {
-		public final Type.List type;				
+		public final Automata.List type;				
 		
-		private ListLoad(Type.List type) {
+		private ListLoad(Automata.List type) {
 			this.type = type;
 		}
 		
@@ -1322,10 +1322,10 @@ public abstract class Code {
 	}		
 	
 	public static final class Load extends Code {		
-		public final Type type;
+		public final Automata type;
 		public final int slot;		
 		
-		private Load(Type type, int slot) {
+		private Load(Automata type, int slot) {
 			this.type = type;
 			this.slot = slot;
 		}
@@ -1404,9 +1404,9 @@ public abstract class Code {
 
 	public static final class ForAll extends Loop {
 		public final int slot;
-		public final Type type;
+		public final Automata type;
 				
-		private ForAll(Type type, int slot, String target, Collection<Integer> modifies) {
+		private ForAll(Automata type, int slot, String target, Collection<Integer> modifies) {
 			super(target,modifies);
 			this.type = type;
 			this.slot = slot;			
@@ -1454,12 +1454,12 @@ public abstract class Code {
 
 	
 	public static final class Update extends Code {
-		public final Type type;
+		public final Automata type;
 		public final int level;
 		public final int slot;
 		public final ArrayList<String> fields;
 
-		private Update(Type type, int slot, int level, Collection<String> fields) {
+		private Update(Automata type, int slot, int level, Collection<String> fields) {
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
@@ -1516,10 +1516,10 @@ public abstract class Code {
 
 	
 	public static final class NewDict extends Code {
-		public final Type.Dictionary type;
+		public final Automata.Dictionary type;
 		public final int nargs;
 		
-		private NewDict(Type.Dictionary type, int nargs) {
+		private NewDict(Automata.Dictionary type, int nargs) {
 			this.type = type;
 			this.nargs = nargs;
 		}
@@ -1546,9 +1546,9 @@ public abstract class Code {
 	}
 	
 	public static final class NewRecord extends Code {
-		public final Type.Record type;
+		public final Automata.Record type;
 		
-		private NewRecord(Type.Record type) {
+		private NewRecord(Automata.Record type) {
 			this.type = type;
 		}
 		
@@ -1574,10 +1574,10 @@ public abstract class Code {
 	}
 		
 	public static final class NewTuple extends Code {
-		public final Type.Tuple type;
+		public final Automata.Tuple type;
 		public final int nargs;
 		
-		private NewTuple(Type.Tuple type, int nargs) {
+		private NewTuple(Automata.Tuple type, int nargs) {
 			this.type = type;
 			this.nargs = nargs;
 		}
@@ -1604,10 +1604,10 @@ public abstract class Code {
 	}
 	
 	public static final class NewSet extends Code {
-		public final Type.Set type;
+		public final Automata.Set type;
 		public final int nargs;
 		
-		private NewSet(Type.Set type, int nargs) {
+		private NewSet(Automata.Set type, int nargs) {
 			this.type = type;
 			this.nargs = nargs;
 		}
@@ -1635,10 +1635,10 @@ public abstract class Code {
 	}
 	
 	public static final class NewList extends Code {
-		public final Type.List type;
+		public final Automata.List type;
 		public final int nargs;
 		
-		private NewList(Type.List type, int nargs) {
+		private NewList(Automata.List type, int nargs) {
 			this.type = type;
 			this.nargs = nargs;
 		}
@@ -1671,9 +1671,9 @@ public abstract class Code {
 	}	
 		
 	public static final class Return extends Code {
-		public final Type type;
+		public final Automata type;
 		
-		private Return(Type type) {
+		private Return(Automata type) {
 			this.type = type;
 		}
 		
@@ -1713,9 +1713,9 @@ public abstract class Code {
 	
 	public static final class SetUnion extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Automata.Set type;
 		
-		private SetUnion(Type.Set type, OpDir dir) {
+		private SetUnion(Automata.Set type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -1748,9 +1748,9 @@ public abstract class Code {
 	
 	public static final class SetIntersect extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Automata.Set type;
 		
-		private SetIntersect(Type.Set type, OpDir dir) {
+		private SetIntersect(Automata.Set type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -1783,9 +1783,9 @@ public abstract class Code {
 	
 	public static final class SetDifference extends Code {		
 		public final OpDir dir;
-		public final Type.Set type;
+		public final Automata.Set type;
 		
-		private SetDifference(Type.Set type, OpDir dir) {
+		private SetDifference(Automata.Set type, OpDir dir) {
 			if(dir == null) {
 				throw new IllegalArgumentException("SetAppend direction cannot be null");
 			}			
@@ -1817,9 +1817,9 @@ public abstract class Code {
 	}
 	
 	public static final class SetLength extends Code {				
-		public final Type.Set type;
+		public final Automata.Set type;
 		
-		private SetLength(Type.Set type) {
+		private SetLength(Automata.Set type) {
 			this.type = type;			
 		}
 		
@@ -1868,7 +1868,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("stringappend" + dir.toString(),Type.T_STRING);
+			return toString("stringappend" + dir.toString(),Automata.T_STRING);
 		}
 	}
 	
@@ -1885,7 +1885,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("substring",Type.T_STRING);
+			return toString("substring",Automata.T_STRING);
 		}
 	}
 	
@@ -1902,7 +1902,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("stringlen",Type.T_STRING);
+			return toString("stringlen",Automata.T_STRING);
 		}
 	}
 	
@@ -1919,7 +1919,7 @@ public abstract class Code {
 		}
 				
 		public String toString() {
-			return toString("stringload",Type.T_STRING);
+			return toString("stringload",Automata.T_STRING);
 		}
 	}
 	
@@ -1937,10 +1937,10 @@ public abstract class Code {
 	}
 
 	public static final class Store extends Code {		
-		public final Type type;
+		public final Automata type;
 		public final int slot;		
 		
-		private Store(Type type, int slot) {
+		private Store(Automata type, int slot) {
 			this.type = type;
 			this.slot = slot;
 		}
@@ -1981,11 +1981,11 @@ public abstract class Code {
 	}	
 
 	public static final class Switch extends Code {
-		public final Type type;
+		public final Automata type;
 		public final ArrayList<Pair<Value,String>> branches;
 		public final String defaultTarget;
 
-		Switch(Type type, String defaultTarget, Collection<Pair<Value,String>> branches) {			
+		Switch(Automata type, String defaultTarget, Collection<Pair<Value,String>> branches) {			
 			this.type = type;
 			this.branches = new ArrayList<Pair<Value,String>>(branches);
 			this.defaultTarget = defaultTarget;
@@ -2048,9 +2048,9 @@ public abstract class Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
 		 public final NameID name;
-		 public final Type.Meth type;
+		 public final Automata.Meth type;
 			
-		 private Send(Type.Meth type, NameID name, boolean synchronous, boolean retval) {
+		 private Send(Automata.Meth type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;
@@ -2084,9 +2084,9 @@ public abstract class Code {
 	}
 
 	public static final class Throw extends Code {
-		public final Type type;
+		public final Automata type;
 
-		private Throw(Type type) {
+		private Throw(Automata type) {
 			this.type = type;
 		}
 		
@@ -2112,9 +2112,9 @@ public abstract class Code {
 	}
 	
 	public static final class Negate extends Code {
-		public final Type type;		
+		public final Automata type;		
 		
-		private Negate(Type type) {			
+		private Negate(Automata type) {			
 			this.type = type;
 		}
 		
@@ -2141,9 +2141,9 @@ public abstract class Code {
 	}
 	
 	public static final class Invert extends Code {
-		public final Type type;		
+		public final Automata type;		
 		
-		private Invert(Type type) {			
+		private Invert(Automata type) {			
 			this.type = type;
 		}
 		
@@ -2170,9 +2170,9 @@ public abstract class Code {
 	}
 	
 	public static final class Spawn extends Code {
-		public final Type.Process type;		
+		public final Automata.Process type;		
 		
-		private Spawn(Type.Process type) {			
+		private Spawn(Automata.Process type) {			
 			this.type = type;
 		}
 		
@@ -2199,9 +2199,9 @@ public abstract class Code {
 	}
 	
 	public static final class ProcLoad extends Code {
-		public final Type.Process type;		
+		public final Automata.Process type;		
 		
-		private ProcLoad(Type.Process type) {			
+		private ProcLoad(Automata.Process type) {			
 			this.type = type;
 		}
 		
@@ -2233,10 +2233,10 @@ public abstract class Code {
 	 *
 	 */
 	public static class Void extends Code {
-		public final Type type;
+		public final Automata type;
 		public final int slot;
 		
-		private Void(Type type, int slot) {
+		private Void(Automata type, int slot) {
 			this.type = type;
 			this.slot = slot;
 		}
@@ -2271,7 +2271,7 @@ public abstract class Code {
 		}
 	}
 	
-	public static String toString(String str, Type t) {
+	public static String toString(String str, Automata t) {
 		if(t == null) {
 			return str + " : ?";
 		} else {

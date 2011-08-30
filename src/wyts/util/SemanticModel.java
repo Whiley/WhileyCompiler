@@ -7,7 +7,7 @@ import org.apache.tools.ant.taskdefs.ManifestTask.Mode;
 
 import wyil.lang.*;
 import wyjc.runtime.BigRational;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 /**
  * <p>
@@ -48,7 +48,7 @@ public final class SemanticModel {
 	 * @param t2
 	 * @return
 	 */
-	public boolean isSubset(Type t1, Type t2) {
+	public boolean isSubset(Automata t1, Automata t2) {
 		for(int i=0;i!=model.size();++i) {
 			Value v = model.get(i);
 			if(match(t2,v) && !match(t1,v)) {
@@ -58,7 +58,7 @@ public final class SemanticModel {
 		return true;
 	}
 		
-	public Set<Value> match(Type t) {
+	public Set<Value> match(Automata t) {
 		HashSet<Value> r = new HashSet<Value>();
 		for(int i=0;i!=model.size();++i) {
 			Value v = model.get(i);
@@ -69,27 +69,27 @@ public final class SemanticModel {
 		return r;
 	}	
 	
-	private static boolean match(Type t, Value v) {
-		if(t instanceof Type.Any) {
+	private static boolean match(Automata t, Value v) {
+		if(t instanceof Automata.Any) {
 			return true;
-		} else if(t instanceof Type.Void) {
+		} else if(t instanceof Automata.Void) {
 			return false;
-		} else if(t instanceof Type.Null && v instanceof Value.Null) {
+		} else if(t instanceof Automata.Null && v instanceof Value.Null) {
 			return true;
-		} else if(t instanceof Type.Byte && v instanceof Value.Byte) {
+		} else if(t instanceof Automata.Byte && v instanceof Value.Byte) {
 			return true;
-		} else if(t instanceof Type.Char && v instanceof Value.Char) {
+		} else if(t instanceof Automata.Char && v instanceof Value.Char) {
 			return true;
-		} else if(t instanceof Type.Int && v instanceof Value.Integer) {
+		} else if(t instanceof Automata.Int && v instanceof Value.Integer) {
 			return true;
-		} else if(t instanceof Type.Real && v instanceof Value.Rational) {
+		} else if(t instanceof Automata.Real && v instanceof Value.Rational) {
 			return true;
-		} else if(t instanceof Type.Strung && v instanceof Value.Strung) {
+		} else if(t instanceof Automata.Strung && v instanceof Value.Strung) {
 			return true;
-		} else if(t instanceof Type.Tuple && v instanceof Value.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
+		} else if(t instanceof Automata.Tuple && v instanceof Value.Tuple) {
+			Automata.Tuple tt = (Automata.Tuple) t;
 			Value.Tuple vt = (Value.Tuple) v;
-			List<Type> tt_elems = tt.elements();
+			List<Automata> tt_elems = tt.elements();
 			List<Value> vt_elems = vt.values;
 			
 			if(tt_elems.size() != vt_elems.size()) {
@@ -97,7 +97,7 @@ public final class SemanticModel {
 			}
 			
 			for(int i=0;i!=tt_elems.size();++i) {
-				Type tt_elem = tt_elems.get(i);
+				Automata tt_elem = tt_elems.get(i);
 				Value vt_elem = vt_elems.get(i);
 				if(!match(tt_elem,vt_elem)) {
 					return false;
@@ -105,9 +105,9 @@ public final class SemanticModel {
 			}
 			
 			return true;
-		} else if(t instanceof Type.Set && v instanceof Value.Set) {		
-			Type.Set ts = (Type.Set) t;
-			Type ts_elem = ts.element();
+		} else if(t instanceof Automata.Set && v instanceof Value.Set) {		
+			Automata.Set ts = (Automata.Set) t;
+			Automata ts_elem = ts.element();
 			Value.Set vs = (Value.Set) v;
 			
 			for(Value vs_value : vs.values) {
@@ -117,9 +117,9 @@ public final class SemanticModel {
 			}
 			
 			return true;
-		} else if(t instanceof Type.List && v instanceof Value.List) {
-			Type.List tl = (Type.List) t;
-			Type tl_elem = tl.element();
+		} else if(t instanceof Automata.List && v instanceof Value.List) {
+			Automata.List tl = (Automata.List) t;
+			Automata tl_elem = tl.element();
 			Value.List vl = (Value.List) v;
 			
 			for(Value vl_value : vl.values) {
@@ -129,10 +129,10 @@ public final class SemanticModel {
 			}
 			
 			return true;
-		} else if(t instanceof Type.Dictionary && v instanceof Value.Dictionary) {
-			Type.Dictionary td = (Type.Dictionary) t;
-			Type td_key = td.key();
-			Type td_value = td.value();
+		} else if(t instanceof Automata.Dictionary && v instanceof Value.Dictionary) {
+			Automata.Dictionary td = (Automata.Dictionary) t;
+			Automata td_key = td.key();
+			Automata td_value = td.value();
 			Value.Dictionary vd = (Value.Dictionary) v;
 			
 			for(Map.Entry<Value,Value> ve : vd.values.entrySet()) {
@@ -144,8 +144,8 @@ public final class SemanticModel {
 			}
 			
 			return true;
-		} else if(t instanceof Type.Record && v instanceof Value.Record) {
-			Type.Record tl = (Type.Record) t;			
+		} else if(t instanceof Automata.Record && v instanceof Value.Record) {
+			Automata.Record tl = (Automata.Record) t;			
 			Value.Record vl = (Value.Record) v;
 			Set<String> t1keys = tl.fields().keySet();
 			Set<String> v1keys = vl.values.keySet();
@@ -153,7 +153,7 @@ public final class SemanticModel {
 				return false;
 			}
 			for(String k : t1keys) {
-				Type tt = tl.fields().get(k);
+				Automata tt = tl.fields().get(k);
 				Value vt = vl.values.get(k);
 				if(vt == null || !match(tt,vt)) {
 					return false;
@@ -161,9 +161,9 @@ public final class SemanticModel {
 			}
 			
 			return true;
-		} else if(t instanceof Type.Union) {
-			Type.Union tu = (Type.Union) t;
-			for(Type e : tu.bounds()) {
+		} else if(t instanceof Automata.Union) {
+			Automata.Union tu = (Automata.Union) t;
+			for(Automata e : tu.bounds()) {
 				if(match(e,v)) {
 					return true;
 				}

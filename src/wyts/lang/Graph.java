@@ -2,7 +2,35 @@ package wyts.lang;
 
 import java.util.*;
 
-public class Graph extends Type {	
+/**
+ * <p>
+ * An Automata represents a finite-state automata. This is a machine for
+ * accepting matching inputs of a given language. An automata is a directed
+ * graph whose nodes and edges are referred to as <i>states</i> and
+ * <i>transitions</i>. Each state has a "kind" which determines how the state
+ * behaves on given inputs. For example, a state with "OR" kind might accept an
+ * input if either of its children does; in contrast, and state of "AND" kind
+ * might accept an input only if all its children does.
+ * </p>
+ * 
+ * <p>
+ * Aside from having a particular kind, each state may also have supplementary
+ * material. This can be used, for example, to effectively provide labelled
+ * transitions. Another use of this might be to store a given string which must
+ * be matched.
+ * </p>
+ * 
+ * <p>
+ * <b>NOTE:</b> In the internal representation of automata, leaf states may be
+ * not be represented as actual nodes. This will occur if the leaf node does not
+ * include any supplementary data, and is primarily for space and performance
+ * optimisation.
+ * </p>
+ * 
+ * @author djp
+ * 
+ */
+public class Graph extends Automata {	
 	public final Node[] nodes;
 
 	public Graph(Node[] nodes) {
@@ -52,8 +80,8 @@ public class Graph extends Type {
 	 *            --- the starting node to extract from.
 	 * @return
 	 */
-	protected final Type extract(int root) {
-		return Type.construct(extract(root,nodes));
+	protected final Automata extract(int root) {
+		return Automata.construct(extract(root,nodes));
 	}
 
 	/**
@@ -135,10 +163,15 @@ public class Graph extends Type {
 		}
 	}
 
-	private static final int[] NOCHILDREN = new int[0];
-	
 	/**
-	 * Traverse the subgraph rooted at the given node an extract all nodes.
+	 * The following constant is used simply to prevent unecessary memory
+	 * allocations.
+	 */
+	private static final int[] NOCHILDREN = new int[0];
+
+	/**
+	 * Traverse the subgraph rooted at the given node an extract all reachable
+	 * nodes.
 	 * 
 	 * @param root
 	 * @param nodes
@@ -149,7 +182,7 @@ public class Graph extends Type {
 		BitSet visited = new BitSet(nodes.length);
 		// extracted maps new indices to old indices
 		ArrayList<Integer> extracted = new ArrayList<Integer>();
-		subgraph(root,visited,extracted,nodes);		
+		extract(root,visited,extracted,nodes);		
 		// rextracted is the reverse of extracted
 		int[] rextracted = new int[nodes.length];
 		int i=0;
@@ -164,25 +197,7 @@ public class Graph extends Type {
 			
 		return newNodes;
 	}
-	
-	static final void extractOnto(int root, Node[] nodes,
-			ArrayList<Node> newNodes) {
-		// First, we perform the DFS.
-		BitSet visited = new BitSet(nodes.length);
-		// extracted maps new indices to old indices
-		ArrayList<Integer> extracted = new ArrayList<Integer>();
-		subgraph(root, visited, extracted, nodes);
-		// rextracted is the reverse of extracted
-		int[] rextracted = new int[nodes.length];
-		int i = newNodes.size();
-		for (int j : extracted) {
-			rextracted[j] = i++;
-		}				
-		for (int j : extracted) {
-			newNodes.add(remap(nodes[j], rextracted));
-		}
-	}
-	
+		
 	/**
 	 * The following method recursively extracts the subgraph rooted at
 	 * <code>index</code> in the given graph using a depth-first search.
@@ -199,14 +214,14 @@ public class Graph extends Type {
 	 * @param graph
 	 *            --- the graph.
 	 */
-	final static void subgraph(int index, BitSet visited,
+	private final static void extract(int index, BitSet visited,
 			ArrayList<Integer> extracted, Node[] graph) {
 		if(visited.get(index)) { return; } // node already visited}
 		extracted.add(index);
 		visited.set(index);
 		Node node = graph[index];
 		for(int child : node.children) {
-			subgraph(child,visited,extracted,graph);
+			extract(child,visited,extracted,graph);
 		}		
 	}
 

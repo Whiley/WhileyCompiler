@@ -36,7 +36,7 @@ import wyts.util.TypeBuilder;
  * @author djp
  * 
  */
-public abstract class Type {
+public abstract class Automata {
 	
 	// =============================================================
 	// Type Constructors
@@ -58,7 +58,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(Type... elements) {		
+	public static final Tuple T_TUPLE(Automata... elements) {		
 		return new Tuple(construct(Graph.K_TUPLE,null,elements));
 	}
 	
@@ -67,7 +67,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
+	public static final Tuple T_TUPLE(java.util.List<Automata> elements) {
 		return new Tuple(construct(Graph.K_TUPLE,null,elements));
 	}
 	
@@ -76,7 +76,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Process T_PROCESS(Type element) {
+	public static final Process T_PROCESS(Automata element) {
 		return new Process(construct(Graph.K_PROCESS,null,element));		
 	}
 	
@@ -93,7 +93,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Set T_SET(Type element) {
+	public static final Set T_SET(Automata element) {
 		return new Set(construct(Graph.K_SET,null,element));		
 	}
 	
@@ -102,7 +102,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final List T_LIST(Type element) {
+	public static final List T_LIST(Automata element) {
 		return new List(construct(Graph.K_LIST,null,element));		
 	}
 	
@@ -111,7 +111,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Dictionary T_DICTIONARY(Type key, Type value) {
+	public static final Dictionary T_DICTIONARY(Automata key, Automata value) {
 		return new Dictionary(construct(Graph.K_DICTIONARY,null,key,value));			
 	}
 	
@@ -120,7 +120,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Collection<Type> bounds) {
+	public static final Union T_UNION(Collection<Automata> bounds) {
 		return new Union(construct(Graph.K_UNION,null,bounds));		
 	}
 	
@@ -129,7 +129,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Type... bounds) {
+	public static final Union T_UNION(Automata... bounds) {
 		return new Union(construct(Graph.K_UNION,null,bounds));			
 	}	
 	
@@ -138,7 +138,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_INTERSECTION(Collection<Type> bounds) {
+	public static final Automata T_INTERSECTION(Collection<Automata> bounds) {
 		return new Intersection(construct(Graph.K_INTERSECTION,null,bounds));
 	}
 	
@@ -147,7 +147,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_INTERSECTION(Type... bounds) {
+	public static final Automata T_INTERSECTION(Automata... bounds) {
 		return new Intersection(construct(Graph.K_INTERSECTION,null,bounds));			
 	}	
 	
@@ -156,7 +156,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_DIFFERENCE(Type left, Type right) {
+	public static final Automata T_DIFFERENCE(Automata left, Automata right) {
 		return new Difference(construct(Graph.K_DIFFERENCE,null,left,right));				
 	}
 	
@@ -165,11 +165,11 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(Type ret,
-			Collection<Type> params) {
-		Type[] rparams = new Type[params.size()+1];		
+	public static final Fun T_FUN(Automata ret,
+			Collection<Automata> params) {
+		Automata[] rparams = new Automata[params.size()+1];		
 		int i = 0;
-		for (Type t : params) { rparams[++i] = t; }		
+		for (Automata t : params) { rparams[++i] = t; }		
 		rparams[0] = ret;
 		return new Fun(construct(Graph.K_FUNCTION,null,rparams));		
 	}
@@ -179,8 +179,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(Type ret, Type... params) {
-		Type[] rparams = new Type[params.length+1];		
+	public static final Fun T_FUN(Automata ret, Automata... params) {
+		Automata[] rparams = new Automata[params.length+1];		
 		System.arraycopy(params, 0, rparams, 1, params.length);
 		rparams[0] = ret;
 		return new Fun(construct(Graph.K_FUNCTION,null,rparams));				
@@ -191,11 +191,11 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Meth T_METH(Process receiver, Type ret,
-			Collection<Type> params) {
-		Type[] rparams = new Type[params.size()+1];		
+	public static final Meth T_METH(Process receiver, Automata ret,
+			Collection<Automata> params) {
+		Automata[] rparams = new Automata[params.size()+1];		
 		int i = 1;
-		for (Type t : params) { rparams[++i] = t; }		
+		for (Automata t : params) { rparams[++i] = t; }		
 		rparams[0] = receiver;
 		rparams[1] = ret;
 		return new Meth(construct(Graph.K_METHOD,null,rparams));		
@@ -206,8 +206,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Meth T_METH(Process receiver, Type ret, Type... params) {				
-		Type[] rparams = new Type[params.length+2];		
+	public static final Meth T_METH(Process receiver, Automata ret, Automata... params) {				
+		Automata[] rparams = new Automata[params.length+2];		
 		System.arraycopy(params, 0, rparams, 2, params.length);
 		rparams[0] = receiver;
 		rparams[1] = ret;
@@ -219,11 +219,11 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Record T_RECORD(Map<String,Type> fields) {				
+	public static final Record T_RECORD(Map<String,Automata> fields) {				
 		java.util.Set<String> keySet = fields.keySet();
 		String[] keys = keySet.toArray(new String[keySet.size()]);
 		Arrays.sort(keys);
-		Type[] types = new Type[keys.length];
+		Automata[] types = new Automata[keys.length];
 		for(int i=0;i!=types.length;++i) {
 			types[i] = fields.get(keys[i]);
 		}
@@ -249,7 +249,7 @@ public abstract class Type {
 	 * @param label
 	 * @return
 	 */
-	public static final Type T_LABEL(String label) {
+	public static final Automata T_LABEL(String label) {
 		return new Graph(construct(Graph.K_LABEL,label));
 	}
 
@@ -276,7 +276,7 @@ public abstract class Type {
 	 *            --- type to be closed.
 	 * @return
 	 */
-	public static final Type T_RECURSIVE(String label, Type type) {
+	public static final Automata T_RECURSIVE(String label, Automata type) {
 		// first stage, identify all matching labels
 		if(type instanceof Leaf) { throw new IllegalArgumentException("cannot close a leaf type"); }
 		Graph compound = (Graph) type;
@@ -316,7 +316,7 @@ public abstract class Type {
 	 * @param str
 	 * @return
 	 */
-	public static Type fromString(String str) {
+	public static Automata fromString(String str) {
 		return new Parser(str).parse();
 	}
 		
@@ -330,7 +330,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpen(String label, Type t) {
+	public static boolean isOpen(String label, Automata t) {
 		if (t instanceof Leaf) {
 			return false;
 		}
@@ -351,7 +351,7 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isOpen(Type t) {
+	public static boolean isOpen(Automata t) {
 		if (t instanceof Leaf) {
 			return false;
 		}
@@ -374,7 +374,7 @@ public abstract class Type {
 	 * of all possible values described by the type <code>t2</code> is a subset
 	 * of that described by <code>t1</code>.
 	 */
-	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
+	public static boolean isCoerciveSubtype(Automata t1, Automata t2) {				
 		Node[] g1 = nodes(t1);
 		Node[] g2 = nodes(t2);
 		SubtypeInference inference = new CoerciveSubtypeOperator(g1,g2);		
@@ -388,7 +388,7 @@ public abstract class Type {
 	 * all possible values described by the type <code>t2</code> is a subset of
 	 * that described by <code>t1</code>.
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {				
+	public static boolean isSubtype(Automata t1, Automata t2) {				
 		Node[] g1 = nodes(t1);
 		Node[] g2 = nodes(t2);
 		SubtypeInference inference = new DefaultSubtypeOperator(g1,g2);		
@@ -404,7 +404,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static boolean isomorphic(Type t1, Type t2) {
+	public static boolean isomorphic(Automata t1, Automata t2) {
 		return isSubtype(t1,t2) && isSubtype(t2,t1);
 	}
 	
@@ -418,7 +418,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type leastUpperBound(Type t1, Type t2) {
+	public static Automata leastUpperBound(Automata t1, Automata t2) {
 		return minimise(T_UNION(t1,t2)); // so easy
 	}
 	
@@ -432,7 +432,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type greatestLowerBound(Type t1, Type t2) {
+	public static Automata greatestLowerBound(Automata t1, Automata t2) {
 		return minimise(T_INTERSECTION(t1,t2)); // so easy
 	}
 
@@ -449,7 +449,7 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	public static Type leastDifference(Type t1, Type t2) {
+	public static Automata leastDifference(Automata t1, Automata t2) {
 		return minimise(T_DIFFERENCE(t1,t2)); // so easy
 	}
 
@@ -467,13 +467,13 @@ public abstract class Type {
 	 * @param t
 	 * @return
 	 */
-	public static Record effectiveRecordType(Type t) {
-		if (t instanceof Type.Record) {
-			return (Type.Record) t;
-		} else if (t instanceof Type.Union) {
-			Union ut = (Type.Union) t;
+	public static Record effectiveRecordType(Automata t) {
+		if (t instanceof Automata.Record) {
+			return (Automata.Record) t;
+		} else if (t instanceof Automata.Union) {
+			Union ut = (Automata.Union) t;
 			Record r = null;
-			for (Type b : ut.bounds()) {
+			for (Automata b : ut.bounds()) {
 				if (!(b instanceof Record)) {
 					return null;
 				}
@@ -481,11 +481,11 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					HashMap<String, Type> rfields = r.fields();
-					HashMap<String, Type> bfields = br.fields();
-					HashMap<String, Type> nfields = new HashMap();
-					for (Map.Entry<String, Type> e : rfields.entrySet()) {
-						Type bt = bfields.get(e.getKey());
+					HashMap<String, Automata> rfields = r.fields();
+					HashMap<String, Automata> bfields = br.fields();
+					HashMap<String, Automata> nfields = new HashMap();
+					for (Map.Entry<String, Automata> e : rfields.entrySet()) {
+						Automata bt = bfields.get(e.getKey());
 						if (bt != null) {
 							nfields.put(e.getKey(),
 									leastUpperBound(e.getValue(), bt));
@@ -499,13 +499,13 @@ public abstract class Type {
 		return null;
 	}
 
-	public static Set effectiveSetType(Type t) {
-		if (t instanceof Type.Set) {
-			return (Type.Set) t;
-		} else if (t instanceof Type.Union) {			
-			Union ut = (Type.Union) t;
+	public static Set effectiveSetType(Automata t) {
+		if (t instanceof Automata.Set) {
+			return (Automata.Set) t;
+		} else if (t instanceof Automata.Union) {			
+			Union ut = (Automata.Union) t;
 			Set r = null;
-			for (Type b : ut.bounds()) {
+			for (Automata b : ut.bounds()) {
 				if (!(b instanceof Set)) {
 					return null;
 				}
@@ -521,13 +521,13 @@ public abstract class Type {
 		return null;
 	}
 	
-	public static List effectiveListType(Type t) {
-		if (t instanceof Type.List) {
-			return (Type.List) t;
-		} else if (t instanceof Type.Union) {			
-			Union ut = (Type.Union) t;
+	public static List effectiveListType(Automata t) {
+		if (t instanceof Automata.List) {
+			return (Automata.List) t;
+		} else if (t instanceof Automata.Union) {			
+			Union ut = (Automata.Union) t;
 			List r = null;
-			for (Type b : ut.bounds()) {
+			for (Automata b : ut.bounds()) {
 				if (!(b instanceof List)) {
 					return null;
 				}
@@ -543,13 +543,13 @@ public abstract class Type {
 		return null;
 	}
 	
-	public static Dictionary effectiveDictionaryType(Type t) {
-		if (t instanceof Type.Dictionary) {
-			return (Type.Dictionary) t;
-		} else if (t instanceof Type.Union) {
-			Union ut = (Type.Union) t;
+	public static Dictionary effectiveDictionaryType(Automata t) {
+		if (t instanceof Automata.Dictionary) {
+			return (Automata.Dictionary) t;
+		} else if (t instanceof Automata.Union) {
+			Union ut = (Automata.Union) t;
 			Dictionary r = null;
-			for (Type b : ut.bounds()) {
+			for (Automata b : ut.bounds()) {
 				if (!(b instanceof Dictionary)) {
 					return null;
 				}
@@ -601,415 +601,10 @@ public abstract class Type {
 	 * @param type
 	 * @return
 	 */
-	public static Type minimise(Type type) {		
+	public static Automata minimise(Automata type) {		
 		return Algorithms.minimise(type);
 	}
 
-	
-	private static int intersect(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes,
-			HashMap<Pair<Integer, Integer>, Integer> allocations) {	
-		Integer idx = allocations.get(new Pair(n1,n2));
-		if(idx != null) {
-			// this indicates an allocation has already been performed for this
-			// pair.  
-			return idx;
-		}
-		
-		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];				
-		int nid = newNodes.size(); // my node id
-		newNodes.add(null); // reserve space for my node	
-		allocations.put(new Pair(n1,n2), nid);
-		Node node; // new node being created
-		
-		if(c1.kind == c2.kind) { 
-			switch(c1.kind) {
-			case K_VOID:
-			case K_ANY:
-			case K_META:
-			case K_NULL:
-			case K_BOOL:
-			case K_BYTE:
-			case K_CHAR:
-			case K_INT:
-			case K_RATIONAL:
-			case K_STRING:
-				node = c1;
-				break;
-			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) c1.children;
-				NameID nid2 = (NameID) c2.children;				
-				if(nid1.name().equals(nid2.name())) {
-					node = c1;
-				} else {
-					node = new Node(K_VOID,null);
-				}
-				break;
-			case K_SET:
-			case K_LIST:
-			case K_PROCESS: {
-				// unary node
-				int e1 = (Integer) c1.children;
-				int e2 = (Integer) c2.children;
-				int element = intersect(e1,graph1,e2,graph2,newNodes,allocations);
-				node = new Node(c1.kind,element);
-				break;
-			}
-			case K_DICTIONARY: {
-				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.children;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.children;
-				int key = intersect(p1.first(),graph2,p2.first(),graph2,newNodes,allocations);
-				int value = intersect(p1.second(),graph2,p2.second(),graph2,newNodes,allocations);
-				node = new Node(K_DICTIONARY,new Pair(key,value));
-				break;
-			}		
-			case K_TUPLE:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.children;
-				int[] elems2 = (int[]) c2.children;
-				if(elems1.length != elems2.length) {
-					// TODO: can we do better here?
-					node = new Node(K_VOID,null);
-				} else {
-					int[] nelems = new int[elems1.length];
-					for(int i=0;i!=nelems.length;++i) {
-						nelems[i] = intersect(elems1[i],graph1,elems2[i],graph2,newNodes,allocations);
-					}
-					node = new Node(K_TUPLE,nelems);
-				}
-				break;
-			}
-			case K_METHOD:
-			case K_FUNCTION:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.children;
-				int[] elems2 = (int[]) c2.children;
-				int e1 = elems1[0];
-				int e2 = elems2[0];
-				if(elems1.length != elems2.length){
-					node = new Node(K_VOID,null);
-				} else if ((e1 == -1 || e2 == -1) && e1 != e2) {
-					node = new Node(K_VOID, null);
-				} else {
-					int[] nelems = new int[elems1.length];
-					// TODO: need to check here whether or not this is the right
-					// thing to do. My gut is telling me that covariant and
-					// contravariance should be treated differently ...
-					for (int i = 0; i != nelems.length; ++i) {
-						nelems[i] = intersect(elems1[i], graph1, elems2[i],
-								graph2, newNodes,allocations);
-					}
-					node = new Node(c1.kind, nelems);
-				}
-				break;
-			}
-			case K_RECORD: 
-					// labeled nary nodes
-					outer : {
-						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.children;
-						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.children;
-						int old = newNodes.size();
-						if (fields1.length != fields2.length) {
-							node = new Node(K_VOID, null);
-						} else {
-							Pair<String, Integer>[] nfields = new Pair[fields1.length];
-							for (int i = 0; i != nfields.length; ++i) {
-								Pair<String, Integer> e1 = fields1[i];
-								Pair<String, Integer> e2 = fields2[i];
-								if (!e1.first().equals(e2.first())) {
-									node = new Node(K_VOID, null);
-									break outer;
-								} else {
-									int nidx = intersect(e1.second(), graph1,
-											e2.second(), graph2, newNodes,
-											allocations);
-
-									if (newNodes.get(nidx).kind == K_VOID) {
-										// A record with a field of void type
-										// cannot exist --- it's just equivalent
-										// to void.
-										while (newNodes.size() != old) {
-											newNodes.remove(newNodes.size() - 1);
-										}
-										node = new Node(K_VOID, null);
-										break outer;
-									}
-
-									nfields[i] = new Pair<String, Integer>(
-											e1.first(), nidx);
-								}
-							}
-							node = new Node(K_RECORD, nfields);
-						}						
-					}	
-				break;
-			case K_UNION: {
-				// This is the hardest (i.e. most expensive) case. Essentially, I
-				// just check that for each bound in one node, there is an
-				// equivalent bound in the other.
-				int[] bounds1 = (int[]) c1.children;
-				int[] nbounds = new int[bounds1.length];
-								
-				// check every bound in c1 is a subtype of some bound in c2.
-				for (int i = 0; i != bounds1.length; ++i) {
-					nbounds[i] = intersect(bounds1[i], graph1, n2, graph2,
-							newNodes,allocations);
-				}
-				node = new Node(K_UNION,nbounds);
-				break;
-			}					
-			default:
-				throw new IllegalArgumentException("attempting to minimise open recurisve type");
-			}		
-		} else if(c1.kind == K_ANY) {			
-			newNodes.remove(newNodes.size()-1);
-			extractOnto(n2,graph2,newNodes);
-			return nid;
-		} else if(c2.kind == K_ANY) {			
-			newNodes.remove(newNodes.size()-1);
-			extractOnto(n1,graph1,newNodes);
-			return nid;
-		} else if (c1.kind == K_UNION){					
-			int[] obounds = (int[]) c1.children;			
-			int[] nbounds = new int[obounds.length];
-							
-			// check every bound in c1 is a subtype of some bound in c2.
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = intersect(obounds[i], graph1, n2, graph2,
-						newNodes,allocations);
-			}
-			node = new Node(K_UNION,nbounds);
-		} else if (c2.kind == K_UNION) {			
-			int[] obounds = (int[]) c2.children;			
-			int[] nbounds = new int[obounds.length];
-							
-			// check every bound in c1 is a subtype of some bound in c2.
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = intersect(n1,graph1,obounds[i], graph2,
-						newNodes,allocations);
-			}
-			node = new Node(K_UNION,nbounds);
-		} else {
-			// default case --> go to void
-			node = new Node(K_VOID,null);
-		}
-		// finally, create the new node!!!
-		newNodes.set(nid, node);
-		return nid;
-	}
-	
-	private static int difference(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes,
-			HashMap<Pair<Integer, Integer>, Integer> allocations, SubtypeRelation matrix) {
-		
-		int nid = newNodes.size(); // my node id		
-		if(matrix.isSupertype(n1,n2)) {
-			newNodes.add(new Node(K_VOID,null));
-			return nid; 
-		}
-		
-		Integer idx = allocations.get(new Pair(n1,n2));
-		if(idx != null) {
-			// this indicates an allocation has already been performed for this
-			// pair.  
-			return idx;
-		}
-		
-		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];				
-		
-		allocations.put(new Pair(n1,n2), nid);
-		newNodes.add(null); // reserve space for my node	
-		Node node; // new node being created
-		
-		if(c1.kind == c2.kind) { 
-			switch(c1.kind) {
-			case K_VOID:
-			case K_ANY:
-			case K_META:
-			case K_NULL:
-			case K_BOOL:
-			case K_BYTE:
-			case K_CHAR:
-			case K_INT:
-			case K_RATIONAL:
-			case K_STRING:
-				node = new Node(K_VOID,null);
-				break;
-			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) c1.children;
-				NameID nid2 = (NameID) c2.children;				
-				if(nid1.name().equals(nid2.name())) {
-					node = new Node(K_VOID,null);					
-				} else {
-					node = c1;
-				}
-				break;
-			case K_SET:
-			case K_LIST:
-			case K_PROCESS: {
-				// unary node
-				int e1 = (Integer) c1.children;
-				int e2 = (Integer) c2.children;
-				int element = difference(e1,graph1,e2,graph2,newNodes,allocations,matrix);
-				node = new Node(c1.kind,element);
-				break;
-			}
-			case K_DICTIONARY: {
-				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) c1.children;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.children;
-				int key = difference(p1.first(),graph2,p2.first(),graph2,newNodes,allocations,matrix);
-				int value = difference(p1.second(),graph2,p2.second(),graph2,newNodes,allocations,matrix);
-				node = new Node(K_DICTIONARY,new Pair(key,value));
-				break;
-			}		
-			case K_TUPLE:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.children;
-				int[] elems2 = (int[]) c2.children;
-				if(elems1.length != elems2.length) {
-					node = c1;
-				} else {
-					int[] nelems = new int[elems1.length];
-					for(int i=0;i!=nelems.length;++i) {
-						nelems[i] = difference(elems1[i],graph1,elems2[i],graph2,newNodes,allocations,matrix);
-					}
-					node = new Node(K_TUPLE,nelems);
-				}
-				break;
-			}
-			case K_METHOD:
-			case K_FUNCTION:  {
-				// nary nodes
-				int[] elems1 = (int[]) c1.children;
-				int[] elems2 = (int[]) c2.children;
-				int e1 = elems1[0];
-				int e2 = elems2[0];
-				if(elems1.length != elems2.length){
-					node = c1;
-				} else if ((e1 == -1 || e2 == -1) && e1 != e2) {
-					node = c1;
-				} else {
-					int[] nelems = new int[elems1.length];
-					// TODO: need to check here whether or not this is the right
-					// thing to do. My gut is telling me that covariant and
-					// contravariance should be treated differently ...
-					for (int i = 0; i != nelems.length; ++i) {
-						nelems[i] = difference(elems1[i], graph1, elems2[i],
-								graph2, newNodes,allocations,matrix);
-					}
-					node = new Node(c1.kind, nelems);
-				}
-				break;
-			}
-			case K_RECORD:
-				// labeled nary nodes
-					outer : {
-						Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) c1.children;
-						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.children;
-						int old = newNodes.size();
-						if (fields1.length != fields2.length) {
-							node = c1;
-						} else {
-							Pair<String, Integer>[] nfields = new Pair[fields1.length];
-							boolean voidField = false;
-							for (int i = 0; i != fields1.length; ++i) {
-								Pair<String, Integer> e1 = fields1[i];
-								Pair<String, Integer> e2 = fields2[i];
-								if (!e1.first().equals(e2.first())) {
-									node = c1;
-									break outer;
-								} else {
-									int nidx = difference(e1.second(), graph1,
-											e2.second(), graph2, newNodes,
-											allocations, matrix);
-									Node nnode = newNodes.get(nidx);
-									if (nnode != null && nnode.kind == K_VOID) {
-										voidField = true;
-									}
-
-									nfields[i] = new Pair<String, Integer>(
-											e1.first(), nidx);
-								}
-							}
-							if(voidField) {
-								// A record with a field of void type
-								// cannot exist --- it's just equivalent
-								// to void.
-								while (newNodes.size() != old) {
-									newNodes.remove(newNodes.size() - 1);
-								}
-								node = new Node(K_VOID, null);
-								break outer;
-							}
-							node = new Node(K_RECORD, nfields);
-						}
-					}
-				break;
-			case K_UNION: {
-				// This is the hardest (i.e. most expensive) case. Essentially, I
-				// just check that for each bound in one node, there is an
-				// equivalent bound in the other.
-				int[] bounds1 = (int[]) c1.children;
-				int[] nbounds = new int[bounds1.length];
-								
-				// check every bound in c1 is a subtype of some bound in c2.
-				for (int i = 0; i != bounds1.length; ++i) {
-					nbounds[i] = difference(bounds1[i], graph1, n2, graph2,
-							newNodes,allocations,matrix);
-				}
-				node = new Node(K_UNION,nbounds);
-				break;
-			}					
-			default:
-				throw new IllegalArgumentException("attempting to minimise open recurisve type");
-			}		
-		} else if(c1.kind == K_ANY) {			
-			// TODO: try to do better
-			node = new Node(K_ANY,null);
-		} else if(c2.kind == K_ANY) {			
-			node = new Node(K_VOID,null);
-		} else if (c1.kind == K_UNION){					
-			int[] obounds = (int[]) c1.children;			
-			int[] nbounds = new int[obounds.length];
-							
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = difference(obounds[i], graph1, n2, graph2,
-						newNodes,allocations,matrix);
-			}
-			node = new Node(K_UNION,nbounds);
-		} else if (c2.kind == K_UNION) {			
-			int[] obounds = (int[]) c2.children;			
-			int[] nbounds = new int[obounds.length];
-							
-			for (int i = 0; i != obounds.length; ++i) {
-				nbounds[i] = difference(n1,graph1,obounds[i], graph2,
-						newNodes,allocations,matrix);
-			}
-			// FIXME: this is broken. need intersection types.
-			node = new Node(K_UNION,nbounds);
-		} else {
-			// default case --> go to no change
-			node = c1;			
-		}								
-		
-		if(node == c1) {
-			while(newNodes.size() > nid) {
-				newNodes.remove(newNodes.size()-1);
-			}
-						
-			extractOnto(n1,graph1,newNodes);			
-			return nid;
-		} else {
-			// finally, create the new node!!!
-			newNodes.set(nid, node);
-			return nid;
-		}
-	}
-	
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -1022,7 +617,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static class Leaf extends Type {}
+	public static class Leaf extends Automata {}
 
 	/**
 	 * A void type represents the type whose variables cannot exist! That is,
@@ -1283,9 +878,9 @@ public abstract class Type {
 		private Tuple(Node[] nodes) {
 			super(nodes);
 		}		
-		public java.util.List<Type> elements() {
+		public java.util.List<Automata> elements() {
 			int[] values = (int[]) nodes[0].children;
-			ArrayList<Type> elems = new ArrayList<Type>();
+			ArrayList<Automata> elems = new ArrayList<Automata>();
 			for(Integer i : values) {
 				elems.add(extract(i));
 			}
@@ -1305,7 +900,7 @@ public abstract class Type {
 		private Set(Node[] nodes) {
 			super(nodes);
 		}
-		public Type element() {
+		public Automata element() {
 			int elemIdx = (Integer) nodes[0].children;
 			return extract(elemIdx);			
 		}		
@@ -1323,7 +918,7 @@ public abstract class Type {
 		private List(Node[] nodes) {
 			super(nodes);
 		}
-		public Type element() {			
+		public Automata element() {			
 			int elemIdx = (Integer) nodes[0].children;
 			return extract(elemIdx);
 		}		
@@ -1339,7 +934,7 @@ public abstract class Type {
 		private Process(Node[] nodes) {
 			super(nodes);
 		}
-		public Type element() {
+		public Automata element() {
 			int elemIdx = (Integer) nodes[0].children;
 			return extract(elemIdx);	
 		}		
@@ -1358,11 +953,11 @@ public abstract class Type {
 		private Dictionary(Node[] nodes) {
 			super(nodes);
 		}
-		public Type key() {
+		public Automata key() {
 			Pair<Integer,Integer> p = (Pair) nodes[0].children;
 			return extract(p.first());
 		}
-		public Type value() {
+		public Automata value() {
 			Pair<Integer,Integer> p = (Pair) nodes[0].children;
 			return extract(p.second());			
 		}
@@ -1403,9 +998,9 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public HashMap<String,Type> fields() {
+		public HashMap<String,Automata> fields() {
 			Pair<String,Integer>[] fields = (Pair[]) nodes[0].children;
-			HashMap<String,Type> r = new HashMap<String,Type>();
+			HashMap<String,Automata> r = new HashMap<String,Automata>();
 			for(Pair<String,Integer> f : fields) {
 				r.put(f.first(),extract(f.second()));
 			}
@@ -1432,11 +1027,11 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public HashSet<Type> bounds() {			
-			HashSet<Type> r = new HashSet<Type>();
+		public HashSet<Automata> bounds() {			
+			HashSet<Automata> r = new HashSet<Automata>();
 			int[] fields = (int[]) nodes[0].children;
 			for(int i : fields) {
-				Type b = extract(i);					
+				Automata b = extract(i);					
 				r.add(b);					
 			}			
 			return r;
@@ -1461,11 +1056,11 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public HashSet<Type> bounds() {			
-			HashSet<Type> r = new HashSet<Type>();
+		public HashSet<Automata> bounds() {			
+			HashSet<Automata> r = new HashSet<Automata>();
 			int[] fields = (int[]) nodes[0].children;
 			for(int i : fields) {
-				Type b = extract(i);					
+				Automata b = extract(i);					
 				r.add(b);					
 			}			
 			return r;
@@ -1484,12 +1079,12 @@ public abstract class Type {
 			super(nodes);
 		}
 		
-		public Type left() {						
+		public Automata left() {						
 			int[] fields = (int[]) nodes[0].children;
 			return extract(fields[0]);			
 		}
 		
-		public Type right() {						
+		public Automata right() {						
 			int[] fields = (int[]) nodes[0].children;
 			return extract(fields[1]);			
 		}
@@ -1512,7 +1107,7 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public Type ret() {						
+		public Automata ret() {						
 			int[] fields = (int[]) nodes[0].children;			
 			return extract(fields[1]);
 		}		
@@ -1522,9 +1117,9 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public ArrayList<Type> params() {
+		public ArrayList<Automata> params() {
 			int[] fields = (int[]) nodes[0].children;
-			ArrayList<Type> r = new ArrayList<Type>();
+			ArrayList<Automata> r = new ArrayList<Automata>();
 			for(int i=2;i<fields.length;++i) {
 				r.add(extract(fields[i]));
 			}
@@ -1541,11 +1136,11 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public Type.Process receiver() {
+		public Automata.Process receiver() {
 			int[] fields = (int[]) nodes[0].children;
 			int r = fields[0];
 			if(r == -1) { return null; }
-			return (Type.Process) extract(r);
+			return (Automata.Process) extract(r);
 		}
 	}
 	
@@ -1554,26 +1149,26 @@ public abstract class Type {
 	 * @param leaf
 	 * @return
 	 */
-	public static final byte leafKind(Type.Leaf leaf) {
-		if(leaf instanceof Type.Void) {
+	public static final byte leafKind(Automata.Leaf leaf) {
+		if(leaf instanceof Automata.Void) {
 			return Graph.K_VOID;
-		} else if(leaf instanceof Type.Any) {
+		} else if(leaf instanceof Automata.Any) {
 			return Graph.K_ANY;
-		} else if(leaf instanceof Type.Null) {
+		} else if(leaf instanceof Automata.Null) {
 			return Graph.K_NULL;
-		} else if(leaf instanceof Type.Bool) {
+		} else if(leaf instanceof Automata.Bool) {
 			return Graph.K_BOOL;
-		} else if(leaf instanceof Type.Byte) {
+		} else if(leaf instanceof Automata.Byte) {
 			return Graph.K_BYTE;
-		} else if(leaf instanceof Type.Char) {
+		} else if(leaf instanceof Automata.Char) {
 			return Graph.K_CHAR;
-		} else if(leaf instanceof Type.Int) {
+		} else if(leaf instanceof Automata.Int) {
 			return Graph.K_INT;
-		} else if(leaf instanceof Type.Real) {
+		} else if(leaf instanceof Automata.Real) {
 			return Graph.K_RATIONAL;
-		} else if(leaf instanceof Type.Strung) {
+		} else if(leaf instanceof Automata.Strung) {
 			return Graph.K_STRING;
-		} else if(leaf instanceof Type.Meta) {
+		} else if(leaf instanceof Automata.Meta) {
 			return Graph.K_META;
 		} else {
 			// should be dead code
@@ -1590,7 +1185,7 @@ public abstract class Type {
 	 * @param nodes
 	 * @return
 	 */
-	public final static Type construct(Node[] nodes) {
+	public final static Automata construct(Node[] nodes) {
 		Node root = nodes[0];
 		switch(root.kind) {
 		case Graph.K_VOID:
@@ -1651,9 +1246,9 @@ public abstract class Type {
 	 * @param elements
 	 * @return
 	 */
-	private static Node[] construct(byte kind, Object data, Type... elements) {
+	private static Node[] construct(byte kind, Object data, Automata... elements) {
 		int len = 1;
-		for(Type b : elements) {
+		for(Automata b : elements) {
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
@@ -1678,9 +1273,9 @@ public abstract class Type {
 	 * @param elements
 	 * @return
 	 */
-	private static Node[] construct(byte kind, Object data, Collection<Type> elements) {		
+	private static Node[] construct(byte kind, Object data, Collection<Automata> elements) {		
 		int len = 1;
-		for(Type b : elements) {
+		for(Automata b : elements) {
 			// could be optimised slightly
 			len += nodes(b).length;
 		}		
@@ -1688,7 +1283,7 @@ public abstract class Type {
 		int[] children = new int[elements.size()];
 		int start = 1;
 		int i=0;
-		for(Type element : elements) {
+		for(Automata element : elements) {
 			children[i] = start;
 			Node[] comps = nodes(element);
 			insertNodes(start,comps,nodes);
@@ -1722,7 +1317,7 @@ public abstract class Type {
 		return into;
 	}
 	
-	private static final Node[] nodes(Type t) {
+	private static final Node[] nodes(Automata t) {
 		if (t instanceof Leaf) {
 			return new Node[]{new Node(leafKind((Leaf) t), null)};
 		} else {			
@@ -1734,7 +1329,7 @@ public abstract class Type {
 	public static void main(String[] args) {				
 		PrintBuilder printer = new PrintBuilder(System.out);	
 		//Type t1 = contractive(); //linkedList(2);
-		Type t1 = T_UNION(T_NULL,T_NULL);
+		Automata t1 = T_UNION(T_NULL,T_NULL);
 		System.out.println("GOT: " + t1);
 		System.out.println("MIN: " + minimise(t1));
 		/*
@@ -1755,25 +1350,25 @@ public abstract class Type {
 		*/	
 	}
 	
-	public static Type contractive() {
-		Type lab = T_LABEL("Contractive");
-		Type union = T_UNION(lab,lab);
+	public static Automata contractive() {
+		Automata lab = T_LABEL("Contractive");
+		Automata union = T_UNION(lab,lab);
 		return T_RECURSIVE("Contractive", union);
 	}
 	
-	public static Type linkedList(int n) {
+	public static Automata linkedList(int n) {
 		return T_RECURSIVE("X",innerLinkedList(n));
 	}
 	
-	public static Type innerLinkedList(int n) {
+	public static Automata innerLinkedList(int n) {
 		if(n == 0) {
 			return T_LABEL("X");
 		} else {
-			Type leaf = T_PROCESS(innerLinkedList(n-1)); 
-			HashMap<String,Type> fields = new HashMap<String,Type>();
+			Automata leaf = T_PROCESS(innerLinkedList(n-1)); 
+			HashMap<String,Automata> fields = new HashMap<String,Automata>();
 			fields.put("next", T_UNION(T_NULL,leaf));
 			fields.put("data", T_BOOL);
-			Type.Record rec = T_RECORD(fields);
+			Automata.Record rec = T_RECORD(fields);
 			return rec;
 		}
 	}

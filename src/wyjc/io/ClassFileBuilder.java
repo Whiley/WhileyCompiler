@@ -44,7 +44,7 @@ import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
 import wyts.io.BinaryTypeWriter;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 import static wyjvm.lang.JvmTypes.*;
 
 /**
@@ -100,7 +100,7 @@ public class ClassFileBuilder {
 					attrs.add((BytecodeAttribute)a);
 				}
 			}
-			Type t = td.type();			
+			Automata t = td.type();			
 			WhileyDefine wd = new WhileyDefine(td.name(),t,attrs);
 			cf.attributes().add(wd);
 		}
@@ -213,8 +213,8 @@ public class ClassFileBuilder {
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
-		Type.Fun wyft = Type.T_METH(null,Type.T_VOID, WHILEY_SYSTEM_T,
-						Type.T_LIST(Type.T_STRING));
+		Automata.Fun wyft = Automata.T_METH(null,Automata.T_VOID, WHILEY_SYSTEM_T,
+						Automata.T_LIST(Automata.T_STRING));
 		JvmType.Function ft3 = convertFunType(wyft);
 		
 		// The following is a little bit of hack. Basically we flush the stdout
@@ -446,10 +446,10 @@ public class ClassFileBuilder {
 		// is being updated.
 		
 		// First, check if this is updating the process' state
-		Type type = c.type;
+		Automata type = c.type;
 				
-		if(c.slot == Code.THIS_SLOT && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {
-			Type.Process p = (Type.Process) type;
+		if(c.slot == Code.THIS_SLOT && Automata.isSubtype(Automata.T_PROCESS(Automata.T_ANY), type)) {
+			Automata.Process p = (Automata.Process) type;
 			type = p.element();
 		}
 		
@@ -457,23 +457,23 @@ public class ClassFileBuilder {
 		
 		ArrayList<String> fields = c.fields;
 		int fi = 0;						
-		Type iter = type;
+		Automata iter = type;
 		// ok, this is such an ugly hack...
-		ArrayList<Type> indices = new ArrayList<Type>();
+		ArrayList<Automata> indices = new ArrayList<Automata>();
 		for(int i=0;i!=c.level;++i) {
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
+			if(Automata.isSubtype(Automata.T_DICTIONARY(Automata.T_ANY, Automata.T_ANY),iter)) {
+				Automata.Dictionary dict = Automata.effectiveDictionaryType(iter);				
 				indices.add(dict.key());
 				iter = dict.value();
-			} else if(Type.isSubtype(Type.T_STRING,iter)) {
-				iter = Type.T_CHAR;
-				indices.add(Type.T_INT);
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
-				Type.List list = Type.effectiveListType(iter);
+			} else if(Automata.isSubtype(Automata.T_STRING,iter)) {
+				iter = Automata.T_CHAR;
+				indices.add(Automata.T_INT);
+			} else if(Automata.isSubtype(Automata.T_LIST(Automata.T_ANY),iter)) {
+				Automata.List list = Automata.effectiveListType(iter);
 				iter = list.element();
-				indices.add(Type.T_INT);
+				indices.add(Automata.T_INT);
 			} else {
-				Type.Record rec = Type.effectiveRecordType(iter);
+				Automata.Record rec = Automata.effectiveRecordType(iter);
 				String field = fields.get(fi++);
 				iter = rec.fields().get(field);
 			}	
@@ -498,7 +498,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));
 	}
 
-	public void multiStoreHelper(Type type, int level,
+	public void multiStoreHelper(Automata type, int level,
 			Iterator<String> fields, int indexSlot, JvmType val_t, int freeSlot, 
 			ArrayList<Bytecode> bytecodes) {
 		
@@ -506,8 +506,8 @@ public class ClassFileBuilder {
 		// doing this. Probably, if I change the multistore bytecode, that would
 		// help.
 		
-		if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {			
-			Type.Process pt = (Type.Process) type;
+		if(Automata.isSubtype(Automata.T_PROCESS(Automata.T_ANY), type)) {			
+			Automata.Process pt = (Automata.Process) type;
 			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
@@ -518,8 +518,8 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "setState", ftype,
 					Bytecode.VIRTUAL));
 			
-		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),type)) {
-			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
+		} else if(Automata.isSubtype(Automata.T_DICTIONARY(Automata.T_ANY, Automata.T_ANY),type)) {
+			Automata.Dictionary dict = Automata.effectiveDictionaryType(type);				
 			
 			if(level != 0) {				
 				bytecodes.add(new Bytecode.Dup(WHILEYMAP));				
@@ -544,20 +544,20 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "put", ftype,
 					Bytecode.STATIC));			
 						
-		} else if(Type.isSubtype(Type.T_STRING,type)) {
+		} else if(Automata.isSubtype(Automata.T_STRING,type)) {
 			
 			// assert: level must be zero here
 			bytecodes.add(new Bytecode.Load(indexSlot, BIG_INTEGER));
 			bytecodes.add(new Bytecode.Load(indexSlot+1, val_t));
-			addWriteConversion(Type.T_INT,bytecodes);			
+			addWriteConversion(Automata.T_INT,bytecodes);			
 
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
 					JAVA_LANG_STRING,BIG_INTEGER,T_CHAR);			
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));						
 			
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),type)) {
-			Type.List list = Type.effectiveListType(type);				
+		} else if(Automata.isSubtype(Automata.T_LIST(Automata.T_ANY),type)) {
+			Automata.List list = Automata.effectiveListType(type);				
 										
 			if(level != 0) {
 				bytecodes.add(new Bytecode.Dup(WHILEYLIST));											
@@ -581,7 +581,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.STATIC));							
 		} else {
-			Type.Record rec = Type.effectiveRecordType(type);			
+			Automata.Record rec = Automata.effectiveRecordType(type);			
 			String field = fields.next();			
 			if(level != 0) {				
 				bytecodes.add(new Bytecode.Dup(WHILEYRECORD));				
@@ -605,7 +605,7 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Return c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		if (c.type == Type.T_VOID) {
+		if (c.type == Automata.T_VOID) {
 			bytecodes.add(new Bytecode.Return(null));
 		} else {
 			bytecodes.add(new Bytecode.Return(convertType(c.type)));
@@ -673,7 +673,7 @@ public class ClassFileBuilder {
 			ArrayList<Bytecode> bytecodes) {	
 				
 		JvmType type = convertType(c.type);
-		if(c.type == Type.T_BOOL) {
+		if(c.type == Automata.T_BOOL) {
 			// boolean is a special case, since it is not implemented as an
 			// object on the JVM stack. Therefore, we need to use the "if_cmp"
 			// bytecode, rather than calling .equals() and using "if" bytecode.
@@ -685,7 +685,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.IfCmp(Bytecode.IfCmp.NE, type, c.target));				
 				break;			
 			}
-		} else if(c.type == Type.T_CHAR || c.type == Type.T_BYTE) {
+		} else if(c.type == Automata.T_CHAR || c.type == Automata.T_BYTE) {
 			int op;
 			switch(c.op) {
 			case EQ:				
@@ -718,7 +718,7 @@ public class ClassFileBuilder {
 			switch(c.op) {
 			case EQ:
 			{				
-				if(Type.isSubtype(c.type, Type.T_NULL)) {
+				if(Automata.isSubtype(c.type, Automata.T_NULL)) {
 					// this indicates an interesting special case. The left
 					// handside of this equality can be null. Therefore, we
 					// cannot directly call "equals()" on this method, since
@@ -736,7 +736,7 @@ public class ClassFileBuilder {
 			}
 			case NEQ:
 			{
-				if (Type.isSubtype(c.type, Type.T_NULL)) {
+				if (Automata.isSubtype(c.type, Automata.T_NULL)) {
 					// this indicates an interesting special case. The left
 					// handside of this equality can be null. Therefore, we
 					// cannot directly call "equals()" on this method, since
@@ -836,7 +836,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
 
-			Type gdiff = Type.leastDifference(c.type,c.test);			
+			Automata gdiff = Automata.leastDifference(c.type,c.test);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(gdiff,bytecodes);		
@@ -844,7 +844,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));
 
-			Type glb = Type.greatestLowerBound(c.type, c.test);
+			Automata glb = Automata.greatestLowerBound(c.type, c.test);
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(glb,bytecodes);		
@@ -861,27 +861,27 @@ public class ClassFileBuilder {
 	// The purpose of this method is to translate a type test. We're testing to
 	// see whether what's on the top of the stack (the value) is a subtype of
 	// the type being tested.  
-	protected void translateTypeTest(String trueTarget, Type src, Type test,
+	protected void translateTypeTest(String trueTarget, Automata src, Automata test,
 			ArrayList<Bytecode> bytecodes, HashMap<Constant,Integer> constants) {		
 		
 		// First, try for the easy cases
 		
-		if (test instanceof Type.Null) {
+		if (test instanceof Automata.Null) {
 			// Easy case		
 			bytecodes.add(new Bytecode.If(Bytecode.If.NULL, trueTarget));
-		} else if(test instanceof Type.Bool) {
+		} else if(test instanceof Automata.Bool) {
 			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_BOOLEAN));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
-		} else if(test instanceof Type.Char) {
+		} else if(test instanceof Automata.Char) {
 			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_CHARACTER));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));			
-		} else if(test instanceof Type.Int) {
+		} else if(test instanceof Automata.Int) {
 			bytecodes.add(new Bytecode.InstanceOf(BIG_INTEGER));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
-		} else if(test instanceof Type.Real) {
+		} else if(test instanceof Automata.Real) {
 			bytecodes.add(new Bytecode.InstanceOf(BIG_RATIONAL));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
-		} else if(test instanceof Type.Strung) {
+		} else if(test instanceof Automata.Strung) {
 			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_STRING));			
 			bytecodes.add(new Bytecode.If(Bytecode.If.NE, trueTarget));
 			
@@ -914,17 +914,17 @@ public class ClassFileBuilder {
 	public int translate(Code.ForAll c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {	
 		JvmType.Clazz srcType = (JvmType.Clazz) convertType(c.type);
-		Type elementType;
+		Automata elementType;
 		
 		// FIXME: following is broken because we need to use the effective type.
 
-		if (c.type instanceof Type.Set) {
-			elementType = ((Type.Set) c.type).element();
-		} else if(c.type instanceof Type.List) {
-			elementType = ((Type.List) c.type).element();
-		} else if(c.type instanceof Type.Dictionary) {
-			Type.Dictionary dict = (Type.Dictionary) c.type;
-			elementType = Type.T_TUPLE(dict.key(),dict.value());
+		if (c.type instanceof Automata.Set) {
+			elementType = ((Automata.Set) c.type).element();
+		} else if(c.type instanceof Automata.List) {
+			elementType = ((Automata.List) c.type).element();
+		} else if(c.type instanceof Automata.Dictionary) {
+			Automata.Dictionary dict = (Automata.Dictionary) c.type;
+			elementType = Automata.T_TUPLE(dict.key(),dict.value());
 		} else {
 			return translateForAllString(c,freeSlot,bytecodes);
 		}
@@ -998,11 +998,11 @@ public class ClassFileBuilder {
 	public void translate(Code.Destructure code, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(code.type instanceof Type.Tuple) {
-			Type.Tuple t = (Type.Tuple) code.type;
-			List<Type> elements = t.elements();
+		if(code.type instanceof Automata.Tuple) {
+			Automata.Tuple t = (Automata.Tuple) code.type;
+			List<Automata> elements = t.elements();
 			for(int i=0;i!=elements.size();++i) {
-				Type elem = elements.get(i);
+				Automata elem = elements.get(i);
 				if((i+1) != elements.size()) {
 					bytecodes.add(new Bytecode.Dup(BIG_RATIONAL));
 				}
@@ -1277,7 +1277,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "state", ftype,
 				Bytecode.VIRTUAL));
 		// finally, we need to cast the object we got back appropriately.		
-		Type.Process pt = (Type.Process) c.type;						
+		Automata.Process pt = (Automata.Process) c.type;						
 		addReadConversion(pt.element(), bytecodes);
 	}
 	
@@ -1343,12 +1343,12 @@ public class ClassFileBuilder {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		
-		HashMap<String,Type> fields = expr.type.fields();
+		HashMap<String,Automata> fields = expr.type.fields();
 		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
 		Collections.sort(keys);
 		Collections.reverse(keys);
 		for(String key : keys) {
-			Type et = fields.get(key);				
+			Automata et = fields.get(key);				
 			bytecodes.add(new Bytecode.Load(freeSlot,WHILEYRECORD));
 			bytecodes.add(new Bytecode.Swap());
 			bytecodes.add(new Bytecode.LoadConst(key));
@@ -1385,10 +1385,10 @@ public class ClassFileBuilder {
 				JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Store(freeSlot,WHILEYTUPLE));		
 		
-		ArrayList<Type> types = new ArrayList<Type>(c.type.elements());
+		ArrayList<Automata> types = new ArrayList<Automata>(c.type.elements());
 		Collections.reverse(types);
 		
-		for(Type type : types) {
+		for(Automata type : types) {
 			bytecodes.add(new Bytecode.Load(freeSlot,WHILEYTUPLE));
 			bytecodes.add(new Bytecode.Swap());			
 			addWriteConversion(type,bytecodes);
@@ -1428,7 +1428,7 @@ public class ClassFileBuilder {
 
 		// now, handle the case of an invoke which returns a value that should
 		// be discarded. 
-		if(!c.retval && c.type.ret() != Type.T_VOID) {
+		if(!c.retval && c.type.ret() != Automata.T_VOID) {
 			bytecodes.add(new Bytecode.Pop(convertType(c.type.ret())));
 		}
 	}
@@ -1443,16 +1443,16 @@ public class ClassFileBuilder {
 		// To make this work, what we'll do is use a temporary register to hold
 		// the array as we build it up.
 
-		Type.Fun ft = (Type.Fun) c.type;		
+		Automata.Fun ft = (Automata.Fun) c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
 		bytecodes.add(new Bytecode.New(arrT));
 		bytecodes.add(new Bytecode.Store(freeSlot,arrT));
 		
-		List<Type> params = ft.params();
+		List<Automata> params = ft.params();
 		for(int i=params.size()-1;i>=0;--i) {
-			Type pt = params.get(i);
+			Automata pt = params.get(i);
 			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
 			bytecodes.add(new Bytecode.Swap());
 			bytecodes.add(new Bytecode.LoadConst(i));
@@ -1481,7 +1481,7 @@ public class ClassFileBuilder {
 		// To make this work, what we'll do is use a temporary register to hold
 		// the array as we build it up.
 
-		Type.Fun ft = (Type.Fun) c.type;		
+		Automata.Fun ft = (Automata.Fun) c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
 		bytecodes.add(new Bytecode.New(arrT));
@@ -1489,9 +1489,9 @@ public class ClassFileBuilder {
 		
 		// first, peal parameters off stack in reverse order
 		
-		List<Type> params = ft.params();
+		List<Automata> params = ft.params();
 		for(int i=params.size()-1;i>=0;--i) {
-			Type pt = params.get(i);
+			Automata pt = params.get(i);
 			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
 			bytecodes.add(new Bytecode.Swap());
 			bytecodes.add(new Bytecode.LoadConst(i+1));
@@ -1539,7 +1539,7 @@ public class ClassFileBuilder {
 		// To make this work, what we'll do is use a temporary register to hold
 		// the array as we build it up.
 
-		Type.Fun ft = (Type.Fun) c.type;		
+		Automata.Fun ft = (Automata.Fun) c.type;		
 		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()+1));
 		bytecodes.add(new Bytecode.New(arrT));
@@ -1547,9 +1547,9 @@ public class ClassFileBuilder {
 		
 		// first, peal parameters off stack in reverse order
 		
-		List<Type> params = ft.params();
+		List<Automata> params = ft.params();
 		for(int i=params.size()-1;i>=0;--i) {
-			Type pt = params.get(i);
+			Automata pt = params.get(i);
 			bytecodes.add(new Bytecode.Load(freeSlot,arrT));
 			bytecodes.add(new Bytecode.Swap());
 			bytecodes.add(new Bytecode.LoadConst(i+1));
@@ -1839,7 +1839,7 @@ public class ClassFileBuilder {
 				JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 		construct(WHILEYRECORD, freeSlot, bytecodes);
 		for (Map.Entry<String, Value> e : expr.values.entrySet()) {
-			Type et = e.getValue().type();
+			Automata et = e.getValue().type();
 			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
 			translate(e.getValue(), freeSlot, bytecodes);
@@ -1858,8 +1858,8 @@ public class ClassFileBuilder {
 		construct(WHILEYMAP, freeSlot, bytecodes);
 		
 		for (Map.Entry<Value, Value> e : expr.values.entrySet()) {
-			Type kt = e.getKey().type();
-			Type vt = e.getValue().type();
+			Automata kt = e.getKey().type();
+			Automata vt = e.getValue().type();
 			bytecodes.add(new Bytecode.Dup(WHILEYMAP));			
 			translate(e.getKey(), freeSlot, bytecodes);
 			addWriteConversion(kt, bytecodes);
@@ -1880,33 +1880,33 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
 	}
 
-	protected void addCoercion(Type from, Type to, int freeSlot,
+	protected void addCoercion(Automata from, Automata to, int freeSlot,
 			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		
 		// First, deal with coercions which require a change of representation
 		// when going into a union.  For example, bool must => Boolean.
-		if (Type.isomorphic(to, from)) {		
+		if (Automata.isomorphic(to, from)) {		
 			// do nothing!						
-		} else if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
+		} else if (!(to instanceof Automata.Bool) && from instanceof Automata.Bool) {
 			// this is either going into a union type, or the any type
-			buildCoercion((Type.Bool) from, to, freeSlot, bytecodes);
-		} else if(from == Type.T_INT) {									
-			buildCoercion((Type.Int)from, to, freeSlot,bytecodes);  
-		} else if(from == Type.T_CHAR) {									
-			buildCoercion((Type.Char)from, to, freeSlot,bytecodes);  
-		} else if(from == Type.T_BYTE) {									
-			buildCoercion((Type.Byte)from, to, freeSlot,bytecodes); 
+			buildCoercion((Automata.Bool) from, to, freeSlot, bytecodes);
+		} else if(from == Automata.T_INT) {									
+			buildCoercion((Automata.Int)from, to, freeSlot,bytecodes);  
+		} else if(from == Automata.T_CHAR) {									
+			buildCoercion((Automata.Char)from, to, freeSlot,bytecodes);  
+		} else if(from == Automata.T_BYTE) {									
+			buildCoercion((Automata.Byte)from, to, freeSlot,bytecodes); 
 		} else {
 			// Second, check for other easy cases that we can do inline. We first
 			// simplify the target in order to remove any unions on the right-hand
 			// side. 
 			to = simplifyCoercion(from,to);
 
-			if (Type.isomorphic(to, from)) {		
+			if (Automata.isomorphic(to, from)) {		
 				// do nothing!						
-			} else if(from == Type.T_STRING && to instanceof Type.List) {									
-				buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
-			} else if(to == Type.T_ANY) {
+			} else if(from == Automata.T_STRING && to instanceof Automata.List) {									
+				buildCoercion((Automata.Strung)from, (Automata.List) to, freeSlot,bytecodes); 
+			} else if(to == Automata.T_ANY) {
 				// nothing to do here
 			} else {
 				// ok, it's a harder case so we use an explicit coercion function
@@ -1918,25 +1918,25 @@ public class ClassFileBuilder {
 		}
 	}
 
-	public void buildCoercion(Type.Bool fromType, Type toType, 
+	public void buildCoercion(Automata.Bool fromType, Automata toType, 
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
 	}
 	
-	public void buildCoercion(Type.Byte fromType, Type toType,
+	public void buildCoercion(Automata.Byte fromType, Automata toType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,T_BYTE);			
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,"valueOf",ftype,Bytecode.STATIC));			
 		// done deal!
 	}
 	
-	public void buildCoercion(Type.Int fromType, Type toType, 
+	public void buildCoercion(Automata.Int fromType, Automata toType, 
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if(!Type.isSubtype(toType,fromType)) {
-			Type glb = Type.greatestLowerBound(Type.T_REAL, toType);
-			if(glb == Type.T_REAL) { 
+		if(!Automata.isSubtype(toType,fromType)) {
+			Automata glb = Automata.greatestLowerBound(Automata.T_REAL, toType);
+			if(glb == Automata.T_REAL) { 
 				// coercion required!
 				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
 				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
@@ -1948,10 +1948,10 @@ public class ClassFileBuilder {
 		}
 	}
 
-	public void buildCoercion(Type.Char fromType, Type toType, 
+	public void buildCoercion(Automata.Char fromType, Automata toType, 
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if(!Type.isSubtype(toType,fromType)) {					
-			if(toType == Type.T_REAL) { 
+		if(!Automata.isSubtype(toType,fromType)) {					
+			if(toType == Automata.T_REAL) { 
 				// coercion required!
 				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,T_INT);			
 				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
@@ -1966,11 +1966,11 @@ public class ClassFileBuilder {
 		}
 	}
 	
-	public void buildCoercion(Type.Strung fromType, Type.List toType, 
+	public void buildCoercion(Automata.Strung fromType, Automata.List toType, 
 			int freeSlot, ArrayList<Bytecode> bytecodes) {		
 		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,JAVA_LANG_STRING);
 		
-		if(toType.element() == Type.T_CHAR) {
+		if(toType.element() == Automata.T_CHAR) {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2cl",ftype,Bytecode.STATIC));	
 		} else {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2il",ftype,Bytecode.STATIC));
@@ -1984,7 +1984,7 @@ public class ClassFileBuilder {
 	 * @param from
 	 * 
 	 */
-	protected void buildCoercion(Type from, Type to, int id,
+	protected void buildCoercion(Automata from, Automata to, int id,
 			HashMap<Constant, Integer> constants, ClassFile cf) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		
@@ -1996,28 +1996,28 @@ public class ClassFileBuilder {
 		to = simplifyCoercion(from,to);
 		
 		// Second, case analysis on the various kinds of coercion
-		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
-			buildCoercion((Type.Tuple) from, (Type.Tuple) to, freeSlot, constants, bytecodes);
-		} else if(from instanceof Type.Process && to instanceof Type.Process) {
+		if(from instanceof Automata.Tuple && to instanceof Automata.Tuple) {
+			buildCoercion((Automata.Tuple) from, (Automata.Tuple) to, freeSlot, constants, bytecodes);
+		} else if(from instanceof Automata.Process && to instanceof Automata.Process) {
 			// TODO			
-		} else if(from instanceof Type.Set && to instanceof Type.Set) {
-			buildCoercion((Type.Set) from, (Type.Set) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
-			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.List && to instanceof Type.Set) {
-			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.Dictionary && to instanceof Type.Dictionary) {
-			buildCoercion((Type.Dictionary) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.List && to instanceof Type.Dictionary) {
-			buildCoercion((Type.List) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.List && to instanceof Type.List) {
-			buildCoercion((Type.List) from, (Type.List) to, freeSlot, constants, bytecodes);			
-		} else if(to instanceof Type.Record && from instanceof Type.Record) {
-			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot, constants, bytecodes);
-		} else if(to instanceof Type.Fun && from instanceof Type.Fun) {
+		} else if(from instanceof Automata.Set && to instanceof Automata.Set) {
+			buildCoercion((Automata.Set) from, (Automata.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Automata.Dictionary && to instanceof Automata.Set) {
+			buildCoercion((Automata.List) from, (Automata.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Automata.List && to instanceof Automata.Set) {
+			buildCoercion((Automata.List) from, (Automata.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Automata.Dictionary && to instanceof Automata.Dictionary) {
+			buildCoercion((Automata.Dictionary) from, (Automata.Dictionary) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Automata.List && to instanceof Automata.Dictionary) {
+			buildCoercion((Automata.List) from, (Automata.Dictionary) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Automata.List && to instanceof Automata.List) {
+			buildCoercion((Automata.List) from, (Automata.List) to, freeSlot, constants, bytecodes);			
+		} else if(to instanceof Automata.Record && from instanceof Automata.Record) {
+			buildCoercion((Automata.Record) from, (Automata.Record) to, freeSlot, constants, bytecodes);
+		} else if(to instanceof Automata.Fun && from instanceof Automata.Fun) {
 			// TODO
-		} else if(from instanceof Type.Union) {			
-			buildCoercion((Type.Union) from, to, freeSlot, constants, bytecodes);
+		} else if(from instanceof Automata.Union) {			
+			buildCoercion((Automata.Union) from, to, freeSlot, constants, bytecodes);
 		} else {
 			throw new RuntimeException("invalid coercion encountered: " + from + " => " + to);
 		}
@@ -2036,7 +2036,7 @@ public class ClassFileBuilder {
 		method.attributes().add(code);				
 	}
 		
-	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
+	protected void buildCoercion(Automata.Tuple fromType, Automata.Tuple toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		int oldSlot = freeSlot++;
@@ -2044,11 +2044,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(oldSlot,WHILEYTUPLE));
 		construct(WHILEYTUPLE,freeSlot,bytecodes);
 		bytecodes.add(new Bytecode.Store(newSlot,WHILEYTUPLE));
-		List<Type> from_elements = fromType.elements();
-		List<Type> to_elements = toType.elements();
+		List<Automata> from_elements = fromType.elements();
+		List<Automata> to_elements = toType.elements();
 		for(int i=0;i!=to_elements.size();++i) {
-			Type from = from_elements.get(i);
-			Type to = to_elements.get(i);
+			Automata from = from_elements.get(i);
+			Automata to = to_elements.get(i);
 			bytecodes.add(new Bytecode.Load(newSlot,WHILEYTUPLE));			
 			bytecodes.add(new Bytecode.Load(oldSlot,WHILEYTUPLE));
 			bytecodes.add(new Bytecode.LoadConst(i));
@@ -2065,11 +2065,11 @@ public class ClassFileBuilder {
 	}
 	
 		
-	protected void buildCoercion(Type.List fromType, Type.List toType, 
+	protected void buildCoercion(Automata.List fromType, Automata.List toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(fromType.element() == Type.T_VOID) {
+		if(fromType.element() == Automata.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -2112,11 +2112,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYLIST));
 	}
 	
-	protected void buildCoercion(Type.List fromType, Type.Dictionary toType, 
+	protected void buildCoercion(Automata.List fromType, Automata.Dictionary toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 
-		if(fromType.element() == Type.T_VOID) {
+		if(fromType.element() == Automata.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -2166,7 +2166,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));		
 	}
 	
-	protected void buildCoercion(Type.Dictionary fromType, Type.Dictionary toType, 
+	protected void buildCoercion(Automata.Dictionary fromType, Automata.Dictionary toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
@@ -2230,11 +2230,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));
 	}
 	
-	protected void buildCoercion(Type.List fromType, Type.Set toType,
+	protected void buildCoercion(Automata.List fromType, Automata.Set toType,
 			int freeSlot, HashMap<Constant,Integer> constants,			
 			ArrayList<Bytecode> bytecodes) {
 						
-		if(fromType.element() == Type.T_VOID) {
+		if(fromType.element() == Automata.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}				
@@ -2276,11 +2276,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
 	}
 	
-	protected void buildCoercion(Type.Set fromType, Type.Set toType,
+	protected void buildCoercion(Automata.Set fromType, Automata.Set toType,
 			int freeSlot, HashMap<Constant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
-		if(fromType.element() == Type.T_VOID) {
+		if(fromType.element() == Automata.T_VOID) {
 			// nothing to do, in this particular case
 			return;
 		}
@@ -2322,7 +2322,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(tmp,WHILEYSET));
 	}
 	
-	public void buildCoercion(Type.Record fromType, Type.Record toType, 
+	public void buildCoercion(Automata.Record fromType, Automata.Record toType, 
 			int freeSlot, HashMap<Constant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {		
 		int oldSlot = freeSlot++;
@@ -2330,11 +2330,11 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(oldSlot,WHILEYRECORD));
 		construct(WHILEYRECORD,freeSlot,bytecodes);
 		bytecodes.add(new Bytecode.Store(newSlot,WHILEYRECORD));
-		Map<String,Type> toFields = toType.fields();
-		Map<String,Type> fromFields = fromType.fields();
+		Map<String,Automata> toFields = toType.fields();
+		Map<String,Automata> fromFields = fromType.fields();
 		for(String key : toFields.keySet()) {
-			Type to = toFields.get(key);
-			Type from = fromFields.get(key);				
+			Automata to = toFields.get(key);
+			Automata from = fromFields.get(key);				
 			bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(key));
 			bytecodes.add(new Bytecode.Load(oldSlot,WHILEYRECORD));
@@ -2353,18 +2353,18 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(newSlot,WHILEYRECORD));		
 	}
 	
-	public void buildCoercion(Type.Union from, Type to, 
+	public void buildCoercion(Automata.Union from, Automata to, 
 			int freeSlot, HashMap<Constant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {	
 		
 		String exitLabel = freshLabel();
-		List<Type> bounds = new ArrayList<Type>(from.bounds());
+		List<Automata> bounds = new ArrayList<Automata>(from.bounds());
 		ArrayList<String> labels = new ArrayList<String>();				
 		
 		// basically, we're building a big dispatch table. I think there's no
 		// question that this could be more efficient in some cases.
 		for(int i=0;i!=bounds.size();++i) {
-			Type bound = bounds.get(i);
+			Automata bound = bounds.get(i);
 			if((i+1) == bounds.size()) {
 				addReadConversion(bound,bytecodes);
 				addCoercion(bound,to,freeSlot,constants,bytecodes);
@@ -2379,7 +2379,7 @@ public class ClassFileBuilder {
 		
 		for(int i=0;i<labels.size();++i) {
 			String label = labels.get(i);
-			Type bound = bounds.get(i);
+			Automata bound = bounds.get(i);
 			bytecodes.add(new Bytecode.Label(label));
 			addReadConversion(bound,bytecodes);
 			addCoercion(bound,to,freeSlot,constants,bytecodes);
@@ -2389,29 +2389,29 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(exitLabel));
 	}
 	
-	protected Type simplifyCoercion(Type from, Type to) {
+	protected Automata simplifyCoercion(Automata from, Automata to) {
 
-		if (to instanceof Type.Union) {
-			Type.Union t2 = (Type.Union) to;
+		if (to instanceof Automata.Union) {
+			Automata.Union t2 = (Automata.Union) to;
 
 			// First, check for identical type (i.e. no coercion necessary)
-			for (Type b : t2.bounds()) {
-				if (Type.isomorphic(from, b)) {
+			for (Automata b : t2.bounds()) {
+				if (Automata.isomorphic(from, b)) {
 					// nothing to do
 					return b;
 				}
 			}
 
 			// Second, check for single non-coercive match
-			for (Type b : t2.bounds()) {
-				if (Type.isSubtype(b, from)) {					
+			for (Automata b : t2.bounds()) {
+				if (Automata.isSubtype(b, from)) {					
 					return b;
 				}
 			}
 
 			// Third, test for single coercive match
-			for (Type b : t2.bounds()) {
-				if (Type.isCoerciveSubtype(b, from)) {
+			for (Automata b : t2.bounds()) {
+				if (Automata.isCoerciveSubtype(b, from)) {
 					return b;
 				}
 			}
@@ -2426,18 +2426,18 @@ public class ClassFileBuilder {
 	 * putting it on the stack. In such case, we need to convert boolean values
 	 * from Boolean objects to bool primitives.
 	 */
-	public void addReadConversion(Type et, ArrayList<Bytecode> bytecodes) {
-		if(et instanceof Type.Bool) {
+	public void addReadConversion(Automata et, ArrayList<Bytecode> bytecodes) {
+		if(et instanceof Automata.Bool) {
 			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BOOLEAN));
 			JvmType.Function ftype = new JvmType.Function(T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"booleanValue", ftype, Bytecode.VIRTUAL));
-		} else if(et instanceof Type.Byte) {
+		} else if(et instanceof Automata.Byte) {
 			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_BYTE));
 			JvmType.Function ftype = new JvmType.Function(T_BYTE);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE,
 					"byteValue", ftype, Bytecode.VIRTUAL));
-		} else if(et instanceof Type.Char) {
+		} else if(et instanceof Automata.Char) {
 			bytecodes.add(new Bytecode.CheckCast(JAVA_LANG_CHARACTER));
 			JvmType.Function ftype = new JvmType.Function(T_CHAR);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER,
@@ -2453,17 +2453,17 @@ public class ClassFileBuilder {
 	 * such case, we need to convert boolean values from bool primitives to
 	 * Boolean objects.
 	 */
-	public void addWriteConversion(Type et, ArrayList<Bytecode> bytecodes) {
-		if(et instanceof Type.Bool) {
+	public void addWriteConversion(Automata et, ArrayList<Bytecode> bytecodes) {
+		if(et instanceof Automata.Bool) {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BOOLEAN,T_BOOL);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BOOLEAN,
 					"valueOf", ftype, Bytecode.STATIC));
-		} else if(et instanceof Type.Byte) {
+		} else if(et instanceof Automata.Byte) {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE,
 					T_BYTE);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE, "valueOf", ftype,
 					Bytecode.STATIC));
-		} else if(et instanceof Type.Char) {
+		} else if(et instanceof Automata.Char) {
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_CHARACTER,
 					T_CHAR);
 			bytecodes.add(new Bytecode.Invoke(JAVA_LANG_CHARACTER, "valueOf", ftype,
@@ -2489,10 +2489,10 @@ public class ClassFileBuilder {
 	 * @param t
 	 * @return
 	 */
-	public static boolean isRefCounted(Type t) {
-		return t != Type.T_BOOL && t != Type.T_INT && t != Type.T_REAL
-				&& t != Type.T_STRING
-				&& !Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t); 
+	public static boolean isRefCounted(Automata t) {
+		return t != Automata.T_BOOL && t != Automata.T_INT && t != Automata.T_REAL
+				&& t != Automata.T_STRING
+				&& !Automata.isSubtype(Automata.T_PROCESS(Automata.T_ANY), t); 
 	}
 
 	/**
@@ -2501,7 +2501,7 @@ public class ClassFileBuilder {
 	 * @param type
 	 * @param bytecodes
 	 */
-	public static void addIncRefs(Type type, ArrayList<Bytecode> bytecodes) {
+	public static void addIncRefs(Automata type, ArrayList<Bytecode> bytecodes) {
 		if(isRefCounted(type)){
 			JvmType jtype = convertType(type);
 			JvmType.Function ftype = new JvmType.Function(jtype,jtype);			
@@ -2527,15 +2527,15 @@ public class ClassFileBuilder {
 				Bytecode.SPECIAL));
 	}		 	
 		
-	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
-			.minimise(Type.T_PROCESS(Type.T_EXISTENTIAL(new NameID(
+	public final static Automata.Process WHILEY_SYSTEM_OUT_T = (Automata.Process) Automata
+			.minimise(Automata.T_PROCESS(Automata.T_EXISTENTIAL(new NameID(
 					new ModuleID(new PkgID("whiley", "lang"), "System"), "1"))));
 
-	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
-			.minimise(Type.T_PROCESS(Type.T_RECORD(new HashMap() {
+	public final static Automata.Process WHILEY_SYSTEM_T = (Automata.Process) Automata
+			.minimise(Automata.T_PROCESS(Automata.T_RECORD(new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
-					put("rest", Type.T_EXISTENTIAL(new NameID(new ModuleID(
+					put("rest", Automata.T_EXISTENTIAL(new NameID(new ModuleID(
 							new PkgID("whiley", "lang"), "System"), "1")));
 				}
 			})));
@@ -2564,68 +2564,68 @@ public class ClassFileBuilder {
 	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang","AssertionError");
 	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util","Collection");	
 	
-	public JvmType.Function convertFunType(Type.Fun t) {		
-		Type.Fun ft = (Type.Fun) t; 
+	public JvmType.Function convertFunType(Automata.Fun t) {		
+		Automata.Fun ft = (Automata.Fun) t; 
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
-		if(ft instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth)ft; 
+		if(ft instanceof Automata.Meth) {
+			Automata.Meth mt = (Automata.Meth)ft; 
 			if(mt.receiver() != null) {
 				paramTypes.add(convertType(mt.receiver()));
 			}
 		}
-		for(Type pt : ft.params()) {
+		for(Automata pt : ft.params()) {
 			paramTypes.add(convertType(pt));
 		}
 		JvmType rt = convertType(ft.ret());			
 		return new JvmType.Function(rt,paramTypes);		
 	}
 	
-	public static JvmType convertType(Type t) {
-		if(t == Type.T_VOID) {
+	public static JvmType convertType(Automata t) {
+		if(t == Automata.T_VOID) {
 			return T_VOID;
-		} else if(t == Type.T_ANY) {
+		} else if(t == Automata.T_ANY) {
 			return JAVA_LANG_OBJECT;
-		} else if(t == Type.T_NULL) {
+		} else if(t == Automata.T_NULL) {
 			return JAVA_LANG_OBJECT;
-		} else if(t instanceof Type.Bool) {
+		} else if(t instanceof Automata.Bool) {
 			return T_BOOL;
-		} else if(t instanceof Type.Byte) {
+		} else if(t instanceof Automata.Byte) {
 			return T_BYTE;
-		} else if(t instanceof Type.Char) {
+		} else if(t instanceof Automata.Char) {
 			return T_CHAR;
-		} else if(t instanceof Type.Int) {
+		} else if(t instanceof Automata.Int) {
 			return BIG_INTEGER;
-		} else if(t instanceof Type.Real) {
+		} else if(t instanceof Automata.Real) {
 			return BIG_RATIONAL;
-		} else if(t instanceof Type.Meta) {
+		} else if(t instanceof Automata.Meta) {
 			return WHILEYTYPE;
-		} else if(t instanceof Type.Strung) {
+		} else if(t instanceof Automata.Strung) {
 			return JAVA_LANG_STRING;
-		} else if(t instanceof Type.List) {
+		} else if(t instanceof Automata.List) {
 			return WHILEYLIST;
-		} else if(t instanceof Type.Set) {
+		} else if(t instanceof Automata.Set) {
 			return WHILEYSET;
-		} else if(t instanceof Type.Dictionary) {
+		} else if(t instanceof Automata.Dictionary) {
 			return WHILEYMAP;
-		} else if(t instanceof Type.Record) {
+		} else if(t instanceof Automata.Record) {
 			return WHILEYRECORD;
-		} else if(t instanceof Type.Process) {
+		} else if(t instanceof Automata.Process) {
 			return WHILEYPROCESS;
-		} else if(t instanceof Type.Tuple) {
+		} else if(t instanceof Automata.Tuple) {
 			return WHILEYTUPLE;
-		} else if(t instanceof Type.Union) {
+		} else if(t instanceof Automata.Union) {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
 			// contains ?
-			Type.Record tt = Type.effectiveRecordType(t);
+			Automata.Record tt = Automata.effectiveRecordType(t);
 			if(tt != null) {
 				return WHILEYRECORD;
 			} else {
 				return JAVA_LANG_OBJECT;
 			}
-		} else if(t instanceof Type.Meta) {							
+		} else if(t instanceof Automata.Meta) {							
 			return JAVA_LANG_OBJECT;			
-		} else if(t instanceof Type.Fun) {						
+		} else if(t instanceof Automata.Fun) {						
 			return JAVA_LANG_REFLECT_METHOD;
 		}else {
 			throw new RuntimeException("unknown type encountered: " + t);
@@ -2637,7 +2637,7 @@ public class ClassFileBuilder {
 		return "cfblab" + label++;
 	}	
 	
-	public static String nameMangle(String name, Type.Fun ft) {				
+	public static String nameMangle(String name, Automata.Fun ft) {				
 		try {			
 			return name + "$" + typeMangle(ft);
 		} catch(IOException e) {
@@ -2645,11 +2645,11 @@ public class ClassFileBuilder {
 		}
 	}
 		
-	public static String typeMangle(Type.Fun ft) throws IOException {		
+	public static String typeMangle(Automata.Fun ft) throws IOException {		
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
 		BinaryTypeWriter tm = new BinaryTypeWriter(binout);
-		Type.build(tm,ft);		
+		Automata.build(tm,ft);		
 		binout.close(); // force flush		
 		//testMangle1(ft);
 		return jout.toString();		
@@ -2689,9 +2689,9 @@ public class ClassFileBuilder {
 		}
 	}
 	public static final class Coercion extends Constant {
-		public final Type from;
-		public final Type to;
-		public Coercion(Type from, Type to) {
+		public final Automata from;
+		public final Automata to;
+		public Coercion(Automata from, Automata to) {
 			this.from = from;
 			this.to = to;
 		}
@@ -2705,7 +2705,7 @@ public class ClassFileBuilder {
 		public int hashCode() {
 			return from.hashCode() + to.hashCode();
 		}
-		public static int get(Type from, Type to, HashMap<Constant,Integer> constants) {
+		public static int get(Automata from, Automata to, HashMap<Constant,Integer> constants) {
 			Coercion vc = new Coercion(from,to);
 			Integer r = constants.get(vc);
 			if(r != null) {

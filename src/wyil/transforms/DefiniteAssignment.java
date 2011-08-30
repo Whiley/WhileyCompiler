@@ -32,7 +32,7 @@ import wyil.Transform;
 import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 import static wyil.lang.Block.*;
 import static wyil.util.SyntaxError.*;
 
@@ -68,8 +68,8 @@ public class DefiniteAssignment extends
 		
 		int diff = 0;
 		
-		if(method.type() instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) method.type();
+		if(method.type() instanceof Automata.Meth) {
+			Automata.Meth mt = (Automata.Meth) method.type();
 			if(mt.receiver() != null) {
 				defined.add(diff);
 				diff++;

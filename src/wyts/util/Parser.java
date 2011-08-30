@@ -2,8 +2,8 @@ package wyts.util;
 
 import java.util.HashMap;
 
-import wyts.lang.Type;
-import static wyts.lang.Type.*;
+import wyts.lang.Automata;
+import static wyts.lang.Automata.*;
 
 /**
  * The Type Parser is used to convert a given string into a type (or a syntax
@@ -21,8 +21,8 @@ public class Parser {
 		this.str = str;
 	}
 	
-	public Type parse() {
-		Type term = parseTerm();
+	public Automata parse() {
+		Automata term = parseTerm();
 		skipWhiteSpace();
 		while(index < str.length() && str.charAt(index) == '|') {
 			// union type
@@ -32,7 +32,7 @@ public class Parser {
 		}
 		return term;
 	}
-	public Type parseTerm() {
+	public Automata parseTerm() {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
 
@@ -61,18 +61,18 @@ public class Parser {
 		case '[':
 		{
 			match("[");
-			Type elem = parse();
+			Automata elem = parse();
 			match("]");
 			return T_LIST(elem);
 		}
 		case '{':
 		{
 			match("{");
-			Type elem = parse();
+			Automata elem = parse();
 			skipWhiteSpace();
 			if(index < str.length() && str.charAt(index) != '}') {
 				// record
-				HashMap<String,Type> fields = new HashMap<String,Type>();
+				HashMap<String,Automata> fields = new HashMap<String,Automata>();
 				String id = parseIdentifier();
 				fields.put(id, elem);
 				skipWhiteSpace();

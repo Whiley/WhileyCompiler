@@ -37,7 +37,7 @@ import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 /**
  * The WhileyVersion attribute is simply a marker used to indicate that a class
@@ -50,7 +50,7 @@ import wyts.lang.Type;
 public class WhileyDefine implements BytecodeAttribute {
 	private String defName;
 	private Value value;	
-	private Type type;
+	private Automata type;
 	
 	// FIXME: at the moment we list BytecodeAttributes here. But these are very
 	// JVM specific. What we really want are WyilAttributes here instead, and a
@@ -69,13 +69,13 @@ public class WhileyDefine implements BytecodeAttribute {
 		this.attributes = new ArrayList<BytecodeAttribute>(attributes);
 	}
 	
-	public WhileyDefine(String name, Type type, BytecodeAttribute... attributes) {
+	public WhileyDefine(String name, Automata type, BytecodeAttribute... attributes) {
 		this.defName = name;
 		this.type = type;	
 		this.attributes = Arrays.asList(attributes);		
 	}
 	
-	public WhileyDefine(String name, Type type, Collection<BytecodeAttribute> attributes) {
+	public WhileyDefine(String name, Automata type, Collection<BytecodeAttribute> attributes) {
 		this.defName = name;
 		this.type = type;	
 		this.attributes = new ArrayList<BytecodeAttribute>(attributes);
@@ -93,7 +93,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		return Collections.unmodifiableList(attributes);
 	}
 	
-	public Type type() {
+	public Automata type() {
 		return type;
 	}
 	
@@ -320,7 +320,7 @@ public class WhileyDefine implements BytecodeAttribute {
 				return new WhileyDefine(name, value, attrs);
 			} else {
 				// type only
-				Type type = WhileyType.Reader.readType(input, constantPool);
+				Automata type = WhileyType.Reader.readType(input, constantPool);
 				int nattrs = input.read_u2();
 				List<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(
 						nattrs, input, constantPool, attributeReaders);

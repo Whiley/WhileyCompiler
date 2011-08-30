@@ -2,7 +2,7 @@ package wyts.util;
 
 import wyil.lang.NameID;
 import wyil.util.Pair;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 /**
  * The Type.Builder interface is essentially a way of separating the
@@ -21,7 +21,7 @@ public interface TypeBuilder {
 	 */
 	void initialise(int numNodes);
 
-	void buildPrimitive(int index, Type.Leaf type);
+	void buildPrimitive(int index, Automata.Leaf type);
 
 	void buildExistential(int index, NameID name);
 

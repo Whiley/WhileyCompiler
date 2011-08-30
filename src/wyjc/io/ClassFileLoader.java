@@ -43,7 +43,7 @@ import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyts.io.BinaryTypeReader;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 /**
  * The ClassFileLoader is responsible for reading class files and converting
@@ -88,12 +88,12 @@ public class ClassFileLoader {
 			return null;
 		}
 		
-		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
+		HashMap<Pair<Automata.Fun,String>,Module.Method> methods = new HashMap();
 		
 		for (ClassFile.Method cm : cf.methods()) {
 			if (!cm.isSynthetic()) {
 				Module.Method mi = createMethodInfo(mid, cm);
-				Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
+				Pair<Automata.Fun, String> key = new Pair(mi.type(), mi.name());
 				Module.Method method = methods.get(key);
 				if (method != null) {
 					// coalesce cases
@@ -113,7 +113,7 @@ public class ClassFileLoader {
 			
 			if(ba instanceof WhileyDefine) {				
 				WhileyDefine wd = (WhileyDefine) ba;								
-				Type type = wd.type();							
+				Automata type = wd.type();							
 				if(type == null) {
 					// constant definition
 					List<Attribute> attrs = new ArrayList<Attribute>();		
@@ -150,7 +150,7 @@ public class ClassFileLoader {
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());
 			// then find the type
-			Type.Fun type = (Type.Fun) new BinaryTypeReader(
+			Automata.Fun type = (Automata.Fun) new BinaryTypeReader(
 					new BinaryInputStream(new JavaIdentifierInputStream(mangle)))
 					.read();
 			// now build the parameter names

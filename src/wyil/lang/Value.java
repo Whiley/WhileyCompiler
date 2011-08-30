@@ -30,13 +30,13 @@ import java.util.*;
 
 import wyil.util.Pair;
 import wyjc.runtime.BigRational;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 public abstract class Value implements Comparable<Value> {	
 
 	public static final Null V_NULL = new Null();
 
-	public abstract Type type();
+	public abstract Automata type();
 	
 	public static Bool V_BOOL(boolean value) {
 		return get(new Bool(value));
@@ -83,7 +83,7 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Dictionary(values));
 	}
 	
-	public static TypeConst V_TYPE(Type type) {
+	public static TypeConst V_TYPE(Automata type) {
 		return get(new TypeConst(type));
 	}
 	
@@ -91,13 +91,13 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Tuple(values));
 	}
 	
-	public static FunConst V_FUN(NameID name, Type.Fun type) {
+	public static FunConst V_FUN(NameID name, Automata.Fun type) {
 		return get(new FunConst(name,type));
 	}		
 	
 	public static final class Null extends Value {				
-		public Type type() {
-			return Type.T_NULL;
+		public Automata type() {
+			return Automata.T_NULL;
 		}
 		public int hashCode() {
 			return 0;
@@ -122,8 +122,8 @@ public abstract class Value implements Comparable<Value> {
 		private Bool(boolean value) {
 			this.value = value;
 		}
-		public Type type() {
-			return Type.T_BOOL;
+		public Automata type() {
+			return Automata.T_BOOL;
 		}
 		public int hashCode() {
 			return value ? 1 : 0;
@@ -161,8 +161,8 @@ public abstract class Value implements Comparable<Value> {
 		private Rational(BigRational value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_REAL;			
+		public Automata type() {				
+			return Automata.T_REAL;			
 		}
 		public int hashCode() {
 			return value.hashCode();
@@ -206,8 +206,8 @@ public abstract class Value implements Comparable<Value> {
 		private Byte(byte value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_BYTE;			
+		public Automata type() {				
+			return Automata.T_BYTE;			
 		}
 		public int hashCode() {
 			return value;
@@ -254,8 +254,8 @@ public abstract class Value implements Comparable<Value> {
 		private Char(char value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_CHAR;			
+		public Automata type() {				
+			return Automata.T_CHAR;			
 		}
 		public int hashCode() {
 			return value;
@@ -293,8 +293,8 @@ public abstract class Value implements Comparable<Value> {
 		private Integer(BigInteger value) {
 			this.value = value;
 		}
-		public Type type() {				
-			return Type.T_INT;			
+		public Automata type() {				
+			return Automata.T_INT;			
 		}
 		public int hashCode() {
 			return value.hashCode();
@@ -341,8 +341,8 @@ public abstract class Value implements Comparable<Value> {
 		private Strung(String value) {
 			this.value = value;
 		}
-		public Type type() {
-			return Type.T_STRING;
+		public Automata type() {
+			return Automata.T_STRING;
 		}
 		public int hashCode() {
 			return value.hashCode();
@@ -373,12 +373,12 @@ public abstract class Value implements Comparable<Value> {
 		private List(Collection<Value> value) {
 			this.values = new ArrayList<Value>(value);
 		}
-		public Type type() {
-			Type t = Type.T_VOID;
+		public Automata type() {
+			Automata t = Automata.T_VOID;
 			for(Value arg : values) {
-				t = Type.leastUpperBound(t,arg.type());
+				t = Automata.leastUpperBound(t,arg.type());
 			}
-			return Type.T_LIST(t);			
+			return Automata.T_LIST(t);			
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -434,12 +434,12 @@ public abstract class Value implements Comparable<Value> {
 		private Set(Collection<Value> value) {
 			this.values = new HashSet<Value>(value);
 		}
-		public Type type() {
-			Type t = Type.T_VOID;
+		public Automata type() {
+			Automata t = Automata.T_VOID;
 			for(Value arg : values) {
-				t = Type.leastUpperBound(t,arg.type());
+				t = Automata.leastUpperBound(t,arg.type());
 			}
-			return Type.T_SET(t);	
+			return Automata.T_SET(t);	
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -537,12 +537,12 @@ public abstract class Value implements Comparable<Value> {
 			this.values = new HashMap<String,Value>(value);
 		}
 
-		public Type type() {
-			HashMap<String, Type> types = new HashMap<String, Type>();
+		public Automata type() {
+			HashMap<String, Automata> types = new HashMap<String, Automata>();
 			for (Map.Entry<String, Value> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
 			}
-			return Type.T_RECORD(types);
+			return Automata.T_RECORD(types);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -612,14 +612,14 @@ public abstract class Value implements Comparable<Value> {
 				this.values.put(p.first(), p.second());
 			}
 		}
-		public Type type() {
-			Type key = Type.T_VOID;
-			Type value = Type.T_VOID;
+		public Automata type() {
+			Automata key = Automata.T_VOID;
+			Automata value = Automata.T_VOID;
 			for (Map.Entry<Value, Value> e : values.entrySet()) {
-				key = Type.leastUpperBound(key,e.getKey().type());
-				value = Type.leastUpperBound(value,e.getKey().type());
+				key = Automata.leastUpperBound(key,e.getKey().type());
+				value = Automata.leastUpperBound(value,e.getKey().type());
 			}
-			return Type.T_DICTIONARY(key,value);
+			return Automata.T_DICTIONARY(key,value);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -686,12 +686,12 @@ public abstract class Value implements Comparable<Value> {
 	}
 	
 	public static final class TypeConst extends Value {
-		public final Type type;
-		private TypeConst(Type type) {
+		public final Automata type;
+		private TypeConst(Automata type) {
 			this.type = type;
 		}
-		public Type type() {
-			return Type.T_META;
+		public Automata type() {
+			return Automata.T_META;
 		}
 		public int hashCode() {
 			return type.hashCode();
@@ -719,15 +719,15 @@ public abstract class Value implements Comparable<Value> {
 	
 	public static final class FunConst extends Value {
 		public final NameID name;
-		public final Type.Fun type;
+		public final Automata.Fun type;
 		
-		private FunConst(NameID name, Type.Fun type) {
+		private FunConst(NameID name, Automata.Fun type) {
 			this.name = name;
 			this.type = type;
 		}
-		public Type type() {
+		public Automata type() {
 			if (type == null) {				
-				return Type.T_FUN(Type.T_ANY, Type.T_ANY);
+				return Automata.T_FUN(Automata.T_ANY, Automata.T_ANY);
 			} else {
 				return type;
 			}
@@ -768,12 +768,12 @@ public abstract class Value implements Comparable<Value> {
 			this.values = new ArrayList<Value>(values);
 		}
 
-		public Type type() {
-			ArrayList<Type> types = new ArrayList<Type>();			
+		public Automata type() {
+			ArrayList<Automata> types = new ArrayList<Automata>();			
 			for (Value e : values) {
 				types.add(e.type());				
 			}
-			return Type.T_TUPLE(types);
+			return Automata.T_TUPLE(types);
 		}
 		public int hashCode() {
 			return values.hashCode();

@@ -26,7 +26,7 @@
 package wyc.lang;
 
 import wyil.lang.*;
-import wyts.lang.Type;
+import wyts.lang.Automata;
 
 /**
  * An attribute is simply a piece of information that we may wish to
@@ -38,9 +38,9 @@ import wyts.lang.Type;
 public interface Attributes {
 
 	public static final class Fun implements Attribute {
-		public final wyts.lang.Type.Fun type;
+		public final wyts.lang.Automata.Fun type;
 
-		public Fun(wyts.lang.Type.Fun type) {
+		public Fun(wyts.lang.Automata.Fun type) {
 			this.type = type;
 		}
 	}
