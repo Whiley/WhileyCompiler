@@ -261,6 +261,9 @@ public final class Automatas {
 
 	/**
 	 * <p>
+	 * Determine whether a relationship between two automata exists.   
+	 * </p>
+	 * <p>
 	 * Determine whether automata <code>a2</code> is subsumed by automata
 	 * <code>a1</code>. One automata <code>a1</code> subsumes another automata
 	 * <code>a2</code> if <code>a1</code> accepts all the values accepted by
@@ -276,7 +279,7 @@ public final class Automatas {
 	 *            automata.
 	 * @return
 	 */
-	public static final boolean isSubsumed(Automata a1, Automata a2, Interpretation interpretation) {
+	public static final boolean isRelated(Automata a1, Automata a2, Interpretation interpretation) {
 		Relation rel = subsetRelation(a1,a2,interpretation);		
 		return rel.isSubSet(0, 0);
 	}
@@ -293,8 +296,8 @@ public final class Automatas {
 			changed=false;
 			for(int i=0;i!=fromDomain;i++) {
 				for(int j=0;j!=toDomain;j++) {					
-					boolean isubj = interpretation.isSubSet(i,from,j,to);					
-					boolean isupj = interpretation.isSuperSet(i,from,j,to);		
+					boolean isubj = interpretation.isSubsumed(i,from,j,to,relation);					
+					boolean isupj = interpretation.isSubsumed(j,to,i,from,?);		
 					
 					if(relation.isSubSet(i,j) && !isubj) {
 						relation.setSubSet(i,j,false);

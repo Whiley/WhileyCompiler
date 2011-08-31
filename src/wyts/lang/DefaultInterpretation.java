@@ -23,7 +23,7 @@ import static wyts.lang.Automata.State;
  */
 public class DefaultInterpretation implements Interpretation {
 	
-	public boolean isSubSet(int fromIndex, Automata from, int toIndex,
+	public boolean isSubsumed(int fromIndex, Automata from, int toIndex,
 			Automata to, Relation relation) {
 		State s1 = from.states[fromIndex];
 		State s2 = to.states[toIndex];

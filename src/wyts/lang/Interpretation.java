@@ -2,12 +2,17 @@ package wyts.lang;
 
 /**
  * <p>
- * An interpretation is necessary for determining whether one automata subsumes
- * another. It provides an interpretation of states in the automata being
- * compared. This is useful in situations where states of one kind subsume those
- * of another. For example, a state of kind "OR" can subsume a state with the
- * same kind as one of its children. Sometimes, there is a special state "TOP"
- * which subsumes all states.
+ * A relation is used to determining whether a relationship exists between two
+ * automata. It provides an interpretation of states in the automata being
+ * compared.
+ * </p>
+ * 
+ * <p>
+ * As an example, consider the common case of <i>subsumption</i>. One automata
+ * <code>a1</code> subsumes another automata <code>a2</code> if <code>a1</code>
+ * accepts all the values accepted by <code>a2</code> (and possibly more). Then,
+ * a state of kind "OR" can subsume a state with the same kind as one of its
+ * children.
  * </p>
  * 
  * @author djp
@@ -30,5 +35,5 @@ public interface Interpretation {
 	 * @return
 	 */
 	public boolean isSubsumed(int fromIndex, Automata from, int toIndex,
-			Automata to, Relation relation);
+			Automata to);
 }
