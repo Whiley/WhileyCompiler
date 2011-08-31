@@ -26,7 +26,7 @@ import wyjvm.io.BinaryOutputStream;
  * @author djp
  * 
  */
-public class BinaryAutomataWriter {		
+public class BinaryAutomataWriter implements GenericWriter<Automata> {		
 	private final BinaryOutputStream writer;	
 	
 	public BinaryAutomataWriter(BinaryOutputStream writer) {

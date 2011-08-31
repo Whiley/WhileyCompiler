@@ -1,12 +1,13 @@
 package wyautl.util;
 
+import java.io.IOException;
 import java.util.*;
-
-import wyautl.lang.Node;
 import wyil.lang.*;
+import wyautl.io.*;
+import wyautl.lang.*;
 
 /**
- * The generator class is used generate lists of types, primarily for testing
+ * The generator class is used generate automatas, primarily for testing
  * purposes.
  * 
  * @author djp
@@ -14,255 +15,187 @@ import wyil.lang.*;
  */
 public class Generator {
 
-	public static class Config {
-		
+	public static final class Kind {
 		/**
-		 * Flag to include NULL in the types generated.
+		 * Determine whether this kind is non-sequential or not.
 		 */
-		public boolean ANY = true;
-		
-		/**
-		 * Flag to include NULL in the types generated.
-		 */
-		public boolean NULL = true;
-		
-		/**
-		 * Flag to include bool in the types generated.
-		 */
-		public boolean BOOL = true;
-		
-		/**
-		 * Flag to include int in the types generated.
-		 */
-		public boolean INT = true;
-		
-		/**
-		 * Flag to include real in the types generated.
-		 */
-		public boolean REAL = true;
-		
-		/**
-		 * Flag to include char in the types generated.
-		 */
-		public boolean CHAR = true;
-		
-		/**
-		 * Flag to include byte in the types generated.
-		 */
-		public boolean BYTE = true;
-		
-		/**
-		 * Flag to include tuples in the types generated.
-		 */
-		public boolean TUPLES = true;
-		
-		/**
-		 * Flag to include lists in the types generated.
-		 */
-		public boolean LISTS = true;
-		
-		/**
-		 * Flag to include sets in the types generated.
-		 */
-		public boolean SETS = true;
-		
-		/**
-		 * Flag to include dictionaries in the types generated.
-		 */
-		public boolean DICTIONARIES = true;
-		
-		/**
-		 * Flag to include records in the types generated.
-		 */
-		public boolean RECORDS = true;
-		
-		/**
-		 * Flag to include unions in the types generated.
-		 */
-		public boolean UNIONS = true;
-		
-		/**
-		 * Flag to include recursives in the types generated.
-		 */
-		public boolean RECURSIVES = true;
-		
-		/**
-		 * MAX_FIELDS defines the maximum number of fields to explore per
-		 * record.
-		 */
-		public int MAX_FIELDS = 2;
+		public final boolean NONSEQUENTIAL;
 
 		/**
-		 * MAX_UNIONS defines the maximum number of disjuncts in a union that
-		 * can be explored.
+		 * Determine minimum number of children this kind can have.
 		 */
-		public int MAX_UNIONS = 2;
+		public final int MIN_CHILDREN;
+
+		/**
+		 * Determine maximum number of children this kind can have.
+		 */
+		public final int MAX_CHILDREN;
+
+		public Kind(boolean nonseq, int min, int max) {
+			this.NONSEQUENTIAL = nonseq;
+			this.MIN_CHILDREN = min;
+			this.MAX_CHILDREN = max;
+		}
+	}
+
+	public static class Config {
+		/**
+		 * Provide details of kinds used.
+		 */
+		public Kind[] KINDS;
 		
 		/**
-		 * MAX_TUPLES defines the maximum number of elements in a tuple that
-		 * can be explored.
+		 * Allow recursive links or not.
 		 */
-		public int MAX_TUPLES = 2;
+		public boolean RECURSIVE;
 		
 		/**
-		 * MAX_DEPTH defines the maximum depth of a type.
+		 * Determine size of automatas to generate.
 		 */
-		public int MAX_DEPTH = 2;			
+		public int SIZE;
 	}
 	
-	public static List<Type> generate(Config config) {
-		ArrayList<Type> types = new ArrayList<Type>();
-		int RECURSIVE_ROOT = -1;
-		// types.add(Type.T_VOID);
-		if(config.ANY) {
-			types.add(Type.T_ANY);
-		}
-		if(config.NULL) {		
-			types.add(Type.T_NULL);
-		}
-		if(config.BYTE) {
-			types.add(Type.T_BYTE);
-		}
-		if(config.CHAR){ 
-			types.add(Type.T_CHAR);
-		}
-		if(config.INT) { 
-			types.add(Type.T_INT);
-		}
-		if(config.REAL) { 
-			types.add(Type.T_REAL);
-		}
-		if(config.RECURSIVES) {
-			RECURSIVE_ROOT = types.size();
-			types.add(Type.T_LABEL("X"));
-		}
-		//types.add(Type.T_STRING);
+	private final static class Template {
+		public final int[] kinds;
+		public final int[] children;		
+		public final BitSet transitions;
 		
-		for(int i=0;i!=config.MAX_DEPTH;++i) {
-			int end = types.size();
-			if(config.LISTS) { addListTypes(types,end); }
-			if(config.SETS) { addSetTypes(types,end); }
-			//addProcessTypes(types,end);
-			if(config.TUPLES) { addTupleTypes(types,config.MAX_TUPLES,end); }
-			if(config.RECORDS) { addRecordTypes(types,config.MAX_FIELDS,end); }
-			if(config.UNIONS) { addUnionTypes(types,config.MAX_UNIONS,end); } 
-			if(config.RECURSIVES) { addRecursiveTypes(RECURSIVE_ROOT,types,end); } 
+		public Template(int size) {
+			this.kinds = new int[size];
+			this.children = new int[size];
+			transitions = new BitSet(size*size);
 		}
 		
-		for(int i=0;i!=types.size();++i) {
-			Type t = types.get(i);
-			if(Type.isOpen(t)) {
-				// yuk ... should be an easier way of doing this!
-				if(t instanceof Type.Compound && ((Type.Compound)t).states[0].kind == State.K_LABEL) {
-					types.remove(i--);
-				} else {
-					types.set(i,Type.T_RECURSIVE("X",t));
+		public final void add(int from, int to) {
+			transitions.set((from*kinds.length)+to,true);
+		}
+		
+		public final void remove(int from, int to) {
+			transitions.set((from*kinds.length)+to,false);
+		}
+		
+		public final boolean isTransition(int from, int to) {
+			return transitions.get((from*kinds.length)+to);
+		}
+	}
+	
+	/**
+	 * Turn a template into an actual automata.
+	 * 
+	 * @param template
+	 * @param writer
+	 */
+	private static void generate(Template template,
+			GenericWriter<Automata> writer) throws IOException {
+		
+		int[] kinds = template.kinds;
+		int[] nchildren = template.children;
+		Automata.State[] states = new Automata.State[kinds.length];
+		
+		for(int i=0;i!=kinds.length;++i) {								
+			int[] children = new int[nchildren[i]];
+			int index = 0;
+			for(int j=0;j!=kinds.length;++j) {
+				if(template.isTransition(i,j)) {
+					children[index++] = j;
 				}
 			}
+			// annoying.
+			states[i] = new Automata.State(kinds[i],children);
 		}
-		return types;
+		
+		Automata automata = new Automata(states);
+		writer.write(automata);
 	}
 	
-	private static void addRecursiveTypes(int root, ArrayList<Type> types, int end) {
-		for(int i=0;i!=end;++i) {
-			Type t = types.get(i);
-			if(i != root && Type.isOpen("X",t)) {				
-				types.add(Type.T_RECURSIVE("X", t));
-			}
+	private static void generate(int from, int to, Template base,
+			GenericWriter<Automata> writer, Config config) throws IOException {
+		
+		if(to >= config.SIZE) {			
+			from = from + 1;
+			to = from;
+			if(from >= config.SIZE) {
+				// ok, generate the automata.				
+				generate(base,writer);
+				return;
+			} 
+		}
+		
+		// first, generate forward edge (if allowed)
+		int[] nchildren = base.children;
+		int[] kinds = base.kinds;
+		Kind fromKind = config.KINDS[kinds[from]];
+		if(nchildren[from] < fromKind.MAX_CHILDREN) {
+			nchildren[from]++;
+			base.add(from,to);
+			generate(from,to+1,base,writer,config);
+			base.remove(from,to);
+			nchildren[from]--;
+		}
+
+		// second, generate reverse edge (if allowed)
+		Kind toKind = config.KINDS[kinds[to]];
+		if (config.RECURSIVE && nchildren[to] < toKind.MAX_CHILDREN) {
+			nchildren[to]++;
+			base.add(to, from);
+			generate(from, to+1, base, writer, config);
+			base.remove(to, from);
+			nchildren[to]--;
+		}
+		
+		// finally, generate no edge (if allowed)	
+		if(fromKind.MIN_CHILDREN <= nchildren[from]) {
+			generate(from,to+1,base,writer,config);
 		}
 	}
 	
-	private static void addListTypes(ArrayList<Type> types, int end) {
-		for(int i=0;i!=end;++i) {
-			Type t = types.get(i);
-			types.add(Type.T_LIST(t));
-		}
-	}
-	
-	private static void addSetTypes(ArrayList<Type> types, int end) {
-		for(int i=0;i!=end;++i) {
-			Type t = types.get(i);
-			types.add(Type.T_SET(t));
-		}
-	}
-	
-	private static void addProcessTypes(ArrayList<Type> types, int end) {
-		for(int i=0;i!=end;++i) {
-			Type t = types.get(i);
-			types.add(Type.T_PROCESS(t));
-		}
-	}
-	
-	private static void addTupleTypes(ArrayList<Type> types, int MAX_TUPLES, int end) {
-		for(int i=2;i<=MAX_TUPLES;++i) {
-			Type[] elems = new Type[i];
-			addTupleTypes(elems,types,0,end);			
-		}
-	}
-	
-	private static void addTupleTypes(Type[] elems, ArrayList<Type> types, int dim, int end) {
-		if(dim == elems.length) {
-			types.add(Type.T_TUPLE(elems));
+	private static void generate(int index, Template base,
+			GenericWriter<Automata> writer, Config config) throws IOException {
+		if(index == config.SIZE) {
+			// now start generating transitions
+			generate(0,0,base,writer,config);
 		} else {
-			for(int i=0;i!=end;++i) {
-				elems[dim] = types.get(i);
-				addTupleTypes(elems,types,dim+1,end);
+			Kind[] kinds = config.KINDS;
+			for(int k=0;k!=kinds.length;++k) {
+				base.kinds[index] = k;
+				generate(index+1,base,writer,config);
 			}
 		}
 	}
 	
-	private static void addRecordTypes(ArrayList<Type> types, int MAX_FIELDS, int end) {
-		for(int i=1;i<=MAX_FIELDS;++i) {
-			Type[] elems = new Type[i];
-			addRecordTypes(elems,types,0,end);			
-		}
-	}
-	
-	private static void addRecordTypes(Type[] elems, ArrayList<Type> types, int dim, int end) {
-		if(dim == elems.length) {
-			HashMap<String,Type> fields = new HashMap<String,Type>();
-			for(int i=0;i!=elems.length;++i) {
-				fields.put("field" + i,elems[i]);
-			}
-			types.add(Type.T_RECORD(fields));
-		} else {
-			for(int i=0;i!=end;++i) {
-				elems[dim] = types.get(i);
-				addRecordTypes(elems,types,dim+1,end);
-			}
-		}
-	}
-	
-	private static void addUnionTypes(ArrayList<Type> types, int MAX_TUPLES, int end) {
-		for(int i=2;i<=MAX_TUPLES;++i) {
-			Type[] elems = new Type[i];
-			addUnionTypes(elems,types,0,end);			
-		}
-	}
-	
-	private static void addUnionTypes(Type[] elems, ArrayList<Type> types, int dim, int end) {
-		if(dim == elems.length) {
-			types.add(Type.T_UNION(elems));
-		} else {
-			for(int i=0;i!=end;++i) {
-				elems[dim] = types.get(i);
-				addUnionTypes(elems,types,dim+1,end);
-			}
-		}
+	/**
+	 * The generate method generates all possible automatas matching of a given
+	 * size. Observe that this may be an extremely expensive operation, and
+	 * significant care must be exercised in setting the configuration
+	 * parameters!
+	 * 
+	 * @param size
+	 *            --- generated automatas will have exactly this size.
+	 * @param recursive
+	 *            --- generated automatas permit recursive links.
+	 * @param writer
+	 *            --- generate automatas are written to this writer.
+	 */
+	public static void generate(GenericWriter<Automata> writer, Config config) throws IOException {
+		Template base = new Template(config.SIZE);
+		generate(0,base,writer,config);
 	}
 	
 	public static void main(String[] args) {
-		Config config = new Config();
-		config.MAX_FIELDS = 2;
-		config.MAX_UNIONS = 2;
-		config.MAX_TUPLES = 2;
-		config.MAX_DEPTH = 2;
+		Config config = new Config() {{
+			KINDS = new Kind[]{
+				new Kind(false,0,2)	
+			};
+			RECURSIVE = false;
+			SIZE = 4;
+		}};
 		
-		List<Type> types = generate(config);
-		for(Type t : types) {
-			System.out.println(t);
-		}
-		
-		System.out.println("Generated " + types.size() + " types");
+		TextAutomataWriter writer = new TextAutomataWriter(System.out);
+		try {
+			generate(writer,config);
+			writer.flush();			
+		} catch(IOException ex) {
+			System.out.println("Exception: " + ex);
+		}		
 	}
 }

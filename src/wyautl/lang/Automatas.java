@@ -36,7 +36,7 @@ public final class Automatas {
 	 * </p>
 	 * 
 	 * @param root
-	 * @param states
+	 * @param kinds
 	 * @return
 	 */
 	public Automata extract(Automata automata, int root) {
@@ -287,6 +287,23 @@ public final class Automatas {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Append a new state onto the end of an automata. It is assumed that any
+	 * children the new state has already refere to nodes within the old
+	 * automata.
+	 * 
+	 * @param automata
+	 * @param state
+	 * @return
+	 */
+	public static Automata append(Automata automata, State state) {
+		State[] ostates = automata.states;
+		State[] nstates = new State[ostates.length+1];
+		System.arraycopy(ostates,0,nstates,0,ostates.length);
+		nstates[ostates.length] = state;
+		return new Automata(nstates);
 	}
 	
 	/**

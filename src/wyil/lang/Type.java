@@ -1367,7 +1367,7 @@ public abstract class Type {
 			return new State[]{new State(leafKind((Leaf) t), null)};
 		} else {			
 			// compound type
-			return ((Compound)t).states;
+			return ((Compound)t).kinds;
 		}
 	}
 	
