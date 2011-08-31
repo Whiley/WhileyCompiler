@@ -3,9 +3,10 @@ package wyts.util;
 import java.util.*;
 
 import wyil.lang.Type;
+import wyts.lang.DefaultInterpretation;
 
 public class TypeTester {
-	public static final SemanticModel.Config MODEL_CONFIG = new SemanticModel.Config() {
+	public static final DefaultInterpretation.Config MODEL_CONFIG = new DefaultInterpretation.Config() {
 		{
 			this.MAX_DEPTH = 2;
 			
@@ -63,7 +64,7 @@ public class TypeTester {
 	}
 	
 	public static void main(String[] args) {
-		SemanticModel model = SemanticModel.generate(MODEL_CONFIG);
+		DefaultInterpretation model = DefaultInterpretation.generate(MODEL_CONFIG);
 		System.out.println("Generated " + model.size() + " values.");		
 		List<Type> types = Generator.generate(TYPE_CONFIG);
 		System.out.println("Generated " + types.size() + " types.");
