@@ -29,7 +29,7 @@ public interface Interpretation {
 	 * @return
 	 */
 	public boolean isSubSet(int fromIndex, Automata from, int toIndex,
-			Automata to);
+			Automata to, Relation relation);
 
 	/**
 	 * <p>
@@ -46,5 +46,5 @@ public interface Interpretation {
 	 * @return
 	 */
 	public boolean isSuperSet(int fromIndex, Automata from,
-			int toIndex, Automata to);
+			int toIndex, Automata to, Relation relation);
 }

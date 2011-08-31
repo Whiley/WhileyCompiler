@@ -16,7 +16,7 @@ import java.util.BitSet;
  * <code>j<code> in the <code>to</code> domain.
  * </p>
  */
-public final class SubsetRelation {
+public final class Relation {
 
 	/** 
 	 * Indicates the size of the "source" domain.
@@ -45,7 +45,7 @@ public final class SubsetRelation {
 	 */
 	private final BitSet superSets;
 
-	public SubsetRelation(int fromDomain, int toDomain, boolean value) {
+	public Relation(int fromDomain, int toDomain, boolean value) {
 		this.fromDomain = fromDomain;
 		this.toDomain = toDomain;
 		this.subSets = new BitSet(fromDomain*toDomain);

@@ -277,16 +277,16 @@ public final class Automatas {
 	 * @return
 	 */
 	public static final boolean isSubsumed(Automata a1, Automata a2, Interpretation interpretation) {
-		SubsetRelation rel = subsetRelation(a1,a2,interpretation);		
+		Relation rel = subsetRelation(a1,a2,interpretation);		
 		return rel.isSubSet(0, 0);
 	}
 	
 	
-	private static final SubsetRelation subsetRelation(Automata from,
+	private static final Relation subsetRelation(Automata from,
 			Automata to, Interpretation interpretation) {		
 		int fromDomain = from.size();
 		int toDomain = to.size();
-		SubsetRelation relation = new SubsetRelation(fromDomain,toDomain,true);
+		Relation relation = new Relation(fromDomain,toDomain,true);
 		
 		boolean changed = true;
 		while(changed) {
