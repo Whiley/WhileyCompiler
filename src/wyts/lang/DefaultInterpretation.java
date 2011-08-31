@@ -11,9 +11,9 @@ import java.util.Arrays;
  * <p>
  * In the default interpretation, a value is a node with a kind, and zero or
  * more children. A value is accepted by a (sequential) state if it has the same
- * kind, and every child of the value is accepted by the corresponding child
- * state. For non-sequential states, we require that every child of the value is
- * accepted by some child state.
+ * kind, and every child value is accepted by the corresponding child state. For
+ * non-sequential states, we require that every child value is accepted by some
+ * child state.
  * </p>
  * <p>
  * <b>NOTE:</b> in the default interpretation, supplementary data is ignored.
