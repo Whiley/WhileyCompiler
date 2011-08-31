@@ -20,12 +20,12 @@ package wyil.lang;
 
 import java.util.*;
 
+import wyautl.lang.*;
+import wyautl.lang.Automata.State;
+import wyautl.util.PrintBuilder;
+import wyautl.util.TypeBuilder;
 import wyil.util.Pair;
 import wyil.util.TypeParser;
-import wyts.lang.*;
-import wyts.lang.Automata.State;
-import wyts.util.PrintBuilder;
-import wyts.util.TypeBuilder;
 
 /**
  * A structural type. See

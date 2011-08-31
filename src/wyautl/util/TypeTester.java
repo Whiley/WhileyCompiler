@@ -1,9 +1,9 @@
-package wyts.util;
+package wyautl.util;
 
 import java.util.*;
 
+import wyautl.lang.DefaultInterpretation;
 import wyil.lang.Type;
-import wyts.lang.DefaultInterpretation;
 
 public class TypeTester {
 	public static final DefaultInterpretation.Config MODEL_CONFIG = new DefaultInterpretation.Config() {

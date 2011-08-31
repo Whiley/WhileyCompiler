@@ -1,9 +1,9 @@
-package wyts.lang;
+package wyautl.lang;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 
-import wyts.lang.Automata.State;
+import wyautl.lang.Automata.State;
 
 /**
  * <p>

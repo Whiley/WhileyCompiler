@@ -28,14 +28,15 @@ package wyjc.attributes;
 import java.io.*;
 
 import java.util.*;
+
+import wyautl.lang.*;
+import wyautl.util.AbstractTypeBuilder;
+import wyautl.util.TypeBuilder;
 import wyil.lang.*;
-import static wyts.lang.Node.*;
+import static wyautl.lang.Node.*;
 import wyil.util.Pair;
 import wyjvm.io.*;
 import wyjvm.lang.*;
-import wyts.lang.*;
-import wyts.util.AbstractTypeBuilder;
-import wyts.util.TypeBuilder;
 
 /**
  * A WhileyCondition attribute corresponds to a whiley.ast.exprs.Condition

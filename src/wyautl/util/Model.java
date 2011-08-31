@@ -1,4 +1,4 @@
-package wyts.util;
+package wyautl.util;
 
 import java.util.*;
 

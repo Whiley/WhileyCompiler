@@ -1,6 +1,6 @@
-package wyts.lang;
+package wyautl.lang;
 
-import static wyts.lang.Automata.State;
+import static wyautl.lang.Automata.State;
 
 /**
  * <p>

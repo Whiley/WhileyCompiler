@@ -33,6 +33,7 @@ import java.util.zip.*;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
 import wyjc.attributes.WhileyVersion;
+import wyautl.io.BinaryAutomataWriter;
 import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;
@@ -43,7 +44,6 @@ import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
-import wyts.io.BinaryAutomataWriter;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

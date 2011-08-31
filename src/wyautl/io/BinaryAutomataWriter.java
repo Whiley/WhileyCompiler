@@ -1,9 +1,9 @@
-package wyts.io;
+package wyautl.io;
 
 import java.io.IOException;
 
+import wyautl.lang.Automata;
 import wyjvm.io.BinaryOutputStream;
-import wyts.lang.Automata;
 
 /**
  * <p>

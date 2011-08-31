@@ -1,8 +1,9 @@
-package wyts.util;
+package wyautl.util;
 
 import java.util.*;
+
+import wyautl.lang.Node;
 import wyil.lang.*;
-import wyts.lang.Node;
 
 /**
  * The generator class is used generate lists of types, primarily for testing

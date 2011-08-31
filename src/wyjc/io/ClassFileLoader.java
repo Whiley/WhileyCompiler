@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import wyautl.io.BinaryAutomataReader;
 import wyil.lang.Attribute;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
@@ -43,7 +44,6 @@ import wyjvm.io.BinaryInputStream;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
-import wyts.io.BinaryAutomataReader;
 
 /**
  * The ClassFileLoader is responsible for reading class files and converting

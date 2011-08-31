@@ -1,8 +1,8 @@
 package wyil.lang;
 
-import static wyts.lang.Node.*;
+import static wyautl.lang.Node.*;
+import wyautl.lang.Relation;
 import wyil.util.Pair;
-import wyts.lang.Relation;
 
 
 public class DefaultSubtypeOperator extends Relation {
