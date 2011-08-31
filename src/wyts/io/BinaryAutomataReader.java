@@ -10,10 +10,10 @@ import wyjvm.io.BinaryInputStream;
 import wyts.lang.InternalTypeBuilder;
 import wyts.lang.Node;
 
-public class BinaryTypeReader {
+public class BinaryAutomataReader {
 	private final BinaryInputStream reader;	
 	
-	public BinaryTypeReader(BinaryInputStream reader) {
+	public BinaryAutomataReader(BinaryInputStream reader) {
 		this.reader = reader;			
 	}
 	

@@ -43,7 +43,7 @@ import wyjc.runtime.BigRational;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
-import wyts.io.BinaryTypeWriter;
+import wyts.io.BinaryAutomataWriter;
 import static wyjvm.lang.JvmTypes.*;
 
 /**
@@ -2647,7 +2647,7 @@ public class ClassFileBuilder {
 	public static String typeMangle(Type.Fun ft) throws IOException {		
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
-		BinaryTypeWriter tm = new BinaryTypeWriter(binout);
+		BinaryAutomataWriter tm = new BinaryAutomataWriter(binout);
 		Type.build(tm,ft);		
 		binout.close(); // force flush		
 		//testMangle1(ft);

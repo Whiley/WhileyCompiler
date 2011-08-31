@@ -43,7 +43,7 @@ import wyjvm.io.BinaryInputStream;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
-import wyts.io.BinaryTypeReader;
+import wyts.io.BinaryAutomataReader;
 
 /**
  * The ClassFileLoader is responsible for reading class files and converting
@@ -150,7 +150,7 @@ public class ClassFileLoader {
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());
 			// then find the type
-			Type.Fun type = (Type.Fun) new BinaryTypeReader(
+			Type.Fun type = (Type.Fun) new BinaryAutomataReader(
 					new BinaryInputStream(new JavaIdentifierInputStream(mangle)))
 					.read();
 			// now build the parameter names
