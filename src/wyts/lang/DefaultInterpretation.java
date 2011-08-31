@@ -24,12 +24,13 @@ import static wyts.lang.Automata.State;
 public class DefaultInterpretation implements Interpretation {
 	
 	public boolean isSubSet(int fromIndex, Automata from, int toIndex,
-			Automata to) {
+			Automata to, Relation relation) {
 		State s1 = from.states[fromIndex];
 		State s2 = to.states[toIndex];
 		
 		if(s1.kind == s2.kind) {
 			int kind = s1.kind;
+			
 			if((kind & Automata.NONSEQUENTIAL) == 0) {
 				// sequential case
 				int[] s1children = s1.children;
@@ -41,10 +42,10 @@ public class DefaultInterpretation implements Interpretation {
 				
 				int length = s1children.length;
 				
-				for(int k=0;k!=length;++k) {
+				for (int k = 0; k != length; ++k) {
 					int s1child = s1children[k];
 					int s2child = s2children[k];
-					if(!equivs.get(s1child,s2child)) {
+					if (!relation.isSubSet(s1child, s2child)) {
 						return false;
 					}
 				}
@@ -57,29 +58,13 @@ public class DefaultInterpretation implements Interpretation {
 				int s1length = s1children.length;
 				int s2length = s2children.length;
 				
-				// First, check every node in s1 has equivalent in s2
-				for(int k=0;k!=s1length;++k) {
-					int s1child = s1children[k];
-					boolean matched = false;
-					for(int l=0;l!=s2length;++l) {
-						int s2child = s2children[k];
-						if(equivs.get(s1child,s2child)) {
-							matched = true;
-							break;
-						}
-					}
-					if(!matched) {
-						return false;
-					}
-				}
-
-				// Second, check every node in s2 has equivalent in s1
+				// Check every node in s2 is subsumed by a node in s1
 				for(int k=0;k!=s2length;++k) {
 					int s2child = s2children[k];
 					boolean matched = false;
-					for(int l=0;l!=s1length;++l) {
-						int s1child = s1children[k];
-						if(equivs.get(s1child,s2child)) {
+					for (int l = 0; l != s1length; ++l) {
+						int s1child = s1children[l];
+						if (relation.isSubSet(s1child, s2child)) {
 							matched = true;
 							break;
 						}
@@ -87,17 +72,11 @@ public class DefaultInterpretation implements Interpretation {
 					if(!matched) {
 						return false;
 					}
-				}
-				
+				}				
 				return true;
 			}
 		}
 		
 		return false;
-	}
-	
-	public boolean isSuperSet(int fromIndex, Automata from, int toIndex,
-			Automata to) {
-		return false;
-	}
+	}	
 }
