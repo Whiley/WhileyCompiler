@@ -1,4 +1,4 @@
-package wyts.util;
+package wyil.util;
 
 import java.util.HashMap;
 
@@ -13,11 +13,11 @@ import static wyil.lang.Type.*;
  * @author djp
  * 
  */
-public class Parser {
+public class TypeParser {
 	private int index;
 	private String str;
 	
-	public Parser(String str) { 
+	public TypeParser(String str) { 
 		this.str = str;
 	}
 	
