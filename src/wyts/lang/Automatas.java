@@ -261,57 +261,32 @@ public final class Automatas {
 
 	/**
 	 * <p>
-	 * Determine whether a relationship between two automata exists.   
-	 * </p>
-	 * <p>
-	 * Determine whether automata <code>a2</code> is subsumed by automata
-	 * <code>a1</code>. One automata <code>a1</code> subsumes another automata
-	 * <code>a2</code> if <code>a1</code> accepts all the values accepted by
-	 * <code>a2</code> (and possibly more).
+	 * Determine whether a relationship between two automata exists. The most
+	 * common relationship of interest is that of <i>subsumption</i>. One
+	 * automata <code>a1</code> subsumes another automata <code>a2</code> if
+	 * <code>a1</code> accepts all the values accepted by <code>a2</code> (and
+	 * possibly more).
 	 * </p>
 	 * 
-	 * @param a1
-	 *            --- automata to check as subsumer
-	 * @param to
-	 *            --- automata to check as subsumee
-	 * @param interpretation
-	 *            --- provides an interpretation of the meaning of states in the
-	 *            automata.
+	 * @param relation
+	 *            --- the relation to be computed. automata.
 	 * @return
 	 */
-	public static final boolean isRelated(Automata a1, Automata a2, Interpretation interpretation) {
-		Relation rel = subsetRelation(a1,a2,interpretation);		
-		return rel.isSubSet(0, 0);
-	}
-	
-	
-	private static final Relation subsetRelation(Automata from,
-			Automata to, Interpretation interpretation) {		
+	public static final void computeRelation(Relation relation) {
+		Automata from = relation.from();
+		Automata to = relation.to();
 		int fromDomain = from.size();
 		int toDomain = to.size();
-		Relation relation = new Relation(fromDomain,toDomain,true);
-		
+
 		boolean changed = true;
-		while(changed) {
-			changed=false;
-			for(int i=0;i!=fromDomain;i++) {
-				for(int j=0;j!=toDomain;j++) {					
-					boolean isubj = interpretation.isSubsumed(i,from,j,to,relation);					
-					boolean isupj = interpretation.isSubsumed(j,to,i,from,?);		
-					
-					if(relation.isSubSet(i,j) && !isubj) {
-						relation.setSubSet(i,j,false);
-						changed = true;
-					}
-					if(relation.isSuperSet(i,j) && !isupj) {
-						relation.setSuperSet(i,j,false);
-						changed = true;
-					}						
-				}	
+		while (changed) {
+			changed = false;
+			for (int i = 0; i != fromDomain; i++) {
+				for (int j = 0; j != toDomain; j++) {
+					changed |= relation.update(i, j);
+				}
 			}
 		}
-		
-		return relation;
 	}
 	
 	/**

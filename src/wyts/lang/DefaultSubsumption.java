@@ -4,8 +4,9 @@ import static wyts.lang.Automata.State;
 
 /**
  * <p>
- * The default interpretation provides a useful starting point for many
- * interpretations. It follows a uniform <i>covariant</i> protocol, as follows:
+ * This default interpretation of <i>subsumption</i> provides a useful starting
+ * point for many interpretations. It follows a uniform <i>covariant</i>
+ * protocol, as follows:
  * </p>
  * <ul>
  * <li>A state <code>s1</code> subsumes another state <code>s2</code> if they
@@ -21,10 +22,30 @@ import static wyts.lang.Automata.State;
  * @author djp
  * 
  */
-public class DefaultInterpretation implements Interpretation {
+public class DefaultSubsumption implements Relation {
+	private final BinaryMatrix subsumes;
+	private final Automata from;
+	private final Automata to;
 	
-	public boolean isSubsumed(int fromIndex, Automata from, int toIndex,
-			Automata to, Relation relation) {
+	public DefaultSubsumption(Automata from, Automata to) {
+		this.from = from;
+		this.to = to;
+		this.subsumes = new BinaryMatrix(from.size(),to.size(),true);
+	}
+	
+	public final Automata from() {
+		return from;
+	}
+	
+	public final Automata to() {
+		return from;
+	}
+	
+	public boolean isRelated(int from, int to) {
+		return subsumes.get(from,to);
+	}
+	
+	public boolean update(int fromIndex, int toIndex) {
 		State s1 = from.states[fromIndex];
 		State s2 = to.states[toIndex];
 		
@@ -45,7 +66,7 @@ public class DefaultInterpretation implements Interpretation {
 				for (int k = 0; k != length; ++k) {
 					int s1child = s1children[k];
 					int s2child = s2children[k];
-					if (!relation.isSubSet(s1child, s2child)) {
+					if (!subsumes.get(s1child, s2child)) {
 						return false;
 					}
 				}
@@ -64,7 +85,7 @@ public class DefaultInterpretation implements Interpretation {
 					boolean matched = false;
 					for (int l = 0; l != s1length; ++l) {
 						int s1child = s1children[l];
-						if (relation.isSubSet(s1child, s2child)) {
+						if (subsumes.get(s1child, s2child)) {
 							matched = true;
 							break;
 						}

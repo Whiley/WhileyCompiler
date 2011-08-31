@@ -2,10 +2,10 @@ package wyil.lang;
 
 import static wyts.lang.Node.*;
 import wyil.util.Pair;
-import wyts.lang.Interpretation;
+import wyts.lang.Relation;
 
 
-public class DefaultSubtypeOperator extends Interpretation {
+public class DefaultSubtypeOperator extends Relation {
 	public DefaultSubtypeOperator(State[] fromGraph, State[] toGraph) {
 		super(fromGraph,toGraph);
 	}
