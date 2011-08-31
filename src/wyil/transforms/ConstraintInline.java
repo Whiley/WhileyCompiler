@@ -9,7 +9,6 @@ import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import static wyil.util.SyntaxError.*;
 import wyjc.runtime.BigRational;
-import wyts.lang.Automata;
 
 /**
  * The purpose of this transform is two-fold:
@@ -120,9 +119,9 @@ public class ConstraintInline implements Transform {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
-			List<Automata> params = method.type().params();
+			List<Type> params = method.type().params();
 			for (int i = 0; i != params.size(); ++i) {
-				Automata t = params.get(i);
+				Type t = params.get(i);
 				body.append(Code.Load(t, i));
 				body.append(Code.Store(t, i + freeSlot));
 			}
@@ -171,7 +170,7 @@ public class ConstraintInline implements Transform {
 		Block precondition = findPrecondition(code.name,code.type);
 		if(precondition != null) {
 			Block blk = new Block(0);
-			List<Automata> paramTypes = code.type.params();
+			List<Type> paramTypes = code.type.params();
 			
 			// TODO: mark as check block
 			
@@ -214,21 +213,21 @@ public class ConstraintInline implements Transform {
 	public Block transform(Code.Return code, int freeSlot, SyntacticElement elem, 
 			Module.Case methodCase, Module.Method method) {
 		
-		if(code.type != Automata.T_VOID) {
+		if(code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
 			if(postcondition != null) {
 				Block blk = new Block(0);				
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
-				Automata.Fun mtype = method.type();	
+				Type.Fun mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Automata.Meth
-						&& ((Automata.Meth) mtype).receiver() != null) {
+				if (mtype instanceof Type.Meth
+						&& ((Type.Meth) mtype).receiver() != null) {
 					binding.put(pIndex++, Code.THIS_SLOT);
 				}
 				int shadowIndex = methodCase.body().numSlots();
-				for(Automata p : mtype.params()) {
+				for(Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
 				blk.importExternal(postcondition,binding);
@@ -251,22 +250,22 @@ public class ConstraintInline implements Transform {
 	public Block transform(Code.ListLoad code, int freeSlot, SyntacticElement elem) {		
 		Block blk = new Block(0);
 		// TODO: mark as check block
-		blk.append(Code.Store(Automata.T_INT, freeSlot),attributes(elem));
+		blk.append(Code.Store(Type.T_INT, freeSlot),attributes(elem));
 		blk.append(Code.Store(code.type, freeSlot+1),attributes(elem));
 		String falseLabel = Block.freshLabel();
 		String exitLabel = Block.freshLabel();
-		blk.append(Code.Load(Automata.T_INT, freeSlot),attributes(elem));	
+		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
 		blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
-		blk.append(Code.IfGoto(Automata.T_INT, Code.COp.LT, falseLabel),attributes(elem));
-		blk.append(Code.Load(Automata.T_INT, freeSlot),attributes(elem));	
+		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, falseLabel),attributes(elem));
+		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));	
 		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
 		blk.append(Code.ListLength(code.type),attributes(elem));
-		blk.append(Code.IfGoto(Automata.T_INT, Code.COp.LT, exitLabel),attributes(elem));
+		blk.append(Code.IfGoto(Type.T_INT, Code.COp.LT, exitLabel),attributes(elem));
 		blk.append(Code.Label(falseLabel),attributes(elem));
 		blk.append(Code.Fail("index out of bounds"),attributes(elem));
 		blk.append(Code.Label(exitLabel),attributes(elem));
 		blk.append(Code.Load(code.type, freeSlot+1),attributes(elem));
-		blk.append(Code.Load(Automata.T_INT, freeSlot),attributes(elem));
+		blk.append(Code.Load(Type.T_INT, freeSlot),attributes(elem));
 		return blk;		
 	}
 
@@ -310,7 +309,7 @@ public class ConstraintInline implements Transform {
 			blk.append(Code.Store(code.type, freeSlot),attributes(elem));
 			String label = Block.freshLabel();
 			blk.append(Code.Load(code.type, freeSlot),attributes(elem));
-			if(code.type instanceof Automata.Int) { 
+			if(code.type instanceof Type.Int) { 
 				blk.append(Code.Const(Value.V_INTEGER(BigInteger.ZERO)),attributes(elem));
 			} else {
 				blk.append(Code.Const(Value.V_RATIONAL(BigRational.ZERO)),attributes(elem));
@@ -326,7 +325,7 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Automata.Fun fun) throws ResolveError {
+	protected Block findPrecondition(NameID name, Type.Fun fun) throws ResolveError {
 		Module m = loader.loadModule(name.module());				
 		Module.Method method = m.method(name.name(),fun);
 		

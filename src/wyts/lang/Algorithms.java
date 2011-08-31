@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import wyil.lang.NameID;
+import wyil.lang.Type;
 import wyil.util.Pair;
 import wyts.lang.Graph.Node;
 
@@ -47,7 +48,7 @@ public class Algorithms {
 	 * @param t
 	 * @return
 	 */
-	public static Automata simplify(Automata t) {
+	public static Type simplify(Type t) {
 		return t;
 	}
 
@@ -59,7 +60,7 @@ public class Algorithms {
 	 * @param t
 	 * @return
 	 */
-	public static Automata compact(Automata t) {
+	public static Type compact(Type t) {
 		return t;
 	}
 	
@@ -98,14 +99,14 @@ public class Algorithms {
 	 * @param type
 	 * @return
 	 */
-	public static Automata minimise(Automata type) {
+	public static Type minimise(Type type) {
 		// Leaf types never need minmising!
-		if (type instanceof Automata.Leaf) {
+		if (type instanceof Type.Leaf) {
 			return type;
 		}				
 		
 		// Only compound types need minimising.
-		Node[] nodes = ((Automata.Compound) type).nodes;		
+		Node[] nodes = ((Type.Compound) type).nodes;		
 		
 		// First, determine the equivalence classes using the default subtype
 		// operator.
@@ -122,7 +123,7 @@ public class Algorithms {
 		//System.out.println(relation.toString());
 		rebuild(0, nodes, allocated, newnodes, relation);				
 		
-		return Automata.construct(newnodes.toArray(new Node[newnodes.size()]));
+		return Type.construct(newnodes.toArray(new Node[newnodes.size()]));
 	}
 	
 	/**

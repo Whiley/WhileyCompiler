@@ -33,7 +33,6 @@ import wyil.lang.*;
 import wyil.lang.Module.*;
 import wyil.ModuleLoader;
 import wyil.Transform;
-import wyts.lang.Automata;
 
 public class WyilFileWriter implements Transform {
 	private PrintWriter out;
@@ -71,7 +70,7 @@ public class WyilFileWriter implements Transform {
 			out.println();
 		}
 		for(TypeDef td : module.types()) {
-			Automata t = td.type();			
+			Type t = td.type();			
 			String t_str;			
 			t_str = t.toString();
 			out.println("define " + td.name() + " as " + t_str);
@@ -106,14 +105,14 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	public void write(Case mcase, Method method, PrintWriter out) {
-		Automata.Fun ft = method.type(); 
+		Type.Fun ft = method.type(); 
 		out.print(ft.ret() + " ");
-		List<Automata> pts = ft.params();
+		List<Type> pts = ft.params();
 		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
 		
 		int li = 0;
-		if(ft instanceof Automata.Meth) {			
-			Automata.Meth mt = (Automata.Meth) ft;
+		if(ft instanceof Type.Meth) {			
+			Type.Meth mt = (Type.Meth) ft;
 			if(mt.receiver() != null) {
 				out.print(mt.receiver());
 				li++;

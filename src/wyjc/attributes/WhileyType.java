@@ -47,13 +47,13 @@ import wyts.util.TypeBuilder;
  * 
  */
 public class WhileyType implements BytecodeAttribute {	
-	private Automata type;
+	private Type type;
 	
-	public WhileyType(Automata type) {		
+	public WhileyType(Type type) {		
 		this.type = type;
 	}
 	
-	public Automata type() {
+	public Type type() {
 		return type;
 	}
 	
@@ -66,14 +66,14 @@ public class WhileyType implements BytecodeAttribute {
 		addPoolItems(type, constantPool);
 	}
 		
-	public static void addPoolItems(Automata type,
+	public static void addPoolItems(Type type,
 			Set<Constant.Info> constantPool) {
-		Automata.build(new ConstantBuilder(constantPool),type);
+		Type.build(new ConstantBuilder(constantPool),type);
 	}
 		
-	public static void write(Automata type, BinaryOutputStream writer,
+	public static void write(Type type, BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool) throws IOException {
-		Automata.build(new JvmBuilder(writer,constantPool),type);
+		Type.build(new JvmBuilder(writer,constantPool),type);
 	}
 			
 	public void write(BinaryOutputStream writer,
@@ -101,11 +101,11 @@ public class WhileyType implements BytecodeAttribute {
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			input.read_u2(); // attribute name index code
 			input.read_u4(); // attribute length
-			Automata t = readType(input, constantPool);
+			Type t = readType(input, constantPool);
 			return new WhileyType(t);
 		}
 
-		public static Automata readType(BinaryInputStream input,
+		public static Type readType(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			InternalTypeBuilder builder = new InternalTypeBuilder();
 			int numNodes = input.read_u2();
@@ -114,31 +114,31 @@ public class WhileyType implements BytecodeAttribute {
 				int tag = input.read_u1();			
 				switch (tag) {
 				case K_ANY:
-					builder.buildPrimitive(i, Automata.T_ANY);
+					builder.buildPrimitive(i, Type.T_ANY);
 					break;
 				case K_VOID:
-					builder.buildPrimitive(i, Automata.T_VOID);
+					builder.buildPrimitive(i, Type.T_VOID);
 					break;
 				case K_NULL:
-					builder.buildPrimitive(i, Automata.T_NULL);
+					builder.buildPrimitive(i, Type.T_NULL);
 					break;
 				case K_BOOL:
-					builder.buildPrimitive(i, Automata.T_BOOL);
+					builder.buildPrimitive(i, Type.T_BOOL);
 					break;
 				case K_BYTE:
-					builder.buildPrimitive(i, Automata.T_BYTE);
+					builder.buildPrimitive(i, Type.T_BYTE);
 					break;
 				case K_CHAR:
-					builder.buildPrimitive(i, Automata.T_CHAR);
+					builder.buildPrimitive(i, Type.T_CHAR);
 					break;
 				case K_INT:
-					builder.buildPrimitive(i, Automata.T_INT);
+					builder.buildPrimitive(i, Type.T_INT);
 					break;
 				case K_RATIONAL:
-					builder.buildPrimitive(i, Automata.T_REAL);
+					builder.buildPrimitive(i, Type.T_REAL);
 					break;
 				case K_STRING:
-					builder.buildPrimitive(i, Automata.T_STRING);
+					builder.buildPrimitive(i, Type.T_STRING);
 					break;
 				case K_LIST:
 					builder.buildList(i, input.read_u2());
@@ -266,25 +266,25 @@ public class WhileyType implements BytecodeAttribute {
 			}
 		}
 
-		public void buildPrimitive(int index, Automata.Leaf t) {
+		public void buildPrimitive(int index, Type.Leaf t) {
 			try {
-				if(t == Automata.T_ANY) {
+				if(t == Type.T_ANY) {
 					writer.write_u1(K_ANY );
-				} else if(t == Automata.T_VOID) {
+				} else if(t == Type.T_VOID) {
 					writer.write_u1(K_VOID);
-				} else if(t == Automata.T_NULL) {
+				} else if(t == Type.T_NULL) {
 					writer.write_u1(K_NULL );
-				} else if(t == Automata.T_BOOL) {
+				} else if(t == Type.T_BOOL) {
 					writer.write_u1(K_BOOL );			
-				} else if(t == Automata.T_BYTE) {			
+				} else if(t == Type.T_BYTE) {			
 					writer.write_u1(K_BYTE );		
-				} else if(t == Automata.T_CHAR) {			
+				} else if(t == Type.T_CHAR) {			
 					writer.write_u1(K_CHAR );		
-				} else if(t == Automata.T_INT) {			
+				} else if(t == Type.T_INT) {			
 					writer.write_u1(K_INT );		
-				} else if(t == Automata.T_REAL) {
+				} else if(t == Type.T_REAL) {
 					writer.write_u1(K_RATIONAL );			
-				} else if(t == Automata.T_STRING) {
+				} else if(t == Type.T_STRING) {
 					writer.write_u1(K_STRING );			
 				} else {
 					throw new RuntimeException("unknown type encountered: " + t);		

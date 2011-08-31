@@ -4,11 +4,11 @@ import java.io.IOException;
 
 import wyil.lang.ModuleID;
 import wyil.lang.NameID;
+import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjvm.io.BinaryInputStream;
 import wyts.lang.InternalTypeBuilder;
 import wyts.lang.Node;
-import wyts.lang.Automata;
 
 public class BinaryTypeReader {
 	private final BinaryInputStream reader;	
@@ -17,7 +17,7 @@ public class BinaryTypeReader {
 		this.reader = reader;			
 	}
 	
-	public Automata read() throws IOException {
+	public Type read() throws IOException {
 		InternalTypeBuilder builder = new InternalTypeBuilder();
 		int numNodes = readLength();			
 		builder.initialise(numNodes);
@@ -25,31 +25,31 @@ public class BinaryTypeReader {
 			int kind = readKind();				
 			switch(kind) {
 			case Node.K_ANY:											
-				builder.buildPrimitive(i, Automata.T_ANY);
+				builder.buildPrimitive(i, Type.T_ANY);
 				break;
 			case Node.K_VOID:
-				builder.buildPrimitive(i, Automata.T_VOID);
+				builder.buildPrimitive(i, Type.T_VOID);
 				break;
 			case Node.K_NULL:
-				builder.buildPrimitive(i, Automata.T_NULL);
+				builder.buildPrimitive(i, Type.T_NULL);
 				break;
 			case Node.K_BOOL:
-				builder.buildPrimitive(i, Automata.T_BOOL);
+				builder.buildPrimitive(i, Type.T_BOOL);
 				break;
 			case Node.K_BYTE:
-				builder.buildPrimitive(i, Automata.T_BYTE);
+				builder.buildPrimitive(i, Type.T_BYTE);
 				break;
 			case Node.K_CHAR:
-				builder.buildPrimitive(i, Automata.T_CHAR);
+				builder.buildPrimitive(i, Type.T_CHAR);
 				break;
 			case Node.K_INT:
-				builder.buildPrimitive(i, Automata.T_INT);
+				builder.buildPrimitive(i, Type.T_INT);
 				break;
 			case Node.K_RATIONAL:
-				builder.buildPrimitive(i, Automata.T_REAL);
+				builder.buildPrimitive(i, Type.T_REAL);
 				break;
 			case Node.K_STRING:
-				builder.buildPrimitive(i, Automata.T_STRING);
+				builder.buildPrimitive(i, Type.T_STRING);
 				break;
 			case Node.K_EXISTENTIAL:
 				String module = readIdentifier();

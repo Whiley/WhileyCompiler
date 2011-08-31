@@ -35,6 +35,7 @@ import java.util.List;
 import wyil.lang.Attribute;
 import wyil.lang.Module;
 import wyil.lang.ModuleID;
+import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
@@ -43,7 +44,6 @@ import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;
 import wyts.io.BinaryTypeReader;
-import wyts.lang.Automata;
 
 /**
  * The ClassFileLoader is responsible for reading class files and converting
@@ -88,12 +88,12 @@ public class ClassFileLoader {
 			return null;
 		}
 		
-		HashMap<Pair<Automata.Fun,String>,Module.Method> methods = new HashMap();
+		HashMap<Pair<Type.Fun,String>,Module.Method> methods = new HashMap();
 		
 		for (ClassFile.Method cm : cf.methods()) {
 			if (!cm.isSynthetic()) {
 				Module.Method mi = createMethodInfo(mid, cm);
-				Pair<Automata.Fun, String> key = new Pair(mi.type(), mi.name());
+				Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
 				Module.Method method = methods.get(key);
 				if (method != null) {
 					// coalesce cases
@@ -113,7 +113,7 @@ public class ClassFileLoader {
 			
 			if(ba instanceof WhileyDefine) {				
 				WhileyDefine wd = (WhileyDefine) ba;								
-				Automata type = wd.type();							
+				Type type = wd.type();							
 				if(type == null) {
 					// constant definition
 					List<Attribute> attrs = new ArrayList<Attribute>();		
@@ -150,7 +150,7 @@ public class ClassFileLoader {
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());
 			// then find the type
-			Automata.Fun type = (Automata.Fun) new BinaryTypeReader(
+			Type.Fun type = (Type.Fun) new BinaryTypeReader(
 					new BinaryInputStream(new JavaIdentifierInputStream(mangle)))
 					.read();
 			// now build the parameter names

@@ -28,11 +28,10 @@ package wyil.lang;
 import java.util.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
-import wyts.lang.Automata;
 
 public class Module extends ModuleLoader.Skeleton {	
 	private final String filename;
-	private HashMap<Pair<String,Automata.Fun>,Method> methods;
+	private HashMap<Pair<String,Type.Fun>,Method> methods;
 	private HashMap<String,TypeDef> types;
 	private HashMap<String,ConstDef> constants;
 	
@@ -45,13 +44,13 @@ public class Module extends ModuleLoader.Skeleton {
 		this.filename = filename;
 		
 		// first, init the caches
-		this.methods = new HashMap<Pair<String,Automata.Fun>, Method>();
+		this.methods = new HashMap<Pair<String,Type.Fun>, Method>();
 		this.types = new HashMap<String, TypeDef>();
 		this.constants = new HashMap<String, ConstDef>();
 		
 		// second, build the caches
 		for(Method m : methods) {
-			Pair<String,Automata.Fun> p = new Pair<String,Automata.Fun>(m.name(),m.type());
+			Pair<String,Type.Fun> p = new Pair<String,Type.Fun>(m.name(),m.type());
 			Method tmp = this.methods.get(p);
 			if (tmp != null) {
 				throw new IllegalArgumentException(
@@ -101,7 +100,7 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public List<Method> method(String name) {
 		ArrayList<Method> r = new ArrayList<Method>();
-		for(Pair<String,Automata.Fun> p : methods.keySet()) {
+		for(Pair<String,Type.Fun> p : methods.keySet()) {
 			if(p.first().equals(name)) {
 				r.add(methods.get(p));
 			}
@@ -109,8 +108,8 @@ public class Module extends ModuleLoader.Skeleton {
 		return r;
 	}
 	
-	public Method method(String name, Automata.Fun ft) {
-		return methods.get(new Pair<String, Automata.Fun>(name, ft));
+	public Method method(String name, Type.Fun ft) {
+		return methods.get(new Pair<String, Type.Fun>(name, ft));
 	}
 	
 	public Collection<Module.Method> methods() {
@@ -118,7 +117,7 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public void add(Module.Method m) {
-		Pair<String,Automata.Fun> p = new Pair<String,Automata.Fun>(m.name(),m.type());
+		Pair<String,Type.Fun> p = new Pair<String,Type.Fun>(m.name(),m.type());
 		this.methods.put(p,m);
 	}
 	
@@ -137,17 +136,17 @@ public class Module extends ModuleLoader.Skeleton {
 	
 	public static class TypeDef extends SyntacticElement.Impl {
 		private String name;
-		private Automata type;		
+		private Type type;		
 		private Block constraint;
 
-		public TypeDef(String name, Automata type, Block constraint, Attribute... attributes) {
+		public TypeDef(String name, Type type, Block constraint, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.type = type;
 			this.constraint = constraint;
 		}
 
-		public TypeDef(String name, Automata type, Block constraint, Collection<Attribute> attributes) {
+		public TypeDef(String name, Type type, Block constraint, Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.type = type;						
@@ -158,7 +157,7 @@ public class Module extends ModuleLoader.Skeleton {
 			return name;
 		}
 
-		public Automata type() {
+		public Type type() {
 			return type;
 		}
 		
@@ -194,10 +193,10 @@ public class Module extends ModuleLoader.Skeleton {
 		
 	public static class Method extends SyntacticElement.Impl {
 		private String name;		
-		private Automata.Fun type;
+		private Type.Fun type;
 		private List<Case> cases;		
 				
-		public Method(String name, Automata.Fun type,
+		public Method(String name, Type.Fun type,
 				Collection<Case> cases, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
@@ -206,7 +205,7 @@ public class Module extends ModuleLoader.Skeleton {
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
-		public Method(String name, Automata.Fun type,
+		public Method(String name, Type.Fun type,
 				Collection<Case> cases, Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
@@ -219,7 +218,7 @@ public class Module extends ModuleLoader.Skeleton {
 			return name;
 		}
 		
-		public Automata.Fun type() {
+		public Type.Fun type() {
 			return type;
 		}
 
@@ -228,7 +227,7 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 
 		public boolean isFunction() {
-			return !(type instanceof Automata.Meth);
+			return !(type instanceof Type.Meth);
 		}
 		
 		public boolean isPublic() {

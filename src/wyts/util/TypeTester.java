@@ -2,7 +2,7 @@ package wyts.util;
 
 import java.util.*;
 
-import wyts.lang.Automata;
+import wyil.lang.Type;
 
 public class TypeTester {
 	public static final SemanticModel.Config MODEL_CONFIG = new SemanticModel.Config() {
@@ -49,11 +49,11 @@ public class TypeTester {
 		}
 	};
 	
-	public static List<Automata> minimise(List<Automata> types) {
-		HashSet<Automata> visited = new HashSet<Automata>();
-		ArrayList<Automata> ntypes = new ArrayList<Automata>();
-		for(Automata t : types) {
-			t = Automata.minimise(t);
+	public static List<Type> minimise(List<Type> types) {
+		HashSet<Type> visited = new HashSet<Type>();
+		ArrayList<Type> ntypes = new ArrayList<Type>();
+		for(Type t : types) {
+			t = Type.minimise(t);
 			if(!visited.contains(t)) {
 				ntypes.add(t);
 				visited.add(t);
@@ -65,7 +65,7 @@ public class TypeTester {
 	public static void main(String[] args) {
 		SemanticModel model = SemanticModel.generate(MODEL_CONFIG);
 		System.out.println("Generated " + model.size() + " values.");		
-		List<Automata> types = Generator.generate(TYPE_CONFIG);
+		List<Type> types = Generator.generate(TYPE_CONFIG);
 		System.out.println("Generated " + types.size() + " types.");
 		types = minimise(types);
 		System.out.println("Reduced to " + types.size() + " types.");
@@ -77,7 +77,7 @@ public class TypeTester {
 			if((i%increment) == 0) {
 				System.out.print(" ");
 			}			
-			Automata t = types.get(i);
+			Type t = types.get(i);
 			//System.out.println("TYPE: " + t);
 			//PrintBuilder tp = new PrintBuilder(System.out);
 			//Type.build(tp, t);
@@ -90,9 +90,9 @@ public class TypeTester {
 				System.out.print(".");
 			}
 			for(int j=0;j!=types.size();++j) {			
-				Automata t1 = types.get(i);
-				Automata t2 = types.get(j);
-				boolean isSubtype = Automata.isSubtype(t1,t2);
+				Type t1 = types.get(i);
+				Type t2 = types.get(j);
+				boolean isSubtype = Type.isSubtype(t1,t2);
 				boolean isSubset = model.isSubset(t1,t2);
 				
 				if(isSubtype && !isSubset) {

@@ -1,8 +1,8 @@
 package wyts.util;
 
 import wyil.lang.NameID;
+import wyil.lang.Type;
 import wyil.util.Pair;
-import wyts.lang.Automata;
 
 
 /**
@@ -17,7 +17,7 @@ public class AbstractTypeBuilder implements TypeBuilder {
 	public void initialise(int numNodes) {
 	}
 
-	public void buildPrimitive(int index, Automata.Leaf type) {
+	public void buildPrimitive(int index, Type.Leaf type) {
 	}
 
 	public void buildExistential(int index, NameID name) {

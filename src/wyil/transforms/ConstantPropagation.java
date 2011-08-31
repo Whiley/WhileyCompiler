@@ -39,7 +39,6 @@ import wyil.lang.Code.SubList;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
 import wyjc.runtime.BigRational;
-import wyts.lang.Automata;
 
 public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
@@ -317,8 +316,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Value val = environment.pop();
 		
 		// FIXME: I think there's a bug here
-		if (val instanceof Value.Rational && code.from == Automata.T_INT
-				&& code.to == Automata.T_REAL) {			
+		if (val instanceof Value.Rational && code.from == Type.T_INT
+				&& code.to == Type.T_REAL) {			
 			entry = new Block.Entry(Code.Const(val),entry.attributes());
 			rewrites.put(index, new Rewrite(entry,1));					
 		} else {			
@@ -352,9 +351,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			Value.Rational rat = (Value.Rational) v;
 			environment.push(Value.V_INTEGER(rat.value.numerator()));
 			environment.push(Value.V_INTEGER(rat.value.denominator()));
-		} else if(code.type instanceof Automata.Tuple) {			
-			Automata.Tuple tup = (Automata.Tuple) code.type;
-			for(Automata t : tup.elements()) {
+		} else if(code.type instanceof Type.Tuple) {			
+			Type.Tuple tup = (Type.Tuple) code.type;
+			for(Type t : tup.elements()) {
 				environment.push(null);
 			}
 		} else {
@@ -407,7 +406,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment.pop(); // target
 		
-		if(code.type.ret() != Automata.T_VOID && code.retval) {
+		if(code.type.ret() != Type.T_VOID && code.retval) {
 			environment.push(null);
 		}
 	}
@@ -422,7 +421,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.pop(); // receiver
 		environment.pop(); // target
 		
-		if(code.type.ret() != Automata.T_VOID && code.retval) {
+		if(code.type.ret() != Type.T_VOID && code.retval) {
 			environment.push(null);
 		}
 	}
@@ -438,14 +437,14 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			environment.pop();
 		}
 		
-		if(code.type instanceof Automata.Meth) {
-			Automata.Meth mt = (Automata.Meth) code.type;
+		if(code.type instanceof Type.Meth) {
+			Type.Meth mt = (Type.Meth) code.type;
 			if(mt.receiver() != null) {
 				environment.pop();
 			}
 		}
 		
-		if(code.type.ret() != Automata.T_VOID && code.retval) {
+		if(code.type.ret() != Type.T_VOID && code.retval) {
 			environment.push(null);
 		}
 	}
@@ -700,7 +699,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	
 	public void infer(Code.Return code, Block.Entry entry,
 			Env environment) {
-		if(code.type != Automata.T_VOID) {
+		if(code.type != Type.T_VOID) {
 			environment.pop();
 		}
 	}
@@ -714,7 +713,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment.pop(); // receiver
 		
-		if (code.type.ret() != Automata.T_VOID && code.synchronous && code.retval) {
+		if (code.type.ret() != Type.T_VOID && code.synchronous && code.retval) {
 			environment.push(null);
 		}
 	}

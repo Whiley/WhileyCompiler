@@ -3,10 +3,10 @@ package wyts.io;
 import java.io.IOException;
 
 import wyil.lang.NameID;
+import wyil.lang.Type;
 import wyil.util.Pair;
 import wyjvm.io.BinaryOutputStream;
 import wyts.lang.Node;
-import wyts.lang.Automata;
 import wyts.util.TypeBuilder;
 
 /**
@@ -30,25 +30,25 @@ public class BinaryTypeWriter implements TypeBuilder {
 		}
 	}
 
-	public void buildPrimitive(int index, Automata.Leaf t) {
+	public void buildPrimitive(int index, Type.Leaf t) {
 		try {
-			if(t == Automata.T_ANY) {
+			if(t == Type.T_ANY) {
 				writeKind(Node.K_ANY );
-			} else if(t == Automata.T_VOID) {
+			} else if(t == Type.T_VOID) {
 				writeKind(Node.K_VOID);
-			} else if(t == Automata.T_NULL) {
+			} else if(t == Type.T_NULL) {
 				writeKind(Node.K_NULL);
-			} else if(t == Automata.T_BOOL) {
+			} else if(t == Type.T_BOOL) {
 				writeKind(Node.K_BOOL);			
-			} else if(t == Automata.T_BYTE) {			
+			} else if(t == Type.T_BYTE) {			
 				writeKind(Node.K_BYTE);		
-			} else if(t == Automata.T_CHAR) {			
+			} else if(t == Type.T_CHAR) {			
 				writeKind(Node.K_CHAR);		
-			} else if(t == Automata.T_INT) {			
+			} else if(t == Type.T_INT) {			
 				writeKind(Node.K_INT);		
-			} else if(t == Automata.T_REAL) {
+			} else if(t == Type.T_REAL) {
 				writeKind(Node.K_RATIONAL);			
-			} else if(t == Automata.T_STRING) {
+			} else if(t == Type.T_STRING) {
 				writeKind(Node.K_STRING);			
 			} else {
 				throw new RuntimeException("unknown type encountered: " + t);		
