@@ -258,6 +258,58 @@ public final class Automatas {
 		
 		return false;
 	}
+
+	/**
+	 * <p>
+	 * Determine whether automata <code>a2</code> is subsumed by automata
+	 * <code>a1</code>. One automata <code>a1</code> subsumes another automata
+	 * <code>a2</code> if <code>a1</code> accepts all the values accepted by
+	 * <code>a2</code> (and possibly more).
+	 * </p>
+	 * 
+	 * @param a1
+	 *            --- automata to check as subsumer
+	 * @param to
+	 *            --- automata to check as subsumee
+	 * @param interpretation
+	 *            --- provides an interpretation of the meaning of states in the
+	 *            automata.
+	 * @return
+	 */
+	public static final boolean isSubsumed(Automata a1, Automata a2, Interpretation interpretation) {
+		SubsetRelation rel = subsetRelation(a1,a2,interpretation);		
+		return rel.isSubSet(0, 0);
+	}
+	
+	
+	private static final SubsetRelation subsetRelation(Automata from,
+			Automata to, Interpretation interpretation) {		
+		int fromDomain = from.size();
+		int toDomain = to.size();
+		SubsetRelation relation = new SubsetRelation(fromDomain,toDomain,true);
+		
+		boolean changed = true;
+		while(changed) {
+			changed=false;
+			for(int i=0;i!=fromDomain;i++) {
+				for(int j=0;j!=toDomain;j++) {					
+					boolean isubj = interpretation.isSubSet(i,from,j,to);					
+					boolean isupj = interpretation.isSuperSet(i,from,j,to);		
+					
+					if(relation.isSubSet(i,j) && !isubj) {
+						relation.setSubSet(i,j,false);
+						changed = true;
+					}
+					if(relation.isSuperSet(i,j) && !isupj) {
+						relation.setSuperSet(i,j,false);
+						changed = true;
+					}						
+				}	
+			}
+		}
+		
+		return relation;
+	}
 	
 	/**
 	 * The remap method takes a node, and mapping from vertices in the old

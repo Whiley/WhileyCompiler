@@ -45,15 +45,15 @@ public final class SubsetRelation {
 	 */
 	private final BitSet superSets;
 
-	public SubsetRelation(int fromDomain, int toDomain) {
+	public SubsetRelation(int fromDomain, int toDomain, boolean value) {
 		this.fromDomain = fromDomain;
 		this.toDomain = toDomain;
 		this.subSets = new BitSet(fromDomain*toDomain);
 		this.superSets = new BitSet(fromDomain*toDomain);
 		
 		// Initially, set all sub- and super-types as true			
-		subSets.set(0,subSets.size(),true);
-		superSets.set(0,superSets.size(),true);
+		subSets.set(0,subSets.size(),value);
+		superSets.set(0,superSets.size(),value);
 	}
 	
 	/**
