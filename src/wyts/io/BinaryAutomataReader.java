@@ -2,160 +2,52 @@ package wyts.io;
 
 import java.io.IOException;
 
-import wyil.lang.ModuleID;
-import wyil.lang.NameID;
-import wyil.lang.Type;
-import wyil.util.Pair;
 import wyjvm.io.BinaryInputStream;
-import wyts.lang.InternalTypeBuilder;
-import wyts.lang.Node;
+import wyts.lang.Automata;
 
-public class BinaryAutomataReader {
+/**
+ * <p>
+ * The binary automata reader is responsible for reader an automata in a binary
+ * format from an input stream. Obviously, it cannot know how to handle the
+ * supplementary data that can be provided as part of a state. Therefore, if the
+ * automata may contain nodes which have supplementary data, the client is
+ * expected to deal with this.
+ * </p>
+ * <p>
+ * <b>NOTE:</b> To handle supplementary data, the client should extend this
+ * class and overwrite the method <code>readState()</code>. In such case, it is
+ * recommended that <code>super.readState()</code> is called before reading the
+ * supplementary data. In other words, the standard information (i.e. kind and
+ * children) for a state comes first, and the supplementary data is placed after
+ * that.
+ * </p>
+ * 
+ * @author djp
+ * 
+ */
+public class BinaryAutomataReader {		
 	private final BinaryInputStream reader;	
 	
 	public BinaryAutomataReader(BinaryInputStream reader) {
 		this.reader = reader;			
 	}
 	
-	public Type read() throws IOException {
-		InternalTypeBuilder builder = new InternalTypeBuilder();
-		int numNodes = readLength();			
-		builder.initialise(numNodes);
-		for(int i=0;i!=numNodes;++i) {
-			int kind = readKind();				
-			switch(kind) {
-			case State.K_ANY:											
-				builder.buildPrimitive(i, Type.T_ANY);
-				break;
-			case State.K_VOID:
-				builder.buildPrimitive(i, Type.T_VOID);
-				break;
-			case State.K_NULL:
-				builder.buildPrimitive(i, Type.T_NULL);
-				break;
-			case State.K_BOOL:
-				builder.buildPrimitive(i, Type.T_BOOL);
-				break;
-			case State.K_BYTE:
-				builder.buildPrimitive(i, Type.T_BYTE);
-				break;
-			case State.K_CHAR:
-				builder.buildPrimitive(i, Type.T_CHAR);
-				break;
-			case State.K_INT:
-				builder.buildPrimitive(i, Type.T_INT);
-				break;
-			case State.K_RATIONAL:
-				builder.buildPrimitive(i, Type.T_REAL);
-				break;
-			case State.K_STRING:
-				builder.buildPrimitive(i, Type.T_STRING);
-				break;
-			case State.K_EXISTENTIAL:
-				String module = readIdentifier();
-				String name = readIdentifier();
-				builder.buildExistential(i, new NameID(ModuleID.fromString(module),name));
-				break;
-			case State.K_SET:
-				builder.buildSet(i, readNode());
-				break;
-			case State.K_LIST:
-				builder.buildList(i, readNode());
-				break;
-			case State.K_PROCESS:
-				builder.buildProcess(i, readNode());
-				break;
-			case State.K_DICTIONARY:
-				builder.buildDictionary(i, readNode(), readNode());
-				break;
-			case State.K_TUPLE: {
-				int nelems = readLength();
-				int[] elems = new int[nelems];
-				for(int j=0;j!=nelems;++j) {
-					elems[j] = readNode();
-				}
-				builder.buildTuple(i,elems);
-				break;
-			}
-			case State.K_RECORD: {
-				int nelems = readLength();
-				Pair<String,Integer>[] elems = new Pair[nelems];
-				for(int j=0;j!=nelems;++j) {
-					elems[j] = new Pair(readIdentifier(),readNode());
-				}
-				builder.buildRecord(i,elems);
-				break;
-			}
-			case State.K_FUNCTION: {
-				int ret = readNode();
-				int nelems = readLength();
-				int[] elems = new int[nelems];
-				for(int j=0;j!=nelems;++j) {
-					elems[j] = readNode();
-				}
-				builder.buildFunction(i,ret,elems);
-				break;
-			}			
-			case State.K_HEADLESS: {									
-				int ret = readNode();
-				int nelems = readLength();
-				int[] elems = new int[nelems];
-				for(int j=0;j!=nelems;++j) {
-					elems[j] = readNode();
-				}
-				builder.buildMethod(i,-1,ret,elems);
-				break;
-			}
-			case State.K_METHOD: {					
-				int rec = readNode();
-				int ret = readNode();
-				int nelems = readLength();
-				int[] elems = new int[nelems];
-				for(int j=0;j!=nelems;++j) {
-					elems[j] = readNode();
-				}
-				builder.buildMethod(i,rec,ret,elems);
-				break;
-			}
-			case State.K_UNION: {
-				int nelems = readLength();
-				int[] elems = new int[nelems];
-				for(int j=0;j!=nelems;++j) {
-					elems[j] = readNode();
-				}
-				builder.buildUnion(i,elems);
-				break;
-			}
-			}
-		}
-		return builder.type();						
-	}
-	
-	private int readLength() throws IOException {
-		return reader.read_uv();
-	}
-	
-	public int readKind() throws IOException {
-		return reader.read_un(5);
-	}
-	
-	private int readNode() throws IOException {
-		return reader.read_uv();
+	public Automata read() throws IOException {		
+		int size = reader.read_uv();
+		Automata.State[] states = new Automata.State[size];
+		for(int i=0;i!=size;++i) {
+			states[i] = readState();			
+		}		
+		return new Automata(states);
 	}
 
-	/**
-	 * An identifier is a string made up of characters from
-	 * [A-Za-z_][A-Za-z0-9_]*
-	 * 
-	 * @param identifier
-	 * @throws IOException
-	 */
-	protected String readIdentifier() throws IOException {
-		int num = readLength();			
-		StringBuilder buf = new StringBuilder();
-		for(int i=0;i!=num;++i) {
-			buf.append((char) reader.read_un(7));
+	protected Automata.State readState() throws IOException {
+		int kind = reader.read_uv();
+		int nchildren = reader.read_uv();
+		int[] children = new int[nchildren];		
+		for (int i=0;i!=nchildren;++i) {
+			children[i]=reader.read_uv();
 		}
-		return buf.toString();
-	}		
-}
+		return new Automata.State(kind,children);
+	}
+}	
