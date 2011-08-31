@@ -10,11 +10,11 @@ package wyts.lang;
  * 
  */
 public abstract class SubtypeInference {
-	protected final Node[] fromGraph;
-	protected final Node[] toGraph;
+	protected final State[] fromGraph;
+	protected final State[] toGraph;
 	protected final SubtypeRelation assumptions;
 	
-	public SubtypeInference(Node[] fromGraph, Node[] toGraph) {
+	public SubtypeInference(State[] fromGraph, State[] toGraph) {
 		this.fromGraph = fromGraph;
 		this.toGraph = toGraph;
 		this.assumptions = new SubtypeRelation(fromGraph.length,toGraph.length);

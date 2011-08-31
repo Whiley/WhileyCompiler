@@ -24,51 +24,51 @@ public class BinaryTypeReader {
 		for(int i=0;i!=numNodes;++i) {
 			int kind = readKind();				
 			switch(kind) {
-			case Node.K_ANY:											
+			case State.K_ANY:											
 				builder.buildPrimitive(i, Type.T_ANY);
 				break;
-			case Node.K_VOID:
+			case State.K_VOID:
 				builder.buildPrimitive(i, Type.T_VOID);
 				break;
-			case Node.K_NULL:
+			case State.K_NULL:
 				builder.buildPrimitive(i, Type.T_NULL);
 				break;
-			case Node.K_BOOL:
+			case State.K_BOOL:
 				builder.buildPrimitive(i, Type.T_BOOL);
 				break;
-			case Node.K_BYTE:
+			case State.K_BYTE:
 				builder.buildPrimitive(i, Type.T_BYTE);
 				break;
-			case Node.K_CHAR:
+			case State.K_CHAR:
 				builder.buildPrimitive(i, Type.T_CHAR);
 				break;
-			case Node.K_INT:
+			case State.K_INT:
 				builder.buildPrimitive(i, Type.T_INT);
 				break;
-			case Node.K_RATIONAL:
+			case State.K_RATIONAL:
 				builder.buildPrimitive(i, Type.T_REAL);
 				break;
-			case Node.K_STRING:
+			case State.K_STRING:
 				builder.buildPrimitive(i, Type.T_STRING);
 				break;
-			case Node.K_EXISTENTIAL:
+			case State.K_EXISTENTIAL:
 				String module = readIdentifier();
 				String name = readIdentifier();
 				builder.buildExistential(i, new NameID(ModuleID.fromString(module),name));
 				break;
-			case Node.K_SET:
+			case State.K_SET:
 				builder.buildSet(i, readNode());
 				break;
-			case Node.K_LIST:
+			case State.K_LIST:
 				builder.buildList(i, readNode());
 				break;
-			case Node.K_PROCESS:
+			case State.K_PROCESS:
 				builder.buildProcess(i, readNode());
 				break;
-			case Node.K_DICTIONARY:
+			case State.K_DICTIONARY:
 				builder.buildDictionary(i, readNode(), readNode());
 				break;
-			case Node.K_TUPLE: {
+			case State.K_TUPLE: {
 				int nelems = readLength();
 				int[] elems = new int[nelems];
 				for(int j=0;j!=nelems;++j) {
@@ -77,7 +77,7 @@ public class BinaryTypeReader {
 				builder.buildTuple(i,elems);
 				break;
 			}
-			case Node.K_RECORD: {
+			case State.K_RECORD: {
 				int nelems = readLength();
 				Pair<String,Integer>[] elems = new Pair[nelems];
 				for(int j=0;j!=nelems;++j) {
@@ -86,7 +86,7 @@ public class BinaryTypeReader {
 				builder.buildRecord(i,elems);
 				break;
 			}
-			case Node.K_FUNCTION: {
+			case State.K_FUNCTION: {
 				int ret = readNode();
 				int nelems = readLength();
 				int[] elems = new int[nelems];
@@ -96,7 +96,7 @@ public class BinaryTypeReader {
 				builder.buildFunction(i,ret,elems);
 				break;
 			}			
-			case Node.K_HEADLESS: {									
+			case State.K_HEADLESS: {									
 				int ret = readNode();
 				int nelems = readLength();
 				int[] elems = new int[nelems];
@@ -106,7 +106,7 @@ public class BinaryTypeReader {
 				builder.buildMethod(i,-1,ret,elems);
 				break;
 			}
-			case Node.K_METHOD: {					
+			case State.K_METHOD: {					
 				int rec = readNode();
 				int ret = readNode();
 				int nelems = readLength();
@@ -117,7 +117,7 @@ public class BinaryTypeReader {
 				builder.buildMethod(i,rec,ret,elems);
 				break;
 			}
-			case Node.K_UNION: {
+			case State.K_UNION: {
 				int nelems = readLength();
 				int[] elems = new int[nelems];
 				for(int j=0;j!=nelems;++j) {

@@ -6,13 +6,13 @@ import wyil.util.Pair;
 
 
 public class DefaultSubtypeOperator extends SubtypeInference {
-	public DefaultSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
+	public DefaultSubtypeOperator(State[] fromGraph, State[] toGraph) {
 		super(fromGraph,toGraph);
 	}
 	
 	public boolean isSubType(int from, int to) {
-		Node fromNode = fromGraph[from];
-		Node toNode = toGraph[to];	
+		State fromNode = fromGraph[from];
+		State toNode = toGraph[to];	
 		
 		if(fromNode.kind == toNode.kind) { 
 			switch(fromNode.kind) {
@@ -134,8 +134,8 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 	}
 	
 	public boolean isSuperType(int from, int to) {
-		Node fromNode = fromGraph[from];
-		Node toNode = toGraph[to];	
+		State fromNode = fromGraph[from];
+		State toNode = toGraph[to];	
 		
 		if(fromNode.kind == toNode.kind) { 
 			switch(fromNode.kind) {

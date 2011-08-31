@@ -13,13 +13,13 @@ import wyil.util.Pair;
 
 public class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
 	
-	public CoerciveSubtypeOperator(Node[] fromGraph, Node[] toGraph) {
+	public CoerciveSubtypeOperator(State[] fromGraph, State[] toGraph) {
 		super(fromGraph,toGraph);
 	}
 	
 	public boolean isSubType(int from, int to) {
-		Node fromNode = fromGraph[from];
-		Node toNode = toGraph[to];	
+		State fromNode = fromGraph[from];
+		State toNode = toGraph[to];	
 		
 		/*
 		if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {
@@ -66,8 +66,8 @@ public class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
 	}
 	
 	public boolean isSuperType(int from, int to) {
-		Node fromNode = fromGraph[from];
-		Node toNode = toGraph[to];	
+		State fromNode = fromGraph[from];
+		State toNode = toGraph[to];	
 		
 		/*
 		if(fromNode.kind == K_RECORD && toNode.kind == K_RECORD) {

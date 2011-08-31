@@ -152,7 +152,7 @@ public class Generator {
 			Type t = types.get(i);
 			if(Type.isOpen(t)) {
 				// yuk ... should be an easier way of doing this!
-				if(t instanceof Type.Compound && ((Type.Compound)t).nodes[0].kind == Node.K_LABEL) {
+				if(t instanceof Type.Compound && ((Type.Compound)t).states[0].kind == State.K_LABEL) {
 					types.remove(i--);
 				} else {
 					types.set(i,Type.T_RECURSIVE("X",t));

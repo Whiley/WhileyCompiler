@@ -30,7 +30,7 @@ import java.util.HashSet;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.util.Pair;
-import wyts.lang.Graph.Node;
+import wyts.lang.Automata.State;
 
 /**
  * This class houses various algorithms for manipulating types.
@@ -49,18 +49,6 @@ public class Algorithms {
 	 * @return
 	 */
 	public static Type simplify(Type t) {
-		return t;
-	}
-
-	/**
-	 * The compact method accepts a type and simply removes unreachable
-	 * vertices. This can happen during minimisation for various reasons.
-	 * Essentially, this is garbage collection of the type graph!
-	 * 
-	 * @param t
-	 * @return
-	 */
-	public static Type compact(Type t) {
 		return t;
 	}
 	
@@ -106,7 +94,7 @@ public class Algorithms {
 		}				
 		
 		// Only compound types need minimising.
-		Node[] nodes = ((Type.Compound) type).nodes;		
+		State[] nodes = ((Type.Compound) type).states;		
 		
 		// First, determine the equivalence classes using the default subtype
 		// operator.
@@ -116,14 +104,14 @@ public class Algorithms {
 		
 		// Second, reconstruct the type taking these equivalence classes into
 		// account.
-		ArrayList<Node> newnodes = new ArrayList<Node>();
+		ArrayList<State> newnodes = new ArrayList<State>();
 		int[] allocated = new int[nodes.length];
 		//System.out.println("REBUILDING: " + type);
 		//Type.build(new PrintBuilder(System.out),type);
 		//System.out.println(relation.toString());
 		rebuild(0, nodes, allocated, newnodes, relation);				
 		
-		return Type.construct(newnodes.toArray(new Node[newnodes.size()]));
+		return Type.construct(newnodes.toArray(new State[newnodes.size()]));
 	}
 	
 	/**
@@ -146,8 +134,8 @@ public class Algorithms {
 	 *            --- the subtype relation.
 	 * @return
 	 */
-	private static int rebuild(int idx, Node[] graph, int[] allocated,
-			ArrayList<Node> newNodes, SubtypeRelation assumptions) {			 	
+	private static int rebuild(int idx, State[] graph, int[] allocated,
+			ArrayList<State> newNodes, SubtypeRelation assumptions) {			 	
 		
 		// First, check if this node has already been allocated. If so, then
 		// simply return the new index for this node. A node may be allocated
@@ -176,7 +164,7 @@ public class Algorithms {
 		newNodes.add(null); // reserve space for my node		
 		
 		// Fourth, recursively reconstruct the children (if any) of this node.
-		Node node = graph[idx];
+		State node = graph[idx];
 		Object data = null;
 		switch(node.kind) {
 		case K_EXISTENTIAL:
@@ -279,22 +267,22 @@ public class Algorithms {
 		}
 		
 		// finally, create the new node!!!
-		newNodes.set(cidx, new Node(node.kind,data));
+		newNodes.set(cidx, new State(node.kind,data));
 		return cidx;
 	}
 		
 	private static final class MinimiseComparator implements Comparator<Integer> {
-		private Node[] graph;
+		private State[] graph;
 		private SubtypeRelation subtypeMatrix;
 		
-		public MinimiseComparator(Node[] graph, SubtypeRelation matrix) {
+		public MinimiseComparator(State[] graph, SubtypeRelation matrix) {
 			this.graph = graph;
 			this.subtypeMatrix = matrix;
 		}
 		
 		public int compare(Integer a, Integer b) {
-			Node n1 = graph[a];
-			Node n2 = graph[b];
+			State n1 = graph[a];
+			State n2 = graph[b];
 			if(n1.kind < n2.kind) {
 				return -1;
 			} else if(n1.kind > n2.kind) {
@@ -352,8 +340,8 @@ public class Algorithms {
 	}
 	
 
-	private static int intersect(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes,
+	private static int intersect(int n1, State[] graph1, int n2, State[] graph2,
+			ArrayList<State> newNodes,
 			HashMap<Pair<Integer, Integer>, Integer> allocations) {	
 		Integer idx = allocations.get(new Pair(n1,n2));
 		if(idx != null) {
@@ -362,12 +350,12 @@ public class Algorithms {
 			return idx;
 		}
 		
-		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];				
+		State c1 = graph1[n1];
+		State c2 = graph2[n2];				
 		int nid = newNodes.size(); // my node id
 		newNodes.add(null); // reserve space for my node	
 		allocations.put(new Pair(n1,n2), nid);
-		Node node; // new node being created
+		State node; // new node being created
 		
 		if(c1.kind == c2.kind) { 
 			switch(c1.kind) {
@@ -389,7 +377,7 @@ public class Algorithms {
 				if(nid1.name().equals(nid2.name())) {
 					node = c1;
 				} else {
-					node = new Node(K_VOID,null);
+					node = new State(K_VOID,null);
 				}
 				break;
 			case K_SET:
@@ -399,7 +387,7 @@ public class Algorithms {
 				int e1 = (Integer) c1.children;
 				int e2 = (Integer) c2.children;
 				int element = intersect(e1,graph1,e2,graph2,newNodes,allocations);
-				node = new Node(c1.kind,element);
+				node = new State(c1.kind,element);
 				break;
 			}
 			case K_DICTIONARY: {
@@ -408,7 +396,7 @@ public class Algorithms {
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.children;
 				int key = intersect(p1.first(),graph2,p2.first(),graph2,newNodes,allocations);
 				int value = intersect(p1.second(),graph2,p2.second(),graph2,newNodes,allocations);
-				node = new Node(K_DICTIONARY,new Pair(key,value));
+				node = new State(K_DICTIONARY,new Pair(key,value));
 				break;
 			}		
 			case K_TUPLE:  {
@@ -417,13 +405,13 @@ public class Algorithms {
 				int[] elems2 = (int[]) c2.children;
 				if(elems1.length != elems2.length) {
 					// TODO: can we do better here?
-					node = new Node(K_VOID,null);
+					node = new State(K_VOID,null);
 				} else {
 					int[] nelems = new int[elems1.length];
 					for(int i=0;i!=nelems.length;++i) {
 						nelems[i] = intersect(elems1[i],graph1,elems2[i],graph2,newNodes,allocations);
 					}
-					node = new Node(K_TUPLE,nelems);
+					node = new State(K_TUPLE,nelems);
 				}
 				break;
 			}
@@ -435,9 +423,9 @@ public class Algorithms {
 				int e1 = elems1[0];
 				int e2 = elems2[0];
 				if(elems1.length != elems2.length){
-					node = new Node(K_VOID,null);
+					node = new State(K_VOID,null);
 				} else if ((e1 == -1 || e2 == -1) && e1 != e2) {
-					node = new Node(K_VOID, null);
+					node = new State(K_VOID, null);
 				} else {
 					int[] nelems = new int[elems1.length];
 					// TODO: need to check here whether or not this is the right
@@ -447,7 +435,7 @@ public class Algorithms {
 						nelems[i] = intersect(elems1[i], graph1, elems2[i],
 								graph2, newNodes,allocations);
 					}
-					node = new Node(c1.kind, nelems);
+					node = new State(c1.kind, nelems);
 				}
 				break;
 			}
@@ -458,14 +446,14 @@ public class Algorithms {
 						Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) c2.children;
 						int old = newNodes.size();
 						if (fields1.length != fields2.length) {
-							node = new Node(K_VOID, null);
+							node = new State(K_VOID, null);
 						} else {
 							Pair<String, Integer>[] nfields = new Pair[fields1.length];
 							for (int i = 0; i != nfields.length; ++i) {
 								Pair<String, Integer> e1 = fields1[i];
 								Pair<String, Integer> e2 = fields2[i];
 								if (!e1.first().equals(e2.first())) {
-									node = new Node(K_VOID, null);
+									node = new State(K_VOID, null);
 									break outer;
 								} else {
 									int nidx = intersect(e1.second(), graph1,
@@ -479,7 +467,7 @@ public class Algorithms {
 										while (newNodes.size() != old) {
 											newNodes.remove(newNodes.size() - 1);
 										}
-										node = new Node(K_VOID, null);
+										node = new State(K_VOID, null);
 										break outer;
 									}
 
@@ -487,7 +475,7 @@ public class Algorithms {
 											e1.first(), nidx);
 								}
 							}
-							node = new Node(K_RECORD, nfields);
+							node = new State(K_RECORD, nfields);
 						}						
 					}	
 				break;
@@ -503,7 +491,7 @@ public class Algorithms {
 					nbounds[i] = intersect(bounds1[i], graph1, n2, graph2,
 							newNodes,allocations);
 				}
-				node = new Node(K_UNION,nbounds);
+				node = new State(K_UNION,nbounds);
 				break;
 			}					
 			default:
@@ -526,7 +514,7 @@ public class Algorithms {
 				nbounds[i] = intersect(obounds[i], graph1, n2, graph2,
 						newNodes,allocations);
 			}
-			node = new Node(K_UNION,nbounds);
+			node = new State(K_UNION,nbounds);
 		} else if (c2.kind == K_UNION) {			
 			int[] obounds = (int[]) c2.children;			
 			int[] nbounds = new int[obounds.length];
@@ -536,23 +524,23 @@ public class Algorithms {
 				nbounds[i] = intersect(n1,graph1,obounds[i], graph2,
 						newNodes,allocations);
 			}
-			node = new Node(K_UNION,nbounds);
+			node = new State(K_UNION,nbounds);
 		} else {
 			// default case --> go to void
-			node = new Node(K_VOID,null);
+			node = new State(K_VOID,null);
 		}
 		// finally, create the new node!!!
 		newNodes.set(nid, node);
 		return nid;
 	}
 	
-	private static int difference(int n1, Node[] graph1, int n2, Node[] graph2,
-			ArrayList<Node> newNodes,
+	private static int difference(int n1, State[] graph1, int n2, State[] graph2,
+			ArrayList<State> newNodes,
 			HashMap<Pair<Integer, Integer>, Integer> allocations, SubtypeRelation matrix) {
 		
 		int nid = newNodes.size(); // my node id		
 		if(matrix.isSupertype(n1,n2)) {
-			newNodes.add(new Node(K_VOID,null));
+			newNodes.add(new State(K_VOID,null));
 			return nid; 
 		}
 		
@@ -563,12 +551,12 @@ public class Algorithms {
 			return idx;
 		}
 		
-		Node c1 = graph1[n1];
-		Node c2 = graph2[n2];				
+		State c1 = graph1[n1];
+		State c2 = graph2[n2];				
 		
 		allocations.put(new Pair(n1,n2), nid);
 		newNodes.add(null); // reserve space for my node	
-		Node node; // new node being created
+		State node; // new node being created
 		
 		if(c1.kind == c2.kind) { 
 			switch(c1.kind) {
@@ -582,13 +570,13 @@ public class Algorithms {
 			case K_INT:
 			case K_RATIONAL:
 			case K_STRING:
-				node = new Node(K_VOID,null);
+				node = new State(K_VOID,null);
 				break;
 			case K_EXISTENTIAL:
 				NameID nid1 = (NameID) c1.children;
 				NameID nid2 = (NameID) c2.children;				
 				if(nid1.name().equals(nid2.name())) {
-					node = new Node(K_VOID,null);					
+					node = new State(K_VOID,null);					
 				} else {
 					node = c1;
 				}
@@ -600,7 +588,7 @@ public class Algorithms {
 				int e1 = (Integer) c1.children;
 				int e2 = (Integer) c2.children;
 				int element = difference(e1,graph1,e2,graph2,newNodes,allocations,matrix);
-				node = new Node(c1.kind,element);
+				node = new State(c1.kind,element);
 				break;
 			}
 			case K_DICTIONARY: {
@@ -609,7 +597,7 @@ public class Algorithms {
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) c2.children;
 				int key = difference(p1.first(),graph2,p2.first(),graph2,newNodes,allocations,matrix);
 				int value = difference(p1.second(),graph2,p2.second(),graph2,newNodes,allocations,matrix);
-				node = new Node(K_DICTIONARY,new Pair(key,value));
+				node = new State(K_DICTIONARY,new Pair(key,value));
 				break;
 			}		
 			case K_TUPLE:  {
@@ -623,7 +611,7 @@ public class Algorithms {
 					for(int i=0;i!=nelems.length;++i) {
 						nelems[i] = difference(elems1[i],graph1,elems2[i],graph2,newNodes,allocations,matrix);
 					}
-					node = new Node(K_TUPLE,nelems);
+					node = new State(K_TUPLE,nelems);
 				}
 				break;
 			}
@@ -647,7 +635,7 @@ public class Algorithms {
 						nelems[i] = difference(elems1[i], graph1, elems2[i],
 								graph2, newNodes,allocations,matrix);
 					}
-					node = new Node(c1.kind, nelems);
+					node = new State(c1.kind, nelems);
 				}
 				break;
 			}
@@ -672,7 +660,7 @@ public class Algorithms {
 									int nidx = difference(e1.second(), graph1,
 											e2.second(), graph2, newNodes,
 											allocations, matrix);
-									Node nnode = newNodes.get(nidx);
+									State nnode = newNodes.get(nidx);
 									if (nnode != null && nnode.kind == K_VOID) {
 										voidField = true;
 									}
@@ -688,10 +676,10 @@ public class Algorithms {
 								while (newNodes.size() != old) {
 									newNodes.remove(newNodes.size() - 1);
 								}
-								node = new Node(K_VOID, null);
+								node = new State(K_VOID, null);
 								break outer;
 							}
-							node = new Node(K_RECORD, nfields);
+							node = new State(K_RECORD, nfields);
 						}
 					}
 				break;
@@ -707,7 +695,7 @@ public class Algorithms {
 					nbounds[i] = difference(bounds1[i], graph1, n2, graph2,
 							newNodes,allocations,matrix);
 				}
-				node = new Node(K_UNION,nbounds);
+				node = new State(K_UNION,nbounds);
 				break;
 			}					
 			default:
@@ -715,9 +703,9 @@ public class Algorithms {
 			}		
 		} else if(c1.kind == K_ANY) {			
 			// TODO: try to do better
-			node = new Node(K_ANY,null);
+			node = new State(K_ANY,null);
 		} else if(c2.kind == K_ANY) {			
-			node = new Node(K_VOID,null);
+			node = new State(K_VOID,null);
 		} else if (c1.kind == K_UNION){					
 			int[] obounds = (int[]) c1.children;			
 			int[] nbounds = new int[obounds.length];
@@ -726,7 +714,7 @@ public class Algorithms {
 				nbounds[i] = difference(obounds[i], graph1, n2, graph2,
 						newNodes,allocations,matrix);
 			}
-			node = new Node(K_UNION,nbounds);
+			node = new State(K_UNION,nbounds);
 		} else if (c2.kind == K_UNION) {			
 			int[] obounds = (int[]) c2.children;			
 			int[] nbounds = new int[obounds.length];
@@ -736,7 +724,7 @@ public class Algorithms {
 						newNodes,allocations,matrix);
 			}
 			// FIXME: this is broken. need intersection types.
-			node = new Node(K_UNION,nbounds);
+			node = new State(K_UNION,nbounds);
 		} else {
 			// default case --> go to no change
 			node = c1;			
