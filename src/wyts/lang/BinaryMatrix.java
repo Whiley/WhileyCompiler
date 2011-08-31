@@ -2,6 +2,12 @@ package wyts.lang;
 
 import java.util.BitSet;
 
+/**
+ * A binary matrix represents a matrix of binary digits.
+ * 
+ * @author djp
+ * 
+ */
 public final class BinaryMatrix {
 	/** 
 	 * Holds the number of columns.

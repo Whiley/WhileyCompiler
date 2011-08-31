@@ -12,15 +12,15 @@ package wyts.lang;
 public abstract class SubtypeInference {
 	protected final State[] fromGraph;
 	protected final State[] toGraph;
-	protected final SubtypeRelation assumptions;
+	protected final SubsetRelation assumptions;
 	
 	public SubtypeInference(State[] fromGraph, State[] toGraph) {
 		this.fromGraph = fromGraph;
 		this.toGraph = toGraph;
-		this.assumptions = new SubtypeRelation(fromGraph.length,toGraph.length);
+		this.assumptions = new SubsetRelation(fromGraph.length,toGraph.length);
 	}
 	
-	public SubtypeRelation doInference() {
+	public SubsetRelation doInference() {
 		int fromDomain = fromGraph.length;
 		int toDomain = toGraph.length;
 		
@@ -32,12 +32,12 @@ public abstract class SubtypeInference {
 					boolean isubj = isSubType(i,j);					
 					boolean isupj = isSuperType(i,j);		
 					
-					if(assumptions.isSubtype(i,j) && !isubj) {
-						assumptions.setSubtype(i,j,false);
+					if(assumptions.isSubSet(i,j) && !isubj) {
+						assumptions.setSubSet(i,j,false);
 						changed = true;
 					}
-					if(assumptions.isSupertype(i,j) && !isupj) {
-						assumptions.setSupertype(i,j,false);
+					if(assumptions.isSuperSet(i,j) && !isupj) {
+						assumptions.setSuperSet(i,j,false);
 						changed = true;
 					}						
 				}	

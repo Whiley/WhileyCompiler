@@ -1,8 +1,8 @@
-package wyts.lang;
+package wyil.lang;
 
-import wyil.lang.NameID;
 import static wyts.lang.Node.*;
 import wyil.util.Pair;
+import wyts.lang.SubtypeInference;
 
 
 public class DefaultSubtypeOperator extends SubtypeInference {
@@ -23,13 +23,13 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 			case K_SET:
 			case K_LIST:
 			case K_PROCESS: {
-				return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
+				return assumptions.isSubSet((Integer) fromNode.data,(Integer) toNode.data);
 			}
 			case K_DICTIONARY: {
 				// binary node
 				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-				return assumptions.isSubtype(p1.first(),p2.first()) && assumptions.isSubtype(p1.second(),p2.second());  					
+				return assumptions.isSubSet(p1.first(),p2.first()) && assumptions.isSubSet(p1.second(),p2.second());  					
 			}		
 			case K_TUPLE:  {
 				// nary nodes
@@ -37,7 +37,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 				int[] elems2 = (int[]) toNode.data;
 				if(elems1.length != elems2.length){ return false; }
 				for(int i=0;i<elems1.length;++i) {
-					if(!assumptions.isSubtype(elems1[i],elems2[i])) { return false; }
+					if(!assumptions.isSubSet(elems1[i],elems2[i])) { return false; }
 				}
 				return true;
 			}
@@ -55,20 +55,20 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 				if((e1 == -1 || e2 == -1) && e1 != e2) {
 					return false;
 				} else if (e1 != -1 && e2 != -1
-						&& !assumptions.isSupertype(e1,e2)) {
+						&& !assumptions.isSuperSet(e1,e2)) {
 					return false;
 				}
 				// Check return value first (which is covariant)
 				e1 = elems1[1];
 				e2 = elems2[1];
-				if(!assumptions.isSubtype(e1,e2)) {
+				if(!assumptions.isSubSet(e1,e2)) {
 					return false;
 				}
 				// Now, check parameters (which are contra-variant)
 				for(int i=2;i<elems1.length;++i) {
 					e1 = elems1[i];
 					e2 = elems2[i];
-					if(!assumptions.isSupertype(e1,e2)) {
+					if(!assumptions.isSuperSet(e1,e2)) {
 						return false;
 					}
 				}
@@ -86,7 +86,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 					Pair<String, Integer> e1 = fields1[i];
 					Pair<String, Integer> e2 = fields2[i];						
 						if (!e1.first().equals(e2.first())
-								|| !assumptions.isSubtype(e1.second(),
+								|| !assumptions.isSubSet(e1.second(),
 										e2.second())) {
 							return false;
 						}
@@ -96,7 +96,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 			case K_UNION: {									
 				int[] bounds2 = (int[]) toNode.data;		
 				for(int j : bounds2) {				
-					if(!assumptions.isSubtype(from,j)) { return false; }								
+					if(!assumptions.isSubSet(from,j)) { return false; }								
 				}
 				return true;					
 			}
@@ -113,7 +113,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 
 			// check every bound in c1 is a subtype of some bound in c2.
 			for(int i : bounds1) {				
-				if(assumptions.isSubtype(i,to)) {
+				if(assumptions.isSubSet(i,to)) {
 					return true;
 				}								
 			}
@@ -123,7 +123,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 
 			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(!assumptions.isSubtype(from,j)) {
+				if(!assumptions.isSubSet(from,j)) {
 					return false;
 				}								
 			}
@@ -146,13 +146,13 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 			case K_SET:
 			case K_LIST:
 			case K_PROCESS: {
-				return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
+				return assumptions.isSuperSet((Integer) fromNode.data,(Integer) toNode.data);
 			}
 			case K_DICTIONARY: {
 				// binary node
 				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
 				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-				return assumptions.isSupertype(p1.first(),p2.first()) && assumptions.isSupertype(p1.second(),p2.second());  					
+				return assumptions.isSuperSet(p1.first(),p2.first()) && assumptions.isSuperSet(p1.second(),p2.second());  					
 			}		
 			case K_TUPLE:  {
 				// nary nodes
@@ -160,7 +160,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 				int[] elems2 = (int[]) toNode.data;
 				if(elems1.length != elems2.length){ return false; }
 				for(int i=0;i<elems1.length;++i) {
-					if(!assumptions.isSupertype(elems1[i],elems2[i])) { return false; }
+					if(!assumptions.isSuperSet(elems1[i],elems2[i])) { return false; }
 				}
 				return true;
 			}
@@ -178,20 +178,20 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 				if((e1 == -1 || e2 == -1) && e1 != e2) {
 					return false;
 				} else if (e1 != -1 && e2 != -1
-						&& !assumptions.isSubtype(e1,e2)) {
+						&& !assumptions.isSubSet(e1,e2)) {
 					return false;
 				}
 				// Check return value first (which is covariant)
 				e1 = elems1[1];
 				e2 = elems2[1];
-				if(!assumptions.isSupertype(e1,e2)) {
+				if(!assumptions.isSuperSet(e1,e2)) {
 					return false;
 				}
 				// Now, check parameters (which are contra-variant)
 				for(int i=2;i<elems1.length;++i) {
 					e1 = elems1[i];
 					e2 = elems2[i];
-					if(!assumptions.isSubtype(e1,e2)) {
+					if(!assumptions.isSubSet(e1,e2)) {
 						return false;
 					}
 				}
@@ -209,7 +209,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 					Pair<String, Integer> e1 = fields1[i];
 					Pair<String, Integer> e2 = fields2[i];						
 						if (!e1.first().equals(e2.first())
-								|| !assumptions.isSupertype(e1.second(),
+								|| !assumptions.isSuperSet(e1.second(),
 										e2.second())) {
 							return false;
 						}
@@ -221,7 +221,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 
 				// check every bound in c1 is a subtype of some bound in toNode.
 				for(int i : bounds1) {				
-					if(!assumptions.isSupertype(i,to)) {
+					if(!assumptions.isSuperSet(i,to)) {
 						return false;
 					}								
 				}
@@ -240,7 +240,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 
 			// check every bound in c1 is a subtype of some bound in c2.
 			for(int i : bounds1) {				
-				if(!assumptions.isSupertype(i,to)) {
+				if(!assumptions.isSuperSet(i,to)) {
 					return false;
 				}								
 			}
@@ -250,7 +250,7 @@ public class DefaultSubtypeOperator extends SubtypeInference {
 
 			// check some bound in c1 is a subtype of some bound in c2.
 			for(int j : bounds2) {				
-				if(assumptions.isSupertype(from,j)) {
+				if(assumptions.isSuperSet(from,j)) {
 					return true;
 				}								
 			}				

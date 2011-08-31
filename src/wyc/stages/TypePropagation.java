@@ -297,10 +297,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);		
-		boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),lhs);
-		boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),rhs);
+		boolean lhs_set = Type.isSubSet(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubSet(Type.T_SET(Type.T_ANY),rhs);		
+		boolean lhs_list = Type.isSubSet(Type.T_LIST(Type.T_ANY),lhs);
+		boolean rhs_list = Type.isSubSet(Type.T_LIST(Type.T_ANY),rhs);
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
 		
@@ -712,7 +712,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		int pi = 0;
 		ArrayList<Type> indices = new ArrayList<Type>();
 		for(int i=0;i!=e.level;++i) {				
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+			if(Type.isSubSet(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
 				if(dict == null) {
@@ -727,7 +727,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_INT,idx,stmt);
 				checkIsSubtype(Type.T_CHAR,val,stmt);	
 				iter = Type.T_CHAR;				
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+			} else if(Type.isSubSet(Type.T_LIST(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
 					syntaxError("expected list",filename,stmt);
@@ -777,11 +777,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
-		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
+		} else if(Type.isSubSet(Type.T_PROCESS(Type.T_ANY),oldtype)) {
 			Type.Process tp = (Type.Process) oldtype;
 			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
 			return Type.T_PROCESS(nelement);
-		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
+		} else if(Type.isSubSet(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
 			// --- hence, the original type must be preserved. However, in the
@@ -797,7 +797,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nelement = typeInference(Type.T_CHAR, newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
 			return oldtype;
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {		
+		} else if(Type.isSubSet(Type.T_LIST(Type.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = typeInference(list.element(), newtype, level - 1,
@@ -1003,8 +1003,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		boolean lhs_set = Type.isSubSet(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubSet(Type.T_SET(Type.T_ANY),rhs);			
 		
 		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
 			if(lhs_set && rhs_set) {
@@ -1035,8 +1035,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		boolean lhs_set = Type.isSubSet(Type.T_SET(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubSet(Type.T_SET(Type.T_ANY),rhs);			
 		
 		if(lhs_set || rhs_set) {				
 			if(lhs_set && rhs_set) {
@@ -1067,7 +1067,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean lhs_set = Type.isSubSet(Type.T_SET(Type.T_ANY),lhs);
 					
 		
 		if(lhs_set) {	

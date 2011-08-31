@@ -1,4 +1,4 @@
-package wyts.lang;
+package wyil.lang;
 
 import static wyts.lang.Node.K_ANY;
 import static wyts.lang.Node.K_CHAR;
@@ -50,11 +50,11 @@ public class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
 			// ints or chars can flow into rationals
 			return true;
 		} else if(fromNode.kind == K_SET && toNode.kind == K_LIST) {
-			return assumptions.isSubtype((Integer) fromNode.data,(Integer) toNode.data);
+			return assumptions.isSubSet((Integer) fromNode.data,(Integer) toNode.data);
 		} else if(fromNode.kind == K_DICTIONARY && toNode.kind == K_LIST) {
 			Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
 			return fromGraph[p1.first()].kind == K_INT
-					&& assumptions.isSubtype(p1.second(),
+					&& assumptions.isSubSet(p1.second(),
 							(Integer) toNode.data);
 		} else if(fromNode.kind == K_LIST && toNode.kind == K_STRING) {
 			Integer p1 = (Integer) fromNode.data;
@@ -96,11 +96,11 @@ public class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
 			// int can flow into rational or char
 			return true;
 		} else if(fromNode.kind == K_LIST && toNode.kind == K_SET) {
-			return assumptions.isSupertype((Integer) fromNode.data,(Integer) toNode.data);
+			return assumptions.isSuperSet((Integer) fromNode.data,(Integer) toNode.data);
 		} else if(fromNode.kind == K_LIST && toNode.kind == K_DICTIONARY) {
 			Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
 			return toGraph[p2.first()].kind == K_INT
-					&& assumptions.isSupertype((Integer)fromNode.data,p2.second());								
+					&& assumptions.isSuperSet((Integer)fromNode.data,p2.second());								
 		} else if(fromNode.kind == K_STRING && toNode.kind == K_LIST) {
 			Integer p2 = (Integer) toNode.data;
 			// TO DO: this is a bug here for cases when the element type is e.g. int|real

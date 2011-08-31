@@ -447,7 +447,7 @@ public class ClassFileBuilder {
 		// First, check if this is updating the process' state
 		Type type = c.type;
 				
-		if(c.slot == Code.THIS_SLOT && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {
+		if(c.slot == Code.THIS_SLOT && Type.isSubSet(Type.T_PROCESS(Type.T_ANY), type)) {
 			Type.Process p = (Type.Process) type;
 			type = p.element();
 		}
@@ -460,14 +460,14 @@ public class ClassFileBuilder {
 		// ok, this is such an ugly hack...
 		ArrayList<Type> indices = new ArrayList<Type>();
 		for(int i=0;i!=c.level;++i) {
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
+			if(Type.isSubSet(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
 				indices.add(dict.key());
 				iter = dict.value();
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				indices.add(Type.T_INT);
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {
+			} else if(Type.isSubSet(Type.T_LIST(Type.T_ANY),iter)) {
 				Type.List list = Type.effectiveListType(iter);
 				iter = list.element();
 				indices.add(Type.T_INT);
@@ -505,7 +505,7 @@ public class ClassFileBuilder {
 		// doing this. Probably, if I change the multistore bytecode, that would
 		// help.
 		
-		if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY), type)) {			
+		if(Type.isSubSet(Type.T_PROCESS(Type.T_ANY), type)) {			
 			Type.Process pt = (Type.Process) type;
 			bytecodes.add(new Bytecode.Dup(WHILEYPROCESS));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);		
@@ -517,7 +517,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "setState", ftype,
 					Bytecode.VIRTUAL));
 			
-		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),type)) {
+		} else if(Type.isSubSet(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),type)) {
 			Type.Dictionary dict = Type.effectiveDictionaryType(type);				
 			
 			if(level != 0) {				
@@ -555,7 +555,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.STATIC));						
 			
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),type)) {
+		} else if(Type.isSubSet(Type.T_LIST(Type.T_ANY),type)) {
 			Type.List list = Type.effectiveListType(type);				
 										
 			if(level != 0) {
@@ -2491,7 +2491,7 @@ public class ClassFileBuilder {
 	public static boolean isRefCounted(Type t) {
 		return t != Type.T_BOOL && t != Type.T_INT && t != Type.T_REAL
 				&& t != Type.T_STRING
-				&& !Type.isSubtype(Type.T_PROCESS(Type.T_ANY), t); 
+				&& !Type.isSubSet(Type.T_PROCESS(Type.T_ANY), t); 
 	}
 
 	/**

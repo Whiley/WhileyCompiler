@@ -315,9 +315,9 @@ public class ModuleBuilder {
 			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
 			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2);
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY), lub)) {
+		} else if(Type.isSubSet(Type.T_LIST(Type.T_ANY), lub)) {
 			return evaluate(bop,(Value.List)v1,(Value.List)v2);
-		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY), lub)) {
+		} else if(Type.isSubSet(Type.T_SET(Type.T_ANY), lub)) {
 			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
 		} 
 		syntaxError("invalid expression",filename,bop);
