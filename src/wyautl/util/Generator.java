@@ -113,18 +113,25 @@ public class Generator {
 		
 		if(to >= config.SIZE) {			
 			from = from + 1;
-			to = from;
-			if(from >= config.SIZE) {
+			to = from+1;
+			if(to >= config.SIZE) {
 				// ok, generate the automata.				
 				generate(base,writer);
 				return;
 			} 
 		}
 		
-		// first, generate forward edge (if allowed)
+
+		// first, generate no edge (if allowed)	
 		int[] nchildren = base.children;
 		int[] kinds = base.kinds;
 		Kind fromKind = config.KINDS[kinds[from]];
+		
+		if(fromKind.MIN_CHILDREN <= nchildren[from]) {
+			generate(from,to+1,base,writer,config);
+		}
+		
+		// second, generate forward edge (if allowed)		
 		if(nchildren[from] < fromKind.MAX_CHILDREN) {
 			nchildren[from]++;
 			base.add(from,to);
@@ -133,7 +140,7 @@ public class Generator {
 			nchildren[from]--;
 		}
 
-		// second, generate reverse edge (if allowed)
+		// first, generate reverse edge (if allowed)
 		Kind toKind = config.KINDS[kinds[to]];
 		if (config.RECURSIVE && nchildren[to] < toKind.MAX_CHILDREN) {
 			nchildren[to]++;
@@ -143,17 +150,13 @@ public class Generator {
 			nchildren[to]--;
 		}
 		
-		// finally, generate no edge (if allowed)	
-		if(fromKind.MIN_CHILDREN <= nchildren[from]) {
-			generate(from,to+1,base,writer,config);
-		}
 	}
 	
 	private static void generate(int index, Template base,
 			GenericWriter<Automata> writer, Config config) throws IOException {
 		if(index == config.SIZE) {
 			// now start generating transitions
-			generate(0,0,base,writer,config);
+			generate(0,1,base,writer,config);
 		} else {
 			Kind[] kinds = config.KINDS;
 			for(int k=0;k!=kinds.length;++k) {
@@ -193,7 +196,8 @@ public class Generator {
 		TextAutomataWriter writer = new TextAutomataWriter(System.out);
 		try {
 			generate(writer,config);
-			writer.flush();			
+			writer.flush();
+			System.out.println("Wrote " + writer.count + " automatas.");
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
 		}		
