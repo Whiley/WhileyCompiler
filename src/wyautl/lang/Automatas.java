@@ -1,6 +1,7 @@
 package wyautl.lang;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 
 import wyautl.lang.Automata.State;
@@ -14,6 +15,8 @@ import wyautl.lang.Automata.State;
  * <li><b>Extraction.</b> This is used to extract one automata out of another.</li>
  * <li><b>Minimisation.</b> This is used to eliminate equivalent states within
  * an automata.</li>
+ * <li><b>Canonicalisation.</b> This is used to convert an automata into a
+ * canonical form.</li>
  * </ul>
  * 
  * @author djp
@@ -163,9 +166,7 @@ public final class Automatas {
 	public static Automata simplify(Automata t) {
 		return t;
 	}
-	
-	
-
+		
 	/**
 	 * <p>
 	 * This method minimises an automata by removing equivalent states. Two
@@ -324,6 +325,100 @@ public final class Automatas {
 		return false;
 	}
 
+	/**
+	 * <p>
+	 * Turn an automata into its canonical form. For two automatas in canonical
+	 * form they are <code>equal()</code> iff they accept exactly the same set
+	 * of values. Two automatas which are not <code>equal()</code> are said to
+	 * be <i>isomorphic</i> if the accept the same set of values. We can tell if
+	 * two automatas are isomorphic by checking whether they have the same
+	 * canonical form. More generally, this known as the graph isomorphism
+	 * problem. From a computational perspective, graph isomorphism is
+	 * interesting in that (at the time of writing) no known polynomial time
+	 * algorithms are known; however, it is also not known to be NP-complete.
+	 * </p>
+	 * 
+	 * <p>
+	 * The canonical form is computed using a straightforward (brute-force)
+	 * back-tracking search. This means it is potentially quite expensive,
+	 * although in most cases it probably runs in polynomial time. The number of
+	 * non-deterministic states in the automata directly affects how hard the
+	 * computation is. In particular, if there are no non-deterministic states,
+	 * the algorithm runs in guaranteed polynomial time.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b>Generally speaking, you want to run extract, simplify and
+	 * minimise before calling this algorithm. Otherwise, you don't get a true
+	 * canonical form.
+	 * </p>
+	 * 
+	 * @param automata ---  to be canonicalised
+	 * @return
+	 */
+	public static Automata canonicalise(Automata automata) {
+		int[] morph = new int[automata.size()];
+		Arrays.fill(morph, automata.size());
+		return automata;
+	}
+	
+	/**
+	 * This function determines whether one morphism of a given automata is
+	 * <i>lexiographically</i> less than another. Starting from the root, we
+	 * compare the states at each index in the morphisms. One state is below
+	 * another if it has a lower kind, fewer children or its transitions are
+	 * "below" those of the other.
+	 * 
+	 * @param morph1
+	 *            --- Morphism to test if below or not.  
+	 * @param morph2
+	 *            --- Morphism to test if above or not.
+	 * @param size
+	 *            --- don't consider states above this.
+	 * @param automata
+	 *            --- automata being canonicalised.
+	 * @return
+	 */
+	private static boolean lessThan(int[] morph1, int[] morph2, int size,
+			Automata automata) {
+		State[] states = automata.states;
+		for(int i=0;i!=size;++i) {
+			State s1 = states[morph1[i]];
+			State s2 = states[morph2[i]];
+			if(s1.kind < s2.kind) {
+				return true;
+			} else if(s1.kind > s2.kind) {
+				return false;
+			}
+			
+			int[] s1children = s1.children;
+			int[] s2children = s2.children;
+			if(s1children.length < s2children.length) {
+				return true;
+			} else if(s1children.length > s2children.length) {
+				return false;
+			}
+			
+			int length = s1children.length;
+			for(int j=0;j!=length;++j) {
+				int s1child = morph1[s1children[j]];
+				int s2child = morph2[s2children[j]];
+				if(s1child < s2child) {
+					return true;
+				} else if(s1child > s2child) {
+					return false;
+				}				
+			}
+			
+			if(s1.data != null || s2.data != null) {
+				throw new RuntimeException("Need to deal with supplementary data in canonicalise");
+			}
+		}
+		
+		// Ok, they're identical thus far!
+		return false;
+	}
+	
 	/**
 	 * <p>
 	 * Determine whether a relationship between two automata exists. The most
