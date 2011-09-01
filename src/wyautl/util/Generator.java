@@ -20,17 +20,17 @@ public class Generator {
 		/**
 		 * Determine whether this kind is deterministic or not.
 		 */
-		public final boolean DETERMINISTIC;
+		public boolean DETERMINISTIC;
 
 		/**
 		 * Determine minimum number of children this kind can have.
 		 */
-		public final int MIN_CHILDREN;
+		public int MIN_CHILDREN;
 
 		/**
 		 * Determine maximum number of children this kind can have.
 		 */
-		public final int MAX_CHILDREN;
+		public int MAX_CHILDREN;
 
 		public Kind(boolean nonseq, int min, int max) {
 			this.DETERMINISTIC = nonseq;
@@ -221,7 +221,7 @@ public class Generator {
 	}};
 		
 	public static void main(String[] args) {		
-		boolean binary = false;
+		boolean binary = false;		
 		GenericWriter<Automata> writer;
 		OutputStream out = System.out;
 		
@@ -237,6 +237,15 @@ public class Generator {
 					config.SIZE = Integer.parseInt(args[++index]);
 				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
 					verbose = true;
+				} else if(args[index].equals("-m") || args[index].equals("-model")) {
+					config.RECURSIVE = false;
+					for(Kind k : config.KINDS) {
+						if(!k.DETERMINISTIC) { 
+							k.DETERMINISTIC = true;
+							k.MIN_CHILDREN = 0;
+							k.MAX_CHILDREN = 1;
+						}
+					}
 				}
 				index++;
 			}

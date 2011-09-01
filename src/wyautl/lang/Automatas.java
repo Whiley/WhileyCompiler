@@ -22,6 +22,71 @@ public final class Automatas {
 
 	/**
 	 * <p>
+	 * Check whether or not an automata is "concrete". A concrete automata
+	 * cannot have recursive links or non-deterministic states.'
+	 * </p>
+	 */
+	public static boolean isConcrete(Automata automata) {
+		// First, check all states are deterministic
+		for(int i=0;i!=automata.size();++i) {
+			State s = automata.states[i];
+			if(!s.deterministic) {
+				return false;
+			}
+		}
+		
+		// Second, check for cycles (i.e. recursive links)
+		BitSet visited = new BitSet(automata.size());
+		BitSet onStack = new BitSet(automata.size());
+		return isConcrete(0,onStack,visited,automata);
+	}
+	
+	/**
+	 * Helper algorithm. This is similar to the well-known algorithm for finding
+	 * strongly connected components. The main difference is that it doesn't
+	 * actually return the components.
+	 * 
+	 * @param index
+	 *            --- current node being visited.
+	 * @param onStack
+	 *            --- indicates which nodes are on the current path from the
+	 *            root.
+	 * @param visited
+	 *            --- indicates which nodes have been visited (but may not be on
+	 *            the current path).
+	 * @param automata
+	 *            --- the automata being traversed.
+	 * @return
+	 */
+	private static boolean isConcrete(int index, BitSet onStack,
+			BitSet visited, Automata automata) {
+		
+		if(onStack.get(index)) {
+			return false; // found a cycle!
+		} 		
+		
+		if (visited.get(index)) {
+			// Ok, we've traversed this node before and it checked out OK.
+			return true;
+		}
+		
+		visited.set(index);
+		onStack.set(index);
+		
+		State state = automata.states[index];
+		for(int child : state.children) {
+			if(!isConcrete(child,onStack,visited,automata)) {
+				return false;
+			}
+		}
+		
+		onStack.set(index,false);
+		
+		return true;
+	}
+	
+	/**
+	 * <p>
 	 * Traverse the automata rooted at the given state and recursively extract
 	 * all reachable states to produce a (potentially smaller) automata.
 	 * </p>

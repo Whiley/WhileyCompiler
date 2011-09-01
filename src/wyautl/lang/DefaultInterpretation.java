@@ -9,11 +9,11 @@ import java.util.Arrays;
  * automata.
  * </p>
  * <p>
- * In the default interpretation, a value is a node with a kind, and zero or
- * more children. A value is accepted by a (sequential) state if it has the same
- * kind, and every child value is accepted by the corresponding child state. For
- * non-sequential states, we require that every child value is accepted by some
- * child state.
+ * In the default interpretation, a value is a tree where each node has a kind
+ * and zero or more children. A value is accepted by a (deterministic) state if
+ * it has the same kind, and every child value is accepted by the corresponding
+ * child state. For non-deterministic states, we require that every child value
+ * is accepted by some child state.
  * </p>
  * <p>
  * <b>NOTE:</b> in the default interpretation, supplementary data is ignored.
@@ -50,11 +50,35 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 		}
 	}
 	
+	/**
+	 * Construct a value from an automata. Will throw an
+	 * IllegalArgumentException if the value is not concrete.
+	 * 
+	 * @param automata
+	 * @return
+	 */
+	public static Value construct(Automata automata) {
+		if(!Automatas.isConcrete(automata)) {
+			throw new IllegalArgumentException("Cannot construct value from non-concrete automata");
+		}
+		return construct(0,automata);
+	}
+	
+	private static Value construct(int index, Automata automata) {
+		Automata.State state = automata.states[index];
+		Value[] children = new Value[state.children.length];
+		int i = 0;
+		for(int c : state.children) {			
+			children[i++] = construct(c,automata);
+		}
+		return new Value(state.kind,children);
+	}
+	
 	public boolean accepts(Automata automata, Value value) {
 		return accepts(0,automata,value);
 	}
 	
-	public boolean accepts(int index, Automata automata, Value value) {
+	public boolean accepts(int index, Automata automata, Value value) {		
 		Automata.State state = automata.states[index];
 		if(state.kind == value.kind) {		
 			if(state.deterministic) {
@@ -65,7 +89,7 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 				}
 				int length = schildren.length;
 				for(int i=0;i!=length;++i) {
-					int schild = schildren[i];
+					int schild = schildren[i];					
 					Value vchild = vchildren[i];
 					if(!accepts(schild,automata,vchild)) {
 						return false;
@@ -80,8 +104,8 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 				for(int i=0;i!=vchildren.length;++i) {
 					Value vchild = vchildren[i];
 					boolean matched = false;
-					for(int j=0;j!=schildren.length;++i) {
-						int schild = schildren[i];					
+					for(int j=0;j!=schildren.length;++j) {
+						int schild = schildren[j];							
 						if(accepts(schild,automata,vchild)) {
 							matched = true;
 							break;
