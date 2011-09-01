@@ -359,7 +359,15 @@ public final class Automatas {
 	public static Automata canonicalise(Automata automata) {
 		int[] morph = new int[automata.size()];
 		Arrays.fill(morph, automata.size());
-		return automata;
+		ArrayList<int[]> candidates = new ArrayList<int[]>();
+		candidates.add(morph);
+		extend(0,candidates,automata);
+		return remap(automata,candidates.get(0));
+	}
+	
+	private static void extend(int index, ArrayList<int[]> candidates,
+			Automata automata) {
+		
 	}
 	
 	/**
@@ -465,6 +473,28 @@ public final class Automatas {
 		nstates[ostates.length] = state;
 		return new Automata(nstates);
 	}
+	
+	/**
+	 * The remap method takes an automata, and a mapping from vertices in the
+	 * old space to the those in the new space. It then applies this mapping, so
+	 * that all states and transitions are remapped accordingly.
+	 * 
+	 * @param automata
+	 *            --- automata to be transposed.
+	 * @param rmap
+	 *            --- mapping from integers in old space to those in new space.
+	 * @return
+	 */
+	private static Automata remap(Automata automata, int[] rmap) {
+		State[] ostates = automata.states;
+		int length = ostates.length;
+		State[] nstates = new State[length];		
+		for(int i=0;i!=length;++i) {
+			State os = ostates[rmap[i]];
+			nstates[i] = remap(os,rmap);
+		}
+		return new Automata(nstates);
+	}	
 	
 	/**
 	 * The remap method takes a node, and mapping from vertices in the old
