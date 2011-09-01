@@ -362,13 +362,23 @@ public final class Automatas {
 		morph[0] = 0; // root *must* be mapped to itself		
 		ArrayList<int[]> candidates = new ArrayList<int[]>();
 		candidates.add(morph);
-		extend(0,candidates,automata);
+		extend(0,0,1,candidates,automata);
 		return remap(automata,candidates.get(0));
 	}
 	
-	private static void extend(int index, ArrayList<int[]> candidates,
-			Automata automata) {
-		
+	/**
+	 * @param current
+	 *            --- the state currently being placed.
+	 * @param index
+	 *            --- the index through current's children.
+	 * @param free
+	 *            --- the first free available node.
+	 * @param candidates
+	 * @param automata
+	 */
+	private static void extend(int current, int index, int free,
+			ArrayList<int[]> candidates, Automata automata) {
+		// what now?
 	}
 	
 	/**
