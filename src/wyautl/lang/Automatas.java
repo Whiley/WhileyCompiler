@@ -225,7 +225,7 @@ public final class Automatas {
 					int s1child = s1children[k];
 					boolean matched = false;
 					for(int l=0;l!=s2length;++l) {
-						int s2child = s2children[k];
+						int s2child = s2children[l];
 						if(equivs.get(s1child,s2child)) {
 							matched = true;
 							break;
