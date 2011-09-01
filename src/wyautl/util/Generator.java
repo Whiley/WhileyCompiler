@@ -18,9 +18,9 @@ public class Generator {
 
 	public static final class Kind {
 		/**
-		 * Determine whether this kind is non-sequential or not.
+		 * Determine whether this kind is deterministic or not.
 		 */
-		public final boolean NONSEQUENTIAL;
+		public final boolean DETERMINISTIC;
 
 		/**
 		 * Determine minimum number of children this kind can have.
@@ -33,7 +33,7 @@ public class Generator {
 		public final int MAX_CHILDREN;
 
 		public Kind(boolean nonseq, int min, int max) {
-			this.NONSEQUENTIAL = nonseq;
+			this.DETERMINISTIC = nonseq;
 			this.MIN_CHILDREN = min;
 			this.MAX_CHILDREN = max;
 		}
@@ -87,22 +87,23 @@ public class Generator {
 	 * @param writer
 	 */
 	private static void generate(Template template,
-			GenericWriter<Automata> writer) throws IOException {
+			GenericWriter<Automata> writer, Config config) throws IOException {
 		
+		Kind[] KINDS = config.KINDS;
 		int[] kinds = template.kinds;
 		int[] nchildren = template.children;
 		Automata.State[] states = new Automata.State[kinds.length];
 		
-		for(int i=0;i!=kinds.length;++i) {								
+		for(int i=0;i!=kinds.length;++i) {
+			int kind = kinds[i];
 			int[] children = new int[nchildren[i]];
 			int index = 0;
 			for(int j=0;j!=kinds.length;++j) {
 				if(template.isTransition(i,j)) {
 					children[index++] = j;
 				}
-			}
-			// annoying.
-			states[i] = new Automata.State(kinds[i],children);
+			}			
+			states[i] = new Automata.State(kind,children,KINDS[kind].DETERMINISTIC);
 		}
 		
 		Automata automata = new Automata(states);
@@ -126,7 +127,7 @@ public class Generator {
 			
 			if(to >= config.SIZE) {
 				// ok, generate the automata.				
-				generate(base,writer);
+				generate(base,writer,config);
 				return;
 			} 
 		}
@@ -164,7 +165,7 @@ public class Generator {
 		} else {
 			Kind[] kinds = config.KINDS;
 			for(int k=0;k!=kinds.length;++k) {
-				base.kinds[index] = k;
+				base.kinds[index] = k;								
 				generate(index+1,base,writer,config);
 			}
 		}
@@ -191,7 +192,7 @@ public class Generator {
 	private static final Config config = new Config() {{
 		KINDS = new Kind[]{
 			new Kind(false,0,2),
-			new Kind(false,1,1)
+			new Kind(true,1,1)
 		};
 		RECURSIVE = true;
 		SIZE = 3;
