@@ -1,6 +1,7 @@
 package wyautl.io;
 
 import java.io.*;
+
 import wyautl.lang.*;
 
 public final class TextAutomataWriter implements GenericWriter<Automata> {
@@ -56,7 +57,11 @@ public final class TextAutomataWriter implements GenericWriter<Automata> {
 		writer.println();
 	}
 	
+	public void close() throws IOException {
+		writer.close();
+	}
+	
 	public void flush() throws IOException {
 		writer.flush();
-	}	
+	}
 }

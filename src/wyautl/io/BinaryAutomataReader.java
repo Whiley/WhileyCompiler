@@ -25,11 +25,15 @@ import wyjvm.io.BinaryInputStream;
  * @author djp
  * 
  */
-public class BinaryAutomataReader {		
+public class BinaryAutomataReader implements GenericReader<Automata> {		
 	private final BinaryInputStream reader;	
 	
 	public BinaryAutomataReader(BinaryInputStream reader) {
 		this.reader = reader;			
+	}
+	
+	public void close() throws IOException {
+		reader.close();
 	}
 	
 	public Automata read() throws IOException {		

@@ -1,8 +1,9 @@
 package wyautl.util;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import wyil.lang.*;
+import wyjvm.io.BinaryOutputStream;
 import wyautl.io.*;
 import wyautl.lang.*;
 
@@ -187,21 +188,64 @@ public class Generator {
 		generate(0,base,writer,config);
 	}
 	
-	public static void main(String[] args) {
-		Config config = new Config() {{
-			KINDS = new Kind[]{
-				new Kind(false,0,2),
-				new Kind(false,1,1)
-			};
-			RECURSIVE = true;
-			SIZE = 2;
-		}};
+	private static final Config config = new Config() {{
+		KINDS = new Kind[]{
+			new Kind(false,0,2),
+			new Kind(false,1,1)
+		};
+		RECURSIVE = true;
+		SIZE = 3;
+	}};
+	
+	private static final class CountWriter<T> implements GenericWriter<T> {
+		public int count;
+		private final GenericWriter<T> writer;
 		
-		TextAutomataWriter writer = new TextAutomataWriter(System.out);
-		try {
-			generate(writer,config);
+		public CountWriter(GenericWriter<T> writer) {
+			this.writer = writer;
+		}
+		
+		public void write(T item) throws IOException {
+			count++;
+			writer.write(item);
+		}
+		
+		public void close() throws IOException {
+			writer.close();
+		}
+		
+		public void flush() throws IOException {
 			writer.flush();
-			System.out.println("Wrote " + writer.count + " automatas.");
+		}
+	}
+	
+	public static void main(String[] args) {
+		boolean binary = false;
+		GenericWriter<Automata> writer;
+		OutputStream out = System.out;
+		
+		try {
+			int index = 0;
+			while(index < args.length) {
+				if(args[index].equals("-b")) {
+					binary=true;
+				} else if(args[index].equals("-o")) {
+					String filename = args[++index];
+					out = new FileOutputStream(filename);
+				}
+				index++;
+			}
+
+			if(binary) {
+				BinaryOutputStream bos = new BinaryOutputStream(out);
+				writer = new BinaryAutomataWriter(bos);
+			} else {
+				writer = new TextAutomataWriter(out);
+			}		
+			CountWriter cwriter = new CountWriter(writer);
+			generate(cwriter,config);			
+			cwriter.close();
+			System.out.println("Wrote " + cwriter.count + " automatas.");
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
 		}		

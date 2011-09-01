@@ -33,8 +33,8 @@ public class BinaryAutomataWriter implements GenericWriter<Automata> {
 		this.writer = writer;			
 	}
 	
-	public void write(Automata automata) throws IOException {		
-		int size = automata.size();
+	public void write(Automata automata) throws IOException {
+		int size = automata.size();		
 		writer.write_uv(size);
 		for(int i=0;i!=size;++i) {
 			write(automata.states[i]);
@@ -49,4 +49,12 @@ public class BinaryAutomataWriter implements GenericWriter<Automata> {
 			writer.write_uv(i);
 		}
 	}	
+	
+	public void close() throws IOException {
+		writer.close();
+	}
+	
+	public void flush() throws IOException {
+		writer.flush();
+	}
 }	

@@ -11,8 +11,7 @@ import java.io.IOException;
  * 
  * @param <T>
  */
-public interface GenericWriter<T> {
-	public void write(T value) throws IOException;
-	public void flush() throws IOException;
+public interface GenericReader<T> {
+	public T read() throws IOException;
 	public void close() throws IOException;
 }
