@@ -43,6 +43,7 @@ public class BinaryAutomataWriter implements GenericWriter<Automata> {
 	
 	protected void write(Automata.State state) throws IOException {
 		writer.write_uv(state.kind);
+		writer.write_bit(state.deterministic);
 		int[] children = state.children;		
 		writer.write_uv(children.length);
 		for(int i : children) {

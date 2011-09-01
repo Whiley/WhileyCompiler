@@ -47,11 +47,12 @@ public class BinaryAutomataReader implements GenericReader<Automata> {
 
 	protected Automata.State readState() throws IOException {
 		int kind = reader.read_uv();
+		boolean deterministic = reader.read_bit();
 		int nchildren = reader.read_uv();
 		int[] children = new int[nchildren];		
 		for (int i=0;i!=nchildren;++i) {
 			children[i]=reader.read_uv();
 		}
-		return new Automata.State(kind,children);
+		return new Automata.State(kind,children,deterministic);
 	}
 }	

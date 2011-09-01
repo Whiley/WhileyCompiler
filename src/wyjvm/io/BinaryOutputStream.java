@@ -133,12 +133,12 @@ public class BinaryOutputStream extends OutputStream {
 		int mask = 1;
 		for(int i=0;i<n;++i) {
 			boolean bit = (bits & mask) != 0;
-			writeBit(bit);
+			write_bit(bit);
 			mask = mask << 1;
 		}		
 	}	
 	
-	public void writeBit(boolean bit) throws IOException {
+	public void write_bit(boolean bit) throws IOException {
 		value = value >> 1;
 		if(bit) {
 			value |= 128;

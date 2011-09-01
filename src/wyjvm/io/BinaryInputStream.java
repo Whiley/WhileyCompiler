@@ -82,7 +82,7 @@ public class BinaryInputStream extends InputStream {
 		return value;
 	}
 	
-	private boolean read_bit() throws IOException {
+	public boolean read_bit() throws IOException {
 		if(count == 0) {
 			value = input.read();
 			if(value < 0) { throw new EOFException(); }
