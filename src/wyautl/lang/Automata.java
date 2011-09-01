@@ -90,22 +90,40 @@ public final class Automata {
 	public String toString() {
 		String r = "";
 		for(int i=0;i!=states.length;++i) {
-			State n = states[i];
-			int[] children = n.children;
-			r = r + "#" + i + " : ";
+			if(i != 0) {
+				r = r + ", ";
+			}
+			Automata.State state = states[i];
+			int kind = state.kind;
+			r = r + "#";
+			r = r + i;
+			r = r + "(";		
+			boolean sequential = (kind & Automata.NONSEQUENTIAL) == 0;			
+			r = r + kind;
+			
+			if(state.data != null) {
+				r = r + "," + state.data;
+			}
+			r = r + ")";
+			if(sequential) {
+				r = r + "[";
+			} else {
+				r = r + "{";
+			}
 			boolean firstTime=true;
-			for(int j=0;j!=children.length;++j) {
+			for(int c : state.children) {
 				if(!firstTime) {
-					r = r + ", ";
+					r = r + ",";
 				}
 				firstTime=false;
-				r = r + j;
+				r = r + c;
 			}
-			if(n.data != null) {
-				r = r + " : " + n.data;
+			if(sequential) {
+				r = r + "]";
+			} else {
+				r = r + "}";
 			}
-			r = r + "\n";
-		}
+		}		
 		return r;
 	}
 

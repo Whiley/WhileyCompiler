@@ -219,7 +219,7 @@ public class Generator {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
 		boolean binary = false;
 		GenericWriter<Automata> writer;
 		OutputStream out = System.out;
@@ -232,6 +232,8 @@ public class Generator {
 				} else if(args[index].equals("-o")) {
 					String filename = args[++index];
 					out = new FileOutputStream(filename);
+				} else if(args[index].equals("-s") || args[index].equals("-size")) {
+					config.SIZE = Integer.parseInt(args[++index]);
 				}
 				index++;
 			}
