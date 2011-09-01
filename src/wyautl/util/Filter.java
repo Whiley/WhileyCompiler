@@ -14,6 +14,7 @@ public class Filter {
 		OutputStream output = System.out;
 		int index = 0;
 		boolean reduce = false;
+		boolean extract = false;
 		boolean simplify = false;
 		boolean minimise = false;
 		boolean canonicalise = false;
@@ -35,6 +36,8 @@ public class Filter {
 					output = new FileOutputStream(filename);
 				} else if(args[index].equals("-r") || args[index].equals("-reduce")) {
 					reduce=true;
+				} else if(args[index].equals("-e") || args[index].equals("-extract")) {
+					extract=true;
 				} else if(args[index].equals("-s") || args[index].equals("-simplify")) {
 					simplify=true;
 				} else if(args[index].equals("-m") || args[index].equals("-minimise")) {
@@ -63,7 +66,14 @@ public class Filter {
 				HashSet<Automata> visited = new HashSet<Automata>();
 				while(true) {
 					Automata automata = reader.read();
+					if(automata.size() == 0) {
+						System.out.println("GOT: " + automata);
+					}
 					nread++;
+					
+					if(extract) {						
+						automata = Automatas.extract(automata,0);
+					}
 					
 					if(minimise) {
 						automata = Automatas.minimise(automata);

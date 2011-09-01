@@ -39,7 +39,7 @@ public final class Automatas {
 	 * @param kinds
 	 * @return
 	 */
-	public Automata extract(Automata automata, int root) {
+	public static Automata extract(Automata automata, int root) {
 		// First, perform a depth-first search from the root.
 		State[] nodes = automata.states;		
 		ArrayList<Integer> extracted = new ArrayList<Integer>();
@@ -167,11 +167,12 @@ public final class Automatas {
 			changed = false;
 			for (int i = 0; i < size; ++i) {
 				for (int j = i + 1; j < size; ++j) {					
-					if(!equivs.get(i,j)) {
+					if(equivs.get(i,j)) {
 						// no need to explore nodes which are already known to
 						// be not equivalent.
-						boolean b = equivalent(i, j, equivs, automata);
+						boolean b = equivalent(i, j, equivs, automata);						
 						equivs.set(i, j, b);
+						equivs.set(j, i, b);
 						changed |= !b;
 					}
 				}
@@ -191,7 +192,7 @@ public final class Automatas {
 		State s1 = automata.states[i];
 		State s2 = automata.states[j];
 		
-		if(s1.kind == s2.kind) {
+		if(s1.kind == s2.kind) {			
 			int kind = s1.kind;
 			if((kind & Automata.NONSEQUENTIAL) == 0) {
 				// sequential case

@@ -39,4 +39,16 @@ public final class BinaryMatrix {
 	public boolean get(int col, int row) {
 		return data.get((row*cols)+col);
 	}
+	
+	public String toString() {
+		String r = "{";
+		for(int i=0;i!=cols;++i) {
+			for(int j=0;j!=cols;++j) {
+				if(get(i,j)) {
+					r = r + "(" + i + "," + j + ")";
+				}
+			}	
+		}
+		return r + "}";						
+	}
 }

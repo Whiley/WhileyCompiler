@@ -197,15 +197,15 @@ public class Generator {
 		SIZE = 3;
 	}};
 	
-	private static final class CountWriter<T> implements GenericWriter<T> {
+	private static final class CountWriter implements GenericWriter<Automata> {
 		public int count;
-		private final GenericWriter<T> writer;
+		private final GenericWriter<Automata> writer;
 		
-		public CountWriter(GenericWriter<T> writer) {
+		public CountWriter(GenericWriter<Automata> writer) {
 			this.writer = writer;
 		}
 		
-		public void write(T item) throws IOException {
+		public void write(Automata item) throws IOException {
 			count++;
 			writer.write(item);
 		}
@@ -245,9 +245,9 @@ public class Generator {
 				writer = new TextAutomataWriter(out);
 			}		
 			CountWriter cwriter = new CountWriter(writer);
-			generate(cwriter,config);			
-			cwriter.close();
+			generate(cwriter,config);
 			System.out.println("Wrote " + cwriter.count + " automatas.");
+			cwriter.close();						
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
 		}		

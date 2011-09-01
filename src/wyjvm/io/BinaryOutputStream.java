@@ -152,8 +152,14 @@ public class BinaryOutputStream extends OutputStream {
 	}
 		
 	public void close() throws IOException {
-		if(count != 0) {					
-			value = value >> (8-count);					
+		if(count != 0) {				
+			// In this case, we're closing but we have a number of bits left to
+			// write. This means we have to pad out the remainder of a byte.
+			// Instead of padding with zeros, I pad with ones. The reason for
+			// this is that it forces an EOF when reading back in with read_uv().
+			value = value >> (8-count);
+			int mask = (~0) << (8-count);
+			value = value | mask;
 			output.write(value);
 		}
 		output.close();
