@@ -158,11 +158,30 @@ public class BinaryOutputStream extends OutputStream {
 			// Instead of padding with zeros, I pad with ones. The reason for
 			// this is that it forces an EOF when reading back in with read_uv().
 			value = value >> (8-count);
-			int mask = (~0) << (8-count);
-			value = value | mask;
+			int mask = 0xff & ((~0) << count);						
+			value = value | mask;			
 			output.write(value);
 		}
 		output.close();
+	}
+	
+	public static String bin2str(int v) {
+		if(v == 0) {
+			return "0";
+		}
+		int mask = 1 << 31;
+		String r = "";
+		boolean leading = true;
+		for(int i=0;i!=32;++i) {
+			if((v&mask) != 0) {
+				r = r + "1";
+				leading=false;
+			} else if(!leading) {
+				r = r + "0";
+			}
+			v = v << 1;
+		}
+		return r;
 	}
 	
 	public static void main(String[] argss) {

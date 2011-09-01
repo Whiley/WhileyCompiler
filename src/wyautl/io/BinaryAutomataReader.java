@@ -37,7 +37,7 @@ public class BinaryAutomataReader implements GenericReader<Automata> {
 	}
 	
 	public Automata read() throws IOException {		
-		int size = reader.read_uv();
+		int size = reader.read_uv();		
 		Automata.State[] states = new Automata.State[size];
 		for(int i=0;i!=size;++i) {
 			states[i] = readState();			
