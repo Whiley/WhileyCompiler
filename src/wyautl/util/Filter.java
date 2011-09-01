@@ -18,6 +18,7 @@ public class Filter {
 		boolean simplify = false;
 		boolean minimise = false;
 		boolean canonicalise = false;
+		boolean verbose = false;
 		
 		try {
 			while(index < args.length) {
@@ -42,7 +43,9 @@ public class Filter {
 					simplify=true;
 				} else if(args[index].equals("-m") || args[index].equals("-minimise")) {
 					minimise=true;
-				} 
+				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
+					verbose = true;
+				}
 				index++;
 			}
 			
@@ -65,10 +68,7 @@ public class Filter {
 			try {
 				HashSet<Automata> visited = new HashSet<Automata>();
 				while(true) {
-					Automata automata = reader.read();
-					if(automata.size() == 0) {
-						System.out.println("GOT: " + automata);
-					}
+					Automata automata = reader.read();					
 					nread++;
 					
 					if(extract) {						
@@ -84,12 +84,17 @@ public class Filter {
 						writer.write(automata);
 						if(reduce) { visited.add(automata); }
 					}
+					
+					if(verbose) {
+						System.err.print("\rRead " + nread + " automata, wrote " + nwritten+ ".");
+					}
 				}				
 			} catch(EOFException e) {
 				
 			}
-			System.out.println("Read " + nread + " automata.");
-			System.out.println("Wrote " + nwritten + " automata.");
+			if(!verbose) {
+				System.err.print("\rRead " + nread + "automata, wrote " + nwritten+ ".");
+			}			
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
 		}	

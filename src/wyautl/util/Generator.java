@@ -108,7 +108,15 @@ public class Generator {
 		
 		Automata automata = new Automata(states);
 		writer.write(automata);
+		writer.flush();
+		count++;
+		if(verbose) {
+			System.err.print("\rWrote " + count + " automatas.");
+		}
 	}
+	
+	private static boolean verbose = false;
+	private static int count = 0;
 	
 	private static void generate(int from, int to, Template base,
 			GenericWriter<Automata> writer, Config config) throws IOException {
@@ -118,9 +126,23 @@ public class Generator {
 		
 		if(to >= config.SIZE) {									
 			if(nchildren[from] < fromKind.MIN_CHILDREN){
-				// this indicates an invalid automata
+				// this indicates an invalid automata, since this state doesn't
+				// have enough children.
 				return;
 			} 
+			
+			if(from > 0) {
+				// non-root state, so ensure has parent
+				boolean hasParent = false;
+				for(int i=0;i!=from;++i) {
+					if(base.isTransition(i,from)) {
+						hasParent = true;
+						break;
+					}
+				}
+
+				if(!hasParent) { return; }
+			}
 			
 			from = from + 1;
 			to = from;
@@ -133,8 +155,8 @@ public class Generator {
 		}
 		
 
-		// first, generate no edge			
-		generate(from,to+1,base,writer,config);		
+		// first, generate no edge (if allowed)			 
+		generate(from,to+1,base,writer,config);
 		
 		// second, generate forward edge (if allowed)		
 		if (from != to && nchildren[from] < fromKind.MAX_CHILDREN) {
@@ -197,29 +219,7 @@ public class Generator {
 		RECURSIVE = true;
 		SIZE = 3;
 	}};
-	
-	private static final class CountWriter implements GenericWriter<Automata> {
-		public int count;
-		private final GenericWriter<Automata> writer;
 		
-		public CountWriter(GenericWriter<Automata> writer) {
-			this.writer = writer;
-		}
-		
-		public void write(Automata item) throws IOException {
-			count++;
-			writer.write(item);
-		}
-		
-		public void close() throws IOException {
-			writer.close();
-		}
-		
-		public void flush() throws IOException {
-			writer.flush();
-		}
-	}
-	
 	public static void main(String[] args) {		
 		boolean binary = false;
 		GenericWriter<Automata> writer;
@@ -235,6 +235,8 @@ public class Generator {
 					out = new FileOutputStream(filename);
 				} else if(args[index].equals("-s") || args[index].equals("-size")) {
 					config.SIZE = Integer.parseInt(args[++index]);
+				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
+					verbose = true;
 				}
 				index++;
 			}
@@ -244,11 +246,12 @@ public class Generator {
 				writer = new BinaryAutomataWriter(bos);
 			} else {
 				writer = new TextAutomataWriter(out);
-			}		
-			CountWriter cwriter = new CountWriter(writer);
-			generate(cwriter,config);
-			System.out.println("Wrote " + cwriter.count + " automatas.");
-			cwriter.close();						
+			}					
+			generate(writer,config);
+			if(!verbose) {
+				System.err.print("\rWrote " + count + " automatas.");
+			}
+			writer.close();									
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
 		}		
