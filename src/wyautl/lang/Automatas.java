@@ -358,7 +358,8 @@ public final class Automatas {
 	 */
 	public static Automata canonicalise(Automata automata) {
 		int[] morph = new int[automata.size()];
-		Arrays.fill(morph, automata.size());
+		Arrays.fill(morph, automata.size());		
+		morph[0] = 0; // root *must* be mapped to itself		
 		ArrayList<int[]> candidates = new ArrayList<int[]>();
 		candidates.add(morph);
 		extend(0,candidates,automata);
