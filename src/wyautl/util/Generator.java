@@ -110,10 +110,19 @@ public class Generator {
 	
 	private static void generate(int from, int to, Template base,
 			GenericWriter<Automata> writer, Config config) throws IOException {
+		int[] nchildren = base.children;
+		int[] kinds = base.kinds;
+		Kind fromKind = config.KINDS[kinds[from]];		
 		
-		if(to >= config.SIZE) {			
+		if(to >= config.SIZE) {									
+			if(nchildren[from] < fromKind.MIN_CHILDREN){
+				// this indicates an invalid automata
+				return;
+			} 
+			
 			from = from + 1;
-			to = from+1;
+			to = from;
+			
 			if(to >= config.SIZE) {
 				// ok, generate the automata.				
 				generate(base,writer);
@@ -122,17 +131,11 @@ public class Generator {
 		}
 		
 
-		// first, generate no edge (if allowed)	
-		int[] nchildren = base.children;
-		int[] kinds = base.kinds;
-		Kind fromKind = config.KINDS[kinds[from]];
-		
-		if(fromKind.MIN_CHILDREN <= nchildren[from]) {
-			generate(from,to+1,base,writer,config);
-		}
+		// first, generate no edge			
+		generate(from,to+1,base,writer,config);		
 		
 		// second, generate forward edge (if allowed)		
-		if(nchildren[from] < fromKind.MAX_CHILDREN) {
+		if (from != to && nchildren[from] < fromKind.MAX_CHILDREN) {
 			nchildren[from]++;
 			base.add(from,to);
 			generate(from,to+1,base,writer,config);
@@ -140,8 +143,8 @@ public class Generator {
 			nchildren[from]--;
 		}
 
-		// first, generate reverse edge (if allowed)
-		Kind toKind = config.KINDS[kinds[to]];
+		// first, generate reverse edge (if allowed)	
+		Kind toKind = config.KINDS[kinds[to]];		
 		if (config.RECURSIVE && nchildren[to] < toKind.MAX_CHILDREN) {
 			nchildren[to]++;
 			base.add(to, from);
@@ -156,7 +159,7 @@ public class Generator {
 			GenericWriter<Automata> writer, Config config) throws IOException {
 		if(index == config.SIZE) {
 			// now start generating transitions
-			generate(0,1,base,writer,config);
+			generate(0,0,base,writer,config);
 		} else {
 			Kind[] kinds = config.KINDS;
 			for(int k=0;k!=kinds.length;++k) {
@@ -187,10 +190,11 @@ public class Generator {
 	public static void main(String[] args) {
 		Config config = new Config() {{
 			KINDS = new Kind[]{
-				new Kind(false,0,2)	
+				new Kind(false,0,2),
+				new Kind(false,1,1)
 			};
-			RECURSIVE = false;
-			SIZE = 4;
+			RECURSIVE = true;
+			SIZE = 2;
 		}};
 		
 		TextAutomataWriter writer = new TextAutomataWriter(System.out);
