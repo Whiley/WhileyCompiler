@@ -173,7 +173,7 @@ public final class Automata {
 
 		public int hashCode() {
 			int r = Arrays.hashCode(children) + kind;
-			if (data == null) {
+			if (data != null) {
 				return r + data.hashCode();
 			} else {
 				return r;
