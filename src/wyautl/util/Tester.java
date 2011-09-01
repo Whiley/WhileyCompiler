@@ -83,6 +83,12 @@ public class Tester {
 		return accepted;
 	}
 	
+	public static boolean isSubsumed(Automata a1, Automata a2) {
+		DefaultSubsumption relation = new DefaultSubsumption(a1, a2);
+		Automatas.computeRelation(relation);
+		return relation.isRelated(0, 0);
+	}
+	
 	/**
 	 * The purpose of this test is to check that minimised automatas accept the
 	 * same set of values as non-minimised ones.
@@ -99,9 +105,17 @@ public class Tester {
 			BitSet oldAccepts = accepts(interpretation, automata, model);
 			BitSet newAccepts = accepts(interpretation, minimised, model);
 			if (!oldAccepts.equals(newAccepts)) {
-				System.out.println("Possible Minimisation Unsoundness: "
+				System.out.println("Possible minimisation unsoundness: "
 						+ automata + " => " + minimised);
 			}
+			if(!isSubsumed(minimised,automata)) {
+				System.out.println("Possible subsumption unsoundness: "
+						+ automata + " :> " + minimised);
+			} else 	if(!isSubsumed(automata,minimised)) {
+				System.out.println("Possible subsumption unsoundness: "
+						+ automata + " <: " + minimised);
+			}
+			
 			// TODO: add subsumption
 			count++;
 			if(verbose) {				

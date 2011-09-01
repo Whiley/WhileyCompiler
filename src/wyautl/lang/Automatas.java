@@ -344,7 +344,7 @@ public final class Automatas {
 		int toDomain = to.size();
 
 		boolean changed = true;
-		while (changed) {
+		while (changed) {			
 			changed = false;
 			for (int i = 0; i != fromDomain; i++) {
 				for (int j = 0; j != toDomain; j++) {

@@ -38,14 +38,21 @@ public class DefaultSubsumption implements Relation {
 	}
 	
 	public final Automata to() {
-		return from;
+		return to;
 	}
 	
-	public boolean isRelated(int from, int to) {
-		return subsumes.get(from,to);
+	public boolean update(int from, int to) {
+		boolean ov = subsumes.get(from, to);
+		boolean nv = isRelated(from, to);
+		if(ov != nv) {
+			subsumes.set(from,to,nv);
+			return true; // changed
+		} else {
+			return false; // no change
+		}
 	}
 	
-	public boolean update(int fromIndex, int toIndex) {
+	public boolean isRelated(int fromIndex, int toIndex) {
 		State s1 = from.states[fromIndex];
 		State s2 = to.states[toIndex];
 		
@@ -70,7 +77,7 @@ public class DefaultSubsumption implements Relation {
 					}
 				}
 				
-				return true;
+				return true;				
 			} else {
 				// non-deterministic (i.e. more expensive) case
 				int[] s1children = s1.children;
