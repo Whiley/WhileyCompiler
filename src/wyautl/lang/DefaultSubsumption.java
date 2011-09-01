@@ -49,11 +49,10 @@ public class DefaultSubsumption implements Relation {
 		State s1 = from.states[fromIndex];
 		State s2 = to.states[toIndex];
 		
-		if(s1.kind == s2.kind) {
-			int kind = s1.kind;
+		if(s1.kind == s2.kind && s1.deterministic == s2.deterministic) {
+			boolean deterministic = s1.deterministic;
 			
-			if((kind & Automata.NONSEQUENTIAL) == 0) {
-				// sequential case
+			if(deterministic) {
 				int[] s1children = s1.children;
 				int[] s2children = s2.children;
 				
@@ -73,7 +72,7 @@ public class DefaultSubsumption implements Relation {
 				
 				return true;
 			} else {
-				// non-sequential (i.e. more expensive) case
+				// non-deterministic (i.e. more expensive) case
 				int[] s1children = s1.children;
 				int[] s2children = s2.children;				
 				int s1length = s1children.length;

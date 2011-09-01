@@ -15,11 +15,10 @@ import java.util.*;
  * 
  * <p>
  * The organisation of children is done according to two approaches:
- * <i>sequential</i> and <i>non-sequential</i>. In the sequential approach, the
- * ordering of children is important; in the non-sequential approach, the
- * ordering of children is not important. Note, the latter corresponds to a
- * multi-set rather than an ordinary set. To indicate a kind is non-sequential,
- * its value should include the <code>NONSEQUENTIAL</code> constant (as a flag).
+ * <i>deterministic</i> and <i>non-deterministic</i>. In the deterministic
+ * approach, the ordering of children is important; in the non-deterministic
+ * approach, the ordering of children is not important. A flag is used to
+ * indicate whether a state is deterministic or not.
  * </p>
  * 
  * <p>
@@ -42,7 +41,6 @@ import java.util.*;
  */
 public final class Automata {	
 	public final State[] states;	
-	public static final int NONSEQUENTIAL = (1 << 31); 
 	
 	public Automata(State... states) {
 		this.states = states;
@@ -97,15 +95,14 @@ public final class Automata {
 			int kind = state.kind;
 			r = r + "#";
 			r = r + i;
-			r = r + "(";		
-			boolean sequential = (kind & Automata.NONSEQUENTIAL) == 0;			
+			r = r + "(";						
 			r = r + kind;
 			
 			if(state.data != null) {
 				r = r + "," + state.data;
 			}
 			r = r + ")";
-			if(sequential) {
+			if(state.deterministic) {
 				r = r + "[";
 			} else {
 				r = r + "{";
@@ -118,7 +115,7 @@ public final class Automata {
 				firstTime=false;
 				r = r + c;
 			}
-			if(sequential) {
+			if(state.deterministic) {
 				r = r + "]";
 			} else {
 				r = r + "}";
@@ -137,20 +134,21 @@ public final class Automata {
 	public static final class State {
 		public final int kind;
 		public final int[] children;
+		public final boolean deterministic;
 		public final Object data;
 
 		/**
-		 * Construct a state with no children and no supplementary data.
+		 * Construct a deterministic state with no children and no supplementary data.
 		 * 
 		 * @param kind
 		 *            --- State kind (must be positive integer).
 		 */
 		public State(int kind) {
-			this(kind,NOCHILDREN,null);
+			this(kind,NOCHILDREN,true,null);
 		}
 		
 		/**
-		 * Construct a state with no supplementary data.
+		 * Construct a deterministic state with no supplementary data.
 		 * 
 		 * @param kind
 		 *            --- State kind (must be positive integer).
@@ -158,9 +156,24 @@ public final class Automata {
 		 *            --- Array of child indices.
 		 */
 		public State(int kind, int[] children) {
-			this(kind,children,null);
+			this(kind,children,true,null);
 		}
 
+		/**
+		 * Construct a state with no supplementary data.
+		 * 
+		 * @param kind
+		 *            --- State kind (must be positive integer).
+		 * @param children
+		 *            --- Array of child indices.
+		 * @param deterministic
+		 *            --- Indicates whether node should be treated as
+		 *            deterministic or not.
+		 */
+		public State(int kind, int[] children, boolean deterministic) {
+			this(kind,children,deterministic,null);
+		}
+		
 		/**
 		 * Construct a state with children and supplementary data.
 		 * 
@@ -168,13 +181,17 @@ public final class Automata {
 		 *            --- State kind (must be positive integer).
 		 * @param children
 		 *            --- Array of child indices.
+		 * @param deterministic
+		 *            --- Indicates whether node should be treated as
+		 *            deterministic or not.
 		 * @param data
 		 *            --- Supplementary data store with state.
 		 */
-		public State(int kind, int[] children, Object data) {
+		public State(int kind, int[] children, boolean deterministic, Object data) {
 			this.kind = kind;
 			this.children = children;
 			this.data = data;
+			this.deterministic = deterministic;
 		}
 		
 		public boolean equals(final Object o) {
@@ -183,7 +200,8 @@ public final class Automata {
 				// in the following, we only need to check data != null for this
 				// node as both nodes have the same kind and, hence, this.data
 				// != null implies c.data != null.
-				return kind == c.kind && Arrays.equals(children, c.children)
+				return kind == c.kind && deterministic == c.deterministic
+						&& Arrays.equals(children, c.children)
 						&& (data == null || data.equals(c.data));
 			}
 			return false;

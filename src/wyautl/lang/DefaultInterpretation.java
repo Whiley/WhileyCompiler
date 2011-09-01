@@ -56,10 +56,8 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 	
 	public boolean accepts(int index, Automata automata, Value value) {
 		Automata.State state = automata.states[index];
-		if(state.kind == value.kind) {
-			int kind = state.kind;
-			if((kind & Automata.NONSEQUENTIAL)==0) {
-				// sequential case
+		if(state.kind == value.kind) {		
+			if(state.deterministic) {
 				int[] schildren = state.children;
 				Value[] vchildren = value.children;
 				if(schildren.length != vchildren.length) {
@@ -75,7 +73,7 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 				}
 				return true;
 			} else {
-				// non-sequential case
+				// non-deterministic case
 				int[] schildren = state.children;
 				Value[] vchildren = value.children;
 								

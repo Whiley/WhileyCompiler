@@ -192,10 +192,9 @@ public final class Automatas {
 		State s1 = automata.states[i];
 		State s2 = automata.states[j];
 		
-		if(s1.kind == s2.kind) {			
-			int kind = s1.kind;
-			if((kind & Automata.NONSEQUENTIAL) == 0) {
-				// sequential case
+		if(s1.kind == s2.kind && s1.deterministic == s2.deterministic) {			
+			boolean deterministic = s1.deterministic;
+			if(deterministic) {
 				int[] s1children = s1.children;
 				int[] s2children = s2.children;
 				
@@ -215,7 +214,7 @@ public final class Automatas {
 				
 				return true;
 			} else {
-				// non-sequential (i.e. more expensive) case
+				// non-deterministic (i.e. more expensive) case
 				int[] s1children = s1.children;
 				int[] s2children = s2.children;				
 				int s1length = s1children.length;
@@ -323,9 +322,9 @@ public final class Automatas {
 	private static State remap(State node, int[] rmap) {
 		int[] ochildren = node.children;
 		int[] nchildren = new int[ochildren.length];
-		for(int i=0;i!=nchildren.length;++i) {
+		for (int i = 0; i != nchildren.length; ++i) {
 			nchildren[i] = rmap[ochildren[i]];
-		}		
-		return new State(node.kind, nchildren, node.data);
-	}			
+		}
+		return new State(node.kind, nchildren, node.deterministic, node.data);
+	}	
 }
