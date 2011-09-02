@@ -116,7 +116,6 @@ public class Tester {
 						+ automata + " <: " + minimised);
 			}
 			
-			// TODO: add subsumption
 			count++;
 			if(verbose) {				
 				System.err.print("\rChecked " + count + " / " + size + " automatas.");				
@@ -124,9 +123,33 @@ public class Tester {
 		}
 	}
 	
+	public static void canonicaliseTest(Interpretation interpretation,
+			ArrayList<Value> model, ArrayList<Automata> automatas, boolean verbose) {
+		int count = 0;
+		int size = automatas.size();
+		for (int i=0;i!=size;++i) {	
+			Automata ai = automatas.get(i);
+			BitSet oldAccepts = accepts(interpretation, ai, model);			
+			for (int j=i+1;j!=size;++j) {	
+				Automata aj = automatas.get(j);
+				BitSet newAccepts = accepts(interpretation, aj, model);
+				if(oldAccepts.equals(newAccepts) && !ai.equals(aj)) {
+					System.out.println("Possible canonicalisation unsoundness: "
+							+ ai + " != " + aj + " (" + newAccepts.cardinality() + ")");
+				}
+			}
+			count++;
+			if(verbose) {				
+				System.err.print("\rChecked " + count + " / " + size + " automatas.");				
+			}
+		}
+	}	
+	
 	public static void main(String[] args) {
 		boolean binaryIn = false;
 		boolean verbose = false;
+		boolean minimiseTest = false;
+		boolean canonicalTest = false;
 				
 		int index = 0;
 		try {
@@ -135,6 +158,10 @@ public class Tester {
 					binaryIn=true;					
 				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
 					verbose = true;
+				} else if(args[index].equals("-m") || args[index].equals("-minimise")) {
+					minimiseTest=true;
+				}  else if(args[index].equals("-c") || args[index].equals("-canonicalise")) {
+					canonicalTest=true;
 				} 
 				index = index + 1;
 			} 
@@ -147,7 +174,12 @@ public class Tester {
 			ArrayList<Value> model = readModel(binaryIn,args[index],verbose);
 			ArrayList<Automata> automatas = readAutomatas(binaryIn,args[index+1],verbose);
 			
-			minimiseTest(new DefaultInterpretation(),model,automatas,verbose);
+			if(minimiseTest) {
+				minimiseTest(new DefaultInterpretation(),model,automatas,verbose);
+			}
+			if(canonicalTest) {
+				canonicaliseTest(new DefaultInterpretation(),model,automatas,verbose);
+			}
 			
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);

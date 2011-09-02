@@ -368,6 +368,31 @@ public final class Automatas {
 	}
 
 	/**
+	 * The following provides a brute-force way of determining the canonical
+	 * form. It's really really slow, but useful for testing.
+	 * 
+	 * @param automata
+	 * @return
+	 */
+	private static Automata bruteForce(Automata automata) {
+		int[] init = new int[automata.size()-1];
+		for(int i=0;i<init.length;++i) {
+			init[i] = i+1;
+		}	
+		Morphism winner = null;
+		for(int[] permutation : permutations(init)) {			
+			Morphism m = new Morphism(automata.size());			
+			for(int c : permutation) {
+				m.allocate(c);
+			}
+			if(winner == null || lessThan(m,winner,automata)) {
+				winner = m;
+			}
+		}
+		return remap(automata,winner.n2i);
+	}
+	
+	/**
 	 * <p>
 	 * This algorithm extends all of the current morphisms by a single place.
 	 * What this means, is that all of children of the state under consideration
@@ -532,6 +557,10 @@ public final class Automatas {
 				return true;
 			} else if(s1.kind > s2.kind) {
 				return false;
+			} else if(s1.deterministic && !s2.deterministic) {
+				return true;
+			} else if(!s1.deterministic && s2.deterministic) {
+				return false;
 			}
 			
 			int[] s1children = s1.children;
@@ -557,12 +586,6 @@ public final class Automatas {
 				throw new RuntimeException("Need to deal with supplementary data in canonicalise");
 			}
 		}
-		
-		// I have a feeling the following line is dead-code
-		if(morph1.free < morph2.free) {
-			throw new RuntimeException("Am i deadcode?");
-			//return true;
-		} 
 		
 		// Ok, they're identical thus far!
 		return false;
