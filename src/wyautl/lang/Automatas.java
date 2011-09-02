@@ -674,6 +674,35 @@ public final class Automatas {
 	}
 	
 	/**
+	 * Append an automata (the <code>tail</code>) onto the back of another (the
+	 * <code>head</code>). In this case, all states in the automata being
+	 * appended are remapped automata for their new location.
+	 * 
+	 * @param head --- head automata
+	 * @param tail --- tail automata to be appended onto head.  
+	 * @return
+	 */
+	public static Automata append(Automata head, Automata tail) {
+		State[] hstates = head.states;
+		State[] tstates = tail.states;
+		int hlength = hstates.length;
+		int tlength = tstates.length;
+		State[] nstates = new State[hlength+tlength];
+		System.arraycopy(hstates,0,nstates,0,hlength);		
+		// now build remap
+		int[] rmap = new int[tlength]; 
+		for(int i=0;i!=tlength;++i) {
+			rmap[i] = i + hlength;
+		}
+		// then copy over states
+		int j = hlength;
+		for(int i=0;i!=tlength;++i,++j) {
+			nstates[j] = remap(tstates[i],rmap);
+		}
+		return new Automata(nstates);
+	}
+	
+	/**
 	 * The remap method takes an automata, and a mapping from vertices in the
 	 * old space to the those in the new space. It then applies this mapping, so
 	 * that all states and transitions are remapped accordingly.
@@ -684,7 +713,7 @@ public final class Automatas {
 	 *            --- mapping from integers in old space to those in new space.
 	 * @return
 	 */
-	private static Automata remap(Automata automata, int[] rmap) {
+	public static Automata remap(Automata automata, int[] rmap) {
 		State[] ostates = automata.states;
 		int length = ostates.length;
 		State[] nstates = new State[length];		

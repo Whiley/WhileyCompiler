@@ -149,10 +149,10 @@ public class ClassFileLoader {
 			int split = cm.name().indexOf('$');
 			String name = cm.name().substring(0, split);
 			String mangle = cm.name().substring(split + 1, cm.name().length());
-			// then find the type
-			Type.Fun type = (Type.Fun) new BinaryAutomataReader(
-					new BinaryInputStream(new JavaIdentifierInputStream(mangle)))
-					.read();
+			// then read the type
+			BinaryInputStream bin = new BinaryInputStream(
+					new JavaIdentifierInputStream(mangle));
+			Type.Fun type = (Type.Fun) new Type.BinaryReader(bin).read();
 			// now build the parameter names
 			List<Attribute> attrs = new ArrayList<Attribute>();
 			for (BytecodeAttribute ba : cm.attributes()) {

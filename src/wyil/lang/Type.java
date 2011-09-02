@@ -18,12 +18,15 @@
 
 package wyil.lang;
 
+import java.io.IOException;
 import java.util.*;
 
+import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.Automata.State;
 import wyil.util.Pair;
 import wyil.util.TypeParser;
+import wyjvm.io.*;
 
 /**
  * A structural type. See
@@ -247,7 +250,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static final Type T_LABEL(String label) {
-		return new Automata(construct(K_LABEL,label));
+		return new Compound(construct(K_LABEL,label));
 	}
 
 	/**
@@ -275,35 +278,28 @@ public abstract class Type {
 	 */
 	public static final Type T_RECURSIVE(String label, Type type) {
 		// first stage, identify all matching labels
-		if(type instanceof Leaf) { throw new IllegalArgumentException("cannot close a leaf type"); }
-		Automata compound = (Automata) type;
-		State[] nodes = compound.states;
-		int[] rmap = new int[nodes.length];		
+		if (type instanceof Leaf) {
+			throw new IllegalArgumentException("cannot close a leaf type");
+		}
+		Compound compound = (Compound) type;
+		Automata automata = compound.automata;
+		State[] nodes = automata.states;
+		int[] rmap = new int[nodes.length];
 		int nmatches = 0;
-		for(int i=0;i!=nodes.length;++i) {
+		for (int i = 0; i != nodes.length; ++i) {
 			State c = nodes[i];
-			if(c.kind == K_LABEL && c.data.equals(label)) {
+			if (c.kind == K_LABEL && c.data.equals(label)) {
 				rmap[i] = 0;
 				nmatches++;
 			} else {
-				rmap[i] = i - nmatches;
+				rmap[i] = i;
 			}
 		}
 		if (nmatches == 0) {
 			throw new IllegalArgumentException(
 					"type cannot be closed, as it contains no matching labels");
 		}
-		State[] newnodes = new State[nodes.length-nmatches];
-		nmatches = 0;
-		for(int i=0;i!=nodes.length;++i) {
-			State c = nodes[i];
-			if(c.kind == K_LABEL && c.data.equals(label)) {				
-				nmatches++;
-			} else {
-				newnodes[i-nmatches] = Automata.remap(nodes[i],rmap);
-			}
-		}
-		return construct(newnodes);
+		return construct(Automatas.remap(automata, rmap));
 	}
 
 	/**
@@ -331,8 +327,8 @@ public abstract class Type {
 		if (t instanceof Leaf) {
 			return false;
 		}
-		Automata graph = (Automata) t;
-		for (State n : graph.states) {
+		Compound graph = (Compound) t;
+		for (State n : graph.automata.states) {
 			if (n.kind == K_LABEL && n.data.equals(label)) {
 				return true;
 			}
@@ -352,15 +348,67 @@ public abstract class Type {
 		if (t instanceof Leaf) {
 			return false;
 		}
-		Automata graph = (Automata) t;
-		for (State n : graph.states) {			
+		Compound graph = (Compound) t;
+		for (State n : graph.automata.states) {
 			if (n.kind == K_LABEL) {
 				return true;
 			}
 		}
 		return false;
 	}	
-		
+	
+	// =============================================================
+	// Readers / Writers
+	// =============================================================
+	
+	/**
+	 * <p>
+	 * A <code>BinaryReader</code> will read types from a binary input stream.
+	 * The types should be written to the stream using <code>BinaryWriter</code>
+	 * .
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> Under-the-hood, this class is essentially a wrapper for
+	 * <code>BinaryAutomataReader</code>.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class BinaryReader {
+		private BinaryAutomataReader reader;
+		public BinaryReader(BinaryInputStream r) {
+			this.reader = new BinaryAutomataReader(r);
+		}
+		public Type read() throws IOException {
+			return construct(reader.read());
+		}
+	}
+	
+	/**
+	 * <p>
+	 * A <code>BinaryWriter</code> will write types to a binary output stream.
+	 * The types should be read back from the stream using
+	 * <code>BinaryReader</code> .
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> Under-the-hood, this class is essentially a wrapper for
+	 * <code>BinaryAutomataWriter</code>.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class BinaryWriter {
+		private BinaryAutomataWriter writer;
+		public BinaryWriter(BinaryOutputStream r) {
+			this.writer = new BinaryAutomataWriter(r);
+		}
+		public void write(Type t) throws IOException {
+			writer.write(destruct(t));			
+		}
+	}
+	
 	// =============================================================
 	// Type operations
 	// =============================================================
@@ -372,8 +420,8 @@ public abstract class Type {
 	 * of that described by <code>t1</code>.
 	 */
 	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
-		State[] g1 = nodes(t1);
-		State[] g2 = nodes(t2);
+		State[] g1 = destruct(t1);
+		State[] g2 = destruct(t2);
 		Relation inference = new CoerciveSubtypeOperator(g1,g2);		
 		Relation rel = inference.doInference();		
 		return rel.isSubSet(0, 0); 
@@ -386,8 +434,8 @@ public abstract class Type {
 	 * that described by <code>t1</code>.
 	 */
 	public static boolean isSubtype(Type t1, Type t2) {				
-		State[] g1 = nodes(t1);
-		State[] g2 = nodes(t2);
+		State[] g1 = destruct(t1);
+		State[] g2 = destruct(t2);
 		Relation inference = new DefaultSubtypeOperator(g1,g2);		
 		Relation rel = inference.doInference();		
 		return rel.isSubSet(0, 0); 
@@ -565,7 +613,7 @@ public abstract class Type {
 	
 	/**
 	 * <p>
-	 * The following algorithm minimises a type. For example:
+	 * The following algorithm simplifies a type. For example:
 	 * </p>
 	 * 
 	 * <pre>
@@ -573,17 +621,27 @@ public abstract class Type {
 	 * define OuterList as null|{int data, InnerList next}
 	 * </pre>
 	 * <p>
-	 * This type is minimised into the following (equivalent) form:
+	 * This type is simplified into the following (equivalent) form:
 	 * </p>
 	 * 
 	 * <pre>
 	 * define LinkedList as null|{int data, LinkedList next}
 	 * </pre>
 	 * <p>
-	 * The minisation algorithm is based on the well-known algorithm for
-	 * minimising a DFA (see e.g. <a
-	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>).
+	 * The simplification algorithm is made up of several different procedures
+	 * which operate on the underlying <i>automata</i> representing the type:
 	 * </p>
+	 * <ol>
+	 * <li><b>Extraction.</b> Here, sub-components unreachable from the root are
+	 * eliminated.</li>
+	 * <li><b>Simplification.</b> Here, basic simplifications are applied. For
+	 * example, eliminating unions of unions.</li>
+	 * <li><b>Minimisation.</b>Here, equivalent states are merged together.</li>
+	 * <li><b>Canonicalisation.</b> A canonical form of the type is computed</li>
+	 * </ol>
+	 * 
+	 * is based on the well-known algorithm for minimising a DFA (see e.g. <a
+	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>). </p>
 	 * <p>
 	 * The algorithm operates by performing a subtype test of each node against
 	 * all others. From this, we can identify nodes which are equivalent under
@@ -598,8 +656,19 @@ public abstract class Type {
 	 * @param type
 	 * @return
 	 */
-	public static Type minimise(Type type) {		
-		return Automatas.minimise(type);
+	public static Type minimise(Type type) {	
+		if(type instanceof Type.Compound) { 
+			Compound compound = (Compound) type;
+			Automata automata = compound.automata;
+			automata = Automatas.extract(automata, 0);
+			//automata = Automatas.simplify(automata);
+			automata = Automatas.minimise(automata);
+			automata = Automatas.canonicalise(automata);
+			return construct(automata);
+		} else {
+			// no need to simplify leafs
+			return type;
+		}
 	}
 
 	// =============================================================
@@ -707,35 +776,6 @@ public abstract class Type {
 		}
 	}
 
-	/**
-	 * The existential type represents the an unknown type, defined at a given
-	 * position.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Existential extends Compound{
-		private Existential(NameID name) {
-			super(new State[] { new State(K_EXISTENTIAL,name) });
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Existential) {
-				Existential e = (Existential) o;
-				return nodes[0].children.equals(nodes[0].children);
-			}
-			return false;
-		}
-		public NameID name() {
-			return (NameID) nodes[0].children;
-		}
-		public int hashCode() {
-			return nodes[0].children.hashCode();
-		}
-		public String toString() {
-			return "?" + name();
-		}
-	}
-	
 	/**
 	 * Represents the set of boolean values (i.e. true and false)
 	 * @author djp
@@ -850,6 +890,37 @@ public abstract class Type {
 		}
 		public String toString() {
 			return "string";
+		}
+	}
+	
+
+	/**
+	 * The existential type represents the an unknown type, defined at a given
+	 * position.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static final class Existential extends Leaf {
+		private NameID nid;
+		private Existential(NameID name) {
+			nid = name;
+		}
+		public boolean equals(Object o) {
+			if(o instanceof Existential) {
+				Existential e = (Existential) o;
+				return nid.equals(e.nid);
+			}
+			return false;
+		}
+		public NameID name() {
+			return nid;
+		}
+		public int hashCode() {
+			return nid.hashCode();
+		}
+		public String toString() {
+			return "?" + nid;
 		}
 	}
 			
@@ -1277,17 +1348,17 @@ public abstract class Type {
 			return T_REAL;
 		case K_STRING:
 			return T_STRING;
-		case K_TUPLE:
-			return new Tuple(automata);
-		case K_SET:
-			return new Set(automata);
-		case K_LIST:
-			return new List(automata);
 		case K_EXISTENTIAL:
 			if(root.children == null) {
 				throw new RuntimeException("Problem");
 			}
 			return new Existential((NameID) root.data);
+		case K_TUPLE:
+			return new Tuple(automata);
+		case K_SET:
+			return new Set(automata);
+		case K_LIST:
+			return new List(automata);		
 		case K_PROCESS:
 			return new Process(automata);
 		case K_DICTIONARY:
@@ -1315,87 +1386,64 @@ public abstract class Type {
 	 * @param elements
 	 * @return
 	 */
-	private static State[] construct(byte kind, Object data, Type... elements) {
-		int len = 1;
-		for(Type b : elements) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		State[] nodes = new State[len];
-		int[] children = new int[elements.length];
+	private static Automata construct(byte kind, Object data, Type... children) {
+		int[] nchildren = new int[children.length];
+		boolean deterministic = (kind != K_UNION && kind != K_INTERSECTION);
+		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
 		int start = 1;
-		for(int i=0;i!=elements.length;++i) {
-			children[i] = start;
-			State[] comps = nodes(elements[i]);
-			insertNodes(start,comps,nodes);
-			start += comps.length;
-		}
-		nodes[0] = new State(kind, children);		
-		return nodes;
+		int i=0;
+		for(Type element : children) {
+			nchildren[i] = start;
+			Automata child = destruct(element);
+			automata = Automatas.append(automata,child);
+			start += child.size();
+			i = i + 1;
+		}		 	
+		return automata;	
 	}
 	
 	/**
-	 * This method constructs a Node array from a collection of types which will
+	 * This method constructs a State array from a collection of types which will
 	 * form children.
 	 * 
 	 * @param kind
-	 * @param elements
+	 * @param children
 	 * @return
 	 */
-	private static State[] construct(byte kind, Object data, Collection<Type> elements) {		
-		int len = 1;
-		for(Type b : elements) {
-			// could be optimised slightly
-			len += nodes(b).length;
-		}		
-		State[] nodes = new State[len];
-		int[] children = new int[elements.size()];
+	private static Automata construct(byte kind, Object data, Collection<Type> children) {						
+		int[] nchildren = new int[children.size()];
+		boolean deterministic = (kind != K_UNION && kind != K_INTERSECTION);
+		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
 		int start = 1;
 		int i=0;
-		for(Type element : elements) {
-			children[i] = start;
-			State[] comps = nodes(element);
-			insertNodes(start,comps,nodes);
-			start += comps.length;
+		for(Type element : children) {
+			nchildren[i] = start;
+			Automata child = destruct(element);
+			automata = Automatas.append(automata,child);
+			start += child.size();
 			i = i + 1;
 		}
-		
-		nodes[0] = new State(kind, children, data);		
-		return nodes;	
+		 		
+		return automata;	
 	}
 	
 	/**
-	 * The method inserts the nodes in
-	 * <code>from</from> into those in <code>into</code> at the given index.
-	 * This method remaps nodes in <code>from</code>, but does not remap
-	 * any in <code>into</code>
+	 * Destruct is the opposite of construct. It converts a type into an
+	 * automata.
 	 * 
-	 * @param start
-	 * @param from
-	 * @param into
+	 * @param t --- type to be converted.
 	 * @return
 	 */
-	public static State[] insertNodes(int start, State[] from, State[] into) {
-		int[] rmap = new int[from.length];
-		for(int i=0;i!=from.length;++i) {
-			rmap[i] = i+start;			
-		}
-		for(int i=0;i!=from.length;++i) {
-			into[i+start] = remap(from[i],rmap);			
-		}
-		return into;
-	}
-	
-	private static final State[] nodes(Type t) {
+	private static final Automata destruct(Type t) {
 		if (t instanceof Leaf) {
-			return new State[]{new State(leafKind((Leaf) t), null)};
-		} else {			
+			return new Automata(new State[] { new State(leafKind((Leaf) t),
+					null) });
+		} else {
 			// compound type
-			return ((Compound)t).kinds;
+			return ((Compound) t).automata;
 		}
 	}
 	
-
 	public static final byte K_VOID = 0;
 	public static final byte K_ANY = 1;
 	public static final byte K_META = 2;
@@ -1422,27 +1470,10 @@ public abstract class Type {
 	public static final byte K_HEADLESS = 23; // used for readers/writers
 	
 	public static void main(String[] args) {				
-		PrintBuilder printer = new PrintBuilder(System.out);	
 		//Type t1 = contractive(); //linkedList(2);
 		Type t1 = T_UNION(T_NULL,T_NULL);
 		System.out.println("GOT: " + t1);
-		System.out.println("MIN: " + minimise(t1));
-		/*
-		Type t2 = fromString("{int x,any y}");
-		//Type t1 = T_REAL;
-		//Type t2 = T_INT;
-		System.out.println("Type: " + t1 + "\n------------------");
-		build(printer,t1);		
-		System.out.println("\nType: " + t2 + "\n------------------");
-		build(printer,t2);		
-		System.out.println("====================");
-		System.out.println(isSubtype(t1,t2));
-		System.out.println(isSubtype(t2,t1));
-		Type glb = greatestLowerBound(t1,t2);
-		System.out.println(glb);
-		Type lub = leastUpperBound(t1,t2);
-		System.out.println(lub);
-		*/	
+		System.out.println("MIN: " + minimise(t1));		
 	}
 	
 	public static Type contractive() {
