@@ -327,10 +327,10 @@ public final class Automatas {
 
 	/**
 	 * <p>
-	 * Turn an automata into its canonical form. For two automatas in canonical
-	 * form they are <code>equal()</code> iff they accept exactly the same set
-	 * of values. Two automatas which are not <code>equal()</code> are said to
-	 * be <i>isomorphic</i> if the accept the same set of values. We can tell if
+	 * Turn an automata into its canonical form. Two automatas in canonical form
+	 * are <code>equal()</code> iff they accept exactly the same set of values.
+	 * Two automatas which are not <code>equal()</code> are said to be
+	 * <i>isomorphic</i> if the accept the same set of values. We can tell if
 	 * two automatas are isomorphic by checking whether they have the same
 	 * canonical form. More generally, this known as the graph isomorphism
 	 * problem. From a computational perspective, graph isomorphism is
@@ -348,37 +348,73 @@ public final class Automatas {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b>Generally speaking, you want to run extract, simplify and
+	 * <b>NOTE:</b> Generally speaking, you want to run extract, simplify and
 	 * minimise before calling this algorithm. Otherwise, you don't get a true
 	 * canonical form.
 	 * </p>
 	 * 
-	 * @param automata ---  to be canonicalised
+	 * @param automata
+	 *            --- to be canonicalised
 	 * @return
 	 */
 	public static Automata canonicalise(Automata automata) {
-		int[] morph = new int[automata.size()];
-		Arrays.fill(morph, automata.size());		
-		morph[0] = 0; // root *must* be mapped to itself		
+		int size = automata.size();				
 		ArrayList<int[]> candidates = new ArrayList<int[]>();
-		candidates.add(morph);
-		extend(0,0,1,candidates,automata);
+		candidates.add(initialMorphism(size));
+		for(int i=0;i!=size;++i) {
+			extend(0,1,candidates,automata);			
+		}
 		return remap(automata,candidates.get(0));
 	}
-	
+
+	private static int[] initialMorphism(int size) {
+		int[] morph = new int[size];
+		Arrays.fill(morph, size);		
+		morph[0] = 0; // root *must* be mapped to itself
+		return morph;
+	}
+
 	/**
-	 * @param current
-	 *            --- the state currently being placed.
+	 * <p>This algorithm extends all of the current morphisms by a single place.
+	 * What this means, is that all of children of the state under consideration
+	 * will be placed after this. In the case of non-deterministic states, this
+	 * may give rise to a number of equivalent extensions to consider.<p>
+	 * 
 	 * @param index
-	 *            --- the index through current's children.
+	 *            --- index in morphism to extend. A state must already have
+	 *            been placed at its index, but some or all of its children will
+	 *            not be placed yet.
 	 * @param free
-	 *            --- the first free available node.
+	 *            --- the first free available index in the morphism (note free
+	 *            > index).
+	 * @param candidates
+	 *            --- this is the list of candidate morphisms currently being
+	 *            explored. An invariant of this algorithm is that all
+	 *            candidates are equivalent under the <code>lessThan()</code>
+	 *            relation.
+	 * @param automata
+	 *            --- the automata being canonicalised
+	 */
+	private static void extend(int index, int free,
+			ArrayList<int[]> candidates, Automata automata) {
+		// what now?
+		int size = candidates.size();
+		for(int i=0;i!=size;++i) {
+			int[] candidate = candidates.get(i);
+			
+		}
+	}
+
+	/**
+	 * The purpose of this method is to prune the candidate list. In otherwords,
+	 * to remove
+	 * 
+	 * @param size
 	 * @param candidates
 	 * @param automata
 	 */
-	private static void extend(int current, int index, int free,
-			ArrayList<int[]> candidates, Automata automata) {
-		// what now?
+	private static void prune(int size, ArrayList<int[]> candidates, Automata automata) {
+		int[] start = candidates.get(0);
 	}
 	
 	/**
