@@ -397,7 +397,6 @@ public final class Automatas {
 		// quite a lot more pruning that could be done!
 		
 		int size = candidates.size();
-		int nFree = -1;
 		for(int i=0;i!=size;++i) {
 			Morphism candidate = candidates.get(i);			
 			extend(index,candidate,candidates,automata);
@@ -437,7 +436,7 @@ public final class Automatas {
 					// GAH --- the following line is horrendously stupid. It's
 					// guaranteed to generate idendical candidates in the case
 					// of a child which is already allocated.
-					if(!candidate.isAllocated(child)) {
+					if(!ncandidate.isAllocated(child)) {
 						ncandidate.allocate(child);
 					}
 				}
@@ -500,6 +499,7 @@ public final class Automatas {
 		int last = candidates.size();
 		while(diff > 0) {
 			candidates.remove(--last);
+			diff = diff - 1;
 		}
 	}
 	
@@ -523,6 +523,8 @@ public final class Automatas {
 	private static boolean lessThan(Morphism morph1, Morphism morph2,
 			Automata automata) {
 		State[] states = automata.states;
+		int size = Math.min(morph1.free,morph2.free);
+		
 		for(int i=0;i!=size;++i) {
 			State s1 = states[morph1.i2n[i]];
 			State s2 = states[morph2.i2n[i]];
@@ -556,6 +558,12 @@ public final class Automatas {
 			}
 		}
 		
+		// I have a feeling the following line is dead-code
+		if(morph1.free < morph2.free) {
+			throw new RuntimeException("Am i deadcode?");
+			//return true;
+		} 
+		
 		// Ok, they're identical thus far!
 		return false;
 	}
@@ -580,6 +588,7 @@ public final class Automatas {
 			int size = morph.size();
 			i2n = Arrays.copyOf(morph.i2n,size);
 			n2i = Arrays.copyOf(morph.n2i,size);
+			free = morph.free;
 		}
 		
 		public boolean isAllocated(int node) {
