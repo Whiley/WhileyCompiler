@@ -22,8 +22,6 @@ import java.util.*;
 
 import wyautl.lang.*;
 import wyautl.lang.Automata.State;
-import wyautl.util.PrintBuilder;
-import wyautl.util.TypeBuilder;
 import wyil.util.Pair;
 import wyil.util.TypeParser;
 
@@ -58,7 +56,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Tuple T_TUPLE(Type... elements) {		
-		return new Tuple(construct(Automata.K_TUPLE,null,elements));
+		return new Tuple(construct(K_TUPLE,null,elements));
 	}
 	
 	/**
@@ -67,7 +65,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
-		return new Tuple(construct(Automata.K_TUPLE,null,elements));
+		return new Tuple(construct(K_TUPLE,null,elements));
 	}
 	
 	/**
@@ -76,7 +74,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Process T_PROCESS(Type element) {
-		return new Process(construct(Automata.K_PROCESS,null,element));		
+		return new Process(construct(K_PROCESS,null,element));		
 	}
 	
 	public static final Existential T_EXISTENTIAL(NameID name) {
@@ -93,7 +91,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Set T_SET(Type element) {
-		return new Set(construct(Automata.K_SET,null,element));		
+		return new Set(construct(K_SET,null,element));		
 	}
 	
 	/**
@@ -102,7 +100,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final List T_LIST(Type element) {
-		return new List(construct(Automata.K_LIST,null,element));		
+		return new List(construct(K_LIST,null,element));		
 	}
 	
 	/**
@@ -111,7 +109,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Dictionary T_DICTIONARY(Type key, Type value) {
-		return new Dictionary(construct(Automata.K_DICTIONARY,null,key,value));			
+		return new Dictionary(construct(K_DICTIONARY,null,key,value));			
 	}
 	
 	/**
@@ -120,7 +118,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Union T_UNION(Collection<Type> bounds) {
-		return new Union(construct(Automata.K_UNION,null,bounds));		
+		return new Union(construct(K_UNION,null,bounds));		
 	}
 	
 	/**
@@ -129,7 +127,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Union T_UNION(Type... bounds) {
-		return new Union(construct(Automata.K_UNION,null,bounds));			
+		return new Union(construct(K_UNION,null,bounds));			
 	}	
 	
 	/**
@@ -138,7 +136,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Type T_INTERSECTION(Collection<Type> bounds) {
-		return new Intersection(construct(Automata.K_INTERSECTION,null,bounds));
+		return new Intersection(construct(K_INTERSECTION,null,bounds));
 	}
 	
 	/**
@@ -147,7 +145,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Type T_INTERSECTION(Type... bounds) {
-		return new Intersection(construct(Automata.K_INTERSECTION,null,bounds));			
+		return new Intersection(construct(K_INTERSECTION,null,bounds));			
 	}	
 	
 	/**
@@ -156,7 +154,7 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Type T_DIFFERENCE(Type left, Type right) {
-		return new Difference(construct(Automata.K_DIFFERENCE,null,left,right));				
+		return new Difference(construct(K_DIFFERENCE,null,left,right));				
 	}
 	
 	/**
@@ -170,7 +168,7 @@ public abstract class Type {
 		int i = 0;
 		for (Type t : params) { rparams[++i] = t; }		
 		rparams[0] = ret;
-		return new Fun(construct(Automata.K_FUNCTION,null,rparams));		
+		return new Fun(construct(K_FUNCTION,null,rparams));		
 	}
 	
 	/**
@@ -182,7 +180,7 @@ public abstract class Type {
 		Type[] rparams = new Type[params.length+1];		
 		System.arraycopy(params, 0, rparams, 1, params.length);
 		rparams[0] = ret;
-		return new Fun(construct(Automata.K_FUNCTION,null,rparams));				
+		return new Fun(construct(K_FUNCTION,null,rparams));				
 	}
 	
 	/**
@@ -197,7 +195,7 @@ public abstract class Type {
 		for (Type t : params) { rparams[++i] = t; }		
 		rparams[0] = receiver;
 		rparams[1] = ret;
-		return new Meth(construct(Automata.K_METHOD,null,rparams));		
+		return new Meth(construct(K_METHOD,null,rparams));		
 	}
 	
 	/**
@@ -210,7 +208,7 @@ public abstract class Type {
 		System.arraycopy(params, 0, rparams, 2, params.length);
 		rparams[0] = receiver;
 		rparams[1] = ret;
-		return new Meth(construct(Automata.K_METHOD,null,rparams));		
+		return new Meth(construct(K_METHOD,null,rparams));		
 	}
 	
 	/**
@@ -226,7 +224,7 @@ public abstract class Type {
 		for(int i=0;i!=types.length;++i) {
 			types[i] = fields.get(keys[i]);
 		}
-		return new Record(construct(Automata.K_RECORD,keys,types));				
+		return new Record(construct(K_RECORD,keys,types));				
 	}
 
 	/**
@@ -249,7 +247,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static final Type T_LABEL(String label) {
-		return new Automata(construct(Automata.K_LABEL,label));
+		return new Automata(construct(K_LABEL,label));
 	}
 
 	/**
@@ -284,7 +282,7 @@ public abstract class Type {
 		int nmatches = 0;
 		for(int i=0;i!=nodes.length;++i) {
 			State c = nodes[i];
-			if(c.kind == Automata.K_LABEL && c.data.equals(label)) {
+			if(c.kind == K_LABEL && c.data.equals(label)) {
 				rmap[i] = 0;
 				nmatches++;
 			} else {
@@ -299,7 +297,7 @@ public abstract class Type {
 		nmatches = 0;
 		for(int i=0;i!=nodes.length;++i) {
 			State c = nodes[i];
-			if(c.kind == Automata.K_LABEL && c.data.equals(label)) {				
+			if(c.kind == K_LABEL && c.data.equals(label)) {				
 				nmatches++;
 			} else {
 				newnodes[i-nmatches] = Automata.remap(nodes[i],rmap);
@@ -335,7 +333,7 @@ public abstract class Type {
 		}
 		Automata graph = (Automata) t;
 		for (State n : graph.states) {
-			if (n.kind == Automata.K_LABEL && n.data.equals(label)) {
+			if (n.kind == K_LABEL && n.data.equals(label)) {
 				return true;
 			}
 		}
@@ -356,7 +354,7 @@ public abstract class Type {
 		}
 		Automata graph = (Automata) t;
 		for (State n : graph.states) {			
-			if (n.kind == Automata.K_LABEL) {
+			if (n.kind == K_LABEL) {
 				return true;
 			}
 		}
@@ -716,7 +714,7 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Existential extends Automata{
+	public static final class Existential extends Compound{
 		private Existential(NameID name) {
 			super(new State[] { new State(K_EXISTENTIAL,name) });
 		}
@@ -865,6 +863,26 @@ public abstract class Type {
 	 * certainly make it more pleasant to use this library.
 	 */
 
+	public static class Compound extends Type {
+		protected final Automata automata;
+		
+		public Compound(Automata automata) {
+			this.automata = automata;
+		}
+		
+		public int hashCode() {
+			return automata.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Compound) {
+				Compound c = (Compound) o;
+				return automata.equals(c.automata);
+			}
+			return false;
+		}
+	}
+	
 	/**
 	 * A tuple type describes a compound type made up of two or more
 	 * subcomponents. It is similar to a record, except that fields are
@@ -873,15 +891,15 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Tuple extends Automata  {
-		private Tuple(State[] nodes) {
-			super(nodes);
+	public static final class Tuple extends Compound  {
+		private Tuple(Automata automata) {
+			super(automata);
 		}		
 		public java.util.List<Type> elements() {
-			int[] values = (int[]) nodes[0].children;
+			int[] values = (int[]) automata.states[0].children;
 			ArrayList<Type> elems = new ArrayList<Type>();
 			for(Integer i : values) {
-				elems.add(extract(i));
+				elems.add(construct(Automatas.extract(automata,i)));
 			}
 			return elems;
 		}		
@@ -895,13 +913,13 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Set extends Automata  {
-		private Set(State[] nodes) {
-			super(nodes);
+	public static final class Set extends Compound  {
+		private Set(Automata automata) {
+			super(automata);
 		}
-		public Type element() {
-			int elemIdx = (Integer) nodes[0].children;
-			return extract(elemIdx);			
+		public Type element() {			
+			int elemIdx = automata.states[0].children[0];
+			return construct(Automatas.extract(automata,elemIdx));			
 		}		
 	}
 
@@ -913,13 +931,13 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class List extends Automata  {
-		private List(State[] nodes) {
-			super(nodes);
+	public static final class List extends Compound  {
+		private List(Automata automata) {
+			super(automata);
 		}
 		public Type element() {			
-			int elemIdx = (Integer) nodes[0].children;
-			return extract(elemIdx);
+			int elemIdx = automata.states[0].children[0];
+			return construct(Automatas.extract(automata,elemIdx));	
 		}		
 	}
 
@@ -929,13 +947,13 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Process extends Automata  {
-		private Process(State[] nodes) {
-			super(nodes);
+	public static final class Process extends Compound  {
+		private Process(Automata automata) {
+			super(automata);
 		}
 		public Type element() {
-			int elemIdx = (Integer) nodes[0].children;
-			return extract(elemIdx);	
+			int elemIdx = automata.states[0].children[0];
+			return construct(Automatas.extract(automata,elemIdx));		
 		}		
 	}
 
@@ -948,17 +966,17 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Dictionary extends Automata  {
-		private Dictionary(State[] nodes) {
-			super(nodes);
+	public static final class Dictionary extends Compound  {
+		private Dictionary(Automata automata) {
+			super(automata);
 		}
 		public Type key() {
-			Pair<Integer,Integer> p = (Pair) nodes[0].children;
-			return extract(p.first());
+			int keyIdx = automata.states[0].children[0];
+			return construct(Automatas.extract(automata,keyIdx));				
 		}
 		public Type value() {
-			Pair<Integer,Integer> p = (Pair) nodes[0].children;
-			return extract(p.second());			
+			int valueIdx = automata.states[0].children[1];
+			return construct(Automatas.extract(automata,valueIdx));	
 		}
 	}
 
@@ -971,9 +989,9 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Record extends Automata  {
-		private Record(State[] nodes) {
-			super(nodes);
+	public static final class Record extends Compound  {
+		private Record(Automata automata) {
+			super(automata);
 		}
 
 		/**
@@ -984,10 +1002,10 @@ public abstract class Type {
 		 * @return
 		 */
 		public HashSet<String> keys() {
-			Pair<String,Integer>[] fields = (Pair[]) nodes[0].children;
+			String[] fields = (String[]) automata.states[0].data;
 			HashSet<String> r = new HashSet<String>();
-			for(Pair<String,Integer> f : fields) {
-				r.add(f.first());
+			for(String f : fields) {
+				r.add(f);
 			}
 			return r;
 		}
@@ -997,11 +1015,13 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public HashMap<String,Type> fields() {
-			Pair<String,Integer>[] fields = (Pair[]) nodes[0].children;
-			HashMap<String,Type> r = new HashMap<String,Type>();
-			for(Pair<String,Integer> f : fields) {
-				r.put(f.first(),extract(f.second()));
+		public HashMap<String, Type> fields() {
+			String[] fields = (String[]) automata.states[0].data;
+			int[] children = automata.states[0].children;
+			HashMap<String, Type> r = new HashMap<String, Type>();
+			for (int i = 0; i != children.length; ++i) {
+				r.put(fields[i],
+						construct(Automatas.extract(automata, children[i])));
 			}
 			return r;
 		}
@@ -1016,9 +1036,9 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Union extends Automata {
-		private Union(State[] nodes) {
-			super(nodes);
+	public static final class Union extends Compound {
+		private Union(Automata automata) {
+			super(automata);
 		}
 
 		/**
@@ -1028,9 +1048,9 @@ public abstract class Type {
 		 */
 		public HashSet<Type> bounds() {			
 			HashSet<Type> r = new HashSet<Type>();
-			int[] fields = (int[]) nodes[0].children;
+			int[] fields = (int[]) automata.states[0].children;
 			for(int i : fields) {
-				Type b = extract(i);					
+				Type b = construct(Automatas.extract(automata,i));					
 				r.add(b);					
 			}			
 			return r;
@@ -1045,9 +1065,9 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Intersection extends Automata {
-		private Intersection(State[] nodes) {
-			super(nodes);
+	public static final class Intersection extends Compound {
+		private Intersection(Automata automata) {
+			super(automata);
 		}
 
 		/**
@@ -1057,9 +1077,9 @@ public abstract class Type {
 		 */
 		public HashSet<Type> bounds() {			
 			HashSet<Type> r = new HashSet<Type>();
-			int[] fields = (int[]) nodes[0].children;
+			int[] fields = (int[]) automata.states[0].children;
 			for(int i : fields) {
-				Type b = extract(i);					
+				Type b = construct(Automatas.extract(automata,i));					
 				r.add(b);					
 			}			
 			return r;
@@ -1073,19 +1093,19 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Difference extends Automata {
-		private Difference(State[] nodes) {
-			super(nodes);
+	public static final class Difference extends Compound {
+		private Difference(Automata automata) {
+			super(automata);
 		}
 		
 		public Type left() {						
-			int[] fields = (int[]) nodes[0].children;
-			return extract(fields[0]);			
+			int[] fields = automata.states[0].children;
+			return construct(Automatas.extract(automata,fields[0]));			
 		}
 		
 		public Type right() {						
-			int[] fields = (int[]) nodes[0].children;
-			return extract(fields[1]);			
+			int[] fields = automata.states[0].children;
+			return construct(Automatas.extract(automata,fields[1]));
 		}
 	}
 	
@@ -1096,9 +1116,9 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static class Fun extends Automata  {
-		Fun(State[] nodes) {
-			super(nodes);
+	public static class Fun extends Compound  {
+		Fun(Automata automata) {
+			super(automata);
 		}
 
 		/**
@@ -1106,10 +1126,10 @@ public abstract class Type {
 		 * 
 		 * @return
 		 */
-		public Type ret() {						
-			int[] fields = (int[]) nodes[0].children;			
-			return extract(fields[1]);
-		}		
+		public Type ret() {
+			int[] fields = automata.states[0].children;
+			return construct(Automatas.extract(automata, fields[1]));
+		}	
 		
 		/**
 		 * Get the parameter types of this function type.
@@ -1117,29 +1137,33 @@ public abstract class Type {
 		 * @return
 		 */
 		public ArrayList<Type> params() {
-			int[] fields = (int[]) nodes[0].children;
+			int[] fields = automata.states[0].children;			
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=2;i<fields.length;++i) {
-				r.add(extract(fields[i]));
+				r.add(construct(Automatas.extract(automata, fields[i])));
 			}
 			return r;
 		}
 	}
 	
 	public static final class Meth extends Fun {
-		Meth(State[] nodes) {
-			super(nodes);
+		Meth(Automata automata) {
+			super(automata);
 		}
+
 		/**
 		 * Get the receiver type of this function type.
 		 * 
 		 * @return
 		 */
 		public Type.Process receiver() {
-			int[] fields = (int[]) nodes[0].children;
+			int[] fields = automata.states[0].children;
 			int r = fields[0];
-			if(r == -1) { return null; }
-			return (Type.Process) extract(r);
+			if (r == -1) {
+				return null;
+			}
+			return (Type.Process) construct(Automatas.extract(automata,
+					fields[0]));
 		}
 	}
 	
@@ -1196,25 +1220,25 @@ public abstract class Type {
 	 */
 	public static final byte leafKind(Type.Leaf leaf) {
 		if(leaf instanceof Type.Void) {
-			return Automata.K_VOID;
+			return K_VOID;
 		} else if(leaf instanceof Type.Any) {
-			return Automata.K_ANY;
+			return K_ANY;
 		} else if(leaf instanceof Type.Null) {
-			return Automata.K_NULL;
+			return K_NULL;
 		} else if(leaf instanceof Type.Bool) {
-			return Automata.K_BOOL;
+			return K_BOOL;
 		} else if(leaf instanceof Type.Byte) {
-			return Automata.K_BYTE;
+			return K_BYTE;
 		} else if(leaf instanceof Type.Char) {
-			return Automata.K_CHAR;
+			return K_CHAR;
 		} else if(leaf instanceof Type.Int) {
-			return Automata.K_INT;
+			return K_INT;
 		} else if(leaf instanceof Type.Real) {
-			return Automata.K_RATIONAL;
+			return K_RATIONAL;
 		} else if(leaf instanceof Type.Strung) {
-			return Automata.K_STRING;
+			return K_STRING;
 		} else if(leaf instanceof Type.Meta) {
-			return Automata.K_META;
+			return K_META;
 		} else {
 			// should be dead code
 			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
@@ -1230,54 +1254,54 @@ public abstract class Type {
 	 * @param nodes
 	 * @return
 	 */
-	public final static Type construct(State[] nodes) {
-		State root = nodes[0];
+	public final static Type construct(Automata automata) {
+		State root = automata.states[0];
 		switch(root.kind) {
-		case Automata.K_VOID:
+		case K_VOID:
 			return T_VOID;
-		case Automata.K_ANY:
+		case K_ANY:
 			return T_ANY;
-		case Automata.K_META:
+		case K_META:
 			return T_META;
-		case Automata.K_NULL:
+		case K_NULL:
 			return T_NULL;			
-		case Automata.K_BOOL:
+		case K_BOOL:
 			return T_BOOL;
-		case Automata.K_BYTE:
+		case K_BYTE:
 			return T_BYTE;
-		case Automata.K_CHAR:
+		case K_CHAR:
 			return T_CHAR;
-		case Automata.K_INT:
+		case K_INT:
 			return T_INT;
-		case Automata.K_RATIONAL:
+		case K_RATIONAL:
 			return T_REAL;
-		case Automata.K_STRING:
+		case K_STRING:
 			return T_STRING;
-		case Automata.K_TUPLE:
-			return new Tuple(nodes);
-		case Automata.K_SET:
-			return new Set(nodes);
-		case Automata.K_LIST:
-			return new List(nodes);
-		case Automata.K_EXISTENTIAL:
+		case K_TUPLE:
+			return new Tuple(automata);
+		case K_SET:
+			return new Set(automata);
+		case K_LIST:
+			return new List(automata);
+		case K_EXISTENTIAL:
 			if(root.children == null) {
 				throw new RuntimeException("Problem");
 			}
-			return new Existential((NameID) root.children);
-		case Automata.K_PROCESS:
-			return new Process(nodes);
-		case Automata.K_DICTIONARY:
-			return new Dictionary(nodes);
-		case Automata.K_RECORD:
-			return new Record(nodes);
-		case Automata.K_UNION:
-			return new Union(nodes);
-		case Automata.K_METHOD:
-			return new Meth(nodes);
-		case Automata.K_FUNCTION:
-			return new Fun(nodes);		
-		case Automata.K_LABEL:
-			return T_LABEL((String)root.children);
+			return new Existential((NameID) root.data);
+		case K_PROCESS:
+			return new Process(automata);
+		case K_DICTIONARY:
+			return new Dictionary(automata);
+		case K_RECORD:
+			return new Record(automata);
+		case K_UNION:
+			return new Union(automata);
+		case K_METHOD:
+			return new Meth(automata);
+		case K_FUNCTION:
+			return new Fun(automata);		
+		case K_LABEL:
+			return T_LABEL((String)root.data);
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
