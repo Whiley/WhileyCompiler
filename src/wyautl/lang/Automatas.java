@@ -191,8 +191,6 @@ public final class Automatas {
 		BinaryMatrix equivs = new BinaryMatrix(automata.size(),automata.size(),true);
 		determineEquivalenceClasses(equivs,automata);
 		
-		System.out.println("EQUIVALENCE CLASSES: " + equivs);
-		
 		// Second, determine representative nodes for each equivalence class.
 		int oldSize = automata.size();
 		int[] mapping = new int[oldSize];		
@@ -713,8 +711,26 @@ public final class Automatas {
 	private static State remap(State node, int[] rmap) {
 		int[] ochildren = node.children;
 		int[] nchildren = new int[ochildren.length];
-		for (int i = 0; i != nchildren.length; ++i) {
-			nchildren[i] = rmap[ochildren[i]];
+		if(node.deterministic) { 
+			for (int i = 0; i != nchildren.length; ++i) {
+				nchildren[i] = rmap[ochildren[i]];
+			}
+		} else {
+			// slightly harder for non-deterministic case
+			BitSet visited = new BitSet(rmap.length);			
+			int diff = 0;
+			for (int i = 0; i != nchildren.length; ++i) {
+				int nchild = rmap[ochildren[i]];
+				if(!visited.get(nchild)) {
+					visited.set(nchild);					
+					nchildren[i-diff] = nchild;
+				} else {
+					diff = diff + 1;
+				}
+			}
+			if(diff > 0) {
+				nchildren = Arrays.copyOf(nchildren, nchildren.length-diff);
+			}
 		}
 		return new State(node.kind, nchildren, node.deterministic, node.data);
 	}
