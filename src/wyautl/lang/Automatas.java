@@ -191,6 +191,8 @@ public final class Automatas {
 		BinaryMatrix equivs = new BinaryMatrix(automata.size(),automata.size(),true);
 		determineEquivalenceClasses(equivs,automata);
 		
+		System.out.println("EQUIVALENCE CLASSES: " + equivs);
+		
 		// Second, determine representative nodes for each equivalence class.
 		int oldSize = automata.size();
 		int[] mapping = new int[oldSize];		
@@ -327,14 +329,12 @@ public final class Automatas {
 
 	/**
 	 * <p>
-	 * Turn an automata into its canonical form. Two automatas in canonical form
-	 * are <code>equal()</code> iff they accept exactly the same set of values.
-	 * Two automatas which are not <code>equal()</code> are said to be
-	 * <i>isomorphic</i> if the accept the same set of values. We can tell if
-	 * two automatas are isomorphic by checking whether they have the same
-	 * canonical form. More generally, this known as the graph isomorphism
-	 * problem. From a computational perspective, graph isomorphism is
-	 * interesting in that (at the time of writing) no known polynomial time
+	 * Turn an automata into its canonical form. Two automatas are said to be
+	 * <i>isomorphic</i> if there is a permutation of states which, when applied
+	 * to the first, yields the second. Then, for any isomorphic automatas have
+	 * an identical canonical form. More generally, this known as the graph
+	 * isomorphism problem. From a computational perspective, graph isomorphism
+	 * is interesting in that (at the time of writing) no known polynomial time
 	 * algorithms are known; however, it is also not known to be NP-complete.
 	 * </p>
 	 * 
@@ -717,5 +717,16 @@ public final class Automatas {
 			nchildren[i] = rmap[ochildren[i]];
 		}
 		return new State(node.kind, nchildren, node.deterministic, node.data);
-	}	
+	}
+	
+	public static void main(String[] args) {
+		State[] states = new State[3];
+		states[0] = new State(0,new int[]{1},false);
+		states[1] = new State(0,new int[]{1,2},false);
+		states[2] = new State(0,new int[]{},false);
+		Automata a = new Automata(states);
+		System.out.println("GOT: " + a);
+		a = minimise(a);
+		System.out.println("NOW: " + a);
+	}
 }
