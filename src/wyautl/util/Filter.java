@@ -43,6 +43,8 @@ public class Filter {
 					simplify=true;
 				} else if(args[index].equals("-m") || args[index].equals("-minimise")) {
 					minimise=true;
+				}  else if(args[index].equals("-c") || args[index].equals("-canonicalise")) {
+					canonicalise=true;
 				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
 					verbose = true;
 				}
@@ -79,6 +81,10 @@ public class Filter {
 						automata = Automatas.minimise(automata);
 					}
 					
+					if(canonicalise) {
+						automata = Automatas.canonicalise(automata);
+					}
+					
 					if(!reduce || !visited.contains(automata)) {					
 						nwritten++;
 						writer.write(automata);
@@ -93,7 +99,7 @@ public class Filter {
 				
 			}
 			if(!verbose) {
-				System.err.print("\rRead " + nread + "automata, wrote " + nwritten+ ".");
+				System.err.print("\rRead " + nread + " automata, wrote " + nwritten+ ".");
 			}			
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
