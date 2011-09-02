@@ -46,7 +46,16 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 		}
 
 		public String toString() {
-			return kind + "(" + Arrays.toString(children) + ")";
+			String middle = "";
+			boolean firstTime=true;
+			for(Value child : children) {
+				if(!firstTime) {
+					middle = middle + ",";
+				}
+				firstTime=false;
+				middle = middle + child;
+			}
+			return kind + "(" + middle + ")";
 		}
 	}
 	
@@ -100,7 +109,11 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 				// non-deterministic case
 				int[] schildren = state.children;
 				Value[] vchildren = value.children;
-								
+				
+				if (vchildren.length == 0 && schildren.length > 0) {
+					return false;
+				}
+				
 				for(int i=0;i!=vchildren.length;++i) {
 					Value vchild = vchildren[i];
 					boolean matched = false;

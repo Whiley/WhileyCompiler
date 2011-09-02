@@ -129,6 +129,11 @@ public class Tester {
 		int size = automatas.size();
 		for (int i=0;i!=size;++i) {	
 			Automata ai = automatas.get(i);
+			
+			if(nonAccepting(ai)) {
+				continue;
+			}
+			
 			BitSet oldAccepts = accepts(interpretation, ai, model);			
 			for (int j=i+1;j!=size;++j) {	
 				Automata aj = automatas.get(j);
@@ -136,6 +141,7 @@ public class Tester {
 				if(oldAccepts.equals(newAccepts) && !ai.equals(aj)) {
 					System.out.println("Possible canonicalisation unsoundness: "
 							+ ai + " != " + aj + " (" + newAccepts.cardinality() + ")");
+					printAccepts(newAccepts,model);
 				}
 			}
 			count++;
@@ -144,6 +150,28 @@ public class Tester {
 			}
 		}
 	}	
+	
+	public static boolean nonAccepting(Automata a) {
+		for(int i=0;i!=a.size();++i) {
+			if(a.states[i].children.length == 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public static void printAccepts(BitSet accepts, ArrayList<Value> model) {
+		System.out.print("{");
+		boolean firstTime=true;
+		for (int i = accepts.nextSetBit(0); i >= 0; i = accepts.nextSetBit(i+1)) {
+			if(!firstTime) {
+				System.out.print(",");
+			}
+			firstTime=false;
+			System.out.print(model.get(i));
+		}
+		System.out.println("}");
+	}
 	
 	public static void main(String[] args) {
 		boolean binaryIn = false;

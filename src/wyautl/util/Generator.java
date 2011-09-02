@@ -224,6 +224,8 @@ public class Generator {
 		boolean binary = false;		
 		GenericWriter<Automata> writer;
 		OutputStream out = System.out;
+		int minSize = 1;
+		int maxSize = config.SIZE;
 		
 		try {
 			int index = 0;
@@ -234,7 +236,14 @@ public class Generator {
 					String filename = args[++index];
 					out = new FileOutputStream(filename);
 				} else if(args[index].equals("-s") || args[index].equals("-size")) {
-					config.SIZE = Integer.parseInt(args[++index]);
+					String arg = args[++index];
+					if(arg.indexOf(':') >= 0) {
+						String[] ss = arg.split(":");
+						minSize = Integer.parseInt(ss[0]);
+						maxSize = Integer.parseInt(ss[1]);
+					} else {
+						maxSize = Integer.parseInt(arg);						
+					}
 				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
 					verbose = true;
 				} else if(args[index].equals("-m") || args[index].equals("-model")) {
@@ -256,7 +265,10 @@ public class Generator {
 			} else {
 				writer = new TextAutomataWriter(out);
 			}					
-			generate(writer,config);
+			for(int i=minSize;i<=maxSize;++i) {
+				config.SIZE = i;
+				generate(writer,config);				
+			}			
 			if(!verbose) {
 				System.err.print("\rWrote " + count + " automatas.");
 			}
