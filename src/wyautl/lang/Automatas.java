@@ -361,8 +361,9 @@ public final class Automatas {
 		int size = automata.size();				
 		ArrayList<int[]> candidates = new ArrayList<int[]>();
 		candidates.add(initialMorphism(size));
+		int free = 1;
 		for(int i=0;i!=size;++i) {
-			extend(0,1,candidates,automata);			
+			free = extend(0,free,candidates,automata);			
 		}
 		return remap(automata,candidates.get(0));
 	}
@@ -375,10 +376,12 @@ public final class Automatas {
 	}
 
 	/**
-	 * <p>This algorithm extends all of the current morphisms by a single place.
+	 * <p>
+	 * This algorithm extends all of the current morphisms by a single place.
 	 * What this means, is that all of children of the state under consideration
 	 * will be placed after this. In the case of non-deterministic states, this
-	 * may give rise to a number of equivalent extensions to consider.<p>
+	 * may give rise to a number of equivalent extensions to consider.
+	 * <p>
 	 * 
 	 * @param index
 	 *            --- index in morphism to extend. A state must already have
@@ -394,27 +397,114 @@ public final class Automatas {
 	 *            relation.
 	 * @param automata
 	 *            --- the automata being canonicalised
+	 * @return --- the next available free slot after the extension.
 	 */
-	private static void extend(int index, int free,
+	private static int extend(int index, int free,
 			ArrayList<int[]> candidates, Automata automata) {
-		// what now?
+
+		// Please note, this algorithm is really not very efficient. There is
+		// quite a lot more pruning that could be done!
+		
 		int size = candidates.size();
+		int nFree = -1;
 		for(int i=0;i!=size;++i) {
 			int[] candidate = candidates.get(i);
-			
+			nFree = extend(index,free,candidate,candidates,automata);
 		}
+		
+		prune(nFree,candidates, automata);
+		return nFree;
 	}
 
+	private static int extend(int index, int free, int[] candidate,
+			ArrayList<int[]> candidates, Automata automata) {
+		State[] states = automata.states;
+		State s = states[candidate[index]];
+		int[] children = s.children;
+		if(s.deterministic) {
+			// easy case
+			for(int child : children) {
+				candidate[free++] = child;
+			}
+		} else {
+			// harder case
+			
+			// This loop is why this algorithm has exponential running time.
+			ArrayList<int[]> permutations = permutations(children);
+			for(int i=0;i!=permutations.size();++i) {
+				int[] ncandidate;
+				if((i+1) == permutations.size()) {
+					// last one, so overwrite original
+					ncandidate = candidate;
+				} else {
+					ncandidate = Arrays.copyOf(candidate,candidate.length);
+					candidates.add(ncandidate);
+				}
+				int[] permutation = permutations.get(i);
+				for(int child : permutation) {
+					ncandidate[free++] = child;
+				}
+			}			
+		}
+		return free;
+	}
+	
+	private static ArrayList<int[]> permutations(int[] children) {
+		ArrayList<int[]> permutations = new ArrayList();		
+		permutations(0,children,permutations);
+		return permutations;
+	}
+	
+	private static void permutations(int index, int[] permutation, ArrayList<int[]> permutations) {		
+		int size = permutation.length;
+		if(index == size) {			
+			permutations.add(Arrays.copyOf(permutation, size));
+		} else {
+			int t1 = permutation[index];
+			for(int i=index;i<size;++i) {
+				int t2 = permutation[i];
+				permutation[index] = t2;
+				permutation[i] = t1;
+				permutations(index+1,permutation,permutations);
+				permutation[index] = t1;
+				permutation[i] = t2;								
+			}
+		}
+	}
+	
 	/**
 	 * The purpose of this method is to prune the candidate list. In otherwords,
-	 * to remove
+	 * to remove any candidates which are above some other candidate. 
 	 * 
 	 * @param size
 	 * @param candidates
 	 * @param automata
 	 */
 	private static void prune(int size, ArrayList<int[]> candidates, Automata automata) {
-		int[] start = candidates.get(0);
+		// this is really inefficient!
+		// at a minimum, we could avoid recomputing lessThan twice for each candidate.
+		int[] least = candidates.get(0); 
+		for(int[] candidate : candidates) {
+			if(lessThan(candidate,least,size,automata)) {
+				least = candidate;
+			}
+		}
+		
+		int diff = 0;
+		for(int i=0;i!=candidates.size();++i) {
+			int[] candidate = candidates.get(i);
+			if(lessThan(least,candidate,size,automata)) {
+				diff = diff + 1;
+			} else {
+				candidates.set(i-diff,candidate);
+			}
+		}
+		
+		// now actually remove those bypassed.
+		int last = candidates.size();
+		while(diff > 0) {
+			candidates.remove(--last);
+		}
 	}
 	
 	/**
