@@ -360,10 +360,9 @@ public final class Automatas {
 	public static Automata canonicalise(Automata automata) {
 		int size = automata.size();				
 		ArrayList<Morphism> candidates = new ArrayList<Morphism>();		
-		candidates.add(new Morphism(size));
-		int free = 1;
+		candidates.add(new Morphism(size));		
 		for(int i=0;i!=size;++i) {
-			free = extend(0,free,candidates,automata);			
+			extend(i,candidates,automata);			
 		}
 		return remap(automata,candidates.get(0).n2i);
 	}
@@ -390,9 +389,8 @@ public final class Automatas {
 	 *            relation.
 	 * @param automata
 	 *            --- the automata being canonicalised
-	 * @return --- the next available free slot after the extension.
 	 */
-	private static int extend(int index, int free,
+	private static void extend(int index,
 			ArrayList<Morphism> candidates, Automata automata) {
 
 		// Please note, this algorithm is really not very efficient. There is
@@ -402,14 +400,13 @@ public final class Automatas {
 		int nFree = -1;
 		for(int i=0;i!=size;++i) {
 			Morphism candidate = candidates.get(i);			
-			nFree = extend(index,free,candidate,candidates,automata);
+			extend(index,candidate,candidates,automata);
 		}
 		
-		prune(nFree,candidates, automata);
-		return nFree;
+		prune(candidates, automata);
 	}
 
-	private static int extend(int index, int free, Morphism candidate,
+	private static void extend(int index, Morphism candidate,
 			ArrayList<Morphism> candidates, Automata automata) {
 		State[] states = automata.states;
 		State s = states[candidate.i2n[index]];
@@ -417,12 +414,14 @@ public final class Automatas {
 		if(s.deterministic) {
 			// easy case
 			for(int child : children) {
-				candidate.allocate(child,free++);
+				if(!candidate.isAllocated(child)) {
+					candidate.allocate(child);
+				}
 			}
 		} else {
 			// harder case
 			
-			// This loop is why this algorithm has exponential running time.
+			// This loop is why this algorithm has exponential running time.			
 			ArrayList<int[]> permutations = permutations(children);
 			for(int i=0;i!=permutations.size();++i) {
 				Morphism ncandidate;
@@ -432,14 +431,18 @@ public final class Automatas {
 				} else {
 					ncandidate = new Morphism(candidate);
 					candidates.add(ncandidate);
-				}
-				int[] permutation = permutations.get(i);
+				}				
+				int[] permutation = permutations.get(i);				
 				for(int child : permutation) {
-					ncandidate.allocate(child, free++);
+					// GAH --- the following line is horrendously stupid. It's
+					// guaranteed to generate idendical candidates in the case
+					// of a child which is already allocated.
+					if(!candidate.isAllocated(child)) {
+						ncandidate.allocate(child);
+					}
 				}
 			}			
-		}
-		return free;
+		}		
 	}
 	
 	private static ArrayList<int[]> permutations(int[] children) {
@@ -473,12 +476,12 @@ public final class Automatas {
 	 * @param candidates
 	 * @param automata
 	 */
-	private static void prune(int size, ArrayList<Morphism> candidates, Automata automata) {
+	private static void prune(ArrayList<Morphism> candidates, Automata automata) {
 		// this is really inefficient!
-		// at a minimum, we could avoid recomputing lessThan twice for each candidate.
+		// at a minimum, we could avoid recomputing lessThan twice for each candidate.		
 		Morphism least = candidates.get(0); 
-		for(Morphism candidate : candidates) {
-			if(lessThan(candidate,least,size,automata)) {
+		for(Morphism candidate : candidates) {			
+			if(lessThan(candidate,least,automata)) {
 				least = candidate;
 			}
 		}
@@ -486,7 +489,7 @@ public final class Automatas {
 		int diff = 0;
 		for(int i=0;i!=candidates.size();++i) {
 			Morphism candidate = candidates.get(i);
-			if(lessThan(least,candidate,size,automata)) {
+			if(lessThan(least,candidate,automata)) {
 				diff = diff + 1;
 			} else {
 				candidates.set(i-diff,candidate);
@@ -517,7 +520,7 @@ public final class Automatas {
 	 *            --- automata being canonicalised.
 	 * @return
 	 */
-	private static boolean lessThan(Morphism morph1, Morphism morph2, int size,
+	private static boolean lessThan(Morphism morph1, Morphism morph2,
 			Automata automata) {
 		State[] states = automata.states;
 		for(int i=0;i!=size;++i) {
@@ -560,6 +563,7 @@ public final class Automatas {
 	private static final class Morphism {
 		final int[] i2n; // indices to nodes
 		final int[] n2i; // nodes to indices
+		int free;        // first available index
 		
 		public Morphism(int size) {
 			i2n = new int[size];
@@ -568,7 +572,8 @@ public final class Automatas {
 				i2n[i] = Integer.MAX_VALUE;
 				n2i[i] = Integer.MAX_VALUE;
 			}
-			allocate(0,0);
+			free = 0;
+			allocate(0);
 		}
 		
 		public Morphism(Morphism morph) {
@@ -577,13 +582,13 @@ public final class Automatas {
 			n2i = Arrays.copyOf(morph.n2i,size);
 		}
 		
-		public boolean nodeAllocated(int node) {
+		public boolean isAllocated(int node) {
 			return n2i[node] != Integer.MAX_VALUE;
 		}
 		
-		public void allocate(int node, int index) {
-			i2n[index] = node;
-			n2i[node] = index;
+		public void allocate(int node) {
+			i2n[free] = node;
+			n2i[node] = free++;
 		}		
 		
 		public int size() {
