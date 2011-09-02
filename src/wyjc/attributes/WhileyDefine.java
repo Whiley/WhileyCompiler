@@ -319,7 +319,8 @@ public class WhileyDefine implements BytecodeAttribute {
 				return new WhileyDefine(name, value, attrs);
 			} else {
 				// type only
-				Type type = WhileyType.Reader.readType(input, constantPool);
+				Type type = Type.construct(new WhileyType.TypeReader(input,
+						constantPool).read());
 				int nattrs = input.read_u2();
 				List<BytecodeAttribute> attrs = BytecodeAttribute.Fn.read(
 						nattrs, input, constantPool, attributeReaders);

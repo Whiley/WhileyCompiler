@@ -413,7 +413,7 @@ public abstract class Type {
 	// Type operations
 	// =============================================================
 
-		/**
+	/**
 	 * Determine whether type <code>t2</code> is a <i>coercive subtype</i> of
 	 * type <code>t1</code> (written t1 :> t2). In other words, whether the set
 	 * of all possible values described by the type <code>t2</code> is a subset
@@ -1434,7 +1434,7 @@ public abstract class Type {
 	 * @param t --- type to be converted.
 	 * @return
 	 */
-	private static final Automata destruct(Type t) {
+	public static final Automata destruct(Type t) {
 		if (t instanceof Leaf) {
 			return new Automata(new State[] { new State(leafKind((Leaf) t),
 					null) });

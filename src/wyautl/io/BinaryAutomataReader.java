@@ -26,7 +26,7 @@ import wyjvm.io.BinaryInputStream;
  * 
  */
 public class BinaryAutomataReader implements GenericReader<Automata> {		
-	private final BinaryInputStream reader;	
+	protected final BinaryInputStream reader;	
 	
 	public BinaryAutomataReader(BinaryInputStream reader) {
 		this.reader = reader;			
