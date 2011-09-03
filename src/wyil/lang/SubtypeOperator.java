@@ -6,10 +6,13 @@ import wyautl.lang.*;
 public class SubtypeOperator implements Relation {
 	private final Automata from;
 	private final Automata to;
+	private final BinaryMatrix subtypes;
+	private final BinaryMatrix suptypes;
 	
 	public SubtypeOperator(Automata fromGraph, Automata toGraph) {
 		this.from = fromGraph;
 		this.to = toGraph;
+		//this.subtypes = new BinaryMatrix(this.);
 	}
 	
 	public Automata from() {
