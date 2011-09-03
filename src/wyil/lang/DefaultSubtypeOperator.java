@@ -2,8 +2,6 @@ package wyil.lang;
 
 import static wyil.lang.Type.*;
 import wyautl.lang.*;
-import wyil.util.Pair;
-
 
 public class DefaultSubtypeOperator implements Relation {
 	private final Automata from;

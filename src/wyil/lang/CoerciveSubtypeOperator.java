@@ -2,10 +2,9 @@ package wyil.lang;
 
 import static wyil.lang.Type.*;
 import wyautl.lang.Automata;
-import wyil.util.Pair;
 
 
-public class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
+public final class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
 	
 	public CoerciveSubtypeOperator(Automata fromAutomata, Automata toAutomata) {
 		super(fromAutomata,toAutomata);
