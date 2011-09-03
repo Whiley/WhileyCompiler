@@ -422,7 +422,7 @@ public abstract class Type {
 	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
-		Relation relation = new CoerciveSubtypeOperator(a1,a2);		
+		Relation relation = new CoercionOperator(a1,a2);		
 		Automatas.computeRelation(relation);		
 		return relation.isRelated(0, 0); 
 	}
@@ -436,7 +436,7 @@ public abstract class Type {
 	public static boolean isSubtype(Type t1, Type t2) {				
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
-		Relation relation = new DefaultSubtypeOperator(a1,a2);		
+		Relation relation = new SubtypeOperator(a1,a2);		
 		Automatas.computeRelation(relation);		
 		return relation.isRelated(0, 0);		
 	}

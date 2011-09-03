@@ -4,9 +4,9 @@ import static wyil.lang.Type.*;
 import wyautl.lang.Automata;
 
 
-public final class CoerciveSubtypeOperator extends DefaultSubtypeOperator {
+public final class CoercionOperator extends SubtypeOperator {
 	
-	public CoerciveSubtypeOperator(Automata fromAutomata, Automata toAutomata) {
+	public CoercionOperator(Automata fromAutomata, Automata toAutomata) {
 		super(fromAutomata,toAutomata);
 	}
 	

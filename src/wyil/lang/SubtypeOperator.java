@@ -3,11 +3,11 @@ package wyil.lang;
 import static wyil.lang.Type.*;
 import wyautl.lang.*;
 
-public class DefaultSubtypeOperator implements Relation {
+public class SubtypeOperator implements Relation {
 	private final Automata from;
 	private final Automata to;
 	
-	public DefaultSubtypeOperator(Automata fromGraph, Automata toGraph) {
+	public SubtypeOperator(Automata fromGraph, Automata toGraph) {
 		this.from = fromGraph;
 		this.to = toGraph;
 	}
