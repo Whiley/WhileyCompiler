@@ -420,11 +420,11 @@ public abstract class Type {
 	 * of that described by <code>t1</code>.
 	 */
 	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
-		State[] g1 = destruct(t1);
-		State[] g2 = destruct(t2);
-		Relation inference = new CoerciveSubtypeOperator(g1,g2);		
-		Relation rel = inference.doInference();		
-		return rel.isSubSet(0, 0); 
+		Automata a1 = destruct(t1);
+		Automata a2 = destruct(t2);
+		Relation relation = new CoerciveSubtypeOperator(a1,a2);		
+		Automatas.computeRelation(relation);		
+		return relation.isRelated(0, 0); 
 	}
 	
 	/**
@@ -434,11 +434,11 @@ public abstract class Type {
 	 * that described by <code>t1</code>.
 	 */
 	public static boolean isSubtype(Type t1, Type t2) {				
-		State[] g1 = destruct(t1);
-		State[] g2 = destruct(t2);
-		Relation inference = new DefaultSubtypeOperator(g1,g2);		
-		Relation rel = inference.doInference();		
-		return rel.isSubSet(0, 0); 
+		Automata a1 = destruct(t1);
+		Automata a2 = destruct(t2);
+		Relation relation = new DefaultSubtypeOperator(a1,a2);		
+		Automatas.computeRelation(relation);		
+		return relation.isRelated(0, 0);		
 	}
 
 	/**

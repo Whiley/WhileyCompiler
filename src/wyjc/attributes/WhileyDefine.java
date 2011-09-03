@@ -279,7 +279,7 @@ public class WhileyDefine implements BytecodeAttribute {
 		}
 	}
 		
-	public static class Reader implements BytecodeAttribute.Reader {		
+	public static final class Reader implements BytecodeAttribute.Reader {		
 		private HashMap<String,BytecodeAttribute.Reader> attributeReaders;
 		
 		public Reader(Collection<BytecodeAttribute.Reader> readers) {
