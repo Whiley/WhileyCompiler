@@ -59,7 +59,7 @@ public final class Automatas {
 	 *            the current path).
 	 * @param automata
 	 *            --- the automata being traversed.
-	 * @return
+	 * @return --- true if the automata is concrete.
 	 */
 	private static boolean isConcrete(int index, BitSet onStack,
 			BitSet visited, Automata automata) {
@@ -103,9 +103,12 @@ public final class Automatas {
 	 * lost.
 	 * </p>
 	 * 
+	 * 
+	 * @param automata
+	 *            --- automata to extract from
 	 * @param root
-	 * @param kinds
-	 * @return
+	 *            --- state in automata to begin extraction from
+	 * @return --- extracted automata.
 	 */
 	public static Automata extract(Automata automata, int root) {
 		// First, perform a depth-first search from the root.
@@ -160,11 +163,11 @@ public final class Automatas {
 	 * removing unions involving any, unions of unions and unions with a single
 	 * element.
 	 * 
-	 * @param t
-	 * @return
+	 * @param automata --- automata to be simplified.
+	 * @return --- simplified automata
 	 */
-	public static Automata simplify(Automata t) {
-		return t;
+	public static Automata simplify(Automata automata) {
+		return automata;
 	}
 		
 	/**
@@ -182,9 +185,9 @@ public final class Automatas {
 	 * in one, there is an equivalent child in the other and vice-versa.</li>
 	 * </ul>
 	 * 
-	 * 
 	 * @param automata
-	 * @return
+	 *            --- automata to minimise
+	 * @return --- minimised automata
 	 */
 	public final static Automata minimise(Automata automata) {		
 		// First, determine equivalence classes
@@ -246,13 +249,9 @@ public final class Automatas {
 		}
 	}
 	
-	/**
+	/*
 	 * Check whether two states are equivalent under the rules set out for
 	 * minimisation above.
-	 * 
-	 * @param i
-	 * @param j
-	 * @return
 	 */
 	private final static boolean equivalent(int i, int j, BinaryMatrix equivs, Automata automata) {
 		State s1 = automata.states[i];
@@ -353,7 +352,7 @@ public final class Automatas {
 	 * 
 	 * @param automata
 	 *            --- to be canonicalised
-	 * @return
+	 * @return --- canonicalised automata
 	 */
 	public static Automata canonicalise(Automata automata) {
 		int size = automata.size();				
@@ -365,12 +364,9 @@ public final class Automatas {
 		return remap(automata,candidates.get(0).n2i);
 	}
 
-	/**
+	/*
 	 * The following provides a brute-force way of determining the canonical
-	 * form. It's really really slow, but useful for testing.
-	 * 
-	 * @param automata
-	 * @return
+	 * form. It's really really slow, but useful for testing.	
 	 */
 	private static Automata bruteForce(Automata automata) {
 		int[] init = new int[automata.size()-1];
@@ -541,7 +537,7 @@ public final class Automatas {
 	 *            --- don't consider states above this.
 	 * @param automata
 	 *            --- automata being canonicalised.
-	 * @return
+	 * @return --- true if morph1 is less than morph2
 	 */
 	private static boolean lessThan(Morphism morph1, Morphism morph2,
 			Automata automata) {
@@ -637,8 +633,7 @@ public final class Automatas {
 	 * 
 	 * @param relation
 	 *            --- the relation to be computed. automata.
-	 * @return
-	 */
+	 */	
 	public static final void computeRelation(Relation relation) {
 		Automata from = relation.from();
 		Automata to = relation.to();
@@ -658,12 +653,14 @@ public final class Automatas {
 	
 	/**
 	 * Append a new state onto the end of an automata. It is assumed that any
-	 * children the new state has already refere to nodes within the old
+	 * children the new state has already refer to states within the old
 	 * automata.
 	 * 
 	 * @param automata
+	 *            --- the automata to append on to
 	 * @param state
-	 * @return
+	 *            --- the state to be appended
+	 * @return --- the new automata
 	 */
 	public static Automata append(Automata automata, State state) {
 		State[] ostates = automata.states;
@@ -678,9 +675,11 @@ public final class Automatas {
 	 * <code>head</code>). In this case, all states in the automata being
 	 * appended are remapped automata for their new location.
 	 * 
-	 * @param head --- head automata
-	 * @param tail --- tail automata to be appended onto head.  
-	 * @return
+	 * @param head
+	 *            --- head automata
+	 * @param tail
+	 *            --- tail automata to be appended onto head.
+	 * @return --- the new automata.
 	 */
 	public static Automata append(Automata head, Automata tail) {
 		State[] hstates = head.states;
