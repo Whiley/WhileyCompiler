@@ -193,9 +193,9 @@ public abstract class Type {
 	 */
 	public static final Meth T_METH(Process receiver, Type ret,
 			Collection<Type> params) {
-		Type[] rparams = new Type[params.size()+1];		
-		int i = 1;
-		for (Type t : params) { rparams[++i] = t; }		
+		Type[] rparams = new Type[params.size()+2];		
+		int i = 2;
+		for (Type t : params) { rparams[i++] = t; }		
 		rparams[0] = receiver;
 		rparams[1] = ret;
 		return new Meth(construct(K_METHOD,null,rparams));		
