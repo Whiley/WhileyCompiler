@@ -7,10 +7,10 @@ import wyjvm.io.BinaryOutputStream;
 
 /**
  * <p>
- * The binary automata write is responsible for writing an automata in a binary
+ * The binary automata writer is responsible for writing an automata in a binary
  * format to an output stream. Obviously, it cannot know how to handle the
  * supplementary data that can be provided as part of a state. Therefore, if the
- * automata contains nodes which have supplementary data, the client is expected
+ * automata contains states which have supplementary data, the client is expected
  * to deal with this.
  * </p>
  * <p>
