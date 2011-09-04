@@ -4,8 +4,8 @@ import static wyil.lang.Type.*;
 import wyautl.lang.*;
 
 public class SubtypeOperator implements Relation {
-	private final Automata from;
-	private final Automata to;
+	protected final Automata from;
+	protected final Automata to;
 	private final BinaryMatrix subtypes; // from :> to
 	private final BinaryMatrix suptypes; // to :> from
 	
@@ -16,15 +16,15 @@ public class SubtypeOperator implements Relation {
 		this.suptypes = new BinaryMatrix(to.size(),from.size(),true);
 	}
 	
-	public Automata from() {
+	public final Automata from() {
 		return from;
 	}
 	
-	public Automata to() {
+	public final Automata to() {
 		return to;
 	}
 	
-	public boolean update(int fromIndex, int toIndex) {
+	public final boolean update(int fromIndex, int toIndex) {
 		boolean oldSubtype = subtypes.get(fromIndex,toIndex);
 		boolean oldSuptype = suptypes.get(toIndex,fromIndex);
 		boolean subtype = isSubtype(fromIndex,toIndex,subtypes,suptypes);
@@ -32,7 +32,7 @@ public class SubtypeOperator implements Relation {
 		return subtype != oldSubtype || suptype != oldSuptype;
 	}
 	
-	public boolean isRelated(int fromIndex, int toIndex) {
+	public final boolean isRelated(int fromIndex, int toIndex) {
 		return subtypes.get(fromIndex,toIndex);
 	}
 	
