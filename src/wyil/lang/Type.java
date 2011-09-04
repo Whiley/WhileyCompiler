@@ -528,7 +528,7 @@ public abstract class Type {
 				} else {
 					HashMap<String, Type> rfields = r.fields();
 					HashMap<String, Type> bfields = br.fields();
-					HashMap<String, Type> nfields = new HashMap();
+					HashMap<String, Type> nfields = new HashMap<String,Type>();
 					for (Map.Entry<String, Type> e : rfields.entrySet()) {
 						Type bt = bfields.get(e.getKey());
 						if (bt != null) {
@@ -663,7 +663,7 @@ public abstract class Type {
 			automata = Automatas.extract(automata, 0);
 			//automata = Automatas.simplify(automata);
 			automata = Automatas.minimise(automata);
-			automata = Automatas.canonicalise(automata);
+			//automata = Automatas.canonicalise(automata);
 			return construct(automata);
 		} else {
 			// no need to simplify leafs
@@ -951,6 +951,24 @@ public abstract class Type {
 				return automata.equals(c.automata);
 			}
 			return false;
+		}
+		
+		public String toString() {
+			// First, we need to find the headers of the computation. This is
+			// necessary in order to mark the start of a recursive type.			
+			BitSet headers = new BitSet(automata.size());
+			BitSet visited = new BitSet(automata.size()); 
+			BitSet onStack = new BitSet(automata.size());
+			findHeaders(0,visited,onStack,headers,automata);
+			visited.clear();
+			String[] titles = new String[automata.size()];
+			int count = 0;
+			for(int i=0;i!=automata.size();++i) {
+				if(headers.get(i)) {
+					titles[i] = headerTitle(count++);
+				}
+			}			
+			return toString(0,visited,titles,automata);
 		}
 	}
 	
@@ -1263,6 +1281,158 @@ public abstract class Type {
 	}
 	
 	/**
+	 * The following method constructs a string representation of the underlying
+	 * automata. This representation may be an expanded version of the underling
+	 * graph, since one cannot easily represent aliasing in the type graph in a
+	 * textual manner.
+	 * 
+	 * @param index
+	 *            --- the index to start from
+	 * @param visited
+	 *            --- the set of vertices already visited.
+	 * @param headers
+	 *            --- an array of strings which identify the name to be given to
+	 *            each header.
+	 * @param automata
+	 *            --- the automata being turned into a string.
+	 * @return --- string representation of automata.
+	 */
+	private final static String toString(int index, BitSet visited,
+			String[] headers, Automata automata) {
+		if (visited.get(index)) {
+			// node already visited
+			return headers[index];
+		} else if(headers[index] != null) {
+			visited.set(index);
+		}
+		State state = automata.states[index];
+		String middle;
+		switch (state.kind) {
+		case K_VOID:
+			return "void";
+		case K_ANY:
+			return "any";
+		case K_NULL:
+			return "null";
+		case K_BOOL:
+			return "bool";
+		case K_BYTE:
+			return "byte";
+		case K_CHAR:
+			return "char";
+		case K_INT:
+			return "int";
+		case K_RATIONAL:
+			return "real";
+		case K_STRING:
+			return "string";
+		case K_SET:
+			middle = "{" + toString(state.children[0], visited, headers, automata)
+					+ "}";
+			break;
+		case K_LIST:
+			middle = "[" + toString(state.children[0], visited, headers, automata)
+					+ "]";
+			break;
+		case K_EXISTENTIAL:
+			middle = "?" + state.data.toString();
+			break;
+		case K_PROCESS:
+			middle = "*" + toString(state.children[0], visited, headers, automata);
+			break;
+		case K_DICTIONARY: {
+			// binary node			
+			String k = toString(state.children[0], visited, headers, automata);
+			String v = toString(state.children[1], visited, headers, automata);
+			middle = "{" + k + "->" + v + "}";
+			break;
+		}
+		case K_UNION: {
+			int[] children = state.children;
+			middle = "";
+			for (int i = 0; i != children.length; ++i) {
+				if (i != 0) {
+					middle += "|";
+				}
+				middle += toString(children[i], visited, headers, automata);
+			}
+			break;
+		}
+		case K_TUPLE: {
+			middle = "";
+			int[] children = state.children;			
+			for (int i = 0; i != children.length; ++i) {
+				if (i != 0) {
+					middle += ",";
+				}
+				middle += toString(children[i], visited, headers, automata);
+			}
+			middle = "(" + middle + ")";
+			break;
+		}
+		case K_RECORD: {
+			// labeled nary node
+			middle = "{";
+			int[] children = state.children;
+			String[] fields = (String[]) state.data;
+			for (int i = 0; i != fields.length; ++i) {
+				if (i != 0) {
+					middle += ",";
+				}
+				middle += toString(children[i], visited, headers, automata) + " " + fields[i];
+			}
+			middle = middle + "}";
+			break;
+		}
+		case K_METHOD:
+		case K_FUNCTION: {
+			middle = "";
+			int[] children = state.children;
+			int start = 0;
+			String rec = null;
+			if(state.kind == K_METHOD) {
+				rec = toString(children[0],visited,headers,automata);
+				start++;
+			}
+			String ret = toString(children[start], visited, headers, automata);
+			boolean firstTime=true;
+			for (int i = start+1; i != children.length; ++i) {
+				if (!firstTime) {
+					middle += ",";
+				}
+				firstTime=false;
+				middle += toString(children[i], visited, headers, automata);
+			}
+			if(state.kind == K_FUNCTION) {
+				middle = ret + "(" + middle + ")";
+			} else if(rec != null) {
+				middle = rec + "::" + ret + "(" + middle + ")";
+			} else {
+				middle = "::" + ret + "(" + middle + ")";
+			}
+			break;
+		}		
+		default: 
+			throw new IllegalArgumentException("Invalid type encountered");
+		}
+		
+		// Finally, check whether this is a header node, or not. If it is a
+		// header then we need to insert the recursive type.
+		String header = headers[index];
+		if(header != null) {
+			// The following case is interesting. Basically, we'll never revisit
+			// a header. Therefore, if we have multiple edges landing on a
+			// header we must update the header string to represent the full
+			// type reachable from the header.
+			String r = header + "<" + middle + ">"; 
+			headers[index] = r;
+			return r;
+		} else {
+			return middle;
+		}
+	}
+
+	/**
 	 * The following method traverses the graph using a depth-first
 	 * search to identify nodes which are "loop headers". That is, they are the
 	 * target of one or more recursive edges in the graph.
@@ -1276,11 +1446,11 @@ public abstract class Type {
 	 * @param headers
 	 *            --- header nodes discovered during this search are set to true
 	 *            in this bitset.
-	 * @param graph
-	 *            --- the graph.
+	 * @param automata
+	 *            --- the automata we're traversing.
 	 */
 	private final static void findHeaders(int index, BitSet visited,
-			BitSet onStack, BitSet headers, State[] graph) {
+			BitSet onStack, BitSet headers, Automata automata) {
 		if(visited.get(index)) {
 			// node already visited
 			if(onStack.get(index)) {
@@ -1290,9 +1460,9 @@ public abstract class Type {
 		} 		
 		onStack.set(index);
 		visited.set(index);
-		State node = graph[index];
-		for(int child : node.children) {
-			findHeaders(child,visited,onStack,headers,graph);
+		State state = automata.states[index];
+		for(int child : state.children) {
+			findHeaders(child,visited,onStack,headers,automata);
 		}	
 		onStack.set(index,false);
 	}
