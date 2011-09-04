@@ -85,7 +85,7 @@ public class Tester {
 	
 	public static boolean isSubsumed(Automata a1, Automata a2) {
 		DefaultSubsumption relation = new DefaultSubsumption(a1, a2);
-		Automatas.computeRelation(relation);
+		Automatas.computeFixpoint(relation);
 		return relation.isRelated(0, 0);
 	}
 	

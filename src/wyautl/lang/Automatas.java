@@ -634,7 +634,7 @@ public final class Automatas {
 	 * @param relation
 	 *            --- the relation to be computed. automata.
 	 */	
-	public static final void computeRelation(Relation relation) {
+	public static final void computeFixpoint(Relation relation) {
 		Automata from = relation.from();
 		Automata to = relation.to();
 		int fromDomain = from.size();

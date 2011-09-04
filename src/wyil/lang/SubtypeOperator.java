@@ -4,8 +4,8 @@ import static wyil.lang.Type.*;
 import wyautl.lang.*;
 
 public class SubtypeOperator implements Relation {
-	protected final Automata from;
-	protected final Automata to;
+	private final Automata from;
+	private final Automata to;
 	private final BinaryMatrix subtypes; // from :> to
 	private final BinaryMatrix suptypes; // to :> from
 	
@@ -27,10 +27,10 @@ public class SubtypeOperator implements Relation {
 	public final boolean update(int fromIndex, int toIndex) {
 		boolean oldSubtype = subtypes.get(fromIndex,toIndex);
 		boolean oldSuptype = suptypes.get(toIndex,fromIndex);
-		boolean newSubtype = isSubtype(fromIndex,toIndex,subtypes,suptypes);
-		boolean newSuptype = isSubtype(toIndex,fromIndex,suptypes,subtypes);		
+		boolean newSubtype = isSubtype(fromIndex,from,toIndex,to,subtypes,suptypes);
+		boolean newSuptype = isSubtype(toIndex,to,fromIndex,from,suptypes,subtypes);		
 		subtypes.set(fromIndex,toIndex,newSubtype);
-		suptypes.set(toIndex,fromIndex,newSubtype);
+		suptypes.set(toIndex,fromIndex,newSuptype);
 		return newSubtype != oldSubtype || newSuptype != oldSuptype;
 	}
 	
@@ -39,8 +39,9 @@ public class SubtypeOperator implements Relation {
 	}
 	
 	// check if to is a subtype of from
-	public boolean isSubtype(int fromIndex, int toIndex, BinaryMatrix subtypes,
-			BinaryMatrix suptypes) {
+	public boolean isSubtype(int fromIndex, Automata from, int toIndex,
+			Automata to, BinaryMatrix subtypes, BinaryMatrix suptypes) {
+		
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;

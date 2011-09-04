@@ -423,7 +423,7 @@ public abstract class Type {
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
 		Relation relation = new CoercionOperator(a1,a2);		
-		Automatas.computeRelation(relation);		
+		Automatas.computeFixpoint(relation);		
 		return relation.isRelated(0, 0); 
 	}
 	
@@ -437,7 +437,7 @@ public abstract class Type {
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
 		Relation relation = new SubtypeOperator(a1,a2);		
-		Automatas.computeRelation(relation);		
+		Automatas.computeFixpoint(relation);		
 		return relation.isRelated(0, 0);		
 	}
 

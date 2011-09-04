@@ -10,8 +10,8 @@ public final class CoercionOperator extends SubtypeOperator {
 		super(fromAutomata,toAutomata);
 	}
 	
-	public boolean isSubtype(int fromIndex, int toIndex, BinaryMatrix subtypes,
-			BinaryMatrix suptypes) {
+	public boolean isSubtype(int fromIndex, Automata from, int toIndex,
+			Automata to, BinaryMatrix subtypes, BinaryMatrix suptypes) {
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];
 
@@ -39,7 +39,7 @@ public final class CoercionOperator extends SubtypeOperator {
 			return childState.kind == K_ANY || childState.kind == K_INT
 					|| childState.kind == K_RATIONAL;
 		} else {
-			return super.isSubtype(fromIndex, toIndex, subtypes, suptypes);
+			return super.isSubtype(fromIndex, from, toIndex, to, subtypes, suptypes);
 		}
 	}
 }
