@@ -265,6 +265,7 @@ public final class Automatas {
 				 return false;
 			 }
 		} else {
+			// following catches case where s2data == null as well
 			if(!s1data.equals(s2data)) {
 				return false;
 			}

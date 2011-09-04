@@ -450,7 +450,7 @@ public abstract class Type {
 	 * all possible values described by the type <code>t2</code> is a subset of
 	 * that described by <code>t1</code>.
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {				
+	public static boolean isSubtype(Type t1, Type t2) {		
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
 		Relation relation = new SubtypeOperator(a1,a2);		
@@ -1652,15 +1652,15 @@ public abstract class Type {
 	 * @param t --- type to be converted.
 	 * @return
 	 */
-	public static final Automata destruct(Type t) {		
-		if (t instanceof Leaf) {			
-			int kind = leafKind((Leaf)t);
+	public static final Automata destruct(Type t) {
+		if (t instanceof Leaf) {
+			int kind = leafKind((Leaf) t);
 			Object data = null;
-			if(t instanceof Existential) {
+			if (t instanceof Existential) {
 				Existential x = (Existential) t;
 				data = x.nid;
-			} 
-			State state = new State(kind,Automata.NOCHILDREN,true,data);					
+			}
+			State state = new State(kind, Automata.NOCHILDREN, true, data);
 			return new Automata(new State[] { state });
 		} else {
 			// compound type
@@ -1697,7 +1697,7 @@ public abstract class Type {
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
 		Type from = fromString("int");
-		Type to = fromString("int|[int]");
+		Type to = fromString("int|int");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));
