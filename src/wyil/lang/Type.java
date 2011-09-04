@@ -1334,6 +1334,8 @@ public abstract class Type {
 			return K_STRING;
 		} else if(leaf instanceof Type.Meta) {
 			return K_META;
+		} else if(leaf instanceof Type.Existential) {
+			return K_EXISTENTIAL;
 		} else {
 			// should be dead code
 			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
@@ -1372,10 +1374,7 @@ public abstract class Type {
 			return T_REAL;
 		case K_STRING:
 			return T_STRING;
-		case K_EXISTENTIAL:
-			if(root.children == null) {
-				throw new RuntimeException("Problem");
-			}
+		case K_EXISTENTIAL:			
 			return new Existential((NameID) root.data);
 		case K_TUPLE:
 			return new Tuple(automata);
@@ -1492,13 +1491,13 @@ public abstract class Type {
 	public static final byte K_LABEL = 22;	
 	public static final byte K_HEADLESS = 23; // used for readers/writers
 	
-	public static void main(String[] args) {				
-		//Type t1 = contractive(); //linkedList(2);
-		Type t1 = fromString("int|[int]");
-		Type t2 = fromString("int");
-		System.out.println(t1 + " :> " + t2 + " = " + isSubtype(t1,t2));
-		System.out.println("simplified(" + t1 + ") = " + minimise(t1));		
-		System.out.println("simplified(" + t2 + ") = " + minimise(t2));
+	public static void main(String[] args) {
+		// Type t1 = contractive(); //linkedList(2);
+		Type from = fromString("int");
+		Type to = fromString("int|[int]");
+		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
+		System.out.println("simplified(" + from + ") = " + minimise(from));
+		System.out.println("simplified(" + to + ") = " + minimise(to));
 	}
 	
 	public static Type contractive() {
