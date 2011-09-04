@@ -1495,9 +1495,11 @@ public abstract class Type {
 	
 	public static void main(String[] args) {				
 		//Type t1 = contractive(); //linkedList(2);
-		Type t1 = T_UNION(T_NULL,T_NULL);
-		System.out.println("GOT: " + t1);
-		System.out.println("MIN: " + minimise(t1));		
+		Type t1 = fromString("int|[int]");
+		Type t2 = fromString("int");
+		System.out.println(t1 + " :> " + t2 + " = " + isSubtype(t1,t2));
+		System.out.println("simplified(" + t1 + ") = " + minimise(t1));		
+		System.out.println("simplified(" + t2 + ") = " + minimise(t2));
 	}
 	
 	public static Type contractive() {

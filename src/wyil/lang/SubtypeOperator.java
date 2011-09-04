@@ -27,9 +27,11 @@ public class SubtypeOperator implements Relation {
 	public final boolean update(int fromIndex, int toIndex) {
 		boolean oldSubtype = subtypes.get(fromIndex,toIndex);
 		boolean oldSuptype = suptypes.get(toIndex,fromIndex);
-		boolean subtype = isSubtype(fromIndex,toIndex,subtypes,suptypes);
-		boolean suptype = isSubtype(toIndex,fromIndex,suptypes,subtypes);
-		return subtype != oldSubtype || suptype != oldSuptype;
+		boolean newSubtype = isSubtype(fromIndex,toIndex,subtypes,suptypes);
+		boolean newSuptype = isSubtype(toIndex,fromIndex,suptypes,subtypes);		
+		subtypes.set(fromIndex,toIndex,newSubtype);
+		suptypes.set(toIndex,fromIndex,newSubtype);
+		return newSubtype != oldSubtype || newSuptype != oldSuptype;
 	}
 	
 	public final boolean isRelated(int fromIndex, int toIndex) {
@@ -133,7 +135,7 @@ public class SubtypeOperator implements Relation {
 				// other primitive types (e.g. void, any, null, int, etc)
 				return true;
 			}
-		} else if(fromKind == K_VOID || toKind == K_ANY){
+		} else if(fromKind == K_ANY || toKind == K_VOID){
 			return true;
 		} else if(fromKind == K_UNION) {
 			int[] fromChildren = fromState.children;		
