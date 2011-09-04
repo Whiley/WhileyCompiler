@@ -257,6 +257,20 @@ public final class Automatas {
 		State s1 = automata.states[i];
 		State s2 = automata.states[j];
 		
+		// first, check supplementary data
+		Object s1data = s1.data;
+		Object s2data = s2.data;
+		if(s1data == null) {
+			 if(s2data != null) {
+				 return false;
+			 }
+		} else {
+			if(!s1data.equals(s2data)) {
+				return false;
+			}
+		}
+		
+		// second, check node kind and children, etc.
 		if(s1.kind == s2.kind && s1.deterministic == s2.deterministic) {			
 			boolean deterministic = s1.deterministic;
 			if(deterministic) {
