@@ -193,12 +193,21 @@ public abstract class Type {
 	 */
 	public static final Meth T_METH(Process receiver, Type ret,
 			Collection<Type> params) {
-		Type[] rparams = new Type[params.size()+2];		
-		int i = 2;
-		for (Type t : params) { rparams[i++] = t; }		
-		rparams[0] = receiver;
-		rparams[1] = ret;
-		return new Meth(construct(K_METHOD,null,rparams));		
+		if(receiver == null) {
+			// this is a headless method
+			Type[] rparams = new Type[params.size()+1];		
+			int i = 1;
+			for (Type t : params) { rparams[i++] = t; }					
+			rparams[0] = ret;
+			return new Meth(construct(K_HEADLESS,null,rparams));
+		} else {
+			Type[] rparams = new Type[params.size()+2];		
+			int i = 2;
+			for (Type t : params) { rparams[i++] = t; }		
+			rparams[0] = receiver;
+			rparams[1] = ret;
+			return new Meth(construct(K_METHOD,null,rparams));		
+		}
 	}
 	
 	/**
@@ -207,11 +216,19 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Meth T_METH(Process receiver, Type ret, Type... params) {				
-		Type[] rparams = new Type[params.length+2];		
-		System.arraycopy(params, 0, rparams, 2, params.length);
-		rparams[0] = receiver;
-		rparams[1] = ret;
-		return new Meth(construct(K_METHOD,null,rparams));		
+		if(receiver == null) {
+			// this is a headless method
+			Type[] rparams = new Type[params.length+1];		
+			System.arraycopy(params, 0, rparams, 1, params.length);			
+			rparams[0] = ret;
+			return new Meth(construct(K_HEADLESS,null,rparams));
+		} else {
+			Type[] rparams = new Type[params.length+2];		
+			System.arraycopy(params, 0, rparams, 2, params.length);
+			rparams[0] = receiver;
+			rparams[1] = ret;
+			return new Meth(construct(K_METHOD,null,rparams));
+		}
 	}
 	
 	/**
@@ -1246,13 +1263,14 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type.Process receiver() {
-			int[] fields = automata.states[0].children;
-			int r = fields[0];
-			if (r == -1) {
+			Automata.State root = automata.states[0];
+			if(root.kind == K_HEADLESS) {
 				return null;
-			}
-			return (Type.Process) construct(Automatas.extract(automata,
+			} else {
+				int[] fields = root.children;
+				return (Type.Process) construct(Automatas.extract(automata,
 					fields[0]));
+			}
 		}
 		
 		/**
@@ -1261,8 +1279,10 @@ public abstract class Type {
 		 * @return
 		 */
 		public Type ret() {
-			int[] fields = automata.states[0].children;
-			return construct(Automatas.extract(automata, fields[1]));
+			Automata.State root = automata.states[0];
+			int[] fields = root.children;
+			int start = root.kind == K_HEADLESS ? 0 : 1;
+			return construct(Automatas.extract(automata, fields[start]));
 		}	
 		
 		/**
@@ -1271,7 +1291,9 @@ public abstract class Type {
 		 * @return
 		 */
 		public ArrayList<Type> params() {
-			int[] fields = automata.states[0].children;			
+			Automata.State root = automata.states[0];
+			int[] fields = root.children;
+			int start = root.kind == K_HEADLESS ? 1 : 2;
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=2;i<fields.length;++i) {
 				r.add(construct(Automatas.extract(automata, fields[i])));
@@ -1385,6 +1407,7 @@ public abstract class Type {
 			break;
 		}
 		case K_METHOD:
+		case K_HEADLESS:
 		case K_FUNCTION: {
 			middle = "";
 			int[] children = state.children;
@@ -1562,6 +1585,8 @@ public abstract class Type {
 			return new Union(automata);
 		case K_METHOD:
 			return new Meth(automata);
+		case K_HEADLESS:
+			return new Meth(automata);
 		case K_FUNCTION:
 			return new Fun(automata);		
 		case K_LABEL:
@@ -1657,9 +1682,10 @@ public abstract class Type {
 	public static final byte K_DIFFERENCE = 18;
 	public static final byte K_FUNCTION = 19;
 	public static final byte K_METHOD = 20;
-	public static final byte K_EXISTENTIAL = 21;
-	public static final byte K_LABEL = 22;	
-	public static final byte K_HEADLESS = 23; // used for readers/writers
+	public static final byte K_HEADLESS = 21; // headless method
+	public static final byte K_EXISTENTIAL = 22;
+	public static final byte K_LABEL = 23;	
+
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
