@@ -221,6 +221,6 @@ public final class Automata {
 	 * The following constant is used simply to prevent unnecessary memory
 	 * allocations.
 	 */
-	private static final int[] NOCHILDREN = new int[0];
+	public static final int[] NOCHILDREN = new int[0];
 
 }

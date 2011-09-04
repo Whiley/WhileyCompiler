@@ -1652,9 +1652,16 @@ public abstract class Type {
 	 * @param t --- type to be converted.
 	 * @return
 	 */
-	public static final Automata destruct(Type t) {
-		if (t instanceof Leaf) {
-			return new Automata(new State[] { new State(leafKind((Leaf) t)) });
+	public static final Automata destruct(Type t) {		
+		if (t instanceof Leaf) {			
+			int kind = leafKind((Leaf)t);
+			Object data = null;
+			if(t instanceof Existential) {
+				Existential x = (Existential) t;
+				data = x.nid;
+			} 
+			State state = new State(kind,Automata.NOCHILDREN,true,data);					
+			return new Automata(new State[] { state });
 		} else {
 			// compound type
 			return ((Compound) t).automata;
