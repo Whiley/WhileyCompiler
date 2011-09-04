@@ -1374,9 +1374,11 @@ public abstract class Type {
 		case K_UNION: {
 			int[] children = state.children;
 			middle = "";
-			for (int i = 0; i != children.length; ++i) {											
-				middle += toString(children[i], visited, headers, automata);
-				middle += "|";
+			for (int i = 0; i != children.length; ++i) {					
+				if(i != 0 && children.length > 1) {
+					middle += "|";
+				}
+				middle += toString(children[i], visited, headers, automata);				
 			}
 			break;
 		}
