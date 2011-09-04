@@ -1460,8 +1460,7 @@ public abstract class Type {
 	 */
 	public static final Automata destruct(Type t) {
 		if (t instanceof Leaf) {
-			return new Automata(new State[] { new State(leafKind((Leaf) t),
-					null) });
+			return new Automata(new State[] { new State(leafKind((Leaf) t)) });
 		} else {
 			// compound type
 			return ((Compound) t).automata;
