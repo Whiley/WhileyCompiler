@@ -6,14 +6,14 @@ import wyautl.lang.*;
 public class SubtypeOperator implements Relation {
 	private final Automata from;
 	private final Automata to;
-	private final BinaryMatrix subtypes;
-	private final BinaryMatrix suptypes;
+	private final BinaryMatrix subtypes; // from :> to
+	private final BinaryMatrix suptypes; // to :> from
 	
 	public SubtypeOperator(Automata from, Automata to) {
 		this.from = from;
 		this.to = to;
 		this.subtypes = new BinaryMatrix(from.size(),to.size(),true);
-		this.suptypes = new BinaryMatrix(from.size(),to.size(),true);
+		this.suptypes = new BinaryMatrix(to.size(),from.size(),true);
 	}
 	
 	public Automata from() {
@@ -24,12 +24,21 @@ public class SubtypeOperator implements Relation {
 		return to;
 	}
 	
-	public boolean update(int from, int to) {
-		return false;
+	public boolean update(int fromIndex, int toIndex) {
+		boolean oldSubtype = subtypes.get(fromIndex,toIndex);
+		boolean oldSuptype = suptypes.get(toIndex,fromIndex);
+		boolean subtype = isSubtype(fromIndex,toIndex,subtypes,suptypes);
+		boolean suptype = isSubtype(toIndex,fromIndex,suptypes,subtypes);
+		return subtype != oldSubtype || suptype != oldSuptype;
+	}
+	
+	public boolean isRelated(int fromIndex, int toIndex) {
+		return subtypes.get(fromIndex,toIndex);
 	}
 	
 	// check if to is a subtype of from
-	public boolean isRelated(int fromIndex, int toIndex) {
+	public boolean isSubtype(int fromIndex, int toIndex, BinaryMatrix subtypes,
+			BinaryMatrix suptypes) {
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
@@ -102,8 +111,7 @@ public class SubtypeOperator implements Relation {
 				int start = 0;
 				if(fromKind == K_METHOD) {
 					// Check (optional) receiver value first (which is contravariant)
-					// FIXME: sort out suptypes
-					if (!suptypes.get(fromChildren[0],toChildren[0])) {
+					if (!suptypes.get(toChildren[0],fromChildren[0])) {
 						return false;
 					}
 					start++;
@@ -116,8 +124,7 @@ public class SubtypeOperator implements Relation {
 				}
 				// Now, check parameters (which are contra-variant)
 				for(int i=start+1;i<fromChildren.length;++i) {
-					// FIXME: sort out suptypes
-					if(!suptypes.get(fromChildren[i],toChildren[i])) {
+					if(!suptypes.get(toChildren[i],fromChildren[i])) {
 						return false;
 					}
 				}
