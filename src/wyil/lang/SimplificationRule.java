@@ -47,7 +47,7 @@ public final class SimplificationRule implements RewriteRule {
 		for(int childIndex : children) {
 			Automata.State child = automata.states[childIndex];
 			switch(child.kind) {
-			case Type.K_ANY:
+			case Type.K_ANY:				
 				automata.states[index] = new Automata.State(Type.K_ANY);
 				return true;
 			case Type.K_VOID:
@@ -61,16 +61,12 @@ public final class SimplificationRule implements RewriteRule {
 					changed = true;
 				}
 			}
-		}
+		}		
 		
 		if(nchildren.size() == 1) {
 			// bypass this node altogether
-			int[] rmap = new int[automata.size()];
-			for(int i=0;i!=automata.size();++i) {
-				rmap[i] = i;
-			}
-			rmap[index] = nchildren.get(0);		
-			Automatas.inplaceRemap(automata, rmap);			
+			int child = nchildren.get(0);
+			automata.states[index] = new Automata.State(automata.states[child]);			
 		} else if(changed) {			
 			children = new int[nchildren.size()];
 			for(int i=0;i!=children.length;++i) {

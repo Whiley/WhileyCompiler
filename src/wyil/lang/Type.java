@@ -1374,11 +1374,18 @@ public abstract class Type {
 		case K_UNION: {
 			int[] children = state.children;
 			middle = "";
-			for (int i = 0; i != children.length; ++i) {
-				if (i != 0) {
-					middle += "|";
-				}
+			for (int i = 0; i != children.length; ++i) {											
 				middle += toString(children[i], visited, headers, automata);
+				middle += "|";
+			}
+			break;
+		}
+		case K_INTERSECTION: {
+			int[] children = state.children;
+			middle = "";
+			for (int i = 0; i != children.length; ++i) {											
+				middle += toString(children[i], visited, headers, automata);
+				middle += "&";
 			}
 			break;
 		}
@@ -1699,7 +1706,7 @@ public abstract class Type {
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
 		Type from = fromString("int");
-		Type to = fromString("int|int");
+		Type to = fromString("int|void");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));

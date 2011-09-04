@@ -194,6 +194,13 @@ public final class Automata {
 			this.deterministic = deterministic;
 		}
 		
+		public State(State state) {
+			kind = state.kind;
+			children = Arrays.copyOf(state.children, state.children.length);
+			data = state.data;
+			deterministic = state.deterministic;
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
 				State c = (State) o;
