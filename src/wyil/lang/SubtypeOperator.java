@@ -103,7 +103,8 @@ public class SubtypeOperator implements Relation {
 				return true;								
 			}			
 			// === Heterogenous Compound States ===
-			case K_FUNCTION:				
+			case K_FUNCTION:
+			case K_HEADLESS:
 			case K_METHOD:
 				// nary nodes
 				int[] fromChildren = fromState.children;
