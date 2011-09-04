@@ -167,6 +167,8 @@ public final class Automatas {
 	 *            --- automata to be rewritten.
 	 */
 	public static void rewrite(Automata automata, RewriteRule rule) {		
+		// note, the following could be made more efficient by exploiting
+		// dependence information in the states.
 		boolean changed = true;
 		while(changed) {
 			changed = false;
@@ -373,16 +375,15 @@ public final class Automatas {
 	 * 
 	 * @param automata
 	 *            --- to be canonicalised
-	 * @return --- canonicalised automata
 	 */
-	public static Automata canonicalise(Automata automata) {
+	public static void canonicalise(Automata automata) {
 		int size = automata.size();				
 		ArrayList<Morphism> candidates = new ArrayList<Morphism>();		
 		candidates.add(new Morphism(size));		
 		for(int i=0;i!=size;++i) {
 			extend(i,candidates,automata);			
 		}
-		return remap(automata,candidates.get(0).n2i);
+		inplaceRemap(automata,candidates.get(0).n2i);
 	}
 
 	/*
@@ -716,7 +717,7 @@ public final class Automatas {
 		}
 		// then copy over states
 		int j = hlength;
-		for(int i=0;i!=tlength;++i,++j) {
+		for(int i=0;i!=tlength;++i,++j) {			
 			nstates[j] = remap(tstates[i],rmap);
 		}
 		return new Automata(nstates);
@@ -731,12 +732,11 @@ public final class Automatas {
 	 *            --- automata to be transposed.
 	 * @param rmap
 	 *            --- mapping from integers in old space to those in new space.
-	 * @return
 	 */
 	public static Automata remap(Automata automata, int[] rmap) {
 		State[] ostates = automata.states;
-		int length = ostates.length;
-		State[] nstates = new State[length];		
+		State[] nstates = new State[ostates.length];
+		int length = ostates.length;			
 		for(int i=0;i!=length;++i) {
 			State os = ostates[rmap[i]];
 			nstates[i] = remap(os,rmap);
@@ -745,9 +745,30 @@ public final class Automatas {
 	}	
 	
 	/**
+	 * The remap method takes an automata, and a mapping from vertices in the
+	 * old space to the those in the new space. It then applies this mapping, so
+	 * that all states and transitions are remapped accordingly.
+	 * 
+	 * @param automata
+	 *            --- automata to be transposed.
+	 * @param rmap
+	 *            --- mapping from integers in old space to those in new space.
+	 */
+	public static void inplaceRemap(Automata automata, int[] rmap) {
+		State[] ostates = automata.states;
+		int length = ostates.length;			
+		for(int i=0;i!=length;++i) {
+			State os = ostates[rmap[i]];
+			inplaceRemap(os,rmap);
+		}		
+	}	
+	
+	
+	
+	/**
 	 * The remap method takes a node, and mapping from vertices in the old
 	 * space to the those in the new space. It then applies this mapping, so
-	 * that the node produced refers to vertices in the new space. Or, in
+	 * that the node now refers to vertices in the new space. Or, in
 	 * other words, it transposes the node into the new space.
 	 * 
 	 * @param node
@@ -755,20 +776,57 @@ public final class Automatas {
 	 * @param rmap
 	 *            --- mapping from integers in old space to those in new
 	 *            space.
-	 * @return
 	 */
-	private static State remap(State node, int[] rmap) {
-		int[] ochildren = node.children;
-		int[] nchildren = new int[ochildren.length];
+	private static void inplaceRemap(State node, int[] rmap) {
+		int[] children = node.children;		
 		if(node.deterministic) { 
-			for (int i = 0; i != nchildren.length; ++i) {
-				nchildren[i] = rmap[ochildren[i]];
+			for (int i = 0; i != children.length; ++i) {
+				children[i] = rmap[children[i]];
 			}
 		} else {
 			// slightly harder for non-deterministic case
 			BitSet visited = new BitSet(rmap.length);			
 			int diff = 0;
-			for (int i = 0; i != nchildren.length; ++i) {
+			for (int i = 0; i != children.length; ++i) {
+				int nchild = rmap[children[i]];
+				if(!visited.get(nchild)) {
+					visited.set(nchild);					
+					children[i-diff] = nchild;
+				} else {
+					diff = diff + 1;
+				}
+			}
+			if(diff > 0) {
+				children = Arrays.copyOf(children, children.length-diff);
+				node.children = children;
+			}
+		}		
+	}
+	
+	/**
+	 * The remap method takes a node, and mapping from vertices in the old
+	 * space to the those in the new space. It then applies this mapping, so
+	 * that the node now refers to vertices in the new space. Or, in
+	 * other words, it transposes the node into the new space.
+	 * 
+	 * @param node
+	 *            --- node to be transposed.
+	 * @param rmap
+	 *            --- mapping from integers in old space to those in new
+	 *            space.
+	 */
+	private static State remap(State node, int[] rmap) {
+		int[] ochildren = node.children;	
+		int[] nchildren = new int[ochildren.length];
+		if(node.deterministic) { 
+			for (int i = 0; i != ochildren.length; ++i) {
+				 nchildren[i] = rmap[ochildren[i]];
+			}
+		} else {
+			// slightly harder for non-deterministic case
+			BitSet visited = new BitSet(rmap.length);			
+			int diff = 0;
+			for (int i = 0; i != ochildren.length; ++i) {
 				int nchild = rmap[ochildren[i]];
 				if(!visited.get(nchild)) {
 					visited.set(nchild);					
@@ -781,7 +839,7 @@ public final class Automatas {
 				nchildren = Arrays.copyOf(nchildren, nchildren.length-diff);
 			}
 		}
-		return new State(node.kind, nchildren, node.deterministic, node.data);
+		return new State(node.kind,nchildren,node.deterministic,node.data);
 	}
 	
 	public static void main(String[] args) {

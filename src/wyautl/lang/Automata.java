@@ -132,10 +132,10 @@ public final class Automata {
 	 * 
 	 */
 	public static final class State {
-		public final int kind;
-		public final int[] children;
-		public final boolean deterministic;
-		public final Object data;
+		public int kind;
+		public int[] children;
+		public boolean deterministic;
+		public Object data;
 
 		/**
 		 * Construct a deterministic state with no children and no supplementary data.

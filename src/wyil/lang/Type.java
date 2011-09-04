@@ -677,8 +677,8 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
+			Automatas.rewrite(automata,SIMPLIFICATION_RULE);
 			automata = Automatas.extract(automata, 0);
-			//automata = Automatas.simplify(automata);
 			automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
 			return construct(automata);
@@ -688,6 +688,8 @@ public abstract class Type {
 		}
 	}
 
+	private static final SimplificationRule SIMPLIFICATION_RULE = new SimplificationRule();
+	
 	// =============================================================
 	// Primitive Types
 	// =============================================================
