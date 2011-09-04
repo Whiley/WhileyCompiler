@@ -159,15 +159,21 @@ public final class Automatas {
 	}
 
 	/**
-	 * The following algorithm simplifies a type. This includes, for example,
-	 * removing unions involving any, unions of unions and unions with a single
-	 * element.
+	 * The following algorithm rewrites an automata according to a given rewrite
+	 * rule. This is achieved by repeatedly applying the rewrite rule until no
+	 * further rewrites are possible.
 	 * 
-	 * @param automata --- automata to be simplified.
-	 * @return --- simplified automata
+	 * @param automata
+	 *            --- automata to be rewritten.
 	 */
-	public static Automata simplify(Automata automata) {
-		return automata;
+	public static void rewrite(Automata automata, RewriteRule rule) {		
+		boolean changed = true;
+		while(changed) {
+			changed = false;
+			for(int i=0;i!=automata.size();++i) {
+				changed |= rule.apply(i,automata);
+			}
+		}
 	}
 		
 	/**
