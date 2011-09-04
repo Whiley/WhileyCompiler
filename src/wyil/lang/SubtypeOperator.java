@@ -9,10 +9,11 @@ public class SubtypeOperator implements Relation {
 	private final BinaryMatrix subtypes;
 	private final BinaryMatrix suptypes;
 	
-	public SubtypeOperator(Automata fromGraph, Automata toGraph) {
-		this.from = fromGraph;
-		this.to = toGraph;
-		//this.subtypes = new BinaryMatrix(this.);
+	public SubtypeOperator(Automata from, Automata to) {
+		this.from = from;
+		this.to = to;
+		this.subtypes = new BinaryMatrix(from.size(),to.size(),true);
+		this.suptypes = new BinaryMatrix(from.size(),to.size(),true);
 	}
 	
 	public Automata from() {
@@ -27,122 +28,118 @@ public class SubtypeOperator implements Relation {
 		return false;
 	}
 	
-	public boolean isRelated(int from, int to) {
-		return false;
-		/*
-		State fromNode = fromGraph[from];
-		State toNode = toGraph[to];	
+	// check if to is a subtype of from
+	public boolean isRelated(int fromIndex, int toIndex) {
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = to.states[toIndex];
+		int fromKind = fromState.kind;
+		int toKind = toState.kind;
 		
-		if(fromNode.kind == toNode.kind) { 
-			switch(fromNode.kind) {
+		if(fromKind == toKind) {
+			switch(fromKind) {
+			// === Leaf States First ===
 			case K_EXISTENTIAL:
-				NameID nid1 = (NameID) fromNode.data;
-				NameID nid2 = (NameID) toNode.data;				
+				NameID nid1 = (NameID) fromState.data;
+				NameID nid2 = (NameID) toState.data;				
 				return nid1.equals(nid2);
+			
+			// === Homogenous Compound States ===
 			case K_SET:
 			case K_LIST:
-			case K_PROCESS: {
-				return assumptions.isSubSet((Integer) fromNode.data,(Integer) toNode.data);
-			}
-			case K_DICTIONARY: {
-				// binary node
-				Pair<Integer, Integer> p1 = (Pair<Integer, Integer>) fromNode.data;
-				Pair<Integer, Integer> p2 = (Pair<Integer, Integer>) toNode.data;
-				return assumptions.isSubSet(p1.first(),p2.first()) && assumptions.isSubSet(p1.second(),p2.second());  					
-			}		
+			case K_PROCESS:
+			case K_DICTIONARY:
 			case K_TUPLE:  {
 				// nary nodes
-				int[] elems1 = (int[]) fromNode.data;
-				int[] elems2 = (int[]) toNode.data;
-				if(elems1.length != elems2.length){ return false; }
-				for(int i=0;i<elems1.length;++i) {
-					if(!assumptions.isSubSet(elems1[i],elems2[i])) { return false; }
-				}
-				return true;
-			}
-			case K_METHOD:
-			case K_FUNCTION:  {
-				// nary nodes
-				int[] elems1 = (int[]) fromNode.data;
-				int[] elems2 = (int[]) toNode.data;
-				if(elems1.length != elems2.length){
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				if (fromChildren.length != toChildren.length) {
 					return false;
 				}
-				// Check (optional) receiver value first (which is contravariant)
-				int e1 = elems1[0];
-				int e2 = elems2[0];
-				if((e1 == -1 || e2 == -1) && e1 != e2) {
-					return false;
-				} else if (e1 != -1 && e2 != -1
-						&& !assumptions.isSuperSet(e1,e2)) {
-					return false;
-				}
-				// Check return value first (which is covariant)
-				e1 = elems1[1];
-				e2 = elems2[1];
-				if(!assumptions.isSubSet(e1,e2)) {
-					return false;
-				}
-				// Now, check parameters (which are contra-variant)
-				for(int i=2;i<elems1.length;++i) {
-					e1 = elems1[i];
-					e2 = elems2[i];
-					if(!assumptions.isSuperSet(e1,e2)) {
+				for (int i = 0; i < fromChildren.length; ++i) {
+					if (!subtypes.get(fromChildren[i], toChildren[i])) {
 						return false;
 					}
 				}
 				return true;
 			}
-			case K_RECORD:		
-			{
-				// labeled nary nodes
-				Pair<String, Integer>[] fields1 = (Pair<String, Integer>[]) fromNode.data;
-				Pair<String, Integer>[] fields2 = (Pair<String, Integer>[]) toNode.data;				
-				if(fields1.length != fields2.length) {
+			case K_RECORD: {
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				if (fromChildren.length != toChildren.length) {
+					return false;
+				}				
+				String[] fromFields = (String[]) fromState.data;
+				String[] toFields = (String[]) toState.data;				
+				
+				for (int i = 0; i != fromFields.length; ++i) {
+					String e1 = fromFields[i];
+					String e2 = toFields[i];
+					if(!e1.equals(e2)) { return false; }
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					if(!subtypes.get(fromChild,toChild)) {
+						return false;
+					}					
+				}									
+				return true;	
+			}
+			case K_UNION: {								
+				int[] toChildren = (int[]) toState.children;		
+				for(int j : toChildren) {				
+					if(!subtypes.get(fromIndex,j)) { return false; }								
+				}
+				return true;								
+			}			
+			// === Heterogenous Compound States ===
+			case K_FUNCTION:				
+			case K_METHOD:
+				// nary nodes
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				if(fromChildren.length != toChildren.length){
 					return false;
 				}
-				for (int i = 0; i != fields2.length; ++i) {
-					Pair<String, Integer> e1 = fields1[i];
-					Pair<String, Integer> e2 = fields2[i];						
-						if (!e1.first().equals(e2.first())
-								|| !assumptions.isSubSet(e1.second(),
-										e2.second())) {
-							return false;
-						}
-				}					
-				return true;					
-			} 		
-			case K_UNION: {									
-				int[] bounds2 = (int[]) toNode.data;		
-				for(int j : bounds2) {				
-					if(!assumptions.isSubSet(from,j)) { return false; }								
+				int start = 0;
+				if(fromKind == K_METHOD) {
+					// Check (optional) receiver value first (which is contravariant)
+					// FIXME: sort out suptypes
+					if (!suptypes.get(fromChildren[0],toChildren[0])) {
+						return false;
+					}
+					start++;
 				}
-				return true;					
-			}
-			case K_LABEL:
-				throw new IllegalArgumentException("attempting to minimise open recurisve type");		
-			default:
-				// primitive types true immediately
+				// Check return value first (which is covariant)
+				int fromChild = fromChildren[start];
+				int toChild = toChildren[start];
+				if(!subtypes.get(fromChild,toChild)) {
+					return false;
+				}
+				// Now, check parameters (which are contra-variant)
+				for(int i=start+1;i<fromChildren.length;++i) {
+					// FIXME: sort out suptypes
+					if(!suptypes.get(fromChildren[i],toChildren[i])) {
+						return false;
+					}
+				}
 				return true;
-			}		
-		} else if(fromNode.kind == K_ANY || toNode.kind == K_VOID) {
+			default:
+				// other primitive types (e.g. void, any, null, int, etc)
+				return true;
+			}
+		} else if(fromKind == K_VOID || toKind == K_ANY){
 			return true;
-		} else if(fromNode.kind == K_UNION) {
-			int[] bounds1 = (int[]) fromNode.data;		
-
-			// check every bound in c1 is a subtype of some bound in c2.
-			for(int i : bounds1) {				
-				if(assumptions.isSubSet(i,to)) {
+		} else if(fromKind == K_UNION) {
+			int[] fromChildren = fromState.children;		
+			for(int i : fromChildren) {				
+				if(subtypes.get(i,toIndex)) {
 					return true;
 				}								
 			}
 			return false;	
-		} else if(toNode.kind == K_UNION) {
-			int[] bounds2 = (int[]) toNode.data;		
-
-			// check some bound in c1 is a subtype of some bound in c2.
-			for(int j : bounds2) {				
-				if(!assumptions.isSubSet(from,j)) {
+		} else if(toKind == K_UNION) {
+			int[] toChildren = toState.children;		
+			for(int j : toChildren) {				
+				if(!subtypes.get(fromIndex,j)) {
 					return false;
 				}								
 			}
@@ -150,6 +147,5 @@ public class SubtypeOperator implements Relation {
 		}
 		
 		return false;
-		*/
 	}	
 }

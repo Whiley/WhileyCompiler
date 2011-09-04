@@ -1199,7 +1199,7 @@ public abstract class Type {
 		 */
 		public Type ret() {
 			int[] fields = automata.states[0].children;
-			return construct(Automatas.extract(automata, fields[1]));
+			return construct(Automatas.extract(automata, fields[0]));
 		}	
 		
 		/**
@@ -1210,7 +1210,7 @@ public abstract class Type {
 		public ArrayList<Type> params() {
 			int[] fields = automata.states[0].children;			
 			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=2;i<fields.length;++i) {
+			for(int i=1;i<fields.length;++i) {
 				r.add(construct(Automatas.extract(automata, fields[i])));
 			}
 			return r;
@@ -1235,6 +1235,30 @@ public abstract class Type {
 			}
 			return (Type.Process) construct(Automatas.extract(automata,
 					fields[0]));
+		}
+		
+		/**
+		 * Get the return type of this function type.
+		 * 
+		 * @return
+		 */
+		public Type ret() {
+			int[] fields = automata.states[0].children;
+			return construct(Automatas.extract(automata, fields[1]));
+		}	
+		
+		/**
+		 * Get the parameter types of this function type.
+		 * 
+		 * @return
+		 */
+		public ArrayList<Type> params() {
+			int[] fields = automata.states[0].children;			
+			ArrayList<Type> r = new ArrayList<Type>();
+			for(int i=2;i<fields.length;++i) {
+				r.add(construct(Automatas.extract(automata, fields[i])));
+			}
+			return r;
 		}
 	}
 	
