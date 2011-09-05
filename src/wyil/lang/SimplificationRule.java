@@ -54,12 +54,12 @@ public final class SimplificationRule implements RewriteRule {
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
 		
 		for(int i=0;i!=children.length;++i) {			
-			int childIndex = children[i];
-			Automata.State child = automata.states[childIndex];
+			int iChild = children[i];
+			Automata.State child = automata.states[iChild];
 			switch(child.kind) {
 			case Type.K_VOID:								
 				automata.states[index] = new Automata.State(Type.K_VOID);
-				return true;
+				return true;			
 			case Type.K_INTERSECTION:
 				for(int c : child.children) { 
 					nchildren.add(c);
@@ -68,16 +68,19 @@ public final class SimplificationRule implements RewriteRule {
 				break;
 			default:
 				// check for contractive case
-				if(childIndex != index) {					
+				if(iChild != index) {					
 					// check whether this child is subsumed
 					boolean subsumed = false;
-					for(int j=0;j<i;++j) {						
-						if(subtypes.isRelated(i,j)) {							
+					for (int j = 0; j < children.length; ++j) {
+						int jChild = children[j];
+						if (i != j
+								&& subtypes.isRelated(iChild, jChild)
+								&& (!subtypes.isRelated(jChild, iChild) || i > j)) {
 							subsumed = true;
 						}
 					}
 					if(!subsumed) {
-						nchildren.add(childIndex);
+						nchildren.add(iChild);
 					} else {
 						changed = true;
 					}
@@ -112,8 +115,8 @@ public final class SimplificationRule implements RewriteRule {
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
 		
 		for(int i=0;i!=children.length;++i) {			
-			int childIndex = children[i];
-			Automata.State child = automata.states[childIndex];
+			int iChild = children[i];
+			Automata.State child = automata.states[iChild];
 			switch(child.kind) {
 			case Type.K_ANY:								
 				automata.states[index] = new Automata.State(Type.K_ANY);
@@ -126,16 +129,19 @@ public final class SimplificationRule implements RewriteRule {
 				break;
 			default:
 				// check for contractive case
-				if(childIndex != index) {					
+				if(iChild != index) {					
 					// check whether this child is subsumed
 					boolean subsumed = false;
-					for(int j=0;j<i;++j) {
-						if(subtypes.isRelated(j,i)) {							
-							subsumed = true;
+						for (int j = 0; j < children.length; ++j) {
+							int jChild = children[j];
+							if (i != j
+									&& subtypes.isRelated(jChild, iChild)
+									&& (!subtypes.isRelated(iChild, jChild) || i > j)) {
+								subsumed = true;
+							}
 						}
-					}
 					if(!subsumed) {
-						nchildren.add(childIndex);
+						nchildren.add(iChild);
 					} else {
 						changed = true;
 					}
