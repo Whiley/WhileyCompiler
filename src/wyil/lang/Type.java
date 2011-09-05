@@ -481,7 +481,8 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastUpperBound(Type t1, Type t2) {
-		return minimise(T_UNION(t1,t2)); // so easy
+		Type t = minimise(T_UNION(t1,t2)); // so easy		
+		return t;
 	}
 	
 	/**
@@ -677,7 +678,9 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,SIMPLIFICATION_RULE);
+			SubtypeOperator relation = new SubtypeOperator(automata,automata);			
+			Automatas.computeFixpoint(relation);
+			Automatas.rewrite(automata,new SimplificationRule(relation));
 			automata = Automatas.extract(automata, 0);
 			automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
@@ -688,8 +691,6 @@ public abstract class Type {
 		}
 	}
 
-	private static final SimplificationRule SIMPLIFICATION_RULE = new SimplificationRule();
-	
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -1711,7 +1712,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("int&any");
+		Type from = fromString("int|int");
 		Type to = T_UNION(T_INT,T_UNION(T_NULL,T_STRING));
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));

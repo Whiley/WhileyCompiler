@@ -30,6 +30,12 @@ import wyautl.lang.*;
  * 
  */
 public final class SimplificationRule implements RewriteRule {
+	public final SubtypeOperator subtypes;
+	
+	public SimplificationRule(SubtypeOperator subtypes) {
+		this.subtypes = subtypes;
+	}
+	
 	public final boolean apply(int index, Automata automata) {
 		Automata.State state = automata.states[index];
 		switch(state.kind) {
@@ -84,15 +90,17 @@ public final class SimplificationRule implements RewriteRule {
 		return changed;
 	}	
 	
-	public static boolean applyUnion(int index, Automata.State state,
+	public boolean applyUnion(int index, Automata.State state,
 			Automata automata) {
 		boolean changed = false;
 		int[] children = state.children;		
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
-		for(int childIndex : children) {
+		
+		for(int i=0;i!=children.length;++i) {			
+			int childIndex = children[i];
 			Automata.State child = automata.states[childIndex];
 			switch(child.kind) {
-			case Type.K_ANY:				
+			case Type.K_ANY:								
 				automata.states[index] = new Automata.State(Type.K_ANY);
 				return true;
 			case Type.K_VOID:
@@ -105,14 +113,25 @@ public final class SimplificationRule implements RewriteRule {
 				changed=true;
 				break;
 			default:
-				if(childIndex != index) {
-					// remove contractive case
-					nchildren.add(childIndex);
+				// check for contractive case
+				if(childIndex != index) {					
+					// check whether this child is subsumed
+					boolean subsumed = false;
+					for(int j=0;j<i;++j) {
+						if(subtypes.isRelated(j,i)) {							
+							subsumed = true;
+						}
+					}
+					if(!subsumed) {
+						nchildren.add(childIndex);
+					} else {
+						changed = true;
+					}
 				} else {
 					changed = true;
 				}
-			}
-		}		
+			}						
+		}
 		
 		if(nchildren.size() == 0) {
 			// this can happen in the case of a union which has only itself as a
