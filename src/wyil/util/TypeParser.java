@@ -24,10 +24,17 @@ public class TypeParser {
 	public Type parse() {
 		Type term = parseTerm();
 		skipWhiteSpace();
-		while(index < str.length() && str.charAt(index) == '|') {
-			// union type
-			match("|");
-			term = T_UNION(term,parse());
+		while (index < str.length()
+				&& (str.charAt(index) == '|' || str.charAt(index) == '&')) {
+			if(str.charAt(index) == '|') {
+				// union type
+				match("|");
+				term = T_UNION(term,parse());
+			} else {
+				// intersection type
+				match("&");
+				term = T_INTERSECTION(term,parse());
+			}
 			skipWhiteSpace();
 		}
 		return term;

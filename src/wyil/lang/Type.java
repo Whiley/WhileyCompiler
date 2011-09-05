@@ -1373,7 +1373,7 @@ public abstract class Type {
 		}
 		case K_UNION: {
 			int[] children = state.children;
-			middle = "";
+			middle = "(";
 			for (int i = 0; i != children.length; ++i) {					
 				if(i != 0 && children.length > 1) {
 					middle += "|";
@@ -1386,8 +1386,10 @@ public abstract class Type {
 			int[] children = state.children;
 			middle = "";
 			for (int i = 0; i != children.length; ++i) {											
+				if(i != 0 && children.length > 1) {
+					middle += "&";
+				}
 				middle += toString(children[i], visited, headers, automata);
-				middle += "&";
 			}
 			break;
 		}
@@ -1594,6 +1596,8 @@ public abstract class Type {
 			return new Record(automata);
 		case K_UNION:
 			return new Union(automata);
+		case K_INTERSECTION:
+			return new Intersection(automata);
 		case K_METHOD:
 			return new Meth(automata);
 		case K_HEADLESS:
@@ -1707,8 +1711,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("int");
-		Type to = fromString("int|void");
+		Type from = fromString("int&any");
+		Type to = T_UNION(T_INT,T_UNION(T_NULL,T_STRING));
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));

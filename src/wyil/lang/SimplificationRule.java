@@ -35,9 +35,54 @@ public final class SimplificationRule implements RewriteRule {
 		switch(state.kind) {
 		case Type.K_UNION:
 			return applyUnion(index,state,automata);
+		case Type.K_INTERSECTION:
+			return applyIntersection(index,state,automata);
 		}
 		return false;
 	}
+	
+	public static boolean applyIntersection(int index, Automata.State state,
+			Automata automata) {
+		boolean changed = false;
+		int[] children = state.children;		
+		ArrayList<Integer> nchildren = new ArrayList<Integer>();
+		for(int childIndex : children) {
+			Automata.State child = automata.states[childIndex];
+			switch(child.kind) {
+			case Type.K_ANY:								
+				changed = true;
+				break;		
+			case Type.K_VOID:
+				automata.states[index] = new Automata.State(Type.K_VOID);
+				return true;	
+			default:
+				if(childIndex != index) {
+					// remove contractive case
+					nchildren.add(childIndex);
+				} else {
+					changed = true;
+				}
+			}
+		}		
+		
+		if(nchildren.size() == 0) {
+			// this can happen in the case of an intersection which has only itself as a
+			// child.
+			automata.states[index] = new Automata.State(Type.K_VOID);
+		} else if(nchildren.size() == 1) {
+			// bypass this node altogether
+			int child = nchildren.get(0);
+			automata.states[index] = new Automata.State(automata.states[child]);			
+		} else if(changed) {			
+			children = new int[nchildren.size()];
+			for(int i=0;i!=children.length;++i) {
+				children[i] = nchildren.get(i);
+			}
+			automata.states[index] = new Automata.State(Type.K_INTERSECTION, children,
+					false);
+		}
+		return changed;
+	}	
 	
 	public static boolean applyUnion(int index, Automata.State state,
 			Automata automata) {
@@ -53,6 +98,12 @@ public final class SimplificationRule implements RewriteRule {
 			case Type.K_VOID:
 				changed = true;
 				break;
+			case Type.K_UNION:
+				for(int c : child.children) { 
+					nchildren.add(c);
+				}
+				changed=true;
+				break;
 			default:
 				if(childIndex != index) {
 					// remove contractive case
@@ -63,7 +114,11 @@ public final class SimplificationRule implements RewriteRule {
 			}
 		}		
 		
-		if(nchildren.size() == 1) {
+		if(nchildren.size() == 0) {
+			// this can happen in the case of a union which has only itself as a
+			// child.
+			automata.states[index] = new Automata.State(Type.K_VOID);
+		} else if(nchildren.size() == 1) {
 			// bypass this node altogether
 			int child = nchildren.get(0);
 			automata.states[index] = new Automata.State(automata.states[child]);			
@@ -76,5 +131,5 @@ public final class SimplificationRule implements RewriteRule {
 					false);
 		}
 		return changed;
-	}
+	}	
 }
