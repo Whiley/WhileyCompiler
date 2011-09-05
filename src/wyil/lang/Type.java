@@ -1372,6 +1372,12 @@ public abstract class Type {
 			middle = "{" + k + "->" + v + "}";
 			break;
 		}
+		case K_DIFFERENCE: {
+			String k = toString(state.children[0], visited, headers, automata);
+			String v = toString(state.children[1], visited, headers, automata);
+			middle = k + "-" + v;
+			break;
+		}
 		case K_UNION: {
 			int[] children = state.children;
 			middle = "(";
@@ -1599,6 +1605,8 @@ public abstract class Type {
 			return new Union(automata);
 		case K_INTERSECTION:
 			return new Intersection(automata);
+		case K_DIFFERENCE:
+			return new Difference(automata);
 		case K_METHOD:
 			return new Meth(automata);
 		case K_HEADLESS:
@@ -1712,8 +1720,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("int&int");
-		Type to = T_UNION(T_INT,T_UNION(T_NULL,T_STRING));
+		Type from = fromString("any&null");
+		Type to = fromString("int");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));

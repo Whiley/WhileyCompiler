@@ -60,9 +60,6 @@ public final class SimplificationRule implements RewriteRule {
 			case Type.K_VOID:								
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;
-			case Type.K_ANY:
-				changed = true;
-				break;
 			case Type.K_INTERSECTION:
 				for(int c : child.children) { 
 					nchildren.add(c);
@@ -120,10 +117,7 @@ public final class SimplificationRule implements RewriteRule {
 			switch(child.kind) {
 			case Type.K_ANY:								
 				automata.states[index] = new Automata.State(Type.K_ANY);
-				return true;
-			case Type.K_VOID:
-				changed = true;
-				break;
+				return true;			
 			case Type.K_UNION:
 				for(int c : child.children) { 
 					nchildren.add(c);
