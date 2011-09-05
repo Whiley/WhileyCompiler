@@ -47,30 +47,48 @@ public final class SimplificationRule implements RewriteRule {
 		return false;
 	}
 	
-	public static boolean applyIntersection(int index, Automata.State state,
+	public boolean applyIntersection(int index, Automata.State state,
 			Automata automata) {
 		boolean changed = false;
 		int[] children = state.children;		
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
-		for(int childIndex : children) {
+		
+		for(int i=0;i!=children.length;++i) {			
+			int childIndex = children[i];
 			Automata.State child = automata.states[childIndex];
 			switch(child.kind) {
-			case Type.K_ANY:								
-				changed = true;
-				break;		
-			case Type.K_VOID:
+			case Type.K_VOID:								
 				automata.states[index] = new Automata.State(Type.K_VOID);
-				return true;	
+				return true;
+			case Type.K_ANY:
+				changed = true;
+				break;
+			case Type.K_INTERSECTION:
+				for(int c : child.children) { 
+					nchildren.add(c);
+				}
+				changed=true;
+				break;
 			default:
-				if(childIndex != index) {
-					// remove contractive case
-					nchildren.add(childIndex);
+				// check for contractive case
+				if(childIndex != index) {					
+					// check whether this child is subsumed
+					boolean subsumed = false;
+					for(int j=0;j<i;++j) {						
+						if(subtypes.isRelated(i,j)) {							
+							subsumed = true;
+						}
+					}
+					if(!subsumed) {
+						nchildren.add(childIndex);
+					} else {
+						changed = true;
+					}
 				} else {
 					changed = true;
 				}
-			}
-		}		
-		
+			}						
+		}	
 		if(nchildren.size() == 0) {
 			// this can happen in the case of an intersection which has only itself as a
 			// child.
