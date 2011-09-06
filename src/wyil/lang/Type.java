@@ -1720,7 +1720,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("any&null");
+		Type from = T_INTERSECTION(T_DIFFERENCE(T_ANY,T_STRING),T_CHAR);		
 		Type to = fromString("int");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));

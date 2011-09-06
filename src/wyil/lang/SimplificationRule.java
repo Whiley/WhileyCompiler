@@ -65,18 +65,23 @@ public final class SimplificationRule implements RewriteRule {
 					nchildren.add(c);
 				}
 				changed=true;
-				break;
+				break;			
 			default:
 				// check for contractive case
 				if(iChild != index) {					
 					// check whether this child is subsumed
 					boolean subsumed = false;
 					for (int j = 0; j < children.length; ++j) {
+						if(i == j) { continue; }
 						int jChild = children[j];
-						if (i != j
-								&& subtypes.isRelated(iChild, jChild)
-								&& (!subtypes.isRelated(jChild, iChild) || i > j)) {
+						boolean irj = subtypes.isRelated(iChild, jChild);
+						boolean jri = subtypes.isRelated(jChild, iChild);
+						if (irj && (!jri || i > j)) {
 							subsumed = true;
+						} else if(!irj && !jri) {
+							// no intersection is possible.
+							automata.states[index] = new Automata.State(Type.K_VOID);
+							return true;			
 						}
 					}
 					if(!subsumed) {
