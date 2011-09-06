@@ -149,22 +149,26 @@ public class SyntaxError extends RuntimeException {
 			}
 
 			output.println(filename + ":" + line + ": " + getMessage());
-			// errout.println();
+			// NOTE: in the following lines I don't print characters
+			// individually. The reason for this is that it messes up the ANT
+			// task output.
+			String str = "";
 			for(int i=lineStart;i<lineEnd;++i) {
-				output.print(text.charAt(i));
+				str = str + text.charAt(i);
 			}
-
+			output.print(str);
+			str = "";
 			for (int i = lineStart; i < start; ++i) {
 				if (text.charAt(i) == '\t') {
-					output.print("\t");
+					str += "\t";
 				} else {
-					output.print(" ");
+					str += " ";
 				}
-			}
+			}			
 			for (int i = start; i <= end; ++i) {
-				output.print("^");
+				str += "^";
 			}
-			output.println("");
+			output.println(str);
 		} 
 	}
 	

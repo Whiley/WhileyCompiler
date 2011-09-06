@@ -2612,6 +2612,14 @@ public class ClassFileBuilder {
 			return WHILEYPROCESS;
 		} else if(t instanceof Type.Tuple) {
 			return WHILEYTUPLE;
+		} else if(t instanceof Type.Difference) {
+			Type.Difference td = (Type.Difference) t;
+			return convertType(td.left());
+		} else if(t instanceof Type.Intersection) {
+			// FIXME: something tells me the following is not the right way to
+			// do this.
+			Type.Intersection td = (Type.Intersection) t;
+			return convertType(td.bounds().iterator().next());
 		} else if(t instanceof Type.Union) {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
