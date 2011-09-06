@@ -44,8 +44,6 @@ public abstract class Messager extends Yielder implements Resumable {
 	private final Queue<Message> mail = new LinkedList<Message>();
 
 	private Message currentMessage = null;
-	
-	private MessageFuture future = null;
 
 	/**
 	 * Whether the messager is ready to resume. This is important if a message
@@ -77,7 +75,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	public Messager(Scheduler scheduler) {
 		this.scheduler = scheduler;
 	}
-	
+
 	/**
 	 * @return This messager's scheduler.
 	 */
@@ -98,30 +96,20 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * @param method The entry method of the message
 	 * @param args The entry arguments of the message
 	 */
-	public void sendSync(Messager sender, Method method, Object[] args) {
-		Message message = new SyncMessage(method, args, sender);
+	public MessageFuture sendSync(Messager sender, Method method, Object[] args) {
+		SyncMessage message = new SyncMessage(method, args, sender);
 
 		// This needs to happen before the message is sent, otherwise this actor
 		// might resume the sender before they've finished yielding.
 		sender.ready = false;
 		sender.shouldYield = true;
 		sender.shouldResume = false;
-		
+
 		sender.shouldYield();
 
 		addMessage(message);
-	}
-
-	/**
-	 * Performs exactly the same operation as <code>sendSync</code>. Included
-	 * purely to help the bytecode understand when a value isn't needed.
-	 * 
-	 * @param sender The sender of the message
-	 * @param method The entry method of the message
-	 * @param args The entry arguments of the message
-	 */
-	public void sendSyncVoid(Messager sender, Method method, Object[] args) {
-		sendSync(sender, method, args);
+		
+		return message.future;
 	}
 
 	/**
@@ -138,11 +126,11 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * @param args The entry arguments of the message
 	 */
 	public void sendAsync(Messager sender, Method method, Object[] args) {
-	  // This needs to happen before the message is sent, otherwise the actor
+		// This needs to happen before the message is sent, otherwise the actor
 		// could start before these are set to the correct values.
 		sender.shouldYield = false;
 		sender.shouldResume = true;
-		
+
 		addMessage(new Message(method, args));
 	}
 
@@ -238,14 +226,6 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	/**
-	 * @return The future of this messager's last sent message
-	 * @throws NullPointerException There is no current message
-	 */
-	public MessageFuture getLastSentFuture() throws NullPointerException {
-		return future;
-	}
-
-	/**
 	 * Completes the current message.
 	 * 
 	 * Note that this method handles both the resumption of the actor that sent
@@ -258,7 +238,7 @@ public abstract class Messager extends Yielder implements Resumable {
 		if (currentMessage instanceof SyncMessage) {
 			((SyncMessage) currentMessage).future.complete(result);
 		}
-		
+
 		nextMessage();
 	}
 
@@ -275,7 +255,7 @@ public abstract class Messager extends Yielder implements Resumable {
 		if (currentMessage instanceof SyncMessage) {
 			((SyncMessage) currentMessage).future.fail(cause);
 		}
-		
+
 		// TODO There's no crash if the entry method fails.
 		nextMessage();
 	}
@@ -312,15 +292,13 @@ public abstract class Messager extends Yielder implements Resumable {
 	private class SyncMessage extends Message {
 
 		private final Messager sender;
-		
+
 		private final MessageFuture future;
 
 		public SyncMessage(Method method, Object[] arguments, Messager sender) {
 			super(method, arguments);
 			this.sender = sender;
 			this.future = new MessageFuture();
-			
-			sender.future = future;
 		}
 
 	}

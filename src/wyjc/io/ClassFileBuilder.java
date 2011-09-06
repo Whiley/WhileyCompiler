@@ -1564,15 +1564,12 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
 		if (c.synchronous) {
-			ftype = new JvmType.Function(T_VOID, WHILEYMESSAGER,
+			ftype = new JvmType.Function(WHILEYFUTURE, WHILEYMESSAGER,
 					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER,
-					c.retval ? "sendSync" : "sendSyncVoid", ftype, Bytecode.VIRTUAL));
-			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getLastSentFuture",
-					new JvmType.Function(WHILEYFUTURE), Bytecode.VIRTUAL));
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
+					Bytecode.VIRTUAL));
 			
-			// Response to failure will be added later on.
+			// Response to failure will be added by Continuations.
 			
 			if (c.retval) {
 				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
@@ -1620,15 +1617,13 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
 		if (c.synchronous) {			
-			JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYMESSAGER,
-					JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER,
-					c.retval ? "sendSync" : "sendSyncVoid", ftype, Bytecode.VIRTUAL));
+			JvmType.Function ftype = new JvmType.Function(WHILEYFUTURE,
+					WHILEYMESSAGER, JAVA_LANG_REFLECT_METHOD, JAVA_LANG_OBJECT_ARRAY);
+			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "sendSync", ftype,
+					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-			bytecodes.add(new Bytecode.Invoke(WHILEYMESSAGER, "getLastSentFuture",
-					new JvmType.Function(WHILEYFUTURE), Bytecode.VIRTUAL));
 			
-			// Response to failure will be added later on. 
+			// Response to failure will be added by Continuations.
 			
 			if (c.retval) {
 				bytecodes.add(new Bytecode.Invoke(WHILEYFUTURE, "getResult",
