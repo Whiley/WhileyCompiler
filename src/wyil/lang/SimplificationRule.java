@@ -61,6 +61,8 @@ public final class SimplificationRule implements RewriteRule {
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;			
 			case Type.K_INTERSECTION:
+					// FIXME: this is broken since the later simplification
+					// iterates children and might miss something.
 				for(int c : child.children) { 
 					nchildren.add(c);
 				}
