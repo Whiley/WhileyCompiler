@@ -43,8 +43,29 @@ public final class SimplificationRule implements RewriteRule {
 			return applyUnion(index,state,automata);
 		case Type.K_INTERSECTION:
 			return applyIntersection(index,state,automata);
+		case Type.K_NOT:
+			return applyNot(index,state,automata);
 		}
 		return false;
+	}
+	
+	public boolean applyNot(int index, Automata.State state,
+			Automata automata) {				
+		int childIndex = state.children[0];
+		Automata.State child = automata.states[childIndex];
+		switch(child.kind) {
+			case Type.K_NOT:
+				// bypass this node altogether
+				int childChildIndex = child.children[0];
+				Automata.State childChild = automata.states[childChildIndex];
+				automata.states[index] = new Automata.State(childChild);
+				return true;
+			case Type.K_UNION:
+			case Type.K_INTERSECTION:
+				// TODO: de-morgan's laws
+			default:
+				return false;
+		}
 	}
 	
 	public boolean applyIntersection(int index, Automata.State state,
