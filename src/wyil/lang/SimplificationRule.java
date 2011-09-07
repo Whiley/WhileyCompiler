@@ -54,6 +54,12 @@ public final class SimplificationRule implements RewriteRule {
 		int childIndex = state.children[0];
 		Automata.State child = automata.states[childIndex];
 		switch(child.kind) {
+			case Type.K_ANY:
+				automata.states[index] = new Automata.State(Type.K_VOID);
+				return true;
+			case Type.K_VOID:
+				automata.states[index] = new Automata.State(Type.K_ANY);
+				return true;
 			case Type.K_NOT:
 				// bypass this node altogether
 				int childChildIndex = child.children[0];
