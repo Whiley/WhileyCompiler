@@ -2612,9 +2612,9 @@ public class ClassFileBuilder {
 			return WHILEYPROCESS;
 		} else if(t instanceof Type.Tuple) {
 			return WHILEYTUPLE;
-		} else if(t instanceof Type.Difference) {
-			Type.Difference td = (Type.Difference) t;
-			return convertType(td.left());
+		} else if(t instanceof Type.Not) {
+			// can we do any better?
+			return JAVA_LANG_OBJECT;
 		} else if(t instanceof Type.Intersection) {
 			// FIXME: something tells me the following is not the right way to
 			// do this.

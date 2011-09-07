@@ -60,9 +60,7 @@ public final class SimplificationRule implements RewriteRule {
 			case Type.K_INTERSECTION:
 				return flattenChildren(index,i,state,automata);
 			case Type.K_UNION:
-				return applyIntersection_2(index,state,automata);
-			case Type.K_DIFFERENCE:
-				return applyIntersection_3(index,state,automata);
+				return applyIntersection_2(index,state,automata);			
 			}
 		}
 		return applyIntersection_4(index, state, automata);		
@@ -77,19 +75,6 @@ public final class SimplificationRule implements RewriteRule {
 	 * @return
 	 */
 	public boolean applyIntersection_2(int index, Automata.State state,
-			Automata automata) {
-		return false;
-	}
-	
-	/**
-	 * This rule distributes over children of type DIFFERENCE
-	 * 
-	 * @param index
-	 * @param state
-	 * @param automata
-	 * @return
-	 */
-	public boolean applyIntersection_3(int index, Automata.State state,
 			Automata automata) {
 		return false;
 	}

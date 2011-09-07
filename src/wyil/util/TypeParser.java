@@ -22,7 +22,7 @@ public class TypeParser {
 	}
 	
 	public Type parse() {
-		Type term = parseTerm();
+		Type term = parseNotTerm();
 		skipWhiteSpace();
 		while (index < str.length()
 				&& (str.charAt(index) == '|' || str.charAt(index) == '&')) {
@@ -38,6 +38,29 @@ public class TypeParser {
 			skipWhiteSpace();
 		}
 		return term;
+	}
+	public Type parseNotTerm() {
+		skipWhiteSpace();
+		char lookahead = str.charAt(index);
+		if(lookahead == '!') {
+			match("!");
+			return T_NOT(parse());
+		} else {
+			return parseBraceTerm();
+		}
+	}
+	public Type parseBraceTerm() {
+		skipWhiteSpace();
+		char lookahead = str.charAt(index);
+		if(lookahead == '(') {
+			match("(");
+			Type t = parse();
+			match(")");
+			skipWhiteSpace();
+			return t;
+		} else {
+			return parseTerm();
+		}
 	}
 	public Type parseTerm() {
 		skipWhiteSpace();

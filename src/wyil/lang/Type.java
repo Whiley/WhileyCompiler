@@ -156,8 +156,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_DIFFERENCE(Type left, Type right) {
-		return new Difference(construct(K_DIFFERENCE,null,left,right));				
+	public static final Type T_NOT(Type element) {
+		return new Not(construct(K_NOT,null,element));				
 	}
 	
 	/**
@@ -513,7 +513,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastDifference(Type t1, Type t2) {
-		return minimise(T_DIFFERENCE(t1,t2)); // so easy
+		return minimise(T_INTERSECTION(t1,T_NOT(t2))); // so easy
 	}
 
 	/**
@@ -1202,20 +1202,15 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Difference extends Compound {
-		private Difference(Automata automata) {
+	public static final class Not extends Compound {
+		private Not(Automata automata) {
 			super(automata);
 		}
 		
-		public Type left() {						
+		public Type element() {						
 			int[] fields = automata.states[0].children;
 			return construct(Automatas.extract(automata,fields[0]));			
-		}
-		
-		public Type right() {						
-			int[] fields = automata.states[0].children;
-			return construct(Automatas.extract(automata,fields[1]));
-		}
+		}		
 	}
 	
 	/**
@@ -1365,27 +1360,25 @@ public abstract class Type {
 		case K_PROCESS:
 			middle = "*" + toString(state.children[0], visited, headers, automata);
 			break;
+		case K_NOT: {
+			middle = "!" + toBracesString(state.children[0], visited, headers, automata);			
+			break;
+		}
 		case K_DICTIONARY: {
 			// binary node			
 			String k = toString(state.children[0], visited, headers, automata);
 			String v = toString(state.children[1], visited, headers, automata);
 			middle = "{" + k + "->" + v + "}";
 			break;
-		}
-		case K_DIFFERENCE: {
-			String k = toString(state.children[0], visited, headers, automata);
-			String v = toString(state.children[1], visited, headers, automata);
-			middle = k + "-" + v;
-			break;
-		}
+		}		
 		case K_UNION: {
 			int[] children = state.children;
-			middle = "(";
+			middle = "";
 			for (int i = 0; i != children.length; ++i) {					
 				if(i != 0 || children.length == 1) {
 					middle += "|";
 				}
-				middle += toString(children[i], visited, headers, automata);				
+				middle += toBracesString(children[i], visited, headers, automata);				
 			}
 			break;
 		}
@@ -1396,7 +1389,7 @@ public abstract class Type {
 				if(i != 0 || children.length == 1) {
 					middle += "&";
 				}
-				middle += toString(children[i], visited, headers, automata);
+				middle += toBracesString(children[i], visited, headers, automata);
 			}
 			break;
 		}
@@ -1475,6 +1468,23 @@ public abstract class Type {
 		}
 	}
 
+	private final static String toBracesString(int index, BitSet visited,
+			String[] headers, Automata automata) {
+		if (visited.get(index)) {
+			// node already visited
+			return headers[index];
+		}
+		String middle = toString(index,visited,headers,automata);
+		State state = automata.states[index];
+		switch(state.kind) {
+			case K_INTERSECTION:
+			case K_UNION:
+				return "(" + middle + ")";
+			default:
+				return middle;
+		}
+	}
+	
 	/**
 	 * The following method traverses the graph using a depth-first
 	 * search to identify nodes which are "loop headers". That is, they are the
@@ -1605,8 +1615,8 @@ public abstract class Type {
 			return new Union(automata);
 		case K_INTERSECTION:
 			return new Intersection(automata);
-		case K_DIFFERENCE:
-			return new Difference(automata);
+		case K_NOT:
+			return new Not(automata);
 		case K_METHOD:
 			return new Meth(automata);
 		case K_HEADLESS:
@@ -1710,7 +1720,7 @@ public abstract class Type {
 	public static final byte K_RECORD = 15;
 	public static final byte K_UNION = 16;
 	public static final byte K_INTERSECTION = 17;
-	public static final byte K_DIFFERENCE = 18;
+	public static final byte K_NOT = 18;
 	public static final byte K_FUNCTION = 19;
 	public static final byte K_METHOD = 20;
 	public static final byte K_HEADLESS = 21; // headless method
@@ -1720,8 +1730,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = T_INTERSECTION(T_DIFFERENCE(T_ANY,T_STRING),T_CHAR);		
-		Type to = fromString("int");
+		Type from = T_INTERSECTION(T_UNION(T_NULL,T_STRING),T_CHAR);		
+		Type to = fromString("!!(int|null)");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));
