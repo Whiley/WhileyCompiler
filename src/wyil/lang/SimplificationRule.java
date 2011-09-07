@@ -48,6 +48,61 @@ public final class SimplificationRule implements RewriteRule {
 	}
 	
 	public boolean applyIntersection(int index, Automata.State state,
+			Automata automata) {				
+		int[] children = state.children;		
+		for(int i=0;i!=children.length;++i) {			
+			int iChild = children[i];
+			Automata.State child = automata.states[iChild];
+			switch(child.kind) {
+			case Type.K_VOID:								
+				automata.states[index] = new Automata.State(Type.K_VOID);
+				return true;
+			case Type.K_INTERSECTION:
+				return flattenChildren(index,i,state,automata);
+			case Type.K_UNION:
+				return applyIntersection_2(index,state,automata);
+			case Type.K_DIFFERENCE:
+				return applyIntersection_3(index,state,automata);
+			}
+		}
+		return applyIntersection_4(index, state, automata);		
+	}
+	
+	/**
+	 * This rule distributes over children of type UNION
+	 * 
+	 * @param index
+	 * @param state
+	 * @param automata
+	 * @return
+	 */
+	public boolean applyIntersection_2(int index, Automata.State state,
+			Automata automata) {
+		return false;
+	}
+	
+	/**
+	 * This rule distributes over children of type DIFFERENCE
+	 * 
+	 * @param index
+	 * @param state
+	 * @param automata
+	 * @return
+	 */
+	public boolean applyIntersection_3(int index, Automata.State state,
+			Automata automata) {
+		return false;
+	}
+	
+	/**
+	 * This rule removes subsumed children from an intersection.
+	 * 
+	 * @param index
+	 * @param state
+	 * @param automata
+	 * @return
+	 */
+	public boolean applyIntersection_4(int index, Automata.State state,
 			Automata automata) {
 		boolean changed = false;
 		int[] children = state.children;		
@@ -55,46 +110,31 @@ public final class SimplificationRule implements RewriteRule {
 		
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
-			Automata.State child = automata.states[iChild];
-			switch(child.kind) {
-			case Type.K_VOID:								
-				automata.states[index] = new Automata.State(Type.K_VOID);
-				return true;			
-			case Type.K_INTERSECTION:
-					// FIXME: this is broken since the later simplification
-					// iterates children and might miss something.
-				for(int c : child.children) { 
-					nchildren.add(c);
+			// check for contractive case
+			if(iChild != index) {					
+				// check whether this child is subsumed
+				boolean subsumed = false;
+				for (int j = 0; j < children.length; ++j) {
+					if(i == j) { continue; }
+					int jChild = children[j];
+					boolean irj = subtypes.isRelated(iChild, jChild);
+					boolean jri = subtypes.isRelated(jChild, iChild);
+					if (irj && (!jri || i > j)) {
+						subsumed = true;
+					} else if(!irj && !jri) {
+						// no intersection is possible!
+						automata.states[index] = new Automata.State(Type.K_VOID);
+						return true;			
+					}
 				}
-				changed=true;
-				break;			
-			default:
-				// check for contractive case
-				if(iChild != index) {					
-					// check whether this child is subsumed
-					boolean subsumed = false;
-					for (int j = 0; j < children.length; ++j) {
-						if(i == j) { continue; }
-						int jChild = children[j];
-						boolean irj = subtypes.isRelated(iChild, jChild);
-						boolean jri = subtypes.isRelated(jChild, iChild);
-						if (irj && (!jri || i > j)) {
-							subsumed = true;
-						} else if(!irj && !jri) {
-							// no intersection is possible.
-							automata.states[index] = new Automata.State(Type.K_VOID);
-							return true;			
-						}
-					}
-					if(!subsumed) {
-						nchildren.add(iChild);
-					} else {
-						changed = true;
-					}
+				if(!subsumed) {
+					nchildren.add(iChild);
 				} else {
 					changed = true;
 				}
-			}						
+			} else {
+				changed = true;
+			}					
 		}	
 		if(nchildren.size() == 0) {
 			// this can happen in the case of an intersection which has only itself as a
@@ -116,6 +156,24 @@ public final class SimplificationRule implements RewriteRule {
 	}	
 	
 	public boolean applyUnion(int index, Automata.State state,
+			Automata automata) {		
+		int[] children = state.children;				
+		for(int i=0;i!=children.length;++i) {			
+			int iChild = children[i];
+			Automata.State child = automata.states[iChild];
+			switch(child.kind) {
+			case Type.K_ANY:								
+				automata.states[index] = new Automata.State(Type.K_ANY);
+				return true;			
+			case Type.K_UNION:
+				return flattenChildren(index,i,state,automata);
+			}
+		}
+		return applyUnion_2(index,state,automata);
+	}
+	
+	
+	public boolean applyUnion_2(int index, Automata.State state,
 			Automata automata) {
 		boolean changed = false;
 		int[] children = state.children;		
@@ -127,13 +185,7 @@ public final class SimplificationRule implements RewriteRule {
 			switch(child.kind) {
 			case Type.K_ANY:								
 				automata.states[index] = new Automata.State(Type.K_ANY);
-				return true;			
-			case Type.K_UNION:
-				for(int c : child.children) { 
-					nchildren.add(c);
-				}
-				changed=true;
-				break;
+				return true;						
 			default:
 				// check for contractive case
 				if(iChild != index) {					
@@ -175,5 +227,42 @@ public final class SimplificationRule implements RewriteRule {
 					false);
 		}
 		return changed;
-	}	
+	}
+
+	/**
+	 * This rule flattens children which have the same kind as the given state.
+	 * 
+	 * @param index
+	 * @param state
+	 * @param automata
+	 * @return
+	 */
+	public boolean flattenChildren(int index, int start,
+			Automata.State state, Automata automata) {
+		ArrayList<Integer> nchildren = new ArrayList<Integer>();
+		int[] children = state.children;
+		final int kind = state.kind;		
+		
+		for (int i = start; i != children.length; ++i) {
+			int iChild = children[i];
+			Automata.State child = automata.states[iChild];
+			if(child.kind == kind) {
+				for (int c : child.children) {
+					nchildren.add(c);
+				}
+			} else {				
+				nchildren.add(iChild);
+			}
+		}
+
+		children = new int[nchildren.size()];
+		for (int i = 0; i != children.length; ++i) {
+			children[i] = nchildren.get(i);
+		}
+		
+		automata.states[index] = new Automata.State(kind,
+				children, false);
+
+		return true;
+	}
 }
