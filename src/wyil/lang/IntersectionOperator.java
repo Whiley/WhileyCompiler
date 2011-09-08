@@ -119,30 +119,12 @@ public class IntersectionOperator implements Relation {
 				}									
 				return true;	
 			}
-			case K_NOT: {
-				int fromChild = fromState.children[0];
-				int toChild = toState.children[0];
-					return intersection(fromChild, false, toChild, true)
-							&& intersection(fromChild, true, toChild, false);
-			}
-			case K_UNION : {
-				int[] toChildren = toState.children;
-				for (int j : toChildren) {					
-					if (intersection(fromIndex, j)) {
-						return true;
-					}
-				}
-				return false;
-			}
-			case K_INTERSECTION : {
-				int[] fromChildren = fromState.children;
-				for (int i : fromChildren) {
-					if (!intersection(i, toIndex)) {
-						return false;
-					}
-				}
-				return true;
-			}
+			case K_NOT: 
+			case K_UNION : 
+			case K_INTERSECTION:
+					// let these cases fall through to if-statements after
+					// switch.
+				break;
 			// === Heterogenous Compound States ===
 			case K_FUNCTION:
 			case K_HEADLESS:
@@ -178,6 +160,14 @@ public class IntersectionOperator implements Relation {
 				return fromSign == toSign;
 			}
 		} 
+		
+		if(fromKind == K_NOT) {
+			int fromChild = fromState.children[0];
+			return intersection(fromChild,!fromSign,toIndex,toSign);
+		} else if(toKind == K_NOT) {
+			int toChild = toState.children[0];
+			return intersection(fromIndex,fromSign,toChild,!toSign);			
+		}
 		
 		// using invert helps reduce the number of cases to consider.
 		fromKind = invert(fromKind,fromSign);
@@ -219,13 +209,7 @@ public class IntersectionOperator implements Relation {
 				}
 			}
 			return true;	
-		} else if(fromKind == K_NOT) {
-			int fromChild = fromState.children[0];
-			return !intersection(fromChild,toIndex);
-		} else if(toKind == K_NOT) {
-			int toChild = toState.children[0];
-			return !intersection(toChild,fromIndex);
-		}
+		}  
 		
 		return false;
 	}
