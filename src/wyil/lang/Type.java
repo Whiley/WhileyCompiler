@@ -1727,8 +1727,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = T_INTERSECTION(T_UNION(T_NULL,T_STRING),T_CHAR);		
-		Type to = fromString("!(string|null)");
+		Type from = fromString("!(string|null)");		
+		Type to = fromString("!null");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));

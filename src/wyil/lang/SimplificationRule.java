@@ -154,18 +154,19 @@ public final class SimplificationRule implements RewriteRule {
 					if (irj && (!jri || i > j)) {
 						subsumed = true;
 					} else if(!irj && !jri) {
+						// FIXME: bug here for not types.  E.g. !string & !null
+						
 						// no intersection is possible!
 						automata.states[index] = new Automata.State(Type.K_VOID);
 						return true;			
 					}
 				}
-				if(!subsumed) {
+				if(!subsumed) {					
 					nchildren.add(iChild);
-				} else {
-					System.out.println("Child subsumed(1)");
+				} else {					
 					changed = true;
 				}
-			} else {
+			} else {				
 				changed = true;
 			}					
 		}	
