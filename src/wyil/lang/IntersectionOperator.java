@@ -78,7 +78,7 @@ public class IntersectionOperator implements Relation {
 			case K_EXISTENTIAL:
 				NameID nid1 = (NameID) fromState.data;
 				NameID nid2 = (NameID) toState.data;				
-				return nid1.equals(nid2);			
+				return fromSign == toSign && nid1.equals(nid2);			
 			// === Homogenous Compound States ===
 			case K_SET:
 			case K_LIST:
@@ -175,41 +175,46 @@ public class IntersectionOperator implements Relation {
 				}
 				return true;
 			default:
-				// other primitive types (e.g. void, any, null, int, etc)
-				return true;
+				return fromSign == toSign;
 			}
+		} 
+		
+		// using invert helps reduce the number of cases to consider.
+		fromKind = invert(fromKind,fromSign);
+		toKind = invert(toKind,toSign);		
+				
+		if(fromKind == K_VOID || toKind == K_VOID){
+			return false;
 		} else if(fromKind == K_ANY || toKind == K_ANY){
-			return true;
-		} else if(fromKind == K_VOID || toKind == K_VOID){
 			return true;
 		} else if(fromKind == K_UNION) {
 			int[] fromChildren = fromState.children;		
 			for(int i : fromChildren) {				
-				if(intersection(i,toIndex)) {
+				if(intersection(i,true,toIndex,toSign)) {
 					return true;
 				}								
 			}
 			return false;	
 		} else if(toKind == K_UNION) {
 			int[] toChildren = toState.children;		
-			for(int j : toChildren) {				
-				if(intersections.get(fromIndex,j)) {
+			for(int j : toChildren) {
+				if(intersection(fromIndex,fromSign,j,true)) {
 					return true;
-				}								
+				}											
 			}
 			return false;	
 		} else if(fromKind == K_INTERSECTION) {
 			int[] fromChildren = fromState.children;
 			for (int i : fromChildren) {
-				if (!intersection(i, toIndex)) {
+				if(!intersection(i,true,toIndex,toSign)) {
 					return false;
-				}
+				}				
 			}
 			return true;	
 		} else if(toKind == K_INTERSECTION) {
 			int[] toChildren = toState.children;
 			for (int j : toChildren) {
-				if (!intersections.get(fromIndex, j)) {
+				if(intersection(fromIndex,fromSign,j,true)) {
 					return false;
 				}
 			}
@@ -223,6 +228,24 @@ public class IntersectionOperator implements Relation {
 		}
 		
 		return false;
+	}
+	
+	private int invert(int kind, boolean sign) {
+		if(sign) {
+			return kind;
+		}
+		switch(kind) {
+			case K_ANY:
+				return K_VOID;
+			case K_VOID:
+				return K_ANY;
+			case K_UNION:
+				return K_INTERSECTION;
+			case K_INTERSECTION:
+				return K_UNION;
+			default:
+				return kind;
+		}		
 	}
 	
 	private boolean intersection(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {
