@@ -30,10 +30,10 @@ import wyautl.lang.*;
  * 
  */
 public final class SimplificationRule implements RewriteRule {
-	public final SubtypeOperator subtypes;
+	public SubtypeOperator subtypes;
 	
-	public SimplificationRule(SubtypeOperator subtypes) {
-		this.subtypes = subtypes;
+	public SimplificationRule(Automata automata) {
+		updateSubtypes(automata);			
 	}
 	
 	public final boolean apply(int index, Automata automata) {
@@ -67,8 +67,28 @@ public final class SimplificationRule implements RewriteRule {
 				automata.states[index] = new Automata.State(childChild);
 				return true;
 			case Type.K_UNION:
-			case Type.K_INTERSECTION:
-				// TODO: de-morgan's laws
+			case Type.K_INTERSECTION: {						
+				int[] child_children = child.children;
+				int[] nchildren = new int[child_children.length];
+				Automata.State[] nstates = new Automata.State[child_children.length];				
+				for(int i=0;i!=child_children.length;++i) {					
+					int[] children = new int[1];
+					children[0] = child_children[i];
+					nchildren[i] = i + automata.size();
+					nstates[i] = new Automata.State(Type.K_NOT,children);
+				}
+				Automatas.inplaceAppendAll(automata, nstates);
+				state = automata.states[index];
+				int nkind = child.kind == Type.K_UNION ? Type.K_INTERSECTION : Type.K_UNION;
+				state.kind = nkind;				
+				state.children = nchildren;
+				state.deterministic = true;
+				
+				// this is annoying
+				updateSubtypes(automata);				
+				
+				return true;
+			}
 			default:
 				return false;
 		}
@@ -142,6 +162,7 @@ public final class SimplificationRule implements RewriteRule {
 				if(!subsumed) {
 					nchildren.add(iChild);
 				} else {
+					System.out.println("Child subsumed(1)");
 					changed = true;
 				}
 			} else {
@@ -276,5 +297,11 @@ public final class SimplificationRule implements RewriteRule {
 				children, false);
 
 		return true;
+	}
+	
+	private void updateSubtypes(Automata automata) {
+		// would be helpful if could perform incremental update
+		subtypes = new SubtypeOperator(automata,automata);			
+		Automatas.computeFixpoint(subtypes);
 	}
 }

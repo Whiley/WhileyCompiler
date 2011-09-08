@@ -88,6 +88,9 @@ public class TypeParser {
 		case 'r':
 			match("real");
 			return T_REAL;
+		case 's':
+			match("string");
+			return T_STRING;
 		case '[':
 		{
 			match("[");

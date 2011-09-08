@@ -157,7 +157,7 @@ public final class Automatas {
 			extract(child,visited,extracted,graph);
 		}		
 	}
-
+	
 	/**
 	 * The following algorithm rewrites an automata according to a given rewrite
 	 * rule. This is achieved by repeatedly applying the rewrite rule until no
@@ -690,6 +690,20 @@ public final class Automatas {
 		System.arraycopy(ostates,0,nstates,0,ostates.length);
 		nstates[ostates.length] = state;
 		return new Automata(nstates);
+	}
+	
+	/**
+	 * Append all given states in place onto the given automata.
+	 * 
+	 * @param automata
+	 * @param states
+	 */
+	public static void inplaceAppendAll(Automata automata, State... states) {
+		State[] ostates = automata.states;
+		State[] nstates = new State[ostates.length+states.length];
+		System.arraycopy(ostates,0,nstates,0,ostates.length);
+		System.arraycopy(states,0,nstates,ostates.length,states.length);		
+		automata.states = nstates;
 	}
 	
 	/**

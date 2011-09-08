@@ -40,7 +40,7 @@ import java.util.*;
  * 
  */
 public final class Automata {	
-	public final State[] states;	
+	public State[] states;	// should not be public!
 	
 	public Automata(State... states) {
 		this.states = states;

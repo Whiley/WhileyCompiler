@@ -678,9 +678,7 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			SubtypeOperator relation = new SubtypeOperator(automata,automata);			
-			Automatas.computeFixpoint(relation);
-			Automatas.rewrite(automata,new SimplificationRule(relation));
+			Automatas.rewrite(automata,new SimplificationRule(automata));
 			automata = Automatas.extract(automata, 0);
 			automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
@@ -1726,12 +1724,11 @@ public abstract class Type {
 	public static final byte K_HEADLESS = 21; // headless method
 	public static final byte K_EXISTENTIAL = 22;
 	public static final byte K_LABEL = 23;	
-
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
 		Type from = T_INTERSECTION(T_UNION(T_NULL,T_STRING),T_CHAR);		
-		Type to = fromString("!!!any");
+		Type to = fromString("!(string|null)");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));

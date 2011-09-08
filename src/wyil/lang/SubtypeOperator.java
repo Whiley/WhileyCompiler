@@ -95,20 +95,25 @@ public class SubtypeOperator implements Relation {
 				}									
 				return true;	
 			}
+			case K_NOT: {
+				int fromChild = fromState.children[0];
+				int toChild = toState.children[0];
+				return suptypes.get(fromChild,toChild);
+			}
 			case K_UNION: {								
-				int[] toChildren = (int[]) toState.children;		
+				int[] toChildren = toState.children;		
 				for(int j : toChildren) {				
 					if(!subtypes.get(fromIndex,j)) { return false; }								
 				}
 				return true;								
 			}	
 			case K_INTERSECTION: {								
-				int[] fromChildren = (int[]) fromState.children;		
+				int[] fromChildren = fromState.children;		
 				for(int i : fromChildren) {				
 					if(!subtypes.get(i,toIndex)) { return false; }								
 				}
 				return true;								
-			}	
+			}				
 			// === Heterogenous Compound States ===
 			case K_FUNCTION:
 			case K_HEADLESS:
@@ -178,6 +183,11 @@ public class SubtypeOperator implements Relation {
 				}								
 			}
 			return false;	
+		} else if(fromKind == K_NOT) {
+			int fromChild = fromState.children[0];
+			return !suptypes.get(fromChild,toIndex);
+		} else if(toKind == K_NOT) {
+			// not sure what to do in this case
 		}
 		
 		return false;
