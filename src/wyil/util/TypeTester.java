@@ -14,7 +14,8 @@ public class TypeTester {
 
 	/**
 	 * In the type interpretation, we must override the default interpretation
-	 * to deal with union, intersection, negation, and any types.
+	 * to deal with union, intersection, negation, any, void, list and set
+	 * types.
 	 * 
 	 * @author djp
 	 * 
@@ -25,6 +26,23 @@ public class TypeTester {
 			switch(state.kind) {
 			case Type.K_ANY:
 				return true; // easy
+			case Type.K_VOID:
+				return false; // easy
+			case Type.K_LIST:
+			case Type.K_SET: {
+				if(value.kind != state.kind) { 
+					return false;
+				}
+				int child = automata.states[index].children[0];
+				Value[] values = value.children;				
+				for(int i=0;i!=values.length;++i) {									
+					Value vchild = values[i];
+					if(!accepts(child,automata,vchild)) {
+						return false;
+					}
+				}
+				return true;
+			}
 			case Type.K_NOT: {
 				int child = automata.states[index].children[0];
 				return !accepts(child,automata,value);
@@ -75,10 +93,12 @@ public class TypeTester {
 		int count = 1;
 		for(int i=0;i!=types.size();++i) {
 			Automata a1 = types.get(i);
-			Type t1 = Type.construct(types.get(i));
+			Type t1 = Type.construct(types.get(i));			
+			if(t1 == Type.T_VOID) { continue; } 
 			for(int j=0;j<types.size();++j) {
 				Automata a2 = types.get(j);
 				Type t2 = Type.construct(types.get(j));
+				if(t2 == Type.T_VOID) { continue; }
 				System.out.println("\t@Test public void test_" + count++ + "() {");
 				if(isModelSubtype(a1,a2,model)) {								
 					System.out.println("\t\tcheckIsSubtype(\"" + t1 + "\",\"" + t2 + "\");");
@@ -109,7 +129,7 @@ public class TypeTester {
 			boolean binaryIn = true;
 			int index = 0;
 			ArrayList<DefaultInterpretation.Value> model = Tester.readModel(binaryIn,args[index],verbose);
-			ArrayList<Automata> types = Tester.readAutomatas(binaryIn,args[index+1],verbose);
+			ArrayList<Automata> types = Tester.readAutomatas(binaryIn,args[index+1],verbose);			
 			generateTests(types,model);
 			
 		} catch(IOException e) {

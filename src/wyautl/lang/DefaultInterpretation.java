@@ -26,7 +26,7 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 			
 	public static final class Value {
 		public final int kind;
-		private final Value[] children;
+		public final Value[] children;
 
 		public Value(int kind, Value... children) {
 			this.kind = kind;

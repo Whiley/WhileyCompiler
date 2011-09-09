@@ -19,10 +19,12 @@ public class TypeGenerator implements GenericWriter<Automata> {
 	
 	public void write(Automata automata) throws IOException {
 		Type t = Type.construct(automata);
-		output.println(t);
-		count++;
-		if(verbose) {
-			System.err.print("\rWrote " + count + " types.");
+		if(t != Type.T_VOID) { 
+			output.println(t);
+			count++;
+			if(verbose) {
+				System.err.print("\rWrote " + count + " types.");
+			}
 		}
 	}
 	
@@ -92,8 +94,8 @@ public class TypeGenerator implements GenericWriter<Automata> {
 					kindUpdate(Type.K_UNION,null);
 					kindUpdate(Type.K_INTERSECTION,null);
 					kindUpdate(Type.K_NOT,null);
-					kindUpdate(Type.K_SET,new Kind(true,1,2));
-					kindUpdate(Type.K_LIST,new Kind(true,1,2));
+					kindUpdate(Type.K_SET,new Kind(true,0,2));
+					kindUpdate(Type.K_LIST,new Kind(true,0,2));
 					// could do more
 				}
 				index++;
