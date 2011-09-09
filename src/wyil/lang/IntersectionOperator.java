@@ -47,6 +47,26 @@ public class IntersectionOperator implements Relation {
 	public final boolean isRelated(int fromIndex, int toIndex) {
 		return intersection(fromIndex,true,toIndex,true);
 	}
+	
+	/**
+	 * Test whether <code>from</code> :> <code>to</code>
+	 * @param fromIndex
+	 * @param toIndex
+	 * @return
+	 */
+	public final boolean isSubtype(int fromIndex, int toIndex) {
+		return !intersection(fromIndex,true,toIndex,false);
+	}
+	
+	/**
+	 * Test whether <code>from</code> <: <code>to</code>
+	 * @param fromIndex
+	 * @param toIndex
+	 * @return
+	 */
+	public final boolean isSupertype(int fromIndex, int toIndex) {
+		return !intersection(fromIndex,false,toIndex,true);
+	}
 
 	/**
 	 * Determine whether there is a non-empty intersection between the state
@@ -138,7 +158,9 @@ public class IntersectionOperator implements Relation {
 				int start = 0;
 				if(fromKind == K_METHOD) {
 					// Check (optional) receiver value first
-					if (!intersection(fromChildren[0],toChildren[0])) {
+					// FIXME: receiver should be INVARIANT
+					if (intersection(fromChildren[0], !fromSign,
+							toChildren[0], !toSign)) {
 						return false;
 					}
 					start++;
@@ -146,12 +168,13 @@ public class IntersectionOperator implements Relation {
 				// Check return value first 
 				int fromChild = fromChildren[start];
 				int toChild = toChildren[start];
-				if(!intersection(fromChild,toChild)) {
+				if(!intersection(fromChild,fromSign,toChild,toSign)) {
 					return false;
 				}
 				// Now, check parameters 
 				for(int i=start+1;i<fromChildren.length;++i) {
-					if(!intersection(toChildren[i],fromChildren[i])) {
+						if (intersection(fromChildren[i], !fromSign,
+								toChildren[i], !toSign)) {
 						return false;
 					}
 				}
@@ -211,7 +234,7 @@ public class IntersectionOperator implements Relation {
 			return true;	
 		}  
 		
-		return false;
+		return fromSign == toSign;		
 	}
 	
 	private int invert(int kind, boolean sign) {

@@ -453,9 +453,9 @@ public abstract class Type {
 	public static boolean isSubtype(Type t1, Type t2) {		
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
-		Relation relation = new SubtypeOperator(a1,a2);		
+		IntersectionOperator relation = new IntersectionOperator(a1,a2);		
 		Automatas.computeFixpoint(relation);		
-		return relation.isRelated(0, 0);		
+		return relation.isSubtype(0, 0);		
 	}
 
 	/**
@@ -1727,8 +1727,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("!(string|null)");		
-		Type to = fromString("!null");
+		Type from = fromString("any");		
+		Type to = fromString("int");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + minimise(from));
 		System.out.println("simplified(" + to + ") = " + minimise(to));
