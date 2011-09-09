@@ -23,6 +23,13 @@ public class TypeTester {
 	}
 	
 	public static void generateTests(ArrayList<Automata> types, ArrayList<Value> model) {
+		System.out.println("// This file was automatically generated.");
+		System.out.println("package wyil.testing;");
+		System.out.println("import org.junit.*;");
+		System.out.println("import static org.junit.Assert.*;");
+		System.out.println("import wyil.lang.Type;");
+		System.out.println();
+		System.out.println("public class SubtypeTests {");
 		int count = 1;
 		for(int i=0;i!=types.size();++i) {
 			Automata a1 = types.get(i);
@@ -30,7 +37,7 @@ public class TypeTester {
 			for(int j=0;j<types.size();++j) {
 				Automata a2 = types.get(j);
 				Type t2 = Type.construct(types.get(j));
-				System.out.println("\tpublic @Test void test_" + count++ + "() {");
+				System.out.println("\t@Test public void test_" + count++ + "() {");
 				if(isModelSubtype(a1,a2,model)) {								
 					System.out.println("\t\tcheckIsSubtype(\"" + t1 + "\",\"" + t2 + "\");");
 				} else {
@@ -39,6 +46,18 @@ public class TypeTester {
 				System.out.println("\t}");
 			}
 		}
+		System.out.println();
+		System.out.println("\tprivate void checkIsSubtype(String from, String to) {");
+		System.out.println("\t\tType ft = Type.fromString(from);");
+		System.out.println("\t\tType tt = Type.fromString(to);");
+		System.out.println("\t\tassertTrue(Type.isSubtype(ft,tt));");
+		System.out.println("\t}");
+		System.out.println("\tprivate void checkNotSubtype(String from, String to) {");
+		System.out.println("\t\tType ft = Type.fromString(from);");
+		System.out.println("\t\tType tt = Type.fromString(to);");		
+		System.out.println("\t\tassertFalse(Type.isSubtype(ft,tt));");
+		System.out.println("\t}");
+		System.out.println("}");
 	}
 		
 	public static boolean verbose = false;

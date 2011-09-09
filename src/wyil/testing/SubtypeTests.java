@@ -1,224 +1,211 @@
+// This file was automatically generated.
 package wyil.testing;
-
-import java.io.*;
-import java.util.ArrayList;
-
-import wyautl.io.BinaryAutomataReader;
-import wyautl.io.GenericReader;
-import wyautl.lang.Automata;
-import wyautl.lang.DefaultInterpretation;
-import wyautl.lang.DefaultInterpretation.Value;
-import wyautl.util.Tester;
-import wyil.lang.Type;
-import wyjvm.io.BinaryInputStream;
-
 import org.junit.*;
 import static org.junit.Assert.*;
+import wyil.lang.Type;
 
-
-public class SubtypeTests {	
-	public @Test void test_1() {
+public class SubtypeTests {
+	@Test public void test_1() {
 		checkIsSubtype("void","void");
 	}
-	public @Test void test_2() {
+	@Test public void test_2() {
 		checkNotSubtype("void","any");
 	}
-	public @Test void test_3() {
+	@Test public void test_3() {
 		checkNotSubtype("void","null");
 	}
-	public @Test void test_4() {
+	@Test public void test_4() {
 		checkNotSubtype("void","int");
 	}
-	public @Test void test_5() {
+	@Test public void test_5() {
 		checkNotSubtype("void","[void]");
 	}
-	public @Test void test_6() {
+	@Test public void test_6() {
 		checkNotSubtype("void","[any]");
 	}
-	public @Test void test_7() {
+	@Test public void test_7() {
 		checkNotSubtype("void","[null]");
 	}
-	public @Test void test_8() {
+	@Test public void test_8() {
 		checkNotSubtype("void","[int]");
 	}
-	public @Test void test_9() {
+	@Test public void test_9() {
 		checkNotSubtype("any","void");
 	}
-	public @Test void test_10() {
+	@Test public void test_10() {
 		checkIsSubtype("any","any");
 	}
-	public @Test void test_11() {
+	@Test public void test_11() {
 		checkNotSubtype("any","null");
 	}
-	public @Test void test_12() {
+	@Test public void test_12() {
 		checkNotSubtype("any","int");
 	}
-	public @Test void test_13() {
+	@Test public void test_13() {
 		checkNotSubtype("any","[void]");
 	}
-	public @Test void test_14() {
+	@Test public void test_14() {
 		checkNotSubtype("any","[any]");
 	}
-	public @Test void test_15() {
+	@Test public void test_15() {
 		checkNotSubtype("any","[null]");
 	}
-	public @Test void test_16() {
+	@Test public void test_16() {
 		checkNotSubtype("any","[int]");
 	}
-	public @Test void test_17() {
+	@Test public void test_17() {
 		checkNotSubtype("null","void");
 	}
-	public @Test void test_18() {
+	@Test public void test_18() {
 		checkNotSubtype("null","any");
 	}
-	public @Test void test_19() {
+	@Test public void test_19() {
 		checkIsSubtype("null","null");
 	}
-	public @Test void test_20() {
+	@Test public void test_20() {
 		checkNotSubtype("null","int");
 	}
-	public @Test void test_21() {
+	@Test public void test_21() {
 		checkNotSubtype("null","[void]");
 	}
-	public @Test void test_22() {
+	@Test public void test_22() {
 		checkNotSubtype("null","[any]");
 	}
-	public @Test void test_23() {
+	@Test public void test_23() {
 		checkNotSubtype("null","[null]");
 	}
-	public @Test void test_24() {
+	@Test public void test_24() {
 		checkNotSubtype("null","[int]");
 	}
-	public @Test void test_25() {
+	@Test public void test_25() {
 		checkNotSubtype("int","void");
 	}
-	public @Test void test_26() {
+	@Test public void test_26() {
 		checkNotSubtype("int","any");
 	}
-	public @Test void test_27() {
+	@Test public void test_27() {
 		checkNotSubtype("int","null");
 	}
-	public @Test void test_28() {
+	@Test public void test_28() {
 		checkIsSubtype("int","int");
 	}
-	public @Test void test_29() {
+	@Test public void test_29() {
 		checkNotSubtype("int","[void]");
 	}
-	public @Test void test_30() {
+	@Test public void test_30() {
 		checkNotSubtype("int","[any]");
 	}
-	public @Test void test_31() {
+	@Test public void test_31() {
 		checkNotSubtype("int","[null]");
 	}
-	public @Test void test_32() {
+	@Test public void test_32() {
 		checkNotSubtype("int","[int]");
 	}
-	public @Test void test_33() {
+	@Test public void test_33() {
 		checkNotSubtype("[void]","void");
 	}
-	public @Test void test_34() {
+	@Test public void test_34() {
 		checkNotSubtype("[void]","any");
 	}
-	public @Test void test_35() {
+	@Test public void test_35() {
 		checkNotSubtype("[void]","null");
 	}
-	public @Test void test_36() {
+	@Test public void test_36() {
 		checkNotSubtype("[void]","int");
 	}
-	public @Test void test_37() {
+	@Test public void test_37() {
 		checkIsSubtype("[void]","[void]");
 	}
-	public @Test void test_38() {
+	@Test public void test_38() {
 		checkNotSubtype("[void]","[any]");
 	}
-	public @Test void test_39() {
+	@Test public void test_39() {
 		checkNotSubtype("[void]","[null]");
 	}
-	public @Test void test_40() {
+	@Test public void test_40() {
 		checkNotSubtype("[void]","[int]");
 	}
-	public @Test void test_41() {
+	@Test public void test_41() {
 		checkNotSubtype("[any]","void");
 	}
-	public @Test void test_42() {
+	@Test public void test_42() {
 		checkNotSubtype("[any]","any");
 	}
-	public @Test void test_43() {
+	@Test public void test_43() {
 		checkNotSubtype("[any]","null");
 	}
-	public @Test void test_44() {
+	@Test public void test_44() {
 		checkNotSubtype("[any]","int");
 	}
-	public @Test void test_45() {
+	@Test public void test_45() {
 		checkNotSubtype("[any]","[void]");
 	}
-	public @Test void test_46() {
+	@Test public void test_46() {
 		checkIsSubtype("[any]","[any]");
 	}
-	public @Test void test_47() {
+	@Test public void test_47() {
 		checkNotSubtype("[any]","[null]");
 	}
-	public @Test void test_48() {
+	@Test public void test_48() {
 		checkNotSubtype("[any]","[int]");
 	}
-	public @Test void test_49() {
+	@Test public void test_49() {
 		checkNotSubtype("[null]","void");
 	}
-	public @Test void test_50() {
+	@Test public void test_50() {
 		checkNotSubtype("[null]","any");
 	}
-	public @Test void test_51() {
+	@Test public void test_51() {
 		checkNotSubtype("[null]","null");
 	}
-	public @Test void test_52() {
+	@Test public void test_52() {
 		checkNotSubtype("[null]","int");
 	}
-	public @Test void test_53() {
+	@Test public void test_53() {
 		checkNotSubtype("[null]","[void]");
 	}
-	public @Test void test_54() {
+	@Test public void test_54() {
 		checkNotSubtype("[null]","[any]");
 	}
-	public @Test void test_55() {
+	@Test public void test_55() {
 		checkIsSubtype("[null]","[null]");
 	}
-	public @Test void test_56() {
+	@Test public void test_56() {
 		checkNotSubtype("[null]","[int]");
 	}
-	public @Test void test_57() {
+	@Test public void test_57() {
 		checkNotSubtype("[int]","void");
 	}
-	public @Test void test_58() {
+	@Test public void test_58() {
 		checkNotSubtype("[int]","any");
 	}
-	public @Test void test_59() {
+	@Test public void test_59() {
 		checkNotSubtype("[int]","null");
 	}
-	public @Test void test_60() {
+	@Test public void test_60() {
 		checkNotSubtype("[int]","int");
 	}
-	public @Test void test_61() {
+	@Test public void test_61() {
 		checkNotSubtype("[int]","[void]");
 	}
-	public @Test void test_62() {
+	@Test public void test_62() {
 		checkNotSubtype("[int]","[any]");
 	}
-	public @Test void test_63() {
+	@Test public void test_63() {
 		checkNotSubtype("[int]","[null]");
 	}
-	public @Test void test_64() {
+	@Test public void test_64() {
 		checkIsSubtype("[int]","[int]");
 	}
 
-	public void checkIsSubtype(String from, String to) {
+	private void checkIsSubtype(String from, String to) {
 		Type ft = Type.fromString(from);
 		Type tt = Type.fromString(to);
 		assertTrue(Type.isSubtype(ft,tt));
 	}
-	
-	public void checkNotSubtype(String from, String to) {
+	private void checkNotSubtype(String from, String to) {
 		Type ft = Type.fromString(from);
 		Type tt = Type.fromString(to);
 		assertFalse(Type.isSubtype(ft,tt));
-	}	
+	}
 }
