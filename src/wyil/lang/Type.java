@@ -1447,7 +1447,7 @@ public abstract class Type {
 			break;
 		}		
 		default: 
-			throw new IllegalArgumentException("Invalid type encountered");
+			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
 		}
 		
 		// Finally, check whether this is a header node, or not. If it is a
@@ -1728,7 +1728,7 @@ public abstract class Type {
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
 		Type from = fromString("any");		
-		Type to = fromString("int");
+		Type to = fromString("void");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("simplified(" + from + ") = " + minimise(from));
 		//System.out.println("simplified(" + to + ") = " + minimise(to));

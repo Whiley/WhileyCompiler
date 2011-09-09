@@ -32,8 +32,8 @@ public class Generator {
 		 */
 		public int MAX_CHILDREN;
 
-		public Kind(boolean nonseq, int min, int max) {
-			this.DETERMINISTIC = nonseq;
+		public Kind(boolean deterministic, int min, int max) {
+			this.DETERMINISTIC = deterministic;
 			this.MIN_CHILDREN = min;
 			this.MAX_CHILDREN = max;
 		}
@@ -187,8 +187,10 @@ public class Generator {
 		} else {
 			Kind[] kinds = config.KINDS;
 			for(int k=0;k!=kinds.length;++k) {
-				base.kinds[index] = k;								
-				generate(index+1,base,writer,config);
+				if(kinds[k] != null) {
+					base.kinds[index] = k;								
+					generate(index+1,base,writer,config);
+				}
 			}
 		}
 	}

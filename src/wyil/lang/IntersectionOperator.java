@@ -55,7 +55,7 @@ public class IntersectionOperator implements Relation {
 	 * @return
 	 */
 	public final boolean isSubtype(int fromIndex, int toIndex) {
-		return !intersection(fromIndex,true,toIndex,false);
+		return !intersection(fromIndex,false,toIndex,true);
 	}
 	
 	/**
@@ -65,7 +65,7 @@ public class IntersectionOperator implements Relation {
 	 * @return
 	 */
 	public final boolean isSupertype(int fromIndex, int toIndex) {
-		return !intersection(fromIndex,false,toIndex,true);
+		return !intersection(fromIndex,true,toIndex,false);
 	}
 
 	/**
