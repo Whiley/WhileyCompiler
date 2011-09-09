@@ -116,6 +116,13 @@ public interface UnresolvedType extends SyntacticElement {
 			this.value=value;
 		}
 	}
+	public static final class Not extends SyntacticElement.Impl implements NonUnion {
+		public final UnresolvedType element;
+		public Not(UnresolvedType element, Attribute... attributes) {
+			this.element = element;
+		}
+	}
+
 	public static final class Union extends SyntacticElement.Impl implements UnresolvedType {
 		public final ArrayList<NonUnion> bounds;
 

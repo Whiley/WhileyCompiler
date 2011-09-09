@@ -574,6 +574,12 @@ public class ModuleBuilder {
 			} else {				
 				return new Pair<Type,Block>(Type.T_UNION(bounds),blk);
 			}			
+		} else if (t instanceof UnresolvedType.Not) {
+			UnresolvedType.Not st = (UnresolvedType.Not) t;
+			Pair<Type,Block> p = expandType(st.element, filename, cache);
+			Block blk = null;
+			// TODO: need to fix not constraints					
+			return new Pair<Type,Block>(Type.T_NOT(p.first()),blk);					
 		} else if (t instanceof UnresolvedType.Intersection) {
 			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
 			Block blk = null;
@@ -1949,6 +1955,12 @@ public class ModuleBuilder {
 				types.put(e.getKey(), p.first());				
 			}
 			return new Pair<Type,Block>(Type.T_RECORD(types),null);
+		} else if(t instanceof UnresolvedType.Not) {
+			UnresolvedType.Not ut = (UnresolvedType.Not) t;
+			Block blk = null;
+			Pair<Type,Block> p = resolve(ut.element);
+			// TODO: fix not constraints
+			return new Pair<Type,Block>(Type.T_NOT(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type> bounds = new HashSet<Type>();			

@@ -598,8 +598,16 @@ public class NameResolution {
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential dt = (UnresolvedType.Existential) t;						
 			t.attributes().add(new Attributes.Module(module));
+		} else if(t instanceof UnresolvedType.Not) {	
+			UnresolvedType.Not ut = (UnresolvedType.Not) t;
+			resolve(ut.element,imports);			
 		} else if(t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
+			for(UnresolvedType b : ut.bounds) {
+				resolve(b,imports);
+			}
+		} else if(t instanceof UnresolvedType.Intersection) {
+			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
 			for(UnresolvedType b : ut.bounds) {
 				resolve(b,imports);
 			}

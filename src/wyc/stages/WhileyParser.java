@@ -1494,7 +1494,15 @@ public class WhileyParser {
 	
 	private UnresolvedType parseType() {
 		int start = index;
-		UnresolvedType t = parseBaseType();		
+		UnresolvedType t;
+		// first, check for NOT types
+		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {
+			// this is a not type
+			match(Shreak.class);
+			t = new UnresolvedType.Not(parseType(),sourceAttr(start, index - 1));
+		} else {
+			t = parseBaseType();
+		}		
 		
 		// Now, attempt to look for union or intersection types.
 		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
