@@ -25,9 +25,9 @@ public class IntersectionOperator implements Relation {
 	
 	public final boolean update(int fromIndex, int toIndex) {
 		boolean oldTrueTrue = intersection(fromIndex,true,toIndex,true);
-		boolean oldFalseTrue = intersection(fromIndex,true,toIndex,true);
-		boolean oldTrueFalse = intersection(fromIndex,true,toIndex,true);
-		boolean oldFalseFalse = intersection(fromIndex,true,toIndex,true);
+		boolean oldFalseTrue = intersection(fromIndex,false,toIndex,true);
+		boolean oldTrueFalse = intersection(fromIndex,true,toIndex,false);
+		boolean oldFalseFalse = intersection(fromIndex,false,toIndex,false);
 		
 		boolean newTrueTrue = isIntersection(fromIndex,true,toIndex,true);
 		boolean newFalseTrue = isIntersection(fromIndex,false,toIndex,true);

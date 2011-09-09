@@ -1730,8 +1730,8 @@ public abstract class Type {
 		Type from = fromString("any");		
 		Type to = fromString("int");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-		System.out.println("simplified(" + from + ") = " + minimise(from));
-		System.out.println("simplified(" + to + ") = " + minimise(to));
+		//System.out.println("simplified(" + from + ") = " + minimise(from));
+		//System.out.println("simplified(" + to + ") = " + minimise(to));
 	}
 	
 	public static Type contractive() {
