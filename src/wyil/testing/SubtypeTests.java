@@ -30,28 +30,28 @@ public class SubtypeTests {
 		checkNotSubtype("void","[int]");
 	}
 	@Test public void test_9() {
-		checkNotSubtype("any","void");
+		checkIsSubtype("any","void");
 	}
 	@Test public void test_10() {
 		checkIsSubtype("any","any");
 	}
 	@Test public void test_11() {
-		checkNotSubtype("any","null");
+		checkIsSubtype("any","null");
 	}
 	@Test public void test_12() {
-		checkNotSubtype("any","int");
+		checkIsSubtype("any","int");
 	}
 	@Test public void test_13() {
-		checkNotSubtype("any","[void]");
+		checkIsSubtype("any","[void]");
 	}
 	@Test public void test_14() {
-		checkNotSubtype("any","[any]");
+		checkIsSubtype("any","[any]");
 	}
 	@Test public void test_15() {
-		checkNotSubtype("any","[null]");
+		checkIsSubtype("any","[null]");
 	}
 	@Test public void test_16() {
-		checkNotSubtype("any","[int]");
+		checkIsSubtype("any","[int]");
 	}
 	@Test public void test_17() {
 		checkNotSubtype("null","void");
@@ -138,16 +138,16 @@ public class SubtypeTests {
 		checkNotSubtype("[any]","int");
 	}
 	@Test public void test_45() {
-		checkNotSubtype("[any]","[void]");
+		checkIsSubtype("[any]","[void]");
 	}
 	@Test public void test_46() {
 		checkIsSubtype("[any]","[any]");
 	}
 	@Test public void test_47() {
-		checkNotSubtype("[any]","[null]");
+		checkIsSubtype("[any]","[null]");
 	}
 	@Test public void test_48() {
-		checkNotSubtype("[any]","[int]");
+		checkIsSubtype("[any]","[int]");
 	}
 	@Test public void test_49() {
 		checkNotSubtype("[null]","void");

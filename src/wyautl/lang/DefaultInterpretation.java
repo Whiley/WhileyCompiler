@@ -22,7 +22,7 @@ import java.util.Arrays;
  * @author djp
  * 
  */
-public final class DefaultInterpretation implements Interpretation<DefaultInterpretation.Value> {
+public class DefaultInterpretation implements Interpretation<DefaultInterpretation.Value> {
 			
 	public static final class Value {
 		public final int kind;

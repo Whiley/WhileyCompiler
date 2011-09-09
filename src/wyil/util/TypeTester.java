@@ -11,7 +11,48 @@ import wyil.lang.Type;
 
 
 public class TypeTester {	
-	private static final DefaultInterpretation interpretation = new DefaultInterpretation();
+
+	/**
+	 * In the type interpretation, we must override the default interpretation
+	 * to deal with union, intersection, negation, and any types.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class TypeInterpretation extends DefaultInterpretation {
+		public boolean accepts(int index, Automata automata, Value value) {
+			Automata.State state = automata.states[index];
+			switch(state.kind) {
+			case Type.K_ANY:
+				return true; // easy
+			case Type.K_NOT: {
+				int child = automata.states[index].children[0];
+				return !accepts(child,automata,value);
+			}
+			case Type.K_UNION: {
+				int[] children = automata.states[index].children;
+				for(int child : children) {
+					if(accepts(child,automata,value)) {
+						return true;
+					}
+				}
+				return false;
+			}
+			case Type.K_INTERSECTION: {
+				int[] children = automata.states[index].children;
+				for(int child : children) {
+					if(!accepts(child,automata,value)) {
+						return false;
+					}
+				}
+				return true;
+			}
+			}
+			return super.accepts(index,automata,value);
+		}
+	}
+	
+	private static final TypeInterpretation interpretation = new TypeInterpretation();
 	
 	public static boolean isModelSubtype(Automata a1, Automata a2, ArrayList<Value> model) {
 		for(Value v : model) {
@@ -21,6 +62,7 @@ public class TypeTester {
 		}
 		return true;
 	}
+	
 	
 	public static void generateTests(ArrayList<Automata> types, ArrayList<Value> model) {
 		System.out.println("// This file was automatically generated.");
