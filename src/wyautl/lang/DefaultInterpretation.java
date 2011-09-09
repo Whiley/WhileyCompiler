@@ -82,7 +82,7 @@ public final class DefaultInterpretation implements Interpretation<DefaultInterp
 		}
 		return new Value(state.kind,children);
 	}
-	
+		
 	public boolean accepts(Automata automata, Value value) {
 		return accepts(0,automata,value);
 	}

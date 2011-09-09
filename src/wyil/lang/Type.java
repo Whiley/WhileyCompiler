@@ -1727,8 +1727,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("any");		
-		Type to = fromString("void");
+		Type from = fromString("null");		
+		Type to = fromString("byte");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("simplified(" + from + ") = " + minimise(from));
 		//System.out.println("simplified(" + to + ") = " + minimise(to));
