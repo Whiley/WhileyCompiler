@@ -77,8 +77,13 @@ public class TypeParser {
 			match("null");
 			return T_NULL;
 		case 'b':
-			match("bool");
-			return T_BOOL;
+			if ((index + 1 < str.length()) && str.charAt(index + 1) == 'o') {
+				match("bool");
+				return T_BOOL;
+			} else {
+				match("byte");
+				return T_BYTE;
+			}
 		case 'c':
 			match("char");
 			return T_CHAR;
