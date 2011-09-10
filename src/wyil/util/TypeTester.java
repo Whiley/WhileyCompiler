@@ -2,6 +2,7 @@ package wyil.util;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.BitSet;
 
 import wyautl.lang.*;
 import wyautl.lang.DefaultInterpretation.Value;
@@ -21,7 +22,7 @@ public class TypeTester {
 	 * 
 	 */
 	public static class TypeInterpretation extends DefaultInterpretation {
-		public boolean accepts(int index, Automata automata, Value value) {
+		public boolean accepts(int index, Automata automata, Value value) {			
 			Automata.State state = automata.states[index];
 			switch(state.kind) {
 			case Type.K_ANY:
@@ -49,7 +50,7 @@ public class TypeTester {
 			}
 			case Type.K_UNION: {
 				int[] children = automata.states[index].children;
-				for(int child : children) {
+				for(int child : children) {					
 					if(accepts(child,automata,value)) {
 						return true;
 					}
