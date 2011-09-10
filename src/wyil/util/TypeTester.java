@@ -22,8 +22,29 @@ public class TypeTester {
 	 * 
 	 */
 	public static class TypeInterpretation extends DefaultInterpretation {
-		public boolean accepts(int index, Automata automata, Value value) {			
+		
+		/**
+		 * The purpose of the visited relation is to help ensure termination in
+		 * the presence of contraction. That is, types with a direct recursive
+		 * cycle involving only unions or intersections.
+		 */
+		private BitSet visited;
+		
+		public boolean accepts(Automata automata, Value value) {
+			visited = new BitSet(automata.size());
+			return super.accepts(automata,value); 
+		}
+		
+		public boolean accepts(int index, Automata automata, Value value) {
 			Automata.State state = automata.states[index];
+			
+			if (visited.get(index)) {
+				return false;
+			} else if (state.kind != Type.K_UNION
+					&& state.kind != Type.K_INTERSECTION) {
+				visited.clear();
+			}
+						
 			switch(state.kind) {
 			case Type.K_ANY:
 				return true; // easy
@@ -33,7 +54,7 @@ public class TypeTester {
 			case Type.K_SET: {
 				if(value.kind != state.kind) { 
 					return false;
-				}
+				}				
 				int child = automata.states[index].children[0];
 				Value[] values = value.children;				
 				for(int i=0;i!=values.length;++i) {									
@@ -50,16 +71,22 @@ public class TypeTester {
 			}
 			case Type.K_UNION: {
 				int[] children = automata.states[index].children;
-				for(int child : children) {					
+				visited.set(index);
+				BitSet copy = visited;
+				for(int child : children) {
+					visited = (BitSet) copy.clone();
 					if(accepts(child,automata,value)) {
 						return true;
 					}
-				}
+				}				
 				return false;
 			}
 			case Type.K_INTERSECTION: {
 				int[] children = automata.states[index].children;
+				visited.set(index);
+				BitSet copy = visited;
 				for(int child : children) {
+					visited = (BitSet) copy.clone();
 					if(!accepts(child,automata,value)) {
 						return false;
 					}
