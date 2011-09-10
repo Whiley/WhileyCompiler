@@ -106,6 +106,8 @@ public class IntersectionOperator implements Relation {
 			// === Homogenous Compound States ===
 			case K_SET:
 			case K_LIST:
+				// != below not ||. This is because lists and sets can intersect
+				// on the empty list/set.
 				if(fromSign != toSign) {					
 					// nary nodes
 					int fromChild = fromState.children[0];
@@ -134,24 +136,26 @@ public class IntersectionOperator implements Relation {
 				return true;
 			}
 			case K_RECORD: {
-				int[] fromChildren = fromState.children;
-				int[] toChildren = toState.children;
-				if (fromChildren.length != toChildren.length) {
-					return false;
-				}				
-				String[] fromFields = (String[]) fromState.data;
-				String[] toFields = (String[]) toState.data;				
-				
-				for (int i = 0; i != fromFields.length; ++i) {
-					String e1 = fromFields[i];
-					String e2 = toFields[i];
-					if(!e1.equals(e2)) { return false; }
-					int fromChild = fromChildren[i];
-					int toChild = toChildren[i];
-					if(!intersection(fromChild,fromSign,toChild,toSign)) {
+				if(fromSign || toSign) {
+					int[] fromChildren = fromState.children;
+					int[] toChildren = toState.children;
+					if (fromChildren.length != toChildren.length) {
 						return false;
-					}					
-				}									
+					}				
+					String[] fromFields = (String[]) fromState.data;
+					String[] toFields = (String[]) toState.data;				
+
+					for (int i = 0; i != fromFields.length; ++i) {
+						String e1 = fromFields[i];
+						String e2 = toFields[i];
+						if(!e1.equals(e2)) { return false; }
+						int fromChild = fromChildren[i];
+						int toChild = toChildren[i];
+						if(!intersection(fromChild,fromSign,toChild,toSign)) {
+							return false;
+						}					
+					}									
+				}
 				return true;	
 			}
 			case K_NOT: 
@@ -164,33 +168,35 @@ public class IntersectionOperator implements Relation {
 			case K_FUNCTION:
 			case K_HEADLESS:
 			case K_METHOD:
-				// nary nodes
-				int[] fromChildren = fromState.children;
-				int[] toChildren = toState.children;
-				if(fromChildren.length != toChildren.length){
-					return false;
-				}
-				int start = 0;
-				if(fromKind == K_METHOD) {
-					// Check (optional) receiver value first
-					// FIXME: receiver should be INVARIANT
-					if (intersection(fromChildren[0], !fromSign,
-							toChildren[0], !toSign)) {
+				if(fromSign || toSign) {
+					// nary nodes
+					int[] fromChildren = fromState.children;
+					int[] toChildren = toState.children;
+					if(fromChildren.length != toChildren.length){
 						return false;
 					}
-					start++;
-				}
-				// Check return value first 
-				int fromChild = fromChildren[start];
-				int toChild = toChildren[start];
-				if(!intersection(fromChild,fromSign,toChild,toSign)) {
-					return false;
-				}
-				// Now, check parameters 
-				for(int i=start+1;i<fromChildren.length;++i) {
+					int start = 0;
+					if(fromKind == K_METHOD) {
+						// Check (optional) receiver value first
+						// FIXME: receiver should be INVARIANT
+						if (intersection(fromChildren[0], !fromSign,
+								toChildren[0], !toSign)) {
+							return false;
+						}
+						start++;
+					}
+					// Check return value first 
+					int fromChild = fromChildren[start];
+					int toChild = toChildren[start];
+					if(!intersection(fromChild,fromSign,toChild,toSign)) {
+						return false;
+					}
+					// Now, check parameters 
+					for(int i=start+1;i<fromChildren.length;++i) {
 						if (intersection(fromChildren[i], !fromSign,
 								toChildren[i], !toSign)) {
-						return false;
+							return false;
+						}
 					}
 				}
 				return true;
