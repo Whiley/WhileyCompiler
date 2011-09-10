@@ -30,7 +30,7 @@ import wyautl.lang.*;
  * 
  */
 public final class SimplificationRule implements RewriteRule {
-	public SubtypeOperator subtypes;
+	public IntersectionOperator subtypes;
 	
 	public SimplificationRule(Automata automata) {
 		updateSubtypes(automata);			
@@ -149,8 +149,8 @@ public final class SimplificationRule implements RewriteRule {
 				for (int j = 0; j < children.length; ++j) {
 					if(i == j) { continue; }
 					int jChild = children[j];
-					boolean irj = subtypes.isRelated(iChild, jChild);
-					boolean jri = subtypes.isRelated(jChild, iChild);
+					boolean irj = subtypes.isSubtype(iChild, jChild);
+					boolean jri = subtypes.isSubtype(jChild, iChild);
 					if (irj && (!jri || i > j)) {
 						subsumed = true;
 					} else if(!irj && !jri) {
@@ -228,8 +228,8 @@ public final class SimplificationRule implements RewriteRule {
 						for (int j = 0; j < children.length; ++j) {
 							int jChild = children[j];
 							if (i != j
-									&& subtypes.isRelated(jChild, iChild)
-									&& (!subtypes.isRelated(iChild, jChild) || i > j)) {
+									&& subtypes.isSubtype(jChild, iChild)
+									&& (!subtypes.isSubtype(iChild, jChild) || i > j)) {
 								subsumed = true;
 							}
 						}
@@ -302,7 +302,7 @@ public final class SimplificationRule implements RewriteRule {
 	
 	private void updateSubtypes(Automata automata) {
 		// would be helpful if could perform incremental update
-		subtypes = new SubtypeOperator(automata,automata);			
+		subtypes = new IntersectionOperator(automata,automata);			
 		Automatas.computeFixpoint(subtypes);
 	}
 }

@@ -4,8 +4,8 @@ import static wyil.lang.Type.*;
 import wyautl.lang.*;
 
 public class IntersectionOperator implements Relation {
-	private final Automata from;
-	private final Automata to;
+	protected final Automata from;
+	protected final Automata to;
 	private final BinaryMatrix intersections;
 	
 	public IntersectionOperator(Automata from, Automata to) {
