@@ -44,7 +44,7 @@ public class TypeParser {
 		char lookahead = str.charAt(index);
 		if(lookahead == '!') {
 			match("!");
-			return T_NOT(parse());
+			return T_NOT(parseNotTerm());
 		} else {
 			return parseBraceTerm();
 		}
