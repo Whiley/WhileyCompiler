@@ -219,8 +219,6 @@ public class IntersectionOperator implements Relation {
 				
 		if(fromKind == K_VOID || toKind == K_VOID){
 			return false;
-		} else if(fromKind == K_ANY || toKind == K_ANY){
-			return true;
 		} else if(fromKind == K_UNION) {
 			int[] fromChildren = fromState.children;		
 			for(int i : fromChildren) {				
@@ -253,6 +251,8 @@ public class IntersectionOperator implements Relation {
 				}
 			}
 			return true;	
+		} else if(fromKind == K_ANY || toKind == K_ANY){
+			return true;
 		}  
 		
 		return !fromSign || !toSign;		
