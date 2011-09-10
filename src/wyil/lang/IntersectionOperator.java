@@ -238,7 +238,7 @@ public class IntersectionOperator implements Relation {
 			return true;	
 		}  
 		
-		return fromSign != toSign;		
+		return !fromSign || !toSign;		
 	}
 	
 	private int invert(int kind, boolean sign) {
