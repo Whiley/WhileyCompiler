@@ -224,7 +224,7 @@ public class IntersectionOperator implements Relation {
 		} else if(fromKind == K_UNION) {
 			int[] fromChildren = fromState.children;		
 			for(int i : fromChildren) {				
-				if(intersection(i,true,toIndex,toSign)) {
+				if(intersection(i,fromSign,toIndex,toSign)) {
 					return true;
 				}								
 			}
@@ -232,7 +232,7 @@ public class IntersectionOperator implements Relation {
 		} else if(toKind == K_UNION) {
 			int[] toChildren = toState.children;		
 			for(int j : toChildren) {
-				if(intersection(fromIndex,fromSign,j,true)) {
+				if(intersection(fromIndex,fromSign,j,toSign)) {
 					return true;
 				}											
 			}
@@ -240,7 +240,7 @@ public class IntersectionOperator implements Relation {
 		} else if(fromKind == K_INTERSECTION) {
 			int[] fromChildren = fromState.children;
 			for (int i : fromChildren) {
-				if(!intersection(i,true,toIndex,toSign)) {
+				if(!intersection(i,fromSign,toIndex,toSign)) {
 					return false;
 				}				
 			}
@@ -248,7 +248,7 @@ public class IntersectionOperator implements Relation {
 		} else if(toKind == K_INTERSECTION) {
 			int[] toChildren = toState.children;
 			for (int j : toChildren) {
-				if(intersection(fromIndex,fromSign,j,true)) {
+				if(!intersection(fromIndex,fromSign,j,toSign)) {
 					return false;
 				}
 			}

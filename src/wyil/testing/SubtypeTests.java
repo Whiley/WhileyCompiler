@@ -27,97 +27,97 @@ public class SubtypeTests {
 		checkIsSubtype("any","[int]");
 	}
 	@Test public void test_8() {
-		checkIsSubtype("any","!void");
-	}
-	@Test public void test_9() {
-		checkIsSubtype("any","!any");
-	}
-	@Test public void test_10() {
-		checkIsSubtype("any","!null");
-	}
-	@Test public void test_11() {
-		checkIsSubtype("any","!int");
-	}
-	@Test public void test_12() {
 		checkIsSubtype("any","[[void]]");
 	}
-	@Test public void test_13() {
+	@Test public void test_9() {
 		checkIsSubtype("any","[[any]]");
 	}
-	@Test public void test_14() {
+	@Test public void test_10() {
 		checkIsSubtype("any","[[null]]");
 	}
-	@Test public void test_15() {
+	@Test public void test_11() {
 		checkIsSubtype("any","[[int]]");
 	}
+	@Test public void test_12() {
+		checkIsSubtype("any","void|void");
+	}
+	@Test public void test_13() {
+		checkIsSubtype("any","void|any");
+	}
+	@Test public void test_14() {
+		checkIsSubtype("any","void|null");
+	}
+	@Test public void test_15() {
+		checkIsSubtype("any","void|int");
+	}
 	@Test public void test_16() {
-		checkIsSubtype("any","[!void]");
+		checkIsSubtype("any","any|void");
 	}
 	@Test public void test_17() {
-		checkIsSubtype("any","[!any]");
+		checkIsSubtype("any","any|any");
 	}
 	@Test public void test_18() {
-		checkIsSubtype("any","[!null]");
+		checkIsSubtype("any","any|null");
 	}
 	@Test public void test_19() {
-		checkIsSubtype("any","[!int]");
+		checkIsSubtype("any","any|int");
 	}
 	@Test public void test_20() {
-		checkIsSubtype("any","![void]");
+		checkIsSubtype("any","null|void");
 	}
 	@Test public void test_21() {
-		checkIsSubtype("any","![any]");
+		checkIsSubtype("any","null|any");
 	}
 	@Test public void test_22() {
-		checkIsSubtype("any","![null]");
+		checkIsSubtype("any","null|null");
 	}
 	@Test public void test_23() {
-		checkIsSubtype("any","![int]");
+		checkIsSubtype("any","null|int");
 	}
 	@Test public void test_24() {
-		checkIsSubtype("any","!!void");
+		checkIsSubtype("any","int|void");
 	}
 	@Test public void test_25() {
-		checkIsSubtype("any","!!any");
+		checkIsSubtype("any","int|any");
 	}
 	@Test public void test_26() {
-		checkIsSubtype("any","!!null");
+		checkIsSubtype("any","int|null");
 	}
 	@Test public void test_27() {
-		checkIsSubtype("any","!!int");
+		checkIsSubtype("any","int|int");
 	}
 	@Test public void test_28() {
-		checkNotSubtype("null","any");
+		checkIsSubtype("any","[void]|void");
 	}
 	@Test public void test_29() {
-		checkIsSubtype("null","null");
+		checkIsSubtype("any","[any]|any");
 	}
 	@Test public void test_30() {
-		checkNotSubtype("null","int");
+		checkIsSubtype("any","[null]|null");
 	}
 	@Test public void test_31() {
-		checkNotSubtype("null","[void]");
+		checkIsSubtype("any","[int]|int");
 	}
 	@Test public void test_32() {
-		checkNotSubtype("null","[any]");
+		checkNotSubtype("null","any");
 	}
 	@Test public void test_33() {
-		checkNotSubtype("null","[null]");
+		checkIsSubtype("null","null");
 	}
 	@Test public void test_34() {
-		checkNotSubtype("null","[int]");
+		checkNotSubtype("null","int");
 	}
 	@Test public void test_35() {
-		checkNotSubtype("null","!void");
+		checkNotSubtype("null","[void]");
 	}
 	@Test public void test_36() {
-		checkIsSubtype("null","!any");
+		checkNotSubtype("null","[any]");
 	}
 	@Test public void test_37() {
-		checkNotSubtype("null","!null");
+		checkNotSubtype("null","[null]");
 	}
 	@Test public void test_38() {
-		checkNotSubtype("null","!int");
+		checkNotSubtype("null","[int]");
 	}
 	@Test public void test_39() {
 		checkNotSubtype("null","[[void]]");
@@ -132,2065 +132,2761 @@ public class SubtypeTests {
 		checkNotSubtype("null","[[int]]");
 	}
 	@Test public void test_43() {
-		checkNotSubtype("null","[!void]");
+		checkIsSubtype("null","void|void");
 	}
 	@Test public void test_44() {
-		checkNotSubtype("null","[!any]");
+		checkNotSubtype("null","void|any");
 	}
 	@Test public void test_45() {
-		checkNotSubtype("null","[!null]");
+		checkIsSubtype("null","void|null");
 	}
 	@Test public void test_46() {
-		checkNotSubtype("null","[!int]");
+		checkNotSubtype("null","void|int");
 	}
 	@Test public void test_47() {
-		checkNotSubtype("null","![void]");
+		checkNotSubtype("null","any|void");
 	}
 	@Test public void test_48() {
-		checkNotSubtype("null","![any]");
+		checkNotSubtype("null","any|any");
 	}
 	@Test public void test_49() {
-		checkNotSubtype("null","![null]");
+		checkNotSubtype("null","any|null");
 	}
 	@Test public void test_50() {
-		checkNotSubtype("null","![int]");
+		checkNotSubtype("null","any|int");
 	}
 	@Test public void test_51() {
-		checkIsSubtype("null","!!void");
+		checkIsSubtype("null","null|void");
 	}
 	@Test public void test_52() {
-		checkNotSubtype("null","!!any");
+		checkNotSubtype("null","null|any");
 	}
 	@Test public void test_53() {
-		checkIsSubtype("null","!!null");
+		checkIsSubtype("null","null|null");
 	}
 	@Test public void test_54() {
-		checkNotSubtype("null","!!int");
+		checkNotSubtype("null","null|int");
 	}
 	@Test public void test_55() {
-		checkNotSubtype("int","any");
+		checkNotSubtype("null","int|void");
 	}
 	@Test public void test_56() {
-		checkNotSubtype("int","null");
+		checkNotSubtype("null","int|any");
 	}
 	@Test public void test_57() {
-		checkIsSubtype("int","int");
+		checkNotSubtype("null","int|null");
 	}
 	@Test public void test_58() {
-		checkNotSubtype("int","[void]");
+		checkNotSubtype("null","int|int");
 	}
 	@Test public void test_59() {
-		checkNotSubtype("int","[any]");
+		checkNotSubtype("null","[void]|void");
 	}
 	@Test public void test_60() {
-		checkNotSubtype("int","[null]");
+		checkNotSubtype("null","[any]|any");
 	}
 	@Test public void test_61() {
-		checkNotSubtype("int","[int]");
+		checkNotSubtype("null","[null]|null");
 	}
 	@Test public void test_62() {
-		checkNotSubtype("int","!void");
+		checkNotSubtype("null","[int]|int");
 	}
 	@Test public void test_63() {
-		checkIsSubtype("int","!any");
+		checkNotSubtype("int","any");
 	}
 	@Test public void test_64() {
-		checkNotSubtype("int","!null");
+		checkNotSubtype("int","null");
 	}
 	@Test public void test_65() {
-		checkNotSubtype("int","!int");
+		checkIsSubtype("int","int");
 	}
 	@Test public void test_66() {
-		checkNotSubtype("int","[[void]]");
+		checkNotSubtype("int","[void]");
 	}
 	@Test public void test_67() {
-		checkNotSubtype("int","[[any]]");
+		checkNotSubtype("int","[any]");
 	}
 	@Test public void test_68() {
-		checkNotSubtype("int","[[null]]");
+		checkNotSubtype("int","[null]");
 	}
 	@Test public void test_69() {
-		checkNotSubtype("int","[[int]]");
+		checkNotSubtype("int","[int]");
 	}
 	@Test public void test_70() {
-		checkNotSubtype("int","[!void]");
+		checkNotSubtype("int","[[void]]");
 	}
 	@Test public void test_71() {
-		checkNotSubtype("int","[!any]");
+		checkNotSubtype("int","[[any]]");
 	}
 	@Test public void test_72() {
-		checkNotSubtype("int","[!null]");
+		checkNotSubtype("int","[[null]]");
 	}
 	@Test public void test_73() {
-		checkNotSubtype("int","[!int]");
+		checkNotSubtype("int","[[int]]");
 	}
 	@Test public void test_74() {
-		checkNotSubtype("int","![void]");
+		checkIsSubtype("int","void|void");
 	}
 	@Test public void test_75() {
-		checkNotSubtype("int","![any]");
+		checkNotSubtype("int","void|any");
 	}
 	@Test public void test_76() {
-		checkNotSubtype("int","![null]");
+		checkNotSubtype("int","void|null");
 	}
 	@Test public void test_77() {
-		checkNotSubtype("int","![int]");
+		checkIsSubtype("int","void|int");
 	}
 	@Test public void test_78() {
-		checkIsSubtype("int","!!void");
+		checkNotSubtype("int","any|void");
 	}
 	@Test public void test_79() {
-		checkNotSubtype("int","!!any");
+		checkNotSubtype("int","any|any");
 	}
 	@Test public void test_80() {
-		checkNotSubtype("int","!!null");
+		checkNotSubtype("int","any|null");
 	}
 	@Test public void test_81() {
-		checkIsSubtype("int","!!int");
+		checkNotSubtype("int","any|int");
 	}
 	@Test public void test_82() {
-		checkNotSubtype("[void]","any");
+		checkNotSubtype("int","null|void");
 	}
 	@Test public void test_83() {
-		checkNotSubtype("[void]","null");
+		checkNotSubtype("int","null|any");
 	}
 	@Test public void test_84() {
-		checkNotSubtype("[void]","int");
+		checkNotSubtype("int","null|null");
 	}
 	@Test public void test_85() {
-		checkIsSubtype("[void]","[void]");
+		checkNotSubtype("int","null|int");
 	}
 	@Test public void test_86() {
-		checkNotSubtype("[void]","[any]");
+		checkIsSubtype("int","int|void");
 	}
 	@Test public void test_87() {
-		checkNotSubtype("[void]","[null]");
+		checkNotSubtype("int","int|any");
 	}
 	@Test public void test_88() {
-		checkNotSubtype("[void]","[int]");
+		checkNotSubtype("int","int|null");
 	}
 	@Test public void test_89() {
-		checkNotSubtype("[void]","!void");
+		checkIsSubtype("int","int|int");
 	}
 	@Test public void test_90() {
-		checkIsSubtype("[void]","!any");
+		checkNotSubtype("int","[void]|void");
 	}
 	@Test public void test_91() {
-		checkNotSubtype("[void]","!null");
+		checkNotSubtype("int","[any]|any");
 	}
 	@Test public void test_92() {
-		checkNotSubtype("[void]","!int");
+		checkNotSubtype("int","[null]|null");
 	}
 	@Test public void test_93() {
-		checkNotSubtype("[void]","[[void]]");
+		checkNotSubtype("int","[int]|int");
 	}
 	@Test public void test_94() {
-		checkNotSubtype("[void]","[[any]]");
+		checkNotSubtype("[void]","any");
 	}
 	@Test public void test_95() {
-		checkNotSubtype("[void]","[[null]]");
+		checkNotSubtype("[void]","null");
 	}
 	@Test public void test_96() {
-		checkNotSubtype("[void]","[[int]]");
+		checkNotSubtype("[void]","int");
 	}
 	@Test public void test_97() {
-		checkNotSubtype("[void]","[!void]");
+		checkIsSubtype("[void]","[void]");
 	}
 	@Test public void test_98() {
-		checkIsSubtype("[void]","[!any]");
+		checkNotSubtype("[void]","[any]");
 	}
 	@Test public void test_99() {
-		checkNotSubtype("[void]","[!null]");
+		checkNotSubtype("[void]","[null]");
 	}
 	@Test public void test_100() {
-		checkNotSubtype("[void]","[!int]");
+		checkNotSubtype("[void]","[int]");
 	}
 	@Test public void test_101() {
-		checkNotSubtype("[void]","![void]");
+		checkNotSubtype("[void]","[[void]]");
 	}
 	@Test public void test_102() {
-		checkNotSubtype("[void]","![any]");
+		checkNotSubtype("[void]","[[any]]");
 	}
 	@Test public void test_103() {
-		checkNotSubtype("[void]","![null]");
+		checkNotSubtype("[void]","[[null]]");
 	}
 	@Test public void test_104() {
-		checkNotSubtype("[void]","![int]");
+		checkNotSubtype("[void]","[[int]]");
 	}
 	@Test public void test_105() {
-		checkIsSubtype("[void]","!!void");
+		checkIsSubtype("[void]","void|void");
 	}
 	@Test public void test_106() {
-		checkNotSubtype("[void]","!!any");
+		checkNotSubtype("[void]","void|any");
 	}
 	@Test public void test_107() {
-		checkNotSubtype("[void]","!!null");
+		checkNotSubtype("[void]","void|null");
 	}
 	@Test public void test_108() {
-		checkNotSubtype("[void]","!!int");
+		checkNotSubtype("[void]","void|int");
 	}
 	@Test public void test_109() {
-		checkNotSubtype("[any]","any");
+		checkNotSubtype("[void]","any|void");
 	}
 	@Test public void test_110() {
-		checkNotSubtype("[any]","null");
+		checkNotSubtype("[void]","any|any");
 	}
 	@Test public void test_111() {
-		checkNotSubtype("[any]","int");
+		checkNotSubtype("[void]","any|null");
 	}
 	@Test public void test_112() {
-		checkIsSubtype("[any]","[void]");
+		checkNotSubtype("[void]","any|int");
 	}
 	@Test public void test_113() {
-		checkIsSubtype("[any]","[any]");
+		checkNotSubtype("[void]","null|void");
 	}
 	@Test public void test_114() {
-		checkIsSubtype("[any]","[null]");
+		checkNotSubtype("[void]","null|any");
 	}
 	@Test public void test_115() {
-		checkIsSubtype("[any]","[int]");
+		checkNotSubtype("[void]","null|null");
 	}
 	@Test public void test_116() {
-		checkNotSubtype("[any]","!void");
+		checkNotSubtype("[void]","null|int");
 	}
 	@Test public void test_117() {
-		checkIsSubtype("[any]","!any");
+		checkNotSubtype("[void]","int|void");
 	}
 	@Test public void test_118() {
-		checkNotSubtype("[any]","!null");
+		checkNotSubtype("[void]","int|any");
 	}
 	@Test public void test_119() {
-		checkNotSubtype("[any]","!int");
+		checkNotSubtype("[void]","int|null");
 	}
 	@Test public void test_120() {
-		checkIsSubtype("[any]","[[void]]");
+		checkNotSubtype("[void]","int|int");
 	}
 	@Test public void test_121() {
-		checkIsSubtype("[any]","[[any]]");
+		checkIsSubtype("[void]","[void]|void");
 	}
 	@Test public void test_122() {
-		checkIsSubtype("[any]","[[null]]");
+		checkNotSubtype("[void]","[any]|any");
 	}
 	@Test public void test_123() {
-		checkIsSubtype("[any]","[[int]]");
+		checkNotSubtype("[void]","[null]|null");
 	}
 	@Test public void test_124() {
-		checkIsSubtype("[any]","[!void]");
+		checkNotSubtype("[void]","[int]|int");
 	}
 	@Test public void test_125() {
-		checkIsSubtype("[any]","[!any]");
+		checkNotSubtype("[any]","any");
 	}
 	@Test public void test_126() {
-		checkIsSubtype("[any]","[!null]");
+		checkNotSubtype("[any]","null");
 	}
 	@Test public void test_127() {
-		checkIsSubtype("[any]","[!int]");
+		checkNotSubtype("[any]","int");
 	}
 	@Test public void test_128() {
-		checkNotSubtype("[any]","![void]");
+		checkIsSubtype("[any]","[void]");
 	}
 	@Test public void test_129() {
-		checkNotSubtype("[any]","![any]");
+		checkIsSubtype("[any]","[any]");
 	}
 	@Test public void test_130() {
-		checkNotSubtype("[any]","![null]");
+		checkIsSubtype("[any]","[null]");
 	}
 	@Test public void test_131() {
-		checkNotSubtype("[any]","![int]");
+		checkIsSubtype("[any]","[int]");
 	}
 	@Test public void test_132() {
-		checkIsSubtype("[any]","!!void");
+		checkIsSubtype("[any]","[[void]]");
 	}
 	@Test public void test_133() {
-		checkNotSubtype("[any]","!!any");
+		checkIsSubtype("[any]","[[any]]");
 	}
 	@Test public void test_134() {
-		checkNotSubtype("[any]","!!null");
+		checkIsSubtype("[any]","[[null]]");
 	}
 	@Test public void test_135() {
-		checkNotSubtype("[any]","!!int");
+		checkIsSubtype("[any]","[[int]]");
 	}
 	@Test public void test_136() {
-		checkNotSubtype("[null]","any");
+		checkIsSubtype("[any]","void|void");
 	}
 	@Test public void test_137() {
-		checkNotSubtype("[null]","null");
+		checkNotSubtype("[any]","void|any");
 	}
 	@Test public void test_138() {
-		checkNotSubtype("[null]","int");
+		checkNotSubtype("[any]","void|null");
 	}
 	@Test public void test_139() {
-		checkIsSubtype("[null]","[void]");
+		checkNotSubtype("[any]","void|int");
 	}
 	@Test public void test_140() {
-		checkNotSubtype("[null]","[any]");
+		checkNotSubtype("[any]","any|void");
 	}
 	@Test public void test_141() {
-		checkIsSubtype("[null]","[null]");
+		checkNotSubtype("[any]","any|any");
 	}
 	@Test public void test_142() {
-		checkNotSubtype("[null]","[int]");
+		checkNotSubtype("[any]","any|null");
 	}
 	@Test public void test_143() {
-		checkNotSubtype("[null]","!void");
+		checkNotSubtype("[any]","any|int");
 	}
 	@Test public void test_144() {
-		checkIsSubtype("[null]","!any");
+		checkNotSubtype("[any]","null|void");
 	}
 	@Test public void test_145() {
-		checkNotSubtype("[null]","!null");
+		checkNotSubtype("[any]","null|any");
 	}
 	@Test public void test_146() {
-		checkNotSubtype("[null]","!int");
+		checkNotSubtype("[any]","null|null");
 	}
 	@Test public void test_147() {
-		checkNotSubtype("[null]","[[void]]");
+		checkNotSubtype("[any]","null|int");
 	}
 	@Test public void test_148() {
-		checkNotSubtype("[null]","[[any]]");
+		checkNotSubtype("[any]","int|void");
 	}
 	@Test public void test_149() {
-		checkNotSubtype("[null]","[[null]]");
+		checkNotSubtype("[any]","int|any");
 	}
 	@Test public void test_150() {
-		checkNotSubtype("[null]","[[int]]");
+		checkNotSubtype("[any]","int|null");
 	}
 	@Test public void test_151() {
-		checkNotSubtype("[null]","[!void]");
+		checkNotSubtype("[any]","int|int");
 	}
 	@Test public void test_152() {
-		checkIsSubtype("[null]","[!any]");
+		checkIsSubtype("[any]","[void]|void");
 	}
 	@Test public void test_153() {
-		checkNotSubtype("[null]","[!null]");
+		checkNotSubtype("[any]","[any]|any");
 	}
 	@Test public void test_154() {
-		checkNotSubtype("[null]","[!int]");
+		checkNotSubtype("[any]","[null]|null");
 	}
 	@Test public void test_155() {
-		checkNotSubtype("[null]","![void]");
+		checkNotSubtype("[any]","[int]|int");
 	}
 	@Test public void test_156() {
-		checkNotSubtype("[null]","![any]");
+		checkNotSubtype("[null]","any");
 	}
 	@Test public void test_157() {
-		checkNotSubtype("[null]","![null]");
+		checkNotSubtype("[null]","null");
 	}
 	@Test public void test_158() {
-		checkNotSubtype("[null]","![int]");
+		checkNotSubtype("[null]","int");
 	}
 	@Test public void test_159() {
-		checkIsSubtype("[null]","!!void");
+		checkIsSubtype("[null]","[void]");
 	}
 	@Test public void test_160() {
-		checkNotSubtype("[null]","!!any");
+		checkNotSubtype("[null]","[any]");
 	}
 	@Test public void test_161() {
-		checkNotSubtype("[null]","!!null");
+		checkIsSubtype("[null]","[null]");
 	}
 	@Test public void test_162() {
-		checkNotSubtype("[null]","!!int");
+		checkNotSubtype("[null]","[int]");
 	}
 	@Test public void test_163() {
-		checkNotSubtype("[int]","any");
+		checkNotSubtype("[null]","[[void]]");
 	}
 	@Test public void test_164() {
-		checkNotSubtype("[int]","null");
+		checkNotSubtype("[null]","[[any]]");
 	}
 	@Test public void test_165() {
-		checkNotSubtype("[int]","int");
+		checkNotSubtype("[null]","[[null]]");
 	}
 	@Test public void test_166() {
-		checkIsSubtype("[int]","[void]");
+		checkNotSubtype("[null]","[[int]]");
 	}
 	@Test public void test_167() {
-		checkNotSubtype("[int]","[any]");
+		checkIsSubtype("[null]","void|void");
 	}
 	@Test public void test_168() {
-		checkNotSubtype("[int]","[null]");
+		checkNotSubtype("[null]","void|any");
 	}
 	@Test public void test_169() {
-		checkIsSubtype("[int]","[int]");
+		checkNotSubtype("[null]","void|null");
 	}
 	@Test public void test_170() {
-		checkNotSubtype("[int]","!void");
+		checkNotSubtype("[null]","void|int");
 	}
 	@Test public void test_171() {
-		checkIsSubtype("[int]","!any");
+		checkNotSubtype("[null]","any|void");
 	}
 	@Test public void test_172() {
-		checkNotSubtype("[int]","!null");
+		checkNotSubtype("[null]","any|any");
 	}
 	@Test public void test_173() {
-		checkNotSubtype("[int]","!int");
+		checkNotSubtype("[null]","any|null");
 	}
 	@Test public void test_174() {
-		checkNotSubtype("[int]","[[void]]");
+		checkNotSubtype("[null]","any|int");
 	}
 	@Test public void test_175() {
-		checkNotSubtype("[int]","[[any]]");
+		checkNotSubtype("[null]","null|void");
 	}
 	@Test public void test_176() {
-		checkNotSubtype("[int]","[[null]]");
+		checkNotSubtype("[null]","null|any");
 	}
 	@Test public void test_177() {
-		checkNotSubtype("[int]","[[int]]");
+		checkNotSubtype("[null]","null|null");
 	}
 	@Test public void test_178() {
-		checkNotSubtype("[int]","[!void]");
+		checkNotSubtype("[null]","null|int");
 	}
 	@Test public void test_179() {
-		checkIsSubtype("[int]","[!any]");
+		checkNotSubtype("[null]","int|void");
 	}
 	@Test public void test_180() {
-		checkNotSubtype("[int]","[!null]");
+		checkNotSubtype("[null]","int|any");
 	}
 	@Test public void test_181() {
-		checkNotSubtype("[int]","[!int]");
+		checkNotSubtype("[null]","int|null");
 	}
 	@Test public void test_182() {
-		checkNotSubtype("[int]","![void]");
+		checkNotSubtype("[null]","int|int");
 	}
 	@Test public void test_183() {
-		checkNotSubtype("[int]","![any]");
+		checkIsSubtype("[null]","[void]|void");
 	}
 	@Test public void test_184() {
-		checkNotSubtype("[int]","![null]");
+		checkNotSubtype("[null]","[any]|any");
 	}
 	@Test public void test_185() {
-		checkNotSubtype("[int]","![int]");
+		checkNotSubtype("[null]","[null]|null");
 	}
 	@Test public void test_186() {
-		checkIsSubtype("[int]","!!void");
+		checkNotSubtype("[null]","[int]|int");
 	}
 	@Test public void test_187() {
-		checkNotSubtype("[int]","!!any");
+		checkNotSubtype("[int]","any");
 	}
 	@Test public void test_188() {
-		checkNotSubtype("[int]","!!null");
+		checkNotSubtype("[int]","null");
 	}
 	@Test public void test_189() {
-		checkNotSubtype("[int]","!!int");
+		checkNotSubtype("[int]","int");
 	}
 	@Test public void test_190() {
-		checkIsSubtype("!void","any");
+		checkIsSubtype("[int]","[void]");
 	}
 	@Test public void test_191() {
-		checkIsSubtype("!void","null");
+		checkNotSubtype("[int]","[any]");
 	}
 	@Test public void test_192() {
-		checkIsSubtype("!void","int");
+		checkNotSubtype("[int]","[null]");
 	}
 	@Test public void test_193() {
-		checkIsSubtype("!void","[void]");
+		checkIsSubtype("[int]","[int]");
 	}
 	@Test public void test_194() {
-		checkIsSubtype("!void","[any]");
+		checkNotSubtype("[int]","[[void]]");
 	}
 	@Test public void test_195() {
-		checkIsSubtype("!void","[null]");
+		checkNotSubtype("[int]","[[any]]");
 	}
 	@Test public void test_196() {
-		checkIsSubtype("!void","[int]");
+		checkNotSubtype("[int]","[[null]]");
 	}
 	@Test public void test_197() {
-		checkIsSubtype("!void","!void");
+		checkNotSubtype("[int]","[[int]]");
 	}
 	@Test public void test_198() {
-		checkIsSubtype("!void","!any");
+		checkIsSubtype("[int]","void|void");
 	}
 	@Test public void test_199() {
-		checkIsSubtype("!void","!null");
+		checkNotSubtype("[int]","void|any");
 	}
 	@Test public void test_200() {
-		checkIsSubtype("!void","!int");
+		checkNotSubtype("[int]","void|null");
 	}
 	@Test public void test_201() {
-		checkIsSubtype("!void","[[void]]");
+		checkNotSubtype("[int]","void|int");
 	}
 	@Test public void test_202() {
-		checkIsSubtype("!void","[[any]]");
+		checkNotSubtype("[int]","any|void");
 	}
 	@Test public void test_203() {
-		checkIsSubtype("!void","[[null]]");
+		checkNotSubtype("[int]","any|any");
 	}
 	@Test public void test_204() {
-		checkIsSubtype("!void","[[int]]");
+		checkNotSubtype("[int]","any|null");
 	}
 	@Test public void test_205() {
-		checkIsSubtype("!void","[!void]");
+		checkNotSubtype("[int]","any|int");
 	}
 	@Test public void test_206() {
-		checkIsSubtype("!void","[!any]");
+		checkNotSubtype("[int]","null|void");
 	}
 	@Test public void test_207() {
-		checkIsSubtype("!void","[!null]");
+		checkNotSubtype("[int]","null|any");
 	}
 	@Test public void test_208() {
-		checkIsSubtype("!void","[!int]");
+		checkNotSubtype("[int]","null|null");
 	}
 	@Test public void test_209() {
-		checkIsSubtype("!void","![void]");
+		checkNotSubtype("[int]","null|int");
 	}
 	@Test public void test_210() {
-		checkIsSubtype("!void","![any]");
+		checkNotSubtype("[int]","int|void");
 	}
 	@Test public void test_211() {
-		checkIsSubtype("!void","![null]");
+		checkNotSubtype("[int]","int|any");
 	}
 	@Test public void test_212() {
-		checkIsSubtype("!void","![int]");
+		checkNotSubtype("[int]","int|null");
 	}
 	@Test public void test_213() {
-		checkIsSubtype("!void","!!void");
+		checkNotSubtype("[int]","int|int");
 	}
 	@Test public void test_214() {
-		checkIsSubtype("!void","!!any");
+		checkIsSubtype("[int]","[void]|void");
 	}
 	@Test public void test_215() {
-		checkIsSubtype("!void","!!null");
+		checkNotSubtype("[int]","[any]|any");
 	}
 	@Test public void test_216() {
-		checkIsSubtype("!void","!!int");
+		checkNotSubtype("[int]","[null]|null");
 	}
 	@Test public void test_217() {
-		checkNotSubtype("!any","any");
+		checkNotSubtype("[int]","[int]|int");
 	}
 	@Test public void test_218() {
-		checkNotSubtype("!any","null");
-	}
-	@Test public void test_219() {
-		checkNotSubtype("!any","int");
-	}
-	@Test public void test_220() {
-		checkNotSubtype("!any","[void]");
-	}
-	@Test public void test_221() {
-		checkNotSubtype("!any","[any]");
-	}
-	@Test public void test_222() {
-		checkNotSubtype("!any","[null]");
-	}
-	@Test public void test_223() {
-		checkNotSubtype("!any","[int]");
-	}
-	@Test public void test_224() {
-		checkNotSubtype("!any","!void");
-	}
-	@Test public void test_225() {
-		checkIsSubtype("!any","!any");
-	}
-	@Test public void test_226() {
-		checkNotSubtype("!any","!null");
-	}
-	@Test public void test_227() {
-		checkNotSubtype("!any","!int");
-	}
-	@Test public void test_228() {
-		checkNotSubtype("!any","[[void]]");
-	}
-	@Test public void test_229() {
-		checkNotSubtype("!any","[[any]]");
-	}
-	@Test public void test_230() {
-		checkNotSubtype("!any","[[null]]");
-	}
-	@Test public void test_231() {
-		checkNotSubtype("!any","[[int]]");
-	}
-	@Test public void test_232() {
-		checkNotSubtype("!any","[!void]");
-	}
-	@Test public void test_233() {
-		checkNotSubtype("!any","[!any]");
-	}
-	@Test public void test_234() {
-		checkNotSubtype("!any","[!null]");
-	}
-	@Test public void test_235() {
-		checkNotSubtype("!any","[!int]");
-	}
-	@Test public void test_236() {
-		checkNotSubtype("!any","![void]");
-	}
-	@Test public void test_237() {
-		checkNotSubtype("!any","![any]");
-	}
-	@Test public void test_238() {
-		checkNotSubtype("!any","![null]");
-	}
-	@Test public void test_239() {
-		checkNotSubtype("!any","![int]");
-	}
-	@Test public void test_240() {
-		checkIsSubtype("!any","!!void");
-	}
-	@Test public void test_241() {
-		checkNotSubtype("!any","!!any");
-	}
-	@Test public void test_242() {
-		checkNotSubtype("!any","!!null");
-	}
-	@Test public void test_243() {
-		checkNotSubtype("!any","!!int");
-	}
-	@Test public void test_244() {
-		checkNotSubtype("!null","any");
-	}
-	@Test public void test_245() {
-		checkNotSubtype("!null","null");
-	}
-	@Test public void test_246() {
-		checkIsSubtype("!null","int");
-	}
-	@Test public void test_247() {
-		checkIsSubtype("!null","[void]");
-	}
-	@Test public void test_248() {
-		checkIsSubtype("!null","[any]");
-	}
-	@Test public void test_249() {
-		checkIsSubtype("!null","[null]");
-	}
-	@Test public void test_250() {
-		checkIsSubtype("!null","[int]");
-	}
-	@Test public void test_251() {
-		checkNotSubtype("!null","!void");
-	}
-	@Test public void test_252() {
-		checkIsSubtype("!null","!any");
-	}
-	@Test public void test_253() {
-		checkIsSubtype("!null","!null");
-	}
-	@Test public void test_254() {
-		checkNotSubtype("!null","!int");
-	}
-	@Test public void test_255() {
-		checkIsSubtype("!null","[[void]]");
-	}
-	@Test public void test_256() {
-		checkIsSubtype("!null","[[any]]");
-	}
-	@Test public void test_257() {
-		checkIsSubtype("!null","[[null]]");
-	}
-	@Test public void test_258() {
-		checkIsSubtype("!null","[[int]]");
-	}
-	@Test public void test_259() {
-		checkIsSubtype("!null","[!void]");
-	}
-	@Test public void test_260() {
-		checkIsSubtype("!null","[!any]");
-	}
-	@Test public void test_261() {
-		checkIsSubtype("!null","[!null]");
-	}
-	@Test public void test_262() {
-		checkIsSubtype("!null","[!int]");
-	}
-	@Test public void test_263() {
-		checkNotSubtype("!null","![void]");
-	}
-	@Test public void test_264() {
-		checkNotSubtype("!null","![any]");
-	}
-	@Test public void test_265() {
-		checkNotSubtype("!null","![null]");
-	}
-	@Test public void test_266() {
-		checkNotSubtype("!null","![int]");
-	}
-	@Test public void test_267() {
-		checkIsSubtype("!null","!!void");
-	}
-	@Test public void test_268() {
-		checkNotSubtype("!null","!!any");
-	}
-	@Test public void test_269() {
-		checkNotSubtype("!null","!!null");
-	}
-	@Test public void test_270() {
-		checkIsSubtype("!null","!!int");
-	}
-	@Test public void test_271() {
-		checkNotSubtype("!int","any");
-	}
-	@Test public void test_272() {
-		checkIsSubtype("!int","null");
-	}
-	@Test public void test_273() {
-		checkNotSubtype("!int","int");
-	}
-	@Test public void test_274() {
-		checkIsSubtype("!int","[void]");
-	}
-	@Test public void test_275() {
-		checkIsSubtype("!int","[any]");
-	}
-	@Test public void test_276() {
-		checkIsSubtype("!int","[null]");
-	}
-	@Test public void test_277() {
-		checkIsSubtype("!int","[int]");
-	}
-	@Test public void test_278() {
-		checkNotSubtype("!int","!void");
-	}
-	@Test public void test_279() {
-		checkIsSubtype("!int","!any");
-	}
-	@Test public void test_280() {
-		checkNotSubtype("!int","!null");
-	}
-	@Test public void test_281() {
-		checkIsSubtype("!int","!int");
-	}
-	@Test public void test_282() {
-		checkIsSubtype("!int","[[void]]");
-	}
-	@Test public void test_283() {
-		checkIsSubtype("!int","[[any]]");
-	}
-	@Test public void test_284() {
-		checkIsSubtype("!int","[[null]]");
-	}
-	@Test public void test_285() {
-		checkIsSubtype("!int","[[int]]");
-	}
-	@Test public void test_286() {
-		checkIsSubtype("!int","[!void]");
-	}
-	@Test public void test_287() {
-		checkIsSubtype("!int","[!any]");
-	}
-	@Test public void test_288() {
-		checkIsSubtype("!int","[!null]");
-	}
-	@Test public void test_289() {
-		checkIsSubtype("!int","[!int]");
-	}
-	@Test public void test_290() {
-		checkNotSubtype("!int","![void]");
-	}
-	@Test public void test_291() {
-		checkNotSubtype("!int","![any]");
-	}
-	@Test public void test_292() {
-		checkNotSubtype("!int","![null]");
-	}
-	@Test public void test_293() {
-		checkNotSubtype("!int","![int]");
-	}
-	@Test public void test_294() {
-		checkIsSubtype("!int","!!void");
-	}
-	@Test public void test_295() {
-		checkNotSubtype("!int","!!any");
-	}
-	@Test public void test_296() {
-		checkIsSubtype("!int","!!null");
-	}
-	@Test public void test_297() {
-		checkNotSubtype("!int","!!int");
-	}
-	@Test public void test_298() {
 		checkNotSubtype("[[void]]","any");
 	}
-	@Test public void test_299() {
+	@Test public void test_219() {
 		checkNotSubtype("[[void]]","null");
 	}
-	@Test public void test_300() {
+	@Test public void test_220() {
 		checkNotSubtype("[[void]]","int");
 	}
-	@Test public void test_301() {
+	@Test public void test_221() {
 		checkIsSubtype("[[void]]","[void]");
 	}
-	@Test public void test_302() {
+	@Test public void test_222() {
 		checkNotSubtype("[[void]]","[any]");
 	}
-	@Test public void test_303() {
+	@Test public void test_223() {
 		checkNotSubtype("[[void]]","[null]");
 	}
-	@Test public void test_304() {
+	@Test public void test_224() {
 		checkNotSubtype("[[void]]","[int]");
 	}
-	@Test public void test_305() {
-		checkNotSubtype("[[void]]","!void");
-	}
-	@Test public void test_306() {
-		checkIsSubtype("[[void]]","!any");
-	}
-	@Test public void test_307() {
-		checkNotSubtype("[[void]]","!null");
-	}
-	@Test public void test_308() {
-		checkNotSubtype("[[void]]","!int");
-	}
-	@Test public void test_309() {
+	@Test public void test_225() {
 		checkIsSubtype("[[void]]","[[void]]");
 	}
-	@Test public void test_310() {
+	@Test public void test_226() {
 		checkNotSubtype("[[void]]","[[any]]");
 	}
-	@Test public void test_311() {
+	@Test public void test_227() {
 		checkNotSubtype("[[void]]","[[null]]");
 	}
-	@Test public void test_312() {
+	@Test public void test_228() {
 		checkNotSubtype("[[void]]","[[int]]");
 	}
-	@Test public void test_313() {
-		checkNotSubtype("[[void]]","[!void]");
+	@Test public void test_229() {
+		checkIsSubtype("[[void]]","void|void");
 	}
-	@Test public void test_314() {
-		checkIsSubtype("[[void]]","[!any]");
+	@Test public void test_230() {
+		checkNotSubtype("[[void]]","void|any");
 	}
-	@Test public void test_315() {
-		checkNotSubtype("[[void]]","[!null]");
+	@Test public void test_231() {
+		checkNotSubtype("[[void]]","void|null");
 	}
-	@Test public void test_316() {
-		checkNotSubtype("[[void]]","[!int]");
+	@Test public void test_232() {
+		checkNotSubtype("[[void]]","void|int");
 	}
-	@Test public void test_317() {
-		checkNotSubtype("[[void]]","![void]");
+	@Test public void test_233() {
+		checkNotSubtype("[[void]]","any|void");
 	}
-	@Test public void test_318() {
-		checkNotSubtype("[[void]]","![any]");
+	@Test public void test_234() {
+		checkNotSubtype("[[void]]","any|any");
 	}
-	@Test public void test_319() {
-		checkNotSubtype("[[void]]","![null]");
+	@Test public void test_235() {
+		checkNotSubtype("[[void]]","any|null");
 	}
-	@Test public void test_320() {
-		checkNotSubtype("[[void]]","![int]");
+	@Test public void test_236() {
+		checkNotSubtype("[[void]]","any|int");
 	}
-	@Test public void test_321() {
-		checkIsSubtype("[[void]]","!!void");
+	@Test public void test_237() {
+		checkNotSubtype("[[void]]","null|void");
 	}
-	@Test public void test_322() {
-		checkNotSubtype("[[void]]","!!any");
+	@Test public void test_238() {
+		checkNotSubtype("[[void]]","null|any");
 	}
-	@Test public void test_323() {
-		checkNotSubtype("[[void]]","!!null");
+	@Test public void test_239() {
+		checkNotSubtype("[[void]]","null|null");
 	}
-	@Test public void test_324() {
-		checkNotSubtype("[[void]]","!!int");
+	@Test public void test_240() {
+		checkNotSubtype("[[void]]","null|int");
 	}
-	@Test public void test_325() {
+	@Test public void test_241() {
+		checkNotSubtype("[[void]]","int|void");
+	}
+	@Test public void test_242() {
+		checkNotSubtype("[[void]]","int|any");
+	}
+	@Test public void test_243() {
+		checkNotSubtype("[[void]]","int|null");
+	}
+	@Test public void test_244() {
+		checkNotSubtype("[[void]]","int|int");
+	}
+	@Test public void test_245() {
+		checkIsSubtype("[[void]]","[void]|void");
+	}
+	@Test public void test_246() {
+		checkNotSubtype("[[void]]","[any]|any");
+	}
+	@Test public void test_247() {
+		checkNotSubtype("[[void]]","[null]|null");
+	}
+	@Test public void test_248() {
+		checkNotSubtype("[[void]]","[int]|int");
+	}
+	@Test public void test_249() {
 		checkNotSubtype("[[any]]","any");
 	}
-	@Test public void test_326() {
+	@Test public void test_250() {
 		checkNotSubtype("[[any]]","null");
 	}
-	@Test public void test_327() {
+	@Test public void test_251() {
 		checkNotSubtype("[[any]]","int");
 	}
-	@Test public void test_328() {
+	@Test public void test_252() {
 		checkIsSubtype("[[any]]","[void]");
 	}
-	@Test public void test_329() {
+	@Test public void test_253() {
 		checkNotSubtype("[[any]]","[any]");
 	}
-	@Test public void test_330() {
+	@Test public void test_254() {
 		checkNotSubtype("[[any]]","[null]");
 	}
-	@Test public void test_331() {
+	@Test public void test_255() {
 		checkNotSubtype("[[any]]","[int]");
 	}
-	@Test public void test_332() {
-		checkNotSubtype("[[any]]","!void");
-	}
-	@Test public void test_333() {
-		checkIsSubtype("[[any]]","!any");
-	}
-	@Test public void test_334() {
-		checkNotSubtype("[[any]]","!null");
-	}
-	@Test public void test_335() {
-		checkNotSubtype("[[any]]","!int");
-	}
-	@Test public void test_336() {
+	@Test public void test_256() {
 		checkIsSubtype("[[any]]","[[void]]");
 	}
-	@Test public void test_337() {
+	@Test public void test_257() {
 		checkIsSubtype("[[any]]","[[any]]");
 	}
-	@Test public void test_338() {
+	@Test public void test_258() {
 		checkIsSubtype("[[any]]","[[null]]");
 	}
-	@Test public void test_339() {
+	@Test public void test_259() {
 		checkIsSubtype("[[any]]","[[int]]");
 	}
-	@Test public void test_340() {
-		checkNotSubtype("[[any]]","[!void]");
+	@Test public void test_260() {
+		checkIsSubtype("[[any]]","void|void");
 	}
-	@Test public void test_341() {
-		checkIsSubtype("[[any]]","[!any]");
+	@Test public void test_261() {
+		checkNotSubtype("[[any]]","void|any");
 	}
-	@Test public void test_342() {
-		checkNotSubtype("[[any]]","[!null]");
+	@Test public void test_262() {
+		checkNotSubtype("[[any]]","void|null");
 	}
-	@Test public void test_343() {
-		checkNotSubtype("[[any]]","[!int]");
+	@Test public void test_263() {
+		checkNotSubtype("[[any]]","void|int");
 	}
-	@Test public void test_344() {
-		checkNotSubtype("[[any]]","![void]");
+	@Test public void test_264() {
+		checkNotSubtype("[[any]]","any|void");
 	}
-	@Test public void test_345() {
-		checkNotSubtype("[[any]]","![any]");
+	@Test public void test_265() {
+		checkNotSubtype("[[any]]","any|any");
 	}
-	@Test public void test_346() {
-		checkNotSubtype("[[any]]","![null]");
+	@Test public void test_266() {
+		checkNotSubtype("[[any]]","any|null");
 	}
-	@Test public void test_347() {
-		checkNotSubtype("[[any]]","![int]");
+	@Test public void test_267() {
+		checkNotSubtype("[[any]]","any|int");
 	}
-	@Test public void test_348() {
-		checkIsSubtype("[[any]]","!!void");
+	@Test public void test_268() {
+		checkNotSubtype("[[any]]","null|void");
 	}
-	@Test public void test_349() {
-		checkNotSubtype("[[any]]","!!any");
+	@Test public void test_269() {
+		checkNotSubtype("[[any]]","null|any");
 	}
-	@Test public void test_350() {
-		checkNotSubtype("[[any]]","!!null");
+	@Test public void test_270() {
+		checkNotSubtype("[[any]]","null|null");
 	}
-	@Test public void test_351() {
-		checkNotSubtype("[[any]]","!!int");
+	@Test public void test_271() {
+		checkNotSubtype("[[any]]","null|int");
 	}
-	@Test public void test_352() {
+	@Test public void test_272() {
+		checkNotSubtype("[[any]]","int|void");
+	}
+	@Test public void test_273() {
+		checkNotSubtype("[[any]]","int|any");
+	}
+	@Test public void test_274() {
+		checkNotSubtype("[[any]]","int|null");
+	}
+	@Test public void test_275() {
+		checkNotSubtype("[[any]]","int|int");
+	}
+	@Test public void test_276() {
+		checkIsSubtype("[[any]]","[void]|void");
+	}
+	@Test public void test_277() {
+		checkNotSubtype("[[any]]","[any]|any");
+	}
+	@Test public void test_278() {
+		checkNotSubtype("[[any]]","[null]|null");
+	}
+	@Test public void test_279() {
+		checkNotSubtype("[[any]]","[int]|int");
+	}
+	@Test public void test_280() {
 		checkNotSubtype("[[null]]","any");
 	}
-	@Test public void test_353() {
+	@Test public void test_281() {
 		checkNotSubtype("[[null]]","null");
 	}
-	@Test public void test_354() {
+	@Test public void test_282() {
 		checkNotSubtype("[[null]]","int");
 	}
-	@Test public void test_355() {
+	@Test public void test_283() {
 		checkIsSubtype("[[null]]","[void]");
 	}
-	@Test public void test_356() {
+	@Test public void test_284() {
 		checkNotSubtype("[[null]]","[any]");
 	}
-	@Test public void test_357() {
+	@Test public void test_285() {
 		checkNotSubtype("[[null]]","[null]");
 	}
-	@Test public void test_358() {
+	@Test public void test_286() {
 		checkNotSubtype("[[null]]","[int]");
 	}
-	@Test public void test_359() {
-		checkNotSubtype("[[null]]","!void");
-	}
-	@Test public void test_360() {
-		checkIsSubtype("[[null]]","!any");
-	}
-	@Test public void test_361() {
-		checkNotSubtype("[[null]]","!null");
-	}
-	@Test public void test_362() {
-		checkNotSubtype("[[null]]","!int");
-	}
-	@Test public void test_363() {
+	@Test public void test_287() {
 		checkIsSubtype("[[null]]","[[void]]");
 	}
-	@Test public void test_364() {
+	@Test public void test_288() {
 		checkNotSubtype("[[null]]","[[any]]");
 	}
-	@Test public void test_365() {
+	@Test public void test_289() {
 		checkIsSubtype("[[null]]","[[null]]");
 	}
-	@Test public void test_366() {
+	@Test public void test_290() {
 		checkNotSubtype("[[null]]","[[int]]");
 	}
-	@Test public void test_367() {
-		checkNotSubtype("[[null]]","[!void]");
+	@Test public void test_291() {
+		checkIsSubtype("[[null]]","void|void");
 	}
-	@Test public void test_368() {
-		checkIsSubtype("[[null]]","[!any]");
+	@Test public void test_292() {
+		checkNotSubtype("[[null]]","void|any");
 	}
-	@Test public void test_369() {
-		checkNotSubtype("[[null]]","[!null]");
+	@Test public void test_293() {
+		checkNotSubtype("[[null]]","void|null");
 	}
-	@Test public void test_370() {
-		checkNotSubtype("[[null]]","[!int]");
+	@Test public void test_294() {
+		checkNotSubtype("[[null]]","void|int");
 	}
-	@Test public void test_371() {
-		checkNotSubtype("[[null]]","![void]");
+	@Test public void test_295() {
+		checkNotSubtype("[[null]]","any|void");
 	}
-	@Test public void test_372() {
-		checkNotSubtype("[[null]]","![any]");
+	@Test public void test_296() {
+		checkNotSubtype("[[null]]","any|any");
 	}
-	@Test public void test_373() {
-		checkNotSubtype("[[null]]","![null]");
+	@Test public void test_297() {
+		checkNotSubtype("[[null]]","any|null");
 	}
-	@Test public void test_374() {
-		checkNotSubtype("[[null]]","![int]");
+	@Test public void test_298() {
+		checkNotSubtype("[[null]]","any|int");
 	}
-	@Test public void test_375() {
-		checkIsSubtype("[[null]]","!!void");
+	@Test public void test_299() {
+		checkNotSubtype("[[null]]","null|void");
 	}
-	@Test public void test_376() {
-		checkNotSubtype("[[null]]","!!any");
+	@Test public void test_300() {
+		checkNotSubtype("[[null]]","null|any");
 	}
-	@Test public void test_377() {
-		checkNotSubtype("[[null]]","!!null");
+	@Test public void test_301() {
+		checkNotSubtype("[[null]]","null|null");
 	}
-	@Test public void test_378() {
-		checkNotSubtype("[[null]]","!!int");
+	@Test public void test_302() {
+		checkNotSubtype("[[null]]","null|int");
 	}
-	@Test public void test_379() {
+	@Test public void test_303() {
+		checkNotSubtype("[[null]]","int|void");
+	}
+	@Test public void test_304() {
+		checkNotSubtype("[[null]]","int|any");
+	}
+	@Test public void test_305() {
+		checkNotSubtype("[[null]]","int|null");
+	}
+	@Test public void test_306() {
+		checkNotSubtype("[[null]]","int|int");
+	}
+	@Test public void test_307() {
+		checkIsSubtype("[[null]]","[void]|void");
+	}
+	@Test public void test_308() {
+		checkNotSubtype("[[null]]","[any]|any");
+	}
+	@Test public void test_309() {
+		checkNotSubtype("[[null]]","[null]|null");
+	}
+	@Test public void test_310() {
+		checkNotSubtype("[[null]]","[int]|int");
+	}
+	@Test public void test_311() {
 		checkNotSubtype("[[int]]","any");
 	}
-	@Test public void test_380() {
+	@Test public void test_312() {
 		checkNotSubtype("[[int]]","null");
 	}
-	@Test public void test_381() {
+	@Test public void test_313() {
 		checkNotSubtype("[[int]]","int");
 	}
-	@Test public void test_382() {
+	@Test public void test_314() {
 		checkIsSubtype("[[int]]","[void]");
 	}
-	@Test public void test_383() {
+	@Test public void test_315() {
 		checkNotSubtype("[[int]]","[any]");
 	}
-	@Test public void test_384() {
+	@Test public void test_316() {
 		checkNotSubtype("[[int]]","[null]");
 	}
-	@Test public void test_385() {
+	@Test public void test_317() {
 		checkNotSubtype("[[int]]","[int]");
 	}
-	@Test public void test_386() {
-		checkNotSubtype("[[int]]","!void");
-	}
-	@Test public void test_387() {
-		checkIsSubtype("[[int]]","!any");
-	}
-	@Test public void test_388() {
-		checkNotSubtype("[[int]]","!null");
-	}
-	@Test public void test_389() {
-		checkNotSubtype("[[int]]","!int");
-	}
-	@Test public void test_390() {
+	@Test public void test_318() {
 		checkIsSubtype("[[int]]","[[void]]");
 	}
-	@Test public void test_391() {
+	@Test public void test_319() {
 		checkNotSubtype("[[int]]","[[any]]");
 	}
-	@Test public void test_392() {
+	@Test public void test_320() {
 		checkNotSubtype("[[int]]","[[null]]");
 	}
-	@Test public void test_393() {
+	@Test public void test_321() {
 		checkIsSubtype("[[int]]","[[int]]");
 	}
+	@Test public void test_322() {
+		checkIsSubtype("[[int]]","void|void");
+	}
+	@Test public void test_323() {
+		checkNotSubtype("[[int]]","void|any");
+	}
+	@Test public void test_324() {
+		checkNotSubtype("[[int]]","void|null");
+	}
+	@Test public void test_325() {
+		checkNotSubtype("[[int]]","void|int");
+	}
+	@Test public void test_326() {
+		checkNotSubtype("[[int]]","any|void");
+	}
+	@Test public void test_327() {
+		checkNotSubtype("[[int]]","any|any");
+	}
+	@Test public void test_328() {
+		checkNotSubtype("[[int]]","any|null");
+	}
+	@Test public void test_329() {
+		checkNotSubtype("[[int]]","any|int");
+	}
+	@Test public void test_330() {
+		checkNotSubtype("[[int]]","null|void");
+	}
+	@Test public void test_331() {
+		checkNotSubtype("[[int]]","null|any");
+	}
+	@Test public void test_332() {
+		checkNotSubtype("[[int]]","null|null");
+	}
+	@Test public void test_333() {
+		checkNotSubtype("[[int]]","null|int");
+	}
+	@Test public void test_334() {
+		checkNotSubtype("[[int]]","int|void");
+	}
+	@Test public void test_335() {
+		checkNotSubtype("[[int]]","int|any");
+	}
+	@Test public void test_336() {
+		checkNotSubtype("[[int]]","int|null");
+	}
+	@Test public void test_337() {
+		checkNotSubtype("[[int]]","int|int");
+	}
+	@Test public void test_338() {
+		checkIsSubtype("[[int]]","[void]|void");
+	}
+	@Test public void test_339() {
+		checkNotSubtype("[[int]]","[any]|any");
+	}
+	@Test public void test_340() {
+		checkNotSubtype("[[int]]","[null]|null");
+	}
+	@Test public void test_341() {
+		checkNotSubtype("[[int]]","[int]|int");
+	}
+	@Test public void test_342() {
+		checkNotSubtype("void|void","any");
+	}
+	@Test public void test_343() {
+		checkNotSubtype("void|void","null");
+	}
+	@Test public void test_344() {
+		checkNotSubtype("void|void","int");
+	}
+	@Test public void test_345() {
+		checkNotSubtype("void|void","[void]");
+	}
+	@Test public void test_346() {
+		checkNotSubtype("void|void","[any]");
+	}
+	@Test public void test_347() {
+		checkNotSubtype("void|void","[null]");
+	}
+	@Test public void test_348() {
+		checkNotSubtype("void|void","[int]");
+	}
+	@Test public void test_349() {
+		checkNotSubtype("void|void","[[void]]");
+	}
+	@Test public void test_350() {
+		checkNotSubtype("void|void","[[any]]");
+	}
+	@Test public void test_351() {
+		checkNotSubtype("void|void","[[null]]");
+	}
+	@Test public void test_352() {
+		checkNotSubtype("void|void","[[int]]");
+	}
+	@Test public void test_353() {
+		checkIsSubtype("void|void","void|void");
+	}
+	@Test public void test_354() {
+		checkNotSubtype("void|void","void|any");
+	}
+	@Test public void test_355() {
+		checkNotSubtype("void|void","void|null");
+	}
+	@Test public void test_356() {
+		checkNotSubtype("void|void","void|int");
+	}
+	@Test public void test_357() {
+		checkNotSubtype("void|void","any|void");
+	}
+	@Test public void test_358() {
+		checkNotSubtype("void|void","any|any");
+	}
+	@Test public void test_359() {
+		checkNotSubtype("void|void","any|null");
+	}
+	@Test public void test_360() {
+		checkNotSubtype("void|void","any|int");
+	}
+	@Test public void test_361() {
+		checkNotSubtype("void|void","null|void");
+	}
+	@Test public void test_362() {
+		checkNotSubtype("void|void","null|any");
+	}
+	@Test public void test_363() {
+		checkNotSubtype("void|void","null|null");
+	}
+	@Test public void test_364() {
+		checkNotSubtype("void|void","null|int");
+	}
+	@Test public void test_365() {
+		checkNotSubtype("void|void","int|void");
+	}
+	@Test public void test_366() {
+		checkNotSubtype("void|void","int|any");
+	}
+	@Test public void test_367() {
+		checkNotSubtype("void|void","int|null");
+	}
+	@Test public void test_368() {
+		checkNotSubtype("void|void","int|int");
+	}
+	@Test public void test_369() {
+		checkNotSubtype("void|void","[void]|void");
+	}
+	@Test public void test_370() {
+		checkNotSubtype("void|void","[any]|any");
+	}
+	@Test public void test_371() {
+		checkNotSubtype("void|void","[null]|null");
+	}
+	@Test public void test_372() {
+		checkNotSubtype("void|void","[int]|int");
+	}
+	@Test public void test_373() {
+		checkIsSubtype("void|any","any");
+	}
+	@Test public void test_374() {
+		checkIsSubtype("void|any","null");
+	}
+	@Test public void test_375() {
+		checkIsSubtype("void|any","int");
+	}
+	@Test public void test_376() {
+		checkIsSubtype("void|any","[void]");
+	}
+	@Test public void test_377() {
+		checkIsSubtype("void|any","[any]");
+	}
+	@Test public void test_378() {
+		checkIsSubtype("void|any","[null]");
+	}
+	@Test public void test_379() {
+		checkIsSubtype("void|any","[int]");
+	}
+	@Test public void test_380() {
+		checkIsSubtype("void|any","[[void]]");
+	}
+	@Test public void test_381() {
+		checkIsSubtype("void|any","[[any]]");
+	}
+	@Test public void test_382() {
+		checkIsSubtype("void|any","[[null]]");
+	}
+	@Test public void test_383() {
+		checkIsSubtype("void|any","[[int]]");
+	}
+	@Test public void test_384() {
+		checkIsSubtype("void|any","void|void");
+	}
+	@Test public void test_385() {
+		checkIsSubtype("void|any","void|any");
+	}
+	@Test public void test_386() {
+		checkIsSubtype("void|any","void|null");
+	}
+	@Test public void test_387() {
+		checkIsSubtype("void|any","void|int");
+	}
+	@Test public void test_388() {
+		checkIsSubtype("void|any","any|void");
+	}
+	@Test public void test_389() {
+		checkIsSubtype("void|any","any|any");
+	}
+	@Test public void test_390() {
+		checkIsSubtype("void|any","any|null");
+	}
+	@Test public void test_391() {
+		checkIsSubtype("void|any","any|int");
+	}
+	@Test public void test_392() {
+		checkIsSubtype("void|any","null|void");
+	}
+	@Test public void test_393() {
+		checkIsSubtype("void|any","null|any");
+	}
 	@Test public void test_394() {
-		checkNotSubtype("[[int]]","[!void]");
+		checkIsSubtype("void|any","null|null");
 	}
 	@Test public void test_395() {
-		checkIsSubtype("[[int]]","[!any]");
+		checkIsSubtype("void|any","null|int");
 	}
 	@Test public void test_396() {
-		checkNotSubtype("[[int]]","[!null]");
+		checkIsSubtype("void|any","int|void");
 	}
 	@Test public void test_397() {
-		checkNotSubtype("[[int]]","[!int]");
+		checkIsSubtype("void|any","int|any");
 	}
 	@Test public void test_398() {
-		checkNotSubtype("[[int]]","![void]");
+		checkIsSubtype("void|any","int|null");
 	}
 	@Test public void test_399() {
-		checkNotSubtype("[[int]]","![any]");
+		checkIsSubtype("void|any","int|int");
 	}
 	@Test public void test_400() {
-		checkNotSubtype("[[int]]","![null]");
+		checkIsSubtype("void|any","[void]|void");
 	}
 	@Test public void test_401() {
-		checkNotSubtype("[[int]]","![int]");
+		checkIsSubtype("void|any","[any]|any");
 	}
 	@Test public void test_402() {
-		checkIsSubtype("[[int]]","!!void");
+		checkIsSubtype("void|any","[null]|null");
 	}
 	@Test public void test_403() {
-		checkNotSubtype("[[int]]","!!any");
+		checkIsSubtype("void|any","[int]|int");
 	}
 	@Test public void test_404() {
-		checkNotSubtype("[[int]]","!!null");
+		checkNotSubtype("void|null","any");
 	}
 	@Test public void test_405() {
-		checkNotSubtype("[[int]]","!!int");
+		checkIsSubtype("void|null","null");
 	}
 	@Test public void test_406() {
-		checkNotSubtype("[!void]","any");
+		checkNotSubtype("void|null","int");
 	}
 	@Test public void test_407() {
-		checkNotSubtype("[!void]","null");
+		checkNotSubtype("void|null","[void]");
 	}
 	@Test public void test_408() {
-		checkNotSubtype("[!void]","int");
+		checkNotSubtype("void|null","[any]");
 	}
 	@Test public void test_409() {
-		checkIsSubtype("[!void]","[void]");
+		checkNotSubtype("void|null","[null]");
 	}
 	@Test public void test_410() {
-		checkIsSubtype("[!void]","[any]");
+		checkNotSubtype("void|null","[int]");
 	}
 	@Test public void test_411() {
-		checkIsSubtype("[!void]","[null]");
+		checkNotSubtype("void|null","[[void]]");
 	}
 	@Test public void test_412() {
-		checkIsSubtype("[!void]","[int]");
+		checkNotSubtype("void|null","[[any]]");
 	}
 	@Test public void test_413() {
-		checkNotSubtype("[!void]","!void");
+		checkNotSubtype("void|null","[[null]]");
 	}
 	@Test public void test_414() {
-		checkIsSubtype("[!void]","!any");
+		checkNotSubtype("void|null","[[int]]");
 	}
 	@Test public void test_415() {
-		checkNotSubtype("[!void]","!null");
+		checkIsSubtype("void|null","void|void");
 	}
 	@Test public void test_416() {
-		checkNotSubtype("[!void]","!int");
+		checkNotSubtype("void|null","void|any");
 	}
 	@Test public void test_417() {
-		checkIsSubtype("[!void]","[[void]]");
+		checkIsSubtype("void|null","void|null");
 	}
 	@Test public void test_418() {
-		checkIsSubtype("[!void]","[[any]]");
+		checkNotSubtype("void|null","void|int");
 	}
 	@Test public void test_419() {
-		checkIsSubtype("[!void]","[[null]]");
+		checkNotSubtype("void|null","any|void");
 	}
 	@Test public void test_420() {
-		checkIsSubtype("[!void]","[[int]]");
+		checkNotSubtype("void|null","any|any");
 	}
 	@Test public void test_421() {
-		checkIsSubtype("[!void]","[!void]");
+		checkNotSubtype("void|null","any|null");
 	}
 	@Test public void test_422() {
-		checkIsSubtype("[!void]","[!any]");
+		checkNotSubtype("void|null","any|int");
 	}
 	@Test public void test_423() {
-		checkIsSubtype("[!void]","[!null]");
+		checkIsSubtype("void|null","null|void");
 	}
 	@Test public void test_424() {
-		checkIsSubtype("[!void]","[!int]");
+		checkNotSubtype("void|null","null|any");
 	}
 	@Test public void test_425() {
-		checkNotSubtype("[!void]","![void]");
+		checkIsSubtype("void|null","null|null");
 	}
 	@Test public void test_426() {
-		checkNotSubtype("[!void]","![any]");
+		checkNotSubtype("void|null","null|int");
 	}
 	@Test public void test_427() {
-		checkNotSubtype("[!void]","![null]");
+		checkNotSubtype("void|null","int|void");
 	}
 	@Test public void test_428() {
-		checkNotSubtype("[!void]","![int]");
+		checkNotSubtype("void|null","int|any");
 	}
 	@Test public void test_429() {
-		checkIsSubtype("[!void]","!!void");
+		checkNotSubtype("void|null","int|null");
 	}
 	@Test public void test_430() {
-		checkNotSubtype("[!void]","!!any");
+		checkNotSubtype("void|null","int|int");
 	}
 	@Test public void test_431() {
-		checkNotSubtype("[!void]","!!null");
+		checkNotSubtype("void|null","[void]|void");
 	}
 	@Test public void test_432() {
-		checkNotSubtype("[!void]","!!int");
+		checkNotSubtype("void|null","[any]|any");
 	}
 	@Test public void test_433() {
-		checkNotSubtype("[!any]","any");
+		checkNotSubtype("void|null","[null]|null");
 	}
 	@Test public void test_434() {
-		checkNotSubtype("[!any]","null");
+		checkNotSubtype("void|null","[int]|int");
 	}
 	@Test public void test_435() {
-		checkNotSubtype("[!any]","int");
+		checkNotSubtype("void|int","any");
 	}
 	@Test public void test_436() {
-		checkIsSubtype("[!any]","[void]");
+		checkNotSubtype("void|int","null");
 	}
 	@Test public void test_437() {
-		checkNotSubtype("[!any]","[any]");
+		checkIsSubtype("void|int","int");
 	}
 	@Test public void test_438() {
-		checkNotSubtype("[!any]","[null]");
+		checkNotSubtype("void|int","[void]");
 	}
 	@Test public void test_439() {
-		checkNotSubtype("[!any]","[int]");
+		checkNotSubtype("void|int","[any]");
 	}
 	@Test public void test_440() {
-		checkNotSubtype("[!any]","!void");
+		checkNotSubtype("void|int","[null]");
 	}
 	@Test public void test_441() {
-		checkIsSubtype("[!any]","!any");
+		checkNotSubtype("void|int","[int]");
 	}
 	@Test public void test_442() {
-		checkNotSubtype("[!any]","!null");
+		checkNotSubtype("void|int","[[void]]");
 	}
 	@Test public void test_443() {
-		checkNotSubtype("[!any]","!int");
+		checkNotSubtype("void|int","[[any]]");
 	}
 	@Test public void test_444() {
-		checkNotSubtype("[!any]","[[void]]");
+		checkNotSubtype("void|int","[[null]]");
 	}
 	@Test public void test_445() {
-		checkNotSubtype("[!any]","[[any]]");
+		checkNotSubtype("void|int","[[int]]");
 	}
 	@Test public void test_446() {
-		checkNotSubtype("[!any]","[[null]]");
+		checkIsSubtype("void|int","void|void");
 	}
 	@Test public void test_447() {
-		checkNotSubtype("[!any]","[[int]]");
+		checkNotSubtype("void|int","void|any");
 	}
 	@Test public void test_448() {
-		checkNotSubtype("[!any]","[!void]");
+		checkNotSubtype("void|int","void|null");
 	}
 	@Test public void test_449() {
-		checkIsSubtype("[!any]","[!any]");
+		checkIsSubtype("void|int","void|int");
 	}
 	@Test public void test_450() {
-		checkNotSubtype("[!any]","[!null]");
+		checkNotSubtype("void|int","any|void");
 	}
 	@Test public void test_451() {
-		checkNotSubtype("[!any]","[!int]");
+		checkNotSubtype("void|int","any|any");
 	}
 	@Test public void test_452() {
-		checkNotSubtype("[!any]","![void]");
+		checkNotSubtype("void|int","any|null");
 	}
 	@Test public void test_453() {
-		checkNotSubtype("[!any]","![any]");
+		checkNotSubtype("void|int","any|int");
 	}
 	@Test public void test_454() {
-		checkNotSubtype("[!any]","![null]");
+		checkNotSubtype("void|int","null|void");
 	}
 	@Test public void test_455() {
-		checkNotSubtype("[!any]","![int]");
+		checkNotSubtype("void|int","null|any");
 	}
 	@Test public void test_456() {
-		checkIsSubtype("[!any]","!!void");
+		checkNotSubtype("void|int","null|null");
 	}
 	@Test public void test_457() {
-		checkNotSubtype("[!any]","!!any");
+		checkNotSubtype("void|int","null|int");
 	}
 	@Test public void test_458() {
-		checkNotSubtype("[!any]","!!null");
+		checkIsSubtype("void|int","int|void");
 	}
 	@Test public void test_459() {
-		checkNotSubtype("[!any]","!!int");
+		checkNotSubtype("void|int","int|any");
 	}
 	@Test public void test_460() {
-		checkNotSubtype("[!null]","any");
+		checkNotSubtype("void|int","int|null");
 	}
 	@Test public void test_461() {
-		checkNotSubtype("[!null]","null");
+		checkIsSubtype("void|int","int|int");
 	}
 	@Test public void test_462() {
-		checkNotSubtype("[!null]","int");
+		checkNotSubtype("void|int","[void]|void");
 	}
 	@Test public void test_463() {
-		checkIsSubtype("[!null]","[void]");
+		checkNotSubtype("void|int","[any]|any");
 	}
 	@Test public void test_464() {
-		checkNotSubtype("[!null]","[any]");
+		checkNotSubtype("void|int","[null]|null");
 	}
 	@Test public void test_465() {
-		checkNotSubtype("[!null]","[null]");
+		checkNotSubtype("void|int","[int]|int");
 	}
 	@Test public void test_466() {
-		checkIsSubtype("[!null]","[int]");
+		checkIsSubtype("any|void","any");
 	}
 	@Test public void test_467() {
-		checkNotSubtype("[!null]","!void");
+		checkIsSubtype("any|void","null");
 	}
 	@Test public void test_468() {
-		checkIsSubtype("[!null]","!any");
+		checkIsSubtype("any|void","int");
 	}
 	@Test public void test_469() {
-		checkNotSubtype("[!null]","!null");
+		checkIsSubtype("any|void","[void]");
 	}
 	@Test public void test_470() {
-		checkNotSubtype("[!null]","!int");
+		checkIsSubtype("any|void","[any]");
 	}
 	@Test public void test_471() {
-		checkIsSubtype("[!null]","[[void]]");
+		checkIsSubtype("any|void","[null]");
 	}
 	@Test public void test_472() {
-		checkIsSubtype("[!null]","[[any]]");
+		checkIsSubtype("any|void","[int]");
 	}
 	@Test public void test_473() {
-		checkIsSubtype("[!null]","[[null]]");
+		checkIsSubtype("any|void","[[void]]");
 	}
 	@Test public void test_474() {
-		checkIsSubtype("[!null]","[[int]]");
+		checkIsSubtype("any|void","[[any]]");
 	}
 	@Test public void test_475() {
-		checkNotSubtype("[!null]","[!void]");
+		checkIsSubtype("any|void","[[null]]");
 	}
 	@Test public void test_476() {
-		checkIsSubtype("[!null]","[!any]");
+		checkIsSubtype("any|void","[[int]]");
 	}
 	@Test public void test_477() {
-		checkIsSubtype("[!null]","[!null]");
+		checkIsSubtype("any|void","void|void");
 	}
 	@Test public void test_478() {
-		checkNotSubtype("[!null]","[!int]");
+		checkIsSubtype("any|void","void|any");
 	}
 	@Test public void test_479() {
-		checkNotSubtype("[!null]","![void]");
+		checkIsSubtype("any|void","void|null");
 	}
 	@Test public void test_480() {
-		checkNotSubtype("[!null]","![any]");
+		checkIsSubtype("any|void","void|int");
 	}
 	@Test public void test_481() {
-		checkNotSubtype("[!null]","![null]");
+		checkIsSubtype("any|void","any|void");
 	}
 	@Test public void test_482() {
-		checkNotSubtype("[!null]","![int]");
+		checkIsSubtype("any|void","any|any");
 	}
 	@Test public void test_483() {
-		checkIsSubtype("[!null]","!!void");
+		checkIsSubtype("any|void","any|null");
 	}
 	@Test public void test_484() {
-		checkNotSubtype("[!null]","!!any");
+		checkIsSubtype("any|void","any|int");
 	}
 	@Test public void test_485() {
-		checkNotSubtype("[!null]","!!null");
+		checkIsSubtype("any|void","null|void");
 	}
 	@Test public void test_486() {
-		checkNotSubtype("[!null]","!!int");
+		checkIsSubtype("any|void","null|any");
 	}
 	@Test public void test_487() {
-		checkNotSubtype("[!int]","any");
+		checkIsSubtype("any|void","null|null");
 	}
 	@Test public void test_488() {
-		checkNotSubtype("[!int]","null");
+		checkIsSubtype("any|void","null|int");
 	}
 	@Test public void test_489() {
-		checkNotSubtype("[!int]","int");
+		checkIsSubtype("any|void","int|void");
 	}
 	@Test public void test_490() {
-		checkIsSubtype("[!int]","[void]");
+		checkIsSubtype("any|void","int|any");
 	}
 	@Test public void test_491() {
-		checkNotSubtype("[!int]","[any]");
+		checkIsSubtype("any|void","int|null");
 	}
 	@Test public void test_492() {
-		checkIsSubtype("[!int]","[null]");
+		checkIsSubtype("any|void","int|int");
 	}
 	@Test public void test_493() {
-		checkNotSubtype("[!int]","[int]");
+		checkIsSubtype("any|void","[void]|void");
 	}
 	@Test public void test_494() {
-		checkNotSubtype("[!int]","!void");
+		checkIsSubtype("any|void","[any]|any");
 	}
 	@Test public void test_495() {
-		checkIsSubtype("[!int]","!any");
+		checkIsSubtype("any|void","[null]|null");
 	}
 	@Test public void test_496() {
-		checkNotSubtype("[!int]","!null");
+		checkIsSubtype("any|void","[int]|int");
 	}
 	@Test public void test_497() {
-		checkNotSubtype("[!int]","!int");
+		checkIsSubtype("any|any","any");
 	}
 	@Test public void test_498() {
-		checkIsSubtype("[!int]","[[void]]");
+		checkIsSubtype("any|any","null");
 	}
 	@Test public void test_499() {
-		checkIsSubtype("[!int]","[[any]]");
+		checkIsSubtype("any|any","int");
 	}
 	@Test public void test_500() {
-		checkIsSubtype("[!int]","[[null]]");
+		checkIsSubtype("any|any","[void]");
 	}
 	@Test public void test_501() {
-		checkIsSubtype("[!int]","[[int]]");
+		checkIsSubtype("any|any","[any]");
 	}
 	@Test public void test_502() {
-		checkNotSubtype("[!int]","[!void]");
+		checkIsSubtype("any|any","[null]");
 	}
 	@Test public void test_503() {
-		checkIsSubtype("[!int]","[!any]");
+		checkIsSubtype("any|any","[int]");
 	}
 	@Test public void test_504() {
-		checkNotSubtype("[!int]","[!null]");
+		checkIsSubtype("any|any","[[void]]");
 	}
 	@Test public void test_505() {
-		checkIsSubtype("[!int]","[!int]");
+		checkIsSubtype("any|any","[[any]]");
 	}
 	@Test public void test_506() {
-		checkNotSubtype("[!int]","![void]");
+		checkIsSubtype("any|any","[[null]]");
 	}
 	@Test public void test_507() {
-		checkNotSubtype("[!int]","![any]");
+		checkIsSubtype("any|any","[[int]]");
 	}
 	@Test public void test_508() {
-		checkNotSubtype("[!int]","![null]");
+		checkIsSubtype("any|any","void|void");
 	}
 	@Test public void test_509() {
-		checkNotSubtype("[!int]","![int]");
+		checkIsSubtype("any|any","void|any");
 	}
 	@Test public void test_510() {
-		checkIsSubtype("[!int]","!!void");
+		checkIsSubtype("any|any","void|null");
 	}
 	@Test public void test_511() {
-		checkNotSubtype("[!int]","!!any");
+		checkIsSubtype("any|any","void|int");
 	}
 	@Test public void test_512() {
-		checkNotSubtype("[!int]","!!null");
+		checkIsSubtype("any|any","any|void");
 	}
 	@Test public void test_513() {
-		checkNotSubtype("[!int]","!!int");
+		checkIsSubtype("any|any","any|any");
 	}
 	@Test public void test_514() {
-		checkNotSubtype("![void]","any");
+		checkIsSubtype("any|any","any|null");
 	}
 	@Test public void test_515() {
-		checkIsSubtype("![void]","null");
+		checkIsSubtype("any|any","any|int");
 	}
 	@Test public void test_516() {
-		checkIsSubtype("![void]","int");
+		checkIsSubtype("any|any","null|void");
 	}
 	@Test public void test_517() {
-		checkNotSubtype("![void]","[void]");
+		checkIsSubtype("any|any","null|any");
 	}
 	@Test public void test_518() {
-		checkNotSubtype("![void]","[any]");
+		checkIsSubtype("any|any","null|null");
 	}
 	@Test public void test_519() {
-		checkNotSubtype("![void]","[null]");
+		checkIsSubtype("any|any","null|int");
 	}
 	@Test public void test_520() {
-		checkNotSubtype("![void]","[int]");
+		checkIsSubtype("any|any","int|void");
 	}
 	@Test public void test_521() {
-		checkNotSubtype("![void]","!void");
+		checkIsSubtype("any|any","int|any");
 	}
 	@Test public void test_522() {
-		checkIsSubtype("![void]","!any");
+		checkIsSubtype("any|any","int|null");
 	}
 	@Test public void test_523() {
-		checkNotSubtype("![void]","!null");
+		checkIsSubtype("any|any","int|int");
 	}
 	@Test public void test_524() {
-		checkNotSubtype("![void]","!int");
+		checkIsSubtype("any|any","[void]|void");
 	}
 	@Test public void test_525() {
-		checkNotSubtype("![void]","[[void]]");
+		checkIsSubtype("any|any","[any]|any");
 	}
 	@Test public void test_526() {
-		checkNotSubtype("![void]","[[any]]");
+		checkIsSubtype("any|any","[null]|null");
 	}
 	@Test public void test_527() {
-		checkNotSubtype("![void]","[[null]]");
+		checkIsSubtype("any|any","[int]|int");
 	}
 	@Test public void test_528() {
-		checkNotSubtype("![void]","[[int]]");
+		checkIsSubtype("any|null","any");
 	}
 	@Test public void test_529() {
-		checkNotSubtype("![void]","[!void]");
+		checkIsSubtype("any|null","null");
 	}
 	@Test public void test_530() {
-		checkNotSubtype("![void]","[!any]");
+		checkIsSubtype("any|null","int");
 	}
 	@Test public void test_531() {
-		checkNotSubtype("![void]","[!null]");
+		checkIsSubtype("any|null","[void]");
 	}
 	@Test public void test_532() {
-		checkNotSubtype("![void]","[!int]");
+		checkIsSubtype("any|null","[any]");
 	}
 	@Test public void test_533() {
-		checkIsSubtype("![void]","![void]");
+		checkIsSubtype("any|null","[null]");
 	}
 	@Test public void test_534() {
-		checkIsSubtype("![void]","![any]");
+		checkIsSubtype("any|null","[int]");
 	}
 	@Test public void test_535() {
-		checkIsSubtype("![void]","![null]");
+		checkIsSubtype("any|null","[[void]]");
 	}
 	@Test public void test_536() {
-		checkIsSubtype("![void]","![int]");
+		checkIsSubtype("any|null","[[any]]");
 	}
 	@Test public void test_537() {
-		checkIsSubtype("![void]","!!void");
+		checkIsSubtype("any|null","[[null]]");
 	}
 	@Test public void test_538() {
-		checkNotSubtype("![void]","!!any");
+		checkIsSubtype("any|null","[[int]]");
 	}
 	@Test public void test_539() {
-		checkIsSubtype("![void]","!!null");
+		checkIsSubtype("any|null","void|void");
 	}
 	@Test public void test_540() {
-		checkIsSubtype("![void]","!!int");
+		checkIsSubtype("any|null","void|any");
 	}
 	@Test public void test_541() {
-		checkNotSubtype("![any]","any");
+		checkIsSubtype("any|null","void|null");
 	}
 	@Test public void test_542() {
-		checkIsSubtype("![any]","null");
+		checkIsSubtype("any|null","void|int");
 	}
 	@Test public void test_543() {
-		checkIsSubtype("![any]","int");
+		checkIsSubtype("any|null","any|void");
 	}
 	@Test public void test_544() {
-		checkNotSubtype("![any]","[void]");
+		checkIsSubtype("any|null","any|any");
 	}
 	@Test public void test_545() {
-		checkNotSubtype("![any]","[any]");
+		checkIsSubtype("any|null","any|null");
 	}
 	@Test public void test_546() {
-		checkNotSubtype("![any]","[null]");
+		checkIsSubtype("any|null","any|int");
 	}
 	@Test public void test_547() {
-		checkNotSubtype("![any]","[int]");
+		checkIsSubtype("any|null","null|void");
 	}
 	@Test public void test_548() {
-		checkNotSubtype("![any]","!void");
+		checkIsSubtype("any|null","null|any");
 	}
 	@Test public void test_549() {
-		checkIsSubtype("![any]","!any");
+		checkIsSubtype("any|null","null|null");
 	}
 	@Test public void test_550() {
-		checkNotSubtype("![any]","!null");
+		checkIsSubtype("any|null","null|int");
 	}
 	@Test public void test_551() {
-		checkNotSubtype("![any]","!int");
+		checkIsSubtype("any|null","int|void");
 	}
 	@Test public void test_552() {
-		checkNotSubtype("![any]","[[void]]");
+		checkIsSubtype("any|null","int|any");
 	}
 	@Test public void test_553() {
-		checkNotSubtype("![any]","[[any]]");
+		checkIsSubtype("any|null","int|null");
 	}
 	@Test public void test_554() {
-		checkNotSubtype("![any]","[[null]]");
+		checkIsSubtype("any|null","int|int");
 	}
 	@Test public void test_555() {
-		checkNotSubtype("![any]","[[int]]");
+		checkIsSubtype("any|null","[void]|void");
 	}
 	@Test public void test_556() {
-		checkNotSubtype("![any]","[!void]");
+		checkIsSubtype("any|null","[any]|any");
 	}
 	@Test public void test_557() {
-		checkNotSubtype("![any]","[!any]");
+		checkIsSubtype("any|null","[null]|null");
 	}
 	@Test public void test_558() {
-		checkNotSubtype("![any]","[!null]");
+		checkIsSubtype("any|null","[int]|int");
 	}
 	@Test public void test_559() {
-		checkNotSubtype("![any]","[!int]");
+		checkIsSubtype("any|int","any");
 	}
 	@Test public void test_560() {
-		checkNotSubtype("![any]","![void]");
+		checkIsSubtype("any|int","null");
 	}
 	@Test public void test_561() {
-		checkIsSubtype("![any]","![any]");
+		checkIsSubtype("any|int","int");
 	}
 	@Test public void test_562() {
-		checkNotSubtype("![any]","![null]");
+		checkIsSubtype("any|int","[void]");
 	}
 	@Test public void test_563() {
-		checkNotSubtype("![any]","![int]");
+		checkIsSubtype("any|int","[any]");
 	}
 	@Test public void test_564() {
-		checkIsSubtype("![any]","!!void");
+		checkIsSubtype("any|int","[null]");
 	}
 	@Test public void test_565() {
-		checkNotSubtype("![any]","!!any");
+		checkIsSubtype("any|int","[int]");
 	}
 	@Test public void test_566() {
-		checkIsSubtype("![any]","!!null");
+		checkIsSubtype("any|int","[[void]]");
 	}
 	@Test public void test_567() {
-		checkIsSubtype("![any]","!!int");
+		checkIsSubtype("any|int","[[any]]");
 	}
 	@Test public void test_568() {
-		checkNotSubtype("![null]","any");
+		checkIsSubtype("any|int","[[null]]");
 	}
 	@Test public void test_569() {
-		checkIsSubtype("![null]","null");
+		checkIsSubtype("any|int","[[int]]");
 	}
 	@Test public void test_570() {
-		checkIsSubtype("![null]","int");
+		checkIsSubtype("any|int","void|void");
 	}
 	@Test public void test_571() {
-		checkNotSubtype("![null]","[void]");
+		checkIsSubtype("any|int","void|any");
 	}
 	@Test public void test_572() {
-		checkNotSubtype("![null]","[any]");
+		checkIsSubtype("any|int","void|null");
 	}
 	@Test public void test_573() {
-		checkNotSubtype("![null]","[null]");
+		checkIsSubtype("any|int","void|int");
 	}
 	@Test public void test_574() {
-		checkNotSubtype("![null]","[int]");
+		checkIsSubtype("any|int","any|void");
 	}
 	@Test public void test_575() {
-		checkNotSubtype("![null]","!void");
+		checkIsSubtype("any|int","any|any");
 	}
 	@Test public void test_576() {
-		checkIsSubtype("![null]","!any");
+		checkIsSubtype("any|int","any|null");
 	}
 	@Test public void test_577() {
-		checkNotSubtype("![null]","!null");
+		checkIsSubtype("any|int","any|int");
 	}
 	@Test public void test_578() {
-		checkNotSubtype("![null]","!int");
+		checkIsSubtype("any|int","null|void");
 	}
 	@Test public void test_579() {
-		checkNotSubtype("![null]","[[void]]");
+		checkIsSubtype("any|int","null|any");
 	}
 	@Test public void test_580() {
-		checkNotSubtype("![null]","[[any]]");
+		checkIsSubtype("any|int","null|null");
 	}
 	@Test public void test_581() {
-		checkNotSubtype("![null]","[[null]]");
+		checkIsSubtype("any|int","null|int");
 	}
 	@Test public void test_582() {
-		checkNotSubtype("![null]","[[int]]");
+		checkIsSubtype("any|int","int|void");
 	}
 	@Test public void test_583() {
-		checkNotSubtype("![null]","[!void]");
+		checkIsSubtype("any|int","int|any");
 	}
 	@Test public void test_584() {
-		checkNotSubtype("![null]","[!any]");
+		checkIsSubtype("any|int","int|null");
 	}
 	@Test public void test_585() {
-		checkNotSubtype("![null]","[!null]");
+		checkIsSubtype("any|int","int|int");
 	}
 	@Test public void test_586() {
-		checkNotSubtype("![null]","[!int]");
+		checkIsSubtype("any|int","[void]|void");
 	}
 	@Test public void test_587() {
-		checkNotSubtype("![null]","![void]");
+		checkIsSubtype("any|int","[any]|any");
 	}
 	@Test public void test_588() {
-		checkIsSubtype("![null]","![any]");
+		checkIsSubtype("any|int","[null]|null");
 	}
 	@Test public void test_589() {
-		checkIsSubtype("![null]","![null]");
+		checkIsSubtype("any|int","[int]|int");
 	}
 	@Test public void test_590() {
-		checkNotSubtype("![null]","![int]");
+		checkNotSubtype("null|void","any");
 	}
 	@Test public void test_591() {
-		checkIsSubtype("![null]","!!void");
+		checkIsSubtype("null|void","null");
 	}
 	@Test public void test_592() {
-		checkNotSubtype("![null]","!!any");
+		checkNotSubtype("null|void","int");
 	}
 	@Test public void test_593() {
-		checkIsSubtype("![null]","!!null");
+		checkNotSubtype("null|void","[void]");
 	}
 	@Test public void test_594() {
-		checkIsSubtype("![null]","!!int");
+		checkNotSubtype("null|void","[any]");
 	}
 	@Test public void test_595() {
-		checkNotSubtype("![int]","any");
+		checkNotSubtype("null|void","[null]");
 	}
 	@Test public void test_596() {
-		checkIsSubtype("![int]","null");
+		checkNotSubtype("null|void","[int]");
 	}
 	@Test public void test_597() {
-		checkIsSubtype("![int]","int");
+		checkNotSubtype("null|void","[[void]]");
 	}
 	@Test public void test_598() {
-		checkNotSubtype("![int]","[void]");
+		checkNotSubtype("null|void","[[any]]");
 	}
 	@Test public void test_599() {
-		checkNotSubtype("![int]","[any]");
+		checkNotSubtype("null|void","[[null]]");
 	}
 	@Test public void test_600() {
-		checkNotSubtype("![int]","[null]");
+		checkNotSubtype("null|void","[[int]]");
 	}
 	@Test public void test_601() {
-		checkNotSubtype("![int]","[int]");
+		checkIsSubtype("null|void","void|void");
 	}
 	@Test public void test_602() {
-		checkNotSubtype("![int]","!void");
+		checkNotSubtype("null|void","void|any");
 	}
 	@Test public void test_603() {
-		checkIsSubtype("![int]","!any");
+		checkIsSubtype("null|void","void|null");
 	}
 	@Test public void test_604() {
-		checkNotSubtype("![int]","!null");
+		checkNotSubtype("null|void","void|int");
 	}
 	@Test public void test_605() {
-		checkNotSubtype("![int]","!int");
+		checkNotSubtype("null|void","any|void");
 	}
 	@Test public void test_606() {
-		checkNotSubtype("![int]","[[void]]");
+		checkNotSubtype("null|void","any|any");
 	}
 	@Test public void test_607() {
-		checkNotSubtype("![int]","[[any]]");
+		checkNotSubtype("null|void","any|null");
 	}
 	@Test public void test_608() {
-		checkNotSubtype("![int]","[[null]]");
+		checkNotSubtype("null|void","any|int");
 	}
 	@Test public void test_609() {
-		checkNotSubtype("![int]","[[int]]");
+		checkIsSubtype("null|void","null|void");
 	}
 	@Test public void test_610() {
-		checkNotSubtype("![int]","[!void]");
+		checkNotSubtype("null|void","null|any");
 	}
 	@Test public void test_611() {
-		checkNotSubtype("![int]","[!any]");
+		checkIsSubtype("null|void","null|null");
 	}
 	@Test public void test_612() {
-		checkNotSubtype("![int]","[!null]");
+		checkNotSubtype("null|void","null|int");
 	}
 	@Test public void test_613() {
-		checkNotSubtype("![int]","[!int]");
+		checkNotSubtype("null|void","int|void");
 	}
 	@Test public void test_614() {
-		checkNotSubtype("![int]","![void]");
+		checkNotSubtype("null|void","int|any");
 	}
 	@Test public void test_615() {
-		checkIsSubtype("![int]","![any]");
+		checkNotSubtype("null|void","int|null");
 	}
 	@Test public void test_616() {
-		checkNotSubtype("![int]","![null]");
+		checkNotSubtype("null|void","int|int");
 	}
 	@Test public void test_617() {
-		checkIsSubtype("![int]","![int]");
+		checkNotSubtype("null|void","[void]|void");
 	}
 	@Test public void test_618() {
-		checkIsSubtype("![int]","!!void");
+		checkNotSubtype("null|void","[any]|any");
 	}
 	@Test public void test_619() {
-		checkNotSubtype("![int]","!!any");
+		checkNotSubtype("null|void","[null]|null");
 	}
 	@Test public void test_620() {
-		checkIsSubtype("![int]","!!null");
+		checkNotSubtype("null|void","[int]|int");
 	}
 	@Test public void test_621() {
-		checkIsSubtype("![int]","!!int");
+		checkIsSubtype("null|any","any");
 	}
 	@Test public void test_622() {
-		checkNotSubtype("!!void","any");
+		checkIsSubtype("null|any","null");
 	}
 	@Test public void test_623() {
-		checkNotSubtype("!!void","null");
+		checkIsSubtype("null|any","int");
 	}
 	@Test public void test_624() {
-		checkNotSubtype("!!void","int");
+		checkIsSubtype("null|any","[void]");
 	}
 	@Test public void test_625() {
-		checkNotSubtype("!!void","[void]");
+		checkIsSubtype("null|any","[any]");
 	}
 	@Test public void test_626() {
-		checkNotSubtype("!!void","[any]");
+		checkIsSubtype("null|any","[null]");
 	}
 	@Test public void test_627() {
-		checkNotSubtype("!!void","[null]");
+		checkIsSubtype("null|any","[int]");
 	}
 	@Test public void test_628() {
-		checkNotSubtype("!!void","[int]");
+		checkIsSubtype("null|any","[[void]]");
 	}
 	@Test public void test_629() {
-		checkNotSubtype("!!void","!void");
+		checkIsSubtype("null|any","[[any]]");
 	}
 	@Test public void test_630() {
-		checkIsSubtype("!!void","!any");
+		checkIsSubtype("null|any","[[null]]");
 	}
 	@Test public void test_631() {
-		checkNotSubtype("!!void","!null");
+		checkIsSubtype("null|any","[[int]]");
 	}
 	@Test public void test_632() {
-		checkNotSubtype("!!void","!int");
+		checkIsSubtype("null|any","void|void");
 	}
 	@Test public void test_633() {
-		checkNotSubtype("!!void","[[void]]");
+		checkIsSubtype("null|any","void|any");
 	}
 	@Test public void test_634() {
-		checkNotSubtype("!!void","[[any]]");
+		checkIsSubtype("null|any","void|null");
 	}
 	@Test public void test_635() {
-		checkNotSubtype("!!void","[[null]]");
+		checkIsSubtype("null|any","void|int");
 	}
 	@Test public void test_636() {
-		checkNotSubtype("!!void","[[int]]");
+		checkIsSubtype("null|any","any|void");
 	}
 	@Test public void test_637() {
-		checkNotSubtype("!!void","[!void]");
+		checkIsSubtype("null|any","any|any");
 	}
 	@Test public void test_638() {
-		checkNotSubtype("!!void","[!any]");
+		checkIsSubtype("null|any","any|null");
 	}
 	@Test public void test_639() {
-		checkNotSubtype("!!void","[!null]");
+		checkIsSubtype("null|any","any|int");
 	}
 	@Test public void test_640() {
-		checkNotSubtype("!!void","[!int]");
+		checkIsSubtype("null|any","null|void");
 	}
 	@Test public void test_641() {
-		checkNotSubtype("!!void","![void]");
+		checkIsSubtype("null|any","null|any");
 	}
 	@Test public void test_642() {
-		checkNotSubtype("!!void","![any]");
+		checkIsSubtype("null|any","null|null");
 	}
 	@Test public void test_643() {
-		checkNotSubtype("!!void","![null]");
+		checkIsSubtype("null|any","null|int");
 	}
 	@Test public void test_644() {
-		checkNotSubtype("!!void","![int]");
+		checkIsSubtype("null|any","int|void");
 	}
 	@Test public void test_645() {
-		checkIsSubtype("!!void","!!void");
+		checkIsSubtype("null|any","int|any");
 	}
 	@Test public void test_646() {
-		checkNotSubtype("!!void","!!any");
+		checkIsSubtype("null|any","int|null");
 	}
 	@Test public void test_647() {
-		checkNotSubtype("!!void","!!null");
+		checkIsSubtype("null|any","int|int");
 	}
 	@Test public void test_648() {
-		checkNotSubtype("!!void","!!int");
+		checkIsSubtype("null|any","[void]|void");
 	}
 	@Test public void test_649() {
-		checkIsSubtype("!!any","any");
+		checkIsSubtype("null|any","[any]|any");
 	}
 	@Test public void test_650() {
-		checkIsSubtype("!!any","null");
+		checkIsSubtype("null|any","[null]|null");
 	}
 	@Test public void test_651() {
-		checkIsSubtype("!!any","int");
+		checkIsSubtype("null|any","[int]|int");
 	}
 	@Test public void test_652() {
-		checkIsSubtype("!!any","[void]");
+		checkNotSubtype("null|null","any");
 	}
 	@Test public void test_653() {
-		checkIsSubtype("!!any","[any]");
+		checkIsSubtype("null|null","null");
 	}
 	@Test public void test_654() {
-		checkIsSubtype("!!any","[null]");
+		checkNotSubtype("null|null","int");
 	}
 	@Test public void test_655() {
-		checkIsSubtype("!!any","[int]");
+		checkNotSubtype("null|null","[void]");
 	}
 	@Test public void test_656() {
-		checkIsSubtype("!!any","!void");
+		checkNotSubtype("null|null","[any]");
 	}
 	@Test public void test_657() {
-		checkIsSubtype("!!any","!any");
+		checkNotSubtype("null|null","[null]");
 	}
 	@Test public void test_658() {
-		checkIsSubtype("!!any","!null");
+		checkNotSubtype("null|null","[int]");
 	}
 	@Test public void test_659() {
-		checkIsSubtype("!!any","!int");
+		checkNotSubtype("null|null","[[void]]");
 	}
 	@Test public void test_660() {
-		checkIsSubtype("!!any","[[void]]");
+		checkNotSubtype("null|null","[[any]]");
 	}
 	@Test public void test_661() {
-		checkIsSubtype("!!any","[[any]]");
+		checkNotSubtype("null|null","[[null]]");
 	}
 	@Test public void test_662() {
-		checkIsSubtype("!!any","[[null]]");
+		checkNotSubtype("null|null","[[int]]");
 	}
 	@Test public void test_663() {
-		checkIsSubtype("!!any","[[int]]");
+		checkIsSubtype("null|null","void|void");
 	}
 	@Test public void test_664() {
-		checkIsSubtype("!!any","[!void]");
+		checkNotSubtype("null|null","void|any");
 	}
 	@Test public void test_665() {
-		checkIsSubtype("!!any","[!any]");
+		checkIsSubtype("null|null","void|null");
 	}
 	@Test public void test_666() {
-		checkIsSubtype("!!any","[!null]");
+		checkNotSubtype("null|null","void|int");
 	}
 	@Test public void test_667() {
-		checkIsSubtype("!!any","[!int]");
+		checkNotSubtype("null|null","any|void");
 	}
 	@Test public void test_668() {
-		checkIsSubtype("!!any","![void]");
+		checkNotSubtype("null|null","any|any");
 	}
 	@Test public void test_669() {
-		checkIsSubtype("!!any","![any]");
+		checkNotSubtype("null|null","any|null");
 	}
 	@Test public void test_670() {
-		checkIsSubtype("!!any","![null]");
+		checkNotSubtype("null|null","any|int");
 	}
 	@Test public void test_671() {
-		checkIsSubtype("!!any","![int]");
+		checkIsSubtype("null|null","null|void");
 	}
 	@Test public void test_672() {
-		checkIsSubtype("!!any","!!void");
+		checkNotSubtype("null|null","null|any");
 	}
 	@Test public void test_673() {
-		checkIsSubtype("!!any","!!any");
+		checkIsSubtype("null|null","null|null");
 	}
 	@Test public void test_674() {
-		checkIsSubtype("!!any","!!null");
+		checkNotSubtype("null|null","null|int");
 	}
 	@Test public void test_675() {
-		checkIsSubtype("!!any","!!int");
+		checkNotSubtype("null|null","int|void");
 	}
 	@Test public void test_676() {
-		checkNotSubtype("!!null","any");
+		checkNotSubtype("null|null","int|any");
 	}
 	@Test public void test_677() {
-		checkIsSubtype("!!null","null");
+		checkNotSubtype("null|null","int|null");
 	}
 	@Test public void test_678() {
-		checkNotSubtype("!!null","int");
+		checkNotSubtype("null|null","int|int");
 	}
 	@Test public void test_679() {
-		checkNotSubtype("!!null","[void]");
+		checkNotSubtype("null|null","[void]|void");
 	}
 	@Test public void test_680() {
-		checkNotSubtype("!!null","[any]");
+		checkNotSubtype("null|null","[any]|any");
 	}
 	@Test public void test_681() {
-		checkNotSubtype("!!null","[null]");
+		checkNotSubtype("null|null","[null]|null");
 	}
 	@Test public void test_682() {
-		checkNotSubtype("!!null","[int]");
+		checkNotSubtype("null|null","[int]|int");
 	}
 	@Test public void test_683() {
-		checkNotSubtype("!!null","!void");
+		checkNotSubtype("null|int","any");
 	}
 	@Test public void test_684() {
-		checkIsSubtype("!!null","!any");
+		checkIsSubtype("null|int","null");
 	}
 	@Test public void test_685() {
-		checkNotSubtype("!!null","!null");
+		checkIsSubtype("null|int","int");
 	}
 	@Test public void test_686() {
-		checkNotSubtype("!!null","!int");
+		checkNotSubtype("null|int","[void]");
 	}
 	@Test public void test_687() {
-		checkNotSubtype("!!null","[[void]]");
+		checkNotSubtype("null|int","[any]");
 	}
 	@Test public void test_688() {
-		checkNotSubtype("!!null","[[any]]");
+		checkNotSubtype("null|int","[null]");
 	}
 	@Test public void test_689() {
-		checkNotSubtype("!!null","[[null]]");
+		checkNotSubtype("null|int","[int]");
 	}
 	@Test public void test_690() {
-		checkNotSubtype("!!null","[[int]]");
+		checkNotSubtype("null|int","[[void]]");
 	}
 	@Test public void test_691() {
-		checkNotSubtype("!!null","[!void]");
+		checkNotSubtype("null|int","[[any]]");
 	}
 	@Test public void test_692() {
-		checkNotSubtype("!!null","[!any]");
+		checkNotSubtype("null|int","[[null]]");
 	}
 	@Test public void test_693() {
-		checkNotSubtype("!!null","[!null]");
+		checkNotSubtype("null|int","[[int]]");
 	}
 	@Test public void test_694() {
-		checkNotSubtype("!!null","[!int]");
+		checkIsSubtype("null|int","void|void");
 	}
 	@Test public void test_695() {
-		checkNotSubtype("!!null","![void]");
+		checkNotSubtype("null|int","void|any");
 	}
 	@Test public void test_696() {
-		checkNotSubtype("!!null","![any]");
+		checkIsSubtype("null|int","void|null");
 	}
 	@Test public void test_697() {
-		checkNotSubtype("!!null","![null]");
+		checkIsSubtype("null|int","void|int");
 	}
 	@Test public void test_698() {
-		checkNotSubtype("!!null","![int]");
+		checkNotSubtype("null|int","any|void");
 	}
 	@Test public void test_699() {
-		checkIsSubtype("!!null","!!void");
+		checkNotSubtype("null|int","any|any");
 	}
 	@Test public void test_700() {
-		checkNotSubtype("!!null","!!any");
+		checkNotSubtype("null|int","any|null");
 	}
 	@Test public void test_701() {
-		checkIsSubtype("!!null","!!null");
+		checkNotSubtype("null|int","any|int");
 	}
 	@Test public void test_702() {
-		checkNotSubtype("!!null","!!int");
+		checkIsSubtype("null|int","null|void");
 	}
 	@Test public void test_703() {
-		checkNotSubtype("!!int","any");
+		checkNotSubtype("null|int","null|any");
 	}
 	@Test public void test_704() {
-		checkNotSubtype("!!int","null");
+		checkIsSubtype("null|int","null|null");
 	}
 	@Test public void test_705() {
-		checkIsSubtype("!!int","int");
+		checkIsSubtype("null|int","null|int");
 	}
 	@Test public void test_706() {
-		checkNotSubtype("!!int","[void]");
+		checkIsSubtype("null|int","int|void");
 	}
 	@Test public void test_707() {
-		checkNotSubtype("!!int","[any]");
+		checkNotSubtype("null|int","int|any");
 	}
 	@Test public void test_708() {
-		checkNotSubtype("!!int","[null]");
+		checkIsSubtype("null|int","int|null");
 	}
 	@Test public void test_709() {
-		checkNotSubtype("!!int","[int]");
+		checkIsSubtype("null|int","int|int");
 	}
 	@Test public void test_710() {
-		checkNotSubtype("!!int","!void");
+		checkNotSubtype("null|int","[void]|void");
 	}
 	@Test public void test_711() {
-		checkIsSubtype("!!int","!any");
+		checkNotSubtype("null|int","[any]|any");
 	}
 	@Test public void test_712() {
-		checkNotSubtype("!!int","!null");
+		checkNotSubtype("null|int","[null]|null");
 	}
 	@Test public void test_713() {
-		checkNotSubtype("!!int","!int");
+		checkNotSubtype("null|int","[int]|int");
 	}
 	@Test public void test_714() {
-		checkNotSubtype("!!int","[[void]]");
+		checkNotSubtype("int|void","any");
 	}
 	@Test public void test_715() {
-		checkNotSubtype("!!int","[[any]]");
+		checkNotSubtype("int|void","null");
 	}
 	@Test public void test_716() {
-		checkNotSubtype("!!int","[[null]]");
+		checkIsSubtype("int|void","int");
 	}
 	@Test public void test_717() {
-		checkNotSubtype("!!int","[[int]]");
+		checkNotSubtype("int|void","[void]");
 	}
 	@Test public void test_718() {
-		checkNotSubtype("!!int","[!void]");
+		checkNotSubtype("int|void","[any]");
 	}
 	@Test public void test_719() {
-		checkNotSubtype("!!int","[!any]");
+		checkNotSubtype("int|void","[null]");
 	}
 	@Test public void test_720() {
-		checkNotSubtype("!!int","[!null]");
+		checkNotSubtype("int|void","[int]");
 	}
 	@Test public void test_721() {
-		checkNotSubtype("!!int","[!int]");
+		checkNotSubtype("int|void","[[void]]");
 	}
 	@Test public void test_722() {
-		checkNotSubtype("!!int","![void]");
+		checkNotSubtype("int|void","[[any]]");
 	}
 	@Test public void test_723() {
-		checkNotSubtype("!!int","![any]");
+		checkNotSubtype("int|void","[[null]]");
 	}
 	@Test public void test_724() {
-		checkNotSubtype("!!int","![null]");
+		checkNotSubtype("int|void","[[int]]");
 	}
 	@Test public void test_725() {
-		checkNotSubtype("!!int","![int]");
+		checkIsSubtype("int|void","void|void");
 	}
 	@Test public void test_726() {
-		checkIsSubtype("!!int","!!void");
+		checkNotSubtype("int|void","void|any");
 	}
 	@Test public void test_727() {
-		checkNotSubtype("!!int","!!any");
+		checkNotSubtype("int|void","void|null");
 	}
 	@Test public void test_728() {
-		checkNotSubtype("!!int","!!null");
+		checkIsSubtype("int|void","void|int");
 	}
 	@Test public void test_729() {
-		checkIsSubtype("!!int","!!int");
+		checkNotSubtype("int|void","any|void");
+	}
+	@Test public void test_730() {
+		checkNotSubtype("int|void","any|any");
+	}
+	@Test public void test_731() {
+		checkNotSubtype("int|void","any|null");
+	}
+	@Test public void test_732() {
+		checkNotSubtype("int|void","any|int");
+	}
+	@Test public void test_733() {
+		checkNotSubtype("int|void","null|void");
+	}
+	@Test public void test_734() {
+		checkNotSubtype("int|void","null|any");
+	}
+	@Test public void test_735() {
+		checkNotSubtype("int|void","null|null");
+	}
+	@Test public void test_736() {
+		checkNotSubtype("int|void","null|int");
+	}
+	@Test public void test_737() {
+		checkIsSubtype("int|void","int|void");
+	}
+	@Test public void test_738() {
+		checkNotSubtype("int|void","int|any");
+	}
+	@Test public void test_739() {
+		checkNotSubtype("int|void","int|null");
+	}
+	@Test public void test_740() {
+		checkIsSubtype("int|void","int|int");
+	}
+	@Test public void test_741() {
+		checkNotSubtype("int|void","[void]|void");
+	}
+	@Test public void test_742() {
+		checkNotSubtype("int|void","[any]|any");
+	}
+	@Test public void test_743() {
+		checkNotSubtype("int|void","[null]|null");
+	}
+	@Test public void test_744() {
+		checkNotSubtype("int|void","[int]|int");
+	}
+	@Test public void test_745() {
+		checkIsSubtype("int|any","any");
+	}
+	@Test public void test_746() {
+		checkIsSubtype("int|any","null");
+	}
+	@Test public void test_747() {
+		checkIsSubtype("int|any","int");
+	}
+	@Test public void test_748() {
+		checkIsSubtype("int|any","[void]");
+	}
+	@Test public void test_749() {
+		checkIsSubtype("int|any","[any]");
+	}
+	@Test public void test_750() {
+		checkIsSubtype("int|any","[null]");
+	}
+	@Test public void test_751() {
+		checkIsSubtype("int|any","[int]");
+	}
+	@Test public void test_752() {
+		checkIsSubtype("int|any","[[void]]");
+	}
+	@Test public void test_753() {
+		checkIsSubtype("int|any","[[any]]");
+	}
+	@Test public void test_754() {
+		checkIsSubtype("int|any","[[null]]");
+	}
+	@Test public void test_755() {
+		checkIsSubtype("int|any","[[int]]");
+	}
+	@Test public void test_756() {
+		checkIsSubtype("int|any","void|void");
+	}
+	@Test public void test_757() {
+		checkIsSubtype("int|any","void|any");
+	}
+	@Test public void test_758() {
+		checkIsSubtype("int|any","void|null");
+	}
+	@Test public void test_759() {
+		checkIsSubtype("int|any","void|int");
+	}
+	@Test public void test_760() {
+		checkIsSubtype("int|any","any|void");
+	}
+	@Test public void test_761() {
+		checkIsSubtype("int|any","any|any");
+	}
+	@Test public void test_762() {
+		checkIsSubtype("int|any","any|null");
+	}
+	@Test public void test_763() {
+		checkIsSubtype("int|any","any|int");
+	}
+	@Test public void test_764() {
+		checkIsSubtype("int|any","null|void");
+	}
+	@Test public void test_765() {
+		checkIsSubtype("int|any","null|any");
+	}
+	@Test public void test_766() {
+		checkIsSubtype("int|any","null|null");
+	}
+	@Test public void test_767() {
+		checkIsSubtype("int|any","null|int");
+	}
+	@Test public void test_768() {
+		checkIsSubtype("int|any","int|void");
+	}
+	@Test public void test_769() {
+		checkIsSubtype("int|any","int|any");
+	}
+	@Test public void test_770() {
+		checkIsSubtype("int|any","int|null");
+	}
+	@Test public void test_771() {
+		checkIsSubtype("int|any","int|int");
+	}
+	@Test public void test_772() {
+		checkIsSubtype("int|any","[void]|void");
+	}
+	@Test public void test_773() {
+		checkIsSubtype("int|any","[any]|any");
+	}
+	@Test public void test_774() {
+		checkIsSubtype("int|any","[null]|null");
+	}
+	@Test public void test_775() {
+		checkIsSubtype("int|any","[int]|int");
+	}
+	@Test public void test_776() {
+		checkNotSubtype("int|null","any");
+	}
+	@Test public void test_777() {
+		checkIsSubtype("int|null","null");
+	}
+	@Test public void test_778() {
+		checkIsSubtype("int|null","int");
+	}
+	@Test public void test_779() {
+		checkNotSubtype("int|null","[void]");
+	}
+	@Test public void test_780() {
+		checkNotSubtype("int|null","[any]");
+	}
+	@Test public void test_781() {
+		checkNotSubtype("int|null","[null]");
+	}
+	@Test public void test_782() {
+		checkNotSubtype("int|null","[int]");
+	}
+	@Test public void test_783() {
+		checkNotSubtype("int|null","[[void]]");
+	}
+	@Test public void test_784() {
+		checkNotSubtype("int|null","[[any]]");
+	}
+	@Test public void test_785() {
+		checkNotSubtype("int|null","[[null]]");
+	}
+	@Test public void test_786() {
+		checkNotSubtype("int|null","[[int]]");
+	}
+	@Test public void test_787() {
+		checkIsSubtype("int|null","void|void");
+	}
+	@Test public void test_788() {
+		checkNotSubtype("int|null","void|any");
+	}
+	@Test public void test_789() {
+		checkIsSubtype("int|null","void|null");
+	}
+	@Test public void test_790() {
+		checkIsSubtype("int|null","void|int");
+	}
+	@Test public void test_791() {
+		checkNotSubtype("int|null","any|void");
+	}
+	@Test public void test_792() {
+		checkNotSubtype("int|null","any|any");
+	}
+	@Test public void test_793() {
+		checkNotSubtype("int|null","any|null");
+	}
+	@Test public void test_794() {
+		checkNotSubtype("int|null","any|int");
+	}
+	@Test public void test_795() {
+		checkIsSubtype("int|null","null|void");
+	}
+	@Test public void test_796() {
+		checkNotSubtype("int|null","null|any");
+	}
+	@Test public void test_797() {
+		checkIsSubtype("int|null","null|null");
+	}
+	@Test public void test_798() {
+		checkIsSubtype("int|null","null|int");
+	}
+	@Test public void test_799() {
+		checkIsSubtype("int|null","int|void");
+	}
+	@Test public void test_800() {
+		checkNotSubtype("int|null","int|any");
+	}
+	@Test public void test_801() {
+		checkIsSubtype("int|null","int|null");
+	}
+	@Test public void test_802() {
+		checkIsSubtype("int|null","int|int");
+	}
+	@Test public void test_803() {
+		checkNotSubtype("int|null","[void]|void");
+	}
+	@Test public void test_804() {
+		checkNotSubtype("int|null","[any]|any");
+	}
+	@Test public void test_805() {
+		checkNotSubtype("int|null","[null]|null");
+	}
+	@Test public void test_806() {
+		checkNotSubtype("int|null","[int]|int");
+	}
+	@Test public void test_807() {
+		checkNotSubtype("int|int","any");
+	}
+	@Test public void test_808() {
+		checkNotSubtype("int|int","null");
+	}
+	@Test public void test_809() {
+		checkIsSubtype("int|int","int");
+	}
+	@Test public void test_810() {
+		checkNotSubtype("int|int","[void]");
+	}
+	@Test public void test_811() {
+		checkNotSubtype("int|int","[any]");
+	}
+	@Test public void test_812() {
+		checkNotSubtype("int|int","[null]");
+	}
+	@Test public void test_813() {
+		checkNotSubtype("int|int","[int]");
+	}
+	@Test public void test_814() {
+		checkNotSubtype("int|int","[[void]]");
+	}
+	@Test public void test_815() {
+		checkNotSubtype("int|int","[[any]]");
+	}
+	@Test public void test_816() {
+		checkNotSubtype("int|int","[[null]]");
+	}
+	@Test public void test_817() {
+		checkNotSubtype("int|int","[[int]]");
+	}
+	@Test public void test_818() {
+		checkIsSubtype("int|int","void|void");
+	}
+	@Test public void test_819() {
+		checkNotSubtype("int|int","void|any");
+	}
+	@Test public void test_820() {
+		checkNotSubtype("int|int","void|null");
+	}
+	@Test public void test_821() {
+		checkIsSubtype("int|int","void|int");
+	}
+	@Test public void test_822() {
+		checkNotSubtype("int|int","any|void");
+	}
+	@Test public void test_823() {
+		checkNotSubtype("int|int","any|any");
+	}
+	@Test public void test_824() {
+		checkNotSubtype("int|int","any|null");
+	}
+	@Test public void test_825() {
+		checkNotSubtype("int|int","any|int");
+	}
+	@Test public void test_826() {
+		checkNotSubtype("int|int","null|void");
+	}
+	@Test public void test_827() {
+		checkNotSubtype("int|int","null|any");
+	}
+	@Test public void test_828() {
+		checkNotSubtype("int|int","null|null");
+	}
+	@Test public void test_829() {
+		checkNotSubtype("int|int","null|int");
+	}
+	@Test public void test_830() {
+		checkIsSubtype("int|int","int|void");
+	}
+	@Test public void test_831() {
+		checkNotSubtype("int|int","int|any");
+	}
+	@Test public void test_832() {
+		checkNotSubtype("int|int","int|null");
+	}
+	@Test public void test_833() {
+		checkIsSubtype("int|int","int|int");
+	}
+	@Test public void test_834() {
+		checkNotSubtype("int|int","[void]|void");
+	}
+	@Test public void test_835() {
+		checkNotSubtype("int|int","[any]|any");
+	}
+	@Test public void test_836() {
+		checkNotSubtype("int|int","[null]|null");
+	}
+	@Test public void test_837() {
+		checkNotSubtype("int|int","[int]|int");
+	}
+	@Test public void test_838() {
+		checkNotSubtype("[void]|void","any");
+	}
+	@Test public void test_839() {
+		checkNotSubtype("[void]|void","null");
+	}
+	@Test public void test_840() {
+		checkNotSubtype("[void]|void","int");
+	}
+	@Test public void test_841() {
+		checkIsSubtype("[void]|void","[void]");
+	}
+	@Test public void test_842() {
+		checkNotSubtype("[void]|void","[any]");
+	}
+	@Test public void test_843() {
+		checkNotSubtype("[void]|void","[null]");
+	}
+	@Test public void test_844() {
+		checkNotSubtype("[void]|void","[int]");
+	}
+	@Test public void test_845() {
+		checkNotSubtype("[void]|void","[[void]]");
+	}
+	@Test public void test_846() {
+		checkNotSubtype("[void]|void","[[any]]");
+	}
+	@Test public void test_847() {
+		checkNotSubtype("[void]|void","[[null]]");
+	}
+	@Test public void test_848() {
+		checkNotSubtype("[void]|void","[[int]]");
+	}
+	@Test public void test_849() {
+		checkIsSubtype("[void]|void","void|void");
+	}
+	@Test public void test_850() {
+		checkNotSubtype("[void]|void","void|any");
+	}
+	@Test public void test_851() {
+		checkNotSubtype("[void]|void","void|null");
+	}
+	@Test public void test_852() {
+		checkNotSubtype("[void]|void","void|int");
+	}
+	@Test public void test_853() {
+		checkNotSubtype("[void]|void","any|void");
+	}
+	@Test public void test_854() {
+		checkNotSubtype("[void]|void","any|any");
+	}
+	@Test public void test_855() {
+		checkNotSubtype("[void]|void","any|null");
+	}
+	@Test public void test_856() {
+		checkNotSubtype("[void]|void","any|int");
+	}
+	@Test public void test_857() {
+		checkNotSubtype("[void]|void","null|void");
+	}
+	@Test public void test_858() {
+		checkNotSubtype("[void]|void","null|any");
+	}
+	@Test public void test_859() {
+		checkNotSubtype("[void]|void","null|null");
+	}
+	@Test public void test_860() {
+		checkNotSubtype("[void]|void","null|int");
+	}
+	@Test public void test_861() {
+		checkNotSubtype("[void]|void","int|void");
+	}
+	@Test public void test_862() {
+		checkNotSubtype("[void]|void","int|any");
+	}
+	@Test public void test_863() {
+		checkNotSubtype("[void]|void","int|null");
+	}
+	@Test public void test_864() {
+		checkNotSubtype("[void]|void","int|int");
+	}
+	@Test public void test_865() {
+		checkIsSubtype("[void]|void","[void]|void");
+	}
+	@Test public void test_866() {
+		checkNotSubtype("[void]|void","[any]|any");
+	}
+	@Test public void test_867() {
+		checkNotSubtype("[void]|void","[null]|null");
+	}
+	@Test public void test_868() {
+		checkNotSubtype("[void]|void","[int]|int");
+	}
+	@Test public void test_869() {
+		checkIsSubtype("[any]|any","any");
+	}
+	@Test public void test_870() {
+		checkIsSubtype("[any]|any","null");
+	}
+	@Test public void test_871() {
+		checkIsSubtype("[any]|any","int");
+	}
+	@Test public void test_872() {
+		checkIsSubtype("[any]|any","[void]");
+	}
+	@Test public void test_873() {
+		checkIsSubtype("[any]|any","[any]");
+	}
+	@Test public void test_874() {
+		checkIsSubtype("[any]|any","[null]");
+	}
+	@Test public void test_875() {
+		checkIsSubtype("[any]|any","[int]");
+	}
+	@Test public void test_876() {
+		checkIsSubtype("[any]|any","[[void]]");
+	}
+	@Test public void test_877() {
+		checkIsSubtype("[any]|any","[[any]]");
+	}
+	@Test public void test_878() {
+		checkIsSubtype("[any]|any","[[null]]");
+	}
+	@Test public void test_879() {
+		checkIsSubtype("[any]|any","[[int]]");
+	}
+	@Test public void test_880() {
+		checkIsSubtype("[any]|any","void|void");
+	}
+	@Test public void test_881() {
+		checkIsSubtype("[any]|any","void|any");
+	}
+	@Test public void test_882() {
+		checkIsSubtype("[any]|any","void|null");
+	}
+	@Test public void test_883() {
+		checkIsSubtype("[any]|any","void|int");
+	}
+	@Test public void test_884() {
+		checkIsSubtype("[any]|any","any|void");
+	}
+	@Test public void test_885() {
+		checkIsSubtype("[any]|any","any|any");
+	}
+	@Test public void test_886() {
+		checkIsSubtype("[any]|any","any|null");
+	}
+	@Test public void test_887() {
+		checkIsSubtype("[any]|any","any|int");
+	}
+	@Test public void test_888() {
+		checkIsSubtype("[any]|any","null|void");
+	}
+	@Test public void test_889() {
+		checkIsSubtype("[any]|any","null|any");
+	}
+	@Test public void test_890() {
+		checkIsSubtype("[any]|any","null|null");
+	}
+	@Test public void test_891() {
+		checkIsSubtype("[any]|any","null|int");
+	}
+	@Test public void test_892() {
+		checkIsSubtype("[any]|any","int|void");
+	}
+	@Test public void test_893() {
+		checkIsSubtype("[any]|any","int|any");
+	}
+	@Test public void test_894() {
+		checkIsSubtype("[any]|any","int|null");
+	}
+	@Test public void test_895() {
+		checkIsSubtype("[any]|any","int|int");
+	}
+	@Test public void test_896() {
+		checkIsSubtype("[any]|any","[void]|void");
+	}
+	@Test public void test_897() {
+		checkIsSubtype("[any]|any","[any]|any");
+	}
+	@Test public void test_898() {
+		checkIsSubtype("[any]|any","[null]|null");
+	}
+	@Test public void test_899() {
+		checkIsSubtype("[any]|any","[int]|int");
+	}
+	@Test public void test_900() {
+		checkNotSubtype("[null]|null","any");
+	}
+	@Test public void test_901() {
+		checkIsSubtype("[null]|null","null");
+	}
+	@Test public void test_902() {
+		checkNotSubtype("[null]|null","int");
+	}
+	@Test public void test_903() {
+		checkIsSubtype("[null]|null","[void]");
+	}
+	@Test public void test_904() {
+		checkNotSubtype("[null]|null","[any]");
+	}
+	@Test public void test_905() {
+		checkIsSubtype("[null]|null","[null]");
+	}
+	@Test public void test_906() {
+		checkNotSubtype("[null]|null","[int]");
+	}
+	@Test public void test_907() {
+		checkNotSubtype("[null]|null","[[void]]");
+	}
+	@Test public void test_908() {
+		checkNotSubtype("[null]|null","[[any]]");
+	}
+	@Test public void test_909() {
+		checkNotSubtype("[null]|null","[[null]]");
+	}
+	@Test public void test_910() {
+		checkNotSubtype("[null]|null","[[int]]");
+	}
+	@Test public void test_911() {
+		checkIsSubtype("[null]|null","void|void");
+	}
+	@Test public void test_912() {
+		checkNotSubtype("[null]|null","void|any");
+	}
+	@Test public void test_913() {
+		checkIsSubtype("[null]|null","void|null");
+	}
+	@Test public void test_914() {
+		checkNotSubtype("[null]|null","void|int");
+	}
+	@Test public void test_915() {
+		checkNotSubtype("[null]|null","any|void");
+	}
+	@Test public void test_916() {
+		checkNotSubtype("[null]|null","any|any");
+	}
+	@Test public void test_917() {
+		checkNotSubtype("[null]|null","any|null");
+	}
+	@Test public void test_918() {
+		checkNotSubtype("[null]|null","any|int");
+	}
+	@Test public void test_919() {
+		checkIsSubtype("[null]|null","null|void");
+	}
+	@Test public void test_920() {
+		checkNotSubtype("[null]|null","null|any");
+	}
+	@Test public void test_921() {
+		checkIsSubtype("[null]|null","null|null");
+	}
+	@Test public void test_922() {
+		checkNotSubtype("[null]|null","null|int");
+	}
+	@Test public void test_923() {
+		checkNotSubtype("[null]|null","int|void");
+	}
+	@Test public void test_924() {
+		checkNotSubtype("[null]|null","int|any");
+	}
+	@Test public void test_925() {
+		checkNotSubtype("[null]|null","int|null");
+	}
+	@Test public void test_926() {
+		checkNotSubtype("[null]|null","int|int");
+	}
+	@Test public void test_927() {
+		checkIsSubtype("[null]|null","[void]|void");
+	}
+	@Test public void test_928() {
+		checkNotSubtype("[null]|null","[any]|any");
+	}
+	@Test public void test_929() {
+		checkIsSubtype("[null]|null","[null]|null");
+	}
+	@Test public void test_930() {
+		checkNotSubtype("[null]|null","[int]|int");
+	}
+	@Test public void test_931() {
+		checkNotSubtype("[int]|int","any");
+	}
+	@Test public void test_932() {
+		checkNotSubtype("[int]|int","null");
+	}
+	@Test public void test_933() {
+		checkIsSubtype("[int]|int","int");
+	}
+	@Test public void test_934() {
+		checkIsSubtype("[int]|int","[void]");
+	}
+	@Test public void test_935() {
+		checkNotSubtype("[int]|int","[any]");
+	}
+	@Test public void test_936() {
+		checkNotSubtype("[int]|int","[null]");
+	}
+	@Test public void test_937() {
+		checkIsSubtype("[int]|int","[int]");
+	}
+	@Test public void test_938() {
+		checkNotSubtype("[int]|int","[[void]]");
+	}
+	@Test public void test_939() {
+		checkNotSubtype("[int]|int","[[any]]");
+	}
+	@Test public void test_940() {
+		checkNotSubtype("[int]|int","[[null]]");
+	}
+	@Test public void test_941() {
+		checkNotSubtype("[int]|int","[[int]]");
+	}
+	@Test public void test_942() {
+		checkIsSubtype("[int]|int","void|void");
+	}
+	@Test public void test_943() {
+		checkNotSubtype("[int]|int","void|any");
+	}
+	@Test public void test_944() {
+		checkNotSubtype("[int]|int","void|null");
+	}
+	@Test public void test_945() {
+		checkIsSubtype("[int]|int","void|int");
+	}
+	@Test public void test_946() {
+		checkNotSubtype("[int]|int","any|void");
+	}
+	@Test public void test_947() {
+		checkNotSubtype("[int]|int","any|any");
+	}
+	@Test public void test_948() {
+		checkNotSubtype("[int]|int","any|null");
+	}
+	@Test public void test_949() {
+		checkNotSubtype("[int]|int","any|int");
+	}
+	@Test public void test_950() {
+		checkNotSubtype("[int]|int","null|void");
+	}
+	@Test public void test_951() {
+		checkNotSubtype("[int]|int","null|any");
+	}
+	@Test public void test_952() {
+		checkNotSubtype("[int]|int","null|null");
+	}
+	@Test public void test_953() {
+		checkNotSubtype("[int]|int","null|int");
+	}
+	@Test public void test_954() {
+		checkIsSubtype("[int]|int","int|void");
+	}
+	@Test public void test_955() {
+		checkNotSubtype("[int]|int","int|any");
+	}
+	@Test public void test_956() {
+		checkNotSubtype("[int]|int","int|null");
+	}
+	@Test public void test_957() {
+		checkIsSubtype("[int]|int","int|int");
+	}
+	@Test public void test_958() {
+		checkIsSubtype("[int]|int","[void]|void");
+	}
+	@Test public void test_959() {
+		checkNotSubtype("[int]|int","[any]|any");
+	}
+	@Test public void test_960() {
+		checkNotSubtype("[int]|int","[null]|null");
+	}
+	@Test public void test_961() {
+		checkIsSubtype("[int]|int","[int]|int");
 	}
 
 	private void checkIsSubtype(String from, String to) {
