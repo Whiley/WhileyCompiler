@@ -38,7 +38,7 @@ public class TypeGenerator implements GenericWriter<Automata> {
 	
 	private static final Config config = new Config() {{		
 		RECURSIVE = false;
-		SIZE = 2;
+		SIZE = 3;
 		KINDS = new Kind[24];
 		KINDS[Type.K_VOID] = new Kind(true,0,0);
 		KINDS[Type.K_ANY] = new Kind(true,0,0);		
@@ -52,6 +52,16 @@ public class TypeGenerator implements GenericWriter<Automata> {
 		//KINDS[Type.K_TUPLE] = new Kind(true,2,2);
 		//KINDS[Type.K_SET] = new Kind(true,1,1);
 		KINDS[Type.K_LIST] = new Kind(true,1,1);
+		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2);	
+		//KINDS[Type.K_PROCESS] = new Kind(true,1,1);
+		//KINDS[Type.K_RECORD] = new Kind(true,1,1);
+		//KINDS[Type.K_UNION] = new Kind(false,2,2);
+		//KINDS[Type.K_INTERSECTION] = new Kind(false,2,2);
+		KINDS[Type.K_NOT] = new Kind(true,1,1);
+		//KINDS[Type.K_FUNCTION] = new Kind(true,1,1);
+		//KINDS[Type.K_METHOD] = new Kind(true,1,1);
+		//KINDS[Type.K_HEADLESS] = new Kind(true,1,1);
+		//KINDS[Type.K_EXISTENTIAL] = new Kind(true,1,1);
 	}};
 	
 	private static void kindUpdate(int k, Kind kind) {

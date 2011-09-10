@@ -97,8 +97,8 @@ public class TypeTester {
 			if(t1 == Type.T_VOID) { continue; } 
 			for(int j=0;j<types.size();++j) {
 				Automata a2 = types.get(j);
-				Type t2 = Type.construct(types.get(j));
-				if(t2 == Type.T_VOID) { continue; }
+				Type t2 = Type.construct(types.get(j));				
+				if(t2 == Type.T_VOID) { continue; }				
 				System.out.println("\t@Test public void test_" + count++ + "() {");
 				if(isModelSubtype(a1,a2,model)) {								
 					System.out.println("\t\tcheckIsSubtype(\"" + t1 + "\",\"" + t2 + "\");");
@@ -120,6 +120,7 @@ public class TypeTester {
 		System.out.println("\t\tassertFalse(Type.isSubtype(ft,tt));");
 		System.out.println("\t}");
 		System.out.println("}");
+		System.err.println("Wrote " + count + " subtype tests.");
 	}
 		
 	public static boolean verbose = false;
