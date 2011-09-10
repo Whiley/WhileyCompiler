@@ -14,27 +14,17 @@ public final class CoercionOperator extends IntersectionOperator {
 			boolean toSign) {
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];
-
-		if (primitiveIntersection(fromState.kind,fromSign,toState.kind,toSign)) {
-			return true;
-			//return fromSign == toSign || (fromSign && !toSign);
+		int fromKind = fromState.kind;
+		int toKind = toState.kind;
+		
+		if (primitiveSubtype(fromKind,toKind)) {
+			return fromSign == toSign || (fromSign && !toSign);
+		} else if (primitiveSubtype(toKind,fromKind)) {
+			return fromSign == toSign || (toSign && !fromSign);
 		} else {
+			// TODO: deal with lists and sets
 			return super.isIntersection(fromIndex, fromSign, toIndex, toSign);
 		}
-	}
-	
-	private static boolean primitiveIntersection(int fromKind,
-			boolean fromSign, int toKind, boolean toSign) {
-		boolean fromTo = primitiveSubtype(fromKind,toKind);
-		boolean toFrom = primitiveSubtype(toKind,fromKind);
-		
-		if(fromSign == toSign) {
-			return fromTo || toFrom; 
-		} else if(fromSign) {
-			return fromTo;
-		} else {
-			return toFrom;
-		}		
 	}
 	
 	private static boolean primitiveSubtype(int fromKind, int toKind) {

@@ -439,9 +439,9 @@ public abstract class Type {
 	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
-		Relation relation = new CoercionOperator(a1,a2);		
+		CoercionOperator relation = new CoercionOperator(a1,a2);		
 		Automatas.computeFixpoint(relation);		
-		return relation.isRelated(0, 0); 
+		return relation.isSubtype(0, 0); 
 	}
 	
 	/**
