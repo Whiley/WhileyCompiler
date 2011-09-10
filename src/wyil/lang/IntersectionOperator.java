@@ -108,7 +108,10 @@ public class IntersectionOperator implements Relation {
 			case K_LIST:
 			case K_PROCESS:
 			case K_DICTIONARY:
-			case K_TUPLE:  {
+			case K_TUPLE:  {				
+				if(!fromSign && !toSign) {
+					return true;
+				}
 				// nary nodes
 				int[] fromChildren = fromState.children;
 				int[] toChildren = toState.children;
