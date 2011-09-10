@@ -236,20 +236,20 @@ public class IntersectionOperator implements Relation {
 			}
 			return false;	
 		} else if(fromKind == K_INTERSECTION) {
-			int[] fromChildren = fromState.children;
-			for (int i : fromChildren) {
+			int[] fromChildren = fromState.children;			
+			for (int i : fromChildren) {				
 				if(!intersection(i,fromSign,toIndex,toSign)) {
 					return false;
-				}				
+				}											
 			}
 			return true;	
 		} else if(toKind == K_INTERSECTION) {
-			int[] toChildren = toState.children;
-			for (int j : toChildren) {
+			int[] toChildren = toState.children;					
+			for (int j : toChildren) {				
 				if(!intersection(fromIndex,fromSign,j,toSign)) {
 					return false;
-				}
-			}
+				}											
+			}			
 			return true;	
 		} else if(fromKind == K_ANY || toKind == K_ANY){
 			return true;
