@@ -106,21 +106,29 @@ public class IntersectionOperator implements Relation {
 			// === Homogenous Compound States ===
 			case K_SET:
 			case K_LIST:
+				if(fromSign != toSign) {					
+					// nary nodes
+					int fromChild = fromState.children[0];
+					int toChild = toState.children[0];
+					if (!intersection(fromChild, fromSign, toChild, toSign)) {
+						return false;					
+					}
+				}
+				return true;
 			case K_PROCESS:
 			case K_DICTIONARY:
 			case K_TUPLE:  {				
-				if(!fromSign && !toSign) {
-					return true;
-				}
-				// nary nodes
-				int[] fromChildren = fromState.children;
-				int[] toChildren = toState.children;
-				if (fromChildren.length != toChildren.length) {
-					return false;
-				}
-				for (int i = 0; i < fromChildren.length; ++i) {
-					if (!intersection(fromChildren[i], fromSign, toChildren[i], toSign)) {
+				if(fromSign || toSign) {					
+					// nary nodes
+					int[] fromChildren = fromState.children;
+					int[] toChildren = toState.children;
+					if (fromChildren.length != toChildren.length) {
 						return false;
+					}
+					for (int i = 0; i < fromChildren.length; ++i) {
+						if (!intersection(fromChildren[i], fromSign, toChildren[i], toSign)) {
+							return false;
+						}
 					}
 				}
 				return true;
