@@ -94,6 +94,10 @@ public class IntersectionOperator implements Relation {
 		
 		if(fromKind == toKind) {
 			switch(fromKind) {
+			case K_VOID:
+				return !fromSign && !toSign;
+			case K_ANY:
+				return fromSign && toSign;
 			// === Leaf States First ===
 			case K_EXISTENTIAL:
 				NameID nid1 = (NameID) fromState.data;
