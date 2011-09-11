@@ -1,6 +1,7 @@
 package wyil.lang;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import wyautl.lang.*;
 
@@ -49,16 +50,23 @@ public final class IntersectionRewrites implements RewriteRule {
 		Object data = null;
 		
 		int kind = Type.K_ANY;
+		int numChildren = 0;
 		for(int i=0;i<children.length;++i) {			
 			int iChild = children[i];
 			// check whether this child is subsumed				
 			Automata.State child = automata.states[iChild];
-			if(kind == Type.K_ANY) {				
+			if(kind == Type.K_ANY && child.kind != Type.K_ANY) {				
 				kind = child.kind;
 				data = child.data;
-			} else if (kind != child.kind && child.kind != Type.K_ANY) {				
+				numChildren = child.children.length;
+			} else if (kind != child.kind && child.kind != Type.K_ANY
+					&& child.children.length != numChildren) {				
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;
+			} else if(child.kind == Type.K_ANY) {					
+				children = removeIndex(i,children);
+				state.children = children;				
+				changed=true;			
 			} else if (kind == child.kind) {				
 				if ((data == child.data)
 						|| (data != null && data.equals(child.data))) {
@@ -67,10 +75,6 @@ public final class IntersectionRewrites implements RewriteRule {
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;
 				}
-			} else if(child.kind == Type.K_ANY) {	
-				children = removeIndex(i,children);
-				state.children = children;				
-				changed=true;			
 			} 
 		}	
 		
@@ -85,9 +89,38 @@ public final class IntersectionRewrites implements RewriteRule {
 			automata.states[index] = new Automata.State(automata.states[child]);
 			changed = true;
 		}
-			
-		// TODO: need to propagate intersections through kinds.
-	
+		
+		switch(kind) {
+			case Type.K_PROCESS:
+			case Type.K_SET:
+			case Type.K_LIST:
+			case Type.K_TUPLE:
+			case Type.K_RECORD:
+			case Type.K_FUNCTION:
+			case Type.K_HEADLESS:
+			case Type.K_METHOD:						
+				// FIXME: bug for function types which are contra-variant?
+				int[] nchildren = new int[numChildren];
+				Automata.State[] nstates = new Automata.State[nchildren.length];				
+				for (int i = 0; i != numChildren; ++i) {
+					nchildren[i] = i + automata.size();
+					int[] nChildChildren = new int[children.length];
+					for (int j = 0; j != children.length; ++j) {
+						int childIndex = children[j];
+						Automata.State child = automata.states[childIndex];
+						nChildChildren[j] = child.children[i];
+					}
+					nstates[i] = new Automata.State(Type.K_INTERSECTION,
+							nChildChildren,false);
+				}
+				Automatas.inplaceAppendAll(automata, nstates);
+				state = automata.states[index];				
+				state.kind = kind;				
+				state.children = nchildren;
+				state.deterministic = true;
+				changed=true;
+		}
+		
 		return changed;
 	}	
 
