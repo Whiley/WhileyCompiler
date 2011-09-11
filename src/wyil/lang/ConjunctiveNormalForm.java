@@ -10,6 +10,7 @@ import wyautl.lang.*;
  * This is achieved by repeated application of the following rewrites:
  * </p>
  * <ul>
+ * <li><code>T | void</code> => <code>T</code>.</li>
  * <li><code>T | any</code> => <code>any</code>.</li>
  * <li><code>T & void</code> => <code>void</code>.</li>
  * <li><code>!!T</code> => <code>T</code>.</li>
@@ -89,61 +90,114 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	public boolean applyIntersection(int index, Automata.State state,
 			Automata automata) {				
 		int[] children = state.children;		
+		boolean changed = false;
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
-			Automata.State child = automata.states[iChild];
-			switch(child.kind) {
-			case Type.K_VOID:								
-				automata.states[index] = new Automata.State(Type.K_VOID);
-				return true;
-			case Type.K_INTERSECTION:
-				return flattenChildren(index,i,state,automata);
-			case Type.K_UNION: {
-				// x&(a|b)&y ==> (x&a&y) |  
-				System.out.println("REWRITING UNION");
-				int[] child_children = child.children;
-				int[] nchildren = new int[child_children.length];
-				Automata.State[] nstates = new Automata.State[child_children.length];
-				for(int j=0;j!=child_children.length;++j) {
-					int jChildIndex = child_children[j];
-					int[] kchildren = new int[children.length];
-					nchildren[j] = automata.size()+j;
-					for(int k=0;k!=children.length;++k) {
-						if(k != i) {
-							kchildren[k] = children[k];
-						} else {
-							kchildren[i] = jChildIndex;
+			if(iChild == i) {
+				// contractive case
+				children = removeIndex(i,children);
+				state.children = children;				
+				changed=true;
+			} else {
+				Automata.State child = automata.states[iChild];
+				switch(child.kind) {
+				case Type.K_VOID:								
+					automata.states[index] = new Automata.State(Type.K_VOID);
+					return true;				
+				case Type.K_INTERSECTION:
+					return flattenChildren(index,i,state,automata);
+				case Type.K_UNION: {
+					int[] child_children = child.children;
+					int[] nchildren = new int[child_children.length];
+					Automata.State[] nstates = new Automata.State[child_children.length];
+					for(int j=0;j!=child_children.length;++j) {
+						int jChildIndex = child_children[j];
+						int[] kchildren = new int[children.length];
+						nchildren[j] = automata.size()+j;
+						for(int k=0;k!=children.length;++k) {
+							if(k != i) {
+								kchildren[k] = children[k];
+							} else {
+								kchildren[i] = jChildIndex;
+							}
 						}
+						nstates[j] = new Automata.State(Type.K_INTERSECTION,kchildren);					
 					}
-					nstates[j] = new Automata.State(Type.K_INTERSECTION,kchildren);					
+					Automatas.inplaceAppendAll(automata, nstates);
+					state = automata.states[index];
+					state.kind = Type.K_UNION;				
+					state.children = nchildren;				
+
+					return true;
 				}
-				Automatas.inplaceAppendAll(automata, nstates);
-				state = automata.states[index];
-				state.kind = Type.K_UNION;				
-				state.children = nchildren;				
-				
-				return true;
-			}
+				}
 			}
 		}
-		return false;		
+		if(children.length == 0) {
+			// this can happen in the case of an intersection which has only
+			// itself as a child.
+			automata.states[index] = new Automata.State(Type.K_VOID);
+			changed = true;
+		} else if(children.length == 1) {
+			// bypass this node altogether
+			int child = children[0];
+			automata.states[index] = new Automata.State(automata.states[child]);
+			changed = true;
+		}
+		return changed;		
 	}	
 		
 	public boolean applyUnion(int index, Automata.State state,
 			Automata automata) {		
-		int[] children = state.children;				
+		int[] children = state.children;		
+		boolean changed = false;
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
-			Automata.State child = automata.states[iChild];
-			switch(child.kind) {
-			case Type.K_ANY:								
-				automata.states[index] = new Automata.State(Type.K_ANY);
-				return true;			
-			case Type.K_UNION:
-				return flattenChildren(index,i,state,automata);
+			if(iChild == i) {
+				// contractive case
+				children = removeIndex(i,children);
+				state.children = children;				
+				changed=true;
+			} else {
+				Automata.State child = automata.states[iChild];
+				switch(child.kind) {
+				case Type.K_ANY:								
+					automata.states[index] = new Automata.State(Type.K_ANY);
+					return true;			
+				case Type.K_VOID: {
+					children = removeIndex(i,children);
+					state.children = children;				
+					changed=true;
+				}				
+				case Type.K_UNION:
+					return flattenChildren(index,i,state,automata);
+				}
 			}
 		}
-		return false;
+		if(children.length == 0) {
+			// this can happen in the case of a union which has only itself as a
+			// child.
+			automata.states[index] = new Automata.State(Type.K_VOID);
+			changed = true;
+		} else if(children.length == 1) {
+			// bypass this node altogether
+			int child = children[0];
+			automata.states[index] = new Automata.State(automata.states[child]);
+			changed = true;
+		} 
+		return changed;
+	}
+	
+	private static int[] removeIndex(int index, int[] children) {
+		int[] nchildren = new int[children.length-1];
+		for(int j=0;j!=children.length;++j) {
+			if(j<index) {
+				nchildren[j] = children[j]; 
+			} else if(j>index) {
+				nchildren[j-1] = children[j];
+			}
+		}
+		return nchildren;
 	}
 	
 	/**
