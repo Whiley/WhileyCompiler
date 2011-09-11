@@ -432,7 +432,7 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type,Block> t = expandType(key, cache);				
-				types.put(key, new Pair(Type.minimise(t.first()),t.second()));				
+				types.put(key, new Pair(Type.normalise(t.first()),t.second()));				
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);

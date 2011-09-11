@@ -2527,11 +2527,11 @@ public class ClassFileBuilder {
 	}		 	
 		
 	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
-			.minimise(Type.T_PROCESS(Type.T_EXISTENTIAL(new NameID(
+			.normalise(Type.T_PROCESS(Type.T_EXISTENTIAL(new NameID(
 					new ModuleID(new PkgID("whiley", "lang"), "System"), "1"))));
 
 	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
-			.minimise(Type.T_PROCESS(Type.T_RECORD(new HashMap() {
+			.normalise(Type.T_PROCESS(Type.T_RECORD(new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
 					put("rest", Type.T_EXISTENTIAL(new NameID(new ModuleID(

@@ -15,6 +15,8 @@ import wyautl.lang.*;
  * <li><code>T & any</code> => <code>T</code>.
  * <li><code>T | void</code> => <code>T</code>.</li>
  * <li><code>T & void</code> => <code>void</code>.
+ * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
+ * <li><code>T_1 & T_2</code> where <code>T_1 :> T_2</code> => <code>T_2</code>.
  * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2) | T_3</code>.
  * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2) & T_3</code>.</li>
  * </ul>
@@ -27,7 +29,12 @@ import wyautl.lang.*;
  * @author djp
  * 
  */
-public final class SimplificationRule implements RewriteRule {
+public final class SubsumptionRule implements RewriteRule {
+	public IntersectionOperator subtypes;
+	
+	public SubsumptionRule(Automata automata) {
+		updateSubtypes(automata);			
+	}
 	
 	public final boolean apply(int index, Automata automata) {
 		Automata.State state = automata.states[index];
@@ -76,6 +83,9 @@ public final class SimplificationRule implements RewriteRule {
 				state.kind = nkind;				
 				state.children = nchildren;
 				state.deterministic = true;
+				
+				// this is annoying
+				updateSubtypes(automata);				
 				
 				return true;
 			}
@@ -128,32 +138,39 @@ public final class SimplificationRule implements RewriteRule {
 			Automata automata) {
 		boolean changed = false;
 		int[] children = state.children;		
-		int kind = Type.K_ANY;
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
 		
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
 			// check for contractive case
 			if(iChild != index) {					
-				// check whether this child is subsumed				
-				Automata.State child = automata.states[iChild];
-				if(kind == Type.K_ANY) {				
-					kind = child.kind;
-				} else if (kind != child.kind && child.kind != Type.K_ANY) {
-					// FIXME: surely there's a bug here if e.g. child is !void
-					// this indicates the intersection is equivalent to void
-					automata.states[index] = new Automata.State(Type.K_VOID);
-					return true;
-				}								
-				nchildren.add(iChild);				
+				// check whether this child is subsumed
+				boolean subsumed = false;
+				for (int j = 0; j < children.length; ++j) {
+					if(i == j) { continue; }
+					int jChild = children[j];
+					boolean irj = subtypes.isSubtype(iChild, jChild);
+					boolean jri = subtypes.isSubtype(jChild, iChild);
+					if (irj && (!jri || i > j)) {
+						subsumed = true;
+					} else if(!irj && !jri) {
+						// FIXME: bug here for not types.  E.g. !string & !null
+						
+						// no intersection is possible!
+						automata.states[index] = new Automata.State(Type.K_VOID);
+						return true;			
+					}
+				}
+				if(!subsumed) {					
+					nchildren.add(iChild);
+				} else {					
+					changed = true;
+				}
 			} else {				
 				changed = true;
 			}					
 		}	
-		
-		if(kind >= 0 && kind < Type.K_STRING) {
-			automata.states[index] = new Automata.State(kind);
-		} else if(nchildren.size() == 0) {
+		if(nchildren.size() == 0) {
 			// this can happen in the case of an intersection which has only itself as a
 			// child.
 			automata.states[index] = new Automata.State(Type.K_VOID);
@@ -208,6 +225,14 @@ public final class SimplificationRule implements RewriteRule {
 				if(iChild != index) {					
 					// check whether this child is subsumed
 					boolean subsumed = false;
+						for (int j = 0; j < children.length; ++j) {
+							int jChild = children[j];
+							if (i != j
+									&& subtypes.isSubtype(jChild, iChild)
+									&& (!subtypes.isSubtype(iChild, jChild) || i > j)) {
+								subsumed = true;
+							}
+						}
 					if(!subsumed) {
 						nchildren.add(iChild);
 					} else {
@@ -273,5 +298,11 @@ public final class SimplificationRule implements RewriteRule {
 				children, false);
 
 		return true;
-	}	
+	}
+	
+	private void updateSubtypes(Automata automata) {
+		// would be helpful if could perform incremental update
+		subtypes = new IntersectionOperator(automata,automata);			
+		Automatas.computeFixpoint(subtypes);
+	}
 }

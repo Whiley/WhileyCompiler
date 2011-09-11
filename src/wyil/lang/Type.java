@@ -327,7 +327,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type fromString(String str) {
-		return new TypeParser(str).parse();
+		return simplify(new TypeParser(str).parse());
 	}
 		
 	/**
@@ -481,7 +481,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastUpperBound(Type t1, Type t2) {
-		Type t = minimise(T_UNION(t1,t2)); // so easy		
+		Type t = normalise(T_UNION(t1,t2)); // so easy		
 		return t;
 	}
 	
@@ -496,7 +496,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type greatestLowerBound(Type t1, Type t2) {
-		return minimise(T_INTERSECTION(t1,t2)); // so easy
+		return normalise(T_INTERSECTION(t1,t2)); // so easy
 	}
 
 	/**
@@ -513,7 +513,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastDifference(Type t1, Type t2) {
-		return minimise(T_INTERSECTION(t1,T_NEGATION(t2))); // so easy
+		return normalise(T_INTERSECTION(t1,T_NEGATION(t2))); // so easy
 	}
 
 	/**
@@ -674,11 +674,11 @@ public abstract class Type {
 	 * @param type
 	 * @return
 	 */
-	public static Type minimise(Type type) {	
+	public static Type normalise(Type type) {	
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new SimplificationRule(automata));
+			Automatas.rewrite(automata,new SimplificationRule());
 			automata = Automatas.extract(automata, 0);
 			automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
@@ -689,6 +689,27 @@ public abstract class Type {
 		}
 	}
 
+	/**
+	 * Simplification provides the minimal level of normalisation required for
+	 * the <code>isSubtype</code> method to work correctly. Simplification
+	 * includes removal of contraction, and applying a minimalistic set of
+	 * rewrites.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static Type simplify(Type type) {	
+		if(type instanceof Type.Compound) { 
+			Compound compound = (Compound) type;
+			Automata automata = compound.automata;
+			Automatas.rewrite(automata,new SimplificationRule());
+			return construct(automata);
+		} else {
+			// no need to simplify leafs
+			return type;
+		}
+	}
+	
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -1728,10 +1749,10 @@ public abstract class Type {
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
 		Type from = fromString("null");		
-		Type to = fromString("X<X|void>");		
+		Type to = fromString("[any]&any");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-		//System.out.println("simplified(" + from + ") = " + minimise(from));
-		//System.out.println("simplified(" + to + ") = " + minimise(to));
+		System.out.println("simplified(" + from + ") = " + normalise(from));
+		System.out.println("simplified(" + to + ") = " + normalise(to));
 	}
 	
 	public static Type contractive() {

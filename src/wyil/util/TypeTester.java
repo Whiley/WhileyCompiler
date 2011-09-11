@@ -135,7 +135,7 @@ public class TypeTester {
 		out.println();
 		out.println("\tprivate void checkSimplification(String from) {");
 		out.println("\t\tType type = Type.fromString(from);");
-		out.println("\t\tType simplified = Type.minimise(type);");
+		out.println("\t\tType simplified = Type.normalise(type);");
 		out.println("\t\tassertTrue(Type.isSubtype(type,simplified));");
 		out.println("\t\tassertTrue(Type.isSubtype(simplified,type));");
 		out.println("\t}");
@@ -163,13 +163,12 @@ public class TypeTester {
 				Automata a2 = types.get(j);
 				Type t2 = Type.construct(types.get(j));				
 				if(t2 == Type.T_VOID) { continue; }				
-				out.println("\t@Test public void test_" + count++ + "() {");
+				out.print("\t@Test public void test_" + count++ + "() { ");
 				if(isModelSubtype(a1,a2,model)) {								
-					out.println("\t\tcheckIsSubtype(\"" + t1 + "\",\"" + t2 + "\");");
+					out.println("checkIsSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
 				} else {
-					out.println("\t\tcheckNotSubtype(\"" + t1 + "\",\"" + t2 + "\");");
-				}
-				out.println("\t}");
+					out.println("checkNotSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
+				}				
 			}
 		}
 		out.println();
