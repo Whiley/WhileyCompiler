@@ -29,7 +29,7 @@ import wyautl.lang.*;
  * @author djp
  * 
  */
-public final class SimplificationRule implements RewriteRule {
+public final class IntersectionRule implements RewriteRule {
 	
 	public final boolean apply(int index, Automata automata) {
 		Automata.State state = automata.states[index];
