@@ -11,11 +11,13 @@ import wyautl.lang.*;
  * relatively straightforward simplifications, including:
  * </p>
  * <ul>
- * <li><code>T | any</code> => <code>any</code>.</li>
  * <li><code>T & any</code> => <code>T</code>.
- * <li><code>T | void</code> => <code>T</code>.</li>
- * <li><code>T & void</code> => <code>void</code>.
- * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2) & T_3</code>.</li>
+ * <li><code>[T_1] & [T_2]</code> => <code>[T_1 & T_2]</code>.
+ * <li><code>{T_1} & {T_2}</code> => <code>{T_1 & T_2}</code>.
+ * <li><code>process {T_1} & process {T_2}</code> => <code>process {T_1 & T_2}</code>.
+ * <li><code>{T_1->T_2} & {T_3->T_4}</code> => <code>{(T_1 & T_3)->(T_2&T_4)}</code>.
+ * <li><code>(T_1,T_2) & (T_3,T_4)</code> => <code>(T_1 & T_3,T_2 & T_4)</code>.
+ * <li><code>{T_1 f} & {T_2 f)</code> => <code>{T_1 & T_3 f}</code>.
  * </ul>
  * <p>
  * <b>NOTE:</b> this rules will not operate correctly unless the given type is
@@ -29,7 +31,7 @@ import wyautl.lang.*;
  * @author djp
  * 
  */
-public final class IntersectionRule implements RewriteRule {
+public final class IntersectionRewrites implements RewriteRule {
 	
 	public final boolean apply(int index, Automata automata) {
 		Automata.State state = automata.states[index];
@@ -44,6 +46,8 @@ public final class IntersectionRule implements RewriteRule {
 			Automata automata) {
 		boolean changed = false;
 		int[] children = state.children;		
+		Object data = null;
+		
 		int kind = Type.K_ANY;
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
@@ -51,16 +55,20 @@ public final class IntersectionRule implements RewriteRule {
 			Automata.State child = automata.states[iChild];
 			if(kind == Type.K_ANY) {				
 				kind = child.kind;
-			} else if (kind != child.kind && child.kind != Type.K_ANY) {
-				// FIXME: need to check records and existentials here
-				// this indicates the intersection is equivalent to void
+				data = child.data;
+			} else if (kind != child.kind && child.kind != Type.K_ANY) {				
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;
+			} else if (kind == child.kind) {				
+				if((data == null && child.data != null) || !data.equals(child.data)) {
+					automata.states[index] = new Automata.State(Type.K_VOID);
+					return true;
+				}
 			} else if(child.kind == Type.K_ANY) {	
 				children = removeIndex(i,children);
 				state.children = children;				
 				changed=true;			
-			}
+			} 
 		}	
 		
 		// TODO: need to propagate intersections through kinds.

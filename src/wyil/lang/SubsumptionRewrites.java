@@ -29,10 +29,10 @@ import wyautl.lang.*;
  * @author djp
  * 
  */
-public final class SubsumptionRule implements RewriteRule {
+public final class SubsumptionRewrites implements RewriteRule {
 	public IntersectionOperator subtypes;
 	
-	public SubsumptionRule(Automata automata) {
+	public SubsumptionRewrites(Automata automata) {
 		updateSubtypes(automata);			
 	}
 	

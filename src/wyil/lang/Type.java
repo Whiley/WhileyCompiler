@@ -679,7 +679,7 @@ public abstract class Type {
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
 			Automatas.rewrite(automata,new ConjunctiveNormalForm());
-			Automatas.rewrite(automata,new IntersectionRule());
+			Automatas.rewrite(automata,new IntersectionRewrites());
 			automata = Automatas.extract(automata, 0);
 			automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
@@ -704,7 +704,7 @@ public abstract class Type {
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
 			Automatas.rewrite(automata,new ConjunctiveNormalForm());
-			Automatas.rewrite(automata,new IntersectionRule());
+			Automatas.rewrite(automata,new IntersectionRewrites());
 			automata = Automatas.extract(automata, 0);
 			return construct(automata);
 		} else {
