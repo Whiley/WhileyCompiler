@@ -52,7 +52,7 @@ public final class SimplificationRule implements RewriteRule {
 			if(kind == Type.K_ANY) {				
 				kind = child.kind;
 			} else if (kind != child.kind && child.kind != Type.K_ANY) {
-				// FIXME: surely there's a bug here if e.g. child is !void
+				// FIXME: need to check records and existentials here
 				// this indicates the intersection is equivalent to void
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;
@@ -61,7 +61,10 @@ public final class SimplificationRule implements RewriteRule {
 				state.children = children;				
 				changed=true;			
 			}
-		}			
+		}	
+		
+		// TODO: need to propagate intersections through kinds.
+		
 		if(children.length == 0) {
 			// this can happen in the case of a union which has only itself as a
 			// child.
