@@ -1,6 +1,7 @@
 package wyil.util;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 import wyil.lang.Type;
 import static wyil.lang.Type.*;
@@ -22,47 +23,51 @@ public class TypeParser {
 	}
 	
 	public Type parse() {
-		Type term = parseNotTerm();
+		return parse(new HashSet<String>());
+	}
+	
+	public Type parse(HashSet<String> typeVariables) {
+		Type term = parseNotTerm(typeVariables);
 		skipWhiteSpace();
 		while (index < str.length()
 				&& (str.charAt(index) == '|' || str.charAt(index) == '&')) {
 			if(str.charAt(index) == '|') {
 				// union type
 				match("|");
-				term = T_UNION(term,parse());
+				term = T_UNION(term,parse(typeVariables));
 			} else {
 				// intersection type
 				match("&");
-				term = T_INTERSECTION(term,parse());
+				term = T_INTERSECTION(term,parse(typeVariables));
 			}
 			skipWhiteSpace();
 		}
 		return term;
 	}
-	public Type parseNotTerm() {
+	public Type parseNotTerm(HashSet<String> typeVariables) {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
 		if(lookahead == '!') {
 			match("!");
-			return T_NOT(parseNotTerm());
+			return T_NOT(parseNotTerm(typeVariables));
 		} else {
-			return parseBraceTerm();
+			return parseBraceTerm(typeVariables);
 		}
 	}
-	public Type parseBraceTerm() {
+	public Type parseBraceTerm(HashSet<String> typeVariables) {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
 		if(lookahead == '(') {
 			match("(");
-			Type t = parse();
+			Type t = parse(typeVariables);
 			match(")");
 			skipWhiteSpace();
 			return t;
 		} else {
-			return parseTerm();
+			return parseTerm(typeVariables);
 		}
 	}
-	public Type parseTerm() {
+	public Type parseTerm(HashSet<String> typeVariables) {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
 
@@ -99,14 +104,14 @@ public class TypeParser {
 		case '[':
 		{
 			match("[");
-			Type elem = parse();
+			Type elem = parse(typeVariables);
 			match("]");
 			return T_LIST(elem);
 		}
 		case '{':
 		{
 			match("{");
-			Type elem = parse();
+			Type elem = parse(typeVariables);
 			skipWhiteSpace();
 			if(index < str.length() && str.charAt(index) != '}') {
 				// record
@@ -116,7 +121,7 @@ public class TypeParser {
 				skipWhiteSpace();
 				while(index < str.length() && str.charAt(index) == ',') {
 					match(",");
-					elem = parse();
+					elem = parse(typeVariables);
 					id = parseIdentifier();
 					fields.put(id, elem);
 					skipWhiteSpace();
@@ -128,8 +133,20 @@ public class TypeParser {
 			return T_SET(elem);
 		}
 		default:
-			throw new IllegalArgumentException("invalid type string: "
-					+ str);
+		{
+			String typeVariable = parseIdentifier();
+			if(typeVariables.contains(typeVariable)) {
+				return T_LABEL(typeVariable);
+			} else {
+				typeVariables = new HashSet<String>(typeVariables);
+				typeVariables.add(typeVariable);
+				match("<");
+				Type t = parse(typeVariables);
+				match(">");				
+				return T_RECURSIVE(typeVariable,t);
+			}		
+		}
+			
 		}
 	}
 	private String parseIdentifier() {

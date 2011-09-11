@@ -1727,11 +1727,11 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("!null|null");		
+		Type from = fromString("X<X|void>");		
 		Type to = fromString("any");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-		System.out.println("simplified(" + from + ") = " + minimise(from));
-		System.out.println("simplified(" + to + ") = " + minimise(to));
+		//System.out.println("simplified(" + from + ") = " + minimise(from));
+		//System.out.println("simplified(" + to + ") = " + minimise(to));
 	}
 	
 	public static Type contractive() {
