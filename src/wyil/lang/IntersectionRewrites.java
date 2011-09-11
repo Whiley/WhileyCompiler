@@ -74,8 +74,6 @@ public final class IntersectionRewrites implements RewriteRule {
 			} 
 		}	
 		
-		// TODO: need to propagate intersections through kinds.
-		
 		if(children.length == 0) {
 			// this can happen in the case of a union which has only itself as a
 			// child.
@@ -86,7 +84,10 @@ public final class IntersectionRewrites implements RewriteRule {
 			int child = children[0];
 			automata.states[index] = new Automata.State(automata.states[child]);
 			changed = true;
-		} 
+		}
+			
+		// TODO: need to propagate intersections through kinds.
+	
 		return changed;
 	}	
 
