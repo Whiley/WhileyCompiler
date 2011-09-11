@@ -579,7 +579,7 @@ public class ModuleBuilder {
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
 			Block blk = null;
 			// TODO: need to fix not constraints					
-			return new Pair<Type,Block>(Type.T_NOT(p.first()),blk);					
+			return new Pair<Type,Block>(Type.T_NEGATION(p.first()),blk);					
 		} else if (t instanceof UnresolvedType.Intersection) {
 			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
 			Block blk = null;
@@ -1960,7 +1960,7 @@ public class ModuleBuilder {
 			Block blk = null;
 			Pair<Type,Block> p = resolve(ut.element);
 			// TODO: fix not constraints
-			return new Pair<Type,Block>(Type.T_NOT(p.first()),blk);							
+			return new Pair<Type,Block>(Type.T_NEGATION(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type> bounds = new HashSet<Type>();			

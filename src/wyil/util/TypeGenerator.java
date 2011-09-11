@@ -103,7 +103,7 @@ public class TypeGenerator implements GenericWriter<Automata> {
 					config.RECURSIVE = false;
 					kindUpdate(Type.K_UNION,null);
 					kindUpdate(Type.K_INTERSECTION,null);
-					kindUpdate(Type.K_NOT,null);
+					kindUpdate(Type.K_NEGATION,null);
 					kindUpdate(Type.K_SET,new Kind(true,0,2));
 					kindUpdate(Type.K_LIST,new Kind(true,0,2));
 					// could do more

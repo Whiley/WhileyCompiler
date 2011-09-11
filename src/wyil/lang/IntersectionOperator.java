@@ -158,7 +158,7 @@ public class IntersectionOperator implements Relation {
 				}
 				return true;	
 			}
-			case K_NOT: 
+			case K_NEGATION: 
 			case K_UNION : 
 			case K_INTERSECTION:
 					// let these cases fall through to if-statements after
@@ -205,10 +205,10 @@ public class IntersectionOperator implements Relation {
 			}
 		} 
 		
-		if(fromKind == K_NOT) {
+		if(fromKind == K_NEGATION) {
 			int fromChild = fromState.children[0];
 			return intersection(fromChild,!fromSign,toIndex,toSign);
-		} else if(toKind == K_NOT) {
+		} else if(toKind == K_NEGATION) {
 			int toChild = toState.children[0];
 			return intersection(fromIndex,fromSign,toChild,!toSign);			
 		}

@@ -156,8 +156,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_NOT(Type element) {
-		return new Not(construct(K_NOT,null,element));				
+	public static final Type T_NEGATION(Type element) {
+		return new Not(construct(K_NEGATION,null,element));				
 	}
 	
 	/**
@@ -513,7 +513,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type leastDifference(Type t1, Type t2) {
-		return minimise(T_INTERSECTION(t1,T_NOT(t2))); // so easy
+		return minimise(T_INTERSECTION(t1,T_NEGATION(t2))); // so easy
 	}
 
 	/**
@@ -1358,7 +1358,7 @@ public abstract class Type {
 		case K_PROCESS:
 			middle = "*" + toString(state.children[0], visited, headers, automata);
 			break;
-		case K_NOT: {
+		case K_NEGATION: {
 			middle = "!" + toBracesString(state.children[0], visited, headers, automata);			
 			break;
 		}
@@ -1613,7 +1613,7 @@ public abstract class Type {
 			return new Union(automata);
 		case K_INTERSECTION:
 			return new Intersection(automata);
-		case K_NOT:
+		case K_NEGATION:
 			return new Not(automata);
 		case K_METHOD:
 			return new Meth(automata);
@@ -1718,7 +1718,7 @@ public abstract class Type {
 	public static final byte K_RECORD = 15;
 	public static final byte K_UNION = 16;
 	public static final byte K_INTERSECTION = 17;
-	public static final byte K_NOT = 18;
+	public static final byte K_NEGATION = 18;
 	public static final byte K_FUNCTION = 19;
 	public static final byte K_METHOD = 20;
 	public static final byte K_HEADLESS = 21; // headless method

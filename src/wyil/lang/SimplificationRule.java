@@ -43,7 +43,7 @@ public final class SimplificationRule implements RewriteRule {
 			return applyUnion(index,state,automata);
 		case Type.K_INTERSECTION:
 			return applyIntersection(index,state,automata);
-		case Type.K_NOT:
+		case Type.K_NEGATION:
 			return applyNot(index,state,automata);
 		}
 		return false;
@@ -60,7 +60,7 @@ public final class SimplificationRule implements RewriteRule {
 			case Type.K_VOID:
 				automata.states[index] = new Automata.State(Type.K_ANY);
 				return true;
-			case Type.K_NOT:
+			case Type.K_NEGATION:
 				// bypass this node altogether
 				int childChildIndex = child.children[0];
 				Automata.State childChild = automata.states[childChildIndex];
@@ -75,7 +75,7 @@ public final class SimplificationRule implements RewriteRule {
 					int[] children = new int[1];
 					children[0] = child_children[i];
 					nchildren[i] = i + automata.size();
-					nstates[i] = new Automata.State(Type.K_NOT,children);
+					nstates[i] = new Automata.State(Type.K_NEGATION,children);
 				}
 				Automatas.inplaceAppendAll(automata, nstates);
 				state = automata.states[index];

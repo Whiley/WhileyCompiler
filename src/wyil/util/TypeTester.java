@@ -42,7 +42,7 @@ public class TypeTester {
 				return false;
 			} else if (state.kind != Type.K_UNION
 					&& state.kind != Type.K_INTERSECTION
-					&& state.kind != Type.K_NOT) {
+					&& state.kind != Type.K_NEGATION) {
 				visited.clear();
 			}
 						
@@ -66,7 +66,7 @@ public class TypeTester {
 				}
 				return true;
 			}
-			case Type.K_NOT: {
+			case Type.K_NEGATION: {
 				int child = automata.states[index].children[0];
 				visited.set(index);				
 				return !accepts(child,automata,value);
