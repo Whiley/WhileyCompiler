@@ -55,8 +55,8 @@ public class TypeGenerator implements GenericWriter<Automata> {
 		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2);	
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1);
 		//KINDS[Type.K_RECORD] = new Kind(true,1,1);
-		KINDS[Type.K_UNION] = new Kind(false,2,2);
-		//KINDS[Type.K_INTERSECTION] = new Kind(false,2,2);
+		//KINDS[Type.K_UNION] = new Kind(false,2,2);
+		KINDS[Type.K_INTERSECTION] = new Kind(false,2,2);
 		//KINDS[Type.K_NOT] = new Kind(true,1,1);
 		//KINDS[Type.K_FUNCTION] = new Kind(true,2,2);
 		//KINDS[Type.K_METHOD] = new Kind(true,1,1);
