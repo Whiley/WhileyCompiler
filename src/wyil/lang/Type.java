@@ -702,7 +702,8 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new SimplificationRule());
+			Automatas.rewrite(automata,new ConjunctiveNormalForm());
+			automata = Automatas.extract(automata, 0);
 			return construct(automata);
 		} else {
 			// no need to simplify leafs
@@ -1749,7 +1750,7 @@ public abstract class Type {
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
 		Type from = fromString("null");		
-		Type to = fromString("[any]&any");		
+		Type to = fromString("!(int|null)&string");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + normalise(from));
 		System.out.println("simplified(" + to + ") = " + normalise(to));

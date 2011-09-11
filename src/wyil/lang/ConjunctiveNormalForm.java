@@ -7,7 +7,7 @@ import wyautl.lang.*;
 /**
  * <p>
  * This simplification rule converts a type into <i>conjunctive normal form</i>.
- * This achieved by repeated application of the following rewrites:
+ * This is achieved by repeated application of the following rewrites:
  * </p>
  * <ul>
  * <li><code>T | any</code> => <code>any</code>.</li>
@@ -21,7 +21,11 @@ import wyautl.lang.*;
  * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2 & T_3)</code>.</li>
  * <li><code>T_1 & (T_2|T_3)</code> => <code>(T_1 & T_2) | (T_1 & T_3)</code>.</li>
  * </ul>
- * 
+ * <p>
+ * <b>NOTE:</b> applications of this rewrite rule may leave states which are
+ * unreachable from the root. Therefore, the resulting automata should be
+ * extracted after rewriting to eliminate any such states.
+ * </p>
  * @author djp
  * 
  */
@@ -73,7 +77,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 				int nkind = child.kind == Type.K_UNION ? Type.K_INTERSECTION : Type.K_UNION;
 				state.kind = nkind;				
 				state.children = nchildren;
-				state.deterministic = true;
+				state.deterministic = false;
 				
 				return true;
 			}
@@ -94,31 +98,36 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 				return true;
 			case Type.K_INTERSECTION:
 				return flattenChildren(index,i,state,automata);
-			case Type.K_UNION:
-				return distributeChildren(index,i,state,automata);			
+			case Type.K_UNION: {
+				// x&(a|b)&y ==> (x&a&y) |  
+				System.out.println("REWRITING UNION");
+				int[] child_children = child.children;
+				int[] nchildren = new int[child_children.length];
+				Automata.State[] nstates = new Automata.State[child_children.length];
+				for(int j=0;j!=child_children.length;++j) {
+					int jChildIndex = child_children[j];
+					int[] kchildren = new int[children.length];
+					nchildren[j] = automata.size()+j;
+					for(int k=0;k!=children.length;++k) {
+						if(k != i) {
+							kchildren[k] = children[k];
+						} else {
+							kchildren[i] = jChildIndex;
+						}
+					}
+					nstates[j] = new Automata.State(Type.K_INTERSECTION,kchildren);					
+				}
+				Automatas.inplaceAppendAll(automata, nstates);
+				state = automata.states[index];
+				state.kind = Type.K_UNION;				
+				state.children = nchildren;				
+				
+				return true;
+			}
 			}
 		}
 		return false;		
-	}
-	
-	/**
-	 * This rule distributes over children of type UNION
-	 * 
-	 * @param pivot
-	 *            --- the distribution point
-	 * @param index
-	 *            --- index of automata state
-	 * @param state
-	 *            --- automata state in question
-	 * @param automata
-	 * @return
-	 */
-	public boolean distributeChildren(int pivot, int index, Automata.State state,
-			Automata automata) {
-		// x&y&(a|b)&z => x&y&z&a | x&y&z&b
-		
-		return false;
-	}
+	}	
 		
 	public boolean applyUnion(int index, Automata.State state,
 			Automata automata) {		
