@@ -49,7 +49,7 @@ public final class IntersectionRewrites implements RewriteRule {
 		Object data = null;
 		
 		int kind = Type.K_ANY;
-		for(int i=0;i!=children.length;++i) {			
+		for(int i=0;i<children.length;++i) {			
 			int iChild = children[i];
 			// check whether this child is subsumed				
 			Automata.State child = automata.states[iChild];
@@ -60,7 +60,10 @@ public final class IntersectionRewrites implements RewriteRule {
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;
 			} else if (kind == child.kind) {				
-				if((data == null && child.data != null) || !data.equals(child.data)) {
+				if ((data == child.data)
+						|| (data != null && data.equals(child.data))) {
+					// this is ok
+				} else {
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;
 				}
