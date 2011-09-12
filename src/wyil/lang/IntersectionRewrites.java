@@ -59,47 +59,44 @@ public final class IntersectionRewrites implements RewriteRule {
 				kind = child.kind;
 				data = child.data;
 				numChildren = child.children.length;
-			} else if (kind != child.kind && child.kind != Type.K_ANY
-					&& child.children.length != numChildren) {				
+			} else if (kind != child.kind && child.kind != Type.K_ANY) {				
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;
-			} else if(child.kind == Type.K_ANY) {					
-				children = removeIndex(i,children);
+			} else if(child.kind == Type.K_ANY) {				
+				children = removeIndex(i--,children);
 				state.children = children;				
 				changed=true;			
 			} else if (kind == child.kind) {				
-				if ((data == child.data)
-						|| (data != null && data.equals(child.data))) {
+				if (child.children.length == numChildren
+						&& (data == child.data || (data != null && data
+								.equals(child.data)))) {
 					// this is ok
-				} else {
+				} else {										
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;
 				}
 			} 
 		}	
 		
-		if(children.length == 0) {
-			// this can happen in the case of a union which has only itself as a
-			// child.
-			automata.states[index] = new Automata.State(Type.K_VOID);
-			changed = true;
+		if(children.length == 0) {			
+			automata.states[index] = new Automata.State(Type.K_ANY);
+			return true;			
 		} else if(children.length == 1) {
 			// bypass this node altogether
 			int child = children[0];
 			automata.states[index] = new Automata.State(automata.states[child]);
-			changed = true;
-		}
-		
+			return true;
+		} 
 		switch(kind) {
+			case Type.K_FUNCTION:
+			case Type.K_HEADLESS:
+			case Type.K_METHOD:
+				throw new RuntimeException("Need to deal with intersection of function types");
 			case Type.K_PROCESS:
 			case Type.K_SET:
 			case Type.K_LIST:
 			case Type.K_TUPLE:
-			case Type.K_RECORD:
-			case Type.K_FUNCTION:
-			case Type.K_HEADLESS:
-			case Type.K_METHOD:						
-				// FIXME: bug for function types which are contra-variant?
+			case Type.K_RECORD:									
 				int[] nchildren = new int[numChildren];
 				Automata.State[] nstates = new Automata.State[nchildren.length];				
 				for (int i = 0; i != numChildren; ++i) {
@@ -124,7 +121,7 @@ public final class IntersectionRewrites implements RewriteRule {
 		return changed;
 	}	
 
-	private static int[] removeIndex(int index, int[] children) {
+	private static int[] removeIndex(int index, int[] children) {		
 		int[] nchildren = new int[children.length-1];
 		for(int j=0;j!=children.length;++j) {
 			if(j<index) {
@@ -132,7 +129,7 @@ public final class IntersectionRewrites implements RewriteRule {
 			} else if(j>index) {
 				nchildren[j-1] = children[j];
 			}
-		}
+		}		
 		return nchildren;
 	}
 }

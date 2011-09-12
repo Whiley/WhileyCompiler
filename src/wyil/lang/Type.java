@@ -1752,7 +1752,7 @@ public abstract class Type {
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);
 		Type from = fromString("null");		
-		Type to = fromString("[int]&[void]");		
+		Type to = fromString("any&any");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + normalise(from));
 		System.out.println("simplified(" + to + ") = " + normalise(to));
