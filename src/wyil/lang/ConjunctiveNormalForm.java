@@ -218,7 +218,48 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	 */
 	public boolean applyIntersection_2(int index, Automata.State state,
 			Automata automata) {				
-		return false;	
+		int[] children = state.children;
+		int pivot = splitPositiveNegativeChildren(state, automata);
+		
+		if(pivot > 0) {
+			// collect up positive children		
+			int kind = -1;
+			int nchildren = 0;
+			Object data = null;
+			for(int i=0;i!=pivot;++i) {
+				Automata.State child = automata.states[children[i]];
+				if(i == 0) {
+					// first time around
+					kind = child.kind;
+					nchildren = child.children.length;
+					data = child.data;
+				} else if (kind != child.kind
+						|| nchildren != child.children.length
+						|| (data == null && child.data != null)
+						|| (data != null && !data.equals(child.data))) {
+					// [T_1] & {T_2} & T_3 => void
+					automata.states[index] = new Automata.State(Type.K_VOID);
+					return true;	
+				}
+			}
+			
+			// INVARIANT: all children have same kind, same number of their
+			// children and same supplementary data.
+			
+			switch(kind) {
+				case Type.K_PROCESS:
+					throw new RuntimeException("Need to deal with process and function types");
+				case Type.K_SET:
+				case Type.K_LIST:
+				case Type.K_DICTIONARY:
+				case Type.K_TUPLE:
+				case Type.K_RECORD:
+					// [T_1] & [T_2] & T3 => [T_1 & T_2] & T3
+					
+			}
+		}
+		
+		return false;
 	}	
 		
 	
@@ -300,7 +341,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	 * @param automata
 	 * @return
 	 */
-	public boolean flattenChildren(int index,
+	private static boolean flattenChildren(int index,
 			Automata.State state, Automata automata) {
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
 		int[] children = state.children;
@@ -327,5 +368,51 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 				children, false);
 
 		return true;
-	}	
+	}
+
+	/**
+	 * The aim of this method is to split up the positive and negative children
+	 * of a given state. A child is negative if it is a negated type; otherwise
+	 * it is positive. This method orders the children such so all the positive
+	 * ones come first, then the negative ones. The value returned indicates the
+	 * lowest index of a negative child (i.e. the point where the negative
+	 * children start). Thus, if the return value matches
+	 * <code>state.children</code>, then all children are positive. Likewise, if
+	 * the return value is <code>0</code>, then all children are negative.
+	 * 
+	 * @param state
+	 *            --- automata state whose children are to be sorted.
+	 * @return --- the start index of the negative children.
+	 */
+	private static int splitPositiveNegativeChildren(Automata.State state, Automata automata) {
+		int[] children = state.children;
+		int posIndex = advancePositive(0,children,automata);
+		int negIndex = retreatNegative(children.length-1,children,automata);
+		
+		while(posIndex < negIndex) {
+			int tmp = children[posIndex];
+			children[posIndex] = children[negIndex];
+			children[negIndex] = tmp;
+			posIndex = advancePositive(posIndex+1,children,automata);
+			negIndex = retreatNegative(negIndex-1,children,automata);			
+		}		
+		
+		return posIndex;
+	}
+	
+	private static int advancePositive(int index, int[] children, Automata automata) {
+		while (index < children.length
+				&& automata.states[children[index]].kind != Type.K_NEGATION) {
+			index = index + 1;
+		}
+		return index;
+	}
+	
+	private static int retreatNegative(int index, int[] children, Automata automata) {
+		while (index > 0
+				&& automata.states[children[index]].kind == Type.K_NEGATION) {
+			index = index - 1;
+		}
+		return index;
+	}
 }
