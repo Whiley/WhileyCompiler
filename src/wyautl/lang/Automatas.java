@@ -172,7 +172,7 @@ public final class Automatas {
 		boolean changed = true;
 		while(changed) {
 			changed = false;
-			for(int i=0;i!=automata.size();++i) {
+			for(int i=0;i<automata.size();++i) {
 				changed |= rule.apply(i,automata);
 			}
 		}

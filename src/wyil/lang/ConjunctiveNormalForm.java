@@ -93,8 +93,8 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		boolean changed = false;
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
-			if(iChild == i) {
-				// contractive case
+			if(iChild == index) {
+				// contractive case				
 				children = removeIndex(i,children);
 				state.children = children;				
 				changed=true;
@@ -105,7 +105,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;				
 				case Type.K_INTERSECTION:
-					return flattenChildren(index,i,state,automata);
+					return flattenChildren(index,state,automata);
 				case Type.K_UNION: {
 					int[] child_children = child.children;
 					int[] nchildren = new int[child_children.length];
@@ -153,7 +153,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		boolean changed = false;
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
-			if(iChild == i) {
+			if(iChild == index) {
 				// contractive case
 				children = removeIndex(i,children);
 				state.children = children;				
@@ -170,7 +170,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 					changed=true;
 				}				
 				case Type.K_UNION:
-					return flattenChildren(index,i,state,automata);
+					return flattenChildren(index,state,automata);
 				}
 			}
 		}
@@ -208,13 +208,13 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	 * @param automata
 	 * @return
 	 */
-	public boolean flattenChildren(int index, int start,
+	public boolean flattenChildren(int index,
 			Automata.State state, Automata automata) {
 		ArrayList<Integer> nchildren = new ArrayList<Integer>();
 		int[] children = state.children;
 		final int kind = state.kind;		
 		
-		for (int i = start; i != children.length; ++i) {
+		for (int i = 0; i != children.length; ++i) {
 			int iChild = children[i];
 			Automata.State child = automata.states[iChild];
 			if(child.kind == kind) {
