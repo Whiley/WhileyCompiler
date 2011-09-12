@@ -4,15 +4,45 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.BitSet;
 
+import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.DefaultInterpretation.Value;
 import wyautl.util.Tester;
+import wyjvm.io.*;
 import wyil.lang.Type;
 
 
 
-public class TypeTester {	
-
+public class TypeTester {
+	
+	public static class BinaryTypeReader extends BinaryAutomataReader {
+		public BinaryTypeReader(BinaryInputStream reader) {
+			super(reader);
+		}
+		public Automata.State readState() throws IOException {
+			Automata.State state = super.readState();
+			if(state.kind == Type.K_RECORD) { 
+				int nfields = reader.read_uv();
+				String[] fields = new String[nfields];
+				for(int i=0;i!=nfields;++i) {
+					fields[i] = readString();
+				}
+				state.data = fields;			
+			}
+			return state;
+		}
+		
+		private String readString() throws IOException {
+			String r = "";
+			int nchars = reader.read_uv();
+			for(int i=0;i!=nchars;++i) {
+				char c = (char) reader.read_u2();
+				r = r + c;
+			}
+			return r;
+		}
+	}
+	
 	/**
 	 * In the type interpretation, we must override the default interpretation
 	 * to deal with union, intersection, negation, any, void, list and set
@@ -115,45 +145,43 @@ public class TypeTester {
 
 	public static void generateSimplificationTests(ArrayList<Automata> types)
 			throws IOException {
-		PrintWriter out = new PrintWriter(new FileWriter("wyil/testing/SimplifyTests.java"));
-		out.println("package wyil.testing;");
-		out.println("import org.junit.*;");
-		out.println("import static org.junit.Assert.*;");
-		out.println("import wyil.lang.Type;");
-		out.println();
-		out.println("public class SimplifyTests {");
+		
+		System.out.println("package wyil.testing;");
+		System.out.println("import org.junit.*;");
+		System.out.println("import static org.junit.Assert.*;");
+		System.out.println("import wyil.lang.Type;");
+		System.out.println();
+		System.out.println("public class SimplifyTests {");
 		int count = 1;
 		for(int i=0;i!=types.size();++i) {
 			Automata a1 = types.get(i);
 			Type t1 = Type.construct(types.get(i));			
 			if(t1 == Type.T_VOID) { continue; }
 			count++;
-			out.println("\t@Test public void test_" + count++ + "() {");
-			out.println("\t\tcheckSimplification(\"" + t1 + "\");");
-			out.println("\t}");
+			System.out.println("\t@Test public void test_" + count++ + "() {");
+			System.out.println("\t\tcheckSimplification(\"" + t1 + "\");");
+			System.out.println("\t}");
 		}
-		out.println();
-		out.println("\tprivate void checkSimplification(String from) {");
-		out.println("\t\tType type = Type.fromString(from);");
-		out.println("\t\tType simplified = Type.normalise(type);");
-		out.println("\t\tassertTrue(Type.isSubtype(type,simplified));");
-		out.println("\t\tassertTrue(Type.isSubtype(simplified,type));");
-		out.println("\t}");
-		out.println("}");
-		out.close();
+		System.out.println();
+		System.out.println("\tprivate void checkSimplification(String from) {");
+		System.out.println("\t\tType type = Type.fromString(from);");
+		System.out.println("\t\tType simplified = Type.normalise(type);");
+		System.out.println("\t\tassertTrue(Type.isSubtype(type,simplified));");
+		System.out.println("\t\tassertTrue(Type.isSubtype(simplified,type));");
+		System.out.println("\t}");
+		System.out.println("}");		
 		System.err.println("Wrote " + count + " simplification tests.");
 	}
 	
 	public static void generateSubtypeTests(ArrayList<Automata> types,
-			ArrayList<Value> model) throws IOException {
-		PrintWriter out = new PrintWriter(new FileWriter("wyil/testing/SubtypeTests.java"));
-		out.println("// This file was automatically generated.");
-		out.println("package wyil.testing;");
-		out.println("import org.junit.*;");
-		out.println("import static org.junit.Assert.*;");
-		out.println("import wyil.lang.Type;");
-		out.println();
-		out.println("public class SubtypeTests {");
+			ArrayList<Value> model) throws IOException {		
+		System.out.println("// This file was automatically generated.");
+		System.out.println("package wyil.testing;");
+		System.out.println("import org.junit.*;");
+		System.out.println("import static org.junit.Assert.*;");
+		System.out.println("import wyil.lang.Type;");
+		System.out.println();
+		System.out.println("public class SubtypeTests {");
 		int count = 1;
 		for(int i=0;i!=types.size();++i) {
 			Automata a1 = types.get(i);
@@ -163,27 +191,26 @@ public class TypeTester {
 				Automata a2 = types.get(j);
 				Type t2 = Type.construct(types.get(j));				
 				if(t2 == Type.T_VOID) { continue; }				
-				out.print("\t@Test public void test_" + count++ + "() { ");
+				System.out.print("\t@Test public void test_" + count++ + "() { ");
 				if(isModelSubtype(a1,a2,model)) {								
-					out.println("checkIsSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
+					System.out.println("checkIsSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
 				} else {
-					out.println("checkNotSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
+					System.out.println("checkNotSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
 				}				
 			}
 		}
-		out.println();
-		out.println("\tprivate void checkIsSubtype(String from, String to) {");
-		out.println("\t\tType ft = Type.fromString(from);");
-		out.println("\t\tType tt = Type.fromString(to);");
-		out.println("\t\tassertTrue(Type.isSubtype(ft,tt));");
-		out.println("\t}");
-		out.println("\tprivate void checkNotSubtype(String from, String to) {");
-		out.println("\t\tType ft = Type.fromString(from);");
-		out.println("\t\tType tt = Type.fromString(to);");		
-		out.println("\t\tassertFalse(Type.isSubtype(ft,tt));");
-		out.println("\t}");
-		out.println("}");
-		out.close();
+		System.out.println();
+		System.out.println("\tprivate void checkIsSubtype(String from, String to) {");
+		System.out.println("\t\tType ft = Type.fromString(from);");
+		System.out.println("\t\tType tt = Type.fromString(to);");
+		System.out.println("\t\tassertTrue(Type.isSubtype(ft,tt));");
+		System.out.println("\t}");
+		System.out.println("\tprivate void checkNotSubtype(String from, String to) {");
+		System.out.println("\t\tType ft = Type.fromString(from);");
+		System.out.println("\t\tType tt = Type.fromString(to);");		
+		System.out.println("\t\tassertFalse(Type.isSubtype(ft,tt));");
+		System.out.println("\t}");
+		System.out.println("}");		
 		System.err.println("Wrote " + count + " subtype tests.");
 	}
 		
@@ -193,10 +220,18 @@ public class TypeTester {
 		try {			
 			boolean binaryIn = true;
 			int index = 0;
-			ArrayList<DefaultInterpretation.Value> model = Tester.readModel(binaryIn,args[index],verbose);
-			ArrayList<Automata> types = Tester.readAutomatas(binaryIn,args[index+1],verbose);						
-			generateSubtypeTests(types,model);
-			generateSimplificationTests(types);
+			String mode = args[index++];
+			ArrayList<DefaultInterpretation.Value> model = Tester.readModel(
+					new BinaryTypeReader(new BinaryInputStream(
+							new FileInputStream(args[index]))), verbose);
+			ArrayList<Automata> types = Tester.readAutomatas(
+					new BinaryTypeReader(new BinaryInputStream(
+							new FileInputStream(args[index+1]))), verbose);						
+			if(mode.equals("-subtypes")) {
+				generateSubtypeTests(types,model);
+			} else {
+				generateSimplificationTests(types);
+			}
 			
 		} catch(IOException e) {
 			System.err.println(e.getMessage());			

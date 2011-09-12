@@ -4,37 +4,64 @@ import java.io.*;
 import java.util.*;
 
 import wyil.lang.Type;
-import wyjvm.io.BinaryOutputStream;
+import wyjvm.io.*;
 import wyautl.io.*;
 import wyautl.lang.Automata;
 import wyautl.util.*;
 import wyautl.util.Generator.Config;
 import wyautl.util.Generator.Kind;
 
-public class TypeGenerator implements GenericWriter<Automata> {
-	private PrintStream output;
+public class TypeGenerator {
 	
-	public TypeGenerator(PrintStream output) {
-		this.output = output;
-	}
-	
-	public void write(Automata automata) throws IOException {
-		Type t = Type.construct(automata);
-		if(t != Type.T_VOID) { 
-			output.println(t);
-			count++;
-			if(verbose) {
-				System.err.print("\rWrote " + count + " types.");
+	public static class TextTypeWriter implements GenericWriter<Automata> {
+		private PrintStream output;
+
+		public TextTypeWriter(PrintStream output) {
+			this.output = output;
+		}
+
+		public void write(Automata automata) throws IOException {
+			Type t = Type.construct(automata);
+			if (t != Type.T_VOID) {
+				output.println(t);
+				count++;
+				if (verbose) {
+					System.err.print("\rWrote " + count + " types.");
+				}
 			}
+		}
+
+		public void flush() throws IOException {
+			output.flush();
+		}
+
+		public void close() throws IOException {
+			output.close();
 		}
 	}
 	
-	public void flush() throws IOException {
-		output.flush();
-	}
-	
-	public void close() throws IOException {
-		output.close();
+	public static class BinaryTypeWriter extends BinaryAutomataWriter {
+		public BinaryTypeWriter(BinaryOutputStream writer) {
+			super(writer);
+		}
+		public void write(Automata.State state) throws IOException {
+			super.write(state);
+			if(state.kind == Type.K_RECORD) {
+				String[] fields = (String[]) state.data;
+				writer.write_uv(fields.length);
+				for(String field : fields) {
+					writeString(field);
+				}					
+			}			
+			count++;
+		}
+		
+		private void writeString(String str) throws IOException {
+			writer.write_uv(str.length());
+			for (int i = 0; i != str.length(); ++i) {
+				writer.write_u2(str.charAt(i));
+			}
+		}
 	}
 	
 	private static final Generator.Data DATA_GENERATOR = new Generator.Data() {
@@ -49,7 +76,7 @@ public class TypeGenerator implements GenericWriter<Automata> {
 	
 	private static final Config config = new Config() {{		
 		RECURSIVE = false;
-		SIZE = 3;
+		SIZE = 2;
 		KINDS = new Kind[24];
 		KINDS[Type.K_VOID] = new Kind(true,0,0,null);
 		KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
@@ -62,7 +89,7 @@ public class TypeGenerator implements GenericWriter<Automata> {
 		//KINDS[Type.K_STRING] = new Kind(true,0,0,null);
 		//KINDS[Type.K_TUPLE] = new Kind(true,2,2,null);
 		//KINDS[Type.K_SET] = new Kind(true,1,1,null);
-		//KINDS[Type.K_LIST] = new Kind(true,1,1,null);
+		KINDS[Type.K_LIST] = new Kind(true,1,1,null);
 		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);	
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
 		KINDS[Type.K_RECORD] = new Kind(true,1,2,DATA_GENERATOR);
@@ -136,16 +163,16 @@ public class TypeGenerator implements GenericWriter<Automata> {
 			
 			if(binary) {
 				BinaryOutputStream bos = new BinaryOutputStream(out);
-				writer = new BinaryAutomataWriter(bos);
+				writer = new BinaryTypeWriter(bos);
 			} else {
-				writer = new TypeGenerator(out);
+				writer = new TextTypeWriter(out);
 			}				
 					
 			for(int i=minSize;i<=maxSize;++i) {
 				config.SIZE = i;
 				Generator.generate(writer,config);				
 			}						
-			System.err.print("\rWrote " + count + " types.");			
+			System.err.println("\rWrote " + count + " types.");			
 			writer.close();									
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);

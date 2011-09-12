@@ -10,17 +10,9 @@ import wyjvm.io.BinaryInputStream;
 
 public class Tester {
 	
-	public static ArrayList<Value> readModel(boolean binaryIn, String filename, boolean verbose)
+	public static ArrayList<Value> readModel(GenericReader<Automata> reader, boolean verbose)
 			throws IOException {
-		GenericReader<Automata> reader;
-		if (binaryIn) {
-			BinaryInputStream bis = new BinaryInputStream(new FileInputStream(
-					filename));
-			reader = new BinaryAutomataReader(bis);
-		} else {
-			reader = null; // TODO
-		}
-
+		
 		ArrayList<Value> model = new ArrayList<Value>();
 		try {
 			int count = 0;
@@ -42,17 +34,9 @@ public class Tester {
 		return model;
 	}
 	
-	public static ArrayList<Automata> readAutomatas(boolean binaryIn, String filename, boolean verbose)
+	public static ArrayList<Automata> readAutomatas(GenericReader<Automata> reader, boolean verbose)
 			throws IOException {
-		GenericReader<Automata> reader;
-		if (binaryIn) {
-			BinaryInputStream bis = new BinaryInputStream(new FileInputStream(
-					filename));
-			reader = new BinaryAutomataReader(bis);
-		} else {
-			reader = null; // TODO
-		}
-
+		
 		ArrayList<Automata> automatas = new ArrayList<Automata>();
 		try {
 			int count = 0;
@@ -173,8 +157,7 @@ public class Tester {
 		System.out.println("}");
 	}
 	
-	public static void main(String[] args) {
-		boolean binaryIn = false;
+	public static void main(String[] args) {		
 		boolean verbose = false;
 		boolean minimiseTest = false;
 		boolean canonicalTest = false;
@@ -182,9 +165,7 @@ public class Tester {
 		int index = 0;
 		try {
 			while(index < args.length && args[index].charAt(0) == '-') {
-				if(args[index].equals("-b")) {
-					binaryIn=true;					
-				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
+				if(args[index].equals("-v") || args[index].equals("-verbose")) {
 					verbose = true;
 				} else if(args[index].equals("-m") || args[index].equals("-minimise")) {
 					minimiseTest=true;
@@ -198,9 +179,14 @@ public class Tester {
 				System.out.println("usage: Tester [options] model.file automata.file");
 				System.exit(1);
 			}
-			
-			ArrayList<Value> model = readModel(binaryIn,args[index],verbose);
-			ArrayList<Automata> automatas = readAutomatas(binaryIn,args[index+1],verbose);
+						
+							
+			ArrayList<Value> model = readModel(
+					new BinaryAutomataReader(new BinaryInputStream(
+							new FileInputStream(args[index]))), verbose);
+			ArrayList<Automata> automatas = readAutomatas(
+					new BinaryAutomataReader(new BinaryInputStream(
+							new FileInputStream(args[index + 1]))), verbose);
 			
 			if(minimiseTest) {
 				minimiseTest(new DefaultInterpretation(),model,automatas,verbose);
