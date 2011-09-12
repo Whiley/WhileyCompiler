@@ -396,12 +396,17 @@ public abstract class Type {
 		public BinaryReader(BinaryInputStream reader) {
 			super(reader);
 		}
-		public Type readType() throws IOException {
-			return construct(read());
+		public Type readType() throws IOException {			
+			Type t = construct(read());			
+			return t;
 		}
 		public Automata.State readState() throws IOException {
 			Automata.State state = super.readState();
-			if(state.kind == Type.K_RECORD) { 
+			if (state.kind == Type.K_EXISTENTIAL) {				
+				String module = readString();
+				String name = readString();
+				state.data = new NameID(ModuleID.fromString(module), name);
+			} else if(state.kind == Type.K_RECORD) { 
 				int nfields = reader.read_uv();
 				ArrayList<String> fields = new ArrayList<String>();
 				for(int i=0;i!=nfields;++i) {
@@ -438,16 +443,20 @@ public abstract class Type {
 	 * 
 	 */
 	public static class BinaryWriter extends BinaryAutomataWriter {		
-		public BinaryWriter(BinaryOutputStream reader) {
-			super(reader);			
+		public BinaryWriter(BinaryOutputStream writer) {
+			super(writer);			
 		}
 		public void write(Type t) throws IOException {
 			write(destruct(t));			
 		}
 		
 		public void write(Automata.State state) throws IOException {
-			super.write(state);
-			if(state.kind == Type.K_RECORD) {
+			super.write(state);			
+			if (state.kind == Type.K_EXISTENTIAL) {
+				NameID name = (NameID) state.data;
+				writeString(name.module().toString());
+				writeString(name.name());
+			} else if(state.kind == Type.K_RECORD) {
 				ArrayList<String> fields = (ArrayList<String>) state.data;
 				writer.write_uv(fields.size());
 				for(String field : fields) {

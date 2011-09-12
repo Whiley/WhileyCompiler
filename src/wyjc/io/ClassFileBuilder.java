@@ -2657,7 +2657,7 @@ public class ClassFileBuilder {
 		BinaryOutputStream binout = new BinaryOutputStream(jout);		
 		Type.BinaryWriter tm = new Type.BinaryWriter(binout);
 		tm.write(ft);
-		binout.close(); // force flush		
+		binout.close(); // force flush	
 		return jout.toString();		
 	}	
 	

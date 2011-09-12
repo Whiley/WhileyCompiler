@@ -123,10 +123,10 @@ public class WhileyDefine implements BytecodeAttribute {
 		for(BytecodeAttribute a : attributes) {
 			a.write(iw, constantPool, loader);
 		}
-		
+		iw.close();
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
 		writer.write_u4(out.size() + 2);		
-		writer.write_u2(constantPool.get(new Constant.Utf8(defName)));		
+		writer.write_u2(constantPool.get(new Constant.Utf8(defName)));				
 		writer.write(out.toByteArray());			
 	}	
 		

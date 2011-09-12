@@ -179,7 +179,7 @@ public class Main {
 				compiler.setLogOut(System.err);
 			}
 		
-		// finally, let's compile some files!!!
+			// finally, let's compile some files!!!
 		
 			ArrayList<File> files = new ArrayList<File>();
 			for (String file : args) {

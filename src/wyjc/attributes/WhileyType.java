@@ -89,18 +89,18 @@ public class WhileyType implements BytecodeAttribute {
 	}
 		
 	public static void write(Type type, BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool) throws IOException {
-		TypeWriter typeWriter = new TypeWriter(writer,constantPool);
-		typeWriter.write(Type.destruct(type));
-		typeWriter.close();
+			Map<Constant.Info, Integer> constantPool) throws IOException {		
+		TypeWriter typeWriter = new TypeWriter(writer,constantPool);		
+		typeWriter.write(Type.destruct(type));		
 	}
 			
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		BinaryOutputStream iw = new BinaryOutputStream(out);
-		write(type,iw,constantPool);
+		write(type,iw,constantPool);		
 		writer.write_u2(constantPool.get(new Constant.Utf8(name())));
+		iw.close();
 		writer.write_u4(out.size());		
 		writer.write(out.toByteArray());						
 	}
@@ -119,7 +119,7 @@ public class WhileyType implements BytecodeAttribute {
 		public WhileyType read(BinaryInputStream input,
 				Map<Integer, Constant.Info> constantPool) throws IOException {
 			input.read_u2(); // attribute name index code
-			input.read_u4(); // attribute length
+			input.read_u4(); // attribute length			
 			TypeReader reader = new TypeReader(input,constantPool);
 			Type t = Type.construct(reader.read());
 			return new WhileyType(t);
@@ -136,7 +136,7 @@ public class WhileyType implements BytecodeAttribute {
 		}
 				
 		public Automata.State readState() throws IOException {
-			Automata.State state = super.readState();
+			Automata.State state = super.readState();			
 			if (state.kind == Type.K_EXISTENTIAL) {
 				String modstr = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
@@ -147,11 +147,11 @@ public class WhileyType implements BytecodeAttribute {
 				return new Automata.State(state.kind, state.children,
 						state.deterministic, data);
 			} else if (state.kind == Type.K_RECORD) {
-				int nfields = reader.read_uv();
+				int nfields = reader.read_uv();				
 				ArrayList<String> fields = new ArrayList<String>();
 				for (int i = 0; i != nfields; ++i) {
-					String f = ((Constant.Utf8) constantPool.get(reader
-							.read_uv())).str;
+					int index = reader.read_uv();					
+					String f = ((Constant.Utf8) constantPool.get(index)).str;
 					fields.add(f);
 				}
 				return new Automata.State(state.kind, state.children,
@@ -169,7 +169,7 @@ public class WhileyType implements BytecodeAttribute {
 			this.constantPool = pool;
 		}
 		
-		public void writerState(Automata.State state) throws IOException {
+		public void write(Automata.State state) throws IOException {
 			super.write(state);
 			if(state.kind == Type.K_EXISTENTIAL) {
 				NameID name = (NameID) state.data;
@@ -179,10 +179,11 @@ public class WhileyType implements BytecodeAttribute {
 				writer.write_uv(constantPool.get(utf8));
 			} else if(state.kind == Type.K_RECORD) {
 				ArrayList<String> fields = (ArrayList<String>) state.data;
-				writer.write_uv(fields.size());
+				writer.write_uv(fields.size());				
 				for (String f : fields) {
 					Constant.Utf8 utf8 = new Constant.Utf8(f);
-					writer.write_uv(constantPool.get(utf8));
+					int index = constantPool.get(utf8);					
+					writer.write_uv(index);
 				}
 			}			
 		}
