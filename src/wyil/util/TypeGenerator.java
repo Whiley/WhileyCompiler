@@ -52,7 +52,7 @@ public class TypeGenerator {
 	
 	private static final Config config = new Config() {{		
 		RECURSIVE = false;
-		SIZE = 2;
+		SIZE = 3;
 		KINDS = new Kind[24];
 		KINDS[Type.K_VOID] = new Kind(true,0,0,null);
 		KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
