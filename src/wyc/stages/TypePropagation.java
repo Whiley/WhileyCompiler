@@ -102,16 +102,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				
 		Env environment = new Env();		
 		
-		if(method.type() instanceof Type.Meth) {
+		if(method.type() instanceof Type.Meth) {			
 			Type.Meth mt = (Type.Meth) method.type();
-			if(mt.receiver() != null) {
+			if(mt.receiver() != null) {				
 				environment.add(mt.receiver());
 			}
 		}
 		List<Type> paramTypes = method.type().params();
-				
-		int i = 0;		
-		for (; i != paramTypes.size(); ++i) {
+					
+		for (int i=0; i != paramTypes.size(); ++i) {
 			Type t = paramTypes.get(i);
 			environment.add(t);
 			if (!(method.type() instanceof Type.Meth)
@@ -166,8 +165,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Now, propagate through the body
 		for (int i = start; i < mcase.body().numSlots(); i++) {
 			environment.add(Type.T_VOID);
-		}	
-						
+		}					
+		
 		Block nbody = doPropagation(mcase.body(),environment);		
 				
 		// TODO: propagate over pre and post conditions

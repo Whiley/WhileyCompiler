@@ -1363,7 +1363,7 @@ public abstract class Type {
 			int[] fields = root.children;
 			int start = root.kind == K_HEADLESS ? 1 : 2;
 			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=2;i<fields.length;++i) {
+			for(int i=start;i<fields.length;++i) {
 				r.add(construct(Automatas.extract(automata, fields[i])));
 			}
 			return r;
