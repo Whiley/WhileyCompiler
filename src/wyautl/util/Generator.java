@@ -16,6 +16,17 @@ import wyautl.lang.*;
  */
 public class Generator {
 
+	public interface Data {
+		/**
+		 * Generate all possible forms of supplementary data for the given
+		 * state.
+		 * 
+		 * @param state
+		 * @return
+		 */
+		public List<Object> generate(Automata.State state);
+	}
+	
 	public static final class Kind {
 		/**
 		 * Determine whether this kind is deterministic or not.
@@ -32,10 +43,16 @@ public class Generator {
 		 */
 		public int MAX_CHILDREN;
 
-		public Kind(boolean deterministic, int min, int max) {
+		/**
+		 * A method for generating approprate supplementary data.
+		 */
+		public Data DATA;
+		
+		public Kind(boolean deterministic, int min, int max, Data data) {
 			this.DETERMINISTIC = deterministic;
 			this.MIN_CHILDREN = min;
 			this.MAX_CHILDREN = max;
+			this.DATA = data;
 		}
 	}
 
@@ -105,13 +122,32 @@ public class Generator {
 			}			
 			states[i] = new Automata.State(kind,children,KINDS[kind].DETERMINISTIC);
 		}
-		
-		Automata automata = new Automata(states);
-		writer.write(automata);
-		writer.flush();
-		count++;
-		if(verbose) {
-			System.err.print("\rWrote " + count + " automatas.");
+		Automata automata = new Automata(states);		
+		generate(0,automata,writer,config);				
+	}
+	
+	private static void generate(int index, Automata automata,
+			GenericWriter<Automata> writer, Config config) throws IOException {
+		if(index == automata.size()) {
+			writer.write(automata);
+			writer.flush();
+			count++;
+			if(verbose) {
+				System.err.print("\rWrote " + count + " automatas.");
+			}	
+		} else {			
+			Automata.State state = automata.states[index];
+			Kind kind = config.KINDS[state.kind];			
+			if(kind.DATA != null) {
+				// this kind requires supplementary data
+				List<Object> datas = kind.DATA.generate(state);
+				for(Object data : datas) {
+					state.data = data;
+					generate(index+1,automata,writer,config);
+				}
+			} else {
+				generate(index+1,automata,writer,config);
+			}
 		}
 	}
 	
@@ -187,7 +223,8 @@ public class Generator {
 		} else {
 			Kind[] kinds = config.KINDS;
 			for(int k=0;k!=kinds.length;++k) {
-				if(kinds[k] != null) {
+				Kind kind = kinds[k];
+				if(kind != null) {
 					base.kinds[index] = k;								
 					generate(index+1,base,writer,config);
 				}
@@ -215,8 +252,8 @@ public class Generator {
 	
 	private static final Config config = new Config() {{
 		KINDS = new Kind[]{
-			new Kind(false,0,2),
-			new Kind(true,1,1)
+			new Kind(false,0,2,null),
+			new Kind(true,1,1,null)
 		};
 		RECURSIVE = true;
 		SIZE = 3;

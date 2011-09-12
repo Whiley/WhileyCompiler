@@ -1,6 +1,7 @@
 package wyil.util;
 
 import java.io.*;
+import java.util.*;
 
 import wyil.lang.Type;
 import wyjvm.io.BinaryOutputStream;
@@ -36,33 +37,55 @@ public class TypeGenerator implements GenericWriter<Automata> {
 		output.close();
 	}
 	
+	private static final Generator.Data DATA_GENERATOR = new Generator.Data() {
+		public List<Object> generate(Automata.State state) {
+			if(state.kind == Type.K_RECORD) {
+				return recordGenerator(state);
+			} else {
+				return Collections.EMPTY_LIST;
+			}
+		}
+	};
+	
 	private static final Config config = new Config() {{		
 		RECURSIVE = false;
 		SIZE = 3;
 		KINDS = new Kind[24];
-		KINDS[Type.K_VOID] = new Kind(true,0,0);
-		KINDS[Type.K_ANY] = new Kind(true,0,0);		
-		KINDS[Type.K_NULL] = new Kind(true,0,0);
-		//KINDS[Type.K_BOOL] = new Kind(true,0,0);
-		//KINDS[Type.K_BYTE] = new Kind(true,0,0);
-		//KINDS[Type.K_CHAR] = new Kind(true,0,0);
-		KINDS[Type.K_INT] = new Kind(true,0,0);
-		//KINDS[Type.K_RATIONAL] = new Kind(true,0,0);
-		//KINDS[Type.K_STRING] = new Kind(true,0,0);
-		//KINDS[Type.K_TUPLE] = new Kind(true,2,2);
-		//KINDS[Type.K_SET] = new Kind(true,1,1);
-		KINDS[Type.K_LIST] = new Kind(true,1,1);
-		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2);	
-		//KINDS[Type.K_PROCESS] = new Kind(true,1,1);
-		//KINDS[Type.K_RECORD] = new Kind(true,1,1);
+		KINDS[Type.K_VOID] = new Kind(true,0,0,null);
+		KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
+		KINDS[Type.K_NULL] = new Kind(true,0,0,null);
+		//KINDS[Type.K_BOOL] = new Kind(true,0,0,null);
+		//KINDS[Type.K_BYTE] = new Kind(true,0,0,null);
+		//KINDS[Type.K_CHAR] = new Kind(true,0,0,null);
+		KINDS[Type.K_INT] = new Kind(true,0,0,null);
+		//KINDS[Type.K_RATIONAL] = new Kind(true,0,0,null);
+		//KINDS[Type.K_STRING] = new Kind(true,0,0,null);
+		//KINDS[Type.K_TUPLE] = new Kind(true,2,2,null);
+		//KINDS[Type.K_SET] = new Kind(true,1,1,null);
+		//KINDS[Type.K_LIST] = new Kind(true,1,1,null);
+		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);	
+		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
+		KINDS[Type.K_RECORD] = new Kind(true,1,2,DATA_GENERATOR);
 		//KINDS[Type.K_UNION] = new Kind(false,2,2);
-		KINDS[Type.K_INTERSECTION] = new Kind(false,2,2);
-		KINDS[Type.K_NEGATION] = new Kind(true,1,1);
-		//KINDS[Type.K_FUNCTION] = new Kind(true,2,2);
-		//KINDS[Type.K_METHOD] = new Kind(true,1,1);
-		//KINDS[Type.K_HEADLESS] = new Kind(true,1,1);
-		//KINDS[Type.K_EXISTENTIAL] = new Kind(true,1,1);
+		//KINDS[Type.K_INTERSECTION] = new Kind(false,2,2,null);
+		//KINDS[Type.K_NEGATION] = new Kind(true,1,1,null);
+		//KINDS[Type.K_FUNCTION] = new Kind(true,2,2,null);
+		//KINDS[Type.K_METHOD] = new Kind(true,1,1,null);
+		//KINDS[Type.K_HEADLESS] = new Kind(true,1,1,null);
+		//KINDS[Type.K_EXISTENTIAL] = new Kind(true,1,1,null);
 	}};
+	
+	private static final String[] fields1 = {"f1","f2","f3","f4","f5"};
+	private static final String[] fields2 = {"f2","f3","f4","f5","f6"};
+	
+	private static List<Object> recordGenerator(Automata.State state) {		
+		String[] data1 = Arrays.copyOf(fields1, state.children.length);
+		String[] data2 = Arrays.copyOf(fields2, state.children.length);				
+		ArrayList<Object> datas = new ArrayList<Object>();		
+		datas.add(data1);
+		datas.add(data2);		
+		return datas;
+	}		
 	
 	private static void kindUpdate(int k, Kind kind) {
 		if(config.KINDS[k] != null) {
@@ -104,8 +127,8 @@ public class TypeGenerator implements GenericWriter<Automata> {
 					kindUpdate(Type.K_UNION,null);
 					kindUpdate(Type.K_INTERSECTION,null);
 					kindUpdate(Type.K_NEGATION,null);
-					kindUpdate(Type.K_SET,new Kind(true,0,2));
-					kindUpdate(Type.K_LIST,new Kind(true,0,2));
+					kindUpdate(Type.K_SET,new Kind(true,0,2,null));
+					kindUpdate(Type.K_LIST,new Kind(true,0,2,null));
 					// could do more
 				}
 				index++;
