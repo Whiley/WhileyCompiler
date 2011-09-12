@@ -7,7 +7,7 @@ import wyautl.lang.*;
 
 /**
  * <p>
- * The simplification rule implements a rewrite rule for the automata
+ * This simplification rule implements a rewrite for the automata
  * representation of types in Whiley. The rewrite rule applies a number of
  * relatively straightforward simplifications, including:
  * </p>
