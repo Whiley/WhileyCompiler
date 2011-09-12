@@ -4,7 +4,7 @@ import org.junit.*;
 import static org.junit.Assert.*;
 import wyil.lang.Type;
 
-public class SubtypeTests {
+public class RecordSubtypeTests {
 	@Test public void test_1() { checkIsSubtype("any","any"); }
 	@Test public void test_2() { checkIsSubtype("any","null"); }
 	@Test public void test_3() { checkIsSubtype("any","int"); }
