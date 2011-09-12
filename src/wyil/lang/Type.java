@@ -725,8 +725,7 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new ConjunctiveNormalForm());
-			Automatas.rewrite(automata,new IntersectionRewrites());
+			Automatas.rewrite(automata,new ConjunctiveNormalForm());			
 			Automatas.rewrite(automata,new SubsumptionRewrites(automata));
 			automata = Automatas.extract(automata, 0);
 			//automata = Automatas.minimise(automata);
@@ -752,7 +751,6 @@ public abstract class Type {
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
 			Automatas.rewrite(automata,new ConjunctiveNormalForm());
-			//Automatas.rewrite(automata,new IntersectionRewrites());
 			automata = Automatas.extract(automata, 0);
 			return construct(automata);
 		} else {

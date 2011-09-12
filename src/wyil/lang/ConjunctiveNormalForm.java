@@ -9,10 +9,13 @@ import wyautl.lang.*;
  * This simplification rule converts a type into <i>conjunctive normal form</i>.
  * This is achieved by repeated application of the following rewrites:
  * </p>
- * <ul>
+ * <ol>
  * <li><code>T | void</code> => <code>T</code>.</li>
  * <li><code>T | any</code> => <code>any</code>.</li>
  * <li><code>T & void</code> => <code>void</code>.</li>
+ * <li><code>T & any</code> => <code>T</code>.</li>
+ * <li><code>X<T | X></code> => <code>T</code>.</li>
+ * <li><code>X<T & X></code> => <code>void</code>.</li>
  * <li><code>!!T</code> => <code>T</code>.</li>
  * <li><code>!any</code> => <code>void</code>.</li>
  * <li><code>!void</code> => <code>any</code>.</li>
@@ -21,7 +24,10 @@ import wyautl.lang.*;
  * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2 | T_3)</code>.</li>
  * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2 & T_3)</code>.</li>
  * <li><code>T_1 & (T_2|T_3)</code> => <code>(T_1 & T_2) | (T_1 & T_3)</code>.</li>
- * </ul>
+ * <li><code>[T_1] & [T_2] & T_3</code> => <code>[T_1 & T_2] & T_3)</code>.</li>
+ * <li><code>![T_1] & ![T_2] & T_3</code> => <code>![T_1 | T_2] & T_3)</code>.</li>
+ * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
+ * </ol>
  * <p>
  * <b>NOTE:</b> applications of this rewrite rule may leave states which are
  * unreachable from the root. Therefore, the resulting automata should be
@@ -86,67 +92,153 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 				return false;
 		}
 	}
-	
+
+	/**
+	 * This method is responsible for the following rewrite rules:
+	 * <ol>
+	 * <li><code>T & void</code> => <code>void</code>.</li>
+	 * <li><code>T & any</code> => <code>T</code>.</li>
+	 * <li><code>X<T & X></code> => <code>void</code>.</li>
+	 * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2 & T_3)</code>.</li>
+	 * <li><code>T_1 & (T_2|T_3)</code> => <code>(T_1 & T_2) | (T_1 & T_3)</code>.</li>
+	 * <li><code>[T_1] & [T_2] & T_3</code> => <code>[T_1 & T_2] & T_3)</code>.</li>
+	 * <li><code>![T_1] & ![T_2] & T_3</code> => <code>![T_1 | T_2] & T_3)</code>.</li>
+	 * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
+	 * </ol>
+	 * 
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param state
+	 *            --- state being worked on.
+	 * @param automata
+	 *            --- automata containing state being worked on.
+	 * @return
+	 */
 	public boolean applyIntersection(int index, Automata.State state,
+			Automata automata) {
+		return applyIntersection_1(index, state, automata)
+				|| applyIntersection_2(index, state, automata);
+	}
+	
+	/**
+	 * This method applies the following rewrite rules:
+	 * <ol>
+	 * <li><code>T & void</code> => <code>void</code>.</li>
+	 * <li><code>T & any</code> => <code>T</code>.</li>
+	 * <li><code>X<T & X></code> => <code>void</code>.</li>
+	 * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2 & T_3)</code>.</li>
+	 * <li><code>T_1 & (T_2|T_3)</code> => <code>(T_1 & T_2) | (T_1 & T_3)</code>.</li>
+	 * </ol>
+	 * 
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param state
+	 *            --- state being worked on.
+	 * @param automata
+	 *            --- automata containing state being worked on.
+	 * @return
+	 */
+	public boolean applyIntersection_1(int index, Automata.State state,
 			Automata automata) {				
 		int[] children = state.children;		
 		boolean changed = false;
 		for(int i=0;i!=children.length;++i) {			
 			int iChild = children[i];
 			if(iChild == index) {
-				// contractive case				
-				children = removeIndex(i,children);
-				state.children = children;				
-				changed=true;
+				// X<T1 & X> => void				
+				automata.states[index] = new Automata.State(Type.K_VOID);
+				return true;
 			} else {
 				Automata.State child = automata.states[iChild];
 				switch(child.kind) {
-				case Type.K_VOID:								
-					automata.states[index] = new Automata.State(Type.K_VOID);
-					return true;				
-				case Type.K_INTERSECTION:
-					return flattenChildren(index,state,automata);
-				case Type.K_UNION: {
-					int[] child_children = child.children;
-					int[] nchildren = new int[child_children.length];
-					Automata.State[] nstates = new Automata.State[child_children.length];
-					for(int j=0;j!=child_children.length;++j) {
-						int jChildIndex = child_children[j];
-						int[] kchildren = new int[children.length];
-						nchildren[j] = automata.size()+j;
-						for(int k=0;k!=children.length;++k) {
-							if(k != i) {
-								kchildren[k] = children[k];
-							} else {
-								kchildren[i] = jChildIndex;
+					case Type.K_VOID:
+						// T1 & void => void
+						automata.states[index] = new Automata.State(Type.K_VOID);
+						return true;	
+					case Type.K_ANY:
+						// T1 & any => T1 
+						children = removeIndex(i,children);
+						state.children = children;				
+						changed=true;
+					case Type.K_INTERSECTION:
+						// T1 & (T2 & T3) => T1 & T2 & T3
+						return flattenChildren(index,state,automata);
+					case Type.K_UNION: {
+						// T1 & (T2 | T3) => (T1 & T2) | (T1 & T3) 
+						int[] child_children = child.children;
+						int[] nchildren = new int[child_children.length];
+						Automata.State[] nstates = new Automata.State[child_children.length];
+						for(int j=0;j!=child_children.length;++j) {
+							int jChildIndex = child_children[j];
+							int[] kchildren = new int[children.length];
+							nchildren[j] = automata.size()+j;
+							for(int k=0;k!=children.length;++k) {
+								if(k != i) {
+									kchildren[k] = children[k];
+								} else {
+									kchildren[i] = jChildIndex;
+								}
 							}
+							nstates[j] = new Automata.State(Type.K_INTERSECTION,kchildren);					
 						}
-						nstates[j] = new Automata.State(Type.K_INTERSECTION,kchildren);					
-					}
-					Automatas.inplaceAppendAll(automata, nstates);
-					state = automata.states[index];
-					state.kind = Type.K_UNION;				
-					state.children = nchildren;				
+						Automatas.inplaceAppendAll(automata, nstates);
+						state = automata.states[index];
+						state.kind = Type.K_UNION;				
+						state.children = nchildren;				
 
-					return true;
-				}
+						return true;
+					}
 				}
 			}
 		}
-		if(children.length == 0) {
-			// this can happen in the case of an intersection which has only
-			// itself as a child.
-			automata.states[index] = new Automata.State(Type.K_VOID);
-			changed = true;
-		} else if(children.length == 1) {
+		if(children.length == 1) {
 			// bypass this node altogether
 			int child = children[0];
 			automata.states[index] = new Automata.State(automata.states[child]);
 			changed = true;
 		}
-		return changed;		
+		return changed;
+	}
+	
+	/**
+	 * This method applies the following rewrite rules:
+	 * <ol>
+	 * <li><code>[T_1] & [T_2] & T_3</code> => <code>[T_1 & T_2] & T_3)</code>.</li>
+	 * <li><code>![T_1] & ![T_2] & T_3</code> => <code>![T_1 | T_2] & T_3)</code>.</li>
+	 * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
+	 * </ol>
+	 * 
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param state
+	 *            --- state being worked on.
+	 * @param automata
+	 *            --- automata containing state being worked on.
+	 * @return
+	 */
+	public boolean applyIntersection_2(int index, Automata.State state,
+			Automata automata) {				
+		return false;	
 	}	
 		
+	
+	/**
+	 * This method is responsible for the following rewrite rules:
+	 * <ol>
+	 * <li><code>T | void</code> => <code>T</code>.</li>
+	 * <li><code>T | any</code> => <code>any</code>.</li>
+	 * <li><code>X<T | X></code> => <code>T</code>.</li>
+	 * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2 | T_3)</code>.</li> 
+	 * </ol>
+	 * 
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param state
+	 *            --- state being worked on.
+	 * @param automata
+	 *            --- automata containing state being worked on.
+	 * @return
+	 */
 	public boolean applyUnion(int index, Automata.State state,
 			Automata automata) {		
 		int[] children = state.children;		
