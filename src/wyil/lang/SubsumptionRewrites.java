@@ -67,7 +67,7 @@ public final class SubsumptionRewrites implements RewriteRule {
 				boolean jri = subtypes.isSubtype(jChild, iChild);
 				if (irj && (!jri || i > j)) {
 					subsumed = true;
-				} else if (!irj && !jri) {
+				} else if (subtypes.isIntersection(iChild, jChild)) {
 					// no intersection is possible!
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;

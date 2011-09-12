@@ -70,6 +70,20 @@ public class IntersectionOperator implements Relation {
 	public final boolean isSupertype(int fromIndex, int toIndex) {
 		return !intersection(fromIndex,true,toIndex,false);
 	}
+	
+	/**
+	 * Determine whether there is a non-empty intersection between the state
+	 * rooted at <code>fromIndex</code> and that rooted at <code>toIndex</code>.
+	 * 
+	 * @param fromIndex
+	 *            --- index of from state
+	 * @param toIndex
+	 *            --- index of to state
+	 * @return --- true if such an intersection exists, false otherwise.
+	 */
+	public final boolean isIntersection(int fromIndex, int toIndex) {
+		return !intersection(fromIndex,true,toIndex,true);
+	}
 
 	/**
 	 * Determine whether there is a non-empty intersection between the state

@@ -717,7 +717,7 @@ public abstract class Type {
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
 			Automatas.rewrite(automata,new ConjunctiveNormalForm());
-			Automatas.rewrite(automata,new IntersectionRewrites());
+			//Automatas.rewrite(automata,new IntersectionRewrites());
 			Automatas.rewrite(automata,new SubsumptionRewrites(automata));
 			automata = Automatas.extract(automata, 0);
 			//automata = Automatas.minimise(automata);
@@ -743,7 +743,7 @@ public abstract class Type {
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
 			Automatas.rewrite(automata,new ConjunctiveNormalForm());
-			Automatas.rewrite(automata,new IntersectionRewrites());
+			//Automatas.rewrite(automata,new IntersectionRewrites());
 			automata = Automatas.extract(automata, 0);
 			return construct(automata);
 		} else {
@@ -1790,11 +1790,11 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);	
-		Type from = fromString("int|int");		
+		Type from = fromString("!null&!string");		
 		Type to = fromString("{any f1}");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-		System.out.println("simplified(" + from + ") = " + normalise(from));
-		System.out.println("simplified(" + to + ") = " + normalise(to));
+		System.out.println("normalised(" + from + ") = " + normalise(from));
+		System.out.println("normalised(" + to + ") = " + normalise(to));
 	}
 	
 	public static Type contractive() {

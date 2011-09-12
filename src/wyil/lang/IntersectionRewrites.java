@@ -81,7 +81,8 @@ public final class IntersectionRewrites implements RewriteRule {
 				kind = child.kind;
 				data = child.data;
 				numChildren = child.children.length;
-			} else if (kind != child.kind && child.kind != Type.K_ANY) {				
+			} else if (kind != child.kind && child.kind != Type.K_ANY) {
+				System.out.println("REDUCING TO VOID(2)");
 				automata.states[index] = new Automata.State(Type.K_VOID);
 				return true;
 			} else if(child.kind == Type.K_ANY) {				
@@ -93,7 +94,8 @@ public final class IntersectionRewrites implements RewriteRule {
 						&& (data == child.data || (data != null && data
 								.equals(child.data)))) {
 					// this is ok
-				} else {										
+				} else {
+					System.out.println("REDUCING TO VOID(3)");
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;
 				}
