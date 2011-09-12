@@ -150,11 +150,11 @@ public class SubtypeTests {
 	@Test public void test_143() { checkIsSubtype("{any f1}","{void f1}"); }
 	@Test public void test_144() { checkIsSubtype("{any f1}","{void f2}"); }
 	@Test public void test_145() { checkIsSubtype("{any f1}","{any f1}"); }
-	@Test public void test_146() { checkIsSubtype("{any f1}","{any f2}"); }
+	@Test public void test_146() { checkNotSubtype("{any f1}","{any f2}"); }
 	@Test public void test_147() { checkIsSubtype("{any f1}","{null f1}"); }
-	@Test public void test_148() { checkIsSubtype("{any f1}","{null f2}"); }
+	@Test public void test_148() { checkNotSubtype("{any f1}","{null f2}"); }
 	@Test public void test_149() { checkIsSubtype("{any f1}","{int f1}"); }
-	@Test public void test_150() { checkIsSubtype("{any f1}","{int f2}"); }
+	@Test public void test_150() { checkNotSubtype("{any f1}","{int f2}"); }
 	@Test public void test_151() { checkNotSubtype("{any f2}","any"); }
 	@Test public void test_152() { checkNotSubtype("{any f2}","null"); }
 	@Test public void test_153() { checkNotSubtype("{any f2}","int"); }
@@ -164,11 +164,11 @@ public class SubtypeTests {
 	@Test public void test_157() { checkNotSubtype("{any f2}","[int]"); }
 	@Test public void test_158() { checkIsSubtype("{any f2}","{void f1}"); }
 	@Test public void test_159() { checkIsSubtype("{any f2}","{void f2}"); }
-	@Test public void test_160() { checkIsSubtype("{any f2}","{any f1}"); }
+	@Test public void test_160() { checkNotSubtype("{any f2}","{any f1}"); }
 	@Test public void test_161() { checkIsSubtype("{any f2}","{any f2}"); }
-	@Test public void test_162() { checkIsSubtype("{any f2}","{null f1}"); }
+	@Test public void test_162() { checkNotSubtype("{any f2}","{null f1}"); }
 	@Test public void test_163() { checkIsSubtype("{any f2}","{null f2}"); }
-	@Test public void test_164() { checkIsSubtype("{any f2}","{int f1}"); }
+	@Test public void test_164() { checkNotSubtype("{any f2}","{int f1}"); }
 	@Test public void test_165() { checkIsSubtype("{any f2}","{int f2}"); }
 	@Test public void test_166() { checkNotSubtype("{null f1}","any"); }
 	@Test public void test_167() { checkNotSubtype("{null f1}","null"); }
@@ -182,7 +182,7 @@ public class SubtypeTests {
 	@Test public void test_175() { checkNotSubtype("{null f1}","{any f1}"); }
 	@Test public void test_176() { checkNotSubtype("{null f1}","{any f2}"); }
 	@Test public void test_177() { checkIsSubtype("{null f1}","{null f1}"); }
-	@Test public void test_178() { checkIsSubtype("{null f1}","{null f2}"); }
+	@Test public void test_178() { checkNotSubtype("{null f1}","{null f2}"); }
 	@Test public void test_179() { checkNotSubtype("{null f1}","{int f1}"); }
 	@Test public void test_180() { checkNotSubtype("{null f1}","{int f2}"); }
 	@Test public void test_181() { checkNotSubtype("{null f2}","any"); }
@@ -196,7 +196,7 @@ public class SubtypeTests {
 	@Test public void test_189() { checkIsSubtype("{null f2}","{void f2}"); }
 	@Test public void test_190() { checkNotSubtype("{null f2}","{any f1}"); }
 	@Test public void test_191() { checkNotSubtype("{null f2}","{any f2}"); }
-	@Test public void test_192() { checkIsSubtype("{null f2}","{null f1}"); }
+	@Test public void test_192() { checkNotSubtype("{null f2}","{null f1}"); }
 	@Test public void test_193() { checkIsSubtype("{null f2}","{null f2}"); }
 	@Test public void test_194() { checkNotSubtype("{null f2}","{int f1}"); }
 	@Test public void test_195() { checkNotSubtype("{null f2}","{int f2}"); }
@@ -214,7 +214,7 @@ public class SubtypeTests {
 	@Test public void test_207() { checkNotSubtype("{int f1}","{null f1}"); }
 	@Test public void test_208() { checkNotSubtype("{int f1}","{null f2}"); }
 	@Test public void test_209() { checkIsSubtype("{int f1}","{int f1}"); }
-	@Test public void test_210() { checkIsSubtype("{int f1}","{int f2}"); }
+	@Test public void test_210() { checkNotSubtype("{int f1}","{int f2}"); }
 	@Test public void test_211() { checkNotSubtype("{int f2}","any"); }
 	@Test public void test_212() { checkNotSubtype("{int f2}","null"); }
 	@Test public void test_213() { checkNotSubtype("{int f2}","int"); }
@@ -228,7 +228,7 @@ public class SubtypeTests {
 	@Test public void test_221() { checkNotSubtype("{int f2}","{any f2}"); }
 	@Test public void test_222() { checkNotSubtype("{int f2}","{null f1}"); }
 	@Test public void test_223() { checkNotSubtype("{int f2}","{null f2}"); }
-	@Test public void test_224() { checkIsSubtype("{int f2}","{int f1}"); }
+	@Test public void test_224() { checkNotSubtype("{int f2}","{int f1}"); }
 	@Test public void test_225() { checkIsSubtype("{int f2}","{int f2}"); }
 
 	private void checkIsSubtype(String from, String to) {

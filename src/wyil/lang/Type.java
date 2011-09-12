@@ -238,11 +238,11 @@ public abstract class Type {
 	 */
 	public static final Record T_RECORD(Map<String,Type> fields) {				
 		java.util.Set<String> keySet = fields.keySet();
-		String[] keys = keySet.toArray(new String[keySet.size()]);
-		Arrays.sort(keys);
-		Type[] types = new Type[keys.length];
+		ArrayList<String> keys = new ArrayList(keySet);
+		Collections.sort(keys);
+		Type[] types = new Type[keys.size()];
 		for(int i=0;i!=types.length;++i) {
-			types[i] = fields.get(keys[i]);
+			types[i] = fields.get(keys.get(i));
 		}
 		return new Record(construct(K_RECORD,keys,types));				
 	}
@@ -392,13 +392,34 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static class BinaryReader {
-		private BinaryAutomataReader reader;
-		public BinaryReader(BinaryInputStream r) {
-			this.reader = new BinaryAutomataReader(r);
+	public static class BinaryReader extends BinaryAutomataReader {		
+		public BinaryReader(BinaryInputStream reader) {
+			super(reader);
 		}
-		public Type read() throws IOException {
-			return construct(reader.read());
+		public Type readType() throws IOException {
+			return construct(read());
+		}
+		public Automata.State readState() throws IOException {
+			Automata.State state = super.readState();
+			if(state.kind == Type.K_RECORD) { 
+				int nfields = reader.read_uv();
+				ArrayList<String> fields = new ArrayList<String>();
+				for(int i=0;i!=nfields;++i) {
+					fields.add(readString());
+				}
+				state.data = fields;			
+			}
+			return state;
+		}
+		
+		private String readString() throws IOException {
+			String r = "";
+			int nchars = reader.read_uv();
+			for(int i=0;i!=nchars;++i) {
+				char c = (char) reader.read_u2();
+				r = r + c;
+			}
+			return r;
 		}
 	}
 	
@@ -416,13 +437,30 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static class BinaryWriter {
-		private BinaryAutomataWriter writer;
-		public BinaryWriter(BinaryOutputStream r) {
-			this.writer = new BinaryAutomataWriter(r);
+	public static class BinaryWriter extends BinaryAutomataWriter {		
+		public BinaryWriter(BinaryOutputStream reader) {
+			super(reader);			
 		}
 		public void write(Type t) throws IOException {
-			writer.write(destruct(t));			
+			write(destruct(t));			
+		}
+		
+		public void write(Automata.State state) throws IOException {
+			super.write(state);
+			if(state.kind == Type.K_RECORD) {
+				ArrayList<String> fields = (ArrayList<String>) state.data;
+				writer.write_uv(fields.size());
+				for(String field : fields) {
+					writeString(field);
+				}					
+			}						
+		}
+		
+		private void writeString(String str) throws IOException {
+			writer.write_uv(str.length());
+			for (int i = 0; i != str.length(); ++i) {
+				writer.write_u2(str.charAt(i));
+			}
 		}
 	}
 	
@@ -1133,7 +1171,7 @@ public abstract class Type {
 		 * @return
 		 */
 		public HashSet<String> keys() {
-			String[] fields = (String[]) automata.states[0].data;
+			ArrayList<String> fields = (ArrayList<String>) automata.states[0].data;
 			HashSet<String> r = new HashSet<String>();
 			for(String f : fields) {
 				r.add(f);
@@ -1147,11 +1185,11 @@ public abstract class Type {
 		 * @return
 		 */
 		public HashMap<String, Type> fields() {
-			String[] fields = (String[]) automata.states[0].data;
+			ArrayList<String> fields = (ArrayList<String>) automata.states[0].data;
 			int[] children = automata.states[0].children;
 			HashMap<String, Type> r = new HashMap<String, Type>();
 			for (int i = 0; i != children.length; ++i) {
-				r.put(fields[i],
+				r.put(fields.get(i),
 						construct(Automatas.extract(automata, children[i])));
 			}
 			return r;
@@ -1431,12 +1469,12 @@ public abstract class Type {
 			// labeled nary node
 			middle = "{";
 			int[] children = state.children;
-			String[] fields = (String[]) state.data;
-			for (int i = 0; i != fields.length; ++i) {
+			ArrayList<String> fields = (ArrayList<String>) state.data;
+			for (int i = 0; i != fields.size(); ++i) {
 				if (i != 0) {
 					middle += ",";
 				}
-				middle += toString(children[i], visited, headers, automata) + " " + fields[i];
+				middle += toString(children[i], visited, headers, automata) + " " + fields.get(i);
 			}
 			middle = middle + "}";
 			break;
@@ -1750,9 +1788,9 @@ public abstract class Type {
 	public static final byte K_LABEL = 23;	
 	
 	public static void main(String[] args) {
-		// Type t1 = contractive(); //linkedList(2);
-		Type from = fromString("null");		
-		Type to = fromString("{void field}");		
+		// Type t1 = contractive(); //linkedList(2);	
+		Type from = fromString("{any f1}");		
+		Type to = fromString("{any f2}");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + normalise(from));
 		System.out.println("simplified(" + to + ") = " + normalise(to));

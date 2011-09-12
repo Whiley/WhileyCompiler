@@ -27,16 +27,24 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 	public static final class Value {
 		public final int kind;
 		public final Value[] children;
+		public final Object data;
 
-		public Value(int kind, Value... children) {
+		public Value(int kind, Object data, Value... children) {
 			this.kind = kind;
-			this.children = children;			
+			this.children = children;		
+			this.data = data;
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Value) {
 				Value dv = (Value) o;
-				return kind == dv.kind && Arrays.equals(children, dv.children);
+				if(kind == dv.kind && Arrays.equals(children, dv.children)) {
+					if(data == null) {
+						return dv.data == null;
+					} else {
+						return data.equals(dv.data);
+					}
+				} 
 			}
 			return false;
 		}
@@ -80,7 +88,7 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 		for(int c : state.children) {			
 			children[i++] = construct(c,automata);
 		}
-		return new Value(state.kind,children);
+		return new Value(state.kind,state.data,children);
 	}
 		
 	public boolean accepts(Automata automata, Value value) {
@@ -89,13 +97,18 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 	
 	public boolean accepts(int index, Automata automata, Value value) {		
 		Automata.State state = automata.states[index];
-		if(state.kind == value.kind) {		
+		if(state.kind == value.kind) {
+			if (state.data == null && value.data != null) {
+				return false;
+			} else if (state.data != null && !state.data.equals(value.data)) {
+				return false;
+			}
 			if(state.deterministic) {
 				int[] schildren = state.children;
 				Value[] vchildren = value.children;
 				if(schildren.length != vchildren.length) {
 					return false;
-				}
+				}				
 				int length = schildren.length;
 				for(int i=0;i!=length;++i) {
 					int schild = schildren[i];					

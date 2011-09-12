@@ -152,7 +152,7 @@ public class ClassFileLoader {
 			// then read the type
 			BinaryInputStream bin = new BinaryInputStream(
 					new JavaIdentifierInputStream(mangle));
-			Type.Fun type = (Type.Fun) new Type.BinaryReader(bin).read();
+			Type.Fun type = (Type.Fun) new Type.BinaryReader(bin).readType();
 			// now build the parameter names
 			List<Attribute> attrs = new ArrayList<Attribute>();
 			for (BytecodeAttribute ba : cm.attributes()) {

@@ -14,35 +14,7 @@ import wyil.lang.Type;
 
 
 public class TypeTester {
-	
-	public static class BinaryTypeReader extends BinaryAutomataReader {
-		public BinaryTypeReader(BinaryInputStream reader) {
-			super(reader);
-		}
-		public Automata.State readState() throws IOException {
-			Automata.State state = super.readState();
-			if(state.kind == Type.K_RECORD) { 
-				int nfields = reader.read_uv();
-				String[] fields = new String[nfields];
-				for(int i=0;i!=nfields;++i) {
-					fields[i] = readString();
-				}
-				state.data = fields;			
-			}
-			return state;
-		}
 		
-		private String readString() throws IOException {
-			String r = "";
-			int nchars = reader.read_uv();
-			for(int i=0;i!=nchars;++i) {
-				char c = (char) reader.read_u2();
-				r = r + c;
-			}
-			return r;
-		}
-	}
-	
 	/**
 	 * In the type interpretation, we must override the default interpretation
 	 * to deal with union, intersection, negation, any, void, list and set
@@ -95,7 +67,7 @@ public class TypeTester {
 					}
 				}
 				return true;
-			}
+			}			
 			case Type.K_NEGATION: {
 				int child = automata.states[index].children[0];
 				visited.set(index);				
@@ -222,10 +194,10 @@ public class TypeTester {
 			int index = 0;
 			String mode = args[index++];
 			ArrayList<DefaultInterpretation.Value> model = Tester.readModel(
-					new BinaryTypeReader(new BinaryInputStream(
+					new Type.BinaryReader(new BinaryInputStream(
 							new FileInputStream(args[index]))), verbose);
 			ArrayList<Automata> types = Tester.readAutomatas(
-					new BinaryTypeReader(new BinaryInputStream(
+					new Type.BinaryReader(new BinaryInputStream(
 							new FileInputStream(args[index+1]))), verbose);						
 			if(mode.equals("-subtypes")) {
 				generateSubtypeTests(types,model);

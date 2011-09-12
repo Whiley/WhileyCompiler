@@ -1,6 +1,9 @@
 package wyil.lang;
 
 import static wyil.lang.Type.*;
+
+import java.util.ArrayList;
+
 import wyautl.lang.*;
 
 public class IntersectionOperator implements Relation {
@@ -140,18 +143,19 @@ public class IntersectionOperator implements Relation {
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
 					if (fromChildren.length != toChildren.length) {
-						return false;
+						return !(fromSign && toSign);
 					}				
-					String[] fromFields = (String[]) fromState.data;
-					String[] toFields = (String[]) toState.data;				
+					ArrayList<String> fromFields = (ArrayList<String>) fromState.data;
+					ArrayList<String> toFields = (ArrayList<String>) toState.data;				
 
-					for (int i = 0; i != fromFields.length; ++i) {
-						String e1 = fromFields[i];
-						String e2 = toFields[i];
-						if(!e1.equals(e2)) { return false; }
+					for (int i = 0; i != fromFields.size(); ++i) {
+						String e1 = fromFields.get(i);
+						String e2 = toFields.get(i);
+						if(!e1.equals(e2)) { return !(fromSign && toSign); }
 						int fromChild = fromChildren[i];
 						int toChild = toChildren[i];
-						if(!intersection(fromChild,fromSign,toChild,toSign)) {
+						if (!intersection(fromChild, fromSign, toChild,
+								toSign)) {
 							return false;
 						}					
 					}									

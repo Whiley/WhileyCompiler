@@ -78,7 +78,7 @@ public class WhileyType implements BytecodeAttribute {
 					utf8 = new Constant.Utf8(name.name());
 					Constant.addPoolItem(utf8, constantPool);
 				} else if (s.kind == Type.K_RECORD) {
-					String[] fields = (String[]) s.data;
+					ArrayList<String> fields = (ArrayList<String>) s.data;
 					for (String f : fields) {
 						Constant.Utf8 utf8 = new Constant.Utf8(f);
 						Constant.addPoolItem(utf8, constantPool);
@@ -148,11 +148,11 @@ public class WhileyType implements BytecodeAttribute {
 						state.deterministic, data);
 			} else if (state.kind == Type.K_RECORD) {
 				int nfields = reader.read_uv();
-				String[] fields = new String[nfields];
+				ArrayList<String> fields = new ArrayList<String>();
 				for (int i = 0; i != nfields; ++i) {
 					String f = ((Constant.Utf8) constantPool.get(reader
 							.read_uv())).str;
-					fields[i] = f;
+					fields.add(f);
 				}
 				return new Automata.State(state.kind, state.children,
 						state.deterministic, fields);
@@ -178,8 +178,8 @@ public class WhileyType implements BytecodeAttribute {
 				utf8 = new Constant.Utf8(name.name());
 				writer.write_uv(constantPool.get(utf8));
 			} else if(state.kind == Type.K_RECORD) {
-				String[] fields = (String[]) state.data;
-				writer.write_uv(fields.length);
+				ArrayList<String> fields = (ArrayList<String>) state.data;
+				writer.write_uv(fields.size());
 				for (String f : fields) {
 					Constant.Utf8 utf8 = new Constant.Utf8(f);
 					writer.write_uv(constantPool.get(utf8));

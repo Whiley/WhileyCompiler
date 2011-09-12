@@ -38,31 +38,7 @@ public class TypeGenerator {
 		public void close() throws IOException {
 			output.close();
 		}
-	}
-	
-	public static class BinaryTypeWriter extends BinaryAutomataWriter {
-		public BinaryTypeWriter(BinaryOutputStream writer) {
-			super(writer);
-		}
-		public void write(Automata.State state) throws IOException {
-			super.write(state);
-			if(state.kind == Type.K_RECORD) {
-				String[] fields = (String[]) state.data;
-				writer.write_uv(fields.length);
-				for(String field : fields) {
-					writeString(field);
-				}					
-			}			
-			count++;
-		}
-		
-		private void writeString(String str) throws IOException {
-			writer.write_uv(str.length());
-			for (int i = 0; i != str.length(); ++i) {
-				writer.write_u2(str.charAt(i));
-			}
-		}
-	}
+	}	
 	
 	private static final Generator.Data DATA_GENERATOR = new Generator.Data() {
 		public List<Object> generate(Automata.State state) {
@@ -102,12 +78,15 @@ public class TypeGenerator {
 		//KINDS[Type.K_EXISTENTIAL] = new Kind(true,1,1,null);
 	}};
 	
-	private static final String[] fields1 = {"f1","f2","f3","f4","f5"};
-	private static final String[] fields2 = {"f2","f3","f4","f5","f6"};
+	private static final String[] fields = {"f1","f2","f3","f4","f5"};	
 	
 	private static List<Object> recordGenerator(Automata.State state) {		
-		String[] data1 = Arrays.copyOf(fields1, state.children.length);
-		String[] data2 = Arrays.copyOf(fields2, state.children.length);				
+		ArrayList<String> data1 = new ArrayList();
+		ArrayList<String> data2 = new ArrayList();
+		for(int i=0;i!=state.children.length;++i) {
+			data1.add(fields[i]);
+			data2.add(fields[i+1]);
+		}
 		ArrayList<Object> datas = new ArrayList<Object>();		
 		datas.add(data1);
 		datas.add(data2);		
@@ -163,7 +142,7 @@ public class TypeGenerator {
 			
 			if(binary) {
 				BinaryOutputStream bos = new BinaryOutputStream(out);
-				writer = new BinaryTypeWriter(bos);
+				writer = new Type.BinaryWriter(bos);
 			} else {
 				writer = new TextTypeWriter(out);
 			}				
