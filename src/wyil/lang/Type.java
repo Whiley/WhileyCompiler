@@ -718,8 +718,9 @@ public abstract class Type {
 			Automata automata = compound.automata;
 			Automatas.rewrite(automata,new ConjunctiveNormalForm());
 			Automatas.rewrite(automata,new IntersectionRewrites());
+			Automatas.rewrite(automata,new SubsumptionRewrites(automata));
 			automata = Automatas.extract(automata, 0);
-			automata = Automatas.minimise(automata);
+			//automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
 			return construct(automata);
 		} else {
@@ -1789,7 +1790,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);	
-		Type from = fromString("{any f1}");		
+		Type from = fromString("int|int");		
 		Type to = fromString("{any f1}");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("simplified(" + from + ") = " + normalise(from));

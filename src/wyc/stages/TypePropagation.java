@@ -1194,7 +1194,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env trueEnv = null;
 		Env falseEnv = null;								
 		Type glb = Type.greatestLowerBound(lhs_t, code.test);
-						
+		
+		System.out.println("GLB: " + lhs_t + " & " + code.test + " = " + glb);
+		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
 			//trueEnv = environment;
