@@ -95,7 +95,7 @@ public class IntersectionOperator implements Relation {
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
 		
-		if(fromKind == toKind) {
+		if(fromKind == toKind) {			
 			switch(fromKind) {
 			case K_VOID:
 				return !fromSign && !toSign;
@@ -143,24 +143,30 @@ public class IntersectionOperator implements Relation {
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
 					if (fromChildren.length != toChildren.length) {
-						return !(fromSign && toSign);
+						return !fromSign || !toSign;
 					}				
 					ArrayList<String> fromFields = (ArrayList<String>) fromState.data;
 					ArrayList<String> toFields = (ArrayList<String>) toState.data;				
-
+					boolean andChildren = true;
+					boolean orChildren = false;
 					for (int i = 0; i != fromFields.size(); ++i) {
 						String e1 = fromFields.get(i);
 						String e2 = toFields.get(i);
-						if(!e1.equals(e2)) { return !(fromSign && toSign); }
+						if(!e1.equals(e2)) { return !fromSign || !toSign; }
 						int fromChild = fromChildren[i];
 						int toChild = toChildren[i];
-						if (!intersection(fromChild, fromSign, toChild,
-								toSign)) {
-							return false;
-						}					
-					}									
+						boolean v = intersection(fromChild, fromSign, toChild,
+								toSign);	
+						andChildren &= v;
+						orChildren |= v;
+					}
+					if(!fromSign || !toSign) {
+						return orChildren;
+					} else {
+						return andChildren;
+					}
 				}
-				return true;	
+				return true;
 			}
 			case K_NEGATION: 
 			case K_UNION : 

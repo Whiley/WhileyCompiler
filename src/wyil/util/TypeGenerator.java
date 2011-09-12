@@ -65,7 +65,7 @@ public class TypeGenerator {
 		//KINDS[Type.K_STRING] = new Kind(true,0,0,null);
 		//KINDS[Type.K_TUPLE] = new Kind(true,2,2,null);
 		//KINDS[Type.K_SET] = new Kind(true,1,1,null);
-		KINDS[Type.K_LIST] = new Kind(true,1,1,null);
+		//KINDS[Type.K_LIST] = new Kind(true,1,1,null);
 		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);	
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
 		KINDS[Type.K_RECORD] = new Kind(true,1,2,DATA_GENERATOR);
