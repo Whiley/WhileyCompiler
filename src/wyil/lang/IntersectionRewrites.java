@@ -37,11 +37,33 @@ public final class IntersectionRewrites implements RewriteRule {
 	public final boolean apply(int index, Automata automata) {
 		Automata.State state = automata.states[index];
 		switch(state.kind) {
+			case Type.K_PROCESS:
+			case Type.K_DICTIONARY:		
+			case Type.K_TUPLE:
+			case Type.K_RECORD:		
+			case Type.K_FUNCTION:
+			case Type.K_METHOD:
+			case Type.K_HEADLESS:
+				return applyOther(index,state,automata);				
 		case Type.K_INTERSECTION:
 			return applyIntersection(index,state,automata);
 		}
 		return false;
 	}
+	
+	public boolean applyOther(int index, Automata.State state,
+			Automata automata) {		
+					
+		for(int childIndex : state.children) {
+			Automata.State child = automata.states[childIndex];
+			if(child.kind == Type.K_VOID) {
+				automata.states[index] = new Automata.State(Type.K_VOID);
+				return true;
+			}
+		}	
+		
+		return false;
+	}	
 	
 	public boolean applyIntersection(int index, Automata.State state,
 			Automata automata) {
