@@ -81,8 +81,8 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		int kind = state.kind;
 		int[] children = state.children;
 		for(int i=0;i<children.length;++i) {
-			if(i == 0 && kind == Type.K_HEADLESS) {
-				// headless method return type allowed to be void
+			if (i == 0 && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
+				// headless method and function return type allowed to be void
 				continue;				
 			} else if(i == 1 && kind == Type.K_METHOD) {
 				// method return type allowed to be void

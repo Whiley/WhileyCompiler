@@ -1546,6 +1546,9 @@ public abstract class Type {
 		switch(state.kind) {
 			case K_INTERSECTION:
 			case K_UNION:
+			case K_FUNCTION:
+			case K_METHOD:
+			case K_HEADLESS:
 				return "(" + middle + ")";
 			default:
 				return middle;
@@ -1796,8 +1799,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);	
-		Type from = fromString("null&null");		
-		Type to = fromString("(any,any)");		
+		Type from = fromString("int(int)");		
+		Type to = fromString("int(int)");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("normalised(" + from + ") = " + normalise(from));
 		System.out.println("normalised(" + to + ") = " + normalise(to));

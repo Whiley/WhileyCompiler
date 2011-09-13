@@ -209,28 +209,34 @@ public class IntersectionOperator implements Relation {
 					if(fromChildren.length != toChildren.length){
 						return false;
 					}
-					int start = 0;
-					if(fromKind == K_METHOD) {
-						// Check (optional) receiver value first
-						// FIXME: receiver should be INVARIANT
-						if (intersection(fromChildren[0], !fromSign,
-								toChildren[0], !toSign)) {
-							return false;
+					
+					int recIndex = fromKind == Type.K_METHOD ? 0 : -1;					
+					int retIndex = fromKind == Type.K_METHOD ? 1 : 0;
+					boolean andChildren = true;
+					boolean orChildren = false;					
+					for(int i=0;i<fromChildren.length;++i) {
+						boolean v;
+						if(i == recIndex) {
+							// receiver type is invariant
+							// FIXME: make receiver invariant!
+							v = intersection(fromChildren[i], !fromSign,
+									toChildren[i], !toSign);
+						} else if(i == retIndex) {
+							// return type is co-variant
+							v = intersection(fromChildren[i], fromSign,
+									toChildren[i], toSign);
+						} else {
+							// parameter type(s) are contra-variant
+							v = intersection(fromChildren[i], !fromSign,
+								toChildren[i], !toSign);
 						}
-						start++;
+						andChildren &= v;
+						orChildren |= v;
 					}
-					// Check return value first 
-					int fromChild = fromChildren[start];
-					int toChild = toChildren[start];
-					if(!intersection(fromChild,fromSign,toChild,toSign)) {
-						return false;
-					}
-					// Now, check parameters 
-					for(int i=start+1;i<fromChildren.length;++i) {
-						if (intersection(fromChildren[i], !fromSign,
-								toChildren[i], !toSign)) {
-							return false;
-						}
+					if(!fromSign || !toSign) {
+						return orChildren;
+					} else {
+						return andChildren;
 					}
 				}
 				return true;

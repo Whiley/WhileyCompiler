@@ -28,7 +28,7 @@ public class TypeParser {
 	}
 	
 	public Type parse(HashSet<String> typeVariables) {
-		Type term = parseNotTerm(typeVariables);
+		Type term = parseFunctionTerm(typeVariables);
 		skipWhiteSpace();
 		while (index < str.length()
 				&& (str.charAt(index) == '|' || str.charAt(index) == '&')) {
@@ -45,6 +45,30 @@ public class TypeParser {
 		}
 		return term;
 	}
+	
+	public Type parseFunctionTerm(HashSet<String> typeVariables) {
+		Type t = parseNotTerm(typeVariables);
+		if(index >= str.length()) { return t; }
+		char lookahead = str.charAt(index);
+		if(lookahead == '(') {
+			// this is a tuple, not a bracketed type.
+			match("(");		
+			ArrayList<Type> elems = new ArrayList();
+			elems.add(parse(typeVariables));
+			lookahead = str.charAt(index);
+			while(lookahead == ',') {
+				match(",");
+				elems.add(parse(typeVariables));
+				skipWhiteSpace();
+				lookahead = str.charAt(index);
+			}
+			match(")");
+			skipWhiteSpace();
+			return T_FUN(t,elems);			
+		}
+		return t;
+	}
+	
 	public Type parseNotTerm(HashSet<String> typeVariables) {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);

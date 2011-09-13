@@ -67,8 +67,7 @@ public class TypeTester {
 					}
 				}
 				return true;
-			}
-			/*
+			}			
 			case Type.K_FUNCTION: 
 			case Type.K_HEADLESS:
 			case Type.K_METHOD: {				
@@ -83,13 +82,22 @@ public class TypeTester {
 				for(int i=start;i<length;++i) {
 					int schild = schildren[i];					
 					Value vchild = vchildren[i];
-					if(!accepts(schild,automata,vchild)) {
+					if(accepts(schild,automata,vchild)) {
+						return false;
+					}
+				}
+				// Second, do return values (which are covariant)
+				if(!accepts(schildren[start],automata,vchildren[start])) {
+					return false;
+				}
+				// Third, do return values (which should be contra-variant)
+				if(state.kind == Type.K_METHOD) {
+					if(accepts(schildren[start],automata,vchildren[start])) {
 						return false;
 					}
 				}
 				return true;
-			}
-			*/
+			}			
 			case Type.K_NEGATION: {
 				int child = automata.states[index].children[0];
 				visited.set(index);				
