@@ -363,11 +363,15 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 				boolean jri = subtypes.isSubtype(jChild, iChild);
 				if (irj && (!jri || i > j)) {
 					subsumed = true;
-				} else if (!subtypes.isIntersection(iChild, jChild)) {
-					// no intersection is possible!
+				} else if(primitiveInverse(iChild,jChild,automata)) {
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;
 				}
+//				else if (!subtypes.isIntersection(iChild, jChild)) {
+//					// no intersection is possible!
+//					automata.states[index] = new Automata.State(Type.K_VOID);
+//					return true;
+//				}			
 			}
 			if(subsumed) {					
 				changed = true;
@@ -384,6 +388,21 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		}
 		
 		return changed;
+	}
+	
+	private static boolean primitiveInverse(int fromIndex, int toIndex, Automata automata) {
+		Automata.State from = automata.states[fromIndex];
+		Automata.State to = automata.states[toIndex];
+		if(from.kind == Type.K_NEGATION && isPrimitive(to.kind)) {
+			return automata.states[from.children[0]].kind == to.kind;
+		} else if(isPrimitive(from.kind) && to.kind == Type.K_NEGATION) {
+			return automata.states[to.children[0]].kind == from.kind;
+		}
+		return false;
+	}
+	
+	private static boolean isPrimitive(int kind) {
+		return kind <= Type.K_STRING;
 	}
 	
 	/**
