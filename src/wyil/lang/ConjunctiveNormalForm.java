@@ -48,10 +48,37 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 				return applyIntersection(index, state, automata);
 			case Type.K_NEGATION :
 				return applyNot(index, state, automata);
+			case Type.K_DICTIONARY:
+			case Type.K_RECORD:
+			case Type.K_TUPLE:
+			case Type.K_FUNCTION:
+			case Type.K_METHOD:
+			case Type.K_HEADLESS:
+				return applyCompound(index, state, automata);
 		}
 		return false;
 	}
 
+	public boolean applyCompound(int index, Automata.State state, Automata automata) {
+		int kind = state.kind;
+		int[] children = state.children;
+		for(int i=0;i<children.length;++i) {
+			if(i == 0 && kind == Type.K_HEADLESS) {
+				// headless method return type allowed to be void
+				continue;				
+			} else if(i == 1 && kind == Type.K_METHOD) {
+				// method return type allowed to be void
+				continue;
+			}
+			Automata.State child = automata.states[children[i]];
+			if(child.kind == Type.K_VOID) {
+				automata.states[index] = new Automata.State(Type.K_VOID);
+				return true;
+			}			
+		}
+		return false;
+	}
+	
 	public boolean applyNot(int index, Automata.State state, Automata automata) {
 		int childIndex = state.children[0];
 		Automata.State child = automata.states[childIndex];
