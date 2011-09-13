@@ -122,13 +122,14 @@ public class Generator {
 			}			
 			states[i] = new Automata.State(kind,children,KINDS[kind].DETERMINISTIC);
 		}
-		Automata automata = new Automata(states);		
+		Automata automata = new Automata(states);					
+		
 		generate(0,automata,writer,config);				
 	}
 	
 	private static void generate(int index, Automata automata,
 			GenericWriter<Automata> writer, Config config) throws IOException {
-		if(index == automata.size()) {
+		if(index == automata.size()) {			
 			writer.write(automata);
 			writer.flush();
 			count++;
@@ -154,16 +155,32 @@ public class Generator {
 	private static boolean verbose = false;
 	private static int count = 0;
 	
+	private static void debug(Template base) {		
+		int[] kinds = base.kinds;
+		for(int i=0;i!=kinds.length;++i) {
+			int kind = kinds[i];
+			System.out.print("(" + kind +")");
+		}
+		for(int i=0;i!=kinds.length;++i) {
+			for(int j=0;j!=kinds.length;++j) {
+				if(base.isTransition(i,j)) {
+					System.out.print(i + "->" +j + " ");
+				}
+			}						
+		}
+		System.out.println();
+	}
+	
 	private static void generate(int from, int to, Template base,
 			GenericWriter<Automata> writer, Config config) throws IOException {
 		int[] nchildren = base.children;
 		int[] kinds = base.kinds;
 		Kind fromKind = config.KINDS[kinds[from]];		
 		
-		if(to >= config.SIZE) {									
+		if(to >= config.SIZE) {	
 			if(nchildren[from] < fromKind.MIN_CHILDREN){
 				// this indicates an invalid automata, since this state doesn't
-				// have enough children.
+				// have enough children.				
 				return;
 			} 
 			
@@ -190,29 +207,36 @@ public class Generator {
 			} 
 		}
 		
-
 		// first, generate no edge (if allowed)			 
 		generate(from,to+1,base,writer,config);
+		Kind toKind = config.KINDS[kinds[to]];	
 		
 		// second, generate forward edge (if allowed)		
 		if (from != to && nchildren[from] < fromKind.MAX_CHILDREN) {
 			nchildren[from]++;
 			base.add(from,to);
 			generate(from,to+1,base,writer,config);
+			
+			// third, generate bidirectional edge (if allowed)
+			if (config.RECURSIVE && nchildren[to] < toKind.MAX_CHILDREN) {
+				nchildren[to]++;
+				base.add(to, from);
+				generate(from, to+1, base, writer, config);
+				base.remove(to, from);
+				nchildren[to]--;		
+			}
 			base.remove(from,to);
 			nchildren[from]--;
-		}
-
-		// first, generate reverse edge (if allowed)	
-		Kind toKind = config.KINDS[kinds[to]];		
+		} 
+		
+		// fourth, generate reverse edge (if allowed)				
 		if (config.RECURSIVE && nchildren[to] < toKind.MAX_CHILDREN) {
 			nchildren[to]++;
 			base.add(to, from);
 			generate(from, to+1, base, writer, config);
 			base.remove(to, from);
-			nchildren[to]--;
+			nchildren[to]--;		
 		}
-		
 	}
 	
 	private static void generate(int index, Template base,

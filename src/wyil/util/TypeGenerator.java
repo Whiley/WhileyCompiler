@@ -21,7 +21,8 @@ public class TypeGenerator {
 		}
 		
 		public void write(Automata automata) throws IOException {
-			Type t = Type.construct(Automatas.extract(automata,0));
+			
+			Type t = Type.construct(automata);
 			if (t != Type.T_VOID && (!eliminateContractives || !Type.isContractive(t))) {
 				super.write(automata);
 				count++;
@@ -70,7 +71,7 @@ public class TypeGenerator {
 	};
 	
 	private static final Config config = new Config() {{		
-		RECURSIVE = false;
+		RECURSIVE = true;
 		SIZE = 3;
 		KINDS = new Kind[24];
 		//KINDS[Type.K_VOID] = new Kind(true,0,0,null);
