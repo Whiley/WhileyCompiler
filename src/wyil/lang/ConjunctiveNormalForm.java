@@ -118,7 +118,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 				int[] child_children = child.children;
 				int[] nchildren = new int[child_children.length];
 				Automata.State[] nstates = new Automata.State[child_children.length];
-				for (int i = 0; i != child_children.length; ++i) {
+				for (int i = 0; i < child_children.length; ++i) {
 					int[] children = new int[1];
 					children[0] = child_children[i];
 					nchildren[i] = i + automata.size();
@@ -193,7 +193,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 			Automata automata) {
 		int[] children = state.children;
 		boolean changed = false;
-		for (int i = 0; i != children.length; ++i) {
+		for (int i = 0; i < children.length; ++i) {
 			int iChild = children[i];
 			if (iChild == index) {
 				// X<T1 & X> => void
@@ -219,11 +219,11 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 						int[] child_children = child.children;
 						int[] nchildren = new int[child_children.length];
 						Automata.State[] nstates = new Automata.State[child_children.length];
-						for (int j = 0; j != child_children.length; ++j) {
+						for (int j = 0; j < child_children.length; ++j) {
 							int jChildIndex = child_children[j];
 							int[] kchildren = new int[children.length];
 							nchildren[j] = automata.size() + j;
-							for (int k = 0; k != children.length; ++k) {
+							for (int k = 0; k < children.length; ++k) {
 								if (k != i) {
 									kchildren[k] = children[k];
 								} else {
@@ -431,7 +431,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 			Automata automata) {
 		int[] children = state.children;
 		boolean changed = false;
-		for (int i = 0; i != children.length; ++i) {
+		for (int i = 0; i < children.length; ++i) {
 			int iChild = children[i];
 			if (iChild == index) {
 				// contractive case
@@ -487,7 +487,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		boolean changed = false;
 		int[] children = state.children;
 
-		for (int i = 0; i != children.length; ++i) {
+		for (int i = 0; i < children.length; ++i) {
 			int iChild = children[i];
 			// check whether this child is subsumed
 			boolean subsumed = false;
@@ -517,7 +517,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	
 	private static int[] removeIndex(int index, int[] children) {
 		int[] nchildren = new int[children.length - 1];
-		for (int j = 0; j != children.length; ++j) {
+		for (int j = 0; j < children.length; ++j) {
 			if (j < index) {
 				nchildren[j] = children[j];
 			} else if (j > index) {
@@ -541,7 +541,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		int[] children = state.children;
 		final int kind = state.kind;
 
-		for (int i = 0; i != children.length; ++i) {
+		for (int i = 0; i < children.length; ++i) {
 			int iChild = children[i];
 			Automata.State child = automata.states[iChild];
 			if (child.kind == kind) {
@@ -554,7 +554,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		}
 
 		children = new int[nchildren.size()];
-		for (int i = 0; i != children.length; ++i) {
+		for (int i = 0; i < children.length; ++i) {
 			children[i] = nchildren.get(i);
 		}
 

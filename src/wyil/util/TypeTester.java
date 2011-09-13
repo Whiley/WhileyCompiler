@@ -144,6 +144,15 @@ public class TypeTester {
 		}
 		return true;
 	}
+	
+	public static boolean isModelEmpty(Automata a1, ArrayList<Value> model) {
+		for(Value v : model) {
+			if (interpretation.accepts(a1, v)) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	public static void generateSimplificationTests(ArrayList<Automata> types)
 			throws IOException {
@@ -218,9 +227,21 @@ public class TypeTester {
 		
 	public static boolean verbose = false;
 	
+	public static void eliminateEmptyTypes(ArrayList<Automata> types,
+			ArrayList<Value> model) {
+		for(int i=0;i!=types.size();++i) {
+			Automata automata = types.get(i);
+			if (automata.states[0].kind != Type.K_VOID
+					&& isModelEmpty(automata, model)) {
+				types.remove(i--);				
+			}
+		}
+	}
+	
 	public static void main(String[] args) {
 		try {			
 			boolean binaryIn = true;
+			boolean eliminateEmptyTypes = true;
 			int index = 0;
 			String mode = args[index++];
 			ArrayList<DefaultInterpretation.Value> model = Tester.readModel(
@@ -228,7 +249,12 @@ public class TypeTester {
 							new FileInputStream(args[index]))), verbose);
 			ArrayList<Automata> types = Tester.readAutomatas(
 					new Type.BinaryReader(new BinaryInputStream(
-							new FileInputStream(args[index+1]))), verbose);						
+							new FileInputStream(args[index+1]))), verbose);	
+			
+			if(eliminateEmptyTypes) {
+				eliminateEmptyTypes(types,model);
+			}
+			
 			if(mode.equals("-subtypes")) {
 				generateSubtypeTests(types,model);
 			} else {
