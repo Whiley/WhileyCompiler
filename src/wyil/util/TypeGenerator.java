@@ -55,7 +55,7 @@ public class TypeGenerator {
 		SIZE = 3;
 		KINDS = new Kind[24];
 		//KINDS[Type.K_VOID] = new Kind(true,0,0,null);
-		KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
+		//KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
 		KINDS[Type.K_NULL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BOOL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BYTE] = new Kind(true,0,0,null);
