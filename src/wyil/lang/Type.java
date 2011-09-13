@@ -25,7 +25,10 @@ import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.Automata.State;
 import wyil.util.Pair;
-import wyil.util.TypeParser;
+import wyil.util.type.CoercionOperator;
+import wyil.util.type.SubtypeOperator;
+import wyil.util.type.TypeParser;
+import wyil.util.type.TypeSimplifications;
 import wyjvm.io.*;
 
 /**

@@ -1,4 +1,4 @@
-package wyil.lang;
+package wyil.util.type;
 
 import static wyil.lang.Type.*;
 import wyautl.lang.*;

@@ -1,10 +1,12 @@
-package wyil.lang;
+package wyil.util.type;
 
 import static wyil.lang.Type.*;
 
 import java.util.ArrayList;
 
 import wyautl.lang.*;
+import wyil.lang.NameID;
+import wyil.lang.Type;
 
 public class SubtypeOperator implements Relation {
 	protected final Automata from;

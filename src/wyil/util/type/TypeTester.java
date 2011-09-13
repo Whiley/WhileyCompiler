@@ -1,4 +1,4 @@
-package wyil.util;
+package wyil.util.type;
 
 import java.io.*;
 import java.util.ArrayList;

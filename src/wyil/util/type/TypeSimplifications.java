@@ -1,8 +1,9 @@
-package wyil.lang;
+package wyil.util.type;
 
 import java.util.ArrayList;
 
 import wyautl.lang.*;
+import wyil.lang.Type;
 
 /**
  * <p>
