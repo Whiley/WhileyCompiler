@@ -70,7 +70,7 @@ public class TypeGenerator {
 	};
 	
 	private static final Config config = new Config() {{		
-		RECURSIVE = true;
+		RECURSIVE = false;
 		SIZE = 3;
 		KINDS = new Kind[24];
 		//KINDS[Type.K_VOID] = new Kind(true,0,0,null);
@@ -79,7 +79,7 @@ public class TypeGenerator {
 		//KINDS[Type.K_BOOL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BYTE] = new Kind(true,0,0,null);
 		//KINDS[Type.K_CHAR] = new Kind(true,0,0,null);
-		//KINDS[Type.K_INT] = new Kind(true,0,0,null);
+		KINDS[Type.K_INT] = new Kind(true,0,0,null);
 		//KINDS[Type.K_RATIONAL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_STRING] = new Kind(true,0,0,null);
 		//KINDS[Type.K_TUPLE] = new Kind(true,2,2,null);
@@ -119,7 +119,7 @@ public class TypeGenerator {
 	}
 	
 	private static boolean verbose = false;
-	private static boolean eliminateContractives = false; //true;
+	private static boolean eliminateContractives = true;
 	private static int count = 0;
 	
 	public static void main(String[] args) {		
