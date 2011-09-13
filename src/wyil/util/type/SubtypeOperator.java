@@ -9,8 +9,50 @@ import wyautl.util.BinaryMatrix;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 
-public class SubtypeOperator implements Relation {
-	protected final Automata from;
+/**
+ * <p>
+ * The subtype operator implements the algorithm for determining whether or not
+ * one type is a <i>subtype</i> of another. For the most part, one can take
+ * subtype to mean <i>subset</i> (this analogy breaks down with function types,
+ * however). Following this analogy, <code>T1</code> is a subtype of
+ * <code>T2</code> (denoted <code>T1 <: T2</code>) if the set of values
+ * represented by <code>T1</code> is a subset of those represented by
+ * <code>T2</code>.
+ * </p>
+ * <p>
+ * The algorithm actually operates by computing the <i>intersection</i> relation
+ * for two types (i.e. whether or not an intersection exists between their set
+ * of values). Subtyping is closely related to intersection and, in fact, we
+ * have that <code>T1 :> T2</code> iff <code>!(!T1 & T2)</code> (where
+ * <code>&</code> is the intersection relation). The choice to compute
+ * intersections, rather than subtypes, was for simplicity. Namely, it was
+ * considered conceptually easier to think about intersections rather than
+ * subtypes.
+ * </p>
+ * <p>
+ * <b>NOTE:</b> for this algorithm to return correct results in all cases, both
+ * types must have been normalised first.
+ * </p>
+ * <h3>References</h3>
+ * <ul>
+ * <li><p>David J. Pearce and James Noble. Structural and Flow-Sensitive Types for
+ * Whiley. Technical Report, Victoria University of Wellington, 2010.</p></li>
+ * <li><p>A. Frisch, G. Castagna, and V. Benzaken. Semantic subtyping. In
+ * Proceedings of the <i>Symposium on Logic in Computer Science</i>, pages
+ * 137--146. IEEE Computer Society Press, 2002.</p></li>
+ * <li><p>Dexter Kozen, Jens Palsberg, and Michael I. Schwartzbach. Efficient
+ * recursive subtyping. In <i>Proceedings of the ACM Conference on Principles of
+ * Programming Languages</i>, pages 419--428, 1993.</p></li>
+ * <li><p>Roberto M. Amadio and Luca Cardelli. Subtyping recursive types. <i>ACM
+ * Transactions on Programming Languages and Systems</i>,
+ * 15:575--631, 1993.</p></li>
+ * </ul>
+ * 
+ * @author djp
+ * 
+ */
+public class SubtypeOperator {
+	protected final Automata from; 
 	protected final Automata to;
 	private final BinaryMatrix intersections;
 	
@@ -21,39 +63,6 @@ public class SubtypeOperator implements Relation {
 		this.intersections = new BinaryMatrix(from.size()*2,to.size()*2,true);
 	}
 	
-	public final Automata from() {
-		return from;
-	}
-	
-	public final Automata to() {
-		return to;
-	}
-	
-	public final boolean update(int fromIndex, int toIndex) {
-		boolean oldTrueTrue = intersection(fromIndex,true,toIndex,true);
-		boolean oldFalseTrue = intersection(fromIndex,false,toIndex,true);
-		boolean oldTrueFalse = intersection(fromIndex,true,toIndex,false);
-		boolean oldFalseFalse = intersection(fromIndex,false,toIndex,false);
-		
-		boolean newTrueTrue = isIntersection(fromIndex,true,toIndex,true);
-		boolean newFalseTrue = isIntersection(fromIndex,false,toIndex,true);
-		boolean newTrueFalse = isIntersection(fromIndex,true,toIndex,false);
-		boolean newFalseFalse = isIntersection(fromIndex,false,toIndex,false);
-		
-		setIntersection(fromIndex,true,toIndex,true,newTrueTrue);
-		setIntersection(fromIndex,false,toIndex,true,newFalseTrue);
-		setIntersection(fromIndex,true,toIndex,false,newTrueFalse);
-		setIntersection(fromIndex,false,toIndex,false,newFalseFalse);
-		
-		return oldTrueTrue != newTrueTrue || oldFalseTrue != newFalseTrue
-				|| oldTrueFalse != newTrueFalse
-				|| oldFalseFalse != newFalseFalse; 
-	}
-	
-	public final boolean isRelated(int fromIndex, int toIndex) {
-		return intersection(fromIndex,true,toIndex,true);
-	}
-	
 	/**
 	 * Test whether <code>from</code> :> <code>to</code>
 	 * @param fromIndex
@@ -61,7 +70,7 @@ public class SubtypeOperator implements Relation {
 	 * @return
 	 */
 	public final boolean isSubtype(int fromIndex, int toIndex) {
-		return !intersection(fromIndex,false,toIndex,true);
+		return !isIntersection(fromIndex,false,toIndex,true);
 	}
 	
 	/**
@@ -71,22 +80,8 @@ public class SubtypeOperator implements Relation {
 	 * @return
 	 */
 	public final boolean isSupertype(int fromIndex, int toIndex) {
-		return !intersection(fromIndex,true,toIndex,false);
-	}
-	
-	/**
-	 * Determine whether there is a non-empty intersection between the state
-	 * rooted at <code>fromIndex</code> and that rooted at <code>toIndex</code>.
-	 * 
-	 * @param fromIndex
-	 *            --- index of from state
-	 * @param toIndex
-	 *            --- index of to state
-	 * @return --- true if such an intersection exists, false otherwise.
-	 */
-	public final boolean isIntersection(int fromIndex, int toIndex) {
-		return intersection(fromIndex,true,toIndex,true);
-	}
+		return !isIntersection(fromIndex,true,toIndex,false);
+	}	
 
 	/**
 	 * Determine whether there is a non-empty intersection between the state
@@ -104,7 +99,12 @@ public class SubtypeOperator implements Relation {
 	 *            --- sign of from state (true = normal, false = inverted).
 	 * @return --- true if such an intersection exists, false otherwise.
 	 */
-	public boolean isIntersection(int fromIndex, boolean fromSign, int toIndex,
+	private boolean isIntersection(int fromIndex, boolean fromSign, int toIndex,
+			boolean toSign) {
+		
+	}
+	
+	private boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {
 		
 		Automata.State fromState = from.states[fromIndex];
@@ -319,17 +319,6 @@ public class SubtypeOperator implements Relation {
 		}		
 	}
 	
-	private boolean intersection(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {
-		if(fromSign) {
-			fromIndex += from.size();
-		}
-		if(toSign) {
-			toIndex += to.size();
-		}
-		
-		return intersections.get(fromIndex,toIndex);
-	}
-		
 	private void setIntersection(int fromIndex, boolean fromSign,
 			int toIndex, boolean toSign, boolean value) {
 		if(fromSign) {
