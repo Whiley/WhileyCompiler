@@ -5,5 +5,7 @@
  * there are a number of relatively complex algorithms required to
  * manipulate them.  For example, for representing Provides classes for
  * reading and writing automatas via input/output streams.
+ * 
+ * @author djp
  */
 package wyautl;

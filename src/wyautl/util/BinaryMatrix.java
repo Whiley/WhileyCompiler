@@ -1,4 +1,4 @@
-package wyautl.lang;
+package wyautl.util;
 
 import java.util.BitSet;
 

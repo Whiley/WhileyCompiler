@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import wyautl.lang.Automata.State;
+import wyautl.util.BinaryMatrix;
 
 /**
  * <p>

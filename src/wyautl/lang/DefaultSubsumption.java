@@ -1,6 +1,7 @@
 package wyautl.lang;
 
 import static wyautl.lang.Automata.State;
+import wyautl.util.BinaryMatrix;
 
 /**
  * <p>

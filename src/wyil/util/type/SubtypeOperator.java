@@ -5,6 +5,7 @@ import static wyil.lang.Type.*;
 import java.util.ArrayList;
 
 import wyautl.lang.*;
+import wyautl.util.BinaryMatrix;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 
