@@ -181,7 +181,6 @@ public class IntersectionOperator implements Relation {
 						int toChild = toChildren[i];
 						boolean v = intersection(fromChild, fromSign, toChild,
 								toSign);
-						System.out.println("CHILD: " + v);
 						andChildren &= v;
 						orChildren |= v;
 					}
