@@ -67,7 +67,29 @@ public class TypeTester {
 					}
 				}
 				return true;
-			}			
+			}
+			/*
+			case Type.K_FUNCTION: 
+			case Type.K_HEADLESS:
+			case Type.K_METHOD: {				
+				int start = state.kind == Type.K_METHOD ? 2 : 1;
+				int[] schildren = state.children;
+				Value[] vchildren = value.children;
+				if(schildren.length != vchildren.length) {
+					return false;
+				}				
+				int length = schildren.length;
+				// First, do parameters (which are contravariant).
+				for(int i=start;i<length;++i) {
+					int schild = schildren[i];					
+					Value vchild = vchildren[i];
+					if(!accepts(schild,automata,vchild)) {
+						return false;
+					}
+				}
+				return true;
+			}
+			*/
 			case Type.K_NEGATION: {
 				int child = automata.states[index].children[0];
 				visited.set(index);				
@@ -108,7 +130,7 @@ public class TypeTester {
 	
 	public static boolean isModelSubtype(Automata a1, Automata a2, ArrayList<Value> model) {
 		for(Value v : model) {
-			if(interpretation.accepts(a2,v) && !interpretation.accepts(a1,v)) {
+			if (interpretation.accepts(a2, v) && !interpretation.accepts(a1, v)) {
 				return false;
 			}
 		}
