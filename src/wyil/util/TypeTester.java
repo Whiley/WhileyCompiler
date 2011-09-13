@@ -227,21 +227,9 @@ public class TypeTester {
 		
 	public static boolean verbose = false;
 	
-	public static void eliminateEmptyTypes(ArrayList<Automata> types,
-			ArrayList<Value> model) {
-		for(int i=0;i!=types.size();++i) {
-			Automata automata = types.get(i);
-			if (automata.states[0].kind != Type.K_VOID
-					&& isModelEmpty(automata, model)) {
-				types.remove(i--);				
-			}
-		}
-	}
-	
 	public static void main(String[] args) {
 		try {			
 			boolean binaryIn = true;
-			boolean eliminateEmptyTypes = true;
 			int index = 0;
 			String mode = args[index++];
 			ArrayList<DefaultInterpretation.Value> model = Tester.readModel(
@@ -250,10 +238,6 @@ public class TypeTester {
 			ArrayList<Automata> types = Tester.readAutomatas(
 					new Type.BinaryReader(new BinaryInputStream(
 							new FileInputStream(args[index+1]))), verbose);	
-			
-			if(eliminateEmptyTypes) {
-				eliminateEmptyTypes(types,model);
-			}
 			
 			if(mode.equals("-subtypes")) {
 				generateSubtypeTests(types,model);

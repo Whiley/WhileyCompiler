@@ -7,11 +7,30 @@ import wyil.lang.Type;
 import wyjvm.io.*;
 import wyautl.io.*;
 import wyautl.lang.Automata;
+import wyautl.lang.Automatas;
+import wyautl.lang.DefaultInterpretation.Value;
 import wyautl.util.*;
 import wyautl.util.Generator.Config;
 import wyautl.util.Generator.Kind;
 
 public class TypeGenerator {
+	
+	public static class BinaryTypeWriter extends Type.BinaryWriter {
+		public BinaryTypeWriter(BinaryOutputStream output) {
+			super(output);
+		}
+		
+		public void write(Automata automata) throws IOException {
+			Type t = Type.construct(Automatas.extract(automata,0));
+			if (t != Type.T_VOID && (!eliminateContractives || !Type.isContractive(t))) {
+				super.write(automata);
+				count++;
+				if (verbose) {
+					System.err.print("\rWrote " + count + " types.");
+				}
+			} 
+		}
+	}
 	
 	public static class TextTypeWriter implements GenericWriter<Automata> {
 		private PrintStream output;
@@ -21,14 +40,14 @@ public class TypeGenerator {
 		}
 
 		public void write(Automata automata) throws IOException {
-			Type t = Type.construct(automata);
-			if (t != Type.T_VOID) {
+			Type t = Type.construct(Automatas.extract(automata,0));
+			if (t != Type.T_VOID && (!eliminateContractives || !Type.isContractive(t))) {
 				output.println(t);
 				count++;
 				if (verbose) {
 					System.err.print("\rWrote " + count + " types.");
 				}
-			}
+			} 
 		}
 
 		public void flush() throws IOException {
@@ -98,8 +117,9 @@ public class TypeGenerator {
 			config.KINDS[k] = kind;
 		}
 	}
-
+	
 	private static boolean verbose = false;
+	private static boolean eliminateContractives = false; //true;
 	private static int count = 0;
 	
 	public static void main(String[] args) {		
@@ -142,7 +162,7 @@ public class TypeGenerator {
 			
 			if(binary) {
 				BinaryOutputStream bos = new BinaryOutputStream(out);
-				writer = new Type.BinaryWriter(bos);
+				writer = new BinaryTypeWriter(bos);
 			} else {
 				writer = new TextTypeWriter(out);
 			}				

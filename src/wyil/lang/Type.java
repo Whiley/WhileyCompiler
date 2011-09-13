@@ -506,6 +506,77 @@ public abstract class Type {
 	}
 
 	/**
+	 * <p>
+	 * Contractive types are types which cannot accept value because they have
+	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
+	 * terminating it. For example, <code>X<{X field}></code> is contractive,
+	 * where as <code>X<{null|X field}></code> is not.
+	 * </p>
+	 * 
+	 * <p>
+	 * This method returns true if the type is contractive, or contains a
+	 * contractive subcomponent. For example, <code>null|X<{X field}></code> is
+	 * considered contracted.
+	 * </p>
+	 * 
+	 * @param type --- type to test for contractivity.
+	 * @return
+	 */
+	public static boolean isContractive(Type type) {
+		if(type instanceof Leaf) {
+			return false;
+		} else {
+			Automata automata = ((Compound) type).automata;
+			BitSet contractives = new BitSet(automata.size());
+			// initially all nodes are considered contracive.
+			contractives.set(0,contractives.size(),true);
+			boolean changed = true;
+			boolean contractive = false;
+			while(changed) {
+				changed=false;
+				contractive = false;
+				for(int i=0;i!=automata.size();++i) {
+					boolean oldVal = contractives.get(i);
+					boolean newVal = isContractive(i,contractives,automata);
+					if(oldVal && !newVal) {
+						contractives.set(i,newVal);
+						changed = true;
+					}
+					contractive |= newVal;
+				}
+			}
+						
+			return contractive;
+		}
+	}
+	
+	private static boolean isContractive(int index, BitSet contractives,
+			Automata automata) {
+		Automata.State state = automata.states[index];
+		int[] children = state.children;
+		if(children.length == 0) {
+			return false;
+		}
+		if(state.deterministic) {
+			for(int child : children) {
+				if(child == index || contractives.get(child)) {
+					return true;
+				}
+			}
+			return false;
+		} else {			
+			boolean r = true;
+			for(int child : children) {				
+				if(child == index) { 
+					return true;
+				}
+				r &= contractives.get(child);									
+			}
+			return r;
+		}
+	}
+	
+	/**
 	 * Check whether two types are <i>isomorphic</i>. This is true if they are
 	 * identical, or encode the same structure.
 	 * 
@@ -1801,10 +1872,12 @@ public abstract class Type {
 		// Type t1 = contractive(); //linkedList(2);	
 		//Type from = fromString("null|X<{null|X next,bool val}>");		
 		Type from = fromString("X<{X next}>)");
-		Type to = fromString("X<{X next}>)");		
+		Type to = Type.T_UNION(fromString("null"),fromString("null"));
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-		System.out.println("normalised(" + from + ") = " + normalise(from));
-		System.out.println("normalised(" + to + ") = " + normalise(to));
+		//System.out.println("normalised(" + from + ") = " + normalise(from));
+		//System.out.println("normalised(" + to + ") = " + normalise(to));
+		System.out.println("isContractive(" + from + ") = " + isContractive(from));
+		System.out.println("isContractive(" + to + ") = " + isContractive(to));
 	}
 	
 	public static Type contractive() {
