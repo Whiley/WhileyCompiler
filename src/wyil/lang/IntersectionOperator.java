@@ -162,8 +162,8 @@ public class IntersectionOperator implements Relation {
 				}
 				return true;
 			}
-			case K_RECORD: {
-				if(fromSign || toSign) {
+			case K_RECORD: {				
+				if(fromSign || toSign) {					
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
 					if (fromChildren.length != toChildren.length) {
@@ -180,7 +180,8 @@ public class IntersectionOperator implements Relation {
 						int fromChild = fromChildren[i];
 						int toChild = toChildren[i];
 						boolean v = intersection(fromChild, fromSign, toChild,
-								toSign);	
+								toSign);
+						System.out.println("CHILD: " + v);
 						andChildren &= v;
 						orChildren |= v;
 					}
@@ -259,7 +260,7 @@ public class IntersectionOperator implements Relation {
 				
 		if(fromKind == K_VOID || toKind == K_VOID){
 			return false;
-		} else if(fromKind == K_UNION) {
+		} else if(fromKind == K_UNION) {			
 			int[] fromChildren = fromState.children;		
 			for(int i : fromChildren) {				
 				if(intersection(i,fromSign,toIndex,toSign)) {

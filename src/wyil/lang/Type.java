@@ -1869,10 +1869,11 @@ public abstract class Type {
 	public static final byte K_LABEL = 23;	
 	
 	public static void main(String[] args) {
-		// Type t1 = contractive(); //linkedList(2);	
-		//Type from = fromString("null|X<{null|X next,bool val}>");		
-		Type from = fromString("X<{X next}>)");
-		Type to = Type.T_UNION(fromString("null"),fromString("null"));
+		// Type t1 = contractive(); //linkedList(2);		
+		//Type from = fromString("X<{X|null f1}>");
+		//Type to = fromString("X<{X|null f1}>");		
+		Type from = fromString("{int|null f1}");
+		Type to = fromString("{int|null f1}");						
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
 		//System.out.println("normalised(" + to + ") = " + normalise(to));
