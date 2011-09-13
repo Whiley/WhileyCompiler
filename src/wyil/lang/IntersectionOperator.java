@@ -144,10 +144,20 @@ public class IntersectionOperator implements Relation {
 					if (fromChildren.length != toChildren.length) {
 						return false;
 					}
+					boolean andChildren = true;
+					boolean orChildren = false;
 					for (int i = 0; i < fromChildren.length; ++i) {
-						if (!intersection(fromChildren[i], fromSign, toChildren[i], toSign)) {
-							return false;
-						}
+						int fromChild = fromChildren[i];
+						int toChild = toChildren[i];
+						boolean v = intersection(fromChild, fromSign, toChild,
+								toSign);	
+						andChildren &= v;
+						orChildren |= v;						
+					}
+					if(!fromSign || !toSign) {
+						return orChildren;
+					} else {
+						return andChildren;
 					}
 				}
 				return true;

@@ -1797,8 +1797,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);	
-		Type from = fromString("!null&[int]&[any]");		
-		Type to = fromString("{any f1}");		
+		Type from = fromString("([any],any)");		
+		Type to = fromString("(any,any)");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("normalised(" + from + ") = " + normalise(from));
 		System.out.println("normalised(" + to + ") = " + normalise(to));
