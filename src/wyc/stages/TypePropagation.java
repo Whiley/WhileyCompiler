@@ -1209,8 +1209,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {					
-				Type gdiff = Type.leastDifference(lhs_t, code.test);
-				System.out.println("DIFF: " + lhs_t + " - " + code.test + " = " + gdiff);
+				Type gdiff = Type.leastDifference(lhs_t, code.test);				
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
@@ -1457,17 +1456,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return candidate;
 	}
 	
-	private boolean paramSubtypes(Type.Fun f1, Type.Fun f2) {
+	private boolean paramSubtypes(Type.Fun f1, Type.Fun f2) {		
 		List<Type> f1_params = f1.params();
 		List<Type> f2_params = f2.params();
 		if(f1_params.size() == f2_params.size()) {
 			for(int i=0;i!=f1_params.size();++i) {
 				Type f1_param = f1_params.get(i);
 				Type f2_param = f2_params.get(i);
-				if(!Type.isCoerciveSubtype(f1_param,f2_param)) {					
+				System.out.println("CHECKING: " + f1_param + " :> " + f2_param);
+				if(!Type.isCoerciveSubtype(f1_param,f2_param)) {	
+					System.out.println("FAILED");
 					return false;
 				}
 			}
+			System.out.println("PASSED");
 			return true;
 		}
 		return false;

@@ -51,10 +51,10 @@ public class TypeGenerator {
 	};
 	
 	private static final Config config = new Config() {{		
-		RECURSIVE = false;
+		RECURSIVE = true;
 		SIZE = 3;
 		KINDS = new Kind[24];
-		KINDS[Type.K_VOID] = new Kind(true,0,0,null);
+		//KINDS[Type.K_VOID] = new Kind(true,0,0,null);
 		KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
 		KINDS[Type.K_NULL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BOOL] = new Kind(true,0,0,null);
@@ -68,11 +68,11 @@ public class TypeGenerator {
 		//KINDS[Type.K_LIST] = new Kind(true,1,1,null);
 		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);	
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
-		//KINDS[Type.K_RECORD] = new Kind(true,1,1,DATA_GENERATOR);
-		//KINDS[Type.K_UNION] = new Kind(false,2,2,null);
+		KINDS[Type.K_RECORD] = new Kind(true,1,1,DATA_GENERATOR);
+		KINDS[Type.K_UNION] = new Kind(false,2,2,null);
 		//KINDS[Type.K_INTERSECTION] = new Kind(false,2,2,null);
 		//KINDS[Type.K_NEGATION] = new Kind(true,1,1,null);
-		KINDS[Type.K_FUNCTION] = new Kind(true,2,3,null);
+		//KINDS[Type.K_FUNCTION] = new Kind(true,2,3,null);
 		//KINDS[Type.K_METHOD] = new Kind(true,1,1,null);
 		//KINDS[Type.K_HEADLESS] = new Kind(true,1,1,null);
 		//KINDS[Type.K_EXISTENTIAL] = new Kind(true,1,1,null);
