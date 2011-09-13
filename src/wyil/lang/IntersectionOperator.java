@@ -82,7 +82,7 @@ public class IntersectionOperator implements Relation {
 	 * @return --- true if such an intersection exists, false otherwise.
 	 */
 	public final boolean isIntersection(int fromIndex, int toIndex) {
-		return !intersection(fromIndex,true,toIndex,true);
+		return intersection(fromIndex,true,toIndex,true);
 	}
 
 	/**

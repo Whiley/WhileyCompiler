@@ -552,7 +552,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 	protected Block infer(FieldLoad e, Entry stmt, Env environment) {	
 		Block blk = new Block(0);
-		Type lhs_t = environment.pop();		
+		Type lhs_t = environment.pop();				
 		
 		if (Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
 			Type.Process tp = (Type.Process) lhs_t;
@@ -1202,14 +1202,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if (glb == Type.T_VOID) {				
 			// DEFINITE FALSE CASE				
 			//falseEnv = environment;							
-			//ncode = Code.Skip;							
+			//ncode = Code.Skip;										
 			syntaxError("incomparable operands: " + lhs_t + " and " + code.test,filename,stmt);
 		} else {
 			ncode = Code.IfType(lhs_t, code.slot, code.test, code.target);				
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
-			if(code.slot >= 0) {						
-				Type gdiff = Type.leastDifference(lhs_t, code.test);							
+			if(code.slot >= 0) {					
+				Type gdiff = Type.leastDifference(lhs_t, code.test);
+				System.out.println("DIFF: " + lhs_t + " - " + code.test + " = " + gdiff);
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
@@ -1521,10 +1522,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return env2;
 		}
 		Env env = new Env();
+
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
 			env.add(Type.leastUpperBound(env1.get(i), env2.get(i)));
 		}
-
+		
 		return env;
 	}	
 	

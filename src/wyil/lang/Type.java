@@ -725,8 +725,7 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new ConjunctiveNormalForm());			
-			Automatas.rewrite(automata,new SubsumptionRewrites(automata));
+			Automatas.rewrite(automata,new ConjunctiveNormalForm(automata));						
 			automata = Automatas.extract(automata, 0);
 			//automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
@@ -750,7 +749,7 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new ConjunctiveNormalForm());
+			Automatas.rewrite(automata,new ConjunctiveNormalForm(automata));
 			automata = Automatas.extract(automata, 0);
 			return construct(automata);
 		} else {
@@ -1797,7 +1796,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);	
-		Type from = fromString("void|{int f}");		
+		Type from = fromString("null&null");		
 		Type to = fromString("(any,any)");		
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("normalised(" + from + ") = " + normalise(from));

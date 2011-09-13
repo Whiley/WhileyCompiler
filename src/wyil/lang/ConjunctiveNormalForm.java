@@ -28,6 +28,9 @@ import wyautl.lang.*;
  * <li><code>[T_1] & [T_2] & T_3</code> => <code>[T_1 & T_2] & T_3)</code>.</li>
  * <li><code>![T_1] & ![T_2] & T_3</code> => <code>![T_1 | T_2] & T_3)</code>.</li>
  * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
+ * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
+ * <li><code>T_1 & T_2</code> where <code>T_1 :> T_2</code> => <code>T_2</code>.
+ * <li><code>T_1 & T_2</code> where <code>T_1 n T_2 = 0</code> => <code>void</code>.
  * 
  * </ol>
  * <p>
@@ -40,25 +43,38 @@ import wyautl.lang.*;
  * 
  */
 public final class ConjunctiveNormalForm implements RewriteRule {
-
+	private IntersectionOperator subtypes;
+	
+	public ConjunctiveNormalForm(Automata automata) {
+		updateSubtypes(automata);
+	}
+	
 	public final boolean apply(int index, Automata automata) {
 		Automata.State state = automata.states[index];
+		boolean changed=false;
 		switch (state.kind) {
 			case Type.K_UNION :
-				return applyUnion(index, state, automata);
+				changed = applyUnion(index, state, automata);
+				break;
 			case Type.K_INTERSECTION :
-				return applyIntersection(index, state, automata);
+				changed = applyIntersection(index, state, automata);
+				break;
 			case Type.K_NEGATION :
-				return applyNot(index, state, automata);
+				changed = applyNot(index, state, automata);
+				break;
 			case Type.K_DICTIONARY:
 			case Type.K_RECORD:
 			case Type.K_TUPLE:
 			case Type.K_FUNCTION:
 			case Type.K_METHOD:
 			case Type.K_HEADLESS:
-				return applyCompound(index, state, automata);
+				changed = applyCompound(index, state, automata);
+				break;
 		}
-		return false;
+		if(changed) { 			
+			updateSubtypes(automata); 
+		}
+		return changed;
 	}
 
 	public boolean applyCompound(int index, Automata.State state, Automata automata) {
@@ -74,7 +90,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 			}
 			Automata.State child = automata.states[children[i]];
 			if(child.kind == Type.K_VOID) {
-				automata.states[index] = new Automata.State(Type.K_VOID);
+				automata.states[index] = new Automata.State(Type.K_VOID);				
 				return true;
 			}			
 		}
@@ -150,7 +166,8 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	public boolean applyIntersection(int index, Automata.State state,
 			Automata automata) {
 		return applyIntersection_1(index, state, automata)
-				|| applyIntersection_2(index, state, automata);
+				|| applyIntersection_2(index, state, automata)
+				|| applyIntersection_3(index, state, automata);
 	}
 
 	/**
@@ -172,7 +189,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	public boolean applyIntersection_1(int index, Automata.State state,
+	private static boolean applyIntersection_1(int index, Automata.State state,
 			Automata automata) {
 		int[] children = state.children;
 		boolean changed = false;
@@ -252,7 +269,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	public boolean applyIntersection_2(int index, Automata.State state,
+	private static boolean applyIntersection_2(int index, Automata.State state,
 			Automata automata) {
 		int[] children = state.children;
 		int pivot = splitPositiveNegativeChildren(state, automata);
@@ -300,6 +317,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 					changed = true;
 			}			
 		}
+		
 		// TODO: collect negative children [this is the harder case]
 		
 		if (children.length == 1) {
@@ -313,7 +331,87 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	}
 
 	/**
+	 * This method applies the following rewrite rules:
+	 * <ol>
+	 * <li><code>T_1 & T_2</code> where <code>T_1 :> T_2</code> => <code>T_2</code>.
+	 * <li><code>T_1 & T_2</code> where <code>T_1 n T_2 = 0</code> => <code>void</code>.
+	 * </ol>
+	 * 
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param state
+	 *            --- state being worked on.
+	 * @param automata
+	 *            --- automata containing state being worked on.
+	 * @return
+	 */
+	private boolean applyIntersection_3(int index, Automata.State state,
+			Automata automata) {
+		boolean changed = false;
+		int[] children = state.children;		
+		
+		for(int i=0;i!=children.length;++i) {			
+			int iChild = children[i];				
+			// check whether this child is subsumed
+			boolean subsumed = false;
+			for (int j = 0; j < children.length; ++j) {
+				if (i == j) {
+					continue;
+				}
+				int jChild = children[j];
+				boolean irj = subtypes.isSubtype(iChild, jChild);
+				boolean jri = subtypes.isSubtype(jChild, iChild);
+				if (irj && (!jri || i > j)) {
+					subsumed = true;
+				} else if (!subtypes.isIntersection(iChild, jChild)) {
+					// no intersection is possible!
+					automata.states[index] = new Automata.State(Type.K_VOID);
+					return true;
+				}
+			}
+			if(subsumed) {					
+				changed = true;
+				children = removeIndex(i--,children);
+				state.children = children;
+			} 							
+		}	
+		
+		if (children.length == 1) {
+			// bypass this node altogether
+			int child = children[0];
+			automata.states[index] = new Automata.State(automata.states[child]);
+			changed = true;
+		}
+		
+		return changed;
+	}
+	
+	/**
 	 * This method is responsible for the following rewrite rules:
+	 * <ol>
+	 * <li><code>T | void</code> => <code>T</code>.</li>
+	 * <li><code>T | any</code> => <code>any</code>.</li>
+	 * <li><code>X<T | X></code> => <code>T</code>.</li>
+	 * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2 | T_3)</code>.</li>
+	 * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
+	 * </ol>
+	 * 
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param state
+	 *            --- state being worked on.
+	 * @param automata
+	 *            --- automata containing state being worked on.
+	 * @return
+	 */
+	public boolean applyUnion(int index, Automata.State state,
+			Automata automata) {
+		return applyUnion_1(index, state, automata)
+				|| applyUnion_2(index, state, automata);
+	}
+	
+	/**
+	 * This method applies the following rewrite rules:
 	 * <ol>
 	 * <li><code>T | void</code> => <code>T</code>.</li>
 	 * <li><code>T | any</code> => <code>any</code>.</li>
@@ -329,7 +427,8 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	public boolean applyUnion(int index, Automata.State state, Automata automata) {
+	private boolean applyUnion_1(int index, Automata.State state,
+			Automata automata) {
 		int[] children = state.children;
 		boolean changed = false;
 		for (int i = 0; i != children.length; ++i) {
@@ -369,6 +468,53 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		return changed;
 	}
 
+	/**
+	 * This method applies the following rewrite rules:
+	 * <ol>
+	 * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
+	 * </ol>
+	 * 
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param state
+	 *            --- state being worked on.
+	 * @param automata
+	 *            --- automata containing state being worked on.
+	 * @return
+	 */
+	private boolean applyUnion_2(int index, Automata.State state,
+			Automata automata) {
+		boolean changed = false;
+		int[] children = state.children;
+
+		for (int i = 0; i != children.length; ++i) {
+			int iChild = children[i];
+			// check whether this child is subsumed
+			boolean subsumed = false;
+			for (int j = 0; j < children.length; ++j) {
+				int jChild = children[j];
+				if (i != j && subtypes.isSubtype(jChild, iChild)
+						&& (!subtypes.isSubtype(iChild, jChild) || i > j)) {
+					subsumed = true;
+				}
+			}
+			if (subsumed) {
+				children = removeIndex(i--, children);
+				state.children = children;
+				changed = true;
+			}
+		}
+
+		if (children.length == 1) {
+			// bypass this node altogether
+			int child = children[0];
+			automata.states[index] = new Automata.State(automata.states[child]);
+			changed = true;
+		}
+		
+		return changed;
+	}
+	
 	private static int[] removeIndex(int index, int[] children) {
 		int[] nchildren = new int[children.length - 1];
 		for (int j = 0; j != children.length; ++j) {
@@ -511,5 +657,11 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 		nstate_children[0] = start;
 		System.arraycopy(state_children, numPositiveChildren, nstate_children, 1, nstate_children.length-1);
 		state.children = nstate_children;
+	}
+	
+	private void updateSubtypes(Automata automata) {
+		// this is horrendously inefficient
+		subtypes = new IntersectionOperator(automata,automata);
+		Automatas.computeFixpoint(subtypes);
 	}
 }
