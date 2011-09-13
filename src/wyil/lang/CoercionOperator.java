@@ -4,7 +4,7 @@ import static wyil.lang.Type.*;
 import wyautl.lang.*;
 
 
-public final class CoercionOperator extends IntersectionOperator {
+public final class CoercionOperator extends SubtypeOperator {
 	
 	public CoercionOperator(Automata fromAutomata, Automata toAutomata) {
 		super(fromAutomata,toAutomata);

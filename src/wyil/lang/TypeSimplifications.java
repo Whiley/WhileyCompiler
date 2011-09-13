@@ -42,10 +42,10 @@ import wyautl.lang.*;
  * @author djp
  * 
  */
-public final class ConjunctiveNormalForm implements RewriteRule {
-	private IntersectionOperator subtypes;
+public final class TypeSimplifications implements RewriteRule {
+	private SubtypeOperator subtypes;
 	
-	public ConjunctiveNormalForm(Automata automata) {
+	public TypeSimplifications(Automata automata) {
 		updateSubtypes(automata);
 	}
 	
@@ -680,7 +680,7 @@ public final class ConjunctiveNormalForm implements RewriteRule {
 	
 	private void updateSubtypes(Automata automata) {
 		// this is horrendously inefficient
-		subtypes = new IntersectionOperator(automata,automata);
+		subtypes = new SubtypeOperator(automata,automata);
 		Automatas.computeFixpoint(subtypes);
 	}
 }

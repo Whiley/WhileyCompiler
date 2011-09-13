@@ -6,12 +6,12 @@ import java.util.ArrayList;
 
 import wyautl.lang.*;
 
-public class IntersectionOperator implements Relation {
+public class SubtypeOperator implements Relation {
 	protected final Automata from;
 	protected final Automata to;
 	private final BinaryMatrix intersections;
 	
-	public IntersectionOperator(Automata from, Automata to) {
+	public SubtypeOperator(Automata from, Automata to) {
 		this.from = from;
 		this.to = to;
 		// matrix is twice the size to accommodate positive and negative signs 
