@@ -10,6 +10,7 @@ import wyautl.lang.*;
  * This is achieved by repeated application of the following rewrites:
  * </p>
  * <ol>
+ * <li><code>{void f}</code> => <code>void</code>.</li>
  * <li><code>T | void</code> => <code>T</code>.</li>
  * <li><code>T | any</code> => <code>any</code>.</li>
  * <li><code>T & void</code> => <code>void</code>.</li>
@@ -27,6 +28,7 @@ import wyautl.lang.*;
  * <li><code>[T_1] & [T_2] & T_3</code> => <code>[T_1 & T_2] & T_3)</code>.</li>
  * <li><code>![T_1] & ![T_2] & T_3</code> => <code>![T_1 | T_2] & T_3)</code>.</li>
  * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
+ * 
  * </ol>
  * <p>
  * <b>NOTE:</b> applications of this rewrite rule may leave states which are

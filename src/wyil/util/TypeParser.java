@@ -1,5 +1,6 @@
 package wyil.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -58,11 +59,28 @@ public class TypeParser {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
 		if(lookahead == '(') {
+			// this is a tuple, not a bracketed type.
 			match("(");
 			Type t = parse(typeVariables);
-			match(")");
 			skipWhiteSpace();
-			return t;
+			lookahead = str.charAt(index);
+			if(lookahead == ',') {
+				ArrayList<Type> elems = new ArrayList();
+				elems.add(t);
+				while(lookahead == ',') {
+					match(",");
+					elems.add(parse(typeVariables));
+					skipWhiteSpace();
+					lookahead = str.charAt(index);
+				}
+				match(")");
+				skipWhiteSpace();
+				return T_TUPLE(elems);
+			} else {
+				match(")");
+				skipWhiteSpace();
+				return t;
+			}
 		} else {
 			return parseTerm(typeVariables);
 		}
