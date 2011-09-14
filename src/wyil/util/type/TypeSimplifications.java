@@ -336,8 +336,7 @@ public final class TypeSimplifications implements RewriteRule {
 		// using invert helps reduce the number of cases to consider.
 		int fromKind = invert(fromState.kind,fromSign);
 		int toKind = invert(toState.kind,toSign);
-		
-		
+				
 		// TODO: tidy this mess up
 		if(fromKind == Type.K_VOID || toKind == Type.K_VOID) {
 			myState = new Automata.State(Type.K_VOID);
@@ -447,9 +446,7 @@ public final class TypeSimplifications implements RewriteRule {
 				break;
 			}				
 			case Type.K_LABEL:
-			case Type.K_EXISTENTIAL: {
-				
-			}			
+			case Type.K_EXISTENTIAL:
 			case Type.K_RECORD: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & {int g} => void
@@ -501,8 +498,42 @@ public final class TypeSimplifications implements RewriteRule {
 			}
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
-			case Type.K_METHOD:
+			case Type.K_METHOD: {
+				// int(int) & any(real) => int(int|real)				
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				int[] myChildren = new int[fromChildren.length];
+				int returnIndex = 0; // index of return value in children
 				
+				if(fromState.kind == Type.K_METHOD) {
+					// receiver is invariant
+					myChildren[0] = intersect(fromChildren[0],
+							true, from, toChildren[0], true, to,
+							allocations, states);
+					returnIndex = 1;
+				}
+				
+				// return value is co-variant (i.e. normal, like e.g. list elements)
+				myChildren[returnIndex] = intersect(fromChildren[returnIndex],
+						true, from, toChildren[returnIndex], true, to,
+						allocations, states);
+				
+				// parameter values are harder, since they are contra-variant.
+				for(int i=returnIndex+1;i<fromChildren.length;++i) {
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					int[] childChildren = new int[2];
+					myChildren[i] = states.size();					
+					states.add(new Automata.State(Type.K_UNION,null,false,childChildren));					
+					childChildren[0] = states.size();
+					Automatas.extractOnto(fromChild,from,states);
+					childChildren[1] = states.size();
+					Automatas.extractOnto(toChild,to,states);
+				}				
+				myState = new Automata.State(fromState.kind, fromState.data,
+						true, myChildren);
+				break;
+			}
 			default: {
 				// K_BYTE, K_CHAR, K_INT, K_RATIONAL
 				// K_STRING, K_NULL			
@@ -615,7 +646,40 @@ public final class TypeSimplifications implements RewriteRule {
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD:
+				// int(int) & !(any(real)) => int&!any(int|!real)				
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				int[] myChildren = new int[fromChildren.length];
+				int returnIndex = 0; // index of return value in children
 				
+				if(fromState.kind == Type.K_METHOD) {
+					// receiver is invariant
+					myChildren[0] = intersect(fromChildren[0],
+							true, from, toChildren[0], false, to,
+							allocations, states);
+					returnIndex = 1;
+				}
+				
+				// return value is co-variant (i.e. normal, like e.g. list elements)
+				myChildren[returnIndex] = intersect(fromChildren[returnIndex],
+						true, from, toChildren[returnIndex], false, to,
+						allocations, states);
+				
+				// parameter values are harder, since they are contra-variant.
+				for(int i=returnIndex+1;i<fromChildren.length;++i) {
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					int[] childChildren = new int[2];
+					myChildren[i] = states.size();					
+					states.add(new Automata.State(Type.K_UNION,null,false,childChildren));					
+					childChildren[0] = states.size();
+					Automatas.extractOnto(fromChild,from,states);
+					childChildren[1] = states.size();
+					states.add(new Automata.State(Type.K_NEGATION,null,false,states.size()+1));
+					Automatas.extractOnto(toChild,to,states);
+				}				
+				myState = new Automata.State(fromState.kind, fromState.data,
+						true, myChildren);
 			default: {
 				// e.g. !INT & INT => INT
 				myState = new Automata.State(Type.K_VOID);				
@@ -726,7 +790,40 @@ public final class TypeSimplifications implements RewriteRule {
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD:
+				// !(int(int)) & any(real) => !int&any(!int|real)				
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				int[] myChildren = new int[fromChildren.length];
+				int returnIndex = 0; // index of return value in children
 				
+				if(fromState.kind == Type.K_METHOD) {
+					// receiver is invariant
+					myChildren[0] = intersect(fromChildren[0],
+							false, from, toChildren[0], true, to,
+							allocations, states);
+					returnIndex = 1;
+				}
+				
+				// return value is co-variant (i.e. normal, like e.g. list elements)
+				myChildren[returnIndex] = intersect(fromChildren[returnIndex],
+						true, from, toChildren[returnIndex], false, to,
+						allocations, states);
+				
+				// parameter values are harder, since they are contra-variant.
+				for(int i=returnIndex+1;i<fromChildren.length;++i) {
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					int[] childChildren = new int[2];
+					myChildren[i] = states.size();					
+					states.add(new Automata.State(Type.K_UNION,null,false,childChildren));					
+					childChildren[0] = states.size();
+					states.add(new Automata.State(Type.K_NEGATION,null,false,states.size()+1));
+					Automatas.extractOnto(fromChild,from,states);
+					childChildren[1] = states.size();					
+					Automatas.extractOnto(toChild,to,states);
+				}				
+				myState = new Automata.State(fromState.kind, fromState.data,
+						true, myChildren);
 			default: {
 				// e.g. INT & !INT => INT
 				myState = new Automata.State(Type.K_VOID);				
@@ -789,7 +886,10 @@ public final class TypeSimplifications implements RewriteRule {
 			case Type.K_SET:
 			case Type.K_DICTIONARY:
 			case Type.K_TUPLE: 
-			case Type.K_RECORD: {
+			case Type.K_RECORD:
+			case Type.K_FUNCTION:
+			case Type.K_HEADLESS:
+			case Type.K_METHOD: {
 				// e.g. ![int] & ![real] => !([int]|[real])
 				int childIndex = states.size();						
 				states.add(null);
@@ -827,10 +927,6 @@ public final class TypeSimplifications implements RewriteRule {
 				myState = new Automata.State(Type.K_NEGATION, true, childIndex);
 				break;
 			}				
-			case Type.K_FUNCTION:
-			case Type.K_HEADLESS:
-			case Type.K_METHOD:
-				
 			default: {
 				// e.g. !INT & !INT => !INT
 				int childIndex = states.size();
