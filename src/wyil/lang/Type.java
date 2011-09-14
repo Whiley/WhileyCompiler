@@ -1711,7 +1711,7 @@ public abstract class Type {
 		case K_FUNCTION:
 			return new Fun(automata);		
 		case K_LABEL:
-			return T_LABEL((String)root.data);
+			return new Compound(automata);
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
