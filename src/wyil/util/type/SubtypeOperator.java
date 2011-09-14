@@ -137,10 +137,18 @@ public class SubtypeOperator {
 			case K_ANY:
 				return fromSign && toSign;
 			// === Leaf States First ===
-			case K_EXISTENTIAL:
+			case K_EXISTENTIAL: {
 				NameID nid1 = (NameID) fromState.data;
-				NameID nid2 = (NameID) toState.data;				
-				return fromSign == toSign && nid1.equals(nid2);			
+				NameID nid2 = (NameID) toState.data;	
+				if(fromSign || toSign) {
+					if(nid1.equals(nid2)) {
+						return fromSign && toSign;
+					} else {
+						return !fromSign || !toSign;
+					}
+				}
+				return true;
+			}
 			// === Homogenous Compound States ===
 			case K_SET:
 			case K_LIST:
