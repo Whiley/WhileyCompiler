@@ -560,18 +560,6 @@ public final class TypeSimplifications implements RewriteRule {
 							
 			case Type.K_LABEL:
 			case Type.K_EXISTENTIAL:
-			
-			case Type.K_LIST:
-			case Type.K_SET: {
-				int fromChild = fromState.children[0];
-				int toChild = toState.children[0];
-				// e.g. [T1] & ![T2] => [T1&!T2]
-				int childIndex = intersect(fromChild, true, from,
-						toChild, false, to, allocations, states);
-				myState = new Automata.State(fromState.kind, childIndex);				
-			}
-			break;
-
 			case Type.K_RECORD: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. {int f} & !{int g} => {int f}
@@ -581,11 +569,31 @@ public final class TypeSimplifications implements RewriteRule {
 				}
 				// now fall through as for the other compound types.
 			}
-			case Type.K_DICTIONARY:
 			case Type.K_TUPLE:
-			case Type.K_PROCESS:
-				
-			
+				if(fromState.children.length != toState.children.length) {					
+					// e.g. (int,int) & !(int) => (int,int)
+					states.remove(states.size()-1);
+					Automatas.extractOnto(fromIndex,from,states);
+					break;
+				}
+			case Type.K_PROCESS: 
+			case Type.K_LIST:
+			case Type.K_SET:
+			case Type.K_DICTIONARY: {
+				// (T1,T2) & !(T3,T4) => (T1 & !T3, T2 & !T4) 
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				int[] myChildren = new int[fromChildren.length];
+				for(int i=0;i!=fromChildren.length;++i) {
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					myChildren[i] = intersect(fromChild, true, from,
+							toChild, false, to, allocations, states);
+				}				
+				myState = new Automata.State(fromState.kind, fromState.data,
+						true, myChildren);
+				break;
+			}
 			case Type.K_NEGATION: {
 				// !T1 & !!T2 => !T1 & T2 (!)
 				int fromChild = fromState.children[0];
@@ -662,19 +670,7 @@ public final class TypeSimplifications implements RewriteRule {
 			}
 							
 			case Type.K_LABEL:
-			case Type.K_EXISTENTIAL:
-			
-			case Type.K_LIST:
-			case Type.K_SET: {
-				int fromChild = fromState.children[0];
-				int toChild = toState.children[0];
-				// e.g. ![T1] & [T2] => [!T1&T2]
-				int childIndex = intersect(fromChild, false, from,
-						toChild, true, to, allocations, states);
-				myState = new Automata.State(fromState.kind, childIndex);				
-			}
-			break;
-
+			case Type.K_EXISTENTIAL:			
 			case Type.K_RECORD: {
 				if(!fromState.data.equals(toState.data)) {					
 					// e.g. !{int f} & {int g} => {int g}
@@ -684,11 +680,31 @@ public final class TypeSimplifications implements RewriteRule {
 				}
 				// now fall through as for the other compound types.
 			}
-			case Type.K_DICTIONARY:
 			case Type.K_TUPLE:
-			case Type.K_PROCESS:
-				
-			
+				if(fromState.children.length != toState.children.length) {					
+					// e.g. !(int,int) & (int) => (int)
+					states.remove(states.size()-1);
+					Automatas.extractOnto(toIndex,to,states);
+					break;
+				}
+			case Type.K_PROCESS: 
+			case Type.K_LIST:
+			case Type.K_SET:
+			case Type.K_DICTIONARY: {
+				// !(T1,T2) & (T3,T4) => (!T1 & T3, !T2 & T4) 
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				int[] myChildren = new int[fromChildren.length];
+				for(int i=0;i!=fromChildren.length;++i) {
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					myChildren[i] = intersect(fromChild, false, from,
+							toChild, true, to, allocations, states);
+				}				
+				myState = new Automata.State(fromState.kind, fromState.data,
+						true, myChildren);
+				break;
+			}							
 			case Type.K_NEGATION: {
 				// !!T1 & !T2 => T1 & !T2 (!)
 				int fromChild = fromState.children[0];
@@ -765,13 +781,9 @@ public final class TypeSimplifications implements RewriteRule {
 				// !any & !any -> void				
 				myState = new Automata.State(Type.K_VOID);				
 				break;
-			}
-				
+			}				
 			case Type.K_LABEL:
 			case Type.K_EXISTENTIAL:
-						
-			break;
-			
 			case Type.K_PROCESS:
 			case Type.K_LIST:
 			case Type.K_SET:
