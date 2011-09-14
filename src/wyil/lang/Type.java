@@ -489,8 +489,7 @@ public abstract class Type {
 	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
-		CoercionOperator relation = new CoercionOperator(a1,a2);		
-		Automatas.computeFixpoint(relation);		
+		CoercionOperator relation = new CoercionOperator(a1,a2);				
 		return relation.isSubtype(0, 0); 
 	}
 	
@@ -504,7 +503,6 @@ public abstract class Type {
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
 		SubtypeOperator relation = new SubtypeOperator(a1,a2);		
-		Automatas.computeFixpoint(relation);		
 		return relation.isSubtype(0, 0);		
 	}
 
@@ -799,7 +797,7 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new TypeSimplifications(automata));						
+			Automatas.rewrite(automata,new TypeSimplifications());						
 			automata = Automatas.extract(automata, 0);
 			//automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
@@ -823,7 +821,7 @@ public abstract class Type {
 		if(type instanceof Type.Compound) { 
 			Compound compound = (Compound) type;
 			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new TypeSimplifications(automata));
+			Automatas.rewrite(automata,new TypeSimplifications());
 			automata = Automatas.extract(automata, 0);
 			return construct(automata);
 		} else {

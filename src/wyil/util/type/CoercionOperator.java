@@ -10,7 +10,7 @@ public final class CoercionOperator extends SubtypeOperator {
 		super(fromAutomata,toAutomata);
 	}
 	
-	public boolean isIntersection(int fromIndex, boolean fromSign, int toIndex,
+	public boolean isIntersectionHelper(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];

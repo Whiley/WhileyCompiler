@@ -2,10 +2,9 @@ package wyil.util.type;
 
 import static wyil.lang.Type.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
 import wyautl.lang.*;
-import wyautl.util.BinaryMatrix;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 
@@ -54,13 +53,13 @@ import wyil.lang.Type;
 public class SubtypeOperator {
 	protected final Automata from; 
 	protected final Automata to;
-	private final BinaryMatrix intersections;
+	private final BitSet assumptions;
 	
 	public SubtypeOperator(Automata from, Automata to) {
 		this.from = from;
 		this.to = to;
 		// matrix is twice the size to accommodate positive and negative signs 
-		this.intersections = new BinaryMatrix(from.size()*2,to.size()*2,true);
+		this.assumptions = new BitSet((2*from.size()) * (to.size()*2));
 	}
 	
 	/**
@@ -99,12 +98,22 @@ public class SubtypeOperator {
 	 *            --- sign of from state (true = normal, false = inverted).
 	 * @return --- true if such an intersection exists, false otherwise.
 	 */
-	private boolean isIntersection(int fromIndex, boolean fromSign, int toIndex,
-			boolean toSign) {
+	protected boolean isIntersection(int fromIndex, boolean fromSign, int toIndex,
+			boolean toSign) {		
+		int index = indexOf(fromIndex,fromSign,toIndex,toSign);
+		if(assumptions.get(index)) {
+			return true;
+		} else {
+			assumptions.set(index,true);
+		}
 		
+		boolean r = isIntersectionInner(fromIndex,fromSign,toIndex,toSign);
+		
+		assumptions.set(index,false);
+		return r;
 	}
 	
-	private boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
+	protected boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {
 		
 		Automata.State fromState = from.states[fromIndex];
@@ -132,7 +141,7 @@ public class SubtypeOperator {
 					// nary nodes
 					int fromChild = fromState.children[0];
 					int toChild = toState.children[0];
-					if (!intersection(fromChild, fromSign, toChild, toSign)) {
+					if (!isIntersection(fromChild, fromSign, toChild, toSign)) {
 						return false;					
 					}
 				}
@@ -152,7 +161,7 @@ public class SubtypeOperator {
 					for (int i = 0; i < fromChildren.length; ++i) {
 						int fromChild = fromChildren[i];
 						int toChild = toChildren[i];
-						boolean v = intersection(fromChild, fromSign, toChild,
+						boolean v = isIntersection(fromChild, fromSign, toChild,
 								toSign);	
 						andChildren &= v;
 						orChildren |= v;						
@@ -182,7 +191,7 @@ public class SubtypeOperator {
 						if(!e1.equals(e2)) { return !fromSign || !toSign; }
 						int fromChild = fromChildren[i];
 						int toChild = toChildren[i];
-						boolean v = intersection(fromChild, fromSign, toChild,
+						boolean v = isIntersection(fromChild, fromSign, toChild,
 								toSign);
 						andChildren &= v;
 						orChildren |= v;
@@ -222,15 +231,15 @@ public class SubtypeOperator {
 						if(i == recIndex) {
 							// receiver type is invariant
 							// FIXME: make receiver invariant!
-							v = intersection(fromChildren[i], !fromSign,
+							v = isIntersection(fromChildren[i], !fromSign,
 									toChildren[i], !toSign);
 						} else if(i == retIndex) {
 							// return type is co-variant
-							v = intersection(fromChildren[i], fromSign,
+							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);
 						} else {
 							// parameter type(s) are contra-variant
-							v = intersection(fromChildren[i], !fromSign,
+							v = isIntersection(fromChildren[i], !fromSign,
 								toChildren[i], !toSign);
 						}
 						andChildren &= v;
@@ -250,10 +259,10 @@ public class SubtypeOperator {
 		
 		if(fromKind == K_NEGATION) {
 			int fromChild = fromState.children[0];
-			return intersection(fromChild,!fromSign,toIndex,toSign);
+			return isIntersection(fromChild,!fromSign,toIndex,toSign);
 		} else if(toKind == K_NEGATION) {
 			int toChild = toState.children[0];
-			return intersection(fromIndex,fromSign,toChild,!toSign);			
+			return isIntersection(fromIndex,fromSign,toChild,!toSign);			
 		}
 		
 		// using invert helps reduce the number of cases to consider.
@@ -265,7 +274,7 @@ public class SubtypeOperator {
 		} else if(fromKind == K_UNION) {			
 			int[] fromChildren = fromState.children;		
 			for(int i : fromChildren) {				
-				if(intersection(i,fromSign,toIndex,toSign)) {
+				if(isIntersection(i,fromSign,toIndex,toSign)) {
 					return true;
 				}								
 			}
@@ -273,7 +282,7 @@ public class SubtypeOperator {
 		} else if(toKind == K_UNION) {
 			int[] toChildren = toState.children;		
 			for(int j : toChildren) {
-				if(intersection(fromIndex,fromSign,j,toSign)) {
+				if(isIntersection(fromIndex,fromSign,j,toSign)) {
 					return true;
 				}											
 			}
@@ -281,7 +290,7 @@ public class SubtypeOperator {
 		} else if(fromKind == K_INTERSECTION) {
 			int[] fromChildren = fromState.children;			
 			for (int i : fromChildren) {				
-				if(!intersection(i,fromSign,toIndex,toSign)) {
+				if(!isIntersection(i,fromSign,toIndex,toSign)) {
 					return false;
 				}											
 			}
@@ -289,7 +298,7 @@ public class SubtypeOperator {
 		} else if(toKind == K_INTERSECTION) {
 			int[] toChildren = toState.children;					
 			for (int j : toChildren) {				
-				if(!intersection(fromIndex,fromSign,j,toSign)) {
+				if(!isIntersection(fromIndex,fromSign,j,toSign)) {
 					return false;
 				}											
 			}			
@@ -301,7 +310,18 @@ public class SubtypeOperator {
 		return !fromSign || !toSign;		
 	}
 	
-	private int invert(int kind, boolean sign) {
+	private int indexOf(int fromIndex, boolean fromSign,
+			int toIndex, boolean toSign) {
+		if(fromSign) {
+			fromIndex += from.size();
+		}
+		if(toSign) {
+			toIndex += to.size();
+		}
+		return (fromIndex*from.size()) + toIndex;
+	}
+	
+	private static int invert(int kind, boolean sign) {
 		if(sign) {
 			return kind;
 		}
@@ -317,17 +337,5 @@ public class SubtypeOperator {
 			default:
 				return kind;
 		}		
-	}
-	
-	private void setIntersection(int fromIndex, boolean fromSign,
-			int toIndex, boolean toSign, boolean value) {
-		if(fromSign) {
-			fromIndex += from.size();
-		}
-		if(toSign) {
-			toIndex += to.size();
-		}
-		
-		intersections.set(fromIndex,toIndex,value);
-	}
+	}	
 }

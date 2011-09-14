@@ -46,10 +46,6 @@ import wyil.lang.Type;
 public final class TypeSimplifications implements RewriteRule {
 	private SubtypeOperator subtypes;
 	
-	public TypeSimplifications(Automata automata) {
-		updateSubtypes(automata);
-	}
-	
 	public final boolean apply(int index, Automata automata) {
 		Automata.State state = automata.states[index];
 		boolean changed=false;
@@ -72,8 +68,9 @@ public final class TypeSimplifications implements RewriteRule {
 				changed = applyCompound(index, state, automata);
 				break;
 		}
-		if(changed) { 			
-			updateSubtypes(automata); 
+		if(changed) { 		
+			// invalidate subtype cache
+			subtypes = null; 
 		}
 		return changed;
 	}
@@ -360,19 +357,14 @@ public final class TypeSimplifications implements RewriteRule {
 					continue;
 				}
 				int jChild = children[j];
-				boolean irj = subtypes.isSubtype(iChild, jChild);
-				boolean jri = subtypes.isSubtype(jChild, iChild);
+				boolean irj = isSubtype(iChild, jChild, automata);
+				boolean jri = isSubtype(jChild, iChild, automata);
 				if (irj && (!jri || i > j)) {
 					subsumed = true;
 				} else if(primitiveInverse(iChild,jChild,automata)) {
 					automata.states[index] = new Automata.State(Type.K_VOID);
 					return true;
 				}
-//				else if (!subtypes.isIntersection(iChild, jChild)) {
-//					// no intersection is possible!
-//					automata.states[index] = new Automata.State(Type.K_VOID);
-//					return true;
-//				}			
 			}
 			if(subsumed) {					
 				changed = true;
@@ -513,8 +505,8 @@ public final class TypeSimplifications implements RewriteRule {
 			boolean subsumed = false;
 			for (int j = 0; j < children.length; ++j) {
 				int jChild = children[j];
-				if (i != j && subtypes.isSubtype(jChild, iChild)
-						&& (!subtypes.isSubtype(iChild, jChild) || i > j)) {
+				if (i != j && isSubtype(jChild, iChild, automata)
+						&& (!isSubtype(iChild, jChild, automata) || i > j)) {
 					subsumed = true;
 				}
 			}
@@ -679,9 +671,10 @@ public final class TypeSimplifications implements RewriteRule {
 		state.children = nstate_children;
 	}
 	
-	private void updateSubtypes(Automata automata) {
-		// this is horrendously inefficient
-		subtypes = new SubtypeOperator(automata,automata);
-		Automatas.computeFixpoint(subtypes);
+	private boolean isSubtype(int fromIndex, int toIndex, Automata automata) {
+		if(subtypes == null) {
+			subtypes = new SubtypeOperator(automata,automata);
+		}
+		return subtypes.isSubtype(fromIndex, toIndex);
 	}
 }
