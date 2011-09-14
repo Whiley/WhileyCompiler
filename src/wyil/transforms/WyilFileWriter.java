@@ -105,14 +105,14 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	public void write(Case mcase, Method method, PrintWriter out) {
-		Type.Fun ft = method.type(); 
+		Type.Function ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
 		ArrayList<String> locals = new ArrayList<String>(mcase.locals());		
 		
 		int li = 0;
-		if(ft instanceof Type.Meth) {			
-			Type.Meth mt = (Type.Meth) ft;
+		if(ft instanceof Type.Method) {			
+			Type.Method mt = (Type.Method) ft;
 			if(mt.receiver() != null) {
 				out.print(mt.receiver());
 				li++;

@@ -35,11 +35,11 @@ public class TypeParser {
 			if(str.charAt(index) == '|') {
 				// union type
 				match("|");
-				term = T_UNION(term,parse(typeVariables));
+				term = Union(term,parse(typeVariables));
 			} else {
 				// intersection type
 				match("&");
-				term = T_INTERSECTION(term,parse(typeVariables));
+				term = Intersection(term,parse(typeVariables));
 			}
 			skipWhiteSpace();
 		}
@@ -64,7 +64,7 @@ public class TypeParser {
 			}
 			match(")");
 			skipWhiteSpace();
-			return T_FUN(t,elems);			
+			return Function(t,elems);			
 		}
 		return t;
 	}
@@ -74,7 +74,7 @@ public class TypeParser {
 		char lookahead = str.charAt(index);
 		if(lookahead == '!') {
 			match("!");
-			return T_NEGATION(parseNotTerm(typeVariables));
+			return Negation(parseNotTerm(typeVariables));
 		} else {
 			return parseBraceTerm(typeVariables);
 		}
@@ -99,7 +99,7 @@ public class TypeParser {
 				}
 				match(")");
 				skipWhiteSpace();
-				return T_TUPLE(elems);
+				return Tuple(elems);
 			} else {
 				match(")");
 				skipWhiteSpace();
@@ -148,7 +148,7 @@ public class TypeParser {
 			match("[");
 			Type elem = parse(typeVariables);
 			match("]");
-			return T_LIST(elem);
+			return List(elem);
 		}
 		case '{':
 		{
@@ -169,23 +169,23 @@ public class TypeParser {
 					skipWhiteSpace();
 				}
 				match("}");
-				return T_RECORD(fields);					
+				return Record(fields);					
 			}
 			match("}");
-			return T_SET(elem);
+			return Set(elem);
 		}
 		default:
 		{
 			String typeVariable = parseIdentifier();
 			if(typeVariables.contains(typeVariable)) {
-				return T_LABEL(typeVariable);
+				return Label(typeVariable);
 			} else {
 				typeVariables = new HashSet<String>(typeVariables);
 				typeVariables.add(typeVariable);
 				match("<");
 				Type t = parse(typeVariables);
 				match(">");				
-				return T_RECURSIVE(typeVariable,t);
+				return Recursive(typeVariable,t);
 			}		
 		}
 			

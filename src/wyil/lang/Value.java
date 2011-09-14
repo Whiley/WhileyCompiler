@@ -90,7 +90,7 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Tuple(values));
 	}
 	
-	public static FunConst V_FUN(NameID name, Type.Fun type) {
+	public static FunConst V_FUN(NameID name, Type.Function type) {
 		return get(new FunConst(name,type));
 	}		
 	
@@ -375,9 +375,9 @@ public abstract class Value implements Comparable<Value> {
 		public Type type() {
 			Type t = Type.T_VOID;
 			for(Value arg : values) {
-				t = Type.T_UNION(t,arg.type());
+				t = Type.Union(t,arg.type());
 			}
-			return Type.T_LIST(t);			
+			return Type.List(t);			
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -436,9 +436,9 @@ public abstract class Value implements Comparable<Value> {
 		public Type type() {
 			Type t = Type.T_VOID;
 			for(Value arg : values) {
-				t = Type.T_UNION(t,arg.type());
+				t = Type.Union(t,arg.type());
 			}
-			return Type.T_SET(t);	
+			return Type.Set(t);	
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -541,7 +541,7 @@ public abstract class Value implements Comparable<Value> {
 			for (Map.Entry<String, Value> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
 			}
-			return Type.T_RECORD(types);
+			return Type.Record(types);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -615,10 +615,10 @@ public abstract class Value implements Comparable<Value> {
 			Type key = Type.T_VOID;
 			Type value = Type.T_VOID;
 			for (Map.Entry<Value, Value> e : values.entrySet()) {
-				key = Type.T_UNION(key,e.getKey().type());
-				value = Type.T_UNION(value,e.getKey().type());
+				key = Type.Union(key,e.getKey().type());
+				value = Type.Union(value,e.getKey().type());
 			}
-			return Type.T_DICTIONARY(key,value);
+			return Type.Dictionary(key,value);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -718,15 +718,15 @@ public abstract class Value implements Comparable<Value> {
 	
 	public static final class FunConst extends Value {
 		public final NameID name;
-		public final Type.Fun type;
+		public final Type.Function type;
 		
-		private FunConst(NameID name, Type.Fun type) {
+		private FunConst(NameID name, Type.Function type) {
 			this.name = name;
 			this.type = type;
 		}
 		public Type type() {
 			if (type == null) {				
-				return Type.T_FUN(Type.T_ANY, Type.T_ANY);
+				return Type.Function(Type.T_ANY, Type.T_ANY);
 			} else {
 				return type;
 			}
@@ -772,7 +772,7 @@ public abstract class Value implements Comparable<Value> {
 			for (Value e : values) {
 				types.add(e.type());				
 			}
-			return Type.T_TUPLE(types);
+			return Type.Tuple(types);
 		}
 		public int hashCode() {
 			return values.hashCode();

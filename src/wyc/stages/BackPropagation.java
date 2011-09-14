@@ -270,8 +270,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		environment.push(code.type);
 		
-		if(code.type instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) code.type;
+		if(code.type instanceof Type.Method) {
+			Type.Method mt = (Type.Method) code.type;
 			if(mt.receiver() != null) {
 				environment.push(mt.receiver());
 			}
@@ -307,8 +307,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		
 
-		if(code.type instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) code.type;
+		if(code.type instanceof Type.Method) {
+			Type.Method mt = (Type.Method) code.type;
 			if(mt.receiver() != null) {
 				environment.push(mt.receiver());
 			}						
@@ -385,14 +385,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		Type iter = code.type;
 		
-		if(code.slot == Code.THIS_SLOT && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
+		if(code.slot == Code.THIS_SLOT && Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
 			Type.Process p = (Type.Process) iter;
 			iter = p.element();
 		}						
 		
 		int fi = 0;
 		for(int i=0;i!=code.level;++i) {
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+			if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
 				environment.push(Type.T_ANY);
@@ -400,7 +400,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
 				environment.push(Type.T_INT);
 				iter = Type.T_CHAR;
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
 				environment.push(Type.T_INT);
 				iter = list.element();
@@ -414,22 +414,22 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// The second job is to try and determine whether there is any general
 		// requirement on the value being assigned.
 		
-		iter = Type.T_UNION(code.type,src);
+		iter = Type.Union(code.type,src);
 		
-		if(code.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
+		if(code.slot == 0 && Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
 			Type.Process p = (Type.Process) iter;
 			iter = p.element();
 		}						
 		
 		fi = 0;
 		for(int i=0;i!=code.level;++i) {
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+			if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
 				iter = dict.value();				
 			} else if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
 				iter = list.element();
 			} else if(Type.effectiveRecordType(iter) != null) {
@@ -762,7 +762,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		Env env = new Env();
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
-			env.add(Type.T_UNION(env1.get(i), env2.get(i)));
+			env.add(Type.Union(env1.get(i), env2.get(i)));
 		}
 
 		return env;

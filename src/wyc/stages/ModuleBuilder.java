@@ -44,7 +44,7 @@ public class ModuleBuilder {
 	private final ModuleLoader loader;	
 	private HashSet<ModuleID> modules;
 	private HashMap<NameID, WhileyFile> filemap;
-	private HashMap<NameID, List<Type.Fun>> functions;
+	private HashMap<NameID, List<Type.Function>> functions;
 	private HashMap<NameID, Pair<Type,Block>> types;
 	private HashMap<NameID, Value> constants;
 	private HashMap<NameID, Pair<UnresolvedType, Expr>> unresolved;
@@ -67,7 +67,7 @@ public class ModuleBuilder {
 	public List<Module> resolve(List<WhileyFile> files) {
 		modules = new HashSet<ModuleID>();
 		filemap = new HashMap<NameID, WhileyFile>();
-		functions = new HashMap<NameID, List<Type.Fun>>();
+		functions = new HashMap<NameID, List<Type.Function>>();
 		types = new HashMap<NameID, Pair<Type,Block>>();
 		constants = new HashMap<NameID, Value>();
 		unresolved = new HashMap<NameID, Pair<UnresolvedType,Expr>>();
@@ -101,7 +101,7 @@ public class ModuleBuilder {
 
 	public Module resolve(WhileyFile wf) {
 		this.filename = wf.filename;
-		HashMap<Pair<Type.Fun, String>, Module.Method> methods = new HashMap();
+		HashMap<Pair<Type.Function, String>, Module.Method> methods = new HashMap();
 		ArrayList<Module.TypeDef> types = new ArrayList<Module.TypeDef>();
 		ArrayList<Module.ConstDef> constants = new ArrayList<Module.ConstDef>();
 		for (WhileyFile.Decl d : wf.declarations) {
@@ -112,7 +112,7 @@ public class ModuleBuilder {
 					constants.add(resolve((ConstDecl) d, wf.module));
 				} else if (d instanceof FunDecl) {
 					Module.Method mi = resolve((FunDecl) d);
-					Pair<Type.Fun, String> key = new Pair(mi.type(), mi.name());
+					Pair<Type.Function, String> key = new Pair(mi.type(), mi.name());
 					Module.Method method = methods.get(key);
 					if (method != null) {
 						// coalesce cases
@@ -288,7 +288,7 @@ public class ModuleBuilder {
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
 			if (mid != null) {
 				NameID name = new NameID(mid.module, f.name);
-				Type.Fun tf = null;
+				Type.Function tf = null;
 				
 				if(f.paramTypes != null) {
 					ArrayList<Type> paramTypes = new ArrayList<Type>();
@@ -296,7 +296,7 @@ public class ModuleBuilder {
 						// TODO: fix parameter constraints
 						paramTypes.add(resolve(p).first());
 					}				
-					tf = Type.T_FUN(Type.T_ANY, paramTypes);
+					tf = Type.Function(Type.T_ANY, paramTypes);
 				}
 				
 				return Value.V_FUN(name, tf);	
@@ -307,7 +307,7 @@ public class ModuleBuilder {
 	}
 
 	protected Value evaluate(Expr.BinOp bop, Value v1, Value v2) {
-		Type lub = Type.T_UNION(v1.type(), v2.type());
+		Type lub = Type.Union(v1.type(), v2.type());
 		
 		// FIXME: there are bugs here related to coercions.
 		
@@ -315,9 +315,9 @@ public class ModuleBuilder {
 			return evaluateBoolean(bop,(Value.Bool) v1,(Value.Bool) v2);
 		} else if(Type.isSubtype(Type.T_REAL, lub)) {
 			return evaluate(bop,(Value.Rational) v1, (Value.Rational) v2);
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY), lub)) {
+		} else if(Type.isSubtype(Type.List(Type.T_ANY), lub)) {
 			return evaluate(bop,(Value.List)v1,(Value.List)v2);
-		} else if(Type.isSubtype(Type.T_SET(Type.T_ANY), lub)) {
+		} else if(Type.isSubtype(Type.Set(Type.T_ANY), lub)) {
 			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
 		} 
 		syntaxError("invalid expression",filename,bop);
@@ -470,7 +470,7 @@ public class ModuleBuilder {
 		}
 
 		// following is needed to terminate any recursion
-		cache.put(key, Type.T_LABEL(key.toString()));
+		cache.put(key, Type.Label(key.toString()));
 
 		// now, expand the type fully		
 		Pair<UnresolvedType,Expr> ut = unresolved.get(key); 
@@ -482,7 +482,7 @@ public class ModuleBuilder {
 		// recursive type.
 		boolean isOpenRecursive = Type.isOpen(key.toString(), t.first());
 		if (isOpenRecursive) {
-			t = new Pair<Type, Block>(Type.T_RECURSIVE(key.toString(),
+			t = new Pair<Type, Block>(Type.Recursive(key.toString(),
 					t.first()), t.second());
 		}
 		
@@ -527,7 +527,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}		
-			return new Pair<Type,Block>(Type.T_LIST(p.first()),blk);			
+			return new Pair<Type,Block>(Type.List(p.first()),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
@@ -541,14 +541,14 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}						
-			return new Pair<Type,Block>(Type.T_SET(p.first()),blk);					
+			return new Pair<Type,Block>(Type.Set(p.first()),blk);					
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;	
 			Block blk = null;
 			// FIXME: put in constraints.  REQUIRES ITERATION OVER DICTIONARIES
 			Pair<Type,Block> key = expandType(st.key, filename, cache);
 			Pair<Type,Block> value = expandType(st.value, filename, cache);
-			return new Pair<Type,Block>(Type.T_DICTIONARY(key.first(),value.first()),blk);					
+			return new Pair<Type,Block>(Type.Dictionary(key.first(),value.first()),blk);					
 		} else if (t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			Block blk = null;
@@ -558,7 +558,7 @@ public class ModuleBuilder {
 				// TODO: add record constraints
 				types.put(e.getKey(), p.first());				
 			}
-			return new Pair<Type,Block>(Type.T_RECORD(types),blk);						
+			return new Pair<Type,Block>(Type.Record(types),blk);						
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			Block blk = null;
@@ -572,14 +572,14 @@ public class ModuleBuilder {
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {				
-				return new Pair<Type,Block>(Type.T_UNION(bounds),blk);
+				return new Pair<Type,Block>(Type.Union(bounds),blk);
 			}			
 		} else if (t instanceof UnresolvedType.Not) {
 			UnresolvedType.Not st = (UnresolvedType.Not) t;
 			Pair<Type,Block> p = expandType(st.element, filename, cache);
 			Block blk = null;
 			// TODO: need to fix not constraints					
-			return new Pair<Type,Block>(Type.T_NEGATION(p.first()),blk);					
+			return new Pair<Type,Block>(Type.Negation(p.first()),blk);					
 		} else if (t instanceof UnresolvedType.Intersection) {
 			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
 			Block blk = null;
@@ -593,19 +593,19 @@ public class ModuleBuilder {
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
 			} else {				
-				return new Pair<Type,Block>(Type.T_INTERSECTION(bounds),blk);
+				return new Pair<Type,Block>(Type.Intersection(bounds),blk);
 			}			
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
 			ModuleID mid = ut.attribute(Attributes.Module.class).module;			
 			// TODO: need to fix existentials
-			return new Pair<Type,Block>(Type.T_EXISTENTIAL(new NameID(mid,"1")),null);							
+			return new Pair<Type,Block>(Type.Existential(new NameID(mid,"1")),null);							
 		} else if (t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Block blk = null;
 			Pair<Type,Block> p = expandType(ut.element, filename, cache);
 			// TODO: fix process constraints
-			return new Pair<Type,Block>(Type.T_PROCESS(p.first()),blk);							
+			return new Pair<Type,Block>(Type.Process(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
 			Attributes.Name nameInfo = dt.attribute(Attributes.Name.class);
@@ -636,7 +636,7 @@ public class ModuleBuilder {
 
 		// method receiver type (if applicable)
 		Type.Process rec = null;
-		Type.Fun ft;
+		Type.Function ft;
 		if (fd instanceof MethDecl) {
 			MethDecl md = (MethDecl) fd;
 			if(md.receiver != null) {
@@ -644,15 +644,15 @@ public class ModuleBuilder {
 				checkType(t, Type.Process.class, md.receiver);
 				rec = (Type.Process) t;				
 			}
-			ft = Type.T_METH(rec, ret, parameters);
+			ft = Type.Method(rec, ret, parameters);
 		} else {
-			ft = Type.T_FUN(ret, parameters);
+			ft = Type.Function(ret, parameters);
 		}
 		 
 		NameID name = new NameID(module, fd.name);
-		List<Type.Fun> types = functions.get(name);
+		List<Type.Function> types = functions.get(name);
 		if (types == null) {
-			types = new ArrayList<Type.Fun>();
+			types = new ArrayList<Type.Function>();
 			functions.put(name, types);
 		}
 		types.add(ft);
@@ -779,7 +779,7 @@ public class ModuleBuilder {
 		// TODO: fix constraints here
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
 		
-		Type.Fun tf = fd.attribute(Attributes.Fun.class).type;
+		Type.Function tf = fd.attribute(Attributes.Fun.class).type;
 		return new Module.Method(fd.name(), tf, ncases);
 	}
 
@@ -1517,26 +1517,26 @@ public class ModuleBuilder {
 					
 		if(variableIndirectInvoke) {			
 			if(s.receiver != null) {
-				blk.append(Code.IndirectSend(Type.T_METH(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
+				blk.append(Code.IndirectSend(Type.Method(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
 			} else {
-				blk.append(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
+				blk.append(Code.IndirectInvoke(Type.Function(Type.T_VOID, paramTypes), retval),attributes(s));
 			}
 		} else if(fieldIndirectInvoke) {
-			blk.append(Code.IndirectInvoke(Type.T_FUN(Type.T_VOID, paramTypes), retval),attributes(s));
+			blk.append(Code.IndirectInvoke(Type.Function(Type.T_VOID, paramTypes), retval),attributes(s));
 		} else if(directInvoke || methodInvoke) {
 			NameID name = new NameID(modInfo.module, s.name);
 			if(receiverIsThis) {
 				blk.append(Code.Invoke(
-						Type.T_METH(null, Type.T_VOID,
+						Type.Method(null, Type.T_VOID,
 								paramTypes), name, retval), attributes(s));
 			} else {
 				blk.append(Code.Invoke(
-						Type.T_FUN(Type.T_VOID, paramTypes), name, retval),attributes(s));
+						Type.Function(Type.T_VOID, paramTypes), name, retval),attributes(s));
 			}
 		} else if(directSend) {						
 			NameID name = new NameID(modInfo.module, s.name);
 			blk.append(Code.Send(
-					Type.T_METH(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
+					Type.Method(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
 		} else {
 			syntaxError("unknown function or method", filename, s);
 		}
@@ -1553,7 +1553,7 @@ public class ModuleBuilder {
 	protected Block resolve(FunConst s, HashMap<String,Integer> environment) {
 		Attributes.Module modInfo = s.attribute(Attributes.Module.class);		
 		NameID name = new NameID(modInfo.module, s.name);	
-		Type.Fun tf = null;
+		Type.Function tf = null;
 		if(s.paramTypes != null) {
 			// in this case, the user has provided explicit type information.
 			ArrayList<Type> paramTypes = new ArrayList<Type>();
@@ -1562,7 +1562,7 @@ public class ModuleBuilder {
 				// TODO: fix parameter constraints
 				paramTypes.add(p.first());
 			}
-			tf = Type.T_FUN(Type.T_ANY, paramTypes);
+			tf = Type.Function(Type.T_ANY, paramTypes);
 		}
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(Value.V_FUN(name, tf)),
@@ -1837,7 +1837,7 @@ public class ModuleBuilder {
 			fields.put(key, Type.T_ANY);
 			blk.append(resolve(sg.fields.get(key), environment));
 		}
-		blk.append(Code.NewRecord(Type.T_RECORD(fields)), attributes(sg));
+		blk.append(Code.NewRecord(Type.Record(fields)), attributes(sg));
 		return blk;
 	}
 
@@ -1915,7 +1915,7 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
-			return new Pair<Type,Block>(Type.T_LIST(p.first()),blk);			
+			return new Pair<Type,Block>(Type.List(p.first()),blk);			
 		} else if (t instanceof UnresolvedType.Set) {
 			UnresolvedType.Set st = (UnresolvedType.Set) t;	
 			Pair<Type,Block> p = resolve(st.element);
@@ -1929,13 +1929,13 @@ public class ModuleBuilder {
 				blk.append(shiftBlock(1,p.second()));				
 				blk.append(Code.End(label));
 			}	
-			return new Pair<Type,Block>(Type.T_SET(p.first()),blk);			
+			return new Pair<Type,Block>(Type.Set(p.first()),blk);			
 		} else if (t instanceof UnresolvedType.Dictionary) {
 			UnresolvedType.Dictionary st = (UnresolvedType.Dictionary) t;			
 			Pair<Type,Block> key = resolve(st.key);
 			Pair<Type,Block> value = resolve(st.value);
 			// TODO: fix dictionary constraints
-			return new Pair<Type,Block>(Type.T_DICTIONARY(key.first(),value.first()),null);					
+			return new Pair<Type,Block>(Type.Dictionary(key.first(),value.first()),null);					
 		} else if (t instanceof UnresolvedType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
 			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
@@ -1945,7 +1945,7 @@ public class ModuleBuilder {
 				// TODO: fix tuple constraints
 				types.add(p.first());				
 			}
-			return new Pair<Type,Block>(Type.T_TUPLE(types),null);			
+			return new Pair<Type,Block>(Type.Tuple(types),null);			
 		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			HashMap<String, Type> types = new HashMap<String, Type>();			
@@ -1954,13 +1954,13 @@ public class ModuleBuilder {
 				// TODO: fix record constraints
 				types.put(e.getKey(), p.first());				
 			}
-			return new Pair<Type,Block>(Type.T_RECORD(types),null);
+			return new Pair<Type,Block>(Type.Record(types),null);
 		} else if(t instanceof UnresolvedType.Not) {
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
 			Block blk = null;
 			Pair<Type,Block> p = resolve(ut.element);
 			// TODO: fix not constraints
-			return new Pair<Type,Block>(Type.T_NEGATION(p.first()),blk);							
+			return new Pair<Type,Block>(Type.Negation(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Union) {
 			UnresolvedType.Union ut = (UnresolvedType.Union) t;
 			HashSet<Type> bounds = new HashSet<Type>();			
@@ -1973,19 +1973,19 @@ public class ModuleBuilder {
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),null);
 			} else {
-				return new Pair<Type,Block>(Type.T_UNION(bounds),null);
+				return new Pair<Type,Block>(Type.Union(bounds),null);
 			}			
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
 			ModuleID mid = ut.attribute(Attributes.Module.class).module;
 			// TODO: need to fix existentials
-			return new Pair<Type,Block>(Type.T_EXISTENTIAL(new NameID(mid,"1")),null);							
+			return new Pair<Type,Block>(Type.Existential(new NameID(mid,"1")),null);							
 		} else if(t instanceof UnresolvedType.Process) {
 			UnresolvedType.Process ut = (UnresolvedType.Process) t;
 			Block blk = null;
 			Pair<Type,Block> p = resolve(ut.element);
 			// TODO: fix process constraints
-			return new Pair<Type,Block>(Type.T_PROCESS(p.first()),blk);							
+			return new Pair<Type,Block>(Type.Process(p.first()),blk);							
 		} else if (t instanceof UnresolvedType.Named) {
 			UnresolvedType.Named dt = (UnresolvedType.Named) t;
 			Attributes.Name nameInfo = dt.attribute(Attributes.Name.class);
@@ -2024,9 +2024,9 @@ public class ModuleBuilder {
 			Pair<Type,Block> ret = resolve(ut.ret);
 			
 			if(receiver != null) {
-				return new Pair<Type,Block>(Type.T_METH(receiver,ret.first(),paramTypes),blk);
+				return new Pair<Type,Block>(Type.Method(receiver,ret.first(),paramTypes),blk);
 			} else {
-				return new Pair<Type,Block>(Type.T_FUN(ret.first(),paramTypes),blk);
+				return new Pair<Type,Block>(Type.Function(ret.first(),paramTypes),blk);
 			}
 		}
 	}

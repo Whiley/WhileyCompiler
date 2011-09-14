@@ -37,9 +37,9 @@ import wyil.lang.*;
 public interface Attributes {
 
 	public static final class Fun implements Attribute {
-		public final wyil.lang.Type.Fun type;
+		public final wyil.lang.Type.Function type;
 
-		public Fun(wyil.lang.Type.Fun type) {
+		public Fun(wyil.lang.Type.Function type) {
 			this.type = type;
 		}
 	}

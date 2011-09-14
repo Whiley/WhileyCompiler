@@ -139,7 +139,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Invoke Invoke(Type.Fun fun, NameID name, boolean retval) {
+	public static Invoke Invoke(Type.Function fun, NameID name, boolean retval) {
 		return get(new Invoke(fun,name,retval));
 	}
 
@@ -287,7 +287,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectSend IndirectSend(Type.Meth meth, boolean synchronous, boolean retval) {
+	public static IndirectSend IndirectSend(Type.Method meth, boolean synchronous, boolean retval) {
 		return get(new IndirectSend(meth,synchronous,retval));
 	}
 	
@@ -299,7 +299,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static IndirectInvoke IndirectInvoke(Type.Fun fun, boolean retval) {
+	public static IndirectInvoke IndirectInvoke(Type.Function fun, boolean retval) {
 		return get(new IndirectInvoke(fun,retval));
 	}
 	
@@ -353,7 +353,7 @@ public abstract class Code {
 	 *            --- destination label.
 	 * @return
 	 */
-	public static Send Send(Type.Meth meth, NameID name, boolean synchronous, boolean retval) {
+	public static Send Send(Type.Method meth, NameID name, boolean synchronous, boolean retval) {
 		return get(new Send(meth,name,synchronous,retval));
 	}	
 	
@@ -1035,10 +1035,10 @@ public abstract class Code {
 	}
 	
 	public static final class IndirectInvoke extends Code {		
-		public final Type.Fun type;
+		public final Type.Function type;
 		public final boolean retval;
 		
-		private IndirectInvoke(Type.Fun type, boolean retval) {
+		private IndirectInvoke(Type.Function type, boolean retval) {
 			this.type = type;
 			this.retval = retval;
 		}
@@ -1073,9 +1073,9 @@ public abstract class Code {
 	public static final class IndirectSend extends Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
-		 public final Type.Meth type;
+		 public final Type.Method type;
 			
-		 private IndirectSend(Type.Meth type, boolean synchronous, boolean retval) {
+		 private IndirectSend(Type.Method type, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.synchronous = synchronous;
 			 this.retval = retval;
@@ -1128,11 +1128,11 @@ public abstract class Code {
 	}
 	
 	public static final class Invoke extends Code {		
-		public final Type.Fun type;
+		public final Type.Function type;
 		public final NameID name;
 		public final boolean retval;
 				
-		private Invoke(Type.Fun type, NameID name, boolean retval) {
+		private Invoke(Type.Function type, NameID name, boolean retval) {
 			this.type = type;
 			this.name = name;
 			this.retval = retval;
@@ -2047,9 +2047,9 @@ public abstract class Code {
 		 public final boolean synchronous;
 		 public final boolean retval;
 		 public final NameID name;
-		 public final Type.Meth type;
+		 public final Type.Method type;
 			
-		 private Send(Type.Meth type, NameID name, boolean synchronous, boolean retval) {
+		 private Send(Type.Method type, NameID name, boolean synchronous, boolean retval) {
 			 this.type = type;
 			 this.name = name;
 			 this.synchronous = synchronous;

@@ -220,10 +220,10 @@ public class ConstraintInline implements Transform {
 				blk.append(Code.Store(code.type, freeSlot),attributes(elem));				
 				HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 				binding.put(0,freeSlot);
-				Type.Fun mtype = method.type();	
+				Type.Function mtype = method.type();	
 				int pIndex = 1;
-				if (mtype instanceof Type.Meth
-						&& ((Type.Meth) mtype).receiver() != null) {
+				if (mtype instanceof Type.Method
+						&& ((Type.Method) mtype).receiver() != null) {
 					binding.put(pIndex++, Code.THIS_SLOT);
 				}
 				int shadowIndex = methodCase.body().numSlots();
@@ -325,7 +325,7 @@ public class ConstraintInline implements Transform {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.Fun fun) throws ResolveError {
+	protected Block findPrecondition(NameID name, Type.Function fun) throws ResolveError {
 		Module m = loader.loadModule(name.module());				
 		Module.Method method = m.method(name.name(),fun);
 		

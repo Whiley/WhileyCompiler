@@ -61,7 +61,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(Type... elements) {		
+	public static final Tuple Tuple(Type... elements) {		
 		Type r = construct(K_TUPLE, null, elements);
 		if (r instanceof Tuple) {
 			return (Tuple) r;
@@ -76,7 +76,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
+	public static final Tuple Tuple(java.util.List<Type> elements) {
 		Type r = construct(K_TUPLE, null, elements);
 		if (r instanceof Tuple) {
 			return (Tuple) r;
@@ -91,7 +91,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Process T_PROCESS(Type element) {
+	public static final Process Process(Type element) {
 		Type r = construct(K_PROCESS, null, element);
 		if (r instanceof Process) {
 			return (Process) r;
@@ -101,7 +101,7 @@ public abstract class Type {
 		}			
 	}
 	
-	public static final Existential T_EXISTENTIAL(NameID name) {
+	public static final Existential Existential(NameID name) {
 		if (name == null) {
 			throw new IllegalArgumentException(
 					"existential name cannot be null");
@@ -114,7 +114,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Set T_SET(Type element) {
+	public static final Set Set(Type element) {
 		Type r = construct(K_SET, null, element);
 		if (r instanceof Set) {
 			return (Set) r;
@@ -129,7 +129,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final List T_LIST(Type element) {
+	public static final List List(Type element) {
 		Type r = construct(K_LIST, null, element);
 		if (r instanceof List) {
 			return (List) r;
@@ -144,7 +144,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Dictionary T_DICTIONARY(Type key, Type value) {
+	public static final Dictionary Dictionary(Type key, Type value) {
 		Type r = construct(K_DICTIONARY, null, key, value);
 		if (r instanceof Dictionary) {
 			return (Dictionary) r;
@@ -159,7 +159,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_UNION(Collection<Type> bounds) {
+	public static final Type Union(Collection<Type> bounds) {
 		return construct(K_UNION,null,bounds);		
 	}
 	
@@ -168,34 +168,16 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_UNION(Type... bounds) {
+	public static final Type Union(Type... bounds) {
 		return construct(K_UNION,null,bounds);			
 	}	
-	
-	/**
-	 * Construct an intersection type using the given type bounds
-	 * 
-	 * @param element
-	 */
-	public static final Type T_INTERSECTION(Collection<Type> bounds) {
-		return construct(K_INTERSECTION,null,bounds);
-	}
-	
-	/**
-	 * Construct an intersection type using the given type bounds
-	 * 
-	 * @param element
-	 */
-	public static final Type T_INTERSECTION(Type... bounds) {
-		return construct(K_INTERSECTION,null,bounds);			
-	}	
-	
+		
 	/**
 	 * Construct a difference of two types.
 	 * 
 	 * @param element
 	 */
-	public static final Type T_NEGATION(Type element) {
+	public static final Type Negation(Type element) {
 		return construct(K_NEGATION,null,element);				
 	}
 	
@@ -204,15 +186,15 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(Type ret,
+	public static final Function Function(Type ret,
 			Collection<Type> params) {
 		Type[] rparams = new Type[params.size()+1];		
 		int i = 0;
 		for (Type t : params) { rparams[++i] = t; }		
 		rparams[0] = ret;
 		Type r = construct(K_FUNCTION, null, rparams);
-		if (r instanceof Fun) {
-			return (Fun) r;
+		if (r instanceof Function) {
+			return (Function) r;
 		} else {
 			throw new IllegalArgumentException(
 					"Invalid Argument(s) for Type.Fun: " + params);
@@ -224,13 +206,13 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Fun T_FUN(Type ret, Type... params) {
+	public static final Function Function(Type ret, Type... params) {
 		Type[] rparams = new Type[params.length+1];		
 		System.arraycopy(params, 0, rparams, 1, params.length);
 		rparams[0] = ret;
 		Type r = construct(K_FUNCTION, null, rparams);
-		if (r instanceof Fun) {
-			return (Fun) r;
+		if (r instanceof Function) {
+			return (Function) r;
 		} else {
 			throw new IllegalArgumentException(
 					"Invalid Argument(s) for Type.Fun: " + params);
@@ -242,7 +224,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Meth T_METH(Process receiver, Type ret,
+	public static final Method Method(Process receiver, Type ret,
 			Collection<Type> params) {
 		Type r;
 		if(receiver == null) {
@@ -260,8 +242,8 @@ public abstract class Type {
 			rparams[1] = ret;
 			r = construct(K_METHOD, null, rparams);						
 		}
-		if (r instanceof Meth) {
-			return (Meth) r;
+		if (r instanceof Method) {
+			return (Method) r;
 		} else {
 			throw new IllegalArgumentException(
 					"Invalid Argument(s) for Type.Meth: " + params);
@@ -273,7 +255,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Meth T_METH(Process receiver, Type ret, Type... params) {
+	public static final Method Method(Process receiver, Type ret, Type... params) {
 		Type r;
 		if(receiver == null) {
 			// this is a headless method
@@ -288,8 +270,8 @@ public abstract class Type {
 			rparams[1] = ret;
 			r = construct(K_METHOD, null, rparams);
 		}
-		if (r instanceof Meth) {
-			return (Meth) r;
+		if (r instanceof Method) {
+			return (Method) r;
 		} else {
 			throw new IllegalArgumentException(
 					"Invalid Argument(s) for Type.Meth: " + params);
@@ -301,7 +283,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Record T_RECORD(Map<String,Type> fields) {				
+	public static final Record Record(Map<String,Type> fields) {				
 		java.util.Set<String> keySet = fields.keySet();
 		ArrayList<String> keys = new ArrayList(keySet);
 		Collections.sort(keys);
@@ -337,7 +319,7 @@ public abstract class Type {
 	 * @param label
 	 * @return
 	 */
-	public static final Type T_LABEL(String label) {
+	public static final Type Label(String label) {
 		return construct(K_LABEL,label);
 	}
 
@@ -364,7 +346,7 @@ public abstract class Type {
 	 *            --- type to be closed.
 	 * @return
 	 */
-	public static final Type T_RECURSIVE(String label, Type type) {
+	public static final Type Recursive(String label, Type type) {
 		// first stage, identify all matching labels
 		if (type instanceof Leaf) {
 			throw new IllegalArgumentException("cannot close a leaf type");
@@ -573,7 +555,7 @@ public abstract class Type {
 		SubtypeOperator relation = new SubtypeOperator(a1,a2);		
 		return relation.isSubtype(0, 0);		
 	}
-
+	
 	/**
 	 * <p>
 	 * Contractive types are types which cannot accept value because they have
@@ -644,7 +626,7 @@ public abstract class Type {
 			return r;
 		}
 	}
-	
+			
 	/**
 	 * Check whether two types are <i>isomorphic</i>. This is true if they are
 	 * identical, or encode the same structure.
@@ -657,6 +639,32 @@ public abstract class Type {
 		return isSubtype(t1,t2) && isSubtype(t2,t1);
 	}
 
+	/**
+	 * Compute the intersection of two types. The resulting type will only
+	 * accept values which are accepted by both types being intersected.. In
+	 * many cases, the only valid intersection will be <code>void</code>.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static Type intersect(Type t1, Type t2) {
+		return TypeSimplifications.intersect(t1,t2);
+	}
+
+	/**
+	 * Compute the subtraction of two types. The resulting type will accept that
+	 * values which are accepted by <code>left</code> but not by
+	 * <code>right</code>. 
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public static Type subtraction(Type left, Type right) {
+		return null;
+	}
+	
 	/**
 	 * The effective record type gives a subset of the visible fields which are
 	 * guaranteed to be in the type. For example, consider this type:
@@ -692,10 +700,10 @@ public abstract class Type {
 						Type bt = bfields.get(e.getKey());
 						if (bt != null) {
 							nfields.put(e.getKey(),
-									T_UNION(e.getValue(), bt));
+									Union(e.getValue(), bt));
 						}
 					}					
-					r = T_RECORD(nfields);
+					r = Record(nfields);
 				}
 			}
 			return r;
@@ -717,7 +725,7 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_SET(T_UNION(r.element(),br.element()));
+					r = Set(Union(r.element(),br.element()));
 				}
 			}			
 			return r;
@@ -739,7 +747,7 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_LIST(T_UNION(r.element(),br.element()));
+					r = List(Union(r.element(),br.element()));
 				}
 			}			
 			return r;
@@ -761,8 +769,8 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_DICTIONARY(T_UNION(r.key(), br.key()),
-							T_UNION(r.value(), br.value()));
+					r = Dictionary(Union(r.key(), br.key()),
+							Union(r.value(), br.value()));
 				}
 			}
 			return r;
@@ -1299,8 +1307,8 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Fun extends Compound  {
-		Fun(Automata automata) {
+	public static class Function extends Compound  {
+		Function(Automata automata) {
 			super(automata);
 		}
 
@@ -1329,8 +1337,8 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class Meth extends Fun {
-		Meth(Automata automata) {
+	public static final class Method extends Function {
+		Method(Automata automata) {
 			super(automata);
 		}
 
@@ -1711,11 +1719,11 @@ public abstract class Type {
 		case K_NEGATION:
 			return new Negation(automata);
 		case K_METHOD:
-			return new Meth(automata);
+			return new Method(automata);
 		case K_HEADLESS:
-			return new Meth(automata);
+			return new Method(automata);
 		case K_FUNCTION:
-			return new Fun(automata);		
+			return new Function(automata);		
 		case K_LABEL:
 			return new Compound(automata);
 		default:
@@ -1875,33 +1883,35 @@ public abstract class Type {
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
 		Type from = fromString("X<[X|real]>");
-		Type to = fromString("X<[X|real]>");									
+		Type to = fromString("X<[X|int]>");									
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
 		//System.out.println("normalised(" + to + ") = " + normalise(to));
 		System.out.println("isContractive(" + from + ") = " + isContractive(from));
 		System.out.println("isContractive(" + to + ") = " + isContractive(to));
+		to = Type.Intersection(from,to);
+		System.out.println(from + " & " + to + " = " + to);
 	}
 	
 	public static Type contractive() {
-		Type lab = T_LABEL("Contractive");
-		Type union = T_UNION(lab,lab);
-		return T_RECURSIVE("Contractive", union);
+		Type lab = Label("Contractive");
+		Type union = Union(lab,lab);
+		return Recursive("Contractive", union);
 	}
 	
 	public static Type linkedList(int n) {
-		return T_RECURSIVE("X",innerLinkedList(n));
+		return Recursive("X",innerLinkedList(n));
 	}
 	
 	public static Type innerLinkedList(int n) {
 		if(n == 0) {
-			return T_LABEL("X");
+			return Label("X");
 		} else {
-			Type leaf = T_PROCESS(innerLinkedList(n-1)); 
+			Type leaf = Process(innerLinkedList(n-1)); 
 			HashMap<String,Type> fields = new HashMap<String,Type>();
-			fields.put("next", T_UNION(T_NULL,leaf));
+			fields.put("next", Union(T_NULL,leaf));
 			fields.put("data", T_BOOL);
-			Type.Record rec = T_RECORD(fields);
+			Type.Record rec = Record(fields);
 			return rec;
 		}
 	}

@@ -1,6 +1,7 @@
 package wyil.util.type;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import wyautl.lang.*;
 import wyil.lang.Type;
@@ -526,6 +527,58 @@ public final class TypeSimplifications implements RewriteRule {
 		}
 		
 		return changed;
+	}
+	
+	private final static class IntersectionPoint {
+		public final int fromIndex;
+		public final boolean fromSign;
+		public final int toIndex;
+		public final boolean toSign;
+		
+		public IntersectionPoint(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {
+			this.fromIndex = fromIndex;
+			this.fromSign = fromSign;
+			this.toIndex = toIndex;
+			this.toSign = toSign;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof IntersectionPoint) {
+				IntersectionPoint ip = (IntersectionPoint) o;
+				return fromIndex == ip.fromIndex && fromSign == ip.fromSign
+						&& toIndex == ip.toIndex && toSign == ip.toSign;
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return fromIndex + toIndex;
+		}
+	}
+	
+	public static Type intersect(Type t1, Type t2) {
+		Automata a1 = Type.destruct(t1);
+		Automata a2 = Type.destruct(t2);
+		HashMap<IntersectionPoint,Integer> allocations = new HashMap();		
+		ArrayList<Automata.State> nstates = new ArrayList();
+		intersect(0,true,a1,0,true,a2,allocations,nstates);
+		Automata automata = new Automata(nstates.toArray(new Automata.State[nstates.size()]));
+		return Type.construct(automata);
+	}
+	
+	private static int intersect(int fromIndex, boolean fromSign,
+			Automata from, int toIndex, boolean toSign, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+		
+		IntersectionPoint ip = new IntersectionPoint(fromIndex,fromSign,toIndex,toSign);
+		Integer allocation = allocations.get(ip);
+		if(allocation != 0) {
+			return allocation;
+		}
+		
+		int index = allocations.size();
+		states.add(null); // allocate space for me
 	}
 	
 	private static int[] removeIndex(int index, int[] children) {

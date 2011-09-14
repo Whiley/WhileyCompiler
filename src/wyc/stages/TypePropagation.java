@@ -102,8 +102,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				
 		Env environment = new Env();		
 		
-		if(method.type() instanceof Type.Meth) {			
-			Type.Meth mt = (Type.Meth) method.type();
+		if(method.type() instanceof Type.Method) {			
+			Type.Method mt = (Type.Method) method.type();
 			if(mt.receiver() != null) {				
 				environment.add(mt.receiver());
 			}
@@ -113,8 +113,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for (int i=0; i != paramTypes.size(); ++i) {
 			Type t = paramTypes.get(i);
 			environment.add(t);
-			if (!(method.type() instanceof Type.Meth)
-					&& Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), t)) {
+			if (!(method.type() instanceof Type.Method)
+					&& Type.isCoerciveSubtype(Type.Process(Type.T_ANY), t)) {
 				// FIXME: add source information
 				syntaxError("function argument cannot have process type",
 						filename, methodCase);
@@ -129,8 +129,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Env environment = initialStore();
 		int start = method.type().params().size();
-		if(method.type() instanceof Type.Meth) {
-			Type.Meth mt = (Type.Meth) method.type();
+		if(method.type() instanceof Type.Method) {
+			Type.Method mt = (Type.Method) method.type();
 			if(mt.receiver() != null) {
 				start++;
 			}
@@ -296,10 +296,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);		
-		boolean lhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),lhs);
-		boolean rhs_list = Type.isSubtype(Type.T_LIST(Type.T_ANY),rhs);
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY),rhs);		
+		boolean lhs_list = Type.isSubtype(Type.List(Type.T_ANY),lhs);
+		boolean rhs_list = Type.isSubtype(Type.List(Type.T_ANY),rhs);
 		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhs);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhs);
 		
@@ -344,14 +344,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			if(lhs_list && rhs_list) {				
 				dir = OpDir.UNIFORM;
 			} else if(lhs_list) {
-				rhs = Type.T_LIST(rhs);
+				rhs = Type.List(rhs);
 				dir = OpDir.LEFT;
 			} else {
-				lhs = Type.T_LIST(lhs);				
+				lhs = Type.List(lhs);				
 				dir = OpDir.RIGHT;
 			}
 			
-			type = Type.effectiveListType(Type.T_UNION(lhs,rhs));
+			type = Type.effectiveListType(Type.Union(lhs,rhs));
 			
 			switch(v.bop) {				
 				case ADD:																				
@@ -376,7 +376,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else if(v.bop == BOp.RANGE) {
 				checkIsSubtype(Type.T_INT,lhs,stmt);
 				checkIsSubtype(Type.T_INT,rhs,stmt);
-				result = Type.T_LIST(Type.T_INT);
+				result = Type.List(Type.T_INT);
 			} else if(v.bop == BOp.REM) {
 				// remainder is a special case which requires both operands to
 				// be integers.
@@ -484,7 +484,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Value infer(Value.FunConst fc, SyntacticElement elem) {
 		try {
-			List<Type.Fun> targets = lookupMethod(fc.name.module(),fc.name.name());
+			List<Type.Function> targets = lookupMethod(fc.name.module(),fc.name.name());
 			String msg;
 			if(fc.type == null) {
 				if(targets.size() == 1) {
@@ -493,7 +493,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				msg = "ambiguous function or method reference";					
 			} else {
 				msg = "no match for " + fc;
-				for(Type.Fun ft : targets) {
+				for(Type.Function ft : targets) {
 					if(fc.type.params().equals(ft.params())) {
 						return Value.V_FUN(fc.name, ft);
 					}
@@ -503,7 +503,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// failed to find an appropriate match
 			boolean firstTime = true;
 			int count = 0;
-			for(Type.Fun ft : targets) {
+			for(Type.Function ft : targets) {
 				if(firstTime) {
 					msg += "\n\tfound: " + fc.name.name() + parameterString(ft.params());
 				} else {
@@ -554,7 +554,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Block blk = new Block(0);
 		Type lhs_t = environment.pop();				
 		
-		if (Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), lhs_t)) {
+		if (Type.isCoerciveSubtype(Type.Process(Type.T_ANY), lhs_t)) {
 			Type.Process tp = (Type.Process) lhs_t;
 			blk.append(Code.ProcLoad(tp),stmt.attributes());
 			lhs_t = tp.element();
@@ -584,7 +584,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type receiver = environment.pop();
 		Type target = environment.pop();		
 		
-		Type.Meth ft = checkType(target,Type.Meth.class,stmt);	
+		Type.Method ft = checkType(target,Type.Method.class,stmt);	
 		
 		List<Type> ft_params = ft.params();
 		for(int i=0;i!=ft_params.size();++i) {
@@ -608,15 +608,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 				
 		Type.Process receiver = null;
-		if(ivk.type instanceof Type.Meth) {			
+		if(ivk.type instanceof Type.Method) {			
 			receiver = (Type.Process) environment.pop(); 							
 		}
 		
 		Collections.reverse(types);		
 		
 		try {						
-			Type.Fun funtype;
-			if(ivk.type instanceof Type.Meth) {
+			Type.Function funtype;
+			if(ivk.type instanceof Type.Method) {
 				funtype = bindMethod(ivk.name,  receiver, types, stmt);
 			} else {
 				funtype = bindFunction(ivk.name,  types, stmt);				
@@ -640,7 +640,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 		Collections.reverse(types);
 		Type target = environment.pop();
-		Type.Fun ft = checkType(target,Type.Fun.class,stmt);			
+		Type.Function ft = checkType(target,Type.Function.class,stmt);			
 		List<Type> ft_params = ft.params();
 		for(int i=0;i!=ft_params.size();++i) {
 			Type param = ft_params.get(i);
@@ -667,7 +667,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
 		Type idx = environment.pop();
 		Type src = environment.pop();
-		if(Type.isCoerciveSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),src)) {			
+		if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),src)) {			
 			// this indicates a dictionary access, rather than a list access			
 			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
 			if(dict == null) {
@@ -702,7 +702,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type src = environment.get(e.slot);		
 		Type iter = src;
 		
-		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.T_PROCESS(Type.T_ANY), src)) {
+		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.Process(Type.T_ANY), src)) {
 			Type.Process p = (Type.Process) src;
 			iter = p.element();
 		}
@@ -711,7 +711,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		int pi = 0;
 		ArrayList<Type> indices = new ArrayList<Type>();
 		for(int i=0;i!=e.level;++i) {				
-			if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),iter)) {			
+			if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
 				if(dict == null) {
@@ -726,7 +726,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_INT,idx,stmt);
 				checkIsSubtype(Type.T_CHAR,val,stmt);	
 				iter = Type.T_CHAR;				
-			} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
 					syntaxError("expected list",filename,stmt);
@@ -776,11 +776,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(level == 0 && fieldLevel == fields.size()) {
 			// this is the base case of the recursion.
 			return newtype;			
-		} else if(Type.isSubtype(Type.T_PROCESS(Type.T_ANY),oldtype)) {
+		} else if(Type.isSubtype(Type.Process(Type.T_ANY),oldtype)) {
 			Type.Process tp = (Type.Process) oldtype;
 			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
-			return Type.T_PROCESS(nelement);
-		} else if(Type.isSubtype(Type.T_DICTIONARY(Type.T_ANY, Type.T_ANY),oldtype)) {
+			return Type.Process(nelement);
+		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
 			// --- hence, the original type must be preserved. However, in the
@@ -790,18 +790,18 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nkey = indices.get(indexLevel);			
 			Type nvalue = typeInference(dict.value(), newtype, level - 1,
 					fieldLevel, fields, indexLevel + 1, indices);
-			return Type.T_DICTIONARY(Type.T_UNION(dict.key(), nkey),
-					Type.T_UNION(dict.value(), nvalue));			
+			return Type.Dictionary(Type.Union(dict.key(), nkey),
+					Type.Union(dict.value(), nvalue));			
 		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
 			Type nelement = typeInference(Type.T_CHAR, newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
 			return oldtype;
-		} else if(Type.isSubtype(Type.T_LIST(Type.T_ANY),oldtype)) {		
+		} else if(Type.isSubtype(Type.List(Type.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = typeInference(list.element(), newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);
-			return Type.T_UNION(oldtype,Type.T_LIST(nelement));
+			return Type.Union(oldtype,Type.List(nelement));
 		
 		} else if(Type.effectiveRecordType(oldtype) != null){			
 			// Record case is more interesting as we may be able to actually
@@ -814,12 +814,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 						level - 1, fieldLevel + 1, fields, indexLevel, indices);
 				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
 				types.put(field, ntype);
-				return Type.T_RECORD(types);
+				return Type.Record(types);
 			} else {
 				Type.Union tu = (Type.Union) oldtype;
 				Type t = Type.T_VOID;
 				for(Type b : tu.bounds()) {					
-					t = Type.T_UNION(
+					t = Type.Union(
 							t,
 							typeInference(b, newtype, level, fieldLevel,
 									fields, indexLevel, indices));
@@ -844,7 +844,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=keys.size()-1;i>=0;--i) {
 			fields.put(keys.get(i),environment.pop());
 		}		
-		Type.Record type = Type.T_RECORD(fields);
+		Type.Record type = Type.Record(fields);
 		environment.push(type);
 		return Code.NewRecord(type);
 	}
@@ -854,12 +854,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type value = Type.T_VOID;
 		
 		for(int i=0;i!=e.nargs;++i) {
-			value = Type.T_UNION(value,environment.pop());
-			key = Type.T_UNION(key,environment.pop());
+			value = Type.Union(value,environment.pop());
+			key = Type.Union(key,environment.pop());
 			
 		}
 		
-		Type.Dictionary type = Type.T_DICTIONARY(key,value);
+		Type.Dictionary type = Type.Dictionary(key,value);
 		environment.push(type);
 		return Code.NewDict(type,e.nargs);
 	}
@@ -868,10 +868,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type elem = Type.T_VOID;		
 		
 		for(int i=0;i!=e.nargs;++i) {
-			elem = Type.T_UNION(elem,environment.pop());						
+			elem = Type.Union(elem,environment.pop());						
 		}
 		
-		Type.List type = Type.T_LIST(elem);
+		Type.List type = Type.List(elem);
 		environment.push(type);
 		return Code.NewList(type,e.nargs);
 	}
@@ -881,10 +881,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type elem = Type.T_VOID;		
 		
 		for(int i=0;i!=e.nargs;++i) {
-			elem = Type.T_UNION(elem,environment.pop());						
+			elem = Type.Union(elem,environment.pop());						
 		}
 		
-		Type.Set type = Type.T_SET(elem);
+		Type.Set type = Type.Set(elem);
 		environment.push(type);
 		return Code.NewSet(type,e.nargs);
 	}
@@ -896,7 +896,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			types.add(environment.pop());						
 		}
 		Collections.reverse(types);
-		Type.Tuple type = Type.T_TUPLE(types);
+		Type.Tuple type = Type.Tuple(types);
 		environment.push(type);
 		return Code.NewTuple(type,e.nargs);
 	}
@@ -912,12 +912,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type _rec = environment.pop();
 		
 		// FIXME: problem here as process check doesn't cover all cases.		
-		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),_rec,stmt);
+		checkIsSubtype(Type.Process(Type.T_ANY),_rec,stmt);
 		// FIXME: bug here as we need an effectiveProcessType
 		Type.Process rec = (Type.Process) _rec; 		
 
 		try {
-			Type.Meth funtype = bindMethod(ivk.name, rec, types, stmt);
+			Type.Method funtype = bindMethod(ivk.name, rec, types, stmt);
 			if (funtype.ret() != Type.T_VOID && ivk.synchronous && ivk.retval) {
 				environment.push(funtype.ret());
 			}
@@ -939,10 +939,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(Type.isCoerciveSubtype(Type.T_STRING,src)) {
 			environment.add(Type.T_INT);
 			return Code.StringLength();
-		} else if(Type.isCoerciveSubtype(Type.T_LIST(Type.T_ANY),src)) {
+		} else if(Type.isCoerciveSubtype(Type.List(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
 			return Code.ListLength(Type.effectiveListType(src));
-		} else if(Type.isCoerciveSubtype(Type.T_SET(Type.T_ANY),src)) {
+		} else if(Type.isCoerciveSubtype(Type.Set(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
 			return Code.SetLength(Type.effectiveSetType(src));
 		} else {
@@ -963,7 +963,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(Type.isCoerciveSubtype(Type.T_STRING, src)) {
 			r = Code.SubString();
 		} else {
-			checkIsSubtype(Type.T_LIST(Type.T_ANY),src,stmt);
+			checkIsSubtype(Type.List(Type.T_ANY),src,stmt);
 			r = Code.SubList(Type.effectiveListType(src));
 		}
 		
@@ -1001,12 +1001,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY),rhs);			
 		
 		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
 			if(lhs_set && rhs_set) {
-				result = Type.T_UNION(lhs,rhs);		
+				result = Type.Union(lhs,rhs);		
 			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
 			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
@@ -1016,9 +1016,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				result = null;
 			}						
 		} else if(dir == OpDir.LEFT && lhs_set) {
-			result = Type.T_UNION(lhs,Type.T_SET(rhs));
+			result = Type.Union(lhs,Type.Set(rhs));
 		} else if(dir == OpDir.RIGHT && rhs_set) {
-			result = Type.T_UNION(Type.T_SET(lhs),rhs);			
+			result = Type.Union(Type.Set(lhs),rhs);			
 		} else {
 			syntaxError("expecting set type",filename,stmt);
 			return null; // dead-code
@@ -1033,12 +1033,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
-		boolean rhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),rhs);			
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
+		boolean rhs_set = Type.isSubtype(Type.Set(Type.T_ANY),rhs);			
 		
 		if(lhs_set || rhs_set) {				
 			if(lhs_set && rhs_set) {
-				result = Type.T_INTERSECTION(lhs,rhs);		
+				result = Type.Intersection(lhs,rhs);		
 			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
 			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
@@ -1065,7 +1065,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type lhs = environment.pop();
 		Type result;
 		
-		boolean lhs_set = Type.isSubtype(Type.T_SET(Type.T_ANY),lhs);
+		boolean lhs_set = Type.isSubtype(Type.Set(Type.T_ANY),lhs);
 					
 		
 		if(lhs_set) {	
@@ -1093,7 +1093,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(ProcLoad v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
-		checkIsSubtype(Type.T_PROCESS(Type.T_ANY),rhs_t,stmt);
+		checkIsSubtype(Type.Process(Type.T_ANY),rhs_t,stmt);
 		Type.Process tp = (Type.Process)rhs_t; 
 		environment.push(tp.element());
 		return Code.ProcLoad(tp);
@@ -1101,8 +1101,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(Spawn v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
-		environment.add(Type.T_PROCESS(rhs_t));
-		return Code.Spawn(Type.T_PROCESS(rhs_t));						
+		environment.add(Type.Process(rhs_t));
+		return Code.Spawn(Type.Process(rhs_t));						
 	}			
 	
 	protected Code infer(Code.Throw code, Entry stmt, Env environment) {
@@ -1165,7 +1165,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}	
 		case SUBSET:
 		case SUBSETEQ:						
-			checkIsSubtype(Type.T_SET(Type.T_ANY),lub,stmt);			
+			checkIsSubtype(Type.Set(Type.T_ANY),lub,stmt);			
 			break;		
 		}
 		
@@ -1190,7 +1190,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Code ncode = code;
 		Env trueEnv = null;
 		Env falseEnv = null;								
-		Type glb = Type.T_INTERSECTION(lhs_t, code.test);		
+		Type glb = Type.Intersection(lhs_t, code.test);		
 		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
@@ -1203,7 +1203,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {									
-				Type gdiff = Type.T_INTERSECTION(lhs_t, Type.T_NEGATION(code.test));				
+				Type gdiff = Type.Intersection(lhs_t, Type.Negation(code.test));				
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
@@ -1251,7 +1251,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem_t = Type.T_CHAR;
 		} else if(src_t instanceof Type.Dictionary){
 			Type.Dictionary d = (Type.Dictionary) src_t;			
-			elem_t = Type.T_TUPLE(d.key(),d.value());
+			elem_t = Type.Tuple(d.key(),d.value());
 		} else {
 			syntaxError("expected set or list, found: " + src_t,filename,stmt);
 			return null; // deadcode
@@ -1341,21 +1341,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @return
 	 * @throws ResolveError
 	 */
-	protected Type.Fun bindFunction(NameID nid, 
+	protected Type.Function bindFunction(NameID nid, 
 			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Fun target = Type.T_FUN(Type.T_ANY,paramTypes);
-		Type.Fun candidate = null;				
+		Type.Function target = Type.Function(Type.T_ANY,paramTypes);
+		Type.Function candidate = null;				
 		
-		List<Type.Fun> targets = lookupMethod(nid.module(),nid.name()); 
+		List<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 
 		
-		for (Type.Fun ft : targets) {										
-			if(ft instanceof Type.Meth) {
+		for (Type.Function ft : targets) {										
+			if(ft instanceof Type.Method) {
 				// in this case, we want to check if this is a definite method
 				// call with a receiver. If so, then we don't consider it. We do
 				// consider "headless" method calls, since these cannot be
 				// distinguished from function calls in module builder.  
-				Type.Meth mt = (Type.Meth) ft;
+				Type.Method mt = (Type.Method) ft;
 				if(mt.receiver() != null) {
 					continue;
 				}
@@ -1373,7 +1373,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String msg = "no match for " + nid.name() + parameterString(paramTypes);
 			boolean firstTime = true;
 			int count = 0;
-			for(Type.Fun ft : targets) {
+			for(Type.Function ft : targets) {
 				if(firstTime) {
 					msg += "\n\tfound: " + nid.name() +  parameterString(ft.params());
 				} else {
@@ -1390,17 +1390,17 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return candidate;
 	}
 	
-	protected Type.Meth bindMethod(NameID nid, Type.Process receiver,
+	protected Type.Method bindMethod(NameID nid, Type.Process receiver,
 			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Meth target = Type.T_METH(receiver, Type.T_ANY,paramTypes);
-		Type.Meth candidate = null;				
+		Type.Method target = Type.Method(receiver, Type.T_ANY,paramTypes);
+		Type.Method candidate = null;				
 		
-		List<Type.Fun> targets = lookupMethod(nid.module(),nid.name()); 
+		List<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 
 		
-		for (Type.Fun ft : targets) {
-			if(ft instanceof Type.Meth) {
-				Type.Meth mt = (Type.Meth) ft; 
+		for (Type.Function ft : targets) {
+			if(ft instanceof Type.Method) {
+				Type.Method mt = (Type.Method) ft; 
 				Type funrec = mt.receiver();			
 				if (receiver == funrec
 						|| (receiver != null && funrec != null && Type
@@ -1425,10 +1425,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String msg = "no match for " + rec + nid.name() + parameterString(paramTypes);
 			boolean firstTime = true;
 			int count = 0;
-			for(Type.Fun ft : targets) {
+			for(Type.Function ft : targets) {
 				rec = "";
-				if(ft instanceof Type.Meth) {
-					Type.Meth mt = (Type.Meth) ft;
+				if(ft instanceof Type.Method) {
+					Type.Method mt = (Type.Method) ft;
 					if(mt.receiver() != null) {
 						rec = mt.receiver().toString();
 					}
@@ -1450,7 +1450,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return candidate;
 	}
 	
-	private boolean paramSubtypes(Type.Fun f1, Type.Fun f2) {		
+	private boolean paramSubtypes(Type.Function f1, Type.Function f2) {		
 		List<Type> f1_params = f1.params();
 		List<Type> f2_params = f2.params();
 		if(f1_params.size() == f2_params.size()) {
@@ -1479,11 +1479,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return paramStr + ")";
 	}
 	
-	protected List<Type.Fun> lookupMethod(ModuleID mid, String name)
+	protected List<Type.Function> lookupMethod(ModuleID mid, String name)
 			throws ResolveError {
 		
 		Module module = loader.loadModule(mid);
-		ArrayList<Type.Fun> rs = new ArrayList<Type.Fun>();
+		ArrayList<Type.Function> rs = new ArrayList<Type.Function>();
 		for (Module.Method m : module.method(name)) {
 			rs.add(m.type());
 		}
@@ -1517,7 +1517,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env env = new Env();
 
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
-			env.add(Type.T_UNION(env1.get(i), env2.get(i)));
+			env.add(Type.Union(env1.get(i), env2.get(i)));
 		}
 		
 		return env;
