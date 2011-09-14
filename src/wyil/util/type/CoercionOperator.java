@@ -37,8 +37,9 @@ public final class CoercionOperator extends SubtypeOperator {
 		super(fromAutomata,toAutomata);
 	}
 	
-	public boolean isIntersectionHelper(int fromIndex, boolean fromSign, int toIndex,
-			boolean toSign) {
+	@Override
+	public boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
+			boolean toSign) {		
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
@@ -46,7 +47,7 @@ public final class CoercionOperator extends SubtypeOperator {
 		
 		if (primitiveSubtype(fromKind,toKind)) {
 			return fromSign == toSign || (fromSign && !toSign);
-		} else if (primitiveSubtype(toKind,fromKind)) {
+		} else if (primitiveSubtype(toKind,fromKind)) {			
 			return fromSign == toSign || (toSign && !fromSign);
 		} else {
 			// TODO: deal with lists and sets

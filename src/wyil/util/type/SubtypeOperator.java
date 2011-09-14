@@ -60,6 +60,8 @@ public class SubtypeOperator {
 		this.to = to;
 		// matrix is twice the size to accommodate positive and negative signs 
 		this.assumptions = new BitSet((2*from.size()) * (to.size()*2));
+		//System.out.println("FROM: " + from);
+		//System.out.println("TO:   " + to);
 	}
 	
 	/**
@@ -100,9 +102,13 @@ public class SubtypeOperator {
 	 */
 	protected boolean isIntersection(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {		
+		
+		//System.out.println("STARTING: " + fromIndex + "(" + fromSign + ") & " + toIndex + "(" + toSign + ")");
+		
 		int index = indexOf(fromIndex,fromSign,toIndex,toSign);
 		if(assumptions.get(index)) {
-			return true;
+			//System.out.println("ASSUMED:  " + fromIndex + "(" + fromSign + ") & " + toIndex + "(" + toSign + ")");
+			return false;
 		} else {
 			assumptions.set(index,true);
 		}
@@ -110,6 +116,9 @@ public class SubtypeOperator {
 		boolean r = isIntersectionInner(fromIndex,fromSign,toIndex,toSign);
 		
 		assumptions.set(index,false);
+		
+		//System.out.println("RESULT:   " + fromIndex + "(" + fromSign + ") & " + toIndex + "(" + toSign + ") = " + r);
+		
 		return r;
 	}
 	
@@ -312,13 +321,14 @@ public class SubtypeOperator {
 	
 	private int indexOf(int fromIndex, boolean fromSign,
 			int toIndex, boolean toSign) {
+		int to_size = to.size();
 		if(fromSign) {
 			fromIndex += from.size();
 		}
 		if(toSign) {
-			toIndex += to.size();
+			toIndex += to_size;
 		}
-		return (fromIndex*from.size()) + toIndex;
+		return (fromIndex*to_size*2) + toIndex;
 	}
 	
 	private static int invert(int kind, boolean sign) {

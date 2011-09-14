@@ -384,6 +384,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_INT,rhs,stmt);
 				result = Type.T_INT;
 			} else if(Type.isCoerciveSubtype(lhs,rhs)) {
+				System.out.println("COERCIVE SUBTYPE: " + lhs + " :> " + rhs);
 				checkIsSubtype(Type.T_REAL,lhs,stmt);
 				result = lhs;
 			} else {
@@ -1462,14 +1463,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(f1_params.size() == f2_params.size()) {
 			for(int i=0;i!=f1_params.size();++i) {
 				Type f1_param = f1_params.get(i);
-				Type f2_param = f2_params.get(i);
-				System.out.println("CHECKING: " + f1_param + " :> " + f2_param);
-				if(!Type.isCoerciveSubtype(f1_param,f2_param)) {	
-					System.out.println("FAILED");
+				Type f2_param = f2_params.get(i);				
+				if(!Type.isCoerciveSubtype(f1_param,f2_param)) {				
 					return false;
 				}
-			}
-			System.out.println("PASSED");
+			}			
 			return true;
 		}
 		return false;
