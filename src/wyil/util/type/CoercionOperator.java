@@ -3,7 +3,34 @@ package wyil.util.type;
 import static wyil.lang.Type.*;
 import wyautl.lang.*;
 
-
+/**
+ * <p>
+ * The coercion operator extends the basic subtype operator to consider
+ * <i>implicit coercions</i> in the subtype computation. Thus, <code>T1</code>
+ * is a <i>coercive subtype</i> of <code>T2</code> iff <code>T1 ~> T3</code> and
+ * <code>T3 <: T2</code> (where <code>T1 ~> T3</code> is taken to mean
+ * <code>T1</code> can be implicitly coerced into <code>T3</code>).
+ * </p>
+ * <p>
+ * There are several places in the Whiley language where implicit coercions are
+ * applied. For example, in the following:
+ * 
+ * <pre>
+ * real f(int x):
+ *     return x
+ * </pre>
+ * 
+ * The above compiles correctly because, while <code>real :> int</code> does not
+ * hold, an <code>int</code> can be implicitly coerced into a <code>real</code>.
+ * </p>
+ * <p>
+ * <b>NOTE:</b> as for the subtype operator, both types must have been
+ * normalised beforehand to guarantee correct results from this operator.
+ * </p>
+ * 
+ * @author djp
+ * 
+ */
 public final class CoercionOperator extends SubtypeOperator {
 	
 	public CoercionOperator(Automata fromAutomata, Automata toAutomata) {
