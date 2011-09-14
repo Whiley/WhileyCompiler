@@ -25,6 +25,7 @@
 
 package wyjc.runtime;
 
+import wyjc.Main;
 import wyjc.runtime.concurrency.Scheduler;
 import wyjc.runtime.concurrency.Strand;
 
@@ -34,7 +35,7 @@ import wyjc.runtime.concurrency.Strand;
  * @author Timothy Jones
  */
 public final class Actor extends Strand {
-
+	
 	private Object state;
 	
 	/**

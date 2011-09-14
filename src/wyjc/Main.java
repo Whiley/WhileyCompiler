@@ -28,6 +28,8 @@ public class Main {
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
 	public static final int BUILD_NUMBER;
+	
+	public static int threadCount;
 
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -76,6 +78,8 @@ public class Main {
 			new OptArg("bootpath", "bp", PATHLIST,
 					"Specify where to find whiley standard library files",
 					new ArrayList<String>()),
+			new OptArg("thread-count", "tc", INT,
+					"Specify the number of threads to use when run", (Object) (-1)),
 			new OptArg("X", PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("C", PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
@@ -153,6 +157,7 @@ public class Main {
 		ArrayList<String> bootpath = (ArrayList) values.get("bootpath");
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values.get("pipeline"); 
 		boolean verbose = values.containsKey("verbose");
+		threadCount = (Integer) values.get("thread-count");
 		
 		try {			
 			// initialise the boot path appropriately

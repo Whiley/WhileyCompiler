@@ -36,7 +36,7 @@ import java.util.concurrent.Executors;
  * @author Timothy Jones
  */
 public final class Scheduler {
-
+	
 	// Count of the number of scheduled tasks. When it returns to 0, the thread
 	// pool will shut down.
 	private int scheduledCount = 0;

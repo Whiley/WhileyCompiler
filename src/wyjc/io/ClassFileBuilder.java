@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.zip.*;
 
+import wyjc.Main;
 import wyjc.attributes.WhileyDefine;
 import wyjc.attributes.WhileyType;
 import wyjc.attributes.WhileyVersion;
@@ -213,8 +214,17 @@ public class ClassFileBuilder {
 		// Create the scheduler that will handle concurrency.
 		codes.add(new Bytecode.New(WHILEYSCHEDULER));
 		codes.add(new Bytecode.Dup(WHILEYSCHEDULER));
-		codes.add(new Bytecode.Invoke(WHILEYSCHEDULER, "<init>",
-				new JvmType.Function(T_VOID), Bytecode.SPECIAL));
+		
+		JvmType.Function ctype;
+		if (Main.threadCount > -1) {
+			codes.add(new Bytecode.LoadConst(Main.threadCount));
+			ctype = new JvmType.Function(T_VOID, T_INT);
+		} else {
+			ctype = new JvmType.Function(T_VOID);
+		}
+		
+		codes.add(new Bytecode.Invoke(WHILEYSCHEDULER, "<init>", ctype,
+				Bytecode.SPECIAL));
 		
 		// Create the System actor and the appropriate number of copies.
 		codes.add(new Bytecode.Invoke(WHILEYPROCESS, "newSystemProcess",

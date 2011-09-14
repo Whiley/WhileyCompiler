@@ -82,24 +82,6 @@ public class Continuations {
 		for (BytecodeAttribute attribute : method.attributes()) {
 			if (attribute instanceof Code) {
 				apply(method, (Code) attribute);
-
-				if (method.name().startsWith("main")) {
-					StackAnalysis sa = new StackAnalysis(method);
-					List<Bytecode> bytecodes = ((Code) attribute).bytecodes();
-					for (int i = 0; i < bytecodes.size(); ++i) {
-						System.out.print(bytecodes.get(i));
-						if (i < bytecodes.size() - 1) {
-							try {
-								System.out.print(" ");
-								System.out.println(sa.typesAt(i + 1));
-							} catch (RuntimeException rex) {
-								System.out.println();
-							}
-						}
-					}
-				}
-
-				break;
 			}
 		}
 	}
