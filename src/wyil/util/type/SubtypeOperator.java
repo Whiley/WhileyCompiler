@@ -236,8 +236,7 @@ public class SubtypeOperator {
 				return true;
 			}
 			case K_NEGATION: 
-			case K_UNION : 
-			case K_INTERSECTION:
+			case K_UNION : 			
 					// let these cases fall through to if-statements after
 					// switch.
 				break;
@@ -363,11 +362,15 @@ public class SubtypeOperator {
 			case K_VOID:
 				return K_ANY;
 			case K_UNION:
-				return K_INTERSECTION;
-			case K_INTERSECTION:
-				return K_UNION;
+				return K_INTERSECTION;			
 			default:
 				return kind;
 		}		
-	}	
+	}
+
+	/**
+	 * The following constant is not actually a valid kind; however, it's
+	 * helpful to think of it as one.
+	 */
+	private static final int K_INTERSECTION = -1;
 }

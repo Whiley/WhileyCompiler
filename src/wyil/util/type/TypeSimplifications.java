@@ -367,14 +367,14 @@ public final class TypeSimplifications implements RewriteRule {
 		} else if(fromKind == Type.K_ANY) {				
 			states.remove(states.size()-1);
 			if(!toSign) {
-				states.add(new Automata.State(Type.K_NEGATION));
+				states.add(new Automata.State(Type.K_NEGATION,states.size()+1));
 			}
 			Automatas.extractOnto(toIndex,to,states);
 			return myIndex;
 		} else if(toKind == Type.K_ANY) {
 			states.remove(states.size()-1);
 			if(!fromSign) {
-				states.add(new Automata.State(Type.K_NEGATION));
+				states.add(new Automata.State(Type.K_NEGATION,states.size()+1));
 			}
 			Automatas.extractOnto(fromIndex,from,states);
 			return myIndex;
@@ -389,12 +389,14 @@ public final class TypeSimplifications implements RewriteRule {
 			Automatas.extractOnto(toIndex,to,states);
 			return myIndex;
 		} else {
-			int nFromChild = states.size();
-			int nToChild = states.size() + 1;
-			states.add(new Automata.State(fromState.kind));
-			states.add(new Automata.State(toState.kind));
-			myState = new Automata.State(Type.K_NEGATION, nFromChild,
-					nToChild);
+			int childIndex = states.size();
+			int nFromChild = states.size()+1;
+			int nToChild = states.size()+2;	
+			new Automata.State(Type.K_UNION, nFromChild,
+					nToChild);			
+			Automatas.extractOnto(fromIndex,from,states);							
+			Automatas.extractOnto(toIndex,to,states);
+			myState = new Automata.State(Type.K_NEGATION, childIndex);
 		}
 		
 		states.set(myIndex, myState);
