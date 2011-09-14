@@ -336,10 +336,20 @@ public final class TypeSimplifications implements RewriteRule {
 			case Type.K_PROCESS:
 				
 			case Type.K_RECORD:
-			case Type.K_NEGATION:
+			case Type.K_NEGATION: {
 				
-			case Type.K_UNION:
-				
+			}				
+			case Type.K_UNION: {
+				int[] fromChildren = fromState.children;
+				int[] newChildren = new int[fromChildren.length];
+				for (int i = 0; i != fromChildren.length; ++i) {
+					int fromChild = fromChildren[i];
+					newChildren[i] = intersect(fromChild, fromSign, from,
+							toIndex, toSign, to, allocations, states);
+				}
+				myState = new Automata.State(K_UNION, newChildren, false);
+			}
+				break;
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD:
