@@ -51,7 +51,7 @@ public final class CoercionOperator extends SubtypeOperator {
 			return fromSign == toSign || (toSign && !fromSign);
 		} else {
 			// TODO: deal with lists and sets
-			return super.isIntersection(fromIndex, fromSign, toIndex, toSign);
+			return super.isIntersectionInner(fromIndex, fromSign, toIndex, toSign);
 		}
 	}
 	

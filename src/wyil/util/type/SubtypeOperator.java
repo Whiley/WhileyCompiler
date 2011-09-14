@@ -163,7 +163,7 @@ public class SubtypeOperator {
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
 					if (fromChildren.length != toChildren.length) {
-						return false;
+						return !fromSign || !toSign;
 					}
 					boolean andChildren = true;
 					boolean orChildren = false;
