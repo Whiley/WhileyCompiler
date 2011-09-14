@@ -43,7 +43,6 @@ public class TypeTester {
 			if (visited.get(index)) {
 				return false;
 			} else if (state.kind != Type.K_UNION
-					&& state.kind != Type.K_INTERSECTION
 					&& state.kind != Type.K_NEGATION) {
 				visited.clear();
 			}
@@ -115,20 +114,7 @@ public class TypeTester {
 				}				
 				copy.clear();
 				return false;
-			}
-			case Type.K_INTERSECTION: {
-				int[] children = automata.states[index].children;
-				visited.set(index);
-				BitSet copy = visited;
-				for(int child : children) {
-					visited = (BitSet) copy.clone();
-					if(!accepts(child,automata,value)) {
-						return false;
-					}
-				}
-				copy.clear();
-				return true;
-			}
+			}			
 			}
 			return super.accepts(index,automata,value);
 		}

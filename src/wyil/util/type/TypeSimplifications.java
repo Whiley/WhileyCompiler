@@ -254,8 +254,7 @@ public final class TypeSimplifications implements RewriteRule {
 		Automata a2 = Type.destruct(t2);
 		HashMap<IntersectionPoint,Integer> allocations = new HashMap();		
 		ArrayList<Automata.State> nstates = new ArrayList();
-		intersect(0,true,a1,0,true,a2,allocations,nstates);
-		System.out.println("GOT STATES: " + nstates);
+		intersect(0,true,a1,0,true,a2,allocations,nstates);		
 		Automata automata = new Automata(nstates.toArray(new Automata.State[nstates.size()]));
 		return Type.construct(automata);
 	}

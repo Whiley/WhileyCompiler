@@ -592,8 +592,9 @@ public class ModuleBuilder {
 			}			
 			if (bounds.size() == 1) {
 				return new Pair<Type,Block>(bounds.iterator().next(),blk);
-			} else {				
-				return new Pair<Type,Block>(Type.Intersection(bounds),blk);
+			} else {
+				throw new RuntimeException("intersection types don't work yet!");
+				//return new Pair<Type,Block>(Type.Intersect(bounds),blk);
 			}			
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			

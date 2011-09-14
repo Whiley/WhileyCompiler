@@ -653,19 +653,6 @@ public abstract class Type {
 	}
 
 	/**
-	 * Compute the subtraction of two types. The resulting type will accept that
-	 * values which are accepted by <code>left</code> but not by
-	 * <code>right</code>. 
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static Type subtraction(Type left, Type right) {
-		return null;
-	}
-	
-	/**
 	 * The effective record type gives a subset of the visible fields which are
 	 * guaranteed to be in the type. For example, consider this type:
 	 * 
@@ -1838,7 +1825,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = fromString("{int f}");
+		Type from = fromString("{int|int f}");
 		Type to = fromString("{any f}");									
 		//System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));

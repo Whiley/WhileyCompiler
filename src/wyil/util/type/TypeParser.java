@@ -31,16 +31,10 @@ public class TypeParser {
 		Type term = parseFunctionTerm(typeVariables);
 		skipWhiteSpace();
 		while (index < str.length()
-				&& (str.charAt(index) == '|' || str.charAt(index) == '&')) {
-			if(str.charAt(index) == '|') {
-				// union type
-				match("|");
-				term = Union(term,parse(typeVariables));
-			} else {
-				// intersection type
-				match("&");
-				term = Type.intersect(term,parse(typeVariables));
-			}
+				&& (str.charAt(index) == '|')) {
+			// union type
+			match("|");
+			term = Union(term,parse(typeVariables));			
 			skipWhiteSpace();
 		}
 		return term;

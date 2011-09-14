@@ -1038,7 +1038,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if(lhs_set || rhs_set) {				
 			if(lhs_set && rhs_set) {
-				result = Type.Intersection(lhs,rhs);		
+				result = Type.intersect(lhs,rhs);		
 			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
 			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
@@ -1190,7 +1190,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Code ncode = code;
 		Env trueEnv = null;
 		Env falseEnv = null;								
-		Type glb = Type.Intersection(lhs_t, code.test);		
+		Type glb = Type.intersect(lhs_t, code.test);		
 		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
@@ -1203,7 +1203,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {									
-				Type gdiff = Type.Intersection(lhs_t, Type.Negation(code.test));				
+				Type gdiff = Type.intersect(lhs_t, Type.Negation(code.test));				
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}

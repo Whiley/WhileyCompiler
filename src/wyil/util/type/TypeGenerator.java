@@ -90,7 +90,6 @@ public class TypeGenerator {
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
 		KINDS[Type.K_RECORD] = new Kind(true,1,1,DATA_GENERATOR);
 		KINDS[Type.K_UNION] = new Kind(false,2,2,null);
-		//KINDS[Type.K_INTERSECTION] = new Kind(false,2,2,null);
 		//KINDS[Type.K_NEGATION] = new Kind(true,1,1,null);
 		//KINDS[Type.K_FUNCTION] = new Kind(true,2,3,null);
 		//KINDS[Type.K_METHOD] = new Kind(true,1,1,null);
@@ -152,7 +151,6 @@ public class TypeGenerator {
 				} else if(args[index].equals("-m") || args[index].equals("-model")) {
 					config.RECURSIVE = false;
 					kindUpdate(Type.K_UNION,null);
-					kindUpdate(Type.K_INTERSECTION,null);
 					kindUpdate(Type.K_NEGATION,null);
 					kindUpdate(Type.K_SET,new Kind(true,0,2,null));
 					kindUpdate(Type.K_LIST,new Kind(true,0,2,null));

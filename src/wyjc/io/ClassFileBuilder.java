@@ -834,7 +834,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
 
-			Type gdiff = Type.Intersection(c.type,Type.Negation(c.test));			
+			Type gdiff = Type.intersect(c.type,Type.Negation(c.test));			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(gdiff,bytecodes);		
@@ -842,7 +842,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));
 
-			Type glb = Type.Intersection(c.type, c.test);
+			Type glb = Type.intersect(c.type, c.test);
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(glb,bytecodes);		
@@ -1933,7 +1933,7 @@ public class ClassFileBuilder {
 	public void buildCoercion(Type.Int fromType, Type toType, 
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		if(!Type.isSubtype(toType,fromType)) {
-			Type glb = Type.Intersection(Type.T_REAL, toType);
+			Type glb = Type.intersect(Type.T_REAL, toType);
 			if(glb == Type.T_REAL) { 
 				// coercion required!
 				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
@@ -2614,11 +2614,6 @@ public class ClassFileBuilder {
 		} else if(t instanceof Type.Negation) {
 			// can we do any better?
 			return JAVA_LANG_OBJECT;
-		} else if(t instanceof Type.Intersection) {
-			// FIXME: something tells me the following is not the right way to
-			// do this.
-			Type.Intersection td = (Type.Intersection) t;
-			return convertType(td.bounds().iterator().next());
 		} else if(t instanceof Type.Union) {
 			// There's an interesting question as to whether we need to do more
 			// here. For example, a union of a set and a list could result in
