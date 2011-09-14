@@ -73,7 +73,7 @@ import wyil.util.*;
  * </ul>
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class Block implements Iterable<Block.Entry> {
@@ -365,7 +365,7 @@ public final class Block implements Iterable<Block.Entry> {
 	 * An Entry object represents a bytecode and those attributes currently
 	 * associated with it (if any) in the block.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Entry extends SyntacticElement.Impl {

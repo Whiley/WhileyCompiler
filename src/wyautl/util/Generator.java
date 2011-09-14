@@ -11,7 +11,7 @@ import wyautl.lang.*;
  * The generator class is used generate automatas, primarily for testing
  * purposes.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class Generator {

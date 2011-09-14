@@ -15,7 +15,7 @@ package wyautl.lang;
  * children.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface Relation {

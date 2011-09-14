@@ -22,7 +22,7 @@ import wyjc.runtime.BigRational;
  * cases is the dispatch target.</li>
  * </ol>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ConstraintInline implements Transform {

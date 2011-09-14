@@ -34,7 +34,7 @@ import static wyc.stages.WhileyLexer.*;
  * positions. For example, a tab which occurs immediately after e.g. a "+"
  * operator is always ignored, since it doesn't make sense.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class WhileyFilter {

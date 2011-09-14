@@ -20,7 +20,7 @@ import wyautl.util.BinaryMatrix;
  * canonical form.</li>
  * </ul>
  * 
- * @author djp
+ * @author David J. Pearce
  */
 public final class Automatas {
 

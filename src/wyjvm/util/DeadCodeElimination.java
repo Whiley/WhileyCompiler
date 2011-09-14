@@ -62,7 +62,7 @@ import wyjvm.lang.*;
  * Here, we can see quite clearly that the code after the first return
  * statement, as well as the ifexit label, is dead.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class DeadCodeElimination {

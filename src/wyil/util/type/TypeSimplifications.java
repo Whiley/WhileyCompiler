@@ -8,9 +8,10 @@ import wyil.lang.Type;
 /**
  * <p>
  * This simplification rule converts a type into <i>conjunctive normal form</i>.
- * This is achieved by repeated application of the following rewrites:
+ * This is achieved by repeated application of various rewrite rules. The
+ * following provides representatives of the main rules considered.
  * </p>
- * <ol>
+ * <ul>
  * <li><code>{void f}</code> => <code>void</code>.</li>
  * <li><code>T | void</code> => <code>T</code>.</li>
  * <li><code>T | any</code> => <code>any</code>.</li>
@@ -31,22 +32,22 @@ import wyil.lang.Type;
  * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
  * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
  * <li><code>T_1 & T_2</code> where <code>T_1 :> T_2</code> => <code>T_2</code>.
- * <li><code>T_1 & T_2</code> where <code>T_1 n T_2 = 0</code> => <code>void</code>.
- * 
- * </ol>
+ * <li><code>T_1 & T_2</code> where <code>T_1 n T_2 = 0</code> =>
+ * <code>void</code>.
+ * </ul>
  * <p>
  * <b>NOTE:</b> applications of this rewrite rule may leave states which are
  * unreachable from the root. Therefore, the resulting automata should be
- * extracted after rewriting to eliminate any such states.
+ * extracted after rewriting to eliminate such states.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class TypeSimplifications implements RewriteRule {
 	private SubtypeOperator subtypes;
 	
-	public final boolean apply(int index, Automata automata) {
+	public final boolean apply(int index, Automata automata) {		
 		Automata.State state = automata.states[index];
 		boolean changed=false;
 		switch (state.kind) {
@@ -70,7 +71,7 @@ public final class TypeSimplifications implements RewriteRule {
 		}
 		if(changed) { 		
 			// invalidate subtype cache
-			subtypes = null; 
+			subtypes = null;			
 		}
 		return changed;
 	}
@@ -140,7 +141,7 @@ public final class TypeSimplifications implements RewriteRule {
 
 	/**
 	 * This method is responsible for the following rewrite rules:
-	 * <ol>
+	 * <ul>
 	 * <li><code>T & void</code> => <code>void</code>.</li>
 	 * <li><code>T & any</code> => <code>T</code>.</li>
 	 * <li><code>X<T & X></code> => <code>void</code>.</li>
@@ -151,7 +152,7 @@ public final class TypeSimplifications implements RewriteRule {
 	 * <li><code>![T_1] & ![T_2] & T_3</code> =>
 	 * <code>![T_1 | T_2] & T_3)</code>.</li>
 	 * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
-	 * </ol>
+	 * </ul>
 	 * 
 	 * @param index
 	 *            --- index of state being worked on.
@@ -170,14 +171,14 @@ public final class TypeSimplifications implements RewriteRule {
 
 	/**
 	 * This method applies the following rewrite rules:
-	 * <ol>
+	 * <ul>
 	 * <li><code>T & void</code> => <code>void</code>.</li>
 	 * <li><code>T & any</code> => <code>T</code>.</li>
 	 * <li><code>X<T & X></code> => <code>void</code>.</li>
 	 * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2 & T_3)</code>.</li>
 	 * <li><code>T_1 & (T_2|T_3)</code> =>
 	 * <code>(T_1 & T_2) | (T_1 & T_3)</code>.</li>
-	 * </ol>
+	 * </ul>
 	 * 
 	 * @param index
 	 *            --- index of state being worked on.
@@ -252,12 +253,12 @@ public final class TypeSimplifications implements RewriteRule {
 
 	/**
 	 * This method applies the following rewrite rules:
-	 * <ol>
+	 * <ul>
 	 * <li><code>[T_1] & [T_2] & T_3</code> => <code>[T_1 & T_2] & T_3)</code>.</li>
 	 * <li><code>![T_1] & ![T_2] & T_3</code> =>
 	 * <code>![T_1 | T_2] & T_3)</code>.</li>
 	 * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
-	 * </ol>
+	 * </ul>
 	 * 
 	 * @param index
 	 *            --- index of state being worked on.
@@ -330,10 +331,10 @@ public final class TypeSimplifications implements RewriteRule {
 
 	/**
 	 * This method applies the following rewrite rules:
-	 * <ol>
+	 * <ul>
 	 * <li><code>T_1 & T_2</code> where <code>T_1 :> T_2</code> => <code>T_2</code>.
 	 * <li><code>T_1 & T_2</code> where <code>T_1 n T_2 = 0</code> => <code>void</code>.
-	 * </ol>
+	 * </ul>
 	 * 
 	 * @param index
 	 *            --- index of state being worked on.
@@ -400,13 +401,13 @@ public final class TypeSimplifications implements RewriteRule {
 	
 	/**
 	 * This method is responsible for the following rewrite rules:
-	 * <ol>
+	 * <ul>
 	 * <li><code>T | void</code> => <code>T</code>.</li>
 	 * <li><code>T | any</code> => <code>any</code>.</li>
 	 * <li><code>X<T | X></code> => <code>T</code>.</li>
 	 * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2 | T_3)</code>.</li>
 	 * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
-	 * </ol>
+	 * </ul>
 	 * 
 	 * @param index
 	 *            --- index of state being worked on.
@@ -424,12 +425,12 @@ public final class TypeSimplifications implements RewriteRule {
 	
 	/**
 	 * This method applies the following rewrite rules:
-	 * <ol>
+	 * <ul>
 	 * <li><code>T | void</code> => <code>T</code>.</li>
 	 * <li><code>T | any</code> => <code>any</code>.</li>
 	 * <li><code>X<T | X></code> => <code>T</code>.</li>
 	 * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2 | T_3)</code>.</li>
-	 * </ol>
+	 * </ul>
 	 * 
 	 * @param index
 	 *            --- index of state being worked on.
@@ -482,9 +483,9 @@ public final class TypeSimplifications implements RewriteRule {
 
 	/**
 	 * This method applies the following rewrite rules:
-	 * <ol>
+	 * <ul>
 	 * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
-	 * </ol>
+	 * </ul>
 	 * 
 	 * @param index
 	 *            --- index of state being worked on.

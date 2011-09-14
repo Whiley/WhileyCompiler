@@ -36,7 +36,7 @@ import wyjvm.lang.*;
  * The <code>ClassFileReader</code> is responsible for reading in a class file
  * and constructing a <code>ClassFile</code> object from it.  
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class ClassFileReader {	
@@ -1788,7 +1788,7 @@ public final class ClassFileReader {
 	 * This class represents a class constant. It is needed to distinguish between a
 	 * class constant and a general String.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	protected class ClassConstant {

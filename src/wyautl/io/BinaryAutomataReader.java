@@ -22,7 +22,7 @@ import wyjvm.io.BinaryInputStream;
  * that.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class BinaryAutomataReader implements GenericReader<Automata> {		

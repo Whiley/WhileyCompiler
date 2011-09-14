@@ -39,7 +39,7 @@ import wyil.util.*;
  * responsible for finding whiley modules on the WHILEYPATH, and retaining
  * information about them which can be used to compile other whiley files.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ModuleLoader {
@@ -108,7 +108,7 @@ public class ModuleLoader {
 	 * module that we can have. Skeletons are used early on in the compilation
 	 * process to help with name resolution.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public abstract static class Skeleton {

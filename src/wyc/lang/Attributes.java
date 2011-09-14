@@ -31,7 +31,7 @@ import wyil.lang.*;
  * An attribute is simply a piece of information that we may wish to
  * attached to a syntactic element,
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface Attributes {

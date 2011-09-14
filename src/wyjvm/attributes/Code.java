@@ -42,7 +42,7 @@ import wyjvm.lang.JvmTypes;
 /**
  * This represents the Code attribute from the JVM Spec.
  * 
- * @author djp
+ * @author David J. Pearce
  */
 public class Code implements BytecodeAttribute {
 
@@ -202,7 +202,7 @@ public class Code implements BytecodeAttribute {
 	 * The exception handler class is used to store the necessary information
 	 * about where control-flow is directed when an exception is raised.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Handler {
@@ -461,7 +461,7 @@ public class Code implements BytecodeAttribute {
 	 * A rewrite defines a sequence of bytecodes that are to be rewritten as a
 	 * (potentially) smaller sequence.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Rewrite {
@@ -486,7 +486,7 @@ public class Code implements BytecodeAttribute {
 	 * captures those attributes which are affected, and provides a hook to tell
 	 * them about rewrites as they happen.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static interface Rewriteable {

@@ -20,7 +20,7 @@ import wyautl.util.BinaryMatrix;
  * </ul>
  * 
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class DefaultSubsumption implements Relation {

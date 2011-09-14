@@ -10,7 +10,7 @@ import static wyc.Pipeline.*;
  * OptArg is a small utility for parsing command-line options. It helps to take
  * some of the hassle out of building the front-end of a Whiley compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class OptArg {

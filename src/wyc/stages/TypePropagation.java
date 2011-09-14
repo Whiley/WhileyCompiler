@@ -58,7 +58,7 @@ import static wyil.lang.Block.*;
  * <b<Note:</b> currently, this stage does not propagate through type definitions.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
@@ -1190,7 +1190,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Code ncode = code;
 		Env trueEnv = null;
 		Env falseEnv = null;								
-		Type glb = Type.T_INTERSECTION(lhs_t, code.test);
+		Type glb = Type.T_INTERSECTION(lhs_t, code.test);		
 		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
@@ -1202,7 +1202,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			ncode = Code.IfType(lhs_t, code.slot, code.test, code.target);				
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
-			if(code.slot >= 0) {					
+			if(code.slot >= 0) {									
 				Type gdiff = Type.T_INTERSECTION(lhs_t, Type.T_NEGATION(code.test));				
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								

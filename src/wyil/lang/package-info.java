@@ -1,6 +1,6 @@
 /**
  * Provides core classes for representing WYIL modules and bytecodes. 
  * 
- * @author djp
+ * @author David J. Pearce
  */
 package wyil.lang;

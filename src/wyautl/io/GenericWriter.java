@@ -7,7 +7,7 @@ import java.io.IOException;
  * by the Generator class so allow writing of Automata and/or values to the
  * stream.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  * @param <T>
  */

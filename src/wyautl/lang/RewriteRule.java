@@ -15,7 +15,7 @@ package wyautl.lang;
  * does not matter.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface RewriteRule {

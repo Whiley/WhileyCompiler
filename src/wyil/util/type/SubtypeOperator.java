@@ -47,7 +47,7 @@ import wyil.lang.Type;
  * 15:575--631, 1993.</p></li>
  * </ul>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class SubtypeOperator {
@@ -104,6 +104,8 @@ public class SubtypeOperator {
 			boolean toSign) {		
 		
 		//System.out.println("STARTING: " + fromIndex + "(" + fromSign + ") & " + toIndex + "(" + toSign + ")");
+		
+		// TODO: can further improve performance using caching
 		
 		int index = indexOf(fromIndex,fromSign,toIndex,toSign);
 		if(assumptions.get(index)) {

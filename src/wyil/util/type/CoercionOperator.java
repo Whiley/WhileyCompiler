@@ -28,7 +28,7 @@ import wyautl.lang.*;
  * normalised beforehand to guarantee correct results from this operator.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class CoercionOperator extends SubtypeOperator {

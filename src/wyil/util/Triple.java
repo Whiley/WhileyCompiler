@@ -28,7 +28,7 @@ package wyil.util;
 /**
  * This class represents a triple of items
  * 
- * @author djp
+ * @author David J. Pearce
  *
  * @param <FIRST> Type of first item
  * @param <SECOND> Type of second item

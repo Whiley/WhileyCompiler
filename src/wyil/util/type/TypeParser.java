@@ -12,7 +12,7 @@ import static wyil.lang.Type.*;
  * error). This is generally useful for debugging purposes, but it does have
  * other usees as well.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class TypeParser {

@@ -20,7 +20,7 @@ public class TypeTester {
 	 * to deal with union, intersection, negation, any, void, list and set
 	 * types.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class TypeInterpretation extends DefaultInterpretation {

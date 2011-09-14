@@ -3,7 +3,7 @@ package wyil.lang;
 /**
  * An import is a special form of regular expression.  
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class Import {	

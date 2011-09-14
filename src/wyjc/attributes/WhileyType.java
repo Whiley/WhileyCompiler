@@ -42,7 +42,7 @@ import wyjvm.lang.*;
  * stored into a class file, such that they can be retrieved and checked against
  * during compilation.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class WhileyType implements BytecodeAttribute {	

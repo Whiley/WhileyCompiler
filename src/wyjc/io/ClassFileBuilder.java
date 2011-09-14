@@ -50,7 +50,7 @@ import static wyjvm.lang.JvmTypes.*;
  * The purpose of the class file builder is to construct a jvm class file from a
  * given WhileyFile.
  * 
- * @author djp
+ * @author David J. Pearce
  */
 public class ClassFileBuilder {
 	protected int CLASS_VERSION = 49;
@@ -2662,7 +2662,7 @@ public class ClassFileBuilder {
 	
 	/**
 	 * A constant is some kind of auxillary functionality used in generated code, which can be reused at multiple sites.  This includes value constants, and coercion functions. 
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public abstract static class Constant {}

@@ -535,7 +535,7 @@ public abstract class Code {
 	 * A binary operation (e.g. +,-,*,/) takes two items off the stack and
 	 * pushes a single result.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class BinOp extends Code {		
@@ -576,7 +576,7 @@ public abstract class Code {
 	 * A catch bytecode is similar to a switch. It identifies a block within
 	 * which exception handlers are active.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Catch extends Code {
@@ -628,7 +628,7 @@ public abstract class Code {
 	 * integer constants, rational constants, list constants, set constants,
 	 * dictionary constants, function constants, etc.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Const extends Code {		
@@ -807,7 +807,7 @@ public abstract class Code {
 	 * The fieldload bytecode pops a record alias from the stack and reads the
 	 * value from the given field, pusing it back onto the stack.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class FieldLoad extends Code {
@@ -2228,7 +2228,7 @@ public abstract class Code {
 	
 	/**
 	 * The void bytecode is used to indicate that a given register is no longer live.
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static class Void extends Code {

@@ -30,7 +30,7 @@ package wyil.lang;
  * purpose of this is to provide a uniform way of referring to modules +
  * names throughout the compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class NameID {

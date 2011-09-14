@@ -6,6 +6,6 @@
  * similar in many ways to Java bytecode.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  */
 package wyil;

@@ -31,7 +31,7 @@ import java.util.*;
  * A modifier represents a flag (e.g. public/final/static) which can be used in
  * a variety of places, including on classes, methods and variable definitions.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface Modifier {

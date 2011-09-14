@@ -19,7 +19,7 @@ import java.util.Arrays;
  * <b>NOTE:</b> in the default interpretation, supplementary data is ignored.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class DefaultInterpretation implements Interpretation<DefaultInterpretation.Value> {

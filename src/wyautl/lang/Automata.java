@@ -36,7 +36,7 @@ import java.util.*;
  * negative index.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class Automata {	
@@ -128,7 +128,7 @@ public final class Automata {
 	 * Represents a state in an automata. Each state has a kind, along with zero
 	 * or more children and an (optional) supplementary data item.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class State {

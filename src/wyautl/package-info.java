@@ -6,6 +6,6 @@
  * manipulate them.  For example, for representing Provides classes for
  * reading and writing automatas via input/output streams.
  * 
- * @author djp
+ * @author David J. Pearce
  */
 package wyautl;

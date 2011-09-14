@@ -18,7 +18,7 @@ import wyjc.transforms.*;
  * options, construct an appropriate pipeline and then instantiate the Whiley
  * Compiler to generate class files.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class Main {

@@ -15,7 +15,7 @@ package wyautl.lang;
  * other.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public interface Interpretation<T> {

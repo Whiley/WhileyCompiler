@@ -36,7 +36,7 @@ import wyil.lang.Attribute;
 /**
  * This exception is thrown when a syntax error occurs in the parser. 
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class SyntaxError extends RuntimeException {

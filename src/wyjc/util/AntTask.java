@@ -50,7 +50,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * verification checking should be performed; a similar switch, nrc="true", can
  * be used to turn off generation of runtime checks as well.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class AntTask extends MatchingTask {

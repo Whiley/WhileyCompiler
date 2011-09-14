@@ -5,7 +5,7 @@ import java.util.BitSet;
 /**
  * A binary matrix represents a matrix of binary digits.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public final class BinaryMatrix {

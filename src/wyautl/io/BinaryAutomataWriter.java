@@ -23,7 +23,7 @@ import wyjvm.io.BinaryOutputStream;
  * that.
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class BinaryAutomataWriter implements GenericWriter<Automata> {		

@@ -41,7 +41,7 @@ import wyil.util.*;
  * left-hand side to either of the two options in the right-hand side.  
  * </p>
  * 
- * @author djp
+ * @author David J. Pearce
  */
 public class CoercionCheck implements Transform {
 	private final ModuleLoader loader;

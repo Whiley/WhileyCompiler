@@ -15,7 +15,7 @@ import wyil.transforms.*;
  * intermediate language (wyil). A pipeline is instantiated before being used to
  * create an instance of Compiler.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class Pipeline {
@@ -127,7 +127,7 @@ public class Pipeline {
 	 * A template is an uninstantiated pipeline stage. This contains all of the
 	 * necessary information to instantiate the stage.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 */
 	public static class Template {					
 		Class<? extends Transform> clazz;
@@ -226,7 +226,7 @@ public class Pipeline {
 	 * The pipeline modifier captures a requested adjustment to the compilation
 	 * pipeline.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 */
 	public static class Modifier {
 		public final POP op;

@@ -50,7 +50,7 @@ import wyjvm.lang.ClassFile;
  * them into wyil modules. The value of this is that we can extract necessary
  * module information from classfiles on the CLASSPATH.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class ClassFileLoader {

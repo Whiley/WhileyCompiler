@@ -52,7 +52,7 @@ import static wyil.util.SyntaxError.*;
  * In the above example, variable z is used in the return statement before it
  * has been defined any value. This is considered a syntax error in whiley.
  * </p>
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public class DefiniteAssignment extends

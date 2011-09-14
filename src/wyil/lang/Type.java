@@ -36,7 +36,7 @@ import wyjvm.io.*;
  * http://whiley.org/2011/03/07/implementing-structural-types/ for more on how
  * this class works.
  * 
- * @author djp
+ * @author David J. Pearce
  * 
  */
 public abstract class Type {
@@ -460,7 +460,7 @@ public abstract class Type {
 	 * <code>BinaryAutomataReader</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class BinaryReader extends BinaryAutomataReader {		
@@ -510,7 +510,7 @@ public abstract class Type {
 	 * <code>BinaryAutomataWriter</code>.
 	 * </p>
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class BinaryWriter extends BinaryAutomataWriter {		
@@ -779,7 +779,7 @@ public abstract class Type {
 	 * primitive types like <code>int</code> and <code>real</code> are leaf
 	 * types.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Leaf extends Type {}
@@ -792,7 +792,7 @@ public abstract class Type {
 	 * the void type is a subtype of everything; that is, it is bottom in the
 	 * type lattice.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Void extends Leaf {
@@ -812,7 +812,7 @@ public abstract class Type {
 	 * The type any represents the type whose variables may hold any possible
 	 * value. <b>NOTE:</b> the any type is top in the type lattice.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Any extends Leaf {
@@ -838,7 +838,7 @@ public abstract class Type {
 	 * abstraction to have around and, in Whiley, it is treated in a completely
 	 * safe manner (unlike e.g. Java).
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Null extends Leaf {
@@ -859,7 +859,7 @@ public abstract class Type {
 	 * are themselves types. (think reflection, where we have
 	 * <code>class Class {}</code>).
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Meta extends Leaf {
@@ -877,7 +877,7 @@ public abstract class Type {
 
 	/**
 	 * Represents the set of boolean values (i.e. true and false)
-	 * @author djp
+	 * @author David J. Pearce
 	 *
 	 */
 	public static final class Bool extends Leaf {
@@ -896,7 +896,7 @@ public abstract class Type {
 	/**
 	 * Represents a unicode character.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Char extends Leaf {
@@ -915,7 +915,7 @@ public abstract class Type {
 	/**
 	 * Represents a unicode character.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Byte extends Leaf {
@@ -938,7 +938,7 @@ public abstract class Type {
 	 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for <code>int</code>
 	 * types.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Int extends Leaf {
@@ -957,7 +957,7 @@ public abstract class Type {
 	/**
 	 * Represents the set of (unbound) rational numbers. 
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Real extends Leaf {
@@ -976,7 +976,7 @@ public abstract class Type {
 	/**
 	 * Represents a string of characters 
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Strung extends Leaf {
@@ -997,7 +997,7 @@ public abstract class Type {
 	 * The existential type represents the an unknown type, defined at a given
 	 * position.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Existential extends Leaf {
@@ -1076,7 +1076,7 @@ public abstract class Type {
 	 * subcomponents. It is similar to a record, except that fields are
 	 * effectively anonymous.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Tuple extends Compound  {
@@ -1098,7 +1098,7 @@ public abstract class Type {
 	 * element type. For example, <code>{1,2,3}</code> is an instance of set
 	 * type <code>{int}</code>; however, <code>{1.345}</code> is not.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Set extends Compound  {
@@ -1116,7 +1116,7 @@ public abstract class Type {
 	 * element type. For example, <code>[1,2,3]</code> is an instance of list
 	 * type <code>[int]</code>; however, <code>[1.345]</code> is not.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class List extends Compound  {
@@ -1132,7 +1132,7 @@ public abstract class Type {
 	/**
 	 * A process represents a reference to an actor in Whiley.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Process extends Compound  {
@@ -1151,7 +1151,7 @@ public abstract class Type {
 	 * <code>int->real</code> represents a map from integers to real values. A
 	 * valid instance of this type might be <code>{1->1.2,2->3}</code>.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Dictionary extends Compound  {
@@ -1174,7 +1174,7 @@ public abstract class Type {
 	 * special kind of "fixed" dictionary (i.e. where we know exactly which
 	 * entries we have).
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Record extends Compound  {
@@ -1221,7 +1221,7 @@ public abstract class Type {
 	 * variable can either hold an integer value, or null. <b>NOTE:</b>There
 	 * must be at least two bounds for a union type to make sense.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Union extends Compound {
@@ -1250,7 +1250,7 @@ public abstract class Type {
 	 * intersection of its bounds. <b>NOTE:</b>There must be at least two bounds
 	 * for an intersection type to make sense.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Intersection extends Compound {
@@ -1278,7 +1278,7 @@ public abstract class Type {
 	 * A difference type represents a type which accepts values in the
 	 * difference between its bounds. 
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static final class Negation extends Compound {
@@ -1296,7 +1296,7 @@ public abstract class Type {
 	 * A function type, consisting of a list of zero or more parameters and a
 	 * return type.
 	 * 
-	 * @author djp
+	 * @author David J. Pearce
 	 * 
 	 */
 	public static class Fun extends Compound  {
@@ -1527,6 +1527,9 @@ public abstract class Type {
 			}
 			break;
 		}		
+		case K_LABEL:
+			middle = (String) state.data;
+			break;
 		default: 
 			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
 		}
@@ -1649,17 +1652,20 @@ public abstract class Type {
 
 	
 	/**
-	 * The construct methods constructs a Type from an array of Components.
-	 * It carefully ensures the kind of the root node matches the class
-	 * created (e.g. a kind K_SET results in a class Set).
+	 * The construct methods constructs a Type from an automata.
 	 * 
 	 * @param nodes
 	 * @return
 	 */
 	public final static Type construct(Automata automata) {
+		return construct(automata,true);
+	}
+	public final static Type construct(Automata automata, boolean normalise) {
 		
 		// first, normalise automata
-		automata = normalise(automata);
+		if(normalise) {
+			automata = normalise(automata);
+		}
 		
 		// second, construc the appropriate face
 		State root = automata.states[0];
@@ -1835,8 +1841,8 @@ public abstract class Type {
 	 * @return
 	 */
 	private static Automata normalise(Automata automata) {		
-		Automatas.rewrite(automata,new TypeSimplifications());						
-		automata = Automatas.extract(automata, 0);
+		Automatas.rewrite(automata,new TypeSimplifications());		
+		automata = Automatas.extract(automata, 0);		
 		automata = Automatas.minimise(automata);		
 		return automata;
 	}
@@ -1868,8 +1874,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = T_STRING;
-		Type to = fromString("X<{X|null f1}>");									
+		Type from = fromString("X<[X|real]>");
+		Type to = fromString("X<[X|real]>");									
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
 		//System.out.println("normalised(" + to + ") = " + normalise(to));
