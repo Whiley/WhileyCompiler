@@ -414,7 +414,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// The second job is to try and determine whether there is any general
 		// requirement on the value being assigned.
 		
-		iter = Type.leastUpperBound(code.type,src);
+		iter = Type.T_UNION(code.type,src);
 		
 		if(code.slot == 0 && Type.isSubtype(Type.T_PROCESS(Type.T_ANY), iter)) {
 			Type.Process p = (Type.Process) iter;
@@ -762,7 +762,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		Env env = new Env();
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
-			env.add(Type.leastUpperBound(env1.get(i), env2.get(i)));
+			env.add(Type.T_UNION(env1.get(i), env2.get(i)));
 		}
 
 		return env;

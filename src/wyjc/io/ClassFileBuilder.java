@@ -249,8 +249,7 @@ public class ClassFileBuilder {
 		if(method.isPublic()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
-		modifiers.add(Modifier.ACC_STATIC);		
-		Type t = Type.normalise(method.type());		
+		modifiers.add(Modifier.ACC_STATIC);					
 		JvmType.Function ft = convertFunType(method.type());		
 		String name = nameMangle(method.name(),method.type());
 		/* need to put this back somehow?
@@ -838,7 +837,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			translateTypeTest(trueLabel, c.type, c.test, bytecodes, constants);
 
-			Type gdiff = Type.leastDifference(c.type,c.test);			
+			Type gdiff = Type.T_INTERSECTION(c.type,Type.T_NEGATION(c.test));			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(gdiff,bytecodes);		
@@ -846,7 +845,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));
 
-			Type glb = Type.greatestLowerBound(c.type, c.test);
+			Type glb = Type.T_INTERSECTION(c.type, c.test);
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(glb,bytecodes);		
@@ -1937,7 +1936,7 @@ public class ClassFileBuilder {
 	public void buildCoercion(Type.Int fromType, Type toType, 
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		if(!Type.isSubtype(toType,fromType)) {
-			Type glb = Type.greatestLowerBound(Type.T_REAL, toType);
+			Type glb = Type.T_INTERSECTION(Type.T_REAL, toType);
 			if(glb == Type.T_REAL) { 
 				// coercion required!
 				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
@@ -2530,17 +2529,17 @@ public class ClassFileBuilder {
 	}		 	
 		
 	public final static Type.Process WHILEY_SYSTEM_OUT_T = (Type.Process) Type
-			.normalise(Type.T_PROCESS(Type.T_EXISTENTIAL(new NameID(
-					new ModuleID(new PkgID("whiley", "lang"), "System"), "1"))));
+			.T_PROCESS(Type.T_EXISTENTIAL(new NameID(new ModuleID(new PkgID(
+					"whiley", "lang"), "System"), "1")));
 
 	public final static Type.Process WHILEY_SYSTEM_T = (Type.Process) Type
-			.normalise(Type.T_PROCESS(Type.T_RECORD(new HashMap() {
+			.T_PROCESS(Type.T_RECORD(new HashMap() {
 				{
 					put("out", WHILEY_SYSTEM_OUT_T);
 					put("rest", Type.T_EXISTENTIAL(new NameID(new ModuleID(
 							new PkgID("whiley", "lang"), "System"), "1")));
 				}
-			})));
+			}));
 		
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");

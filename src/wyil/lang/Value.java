@@ -375,7 +375,7 @@ public abstract class Value implements Comparable<Value> {
 		public Type type() {
 			Type t = Type.T_VOID;
 			for(Value arg : values) {
-				t = Type.leastUpperBound(t,arg.type());
+				t = Type.T_UNION(t,arg.type());
 			}
 			return Type.T_LIST(t);			
 		}
@@ -436,7 +436,7 @@ public abstract class Value implements Comparable<Value> {
 		public Type type() {
 			Type t = Type.T_VOID;
 			for(Value arg : values) {
-				t = Type.leastUpperBound(t,arg.type());
+				t = Type.T_UNION(t,arg.type());
 			}
 			return Type.T_SET(t);	
 		}
@@ -615,8 +615,8 @@ public abstract class Value implements Comparable<Value> {
 			Type key = Type.T_VOID;
 			Type value = Type.T_VOID;
 			for (Map.Entry<Value, Value> e : values.entrySet()) {
-				key = Type.leastUpperBound(key,e.getKey().type());
-				value = Type.leastUpperBound(value,e.getKey().type());
+				key = Type.T_UNION(key,e.getKey().type());
+				value = Type.T_UNION(value,e.getKey().type());
 			}
 			return Type.T_DICTIONARY(key,value);
 		}

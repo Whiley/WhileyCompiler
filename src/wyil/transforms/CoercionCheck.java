@@ -119,7 +119,7 @@ public class CoercionCheck implements Transform {
 		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
 			Type.Dictionary t1 = (Type.Dictionary) from;
 			Type.Set t2 = (Type.Set) to;
-			Type.Tuple tup = Type.T_TUPLE(t1.key(),t1.value());
+			Type tup = Type.T_TUPLE(t1.key(),t1.value());
 			check(tup,t2.element(),visited,elem);
 		} else if(from instanceof Type.List && to instanceof Type.Set) {
 			Type.List t1 = (Type.List) from;

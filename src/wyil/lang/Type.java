@@ -141,7 +141,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_INTERSECTION(Collection<Type> bounds) {
+	public static final Intersection T_INTERSECTION(Collection<Type> bounds) {
 		return new Intersection(construct(K_INTERSECTION,null,bounds));
 	}
 	
@@ -150,7 +150,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_INTERSECTION(Type... bounds) {
+	public static final Intersection T_INTERSECTION(Type... bounds) {
 		return new Intersection(construct(K_INTERSECTION,null,bounds));			
 	}	
 	
@@ -159,7 +159,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type T_NEGATION(Type element) {
+	public static final Not T_NEGATION(Type element) {
 		return new Not(construct(K_NEGATION,null,element));				
 	}
 	
@@ -330,7 +330,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type fromString(String str) {
-		return simplify(new TypeParser(str).parse());
+		return new TypeParser(str).parse();
 	}
 		
 	/**
@@ -588,52 +588,6 @@ public abstract class Type {
 	public static boolean isomorphic(Type t1, Type t2) {
 		return isSubtype(t1,t2) && isSubtype(t2,t1);
 	}
-	
-	/**
-	 * Compute the <i>least upper bound</i> of two types t1 and t2. The least upper
-	 * bound is a type t3 where <code>t3 :> t1</code>, <code>t3 :> t2</code> and
-	 * there does not exist a type t4, where <code>t3 :> t4</code>,
-	 * <code>t4 :> t1</code>, <code>t4 :> t2</code>.
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static Type leastUpperBound(Type t1, Type t2) {
-		Type t = normalise(T_UNION(t1,t2)); // so easy		
-		return t;
-	}
-	
-	/**
-	 * Compute the <i>greatest lower bound</i> of two types t1 and t2. The
-	 * greatest lower bound is a type t3 where <code>t1 :> t3</code>,
-	 * <code>t2 :> t3</code> and there does not exist a type t4, where
-	 * <code>t1 :> t4</code>, <code>t2 :> t4</code> and <code>t4 :> t3</code>.
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static Type greatestLowerBound(Type t1, Type t2) {
-		return normalise(T_INTERSECTION(t1,t2)); // so easy
-	}
-
-	/**
-	 * Let <code>S</code> be determined by subtracting the set of values
-	 * described by type <code>t2</code> from that described by <code>t1</code>.
-	 * Then, this method returns the <i>least</i> type <code>t3</code> which
-	 * covers <code>S</code> (that is, every value in <code>S</code> is in the
-	 * set of values described by <code>t3</code>). Unfortunately, in some
-	 * cases, <code>t3</code> may contain other (spurious) values not found in
-	 * <code>S</code>.
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static Type leastDifference(Type t1, Type t2) {
-		return normalise(T_INTERSECTION(t1,T_NEGATION(t2))); // so easy
-	}
 
 	/**
 	 * The effective record type gives a subset of the visible fields which are
@@ -670,7 +624,7 @@ public abstract class Type {
 						Type bt = bfields.get(e.getKey());
 						if (bt != null) {
 							nfields.put(e.getKey(),
-									leastUpperBound(e.getValue(), bt));
+									T_UNION(e.getValue(), bt));
 						}
 					}					
 					r = T_RECORD(nfields);
@@ -695,7 +649,7 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_SET(leastUpperBound(r.element(),br.element()));
+					r = T_SET(T_UNION(r.element(),br.element()));
 				}
 			}			
 			return r;
@@ -717,7 +671,7 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_LIST(leastUpperBound(r.element(),br.element()));
+					r = T_LIST(T_UNION(r.element(),br.element()));
 				}
 			}			
 			return r;
@@ -739,97 +693,15 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = T_DICTIONARY(leastUpperBound(r.key(), br.key()),
-							leastUpperBound(r.value(), br.value()));
+					r = T_DICTIONARY(T_UNION(r.key(), br.key()),
+							T_UNION(r.value(), br.value()));
 				}
 			}
 			return r;
 		}
 		return null;
 	}
-	
-	/**
-	 * <p>
-	 * The following algorithm simplifies a type. For example:
-	 * </p>
-	 * 
-	 * <pre>
-	 * define InnerList as null|{int data, OuterList next}
-	 * define OuterList as null|{int data, InnerList next}
-	 * </pre>
-	 * <p>
-	 * This type is simplified into the following (equivalent) form:
-	 * </p>
-	 * 
-	 * <pre>
-	 * define LinkedList as null|{int data, LinkedList next}
-	 * </pre>
-	 * <p>
-	 * The simplification algorithm is made up of several different procedures
-	 * which operate on the underlying <i>automata</i> representing the type:
-	 * </p>
-	 * <ol>
-	 * <li><b>Extraction.</b> Here, sub-components unreachable from the root are
-	 * eliminated.</li>
-	 * <li><b>Simplification.</b> Here, basic simplifications are applied. For
-	 * example, eliminating unions of unions.</li>
-	 * <li><b>Minimisation.</b>Here, equivalent states are merged together.</li>
-	 * <li><b>Canonicalisation.</b> A canonical form of the type is computed</li>
-	 * </ol>
-	 * 
-	 * is based on the well-known algorithm for minimising a DFA (see e.g. <a
-	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>). </p>
-	 * <p>
-	 * The algorithm operates by performing a subtype test of each node against
-	 * all others. From this, we can identify nodes which are equivalent under
-	 * the subtype operator. Using this information, the type is reconstructed
-	 * such that for each equivalence class only a single node is created.
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> this algorithm does not put the type into a canonical form.
-	 * Additional work is necessary to do this.
-	 * </p>
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public static Type normalise(Type type) {	
-		if(type instanceof Type.Compound) { 
-			Compound compound = (Compound) type;
-			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new TypeSimplifications());						
-			automata = Automatas.extract(automata, 0);
-			automata = Automatas.minimise(automata);
-			//automata = Automatas.canonicalise(automata);
-			return construct(automata);
-		} else {
-			// no need to simplify leafs
-			return type;
-		}
-	}
-
-	/**
-	 * Simplification provides the minimal level of normalisation required for
-	 * the <code>isSubtype</code> method to work correctly. Simplification
-	 * includes removal of contraction, and applying a minimalistic set of
-	 * rewrites.
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public static Type simplify(Type type) {	
-		if(type instanceof Type.Compound) { 
-			Compound compound = (Compound) type;
-			Automata automata = compound.automata;
-			Automatas.rewrite(automata,new TypeSimplifications());
-			automata = Automatas.extract(automata, 0);
-			return construct(automata);
-		} else {
-			// no need to simplify leafs
-			return type;
-		}
-	}
-	
+			
 	// =============================================================
 	// Primitive Types
 	// =============================================================
@@ -1094,7 +966,7 @@ public abstract class Type {
 	 */
 
 	public static class Compound extends Type {
-		protected final Automata automata;
+		protected Automata automata;
 		
 		public Compound(Automata automata) {
 			this.automata = automata;
@@ -1717,6 +1589,11 @@ public abstract class Type {
 	 * @return
 	 */
 	public final static Type construct(Automata automata) {
+		
+		// first, normalise automata
+		automata = normalise(automata);
+		
+		// second, construc the appropriate face
 		State root = automata.states[0];
 		switch(root.kind) {
 		case K_VOID:
@@ -1793,7 +1670,7 @@ public abstract class Type {
 			start += child.size();
 			i = i + 1;
 		}		 	
-		return automata;	
+		return normalise(automata);	
 	}
 	
 	/**
@@ -1818,7 +1695,7 @@ public abstract class Type {
 			i = i + 1;
 		}
 		 		
-		return automata;	
+		return normalise(automata);	
 	}
 	
 	/**
@@ -1842,6 +1719,58 @@ public abstract class Type {
 			// compound type
 			return ((Compound) t).automata;
 		}
+	}
+	
+	/**
+	 * <p>
+	 * The following algorithm simplifies a type. For example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * define InnerList as null|{int data, OuterList next}
+	 * define OuterList as null|{int data, InnerList next}
+	 * </pre>
+	 * <p>
+	 * This type is simplified into the following (equivalent) form:
+	 * </p>
+	 * 
+	 * <pre>
+	 * define LinkedList as null|{int data, LinkedList next}
+	 * </pre>
+	 * <p>
+	 * The simplification algorithm is made up of several different procedures
+	 * which operate on the underlying <i>automata</i> representing the type:
+	 * </p>
+	 * <ol>
+	 * <li><b>Extraction.</b> Here, sub-components unreachable from the root are
+	 * eliminated.</li>
+	 * <li><b>Simplification.</b> Here, basic simplifications are applied. For
+	 * example, eliminating unions of unions.</li>
+	 * <li><b>Minimisation.</b>Here, equivalent states are merged together.</li>
+	 * <li><b>Canonicalisation.</b> A canonical form of the type is computed</li>
+	 * </ol>
+	 * 
+	 * is based on the well-known algorithm for minimising a DFA (see e.g. <a
+	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>). </p>
+	 * <p>
+	 * The algorithm operates by performing a subtype test of each node against
+	 * all others. From this, we can identify nodes which are equivalent under
+	 * the subtype operator. Using this information, the type is reconstructed
+	 * such that for each equivalence class only a single node is created.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> this algorithm does not put the type into a canonical form.
+	 * Additional work is necessary to do this.
+	 * </p>
+	 * 
+	 * @param type
+	 * @return
+	 */
+	private static Automata normalise(Automata automata) {	
+		Automatas.rewrite(automata,new TypeSimplifications());						
+		automata = Automatas.extract(automata, 0);
+		automata = Automatas.minimise(automata);
+		return automata;
 	}
 	
 	public static final byte K_VOID = 0;

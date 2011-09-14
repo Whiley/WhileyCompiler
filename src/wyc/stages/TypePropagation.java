@@ -351,7 +351,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				dir = OpDir.RIGHT;
 			}
 			
-			type = Type.effectiveListType(Type.leastUpperBound(lhs,rhs));
+			type = Type.effectiveListType(Type.T_UNION(lhs,rhs));
 			
 			switch(v.bop) {				
 				case ADD:																				
@@ -790,8 +790,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nkey = indices.get(indexLevel);			
 			Type nvalue = typeInference(dict.value(), newtype, level - 1,
 					fieldLevel, fields, indexLevel + 1, indices);
-			return Type.T_DICTIONARY(Type.leastUpperBound(dict.key(), nkey),
-					Type.leastUpperBound(dict.value(), nvalue));			
+			return Type.T_DICTIONARY(Type.T_UNION(dict.key(), nkey),
+					Type.T_UNION(dict.value(), nvalue));			
 		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
 			Type nelement = typeInference(Type.T_CHAR, newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
@@ -801,7 +801,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = typeInference(list.element(), newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);
-			return Type.leastUpperBound(oldtype,Type.T_LIST(nelement));
+			return Type.T_UNION(oldtype,Type.T_LIST(nelement));
 		
 		} else if(Type.effectiveRecordType(oldtype) != null){			
 			// Record case is more interesting as we may be able to actually
@@ -819,7 +819,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type.Union tu = (Type.Union) oldtype;
 				Type t = Type.T_VOID;
 				for(Type b : tu.bounds()) {					
-					t = Type.leastUpperBound(
+					t = Type.T_UNION(
 							t,
 							typeInference(b, newtype, level, fieldLevel,
 									fields, indexLevel, indices));
@@ -854,8 +854,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type value = Type.T_VOID;
 		
 		for(int i=0;i!=e.nargs;++i) {
-			value = Type.leastUpperBound(value,environment.pop());
-			key = Type.leastUpperBound(key,environment.pop());
+			value = Type.T_UNION(value,environment.pop());
+			key = Type.T_UNION(key,environment.pop());
 			
 		}
 		
@@ -868,7 +868,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type elem = Type.T_VOID;		
 		
 		for(int i=0;i!=e.nargs;++i) {
-			elem = Type.leastUpperBound(elem,environment.pop());						
+			elem = Type.T_UNION(elem,environment.pop());						
 		}
 		
 		Type.List type = Type.T_LIST(elem);
@@ -881,7 +881,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type elem = Type.T_VOID;		
 		
 		for(int i=0;i!=e.nargs;++i) {
-			elem = Type.leastUpperBound(elem,environment.pop());						
+			elem = Type.T_UNION(elem,environment.pop());						
 		}
 		
 		Type.Set type = Type.T_SET(elem);
@@ -1007,7 +1007,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
 			if(lhs_set && rhs_set) {
-				result = Type.leastUpperBound(lhs,rhs);		
+				result = Type.T_UNION(lhs,rhs);		
 			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
 			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
@@ -1017,9 +1017,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				result = null;
 			}						
 		} else if(dir == OpDir.LEFT && lhs_set) {
-			result = Type.leastUpperBound(lhs,Type.T_SET(rhs));
+			result = Type.T_UNION(lhs,Type.T_SET(rhs));
 		} else if(dir == OpDir.RIGHT && rhs_set) {
-			result = Type.leastUpperBound(Type.T_SET(lhs),rhs);			
+			result = Type.T_UNION(Type.T_SET(lhs),rhs);			
 		} else {
 			syntaxError("expecting set type",filename,stmt);
 			return null; // dead-code
@@ -1039,7 +1039,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if(lhs_set || rhs_set) {				
 			if(lhs_set && rhs_set) {
-				result = Type.greatestLowerBound(lhs,rhs);		
+				result = Type.T_INTERSECTION(lhs,rhs);		
 			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
 			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
@@ -1192,24 +1192,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Code ncode = code;
 		Env trueEnv = null;
 		Env falseEnv = null;								
-		Type glb = Type.greatestLowerBound(lhs_t, code.test);
+		Type glb = Type.T_INTERSECTION(lhs_t, code.test);
 		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
-			//trueEnv = environment;
-			//ncode = Code.Goto(code.target);										
 			syntaxError("branch always taken",filename,methodCase.body().get(index));
 		} else if (glb == Type.T_VOID) {				
 			// DEFINITE FALSE CASE				
-			//falseEnv = environment;							
-			//ncode = Code.Skip;										
 			syntaxError("incomparable operands: " + lhs_t + " and " + code.test,filename,stmt);
 		} else {
 			ncode = Code.IfType(lhs_t, code.slot, code.test, code.target);				
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {					
-				Type gdiff = Type.leastDifference(lhs_t, code.test);				
+				Type gdiff = Type.T_INTERSECTION(lhs_t, Type.T_NEGATION(code.test));				
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
@@ -1523,7 +1519,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Env env = new Env();
 
 		for (int i = 0; i != Math.min(env1.size(), env2.size()); ++i) {
-			env.add(Type.leastUpperBound(env1.get(i), env2.get(i)));
+			env.add(Type.T_UNION(env1.get(i), env2.get(i)));
 		}
 		
 		return env;
