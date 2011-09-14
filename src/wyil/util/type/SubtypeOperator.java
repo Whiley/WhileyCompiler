@@ -149,6 +149,18 @@ public class SubtypeOperator {
 				}
 				return true;
 			}
+			case K_LABEL: {
+				String lab1 = (String) fromState.data;
+				String lab2 = (String) toState.data;	
+				if(fromSign || toSign) {
+					if(lab1.equals(lab2)) {
+						return fromSign && toSign;
+					} else {
+						return !fromSign || !toSign;
+					}
+				}
+				return true;
+			}
 			// === Homogenous Compound States ===
 			case K_SET:
 			case K_LIST:

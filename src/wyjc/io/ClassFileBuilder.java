@@ -214,10 +214,7 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
 		Type.Fun wyft = (Type.Fun) Type.T_METH(null,Type.T_VOID, WHILEY_SYSTEM_T,
 						Type.T_LIST(Type.T_STRING));
-		System.out.println("CREATED: " + wyft);
-		System.out.println("AUTOMATA: " + Type.destruct(wyft));
-		JvmType.Function ft3 = convertFunType(wyft);
-		
+		JvmType.Function ft3 = convertFunType(wyft);		
 		// The following is a little bit of hack. Basically we flush the stdout
 		// channel on exit
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main",wyft), ft3, Bytecode.STATIC));

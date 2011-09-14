@@ -1546,7 +1546,7 @@ public class ModuleBuilder {
 
 	protected Block resolve(Constant c, HashMap<String,Integer> environment) {
 		Block blk = new Block(environment.size());
-		blk.append(Code.Const(c.value), attributes(c));
+		blk.append(Code.Const(c.value), attributes(c));		
 		return blk;
 	}
 
@@ -1834,7 +1834,7 @@ public class ModuleBuilder {
 		ArrayList<String> keys = new ArrayList<String>(sg.fields.keySet());
 		Collections.sort(keys);
 		for (String key : keys) {
-			fields.put(key, Type.T_VOID);
+			fields.put(key, Type.T_ANY);
 			blk.append(resolve(sg.fields.get(key), environment));
 		}
 		blk.append(Code.NewRecord(Type.T_RECORD(fields)), attributes(sg));

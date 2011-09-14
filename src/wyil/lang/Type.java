@@ -1766,10 +1766,10 @@ public abstract class Type {
 	 * @param type
 	 * @return
 	 */
-	private static Automata normalise(Automata automata) {	
+	private static Automata normalise(Automata automata) {		
 		Automatas.rewrite(automata,new TypeSimplifications());						
 		automata = Automatas.extract(automata, 0);
-		automata = Automatas.minimise(automata);
+		automata = Automatas.minimise(automata);		
 		return automata;
 	}
 	
@@ -1800,7 +1800,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = fromString("X<{X|null f1}>");
+		Type from = T_STRING;
 		Type to = fromString("X<{X|null f1}>");									
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));

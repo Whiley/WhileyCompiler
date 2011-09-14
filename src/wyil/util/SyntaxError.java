@@ -147,13 +147,14 @@ public class SyntaxError extends RuntimeException {
 				output.println("syntax error: " + getMessage());
 				return;
 			}
-
+			lineEnd = Math.min(lineEnd,text.length());
+			
 			output.println(filename + ":" + line + ": " + getMessage());
 			// NOTE: in the following lines I don't print characters
 			// individually. The reason for this is that it messes up the ANT
 			// task output.
 			String str = "";
-			for(int i=lineStart;i<lineEnd;++i) {
+			for (int i = lineStart; i < lineEnd; ++i) {
 				str = str + text.charAt(i);
 			}
 			output.print(str);
