@@ -371,6 +371,23 @@ public final class TypeSimplifications implements RewriteRule {
 			
 			if(fromKind == K_VOID || toKind == K_VOID) {
 				myState = new Automata.State(Type.K_VOID);
+			} else if(fromKind == K_UNION) {
+				int[] fromChildren = fromState.children;
+				int[] newChildren = new int[fromChildren.length];
+				for(int i=0;i!=fromChildren.length;++i) {
+					int fromChild = fromChildren[i];
+					newChildren[i] = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);
+				}
+				myState = new Automata.State(K_UNION,newChildren,false);
+			} else if(toKind == K_UNION) {
+				int[] toChildren = toState.children;
+				int[] newChildren = new int[toChildren.length];
+				for(int i=0;i!=toChildren.length;++i) {
+					int toChild = toChildren[i];
+					newChildren[i] = intersect(fromIndex, fromSign, from,
+							toChild, toSign, to, allocations, states);
+				}
+				myState = new Automata.State(K_UNION,newChildren,false);
 			} else if(fromKind == K_ANY) {				
 				states.remove(states.size()-1);
 				if(!toSign) {

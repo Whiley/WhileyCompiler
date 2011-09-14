@@ -1838,8 +1838,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = fromString("[any]");
-		Type to = fromString("[{int field}]");									
+		Type from = fromString("[int]");
+		Type to = fromString("[int|real]");									
 		//System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
 		//System.out.println("normalised(" + to + ") = " + normalise(to));
