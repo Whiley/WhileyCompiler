@@ -62,7 +62,13 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Tuple T_TUPLE(Type... elements) {		
-		return new Tuple(construct(K_TUPLE,null,elements));
+		Type r = construct(K_TUPLE, null, elements);
+		if (r instanceof Tuple) {
+			return (Tuple) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Arguments for Type.Tuple: " + elements);
+		}		
 	}
 	
 	/**
@@ -71,7 +77,13 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Tuple T_TUPLE(java.util.List<Type> elements) {
-		return new Tuple(construct(K_TUPLE,null,elements));
+		Type r = construct(K_TUPLE, null, elements);
+		if (r instanceof Tuple) {
+			return (Tuple) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Tuple: " + elements);
+		}
 	}
 	
 	/**
@@ -80,7 +92,13 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Process T_PROCESS(Type element) {
-		return new Process(construct(K_PROCESS,null,element));		
+		Type r = construct(K_PROCESS, null, element);
+		if (r instanceof Process) {
+			return (Process) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Process: " + element);
+		}			
 	}
 	
 	public static final Existential T_EXISTENTIAL(NameID name) {
@@ -97,7 +115,13 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Set T_SET(Type element) {
-		return new Set(construct(K_SET,null,element));		
+		Type r = construct(K_SET, null, element);
+		if (r instanceof Set) {
+			return (Set) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Set: " + element);
+		}			
 	}
 	
 	/**
@@ -106,7 +130,13 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final List T_LIST(Type element) {
-		return new List(construct(K_LIST,null,element));		
+		Type r = construct(K_LIST, null, element);
+		if (r instanceof List) {
+			return (List) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.List: " + element);
+		}			
 	}
 	
 	/**
@@ -115,7 +145,13 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Dictionary T_DICTIONARY(Type key, Type value) {
-		return new Dictionary(construct(K_DICTIONARY,null,key,value));			
+		Type r = construct(K_DICTIONARY, null, key, value);
+		if (r instanceof Dictionary) {
+			return (Dictionary) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.List: " + key + ", " + value);
+		}		
 	}
 	
 	/**
@@ -123,8 +159,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Collection<Type> bounds) {
-		return new Union(construct(K_UNION,null,bounds));		
+	public static final Type T_UNION(Collection<Type> bounds) {
+		return construct(K_UNION,null,bounds);		
 	}
 	
 	/**
@@ -132,8 +168,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Union T_UNION(Type... bounds) {
-		return new Union(construct(K_UNION,null,bounds));			
+	public static final Type T_UNION(Type... bounds) {
+		return construct(K_UNION,null,bounds);			
 	}	
 	
 	/**
@@ -141,8 +177,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Intersection T_INTERSECTION(Collection<Type> bounds) {
-		return new Intersection(construct(K_INTERSECTION,null,bounds));
+	public static final Type T_INTERSECTION(Collection<Type> bounds) {
+		return construct(K_INTERSECTION,null,bounds);
 	}
 	
 	/**
@@ -150,8 +186,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Intersection T_INTERSECTION(Type... bounds) {
-		return new Intersection(construct(K_INTERSECTION,null,bounds));			
+	public static final Type T_INTERSECTION(Type... bounds) {
+		return construct(K_INTERSECTION,null,bounds);			
 	}	
 	
 	/**
@@ -159,8 +195,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Not T_NEGATION(Type element) {
-		return new Not(construct(K_NEGATION,null,element));				
+	public static final Type T_NEGATION(Type element) {
+		return construct(K_NEGATION,null,element);				
 	}
 	
 	/**
@@ -174,7 +210,13 @@ public abstract class Type {
 		int i = 0;
 		for (Type t : params) { rparams[++i] = t; }		
 		rparams[0] = ret;
-		return new Fun(construct(K_FUNCTION,null,rparams));		
+		Type r = construct(K_FUNCTION, null, params);
+		if (r instanceof Fun) {
+			return (Fun) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Fun: " + params);
+		}			
 	}
 	
 	/**
@@ -186,7 +228,13 @@ public abstract class Type {
 		Type[] rparams = new Type[params.length+1];		
 		System.arraycopy(params, 0, rparams, 1, params.length);
 		rparams[0] = ret;
-		return new Fun(construct(K_FUNCTION,null,rparams));				
+		Type r = construct(K_FUNCTION, null, params);
+		if (r instanceof Fun) {
+			return (Fun) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Fun: " + params);
+		}							
 	}
 	
 	/**
@@ -196,21 +244,28 @@ public abstract class Type {
 	 */
 	public static final Meth T_METH(Process receiver, Type ret,
 			Collection<Type> params) {
+		Type r;
 		if(receiver == null) {
 			// this is a headless method
 			Type[] rparams = new Type[params.size()+1];		
 			int i = 1;
 			for (Type t : params) { rparams[i++] = t; }					
 			rparams[0] = ret;
-			return new Meth(construct(K_HEADLESS,null,rparams));
+			r = construct(K_HEADLESS, null, rparams);					
 		} else {
 			Type[] rparams = new Type[params.size()+2];		
 			int i = 2;
 			for (Type t : params) { rparams[i++] = t; }		
 			rparams[0] = receiver;
 			rparams[1] = ret;
-			return new Meth(construct(K_METHOD,null,rparams));		
+			r = construct(K_METHOD, null, rparams);						
 		}
+		if (r instanceof Meth) {
+			return (Meth) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Meth: " + params);
+		}	
 	}
 	
 	/**
@@ -218,19 +273,26 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Meth T_METH(Process receiver, Type ret, Type... params) {				
+	public static final Meth T_METH(Process receiver, Type ret, Type... params) {
+		Type r;
 		if(receiver == null) {
 			// this is a headless method
 			Type[] rparams = new Type[params.length+1];		
 			System.arraycopy(params, 0, rparams, 1, params.length);			
 			rparams[0] = ret;
-			return new Meth(construct(K_HEADLESS,null,rparams));
+			r = construct(K_HEADLESS, null, rparams);						
 		} else {
 			Type[] rparams = new Type[params.length+2];		
 			System.arraycopy(params, 0, rparams, 2, params.length);
 			rparams[0] = receiver;
 			rparams[1] = ret;
-			return new Meth(construct(K_METHOD,null,rparams));
+			r = construct(K_METHOD, null, rparams);
+		}
+		if (r instanceof Meth) {
+			return (Meth) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Meth: " + params);
 		}
 	}
 	
@@ -247,7 +309,13 @@ public abstract class Type {
 		for(int i=0;i!=types.length;++i) {
 			types[i] = fields.get(keys.get(i));
 		}
-		return new Record(construct(K_RECORD,keys,types));				
+		Type r = construct(K_RECORD,keys,types);
+		if (r instanceof Record) {
+			return (Record) r;
+		} else {
+			throw new IllegalArgumentException(
+					"Invalid Argument(s) for Type.Meth: " + fields);
+		}		
 	}
 
 	/**
@@ -270,7 +338,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static final Type T_LABEL(String label) {
-		return new Compound(construct(K_LABEL,label));
+		return construct(K_LABEL,label);
 	}
 
 	/**
@@ -1213,8 +1281,8 @@ public abstract class Type {
 	 * @author djp
 	 * 
 	 */
-	public static final class Not extends Compound {
-		private Not(Automata automata) {
+	public static final class Negation extends Compound {
+		private Negation(Automata automata) {
 			super(automata);
 		}
 		
@@ -1635,7 +1703,7 @@ public abstract class Type {
 		case K_INTERSECTION:
 			return new Intersection(automata);
 		case K_NEGATION:
-			return new Not(automata);
+			return new Negation(automata);
 		case K_METHOD:
 			return new Meth(automata);
 		case K_HEADLESS:
@@ -1657,7 +1725,7 @@ public abstract class Type {
 	 * @param elements
 	 * @return
 	 */
-	private static Automata construct(byte kind, Object data, Type... children) {
+	private static Type construct(byte kind, Object data, Type... children) {
 		int[] nchildren = new int[children.length];
 		boolean deterministic = (kind != K_UNION && kind != K_INTERSECTION);
 		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
@@ -1670,7 +1738,7 @@ public abstract class Type {
 			start += child.size();
 			i = i + 1;
 		}		 	
-		return normalise(automata);	
+		return construct(automata);	
 	}
 	
 	/**
@@ -1681,7 +1749,7 @@ public abstract class Type {
 	 * @param children
 	 * @return
 	 */
-	private static Automata construct(byte kind, Object data, Collection<Type> children) {						
+	private static Type construct(byte kind, Object data, Collection<Type> children) {						
 		int[] nchildren = new int[children.size()];
 		boolean deterministic = (kind != K_UNION && kind != K_INTERSECTION);
 		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
@@ -1695,7 +1763,7 @@ public abstract class Type {
 			i = i + 1;
 		}
 		 		
-		return normalise(automata);	
+		return construct(automata);	
 	}
 	
 	/**

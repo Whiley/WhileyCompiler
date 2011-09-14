@@ -2611,7 +2611,7 @@ public class ClassFileBuilder {
 			return WHILEYPROCESS;
 		} else if(t instanceof Type.Tuple) {
 			return WHILEYTUPLE;
-		} else if(t instanceof Type.Not) {
+		} else if(t instanceof Type.Negation) {
 			// can we do any better?
 			return JAVA_LANG_OBJECT;
 		} else if(t instanceof Type.Intersection) {

@@ -983,7 +983,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			
 			Type rhs_t = environment.pop();
-			
 			checkIsSubtype(ret_t,rhs_t,stmt);
 		} else if(ret_t != Type.T_VOID) {
 			syntaxError(
@@ -1083,7 +1082,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 	protected Code infer(Negate v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
-
 		checkIsSubtype(Type.T_REAL,rhs_t,stmt);
 		if(rhs_t != Type.T_INT) {
 			// this is an implicit coercion
