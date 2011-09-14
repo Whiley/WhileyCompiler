@@ -66,7 +66,7 @@ public class DefiniteAssignment extends
 		HashSet<Integer> defined = new HashSet<Integer>();
 		
 		int diff = 0;
-		
+						
 		if(method.type() instanceof Type.Meth) {
 			Type.Meth mt = (Type.Meth) method.type();
 			if(mt.receiver() != null) {

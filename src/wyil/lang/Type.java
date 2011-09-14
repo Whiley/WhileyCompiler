@@ -210,7 +210,7 @@ public abstract class Type {
 		int i = 0;
 		for (Type t : params) { rparams[++i] = t; }		
 		rparams[0] = ret;
-		Type r = construct(K_FUNCTION, null, params);
+		Type r = construct(K_FUNCTION, null, rparams);
 		if (r instanceof Fun) {
 			return (Fun) r;
 		} else {
@@ -228,7 +228,7 @@ public abstract class Type {
 		Type[] rparams = new Type[params.length+1];		
 		System.arraycopy(params, 0, rparams, 1, params.length);
 		rparams[0] = ret;
-		Type r = construct(K_FUNCTION, null, params);
+		Type r = construct(K_FUNCTION, null, rparams);
 		if (r instanceof Fun) {
 			return (Fun) r;
 		} else {
