@@ -144,8 +144,8 @@ public class WhileyType implements BytecodeAttribute {
 				String name = ((Constant.Utf8) constantPool.get(reader
 						.read_uv())).str;
 				NameID data = new NameID(mid, name);
-				return new Automata.State(state.kind, state.children,
-						state.deterministic, data);
+				return new Automata.State(state.kind, data,
+						state.deterministic, state.children);
 			} else if (state.kind == Type.K_RECORD) {
 				int nfields = reader.read_uv();				
 				ArrayList<String> fields = new ArrayList<String>();
@@ -154,8 +154,8 @@ public class WhileyType implements BytecodeAttribute {
 					String f = ((Constant.Utf8) constantPool.get(index)).str;
 					fields.add(f);
 				}
-				return new Automata.State(state.kind, state.children,
-						state.deterministic, fields);
+				return new Automata.State(state.kind, fields,
+						state.deterministic, state.children);
 			}
 			return state;
 		}

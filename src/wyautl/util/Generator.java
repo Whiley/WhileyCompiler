@@ -120,7 +120,7 @@ public class Generator {
 					children[index++] = j;
 				}
 			}			
-			states[i] = new Automata.State(kind,children,KINDS[kind].DETERMINISTIC);
+			states[i] = new Automata.State(kind,KINDS[kind].DETERMINISTIC,children);
 		}
 		Automata automata = new Automata(states);					
 		

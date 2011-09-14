@@ -876,14 +876,14 @@ public final class Automatas {
 				nchildren = Arrays.copyOf(nchildren, nchildren.length-diff);
 			}
 		}
-		return new State(node.kind,nchildren,node.deterministic,node.data);
+		return new State(node.kind,node.data,node.deterministic,nchildren);
 	}
 	
 	public static void main(String[] args) {
 		State[] states = new State[3];
-		states[0] = new State(0,new int[]{1},false);
-		states[1] = new State(0,new int[]{1,2},false);
-		states[2] = new State(0,new int[]{},false);
+		states[0] = new State(0,false,new int[]{1});
+		states[1] = new State(0,false,new int[]{1,2});
+		states[2] = new State(0,false,new int[]{});
 		Automata a = new Automata(states);
 		System.out.println("GOT: " + a);
 		a = minimise(a);

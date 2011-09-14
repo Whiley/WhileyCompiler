@@ -1699,7 +1699,7 @@ public abstract class Type {
 	private static Type construct(byte kind, Object data, Type... children) {
 		int[] nchildren = new int[children.length];
 		boolean deterministic = kind != K_UNION;
-		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
+		Automata automata = new Automata(new State(kind, data, deterministic, nchildren));
 		int start = 1;
 		int i=0;
 		for(Type element : children) {
@@ -1723,7 +1723,7 @@ public abstract class Type {
 	private static Type construct(byte kind, Object data, Collection<Type> children) {						
 		int[] nchildren = new int[children.size()];
 		boolean deterministic = kind != K_UNION;
-		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
+		Automata automata = new Automata(new State(kind, data, deterministic, nchildren));
 		int start = 1;
 		int i=0;
 		for(Type element : children) {
@@ -1752,7 +1752,7 @@ public abstract class Type {
 				Existential x = (Existential) t;
 				data = x.nid;
 			}
-			State state = new State(kind, Automata.NOCHILDREN, true, data);
+			State state = new State(kind, data, true, Automata.NOCHILDREN);
 			return new Automata(new State[] { state });
 		} else {
 			// compound type

@@ -144,7 +144,7 @@ public final class Automata {
 		 *            --- State kind (must be positive integer).
 		 */
 		public State(int kind) {
-			this(kind,NOCHILDREN,true,null);
+			this(kind,null,true,NOCHILDREN);
 		}
 		
 		/**
@@ -156,7 +156,7 @@ public final class Automata {
 		 *            --- Array of child indices.
 		 */
 		public State(int kind, int... children) {
-			this(kind,children,true,null);
+			this(kind,null,true,children);
 		}
 
 		/**
@@ -164,14 +164,14 @@ public final class Automata {
 		 * 
 		 * @param kind
 		 *            --- State kind (must be positive integer).
-		 * @param children
-		 *            --- Array of child indices.
 		 * @param deterministic
 		 *            --- Indicates whether node should be treated as
 		 *            deterministic or not.
+		 * @param children
+		 *            --- Array of child indices.
 		 */
-		public State(int kind, int[] children, boolean deterministic) {
-			this(kind,children,deterministic,null);
+		public State(int kind, boolean deterministic, int... children) {
+			this(kind,null,deterministic,children);
 		}
 		
 		/**
@@ -179,15 +179,15 @@ public final class Automata {
 		 * 
 		 * @param kind
 		 *            --- State kind (must be positive integer).
-		 * @param children
-		 *            --- Array of child indices.
+		 * @param data
+		 *            --- Supplementary data store with state.
 		 * @param deterministic
 		 *            --- Indicates whether node should be treated as
 		 *            deterministic or not.
-		 * @param data
-		 *            --- Supplementary data store with state.
+		 * @param children
+		 *            --- Array of child indices.
 		 */
-		public State(int kind, int[] children, boolean deterministic, Object data) {
+		public State(int kind, Object data, boolean deterministic, int... children) {
 			this.kind = kind;
 			this.children = children;
 			this.data = data;

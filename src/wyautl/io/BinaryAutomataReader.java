@@ -53,6 +53,6 @@ public class BinaryAutomataReader implements GenericReader<Automata> {
 		for (int i=0;i!=nchildren;++i) {
 			children[i]=reader.read_uv();
 		}
-		return new Automata.State(kind,children,deterministic);
+		return new Automata.State(kind,deterministic,children);
 	}
 }	
