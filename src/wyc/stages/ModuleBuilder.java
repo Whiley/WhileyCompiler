@@ -1512,7 +1512,7 @@ public class ModuleBuilder {
 		int i = 0;
 		for (Expr e : args) {
 			blk.append(resolve(e, environment));
-			paramTypes[i++] = Type.T_VOID;
+			paramTypes[i++] = Type.T_ANY;
 		}	
 					
 		if(variableIndirectInvoke) {			

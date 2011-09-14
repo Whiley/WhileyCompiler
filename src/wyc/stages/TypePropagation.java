@@ -1371,7 +1371,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		// Check whether we actually found something. If not, print a useful
 		// error message.
-		if(candidate == null) {
+		if(candidate == null) {			
 			String msg = "no match for " + nid.name() + parameterString(paramTypes);
 			boolean firstTime = true;
 			int count = 0;
