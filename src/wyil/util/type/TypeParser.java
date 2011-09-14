@@ -39,7 +39,7 @@ public class TypeParser {
 			} else {
 				// intersection type
 				match("&");
-				term = Intersection(term,parse(typeVariables));
+				term = Type.intersect(term,parse(typeVariables));
 			}
 			skipWhiteSpace();
 		}

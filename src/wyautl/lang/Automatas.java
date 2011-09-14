@@ -131,7 +131,29 @@ public final class Automatas {
 		}			
 		return new Automata(newNodes);
 	}
+	
+
+	public static void extractOnto(int index, Automata automata,
+			ArrayList<Automata.State> newNodes) { 		
+		// First, perform a depth-first search from the root.
+		State[] nodes = automata.states;		
+		ArrayList<Integer> extracted = new ArrayList<Integer>();
+		extract(index,new BitSet(nodes.length),extracted,nodes);
 		
+		// Second, build up remapping
+		int[] remap = new int[nodes.length];
+		int i=newNodes.size();
+		for(int j : extracted) {
+			remap[j]=i++;
+		}
+		// Third, apply remapping
+		i=0;
+		for(int j : extracted) {
+			newNodes.add(remap(nodes[j],remap));  
+		}			
+	}
+		
+	
 	/**
 	 * The following method recursively extracts the subgraph rooted at
 	 * <code>index</code> in the given graph using a depth-first search.

@@ -1254,35 +1254,6 @@ public abstract class Type {
 	}
 
 	/**
-	 * An intersection type represents a type which accepts values in the
-	 * intersection of its bounds. <b>NOTE:</b>There must be at least two bounds
-	 * for an intersection type to make sense.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Intersection extends Compound {
-		private Intersection(Automata automata) {
-			super(automata);
-		}
-
-		/**
-		 * Return the bounds of this union type.
-		 * 
-		 * @return
-		 */
-		public HashSet<Type> bounds() {			
-			HashSet<Type> r = new HashSet<Type>();
-			int[] fields = (int[]) automata.states[0].children;
-			for(int i : fields) {
-				Type b = construct(Automatas.extract(automata,i));					
-				r.add(b);					
-			}			
-			return r;
-		}
-	}
-	
-	/**
 	 * A difference type represents a type which accepts values in the
 	 * difference between its bounds. 
 	 * 
@@ -1469,17 +1440,6 @@ public abstract class Type {
 			}
 			break;
 		}
-		case K_INTERSECTION: {
-			int[] children = state.children;
-			middle = "";
-			for (int i = 0; i != children.length; ++i) {											
-				if(i != 0 || children.length == 1) {
-					middle += "&";
-				}
-				middle += toBracesString(children[i], visited, headers, automata);
-			}
-			break;
-		}
 		case K_TUPLE: {
 			middle = "";
 			int[] children = state.children;			
@@ -1566,8 +1526,7 @@ public abstract class Type {
 		}
 		String middle = toString(index,visited,headers,automata);
 		State state = automata.states[index];
-		switch(state.kind) {
-			case K_INTERSECTION:
+		switch(state.kind) {		
 			case K_UNION:
 			case K_FUNCTION:
 			case K_METHOD:
@@ -1714,8 +1673,6 @@ public abstract class Type {
 			return new Record(automata);
 		case K_UNION:
 			return new Union(automata);
-		case K_INTERSECTION:
-			return new Intersection(automata);
 		case K_NEGATION:
 			return new Negation(automata);
 		case K_METHOD:
@@ -1741,7 +1698,7 @@ public abstract class Type {
 	 */
 	private static Type construct(byte kind, Object data, Type... children) {
 		int[] nchildren = new int[children.length];
-		boolean deterministic = (kind != K_UNION && kind != K_INTERSECTION);
+		boolean deterministic = kind != K_UNION;
 		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
 		int start = 1;
 		int i=0;
@@ -1765,7 +1722,7 @@ public abstract class Type {
 	 */
 	private static Type construct(byte kind, Object data, Collection<Type> children) {						
 		int[] nchildren = new int[children.size()];
-		boolean deterministic = (kind != K_UNION && kind != K_INTERSECTION);
+		boolean deterministic = kind != K_UNION;
 		Automata automata = new Automata(new State(kind, nchildren, deterministic, data));
 		int start = 1;
 		int i=0;
@@ -1849,7 +1806,7 @@ public abstract class Type {
 	 * @return
 	 */
 	private static Automata normalise(Automata automata) {		
-		Automatas.rewrite(automata,new TypeSimplifications());		
+		//Automatas.rewrite(automata,new TypeSimplifications());		
 		automata = Automatas.extract(automata, 0);		
 		automata = Automatas.minimise(automata);		
 		return automata;
@@ -1872,7 +1829,6 @@ public abstract class Type {
 	public static final byte K_PROCESS = 14;
 	public static final byte K_RECORD = 15;
 	public static final byte K_UNION = 16;
-	public static final byte K_INTERSECTION = 17;
 	public static final byte K_NEGATION = 18;
 	public static final byte K_FUNCTION = 19;
 	public static final byte K_METHOD = 20;
@@ -1882,15 +1838,14 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = fromString("X<[X|real]>");
-		Type to = fromString("X<[X|int]>");									
-		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
+		Type from = fromString("[any]");
+		Type to = fromString("[{int field}]");									
+		//System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
 		//System.out.println("normalised(" + to + ") = " + normalise(to));
 		System.out.println("isContractive(" + from + ") = " + isContractive(from));
 		System.out.println("isContractive(" + to + ") = " + isContractive(to));
-		to = Type.Intersection(from,to);
-		System.out.println(from + " & " + to + " = " + to);
+		System.out.println(from + " & " + to + " = " + intersect(from,to));
 	}
 	
 	public static Type contractive() {

@@ -155,7 +155,7 @@ public final class Automata {
 		 * @param children
 		 *            --- Array of child indices.
 		 */
-		public State(int kind, int[] children) {
+		public State(int kind, int... children) {
 			this(kind,children,true,null);
 		}
 
