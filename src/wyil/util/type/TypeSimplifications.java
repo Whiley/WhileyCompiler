@@ -579,6 +579,7 @@ public final class TypeSimplifications implements RewriteRule {
 		
 		int index = allocations.size();
 		states.add(null); // allocate space for me
+		
 	}
 	
 	private static int[] removeIndex(int index, int[] children) {
