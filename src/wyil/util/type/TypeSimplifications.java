@@ -277,11 +277,23 @@ public final class TypeSimplifications implements RewriteRule {
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];		
 				
+		// now, dispatch for the appropriate case.
 		if(fromState.kind == toState.kind) {
-			return intersectSameKind(fromIndex, fromSign, from, toIndex,
-					toSign, to, allocations, states);
+			if(fromSign && toSign) {
+				return intersectSameKindPosPos(fromIndex, from, toIndex,
+					to, allocations, states);
+			} else if(fromSign) {
+				return intersectSameKindPosNeg(fromIndex, from, toIndex,
+						to, allocations, states);
+			} else if(toSign) {
+				return intersectSameKindNegPos(fromIndex, from, toIndex,
+						to, allocations, states);
+			} else {
+				return intersectSameKindNegNeg(fromIndex, from, toIndex,
+						to, allocations, states);
+			}
 		} else {
-			return intersectDifferenceKind(fromIndex, fromSign, from, toIndex,
+			return intersectDifferentKind(fromIndex, fromSign, from, toIndex,
 					toSign, to, allocations, states);
 		}
 	}
@@ -312,7 +324,7 @@ public final class TypeSimplifications implements RewriteRule {
 	 *            constructed/
 	 * @return
 	 */
-	private static int intersectDifferenceKind(int fromIndex, boolean fromSign,
+	private static int intersectDifferentKind(int fromIndex, boolean fromSign,
 			Automata from, int toIndex, boolean toSign, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automata.State> states) {
@@ -325,6 +337,8 @@ public final class TypeSimplifications implements RewriteRule {
 		int fromKind = invert(fromState.kind,fromSign);
 		int toKind = invert(toState.kind,toSign);
 		
+		
+		// TODO: tidy this mess up
 		if(fromKind == Type.K_VOID || toKind == Type.K_VOID) {
 			myState = new Automata.State(Type.K_VOID);
 		} else if(fromKind == Type.K_UNION) {
@@ -389,22 +403,18 @@ public final class TypeSimplifications implements RewriteRule {
 		
 		return myIndex;
 	}
-
+	
 	/**
-	 * The following method intersects two nodes which have identical kind. A
-	 * precondition is that space has already been allocated in states for the
-	 * resulting node.
+	 * The following method intersects two nodes with positive sign which have
+	 * identical kind. A precondition is that space has already been allocated
+	 * in states for the resulting node.
 	 * 
 	 * @param fromIndex
-	 *            --- index of state in from position
-	 * @param fromSign
 	 *            --- index of state in from position
 	 * @param from
 	 *            --- automata in the from position (i.e. containing state at
 	 *            fromIndex).
 	 * @param toIndex
-	 *            --- index of state in to position
-	 * @param toSign
 	 *            --- index of state in to position
 	 * @param to
 	 *            --- automata in the to position (i.e. containing state at
@@ -416,8 +426,327 @@ public final class TypeSimplifications implements RewriteRule {
 	 *            constructed/
 	 * @return
 	 */
-	private static int intersectSameKind(int fromIndex, boolean fromSign,
-			Automata from, int toIndex, boolean toSign, Automata to,
+	private static int intersectSameKindPosPos(int fromIndex, Automata from,
+			int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+		int myIndex = states.size()-1;
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = to.states[toIndex];		
+		Automata.State myState = null;
+		
+		switch(fromState.kind) {
+			case Type.K_VOID: {
+				// void & void => void
+				myState = new Automata.State(Type.K_VOID);				
+				break;
+			}
+			case Type.K_ANY: {
+				// any & any => any
+				myState = new Automata.State(Type.K_ANY);
+				break;
+			}				
+			case Type.K_LABEL:
+			case Type.K_EXISTENTIAL: {
+				
+			}			
+			case Type.K_RECORD: {
+				if(!fromState.data.equals(toState.data)) {					
+					// e.g. {int f} & {int g} => void
+					myState = new Automata.State(Type.K_VOID);
+					break;
+				}
+				// now fall through as for the other compound types.
+			}
+			case Type.K_TUPLE:
+				if(fromState.children.length != toState.children.length) {					
+					// e.g. (int,int) & (int) => void
+					myState = new Automata.State(Type.K_VOID);
+					break;
+				}					
+			case Type.K_PROCESS: 
+			case Type.K_LIST:
+			case Type.K_SET:
+			case Type.K_DICTIONARY: {								
+				// e.g. [T1] & [T2] => [T1&T2]				
+				int[] fromChildren = fromState.children;
+				int[] toChildren = toState.children;
+				int[] myChildren = new int[fromChildren.length];
+				for(int i=0;i!=fromChildren.length;++i) {
+					int fromChild = fromChildren[i];
+					int toChild = toChildren[i];
+					myChildren[i] = intersect(fromChild, true, from,
+							toChild, true, to, allocations, states);
+				}				
+				myState = new Automata.State(fromState.kind, fromState.data,
+						true, myChildren);
+				break;
+			}							
+			case Type.K_NEGATION: {
+				// !T1 & !T2 => !T1 & !T2 (!)
+				int fromChild = fromState.children[0];
+				int toChild = toState.children[0];
+				return intersect(fromChild,false,from,toChild,false,to,allocations,states);
+			}				
+			case Type.K_UNION: {
+				int[] fromChildren = fromState.children;
+				int[] newChildren = new int[fromChildren.length];
+				for (int i = 0; i != fromChildren.length; ++i) {
+					int fromChild = fromChildren[i];
+					newChildren[i] = intersect(fromChild, true, from,
+							toIndex, true, to, allocations, states);
+				}
+				myState = new Automata.State(Type.K_UNION, false, newChildren);
+				break;
+			}
+			case Type.K_FUNCTION:
+			case Type.K_HEADLESS:
+			case Type.K_METHOD:
+				
+			default: {
+				// K_BYTE, K_CHAR, K_INT, K_RATIONAL
+				// K_STRING, K_NULL			
+				// e.g. INT & INT => INT
+				myState = new Automata.State(fromState.kind);
+				break;
+			}		
+		}
+		
+		states.set(myIndex, myState);
+		
+		return myIndex;
+	}
+
+	/**
+	 * The following method intersects two nodes with (resp. positive and
+	 * negative sign) which have identical kind. A precondition is that space
+	 * has already been allocated in states for the resulting node.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed/
+	 * @return
+	 */
+	private static int intersectSameKindPosNeg(int fromIndex, Automata from,
+			int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+	
+		int myIndex = states.size()-1;
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = to.states[toIndex];		
+		Automata.State myState = null;
+		
+		switch(fromState.kind) {
+			case Type.K_ANY: 
+			case Type.K_VOID: {
+				// void & !void => void
+				// any & !any => void
+				myState = new Automata.State(Type.K_VOID);				
+				break;
+			}
+							
+			case Type.K_LABEL:
+			case Type.K_EXISTENTIAL:
+			
+			case Type.K_LIST:
+			case Type.K_SET: {
+				int fromChild = fromState.children[0];
+				int toChild = toState.children[0];
+				// e.g. [T1] & ![T2] => [T1&!T2]
+				int childIndex = intersect(fromChild, true, from,
+						toChild, false, to, allocations, states);
+				myState = new Automata.State(fromState.kind, childIndex);				
+			}
+			break;
+
+			case Type.K_RECORD: {
+				if(!fromState.data.equals(toState.data)) {					
+					// e.g. {int f} & !{int g} => {int f}
+					states.remove(states.size()-1);
+					Automatas.extractOnto(fromIndex,from,states);
+					return myIndex;
+				}
+				// now fall through as for the other compound types.
+			}
+			case Type.K_DICTIONARY:
+			case Type.K_TUPLE:
+			case Type.K_PROCESS:
+				
+			
+			case Type.K_NEGATION: {
+				// !T1 & !!T2 => !T1 & T2 (!)
+				int fromChild = fromState.children[0];
+				int toChild = toState.children[0];
+				return intersect(fromChild,false,from,toChild,true,to,allocations,states);
+			}				
+			case Type.K_UNION: {
+				// (T1|T2) & !(T3|T4) => (T1&!(T3|T4)) | (T2&!(T3|T4))
+				int[] fromChildren = fromState.children;
+				int[] newChildren = new int[fromChildren.length];
+				for (int i = 0; i != fromChildren.length; ++i) {
+					int fromChild = fromChildren[i];
+					newChildren[i] = intersect(fromChild, true, from,
+							toIndex, false, to, allocations, states);
+				}
+				myState = new Automata.State(Type.K_UNION, false, newChildren);
+				break;
+			}
+			case Type.K_FUNCTION:
+			case Type.K_HEADLESS:
+			case Type.K_METHOD:
+				
+			default: {
+				// e.g. !INT & INT => INT
+				myState = new Automata.State(Type.K_VOID);				
+				break;
+			}		
+		}
+		
+		states.set(myIndex, myState);
+		
+		return myIndex;
+	}
+
+	/**
+	 * The following method intersects two nodes with (resp. negative and
+	 * positive sign) which have identical kind. A precondition is that space
+	 * has already been allocated in states for the resulting node.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed/
+	 * @return
+	 */
+	private static int intersectSameKindNegPos(int fromIndex, Automata from,
+			int toIndex, Automata to,
+			HashMap<IntersectionPoint, Integer> allocations,
+			ArrayList<Automata.State> states) {
+	
+		int myIndex = states.size()-1;
+		Automata.State fromState = from.states[fromIndex];
+		Automata.State toState = to.states[toIndex];		
+		Automata.State myState = null;
+		
+		switch(fromState.kind) {
+			case Type.K_ANY: 
+			case Type.K_VOID: {
+				// !void & void => void
+				// !any & any => void
+				myState = new Automata.State(Type.K_VOID);				
+				break;
+			}
+							
+			case Type.K_LABEL:
+			case Type.K_EXISTENTIAL:
+			
+			case Type.K_LIST:
+			case Type.K_SET: {
+				int fromChild = fromState.children[0];
+				int toChild = toState.children[0];
+				// e.g. ![T1] & [T2] => [!T1&T2]
+				int childIndex = intersect(fromChild, false, from,
+						toChild, true, to, allocations, states);
+				myState = new Automata.State(fromState.kind, childIndex);				
+			}
+			break;
+
+			case Type.K_RECORD: {
+				if(!fromState.data.equals(toState.data)) {					
+					// e.g. !{int f} & {int g} => {int g}
+					states.remove(states.size()-1);
+					Automatas.extractOnto(toIndex,to,states);
+					return myIndex;
+				}
+				// now fall through as for the other compound types.
+			}
+			case Type.K_DICTIONARY:
+			case Type.K_TUPLE:
+			case Type.K_PROCESS:
+				
+			
+			case Type.K_NEGATION: {
+				// !!T1 & !T2 => T1 & !T2 (!)
+				int fromChild = fromState.children[0];
+				int toChild = toState.children[0];
+				return intersect(fromChild,true,from,toChild,false,to,allocations,states);
+			}				
+			case Type.K_UNION: {
+				// !(T1|T2) & (T3|T4) => !(T1|T2)&T3 | !(T1|T2)&T3
+				int[] toChildren = toState.children;
+				int[] newChildren = new int[toChildren.length];
+				for (int i = 0; i != toChildren.length; ++i) {
+					int toChild = toChildren[i];
+					newChildren[i] = intersect(fromIndex, false, from,
+							toChild, true, to, allocations, states);
+				}
+				myState = new Automata.State(Type.K_UNION, false, newChildren);
+				break;
+			}				
+			case Type.K_FUNCTION:
+			case Type.K_HEADLESS:
+			case Type.K_METHOD:
+				
+			default: {
+				// e.g. INT & !INT => INT
+				myState = new Automata.State(Type.K_VOID);				
+				break;
+			}		
+		}
+		
+		states.set(myIndex, myState);
+		
+		return myIndex;
+	}
+
+	/**
+	 * The following method intersects two nodes with (resp) negative and
+	 * negative sign which have identical kind. A precondition is that space has
+	 * already been allocated in states for the resulting node.
+	 * 
+	 * @param fromIndex
+	 *            --- index of state in from position
+	 * @param from
+	 *            --- automata in the from position (i.e. containing state at
+	 *            fromIndex).
+	 * @param toIndex
+	 *            --- index of state in to position
+	 * @param to
+	 *            --- automata in the to position (i.e. containing state at
+	 *            toIndex).
+	 * @param allocations
+	 *            --- mapping of intersection points to their index in states
+	 * @param states
+	 *            --- list of states which constitute the new automata being
+	 *            constructed/
+	 * @return
+	 */
+	private static int intersectSameKindNegNeg(int fromIndex, Automata from,
+			int toIndex, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automata.State> states) {
 		
@@ -428,118 +757,74 @@ public final class TypeSimplifications implements RewriteRule {
 		
 		switch(fromState.kind) {
 			case Type.K_VOID: {
-				if(!fromSign && !toSign) {
-					myState = new Automata.State(Type.K_ANY);
-				} else {
-					myState = new Automata.State(Type.K_VOID);
-				}
+				// !void & !void => any
+				myState = new Automata.State(Type.K_ANY);				
 				break;
 			}
 			case Type.K_ANY: {
-				if(fromSign && toSign) {
-					myState = new Automata.State(Type.K_ANY);
-				} else {
-					myState = new Automata.State(Type.K_VOID);
-				}
+				// !any & !any -> void				
+				myState = new Automata.State(Type.K_VOID);				
 				break;
 			}
 				
 			case Type.K_LABEL:
 			case Type.K_EXISTENTIAL:
+						
+			break;
 			
+			case Type.K_PROCESS:
 			case Type.K_LIST:
-			case Type.K_SET: {
+			case Type.K_SET:
+			case Type.K_DICTIONARY:
+			case Type.K_TUPLE: 
+			case Type.K_RECORD: {
+				// e.g. ![int] & ![real] => !([int]|[real])
+				int childIndex = states.size();						
+				states.add(null);
+				int fromChild = states.size();
+				Automatas.extractOnto(fromIndex,from,states);
+				int toChild = states.size();
+				Automatas.extractOnto(toIndex,to,states);
+				states.set(childIndex, new Automata.State(Type.K_UNION,false,fromChild,toChild));
+				myState = new Automata.State(Type.K_NEGATION,childIndex);
+				break;
+			}				
+			case Type.K_NEGATION: {
+				// !!T1 & !!T2 => T1 & T2 (!)
 				int fromChild = fromState.children[0];
 				int toChild = toState.children[0];
-				// != below not ||. This is because lists and sets can intersect
-				// on the empty list/set.
-				if (!fromSign && !toSign) {
-					// e.g. ![int] & ![real] => !([int],[real])
-					int nFromChild = states.size();
-					int nToChild = states.size() + 1;
-					states.add(new Automata.State(fromState.kind));
-					states.add(new Automata.State(toState.kind));
-					myState = new Automata.State(Type.K_NEGATION, nFromChild,
-							nToChild);
-				} else {
-					// e.g. [T1] & [T2] => [T1&T2]
-					int childIndex = intersect(fromChild, fromSign, from,
-							toChild, toSign, to, allocations, states);
-					myState = new Automata.State(fromState.kind, childIndex);
-				}
-			}
-			break;
-
-			case Type.K_RECORD: {
-				if(fromState.data != toState.data) {
-					// fields must be identical
-					if(fromSign && toSign) {
-						// e.g. {int f} & {int g} => void
-						myState = new Automata.State(Type.K_VOID);						
-					} else if(fromSign) {
-						// e.g. {int f} & !{int g} => {int f}
-						states.remove(states.size()-1);
-						Automatas.extractOnto(fromIndex,from,states);
-						return myIndex;
-					} else if(toSign) {
-						// e.g. !{int f} & {int g} => {int g}
-						states.remove(states.size()-1);
-						Automatas.extractOnto(toIndex,to,states);
-						return myIndex;
-					} else {					
-						// e.g. !{int f} & !{int g} => !({int f}|{int g})
-						int childIndex = states.size();						
-						states.add(null);
-						int fromChild = states.size();
-						Automatas.extractOnto(fromIndex,from,states);
-						int toChild = states.size();
-						Automatas.extractOnto(toIndex,to,states);
-						states.set(childIndex, new Automata.State(Type.K_UNION,false,fromChild,toChild));
-						myState = new Automata.State(Type.K_NEGATION,childIndex);
-					}						
-				}
-				// now fall through as for the other compound types.
-			}
-			case Type.K_DICTIONARY:
-			case Type.K_TUPLE:
-			case Type.K_PROCESS:
-				
-			
-			case Type.K_NEGATION: {
-				
+				return intersect(fromChild,true,from,toChild,true,to,allocations,states);			
 			}				
 			case Type.K_UNION: {
+				// !(T1|T2) & !(T3|T4) => !T1 & !T2 & !T3 & !T4 => !(T1|T2|T3|T4)
 				int[] fromChildren = fromState.children;
-				int[] newChildren = new int[fromChildren.length];
+				int[] toChildren = toState.children;
+				int[] newChildren = new int[fromChildren.length+toChildren.length];
+				int childIndex = states.size();
+				states.add(new Automata.State(Type.K_UNION, false, newChildren));
 				for (int i = 0; i != fromChildren.length; ++i) {
 					int fromChild = fromChildren[i];
-					newChildren[i] = intersect(fromChild, fromSign, from,
-							toIndex, toSign, to, allocations, states);
+					newChildren[i] = states.size();
+					Automatas.extractOnto(fromChild,from,states);					
 				}
-				myState = new Automata.State(Type.K_UNION, false, newChildren);
-			}
+				for (int i = 0; i != toChildren.length; ++i) {
+					int toChild = toChildren[i];
+					newChildren[i+fromChildren.length] = states.size();
+					Automatas.extractOnto(toChild,to,states);					
+				}
+				myState = new Automata.State(Type.K_NEGATION, true, childIndex);
 				break;
+			}				
 			case Type.K_FUNCTION:
 			case Type.K_HEADLESS:
 			case Type.K_METHOD:
 				
 			default: {
-				// K_BYTE, K_CHAR, K_INT, K_RATIONAL
-				// K_STRING, K_NULL
-			
-				if(fromSign && toSign) {
-					// e.g. INT & INT => INT
-					myState = new Automata.State(fromState.kind);
-				} else if(fromSign != toSign) {
-					// e.g. !INT & INT => INT
-					myState = new Automata.State(Type.K_VOID);
-				} else {
-					// e.g. !INT & !INT => !INT
-					int childIndex = states.size();
-					states.add(new Automata.State(fromState.kind));
-					myState = new Automata.State(Type.K_NEGATION,childIndex);
-				}
-				break;
+				// e.g. !INT & !INT => !INT
+				int childIndex = states.size();
+				states.add(new Automata.State(fromState.kind));
+				myState = new Automata.State(Type.K_NEGATION,childIndex);			
+				break;			
 			}		
 		}
 		
