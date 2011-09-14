@@ -383,8 +383,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_INT,lhs,stmt);
 				checkIsSubtype(Type.T_INT,rhs,stmt);
 				result = Type.T_INT;
-			} else if(Type.isCoerciveSubtype(lhs,rhs)) {
-				System.out.println("COERCIVE SUBTYPE: " + lhs + " :> " + rhs);
+			} else if(Type.isCoerciveSubtype(lhs,rhs)) {				
 				checkIsSubtype(Type.T_REAL,lhs,stmt);
 				result = lhs;
 			} else {

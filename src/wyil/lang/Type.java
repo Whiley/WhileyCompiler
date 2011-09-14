@@ -799,7 +799,7 @@ public abstract class Type {
 			Automata automata = compound.automata;
 			Automatas.rewrite(automata,new TypeSimplifications());						
 			automata = Automatas.extract(automata, 0);
-			//automata = Automatas.minimise(automata);
+			automata = Automatas.minimise(automata);
 			//automata = Automatas.canonicalise(automata);
 			return construct(automata);
 		} else {

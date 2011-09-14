@@ -212,8 +212,10 @@ public class ClassFileBuilder {
 		JvmType.Function ft2 = new JvmType.Function(WHILEYLIST,
 				new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL,"fromStringList",ft2,Bytecode.STATIC));
-		Type.Fun wyft = Type.T_METH(null,Type.T_VOID, WHILEY_SYSTEM_T,
+		Type.Fun wyft = (Type.Fun) Type.T_METH(null,Type.T_VOID, WHILEY_SYSTEM_T,
 						Type.T_LIST(Type.T_STRING));
+		System.out.println("CREATED: " + wyft);
+		System.out.println("AUTOMATA: " + Type.destruct(wyft));
 		JvmType.Function ft3 = convertFunType(wyft);
 		
 		// The following is a little bit of hack. Basically we flush the stdout
@@ -248,6 +250,7 @@ public class ClassFileBuilder {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);		
+		Type t = Type.normalise(method.type());		
 		JvmType.Function ft = convertFunType(method.type());		
 		String name = nameMangle(method.name(),method.type());
 		/* need to put this back somehow?
