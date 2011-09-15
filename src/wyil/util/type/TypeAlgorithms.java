@@ -5,8 +5,22 @@ import java.util.BitSet;
 import java.util.HashMap;
 
 import wyautl.lang.*;
+import wyautl.lang.Automata.State;
 
+import wyil.lang.NameID;
 import wyil.lang.Type;
+import wyil.lang.Type.Compound;
+import wyil.lang.Type.Dictionary;
+import wyil.lang.Type.Existential;
+import wyil.lang.Type.Function;
+import wyil.lang.Type.List;
+import wyil.lang.Type.Method;
+import wyil.lang.Type.Negation;
+import wyil.lang.Type.Process;
+import wyil.lang.Type.Record;
+import wyil.lang.Type.Set;
+import wyil.lang.Type.Tuple;
+import wyil.lang.Type.Union;
 
 
 public final class TypeAlgorithms {
@@ -38,70 +52,51 @@ public final class TypeAlgorithms {
 	 * </p>
 	 * 
 	 */
-	public static Type simplify(Type type) {
-		Automata automata = Type.destruct(type);
-		HashMap<Integer,Integer> allocations = new HashMap();		
-		ArrayList<Automata.State> nstates = new ArrayList();
-		simplify(0,automata,allocations,nstates);		
-		Automata nautomata = new Automata(nstates.toArray(new Automata.State[nstates.size()]));
-		return Type.construct(nautomata); // will cause infinite loop.
-	}
+	public static Automata simplify(Automata automata) {
+		Automata nautomata = Automatas.extract(automata, 0);
+//		boolean changed = true;
+//		while(changed) {			
+//			changed = simplify(0,nautomata);
+//		}
+		return nautomata;
+	}	
 	
-	private static int simplify(int index, Automata automata,
-			HashMap<Integer, Integer> allocations,
-			ArrayList<Automata.State> states) {		
-		// first, check whether we've already simplified this node
-		Integer allocation = allocations.get(index);
-		if(allocation != null) { return allocation;}
-		
-		// looks like we haven't, so proceed to determine simplified state.
-		int myIndex = states.size();
-		allocations.put(index,myIndex);
-		states.add(null); // allocate space for me
-		
+	private static boolean simplify(int index, Automata automata) {
 		Automata.State state = automata.states[index];
-		Automata.State myState = null;
+		boolean changed=false;
+		switch (state.kind) {
+		case Type.K_UNION :
+			changed = simplifyUnion(index, state, automata);
+			break;
+		case Type.K_DICTIONARY:
+		case Type.K_RECORD:
+		case Type.K_TUPLE:
+		case Type.K_FUNCTION:
+		case Type.K_METHOD:
+		case Type.K_HEADLESS:
+			changed = simplifyCompound(index, state, automata);
+			break;
+		}		
+		return changed;
+	}
+
+	private static boolean simplifyCompound(int index, Automata.State state, Automata automata) {
 		int kind = state.kind;
-		
-		switch(kind) {
-			case Type.K_PROCESS:
-			case Type.K_LIST:
-			case Type.K_SET:
-			case Type.K_DICTIONARY:
-			case Type.K_RECORD: 
-			case Type.K_FUNCTION:
-			case Type.K_HEADLESS:
-			case Type.K_METHOD:{
-				int[] children = state.children;
-				int[] nchildren = new int[children.length];
-				for(int i=0;i<children.length;++i) {
-					
-					Automata.State child = automata.states[children[i]];
-					if (i == 0 && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
-						// headless method and function return type allowed to be void									
-					} else if(i == 1 && kind == Type.K_METHOD) {
-						// method return type allowed to be void						
-					} else if(child.kind == Type.K_VOID) {
-						// roll back what we may have already allocated
-						while(states.size() > myIndex) {
-							states.remove(states.size()-1);
-						}
-						states.add(new Automata.State(Type.K_VOID));
-						return myIndex;
-					}			
-				}
-				myState = ???;
+		int[] children = state.children;
+		for(int i=0;i<children.length;++i) {
+			if (i == 0 && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
+				// headless method and function return type allowed to be void
+				continue;
+			} else if(i == 1 && kind == Type.K_METHOD) {
+				// method return type allowed to be void
+				continue;
+			}
+			Automata.State child = automata.states[children[i]];
+			if(child.kind == Type.K_VOID) {
+				automata.states[index] = new Automata.State(Type.K_VOID);
+				return true;
 			}
 		}
-		
-		states.set(myIndex,myState);
-		
-		return myIndex;
-	}
-	
-	public boolean applyCompound(int index, Automata.State state, Automata automata) {
-		int kind = state.kind;
-		
 		return false;
 	}
 		
@@ -123,10 +118,10 @@ public final class TypeAlgorithms {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	public boolean applyUnion(int index, Automata.State state,
+	private static boolean simplifyUnion(int index, Automata.State state,
 			Automata automata) {
-		return applyUnion_1(index, state, automata)
-				|| applyUnion_2(index, state, automata);
+		return simplifyUnion_1(index, state, automata)
+				|| simplifyUnion_2(index, state, automata);
 	}
 	
 	/**
@@ -146,7 +141,7 @@ public final class TypeAlgorithms {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	private boolean applyUnion_1(int index, Automata.State state,
+	private static boolean simplifyUnion_1(int index, Automata.State state,
 			Automata automata) {
 		int[] children = state.children;
 		boolean changed = false;
@@ -201,7 +196,7 @@ public final class TypeAlgorithms {
 	 *            --- automata containing state being worked on.
 	 * @return
 	 */
-	private boolean applyUnion_2(int index, Automata.State state,
+	private static boolean simplifyUnion_2(int index, Automata.State state,
 			Automata automata) {
 		boolean changed = false;
 		int[] children = state.children;
@@ -234,6 +229,12 @@ public final class TypeAlgorithms {
 		return changed;
 	}
 	
+	private static boolean isSubtype(int fromIndex, int toIndex,
+			Automata automata) {
+		SubtypeOperator op = new SubtypeOperator(automata,automata);
+		return op.isSubtype(fromIndex, toIndex);
+	}
+	
 	private final static class IntersectionPoint {
 		public final int fromIndex;
 		public final boolean fromSign;
@@ -261,6 +262,15 @@ public final class TypeAlgorithms {
 		}
 	}
 	
+	/**
+	 * Compute the intersection of two types. The resulting type will only
+	 * accept values which are accepted by both types being intersected.. In
+	 * many cases, the only valid intersection will be <code>void</code>.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
 	public static Type intersect(Type t1, Type t2) {
 		Automata a1 = Type.destruct(t1);
 		Automata a2 = Type.destruct(t2);
@@ -401,16 +411,17 @@ public final class TypeAlgorithms {
 			Automatas.extractOnto(toIndex,to,states);
 			return myIndex;
 		} else {
-			int childIndex = states.size();
-			int nFromChild = states.size()+1;
-			int nToChild = states.size()+2;	
-			new Automata.State(Type.K_UNION, nFromChild,
-					nToChild);			
-			Automatas.extractOnto(fromIndex,from,states);							
+			int childIndex = states.size();			
+			states.add(null);		
+			int nFromChild = states.size();			
+			Automatas.extractOnto(fromIndex,from,states);
+			int nToChild = states.size();
 			Automatas.extractOnto(toIndex,to,states);
+			states.set(childIndex,new Automata.State(Type.K_UNION, nFromChild,
+					nToChild));
 			myState = new Automata.State(Type.K_NEGATION, childIndex);
 		}
-		
+				
 		states.set(myIndex, myState);
 		
 		return myIndex;
@@ -494,8 +505,9 @@ public final class TypeAlgorithms {
 			}							
 			case Type.K_NEGATION: {
 				// !T1 & !T2 => !T1 & !T2 (!)
+				states.remove(states.size()-1);
 				int fromChild = fromState.children[0];
-				int toChild = toState.children[0];
+				int toChild = toState.children[0];				
 				return intersect(fromChild,false,from,toChild,false,to,allocations,states);
 			}				
 			case Type.K_UNION: {
@@ -640,6 +652,7 @@ public final class TypeAlgorithms {
 			}
 			case Type.K_NEGATION: {
 				// !T1 & !!T2 => !T1 & T2 (!)
+				states.remove(states.size()-1);
 				int fromChild = fromState.children[0];
 				int toChild = toState.children[0];
 				return intersect(fromChild,false,from,toChild,true,to,allocations,states);
@@ -784,6 +797,7 @@ public final class TypeAlgorithms {
 			}							
 			case Type.K_NEGATION: {
 				// !!T1 & !T2 => T1 & !T2 (!)
+				states.remove(states.size()-1);
 				int fromChild = fromState.children[0];
 				int toChild = toState.children[0];
 				return intersect(fromChild,true,from,toChild,false,to,allocations,states);
@@ -916,6 +930,7 @@ public final class TypeAlgorithms {
 			}				
 			case Type.K_NEGATION: {
 				// !!T1 & !!T2 => T1 & T2 (!)
+				states.remove(states.size()-1);
 				int fromChild = fromState.children[0];
 				int toChild = toState.children[0];
 				return intersect(fromChild,true,from,toChild,true,to,allocations,states);			
@@ -1063,5 +1078,5 @@ public final class TypeAlgorithms {
 			index = index - 1;
 		}
 		return index;
-	}
+	}	
 }

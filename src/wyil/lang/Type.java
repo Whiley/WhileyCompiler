@@ -1612,15 +1612,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public final static Type construct(Automata automata) {
-		return construct(automata,true);
-	}
-	public final static Type construct(Automata automata, boolean normalise) {
-		
-		// first, normalise automata
-		if(normalise) {
-			automata = normalise(automata);
-		}
-		
+		automata = normalise(automata);
 		// second, construc the appropriate face
 		State root = automata.states[0];
 		switch(root.kind) {
@@ -1793,7 +1785,7 @@ public abstract class Type {
 	 * @return
 	 */
 	private static Automata normalise(Automata automata) {		
-		//Automatas.rewrite(automata,new TypeSimplifications());		
+		automata = TypeAlgorithms.simplify(automata);
 		automata = Automatas.extract(automata, 0);		
 		automata = Automatas.minimise(automata);		
 		return automata;
@@ -1825,7 +1817,7 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = fromString("any");
+		Type from = fromString("!any");
 		Type to = fromString("!int");									
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
