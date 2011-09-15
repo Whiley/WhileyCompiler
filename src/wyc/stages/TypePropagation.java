@@ -844,7 +844,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		for(int i=keys.size()-1;i>=0;--i) {
 			fields.put(keys.get(i),environment.pop());
 		}		
-		Type.Record type = Type.Record(fields);
+		Type.Record type = checkType(Type.Record(fields),Type.Record.class,stmt);
 		environment.push(type);
 		return Code.NewRecord(type);
 	}
@@ -859,7 +859,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 		}
 		
-		Type.Dictionary type = Type.Dictionary(key,value);
+		Type.Dictionary type = checkType(Type.Dictionary(key,value),Type.Dictionary.class,stmt);
 		environment.push(type);
 		return Code.NewDict(type,e.nargs);
 	}
@@ -871,7 +871,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem = Type.Union(elem,environment.pop());						
 		}
 		
-		Type.List type = Type.List(elem);
+		Type.List type = checkType(Type.List(elem),Type.List.class,stmt);
 		environment.push(type);
 		return Code.NewList(type,e.nargs);
 	}
@@ -884,7 +884,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			elem = Type.Union(elem,environment.pop());						
 		}
 		
-		Type.Set type = Type.Set(elem);
+		Type.Set type = checkType(Type.Set(elem),Type.Set.class,stmt);
 		environment.push(type);
 		return Code.NewSet(type,e.nargs);
 	}
@@ -896,7 +896,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			types.add(environment.pop());						
 		}
 		Collections.reverse(types);
-		Type.Tuple type = Type.Tuple(types);
+		Type.Tuple type = checkType(Type.Tuple(types),Type.Tuple.class,stmt);
 		environment.push(type);
 		return Code.NewTuple(type,e.nargs);
 	}
@@ -1101,8 +1101,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(Spawn v, Entry stmt, Env environment) {
 		Type rhs_t = environment.pop();
-		environment.add(Type.Process(rhs_t));
-		return Code.Spawn(Type.Process(rhs_t));						
+		Type.Process pt = checkType(Type.Process(rhs_t),Type.Process.class,stmt);
+		environment.add(pt);
+		return Code.Spawn(pt);						
 	}			
 	
 	protected Code infer(Code.Throw code, Entry stmt, Env environment) {
@@ -1344,7 +1345,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Type.Function bindFunction(NameID nid, 
 			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Function target = Type.Function(Type.T_ANY,paramTypes);
+		Type.Function target = checkType(Type.Function(Type.T_ANY, paramTypes),
+				Type.Function.class, elem);
 		Type.Function candidate = null;				
 		
 		List<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 
@@ -1393,7 +1395,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Type.Method bindMethod(NameID nid, Type.Process receiver,
 			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Method target = Type.Method(receiver, Type.T_ANY,paramTypes);
+		Type.Method target = checkType(
+				Type.Method(receiver, Type.T_ANY, paramTypes),
+				Type.Method.class, elem);
 		Type.Method candidate = null;				
 		
 		List<Type.Function> targets = lookupMethod(nid.module(),nid.name()); 

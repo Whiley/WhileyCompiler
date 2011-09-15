@@ -61,14 +61,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple Tuple(Type... elements) {		
-		Type r = construct(K_TUPLE, null, elements);
-		if (r instanceof Tuple) {
-			return (Tuple) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Arguments for Type.Tuple: " + elements);
-		}		
+	public static final Type Tuple(Type... elements) {		
+		return construct(K_TUPLE, null, elements);			
 	}
 	
 	/**
@@ -76,14 +70,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Tuple Tuple(java.util.List<Type> elements) {
-		Type r = construct(K_TUPLE, null, elements);
-		if (r instanceof Tuple) {
-			return (Tuple) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Tuple: " + elements);
-		}
+	public static final Type Tuple(java.util.List<Type> elements) {
+		return construct(K_TUPLE, null, elements);		
 	}
 	
 	/**
@@ -91,14 +79,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Process Process(Type element) {
-		Type r = construct(K_PROCESS, null, element);
-		if (r instanceof Process) {
-			return (Process) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Process: " + element);
-		}			
+	public static final Type Process(Type element) {
+		return construct(K_PROCESS, null, element);				
 	}
 	
 	public static final Existential Existential(NameID name) {
@@ -114,14 +96,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Set Set(Type element) {
-		Type r = construct(K_SET, null, element);
-		if (r instanceof Set) {
-			return (Set) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Set: " + element);
-		}			
+	public static final Type Set(Type element) {
+		return construct(K_SET, null, element);			
 	}
 	
 	/**
@@ -129,14 +105,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final List List(Type element) {
-		Type r = construct(K_LIST, null, element);
-		if (r instanceof List) {
-			return (List) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.List: " + element);
-		}			
+	public static final Type List(Type element) {
+		return construct(K_LIST, null, element);				
 	}
 	
 	/**
@@ -144,14 +114,8 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Dictionary Dictionary(Type key, Type value) {
-		Type r = construct(K_DICTIONARY, null, key, value);
-		if (r instanceof Dictionary) {
-			return (Dictionary) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.List: " + key + ", " + value);
-		}		
+	public static final Type Dictionary(Type key, Type value) {
+		return construct(K_DICTIONARY, null, key, value);		
 	}
 	
 	/**
@@ -186,19 +150,13 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Function Function(Type ret,
+	public static final Type Function(Type ret,
 			Collection<Type> params) {
 		Type[] rparams = new Type[params.size()+1];		
 		int i = 0;
 		for (Type t : params) { rparams[++i] = t; }		
 		rparams[0] = ret;
-		Type r = construct(K_FUNCTION, null, rparams);
-		if (r instanceof Function) {
-			return (Function) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Fun: " + params);
-		}			
+		return construct(K_FUNCTION, null, rparams); 			
 	}
 	
 	/**
@@ -206,17 +164,11 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Function Function(Type ret, Type... params) {
+	public static final Type Function(Type ret, Type... params) {
 		Type[] rparams = new Type[params.length+1];		
 		System.arraycopy(params, 0, rparams, 1, params.length);
 		rparams[0] = ret;
-		Type r = construct(K_FUNCTION, null, rparams);
-		if (r instanceof Function) {
-			return (Function) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Fun: " + params);
-		}							
+		return construct(K_FUNCTION, null, rparams);								
 	}
 	
 	/**
@@ -224,30 +176,23 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Method Method(Process receiver, Type ret,
+	public static final Type Method(Process receiver, Type ret,
 			Collection<Type> params) {
-		Type r;
 		if(receiver == null) {
 			// this is a headless method
 			Type[] rparams = new Type[params.size()+1];		
 			int i = 1;
 			for (Type t : params) { rparams[i++] = t; }					
 			rparams[0] = ret;
-			r = construct(K_HEADLESS, null, rparams);					
+			return construct(K_HEADLESS, null, rparams);					
 		} else {
 			Type[] rparams = new Type[params.size()+2];		
 			int i = 2;
 			for (Type t : params) { rparams[i++] = t; }		
 			rparams[0] = receiver;
 			rparams[1] = ret;
-			r = construct(K_METHOD, null, rparams);						
-		}
-		if (r instanceof Method) {
-			return (Method) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Meth: " + params);
-		}	
+			return construct(K_METHOD, null, rparams);						
+		}		
 	}
 	
 	/**
@@ -255,26 +200,19 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Method Method(Process receiver, Type ret, Type... params) {
-		Type r;
+	public static final Type Method(Process receiver, Type ret, Type... params) {
 		if(receiver == null) {
 			// this is a headless method
 			Type[] rparams = new Type[params.length+1];		
 			System.arraycopy(params, 0, rparams, 1, params.length);			
 			rparams[0] = ret;
-			r = construct(K_HEADLESS, null, rparams);						
+			return construct(K_HEADLESS, null, rparams);						
 		} else {
 			Type[] rparams = new Type[params.length+2];		
 			System.arraycopy(params, 0, rparams, 2, params.length);
 			rparams[0] = receiver;
 			rparams[1] = ret;
-			r = construct(K_METHOD, null, rparams);
-		}
-		if (r instanceof Method) {
-			return (Method) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Meth: " + params);
+			return construct(K_METHOD, null, rparams);
 		}
 	}
 	
@@ -283,7 +221,7 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Record Record(Map<String,Type> fields) {				
+	public static final Type Record(Map<String,Type> fields) {				
 		java.util.Set<String> keySet = fields.keySet();
 		ArrayList<String> keys = new ArrayList(keySet);
 		Collections.sort(keys);
@@ -291,13 +229,7 @@ public abstract class Type {
 		for(int i=0;i!=types.length;++i) {
 			types[i] = fields.get(keys.get(i));
 		}
-		Type r = construct(K_RECORD,keys,types);
-		if (r instanceof Record) {
-			return (Record) r;
-		} else {
-			throw new IllegalArgumentException(
-					"Invalid Argument(s) for Type.Meth: " + fields);
-		}		
+		return construct(K_RECORD,keys,types);			
 	}
 
 	/**
@@ -690,7 +622,12 @@ public abstract class Type {
 									Union(e.getValue(), bt));
 						}
 					}					
-					r = Record(nfields);
+					Type tmp = Record(nfields);
+					if(tmp instanceof Record) {
+						r = (Record) tmp;
+					} else {
+						return null;
+					}
 				}
 			}
 			return r;
@@ -712,7 +649,7 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = Set(Union(r.element(),br.element()));
+					r = (Set) Set(Union(r.element(),br.element()));
 				}
 			}			
 			return r;
@@ -734,7 +671,7 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = List(Union(r.element(),br.element()));
+					r = (List) List(Union(r.element(),br.element()));
 				}
 			}			
 			return r;
@@ -756,8 +693,13 @@ public abstract class Type {
 				if (r == null) {
 					r = br;
 				} else {
-					r = Dictionary(Union(r.key(), br.key()),
+					Type tmp = Dictionary(Union(r.key(), br.key()),
 							Union(r.value(), br.value()));
+					if(tmp instanceof Dictionary) {
+						r = (Dictionary) tmp;
+					} else {
+						return null;
+					}
 				}
 			}
 			return r;
@@ -1845,8 +1787,7 @@ public abstract class Type {
 			HashMap<String,Type> fields = new HashMap<String,Type>();
 			fields.put("next", Union(T_NULL,leaf));
 			fields.put("data", T_BOOL);
-			Type.Record rec = Record(fields);
-			return rec;
+			return Record(fields);
 		}
 	}
 }
