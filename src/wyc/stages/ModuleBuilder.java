@@ -296,7 +296,8 @@ public class ModuleBuilder {
 						// TODO: fix parameter constraints
 						paramTypes.add(resolve(p).first());
 					}				
-					tf = Type.Function(Type.T_ANY, paramTypes);
+					tf = checkType(Type.Function(Type.T_ANY, paramTypes),
+							Type.Function.class, expr);
 				}
 				
 				return Value.V_FUN(name, tf);	
@@ -357,7 +358,7 @@ public class ModuleBuilder {
 	protected Value evaluate(Expr.BinOp bop, Value.List v1, Value.List v2) {
 		switch(bop.op) {
 		case ADD:
-			ArrayList vals = new ArrayList(v1.values);
+			ArrayList<Value> vals = new ArrayList<Value>(v1.values);
 			vals.addAll(v2.values);
 			return Value.V_LIST(vals);
 		}
@@ -369,13 +370,13 @@ public class ModuleBuilder {
 		switch(bop.op) {
 		case UNION:
 		{
-			HashSet vals = new HashSet(v1.values);			
+			HashSet<Value> vals = new HashSet<Value>(v1.values);			
 			vals.addAll(v2.values);
 			return Value.V_SET(vals);
 		}
 		case INTERSECTION:
 		{
-			HashSet vals = new HashSet();			
+			HashSet<Value> vals = new HashSet<Value>();			
 			for(Value v : v1.values) {
 				if(v2.values.contains(v)) {
 					vals.add(v);
@@ -385,7 +386,7 @@ public class ModuleBuilder {
 		}
 		case SUB:
 		{
-			HashSet vals = new HashSet();			
+			HashSet<Value> vals = new HashSet<Value>();			
 			for(Value v : v1.values) {
 				if(!v2.values.contains(v)) {
 					vals.add(v);
@@ -405,7 +406,7 @@ public class ModuleBuilder {
 	 * @param files
 	 */
 	protected void generateTypes(List<WhileyFile> files) {
-		HashMap<NameID, SyntacticElement> srcs = new HashMap();
+		HashMap<NameID, SyntacticElement> srcs = new HashMap<NameID, SyntacticElement>();
 		
 		// The declOrder list is basically a hack. It ensures that types are
 		// visited in the order that they are declared. This helps give some
@@ -432,7 +433,7 @@ public class ModuleBuilder {
 			try {
 				HashMap<NameID, Type> cache = new HashMap<NameID, Type>();				
 				Pair<Type,Block> t = expandType(key, cache);				
-				types.put(key, new Pair(t.first(),t.second()));				
+				types.put(key, new Pair<Type,Block>(t.first(),t.second()));				
 			} catch (ResolveError ex) {
 				syntaxError(ex.getMessage(), filemap.get(key).filename, srcs
 						.get(key), ex);
@@ -645,9 +646,9 @@ public class ModuleBuilder {
 				checkType(t, Type.Process.class, md.receiver);
 				rec = (Type.Process) t;				
 			}
-			ft = Type.Method(rec, ret, parameters);
+			ft = checkType(Type.Method(rec, ret, parameters),Type.Method.class,fd);
 		} else {
-			ft = Type.Function(ret, parameters);
+			ft = checkType(Type.Function(ret, parameters),Type.Function.class,fd);
 		}
 		 
 		NameID name = new NameID(module, fd.name);
@@ -1518,26 +1519,35 @@ public class ModuleBuilder {
 					
 		if(variableIndirectInvoke) {			
 			if(s.receiver != null) {
-				blk.append(Code.IndirectSend(Type.Method(null, Type.T_VOID, paramTypes),s.synchronous, retval),attributes(s));
+				Type.Method mt = checkType(Type.Method(null, Type.T_VOID, paramTypes),Type.Method.class,s);
+				blk.append(Code.IndirectSend(mt,s.synchronous, retval),attributes(s));
 			} else {
-				blk.append(Code.IndirectInvoke(Type.Function(Type.T_VOID, paramTypes), retval),attributes(s));
+				Type.Function ft = checkType(Type.Function(Type.T_VOID, paramTypes),Type.Function.class,s);
+				blk.append(Code.IndirectInvoke(ft, retval),attributes(s));
 			}
 		} else if(fieldIndirectInvoke) {
-			blk.append(Code.IndirectInvoke(Type.Function(Type.T_VOID, paramTypes), retval),attributes(s));
+			Type.Function ft = checkType(Type.Function(Type.T_VOID, paramTypes),Type.Function.class,s);
+			blk.append(Code.IndirectInvoke(ft, retval),attributes(s));
 		} else if(directInvoke || methodInvoke) {
 			NameID name = new NameID(modInfo.module, s.name);
 			if(receiverIsThis) {
-				blk.append(Code.Invoke(
-						Type.Method(null, Type.T_VOID,
-								paramTypes), name, retval), attributes(s));
+				Type.Method mt = checkType(
+						Type.Method(null, Type.T_VOID, paramTypes),
+						Type.Method.class, s);
+				blk.append(Code.Invoke(mt, name, retval), attributes(s));
 			} else {
-				blk.append(Code.Invoke(
-						Type.Function(Type.T_VOID, paramTypes), name, retval),attributes(s));
+				Type.Function ft = checkType(
+						Type.Function(Type.T_VOID, paramTypes),
+						Type.Function.class, s);
+				blk.append(Code.Invoke(ft, name, retval), attributes(s));
 			}
 		} else if(directSend) {						
 			NameID name = new NameID(modInfo.module, s.name);
-			blk.append(Code.Send(
-					Type.Method(null, Type.T_VOID, paramTypes), name, s.synchronous, retval),attributes(s));
+			Type.Method mt = checkType(
+					Type.Method(null, Type.T_VOID, paramTypes),
+					Type.Method.class, s);
+			blk.append(Code.Send(mt, name, s.synchronous, retval),
+					attributes(s));
 		} else {
 			syntaxError("unknown function or method", filename, s);
 		}
@@ -1563,7 +1573,8 @@ public class ModuleBuilder {
 				// TODO: fix parameter constraints
 				paramTypes.add(p.first());
 			}
-			tf = Type.Function(Type.T_ANY, paramTypes);
+			tf = checkType(Type.Function(Type.T_ANY, paramTypes),
+					Type.Function.class, s);
 		}
 		Block blk = new Block(environment.size());
 		blk.append(Code.Const(Value.V_FUN(name, tf)),
@@ -1838,7 +1849,8 @@ public class ModuleBuilder {
 			fields.put(key, Type.T_ANY);
 			blk.append(resolve(sg.fields.get(key), environment));
 		}
-		blk.append(Code.NewRecord(Type.Record(fields)), attributes(sg));
+		Type.Record rt = checkType(Type.Record(fields),Type.Record.class,sg);
+		blk.append(Code.NewRecord(rt), attributes(sg));
 		return blk;
 	}
 

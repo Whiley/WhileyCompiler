@@ -20,17 +20,17 @@ public class TypeGenerator {
 			super(output);
 		}
 		
-		public void write(Automata automata) throws IOException {
-			if(isValidType(automata)) {
+		public void write(Automata automata) throws IOException {			
+			if(!isContractive(automata)) {
 				Type t = Type.construct(automata);
-				if (t != Type.T_VOID && !Type.isContractive(t)) {
+				if (t != Type.T_VOID) {
 					super.write(automata);
 					count++;
 					if (verbose) {
 						System.err.print("\rWrote " + count + " types.");					
 					}
-				}
-			} 
+				}			
+			}
 		}
 	}
 	
@@ -41,8 +41,8 @@ public class TypeGenerator {
 			this.output = output;
 		}
 
-		public void write(Automata automata) throws IOException {
-			if(isValidType(automata)) {
+		public void write(Automata automata) throws IOException {			
+			if(!isContractive(automata)) {
 				Type t = Type.construct(Automatas.extract(automata,0));
 				if (t != Type.T_VOID) {
 					output.println(t);
@@ -50,7 +50,7 @@ public class TypeGenerator {
 					if (verbose) {
 						System.err.print("\rWrote " + count + " types.");
 					}
-				} 
+				} 			
 			}
 		}
 
@@ -63,18 +63,7 @@ public class TypeGenerator {
 		}
 	}	
 	
-	private static final boolean isValidType(Automata automata) {
-		if(isContractive(automata)) {
-			return false;
-		} else if(automata.states[0].kind != Type.K_VOID){ 
-			automata = TypeAlgorithms.simplify(automata);
-			return automata.states[0].kind != Type.K_VOID;
-		} else {
-			return true;
-		}
-	}
-	
-	public static boolean isContractive(Automata automata) {
+	public static boolean isContractive(Automata automata) {		
 		BitSet contractives = new BitSet(automata.size());
 		// initially all nodes are considered contracive.
 		contractives.set(0,contractives.size(),true);
@@ -134,24 +123,24 @@ public class TypeGenerator {
 	};
 	
 	private static final Config config = new Config() {{		
-		RECURSIVE = false;
+		RECURSIVE = true;
 		SIZE = 3;
 		KINDS = new Kind[24];
-		KINDS[Type.K_VOID] = new Kind(true,0,0,null);
+		//KINDS[Type.K_VOID] = new Kind(true,0,0,null);
 		KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
 		KINDS[Type.K_NULL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BOOL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BYTE] = new Kind(true,0,0,null);
 		//KINDS[Type.K_CHAR] = new Kind(true,0,0,null);
-		KINDS[Type.K_INT] = new Kind(true,0,0,null);
+		//KINDS[Type.K_INT] = new Kind(true,0,0,null);
 		//KINDS[Type.K_RATIONAL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_STRING] = new Kind(true,0,0,null);
-		//KINDS[Type.K_TUPLE] = new Kind(true,2,2,null);
+		KINDS[Type.K_TUPLE] = new Kind(true,2,2,null);
 		//KINDS[Type.K_SET] = new Kind(true,1,1,null);
 		//KINDS[Type.K_LIST] = new Kind(true,1,1,null);
 		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);	
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
-		KINDS[Type.K_RECORD] = new Kind(true,1,2,DATA_GENERATOR);
+		KINDS[Type.K_RECORD] = new Kind(true,1,1,DATA_GENERATOR);
 		KINDS[Type.K_UNION] = new Kind(false,2,2,null);
 		//KINDS[Type.K_NEGATION] = new Kind(true,1,1,null);
 		//KINDS[Type.K_FUNCTION] = new Kind(true,2,3,null);
