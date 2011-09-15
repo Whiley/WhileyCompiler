@@ -180,26 +180,6 @@ public final class Automatas {
 			extract(child,visited,extracted,graph);
 		}		
 	}
-	
-	/**
-	 * The following algorithm rewrites an automata according to a given rewrite
-	 * rule. This is achieved by repeatedly applying the rewrite rule until no
-	 * further rewrites are possible.
-	 * 
-	 * @param automata
-	 *            --- automata to be rewritten.
-	 */
-	public static void rewrite(Automata automata, RewriteRule rule) {		
-		// note, the following could be made more efficient by exploiting
-		// dependence information in the states.
-		boolean changed = true;
-		while(changed) {
-			changed = false;
-			for(int i=0;i<automata.size();++i) {
-				changed |= rule.apply(i,automata);
-			}
-		}
-	}
 		
 	/**
 	 * <p>

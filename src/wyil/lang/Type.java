@@ -28,7 +28,7 @@ import wyil.util.Pair;
 import wyil.util.type.CoercionOperator;
 import wyil.util.type.SubtypeOperator;
 import wyil.util.type.TypeParser;
-import wyil.util.type.TypeSimplifications;
+import wyil.util.type.TypeAlgorithms;
 import wyjvm.io.*;
 
 /**
@@ -649,7 +649,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type intersect(Type t1, Type t2) {
-		return TypeSimplifications.intersect(t1,t2);
+		return TypeAlgorithms.intersect(t1,t2);
 	}
 
 	/**

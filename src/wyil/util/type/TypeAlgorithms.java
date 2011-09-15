@@ -8,88 +8,100 @@ import wyautl.lang.*;
 
 import wyil.lang.Type;
 
-/**
- * <p>
- * This simplification rule converts a type into <i>conjunctive normal form</i>.
- * This is achieved by repeated application of various rewrite rules. The
- * following provides representatives of the main rules considered.
- * </p>
- * <ul>
- * <li><code>{void f}</code> => <code>void</code>.</li>
- * <li><code>T | void</code> => <code>T</code>.</li>
- * <li><code>T | any</code> => <code>any</code>.</li>
- * <li><code>T & void</code> => <code>void</code>.</li>
- * <li><code>T & any</code> => <code>T</code>.</li>
- * <li><code>X<T | X></code> => <code>T</code>.</li>
- * <li><code>X<T & X></code> => <code>void</code>.</li>
- * <li><code>!!T</code> => <code>T</code>.</li>
- * <li><code>!any</code> => <code>void</code>.</li>
- * <li><code>!void</code> => <code>any</code>.</li>
- * <li><code>!(T_1 | T_2)</code> => <code>!T_1 & !T_2</code>.</li>
- * <li><code>!(T_1 & T_2)</code> => <code>!T_1 | !T_2</code>.</li>
- * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2 | T_3)</code>.</li>
- * <li><code>(T_1 & T_2) & T_3</code> => <code>(T_1 & T_2 & T_3)</code>.</li>
- * <li><code>T_1 & (T_2|T_3)</code> => <code>(T_1 & T_2) | (T_1 & T_3)</code>.</li>
- * <li><code>[T_1] & [T_2] & T_3</code> => <code>[T_1 & T_2] & T_3)</code>.</li>
- * <li><code>![T_1] & ![T_2] & T_3</code> => <code>![T_1 | T_2] & T_3)</code>.</li>
- * <li><code>[T_1] & {T_2}</code> => <code>void</code>.</li>
- * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> => <code>T_1</code>.
- * <li><code>T_1 & T_2</code> where <code>T_1 :> T_2</code> => <code>T_2</code>.
- * <li><code>T_1 & T_2</code> where <code>T_1 n T_2 = 0</code> =>
- * <code>void</code>.
- * </ul>
- * <p>
- * <b>NOTE:</b> applications of this rewrite rule may leave states which are
- * unreachable from the root. Therefore, the resulting automata should be
- * extracted after rewriting to eliminate such states.
- * </p>
- * 
- * @author David J. Pearce
- * 
- */
-public final class TypeSimplifications implements RewriteRule {
-	private SubtypeOperator subtypes;
-	
-	public final boolean apply(int index, Automata automata) {		
-		Automata.State state = automata.states[index];
-		boolean changed=false;
-		switch (state.kind) {
-			case Type.K_UNION :
-				changed = applyUnion(index, state, automata);
-				break;
-			case Type.K_DICTIONARY:
-			case Type.K_RECORD:
-			case Type.K_TUPLE:
-			case Type.K_FUNCTION:
-			case Type.K_METHOD:
-			case Type.K_HEADLESS:
-				changed = applyCompound(index, state, automata);
-				break;
-		}
-		if(changed) { 		
-			// invalidate subtype cache
-			subtypes = null;			
-		}
-		return changed;
-	}
 
+public final class TypeAlgorithms {
+
+	/**
+	 * <p>
+	 * This simplification rule removes spurious components by repeated
+	 * application of various rewrite rules. The following provides
+	 * representatives of the main rules considered.
+	 * </p>
+	 * <ul>
+	 * <li><code>{void f}</code> => <code>void</code>.</li>
+	 * <li><code>T | void</code> => <code>T</code>.</li>
+	 * <li><code>T | any</code> => <code>any</code>.</li>
+	 * <li><code>X<T | X></code> => <code>T</code>.</li>
+	 * <li><code>!!T</code> => <code>T</code>.</li>
+	 * <li><code>!any</code> => <code>void</code>.</li>
+	 * <li><code>!void</code> => <code>any</code>.</li>
+	 * <li><code>!(T_1 | T_2)</code> => <code>!T_1 & !T_2</code>.</li>
+	 * <li><code>(T_1 | T_2) | T_3</code> => <code>(T_1 | T_2 | T_3)</code>.</li>
+	 * <li><code>T_1 | T_2</code> where <code>T_1 :> T_2</code> =>
+	 * <code>T_1</code>.
+	 * <code>void</code>.
+	 * </ul>
+	 * <p>
+	 * <b>NOTE:</b> applications of this rewrite rule may leave states which are
+	 * unreachable from the root. Therefore, the resulting automata should be
+	 * extracted after rewriting to eliminate such states.
+	 * </p>
+	 * 
+	 */
+	public static Type simplify(Type type) {
+		Automata automata = Type.destruct(type);
+		HashMap<Integer,Integer> allocations = new HashMap();		
+		ArrayList<Automata.State> nstates = new ArrayList();
+		simplify(0,automata,allocations,nstates);		
+		Automata nautomata = new Automata(nstates.toArray(new Automata.State[nstates.size()]));
+		return Type.construct(nautomata); // will cause infinite loop.
+	}
+	
+	private static int simplify(int index, Automata automata,
+			HashMap<Integer, Integer> allocations,
+			ArrayList<Automata.State> states) {		
+		// first, check whether we've already simplified this node
+		Integer allocation = allocations.get(index);
+		if(allocation != null) { return allocation;}
+		
+		// looks like we haven't, so proceed to determine simplified state.
+		int myIndex = states.size();
+		allocations.put(index,myIndex);
+		states.add(null); // allocate space for me
+		
+		Automata.State state = automata.states[index];
+		Automata.State myState = null;
+		int kind = state.kind;
+		
+		switch(kind) {
+			case Type.K_PROCESS:
+			case Type.K_LIST:
+			case Type.K_SET:
+			case Type.K_DICTIONARY:
+			case Type.K_RECORD: 
+			case Type.K_FUNCTION:
+			case Type.K_HEADLESS:
+			case Type.K_METHOD:{
+				int[] children = state.children;
+				int[] nchildren = new int[children.length];
+				for(int i=0;i<children.length;++i) {
+					
+					Automata.State child = automata.states[children[i]];
+					if (i == 0 && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
+						// headless method and function return type allowed to be void									
+					} else if(i == 1 && kind == Type.K_METHOD) {
+						// method return type allowed to be void						
+					} else if(child.kind == Type.K_VOID) {
+						// roll back what we may have already allocated
+						while(states.size() > myIndex) {
+							states.remove(states.size()-1);
+						}
+						states.add(new Automata.State(Type.K_VOID));
+						return myIndex;
+					}			
+				}
+				myState = ???;
+			}
+		}
+		
+		states.set(myIndex,myState);
+		
+		return myIndex;
+	}
+	
 	public boolean applyCompound(int index, Automata.State state, Automata automata) {
 		int kind = state.kind;
-		int[] children = state.children;
-		for(int i=0;i<children.length;++i) {
-			if (i == 0 && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
-				// headless method and function return type allowed to be void
-				continue;				
-			} else if(i == 1 && kind == Type.K_METHOD) {
-				// method return type allowed to be void
-				continue;
-			}
-			Automata.State child = automata.states[children[i]];
-			if(child.kind == Type.K_VOID) {
-				automata.states[index] = new Automata.State(Type.K_VOID);				
-				return true;
-			}			
-		}
+		
 		return false;
 	}
 		
@@ -1051,12 +1063,5 @@ public final class TypeSimplifications implements RewriteRule {
 			index = index - 1;
 		}
 		return index;
-	}
-
-	private boolean isSubtype(int fromIndex, int toIndex, Automata automata) {
-		if(subtypes == null) {
-			subtypes = new SubtypeOperator(automata,automata);
-		}
-		return subtypes.isSubtype(fromIndex, toIndex);
 	}
 }
