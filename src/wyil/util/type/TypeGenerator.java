@@ -21,13 +21,14 @@ public class TypeGenerator {
 		}
 		
 		public void write(Automata automata) throws IOException {
-			
-			Type t = Type.construct(automata);
-			if (t != Type.T_VOID && (!eliminateContractives || !Type.isContractive(t))) {
-				super.write(automata);
-				count++;
-				if (verbose) {
-					System.err.print("\rWrote " + count + " types.");
+			if(isValidType(automata)) {
+				Type t = Type.construct(automata);
+				if (t != Type.T_VOID && !Type.isContractive(t)) {
+					super.write(automata);
+					count++;
+					if (verbose) {
+						System.err.print("\rWrote " + count + " types.");					
+					}
 				}
 			} 
 		}
@@ -41,14 +42,16 @@ public class TypeGenerator {
 		}
 
 		public void write(Automata automata) throws IOException {
-			Type t = Type.construct(Automatas.extract(automata,0));
-			if (t != Type.T_VOID && (!eliminateContractives || !Type.isContractive(t))) {
-				output.println(t);
-				count++;
-				if (verbose) {
-					System.err.print("\rWrote " + count + " types.");
-				}
-			} 
+			if(isValidType(automata)) {
+				Type t = Type.construct(Automatas.extract(automata,0));
+				if (t != Type.T_VOID) {
+					output.println(t);
+					count++;
+					if (verbose) {
+						System.err.print("\rWrote " + count + " types.");
+					}
+				} 
+			}
 		}
 
 		public void flush() throws IOException {
@@ -59,6 +62,66 @@ public class TypeGenerator {
 			output.close();
 		}
 	}	
+	
+	private static final boolean isValidType(Automata automata) {
+		if(isContractive(automata)) {
+			return false;
+		} else if(automata.states[0].kind != Type.K_VOID){ 
+			automata = TypeAlgorithms.simplify(automata);
+			return automata.states[0].kind != Type.K_VOID;
+		} else {
+			return true;
+		}
+	}
+	
+	public static boolean isContractive(Automata automata) {
+		BitSet contractives = new BitSet(automata.size());
+		// initially all nodes are considered contracive.
+		contractives.set(0,contractives.size(),true);
+		boolean changed = true;
+		boolean contractive = false;
+		while(changed) {
+			changed=false;
+			contractive = false;
+			for(int i=0;i!=automata.size();++i) {
+				boolean oldVal = contractives.get(i);
+				boolean newVal = isContractive(i,contractives,automata);
+				if(oldVal && !newVal) {
+					contractives.set(i,newVal);
+					changed = true;
+				}
+				contractive |= newVal;
+			}
+		}
+
+		return contractive;
+	}
+	
+	private static boolean isContractive(int index, BitSet contractives,
+			Automata automata) {
+		Automata.State state = automata.states[index];
+		int[] children = state.children;
+		if(children.length == 0) {
+			return false;
+		}
+		if(state.deterministic) {
+			for(int child : children) {
+				if(child == index || contractives.get(child)) {
+					return true;
+				}
+			}
+			return false;
+		} else {			
+			boolean r = true;
+			for(int child : children) {				
+				if(child == index) { 
+					return true;
+				}
+				r &= contractives.get(child);									
+			}
+			return r;
+		}
+	}
 	
 	private static final Generator.Data DATA_GENERATOR = new Generator.Data() {
 		public List<Object> generate(Automata.State state) {
@@ -71,11 +134,11 @@ public class TypeGenerator {
 	};
 	
 	private static final Config config = new Config() {{		
-		RECURSIVE = true;
+		RECURSIVE = false;
 		SIZE = 3;
 		KINDS = new Kind[24];
-		//KINDS[Type.K_VOID] = new Kind(true,0,0,null);
-		//KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
+		KINDS[Type.K_VOID] = new Kind(true,0,0,null);
+		KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
 		KINDS[Type.K_NULL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BOOL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BYTE] = new Kind(true,0,0,null);
@@ -88,7 +151,7 @@ public class TypeGenerator {
 		//KINDS[Type.K_LIST] = new Kind(true,1,1,null);
 		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);	
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
-		KINDS[Type.K_RECORD] = new Kind(true,1,1,DATA_GENERATOR);
+		KINDS[Type.K_RECORD] = new Kind(true,1,2,DATA_GENERATOR);
 		KINDS[Type.K_UNION] = new Kind(false,2,2,null);
 		//KINDS[Type.K_NEGATION] = new Kind(true,1,1,null);
 		//KINDS[Type.K_FUNCTION] = new Kind(true,2,3,null);
@@ -118,8 +181,7 @@ public class TypeGenerator {
 		}
 	}
 	
-	private static boolean verbose = false;
-	private static boolean eliminateContractives = true;
+	private static boolean verbose = false;	
 	private static int count = 0;
 	
 	public static void main(String[] args) {		

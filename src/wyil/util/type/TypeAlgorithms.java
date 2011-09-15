@@ -54,10 +54,10 @@ public final class TypeAlgorithms {
 	 */
 	public static Automata simplify(Automata automata) {
 		Automata nautomata = Automatas.extract(automata, 0);
-//		boolean changed = true;
-//		while(changed) {			
-//			changed = simplify(0,nautomata);
-//		}
+		boolean changed = true;
+		while(changed) {				
+			changed = simplify(0,nautomata);
+		}
 		return nautomata;
 	}	
 	
@@ -149,8 +149,7 @@ public final class TypeAlgorithms {
 			int iChild = children[i];
 			if (iChild == index) {
 				// contractive case
-				children = removeIndex(i, children);
-				state.children = children;
+				state.children = removeIndex(i, children);
 				changed = true;
 			} else {
 				Automata.State child = automata.states[iChild];
