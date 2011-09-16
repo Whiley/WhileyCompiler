@@ -1494,44 +1494,8 @@ public class WhileyParser {
 	
 	private UnresolvedType parseType() {
 		int start = index;
-		UnresolvedType t;
-		// first, check for NOT types		
-		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {			
-			// this is a not type
-			match(Shreak.class);
-			t = new UnresolvedType.Not(parseType(),sourceAttr(start, index - 1));
-		} else {
-			t = parseBaseType();
-		}		
-		
-		// Now, attempt to look for negation, union or intersection types.
-		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
-			// this is a union type
-			ArrayList<UnresolvedType.NonUnion> types = new ArrayList<UnresolvedType.NonUnion>();
-			types.add((UnresolvedType.NonUnion) t);
-			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
-				match(Bar.class);
-				// the following is needed because the lexer filter cannot
-				// distinguish between a lengthof operator, and union type.
-				skipWhiteSpace();
-				t = parseBaseType();
-				types.add((UnresolvedType.NonUnion) t);
-			}
-			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof Ampersand) {
-			// this is an intersection type
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
-			types.add(t);
-			while (index < tokens.size() && tokens.get(index) instanceof Ampersand) {
-				match(Ampersand.class);
-				// the following is needed because the lexer filter cannot
-				// distinguish between a lengthof operator, and union type.
-				skipWhiteSpace();
-				t = parseBaseType();
-				types.add(t);
-			}
-			return new UnresolvedType.Intersection(types, sourceAttr(start, index - 1));
-		} else if ((index + 1) < tokens.size()
+		UnresolvedType t = parseUnionIntersectionType();
+		if ((index + 1) < tokens.size()
 				&& tokens.get(index) instanceof ColonColon
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// this is a headless method type
@@ -1589,6 +1553,84 @@ public class WhileyParser {
 			return new UnresolvedType.Fun(t, receiver, types, sourceAttr(start, index - 1));
 		} else {
 			return t;
+		}
+	}
+	
+	private UnresolvedType parseUnionIntersectionType() {
+		int start = index;
+		UnresolvedType t = parseNegationType();
+		// Now, attempt to look for negation, union or intersection types.
+		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
+			// this is a union type
+			ArrayList<UnresolvedType.NonUnion> types = new ArrayList<UnresolvedType.NonUnion>();
+			types.add((UnresolvedType.NonUnion) t);
+			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
+				match(Bar.class);
+				// the following is needed because the lexer filter cannot
+				// distinguish between a lengthof operator, and union type.
+				skipWhiteSpace();
+				t = parseNegationType();
+				types.add((UnresolvedType.NonUnion) t);
+			}
+			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof Ampersand) {
+			// this is an intersection type
+			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			types.add(t);
+			while (index < tokens.size()
+					&& tokens.get(index) instanceof Ampersand) {
+				match(Ampersand.class);
+				// the following is needed because the lexer filter cannot
+				// distinguish between a lengthof operator, and union type.
+				skipWhiteSpace();
+				t = parseNegationType();
+				types.add(t);
+			}
+			return new UnresolvedType.Intersection(types, sourceAttr(start,
+					index - 1));
+		} else {
+			return t;
+		}
+	}
+	
+	private UnresolvedType parseNegationType() {
+		int start = index;				
+		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {			
+			// this is a negation type
+			match(Shreak.class);
+			return new UnresolvedType.Not(parseNegationType(),sourceAttr(start, index - 1));
+		} else {
+			return parseBraceType();
+		}
+	}
+	
+	private UnresolvedType parseBraceType() {			
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			// tuple type or bracketed type
+			int start = index;
+			match(LeftBrace.class);
+			UnresolvedType t = parseType();
+			skipWhiteSpace();
+			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				// tuple type
+				ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+				types.add(t);				
+				while (index < tokens.size()
+						&& tokens.get(index) instanceof Comma) {					
+					match(Comma.class);
+					types.add(parseType());
+					skipWhiteSpace();
+				}
+				match(RightBrace.class);
+				return new UnresolvedType.Tuple(types, sourceAttr(start, index - 1));
+			} else {
+				// bracketed type
+				match(RightBrace.class);
+				return t;
+			}			
+		} else {
+			return parseBaseType();
 		}
 	}
 	

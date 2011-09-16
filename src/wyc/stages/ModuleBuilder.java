@@ -1987,6 +1987,21 @@ public class ModuleBuilder {
 			} else {
 				return new Pair<Type,Block>(Type.Union(bounds),null);
 			}			
+		} else if(t instanceof UnresolvedType.Intersection) {
+			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
+			Block blk = null;
+			Type r = null;
+			for(int i=0;i!=ut.bounds.size();++i) {
+				UnresolvedType b = ut.bounds.get(i);
+				Pair<Type,Block> p = resolve(b);
+				// TODO: add intersection constraints
+				if(r == null) {
+					r = p.first();
+				} else {
+					r = Type.intersect(p.first(),r);
+				}
+			}						
+			return new Pair<Type,Block>(r,blk);
 		} else if(t instanceof UnresolvedType.Existential) {
 			UnresolvedType.Existential ut = (UnresolvedType.Existential) t;			
 			ModuleID mid = ut.attribute(Attributes.Module.class).module;
