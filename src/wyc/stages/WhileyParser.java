@@ -1495,8 +1495,9 @@ public class WhileyParser {
 	private UnresolvedType parseType() {
 		int start = index;
 		UnresolvedType t;
-		// first, check for NOT types
+		// first, check for NOT types		
 		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {
+			System.out.println("GOT: NOT");
 			// this is a not type
 			match(Shreak.class);
 			t = new UnresolvedType.Not(parseType(),sourceAttr(start, index - 1));
@@ -1504,7 +1505,7 @@ public class WhileyParser {
 			t = parseBaseType();
 		}		
 		
-		// Now, attempt to look for union or intersection types.
+		// Now, attempt to look for negation, union or intersection types.
 		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
 			// this is a union type
 			ArrayList<UnresolvedType.NonUnion> types = new ArrayList<UnresolvedType.NonUnion>();
