@@ -57,7 +57,7 @@ public final class TypeAlgorithms {
 		while(changed) {	
 			changed = false;
 			for(int i=0;i!=automata.size();++i) {
-				changed |= simplify(0,automata);
+				changed |= simplify(i,automata);
 			}
 		}		
 	}	

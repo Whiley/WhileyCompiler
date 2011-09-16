@@ -559,7 +559,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			blk.append(Code.ProcLoad(tp),stmt.attributes());
 			lhs_t = tp.element();
 		}
-		
+
 		Type.Record ett = Type.effectiveRecordType(lhs_t);		
 		if (ett == null) {
 			syntaxError("record required, got: " + lhs_t, filename, stmt);
@@ -1204,7 +1204,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			trueEnv = new Env(environment);
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {									
-				Type gdiff = Type.intersect(lhs_t, Type.Negation(code.test));				
+				Type gdiff = Type.intersect(lhs_t, Type.Negation(code.test));
+				//System.out.println("GLB: " + glb);
+				//System.out.println("GDIFF: " + gdiff);
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}

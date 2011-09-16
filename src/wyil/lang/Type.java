@@ -1748,13 +1748,13 @@ public abstract class Type {
 	public static final byte K_EXISTENTIAL = 22;
 	public static final byte K_LABEL = 23;	
 		
-	private static final ArrayList<Code> values = new ArrayList<Code>();
-	private static final HashMap<Code,Integer> cache = new HashMap<Code,Integer>();
+	private static final ArrayList<Automata> values = new ArrayList<Automata>();
+	private static final HashMap<Automata,Integer> cache = new HashMap<Automata,Integer>();
 
 	/**
 	 * The following method is for implementing the fly-weight pattern.
 	 */
-	private static <T extends Code> T get(T type) {
+	private static <T extends Automata> T get(T type) {
 		Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) values.get(idx);
@@ -1785,14 +1785,15 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = fromString("{void f}");
-		Type to = fromString("!int");									
+		Type from = fromString("{real f,int y}");
+		Type to = fromString("{int x,int y}");									
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
 		//System.out.println("normalised(" + to + ") = " + normalise(to));
 		System.out.println("isContractive(" + from + ") = " + isContractive(from));
 		System.out.println("isContractive(" + to + ") = " + isContractive(to));
 		System.out.println(from + " & " + to + " = " + intersect(from,to));
+		System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
 	}
 	
 	public static Type contractive() {
