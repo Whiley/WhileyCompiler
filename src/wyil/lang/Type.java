@@ -1717,8 +1717,7 @@ public abstract class Type {
 	 * @param type
 	 * @return
 	 */
-	private static Automata normalise(Automata automata) {		
-		//TypeAlgorithms.simplify(Automatas.extract(automata,0));
+	private static Automata normalise(Automata automata) {				
 		TypeAlgorithms.simplify(automata);
 		automata = Automatas.extract(automata, 0);		
 		automata = Automatas.minimise(automata);		
