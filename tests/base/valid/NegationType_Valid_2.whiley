@@ -5,5 +5,5 @@ import whiley.lang.*:*
 
 void ::main(System sys, [string] args):
     sys.out.println(String.str(f(1)))
-    sys.out.println(String.str(f([1,2,3])))
+
 

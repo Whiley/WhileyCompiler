@@ -1,7 +1,10 @@
 import whiley.lang.*:*
 
 !null f(any x):
-    return x
+    if x is null:
+        return 1
+    else:
+        return x
 
 void ::main(System sys, [string] args):
     sys.out.println(String.str(f(1)))

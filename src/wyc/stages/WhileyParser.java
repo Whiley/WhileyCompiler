@@ -1496,8 +1496,7 @@ public class WhileyParser {
 		int start = index;
 		UnresolvedType t;
 		// first, check for NOT types		
-		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {
-			System.out.println("GOT: NOT");
+		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {			
 			// this is a not type
 			match(Shreak.class);
 			t = new UnresolvedType.Not(parseType(),sourceAttr(start, index - 1));
@@ -1794,11 +1793,11 @@ public class WhileyParser {
 	
 	private void matchEndLine() {
 		while(index < tokens.size()) {
-			Token t = tokens.get(index++);			
+			Token t = tokens.get(index++);
 			if(t instanceof NewLine) {
 				break;
 			} else if(!(t instanceof LineComment) && !(t instanceof BlockComment) &&!(t instanceof Tabs)) {
-				syntaxError("syntax error",t);
+				syntaxError("unexpected token encountered (" + t.text + ")",t);
 			}			
 		}
 	}
