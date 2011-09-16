@@ -47,8 +47,30 @@ public final class CoercionOperator extends SubtypeOperator {
 		
 		if (primitiveSubtype(fromKind,toKind)) {
 			return fromSign == toSign || (fromSign && !toSign);
-		} else if (primitiveSubtype(toKind,fromKind)) {			
-			return fromSign == toSign || (toSign && !fromSign);
+		} else if(fromKind == K_SET && toKind == K_LIST) {
+			if (fromSign != toSign) {
+				// nary nodes
+				int fromChild = fromState.children[0];
+				int toChild = toState.children[0];
+				if (!isIntersection(fromChild, fromSign, toChild, toSign)) {
+					return false;
+				}
+			}
+			return true;
+		} else if(fromKind == K_DICTIONARY && toKind == K_LIST) {
+			if (!fromSign || !toSign) {
+				// nary nodes
+				int fromKey = fromState.children[0];
+				int fromValue = fromState.children[1];
+				int toChild = toState.children[0];
+				Automata.State fromKeyState = from.states[fromKey];
+				if (fromKeyState.kind != K_INT) {
+					return fromSign != toSign;
+				} else if (!isIntersection(fromValue, fromSign, toChild, toSign)) {
+					return false;
+				}
+			}
+			return true;
 		} else {
 			// TODO: deal with lists and sets
 			return super.isIntersectionInner(fromIndex, fromSign, toIndex, toSign);
@@ -66,7 +88,7 @@ public final class CoercionOperator extends SubtypeOperator {
 				&& (toKind == K_INT || toKind == K_CHAR)) {
 			// ints or chars can flow into rationals
 			return true;
-		}
+		} 
 		return false;
 	}
 }
