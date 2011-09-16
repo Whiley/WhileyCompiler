@@ -2014,6 +2014,8 @@ public class ClassFileBuilder {
 			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot, constants, bytecodes);
 		} else if(to instanceof Type.Function && from instanceof Type.Function) {
 			// TODO
+		} else if(from instanceof Type.Negation || to instanceof Type.Negation) {			
+			// no need to do anything, since convertType on a negation returns java/lang/Object
 		} else if(from instanceof Type.Union) {			
 			buildCoercion((Type.Union) from, to, freeSlot, constants, bytecodes);
 		} else {
