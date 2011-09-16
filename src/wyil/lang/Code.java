@@ -2278,7 +2278,6 @@ public abstract class Code {
 		}
 	}
 	
-
 	private static final ArrayList<Code> values = new ArrayList<Code>();
 	private static final HashMap<Code,Integer> cache = new HashMap<Code,Integer>();
 	

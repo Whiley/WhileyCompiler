@@ -1718,7 +1718,8 @@ public abstract class Type {
 	 * @return
 	 */
 	private static Automata normalise(Automata automata) {		
-		automata = TypeAlgorithms.simplify(automata);
+		//TypeAlgorithms.simplify(Automatas.extract(automata,0));
+		TypeAlgorithms.simplify(automata);
 		automata = Automatas.extract(automata, 0);		
 		automata = Automatas.minimise(automata);		
 		return automata;
@@ -1747,7 +1748,23 @@ public abstract class Type {
 	public static final byte K_HEADLESS = 21; // headless method
 	public static final byte K_EXISTENTIAL = 22;
 	public static final byte K_LABEL = 23;	
-	
+		
+	private static final ArrayList<Code> values = new ArrayList<Code>();
+	private static final HashMap<Code,Integer> cache = new HashMap<Code,Integer>();
+
+	/**
+	 * The following method is for implementing the fly-weight pattern.
+	 */
+	private static <T extends Code> T get(T type) {
+		Integer idx = cache.get(type);
+		if(idx != null) {
+			return (T) values.get(idx);
+		} else {					
+			cache.put(type, values.size());
+			values.add(type);
+			return type;
+		}
+	}
 
 	private static int equalsCount = 0;
 	private static int constructCount = 0;

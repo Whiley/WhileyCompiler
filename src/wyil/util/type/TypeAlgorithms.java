@@ -52,13 +52,14 @@ public final class TypeAlgorithms {
 	 * </p>
 	 * 
 	 */
-	public static Automata simplify(Automata automata) {
-		Automata nautomata = Automatas.extract(automata, 0);
+	public static void simplify(Automata automata) {				
 		boolean changed = true;
-		while(changed) {				
-			changed = simplify(0,nautomata);
-		}
-		return nautomata;
+		while(changed) {	
+			changed = false;
+			for(int i=0;i!=automata.size();++i) {
+				changed |= simplify(0,automata);
+			}
+		}		
 	}	
 	
 	private static boolean simplify(int index, Automata automata) {
