@@ -2,7 +2,7 @@ import whiley.lang.*:*
 
 bool test({real} xs, [int] ys):
     for x in (xs+ys):
-        if x is int:
+        if x == 3:
             return true
     return false
 
