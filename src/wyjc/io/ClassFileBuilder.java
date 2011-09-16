@@ -1883,7 +1883,7 @@ public class ClassFileBuilder {
 		
 		// First, deal with coercions which require a change of representation
 		// when going into a union.  For example, bool must => Boolean.
-		if (Type.isomorphic(to, from)) {		
+		if (from.equals(to)) {		
 			// do nothing!						
 		} else if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
@@ -1900,7 +1900,7 @@ public class ClassFileBuilder {
 			// side. 
 			to = simplifyCoercion(from,to);
 
-			if (Type.isomorphic(to, from)) {		
+			if (from.equals(to)) {		
 				// do nothing!						
 			} else if(from == Type.T_STRING && to instanceof Type.List) {									
 				buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
@@ -2394,7 +2394,7 @@ public class ClassFileBuilder {
 
 			// First, check for identical type (i.e. no coercion necessary)
 			for (Type b : t2.bounds()) {
-				if (Type.isomorphic(from, b)) {
+				if (from.equals(b)) {
 					// nothing to do
 					return b;
 				}

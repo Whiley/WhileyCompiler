@@ -558,19 +558,7 @@ public abstract class Type {
 			return r;
 		}
 	}
-			
-	/**
-	 * Check whether two types are <i>isomorphic</i>. This is true if they are
-	 * identical, or encode the same structure.
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static boolean isomorphic(Type t1, Type t2) {
-		return isSubtype(t1,t2) && isSubtype(t2,t1);
-	}
-
+				
 	/**
 	 * Compute the intersection of two types. The resulting type will only
 	 * accept values which are accepted by both types being intersected.. In
@@ -982,9 +970,11 @@ public abstract class Type {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof Compound) {
+			if (o instanceof Compound) {
 				Compound c = (Compound) o;
-				return automata.equals(c.automata);
+				equalsCount++;
+				// return automata.equals(c.automata);
+				return isSubtype(this, c) && isSubtype(c, this);
 			}
 			return false;
 		}
@@ -1554,6 +1544,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public final static Type construct(Automata automata) {
+		constructCount++;
 		automata = normalise(automata);
 		// second, construc the appropriate face
 		State root = automata.states[0];
@@ -1756,6 +1747,25 @@ public abstract class Type {
 	public static final byte K_HEADLESS = 21; // headless method
 	public static final byte K_EXISTENTIAL = 22;
 	public static final byte K_LABEL = 23;	
+	
+
+	private static int equalsCount = 0;
+	private static int constructCount = 0;
+
+	static {
+		Thread _shutdownHook = new Thread(Type.class.getName()
+				+ ".shutdownHook") {
+			public void run() {
+				shutdown();
+			}
+		};
+		Runtime.getRuntime().addShutdownHook(_shutdownHook);
+	}
+	
+	public static void shutdown() {
+		System.err.println("#TYPE CONSTRUCTIONS: " + constructCount);
+		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);		
+	}
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		

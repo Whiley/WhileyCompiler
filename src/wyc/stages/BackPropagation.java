@@ -746,7 +746,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void coerce(Type to, Type from, int index, SyntacticElement elem) {		
 		//if (!Type.isSubtype(to,from)) {					
-		if (!Type.isomorphic(to,from)) {			
+		if (!to.equals(from)) {			
 			insertions.put(index,
 					new Block.Entry(Code.Convert(from, to), elem.attributes()));
 		} else {

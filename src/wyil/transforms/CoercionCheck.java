@@ -169,7 +169,7 @@ public class CoercionCheck implements Transform {
 			// First, check for identical type (i.e. no coercion necessary)
 			
 			for(Type b : t2.bounds()) {
-				if(Type.isomorphic(from, b)) {
+				if(from.equals(b)) {
 					// no problem
 					return;
 				}

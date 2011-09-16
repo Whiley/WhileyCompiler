@@ -1,3 +1,4 @@
+import whiley.lang.*:*
 import whiley.io.*
 
 // ====================================================
@@ -163,7 +164,7 @@ define State as { string input, int pos }
     start = st.pos
     while st.pos < |st.input| && isDigit(st.input[st.pos]):
         st.pos = st.pos + 1    
-    return str2int(st.input[start..st.pos]), st
+    return String.toInt(st.input[start..st.pos]), st
 
 (Expr, State) parseList(State st) throws SyntaxError:    
     st.pos = st.pos + 1 // skip '['
@@ -197,9 +198,9 @@ bool isWhiteSpace(char c):
 // Main Method
 // ====================================================
 
-public void System::main([string] args):
-    file = this.openReader(args[0])
-    input = ascii2str(file.read())
+public void ::main(System sys, [string] args):
+    file = File.Reader(args[0])
+    input = String.fromASCII(file.read())
 
     if(|args| > 0):
         env = {"$"->0} 
@@ -210,7 +211,7 @@ public void System::main([string] args):
             if s is Set:
                 env[s.lhs] = r
             else:
-                out.println(str(r))
+                sys.out.println(str(r))
             st = parseWhiteSpace(st)
     else:
-        out.println("no parameter provided!")
+        sys.out.println("no parameter provided!")

@@ -1,3 +1,5 @@
+import whiley.lang.*:*
+
 [int] sort([int] items):
     if |items| > 1:
         pivot = |items| / 2
@@ -22,11 +24,11 @@
             r=r+1
     return items
 
-void System::main([string] args):
-    out.println(str(sort([])))
-    out.println(str(sort([4,3,5,2,1])))
-    out.println(str(sort([3,4,7,1,2])))
-    out.println(str(sort([3,4,7,2])))
-    out.println(str(sort([2,3,4,2])))
-    out.println(str(sort([1,2,3,4])))
-    out.println(str(sort([1,2,3,4,5])))
+void ::main(System sys, [string] args):
+    sys.out.println(str(sort([])))
+    sys.out.println(str(sort([4,3,5,2,1])))
+    sys.out.println(str(sort([3,4,7,1,2])))
+    sys.out.println(str(sort([3,4,7,2])))
+    sys.out.println(str(sort([2,3,4,2])))
+    sys.out.println(str(sort([1,2,3,4])))
+    sys.out.println(str(sort([1,2,3,4,5])))
