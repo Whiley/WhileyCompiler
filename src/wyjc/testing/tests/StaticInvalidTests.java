@@ -104,6 +104,8 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void MethodCall_CompileFail_8_StaticTest() { contextFailTest("MethodCall_CompileFail_8"); }
  @Test public void MethodRef_Invalid_1_StaticTest() { contextFailTest("MethodRef_Invalid_1"); }
  @Test public void NegationType_Invalid_1_RuntimeTest() { contextFailTest("NegationType_Invalid_1"); }
+ @Test public void NegationType_Invalid_2_RuntimeTest() { contextFailTest("NegationType_Invalid_2"); }
+ @Test public void NegationType_Invalid_3_RuntimeTest() { contextFailTest("NegationType_Invalid_3"); }
  @Test public void Process_Invalid_1_StaticTest() { contextFailTest("Process_Invalid_1"); }
  @Test public void Process_Invalid_2_StaticTest() { contextFailTest("Process_Invalid_2"); }
  @Test public void Process_Invalid_3_StaticTest() { contextFailTest("Process_Invalid_3"); }
