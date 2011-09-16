@@ -71,6 +71,18 @@ public final class CoercionOperator extends SubtypeOperator {
 				}
 			}
 			return true;
+		} else if(fromKind == K_LIST && toKind == K_STRING) {			
+			if (!fromSign || !toSign) {
+				// TO DO: this is a bug here for cases when the element type is e.g. int|real
+				int fromChild = fromState.children[0];				
+				int fromChildKind = from.states[fromChild].kind;
+				if (fromChildKind != K_INT
+						&& fromChildKind != K_RATIONAL
+						&& fromChildKind != K_ANY) {					
+					return fromSign != toSign;
+				} 
+			}
+			return fromSign == toSign;
 		} else {
 			// TODO: deal with lists and sets
 			return super.isIntersectionInner(fromIndex, fromSign, toIndex, toSign);
