@@ -35,3 +35,9 @@ void SystemOutWriter::print(string str):
 void SystemOutWriter::println(string str):
     debug str + "\n"
 
+void SystemOutWriter::print(any item):
+    debug String.str(item)
+
+void SystemOutWriter::println(any item):
+    debug String.str(item) + "\n"
+
