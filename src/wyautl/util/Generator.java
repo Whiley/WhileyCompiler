@@ -137,18 +137,29 @@ public class Generator {
 				System.err.print("\rWrote " + count + " automatas.");
 			}	
 		} else {			
-			Automata.State state = automata.states[index];
-			Kind kind = config.KINDS[state.kind];			
-			if(kind.DATA != null) {
-				// this kind requires supplementary data
-				List<Object> datas = kind.DATA.generate(state);
-				for(Object data : datas) {
-					state.data = data;
-					generate(index+1,automata,writer,config);
-				}
-			} else {
-				generate(index+1,automata,writer,config);
+			Automata.State state = automata.states[index];			
+			int[] state_children = state.children;
+			for(int[] nchildren : Automatas.permutations(state_children)) {
+				state.children = nchildren;
+				generateData(index,automata,writer,config);				
 			}
+		}
+	}
+	
+	
+	private static void generateData(int index, Automata automata,
+			GenericWriter<Automata> writer, Config config) throws IOException {
+		Automata.State state = automata.states[index];
+		Kind kind = config.KINDS[state.kind];
+		if (kind.DATA != null) {
+			// this kind requires supplementary data
+			List<Object> datas = kind.DATA.generate(state);
+			for (Object data : datas) {
+				state.data = data;
+				generate(index + 1, automata, writer, config);
+			}
+		} else {
+			generate(index + 1, automata, writer, config);
 		}
 	}
 	

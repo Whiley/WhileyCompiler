@@ -488,7 +488,31 @@ public final class Automatas {
 		}		
 	}
 	
-	private static ArrayList<int[]> permutations(int[] children) {
+	/**
+	 * <p>
+	 * The following method produces every possible permutation of the give
+	 * array. For example, if <code>children=[1,2,3]</code>, the returned list
+	 * includes the following permutations:
+	 * </p>
+	 * 
+	 * <pre>
+	 * [1,2,3]
+	 * [2,1,3]
+	 * [1,3,2]
+	 * [3,2,1]
+	 * [2,3,1]
+	 * [3,1,2]
+	 * </pre>
+	 * <p>
+	 * <b>NOTE:</b> the number of possible permutations is factorial in the size
+	 * of the input array. Therefore, <i>this can a very expensive
+	 * operation</i>. Use with care!
+	 * </p>
+	 * 
+	 * @param children
+	 * @return
+	 */
+	public static ArrayList<int[]> permutations(int[] children) {
 		ArrayList<int[]> permutations = new ArrayList();		
 		permutations(0,children,permutations);
 		return permutations;
