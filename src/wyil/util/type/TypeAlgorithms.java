@@ -70,6 +70,9 @@ public final class TypeAlgorithms {
 		Automata.State state = automata.states[index];
 		boolean changed=false;
 		switch (state.kind) {
+		case Type.K_NEGATION:
+			changed = simplifyNegation(index, state, automata);
+			break;
 		case Type.K_UNION :
 			changed = simplifyUnion(index, state, automata);
 			break;
@@ -84,7 +87,18 @@ public final class TypeAlgorithms {
 		}		
 		return changed;
 	}
-
+	
+	private static boolean simplifyNegation(int index, Automata.State state, Automata automata) {
+		Automata.State child = automata.states[state.children[0]];
+		if(child.kind == Type.K_NEGATION) {
+			// bypass node
+			Automata.State childchild = automata.states[child.children[0]];
+			automata.states[index] = new Automata.State(childchild);
+			return true;
+		}
+		return false;
+	}
+	
 	private static boolean simplifyCompound(int index, Automata.State state, Automata automata) {
 		int kind = state.kind;
 		int[] children = state.children;
@@ -278,11 +292,14 @@ public final class TypeAlgorithms {
 	public static Type intersect(Type t1, Type t2) {
 		Automata a1 = Type.destruct(t1);
 		Automata a2 = Type.destruct(t2);
+		return Type.construct(intersect(true,a1,true,a2));
+	}
+	
+	private static Automata intersect(boolean fromSign, Automata from, boolean toSign, Automata to) {
 		HashMap<IntersectionPoint,Integer> allocations = new HashMap();		
 		ArrayList<Automata.State> nstates = new ArrayList();
-		intersect(0,true,a1,0,true,a2,allocations,nstates);		
-		Automata automata = new Automata(nstates.toArray(new Automata.State[nstates.size()]));
-		return Type.construct(automata);
+		intersect(0,fromSign,from,0,toSign,to,allocations,nstates);		
+		return new Automata(nstates.toArray(new Automata.State[nstates.size()]));		
 	}
 	
 	private static int intersect(int fromIndex, boolean fromSign,
@@ -365,7 +382,7 @@ public final class TypeAlgorithms {
 		// TODO: tidy this mess up
 		if(fromKind == Type.K_VOID || toKind == Type.K_VOID) {
 			myState = new Automata.State(Type.K_VOID);
-		} else if(fromKind == Type.K_UNION || fromKind == K_INTERSECTION) {
+		} else if(fromKind == Type.K_UNION) {
 			// (T1 | T2) & T3 => (T1&T3) | (T2&T3)
 			int[] fromChildren = fromState.children;
 			int[] myChildren = new int[fromChildren.length];
@@ -373,14 +390,8 @@ public final class TypeAlgorithms {
 				int fromChild = fromChildren[i];
 				myChildren[i] = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);
 			}
-			
-			if(fromKind == K_INTERSECTION) {
-				System.out.println("GOT HERE(1)");
-				states.add(new Automata.State(Type.K_UNION,false,myChildren));
-				myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);
-			} else {
-				myState = new Automata.State(Type.K_UNION,false,myChildren);
-			}
+						
+			myState = new Automata.State(Type.K_UNION,false,myChildren);			
 		} else if(toKind == Type.K_UNION) {			
 			int[] toChildren = toState.children;
 			int[] myChildren = new int[toChildren.length];
@@ -391,34 +402,29 @@ public final class TypeAlgorithms {
 			}			
 			myState = new Automata.State(Type.K_UNION,false,myChildren);					
 		} else if(fromKind == K_INTERSECTION) {
-			// !(T1 | T2 | !T3) 
-			// 
-			// => !((!T1&!T2)|!T3)
-			// => !((!T1&!T3)|(!T2&!T3))
-			
-			WORKING ON THIS BIT!!
-			
+			// !(T1 | T2) & T3 => (!T1&T3) & (!T2&T3)
+			// => !((T1|!T3)|(T2|!T3))
 			int[] fromChildren = fromState.children;
 			int[] myChildren = new int[fromChildren.length];
-			for (int i = 0; i != fromChildren.length; ++i) {
+			for(int i=0;i!=fromChildren.length;++i) {
 				int fromChild = fromChildren[i];
-				myChildren[i] = intersect(fromChild, fromSign, from, toIndex,
-						!toSign, to, allocations, states);
-			}
-			states.add(new Automata.State(Type.K_UNION, false, myChildren));
-			myState = new Automata.State(Type.K_NEGATION, true,
-					states.size() - 1);			
+				int tmpChild = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);				
+				myChildren[i] = states.size();
+				states.add(new Automata.State(Type.K_NEGATION,true,tmpChild));
+			}						
+			states.add(new Automata.State(Type.K_UNION,false,myChildren));		
+			myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);
 		} else if(toKind == K_INTERSECTION) {			
 			int[] toChildren = toState.children;
 			int[] myChildren = new int[toChildren.length];
 			for(int i=0;i!=toChildren.length;++i) {
 				int toChild = toChildren[i];
-				myChildren[i] = intersect(fromIndex, !fromSign, from,
-						toChild, toSign, to, allocations, states);
-			}			
-			System.out.println("GOT HERE(2)");
-			states.add(new Automata.State(Type.K_UNION,false,myChildren));
-			myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);						
+				int tmpChild = intersect(fromIndex,fromSign,from,toChild,toSign,to,allocations,states);				
+				myChildren[i] = states.size();
+				states.add(new Automata.State(Type.K_NEGATION,true,tmpChild));
+			}						
+			states.add(new Automata.State(Type.K_UNION,false,myChildren));		
+			myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);					
 		} else if(fromKind == Type.K_NEGATION) {
 			states.remove(states.size()-1);
 			int fromChild = fromState.children[0];
@@ -714,8 +720,7 @@ public final class TypeAlgorithms {
 				return intersect(fromChild,false,from,toChild,true,to,allocations,states);
 			}				
 			case Type.K_UNION: {
-				// (T1|T2) & !(T3|T4) => (T1&!(T3|T4)) | (T2&!(T3|T4))
-				System.out.println("GOT HERE");
+				// (T1|T2) & !(T3|T4) => (T1&!(T3|T4)) | (T2&!(T3|T4))				
 				int[] fromChildren = fromState.children;
 				int[] newChildren = new int[fromChildren.length];
 				for (int i = 0; i != fromChildren.length; ++i) {
