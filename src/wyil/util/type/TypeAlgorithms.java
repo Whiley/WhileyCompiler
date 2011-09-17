@@ -401,30 +401,34 @@ public final class TypeAlgorithms {
 						toChild, toSign, to, allocations, states);
 			}			
 			myState = new Automata.State(Type.K_UNION,false,myChildren);					
-		} else if(fromKind == K_INTERSECTION) {
+		} else if (fromKind == K_INTERSECTION) {
 			// !(T1 | T2) & T3 => (!T1&T3) & (!T2&T3)
 			// => !((T1|!T3)|(T2|!T3))
 			int[] fromChildren = fromState.children;
 			int[] myChildren = new int[fromChildren.length];
-			for(int i=0;i!=fromChildren.length;++i) {
+			for (int i = 0; i != fromChildren.length; ++i) {
 				int fromChild = fromChildren[i];
-				int tmpChild = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);				
+				int tmpChild = intersect(fromChild, fromSign, from, toIndex,
+						toSign, to, allocations, states);
 				myChildren[i] = states.size();
-				states.add(new Automata.State(Type.K_NEGATION,true,tmpChild));
-			}						
-			states.add(new Automata.State(Type.K_UNION,false,myChildren));		
-			myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);
-		} else if(toKind == K_INTERSECTION) {			
+				states.add(new Automata.State(Type.K_NEGATION, true, tmpChild));
+			}
+			states.add(new Automata.State(Type.K_UNION, false, myChildren));
+			myState = new Automata.State(Type.K_NEGATION, true,
+					states.size() - 1);
+		} else if (toKind == K_INTERSECTION) {
 			int[] toChildren = toState.children;
 			int[] myChildren = new int[toChildren.length];
-			for(int i=0;i!=toChildren.length;++i) {
+			for (int i = 0; i != toChildren.length; ++i) {
 				int toChild = toChildren[i];
-				int tmpChild = intersect(fromIndex,fromSign,from,toChild,toSign,to,allocations,states);				
+				int tmpChild = intersect(fromIndex, fromSign, from, toChild,
+						toSign, to, allocations, states);
 				myChildren[i] = states.size();
-				states.add(new Automata.State(Type.K_NEGATION,true,tmpChild));
-			}						
-			states.add(new Automata.State(Type.K_UNION,false,myChildren));		
-			myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);					
+				states.add(new Automata.State(Type.K_NEGATION, true, tmpChild));
+			}
+			states.add(new Automata.State(Type.K_UNION, false, myChildren));
+			myState = new Automata.State(Type.K_NEGATION, true,
+					states.size() - 1);
 		} else if(fromKind == Type.K_NEGATION) {
 			states.remove(states.size()-1);
 			int fromChild = fromState.children[0];
