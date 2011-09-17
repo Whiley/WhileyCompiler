@@ -1,5 +1,9 @@
 package wyil.util.type;
 
+import static wyil.lang.Type.K_ANY;
+import static wyil.lang.Type.K_UNION;
+import static wyil.lang.Type.K_VOID;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -361,23 +365,60 @@ public final class TypeAlgorithms {
 		// TODO: tidy this mess up
 		if(fromKind == Type.K_VOID || toKind == Type.K_VOID) {
 			myState = new Automata.State(Type.K_VOID);
-		} else if(fromKind == Type.K_UNION) {
+		} else if(fromKind == Type.K_UNION || fromKind == K_INTERSECTION) {
+			// (T1 | T2) & T3 => (T1&T3) | (T2&T3)
 			int[] fromChildren = fromState.children;
-			int[] newChildren = new int[fromChildren.length];
+			int[] myChildren = new int[fromChildren.length];
 			for(int i=0;i!=fromChildren.length;++i) {
 				int fromChild = fromChildren[i];
-				newChildren[i] = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);
+				myChildren[i] = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);
 			}
-			myState = new Automata.State(Type.K_UNION,false,newChildren);
-		} else if(toKind == Type.K_UNION) {
+			
+			if(fromKind == K_INTERSECTION) {
+				System.out.println("GOT HERE(1)");
+				states.add(new Automata.State(Type.K_UNION,false,myChildren));
+				myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);
+			} else {
+				myState = new Automata.State(Type.K_UNION,false,myChildren);
+			}
+		} else if(toKind == Type.K_UNION) {			
 			int[] toChildren = toState.children;
-			int[] newChildren = new int[toChildren.length];
+			int[] myChildren = new int[toChildren.length];
 			for(int i=0;i!=toChildren.length;++i) {
 				int toChild = toChildren[i];
-				newChildren[i] = intersect(fromIndex, fromSign, from,
+				myChildren[i] = intersect(fromIndex, fromSign, from,
 						toChild, toSign, to, allocations, states);
+			}			
+			myState = new Automata.State(Type.K_UNION,false,myChildren);					
+		} else if(fromKind == K_INTERSECTION) {
+			// !(T1 | T2 | !T3) 
+			// 
+			// => !((!T1&!T2)|!T3)
+			// => !((!T1&!T3)|(!T2&!T3))
+			
+			WORKING ON THIS BIT!!
+			
+			int[] fromChildren = fromState.children;
+			int[] myChildren = new int[fromChildren.length];
+			for (int i = 0; i != fromChildren.length; ++i) {
+				int fromChild = fromChildren[i];
+				myChildren[i] = intersect(fromChild, fromSign, from, toIndex,
+						!toSign, to, allocations, states);
 			}
-			myState = new Automata.State(Type.K_UNION,false,newChildren);
+			states.add(new Automata.State(Type.K_UNION, false, myChildren));
+			myState = new Automata.State(Type.K_NEGATION, true,
+					states.size() - 1);			
+		} else if(toKind == K_INTERSECTION) {			
+			int[] toChildren = toState.children;
+			int[] myChildren = new int[toChildren.length];
+			for(int i=0;i!=toChildren.length;++i) {
+				int toChild = toChildren[i];
+				myChildren[i] = intersect(fromIndex, !fromSign, from,
+						toChild, toSign, to, allocations, states);
+			}			
+			System.out.println("GOT HERE(2)");
+			states.add(new Automata.State(Type.K_UNION,false,myChildren));
+			myState = new Automata.State(Type.K_NEGATION,true,states.size()-1);						
 		} else if(fromKind == Type.K_NEGATION) {
 			states.remove(states.size()-1);
 			int fromChild = fromState.children[0];
@@ -674,6 +715,7 @@ public final class TypeAlgorithms {
 			}				
 			case Type.K_UNION: {
 				// (T1|T2) & !(T3|T4) => (T1&!(T3|T4)) | (T2&!(T3|T4))
+				System.out.println("GOT HERE");
 				int[] fromChildren = fromState.children;
 				int[] newChildren = new int[fromChildren.length];
 				for (int i = 0; i != fromChildren.length; ++i) {
@@ -1004,14 +1046,22 @@ public final class TypeAlgorithms {
 			return kind;
 		}
 		switch(kind) {
-			case Type.K_ANY:
-				return Type.K_VOID;
-			case Type.K_VOID:
-				return Type.K_ANY;
+			case K_ANY:
+				return K_VOID;
+			case K_VOID:
+				return K_ANY;
+			case K_UNION:
+				return K_INTERSECTION;			
 			default:
 				return kind;
 		}		
 	}
+
+	/**
+	 * The following constant is not actually a valid kind; however, it's
+	 * helpful to think of it as one.
+	 */
+	private static final int K_INTERSECTION = -1;
 	
 	private static int[] removeIndex(int index, int[] children) {
 		int[] nchildren = new int[children.length - 1];

@@ -1205,8 +1205,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			falseEnv = new Env(environment);		
 			if(code.slot >= 0) {									
 				Type gdiff = Type.intersect(lhs_t, Type.Negation(code.test));
-				//System.out.println("GLB: " + glb);
-				//System.out.println("GDIFF: " + gdiff);
+				System.out.println("GLB: " + lhs_t + " & " + code.test + " = " + glb);
+				System.out.println("GLB: " + lhs_t + " - " + code.test + " = " + gdiff);
 				trueEnv.set(code.slot, glb);			
 				falseEnv.set(code.slot, gdiff);								
 			}
