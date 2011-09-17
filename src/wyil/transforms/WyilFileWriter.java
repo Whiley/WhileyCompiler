@@ -227,7 +227,7 @@ public class WyilFileWriter implements Transform {
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
-				line = "if" + iftype.test + " " + getLocal(iftype.slot,locals)
+				line = "if " + getLocal(iftype.slot,locals) + " is " + iftype.test
 						+ " goto " + iftype.target + " : " + iftype.type;
 			} else {
 				line = c.toString();

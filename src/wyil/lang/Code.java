@@ -1027,9 +1027,9 @@ public abstract class Code {
 	
 		public String toString() {
 			if(slot >= 0) {
-				return toString("if" + test + " " + slot + " goto " + target,type);
-			} else {
-				return toString("if" + test + " goto " + target,type);
+				return toString("if " + slot + " is " + test + " goto " + target,type);
+			} else {				
+				return toString("if " + test + " goto " + target,type);
 			}
 		}
 	}
