@@ -77,12 +77,12 @@ public class TypeParser {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
 		if(lookahead == '(') {
-			// this is a tuple, not a bracketed type.
 			match("(");
 			Type t = parse(typeVariables);
 			skipWhiteSpace();
 			lookahead = str.charAt(index);
 			if(lookahead == ',') {
+				// this is a tuple, not a bracketed type.
 				ArrayList<Type> elems = new ArrayList();
 				elems.add(t);
 				while(lookahead == ',') {

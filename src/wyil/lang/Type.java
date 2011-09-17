@@ -296,11 +296,7 @@ public abstract class Type {
 			} else {
 				rmap[i] = i;
 			}
-		}
-		if (nmatches == 0) {
-			throw new IllegalArgumentException(
-					"type cannot be closed, as it contains no matching labels");
-		}
+		}		
 		return construct(Automatas.remap(automata, rmap));
 	}
 
@@ -1785,7 +1781,8 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		//Type from = fromString("X<real|[X]>");
-		Type from = fromString("X<real|[X]>");
+		Type from = fromString("X<(any,X|any)>");		
+		//Type from = fromString("X<real|[X]>");
 		Type to = fromString("X<[real|X]>");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));

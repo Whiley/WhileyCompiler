@@ -403,7 +403,7 @@ public final class TypeAlgorithms {
 			myState = new Automata.State(Type.K_UNION,false,myChildren);					
 		} else if (fromKind == K_INTERSECTION) {
 			// !(T1 | T2) & T3 => (!T1&T3) & (!T2&T3)
-			// => !((T1|!T3)|(T2|!T3))
+			// => !(!(!T1&T3)|!(!T2&T3))
 			int[] fromChildren = fromState.children;
 			int[] myChildren = new int[fromChildren.length];
 			for (int i = 0; i != fromChildren.length; ++i) {
