@@ -842,7 +842,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(trueLabel));
 
-			Type glb = Type.intersect(c.type, c.test);
+			Type glb = Type.intersect(c.type, c.test);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 			// now, add checkcase
 			addReadConversion(glb,bytecodes);		

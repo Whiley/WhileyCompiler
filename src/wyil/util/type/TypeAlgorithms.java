@@ -635,19 +635,34 @@ public final class TypeAlgorithms {
 			case Type.K_PROCESS: 
 			case Type.K_LIST:
 			case Type.K_SET:
-			case Type.K_DICTIONARY: {
-				// (T1,T2) & !(T3,T4) => (T1 & !T3, T2 & !T4) 
+			case Type.K_DICTIONARY: {				
+				// (T1,T2) & !(T3,T4) => (T1 & !T3, T2) | (T1, T2 & !T4) 
 				int[] fromChildren = fromState.children;
 				int[] toChildren = toState.children;
+				int[] tmpChildren = new int[fromChildren.length];
+				for(int i=0;i!=fromChildren.length;++i) {
+					tmpChildren[i] = states.size();
+					Automatas.extractOnto(fromChildren[i],from,states);
+				}				
 				int[] myChildren = new int[fromChildren.length];
 				for(int i=0;i!=fromChildren.length;++i) {
-					int fromChild = fromChildren[i];
-					int toChild = toChildren[i];
-					myChildren[i] = intersect(fromChild, true, from,
-							toChild, false, to, allocations, states);
+					int[] myChildChildren = new int[fromChildren.length];
+					for(int j=0;j!=fromChildren.length;++j) {
+						if(i == j) {
+							int fromChild = fromChildren[i];
+							int toChild = toChildren[i];
+							myChildChildren[i] = intersect(fromChild, true, from,
+									toChild, false, to, allocations, states);
+						} else {
+							myChildChildren[j] = tmpChildren[j];
+						}
+					}
+					myChildren[i] = states.size();
+					states.add(new Automata.State(fromState.kind, fromState.data,
+							true, myChildChildren));
 				}				
-				myState = new Automata.State(fromState.kind, fromState.data,
-						true, myChildren);
+				myState = new Automata.State(Type.K_UNION, null,
+						false, myChildren);
 				break;
 			}
 			case Type.K_NEGATION: {
@@ -781,19 +796,34 @@ public final class TypeAlgorithms {
 			case Type.K_LIST:
 			case Type.K_SET:
 			case Type.K_DICTIONARY: {
-				// !(T1,T2) & (T3,T4) => (!T1 & T3, !T2 & T4) 
+				// !(T1,T2) & (T3,T4) => (!T1 & T3, T2) | (T3, !T2 & T4) 
 				int[] fromChildren = fromState.children;
 				int[] toChildren = toState.children;
+				int[] tmpChildren = new int[fromChildren.length];
+				for(int i=0;i!=toChildren.length;++i) {
+					tmpChildren[i] = states.size();
+					Automatas.extractOnto(toChildren[i],to,states);
+				}				
 				int[] myChildren = new int[fromChildren.length];
 				for(int i=0;i!=fromChildren.length;++i) {
-					int fromChild = fromChildren[i];
-					int toChild = toChildren[i];
-					myChildren[i] = intersect(fromChild, false, from,
-							toChild, true, to, allocations, states);
+					int[] myChildChildren = new int[fromChildren.length];
+					for(int j=0;j!=fromChildren.length;++j) {
+						if(i == j) {
+							int fromChild = fromChildren[i];
+							int toChild = toChildren[i];
+							myChildChildren[i] = intersect(fromChild, false, from,
+									toChild, true, to, allocations, states);
+						} else {
+							myChildChildren[j] = tmpChildren[j];
+						}
+					}
+					myChildren[i] = states.size();
+					states.add(new Automata.State(fromState.kind, fromState.data,
+							true, myChildChildren));
 				}				
-				myState = new Automata.State(fromState.kind, fromState.data,
-						true, myChildren);
-				break;
+				myState = new Automata.State(Type.K_UNION, null,
+						false, myChildren);
+				break;				
 			}							
 			case Type.K_NEGATION: {
 				// !!T1 & !T2 => T1 & !T2 (!)

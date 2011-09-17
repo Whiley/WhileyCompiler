@@ -1785,8 +1785,10 @@ public abstract class Type {
 	
 	public static void main(String[] args) {
 		// Type t1 = contractive(); //linkedList(2);		
-		Type from = fromString("{real f,int y}");
-		Type to = fromString("{int x,int y}");									
+		//Type from = fromString("{int->any}");
+		//Type to = fromString("{int->string}");									
+		Type from = fromString("(int,any)");
+		Type to = fromString("(int,string)");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		//System.out.println("normalised(" + from + ") = " + normalise(from));
 		//System.out.println("normalised(" + to + ") = " + normalise(to));
@@ -1794,6 +1796,9 @@ public abstract class Type {
 		System.out.println("isContractive(" + to + ") = " + isContractive(to));
 		System.out.println(from + " & " + to + " = " + intersect(from,to));
 		System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
+		System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
+		System.out.println("!" + from + " & !" + to + " = "
+				+ intersect(Type.Negation(from), Type.Negation(to)));
 	}
 	
 	public static Type contractive() {

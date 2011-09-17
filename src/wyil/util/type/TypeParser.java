@@ -149,7 +149,14 @@ public class TypeParser {
 			match("{");
 			Type elem = parse(typeVariables);
 			skipWhiteSpace();
-			if(index < str.length() && str.charAt(index) != '}') {
+			if(index < str.length() && str.charAt(index) == '-') {
+				// dictionary				
+				match("->");
+				Type value = parse(typeVariables);				
+				match("}");
+				return Dictionary(elem,value);					
+				
+			} else if(index < str.length() && str.charAt(index) != '}') {
 				// record
 				HashMap<String,Type> fields = new HashMap<String,Type>();
 				String id = parseIdentifier();
