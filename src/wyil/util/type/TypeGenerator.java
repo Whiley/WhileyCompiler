@@ -201,6 +201,7 @@ public class TypeGenerator {
 					verbose = true;
 				} else if(args[index].equals("-m") || args[index].equals("-model")) {
 					config.RECURSIVE = false;
+					maxSize++;
 					kindUpdate(Type.K_UNION,null);
 					kindUpdate(Type.K_NEGATION,null);
 					kindUpdate(Type.K_SET,new Kind(true,0,2,null));

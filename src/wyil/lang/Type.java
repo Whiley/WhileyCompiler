@@ -1780,8 +1780,8 @@ public abstract class Type {
 	}
 	
 	public static void main(String[] args) {
-		Type from = fromString("null");
-		Type to = fromString("(any,{any f1})");		
+		Type from = fromString("(null,null)");
+		Type to = fromString("X<(null,X|null)>");		
 		//Type from = fromString("X<real|[X]>");
 		//Type to = fromString("X<[real|X]>");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));

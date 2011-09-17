@@ -197,18 +197,18 @@ public class RecursiveSubtypeTests {
 	@Test public void test_190() { checkNotSubtype("(null,null)","(null,{null f2})"); }
 	@Test public void test_191() { checkNotSubtype("(null,null)","({null f1},null)"); }
 	@Test public void test_192() { checkNotSubtype("(null,null)","({null f2},null)"); }
-	@Test public void test_193() { checkIsSubtype("(null,null)","X<(null,X|null)>"); }
-	@Test public void test_194() { checkIsSubtype("(null,null)","X<(null,null|X)>"); }
-	@Test public void test_195() { checkIsSubtype("(null,null)","X<(null|X,null)>"); }
-	@Test public void test_196() { checkIsSubtype("(null,null)","X<(X|null,null)>"); }
+	@Test public void test_193() { checkNotSubtype("(null,null)","X<(null,X|null)>"); }
+	@Test public void test_194() { checkNotSubtype("(null,null)","X<(null,null|X)>"); }
+	@Test public void test_195() { checkNotSubtype("(null,null)","X<(null|X,null)>"); }
+	@Test public void test_196() { checkNotSubtype("(null,null)","X<(X|null,null)>"); }
 	@Test public void test_197() { checkNotSubtype("(null,null)","({null f1},null)"); }
 	@Test public void test_198() { checkNotSubtype("(null,null)","({null f2},null)"); }
 	@Test public void test_199() { checkNotSubtype("(null,null)","(null,{null f1})"); }
 	@Test public void test_200() { checkNotSubtype("(null,null)","(null,{null f2})"); }
-	@Test public void test_201() { checkIsSubtype("(null,null)","X<(X|null,null)>"); }
-	@Test public void test_202() { checkIsSubtype("(null,null)","X<(null|X,null)>"); }
-	@Test public void test_203() { checkIsSubtype("(null,null)","X<(null,null|X)>"); }
-	@Test public void test_204() { checkIsSubtype("(null,null)","X<(null,X|null)>"); }
+	@Test public void test_201() { checkNotSubtype("(null,null)","X<(X|null,null)>"); }
+	@Test public void test_202() { checkNotSubtype("(null,null)","X<(null|X,null)>"); }
+	@Test public void test_203() { checkNotSubtype("(null,null)","X<(null,null|X)>"); }
+	@Test public void test_204() { checkNotSubtype("(null,null)","X<(null,X|null)>"); }
 	@Test public void test_205() { checkNotSubtype("(null,null)","{{null f1} f1}"); }
 	@Test public void test_206() { checkNotSubtype("(null,null)","{{null f2} f1}"); }
 	@Test public void test_207() { checkNotSubtype("(null,null)","{{null f1} f2}"); }
@@ -258,18 +258,18 @@ public class RecursiveSubtypeTests {
 	@Test public void test_251() { checkNotSubtype("(null,null)","(null,{null f2})"); }
 	@Test public void test_252() { checkNotSubtype("(null,null)","({null f1},null)"); }
 	@Test public void test_253() { checkNotSubtype("(null,null)","({null f2},null)"); }
-	@Test public void test_254() { checkIsSubtype("(null,null)","X<(null,X|null)>"); }
-	@Test public void test_255() { checkIsSubtype("(null,null)","X<(null,null|X)>"); }
-	@Test public void test_256() { checkIsSubtype("(null,null)","X<(null|X,null)>"); }
-	@Test public void test_257() { checkIsSubtype("(null,null)","X<(X|null,null)>"); }
+	@Test public void test_254() { checkNotSubtype("(null,null)","X<(null,X|null)>"); }
+	@Test public void test_255() { checkNotSubtype("(null,null)","X<(null,null|X)>"); }
+	@Test public void test_256() { checkNotSubtype("(null,null)","X<(null|X,null)>"); }
+	@Test public void test_257() { checkNotSubtype("(null,null)","X<(X|null,null)>"); }
 	@Test public void test_258() { checkNotSubtype("(null,null)","({null f1},null)"); }
 	@Test public void test_259() { checkNotSubtype("(null,null)","({null f2},null)"); }
 	@Test public void test_260() { checkNotSubtype("(null,null)","(null,{null f1})"); }
 	@Test public void test_261() { checkNotSubtype("(null,null)","(null,{null f2})"); }
-	@Test public void test_262() { checkIsSubtype("(null,null)","X<(X|null,null)>"); }
-	@Test public void test_263() { checkIsSubtype("(null,null)","X<(null|X,null)>"); }
-	@Test public void test_264() { checkIsSubtype("(null,null)","X<(null,null|X)>"); }
-	@Test public void test_265() { checkIsSubtype("(null,null)","X<(null,X|null)>"); }
+	@Test public void test_262() { checkNotSubtype("(null,null)","X<(X|null,null)>"); }
+	@Test public void test_263() { checkNotSubtype("(null,null)","X<(null|X,null)>"); }
+	@Test public void test_264() { checkNotSubtype("(null,null)","X<(null,null|X)>"); }
+	@Test public void test_265() { checkNotSubtype("(null,null)","X<(null,X|null)>"); }
 	@Test public void test_266() { checkNotSubtype("(null,null)","{{null f1} f1}"); }
 	@Test public void test_267() { checkNotSubtype("(null,null)","{{null f2} f1}"); }
 	@Test public void test_268() { checkNotSubtype("(null,null)","{{null f1} f2}"); }
@@ -565,14 +565,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_558() { checkNotSubtype("X<(null,X|null)>","({null f2},null)"); }
 	@Test public void test_559() { checkIsSubtype("X<(null,X|null)>","X<(null,X|null)>"); }
 	@Test public void test_560() { checkIsSubtype("X<(null,X|null)>","X<(null,null|X)>"); }
-	@Test public void test_561() { checkIsSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
-	@Test public void test_562() { checkIsSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
+	@Test public void test_561() { checkNotSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
+	@Test public void test_562() { checkNotSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
 	@Test public void test_563() { checkNotSubtype("X<(null,X|null)>","({null f1},null)"); }
 	@Test public void test_564() { checkNotSubtype("X<(null,X|null)>","({null f2},null)"); }
 	@Test public void test_565() { checkNotSubtype("X<(null,X|null)>","(null,{null f1})"); }
 	@Test public void test_566() { checkNotSubtype("X<(null,X|null)>","(null,{null f2})"); }
-	@Test public void test_567() { checkIsSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
-	@Test public void test_568() { checkIsSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
+	@Test public void test_567() { checkNotSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
+	@Test public void test_568() { checkNotSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
 	@Test public void test_569() { checkIsSubtype("X<(null,X|null)>","X<(null,null|X)>"); }
 	@Test public void test_570() { checkIsSubtype("X<(null,X|null)>","X<(null,X|null)>"); }
 	@Test public void test_571() { checkNotSubtype("X<(null,X|null)>","{{null f1} f1}"); }
@@ -626,14 +626,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_619() { checkNotSubtype("X<(null,null|X)>","({null f2},null)"); }
 	@Test public void test_620() { checkIsSubtype("X<(null,null|X)>","X<(null,X|null)>"); }
 	@Test public void test_621() { checkIsSubtype("X<(null,null|X)>","X<(null,null|X)>"); }
-	@Test public void test_622() { checkIsSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
-	@Test public void test_623() { checkIsSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
+	@Test public void test_622() { checkNotSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
+	@Test public void test_623() { checkNotSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
 	@Test public void test_624() { checkNotSubtype("X<(null,null|X)>","({null f1},null)"); }
 	@Test public void test_625() { checkNotSubtype("X<(null,null|X)>","({null f2},null)"); }
 	@Test public void test_626() { checkNotSubtype("X<(null,null|X)>","(null,{null f1})"); }
 	@Test public void test_627() { checkNotSubtype("X<(null,null|X)>","(null,{null f2})"); }
-	@Test public void test_628() { checkIsSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
-	@Test public void test_629() { checkIsSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
+	@Test public void test_628() { checkNotSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
+	@Test public void test_629() { checkNotSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
 	@Test public void test_630() { checkIsSubtype("X<(null,null|X)>","X<(null,null|X)>"); }
 	@Test public void test_631() { checkIsSubtype("X<(null,null|X)>","X<(null,X|null)>"); }
 	@Test public void test_632() { checkNotSubtype("X<(null,null|X)>","{{null f1} f1}"); }
@@ -685,8 +685,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_678() { checkNotSubtype("X<(null|X,null)>","(null,{null f2})"); }
 	@Test public void test_679() { checkNotSubtype("X<(null|X,null)>","({null f1},null)"); }
 	@Test public void test_680() { checkNotSubtype("X<(null|X,null)>","({null f2},null)"); }
-	@Test public void test_681() { checkIsSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
-	@Test public void test_682() { checkIsSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
+	@Test public void test_681() { checkNotSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
+	@Test public void test_682() { checkNotSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
 	@Test public void test_683() { checkIsSubtype("X<(null|X,null)>","X<(null|X,null)>"); }
 	@Test public void test_684() { checkIsSubtype("X<(null|X,null)>","X<(X|null,null)>"); }
 	@Test public void test_685() { checkNotSubtype("X<(null|X,null)>","({null f1},null)"); }
@@ -695,8 +695,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_688() { checkNotSubtype("X<(null|X,null)>","(null,{null f2})"); }
 	@Test public void test_689() { checkIsSubtype("X<(null|X,null)>","X<(X|null,null)>"); }
 	@Test public void test_690() { checkIsSubtype("X<(null|X,null)>","X<(null|X,null)>"); }
-	@Test public void test_691() { checkIsSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
-	@Test public void test_692() { checkIsSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
+	@Test public void test_691() { checkNotSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
+	@Test public void test_692() { checkNotSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
 	@Test public void test_693() { checkNotSubtype("X<(null|X,null)>","{{null f1} f1}"); }
 	@Test public void test_694() { checkNotSubtype("X<(null|X,null)>","{{null f2} f1}"); }
 	@Test public void test_695() { checkNotSubtype("X<(null|X,null)>","{{null f1} f2}"); }
@@ -746,8 +746,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_739() { checkNotSubtype("X<(X|null,null)>","(null,{null f2})"); }
 	@Test public void test_740() { checkNotSubtype("X<(X|null,null)>","({null f1},null)"); }
 	@Test public void test_741() { checkNotSubtype("X<(X|null,null)>","({null f2},null)"); }
-	@Test public void test_742() { checkIsSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
-	@Test public void test_743() { checkIsSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
+	@Test public void test_742() { checkNotSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
+	@Test public void test_743() { checkNotSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
 	@Test public void test_744() { checkIsSubtype("X<(X|null,null)>","X<(null|X,null)>"); }
 	@Test public void test_745() { checkIsSubtype("X<(X|null,null)>","X<(X|null,null)>"); }
 	@Test public void test_746() { checkNotSubtype("X<(X|null,null)>","({null f1},null)"); }
@@ -756,8 +756,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_749() { checkNotSubtype("X<(X|null,null)>","(null,{null f2})"); }
 	@Test public void test_750() { checkIsSubtype("X<(X|null,null)>","X<(X|null,null)>"); }
 	@Test public void test_751() { checkIsSubtype("X<(X|null,null)>","X<(null|X,null)>"); }
-	@Test public void test_752() { checkIsSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
-	@Test public void test_753() { checkIsSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
+	@Test public void test_752() { checkNotSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
+	@Test public void test_753() { checkNotSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
 	@Test public void test_754() { checkNotSubtype("X<(X|null,null)>","{{null f1} f1}"); }
 	@Test public void test_755() { checkNotSubtype("X<(X|null,null)>","{{null f2} f1}"); }
 	@Test public void test_756() { checkNotSubtype("X<(X|null,null)>","{{null f1} f2}"); }
@@ -1051,8 +1051,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1044() { checkNotSubtype("X<(X|null,null)>","(null,{null f2})"); }
 	@Test public void test_1045() { checkNotSubtype("X<(X|null,null)>","({null f1},null)"); }
 	@Test public void test_1046() { checkNotSubtype("X<(X|null,null)>","({null f2},null)"); }
-	@Test public void test_1047() { checkIsSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
-	@Test public void test_1048() { checkIsSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
+	@Test public void test_1047() { checkNotSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
+	@Test public void test_1048() { checkNotSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
 	@Test public void test_1049() { checkIsSubtype("X<(X|null,null)>","X<(null|X,null)>"); }
 	@Test public void test_1050() { checkIsSubtype("X<(X|null,null)>","X<(X|null,null)>"); }
 	@Test public void test_1051() { checkNotSubtype("X<(X|null,null)>","({null f1},null)"); }
@@ -1061,8 +1061,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1054() { checkNotSubtype("X<(X|null,null)>","(null,{null f2})"); }
 	@Test public void test_1055() { checkIsSubtype("X<(X|null,null)>","X<(X|null,null)>"); }
 	@Test public void test_1056() { checkIsSubtype("X<(X|null,null)>","X<(null|X,null)>"); }
-	@Test public void test_1057() { checkIsSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
-	@Test public void test_1058() { checkIsSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
+	@Test public void test_1057() { checkNotSubtype("X<(X|null,null)>","X<(null,null|X)>"); }
+	@Test public void test_1058() { checkNotSubtype("X<(X|null,null)>","X<(null,X|null)>"); }
 	@Test public void test_1059() { checkNotSubtype("X<(X|null,null)>","{{null f1} f1}"); }
 	@Test public void test_1060() { checkNotSubtype("X<(X|null,null)>","{{null f2} f1}"); }
 	@Test public void test_1061() { checkNotSubtype("X<(X|null,null)>","{{null f1} f2}"); }
@@ -1112,8 +1112,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1105() { checkNotSubtype("X<(null|X,null)>","(null,{null f2})"); }
 	@Test public void test_1106() { checkNotSubtype("X<(null|X,null)>","({null f1},null)"); }
 	@Test public void test_1107() { checkNotSubtype("X<(null|X,null)>","({null f2},null)"); }
-	@Test public void test_1108() { checkIsSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
-	@Test public void test_1109() { checkIsSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
+	@Test public void test_1108() { checkNotSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
+	@Test public void test_1109() { checkNotSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
 	@Test public void test_1110() { checkIsSubtype("X<(null|X,null)>","X<(null|X,null)>"); }
 	@Test public void test_1111() { checkIsSubtype("X<(null|X,null)>","X<(X|null,null)>"); }
 	@Test public void test_1112() { checkNotSubtype("X<(null|X,null)>","({null f1},null)"); }
@@ -1122,8 +1122,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1115() { checkNotSubtype("X<(null|X,null)>","(null,{null f2})"); }
 	@Test public void test_1116() { checkIsSubtype("X<(null|X,null)>","X<(X|null,null)>"); }
 	@Test public void test_1117() { checkIsSubtype("X<(null|X,null)>","X<(null|X,null)>"); }
-	@Test public void test_1118() { checkIsSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
-	@Test public void test_1119() { checkIsSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
+	@Test public void test_1118() { checkNotSubtype("X<(null|X,null)>","X<(null,null|X)>"); }
+	@Test public void test_1119() { checkNotSubtype("X<(null|X,null)>","X<(null,X|null)>"); }
 	@Test public void test_1120() { checkNotSubtype("X<(null|X,null)>","{{null f1} f1}"); }
 	@Test public void test_1121() { checkNotSubtype("X<(null|X,null)>","{{null f2} f1}"); }
 	@Test public void test_1122() { checkNotSubtype("X<(null|X,null)>","{{null f1} f2}"); }
@@ -1175,14 +1175,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1168() { checkNotSubtype("X<(null,null|X)>","({null f2},null)"); }
 	@Test public void test_1169() { checkIsSubtype("X<(null,null|X)>","X<(null,X|null)>"); }
 	@Test public void test_1170() { checkIsSubtype("X<(null,null|X)>","X<(null,null|X)>"); }
-	@Test public void test_1171() { checkIsSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
-	@Test public void test_1172() { checkIsSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
+	@Test public void test_1171() { checkNotSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
+	@Test public void test_1172() { checkNotSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
 	@Test public void test_1173() { checkNotSubtype("X<(null,null|X)>","({null f1},null)"); }
 	@Test public void test_1174() { checkNotSubtype("X<(null,null|X)>","({null f2},null)"); }
 	@Test public void test_1175() { checkNotSubtype("X<(null,null|X)>","(null,{null f1})"); }
 	@Test public void test_1176() { checkNotSubtype("X<(null,null|X)>","(null,{null f2})"); }
-	@Test public void test_1177() { checkIsSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
-	@Test public void test_1178() { checkIsSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
+	@Test public void test_1177() { checkNotSubtype("X<(null,null|X)>","X<(X|null,null)>"); }
+	@Test public void test_1178() { checkNotSubtype("X<(null,null|X)>","X<(null|X,null)>"); }
 	@Test public void test_1179() { checkIsSubtype("X<(null,null|X)>","X<(null,null|X)>"); }
 	@Test public void test_1180() { checkIsSubtype("X<(null,null|X)>","X<(null,X|null)>"); }
 	@Test public void test_1181() { checkNotSubtype("X<(null,null|X)>","{{null f1} f1}"); }
@@ -1236,14 +1236,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1229() { checkNotSubtype("X<(null,X|null)>","({null f2},null)"); }
 	@Test public void test_1230() { checkIsSubtype("X<(null,X|null)>","X<(null,X|null)>"); }
 	@Test public void test_1231() { checkIsSubtype("X<(null,X|null)>","X<(null,null|X)>"); }
-	@Test public void test_1232() { checkIsSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
-	@Test public void test_1233() { checkIsSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
+	@Test public void test_1232() { checkNotSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
+	@Test public void test_1233() { checkNotSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
 	@Test public void test_1234() { checkNotSubtype("X<(null,X|null)>","({null f1},null)"); }
 	@Test public void test_1235() { checkNotSubtype("X<(null,X|null)>","({null f2},null)"); }
 	@Test public void test_1236() { checkNotSubtype("X<(null,X|null)>","(null,{null f1})"); }
 	@Test public void test_1237() { checkNotSubtype("X<(null,X|null)>","(null,{null f2})"); }
-	@Test public void test_1238() { checkIsSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
-	@Test public void test_1239() { checkIsSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
+	@Test public void test_1238() { checkNotSubtype("X<(null,X|null)>","X<(X|null,null)>"); }
+	@Test public void test_1239() { checkNotSubtype("X<(null,X|null)>","X<(null|X,null)>"); }
 	@Test public void test_1240() { checkIsSubtype("X<(null,X|null)>","X<(null,null|X)>"); }
 	@Test public void test_1241() { checkIsSubtype("X<(null,X|null)>","X<(null,X|null)>"); }
 	@Test public void test_1242() { checkNotSubtype("X<(null,X|null)>","{{null f1} f1}"); }
@@ -1905,8 +1905,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1898() { checkNotSubtype("X<null|(X,null)>","(null,{null f2})"); }
 	@Test public void test_1899() { checkNotSubtype("X<null|(X,null)>","({null f1},null)"); }
 	@Test public void test_1900() { checkNotSubtype("X<null|(X,null)>","({null f2},null)"); }
-	@Test public void test_1901() { checkIsSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
-	@Test public void test_1902() { checkIsSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
+	@Test public void test_1901() { checkNotSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
+	@Test public void test_1902() { checkNotSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
 	@Test public void test_1903() { checkIsSubtype("X<null|(X,null)>","X<(null|X,null)>"); }
 	@Test public void test_1904() { checkIsSubtype("X<null|(X,null)>","X<(X|null,null)>"); }
 	@Test public void test_1905() { checkNotSubtype("X<null|(X,null)>","({null f1},null)"); }
@@ -1915,8 +1915,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1908() { checkNotSubtype("X<null|(X,null)>","(null,{null f2})"); }
 	@Test public void test_1909() { checkIsSubtype("X<null|(X,null)>","X<(X|null,null)>"); }
 	@Test public void test_1910() { checkIsSubtype("X<null|(X,null)>","X<(null|X,null)>"); }
-	@Test public void test_1911() { checkIsSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
-	@Test public void test_1912() { checkIsSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
+	@Test public void test_1911() { checkNotSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
+	@Test public void test_1912() { checkNotSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
 	@Test public void test_1913() { checkNotSubtype("X<null|(X,null)>","{{null f1} f1}"); }
 	@Test public void test_1914() { checkNotSubtype("X<null|(X,null)>","{{null f2} f1}"); }
 	@Test public void test_1915() { checkNotSubtype("X<null|(X,null)>","{{null f1} f2}"); }
@@ -1928,8 +1928,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1921() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_1922() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_1923() { checkIsSubtype("X<null|(X,null)>","X<null|(X,null)>"); }
-	@Test public void test_1924() { checkIsSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
-	@Test public void test_1925() { checkIsSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
+	@Test public void test_1924() { checkNotSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
+	@Test public void test_1925() { checkNotSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
 	@Test public void test_1926() { checkIsSubtype("X<null|(X,null)>","X<(X,null)|null>"); }
 	@Test public void test_1927() { checkNotSubtype("X<null|(X,null)>","null|{null f1}"); }
 	@Test public void test_1928() { checkNotSubtype("X<null|(X,null)>","null|{null f2}"); }
@@ -1943,8 +1943,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1936() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_1937() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_1938() { checkIsSubtype("X<null|(X,null)>","X<(X,null)|null>"); }
-	@Test public void test_1939() { checkIsSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
-	@Test public void test_1940() { checkIsSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
+	@Test public void test_1939() { checkNotSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
+	@Test public void test_1940() { checkNotSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
 	@Test public void test_1941() { checkIsSubtype("X<null|(X,null)>","X<null|(X,null)>"); }
 	@Test public void test_1942() { checkNotSubtype("X<null|(X,null)>","{null f1}|null"); }
 	@Test public void test_1943() { checkNotSubtype("X<null|(X,null)>","{null f2}|null"); }
@@ -1968,14 +1968,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1961() { checkNotSubtype("X<null|(null,X)>","({null f2},null)"); }
 	@Test public void test_1962() { checkIsSubtype("X<null|(null,X)>","X<(null,X|null)>"); }
 	@Test public void test_1963() { checkIsSubtype("X<null|(null,X)>","X<(null,null|X)>"); }
-	@Test public void test_1964() { checkIsSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
-	@Test public void test_1965() { checkIsSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
+	@Test public void test_1964() { checkNotSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
+	@Test public void test_1965() { checkNotSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
 	@Test public void test_1966() { checkNotSubtype("X<null|(null,X)>","({null f1},null)"); }
 	@Test public void test_1967() { checkNotSubtype("X<null|(null,X)>","({null f2},null)"); }
 	@Test public void test_1968() { checkNotSubtype("X<null|(null,X)>","(null,{null f1})"); }
 	@Test public void test_1969() { checkNotSubtype("X<null|(null,X)>","(null,{null f2})"); }
-	@Test public void test_1970() { checkIsSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
-	@Test public void test_1971() { checkIsSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
+	@Test public void test_1970() { checkNotSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
+	@Test public void test_1971() { checkNotSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
 	@Test public void test_1972() { checkIsSubtype("X<null|(null,X)>","X<(null,null|X)>"); }
 	@Test public void test_1973() { checkIsSubtype("X<null|(null,X)>","X<(null,X|null)>"); }
 	@Test public void test_1974() { checkNotSubtype("X<null|(null,X)>","{{null f1} f1}"); }
@@ -1988,10 +1988,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1981() { checkNotSubtype("X<null|(null,X)>","X<{X|null f2}>"); }
 	@Test public void test_1982() { checkIsSubtype("X<null|(null,X)>","null"); }
 	@Test public void test_1983() { checkIsSubtype("X<null|(null,X)>","null"); }
-	@Test public void test_1984() { checkIsSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
+	@Test public void test_1984() { checkNotSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
 	@Test public void test_1985() { checkIsSubtype("X<null|(null,X)>","X<null|(null,X)>"); }
 	@Test public void test_1986() { checkIsSubtype("X<null|(null,X)>","X<(null,X)|null>"); }
-	@Test public void test_1987() { checkIsSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
+	@Test public void test_1987() { checkNotSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
 	@Test public void test_1988() { checkNotSubtype("X<null|(null,X)>","null|{null f1}"); }
 	@Test public void test_1989() { checkNotSubtype("X<null|(null,X)>","null|{null f2}"); }
 	@Test public void test_1990() { checkNotSubtype("X<null|(null,X)>","{null f1}|null"); }
@@ -2003,10 +2003,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_1996() { checkIsSubtype("X<null|(null,X)>","null"); }
 	@Test public void test_1997() { checkIsSubtype("X<null|(null,X)>","null"); }
 	@Test public void test_1998() { checkIsSubtype("X<null|(null,X)>","null"); }
-	@Test public void test_1999() { checkIsSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
+	@Test public void test_1999() { checkNotSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
 	@Test public void test_2000() { checkIsSubtype("X<null|(null,X)>","X<(null,X)|null>"); }
 	@Test public void test_2001() { checkIsSubtype("X<null|(null,X)>","X<null|(null,X)>"); }
-	@Test public void test_2002() { checkIsSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
+	@Test public void test_2002() { checkNotSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
 	@Test public void test_2003() { checkNotSubtype("X<null|(null,X)>","{null f1}|null"); }
 	@Test public void test_2004() { checkNotSubtype("X<null|(null,X)>","{null f2}|null"); }
 	@Test public void test_2005() { checkNotSubtype("X<null|(null,X)>","null|{null f1}"); }
@@ -2029,14 +2029,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2022() { checkNotSubtype("X<(null,X)|null>","({null f2},null)"); }
 	@Test public void test_2023() { checkIsSubtype("X<(null,X)|null>","X<(null,X|null)>"); }
 	@Test public void test_2024() { checkIsSubtype("X<(null,X)|null>","X<(null,null|X)>"); }
-	@Test public void test_2025() { checkIsSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
-	@Test public void test_2026() { checkIsSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
+	@Test public void test_2025() { checkNotSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
+	@Test public void test_2026() { checkNotSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
 	@Test public void test_2027() { checkNotSubtype("X<(null,X)|null>","({null f1},null)"); }
 	@Test public void test_2028() { checkNotSubtype("X<(null,X)|null>","({null f2},null)"); }
 	@Test public void test_2029() { checkNotSubtype("X<(null,X)|null>","(null,{null f1})"); }
 	@Test public void test_2030() { checkNotSubtype("X<(null,X)|null>","(null,{null f2})"); }
-	@Test public void test_2031() { checkIsSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
-	@Test public void test_2032() { checkIsSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
+	@Test public void test_2031() { checkNotSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
+	@Test public void test_2032() { checkNotSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
 	@Test public void test_2033() { checkIsSubtype("X<(null,X)|null>","X<(null,null|X)>"); }
 	@Test public void test_2034() { checkIsSubtype("X<(null,X)|null>","X<(null,X|null)>"); }
 	@Test public void test_2035() { checkNotSubtype("X<(null,X)|null>","{{null f1} f1}"); }
@@ -2049,10 +2049,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2042() { checkNotSubtype("X<(null,X)|null>","X<{X|null f2}>"); }
 	@Test public void test_2043() { checkIsSubtype("X<(null,X)|null>","null"); }
 	@Test public void test_2044() { checkIsSubtype("X<(null,X)|null>","null"); }
-	@Test public void test_2045() { checkIsSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
+	@Test public void test_2045() { checkNotSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
 	@Test public void test_2046() { checkIsSubtype("X<(null,X)|null>","X<null|(null,X)>"); }
 	@Test public void test_2047() { checkIsSubtype("X<(null,X)|null>","X<(null,X)|null>"); }
-	@Test public void test_2048() { checkIsSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
+	@Test public void test_2048() { checkNotSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
 	@Test public void test_2049() { checkNotSubtype("X<(null,X)|null>","null|{null f1}"); }
 	@Test public void test_2050() { checkNotSubtype("X<(null,X)|null>","null|{null f2}"); }
 	@Test public void test_2051() { checkNotSubtype("X<(null,X)|null>","{null f1}|null"); }
@@ -2064,10 +2064,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2057() { checkIsSubtype("X<(null,X)|null>","null"); }
 	@Test public void test_2058() { checkIsSubtype("X<(null,X)|null>","null"); }
 	@Test public void test_2059() { checkIsSubtype("X<(null,X)|null>","null"); }
-	@Test public void test_2060() { checkIsSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
+	@Test public void test_2060() { checkNotSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
 	@Test public void test_2061() { checkIsSubtype("X<(null,X)|null>","X<(null,X)|null>"); }
 	@Test public void test_2062() { checkIsSubtype("X<(null,X)|null>","X<null|(null,X)>"); }
-	@Test public void test_2063() { checkIsSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
+	@Test public void test_2063() { checkNotSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
 	@Test public void test_2064() { checkNotSubtype("X<(null,X)|null>","{null f1}|null"); }
 	@Test public void test_2065() { checkNotSubtype("X<(null,X)|null>","{null f2}|null"); }
 	@Test public void test_2066() { checkNotSubtype("X<(null,X)|null>","null|{null f1}"); }
@@ -2088,8 +2088,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2081() { checkNotSubtype("X<(X,null)|null>","(null,{null f2})"); }
 	@Test public void test_2082() { checkNotSubtype("X<(X,null)|null>","({null f1},null)"); }
 	@Test public void test_2083() { checkNotSubtype("X<(X,null)|null>","({null f2},null)"); }
-	@Test public void test_2084() { checkIsSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
-	@Test public void test_2085() { checkIsSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
+	@Test public void test_2084() { checkNotSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
+	@Test public void test_2085() { checkNotSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
 	@Test public void test_2086() { checkIsSubtype("X<(X,null)|null>","X<(null|X,null)>"); }
 	@Test public void test_2087() { checkIsSubtype("X<(X,null)|null>","X<(X|null,null)>"); }
 	@Test public void test_2088() { checkNotSubtype("X<(X,null)|null>","({null f1},null)"); }
@@ -2098,8 +2098,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2091() { checkNotSubtype("X<(X,null)|null>","(null,{null f2})"); }
 	@Test public void test_2092() { checkIsSubtype("X<(X,null)|null>","X<(X|null,null)>"); }
 	@Test public void test_2093() { checkIsSubtype("X<(X,null)|null>","X<(null|X,null)>"); }
-	@Test public void test_2094() { checkIsSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
-	@Test public void test_2095() { checkIsSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
+	@Test public void test_2094() { checkNotSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
+	@Test public void test_2095() { checkNotSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
 	@Test public void test_2096() { checkNotSubtype("X<(X,null)|null>","{{null f1} f1}"); }
 	@Test public void test_2097() { checkNotSubtype("X<(X,null)|null>","{{null f2} f1}"); }
 	@Test public void test_2098() { checkNotSubtype("X<(X,null)|null>","{{null f1} f2}"); }
@@ -2111,8 +2111,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2104() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2105() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2106() { checkIsSubtype("X<(X,null)|null>","X<null|(X,null)>"); }
-	@Test public void test_2107() { checkIsSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
-	@Test public void test_2108() { checkIsSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
+	@Test public void test_2107() { checkNotSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
+	@Test public void test_2108() { checkNotSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
 	@Test public void test_2109() { checkIsSubtype("X<(X,null)|null>","X<(X,null)|null>"); }
 	@Test public void test_2110() { checkNotSubtype("X<(X,null)|null>","null|{null f1}"); }
 	@Test public void test_2111() { checkNotSubtype("X<(X,null)|null>","null|{null f2}"); }
@@ -2126,8 +2126,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2119() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2120() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2121() { checkIsSubtype("X<(X,null)|null>","X<(X,null)|null>"); }
-	@Test public void test_2122() { checkIsSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
-	@Test public void test_2123() { checkIsSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
+	@Test public void test_2122() { checkNotSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
+	@Test public void test_2123() { checkNotSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
 	@Test public void test_2124() { checkIsSubtype("X<(X,null)|null>","X<null|(X,null)>"); }
 	@Test public void test_2125() { checkNotSubtype("X<(X,null)|null>","{null f1}|null"); }
 	@Test public void test_2126() { checkNotSubtype("X<(X,null)|null>","{null f2}|null"); }
@@ -2820,8 +2820,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2813() { checkNotSubtype("X<(X,null)|null>","(null,{null f2})"); }
 	@Test public void test_2814() { checkNotSubtype("X<(X,null)|null>","({null f1},null)"); }
 	@Test public void test_2815() { checkNotSubtype("X<(X,null)|null>","({null f2},null)"); }
-	@Test public void test_2816() { checkIsSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
-	@Test public void test_2817() { checkIsSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
+	@Test public void test_2816() { checkNotSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
+	@Test public void test_2817() { checkNotSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
 	@Test public void test_2818() { checkIsSubtype("X<(X,null)|null>","X<(null|X,null)>"); }
 	@Test public void test_2819() { checkIsSubtype("X<(X,null)|null>","X<(X|null,null)>"); }
 	@Test public void test_2820() { checkNotSubtype("X<(X,null)|null>","({null f1},null)"); }
@@ -2830,8 +2830,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2823() { checkNotSubtype("X<(X,null)|null>","(null,{null f2})"); }
 	@Test public void test_2824() { checkIsSubtype("X<(X,null)|null>","X<(X|null,null)>"); }
 	@Test public void test_2825() { checkIsSubtype("X<(X,null)|null>","X<(null|X,null)>"); }
-	@Test public void test_2826() { checkIsSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
-	@Test public void test_2827() { checkIsSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
+	@Test public void test_2826() { checkNotSubtype("X<(X,null)|null>","X<(null,null|X)>"); }
+	@Test public void test_2827() { checkNotSubtype("X<(X,null)|null>","X<(null,X|null)>"); }
 	@Test public void test_2828() { checkNotSubtype("X<(X,null)|null>","{{null f1} f1}"); }
 	@Test public void test_2829() { checkNotSubtype("X<(X,null)|null>","{{null f2} f1}"); }
 	@Test public void test_2830() { checkNotSubtype("X<(X,null)|null>","{{null f1} f2}"); }
@@ -2843,8 +2843,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2836() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2837() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2838() { checkIsSubtype("X<(X,null)|null>","X<null|(X,null)>"); }
-	@Test public void test_2839() { checkIsSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
-	@Test public void test_2840() { checkIsSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
+	@Test public void test_2839() { checkNotSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
+	@Test public void test_2840() { checkNotSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
 	@Test public void test_2841() { checkIsSubtype("X<(X,null)|null>","X<(X,null)|null>"); }
 	@Test public void test_2842() { checkNotSubtype("X<(X,null)|null>","null|{null f1}"); }
 	@Test public void test_2843() { checkNotSubtype("X<(X,null)|null>","null|{null f2}"); }
@@ -2858,8 +2858,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2851() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2852() { checkIsSubtype("X<(X,null)|null>","null"); }
 	@Test public void test_2853() { checkIsSubtype("X<(X,null)|null>","X<(X,null)|null>"); }
-	@Test public void test_2854() { checkIsSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
-	@Test public void test_2855() { checkIsSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
+	@Test public void test_2854() { checkNotSubtype("X<(X,null)|null>","X<(null,X)|null>"); }
+	@Test public void test_2855() { checkNotSubtype("X<(X,null)|null>","X<null|(null,X)>"); }
 	@Test public void test_2856() { checkIsSubtype("X<(X,null)|null>","X<null|(X,null)>"); }
 	@Test public void test_2857() { checkNotSubtype("X<(X,null)|null>","{null f1}|null"); }
 	@Test public void test_2858() { checkNotSubtype("X<(X,null)|null>","{null f2}|null"); }
@@ -2883,14 +2883,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2876() { checkNotSubtype("X<(null,X)|null>","({null f2},null)"); }
 	@Test public void test_2877() { checkIsSubtype("X<(null,X)|null>","X<(null,X|null)>"); }
 	@Test public void test_2878() { checkIsSubtype("X<(null,X)|null>","X<(null,null|X)>"); }
-	@Test public void test_2879() { checkIsSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
-	@Test public void test_2880() { checkIsSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
+	@Test public void test_2879() { checkNotSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
+	@Test public void test_2880() { checkNotSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
 	@Test public void test_2881() { checkNotSubtype("X<(null,X)|null>","({null f1},null)"); }
 	@Test public void test_2882() { checkNotSubtype("X<(null,X)|null>","({null f2},null)"); }
 	@Test public void test_2883() { checkNotSubtype("X<(null,X)|null>","(null,{null f1})"); }
 	@Test public void test_2884() { checkNotSubtype("X<(null,X)|null>","(null,{null f2})"); }
-	@Test public void test_2885() { checkIsSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
-	@Test public void test_2886() { checkIsSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
+	@Test public void test_2885() { checkNotSubtype("X<(null,X)|null>","X<(X|null,null)>"); }
+	@Test public void test_2886() { checkNotSubtype("X<(null,X)|null>","X<(null|X,null)>"); }
 	@Test public void test_2887() { checkIsSubtype("X<(null,X)|null>","X<(null,null|X)>"); }
 	@Test public void test_2888() { checkIsSubtype("X<(null,X)|null>","X<(null,X|null)>"); }
 	@Test public void test_2889() { checkNotSubtype("X<(null,X)|null>","{{null f1} f1}"); }
@@ -2903,10 +2903,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2896() { checkNotSubtype("X<(null,X)|null>","X<{X|null f2}>"); }
 	@Test public void test_2897() { checkIsSubtype("X<(null,X)|null>","null"); }
 	@Test public void test_2898() { checkIsSubtype("X<(null,X)|null>","null"); }
-	@Test public void test_2899() { checkIsSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
+	@Test public void test_2899() { checkNotSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
 	@Test public void test_2900() { checkIsSubtype("X<(null,X)|null>","X<null|(null,X)>"); }
 	@Test public void test_2901() { checkIsSubtype("X<(null,X)|null>","X<(null,X)|null>"); }
-	@Test public void test_2902() { checkIsSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
+	@Test public void test_2902() { checkNotSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
 	@Test public void test_2903() { checkNotSubtype("X<(null,X)|null>","null|{null f1}"); }
 	@Test public void test_2904() { checkNotSubtype("X<(null,X)|null>","null|{null f2}"); }
 	@Test public void test_2905() { checkNotSubtype("X<(null,X)|null>","{null f1}|null"); }
@@ -2918,10 +2918,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2911() { checkIsSubtype("X<(null,X)|null>","null"); }
 	@Test public void test_2912() { checkIsSubtype("X<(null,X)|null>","null"); }
 	@Test public void test_2913() { checkIsSubtype("X<(null,X)|null>","null"); }
-	@Test public void test_2914() { checkIsSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
+	@Test public void test_2914() { checkNotSubtype("X<(null,X)|null>","X<(X,null)|null>"); }
 	@Test public void test_2915() { checkIsSubtype("X<(null,X)|null>","X<(null,X)|null>"); }
 	@Test public void test_2916() { checkIsSubtype("X<(null,X)|null>","X<null|(null,X)>"); }
-	@Test public void test_2917() { checkIsSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
+	@Test public void test_2917() { checkNotSubtype("X<(null,X)|null>","X<null|(X,null)>"); }
 	@Test public void test_2918() { checkNotSubtype("X<(null,X)|null>","{null f1}|null"); }
 	@Test public void test_2919() { checkNotSubtype("X<(null,X)|null>","{null f2}|null"); }
 	@Test public void test_2920() { checkNotSubtype("X<(null,X)|null>","null|{null f1}"); }
@@ -2944,14 +2944,14 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2937() { checkNotSubtype("X<null|(null,X)>","({null f2},null)"); }
 	@Test public void test_2938() { checkIsSubtype("X<null|(null,X)>","X<(null,X|null)>"); }
 	@Test public void test_2939() { checkIsSubtype("X<null|(null,X)>","X<(null,null|X)>"); }
-	@Test public void test_2940() { checkIsSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
-	@Test public void test_2941() { checkIsSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
+	@Test public void test_2940() { checkNotSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
+	@Test public void test_2941() { checkNotSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
 	@Test public void test_2942() { checkNotSubtype("X<null|(null,X)>","({null f1},null)"); }
 	@Test public void test_2943() { checkNotSubtype("X<null|(null,X)>","({null f2},null)"); }
 	@Test public void test_2944() { checkNotSubtype("X<null|(null,X)>","(null,{null f1})"); }
 	@Test public void test_2945() { checkNotSubtype("X<null|(null,X)>","(null,{null f2})"); }
-	@Test public void test_2946() { checkIsSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
-	@Test public void test_2947() { checkIsSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
+	@Test public void test_2946() { checkNotSubtype("X<null|(null,X)>","X<(X|null,null)>"); }
+	@Test public void test_2947() { checkNotSubtype("X<null|(null,X)>","X<(null|X,null)>"); }
 	@Test public void test_2948() { checkIsSubtype("X<null|(null,X)>","X<(null,null|X)>"); }
 	@Test public void test_2949() { checkIsSubtype("X<null|(null,X)>","X<(null,X|null)>"); }
 	@Test public void test_2950() { checkNotSubtype("X<null|(null,X)>","{{null f1} f1}"); }
@@ -2964,10 +2964,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2957() { checkNotSubtype("X<null|(null,X)>","X<{X|null f2}>"); }
 	@Test public void test_2958() { checkIsSubtype("X<null|(null,X)>","null"); }
 	@Test public void test_2959() { checkIsSubtype("X<null|(null,X)>","null"); }
-	@Test public void test_2960() { checkIsSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
+	@Test public void test_2960() { checkNotSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
 	@Test public void test_2961() { checkIsSubtype("X<null|(null,X)>","X<null|(null,X)>"); }
 	@Test public void test_2962() { checkIsSubtype("X<null|(null,X)>","X<(null,X)|null>"); }
-	@Test public void test_2963() { checkIsSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
+	@Test public void test_2963() { checkNotSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
 	@Test public void test_2964() { checkNotSubtype("X<null|(null,X)>","null|{null f1}"); }
 	@Test public void test_2965() { checkNotSubtype("X<null|(null,X)>","null|{null f2}"); }
 	@Test public void test_2966() { checkNotSubtype("X<null|(null,X)>","{null f1}|null"); }
@@ -2979,10 +2979,10 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2972() { checkIsSubtype("X<null|(null,X)>","null"); }
 	@Test public void test_2973() { checkIsSubtype("X<null|(null,X)>","null"); }
 	@Test public void test_2974() { checkIsSubtype("X<null|(null,X)>","null"); }
-	@Test public void test_2975() { checkIsSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
+	@Test public void test_2975() { checkNotSubtype("X<null|(null,X)>","X<(X,null)|null>"); }
 	@Test public void test_2976() { checkIsSubtype("X<null|(null,X)>","X<(null,X)|null>"); }
 	@Test public void test_2977() { checkIsSubtype("X<null|(null,X)>","X<null|(null,X)>"); }
-	@Test public void test_2978() { checkIsSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
+	@Test public void test_2978() { checkNotSubtype("X<null|(null,X)>","X<null|(X,null)>"); }
 	@Test public void test_2979() { checkNotSubtype("X<null|(null,X)>","{null f1}|null"); }
 	@Test public void test_2980() { checkNotSubtype("X<null|(null,X)>","{null f2}|null"); }
 	@Test public void test_2981() { checkNotSubtype("X<null|(null,X)>","null|{null f1}"); }
@@ -3003,8 +3003,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_2996() { checkNotSubtype("X<null|(X,null)>","(null,{null f2})"); }
 	@Test public void test_2997() { checkNotSubtype("X<null|(X,null)>","({null f1},null)"); }
 	@Test public void test_2998() { checkNotSubtype("X<null|(X,null)>","({null f2},null)"); }
-	@Test public void test_2999() { checkIsSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
-	@Test public void test_3000() { checkIsSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
+	@Test public void test_2999() { checkNotSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
+	@Test public void test_3000() { checkNotSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
 	@Test public void test_3001() { checkIsSubtype("X<null|(X,null)>","X<(null|X,null)>"); }
 	@Test public void test_3002() { checkIsSubtype("X<null|(X,null)>","X<(X|null,null)>"); }
 	@Test public void test_3003() { checkNotSubtype("X<null|(X,null)>","({null f1},null)"); }
@@ -3013,8 +3013,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_3006() { checkNotSubtype("X<null|(X,null)>","(null,{null f2})"); }
 	@Test public void test_3007() { checkIsSubtype("X<null|(X,null)>","X<(X|null,null)>"); }
 	@Test public void test_3008() { checkIsSubtype("X<null|(X,null)>","X<(null|X,null)>"); }
-	@Test public void test_3009() { checkIsSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
-	@Test public void test_3010() { checkIsSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
+	@Test public void test_3009() { checkNotSubtype("X<null|(X,null)>","X<(null,null|X)>"); }
+	@Test public void test_3010() { checkNotSubtype("X<null|(X,null)>","X<(null,X|null)>"); }
 	@Test public void test_3011() { checkNotSubtype("X<null|(X,null)>","{{null f1} f1}"); }
 	@Test public void test_3012() { checkNotSubtype("X<null|(X,null)>","{{null f2} f1}"); }
 	@Test public void test_3013() { checkNotSubtype("X<null|(X,null)>","{{null f1} f2}"); }
@@ -3026,8 +3026,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_3019() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_3020() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_3021() { checkIsSubtype("X<null|(X,null)>","X<null|(X,null)>"); }
-	@Test public void test_3022() { checkIsSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
-	@Test public void test_3023() { checkIsSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
+	@Test public void test_3022() { checkNotSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
+	@Test public void test_3023() { checkNotSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
 	@Test public void test_3024() { checkIsSubtype("X<null|(X,null)>","X<(X,null)|null>"); }
 	@Test public void test_3025() { checkNotSubtype("X<null|(X,null)>","null|{null f1}"); }
 	@Test public void test_3026() { checkNotSubtype("X<null|(X,null)>","null|{null f2}"); }
@@ -3041,8 +3041,8 @@ public class RecursiveSubtypeTests {
 	@Test public void test_3034() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_3035() { checkIsSubtype("X<null|(X,null)>","null"); }
 	@Test public void test_3036() { checkIsSubtype("X<null|(X,null)>","X<(X,null)|null>"); }
-	@Test public void test_3037() { checkIsSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
-	@Test public void test_3038() { checkIsSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
+	@Test public void test_3037() { checkNotSubtype("X<null|(X,null)>","X<(null,X)|null>"); }
+	@Test public void test_3038() { checkNotSubtype("X<null|(X,null)>","X<null|(null,X)>"); }
 	@Test public void test_3039() { checkIsSubtype("X<null|(X,null)>","X<null|(X,null)>"); }
 	@Test public void test_3040() { checkNotSubtype("X<null|(X,null)>","{null f1}|null"); }
 	@Test public void test_3041() { checkNotSubtype("X<null|(X,null)>","{null f2}|null"); }
