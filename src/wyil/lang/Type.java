@@ -506,55 +506,10 @@ public abstract class Type {
 			return false;
 		} else {
 			Automata automata = ((Compound) type).automata;
-			BitSet contractives = new BitSet(automata.size());
-			// initially all nodes are considered contracive.
-			contractives.set(0,contractives.size(),true);
-			boolean changed = true;
-			boolean contractive = false;
-			while(changed) {
-				changed=false;
-				contractive = false;
-				for(int i=0;i!=automata.size();++i) {
-					boolean oldVal = contractives.get(i);
-					boolean newVal = isContractive(i,contractives,automata);
-					if(oldVal && !newVal) {
-						contractives.set(i,newVal);
-						changed = true;
-					}
-					contractive |= newVal;
-				}
-			}
-						
-			return contractive;
+			return TypeAlgorithms.isContractive(automata);
 		}
 	}
-	
-	private static boolean isContractive(int index, BitSet contractives,
-			Automata automata) {
-		Automata.State state = automata.states[index];
-		int[] children = state.children;
-		if(children.length == 0) {
-			return false;
-		}
-		if(state.deterministic) {
-			for(int child : children) {
-				if(child == index || contractives.get(child)) {
-					return true;
-				}
-			}
-			return false;
-		} else {			
-			boolean r = true;
-			for(int child : children) {				
-				if(child == index) { 
-					return true;
-				}
-				r &= contractives.get(child);									
-			}
-			return r;
-		}
-	}
-				
+			
 	/**
 	 * Compute the intersection of two types. The resulting type will only
 	 * accept values which are accepted by both types being intersected.. In
@@ -1780,10 +1735,10 @@ public abstract class Type {
 	}
 	
 	public static void main(String[] args) {
-		Type from = fromString("(null,null)");
-		Type to = fromString("X<(null,X|null)>");		
-		//Type from = fromString("X<real|[X]>");
-		//Type to = fromString("X<[real|X]>");
+		//Type from = fromString("(null,null)");
+		//Type to = fromString("X<[X]>");		
+		Type from = fromString("X<real|[X]>");
+		Type to = fromString("X<[real|X]>");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
 		System.out.println("isContractive(" + from + ") = " + isContractive(from));
 		System.out.println("isContractive(" + to + ") = " + isContractive(to));

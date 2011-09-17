@@ -20,17 +20,15 @@ public class TypeGenerator {
 			super(output);
 		}
 		
-		public void write(Automata automata) throws IOException {			
-			if(!isContractive(automata)) {
-				Type t = Type.construct(automata);
-				if (t != Type.T_VOID) {
-					super.write(automata);
-					count++;
-					if (verbose) {
-						System.err.print("\rWrote " + count + " types.");					
-					}
-				}			
-			}
+		public void write(Automata automata) throws IOException {						
+			Type t = Type.construct(automata);
+			if (t != Type.T_VOID) {
+				super.write(automata);
+				count++;
+				if (verbose) {
+					System.err.print("\rWrote " + count + " types.");					
+				}
+			}						
 		}
 	}
 	
@@ -41,17 +39,15 @@ public class TypeGenerator {
 			this.output = output;
 		}
 
-		public void write(Automata automata) throws IOException {			
-			if(!isContractive(automata)) {
-				Type t = Type.construct(Automatas.extract(automata,0));
-				if (t != Type.T_VOID) {
-					output.println(t);
-					count++;
-					if (verbose) {
-						System.err.print("\rWrote " + count + " types.");
-					}
-				} 			
-			}
+		public void write(Automata automata) throws IOException {						
+			Type t = Type.construct(Automatas.extract(automata,0));
+			if (t != Type.T_VOID) {
+				output.println(t);
+				count++;
+				if (verbose) {
+					System.err.print("\rWrote " + count + " types.");
+				}
+			} 			
 		}
 
 		public void flush() throws IOException {

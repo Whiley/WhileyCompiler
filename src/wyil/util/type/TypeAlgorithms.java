@@ -17,6 +17,7 @@ import wyil.lang.Type.Compound;
 import wyil.lang.Type.Dictionary;
 import wyil.lang.Type.Existential;
 import wyil.lang.Type.Function;
+import wyil.lang.Type.Leaf;
 import wyil.lang.Type.List;
 import wyil.lang.Type.Method;
 import wyil.lang.Type.Negation;
@@ -29,6 +30,75 @@ import wyil.lang.Type.Union;
 
 public final class TypeAlgorithms {
 
+	/**
+	 * <p>
+	 * Contractive types are types which cannot accept value because they have
+	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
+	 * terminating it. For example, <code>X<{X field}></code> is contractive,
+	 * where as <code>X<{null|X field}></code> is not.
+	 * </p>
+	 * 
+	 * <p>
+	 * This method returns true if the type is contractive, or contains a
+	 * contractive subcomponent. For example, <code>null|X<{X field}></code> is
+	 * considered contracted.
+	 * </p>
+	 * 
+	 * @param type --- type to test for contractivity.
+	 * @return
+	 */
+	public static boolean isContractive(Automata automata) {
+		BitSet contractives = new BitSet(automata.size());
+		contractives.set(0,automata.size(),true);
+		// initially all nodes are considered contracive.
+		return findContractives(automata,contractives);
+	}
+	
+	private static boolean findContractives(Automata automata, BitSet contractives) {		
+		boolean changed = true;
+		boolean contractive = false;
+		while(changed) {
+			changed=false;
+			contractive = false;
+			for(int i=0;i!=automata.size();++i) {
+				boolean oldVal = contractives.get(i);
+				boolean newVal = isContractive(i,contractives,automata);
+				if(oldVal && !newVal) {
+					contractives.set(i,newVal);
+					changed = true;
+				}
+				contractive |= newVal;
+			}
+		}
+		return contractive;
+	}
+	
+	private static boolean isContractive(int index, BitSet contractives,
+			Automata automata) {
+		Automata.State state = automata.states[index];
+		int[] children = state.children;
+		if(children.length == 0) {
+			return false;
+		}
+		if(state.deterministic) {
+			for(int child : children) {
+				if(child == index || contractives.get(child)) {
+					return true;
+				}
+			}
+			return false;
+		} else {			
+			boolean r = true;
+			for(int child : children) {				
+				if(child == index) { 
+					return true;
+				}
+				r &= contractives.get(child);									
+			}
+			return r;
+		}
+	}
+	
 	/**
 	 * <p>
 	 * This simplification rule removes spurious components by repeated
@@ -60,11 +130,26 @@ public final class TypeAlgorithms {
 		boolean changed = true;
 		while(changed) {	
 			changed = false;
+			changed |= simplifyContractives(automata);
 			for(int i=0;i!=automata.size();++i) {
 				changed |= simplify(i,automata);
 			}
 		}		
 	}	
+	
+	private static boolean simplifyContractives(Automata automata) {
+		BitSet contractives = new BitSet(automata.size());
+		// initially all nodes are considered contractive.
+		contractives.set(0,automata.size(),true);
+		boolean changed = findContractives(automata, contractives);
+
+		for (int i = contractives.nextSetBit(0); i >= 0; i = contractives
+				.nextSetBit(i + 1)) {
+			automata.states[i] = new Automata.State(Type.K_VOID);
+		}
+
+		return changed;
+	}
 	
 	private static boolean simplify(int index, Automata automata) {
 		Automata.State state = automata.states[index];
