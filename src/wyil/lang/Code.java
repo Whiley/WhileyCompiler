@@ -1514,7 +1514,6 @@ public abstract class Code {
 	
 	private static final class UpdateIterator implements Iterator<LVal> {		
 		private final ArrayList<String> fields;
-		private final int level;
 		private Type iter;
 		private int fieldIndex;	
 		private int index;
@@ -1522,7 +1521,7 @@ public abstract class Code {
 		public UpdateIterator(Type type, int level, ArrayList<String> fields) {
 			this.fields = fields;
 			this.iter = type;
-			this.level = level;
+			this.index = level;
 			
 			// TODO: sort out this hack
 			if(Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
@@ -1533,6 +1532,7 @@ public abstract class Code {
 		
 		public LVal next() {
 			Type raw = iter;
+			index--;
 			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				return new StringLVal();
@@ -1556,7 +1556,7 @@ public abstract class Code {
 		}
 		
 		public boolean hasNext() {
-			return index == level;
+			return index > 0;
 		}
 		
 		public void remove() {
@@ -1589,7 +1589,11 @@ public abstract class Code {
 			return new UpdateIterator(type,level,fields);
 		}
 				
-		public Type rhs(int index) {
+		/**
+		 * Extract the type for the right-hand side of this assignment.
+		 * @return
+		 */
+		public Type rhs() {
 			Type iter = type;
 			int fieldIndex = 0;
 			for (int i = 0; i != level; ++i) {
