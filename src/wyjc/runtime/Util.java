@@ -555,6 +555,8 @@ public class Util {
 			return o2 == null ? 0 : -1;				
 		} else if(o1 instanceof Boolean) {
 			return compare((Boolean)o1,o2);
+		} else if(o1 instanceof Character) {			
+			return compare((Character)o1,o2);
 		} else if(o1 instanceof BigInteger) {			
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof BigRational) {
@@ -585,6 +587,17 @@ public class Util {
 		}
 	}
 
+	public static int compare(Character o1, Object o2) {
+		if(o2 == null) {
+			return 1;
+		} else if(o2 instanceof Character) {
+			Character c2 = (Character) o2;
+			return o1.compareTo(c2);
+		} else {
+			return -1;
+		}
+	}
+	
 	public static int compare(BigInteger o1, Object o2) {
 		if(o2 == null || o2 instanceof Boolean) {
 			return 1;

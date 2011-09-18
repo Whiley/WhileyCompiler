@@ -496,7 +496,7 @@ public class ClassFileBuilder {
 			if(level != 0) {				
 				bytecodes.add(new Bytecode.Dup(WHILEYMAP));				
 				bytecodes.add(new Bytecode.Load(indexSlot,convertType(dict.key())));
-				
+				addWriteConversion(dict.key(),bytecodes);				
 				JvmType.Function ftype = new JvmType.Function(
 						JAVA_LANG_OBJECT, WHILEYMAP, JAVA_LANG_OBJECT);
 				bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "get", ftype,
@@ -507,6 +507,7 @@ public class ClassFileBuilder {
 				bytecodes.add(new Bytecode.Swap());
 			} else {
 				bytecodes.add(new Bytecode.Load(indexSlot,convertType(dict.key())));
+				addWriteConversion(dict.key(),bytecodes);
 				bytecodes.add(new Bytecode.Load(indexSlot+1, val_t));	
 				addWriteConversion(dict.value(),bytecodes);
 			}
