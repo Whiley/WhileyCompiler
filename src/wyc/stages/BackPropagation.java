@@ -509,9 +509,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Env environment) {
 		Type src = environment.get(code.slot);
 		
-		if(src == Type.T_VOID) {
-			src = code.type;
-		}
+		if(src == Type.T_VOID) { src = code.type; }
 		
 		// the following is necessary to deal with constraints being propagated
 		// through slots, rather than on the stack.
@@ -524,7 +522,6 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		
 		environment.push(src);
-//		environment.push(code.type);
 		environment.set(code.slot,Type.T_VOID);
 	}
 	

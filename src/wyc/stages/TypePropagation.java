@@ -699,11 +699,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			path.add(environment.pop());
 		}
 		
-		Type oldType = environment.get(e.slot);		
-		Type iter = oldType;
+		Type src = environment.get(e.slot);		
+		Type iter = src;
 		
-		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.Process(Type.T_ANY), oldType)) {
-			Type.Process p = (Type.Process) oldType;
+		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.Process(Type.T_ANY), src)) {
+			Type.Process p = (Type.Process) src;
 			iter = p.element();
 		}
 		
@@ -724,6 +724,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);				
 				iter = list.element();
+			} else if(Type.isSubtype(Type.Set(Type.T_VOID),iter)) {			
+				// this indicates a dictionary access to an empty dictionary			
+				indices.add(path.get(pi++));
+				iter = Type.T_VOID;				
 			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
@@ -731,8 +735,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					syntaxError("expected dictionary",filename,stmt);
 				}
 				indices.add(path.get(pi++));
-				// We don't  
-				// checkIsSubtype(dict.key(),idx,stmt);
 				iter = dict.value();				
 			} else {
 				Type.Record rec = Type.effectiveRecordType(iter);
@@ -750,10 +752,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Now, we need to determine the (potentially) updated type of the
 		// variable in question. For example, if we assign a real into a [int]
 		// then we'll end up with a [real].
-		Type newType = typeInference(oldType,val,e.level,0,e.fields,0,indices);
-		environment.set(e.slot,newType);
+		Type beforeType = inferBeforeType(src,e.level,0,e.fields,0,indices);
+		Type afterType = inferAfterType(src,val,e.level,0,e.fields,0,indices);
+		environment.set(e.slot,afterType);
 		
-		return Code.Update(oldType,newType,e.slot,e.level,e.fields);
+		return Code.Update(beforeType,afterType,e.slot,e.level,e.fields);
 	}
 
 	/**
@@ -770,7 +773,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	 * @param fields
 	 * @return
 	 */
-	public static Type typeInference(Type oldtype, Type newtype, int level,
+	public static Type inferAfterType(Type oldtype, Type newtype, int level,
 			int fieldLevel, ArrayList<String> fields, int indexLevel,
 			ArrayList<Type> indices) {
 		if(level == 0 && fieldLevel == fields.size()) {
@@ -778,18 +781,25 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			return newtype;			
 		} else if(Type.isSubtype(Type.Process(Type.T_ANY),oldtype)) {
 			Type.Process tp = (Type.Process) oldtype;
-			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
+			Type nelement = inferAfterType(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
 			return Type.Process(nelement);
 		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
-			Type nelement = typeInference(Type.T_CHAR, newtype, level - 1,
+			Type nelement = inferAfterType(Type.T_CHAR, newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
 			return oldtype;
 		} else if(Type.isSubtype(Type.List(Type.T_ANY),oldtype)) {		
 			// List case is basicaly same as for dictionary above.
 			Type.List list = Type.effectiveListType(oldtype);
-			Type nelement = typeInference(list.element(), newtype, level - 1,
+			Type nelement = inferAfterType(list.element(), newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);
+			// FIXME: this is overly conservative.
 			return Type.List(Type.Union(list.element(),nelement));		
+		} else if(Type.isSubtype(Type.Set(Type.T_VOID),oldtype)) {			
+			// this indicates a dictionary access to an empty dictionary			
+			Type nkey = indices.get(indexLevel);			
+			Type nvalue = inferAfterType(Type.T_VOID, newtype, level - 1,
+					fieldLevel, fields, indexLevel + 1, indices);
+			return Type.Dictionary(nkey, nvalue);			
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
@@ -798,8 +808,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// we need to generalise the value type accordingly. 
 			Type.Dictionary dict = Type.effectiveDictionaryType(oldtype);
 			Type nkey = indices.get(indexLevel);			
-			Type nvalue = typeInference(dict.value(), newtype, level - 1,
+			Type nvalue = inferAfterType(dict.value(), newtype, level - 1,
 					fieldLevel, fields, indexLevel + 1, indices);
+			// FIXME: this is overly conservative.
 			return Type.Dictionary(Type.Union(dict.key(), nkey),
 					Type.Union(dict.value(), nvalue));			
 		} else if(Type.effectiveRecordType(oldtype) != null){			
@@ -809,7 +820,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			String field = fields.get(fieldLevel);
 			if(oldtype instanceof Type.Record) {
 				Type.Record rt = (Type.Record) oldtype;
-				Type ntype = typeInference(rt.fields().get(field), newtype,
+				Type ntype = inferAfterType(rt.fields().get(field), newtype,
 						level - 1, fieldLevel + 1, fields, indexLevel, indices);
 				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
 				types.put(field, ntype);
@@ -820,7 +831,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				for(Type b : tu.bounds()) {					
 					t = Type.Union(
 							t,
-							typeInference(b, newtype, level, fieldLevel,
+							inferAfterType(b, newtype, level, fieldLevel,
 									fields, indexLevel, indices));
 				}
 				return t;
@@ -830,6 +841,74 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 
+	public static Type inferBeforeType(Type oldtype, int level,
+			int fieldLevel, ArrayList<String> fields, int indexLevel,
+			ArrayList<Type> indices) {
+		if(level == 0 && fieldLevel == fields.size()) {
+			// this is the base case of the recursion.
+			return oldtype;			
+		} else if(Type.isSubtype(Type.Process(Type.T_ANY),oldtype)) {
+			Type.Process tp = (Type.Process) oldtype;
+			Type nelement = inferBeforeType(tp.element(),level,fieldLevel,fields,indexLevel,indices);
+			return Type.Process(nelement);
+		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
+			Type nelement = inferBeforeType(Type.T_CHAR, level - 1,
+					fieldLevel, fields, indexLevel, indices);			
+			return oldtype;
+		} else if(Type.isSubtype(Type.List(Type.T_ANY),oldtype)) {		
+			// List case is basicaly same as for dictionary above.
+			Type.List list = Type.effectiveListType(oldtype);
+			Type nelement = inferBeforeType(list.element(), level - 1,
+					fieldLevel, fields, indexLevel, indices);
+			// FIXME: this is overly conservative.
+			return Type.List(Type.Union(list.element(),nelement));		
+		} else if(Type.isSubtype(Type.Set(Type.T_VOID),oldtype)) {			
+			// this indicates a dictionary access to an empty dictionary			
+			Type nkey = indices.get(indexLevel);			
+			Type nvalue = inferBeforeType(Type.T_VOID, level - 1, fieldLevel,
+					fields, indexLevel + 1, indices);
+			return Type.Dictionary(nkey,nvalue);			
+		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
+			// Dictionary case is straightforward. Since only one key-value pair
+			// is being updated, we must assume other key-value pairs are not
+			// --- hence, the original type must be preserved. However, in the
+			// case that we're assigning a more general value for some key then
+			// we need to generalise the value type accordingly. 
+			Type.Dictionary dict = Type.effectiveDictionaryType(oldtype);
+			Type nkey = indices.get(indexLevel);			
+			Type nvalue = inferBeforeType(dict.value(), level - 1,
+					fieldLevel, fields, indexLevel + 1, indices);
+			// FIXME: this is overly conservative.
+			return Type.Dictionary(Type.Union(dict.key(), nkey),
+					Type.Union(dict.value(), nvalue));			
+		} else if(Type.effectiveRecordType(oldtype) != null){			
+			// Record case is more interesting as we may be able to actually
+			// perform a "strong" update of the type. This is because we know
+			// exactly which field is being updated.
+			String field = fields.get(fieldLevel);
+			if(oldtype instanceof Type.Record) {
+				Type.Record rt = (Type.Record) oldtype;
+				Type ntype = inferBeforeType(rt.fields().get(field), 
+						level - 1, fieldLevel + 1, fields, indexLevel, indices);
+				HashMap<String,Type> types = new HashMap<String,Type>(rt.fields());				
+				types.put(field, ntype);
+				return Type.Record(types);
+			} else {
+				Type.Union tu = (Type.Union) oldtype;
+				Type t = Type.T_VOID;
+				for(Type b : tu.bounds()) {					
+					t = Type.Union(
+							t,
+							inferBeforeType(b, level, fieldLevel,
+									fields, indexLevel, indices));
+				}
+				return t;
+			} 			
+		} else {
+			throw new IllegalArgumentException("invalid type passed to type inference: " + oldtype);
+		}
+	}
+	
 	protected Code infer(Load e, Entry stmt, Env environment) {
 		e = Code.Load(environment.get(e.slot), e.slot);		
 		environment.push(e.type);

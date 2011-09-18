@@ -1974,8 +1974,8 @@ public class ClassFileBuilder {
 			// TODO			
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
 			buildCoercion((Type.Set) from, (Type.Set) to, freeSlot, constants, bytecodes);			
-		} else if(from instanceof Type.Dictionary && to instanceof Type.Set) {
-			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
+		} else if(from instanceof Type.Set && to instanceof Type.Dictionary) {
+			buildCoercion((Type.Set) from, (Type.Dictionary) to, freeSlot, constants, bytecodes);			
 		} else if(from instanceof Type.List && to instanceof Type.Set) {
 			buildCoercion((Type.List) from, (Type.Set) to, freeSlot, constants, bytecodes);			
 		} else if(from instanceof Type.Dictionary && to instanceof Type.Dictionary) {
@@ -2202,6 +2202,20 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Goto(loopLabel));
 		bytecodes.add(new Bytecode.Label(exitLabel));
 		bytecodes.add(new Bytecode.Load(target,WHILEYMAP));
+	}
+	
+	protected void buildCoercion(Type.Set fromType, Type.Dictionary toType, 
+			int freeSlot, HashMap<Constant, Integer> constants,
+			ArrayList<Bytecode> bytecodes) {
+		// this case can only happen in one situation --- when the set is empty.
+		
+		if (fromType.element() != Type.T_VOID) {
+			throw new RuntimeException("invalid coercion encountered: "
+					+ fromType + " => " + toType);
+		}
+
+		bytecodes.add(new Bytecode.Pop(WHILEYSET));
+		construct(WHILEYMAP, freeSlot, bytecodes);					
 	}
 	
 	protected void buildCoercion(Type.List fromType, Type.Set toType,
