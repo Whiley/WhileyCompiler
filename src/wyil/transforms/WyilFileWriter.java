@@ -223,7 +223,7 @@ public class WyilFileWriter implements Transform {
 				firstTime=false;
 				fs += f;
 			}
-			line = "multistore " + getLocal(store.slot,locals) + " #" + store.level + fs + " : " + store.type;
+			line = "update " + getLocal(store.slot,locals) + " #" + store.level + fs + " : " + store.type;
 		} else if(c instanceof Code.IfType && !writeSlots){
 			Code.IfType iftype = (Code.IfType) c;
 			if(iftype.slot >= 0) {
