@@ -378,9 +378,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	public void infer(int index, Code.Update code, Block.Entry stmt,
 			Env environment) {
 		
-		Type src = environment.get(code.slot);
-		
-		// TODO: add a conversion here??
+		Type src = environment.get(code.slot);		 
 		
 		// The first job is to make sure we've got the right types for indices
 		// and key values loaded onto the stack.
@@ -487,10 +485,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.Store code, Block.Entry entry,
 			Env environment) {
+		coerce(environment.get(code.slot),code.type,index,entry);
 		environment.push(code.type);				
-		// The following is definitely broken. Perhaps a slot coercion operation
-		// might help
-		// coerce(environment.get(code.slot),code.type,index,entry);
 		environment.set(code.slot,Type.T_VOID);
 	}
 	

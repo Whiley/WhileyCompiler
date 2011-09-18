@@ -753,7 +753,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type ntype = typeInference(src,val,e.level,0,e.fields,0,indices);
 		environment.set(e.slot,ntype);
 		
-		return Code.Update(src,e.slot,e.level,e.fields);
+		//return Code.Update(src,e.slot,e.level,e.fields);
+		return Code.Update(ntype,e.slot,e.level,e.fields);
 	}
 
 	/**
@@ -789,8 +790,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.List list = Type.effectiveListType(oldtype);
 			Type nelement = typeInference(list.element(), newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);
-			return Type.Union(oldtype,Type.List(nelement));
-		
+			return Type.List(Type.Union(list.element(),nelement));		
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
