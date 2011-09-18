@@ -384,7 +384,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// and key values loaded onto the stack.
 		
 		//Type iter = code.type;
-		Type iter = src;
+		Type iter = src == Type.T_VOID ? code.type : src;
 		
 		if(code.slot == Code.THIS_SLOT && Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
 			Type.Process p = (Type.Process) iter;
@@ -400,7 +400,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 				Type.List list = Type.effectiveListType(iter);							
 				environment.push(Type.T_INT);
 				iter = list.element();
-			} else if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
 				//environment.push(Type.T_ANY);
@@ -425,16 +425,16 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		fi = 0;
 		for(int i=0;i!=code.level;++i) {
-			if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
-				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
-				iter = dict.value();				
-			} else if(Type.isSubtype(Type.T_STRING,iter)) {
+			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);							
 				iter = list.element();
-			} else if(Type.effectiveRecordType(iter) != null) {
+			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
+				// this indicates a dictionary access, rather than a list access			
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
+				iter = dict.value();				
+			} else  if(Type.effectiveRecordType(iter) != null) {
 				Type.Record rec = Type.effectiveRecordType(iter);				
 				String field = code.fields.get(fi++);
 				iter = rec.fields().get(field);							
@@ -446,7 +446,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		
 		environment.push(iter);
-		environment.set(code.slot, code.type);
+		environment.set(code.slot, code.type);		
 	}
 	
 	public void infer(int index, Code.NewDict code, Block.Entry entry,

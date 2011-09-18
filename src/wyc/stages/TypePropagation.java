@@ -724,7 +724,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);				
 				iter = list.element();
-			} else if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
+			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
 				// this indicates a dictionary access, rather than a list access			
 				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
 				if(dict == null) {
@@ -780,18 +780,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.Process tp = (Type.Process) oldtype;
 			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
 			return Type.Process(nelement);
-		} else if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
-			// Dictionary case is straightforward. Since only one key-value pair
-			// is being updated, we must assume other key-value pairs are not
-			// --- hence, the original type must be preserved. However, in the
-			// case that we're assigning a more general value for some key then
-			// we need to generalise the value type accordingly. 
-			Type.Dictionary dict = Type.effectiveDictionaryType(oldtype);
-			Type nkey = indices.get(indexLevel);			
-			Type nvalue = typeInference(dict.value(), newtype, level - 1,
-					fieldLevel, fields, indexLevel + 1, indices);
-			return Type.Dictionary(Type.Union(dict.key(), nkey),
-					Type.Union(dict.value(), nvalue));			
 		} else if(Type.isSubtype(Type.T_STRING,oldtype)) {
 			Type nelement = typeInference(Type.T_CHAR, newtype, level - 1,
 					fieldLevel, fields, indexLevel, indices);			
@@ -803,6 +791,18 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					fieldLevel, fields, indexLevel, indices);
 			return Type.Union(oldtype,Type.List(nelement));
 		
+		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
+			// Dictionary case is straightforward. Since only one key-value pair
+			// is being updated, we must assume other key-value pairs are not
+			// --- hence, the original type must be preserved. However, in the
+			// case that we're assigning a more general value for some key then
+			// we need to generalise the value type accordingly. 
+			Type.Dictionary dict = Type.effectiveDictionaryType(oldtype);
+			Type nkey = indices.get(indexLevel);			
+			Type nvalue = typeInference(dict.value(), newtype, level - 1,
+					fieldLevel, fields, indexLevel + 1, indices);
+			return Type.Dictionary(Type.Union(dict.key(), nkey),
+					Type.Union(dict.value(), nvalue));			
 		} else if(Type.effectiveRecordType(oldtype) != null){			
 			// Record case is more interesting as we may be able to actually
 			// perform a "strong" update of the type. This is because we know
