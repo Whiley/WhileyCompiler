@@ -1451,8 +1451,120 @@ public abstract class Code {
 		}		
 	}
 
+	public static abstract class LVal {
+		protected Type type;
+		
+		public LVal(Type t) {
+			this.type = type;
+		}
+		
+		public Type rawType() {
+			return type;
+		}
+	}
 	
-	public static final class Update extends Code {
+	public static final class DictLVal extends LVal {
+		public DictLVal(Type t) {
+			super(t);
+			if(Type.effectiveDictionaryType(t) == null) {
+				throw new IllegalArgumentException("Invalid Dictionary Type");
+			}
+		}
+		
+		public Type.Dictionary type() {
+			return Type.effectiveDictionaryType(type);
+		}
+	}
+	
+	public static final class ListLVal extends LVal {
+		public ListLVal(Type t) {
+			super(t);
+			if(Type.effectiveListType(t) == null) {
+				throw new IllegalArgumentException("Invalid List Type");
+			}
+		}
+		
+		public Type.List type() {
+			return Type.effectiveListType(type);
+		}
+	}
+	
+	public static final class StringLVal extends LVal {
+		public StringLVal() {
+			super(Type.T_STRING);			
+		}		
+	}
+	
+	public static final class RecordLVal extends LVal {
+		public final String field;
+		
+		public RecordLVal(Type t, String field) {
+			super(t);
+			this.field = field;
+			Type.Record rt = Type.effectiveRecordType(t);
+			if(rt == null || !rt.fields().containsKey(field)) {
+				throw new IllegalArgumentException("Invalid Record Type");
+			}		
+		}
+		
+		public Type.Record type() {
+			return Type.effectiveRecordType(type);
+		}
+	}
+	
+	private static final class UpdateIterator implements Iterator<LVal> {		
+		private final ArrayList<String> fields;
+		private final int level;
+		private Type iter;
+		private int fieldIndex;	
+		private int index;
+		
+		public UpdateIterator(Type type, int level, ArrayList<String> fields) {
+			this.fields = fields;
+			this.iter = type;
+			this.level = level;
+			
+			// TODO: sort out this hack
+			if(Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
+				Type.Process p = (Type.Process) iter;
+				iter = p.element();
+			}	
+		}
+		
+		public LVal next() {
+			Type raw = iter;
+			if(Type.isSubtype(Type.T_STRING,iter)) {
+				iter = Type.T_CHAR;
+				return new StringLVal();
+			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
+				Type.List list = Type.effectiveListType(iter);											
+				iter = list.element();
+				return new ListLVal(raw);
+			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
+				// this indicates a dictionary access, rather than a list access			
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
+				iter = dict.value();	
+				return new DictLVal(raw);
+			} else  if(Type.effectiveRecordType(iter) != null) {
+				Type.Record rec = Type.effectiveRecordType(iter);				
+				String field = fields.get(fieldIndex++);
+				iter = rec.fields().get(field);
+				return new RecordLVal(raw,field);
+			} else {
+				throw new IllegalArgumentException("Invalid type for Code.Update");
+			}
+		}
+		
+		public boolean hasNext() {
+			return index == level;
+		}
+		
+		public void remove() {
+			throw new UnsupportedOperationException("UpdateIterator is unmodifiable");
+		}
+	}
+	
+	public static final class Update extends Code implements Iterable<LVal> {
 		public final Type type;
 		public final int level;
 		public final int slot;
@@ -1473,40 +1585,32 @@ public abstract class Code {
 			slots.add(slot);
 		}
 		
-		/**
-		 * Return the type of the subcomponent at the given depth. In the case
-		 * of depth == level, then this will return the type of the value being
-		 * assigned on the right-hand side.
-		 * 
-		 * @param index
-		 * @return
-		 */
-		public Type typeAt(int index) {
-			Type iter = this.type;
-									
-			if(Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
-				Type.Process p = (Type.Process) iter;
-				iter = p.element();
-			}	
-			
-			int fi = 0;
-			
-			for(int i=0;i!=index;++i) {
-				if(Type.isSubtype(Type.T_STRING,iter)) {
+		public Iterator<LVal> iterator() {			
+			return new UpdateIterator(type,level,fields);
+		}
+				
+		public Type rhs(int index) {
+			Type iter = type;
+			int fieldIndex = 0;
+			for (int i = 0; i != level; ++i) {
+				if (Type.isSubtype(Type.T_STRING, iter)) {
 					iter = Type.T_CHAR;
-				} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
-					Type.List list = Type.effectiveListType(iter);							
+				} else if (Type.isSubtype(Type.List(Type.T_ANY), iter)) {
+					Type.List list = Type.effectiveListType(iter);
 					iter = list.element();
-				} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
-					// this indicates a dictionary access, rather than a list access			
-					Type.Dictionary dict = Type.effectiveDictionaryType(iter);											
-					iter = dict.value();				
-				} else  if(Type.effectiveRecordType(iter) != null) {
-					Type.Record rec = Type.effectiveRecordType(iter);				
-					String field = fields.get(fi++);
-					iter = rec.fields().get(field);							
+				} else if (Type.isSubtype(
+						Type.Dictionary(Type.T_ANY, Type.T_ANY), iter)) {
+					// this indicates a dictionary access, rather than a list
+					// access
+					Type.Dictionary dict = Type.effectiveDictionaryType(iter);
+					iter = dict.value();
+				} else if (Type.effectiveRecordType(iter) != null) {
+					Type.Record rec = Type.effectiveRecordType(iter);
+					String field = fields.get(fieldIndex++);
+					iter = rec.fields().get(field);
 				} else {
-					throw new IllegalArgumentException("Invalid type for Code.Type");
+					throw new IllegalArgumentException(
+							"Invalid type for Code.Update");
 				}
 			}
 			return iter;

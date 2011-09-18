@@ -382,48 +382,29 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		// The first job is to make sure we've got the right types for indices
 		// and key values loaded onto the stack.
-		
-		//Type iter = code.type;
-		Type iter = src == Type.T_VOID ? code.type : src;
-		
-		if(code.slot == Code.THIS_SLOT && Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
-			Type.Process p = (Type.Process) iter;
-			iter = p.element();
-		}						
-		
-		int fi = 0;
-		for(int i=0;i!=code.level;++i) {
-			if(Type.isSubtype(Type.T_STRING,iter)) {
+				
+		for(Code.LVal lv : code) {
+			if(lv instanceof Code.StringLVal || lv instanceof ListLVal) {
 				environment.push(Type.T_INT);
-				iter = Type.T_CHAR;
-			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
-				Type.List list = Type.effectiveListType(iter);							
-				environment.push(Type.T_INT);
-				iter = list.element();
-			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
-				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);							
-				//environment.push(Type.T_ANY);
-				environment.push(dict.key());
-				iter = dict.value();				
-			} else  {
-				Type.Record rec = Type.effectiveRecordType(iter);				
-				String field = code.fields.get(fi++);
-				iter = rec.fields().get(field);							
+			} else if(lv instanceof DictLVal) {
+				DictLVal dlv = (DictLVal) lv;
+				environment.push(dlv.type().key());
+			} else {
+				// RecordLVal has no stack requirement 
 			}
 		}
 		
 		// The second job is to try and determine whether there is any general
 		// requirement on the value being assigned.
 		
-		iter = Type.Union(code.type,src);
+		Type iter = Type.Union(code.type,src);
 		
 		if(code.slot == 0 && Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
 			Type.Process p = (Type.Process) iter;
 			iter = p.element();
 		}						
 		
-		fi = 0;
+		int fi = 0;
 		for(int i=0;i!=code.level;++i) {
 			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
