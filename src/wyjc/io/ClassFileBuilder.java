@@ -437,63 +437,37 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Store(c.slot, type));				
 	}
 
-	public void translate(Code.Update c, int freeSlot,ArrayList<Bytecode> bytecodes) {
-		
-		// Now, my general feeling is that the multistore bytecode could use
-		// some work. Essentially, to simplify this process of figuring our what
-		// is being updated.
-		
-		// First, check if this is updating the process' state
-		Type type = c.type;
-				
-		if(c.slot == Code.THIS_SLOT && Type.isSubtype(Type.Process(Type.T_ANY), type)) {
-			Type.Process p = (Type.Process) type;
-			type = p.element();
-		}
-		
-		// Second, determine type of value being assigned
-		
-		ArrayList<String> fields = c.fields;
-		int fi = 0;						
-		Type iter = type;
-		// ok, this is such an ugly hack...
+	public void translate(Code.Update code, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+
 		ArrayList<Type> indices = new ArrayList<Type>();
-		for(int i=0;i!=c.level;++i) {
-			if(Type.isSubtype(Type.T_STRING,iter)) {
-				iter = Type.T_CHAR;
+		for (Code.LVal lv : code) {
+			if (lv instanceof Code.StringLVal || lv instanceof Code.ListLVal) {
 				indices.add(Type.T_INT);
-			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {
-				Type.List list = Type.effectiveListType(iter);
-				iter = list.element();
-				indices.add(Type.T_INT);
-			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
-				indices.add(dict.key());
-				iter = dict.value();
-			}else {
-				Type.Record rec = Type.effectiveRecordType(iter);
-				String field = fields.get(fi++);
-				iter = rec.fields().get(field);
-			}	
+			} else if (lv instanceof Code.DictLVal) {
+				DictLVal dlv = (Code.DictLVal) lv;
+				indices.add(dlv.type().key());
+			} else {
+				// no need to do anything for records
+			}
 		}
-						
+
 		int indexSlot = freeSlot;
 		freeSlot += indices.size();
-		// Third, store the value to be assigned				
-		JvmType val_t = convertType(iter);		
-		bytecodes.add(new Bytecode.Store(freeSlot++,val_t));
-		
-		for(int i=indices.size()-1;i>=0;--i) {
+		// Third, store the value to be assigned
+		JvmType val_t = convertType(code.rhs());
+		bytecodes.add(new Bytecode.Store(freeSlot++, val_t));
+
+		for (int i = indices.size() - 1; i >= 0; --i) {
 			JvmType t = convertType(indices.get(i));
-			bytecodes.add(new Bytecode.Store(indexSlot+i,t));
+			bytecodes.add(new Bytecode.Store(indexSlot + i, t));
 		}
-		
-		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-		
-		// Fourth, finally process the assignment path and update the object in
-		// question.		
-		multiStoreHelper(c.type,c.level-1,fields.iterator(),indexSlot,val_t,freeSlot, bytecodes);		
-		bytecodes.add(new Bytecode.Store(c.slot, convertType(c.type)));
+
+		bytecodes.add(new Bytecode.Load(code.slot, convertType(code.type)));
+
+		multiStoreHelper(code.type, code.level - 1, code.fields.iterator(),
+				indexSlot, val_t, freeSlot, bytecodes);
+		bytecodes.add(new Bytecode.Store(code.slot, convertType(code.type)));
 	}
 
 	public void multiStoreHelper(Type type, int level,
