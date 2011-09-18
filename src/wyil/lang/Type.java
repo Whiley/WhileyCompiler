@@ -1665,7 +1665,7 @@ public abstract class Type {
 	 * Additional work is necessary to do this.
 	 * </p>
 	 * 
-	 * @param type
+	 * @param afterType
 	 * @return
 	 */
 	private static Automata normalise(Automata automata) {				

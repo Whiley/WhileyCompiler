@@ -388,19 +388,19 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Type src = environment.get(code.slot);
 		
 		if(src == Type.T_VOID) {
-			src = code.type;
+			src = code.afterType;
 		}
 		
 		// the following is necessary to deal with constraints being propagated
 		// through slots, rather than on the stack.
-		if (!code.type.equals(src)) {
-			rewrites.put(
-					index,
-					new Block.Entry(Code.Update(src, code.slot, code.level,
-							code.fields), stmt.attributes()));
-		} else {
-			rewrites.remove(index);
-		}
+//		if (!code.afterType.equals(src)) {
+//			rewrites.put(
+//					index,
+//					new Block.Entry(Code.Update(src, code.slot, code.level,
+//							code.fields), stmt.attributes()));
+//		} else {
+//			rewrites.remove(index);
+//		}
 		
 		// The first job is to make sure we've got the right types for indices
 		// and key values loaded onto the stack.
@@ -420,7 +420,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// requirement on the value being assigned.
 		
 		environment.push(code.rhs());
-		environment.set(code.slot, src);		
+		environment.set(code.slot, code.beforeType);		
 	}
 	
 	public void infer(int index, Code.NewDict code, Block.Entry entry,
@@ -511,6 +511,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		// the following is necessary to deal with constraints being propagated
 		// through slots, rather than on the stack.
+		
 		if (src != Type.T_VOID && !code.type.equals(src)) {
 			rewrites.put(index, new Block.Entry(Code.Store(src, code.slot),
 					entry.attributes()));
@@ -519,6 +520,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		}
 		
 		environment.push(src);
+//		environment.push(code.type);
 		environment.set(code.slot,Type.T_VOID);
 	}
 	

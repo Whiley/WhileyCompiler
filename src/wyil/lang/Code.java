@@ -55,7 +55,7 @@ public abstract class Code {
 	 * Construct a <code>const</code> bytecode which loads a given constant
 	 * onto the stack.
 	 * 
-	 * @param type
+	 * @param afterType
 	 *            --- record type.
 	 * @param field
 	 *            --- field to write.
@@ -391,7 +391,7 @@ public abstract class Code {
 	 * Construct a <code>throw</code> bytecode which pops a value off the
 	 * stack and throws it.
 	 * 
-	 * @param type
+	 * @param afterType
 	 *            --- value type to throw 
 	 * @return
 	 */
@@ -415,14 +415,15 @@ public abstract class Code {
 	 * Construct a <code>update</code> bytecode which writes a value into a
 	 * compound structure, as determined by a given access path.
 	 * 
-	 * @param type
+	 * @param afterType
 	 *            --- record type.
 	 * @param field
 	 *            --- field to write.
 	 * @return
 	 */
-	public static Update Update(Type type, int slot, int level, Collection<String> fields) {
-		return get(new Update(type,slot,level,fields));
+	public static Update Update(Type beforeType, Type afterType, int slot,
+			int level, Collection<String> fields) {
+		return get(new Update(beforeType, afterType, slot, level, fields));
 	}
 
 	public static Void Void(Type type, int slot) {
@@ -1565,17 +1566,19 @@ public abstract class Code {
 	}
 	
 	public static final class Update extends Code implements Iterable<LVal> {
-		public final Type type;
+		public final Type beforeType;
+		public final Type afterType;
 		public final int level;
 		public final int slot;
 		public final ArrayList<String> fields;
 
-		private Update(Type type, int slot, int level, Collection<String> fields) {
+		private Update(Type beforeType, Type afterType, int slot, int level, Collection<String> fields) {
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
 			}
-			this.type = type;
+			this.beforeType = beforeType;
+			this.afterType = afterType;
 			this.slot = slot;
 			this.level = level;
 			this.fields = new ArrayList<String>(fields);
@@ -1586,7 +1589,7 @@ public abstract class Code {
 		}
 		
 		public Iterator<LVal> iterator() {			
-			return new UpdateIterator(type,level,fields);
+			return new UpdateIterator(afterType,level,fields);
 		}
 				
 		/**
@@ -1594,7 +1597,7 @@ public abstract class Code {
 		 * @return
 		 */
 		public Type rhs() {
-			Type iter = type;
+			Type iter = afterType;
 			
 			// TODO: sort out this hack
 			if (Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
@@ -1630,25 +1633,29 @@ public abstract class Code {
 		public Code remap(Map<Integer,Integer> binding) {
 			Integer nslot = binding.get(slot);
 			if(nslot != null) {
-				return Code.Update(type, nslot, level, fields);
+				return Code.Update(beforeType, afterType, nslot, level, fields);
 			} else {
 				return this;
 			}
 		}
 				
 		public int hashCode() {
-			if(type == null) {
+			if(afterType == null) {
 				return level + fields.hashCode();
 			} else {
-				return type.hashCode() + slot + level + fields.hashCode();
+				return afterType.hashCode() + slot + level + fields.hashCode();
 			}
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Update) {
 				Update i = (Update) o;
-				return (i.type == type || (type != null && type.equals(i.type)))
-						&& level == i.level && slot == i.slot && fields.equals(i.fields);
+				return (i.beforeType == beforeType || (beforeType != null && beforeType
+						.equals(i.beforeType)))
+						&& (i.afterType == afterType || (afterType != null && afterType
+								.equals(i.afterType)))
+						&& level == i.level
+						&& slot == i.slot && fields.equals(i.fields);
 			}
 			return false;
 		}
@@ -1663,7 +1670,7 @@ public abstract class Code {
 				firstTime=false;
 				fs += f;
 			}
-			return toString("update " + slot + " #" + level + fs,type);
+			return toString("update " + slot + " #" + level + fs,beforeType,afterType);
 		}
 	}
 
@@ -2429,6 +2436,14 @@ public abstract class Code {
 			return str + " : ?";
 		} else {
 			return str + " : " + t;
+		}
+	}
+	
+	public static String toString(String str, Type before, Type after) {
+		if(before == null || after == null) {
+			return str + " : ?";
+		} else {
+			return str + " : " + before + " => " + after;
 		}
 	}
 	

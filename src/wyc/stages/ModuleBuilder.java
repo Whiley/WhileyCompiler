@@ -872,7 +872,7 @@ public class ModuleBuilder {
 			}
 			int slot = environment.get(l.first().var);
 			blk.append(resolve(s.rhs, environment));			
-			blk.append(Code.Update(null,slot,l.second(),fields),
+			blk.append(Code.Update(null,null,slot,l.second(),fields),
 					attributes(s));							
 		} else {
 			syntaxError("invalid assignment", filename, s);

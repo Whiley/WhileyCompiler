@@ -699,11 +699,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			path.add(environment.pop());
 		}
 		
-		Type src = environment.get(e.slot);		
-		Type iter = src;
+		Type oldType = environment.get(e.slot);		
+		Type iter = oldType;
 		
-		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.Process(Type.T_ANY), src)) {
-			Type.Process p = (Type.Process) src;
+		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.Process(Type.T_ANY), oldType)) {
+			Type.Process p = (Type.Process) oldType;
 			iter = p.element();
 		}
 		
@@ -750,11 +750,10 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Now, we need to determine the (potentially) updated type of the
 		// variable in question. For example, if we assign a real into a [int]
 		// then we'll end up with a [real].
-		Type ntype = typeInference(src,val,e.level,0,e.fields,0,indices);
-		environment.set(e.slot,ntype);
+		Type newType = typeInference(oldType,val,e.level,0,e.fields,0,indices);
+		environment.set(e.slot,newType);
 		
-		//return Code.Update(src,e.slot,e.level,e.fields);
-		return Code.Update(ntype,e.slot,e.level,e.fields);
+		return Code.Update(oldType,newType,e.slot,e.level,e.fields);
 	}
 
 	/**
