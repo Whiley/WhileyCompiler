@@ -1595,6 +1595,13 @@ public abstract class Code {
 		 */
 		public Type rhs() {
 			Type iter = type;
+			
+			// TODO: sort out this hack
+			if (Type.isSubtype(Type.Process(Type.T_ANY), iter)) {
+				Type.Process p = (Type.Process) iter;
+				iter = p.element();
+			}
+			
 			int fieldIndex = 0;
 			for (int i = 0; i != level; ++i) {
 				if (Type.isSubtype(Type.T_STRING, iter)) {
