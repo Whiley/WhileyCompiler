@@ -71,6 +71,16 @@ public final class CoercionOperator extends SubtypeOperator {
 				}
 			}
 			return true;
+		} else if(fromKind == K_DICTIONARY && toKind == K_SET) {
+			if (!fromSign || !toSign) {
+				// TO DO: this is a bug here for cases when the element type is e.g. int|real
+				int toChild = toState.children[0];				
+				int toChildKind = to.states[toChild].kind;
+				if (toChildKind != K_VOID) {					
+					return fromSign != toSign;
+				} 
+			}
+			return fromSign == toSign;
 		} else if(fromKind == K_LIST && toKind == K_STRING) {			
 			if (!fromSign || !toSign) {
 				// TO DO: this is a bug here for cases when the element type is e.g. int|real

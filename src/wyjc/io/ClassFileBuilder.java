@@ -459,18 +459,18 @@ public class ClassFileBuilder {
 		// ok, this is such an ugly hack...
 		ArrayList<Type> indices = new ArrayList<Type>();
 		for(int i=0;i!=c.level;++i) {
-			if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
-				indices.add(dict.key());
-				iter = dict.value();
-			} else if(Type.isSubtype(Type.T_STRING,iter)) {
+			if(Type.isSubtype(Type.T_STRING,iter)) {
 				iter = Type.T_CHAR;
 				indices.add(Type.T_INT);
 			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {
 				Type.List list = Type.effectiveListType(iter);
 				iter = list.element();
 				indices.add(Type.T_INT);
-			} else {
+			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
+				indices.add(dict.key());
+				iter = dict.value();
+			}else {
 				Type.Record rec = Type.effectiveRecordType(iter);
 				String field = fields.get(fi++);
 				iter = rec.fields().get(field);

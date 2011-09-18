@@ -621,11 +621,23 @@ public abstract class Type {
 	public static Dictionary effectiveDictionaryType(Type t) {
 		if (t instanceof Type.Dictionary) {
 			return (Type.Dictionary) t;
+		} else if(isSubtype(Set(T_VOID),t)) {
+			 return (Dictionary) Dictionary(T_VOID,T_VOID);		
 		} else if (t instanceof Type.Union) {
 			Union ut = (Type.Union) t;
 			Dictionary r = null;
-			for (Type b : ut.bounds()) {
-				if (!(b instanceof Dictionary)) {
+			for (Type b : ut.bounds()) {				
+				if(isSubtype(Set(T_VOID),b)) {
+					if(r == null) {
+						Type tmp = Dictionary(T_VOID,T_VOID);						
+						if(tmp instanceof Dictionary) {
+							r = (Dictionary) tmp;
+						} else {
+							return null;
+						}
+					}
+					continue;
+				} else if (!(b instanceof Dictionary)) {
 					return null;
 				}
 				Dictionary br = (Dictionary) b;

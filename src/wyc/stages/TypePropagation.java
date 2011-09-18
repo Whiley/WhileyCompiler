@@ -711,17 +711,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		int pi = 0;
 		ArrayList<Type> indices = new ArrayList<Type>();
 		for(int i=0;i!=e.level;++i) {				
-			if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
-				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
-				if(dict == null) {
-					syntaxError("expected dictionary",filename,stmt);
-				}
-				indices.add(path.get(pi++));
-				// We don't  
-				// checkIsSubtype(dict.key(),idx,stmt);
-				iter = dict.value();				
-			} else if(Type.isSubtype(Type.T_STRING,iter)) {							
+			if(Type.isSubtype(Type.T_STRING,iter)) {							
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);
 				checkIsSubtype(Type.T_CHAR,val,stmt);	
@@ -734,6 +724,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);				
 				iter = list.element();
+			} else if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
+				// this indicates a dictionary access, rather than a list access			
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
+				if(dict == null) {
+					syntaxError("expected dictionary",filename,stmt);
+				}
+				indices.add(path.get(pi++));
+				// We don't  
+				// checkIsSubtype(dict.key(),idx,stmt);
+				iter = dict.value();				
 			} else {
 				Type.Record rec = Type.effectiveRecordType(iter);
 				if(rec == null) {
@@ -780,7 +780,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.Process tp = (Type.Process) oldtype;
 			Type nelement = typeInference(tp.element(),newtype,level,fieldLevel,fields,indexLevel,indices);
 			return Type.Process(nelement);
-		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
+		} else if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
 			// --- hence, the original type must be preserved. However, in the

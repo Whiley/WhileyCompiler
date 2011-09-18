@@ -160,8 +160,7 @@ public final class TypeAlgorithms {
 			break;
 		case Type.K_UNION :
 			changed = simplifyUnion(index, state, automata);
-			break;
-		case Type.K_DICTIONARY:
+			break;		
 		case Type.K_RECORD:
 		case Type.K_TUPLE:
 		case Type.K_FUNCTION:
