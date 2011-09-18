@@ -2144,6 +2144,11 @@ public class ClassFileBuilder {
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 		
+		if (fromType.key() == Type.T_VOID || toType.key() == Type.T_VOID) {
+			// nothing to do, in this particular case
+			return;
+		}
+		
 		// The following piece of code implements a java for-each loop which
 		// iterates every element of the input collection, and recursively
 		// converts it before loading it back onto a new WhileyList. 
