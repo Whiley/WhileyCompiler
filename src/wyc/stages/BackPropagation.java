@@ -419,7 +419,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// The second job is to try and determine whether there is any general
 		// requirement on the value being assigned.
 		
-		environment.push(code.rhs());
+		environment.push(code.rhs());		
 		environment.set(code.slot, code.beforeType);		
 	}
 	
@@ -430,7 +430,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// TODO: could do better here by rewriting bytecode. For example, if we
 		// require a set then changing bytecode to newset makes sense!
 	 	
-		coerceAfter(req,code.type,index,entry);		
+		coerceAfter(req,code.type,index,entry);
+		
 		Type key = code.type.key();
 		Type value = code.type.value();
 		for(int i=0;i!=code.nargs;++i) {

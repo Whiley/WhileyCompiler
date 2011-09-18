@@ -1295,7 +1295,13 @@ public class WhileyParser {
 		if(token instanceof RightCurly) {
 			match(RightCurly.class);			
 			// empty set definition
-			Value v = Value.V_SET(new ArrayList<Value>()); 
+			Value v = Value.V_SET(Collections.EMPTY_LIST); 
+			return new Expr.Constant(v, sourceAttr(start, index - 1));
+		} else if(token instanceof RightArrow) {
+			match(RightArrow.class);		
+			match(RightCurly.class);			
+			// empty dictionary definition
+			Value v = Value.V_DICTIONARY(Collections.EMPTY_SET); 
 			return new Expr.Constant(v, sourceAttr(start, index - 1));
 		}
 		

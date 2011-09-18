@@ -624,7 +624,7 @@ public abstract class Type {
 		} else if (t instanceof Type.Union) {
 			Union ut = (Type.Union) t;
 			Dictionary r = null;
-			for (Type b : ut.bounds()) {				
+			for (Type b : ut.bounds()) {
 				if (!(b instanceof Dictionary)) {
 					return null;
 				}

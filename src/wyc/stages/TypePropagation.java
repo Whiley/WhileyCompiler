@@ -724,18 +724,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);				
 				iter = list.element();
-			} else if(Type.isSubtype(Type.Set(Type.T_VOID),iter)) {			
-				// this indicates a dictionary access to an empty dictionary			
-				indices.add(path.get(pi++));
-				iter = Type.T_VOID;				
-			} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),iter)) {			
-				// this indicates a dictionary access, rather than a list access			
-				Type.Dictionary dict = Type.effectiveDictionaryType(iter);			
-				if(dict == null) {
-					syntaxError("expected dictionary",filename,stmt);
+			} else if (Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),
+					iter)) {
+				// this indicates a dictionary access, rather than a list access
+				Type.Dictionary dict = Type.effectiveDictionaryType(iter);				
+				if (dict == null) {
+					syntaxError("expected dictionary", filename, stmt);
 				}
 				indices.add(path.get(pi++));
-				iter = dict.value();				
+				iter = dict.value();
 			} else {
 				Type.Record rec = Type.effectiveRecordType(iter);
 				if(rec == null) {
@@ -794,12 +791,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					fieldLevel, fields, indexLevel, indices);
 			// FIXME: this is overly conservative.
 			return Type.List(Type.Union(list.element(),nelement));		
-		} else if(Type.isSubtype(Type.Set(Type.T_VOID),oldtype)) {			
-			// this indicates a dictionary access to an empty dictionary			
-			Type nkey = indices.get(indexLevel);			
-			Type nvalue = inferAfterType(Type.T_VOID, newtype, level - 1,
-					fieldLevel, fields, indexLevel + 1, indices);
-			return Type.Dictionary(nkey, nvalue);			
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
@@ -862,12 +853,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 					fieldLevel, fields, indexLevel, indices);
 			// FIXME: this is overly conservative.
 			return Type.List(Type.Union(list.element(),nelement));		
-		} else if(Type.isSubtype(Type.Set(Type.T_VOID),oldtype)) {			
-			// this indicates a dictionary access to an empty dictionary			
-			Type nkey = indices.get(indexLevel);			
-			Type nvalue = inferBeforeType(Type.T_VOID, level - 1, fieldLevel,
-					fields, indexLevel + 1, indices);
-			return Type.Dictionary(nkey,nvalue);			
 		} else if(Type.isSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),oldtype)) {
 			// Dictionary case is straightforward. Since only one key-value pair
 			// is being updated, we must assume other key-value pairs are not
@@ -879,7 +864,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type nvalue = inferBeforeType(dict.value(), level - 1,
 					fieldLevel, fields, indexLevel + 1, indices);
 			// FIXME: this is overly conservative.
-			return Type.Dictionary(Type.Union(dict.key(), nkey),
+			return Type.Dictionary(dict.key(),
 					Type.Union(dict.value(), nvalue));			
 		} else if(Type.effectiveRecordType(oldtype) != null){			
 			// Record case is more interesting as we may be able to actually
