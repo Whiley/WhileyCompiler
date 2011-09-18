@@ -41,7 +41,7 @@ import wyjc.runtime.BigRational;
 
 public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
 	private static final HashMap<Integer,Block.Entry> afterInsertions = new HashMap<Integer,Block.Entry>();
-	private static final HashMap<Integer,Block.Entry> beforeInsertions = new HashMap<Integer,Block.Entry>();
+	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
 	public BackPropagation(ModuleLoader loader) {
 		super(loader);
@@ -69,7 +69,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		methodCase = mcase;
 		stores = new HashMap<String,Env>();
 		afterInsertions.clear();
-		beforeInsertions.clear();
+		rewrites.clear();
 		
 		Env environment = initialStore();		
 		propagate(0,mcase.body().size(), environment);	
@@ -78,11 +78,12 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		Block body = mcase.body();
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
-			Block.Entry beforeInsertion = beforeInsertions.get(i);			
-			if(beforeInsertion != null) {								
-				nbody.append(beforeInsertion);				
-			} 	
-			nbody.append(body.get(i));		
+			Block.Entry rewrite = rewrites.get(i);			
+			if(rewrite != null) {								
+				nbody.append(rewrite);				
+			} else {
+				nbody.append(body.get(i));
+			}
 			Block.Entry afterInsertion = afterInsertions.get(i);			
 			if(afterInsertion != null) {								
 				nbody.append(afterInsertion);				
@@ -383,7 +384,24 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.Update code, Block.Entry stmt,
 			Env environment) {
-				
+		
+		Type src = environment.get(code.slot);
+		
+		if(src == Type.T_VOID) {
+			src = code.type;
+		}
+		
+		// the following is necessary to deal with constraints being propagated
+		// through slots, rather than on the stack.
+		if (!code.type.equals(src)) {
+			rewrites.put(
+					index,
+					new Block.Entry(Code.Update(src, code.slot, code.level,
+							code.fields), stmt.attributes()));
+		} else {
+			rewrites.remove(index);
+		}
+		
 		// The first job is to make sure we've got the right types for indices
 		// and key values loaded onto the stack.
 				
@@ -402,7 +420,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		// requirement on the value being assigned.
 		
 		environment.push(code.rhs());
-		environment.set(code.slot, code.type);		
+		environment.set(code.slot, src);		
 	}
 	
 	public void infer(int index, Code.NewDict code, Block.Entry entry,
@@ -489,13 +507,18 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 	
 	public void infer(int index, Code.Store code, Block.Entry entry,
 			Env environment) {
-
-		// TODO: a problem occurs here if the type requested of the store
-		// bytecode does not match type of this code. Some kind of coercion is
-		// required, but it's tricky.
-
-		//environment.push(code.type);				
-		environment.push(environment.get(code.slot));
+		Type src = environment.get(code.slot);
+		
+		// the following is necessary to deal with constraints being propagated
+		// through slots, rather than on the stack.
+		if (src != Type.T_VOID && !code.type.equals(src)) {
+			rewrites.put(index, new Block.Entry(Code.Store(src, code.slot),
+					entry.attributes()));
+		} else {
+			rewrites.remove(index);
+		}
+		
+		environment.push(src);
 		environment.set(code.slot,Type.T_VOID);
 	}
 	
@@ -694,7 +717,9 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			newEnv = propagate(start+1,end, oldEnv);
 			
 		} while (!newEnv.equals(oldEnv));
-				
+		
+		environment = join(environment,newEnv);
+		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 								
 			environment.push(fall.type);			
@@ -713,17 +738,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else {
 			afterInsertions.remove(index);
 		}
-	}
-	
-	public void coerceBefore(Type to, Type from, int index, SyntacticElement elem) {		
-		//if (!Type.isSubtype(to,from)) {					
-		if (!to.equals(from)) {			
-			beforeInsertions.put(index,
-					new Block.Entry(Code.Convert(from, to), elem.attributes()));
-		} else {
-			beforeInsertions.remove(index);
-		}
-	}
+	}	
 	
 	public Env join(Env env1, Env env2) {
 		if (env2 == null) {
