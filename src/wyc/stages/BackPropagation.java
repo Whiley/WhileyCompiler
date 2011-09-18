@@ -509,10 +509,14 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			Env environment) {
 		Type src = environment.get(code.slot);
 		
+		if(src == Type.T_VOID) {
+			src = code.type;
+		}
+		
 		// the following is necessary to deal with constraints being propagated
 		// through slots, rather than on the stack.
 		
-		if (src != Type.T_VOID && !code.type.equals(src)) {
+		if (!code.type.equals(src)) {
 			rewrites.put(index, new Block.Entry(Code.Store(src, code.slot),
 					entry.attributes()));
 		} else {
