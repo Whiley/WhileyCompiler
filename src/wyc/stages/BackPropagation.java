@@ -408,11 +408,11 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		for(Code.LVal lv : code) {		
 			if (lv instanceof Code.StringLVal || lv instanceof ListLVal) {
 				environment.push(Type.T_INT);
-			} else if(lv instanceof DictLVal) {
+			} else if (lv instanceof DictLVal) {
 				DictLVal dlv = (DictLVal) lv;
 				environment.push(dlv.type().key());
 			} else {
-				// RecordLVal has no stack requirement 
+				// RecordLVal has no stack requirement
 			}
 		}
 		

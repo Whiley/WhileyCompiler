@@ -1455,7 +1455,7 @@ public abstract class Code {
 		protected Type type;
 		
 		public LVal(Type t) {
-			this.type = type;
+			this.type = t;
 		}
 		
 		public Type rawType() {
@@ -1465,13 +1465,13 @@ public abstract class Code {
 	
 	public static final class DictLVal extends LVal {
 		public DictLVal(Type t) {
-			super(t);
+			super(t);			
 			if(Type.effectiveDictionaryType(t) == null) {
 				throw new IllegalArgumentException("Invalid Dictionary Type");
 			}
 		}
 		
-		public Type.Dictionary type() {
+		public Type.Dictionary type() {			
 			return Type.effectiveDictionaryType(type);
 		}
 	}
