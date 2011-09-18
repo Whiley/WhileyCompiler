@@ -46,6 +46,13 @@ public final class Automata {
 		this.states = states;
 	}
 
+	public Automata(Automata automata) {
+		this.states = new State[automata.states.length];
+		for(int i=0;i!=states.length;++i) {
+			states[i] = new State(automata.states[i]);
+		}
+	}
+	
 	public int size() {
 		return states.length;
 	}

@@ -21,7 +21,7 @@ public class TypeGenerator {
 		}
 		
 		public void write(Automata automata) throws IOException {						
-			Type t = Type.construct(automata);
+			Type t = Type.construct(new Automata(automata));
 			if (t != Type.T_VOID) {
 				super.write(automata);
 				count++;

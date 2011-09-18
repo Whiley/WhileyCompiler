@@ -119,17 +119,16 @@ public class Generator {
 				if(template.isTransition(i,j)) {
 					children[index++] = j;
 				}
-			}			
+			}						
 			states[i] = new Automata.State(kind,KINDS[kind].DETERMINISTIC,children);
 		}
-		Automata automata = new Automata(states);					
-		
-		generate(0,automata,writer,config);				
+		Automata automata = new Automata(states);							
+		generate(0,automata,writer,config);	
 	}
 	
 	private static void generate(int index, Automata automata,
 			GenericWriter<Automata> writer, Config config) throws IOException {
-		if(index == automata.size()) {			
+		if(index >= automata.size()) {			
 			writer.write(automata);
 			writer.flush();
 			count++;
@@ -149,7 +148,7 @@ public class Generator {
 	
 	private static void generateData(int index, Automata automata,
 			GenericWriter<Automata> writer, Config config) throws IOException {
-		Automata.State state = automata.states[index];
+		Automata.State state = automata.states[index];		
 		Kind kind = config.KINDS[state.kind];
 		if (kind.DATA != null) {
 			// this kind requires supplementary data
