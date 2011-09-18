@@ -1,5 +1,5 @@
 import whiley.lang.*:*
-import whiley.io.*
+import whiley.io.File:*
 
 // ====================================================
 // A simple calculator for expressions
