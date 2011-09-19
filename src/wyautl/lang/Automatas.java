@@ -3,6 +3,7 @@ package wyautl.lang;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Comparator;
 
 import wyautl.lang.Automata.State;
 import wyautl.util.BinaryMatrix;
@@ -378,13 +379,18 @@ public final class Automatas {
 	 * 
 	 * @param automata
 	 *            --- to be canonicalised
+	 * @param dataComparator
+	 *            --- comparator for supplementary data. May be null if no state
+	 *            has supplementary data.  The comparator is guaranteed to be
+	 *            called on states of matching kind and determinism.
 	 */
-	public static void canonicalise(Automata automata) {
+	public static void canonicalise(Automata automata,
+			Comparator<State> dataComparator) {
 		int size = automata.size();				
 		ArrayList<Morphism> candidates = new ArrayList<Morphism>();		
 		candidates.add(new Morphism(size));		
 		for(int i=0;i!=size;++i) {
-			extend(i,candidates,automata);			
+			extend(i,candidates,automata,dataComparator);			
 		}
 		inplaceRemap(automata,candidates.get(0).n2i);
 	}
@@ -393,7 +399,7 @@ public final class Automatas {
 	 * The following provides a brute-force way of determining the canonical
 	 * form. It's really really slow, but useful for testing.	
 	 */
-	private static Automata bruteForce(Automata automata) {
+	private static Automata bruteForce(Automata automata, Comparator dataComparator) {
 		int[] init = new int[automata.size()-1];
 		for(int i=0;i<init.length;++i) {
 			init[i] = i+1;
@@ -404,13 +410,13 @@ public final class Automatas {
 			for(int c : permutation) {
 				m.allocate(c);
 			}
-			if(winner == null || lessThan(m,winner,automata)) {
+			if(winner == null || lessThan(m,winner,automata, dataComparator)) {
 				winner = m;
 			}
 		}
 		return remap(automata,winner.n2i);
 	}
-	
+
 	/**
 	 * <p>
 	 * This algorithm extends all of the current morphisms by a single place.
@@ -433,9 +439,14 @@ public final class Automatas {
 	 *            relation.
 	 * @param automata
 	 *            --- the automata being canonicalised
+	 * @param dataComparator
+	 *            --- comparator for supplementary data. May be null if no state
+	 *            has supplementary data. The comparator is guaranteed to be
+	 *            called on states of matching kind and determinism.
+	 * 
 	 */
-	private static void extend(int index,
-			ArrayList<Morphism> candidates, Automata automata) {
+	private static void extend(int index, ArrayList<Morphism> candidates,
+			Automata automata, Comparator<State> dataComparator) {
 
 		// Please note, this algorithm is really not very efficient. There is
 		// quite a lot more pruning that could be done!
@@ -446,7 +457,7 @@ public final class Automatas {
 			extend(index,candidate,candidates,automata);
 		}
 		
-		prune(candidates, automata);
+		prune(candidates, automata, dataComparator);
 	}
 
 	private static void extend(int index, Morphism candidate,
@@ -543,12 +554,12 @@ public final class Automatas {
 	 * @param candidates
 	 * @param automata
 	 */
-	private static void prune(ArrayList<Morphism> candidates, Automata automata) {
+	private static void prune(ArrayList<Morphism> candidates, Automata automata, Comparator<State> dataComparator) {
 		// this is really inefficient!
 		// at a minimum, we could avoid recomputing lessThan twice for each candidate.		
 		Morphism least = candidates.get(0); 
 		for(Morphism candidate : candidates) {			
-			if(lessThan(candidate,least,automata)) {
+			if(lessThan(candidate,least,automata, dataComparator)) {
 				least = candidate;
 			}
 		}
@@ -556,7 +567,7 @@ public final class Automatas {
 		int diff = 0;
 		for(int i=0;i!=candidates.size();++i) {
 			Morphism candidate = candidates.get(i);
-			if(lessThan(least,candidate,automata)) {
+			if(lessThan(least,candidate,automata, dataComparator)) {
 				diff = diff + 1;
 			} else {
 				candidates.set(i-diff,candidate);
@@ -589,7 +600,7 @@ public final class Automatas {
 	 * @return --- true if morph1 is less than morph2
 	 */
 	private static boolean lessThan(Morphism morph1, Morphism morph2,
-			Automata automata) {
+			Automata automata, Comparator<State> dataComparator) {
 		State[] states = automata.states;
 		int size = Math.min(morph1.free,morph2.free);
 		
@@ -624,9 +635,18 @@ public final class Automatas {
 					return false;
 				}				
 			}
-			
+						
 			if(s1.data != null || s2.data != null) {
-				throw new RuntimeException("Need to deal with supplementary data in canonicalise");
+				if(s1.data == null && s1.data != null) {
+					return true;
+				} else if(s1.data != null && s1.data == null) {
+					return false;
+				} else if(s1.data != null && s2.data != null) {
+					int c = dataComparator.compare(s1,s2);
+					if(c != 0) {
+						return c < 0;
+					}
+				}				
 			}
 		}
 		

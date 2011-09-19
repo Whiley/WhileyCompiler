@@ -1674,6 +1674,7 @@ public abstract class Type {
 		TypeAlgorithms.simplify(automata);				
 		automata = Automatas.extract(automata, 0);		
 		automata = Automatas.minimise(automata);
+		//Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);
 		minimisedCount += automata.size();
 		return automata;
 	}

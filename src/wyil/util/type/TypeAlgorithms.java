@@ -6,6 +6,7 @@ import static wyil.lang.Type.K_VOID;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import wyautl.lang.*;
@@ -30,6 +31,46 @@ import wyil.lang.Type.Union;
 
 public final class TypeAlgorithms {
 
+	/**
+	 * The data comparator is used in the type canonicalisation process. It is
+	 * used to compare the supplementary data of states in automatas
+	 * representing types. Supplementary data is used for record kinds and 
+	 */
+	public static final Comparator<Automata.State> DATA_COMPARATOR = new Comparator<Automata.State>() {
+		public int compare(Automata.State s1, Automata.State s2) {
+			// PRE-CONDITION s1.kind == s2.kind
+			if(s1.kind == Type.K_RECORD) {
+				ArrayList<String> fields1 = (ArrayList<String>) s1.data;
+				ArrayList<String> fields2 = (ArrayList<String>) s2.data;
+				int fields1_size = fields1.size();
+				int fields2_size = fields2.size();
+				if(fields1_size < fields2_size) {
+					return -1;
+				} else if(fields1_size > fields2_size) {
+					return 1;
+				}
+				// fields1_size == fields2_size
+				for(int i=0;i!=fields1_size;++i) {
+					String str1 = fields1.get(i);
+					String str2 = fields2.get(i);
+					int c = str1.compareTo(str2);
+					if(c != 0) {
+						return c;
+					}
+				}
+				return 0;
+			} else if(s1.kind == Type.K_EXISTENTIAL){
+				NameID nid1 = (NameID) s1.data;
+				NameID nid2 = (NameID) s2.data;
+				return nid1.toString().compareTo(nid2.toString());
+			} else {
+				String str1 = (String) s1.data;
+				String str2 = (String) s2.data;
+				return str1.compareTo(str2);
+			}
+		}
+	};
+	
 	/**
 	 * <p>
 	 * Contractive types are types which cannot accept value because they have
