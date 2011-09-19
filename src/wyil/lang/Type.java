@@ -1668,10 +1668,13 @@ public abstract class Type {
 	 * @param afterType
 	 * @return
 	 */
-	private static Automata normalise(Automata automata) {				
-		TypeAlgorithms.simplify(automata);
+	private static Automata normalise(Automata automata) {		
+		normalisedCount++;
+		unminimisedCount += automata.size();
+		TypeAlgorithms.simplify(automata);				
 		automata = Automatas.extract(automata, 0);		
-		automata = Automatas.minimise(automata);		
+		automata = Automatas.minimise(automata);
+		minimisedCount += automata.size();
 		return automata;
 	}
 	
@@ -1718,6 +1721,9 @@ public abstract class Type {
 
 	private static int equalsCount = 0;
 	private static int constructCount = 0;
+	private static int normalisedCount = 0;
+	private static int unminimisedCount = 0;
+	private static int minimisedCount = 0;
 
 	static {
 		Thread _shutdownHook = new Thread(Type.class.getName()
@@ -1731,7 +1737,8 @@ public abstract class Type {
 	
 	public static void shutdown() {
 		System.err.println("#TYPE CONSTRUCTIONS: " + constructCount);
-		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);		
+		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);	
+		System.err.println("#TYPE NORMALISATIONS: " + normalisedCount + " (" + unminimisedCount + " -> " + minimisedCount +")");
 	}
 	
 	public static void main(String[] args) {

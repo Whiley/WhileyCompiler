@@ -126,15 +126,15 @@ public final class TypeAlgorithms {
 	 * </p>
 	 * 
 	 */
-	public static void simplify(Automata automata) {				
+	public static void simplify(Automata automata) {		
 		boolean changed = true;
-		while(changed) {	
+		while(changed) {				
 			changed = false;
-			changed |= simplifyContractives(automata);
-			for(int i=0;i!=automata.size();++i) {
-				changed |= simplify(i,automata);
-			}
-		}		
+			changed |= simplifyContractives(automata);						
+			for(int i=0;i!=automata.size();++i) {				
+				changed |= simplify(i,automata);				
+			}			
+		}	
 	}	
 	
 	private static boolean simplifyContractives(Automata automata) {
@@ -151,24 +151,24 @@ public final class TypeAlgorithms {
 		return changed;
 	}
 	
-	private static boolean simplify(int index, Automata automata) {
+	private static boolean simplify(int index, Automata automata) {		
 		Automata.State state = automata.states[index];
 		boolean changed=false;
 		switch (state.kind) {
-		case Type.K_NEGATION:
+		case Type.K_NEGATION:			
 			changed = simplifyNegation(index, state, automata);
 			break;
-		case Type.K_UNION :
+		case Type.K_UNION :			
 			changed = simplifyUnion(index, state, automata);
 			break;		
 		case Type.K_RECORD:
 		case Type.K_TUPLE:
 		case Type.K_FUNCTION:
 		case Type.K_METHOD:
-		case Type.K_HEADLESS:
+		case Type.K_HEADLESS:			
 			changed = simplifyCompound(index, state, automata);
 			break;
-		}		
+		}				
 		return changed;
 	}
 	

@@ -1340,7 +1340,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Env newEnv = null;
 		Env oldEnv = loopEnv;
-		do {					
+		do {								
 			// iterate until a fixed point reached
 			oldEnv = newEnv;			 			
 			newEnv = join(loopEnv,propagate(start+1,end,oldEnv));
@@ -1380,7 +1380,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		Env newEnv = environment;
 		Env oldEnv = null;
-		do {
+		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv;
 			newEnv = join(environment,propagate(start+1,end, oldEnv));
