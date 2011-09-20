@@ -922,14 +922,11 @@ public abstract class Type {
 			if (o instanceof Compound) {
 				Compound c = (Compound) o;
 				equalsCount++;
-				boolean r1 = automata.equals(c.automata);
-				boolean r2 = isSubtype(this, c) && isSubtype(c, this);
-				if(r1 != r2) {
-					System.out.println("MIA: " + this + " != " + c);
-					System.out.println("AUTOMATA #1: " + this.automata);
-					System.out.println("AUTOMATA #2: " + c.automata);
-				}
-				return r2;
+				if(canonicalisation) {
+					return automata.equals(c.automata);
+				} else {
+					return isSubtype(this, c) && isSubtype(c, this);
+				}				
 			}
 			return false;
 		}
@@ -1705,8 +1702,10 @@ public abstract class Type {
 		unminimisedCount += automata.size();
 		TypeAlgorithms.simplify(automata);				
 		automata = Automatas.extract(automata, 0);		
-		automata = Automatas.minimise(automata);		
-		Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);		
+		automata = Automatas.minimise(automata);
+		if(canonicalisation) {
+			Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);
+		} 
 		minimisedCount += automata.size();
 		return automata;
 	}
@@ -1752,6 +1751,7 @@ public abstract class Type {
 		}
 	}
 
+	private static boolean canonicalisation = true;
 	private static int equalsCount = 0;	
 	private static int normalisedCount = 0;
 	private static int unminimisedCount = 0;
