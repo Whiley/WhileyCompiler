@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 // this is a comment!
 define odd as { 1,3,5 }

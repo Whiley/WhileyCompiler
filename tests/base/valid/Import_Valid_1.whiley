@@ -1,6 +1,6 @@
-import whiley.lang.*
-import whiley.lang.System:System
-import whiley.lang.System:println
+import * from whiley.lang.*
+import * from whiley.lang.*
+import * from whiley.lang.*
 
 Type.nat f(int x):
     if x < 0:

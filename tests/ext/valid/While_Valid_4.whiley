@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 [int] extract([int] ls) ensures |$| > 0:
     i = 0

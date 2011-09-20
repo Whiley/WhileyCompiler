@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define tenup as int
 define msg1 as {tenup op, [int] data}

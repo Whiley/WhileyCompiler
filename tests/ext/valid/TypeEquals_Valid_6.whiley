@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define plist as [int] where |$| > 0 && $[0] == 0
 define expr as [int]|int

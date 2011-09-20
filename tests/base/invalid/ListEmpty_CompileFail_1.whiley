@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 void f(int x):
     sys.out.println(str(x))

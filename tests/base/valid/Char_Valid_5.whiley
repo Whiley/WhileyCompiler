@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 int iof(string s, int i):
     return s[i] - 'a'

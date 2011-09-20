@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 {int} f([int] xs):
     return { x | x in xs, x > 1 }

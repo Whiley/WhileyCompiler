@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define wmcr6tup as {int x, int y}
 define Proc as process { int state }

@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 string f(int i):
     arr1 = [1,2,64]

@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 string f({int} xs, {int} ys) requires |xs| <= |ys|:
     if xs ⊂ ys:

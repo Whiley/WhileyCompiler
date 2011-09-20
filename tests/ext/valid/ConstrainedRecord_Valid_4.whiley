@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define point as {int x, int y} where $.x > 0 && $.y > 0
 

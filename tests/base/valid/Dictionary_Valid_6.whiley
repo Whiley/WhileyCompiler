@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 {char->int} reverse(string input):
     rs = {->}

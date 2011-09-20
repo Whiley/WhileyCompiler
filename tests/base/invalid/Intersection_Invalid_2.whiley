@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define LinkedList as null | {int data, LinkedList next}
 define UnitList as {int data, null next}

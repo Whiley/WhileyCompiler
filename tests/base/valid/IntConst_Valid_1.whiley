@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 void ::main(System sys,[string] args):
     x = 1234567891011121314151617181920

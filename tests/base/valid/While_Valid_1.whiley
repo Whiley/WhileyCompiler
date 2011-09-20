@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 [int] reverse([int] ls):
     i = |ls|

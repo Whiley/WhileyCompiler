@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define PAWN as 0
 define KNIGHT as 1 

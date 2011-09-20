@@ -122,15 +122,16 @@ public class WhileyParser {
 		
 		// first, check if from is used
 		String name = null;
-		if((index+1) < tokens.size() && tokens.get(index+1).text.equals("from")) {						
+		if ((index + 1) < tokens.size()
+				&& tokens.get(index + 1).text.equals("from")) {
 			Token t = tokens.get(index);
-			if(t.text.equals("*")) {
+			if (t.text.equals("*")) {
 				match(Star.class);
-				name = "*";	
+				name = "*";
 			} else {
 				name = matchIdentifier().text;
 			}
-			matchIdentifier();			
+			matchIdentifier();
 		}
 				
 		ArrayList<String> pkg = new ArrayList<String>();

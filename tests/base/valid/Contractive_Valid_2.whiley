@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
     
 define C1 as null|any
 define C2 as null|any

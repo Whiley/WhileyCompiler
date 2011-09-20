@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 [int] f([[real|int]] e):
     if e is [[int]]:

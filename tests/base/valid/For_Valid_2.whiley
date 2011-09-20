@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define nat as int
 void ::main(System sys,[string] args):

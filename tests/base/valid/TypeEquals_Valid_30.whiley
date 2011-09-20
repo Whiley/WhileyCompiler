@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 int f({int->any} xs):
     if xs is {int->string}:

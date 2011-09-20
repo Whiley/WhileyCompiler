@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
     
 define Contractive as Contractive|null
 

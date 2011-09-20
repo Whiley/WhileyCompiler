@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 (int,int) f({int->int} dict):
     k = 0

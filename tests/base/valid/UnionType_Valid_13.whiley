@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 
 define immStoreCode as { 0,1,2 }

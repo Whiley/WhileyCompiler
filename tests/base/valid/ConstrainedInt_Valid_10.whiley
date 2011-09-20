@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 // This example was inspired by comments from Stuart Marshall.
 

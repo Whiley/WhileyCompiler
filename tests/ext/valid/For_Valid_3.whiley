@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 int sum({nat} xs) ensures $ >= 0:
     r = 0

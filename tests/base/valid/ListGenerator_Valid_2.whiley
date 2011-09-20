@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 string f([[int]] x):
     if(|x[0]| > 2):
