@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 [int] sort([int] items):
     if |items| > 1:

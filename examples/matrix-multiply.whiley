@@ -1,5 +1,5 @@
-import whiley.lang.*:*
-import whiley.io.File:*
+import * from whiley.lang.*
+import * from whiley.io.File
 
 // ========================================================
 // Benchmark
