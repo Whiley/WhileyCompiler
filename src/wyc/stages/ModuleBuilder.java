@@ -1048,6 +1048,7 @@ public class ModuleBuilder {
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt.first(),lab));
 			cblk.append(Code.Label(lab), attributes(c));
+			cblk.append(Code.Store(pt.first(), freeReg), attributes(c));
 			for (Stmt st : c.stmts) {
 				cblk.append(resolve(st, environment));
 			}

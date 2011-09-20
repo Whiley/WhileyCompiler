@@ -141,6 +141,10 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 					
 					store = propagate(i, sw, stmt, swStores, defStore);																				
 				} else if (code instanceof Code.TryCatch) {
+					
+					// FIXME: this is fundamentally broken since an exception
+					// can arise at (in principle) any bytecode.
+					
 					Code.TryCatch sw = (Code.TryCatch) code;
 					
 					ArrayList<T> swStores = new ArrayList<T>();

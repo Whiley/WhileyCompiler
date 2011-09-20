@@ -706,7 +706,21 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		
 		return environment;
 	}
-		
+	
+	public Env propagate(int index, Code.TryCatch sw, Entry stmt,
+			List<Env> environments, Env defEnv) {
+
+		Env environment = defEnv;
+
+		for (int i = 0; i != sw.catches.size(); ++i) {
+			Env catchEnvironment = (Env) environments.get(i).clone();
+			catchEnvironment.pop(); // exception type
+			environment = join(environment, catchEnvironment);
+		}
+
+		return environment;
+	}
+	
 	public Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment) {
 

@@ -151,8 +151,11 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					merge(sw.defaultTarget, store, stores);
 					store = null;
 				} else if (code instanceof Code.TryCatch) {
-					Code.TryCatch sw = (Code.TryCatch) code;
 					
+					// FIXME: this is fundamentally broken since an exception
+					// can arise at (in principle) any bytecode.
+					
+					Code.TryCatch sw = (Code.TryCatch) code;					
 					List<T> r = propagate(i, sw, entry, store);										
 
 					// assert r.second().size() == nsw.branches.size()

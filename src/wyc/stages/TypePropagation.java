@@ -1302,6 +1302,20 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return envs;
 	}	
 	
+	protected List<Env> propagate(int index, Code.TryCatch code, Entry stmt,
+			Env environment) {
+		
+		ArrayList<Env> envs = new ArrayList<Env>();
+		
+		for(Pair<Type, String> e : code.catches) {
+			Env catchEnvironment = (Env) environment.clone();
+			catchEnvironment.push(e.first()); // exception type
+			envs.add(catchEnvironment);
+		}
+
+		return envs;
+	}
+	
 	protected Env propagate(int start, int end, Code.ForAll forloop,
 			Entry stmt, ArrayList<Integer> modifies, Env environment) {
 						

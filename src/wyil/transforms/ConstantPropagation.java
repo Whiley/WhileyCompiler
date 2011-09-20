@@ -1033,7 +1033,21 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		return stores;
 	}
+	
+	public List<Env> propagate(int index, Code.TryCatch sw,
+			Entry stmt, Env environment) {		
+		Env catchEnvironment = (Env) environment.clone();
 		
+		catchEnvironment.push(null); // the exception value
+		
+		ArrayList<Env> stores = new ArrayList();
+		for (int i = 0; i != sw.catches.size(); ++i) {
+			stores.add(catchEnvironment);
+		}
+		
+		return stores;
+	}
+	
 	public Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment) {
 		
