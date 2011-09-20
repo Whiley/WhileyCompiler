@@ -313,7 +313,7 @@ public class ClassFileBuilder {
 
 			for (UnresolvedHandler ur : unresolvedHandlers) {
 				int start = labels.get(ur.start);
-				int end = labels.get(ur.end);				
+				int end = labels.get(ur.end);
 				Handler handler = new Handler(start, end, ur.target,
 						ur.exception);
 				handlers.add(handler);

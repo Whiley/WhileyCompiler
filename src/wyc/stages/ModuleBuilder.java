@@ -1032,18 +1032,20 @@ public class ModuleBuilder {
 	}
 	
 	protected Block resolve(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
-		String exitLab = Block.freshLabel();
-		String endLab = Block.freshLabel();
+		String exitLab = Block.freshLabel();		
 		Block cblk = new Block(environment.size());		
 		for (Stmt st : s.body) {
 			cblk.append(resolve(st, environment));
 		}		
 		cblk.append(Code.Goto(exitLab),attributes(s));	
-		cblk.append(Code.Label(endLab), attributes(s));
+		String endLab = null;
 		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
 		for(Stmt.Catch c : s.catches) {
 			int freeReg = allocate(c.variable,environment);
 			String lab = Block.freshLabel();
+			if(endLab == null) {
+				endLab = lab;
+			}
 			Pair<Type,Block> pt = resolve(c.type);
 			// TODO: deal with exception type constraints
 			catches.add(new Pair<Type,String>(pt.first(),lab));

@@ -87,9 +87,13 @@ public class DeadCodeElimination {
 		// bytecode. This identifies those bytecodes which are reachable from
 		// the method's entry point.
 		HashSet<Integer> visited = new HashSet<Integer>();
-				
-		// FIXME: there is a bug here related to exception handlers.
-		visit(0,visited,buildLabelMap(bytecodes),bytecodes);
+		HashMap<String,Integer> labelMap = buildLabelMap(bytecodes); 		
+		visit(0,visited,labelMap,bytecodes);
+		// now, visit handlers as well
+		for(Code.Handler handler : code.handlers()) {
+			int target = labelMap.get(handler.label);
+			visit(target,visited,labelMap,bytecodes);
+		}
 		
 		// Second, for any unreachable bytecode, add a rewrite which simply
 		// deletes it.

@@ -2337,7 +2337,7 @@ public abstract class Code {
 				firstTime = false;
 				table += p.first() + "->" + p.second();
 			}
-			return "switch " + table;
+			return "trycatch " + table;
 		}
 	}
 	
