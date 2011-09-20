@@ -1858,17 +1858,19 @@ public class ClassFileBuilder {
 		
 		// First, deal with coercions which require a change of representation
 		// when going into a union.  For example, bool must => Boolean.
-		if (Type.intersect(from, to).equals(from)) {			
-			// do nothing!						
-		} else if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
+		if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
 			buildCoercion((Type.Bool) from, to, freeSlot, bytecodes);
-		} else if(from == Type.T_INT) {									
-			buildCoercion((Type.Int)from, to, freeSlot,bytecodes);  
-		} else if(from == Type.T_CHAR) {									
-			buildCoercion((Type.Char)from, to, freeSlot,bytecodes);  
 		} else if(from == Type.T_BYTE) {									
 			buildCoercion((Type.Byte)from, to, freeSlot,bytecodes); 
+		} else if(from == Type.T_CHAR) {									
+			buildCoercion((Type.Char)from, to, freeSlot,bytecodes);  
+		} else if (Type.intersect(from, to).equals(from)) {			
+			// do nothing!
+			// (note, need to check this after primitive types to avoid risk of
+			// missing coercion to any)
+		} else  if(from == Type.T_INT) {									
+			buildCoercion((Type.Int)from, to, freeSlot,bytecodes);  
 		} else if(from == Type.T_STRING && to instanceof Type.List) {									
 			buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
 		} else {			
