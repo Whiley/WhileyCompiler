@@ -1753,7 +1753,7 @@ public abstract class Type {
 		}
 	}
 
-	private static boolean canonicalisation = false;
+	private static boolean canonicalisation = true;
 	private static int equalsCount = 0;	
 	private static int normalisedCount = 0;
 	private static int unminimisedCount = 0;

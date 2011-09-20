@@ -206,6 +206,8 @@ public final class Automatas {
 		BinaryMatrix equivs = new BinaryMatrix(automata.size(),automata.size(),true);
 		determineEquivalenceClasses(equivs,automata);
 		
+		// TODO: optimise the case when all equivalence classes have unit size.
+		
 		// Second, determine representative nodes for each equivalence class.
 		int oldSize = automata.size();
 		int[] mapping = new int[oldSize];		
