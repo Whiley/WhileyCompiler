@@ -109,19 +109,6 @@ public class BinaryOutputStream extends OutputStream {
 	 * @throws IOException
 	 */
 	public void write_uv(int w) throws IOException {		
-//		if(w >= 0 && w <= 7) {
-//			write_un(w,4);
-//		} else if(w >= 0 && w <= 63){
-//			write_un(8|((w>>3)&7),4);
-//			write_un(w&7,4);
-//		} else if(w >= 0 && w <= 511){
-//			write_un(8|((w>>6)&7),4);
-//			write_un(8|((w>>3)&7),4);
-//			write_un(w&7,4);
-//		} else {
-//			throw new RuntimeException("Need to implement general case for write_uv");
-//		}
-//				
 		do {
 			int t = w & 7;
 			w = w >> 3;

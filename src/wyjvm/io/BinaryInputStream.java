@@ -74,11 +74,6 @@ public class BinaryInputStream extends InputStream {
 	public int read_uv() throws IOException {
 		int value = 0;
 		boolean flag = true;
-//		while(flag) {
-//			int w = read_un(4);
-//			flag = (w&8) != 0;
-//			value = (value << 3) | (w&7);
-//		}
 		int shift = 0;
 		while(flag) {
 			int w = read_un(4);

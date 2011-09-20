@@ -1858,7 +1858,7 @@ public class ClassFileBuilder {
 		
 		// First, deal with coercions which require a change of representation
 		// when going into a union.  For example, bool must => Boolean.
-		if (from.equals(to)) {		
+		if (Type.intersect(from, to).equals(from)) {			
 			// do nothing!						
 		} else if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
 			// this is either going into a union type, or the any type
@@ -1869,25 +1869,14 @@ public class ClassFileBuilder {
 			buildCoercion((Type.Char)from, to, freeSlot,bytecodes);  
 		} else if(from == Type.T_BYTE) {									
 			buildCoercion((Type.Byte)from, to, freeSlot,bytecodes); 
-		} else {
-			// Second, check for other easy cases that we can do inline. We first
-			// simplify the target in order to remove any unions on the right-hand
-			// side. 
-			to = simplifyCoercion(from,to);
-
-			if (from.equals(to)) {		
-				// do nothing!						
-			} else if(from == Type.T_STRING && to instanceof Type.List) {									
-				buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
-			} else if(to == Type.T_ANY) {
-				// nothing to do here
-			} else {
-				// ok, it's a harder case so we use an explicit coercion function
-				int id = Coercion.get(from,to,constants);
-				String name = "coercion$" + id;
-				JvmType.Function ft = new JvmType.Function(convertType(to), convertType(from));
-				bytecodes.add(new Bytecode.Invoke(owner, name, ft, Bytecode.STATIC));
-			}
+		} else if(from == Type.T_STRING && to instanceof Type.List) {									
+			buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
+		} else {			
+			// ok, it's a harder case so we use an explicit coercion function								
+			int id = Coercion.get(from,to,constants);
+			String name = "coercion$" + id;
+			JvmType.Function ft = new JvmType.Function(convertType(to), convertType(from));
+			bytecodes.add(new Bytecode.Invoke(owner, name, ft, Bytecode.STATIC));
 		}
 	}
 
@@ -1906,18 +1895,16 @@ public class ClassFileBuilder {
 	}
 	
 	public void buildCoercion(Type.Int fromType, Type toType, 
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if(!Type.isSubtype(toType,fromType)) {
-			Type glb = Type.intersect(Type.T_REAL, toType);
-			if(glb == Type.T_REAL) { 
-				// coercion required!
-				JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
-				bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
-			} else {				
-				// must be => char
-				JvmType.Function ftype = new JvmType.Function(T_INT);			
-				bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));				
-			}
+			int freeSlot, ArrayList<Bytecode> bytecodes) {		
+		Type glb = Type.intersect(Type.T_REAL, toType);
+		if(glb == Type.T_REAL) { 
+			// coercion required!
+			JvmType.Function ftype = new JvmType.Function(BIG_RATIONAL,BIG_INTEGER);			
+			bytecodes.add(new Bytecode.Invoke(BIG_RATIONAL,"valueOf",ftype,Bytecode.STATIC));
+		} else {				
+			// must be => char
+			JvmType.Function ftype = new JvmType.Function(T_INT);			
+			bytecodes.add(new Bytecode.Invoke(BIG_INTEGER,"intValue",ftype,Bytecode.VIRTUAL));				
 		}
 	}
 
@@ -2383,6 +2370,12 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(exitLabel));
 	}
 	
+	/**
+	 * 
+	 * @param from
+	 * @param to
+	 * @return
+	 */
 	protected Type simplifyCoercion(Type from, Type to) {
 
 		if (to instanceof Type.Union) {
