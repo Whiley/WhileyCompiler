@@ -399,6 +399,21 @@ public abstract class Code {
 		return get(new Throw(t));
 	}
 	
+	/**
+	 * Construct a <code>trycatch</code> bytecode which defines a region of
+	 * bytecodes which are covered by one or more catch handles. 
+	 * 
+	 * @param target
+	 *            --- identifies end-of-block label.
+	 * @param catches
+	 *            --- map from types to destination labels.
+	 * @return
+	 */
+	public static TryCatch TryCatch(String target,
+			Collection<Pair<Type, String>> catches) {
+		return get(new TryCatch(target, catches));
+	}
+	
 	public static Negate Negate(Type type) {
 		return get(new Negate(type));
 	}		
@@ -2268,6 +2283,61 @@ public abstract class Code {
 	
 		public String toString() {
 			return toString("throw",type);
+		}
+	}
+	
+	public static final class TryCatch extends Code {		
+		public final String target;
+		public final ArrayList<Pair<Type,String>> catches;
+
+		TryCatch(String target, Collection<Pair<Type,String>> catches) {						
+			this.catches = new ArrayList<Pair<Type,String>>(catches);
+			this.target = target;
+		}
+	
+		public TryCatch relabel(Map<String,String> labels) {
+			ArrayList<Pair<Type,String>> nbranches = new ArrayList();
+			for(Pair<Type,String> p : catches) {
+				String nlabel = labels.get(p.second());
+				if(nlabel == null) {
+					nbranches.add(p);
+				} else {
+					nbranches.add(new Pair(p.first(),nlabel));
+				}
+			}
+			
+			String ntarget = labels.get(target);
+			if(ntarget != null) {
+				return TryCatch(ntarget,nbranches);
+			} else {
+				return TryCatch(target,nbranches);
+			}
+		}
+		
+		public int hashCode() {
+			return target.hashCode() + catches.hashCode();			
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof TryCatch) {
+				TryCatch ig = (TryCatch) o;
+				return target.equals(ig.target)
+						&& catches.equals(ig.catches);						
+			}
+			return false;
+		}
+
+		public String toString() {
+			String table = "";
+			boolean firstTime = true;
+			for (Pair<Type, String> p : catches) {
+				if (!firstTime) {
+					table += ", ";
+				}
+				firstTime = false;
+				table += p.first() + "->" + p.second();
+			}
+			return "switch " + table;
 		}
 	}
 	

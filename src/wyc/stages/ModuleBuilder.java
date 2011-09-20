@@ -808,6 +808,8 @@ public class ModuleBuilder {
 				return resolve((IfElse) stmt, environment);
 			} else if (stmt instanceof Switch) {
 				return resolve((Switch) stmt, environment);
+			} else if (stmt instanceof TryCatch) {
+				return resolve((TryCatch) stmt, environment);
 			} else if (stmt instanceof Break) {
 				return resolve((Break) stmt, environment);
 			} else if (stmt instanceof Throw) {
@@ -1026,6 +1028,36 @@ public class ModuleBuilder {
 		blk.append(cblk);
 		blk.append(Code.Label(exitLab), attributes(s));
 		scopes.pop();
+		return blk;
+	}
+	
+	protected Block resolve(TryCatch s, HashMap<String,Integer> environment) throws ResolveError {
+		String exitLab = Block.freshLabel();
+		String endLab = Block.freshLabel();
+		Block cblk = new Block(environment.size());		
+		for (Stmt st : s.body) {
+			cblk.append(resolve(st, environment));
+		}		
+		cblk.append(Code.Goto(exitLab),attributes(s));	
+		cblk.append(Code.Label(endLab), attributes(s));
+		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
+		for(Stmt.Catch c : s.catches) {
+			int freeReg = allocate(c.variable,environment);
+			String lab = Block.freshLabel();
+			Pair<Type,Block> pt = resolve(c.type);
+			// TODO: deal with exception type constraints
+			catches.add(new Pair<Type,String>(pt.first(),lab));
+			cblk.append(Code.Label(lab), attributes(c));
+			for (Stmt st : c.stmts) {
+				cblk.append(resolve(st, environment));
+			}
+			cblk.append(Code.Goto(exitLab),attributes(c));
+		}
+		
+		Block blk = new Block(environment.size());
+		blk.append(Code.TryCatch(endLab,catches),attributes(s));
+		blk.append(cblk);
+		blk.append(Code.Label(exitLab), attributes(s));
 		return blk;
 	}
 	
