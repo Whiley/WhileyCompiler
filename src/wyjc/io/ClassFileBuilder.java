@@ -1951,11 +1951,24 @@ public class ClassFileBuilder {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		
 		int freeSlot = 1;
-		bytecodes.add(new Bytecode.Load(0,convertType(from)));		
+		bytecodes.add(new Bytecode.Load(0,convertType(from)));				
+		buildCoercion(from,to,freeSlot,constants,bytecodes);
+		bytecodes.add(new Bytecode.Return(convertType(to)));
 		
-		// First, call simplify the coercion if possible. This will remove any
-		// union types from the right-hand side.
-		to = simplifyCoercion(from,to);
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.ACC_PRIVATE);
+		modifiers.add(Modifier.ACC_STATIC);
+		modifiers.add(Modifier.ACC_SYNTHETIC);
+		JvmType.Function ftype = new JvmType.Function(convertType(to),convertType(from));
+		String name = "coercion$" + id;
+		ClassFile.Method method = new ClassFile.Method(name, ftype, modifiers);
+		cf.methods().add(method);
+		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),method);
+		method.attributes().add(code);				
+	}
+	
+	protected void buildCoercion(Type from, Type to, int freeSlot,
+			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		
 		// Second, case analysis on the various kinds of coercion
 		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
@@ -1982,24 +1995,13 @@ public class ClassFileBuilder {
 			// no need to do anything, since convertType on a negation returns java/lang/Object
 		} else if(from instanceof Type.Union) {			
 			buildCoercion((Type.Union) from, to, freeSlot, constants, bytecodes);
+		} else if(to instanceof Type.Union) {			
+			buildCoercion(from, (Type.Union) to, freeSlot, constants, bytecodes);
 		} else {
 			throw new RuntimeException("invalid coercion encountered: " + from + " => " + to);
-		}
-	
-		bytecodes.add(new Bytecode.Return(convertType(to)));
-		
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PRIVATE);
-		modifiers.add(Modifier.ACC_STATIC);
-		modifiers.add(Modifier.ACC_SYNTHETIC);
-		JvmType.Function ftype = new JvmType.Function(convertType(to),convertType(from));
-		String name = "coercion$" + id;
-		ClassFile.Method method = new ClassFile.Method(name, ftype, modifiers);
-		cf.methods().add(method);
-		wyjvm.attributes.Code code = new wyjvm.attributes.Code(bytecodes,new ArrayList(),method);
-		method.attributes().add(code);				
+		}						
 	}
-		
+	
 	protected void buildCoercion(Type.Tuple fromType, Type.Tuple toType, 
 			int freeSlot, HashMap<Constant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
@@ -2372,43 +2374,38 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(exitLabel));
 	}
 	
-	/**
-	 * 
-	 * @param from
-	 * @param to
-	 * @return
-	 */
-	protected Type simplifyCoercion(Type from, Type to) {
+	public void buildCoercion(Type from, Type.Union to, 
+			int freeSlot, HashMap<Constant,Integer> constants,
+			ArrayList<Bytecode> bytecodes) {	
+		Type.Union t2 = (Type.Union) to;
 
-		if (to instanceof Type.Union) {
-			Type.Union t2 = (Type.Union) to;
-
-			// First, check for identical type (i.e. no coercion necessary)
-			for (Type b : t2.bounds()) {
-				if (from.equals(b)) {
-					// nothing to do
-					return b;
-				}
-			}
-
-			// Second, check for single non-coercive match
-			for (Type b : t2.bounds()) {
-				if (Type.isSubtype(b, from)) {					
-					return b;
-				}
-			}
-
-			// Third, test for single coercive match
-			for (Type b : t2.bounds()) {
-				if (Type.isCoerciveSubtype(b, from)) {
-					return b;
-				}
+		// First, check for identical type (i.e. no coercion necessary)
+		for (Type b : t2.bounds()) {
+			if (from.equals(b)) {
+				// nothing to do
+				return;
 			}
 		}
 
-		return to;
+		// Second, check for single non-coercive match
+		for (Type b : t2.bounds()) {
+			if (Type.isSubtype(b, from)) {
+				buildCoercion(from,b,freeSlot,constants,bytecodes);
+				return;
+			}
+		}
+
+		// Third, test for single coercive match
+		for (Type b : t2.bounds()) {
+			if (Type.isCoerciveSubtype(b, from)) {
+				buildCoercion(from,b,freeSlot,constants,bytecodes);
+				return;
+			}
+		}
+		
+		// I don't think we should be able to get here!
 	}
-	
+		
 	/**
 	 * The read conversion is necessary in situations where we're reading a
 	 * value from a collection (e.g. WhileyList, WhileySet, etc) and then
