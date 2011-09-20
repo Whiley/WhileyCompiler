@@ -360,6 +360,8 @@ public class WhileyParser {
 			return parseIf(indent);
 		} else if(token.text.equals("switch")) {			
 			return parseSwitch(indent);
+		} else if(token.text.equals("try")) {			
+			return parseTryCatch(indent);
 		} else if(token.text.equals("break")) {			
 			return parseBreak(indent);
 		} else if(token.text.equals("throw")) {			
@@ -485,7 +487,7 @@ public class WhileyParser {
 		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,end-1));
 	}
 	
-	public Stmt.Case parseCase(int indent) {
+	private Stmt.Case parseCase(int indent) {
 		checkNotEof();
 		int start = index;
 		Expr condition;
@@ -527,6 +529,52 @@ public class WhileyParser {
 		matchEndLine();
 		ArrayList<Stmt.Case> cases = parseCaseBlock(indent+1);		
 		return new Stmt.Switch(c, cases, sourceAttr(start,end-1));
+	}
+	
+	private Stmt.Catch parseCatch(int indent) {
+		checkNotEof();
+		int start = index;		
+		matchKeyword("catch");
+		match(LeftBrace.class);
+		UnresolvedType type = parseType();
+		String variable = matchIdentifier().text;
+		match(RightBrace.class);
+		match(Colon.class);
+		int end = index;
+		matchEndLine();		
+		List<Stmt> stmts = parseBlock(indent+1);
+		return new Stmt.Catch(type,variable,stmts,sourceAttr(start,end-1));
+	}
+	
+	private ArrayList<Stmt.Catch> parseCatchBlock(int indent) {
+		Tabs tabs = null;
+		
+		tabs = getIndent();
+		
+		ArrayList<Stmt.Catch> catches = new ArrayList<Stmt.Catch>();
+		while(tabs != null && tabs.ntabs >= indent) {
+			index = index + 1; // skip tabs
+			if(index < tokens.size() && tokens.get(index).text.equals("catch")) {				
+				catches.add(parseCatch(indent));			
+				tabs = getIndent();
+			} else {
+				index = index - 1; // undo
+				break;
+			}
+		}
+		
+		return catches;
+	}
+	
+	private Stmt parseTryCatch(int indent) {
+		int start = index;
+		matchKeyword("try");									
+		match(Colon.class);
+		int end = index;
+		matchEndLine();
+		List<Stmt> blk = parseBlock(indent+1);
+		List<Stmt.Catch> catches = parseCatchBlock(indent);		
+		return new Stmt.TryCatch(blk, catches, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseThrow(int indent) {

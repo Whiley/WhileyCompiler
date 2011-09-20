@@ -174,6 +174,20 @@ public interface Stmt extends SyntacticElement {
 		}
 	}	
 	
+	public static final class Catch extends SyntacticElement.Impl {
+		public UnresolvedType type; 
+		public final String variable;
+		public final ArrayList<Stmt> stmts;
+
+		public Catch(UnresolvedType type, String variable, List<Stmt> statements,
+				Attribute... attributes) {
+			super(attributes);
+			this.type = type;
+			this.variable = variable;
+			this.stmts = new ArrayList<Stmt>(statements);
+		}
+	}
+	
 	public static final class Break extends SyntacticElement.Impl implements Stmt {
 		public Break(Attribute... attributes) {
 			super(attributes);
@@ -186,6 +200,26 @@ public interface Stmt extends SyntacticElement {
 		public Throw(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;
+		}
+	}
+	
+	public static final class TryCatch extends SyntacticElement.Impl implements
+			Stmt {
+		public ArrayList<Stmt> body;
+		public final ArrayList<Catch> catches;
+
+		public TryCatch(Collection<Stmt> body, List<Catch> catches,
+				Attribute... attributes) {
+			super(attributes);
+			this.body = new ArrayList<Stmt>(body);
+			this.catches = new ArrayList<Catch>(catches);
+		}
+
+		public TryCatch(Collection<Stmt> body, List<Catch> catches,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.body = new ArrayList<Stmt>(body);
+			this.catches = new ArrayList<Catch>(catches);
 		}
 	}
 	

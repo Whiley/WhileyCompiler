@@ -475,6 +475,7 @@ public class WhileyLexer {
 		"any",
 		"byte",
 		"char",
+		"catch",
 		"int",
 		"real",
 		"string",
@@ -504,7 +505,8 @@ public class WhileyLexer {
 		"package",
 		"public",
 		"extern",
-		"spawn"
+		"spawn",
+		"try"
 	};
 	
 	public Token scanIdentifier() {
