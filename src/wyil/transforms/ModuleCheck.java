@@ -33,11 +33,27 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wyil.util.SyntaxError.*;
 
-public class FunctionCheck implements Transform {
+/**
+ * <p>
+ * Performs a number of simplistic checks that a module is syntactically
+ * correct. This includes the following
+ * </p>
+ * <ul>
+ * <li><b>Functions cannot have side-effects</b>. This includes sending messages
+ * to actors, calling headless methods and spawning processes.</li>
+ * <li><b>Functions/Methods cannot throw exceptions unless they are
+ * declared</b>. Thus, if a method or function throws an exception an appropriate
+ * throws clause is required.
+ * </ul>
+ * 
+ * @author djp
+ * 
+ */
+public class ModuleCheck implements Transform {
 	private final ModuleLoader loader;
 	private String filename;
 
-	public FunctionCheck(ModuleLoader loader) {
+	public ModuleCheck(ModuleLoader loader) {
 		this.loader = loader;
 	}
 	
@@ -52,12 +68,12 @@ public class FunctionCheck implements Transform {
 	public void check(Module.Method method) {		
 		if (!(method.type() instanceof Type.Function)) {
 			for (Module.Case c : method.cases()) {
-				check(c.body(), method);
+				checkFunctionsPure(c.body(), method);
 			}
 		}
 	}
 	
-	protected void check(Block block,  Module.Method method) {		
+	protected void checkFunctionsPure(Block block,  Module.Method method) {		
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;

@@ -55,7 +55,7 @@ public class Pipeline {
 					// serious problems with that phase.
 					//add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
-					add(new Template(FunctionCheck.class, Collections.EMPTY_MAP));										
+					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));										
 					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));					
 				}
 			});
@@ -70,7 +70,7 @@ public class Pipeline {
 		register(BackPropagation.class);
 		register(DefiniteAssignment.class);
 		register(ConstantPropagation.class);
-		register(FunctionCheck.class);
+		register(ModuleCheck.class);
 		register(ConstraintInline.class);
 		register(CoercionCheck.class);
 		register(WyilFileWriter.class);
