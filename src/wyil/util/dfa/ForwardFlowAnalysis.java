@@ -150,6 +150,19 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					}
 					merge(sw.defaultTarget, store, stores);
 					store = null;
+				} else if (code instanceof Code.TryCatch) {
+					Code.TryCatch sw = (Code.TryCatch) code;
+					
+					List<T> r = propagate(i, sw, entry, store);										
+
+					// assert r.second().size() == nsw.branches.size()
+					Code.TryCatch nsw = (Code.TryCatch) entry.code;
+					for(int j=0;j!=nsw.catches.size();++j){
+						String target = nsw.catches.get(j).second();
+						T nstore = r.get(j);
+						merge(target, nstore, stores);
+					}
+										
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) entry.code;
 					merge(gto.target, store, stores);
@@ -246,6 +259,25 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 */
 	protected abstract List<T> propagate(int index, Code.Switch sw, Entry entry, T store);
 
+	/**
+	 * <p>
+	 * Propagate through a try-catch multi-way branch. This produces multiple
+	 * stores --- one for each of the various branches.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- the index of this bytecode in the method's block
+	 * @param tc
+	 *            --- the code of this statement
+	 * @param entry
+	 *            --- block entry for this bytecode
+	 * @param store
+	 *            --- abstract store which holds true immediately before this
+	 *            statement.
+	 * @return
+	 */
+	protected abstract List<T> propagate(int index, Code.TryCatch tc, Entry entry, T store);
+	
 	/**
 	 * <p>
 	 * Propagate through a loop statement, producing a store which holds true

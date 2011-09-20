@@ -120,7 +120,16 @@ public class DefiniteAssignment extends
 		}
 		return stores;
 	}
-		
+	
+	public List<HashSet<Integer>> propagate(int index, Code.TryCatch sw,
+			Entry stmt, HashSet<Integer> in) {
+		ArrayList<HashSet<Integer>> stores = new ArrayList();
+		for (int i = 0; i != sw.catches.size(); ++i) {
+			stores.add(in);
+		}
+		return stores;
+	}
+	
 	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
 			Entry stmt, HashSet<Integer> in) {
 		
