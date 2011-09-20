@@ -286,13 +286,11 @@ public abstract class Type {
 		Compound compound = (Compound) type;
 		Automata automata = compound.automata;
 		State[] nodes = automata.states;
-		int[] rmap = new int[nodes.length];
-		int nmatches = 0;
+		int[] rmap = new int[nodes.length];		
 		for (int i = 0; i != nodes.length; ++i) {
 			State c = nodes[i];
 			if (c.kind == K_LABEL && c.data.equals(label)) {
 				rmap[i] = 0;
-				nmatches++;
 			} else {
 				rmap[i] = i;
 			}
@@ -924,8 +922,14 @@ public abstract class Type {
 			if (o instanceof Compound) {
 				Compound c = (Compound) o;
 				equalsCount++;
-				// return automata.equals(c.automata);
-				return isSubtype(this, c) && isSubtype(c, this);
+				boolean r1 = automata.equals(c.automata);
+				boolean r2 = isSubtype(this, c) && isSubtype(c, this);
+				if(r1 != r2) {
+					System.out.println("MIA: " + this + " != " + c);
+					System.out.println("AUTOMATA #1: " + this.automata);
+					System.out.println("AUTOMATA #2: " + c.automata);
+				}
+				return r2;
 			}
 			return false;
 		}
@@ -1495,60 +1499,86 @@ public abstract class Type {
 	 * @return
 	 */
 	public final static Type construct(Automata automata) {
-		constructCount++;
 		automata = normalise(automata);
 		// second, construc the appropriate face
 		State root = automata.states[0];
+		Type type;
+		
 		switch(root.kind) {
 		case K_VOID:
-			return T_VOID;
+			type = T_VOID;
+			break;
 		case K_ANY:
-			return T_ANY;
+			type = T_ANY;
+			break;
 		case K_META:
-			return T_META;
+			type = T_META;
+			break;
 		case K_NULL:
-			return T_NULL;			
+			type = T_NULL;
+			break;
 		case K_BOOL:
-			return T_BOOL;
+			type = T_BOOL;
+			break;
 		case K_BYTE:
-			return T_BYTE;
+			type = T_BYTE;
+			break;
 		case K_CHAR:
-			return T_CHAR;
+			type = T_CHAR;
+			break;
 		case K_INT:
-			return T_INT;
+			type = T_INT;
+			break;
 		case K_RATIONAL:
-			return T_REAL;
+			type = T_REAL;
+			break;
 		case K_STRING:
-			return T_STRING;
+			type = T_STRING;
+			break;
 		case K_EXISTENTIAL:			
-			return new Existential((NameID) root.data);
+			type = new Existential((NameID) root.data);
+			break;
 		case K_TUPLE:
-			return new Tuple(automata);
+			type = new Tuple(automata);
+			break;
 		case K_SET:
-			return new Set(automata);
+			type = new Set(automata);
+			break;
 		case K_LIST:
-			return new List(automata);		
+			type = new List(automata);
+			break;
 		case K_PROCESS:
-			return new Process(automata);
+			type = new Process(automata);
+			break;
 		case K_DICTIONARY:
-			return new Dictionary(automata);
+			type = new Dictionary(automata);
+			break;
 		case K_RECORD:
-			return new Record(automata);
+			type = new Record(automata);
+			break;
 		case K_UNION:
-			return new Union(automata);
+			type = new Union(automata);
+			break;
 		case K_NEGATION:
-			return new Negation(automata);
+			type = new Negation(automata);
+			break;
 		case K_METHOD:
-			return new Method(automata);
+			type = new Method(automata);
+			break;
 		case K_HEADLESS:
-			return new Method(automata);
+			type = new Method(automata);
+			break;
 		case K_FUNCTION:
-			return new Function(automata);		
+			type = new Function(automata);
+			break;
 		case K_LABEL:
-			return new Compound(automata);
+			type = new Compound(automata);
+			break;
 		default:
 			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
+				
+		return type;
 	}
 
 	/**
@@ -1720,11 +1750,11 @@ public abstract class Type {
 		}
 	}
 
-	private static int equalsCount = 0;
-	private static int constructCount = 0;
+	private static int equalsCount = 0;	
 	private static int normalisedCount = 0;
 	private static int unminimisedCount = 0;
 	private static int minimisedCount = 0;
+	private static final HashSet<Type> distinctTypes = new HashSet<Type>();
 
 	static {
 		Thread _shutdownHook = new Thread(Type.class.getName()
@@ -1737,9 +1767,9 @@ public abstract class Type {
 	}
 	
 	public static void shutdown() {
-		System.err.println("#TYPE CONSTRUCTIONS: " + constructCount);
 		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);	
 		System.err.println("#TYPE NORMALISATIONS: " + normalisedCount + " (" + unminimisedCount + " -> " + minimisedCount +")");
+		System.err.println("#DISTINCT TYPES: " + distinctTypes.size());
 	}
 	
 	public static void main(String[] args) {

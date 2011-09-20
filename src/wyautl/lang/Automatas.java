@@ -867,20 +867,20 @@ public final class Automatas {
 			}
 		} else {
 			// slightly harder for non-deterministic case
-			BitSet visited = new BitSet(rmap.length);			
-			int diff = 0;
+			BitSet visited = new BitSet(rmap.length);						
 			for (int i = 0; i != children.length; ++i) {
-				int nchild = rmap[children[i]];
-				if(!visited.get(nchild)) {
-					visited.set(nchild);					
-					children[i-diff] = nchild;
-				} else {
-					diff = diff + 1;
-				}
+				int nchild = rmap[children[i]];				
+				visited.set(nchild);									
 			}
-			if(diff > 0) {
-				children = Arrays.copyOf(children, children.length-diff);
+			int nlength = visited.cardinality();
+			if(nlength != children.length) {			
+				children = Arrays.copyOf(children, nlength);
 				node.children = children;
+			}			
+			int j=0;
+			for (int i = visited.nextSetBit(0); i >= 0; i = visited
+					.nextSetBit(i + 1)) {
+				children[j++] = i;
 			}
 		}		
 	}
@@ -898,27 +898,26 @@ public final class Automatas {
 	 *            space.
 	 */
 	private static State remap(State node, int[] rmap) {
-		int[] ochildren = node.children;	
-		int[] nchildren = new int[ochildren.length];
+		int[] ochildren = node.children;
+		int[] nchildren;
 		if(node.deterministic) { 
+			nchildren = new int[ochildren.length];
 			for (int i = 0; i != ochildren.length; ++i) {
 				 nchildren[i] = rmap[ochildren[i]];
 			}
 		} else {
 			// slightly harder for non-deterministic case
-			BitSet visited = new BitSet(rmap.length);			
-			int diff = 0;
+			BitSet visited = new BitSet(rmap.length);						
 			for (int i = 0; i != ochildren.length; ++i) {
-				int nchild = rmap[ochildren[i]];
-				if(!visited.get(nchild)) {
-					visited.set(nchild);					
-					nchildren[i-diff] = nchild;
-				} else {
-					diff = diff + 1;
-				}
+				int nchild = rmap[ochildren[i]];				
+				visited.set(nchild);									
 			}
-			if(diff > 0) {
-				nchildren = Arrays.copyOf(nchildren, nchildren.length-diff);
+			int nlength = visited.cardinality();
+			nchildren = new int[nlength];
+			int j=0;
+			for (int i = visited.nextSetBit(0); i >= 0; i = visited
+					.nextSetBit(i + 1)) {
+				nchildren[j++] = i;
 			}
 		}
 		return new State(node.kind,node.data,node.deterministic,nchildren);
