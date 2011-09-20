@@ -65,15 +65,24 @@ public class ModuleCheck implements Transform {
 		}
 	}
 		
-	public void check(Module.Method method) {		
-		if (!(method.type() instanceof Type.Function)) {
-			for (Module.Case c : method.cases()) {
-				checkFunctionsPure(c.body(), method);
+	public void check(Module.Method method) {
+		boolean isFunction = !(method.type() instanceof Type.Method);
+		for (Module.Case c : method.cases()) {
+			checkThrowsClause(c);
+			if(isFunction) {
+				checkFunctionPure(c);
 			}
-		}
+		}		
 	}
 	
-	protected void checkFunctionsPure(Block block,  Module.Method method) {		
+	protected void checkThrowsClause(Module.Case c) {
+		// this is where we should check throws clauses
+		// however, it requires me to figure out where to put the throw type.
+		// Should it be part of Type.Function, for example? (yes, probably)
+	}
+	
+	protected void checkFunctionPure(Module.Case c) {
+		Block block = c.body();
 		for (int i = 0; i != block.size(); ++i) {
 			Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
