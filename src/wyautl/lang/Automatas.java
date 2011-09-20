@@ -392,7 +392,7 @@ public final class Automatas {
 		for(int i=0;i!=size;++i) {
 			extend(i,candidates,automata,dataComparator);			
 		}
-		inplaceRemap(automata,candidates.get(0).n2i);
+		inplaceReorder(automata,candidates.get(0).n2i);		
 	}
 
 	/*
@@ -819,12 +819,33 @@ public final class Automatas {
 		State[] ostates = automata.states;
 		int length = ostates.length;			
 		for(int i=0;i!=length;++i) {
-			State os = ostates[rmap[i]];
+			State os = ostates[i];
 			inplaceRemap(os,rmap);
 		}		
-	}	
-	
-	
+	}
+
+	/**
+	 * The reorder method takes an automata, and a mapping from vertices in the
+	 * old space to the those in the new space. It then reorders every state
+	 * according to this mapping. Thus, states may change position and
+	 * transitions are remapped accordingly.
+	 * 
+	 * @param automata
+	 *            --- automata to be transposed.
+	 * @param rmap
+	 *            --- mapping from integers in old space to those in new space.
+	 */
+	public static void inplaceReorder(Automata automata, int[] rmap) {
+		State[] ostates = automata.states;
+		State[] nstates = new State[ostates.length];
+		int length = ostates.length;			
+		for(int i=0;i!=length;++i) {
+			State os = ostates[i];
+			inplaceRemap(os,rmap);
+			nstates[rmap[i]] = os;
+		}		
+		automata.states = nstates;
+	}
 	
 	/**
 	 * The remap method takes a node, and mapping from vertices in the old

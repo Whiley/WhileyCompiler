@@ -140,9 +140,9 @@ public class TypeTester {
 		return true;
 	}
 
-	public static void generateSimplificationTests(ArrayList<Automata> types)
+	public static void generateCanonicalisationTests(ArrayList<Automata> types)
 			throws IOException {
-		
+
 		System.out.println("package wyil.testing;");
 		System.out.println("import org.junit.*;");
 		System.out.println("import static org.junit.Assert.*;");
@@ -150,10 +150,12 @@ public class TypeTester {
 		System.out.println();
 		System.out.println("public class SimplifyTests {");
 		int count = 1;
-		for(int i=0;i!=types.size();++i) {
+		for (int i = 0; i != types.size(); ++i) {
 			Automata a1 = types.get(i);
-			Type t1 = Type.construct(types.get(i));			
-			if(t1 == Type.T_VOID) { continue; }
+			Type t1 = Type.construct(types.get(i));
+			if (t1 == Type.T_VOID) {
+				continue;
+			}
 			count++;
 			System.out.println("\t@Test public void test_" + count++ + "() {");
 			System.out.println("\t\tcheckSimplification(\"" + t1 + "\");");
@@ -166,7 +168,7 @@ public class TypeTester {
 		System.out.println("\t\tassertTrue(Type.isSubtype(type,simplified));");
 		System.out.println("\t\tassertTrue(Type.isSubtype(simplified,type));");
 		System.out.println("\t}");
-		System.out.println("}");		
+		System.out.println("}");
 		System.err.println("Wrote " + count + " simplification tests.");
 	}
 	
@@ -228,7 +230,7 @@ public class TypeTester {
 			if(mode.equals("-subtypes")) {
 				generateSubtypeTests(types,model);
 			} else {
-				generateSimplificationTests(types);
+				generateCanonicalisationTests(types);
 			}
 			
 		} catch(IOException e) {

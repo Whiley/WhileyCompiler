@@ -82,7 +82,7 @@ public class Filter {
 					}
 					
 					if(canonicalise) {
-						Automatas.canonicalise(automata);
+						Automatas.canonicalise(automata,null);
 					}
 					
 					if(!reduce || !visited.contains(automata)) {					

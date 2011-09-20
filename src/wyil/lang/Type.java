@@ -1673,8 +1673,8 @@ public abstract class Type {
 		unminimisedCount += automata.size();
 		TypeAlgorithms.simplify(automata);				
 		automata = Automatas.extract(automata, 0);		
-		automata = Automatas.minimise(automata);
-		//Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);
+		automata = Automatas.minimise(automata);		
+		Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);		
 		minimisedCount += automata.size();
 		return automata;
 	}
@@ -1745,16 +1745,14 @@ public abstract class Type {
 	public static void main(String[] args) {
 		//Type from = fromString("(null,null)");
 		//Type to = fromString("X<[X]>");		
-		Type from = fromString("X<real|[X]>");
-		Type to = fromString("X<[real|X]>");
+		Type from = fromString("null");
+		Type to = fromString("X<(X|null,null)>");
 		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-		System.out.println("isContractive(" + from + ") = " + isContractive(from));
-		System.out.println("isContractive(" + to + ") = " + isContractive(to));
-		System.out.println(from + " & " + to + " = " + intersect(from,to));
-		System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
-		System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
-		System.out.println("!" + from + " & !" + to + " = "
-				+ intersect(Type.Negation(from), Type.Negation(to)));
+		//System.out.println(from + " & " + to + " = " + intersect(from,to));
+		//System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
+		//System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
+		//System.out.println("!" + from + " & !" + to + " = "
+		//		+ intersect(Type.Negation(from), Type.Negation(to)));
 	}
 	
 	public static Type contractive() {
