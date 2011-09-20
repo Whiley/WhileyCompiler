@@ -171,6 +171,8 @@ public class NameResolution {
 				resolve((IfElse)s, environment, imports);
 			} else if(s instanceof Switch) {
 				resolve((Switch)s, environment, imports);
+			} else if(s instanceof TryCatch) {
+				resolve((TryCatch)s, environment, imports);
 			} else if(s instanceof While) {
 				resolve((While)s, environment, imports);
 			} else if(s instanceof For) {
@@ -261,6 +263,27 @@ public class NameResolution {
 				resolve(st, environment, imports);
 			}			
 		}		
+	}
+	
+	protected void resolve(TryCatch s, HashMap<String, Set<Expr>> environment,
+			ArrayList<Import> imports) throws ResolveError {		
+		
+		for(Stmt st : s.body) {
+			resolve(st, environment, imports);
+		}
+			
+		for (Stmt.Catch c : s.catches) {
+			environment = new HashMap<String, Set<Expr>>(environment);
+			if (environment.containsKey(c.variable)) {
+				syntaxError("variable " + c.variable + " is alreaded defined",
+						filename, s);
+			}
+			environment.put(c.variable, Collections.EMPTY_SET);
+			resolve(c.type, imports);
+			for (Stmt st : c.stmts) {
+				resolve(st, environment, imports);
+			}
+		}
 	}
 	
 	protected void resolve(While s, HashMap<String,Set<Expr>> environment,
