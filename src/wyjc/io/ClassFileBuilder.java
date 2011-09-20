@@ -41,6 +41,7 @@ import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
+import wyjvm.attributes.Code.Handler;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
@@ -262,17 +263,20 @@ public class ClassFileBuilder {
 				cm.attributes().add((BytecodeAttribute)a);
 			}
 		}
-				
-		ArrayList<Bytecode> codes = translate(mcase,constants);
-		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,new ArrayList(),cm);
+			
+		ArrayList<Handler> handlers = new ArrayList<Handler>();
+		ArrayList<Bytecode> codes = translate(mcase,constants,handlers);
+		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,handlers,cm);
 		cm.attributes().add(code);		
 		
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translate(Module.Case mcase, HashMap<Constant,Integer> constants) {
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();				
-		translate(mcase.body(),mcase.body().numSlots(),constants,bytecodes);				
+	public ArrayList<Bytecode> translate(Module.Case mcase,
+			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers) {
+		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
+		translate(mcase.body(), mcase.body().numSlots(), constants, handlers,
+				bytecodes);
 		return bytecodes;
 	}
 
@@ -286,15 +290,42 @@ public class ClassFileBuilder {
 	 * @param bytecodes
 	 *            --- list to insert bytecodes into *
 	 */
-	public void translate(Block blk, int freeSlot, HashMap<Constant,Integer> constants,
+	public void translate(Block blk, int freeSlot,
+			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
 			ArrayList<Bytecode> bytecodes) {
+		
+		ArrayList<UnresolvedHandler> unresolvedHandlers = new ArrayList<UnresolvedHandler>();
 		for (Entry s : blk) {
-			freeSlot = translate(s, freeSlot, constants, bytecodes);
+			freeSlot = translate(s, freeSlot, constants, unresolvedHandlers,
+					bytecodes);
 		}
+		
+		if (unresolvedHandlers.size() > 0) {
+			HashMap<String, Integer> labels = new HashMap<String, Integer>();
+
+			for (int i = 0; i != bytecodes.size(); ++i) {
+				Bytecode b = bytecodes.get(i);
+				if (b instanceof Bytecode.Label) {
+					Bytecode.Label lab = (Bytecode.Label) b;
+					labels.put(lab.name, i);
+				}
+			}
+
+			for (UnresolvedHandler ur : unresolvedHandlers) {
+				int start = labels.get(ur.start);
+				int end = labels.get(ur.end);				
+				Handler handler = new Handler(start, end, ur.target,
+						ur.exception);
+				handlers.add(handler);
+			}
+		}
+		
+		// here, we need to resolve the handlers.
 	}
 	
 	public int translate(Entry entry, int freeSlot,
-			HashMap<Constant,Integer> constants, ArrayList<Bytecode> bytecodes) {
+			HashMap<Constant, Integer> constants,
+			ArrayList<UnresolvedHandler> handlers, ArrayList<Bytecode> bytecodes) {
 		try {
 			Code code = entry.code;
 			if(code instanceof Assert) {
@@ -392,7 +423,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof Switch) {
 				 translate((Switch)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof TryCatch) {
-				 translate((TryCatch)code,entry,freeSlot,bytecodes);
+				 translate((TryCatch)code,entry,freeSlot,handlers,constants,bytecodes);
 			} else if(code instanceof Spawn) {
 				 translate((Spawn)code,freeSlot,bytecodes);
 			} else if(code instanceof Throw) {
@@ -645,8 +676,45 @@ public class ClassFileBuilder {
 	}
 
 	public void translate(Code.TryCatch c, Block.Entry entry, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		// at the moment, this doesn't actually do anything!
+			ArrayList<UnresolvedHandler> handlers,
+			HashMap<Constant, Integer> constants, ArrayList<Bytecode> bytecodes) {
+		
+		// this code works by redirecting *all* whiley exceptions into the
+		// trampoline block. The trampoline then pulls out the matching ones,
+		// and lets the remainder be rethrown.
+		
+		String start = freshLabel();
+		String trampolineStart = freshLabel();
+		bytecodes.add(new Bytecode.Goto(start));
+		// trampoline goes here
+		bytecodes.add(new Bytecode.Label(trampolineStart));
+		bytecodes.add(new Bytecode.Dup(WHILEYEXCEPTION));
+		bytecodes.add(new Bytecode.Store(freeSlot, WHILEYEXCEPTION));
+		bytecodes.add(new Bytecode.GetField(WHILEYEXCEPTION, "value", JAVA_LANG_OBJECT, Bytecode.NONSTATIC));
+		ArrayList<String> bounces = new ArrayList<String>();
+		for (Pair<Type, String> handler : c.catches) {
+			String bounce = freshLabel();
+			bounces.add(bounce);
+			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT));
+			translateTypeTest(bounce, Type.T_ANY, handler.first(),
+					bytecodes, constants);
+		}
+		// rethrow what doesn't match
+		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+		bytecodes.add(new Bytecode.Load(freeSlot, WHILEYEXCEPTION));
+		bytecodes.add(new Bytecode.Throw());	
+		for(int i=0;i!=bounces.size();++i) {
+			String bounce = bounces.get(i);
+			Pair<Type,String> handler = c.catches.get(i);
+			bytecodes.add(new Bytecode.Label(bounce));
+			addReadConversion(handler.first(),bytecodes);
+			bytecodes.add(new Bytecode.Goto(handler.second()));			
+		}
+		bytecodes.add(new Bytecode.Label(start));
+		
+		UnresolvedHandler trampolineHandler = new UnresolvedHandler(start,
+				c.target, trampolineStart, WHILEYEXCEPTION);
+		handlers.add(trampolineHandler);
 	}
 	
 	public void translate(Code.IfGoto c, Entry stmt, int freeSlot,
@@ -818,7 +886,7 @@ public class ClassFileBuilder {
 
 			Type gdiff = Type.intersect(c.type,Type.Negation(c.test));			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-			// now, add checkcase
+			// now, add checkcast
 			addReadConversion(gdiff,bytecodes);		
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(gdiff)));							
 			bytecodes.add(new Bytecode.Goto(exitLabel));
@@ -826,7 +894,7 @@ public class ClassFileBuilder {
 
 			Type glb = Type.intersect(c.type, c.test);			
 			bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
-			// now, add checkcase
+			// now, add checkcast
 			addReadConversion(glb,bytecodes);		
 			bytecodes.add(new Bytecode.Store(c.slot,convertType(glb)));			
 			bytecodes.add(new Bytecode.Goto(c.target));
@@ -2710,6 +2778,21 @@ public class ClassFileBuilder {
 				constants.put(vc, x);
 				return x;
 			}			
+		}
+	}
+	
+	public static class UnresolvedHandler {
+		public String start;
+		public String end;
+		public String target;
+		public JvmType.Clazz exception;
+
+		public UnresolvedHandler(String start, String end, String target,
+				JvmType.Clazz exception) {
+			this.start = start;
+			this.end = end;
+			this.target = target;
+			this.exception = exception;
 		}
 	}
 	
