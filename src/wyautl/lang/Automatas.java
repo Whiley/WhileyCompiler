@@ -391,8 +391,8 @@ public final class Automatas {
 		candidates.add(new Morphism(size));		
 		for(int i=0;i!=size;++i) {
 			extend(i,candidates,automata,dataComparator);			
-		}
-		inplaceReorder(automata,candidates.get(0).n2i);		
+		}		
+		inplaceReorder(automata,candidates.get(0).n2i);					
 	}
 
 	/*
@@ -406,7 +406,7 @@ public final class Automatas {
 		}	
 		Morphism winner = null;
 		for(int[] permutation : permutations(init)) {			
-			Morphism m = new Morphism(automata.size());			
+			Morphism m = new Morphism(automata.size());				
 			for(int c : permutation) {
 				m.allocate(c);
 			}
@@ -414,7 +414,8 @@ public final class Automatas {
 				winner = m;
 			}
 		}
-		return remap(automata,winner.n2i);
+		
+		return reorder(automata,winner.n2i);
 	}
 
 	/**
@@ -475,7 +476,7 @@ public final class Automatas {
 		} else {
 			// harder case
 			
-			// This loop is why this algorithm has exponential running time.			
+			// This loop is why the algorithm has exponential running time.			
 			ArrayList<int[]> permutations = permutations(children);
 			for(int i=0;i!=permutations.size();++i) {
 				Morphism ncandidate;
@@ -604,7 +605,7 @@ public final class Automatas {
 		State[] states = automata.states;
 		int size = Math.min(morph1.free,morph2.free);
 		
-		for(int i=0;i!=size;++i) {
+		for(int i=0;i!=size;++i) {			
 			State s1 = states[morph1.i2n[i]];
 			State s2 = states[morph2.i2n[i]];
 			if(s1.kind < s2.kind) {
@@ -624,30 +625,60 @@ public final class Automatas {
 			} else if(s1children.length > s2children.length) {
 				return false;
 			}
-			
 			int length = s1children.length;
-			for(int j=0;j!=length;++j) {
-				int s1child = morph1.n2i[s1children[j]];
-				int s2child = morph2.n2i[s2children[j]];
-				if(s1child < s2child) {
-					return true;
-				} else if(s1child > s2child) {
-					return false;
-				}				
+			boolean deterministic = s1.deterministic;
+			if(deterministic) {			
+				for(int j=0;j!=length;++j) {
+					int s1child = morph1.n2i[s1children[j]];
+					int s2child = morph2.n2i[s2children[j]];
+					if(s1child < s2child) {
+						return true;
+					} else if(s1child > s2child) {
+						return false;
+					}				
+				}									
+			} else {
+				// as usual, non-deterministic states are awkward
+				BitSet s1Visited = new BitSet(automata.size());
+				BitSet s2Visited = new BitSet(automata.size());
+				for(int j=0;j!=length;++j) {
+					int s1child = morph1.n2i[s1children[j]];
+					int s2child = morph2.n2i[s2children[j]];
+					if(s1child != Integer.MAX_VALUE) {
+						s1Visited.set(s1child);
+					}
+					if(s2child != Integer.MAX_VALUE) {
+						s2Visited.set(s2child);
+					}
+				}
+				int s1cardinality = s1Visited.cardinality();
+				int s2cardinality = s2Visited.cardinality();
+				if(s1cardinality != s2cardinality) {					
+					// greater cardinality means more allocated children.
+					return s1cardinality > s2cardinality;
+				}
+				int s1i = s1Visited.nextSetBit(0);
+				int s2i = s2Visited.nextSetBit(0);
+				while(s1i == s2i && s1i >= 0) {
+					s1i = s1Visited.nextSetBit(s1i+1);
+					s2i = s2Visited.nextSetBit(s2i+1);
+				}
+				if(s1i != s2i) {										
+					return s1i < s2i;
+				}
 			}
-						
-			if(s1.data != null || s2.data != null) {
-				if(s1.data == null && s1.data != null) {
-					return true;
-				} else if(s1.data != null && s1.data == null) {
+			if(s1.data != null) {
+				if(s2.data == null) {					
 					return false;
-				} else if(s1.data != null && s2.data != null) {
-					int c = dataComparator.compare(s1,s2);
-					if(c != 0) {
+				} else {
+					int c = dataComparator.compare(s1,s2);				
+					if(c != 0) {						
 						return c < 0;
 					}
-				}				
-			}
+				}
+			} else if(s2.data != null) {				
+				return true;
+			} 			
 		}
 		
 		// Ok, they're identical thus far!
@@ -785,6 +816,29 @@ public final class Automatas {
 	}
 	
 	/**
+	 * The reorder method takes an automata, and a mapping from vertices in the
+	 * old space to the those in the new space. It then reorders every state
+	 * according to this mapping. Thus, states may change position and
+	 * transitions are remapped accordingly.
+	 * 
+	 * @param automata
+	 *            --- automata to be transposed.
+	 * @param rmap
+	 *            --- mapping from integers in old space to those in new space.
+	 */
+	public static Automata reorder(Automata automata, int[] rmap) {
+		State[] ostates = automata.states;
+		State[] nstates = new State[ostates.length];
+		int length = ostates.length;			
+		for(int i=0;i!=length;++i) {
+			State os = ostates[i];
+			inplaceRemap(os,rmap);
+			nstates[rmap[i]] = new Automata.State(os);
+		}		
+		return new Automata(nstates);
+	}
+	
+	/**
 	 * The remap method takes an automata, and a mapping from vertices in the
 	 * old space to the those in the new space. It then applies this mapping, so
 	 * that all states and transitions are remapped accordingly.
@@ -805,25 +859,6 @@ public final class Automatas {
 		return new Automata(nstates);
 	}	
 	
-	/**
-	 * The remap method takes an automata, and a mapping from vertices in the
-	 * old space to the those in the new space. It then applies this mapping, so
-	 * that all states and transitions are remapped accordingly.
-	 * 
-	 * @param automata
-	 *            --- automata to be transposed.
-	 * @param rmap
-	 *            --- mapping from integers in old space to those in new space.
-	 */
-	public static void inplaceRemap(Automata automata, int[] rmap) {
-		State[] ostates = automata.states;
-		int length = ostates.length;			
-		for(int i=0;i!=length;++i) {
-			State os = ostates[i];
-			inplaceRemap(os,rmap);
-		}		
-	}
-
 	/**
 	 * The reorder method takes an automata, and a mapping from vertices in the
 	 * old space to the those in the new space. It then reorders every state
@@ -846,6 +881,25 @@ public final class Automatas {
 		}		
 		automata.states = nstates;
 	}
+	
+	/**
+	 * The remap method takes an automata, and a mapping from vertices in the
+	 * old space to the those in the new space. It then applies this mapping, so
+	 * that all states and transitions are remapped accordingly.
+	 * 
+	 * @param automata
+	 *            --- automata to be transposed.
+	 * @param rmap
+	 *            --- mapping from integers in old space to those in new space.
+	 */
+	public static void inplaceRemap(Automata automata, int[] rmap) {
+		State[] ostates = automata.states;
+		int length = ostates.length;			
+		for(int i=0;i!=length;++i) {
+			State os = ostates[i];
+			inplaceRemap(os,rmap);
+		}		
+	}	
 	
 	/**
 	 * The remap method takes a node, and mapping from vertices in the old

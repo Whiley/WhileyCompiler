@@ -49,7 +49,7 @@ public final class TypeAlgorithms {
 				} else if(fields1_size > fields2_size) {
 					return 1;
 				}
-				// fields1_size == fields2_size
+				// ASSERT: fields1_size == fields2_size
 				for(int i=0;i!=fields1_size;++i) {
 					String str1 = fields1.get(i);
 					String str2 = fields2.get(i);
