@@ -1700,9 +1700,17 @@ public abstract class Type {
 	private static Automata normalise(Automata automata) {		
 		normalisedCount++;
 		unminimisedCount += automata.size();
-		TypeAlgorithms.simplify(automata);				
-		automata = Automatas.extract(automata, 0);		
+		System.out.println("ENTRY");
+		System.out.println(automata);
+		TypeAlgorithms.simplify(automata);
+		System.out.println("STAGE 1");
+		System.out.println(automata);
+		automata = Automatas.extract(automata, 0);
+		System.out.println("STAGE 3");
+		System.out.println(automata);
 		automata = Automatas.minimise(automata);
+		System.out.println("STAGE 4");
+		System.out.println(automata);
 		if(canonicalisation) {
 			Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);
 		} 

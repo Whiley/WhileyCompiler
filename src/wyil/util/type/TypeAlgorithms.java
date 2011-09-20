@@ -10,23 +10,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 import wyautl.lang.*;
-import wyautl.lang.Automata.State;
 
 import wyil.lang.NameID;
 import wyil.lang.Type;
-import wyil.lang.Type.Compound;
-import wyil.lang.Type.Dictionary;
-import wyil.lang.Type.Existential;
-import wyil.lang.Type.Function;
-import wyil.lang.Type.Leaf;
-import wyil.lang.Type.List;
-import wyil.lang.Type.Method;
-import wyil.lang.Type.Negation;
-import wyil.lang.Type.Process;
-import wyil.lang.Type.Record;
-import wyil.lang.Type.Set;
-import wyil.lang.Type.Tuple;
-import wyil.lang.Type.Union;
 
 
 public final class TypeAlgorithms {
@@ -88,8 +74,9 @@ public final class TypeAlgorithms {
 	 * @param type --- type to test for contractivity.
 	 * @return
 	 */
-	public static boolean isContractive(Automata automata) {
+	public static boolean isContractive(Automata automata) {		
 		BitSet contractives = new BitSet(automata.size());
+		// TODO: optimise away the need to initialise the contractives
 		contractives.set(0,automata.size(),true);
 		// initially all nodes are considered contracive.
 		return findContractives(automata,contractives);
@@ -170,7 +157,7 @@ public final class TypeAlgorithms {
 	public static void simplify(Automata automata) {		
 		boolean changed = true;
 		while(changed) {				
-			changed = false;
+			changed = false;			
 			changed |= simplifyContractives(automata);						
 			for(int i=0;i!=automata.size();++i) {				
 				changed |= simplify(i,automata);				
@@ -181,6 +168,7 @@ public final class TypeAlgorithms {
 	private static boolean simplifyContractives(Automata automata) {
 		BitSet contractives = new BitSet(automata.size());
 		// initially all nodes are considered contractive.
+		// TODO: optimise away the need to initialise the contractives
 		contractives.set(0,automata.size(),true);
 		boolean changed = findContractives(automata, contractives);
 
@@ -200,14 +188,14 @@ public final class TypeAlgorithms {
 			changed = simplifyNegation(index, state, automata);
 			break;
 		case Type.K_UNION :			
-			changed = simplifyUnion(index, state, automata);
+			changed = simplifyUnion(index, state, automata);			
 			break;		
 		case Type.K_RECORD:
 		case Type.K_TUPLE:
 		case Type.K_FUNCTION:
 		case Type.K_METHOD:
 		case Type.K_HEADLESS:			
-			changed = simplifyCompound(index, state, automata);
+			changed = simplifyCompound(index, state, automata);			
 			break;
 		}				
 		return changed;
@@ -514,8 +502,7 @@ public final class TypeAlgorithms {
 			for(int i=0;i!=fromChildren.length;++i) {
 				int fromChild = fromChildren[i];
 				myChildren[i] = intersect(fromChild,fromSign,from,toIndex,toSign,to,allocations,states);
-			}
-						
+			}					
 			myState = new Automata.State(Type.K_UNION,false,myChildren);			
 		} else if(toKind == Type.K_UNION) {			
 			int[] toChildren = toState.children;
@@ -597,7 +584,7 @@ public final class TypeAlgorithms {
 					nToChild));
 			myState = new Automata.State(Type.K_NEGATION, childIndex);
 		}
-				
+		
 		states.set(myIndex, myState);
 		
 		return myIndex;
@@ -632,7 +619,7 @@ public final class TypeAlgorithms {
 		int myIndex = states.size()-1;
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];		
-		Automata.State myState = null;
+		Automata.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_VOID: {
@@ -779,7 +766,7 @@ public final class TypeAlgorithms {
 		int myIndex = states.size()-1;
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];		
-		Automata.State myState = null;
+		Automata.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_ANY: 
@@ -806,7 +793,7 @@ public final class TypeAlgorithms {
 					// e.g. (int,int) & !(int) => (int,int)
 					states.remove(states.size()-1);
 					Automatas.extractOnto(fromIndex,from,states);
-					break;
+					return myIndex;
 				}
 			case Type.K_PROCESS: 
 			case Type.K_LIST:
@@ -939,7 +926,7 @@ public final class TypeAlgorithms {
 		int myIndex = states.size()-1;
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];		
-		Automata.State myState = null;
+		Automata.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_ANY: 
@@ -966,7 +953,7 @@ public final class TypeAlgorithms {
 					// e.g. !(int,int) & (int) => (int)
 					states.remove(states.size()-1);
 					Automatas.extractOnto(toIndex,to,states);
-					break;
+					return myIndex;
 				}
 			case Type.K_PROCESS: 
 			case Type.K_LIST:
@@ -1099,7 +1086,7 @@ public final class TypeAlgorithms {
 		int myIndex = states.size()-1;
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];		
-		Automata.State myState = null;
+		Automata.State myState;
 		
 		switch(fromState.kind) {
 			case Type.K_VOID: {
