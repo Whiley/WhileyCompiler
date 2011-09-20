@@ -87,8 +87,8 @@ public abstract class Code {
 		return get(new DictLoad(type));
 	}
 	
-	public static End End(String label) {
-		return get(new End(label));
+	public static LoopEnd End(String label) {
+		return get(new LoopEnd(label));
 	}
 	
 	public static ExternJvm ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
@@ -745,12 +745,12 @@ public abstract class Code {
 		}	
 	}	
 	
-	public static final class End extends Label {
-		End(String label) {
+	public static final class LoopEnd extends Label {
+		LoopEnd(String label) {
 			super(label);
 		}
 		
-		public End relabel(Map<String,String> labels) {
+		public LoopEnd relabel(Map<String,String> labels) {
 			String nlabel = labels.get(label);
 			if(nlabel == null) {
 				return this;
@@ -763,8 +763,8 @@ public abstract class Code {
 			return label.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof End) {
-				End e = (End) o;
+			if(o instanceof LoopEnd) {
+				LoopEnd e = (LoopEnd) o;
 				return e.label.equals(label);
 			}
 			return false;

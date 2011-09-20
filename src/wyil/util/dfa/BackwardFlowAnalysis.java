@@ -97,9 +97,9 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 				Code code = stmt.code;
 
 				// First, check for a label which may have incoming information.
-				if (code instanceof Code.End) {					
+				if (code instanceof Code.LoopEnd) {					
 					Code.Loop loop = null;
-					String label = ((Code.End) code).label;
+					String label = ((Code.LoopEnd) code).label;
 					// first, save the store since it might be needed for break
 					// statements.
 					stores.put(label,store);

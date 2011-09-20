@@ -178,7 +178,7 @@ public class WyilFileWriter implements Transform {
 	
 	public void write(int indent, Block blk, List<String> locals, PrintWriter out) {
 		for(Block.Entry s : blk) {
-			if(s.code instanceof Code.End) {				
+			if(s.code instanceof Code.LoopEnd) {				
 				--indent;
 			} else if(s.code instanceof Code.Label) { 
 				write(indent-1,s.code,s.attributes(),locals,out);
@@ -199,8 +199,8 @@ public class WyilFileWriter implements Transform {
 		tabIndent(indent+1,out);
 	
 		// First, write out code	
-		if(c instanceof Code.End) {
-			Code.End cend = (Code.End)c;
+		if(c instanceof Code.LoopEnd) {
+			Code.LoopEnd cend = (Code.LoopEnd)c;
 			if(writeLabels) {
 				line = "end " + cend.label;
 			} else {

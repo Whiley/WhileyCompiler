@@ -311,8 +311,8 @@ public class ClassFileBuilder {
 				 translate((Destructure)code,freeSlot,bytecodes);
 			} else if(code instanceof DictLoad) {
 				 translate((DictLoad)code,freeSlot,bytecodes);
-			} else if(code instanceof End) {
-				 translate((End)code,freeSlot,bytecodes);
+			} else if(code instanceof LoopEnd) {
+				 translate((LoopEnd)code,freeSlot,bytecodes);
 			} else if(code instanceof ExternJvm) {
 				translate((ExternJvm)code,freeSlot,bytecodes);
 			} else if(code instanceof Fail) {
@@ -885,7 +885,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Label(c.target + "$head"));
 	}
 	
-	protected void translate(Code.End end,			
+	protected void translate(Code.LoopEnd end,			
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Goto(end.label + "$head"));
 		bytecodes.add(new Bytecode.Label(end.label));
