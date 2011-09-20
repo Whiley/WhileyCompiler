@@ -1699,18 +1699,12 @@ public abstract class Type {
 	 */
 	private static Automata normalise(Automata automata) {		
 		normalisedCount++;
-		unminimisedCount += automata.size();
-		System.out.println("ENTRY");
-		System.out.println(automata);
+		unminimisedCount += automata.size();		
 		TypeAlgorithms.simplify(automata);
-		System.out.println("STAGE 1");
-		System.out.println(automata);
+		// TODO: extract in place to avoid allocating data unless necessary
 		automata = Automatas.extract(automata, 0);
-		System.out.println("STAGE 3");
-		System.out.println(automata);
+		// TODO: minimise in place to avoid allocating data unless necessary
 		automata = Automatas.minimise(automata);
-		System.out.println("STAGE 4");
-		System.out.println(automata);
 		if(canonicalisation) {
 			Automatas.canonicalise(automata, TypeAlgorithms.DATA_COMPARATOR);
 		} 
