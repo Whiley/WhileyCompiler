@@ -120,6 +120,19 @@ public class WhileyParser {
 		int start = index;
 		matchKeyword("import");
 		
+		// first, check if from is used
+		String name = null;
+		if((index+1) < tokens.size() && tokens.get(index+1).text.equals("from")) {						
+			Token t = tokens.get(index);
+			if(t.text.equals("*")) {
+				match(Star.class);
+				name = "*";	
+			} else {
+				name = matchIdentifier().text;
+			}
+			matchIdentifier();			
+		}
+				
 		ArrayList<String> pkg = new ArrayList<String>();
 		pkg.add(matchIdentifier().text);
 		
@@ -137,20 +150,8 @@ public class WhileyParser {
 		}
 		
 		String module = pkg.get(pkg.size()-1);
-		pkg.remove(pkg.size()-1);
-		String name = null;
-		
-		if(index < tokens.size() && tokens.get(index) instanceof Colon) {
-			match(Colon.class);
-			Token t = tokens.get(index);
-			if(t.text.equals("*")) {
-				match(Star.class);
-				name = "*";	
-			} else {
-				name = matchIdentifier().text;
-			}
-		}
-		
+		pkg.remove(pkg.size()-1);		
+				
 		int end = index;
 		matchEndLine();
 		
