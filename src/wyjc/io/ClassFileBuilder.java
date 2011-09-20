@@ -391,6 +391,8 @@ public class ClassFileBuilder {
 				 translate((Store)code,freeSlot,bytecodes);
 			} else if(code instanceof Switch) {
 				 translate((Switch)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof TryCatch) {
+				 translate((TryCatch)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Spawn) {
 				 translate((Spawn)code,freeSlot,bytecodes);
 			} else if(code instanceof Throw) {
@@ -640,6 +642,11 @@ public class ClassFileBuilder {
 			}
 			bytecodes.add(new Bytecode.Goto(c.defaultTarget));
 		}
+	}
+
+	public void translate(Code.TryCatch c, Block.Entry entry, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		// at the moment, this doesn't actually do anything!
 	}
 	
 	public void translate(Code.IfGoto c, Entry stmt, int freeSlot,
