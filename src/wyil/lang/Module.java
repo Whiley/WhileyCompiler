@@ -193,7 +193,7 @@ public class Module extends ModuleLoader.Skeleton {
 		
 	public static class Method extends SyntacticElement.Impl {
 		private String name;		
-		private Type.Function type;
+		private Type.Function type;		
 		private List<Case> cases;		
 				
 		public Method(String name, Type.Function type,

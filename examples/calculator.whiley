@@ -42,7 +42,9 @@ define Stmt as Print | Set
 // Expression Evaluator
 // ====================================================
 
-Value evaluate(Expr e, {string->Value} env) throws Error:
+define SyntaxError as { string err }
+
+Value evaluate(Expr e, {string->Value} env) throws SyntaxError:
     if e is int:
         return e
     else if e is Var:
@@ -82,7 +84,6 @@ Value evaluate(Expr e, {string->Value} env) throws Error:
 // Expression Parser
 // ====================================================
 
-define SyntaxError as { string err }
 define State as { string input, int pos }
 
 // Top-level parse method
@@ -98,7 +99,7 @@ define State as { string input, int pos }
             e,st = parseAddSubExpr(st)
             return {lhs: v.id, rhs: e},st
         default:
-            throw {err:"unknown statement: " + keyword.id}
+            throw {err:"unknown statement (" + keyword.id + ")"}
 
 (Expr, State) parseAddSubExpr(State st) throws SyntaxError:    
     // First, pass left-hand side    
@@ -202,16 +203,19 @@ public void ::main(System sys, [string] args):
     file = File.Reader(args[0])
     input = String.fromASCII(file.read())
 
-    if(|args| > 0):
-        env = {"$"->0} 
-        st = {pos: 0, input: input}
-        while st.pos < |st.input|:
-            s,st = parse(st)
-            r = evaluate(s.rhs,env)
-            if s is Set:
-                env[s.lhs] = r
-            else:
-                sys.out.println(str(r))
-            st = parseWhiteSpace(st)
-    else:
+    if(|args| == 0):
         sys.out.println("no parameter provided!")
+    else:
+        try:
+            env = {"$"->0} 
+            st = {pos: 0, input: input}
+            while st.pos < |st.input|:
+                s,st = parse(st)
+                r = evaluate(s.rhs,env)
+                if s is Set:
+                    env[s.lhs] = r
+                else:
+                    sys.out.println(str(r))
+                st = parseWhiteSpace(st)
+        catch(SyntaxError e):
+            sys.out.println("syntax error: " + e.err)

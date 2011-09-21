@@ -1760,15 +1760,15 @@ public abstract class Type {
 	private static int minimisedCount = 0;
 	private static final HashSet<Type> distinctTypes = new HashSet<Type>();
 
-	static {
-		Thread _shutdownHook = new Thread(Type.class.getName()
-				+ ".shutdownHook") {
-			public void run() {
-				shutdown();
-			}
-		};
-		Runtime.getRuntime().addShutdownHook(_shutdownHook);
-	}
+//	static {
+//		Thread _shutdownHook = new Thread(Type.class.getName()
+//				+ ".shutdownHook") {
+//			public void run() {
+//				shutdown();
+//			}
+//		};
+//		Runtime.getRuntime().addShutdownHook(_shutdownHook);
+//	}
 	
 	public static void shutdown() {
 		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);	
