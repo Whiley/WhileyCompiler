@@ -42,6 +42,7 @@ import wyil.lang.Code.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
 import wyjvm.attributes.Code.Handler;
+import wyjvm.attributes.LineNumberTable;
 import wyjvm.io.BinaryInputStream;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
@@ -265,18 +266,23 @@ public class ClassFileBuilder {
 		}
 			
 		ArrayList<Handler> handlers = new ArrayList<Handler>();
-		ArrayList<Bytecode> codes = translate(mcase,constants,handlers);
+		ArrayList<LineNumberTable.Entry> lineNumbers = new ArrayList<LineNumberTable.Entry>();
+		ArrayList<Bytecode> codes = translate(mcase,constants,handlers,lineNumbers);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,handlers,cm);
+		if(!lineNumbers.isEmpty()) {
+			code.attributes().add(new LineNumberTable(lineNumbers));
+		}
 		cm.attributes().add(code);		
 		
 		return cm;
 	}
 	
 	public ArrayList<Bytecode> translate(Module.Case mcase,
-			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers) {
+			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
+			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		translate(mcase.body(), mcase.body().numSlots(), constants, handlers,
-				bytecodes);
+				lineNumbers, bytecodes);
 		return bytecodes;
 	}
 
@@ -291,11 +297,17 @@ public class ClassFileBuilder {
 	 *            --- list to insert bytecodes into *
 	 */
 	public void translate(Block blk, int freeSlot,
-			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
+			HashMap<Constant, Integer> constants, 
+			ArrayList<Handler> handlers,
+			ArrayList<LineNumberTable.Entry> lineNumbers,
 			ArrayList<Bytecode> bytecodes) {
 		
 		ArrayList<UnresolvedHandler> unresolvedHandlers = new ArrayList<UnresolvedHandler>();
 		for (Entry s : blk) {
+			Attribute.Source loc = s.attribute(Attribute.Source.class);
+			if(loc != null) {
+				lineNumbers.add(new LineNumberTable.Entry(bytecodes.size(),loc.line));
+			}
 			freeSlot = translate(s, freeSlot, constants, unresolvedHandlers,
 					bytecodes);
 		}
