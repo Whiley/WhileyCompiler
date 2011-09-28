@@ -489,8 +489,10 @@ public abstract class Code {
 	// ===============================================================
 
 	/**
-	 * Pops a boolean from the stack and checks it is true. If not, an assertion
-	 * fault is raised.
+	 * Indicates the start of a code block representing an assertion. This
+	 * includes assertions arising from type invariants, as well as
+	 * method/function pre- and post-conditions. The target identifies the label
+	 * terminating this block.
 	 */
 	public static final class Assert extends Code {
 		public final String target;
@@ -612,21 +614,27 @@ public abstract class Code {
 	}
 
 	/**
-	 * A catch bytecode is similar to a switch. It identifies a block within
-	 * which exception handlers are active.
+	 * <p>
+	 * Pops a value from the stack, converts it to a given type and pushes it
+	 * back on. This bytecode is the only way to change the type of a value.
+	 * It's purpose is to simplify implementations which have different
+	 * representations of data types.
+	 * </p>
 	 * 
-	 * @author David J. Pearce
+	 * <p>
+	 * In many cases, this bytecode may correspond to a nop on the hardware.
+	 * Consider converting from <code>[any]</code> to <code>any</code>. On the
+	 * JVM, <code>any</code> translates to <code>Object</code>, whilst
+	 * <code>[any]</code> translates to <code>List</code> (which is an instance
+	 * of <code>Object</code>). Thus, no conversion is necessary since
+	 * <code>List</code> can safely flow into <code>Object</code>.  
+	 * </p>
 	 * 
-	 */
-	public static final class Catch extends Code {
-		
-	}
-
-	/**
-	 * A convert operation represents a conversion from a value of one type to
-	 * another. The purpose of the conversion bytecode is to make it easy for
-	 * implementations which have different representations of data types to
-	 * convert between them.
+	 * <p>
+	 * A convert bytecode must be inserted whenever the type of a variable
+	 * changes. This includes at control-flow meet points, when the value is
+	 * passed as a parameter, assigned to a field, etc.
+	 * </p>
 	 */
 	public static final class Convert extends Code {
 		public final Type from;
@@ -661,11 +669,11 @@ public abstract class Code {
 			return "convert " + from + " to " + to;
 		}
 	}
-	
+
 	/**
-	 * A const bytecode pushes a constant value onto the stack. This includes
-	 * integer constants, rational constants, list constants, set constants,
-	 * dictionary constants, function constants, etc.
+	 * Pushes a constant value onto the stack. This includes integer constants,
+	 * rational constants, list constants, set constants, dictionary constants,
+	 * function constants, etc.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -694,6 +702,16 @@ public abstract class Code {
 		}
 	}
 
+	/**
+	 * Pops a string from the stack and writes it to the debug console. This
+	 * bytecode is not intended to form part of the programs operation. Rather,
+	 * it is to facilitate debugging within functions (since they cannot have
+	 * side-effects). Furthermore, if debugging is disabled, this bytecode is a
+	 * nop.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Debug extends Code {
 		Debug() {}
 		public int hashCode() {
@@ -708,9 +726,10 @@ public abstract class Code {
 	}
 
 	/**
-	 * A destructure operation takes a compound value and "destructures" it into
-	 * multiple values. For example, a rational can be destructured into two
-	 * integers. Or, an n-tuple can be structured into n values.
+	 * Pops a compound value from the stack "destructures" it into multiple
+	 * values which are pushed back on the stack. For example, a rational can be
+	 * destructured into two integers (the <i>numerator</i> and
+	 * <i>denominator</i>). Or, an n-tuple can be destructured into n values.
 	 */
 	public static final class Destructure extends Code {
 		public final Type type;
@@ -739,7 +758,15 @@ public abstract class Code {
 			return "destructure " + type;
 		}
 	}
-	
+
+	/**
+	 * Pops a key and dictionary from the stack, and looks up the value for that
+	 * key in the dictionary. If no value exists, a dictionary fault is raised.
+	 * Otherwise, the value is pushed onto the stack.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class DictLoad extends Code {
 		public final Type.Dictionary type;				
 		
@@ -768,6 +795,11 @@ public abstract class Code {
 		}	
 	}	
 	
+	/**
+	 * Marks the end of a loop block.
+	 * @author djp
+	 *
+	 */
 	public static final class LoopEnd extends Label {
 		LoopEnd(String label) {
 			super(label);
@@ -797,7 +829,13 @@ public abstract class Code {
 			return "end " + label;
 		}
 	}
-	
+
+	/**
+	 * Marks a list of JVM bytecodes to be inlined at this point.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class ExternJvm extends Code {
 		public final List<wyjvm.lang.Bytecode> bytecodes;
 		
@@ -818,7 +856,14 @@ public abstract class Code {
 			return "externjvm";
 		}
 	}
-	
+
+	/**
+	 * Raises an assertion failure fault with the given message. Fail bytecodes
+	 * may only appear within assertion blocks.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Fail extends Code {
 		public final String msg;
 		
@@ -841,10 +886,10 @@ public abstract class Code {
 			return "fail \"" + msg + "\"";
 		}		
 	}
-	
+
 	/**
-	 * The fieldload bytecode pops a record alias from the stack and reads the
-	 * value from the given field, pusing it back onto the stack.
+	 * Pops a record from the stack and pushes the value from the given
+	 * field back on.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -887,7 +932,19 @@ public abstract class Code {
 			return toString("fieldload " + field,type);			
 		}	
 	}
-	
+
+	/**
+	 * <p>
+	 * Branches unconditionally to the given label.
+	 * </p>
+	 * 
+	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
+	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Goto extends Code {
 		public final String target;
 		
@@ -919,7 +976,32 @@ public abstract class Code {
 			return "goto " + target;		
 		}		
 	}
-	
+
+	/**
+	 * <p>
+	 * Branches conditionally to the given label, by popping two operands from
+	 * the stack and comparing them. The possible comparators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>equals (eq) and not-equals (ne)</i>. Both operands must have the
+	 * given type.</li>
+	 * <li><i>less-than (lt), less-than-or-equals (le), greater-than (gt) and
+	 * great-than-or-equals (ge).</i> Both operands must have the given type,
+	 * which additionally must by either <code>char</code>, <code>int</code> or
+	 * <code>real</code>.</li>
+	 * <li><i>element of (in).</i> The second operand must be a set whose
+	 * element type is that of the first.</li>
+	 * <li><i>subset (ss) and subset-equals (sse)</i>. Both operands must have
+	 * the given type, which additionally must be a set.</li>
+	 * </ul>
+	 *  
+	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
+	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
+	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class IfGoto extends Code {
 		public final Type type;
 		public final COp op;
@@ -1490,6 +1572,14 @@ public abstract class Code {
 		}		
 	}
 
+	/**
+	 * Represents a type which may appear on the left of an assignment
+	 * expression. Lists, Dictionaries, Strings, Records and Processes are the
+	 * only valid types for an lval.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static abstract class LVal {
 		protected Type type;
 		
@@ -1502,6 +1592,11 @@ public abstract class Code {
 		}
 	}
 	
+	/**
+	 * An LVal with dictionary type.
+	 * @author djp
+	 *
+	 */
 	public static final class DictLVal extends LVal {
 		public DictLVal(Type t) {
 			super(t);			
@@ -1515,6 +1610,11 @@ public abstract class Code {
 		}
 	}
 	
+	/**
+	 * An LVal with list type.
+	 * @author djp
+	 *
+	 */
 	public static final class ListLVal extends LVal {
 		public ListLVal(Type t) {
 			super(t);
@@ -1528,12 +1628,22 @@ public abstract class Code {
 		}
 	}
 	
+	/**
+	 * An LVal with string type.
+	 * @author djp
+	 *
+	 */
 	public static final class StringLVal extends LVal {
 		public StringLVal() {
 			super(Type.T_STRING);			
 		}		
 	}
 	
+	/**
+	 * An LVal with record type.
+	 * @author djp
+	 *
+	 */
 	public static final class RecordLVal extends LVal {
 		public final String field;
 		
@@ -1602,7 +1712,25 @@ public abstract class Code {
 			throw new UnsupportedOperationException("UpdateIterator is unmodifiable");
 		}
 	}
-	
+
+	/**
+	 * <p>
+	 * Pops a compound structure, zero or more indices and a value from the
+	 * stack and updates the compound structure with the given value. Valid
+	 * compound structures are lists, dictionaries, strings, records and
+	 * processes.
+	 * </p>
+	 * <p>
+	 * Ideally, this operation is done in-place, meaning the operation is
+	 * constant time. However, to support Whiley's value semantics this bytecode
+	 * may require (in some cases) a clone of the underlying data-structure.
+	 * Thus, the worst-case runtime of this operation is linear in the size of
+	 * the compound structure.
+	 * </p>
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static final class Update extends Code implements Iterable<LVal> {
 		public final Type beforeType;
 		public final Type afterType;
