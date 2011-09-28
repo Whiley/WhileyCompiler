@@ -35,9 +35,9 @@ import wyil.lang.*;
 import wyil.util.*;
 
 /**
- * The module loader is a critical component of the Whiley compiler. It is
- * responsible for finding whiley modules on the WHILEYPATH, and retaining
- * information about them which can be used to compile other whiley files.
+ * Responsible for locating whiley modules on the WHILEYPATH, and retaining
+ * information about them which can be used to compile other whiley files. This
+ * is a critical component of the Whiley compiler.
  * 
  * @author David J. Pearce
  * 
@@ -103,10 +103,10 @@ public class ModuleLoader {
 	}
 
 	/**
-	 * A module Skeleton provides basic information regarding what names are
-	 * defined within a module. It represents the minimal knowledge regarding a
-	 * module that we can have. Skeletons are used early on in the compilation
-	 * process to help with name resolution.
+	 * Provides basic information regarding what names are defined within a
+	 * module. It represents the minimal knowledge regarding a module that we
+	 * can have. Skeletons are used early on in the compilation process to help
+	 * with name resolution.
 	 * 
 	 * @author David J. Pearce
 	 * 

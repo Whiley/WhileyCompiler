@@ -25,8 +25,24 @@
 
 package wyil.lang;
 
+/**
+ * Represents a piece of meta-information that may be associated with a WYIL
+ * bytecode or declaration. For example, the location of the element in the
+ * source code which generated this bytecode.
+ * 
+ * @author djp
+ * 
+ */
 public interface Attribute {
-	
+
+	/**
+	 * Represents a location in the source code of a Whiley Module. For example,
+	 * this may be the location which generated a particular bytecode, or the
+	 * location of a particular type declaration.
+	 * 
+	 * @author djp
+	 * 
+	 */
 	public static class Source implements Attribute {
 		public final int start;	
 		public final int end;	
