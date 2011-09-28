@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 // This example is adapted from a recursive type example.
 define ADD as 1

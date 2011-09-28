@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define ADD as 1
 define SUB as 2

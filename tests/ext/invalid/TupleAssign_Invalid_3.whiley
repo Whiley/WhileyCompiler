@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define tac3ta as {int f1, int f2} where f1 < f2
 

@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 // this is a comment!
 define c2nat as int where $ < 10

@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define scf2nat as int where $ >= 0
 
