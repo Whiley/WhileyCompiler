@@ -28,6 +28,15 @@ package wyil.lang;
 import java.util.*;
 import wyil.util.*;
 
+/**
+ * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
+ * stack-based bytecodes, similar to the Java Virtual Machine. Bytecodes may
+ * push/pop values from the stack, and store/load them from the local variable
+ * array.
+ * 
+ * @author djp
+ * 
+ */
 public abstract class Code {
 	public final static int THIS_SLOT = 0;
 	
@@ -478,7 +487,11 @@ public abstract class Code {
 	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================
-	
+
+	/**
+	 * Pops a boolean from the stack and checks it is true. If not, an assertion
+	 * fault is raised.
+	 */
 	public static final class Assert extends Code {
 		public final String target;
 		
@@ -548,8 +561,18 @@ public abstract class Code {
 	};
 
 	/**
-	 * A binary operation (e.g. +,-,*,/) takes two items off the stack and
-	 * pushes a single result.
+	 * <p>
+	 * A binary operation takes two items off the stack and pushes a single
+	 * result. The binary operators are:
+	 * </p>
+	 * <ul>
+	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
+	 * be either integers or reals (but not one or the other). A value of the
+	 * same type is produced.</li>
+	 * <li><i>range</i></li>
+	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
+	 * <li><i>leftshift,rightshift</i></li>
+	 * </ul>
 	 * 
 	 * @author David J. Pearce
 	 * 
