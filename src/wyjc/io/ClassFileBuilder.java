@@ -435,7 +435,7 @@ public class ClassFileBuilder {
 		} catch (SyntaxError ex) {
 			throw ex;
 		} catch (Exception ex) {		
-			syntaxError("internal failure", filename, entry, ex);
+			internalFailure("internal failure", filename, entry, ex);
 		}
 		
 		return freeSlot;

@@ -126,7 +126,7 @@ public class ModuleBuilder {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				syntaxError("internal failure", wf.filename, d, ex);
+				internalFailure("internal failure", wf.filename, d, ex);
 			}
 		}
 		
@@ -835,7 +835,7 @@ public class ModuleBuilder {
 		} catch (SyntaxError sex) {
 			throw sex;
 		} catch (Exception ex) {			
-			syntaxError("internal failure", filename, stmt, ex);
+			internalFailure("internal failure", filename, stmt, ex);
 		}
 		return null;
 	}
@@ -1159,7 +1159,7 @@ public class ModuleBuilder {
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			syntaxError("internal failure", filename, condition, ex);
+			internalFailure("internal failure", filename, condition, ex);
 		}
 
 		return null;
@@ -1485,10 +1485,12 @@ public class ModuleBuilder {
 				syntaxError("unknown expression encountered: "
 						+ expression.getClass().getName() + " (" + expression + ")", filename, expression);
 			}
+		} catch (ResolveError rex) {
+			syntaxError(rex.getMessage(), filename, expression, rex);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			syntaxError("internal failure", filename, expression, ex);
+			internalFailure("internal failure", filename, expression, ex);
 		}
 
 		return null;
