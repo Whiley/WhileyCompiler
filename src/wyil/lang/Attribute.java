@@ -44,12 +44,14 @@ public interface Attribute {
 	 * 
 	 */
 	public static class Source implements Attribute {
-		public final int start;	
-		public final int end;	
+		public final int start;	 // starting character index
+		public final int end;	 // end character index
+		public final int line;   // line number
 
-		public Source(int start, int end) {			
+		public Source(int start, int end, int line) {			
 			this.start = start;
-			this.end = end;		
+			this.end = end;
+			this.line = line;		
 		}
 		
 		public String toString() {
