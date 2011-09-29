@@ -34,7 +34,7 @@ import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
 import wyjvm.lang.JvmType;
 
-public class Exceptions implements BytecodeAttribute {
+public class Exceptions implements Code.Rewriteable, BytecodeAttribute {
 	protected List<JvmType.Clazz> exceptions;
 	
 	public Exceptions(List<JvmType.Clazz> exceptions) {
@@ -47,6 +47,10 @@ public class Exceptions implements BytecodeAttribute {
 	
 	public List<JvmType.Clazz> exceptions() {
 		return exceptions;
+	}
+	
+	public void apply(List<Code.Rewrite> rewrites) {
+		// FIXME: this should be implemented!
 	}
 	
 	/**
