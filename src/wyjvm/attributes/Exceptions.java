@@ -34,7 +34,7 @@ import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
 import wyjvm.lang.JvmType;
 
-public class Exceptions implements Code.Rewriteable, BytecodeAttribute {
+public class Exceptions implements BytecodeAttribute {
 	protected List<JvmType.Clazz> exceptions;
 	
 	public Exceptions(List<JvmType.Clazz> exceptions) {
@@ -49,10 +49,6 @@ public class Exceptions implements Code.Rewriteable, BytecodeAttribute {
 		return exceptions;
 	}
 	
-	public void apply(List<Code.Rewrite> rewrites) {
-		// FIXME: this should be implemented!
-	}
-	
 	/**
 	 * This method requires the attribute to write itself to the binary stream.
 	 * 
@@ -61,8 +57,7 @@ public class Exceptions implements Code.Rewriteable, BytecodeAttribute {
 	 * @throws IOException
 	 */
 	public void write(BinaryOutputStream writer,
-			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {
-		
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader) throws IOException {		
 		writer.write_u2(constantPool.get(new Constant.Utf8("Exceptions")));
 		writer.write_u4(2 + (2 * exceptions.size()));
 		writer.write_u2(exceptions.size());

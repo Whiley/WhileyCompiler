@@ -28,12 +28,9 @@ package wyjc.io;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.zip.*;
 
 import wyjc.attributes.WhileyDefine;
-import wyjc.attributes.WhileyType;
 import wyjc.attributes.WhileyVersion;
-import wyautl.io.BinaryAutomataWriter;
 import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;
@@ -43,7 +40,7 @@ import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
 import wyjvm.attributes.Code.Handler;
 import wyjvm.attributes.LineNumberTable;
-import wyjvm.io.BinaryInputStream;
+import wyjvm.attributes.SourceFile;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
 import static wyjvm.lang.JvmTypes.*;
@@ -78,6 +75,10 @@ public class ClassFileBuilder {
 				new ArrayList<JvmType.Clazz>(), modifiers);
 	
 		this.filename = module.filename();
+		
+		if(filename != null) {
+			cf.attributes().add(new SourceFile(filename));
+		}
 		
 		boolean addMainLauncher = false;		
 				

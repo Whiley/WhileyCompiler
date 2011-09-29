@@ -63,7 +63,7 @@ public class WhileyLexer {
 	public List<Token> scan() {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		pos = 0;
-		line = 0;
+		line = 1;
 		
 		while(pos < input.length()) {
 			char c = input.charAt(pos);

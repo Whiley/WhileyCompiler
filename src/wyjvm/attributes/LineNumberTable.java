@@ -7,15 +7,15 @@ import java.util.*;
 import wyjvm.lang.*;
 import wyjvm.io.*;
 
-public class LineNumberTable implements Code.Rewriteable,BytecodeAttribute {
+public class LineNumberTable implements Code.BytecodeMapAttribute {
 	private ArrayList<Entry> entries;
 	
 	public static final class Entry {
-		public final int start_pc;
+		public final int start;
 		public final int line;
 		
 		public Entry(int start, int line) {
-			this.start_pc = start;
+			this.start = start;
 			this.line = line;
 		}
 	}
@@ -39,11 +39,17 @@ public class LineNumberTable implements Code.Rewriteable,BytecodeAttribute {
 	public void write(BinaryOutputStream writer,
 			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
 			throws IOException {
+		// should never be called
+	}
+	
+	public void write(int[] bytecodeOffsets, BinaryOutputStream writer,
+			Map<Constant.Info, Integer> constantPool, ClassLoader loader)
+			throws IOException {
 		writer.write_u2(constantPool.get(new Constant.Utf8("LineNumberTable")));
 		writer.write_u4(2 + (4 * entries.size()));
 		writer.write_u2(entries.size());	
 		for(Entry e : entries) {
-			writer.write_u2(e.start_pc);
+			writer.write_u2(bytecodeOffsets[e.start]);
 			writer.write_u2(e.line);
 		}
 	}
@@ -59,7 +65,7 @@ public class LineNumberTable implements Code.Rewriteable,BytecodeAttribute {
 		output.println("  LineNumberTable:");
 		for(Entry e : entries) {
 			output.print("   ");
-			output.println("line " + e.line + ": " + e.start_pc);			
+			output.println("line " + e.line + ": " + e.start);			
 		}
 	}	
 }
