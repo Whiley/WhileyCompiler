@@ -25,7 +25,8 @@ public class LineNumberTable implements Code.Rewriteable,BytecodeAttribute {
 	}
 	
 	public void apply(List<Code.Rewrite> rewrites) {
-		// do nothing for now!
+		ArrayList<Integer> newMap = new ArrayList<Integer>();
+		
 	}
 	
 	public List<Entry> entries() {

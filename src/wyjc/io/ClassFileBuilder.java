@@ -305,7 +305,7 @@ public class ClassFileBuilder {
 		ArrayList<UnresolvedHandler> unresolvedHandlers = new ArrayList<UnresolvedHandler>();
 		for (Entry s : blk) {
 			Attribute.Source loc = s.attribute(Attribute.Source.class);
-			if(loc != null) {
+			if(loc != null) {				
 				lineNumbers.add(new LineNumberTable.Entry(bytecodes.size(),loc.line));
 			}
 			freeSlot = translate(s, freeSlot, constants, unresolvedHandlers,
