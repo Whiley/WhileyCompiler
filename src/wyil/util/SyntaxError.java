@@ -220,10 +220,27 @@ public class SyntaxError extends RuntimeException {
 	 * 
 	 */
 	public static class InternalFailure extends SyntaxError {
+		public InternalFailure(String msg, String filename, int start, int end) {
+			super(msg, filename, start, end);
+		}
 		public InternalFailure(String msg, String filename, int start, int end,
 				Throwable ex) {
 			super(msg, filename, start, end, ex);
 		}
+	}
+	
+	public static void internalFailure(String msg, String filename,
+			SyntacticElement elem) {
+		int start = -1;
+		int end = -1;		
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;			
+		}
+		
+		throw new InternalFailure(msg, filename, start, end);
 	}
 	
 	public static void internalFailure(String msg, String filename,

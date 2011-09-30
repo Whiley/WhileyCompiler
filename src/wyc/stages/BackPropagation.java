@@ -25,7 +25,7 @@
 
 package wyc.stages;
 
-import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 import java.math.BigInteger;
@@ -187,9 +187,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Spawn)code,entry,environment);
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
-		} else {
-			String errMsg = errorMessage(UNKNOWN_WYIL_CODE,code);
-			syntaxError(errMsg,filename,entry);
+		} else {			
+			internalFailure("unknown wyil code",filename,entry);
 			return null;
 		}	
 		

@@ -25,7 +25,8 @@
 
 package wyc.stages;
 
-import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -312,7 +313,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				case SUB:
 					return inferSetDifference(OpDir.UNIFORM,stmt,environment);
 				default:
-					syntaxError("invalid set operation: " + v.bop,filename,stmt);
+					syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
 					result = null;
 			}						
 		} else if(lhs_str || rhs_str) {			
@@ -539,7 +540,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.push(Type.T_INT);
 			environment.push(Type.T_INT);
 		} else {
-			syntaxError("invalid destructuring operation",filename,stmt);
+			syntaxError(errorMessage(INVALID_DESTRUCTURE_EXPRESSION),filename,stmt);
 		}
 
 		return Code.Destructure(type);
@@ -562,11 +563,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 
 		Type.Record ett = Type.effectiveRecordType(lhs_t);		
 		if (ett == null) {
-			syntaxError("record required, got: " + lhs_t, filename, stmt);
+			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,lhs_t), filename, stmt);
 		}
 		Type ft = ett.fields().get(e.field);		
 		if (ft == null) {
-			syntaxError("record has no field named " + e.field, filename, stmt);
+			syntaxError(errorMessage(RECORD_MISSING_FIELD,e.field), filename, stmt);
 		}
 		
 		environment.push(ft);
@@ -1465,6 +1466,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				}
 			}
 			
+			// need to think about this one
 			syntaxError(msg + "\n",filename,elem);
 		}
 		
@@ -1574,21 +1576,21 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected <T extends Type> T checkType(Type t, Class<T> clazz,
-			SyntacticElement elem) {		
+			SyntacticElement elem) {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
-			syntaxError("expected type " + clazz.getName() + ", found "
-					+ t, filename, elem);
+			syntaxError(errorMessage(SUBTYPE_ERROR, clazz.getName(), t),
+					filename, elem);
 			return null;
 		}
 	}
 	
 	// Check t1 :> t2
-	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {		
+	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
 		if (!Type.isCoerciveSubtype(t1, t2)) {
-			syntaxError("expected type " + t1 + ", found " + t2, filename, elem);
-		}		
+			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
+		}
 	}
 
 	public Env join(Env env1, Env env2) {

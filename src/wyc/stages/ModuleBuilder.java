@@ -205,7 +205,8 @@ public class ModuleBuilder {
 			return mi.constant(key.name()).constant();
 		} else if (visited.contains(key)) {
 			// this indicates a cyclic definition.
-			syntaxError("cyclic constant definition encountered", filemap
+			String errMsg = errorMessage(CYCLIC_CONSTANT_DECLARATION);
+			syntaxError(errMsg, filemap
 					.get(key).filename, exprs.get(key));
 		} else {
 			visited.add(key); // mark this node as visited
@@ -825,7 +826,8 @@ public class ModuleBuilder {
 			} else if (stmt instanceof Skip) {
 				return resolve((Skip) stmt, environment);
 			} else {
-				syntaxError("unknown statement encountered: "
+				// should be dead-code
+				internalFailure("unknown statement encountered: "
 						+ stmt.getClass().getName(), filename, stmt);
 			}
 		} catch (ResolveError rex) {
@@ -855,7 +857,7 @@ public class ModuleBuilder {
 			
 			for(Expr e : fields) {
 				if(!(e instanceof LocalVariable)) {
-					syntaxError("variable expected",filename,e);
+					syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,e);
 				}
 				LocalVariable v = (LocalVariable) e;
 				blk.append(Code.Store(null, allocate(v.var, environment)),
@@ -898,7 +900,7 @@ public class ModuleBuilder {
 			fields.add(ra.name);
 			return new Pair(l.first(),l.second() + 1);			
 		} else {
-			syntaxError("invalid assignment component", filename, e);
+			syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), filename, e);
 			return null; // dead code
 		}
 	}
@@ -977,7 +979,7 @@ public class ModuleBuilder {
 	protected Block resolve(Break s, HashMap<String,Integer> environment) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if(scope == null) {
-			syntaxError("break outside switch or loop",filename,s);
+			syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP), filename, s);
 		}
 		Block blk = new Block(environment.size());
 		blk.append(Code.Goto(scope.label));
@@ -996,7 +998,7 @@ public class ModuleBuilder {
 			if(c.value == null) {
 				// indicates the default block
 				if(defaultTarget != exitLab) {
-					syntaxError("duplicate default label",filename,c);
+					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),filename,c);
 				} else {
 					defaultTarget = Block.freshLabel();	
 					cblk.append(Code.Label(defaultTarget), attributes(c));
@@ -1011,7 +1013,7 @@ public class ModuleBuilder {
 				String target = Block.freshLabel();	
 				cblk.append(Code.Label(target), attributes(c));				
 				if(values.contains(constant)) {
-					syntaxError("duplicate case label",filename,c);
+					syntaxError(errorMessage(DUPLICATE_CASE_LABEL),filename,c);
 				}				
 				cases.add(new Pair(constant,target));
 				values.add(constant);
@@ -1019,7 +1021,7 @@ public class ModuleBuilder {
 					cblk.append(resolve(st, environment));
 				}								
 			} else {
-				syntaxError("unreachable code",filename,c);
+				syntaxError(errorMessage(UNREACHABLE_CODE), filename, c);
 			}
 		}		
 		blk.append(Code.Switch(null,defaultTarget,cases),attributes(s));
@@ -1150,9 +1152,8 @@ public class ModuleBuilder {
 				return resolveCondition(target, (ListAccess) condition, environment);
 			} else if (condition instanceof Comprehension) {
 				return resolveCondition(target, (Comprehension) condition, environment);
-			} else {
-				syntaxError("expected boolean expression, got: "
-						+ condition.getClass().getName(), filename, condition);
+			} else {				
+				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, condition);
 			}
 		} catch (SyntaxError se) {
 			throw se;
@@ -1286,7 +1287,7 @@ public class ModuleBuilder {
 			// this is a simple rewrite to enable type inference.
 			LocalVariable lhs = (LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
-				syntaxError("unknown variable", filename, v.lhs);
+				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);					
 			blk.append(Code.IfType(null, slot, Type.T_NULL, target), attributes(v));
@@ -1297,7 +1298,7 @@ public class ModuleBuilder {
 			String exitLabel = Block.freshLabel();
 			LocalVariable lhs = (LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
-				syntaxError("unknown variable", filename, v.lhs);
+				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			int slot = environment.get(lhs.var);						
 			blk.append(Code.IfType(null, slot, Type.T_NULL, exitLabel), attributes(v));
@@ -1318,7 +1319,7 @@ public class ModuleBuilder {
 		if (v.lhs instanceof LocalVariable) {
 			LocalVariable lhs = (LocalVariable) v.lhs;
 			if (!environment.containsKey(lhs.var)) {
-				syntaxError("unknown variable", filename, v.lhs);
+				syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v.lhs);
 			}
 			slot = environment.get(lhs.var);
 			blk = new Block(environment.size());
@@ -1344,7 +1345,7 @@ public class ModuleBuilder {
 			blk.append(Code.Label(label));
 			return blk;
 		}
-		syntaxError("expected boolean expression", filename, v);
+		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, v);
 		return null;
 	}
 
@@ -1373,7 +1374,7 @@ public class ModuleBuilder {
 			HashMap<String,Integer> environment) {
 		
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
-			syntaxError("expected boolean expression", filename, e);
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, e);
 		}
 					
 		// Ok, non-boolean case.				
@@ -1480,8 +1481,10 @@ public class ModuleBuilder {
 			} else if (expression instanceof FunConst) {
 				return resolve((FunConst) expression, environment);
 			} else {
-				syntaxError("unknown expression encountered: "
-						+ expression.getClass().getName() + " (" + expression + ")", filename, expression);
+				// should be dead-code
+				internalFailure("unknown expression encountered: "
+						+ expression.getClass().getName() + " (" + expression
+						+ ")", filename, expression);
 			}
 		} catch (ResolveError rex) {
 			syntaxError(rex.getMessage(), filename, expression, rex);
@@ -1583,7 +1586,7 @@ public class ModuleBuilder {
 			blk.append(Code.Send(mt, name, s.synchronous, retval),
 					attributes(s));
 		} else {
-			syntaxError("unknown function or method", filename, s);
+			syntaxError(errorMessage(UNKNOWN_FUNCTION_OR_METHOD), filename, s);
 		}
 		
 		return blk;
@@ -1634,7 +1637,8 @@ public class ModuleBuilder {
 			blk.append(Code.Load(null, environment.get(v.var)), attributes(v));					
 			return blk;
 		} else {
-			syntaxError("variable might not be initialised",filename,v);
+			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
+					v);
 		}
 		
 		// Third, see if it's a constant
@@ -1686,7 +1690,8 @@ public class ModuleBuilder {
 			blk.append(Code.Spawn(null), attributes(v));
 			break;			
 		default:
-			syntaxError("unexpected unary operator encountered", filename, v);
+			// should be dead-code
+			internalFailure("unexpected unary operator encountered", filename, v);
 			return null;
 		}
 		return blk;
@@ -1748,7 +1753,8 @@ public class ModuleBuilder {
 		Block blk = new Block(environment.size());
 		if (v.nop == NOp.SUBLIST) {
 			if (v.arguments.size() != 3) {
-				syntaxError("incorrect number of arguments", filename, v);
+				// this should be dead-code
+				internalFailure("incorrect number of arguments", filename, v);
 			}
 			blk.append(resolve(v.arguments.get(0), environment));
 			blk.append(resolve(v.arguments.get(1), environment));
@@ -2075,7 +2081,8 @@ public class ModuleBuilder {
 				if(tmp.first() instanceof Type.Process) { 
 					receiver = (Type.Process) tmp.first();
 				} else {
-					syntaxError("method receiver must have process type",filename,ut.receiver);
+					syntaxError(errorMessage(RECEIVER_NOT_PROCESS), filename,
+							ut.receiver);
 				}
 			}			
 			for(UnresolvedType pt : ut.paramTypes) {
@@ -2108,7 +2115,7 @@ public class ModuleBuilder {
 				return flattern(la.mhs);
 			}
 		}
-		syntaxError("invalid lval", filename, e);
+		syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), filename, e);
 		return null;
 	}
 
@@ -2168,7 +2175,7 @@ public class ModuleBuilder {
 		case RIGHTSHIFT:
 			return Code.BOp.RIGHTSHIFT;
 		}
-		syntaxError("unrecognised binary operation", filename, elem);
+		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), filename, elem);
 		return null;
 	}
 
@@ -2193,7 +2200,7 @@ public class ModuleBuilder {
 		case ELEMENTOF:
 			return Code.COp.ELEMOF;
 		}
-		syntaxError("unrecognised binary operation", filename, elem);
+		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), filename, elem);
 		return null;
 	}
 
