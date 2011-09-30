@@ -512,7 +512,7 @@ public class ModuleLoader {
 				}				
 			} else {			
 				// this is a jar file
-				try {
+				try {					
 					JarFile jf = new JarFile(dir);
 					for (Enumeration<JarEntry> e = jf.entries(); e
 							.hasMoreElements();) {
