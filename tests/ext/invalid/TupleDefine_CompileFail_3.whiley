@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define tcf3byte as int where $ >=0 && $ <= 255
 

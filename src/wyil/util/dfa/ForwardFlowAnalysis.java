@@ -25,7 +25,7 @@
 
 package wyil.util.dfa;
 
-import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.SyntaxError.internalFailure;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -182,7 +182,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				syntaxError("internal failure", filename, entry, ex);
+				internalFailure("internal failure", filename, entry, ex);
 			}
 		}
 		

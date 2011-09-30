@@ -360,7 +360,7 @@ public class NameResolution {
 		} catch(SyntaxError se) {
 			throw se;
 		} catch(Exception ex) {
-			syntaxError("internal failure", filename, e, ex);			
+			internalFailure("internal failure", filename, e, ex);			
 		}	
 		
 		return e;

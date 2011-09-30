@@ -115,7 +115,7 @@ public class SyntaxError extends RuntimeException {
 	 * @return
 	 */
 	public int end() { return end; }
-
+	
 	/**
 	 * Output the syntax error to a given output stream.
 	 */
@@ -208,6 +208,36 @@ public class SyntaxError extends RuntimeException {
 		}
 		
 		throw new SyntaxError(msg, filename, start, end, ex);
+	}
+
+	/**
+	 * An internal failure is a special form of syntax error which indicates
+	 * something went wrong whilst processing some piece of syntax. In other
+	 * words, is an internal error in the compiler, rather than a mistake in the
+	 * input program.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public static class InternalFailure extends SyntaxError {
+		public InternalFailure(String msg, String filename, int start, int end,
+				Throwable ex) {
+			super(msg, filename, start, end, ex);
+		}
+	}
+	
+	public static void internalFailure(String msg, String filename,
+			SyntacticElement elem, Throwable ex) {
+		int start = -1;
+		int end = -1;		
+		
+		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
+		if(attr != null) {
+			start=attr.start;
+			end=attr.end;			
+		}
+		
+		throw new InternalFailure(msg, filename, start, end, ex);
 	}
 	
 	

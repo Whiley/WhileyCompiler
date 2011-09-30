@@ -152,7 +152,7 @@ public class ConstraintInline implements Transform {
 				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
 			}
 		} catch(ResolveError e) {
-			syntaxError("internal failure",filename,entry,e);
+			syntaxError(e.getMessage(),filename,entry,e);
 		}
 		
 		return null;

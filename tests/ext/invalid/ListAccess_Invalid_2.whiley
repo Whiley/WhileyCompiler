@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 void f([int] x, int i) requires |x| > 0:
     if i < 0 || i >= |x|:

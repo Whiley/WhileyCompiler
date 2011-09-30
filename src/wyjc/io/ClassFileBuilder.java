@@ -28,12 +28,9 @@ package wyjc.io;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.zip.*;
 
 import wyjc.attributes.WhileyDefine;
-import wyjc.attributes.WhileyType;
 import wyjc.attributes.WhileyVersion;
-import wyautl.io.BinaryAutomataWriter;
 import wyil.*;
 import static wyil.util.SyntaxError.*;
 import wyil.util.*;
@@ -42,7 +39,8 @@ import wyil.lang.Code.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.BigRational;
 import wyjvm.attributes.Code.Handler;
-import wyjvm.io.BinaryInputStream;
+import wyjvm.attributes.LineNumberTable;
+import wyjvm.attributes.SourceFile;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
 import static wyjvm.lang.JvmTypes.*;
@@ -77,6 +75,10 @@ public class ClassFileBuilder {
 				new ArrayList<JvmType.Clazz>(), modifiers);
 	
 		this.filename = module.filename();
+		
+		if(filename != null) {
+			cf.attributes().add(new SourceFile(filename));
+		}
 		
 		boolean addMainLauncher = false;		
 				
@@ -265,18 +267,23 @@ public class ClassFileBuilder {
 		}
 			
 		ArrayList<Handler> handlers = new ArrayList<Handler>();
-		ArrayList<Bytecode> codes = translate(mcase,constants,handlers);
+		ArrayList<LineNumberTable.Entry> lineNumbers = new ArrayList<LineNumberTable.Entry>();
+		ArrayList<Bytecode> codes = translate(mcase,constants,handlers,lineNumbers);
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,handlers,cm);
+		if(!lineNumbers.isEmpty()) {
+			code.attributes().add(new LineNumberTable(lineNumbers));
+		}
 		cm.attributes().add(code);		
 		
 		return cm;
 	}
 	
 	public ArrayList<Bytecode> translate(Module.Case mcase,
-			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers) {
+			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
+			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		translate(mcase.body(), mcase.body().numSlots(), constants, handlers,
-				bytecodes);
+				lineNumbers, bytecodes);
 		return bytecodes;
 	}
 
@@ -291,11 +298,17 @@ public class ClassFileBuilder {
 	 *            --- list to insert bytecodes into *
 	 */
 	public void translate(Block blk, int freeSlot,
-			HashMap<Constant, Integer> constants, ArrayList<Handler> handlers,
+			HashMap<Constant, Integer> constants, 
+			ArrayList<Handler> handlers,
+			ArrayList<LineNumberTable.Entry> lineNumbers,
 			ArrayList<Bytecode> bytecodes) {
 		
 		ArrayList<UnresolvedHandler> unresolvedHandlers = new ArrayList<UnresolvedHandler>();
 		for (Entry s : blk) {
+			Attribute.Source loc = s.attribute(Attribute.Source.class);
+			if(loc != null) {				
+				lineNumbers.add(new LineNumberTable.Entry(bytecodes.size(),loc.line));
+			}
 			freeSlot = translate(s, freeSlot, constants, unresolvedHandlers,
 					bytecodes);
 		}
@@ -435,7 +448,7 @@ public class ClassFileBuilder {
 		} catch (SyntaxError ex) {
 			throw ex;
 		} catch (Exception ex) {		
-			syntaxError("internal failure", filename, entry, ex);
+			internalFailure("internal failure", filename, entry, ex);
 		}
 		
 		return freeSlot;

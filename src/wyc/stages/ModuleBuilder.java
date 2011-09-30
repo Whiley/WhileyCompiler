@@ -26,14 +26,12 @@
 package wyc.stages;
 
 import java.util.*;
-import java.math.BigInteger;
 
 import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
-import wyil.lang.Block.Entry;
-import wyil.lang.Code.IfGoto;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.*;
 import wyc.lang.Stmt;
@@ -126,7 +124,7 @@ public class ModuleBuilder {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				syntaxError("internal failure", wf.filename, d, ex);
+				internalFailure("internal failure", wf.filename, d, ex);
 			}
 		}
 		
@@ -303,7 +301,7 @@ public class ModuleBuilder {
 				return Value.V_FUN(name, tf);	
 			}					
 		}
-		syntaxError("invalid expression in constant definition", filename, expr);
+		syntaxError(errorMessage(INVALID_CONSTANT_EXPRESSION), filename, expr);
 		return null;
 	}
 
@@ -321,7 +319,7 @@ public class ModuleBuilder {
 		} else if(Type.isSubtype(Type.Set(Type.T_ANY), lub)) {
 			return evaluate(bop,(Value.Set) v1, (Value.Set) v2);
 		} 
-		syntaxError("invalid expression",filename,bop);
+		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION),filename,bop);
 		return null;
 	}
 	
@@ -334,7 +332,7 @@ public class ModuleBuilder {
 		case XOR:
 			return Value.V_BOOL(v1.value ^ v2.value);
 		}
-		syntaxError("invalid boolean expression",filename,bop);
+		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),filename,bop);
 		return null;
 	}
 	
@@ -351,7 +349,7 @@ public class ModuleBuilder {
 		case REM:
 			return Value.V_RATIONAL(v1.value.intRemainder(v2.value));	
 		}
-		syntaxError("invalid numeric expression",filename,bop);
+		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),filename,bop);
 		return null;
 	}
 	
@@ -362,7 +360,7 @@ public class ModuleBuilder {
 			vals.addAll(v2.values);
 			return Value.V_LIST(vals);
 		}
-		syntaxError("invalid list expression",filename,bop);
+		syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,bop);
 		return null;
 	}
 	
@@ -395,7 +393,7 @@ public class ModuleBuilder {
 			return Value.V_SET(vals);
 		}
 		}
-		syntaxError("invalid set expression",filename,bop);
+		syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,bop);
 		return null;
 	}
 	
@@ -835,7 +833,7 @@ public class ModuleBuilder {
 		} catch (SyntaxError sex) {
 			throw sex;
 		} catch (Exception ex) {			
-			syntaxError("internal failure", filename, stmt, ex);
+			internalFailure("internal failure", filename, stmt, ex);
 		}
 		return null;
 	}
@@ -1159,7 +1157,7 @@ public class ModuleBuilder {
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			syntaxError("internal failure", filename, condition, ex);
+			internalFailure("internal failure", filename, condition, ex);
 		}
 
 		return null;
@@ -1485,10 +1483,12 @@ public class ModuleBuilder {
 				syntaxError("unknown expression encountered: "
 						+ expression.getClass().getName() + " (" + expression + ")", filename, expression);
 			}
+		} catch (ResolveError rex) {
+			syntaxError(rex.getMessage(), filename, expression, rex);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			syntaxError("internal failure", filename, expression, ex);
+			internalFailure("internal failure", filename, expression, ex);
 		}
 
 		return null;
@@ -2237,8 +2237,8 @@ public class ModuleBuilder {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
-			syntaxError("expected type " + clazz.getName() + ", found " + t,
-					filename, elem);
+			String errMsg = errorMessage(SUBTYPE_ERROR,clazz.getName(),t);
+			syntaxError(errMsg, filename, elem);
 			return null;
 		}
 	}

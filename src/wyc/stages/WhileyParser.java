@@ -248,7 +248,7 @@ public class WhileyParser {
 		
 		// Ok, failed parsing type constructor. So, backtrack and try for
 		// expression.
-		index = mid;	
+		index = mid;		
 		Expr e = parseCondition(false);
 		int end = index;
 		matchEndLine();		
@@ -1812,27 +1812,6 @@ public class WhileyParser {
 		return t;
 	}		
 	
-	private boolean isTypeStart() {
-		checkNotEof();
-		Token token = tokens.get(index);
-		if(token instanceof Keyword) {
-			return token.text.equals("int") || token.text.equals("void")
-					|| token.text.equals("bool") || token.text.equals("real")
-					|| token.text.equals("?") || token.text.equals("*")
-					|| token.text.equals("process");			
-		} else if(token instanceof LeftBrace) {
-			// Left brace is a difficult situation, since it can represent the
-			// start of a tuple expression or the start of a typle lval.
-			int tmp = index;
-			match(LeftBrace.class);
-			boolean r = isTypeStart();
-			index = tmp;
-			return r;
-		} else {
-			return token instanceof LeftCurly || token instanceof LeftSquare;
-		}
-	}
-
 	private void skipWhiteSpace() {
 		while (index < tokens.size() && isWhiteSpace(tokens.get(index))) {
 			index++;
@@ -1903,7 +1882,7 @@ public class WhileyParser {
 	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
-		return new Attribute.Source(t1.start,t2.end());
+		return new Attribute.Source(t1.start,t2.end(),t1.line);
 	}
 	
 	private void syntaxError(String msg, Expr e) {

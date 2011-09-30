@@ -946,7 +946,7 @@ public abstract class Type {
 					titles[i] = headerTitle(count++);
 				}
 			}			
-			return toString(0,visited,titles,automata);
+			return Type.toString(0,visited,titles,automata);
 		}
 	}
 	

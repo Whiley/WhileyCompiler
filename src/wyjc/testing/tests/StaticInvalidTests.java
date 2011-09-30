@@ -112,6 +112,8 @@ public class StaticInvalidTests extends TestHarness {
  @Test public void ProcessAccess_Invalid_1_StaticTest() { contextFailTest("ProcessAccess_CompileFail_1"); }
  @Test public void ProcessAccess_Invalid_2_StaticTest() { contextFailTest("ProcessAccess_CompileFail_2"); }
  @Test public void ProcessAccess_Invalid_3_StaticTest() { contextFailTest("ProcessAccess_Invalid_3"); }
+ @Test public void Parameter_Invalid_1_StaticTest() { contextFailTest("Parameter_CompileFail_1"); }
+ @Test public void Parameter_Invalid_2_StaticTest() { contextFailTest("Parameter_CompileFail_2"); }
  @Test public void RealAdd_CompileFail_1_StaticTest() { contextFailTest("RealAdd_CompileFail_1"); }
  @Test public void RealDiv_CompileFail_1_StaticTest() { contextFailTest("RealDiv_CompileFail_1"); }
  @Test public void Record_CompileFail_1_StaticTest() { contextFailTest("Record_Invalid_1"); }

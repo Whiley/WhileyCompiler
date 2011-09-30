@@ -29,6 +29,15 @@ import java.io.IOException;
 
 import wyil.lang.Module;
 
+/**
+ * Represents an action that may be applied to a Whiley module. Such actions
+ * typically either check that a module is valid (with respect to some
+ * particular concern), or apply optimisations to the module. Examples include
+ * <i>constant propagation</i> and <i>definite assignment analysis</i>.
+ * 
+ * @author djp
+ * 
+ */
 public interface Transform {	
 	public void apply(Module module) throws IOException;
 }

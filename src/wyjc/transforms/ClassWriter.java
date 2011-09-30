@@ -42,7 +42,11 @@ import wyjvm.util.Validation;
 public class ClassWriter implements Transform {
 	private ClassFileBuilder classBuilder;
 	private boolean validate = true;
-	private boolean deadCode = true;
+	
+	// FIXME: deadCode elimination is currently unsafe because the
+	// LineNumberTable and Exceptions attributes do not deal with rewrites
+	// properly. 
+	private boolean deadCode = false;
 	
 	public ClassWriter(ModuleLoader loader) {
 		classBuilder = new ClassFileBuilder(loader, wyjc.Main.MAJOR_VERSION,
@@ -65,6 +69,10 @@ public class ClassWriter implements Transform {
 			new Validation().apply(file);
 		}
 		if(deadCode) {
+			// FIXME: deadCode elimination is currently unsafe because the
+			// LineNumberTable and Exceptions attributes do not deal with rewrites
+			// properly.
+			
 			// eliminate any dead code that was introduced.		
 			new DeadCodeElimination().apply(file);
 		}

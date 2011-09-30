@@ -84,15 +84,19 @@ public class TestHarness {
 	protected void contextFailTest(String name) {				
 		name = srcPath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wp", "lib/wyrt.jar",name)) {
+		int r = compile("-wp", "lib/wyrt.jar",name);
+		
+		if (r == 0) {
 			fail("Test compiled when it shouldn't have!");
+		} else if(r == Main.INTERNAL_FAILURE) {
+			fail("Test caused internal failure!");
 		}
 	}
 		
 	protected void runtimeFailTest(String name) {				
 		String fullName = srcPath + File.separatorChar + name + ".whiley";
 		
-		if(!compile("-wp", "lib/wyrt.jar",fullName)) { 
+		if(compile("-wp", "lib/wyrt.jar",fullName) != 0) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(srcPath,name,"-wp", "lib/wyrt.jar");				
@@ -102,8 +106,8 @@ public class TestHarness {
 		}
 	}
 	
-	private static boolean compile(String... args) {
-		return new Main().run(args) == 0;
+	private static int compile(String... args) {
+		return new Main().run(args);
 	}
 	
 	private static String run(String path, String name, String... args) {

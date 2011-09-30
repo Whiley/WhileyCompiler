@@ -1,4 +1,4 @@
-import whiley.lang.*:*
+import * from whiley.lang.*
 
 define scf6nat as int where $ > 0
 define scf6tup as {scf6nat f, int g} where g > f
