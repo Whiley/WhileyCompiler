@@ -14,15 +14,35 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class Strand extends Messager {
 
+	private long wakeAt = -1;
+	
 	/**
 	 * @param scheduler The scheduler to use for threading.
 	 */
 	public Strand(Scheduler scheduler) {
 		super(scheduler);
 	}
+	
+	/**
+	 * @param milliseconds The number of milliseconds to sleep for.
+	 */
+	public void sleep(long milliseconds) {
+		shouldYield = true;
+		shouldResume = true;
+		
+		wakeAt = System.currentTimeMillis() + milliseconds;
+	}
 
 	@Override
 	public void resume() {
+		if (wakeAt != -1) {
+			if (System.currentTimeMillis() < wakeAt) {
+				return;
+			} else {
+				wakeAt = -1;
+			}
+		}
+		
 		try {
 			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
 

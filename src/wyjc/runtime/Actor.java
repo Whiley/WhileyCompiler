@@ -25,7 +25,6 @@
 
 package wyjc.runtime;
 
-import wyjc.Main;
 import wyjc.runtime.concurrency.Scheduler;
 import wyjc.runtime.concurrency.Strand;
 

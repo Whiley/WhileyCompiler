@@ -67,7 +67,7 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * See the <code>scheduleResume</code> and <code>beReadyToResume</code>
 	 * methods for information on how its use is carried out.
 	 */
-	private boolean shouldResume = false;
+	protected boolean shouldResume = false;
 
 	/**
 	 * @param scheduler The scheduler to use for messager resumption.
@@ -104,8 +104,6 @@ public abstract class Messager extends Yielder implements Resumable {
 		sender.ready = false;
 		sender.shouldYield = true;
 		sender.shouldResume = false;
-
-		sender.shouldYield();
 
 		addMessage(message);
 		
