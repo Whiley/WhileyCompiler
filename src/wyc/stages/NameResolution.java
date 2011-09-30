@@ -28,6 +28,7 @@ package wyc.stages;
 import java.util.*;
 
 import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 import wyil.ModuleLoader;
 import wyil.util.*;
 import wyil.lang.*;
@@ -70,7 +71,8 @@ public class NameResolution {
 					resolve((ConstDecl)d,imports);					
 				}
 			} catch(ResolveError ex) {
-				syntaxError(ex.getMessage(),filename,d);
+				syntaxError(errorMessage(RESOLUTION_ERROR, ex.getMessage()),
+						filename, d);
 			}
 		}				
 	}
@@ -92,7 +94,8 @@ public class NameResolution {
 			}
 		} catch (ResolveError e) {												
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), filename,  td);			
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+					filename, td);			
 		}
 	}	
 	
@@ -123,7 +126,8 @@ public class NameResolution {
 			resolve(fd.throwType, imports);
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), filename, fd.ret);
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), filename,
+					fd.ret);
 		}
 		
 		// method receiver type (if applicable)
@@ -182,12 +186,13 @@ public class NameResolution {
 			} else if(s instanceof Spawn) {
 				resolve((UnOp)s, environment, imports);
 			} else {
-				syntaxError("unknown statement encountered: "
+				internalFailure("unknown statement encountered: "
 						+ s.getClass().getName(), filename, s);				
 			}
 		} catch (ResolveError e) {
 			// Ok, we've hit a resolution error.
-			syntaxError(e.getMessage(), filename, s);			
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+					filename, s);			
 		}
 	}	
 
@@ -206,7 +211,7 @@ public class NameResolution {
 					tg.fields.set(i,new LocalVariable(v.var,e.attributes()));
 					environment.put(v.var, Collections.EMPTY_SET);
 				} else {
-					syntaxError("variable expected",filename,e);
+					syntaxError(errorMessage(INVALID_TUPLE_LVAL), filename, e);
 				}
 			}
 		} else {
@@ -275,7 +280,7 @@ public class NameResolution {
 		for (Stmt.Catch c : s.catches) {
 			environment = new HashMap<String, Set<Expr>>(environment);
 			if (environment.containsKey(c.variable)) {
-				syntaxError("variable " + c.variable + " is alreaded defined",
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, c.variable),
 						filename, s);
 			}
 			environment.put(c.variable, Collections.EMPTY_SET);
@@ -307,7 +312,7 @@ public class NameResolution {
 		environment = new HashMap<String,Set<Expr>>(environment);
 		for(String var : s.variables) {
 			if (environment.containsKey(var)) {
-				syntaxError("variable " + var + " is alreaded defined",
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
 						filename, s);
 			}
 			environment.put(var, Collections.EMPTY_SET);
@@ -352,7 +357,7 @@ public class NameResolution {
 			} else if(e instanceof FunConst) {
 				e = resolve((FunConst) e, environment, imports);
 			} else {				
-				syntaxError("unknown expression encountered: "
+				internalFailure("unknown expression encountered: "
 							+ e.getClass().getName(), filename, e);								
 			}
 		} catch(ResolveError re) {
@@ -434,12 +439,12 @@ public class NameResolution {
 				return new PackageAccess(pid, v.attributes());
 			}
 			// ok, failed.
-			syntaxError("unknown variable encountered", filename, v);			
+			syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v);			
 		} else if (aliases.size() == 1) {			
 			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
-			syntaxError("fix up aliases",filename,v);
+			internalFailure("fix up aliases",filename,v);
 		} else if (aliases.size() > 1) {
-			syntaxError("ambigous variable name", filename, v);
+			syntaxError(errorMessage(AMBIGUOUS_VARIABLE), filename, v);
 		} else {
 			// following signals a local variable	
 			return new LocalVariable(v.var,v.attributes());
@@ -488,7 +493,7 @@ public class NameResolution {
 		for(int i=0;i!=e.sources.size();++i) {	
 			Pair<String,Expr> me = e.sources.get(i);
 			if (environment.containsKey(me.first())) {
-				syntaxError("variable " + me.first() + " is alreaded defined",
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, me.first()),
 						filename, e);
 			}
 			Expr me_second = resolve(me.second(),nenv,imports);
@@ -574,7 +579,7 @@ public class NameResolution {
 				pa.pid = pid;
 				return pa;
 			} else {
-				syntaxError("invalid package access",filename,pa);				
+				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS),filename,pa);				
 			}
 		} else if(sg.lhs instanceof ModuleAccess) {
 			// this indicates we're constructing a constant access
@@ -585,7 +590,7 @@ public class NameResolution {
 					return new ExternalAccess(new NameID(ma.mid,sg.name));
 				}				
 			} catch(ResolveError err) {}			
-			syntaxError("invalid module access",filename,ma);							
+			syntaxError(errorMessage(INVALID_MODULE_ACCESS),filename,ma);						
 		}
 		return sg;		
 	}

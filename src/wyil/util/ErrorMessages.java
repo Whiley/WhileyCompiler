@@ -21,25 +21,61 @@ package wyil.util;
  * 
  */
 public class ErrorMessages {
-
-	public static final int UNKNOWN_WYIL_CODE = 0;
+	
+	public static final int CYCLIC_CONSTANT_DECLARATION = 0;
 	public static final int INVALID_CONSTANT_EXPRESSION = 1;
 	public static final int INVALID_BOOLEAN_EXPRESSION = 2;
 	public static final int INVALID_NUMERIC_EXPRESSION = 3;
-	public static final int INVALID_BINARY_EXPRESSION = 4;
+	public static final int INVALID_BINARY_EXPRESSION = 4;	
 	public static final int INVALID_LIST_EXPRESSION = 5;
 	public static final int INVALID_SET_EXPRESSION = 6;
-	public static final int SUBTYPE_ERROR = 7;
+	public static final int INVALID_LVAL_EXPRESSION = 7;
+	public static final int INVALID_DESTRUCTURE_EXPRESSION = 8;
+	public static final int INVALID_TUPLE_LVAL = 9;
+	public static final int INVALID_MODULE_ACCESS = 10;
+	public static final int INVALID_PACKAGE_ACCESS = 11;	
+	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 12;
+	public static final int RESOLUTION_ERROR = 13;
+	public static final int AMBIGUOUS_VARIABLE = 14;
+	public static final int UNKNOWN_VARIABLE = 15;
+	public static final int UNKNOWN_FUNCTION_OR_METHOD = 16;
+	public static final int VARIABLE_POSSIBLY_UNITIALISED = 17;
+	public static final int VARIABLE_ALREADY_DEFINED = 18;
+	public static final int DUPLICATE_DEFAULT_LABEL = 19;
+	public static final int DUPLICATE_CASE_LABEL = 20;
+	public static final int UNREACHABLE_CODE = 21;
+	public static final int RECEIVER_NOT_PROCESS = 22;	
+	public static final int SUBTYPE_ERROR = 23;
+	public static final int RECORD_TYPE_REQUIRED = 24;
+	public static final int RECORD_MISSING_FIELD = 25;
 	
-		private final static String[] messages = {
-			"unknown wyil bytecode encountered ($1)",
+		private final static String[] messages = {			
+			"cyclic constant expression",
 			"invalid constant expression",
 			"invalid boolean expression",
 			"invalid numeric expression",
-			"invalid binary expression",
+			"invalid binary expression",			
 			"invalid list expression",
 			"invalid set expression",
-			"expected type $1, found $2"
+			"invalid assignment expression",
+			"invalid destructure expression",
+			"invalid tuple lval",
+			"invalid module access",
+			"invalid package access",
+			"break outside switch or loop",
+			"$1", // resolution error
+			"ambiguous variable",
+			"unknown variable",
+			"unknown function or method",
+			"variable may be uninitialised",
+			"variable $1 already defined",
+			"duplicate default label",
+			"duplicate case label",
+			"unreachable code",
+			"method receiver must have process type",
+			"expected type $1, found $2",
+			"record required, got: $1",
+			"record has no field named $1"
 	};
 	
 	/**
