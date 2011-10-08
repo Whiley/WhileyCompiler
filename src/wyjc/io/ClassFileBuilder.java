@@ -1323,10 +1323,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.Swap());
 		// TODO: problem here ... need to swap or something		
 		bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
-		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "getScheduler",
-				new JvmType.Function(WHILEYSCHEDULER), Bytecode.VIRTUAL));
-		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT,
-				WHILEYSCHEDULER);
+		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
 	}
