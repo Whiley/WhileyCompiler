@@ -69,18 +69,9 @@ public abstract class Messager extends Yielder implements Resumable {
 	 */
 	protected boolean shouldResume = false;
 
-	public Messager() {
-		Thread currentThread = Thread.currentThread();
-		if (currentThread instanceof ActorThreadFactory.ActorThread) {
-			System.err.println("Got existing scheduler.");
-			scheduler =
-			    ((ActorThreadFactory.ActorThread) currentThread).getScheduler();
-		} else {
-			System.err.println("Made new scheduler");
-			scheduler = new Scheduler();
-		}
-	}
-	
+	/**
+	 * @param scheduler The scheduler to use for concurrency
+	 */
 	protected Messager(Scheduler scheduler) {
 		this.scheduler = scheduler;
 	}

@@ -8,7 +8,7 @@ import java.lang.reflect.InvocationTargetException;
  * real thread, allowing large amounts to be created and used.
  * 
  * If <code>Strand</code> is instantiated, it will perform exactly like an
- * actor, except it has not internal state.
+ * actor, except it has no internal state.
  * 
  * @author Timothy Jones
  */
@@ -16,14 +16,15 @@ public class Strand extends Messager {
 
 	private long wakeAt = -1;
 	
-	public Strand() {}
-	
+	/**
+	 * @param scheduler The scheduler to use for concurrency
+	 */
 	protected Strand(Scheduler scheduler) {
 		super(scheduler);
 	}
 	
 	/**
-	 * @param milliseconds The number of milliseconds to sleep for.
+	 * @param milliseconds The number of milliseconds to sleep for
 	 */
 	public void sleep(long milliseconds) {
 		shouldYield = true;
