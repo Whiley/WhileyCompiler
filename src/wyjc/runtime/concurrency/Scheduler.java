@@ -84,10 +84,28 @@ public final class Scheduler {
 	 * 
 	 * @param resumable The object to schedule a resume for.
 	 */
-	public void scheduleResume(Resumable resumable) {
+	public void scheduleResume(final Resumable resumable) {
 		increaseCount();
 
-		pool.execute(new Resumer(resumable));
+		pool.execute(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					resumable.resume();
+				} catch (Throwable th) {
+					System.err.println("Warning - actor resumption threw an exception.");
+					th.printStackTrace();
+				}
+
+				decreaseCount();
+
+				if (scheduledCount == 0) {
+					pool.shutdown();
+				}
+			}
+			
+		});
 	}
 
 	/**
@@ -102,43 +120,6 @@ public final class Scheduler {
 	 */
 	private synchronized void decreaseCount() {
 		scheduledCount -= 1;
-	}
-	
-
-	/**
-	 * Handles the resuming of tasks by implementing runnable, allowing it to run
-	 * on a different thread.
-	 * 
-	 * @author Timothy Jones
-	 */
-	private class Resumer implements Runnable {
-
-		// The object to resume.
-		private final Resumable resumable;
-
-		/**
-		 * @param resumable The object to resume.
-		 */
-		public Resumer(Resumable resumable) {
-			this.resumable = resumable;
-		}
-
-		@Override
-		public void run() {
-			try {
-				resumable.resume();
-			} catch (Throwable th) {
-				System.err.println("Warning - actor resumption threw an exception.");
-				th.printStackTrace();
-			}
-
-			decreaseCount();
-
-			if (scheduledCount == 0) {
-				pool.shutdown();
-			}
-		}
-
 	}
 	
 	
