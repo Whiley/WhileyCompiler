@@ -1322,7 +1322,6 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.DupX1());
 		bytecodes.add(new Bytecode.Swap());
 		// TODO: problem here ... need to swap or something		
-		bytecodes.add(new Bytecode.Load(0, WHILEYPROCESS));
 		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYPROCESS, "<init>", ftype,
 				Bytecode.SPECIAL));
