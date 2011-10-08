@@ -25,24 +25,19 @@
 
 package wyjc.runtime;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.math.BigInteger;
-import java.util.HashMap;
-
-import wyjc.runtime.concurrency.Strand;
+import java.math.*;
+import java.util.*;
+import java.io.*;
+import java.lang.reflect.*;
 
 public class IO {
-	public static Actor openReader(Strand currentStrand, String filename) {
+	public static Actor openReader(String filename) {
 		Record r = new Record();
 		try {			
 			FileInputStream fin = new FileInputStream(filename);
 			r.put("fileName", filename);
 			r.put("$fin", fin);
-			Actor p = new Actor(r, currentStrand.getScheduler());
+			Actor p = new Actor(r);
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());			
@@ -50,13 +45,13 @@ public class IO {
 		return null;
 	}
 	
-	public static Actor openWriter(Strand currentStrand, String filename) {
+	public static Actor openWriter(String filename) {
 		Record r = new Record();
 		try {			
 			FileOutputStream fout = new FileOutputStream(filename);
 			r.put("fileName", filename);
 			r.put("$fout", fout);			
-			Actor p = new Actor(r, currentStrand.getScheduler());
+			Actor p = new Actor(r);
 			return p;
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());	

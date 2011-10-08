@@ -16,10 +16,9 @@ public class Strand extends Messager {
 
 	private long wakeAt = -1;
 	
-	/**
-	 * @param scheduler The scheduler to use for threading.
-	 */
-	public Strand(Scheduler scheduler) {
+	public Strand() {}
+	
+	protected Strand(Scheduler scheduler) {
 		super(scheduler);
 	}
 	

@@ -29,14 +29,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * A task scheduler for the actor system that distributes the processes
- * amongst a certain number of threads. Once all threads are busy newly
- * scheduled tasks are delayed until an existing thread becomes available.
+ * A task scheduler for the actor system that distributes the processes amongst
+ * a certain number of threads. Once all threads are busy newly scheduled tasks
+ * are delayed until an existing thread becomes available.
  * 
  * @author Timothy Jones
  */
 public final class Scheduler {
-	
+
 	// Count of the number of scheduled tasks. When it returns to 0, the thread
 	// pool will shut down.
 	private int scheduledCount = 0;
@@ -45,11 +45,11 @@ public final class Scheduler {
 	private ExecutorService pool;
 
 	/**
-	 * Creates a new scheduler with a cached thread pool, meaning threads will
-	 * be booted up as needed, rather than all at once.
+	 * Creates a new scheduler with a cached thread pool, meaning threads will be
+	 * booted up as needed, rather than all at once.
 	 */
 	public Scheduler() {
-		pool = Executors.newCachedThreadPool();
+		pool = Executors.newCachedThreadPool(new ActorThreadFactory(this));
 	}
 
 	/**
@@ -58,7 +58,8 @@ public final class Scheduler {
 	 * @param threadCount The number of threads to have in the pool.
 	 */
 	public Scheduler(int threadCount) {
-		pool = Executors.newFixedThreadPool(threadCount);
+		pool =
+		    Executors.newFixedThreadPool(threadCount, new ActorThreadFactory(this));
 	}
 
 	/**
@@ -84,7 +85,7 @@ public final class Scheduler {
 	 */
 	public void scheduleResume(Resumable resumable) {
 		increaseCount();
-		
+
 		pool.execute(new Resumer(resumable));
 	}
 

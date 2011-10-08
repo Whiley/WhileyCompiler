@@ -37,11 +37,11 @@ public final class Actor extends Strand {
 	
 	private Object state;
 	
-	/**
-	 * @param state The internal state of the actor.
-	 * @param scheduler The scheduler to use for threading.
-	 */
-	public Actor(Object state, Scheduler scheduler) {
+	public Actor(Object state) {
+		this.state = state;
+	}
+	
+	private Actor(Object state, Scheduler scheduler) {
 		super(scheduler);
 		this.state = state;
 	}
