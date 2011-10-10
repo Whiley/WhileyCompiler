@@ -45,7 +45,7 @@ public class Strand extends Messager {
 		}
 		
 		try {
-			Object result = getCurrentMethod().invoke(null, getCurrentArguments());
+			Object result = invokeCurrentMethod();
 
 			if (!isYielded()) {
 				// Completes the message and moves on to the next one.

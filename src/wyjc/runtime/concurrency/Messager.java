@@ -25,6 +25,7 @@
 
 package wyjc.runtime.concurrency;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -132,26 +133,20 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * @param message The message to add
 	 */
 	private void addMessage(Message message) {
-		if (addMessageSynchronized(message)) {
-			scheduleResume();
-		}
-	}
+		boolean resume;
 
-	/**
-	 * Adds a message to the queue in a thread-safe manner. If the messager isn't
-	 * currently working on a message, this method will instead immediately place
-	 * it into <code>currentMessage</code>.
-	 * 
-	 * @param message The message to add
-	 * @return Whether the added message is now the current message
-	 */
-	private synchronized boolean addMessageSynchronized(Message message) {
-		if (currentMessage == null) {
-			currentMessage = message;
-			return true;
-		} else {
-			mail.add(message);
-			return false;
+		synchronized (this) {
+			if (currentMessage == null) {
+				currentMessage = message;
+				resume = true;
+			} else {
+				mail.add(message);
+				resume = false;
+			}
+		}
+
+		if (resume) {
+			scheduleResume();
 		}
 	}
 
@@ -161,37 +156,25 @@ public abstract class Messager extends Yielder implements Resumable {
 	 * resume once it reaches a ready state.
 	 */
 	protected void scheduleResume() {
-		if (ensureReady()) {
-			return;
+		synchronized (this) {
+			if (!ready) {
+				shouldResume = true;
+				return;
+			}
+			
+			shouldResume = false;
 		}
 
-		shouldResume = false;
 		scheduler.scheduleResume(this);
 	}
 
 	/**
-	 * A synchronised method that checks if the messager is ready to resume. If
-	 * not, it remembers that a resumption was attempted, and informs the messager
-	 * that it should resume immediately on becoming ready.
-	 * 
-	 * @return Whether the messager is currently ready
-	 */
-	private synchronized boolean ensureReady() {
-		if (!ready) {
-			shouldResume = true;
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
 	 * Sets the messager as ready to resume, and returns whether the messager
-	 * should resume immediately.
+	 * should schedule a resumption immediately.
 	 * 
 	 * The reason this dual functionality is composed into a single method is that
-	 * a race condition can occur in trying to separate them out into two, as a
-	 * resumption can arrive during the setting of the ready state.
+	 * a race condition can occur in trying to separate them out into two,
+	 * otherwise a resumption can arrive during the change in the ready state.
 	 * 
 	 * @return Whether the messager should resume as a result of being ready
 	 */
@@ -201,19 +184,18 @@ public abstract class Messager extends Yielder implements Resumable {
 	}
 
 	/**
-	 * @return The entry method of this messager's current message
-	 * @throws NullPointerException There is no current message
+	 * Invokes the method passed by the current message with the arguments passed
+	 * by the current message.
+	 * 
+	 * Note that this intentionally does not address the fact that the current
+	 * message doesn't always exist, and so should only be called when it is
+	 * certain to exist.
+	 * 
+	 * @return The result of the invocation.
 	 */
-	protected Method getCurrentMethod() throws NullPointerException {
-		return currentMessage.method;
-	}
-
-	/**
-	 * @return The entry arguments of this messager's current message
-	 * @throws NullPointerException There is no current message
-	 */
-	protected Object[] getCurrentArguments() throws NullPointerException {
-		return currentMessage.arguments;
+	protected Object invokeCurrentMethod() throws IllegalAccessException,
+	    IllegalArgumentException, InvocationTargetException {
+		return currentMessage.method.invoke(null, currentMessage.arguments);
 	}
 
 	/**
@@ -251,17 +233,27 @@ public abstract class Messager extends Yielder implements Resumable {
 		nextMessage();
 	}
 
-	private synchronized void nextMessage() {
+	private void nextMessage() {
 		if (currentMessage instanceof SyncMessage) {
 			((SyncMessage) currentMessage).sender.scheduleResume();
 		}
 
-		if (mail.isEmpty()) {
-			currentMessage = null;
-			// Threads can block while this messager is busy with the wait method.
-			notifyAll();
-		} else {
-			currentMessage = mail.poll();
+		boolean resume;
+
+		synchronized (this) {
+			if (mail.isEmpty()) {
+				currentMessage = null;
+				resume = false;
+
+				// Threads can block while this messager is busy with the wait method.
+				notifyAll();
+			} else {
+				currentMessage = mail.poll();
+				resume = true;
+			}
+		}
+
+		if (resume) {
 			scheduleResume();
 		}
 	}

@@ -28,6 +28,7 @@ package wyjc.runtime.concurrency;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A task scheduler for the actor system that distributes the processes amongst
@@ -85,7 +86,9 @@ public final class Scheduler {
 	 * @param resumable The object to schedule a resume for.
 	 */
 	public void scheduleResume(final Resumable resumable) {
-		increaseCount();
+		synchronized (this) {
+			scheduledCount += 1;
+		}
 
 		pool.execute(new Runnable() {
 			
@@ -98,7 +101,9 @@ public final class Scheduler {
 					th.printStackTrace();
 				}
 
-				decreaseCount();
+				synchronized (Scheduler.this) {
+					scheduledCount -= 1;
+				}
 
 				if (scheduledCount == 0) {
 					pool.shutdown();
@@ -106,20 +111,6 @@ public final class Scheduler {
 			}
 			
 		});
-	}
-
-	/**
-	 * Synchronises the increasing of the scheduled counter.
-	 */
-	private synchronized void increaseCount() {
-		scheduledCount += 1;
-	}
-
-	/**
-	 * Synchronises the decreasing of the scheduled counter.
-	 */
-	private synchronized void decreaseCount() {
-		scheduledCount -= 1;
 	}
 	
 	
