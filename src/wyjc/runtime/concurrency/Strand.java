@@ -37,6 +37,7 @@ public class Strand extends Messager {
 	public void resume() {
 		if (wakeAt != -1) {
 			if (System.currentTimeMillis() < wakeAt) {
+				scheduleResume();
 				return;
 			} else {
 				wakeAt = -1;
@@ -49,11 +50,9 @@ public class Strand extends Messager {
 			if (!isYielded()) {
 				// Completes the message and moves on to the next one.
 				completeCurrentMessage(result);
-			} else {
-				if (readyToResume()) {
-					// Readies the actor for another resumption.
-					scheduleResume();
-				}
+			} else if (readyToResume()) {
+				// Readies the actor for another resumption.
+				scheduleResume();
 			}
 		} catch (IllegalArgumentException iax) {
 			// Not possible - caught by the language compiler.
