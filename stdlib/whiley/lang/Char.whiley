@@ -36,3 +36,6 @@ public bool isLetter(char c):
 
 public bool isDigit(char c):
     return '0' <= c && c <= '9'
+
+bool isWhiteSpace(char c):
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r'
