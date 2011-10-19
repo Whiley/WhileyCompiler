@@ -117,7 +117,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			if (!(method.type() instanceof Type.Method)
 					&& Type.isCoerciveSubtype(Type.Process(Type.T_ANY), t)) {
 				// FIXME: add source information
-				syntaxError("function argument cannot have process type",
+				syntaxError(errorMessage(PROCESS_NOT_PERMITTED_IN_FUNCTION),
 						filename, methodCase);
 			}
 		}				
@@ -276,7 +276,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(code instanceof Throw) {
 			code = infer((Throw)code,entry,environment);
 		} else {
-			syntaxError("Unknown wyil code encountered: " + code,filename,entry);
+			internalFailure("Unknown wyil code encountered: " + code,filename,entry);
 			return null;
 		}
 		
@@ -721,7 +721,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else if(Type.isSubtype(Type.List(Type.T_ANY),iter)) {			
 				Type.List list = Type.effectiveListType(iter);			
 				if(list == null) {
-					syntaxError("expected list",filename,stmt);
+					syntaxError(errorMessage(INVALID_LIST_EXPRESSION),
+							filename, stmt);
 				}
 				Type idx = path.get(pi++);
 				checkIsSubtype(Type.T_INT,idx,stmt);				
@@ -1078,7 +1079,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
 				result = rhs;				
 			} else {
-				syntaxError("invalid set operation on types",filename,stmt);
+				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
 				result = null;
 			}						
 		} else if(dir == OpDir.LEFT && lhs_set) {
@@ -1086,7 +1087,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(dir == OpDir.RIGHT && rhs_set) {
 			result = Type.Union(Type.Set(lhs),rhs);			
 		} else {
-			syntaxError("expecting set type",filename,stmt);
+			syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);			
 			return null; // dead-code
 		}
 				
@@ -1138,7 +1139,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(lhs,rhs,stmt);
 			result = lhs;			
 		} else {
-			syntaxError("expecting set type",filename,stmt);
+			syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
 			return null; // dead-code
 		}
 				
@@ -1197,11 +1198,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else if(rhs_t instanceof Type.Set){
 				element = ((Type.Set)rhs_t).element();
 			} else {
-				syntaxError("expected set or list, found: " + rhs_t,filename,stmt);
+				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
 				return null;
 			}
 			if (!Type.isCoerciveSubtype(element, lhs_t)) {
-				syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs_t, rhs_t),
 						filename, stmt);
 			}			
 			lub = rhs_t;
@@ -1210,8 +1211,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(Type.isCoerciveSubtype(rhs_t, lhs_t)) {
 			lub = rhs_t;
 		} else {
-			syntaxError("incomparable types: " + lhs_t + " and " + rhs_t,
-					filename, stmt);
+			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs_t, rhs_t),
+					filename, stmt);			
 			lub = null; // unreachable
 		}
 		
@@ -1261,10 +1262,12 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		
 		if(Type.isSubtype(code.test,lhs_t)) {								
 			// DEFINITE TRUE CASE										
-			syntaxError("branch always taken",filename,methodCase.body().get(index));
+			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), filename, methodCase
+					.body().get(index));
 		} else if (glb == Type.T_VOID) {				
-			// DEFINITE FALSE CASE				
-			syntaxError("incomparable operands: " + lhs_t + " and " + code.test,filename,stmt);
+			// DEFINITE FALSE CASE	
+			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs_t, code.test),
+					filename, stmt);			
 		} else {
 			ncode = Code.IfType(lhs_t, code.slot, code.test, code.target);				
 			trueEnv = new Env(environment);
@@ -1336,7 +1339,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type.Dictionary d = (Type.Dictionary) src_t;			
 			elem_t = Type.Tuple(d.key(),d.value());
 		} else {
-			syntaxError("expected set or list, found: " + src_t,filename,stmt);
+			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);			
 			return null; // deadcode
 		}
 		
@@ -1590,7 +1593,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	// Check t1 :> t2
 	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (!Type.isCoerciveSubtype(t1, t2)) {
+		if (!Type.isCoerciveSubtype(t1, t2)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
 		}
 	}

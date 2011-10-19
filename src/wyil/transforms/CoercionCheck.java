@@ -2,6 +2,7 @@ package wyil.transforms;
 
 import java.util.*;
 import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.ErrorMessages.*;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
@@ -181,9 +182,8 @@ public class CoercionCheck implements Transform {
 			for(Type b : t2.bounds()) {
 				if(Type.isSubtype(b,from)) {
 					if(match != null) {
-						// found ambiguity
-						syntaxError("ambiguous coercion (" + from + " => "
-								+ to, filename, elem);
+						// found ambiguity						
+						syntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), filename, elem);
 					} else {
 						check(from,b,visited,elem);
 						match = b;						

@@ -442,7 +442,7 @@ public class ClassFileBuilder {
 			} else if(code instanceof Throw) {
 				 translate((Throw)code,freeSlot,bytecodes);
 			} else {
-				syntaxError("unknown wyil code encountered (" + code + ")", filename, entry);
+				internalFailure("unknown wyil code encountered (" + code + ")", filename, entry);
 			}
 			
 		} catch (SyntaxError ex) {
@@ -768,7 +768,7 @@ public class ClassFileBuilder {
 				op = Bytecode.IfCmp.GE;
 				break;
 			default:
-				syntaxError("unknown if condition encountered",filename,stmt);
+				internalFailure("unknown if condition encountered",filename,stmt);
 				return;
 			}
 			bytecodes.add(new Bytecode.IfCmp(op, T_BYTE,c.target));
@@ -1213,7 +1213,7 @@ public class ClassFileBuilder {
 					"rightshift", ftype, Bytecode.STATIC));
 			break;
 		default:
-			syntaxError("unknown binary expression encountered",filename,stmt);
+			internalFailure("unknown binary expression encountered",filename,stmt);
 		}		
 	}
 

@@ -34,6 +34,7 @@ import wyil.util.dfa.*;
 import wyil.lang.*;
 import static wyil.lang.Block.*;
 import static wyil.util.SyntaxError.*;
+import static wyil.util.ErrorMessages.*;
 
 /**
  * <p>
@@ -92,7 +93,7 @@ public class DefiniteAssignment extends
 		} else if(code instanceof Code.Load) {
 			Code.Load load = (Code.Load) code;
 			if(!in.contains(load.slot)) {
-				syntaxError("variable might not be initialised",
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 						filename, entry);
 			}
 		}		

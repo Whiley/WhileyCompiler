@@ -25,7 +25,7 @@
 
 package wyil.transforms;
 
-import static wyil.util.SyntaxError.syntaxError;
+import static wyil.util.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -215,7 +215,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		} else if(code instanceof Throw) {
 			infer(index,(Throw)code,entry,environment);
 		} else {
-			syntaxError("unknown wyil code encountered: " + code,filename,entry);
+			internalFailure("unknown wyil code encountered: " + code,filename,entry);
 			return null;
 		}	
 		

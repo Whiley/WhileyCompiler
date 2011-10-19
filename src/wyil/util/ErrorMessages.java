@@ -46,12 +46,20 @@ public class ErrorMessages {
 	public static final int DUPLICATE_DEFAULT_LABEL = 21;
 	public static final int DUPLICATE_CASE_LABEL = 22;
 	public static final int UNREACHABLE_CODE = 23;
-	public static final int RECEIVER_NOT_PROCESS = 24;	
-	public static final int SUBTYPE_ERROR = 25;
-	public static final int RECORD_TYPE_REQUIRED = 26;
-	public static final int RECORD_MISSING_FIELD = 27;
-	public static final int RETURN_FROM_VOID = 28;
-	public static final int MISSING_RETURN_VALUE = 28;
+	public static final int RECEIVER_NOT_PROCESS = 24;
+	public static final int PROCESS_NOT_PERMITTED_IN_FUNCTION = 25;
+	public static final int SEND_NOT_PERMITTED_IN_FUNCTION = 26;
+	public static final int METHODCALL_NOT_PERMITTED_IN_FUNCTION = 27;
+	public static final int SPAWN_NOT_PERMITTED_IN_FUNCTION = 28;
+	public static final int PROCESS_ACCESS_NOT_PERMITTED_IN_FUNCTION = 29;
+	public static final int SUBTYPE_ERROR = 30;
+	public static final int INCOMPARABLE_OPERANDS = 31;
+	public static final int RECORD_TYPE_REQUIRED = 32;
+	public static final int RECORD_MISSING_FIELD = 33;
+	public static final int RETURN_FROM_VOID = 34;
+	public static final int MISSING_RETURN_VALUE = 35;
+	public static final int BRANCH_ALWAYS_TAKEN = 36;
+	public static final int AMBIGUOUS_COERCION = 37;	                        
 	
 		private final static String[] messages = {			
 			"cyclic constant expression",
@@ -69,21 +77,29 @@ public class ErrorMessages {
 			"invalid module access",
 			"invalid package access",
 			"break outside switch or loop",
-			"$1", // resolution error
+			"$0", // resolution error
 			"ambiguous variable",
 			"unknown variable",
 			"unknown function or method",
 			"variable may be uninitialised",
-			"variable $1 already defined",
+			"variable $0 already defined",
 			"duplicate default label",
 			"duplicate case label",
 			"unreachable code",
 			"method receiver must have process type",
-			"expected type $1, found $2",
-			"record required, got: $1",
-			"record has no field named $1",
+			"process not permitted in function",
+			"message send not permitted in function",
+			"method invocation not permitted in function",
+			"process spawning not permitted in function",
+			"process access not permitted in function",
+			"expected type $0, found $1",
+			"incomparable operands: $0 and $1",
+			"record required, got: $0",
+			"record has no field named $0",
 			"cannot return value from method with void return type",
-			"missing return value"
+			"missing return value",
+			"branch always taken",
+			"ambiguous coercion (from $0 to $1)"
 	};
 	
 	/**
@@ -101,7 +117,7 @@ public class ErrorMessages {
 		}
 		String r = messages[kind];
 		for (int i = 0; i != data.length; ++i) {
-			r = r.replaceAll("$" + i, data.toString());
+			r = r.replaceAll("\\$" + i, data[i].toString());			
 		}
 		return r;		
 	}
