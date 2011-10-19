@@ -29,25 +29,29 @@ public class ErrorMessages {
 	public static final int INVALID_BINARY_EXPRESSION = 4;	
 	public static final int INVALID_LIST_EXPRESSION = 5;
 	public static final int INVALID_SET_EXPRESSION = 6;
-	public static final int INVALID_LVAL_EXPRESSION = 7;
-	public static final int INVALID_DESTRUCTURE_EXPRESSION = 8;
-	public static final int INVALID_TUPLE_LVAL = 9;
-	public static final int INVALID_MODULE_ACCESS = 10;
-	public static final int INVALID_PACKAGE_ACCESS = 11;	
-	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 12;
-	public static final int RESOLUTION_ERROR = 13;
-	public static final int AMBIGUOUS_VARIABLE = 14;
-	public static final int UNKNOWN_VARIABLE = 15;
-	public static final int UNKNOWN_FUNCTION_OR_METHOD = 16;
-	public static final int VARIABLE_POSSIBLY_UNITIALISED = 17;
-	public static final int VARIABLE_ALREADY_DEFINED = 18;
-	public static final int DUPLICATE_DEFAULT_LABEL = 19;
-	public static final int DUPLICATE_CASE_LABEL = 20;
-	public static final int UNREACHABLE_CODE = 21;
-	public static final int RECEIVER_NOT_PROCESS = 22;	
-	public static final int SUBTYPE_ERROR = 23;
-	public static final int RECORD_TYPE_REQUIRED = 24;
-	public static final int RECORD_MISSING_FIELD = 25;
+	public static final int INVALID_SET_OR_LIST_EXPRESSION = 7;
+	public static final int INVALID_DICTIONARY_EXPRESSION = 8;
+	public static final int INVALID_LVAL_EXPRESSION = 9;
+	public static final int INVALID_DESTRUCTURE_EXPRESSION = 10;
+	public static final int INVALID_TUPLE_LVAL = 12;
+	public static final int INVALID_MODULE_ACCESS = 13;
+	public static final int INVALID_PACKAGE_ACCESS = 14;	
+	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 14;
+	public static final int RESOLUTION_ERROR = 15;
+	public static final int AMBIGUOUS_VARIABLE = 16;
+	public static final int UNKNOWN_VARIABLE = 17;
+	public static final int UNKNOWN_FUNCTION_OR_METHOD = 18;
+	public static final int VARIABLE_POSSIBLY_UNITIALISED = 19;
+	public static final int VARIABLE_ALREADY_DEFINED = 20;
+	public static final int DUPLICATE_DEFAULT_LABEL = 21;
+	public static final int DUPLICATE_CASE_LABEL = 22;
+	public static final int UNREACHABLE_CODE = 23;
+	public static final int RECEIVER_NOT_PROCESS = 24;	
+	public static final int SUBTYPE_ERROR = 25;
+	public static final int RECORD_TYPE_REQUIRED = 26;
+	public static final int RECORD_MISSING_FIELD = 27;
+	public static final int RETURN_FROM_VOID = 28;
+	public static final int MISSING_RETURN_VALUE = 28;
 	
 		private final static String[] messages = {			
 			"cyclic constant expression",
@@ -57,6 +61,8 @@ public class ErrorMessages {
 			"invalid binary expression",			
 			"invalid list expression",
 			"invalid set expression",
+			"invalid set or list expression",
+			"invalid dictionary expression",
 			"invalid assignment expression",
 			"invalid destructure expression",
 			"invalid tuple lval",
@@ -75,7 +81,9 @@ public class ErrorMessages {
 			"method receiver must have process type",
 			"expected type $1, found $2",
 			"record required, got: $1",
-			"record has no field named $1"
+			"record has no field named $1",
+			"cannot return value from method with void return type",
+			"missing return value"
 	};
 	
 	/**

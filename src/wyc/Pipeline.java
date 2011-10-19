@@ -55,9 +55,8 @@ public class Pipeline {
 					// Constant Propagation is disabled as there are some
 					// serious problems with that phase.
 					//add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
-					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
-					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
-					add(new Template(WyilFileWriter.class, Collections.EMPTY_MAP));					
+					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));					
+					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));									
 				}
 			});
 

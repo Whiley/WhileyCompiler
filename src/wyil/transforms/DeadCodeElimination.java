@@ -58,6 +58,7 @@ public class DeadCodeElimination implements Transform {
 		visited.set(0);
 		while(!worklist.isEmpty()) {
 			int index = worklist.pop();
+					
 			Code code = block.get(index).code;
 			
 			if(code instanceof Code.Goto) {
@@ -86,8 +87,10 @@ public class DeadCodeElimination implements Transform {
 			} else if(code instanceof Code.Throw || code instanceof Code.Return) {
 				// terminating bytecode
 			} else {
-				// sequential bytecode
-				addTarget(index+1,visited,worklist);				
+				// sequential bytecode	
+				if((index+1) < block.size()) {
+					addTarget(index+1,visited,worklist);
+				}
 			}
 		}
 		
@@ -108,7 +111,7 @@ public class DeadCodeElimination implements Transform {
 		for(int i=0;i!=block.size();++i) {
 			Code c = block.get(i).code;
 			if(c instanceof Code.Label) {
-				Code.Label l = (Code.Label) c;
+				Code.Label l = (Code.Label) c;				
 				map.put(l.label,i);
 			}
 		}
@@ -117,7 +120,7 @@ public class DeadCodeElimination implements Transform {
 	
 	private static void addTarget(int index, BitSet visited, Stack<Integer> worklist) {
 		if(!visited.get(index)) {
-			visited.set(index);
+			visited.set(index);			
 			worklist.push(index);
 		}
 	}

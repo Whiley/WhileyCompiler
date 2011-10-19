@@ -516,7 +516,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			syntaxError(msg + "\n",filename,elem);
 		} catch(ResolveError ex) {
-			syntaxError(ex.getMessage(),filename,elem);				
+			syntaxError(errorMessage(RESOLUTION_ERROR, ex.getMessage()),filename,elem);				
 		}			
 		return null;
 	}
@@ -627,7 +627,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			return Code.Invoke(funtype, ivk.name, ivk.retval);			
 		} catch (ResolveError ex) {
-			syntaxError(ex.getMessage(), filename, stmt);
+			syntaxError(errorMessage(RESOLUTION_ERROR, ex.getMessage()),
+					filename, stmt);
 			return null; // unreachable
 		}		
 	}
@@ -672,7 +673,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			// this indicates a dictionary access, rather than a list access			
 			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
 			if(dict == null) {
-				syntaxError("expected dictionary",filename,stmt);
+				syntaxError(errorMessage(INVALID_DICTIONARY_EXPRESSION),filename,stmt);
 			}
 			checkIsSubtype(dict.key(),idx,stmt);
 			environment.push(dict.value());
@@ -685,7 +686,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else {		
 			Type.List list = Type.effectiveListType(src);			
 			if(list == null) {
-				syntaxError("expected list",filename,stmt);
+				syntaxError(errorMessage(INVALID_LIST_EXPRESSION),filename,stmt);				
 			}			
 			checkIsSubtype(Type.T_INT,idx,stmt);
 			environment.push(list.element());
@@ -987,7 +988,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			}
 			return Code.Send(funtype, ivk.name, ivk.synchronous, ivk.retval);			
 		} catch (ResolveError ex) {
-			syntaxError(ex.getMessage(), filename, stmt);
+			syntaxError(errorMessage(RESOLUTION_ERROR,ex.getMessage()), filename, stmt);
 			return null; // unreachable
 		}		
 	}
@@ -1010,7 +1011,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.add(Type.T_INT);
 			return Code.SetLength(Type.effectiveSetType(src));
 		} else {
-			syntaxError("expected list or set, found " + src,filename,stmt);
+			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
 			return null;
 		}
 	}
@@ -1042,7 +1043,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(environment.size() > methodCase.body().numSlots()) {			
 			if(ret_t == Type.T_VOID) {
 				syntaxError(
-						"cannot return value from method with void return type",
+						errorMessage(RETURN_FROM_VOID),
 						filename, stmt);
 			}
 			
@@ -1050,7 +1051,8 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			checkIsSubtype(ret_t,rhs_t,stmt);
 		} else if(ret_t != Type.T_VOID) {
 			syntaxError(
-					"missing return value",filename, stmt);
+					errorMessage(MISSING_RETURN_VALUE),
+					filename, stmt);			
 		}
 		
 		return Code.Return(ret_t);
@@ -1108,11 +1110,11 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
 				result = rhs;				
 			} else {
-				syntaxError("invalid set operation on types",filename,stmt);
+				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
 				result = null;
 			}						
 		} else {
-			syntaxError("expecting set type",filename,stmt);
+			syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
 			return null; // dead-code
 		}
 				

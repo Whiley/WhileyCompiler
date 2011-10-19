@@ -137,7 +137,8 @@ public class NameResolution {
 				resolve(md.receiver, imports);			
 			} catch (ResolveError e) {
 				// Ok, we've hit a resolution error.
-				syntaxError(e.getMessage(),filename,md.receiver);
+				syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+						filename, md.receiver);
 			}
 		}
 		
