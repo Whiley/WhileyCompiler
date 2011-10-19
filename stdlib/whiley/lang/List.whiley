@@ -14,3 +14,12 @@ public [int] create(int size, int element):
         r = r + [element]
         i = i + 1
     return r 
+
+public [bool] create(int size, bool element):
+    r = []
+    i = 0
+    while i < size:
+        r = r + [element]
+        i = i + 1
+    return r 
+
