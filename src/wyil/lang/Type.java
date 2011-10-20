@@ -210,12 +210,14 @@ public abstract class Type {
 			Type[] rparams = new Type[params.length+2];		
 			System.arraycopy(params, 0, rparams, 2, params.length);			
 			rparams[0] = ret;
+			rparams[1] = T_VOID; // throws clause
 			return construct(K_HEADLESS, null, rparams);						
 		} else {
 			Type[] rparams = new Type[params.length+3];		
 			System.arraycopy(params, 0, rparams, 3, params.length);
 			rparams[0] = receiver;
 			rparams[1] = ret;
+			rparams[2] = T_VOID; // throws clause
 			return construct(K_METHOD, null, rparams);
 		}
 	}
@@ -1167,6 +1169,16 @@ public abstract class Type {
 			int[] fields = automata.states[0].children;
 			return construct(Automatas.extract(automata, fields[0]));
 		}	
+
+		/**
+		 * Get the throws clause of this function type.
+		 * 
+		 * @return
+		 */
+		public Type throwsClause() {
+			int[] fields = automata.states[0].children;
+			return construct(Automatas.extract(automata, fields[1]));
+		}
 		
 		/**
 		 * Get the parameter types of this function type.
@@ -1205,7 +1217,7 @@ public abstract class Type {
 		}
 		
 		/**
-		 * Get the return type of this function type.
+		 * Get the return type of this method type.
 		 * 
 		 * @return
 		 */
@@ -1213,6 +1225,18 @@ public abstract class Type {
 			Automata.State root = automata.states[0];
 			int[] fields = root.children;
 			int start = root.kind == K_HEADLESS ? 0 : 1;
+			return construct(Automatas.extract(automata, fields[start]));
+		}	
+		
+		/**
+		 * Get the throws clause for this method type.
+		 * 
+		 * @return
+		 */
+		public Type throwsClause() {
+			Automata.State root = automata.states[0];
+			int[] fields = root.children;
+			int start = root.kind == K_HEADLESS ? 1 : 2;
 			return construct(Automatas.extract(automata, fields[start]));
 		}	
 		
@@ -1353,6 +1377,7 @@ public abstract class Type {
 				start++;
 			}
 			String ret = toString(children[start], visited, headers, automata);
+			String thros = toString(children[start+1], visited, headers, automata);
 			boolean firstTime=true;
 			for (int i = start+2; i != children.length; ++i) {
 				if (!firstTime) {
@@ -1367,6 +1392,9 @@ public abstract class Type {
 				middle = rec + "::" + ret + "(" + middle + ")";
 			} else {
 				middle = "::" + ret + "(" + middle + ")";
+			}
+			if(!thros.equals("void")) {
+				middle = middle + " throws " + thros;
 			}
 			break;
 		}		
