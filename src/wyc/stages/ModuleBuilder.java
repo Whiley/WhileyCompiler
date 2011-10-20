@@ -972,7 +972,7 @@ public class ModuleBuilder {
 	
 	protected Block resolve(Throw s, HashMap<String,Integer> environment) {
 		Block blk = resolve(s.expr, environment);
-		blk.append(Code.Throw(null));
+		blk.append(Code.Throw(null), s.attributes());
 		return blk;
 	}
 	
