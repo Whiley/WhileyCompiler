@@ -25,7 +25,7 @@
 
 package whiley.lang
 
-define Error as { string msg }
+import * from whiley.lang.Errors
 
 public string str(any item):
     if item is null:
@@ -93,12 +93,12 @@ public string fromASCII([byte] data):
 
 
 // Convert a string into an integer
-public int toInt(string input) throws Error:
+public int toInt(string input) throws SyntaxError:
     r = 0
     for i in 0..|input|:
         c = input[i]
         r = r * 10
         if !Char.isDigit(c):
-            throw { msg: "invalid number string (" + String.str(input) + ")" }
+            throw SyntaxError("invalid number string",i,i)
         r = r + (c - '0')
     return r

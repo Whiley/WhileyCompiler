@@ -32,6 +32,7 @@ import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import wyil.util.Pair;
+import wyil.util.SyntaxError;
 import static wyil.util.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
@@ -44,8 +45,11 @@ import static wyil.util.ErrorMessages.*;
  * <li><b>Functions cannot have side-effects</b>. This includes sending messages
  * to actors, calling headless methods and spawning processes.</li>
  * <li><b>Functions/Methods cannot throw exceptions unless they are
- * declared</b>. Thus, if a method or function throws an exception an appropriate
- * throws clause is required.
+ * declared</b>. Thus, if a method or function throws an exception an
+ * appropriate throws clause is required.
+ * <li><b>Every catch handler must catch something</b>. It is a syntax error if
+ * a catch handler exists which can never catch anything (i.e. it is dead-code).
+ * </li>
  * </ul>
  * 
  * @author djp
@@ -93,44 +97,52 @@ public class ModuleCheck implements Transform {
 	protected void checkTryCatchBlocks(int start, int end, Module.Case c,
 			Handler handler) {
 		Block block = c.body();
-		for (int i = start; i != end; ++i) {
+		for (int i = start; i < end; ++i) {
 			Block.Entry entry = block.get(i);
-			Code code = entry.code;
+			
+			try {
 
-			if (code instanceof TryCatch) {
-				TryCatch sw = (TryCatch) code;
-				int s = start;
-				// Note, I could make this more efficient!					
-				while (++i < block.size()) {
-					entry = block.get(i);
-					if (entry.code instanceof Code.Label) {
-						Code.Label l = (Code.Label) entry.code;
-						if (l.label.equals(sw.target)) {
-							// end of loop body found
-							break;
-						}
-					}						
-				}
-				Handler nhandler = new Handler(sw.catches,handler);
-				checkTryCatchBlocks(s + 1, i, c, nhandler);
-				// now we need to check that every handler is, in fact,
-				// reachable.
-				for(Pair<Type,String> p : sw.catches) {
-					if(!nhandler.active.contains(p.first())) {
-						// FIXME: better error message which focuses on the
-						// actual handler is required.
-						syntaxError(
-								errorMessage(UNREACHABLE_CODE),
-								filename, entry);
+				Code code = entry.code;
+
+				if (code instanceof TryCatch) {
+					TryCatch sw = (TryCatch) code;
+					int s = start;
+					// Note, I could make this more efficient!					
+					while (++i < block.size()) {
+						entry = block.get(i);
+						if (entry.code instanceof Code.Label) {
+							Code.Label l = (Code.Label) entry.code;
+							if (l.label.equals(sw.target)) {
+								// end of loop body found
+								break;
+							}
+						}						
 					}
+					Handler nhandler = new Handler(sw.catches,handler);
+					checkTryCatchBlocks(s + 1, i, c, nhandler);
+					// now we need to check that every handler is, in fact,
+					// reachable.
+					for(Pair<Type,String> p : sw.catches) {
+						if(!nhandler.active.contains(p.first())) {
+							// FIXME: better error message which focuses on the
+							// actual handler is required.
+							syntaxError(
+									errorMessage(UNREACHABLE_CODE),
+									filename, entry);
+						}
+					}
+				} else {
+					Type ex = thrownException(code);				
+					if (ex != Type.T_VOID && !handler.catchException(ex)) {
+						syntaxError(
+								errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
+								filename, entry);
+					}				
 				}
-			} else {
-				Type ex = thrownException(code);				
-				if (ex != Type.T_VOID && !handler.catchException(ex)) {
-					syntaxError(
-							errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
-							filename, entry);
-				}				
+			} catch(SyntaxError ex) {
+				throw ex;
+			} catch(Throwable ex) {
+				internalFailure(ex.getMessage(),filename,entry,ex);
 			}
 		}
 	}
