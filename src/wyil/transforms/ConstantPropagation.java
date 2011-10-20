@@ -122,6 +122,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	*/
 	
 
+	@Override
 	public Env propagate(int index, Entry entry, Env environment) {						
 		Code code = entry.code;			
 		
@@ -996,6 +997,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		environment.push(result);
 	}	
 	
+	@Override
 	public Pair<Env, Env> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
@@ -1009,6 +1011,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return new Pair(environment, environment);
 	}
 	
+	@Override
 	public Pair<Env, Env> propagate(int index,
 			Code.IfType code, Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
@@ -1020,6 +1023,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return new Pair(environment, environment);
 	}
 	
+	@Override
 	public List<Env> propagate(int index, Code.Switch sw,
 			Entry stmt, Env environment) {
 		environment = (Env) environment.clone();
@@ -1033,14 +1037,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		return stores;
 	}
-	
-	public Env propagate(int index, Code.TryCatch sw, Type handler,
-			Entry stmt, Env environment) {		
+
+	@Override
+	public Env propagate(Code code, Type handler, Env environment) {		
 		Env catchEnvironment = (Env) environment.clone();		
 		catchEnvironment.push(null); // the exception value
 		return catchEnvironment;
 	}
 	
+	@Override
 	public Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 		

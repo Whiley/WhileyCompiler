@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import wyc.stages.TypePropagation.Env;
 import wyil.ModuleLoader;
 import wyil.Transform;
 import wyil.lang.*;
@@ -210,19 +211,24 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected void mergeHandlers(Code code, T store, List<Pair<Type, String>> handlers,
 			Map<String, T> stores) {
 		if(code instanceof Code.Throw) {
-			Code.Throw t = (Code.Throw) code;			
+			Code.Throw t = (Code.Throw) code;	
+			store = propagate(code,t.type,store);
 			mergeHandler(t.type,store,handlers,stores);
 		} else if(code instanceof Code.IndirectInvoke) {
 			Code.IndirectInvoke i = (Code.IndirectInvoke) code;
+			store = propagate(code,i.type.throwsClause(),store);
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;
+			store = propagate(code,i.type.throwsClause(),store);
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		} else if(code instanceof Code.IndirectSend) {
 			Code.IndirectSend i = (Code.IndirectSend) code;
+			store = propagate(code,i.type.throwsClause(),store);
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		} else if(code instanceof Code.Send) {
 			Code.Send i = (Code.Send) code;
+			store = propagate(code,i.type.throwsClause(),store);
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		}
 	}
@@ -307,21 +313,17 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected abstract List<T> propagate(int index, Code.Switch sw, Entry entry, T store);
 
 	/**
-	 * @param index
-	 *            --- the index of this bytecode in the method's block
-	 * @param tc
-	 *            --- the code of this statement
+	 * Propagate an exception into a catch handler.
+	 * 
+	 * @param cause
+	 *            --- code causing exception
 	 * @param handler
-	 *            --- type being caught            
-	 * @param entry
-	 *            --- block entry for this bytecode
+	 *            --- type of handler catching exception
 	 * @param store
-	 *            --- abstract store which holds true immediately before this
-	 *            statement.
+	 *            --- store immediately before cause
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.TryCatch tc, Type handler,
-			Entry entry, T store);
+	protected abstract T propagate(Code cause, Type handler, T store);
 	
 	/**
 	 * <p>

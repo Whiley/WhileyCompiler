@@ -101,18 +101,21 @@ public class DefiniteAssignment extends
 		return in;
 	}
 		
+	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfGoto igoto, Entry stmt, HashSet<Integer> in) {
 		// nothing to do here
 		return new Pair(in, in);
 	}
-	
+
+	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Code.IfType iftype, Entry stmt, HashSet<Integer> in) {
 		// nothing to do here
 		return new Pair(in,in);
 	}
 	
+	@Override
 	public List<HashSet<Integer>> propagate(int index, Code.Switch sw,
 			Entry stmt, HashSet<Integer> in) {
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
@@ -121,12 +124,14 @@ public class DefiniteAssignment extends
 		}
 		return stores;
 	}
-	
-	public HashSet<Integer> propagate(int index, Code.TryCatch sw,
-			Type handler, Entry stmt, HashSet<Integer> in) {
+
+	@Override
+	public HashSet<Integer> propagate(Code code, Type handler,
+			HashSet<Integer> in) {
 		return in;
 	}
 	
+	@Override
 	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
 			Entry stmt, HashSet<Integer> in, List<Pair<Type, String>> handlers) {
 

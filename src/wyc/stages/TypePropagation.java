@@ -1574,6 +1574,71 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return rs;		
 	}
 	
+
+	@Override
+	protected void mergeHandlers(Code code, Env store, List<Pair<Type, String>> handlers,
+			Map<String, Env> stores) {
+		if(code instanceof Code.Throw) {
+			// We have to take the type of the stack here, since the throw
+			// bytecode may not have been typed yet!
+			Type type = store.top();
+			mergeHandler(type,store,handlers,stores);
+		} else {
+			super.mergeHandlers(code, store, handlers, stores);
+		}
+	}
+	
+	@Override
+	protected Env propagate(Code code, Type handler, Env store) {
+		if(code instanceof Code.Throw) {
+			Code.Throw t = (Code.Throw) code;						
+			store = store.clone();
+			Type thrown = store.pop();
+			store.push(Type.intersect(handler, thrown));
+			return store;
+		} else if(code instanceof Code.IndirectInvoke) {
+			Code.IndirectInvoke i = (Code.IndirectInvoke) code;			
+			store = store.clone();
+			flushStack(store);	
+			store.push(Type.intersect(handler, i.type.throwsClause()));
+			return store;
+		} else if(code instanceof Code.Invoke) {
+			Code.Invoke i = (Code.Invoke) code;
+			store = store.clone();
+			flushStack(store);
+			store.push(Type.intersect(handler, i.type.throwsClause()));
+			return store;
+		} else if(code instanceof Code.IndirectSend) {
+			Code.IndirectSend i = (Code.IndirectSend) code;
+			store = store.clone();
+			flushStack(store);
+			store.push(Type.intersect(handler, i.type.throwsClause()));
+			return store;
+		} else if(code instanceof Code.Send) {
+			Code.Send i = (Code.Send) code;
+			store = store.clone();
+			flushStack(store);
+			store.push(Type.intersect(handler, i.type.throwsClause()));
+		}
+		
+		return store;
+	}
+	
+	protected void flushStack(Env store) {
+		Type.Function ft = method.type();
+		int count = ft.params().size();
+		if(ft instanceof Type.Method) {
+			Type.Method mt = (Type.Method) ft;
+			if(mt.receiver() != null) {
+				count++;
+			}
+		}
+		
+		while(store.size() > count) {
+			store.pop();
+		}
+	}
+	
 	protected <T extends Type> T checkType(Type t, Class<T> clazz,
 			SyntacticElement elem) {
 		if (clazz.isInstance(t)) {
@@ -1589,19 +1654,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
 		if (!Type.isCoerciveSubtype(t1, t2)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
-		}
-	}
-
-	@Override
-	protected void mergeHandlers(Code code, Env store, List<Pair<Type, String>> handlers,
-			Map<String, Env> stores) {
-		if(code instanceof Code.Throw) {
-			// We have to take the type of the stack here, since the throw
-			// bytecode may not have been typed yet!
-			Type type = store.top();
-			mergeHandler(type,store,handlers,stores);
-		} else {
-			super.mergeHandlers(code, store, handlers, stores);
 		}
 	}
 	
