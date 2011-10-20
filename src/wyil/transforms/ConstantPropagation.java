@@ -1039,7 +1039,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 
 	@Override
-	public Env propagate(Code code, Type handler, Env environment) {		
+	public Env propagate(Type handler, Env environment) {		
 		Env catchEnvironment = (Env) environment.clone();		
 		catchEnvironment.push(null); // the exception value
 		return catchEnvironment;

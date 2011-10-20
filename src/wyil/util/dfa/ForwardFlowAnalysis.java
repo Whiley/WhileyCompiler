@@ -106,17 +106,15 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						store = join(store, tmp);
 					} else if (tmp != null) {
 						store = tmp;
-					}					
+					}									
 				}
-								
+				
+				T oldStore = store;
+				
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
-				} else {
-					mergeHandlers(code,store,handlers,stores);					
-				}
-					
-				if (code instanceof Code.Loop) {
+				} else if (code instanceof Code.Loop) {
 					Code.Loop loop = (Code.Loop) code;
 					int s = i;
 					// Note, I could make this more efficient!					
@@ -175,6 +173,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					ArrayList<Pair<Type,String>> nhandlers = new ArrayList<Pair<Type,String>>(handlers);														
 					nhandlers.addAll(0,sw.catches);
 					store = propagate(s+1,i,store,nhandlers);
+					i = i - 1; // this is necessary since last label of
+								// try-catch is first label of catch handler
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) entry.code;
 					merge(gto.target, store, stores);
@@ -188,7 +188,9 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						store = null;
 					}
 				}				
-							
+					
+				mergeHandlers(i,code,oldStore,handlers,stores);
+				
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
@@ -208,43 +210,41 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		}
 	}
 
-	protected void mergeHandlers(Code code, T store, List<Pair<Type, String>> handlers,
+	protected void mergeHandlers(int index, Code code, T store, List<Pair<Type, String>> handlers,
 			Map<String, T> stores) {
 		if(code instanceof Code.Throw) {
 			Code.Throw t = (Code.Throw) code;	
-			store = propagate(code,t.type,store);
 			mergeHandler(t.type,store,handlers,stores);
 		} else if(code instanceof Code.IndirectInvoke) {
-			Code.IndirectInvoke i = (Code.IndirectInvoke) code;
-			store = propagate(code,i.type.throwsClause(),store);
+			Code.IndirectInvoke i = (Code.IndirectInvoke) code;			
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		} else if(code instanceof Code.Invoke) {
-			Code.Invoke i = (Code.Invoke) code;
-			store = propagate(code,i.type.throwsClause(),store);
+			Code.Invoke i = (Code.Invoke) code;	
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		} else if(code instanceof Code.IndirectSend) {
 			Code.IndirectSend i = (Code.IndirectSend) code;
-			store = propagate(code,i.type.throwsClause(),store);
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		} else if(code instanceof Code.Send) {
-			Code.Send i = (Code.Send) code;
-			store = propagate(code,i.type.throwsClause(),store);
+			Code.Send i = (Code.Send) code;			
 			mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		}
 	}
 	
 	protected void mergeHandler(Type type, T store, List<Pair<Type, String>> handlers,
 			Map<String, T> stores) {
-		for(Pair<Type,String> handler : handlers) {
-			Type ht = handler.first();			
-			// TODO: think about whether this makes sense or not?
-			if(Type.isSubtype(type, ht)) {
-				merge(handler.second(),store,stores);
-				// not completely subsumed
-			} else if(Type.isSubtype(ht,type)) {
-				merge(handler.second(),store,stores);
+		for(Pair<Type,String> p : handlers) {
+			Type handler = p.first();			
+
+			if(Type.isSubtype(handler,type)) {
+				T nstore = propagate(handler,store);
+				merge(p.second(),nstore,stores);
 				return; // completely subsumed
-			}
+			} else if(Type.isSubtype(type, handler)) {
+				T nstore = propagate(handler,store);
+				merge(p.second(),nstore,stores);
+				// not completely subsumed
+				type = Type.intersect(type,Type.Negation(handler));
+			} 
 		}
 	}
 	
@@ -315,15 +315,13 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	/**
 	 * Propagate an exception into a catch handler.
 	 * 
-	 * @param cause
-	 *            --- code causing exception
 	 * @param handler
 	 *            --- type of handler catching exception
 	 * @param store
 	 *            --- store immediately before cause
 	 * @return
 	 */
-	protected abstract T propagate(Code cause, Type handler, T store);
+	protected abstract T propagate(Type handler, T store);
 	
 	/**
 	 * <p>

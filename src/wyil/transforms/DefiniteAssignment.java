@@ -126,8 +126,7 @@ public class DefiniteAssignment extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(Code code, Type handler,
-			HashSet<Integer> in) {
+	public HashSet<Integer> propagate(Type handler, HashSet<Integer> in) {
 		return in;
 	}
 	
