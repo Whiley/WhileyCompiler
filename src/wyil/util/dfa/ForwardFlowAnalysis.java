@@ -96,7 +96,6 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 			Entry entry = block.get(i);			
 			try {				
 				Code code = entry.code;
-				mergeHandlers(code,store,handlers,stores);
 				
 				// First, check for a label which may have incoming information.
 				if (code instanceof Code.Label) {
@@ -112,7 +111,11 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
-				} else if (code instanceof Code.Loop) {
+				} else {
+					mergeHandlers(code,store,handlers,stores);					
+				}
+					
+				if (code instanceof Code.Loop) {
 					Code.Loop loop = (Code.Loop) code;
 					int s = i;
 					// Note, I could make this more efficient!					
