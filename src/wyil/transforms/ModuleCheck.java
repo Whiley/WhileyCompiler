@@ -112,8 +112,7 @@ public class ModuleCheck implements Transform {
 					}						
 				}
 				Handler nhandler = new Handler(sw.catches,handler);
-				checkTryCatchBlocks(s + 1, i, c, new Handler(sw.catches,
-						nhandler));
+				checkTryCatchBlocks(s + 1, i, c, nhandler);
 				// now we need to check that every handler is, in fact,
 				// reachable.
 				for(Pair<Type,String> p : sw.catches) {
@@ -126,7 +125,7 @@ public class ModuleCheck implements Transform {
 					}
 				}
 			} else {
-				Type ex = thrownException(code);
+				Type ex = thrownException(code);				
 				if (ex != Type.T_VOID && !handler.catchException(ex)) {
 					syntaxError(
 							errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
