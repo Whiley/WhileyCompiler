@@ -154,6 +154,8 @@ public class ConstraintInline implements Transform {
 			}
 		} catch(ResolveError e) {
 			syntaxError(e.getMessage(),filename,entry,e);
+		} catch(Throwable e) {
+			internalFailure(e.getMessage(),filename,entry,e);
 		}
 		
 		return null;

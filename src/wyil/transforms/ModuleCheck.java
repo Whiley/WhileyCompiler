@@ -185,6 +185,7 @@ public class ModuleCheck implements Transform {
 				} else if (Type.isSubtype(type, t)) {
 					active.add(t);
 					// this exception may escape
+					type = Type.intersect(type, Type.Negation(t));
 				}
 			}
 
