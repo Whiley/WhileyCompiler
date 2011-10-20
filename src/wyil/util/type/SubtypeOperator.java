@@ -254,6 +254,7 @@ public class SubtypeOperator {
 					
 					int recIndex = fromKind == Type.K_METHOD ? 0 : -1;					
 					int retIndex = fromKind == Type.K_METHOD ? 1 : 0;
+					int throwsIndex = retIndex+1;
 					boolean andChildren = true;
 					boolean orChildren = false;					
 					for(int i=0;i<fromChildren.length;++i) {
@@ -267,7 +268,10 @@ public class SubtypeOperator {
 							// return type is co-variant
 							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);
-						} else {
+						} else if(i == throwsIndex) {
+							// TODO:
+							v = false;
+						} else {						
 							// parameter type(s) are contra-variant
 							v = isIntersection(fromChildren[i], !fromSign,
 								toChildren[i], !toSign);

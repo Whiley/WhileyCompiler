@@ -70,7 +70,7 @@ public class TypeTester {
 			case Type.K_FUNCTION: 
 			case Type.K_HEADLESS:
 			case Type.K_METHOD: {				
-				int start = state.kind == Type.K_METHOD ? 2 : 1;
+				int start = state.kind == Type.K_METHOD ? 3 : 2;
 				int[] schildren = state.children;
 				Value[] vchildren = value.children;
 				if(schildren.length != vchildren.length) {

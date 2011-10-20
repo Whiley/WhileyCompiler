@@ -119,7 +119,8 @@ public class ErrorMessages {
 		}
 		String r = messages[kind];
 		for (int i = 0; i != data.length; ++i) {
-			r = r.replaceAll("\\$" + i, data[i].toString());			
+			String rep = data[i].toString();
+			r = r.replaceAll("\\$" + i, rep);			
 		}
 		return r;		
 	}

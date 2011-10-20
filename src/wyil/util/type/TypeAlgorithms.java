@@ -216,11 +216,11 @@ public final class TypeAlgorithms {
 		int kind = state.kind;
 		int[] children = state.children;
 		for(int i=0;i<children.length;++i) {
-			if (i == 0 && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
-				// headless method and function return type allowed to be void
+			if ((i == 0 || i == 1) && (kind == Type.K_HEADLESS || kind == Type.K_FUNCTION)) {
+				// headless method and function return or throws type allowed to be void
 				continue;
-			} else if(i == 1 && kind == Type.K_METHOD) {
-				// method return type allowed to be void
+			} else if((i == 1 || i == 2) && kind == Type.K_METHOD) {
+				// method return or throws type allowed to be void
 				continue;
 			}
 			Automata.State child = automata.states[children[i]];
@@ -707,7 +707,7 @@ public final class TypeAlgorithms {
 						allocations, states);
 				
 				// parameter values are harder, since they are contra-variant.
-				for(int i=returnIndex+1;i<fromChildren.length;++i) {
+				for(int i=returnIndex+2;i<fromChildren.length;++i) {
 					int fromChild = fromChildren[i];
 					int toChild = toChildren[i];
 					int[] childChildren = new int[2];
@@ -870,7 +870,7 @@ public final class TypeAlgorithms {
 						allocations, states);
 				
 				// parameter values are harder, since they are contra-variant.
-				for(int i=returnIndex+1;i<fromChildren.length;++i) {
+				for(int i=returnIndex+2;i<fromChildren.length;++i) {
 					int fromChild = fromChildren[i];
 					int toChild = toChildren[i];
 					int[] childChildren = new int[2];
@@ -1030,7 +1030,7 @@ public final class TypeAlgorithms {
 						allocations, states);
 				
 				// parameter values are harder, since they are contra-variant.
-				for(int i=returnIndex+1;i<fromChildren.length;++i) {
+				for(int i=returnIndex+2;i<fromChildren.length;++i) {
 					int fromChild = fromChildren[i];
 					int toChild = toChildren[i];
 					int[] childChildren = new int[2];

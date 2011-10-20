@@ -152,10 +152,11 @@ public abstract class Type {
 	 */
 	public static final Type Function(Type ret,
 			Collection<Type> params) {
-		Type[] rparams = new Type[params.size()+1];		
-		int i = 0;
-		for (Type t : params) { rparams[++i] = t; }		
+		Type[] rparams = new Type[params.size()+2];		
+		int i = 2;
+		for (Type t : params) { rparams[i++] = t; }		
 		rparams[0] = ret;
+		rparams[1] = T_VOID; // throws clause
 		return construct(K_FUNCTION, null, rparams); 			
 	}
 	
@@ -165,9 +166,10 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Type Function(Type ret, Type... params) {
-		Type[] rparams = new Type[params.length+1];		
-		System.arraycopy(params, 0, rparams, 1, params.length);
+		Type[] rparams = new Type[params.length+2];		
+		System.arraycopy(params, 0, rparams, 2, params.length);
 		rparams[0] = ret;
+		rparams[1] = T_VOID; // throws clause
 		return construct(K_FUNCTION, null, rparams);								
 	}
 	
@@ -180,17 +182,19 @@ public abstract class Type {
 			Collection<Type> params) {
 		if(receiver == null) {
 			// this is a headless method
-			Type[] rparams = new Type[params.size()+1];		
-			int i = 1;
-			for (Type t : params) { rparams[i++] = t; }					
-			rparams[0] = ret;
-			return construct(K_HEADLESS, null, rparams);					
-		} else {
 			Type[] rparams = new Type[params.size()+2];		
 			int i = 2;
+			for (Type t : params) { rparams[i++] = t; }					
+			rparams[0] = ret;
+			rparams[1] = T_VOID; // throws clause
+			return construct(K_HEADLESS, null, rparams);					
+		} else {
+			Type[] rparams = new Type[params.size()+3];		
+			int i = 3;
 			for (Type t : params) { rparams[i++] = t; }		
 			rparams[0] = receiver;
 			rparams[1] = ret;
+			rparams[2] = T_VOID; // throws clause
 			return construct(K_METHOD, null, rparams);						
 		}		
 	}
@@ -203,13 +207,13 @@ public abstract class Type {
 	public static final Type Method(Process receiver, Type ret, Type... params) {
 		if(receiver == null) {
 			// this is a headless method
-			Type[] rparams = new Type[params.length+1];		
-			System.arraycopy(params, 0, rparams, 1, params.length);			
+			Type[] rparams = new Type[params.length+2];		
+			System.arraycopy(params, 0, rparams, 2, params.length);			
 			rparams[0] = ret;
 			return construct(K_HEADLESS, null, rparams);						
 		} else {
-			Type[] rparams = new Type[params.length+2];		
-			System.arraycopy(params, 0, rparams, 2, params.length);
+			Type[] rparams = new Type[params.length+3];		
+			System.arraycopy(params, 0, rparams, 3, params.length);
 			rparams[0] = receiver;
 			rparams[1] = ret;
 			return construct(K_METHOD, null, rparams);
@@ -1172,7 +1176,7 @@ public abstract class Type {
 		public ArrayList<Type> params() {
 			int[] fields = automata.states[0].children;			
 			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=1;i<fields.length;++i) {
+			for(int i=2;i<fields.length;++i) {
 				r.add(construct(Automatas.extract(automata, fields[i])));
 			}
 			return r;
@@ -1220,7 +1224,7 @@ public abstract class Type {
 		public ArrayList<Type> params() {
 			Automata.State root = automata.states[0];
 			int[] fields = root.children;
-			int start = root.kind == K_HEADLESS ? 1 : 2;
+			int start = root.kind == K_HEADLESS ? 2 : 3;
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=start;i<fields.length;++i) {
 				r.add(construct(Automatas.extract(automata, fields[i])));
@@ -1350,7 +1354,7 @@ public abstract class Type {
 			}
 			String ret = toString(children[start], visited, headers, automata);
 			boolean firstTime=true;
-			for (int i = start+1; i != children.length; ++i) {
+			for (int i = start+2; i != children.length; ++i) {
 				if (!firstTime) {
 					middle += ",";
 				}

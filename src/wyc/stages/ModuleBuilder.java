@@ -2244,7 +2244,8 @@ public class ModuleBuilder {
 		if (clazz.isInstance(t)) {
 			return (T) t;
 		} else {
-			String errMsg = errorMessage(SUBTYPE_ERROR,clazz.getName(),t);
+			// TODO: need a better error message here.
+			String errMsg = errorMessage(SUBTYPE_ERROR,clazz.getName().replace('$',' '),t);
 			syntaxError(errMsg, filename, elem);
 			return null;
 		}
