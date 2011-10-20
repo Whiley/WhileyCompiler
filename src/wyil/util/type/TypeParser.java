@@ -58,7 +58,7 @@ public class TypeParser {
 			}
 			match(")");
 			skipWhiteSpace();
-			return Function(t,elems);			
+			return Function(t,Type.T_VOID,elems);			
 		}
 		return t;
 	}

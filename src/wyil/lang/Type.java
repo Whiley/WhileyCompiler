@@ -150,13 +150,13 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Function(Type ret,
+	public static final Type Function(Type ret, Type throwsClause,
 			Collection<Type> params) {
 		Type[] rparams = new Type[params.size()+2];		
 		int i = 2;
 		for (Type t : params) { rparams[i++] = t; }		
 		rparams[0] = ret;
-		rparams[1] = T_VOID; // throws clause
+		rparams[1] = throwsClause;
 		return construct(K_FUNCTION, null, rparams); 			
 	}
 	
@@ -165,11 +165,12 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Function(Type ret, Type... params) {
+	public static final Type Function(Type ret, Type throwsClause,
+			Type... params) {
 		Type[] rparams = new Type[params.length+2];		
 		System.arraycopy(params, 0, rparams, 2, params.length);
 		rparams[0] = ret;
-		rparams[1] = T_VOID; // throws clause
+		rparams[1] = throwsClause;
 		return construct(K_FUNCTION, null, rparams);								
 	}
 	
@@ -179,14 +180,14 @@ public abstract class Type {
 	 * @param element
 	 */
 	public static final Type Method(Process receiver, Type ret,
-			Collection<Type> params) {
+			Type throwsClause, Collection<Type> params) {
 		if(receiver == null) {
 			// this is a headless method
 			Type[] rparams = new Type[params.size()+2];		
 			int i = 2;
 			for (Type t : params) { rparams[i++] = t; }					
 			rparams[0] = ret;
-			rparams[1] = T_VOID; // throws clause
+			rparams[1] = throwsClause;
 			return construct(K_HEADLESS, null, rparams);					
 		} else {
 			Type[] rparams = new Type[params.size()+3];		
@@ -194,7 +195,7 @@ public abstract class Type {
 			for (Type t : params) { rparams[i++] = t; }		
 			rparams[0] = receiver;
 			rparams[1] = ret;
-			rparams[2] = T_VOID; // throws clause
+			rparams[2] = throwsClause;
 			return construct(K_METHOD, null, rparams);						
 		}		
 	}
@@ -204,20 +205,21 @@ public abstract class Type {
 	 * 
 	 * @param element
 	 */
-	public static final Type Method(Process receiver, Type ret, Type... params) {
+	public static final Type Method(Process receiver, Type ret,
+			Type throwsClause, Type... params) {
 		if(receiver == null) {
 			// this is a headless method
 			Type[] rparams = new Type[params.length+2];		
 			System.arraycopy(params, 0, rparams, 2, params.length);			
 			rparams[0] = ret;
-			rparams[1] = T_VOID; // throws clause
+			rparams[1] = throwsClause;
 			return construct(K_HEADLESS, null, rparams);						
 		} else {
 			Type[] rparams = new Type[params.length+3];		
 			System.arraycopy(params, 0, rparams, 3, params.length);
 			rparams[0] = receiver;
 			rparams[1] = ret;
-			rparams[2] = T_VOID; // throws clause
+			rparams[2] = throwsClause;
 			return construct(K_METHOD, null, rparams);
 		}
 	}

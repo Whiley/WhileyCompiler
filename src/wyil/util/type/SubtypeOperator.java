@@ -269,8 +269,9 @@ public class SubtypeOperator {
 							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);
 						} else if(i == throwsIndex) {
-							// TODO:
-							v = false;
+							// throws type is co-variant
+							v = isIntersection(fromChildren[i], fromSign,
+									toChildren[i], toSign);
 						} else {						
 							// parameter type(s) are contra-variant
 							v = isIntersection(fromChildren[i], !fromSign,

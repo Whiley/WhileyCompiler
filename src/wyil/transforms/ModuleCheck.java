@@ -86,7 +86,7 @@ public class ModuleCheck implements Transform {
 	
 	protected void checkTryCatchBlocks(Module.Case c, Module.Method m) {
 		// TODO: add list of declared thrown exceptions
-		Handler rootHandler = new Handler(Collections.EMPTY_LIST);
+		Handler rootHandler = new Handler(m.type().throwsClause());
 		checkTryCatchBlocks(0,c.body().size(),c,rootHandler);
 	}
 	
@@ -111,41 +111,50 @@ public class ModuleCheck implements Transform {
 						}
 					}						
 				}
-//				checkTryCatchBlocks(s + 1, i, c, new Handler(sw.catches,
-//						handler));
-			} else {
-				for (Type t : thrownExceptions(code)) {
-					if (!handler.catchException(t)) {
+				Handler nhandler = new Handler(sw.catches,handler);
+				checkTryCatchBlocks(s + 1, i, c, new Handler(sw.catches,
+						nhandler));
+				// now we need to check that every handler is, in fact,
+				// reachable.
+				for(Pair<Type,String> p : sw.catches) {
+					if(!nhandler.active.contains(p.first())) {
+						// FIXME: better error message which focuses on the
+						// actual handler is required.
 						syntaxError(
-								errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
+								errorMessage(UNREACHABLE_CODE),
 								filename, entry);
 					}
 				}
+			} else {
+				Type ex = thrownException(code);
+				if (ex != Type.T_VOID && !handler.catchException(ex)) {
+					syntaxError(
+							errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
+							filename, entry);
+				}				
 			}
 		}
 	}
 	
-	private List<Type> thrownExceptions(Code code) {
+	private Type thrownException(Code code) {
 		if(code instanceof Code.Throw) {
-			Code.Throw t = (Code.Throw) code;
-			ArrayList<Type> exceptions = new ArrayList<Type>();
-			exceptions.add(t.type);
-			return exceptions;
+			Code.Throw t = (Code.Throw) code;			
+			return t.type;
 		} else if(code instanceof Code.IndirectInvoke) {
 			Code.IndirectInvoke i = (Code.IndirectInvoke) code;
-			// TODO
+			return i.type.throwsClause();
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke i = (Code.Invoke) code;
-			// TODO
+			return i.type.throwsClause();
 		} else if(code instanceof Code.IndirectSend) {
 			Code.IndirectSend i = (Code.IndirectSend) code;
-			// TODO
+			return i.type.throwsClause();
 		} else if(code instanceof Code.Send) {
 			Code.Send i = (Code.Send) code;
-			// TODO
+			return i.type.throwsClause();
 		}
 		
-		return Collections.EMPTY_LIST;
+		return Type.T_VOID;
 	}
 	
 	private static class Handler {
@@ -162,8 +171,9 @@ public class ModuleCheck implements Transform {
 			this.active = new HashSet<Type>();
 		}
 
-		public Handler(Collection<Type> handlers) {
-			this.handlers = new ArrayList<Type>(handlers);			
+		public Handler(Type throwsClause) {
+			this.handlers = new ArrayList<Type>();
+			this.handlers.add(throwsClause);
 			this.parent = null;
 			this.active = new HashSet<Type>();
 		}

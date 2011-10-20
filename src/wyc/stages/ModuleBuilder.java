@@ -295,7 +295,8 @@ public class ModuleBuilder {
 						// TODO: fix parameter constraints
 						paramTypes.add(resolve(p).first());
 					}				
-					tf = checkType(Type.Function(Type.T_ANY, paramTypes),
+					tf = checkType(
+							Type.Function(Type.T_ANY, Type.T_VOID, paramTypes),
 							Type.Function.class, expr);
 				}
 				
@@ -634,6 +635,8 @@ public class ModuleBuilder {
 		// method return type
 		Type ret = resolve(fd.ret).first();
 
+		Type throwsClause = resolve(fd.throwType).first();
+		
 		// method receiver type (if applicable)
 		Type.Process rec = null;
 		Type.Function ft;
@@ -644,9 +647,9 @@ public class ModuleBuilder {
 				checkType(t, Type.Process.class, md.receiver);
 				rec = (Type.Process) t;				
 			}
-			ft = checkType(Type.Method(rec, ret, parameters),Type.Method.class,fd);
+			ft = checkType(Type.Method(rec, ret, throwsClause, parameters),Type.Method.class,fd);
 		} else {
-			ft = checkType(Type.Function(ret, parameters),Type.Function.class,fd);
+			ft = checkType(Type.Function(ret, throwsClause, parameters),Type.Function.class,fd);
 		}
 		 
 		NameID name = new NameID(module, fd.name);
@@ -1556,32 +1559,32 @@ public class ModuleBuilder {
 					
 		if(variableIndirectInvoke) {			
 			if(s.receiver != null) {
-				Type.Method mt = checkType(Type.Method(null, Type.T_VOID, paramTypes),Type.Method.class,s);
+				Type.Method mt = checkType(Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),Type.Method.class,s);
 				blk.append(Code.IndirectSend(mt,s.synchronous, retval),attributes(s));
 			} else {
-				Type.Function ft = checkType(Type.Function(Type.T_VOID, paramTypes),Type.Function.class,s);
+				Type.Function ft = checkType(Type.Function(Type.T_VOID, Type.T_VOID, paramTypes),Type.Function.class,s);
 				blk.append(Code.IndirectInvoke(ft, retval),attributes(s));
 			}
 		} else if(fieldIndirectInvoke) {
-			Type.Function ft = checkType(Type.Function(Type.T_VOID, paramTypes),Type.Function.class,s);
+			Type.Function ft = checkType(Type.Function(Type.T_VOID, Type.T_VOID, paramTypes),Type.Function.class,s);
 			blk.append(Code.IndirectInvoke(ft, retval),attributes(s));
 		} else if(directInvoke || methodInvoke) {
 			NameID name = new NameID(modInfo.module, s.name);
 			if(receiverIsThis) {
 				Type.Method mt = checkType(
-						Type.Method(null, Type.T_VOID, paramTypes),
+						Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),
 						Type.Method.class, s);
 				blk.append(Code.Invoke(mt, name, retval), attributes(s));
 			} else {
 				Type.Function ft = checkType(
-						Type.Function(Type.T_VOID, paramTypes),
+						Type.Function(Type.T_VOID, Type.T_VOID, paramTypes),
 						Type.Function.class, s);
 				blk.append(Code.Invoke(ft, name, retval), attributes(s));
 			}
 		} else if(directSend) {						
 			NameID name = new NameID(modInfo.module, s.name);
 			Type.Method mt = checkType(
-					Type.Method(null, Type.T_VOID, paramTypes),
+					Type.Method(null, Type.T_VOID, Type.T_VOID, paramTypes),
 					Type.Method.class, s);
 			blk.append(Code.Send(mt, name, s.synchronous, retval),
 					attributes(s));
@@ -1610,7 +1613,7 @@ public class ModuleBuilder {
 				// TODO: fix parameter constraints
 				paramTypes.add(p.first());
 			}
-			tf = checkType(Type.Function(Type.T_ANY, paramTypes),
+			tf = checkType(Type.Function(Type.T_ANY, Type.T_VOID, paramTypes),
 					Type.Function.class, s);
 		}
 		Block blk = new Block(environment.size());
@@ -2072,6 +2075,7 @@ public class ModuleBuilder {
 			}
 		} else {
 			UnresolvedType.Fun ut = (UnresolvedType.Fun) t;			
+			
 			ArrayList<Type> paramTypes = new ArrayList<Type>();
 			Type.Process receiver = null;
 			Block blk = null;
@@ -2092,10 +2096,12 @@ public class ModuleBuilder {
 			}
 			Pair<Type,Block> ret = resolve(ut.ret);
 			
-			if(receiver != null) {
-				return new Pair<Type,Block>(Type.Method(receiver,ret.first(),paramTypes),blk);
+			if (receiver != null) {
+				return new Pair<Type, Block>(Type.Method(receiver, ret.first(),
+						Type.T_VOID, paramTypes), blk);
 			} else {
-				return new Pair<Type,Block>(Type.Function(ret.first(),paramTypes),blk);
+				return new Pair<Type, Block>(Type.Function(ret.first(),
+						Type.T_VOID, paramTypes), blk);
 			}
 		}
 	}

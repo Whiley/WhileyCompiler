@@ -1424,7 +1424,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Type.Function bindFunction(NameID nid, 
 			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 
-		Type.Function target = checkType(Type.Function(Type.T_ANY, paramTypes),
+		Type.Function target = checkType(Type.Function(Type.T_ANY, Type.T_ANY, paramTypes),
 				Type.Function.class, elem);
 		Type.Function candidate = null;				
 		
@@ -1476,7 +1476,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			List<Type> paramTypes, SyntacticElement elem) throws ResolveError {
 
 		Type.Method target = checkType(
-				Type.Method(receiver, Type.T_ANY, paramTypes),
+				Type.Method(receiver, Type.T_ANY, Type.T_ANY, paramTypes),
 				Type.Method.class, elem);
 		Type.Method candidate = null;				
 		

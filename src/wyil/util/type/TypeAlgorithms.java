@@ -706,6 +706,11 @@ public final class TypeAlgorithms {
 						true, from, toChildren[returnIndex], true, to,
 						allocations, states);
 				
+				// throws clause is co-variant (i.e. normal, like e.g. list elements)
+				myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
+						true, from, toChildren[returnIndex+1], true, to,
+						allocations, states);
+				
 				// parameter values are harder, since they are contra-variant.
 				for(int i=returnIndex+2;i<fromChildren.length;++i) {
 					int fromChild = fromChildren[i];
@@ -868,6 +873,11 @@ public final class TypeAlgorithms {
 				myChildren[returnIndex] = intersect(fromChildren[returnIndex],
 						true, from, toChildren[returnIndex], false, to,
 						allocations, states);
+
+				// throws clause is co-variant (i.e. normal, like e.g. list elements)
+				myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
+						true, from, toChildren[returnIndex+1], false, to,
+						allocations, states);
 				
 				// parameter values are harder, since they are contra-variant.
 				for(int i=returnIndex+2;i<fromChildren.length;++i) {
@@ -1027,6 +1037,11 @@ public final class TypeAlgorithms {
 				// return value is co-variant (i.e. normal, like e.g. list elements)
 				myChildren[returnIndex] = intersect(fromChildren[returnIndex],
 						true, from, toChildren[returnIndex], false, to,
+						allocations, states);
+				
+				// throw clause is co-variant (i.e. normal, like e.g. list elements)
+				myChildren[returnIndex+1] = intersect(fromChildren[returnIndex+1],
+						true, from, toChildren[returnIndex+1], false, to,
 						allocations, states);
 				
 				// parameter values are harder, since they are contra-variant.
