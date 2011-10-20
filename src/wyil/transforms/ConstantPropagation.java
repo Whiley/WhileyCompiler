@@ -72,7 +72,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: propagate constants through pre- and post-conditions.
 		
 		Env environment = initialStore();		
-		propagate(0,mcase.body().size(), environment);	
+		propagate(0,mcase.body().size(), environment, Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
 		Block body = mcase.body();
@@ -1034,22 +1034,15 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return stores;
 	}
 	
-	public List<Env> propagate(int index, Code.TryCatch sw,
+	public Env propagate(int index, Code.TryCatch sw, Type handler,
 			Entry stmt, Env environment) {		
-		Env catchEnvironment = (Env) environment.clone();
-		
+		Env catchEnvironment = (Env) environment.clone();		
 		catchEnvironment.push(null); // the exception value
-		
-		ArrayList<Env> stores = new ArrayList();
-		for (int i = 0; i != sw.catches.size(); ++i) {
-			stores.add(catchEnvironment);
-		}
-		
-		return stores;
+		return catchEnvironment;
 	}
 	
 	public Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment) {
+			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 		
 		environment = new Env(environment);
 		
@@ -1076,7 +1069,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		do {						
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv);									
+			newEnv = propagate(start+1,end, oldEnv, handlers);									
 		} while (!newEnv.equals(oldEnv));
 		
 		return join(environment,newEnv);		

@@ -122,26 +122,22 @@ public class DefiniteAssignment extends
 		return stores;
 	}
 	
-	public List<HashSet<Integer>> propagate(int index, Code.TryCatch sw,
-			Entry stmt, HashSet<Integer> in) {
-		ArrayList<HashSet<Integer>> stores = new ArrayList();
-		for (int i = 0; i != sw.catches.size(); ++i) {
-			stores.add(in);
-		}
-		return stores;
+	public HashSet<Integer> propagate(int index, Code.TryCatch sw,
+			Type handler, Entry stmt, HashSet<Integer> in) {
+		return in;
 	}
 	
 	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
-			Entry stmt, HashSet<Integer> in) {
-		
-		if(loop instanceof Code.ForAll) {
+			Entry stmt, HashSet<Integer> in, List<Pair<Type, String>> handlers) {
+
+		if (loop instanceof Code.ForAll) {
 			in = new HashSet<Integer>(in);
 			Code.ForAll fall = (Code.ForAll) loop;
 			in.add(fall.slot);
-		} 
-		
-		HashSet<Integer> r = propagate(start+1,end,in);
-		return join(in,r);		
+		}
+
+		HashSet<Integer> r = propagate(start + 1, end, in, handlers);
+		return join(in, r);
 	}
 	
 	protected HashSet<Integer> join(HashSet<Integer> s1, HashSet<Integer> s2) {		

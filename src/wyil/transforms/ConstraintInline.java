@@ -5,6 +5,7 @@ import java.util.*;
 
 import wyil.*;
 import wyil.lang.*;
+import wyil.util.Pair;
 import wyil.util.ResolveError;
 import wyil.util.SyntacticElement;
 import static wyil.util.SyntaxError.*;
@@ -328,7 +329,7 @@ public class ConstraintInline implements Transform {
 	protected Block findPrecondition(NameID name, Type.Function fun) throws ResolveError {
 		Module m = loader.loadModule(name.module());				
 		Module.Method method = m.method(name.name(),fun);
-		
+	
 		for(Module.Case c : method.cases()) {
 			// FIXME: this is a hack for now
 			return c.precondition();

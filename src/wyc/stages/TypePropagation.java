@@ -183,7 +183,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		this.block = blk;
 		
 		// now, perform the propagation
-		propagate(0,blk.size(), environment);	
+		propagate(0, blk.size(), environment, Collections.EMPTY_LIST);	
 				
 		// finally, apply any and all rewrites
 		Block nblk = new Block(blk.numInputs());				
@@ -1308,22 +1308,16 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		return envs;
 	}	
 	
-	protected List<Env> propagate(int index, Code.TryCatch code, Entry stmt,
-			Env environment) {
-		
-		ArrayList<Env> envs = new ArrayList<Env>();
-		
-		for(Pair<Type, String> e : code.catches) {
-			Env catchEnvironment = (Env) environment.clone();
-			catchEnvironment.push(e.first()); // exception type
-			envs.add(catchEnvironment);
-		}
-
-		return envs;
+	protected Env propagate(int index, Code.TryCatch code, Type handler, Entry stmt,
+			Env environment) {		
+		Env catchEnvironment = (Env) environment.clone();
+		catchEnvironment.push(handler); // exception type				
+		return catchEnvironment;
 	}
 	
 	protected Env propagate(int start, int end, Code.ForAll forloop,
-			Entry stmt, ArrayList<Integer> modifies, Env environment) {
+			Entry stmt, ArrayList<Integer> modifies, Env environment,
+			List<Pair<Type, String>> handlers) {
 						
 		// Now, type the source 		
 		Type src_t = environment.pop();						
@@ -1363,7 +1357,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		do {								
 			// iterate until a fixed point reached
 			oldEnv = newEnv;			 			
-			newEnv = join(loopEnv,propagate(start+1,end,oldEnv));
+			newEnv = join(loopEnv,propagate(start+1,end,oldEnv,handlers));
 		 } while(!newEnv.equals(oldEnv));				
 		
 		// following line is necessary to get rid of the loop variable
@@ -1377,7 +1371,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Env propagate(int start, int end, Code.Loop loop,
-			Entry stmt, Env environment) {
+			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 
 		// First, calculate the modifies set
 		ArrayList<Integer> modifies = new ArrayList<Integer>();
@@ -1395,7 +1389,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// Now, type the loop body
 		
 		if (loop instanceof Code.ForAll) {
-			return propagate(start, end, (Code.ForAll) loop, stmt, modifies, environment);
+			return propagate(start, end, (Code.ForAll) loop, stmt, modifies, environment, handlers);
 		}
 		
 		Env newEnv = environment;
@@ -1403,7 +1397,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv;
-			newEnv = join(environment,propagate(start+1,end, oldEnv));
+			newEnv = join(environment,propagate(start+1,end, oldEnv, handlers));
 		} while (!newEnv.equals(oldEnv));		
 				
 		environment = join(environment,newEnv);		

@@ -28,6 +28,7 @@ package wyil.util.dfa;
 import static wyil.util.SyntaxError.internalFailure;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,16 +87,17 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		this.stores = new HashMap<String,T>();
 		this.block = mcase.body();
 		T init = initialStore();
-		propagate(0, mcase.body().size(), init);		
+		propagate(0, mcase.body().size(), init, Collections.EMPTY_LIST);		
 		return mcase;
 	}		
 	
-	protected T propagate(int start, int end, T store) {
+	protected T propagate(int start, int end, T store, List<Pair<Type,String>> handlers) {
 		for(int i=start;i<end;++i) {						
 			Entry entry = block.get(i);			
 			try {				
 				Code code = entry.code;
-
+				mergeHandlers(code,store,handlers,stores);
+				
 				// First, check for a label which may have incoming information.
 				if (code instanceof Code.Label) {
 					Code.Label l = (Code.Label) code;
@@ -124,7 +126,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 							}
 						}						
 					}
-					store = propagate(s, i, loop, entry, store);										
+					store = propagate(s, i, loop, entry, store, handlers);										
 					continue;
 				} else if (code instanceof Code.IfGoto) {
 					Code.IfGoto ifgoto = (Code.IfGoto) code;
@@ -151,21 +153,24 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 					merge(sw.defaultTarget, store, stores);
 					store = null;
 				} else if (code instanceof Code.TryCatch) {
-					
-					// FIXME: this is fundamentally broken since an exception
-					// can arise at (in principle) any bytecode.
-					
 					Code.TryCatch sw = (Code.TryCatch) code;					
-					List<T> r = propagate(i, sw, entry, store);										
+					int s = i;
 
-					// assert r.second().size() == nsw.branches.size()
-					Code.TryCatch nsw = (Code.TryCatch) entry.code;
-					for(int j=0;j!=nsw.catches.size();++j){
-						String target = nsw.catches.get(j).second();
-						T nstore = r.get(j);
-						merge(target, nstore, stores);
+					// Note, I could make this more efficient!					
+					while (++i < block.size()) {
+						entry = block.get(i);
+						if (entry.code instanceof Code.Label) {
+							Code.Label l = (Code.Label) entry.code;
+							if (l.label.equals(sw.target)) {
+								// end of loop body found
+								break;
+							}
+						}						
 					}
-										
+					
+					ArrayList<Pair<Type,String>> nhandlers = new ArrayList<Pair<Type,String>>(handlers);														
+					nhandlers.addAll(0,sw.catches);
+					store = propagate(s+1,i,store,nhandlers);
 				} else if (code instanceof Code.Goto) {
 					Code.Goto gto = (Code.Goto) entry.code;
 					merge(gto.target, store, stores);
@@ -179,6 +184,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						store = null;
 					}
 				}				
+				
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
@@ -198,6 +204,41 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		}
 	}
 
+	protected void mergeHandlers(Code code, T store, List<Pair<Type, String>> handlers,
+			Map<String, T> stores) {
+		if(code instanceof Code.Throw) {
+			Code.Throw t = (Code.Throw) code;
+			mergeHandler(t.type,store,handlers,stores);
+		} else if(code instanceof Code.IndirectInvoke) {
+			Code.IndirectInvoke i = (Code.IndirectInvoke) code;
+			// mergeHandler(t.type,store,handlers,stores);
+		} else if(code instanceof Code.Invoke) {
+			Code.Invoke i = (Code.Invoke) code;
+			// mergeHandler(t.type,store,handlers,stores);
+		} else if(code instanceof Code.IndirectSend) {
+			Code.IndirectSend i = (Code.IndirectSend) code;
+			// mergeHandler(t.type,store,handlers,stores);
+		} else if(code instanceof Code.Send) {
+			Code.Send i = (Code.Send) code;
+			// mergeHandler(t.type,store,handlers,stores);
+		}
+	}
+	
+	protected void mergeHandler(Type type, T store, List<Pair<Type, String>> handlers,
+			Map<String, T> stores) {
+		for(Pair<Type,String> handler : handlers) {
+			Type ht = handler.first();			
+			// TODO: think about whether this makes sense or not?
+			if(Type.isSubtype(type, ht)) {
+				merge(handler.second(),store,stores);
+				// not completely subsumed
+			} else if(Type.isSubtype(ht,type)) {
+				merge(handler.second(),store,stores);
+				return; // completely subsumed
+			}
+		}
+	}
+	
 	/**
 	 * <p>
 	 * Propagate through a conditional branch. This produces two stores for the
@@ -263,15 +304,12 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected abstract List<T> propagate(int index, Code.Switch sw, Entry entry, T store);
 
 	/**
-	 * <p>
-	 * Propagate through a try-catch multi-way branch. This produces multiple
-	 * stores --- one for each of the various branches.
-	 * </p>
-	 * 
 	 * @param index
 	 *            --- the index of this bytecode in the method's block
 	 * @param tc
 	 *            --- the code of this statement
+	 * @param handler
+	 *            --- type being caught            
 	 * @param entry
 	 *            --- block entry for this bytecode
 	 * @param store
@@ -279,7 +317,8 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract List<T> propagate(int index, Code.TryCatch tc, Entry entry, T store);
+	protected abstract T propagate(int index, Code.TryCatch tc, Type handler,
+			Entry entry, T store);
 	
 	/**
 	 * <p>
@@ -307,7 +346,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	 * @return
 	 */
 	protected abstract T propagate(int start, int end, 
-			Code.Loop code, Entry entry, T store);
+			Code.Loop code, Entry entry, T store, List<Pair<Type,String>> handlers);
 
 	/**
 	 * <p>

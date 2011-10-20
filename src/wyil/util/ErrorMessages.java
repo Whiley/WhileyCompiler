@@ -59,7 +59,8 @@ public class ErrorMessages {
 	public static final int RETURN_FROM_VOID = 34;
 	public static final int MISSING_RETURN_VALUE = 35;
 	public static final int BRANCH_ALWAYS_TAKEN = 36;
-	public static final int AMBIGUOUS_COERCION = 37;	                        
+	public static final int AMBIGUOUS_COERCION = 37;
+	public static final int MUST_DECLARE_THROWN_EXCEPTION = 38;
 	
 		private final static String[] messages = {			
 			"cyclic constant expression",
@@ -99,7 +100,8 @@ public class ErrorMessages {
 			"cannot return value from method with void return type",
 			"missing return value",
 			"branch always taken",
-			"ambiguous coercion (from $0 to $1)"
+			"ambiguous coercion (from $0 to $1)",
+			"exception may be thrown which is not declared"
 	};
 	
 	/**
