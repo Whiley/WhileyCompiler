@@ -184,7 +184,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 						store = null;
 					}
 				}				
-				
+							
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
@@ -207,7 +207,7 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 	protected void mergeHandlers(Code code, T store, List<Pair<Type, String>> handlers,
 			Map<String, T> stores) {
 		if(code instanceof Code.Throw) {
-			Code.Throw t = (Code.Throw) code;
+			Code.Throw t = (Code.Throw) code;			
 			mergeHandler(t.type,store,handlers,stores);
 		} else if(code instanceof Code.IndirectInvoke) {
 			Code.IndirectInvoke i = (Code.IndirectInvoke) code;

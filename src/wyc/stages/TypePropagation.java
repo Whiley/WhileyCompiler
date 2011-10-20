@@ -1592,6 +1592,19 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		}
 	}
 
+	@Override
+	protected void mergeHandlers(Code code, Env store, List<Pair<Type, String>> handlers,
+			Map<String, Env> stores) {
+		if(code instanceof Code.Throw) {
+			// We have to take the type of the stack here, since the throw
+			// bytecode may not have been typed yet!
+			Type type = store.top();
+			mergeHandler(type,store,handlers,stores);
+		} else {
+			super.mergeHandlers(code, store, handlers, stores);
+		}
+	}
+	
 	public Env join(Env env1, Env env2) {
 		if (env2 == null) {
 			return env1;
