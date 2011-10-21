@@ -62,7 +62,7 @@ public class NameResolution {
 			try {
 				if(d instanceof ImportDecl) {
 					ImportDecl impd = (ImportDecl) d;
-					imports.add(0,new Import(new PkgID(impd.pkg),impd.module,impd.name));
+					imports.add(1,new Import(new PkgID(impd.pkg),impd.module,impd.name));
 				} else if(d instanceof FunDecl) {
 					resolve((FunDecl)d,imports);
 				} else if(d instanceof TypeDecl) {
@@ -381,7 +381,7 @@ public class NameResolution {
 			ivk.arguments.set(i,e);
 		}
 
-		if(!environment.containsKey(ivk.name)) {
+		if(!environment.containsKey(ivk.name)) {			
 			// only look for non-local function binding if there is not a local
 			// variable with the same name.
 			Expr target = ivk.receiver;			
@@ -395,7 +395,7 @@ public class NameResolution {
 					ivk.attributes().add(new Attributes.Module(maccess.mid));
 				} else {
 					ivk.receiver = target;
-					try {
+					try {						
 						NameID nid = loader.resolveAsName(ivk.name,imports);
 						ivk.attributes().add(new Attributes.Module(nid.module()));	
 					} catch(ResolveError e) {
@@ -405,14 +405,14 @@ public class NameResolution {
 						// by an indirect function call.
 					}
 				}
-			} else {
-				NameID nid = loader.resolveAsName(ivk.name,imports);
+			} else {				
+				NameID nid = loader.resolveAsName(ivk.name,imports);				
 				// Ok, resolve the module for this invoke
 				ivk.attributes().add(new Attributes.Module(nid.module()));		
 			}
 		} else if(ivk.receiver != null) {
 			ivk.receiver = resolve(ivk.receiver,environment,imports);
-		}
+		} 
 		
 		return ivk;
 	}
