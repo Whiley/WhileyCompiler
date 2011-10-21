@@ -81,13 +81,20 @@ public class ModuleCheck implements Transform {
 		}		
 	}
 	
-	protected void checkTryCatchBlocks(Module.Case c, Module.Method m) {		
+	protected void checkTryCatchBlocks(Module.Case c, Module.Method m) {
+		HashMap<String,Block.Entry> labelMap = new HashMap<String,Block.Entry>();
+		for (Block.Entry b : c.body()) {
+			if(b.code instanceof Code.Label) {
+				Label l = (Code.Label) b.code;
+				labelMap.put(l.label, b);
+			}
+		}
 		Handler rootHandler = new Handler(m.type().throwsClause());
-		checkTryCatchBlocks(0,c.body().size(),c,rootHandler);
+		checkTryCatchBlocks(0,c.body().size(),c,rootHandler,labelMap);
 	}
 	
 	protected void checkTryCatchBlocks(int start, int end, Module.Case c,
-			Handler handler) {		
+			Handler handler, HashMap<String,Block.Entry> labelMap) {		
 		Block block = c.body();
 		for (int i = start; i < end; ++i) {
 			Block.Entry entry = block.get(i);
@@ -111,7 +118,7 @@ public class ModuleCheck implements Transform {
 					}
 					
 					Handler nhandler = new Handler(sw.catches,handler);
-					checkTryCatchBlocks(s + 1, i, c, nhandler);
+					checkTryCatchBlocks(s + 1, i, c, nhandler, labelMap);
 					
 					// now we need to check that every handler is, in fact,
 					// reachable.															
@@ -121,7 +128,7 @@ public class ModuleCheck implements Transform {
 							// actual handler is required.
 							syntaxError(
 									errorMessage(UNREACHABLE_CODE),
-									filename, entry);
+									filename, labelMap.get(p.second()));
 						}
 					}
 				} else {
