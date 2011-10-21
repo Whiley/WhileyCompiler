@@ -279,15 +279,15 @@ public class NameResolution {
 		}
 			
 		for (Stmt.Catch c : s.catches) {
-			environment = new HashMap<String, Set<Expr>>(environment);
-			if (environment.containsKey(c.variable)) {
+			HashMap<String, Set<Expr>> nenvironment = new HashMap<String, Set<Expr>>(environment);
+			if (nenvironment.containsKey(c.variable)) {
 				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, c.variable),
 						filename, s);
 			}
-			environment.put(c.variable, Collections.EMPTY_SET);
+			nenvironment.put(c.variable, Collections.EMPTY_SET);
 			resolve(c.type, imports);
 			for (Stmt st : c.stmts) {
-				resolve(st, environment, imports);
+				resolve(st, nenvironment, imports);
 			}
 		}
 	}
