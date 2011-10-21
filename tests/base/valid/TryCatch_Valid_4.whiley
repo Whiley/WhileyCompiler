@@ -14,39 +14,58 @@ define PIECE_CHARS as [ 'P', 'N', 'B', 'R', 'Q', 'K' ]
 
 define PieceKind as { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING }
 define Piece as { PieceKind kind, bool colour }
-define WHITE_ROOK as {kind: ROOK, colour: false}
 
-define SingleMove as { Piece piece, Pos from, Pos to }
-define SingleTake as { Piece piece, Pos from, Pos to, Piece taken }
-define SimpleMove as SingleMove | SingleTake
+define WHITE_PAWN as { kind: PAWN, colour: true }
+define WHITE_KNIGHT as { kind: KNIGHT, colour: true }
+define WHITE_BISHOP as { kind: BISHOP, colour: true }
+define WHITE_ROOK as { kind: ROOK, colour: true }
+define WHITE_QUEEN as { kind: QUEEN, colour: true }
+define WHITE_KING as { kind: KING, colour: true }
 
-define CastleMove as { bool isWhite, bool kingSide }
-define CheckMove as { Move check }
-define Move as CheckMove | CastleMove | SimpleMove
-
-define RowCol as int // where 0 <= $ && $ <= 8
-define Pos as { RowCol col, RowCol row } 
-define POS as {col: 0, row: 0}
-
-define InvalidMove as { Move move }
-public InvalidMove InvalidMove(Move m):
-    return { move: m }
+define BLACK_PAWN as { kind: PAWN, colour: false }
+define BLACK_KNIGHT as { kind: KNIGHT, colour: false }
+define BLACK_BISHOP as { kind: BISHOP, colour: false }
+define BLACK_ROOK as { kind: ROOK, colour: false }
+define BLACK_QUEEN as { kind: QUEEN, colour: false }
+define BLACK_KING as { kind: KING, colour: false }
 
 // ================================================================
 
-define RankPos as { int row }
+define Move as { Piece piece, Pos from, Pos to }
+
+define Pos as { int col, int row } 
+define POS as {col: 0, row: 0}
+
+define InvalidMove as { Move move, Board board }
+public InvalidMove InvalidMove(Move m):
+    return { move: m, board: startingChessBoard }
+
+// ================================================================
+
 define FilePos as { int col }
-define ShortPos as Pos | RankPos | FilePos | null
+define ShortPos as Pos | FilePos | null
+define ShortMove as { Piece piece, ShortPos from, Pos to, bool isTake }
 
-define ShortSingleMove as { Piece piece, ShortPos from, Pos to, bool isTake }
-define ShortCheckMove as { ShortMove check }
-
-define ShortMove as ShortSingleMove | ShortCheckMove | CastleMove
-define ShortRound as (ShortMove,ShortMove|null)
-
-define InvalidShortMove as { ShortMove move }
+define InvalidShortMove as { ShortMove move, Board board }
 public InvalidShortMove InvalidShortMove(ShortMove m):
-    return { move: m }
+    return { move: m, board: startingChessBoard }
+
+// ================================================================
+
+define Square as Piece | null
+define Row as [Square] // where |$| == 8
+define Board as [Row]
+
+define startingChessBoard as [
+    [ WHITE_ROOK,WHITE_KNIGHT,WHITE_BISHOP,WHITE_QUEEN,WHITE_KING,WHITE_BISHOP,WHITE_KNIGHT,WHITE_ROOK ], // rank 1
+    [ WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN,WHITE_PAWN ],          // rank 2
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 3
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 4
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 5
+    [ null, null, null, null, null, null, null, null ],                                                   // rank 6
+    [ BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN,BLACK_PAWN ],          // rank 7
+    [ BLACK_ROOK,BLACK_KNIGHT,BLACK_BISHOP,BLACK_QUEEN,BLACK_KING,BLACK_BISHOP,BLACK_KNIGHT,BLACK_ROOK ]  // rank 8
+]
 
 // ================================================================
 

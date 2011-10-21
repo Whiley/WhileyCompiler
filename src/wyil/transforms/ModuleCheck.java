@@ -134,6 +134,7 @@ public class ModuleCheck implements Transform {
 				} else {
 					Type ex = thrownException(code);				
 					if (ex != Type.T_VOID && !handler.catchException(ex)) {
+						System.out.println("GOT HERE: " + ex);
 						syntaxError(
 								errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
 								filename, entry);
@@ -195,7 +196,7 @@ public class ModuleCheck implements Transform {
 					active.add(t);
 					return true;
 				} else if (Type.isSubtype(type, t)) {					
-					active.add(t);
+					active.add(t);					
 					// this exception may escape
 					type = Type.intersect(type, Type.Negation(t));
 				}
