@@ -74,7 +74,6 @@ public class ModuleCheck implements Transform {
 	public void check(Module.Method method) {
 		boolean isFunction = !(method.type() instanceof Type.Method);
 		for (Module.Case c : method.cases()) {
-			checkThrowsClause(c);
 			checkTryCatchBlocks(c, method);
 			if(isFunction) {
 				checkFunctionPure(c);
@@ -82,31 +81,23 @@ public class ModuleCheck implements Transform {
 		}		
 	}
 	
-	protected void checkThrowsClause(Module.Case c) {
-		// this is where we should check throws clauses
-		// however, it requires me to figure out where to put the throw type.
-		// Should it be part of Type.Function, for example? (yes, probably)
-	}
-	
-	protected void checkTryCatchBlocks(Module.Case c, Module.Method m) {
-		// TODO: add list of declared thrown exceptions
+	protected void checkTryCatchBlocks(Module.Case c, Module.Method m) {		
 		Handler rootHandler = new Handler(m.type().throwsClause());
 		checkTryCatchBlocks(0,c.body().size(),c,rootHandler);
 	}
 	
 	protected void checkTryCatchBlocks(int start, int end, Module.Case c,
-			Handler handler) {
+			Handler handler) {		
 		Block block = c.body();
 		for (int i = start; i < end; ++i) {
 			Block.Entry entry = block.get(i);
 			
 			try {
-
 				Code code = entry.code;
 
 				if (code instanceof TryCatch) {
 					TryCatch sw = (TryCatch) code;
-					int s = start;
+					int s = i;
 					// Note, I could make this more efficient!					
 					while (++i < block.size()) {
 						entry = block.get(i);
@@ -118,12 +109,14 @@ public class ModuleCheck implements Transform {
 							}
 						}						
 					}
+					
 					Handler nhandler = new Handler(sw.catches,handler);
 					checkTryCatchBlocks(s + 1, i, c, nhandler);
+					
 					// now we need to check that every handler is, in fact,
-					// reachable.
+					// reachable.															
 					for(Pair<Type,String> p : sw.catches) {
-						if(!nhandler.active.contains(p.first())) {
+						if(!nhandler.active.contains(p.first())) {							
 							// FIXME: better error message which focuses on the
 							// actual handler is required.
 							syntaxError(
@@ -189,12 +182,12 @@ public class ModuleCheck implements Transform {
 			this.active = new HashSet<Type>();
 		}
 		
-		public boolean catchException(Type type) {
+		public boolean catchException(Type type) {			
 			for (Type t : handlers) {
 				if (Type.isSubtype(t, type)) {
 					active.add(t);
 					return true;
-				} else if (Type.isSubtype(type, t)) {
+				} else if (Type.isSubtype(type, t)) {					
 					active.add(t);
 					// this exception may escape
 					type = Type.intersect(type, Type.Negation(t));
