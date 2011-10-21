@@ -147,6 +147,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void IfElse_Valid_4_RuntimeTest() { runTest("IfElse_Valid_4"); }
  @Test public void Import_Valid_1_RuntimeTest() { runTest("Import_Valid_1"); }
  @Test public void Import_Valid_2_RuntimeTest() { runTest("Import_Valid_2"); } 
+ @Test public void Import_Valid_3_RuntimeTest() { runTest("Import_Valid_3"); }
  @Test public void Interface_Valid_1_RuntimeTest() { runTest("Interface_Valid_1"); }
  @Test public void Intersection_Valid_1_RuntimeTest() { runTest("Intersection_Valid_1"); }
  @Test public void Intersection_Valid_2_RuntimeTest() { runTest("Intersection_Valid_2"); }
