@@ -52,6 +52,31 @@ public byte toUnsignedByte(int v) requires 0 <= v && v <= 255:
         mask = mask << 1
     return r  
 
+// convert an arbitrary sized unsigned integer into a list of bytes in
+// little endian form.
+public [byte] toUnsignedBytes(int v) requires v >= 0:
+    bytes = []
+    // do-while is needed here
+    r = 0b
+    mask = 00000001b
+    for i in 0..8:
+        if (v % 2) == 1:
+            r = r | mask
+        v = v / 2
+        mask = mask << 1
+    bytes = bytes + [r]
+    while v > 0:
+        r = 0b
+        mask = 00000001b
+        for i in 0..8:
+            if (v % 2) == 1:
+                r = r | mask
+            v = v / 2
+            mask = mask << 1
+        bytes = bytes + [r]
+    return bytes
+
+// Convert a signed integer into a single byte
 public byte toSignedByte(int v) requires -128 <= v && v <= 127:
     if v < 0:
         v = v + 256
