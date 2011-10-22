@@ -75,6 +75,13 @@ public string fromASCII([byte] data):
         r = r + Byte.toUnsignedInt(b)
     return r    
 
+// FIXME: this method is completely broken!
+public [byte] toUTF8(string s):
+    r = []
+    for c in s:
+        // the following line is fatally flawed!
+        r = r + [Int.toUnsignedByte(c)]
+    return r
 
 // Convert a string into an integer
 public int toInt(string input) throws SyntaxError:
