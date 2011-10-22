@@ -268,15 +268,56 @@ public class ClassFileBuilder {
 		}
 			
 		ArrayList<Handler> handlers = new ArrayList<Handler>();
-		ArrayList<LineNumberTable.Entry> lineNumbers = new ArrayList<LineNumberTable.Entry>();
-		ArrayList<Bytecode> codes = translate(mcase,constants,handlers,lineNumbers);
+		ArrayList<LineNumberTable.Entry> lineNumbers = new ArrayList<LineNumberTable.Entry>();		
+		ArrayList<Bytecode> codes;
+		if(method.isNative()) {
+			codes = translateNative(mcase,method);
+		} else {
+			codes = translate(mcase,constants,handlers,lineNumbers);
+		}
+		
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,handlers,cm);
 		if(!lineNumbers.isEmpty()) {
 			code.attributes().add(new LineNumberTable(lineNumbers));
-		}
-		cm.attributes().add(code);		
+		}						
+		cm.attributes().add(code);
 		
 		return cm;
+	}
+	
+	public ArrayList<Bytecode> translateNative(Module.Case mcase,
+			Module.Method method) {
+		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
+		Type.Function ft = method.type();
+		int slot = 0;
+		// first, check to see if need to load receiver
+		if(ft instanceof Type.Method) {
+			Type.Method mt = (Type.Method) ft; 
+			if(mt.receiver() != null) {
+				bytecodes.add(new Bytecode.Load(slot++, convertType(mt.receiver())));
+			}
+		}
+		
+		for(Type param : ft.params()) {
+			bytecodes.add(new Bytecode.Load(slot++, convertType(param)));
+		}
+		
+		String pkg = owner.pkg();
+		if(!pkg.equals("")) {
+			pkg = "." + pkg;
+		}
+		pkg = WHILEY_NATIVE_ROOT + pkg;				
+		JvmType.Clazz redirect = new JvmType.Clazz(pkg, owner.components().get(0).first());
+		bytecodes.add(new Bytecode.Invoke(redirect, method.name(),
+				convertFunType(ft), Bytecode.STATIC));
+		
+		if(ft.ret() == Type.T_VOID) {
+			bytecodes.add(new Bytecode.Return(null));
+		} else {
+			bytecodes.add(new Bytecode.Return(convertType(ft.ret())));
+		}
+		
+		return bytecodes;
 	}
 	
 	public ArrayList<Bytecode> translate(Module.Case mcase,
@@ -2615,6 +2656,7 @@ public class ClassFileBuilder {
 				}
 			}));
 		
+	public final static String WHILEY_NATIVE_ROOT = "wyjc.runtime";
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");
