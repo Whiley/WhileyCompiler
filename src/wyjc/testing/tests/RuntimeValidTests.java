@@ -375,6 +375,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void UnionType_Valid_18_RuntimeTest() { runTest("UnionType_Valid_18"); }
  @Test public void VarDecl_Valid_1_RuntimeTest() { runTest("VarDecl_Valid_1"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { runTest("VarDecl_Valid_2"); }
+ @Test public void VarDecl_Valid_3_RuntimeTest() { runTest("VarDecl_Valid_3"); }
  @Test public void While_Valid_1_RuntimeTest() { runTest("While_Valid_1"); }
  @Test public void While_Valid_2_RuntimeTest() { runTest("While_Valid_2"); }
  @Test public void While_Valid_3_RuntimeTest() { runTest("While_Valid_3"); }
