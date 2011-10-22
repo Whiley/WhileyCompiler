@@ -160,7 +160,7 @@ public class Module extends ModuleLoader.Skeleton {
 		
 		public List<Modifier> modifiers() {
 			return modifiers;
-		}
+		}				
 		
 		public String name() {
 			return name;
@@ -255,7 +255,16 @@ public class Module extends ModuleLoader.Skeleton {
 		}
 		
 		public boolean isPublic() {
+				// TODO: fixme!
 			return true;
+		}
+		
+		public boolean isNative() {
+			return modifiers.contains(Modifier.NATIVE);
+		}
+		
+		public boolean isExport() {
+			return modifiers.contains(Modifier.EXPORT);
 		}
 	}	
 	

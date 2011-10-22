@@ -63,7 +63,10 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 		}	
 		
 		for(Module.Method method : module.methods()) {					
-			module.add(propagate(method));
+			if(!method.isNative()) {
+				// native functions/methods don't have bodies
+				module.add(propagate(method));
+			}
 		}		
 	}
 	
