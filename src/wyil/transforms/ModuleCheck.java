@@ -133,8 +133,7 @@ public class ModuleCheck implements Transform {
 					}
 				} else {
 					Type ex = thrownException(code);				
-					if (ex != Type.T_VOID && !handler.catchException(ex)) {
-						System.out.println("GOT HERE: " + ex);
+					if (ex != Type.T_VOID && !handler.catchException(ex)) {						
 						syntaxError(
 								errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
 								filename, entry);
@@ -190,15 +189,15 @@ public class ModuleCheck implements Transform {
 			this.active = new HashSet<Type>();
 		}
 		
-		public boolean catchException(Type type) {			
+		public boolean catchException(Type type) {						
 			for (Type t : handlers) {
-				if (Type.isSubtype(t, type)) {
+				if (Type.isSubtype(t, type)) {					
 					active.add(t);
 					return true;
 				} else if (Type.isSubtype(type, t)) {					
 					active.add(t);					
 					// this exception may escape
-					type = Type.intersect(type, Type.Negation(t));
+					type = Type.intersect(type, Type.Negation(t));					
 				}
 			}
 
