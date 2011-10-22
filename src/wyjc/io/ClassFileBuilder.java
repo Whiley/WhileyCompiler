@@ -223,7 +223,9 @@ public class ClassFileBuilder {
 		// channel on exit
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main",wyft), ft3, Bytecode.STATIC));
 		ft3 = new JvmType.Function(T_VOID);		
-		codes.add(new Bytecode.Invoke(WHILEYIO, "flush", ft3, Bytecode.STATIC));
+		codes.add(new Bytecode.Invoke(new JvmType.Clazz(
+				"wyjc.runtime.whiley.io", "File"), "flush", ft3,
+				Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
 		
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,
@@ -1610,7 +1612,7 @@ public class ClassFileBuilder {
 		bytecodes.add(new Bytecode.LoadConst(c.name.module().toString()));		
 		bytecodes
 				.add(new Bytecode.LoadConst(nameMangle(c.name.name(), c.type)));
-		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,
 				Bytecode.STATIC));
 		bytecodes.add(new Bytecode.Load(freeSlot, arrT));
 							
@@ -1980,7 +1982,7 @@ public class ClassFileBuilder {
 		NameID nid = e.name;		
 		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()));
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
-		bytecodes.add(new Bytecode.Invoke(WHILEYIO, "functionRef", ftype,Bytecode.STATIC));
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,Bytecode.STATIC));
 	}
 
 	protected void addCoercion(Type from, Type to, int freeSlot,
@@ -2661,8 +2663,7 @@ public class ClassFileBuilder {
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");
 	public final static JvmType.Clazz WHILEYTUPLE = new JvmType.Clazz("wyjc.runtime","Tuple");
-	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz("wyjc.runtime","Type");
-	public final static JvmType.Clazz WHILEYIO = new JvmType.Clazz("wyjc.runtime","IO");
+	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz("wyjc.runtime","Type");	
 	public final static JvmType.Clazz WHILEYMAP = new JvmType.Clazz("wyjc.runtime","Dictionary");
 	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime","Record");	
 	public final static JvmType.Clazz WHILEYPROCESS = new JvmType.Clazz(

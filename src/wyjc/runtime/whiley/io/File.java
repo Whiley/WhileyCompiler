@@ -35,7 +35,7 @@ import wyjc.runtime.List;
 import wyjc.runtime.Record;
 
 public class File {
-	public static Actor openReader(String filename) {
+	public static Actor Reader(String filename) {
 		Record r = new Record();
 		try {			
 			FileInputStream fin = new FileInputStream(filename);
@@ -50,7 +50,7 @@ public class File {
 		return null;
 	}
 	
-	public static Actor openWriter(String filename) {
+	public static Actor Writer(String filename) {
 		Record r = new Record();
 		try {			
 			FileOutputStream fout = new FileOutputStream(filename);
@@ -65,7 +65,7 @@ public class File {
 		return null;
 	}
 	
-	public static void closeFile(Actor p) {
+	public static void close(Actor p) {
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");		
 		try {
@@ -81,7 +81,7 @@ public class File {
 		}
 	}
 	
-	public static List readFile(Actor p, BigInteger max) {		
+	public static List read(Actor p, BigInteger max) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
@@ -100,7 +100,7 @@ public class File {
 	}
 	
 	private static final int CHUNK_SIZE = 1024;
-	public static List readFile(Actor p) {		
+	public static List read(Actor p) {		
 		FileInputStream fin = (FileInputStream) ((HashMap) p.state())
 				.get("$fin");
 		
@@ -121,7 +121,7 @@ public class File {
 		return r;		
 	}
 	
-	public static void writeFile(Actor p, List bytes) {
+	public static void write(Actor p, List bytes) {
 		System.out.println("IO write (1)");
 		System.out.flush();
 		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
@@ -143,19 +143,5 @@ public class File {
 	
 	public static void flush() {
 		System.out.flush();
-	}
-	
-	public static Method functionRef(String clazz, String name) {
-		try {
-			Class cl = Class.forName(clazz);
-			for(Method m : cl.getDeclaredMethods()) {
-				if(m.getName().equals(name)) {
-					return m;
-				}
-			}
-			throw new RuntimeException("Method Not Found: " + clazz + ":" + name);
-		} catch(ClassNotFoundException e) {
-			throw new RuntimeException("Class Not Found: " + clazz);
-		}
 	}
 }

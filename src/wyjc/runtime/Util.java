@@ -25,6 +25,7 @@
 
 package wyjc.runtime;
 
+import java.lang.reflect.Method;
 import java.math.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +56,20 @@ public class Util {
 	private static int nset_clones = 0;
 	private static int nrecord_clones = 0;
 
+	public static Method functionRef(String clazz, String name) {
+		try {
+			Class cl = Class.forName(clazz);
+			for(Method m : cl.getDeclaredMethods()) {
+				if(m.getName().equals(name)) {
+					return m;
+				}
+			}
+			throw new RuntimeException("Method Not Found: " + clazz + ":" + name);
+		} catch(ClassNotFoundException e) {
+			throw new RuntimeException("Class Not Found: " + clazz);
+		}
+	}
+	
 	public static String append(final String lhs, final String rhs) {		
 		return lhs + rhs;
 	}
