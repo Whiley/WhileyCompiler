@@ -418,7 +418,8 @@ public final class TypeAlgorithms {
 	private static int intersect(int fromIndex, boolean fromSign,
 			Automata from, int toIndex, boolean toSign, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automata.State> states) {
+			ArrayList<Automata.State> states) {				
+		
 		// first, check whether we have determined this state already
 		IntersectionPoint ip = new IntersectionPoint(fromIndex,fromSign,toIndex,toSign);
 		Integer allocation = allocations.get(ip);
@@ -483,6 +484,7 @@ public final class TypeAlgorithms {
 			Automata from, int toIndex, boolean toSign, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automata.State> states) {
+				
 		int myIndex = states.size()-1;
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];		
@@ -495,7 +497,8 @@ public final class TypeAlgorithms {
 		// TODO: tidy this mess up
 		if(fromKind == Type.K_VOID || toKind == Type.K_VOID) {
 			myState = new Automata.State(Type.K_VOID);
-		} else if(fromKind == Type.K_UNION) {
+		} else if(fromKind == Type.K_UNION) {						
+			
 			// (T1 | T2) & T3 => (T1&T3) | (T2&T3)
 			int[] fromChildren = fromState.children;
 			int[] myChildren = new int[fromChildren.length];
@@ -545,7 +548,7 @@ public final class TypeAlgorithms {
 			states.remove(states.size()-1);
 			int fromChild = fromState.children[0];
 			return intersect(fromChild,!fromSign,from,toIndex,toSign,to,allocations,states);
-		} else if(toKind == Type.K_NEGATION) {
+		} else if(toKind == Type.K_NEGATION) {			
 			states.remove(states.size()-1);
 			int toChild = toState.children[0];
 			return intersect(fromIndex,fromSign,from,toChild,!toSign,to,allocations,states);
@@ -767,7 +770,6 @@ public final class TypeAlgorithms {
 			int toIndex, Automata to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automata.State> states) {
-	
 		int myIndex = states.size()-1;
 		Automata.State fromState = from.states[fromIndex];
 		Automata.State toState = to.states[toIndex];		
