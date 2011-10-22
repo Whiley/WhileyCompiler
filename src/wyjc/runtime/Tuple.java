@@ -47,7 +47,7 @@ public final class Tuple extends java.util.ArrayList {
 				r += ",";
 			}
 			firstTime=false;
-			r += Util.str(o);
+			r += wyjc.runtime.whiley.lang.String.str(o);
 		}
 		return r + ")";
 	}

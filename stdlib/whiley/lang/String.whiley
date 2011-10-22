@@ -27,23 +27,7 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
-public string str(any item):
-    if item is null:
-        return "null"
-    else if item is string:
-        return "\"" + item + "\""
-    else if item is char:
-        return "\'" + item + "\'"
-    else if item is byte:
-        extern jvm:
-            iload 0
-            invokestatic wyjc/runtime/Util.str:(B)Ljava/lang/String;
-            areturn
-    extern jvm:
-        aload 0
-        invokevirtual java/lang/Object.toString:()Ljava/lang/String;
-        areturn
-    return "DUMMY" // dead code
+public native string str(any item):
 
 // find first index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED

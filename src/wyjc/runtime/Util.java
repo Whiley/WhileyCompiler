@@ -187,43 +187,7 @@ public class Util {
 	 */
 	public static boolean equals(Object o1, Object o2) {
 		return (o1 != null && o1.equals(o2)) || (o1 == o2);
-	}
-	
-	/**
-	 * Convert a given Whiley object into a string
-	 * @param o
-	 * @return
-	 */
-	public static String str(Object o) {
-		if(o == null) {
-			return "null";
-		} else if(o instanceof String) {
-			String s = (String) o;
-			return "\"" + s + "\"";
-		} else if(o instanceof Character) {
-			Character s = (Character) o;
-			return "\'" + s + "\'";
-		} else if(o instanceof Byte) {
-			Byte b = (Byte) o;
-			return str(b.byteValue());
-		} else {
-			return o.toString();
-		}
-	}
-	
-	public static String str(byte b) {
-		String r = "b";
-		byte v = b;
-		for(int i=0;i!=8;++i) {
-			if((v&0x1) == 1) {
-				r = "1" + r;
-			} else {
-				r = "0" + r;
-			}
-			v = (byte) (v >>> 1);
-		}
-		return r;
-	}
+	}		
 	
 	/**
 	 * The following method is used for printing debug output arising from debug
