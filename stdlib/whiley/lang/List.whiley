@@ -22,5 +22,13 @@ public [bool] create(int size, bool element) requires size >= 0, ensures |$| == 
         r = r + [element]
         i = i + 1
     return r 
-    
+
+public [bool] reverse([bool] list):
+    return list[|list|..0]    
+
+public [byte] reverse([byte] list):
+    return list[|list|..0]    
+
+public [int] reverse([int] list):
+    return list[|list|..0]    
 
