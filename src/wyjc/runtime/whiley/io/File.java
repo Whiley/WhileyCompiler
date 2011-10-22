@@ -23,14 +23,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.runtime;
+package wyjc.runtime.whiley.io;
 
 import java.math.*;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
 
-public class IO {
+import wyjc.runtime.Actor;
+import wyjc.runtime.List;
+import wyjc.runtime.Record;
+
+public class File {
 	public static Actor openReader(String filename) {
 		Record r = new Record();
 		try {			

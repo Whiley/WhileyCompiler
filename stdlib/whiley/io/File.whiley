@@ -26,55 +26,26 @@
 package whiley.io
 
 define Reader as process { string fileName }
+
 define Writer as process { string fileName, int writer }
 
-// not sure if this makes sense per se
-Reader ::Reader(string fileName):
-    extern jvm:
-        aload 0
-        invokestatic wyjc/runtime/IO.openReader:(Ljava/lang/String;)Lwyjc/runtime/Actor;
-        areturn
-    // the following line is dead code
-    return spawn {fileName: ""}
+// create file reader
+public native Reader ::Reader(string fileName):
 
-void Reader::close():
-    extern jvm:
-        aload 0
-        invokestatic wyjc/runtime/IO.closeFile:(Lwyjc/runtime/Actor;)V;
+// close file reader
+public native void Reader::close():
 
 // read the whole file
-[byte] Reader::read():
-    extern jvm:
-        aload 0
-        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;)Lwyjc/runtime/List;
-        areturn
-    return []
+public native [byte] Reader::read():
     
 // read at most max bytes 
-[byte] Reader::read(int max):
-    extern jvm:
-        aload 0
-        aload 1
-        invokestatic wyjc/runtime/IO.readFile:(Lwyjc/runtime/Actor;Ljava/math/BigInteger;)Lwyjc/runtime/List;
-        areturn
-    return []
+public native [byte] Reader::read(int max):
 
-Writer ::Writer(string fileName):
-    extern jvm:
-        aload 0
-        invokestatic wyjc/runtime/IO.openWriter:(Ljava/lang/String;)Lwyjc/runtime/Actor;
-        areturn
-    // the following line is dead code
-    return spawn {fileName: "", writer: 0}
+// create file writer
+public native Writer ::Writer(string fileName):
 
-void Writer::close():
-    extern jvm:
-        aload 0
-        invokestatic wyjc/runtime/IO.closeFile:(Lwyjc/runtime/Actor;)V;
+// close file writer
+public native void Writer::close():
 
-// read the whole file
-void Writer::write([byte] data):
-    extern jvm:
-        aload 0
-        aload 1
-        invokestatic wyjc/runtime/IO.writeFile:(Lwyjc/runtime/Actor;Ljava/util/List;)V
+// write the whole file
+public native void Writer::write([byte] data):
