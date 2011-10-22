@@ -122,19 +122,15 @@ public class File {
 	}
 	
 	public static void write(Actor p, List bytes) {
-		System.out.println("IO write (1)");
-		System.out.flush();
 		FileOutputStream fout = (FileOutputStream) ((HashMap) p.state())
 				.get("$fout");
 				
-		try {
-			System.out.println("IO write (1)");
+		try {			
 			byte[] bs = new byte[bytes.size()];
 			for(int i=0;i!=bs.length;++i) {
 				Byte r = (Byte) bytes.get(i); 
 				bs[i] = r.byteValue();
-			}
-			System.out.println("IO write (2)");
+			}			
 			fout.write(bs);			
 		} catch (IOException ioe) {
 			// what to do here??
