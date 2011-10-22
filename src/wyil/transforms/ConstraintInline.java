@@ -62,7 +62,7 @@ public class ConstraintInline implements Transform {
 			constraint = nconstraint;
 		}
 		
-		return new Module.TypeDef(type.name(), type.type(), constraint,
+		return new Module.TypeDef(type.modifiers(), type.name(), type.type(), constraint,
 				type.attributes());
 	}
 	
@@ -71,7 +71,7 @@ public class ConstraintInline implements Transform {
 		for(Module.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new Module.Method(method.name(), method.type(), cases);
+		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	public Module.Case transform(Module.Case mcase, Module.Method method) {	

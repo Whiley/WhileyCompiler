@@ -86,7 +86,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				environment.add(Type.T_VOID);
 			}
 			constraint = doPropagation(constraint,environment);	
-			return new Module.TypeDef(type.name(), type.type(), constraint, type.attributes());
+			return new Module.TypeDef(type.modifiers(), type.name(), type.type(), constraint, type.attributes());
 		} else {
 			return type;
 		}
@@ -96,7 +96,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		// We need to perform type propagation over values in order to handle
 		// function constants which have not yet been bound.
 		Value v = (Value) infer(def.constant(),def);
-		return new Module.ConstDef(def.name(), v, def.attributes());
+		return new Module.ConstDef(def.modifiers(), def.name(), v, def.attributes());
 	}
 	
 	public Env initialStore() {

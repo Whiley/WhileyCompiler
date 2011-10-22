@@ -135,22 +135,31 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public static class TypeDef extends SyntacticElement.Impl {
+		private List<Modifier> modifiers;
 		private String name;
 		private Type type;		
 		private Block constraint;
 
-		public TypeDef(String name, Type type, Block constraint, Attribute... attributes) {
+		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+				Block constraint, Attribute... attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.type = type;
 			this.constraint = constraint;
 		}
 
-		public TypeDef(String name, Type type, Block constraint, Collection<Attribute> attributes) {
+		public TypeDef(Collection<Modifier> modifiers, String name, Type type,
+				Block constraint, Collection<Attribute> attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
-			this.type = type;						
+			this.type = type;
 			this.constraint = constraint;
+		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
 		}
 		
 		public String name() {
@@ -167,19 +176,26 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 	
 	public static class ConstDef extends SyntacticElement.Impl {
+		private List<Modifier> modifiers;
 		private String name;		
 		private Value constant;
 		
-		public ConstDef(String name, Value constant,  Attribute... attributes) {
+		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Attribute... attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.constant = constant;
 		}
 		
-		public ConstDef(String name, Value constant,  Collection<Attribute> attributes) {
+		public ConstDef(Collection<Modifier> modifiers, String name, Value constant,  Collection<Attribute> attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.constant = constant;
+		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
 		}
 		
 		public String name() {
@@ -192,26 +208,34 @@ public class Module extends ModuleLoader.Skeleton {
 	}
 		
 	public static class Method extends SyntacticElement.Impl {
+		private List<Modifier> modifiers;
 		private String name;		
 		private Type.Function type;		
 		private List<Case> cases;		
 				
-		public Method(String name, Type.Function type,
-				Collection<Case> cases, Attribute... attributes) {
+		public Method(Collection<Modifier> modifiers, String name,
+				Type.Function type, Collection<Case> cases,
+				Attribute... attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.type = type;
 			this.cases = Collections
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 		
-		public Method(String name, Type.Function type,
+		public Method(Collection<Modifier> modifiers, String name, Type.Function type,
 				Collection<Case> cases, Collection<Attribute> attributes) {
 			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 			this.type = type;
 			this.cases = Collections
 					.unmodifiableList(new ArrayList<Case>(cases));
+		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
 		}
 		
 		public String name() {

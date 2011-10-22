@@ -117,7 +117,8 @@ public class ModuleBuilder {
 						ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
 								method.cases());
 						ncases.addAll(mi.cases());
-						mi = new Module.Method(mi.name(), mi.type(), ncases);
+						mi = new Module.Method(method.modifiers(), mi.name(),
+								mi.type(), ncases);
 					}
 					methods.put(key, mi);
 				}
@@ -664,12 +665,12 @@ public class ModuleBuilder {
 
 	protected Module.ConstDef resolve(ConstDecl td, ModuleID module) {
 		Value v = constants.get(new NameID(module, td.name()));
-		return new Module.ConstDef(td.name(), v);
+		return new Module.ConstDef(td.modifiers, td.name(), v);
 	}
 
 	protected Module.TypeDef resolve(TypeDecl td, ModuleID module) {
 		Pair<Type,Block> p = types.get(new NameID(module, td.name()));
-		return new Module.TypeDef(td.name(), p.first(), p.second());
+		return new Module.TypeDef(td.modifiers, td.name(), p.first(), p.second());
 	}
 
 	protected Module.Method resolve(FunDecl fd) {		
@@ -783,7 +784,7 @@ public class ModuleBuilder {
 		ncases.add(new Module.Case(body,precondition,postcondition,locals));
 		
 		Type.Function tf = fd.attribute(Attributes.Fun.class).type;
-		return new Module.Method(fd.name(), tf, ncases);
+		return new Module.Method(fd.modifiers, fd.name(), tf, ncases);
 	}
 
 	/**

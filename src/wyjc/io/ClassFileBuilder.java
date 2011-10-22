@@ -43,6 +43,7 @@ import wyjvm.attributes.LineNumberTable;
 import wyjvm.attributes.SourceFile;
 import wyjvm.io.BinaryOutputStream;
 import wyjvm.lang.*;
+import wyjvm.lang.Modifier;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

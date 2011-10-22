@@ -77,7 +77,7 @@ public abstract class BackwardFlowAnalysis<T> implements Transform {
 		for (Module.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new Module.Method(method.name(), method.type(), cases);
+		return new Module.Method(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	public Module.Case propagate(Module.Case mcase) {

@@ -64,6 +64,7 @@ public class WyilFileWriter implements Transform {
 		out.println("source-file: " + module.filename());
 		out.println();
 		for(ConstDef cd : module.constants()) {
+			writeModifiers(cd.modifiers(),out);
 			out.println("define " + cd.name() + " as " + cd.constant());
 		}
 		if(!module.constants().isEmpty()) {
@@ -73,6 +74,7 @@ public class WyilFileWriter implements Transform {
 			Type t = td.type();			
 			String t_str;			
 			t_str = t.toString();
+			writeModifiers(td.modifiers(),out);
 			out.println("define " + td.name() + " as " + t_str);
 			Block constraint = td.constraint();
 			if(constraint != null) {
@@ -105,6 +107,7 @@ public class WyilFileWriter implements Transform {
 	}
 	
 	public void write(Case mcase, Method method, PrintWriter out) {
+		writeModifiers(method.modifiers(),out);
 		Type.Function ft = method.type(); 
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
@@ -265,6 +268,13 @@ public class WyilFileWriter implements Transform {
 			}
 		}
 		out.println();
+	}
+	
+	public static void writeModifiers(List<Modifier> modifiers, PrintWriter out) {		
+		for(Modifier m : modifiers) {						
+			out.print(m.toString());
+			out.print(" ");
+		}
 	}
 	
 	public static String getLocal(int index, List<String> locals) {

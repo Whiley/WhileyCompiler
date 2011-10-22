@@ -100,7 +100,7 @@ public class ClassFileLoader {
 					ArrayList<Module.Case> ncases = new ArrayList<Module.Case>(
 							method.cases());
 					ncases.addAll(mi.cases());
-					mi = new Module.Method(mi.name(), mi.type(), ncases);
+					mi = new Module.Method(method.modifiers(), mi.name(), mi.type(), ncases);
 				}
 				methods.put(key, mi);
 			}
@@ -123,7 +123,8 @@ public class ClassFileLoader {
 							attrs.add((Attribute)bba);
 						}
 					}
-					Module.ConstDef ci = new Module.ConstDef(wd.defName(),wd.value(),attrs);
+					// TODO: generate proper modifiers
+					Module.ConstDef ci = new Module.ConstDef(Collections.EMPTY_LIST,wd.defName(),wd.value(),attrs);
 					constants.add(ci);
 				} else {
 					// type definition
@@ -134,7 +135,8 @@ public class ClassFileLoader {
 							attrs.add((Attribute)bba);
 						}
 					}
-					Module.TypeDef ti = new Module.TypeDef(wd.defName(),type,null,attrs);					
+					// TODO: generate proper modifiers
+					Module.TypeDef ti = new Module.TypeDef(Collections.EMPTY_LIST,wd.defName(),type,null,attrs);					
 					types.add(ti);
 				}
 			}
@@ -171,8 +173,8 @@ public class ClassFileLoader {
 			List<Module.Case> mcases = new ArrayList<Module.Case>();
 			// TODO: fix this problem here related to locals
 			mcases.add(new Module.Case(null, null, null, Collections.EMPTY_LIST, attrs));
-
-			return new Module.Method(name, type, mcases);
+			// TODO: generate proper modifiers
+			return new Module.Method(Collections.EMPTY_LIST,name, type, mcases);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
