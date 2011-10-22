@@ -40,3 +40,20 @@ public string hex(int item):
             r = ('a' + w) + r
         item = v
     return r
+
+// convert an integer into an unsigned byte
+public byte toUnsignedByte(int v) requires 0 <= v && v <= 255:
+    mask = 00000001b
+    r = 0b
+    for i in 0..8:
+        if (v % 2) == 1:
+            r = r | mask
+        v = v / 2
+        mask = mask << 1
+    return r  
+
+public byte toSignedByte(int v) requires -128 <= v && v <= 127:
+    if v < 0:
+        v = v + 256
+    return Int.toUnsignedByte(v) 
+    
