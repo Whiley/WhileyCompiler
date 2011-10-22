@@ -266,19 +266,5 @@ public interface Stmt extends SyntacticElement {
 		public String toString() {
 			return "debug " + expr;			
 		}
-	}
-	
-	public static final class ExternJvm extends Skip implements Stmt {
-		public ArrayList<Bytecode> bytecodes;
-		
-		public ExternJvm(Collection<Bytecode> bytecodes, Attribute... attributes) {
-			super(attributes);
-			this.bytecodes = new ArrayList<Bytecode>(bytecodes);
-		}
-		
-		public ExternJvm(Collection<Bytecode> bytecodes, Collection<Attribute> attributes) {
-			super(attributes);
-			this.bytecodes = new ArrayList<Bytecode>(bytecodes);
-		}		
-	}
+	}	
 }

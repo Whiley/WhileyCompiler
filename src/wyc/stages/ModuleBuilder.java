@@ -825,8 +825,6 @@ public class ModuleBuilder {
 				return resolve((Invoke) stmt,false,environment);								
 			} else if (stmt instanceof Spawn) {
 				return resolve((UnOp) stmt, environment);
-			} else if (stmt instanceof ExternJvm) {
-				return resolve((ExternJvm) stmt, environment);
 			} else if (stmt instanceof Skip) {
 				return resolve((Skip) stmt, environment);
 			} else {
@@ -931,13 +929,6 @@ public class ModuleBuilder {
 			blk.append(Code.Return(Type.T_VOID), attributes(s));
 			return blk;
 		}
-	}
-
-	protected Block resolve(ExternJvm s, HashMap<String,Integer> environment) {
-		Block blk = new Block(environment.size());
-		blk.append(Code.ExternJvm(s.bytecodes),
-				attributes(s));
-		return blk;
 	}
 
 	protected Block resolve(Skip s, HashMap<String,Integer> environment) {

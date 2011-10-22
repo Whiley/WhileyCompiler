@@ -401,8 +401,6 @@ public class ClassFileBuilder {
 				 translate((DictLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof LoopEnd) {
 				 translate((LoopEnd)code,freeSlot,bytecodes);
-			} else if(code instanceof ExternJvm) {
-				translate((ExternJvm)code,freeSlot,bytecodes);
 			} else if(code instanceof Fail) {
 				 translate((Fail)code,freeSlot,bytecodes);
 			} else if(code instanceof FieldLoad) {
@@ -1141,11 +1139,7 @@ public class ClassFileBuilder {
 				ftype, Bytecode.SPECIAL));
 		bytecodes.add(new Bytecode.Throw());
 	}
-	public void translate(Code.ExternJvm c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.addAll(c.bytecodes);
-	}
-		
+	
 	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
 	}

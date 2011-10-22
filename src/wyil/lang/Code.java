@@ -100,10 +100,6 @@ public abstract class Code {
 		return get(new LoopEnd(label));
 	}
 	
-	public static ExternJvm ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
-		return get(new ExternJvm(bytecodes));
-	}
-
 	/**
 	 * Construct a <code>fail</code> bytecode which indicates a runtime failure.
 	 * 
@@ -828,34 +824,7 @@ public abstract class Code {
 		public String toString() {
 			return "end " + label;
 		}
-	}
-
-	/**
-	 * Marks a list of JVM bytecodes to be inlined at this point.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class ExternJvm extends Code {
-		public final List<wyjvm.lang.Bytecode> bytecodes;
-		
-		ExternJvm(List<wyjvm.lang.Bytecode> bytecodes) {
-			this.bytecodes = new ArrayList(bytecodes);
-		}
-		public int hashCode() {
-			return bytecodes.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof ExternJvm) {
-				ExternJvm e = (ExternJvm) o;
-				return e.bytecodes.equals(bytecodes);
-			}
-			return false;
-		}
-		public String toString() {
-			return "externjvm";
-		}
-	}
+	}	
 
 	/**
 	 * Raises an assertion failure fault with the given message. Fail bytecodes

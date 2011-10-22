@@ -217,8 +217,6 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = infer((Debug)code,entry,environment);
 		} else if(code instanceof Destructure) {
 			code = infer((Destructure)code,entry,environment);
-		} else if(code instanceof ExternJvm) {
-			// skip
 		} else if(code instanceof Fail) {
 			code = infer((Fail)code,entry,environment);
 		} else if(code instanceof FieldLoad) {

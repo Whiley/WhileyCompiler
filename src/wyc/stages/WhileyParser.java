@@ -374,8 +374,6 @@ public class WhileyParser {
 			return parseWhile(indent);
 		} else if(token.text.equals("for")) {			
 			return parseFor(indent);
-		} else if(token.text.equals("extern")) {			
-			return parseExtern(indent);
 		} else if(token.text.equals("spawn")) {			
 			return parseSpawn();
 		} else if ((index + 1) < tokens.size()
@@ -638,37 +636,6 @@ public class WhileyParser {
 
 		return new Stmt.For(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}
-	
-	private Stmt parseExtern(int indent) {
-		int start = index;
-		matchKeyword("extern");
-		Token tok = tokens.get(index++);
-		if(!tok.text.equals("jvm")) {
-			syntaxError("unsupported extern language: " + tok,tok);
-		}		
-		match(Colon.class);
-		int end = index;
-		matchEndLine();
-		Tabs tabs = null;
-		
-		if(tokens.get(index) instanceof Tabs) {
-			tabs = (Tabs) tokens.get(index);
-		}
-		indent = indent + 1;
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		while(tabs != null && tabs.ntabs == indent) {												
-			index = index + 1;
-			bytecodes.add(parseBytecode());								
-			tabs = null;
-			if(index < tokens.size() && tokens.get(index) instanceof Tabs) {
-				tabs = (Tabs) tokens.get(index);
-			} else {
-				tabs = null;
-			}
-		}
-		
-		return new Stmt.ExternJvm(bytecodes,sourceAttr(start,end-1));
-	}		
 	
 	private Bytecode parseBytecode() {
 		String line = "";
