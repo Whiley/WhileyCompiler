@@ -32,7 +32,6 @@ import java.util.*;
 import wyil.lang.*;
 import wyil.util.*;
 import wyc.lang.*;
-import wyc.lang.Stmt;
 import wyc.lang.WhileyFile.*;
 import wyc.util.*;
 import wyjc.runtime.BigRational;
@@ -262,6 +261,10 @@ public class WhileyParser {
 				&& isModifier((lookahead = tokens.get(index)))) {
 			if(lookahead.text.equals("public")) {
 				mods.add(Modifier.PUBLIC);
+			} else if(lookahead.text.equals("native")) {
+				mods.add(Modifier.NATIVE);
+			} else if(lookahead.text.equals("export")) {
+				mods.add(Modifier.EXPORT);
 			} 
 			index = index + 1;
 		}
@@ -270,7 +273,8 @@ public class WhileyParser {
 	
 	public String[] modifiers = {
 			"public",
-			"visible"
+			"export",
+			"native"			
 	};
 	
 	public boolean isModifier(Token tok) {

@@ -506,6 +506,8 @@ public class WhileyLexer {
 		"import",
 		"package",
 		"public",
+		"native",
+		"export",
 		"extern",
 		"spawn",
 		"try"
