@@ -31,7 +31,7 @@ public native string str(any item):
 
 // find first index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED
-public int|null indexOf(char c, string str):
+public int|null indexOf(string str, char c):
     i = 0
     while i < |str|:
         if str[i] == c:
@@ -39,7 +39,7 @@ public int|null indexOf(char c, string str):
         i = i + 1
     return null
 
-public int|null indexOf(char c, int start, string str):
+public int|null indexOf(string str, char c, int start):
     i = start
     while i < |str|:
         if str[i] == c:
@@ -49,7 +49,7 @@ public int|null indexOf(char c, int start, string str):
 
 // find last index in string which matches character.  If no match,
 // then return null.  TO BE DEPRECATED
-public int|null lastIndexOf(char c, string str):
+public int|null lastIndexOf(string str, char c):
     i = |str|
     while i > 0:
         i = i - 1
@@ -59,7 +59,7 @@ public int|null lastIndexOf(char c, string str):
 
 // replace all occurrences of "old" with "new" in string "str".  TO BE
 // DEPRECATED
-public string replace(char old, char new, string str):
+public string replace(string str, char old, char new):
     i = 0
     while i < |str|:
         if str[i] == old:
