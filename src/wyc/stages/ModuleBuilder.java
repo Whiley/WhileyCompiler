@@ -283,6 +283,18 @@ public class ModuleBuilder {
 				values.add(v);				
 			}
 			return Value.V_TUPLE(values);
+		}  else if (expr instanceof DictionaryGen) {
+			DictionaryGen rg = (DictionaryGen) expr;			
+			HashSet<Pair<Value,Value>> values = new HashSet<Pair<Value,Value>>();			
+			for(Pair<Expr,Expr> e : rg.pairs) {
+				Value key = expandConstantHelper(e.first(),filename,exprs,visited);
+				Value value = expandConstantHelper(e.second(),filename,exprs,visited);
+				if(key == null || value == null) {
+					return null;
+				}
+				values.add(new Pair<Value,Value>(key,value));				
+			}
+			return Value.V_DICTIONARY(values);
 		} else if(expr instanceof FunConst) {
 			FunConst f = (FunConst) expr;
 			Attributes.Module mid = expr.attribute(Attributes.Module.class);
