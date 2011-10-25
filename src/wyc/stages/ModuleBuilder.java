@@ -1002,7 +1002,7 @@ public class ModuleBuilder {
 		ArrayList<Pair<Value,String>> cases = new ArrayList();	
 		
 		for(Stmt.Case c : s.cases) {			
-			if(c.value == null) {
+			if(c.values.isEmpty()) {
 				// indicates the default block
 				if(defaultTarget != exitLab) {
 					syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL),filename,c);
@@ -1015,15 +1015,19 @@ public class ModuleBuilder {
 					cblk.append(Code.Goto(exitLab),attributes(c));
 				}
 			} else if(defaultTarget == exitLab) {
-				Value constant = expandConstantHelper(c.value, filename,
-						new HashMap(), new HashSet());												
 				String target = Block.freshLabel();	
 				cblk.append(Code.Label(target), attributes(c));				
-				if(values.contains(constant)) {
-					syntaxError(errorMessage(DUPLICATE_CASE_LABEL),filename,c);
-				}				
-				cases.add(new Pair(constant,target));
-				values.add(constant);
+				
+				for(Expr e : c.values) { 
+					Value constant = expandConstantHelper(e, filename,
+							new HashMap(), new HashSet());												
+					if(values.contains(constant)) {
+						syntaxError(errorMessage(DUPLICATE_CASE_LABEL),filename,c);
+					}									
+					cases.add(new Pair(constant,target));
+					values.add(constant);
+				}
+				
 				for (Stmt st : c.stmts) {
 					cblk.append(resolve(st, environment));
 				}

@@ -492,19 +492,24 @@ public class WhileyParser {
 	private Stmt.Case parseCase(int indent) {
 		checkNotEof();
 		int start = index;
-		Expr condition;
+		List<Expr> values;
 		if(index < tokens.size() && tokens.get(index).text.equals("default")) {				
 			matchKeyword("default");
-			condition = null;
+			values = Collections.EMPTY_LIST;			
 		} else {
 			matchKeyword("case");
-			condition = parseCondition(false);
+			values = new ArrayList<Expr>();
+			values.add(parseCondition(false));
+			while(index < tokens.size() && tokens.get(index) instanceof Comma) {				
+				match(Comma.class);
+				values.add(parseCondition(false));
+			}
 		}		
 		match(Colon.class);
 		int end = index;
 		matchEndLine();		
 		List<Stmt> stmts = parseBlock(indent+1);
-		return new Stmt.Case(condition,stmts,sourceAttr(start,end-1));
+		return new Stmt.Case(values,stmts,sourceAttr(start,end-1));
 	}
 	
 	private ArrayList<Stmt.Case> parseCaseBlock(int indent) {

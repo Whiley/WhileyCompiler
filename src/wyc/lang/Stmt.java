@@ -163,13 +163,13 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {
-		public Expr value; // needs to proved a constant
+		public ArrayList<Expr> values; // needs to be proved all constants
 		public final ArrayList<Stmt> stmts;
 		
-		public Case(Expr condition, List<Stmt> statements,
+		public Case(List<Expr> values, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
-			this.value = condition;
+			this.values = new ArrayList<Expr>(values);
 			this.stmts = new ArrayList<Stmt>(statements);
 		}
 	}	

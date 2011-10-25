@@ -261,9 +261,11 @@ public class NameResolution {
 		
 		s.expr = resolve(s.expr, environment, imports);
 		
-		for(Stmt.Case c : s.cases){					
-			if(c.value != null) {
-				c.value = resolve(c.value,environment,imports);
+		for(Stmt.Case c : s.cases){			
+			for(int i=0;i!=c.values.size();++i) {
+				Expr v = c.values.get(i);
+				v = resolve(v,environment,imports);
+				c.values.set(i, v);
 			}
 			for (Stmt st : c.stmts) {
 				resolve(st, environment, imports);
