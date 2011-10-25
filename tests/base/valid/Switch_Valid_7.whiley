@@ -8,19 +8,14 @@ string f(string input):
     switch c:
         case 'N':
             r = "GOT KNIGHT"
-            break
         case 'B':
             r = "GOT BISHOP"
-            break
         case 'R':
             r = "GOT ROOK"
-            break
         case 'Q':
             r = "GOT QUEEN"
-            break
         case 'K':
             r = "GOT KING"
-            break
         default:
             r = "GOT NOTHING"
     return r

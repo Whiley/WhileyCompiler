@@ -986,7 +986,7 @@ public class ModuleBuilder {
 	protected Block resolve(Break s, HashMap<String,Integer> environment) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if(scope == null) {
-			syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP), filename, s);
+			syntaxError(errorMessage(BREAK_OUTSIDE_LOOP), filename, s);
 		}
 		Block blk = new Block(environment.size());
 		blk.append(Code.Goto(scope.label));
@@ -999,8 +999,8 @@ public class ModuleBuilder {
 		Block cblk = new Block(environment.size());
 		String defaultTarget = exitLab;
 		HashSet<Value> values = new HashSet();
-		ArrayList<Pair<Value,String>> cases = new ArrayList();		
-		scopes.push(new BreakScope(exitLab));
+		ArrayList<Pair<Value,String>> cases = new ArrayList();	
+		
 		for(Stmt.Case c : s.cases) {			
 			if(c.value == null) {
 				// indicates the default block
@@ -1026,15 +1026,15 @@ public class ModuleBuilder {
 				values.add(constant);
 				for (Stmt st : c.stmts) {
 					cblk.append(resolve(st, environment));
-				}								
+				}
+				cblk.append(Code.Goto(exitLab),attributes(c));
 			} else {
 				syntaxError(errorMessage(UNREACHABLE_CODE), filename, c);
 			}
 		}		
 		blk.append(Code.Switch(null,defaultTarget,cases),attributes(s));
 		blk.append(cblk);
-		blk.append(Code.Label(exitLab), attributes(s));
-		scopes.pop();
+		blk.append(Code.Label(exitLab), attributes(s));		
 		return blk;
 	}
 	

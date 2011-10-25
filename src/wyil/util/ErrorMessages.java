@@ -36,7 +36,7 @@ public class ErrorMessages {
 	public static final int INVALID_TUPLE_LVAL = 12;
 	public static final int INVALID_MODULE_ACCESS = 13;
 	public static final int INVALID_PACKAGE_ACCESS = 14;	
-	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 14;
+	public static final int BREAK_OUTSIDE_LOOP = 14;
 	public static final int RESOLUTION_ERROR = 15;
 	public static final int AMBIGUOUS_VARIABLE = 16;
 	public static final int UNKNOWN_VARIABLE = 17;
