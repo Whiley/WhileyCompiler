@@ -475,19 +475,23 @@ public interface JvmType extends Comparable<JvmType> {
 		private final String pkg;
 		private final List<Pair<String, List<JvmType.Reference>>> components;
 		
-		public Clazz(String pkg, List<Pair<String, List<JvmType.Reference>>> components) {
+		public Clazz(String pkg,
+				List<Pair<String, List<JvmType.Reference>>> components) {
 			if (components == null) {
 				throw new IllegalArgumentException(
 						"Supplied class components type cannot be null.");
 			}
 			this.pkg = pkg;
 			this.components = components;
-		}		
-		
-		public Clazz(String pkg, String clazz) {
+		}
+
+		public Clazz(String pkg, String... components) {
 			this.pkg = pkg;
-			components = new ArrayList<Pair<String,List<JvmType.Reference>>>();
-			components.add(new Pair(clazz,new ArrayList<JvmType.Reference>()));
+			this.components = new ArrayList<Pair<String, List<JvmType.Reference>>>();
+			for (String c : components) {
+				this.components.add(new Pair<String, List<JvmType.Reference>>(
+						c, new ArrayList<JvmType.Reference>()));
+			}
 		}
 		
 		public List<Pair<String, List<JvmType.Reference>>> components() {

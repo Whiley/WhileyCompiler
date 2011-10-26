@@ -28,23 +28,5 @@ public class String {
 			v = (byte) (v >>> 1);
 		}
 		return r;
-	}
-	
-//    if item is null:
-//        return "null"
-//    else if item is string:
-//        return "\"" + item + "\""
-//    else if item is char:
-//        return "\'" + item + "\'"
-//    else if item is byte:
-//        extern jvm:
-//            iload 0
-//            invokestatic wyjc/runtime/Util.str:(B)Ljava/lang/String;
-//            areturn
-//    extern jvm:
-//        aload 0
-//        invokevirtual java/lang/Object.toString:()Ljava/lang/String;
-//        areturn
-//    return "DUMMY" // dead code
-
+	}	
 }

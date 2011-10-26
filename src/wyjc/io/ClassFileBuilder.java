@@ -304,12 +304,7 @@ public class ClassFileBuilder {
 			bytecodes.add(new Bytecode.Load(slot++, convertType(param)));
 		}
 		
-		String pkg = owner.pkg();
-		if(!pkg.equals("")) {
-			pkg = "." + pkg;
-		}
-		pkg = WHILEY_NATIVE_ROOT + pkg;				
-		JvmType.Clazz redirect = new JvmType.Clazz(pkg, owner.components().get(0).first());
+		JvmType.Clazz redirect = new JvmType.Clazz(owner.pkg(), owner.components().get(0).first(),"native");		
 		bytecodes.add(new Bytecode.Invoke(redirect, method.name(),
 				convertFunType(ft), Bytecode.STATIC));
 		
