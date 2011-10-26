@@ -254,7 +254,13 @@ public class ClassFileBuilder {
 		}
 		modifiers.add(Modifier.ACC_STATIC);					
 		JvmType.Function ft = convertFunType(method.type());		
-		String name = nameMangle(method.name(),method.type());
+		
+		String name = method.name();
+		
+		if(!method.isExport()) {
+			name = nameMangle(name,method.type());
+		}
+		
 		/* need to put this back somehow?
 		if(method.cases().size() > 1) {
 			name = name + "$" + caseNum;
@@ -274,7 +280,7 @@ public class ClassFileBuilder {
 		ArrayList<Bytecode> codes;
 		if(method.isNative()) {
 			codes = translateNative(mcase,method);
-		} else {
+		} else {			
 			codes = translate(mcase,constants,handlers,lineNumbers);
 		}
 		
