@@ -25,10 +25,7 @@ import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.Automata.State;
 import wyil.util.Pair;
-import wyil.util.type.ImplicitCoercionOperator;
-import wyil.util.type.SubtypeOperator;
-import wyil.util.type.TypeParser;
-import wyil.util.type.TypeAlgorithms;
+import wyil.util.type.*;
 import wyjvm.io.*;
 
 /**
@@ -465,15 +462,26 @@ public abstract class Type {
 	// =============================================================
 
 	/**
-	 * Determine whether type <code>t2</code> is a <i>coercive subtype</i> of
-	 * type <code>t1</code> (written t1 :> t2). In other words, whether the set
-	 * of all possible values described by the type <code>t2</code> is a subset
-	 * of that described by <code>t1</code>.
+	 * Determine whether type <code>t2</code> is an <i>implicit coercive
+	 * subtype</i> of type <code>t1</code> (written t1 :> t2). In other words,
+	 * whether the set of all possible values described by the type
+	 * <code>t2</code> is a subset of that described by <code>t1</code>.
 	 */
-	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
+	public static boolean isImplicitCoerciveSubtype(Type t1, Type t2) {				
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
 		ImplicitCoercionOperator relation = new ImplicitCoercionOperator(a1,a2);				
+		return relation.isSubtype(0, 0); 
+	}
+
+	/**
+	 * Determine whether type <code>t2</code> is an <i>explicit coercive
+	 * subtype</i> of type <code>t1</code>.  
+	 */
+	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2) {				
+		Automata a1 = destruct(t1);
+		Automata a2 = destruct(t2);
+		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2);				
 		return relation.isSubtype(0, 0); 
 	}
 	

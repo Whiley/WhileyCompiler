@@ -115,7 +115,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			Type t = paramTypes.get(i);
 			environment.add(t);
 			if (!(method.type() instanceof Type.Method)
-					&& Type.isCoerciveSubtype(Type.Process(Type.T_ANY), t)) {
+					&& Type.isImplicitCoerciveSubtype(Type.Process(Type.T_ANY), t)) {
 				// FIXME: add source information
 				syntaxError(errorMessage(PROCESS_NOT_PERMITTED_IN_FUNCTION),
 						filename, methodCase);
@@ -382,7 +382,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				checkIsSubtype(Type.T_INT,lhs,stmt);
 				checkIsSubtype(Type.T_INT,rhs,stmt);
 				result = Type.T_INT;
-			} else if(Type.isCoerciveSubtype(lhs,rhs)) {				
+			} else if(Type.isImplicitCoerciveSubtype(lhs,rhs)) {				
 				checkIsSubtype(Type.T_REAL,lhs,stmt);
 				result = lhs;
 			} else {
@@ -403,7 +403,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(Code.Convert code, Entry stmt, Env environment) {
 		Type from = environment.pop();
-		checkIsSubtype(code.to,from,stmt);
+		if (!Type.isExplicitCoerciveSubtype(code.to, from)) {			
+			syntaxError(errorMessage(SUBTYPE_ERROR, code.to, from), filename, stmt);
+		}		
 		environment.push(code.to);
 		return Code.Convert(from, code.to);
 	}
@@ -553,7 +555,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Block blk = new Block(0);
 		Type lhs_t = environment.pop();				
 		
-		if (Type.isCoerciveSubtype(Type.Process(Type.T_ANY), lhs_t)) {
+		if (Type.isImplicitCoerciveSubtype(Type.Process(Type.T_ANY), lhs_t)) {
 			Type.Process tp = (Type.Process) lhs_t;
 			blk.append(Code.ProcLoad(tp),stmt.attributes());
 			lhs_t = tp.element();
@@ -667,7 +669,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	protected Code infer(ListLoad e, Entry stmt, Env environment) {
 		Type idx = environment.pop();
 		Type src = environment.pop();
-		if(Type.isCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),src)) {			
+		if(Type.isImplicitCoerciveSubtype(Type.Dictionary(Type.T_ANY, Type.T_ANY),src)) {			
 			// this indicates a dictionary access, rather than a list access			
 			Type.Dictionary dict = Type.effectiveDictionaryType(src);			
 			if(dict == null) {
@@ -677,7 +679,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.push(dict.value());
 			// OK, it's a hit
 			return Code.DictLoad(dict);
-		} else if(Type.isCoerciveSubtype(Type.T_STRING,src)) {
+		} else if(Type.isImplicitCoerciveSubtype(Type.T_STRING,src)) {
 			checkIsSubtype(Type.T_INT,idx,stmt);
 			environment.push(Type.T_CHAR);
 			return Code.StringLoad();
@@ -702,7 +704,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		Type src = environment.get(e.slot);		
 		Type iter = src;
 		
-		if(e.slot == Code.THIS_SLOT && Type.isCoerciveSubtype(Type.Process(Type.T_ANY), src)) {
+		if(e.slot == Code.THIS_SLOT && Type.isImplicitCoerciveSubtype(Type.Process(Type.T_ANY), src)) {
 			Type.Process p = (Type.Process) src;
 			iter = p.element();
 		}
@@ -1000,13 +1002,13 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	protected Code infer(Code.ListLength code, Entry stmt, Env environment) {
 		Type src = environment.pop();
-		if(Type.isCoerciveSubtype(Type.T_STRING,src)) {
+		if(Type.isImplicitCoerciveSubtype(Type.T_STRING,src)) {
 			environment.add(Type.T_INT);
 			return Code.StringLength();
-		} else if(Type.isCoerciveSubtype(Type.List(Type.T_ANY),src)) {
+		} else if(Type.isImplicitCoerciveSubtype(Type.List(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
 			return Code.ListLength(Type.effectiveListType(src));
-		} else if(Type.isCoerciveSubtype(Type.Set(Type.T_ANY),src)) {
+		} else if(Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
 			return Code.SetLength(Type.effectiveSetType(src));
 		} else {
@@ -1024,7 +1026,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		checkIsSubtype(Type.T_INT,end,stmt);
 		Code r;
 		
-		if(Type.isCoerciveSubtype(Type.T_STRING, src)) {
+		if(Type.isImplicitCoerciveSubtype(Type.T_STRING, src)) {
 			r = Code.SubString();
 		} else {
 			checkIsSubtype(Type.List(Type.T_ANY),src,stmt);
@@ -1072,9 +1074,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(dir == OpDir.UNIFORM && (lhs_set || rhs_set)) {					
 			if(lhs_set && rhs_set) {
 				result = Type.Union(lhs,rhs);		
-			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
+			} else if(lhs_set && Type.isImplicitCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
-			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
+			} else  if(rhs_set && Type.isImplicitCoerciveSubtype(rhs, lhs)) {
 				result = rhs;				
 			} else {
 				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
@@ -1104,9 +1106,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		if(lhs_set || rhs_set) {				
 			if(lhs_set && rhs_set) {
 				result = Type.intersect(lhs,rhs);		
-			} else if(lhs_set && Type.isCoerciveSubtype(lhs, rhs)) {
+			} else if(lhs_set && Type.isImplicitCoerciveSubtype(lhs, rhs)) {
 				result = lhs;
-			} else  if(rhs_set && Type.isCoerciveSubtype(rhs, lhs)) {
+			} else  if(rhs_set && Type.isImplicitCoerciveSubtype(rhs, lhs)) {
 				result = rhs;				
 			} else {
 				syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
@@ -1199,14 +1201,14 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
 				return null;
 			}
-			if (!Type.isCoerciveSubtype(element, lhs_t)) {
+			if (!Type.isImplicitCoerciveSubtype(element, lhs_t)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs_t, rhs_t),
 						filename, stmt);
 			}			
 			lub = rhs_t;
-		} else if(Type.isCoerciveSubtype(lhs_t, rhs_t)) {
+		} else if(Type.isImplicitCoerciveSubtype(lhs_t, rhs_t)) {
 			lub = lhs_t;
-		} else if(Type.isCoerciveSubtype(rhs_t, lhs_t)) {
+		} else if(Type.isImplicitCoerciveSubtype(rhs_t, lhs_t)) {
 			lub = rhs_t;
 		} else {
 			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs_t, rhs_t),
@@ -1486,7 +1488,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 				Type funrec = mt.receiver();			
 				if (receiver == funrec
 						|| (receiver != null && funrec != null && Type
-								.isCoerciveSubtype(receiver, funrec))) {
+								.isImplicitCoerciveSubtype(receiver, funrec))) {
 					// receivers match up OK ...				
 					if (ft.params().size() == paramTypes.size()						
 							&& paramSubtypes(ft, target)
@@ -1539,7 +1541,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			for(int i=0;i!=f1_params.size();++i) {
 				Type f1_param = f1_params.get(i);
 				Type f2_param = f2_params.get(i);				
-				if(!Type.isCoerciveSubtype(f1_param,f2_param)) {				
+				if(!Type.isImplicitCoerciveSubtype(f1_param,f2_param)) {				
 					return false;
 				}
 			}			
@@ -1613,7 +1615,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	
 	// Check t1 :> t2
 	protected void checkIsSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (!Type.isCoerciveSubtype(t1, t2)) {			
+		if (!Type.isImplicitCoerciveSubtype(t1, t2)) {			
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), filename, elem);
 		}
 	}

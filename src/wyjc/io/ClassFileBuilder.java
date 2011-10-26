@@ -2523,7 +2523,7 @@ public class ClassFileBuilder {
 
 		// Third, test for single coercive match
 		for (Type b : t2.bounds()) {
-			if (Type.isCoerciveSubtype(b, from)) {
+			if (Type.isImplicitCoerciveSubtype(b, from)) {
 				buildCoercion(from,b,freeSlot,constants,bytecodes);
 				return;
 			}

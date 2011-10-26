@@ -5,7 +5,7 @@ import wyautl.lang.*;
 
 /**
  * <p>
- * The coercion operator extends the basic subtype operator to consider
+ * The implicit coercion operator extends the basic subtype operator to consider
  * <i>implicit coercions</i> in the subtype computation. Thus, <code>T1</code>
  * is a <i>coercive subtype</i> of <code>T2</code> iff <code>T1 ~> T3</code> and
  * <code>T3 <: T2</code> (where <code>T1 ~> T3</code> is taken to mean
@@ -31,7 +31,7 @@ import wyautl.lang.*;
  * @author David J. Pearce
  * 
  */
-public final class ImplicitCoercionOperator extends SubtypeOperator {
+public class ImplicitCoercionOperator extends SubtypeOperator {
 	
 	public ImplicitCoercionOperator(Automata fromAutomata, Automata toAutomata) {
 		super(fromAutomata,toAutomata);
