@@ -27,17 +27,18 @@ package whiley.lang
 
 define Error as { string msg }
 
+define digits as [
+    '0','1','2','3','4','5','6','7','8','9',
+    'a','b','c','d','e','f','g','h'
+]
+
 // Convert an integer into a hex string
 public string toHexString(int item):    
     r = ""
     while item > 0:
         v = item / 16
-        w = item - (v*16)
-        if w <= 9:                
-            r = ('0' + w) + r
-        else:
-            w = w - 10
-            r = ('a' + w) + r
+        w = item % 16
+        r = r + digits[w]
         item = v
     return r
 

@@ -72,7 +72,7 @@ public string replace(string str, char old, char new):
 public string fromASCII([byte] data):
     r = ""
     for b in data:
-        r = r + Byte.toUnsignedInt(b)
+        r = r + Byte.toChar(b)
     return r    
 
 // FIXME: this method is completely broken!

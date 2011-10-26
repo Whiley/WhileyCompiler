@@ -57,6 +57,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Cast_Valid_2_RuntimeTest() { runTest("Cast_Valid_2"); }
  @Test public void Cast_Valid_3_RuntimeTest() { runTest("Cast_Valid_3"); }
  @Test public void Cast_Valid_4_RuntimeTest() { runTest("Cast_Valid_4"); }
+ @Test public void Cast_Valid_5_RuntimeTest() { runTest("Cast_Valid_5"); }
  @Test public void Char_Valid_1_RuntimeTest() { runTest("Char_Valid_1"); }
  @Test public void Char_Valid_2_RuntimeTest() { runTest("Char_Valid_2"); }
  @Test public void Char_Valid_3_RuntimeTest() { runTest("Char_Valid_3"); }

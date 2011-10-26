@@ -1,11 +1,16 @@
 import * from whiley.lang.*
 
+define digits as [
+    '0','1','2','3','4','5','6','7','8','9'
+]
+
+define alphabet as [
+    'a','b','c','d','e','f'
+]
+
 string iof(int i):
-    return "" + ('a' + i) + ('1' + i)
+    return "" + alphabet[i%6] + digits[i%10]
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(iof(0)))
-    sys.out.println(str(iof(1)))
-    sys.out.println(str(iof(2)))
-    sys.out.println(str(iof(3)))
-    sys.out.println(str(iof(4)))
+    for i in 0..100:
+        sys.out.println(str(iof(i)))

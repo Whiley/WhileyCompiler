@@ -39,6 +39,10 @@ int toInt(byte b):
     else:
         return r    
 
+// Convert a byte into a unicode character.
+char toChar(byte b):
+    return (char) toUnsignedInt(b)
+
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole
 int toInt([byte] bytes):
