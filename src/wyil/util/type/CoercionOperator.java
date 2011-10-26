@@ -100,10 +100,7 @@ public final class CoercionOperator extends SubtypeOperator {
 	}
 	
 	private static boolean primitiveSubtype(int fromKind, int toKind) {
-		if (fromKind == K_CHAR && toKind == K_INT) {
-			// ints can flow into chars
-			return true;
-		} else if (fromKind == K_INT && toKind == K_CHAR) {
+		if (fromKind == K_INT && toKind == K_CHAR) {
 			// chars can flow into ints
 			return true;
 		} else if (fromKind == K_RATIONAL

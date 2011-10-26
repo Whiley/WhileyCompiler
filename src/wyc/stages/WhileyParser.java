@@ -960,7 +960,7 @@ public class WhileyParser {
 			match(token.getClass());
 			ops.add(addSubOp(token));
 			exprs.add(parseMulDivExpression());	
-			ends.add(index);
+			ends.add(index-1);
 		}
 		
 		Expr result = exprs.get(0);
@@ -1042,83 +1042,85 @@ public class WhileyParser {
 		int ostart = index;		
 		Expr lhs = parseTerm();
 		
-		Token lookahead = tokens.get(index);
-		
-		while (lookahead instanceof LeftSquare 
-				|| lookahead instanceof Dot
-				|| lookahead instanceof Shreak
-				|| lookahead instanceof LeftBrace) {
-			ostart = start;
-			start = index;
-			if(lookahead instanceof LeftSquare) {
-				match(LeftSquare.class);				
-				
-				lookahead = tokens.get(index);
-				
-				if (lookahead instanceof DotDot) {
-					// this indicates a sublist without a starting expression;
-					// hence, start point defaults to zero
-					match(DotDot.class);
-					
+		if(index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+
+			while (lookahead instanceof LeftSquare 
+					|| lookahead instanceof Dot
+					|| lookahead instanceof Shreak
+					|| lookahead instanceof LeftBrace) {
+				ostart = start;
+				start = index;
+				if(lookahead instanceof LeftSquare) {
+					match(LeftSquare.class);				
+
 					lookahead = tokens.get(index);
-					Expr end = parseAddSubExpression();
-					match(RightSquare.class);
-					return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
-							index - 1), lhs, new Expr.Constant(Value
-							.V_INTEGER(BigInteger.ZERO), sourceAttr(start,
-							index - 1)), end);
-				}
-				
-				Expr rhs = parseAddSubExpression();
-				
-				lookahead = tokens.get(index);
-				if(lookahead instanceof DotDot) {					
-					match(DotDot.class);
-					
-					lookahead = tokens.get(index);
-					Expr end;
-					if(lookahead instanceof RightSquare) {
-						// In this case, no end of the slice has been provided.
-						// Therefore, it is taken to be the length of the source
-						// expression.						
-						end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
-								.attribute(Attribute.Source.class));
-					} else {
-						end = parseBitwiseExpression(false);						
+
+					if (lookahead instanceof DotDot) {
+						// this indicates a sublist without a starting expression;
+						// hence, start point defaults to zero
+						match(DotDot.class);
+
+						lookahead = tokens.get(index);
+						Expr end = parseAddSubExpression();
+						match(RightSquare.class);
+						return new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(start,
+								index - 1), lhs, new Expr.Constant(Value
+										.V_INTEGER(BigInteger.ZERO), sourceAttr(start,
+												index - 1)), end);
 					}
-					match(RightSquare.class);
-					lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
-							start, index - 1), lhs, rhs, end);
+
+					Expr rhs = parseAddSubExpression();
+
+					lookahead = tokens.get(index);
+					if(lookahead instanceof DotDot) {					
+						match(DotDot.class);
+
+						lookahead = tokens.get(index);
+						Expr end;
+						if(lookahead instanceof RightSquare) {
+							// In this case, no end of the slice has been provided.
+							// Therefore, it is taken to be the length of the source
+							// expression.						
+							end = new Expr.UnOp(Expr.UOp.LENGTHOF, lhs, lhs
+									.attribute(Attribute.Source.class));
+						} else {
+							end = parseBitwiseExpression(false);						
+						}
+						match(RightSquare.class);
+						lhs = new Expr.NaryOp(Expr.NOp.SUBLIST, sourceAttr(
+								start, index - 1), lhs, rhs, end);
+					} else {
+						match(RightSquare.class);							
+						lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
+								index - 1));
+					}
+				} else if(lookahead instanceof Dot) {				
+					match(Dot.class);
+					int tmp = index;
+					String name = matchIdentifier().text; 	
+					if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+						// this indicates a method invocation.
+						index = tmp; // slight backtrack
+						Expr.Invoke ivk = parseInvokeExpr();							
+						lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
+								true, sourceAttr(
+										ostart, index - 1));				
+					} else {
+						lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
+					}
 				} else {
-					match(RightSquare.class);							
-					lhs = new Expr.ListAccess(lhs, rhs, sourceAttr(start,
-							index - 1));
-				}
-			} else if(lookahead instanceof Dot) {				
-				match(Dot.class);
-				int tmp = index;
-				String name = matchIdentifier().text; 	
-				if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-					// this indicates a method invocation.
-					index = tmp; // slight backtrack
+					match(Shreak.class);								 						
 					Expr.Invoke ivk = parseInvokeExpr();							
 					lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
-							true, sourceAttr(
-									ostart, index - 1));				
-				} else {
-					lhs =  new Expr.RecordAccess(lhs, name, sourceAttr(start,index - 1));
+							false, sourceAttr(
+									ostart, index - 1));								
 				}
-			} else {
-				match(Shreak.class);								 						
-				Expr.Invoke ivk = parseInvokeExpr();							
-				lhs = new Expr.Invoke(ivk.name, lhs, ivk.arguments,
-						false, sourceAttr(
-								ostart, index - 1));								
-			}
-			if(index < tokens.size()) {
-				lookahead = tokens.get(index);	
-			} else {
-				lookahead = null;
+				if(index < tokens.size()) {
+					lookahead = tokens.get(index);	
+				} else {
+					lookahead = null;
+				}
 			}
 		}
 		
@@ -1855,8 +1857,8 @@ public class WhileyParser {
 		}
 	}
 	
-	private Attribute.Source sourceAttr(int start, int end) {
-		Token t1 = tokens.get(start);
+	private Attribute.Source sourceAttr(int start, int end) {		
+		Token t1 = tokens.get(start);				
 		Token t2 = tokens.get(end);
 		return new Attribute.Source(t1.start,t2.end(),t1.line);
 	}
