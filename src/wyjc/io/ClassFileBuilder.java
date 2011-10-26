@@ -224,7 +224,7 @@ public class ClassFileBuilder {
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main",wyft), ft3, Bytecode.STATIC));
 		ft3 = new JvmType.Function(T_VOID);		
 		codes.add(new Bytecode.Invoke(new JvmType.Clazz(
-				"wyjc.runtime.whiley.io", "File"), "flush", ft3,
+				"whiley.io", "File$native"), "flush", ft3,
 				Bytecode.STATIC));
 		codes.add(new Bytecode.Return(null));
 		
@@ -2647,7 +2647,6 @@ public class ClassFileBuilder {
 				}
 			}));
 		
-	public final static String WHILEY_NATIVE_ROOT = "wyjc.runtime";
 	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime","Util");
 	public final static JvmType.Clazz WHILEYLIST = new JvmType.Clazz("wyjc.runtime","List");
 	public final static JvmType.Clazz WHILEYSET = new JvmType.Clazz("wyjc.runtime","Set");

@@ -32,7 +32,7 @@ public final class Record extends HashMap<String,Object> {
 				r = r + ",";
 			}
 			firstTime = false;
-			r = r + s + ":" + wyjc.runtime.whiley.lang.String.str(get(s));
+			r = r + s + ":" + whiley.lang.String$native.str(get(s));
 		}
 		return r + "}";
 	}

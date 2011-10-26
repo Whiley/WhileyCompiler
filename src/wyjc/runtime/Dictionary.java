@@ -36,7 +36,7 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 			}
 			firstTime=false;
 			Object val = get(key);			
-			r = r + wyjc.runtime.whiley.lang.String.str(key) + "->" + val;
+			r = r + whiley.lang.String$native.str(key) + "->" + val;
 		}
 		return r + "}";
 	} 
