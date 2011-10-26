@@ -240,7 +240,14 @@ public class ClassFileBuilder {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
 		for(Module.Case c : method.cases()) {
-			methods.add(build(num++,c,method,constants));
+			if(method.isNative()) {
+				methods.add(buildNativeOrExport(c,method,constants));
+			} else {
+				if(method.isExport()) {
+					methods.add(buildNativeOrExport(c,method,constants));
+				}
+				methods.add(build(num++,c,method,constants));
+			}
 		}
 		return methods;
 	}
@@ -255,11 +262,7 @@ public class ClassFileBuilder {
 		modifiers.add(Modifier.ACC_STATIC);					
 		JvmType.Function ft = convertFunType(method.type());		
 		
-		String name = method.name();
-		
-		if(!method.isExport()) {
-			name = nameMangle(name,method.type());
-		}
+		String name = nameMangle(method.name(),method.type());		
 		
 		/* need to put this back somehow?
 		if(method.cases().size() > 1) {
@@ -277,13 +280,8 @@ public class ClassFileBuilder {
 			
 		ArrayList<Handler> handlers = new ArrayList<Handler>();
 		ArrayList<LineNumberTable.Entry> lineNumbers = new ArrayList<LineNumberTable.Entry>();		
-		ArrayList<Bytecode> codes;
-		if(method.isNative()) {
-			codes = translateNative(mcase,method);
-		} else {			
-			codes = translate(mcase,constants,handlers,lineNumbers);
-		}
-		
+		ArrayList<Bytecode> codes;				
+		codes = translate(mcase,constants,handlers,lineNumbers);		
 		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,handlers,cm);
 		if(!lineNumbers.isEmpty()) {
 			code.attributes().add(new LineNumberTable(lineNumbers));
@@ -293,33 +291,75 @@ public class ClassFileBuilder {
 		return cm;
 	}
 	
-	public ArrayList<Bytecode> translateNative(Module.Case mcase,
-			Module.Method method) {
+	public ClassFile.Method buildNativeOrExport(Module.Case mcase,
+			Module.Method method, HashMap<Constant,Integer> constants) {
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		if(method.isPublic()) {
+			modifiers.add(Modifier.ACC_PUBLIC);
+		}
+		modifiers.add(Modifier.ACC_STATIC);					
+		JvmType.Function ft = convertFunType(method.type());		
+		
+		String name = method.name();
+		if(method.isNative()) {
+			name = nameMangle(method.name(),method.type());
+		}
+				
+		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);		
+		for(Attribute a : mcase.attributes()) {
+			if(a instanceof BytecodeAttribute) {
+				// FIXME: this is a hack
+				cm.attributes().add((BytecodeAttribute)a);
+			}
+		}
+			
+		ArrayList<Handler> handlers = new ArrayList<Handler>();			
+		ArrayList<Bytecode> codes;				
+		codes = translateNativeOrExport(method);		
+		wyjvm.attributes.Code code = new wyjvm.attributes.Code(codes,handlers,cm);
+							
+		cm.attributes().add(code);
+		
+		return cm;
+	}
+	
+	public ArrayList<Bytecode> translateNativeOrExport(Module.Method method) {
+
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.Function ft = method.type();
 		int slot = 0;
 		// first, check to see if need to load receiver
-		if(ft instanceof Type.Method) {
-			Type.Method mt = (Type.Method) ft; 
-			if(mt.receiver() != null) {
-				bytecodes.add(new Bytecode.Load(slot++, convertType(mt.receiver())));
+		if (ft instanceof Type.Method) {
+			Type.Method mt = (Type.Method) ft;
+			if (mt.receiver() != null) {
+				bytecodes.add(new Bytecode.Load(slot++, convertType(mt
+						.receiver())));
 			}
 		}
-		
-		for(Type param : ft.params()) {
+
+		for (Type param : ft.params()) {
 			bytecodes.add(new Bytecode.Load(slot++, convertType(param)));
 		}
-		
-		JvmType.Clazz redirect = new JvmType.Clazz(owner.pkg(), owner.components().get(0).first(),"native");		
-		bytecodes.add(new Bytecode.Invoke(redirect, method.name(),
-				convertFunType(ft), Bytecode.STATIC));
-		
-		if(ft.ret() == Type.T_VOID) {
+
+		if (method.isNative()) {
+			JvmType.Clazz redirect = new JvmType.Clazz(owner.pkg(), owner
+					.components().get(0).first(), "native");
+			bytecodes.add(new Bytecode.Invoke(redirect, method.name(),
+					convertFunType(ft), Bytecode.STATIC));
+		} else {
+			JvmType.Clazz redirect = new JvmType.Clazz(owner.pkg(), owner
+					.components().get(0).first());
+			bytecodes.add(new Bytecode.Invoke(redirect, nameMangle(
+					method.name(), method.type()), convertFunType(ft),
+					Bytecode.STATIC));
+		}
+
+		if (ft.ret() == Type.T_VOID) {
 			bytecodes.add(new Bytecode.Return(null));
 		} else {
 			bytecodes.add(new Bytecode.Return(convertType(ft.ret())));
 		}
-		
+
 		return bytecodes;
 	}
 	
