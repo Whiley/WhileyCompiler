@@ -554,22 +554,20 @@ public class ModuleLoader {
 		long time = System.currentTimeMillis();		
 		
 		// TODO: the following line should be removed in the near future.
-		Module mi = moduleReader.read(module,filename,input);
+		Module mi = moduleReader.read(module, filename, input);
 
-		if(mi != null) {
-			logger.logTimedMessage("Loaded " + filename, System
-					.currentTimeMillis()
-					- time);				
+		if (mi != null) {
+			logger.logTimedMessage("Loaded " + filename,
+					System.currentTimeMillis() - time);
 
 			// observe that createModule will return null if the
 			// class file is *not* from whiley source file. In such
 			// case, we simply ignore the class file altogether.
-			moduletable.put(module,mi);
+			moduletable.put(module, mi);
 			return mi;
 		} else {
-			logger.logTimedMessage("Ignored " + filename, System
-					.currentTimeMillis()
-					- time);	
+			logger.logTimedMessage("Ignored " + filename,
+					System.currentTimeMillis() - time);
 			return null;
 		}
 	} 

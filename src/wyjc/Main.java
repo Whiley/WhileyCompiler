@@ -214,7 +214,7 @@ public class Main {
 		return SUCCESS;
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
 		System.exit(new Main().run(args));
 	}
 }

@@ -105,10 +105,9 @@ public class Compiler implements Logger {
 		WhileyLexer wlexer = new WhileyLexer(file.getPath());		
 		List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer.scan());		
 
-		WhileyParser wfr = new WhileyParser(file.getPath(),tokens);	
-		logTimedMessage("[" + file + "] Parsing complete", System
-				.currentTimeMillis()
-				- start);
+		WhileyParser wfr = new WhileyParser(file.getPath(), tokens);
+		logTimedMessage("[" + file + "] Parsing complete",
+				System.currentTimeMillis() - start);
 		
 		return wfr.read(); 
 	}		
@@ -131,7 +130,7 @@ public class Compiler implements Logger {
 	}
 	
 	protected void process(Module module, Transform stage) throws IOException {
-		long start = System.currentTimeMillis();
+		long start = System.currentTimeMillis();		
 		String name = name(stage.getClass().getSimpleName());		
 		
 		try {
@@ -173,7 +172,7 @@ public class Compiler implements Logger {
 		
 	}
 	
-	protected List<Module> buildModules(List<WhileyFile> files) {
+	protected List<Module> buildModules(List<WhileyFile> files) {		
 		long start = System.currentTimeMillis();		
 		List<Module> modules = new ModuleBuilder(loader).resolve(files);
 		logTimedMessage("built modules",
@@ -218,5 +217,5 @@ public class Compiler implements Logger {
 		logout.print(" [");
 		logout.print(time);
 		logout.println("ms]");
-	}
+	}	
 }
