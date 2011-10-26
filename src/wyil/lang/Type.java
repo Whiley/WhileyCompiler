@@ -25,7 +25,7 @@ import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.Automata.State;
 import wyil.util.Pair;
-import wyil.util.type.CoercionOperator;
+import wyil.util.type.ImplicitCoercionOperator;
 import wyil.util.type.SubtypeOperator;
 import wyil.util.type.TypeParser;
 import wyil.util.type.TypeAlgorithms;
@@ -473,7 +473,7 @@ public abstract class Type {
 	public static boolean isCoerciveSubtype(Type t1, Type t2) {				
 		Automata a1 = destruct(t1);
 		Automata a2 = destruct(t2);
-		CoercionOperator relation = new CoercionOperator(a1,a2);				
+		ImplicitCoercionOperator relation = new ImplicitCoercionOperator(a1,a2);				
 		return relation.isSubtype(0, 0); 
 	}
 	

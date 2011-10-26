@@ -31,9 +31,9 @@ import wyautl.lang.*;
  * @author David J. Pearce
  * 
  */
-public final class CoercionOperator extends SubtypeOperator {
+public final class ImplicitCoercionOperator extends SubtypeOperator {
 	
-	public CoercionOperator(Automata fromAutomata, Automata toAutomata) {
+	public ImplicitCoercionOperator(Automata fromAutomata, Automata toAutomata) {
 		super(fromAutomata,toAutomata);
 	}
 	
