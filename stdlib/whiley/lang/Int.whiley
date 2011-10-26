@@ -28,7 +28,7 @@ package whiley.lang
 define Error as { string msg }
 
 // Convert an integer into a hex string
-public string hex(int item):    
+public string toHexString(int item):    
     r = ""
     while item > 0:
         v = item / 16
