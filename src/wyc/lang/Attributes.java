@@ -60,11 +60,4 @@ public interface Attributes {
 		}
 	}
 	
-	public static final class Alias implements Attribute {
-		public final Expr alias;
-		
-		public Alias(Expr alias) {
-			this.alias = alias;
-		}
-	}	
 }

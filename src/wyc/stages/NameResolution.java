@@ -87,9 +87,10 @@ public class NameResolution {
 			if (td.constraint != null) {
 				HashMap<String, Set<Expr>> environment = new HashMap<String, Set<Expr>>();
 				environment.put("$", Collections.EMPTY_SET);
-				addExposedNames(new Expr.UnknownVariable("$", td.constraint
-						.attribute(Attribute.Source.class),
-						new Attributes.Alias(null)), td.type, environment);
+				addExposedNames(
+						new Expr.LocalVariable("$", td.constraint
+								.attribute(Attribute.Source.class)),
+						td.type, environment);
 				resolve(td.constraint, environment, imports);
 			}
 		} catch (ResolveError e) {												
@@ -444,8 +445,7 @@ public class NameResolution {
 			// ok, failed.
 			syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, v);			
 		} else if (aliases.size() == 1) {			
-			v.attributes().add(new Attributes.Alias(aliases.iterator().next()));
-			internalFailure("fix up aliases",filename,v);
+			return aliases.iterator().next();			
 		} else if (aliases.size() > 1) {
 			syntaxError(errorMessage(AMBIGUOUS_VARIABLE), filename, v);
 		} else {
@@ -666,8 +666,8 @@ public class NameResolution {
 	 * </pre>
 	 * 
 	 * In this case, <code>x</code> and <code>y</code> are "exposed" --- meaning
-	 * they're real names are different in some way. In this case, the aliases
-	 * we have are: x->$.x and y->$.y
+	 * their real names are different in some way. In this case, the aliases we
+	 * have are: x->$.x and y->$.y
 	 * 
 	 * @param src
 	 * @param t
