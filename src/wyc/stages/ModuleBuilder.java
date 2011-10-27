@@ -563,7 +563,18 @@ public class ModuleBuilder {
 			Pair<Type,Block> key = expandType(st.key, filename, cache);
 			Pair<Type,Block> value = expandType(st.value, filename, cache);
 			return new Pair<Type,Block>(Type.Dictionary(key.first(),value.first()),blk);					
-		} else if (t instanceof UnresolvedType.Record) {
+		} else if (t instanceof UnresolvedType.Tuple) {
+			// At the moment, a tuple is compiled down to a wyil record.
+			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			Block blk = null;			
+			ArrayList<Type> types = new ArrayList<Type>();				
+			for (UnresolvedType e : tt.types) {				
+				Pair<Type,Block> p = expandType(e, filename, cache);
+				// TODO: fix tuple constraints
+				types.add(p.first());				
+			}
+			return new Pair<Type,Block>(Type.Tuple(types),blk);			
+		}else if (t instanceof UnresolvedType.Record) {
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
 			Block blk = null;
 			HashMap<String, Type> types = new HashMap<String, Type>();								
