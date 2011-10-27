@@ -1,6 +1,6 @@
 package whiley.lang;
 
-public class String$native {    
+public class Any$native {    
 	public static java.lang.String toString(Object o) {
 		if(o == null) {
 			return "null";

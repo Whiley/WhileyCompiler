@@ -36,8 +36,8 @@ void SystemOutWriter::println(string str):
     debug str + "\n"
 
 void SystemOutWriter::print(any item):
-    debug String.toString(item)
+    debug Any.toString(item)
 
 void SystemOutWriter::println(any item):
-    debug String.toString(item) + "\n"
+    debug Any.toString(item) + "\n"
 

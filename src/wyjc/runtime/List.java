@@ -36,7 +36,7 @@ public final class List extends java.util.ArrayList {
 				r += ", ";
 			}
 			firstTime=false;
-			r += whiley.lang.String$native.toString(o);
+			r += whiley.lang.Any$native.toString(o);
 		}
 		return r + "]";
 	}

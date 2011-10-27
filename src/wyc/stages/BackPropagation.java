@@ -763,11 +763,12 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		} else if(to == Type.T_STRING) {
 			// this indicates a string conversion is required
 			
-			Type.Function ft = (Type.Function) Type.Function(Type.T_STRING,
-					Type.T_VOID,Type.T_ANY);
-			NameID name = new NameID(ModuleID.fromString("whiley.lang.String"),
-					"toString");
-			Code code = Code.Invoke(ft,name,true);
+			/**
+			 * FIXME: bug here, since we need to convert the from operand!
+			 */
+			
+			Pair<Type.Function,NameID> p = choseToString(from);			
+			Code code = Code.Invoke(p.first(),p.second(),true);
 			afterInsertions.put(index,
 					new Block.Entry(code, elem.attributes()));
 		} else {
@@ -787,6 +788,36 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 //			...
 //		}
 	}	
+	
+	/**
+	 * Choose the best toString method based on the given type.
+	 * 
+	 * @param from
+	 * @return
+	 */
+	private static Pair<Type.Function,NameID> choseToString(Type type) {
+		Type.Function ft;
+		NameID name;
+		
+		if (type == Type.T_BYTE) {
+			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
+					Type.T_BYTE);
+			name = new NameID(ModuleID.fromString("whiley.lang.Byte"),
+					"toString");
+		} else if (type == Type.T_CHAR) {
+			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
+					Type.T_CHAR);
+			name = new NameID(ModuleID.fromString("whiley.lang.Char"),
+					"toString");
+		} else {
+			ft = (Type.Function) Type.Function(Type.T_STRING, Type.T_VOID,
+					Type.T_ANY);
+			name = new NameID(ModuleID.fromString("whiley.lang.Any"),
+					"toString");
+		}
+		
+		return new Pair<Type.Function,NameID>(ft,name);
+	}
 	
 	public Env join(Env env1, Env env2) {
 		if (env2 == null) {
