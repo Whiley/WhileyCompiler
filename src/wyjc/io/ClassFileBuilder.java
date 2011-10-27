@@ -438,6 +438,8 @@ public class ClassFileBuilder {
 				 translate((Debug)code,freeSlot,bytecodes);
 			} else if(code instanceof Destructure) {
 				 translate((Destructure)code,freeSlot,bytecodes);
+			} else if(code instanceof DictLength) {
+				 translate((DictLength)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof DictLoad) {
 				 translate((DictLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof LoopEnd) {
@@ -1183,6 +1185,13 @@ public class ClassFileBuilder {
 	
 	public void translate(Code.Load c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.slot, convertType(c.type)));
+	}
+	
+	public void translate(Code.DictLength c, Entry stmt, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		JvmType.Function ftype = new JvmType.Function(BIG_INTEGER,WHILEYMAP);						
+		bytecodes.add(new Bytecode.Invoke(WHILEYMAP, "length",
+				ftype, Bytecode.STATIC));								
 	}
 	
 	public void translate(Code.DictLoad c, int freeSlot,

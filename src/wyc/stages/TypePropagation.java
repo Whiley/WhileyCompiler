@@ -290,7 +290,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 	}
 	
 	protected Code infer(BinOp v, Entry stmt, Env environment) {		
-		Code code = v;
+		Code code = v;		
 		Type rhs = environment.pop();
 		Type lhs = environment.pop();
 		Type result;
@@ -307,9 +307,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			environment.push(rhs);
 			switch(v.bop) {
 				case ADD:			
-					return inferSetUnion(OpDir.UNIFORM,stmt,environment);
-				case SUB:
-					return inferSetDifference(OpDir.UNIFORM,stmt,environment);
+					return inferSetUnion(OpDir.UNIFORM, stmt, environment);					
+				case SUB:										
+					return inferSetDifference(OpDir.UNIFORM, stmt, environment);
 				default:
 					syntaxError(errorMessage(INVALID_SET_EXPRESSION),filename,stmt);
 					result = null;
@@ -319,13 +319,15 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			
 			if(lhs_str && rhs_str) {				
 				dir = OpDir.UNIFORM;
-			} else if(lhs_str) {				
-				dir = OpDir.LEFT;
-				checkIsSubtype(Type.T_CHAR,rhs,stmt);
-			} else {				
-				dir = OpDir.RIGHT;
-				checkIsSubtype(Type.T_CHAR,lhs,stmt);
-			} 
+			} else if(lhs_str && Type.isSubtype(Type.T_CHAR, rhs)) {				
+				dir = OpDir.LEFT;				
+			} else if(rhs_str && Type.isSubtype(Type.T_CHAR, lhs)){				
+				dir = OpDir.RIGHT;				
+			} else {
+				// this indicates that one operand must be explicitly converted
+				// into a string.
+				dir = OpDir.UNIFORM;
+			}
 			
 			switch(v.bop) {				
 				case ADD:																				
@@ -396,8 +398,7 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 			code = Code.BinOp(result,v.bop);
 		}				
 		
-		environment.push(result);
-		
+		environment.push(result);		
 		return code;				
 	}
 	
@@ -1011,6 +1012,9 @@ public class TypePropagation extends ForwardFlowAnalysis<TypePropagation.Env> {
 		} else if(Type.isImplicitCoerciveSubtype(Type.Set(Type.T_ANY),src)) {
 			environment.add(Type.T_INT);
 			return Code.SetLength(Type.effectiveSetType(src));
+		} else if(Type.isImplicitCoerciveSubtype(Type.Dictionary(Type.T_ANY,Type.T_ANY),src)) {			
+			environment.add(Type.T_INT);
+			return Code.DictLength(Type.effectiveDictionaryType(src));
 		} else {
 			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
 			return null;

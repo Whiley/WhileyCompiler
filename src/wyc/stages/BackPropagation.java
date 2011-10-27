@@ -115,6 +115,8 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			infer(index,(Debug)code,entry,environment);
 		} else if(code instanceof Destructure) {
 			infer(index,(Destructure)code,entry,environment);
+		} else if(code instanceof DictLength) {
+			infer(index,(DictLength)code,entry,environment);
 		} else if(code instanceof DictLoad) {
 			infer(index,(DictLoad)code,entry,environment);
 		} else if(code instanceof Fail) {
@@ -247,6 +249,13 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			environment.pop();
 		} 
 		
+		environment.push(code.type);
+	}
+		
+	public void infer(int index, Code.DictLength code, Block.Entry entry,
+			Env environment) {		
+		Type req = environment.pop();
+		coerceAfter(req,Type.T_INT,index,entry);
 		environment.push(code.type);
 	}
 	
@@ -747,13 +756,24 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 		return environment;		
 	}
 	
-	public void coerceAfter(Type to, Type from, int index, SyntacticElement elem) {		
-		//if (!Type.isSubtype(to,from)) {					
-		if (!to.equals(from)) {			
+	public void coerceAfter(Type to, Type from, int index, SyntacticElement elem) {					
+		
+		if (to.equals(from)) {
+			afterInsertions.remove(index);
+		} else if(Type.isExplicitCoerciveSubtype(to,from)) {					
 			afterInsertions.put(index,
 					new Block.Entry(Code.Convert(from, to), elem.attributes()));
+		} else if(to == Type.T_STRING) {
+			// this indicates a string conversion is required
+			Type.Function ft = (Type.Function) Type.Function(Type.T_STRING,
+					Type.T_VOID,Type.T_ANY);
+			NameID name = new NameID(ModuleID.fromString("whiley.lang.String"),
+					"str");
+			Code code = Code.Invoke(ft,name,true);
+			afterInsertions.put(index,
+					new Block.Entry(code, elem.attributes()));
 		} else {
-			afterInsertions.remove(index);
+			syntaxError(errorMessage(ErrorMessages.SUBTYPE_ERROR,to,from),filename,elem);
 		}
 	}	
 	

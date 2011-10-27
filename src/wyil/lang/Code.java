@@ -84,6 +84,10 @@ public abstract class Code {
 		return get(new Destructure(from));
 	}
 	
+	public static DictLength DictLength(Type.Dictionary type) {
+		return get(new DictLength(type));
+	}
+	
 	/**
 	 * Construct a <code>dictload</code> bytecode which reads the value
 	 * associated with a given key in a dictionary.
@@ -755,6 +759,35 @@ public abstract class Code {
 		}
 	}
 
+	public static final class DictLength extends Code {				
+		public final Type.Dictionary type;
+		
+		private DictLength(Type.Dictionary type) {
+			this.type = type;			
+		}
+		
+		public int hashCode() {
+			if(type == null) {
+				return 558723; 
+			} else {
+				return type.hashCode();
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof SetLength) {
+				DictLength setop = (DictLength) o;
+				return (type == setop.type || (type != null && type
+						.equals(setop.type)));
+			}
+			return false;
+		}
+				
+		public String toString() {
+			return toString("dictlength",type);
+		}
+	}
+	
 	/**
 	 * Pops a key and dictionary from the stack, and looks up the value for that
 	 * key in the dictionary. If no value exists, a dictionary fault is raised.

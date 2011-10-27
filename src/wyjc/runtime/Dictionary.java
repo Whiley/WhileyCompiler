@@ -1,5 +1,6 @@
 package wyjc.runtime;
 
+import java.math.BigInteger;
 import java.util.*;
 
 
@@ -73,8 +74,8 @@ public final class Dictionary extends java.util.HashMap<Object,Object> {
 		return dict;
 	}
 	
-	public static int size(Dictionary dict) {
-		return dict.size();
+	public static BigInteger length(Dictionary dict) {
+		return BigInteger.valueOf(dict.size());
 	}
 	
 	public static final class Iterator implements java.util.Iterator {
