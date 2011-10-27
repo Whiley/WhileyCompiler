@@ -301,6 +301,19 @@ public class WhileyParser {
 		return stmts;
 	}
 	
+	private void parseIndent(int indent) {
+		if(index < tokens.size()) {
+			Token t = tokens.get(index);
+			if(t instanceof Tabs && ((Tabs)t).ntabs == indent) {
+				index = index + 1;	
+			} else {
+				syntaxError("unexpected end-of-block",t);	
+			}
+		} else {
+			throw new SyntaxError("unexpected end-of-file",filename,index,index);
+		}		
+	}
+	
 	private Tabs getIndent() {
 		// FIXME: there's still a bug here for empty lines with arbitrary tabs
 		if (index < tokens.size() && tokens.get(index) instanceof Tabs) {
@@ -370,6 +383,8 @@ public class WhileyParser {
 			return parseBreak(indent);
 		} else if(token.text.equals("throw")) {			
 			return parseThrow(indent);
+		} else if(token.text.equals("do")) {			
+			return parseDoWhile(indent);
 		} else if(token.text.equals("while")) {			
 			return parseWhile(indent);
 		} else if(token.text.equals("for")) {			
@@ -614,6 +629,26 @@ public class WhileyParser {
 		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(indent+1);								
+		
+		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
+	}
+	
+	private Stmt parseDoWhile(int indent) {
+		int start = index;
+		matchKeyword("do");						
+		Expr invariant = null;
+		if (tokens.get(index).text.equals("where")) {
+			matchKeyword("where");
+			invariant = parseCondition(false);
+		}
+		match(Colon.class);
+		int end = index;
+		matchEndLine();
+		List<Stmt> blk = parseBlock(indent+1);								
+		parseIndent(indent);
+		matchKeyword("while");
+		Expr condition = parseCondition(false);
+		matchEndLine();
 		
 		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
 	}

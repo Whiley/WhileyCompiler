@@ -491,6 +491,7 @@ public class WhileyLexer {
 		"default",
 		"throw",
 		"throws",
+		"do",
 		"while",
 		"else",
 		"where",
