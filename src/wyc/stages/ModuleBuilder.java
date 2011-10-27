@@ -568,8 +568,16 @@ public class ModuleBuilder {
 			Block blk = null;
 			HashMap<String, Type> types = new HashMap<String, Type>();								
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
-				Pair<Type,Block> p = expandType(e.getValue(), filename, cache);
-				// TODO: add record constraints
+				Pair<Type,Block> p = expandType(e.getValue(), filename, cache); 
+				if (p.second() != null) {
+					if(blk == null) {
+						blk = new Block(1);
+					}					
+					blk.append(Code.Load(null, Code.THIS_SLOT));
+					blk.append(Code.FieldLoad(null, e.getKey()));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1));
+					blk.append(shiftBlock(1,p.second()));								
+				}	
 				types.put(e.getKey(), p.first());				
 			}
 			return new Pair<Type,Block>(Type.Record(types),blk);						
@@ -2012,13 +2020,22 @@ public class ModuleBuilder {
 			return new Pair<Type,Block>(Type.Tuple(types),null);			
 		} else if (t instanceof UnresolvedType.Record) {		
 			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			HashMap<String, Type> types = new HashMap<String, Type>();			
+			HashMap<String, Type> types = new HashMap<String, Type>();	
+			Block blk = null;
 			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
 				Pair<Type,Block> p = resolve(e.getValue());
-				// TODO: fix record constraints
+				if (p.second() != null) {
+					if(blk == null) {
+						blk = new Block(1);
+					}					
+					blk.append(Code.Load(null, Code.THIS_SLOT));
+					blk.append(Code.FieldLoad(null, e.getKey()));
+					blk.append(Code.Store(null, Code.THIS_SLOT+1));
+					blk.append(shiftBlock(1,p.second()));								
+				}
 				types.put(e.getKey(), p.first());				
 			}
-			return new Pair<Type,Block>(Type.Record(types),null);
+			return new Pair<Type,Block>(Type.Record(types),blk);
 		} else if(t instanceof UnresolvedType.Not) {
 			UnresolvedType.Not ut = (UnresolvedType.Not) t;
 			Block blk = null;

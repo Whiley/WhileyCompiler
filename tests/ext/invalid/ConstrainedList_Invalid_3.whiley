@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-public [int] update(string str):
-    return [-1]
+public [char] update(string str):
+    return [(char) -1]
 
 public void f(char c):
     debug "" + c
