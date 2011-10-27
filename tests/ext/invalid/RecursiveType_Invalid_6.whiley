@@ -12,4 +12,4 @@ expr f(expr e):
 
 void ::main(System sys,[string] args):
     e1 = {op:ADD, left:{op:0,left:2,right:2}, right:2}
-    debug str(f(e1))
+    debug toString(f(e1))

@@ -13,5 +13,5 @@ int g(int x) ensures $ > 0 && $ <= 256:
 
 void ::main(System sys,[string] args):
     bytes = f(256)
-    debug str(bytes)
+    debug toString(bytes)
 

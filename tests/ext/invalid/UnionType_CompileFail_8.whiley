@@ -12,4 +12,4 @@ bop f(bop b):
 
 void ::main(System sys,[string] args):
     b = {op:0, lhs:1, rhs:2}
-    debug str(f(b))
+    debug toString(f(b))

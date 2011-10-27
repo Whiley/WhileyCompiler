@@ -10,4 +10,4 @@ nat f():
     return h()
 
 void ::main(System sys,[string] args):
-    debug str(f())
+    debug toString(f())

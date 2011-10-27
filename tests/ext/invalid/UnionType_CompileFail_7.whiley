@@ -9,7 +9,7 @@ IntList f(IntList il):
 
 void ::main(System sys,[string] args):
     x = {op:[1], mode:1}
-    debug str(x)
+    debug toString(x)
     x = f(x)
-    debug str(x)  
+    debug toString(x)  
 

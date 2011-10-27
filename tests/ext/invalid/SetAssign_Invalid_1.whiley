@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 // this is a comment!
 void f({int} xs) requires |xs| > 4:
-    debug str(xs)
+    debug toString(xs)
 
 void ::main(System sys,[string] args):
     if |args| > 1:

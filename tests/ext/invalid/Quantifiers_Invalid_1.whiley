@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 void f({int} ls) requires some { i in ls | i < 0}:
-    debug str(ls)
+    debug toString(ls)
 
 void g({int} ls):
     f(ls)

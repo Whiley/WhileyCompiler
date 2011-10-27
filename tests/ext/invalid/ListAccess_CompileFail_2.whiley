@@ -8,4 +8,4 @@ void f([int] x) requires |x| > 0:
 void ::main(System sys,[string] args):
      arr = [1,2,3]
      f(arr)
-     debug str(arr[0])
+     debug toString(arr[0])

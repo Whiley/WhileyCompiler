@@ -10,4 +10,4 @@ int g([int] left, plistv6 right):
 
 void ::main(System sys,[string] args):
     r = g([1,2,-1],[6,7,8])
-    debug str(r)
+    debug toString(r)

@@ -9,4 +9,4 @@ int f(odd x):
 void ::main(System sys,[string] args):
     y = 2
     f(y)
-    debug str(y)
+    debug toString(y)

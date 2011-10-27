@@ -7,5 +7,5 @@ define i8 as int where $ >=-128 && $ <= 127
 
 void ::main(System sys,[string] args):
     bytes = f(256)
-    debug str(bytes)
+    debug toString(bytes)
 

@@ -5,7 +5,7 @@ define neg as int where $ < 0
 define expr as pos|neg
 
 void g(neg x):
-    debug "NEGATIVE: " + str(x)
+    debug "NEGATIVE: " + toString(x)
 
 void f(expr e):
     if e is pos:

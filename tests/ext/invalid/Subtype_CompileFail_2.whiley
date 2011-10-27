@@ -3,9 +3,9 @@ import * from whiley.lang.*
 define scf2nat as int where $ >= 0
 
 void f(scf2nat x):
-    debug str(x)
+    debug toString(x)
     x = -1
-    debug str(x)
+    debug toString(x)
     f(x) // recursive
 
 void ::main(System sys,[string] args):

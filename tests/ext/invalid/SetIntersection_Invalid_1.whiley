@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 void f({int} xs) requires xs ⊆ {1,2,3}:
-    debug str(xs)
+    debug toString(xs)
 
 void g({int} ys):
     f(ys ∩ {1,2,3,4})

@@ -12,4 +12,4 @@ exp2 f(exp1 e1):
 
 void ::main(System sys,[string] args):
     x = f(-1)
-    debug str(x)
+    debug toString(x)

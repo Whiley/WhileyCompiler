@@ -13,6 +13,6 @@ nat sum(LinkedList list):
 
 void ::main(System sys,[string] args):
     l = { next:1, data:1 }
-    debug str(sum(l))
+    debug toString(sum(l))
     l = { next:l, data:-2 }
-    debug str(sum(l))    
+    debug toString(sum(l))    

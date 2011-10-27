@@ -8,4 +8,4 @@ c1pnat f(int x):
     return x
 
 void ::main(System sys,[string] args):
-    debug str(f(-1))
+    debug toString(f(-1))

@@ -9,4 +9,4 @@ point f(point p):
 void ::main(System sys,[string] args):
     z = {x:1,y:-2}
     p = f(z)
-    debug str(p)
+    debug toString(p)

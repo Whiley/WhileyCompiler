@@ -7,5 +7,5 @@ int f(pintset x):
 
 void ::main(System sys,[string] args):
     p = {1}
-    debug str(p)
+    debug toString(p)
     f(p)
