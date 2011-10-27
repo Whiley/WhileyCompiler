@@ -181,6 +181,8 @@ public class NameResolution {
 				resolve((TryCatch)s, environment, imports);
 			} else if(s instanceof While) {
 				resolve((While)s, environment, imports);
+			} else if(s instanceof DoWhile) {
+				resolve((DoWhile)s, environment, imports);
 			} else if(s instanceof For) {
 				resolve((For)s, environment, imports);
 			} else if(s instanceof Invoke) {
@@ -296,6 +298,18 @@ public class NameResolution {
 	}
 	
 	protected void resolve(While s, HashMap<String,Set<Expr>> environment,
+			ArrayList<Import> imports) {
+		s.condition = resolve(s.condition, environment, imports);
+		if (s.invariant != null) {
+			s.invariant = resolve(s.invariant, environment, imports);
+		}
+		environment = new HashMap<String,Set<Expr>>(environment);
+		for (Stmt st : s.body) {
+			resolve(st, environment, imports);
+		}
+	}
+	
+	protected void resolve(DoWhile s, HashMap<String,Set<Expr>> environment,
 			ArrayList<Import> imports) {
 		s.condition = resolve(s.condition, environment, imports);
 		if (s.invariant != null) {

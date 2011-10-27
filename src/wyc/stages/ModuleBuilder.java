@@ -850,6 +850,8 @@ public class ModuleBuilder {
 				return resolve((Throw) stmt, environment);
 			} else if (stmt instanceof While) {
 				return resolve((While) stmt, environment);
+			} else if (stmt instanceof DoWhile) {
+				return resolve((DoWhile) stmt, environment);
 			} else if (stmt instanceof For) {
 				return resolve((For) stmt, environment);
 			} else if (stmt instanceof Invoke) {
@@ -1113,6 +1115,26 @@ public class ModuleBuilder {
 		return blk;
 	}
 
+	protected Block resolve(DoWhile s, HashMap<String,Integer> environment) {		
+		String label = Block.freshLabel();				
+				
+		Block blk = new Block(environment.size());
+		
+		blk.append(Code.Loop(label, Collections.EMPTY_SET),
+				attributes(s));
+		
+		for (Stmt st : s.body) {
+			blk.append(resolve(st, environment));
+		}		
+	
+		blk.append(resolveCondition(label, invert(s.condition), environment));
+
+		
+		blk.append(Code.End(label));
+
+		return blk;
+	}
+	
 	protected Block resolve(For s, HashMap<String,Integer> environment) {		
 		String label = Block.freshLabel();
 		Block blk = resolve(s.source,environment);	

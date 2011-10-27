@@ -650,7 +650,7 @@ public class WhileyParser {
 		Expr condition = parseCondition(false);
 		matchEndLine();
 		
-		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
+		return new Stmt.DoWhile(condition,invariant,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseFor(int indent) {
