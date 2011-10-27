@@ -12,4 +12,4 @@ void ::main(System sys, [string] args):
     list = { data: 1234, next: null}
     list = { data: 2234, next: list}
     d = f(list)
-    sys.out.println("GOT: " + String.toString(d))
+    sys.out.println("GOT: " + Any.toString(d))

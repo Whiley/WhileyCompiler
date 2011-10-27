@@ -11,6 +11,6 @@ void ::main(System sys,[string] args):
     e1 = {op:ADD,left:1,right:2}
     e2 = {op:SUB,left:e1,right:2}
     e3 = {op:SUB,left:{op:MUL,left:2,right:2},right:2}
-    sys.out.println(str(e1))
-    sys.out.println(str(e2))
-    sys.out.println(str(e3))
+    sys.out.println(toString(e1))
+    sys.out.println(toString(e2))
+    sys.out.println(toString(e3))

@@ -5,4 +5,4 @@ int f(int x, int y) requires y != 0:
 
 void ::main(System sys,[string] args):
      x = f(10,2)
-     sys.out.println(str(x)  )
+     sys.out.println(toString(x)  )

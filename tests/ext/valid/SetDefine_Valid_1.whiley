@@ -4,4 +4,4 @@ define pintset as {int} where |$| > 1
 
 void ::main(System sys,[string] args):
     p = {1,2}
-    sys.out.println(str(p))
+    sys.out.println(toString(p))

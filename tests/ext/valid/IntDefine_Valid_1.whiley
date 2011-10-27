@@ -7,7 +7,7 @@ define pir1nat as ir1nat where $ > 1
 string f(int x):
     if x > 2:
         y = x
-        return str(y)
+        return toString(y)
     return ""
 
 void ::main(System sys,[string] args):

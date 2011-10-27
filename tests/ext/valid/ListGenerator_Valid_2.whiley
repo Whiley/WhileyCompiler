@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 string f([[int]] x) requires |x| > 0:
     if(|x[0]| > 2):
-        return str(x[0][1])
+        return toString(x[0][1])
     else:
         return ""
 

@@ -10,4 +10,4 @@ int g(plistv6 left, plistv6 right):
 
 void ::main(System sys,[string] args):
     r = g([1,2,3],[6,7,8])
-    sys.out.println(str(r))
+    sys.out.println(toString(r))

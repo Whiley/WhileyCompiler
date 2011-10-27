@@ -11,5 +11,5 @@ int sum(posintlist ls) ensures $ >= 0:
 
 void ::main(System sys,[string] args):
     c = sum([1,2,3,4,5,6,7])
-    sys.out.println(str(c))
+    sys.out.println(toString(c))
     

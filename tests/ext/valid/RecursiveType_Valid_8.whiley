@@ -16,4 +16,4 @@ expr parse(string input):
 
 void ::main(System sys,[string] args):
     e = parse("Hello")
-    sys.out.println(str(e))
+    sys.out.println(toString(e))

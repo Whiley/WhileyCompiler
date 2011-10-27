@@ -6,4 +6,4 @@ define LinkedList as null|{LinkedList next, int data}
     return x
 
 void ::main(System sys, [string] args):
-    sys.out.println(String.toString(f("Hello World")))
+    sys.out.println(Any.toString(f("Hello World")))

@@ -12,4 +12,4 @@ b_nat f(a_nat x):
 void ::main(System sys,[string] args):
     x = |args|    
     x = f(x)    
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

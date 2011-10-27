@@ -11,4 +11,4 @@ int f(InterList l):
 void ::main(System sys, [string] args):
     list = { data: 1234, next: null}
     d = f(list)
-    sys.out.println("GOT: " + String.toString(d))
+    sys.out.println("GOT: " + Any.toString(d))

@@ -6,7 +6,7 @@ define num as {1,2,3,4}
 
 string f(num x):
     y = x
-    return str(y)
+    return toString(y)
 
 string g(int x, nat z) requires (x == 1 || x == 2) && z in {1,2,3,x}:
     return f(z)

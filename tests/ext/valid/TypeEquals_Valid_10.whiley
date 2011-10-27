@@ -13,6 +13,6 @@ int f(expr e):
 
 void ::main(System sys,[string] args):
     x = f(1)
-    sys.out.println(str(x))
+    sys.out.println(toString(x))
     x = f({x:4,y:10})   
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

@@ -6,11 +6,11 @@ define SubExpr as real | { SubExpr lhs, int data }
 string toString(Expr e):
     if e is SubExpr:
         if e is real:
-            return toString(e)
+            return Any.toString(e)
         else:
-            return toString(e.data) + "->" + toString(e.lhs)
+            return Any.toString(e.data) + "->" + toString(e.lhs)
     else:
-        return toString(-1)
+        return Any.toString(-1)
 
 void ::main(System sys,[string] args):
     se1 = 0.1234

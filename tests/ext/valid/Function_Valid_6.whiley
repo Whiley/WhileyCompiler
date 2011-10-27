@@ -6,7 +6,7 @@ define fr6nat as int where $ >= 0
     return { y | y in xs, y > 1 }
 
 string f({int} x):
-    return str(x)
+    return toString(x)
 
 void ::main(System sys,[string] args):
     ys = {1,2,3}

@@ -5,7 +5,7 @@ define code as {codeOp op, [int] payload}
 
 string f(code x):
     y = x.op
-    return str(y)
+    return toString(y)
 
 void ::main(System sys,[string] args):
     sys.out.println(f({op:1,payload:[1]}))

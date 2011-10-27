@@ -7,4 +7,4 @@ define sr9arr as [{sr9nat f, int g}] where some { z in $ | z.f == 1}
 void ::main(System sys,[string] args):
     x = [{f:1,g:2},{f:1,g:8}]
     x[0].f = 2 
-    sys.out.println(str(x))
+    sys.out.println(toString(x))

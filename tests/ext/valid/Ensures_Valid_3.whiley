@@ -11,5 +11,5 @@ int countOver({int} xs, int y) requires pred(xs):
 void ::main(System sys,[string] args):
     c1 = countOver({1,2,3,4},1)
     c2 = countOver({1,2,3,4},3)
-    sys.out.println(str(c1))
-    sys.out.println(str(c2))
+    sys.out.println(toString(c1))
+    sys.out.println(toString(c2))

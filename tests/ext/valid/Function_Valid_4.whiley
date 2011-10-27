@@ -6,7 +6,7 @@ fr4nat g(fr4nat x):
     return x + 1
 
 string f(fr4nat x):
-    return str(x)
+    return toString(x)
 
 void ::main(System sys,[string] args):
     y = 1

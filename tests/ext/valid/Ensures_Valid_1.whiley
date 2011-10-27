@@ -7,4 +7,4 @@ int add(int x, int y) requires x>=0 && y>=0, ensures $>0:
         return x+y
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(1))
+    sys.out.println(toString(1))

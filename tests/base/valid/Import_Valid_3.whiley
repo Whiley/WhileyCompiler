@@ -1,5 +1,5 @@
 import * from whiley.lang.System
-import * from whiley.lang.String
+import * from whiley.lang.Any
 
 int toInt([int] ls):
     r = 0
@@ -9,5 +9,5 @@ int toInt([int] ls):
 
 public void ::main(System sys, [string] args):
     ls = [1,2,3,4]
-    s = String.toString(toInt(ls))
+    s = Any.toString(toInt(ls))
     sys.out.println(s)

@@ -4,4 +4,4 @@ import * from whiley.lang.*
     return { -x | x ∈ xs } 
 
 void ::main(System sys,[string] args):
-    sys.out.println(str(f({1,2,3,4})))
+    sys.out.println(toString(f({1,2,3,4})))

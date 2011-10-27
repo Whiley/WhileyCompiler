@@ -6,4 +6,4 @@ int constantPool():
 
 void ::main(System sys, [string] args):
     constantPool = constantPool()
-    sys.out.println("GOT: " + String.toString(constantPool))
+    sys.out.println("GOT: " + Any.toString(constantPool))
