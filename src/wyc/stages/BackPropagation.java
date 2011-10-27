@@ -762,6 +762,7 @@ public class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {
 			afterInsertions.remove(index);
 		} else if(to == Type.T_STRING) {
 			// this indicates a string conversion is required
+			
 			Type.Function ft = (Type.Function) Type.Function(Type.T_STRING,
 					Type.T_VOID,Type.T_ANY);
 			NameID name = new NameID(ModuleID.fromString("whiley.lang.String"),
