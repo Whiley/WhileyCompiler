@@ -6,10 +6,8 @@ define expr as int|bop
 int f(expr e):
     if e is bop:
         return e.x + e.y
-    else if e is int:
-        return e // requires type difference
     else:
-        return -1 // unreachable
+        return e 
 
 void ::main(System sys,[string] args):
     x = f(1)
