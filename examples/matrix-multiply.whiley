@@ -21,7 +21,7 @@ int Multiplier::get():
 // Parser
 // ========================================================
 
-(Matrix,Matrix) parseFile(string input):
+(Matrix,Matrix) parseFile(string input) throws SyntaxError:
     data,pos = parseLine(2,0,input)    
     nrows = data[0]
     ncols = data[1]
@@ -29,14 +29,14 @@ int Multiplier::get():
     B,pos = parseMatrix(nrows,ncols,pos,input)
     return A,B
 
-(Matrix,int) parseMatrix(int nrows, int ncols, int pos, string input):    
+(Matrix,int) parseMatrix(int nrows, int ncols, int pos, string input) throws SyntaxError:    
     rows = []
     for i in 0..nrows:
         row,pos = parseLine(ncols,pos,input)
         rows = rows + [row]
     return rows,pos
         
-([int],int) parseLine(int count, int pos, string input):
+([int],int) parseLine(int count, int pos, string input) throws SyntaxError:
     pos = skipWhiteSpace(pos,input)
     ints = []
     while pos < |input| && |ints| != count:       
@@ -44,15 +44,15 @@ int Multiplier::get():
         ints = ints + i
         pos = skipWhiteSpace(pos,input)
     if |ints| != count:  
-        throw { msg: "invalid input file" }
+        throw SyntaxError("invalid input file",pos,pos)
     return ints,pos
 
-(int,int) parseInt(int pos, string input):
+(int,int) parseInt(int pos, string input) throws SyntaxError:
     start = pos
     while pos < |input| && Char.isDigit(input[pos]):
         pos = pos + 1
     if pos == start:
-        throw "Missing number"
+        throw SyntaxError("Missing number",pos,pos)
     return String.toInt(input[start..pos]),pos
 
 int skipWhiteSpace(int index, string input):
@@ -111,8 +111,11 @@ void ::main(System sys, [string] args):
     // first, read data
     input = String.fromASCII(file.read())
     // second, build the matrices
-    A,B = parseFile(input)
-    // third, run the benchmark
-    C = run(A,B)    
-    // finally, print the result!
-    printMat(sys,C)
+    try:
+        A,B = parseFile(input)
+        // third, run the benchmark
+        C = run(A,B)    
+        // finally, print the result!
+        printMat(sys,C)
+    catch(SyntaxError e):
+        sys.out.println("syntax error: " + e.msg)

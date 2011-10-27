@@ -217,7 +217,7 @@ public void ::main(System sys, [string] args):
                 if s is Set:
                     env[s.lhs] = r
                 else:
-                    sys.out.println(str(r))
+                    sys.out.println(r)
                 st = parseWhiteSpace(st)
         catch(RuntimeError e1):
             sys.out.println("runtime error: " + e1.msg)
